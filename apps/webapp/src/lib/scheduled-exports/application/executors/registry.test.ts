@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PAYROLL_EXPORT_FORMATS } from "@/lib/payroll-export/format-registry";
 
 const mocks = vi.hoisted(() => ({ getPayrollExportConfig: vi.fn() }));
 
@@ -48,6 +49,18 @@ describe("validateScheduledReportConfig", () => {
 			expect(mocks.getPayrollExportConfig).toHaveBeenCalledWith("org-1", formatId);
 		},
 	);
+
+	it("saves a payroll schedule for a newly registered format with no further edits", async () => {
+		const registered = PAYROLL_EXPORT_FORMATS as unknown as object[];
+		registered.push({ id: "fake_api", kind: "api" });
+		try {
+			await expect(
+				validateScheduledReportConfig("org-1", "payroll_export", { formatId: "fake_api" }),
+			).resolves.toEqual([]);
+		} finally {
+			registered.pop();
+		}
+	});
 
 	it("refuses a payroll schedule for an unknown format", async () => {
 		await expect(

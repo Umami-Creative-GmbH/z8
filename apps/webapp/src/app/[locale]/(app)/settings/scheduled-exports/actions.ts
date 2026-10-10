@@ -18,9 +18,10 @@ import type {
 	ScheduledExportReportConfig,
 } from "@/db/schema/scheduled-export";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
-import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
+import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { validateScheduledReportConfig } from "@/lib/scheduled-exports/application/executors/registry";
 import {
 	calculateNextExecution,
@@ -113,6 +114,31 @@ export interface ExecutionHistoryItem {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
+/** The organization's schedule, or a NotFoundError. */
+function findScheduledExport(organizationId: string, scheduleId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const schedule = yield* dbService.query("scheduledExport.getById", () =>
+			dbService.db.query.scheduledExport.findFirst({
+				where: and(
+					eq(scheduledExport.id, scheduleId),
+					eq(scheduledExport.organizationId, organizationId),
+				),
+			}),
+		);
+		if (!schedule) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Scheduled export not found",
+					entityType: "scheduled_export",
+					entityId: scheduleId,
+				}),
+			);
+		}
+		return schedule;
+	});
+}
+
 /** Refuses a report configuration its executor rejects, e.g. an unconfigured payroll format. */
 function validateReportConfig(
 	organizationId: string,
@@ -120,7 +146,8 @@ function validateReportConfig(
 	reportConfig: ScheduledExportReportConfig,
 ) {
 	return Effect.gen(function* () {
-		const errors = yield* Effect.promise(() =>
+		const dbService = yield* DatabaseService;
+		const errors = yield* dbService.query("scheduledExport.validateReportConfig", () =>
 			validateScheduledReportConfig(organizationId, reportType, reportConfig),
 		);
 		if (errors.length > 0) {
@@ -364,21 +391,17 @@ export async function updateScheduledExportAction(
 			}
 		}
 
-		if (input.reportConfig !== undefined) {
-			const reportConfig = input.reportConfig;
-			const existing = yield* Effect.promise(() =>
-				db.query.scheduledExport.findFirst({
-					where: and(
-						eq(scheduledExport.id, input.id),
-						eq(scheduledExport.organizationId, input.organizationId),
-					),
-					columns: { reportType: true },
-				}),
-			);
-			if (!existing) {
-				throw new Error("Scheduled export not found");
-			}
-			yield* validateReportConfig(input.organizationId, existing.reportType, reportConfig);
+		const scheduleChanged =
+			input.scheduleType !== undefined ||
+			input.cronExpression !== undefined ||
+			input.timezone !== undefined;
+		const existing =
+			input.reportConfig !== undefined || scheduleChanged
+				? yield* findScheduledExport(input.organizationId, input.id)
+				: undefined;
+
+		if (existing && input.reportConfig !== undefined) {
+			yield* validateReportConfig(input.organizationId, existing.reportType, input.reportConfig);
 		}
 
 		// Build update object
@@ -402,26 +425,14 @@ export async function updateScheduledExportAction(
 		if (input.isActive !== undefined) updates.isActive = input.isActive;
 
 		// Recalculate next execution if schedule changed
-		if (
-			input.scheduleType !== undefined ||
-			input.cronExpression !== undefined ||
-			input.timezone !== undefined
-		) {
-			const existing = yield* Effect.promise(() =>
-				db.query.scheduledExport.findFirst({
-					where: eq(scheduledExport.id, input.id),
-				}),
-			);
-
-			if (existing) {
-				const scheduleConfig: ScheduleConfig = {
-					type: input.scheduleType || (existing.scheduleType as ScheduleType),
-					cronExpression: input.cronExpression ?? existing.cronExpression ?? undefined,
-					timezone: input.timezone || existing.timezone,
-				};
-				const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
-				updates.nextExecutionAt = nextExecutionAt.toJSDate();
-			}
+		if (scheduleChanged && existing) {
+			const scheduleConfig: ScheduleConfig = {
+				type: input.scheduleType || (existing.scheduleType as ScheduleType),
+				cronExpression: input.cronExpression ?? existing.cronExpression ?? undefined,
+				timezone: input.timezone || existing.timezone,
+			};
+			const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
+			updates.nextExecutionAt = nextExecutionAt.toJSDate();
 		}
 
 		const schedule = yield* Effect.promise(async () => {

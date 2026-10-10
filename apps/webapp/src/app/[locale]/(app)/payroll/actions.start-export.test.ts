@@ -128,10 +128,8 @@ describe("payroll workspace export formats", () => {
 	});
 
 	afterEach(() => {
-		registered.splice(
-			registered.findIndex((format) => "id" in format && format.id === "fake_lohn"),
-			1,
-		);
+		const fake = registered.findIndex((format) => "id" in format && format.id === "fake_lohn");
+		if (fake >= 0) registered.splice(fake, 1);
 	});
 
 	it("exports in a file format registered for the workspace with no further edits", async () => {

@@ -39,31 +39,31 @@ export type PayrollWorkspaceExportFormatId = Extract<
 	{ payrollWorkspace: true }
 >["id"];
 
-/** The registry widened, so lookups take any string. */
-function formats(): readonly PayrollExportFormatEntry[] {
+/** Lookups take any string. */
+function widenedFormats(): readonly PayrollExportFormatEntry[] {
 	return PAYROLL_EXPORT_FORMATS;
 }
 
 export function payrollExportFormatIds(): PayrollExportFormatId[] {
-	return formats().map((format) => format.id as PayrollExportFormatId);
+	return widenedFormats().map((format) => format.id as PayrollExportFormatId);
 }
 
 export function isPayrollExportFormatId(value: unknown): value is PayrollExportFormatId {
-	return formats().some((format) => format.id === value);
+	return widenedFormats().some((format) => format.id === value);
 }
 
 export function payrollExportFormatKind(formatId: string): PayrollExportFormatKind | undefined {
-	return formats().find((format) => format.id === formatId)?.kind;
+	return widenedFormats().find((format) => format.id === formatId)?.kind;
 }
 
 export function payrollExportFileFormatIds(): PayrollExportFileFormatId[] {
-	return formats()
+	return widenedFormats()
 		.filter((format) => format.kind === "file")
 		.map((format) => format.id as PayrollExportFileFormatId);
 }
 
 export function payrollWorkspaceExportFormatIds(): PayrollWorkspaceExportFormatId[] {
-	return formats()
+	return widenedFormats()
 		.filter((format) => format.kind === "file" && format.payrollWorkspace)
 		.map((format) => format.id as PayrollWorkspaceExportFormatId);
 }
