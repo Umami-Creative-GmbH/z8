@@ -41,6 +41,7 @@ function getNotificationStyle(type: NotificationType): {
 		case "missed_clock_in_reminder":
 		case "forgotten_clock_out_reminder":
 		case "break_due_reminder":
+		case "period_submission_reminder":
 			return {
 				icon: <IconClock className="size-4" />,
 				bgColor: "bg-sky-100 dark:bg-sky-900/30",
