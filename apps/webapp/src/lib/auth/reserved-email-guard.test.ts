@@ -1,6 +1,7 @@
 import { passkey } from "@better-auth/passkey";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import { betterAuth } from "better-auth/minimal";
+import { admin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { describe, expect, it, vi } from "vitest";
@@ -34,6 +35,7 @@ async function setup() {
 			bearer(),
 			organization({ sendInvitationEmail }),
 			passkey({ rpID: "app.example.com", origin: "https://app.example.com" }),
+			admin(),
 		],
 	});
 	const context = await auth.$context;
@@ -136,6 +138,15 @@ describe("reserved-email guard (#857)", () => {
 
 		await expect(
 			context.internalAdapter.updateUser(user.id, { email: reservedEmail }),
+		).rejects.toMatchObject(refused);
+	});
+
+	it("refuses the admin plugin creating a user with a reserved address", async () => {
+		const { auth } = await setup();
+
+		// A server-side call needs no admin session, so only the guard stands in the way.
+		await expect(
+			auth.api.createUser({ body: { email: reservedEmail, name: "Kiosk", password } }),
 		).rejects.toMatchObject(refused);
 	});
 

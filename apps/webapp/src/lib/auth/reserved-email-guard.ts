@@ -20,7 +20,7 @@ const emailBodyFields = new Map<string, string>([
 	["/sign-in/magic-link", "email"],
 	["/organization/invite-member", "email"],
 	["/change-email", "newEmail"],
-	["/admin/create-user", "email"],
+	// The admin plugin's user creation and update are refused by the user database hooks below.
 ]);
 
 /** Endpoints that act for the signed-in user, refused when that user's address is reserved. */
