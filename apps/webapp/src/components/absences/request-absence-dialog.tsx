@@ -25,7 +25,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
 	Select,
 	SelectContent,
@@ -56,18 +55,12 @@ import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
 import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
+import type { StagedSickNoteFile } from "./sick-notes/sick-note-files-field";
 import {
-	resolveStagedSickNoteFiles,
-	SickNoteFilesField,
-	type StagedSickNoteFile,
-	stagedSickNoteFilesComplete,
-	useSickNoteDefaults,
-} from "./sick-notes/sick-note-files-field";
-import {
-	StagedSickNoteUploadError,
-	type UploadedSickNote,
-	useStagedSickNoteUploads,
-} from "./sick-notes/use-staged-sick-note-uploads";
+	failedSickNoteNames,
+	StagedSickNotesSection,
+	useStagedSickNotes,
+} from "./sick-notes/staged-sick-notes-section";
 
 interface RequestAbsenceDialogProps {
 	categories: Array<{
@@ -193,33 +186,6 @@ function useRequestAbsenceDialogController({
 				);
 				return;
 			}
-			// Sick notes are uploaded first and attached once the absence exists (#983).
-			const stagedSickNotes =
-				selectedCategory?.type === "sick" && canAttachSickNotes
-					? value.sickNotes
-					: [];
-			let uploadedSickNotes: UploadedSickNote[] = [];
-			if (stagedSickNotes.length > 0) {
-				try {
-					uploadedSickNotes = await sickNoteUploads.stage(
-						resolveStagedSickNoteFiles(stagedSickNotes, sickNoteDefaults),
-					);
-				} catch (error) {
-					toast.error(
-						t(
-							"absences.sickNotes.request.uploadFailed",
-							"{fileName} could not be uploaded. Remove it or try again.",
-							{
-								fileName:
-									error instanceof StagedSickNoteUploadError
-										? error.fileName
-										: "",
-							},
-						),
-					);
-					return;
-				}
-			}
 			const request = {
 				categoryId: normalized.categoryId,
 				startDate: normalized.startDate,
@@ -232,10 +198,23 @@ function useRequestAbsenceDialogController({
 				notes: normalized.notes || undefined,
 				...(value.sickDetail ? { sickDetail: value.sickDetail } : {}),
 			};
-			const result =
-				uploadedSickNotes.length > 0
-					? await requestAbsence(request, uploadedSickNotes)
-					: await requestAbsence(request);
+			const failureMessage = t(
+				"absences.toast.requestFailed",
+				"Failed to submit absence request",
+			);
+			// Sick notes are uploaded first and attached once the absence exists (#983).
+			const result = await sickNotes.submit({
+				files:
+					selectedCategory?.type === "sick" && canAttachSickNotes
+						? value.sickNotes
+						: [],
+				send: (uploaded) =>
+					uploaded
+						? requestAbsence(request, uploaded)
+						: requestAbsence(request),
+				failureMessage,
+			});
+			if (!result) return;
 			if (result.success) {
 				toast.success(
 					t(
@@ -243,17 +222,13 @@ function useRequestAbsenceDialogController({
 						"Absence request submitted successfully",
 					),
 				);
-				const failedSickNotes = result.data?.sickNotes?.failed ?? [];
-				if (failedSickNotes.length > 0) {
+				const failedFiles = failedSickNoteNames(result);
+				if (failedFiles) {
 					toast.warning(
 						t(
 							"absences.sickNotes.request.attachFailed",
 							"Your absence was requested, but {files} could not be attached. You can attach sick notes from the absence later.",
-							{
-								files: failedSickNotes
-									.map((failure) => failure.fileName)
-									.join(", "),
-							},
+							{ files: failedFiles },
 						),
 					);
 				}
@@ -264,13 +239,7 @@ function useRequestAbsenceDialogController({
 			} else if (result.code === "AbsenceDaysRefusedError") {
 				toast.error(noWorkingDaysMessage(t));
 			} else {
-				toast.error(
-					result.error ||
-						t(
-							"absences.toast.requestFailed",
-							"Failed to submit absence request",
-						),
-				);
+				toast.error(result.error || failureMessage);
 			}
 		},
 	});
@@ -308,8 +277,7 @@ function useRequestAbsenceDialogController({
 		startDate: state.values.startDate,
 		endDate: state.values.endDate,
 	}));
-	const sickNoteDefaults = useSickNoteDefaults(sickNoteDates);
-	const sickNoteUploads = useStagedSickNoteUploads();
+	const sickNotes = useStagedSickNotes(sickNoteDates);
 	const canLoadPlanPreview = Boolean(
 		open &&
 			planPreviewValues.categoryId &&
@@ -338,7 +306,7 @@ function useRequestAbsenceDialogController({
 		showSickDetail: selectedCategory?.type === "sick",
 		showSickNotes: selectedCategory?.type === "sick" && canAttachSickNotes,
 		sickNoteDates,
-		sickNoteUploads,
+		sickNotes,
 		t,
 	};
 }
@@ -367,7 +335,7 @@ export function RequestAbsenceDialog({
 		showSickDetail,
 		showSickNotes,
 		sickNoteDates,
-		sickNoteUploads,
+		sickNotes,
 		t,
 	} = useRequestAbsenceDialogController({
 		categories,
@@ -423,7 +391,7 @@ export function RequestAbsenceDialog({
 							<RequestAbsenceSickNotes
 								dates={sickNoteDates}
 								form={form}
-								uploads={sickNoteUploads}
+								sickNotes={sickNotes}
 							/>
 						)}
 						<RequestAbsenceSummaryAndNotes
@@ -612,11 +580,11 @@ function RequestAbsenceCategoryFields({
 function RequestAbsenceSickNotes({
 	dates,
 	form,
-	uploads,
+	sickNotes,
 }: {
 	dates: { startDate: string; endDate: string };
 	form: RequestAbsenceFormApi;
-	uploads: ReturnType<typeof useStagedSickNoteUploads>;
+	sickNotes: ReturnType<typeof useStagedSickNotes>;
 }) {
 	const { t } = useTranslate();
 	return (
@@ -624,67 +592,21 @@ function RequestAbsenceSickNotes({
 			{(isSubmitting: boolean) => (
 				<form.Field
 					name="sickNotes"
-					validators={{
-						onSubmit: ({ value }) =>
-							stagedSickNoteFilesComplete(value)
-								? undefined
-								: t(
-										"absences.sickNotes.files.incomplete",
-										"Give each sick note a title and a document date.",
-									),
-					}}
+					validators={{ onSubmit: ({ value }) => sickNotes.validate(value) }}
 				>
 					{(field) => (
-						<TFormItem>
-							<section
-								aria-labelledby="request-absence-sick-notes"
-								className="space-y-2"
-							>
-								<div>
-									<h3
-										id="request-absence-sick-notes"
-										className="text-sm font-medium"
-									>
-										{t(
-											"absences.sickNotes.request.title",
-											"Sick note (optional)",
-										)}
-									</h3>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"absences.sickNotes.request.description",
-											"Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file. Your approver only sees that a sick note is attached.",
-										)}
-									</p>
-								</div>
-								<SickNoteFilesField
-									value={field.state.value}
-									onChange={field.handleChange}
-									dates={dates}
-									disabled={isSubmitting}
-									invalid={field.state.meta.errors.length > 0}
-								/>
-								<TFormMessage field={field} />
-								{uploads.isStaging ? (
-									<div className="space-y-1">
-										<Progress
-											value={uploads.progress}
-											aria-label={t(
-												"absences.sickNotes.attach.progress",
-												"Upload progress",
-											)}
-										/>
-										<p className="text-xs text-muted-foreground">
-											{t(
-												"absences.sickNotes.attach.progressCount",
-												"{done} of {total} uploaded",
-												{ done: uploads.done, total: uploads.total },
-											)}
-										</p>
-									</div>
-								) : null}
-							</section>
-						</TFormItem>
+						<StagedSickNotesSection
+							id="request-absence-sick-notes"
+							title={t("absences.sickNotes.request.title", "Sick note (optional)")}
+							description={t(
+								"absences.sickNotes.request.description",
+								"Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file. Your approver only sees that a sick note is attached.",
+							)}
+							field={field}
+							dates={dates}
+							disabled={isSubmitting}
+							uploads={sickNotes.uploads}
+						/>
 					)}
 				</form.Field>
 			)}

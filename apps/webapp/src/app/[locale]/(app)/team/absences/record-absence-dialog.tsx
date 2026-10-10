@@ -6,16 +6,10 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	resolveStagedSickNoteFiles,
-	SickNoteFilesField,
-	stagedSickNoteFilesComplete,
-	useSickNoteDefaults,
-} from "@/components/absences/sick-notes/sick-note-files-field";
-import {
-	StagedSickNoteUploadError,
-	type UploadedSickNote,
-	useStagedSickNoteUploads,
-} from "@/components/absences/sick-notes/use-staged-sick-note-uploads";
+	failedSickNoteNames,
+	StagedSickNotesSection,
+	useStagedSickNotes,
+} from "@/components/absences/sick-notes/staged-sick-notes-section";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -28,7 +22,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
 	Select,
 	SelectContent,
@@ -46,13 +39,8 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";
-import type { ServerActionResult } from "@/lib/effect/result";
 import { useRouter } from "@/navigation";
-import {
-	type RecordedAbsence,
-	recordAbsenceForEmployee,
-	recordAbsenceWithSickNotes,
-} from "./actions";
+import { recordAbsenceForEmployee, recordAbsenceWithSickNotes } from "./actions";
 import {
 	buildRecordAbsenceForEmployeeInput,
 	getDefaultRecordAbsenceFormValues,
@@ -94,7 +82,6 @@ function useRecordAbsenceDialogForm({
 	const { refresh } = useRouter();
 	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
 	const formDefaultValues = getDefaultRecordAbsenceFormValues();
-	const sickNoteUploads = useStagedSickNoteUploads();
 	const requiredMessage = (label: string) =>
 		t("team.absences.recordDialog.required", "{label} is required", { label });
 	const form = useForm({
@@ -122,53 +109,34 @@ function useRecordAbsenceDialogForm({
 			const selectedCategory = categories.find(
 				(category) => category.id === value.categoryId,
 			);
-			const stagedSickNotes =
-				sickNotesEnabled && selectedCategory?.type === "sick"
-					? value.sickNotes
-					: [];
-			let uploadedSickNotes: UploadedSickNote[] = [];
-			if (stagedSickNotes.length > 0) {
-				try {
-					uploadedSickNotes = await sickNoteUploads.stage(
-						resolveStagedSickNoteFiles(stagedSickNotes, sickNoteDefaults),
-					);
-				} catch (error) {
-					toast.error(
-						t(
-							"absences.sickNotes.request.uploadFailed",
-							"{fileName} could not be uploaded. Remove it or try again.",
-							{
-								fileName:
-									error instanceof StagedSickNoteUploadError
-										? error.fileName
-										: "",
-							},
-						),
-					);
-					return;
-				}
-			}
-
 			const input = buildRecordAbsenceForEmployeeInput(employee.id, value);
-			const result: ServerActionResult<RecordedAbsence> =
-				uploadedSickNotes.length > 0
-					? await recordAbsenceWithSickNotes(input, uploadedSickNotes)
-					: await recordAbsenceForEmployee(input);
+			const failureMessage = t(
+				"team.absences.recordDialog.failure",
+				"Failed to record absence",
+			);
+			const result = await sickNotes.submit({
+				files:
+					sickNotesEnabled && selectedCategory?.type === "sick"
+						? value.sickNotes
+						: [],
+				send: (uploaded) =>
+					uploaded
+						? recordAbsenceWithSickNotes(input, uploaded)
+						: recordAbsenceForEmployee(input),
+				failureMessage,
+			});
+			if (!result) return;
 			if (result.success) {
 				toast.success(
 					t("team.absences.recordDialog.success", "Absence recorded"),
 				);
-				const failedSickNotes = result.data?.sickNotes?.failed ?? [];
-				if (failedSickNotes.length > 0) {
+				const failedFiles = failedSickNoteNames(result);
+				if (failedFiles) {
 					toast.warning(
 						t(
 							"team.absences.recordDialog.sickNotesFailed",
 							"The absence was recorded, but {files} could not be attached. Someone who manages sick notes can attach them later.",
-							{
-								files: failedSickNotes
-									.map((failure) => failure.fileName)
-									.join(", "),
-							},
+							{ files: failedFiles },
 						),
 					);
 				}
@@ -179,10 +147,7 @@ function useRecordAbsenceDialogForm({
 				return;
 			}
 
-			toast.error(
-				result.error ??
-					t("team.absences.recordDialog.failure", "Failed to record absence"),
-			);
+			toast.error(result.error ?? failureMessage);
 		},
 	});
 
@@ -190,7 +155,7 @@ function useRecordAbsenceDialogForm({
 		startDate: state.values.startDate,
 		endDate: state.values.endDate,
 	}));
-	const sickNoteDefaults = useSickNoteDefaults(sickNoteDates);
+	const sickNotes = useStagedSickNotes(sickNoteDates);
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen) {
@@ -206,7 +171,7 @@ function useRecordAbsenceDialogForm({
 		handleOpenChange,
 		requiredMessage,
 		sickNoteDates,
-		sickNoteUploads,
+		sickNotes,
 	};
 }
 
@@ -228,7 +193,7 @@ export function RecordAbsenceDialog({
 		handleOpenChange,
 		requiredMessage,
 		sickNoteDates,
-		sickNoteUploads,
+		sickNotes,
 	} = useRecordAbsenceDialogForm({
 		employee,
 		onOpenChange,
@@ -436,7 +401,7 @@ export function RecordAbsenceDialog({
 										<RecordAbsenceSickNotes
 											dates={sickNoteDates}
 											form={form}
-											uploads={sickNoteUploads}
+											sickNotes={sickNotes}
 										/>
 									) : null
 								}
@@ -517,11 +482,11 @@ export function RecordAbsenceDialog({
 function RecordAbsenceSickNotes({
 	dates,
 	form,
-	uploads,
+	sickNotes,
 }: {
 	dates: { startDate: string; endDate: string };
 	form: RecordAbsenceFormApi;
-	uploads: ReturnType<typeof useStagedSickNoteUploads>;
+	sickNotes: ReturnType<typeof useStagedSickNotes>;
 }) {
 	const { t } = useTranslate();
 	return (
@@ -529,67 +494,24 @@ function RecordAbsenceSickNotes({
 			{(isSubmitting: boolean) => (
 				<form.Field
 					name="sickNotes"
-					validators={{
-						onSubmit: ({ value }) =>
-							stagedSickNoteFilesComplete(value)
-								? undefined
-								: t(
-										"absences.sickNotes.files.incomplete",
-										"Give each sick note a title and a document date.",
-									),
-					}}
+					validators={{ onSubmit: ({ value }) => sickNotes.validate(value) }}
 				>
 					{(field) => (
-						<TFormItem>
-							<section
-								aria-labelledby="record-absence-sick-notes"
-								className="space-y-2"
-							>
-								<div>
-									<h3
-										id="record-absence-sick-notes"
-										className="text-sm font-medium"
-									>
-										{t(
-											"team.absences.recordDialog.sickNotes.title",
-											"Sick note (optional)",
-										)}
-									</h3>
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"team.absences.recordDialog.sickNotes.description",
-											"Add photos or PDFs of the sick note you were handed: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in the employee's personnel file, and the employee sees it. Afterwards, only those who manage the employee's sick notes can open it.",
-										)}
-									</p>
-								</div>
-								<SickNoteFilesField
-									value={field.state.value}
-									onChange={field.handleChange}
-									dates={dates}
-									disabled={isSubmitting}
-									invalid={field.state.meta.errors.length > 0}
-								/>
-								<TFormMessage field={field} />
-								{uploads.isStaging ? (
-									<div className="space-y-1">
-										<Progress
-											value={uploads.progress}
-											aria-label={t(
-												"absences.sickNotes.attach.progress",
-												"Upload progress",
-											)}
-										/>
-										<p className="text-xs text-muted-foreground">
-											{t(
-												"absences.sickNotes.attach.progressCount",
-												"{done} of {total} uploaded",
-												{ done: uploads.done, total: uploads.total },
-											)}
-										</p>
-									</div>
-								) : null}
-							</section>
-						</TFormItem>
+						<StagedSickNotesSection
+							id="record-absence-sick-notes"
+							title={t(
+								"team.absences.recordDialog.sickNotes.title",
+								"Sick note (optional)",
+							)}
+							description={t(
+								"team.absences.recordDialog.sickNotes.description",
+								"Add photos or PDFs of the sick note you were handed: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in the employee's personnel file, and the employee sees it. Afterwards, only those who manage the employee's sick notes can open it.",
+							)}
+							field={field}
+							dates={dates}
+							disabled={isSubmitting}
+							uploads={sickNotes.uploads}
+						/>
 					)}
 				</form.Field>
 			)}

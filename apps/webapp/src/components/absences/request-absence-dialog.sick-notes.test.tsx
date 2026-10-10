@@ -6,7 +6,10 @@ import type { ReactElement, ReactNode } from "react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getAbsencePlanPreview, requestAbsence } from "@/app/[locale]/(app)/absences/actions";
-import { getOwnAbsenceSickNotesAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
+import {
+	discardStagedSickNoteUploadsAction,
+	getOwnAbsenceSickNotesAction,
+} from "@/app/[locale]/(app)/absences/sick-note-actions";
 import { RequestAbsenceDialog } from "./request-absence-dialog";
 import { StagedSickNoteUploadError } from "./sick-notes/use-staged-sick-note-uploads";
 
@@ -298,6 +301,21 @@ describe("RequestAbsenceDialog sick notes (#983)", () => {
 		expect(String(toastMock.warning.mock.calls[0]?.[0])).toBe(
 			"Your absence was requested, but b.pdf could not be attached. You can attach sick notes from the absence later.",
 		);
+	});
+
+	it("deletes the uploaded files when the request never reaches the server, and says so", async () => {
+		requestAbsenceMock.mockRejectedValue(new Error("Failed to fetch"));
+		renderDialog();
+		fillSickLeave();
+		await stageFiles(["a.pdf", "b.pdf"]);
+
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(discardStagedSickNoteUploadsAction).toHaveBeenCalledWith(["key-a.pdf", "key-b.pdf"]),
+		);
+		expect(toastMock.error).toHaveBeenCalledWith("Failed to submit absence request");
+		expect(toastMock.success).not.toHaveBeenCalled();
 	});
 
 	it("refuses a staged file without a title", async () => {

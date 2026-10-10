@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { discardStagedSickNoteUploadsAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
 import { recordAbsenceForEmployee, recordAbsenceWithSickNotes } from "./actions";
 import { RecordAbsenceDialog } from "./record-absence-dialog";
 
@@ -226,6 +227,23 @@ describe("RecordAbsenceDialog sick notes (#984)", () => {
 
 		await waitFor(() => expect(vi.mocked(toast).warning).toHaveBeenCalledTimes(1));
 		expect(vi.mocked(toast).warning).toHaveBeenCalledWith(expect.stringContaining("note.pdf"));
+	});
+
+	it("deletes the uploaded files when the recording never reaches the server, and says so", async () => {
+		vi.mocked(recordAbsenceWithSickNotes).mockRejectedValue(new Error("Failed to fetch"));
+		renderDialog();
+		fillSickLeave();
+		fireEvent.change(await screen.findByTestId("sick-note-file-input"), {
+			target: { files: [pdf("note.pdf")] },
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Record absence" }));
+
+		await waitFor(() =>
+			expect(discardStagedSickNoteUploadsAction).toHaveBeenCalledWith(["key-note.pdf"]),
+		);
+		expect(vi.mocked(toast).error).toHaveBeenCalledWith("Failed to record absence");
+		expect(vi.mocked(toast).success).not.toHaveBeenCalled();
 	});
 
 	it("offers no sick notes while personnel files are off, or for other absences", () => {
