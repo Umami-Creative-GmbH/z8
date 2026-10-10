@@ -191,6 +191,13 @@ const limiters = {
 		prefix: "ratelimit:export",
 		analytics: false,
 	}),
+	/** Kiosk pairing-code attempts per client IP (#859): 10 per 10 minutes */
+	kioskPairing: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(10, "600 s"),
+		prefix: "ratelimit:kiosk-pairing",
+		analytics: false,
+	}),
 };
 
 export type RateLimitEndpoint = keyof typeof limiters;
@@ -222,6 +229,7 @@ export const RATE_LIMIT_CONFIGS = {
 		maxRequests: exportConfig.requests,
 		windowSeconds: exportConfig.seconds,
 	},
+	kioskPairing: { maxRequests: 10, windowSeconds: 600 },
 };
 
 /**

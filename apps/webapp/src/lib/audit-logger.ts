@@ -219,6 +219,14 @@ export enum AuditAction {
 	SUBAREA_EMPLOYEE_ASSIGNED = "subarea.employee_assigned",
 	SUBAREA_EMPLOYEE_REMOVED = "subarea.employee_removed",
 
+	// Kiosk enrolment (#859)
+	KIOSK_CREATED = "kiosk.created",
+	KIOSK_UPDATED = "kiosk.updated",
+	KIOSK_PAIRING_CODE_ISSUED = "kiosk.pairing_code_issued",
+	KIOSK_PAIRED = "kiosk.paired",
+	KIOSK_TOKEN_ROTATED = "kiosk.token_rotated",
+	KIOSK_REVOKED = "kiosk.revoked",
+
 	// Audit Pack Operations
 	AUDIT_PACK_CREATED = "audit_pack.created",
 	AUDIT_PACK_DOWNLOADED = "audit_pack.downloaded",
@@ -287,6 +295,7 @@ export interface AuditLogEntry {
 		| "subarea"
 		| "location_employee"
 		| "subarea_employee"
+		| "kiosk"
 		| "user"
 		| "audit_pack_request"
 		| "works_council_settings"
