@@ -2,7 +2,6 @@ import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import {
-	calendarRangeToDateRange,
 	employeeScheduleWeek,
 	employeeShiftEvent,
 	groupShiftsByDay,
@@ -83,17 +82,6 @@ describe("groupShiftsByDay", () => {
 		);
 
 		expect(grouped.every((day) => day.shifts.length === 0)).toBe(true);
-	});
-});
-
-describe("calendarRangeToDateRange", () => {
-	it("covers every organization day the calendar shows, through its last day", () => {
-		expect(
-			calendarRangeToDateRange({
-				start: Temporal.ZonedDateTime.from("2026-10-05T00:00:00+02:00[Europe/Berlin]"),
-				end: Temporal.ZonedDateTime.from("2026-10-11T23:59:59.999+02:00[Europe/Berlin]"),
-			}),
-		).toEqual({ startDate: "2026-10-05", endDateExclusive: "2026-10-12" });
 	});
 });
 

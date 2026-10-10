@@ -4,20 +4,20 @@
 import "temporal-polyfill/global";
 
 import { createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
-import { createDragAndDropPlugin } from "@schedule-x/drag-and-drop";
-import { createEventModalPlugin } from "@schedule-x/event-modal";
 import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
 	DateRange,
 	ShiftTemplate,
 	ShiftWithRelations,
 } from "@/app/[locale]/(app)/scheduling/types";
+import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import type { PlainDate, ZonedDateTime } from "@/lib/datetime/temporal-core";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import { EmployeeShiftSchedule } from "./employee-shift-schedule";
 import {
@@ -27,10 +27,12 @@ import {
 import { PublishComplianceDialog } from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
 import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
+import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
 import {
+	calendarRangeToDateRange,
+	eventToShiftTimes,
 	initialSchedulerView,
-	plainDateTimeToDateKey,
-	plainDateTimeToTimeString,
+	scheduleXFirstDayOfWeek,
 } from "./shift-scheduler-utils";
 import { TemplateSidebar } from "./template-sidebar";
 import { useCoverageHeatmap } from "./use-coverage-heatmap";
@@ -71,7 +73,10 @@ function PlannerShiftScheduler({
 }: ShiftSchedulerProps) {
 	const { t } = useTranslate();
 	const { resolvedTheme } = useTheme();
-	const [initialView] = useState(() => initialSchedulerView(focusDate));
+	const weekStartDay = useWeekStartDay();
+	const [initialView] = useState(() =>
+		initialSchedulerView(focusDate, organizationTimezone, weekStartDay),
+	);
 	const [dateRange, setDateRange] = useState<DateRange>(initialView.dateRange);
 	const [showAllEmployees, setShowAllEmployees] = useState(false);
 	const employeeFilter = showAllEmployees ? null : focusEmployeeId;
@@ -114,50 +119,51 @@ function PlannerShiftScheduler({
 		isManager && showCoverageOverlay,
 	);
 
-	// Handle event click - Schedule-X passes (event, uiEvent)
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const handleEventClick = (event: any, _e: UIEvent) => {
-		const eventId = event?.id as string | undefined;
-		if (!eventId) return;
-		const shift = shifts.find((s) => s.id === eventId);
+	// Schedule-X keeps the callbacks of its first render, so they read the latest shifts here.
+	const shiftsRef = useRef(shifts);
+	const updateShiftRef = useRef(updateShift);
+	const resetEventsRef = useRef(() => {});
+	useEffect(() => {
+		shiftsRef.current = shifts;
+		updateShiftRef.current = updateShift;
+	}, [shifts, updateShift]);
+
+	const handleEventClick = (event: { id: string | number }) => {
+		const shift = shiftsRef.current.find((s) => s.id === event.id);
 		if (shift) {
 			setSelectedShift(shift);
 			setIsShiftDialogOpen(true);
 		}
 	};
 
-	// Handle drag end - Schedule-X passes the updated event with Temporal types
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const handleEventUpdate = (updatedEvent: any) => {
+	// Drag end: Schedule-X passes the moved event in the organization's zone.
+	const handleEventUpdate = (updatedEvent: {
+		id: string | number;
+		start: ZonedDateTime | PlainDate;
+		end: ZonedDateTime | PlainDate;
+	}) => {
 		if (!isManager) return;
+		const { start, end } = updatedEvent;
+		// Shifts are always timed; an all-day value can't be saved as wall times.
+		if (!(start instanceof Temporal.ZonedDateTime && end instanceof Temporal.ZonedDateTime)) return;
 
-		const eventId = updatedEvent?.id as string | undefined;
-		const eventStart = updatedEvent?.start as Temporal.PlainDateTime | undefined;
-		const eventEnd = updatedEvent?.end as Temporal.PlainDateTime | undefined;
-		if (!eventId || !eventStart || !eventEnd) return;
-
-		const shift = shifts.find((s) => s.id === eventId);
+		const shift = shiftsRef.current.find((s) => s.id === updatedEvent.id);
 		if (!shift) return;
 
-		updateShift({
-			id: shift.id,
-			employeeId: shift.employeeId,
-			subareaId: shift.subareaId,
-			date: plainDateTimeToDateKey(eventStart),
-			startTime: plainDateTimeToTimeString(eventStart),
-			endTime: plainDateTimeToTimeString(eventEnd),
-		});
+		updateShiftRef.current(
+			{
+				id: shift.id,
+				employeeId: shift.employeeId,
+				subareaId: shift.subareaId,
+				...eventToShiftTimes({ start, end }, organizationTimezone),
+			},
+			// The shifts didn't change, so put the dropped event back where it is stored.
+			{ onError: () => resetEventsRef.current() },
+		);
 	};
 
-	// Handle date range change from calendar
-	const handleRangeChange = (range: {
-		start: Temporal.ZonedDateTime;
-		end: Temporal.ZonedDateTime;
-	}) => {
-		setDateRange({
-			startDate: range.start.toPlainDate().toString(),
-			endDateExclusive: range.end.toPlainDate().toString(),
-		});
+	const handleRangeChange = (range: { start: ZonedDateTime; end: ZonedDateTime }) => {
+		setDateRange(calendarRangeToDateRange(range));
 	};
 
 	// Handle template drop (create new shift)
@@ -176,6 +182,8 @@ function PlannerShiftScheduler({
 	const calendar = useCalendarApp({
 		views: [createViewWeek(), createViewMonthGrid()],
 		selectedDate: initialView.selectedDate,
+		timezone: organizationTimezone,
+		firstDayOfWeek: scheduleXFirstDayOfWeek(weekStartDay),
 		events,
 		isDark,
 		calendars: {
@@ -219,7 +227,8 @@ function PlannerShiftScheduler({
 				},
 			},
 		},
-		plugins: [...(isManager ? [createDragAndDropPlugin()] : []), createEventModalPlugin()],
+		// No event modal: a click opens the shift dialog, which the modal would only duplicate.
+		plugins: isManager ? [createScheduleXDragAndDropPlugin()] : [],
 		callbacks: {
 			onEventClick: handleEventClick,
 			onEventUpdate: handleEventUpdate,
@@ -232,6 +241,7 @@ function PlannerShiftScheduler({
 		if (calendar) {
 			calendar.events.set(events);
 		}
+		resetEventsRef.current = () => calendar?.events.set(events);
 	}, [calendar, events]);
 
 	// Update dark mode when theme changes
@@ -240,16 +250,6 @@ function PlannerShiftScheduler({
 			calendar.setTheme(isDark ? "dark" : "light");
 		}
 	}, [calendar, isDark]);
-
-	if (shiftsLoading) {
-		return (
-			<div className="flex items-center justify-center py-20">
-				<div className="animate-pulse text-muted-foreground">
-					{t("scheduling:scheduling.scheduler.loading", "Loading schedule...")}
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className="flex flex-col gap-4 h-[calc(100vh-200px)]">
@@ -285,8 +285,20 @@ function PlannerShiftScheduler({
 				{isManager && <TemplateSidebar templates={templates} onTemplateDrop={handleTemplateDrop} />}
 
 				{/* Main calendar */}
-				<div className="flex-1 relative h-full overflow-hidden">
+				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
+				<div className="flex-1 relative isolate h-full overflow-hidden">
 					<ScheduleXCalendar calendarApp={calendar} />
+					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
+					{shiftsLoading && (
+						<div
+							className="absolute inset-0 flex items-center justify-center bg-background/60"
+							role="status"
+						>
+							<span className="animate-pulse text-muted-foreground motion-reduce:animate-none">
+								{t("scheduling:scheduling.scheduler.loading", "Loading schedule...")}
+							</span>
+						</div>
+					)}
 
 					{/* Publish FAB for managers with draft shifts */}
 					{isManager && draftCount > 0 && (

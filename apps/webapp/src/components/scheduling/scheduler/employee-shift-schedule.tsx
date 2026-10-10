@@ -21,12 +21,9 @@ import { parsePlainDate, type ZonedDateTime } from "@/lib/datetime/temporal-core
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import { ShiftDetailsPanel } from "../shifts/shift-details-panel";
-import {
-	calendarRangeToDateRange,
-	employeeScheduleWeek,
-	employeeShiftEvent,
-} from "./employee-schedule-utils";
+import { employeeScheduleWeek, employeeShiftEvent } from "./employee-schedule-utils";
 import { EmployeeShiftAgenda } from "./employee-shift-agenda";
+import { calendarRangeToDateRange } from "./shift-scheduler-utils";
 import { useShiftSchedulerData } from "./use-shift-scheduler-data";
 
 interface EmployeeShiftScheduleProps {
