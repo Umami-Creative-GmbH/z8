@@ -1,19 +1,19 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { user } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
+import { employee, location } from "@/db/schema";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
 import { isOrganizationAdmin } from "@/lib/authorization/organization-admin";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import { runKioskPinAction } from "@/lib/time-tracking/kiosk/kiosk-pin-action";
 import { kioskOnlyEmailUpgradeDeps } from "@/lib/time-tracking/kiosk/kiosk-only-email-upgrade";
 import {
 	addEmailToKioskOnlyEmployee,
 	createKioskOnlyEmployee,
 } from "@/lib/time-tracking/kiosk/kiosk-only-employee";
-import type { KioskPinActionResult } from "@/lib/time-tracking/kiosk/pin-errors";
+import { runKioskPinAction } from "@/lib/time-tracking/kiosk/kiosk-pin-action";
+import { type KioskPinActionResult, KioskPinRefusal } from "@/lib/time-tracking/kiosk/pin-errors";
 import {
 	canManageEmployeeKioskPin,
 	issueKioskPin,
@@ -122,7 +122,30 @@ export type CreateKioskOnlyEmployeeActionInput = {
 	firstName: string;
 	lastName: string;
 	teamId: string | null;
+	/** Assigned locations, whose kiosks accept the employee. */
+	locationIds: string[];
 };
+
+export type KioskOnlyEmployeeLocationOption = { id: string; name: string };
+
+/** The active locations an owner or admin can assign a new kiosk-only employee to. */
+export async function getKioskOnlyEmployeeLocationsAction(): Promise<
+	KioskPinActionResult<KioskOnlyEmployeeLocationOption[]>
+> {
+	return runKioskPinAction("kiosk.kioskOnlyEmployeeLocations", async (db, actor) => {
+		if (!(await isOrganizationAdmin(db, actor))) {
+			throw new KioskPinRefusal(
+				"not_allowed",
+				"Only organization owners and admins can manage kiosk-only employees.",
+			);
+		}
+		return db
+			.select({ id: location.id, name: location.name })
+			.from(location)
+			.where(and(eq(location.organizationId, actor.organizationId), eq(location.isActive, true)))
+			.orderBy(asc(location.name));
+	});
+}
 
 /** Creates a kiosk-only employee (no email, no sign-in) in the active organization. */
 export async function createKioskOnlyEmployeeAction(
@@ -135,6 +158,9 @@ export async function createKioskOnlyEmployeeAction(
 			firstName: typeof input?.firstName === "string" ? input.firstName : "",
 			lastName: typeof input?.lastName === "string" ? input.lastName : "",
 			teamId: typeof input?.teamId === "string" ? input.teamId : null,
+			locationIds: Array.isArray(input?.locationIds)
+				? input.locationIds.filter((id): id is string => typeof id === "string")
+				: [],
 		});
 		revalidatePath(EMPLOYEES_PATH);
 		return { employeeId };

@@ -16,6 +16,8 @@ import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigg
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
 import { isUuid } from "@/lib/validations/uuid";
+import { AssignedLocationRefusal } from "../assigned-locations/errors";
+import { addAssignedLocation } from "../assigned-locations/store";
 import { KioskPinRefusal } from "./pin-errors";
 
 type Database = typeof rootDatabase;
@@ -31,6 +33,8 @@ export type CreateKioskOnlyEmployeeInput = {
 	firstName: string;
 	lastName?: string | null;
 	teamId?: string | null;
+	/** Assigned locations (#858), the locations whose kiosks accept the employee. */
+	locationIds?: readonly string[];
 };
 
 /**
@@ -73,7 +77,9 @@ function isUniqueViolation(error: unknown): boolean {
  * Creates a kiosk-only employee (ADR 0006): a real user with a reserved,
  * undeliverable address unique to them and no credential, an approved member
  * of the organization and an ordinary employee profile. The names live on the
- * user, the single name source. The employee is a full billable seat.
+ * user, the single name source. The employee is a full billable seat. The
+ * locations picked at creation are assigned in the same transaction, so a
+ * location outside the organization creates nothing.
  */
 export async function createKioskOnlyEmployee(
 	db: Database,
@@ -99,6 +105,11 @@ export async function createKioskOnlyEmployee(
 		if (!targetTeam) {
 			throw new KioskPinRefusal("team_not_found", "Team not found in this organization.");
 		}
+	}
+
+	const locationIds = [...new Set(input.locationIds ?? [])];
+	if (!locationIds.every(isUuid)) {
+		throw new KioskPinRefusal("location_not_found", "Location not found in this organization.");
 	}
 
 	const userId = crypto.randomUUID();
@@ -138,10 +149,23 @@ export async function createKioskOnlyEmployee(
 					isActive: true,
 				})
 				.returning({ id: employee.id });
+			for (const locationId of locationIds) {
+				await addAssignedLocation(tx, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					employeeId: created.id,
+					locationId,
+				});
+			}
 			return created.id;
 		},
 		db,
-	);
+	).catch((error: unknown) => {
+		if (error instanceof AssignedLocationRefusal) {
+			throw new KioskPinRefusal("location_not_found", "Location not found in this organization.");
+		}
+		throw error;
+	});
 
 	await syncBillingSeatsAfterMemberChange({
 		organizationId: input.organizationId,

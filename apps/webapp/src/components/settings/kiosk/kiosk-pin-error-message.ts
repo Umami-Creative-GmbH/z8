@@ -38,6 +38,8 @@ export function kioskPinErrorMessage(t: Translate, code: KioskPinErrorCode): str
 			);
 		case "team_not_found":
 			return t("settings.kioskPin.errors.teamNotFound", "This team was not found.");
+		case "location_not_found":
+			return t("settings.kioskPin.errors.locationNotFound", "This location was not found.");
 		case "not_kiosk_only":
 			return t(
 				"settings.kioskPin.errors.notKioskOnly",

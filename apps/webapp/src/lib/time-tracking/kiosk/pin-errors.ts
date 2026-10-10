@@ -17,6 +17,7 @@ export type KioskPinErrorCode =
 	| "email_in_use"
 	| "email_not_allowed"
 	| "team_not_found"
+	| "location_not_found"
 	| "not_kiosk_only"
 	/** Anything unexpected: the action failed for a reason the user cannot act on. */
 	| "failed";

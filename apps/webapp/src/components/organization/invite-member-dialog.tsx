@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
 	type CreateKioskOnlyEmployeeActionInput,
 	createKioskOnlyEmployeeAction,
+	getKioskOnlyEmployeeLocationsAction,
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
@@ -60,6 +61,12 @@ export function InviteMemberDialog({
 		enabled: open,
 	});
 	const teams = teamsResult?.success ? teamsResult.data : [];
+	const { data: locationsResult } = useQuery({
+		queryKey: ["kioskOnlyEmployeeLocations", organizationId],
+		queryFn: () => getKioskOnlyEmployeeLocationsAction(),
+		enabled: open,
+	});
+	const kioskLocations = locationsResult?.success ? locationsResult.data : [];
 
 	const inviteMutation = useMutation({
 		mutationFn: (data: {
@@ -110,6 +117,7 @@ export function InviteMemberDialog({
 			kioskOnly: false,
 			firstName: "",
 			lastName: "",
+			locationIds: [] as string[],
 		},
 		onSubmit: async ({ value }) => {
 			if (value.kioskOnly) {
@@ -118,6 +126,7 @@ export function InviteMemberDialog({
 						firstName: value.firstName,
 						lastName: value.lastName,
 						teamId: value.targetTeamId === "none" ? null : value.targetTeamId,
+						locationIds: value.locationIds,
 					})
 					.catch(() => null);
 				if (!created) return;
@@ -239,6 +248,53 @@ export function InviteMemberDialog({
 														maxLength={100}
 													/>
 												</div>
+											)}
+										</form.Field>
+										<form.Field name="locationIds">
+											{(field) => (
+												<fieldset className="space-y-2">
+													<legend className="text-sm font-medium leading-none">
+														{t("organization.invite.kioskOnly.locations", "Assigned locations")}
+													</legend>
+													<p className="text-xs text-muted-foreground">
+														{t(
+															"organization.invite.kioskOnly.locationsDescription",
+															"The kiosks at these locations list the employee.",
+														)}
+													</p>
+													{kioskLocations.length === 0 ? (
+														<p className="text-sm text-muted-foreground">
+															{t(
+																"organization.invite.kioskOnly.noLocations",
+																"No active locations yet. You can assign locations later.",
+															)}
+														</p>
+													) : (
+														kioskLocations.map((option) => {
+															const id = `kioskOnlyLocation-${option.id}`;
+															return (
+																<div key={option.id} className="flex items-center gap-x-2">
+																	<Checkbox
+																		id={id}
+																		checked={field.state.value.includes(option.id)}
+																		onCheckedChange={(checked) =>
+																			field.handleChange(
+																				checked === true
+																					? [...field.state.value, option.id]
+																					: field.state.value.filter(
+																							(locationId) => locationId !== option.id,
+																						),
+																			)
+																		}
+																	/>
+																	<label htmlFor={id} className="text-sm leading-none">
+																		{option.name}
+																	</label>
+																</div>
+															);
+														})
+													)}
+												</fieldset>
 											)}
 										</form.Field>
 									</>

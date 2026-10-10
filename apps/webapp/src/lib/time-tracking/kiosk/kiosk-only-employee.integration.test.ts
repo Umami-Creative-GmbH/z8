@@ -35,6 +35,9 @@ const ids = {
 	demo: "d8571000-0000-4000-8000-000000000004",
 	team: "d8571000-0000-4000-8000-0000000000a1",
 	foreignTeam: "d8571000-0000-4000-8000-0000000000a2",
+	store: "d8571000-0000-4000-8000-0000000000b1",
+	warehouse: "d8571000-0000-4000-8000-0000000000b2",
+	foreignLocation: "d8571000-0000-4000-8000-0000000000b3",
 } as const;
 const fixtureUsers = [ids.ownerUser, ids.adminUser, ids.managerUser, ids.demoUser, ids.takenUser];
 const clock = { nowInstant: () => parseInstant("2026-03-02T08:00:00Z") };
@@ -189,6 +192,52 @@ describe("kiosk-only employees on PostgreSQL", () => {
 		expect(rows[0].email).not.toBe(rows[1].email);
 		// The demo member stays excluded; both kiosk-only employees are billable.
 		expect(await seats()).toBe(before + 2);
+	});
+
+	it("assigns the locations picked at creation in the same transaction (#761)", async () => {
+		await pool.query(
+			`insert into location (id, organization_id, name, is_active, created_by, updated_at) values
+			 ($1, $4, 'Store', true, $6, now()), ($2, $4, 'Warehouse', true, $6, now()),
+			 ($3, $5, 'Foreign', true, $6, now())`,
+			[ids.store, ids.warehouse, ids.foreignLocation, org, ids.otherOrganization, ids.ownerUser],
+		);
+		const assignedTo = async (employeeId: string) =>
+			(
+				await pool.query<{ location_id: string }>(
+					`select location_id from employee_assigned_location
+					 where organization_id = $1 and employee_id = $2 order by location_id`,
+					[org, employeeId],
+				)
+			).rows.map((row) => row.location_id);
+
+		const created = await createKioskOnlyEmployee(db, {
+			organizationId: org,
+			actorUserId: ids.adminUser,
+			firstName: "Jamie",
+			locationIds: [ids.store, ids.warehouse, ids.store],
+		});
+
+		expect(await assignedTo(created.employeeId)).toEqual([ids.store, ids.warehouse]);
+		const usersBefore = await pool.query(
+			"select count(*)::int as count from member where organization_id = $1",
+			[org],
+		);
+		expect(
+			await refusalOf(
+				createKioskOnlyEmployee(db, {
+					organizationId: org,
+					actorUserId: ids.adminUser,
+					firstName: "Kim",
+					locationIds: [ids.store, ids.foreignLocation],
+				}),
+			),
+		).toBe("location_not_found");
+		// Nothing of the refused employee remains: user, membership and employee roll back together.
+		const usersAfter = await pool.query(
+			"select count(*)::int as count from member where organization_id = $1",
+			[org],
+		);
+		expect(usersAfter.rows[0].count).toBe(usersBefore.rows[0].count);
 	});
 
 	it("lets only owners and admins create one, in their own organization's teams", async () => {

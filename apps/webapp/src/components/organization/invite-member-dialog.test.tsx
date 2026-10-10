@@ -46,6 +46,13 @@ vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/employees/kiosk-actions", () => ({
 	createKioskOnlyEmployeeAction: createKioskOnlyEmployeeMock,
+	getKioskOnlyEmployeeLocationsAction: async () => ({
+		success: true,
+		data: [
+			{ id: "loc-store", name: "Store" },
+			{ id: "loc-warehouse", name: "Warehouse" },
+		],
+	}),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/teams/actions", () => ({
@@ -171,6 +178,9 @@ describe("InviteMemberDialog target team form", () => {
 		expect(screen.queryByLabelText("Email Address")).toBeNull();
 		fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Jamie" } });
 		fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "Doe" } });
+		// The admin picks the assigned locations whose kiosks accept the employee (#761).
+		fireEvent.click(await screen.findByRole("checkbox", { name: "Warehouse" }));
+		fireEvent.click(screen.getByRole("checkbox", { name: "Store" }));
 		fireEvent.click(screen.getByRole("button", { name: "Create employee" }));
 
 		await waitFor(() =>
@@ -178,6 +188,7 @@ describe("InviteMemberDialog target team form", () => {
 				firstName: "Jamie",
 				lastName: "Doe",
 				teamId: null,
+				locationIds: ["loc-warehouse", "loc-store"],
 			}),
 		);
 		expect(sendInvitationMock).not.toHaveBeenCalled();
