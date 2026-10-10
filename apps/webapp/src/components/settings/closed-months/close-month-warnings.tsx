@@ -79,10 +79,7 @@ export function CloseMonthWarningList({ warnings }: { warnings: readonly CloseMo
 			<AlertDescription>
 				<ul className="list-disc space-y-1 ps-5">
 					{listed.map((warning) => (
-						<li
-							key={`${warning.employeeId}:${warning.startDate}`}
-							className="break-words"
-						>
+						<li key={`${warning.employeeId}:${warning.startDate}`} className="break-words">
 							{warning.employeeName}
 							{": "}
 							{describe(warning)}

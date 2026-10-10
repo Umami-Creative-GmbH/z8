@@ -39,7 +39,11 @@ describe("close warnings about period submissions on PostgreSQL", () => {
 	it("warns about every week touching the month without an approved submission, except a pending one", async () => {
 		const org = await weeklyOrganization();
 		const person = await fixture.employee({ organizationId: org.organizationId });
-		const submit = (startDate: string, endDate: string, status: "approved" | "pending" | "rejected") =>
+		const submit = (
+			startDate: string,
+			endDate: string,
+			status: "approved" | "pending" | "rejected",
+		) =>
 			fixture.periodSubmission({
 				organizationId: org.organizationId,
 				employeeId: person.employeeId,

@@ -40,7 +40,9 @@ describe("payroll readiness period submission warning on PostgreSQL", () => {
 	}
 
 	const periodSubmissionCheck = (result: Awaited<ReturnType<typeof getPayrollReadiness>>) =>
-		result.groups.flatMap((group) => group.checks).find((check) => check.id === "period-submissions");
+		result.groups
+			.flatMap((group) => group.checks)
+			.find((check) => check.id === "period-submissions");
 
 	it("warns about every week overlapping the range without an approved submission", async () => {
 		const org = await weeklyOrganization();
