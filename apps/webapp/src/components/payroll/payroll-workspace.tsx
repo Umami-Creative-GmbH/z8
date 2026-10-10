@@ -75,6 +75,7 @@ import {
 } from "@/lib/payroll-workspace/blocker-identity";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { queryKeys } from "@/lib/query/keys";
+import { OvertimePayoutReadinessAlert } from "./overtime-payout-readiness-alert";
 import { PayrollRunReadinessCard } from "./payroll-run-readiness-card";
 import { PayrollRunsCard } from "./payroll-runs-card";
 
@@ -684,6 +685,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				onClearBlocker={clearPayrollBlocker}
 				t={t}
 			/>
+			{filtersHaveNoMatches ? null : (
+				<OvertimePayoutReadinessAlert request={{ ...request, formatId }} />
+			)}
 			{filtersHaveNoMatches ? null : (
 				<PayrollRunReadinessCard request={{ ...request, formatId }} />
 			)}

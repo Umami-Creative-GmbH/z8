@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { FormerEmployeesExportCard } from "@/components/payroll/former-employees-export-card";
 import { PayrollWorkspace } from "@/components/payroll/payroll-workspace";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,7 +38,18 @@ async function PayrollPageContent() {
 			summaryResult.code === "AuthorizationError" &&
 			((await loadPayrollWorkBalanceEmployees())?.length ?? 0) > 0;
 		return (
-			<PayrollFailureState code={summaryResult.code} t={t} offerWorkBalances={offerWorkBalances} />
+			<PayrollFailureState
+				code={summaryResult.code}
+				t={t}
+				offerWorkBalances={offerWorkBalances}
+				exportEntry={
+					// Their last months can still be exported (#1001).
+					<FormerEmployeesExportCard
+						initialMonth={start.toFormat("yyyy-MM")}
+						exportFormats={formatsResult.success ? formatsResult.data : []}
+					/>
+				}
+			/>
 		);
 	}
 

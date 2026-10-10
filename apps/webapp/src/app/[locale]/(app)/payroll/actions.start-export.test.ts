@@ -26,6 +26,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
 	resolvePayrollAccessibleEmployeeIds: mockState.resolvePayrollAccessibleEmployeeIds,
+	hasActivePayrollAccessGrant: vi.fn(async () => true),
 	intersectPayrollScope: ({
 		allowedEmployeeIds,
 		requestedEmployeeIds,
@@ -36,6 +37,10 @@ vi.mock("@/lib/payroll-access/permissions", () => ({
 		(requestedEmployeeIds ?? allowedEmployeeIds)
 			.filter((employeeId) => allowedEmployeeIds.includes(employeeId))
 			.sort(),
+}));
+
+vi.mock("@/lib/payroll-access/adjustment-coverage", () => ({
+	listDepartedEmployeesCoveredForExport: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/payroll-export", () => ({

@@ -42,6 +42,7 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
 vi.mock("./payroll-run-readiness-card", () => ({ PayrollRunReadinessCard: () => null }));
+vi.mock("./overtime-payout-readiness-alert", () => ({ OvertimePayoutReadinessAlert: () => null }));
 vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
 	dismissPayrollBlockerAction: actionMocks.dismissPayrollBlockerAction,
 	exportPayrollPdfAction: actionMocks.exportPayrollPdfAction,
