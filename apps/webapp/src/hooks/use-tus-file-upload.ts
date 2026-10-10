@@ -3,24 +3,21 @@
 import Uppy from "@uppy/core";
 import Tus from "@uppy/tus";
 import { useEffect, useLayoutEffect, useReducer, useRef } from "react";
-import { ALLOWED_TRAVEL_EXPENSE_MIME_TYPES } from "@/lib/travel-expenses/attachment-validation";
 import { getTusFileKeyFromUploadUrl } from "@/lib/upload/tus-url";
 
-const DEFAULT_MAX_TRAVEL_EXPENSE_FILE_SIZE = 10 * 1024 * 1024;
-
-interface UseTravelExpenseFileUploadOptions<Result> {
+export interface UseTusFileUploadOptions<Result> {
 	/** Attaches the finished upload on the server, e.g. to a report item. */
 	process: (input: { tusFileKey: string; fileName: string | undefined }) => Promise<Result>;
-	maxFileSize?: number;
-	/** Accepted MIME types; receipt types by default. */
-	allowedFileTypes?: readonly string[];
+	maxFileSize: number;
+	/** Accepted MIME types. */
+	allowedFileTypes: readonly string[];
 	/** Extra TUS upload metadata, e.g. `{ purpose: "personnel-document" }` (#865). */
 	uploadMetadata?: Readonly<Record<string, string>>;
 	onSuccess?: (result: Result) => void;
 	onError?: (error: Error) => void;
 }
 
-interface UseTravelExpenseFileUploadReturn {
+export interface UseTusFileUploadReturn {
 	addFile: (file: File) => void;
 	progress: number;
 	isUploading: boolean;
@@ -28,24 +25,21 @@ interface UseTravelExpenseFileUploadReturn {
 	reset: () => void;
 }
 
-type TravelExpenseUploadState = {
+type TusUploadState = {
 	progress: number;
 	isUploading: boolean;
 	isProcessing: boolean;
 };
 
-type TravelExpenseUploadAction =
+type TusUploadAction =
 	| { type: "start" }
 	| { type: "progress"; progress: number }
 	| { type: "processing" }
 	| { type: "reset" };
 
-const idle: TravelExpenseUploadState = { progress: 0, isUploading: false, isProcessing: false };
+const idle: TusUploadState = { progress: 0, isUploading: false, isProcessing: false };
 
-function travelExpenseUploadReducer(
-	state: TravelExpenseUploadState,
-	action: TravelExpenseUploadAction,
-): TravelExpenseUploadState {
+function tusUploadReducer(state: TusUploadState, action: TusUploadAction): TusUploadState {
 	switch (action.type) {
 		case "start":
 			return { progress: 1, isUploading: true, isProcessing: false };
@@ -59,20 +53,20 @@ function travelExpenseUploadReducer(
 }
 
 /**
- * Uploads one receipt file at a time through TUS, then hands it to `process`.
+ * Uploads one file at a time through TUS, then hands it to `process`.
  * The uploader lives for the component's lifetime: rerenders (autosave,
  * refetches, new callback identities) never recreate or destroy it mid-upload,
  * and completion always reaches the latest callbacks.
  */
-export function useTravelExpenseFileUpload<Result>({
+export function useTusFileUpload<Result>({
 	process,
-	maxFileSize = DEFAULT_MAX_TRAVEL_EXPENSE_FILE_SIZE,
-	allowedFileTypes = ALLOWED_TRAVEL_EXPENSE_MIME_TYPES,
+	maxFileSize,
+	allowedFileTypes,
 	uploadMetadata,
 	onSuccess,
 	onError,
-}: UseTravelExpenseFileUploadOptions<Result>): UseTravelExpenseFileUploadReturn {
-	const [uploadState, dispatchUploadState] = useReducer(travelExpenseUploadReducer, idle);
+}: UseTusFileUploadOptions<Result>): UseTusFileUploadReturn {
+	const [uploadState, dispatchUploadState] = useReducer(tusUploadReducer, idle);
 	const uppyRef = useRef<Uppy | null>(null);
 	const callbacks = useRef({ process, onSuccess, onError, uploadMetadata });
 	useLayoutEffect(() => {
@@ -127,7 +121,7 @@ export function useTravelExpenseFileUpload<Result>({
 						succeeded?.(processed);
 					} catch (error) {
 						failed?.(
-							error instanceof Error ? error : new Error("Travel expense file processing failed"),
+							error instanceof Error ? error : new Error("File processing failed"),
 						);
 					}
 				} else {

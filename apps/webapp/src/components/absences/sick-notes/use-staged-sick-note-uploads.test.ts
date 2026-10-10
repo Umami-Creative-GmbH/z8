@@ -8,8 +8,8 @@ import { useStagedSickNoteUploads } from "./use-staged-sick-note-uploads";
 /** The TUS uploader: each added file "uploads" to a key named after it, unless it should fail. */
 const tus = vi.hoisted(() => ({ failing: new Set<string>(), uploaded: [] as string[] }));
 
-vi.mock("@/hooks/use-travel-expense-file-upload", () => ({
-	useTravelExpenseFileUpload: (options: {
+vi.mock("@/hooks/use-tus-file-upload", () => ({
+	useTusFileUpload: (options: {
 		process: (input: { tusFileKey: string; fileName: string | undefined }) => Promise<unknown>;
 		onSuccess?: (result: unknown) => void;
 		onError?: (error: Error) => void;

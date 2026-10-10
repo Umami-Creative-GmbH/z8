@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { discardStagedSickNoteUploadsAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
-import { useTravelExpenseFileUpload } from "@/hooks/use-travel-expense-file-upload";
+import { useTusFileUpload } from "@/hooks/use-tus-file-upload";
 import {
 	PERSONNEL_DOCUMENT_MAX_BYTES,
 	PERSONNEL_DOCUMENT_MIME_TYPES,
@@ -32,10 +32,12 @@ export class StagedSickNoteUploadError extends Error {
 	}
 }
 
-interface Run {
+/** One `stage` call, from start until it settles. */
+interface StagingRun {
 	queue: ResolvedStagedSickNote[];
 	total: number;
-	current: ResolvedStagedSickNote | null;
+	/** The note whose file is uploading now. */
+	uploading: ResolvedStagedSickNote | null;
 	uploaded: UploadedSickNote[];
 	resolve: (uploaded: UploadedSickNote[]) => void;
 	reject: (error: StagedSickNoteUploadError) => void;
@@ -52,83 +54,81 @@ interface Run {
 export function useStagedSickNoteUploads(
 	options: { process?: (uploaded: UploadedSickNote) => Promise<void> } = {},
 ) {
-	const run = useRef<Run | null>(null);
+	const activeRun = useRef<StagingRun | null>(null);
 	const processRef = useRef(options.process);
 	useLayoutEffect(() => {
 		processRef.current = options.process;
 	});
 	const [count, setCount] = useState({ done: 0, total: 0 });
 
-	function settle(): Run | null {
-		const current = run.current;
-		run.current = null;
+	function settle(): StagingRun | null {
+		const run = activeRun.current;
+		activeRun.current = null;
 		setCount({ done: 0, total: 0 });
-		return current;
+		return run;
 	}
 
-	const upload = useTravelExpenseFileUpload<UploadedSickNote>({
+	const upload = useTusFileUpload<UploadedSickNote>({
 		maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
 		allowedFileTypes: PERSONNEL_DOCUMENT_MIME_TYPES,
 		uploadMetadata: { purpose: "personnel-document" },
 		process: async ({ tusFileKey, fileName }) => {
-			const current = run.current?.current;
-			if (!current) throw new Error("Upload failed");
+			const note = activeRun.current?.uploading;
+			if (!note) throw new Error("Upload failed");
 			const uploaded: UploadedSickNote = {
 				tusFileKey,
-				fileName: fileName ?? current.file.name,
-				title: current.title,
-				documentDate: current.documentDate,
+				fileName: fileName ?? note.file.name,
+				title: note.title,
+				documentDate: note.documentDate,
 			};
 			await processRef.current?.(uploaded);
 			return uploaded;
 		},
 		onSuccess: (uploaded) => {
-			const current = run.current;
-			if (!current) return;
-			current.uploaded.push(uploaded);
-			setCount({ done: current.uploaded.length, total: current.total });
+			const run = activeRun.current;
+			if (!run) return;
+			run.uploaded.push(uploaded);
+			setCount({ done: run.uploaded.length, total: run.total });
 			next();
 		},
 		onError: (error) => {
-			const current = settle();
-			if (!current) return;
-			if (!processRef.current && current.uploaded.length > 0) {
+			const run = settle();
+			if (!run) return;
+			if (!processRef.current && run.uploaded.length > 0) {
 				void discardStagedSickNoteUploadsAction(
-					current.uploaded.map((uploaded) => uploaded.tusFileKey),
+					run.uploaded.map((uploaded) => uploaded.tusFileKey),
 				).catch(() => undefined);
 			}
-			current.reject(
-				new StagedSickNoteUploadError(
-					current.current?.file.name ?? "",
-					error.message,
-					current.uploaded,
-				),
+			run.reject(
+				new StagedSickNoteUploadError(run.uploading?.file.name ?? "", error.message, run.uploaded),
 			);
 		},
 	});
 
 	function next() {
-		const current = run.current;
-		if (!current) return;
-		const following = current.queue.shift();
+		const run = activeRun.current;
+		if (!run) return;
+		const following = run.queue.shift();
 		if (!following) {
 			settle();
-			current.resolve(current.uploaded);
+			run.resolve(run.uploaded);
 			return;
 		}
-		current.current = following;
+		run.uploading = following;
 		// The uploader clears itself right after reporting a finished file.
 		setTimeout(() => upload.addFile(following.file), 0);
 	}
 
 	function stage(notes: readonly ResolvedStagedSickNote[]): Promise<UploadedSickNote[]> {
-		if (run.current) return Promise.reject(new StagedSickNoteUploadError("", "Upload in progress"));
+		if (activeRun.current) {
+			return Promise.reject(new StagedSickNoteUploadError("", "Upload in progress"));
+		}
 		if (notes.length === 0) return Promise.resolve([]);
 		return new Promise((resolve, reject) => {
-			run.current = {
+			activeRun.current = {
 				queue: [...notes],
 				total: notes.length,
-				current: null,
+				uploading: null,
 				uploaded: [],
 				resolve,
 				reject,

@@ -38,7 +38,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { useTravelExpenseFileUpload } from "@/hooks/use-travel-expense-file-upload";
+import { useTusFileUpload } from "@/hooks/use-tus-file-upload";
 import {
 	type DocumentCategory,
 	type DocumentVisibility,
@@ -112,7 +112,7 @@ function useDocumentDialog(props: DocumentDialogProps) {
 				? ownUploadValues({ today })
 				: defaultUploadValues({ today, category: categories[0] ?? "other" });
 
-	const upload = useTravelExpenseFileUpload({
+	const upload = useTusFileUpload({
 		maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
 		allowedFileTypes: PERSONNEL_DOCUMENT_MIME_TYPES,
 		uploadMetadata: { purpose: "personnel-document" },
