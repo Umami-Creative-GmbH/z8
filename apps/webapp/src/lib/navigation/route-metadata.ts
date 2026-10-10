@@ -76,6 +76,12 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleKey: "nav.teamAbsences",
 		titleDefault: "Team Absences",
 	},
+	{
+		id: "team-presence",
+		href: "/team/presence",
+		titleKey: "nav.teamPresence",
+		titleDefault: "Who Is In",
+	},
 	{ id: "team", href: "/team", titleKey: "nav.team", titleDefault: "Team" },
 	{
 		id: "approvals",
