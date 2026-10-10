@@ -25,10 +25,15 @@ import {
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
-import type { CloseMonthBlocker } from "@/lib/time-tracking/closed-months/store";
+import type { CloseMonthBlocker, CloseMonthScope } from "@/lib/time-tracking/closed-months/store";
 import { useRouter } from "@/navigation";
+import { CloseMonthWarnings } from "./close-month-warnings";
 
 const ORGANIZATION = "__organization";
+
+function toCloseScope(value: string): CloseMonthScope {
+	return value === ORGANIZATION ? { kind: "organization" } : { kind: "team", teamId: value };
+}
 
 /**
  * Closes one month for the organization or a team (#762). A refused close
@@ -56,13 +61,7 @@ export function CloseMonthPanel({
 		defaultValues: { scope: ORGANIZATION },
 		onSubmit: async ({ value }) => {
 			if (!month) return;
-			const result = await closeMonthAction({
-				month,
-				scope:
-					value.scope === ORGANIZATION
-						? { kind: "organization" }
-						: { kind: "team", teamId: value.scope },
-			});
+			const result = await closeMonthAction({ month, scope: toCloseScope(value.scope) });
 			if (!result.success) {
 				toast.error(result.error);
 				return;
@@ -166,6 +165,13 @@ export function CloseMonthPanel({
 							)}
 						</form.Field>
 						{blockers.length > 0 ? <CloseBlockers blockers={blockers} /> : null}
+						{open ? (
+							<form.Subscribe<string> selector={(state) => state.values.scope}>
+								{(scope: string) => (
+									<CloseMonthWarnings month={month} scope={toCloseScope(scope)} />
+								)}
+							</form.Subscribe>
+						) : null}
 					</ActionPanelBody>
 					<ActionPanelFooter>
 						<Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

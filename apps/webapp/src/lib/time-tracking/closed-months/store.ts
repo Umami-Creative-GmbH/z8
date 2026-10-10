@@ -112,7 +112,7 @@ export type ReopenMonthResult =
 	| { kind: "nothing_to_reopen"; month: ClosedMonthKey }
 	| { kind: "reason_required" };
 
-interface CoveredEmployee {
+export interface CoveredEmployee {
 	id: string;
 	name: string;
 	teamId: string | null;
@@ -303,8 +303,12 @@ export async function monthClosureStatuses(
 // CLOSE
 // ============================================
 
-async function employeesInScope(
-	transaction: Transaction,
+/**
+ * The employees a close of the month for the scope covers: those not closed for it yet, each
+ * with their month as instants in their effective timezone.
+ */
+export async function employeesInScope(
+	transaction: ClosedMonthReader,
 	input: { organizationId: string; scope: CloseMonthScope; month: ClosedMonthKey },
 ) {
 	const organizationRow = await transaction
