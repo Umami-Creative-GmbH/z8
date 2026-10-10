@@ -21,6 +21,8 @@ const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	kicks: [] as Array<{ organizationId: string; workflowId?: string | null }>,
+	/** Who each time decision notification names as the decider (#1016). */
+	timeDeciders: [] as string[],
 }));
 
 vi.mock("next/server", async (importOriginal) =>
@@ -68,15 +70,18 @@ vi.mock("@/lib/email/render", async (importOriginal) =>
 	(await import("@/test/integration-harness")).absenceEmailRender(importOriginal),
 );
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal, [
+vi.mock("@/lib/notifications/triggers", async (importOriginal) => ({
+	...(await (await import("@/test/integration-harness")).notificationTriggers(importOriginal, [
 		"onAbsenceRequestSubmitted",
 		"onAbsenceRequestPendingApproval",
 		"onAbsenceRequestApproved",
 		"onAbsenceRequestRejected",
 		"onApprovedAbsenceCancelledByEmployee",
-	]),
-);
+	])),
+	onClockOutApproved: async (params: { approverName: string }) => {
+		harness.timeDeciders.push(params.approverName);
+	},
+}));
 
 vi.mock("@/lib/queue", async (importOriginal) =>
 	(await import("@/test/integration-harness")).calendarSyncQueue(importOriginal),
@@ -109,6 +114,10 @@ const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { processDueEscalations } = await import("@/lib/approvals/escalation/transfer");
 const { processEscalationReplacementDeliveries } = await import(
 	"@/lib/approvals/escalation/replacement-delivery"
+);
+const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { submitHistoricalPolicyClockOut } = await import(
+	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
 );
 
 const APPROVER_TELEGRAM_ID = 10_171;
@@ -368,7 +377,9 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 		);
 	}
 
-	async function submit(): Promise<{ absenceId: string; requestId: string }> {
+	async function submit(
+		options: { deputyEmployeeId?: string } = {},
+	): Promise<{ absenceId: string; requestId: string }> {
 		actAs(ids.requesterUser);
 		const result = await requestAbsenceEffect({
 			categoryId: ids.vacation,
@@ -378,6 +389,7 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 			endPeriod: "full_day",
 			durationKind: "full_day",
 			notes: null,
+			...options,
 		});
 		harness.userId = null;
 		if (!result.success) throw new Error(`Submission failed: ${result.error}`);
@@ -497,6 +509,7 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 		harness.userId = null;
 		harness.organizationId = null;
 		harness.kicks.length = 0;
+		harness.timeDeciders.length = 0;
 		calls.length = 0;
 		installTelegramTransport();
 	});
@@ -520,6 +533,8 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 		expect(String(card.body.text)).toContain("Covering for: Morgan Manager");
 		expect(buttonsOf(card).filter((button) => button.callback_data)).toHaveLength(2);
 		expect(String(only(sendsTo(APPROVER_CHAT_ID)).body.text)).not.toContain("Covering for");
+		// The absence card shows who covers during the requested absence (#1011).
+		expect(String(only(sendsTo(APPROVER_CHAT_ID)).body.text)).toContain("Deputy: None named");
 
 		const own = await approverMessage();
 		const deputy = await deputyMessage();
@@ -548,6 +563,14 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 		// A later pass never sends either card again.
 		await deliver(minutes(60));
 		expect(sends()).toHaveLength(2);
+	});
+
+	it("shows the requested absence's deputy on its approval card (#1011)", async () => {
+		await seed();
+		await submit({ deputyEmployeeId: ids.otherDeputy });
+
+		await deliver();
+		expect(String(only(sendsTo(APPROVER_CHAT_ID)).body.text)).toContain("Deputy: Zoe Other");
 	});
 
 	it("sends no deputy card for an approval assigned to X before cover started", async () => {
@@ -642,7 +665,10 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 
 		await deliver(minutes(1));
 		for (const message of [await approverMessage(), await deputyMessage()]) {
-			expect(String(only(editsOf(message)).body.text)).toContain("Request approved");
+			const edit = String(only(editsOf(message)).body.text);
+			expect(edit).toContain("Request approved");
+			// The decision reads as made by Y for X on every card (#1016).
+			expect(edit).toContain("Approved by Dana Deputy (deputy for Morgan Manager)");
 			expect(message).toMatchObject({ controls: "none", state: "retired" });
 		}
 	});
@@ -784,6 +810,73 @@ describe("Deputy approval cards (PostgreSQL)", () => {
 			expect(String(retired?.body.text)).toContain("Reassigned");
 		},
 	);
+
+	describe("legacy time approvals", () => {
+		it("decides a policy clock-out from the deputy's card and names both people to the requester", async () => {
+			await seed({ mode: "legacy" });
+			const timestamp = new Date("2026-07-01T00:00:00Z");
+			for (const [sql, params] of [
+				[
+					`insert into approval_workflow_rollout
+					 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+					 values ($1, 'policy_clock_out', 'legacy', 'legacy', $2, $2)`,
+					[ids.organization, timestamp],
+				],
+				[
+					`insert into approval_evidence_control (organization_id, workflow_type, mode)
+					 values ($1, 'policy_clock_out', 'capture')`,
+					[ids.organization],
+				],
+				[
+					`insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+					 values ($1, 'policy_clock_out', 'telegram', 'actionable')`,
+					[ids.organization],
+				],
+				[
+					`insert into approval_delivery_control (organization_id, workflow_type, provider, activated_at)
+					 values ($1, 'policy_clock_out', 'telegram', $2)`,
+					[ids.organization, timestamp],
+				],
+				[
+					`insert into time_entry_append_control (organization_id, mode) values ($1, 'active')`,
+					[ids.organization],
+				],
+			] as const) {
+				await admin.query(sql, [...params]);
+			}
+			actAs(ids.requesterUser);
+			const start = Temporal.Instant.from("2026-07-21T08:00:00Z");
+			await expect(
+				clockIn("office", { instant: start, browserTimezone: "UTC" }),
+			).resolves.toMatchObject({ success: true });
+			await expect(
+				clockOut(undefined, undefined, {
+					submissionId: crypto.randomUUID(),
+					instant: Temporal.Instant.from("2026-07-21T12:00:00Z"),
+					browserTimezone: "UTC",
+				}),
+			).resolves.toMatchObject({ success: true });
+			harness.userId = null;
+			const { rows } = await admin.query<{ id: string }>(
+				"select id from work_period where employee_id = $1 and start_time = $2 and deleted_at is null",
+				[ids.requester, new Date("2026-07-21T08:00:00Z")],
+			);
+			await submitHistoricalPolicyClockOut({
+				organizationId: ids.organization,
+				employeeId: ids.requester,
+				userId: ids.requesterUser,
+				workPeriodId: only(rows).id,
+			});
+
+			await deliver();
+			expect(String(only(sendsTo(DEPUTY_CHAT_ID)).body.text)).toContain(
+				"Covering for: Morgan Manager",
+			);
+			await deputyPressesApprove("t1017-time-approve");
+
+			expect(harness.timeDeciders).toEqual(["Dana Deputy (deputy for Morgan Manager)"]);
+		});
+	});
 
 	describe("under legacy absence authority", () => {
 		it("issues a legacy deputy card and decides from it as a deputy decision for X", async () => {

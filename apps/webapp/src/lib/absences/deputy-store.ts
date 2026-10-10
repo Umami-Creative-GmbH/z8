@@ -378,3 +378,31 @@ export async function loadAbsenceDeputyViews(
 		]),
 	);
 }
+
+/**
+ * One absence's current deputy as its approver sees them (#1011), for the
+ * approval card: undefined when the absence is not the organization's, null
+ * when it names nobody.
+ */
+export async function loadAbsenceDeputyView(
+	database: Pick<Database, "select">,
+	input: { organizationId: string; absenceId: string },
+): Promise<AbsenceDeputyView | null | undefined> {
+	const [absence] = await database
+		.select({ deputyEmployeeId: absenceEntry.deputyEmployeeId })
+		.from(absenceEntry)
+		.where(
+			and(
+				eq(absenceEntry.id, input.absenceId),
+				eq(absenceEntry.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	if (!absence) return undefined;
+	if (!absence.deputyEmployeeId) return null;
+	const views = await loadAbsenceDeputyViews(database, {
+		organizationId: input.organizationId,
+		deputyEmployeeIds: [absence.deputyEmployeeId],
+	});
+	return views.get(absence.deputyEmployeeId) ?? null;
+}

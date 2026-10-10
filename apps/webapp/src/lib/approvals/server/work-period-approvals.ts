@@ -65,7 +65,7 @@ import {
 } from "../escalation/decision-authority";
 import {
 	asDeputyDecider,
-	loadLegacyActingFor,
+	loadDeputyActingFor,
 	recordCanonicalDeputyDecisionOf,
 } from "../deputy/deputy-decision-store";
 import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
@@ -2291,7 +2291,7 @@ export function notifyWorkPeriodApprovalAfterCommit(
 			? await asDeputyDecider(
 					dbService.db as never,
 					currentEmployee,
-					await loadLegacyActingFor(dbService.db as never, {
+					await loadDeputyActingFor(dbService.db as never, {
 						organizationId: result.period.organizationId,
 						approvalRequestId,
 					}),

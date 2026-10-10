@@ -57,7 +57,7 @@ const {
 vi.mock("@/lib/approvals/deputy/deputy-decision-store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/approvals/deputy/deputy-decision-store")>()),
 	coversCurrentApprover: async () => false,
-	loadLegacyActingFor: async () => null,
+	loadDeputyActingFor: async () => null,
 	recordCanonicalDeputyDecisionOf: async () => null,
 	authorizeLegacyDeputyDecision: async () => {
 		const { deputyDecisionRefusalError } = await import("@/lib/approvals/deputy/deputy-decision");

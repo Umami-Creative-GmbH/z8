@@ -454,7 +454,13 @@ export async function decideBoundLegacyTimeInvocation(
 				// The same after-commit effects as a web decision; never on replay.
 				dispatch: async (execution) => {
 					await Effect.runPromise(
-						notifyWorkPeriodApprovalAfterCommit(execution.result, actor, dbService),
+						// The bound request: a covering deputy's decision reads "(deputy for X)" (#1016).
+						notifyWorkPeriodApprovalAfterCommit(
+							execution.result,
+							actor,
+							dbService,
+							binding.legacyApprovalRequestId,
+						),
 					);
 				},
 				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,

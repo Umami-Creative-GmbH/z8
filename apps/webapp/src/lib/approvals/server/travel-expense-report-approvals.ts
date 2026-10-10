@@ -32,7 +32,7 @@ import { wasLegacyRequestTransferred } from "../escalation/legacy-transfer-store
 import {
 	asDeputyDecider,
 	coversCurrentApprover,
-	loadLegacyActingFor,
+	loadDeputyActingFor,
 } from "../deputy/deputy-decision-store";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
@@ -723,7 +723,7 @@ async function notifyRequester(
 	const decider = await asDeputyDecider(
 		database as never,
 		input.actor,
-		await loadLegacyActingFor(database as never, {
+		await loadDeputyActingFor(database as never, {
 			organizationId: input.organizationId,
 			approvalRequestId,
 		}),

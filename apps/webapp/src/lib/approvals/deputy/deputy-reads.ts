@@ -1,3 +1,4 @@
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DeputyCardCandidate, DeputyCardRecipient } from "../delivery/deputy-cards";
 import type { Cover } from "./covering";
@@ -66,4 +67,21 @@ export async function loadEmployeeName(
 	input: { organizationId: string; employeeId: string },
 ): Promise<string | null> {
 	return (await deputyDecisionStore()).loadEmployeeName(executor, input);
+}
+
+/** The absent approver's name when a covering deputy made this decision, else null. */
+export async function loadDeputyActingForName(
+	executor: DeputyDecisionReader,
+	input: { organizationId: string; assignmentId?: string | null; approvalRequestId?: string | null },
+): Promise<string | null> {
+	if (!input.assignmentId && !input.approvalRequestId) return null;
+	return (await deputyDecisionStore()).loadDeputyActingForName(executor, input);
+}
+
+/** An absence's current deputy for its approval card (#1011); see `loadAbsenceDeputyView`. */
+export async function loadAbsenceDeputyView(
+	executor: CoveringExecutor,
+	input: { organizationId: string; absenceId: string },
+): Promise<AbsenceDeputyView | null | undefined> {
+	return (await import("@/lib/absences/deputy-store")).loadAbsenceDeputyView(executor, input);
 }

@@ -59,7 +59,7 @@ import { type ActingFor, isDeputyCardAssignmentPending } from "../deputy/deputy-
 import {
 	asDeputyDecider,
 	coversCurrentApprover,
-	loadLegacyActingFor,
+	loadDeputyActingFor,
 	recordCanonicalDeputyDecisionOf,
 } from "../deputy/deputy-decision-store";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -718,7 +718,7 @@ export async function executeAbsenceDecisionInTransaction(
 			// The shared legacy path stored whom a covering deputy acted for (#1016).
 			const actingFor =
 				decidedRequestId && domainResult
-					? await loadLegacyActingFor(transactionDb, {
+					? await loadDeputyActingFor(transactionDb, {
 							organizationId: input.organizationId,
 							approvalRequestId: decidedRequestId,
 						})

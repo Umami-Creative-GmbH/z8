@@ -9,13 +9,19 @@ import {
 	approvalWorkflowStage,
 	employee,
 } from "@/db/schema";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { readApprovalAuthoritySnapshot } from "../authority";
 import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
-import { legacyDecidedEarlierStage, loadCover, loadEmployeeName } from "../deputy/deputy-reads";
+import {
+	legacyDecidedEarlierStage,
+	loadAbsenceDeputyView,
+	loadCover,
+	loadEmployeeName,
+} from "../deputy/deputy-reads";
 import {
 	type ApprovalActionableCard,
 	type ApprovalCardDraft,
@@ -94,7 +100,7 @@ export async function prepareApprovalPresentation(input: {
 			eq(approvalRequest.approverId, approverEmployeeId),
 			eq(approvalRequest.status, "pending"),
 		),
-		columns: { id: true, metadata: true, entityType: true, requestedBy: true },
+		columns: { id: true, metadata: true, entityType: true, entityId: true, requestedBy: true },
 	});
 	if (!request) return { status: "undisclosable" };
 	const coveringFor = actingFor
@@ -203,15 +209,35 @@ export async function prepareApprovalPresentation(input: {
 	});
 	if (!display) return { status: "undisclosable" };
 	const t = await getBotTranslate(display.locale);
-	// A deputy card names the absent approver first; provider limits count it.
+	// A deputy card names the absent approver first; an absence card ends with
+	// who covers during it (#1011). Provider limits count both.
 	const coveringFact = coveringFor
 		? {
 				label: t("bot.approval.card.coveringFor", "Covering for"),
 				value: coveringFor.approverName,
 			}
 		: null;
+	const deputyFact =
+		request.entityType === "absence_entry"
+			? absenceDeputyFact(
+					await loadAbsenceDeputyView(db, {
+						organizationId: input.organizationId,
+						absenceId: request.entityId,
+					}),
+					t,
+				)
+			: null;
 	const withCover = <T extends { facts: ApprovalCardFact[] }>(card: T): T =>
-		coveringFact ? { ...card, facts: [coveringFact, ...card.facts] } : card;
+		coveringFact || deputyFact
+			? {
+					...card,
+					facts: [
+						...(coveringFact ? [coveringFact] : []),
+						...card.facts,
+						...(deputyFact ? [deputyFact] : []),
+					],
+				}
+			: card;
 	const providerFits = input.fits;
 	const fits = providerFits
 		? { fits: (draft: ApprovalCardDraft) => providerFits(withCover(draft)) }
@@ -326,6 +352,25 @@ export async function prepareApprovalPresentation(input: {
 			organizationId: input.organizationId,
 			reference: { kind: "compatibility", approvalRequestId: request.id },
 		}),
+	};
+}
+
+/**
+ * The absence card's "Deputy" fact (#1011): the current deputy, noted when a
+ * contact only; "None named" without one. Null when the absence is gone.
+ */
+function absenceDeputyFact(
+	deputy: AbsenceDeputyView | null | undefined,
+	t: Awaited<ReturnType<typeof getBotTranslate>>,
+): ApprovalCardFact | null {
+	if (deputy === undefined) return null;
+	const label = t("bot.approval.card.deputy", "Deputy");
+	if (!deputy) return { label, value: t("bot.approval.card.deputyNone", "None named") };
+	return {
+		label,
+		value: deputy.canDecideApprovals
+			? deputy.name
+			: t("bot.approval.card.deputyContactOnly", "{name} (contact only)", { name: deputy.name }),
 	};
 }
 

@@ -104,7 +104,7 @@ import {
 } from "../escalation/decision-authority";
 import {
 	asDeputyDecider,
-	loadLegacyActingFor,
+	loadDeputyActingFor,
 	recordCanonicalDeputyDecisionOf,
 } from "../deputy/deputy-decision-store";
 import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
@@ -4620,7 +4620,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	const actor = await asDeputyDecider(
 		input.dbService.db as never,
 		input.actor,
-		await loadLegacyActingFor(input.dbService.db as never, {
+		await loadDeputyActingFor(input.dbService.db as never, {
 			organizationId: input.actor.organizationId,
 			approvalRequestId: request.id,
 		}),

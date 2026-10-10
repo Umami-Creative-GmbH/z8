@@ -1,3 +1,5 @@
+import { db } from "@/db";
+import { loadDeputyActingForName } from "@/lib/approvals/deputy/deputy-reads";
 import type { ApprovalReviewNotice } from "@/lib/approvals/presentation";
 import {
 	type ApprovalReviewReference,
@@ -96,7 +98,12 @@ export async function boundDecisionNotice(
 			reviewUrl,
 		};
 	}
-	const { title, text } = decisionEvidenceText(result.evidence, display, t);
+	const { title, text } = await decisionEvidenceText(
+		result.evidence,
+		display,
+		t,
+		recipient.organizationId,
+	);
 	return {
 		title,
 		text: result.replayed
@@ -133,19 +140,45 @@ function noLongerCoveringText(
 	};
 }
 
-/** Committed outcome wording with the persisted actor and decision time. */
-function decisionEvidenceText(
-	evidence: Pick<
-		DecisionEvidenceRecord,
-		"assignmentOutcome" | "requestOutcome" | "decidedAt" | "labels"
-	>,
+/** Committed evidence as a notice reads it, with what identifies its decision. */
+type NoticeEvidence = Pick<
+	DecisionEvidenceRecord,
+	"assignmentOutcome" | "requestOutcome" | "decidedAt" | "labels"
+> & {
+	/** A canonical decision's assignment. */
+	assignmentId?: string | null;
+	/** A legacy decision's request. */
+	legacy?: { approvalRequestId: string };
+};
+
+/**
+ * Committed outcome wording with the persisted actor and decision time. A
+ * covering deputy's decision reads "by Y (deputy for X)" (#1016), from its
+ * acting-for record.
+ */
+async function decisionEvidenceText(
+	evidence: NoticeEvidence,
 	display: RecipientDisplayContext,
 	t: BotTranslateFn,
-): { title: string; text: string } {
+	organizationId: string,
+): Promise<{ title: string; text: string }> {
+	const actorName =
+		evidence.labels.actorName ?? t("bot.approval.card.unavailable", "Unavailable");
+	const actingForName = await loadDeputyActingForName(db, {
+		organizationId,
+		...(evidence.assignmentId
+			? { assignmentId: evidence.assignmentId }
+			: evidence.legacy
+				? { approvalRequestId: evidence.legacy.approvalRequestId }
+				: {}),
+	});
 	const params = {
-		actor:
-			evidence.labels.actorName ??
-			t("bot.approval.card.unavailable", "Unavailable"),
+		actor: actingForName
+			? t("bot.approval.outcome.deputyActor", "{actor} (deputy for {approver})", {
+					actor: actorName,
+					approver: actingForName,
+				})
+			: actorName,
 		time: `${formatInstant(evidence.decidedAt, display, "dateTimeMedium")} (${display.timezone})`,
 	};
 	const outcome = BOUND_OUTCOME_TEXT[boundOutcome(evidence)];
@@ -163,10 +196,7 @@ function decisionEvidenceText(
 export interface ApprovalStatusNoticeInput {
 	workflowStatus: string;
 	/** Committed evidence of this recipient's own assignment, if it was decided. */
-	evidence: Pick<
-		DecisionEvidenceRecord,
-		"assignmentOutcome" | "requestOutcome" | "decidedAt" | "labels"
-	> | null;
+	evidence: NoticeEvidence | null;
 	/**
 	 * The recipient's assignment was replaced by another approver's (escalation
 	 * or reassignment, #300). Its outcome is not theirs to learn from the card.
@@ -194,7 +224,7 @@ export async function approvalStatusNotice(
 	const reviewLabel = t("bot.approval.reviewInZ8", "Review in Z8");
 	const reviewUrl = await approvalReviewUrl({ organizationId, reference });
 	if (display && status.evidence) {
-		const { title, text } = decisionEvidenceText(status.evidence, display, t);
+		const { title, text } = await decisionEvidenceText(status.evidence, display, t, organizationId);
 		const current =
 			status.workflowStatus !== status.evidence.requestOutcome
 				? status.workflowStatus === "approved"

@@ -16,6 +16,10 @@ vi.mock("@/lib/bot-platform/i18n", () => ({
 vi.mock("@/lib/app-url", () => ({
 	getOrganizationBaseUrl: async () => "https://org.z8.test",
 }));
+const deputyReads = vi.hoisted(() => ({
+	loadDeputyActingForName: vi.fn(async (): Promise<string | null> => null),
+}));
+vi.mock("@/lib/approvals/deputy/deputy-reads", () => deputyReads);
 
 const { boundDecisionNotice } = await import("./approval-notice");
 
@@ -71,6 +75,31 @@ describe("boundDecisionNotice", () => {
 			expect(notice).toMatchObject({ title, text });
 		},
 	);
+
+	it("names a covering deputy's decision as made for the absent approver (#1016)", async () => {
+		deputyReads.loadDeputyActingForName.mockResolvedValueOnce("Xenia Absent");
+		const result = decided({ assignmentOutcome: "approved", requestOutcome: "approved" });
+		const notice = await boundDecisionNotice(
+			{
+				...result,
+				evidence: {
+					...result.evidence,
+					assignmentId: "assignment-1",
+					labels: { actorName: "Dana Deputy" },
+				},
+			},
+			recipient,
+			reference,
+		);
+
+		expect(notice?.text).toBe(
+			"Approved by Dana Deputy (deputy for Xenia Absent) on Aug 1, 2026, 10:15 (Europe/Berlin). The request is approved.",
+		);
+		expect(deputyReads.loadDeputyActingForName).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org",
+			assignmentId: "assignment-1",
+		});
+	});
 
 	it("labels a replay as the original result", async () => {
 		const notice = await boundDecisionNotice(

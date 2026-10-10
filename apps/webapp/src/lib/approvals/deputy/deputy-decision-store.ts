@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aliasedTable, and, eq, inArray, lt, sql } from "drizzle-orm";
+import { aliasedTable, and, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -422,8 +422,11 @@ export async function loadDeputyDecisionsForEntities(
 	}));
 }
 
-/** Whom the legacy decision of this request was made for, from its acting-for record. */
-export async function loadLegacyActingFor(
+/**
+ * Whom the decision of this request was made for, from its acting-for record:
+ * a legacy request, or a canonical stage's compatibility row (#1016).
+ */
+export async function loadDeputyActingFor(
 	executor: DeputyDecisionReader,
 	input: { organizationId: string; approvalRequestId: string },
 ): Promise<ActingFor | null> {
@@ -436,12 +439,46 @@ export async function loadLegacyActingFor(
 		.where(
 			and(
 				eq(approvalDeputyDecision.organizationId, input.organizationId),
-				eq(approvalDeputyDecision.authority, "legacy"),
 				eq(approvalDeputyDecision.approvalRequestId, input.approvalRequestId),
 			),
 		)
+		.orderBy(desc(approvalDeputyDecision.decidedAt))
 		.limit(1);
-	return row ? { approverEmployeeId: row.approverEmployeeId, absenceId: row.absenceId ?? "" } : null;
+	return row?.absenceId
+		? { approverEmployeeId: row.approverEmployeeId, absenceId: row.absenceId }
+		: null;
+}
+
+/**
+ * The absent approver's name when a covering deputy made this decision (an
+ * assignment's, or a legacy request's), for "by Y (deputy for X)" on cards;
+ * null for an ordinary decision.
+ */
+export async function loadDeputyActingForName(
+	executor: DeputyDecisionReader,
+	input: { organizationId: string; assignmentId?: string | null; approvalRequestId?: string | null },
+): Promise<string | null> {
+	const target = input.assignmentId
+		? eq(approvalDeputyDecision.assignmentId, input.assignmentId)
+		: input.approvalRequestId
+			? eq(approvalDeputyDecision.approvalRequestId, input.approvalRequestId)
+			: null;
+	if (!target) return null;
+	const [row] = await executor
+		.select({ name: user.name })
+		.from(approvalDeputyDecision)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, approvalDeputyDecision.actingForEmployeeId),
+				eq(employee.organizationId, input.organizationId),
+			),
+		)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.where(and(eq(approvalDeputyDecision.organizationId, input.organizationId), target))
+		.orderBy(desc(approvalDeputyDecision.decidedAt))
+		.limit(1);
+	return row?.name ?? null;
 }
 
 /**
