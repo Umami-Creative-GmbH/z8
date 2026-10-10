@@ -36,6 +36,7 @@ import { isAwaitingReimbursement } from "./finance-queue-store";
 import { STORED_AMOUNT_SCALE } from "./money";
 import type { OfficerScope } from "./officer-scope";
 import { isSourceInOfficerScope } from "./officer-scope-read";
+import { PAYROLL_CURRENCY } from "./payroll-line-kind";
 import type { PayrollRevision } from "./payroll-lines";
 import {
 	classifyPayrollRunCandidate,
@@ -431,7 +432,7 @@ async function expenseLines(
 			lastName: person?.lastName ?? null,
 			wageTypeCode: total.wageTypeCode,
 			amount: formatUnits(total.units, STORED_AMOUNT_SCALE),
-			currency: "EUR",
+			currency: PAYROLL_CURRENCY,
 			date,
 		};
 	});

@@ -28,6 +28,7 @@ import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { formatMoney, formatPlainDateRange } from "@/lib/travel-expenses/format";
 import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
+import { PAYROLL_CURRENCY } from "@/lib/travel-expenses/payroll-line-kind";
 import type {
 	PayrollRunConfirmationRow,
 	PayrollRunToConfirm,
@@ -39,7 +40,8 @@ import { settlementFieldMessage } from "./record-reimbursement-form";
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 function outcomeText(t: Translate, locale: string, row: PayrollRunConfirmationRow): string {
-	const money = (amount: string | null) => (amount ? formatMoney(locale, amount, "EUR") : "");
+	const money = (amount: string | null) =>
+		amount ? formatMoney(locale, amount, PAYROLL_CURRENCY) : "";
 	switch (row.outcome) {
 		case "confirmed":
 			return row.remaining
@@ -134,7 +136,7 @@ export function ConfirmPayrollRunButton({
 												{
 													format: run.formatName,
 													count: run.confirmableReports,
-													amount: formatMoney(locale, run.confirmableAmount, "EUR"),
+													amount: formatMoney(locale, run.confirmableAmount, PAYROLL_CURRENCY),
 												},
 											)
 										: t(
@@ -321,7 +323,7 @@ function ConfirmationResults({
 					{rows.map((row) => (
 						<ResultRow
 							key={row.reportId}
-							label={`${row.employeeName ?? "—"} · ${formatMoney(locale, row.frozenAmount, "EUR")}`}
+							label={`${row.employeeName ?? "—"} · ${formatMoney(locale, row.frozenAmount, PAYROLL_CURRENCY)}`}
 							done={row.outcome === "confirmed"}
 							text={outcomeText(t, locale, row)}
 						/>

@@ -21,6 +21,7 @@ import { latestCalendarDate } from "./future-dates";
 import { STORED_AMOUNT_SCALE } from "./money";
 import type { OfficerScope } from "./officer-scope";
 import { isSourceInOfficerScope, reportInOfficerScope } from "./officer-scope-read";
+import { PAYROLL_CURRENCY } from "./payroll-line-kind";
 import {
 	loadPayrollRunHeader,
 	loadPayrollRunHeaders,
@@ -59,7 +60,6 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Executor = Database | Transaction;
 
-const PAYROLL_CURRENCY = "EUR";
 const ZERO = BigInt(0);
 
 export const PAYROLL_RUN_CONFIRMATION_OUTCOMES = [

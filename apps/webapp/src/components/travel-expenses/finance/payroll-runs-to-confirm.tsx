@@ -7,6 +7,7 @@ import { getPayrollRunsToConfirmAction } from "@/app/[locale]/(app)/travel-expen
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
 import { formatMoney, formatPlainDateRange } from "@/lib/travel-expenses/format";
+import { PAYROLL_CURRENCY } from "@/lib/travel-expenses/payroll-line-kind";
 import { ConfirmPayrollRunButton } from "./confirm-payroll-run-dialog";
 
 /**
@@ -65,7 +66,7 @@ export function PayrollRunsToConfirm({
 										"{count, plural, one {# expense report} other {# expense reports}} for you to confirm, {amount}",
 										{
 											count: run.confirmableReports,
-											amount: formatMoney(locale, run.confirmableAmount, "EUR"),
+											amount: formatMoney(locale, run.confirmableAmount, PAYROLL_CURRENCY),
 										},
 									)}
 								</p>
@@ -74,7 +75,7 @@ export function PayrollRunsToConfirm({
 								run={run}
 								defaultOpen={run.jobId === openJobId}
 								onConfirmed={() =>
-									void queryClient.invalidateQueries({ queryKey: ["travel-expenses"] })
+									void queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.all })
 								}
 							/>
 						</li>
