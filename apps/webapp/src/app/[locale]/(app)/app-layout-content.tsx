@@ -27,6 +27,7 @@ import type { BillingAccessResult } from "@/lib/effect/services/billing/billing-
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOrganizationSettings } from "@/lib/organization-settings";
+import { appBannerScrollPaddingClassName } from "@/lib/store-app/app-banner";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import { DOMAIN_HEADERS } from "@/proxy";
 
@@ -158,8 +159,10 @@ export async function AuthenticatedAppContent({ children, params }: Authenticate
 								<OrganizationDeletionBanner />
 								{/* Asked on the next clock action when position capture needs consent (#826). */}
 								<PositionConsentDialogHost />
-								{/* Keeps the end of each page above the home indicator when drawn edge to edge. */}
-								<div className="flex flex-1 flex-col min-h-0 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+								{/* Keeps the end of each page above the home indicator when drawn edge to edge, and above the get-the-app banner while it shows (#847). */}
+								<div
+									className={`flex flex-1 flex-col min-h-0 overflow-y-auto ${appBannerScrollPaddingClassName}`}
+								>
 									{children}
 								</div>
 								{/* Floats over the page on phone browsers, so it never shifts the layout (#847). */}

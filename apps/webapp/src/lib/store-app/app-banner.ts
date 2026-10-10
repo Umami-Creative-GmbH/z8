@@ -37,6 +37,20 @@ export const APP_BANNER_DISMISSAL_HOURS = 24 * 90;
 /** `localStorage` key holding the dismissal instant for this browser. */
 export const APP_BANNER_DISMISSED_AT_STORAGE_KEY = "z8.storeAppBanner.dismissedAt";
 
+/**
+ * CSS variable on `<html>` with the banner's height while it shows; unset otherwise. The
+ * banner floats over the page, so the app's scroll area pads its end by this much to keep a
+ * page's last controls reachable (`appBannerScrollPaddingClassName`).
+ */
+export const APP_BANNER_HEIGHT_VARIABLE = "--app-banner-height";
+
+/**
+ * Bottom padding of the app's scroll area: the home indicator, or the banner while it shows
+ * (its height already includes the home indicator). Padding the end shifts nothing above it.
+ */
+export const appBannerScrollPaddingClassName =
+	"pb-[max(env(safe-area-inset-bottom),var(--app-banner-height,0px))]";
+
 const IPHONE = /\b(?:iPhone|iPod)\b/;
 const ANDROID = /\bAndroid\b/;
 // Android phones send "Mobile"; Android tablets leave it out.

@@ -2,7 +2,10 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { APP_BANNER_DISMISSED_AT_STORAGE_KEY } from "@/lib/store-app/app-banner";
+import {
+	APP_BANNER_DISMISSED_AT_STORAGE_KEY,
+	APP_BANNER_HEIGHT_VARIABLE,
+} from "@/lib/store-app/app-banner";
 import { GetTheAppBanner } from "./get-the-app-banner";
 
 vi.mock("@tolgee/react", () => ({
@@ -62,6 +65,21 @@ describe("GetTheAppBanner", () => {
 		expect(window.localStorage.getItem(APP_BANNER_DISMISSED_AT_STORAGE_KEY)).toEqual(
 			expect.any(String),
 		);
+	});
+
+	it("publishes its height while shown, so the app pads the page end", () => {
+		emulateBrowser({ userAgent: IPHONE_SAFARI, phoneWidth: true });
+		vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+			height: 71.5,
+		} as DOMRect);
+		const height = () =>
+			document.documentElement.style.getPropertyValue(APP_BANNER_HEIGHT_VARIABLE);
+
+		render(<GetTheAppBanner storeUrls={{ ios: APP_STORE_URL, android: PLAY_STORE_URL }} />);
+		expect(height()).toBe("72px");
+
+		fireEvent.click(screen.getByRole("button", { name: "Dismiss app suggestion" }));
+		expect(height()).toBe("");
 	});
 
 	it("renders nothing at tablet or desktop width", () => {

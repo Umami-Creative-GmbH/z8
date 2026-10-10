@@ -7,6 +7,7 @@ import { Temporal } from "temporal-polyfill";
 import { Button } from "@/components/ui/button";
 import {
 	APP_BANNER_DISMISSED_AT_STORAGE_KEY,
+	APP_BANNER_HEIGHT_VARIABLE,
 	decideAppBanner,
 	type StoreAppUrls,
 } from "@/lib/store-app/app-banner";
@@ -58,13 +59,36 @@ function getServerPlatform(): StoreAppPlatform | null {
 	return null;
 }
 
+/**
+ * Publishes the banner's height as `APP_BANNER_HEIGHT_VARIABLE` while it is mounted, so the
+ * app's scroll area can pad its end and the last controls of a page stay reachable.
+ */
+function publishBannerHeight(banner: HTMLElement | null) {
+	if (!banner) return;
+	const root = document.documentElement;
+	const update = () => {
+		root.style.setProperty(
+			APP_BANNER_HEIGHT_VARIABLE,
+			`${Math.ceil(banner.getBoundingClientRect().height)}px`,
+		);
+	};
+	update();
+	const observer = typeof ResizeObserver === "function" ? new ResizeObserver(update) : null;
+	observer?.observe(banner);
+	return () => {
+		observer?.disconnect();
+		root.style.removeProperty(APP_BANNER_HEIGHT_VARIABLE);
+	};
+}
+
 interface GetTheAppBannerProps {
 	storeUrls: StoreAppUrls;
 }
 
 /**
  * Suggests the Z8 store app to signed-in phone browsers (#847). Renders nothing until the
- * store listings are configured, and floats over the page so it never shifts the layout.
+ * store listings are configured, and floats over the page so it never shifts the layout. While
+ * it shows, the app's scroll area pads its end by the banner's height.
  */
 export function GetTheAppBanner({ storeUrls }: GetTheAppBannerProps) {
 	if (!storeUrls.ios && !storeUrls.android) return null;
@@ -105,6 +129,7 @@ function GetTheAppBannerContent({ storeUrls }: GetTheAppBannerProps) {
 
 	return (
 		<aside
+			ref={publishBannerHeight}
 			aria-labelledby={titleId}
 			className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(0_0_0/0.08)] backdrop-blur supports-[backdrop-filter]:bg-background/85 md:hidden"
 		>

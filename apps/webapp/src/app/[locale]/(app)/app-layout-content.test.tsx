@@ -371,4 +371,13 @@ describe("authenticated app layout gates", () => {
 		expect(html).toContain('data-ios="https://apps.apple.com/app/z8/id1234567890"');
 		expect(html).toContain('data-android="null"');
 	});
+
+	it("pads the page end by the get-the-app banner's height while it shows", async () => {
+		const { html } = await serverRender("/en/time-tracking");
+
+		const scrollArea = /<div class="([^"]*overflow-y-auto[^"]*)"/.exec(html)?.[1];
+		expect(scrollArea).toContain(
+			"pb-[max(env(safe-area-inset-bottom),var(--app-banner-height,0px))]",
+		);
+	});
 });
