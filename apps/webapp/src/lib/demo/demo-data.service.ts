@@ -68,9 +68,11 @@ import {
 	dateFromInstant,
 	instantFromDate,
 	type PlainDate,
+	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
 	instantFromTimeCorrectionBoundary,
@@ -83,6 +85,7 @@ import {
 } from "@/lib/time-tracking/time-entry-append";
 import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
+import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	assignDemoWorkCategory,
 	type DemoWorkSession,
@@ -2371,6 +2374,32 @@ export async function generateDemoShiftTemplates(
 	return { templatesCreated };
 }
 
+interface DemoShiftDay {
+	/** The `shift.date` value: the day's organization-local midnight. */
+	storedDate: Date;
+	isWeekday: boolean;
+}
+
+/** The organization-local calendar days of a demo range, both ends inclusive. */
+function demoShiftDays(
+	range: DemoDataOptions["dateRange"],
+	timezone: string,
+): DemoShiftDay[] {
+	const days: DemoShiftDay[] = [];
+	const lastDay = plainDateAt(instantFromDate(range.end), timezone);
+	for (
+		let day = plainDateAt(instantFromDate(range.start), timezone);
+		comparePlainDates(day, lastDay) <= 0;
+		day = day.add({ days: 1 })
+	) {
+		days.push({
+			storedDate: shiftStoredDate(day.toString(), timezone),
+			isWeekday: day.dayOfWeek <= 5,
+		});
+	}
+	return days;
+}
+
 /**
  * Generate demo shifts with recurrence patterns
  */
@@ -2410,6 +2439,18 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 		where: eq(employee.organizationId, options.organizationId),
 	});
 
+	const organizationRow = await db.query.organization.findFirst({
+		where: (table) => eq(table.id, options.organizationId),
+		columns: { timezone: true },
+	});
+	const shiftDays = demoShiftDays(
+		options.dateRange,
+		parseIanaTimeZone(organizationRow?.timezone ?? "UTC"),
+	);
+	if (shiftDays.length === 0) {
+		return { recurrencesCreated: 0, shiftsCreated: 0, requestsCreated: 0 };
+	}
+
 	let recurrencesCreated = 0;
 	let shiftsCreated = 0;
 	let requestsCreated = 0;
@@ -2433,8 +2474,8 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 				startTime: template.startTime,
 				endTime: template.endTime,
 				color: template.color,
-				startDate: options.dateRange.start,
-				endDate: options.dateRange.end,
+				startDate: shiftDays[0].storedDate,
+				endDate: shiftDays[shiftDays.length - 1].storedDate,
 				weeklyDays: JSON.stringify([1, 2, 3, 4, 5]), // Monday-Friday
 				isActive: true,
 				createdBy: options.createdBy,
@@ -2444,19 +2485,11 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 
 		recurrencesCreated++;
 
-		// Generate shift instances for the date range
-		const startDT = DateTime.fromJSDate(options.dateRange.start, {
-			zone: "utc",
-		});
-		const endDT = DateTime.fromJSDate(options.dateRange.end, { zone: "utc" });
-		let currentDT = startDT;
-
 		const shuffledEmployees = faker.helpers.shuffle([...employees]);
 		let employeeIndex = 0;
 
-		while (currentDT <= endDT) {
-			// Skip weekends
-			if (currentDT.weekday >= 1 && currentDT.weekday <= 5) {
+		for (const shiftDay of shiftDays) {
+			if (shiftDay.isWeekday) {
 				// 70% assigned to employee, 30% open shifts
 				const assignToEmployee =
 					Math.random() < 0.7 && shuffledEmployees.length > 0;
@@ -2477,7 +2510,7 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 						templateId: template.id,
 						subareaId: subarea.id,
 						recurrenceId: newRecurrence.id,
-						date: currentDT.toJSDate(),
+						date: shiftDay.storedDate,
 						startTime: template.startTime,
 						endTime: template.endTime,
 						status: isPublished ? "published" : "draft",
@@ -2547,8 +2580,6 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 					requestsCreated++;
 				}
 			}
-
-			currentDT = currentDT.plus({ days: 1 });
 		}
 	}
 
