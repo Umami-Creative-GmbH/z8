@@ -88,9 +88,18 @@ export type ApprovalWorkflowPrincipal =
 			systemId:
 				| "approval-expiry"
 				| "approval-activation"
-				| typeof APPROVAL_ESCALATION_SYSTEM_ID;
+				| typeof APPROVAL_ESCALATION_SYSTEM_ID
+				| typeof PERIOD_SUBMISSION_CHANGE_SYSTEM_ID;
 	  }
 	| OffboardingHandoverPrincipal;
+
+/**
+ * Narrow capability of the period submission writer seam (#1062): a change to a submitted
+ * period withdraws its pending submission. It may only cancel a pending period submission
+ * workflow, with the "withdrawn after a change" reason the adapter checks; it needs no signed-in
+ * user and no active employee, so a change to a departed employee's period still withdraws it.
+ */
+export const PERIOD_SUBMISSION_CHANGE_SYSTEM_ID = "period-submission-change";
 
 /**
  * Narrow departure-handover capability (#341). It carries the persisted

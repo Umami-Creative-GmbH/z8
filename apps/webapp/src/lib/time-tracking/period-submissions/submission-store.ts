@@ -296,6 +296,36 @@ export async function closePendingPeriodSubmission(
 	return row;
 }
 
+/**
+ * Marks an approved submission out of date after a change to its period (#1062), in the writer's
+ * transaction. The decision columns stay as history; the approved workflow is terminal and is
+ * left as it is. Throws when the row is not the approved submission.
+ */
+export async function outdateApprovedPeriodSubmission(
+	database: PeriodSubmissionDatabase,
+	input: { organizationId: string; submissionId: string; closedAt: Instant },
+): Promise<PeriodSubmissionRow> {
+	const [row] = await database
+		.update(periodSubmission)
+		.set({
+			status: "outdated",
+			closedAt: dateFromInstant(input.closedAt),
+			closedCause: "change",
+			revision: sql`${periodSubmission.revision} + 1`,
+			updatedAt: dateFromInstant(input.closedAt),
+		})
+		.where(
+			and(
+				eq(periodSubmission.organizationId, input.organizationId),
+				eq(periodSubmission.id, input.submissionId),
+				eq(periodSubmission.status, "approved"),
+			),
+		)
+		.returning();
+	if (!row) throw new Error("Period submission is not approved");
+	return row;
+}
+
 /** Audit actions of period submissions (spec #805: actor, time and any reason). */
 export type PeriodSubmissionAuditAction =
 	| AuditAction.PERIOD_SUBMISSION_SUBMITTED

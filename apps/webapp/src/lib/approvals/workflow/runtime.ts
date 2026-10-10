@@ -38,6 +38,7 @@ import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	isOffboardingHandoverPrincipal,
+	PERIOD_SUBMISSION_CHANGE_SYSTEM_ID,
 } from "./ports";
 import type {
 	ApprovalCommandActorResolver,
@@ -119,6 +120,7 @@ export function createDatabaseApprovalCommandActorResolver(): ApprovalCommandAct
 					input.principal.systemId !== "approval-expiry" &&
 					input.principal.systemId !== "approval-activation" &&
 					input.principal.systemId !== APPROVAL_ESCALATION_SYSTEM_ID &&
+					input.principal.systemId !== PERIOD_SUBMISSION_CHANGE_SYSTEM_ID &&
 					input.principal.systemId !== EMPLOYEE_OFFBOARDING_SYSTEM_ID
 				) {
 					return runtimeFailure("unknown system actor");
