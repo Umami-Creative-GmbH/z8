@@ -70,7 +70,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/my-documents": ["common", "settings/people"],
 	"/personnel-files": ["common", "settings/people"],
 	// travelExpenses: confirming a payroll run as paid (#853).
-	"/payroll": ["common", "payroll", "travelExpenses"],
+	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).
+	"/payroll": ["common", "payroll", "travelExpenses", "settings/payrollExport"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/analytics": ["common", "analytics"],
