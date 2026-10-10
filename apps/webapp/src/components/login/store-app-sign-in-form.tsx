@@ -13,10 +13,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { getPostSignInRedirectUrl, sanitizeCallbackUrl } from "@/lib/auth/callback-url";
 import { loadNativeAuthSession } from "@/lib/store-app/native-auth-session";
 import { getStoreAppPlatform } from "@/lib/store-app/shell";
-import {
-	type StoreAppSignInResult,
-	signInFromStoreApp,
-} from "@/lib/store-app/store-app-sign-in";
+import { type StoreAppSignInResult, signInFromStoreApp } from "@/lib/store-app/store-app-sign-in";
 
 type FailureReason = Extract<StoreAppSignInResult, { status: "failed" }>["reason"];
 type Translate = ReturnType<typeof useTranslate>["t"];

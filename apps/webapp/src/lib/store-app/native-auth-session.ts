@@ -21,7 +21,6 @@ export type IosAuthSessionPlugin = {
 export type AndroidAuthSessionPlugins = {
 	browser: {
 		open(options: { url: string }): Promise<void>;
-		close(): Promise<void>;
 		addListener(eventName: "browserFinished", callback: () => void): Promise<ListenerHandle>;
 	};
 	app: {
@@ -64,7 +63,8 @@ export function androidAuthSession(plugins: AndroidAuthSessionPlugins): OpenAuth
 			handles.push(
 				plugins.app.addListener("appUrlOpen", (event) => {
 					if (!event.url.toLowerCase().startsWith(`${callbackScheme}:`)) return;
-					void plugins.browser.close().catch(() => {});
+					// No Browser.close(): the singleTask MainActivity already cleared the tab
+					// above it, and closing a gone tab would start an empty controller activity.
 					finish({ status: "completed", callbackUrl: event.url });
 				}),
 				plugins.browser.addListener("browserFinished", () => {

@@ -329,7 +329,7 @@ describe("GET /api/auth/app-login", () => {
 
 		const response = await GET(request);
 
-		expect(new URL(response.headers.get("location")!).pathname).toBe("/sign-in");
+		expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/sign-in");
 		const cleared = response.headers
 			.getSetCookie()
 			.find((entry) => entry.startsWith("__Secure-better-auth.session_token="));
@@ -346,7 +346,7 @@ describe("GET /api/auth/app-login", () => {
 
 		const response = await GET(request);
 
-		expect(new URL(response.headers.get("location")!).pathname).toBe("/sign-in");
+		expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/sign-in");
 		expect(response.headers.getSetCookie()).toEqual([]);
 	});
 });

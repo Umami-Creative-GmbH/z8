@@ -51,7 +51,6 @@ describe("Android auth session (Custom Tabs)", () => {
 		const plugins = {
 			browser: {
 				open: vi.fn(async () => {}),
-				close: vi.fn(async () => {}),
 				addListener: vi.fn(async (event: string, callback: () => void) => {
 					listeners[event] = callback;
 					return { remove: async () => void removed.push(event) };
@@ -74,7 +73,9 @@ describe("Android auth session (Custom Tabs)", () => {
 	it("opens a Custom Tab and returns the app link it delivered", async () => {
 		const fake = fakePlugins();
 		const session = androidAuthSession(fake.plugins)(SIGN_IN, "z8mobile");
-		await vi.waitFor(() => expect(fake.plugins.browser.open).toHaveBeenCalledWith({ url: SIGN_IN }));
+		await vi.waitFor(() =>
+			expect(fake.plugins.browser.open).toHaveBeenCalledWith({ url: SIGN_IN }),
+		);
 
 		fake.emit("appUrlOpen", { url: CALLBACK });
 

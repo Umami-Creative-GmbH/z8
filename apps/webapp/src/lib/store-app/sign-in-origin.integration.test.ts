@@ -48,15 +48,15 @@ afterAll(cleanup);
 
 describe("store app sign-in origin on the migrated schema", () => {
 	it("starts on the verified custom domain under the email's domain", async () => {
-		await expect(
-			resolveStoreAppSignInOrigin("ada@T842-Acme.example", mainOrigin),
-		).resolves.toBe("https://time.t842-acme.example");
+		await expect(resolveStoreAppSignInOrigin("ada@T842-Acme.example", mainOrigin)).resolves.toBe(
+			"https://time.t842-acme.example",
+		);
 	});
 
 	it("starts on the custom domain of the organization with the verified SSO domain", async () => {
-		await expect(
-			resolveStoreAppSignInOrigin("ada@t842-globex.example", mainOrigin),
-		).resolves.toBe("https://zeit.t842-globex-gruppe.example");
+		await expect(resolveStoreAppSignInOrigin("ada@t842-globex.example", mainOrigin)).resolves.toBe(
+			"https://zeit.t842-globex-gruppe.example",
+		);
 	});
 
 	it.each([

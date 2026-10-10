@@ -40,9 +40,9 @@ function harness({
 
 describe("PKCE for the store app", () => {
 	it("derives the S256 challenge of RFC 7636 appendix B", async () => {
-		await expect(
-			challengeForVerifier("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
-		).resolves.toBe("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
+		await expect(challengeForVerifier("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")).resolves.toBe(
+			"E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+		);
 	});
 
 	it("creates a fresh 43-character verifier each time", () => {

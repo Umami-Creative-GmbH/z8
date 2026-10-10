@@ -17,9 +17,7 @@ export const BETTER_AUTH_SESSION_COOKIE_NAMES = [
 /** Whether the request still carries a session cookie, valid or not. */
 export function hasBetterAuthSessionCookie(cookieHeader: string | null): boolean {
 	if (!cookieHeader) return false;
-	const names = new Set(
-		cookieHeader.split(";").map((entry) => entry.split("=")[0]?.trim() ?? ""),
-	);
+	const names = new Set(cookieHeader.split(";").map((entry) => entry.split("=")[0]?.trim() ?? ""));
 	return BETTER_AUTH_SESSION_COOKIE_NAMES.some((name) => names.has(name));
 }
 

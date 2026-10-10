@@ -71,9 +71,7 @@ export async function resolveStoreAppSignInOrigin(
 					)
 			: [];
 
-	const byDomain = new Map(
-		[...customDomains, ...ssoCustomDomains].map((row) => [row.domain, row]),
-	);
+	const byDomain = new Map([...customDomains, ...ssoCustomDomains].map((row) => [row.domain, row]));
 	const domain = selectStoreAppSignInDomain(email, {
 		customDomains: [...byDomain.values()],
 		ssoProviders: matchingProviders,
