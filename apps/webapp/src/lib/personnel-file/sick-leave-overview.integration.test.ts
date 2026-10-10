@@ -309,6 +309,35 @@ describe("sick leave overview", () => {
 		expect(absenceIdsOf(result)).not.toContain(absences.outsiderMissing);
 	});
 
+	it("never shows an owner their own sick leave, whatever the filters say", async () => {
+		const ownersOwn = "e9853000-0000-4000-8000-00000000000b";
+		await seedAbsence(ownersOwn, {
+			employee: "owner",
+			startDate: "2026-09-08",
+			endDate: "2026-09-09",
+			sickDetail: "without_certificate",
+		});
+		try {
+			const everything = await overview("owner");
+			const asEmployee = await overview("owner", { employeeId: ids.owner });
+
+			expect(absenceIdsOf(everything)).not.toContain(ownersOwn);
+			expect(everything.total).toBe(6);
+			expect(asEmployee.rows).toEqual([]);
+			expect(asEmployee.total).toBe(0);
+			// The same organization-wide grant without the owner's own file does list it.
+			const anotherAdmin = await listSickLeaveOverview(
+				db,
+				{ ...(await accessOf("owner")), selfEmployeeId: null },
+				parseSickLeaveOverviewParams({}, TODAY),
+			);
+			if (anotherAdmin.kind !== "ok") throw new Error("refused");
+			expect(absenceIdsOf(anotherAdmin)).toContain(ownersOwn);
+		} finally {
+			await admin.query("delete from absence_entry where id = $1", [ownersOwn]);
+		}
+	});
+
 	it("refuses the query for an officer whose grant does not cover sick notes", async () => {
 		const result = await listSickLeaveOverview(
 			db,
