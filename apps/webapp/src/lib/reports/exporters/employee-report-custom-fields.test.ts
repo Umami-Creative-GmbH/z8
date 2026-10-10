@@ -23,7 +23,7 @@ vi.mock("@react-pdf/renderer", async () => {
 		Page: box("section"),
 		View: box("div"),
 		Text: box("p"),
-		StyleSheet: { create: <T,>(styles: T) => styles },
+		StyleSheet: { create: <T>(styles: T) => styles },
 		pdf: (element: Parameters<typeof renderToStaticMarkup>[0]) => ({
 			toBlob: async () => new Blob([renderToStaticMarkup(element)]),
 		}),

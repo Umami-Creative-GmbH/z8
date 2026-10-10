@@ -81,11 +81,7 @@ const users = [ids.ownerUser, ids.managerUser, ids.pmUser, ids.otherUser];
 
 async function report(userId: string, projectId: string, end = "2026-03-31") {
 	harness.userId = userId;
-	const result = await getProjectDetailedReport(
-		projectId,
-		new Date("2026-03-01"),
-		new Date(end),
-	);
+	const result = await getProjectDetailedReport(projectId, new Date("2026-03-01"), new Date(end));
 	if (!result.success) throw new Error(result.error);
 	return result.data;
 }

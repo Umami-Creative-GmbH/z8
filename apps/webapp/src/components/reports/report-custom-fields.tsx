@@ -14,7 +14,9 @@ function useReportCustomFieldText() {
 	return (field: CustomFieldReportValue): string => {
 		if (field.value === null) return "—";
 		if (typeof field.value === "boolean") {
-			return field.value ? t("reports.customFields.yes", "Yes") : t("reports.customFields.no", "No");
+			return field.value
+				? t("reports.customFields.yes", "Yes")
+				: t("reports.customFields.no", "No");
 		}
 		if (field.type === "date") return formatDateOnly(field.value, locale) || field.value;
 		return field.value;
