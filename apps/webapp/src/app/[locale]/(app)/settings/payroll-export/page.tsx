@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { DatevConfigForm } from "@/components/settings/payroll-export/datev-config-form";
+import { ExpenseWageTypeMappings } from "@/components/settings/payroll-export/expense-wage-type-mappings";
 import { ExportForm } from "@/components/settings/payroll-export/export-form";
 import { ExportHistory } from "@/components/settings/payroll-export/export-history";
 import { LexwareConfigForm } from "@/components/settings/payroll-export/lexware-config-form";
@@ -216,8 +217,9 @@ async function PayrollExportContent() {
 					/>
 				</TabsContent>
 
-				<TabsContent value="mappings" className="mt-4">
+				<TabsContent value="mappings" className="mt-4 space-y-6">
 					<WageTypeMappings organizationId={organizationId} config={config} />
+					<ExpenseWageTypeMappings />
 				</TabsContent>
 
 				<TabsContent value="history" className="mt-4">

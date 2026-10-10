@@ -111,6 +111,9 @@ export enum AuditAction {
 	PAYROLL_ACCESS_GRANT_CHANGED = "payroll_access.grant_changed",
 	PAYROLL_ACCESS_GRANT_REVOKED = "payroll_access.grant_revoked",
 
+	// Payroll Export Operations (#851)
+	PAYROLL_EXPENSE_WAGE_TYPE_CHANGED = "payroll_export.expense_wage_type_changed",
+
 	// Position Capture Operations (#825)
 	POSITION_CAPTURE_SETTINGS_CHANGED = "position_capture.settings_changed",
 	POSITION_CAPTURE_ASSIGNMENT_SET = "position_capture.assignment_set",

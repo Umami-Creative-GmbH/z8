@@ -7,11 +7,13 @@ import {
 	jsonb,
 	numeric,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { PayrollLineKind } from "@/lib/travel-expenses/payroll-line-kind";
 import { currentTimestamp } from "./timestamp";
 
 // Import auth tables for FK references
@@ -161,6 +163,37 @@ export const payrollWageTypeMapping = pgTable(
 		uniqueIndex("payrollWageTypeMapping_config_specialCategory_idx")
 			.on(table.configId, table.specialCategory)
 			.where(sql`special_category IS NOT NULL AND is_active = true`),
+	],
+);
+
+/**
+ * Expense wage types (#851): the code each payroll line kind is paid under, per
+ * payroll file format. Keyed by the organization, not an export config, so an
+ * organization maps its expense lines whichever file formats it configured. A
+ * missing row or `null` code leaves the kind unmapped for that format. Read
+ * through `resolveExpenseWageType`.
+ */
+export const payrollExpenseWageTypeMapping = pgTable(
+	"payroll_expense_wage_type_mapping",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		payrollLineKind: text("payroll_line_kind").$type<PayrollLineKind>().notNull(),
+		datevWageTypeCode: text("datev_wage_type_code"),
+		lexwareWageTypeCode: text("lexware_wage_type_code"),
+		sageWageTypeCode: text("sage_wage_type_code"),
+		successFactorsWageTypeCode: text("successfactors_wage_type_code"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		primaryKey({ columns: [table.organizationId, table.payrollLineKind] }),
+		check(
+			"payroll_expense_wage_type_mapping_kind_check",
+			sql`${table.payrollLineKind} IN ('per_diem_statutory', 'per_diem_excess', 'mileage_statutory', 'mileage_excess', 'receipt_transport', 'receipt_accommodation', 'receipt_meals', 'receipt_parking', 'receipt_other')`,
+		),
 	],
 );
 
