@@ -80,6 +80,9 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_due_for_deletion",
 	// One-time notice to owners and admins that time off in lieu is available (#1000)
 	"time_off_in_lieu_available",
+	// A balance adjustment on the employee's own work balance (#996)
+	"work_balance_adjustment_recorded",
+	"work_balance_adjustment_cancelled",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

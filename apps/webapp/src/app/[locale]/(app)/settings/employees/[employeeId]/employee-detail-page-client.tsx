@@ -373,7 +373,8 @@ function EmployeeRecordSections({
 				workPolicies={workPolicies}
 			/>
 
-			{isOrgAdmin && <EmployeeWorkBalanceSection employeeId={employeeId} />}
+			{/* Managers see it read-only for employees they manage (#996); the server decides. */}
+			{isOrgAdminOrManager && <EmployeeWorkBalanceSection employeeId={employeeId} />}
 
 			{isOrgAdmin && (
 				<WorkBalanceRecalculationCard
