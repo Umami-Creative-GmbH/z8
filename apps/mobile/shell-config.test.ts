@@ -122,7 +122,7 @@ describe("Capacitor configuration", () => {
 describe("app-bound domains in Info.plist", () => {
 	const plist = [
 		'<?xml version="1.0" encoding="UTF-8"?>',
-		"<plist version=\"1.0\">",
+		'<plist version="1.0">',
 		"<dict>",
 		"\t<key>CFBundleName</key>",
 		"\t<string>Z8</string>",

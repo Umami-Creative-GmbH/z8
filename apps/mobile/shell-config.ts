@@ -35,7 +35,8 @@ const MAX_APP_BOUND_DOMAINS = 10;
 /** Development hosts that may be reached over plain http (Android emulator: 10.0.2.2). */
 const LOCAL_DEVELOPMENT_HOSTS = new Set(["localhost", "127.0.0.1", "10.0.2.2"]);
 
-const HOSTNAME = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+const HOSTNAME =
+	/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 export type ShellEnvironment = Readonly<Record<string, string | undefined>>;
 
@@ -101,7 +102,7 @@ export function createCapacitorConfig(settings: ShellSettings): CapacitorConfig 
 			SplashScreen: {
 				launchShowDuration: 1500,
 				launchAutoHide: true,
-				backgroundColor: "#3a5fc8",
+				backgroundColor: "#3860c6",
 				showSpinner: false,
 			},
 		},
@@ -122,7 +123,8 @@ export function withAppBoundDomains(infoPlist: string, domains: readonly string[
 		"\t</array>",
 	].join("\n");
 
-	const existing = /\t<key>WKAppBoundDomains<\/key>\n\t<array>\n(?:\t\t<string>[^<]*<\/string>\n)*\t<\/array>/;
+	const existing =
+		/\t<key>WKAppBoundDomains<\/key>\n\t<array>\n(?:\t\t<string>[^<]*<\/string>\n)*\t<\/array>/;
 	let patched: string;
 	if (existing.test(lf)) {
 		patched = lf.replace(existing, entry);
@@ -145,8 +147,7 @@ function parseOrigin(value: string): URL {
 		throw new Error(`Z8_APP_ORIGIN is not a URL: ${value}`);
 	}
 
-	const isLocalDevelopment =
-		url.protocol === "http:" && LOCAL_DEVELOPMENT_HOSTS.has(url.hostname);
+	const isLocalDevelopment = url.protocol === "http:" && LOCAL_DEVELOPMENT_HOSTS.has(url.hostname);
 	if (url.protocol !== "https:" && !isLocalDevelopment) {
 		throw new Error(
 			`Z8_APP_ORIGIN must use https (plain http only for ${[...LOCAL_DEVELOPMENT_HOSTS].join(", ")}): ${value}`,
