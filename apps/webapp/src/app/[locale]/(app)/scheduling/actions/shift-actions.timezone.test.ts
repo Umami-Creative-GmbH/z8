@@ -115,7 +115,8 @@ describe("publishShifts organization timezone boundary", () => {
 		});
 		expect(mockState.evaluateScheduleWindow).toHaveBeenCalledWith({
 			organizationId: "org-1",
-			...expectedRange,
+			startDate: expectedRange.startDate,
+			endDateExclusive: expectedRange.endDate,
 			timezone: "Europe/Berlin",
 		});
 		expect(mockState.publishShifts).toHaveBeenCalledWith(

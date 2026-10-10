@@ -114,7 +114,7 @@ function getScheduleComplianceEvaluation(
 		const evaluation = yield* scheduleComplianceService.evaluateScheduleWindow({
 			organizationId: context.organizationId,
 			startDate: range.start,
-			endDate: range.endExclusive,
+			endDateExclusive: range.endExclusive,
 			timezone,
 		});
 

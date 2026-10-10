@@ -1,3 +1,5 @@
+import type { PlainDate } from "@/lib/datetime/temporal-core";
+
 export type ScheduleComplianceFindingType = "restTime" | "maxHours" | "overtime";
 
 export interface ScheduleComplianceRegulation {
@@ -20,8 +22,19 @@ export interface EmployeeScheduleComplianceInput {
 	restTransitions: RestTransitionInterval[];
 }
 
+/**
+ * The organization-local calendar days `[start, endExclusive)` being judged. Days before `start`
+ * are lookback: they count toward weekly and monthly totals and the first rest gap, but get no
+ * findings of their own.
+ */
+export interface ScheduleComplianceWindow {
+	start: PlainDate;
+	endExclusive: PlainDate;
+}
+
 export interface ScheduleComplianceInput {
 	timezone: string;
+	window: ScheduleComplianceWindow;
 	regulation: ScheduleComplianceRegulation;
 	employees: EmployeeScheduleComplianceInput[];
 }
