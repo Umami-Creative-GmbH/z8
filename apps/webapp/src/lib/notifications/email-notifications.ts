@@ -54,6 +54,8 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	personnel_file_expiry_upcoming: ["/personnel-files/", "/my-documents"],
 	personnel_file_expired_today: ["/personnel-files/", "/my-documents"],
 	personnel_file_due_for_deletion: "/personnel-files/",
+	// The absent employee gets their absences, managers the team absences (#1014).
+	absence_deputy_unavailable: ["/absences", "/team/absences"],
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

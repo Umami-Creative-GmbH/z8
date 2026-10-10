@@ -78,6 +78,8 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// A departed or deactivated deputy was cleared from an absence (#1014)
+	"absence_deputy_unavailable",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

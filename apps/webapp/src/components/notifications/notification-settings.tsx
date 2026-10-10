@@ -89,6 +89,7 @@ const NOTIFICATION_CATEGORIES = [
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+			"absence_deputy_unavailable",
 		] as NotificationType[],
 	},
 	{
@@ -258,6 +259,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, strin
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
+	// A departed or deactivated deputy was cleared from an absence
+	absence_deputy_unavailable: "Deputy no longer available",
 };
 
 // Channel icons and labels

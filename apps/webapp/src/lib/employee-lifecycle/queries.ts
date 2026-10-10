@@ -8,6 +8,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { departureCutoff } from "./cutoff";
+import { countDeputyAssignmentsNotEnded } from "./deputy-release";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
 import { actorMayResolveDepartureWork } from "./reviews";
 import type {
@@ -19,7 +20,7 @@ import type {
 	OffboardingReviewKind,
 } from "./view-types";
 
-type QueryDatabase = Pick<typeof rootDatabase, "execute">;
+type QueryDatabase = Pick<typeof rootDatabase, "execute" | "select">;
 
 const MACHINE_REASON = /^[a-z][a-z_]{0,63}$/;
 
@@ -241,6 +242,7 @@ export async function getEmployeeOffboardingView(
 	let failedTasks: EmployeeOffboardingView["failedTasks"] = [];
 	let reviews: EmployeeOffboardingView["reviews"] = [];
 	let futureWork = { shifts: 0, absences: 0, employmentTerms: 0 };
+	let deputyAbsences = 0;
 	if (departure) {
 		const tasks = await database.execute<{ id: string; kind: string; status: string }>(sql`
 			SELECT id, kind, status FROM employee_departure_task
@@ -281,6 +283,12 @@ export async function getEmployeeOffboardingView(
 			cutoff: departure.cutoffAt,
 			timezone: departure.timezone,
 		});
+		// The same rule the departure clears with, so the count matches what it clears.
+		deputyAbsences = await countDeputyAssignmentsNotEnded(database, {
+			organizationId: input.organizationId,
+			deputyEmployeeId: input.employeeId,
+			at: departure.cutoffAt,
+		});
 	}
 
 	const authority = await evaluateDepartureAuthority(database, {
@@ -313,6 +321,7 @@ export async function getEmployeeOffboardingView(
 			failedTasks,
 			reviews,
 			futureWork,
+			deputyAbsences,
 			capabilities: deriveOffboardingCapabilities({
 				viewer,
 				selfTarget: target.user_id === input.actorUserId,
@@ -504,6 +513,12 @@ export async function previewEmployeeDeparture(
 	if (fact?.running_timer) exceptions.push("running_timer");
 	if (Number(fact?.future_shifts ?? 0) > 0) exceptions.push("future_shifts");
 	if (Number(fact?.future_absences ?? 0) > 0) exceptions.push("future_absences");
+	const deputyAbsences = await countDeputyAssignmentsNotEnded(database, {
+		organizationId: input.organizationId,
+		deputyEmployeeId: input.employeeId,
+		at: cutoff.cutoff,
+	});
+	if (deputyAbsences > 0) exceptions.push("deputy_absences");
 	if (input.replacementEmployeeId !== null && !hasReplacement) {
 		exceptions.push("replacement_ineligible");
 	}

@@ -76,6 +76,8 @@ export async function recordDeputyChange(
 		actorUserId: string;
 		from: string | null;
 		to: string | null;
+		/** Why a system side effect changed it, for example a departure (#1014). */
+		metadata?: Record<string, unknown>;
 	},
 ): Promise<void> {
 	await audit.record(tx, {
@@ -86,6 +88,7 @@ export async function recordDeputyChange(
 		targetId: input.absenceId,
 		employeeId: input.absentEmployeeId,
 		changes: { deputyEmployeeId: { from: input.from, to: input.to } },
+		metadata: input.metadata ?? null,
 	});
 }
 

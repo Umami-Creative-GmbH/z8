@@ -99,6 +99,8 @@ export interface ManagerAbsenceCalendarEntry {
 	};
 	/** How many sick notes are attached to sick leave (#982); managers never open them. */
 	sickNoteCount?: number;
+	/** The category requires a deputy and the running or upcoming absence has none (#1014). */
+	deputyMissing?: true;
 }
 
 export interface ManagerAbsenceCalendarDay {

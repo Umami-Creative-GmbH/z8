@@ -119,6 +119,34 @@ describe("TeamAbsenceYearCalendar", () => {
 		expect(within(details).getByText("Approved")).toBeTruthy();
 	});
 
+	it("flags an absence whose required deputy is missing (#1014)", () => {
+		const entry = {
+			employeeId: "employee-1",
+			employeeName: "Ada Lovelace",
+			startDate: "2026-03-04",
+			startPeriod: "full_day" as const,
+			endDate: "2026-03-04",
+			endPeriod: "full_day" as const,
+			status: "approved" as const,
+			category: { name: "On-call leave", type: "custom", color: null },
+		};
+		render(
+			<TeamAbsenceYearCalendar
+				data={{
+					year: 2026,
+					teamId: null,
+					entries: [
+						{ ...entry, id: "absence-1", deputyMissing: true },
+						{ ...entry, id: "absence-2", employeeId: "employee-2", employeeName: "Grace Hopper" },
+					],
+				}}
+			/>,
+		);
+
+		const details = screen.getByTestId("team-absence-calendar-details-2026-03-04");
+		expect(within(details).getAllByText("Deputy missing")).toHaveLength(1);
+	});
+
 	it("labels the current day when the selected year contains today", () => {
 		Settings.now = () => new Date("2026-06-12T10:00:00.000Z").valueOf();
 

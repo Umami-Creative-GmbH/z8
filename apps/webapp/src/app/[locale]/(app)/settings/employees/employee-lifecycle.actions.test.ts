@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
 	headers: vi.fn(),
 	logAudit: vi.fn(),
 	loggerWarn: vi.fn(),
+	notifyReleasedDeputyAssignments: vi.fn(),
+	releaseDeputyAssignmentsOnDeactivation: vi.fn(),
 	revalidateEmployeesCache: vi.fn(),
 	revokeOrganizationActiveSessions: vi.fn(),
 	runTracedEmployeeAction: vi.fn(),
@@ -59,6 +61,15 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/auth/member-removal-cleanup", () => ({
 	completeRemovedMemberCleanup: mocks.completeRemovedMemberCleanup,
+}));
+
+// The release itself is covered by deputy-release.integration.test.ts (#1014).
+vi.mock("@/lib/employee-lifecycle/deputy-release", () => ({
+	releaseDeputyAssignmentsOnDeactivation: mocks.releaseDeputyAssignmentsOnDeactivation,
+}));
+
+vi.mock("@/lib/employee-lifecycle/deputy-release-runtime", () => ({
+	notifyReleasedDeputyAssignments: mocks.notifyReleasedDeputyAssignments,
 }));
 
 vi.mock("next/headers", () => ({
@@ -569,6 +580,63 @@ describe("employee lifecycle actions", () => {
 			"audit-logged",
 			"cache-revalidated",
 		]);
+	});
+
+	it("clears the deactivated employee as deputy in the transaction and notifies after the commit (#1014)", async () => {
+		const { events } = setup();
+		const released = {
+			organizationId,
+			deputyEmployeeId: employeeId,
+			eventKey: "employee_deactivated:1",
+			assignments: [
+				{
+					absenceId: "absence-1",
+					absentEmployeeId: "anna",
+					startDate: "2026-10-01",
+					endDate: "2026-10-05",
+				},
+			],
+		};
+		mocks.releaseDeputyAssignmentsOnDeactivation.mockImplementation(async () => {
+			events.push("deputies-released");
+			return released;
+		});
+		mocks.notifyReleasedDeputyAssignments.mockImplementation(async () => {
+			events.push("deputies-notified");
+		});
+
+		const result = await deactivateEmployeeAction(employeeId);
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.releaseDeputyAssignmentsOnDeactivation).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ select: expect.any(Function), update: expect.any(Function) }),
+			expect.anything(),
+			{
+				organizationId,
+				employeeId,
+				actorUserId,
+				at: expect.anything(),
+				reason: "employee_deactivated",
+			},
+		);
+		expect(mocks.notifyReleasedDeputyAssignments).toHaveBeenCalledExactlyOnceWith(released);
+		expect(events.indexOf("deputies-released")).toBeLessThan(
+			events.indexOf("transaction-committed"),
+		);
+		expect(events.indexOf("deputies-notified")).toBeGreaterThan(
+			events.indexOf("transaction-committed"),
+		);
+	});
+
+	it("never touches deputies when reactivating", async () => {
+		setup({
+			target: { id: employeeId, userId: targetUserId, organizationId, isActive: false },
+		});
+
+		await reactivateEmployeeAction(employeeId);
+
+		expect(mocks.releaseDeputyAssignmentsOnDeactivation).not.toHaveBeenCalled();
+		expect(mocks.notifyReleasedDeputyAssignments).not.toHaveBeenCalled();
 	});
 
 	it("always retries session revocation but does not update or audit an already inactive employee", async () => {

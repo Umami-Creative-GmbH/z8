@@ -1,5 +1,6 @@
 "use client";
 
+import { IconUserExclamation } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { SickNoteMarker } from "@/components/absences/sick-notes/sick-note-marker";
@@ -84,6 +85,12 @@ function TeamAbsenceDayDetails({
 						</span>
 					</p>
 					{entry.sickNoteCount ? <SickNoteMarker count={entry.sickNoteCount} /> : null}
+					{entry.deputyMissing ? (
+						<span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+							<IconUserExclamation aria-hidden="true" className="size-3.5" />
+							{t("team.absences.calendar.deputyMissing", "Deputy missing")}
+						</span>
+					) : null}
 				</div>
 			))}
 		</div>

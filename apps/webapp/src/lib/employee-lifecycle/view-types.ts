@@ -24,7 +24,8 @@ export type OffboardingFollowUpTaskKind =
 	| "clock_postprocess"
 	| "notify_review"
 	| "clock_repair"
-	| "approval_handover";
+	| "approval_handover"
+	| "notify_deputy_release";
 
 export interface EmployeeOffboardingView {
 	employeeId: string;
@@ -62,6 +63,11 @@ export interface EmployeeOffboardingView {
 	}>;
 	/** Work dated after the cutoff; kept, never deleted, and managed where it lives. */
 	futureWork: { shifts: number; absences: number; employmentTerms: number };
+	/**
+	 * Other employees' absences that name this employee as deputy and have not
+	 * ended at the cutoff; the departure clears the deputy on them (#1014).
+	 */
+	deputyAbsences: number;
 	capabilities: {
 		schedule: boolean;
 		cancel: boolean;
@@ -80,6 +86,8 @@ export type DeparturePreviewException =
 	| "running_timer"
 	| "future_shifts"
 	| "future_absences"
+	/** The employee is deputy on running or upcoming absences (#1014). */
+	| "deputy_absences"
 	| "unassigned_approval_duties"
 	| "legacy_approval_duties"
 	/** The chosen replacement is not one of the replacements offered. */

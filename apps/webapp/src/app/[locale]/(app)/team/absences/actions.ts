@@ -16,6 +16,7 @@ import {
 } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
+import { findDeputyMissingAbsenceIds } from "@/lib/absences/deputy-missing-store";
 import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
 import {
 	normalizeAbsenceDurationInput,
@@ -29,6 +30,7 @@ import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 import { AuditTrail } from "@/lib/audit-trail";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { countSickNotesForAbsences } from "@/lib/personnel-file/sick-note-store";
@@ -232,6 +234,9 @@ export async function getManagerAbsenceCalendar(params: {
 			categoryName: absenceCategory.name,
 			categoryType: absenceCategory.type,
 			categoryColor: absenceCategory.color,
+			// "Deputy missing" (#1014)
+			deputyEmployeeId: absenceEntry.deputyEmployeeId,
+			deputyRequired: absenceCategory.deputyRequired,
 		};
 		const absenceConditions = [
 			eq(absenceEntry.organizationId, actor.organizationId),
@@ -268,6 +273,11 @@ export async function getManagerAbsenceCalendar(params: {
 			absenceIds: rows.filter((row) => row.categoryType === "sick").map((row) => row.id),
 			access: null,
 		});
+		const deputyMissing = await findDeputyMissingAbsenceIds(db, {
+			organizationId: actor.organizationId,
+			at: systemClock.nowInstant(),
+			absences: rows,
+		});
 
 		return {
 			success: true,
@@ -276,6 +286,7 @@ export async function getManagerAbsenceCalendar(params: {
 				teamId: normalized.teamId,
 				entries: rows.map((row) => ({
 					...(sickNotes.has(row.id) ? { sickNoteCount: sickNotes.get(row.id)?.count } : {}),
+					...(deputyMissing.has(row.id) ? { deputyMissing: true as const } : {}),
 					id: row.id,
 					employeeId: row.employeeId,
 					employeeName: row.employeeName,
