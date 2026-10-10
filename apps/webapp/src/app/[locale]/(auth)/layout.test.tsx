@@ -214,6 +214,14 @@ describe("AuthLayout", () => {
 		);
 	});
 
+	it("clears the notch and home indicator of the store app shell (#846)", async () => {
+		render(await AuthLayoutContent({ children: <div>Auth content</div> }));
+
+		const authSection = screen.getByText("Auth content").closest("section");
+		expect(authSection?.className).toContain("pt-[max(1rem,env(safe-area-inset-top))]");
+		expect(authSection?.className).toContain("pb-[env(safe-area-inset-bottom)]");
+	});
+
 	it("does not fall back to the platform cookie script on custom domains", async () => {
 		mockState.headers.mockResolvedValue(
 			new Headers({ host: "login.acme.test" }),

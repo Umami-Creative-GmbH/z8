@@ -5,13 +5,12 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp, { type Sharp } from "sharp";
+import { BRAND_COLOR } from "../shell-config.ts";
 
 /** The PWA icon: white "z8" on a rounded brand-blue square, 512 x 512. */
 const SOURCE = fileURLToPath(
 	new URL("../../webapp/public/android-chrome-512x512.png", import.meta.url),
 );
-/** Brand blue of the source icon. */
-const BRAND = "#3860c6";
 
 const app = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const androidRes = (path: string) => app(`android/app/src/main/res/${path}`);
@@ -25,7 +24,7 @@ async function write(image: Sharp, path: string) {
 /** The icon as an opaque brand square: its rounded, transparent corners filled with brand blue. */
 function brandSquare(size: number) {
 	// Flatten before resizing, so the white of transparent pixels never bleeds into the edge.
-	return sharp(SOURCE).flatten({ background: BRAND }).resize(size, size);
+	return sharp(SOURCE).flatten({ background: BRAND_COLOR }).resize(size, size);
 }
 
 async function fullBleed(size: number) {
@@ -35,7 +34,7 @@ async function fullBleed(size: number) {
 /** The icon centered on a brand canvas, at its native size or smaller. */
 async function centered(width: number, height: number, iconSize: number) {
 	const icon = await brandSquare(iconSize).png().toBuffer();
-	return sharp({ create: { width, height, channels: 3, background: BRAND } }).composite([
+	return sharp({ create: { width, height, channels: 3, background: BRAND_COLOR } }).composite([
 		{ input: icon, gravity: "center" },
 	]);
 }

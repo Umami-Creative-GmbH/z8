@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import {
+	BRAND_COLOR,
 	createCapacitorConfig,
 	resolveShellSettings,
 	STORE_APP_USER_AGENT_MARKER,
@@ -99,6 +100,24 @@ describe("Capacitor configuration", () => {
 	it("tells the web app it runs in the shell through the user agent", () => {
 		assert.equal(config.ios?.appendUserAgent, `${STORE_APP_USER_AGENT_MARKER}/ios`);
 		assert.equal(config.android?.appendUserAgent, `${STORE_APP_USER_AGENT_MARKER}/android`);
+	});
+
+	it("leaves every safe-area inset to the web app on iOS (#846)", () => {
+		// The web app draws edge to edge and pads with env(safe-area-inset-*); a native inset
+		// on top would double the gap on pages whose document scrolls.
+		assert.equal(config.ios?.contentInset, "never");
+		const rootLayout = readFileSync(
+			new URL("../webapp/src/app/[locale]/layout.tsx", import.meta.url),
+			"utf8",
+		);
+		assert.match(rootLayout, /viewportFit: "cover"/);
+	});
+
+	it("uses one brand color for the splash screen and the offline page", () => {
+		const offlinePage = readFileSync(new URL("www/z8-shell-offline.html", import.meta.url), "utf8");
+
+		assert.equal(config.plugins?.SplashScreen?.backgroundColor, BRAND_COLOR);
+		assert.match(offlinePage, new RegExp(`--brand: ${BRAND_COLOR};`));
 	});
 
 	it("keeps the service worker working on both platforms", () => {

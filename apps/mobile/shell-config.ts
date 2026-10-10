@@ -29,6 +29,12 @@ export const STORE_APP_USER_AGENT_MARKER = "Z8StoreApp";
  */
 export const OFFLINE_PAGE = "z8-shell-offline.html";
 
+/**
+ * Z8 brand blue of the splash screen, the generated icons (`scripts/generate-assets.ts`) and
+ * the offline page (`www/z8-shell-offline.html`, static, so a test keeps it equal).
+ */
+export const BRAND_COLOR = "#3860c6";
+
 /** iOS honours at most 10 entries in `WKAppBoundDomains`. */
 const MAX_APP_BOUND_DOMAINS = 10;
 
@@ -90,7 +96,9 @@ export function createCapacitorConfig(settings: ShellSettings): CapacitorConfig 
 			appendUserAgent: `${STORE_APP_USER_AGENT_MARKER}/ios`,
 			// Service workers only run in WKWebView for app-bound domains.
 			limitsNavigationsToAppBoundDomains: true,
-			contentInset: "automatic",
+			// The web app owns every inset: it draws edge to edge (`viewport-fit=cover`) and pads with
+			// `env(safe-area-inset-*)` (#846). "automatic" would add native insets on some pages only.
+			contentInset: "never",
 		},
 		android: {
 			appendUserAgent: `${STORE_APP_USER_AGENT_MARKER}/android`,
@@ -102,7 +110,7 @@ export function createCapacitorConfig(settings: ShellSettings): CapacitorConfig 
 			SplashScreen: {
 				launchShowDuration: 1500,
 				launchAutoHide: true,
-				backgroundColor: "#3860c6",
+				backgroundColor: BRAND_COLOR,
 				showSpinner: false,
 			},
 			// Native push through FCM (#843). iOS shows pushes while the app is open too.

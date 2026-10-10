@@ -11,6 +11,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingRegion } from "@/components/ui/loading-region";
+import { pageSafeAreaPaddingClassName } from "@/components/ui/safe-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
@@ -61,7 +62,7 @@ function AuthLayoutLoading() {
 			data-testid="auth-layout-loading"
 			role="status"
 		>
-			<section className="flex min-h-svh flex-col px-4 pt-4 pb-0 sm:px-8 sm:pt-6 lg:px-10">
+			<section className={`flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}>
 				<div
 					aria-hidden="true"
 					className="flex h-9 items-center justify-end gap-2"
@@ -184,7 +185,7 @@ export async function AuthLayoutContent({
 			) : null}
 			<div className="relative min-h-svh overflow-x-hidden bg-background">
 				<AuthBackgroundImage initialImage={backgroundImage} />
-				<section className="relative z-10 flex min-h-svh flex-col px-4 pt-4 pb-0 sm:px-8 sm:pt-6 sm:pb-0 lg:px-10">
+				<section className={`relative z-10 flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}>
 					<div className="auth-shell-controls auth-shell-controls-readable flex items-center justify-end gap-2 drop-shadow-sm [&_[data-slot=dropdown-menu-trigger]]:!border-white/20 [&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85 [&_[data-slot=dropdown-menu-trigger]]:!text-white [&_[data-slot=dropdown-menu-trigger]]:!shadow-lg [&_[data-slot=dropdown-menu-trigger]]:!shadow-slate-950/20 [&_[data-slot=dropdown-menu-trigger]]:!backdrop-blur-xl [&_[data-slot=dropdown-menu-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]]:!border-white/20 [&_[data-slot=select-trigger]]:!bg-slate-950/85 [&_[data-slot=select-trigger]]:!text-white [&_[data-slot=select-trigger]]:!shadow-lg [&_[data-slot=select-trigger]]:!shadow-slate-950/20 [&_[data-slot=select-trigger]]:!backdrop-blur-xl [&_[data-slot=select-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]_svg]:!text-white">
 						<ThemeToggle />
 						<FontSizeToggle />
