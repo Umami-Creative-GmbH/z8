@@ -3,6 +3,7 @@ import type { useTranslate } from "@tolgee/react";
 export {
 	formatCountry,
 	formatMoney,
+	formatPayrollPeriod,
 	formatPlainDate,
 	formatPlainDateRange,
 	formatPlainTime,

@@ -39,13 +39,7 @@ import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import { TRIP_ICON } from "../expense-icons";
-import {
-	formatMoney,
-	formatPlainDate,
-	formatPlainDateRange,
-	formatRecordedInstant,
-} from "../report/format";
-import { reportName } from "../report-name";
+import { formatMoney, formatRecordedInstant } from "../report/format";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import {
 	BulkReimbursementDialog,
@@ -55,6 +49,7 @@ import {
 } from "./bulk-reimbursement-dialog";
 import { payrollRunLabel } from "./payroll-run-notice";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
+import { settlementTitle } from "./settlement-title";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -62,29 +57,6 @@ function accountHref(account: SettlementAccount): string {
 	return account.source.type === "report"
 		? `/travel-expenses/reports/${account.source.id}`
 		: `/travel-expenses/${account.source.id}`;
-}
-
-function accountTitle(t: Translate, locale: string, account: SettlementAccount) {
-	const { title } = account;
-	switch (title.kind) {
-		case "trip":
-			return {
-				name: reportName(t, { kind: "trip", itemType: null, title: title.purpose }),
-				dates: formatPlainDateRange(locale, title.startDate, title.endDate),
-			};
-		case "standalone":
-			return {
-				name: reportName(t, { kind: "standalone", itemType: null, title: title.description }),
-				dates: title.expenseDate ? formatPlainDate(locale, title.expenseDate) : null,
-			};
-		case "legacy_claim":
-			return {
-				name: t("travelExpenses.finance.legacyClaim", "Legacy {type} claim", {
-					type: title.claimType.replace("_", " "),
-				}),
-				dates: formatPlainDateRange(locale, title.startDate, title.endDate),
-			};
-	}
 }
 
 function SourceIcon({ account }: { account: SettlementAccount }) {
@@ -109,7 +81,7 @@ function accountKey(account: SettlementAccount): string {
 const isSelectable = isReimbursableInFull;
 
 function accountLabel(t: Translate, locale: string, account: SettlementAccount): string {
-	return `${account.employeeName ?? "—"} · ${accountTitle(t, locale, account).name}`;
+	return `${account.employeeName ?? "—"} · ${settlementTitle(t, locale, account.title).name}`;
 }
 
 /**
@@ -481,7 +453,7 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 					{canSettle && <SelectionBar selection={selection} onMark={openBulk} />}
 					<ul className="divide-y" aria-busy={isFetching}>
 						{data.accounts.map((account) => {
-							const title = accountTitle(t, locale, account);
+							const title = settlementTitle(t, locale, account.title);
 							return (
 								<li key={accountKey(account)} className={cn(canSettle && "flex items-center")}>
 									{canSettle && (

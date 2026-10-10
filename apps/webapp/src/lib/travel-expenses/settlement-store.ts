@@ -5,6 +5,7 @@ import { user } from "@/db/auth-schema";
 import {
 	approvalDecisionEvidence,
 	employee,
+	payrollExportJob,
 	travelExpenseClaim,
 	travelExpenseExportBatch,
 	travelExpenseReport,
@@ -25,7 +26,12 @@ import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-r
 import type { OfficerScope } from "./officer-scope";
 import { isSourceInOfficerScope } from "./officer-scope-read";
 import { OWNER_SELF_APPROVAL_REASON } from "./owner-self-approval";
-import { type IncludedPayrollRun, loadIncludedPayrollRuns } from "./payroll-run-inclusion-read";
+import {
+	type ConfirmedPayrollRun,
+	type IncludedPayrollRun,
+	loadConfirmedPayrollRuns,
+	loadIncludedPayrollRuns,
+} from "./payroll-run-inclusion-read";
 import {
 	computeSettlement,
 	type EntitlementComponent,
@@ -77,11 +83,24 @@ export interface SettlementEntryView {
 	recordedByName: string | null;
 	/** The export batch the reimbursement was recorded for (#755). Finance views only. */
 	exportBatch: SettlementEntryExportBatch | null;
+	/**
+	 * The payroll run whose confirmation recorded the reimbursement (#853). The
+	 * employee sees it too: it names the payslip that paid them.
+	 */
+	payrollRun: SettlementEntryPayrollRun | null;
 }
 
 export interface SettlementEntryExportBatch {
 	id: string;
 	requestedAt: string;
+}
+
+export interface SettlementEntryPayrollRun {
+	/** The payroll export job that is the run. */
+	id: string;
+	/** The payroll period, as logical dates. */
+	periodStart: string;
+	periodEnd: string;
 }
 
 export interface SettlementBasis {
@@ -127,6 +146,12 @@ export interface SettlementAccount {
 	 * Finance views only; null in the employee's own view and for legacy claims.
 	 */
 	payrollRun: IncludedPayrollRun | null;
+	/**
+	 * The payroll runs confirmed as having paid the report (#853), oldest first:
+	 * their lines are what payroll already carried (decision 17). Finance views
+	 * only; empty in the employee's own view and for legacy claims.
+	 */
+	confirmedPayrollRuns: ConfirmedPayrollRun[];
 }
 
 export type SettlementTitle =
@@ -262,15 +287,17 @@ async function loadEntries(
 			.from(travelExpenseSettlementEntry)
 			.leftJoin(user, eq(user.id, travelExpenseSettlementEntry.recordedByUserId))
 			.leftJoin(travelExpenseExportBatch, entryExportBatchJoin())
+			.leftJoin(payrollExportJob, entryPayrollRunJoin())
 			.where(and(eq(travelExpenseSettlementEntry.organizationId, organizationId), scope))
 			.orderBy(asc(travelExpenseSettlementEntry.recordedAt), asc(travelExpenseSettlementEntry.id));
-		for (const { entry, recordedByName, exportBatchRequestedAt } of rows) {
+		for (const row of rows) {
+			const { entry } = row;
 			const key =
 				entry.sourceType === "report"
 					? sourceKey({ type: "report", id: entry.reportId ?? "" })
 					: sourceKey({ type: "legacy_claim", id: entry.legacyClaimId ?? "" });
 			const list = entries.get(key) ?? [];
-			list.push(toEntryView(entry, recordedByName, exportBatchRequestedAt));
+			list.push(toEntryView(row));
 			entries.set(key, list);
 		}
 	}
@@ -283,6 +310,7 @@ function entryColumns() {
 		entry: travelExpenseSettlementEntry,
 		recordedByName: user.name,
 		exportBatchRequestedAt: travelExpenseExportBatch.requestedAt,
+		payrollRunFilters: payrollExportJob.filters,
 	};
 }
 
@@ -293,11 +321,24 @@ function entryExportBatchJoin() {
 	);
 }
 
-function toEntryView(
-	entry: typeof travelExpenseSettlementEntry.$inferSelect,
-	recordedByName: string | null,
-	exportBatchRequestedAt: Date | null,
-): SettlementEntryView {
+function entryPayrollRunJoin() {
+	return and(
+		eq(payrollExportJob.id, travelExpenseSettlementEntry.payrollRunId),
+		eq(payrollExportJob.organizationId, travelExpenseSettlementEntry.organizationId),
+	);
+}
+
+function toEntryView({
+	entry,
+	recordedByName,
+	exportBatchRequestedAt,
+	payrollRunFilters,
+}: {
+	entry: typeof travelExpenseSettlementEntry.$inferSelect;
+	recordedByName: string | null;
+	exportBatchRequestedAt: Date | null;
+	payrollRunFilters: (typeof payrollExportJob.$inferSelect)["filters"] | null;
+}): SettlementEntryView {
 	return {
 		id: entry.id,
 		kind: entry.kind,
@@ -315,6 +356,14 @@ function toEntryView(
 				? {
 						id: entry.exportBatchId,
 						requestedAt: instantToCanonicalString(instantFromDate(exportBatchRequestedAt)),
+					}
+				: null,
+		payrollRun:
+			entry.payrollRunId && payrollRunFilters
+				? {
+						id: entry.payrollRunId,
+						periodStart: payrollRunFilters.dateRange.start,
+						periodEnd: payrollRunFilters.dateRange.end,
 					}
 				: null,
 	};
@@ -363,23 +412,23 @@ export async function buildSettlementAccounts(
 		...reports.map(({ row }) => ({ type: "report" as const, id: row.id })),
 		...claims.map(({ row }) => ({ type: "legacy_claim" as const, id: row.id })),
 	];
-	const [decisions, entries, adjustments, adjustmentOriginals, payrollRuns] = await Promise.all([
-		loadApprovedRevisionDecisions(
-			database,
-			organizationId,
-			[...revisions.values()].map((revision) => revision.id),
-		),
-		loadEntries(database, organizationId, sources),
-		loadApprovedAdjustmentComponents(database, { organizationId, sources }),
-		loadAdjustmentOriginals(database, {
-			organizationId,
-			reportIds: reports.map(({ row }) => row.id),
-		}),
-		loadIncludedPayrollRuns(database, {
-			organizationId,
-			reportIds: approvedReports.map(({ row }) => row.id),
-		}),
-	]);
+	const approvedReportIds = approvedReports.map(({ row }) => row.id);
+	const [decisions, entries, adjustments, adjustmentOriginals, payrollRuns, confirmedRuns] =
+		await Promise.all([
+			loadApprovedRevisionDecisions(
+				database,
+				organizationId,
+				[...revisions.values()].map((revision) => revision.id),
+			),
+			loadEntries(database, organizationId, sources),
+			loadApprovedAdjustmentComponents(database, { organizationId, sources }),
+			loadAdjustmentOriginals(database, {
+				organizationId,
+				reportIds: reports.map(({ row }) => row.id),
+			}),
+			loadIncludedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
+			loadConfirmedPayrollRuns(database, { organizationId, reportIds: approvedReportIds }),
+		]);
 
 	const accounts: SettlementAccount[] = [];
 	for (const { row, employeeName } of reports) {
@@ -433,6 +482,7 @@ export async function buildSettlementAccounts(
 			adjustmentDelta:
 				adjustmentOf && approved ? (revision?.facts.adjustment?.delta.amount ?? null) : null,
 			payrollRun: payrollRuns.get(row.id) ?? null,
+			confirmedPayrollRuns: confirmedRuns.get(row.id) ?? [],
 		});
 	}
 	for (const { row, employeeName } of claims) {
@@ -484,6 +534,7 @@ export async function buildSettlementAccounts(
 			adjustmentDelta: null,
 			// Legacy claims are never included in a payroll run (#745, decision 6).
 			payrollRun: null,
+			confirmedPayrollRuns: [],
 		});
 	}
 	return accounts;
@@ -621,6 +672,7 @@ export function settlementCommandFingerprint(
 	source: SettlementSource,
 	command: SettlementCommand,
 	exportBatchId: string | null = null,
+	payrollRunId: string | null = null,
 ): string {
 	const canonical = JSON.stringify([
 		"travel_expense_settlement:v1",
@@ -634,6 +686,8 @@ export function settlementCommandFingerprint(
 		command.note,
 		// Appended only when set, so every fingerprint recorded before #755 stays valid.
 		...(exportBatchId ? [exportBatchId] : []),
+		// Likewise for #853; tagged so a run id never reads as a batch id.
+		...(payrollRunId ? ["payroll_run", payrollRunId] : []),
 	]);
 	return `travel_expense_settlement:v1:${createHash("sha256").update(canonical).digest("hex")}`;
 }
@@ -672,6 +726,26 @@ export type RecordSettlementResult =
 			account: SettlementAccount;
 	  };
 
+export interface RecordSettlementInput {
+	actor: SettlementActor;
+	/** The officer scope the actor records money in (#747); any other account is not found. */
+	scope: OfficerScope;
+	source: SettlementSource;
+	idempotencyKey: string;
+	command: SettlementCommand;
+	expectedBalance: { currency: string; amount: string };
+	/** Bulk reimbursement (#754): refused unless the entry leaves the whole account reimbursed. */
+	inFull?: boolean;
+	/** The completed export batch the reimbursement is recorded for (#755); the caller checked it. */
+	exportBatchId?: string;
+	/**
+	 * The payroll run being confirmed (#853): the one run whose inclusion of the
+	 * report does not refuse the entry. The caller confirms the inclusion in the
+	 * same transaction.
+	 */
+	payrollRunId?: string;
+}
+
 /**
  * Records money that moved outside Z8 for one approved source. The source row
  * lock serializes every write to the account; the idempotency key makes a
@@ -684,97 +758,12 @@ export type RecordSettlementResult =
  */
 export async function recordSettlementEntry(
 	database: Database,
-	input: {
-		actor: SettlementActor;
-		/** The officer scope the actor records money in (#747); any other account is not found. */
-		scope: OfficerScope;
-		source: SettlementSource;
-		idempotencyKey: string;
-		command: SettlementCommand;
-		expectedBalance: { currency: string; amount: string };
-		/** Bulk reimbursement (#754): refused unless the entry leaves the whole account reimbursed. */
-		inFull?: boolean;
-		/** The completed export batch the reimbursement is recorded for (#755); the caller checked it. */
-		exportBatchId?: string;
-	},
+	input: RecordSettlementInput,
 	now: Instant = systemClock.nowInstant(),
 ): Promise<RecordSettlementResult> {
-	const { actor, source, command } = input;
-	const exportBatchId = input.exportBatchId ?? null;
-	const fingerprint = settlementCommandFingerprint(source, command, exportBatchId);
-	const result = await database.transaction(async (tx): Promise<RecordSettlementResult> => {
-		const account = await loadSettlementAccount(
-			tx,
-			{ organizationId: actor.organizationId, source },
-			{ lock: true },
-		);
-		if (!account) return { status: "not_found" } as const;
-		const inScope = await isSourceInOfficerScope(tx, input.scope, {
-			organizationId: actor.organizationId,
-			source,
-			employeeId: account.employeeId,
-		});
-		if (!inScope) return { status: "not_found" } as const;
-		const replay = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
-		if (replay) return replayResult(replay, fingerprint, account);
-		// Read under the report lock that including and removing take too (#852).
-		if (account.payrollRun) {
-			return { status: "in_payroll_run", payrollRun: account.payrollRun } as const;
-		}
-		if (account.adjustmentOf) return { status: "adjustment_report" } as const;
-		if (!account.approved) return { status: "not_approved" } as const;
-		if (account.employeeId === actor.employeeId) return { status: "own_expense" } as const;
-		const plan = planSettlementEntry(account.summary, command, input.expectedBalance, {
-			inFull: input.inFull,
-		});
-		if (!plan.ok) {
-			return { status: "refused", reason: plan.reason, balance: plan.balance, account } as const;
-		}
-		const inserted = await tx
-			.insert(travelExpenseSettlementEntry)
-			.values({
-				organizationId: actor.organizationId,
-				sourceType: source.type,
-				reportId: source.type === "report" ? source.id : null,
-				legacyClaimId: source.type === "legacy_claim" ? source.id : null,
-				kind: command.kind,
-				amount: command.amount,
-				currency: command.currency,
-				occurredOn: command.occurredOn,
-				reference: command.reference,
-				note: command.note,
-				basisRevisionId: source.type === "report" ? (account.basis?.revisionId ?? null) : null,
-				basisSubmissionCycle:
-					source.type === "report" ? (account.basis?.submissionCycle ?? null) : null,
-				balanceBefore: plan.balanceBefore,
-				idempotencyKey: input.idempotencyKey,
-				commandFingerprint: fingerprint,
-				recordedByEmployeeId: actor.employeeId,
-				recordedByUserId: actor.userId,
-				recordedAt: dateFromInstant(now),
-				exportBatchId,
-			})
-			.onConflictDoNothing({
-				target: [
-					travelExpenseSettlementEntry.organizationId,
-					travelExpenseSettlementEntry.idempotencyKey,
-				],
-			})
-			.returning({ id: travelExpenseSettlementEntry.id });
-		if (inserted.length === 0) {
-			// The same key committed concurrently for another account.
-			const raced = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
-			if (!raced) throw new Error("Settlement idempotency key vanished");
-			return replayResult(raced, fingerprint, account);
-		}
-		const updated = await loadSettlementAccount(tx, {
-			organizationId: actor.organizationId,
-			source,
-		});
-		const entry = updated?.entries.find((candidate) => candidate.id === inserted[0]?.id);
-		if (!updated || !entry) throw new Error("Recorded settlement entry not readable");
-		return { status: "recorded", replayed: false, entry, account: updated } as const;
-	});
+	const result = await database.transaction((tx) =>
+		recordSettlementEntryInTransaction(tx, input, now),
+	);
 	if (result.status === "recorded" && !result.replayed) {
 		await notifySettlementRecorded(database, {
 			account: result.account,
@@ -785,12 +774,104 @@ export async function recordSettlementEntry(
 	return result;
 }
 
+/**
+ * `recordSettlementEntry` inside the caller's transaction, for a caller that
+ * writes more in the same transaction (#853 confirms the payroll run's
+ * inclusion). The caller notifies after commit (`notifySettlementRecorded`)
+ * when an entry was recorded and not replayed.
+ */
+export async function recordSettlementEntryInTransaction(
+	tx: Transaction,
+	input: RecordSettlementInput,
+	now: Instant,
+): Promise<RecordSettlementResult> {
+	const { actor, source, command } = input;
+	const exportBatchId = input.exportBatchId ?? null;
+	const payrollRunId = input.payrollRunId ?? null;
+	const fingerprint = settlementCommandFingerprint(source, command, exportBatchId, payrollRunId);
+	const account = await loadSettlementAccount(
+		tx,
+		{ organizationId: actor.organizationId, source },
+		{ lock: true },
+	);
+	if (!account) return { status: "not_found" } as const;
+	const inScope = await isSourceInOfficerScope(tx, input.scope, {
+		organizationId: actor.organizationId,
+		source,
+		employeeId: account.employeeId,
+	});
+	if (!inScope) return { status: "not_found" } as const;
+	const replay = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
+	if (replay) return replayResult(replay, fingerprint, account);
+	// Read under the report lock that including and removing take too (#852).
+	if (account.payrollRun && account.payrollRun.jobId !== payrollRunId) {
+		return { status: "in_payroll_run", payrollRun: account.payrollRun } as const;
+	}
+	if (account.adjustmentOf) return { status: "adjustment_report" } as const;
+	if (!account.approved) return { status: "not_approved" } as const;
+	if (account.employeeId === actor.employeeId) return { status: "own_expense" } as const;
+	const plan = planSettlementEntry(account.summary, command, input.expectedBalance, {
+		inFull: input.inFull,
+		// Only confirming a payroll run records what payroll paid beyond what is owed (#853).
+		paidByPayroll: payrollRunId !== null,
+	});
+	if (!plan.ok) {
+		return { status: "refused", reason: plan.reason, balance: plan.balance, account } as const;
+	}
+	const inserted = await tx
+		.insert(travelExpenseSettlementEntry)
+		.values({
+			organizationId: actor.organizationId,
+			sourceType: source.type,
+			reportId: source.type === "report" ? source.id : null,
+			legacyClaimId: source.type === "legacy_claim" ? source.id : null,
+			kind: command.kind,
+			amount: command.amount,
+			currency: command.currency,
+			occurredOn: command.occurredOn,
+			reference: command.reference,
+			note: command.note,
+			basisRevisionId: source.type === "report" ? (account.basis?.revisionId ?? null) : null,
+			basisSubmissionCycle:
+				source.type === "report" ? (account.basis?.submissionCycle ?? null) : null,
+			balanceBefore: plan.balanceBefore,
+			idempotencyKey: input.idempotencyKey,
+			commandFingerprint: fingerprint,
+			recordedByEmployeeId: actor.employeeId,
+			recordedByUserId: actor.userId,
+			recordedAt: dateFromInstant(now),
+			exportBatchId,
+			payrollRunId,
+		})
+		.onConflictDoNothing({
+			target: [
+				travelExpenseSettlementEntry.organizationId,
+				travelExpenseSettlementEntry.idempotencyKey,
+			],
+		})
+		.returning({ id: travelExpenseSettlementEntry.id });
+	if (inserted.length === 0) {
+		// The same key committed concurrently for another account.
+		const raced = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
+		if (!raced) throw new Error("Settlement idempotency key vanished");
+		return replayResult(raced, fingerprint, account);
+	}
+	const updated = await loadSettlementAccount(tx, {
+		organizationId: actor.organizationId,
+		source,
+	});
+	const entry = updated?.entries.find((candidate) => candidate.id === inserted[0]?.id);
+	if (!updated || !entry) throw new Error("Recorded settlement entry not readable");
+	return { status: "recorded", replayed: false, entry, account: updated } as const;
+}
+
 async function findByIdempotencyKey(tx: Transaction, organizationId: string, key: string) {
 	const [row] = await tx
 		.select(entryColumns())
 		.from(travelExpenseSettlementEntry)
 		.leftJoin(user, eq(user.id, travelExpenseSettlementEntry.recordedByUserId))
 		.leftJoin(travelExpenseExportBatch, entryExportBatchJoin())
+		.leftJoin(payrollExportJob, entryPayrollRunJoin())
 		.where(
 			and(
 				eq(travelExpenseSettlementEntry.organizationId, organizationId),
@@ -807,10 +888,5 @@ function replayResult(
 	account: SettlementAccount,
 ): RecordSettlementResult {
 	if (found.entry.commandFingerprint !== fingerprint) return { status: "idempotency_conflict" };
-	return {
-		status: "recorded",
-		replayed: true,
-		entry: toEntryView(found.entry, found.recordedByName, found.exportBatchRequestedAt),
-		account,
-	};
+	return { status: "recorded", replayed: true, entry: toEntryView(found), account };
 }
