@@ -31,3 +31,13 @@ _Avoid_: Task budget
 **Project template**:
 A reusable blueprint for new projects. It is never booked to and is not a project; creating a project from it copies its contents once, and later changes to either side do not affect the other.
 _Avoid_: Template project, master project
+
+### Sharing reports
+
+**Report share link**:
+A secret, expiring URL that lets someone outside Z8 view one shared snapshot without signing in. It covers either one project's report or one customer's billable report, and it is revoked as soon as its creator can no longer see every project in it.
+_Avoid_: Public report, guest access, client link, shared report
+
+**Shared snapshot**:
+The report content a report share link shows, frozen when the link is created. Later changes to the work behind it never reach it, and it never contains cost or margin.
+_Avoid_: Live report, shared view

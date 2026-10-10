@@ -5,6 +5,14 @@ import { enterpriseIdentitySetup } from "@/db/schema";
 
 type EnterpriseIdentityRestriction = "inviteRestrictionEnabled" | "domainRestrictionEnabled";
 
+/** An active restriction refused the email; other errors are lookup failures. */
+export class EnterpriseIdentityEmailNotAllowedError extends Error {
+	constructor(domain: string) {
+		super(`Email must use the enterprise identity domain ${domain}`);
+		this.name = "EnterpriseIdentityEmailNotAllowedError";
+	}
+}
+
 export interface EnterpriseIdentityOrganizationDomainCandidate {
 	id: string;
 	domain: string;
@@ -62,7 +70,7 @@ export async function assertEnterpriseIdentityEmailAllowed({
 	if (!setup?.domain || !setup.enforcement?.[restriction]) return;
 
 	if (!isEmailInEnterpriseIdentityDomain(email, setup.domain)) {
-		throw new Error(`Email must use the enterprise identity domain ${setup.domain}`);
+		throw new EnterpriseIdentityEmailNotAllowedError(setup.domain);
 	}
 }
 

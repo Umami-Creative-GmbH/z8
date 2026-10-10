@@ -30,6 +30,12 @@ _Avoid_: backfill, bootstrap
 Keeping legacy requests in step with canonical workflows once canonical authority decides, in lifecycle mode `canonical`.
 _Avoid_: reverse mirroring
 
+### Deputies
+
+**Deputy decision**:
+A decision made by an approver's deputy, during the approver's approved absence, on an approval still assigned to that approver. It records both people.
+_Avoid_: delegated decision, proxy approval, on-behalf decision (that term means acting for the requester)
+
 ### Cards
 
 **Review binding**:

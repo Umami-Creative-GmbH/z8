@@ -620,6 +620,51 @@ describe("app sidebar compliance navigation", () => {
 		expect(canViewWorksCouncilPortalMock).not.toHaveBeenCalled();
 	});
 
+	it("gives employees their own schedule after Calendar only while shifts are on (#977)", () => {
+		const capabilities = {
+			scheduling: true,
+			compliance: false,
+			payroll: false,
+			finance: false,
+			worksCouncil: false,
+			platformAdmin: false,
+		};
+		const { rerender } = render(<AppSidebar employeeRole="employee" />);
+		expect(screen.queryByRole("link", { name: "My Schedule" })).toBeNull();
+
+		rerender(<AppSidebar employeeRole="employee" navigationCapabilities={capabilities} />);
+
+		expect(screen.getByRole("link", { name: "My Schedule" }).getAttribute("href")).toBe(
+			"/scheduling",
+		);
+		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.indexOf("/scheduling")).toBe(urls.indexOf("/calendar") + 1);
+		expect(navTeamSpy).not.toHaveBeenCalled();
+	});
+
+	it("keeps Scheduling in the Team section for managers, not in their personal section (#977)", () => {
+		render(
+			<AppSidebar
+				employeeRole="manager"
+				navigationCapabilities={{
+					scheduling: true,
+					compliance: false,
+					payroll: false,
+					finance: false,
+					worksCouncil: false,
+					platformAdmin: false,
+				}}
+			/>,
+		);
+
+		expect(navMainSpy.mock.lastCall?.[0].map((item) => item.url)).not.toContain("/scheduling");
+		expect(navTeamSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({ title: "Scheduling", url: "/scheduling" }),
+			]),
+		);
+	});
+
 	it("renders Team Absences after Team for managers only", () => {
 		const { rerender } = render(<AppSidebar employeeRole="manager" />);
 

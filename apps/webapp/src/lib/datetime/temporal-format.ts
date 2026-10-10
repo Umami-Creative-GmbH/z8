@@ -17,7 +17,8 @@ export type PlainDateFormatPreset =
 	| "monthLong"
 	| "monthYear"
 	| "weekdayShort"
-	| "weekdayMonthDay";
+	| "weekdayMonthDay"
+	| "weekdayDateLong";
 
 export interface DisplayContext {
 	locale: string;
@@ -71,6 +72,7 @@ const PLAIN_DATE_FORMAT_OPTIONS: Readonly<
 	monthYear: { year: "numeric", month: "long" },
 	weekdayShort: { weekday: "short" },
 	weekdayMonthDay: { weekday: "short", month: "short", day: "numeric" },
+	weekdayDateLong: { weekday: "long", year: "numeric", month: "long", day: "numeric" },
 };
 
 const TIME_PRESETS: ReadonlySet<DateTimeFormatPreset> = new Set([
