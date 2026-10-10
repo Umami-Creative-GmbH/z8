@@ -93,12 +93,13 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 						</span>
 					)}
 				</div>
-				<div className="flex items-center gap-1 pointer-coarse:gap-2">
+				{/* Button grows each hit area to 44 px on touch screens; the gap keeps them apart (#846). */}
+				<div className="flex items-center gap-1 pointer-coarse:gap-3">
 					{unreadCount > 0 && (
 						<Button
 							size="icon"
 							variant="ghost"
-							className="size-8 pointer-coarse:size-9"
+							className="size-8"
 							onClick={handleMarkAllAsRead}
 							disabled={isMarkingAllRead}
 							aria-label={t("common:notifications.actions.markAllRead", "Mark all read")}
@@ -111,7 +112,7 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 						<Button
 							size="icon"
 							variant="ghost"
-							className="size-8 text-muted-foreground hover:text-destructive pointer-coarse:size-9"
+							className="size-8 text-muted-foreground hover:text-destructive"
 							onClick={handleDeleteAll}
 							disabled={isDeletingAll}
 							aria-label={t("common:notifications.actions.deleteAll", "Delete all")}
@@ -120,13 +121,7 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 							<IconTrash className="size-4" />
 						</Button>
 					)}
-					<Button
-						size="icon"
-						variant="ghost"
-						className="size-8 pointer-coarse:size-9"
-						asChild
-						onClick={handleClose}
-					>
+					<Button size="icon" variant="ghost" className="size-8" asChild onClick={handleClose}>
 						<Link
 							href="/settings/notifications"
 							aria-label={t("common:notifications.actions.settings", "Notification settings")}

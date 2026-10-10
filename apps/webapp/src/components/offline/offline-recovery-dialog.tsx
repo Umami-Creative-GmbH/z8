@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import type { OfflineRecoveryRecord } from "@/lib/offline/types";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
+import { WRAPPING_LABEL } from "./offline-capture-actions";
 
 type Translate = (key: string, defaultValue: string, params?: Record<string, string>) => string;
 
@@ -269,7 +270,7 @@ export function OfflineRecoveryDialog({
 								<Button
 									variant="outline"
 									size="sm"
-									className="h-auto min-h-8 max-w-full whitespace-normal py-1.5"
+									className={`${WRAPPING_LABEL} min-h-8 py-1.5`}
 									disabled={busy}
 									onClick={() => void load(record.id)}
 								>
@@ -286,7 +287,7 @@ export function OfflineRecoveryDialog({
 				{/* Long labels wrap on phones instead of scrolling the dialog sideways (#846). */}
 				<Button
 					variant="outline"
-					className="h-auto min-h-9 max-w-full whitespace-normal"
+					className={WRAPPING_LABEL}
 					disabled={busy || records.length === 0}
 					onClick={() => void exportRecords()}
 				>

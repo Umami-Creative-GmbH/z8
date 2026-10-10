@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 export type ClockCaptureMode = "server" | "local-queue" | "local-review";
 
 // Long German labels wrap inside the button instead of leaving the narrow clock popover (#846).
-const WRAPPING_LABEL = "h-auto min-h-9 max-w-full whitespace-normal";
+export const WRAPPING_LABEL = "h-auto min-h-9 max-w-full whitespace-normal";
 
 /** Both endpoints stay available without inventing an active server period. */
 export function ClockCaptureControls({
