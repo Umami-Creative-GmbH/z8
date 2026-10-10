@@ -6,6 +6,7 @@ import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import {
 	absenceCategory,
 	absenceEntry,
+	auditLog,
 	db,
 	employee,
 	employeeManagers,
@@ -929,68 +930,19 @@ export async function fetchShifts(organizationId: string) {
 }
 
 /**
- * Fetch audit logs for an organization
+ * Fetch all audit logs of an organization, newest first.
  * Format: CSV (large volume, tabular)
- * Note: We filter by entity types that are org-scoped
+ * Rows are scoped by `audit_log.organization_id` and read in batches, so the
+ * export holds every row of this organization and none of another (#1045).
  */
 export async function fetchAuditLogs(organizationId: string) {
 	logger.info({ organizationId }, "Fetching audit logs for export");
 
-	// Get all employee IDs and team IDs for this org to filter audit logs
-	const [orgEmployees, orgTeams] = await Promise.all([
-		db.query.employee.findMany({
-			where: eq(employee.organizationId, organizationId),
-			columns: { id: true, userId: true },
-		}),
-		db.query.team.findMany({
-			where: eq(team.organizationId, organizationId),
-			columns: { id: true },
-		}),
-	]);
+	const logs = await collectGenerator(streamAuditLogs(organizationId));
 
-	const employeeIds = new Set(orgEmployees.map((e) => e.id));
-	const userIds = new Set(orgEmployees.map((e) => e.userId));
-	const teamIds = new Set(orgTeams.map((t) => t.id));
+	logger.info({ count: logs.length }, "Fetched audit logs");
 
-	// Fetch audit logs - we'll need to filter them
-	const logs = await db.query.auditLog.findMany({
-		orderBy: (auditLog, { desc }) => [desc(auditLog.timestamp)],
-		limit: 10000, // Limit to prevent massive exports
-	});
-
-	// Filter to logs related to this organization's entities
-	const filteredLogs = logs.filter((log) => {
-		// Direct org reference
-		if (log.entityType === "organization" && log.entityId === organizationId) {
-			return true;
-		}
-		// Employee-related
-		if (log.entityType === "employee" && employeeIds.has(log.entityId)) {
-			return true;
-		}
-		// Team-related
-		if (log.entityType === "team" && teamIds.has(log.entityId)) {
-			return true;
-		}
-		// Performed by users in this org
-		if (log.performedBy && userIds.has(log.performedBy)) {
-			return true;
-		}
-		return false;
-	});
-
-	logger.info({ count: filteredLogs.length }, "Fetched audit logs");
-
-	return filteredLogs.map((log) => ({
-		id: log.id,
-		entityType: log.entityType,
-		entityId: log.entityId,
-		action: log.action,
-		performedBy: log.performedBy,
-		changes: log.changes, // JSON string
-		metadata: log.metadata, // JSON string
-		timestamp: log.timestamp,
-	}));
+	return logs;
 }
 
 /**
@@ -1187,23 +1139,18 @@ export async function* streamWorkPeriods(
 }
 
 /**
- * Stream audit logs in batches using a generator
+ * Stream an organization's audit logs in batches using a generator
  * Yields batches of audit logs to prevent memory exhaustion
  */
-export async function* streamAuditLogs(
-	organizationId: string,
-	employeeIds: Set<string>,
-	userIds: Set<string>,
-	teamIds: Set<string>,
-): AsyncGenerator<
+export async function* streamAuditLogs(organizationId: string): AsyncGenerator<
 	Array<{
 		id: string;
 		entityType: string;
 		entityId: string;
 		action: string;
-		performedBy: string | null;
-		changes: unknown;
-		metadata: unknown;
+		performedBy: string;
+		changes: string | null; // JSON string
+		metadata: string | null; // JSON string
 		timestamp: Date;
 	}>
 > {
@@ -1212,9 +1159,11 @@ export async function* streamAuditLogs(
 
 	while (hasMore) {
 		const batch = await db.query.auditLog.findMany({
+			where: eq(auditLog.organizationId, organizationId),
 			limit: BATCH_SIZE,
 			offset,
-			orderBy: (auditLog, { desc }) => [desc(auditLog.timestamp)],
+			// The id tiebreaker keeps offset pages stable when timestamps collide.
+			orderBy: (auditLog, { desc }) => [desc(auditLog.timestamp), desc(auditLog.id)],
 		});
 
 		if (batch.length === 0) {
@@ -1222,35 +1171,16 @@ export async function* streamAuditLogs(
 			break;
 		}
 
-		// Filter to logs related to this organization's entities
-		const filteredBatch = batch.filter((log) => {
-			if (log.entityType === "organization" && log.entityId === organizationId) {
-				return true;
-			}
-			if (log.entityType === "employee" && employeeIds.has(log.entityId)) {
-				return true;
-			}
-			if (log.entityType === "team" && teamIds.has(log.entityId)) {
-				return true;
-			}
-			if (log.performedBy && userIds.has(log.performedBy)) {
-				return true;
-			}
-			return false;
-		});
-
-		if (filteredBatch.length > 0) {
-			yield filteredBatch.map((log) => ({
-				id: log.id,
-				entityType: log.entityType,
-				entityId: log.entityId,
-				action: log.action,
-				performedBy: log.performedBy,
-				changes: log.changes,
-				metadata: log.metadata,
-				timestamp: log.timestamp,
-			}));
-		}
+		yield batch.map((log) => ({
+			id: log.id,
+			entityType: log.entityType,
+			entityId: log.entityId,
+			action: log.action,
+			performedBy: log.performedBy,
+			changes: log.changes,
+			metadata: log.metadata,
+			timestamp: log.timestamp,
+		}));
 
 		offset += BATCH_SIZE;
 		hasMore = batch.length === BATCH_SIZE;
