@@ -3,7 +3,7 @@ import "server-only";
 import { listActiveEmployeesAssignedToLocation } from "@/lib/time-tracking/assigned-locations/queries";
 import type { AuthenticatedKiosk } from "./authenticate";
 import type { KioskEmployeeListing } from "./protocol";
-import type { KioskClient } from "./store";
+import type { KioskClient } from "./kiosk-store";
 
 /**
  * The kiosk home screen's employee list (#862): who may clock at the kiosk's

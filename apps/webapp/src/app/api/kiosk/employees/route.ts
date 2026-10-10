@@ -1,7 +1,10 @@
 import { db } from "@/db";
-import { kioskRefusalResponse, resolveKioskFromRequest } from "@/lib/kiosk/authenticate";
-import { readKioskEmployees } from "@/lib/kiosk/home";
-import type { KioskEmployeesResponse } from "@/lib/kiosk/protocol";
+import {
+	kioskRefusalResponse,
+	resolveKioskFromRequest,
+} from "@/lib/time-tracking/kiosk/authenticate";
+import { readKioskEmployees } from "@/lib/time-tracking/kiosk/home";
+import type { KioskEmployeesResponse } from "@/lib/time-tracking/kiosk/protocol";
 
 /**
  * The kiosk home screen's employee list (#862): the active employees assigned

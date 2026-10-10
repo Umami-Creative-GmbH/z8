@@ -11,8 +11,8 @@ import {
 import { useTranslate } from "@tolgee/react";
 import type { ComponentType, SVGProps } from "react";
 import { Button } from "@/components/ui/button";
-import { formatKioskDuration, formatKioskTime } from "@/lib/kiosk/display";
-import type { KioskClockAction, KioskEmployeeSnapshot } from "@/lib/kiosk/protocol";
+import { formatKioskDuration, formatKioskTime } from "@/lib/time-tracking/kiosk/display";
+import type { KioskClockAction, KioskEmployeeSnapshot } from "@/lib/time-tracking/kiosk/protocol";
 
 /** What the panel offers; `end_day` is a clock-out while on a break (it ends at the break's start). */
 export type KioskPanelAction =

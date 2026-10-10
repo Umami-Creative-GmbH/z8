@@ -3,8 +3,8 @@
 import { IconClockPause, IconUserCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState } from "react";
-import { kioskFetch, kioskRefusalOf } from "@/lib/kiosk/device";
-import type { KioskBoardResponse } from "@/lib/kiosk/protocol";
+import { kioskFetch, kioskRefusalOf } from "@/lib/time-tracking/kiosk/device";
+import type { KioskBoardResponse } from "@/lib/time-tracking/kiosk/protocol";
 import { cn } from "@/lib/utils";
 
 /** How often the board refreshes; the spec asks for at least once a minute. */

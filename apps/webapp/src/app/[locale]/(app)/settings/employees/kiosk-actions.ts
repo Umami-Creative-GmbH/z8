@@ -4,11 +4,10 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
-import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
+import { isOrganizationAdmin } from "@/lib/authorization/organization-admin";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import { runKioskAction } from "@/lib/time-tracking/kiosk/action-runner";
+import { runKioskPinAction } from "@/lib/time-tracking/kiosk/kiosk-pin-action";
 import { kioskOnlyEmailUpgradeDeps } from "@/lib/time-tracking/kiosk/kiosk-only-email-upgrade";
 import {
 	addEmailToKioskOnlyEmployee,
@@ -22,6 +21,7 @@ import {
 	resetKioskPin,
 	unlockKioskPin,
 } from "@/lib/time-tracking/kiosk/pin-store";
+import { isUuid } from "@/lib/validations/uuid";
 
 export type EmployeeKioskState = {
 	/** Whether the viewer may issue, reset or unlock this employee's PIN. */
@@ -44,9 +44,9 @@ function employeeIdOf(value: unknown): string {
 export async function getEmployeeKioskStateAction(
 	employeeId: string,
 ): Promise<KioskPinActionResult<EmployeeKioskState | null>> {
-	return runKioskAction("kiosk.employeeState", async (db, actor) => {
+	return runKioskPinAction("kiosk.employeeState", async (db, actor) => {
 		const id = employeeIdOf(employeeId);
-		const [target] = /^[0-9a-f-]{36}$/i.test(id)
+		const [target] = isUuid(id)
 			? await db
 					.select({ email: user.email })
 					.from(employee)
@@ -60,18 +60,12 @@ export async function getEmployeeKioskStateAction(
 			actorUserId: actor.userId,
 			employeeId: id,
 		};
-		const [canManagePin, principal] = await Promise.all([
+		const [canManagePin, isAdmin] = await Promise.all([
 			canManageEmployeeKioskPin(db, input),
-			loadOrganizationPrincipalContext(db, {
-				userId: actor.userId,
-				organizationId: actor.organizationId,
-			}),
+			isOrganizationAdmin(db, actor),
 		]);
-		const role = principal.orgMembership?.role;
-		const isOrganizationAdmin =
-			hasOrganizationRole(role, "owner") || hasOrganizationRole(role, "admin");
 		const kioskOnly = isReservedEmail(target.email);
-		if (!canManagePin && !(kioskOnly && isOrganizationAdmin)) return null;
+		if (!canManagePin && !(kioskOnly && isAdmin)) return null;
 		const status = canManagePin
 			? await readKioskPinStatus(db, input)
 			: { hasPin: false, lockedUntil: null };
@@ -80,7 +74,7 @@ export async function getEmployeeKioskStateAction(
 			hasPin: status.hasPin,
 			lockedUntil: status.lockedUntil ? instantToCanonicalString(status.lockedUntil) : null,
 			kioskOnly,
-			canAddEmail: kioskOnly && isOrganizationAdmin,
+			canAddEmail: kioskOnly && isAdmin,
 		};
 	});
 }
@@ -89,7 +83,7 @@ export async function getEmployeeKioskStateAction(
 export async function issueEmployeeKioskPinAction(
 	employeeId: string,
 ): Promise<KioskPinActionResult<{ pin: string }>> {
-	return runKioskAction("kiosk.issuePin", (db, actor) =>
+	return runKioskPinAction("kiosk.issuePin", (db, actor) =>
 		issueKioskPin(db, {
 			organizationId: actor.organizationId,
 			actorUserId: actor.userId,
@@ -102,7 +96,7 @@ export async function issueEmployeeKioskPinAction(
 export async function resetEmployeeKioskPinAction(
 	employeeId: string,
 ): Promise<KioskPinActionResult<{ pin: string }>> {
-	return runKioskAction("kiosk.resetPin", (db, actor) =>
+	return runKioskPinAction("kiosk.resetPin", (db, actor) =>
 		resetKioskPin(db, {
 			organizationId: actor.organizationId,
 			actorUserId: actor.userId,
@@ -114,7 +108,7 @@ export async function resetEmployeeKioskPinAction(
 export async function unlockEmployeeKioskPinAction(
 	employeeId: string,
 ): Promise<KioskPinActionResult<{ unlocked: true }>> {
-	return runKioskAction("kiosk.unlockPin", async (db, actor) => {
+	return runKioskPinAction("kiosk.unlockPin", async (db, actor) => {
 		await unlockKioskPin(db, {
 			organizationId: actor.organizationId,
 			actorUserId: actor.userId,
@@ -134,7 +128,7 @@ export type CreateKioskOnlyEmployeeActionInput = {
 export async function createKioskOnlyEmployeeAction(
 	input: CreateKioskOnlyEmployeeActionInput,
 ): Promise<KioskPinActionResult<{ employeeId: string }>> {
-	return runKioskAction("kiosk.createKioskOnlyEmployee", async (db, actor) => {
+	return runKioskPinAction("kiosk.createKioskOnlyEmployee", async (db, actor) => {
 		const { employeeId } = await createKioskOnlyEmployee(db, {
 			organizationId: actor.organizationId,
 			actorUserId: actor.userId,
@@ -152,7 +146,7 @@ export async function addKioskOnlyEmployeeEmailAction(input: {
 	employeeId: string;
 	email: string;
 }): Promise<KioskPinActionResult<{ invitationSent: boolean }>> {
-	return runKioskAction("kiosk.addKioskOnlyEmployeeEmail", async (db, actor) => {
+	return runKioskPinAction("kiosk.addKioskOnlyEmployeeEmail", async (db, actor) => {
 		const result = await addEmailToKioskOnlyEmployee(
 			db,
 			{

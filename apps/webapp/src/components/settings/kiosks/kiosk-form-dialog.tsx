@@ -39,7 +39,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { kioskErrorMessage } from "./kiosk-format";
+import { kioskSettingsErrorMessage } from "./kiosk-format";
 
 const NAME_MAX_LENGTH = 100;
 
@@ -101,7 +101,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 					});
 					if (!result.success) {
 						toast.error(
-							kioskErrorMessage(t, result.code) ??
+							kioskSettingsErrorMessage(t, result.code) ??
 								t("settings.kiosks.createFailed", "The kiosk could not be created"),
 						);
 						return;
@@ -119,7 +119,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 				});
 				if (!result.success) {
 					toast.error(
-						kioskErrorMessage(t, result.code) ??
+						kioskSettingsErrorMessage(t, result.code) ??
 							t("settings.kiosks.saveFailed", "The kiosk could not be saved"),
 					);
 					return;

@@ -13,7 +13,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { hashKioskSecret } from "@/lib/kiosk/credentials";
+import { hashKioskSecret } from "@/lib/time-tracking/kiosk/credentials";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,

@@ -5,13 +5,13 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { kioskCall } from "@/lib/kiosk/device";
+import { kioskCall } from "@/lib/time-tracking/kiosk/device";
 import type {
 	KioskDeviceInfo,
 	KioskEmployeeListing,
 	KioskEmployeesResponse,
 	KioskRefusalCode,
-} from "@/lib/kiosk/protocol";
+} from "@/lib/time-tracking/kiosk/protocol";
 import { KioskLanguageSwitch } from "./kiosk-language";
 import { KioskWhoIsInBoard } from "./kiosk-who-is-in-board";
 

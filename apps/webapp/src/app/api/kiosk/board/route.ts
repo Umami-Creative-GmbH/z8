@@ -1,6 +1,9 @@
 import { db } from "@/db";
-import { kioskRefusalResponse, resolveKioskFromRequest } from "@/lib/kiosk/authenticate";
-import type { KioskBoardResponse } from "@/lib/kiosk/protocol";
+import {
+	kioskRefusalResponse,
+	resolveKioskFromRequest,
+} from "@/lib/time-tracking/kiosk/authenticate";
+import type { KioskBoardResponse } from "@/lib/time-tracking/kiosk/protocol";
 import { readKioskBoard } from "@/lib/time-tracking/who-is-in/queries";
 
 /**

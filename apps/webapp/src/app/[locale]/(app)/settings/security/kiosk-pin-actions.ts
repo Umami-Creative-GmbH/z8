@@ -1,6 +1,6 @@
 "use server";
 
-import { runKioskAction } from "@/lib/time-tracking/kiosk/action-runner";
+import { runKioskPinAction } from "@/lib/time-tracking/kiosk/kiosk-pin-action";
 import type { KioskPinActionResult } from "@/lib/time-tracking/kiosk/pin-errors";
 import { readOwnKioskPinStatus, setOwnKioskPin } from "@/lib/time-tracking/kiosk/pin-store";
 
@@ -8,7 +8,7 @@ import { readOwnKioskPinStatus, setOwnKioskPin } from "@/lib/time-tracking/kiosk
 export async function getOwnKioskPinStatusAction(): Promise<
 	KioskPinActionResult<{ hasEmployee: boolean; hasPin: boolean }>
 > {
-	return runKioskAction("kiosk.ownPinStatus", (db, actor) =>
+	return runKioskPinAction("kiosk.ownPinStatus", (db, actor) =>
 		readOwnKioskPinStatus(db, { organizationId: actor.organizationId, userId: actor.userId }),
 	);
 }
@@ -17,7 +17,7 @@ export async function getOwnKioskPinStatusAction(): Promise<
 export async function setOwnKioskPinAction(
 	pin: string,
 ): Promise<KioskPinActionResult<{ saved: true }>> {
-	return runKioskAction("kiosk.setOwnPin", async (db, actor) => {
+	return runKioskPinAction("kiosk.setOwnPin", async (db, actor) => {
 		await setOwnKioskPin(db, {
 			organizationId: actor.organizationId,
 			userId: actor.userId,

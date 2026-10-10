@@ -14,6 +14,7 @@ import {
 	type WhoIsInScope,
 	whoIsInScopeFor,
 } from "@/lib/time-tracking/who-is-in/shape";
+import { isUuid } from "@/lib/validations/uuid";
 
 /**
  * The manager view of the who-is-in board (#863). Owners and admins see every
@@ -60,12 +61,10 @@ export type LocationPresenceResult =
 	| { status: "forbidden" }
 	| { status: "not_found" };
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export async function getLocationPresence(locationId: string): Promise<LocationPresenceResult> {
 	const viewer = await getWhoIsInViewer();
 	if (!viewer) return { status: "forbidden" };
-	if (!UUID.test(locationId)) return { status: "not_found" };
+	if (!isUuid(locationId)) return { status: "not_found" };
 	const location = await findWhoIsInLocation(db, {
 		organizationId: viewer.organizationId,
 		locationId,

@@ -9,20 +9,19 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { generateReservedEmail, isReservedEmail } from "@/lib/auth/reserved-email";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
-import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
+import { isOrganizationAdmin } from "@/lib/authorization/organization-admin";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
+import { isUuid } from "@/lib/validations/uuid";
 import { KioskPinRefusal } from "./pin-errors";
 
 type Database = typeof rootDatabase;
 
 const logger = createLogger("KioskOnlyEmployee");
 const NAME_MAX_LENGTH = 100;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const emailSchema = z.email();
 
 export type CreateKioskOnlyEmployeeInput = {
@@ -50,12 +49,7 @@ export type KioskOnlyEmailUpgradeDeps = {
 };
 
 async function requireOrganizationAdmin(db: Database, organizationId: string, actorUserId: string) {
-	const principal = await loadOrganizationPrincipalContext(db, {
-		userId: actorUserId,
-		organizationId,
-	});
-	const role = principal.orgMembership?.role;
-	if (!hasOrganizationRole(role, "owner") && !hasOrganizationRole(role, "admin")) {
+	if (!(await isOrganizationAdmin(db, { userId: actorUserId, organizationId }))) {
 		throw new KioskPinRefusal(
 			"not_allowed",
 			"Only organization owners and admins can manage kiosk-only employees.",
@@ -95,7 +89,7 @@ export async function createKioskOnlyEmployee(
 
 	const teamId = input.teamId || null;
 	if (teamId) {
-		const [targetTeam] = UUID_PATTERN.test(teamId)
+		const [targetTeam] = isUuid(teamId)
 			? await db
 					.select({ id: team.id })
 					.from(team)
@@ -212,7 +206,7 @@ export async function addEmailToKioskOnlyEmployee(
 				organizationId: input.organizationId,
 				normalizedEmail: email,
 			});
-			const [target] = UUID_PATTERN.test(input.employeeId)
+			const [target] = isUuid(input.employeeId)
 				? await tx
 						.select({ userId: user.id, email: user.email })
 						.from(employee)

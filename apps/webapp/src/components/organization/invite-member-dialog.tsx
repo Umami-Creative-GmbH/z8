@@ -11,7 +11,7 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/kiosk-actions";
 import { sendInvitation } from "@/app/[locale]/(app)/settings/organizations/actions";
 import { listTeams } from "@/app/[locale]/(app)/settings/teams/actions";
-import { kioskErrorMessage } from "@/components/settings/kiosk/kiosk-error-message";
+import { kioskPinErrorMessage } from "@/components/settings/kiosk/kiosk-pin-error-message";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -96,7 +96,7 @@ export function InviteMemberDialog({
 			}
 		},
 		onError: () => {
-			toast.error(kioskErrorMessage(t, "failed"));
+			toast.error(kioskPinErrorMessage(t, "failed"));
 		},
 	});
 
@@ -127,7 +127,7 @@ export function InviteMemberDialog({
 					onOpenChange(false);
 					refresh();
 				} else {
-					toast.error(kioskErrorMessage(t, created.code));
+					toast.error(kioskPinErrorMessage(t, created.code));
 				}
 				return;
 			}

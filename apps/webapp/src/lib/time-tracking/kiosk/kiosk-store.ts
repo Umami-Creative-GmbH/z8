@@ -15,7 +15,7 @@ import {
 	normalizePairingCode,
 	PAIRING_CODE_TTL_MS,
 } from "./credentials";
-import { KioskRefusal } from "./errors";
+import { KioskSettingsRefusal } from "./kiosk-settings-errors";
 import type { KioskDeviceInfo } from "./protocol";
 
 /**
@@ -56,7 +56,7 @@ type Actor = { organizationId: string; actorUserId: string };
 function parseKioskName(value: unknown): string {
 	const name = typeof value === "string" ? value.trim() : "";
 	if (name.length === 0 || name.length > KIOSK_NAME_MAX_LENGTH) {
-		throw new KioskRefusal("invalid_name", "A kiosk name has 1 to 100 characters.");
+		throw new KioskSettingsRefusal("invalid_name", "A kiosk name has 1 to 100 characters.");
 	}
 	return name;
 }
@@ -65,7 +65,7 @@ function parseKioskZone(value: unknown): string {
 	try {
 		return parseIanaTimeZone(value);
 	} catch {
-		throw new KioskRefusal("invalid_timezone", "Choose a named IANA time zone.");
+		throw new KioskSettingsRefusal("invalid_timezone", "Choose a named IANA time zone.");
 	}
 }
 
@@ -86,7 +86,10 @@ async function requireOrganizationLocation(
 		)
 		.limit(1);
 	if (!found) {
-		throw new KioskRefusal("location_not_found", "Location not found in this organization.");
+		throw new KioskSettingsRefusal(
+			"location_not_found",
+			"Location not found in this organization.",
+		);
 	}
 	return found;
 }
@@ -186,8 +189,8 @@ async function lockManagedKiosk(tx: KioskClient, organizationId: string, kioskId
 		.where(and(eq(kiosk.organizationId, organizationId), eq(kiosk.id, kioskId)))
 		.for("update")
 		.limit(1);
-	if (!found) throw new KioskRefusal("kiosk_not_found", "Kiosk not found.");
-	if (found.revokedAt) throw new KioskRefusal("kiosk_revoked", "This kiosk is revoked.");
+	if (!found) throw new KioskSettingsRefusal("kiosk_not_found", "Kiosk not found.");
+	if (found.revokedAt) throw new KioskSettingsRefusal("kiosk_revoked", "This kiosk is revoked.");
 	return found;
 }
 

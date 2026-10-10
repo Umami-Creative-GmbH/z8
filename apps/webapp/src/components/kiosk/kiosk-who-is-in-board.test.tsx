@@ -2,7 +2,7 @@
 
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { KioskBoardResponse } from "@/lib/kiosk/protocol";
+import type { KioskBoardResponse } from "@/lib/time-tracking/kiosk/protocol";
 import { KIOSK_BOARD_REFRESH_MS, KioskWhoIsInBoard } from "./kiosk-who-is-in-board";
 
 vi.mock("@tolgee/react", () => ({

@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employee, employeeKioskPin } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import { isOrganizationAdminPrincipal } from "@/lib/authorization/organization-admin";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
 import {
 	type Clock,
@@ -17,6 +17,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { isUuid } from "@/lib/validations/uuid";
 import {
 	GENERATED_KIOSK_PIN_LENGTH,
 	isValidKioskPin,
@@ -51,8 +52,6 @@ export type KioskPinStatus = {
 	lockedUntil: Instant | null;
 };
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function generateKioskPin(): string {
 	return String(randomInt(0, 10 ** GENERATED_KIOSK_PIN_LENGTH)).padStart(
 		GENERATED_KIOSK_PIN_LENGTH,
@@ -80,13 +79,14 @@ export async function canManageEmployeeKioskPin(
 		userId: input.actorUserId,
 		organizationId: input.organizationId,
 	});
-	const role = principal.orgMembership?.role;
-	if (hasOrganizationRole(role, "owner") || hasOrganizationRole(role, "admin")) return true;
-	return principal.managedEmployeeIds.includes(input.employeeId);
+	return (
+		isOrganizationAdminPrincipal(principal) ||
+		principal.managedEmployeeIds.includes(input.employeeId)
+	);
 }
 
 async function requireKioskPinManager(db: Database, input: KioskPinManagementInput) {
-	const [target] = UUID_PATTERN.test(input.employeeId)
+	const [target] = isUuid(input.employeeId)
 		? await db
 				.select({ id: employee.id })
 				.from(employee)
@@ -297,7 +297,7 @@ export async function verifyEmployeeKioskPin(
 	input: { organizationId: string; employeeId: string; pin: string },
 	clock: Clock = systemClock,
 ): Promise<KioskPinVerification> {
-	if (!UUID_PATTERN.test(input.employeeId)) return { status: "no_pin" };
+	if (!isUuid(input.employeeId)) return { status: "no_pin" };
 	return db.transaction(async (tx) => {
 		const [row] = await tx
 			.select({

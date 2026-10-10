@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { formatKioskTime } from "@/lib/kiosk/display";
-import type { KioskClockRefusal } from "@/lib/kiosk/protocol";
+import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
+import type { KioskClockRefusal } from "@/lib/time-tracking/kiosk/protocol";
 
 /** Refusals about the PIN or the employee: the kiosk asks for the PIN again. */
 export const KIOSK_PIN_REFUSALS: ReadonlySet<string> = new Set([

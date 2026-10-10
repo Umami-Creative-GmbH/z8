@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { normalizePairingCode } from "@/lib/kiosk/credentials";
-import { pairKiosk, readKioskDeviceInfo } from "@/lib/kiosk/store";
+import { normalizePairingCode } from "@/lib/time-tracking/kiosk/credentials";
+import { pairKiosk, readKioskDeviceInfo } from "@/lib/time-tracking/kiosk/kiosk-store";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 
 const NO_STORE = { "Cache-Control": "no-store" };

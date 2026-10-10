@@ -3,9 +3,12 @@
 import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { location } from "@/db/schema";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
-import { runKioskAction } from "@/lib/kiosk/action-runner";
-import { type KioskActionResult, KioskRefusal } from "@/lib/kiosk/errors";
+import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
+import { runRefusalAction } from "@/lib/effect/refusal-action";
+import {
+	type KioskSettingsActionResult,
+	KioskSettingsRefusal,
+} from "@/lib/time-tracking/kiosk/kiosk-settings-errors";
 import {
 	createKiosk,
 	issueKioskPairingCode,
@@ -13,7 +16,8 @@ import {
 	listKiosks,
 	revokeKiosk,
 	updateKiosk,
-} from "@/lib/kiosk/store";
+} from "@/lib/time-tracking/kiosk/kiosk-store";
+import { isUuid } from "@/lib/validations/uuid";
 
 export type KioskData = {
 	id: string;
@@ -56,10 +60,11 @@ export type UpdateKioskInput = {
 };
 
 const SETTINGS_PATH = "/settings/kiosks";
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function getKioskAdminDataAction(): Promise<KioskActionResult<KioskAdminData>> {
-	return runKioskAction("kiosk.adminData", async (db) => {
+export async function getKioskAdminDataAction(): Promise<
+	KioskSettingsActionResult<KioskAdminData>
+> {
+	return runRefusalAction("kiosk.adminData", KioskSettingsRefusal, async (db) => {
 		const { organizationId } = await requireKioskAdmin();
 		const [kiosks, locations] = await Promise.all([
 			listKiosks(db, organizationId),
@@ -90,8 +95,8 @@ export async function getKioskAdminDataAction(): Promise<KioskActionResult<Kiosk
 
 export async function createKioskAction(
 	input: CreateKioskInput,
-): Promise<KioskActionResult<IssuedPairingCodeData>> {
-	return runKioskAction("kiosk.create", async (db) => {
+): Promise<KioskSettingsActionResult<IssuedPairingCodeData>> {
+	return runRefusalAction("kiosk.create", KioskSettingsRefusal, async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const locationId = parseUuid(input?.locationId, "location_not_found");
 		const created = await db.transaction((tx) =>
@@ -114,8 +119,8 @@ export async function createKioskAction(
 
 export async function updateKioskAction(
 	input: UpdateKioskInput,
-): Promise<KioskActionResult<{ kioskId: string }>> {
-	return runKioskAction("kiosk.update", async (db) => {
+): Promise<KioskSettingsActionResult<{ kioskId: string }>> {
+	return runRefusalAction("kiosk.update", KioskSettingsRefusal, async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
 		const locationId =
@@ -123,7 +128,7 @@ export async function updateKioskAction(
 				? undefined
 				: parseUuid(input.locationId, "location_not_found");
 		if (input?.boardEnabled !== undefined && typeof input.boardEnabled !== "boolean") {
-			throw new KioskRefusal("invalid_selection", "The board switch must be on or off.");
+			throw new KioskSettingsRefusal("invalid_selection", "The board switch must be on or off.");
 		}
 		await db.transaction((tx) =>
 			updateKiosk(tx, {
@@ -146,8 +151,8 @@ export async function updateKioskAction(
 /** Issues a new pairing code; a paired kiosk's token is rotated away at once. */
 export async function issueKioskPairingCodeAction(input: {
 	kioskId: string;
-}): Promise<KioskActionResult<IssuedPairingCodeData>> {
-	return runKioskAction("kiosk.issuePairingCode", async (db) => {
+}): Promise<KioskSettingsActionResult<IssuedPairingCodeData>> {
+	return runRefusalAction("kiosk.issuePairingCode", KioskSettingsRefusal, async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
 		const issued = await db.transaction((tx) =>
@@ -160,8 +165,8 @@ export async function issueKioskPairingCodeAction(input: {
 
 export async function revokeKioskAction(input: {
 	kioskId: string;
-}): Promise<KioskActionResult<{ kioskId: string }>> {
-	return runKioskAction("kiosk.revoke", async (db) => {
+}): Promise<KioskSettingsActionResult<{ kioskId: string }>> {
+	return runRefusalAction("kiosk.revoke", KioskSettingsRefusal, async (db) => {
 		const { organizationId, userId } = await requireKioskAdmin();
 		const kioskId = parseUuid(input?.kioskId, "kiosk_not_found");
 		await db.transaction((tx) => revokeKiosk(tx, { organizationId, actorUserId: userId, kioskId }));
@@ -171,18 +176,17 @@ export async function revokeKioskAction(input: {
 }
 
 /** Organization owners and admins of the active organization only. */
-async function requireKioskAdmin(): Promise<{ organizationId: string; userId: string }> {
-	const authContext = await getAuthContext();
-	const organizationId = authContext?.session.activeOrganizationId ?? null;
-	if (!authContext || !organizationId || !(await canManageCurrentOrganizationSettings())) {
-		throw new KioskRefusal("admin_only", "Only organization owners and admins can manage kiosks.");
-	}
-	return { organizationId, userId: authContext.user.id };
+function requireKioskAdmin() {
+	return requireOrganizationAdmin(
+		() =>
+			new KioskSettingsRefusal(
+				"admin_only",
+				"Only organization owners and admins can manage kiosks.",
+			),
+	);
 }
 
 function parseUuid(value: unknown, code: "kiosk_not_found" | "location_not_found"): string {
-	if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
-		throw new KioskRefusal(code, "Not found in this organization.");
-	}
+	if (!isUuid(value)) throw new KioskSettingsRefusal(code, "Not found in this organization.");
 	return value;
 }

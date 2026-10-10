@@ -1,6 +1,9 @@
 import { db } from "@/db";
-import { kioskRefusalResponse, resolveKioskFromRequest } from "@/lib/kiosk/authenticate";
-import { readKioskDeviceInfo } from "@/lib/kiosk/store";
+import {
+	kioskRefusalResponse,
+	resolveKioskFromRequest,
+} from "@/lib/time-tracking/kiosk/authenticate";
+import { readKioskDeviceInfo } from "@/lib/time-tracking/kiosk/kiosk-store";
 
 /**
  * The kiosk a device is paired as (#859). The kiosk page calls it on start to

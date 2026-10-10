@@ -4,8 +4,12 @@ import { IconLoader2, IconWifiOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { forgetKioskToken, type KioskSession, loadKioskSession } from "@/lib/kiosk/device";
-import type { KioskDeviceInfo } from "@/lib/kiosk/protocol";
+import {
+	forgetKioskToken,
+	type KioskSession,
+	loadKioskSession,
+} from "@/lib/time-tracking/kiosk/device";
+import type { KioskDeviceInfo } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskPairedScreen } from "./kiosk-paired-screen";
 import { KioskPairingForm } from "./kiosk-pairing-form";
 import { KioskRevokedScreen } from "./kiosk-revoked-screen";

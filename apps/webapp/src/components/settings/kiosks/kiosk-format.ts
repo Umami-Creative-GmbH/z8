@@ -1,6 +1,6 @@
 import type { useTranslate } from "@tolgee/react";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import type { KioskErrorCode } from "@/lib/kiosk/errors";
+import type { KioskSettingsErrorCode } from "@/lib/time-tracking/kiosk/kiosk-settings-errors";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -28,7 +28,10 @@ export function kioskPairingUrl(origin: string, locale: string, pairingCode: str
  * The translated reason a kiosk action was refused, or null when the code says
  * nothing the admin can act on (the caller shows its own "could not" message).
  */
-export function kioskErrorMessage(t: Translate, code: KioskErrorCode | undefined): string | null {
+export function kioskSettingsErrorMessage(
+	t: Translate,
+	code: KioskSettingsErrorCode | undefined,
+): string | null {
 	switch (code) {
 		case "admin_only":
 			return t(

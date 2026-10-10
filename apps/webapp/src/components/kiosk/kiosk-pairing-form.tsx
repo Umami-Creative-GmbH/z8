@@ -12,8 +12,8 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
-import { type KioskPairingResult, pairKioskDevice } from "@/lib/kiosk/device";
-import type { KioskDeviceInfo } from "@/lib/kiosk/protocol";
+import { type KioskPairingResult, pairKioskDevice } from "@/lib/time-tracking/kiosk/device";
+import type { KioskDeviceInfo } from "@/lib/time-tracking/kiosk/protocol";
 
 interface KioskPairingFormProps {
 	initialCode: string;

@@ -3,7 +3,7 @@ import type { KioskPinErrorCode } from "@/lib/time-tracking/kiosk/pin-errors";
 type Translate = (key: string, defaultValue: string) => string;
 
 /** The translated message for a refused kiosk PIN or kiosk-only employee action (#857). */
-export function kioskErrorMessage(t: Translate, code: KioskPinErrorCode): string {
+export function kioskPinErrorMessage(t: Translate, code: KioskPinErrorCode): string {
 	switch (code) {
 		case "sign_in_required":
 			return t("settings.kioskPin.errors.signInRequired", "Sign in to continue.");

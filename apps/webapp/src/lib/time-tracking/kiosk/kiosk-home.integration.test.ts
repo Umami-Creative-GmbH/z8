@@ -11,7 +11,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { hashKioskSecret } from "@/lib/kiosk/credentials";
+import { hashKioskSecret } from "@/lib/time-tracking/kiosk/credentials";
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (importOriginal) =>

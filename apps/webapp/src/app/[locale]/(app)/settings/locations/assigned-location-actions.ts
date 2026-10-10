@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
-import { runAssignedLocationAction } from "@/lib/time-tracking/assigned-locations/action-runner";
+import { requireOrganizationAdmin } from "@/lib/auth/current-organization-actor";
+import { runRefusalAction } from "@/lib/effect/refusal-action";
 import {
 	type AssignedLocationActionResult,
 	AssignedLocationRefusal,
@@ -17,6 +17,7 @@ import {
 	listLocationAssignedEmployees,
 	removeAssignedLocation,
 } from "@/lib/time-tracking/assigned-locations/store";
+import { isUuid } from "@/lib/validations/uuid";
 
 /**
  * Assigned locations (#858): the locations an employee works at, managed by
@@ -39,7 +40,7 @@ export type AssignedLocationInput = { employeeId: string; locationId: string };
 export async function getEmployeeAssignedLocationsAction(input: {
 	employeeId: string;
 }): Promise<AssignedLocationActionResult<EmployeeAssignedLocationsData>> {
-	return runAssignedLocationAction("assignedLocations.ofEmployee", async (db) => {
+	return runRefusalAction("assignedLocations.ofEmployee", AssignedLocationRefusal, async (db) => {
 		const { organizationId } = await requireAssignedLocationAdmin();
 		return listEmployeeAssignedLocations(db, {
 			organizationId,
@@ -51,7 +52,7 @@ export async function getEmployeeAssignedLocationsAction(input: {
 export async function getLocationAssignedEmployeesAction(input: {
 	locationId: string;
 }): Promise<AssignedLocationActionResult<LocationAssignedEmployeesData>> {
-	return runAssignedLocationAction("assignedLocations.ofLocation", async (db) => {
+	return runRefusalAction("assignedLocations.ofLocation", AssignedLocationRefusal, async (db) => {
 		const { organizationId } = await requireAssignedLocationAdmin();
 		return listLocationAssignedEmployees(db, {
 			organizationId,
@@ -63,7 +64,7 @@ export async function getLocationAssignedEmployeesAction(input: {
 export async function addAssignedLocationAction(
 	input: AssignedLocationInput,
 ): Promise<AssignedLocationActionResult<AssignedLocationInput>> {
-	return runAssignedLocationAction("assignedLocations.add", async (db) => {
+	return runRefusalAction("assignedLocations.add", AssignedLocationRefusal, async (db) => {
 		const { organizationId, userId } = await requireAssignedLocationAdmin();
 		const target = parseInput(input);
 		await db.transaction((tx) =>
@@ -77,7 +78,7 @@ export async function addAssignedLocationAction(
 export async function removeAssignedLocationAction(
 	input: AssignedLocationInput,
 ): Promise<AssignedLocationActionResult<AssignedLocationInput>> {
-	return runAssignedLocationAction("assignedLocations.remove", async (db) => {
+	return runRefusalAction("assignedLocations.remove", AssignedLocationRefusal, async (db) => {
 		const { organizationId, userId } = await requireAssignedLocationAdmin();
 		const target = parseInput(input);
 		await db.transaction((tx) =>
@@ -89,16 +90,14 @@ export async function removeAssignedLocationAction(
 }
 
 /** Organization owners and admins of the active organization only. */
-async function requireAssignedLocationAdmin(): Promise<{ organizationId: string; userId: string }> {
-	const authContext = await getAuthContext();
-	const organizationId = authContext?.session.activeOrganizationId ?? null;
-	if (!authContext || !organizationId || !(await canManageCurrentOrganizationSettings())) {
-		throw new AssignedLocationRefusal(
-			"admin_only",
-			"Only organization owners and admins can manage assigned locations.",
-		);
-	}
-	return { organizationId, userId: authContext.user.id };
+function requireAssignedLocationAdmin() {
+	return requireOrganizationAdmin(
+		() =>
+			new AssignedLocationRefusal(
+				"admin_only",
+				"Only organization owners and admins can manage assigned locations.",
+			),
+	);
 }
 
 function revalidateAssignedLocationPaths(target: AssignedLocationInput) {
@@ -113,10 +112,8 @@ function parseInput(input: AssignedLocationInput): AssignedLocationInput {
 	};
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function parseUuid(value: unknown, field: string): string {
-	if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
+	if (!isUuid(value)) {
 		throw new AssignedLocationRefusal("invalid_selection", `Invalid selection: ${field}.`);
 	}
 	return value;

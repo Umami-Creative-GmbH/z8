@@ -19,7 +19,7 @@ vi.mock("@/lib/rate-limit", () => ({
 		),
 }));
 
-vi.mock("@/lib/kiosk/store", () => ({
+vi.mock("@/lib/time-tracking/kiosk/kiosk-store", () => ({
 	pairKiosk: mocks.pairKiosk,
 	readKioskDeviceInfo: vi.fn(),
 }));

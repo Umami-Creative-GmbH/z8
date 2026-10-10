@@ -7,7 +7,7 @@ import {
 	type KioskClockResult,
 	type KioskDeviceInfo,
 	type KioskEmployeeSnapshot,
-} from "@/lib/kiosk/protocol";
+} from "@/lib/time-tracking/kiosk/protocol";
 import { KioskApp } from "./kiosk-app";
 
 vi.mock("@tolgee/react", () => ({

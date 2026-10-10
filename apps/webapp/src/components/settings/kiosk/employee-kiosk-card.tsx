@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { KioskPinActionResult } from "@/lib/time-tracking/kiosk/pin-errors";
-import { kioskErrorMessage } from "./kiosk-error-message";
+import { kioskPinErrorMessage } from "./kiosk-pin-error-message";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -122,7 +122,7 @@ function KioskPinSection({
 			onSuccess(result.data);
 			void onChanged();
 		} else {
-			toast.error(kioskErrorMessage(t, result.code));
+			toast.error(kioskPinErrorMessage(t, result.code));
 		}
 	};
 
@@ -135,7 +135,7 @@ function KioskPinSection({
 			setConfirmingReset(false);
 			handleResult(result, (data) => setShownPin(data.pin));
 		},
-		onError: () => toast.error(kioskErrorMessage(t, "failed")),
+		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
 	});
 	const unlockMutation = useMutation({
 		mutationFn: () => unlockEmployeeKioskPinAction(employeeId),
@@ -143,7 +143,7 @@ function KioskPinSection({
 			handleResult(result, () =>
 				toast.success(t("settings.employees.kioskPin.unlocked", "Kiosk PIN unlocked")),
 			),
-		onError: () => toast.error(kioskErrorMessage(t, "failed")),
+		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
 	});
 	const busy = pinMutation.isPending || unlockMutation.isPending;
 
@@ -223,7 +223,7 @@ function AddEmailSection({
 }) {
 	const addMutation = useMutation({
 		mutationFn: (email: string) => addKioskOnlyEmployeeEmailAction({ employeeId, email }),
-		onError: () => toast.error(kioskErrorMessage(t, "failed")),
+		onError: () => toast.error(kioskPinErrorMessage(t, "failed")),
 	});
 	const form = useForm({
 		defaultValues: { email: "" },
@@ -231,7 +231,7 @@ function AddEmailSection({
 			const result = await addMutation.mutateAsync(value.email).catch(() => null);
 			if (!result) return;
 			if (!result.success) {
-				toast.error(kioskErrorMessage(t, result.code));
+				toast.error(kioskPinErrorMessage(t, result.code));
 				return;
 			}
 			if (result.data.invitationSent) {

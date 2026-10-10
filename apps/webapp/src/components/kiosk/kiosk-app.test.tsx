@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { KIOSK_TOKEN_STORAGE_KEY, type KioskDeviceInfo } from "@/lib/kiosk/protocol";
+import { KIOSK_TOKEN_STORAGE_KEY, type KioskDeviceInfo } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskApp } from "./kiosk-app";
 
 vi.mock("@tolgee/react", () => ({

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createHash, randomBytes, randomInt } from "node:crypto";
 
 /**

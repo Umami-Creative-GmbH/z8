@@ -6,7 +6,7 @@ import { kiosk } from "@/db/schema";
 import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { hashKioskSecret } from "./credentials";
 import { KIOSK_TOKEN_HEADER, type KioskRefusalCode } from "./protocol";
-import type { KioskClient, PairedKiosk } from "./store";
+import type { KioskClient, PairedKiosk } from "./kiosk-store";
 
 /**
  * Kiosk authentication (#859). Every kiosk request carries the device token in

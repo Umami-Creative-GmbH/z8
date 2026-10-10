@@ -4,8 +4,8 @@ import { IconWifiOff } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState } from "react";
 import { useOnlineStatus } from "@/hooks/use-online-status";
-import { kioskFetch, kioskPost, kioskRefusalOf } from "@/lib/kiosk/device";
-import { formatKioskTime } from "@/lib/kiosk/display";
+import { kioskFetch, kioskPost, kioskRefusalOf } from "@/lib/time-tracking/kiosk/device";
+import { formatKioskTime } from "@/lib/time-tracking/kiosk/display";
 import type {
 	KioskClockRefusal,
 	KioskClockResult,
@@ -13,7 +13,7 @@ import type {
 	KioskEmployeeListing,
 	KioskEmployeeSnapshot,
 	KioskRefusalCode,
-} from "@/lib/kiosk/protocol";
+} from "@/lib/time-tracking/kiosk/protocol";
 import { KioskConfirmation } from "./kiosk-confirmation";
 import {
 	KIOSK_ACTION_REQUEST,

@@ -3,7 +3,7 @@
  * code; the English message is a diagnostic for logs only. Shared by the server
  * actions and the client, so this file has no server-only imports.
  */
-export type KioskErrorCode =
+export type KioskSettingsErrorCode =
 	| "admin_only"
 	| "invalid_name"
 	| "invalid_timezone"
@@ -15,17 +15,17 @@ export type KioskErrorCode =
 	| "failed";
 
 /** A refusal the user can act on; thrown by the kiosk store and actions. */
-export class KioskRefusal extends Error {
-	readonly code: KioskErrorCode;
+export class KioskSettingsRefusal extends Error {
+	readonly code: KioskSettingsErrorCode;
 
-	constructor(code: KioskErrorCode, message: string) {
+	constructor(code: KioskSettingsErrorCode, message: string) {
 		super(message);
-		this.name = "KioskRefusal";
+		this.name = "KioskSettingsRefusal";
 		this.code = code;
 	}
 }
 
 /** A kiosk server action's result; a failure always carries a stable code. */
-export type KioskActionResult<T> =
+export type KioskSettingsActionResult<T> =
 	| { success: true; data: T }
-	| { success: false; error: string; code: KioskErrorCode };
+	| { success: false; error: string; code: KioskSettingsErrorCode };
