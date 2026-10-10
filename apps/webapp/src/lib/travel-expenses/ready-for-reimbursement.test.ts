@@ -278,6 +278,7 @@ describe("leftOutOfPayrollRun (#855)", () => {
 		periodStart: "2026-10-01",
 		periodEnd: "2026-10-31",
 		includedAt: "2026-10-31T08:00:00Z",
+		partlyConfirmed: false,
 	};
 
 	it("is due for an approved report no run carries, keyed like its approval", () => {

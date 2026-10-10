@@ -32,7 +32,7 @@ export type PayrollRunSkip =
 	| { reason: "negative_difference"; kinds: PayrollLineKind[] }
 	/** Payroll line kinds without a wage type mapped for the run's format. */
 	| { reason: "unmapped_wage_type"; kinds: PayrollLineKind[] }
-	/** An unconfirmed run of another period includes it. */
+	/** A run of another period, or a partly confirmed run, still includes it. */
 	| { reason: "included_in_other_run"; run: IncludedPayrollRun }
 	| {
 			reason:
@@ -51,7 +51,7 @@ export type PayrollRunClassification =
 			outcome: "include";
 			basisRevisionId: string;
 			lines: TravelExpensePayrollRunInclusionLine[];
-			/** An unconfirmed run of the same period holds it: this run takes it over. */
+			/** A run of the same period that nobody confirmed yet holds it: this run takes it over. */
 			takesOver: boolean;
 	  }
 	| { outcome: "skip"; skip: PayrollRunSkip };
@@ -83,7 +83,13 @@ export function classifyPayrollRunCandidate(
 		return skip({ reason: "legacy_claim" });
 	}
 	const held = account.payrollRun;
-	if (held && !(held.periodStart === period.startDate && held.periodEnd === period.endDate)) {
+	// Only an unconfirmed run of the same period is taken over. Once a run is partly
+	// confirmed, payroll paid its file: another file could pay its reports twice.
+	if (
+		held &&
+		(held.partlyConfirmed ||
+			!(held.periodStart === period.startDate && held.periodEnd === period.endDate))
+	) {
 		return skip({ reason: "included_in_other_run", run: held });
 	}
 	const { revision } = input;

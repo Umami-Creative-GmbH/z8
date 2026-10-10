@@ -74,6 +74,7 @@ const run = (periodStart: string, periodEnd: string) => ({
 	periodStart,
 	periodEnd,
 	includedAt: "2026-10-01T10:00:00Z",
+	partlyConfirmed: false,
 });
 
 describe("classifyPayrollRunCandidate", () => {
@@ -132,6 +133,19 @@ describe("classifyPayrollRunCandidate", () => {
 				}),
 			),
 		).toMatchObject({ outcome: "include", takesOver: true });
+	});
+
+	it("never takes over a report a run of the same period holds once that run is partly confirmed", () => {
+		// Payroll already paid that run's file: another file could pay the report twice.
+		const held = { ...run(PERIOD.startDate, PERIOD.endDate), partlyConfirmed: true };
+
+		expect(
+			classifyPayrollRunCandidate(
+				report({
+					account: { source: { type: "report", id: "report-1" }, entries: [], payrollRun: held },
+				}),
+			),
+		).toEqual({ outcome: "skip", skip: { reason: "included_in_other_run", run: held } });
 	});
 
 	it("leaves out a report in another currency", () => {

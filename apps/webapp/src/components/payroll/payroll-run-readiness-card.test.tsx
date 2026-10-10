@@ -91,6 +91,7 @@ describe("PayrollRunReadinessList", () => {
 							periodStart: "2026-09-01",
 							periodEnd: "2026-09-30",
 							includedAt: "2026-09-30T10:00:00Z",
+							partlyConfirmed: false,
 						},
 					}),
 					entry("nothing", { reason: "nothing_owed" }),

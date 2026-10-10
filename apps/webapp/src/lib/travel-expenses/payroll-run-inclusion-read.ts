@@ -29,6 +29,11 @@ export interface IncludedPayrollRun {
 	periodStart: string;
 	periodEnd: string;
 	includedAt: string;
+	/**
+	 * Confirmed as paid for some other report (#853): payroll paid the run's
+	 * file, so no later export takes its remaining reports over.
+	 */
+	partlyConfirmed: boolean;
 }
 
 /** The organization's payroll runs that still include a report: its unconfirmed runs. */
@@ -73,7 +78,8 @@ export async function isCarriedByPayrollRun(
 }
 
 /** A confirmed payroll run that paid a report (#853), as its account shows it. */
-export interface ConfirmedPayrollRun extends Omit<IncludedPayrollRun, "includedAt"> {
+export interface ConfirmedPayrollRun
+	extends Omit<IncludedPayrollRun, "includedAt" | "partlyConfirmed"> {
 	confirmedAt: string;
 	/** The lines the run carried: what earlier payroll runs paid, per wage type (decision 17). */
 	lines: TravelExpensePayrollRunInclusionLine[];
@@ -168,6 +174,10 @@ export async function loadIncludedPayrollRuns(
 				inArray(travelExpensePayrollRunInclusion.reportId, [...input.reportIds]),
 			),
 		);
+	const partlyConfirmed = await partlyConfirmedRuns(database, {
+		organizationId: input.organizationId,
+		jobIds: [...new Set(rows.map((row) => row.jobId))],
+	});
 	for (const row of rows) {
 		runs.set(row.reportId, {
 			jobId: row.jobId,
@@ -176,7 +186,27 @@ export async function loadIncludedPayrollRuns(
 			periodStart: row.filters.dateRange.start,
 			periodEnd: row.filters.dateRange.end,
 			includedAt: instantToCanonicalString(instantFromDate(row.includedAt)),
+			partlyConfirmed: partlyConfirmed.has(row.jobId),
 		});
 	}
 	return runs;
+}
+
+/** Those of the jobs' runs confirmed as paid for at least one report (#853). */
+export async function partlyConfirmedRuns(
+	database: Executor,
+	input: { organizationId: string; jobIds: readonly string[] },
+): Promise<Set<string>> {
+	if (input.jobIds.length === 0) return new Set();
+	const rows = await database
+		.selectDistinct({ jobId: travelExpensePayrollRunInclusion.payrollExportJobId })
+		.from(travelExpensePayrollRunInclusion)
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "confirmed"),
+				inArray(travelExpensePayrollRunInclusion.payrollExportJobId, [...input.jobIds]),
+			),
+		);
+	return new Set(rows.map((row) => row.jobId));
 }

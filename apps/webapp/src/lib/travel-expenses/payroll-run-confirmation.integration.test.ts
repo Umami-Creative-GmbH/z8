@@ -107,6 +107,8 @@ const { discardPayrollRunAction } = await import(
 );
 const { createExportJob, processExportJob } = await import("@/lib/payroll-export/export-service");
 const { countUnconfirmedPayrollRuns } = await import("./reimbursement-channel");
+const { getPayrollRunReadiness } = await import("./payroll-run-readiness");
+const { db } = await import("@/db");
 const { POST: processReceipt } = await import(
 	"@/app/api/upload/travel-expense/report-receipt/route"
 );
@@ -545,6 +547,47 @@ describe("confirming a payroll run as paid (#853)", () => {
 		expect(await entries(officers)).toEqual([
 			expect.objectContaining({ amount: "30.00", recorded_by: "t853-finance", run: run.jobId }),
 		]);
+	});
+
+	it("keeps a partly confirmed run's remaining reports when its period is exported again", async () => {
+		const requesters = await approvedHotel("100.00");
+		const officers = await approvedHotel("30.00", "officer");
+		const run = await exportPayroll(current);
+		// The officer's own report stays included for someone else.
+		await confirmed("officer", run.jobId);
+
+		const again = await exportPayroll(current);
+
+		// Payroll paid the first file: the second never carries the officer's report too.
+		expect(again.content).not.toContain(datevLine("P-OFF", "30.00", current));
+		expect(await inclusions(officers)).toEqual([
+			expect.objectContaining({ state: "included", job: run.jobId }),
+		]);
+		// Readiness agrees with the export: the first run holds it.
+		expect(
+			await getPayrollRunReadiness(db, {
+				organizationId: ORG,
+				formatId: "datev_lohn",
+				period: { startDate: current.start, endDate: current.end },
+				employeeIds: [ids.requester, ids.officer],
+			}),
+		).toEqual({
+			applies: true,
+			entries: [
+				expect.objectContaining({
+					source: { type: "report", id: officers },
+					skip: {
+						reason: "included_in_other_run",
+						run: expect.objectContaining({ jobId: run.jobId, partlyConfirmed: true }),
+					},
+				}),
+			],
+		});
+		// It is confirmed with the run that carried it.
+		expect(await confirmed("finance", run.jobId)).toEqual([
+			expect.objectContaining({ reportId: officers, outcome: "confirmed", amount: "30.00" }),
+		]);
+		expect(await entries(requesters)).toHaveLength(1);
 	});
 
 	it("records what payroll paid after an adjustment lowered it: the overpayment shows and is recovered by hand", async () => {

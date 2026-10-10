@@ -42,6 +42,7 @@ import {
 	type PayrollRunClassification,
 	type PayrollRunSkip,
 } from "./payroll-run-classification";
+import { partlyConfirmedRuns } from "./payroll-run-inclusion-read";
 import { notifyReportsLeftOutOfPayrollRun } from "./ready-for-reimbursement";
 import { paysThroughPayrollRuns } from "./reimbursement-channel";
 import {
@@ -222,7 +223,8 @@ export async function classifyPayrollRunCandidates(
  *
  * Exporting the same period again moves to this run the reports earlier
  * unconfirmed runs of that period included for these employees: their
- * inclusions there are superseded. A report this run cannot take (its kinds
+ * inclusions there are superseded. A run confirmed for any report keeps the
+ * rest: payroll paid its file, so another file could pay them twice. A report this run cannot take (its kinds
  * are no longer mapped, say) stays in the earlier run rather than in none, so
  * it is never freed for a bank transfer while a payroll file may still pay
  * it. A retried export of the same job first discards what it included before.
@@ -513,21 +515,13 @@ export async function listUnconfirmedPayrollRuns(
 		if (!run.employeeIds.includes(row.employeeId)) run.employeeIds.push(row.employeeId);
 		runs.set(row.jobId, run);
 	}
-	if (runs.size > 0) {
-		const confirmed = await database
-			.selectDistinct({ jobId: travelExpensePayrollRunInclusion.payrollExportJobId })
-			.from(travelExpensePayrollRunInclusion)
-			.where(
-				and(
-					eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
-					eq(travelExpensePayrollRunInclusion.state, "confirmed"),
-					inArray(travelExpensePayrollRunInclusion.payrollExportJobId, [...runs.keys()]),
-				),
-			);
-		for (const { jobId } of confirmed) {
-			const run = runs.get(jobId);
-			if (run) run.partlyConfirmed = true;
-		}
+	const confirmed = await partlyConfirmedRuns(database, {
+		organizationId,
+		jobIds: [...runs.keys()],
+	});
+	for (const jobId of confirmed) {
+		const run = runs.get(jobId);
+		if (run) run.partlyConfirmed = true;
 	}
 	return [...runs.values()].toSorted((left, right) =>
 		right.exportedAt.localeCompare(left.exportedAt),
