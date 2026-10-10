@@ -1219,6 +1219,13 @@
       "when": 1799251200000,
       "tag": "0173_employee_kiosk_pin",
       "breakpoints": true
+    },
+    {
+      "idx": 174,
+      "version": "7",
+      "when": 1799337600000,
+      "tag": "0174_employee_assigned_location",
+      "breakpoints": true
     }
   ]
 }

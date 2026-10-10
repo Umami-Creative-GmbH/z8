@@ -11,6 +11,7 @@ import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
+import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
@@ -311,6 +312,8 @@ function EmployeeRecordSections({
 					onSuccess={data.refetch}
 				/>
 			)}
+
+			{isOrgAdmin && <EmployeeAssignedLocationsCard employeeId={employeeId} />}
 
 			<EmployeeCustomRolesCard
 				employeeId={employeeId}
