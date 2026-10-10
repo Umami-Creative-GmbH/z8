@@ -1,11 +1,8 @@
 import "server-only";
-import { and, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { employee } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { comparePlainDates, dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
-import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
-import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
+import { getEmployeeWorkBalance, loadWorkBalanceEmployee } from "@/lib/work-balance/service";
 import {
 	previewTimeOffInLieu,
 	type TimeOffInLieuAbsence,
@@ -23,23 +20,11 @@ export async function loadTimeOffInLieuPreview(input: {
 	employeeId: string;
 	absence: TimeOffInLieuAbsence;
 }): Promise<TimeOffInLieuPreview | null> {
-	const scopedEmployee = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, input.employeeId),
-			eq(employee.organizationId, input.organizationId),
-		),
-		columns: { id: true },
-		with: {
-			userSettings: { columns: { timezone: true } },
-			organization: { columns: { timezone: true } },
-		},
-	});
-	if (!scopedEmployee) return null;
+	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
+	const subject = await loadWorkBalanceEmployee(scope);
+	if (!subject) return null;
 
-	const balance = await getEmployeeWorkBalance({
-		employeeId: input.employeeId,
-		organizationId: input.organizationId,
-	});
+	const balance = await getEmployeeWorkBalance(scope);
 	if (!balance) return null;
 
 	// Only the days after the balance's last counted day can still draw on it.
@@ -49,19 +34,15 @@ export async function loadTimeOffInLieuPreview(input: {
 	const firstUncounted = comparePlainDates(start, counted) > 0 ? start : counted.add({ days: 1 });
 	const requiredMinutesByDate: Record<string, number> = {};
 	if (comparePlainDates(firstUncounted, end) <= 0) {
-		const timeZone = resolveEffectiveTimezone(
-			scopedEmployee.userSettings?.timezone,
-			scopedEmployee.organization?.timezone,
-		);
+		// From the start of the first uncounted day through the last instant of the
+		// absence's last day, in the employee's timezone.
 		const requirements = await getDailyWorkRequirementsForEmployee({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			startDate: dateFromInstant(firstUncounted.toZonedDateTime({ timeZone }).toInstant()),
-			endDate: new Date(
-				dateFromInstant(end.add({ days: 1 }).toZonedDateTime({ timeZone }).toInstant()).getTime() -
-					1,
+			...scope,
+			startDate: dateFromInstant(localDayRange(firstUncounted.toString(), subject.timezone).start),
+			endDate: dateFromInstant(
+				localDayRange(end.toString(), subject.timezone).endExclusive.subtract({ milliseconds: 1 }),
 			),
-			timezone: timeZone,
+			timezone: subject.timezone,
 		});
 		for (const [date, requirement] of Object.entries(requirements)) {
 			requiredMinutesByDate[date] = requirement.requiredMinutes;
