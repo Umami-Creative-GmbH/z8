@@ -16,6 +16,11 @@ export type AutoClockOutDecision = AutoClockOutCandidate & {
 	settings: AutoClockOutSettings;
 	start: Instant;
 	cutoff: Instant;
+	/**
+	 * Where the closure ends when it is not the cutoff: the start of a break in
+	 * progress that began before it (#861), so the break never counts as work.
+	 */
+	closesAt?: Instant;
 	timezone: string;
 	provenanceUserId: string;
 	operationId: string;
