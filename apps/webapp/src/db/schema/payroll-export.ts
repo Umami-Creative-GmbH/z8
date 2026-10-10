@@ -264,6 +264,8 @@ export const payrollExportJob = pgTable(
 		index("payrollExportJob_createdAt_idx").on(table.createdAt),
 		// Composite index for finding pending async jobs
 		index("payrollExportJob_status_isAsync_idx").on(table.status, table.isAsync),
+		// The target of organization-scoped references: a reimbursement names its payroll run (#853).
+		uniqueIndex("payrollExportJob_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
 

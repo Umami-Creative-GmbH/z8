@@ -4,6 +4,7 @@ import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams, NotificationType } from "@/lib/notifications/types";
+import { payrollPeriodText } from "./payroll-run-period";
 import type { CurrencySettlement } from "./settlement";
 import type { SettlementAccount, SettlementEntryView } from "./settlement-store";
 
@@ -31,6 +32,22 @@ const settlementNotificationCopy = {
 		messageDefault:
 			"{amount} {currency} of your travel expense has been reimbursed (payment reference {reference}). {remaining} {remainingCurrency} is still awaiting reimbursement.",
 	},
+	// A confirmed payroll run paid it (#853): the run replaces the payment reference.
+	reimbursedWithPayroll: {
+		titleKey: "common:notifications.content.travelExpenseReimbursed.title",
+		titleDefault: "Expense reimbursed",
+		messageKey: "common:notifications.content.travelExpenseReimbursedWithPayroll.message",
+		messageDefault:
+			"Your travel expense has been fully reimbursed with payroll {period}: {amount} {currency}.",
+	},
+	partiallyReimbursedWithPayroll: {
+		titleKey: "common:notifications.content.travelExpensePartiallyReimbursed.title",
+		titleDefault: "Expense partially reimbursed",
+		messageKey:
+			"common:notifications.content.travelExpensePartiallyReimbursedWithPayroll.message",
+		messageDefault:
+			"{amount} {currency} of your travel expense has been reimbursed with payroll {period}. {remaining} {remainingCurrency} is still awaiting reimbursement.",
+	},
 	recoveryRecorded: {
 		titleKey: "common:notifications.content.travelExpenseRecoveryRecorded.title",
 		titleDefault: "Expense recovery recorded",
@@ -53,12 +70,20 @@ function classify(
 			copy: settlementNotificationCopy.recoveryRecorded,
 		};
 	}
+	const payroll = entry.payrollRun !== null;
 	return outstanding
 		? {
 				type: "travel_expense_partially_reimbursed",
-				copy: settlementNotificationCopy.partiallyReimbursed,
+				copy: payroll
+					? settlementNotificationCopy.partiallyReimbursedWithPayroll
+					: settlementNotificationCopy.partiallyReimbursed,
 			}
-		: { type: "travel_expense_reimbursed", copy: settlementNotificationCopy.reimbursed };
+		: {
+				type: "travel_expense_reimbursed",
+				copy: payroll
+					? settlementNotificationCopy.reimbursedWithPayroll
+					: settlementNotificationCopy.reimbursed,
+			};
 }
 
 /**
@@ -83,6 +108,9 @@ export function buildSettlementNotification(input: {
 		reference: entry.reference,
 		remaining: outstanding?.balance ?? "0.00",
 		remainingCurrency: outstanding?.currency ?? entry.currency,
+		...(entry.payrollRun
+			? { period: payrollPeriodText(entry.payrollRun.periodStart, entry.payrollRun.periodEnd) }
+			: {}),
 	};
 	const report = account.source.type === "report";
 	return {
@@ -91,8 +119,8 @@ export function buildSettlementNotification(input: {
 		type,
 		title: copy.titleDefault,
 		message: copy.messageDefault.replace(
-			/\{(amount|currency|reference|remaining|remainingCurrency)\}/g,
-			(_, key: keyof typeof params) => params[key],
+			/\{(amount|currency|reference|remaining|remainingCurrency|period)\}/g,
+			(match, key: keyof typeof params) => params[key] ?? match,
 		),
 		entityType: report ? "travel_expense_report" : "travel_expense_claim",
 		entityId: account.source.id,

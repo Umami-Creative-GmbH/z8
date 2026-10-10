@@ -15,6 +15,7 @@ import {
 import type { SettlementEntryKind } from "@/lib/travel-expenses/settlement.types";
 import { organization } from "../auth-schema";
 import { employee } from "./organization";
+import { payrollExportJob } from "./payroll-export";
 import { travelExpenseClaim, travelExpenseReport } from "./travel-expense";
 import { travelExpenseExportBatch } from "./travel-expense-export";
 
@@ -58,6 +59,8 @@ export const travelExpenseSettlementEntry = pgTable(
 		recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
 		// The completed export batch this reimbursement was recorded for (#755); null otherwise.
 		exportBatchId: uuid("export_batch_id"),
+		// The payroll run whose confirmation recorded this reimbursement (#853); null otherwise.
+		payrollRunId: uuid("payroll_run_id"),
 	},
 	(table) => [
 		foreignKey({
@@ -78,6 +81,18 @@ export const travelExpenseSettlementEntry = pgTable(
 		index("travelExpenseSettlementEntry_org_export_batch_idx")
 			.on(table.organizationId, table.exportBatchId)
 			.where(sql`${table.exportBatchId} IS NOT NULL`),
+		foreignKey({
+			name: "travel_expense_settlement_entry_payroll_run_fk",
+			columns: [table.payrollRunId, table.organizationId],
+			foreignColumns: [payrollExportJob.id, payrollExportJob.organizationId],
+		}),
+		index("travelExpenseSettlementEntry_org_payroll_run_idx")
+			.on(table.organizationId, table.payrollRunId)
+			.where(sql`${table.payrollRunId} IS NOT NULL`),
+		check(
+			"travel_expense_settlement_entry_payroll_run_check",
+			sql`${table.payrollRunId} IS NULL OR (${table.kind} = 'reimbursement' AND ${table.sourceType} = 'report' AND ${table.exportBatchId} IS NULL)`,
+		),
 		uniqueIndex("travelExpenseSettlementEntry_org_idempotency_idx").on(
 			table.organizationId,
 			table.idempotencyKey,

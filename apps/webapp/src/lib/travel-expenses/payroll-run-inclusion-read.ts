@@ -1,10 +1,11 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import {
 	payrollExportConfig,
 	payrollExportFormat,
 	payrollExportJob,
 	travelExpensePayrollRunInclusion,
+	type TravelExpensePayrollRunInclusionLine,
 } from "@/db/schema";
 import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 
@@ -45,6 +46,71 @@ export async function countRunsIncludingReports(
 			),
 		);
 	return rows.length;
+}
+
+/** A confirmed payroll run that paid a report (#853), as its account shows it. */
+export interface ConfirmedPayrollRun extends Omit<IncludedPayrollRun, "includedAt"> {
+	confirmedAt: string;
+	/** The lines the run carried: what earlier payroll runs paid, per wage type (decision 17). */
+	lines: TravelExpensePayrollRunInclusionLine[];
+	/** Overpaid by payroll: how much more the run paid than was owed at confirmation. */
+	overpaidAmount: string | null;
+}
+
+/** Each report's confirmed payroll runs, oldest confirmation first. */
+export async function loadConfirmedPayrollRuns(
+	database: Executor,
+	input: { organizationId: string; reportIds: readonly string[] },
+): Promise<Map<string, ConfirmedPayrollRun[]>> {
+	const runs = new Map<string, ConfirmedPayrollRun[]>();
+	if (input.reportIds.length === 0) return runs;
+	const rows = await database
+		.select({
+			reportId: travelExpensePayrollRunInclusion.reportId,
+			jobId: travelExpensePayrollRunInclusion.payrollExportJobId,
+			confirmedAt: travelExpensePayrollRunInclusion.endedAt,
+			lines: travelExpensePayrollRunInclusion.lines,
+			overpaidAmount: travelExpensePayrollRunInclusion.overpaidAmount,
+			filters: payrollExportJob.filters,
+			formatId: payrollExportConfig.formatId,
+			formatName: payrollExportFormat.name,
+		})
+		.from(travelExpensePayrollRunInclusion)
+		.innerJoin(
+			payrollExportJob,
+			and(
+				eq(payrollExportJob.id, travelExpensePayrollRunInclusion.payrollExportJobId),
+				eq(payrollExportJob.organizationId, travelExpensePayrollRunInclusion.organizationId),
+			),
+		)
+		.innerJoin(payrollExportConfig, eq(payrollExportConfig.id, payrollExportJob.configId))
+		.innerJoin(payrollExportFormat, eq(payrollExportFormat.id, payrollExportConfig.formatId))
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "confirmed"),
+				inArray(travelExpensePayrollRunInclusion.reportId, [...input.reportIds]),
+			),
+		)
+		.orderBy(asc(travelExpensePayrollRunInclusion.endedAt), asc(travelExpensePayrollRunInclusion.id));
+	for (const row of rows) {
+		const list = runs.get(row.reportId) ?? [];
+		list.push({
+			jobId: row.jobId,
+			formatId: row.formatId,
+			formatName: row.formatName,
+			periodStart: row.filters.dateRange.start,
+			periodEnd: row.filters.dateRange.end,
+			// A confirmed inclusion always has its end (the ended check).
+			confirmedAt: row.confirmedAt
+				? instantToCanonicalString(instantFromDate(row.confirmedAt))
+				: "",
+			lines: row.lines,
+			overpaidAmount: row.overpaidAmount,
+		});
+		runs.set(row.reportId, list);
+	}
+	return runs;
 }
 
 export async function loadIncludedPayrollRuns(

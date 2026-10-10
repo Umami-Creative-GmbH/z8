@@ -470,7 +470,12 @@ export type DiscardPayrollRunResult =
 	/** The run includes no report (any more): nothing to discard. */
 	| { status: "not_found" }
 	/** It includes reports of employees outside the actor's payroll scope. */
-	| { status: "out_of_scope" };
+	| { status: "out_of_scope" }
+	/**
+	 * Confirmed as paid for some report (#853): a confirmed run is final. Its
+	 * remaining reports can still be removed one by one.
+	 */
+	| { status: "confirmed" };
 
 /**
  * Discards an unconfirmed payroll run: every report it still includes is
@@ -508,6 +513,18 @@ export async function discardPayrollRun(
 			.orderBy(asc(travelExpensePayrollRunInclusion.id))
 			.for("update");
 		if (held.length === 0) return { status: "not_found" };
+		const [confirmed] = await tx
+			.select({ id: travelExpensePayrollRunInclusion.id })
+			.from(travelExpensePayrollRunInclusion)
+			.where(
+				and(
+					eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+					eq(travelExpensePayrollRunInclusion.payrollExportJobId, jobId),
+					eq(travelExpensePayrollRunInclusion.state, "confirmed"),
+				),
+			)
+			.limit(1);
+		if (confirmed) return { status: "confirmed" };
 		const scope = input.employeeScope;
 		if (scope !== "all" && !held.every((inclusion) => scope.includes(inclusion.employeeId))) {
 			return { status: "out_of_scope" };

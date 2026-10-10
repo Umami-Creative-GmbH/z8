@@ -61,6 +61,14 @@ export function DiscardPayrollRunButton({
 						"This payroll run includes employees outside your payroll scope.",
 					),
 				);
+			} else if (result.success && result.data.status === "confirmed") {
+				toast.error(
+					t(
+						"payroll.run.discard.confirmed",
+						"This payroll run is already confirmed as paid for some reports, so it can no longer be discarded. Remove single reports from it instead.",
+					),
+				);
+				router.refresh();
 			} else if (result.success) {
 				toast.error(
 					t("payroll.run.discard.notFound", "This payroll run no longer includes any reports."),
