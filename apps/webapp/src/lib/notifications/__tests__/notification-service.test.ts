@@ -157,6 +157,11 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+// Recipients are their own here; kiosk-only forwarding runs against PostgreSQL (#860).
+vi.mock("../kiosk-only-recipients", () => ({
+	resolveNotificationRecipients: async () => ({ kind: "self" }),
+}));
+
 vi.mock("@/db/schema", () => ({
 	notification: {
 		id: "notification",

@@ -217,6 +217,8 @@ const FAILURE_REPLIES: Record<
 	under_review: { status: 409, code: "review_pending" },
 	// The work touches a closed month (#762): terminal until someone reopens it.
 	month_closed: { status: 409, code: "month_closed" },
+	// A break in progress is open (#861): the work is not available to this break.
+	on_break: { status: 409, code: "target_not_active" },
 	failed: { status: 500, code: "unknown" },
 	unconfirmed: { status: 500, code: "unknown" },
 };

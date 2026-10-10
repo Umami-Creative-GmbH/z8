@@ -189,6 +189,14 @@ export const workPeriod = pgTable(
 		// writers that have not adopted them leave it unchanged (#327).
 		graphRevision: integer("graph_revision").default(0).notNull(),
 
+		// A break in progress on live work (#861, Time Tracking ADR 0007): where the
+		// break started and the zone observed there. Every closure of the work ends
+		// it at that start and clears both; the starting operation stays, so a retry
+		// of that start replays.
+		breakStartedAt: timestamp("break_started_at", { withTimezone: true }),
+		breakStartedZone: text("break_started_zone"),
+		breakStartedOperationId: uuid("break_started_operation_id"),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -257,6 +265,15 @@ export const workPeriod = pgTable(
 			table.organizationId,
 			table.startTime,
 		),
+		// A break in progress (#861) has its start and zone together, and always
+		// the operation that started it.
+		check(
+			"workPeriod_break_in_progress_chk",
+			sql`(${table.breakStartedAt} IS NULL) = (${table.breakStartedZone} IS NULL) AND (${table.breakStartedAt} IS NULL OR ${table.breakStartedOperationId} IS NOT NULL)`,
+		),
+		uniqueIndex("workPeriod_org_breakStartedOperation_idx")
+			.on(table.organizationId, table.breakStartedOperationId)
+			.where(sql`${table.breakStartedOperationId} IS NOT NULL`),
 	],
 );
 

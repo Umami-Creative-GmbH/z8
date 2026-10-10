@@ -9,6 +9,7 @@
     "build": "pnpm run i18n:metadata && pnpm run generate-licenses && next build",
     "start": "next start",
     "test": "pnpm run i18n:metadata && vitest run --project unit",
+    "public-api:openapi": "vitest run src/lib/public-api/openapi.test.ts --project unit --update",
     "i18n:metadata": "tsx scripts/generate-catalog-metadata.ts",
     "i18n:pull": "tolgee pull && pnpm run i18n:metadata",
     "test:integration": "bash ./scripts/run-approval-workflow-repository-integration.sh",

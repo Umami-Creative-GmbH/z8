@@ -41,6 +41,7 @@ import {
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 } from "./close-active-work";
+import { receiptActorColumns, writerActor } from "./receipt-actor";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkLocationType } from "./work-location";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
@@ -64,7 +65,8 @@ export type StartLiveWorkResult = {
 	version: typeof START_LIVE_WORK_RESULT_VERSION;
 	operationId: string;
 	owner: { employeeId: string };
-	actor: { kind: "human"; userId: string };
+	/** A kiosk start (#860) records its kiosk, never a human authority. */
+	actor: { kind: "human"; userId: string } | { kind: "kiosk"; kioskId: string };
 	workPeriodId: string;
 	clockInEntryId: string;
 	start: {
@@ -245,8 +247,7 @@ export async function startLiveWork(
 		commandVersion: input.command.version,
 		command: input.command,
 		appendAdmission: started.result.append.admission,
-		actorKind: "human",
-		actorUserId: input.actorUserId,
+		...receiptActorColumns(started.result.actor),
 		workPeriodId: started.result.workPeriodId,
 		resultVersion: START_LIVE_WORK_RESULT_VERSION,
 		result: started.result,
@@ -321,7 +322,7 @@ export async function startLiveWorkGraph(
 		version: START_LIVE_WORK_RESULT_VERSION,
 		operationId: command.operationId,
 		owner: { employeeId },
-		actor: { kind: "human", userId: input.actorUserId },
+		actor: writerActor(input.writer, input.actorUserId),
 		workPeriodId: period.id,
 		clockInEntryId: appended.entry.id,
 		start: {

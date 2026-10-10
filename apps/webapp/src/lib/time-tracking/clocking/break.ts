@@ -12,12 +12,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { canonicalWorkRecordClient } from "../canonical-work-record";
 import { ClockingConflictError, LiveWorkOccupiedError } from "../clocking-core";
-import {
-	type CloseActiveWorkWriter,
-	CompletedWorkCollisionError,
-	clockSource,
-	liveClockOutWriter,
-} from "../close-active-work";
+import { type CloseActiveWorkWriter, CompletedWorkCollisionError } from "../close-active-work";
 import {
 	type CloseResumeWorkOperationCommand,
 	type CloseResumeWorkResult,
@@ -43,6 +38,7 @@ import {
 	isFrozen,
 	receiptCommandOf,
 } from "./frozen";
+import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
 import type { BreakCommand, BreakResult } from "./types";
 
@@ -108,13 +104,15 @@ export function planBreak(command: BreakCommand, employee: Employee): BreakPlan 
 		...(at.kind === "occurred" ? { requestedInstant: instantToCanonicalString(at.instant) } : {}),
 		browserTimezone: zone.device,
 		deviceInfo: channel,
+		...kioskReceiptEvidence(command),
 	};
 	return {
 		command,
 		employee,
 		receiptCommand: receiptCommandOf<CloseResumeWorkOperationCommand>(command, receiptCommand),
-		// The live channel's writer names the channel, not the kind.
-		writer: liveClockOutWriter(channel),
+		// The live channel's writer names the channel, not the kind; a kiosk's also
+		// names the kiosk (#860).
+		writer: clockWriterOf(command),
 	};
 }
 
@@ -266,10 +264,9 @@ export async function takeBreak(
 	};
 }
 
-/** The channel's source evidence, for a break whose adapter carries no request. */
-function channelRequestMetadata(channel: BreakCommand["channel"]): TimeEntryRequestMetadata {
-	const { ipAddress, deviceInfo } = clockSource(channel);
-	return { ipAddress, userAgent: deviceInfo };
+/** The writer's source evidence, for a break whose adapter carries no request. */
+function writerRequestMetadata(writer: CloseActiveWorkWriter): TimeEntryRequestMetadata {
+	return { ipAddress: writer.ipAddress ?? null, userAgent: writer.deviceInfo };
 }
 
 /**
@@ -314,7 +311,7 @@ async function takeLegacyBreak(
 		.limit(1);
 	if (!period) throw new ClockingConflictError("Active work period changed");
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
-	const request = command.request ?? channelRequestMetadata(command.channel);
+	const request = command.request ?? writerRequestMetadata(plan.writer);
 
 	// The locked row, not the target resolved before the transaction, is the source.
 	const start = instantFromDate(period.startTime);

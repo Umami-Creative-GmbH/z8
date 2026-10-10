@@ -6,12 +6,14 @@
 		"dev": "next dev -p 3002 --webpack",
 		"build": "next build",
 		"start": "next start -p 3001",
-		"postinstall": "fumadocs-mdx"
+		"postinstall": "fumadocs-mdx",
+		"generate:api-reference": "node scripts/generate-api-reference.mjs"
 	},
 	"dependencies": {
 		"@tabler/icons-react": "^3.49.0",
 		"fumadocs-core": "^16.16.2",
 		"fumadocs-mdx": "^15.4.6",
+		"fumadocs-openapi": "12.4.1",
 		"fumadocs-ui": "^16.16.2",
 		"next": "16.4.0",
 		"react": "19.3.0",

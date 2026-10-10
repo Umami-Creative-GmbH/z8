@@ -80,6 +80,8 @@ export * from "./personnel-file";
 export * from "./platform-admin";
 export * from "./project";
 export * from "./project-assignment-history";
+// Public API key request log (#763)
+export * from "./public-api";
 // All relations (centralized)
 export * from "./relations";
 // Scheduled exports
@@ -117,6 +119,8 @@ export * from "./travel-expense-export";
 export * from "./travel-expense-adjustment";
 export * from "./expense-officer";
 export * from "./position-capture";
+export * from "./assigned-location";
+export * from "./kiosk";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";
@@ -126,3 +130,4 @@ export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
 export * from "./works-council";
+export * from "./kiosk-pin";

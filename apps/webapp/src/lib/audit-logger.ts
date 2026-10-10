@@ -159,6 +159,11 @@ export enum AuditAction {
 	ICS_FEED_REGENERATED = "ics_feed.regenerated",
 	ICS_FEED_REVOKED = "ics_feed.revoked",
 
+	// Public API key lifecycle (#763); key usage goes to the key request log instead
+	API_KEY_CREATED = "api_key.created",
+	API_KEY_UPDATED = "api_key.updated",
+	API_KEY_REVOKED = "api_key.revoked",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",
@@ -252,6 +257,25 @@ export enum AuditAction {
 	SUBAREA_DELETED = "subarea.deleted",
 	SUBAREA_EMPLOYEE_ASSIGNED = "subarea.employee_assigned",
 	SUBAREA_EMPLOYEE_REMOVED = "subarea.employee_removed",
+	// Assigned locations (#858): where an employee works, distinct from supervisors
+	ASSIGNED_LOCATION_ADDED = "location.assigned_employee_added",
+	ASSIGNED_LOCATION_REMOVED = "location.assigned_employee_removed",
+
+	// Kiosk PINs and kiosk-only employees (#857)
+	KIOSK_PIN_ISSUED = "kiosk_pin.issued",
+	KIOSK_PIN_RESET = "kiosk_pin.reset",
+	KIOSK_PIN_UNLOCKED = "kiosk_pin.unlocked",
+	KIOSK_PIN_CHANGED = "kiosk_pin.changed",
+	KIOSK_ONLY_EMPLOYEE_CREATED = "kiosk_only_employee.created",
+	KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED = "kiosk_only_employee.email_added",
+
+	// Kiosk enrolment (#859)
+	KIOSK_CREATED = "kiosk.created",
+	KIOSK_UPDATED = "kiosk.updated",
+	KIOSK_PAIRING_CODE_ISSUED = "kiosk.pairing_code_issued",
+	KIOSK_PAIRED = "kiosk.paired",
+	KIOSK_TOKEN_ROTATED = "kiosk.token_rotated",
+	KIOSK_REVOKED = "kiosk.revoked",
 
 	// Audit Pack Operations
 	AUDIT_PACK_CREATED = "audit_pack.created",
@@ -323,13 +347,17 @@ export interface AuditLogEntry {
 		| "subarea"
 		| "location_employee"
 		| "subarea_employee"
+		| "kiosk"
+		| "employee_assigned_location"
 		| "user"
+		| "kiosk_pin"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"
 		| "travel_expense_policy_version"
 		| "travel_expense_export"
-		| "ics_feed";
+		| "ics_feed"
+		| "api_key";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
@@ -409,6 +437,22 @@ async function sendToExternalService(entry: AuditLogEntry): Promise<void> {
 	} catch (error) {
 		// Log error but don't fail the operation
 		logger.error({ error, action: entry.action }, "Failed to send audit log to external service");
+	}
+}
+
+/**
+ * Hands an audit entry whose row is already committed to the external audit
+ * service, as `logAudit` does after persisting. Fire-and-forget; never throws.
+ * Stores that write their audit row inside their own transaction call it only
+ * after that transaction committed (`withAuditTrail`).
+ */
+export function forwardAuditToExternalService(entry: AuditLogEntry): void {
+	try {
+		sendToExternalService(entry).catch(() => {
+			// Already logged in sendToExternalService
+		});
+	} catch (error) {
+		logger.error({ error, action: entry.action }, "Failed to forward audit log");
 	}
 }
 

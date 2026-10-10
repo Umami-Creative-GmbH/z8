@@ -11,6 +11,7 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { autoClockOutClosureEnd } from "../automatic-clock-out/policy";
 import {
 	ClockingAccessError,
 	ClockingConflictError,
@@ -52,6 +53,24 @@ import {
 	takeBreak,
 } from "./break";
 import {
+	BreakInProgressChangedError,
+	type BreakInProgressCommand,
+	BreakStartCollisionError,
+	type BreakStartWrite,
+	closureEnd,
+	committedResumeStart,
+	findLiveWork,
+	type ResumeBreakCommand,
+	type ResumeBreakOutcome,
+	recordBreakInProgress,
+	replayBreakStart,
+	resumesBreak,
+	type StartBreakOutcome,
+	type StartBreakRefusal,
+	settleBreakInProgress,
+	startFreshnessRefusal,
+} from "./break-in-progress";
+import {
 	type ClockInPlan,
 	type ClockInStart,
 	planClockIn,
@@ -75,6 +94,7 @@ import type {
 	BreakCommand,
 	BreakOutcome,
 	BreakRefusal,
+	BreakStart,
 	ClockCommand,
 	ClockInCommand,
 	ClockInOutcome,
@@ -84,6 +104,7 @@ import type {
 	ClockOutOutcome,
 	ClockOutRefusal,
 	ClockRefusal,
+	ClockTarget,
 	OperationIdentity,
 } from "./types";
 
@@ -132,6 +153,10 @@ export type Clocking = {
 	 * Only receipts of the channel's writer answer; legacy work keeps none.
 	 */
 	lookup(query: ClockLookupQuery): Promise<ClockLookup>;
+	/** Records a break in progress on the employee's live work (#861). */
+	startBreak(command: BreakInProgressCommand): Promise<StartBreakOutcome>;
+	/** Runs the break command with the open break's recorded start, ending it (#861). */
+	resumeBreak(command: ResumeBreakCommand): Promise<ResumeBreakOutcome>;
 };
 
 type Employee = typeof employee.$inferSelect;
@@ -141,7 +166,9 @@ function isReplayable(identity: OperationIdentity) {
 	return identity.origin !== "server";
 }
 
-function refused<R extends ClockRefusal>(failure: R) {
+function refused<R extends ClockRefusal | StartBreakRefusal | { code: "no_break_in_progress" }>(
+	failure: R,
+) {
 	return { outcome: "refused" as const, failure };
 }
 
@@ -292,7 +319,10 @@ function freshnessRefusal(command: ClockCommand, eventInstant: Instant) {
 	const { freshness } = command;
 	if (!freshness || command.at.kind !== "occurred") return null;
 	const instants = [
-		...(isBreak(command) && command.body.start ? [command.body.start.instant] : []),
+		// A resumed break's start was recorded by the server, not observed now.
+		...(isBreak(command) && command.body.start && !command.resumesBreakInProgress
+			? [command.body.start.instant]
+			: []),
 		eventInstant,
 		...(freshness.observed ?? []),
 	];
@@ -309,7 +339,7 @@ function freshnessRefusal(command: ClockCommand, eventInstant: Instant) {
 
 /** The capture at an instant, in the device zone observed there, else the fallback. */
 function eventCapture(
-	command: ClockCommand,
+	command: Pick<ClockCommand, "principal" | "subject" | "zone">,
 	eventInstant: Instant,
 	deviceZone = command.zone.device,
 ) {
@@ -415,7 +445,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		}
 	}
 
-	function eventInstantOf(command: ClockCommand) {
+	function eventInstantOf(command: Pick<ClockCommand, "at">) {
 		return command.at.kind === "occurred" ? command.at.instant : clock.nowInstant();
 	}
 
@@ -449,7 +479,9 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	 */
 	async function resolveTarget(
 		plan: ClockOutPlan | BreakPlan,
-	): Promise<ClockOutTarget | { refusal: ClockTargetRefusal }> {
+	): Promise<
+		(ClockOutTarget & { breakInProgress: BreakStart | null }) | { refusal: ClockTargetRefusal }
+	> {
 		const target = plan.command.body.target ?? { kind: "active" };
 		const [period] = await db
 			.select({
@@ -460,6 +492,8 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				deletedAt: workPeriod.deletedAt,
 				workLocationType: workPeriod.workLocationType,
 				projectId: workPeriod.projectId,
+				breakStartedAt: workPeriod.breakStartedAt,
+				breakStartedZone: workPeriod.breakStartedZone,
 			})
 			.from(workPeriod)
 			.where(
@@ -490,6 +524,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			start: instantFromDate(period.startTime),
 			workLocationType: (period.workLocationType as WorkLocationType | null) ?? null,
 			projectId: period.projectId,
+			// The open break a closure ends at (#861); re-checked under the work transaction.
+			breakInProgress:
+				period.breakStartedAt && period.breakStartedZone
+					? { instant: instantFromDate(period.breakStartedAt), zone: period.breakStartedZone }
+					: null,
 		};
 	}
 
@@ -537,6 +576,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	async function executeClockOut(
 		plan: ClockOutPlan,
 		eventInstant: Instant,
+		attempt = 0,
 	): Promise<ClockOutOutcome> {
 		const { command } = plan;
 		const stale = freshnessRefusal(command, eventInstant);
@@ -544,8 +584,17 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		// A blocking holiday never refuses a clock-out: it would leave live work running.
 		const target = await resolveTarget(plan);
 		if ("refusal" in target) return refused({ code: target.refusal });
-		const attribution = await attributionRefusal(plan, target, eventInstant);
+		// An open break in progress ends the work at its start (#861).
+		const end = closureEnd(eventInstant, target.breakInProgress);
+		const attribution = await attributionRefusal(plan, target, end.instant);
 		if (attribution) return refused(attribution);
+		// The device's position belongs to the command's instant, not the earlier break start.
+		const stamped = end.atBreakStart ? { ...command, position: undefined } : command;
+		const periodScope = {
+			organizationId: plan.employee.organizationId,
+			employeeId: plan.employee.id,
+			workPeriodId: target.workPeriodId,
+		};
 
 		let closure: ClockOutClosure;
 		try {
@@ -553,26 +602,33 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				{
 					...closureScope(plan),
 					workPeriodId: target.workPeriodId,
-					endTime: eventInstant,
+					endTime: end.instant,
 					projectId: attributionValue(command.body.project),
 					...(command.body.task ? { taskId: attributionValue(command.body.task) } : {}),
 					workCategoryId: attributionValue(command.body.workCategory),
 				},
-				async (coordination) =>
-					stampExecutedClockEvent(
-						coordination.db,
-						command,
-						await closeClockOut(coordination, {
-							plan,
-							replayable: isReplayable(command.identity),
-							target,
-							eventInstant,
-							capture: eventCapture(command, eventInstant),
-						}),
-						{ eventInstant, entryIdOf: (closed) => closed.entry.id },
-					),
+				async (coordination) => {
+					const closed = await closeClockOut(coordination, {
+						plan,
+						replayable: isReplayable(command.identity),
+						target,
+						eventInstant: end.instant,
+						capture: eventCapture(command, end.instant, end.zone ?? command.zone.device),
+					});
+					if (closed.disposition === "executed") {
+						await settleBreakInProgress(coordination.db, periodScope, target.breakInProgress);
+					}
+					return stampExecutedClockEvent(coordination.db, stamped, closed, {
+						eventInstant,
+						entryIdOf: (executed) => executed.entry.id,
+					});
+				},
 			);
 		} catch (error) {
+			// A break started since the target was read: plan the closure again.
+			if (error instanceof BreakInProgressChangedError && attempt < 2) {
+				return executeClockOut(plan, eventInstant, attempt + 1);
+			}
 			return refused(closureRefusal(command, error));
 		}
 		if (closure.disposition === "replayed") {
@@ -688,7 +744,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	}
 
 	/** Break steps after committed replay; any refusal here may race a matching commit. */
-	async function executeBreak(plan: BreakPlan, eventInstant: Instant): Promise<BreakOutcome> {
+	async function executeBreak(
+		plan: BreakPlan,
+		eventInstant: Instant,
+		attempt = 0,
+	): Promise<BreakOutcome> {
 		const { command, employee: subject } = plan;
 		const stale = freshnessRefusal(command, eventInstant);
 		if (stale) return refused(stale);
@@ -703,6 +763,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		}
 		const target = await resolveTarget(plan);
 		if ("refusal" in target) return refused({ code: target.refusal });
+		// An open break in progress ends only by its resume, a break at its start (#861).
+		const open = target.breakInProgress;
+		if (open ? !resumesBreak(command, open) : command.resumesBreakInProgress) {
+			return refused({ code: open ? "on_break" : targetChanged(command) });
+		}
 		const { start } = command.body;
 		const breakStart = breakStartOf(command, eventInstant);
 		if (compareInstants(breakStart, target.start) <= 0) {
@@ -713,29 +778,44 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		try {
 			closure = await transactions.run(
 				{ ...transactionScope(plan), workPeriodId: target.workPeriodId, endTime: breakStart },
-				async (coordination) =>
-					stampExecutedClockEvent(
-						coordination.db,
-						command,
-						await takeBreak(coordination, {
-							plan,
-							replayable: isReplayable(command.identity),
-							target,
-							// Each endpoint is captured in the zone at its own instant.
-							endpoints: {
-								close: {
-									instant: breakStart,
-									capture: eventCapture(command, breakStart, start?.zone ?? command.zone.device),
-								},
-								resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
+				async (coordination) => {
+					const taken = await takeBreak(coordination, {
+						plan,
+						replayable: isReplayable(command.identity),
+						target,
+						// Each endpoint is captured in the zone at its own instant.
+						endpoints: {
+							close: {
+								instant: breakStart,
+								capture: eventCapture(command, breakStart, start?.zone ?? command.zone.device),
 							},
-						}),
-						// The device fixed its position when the break ended: only the resumed
-						// clock-in carries it, never the earlier break start (#826 D1).
-						{ eventInstant, entryIdOf: (taken) => taken.resumeEntryId },
-					),
+							resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
+						},
+					});
+					if (taken.disposition === "executed") {
+						await settleBreakInProgress(
+							coordination.db,
+							{
+								organizationId: subject.organizationId,
+								employeeId: subject.id,
+								workPeriodId: target.workPeriodId,
+							},
+							open,
+						);
+					}
+					// The device fixed its position when the break ended: only the resumed
+					// clock-in carries it, never the earlier break start (#826 D1).
+					return stampExecutedClockEvent(coordination.db, command, taken, {
+						eventInstant,
+						entryIdOf: (executed) => executed.resumeEntryId,
+					});
+				},
 			);
 		} catch (error) {
+			// A break in progress started or ended since the target was read: plan again.
+			if (error instanceof BreakInProgressChangedError && attempt < 2) {
+				return executeBreak(plan, eventInstant, attempt + 1);
+			}
 			return refused(breakRefusal(command, error));
 		}
 		if (closure.disposition === "replayed") return { outcome: "replayed", result: closure.result };
@@ -777,7 +857,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				command.body.target?.kind !== "period" ||
 				command.body.target.workPeriodId !== binding.decision.workPeriodId ||
 				command.at.kind !== "occurred" ||
-				compareInstants(command.at.instant, binding.decision.cutoff) !== 0 ||
+				compareInstants(command.at.instant, autoClockOutClosureEnd(binding.decision)) !== 0 ||
 				command.zone.device !== null ||
 				command.zone.fallback !== binding.decision.timezone ||
 				command.body.project.kind !== "preserve" ||
@@ -830,9 +910,156 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return runClockOut(command, subject);
 	}
 
+	/**
+	 * The run order up to billing for a break in progress's commands: the
+	 * employee's own, never on behalf, authorized as a break.
+	 */
+	async function admitBreakInProgress(
+		command: BreakInProgressCommand,
+	): Promise<
+		| { subject: Employee }
+		| { code: "access_denied" | "invalid_command" }
+		| { code: "billing_required"; reason: string }
+	> {
+		if (!isEnlistedFor(command) || command.subject.onBehalf) return { code: "access_denied" };
+		if (!CANONICAL_UUID.test(command.identity.id)) return { code: "invalid_command" };
+		const subject = await authorizedSubject({ ...command, kind: "break" });
+		if (!subject) return { code: "access_denied" };
+		const billing = await requireBillingForMutation(command.organizationId);
+		if (!isBillingMutationAllowed(billing)) {
+			return { code: "billing_required", reason: billing.reason ?? "subscription_required" };
+		}
+		return { subject };
+	}
+
+	function startBreakRefusal(error: unknown): StartBreakRefusal {
+		if (isUnresolvedWorkPeriodReview(error)) {
+			return {
+				code: "under_review",
+				review:
+					error.conflictType === "pending_time_correction_approval" ? "time_correction" : "approval",
+			};
+		}
+		if (error instanceof BreakStartCollisionError) return { code: "collision" };
+		if (error instanceof ClockingConflictError) return { code: "not_clocked_in" };
+		return { code: "unconfirmed", cause: error };
+	}
+
+	async function replayStartedBreak(
+		command: BreakInProgressCommand,
+		subject: Employee,
+	): Promise<StartBreakOutcome | null> {
+		try {
+			const result = await replayBreakStart(
+				db,
+				{ organizationId: subject.organizationId, employeeId: subject.id },
+				command.identity.id,
+			);
+			return result ? { outcome: "replayed", result } : null;
+		} catch (error) {
+			return refused(
+				error instanceof BreakStartCollisionError
+					? { code: "collision" }
+					: { code: "failed", cause: error },
+			);
+		}
+	}
+
+	/** Start steps after committed replay; the live work is re-read under its lock. */
+	async function executeStartBreak(
+		command: BreakInProgressCommand,
+		subject: Employee,
+	): Promise<StartBreakOutcome> {
+		const instant = eventInstantOf(command);
+		const stale = startFreshnessRefusal(command, instant);
+		if (stale) return refused(stale);
+		const scope = { organizationId: subject.organizationId, employeeId: subject.id };
+		const live = await findLiveWork(db, scope);
+		if (!live) return refused({ code: "not_clocked_in" });
+		if (live.breakInProgress) return refused({ code: "already_on_break" });
+		if (compareInstants(instant, live.start) <= 0) return refused({ code: "invalid_interval" });
+		// The zone the break's closure will be captured in when it ends.
+		const zone = eventCapture(command, instant).timezone;
+		let write: BreakStartWrite;
+		try {
+			write = await transactions.run(
+				{
+					...scope,
+					userId: command.principal.userId,
+					ownerUserId: subject.userId,
+					submissionId: command.identity.id,
+					workPeriodId: live.workPeriodId,
+					endTime: instant,
+				},
+				(coordination) =>
+					recordBreakInProgress(coordination.db, {
+						...scope,
+						workPeriodId: live.workPeriodId,
+						operationId: command.identity.id,
+						replayable: isReplayable(command.identity),
+						start: { instant, zone },
+					}),
+			);
+		} catch (error) {
+			return refused(startBreakRefusal(error));
+		}
+		if (write.disposition === "refused") return refused({ code: write.code });
+		return { outcome: write.disposition, result: write.result };
+	}
+
+	async function startBreak(command: BreakInProgressCommand): Promise<StartBreakOutcome> {
+		const admitted = await admitBreakInProgress(command);
+		if ("code" in admitted) return refused(admitted);
+		const { subject } = admitted;
+		const replayable = isReplayable(command.identity);
+		if (replayable) {
+			const replay = await replayStartedBreak(command, subject);
+			if (replay) return replay;
+		}
+		const outcome = await executeStartBreak(command, subject);
+		if (
+			replayable &&
+			outcome.outcome === "refused" &&
+			(outcome.failure.code === "already_on_break" || outcome.failure.code === "admission_window")
+		) {
+			// A matching start may have committed since the first replay read.
+			const replay = await replayStartedBreak(command, subject);
+			if (replay?.outcome === "replayed") return replay;
+		}
+		return outcome;
+	}
+
+	async function resumeBreak(command: ResumeBreakCommand): Promise<ResumeBreakOutcome> {
+		const admitted = await admitBreakInProgress(command);
+		if ("code" in admitted) return refused(admitted);
+		const { subject } = admitted;
+		const scope = { organizationId: subject.organizationId, employeeId: subject.id };
+		const live = await findLiveWork(db, scope);
+		const resume = (target: ClockTarget, start: BreakStart) => {
+			const breakCommand: BreakCommand = {
+				...command,
+				body: { kind: "break", target, start },
+				resumesBreakInProgress: true,
+			};
+			return (run as Clocking["run"])(breakCommand);
+		};
+		if (live?.breakInProgress) {
+			return resume({ kind: "period", workPeriodId: live.workPeriodId }, live.breakInProgress);
+		}
+		// A retried resume that committed rebuilds its break command and replays it;
+		// the target is the work it resumed, which it can never close again.
+		const committed = isReplayable(command.identity)
+			? await committedResumeStart(db, scope, command.identity.id)
+			: null;
+		if (!committed) return refused({ code: "no_break_in_progress" });
+		return resume({ kind: "started_by", operationId: command.identity.id }, committed);
+	}
+
 	return {
 		// Each kind's outcome follows its command; the overloads state it.
 		run: run as Clocking["run"],
+		startBreak,
+		resumeBreak,
 
 		async lookup(query) {
 			// Self-service only: a lookup names no command kind to run on behalf.

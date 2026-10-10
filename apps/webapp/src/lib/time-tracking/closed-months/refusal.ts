@@ -3,7 +3,7 @@ import { type ClosedMonthKey, firstDayOfMonth, parseClosedMonth } from "./rules"
 
 /**
  * The typed "month closed" refusal (#762). Writers raise it before writing;
- * the database refusal behind them (migration 0183) raises this SQLSTATE with
+ * the database refusal behind them (migration 0191) raises this SQLSTATE with
  * the month as its detail, and `monthClosedRefusalOf` turns either into the
  * same `MonthClosedError`.
  */

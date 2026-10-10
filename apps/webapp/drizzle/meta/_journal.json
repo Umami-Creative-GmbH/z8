@@ -1280,21 +1280,77 @@
       "idx": 182,
       "version": "7",
       "when": 1800028800000,
-      "tag": "0182_closed_months",
+      "tag": "0182_employee_kiosk_pin",
       "breakpoints": true
     },
     {
       "idx": 183,
       "version": "7",
       "when": 1800115200000,
-      "tag": "0183_closed_month_refusal",
+      "tag": "0183_employee_assigned_location",
       "breakpoints": true
     },
     {
       "idx": 184,
       "version": "7",
       "when": 1800201600000,
-      "tag": "0184_closed_month_notifications",
+      "tag": "0184_kiosk",
+      "breakpoints": true
+    },
+    {
+      "idx": 185,
+      "version": "7",
+      "when": 1800288000000,
+      "tag": "0185_work_period_break_in_progress",
+      "breakpoints": true
+    },
+    {
+      "idx": 186,
+      "version": "7",
+      "when": 1800374400000,
+      "tag": "0186_kiosk_clocking",
+      "breakpoints": true
+    },
+    {
+      "idx": 187,
+      "version": "7",
+      "when": 1800460800000,
+      "tag": "0187_drop_payroll_export_format_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1800547200000,
+      "tag": "0188_organization_api_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1800633600000,
+      "tag": "0189_public_api_request_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 190,
+      "version": "7",
+      "when": 1800720000000,
+      "tag": "0190_closed_months",
+      "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1800806400000,
+      "tag": "0191_closed_month_refusal",
+      "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1800892800000,
+      "tag": "0192_closed_month_notifications",
       "breakpoints": true
     }
   ]

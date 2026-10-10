@@ -6,6 +6,7 @@ import {
 } from "@/components/compliance/compliance-alert-banner";
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
 import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
+import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
 import { ClockConnectionNotice } from "@/components/time-tracking/clock-connection-notice";
 import {
 	ActiveSessionSummary,
@@ -31,6 +32,8 @@ interface ActiveWorkPeriodData {
 	id: string;
 	startTime: Date;
 	endTime: Date | null;
+	breakStartedAt?: Date | null;
+	breakStartedZone?: string | null;
 }
 
 interface Props {
@@ -75,13 +78,16 @@ export function ClockInOutWidget({
 	timeFormat,
 }: Props) {
 	const widget = useClockInOutWidget(activeWorkPeriod);
+	const onBreak = widget.isClockedIn && !!widget.activeWorkPeriod?.breakStartedAt;
 
 	return (
 		<Card className="@container/widget">
 			<CardHeader>
 				<CardTitle>{widget.t("timeTracking.title", "Time Tracking")}</CardTitle>
 				<CardDescription>
-					{widget.isClockedIn
+					{onBreak
+						? widget.t("timeTracking.breakInProgress.description", "You're on a break")
+						: widget.isClockedIn
 						? widget.t(
 								"timeTracking.currentlyClockedIn",
 								"You're currently clocked in",
@@ -97,6 +103,13 @@ export function ClockInOutWidget({
 						elapsedSeconds={widget.elapsedSeconds}
 						startTime={widget.activeWorkPeriod.startTime}
 						t={widget.t}
+						timeFormat={timeFormat}
+					/>
+				) : null}
+				{onBreak && widget.activeWorkPeriod?.breakStartedAt ? (
+					<BreakInProgressNotice
+						since={widget.activeWorkPeriod.breakStartedAt}
+						zone={widget.activeWorkPeriod.breakStartedZone ?? null}
 						timeFormat={timeFormat}
 					/>
 				) : null}
@@ -142,7 +155,8 @@ export function ClockInOutWidget({
 									t={widget.t}
 								/>
 							</div>
-							{widget.isClockedIn ? (
+							{/* A break in progress ends only by its resume at a kiosk. */}
+							{widget.isClockedIn && !onBreak ? (
 								<QuickBreakPopover
 									onAddBreak={widget.handleAddBreak}
 									isAddingBreak={widget.isAddingBreak}

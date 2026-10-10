@@ -5,5 +5,6 @@
  */
 
 export * from "./date-range-calculator";
+export * from "./recipient-emails";
 export * from "./schedule-evaluator";
 export * from "./types";

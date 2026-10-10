@@ -197,6 +197,20 @@ const limiters = {
 		prefix: "ratelimit:export",
 		analytics: false,
 	}),
+	/** Kiosk pairing-code attempts per client IP (#859): 10 per 10 minutes */
+	kioskPairing: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(10, "600 s"),
+		prefix: "ratelimit:kiosk-pairing",
+		analytics: false,
+	}),
+	/** Kiosk PIN attempts per kiosk (#860): 30 per minute, every PIN-carrying call counts */
+	kioskPinAttempts: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(30, "60 s"),
+		prefix: "ratelimit:kiosk-pin",
+		analytics: false,
+	}),
 	/** ICS feed fetches, keyed by feed id (120 per hour) */
 	icsFeed: new Ratelimit({
 		redis,
@@ -224,6 +238,8 @@ export type RateLimitEndpoint = keyof typeof limiters;
 export interface RateLimitResult {
 	/** Whether the request is allowed */
 	allowed: boolean;
+	/** Requests allowed per window, when known */
+	limit?: number;
 	/** Number of remaining requests in the window */
 	remaining: number;
 	/** Timestamp when the rate limit resets (Unix epoch in milliseconds) */
@@ -248,6 +264,8 @@ export const RATE_LIMIT_CONFIGS = {
 		maxRequests: exportConfig.requests,
 		windowSeconds: exportConfig.seconds,
 	},
+	kioskPairing: { maxRequests: 10, windowSeconds: 600 },
+	kioskPinAttempts: { maxRequests: 30, windowSeconds: 60 },
 	icsFeed: {
 		maxRequests: icsFeedConfig.requests,
 		windowSeconds: icsFeedConfig.seconds,
@@ -312,6 +330,7 @@ export async function checkRateLimit(
 			logger.info({ identifier, endpoint, retryAfter }, "Rate limit exceeded");
 			return {
 				allowed: false,
+				limit: result.limit,
 				remaining: result.remaining,
 				resetAt: result.reset,
 				retryAfter: Math.max(0, retryAfter),
@@ -320,6 +339,7 @@ export async function checkRateLimit(
 
 		return {
 			allowed: true,
+			limit: result.limit,
 			remaining: result.remaining,
 			resetAt: result.reset,
 			retryAfter: 0,
@@ -572,6 +592,9 @@ export function createRateLimitResponse(
 ): Response {
 	const headers: Record<string, string> = {
 		"Retry-After": result.retryAfter.toString(),
+		...(result.limit === undefined
+			? {}
+			: { "X-RateLimit-Limit": result.limit.toString() }),
 		"X-RateLimit-Remaining": result.remaining.toString(),
 		"X-RateLimit-Reset": Math.floor(result.resetAt / 1000).toString(),
 	};
