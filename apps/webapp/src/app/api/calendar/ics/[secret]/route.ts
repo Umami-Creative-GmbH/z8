@@ -2,14 +2,15 @@
  * ICS Feed Endpoint
  *
  * Public endpoint that generates ICS calendar feeds for external calendar
- * applications to subscribe to. Authentication is via secret token in the URL.
+ * applications to subscribe to. Authentication is via secret token in the URL;
+ * the feed is found by the token's digest (#991).
  *
  * GET /api/calendar/ics/[secret]
  *
  * Returns: text/calendar (ICS format)
  */
 
-import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -18,14 +19,19 @@ import { absenceCategory, absenceEntry, icsFeed } from "@/db/schema";
 import { employee, team } from "@/db/schema/organization";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { generateICS, mapAbsencesToICSEvents } from "@/lib/calendar-sync/domain";
+import {
+	digestIcsFeedSecret,
+	isWellFormedIcsFeedSecret,
+} from "@/lib/calendar-sync/ics-feed-secret";
 import type { ICSFeedOptions } from "@/lib/calendar-sync/types";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 
 // ============================================
 // ROUTE HANDLER
 // ============================================
 
 async function handleCalendarIcsFeed(
-	_request: NextRequest,
+	request: NextRequest,
 	{ params }: { params: Promise<{ secret: string }> },
 ) {
 	await connection(); // Opt out of caching for dynamic data
@@ -33,29 +39,43 @@ async function handleCalendarIcsFeed(
 	const { secret } = await params;
 
 	try {
-		// 1. Validate the secret token and get feed config
-		const feed = await db.query.icsFeed.findFirst({
-			where: and(eq(icsFeed.secret, secret), eq(icsFeed.isActive, true)),
-		});
+		// 1. Find the active feed by the secret's digest
+		const feed = isWellFormedIcsFeedSecret(secret)
+			? await db.query.icsFeed.findFirst({
+					where: and(
+						eq(icsFeed.secretDigest, digestIcsFeedSecret(secret)),
+						isNull(icsFeed.revokedAt),
+					),
+				})
+			: undefined;
+
+		// 2. Rate limit: unknown secrets per client IP, known feeds per feed.
+		// Misses never consume a feed's budget, so guessing cannot lock a feed out.
+		const rateLimit = feed
+			? await checkRateLimit(feed.id, "icsFeed")
+			: await checkRateLimit(getClientIp(request), "icsFeedMiss");
+		if (!rateLimit.allowed) {
+			return createRateLimitResponse(rateLimit, request);
+		}
 
 		if (!feed) {
 			return new NextResponse("Feed not found", { status: 404 });
 		}
 
-		// 2. Update last accessed timestamp (fire and forget)
+		// 3. Record the fetch (fire and forget)
 		db.update(icsFeed)
-			.set({ lastAccessedAt: new Date() })
+			.set({ lastUsedAt: new Date() })
 			.where(and(eq(icsFeed.id, feed.id), eq(icsFeed.organizationId, feed.organizationId)))
 			.catch(() => {
 				// Ignore errors updating access time
 			});
 
-		// 3. Determine date range (past 30 days to next 365 days)
+		// 4. Determine date range (past 30 days to next 365 days)
 		const now = DateTime.now();
 		const startDate = now.minus({ days: 30 }).toFormat("yyyy-MM-dd");
 		const endDate = now.plus({ days: 365 }).toFormat("yyyy-MM-dd");
 
-		// 4. Build status filter based on feed settings
+		// 5. Build status filter based on feed settings
 		const statusFilters: Array<"pending" | "approved" | "rejected"> = [];
 		if (feed.includeApproved) statusFilters.push("approved");
 		if (feed.includePending) statusFilters.push("pending");
@@ -71,7 +91,7 @@ async function handleCalendarIcsFeed(
 			});
 		}
 
-		// 5. Fetch absences based on feed type
+		// 6. Fetch absences based on feed type
 		let absences: AbsenceWithCategory[] = [];
 		let calendarName = "Z8 Absences";
 		let calendarDescription = "";
@@ -120,7 +140,7 @@ async function handleCalendarIcsFeed(
 			);
 		}
 
-		// 6. Map absences to ICS events
+		// 7. Map absences to ICS events
 		const options: ICSFeedOptions = {
 			calendarName,
 			calendarDescription,
@@ -132,10 +152,10 @@ async function handleCalendarIcsFeed(
 			includeEmployeeName,
 		});
 
-		// 7. Generate ICS content
+		// 8. Generate ICS content
 		const icsContent = generateICS(events, options);
 
-		// 8. Return ICS response
+		// 9. Return ICS response
 		return new NextResponse(icsContent, {
 			headers: getICSHeaders(),
 		});
