@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
-import { AnnouncementBar } from "@/components/landing/announcement-bar";
 import { ComparisonTable } from "@/components/landing/comparison-table";
 import { DetailedFeatures } from "@/components/landing/detailed-features";
 import { FaqSection } from "@/components/landing/faq-section";
@@ -18,7 +17,6 @@ import { NewsletterCta } from "@/components/landing/newsletter-cta";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { ProductGallery } from "@/components/landing/product-gallery";
 import { StatsRibbon } from "@/components/landing/stats-ribbon";
-import { Testimonials } from "@/components/landing/testimonials";
 import { ThemeProvider } from "@/components/theme/theme-context";
 import { landingCopy } from "@/i18n/landing-copy";
 import { alternatePath, getLocalizedPath, isLocale } from "@/i18n/locales";
@@ -75,7 +73,6 @@ export default async function Home({ params }: PageProps) {
 
 	return (
 		<ThemeProvider>
-			<AnnouncementBar copy={copy.announcement} />
 			<Header copy={copy.header} />
 			<HeroSection copy={copy.hero} />
 			<LogoBar copy={copy.logos} />
@@ -83,7 +80,6 @@ export default async function Home({ params }: PageProps) {
 			<FeaturesGrid copy={copy.featuresGrid} />
 			<DetailedFeatures copy={copy.detailedFeatures} />
 			<ProductGallery images={copy.galleryImages} />
-			<Testimonials copy={copy.testimonials} />
 			<LargeBanner copy={copy.largeBanner} />
 			<PricingSection copy={copy.pricing} />
 			<ComparisonTable copy={copy.comparisons} />

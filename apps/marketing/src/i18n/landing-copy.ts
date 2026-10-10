@@ -42,10 +42,6 @@ const comparisonAvailability = {
 } as const;
 
 export type LandingCopy = {
-	announcement: {
-		badge: string;
-		text: string;
-	};
 	header: {
 		brand: string;
 		navItems: Array<{ id: StableId; href: string; label: string }>;
@@ -90,11 +86,6 @@ export type LandingCopy = {
 		items: Array<{ id: StableId; tag: string; title: string; desc: string; image: string }>;
 	};
 	galleryImages: string[];
-	testimonials: {
-		eyebrow: string;
-		title: string;
-		items: Array<{ id: StableId; quote: string; name: string; role: string; avatar: string }>;
-	};
 	largeBanner: {
 		image: string;
 		imageAlt: string;
@@ -165,10 +156,6 @@ export type LandingCopy = {
 
 export const landingCopy: Record<Locale, LandingCopy> = {
 	de: {
-		announcement: {
-			badge: "Neu",
-			text: "Z8 v4 ist da: Schneller, schöner, smarter.",
-		},
 		header: {
 			brand: "Z8",
 			navItems: [
@@ -221,14 +208,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			},
 		},
 		logos: {
-			label: "Vertraut von",
-			items: ["DATEV", "Lexware", "Personio", "SAP", "Sage"],
+			label: "Exportiert nach",
+			items: ["DATEV", "Lexware", "Personio", "SAP SuccessFactors", "Sage"],
 		},
 		stats: [
-			{ value: "2.400+", label: "Unternehmen", sub: "vertrauen auf Z8" },
-			{ value: "99,98%", label: "Uptime", sub: "seit 2022" },
-			{ value: "340k", label: "Mitarbeiter", sub: "erfassen täglich" },
-			{ value: "<2s", label: "Ladezeit", sub: "Median weltweit" },
+			{ value: "4 €", label: "pro Nutzer", sub: "im Monat, zzgl. MwSt." },
+			{ value: "14 Tage", label: "kostenlos testen", sub: "ohne Kreditkarte" },
+			{ value: "5", label: "Lohnexport-Ziele", sub: "DATEV bis SAP SuccessFactors" },
+			{ value: "SSO", label: "SAML & OIDC", sub: "plus SCIM-Provisioning" },
 		],
 		featuresGrid: {
 			eyebrow: "Funktionen",
@@ -297,36 +284,6 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			],
 		},
 		galleryImages,
-		testimonials: {
-			eyebrow: "Kundenstimmen",
-			title: "Was unsere Kunden sagen.",
-			items: [
-				{
-					id: "katharina-voss",
-					quote:
-						"Wir haben drei Tools durch Z8 ersetzt. Die Zeitersparnis in der HR-Abteilung ist spürbar \u2014 mindestens 8 Stunden pro Woche.",
-					name: "Dr. Katharina Voss",
-					role: "Head of People, Finleap",
-					avatar: "KV",
-				},
-				{
-					id: "markus-hein",
-					quote:
-						"GoBD-Konformität war für uns ein Muss. Z8 ist das einzige Tool, das das sauber löst und gleichzeitig schön aussieht.",
-					name: "Markus Hein",
-					role: "Geschäftsführer, Hein & Partner",
-					avatar: "MH",
-				},
-				{
-					id: "sophie-brandt",
-					quote:
-						"Unser Onboarding dauert jetzt 3 Minuten statt 2 Tage. Die SCIM-Integration mit unserem IdP funktioniert einwandfrei.",
-					name: "Sophie Brandt",
-					role: "IT-Leiterin, Commerz Real",
-					avatar: "SB",
-				},
-			],
-		},
 		largeBanner: {
 			image: largeBannerImage,
 			imageAlt: "Team collaboration",
@@ -453,7 +410,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "gobd-compliance",
 					q: "Ist Z8 wirklich GoBD-konform?",
-					a: "Ja. Alle Zeiteinträge werden revisionssicher gespeichert. Nachträgliche Änderungen werden dokumentiert und sind jederzeit nachvollziehbar. Wir arbeiten mit spezialisierten Wirtschaftsprüfern zusammen.",
+					a: "Ja. Alle Zeiteinträge werden revisionssicher gespeichert. Nachträgliche Änderungen werden dokumentiert und sind jederzeit nachvollziehbar.",
 				},
 				{
 					id: "payroll-integration",
@@ -512,10 +469,6 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 		},
 	},
 	en: {
-		announcement: {
-			badge: "New",
-			text: "Z8 v4 is here: faster, cleaner, smarter.",
-		},
 		header: {
 			brand: "Z8",
 			navItems: [
@@ -568,14 +521,14 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			},
 		},
 		logos: {
-			label: "Trusted by",
-			items: ["DATEV", "Lexware", "Personio", "SAP", "Sage"],
+			label: "Exports to",
+			items: ["DATEV", "Lexware", "Personio", "SAP SuccessFactors", "Sage"],
 		},
 		stats: [
-			{ value: "2,400+", label: "companies", sub: "trust Z8" },
-			{ value: "99.98%", label: "uptime", sub: "since 2022" },
-			{ value: "340k", label: "employees", sub: "track daily" },
-			{ value: "<2s", label: "load time", sub: "global median" },
+			{ value: "€4", label: "per user", sub: "per month, excl. tax" },
+			{ value: "14 days", label: "free trial", sub: "no credit card" },
+			{ value: "5", label: "payroll export targets", sub: "DATEV to SAP SuccessFactors" },
+			{ value: "SSO", label: "SAML & OIDC", sub: "plus SCIM provisioning" },
 		],
 		featuresGrid: {
 			eyebrow: "Features",
@@ -644,36 +597,6 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 			],
 		},
 		galleryImages,
-		testimonials: {
-			eyebrow: "Customer voices",
-			title: "What our customers say.",
-			items: [
-				{
-					id: "katharina-voss",
-					quote:
-						"We replaced three tools with Z8. The time savings for our HR team are noticeable - at least 8 hours per week.",
-					name: "Dr. Katharina Voss",
-					role: "Head of People, Finleap",
-					avatar: "KV",
-				},
-				{
-					id: "markus-hein",
-					quote:
-						"GoBD compliance was non-negotiable for us. Z8 is the only tool that solves it cleanly and still looks great.",
-					name: "Markus Hein",
-					role: "Managing Director, Hein & Partner",
-					avatar: "MH",
-				},
-				{
-					id: "sophie-brandt",
-					quote:
-						"Our onboarding now takes 3 minutes instead of 2 days. The SCIM integration with our IdP works flawlessly.",
-					name: "Sophie Brandt",
-					role: "Head of IT, Commerz Real",
-					avatar: "SB",
-				},
-			],
-		},
 		largeBanner: {
 			image: largeBannerImage,
 			imageAlt: "Team collaboration",
@@ -799,7 +722,7 @@ export const landingCopy: Record<Locale, LandingCopy> = {
 				{
 					id: "gobd-compliance",
 					q: "Is Z8 really GoBD-compliant?",
-					a: "Yes. All time entries are stored in an audit-proof way. Later changes are documented and traceable at any time. We work with specialized auditors.",
+					a: "Yes. All time entries are stored in an audit-proof way. Later changes are documented and traceable at any time.",
 				},
 				{
 					id: "payroll-integration",
