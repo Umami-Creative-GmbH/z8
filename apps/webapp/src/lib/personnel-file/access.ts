@@ -124,15 +124,18 @@ export function sickNoteAttachRefusal(
 	access: PersonnelFileAccess,
 	input: {
 		employeeSickNoteUpload: boolean;
-		absence: { employeeId: string; categoryType: string; status: string };
+		absence: {
+			employeeId: string;
+			/** The absence category's type; sick leave is "sick". */
+			categoryType: string;
+			status: "pending" | "approved" | "rejected";
+		};
 	},
 ): SickNoteAttachRefusal | null {
 	if (!input.employeeSickNoteUpload) return "setting_off";
 	if (!isOwnDocument(access, input.absence.employeeId)) return "not_own";
 	if (input.absence.categoryType !== "sick") return "not_sick";
-	if (input.absence.status !== "pending" && input.absence.status !== "approved") {
-		return "rejected";
-	}
+	if (input.absence.status === "rejected") return "rejected";
 	return null;
 }
 
@@ -141,14 +144,15 @@ export const OWN_SICK_NOTE_DELETE_WINDOW_HOURS = 24;
 
 /**
  * Whether the employee may delete their own sick note: one they uploaded
- * themselves, within 24 hours of uploading it (to fix a mistake). After that,
- * only whoever manages the employee's sick notes may.
+ * themselves and still see (shared), within 24 hours of uploading it (to fix
+ * a mistake). After that, only whoever manages the employee's sick notes may.
  */
 export function canDeleteOwnSickNote(
 	access: PersonnelFileAccess,
 	document: {
 		employeeId: string;
 		category: DocumentCategory;
+		visibility: DocumentVisibility;
 		uploadedBy: string | null;
 		createdAt: Instant;
 	},
@@ -157,6 +161,7 @@ export function canDeleteOwnSickNote(
 	return (
 		isOwnDocument(access, document.employeeId) &&
 		document.category === "sick_note" &&
+		document.visibility === "shared" &&
 		document.uploadedBy === access.userId &&
 		compareInstants(now, document.createdAt.add({ hours: OWN_SICK_NOTE_DELETE_WINDOW_HOURS })) < 0
 	);

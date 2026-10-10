@@ -170,4 +170,28 @@ describe("getLocalizedNotificationContent", () => {
 			"Sie wurden von Mina Manager zum Team Operations hinzugefügt.",
 		);
 	});
+
+	it("shows a sick note's absence dates in the reader's locale (#982)", () => {
+		const localized = getLocalizedNotificationContent(
+			buildNotification({
+				title: "New document in a personnel file",
+				message: "Anna Example uploaded a sick note for 12–14 Oct 2026",
+				metadata: JSON.stringify({
+					dateRangeDays: { startDate: "2026-10-12", endDate: "2026-10-14" },
+					i18n: {
+						messageKey:
+							"common:notifications.content.personnelFileEmployeeUpload.sickNote",
+						messageDefault: "{name} hat eine Krankmeldung für {dateRange} hochgeladen",
+						params: { name: "Anna Example", dateRange: "12–14 Oct 2026" },
+					},
+				}),
+			}),
+			t,
+			"de",
+		);
+
+		expect(localized.message.replace(/\s/gu, " ")).toMatch(
+			/^Anna Example hat eine Krankmeldung für 12\.\s?–\s?14\. Okt\. 2026 hochgeladen$/u,
+		);
+	});
 });

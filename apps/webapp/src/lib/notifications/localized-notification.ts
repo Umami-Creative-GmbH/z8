@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import type { NotificationWithMeta } from "./types";
 
 type TranslationParam = string | number | bigint | boolean | Date | null | undefined;
@@ -15,6 +16,8 @@ type NotificationMetadata = {
 	endDate?: string;
 	absenceType?: string;
 	categoryName?: string;
+	/** Plain days the `dateRange` param stands for, formatted in the reader's locale (#982). */
+	dateRangeDays?: { startDate: string; endDate: string };
 	i18n?: {
 		titleKey?: string;
 		titleDefault?: string;
@@ -96,6 +99,20 @@ function formatDateRange(
 	return start === end ? start : `${start} - ${end}`;
 }
 
+function localizedParams(
+	metadata: NotificationMetadata,
+	locale: string,
+): Record<string, TranslationParam> | undefined {
+	const params = metadata.i18n?.params;
+	const days = metadata.dateRangeDays;
+	if (!params || !days) return params;
+	try {
+		return { ...params, dateRange: formatAbsenceDateRange(days.startDate, days.endDate, locale) };
+	} catch {
+		return params;
+	}
+}
+
 export function getLocalizedNotificationContent(
 	notification: NotificationWithMeta,
 	t: Translate,
@@ -112,7 +129,7 @@ export function getLocalizedNotificationContent(
 		? t(
 				metadata.i18n.messageKey,
 				metadata.i18n.messageDefault ?? notification.message,
-				metadata.i18n.params,
+				localizedParams(metadata, locale),
 			)
 		: notification.message;
 

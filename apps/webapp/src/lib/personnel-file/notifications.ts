@@ -75,7 +75,7 @@ const employeeUploadMessages = {
 	},
 } as const;
 
-/** Notifications are built once for all recipients, so their dates use one fixed format. */
+/** The stored message's fallback date format; readers get theirs from `dateRangeDays`. */
 const NOTIFICATION_DATE_LOCALE = "en-GB";
 
 type UploadedDocument = {
@@ -140,6 +140,10 @@ export function buildEmployeeUploadNotification(input: {
 		metadata: {
 			category: input.document.category,
 			employeeId: input.document.employeeId,
+			// The reader sees the range in their own locale; `dateRange` is the fallback.
+			...(absence
+				? { dateRangeDays: { startDate: absence.startDate, endDate: absence.endDate } }
+				: {}),
 			i18n: { ...copy, params },
 		},
 	};

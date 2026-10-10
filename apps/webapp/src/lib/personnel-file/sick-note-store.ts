@@ -45,6 +45,8 @@ export async function countSickNotesForAbsences(
 		absenceIds: readonly string[];
 		/** The viewer's personnel file access; null while they have none. */
 		access: PersonnelFileAccess | null;
+		/** Only this employee's sick notes, for a caller who may see only their own absences. */
+		employeeId?: string;
 	},
 ): Promise<Map<string, SickNoteMarker>> {
 	const markers = new Map<string, SickNoteMarker>();
@@ -65,6 +67,7 @@ export async function countSickNotesForAbsences(
 			and(
 				eq(employeeDocument.organizationId, input.organizationId),
 				inArray(employeeDocument.absenceEntryId, absenceIds),
+				input.employeeId ? eq(employeeDocument.employeeId, input.employeeId) : undefined,
 			),
 		)
 		.groupBy(employeeDocument.absenceEntryId);

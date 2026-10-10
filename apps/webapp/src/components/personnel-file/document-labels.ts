@@ -7,7 +7,7 @@ import type {
 	DocumentCategory,
 	DocumentVisibility,
 	PayPeriod,
-	personnelDocumentFileProblem,
+	PersonnelDocumentFileProblem,
 } from "@/lib/personnel-file/document.types";
 
 /** Translated names of the document categories and visibilities (CONTEXT.md terms). */
@@ -28,10 +28,7 @@ export function usePersonnelFileLabels() {
 }
 
 /** Why a chosen file cannot be uploaded, as `personnelDocumentFileProblem` reports it. */
-export function usePersonnelFileProblemMessages(): Record<
-	NonNullable<ReturnType<typeof personnelDocumentFileProblem>>,
-	string
-> {
+export function usePersonnelFileProblemMessages(): Record<PersonnelDocumentFileProblem, string> {
 	const { t } = useTranslate();
 	return {
 		heic: t(

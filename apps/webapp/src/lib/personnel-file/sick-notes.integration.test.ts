@@ -710,6 +710,21 @@ describe.each(["legacy", "canonical"] as const)("sick notes on absences (#982, %
 			}
 		});
 
+		it("never tells a colleague whether someone's absence has sick notes", async () => {
+			const absence = await requestAbsence("anna");
+			signIn("anna");
+			await attachOk(absence.id);
+			expect(await sickNoteActions.getOwnAbsenceSickNotesAction([absence.id])).toMatchObject({
+				success: true,
+				data: { markers: { [absence.id]: { count: 1, viewable: true } } },
+			});
+			signIn("ben");
+			expect(await sickNoteActions.getOwnAbsenceSickNotesAction([absence.id])).toEqual({
+				success: true,
+				data: { canAttach: true, markers: {} },
+			});
+		});
+
 		it("refuses a former employee", async () => {
 			await admin.query(
 				`insert into absence_entry

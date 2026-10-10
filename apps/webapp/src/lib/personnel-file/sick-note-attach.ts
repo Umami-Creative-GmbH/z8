@@ -63,30 +63,33 @@ export type SickNoteAttachTarget =
 	| { kind: "refused"; reason: SickNoteAttachRefusal };
 
 /**
- * Whether the actor may attach a sick note to the absence now. Absences of
- * other organizations are not found; everything else is decided by
- * `sickNoteAttachRefusal`.
+ * Reads the absence (of the actor's organization only) with the absence
+ * settings and decides with `sickNoteAttachRefusal`. `lock` holds the
+ * absence row for the rest of the transaction.
  */
-export async function loadSickNoteAttachTarget(
+async function decideSickNoteTarget(
 	database: Reader,
 	access: PersonnelFileAccess,
-	absenceId: string,
+	input: { absenceId: string; lock: boolean },
 ): Promise<SickNoteAttachTarget> {
+	const query = database
+		.select(absenceColumns())
+		.from(absenceEntry)
+		.innerJoin(
+			absenceCategory,
+			and(
+				eq(absenceCategory.id, absenceEntry.categoryId),
+				eq(absenceCategory.organizationId, access.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(absenceEntry.id, input.absenceId),
+				eq(absenceEntry.organizationId, access.organizationId),
+			),
+		);
 	const [[row], settings] = await Promise.all([
-		database
-			.select(absenceColumns())
-			.from(absenceEntry)
-			.innerJoin(
-				absenceCategory,
-				and(
-					eq(absenceCategory.id, absenceEntry.categoryId),
-					eq(absenceCategory.organizationId, access.organizationId),
-				),
-			)
-			.where(
-				and(eq(absenceEntry.id, absenceId), eq(absenceEntry.organizationId, access.organizationId)),
-			)
-			.limit(1),
+		input.lock ? query.for("update", { of: absenceEntry }) : query.limit(1),
 		loadAbsenceSettings(database, access.organizationId),
 	]);
 	if (!row) return { kind: "not_found" };
@@ -95,6 +98,19 @@ export async function loadSickNoteAttachTarget(
 		absence: row,
 	});
 	return reason ? { kind: "refused", reason } : { kind: "ok", absence: absenceOf(row) };
+}
+
+/**
+ * Whether the actor may attach a sick note to the absence now. Absences of
+ * other organizations are not found; everything else is decided by
+ * `sickNoteAttachRefusal`.
+ */
+export function loadSickNoteAttachTarget(
+	database: Reader,
+	access: PersonnelFileAccess,
+	absenceId: string,
+): Promise<SickNoteAttachTarget> {
+	return decideSickNoteTarget(database, access, { absenceId, lock: false });
 }
 
 /**
@@ -107,32 +123,10 @@ export async function lockSickNoteAbsence(
 	access: PersonnelFileAccess,
 	input: { absenceId: string; employeeId: string },
 ): Promise<SickNoteAbsence | null> {
-	const [[row], settings] = await Promise.all([
-		tx
-			.select(absenceColumns())
-			.from(absenceEntry)
-			.innerJoin(
-				absenceCategory,
-				and(
-					eq(absenceCategory.id, absenceEntry.categoryId),
-					eq(absenceCategory.organizationId, access.organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(absenceEntry.id, input.absenceId),
-					eq(absenceEntry.organizationId, access.organizationId),
-				),
-			)
-			.for("update", { of: absenceEntry }),
-		loadAbsenceSettings(tx, access.organizationId),
-	]);
-	if (!row || row.employeeId !== input.employeeId) return null;
-	const refusal = sickNoteAttachRefusal(access, {
-		employeeSickNoteUpload: settings.employeeSickNoteUpload,
-		absence: row,
-	});
-	return refusal ? null : absenceOf(row);
+	const target = await decideSickNoteTarget(tx, access, { absenceId: input.absenceId, lock: true });
+	return target.kind === "ok" && target.absence.employeeId === input.employeeId
+		? target.absence
+		: null;
 }
 
 /**
@@ -140,7 +134,7 @@ export async function lockSickNoteAbsence(
  * becomes "with certificate" when one is attached, audited. Every other sick
  * detail stays, and removing notes never changes it back.
  */
-export async function recordSickNoteCertificate(
+export async function markAbsenceWithCertificate(
 	tx: Transaction,
 	input: {
 		organizationId: string;

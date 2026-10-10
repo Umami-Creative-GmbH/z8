@@ -184,6 +184,7 @@ describe("sick notes on absences (#982)", () => {
 		const note = {
 			employeeId: "anna",
 			category: "sick_note",
+			visibility: "shared",
 			uploadedBy: "u",
 			createdAt: uploadedAt,
 		} as const;
@@ -207,6 +208,10 @@ describe("sick notes on absences (#982)", () => {
 				false,
 			);
 			expect(canDeleteOwnSickNote(employeeAnna, { ...note, employeeId: "ben" }, now)).toBe(false);
+			// An officer made it HR-only: the employee no longer sees it.
+			expect(canDeleteOwnSickNote(employeeAnna, { ...note, visibility: "hr_only" }, now)).toBe(
+				false,
+			);
 		});
 	});
 });

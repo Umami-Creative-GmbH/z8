@@ -66,12 +66,15 @@ export function isHeicMime(mime: string): boolean {
 	return /^image\/hei[cf](-sequence)?$/i.test(mime.trim());
 }
 
-/** Why a chosen file cannot become an employee document, checked before uploading it. */
+/** Why a chosen file cannot become an employee document. */
+export type PersonnelDocumentFileProblem = "heic" | "unsupported_type" | "too_large";
+
+/** Checks a chosen file before uploading it; null when it may be uploaded. */
 export function personnelDocumentFileProblem(file: {
 	type: string;
 	name: string;
 	size: number;
-}): "heic" | "unsupported_type" | "too_large" | null {
+}): PersonnelDocumentFileProblem | null {
 	if (isHeicMime(file.type) || /\.hei[cf]$/i.test(file.name)) return "heic";
 	if (!isPersonnelDocumentMime(file.type)) return "unsupported_type";
 	if (file.size > PERSONNEL_DOCUMENT_MAX_BYTES) return "too_large";

@@ -35,7 +35,8 @@ export async function getOwnAbsenceSickNotesAction(
 ): Promise<ServerActionResult<OwnAbsenceSickNotes>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
-		if (current.status !== "resolved" || !current.access.selfEmployeeId) {
+		const selfEmployeeId = current.status === "resolved" ? current.access.selfEmployeeId : null;
+		if (current.status !== "resolved" || !selfEmployeeId) {
 			return { success: true, data: { canAttach: false, markers: {} } };
 		}
 		const { access } = current;
@@ -44,10 +45,12 @@ export async function getOwnAbsenceSickNotesAction(
 			.slice(0, MAX_ABSENCES);
 		const [settings, markers] = await Promise.all([
 			loadAbsenceSettings(db, access.organizationId),
+			// Never tells anyone whether a colleague's absence has sick notes.
 			countSickNotesForAbsences(db, {
 				organizationId: access.organizationId,
 				absenceIds: ids,
 				access,
+				employeeId: selfEmployeeId,
 			}),
 		]);
 		return {

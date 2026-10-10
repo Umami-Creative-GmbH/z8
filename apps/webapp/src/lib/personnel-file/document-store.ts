@@ -15,7 +15,7 @@ import type { DocumentCategory, DocumentVisibility, PayPeriod } from "./document
 import { type DocumentMetadata, validateDocumentMetadata } from "./document-rules";
 import {
 	lockSickNoteAbsence,
-	recordSickNoteCertificate,
+	markAbsenceWithCertificate,
 	type SickNoteAbsence,
 } from "./sick-note-attach";
 import type { StagedPersonnelFileUpload, StoredPersonnelFileObject } from "./upload-ledger";
@@ -230,7 +230,7 @@ export async function finalizePersonnelDocumentUpload(
 			},
 		});
 		if (absence) {
-			await recordSickNoteCertificate(tx, {
+			await markAbsenceWithCertificate(tx, {
 				organizationId: input.organizationId,
 				absence,
 				documentId: row.id,
@@ -410,7 +410,6 @@ export async function deleteDocument(
 		const managed = canManageDocument(access, employeeRef, current.category);
 		const ownSickNote =
 			!managed &&
-			current.visibility === "shared" &&
 			canDeleteOwnSickNote(
 				access,
 				{ ...current, createdAt: instantFromDate(current.createdAt) },
