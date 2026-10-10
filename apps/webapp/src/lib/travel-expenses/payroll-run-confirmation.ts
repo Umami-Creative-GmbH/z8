@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import {
 	auditLog,
@@ -413,6 +413,62 @@ export interface PayrollRunToConfirm {
 	defaultPayday: string;
 }
 
+/** A report an unconfirmed run includes, as one confirmer sees it. */
+export interface IncludedReportForConfirmer {
+	jobId: string;
+	reportId: string;
+	lines: TravelExpensePayrollRunInclusionLine[];
+	/** In the confirmer's officer scope and not their own: confirming records it. */
+	confirmable: boolean;
+}
+
+/**
+ * The reports unconfirmed runs include (of `jobId` only, when given), each
+ * with whether the confirmer may confirm it. The list of runs to confirm and
+ * the run notification both count with it, so an officer is told exactly the
+ * number of reports they find to confirm.
+ */
+export async function loadIncludedReportsForConfirmer(
+	database: Executor,
+	input: {
+		organizationId: string;
+		scope: OfficerScope;
+		confirmerEmployeeId: string;
+		jobId?: string;
+	},
+): Promise<IncludedReportForConfirmer[]> {
+	const inScope = reportInOfficerScope(input.scope) ?? sql`true`;
+	const rows = await database
+		.select({
+			jobId: travelExpensePayrollRunInclusion.payrollExportJobId,
+			reportId: travelExpensePayrollRunInclusion.reportId,
+			employeeId: travelExpensePayrollRunInclusion.employeeId,
+			lines: travelExpensePayrollRunInclusion.lines,
+			inScope: sql<boolean>`${inScope}`,
+		})
+		.from(travelExpensePayrollRunInclusion)
+		.innerJoin(
+			travelExpenseReport,
+			and(
+				eq(travelExpenseReport.id, travelExpensePayrollRunInclusion.reportId),
+				eq(travelExpenseReport.organizationId, travelExpensePayrollRunInclusion.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+				input.jobId ? eq(travelExpensePayrollRunInclusion.payrollExportJobId, input.jobId) : undefined,
+			),
+		);
+	return rows.map((row) => ({
+		jobId: row.jobId,
+		reportId: row.reportId,
+		lines: row.lines,
+		confirmable: row.inScope === true && row.employeeId !== input.confirmerEmployeeId,
+	}));
+}
+
 /**
  * The organization's unconfirmed payroll runs that include a report the
  * reader may confirm, most recently exported first.
@@ -423,43 +479,19 @@ export async function listPayrollRunsToConfirm(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<PayrollRunToConfirm[]> {
 	const { organizationId } = input;
-	const rows = await database
-		.select({
-			jobId: travelExpensePayrollRunInclusion.payrollExportJobId,
-			reportId: travelExpensePayrollRunInclusion.reportId,
-			employeeId: travelExpensePayrollRunInclusion.employeeId,
-			lines: travelExpensePayrollRunInclusion.lines,
-		})
-		.from(travelExpensePayrollRunInclusion)
-		.where(
-			and(
-				eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
-				eq(travelExpensePayrollRunInclusion.state, "included"),
-			),
-		);
+	const rows = await loadIncludedReportsForConfirmer(database, {
+		organizationId,
+		scope: input.scope,
+		confirmerEmployeeId: input.actorEmployeeId,
+	});
 	if (rows.length === 0) return [];
-	const reportIds = [...new Set(rows.map((row) => row.reportId))];
-	const inScope = new Set(
-		(
-			await database
-				.select({ id: travelExpenseReport.id })
-				.from(travelExpenseReport)
-				.where(
-					and(
-						eq(travelExpenseReport.organizationId, organizationId),
-						inArray(travelExpenseReport.id, reportIds),
-						reportInOfficerScope(input.scope),
-					),
-				)
-		).map((report) => report.id),
-	);
 	const timezone = await loadOrganizationTimezone(database, organizationId);
 	const today = now.toZonedDateTimeISO(timezone).toPlainDate().toString();
 	const runs = new Map<string, { included: number; confirmable: number; amount: bigint }>();
 	for (const row of rows) {
 		const run = runs.get(row.jobId) ?? { included: 0, confirmable: 0, amount: ZERO };
 		run.included += 1;
-		if (inScope.has(row.reportId) && row.employeeId !== input.actorEmployeeId) {
+		if (row.confirmable) {
 			run.confirmable += 1;
 			run.amount += frozenTotal(row.lines);
 		}

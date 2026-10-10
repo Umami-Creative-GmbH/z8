@@ -457,6 +457,29 @@ describe("payroll run notifications for expense officers (#855)", () => {
 		expect(await readyNotifications()).toEqual([]);
 	});
 
+	it("counts for each officer exactly the reports they can confirm", async () => {
+		await approvedReceipt("requester", "100.00");
+		await approvedReceipt("colleague", "8.05");
+		await approvedReceipt("allOfficer", "30.00");
+		const jobId = await exportPayroll("datev_lohn", current);
+
+		// Everyone but themselves for the all-scope officer; the Berlin reports for the Berlin officer.
+		for (const [officer, count] of [
+			["allOfficer", 2],
+			["berlinOfficer", 2],
+		] as const) {
+			signIn(officer);
+			const listed = await finance.getPayrollRunsToConfirmAction();
+			expect(listed).toEqual({
+				success: true,
+				data: [expect.objectContaining({ jobId, confirmableReports: count })],
+			});
+			expect(
+				(await runNotifications()).find((row) => row.user_id === `t855-${officer}`)?.message,
+			).toBe(runMessage(current, "DATEV Lohn & Gehalt", count));
+		}
+	});
+
 	it("tells the covering officers once about a report the run leaves out", async () => {
 		const hotel = await approvedReceipt("requester", "100.00");
 		const taxi = await approvedReceipt("requester", "12.00", "transport");

@@ -1,13 +1,14 @@
-import { and, eq } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { travelExpensePayrollRunInclusion, travelExpenseReport } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { listReimbursingOfficers } from "./expense-officer-grant-store";
-import { coveringOfficers } from "./officer-scope";
 import type { PayrollRunSkipped } from "./payroll-run";
-import { loadPayrollRunHeader, type PayrollRunHeader } from "./payroll-run-confirmation";
+import {
+	loadIncludedReportsForConfirmer,
+	loadPayrollRunHeader,
+	type PayrollRunHeader,
+} from "./payroll-run-confirmation";
 import { payrollPeriodText } from "./payroll-run-period";
 import { notifyReportsLeftOutOfPayrollRun } from "./ready-for-reimbursement";
 
@@ -97,38 +98,19 @@ async function notifyRunOfficers(
 	input: { organizationId: string; jobId: string },
 ): Promise<void> {
 	const { organizationId, jobId } = input;
-	const included = await database
-		.select({
-			employeeId: travelExpensePayrollRunInclusion.employeeId,
-			approvalTeamIds: travelExpenseReport.approvalTeamIds,
-		})
-		.from(travelExpensePayrollRunInclusion)
-		.innerJoin(
-			travelExpenseReport,
-			and(
-				eq(travelExpenseReport.id, travelExpensePayrollRunInclusion.reportId),
-				eq(travelExpenseReport.organizationId, travelExpensePayrollRunInclusion.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
-				eq(travelExpensePayrollRunInclusion.payrollExportJobId, jobId),
-				eq(travelExpensePayrollRunInclusion.state, "included"),
-			),
-		);
-	if (included.length === 0) return;
 	const officers = await listReimbursingOfficers(database, { organizationId });
 	if (officers.length === 0) return;
 	const reports = new Map<string, number>();
-	for (const inclusion of included) {
-		// Included reports are originals: the teams recorded at their approval are their own.
-		for (const officer of coveringOfficers(officers, {
-			employeeId: inclusion.employeeId,
-			approvalTeamIds: inclusion.approvalTeamIds ?? [],
-		})) {
-			reports.set(officer.userId, (reports.get(officer.userId) ?? 0) + 1);
-		}
+	for (const officer of officers) {
+		// Counted as the list of runs to confirm counts: what the officer finds there.
+		const included = await loadIncludedReportsForConfirmer(database, {
+			organizationId,
+			scope: officer.scope,
+			confirmerEmployeeId: officer.officerEmployeeId,
+			jobId,
+		});
+		const confirmable = included.filter((report) => report.confirmable).length;
+		if (confirmable > 0) reports.set(officer.userId, confirmable);
 	}
 	if (reports.size === 0) return;
 	const run = await loadPayrollRunHeader(database, { organizationId, jobId });
