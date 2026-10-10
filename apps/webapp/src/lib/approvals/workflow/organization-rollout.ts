@@ -1,5 +1,9 @@
 import { approvalWorkflowRollout } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
+import {
+	initialApprovalLifecycleMode,
+	initialApprovalSideEffectMode,
+} from "../authority/resolution";
 import type { ApprovalDatabase } from "../server/types";
 import { APPROVAL_WORKFLOW_TYPES } from "./types";
 
@@ -9,8 +13,10 @@ import { APPROVAL_WORKFLOW_TYPES } from "./types";
  * first write of a workflow type bootstraps its row in the write gate, and every
  * other writer of that type in the organization waits on the uncommitted row.
  *
- * Rows start `legacy`/`legacy`, like the write gate's fail-safe insert and
- * migration 0107's backfill. An existing row and its modes are never changed.
+ * Rows start in the kind's initial modes, like the write gate's fail-safe
+ * insert: `legacy`/`legacy` (as migration 0107's backfill), or
+ * `complete`/`canonical` for a canonical-only kind (#1058). An existing row
+ * and its modes are never changed.
  */
 export async function createOrganizationApprovalRollouts(
 	database: ApprovalDatabase,
@@ -23,8 +29,8 @@ export async function createOrganizationApprovalRollouts(
 			APPROVAL_WORKFLOW_TYPES.map((workflowType) => ({
 				organizationId,
 				workflowType,
-				lifecycleMode: "legacy" as const,
-				sideEffectMode: "legacy" as const,
+				lifecycleMode: initialApprovalLifecycleMode(workflowType),
+				sideEffectMode: initialApprovalSideEffectMode(workflowType),
 				updatedAt,
 			})),
 		)
