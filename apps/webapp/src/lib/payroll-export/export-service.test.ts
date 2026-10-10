@@ -405,3 +405,80 @@ describe("payroll export under scoped work collection (#322)", () => {
 		expect(firstLines[0].endTime.toISO()).toBe("2026-07-10T09:00:40.000Z");
 	});
 });
+
+describe("stored payroll export files (#1008)", () => {
+	const syncJob = {
+		id: "job-1",
+		organizationId: "org-1",
+		configId: "config-1",
+		isAsync: false,
+		filters: { dateRange: { start: "2026-07-01", end: "2026-07-31" } },
+		config: { formatId: "datev_lohn", config: {} },
+	};
+	const exported = {
+		fileName: "export.csv",
+		content: "csv",
+		encoding: "utf-8",
+		mimeType: "text/csv",
+		metadata: { workPeriodCount: 1, employeeCount: 1 },
+	};
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		mockState.updates.length = 0;
+		mockState.readInput.mockResolvedValue(null);
+		vi.mocked(dataFetcher.fetchWorkPeriodsForExport).mockResolvedValue([]);
+		vi.mocked(dataFetcher.fetchAbsencesForExport).mockResolvedValue([]);
+		vi.mocked(dataFetcher.getWageTypeMappings).mockResolvedValue([]);
+		mockState.transform.mockReturnValue(exported);
+		const storage = await import("@/lib/storage/export-s3-client");
+		vi.mocked(storage.getPresignedUrl).mockResolvedValue("https://s3.example/signed");
+	});
+
+	it("uploads a run under the sync threshold when asked to store it and returns its key", async () => {
+		mockState.findFirst.mockResolvedValue(syncJob);
+		const storage = await import("@/lib/storage/export-s3-client");
+
+		const outcome = await processExportJob(
+			{ jobId: "job-1", organizationId: "org-1" },
+			{ storeFile: true },
+		);
+
+		const s3Key = "payroll-exports/org-1/job-1/export.csv";
+		expect(storage.uploadExport).toHaveBeenCalledWith(
+			"org-1",
+			s3Key,
+			Buffer.from("csv", "utf-8"),
+			"text/csv",
+		);
+		expect(outcome).toMatchObject({ s3Key, result: exported });
+		expect(mockState.updates.at(-1)?.set).toMatchObject({ status: "completed", s3Key });
+	});
+
+	it("returns the stored key of a run over the threshold, not a key parsed from its URL", async () => {
+		mockState.findFirst.mockResolvedValue({ ...syncJob, isAsync: true });
+		const storage = await import("@/lib/storage/export-s3-client");
+		// Path-style addressing puts the bucket name first in the URL's path.
+		vi.mocked(storage.getPresignedUrl).mockResolvedValue(
+			"https://s3.example/exports-bucket/payroll-exports/org-1/job-1/export.csv?sig",
+		);
+
+		const outcome = await processExportJob(
+			{ jobId: "job-1", organizationId: "org-1" },
+			{ storeFile: true },
+		);
+
+		expect(outcome.s3Key).toBe("payroll-exports/org-1/job-1/export.csv");
+	});
+
+	it("keeps an interactive run under the threshold inline, without an upload", async () => {
+		mockState.findFirst.mockResolvedValue(syncJob);
+		const storage = await import("@/lib/storage/export-s3-client");
+
+		const outcome = await processExportJob({ jobId: "job-1", organizationId: "org-1" });
+
+		expect(storage.uploadExport).not.toHaveBeenCalled();
+		expect(outcome).toEqual({ result: exported });
+		expect(mockState.updates.at(-1)?.set).not.toHaveProperty("s3Key");
+	});
+});
