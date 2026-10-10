@@ -97,6 +97,8 @@ export interface ManagerAbsenceCalendarEntry {
 		type: string;
 		color: string | null;
 	};
+	/** How many sick notes are attached to sick leave (#982); managers never open them. */
+	sickNoteCount?: number;
 }
 
 export interface ManagerAbsenceCalendarDay {

@@ -46,6 +46,21 @@ const mockState = vi.hoisted(() => ({
 	notifyManager: vi.fn(),
 	removeCanonicalInTransaction: vi.fn(),
 	requireBillingForMutation: vi.fn(),
+	deleteSickNotes: vi.fn(),
+	runPersonnelFileCleanup: vi.fn(),
+}));
+
+// Sick notes go with a cancelled absence (#982): sick-notes.integration.test.ts.
+vi.mock("@/lib/personnel-file/sick-note-store", () => ({
+	deleteSickNotesOfCancelledAbsence: mockState.deleteSickNotes,
+}));
+
+vi.mock("@/lib/personnel-file/upload-ledger", () => ({
+	runPersonnelFileCleanup: mockState.runPersonnelFileCleanup,
+}));
+
+vi.mock("@/lib/personnel-file/storage", () => ({
+	deletePersonnelDocumentObject: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -629,6 +644,43 @@ describe("absence cancellation", () => {
 		mockState.findManagerLinks.mockResolvedValue([]);
 		mockState.notifyManager.mockResolvedValue(undefined);
 		mockState.addCalendarSyncJob.mockResolvedValue(undefined);
+		mockState.deleteSickNotes.mockResolvedValue([]);
+		mockState.runPersonnelFileCleanup.mockResolvedValue(undefined);
+	});
+
+	it.each([
+		"legacy",
+		"shadow",
+		"ready",
+		"canonical",
+		"complete",
+	] as const)("deletes the absence's sick notes before the absence in the %s lifecycle path", async (mode) => {
+		const test = harness({ mode });
+		mockState.deleteSickNotes.mockImplementation(async () => {
+			test.events.push("sick-notes-delete");
+			return ["note-1", "note-2"];
+		});
+
+		const result = await mutations.cancelAbsenceRequestForEmployee(absenceId, {
+			id: employeeId,
+			organizationId,
+		});
+
+		expect(result).toEqual({ success: true });
+		expect(mockState.deleteSickNotes).toHaveBeenCalledOnce();
+		expect(mockState.deleteSickNotes).toHaveBeenCalledWith(expect.anything(), {
+			organizationId,
+			absenceId,
+			actorUserId: "owner-user",
+		});
+		expect(test.events.indexOf("sick-notes-delete")).toBeLessThan(
+			test.events.indexOf("source-delete"),
+		);
+		// Their objects are queued in the transaction; cleanup runs after commit.
+		expect(mockState.runPersonnelFileCleanup.mock.calls.map(([, input]) => input.only)).toEqual([
+			{ documentId: "note-1", organizationId },
+			{ documentId: "note-2", organizationId },
+		]);
 	});
 
 	it.each([

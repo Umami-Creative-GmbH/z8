@@ -76,7 +76,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/": ["common", "dashboard"],
 	"/analytics": ["common", "analytics"],
 	"/calendar": ["common", "calendar", "timeTracking"],
-	"/absences": ["common", "calendar"],
+	// settings/people: sick notes reuse the personnel file document list (#982).
+	"/absences": ["common", "calendar", "settings/people"],
 	"/time-tracking": ["common", "timeTracking", "compliance"],
 	"/travel-expenses": ["common", "travelExpenses"],
 	"/reports": ["common", "reports"],

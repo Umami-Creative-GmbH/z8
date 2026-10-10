@@ -9,6 +9,7 @@ import {
 	isOwnDocument,
 	managedCategoriesFor,
 } from "@/lib/personnel-file/access";
+import type { SickNoteAttachRefusal } from "@/lib/personnel-file/access";
 import { loadEmployeeRef } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { DEFAULT_VISIBILITY, isDocumentCategory } from "@/lib/personnel-file/document.types";
@@ -18,6 +19,7 @@ import {
 	personnelDocumentStorageKey,
 } from "@/lib/personnel-file/document-store";
 import { notifyDocumentShared, notifyEmployeeUpload } from "@/lib/personnel-file/notifications";
+import { loadSickNoteAttachTarget } from "@/lib/personnel-file/sick-note-attach";
 import {
 	deletePersonnelDocumentObject,
 	deleteTusUpload,
@@ -39,6 +41,8 @@ const requestSchema = z.object({
 	employeeId: z.uuid(),
 	/** "own": the employee uploads into their own file (#867). */
 	source: z.literal("own").optional(),
+	/** With "own": the employee attaches a sick note to this absence of theirs (#982). */
+	absenceId: z.uuid().optional(),
 	fileName: z.string().max(255).optional(),
 	metadata: z.object({
 		category: z.unknown(),
@@ -54,6 +58,14 @@ function notFound() {
 	return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 }
 
+const SICK_NOTE_REFUSALS: Record<Exclude<SickNoteAttachRefusal, "not_own">, string> = {
+	setting_off: "Your organization does not let employees attach sick notes.",
+	not_sick: "Sick notes can be attached only to sick leave.",
+	rejected: "Sick notes cannot be attached to a rejected absence.",
+};
+
+const ABSENCE_UNAVAILABLE = "This absence can no longer take a sick note.";
+
 /**
  * Records a finished TUS upload as an employee document in a personnel file
  * (#865). Only actors the personnel file access resolver lets manage the
@@ -62,7 +74,9 @@ function notFound() {
  *
  * With `source: "own"` the employee uploads into their own file (#867): only
  * certificates and other documents, always shared, and the covering officers
- * (or owners and admins) are notified instead of the employee.
+ * (or owners and admins) are notified instead of the employee. With an
+ * `absenceId` as well, the upload is a sick note attached to that sick-leave
+ * absence of theirs (#982): always a shared sick note without expiry date.
  */
 export async function POST(request: NextRequest) {
 	await connection();
@@ -79,8 +93,11 @@ export async function POST(request: NextRequest) {
 		if (!parsed.success) {
 			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
 		}
-		const { tusFileKey, employeeId, fileName, metadata } = parsed.data;
+		const { tusFileKey, employeeId, fileName, metadata, absenceId } = parsed.data;
 		const own = parsed.data.source === "own";
+		if (absenceId && !own) {
+			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
+		}
 
 		const employee = await loadEmployeeRef(db, {
 			organizationId: access.organizationId,
@@ -93,10 +110,23 @@ export async function POST(request: NextRequest) {
 		)
 			return notFound();
 
+		if (absenceId) {
+			const target = await loadSickNoteAttachTarget(db, access, absenceId);
+			if (target.kind !== "ok") {
+				// Someone else's absence reads as not found, like another organization's.
+				const reason = target.kind === "refused" ? target.reason : "not_own";
+				return reason === "not_own"
+					? NextResponse.json({ error: "Absence not found" }, { status: 404 })
+					: NextResponse.json({ error: SICK_NOTE_REFUSALS[reason] }, { status: 403 });
+			}
+		}
+
 		const validated = validateDocumentMetadata({
 			...metadata,
+			// A sick note attached to an absence has no expiry date (#982).
+			...(absenceId ? { category: "sick_note" } : {}),
 			payPeriod: metadata.payPeriod ?? null,
-			expiryDate: metadata.expiryDate ?? null,
+			expiryDate: absenceId ? null : (metadata.expiryDate ?? null),
 			// Employee uploads are always shared; the employee chooses no visibility.
 			visibility: own
 				? "shared"
@@ -109,14 +139,15 @@ export async function POST(request: NextRequest) {
 				{ status: 400 },
 			);
 		}
-		if (own) {
+		// A sick note was checked against its absence above, and is again when recorded.
+		if (own && !absenceId) {
 			if (!canUploadOwnDocument(access, employee.id, validated.value.category)) {
 				return NextResponse.json(
 					{ error: "You can upload only certificates and other documents.", field: "category" },
 					{ status: 403 },
 				);
 			}
-		} else if (!canManageDocument(access, employee, validated.value.category)) {
+		} else if (!own && !canManageDocument(access, employee, validated.value.category)) {
 			return notFound();
 		}
 
@@ -171,6 +202,7 @@ export async function POST(request: NextRequest) {
 				sizeBytes: upload.buffer.length,
 				checksumSha256: upload.checksumSha256,
 				...(own ? { source: "employee" as const } : {}),
+				...(absenceId ? { sickNote: { absenceId, access } } : {}),
 			});
 		} catch (error) {
 			await markPersonnelFileUploadFailed(db, {
@@ -184,6 +216,16 @@ export async function POST(request: NextRequest) {
 		}
 
 		await deleteTusUpload(safeTusFileKey);
+
+		if (finalized.kind === "absence_unavailable") {
+			// Cancelled, rejected or no longer allowed while the file was stored.
+			await markPersonnelFileUploadFailed(db, { ...staged, stored, reason: "finalization_failed" });
+			await runPersonnelFileCleanup(db, {
+				deleteObject: deletePersonnelDocumentObject,
+				only: { documentId, organizationId: access.organizationId },
+			}).catch((error) => logger.error({ error }, "Deferred personnel file upload cleanup"));
+			return NextResponse.json({ error: ABSENCE_UNAVAILABLE }, { status: 409 });
+		}
 
 		if (finalized.kind === "not_pending") {
 			// Cleanup claimed the staged object meanwhile (a very slow upload).

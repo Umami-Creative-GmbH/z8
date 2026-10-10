@@ -1268,6 +1268,13 @@
       "when": 1799856000000,
       "tag": "0180_payroll_export_job_personnel_identifier",
       "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1799942400000,
+      "tag": "0181_absence_sick_notes",
+      "breakpoints": true
     }
   ]
 }

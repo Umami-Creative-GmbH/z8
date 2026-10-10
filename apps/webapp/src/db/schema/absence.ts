@@ -17,7 +17,7 @@ import { currentTimestamp } from "./timestamp";
 export type LocaleTranslationMap = Record<string, string>;
 
 // Import auth tables for FK references
-import { organization } from "../auth-schema";
+import { organization, user } from "../auth-schema";
 import { approvalWorkflow } from "./approval-workflow";
 import { absenceTypeEnum, approvalStatusEnum, dayPeriodEnum, sickDetailEnum } from "./enums";
 import { employee } from "./organization";
@@ -121,5 +121,24 @@ export const absenceEntry = pgTable(
 			table.approvalWorkflowId,
 		),
 		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
+		// Target of org-scoped references such as a sick note's link (#982).
+		unique("absenceEntry_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
+
+/**
+ * Absence settings of an organization (#982). No row means the defaults.
+ * Only owners and admins change them.
+ */
+export const absenceSetting = pgTable("absence_setting", {
+	organizationId: text("organization_id")
+		.primaryKey()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	/** Employees may attach sick notes to their sick-leave absences (needs personnel files). */
+	employeeSickNoteUpload: boolean("employee_sick_note_upload").default(false).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.defaultNow()
+		.$onUpdate(() => currentTimestamp())
+		.notNull(),
+	updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+});

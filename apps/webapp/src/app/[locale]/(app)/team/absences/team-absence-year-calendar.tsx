@@ -2,6 +2,7 @@
 
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { SickNoteMarker } from "@/components/absences/sick-notes/sick-note-marker";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
@@ -82,6 +83,7 @@ function TeamAbsenceDayDetails({
 								: t("team.absences.calendar.approved", "Approved")}
 						</span>
 					</p>
+					{entry.sickNoteCount ? <SickNoteMarker count={entry.sickNoteCount} /> : null}
 				</div>
 			))}
 		</div>

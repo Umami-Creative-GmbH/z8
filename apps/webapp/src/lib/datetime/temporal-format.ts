@@ -38,7 +38,10 @@ const TemporalDateTimeFormat = (
 			DateTimeFormat: new (
 				locale: string,
 				options: Intl.DateTimeFormatOptions,
-			) => { format(value: Instant | PlainDate): string };
+			) => {
+				format(value: Instant | PlainDate): string;
+				formatRange(start: PlainDate, end: PlainDate): string;
+			};
 		};
 	}
 ).Intl.DateTimeFormat;
@@ -111,6 +114,17 @@ export function formatPlainDate(
 	preset: PlainDateFormatPreset,
 ): string {
 	return new TemporalDateTimeFormat(locale, PLAIN_DATE_FORMAT_OPTIONS[preset]).format(date);
+}
+
+/** Two plain calendar days as one range in the locale, e.g. "12–14 Oct 2026"; one day once. */
+export function formatPlainDateRange(
+	start: PlainDate,
+	end: PlainDate,
+	locale: string,
+	preset: PlainDateFormatPreset,
+): string {
+	const format = new TemporalDateTimeFormat(locale, PLAIN_DATE_FORMAT_OPTIONS[preset]);
+	return start.equals(end) ? format.format(start) : format.formatRange(start, end);
 }
 
 export function formatUtcOffset(offsetMinutes: number): string {
