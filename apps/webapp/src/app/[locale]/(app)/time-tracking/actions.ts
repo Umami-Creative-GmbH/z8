@@ -112,6 +112,7 @@ import type {
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 
 /** The calendar's break; the Clocking module checks billing like every other break. */
 export async function addBreakToActiveSession(
@@ -968,7 +969,7 @@ export async function updateWorkPeriodProject(
 			data: { workPeriodId, projectId },
 		};
 	} catch (error) {
-		const failure = describeAmendmentFailure(error);
+		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 		if (failure) {
 			return { success: false, error: failure.message, code: failure.code };
 		}
@@ -1055,7 +1056,7 @@ export async function updateWorkPeriodBillability(
 
 		return { success: true, data: { workPeriodId, isBillable: billable } };
 	} catch (error) {
-		const failure = describeAmendmentFailure(error);
+		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 		if (failure) {
 			return { success: false, error: failure.message, code: failure.code };
 		}

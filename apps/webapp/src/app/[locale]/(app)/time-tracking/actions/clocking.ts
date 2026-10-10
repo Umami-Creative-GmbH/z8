@@ -533,6 +533,12 @@ export async function clockIn(
 				error: await clockInFailureMessage(refusal.code),
 				code: refusal.code,
 			};
+		case "month_closed":
+			return {
+				success: false,
+				error: await clockInFailureMessage(refusal.code, { month: refusal.month }),
+				code: refusal.code,
+			};
 		default:
 			return { success: false, error: await clockInFailureMessage(refusal.code) };
 	}
@@ -645,7 +651,10 @@ export async function clockOut(
 	if (result.refusal.code === "billing_required") {
 		return { success: false, error: "billing_required", code: result.refusal.reason };
 	}
-	const error = await clockOutFailureMessage(result.refusal.code);
+	const error = await clockOutFailureMessage(
+		result.refusal.code,
+		result.refusal.code === "month_closed" ? { month: result.refusal.month } : undefined,
+	);
 	// The stable task reason, as manual entry and the project change name it (#873).
 	if (result.refusal.code === "task_not_allowed") {
 		return { success: false, error, code: result.refusal.reason };

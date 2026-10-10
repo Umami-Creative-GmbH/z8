@@ -49,7 +49,7 @@ import {
 
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-export type ClosedMonthReader = Database | Transaction;
+export type ClosedMonthReader = Pick<Database, "select"> | Pick<Transaction, "select">;
 
 export const CLOSED_MONTH_AUDIT_ENTITY_TYPE = "closed_month";
 

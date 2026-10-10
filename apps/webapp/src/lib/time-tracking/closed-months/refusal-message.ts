@@ -21,6 +21,17 @@ function monthLabel(month: ClosedMonthKey, locale: string): string {
 }
 
 /**
+ * A described writer failure with a closed month's English message replaced by
+ * the request's language; any other failure unchanged.
+ */
+export async function localizeMonthClosed<T extends { message: string; month?: string }>(
+	failure: T | null,
+): Promise<T | null> {
+	if (!failure?.month) return failure;
+	return { ...failure, message: await monthClosedMessage(failure.month) };
+}
+
+/**
  * The words of the "month closed" refusal (#762) in the request's language.
  * Outside a request scope (background callers, tests) it is English.
  */

@@ -77,6 +77,8 @@ import {
 	earliestStartDate,
 } from "./close-active-work";
 import { canonicalJson } from "./canonical-json";
+import { monthClosedRefusalOf } from "./closed-months/refusal";
+import { assertWorkOpen } from "./closed-months/store";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import {
@@ -933,6 +935,18 @@ export async function amendCompletedWork(
 			excludeWorkPeriodIds: [period.id],
 		});
 	}
+	// Work and attribution touching a closed month are frozen, before or after
+	// the change; notes alone are not (#762).
+	if (Object.values(changes).some(Boolean)) {
+		await assertWorkOpen(tx, {
+			organizationId,
+			employeeId,
+			intervals: [
+				{ start: instantFromDate(period.startTime), end: instantFromDate(period.endTime) },
+				{ start: resulting.startAt, end: resulting.endAt },
+			],
+		});
+	}
 
 	// Correction entries: exact predecessor from the append collaborator.
 	const corrections: AmendCompletedWorkResult["corrections"] = [];
@@ -1376,8 +1390,17 @@ async function insertReceipt(
 	});
 }
 
-/** User-facing outcome of an operation error, or null for unexpected failures. */
-export function describeAmendmentFailure(error: unknown): { message: string; code: string } | null {
+/**
+ * User-facing outcome of an operation error, or null for unexpected failures.
+ * A closed month (#762) also names the month, for translated wording.
+ */
+export function describeAmendmentFailure(
+	error: unknown,
+): { message: string; code: string; month?: string } | null {
+	const closed = monthClosedRefusalOf(error);
+	if (closed) {
+		return { message: closed.message, code: "month_closed", month: closed.month };
+	}
 	if (error instanceof CompletedWorkCollisionError) {
 		return {
 			message:

@@ -27,6 +27,7 @@ import {
 	liveClockOutWriter,
 } from "../close-active-work";
 import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resume-work";
+import { monthClosedRefusalOf } from "../closed-months/refusal";
 import { isProjectEligible, projectTaskIneligibility } from "../project-eligibility";
 import { findStandingStart, type StartLiveWorkResult } from "../start-live-work";
 import { attributionAfter } from "../task-attribution";
@@ -210,6 +211,11 @@ function transactionRefusal(error: unknown) {
 	}
 	if (error instanceof LegacyCommandNotAcceptedError) {
 		return { code: "legacy_not_accepted" as const };
+	}
+	// The writer's own check, or the database refusal behind it (#762).
+	const closed = monthClosedRefusalOf(error);
+	if (closed) {
+		return { code: "month_closed" as const, month: closed.month };
 	}
 	return null;
 }
