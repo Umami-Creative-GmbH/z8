@@ -40,7 +40,8 @@ function Calendar({
 			showOutsideDays={showOutsideDays}
 			weekStartsOn={props.weekStartsOn ?? weekStartDayToDayPickerValue(weekStartDay)}
 			className={cn(
-				"bg-background group/calendar p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
+				// Days are 44 px on touch screens, and a week still fits a 375 px phone (#846).
+				"bg-background group/calendar p-3 [--cell-size:--spacing(8)] pointer-coarse:[--cell-size:--spacing(11)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
 				"rtl:**:[.rdp-button\\_next>svg]:rotate-180",
 				"rtl:**:[.rdp-button\\_previous>svg]:rotate-180",
 				className,

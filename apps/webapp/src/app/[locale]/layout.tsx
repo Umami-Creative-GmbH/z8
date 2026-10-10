@@ -1,6 +1,6 @@
+import type { Viewport } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
-import { Toaster } from "sonner";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
@@ -8,6 +8,7 @@ import { SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
 import { loadShellTranslations } from "@/tolgee/load-translations";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
@@ -43,6 +44,18 @@ async function TranslationProvider({
 	);
 }
 
+// The store app shell draws edge to edge, so the page covers the notch and home indicator and
+// places its own controls with `env(safe-area-inset-*)` (#846). Insets stay 0 elsewhere.
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	viewportFit: "cover",
+};
+
+// Sonner's own offsets (24px, 16px on phones) plus the home indicator.
+const TOASTER_OFFSET = { bottom: "calc(24px + env(safe-area-inset-bottom))" };
+const TOASTER_MOBILE_OFFSET = { bottom: "calc(16px + env(safe-area-inset-bottom))" };
+
 // Keep global metadata static to avoid loading legacy root locale messages on every page.
 const DEFAULT_META = {
 	title: "z8 - time app",
@@ -72,7 +85,12 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 					/>
 				</Suspense>
 				{children}
-				<Toaster position="bottom-right" richColors />
+				<Toaster
+					mobileOffset={TOASTER_MOBILE_OFFSET}
+					offset={TOASTER_OFFSET}
+					position="bottom-right"
+					richColors
+				/>
 			</TooltipProvider>
 		</QueryProvider>
 	);
@@ -95,7 +113,7 @@ function RootRouteShell() {
 				<Skeleton className="h-9 w-5/6" />
 			</aside>
 			<section className="flex min-w-0 flex-1 flex-col">
-				<header className="flex h-12 shrink-0 items-center gap-3 border-b px-4 lg:px-6">
+				<header className="box-content flex h-12 shrink-0 items-center gap-3 border-b px-4 pt-[env(safe-area-inset-top)] lg:px-6">
 					<Skeleton className="size-7" />
 					<Skeleton className="h-5 w-36" />
 				</header>

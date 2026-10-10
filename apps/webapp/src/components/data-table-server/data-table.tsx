@@ -109,7 +109,15 @@ interface DataTableProps<TData extends RowData> {
 	 * Custom className for rows (can be a function based on row data)
 	 */
 	rowClassName?: string | ((row: TData) => string);
+	/**
+	 * Keep the last column (row actions) at the right edge while the others scroll sideways,
+	 * so a phone can reach it without scrolling the table (#846).
+	 * @default false
+	 */
+	pinLastColumn?: boolean;
 }
+
+const PINNED_COLUMN_CLASS_NAME = "sticky right-0 bg-card";
 
 export function DataTable<TData extends RowData>({
 	columns,
@@ -131,6 +139,7 @@ export function DataTable<TData extends RowData>({
 	className,
 	onRowClick,
 	rowClassName,
+	pinLastColumn = false,
 }: DataTableProps<TData>) {
 	const { t } = useTranslate();
 
@@ -189,8 +198,16 @@ export function DataTable<TData extends RowData>({
 				<TableHeader>
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
-							{headerGroup.headers.map((header) => (
-								<TableHead key={header.id} colSpan={header.colSpan}>
+							{headerGroup.headers.map((header, index) => (
+								<TableHead
+									key={header.id}
+									colSpan={header.colSpan}
+									className={cn(
+										pinLastColumn &&
+											index === headerGroup.headers.length - 1 &&
+											PINNED_COLUMN_CLASS_NAME,
+									)}
+								>
 									{header.isPlaceholder
 										? null
 										: flexRender(
@@ -219,8 +236,13 @@ export function DataTable<TData extends RowData>({
 										onRowClick ? () => onRowClick(row.original) : undefined
 									}
 								>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
+									{row.getVisibleCells().map((cell, index, cells) => (
+										<TableCell
+											key={cell.id}
+											className={cn(
+												pinLastColumn && index === cells.length - 1 && PINNED_COLUMN_CLASS_NAME,
+											)}
+										>
 											{flexRender(
 												cell.column.columnDef.cell,
 												cell.getContext(),
