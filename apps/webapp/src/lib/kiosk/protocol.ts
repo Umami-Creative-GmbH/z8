@@ -74,7 +74,8 @@ export type KioskClockResult = KioskEmployeeSnapshot & {
 };
 
 /**
- * Why a kiosk call did nothing. HTTP status: 400 `invalid_request`, 401
+ * Why a kiosk call did nothing. HTTP status: 400 `invalid_request` (and Clocking's
+ * `invalid_command`, `invalid_break_duration`), 401
  * `kiosk_unknown`/`kiosk_revoked`, 403 `employee_not_assigned`, `wrong_pin`,
  * `no_pin`, `access_denied`, 423 `pin_locked`, 429 `rate_limited`, 402
  * `billing_required`, 503 `failed`/`unconfirmed` (only `unconfirmed` may have
@@ -83,7 +84,9 @@ export type KioskClockResult = KioskEmployeeSnapshot & {
  * `no_break_in_progress`, `holiday_blocked`), which also carries the state.
  */
 export type KioskClockRefusal =
-	| { code: KioskRefusalCode | "invalid_request" | "employee_not_assigned" | "wrong_pin" | "no_pin" }
+	| {
+			code: KioskRefusalCode | "invalid_request" | "employee_not_assigned" | "wrong_pin" | "no_pin";
+	  }
 	| { code: "pin_locked"; lockedUntil: string }
 	| { code: "rate_limited"; retryAfter: number }
 	| ({ code: string } & Partial<KioskEmployeeSnapshot>);

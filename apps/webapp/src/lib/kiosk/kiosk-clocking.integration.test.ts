@@ -314,7 +314,11 @@ describe("kiosk clocking on PostgreSQL", () => {
 					outcome: "executed",
 					action: "clock_in",
 					employee: { id: ids.worker, name: "Wanda Worker" },
-					state: { status: "clocked_in", workPeriodId: expect.any(String), since: "2026-07-22T06:00:00Z" },
+					state: {
+						status: "clocked_in",
+						workPeriodId: expect.any(String),
+						since: "2026-07-22T06:00:00Z",
+					},
 					dayTotal: { date: "2026-07-22", timezone: KIOSK_ZONE, todayMinutes: 0 },
 				},
 			});
@@ -365,7 +369,9 @@ describe("kiosk clocking on PostgreSQL", () => {
 					dayTotal: { date: "2026-07-22", timezone: KIOSK_ZONE, todayMinutes: 480 },
 				},
 			});
-			expect((await entries()).map((entry) => [entry.type, entry.device_info, entry.created_by])).toEqual([
+			expect(
+				(await entries()).map((entry) => [entry.type, entry.device_info, entry.created_by]),
+			).toEqual([
 				["clock_in", `kiosk:${ids.kiosk}`, ids.workerUser],
 				["clock_out", `kiosk:${ids.kiosk}`, ids.workerUser],
 				["clock_in", `kiosk:${ids.kiosk}`, ids.workerUser],
@@ -451,7 +457,11 @@ describe("kiosk clocking on PostgreSQL", () => {
 			// The day ends at the open break's start.
 			expect(endOfDay).toMatchObject({
 				status: 200,
-				body: { outcome: "executed", state: { status: "clocked_out" }, dayTotal: { todayMinutes: 390 } },
+				body: {
+					outcome: "executed",
+					state: { status: "clocked_out" },
+					dayTotal: { todayMinutes: 390 },
+				},
 			});
 		});
 
@@ -462,7 +472,10 @@ describe("kiosk clocking on PostgreSQL", () => {
 			const retry = await clock({ action: "clock_in", operationId });
 
 			expect(first.body.outcome).toBe("executed");
-			expect(retry).toMatchObject({ status: 200, body: { outcome: "replayed", state: { status: "clocked_in" } } });
+			expect(retry).toMatchObject({
+				status: 200,
+				body: { outcome: "replayed", state: { status: "clocked_in" } },
+			});
 			expect(await entries()).toHaveLength(1);
 		});
 	});
@@ -494,7 +507,9 @@ describe("kiosk clocking on PostgreSQL", () => {
 
 		it("answers a locked PIN without clocking, even when it is then right", async () => {
 			for (let attempt = 1; attempt < 5; attempt++) {
-				expect((await clock({ action: "clock_in", pin: "0000" })).body).toEqual({ code: "wrong_pin" });
+				expect((await clock({ action: "clock_in", pin: "0000" })).body).toEqual({
+					code: "wrong_pin",
+				});
 			}
 			const fifth = await clock({ action: "clock_in", pin: "0000" });
 			const right = await clock({ action: "clock_in" });
@@ -572,7 +587,11 @@ describe("kiosk clocking on PostgreSQL", () => {
 			});
 
 			it("refuses a proof built without the PIN check", async () => {
-				const forged = { organizationId: ids.organization, kioskId: ids.kiosk, employeeId: ids.worker };
+				const forged = {
+					organizationId: ids.organization,
+					kioskId: ids.kiosk,
+					employeeId: ids.worker,
+				};
 				await expect(clockIn(kioskPrincipal(forged))).resolves.toEqual(denied);
 			});
 
@@ -615,7 +634,11 @@ describe("kiosk clocking on PostgreSQL", () => {
 
 		describe("notifications of a kiosk-only employee", () => {
 			async function inbox(userId: string) {
-				const { rows } = await admin.query<{ title: string; message: string; metadata: string | null }>(
+				const { rows } = await admin.query<{
+					title: string;
+					message: string;
+					metadata: string | null;
+				}>(
 					`select title, message, metadata from notification where user_id = $1 order by created_at`,
 					[userId],
 				);
@@ -660,7 +683,11 @@ describe("kiosk clocking on PostgreSQL", () => {
 			const response = await clock({ action: "clock_out" });
 			expect(response).toMatchObject({
 				status: 409,
-				body: { code: "not_clocked_in", state: { status: "clocked_out" }, dayTotal: { todayMinutes: 0 } },
+				body: {
+					code: "not_clocked_in",
+					state: { status: "clocked_out" },
+					dayTotal: { todayMinutes: 0 },
+				},
 			});
 		});
 	});

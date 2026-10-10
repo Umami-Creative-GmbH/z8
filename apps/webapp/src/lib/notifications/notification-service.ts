@@ -306,7 +306,13 @@ export async function createNotification(
 	options: { throwOnError?: boolean } = {},
 ): Promise<Notification | null> {
 	try {
-		const recipients = await resolveNotificationRecipients(db, params);
+		// An unreadable recipient keeps the notification addressed as it was.
+		const recipients = await resolveNotificationRecipients(db, params).catch(
+			(error): NotificationRecipients => {
+				logger.warn({ error, userId: params.userId }, "Could not resolve notification recipients");
+				return { kind: "self" };
+			},
+		);
 		if (recipients.kind === "forwarded") {
 			return forwardNotification(params, recipients, options);
 		}

@@ -50,7 +50,8 @@ export async function proveKioskPin(
 		pin: string,
 	) => Promise<KioskPinVerification> = verifyKioskPin,
 ): Promise<
-	{ status: "verified"; proof: KioskPinProof } | Exclude<KioskPinVerification, { status: "verified" }>
+	| { status: "verified"; proof: KioskPinProof }
+	| Exclude<KioskPinVerification, { status: "verified" }>
 > {
 	const verification = await verify(input.organizationId, input.employeeId, input.pin);
 	if (verification.status !== "verified") return verification;

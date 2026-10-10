@@ -12,7 +12,11 @@ import type { Clocking } from "@/lib/time-tracking/clocking/clocking";
 import { proveKioskPin } from "@/lib/time-tracking/clocking/kiosk";
 import type { ClockPrincipal } from "@/lib/time-tracking/clocking/types";
 import type { KioskPinVerification } from "@/lib/time-tracking/kiosk/verify-kiosk-pin";
-import { type AuthenticatedKiosk, kioskRefusalResponse, resolveKioskFromRequest } from "./authenticate";
+import {
+	type AuthenticatedKiosk,
+	kioskRefusalResponse,
+	resolveKioskFromRequest,
+} from "./authenticate";
 import { readKioskEmployeeState } from "./employee-state";
 import {
 	KIOSK_CLOCK_ACTIONS,
@@ -50,7 +54,12 @@ const employeeRequest = z.object({
 const clockRequest = employeeRequest.extend({
 	action: z.enum(KIOSK_CLOCK_ACTIONS),
 	operationId: z.string().uuid().optional(),
-	breakMinutes: z.number().int().min(1).max(24 * 60).optional(),
+	breakMinutes: z
+		.number()
+		.int()
+		.min(1)
+		.max(24 * 60)
+		.optional(),
 });
 
 function json(body: unknown, status = 200) {
@@ -94,8 +103,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 		body: { employeeId: string; pin: string },
 		kiosk: AuthenticatedKiosk,
 	): Promise<
-		| { response: Response }
-		| { principal: ClockPrincipal; employee: { id: string; name: string } }
+		{ response: Response } | { principal: ClockPrincipal; employee: { id: string; name: string } }
 	> {
 		const limit = await deps.limitPinAttempts(kiosk.kioskId);
 		if (!limit.allowed) {

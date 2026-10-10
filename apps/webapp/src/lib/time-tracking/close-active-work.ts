@@ -168,7 +168,11 @@ export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter
 	}
 	// A kiosk command's own writer also names its kiosk (`kioskClockWriter`).
 	if (channel === "kiosk") {
-		return { writer: "kiosk_clock", writerVersion: KIOSK_CLOCK_WRITER_VERSION, ...clockSource(channel) };
+		return {
+			writer: "kiosk_clock",
+			writerVersion: KIOSK_CLOCK_WRITER_VERSION,
+			...clockSource(channel),
+		};
 	}
 	return channel.endsWith("-bot")
 		? { writer: "bot_clock_out", writerVersion: BOT_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) }

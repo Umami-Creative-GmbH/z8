@@ -12,10 +12,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { canonicalWorkRecordClient } from "../canonical-work-record";
 import { ClockingConflictError, LiveWorkOccupiedError } from "../clocking-core";
-import {
-	type CloseActiveWorkWriter,
-	CompletedWorkCollisionError,
-} from "../close-active-work";
+import { type CloseActiveWorkWriter, CompletedWorkCollisionError } from "../close-active-work";
 import {
 	type CloseResumeWorkOperationCommand,
 	type CloseResumeWorkResult,
