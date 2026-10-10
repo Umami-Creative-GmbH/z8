@@ -4,7 +4,10 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import type { ServerActionResult } from "@/lib/effect/result";
-import type { StagedSickNoteInput } from "@/lib/personnel-file/sick-note-upload";
+import type {
+	AbsenceWithSickNotes,
+	StagedSickNoteInput,
+} from "@/lib/personnel-file/sick-note-upload";
 import { getCurrentEmployee as getCurrentEmployeeAction } from "./current-employee";
 import { cancelAbsenceRequest as cancelAbsenceRequestAction } from "./mutations";
 import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";
@@ -17,10 +20,7 @@ import {
 	requestAbsenceEffect as requestAbsenceAction,
 	requestAbsenceEffect,
 } from "./request-absence-effect";
-import {
-	type RequestedAbsence,
-	requestAbsenceWithSickNotes,
-} from "./request-with-sick-notes";
+import { requestAbsenceWithSickNotes } from "./request-with-sick-notes";
 
 export { requestAbsenceEffect };
 
@@ -126,7 +126,7 @@ export async function getAbsencePlanPreview(
 export async function requestAbsence(
 	data: AbsenceRequest,
 	stagedSickNotes?: readonly StagedSickNoteInput[],
-): Promise<ServerActionResult<RequestedAbsence>> {
+): Promise<ServerActionResult<AbsenceWithSickNotes>> {
 	if (stagedSickNotes === undefined) return requestAbsenceAction(data);
 	return requestAbsenceWithSickNotes(data, stagedSickNotes);
 }

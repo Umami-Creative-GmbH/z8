@@ -34,10 +34,8 @@ import { createLogger } from "@/lib/logger";
 import { resolvePersonnelFileAccess } from "@/lib/personnel-file/access-store";
 import { countSickNotesForAbsences } from "@/lib/personnel-file/sick-note-store";
 import {
-	attachStagedSickNotes,
-	discardStagedSickNotes,
-	parseStagedSickNotes,
-	type SickNoteAttachFailure,
+	type AbsenceWithSickNotes,
+	createAbsenceWithStagedSickNotes,
 	type StagedSickNoteInput,
 } from "@/lib/personnel-file/sick-note-upload";
 import { addCalendarSyncJob } from "@/lib/queue";
@@ -567,97 +565,43 @@ export async function recordAbsenceForEmployee(
 	}
 }
 
-export interface RecordedAbsence {
-	absenceId: string;
-	/** What became of the staged sick notes (#984); absent when none came along. */
-	sickNotes?: { attached: number; failed: SickNoteAttachFailure[] };
-}
-
-const SICK_NOTES_NOT_ALLOWED = "Sick notes cannot be attached here.";
-
 /**
  * Records an absence for an employee with sick notes staged in the recording
  * dialog (#984, Personnel File ADR 0002). The absence is recorded exactly as
  * without notes; only then is each staged upload attached on the recorder's
- * authority: a shared sick note the employee sees, which a recorder who does
- * not manage the employee's sick notes cannot open afterwards. This is the
- * only way a manager uploads a sick note. A failed recording stores nothing
- * and discards the uploads; notes that may not be attached (personnel files
- * off, not sick leave) are discarded and reported by their file names.
+ * authority, granted for this absence alone: a shared sick note the employee
+ * sees, which a recorder who does not manage the employee's sick notes cannot
+ * open afterwards. This is the only way a manager uploads a sick note. See
+ * `createAbsenceWithStagedSickNotes` for what becomes of the uploads.
  */
 export async function recordAbsenceWithSickNotes(
 	input: RecordAbsenceForEmployeeInput,
 	stagedSickNotes: readonly StagedSickNoteInput[],
-): Promise<ServerActionResult<RecordedAbsence>> {
-	const notes = parseStagedSickNotes(stagedSickNotes);
-	if (!notes) return { success: false, error: "Invalid sick notes", code: "ValidationError" };
-	if (notes.length === 0) return recordAbsenceForEmployee(input);
-
-	const actorResult = await resolveActor();
-	if (!actorResult.success) return actorResult;
-	const actor = actorResult.data;
-
-	const recorded = await recordAbsenceForEmployee(input);
-	if (!recorded.success) {
-		await discardStagedSickNotes(actor.userId, notes);
-		return recorded;
-	}
-	const { absenceId } = recorded.data;
-
-	try {
-		const access = await resolvePersonnelFileAccess(db, {
-			userId: actor.userId,
-			organizationId: actor.organizationId,
-		});
-		if (!access) {
-			await discardStagedSickNotes(actor.userId, notes);
-			return {
-				success: true,
-				data: {
-					absenceId,
-					sickNotes: {
-						attached: 0,
-						failed: notes.map((note) => ({
-							fileName: note.fileName?.trim() || "file",
-							error: SICK_NOTES_NOT_ALLOWED,
-						})),
-					},
-				},
-			};
-		}
-		const attached = await attachStagedSickNotes(db, {
-			access,
-			absenceId,
-			employeeId: input.employeeId,
-			notes,
-			authority: "recorder",
-			uploaderName: actor.name,
-		});
-		return {
-			success: true,
-			data: {
-				absenceId,
-				sickNotes: { attached: attached.attached.length, failed: attached.failed },
-			},
-		};
-	} catch (error) {
-		// The absence is recorded either way; the notes can be attached by an officer.
-		logger.error({ error, absenceId }, "Failed to attach sick notes to a recorded absence");
-		await discardStagedSickNotes(actor.userId, notes).catch(() => undefined);
-		return {
-			success: true,
-			data: {
-				absenceId,
-				sickNotes: {
-					attached: 0,
-					failed: notes.map((note) => ({
-						fileName: note.fileName?.trim() || "file",
-						error: "Processing failed",
-					})),
-				},
-			},
-		};
-	}
+): Promise<ServerActionResult<AbsenceWithSickNotes>> {
+	const { getRequestSession } = await import("@/lib/auth/request-session");
+	const session = await getRequestSession();
+	return createAbsenceWithStagedSickNotes(db, {
+		userId: session?.user?.id ?? null,
+		stagedSickNotes,
+		create: () => recordAbsenceForEmployee(input),
+		attacher: async () => {
+			const actorResult = await resolveActor();
+			if (!actorResult.success) return null;
+			const actor = actorResult.data;
+			const access = await resolvePersonnelFileAccess(db, {
+				userId: actor.userId,
+				organizationId: actor.organizationId,
+			});
+			return access
+				? {
+						authority: "recorder",
+						access,
+						employeeId: input.employeeId,
+						uploaderName: actor.name,
+					}
+				: null;
+		},
+	});
 }
 
 async function resolveActor(): Promise<ServerActionResult<ManagerAbsenceActor>> {

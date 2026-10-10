@@ -8,12 +8,7 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import {
-	canDeleteOwnSickNote,
-	canManageDocument,
-	type PersonnelFileAccess,
-	type SickNoteAuthority,
-} from "./access";
+import { canDeleteOwnSickNote, canManageDocument, type PersonnelFileAccess } from "./access";
 import { loadEmployeeRef, visibleDocumentsCondition } from "./access-store";
 import { writeDocumentAudit } from "./audit";
 import type { DocumentCategory, DocumentVisibility, PayPeriod } from "./document.types";
@@ -22,6 +17,7 @@ import {
 	lockSickNoteAbsence,
 	markAbsenceWithCertificate,
 	type SickNoteAbsence,
+	type SickNoteAttachAuthority,
 } from "./sick-note-attach";
 import type { StagedPersonnelFileUpload, StoredPersonnelFileObject } from "./upload-ledger";
 
@@ -179,7 +175,11 @@ export async function finalizePersonnelDocumentUpload(
 		 */
 		source?: PersonnelDocumentUploadSource;
 		/** The sick note is attached to this absence, on the given authority (#982). */
-		sickNote?: { absenceId: string; access: PersonnelFileAccess; authority: SickNoteAuthority };
+		sickNote?: {
+			absenceId: string;
+			access: PersonnelFileAccess;
+			authority: SickNoteAttachAuthority;
+		};
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<FinalizePersonnelDocumentResult> {

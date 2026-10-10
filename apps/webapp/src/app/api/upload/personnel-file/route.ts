@@ -14,9 +14,13 @@ import { loadEmployeeRef } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { DEFAULT_VISIBILITY, isDocumentCategory } from "@/lib/personnel-file/document.types";
 import { validateDocumentMetadata } from "@/lib/personnel-file/document-rules";
-import { recordUploadedPersonnelDocument } from "@/lib/personnel-file/document-upload";
+import {
+	recordUploadedPersonnelDocument,
+	uploadNotRecorded,
+} from "@/lib/personnel-file/document-upload";
 import { notifyDocumentShared, notifyEmployeeUpload } from "@/lib/personnel-file/notifications";
 import { loadSickNoteAttachTarget } from "@/lib/personnel-file/sick-note-attach";
+import { SICK_NOTE_REFUSAL_MESSAGES } from "@/lib/personnel-file/sick-note-refusals";
 
 const logger = createLogger("PersonnelFileUpload");
 
@@ -45,17 +49,6 @@ const requestSchema = z.object({
 function notFound() {
 	return NextResponse.json({ error: "Employee not found" }, { status: 404 });
 }
-
-const SICK_NOTE_REFUSALS: Record<
-	Exclude<SickNoteAttachRefusal, "not_own" | "not_managed">,
-	string
-> = {
-	setting_off: "Your organization does not let employees attach sick notes.",
-	not_sick: "Sick notes can be attached only to sick leave.",
-	rejected: "Sick notes cannot be attached to a rejected absence.",
-};
-
-const ABSENCE_UNAVAILABLE = "This absence can no longer take a sick note.";
 
 /**
  * Records a finished TUS upload as an employee document in a personnel file
@@ -108,17 +101,17 @@ export async function POST(request: NextRequest) {
 			const target = await loadSickNoteAttachTarget(db, access, absenceId, authority);
 			// Someone else's absence, or one the officer does not cover, reads as not
 			// found, like another organization's; so does another employee's absence.
-			const reason =
+			const reason: SickNoteAttachRefusal | null =
 				target.kind === "refused"
 					? target.reason
 					: target.kind === "not_found" || target.absence.employeeId !== employee.id
 						? "not_own"
 						: null;
-			if (reason === "not_own" || reason === "not_managed") {
-				return NextResponse.json({ error: "Absence not found" }, { status: 404 });
-			}
 			if (reason) {
-				return NextResponse.json({ error: SICK_NOTE_REFUSALS[reason] }, { status: 403 });
+				return NextResponse.json(
+					{ error: SICK_NOTE_REFUSAL_MESSAGES[reason] },
+					{ status: reason === "not_own" || reason === "not_managed" ? 404 : 403 },
+				);
 			}
 		}
 
@@ -163,20 +156,9 @@ export async function POST(request: NextRequest) {
 			...(absenceId ? { sickNote: { absenceId, authority } } : {}),
 		});
 
-		if (finalized.kind === "invalid_file_key") {
-			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
-		}
-		if (finalized.kind === "unreadable") {
-			return NextResponse.json({ error: finalized.error }, { status: finalized.status });
-		}
-		if (finalized.kind === "absence_unavailable") {
-			return NextResponse.json({ error: ABSENCE_UNAVAILABLE }, { status: 409 });
-		}
-		if (finalized.kind === "not_pending") {
-			return NextResponse.json(
-				{ error: "The upload took too long. Please upload the file again." },
-				{ status: 409 },
-			);
+		if (finalized.kind !== "recorded") {
+			const { status, error } = uploadNotRecorded(finalized);
+			return NextResponse.json({ error }, { status });
 		}
 
 		if (own) {

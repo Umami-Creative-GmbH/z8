@@ -458,6 +458,25 @@ describe.each(["legacy", "canonical"] as const)(
 			expect(rows).toEqual([]);
 		});
 
+		it("deletes the caller's own uploads of a refused payload, and nobody else's", async () => {
+			signIn("owner");
+			const owners = stage("owner.pdf");
+			signIn("anna");
+			const tooMany = Array.from({ length: 11 }, (_, index) => stage(`page-${index}.pdf`));
+			const badShape = { ...stage("bad.pdf"), documentDate: 20261005 };
+
+			expect(await requestAbsence(sickLeave(), [...tooMany, owners])).toMatchObject({
+				success: false,
+			});
+			expect(
+				await requestAbsence(sickLeave(), [badShape] as unknown as Parameters<
+					typeof requestAbsence
+				>[1]),
+			).toMatchObject({ success: false });
+
+			expect([...harness.tus.keys()]).toEqual([owners.tusFileKey]);
+		});
+
 		it("deletes the dialog's own staged uploads when it gives up before requesting", async () => {
 			signIn("owner");
 			const owners = stage("owner.pdf");

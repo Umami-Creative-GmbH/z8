@@ -10,6 +10,7 @@
 import type { NextRequest } from "next/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
+import type { RecorderSickNoteGrant } from "./sick-note-attach";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -129,6 +130,7 @@ const sickNoteLinkActions = await import("@/app/[locale]/(app)/personnel-files/s
 const sickNoteActions = await import("@/app/[locale]/(app)/absences/sick-note-actions");
 const { resolvePersonnelFileAccess } = await import("./access-store");
 const { countSickNotesForAbsences } = await import("./sick-note-store");
+const { loadSickNoteAttachTarget } = await import("./sick-note-attach");
 const { seedPersonnelFileOfficerGrant } = await import("./testing/officer-grant.test.fixture");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { db } = await import("@/db");
@@ -616,6 +618,51 @@ describe("sick notes recorded on the employee's behalf and managed by officers (
 			expect(await linkedNotes(first.data.absenceId)).toEqual([]);
 		});
 
+		it("deletes the uploads of someone who may not record absences, and records nothing", async () => {
+			signIn("anna");
+			const leave = recording("ben");
+			const result = await recordAbsenceWithSickNotes(leave, [stage("a.pdf")]);
+
+			expect(result.success).toBe(false);
+			expect(harness.tus.size).toBe(0);
+			const { rows } = await admin.query(
+				"select id from absence_entry where employee_id = $1 and start_date = $2",
+				[ids.ben, leave.startDate],
+			);
+			expect(rows).toEqual([]);
+		});
+
+		it("deletes the recorder's own uploads of a refused payload, and nobody else's", async () => {
+			signIn("owner");
+			const owners = stage("owner.pdf");
+			signIn("manager");
+			const tooMany = Array.from({ length: 11 }, (_, index) => stage(`page-${index}.pdf`));
+
+			const result = await recordAbsenceWithSickNotes(recording("anna"), [...tooMany, owners]);
+
+			expect(result).toMatchObject({ success: false, code: "ValidationError" });
+			expect([...harness.tus.keys()]).toEqual([owners.tusFileKey]);
+		});
+
+		it("binds the recorder's authority to the absence it was granted for", async () => {
+			const granted = await seedAbsence("anna");
+			const other = await seedAbsence("anna");
+			const access = await resolvePersonnelFileAccess(db, {
+				userId: userOf("manager"),
+				organizationId: ORG,
+			});
+			if (!access) throw new Error("no access");
+			const grant = { kind: "recorder", absenceId: granted } as RecorderSickNoteGrant;
+
+			expect(await loadSickNoteAttachTarget(db, access, granted, grant)).toMatchObject({
+				kind: "ok",
+			});
+			expect(await loadSickNoteAttachTarget(db, access, other, grant)).toEqual({
+				kind: "refused",
+				reason: "not_managed",
+			});
+		});
+
 		it("refuses a manager attaching to an absence outside the recording", async () => {
 			const absenceId = await seedAbsence("anna");
 			signIn("manager");
@@ -765,6 +812,33 @@ describe("sick notes recorded on the employee's behalf and managed by officers (
 				await sickNoteLinkActions.linkSickNoteAction({ documentId: certificate, absenceId }),
 			).toMatchObject({ success: false });
 			expect(await linkOf(certificate)).toBeNull();
+		});
+
+		it("tells an officer who sees a certificate that only sick notes can be linked", async () => {
+			const absenceId = await seedAbsence("anna");
+			const certificate = await seedDocument("anna", { category: "certificate" });
+			signIn("certOfficer");
+			expect(
+				await sickNoteLinkActions.linkSickNoteAction({ documentId: certificate, absenceId }),
+			).toEqual({
+				success: false,
+				error: "Only sick notes can be linked to an absence.",
+				code: "not_sick_note",
+			});
+		});
+
+		it("never tells a sick-note officer that a certificate they cannot see exists", async () => {
+			const absenceId = await seedAbsence("anna");
+			const certificate = await seedDocument("anna", { category: "certificate" });
+			signIn("officer");
+			const unknown = await sickNoteLinkActions.linkSickNoteAction({
+				documentId: "e9849999-0000-4000-8000-000000000000",
+				absenceId,
+			});
+			expect(
+				await sickNoteLinkActions.linkSickNoteAction({ documentId: certificate, absenceId }),
+			).toEqual(unknown);
+			expect(unknown).toMatchObject({ success: false, error: "Not found" });
 		});
 
 		it("refuses a document or an absence of another organization", async () => {

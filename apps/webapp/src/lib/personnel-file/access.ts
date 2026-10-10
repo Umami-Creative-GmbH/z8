@@ -119,14 +119,16 @@ export type SickNoteAttachRefusal =
 	| "rejected";
 
 /**
- * On whose authority a sick note is attached to an absence (ADR 0002):
+ * On whose standing authority a sick note is attached to an absence (ADR 0002):
  * - "employee": the employee to their own absence (#982), `sickNoteAttachRefusal`;
- * - "recorder": whoever records the absence on the employee's behalf, from
- *   inside the recording only (#984), `recorderSickNoteAttachRefusal`;
  * - "officer": whoever manages the employee's sick notes (#984),
  *   `officerSickNoteAttachRefusal`.
+ *
+ * Whoever records an absence on the employee's behalf (#984) has no standing
+ * authority: they attach only from inside that recording, with a grant bound
+ * to the absence just recorded (`RecorderSickNoteGrant` in sick-note-attach.ts).
  */
-export type SickNoteAuthority = "employee" | "recorder" | "officer";
+export type SickNoteAuthority = "employee" | "officer";
 
 type SickNoteTargetAbsence = {
 	employeeId: string;
@@ -135,22 +137,18 @@ type SickNoteTargetAbsence = {
 	status: "pending" | "approved" | "rejected";
 };
 
-function sickLeaveRefusal(absence: SickNoteTargetAbsence): SickNoteAttachRefusal | null {
+/**
+ * Whether the absence can take a sick note at all, whoever attaches it: only
+ * sick leave that is pending or approved. Every authority checks this; the
+ * recorder of the absence (#984) checks nothing else, whatever the
+ * employee-upload setting says.
+ */
+export function sickLeaveAttachRefusal(
+	absence: Pick<SickNoteTargetAbsence, "categoryType" | "status">,
+): SickNoteAttachRefusal | null {
 	if (absence.categoryType !== "sick") return "not_sick";
 	if (absence.status === "rejected") return "rejected";
 	return null;
-}
-
-/**
- * Whether the recorder may upload a sick note to the absence they are
- * recording for the employee (#984): any pending or approved sick leave,
- * whatever the employee-upload setting says. Their authority comes from the
- * recording itself, so only the recording action may decide with it.
- */
-export function recorderSickNoteAttachRefusal(input: {
-	absence: SickNoteTargetAbsence;
-}): SickNoteAttachRefusal | null {
-	return sickLeaveRefusal(input.absence);
 }
 
 /**
@@ -169,7 +167,7 @@ export function officerSickNoteAttachRefusal(
 	) {
 		return "not_managed";
 	}
-	return sickLeaveRefusal(input.absence);
+	return sickLeaveAttachRefusal(input.absence);
 }
 
 /**
@@ -189,7 +187,7 @@ export function sickNoteAttachRefusal(
 ): SickNoteAttachRefusal | null {
 	if (!input.employeeSickNoteUpload) return "setting_off";
 	if (!isOwnDocument(access, input.absence.employeeId)) return "not_own";
-	return sickLeaveRefusal(input.absence);
+	return sickLeaveAttachRefusal(input.absence);
 }
 
 /** How long an employee may delete a sick note they uploaded themselves. */

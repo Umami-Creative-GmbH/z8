@@ -4,7 +4,7 @@ import type { db as appDb } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
-import type { PersonnelFileAccess, SickNoteAuthority } from "./access";
+import type { PersonnelFileAccess } from "./access";
 import type { DocumentMetadata } from "./document-rules";
 import {
 	type FinalizePersonnelDocumentResult,
@@ -12,6 +12,7 @@ import {
 	type PersonnelDocumentUploadSource,
 	personnelDocumentStorageKey,
 } from "./document-store";
+import type { SickNoteAttachAuthority } from "./sick-note-attach";
 import {
 	deletePersonnelDocumentObject,
 	deleteTusUpload,
@@ -50,6 +51,25 @@ export type RecordUploadedDocumentResult =
 	/** The ledger cleanup claimed the staged object meanwhile (a very slow upload). */
 	| { kind: "not_pending" };
 
+/**
+ * Why a finished upload was not recorded, as the HTTP status and the message
+ * the upload route answers with and the staged sick notes report per file.
+ */
+export function uploadNotRecorded(
+	result: Exclude<RecordUploadedDocumentResult, { kind: "recorded" }>,
+): { status: number; error: string } {
+	switch (result.kind) {
+		case "invalid_file_key":
+			return { status: 400, error: "Invalid file key" };
+		case "unreadable":
+			return { status: result.status, error: result.error };
+		case "absence_unavailable":
+			return { status: 409, error: "This absence can no longer take a sick note." };
+		case "not_pending":
+			return { status: 409, error: "The upload took too long. Please upload the file again." };
+	}
+}
+
 export async function recordUploadedPersonnelDocument(
 	database: Database,
 	input: {
@@ -62,7 +82,7 @@ export async function recordUploadedPersonnelDocument(
 		/** "employee" or "recorder" (#867, #984), see `finalizePersonnelDocumentUpload`. */
 		source?: PersonnelDocumentUploadSource;
 		/** Attaches the document as a sick note to the absence (#982). */
-		sickNote?: { absenceId: string; authority: SickNoteAuthority };
+		sickNote?: { absenceId: string; authority: SickNoteAttachAuthority };
 	},
 ): Promise<RecordUploadedDocumentResult> {
 	const { access } = input;

@@ -10,7 +10,7 @@ import {
 	ORGANIZATION_ADMIN_GRANT,
 	officerSickNoteAttachRefusal,
 	type PersonnelFileAccess,
-	recorderSickNoteAttachRefusal,
+	sickLeaveAttachRefusal,
 	sickNoteAttachRefusal,
 } from "./access";
 
@@ -181,20 +181,16 @@ describe("sick notes on absences (#982)", () => {
 		).toBe("rejected");
 	});
 
-	describe("recording sick leave on the employee's behalf (#984)", () => {
-		it("lets the recorder attach to sick leave, whatever the employee-upload setting says", () => {
+	describe("whether an absence can take a sick note at all (the recorder's only rule, #984)", () => {
+		it("takes pending and approved sick leave", () => {
 			for (const status of ["pending", "approved"] as const) {
-				expect(recorderSickNoteAttachRefusal({ absence: { ...sickLeave, status } })).toBeNull();
+				expect(sickLeaveAttachRefusal({ ...sickLeave, status })).toBeNull();
 			}
 		});
 
 		it("refuses an absence that is no sick leave, or a rejected one", () => {
-			expect(
-				recorderSickNoteAttachRefusal({ absence: { ...sickLeave, categoryType: "vacation" } }),
-			).toBe("not_sick");
-			expect(recorderSickNoteAttachRefusal({ absence: { ...sickLeave, status: "rejected" } })).toBe(
-				"rejected",
-			);
+			expect(sickLeaveAttachRefusal({ ...sickLeave, categoryType: "vacation" })).toBe("not_sick");
+			expect(sickLeaveAttachRefusal({ ...sickLeave, status: "rejected" })).toBe("rejected");
 		});
 	});
 

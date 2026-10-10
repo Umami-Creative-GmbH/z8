@@ -9,9 +9,9 @@ import {
 	type LinkableSickLeave,
 	linkSickNoteToAbsence,
 	listLinkableSickLeave,
-	type SickNoteLinkRefusal,
 	unlinkSickNoteFromAbsence,
 } from "@/lib/personnel-file/sick-note-link";
+import { SICK_NOTE_REFUSAL_MESSAGES } from "@/lib/personnel-file/sick-note-refusals";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 
 /**
@@ -22,14 +22,6 @@ import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
  */
 
 const NOT_FOUND = "Not found";
-
-const LINK_REFUSALS: Record<SickNoteLinkRefusal, string> = {
-	not_sick_note: "Only sick notes can be linked to an absence.",
-	already_linked: "This sick note is linked to another absence. Unlink it first.",
-	other_employee: "The sick note and the absence belong to different employees.",
-	not_sick: "Sick notes can be linked only to sick leave.",
-	rejected: "Sick notes cannot be linked to a rejected absence.",
-};
 
 export type { LinkableSickLeave } from "@/lib/personnel-file/sick-note-link";
 
@@ -59,7 +51,11 @@ export async function linkSickNoteAction(input: {
 			case "not_found":
 				return { success: false, error: NOT_FOUND };
 			case "refused":
-				return { success: false, error: LINK_REFUSALS[result.reason], code: result.reason };
+				return {
+					success: false,
+					error: SICK_NOTE_REFUSAL_MESSAGES[result.reason],
+					code: result.reason,
+				};
 			case "linked":
 				return { success: true, data: result.document };
 		}

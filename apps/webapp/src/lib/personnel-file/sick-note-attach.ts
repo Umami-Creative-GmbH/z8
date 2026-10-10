@@ -8,9 +8,9 @@ import { AuditAction } from "@/lib/audit-logger";
 import {
 	officerSickNoteAttachRefusal,
 	type PersonnelFileAccess,
-	recorderSickNoteAttachRefusal,
 	type SickNoteAttachRefusal,
 	type SickNoteAuthority,
+	sickLeaveAttachRefusal,
 	sickNoteAttachRefusal,
 } from "./access";
 import { loadEmployeeRef } from "./access-store";
@@ -26,6 +26,24 @@ import { loadEmployeeRef } from "./access-store";
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Reader = Database | Pick<Transaction, "select">;
+
+declare const recordedAbsence: unique symbol;
+
+/**
+ * The authority of whoever records an absence on the employee's behalf
+ * (#984): to attach sick notes to that one absence, from inside the
+ * recording. It is bound to the absence it was granted for and opens no
+ * other; only `createAbsenceWithStagedSickNotes` (sick-note-upload.ts) grants
+ * one, for the absence it has just created.
+ */
+export interface RecorderSickNoteGrant {
+	readonly kind: "recorder";
+	readonly absenceId: string;
+	readonly [recordedAbsence]: true;
+}
+
+/** A standing authority, or the recorder's grant for the absence just recorded. */
+export type SickNoteAttachAuthority = SickNoteAuthority | RecorderSickNoteGrant;
 
 /** The absence a sick note is attached to, as attaching needs it. */
 export interface SickNoteAbsence {
@@ -75,7 +93,7 @@ export type SickNoteAttachTarget =
 async function decideSickNoteTarget(
 	database: Reader,
 	access: PersonnelFileAccess,
-	input: { absenceId: string; authority: SickNoteAuthority; lock: boolean },
+	input: { absenceId: string; authority: SickNoteAttachAuthority; lock: boolean },
 ): Promise<SickNoteAttachTarget> {
 	const query = database
 		.select(absenceColumns())
@@ -101,10 +119,19 @@ async function decideSickNoteTarget(
 
 async function attachRefusalUnder(
 	database: Reader,
-	authority: SickNoteAuthority,
+	authority: SickNoteAttachAuthority,
 	access: PersonnelFileAccess,
-	absence: { employeeId: string; categoryType: string; status: SickNoteAbsence["status"] },
+	absence: {
+		id: string;
+		employeeId: string;
+		categoryType: string;
+		status: SickNoteAbsence["status"];
+	},
 ): Promise<SickNoteAttachRefusal | null> {
+	if (typeof authority === "object") {
+		// The recorder's grant opens only the absence it was granted for.
+		return authority.absenceId === absence.id ? sickLeaveAttachRefusal(absence) : "not_managed";
+	}
 	switch (authority) {
 		case "employee": {
 			const settings = await loadAbsenceSettings(database, access.organizationId);
@@ -113,8 +140,6 @@ async function attachRefusalUnder(
 				absence,
 			});
 		}
-		case "recorder":
-			return recorderSickNoteAttachRefusal({ absence });
 		case "officer": {
 			const employee = await loadEmployeeRef(database, {
 				organizationId: access.organizationId,
@@ -135,7 +160,7 @@ export function loadSickNoteAttachTarget(
 	database: Reader,
 	access: PersonnelFileAccess,
 	absenceId: string,
-	authority: SickNoteAuthority = "employee",
+	authority: SickNoteAttachAuthority = "employee",
 ): Promise<SickNoteAttachTarget> {
 	return decideSickNoteTarget(database, access, { absenceId, authority, lock: false });
 }
@@ -147,7 +172,7 @@ export function loadSickNoteAttachTarget(
 export function lockSickNoteAttachTarget(
 	tx: Transaction,
 	access: PersonnelFileAccess,
-	input: { absenceId: string; authority: SickNoteAuthority },
+	input: { absenceId: string; authority: SickNoteAttachAuthority },
 ): Promise<SickNoteAttachTarget> {
 	return decideSickNoteTarget(tx, access, { ...input, lock: true });
 }
@@ -162,7 +187,7 @@ export function lockSickNoteAttachTarget(
 export async function lockSickNoteAbsence(
 	tx: Transaction,
 	access: PersonnelFileAccess,
-	input: { absenceId: string; employeeId: string; authority: SickNoteAuthority },
+	input: { absenceId: string; employeeId: string; authority: SickNoteAttachAuthority },
 ): Promise<SickNoteAbsence | null> {
 	const target = await lockSickNoteAttachTarget(tx, access, input);
 	return target.kind === "ok" && target.absence.employeeId === input.employeeId
