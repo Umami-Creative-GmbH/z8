@@ -16,6 +16,10 @@ vi.mock("@/lib/bot-platform/i18n", () => ({
 vi.mock("@/lib/app-url", () => ({
 	getOrganizationBaseUrl: async () => "https://org.z8.test",
 }));
+const deputyReads = vi.hoisted(() => ({
+	loadDeputyActingForName: vi.fn(async (): Promise<string | null> => null),
+}));
+vi.mock("@/lib/approvals/deputy/deputy-reads", () => deputyReads);
 
 const { boundDecisionNotice } = await import("./approval-notice");
 
@@ -72,6 +76,31 @@ describe("boundDecisionNotice", () => {
 		},
 	);
 
+	it("names a covering deputy's decision as made for the absent approver (#1016)", async () => {
+		deputyReads.loadDeputyActingForName.mockResolvedValueOnce("Xenia Absent");
+		const result = decided({ assignmentOutcome: "approved", requestOutcome: "approved" });
+		const notice = await boundDecisionNotice(
+			{
+				...result,
+				evidence: {
+					...result.evidence,
+					assignmentId: "assignment-1",
+					labels: { actorName: "Dana Deputy" },
+				},
+			},
+			recipient,
+			reference,
+		);
+
+		expect(notice?.text).toBe(
+			"Approved by Dana Deputy (deputy for Xenia Absent) on Aug 1, 2026, 10:15 (Europe/Berlin). The request is approved.",
+		);
+		expect(deputyReads.loadDeputyActingForName).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org",
+			assignmentId: "assignment-1",
+		});
+	});
+
 	it("labels a replay as the original result", async () => {
 		const notice = await boundDecisionNotice(
 			decided({ assignmentOutcome: "approved", requestOutcome: "approved" }, true),
@@ -79,6 +108,18 @@ describe("boundDecisionNotice", () => {
 			reference,
 		);
 		expect(notice?.text).toContain("this is its original result");
+	});
+
+	it("tells a deputy pressing after cover ended that nothing was decided (#1017)", async () => {
+		const notice = await boundDecisionNotice(
+			{ status: "not_covering", approverName: "Morgan Manager" },
+			recipient,
+			reference,
+		);
+		expect(notice).toMatchObject({
+			title: "No longer covering for Morgan Manager",
+			text: "You are no longer covering for Morgan Manager, so this card can't decide anything. No decision was made here. Review the request in Z8 if you still have access.",
+		});
 	});
 
 	it("never reports a decision for review, conflict or not-found results", async () => {

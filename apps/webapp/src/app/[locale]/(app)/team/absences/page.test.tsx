@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { render, screen } from "@testing-library/react";
+import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getManagerAbsenceEmployees = vi.fn();
@@ -38,6 +39,12 @@ vi.mock("../actions", () => ({
 		organizationId: "org-1",
 		role: "manager",
 	})),
+}));
+
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 vi.mock("./actions", () => ({
@@ -119,6 +126,38 @@ describe("TeamAbsencesPage", () => {
 			year: 2026,
 			teamId: "team-1",
 		});
+	});
+
+	it("narrows the calendar to the absences a departing employee covers, from the offboarding link (#1014)", async () => {
+		const result = await TeamAbsencesPageContent({
+			searchParams: Promise.resolve({
+				year: "2026",
+				deputy: "e1014000-0000-4000-8000-000000000001",
+				coverAt: "2026-09-30T22:00:00Z",
+			}),
+		});
+		render(result);
+
+		expect(getManagerAbsenceCalendar).toHaveBeenCalledWith({
+			year: 2026,
+			teamId: undefined,
+			deputyCover: {
+				deputyEmployeeId: "e1014000-0000-4000-8000-000000000001",
+				at: "2026-09-30T22:00:00Z",
+			},
+		});
+		expect(screen.getByText("Showing only the absences this employee covers as deputy.")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Show all absences" }).getAttribute("href")).toBe(
+			"/team/absences?year=2026",
+		);
+	});
+
+	it("ignores a malformed deputy filter", async () => {
+		await TeamAbsencesPageContent({
+			searchParams: Promise.resolve({ year: "2026", deputy: "anna", coverAt: "yesterday" }),
+		});
+
+		expect(getManagerAbsenceCalendar).toHaveBeenCalledWith({ year: 2026, teamId: undefined });
 	});
 
 	it("renders the calendar above the existing table", async () => {

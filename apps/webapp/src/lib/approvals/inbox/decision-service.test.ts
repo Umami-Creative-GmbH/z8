@@ -933,6 +933,74 @@ describe("approval inbox decision service", () => {
 		});
 	});
 
+	describe("covering deputies (#1016)", () => {
+		const absentApproversRequest = {
+			id: "approval-1",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			organizationId: "org-1",
+			approverId: "absent-1",
+			requesterEmployeeId: "employee-1",
+			status: "pending" as const,
+			targetType: "compatibility_request" as const,
+			workflowKind: null,
+		};
+
+		it("lets the deputy attempt the covered approver's items; the owners judge the right", async () => {
+			const approve = vi.fn(() => Effect.succeed(undefined));
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [
+					absentApproversRequest,
+					{ ...absentApproversRequest, id: "claim-1", entityType: "travel_expense_claim" },
+				],
+				actorEmployeeId: "deputy-1",
+				action: "approve",
+				coveredApproverIds: ["absent-1"],
+				resolveHandler: () => ({ type: "absence_entry", approve, reject: vi.fn() }) as never,
+			});
+
+			expect(result.succeeded).toEqual([
+				{ id: "approval-1", type: "absence_entry", status: "approved" },
+			]);
+			// Expense claims are never a deputy kind.
+			expect(result.failed).toEqual([
+				{ id: "claim-1", code: "not_found", message: "Approval not found" },
+			]);
+			expect(approve).toHaveBeenCalledWith("absence-1", "deputy-1", {
+				approvalRequestId: "approval-1",
+				allowAnyApprover: true,
+			});
+		});
+
+		it("passes the four-eyes refusal on as a clear forbidden message", async () => {
+			const fourEyes =
+				"You already decided an earlier stage of this request, so you cannot decide it as a deputy";
+			const result = await bulkDecideApprovalInboxItemsFromRequests({
+				requests: [absentApproversRequest],
+				actorEmployeeId: "deputy-1",
+				action: "approve",
+				coveredApproverIds: ["absent-1"],
+				resolveHandler: () =>
+					({
+						type: "absence_entry",
+						approve: vi.fn(() =>
+							Effect.fail(
+								new AuthorizationError({
+									message: fourEyes,
+									userId: "deputy-1",
+									resource: "absence_entry",
+									action: "approve",
+								}),
+							),
+						),
+						reject: vi.fn(),
+					}) as never,
+			});
+
+			expect(result.failed).toEqual([{ id: "approval-1", code: "forbidden", message: fourEyes }]);
+		});
+	});
+
 	it("allows bulk decisions by org-wide manage approvers", async () => {
 		const reject = vi.fn(() => Effect.succeed(undefined));
 

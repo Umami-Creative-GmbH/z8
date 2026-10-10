@@ -215,6 +215,12 @@ export interface ApprovalQueryParams {
 		eligibleApproverIds: string[];
 	}>;
 
+	/**
+	 * Absent approvers this viewer covers for right now (#1016): their pending
+	 * approvals of the deputy kinds are listed too.
+	 */
+	coveredApproverIds?: string[];
+
 	/** Filter by date range (request creation date) */
 	dateRange?: {
 		from: Date;
@@ -270,6 +276,8 @@ export interface ApprovalTimelineEvent {
 		| "returned"
 		/** A travel expense report withdrawn by its employee (#603). */
 		| "withdrawn";
+	/** A covering deputy decided this for the absent approver named here (#1016). */
+	actingFor?: { name: string };
 	performedBy: {
 		name: string;
 		image: string | null;
@@ -324,7 +332,7 @@ export interface ApprovalTypeHandler<TEntity = unknown> {
 		organizationId: string,
 		visibility?: Pick<
 			ApprovalQueryParams,
-			"eligibleApprovalScopes" | "includeAllApprovers"
+			"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds"
 		>,
 	) => Effect.Effect<number, AnyAppError, ApprovalHandlerServices>;
 

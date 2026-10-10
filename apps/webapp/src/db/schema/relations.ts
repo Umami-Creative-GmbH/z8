@@ -1266,6 +1266,10 @@ export const absenceEntryRelations = relations(absenceEntry, ({ one }) => ({
 		fields: [absenceEntry.approvedBy],
 		references: [employee.id],
 	}),
+	deputy: one(employee, {
+		fields: [absenceEntry.deputyEmployeeId, absenceEntry.organizationId],
+		references: [employee.id, employee.organizationId],
+	}),
 	approvalWorkflow: one(approvalWorkflow, {
 		fields: [absenceEntry.approvalWorkflowId, absenceEntry.organizationId],
 		references: [approvalWorkflow.id, approvalWorkflow.organizationId],

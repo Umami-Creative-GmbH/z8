@@ -62,6 +62,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 					notes: null,
 					sickDetail: "child_sick",
 					sickNotes: { count: 2, viewable: false },
+					deputy: null,
 					category: { name: "Sick Leave", type: "sick", color: null },
 				},
 			},
@@ -90,6 +91,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 					notes: null,
 					sickDetail: "other",
 					sickNotes: { count: 1, viewable: true },
+					deputy: { id: "employee-9", name: "Dorothy Vaughan", canDecideApprovals: false },
 					category: { name: "Sick Leave", type: "sick", color: null },
 				},
 			},
@@ -118,6 +120,7 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 					notes: null,
 					sickDetail: "with_certificate",
 					sickNotes: null,
+					deputy: { id: "employee-8", name: "Mary Jackson", canDecideApprovals: true },
 					category: { name: "Vacation", type: "vacation", color: null },
 				},
 			},
@@ -165,5 +168,14 @@ describe("AbsenceApprovalsTable", () => {
 		expect(markers[1]?.closest("a")?.getAttribute("href")).toBe(
 			"/personnel-files/employee-3?category=sick_note",
 		);
+	});
+
+	it("shows each absence's deputy, noting a deputy who is a contact only (#1011)", async () => {
+		renderTable();
+
+		expect(await screen.findByText("Dorothy Vaughan")).toBeTruthy();
+		expect(screen.getByText("Mary Jackson")).toBeTruthy();
+		expect(screen.getAllByText("Contact only: cannot decide approvals")).toHaveLength(1);
+		expect(screen.getAllByText("Deputy")).toHaveLength(2);
 	});
 });

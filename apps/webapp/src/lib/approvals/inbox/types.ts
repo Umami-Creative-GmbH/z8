@@ -70,6 +70,17 @@ export interface ApprovalInboxCapabilities {
 	requiresDetailReview?: boolean;
 	/** The viewer requested this; someone else decides it, so every decision is off (#686). */
 	ownRequest?: boolean;
+	/**
+	 * The viewer covers for this item's approver but already decided an
+	 * earlier stage of it (four-eyes, #1016); every decision is off.
+	 */
+	decidedEarlierStage?: boolean;
+}
+
+/** An absent approver the viewer covers for right now (#1016). */
+export interface ApprovalInboxCover {
+	approverId: string;
+	approverName: string;
 }
 
 export interface ApprovalInboxItem {
@@ -84,6 +95,8 @@ export interface ApprovalInboxItem {
 	timing: ApprovalInboxTiming;
 	triage: ApprovalInboxTriage;
 	capabilities: ApprovalInboxCapabilities;
+	/** Assigned to an absent approver the viewer covers for: their "Covering for" section (#1016). */
+	coveringFor?: ApprovalInboxCover;
 }
 
 /**
@@ -174,6 +187,8 @@ export type ApprovalInboxDetailSection =
 				label: string | ApprovalInboxLocalizedText;
 				at: string;
 				actorName: string | null;
+				/** A covering deputy decided for this absent approver (#1016). */
+				actingForName?: string | null;
 			}>;
 	  }
 	| {
@@ -208,6 +223,20 @@ export interface ApprovalInboxListResult {
 	counts: Record<ApprovalInboxType, number>;
 	supportedTypes: ApprovalInboxType[];
 	warnings: ApprovalInboxWarning[];
+	/**
+	 * One "Covering for" section per covered approver (#1016), with its own
+	 * rows; `items` holds only the viewer's own approvals.
+	 */
+	covering?: ApprovalInboxCoveringSection[];
+}
+
+/** A "Covering for" section: what waits for one absent approver the viewer covers for. */
+export interface ApprovalInboxCoveringSection extends ApprovalInboxCover {
+	/** Pending approvals the section lists; `rows.length` unless `hasMore`. */
+	count: number;
+	rows: ApprovalInboxItem[];
+	/** More wait than the section lists at once. */
+	hasMore: boolean;
 }
 
 export interface ApprovalInboxDecisionSuccess {

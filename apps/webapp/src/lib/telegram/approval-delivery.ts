@@ -62,6 +62,7 @@ export const telegramApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		const card = await prepareApprovalPresentation({
 			approvalId: input.approvalRequestId,
 			recipientEmployeeId: input.recipientEmployeeId,
+			actingForEmployeeId: input.actingForEmployeeId ?? null,
 			organizationId: input.organizationId,
 			provider: "telegram",
 			fits: fitsTelegramMessage,

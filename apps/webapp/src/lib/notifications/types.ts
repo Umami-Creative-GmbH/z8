@@ -78,6 +78,16 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Deputy on an absence: named, removed, new dates, day-before reminder (#1013)
+	"absence_deputy_assigned",
+	"absence_deputy_removed",
+	"absence_deputy_dates_changed",
+	"absence_deputy_reminder",
+	// A departed or deactivated deputy was cleared from an absence (#1014)
+	"absence_deputy_unavailable",
+	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
+	"approval_cover_started",
+	"approval_cover_return_summary",
 	// Closed months (#762): automatic close, its blockers, and reopenings
 	"month_closed_automatically",
 	"month_close_blocked",
@@ -100,6 +110,8 @@ export function hasMandatoryInbox(type: NotificationType): boolean {
 const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"travel_expense_ready_for_reimbursement",
 	"travel_expense_payroll_run_awaiting_confirmation",
+	// The approver hears in the app what their deputy decided (#1018).
+	"approval_cover_return_summary",
 	// Closed months notify in-app only (#762).
 	"month_closed_automatically",
 	"month_close_blocked",

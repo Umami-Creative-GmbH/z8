@@ -203,6 +203,8 @@ describe("route catalog wiring", () => {
 			getRouteCatalogScope("/settings/vacation/employees/123")?.namespaces,
 		).toContain("settings/vacation");
 		expect(getRouteCatalogScope("/reports/projects")?.route).toBe("/reports");
+		// The record and change-deputy dialogs on /team use calendar's absences.deputy.* keys (#802).
+		expect(getRouteCatalogScope("/team/absences")?.namespaces).toContain("calendar");
 		expect(getRouteCatalogScope("/reportsextra")).toBeUndefined();
 	});
 	it.each(ALL_LANGUAGES)(

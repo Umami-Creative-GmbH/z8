@@ -24,6 +24,22 @@ vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
 	assertAbsenceOpenById: vi.fn(async () => {}),
 }));
 
+// Deputy decisions read and write the acting-for record; verified against
+// PostgreSQL in deputy-decisions.integration.test.ts (#1016).
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/deputy/deputy-decision-store")>()),
+	coversCurrentApprover: async () => false,
+	loadDeputyActingFor: async () => null,
+	recordCanonicalDeputyDecisionOf: async () => null,
+	authorizeLegacyDeputyDecision: async () => {
+		const { deputyDecisionRefusalError } = await import("@/lib/approvals/deputy/deputy-decision");
+		throw deputyDecisionRefusalError("not_covering", {
+			actorEmployeeId: "actor",
+			resource: "approval_request",
+			action: "approve",
+		});
+	},
+}));
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret",
@@ -69,6 +85,10 @@ vi.mock("@/lib/absences/absence-days-resolver", () => ({ getAbsenceDays }));
 
 vi.mock("@/lib/queue", () => ({
 	addCalendarSyncJob,
+}));
+
+vi.mock("@/lib/absences/deputy-notifier", () => ({
+	notifyAbsenceDeputies: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({

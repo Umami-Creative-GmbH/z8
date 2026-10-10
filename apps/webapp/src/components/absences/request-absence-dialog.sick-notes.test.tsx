@@ -38,6 +38,12 @@ vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
 	discardStagedSickNoteUploadsAction: vi.fn(),
 }));
 
+// The deputy field (#1011) is not under test here.
+vi.mock("./deputy-picker", async (original) => ({
+	...(await original<typeof import("./deputy-picker")>()),
+	DeputyPicker: () => null,
+}));
+
 vi.mock("./sick-notes/use-staged-sick-note-uploads", async (original) => ({
 	...(await original<typeof import("./sick-notes/use-staged-sick-note-uploads")>()),
 	useStagedSickNoteUploads: () => ({

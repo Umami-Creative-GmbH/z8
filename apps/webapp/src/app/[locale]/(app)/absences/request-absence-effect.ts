@@ -17,6 +17,10 @@ import {
 } from "@/lib/absences/absence-days";
 import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
+import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
+import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
+import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
+import { AuditTrail } from "@/lib/audit-trail";
 import {
 	type NormalizedAbsenceDurationInput,
 	normalizeAbsenceDurationInput,
@@ -358,6 +362,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 		type: string;
 	};
 	createdBy: string;
+	/** The deputy named on the request (#1011), already checked. */
+	deputyEmployeeId?: string | null;
 	hasManagerApprovalWorkflow: boolean;
 	approvalWorkflow?: {
 		categoryId: string;
@@ -381,6 +387,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				currentEmployee,
 			))
 		: undefined;
+	const deputyEmployeeId = params.deputyEmployeeId ?? null;
+	const audit = new AuditTrail();
 
 	return dbService
 		.query("createRequestedAbsenceRecords", async () => {
@@ -432,9 +440,21 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						endPeriod: entryDuration.endPeriod,
 						notes: data.notes,
 						sickDetail: data.sickDetail ?? null,
+						deputyEmployeeId,
+						deputyAssignedAt: deputyEmployeeId ? currentTimestamp() : null,
 						status: "pending",
 					})
 					.returning();
+				if (deputyEmployeeId) {
+					await recordDeputyChange(audit, tx, {
+						organizationId: currentEmployee.organizationId,
+						absenceId: newAbsence.id,
+						absentEmployeeId: currentEmployee.id,
+						actorUserId: createdBy,
+						from: null,
+						to: deputyEmployeeId,
+					});
+				}
 
 				const canonicalValues = buildCanonicalAbsenceRecordValues({
 					organizationId: currentEmployee.organizationId,
@@ -790,6 +810,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 			return await dbService.db.transaction((tx) => createRecords(tx));
 		})
 		.pipe(
+			// The deputy's audit entry leaves for the external service only once committed.
+			Effect.tap(() => Effect.sync(() => audit.forwardCommitted())),
 			Effect.mapError((error) => {
 				if (error.cause instanceof ValidationError) return error.cause;
 				if (
@@ -1124,6 +1146,24 @@ function requestAbsenceWithResolverEffect(
 					yield* Effect.fail(createSickDetailValidationError(sickDetailError));
 				}
 
+				const deputyRefusal = yield* dbService.query("absences.checkDeputy", () =>
+					checkDeputyNaming(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						absentEmployeeId: currentEmployee.id,
+						deputyEmployeeId: data.deputyEmployeeId,
+						deputyRequired: category.deputyRequired,
+					}),
+				);
+				if (deputyRefusal) {
+					yield* Effect.fail(
+						new ValidationError({
+							message: DEPUTY_REFUSAL_MESSAGES[deputyRefusal],
+							field: "deputyEmployeeId",
+							refusal: deputyRefusal,
+						}),
+					);
+				}
+
 				const absenceDays = yield* dbService.query(
 					"getRequestedAbsenceDays",
 					() =>
@@ -1180,6 +1220,7 @@ function requestAbsenceWithResolverEffect(
 					data: requestData,
 					category,
 					createdBy: userId,
+					deputyEmployeeId: data.deputyEmployeeId ?? null,
 					submittedInput: data,
 					hasManagerApprovalWorkflow: category.requiresApproval,
 					approvalWorkflow: category.requiresApproval
@@ -1280,6 +1321,27 @@ function requestAbsenceWithResolverEffect(
 						"Absence auto-approved (no approval required)",
 					);
 				}
+				// A pending absence names nobody yet; one approved on creation (or
+				// vacations a sick absence changed) tells their deputies (#1013).
+				yield* Effect.promise(() =>
+					notifyAbsenceDeputies(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						events: [
+							{ kind: "vacation_override", summary: newAbsence.vacationOverrideSummary },
+							...(autoCompletion
+								? [
+										{
+											kind: "vacation_override" as const,
+											summary: autoCompletion.vacationOverrideSummary,
+										},
+									]
+								: []),
+							...(autoCompletion || !category.requiresApproval
+								? [{ kind: "approved" as const, absenceId: newAbsence.id }]
+								: []),
+						],
+					}),
+				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				span.end();

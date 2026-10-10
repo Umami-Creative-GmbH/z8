@@ -46,6 +46,8 @@ export const departureTaskKinds = [
 	"notify_review",
 	"clock_repair",
 	"approval_handover",
+	// One cleared deputy assignment to notify about (#1014).
+	"notify_deputy_release",
 ] as const;
 export const departureTaskStatuses = ["pending", "processing", "completed", "failed"] as const;
 export const departureReviewKinds = [

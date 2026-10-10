@@ -62,6 +62,7 @@ type OrganizationHooks = NonNullable<OrganizationOptions["organizationHooks"]>;
 const organizationEndpoints = organization().endpoints;
 const adminEndpoints = admin().endpoints;
 const ORGANIZATION_LEAVE_PATH = organizationEndpoints.leaveOrganization.path;
+const MEMBER_REMOVAL_PATH = organizationEndpoints.removeMember.path;
 const GLOBAL_ACCESS_PATHS = new Set<string>([
 	adminEndpoints.setRole.path,
 	adminEndpoints.banUser.path,
@@ -105,23 +106,43 @@ function assertProtected(operation: string, userId: string) {
 	}
 }
 
+/** Who requested each coordinated member removal (the removing admin), by transaction. */
+const removalActors = new WeakMap<object, string>();
+
+/**
+ * Remembers the signed-in user who requested the member removal running in
+ * this coordinated transaction, so its side effects are audited under them
+ * (#1014 default 5). Better Auth's removal hooks only name the removed user.
+ */
+export function recordMemberRemovalActor(transaction: object, actorUserId: string) {
+	removalActors.set(transaction, actorUserId);
+}
+
 /**
  * Deactivates the removed member in the removal transaction; the rest runs
  * after commit. Refuses (rolling the removal back) unless the removal took
  * the member's guard before deleting the membership.
  */
-async function cleanUpRemovedMember(input: { organizationId: string; userId: string }) {
+async function cleanUpRemovedMember(input: {
+	organizationId: string;
+	userId: string;
+	/** Who initiated it; otherwise the removal's recorded requester, if any. */
+	actorUserId?: string;
+}) {
 	assertProtected("organization member removal", input.userId);
 	const transaction = requireAuthTransaction("organization member removal cleanup");
+	const actorUserId = input.actorUserId ?? removalActors.get(transaction);
 	const outcome = await revokeRemovedMemberAccessInTransaction(
 		transaction,
 		input.userId,
 		input.organizationId,
+		actorUserId ? { actorUserId } : {},
 	);
 	await queueAfterAuthTransactionCommit(() =>
 		completeRemovedMemberCleanupPostCommit({
 			organizationId: input.organizationId,
 			sessionTokens: outcome.sessionTokens,
+			releasedDeputies: outcome.releasedDeputies,
 		}),
 	);
 }
@@ -225,6 +246,14 @@ export function authMutationCoordinationPlugin() {
 					}),
 				},
 				{
+					matcher: (context) => context.path === MEMBER_REMOVAL_PATH,
+					handler: createAuthMiddleware(async (ctx) => {
+						const transaction = requireAuthTransaction("organization member removal");
+						const actorUserId = await requestingUserId(ctx);
+						if (actorUserId) recordMemberRemovalActor(transaction, actorUserId);
+					}),
+				},
+				{
 					matcher: (context) => GLOBAL_ACCESS_PATHS.has(context.path ?? ""),
 					handler: createAuthMiddleware(async (ctx) => {
 						const transaction = requireAuthTransaction("global user access change");
@@ -244,7 +273,8 @@ export function authMutationCoordinationPlugin() {
 						const userId = stringField(leaveResult, "userId");
 						const organizationId = stringField(leaveResult, "organizationId");
 						if (leaveResult instanceof Error || !userId || !organizationId) return;
-						await cleanUpRemovedMember({ organizationId, userId });
+						// Leaving is the member's own act.
+						await cleanUpRemovedMember({ organizationId, userId, actorUserId: userId });
 					}),
 				},
 				{

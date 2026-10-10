@@ -59,6 +59,7 @@ describe("absence category form helpers", () => {
 			requiresApproval: true,
 			countsAgainstVacation: false,
 			drawsOnWorkBalance: false,
+			deputyRequired: false,
 			color: "#3b82f6",
 			isActive: true,
 		});
@@ -76,6 +77,7 @@ describe("absence category form helpers", () => {
 			requiresApproval: false,
 			countsAgainstVacation: false,
 			drawsOnWorkBalance: false,
+			deputyRequired: true,
 			color: null,
 			isActive: false,
 		};
@@ -90,6 +92,7 @@ describe("absence category form helpers", () => {
 			requiresApproval: false,
 			countsAgainstVacation: false,
 			drawsOnWorkBalance: false,
+			deputyRequired: true,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -101,6 +104,7 @@ describe("absence category form helpers", () => {
 				...defaultAbsenceCategoryFormValues,
 				name: "  Training  ",
 				description: "  Planned training time  ",
+				deputyRequired: true,
 				isActive: false,
 			}),
 		).toEqual({
@@ -113,6 +117,7 @@ describe("absence category form helpers", () => {
 			requiresApproval: true,
 			countsAgainstVacation: false,
 			drawsOnWorkBalance: false,
+			deputyRequired: true,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -238,5 +243,81 @@ describe("absence category form helpers", () => {
 				}),
 			),
 		);
+	});
+
+	it("saves the Deputy required setting (#1011)", async () => {
+		const { createAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(createAbsenceCategory).mockResolvedValue({ success: false, error: "stop" });
+		render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "On-call leave" } });
+		fireEvent.click(screen.getByRole("checkbox", { name: "Deputy required" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+
+		await vi.waitFor(() =>
+			expect(createAbsenceCategory).toHaveBeenCalledWith(
+				expect.objectContaining({ name: "On-call leave", deputyRequired: true }),
+			),
+		);
+	});
+
+	it("keeps Deputy required off for sick leave (#1011)", async () => {
+		const { updateAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(updateAbsenceCategory).mockResolvedValue({ success: false, error: "stop" });
+		const sick: AbsenceCategoryForSettings = {
+			id: "category_sick",
+			type: "sick",
+			name: "Sick leave",
+			description: null,
+			nameTranslations: null,
+			descriptionTranslations: null,
+			requiresWorkTime: false,
+			requiresApproval: false,
+			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
+			deputyRequired: true,
+			color: null,
+			isActive: true,
+		};
+		render(
+			<AbsenceCategoryForm
+				open={true}
+				onOpenChange={vi.fn()}
+				organizationId="org_1"
+				existingCategory={sick}
+			/>,
+		);
+		const checkbox = screen.getByRole("checkbox", { name: "Deputy required" });
+		expect(checkbox.getAttribute("aria-disabled")).toBe("true");
+		expect(checkbox.getAttribute("aria-checked")).toBe("false");
+		expect(screen.getByText("Sick leave never requires a deputy.")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: /save|update/i }));
+		await vi.waitFor(() =>
+			expect(updateAbsenceCategory).toHaveBeenCalledWith(
+				"category_sick",
+				expect.objectContaining({ deputyRequired: false }),
+			),
+		);
+	});
+});
+
+describe("canRequireDeputy (#1011)", () => {
+	it("allows Deputy required for every category type but sick leave", async () => {
+		const { canRequireDeputy } = await import("@/lib/absences/deputy");
+		expect(canRequireDeputy("sick")).toBe(false);
+		for (const type of [
+			"vacation",
+			"home_office",
+			"personal",
+			"parental",
+			"custom",
+			"time_off_in_lieu",
+		]) {
+			expect(canRequireDeputy(type)).toBe(true);
+		}
 	});
 });

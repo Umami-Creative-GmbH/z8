@@ -18,6 +18,8 @@ const harness = vi.hoisted(() => ({
 	tus: new Map<string, Buffer>(),
 	objects: new Map<string, Buffer>(),
 	notifications: [] as Array<{ action: string; reportId: string; reason?: string }>,
+	/** Who each decision notification names as the decider (#1016). */
+	deciders: [] as string[],
 }));
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
@@ -54,8 +56,10 @@ vi.mock("@/lib/notifications/triggers", async (original) => ({
 	onTravelExpenseReportDecided: async (params: {
 		action: string;
 		reportId: string;
+		approverName: string;
 		rejectionReason?: string;
 	}) => {
+		harness.deciders.push(params.approverName);
 		harness.notifications.push({
 			action: params.action,
 			reportId: params.reportId,
@@ -460,6 +464,7 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		harness.tus.clear();
 		harness.objects.clear();
 		harness.notifications = [];
+		harness.deciders = [];
 	});
 	afterAll(cleanup);
 
@@ -1132,5 +1137,49 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 			[returnedRequest],
 		);
 		expect(audit.map((row) => row.action)).toEqual(["return"]);
+	});
+
+	it("lets the absent manager's covering deputy approve a legacy report for them (#1016)", async () => {
+		// The manager is away around today and names the lead as deputy.
+		const { rows: categories } = await admin.query<{ id: string }>(
+			`insert into absence_category
+			 (organization_id, type, name, requires_approval, requires_work_time, counts_against_vacation,
+			  is_active, updated_at)
+			 values ('t603-org', 'vacation', 'Away', true, false, false, true, now()) returning id`,
+		);
+		const { rows: absences } = await admin.query<{ id: string }>(
+			`insert into absence_entry
+			 (employee_id, category_id, start_date, end_date, status, organization_id, deputy_employee_id,
+			  updated_at)
+			 values ($1, $2, current_date - 2, current_date + 2, 'approved', 't603-org', $3, now())
+			 returning id`,
+			[ids.manager, categories[0]?.id, ids.lead],
+		);
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		const requestId = await pendingRequestId(reportId);
+
+		signIn("lead");
+		expect((await decide("approve", requestId)).status).toBe(200);
+
+		expect((await reportState(reportId)).requests).toEqual([
+			expect.objectContaining({ id: requestId, status: "approved", approver_id: ids.manager }),
+		]);
+		const { rows } = await admin.query(
+			`select deputy_employee_id, acting_for_employee_id, absence_id, authority, entity_type
+			 from approval_deputy_decision where organization_id = 't603-org' and entity_id = $1`,
+			[reportId],
+		);
+		expect(rows).toEqual([
+			{
+				deputy_employee_id: ids.lead,
+				acting_for_employee_id: ids.manager,
+				absence_id: absences[0]?.id,
+				authority: "legacy",
+				entity_type: "travel_expense_report",
+			},
+		]);
+		// The requester hears who decided, for whom.
+		expect(harness.deciders).toEqual(["lead (deputy for manager)"]);
 	});
 });

@@ -21,6 +21,7 @@ import type {
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+	isCoveringDeputyGrant,
 	isOffboardingHandoverPrincipal,
 } from "./ports";
 import type { ApprovalWorkflowRepository } from "./repository";
@@ -275,7 +276,7 @@ function allowsAuthorization(
 		// The narrow scheduled capability replaces an overdue assignment only.
 		return authorization === "system" && request.command.type === "escalate";
 	}
-	if (authorization === "active_assignment") {
+	if (authorization === "active_assignment" || isCoveringDeputyGrant(authorization)) {
 		return (
 			request.principal.kind === "employee" &&
 			(request.command.type === "approve" || request.command.type === "reject")
@@ -671,7 +672,9 @@ export function createApprovalTransitionEngine(
 								sourceAssignmentId: offboardingPrincipal.assignmentId,
 							},
 						}
-					: {},
+					: isCoveringDeputyGrant(authorization)
+						? { actingFor: authorization.actingFor }
+						: {},
 			);
 			if (plan.expectedVersion !== request.expectedVersion) {
 				throw engineError("version_conflict", {

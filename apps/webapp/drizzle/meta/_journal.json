@@ -1387,6 +1387,55 @@
       "when": 1801324800000,
       "tag": "0197_balance_adjustment_closed_month_refusal",
       "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1801411200000,
+      "tag": "0198_absence_deputy",
+      "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1801497600000,
+      "tag": "0199_approval_setting_deputy_decisions",
+      "breakpoints": true
+    },
+    {
+      "idx": 200,
+      "version": "7",
+      "when": 1801584000000,
+      "tag": "0200_absence_deputy_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 201,
+      "version": "7",
+      "when": 1801670400000,
+      "tag": "0201_absence_deputy_release",
+      "breakpoints": true
+    },
+    {
+      "idx": 202,
+      "version": "7",
+      "when": 1801756800000,
+      "tag": "0202_approval_deputy_decision",
+      "breakpoints": true
+    },
+    {
+      "idx": 203,
+      "version": "7",
+      "when": 1801843200000,
+      "tag": "0203_approval_deputy_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 204,
+      "version": "7",
+      "when": 1801929600000,
+      "tag": "0204_approval_deputy_cover_summaries",
+      "breakpoints": true
     }
   ]
 }

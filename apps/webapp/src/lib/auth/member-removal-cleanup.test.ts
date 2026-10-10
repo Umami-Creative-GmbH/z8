@@ -50,9 +50,14 @@ function setup(
 		events.push("database-sessions-deleted");
 	});
 	const deleteRows = vi.fn(() => ({ where: deleteWhere }));
-	const updateWhere = vi.fn().mockImplementation(async () => {
-		events.push("employee-deactivated");
-	});
+	// No employee row comes back, so no deputy release runs here; the release is
+	// covered by deputy-release.integration.test.ts (#1014).
+	const updateWhere = vi.fn().mockImplementation(() => ({
+		returning: async () => {
+			events.push("employee-deactivated");
+			return [];
+		},
+	}));
 	const updateSet = vi.fn(() => ({ where: updateWhere }));
 	const update = vi.fn(() => ({ set: updateSet }));
 	const tx = {

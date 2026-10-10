@@ -55,6 +55,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
 import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
+import { DeputyPicker, deputyRefusalText, deputyRequiredText } from "./deputy-picker";
 import type { StagedSickNoteFile } from "./sick-notes/sick-note-files-field";
 import {
 	failedSickNoteNames,
@@ -70,6 +71,8 @@ interface RequestAbsenceDialogProps {
 		color: string | null;
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
+		/** Absences of this type must name a deputy (#1011). */
+		deputyRequired?: boolean;
 	}>;
 	organizationId: string;
 	remainingDays: number;
@@ -93,6 +96,8 @@ const createDefaultValues = (initialDate?: string) => ({
 	sickDetail: "" as SickDetail | "",
 	/** Sick notes to attach once the sick leave is requested (#983). */
 	sickNotes: [] as StagedSickNoteFile[],
+	/** The colleague covering while the employee is away (#1011), or "". */
+	deputyEmployeeId: "",
 });
 
 type RequestAbsenceFormValues = ReturnType<typeof createDefaultValues>;
@@ -197,6 +202,7 @@ function useRequestAbsenceDialogController({
 				endTime: normalized.endTime,
 				notes: normalized.notes || undefined,
 				...(value.sickDetail ? { sickDetail: value.sickDetail } : {}),
+				...(value.deputyEmployeeId ? { deputyEmployeeId: value.deputyEmployeeId } : {}),
 			};
 			const failureMessage = t(
 				"absences.toast.requestFailed",
@@ -215,6 +221,15 @@ function useRequestAbsenceDialogController({
 				failureMessage,
 			});
 			if (!result) return;
+			const deputyError = result.success ? null : deputyRefusalText(t, result.refusal);
+			if (deputyError) {
+				// The server refused the deputy: show it on the deputy field.
+				form.setFieldMeta("deputyEmployeeId", (meta) => ({
+					...meta,
+					errorMap: { ...meta.errorMap, onServer: deputyError },
+				}));
+				return;
+			}
 			if (result.success) {
 				toast.success(
 					t(
@@ -394,6 +409,7 @@ export function RequestAbsenceDialog({
 								sickNotes={sickNotes}
 							/>
 						)}
+						<RequestAbsenceDeputyField categories={categories} form={form} />
 						<RequestAbsenceSummaryAndNotes
 							canLoadPlanPreview={canLoadPlanPreview}
 							categories={categories}
@@ -747,6 +763,65 @@ function RequestAbsenceDurationFields({
 				}}
 			</form.Subscribe>
 		</>
+	);
+}
+
+function RequestAbsenceDeputyField({
+	categories,
+	form,
+}: {
+	categories: RequestAbsenceDialogProps["categories"];
+	form: RequestAbsenceFormApi;
+}) {
+	const { t } = useTranslate();
+	const { categoryId, startDate, endDate } = useStore(form.store, (state) => ({
+		categoryId: state.values.categoryId,
+		startDate: state.values.startDate,
+		endDate: state.values.endDate,
+	}));
+	const required = Boolean(
+		categories.find((category) => category.id === categoryId)?.deputyRequired,
+	);
+	return (
+		<form.Field
+			name="deputyEmployeeId"
+			validators={{
+				onSubmit: ({ value, fieldApi }) =>
+					!value &&
+					categories.find(
+						(category) => category.id === fieldApi.form.getFieldValue("categoryId"),
+					)?.deputyRequired
+						? deputyRequiredText(t)
+						: undefined,
+			}}
+		>
+			{(field) => (
+				<TFormItem>
+					<TFormLabel hasError={field.state.meta.errors.length > 0}>
+						{required
+							? t("absences.deputy.labelRequired", "Deputy *")
+							: t("absences.deputy.labelOptional", "Deputy (Optional)")}
+					</TFormLabel>
+					<TFormControl hasError={field.state.meta.errors.length > 0}>
+						<DeputyPicker
+							value={field.state.value}
+							onChange={field.handleChange}
+							onBlur={field.handleBlur}
+							startDate={startDate}
+							endDate={endDate || startDate}
+							required={required}
+						/>
+					</TFormControl>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"absences.deputy.help",
+							"The colleague who covers while you are away. They are not asked to accept.",
+						)}
+					</p>
+					<TFormMessage field={field} />
+				</TFormItem>
+			)}
+		</form.Field>
 	);
 }
 

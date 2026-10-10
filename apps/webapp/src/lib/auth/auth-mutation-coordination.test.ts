@@ -30,6 +30,7 @@ const {
 	createCoordinatedOrganizationHooks,
 	handleCoordinatedAuthRequest,
 	isCoordinatedAuthMutationPath,
+	recordMemberRemovalActor,
 } = await import("./auth-mutation-coordination");
 const { captureAuthTransactions, runCoordinatedAuthMutation, UncoordinatedAuthMutationError } =
 	await import("./auth-transaction");
@@ -186,12 +187,26 @@ describe("coordinated organization hooks", () => {
 			mocks.events.push("removal-end");
 		});
 
-		expect(mocks.revoke).toHaveBeenCalledExactlyOnceWith(auth.transaction, "target", "org-1");
+		expect(mocks.revoke).toHaveBeenCalledExactlyOnceWith(auth.transaction, "target", "org-1", {});
 		expect(mocks.postCommit).toHaveBeenCalledExactlyOnceWith({
 			organizationId: "org-1",
 			sessionTokens: ["token-1"],
 		});
 		expect(mocks.events).toEqual(["revoke", "removal-end", "commit", "post-commit"]);
+	});
+
+	it("audits the removal's side effects under the admin who requested it (#1014)", async () => {
+		const auth = coordinatedAuth();
+		const organizationHooks = hooks();
+		await runCoordinatedAuthMutation(auth.context, async () => {
+			recordMemberRemovalActor(auth.transaction, "admin-1");
+			await organizationHooks.beforeRemoveMember!({ member, user, organization });
+			await organizationHooks.afterRemoveMember!({ member, user, organization });
+		});
+
+		expect(mocks.revoke).toHaveBeenCalledExactlyOnceWith(auth.transaction, "target", "org-1", {
+			actorUserId: "admin-1",
+		});
 	});
 
 	it("runs membership provisioning after the membership commits, as before", async () => {

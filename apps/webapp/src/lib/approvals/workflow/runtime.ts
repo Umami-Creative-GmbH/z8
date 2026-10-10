@@ -23,6 +23,13 @@ import {
 	preflightCanonicalWorkPeriodDecisionEvidence,
 	recordCanonicalWorkPeriodDecisionEvidence,
 } from "../evidence/work-period-evidence";
+import { loadCover } from "../deputy/deputy-reads";
+import {
+	decidedEarlierStage,
+	decideDeputyRight,
+	deputyDecisionRefusalError,
+	isDeputyDecisionEntityType,
+} from "../deputy/deputy-decision";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
@@ -34,6 +41,7 @@ import {
 } from "./ports";
 import type {
 	ApprovalCommandActorResolver,
+	ApprovalCoveringDeputyGrant,
 	ApprovalMaterializedTransitionPlan,
 	ApprovalTransitionResultBuilder,
 	ApprovalWorkflowAuthorization,
@@ -176,6 +184,11 @@ export function createApprovalWorkflowAuthorization(input: {
 		ReturnType<typeof createOffboardingReassignmentAuthority>,
 		"authorize"
 	>;
+	/**
+	 * Covering (#1015) judged now, on the decision's transaction. Without it
+	 * no deputy decision is granted.
+	 */
+	deputyAuthority?: ApprovalDeputyAuthority;
 }): ApprovalWorkflowAuthorization {
 	return {
 		async authorize(request) {
@@ -265,9 +278,93 @@ export function createApprovalWorkflowAuthorization(input: {
 			) {
 				return "manage_approval";
 			}
+			// Own rights won above; only now may a covering deputy decide (#1016).
+			const deputyGrant =
+				isDecision && input.deputyAuthority
+					? await authorizeCoveringDeputy({
+							deputyAuthority: input.deputyAuthority,
+							dbService: request.dbService,
+							organizationId: request.organizationId,
+							workflow,
+							command,
+							actorEmployeeId: request.actor.employeeId,
+						})
+					: null;
+			if (deputyGrant) return deputyGrant;
 			return runtimeFailure("forbidden command actor");
 		},
 	};
+}
+
+/** Covering as the canonical authorization asks it (#1015's `loadCover`). */
+export interface ApprovalDeputyAuthority {
+	coverFor(input: {
+		dbService: import("./ports").ApprovalDbService;
+		organizationId: string;
+		approverEmployeeId: string;
+		deputyEmployeeId: string;
+	}): Promise<{ approverId: string; absenceId: string } | null>;
+}
+
+/** Covering judged at the runtime clock's now, on the decision's transaction. */
+export function createCoveringDeputyAuthority(clock: Clock): ApprovalDeputyAuthority {
+	return {
+		coverFor: ({ dbService, organizationId, approverEmployeeId, deputyEmployeeId }) =>
+			loadCover(dbService.db as never, {
+				organizationId,
+				approverId: approverEmployeeId,
+				deputyId: deputyEmployeeId,
+				at: clock.nowInstant(),
+			}),
+	};
+}
+
+async function authorizeCoveringDeputy(input: {
+	deputyAuthority: ApprovalDeputyAuthority;
+	dbService: import("./ports").ApprovalDbService;
+	organizationId: string;
+	workflow: import("./ports").ApprovalWorkflowSnapshot;
+	command: Extract<
+		import("./state-machine").ApprovalWorkflowCommand,
+		{ type: "approve" | "reject" }
+	>;
+	actorEmployeeId: string;
+}): Promise<ApprovalCoveringDeputyGrant | null> {
+	const { workflow, command } = input;
+	// Deputies decide only absences, time approvals and travel reports (spec
+	// #802), whatever adapters exist; never expense claims.
+	if (!isDeputyDecisionEntityType(workflow.sourceType)) return null;
+	const stage = workflow.stages.find(
+		(item) => item.id === command.stageId && item.status === "pending",
+	);
+	const assignment = stage?.assignments.find(
+		(item) => item.id === command.assignmentId && item.status === "pending",
+	);
+	if (!stage || !assignment) return null;
+	const cover = await input.deputyAuthority.coverFor({
+		dbService: input.dbService,
+		organizationId: input.organizationId,
+		approverEmployeeId: assignment.approverEmployeeId,
+		deputyEmployeeId: input.actorEmployeeId,
+	});
+	const right = decideDeputyRight({
+		actorEmployeeId: input.actorEmployeeId,
+		approverEmployeeId: assignment.approverEmployeeId,
+		cover,
+		actorDecidedEarlierStage: decidedEarlierStage(workflow, stage.id, input.actorEmployeeId),
+	});
+	if (right.kind === "deputy") {
+		return { kind: "covering_deputy", actingFor: right.actingFor };
+	}
+	if (right.reason === "four_eyes") {
+		// Typed, so the decision owners' translators pass it on as a forbidden result.
+		throw deputyDecisionRefusalError("four_eyes", {
+			actorEmployeeId: input.actorEmployeeId,
+			resource: workflow.workflowType,
+			action: command.type,
+		});
+	}
+	return null;
 }
 
 export function createRegistryApprovalSourceLoader(
@@ -465,6 +562,8 @@ export function createApprovalWorkflowRuntime(_input: {
 		command: import("./state-machine").ApprovalWorkflowCommand;
 	}) => Promise<boolean>;
 	clock?: Clock;
+	/** Defaults to covering read on the decision's transaction (#1016). */
+	deputyAuthority?: ApprovalDeputyAuthority;
 }): {
 	repository: ApprovalWorkflowRepository;
 	transitionEngine: ApprovalTransitionEngine;
@@ -483,6 +582,7 @@ export function createApprovalWorkflowRuntime(_input: {
 		authorization: createApprovalWorkflowAuthorization({
 			canManageApproval: _input.canManageApproval,
 			offboardingAuthority: createOffboardingReassignmentAuthority({ clock }),
+			deputyAuthority: _input.deputyAuthority ?? createCoveringDeputyAuthority(clock),
 		}),
 		sourceLoader: createRegistryApprovalSourceLoader(_input.adapterRegistry),
 		resultBuilder: createApprovalTransitionResultBuilder(),

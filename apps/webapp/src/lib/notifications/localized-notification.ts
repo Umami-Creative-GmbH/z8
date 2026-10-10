@@ -1,4 +1,6 @@
 import { DateTime } from "luxon";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import type { NotificationWithMeta } from "./types";
@@ -19,6 +21,8 @@ type NotificationMetadata = {
 	categoryName?: string;
 	/** Plain days the `dateRange` param stands for, formatted in the reader's locale (#982). */
 	dateRangeDays?: { startDate: string; endDate: string };
+	/** The plain day the `untilDate` param stands for, in the reader's locale (#1013). */
+	untilDay?: string;
 	/** A closed month (`YYYY-MM`) the `month` param stands for, in the reader's locale (#762). */
 	closedMonth?: string;
 	i18n?: {
@@ -109,10 +113,14 @@ function localizedParams(
 	const params = metadata.i18n?.params;
 	if (!params) return params;
 	const days = metadata.dateRangeDays;
+	const untilDay = metadata.untilDay;
 	const localized = { ...params };
 	try {
 		if (days) {
 			localized.dateRange = formatAbsenceDateRange(days.startDate, days.endDate, locale);
+		}
+		if (untilDay) {
+			localized.untilDate = formatPlainDate(parsePlainDate(untilDay), locale, "dateMedium");
 		}
 		if (metadata.closedMonth) {
 			localized.month = formatClosedMonthLabel(metadata.closedMonth, locale);

@@ -24,6 +24,7 @@ interface AbsencesViewContainerProps {
 		color: string | null;
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
+		deputyRequired?: boolean;
 	}>;
 	organizationId: string;
 	remainingDays: number;

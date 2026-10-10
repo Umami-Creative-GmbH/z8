@@ -53,14 +53,25 @@ function historyDetail(t: Translate, event: HistoryEvent, showCycle: boolean): s
 					"Nobody else could review this report.",
 				)
 			: event.label === "approval_recorded"
-				? t(
-						"travelExpenses.report.history.detail.approvalRecorded",
-						"By {name}; awaiting further approval.",
-						{ name: event.actorName ?? "—" },
-					)
-				: t("travelExpenses.report.history.detail.by", "By {name}", {
-						name: event.actorName ?? "—",
-					});
+				? event.actingForName
+					? t(
+							"travelExpenses.report.history.detail.approvalRecordedByDeputy",
+							"By {name} (deputy for {actingForName}); awaiting further approval.",
+							{ name: event.actorName ?? "—", actingForName: event.actingForName },
+						)
+					: t(
+							"travelExpenses.report.history.detail.approvalRecorded",
+							"By {name}; awaiting further approval.",
+							{ name: event.actorName ?? "—" },
+						)
+				: event.actingForName
+					? t("travelExpenses.report.history.detail.byDeputy", "By {name} (deputy for {actingForName})", {
+							name: event.actorName ?? "—",
+							actingForName: event.actingForName,
+						})
+					: t("travelExpenses.report.history.detail.by", "By {name}", {
+							name: event.actorName ?? "—",
+						});
 	return showCycle
 		? t("travelExpenses.report.history.detail.inCycle", "Submission {number} · {detail}", {
 				number: event.cycle,
@@ -251,9 +262,15 @@ function DecisionNotice({ decision }: { decision: SubmittedReportView["decision"
 			<Alert variant="destructive">
 				<IconAlertTriangle aria-hidden="true" className="size-4" />
 				<AlertTitle>
-					{t("travelExpenses.report.rejectedBy", "Rejected by {name}", {
-						name: decision.deciderName ?? "—",
-					})}
+					{decision.actingForName
+						? t(
+								"travelExpenses.report.rejectedByDeputy",
+								"Rejected by {name} (deputy for {actingForName})",
+								{ name: decision.deciderName ?? "—", actingForName: decision.actingForName },
+							)
+						: t("travelExpenses.report.rejectedBy", "Rejected by {name}", {
+								name: decision.deciderName ?? "—",
+							})}
 				</AlertTitle>
 				{decision.reason && <AlertDescription>{decision.reason}</AlertDescription>}
 			</Alert>
@@ -273,10 +290,20 @@ function DecisionNotice({ decision }: { decision: SubmittedReportView["decision"
 	if (decision?.outcome === "approved") {
 		return (
 			<p className="text-sm">
-				{t("travelExpenses.report.approvedBy", "Approved by {name} on {date}.", {
-					name: decision.deciderName ?? "—",
-					date: formatInstant(locale, decision.decidedAt),
-				})}
+				{decision.actingForName
+					? t(
+							"travelExpenses.report.approvedByDeputy",
+							"Approved by {name} (deputy for {actingForName}) on {date}.",
+							{
+								name: decision.deciderName ?? "—",
+								actingForName: decision.actingForName,
+								date: formatInstant(locale, decision.decidedAt),
+							},
+						)
+					: t("travelExpenses.report.approvedBy", "Approved by {name} on {date}.", {
+							name: decision.deciderName ?? "—",
+							date: formatInstant(locale, decision.decidedAt),
+						})}
 			</p>
 		);
 	}

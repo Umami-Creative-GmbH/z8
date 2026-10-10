@@ -1,11 +1,43 @@
 // @vitest-environment jsdom
 
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Settings } from "luxon";
+import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { ManagerAbsenceCalendarEntry } from "./manager-absence-types";
 import { TeamAbsenceYearCalendar } from "./team-absence-year-calendar";
 
 let applicationLocale = "en";
+
+const { changeDeputyDialog } = vi.hoisted(() => ({ changeDeputyDialog: vi.fn() }));
+
+vi.mock("@/components/absences/change-deputy-dialog", () => ({
+	ChangeDeputyDialog: (props: Record<string, unknown>) => {
+		changeDeputyDialog(props);
+		return null;
+	},
+}));
+
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
+	useRouter: () => ({ refresh: vi.fn() }),
+}));
+
+function calendarEntry(id: string, employeeName: string): ManagerAbsenceCalendarEntry {
+	return {
+		id,
+		employeeId: `employee-${id}`,
+		employeeName,
+		startDate: "2026-03-04",
+		startPeriod: "full_day",
+		endDate: "2026-03-04",
+		endPeriod: "full_day",
+		status: "approved",
+		category: { name: "Vacation", type: "vacation", color: null },
+	};
+}
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({
@@ -117,6 +149,94 @@ describe("TeamAbsenceYearCalendar", () => {
 		expect(within(details).getByText("Ada Lovelace")).toBeTruthy();
 		expect(within(details).getByText("Vacation")).toBeTruthy();
 		expect(within(details).getByText("Approved")).toBeTruthy();
+	});
+
+	it("shows the deputy of an absence that has one, linked when the viewer may open profiles (#1012)", () => {
+		render(
+			<TeamAbsenceYearCalendar
+				data={{
+					year: 2026,
+					teamId: null,
+					entries: [
+						{
+							...calendarEntry("absence-1", "Ada Lovelace"),
+							deputy: { id: "employee-9", name: "Grace Hopper", canOpenProfile: true },
+						},
+						{
+							...calendarEntry("absence-2", "Alan Turing"),
+							deputy: { id: "employee-8", name: "Edsger Dijkstra", canOpenProfile: false },
+						},
+						calendarEntry("absence-3", "Barbara Liskov"),
+					],
+				}}
+			/>,
+		);
+
+		const details = screen.getByTestId("team-absence-calendar-details-2026-03-04");
+		expect(within(details).getAllByText("Deputy:")).toHaveLength(2);
+		expect(within(details).getByRole("link", { name: "Grace Hopper" }).getAttribute("href")).toBe(
+			"/settings/employees/employee-9",
+		);
+		expect(within(details).queryByRole("link", { name: "Edsger Dijkstra" })).toBeNull();
+		expect(within(details).getByText("Edsger Dijkstra")).toBeTruthy();
+	});
+
+	it("lets a manager change the deputy of an absence from the day details (#1012)", async () => {
+		render(
+			<TeamAbsenceYearCalendar
+				data={{
+					year: 2026,
+					teamId: null,
+					entries: [
+						{
+							...calendarEntry("absence-1", "Ada Lovelace"),
+							deputy: { id: "employee-9", name: "Grace Hopper", canOpenProfile: false },
+							canChangeDeputy: true,
+						},
+						{ ...calendarEntry("absence-2", "Alan Turing"), canChangeDeputy: false },
+					],
+				}}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "March 4, 2026: 2 absent" }));
+		const change = await screen.findByRole("button", { name: "Change deputy of Ada Lovelace" });
+		expect(screen.queryByRole("button", { name: "Change deputy of Alan Turing" })).toBeNull();
+
+		fireEvent.click(change);
+
+		expect(changeDeputyDialog).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				open: true,
+				employeeName: "Ada Lovelace",
+				absence: expect.objectContaining({
+					id: "absence-1",
+					employeeId: "employee-absence-1",
+					startDate: "2026-03-04",
+					endDate: "2026-03-04",
+					deputy: { id: "employee-9", name: "Grace Hopper" },
+					category: { deputyRequired: false },
+				}),
+			}),
+		);
+	});
+
+	it("flags an absence whose required deputy is missing (#1014)", () => {
+		render(
+			<TeamAbsenceYearCalendar
+				data={{
+					year: 2026,
+					teamId: null,
+					entries: [
+						{ ...calendarEntry("absence-1", "Ada Lovelace"), deputyMissing: true },
+						calendarEntry("absence-2", "Grace Hopper"),
+					],
+				}}
+			/>,
+		);
+
+		const details = screen.getByTestId("team-absence-calendar-details-2026-03-04");
+		expect(within(details).getAllByText("Deputy missing")).toHaveLength(1);
 	});
 
 	it("labels the current day when the selected year contains today", () => {

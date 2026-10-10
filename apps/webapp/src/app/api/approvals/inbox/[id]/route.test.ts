@@ -82,6 +82,12 @@ vi.mock("@/lib/approvals/inbox/read-service", () => ({
 	getApprovalInboxDetail: mockState.getApprovalInboxDetail,
 }));
 
+// Covering deputies' detail access is verified in authorized-detail.test.ts (#1016).
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadDeputyDetailAccess: async () => null,
+	loadInboxCovers: async () => [],
+}));
+
 vi.mock("@/lib/approvals/inbox/source-adapters", () => ({
 	isSupportedInboxType: (type: string) =>
 		["absence_entry", "time_entry", "travel_expense_claim"].includes(type),
@@ -208,6 +214,7 @@ describe("GET /api/approvals/inbox/[id]", () => {
 			approverId: "employee-1",
 			includeAllApprovers: undefined,
 			eligibleApprovalScopes: [],
+			covering: [],
 		});
 	});
 

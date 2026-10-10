@@ -97,6 +97,40 @@ describe("reconcileSCIMLifecycle", () => {
 		return target;
 	}
 
+	it("reports the employee it deactivated once, so the deputy release runs (#1014)", async () => {
+		const target = fixture({
+			member: {
+				id: "member_existing",
+				organizationId,
+				userId,
+				role: "member",
+				status: "approved",
+			},
+			employee: {
+				id: "employee_existing",
+				organizationId,
+				userId,
+				role: "employee",
+				isActive: true,
+			},
+		});
+		const deactivated: unknown[] = [];
+		const hooks = {
+			onEmployeeDeactivated: async (input: unknown) => {
+				deactivated.push(input);
+			},
+		};
+		const context = { database: target.database } as SCIMTransactionContext;
+
+		await reconcileSCIMLifecycle(projected(false), context, hooks);
+		await reconcileSCIMLifecycle(projected(false), context, hooks);
+		await reconcileSCIMLifecycle(projected(true), context, hooks);
+
+		expect(deactivated).toEqual([
+			{ organizationId, userId, employeeId: "employee_existing", connectionId },
+		]);
+	});
+
 	it("creates pending inactive membership without a billable revision", async () => {
 		const target = await reconcile(true);
 

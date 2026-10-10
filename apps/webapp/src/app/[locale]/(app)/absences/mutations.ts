@@ -14,6 +14,7 @@ import {
 	employeeManagers,
 	timeRecord,
 } from "@/db/schema";
+import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import {
 	legacyDeliveryCycleId,
 	recordLegacyDeliveryIntent,
@@ -798,6 +799,22 @@ export async function cancelAbsenceRequestForEmployee(
 			organizationId,
 			action: "delete",
 		}).catch(() => undefined);
+		await notifyAbsenceDeputies(db, {
+			organizationId,
+			events: [
+				{
+					kind: "cancelled",
+					absence: {
+						id: committedAbsence.id,
+						employeeId: committedAbsence.employeeId,
+						deputyEmployeeId: committedAbsence.deputyEmployeeId,
+						startDate: committedAbsence.startDate,
+						endDate: committedAbsence.endDate,
+						status: committedAbsence.status,
+					},
+				},
+			],
+		});
 		if (
 			committedAbsence.status === "approved" &&
 			committedAbsence.employeeId === currentEmployee.id

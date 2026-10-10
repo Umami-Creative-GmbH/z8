@@ -10,6 +10,7 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { loadInboxCovers } from "@/lib/approvals/deputy/deputy-decision-store";
 import type { ApprovalPriority, ApprovalStatus } from "@/lib/approvals/domain/types";
 import { getApprovalInboxList } from "@/lib/approvals/inbox/read-service";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
@@ -17,6 +18,7 @@ import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/ma
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -122,6 +124,12 @@ export async function GET(request: NextRequest) {
 			cursor,
 			limit,
 			eligibleApprovalScopes,
+			// "Covering for" sections: absent approvers this employee covers for now (#1016).
+			covering: await loadInboxCovers(db, {
+				organizationId: currentEmployee.organizationId,
+				deputyEmployeeId: currentEmployee.id,
+				at: systemClock.nowInstant(),
+			}),
 		});
 
 		return NextResponse.json(result);

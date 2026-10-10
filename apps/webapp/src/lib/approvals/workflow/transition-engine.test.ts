@@ -24,6 +24,7 @@ import type {
 	ApprovalWorkflowCommandRequest,
 	ApprovalWorkflowLifecycleMode,
 	ApprovalWorkflowPrincipal,
+	ApprovalWorkflowAuthorizationGrant,
 	ApprovalWorkflowSnapshot,
 	ResolvedStage,
 	StageActivationInput,
@@ -626,12 +627,7 @@ function engineFixture(
 		claim?: "reserved" | "mismatch" | "completed";
 		claimSequence?: Array<"reserved" | "mismatch" | "completed">;
 		completedResult?: ApprovalCommandResult;
-		authorization?:
-			| "active_assignment"
-			| "requester"
-			| "manage_approval"
-			| "system"
-			| "offboarding_reassignment";
+		authorization?: ApprovalWorkflowAuthorizationGrant;
 		authorizationError?: Error;
 		actor?:
 			| { kind: "employee"; employeeId: string; userId: string }
@@ -2156,6 +2152,37 @@ describe("approval transition engine atomic orchestration", () => {
 			metadata: expect.objectContaining({ offboarding: lineage }),
 		});
 		expect(JSON.stringify(plan)).not.toContain(offboardingPrincipal.claimToken);
+	});
+
+	const deputyGrant = {
+		kind: "covering_deputy" as const,
+		actingFor: {
+			approverEmployeeId: "e0000000-0000-4000-8000-0000000000a1",
+			absenceId: "e0000000-0000-4000-8000-0000000000a2",
+		},
+	};
+
+	it("records whom a covering deputy's decision acted for on the assignment event (#1016)", async () => {
+		const fixture = engineFixture({ authorization: deputyGrant });
+		await fixture.engine.execute(engineRequest());
+		const plan = fixture.appliedPlans[0];
+		expect(plan?.events[0]).toMatchObject({
+			eventType: "assignment.approved",
+			metadata: {
+				stageId: engineIds.stage,
+				actingForEmployeeId: deputyGrant.actingFor.approverEmployeeId,
+				actingForAbsenceId: deputyGrant.actingFor.absenceId,
+			},
+		});
+	});
+
+	it("never admits a covering deputy grant for anything but approve or reject", async () => {
+		const fixture = engineFixture({ authorization: deputyGrant });
+		await expect(
+			fixture.engine.execute(
+				engineRequest({ command: { type: "cancel", reason: "withdrawn" } }),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
 	});
 
 	it("re-verifies handover evidence before replaying a completed receipt", async () => {

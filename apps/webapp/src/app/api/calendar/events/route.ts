@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
-import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
+import { getAbsencesForMonth, linkAbsenceDeputyProfiles } from "@/lib/calendar/absence-service";
 import {
 	assignedHolidayToCalendarEvent,
 	getAssignedHolidaysForEmployee,
@@ -425,6 +425,12 @@ export async function GET(request: NextRequest) {
 		]);
 		dailyRequirements = resolvedDailyRequirements;
 		workBalance = resolvedWorkBalance;
+		if (showAbsences) {
+			events = await linkAbsenceDeputyProfiles(events, {
+				organizationId,
+				viewerUserId: orgContext.user.id,
+			});
+		}
 
 		// Use SuperJSON to preserve Date objects in the response
 		return superJsonResponse({

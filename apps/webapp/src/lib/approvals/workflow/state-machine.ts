@@ -1302,6 +1302,7 @@ function planDecision(
 	snapshot: ApprovalWorkflowSnapshot,
 	command: Extract<ApprovalWorkflowCommand, { type: "approve" | "reject" }>,
 	now: Instant,
+	actingFor?: ApprovalWorkflowTransitionOptions["actingFor"],
 ): ApprovalTransitionPlan {
 	if (command.type === "reject") assertReason(command.reason, command.type);
 	if (command.type === "approve" && command.reason !== undefined) {
@@ -1326,7 +1327,15 @@ function planDecision(
 	const status = command.type === "approve" ? "approved" : "rejected";
 	const drafts: EventDraft[] = [];
 	closeAssignment(acting, status, now, actorIntent);
-	drafts.push(eventForAssignment(acting, status, actorIntent, reason));
+	const decided = eventForAssignment(acting, status, actorIntent, reason);
+	if (actingFor) {
+		decided.metadata = {
+			...decided.metadata,
+			actingForEmployeeId: actingFor.approverEmployeeId,
+			actingForAbsenceId: actingFor.absenceId,
+		};
+	}
+	drafts.push(decided);
 	for (const sibling of resultingStage.assignments) {
 		if (
 			snapshotsEqual(sibling.reference, acting.reference) ||
@@ -3041,6 +3050,11 @@ export interface ApprovalWorkflowTransitionOptions {
 	 * and event. Only a `reassign` command accepts it.
 	 */
 	offboardingLineage?: JsonObject;
+	/**
+	 * A covering deputy decides for the absent approver (#1016): recorded on
+	 * the decided assignment's event. Only `approve` and `reject` accept it.
+	 */
+	actingFor?: { approverEmployeeId: string; absenceId: string };
 }
 
 export function planWorkflowTransition(
@@ -3104,7 +3118,7 @@ export function planWorkflowTransition(
 	switch (command.type) {
 		case "approve":
 		case "reject":
-			return planDecision(snapshot, command, now);
+			return planDecision(snapshot, command, now, options.actingFor);
 		case "cancel":
 		case "expire":
 			return planPendingClosure(snapshot, command, now);

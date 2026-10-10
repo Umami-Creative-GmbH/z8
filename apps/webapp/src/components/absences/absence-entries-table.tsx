@@ -1,6 +1,6 @@
 "use client";
 
-import { IconPaperclip, IconX } from "@tabler/icons-react";
+import { IconPaperclip, IconUserShare, IconX } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -24,9 +24,12 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDateRange, formatDays } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
-import type { AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
+import type { AbsenceWithCategory, AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
+import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
+import { ChangeDeputyDialog } from "./change-deputy-dialog";
+import { DeputyName } from "./deputy-name";
 import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
 import { AttachSickNoteDialog } from "./sick-notes/attach-sick-note-dialog";
 import { SickNoteMarker } from "./sick-notes/sick-note-marker";
@@ -44,6 +47,14 @@ function canShowCancelAction(absence: AbsenceWithDays, today: string): boolean {
 	return false;
 }
 
+/** The deputy can change on pending and approved absences until they have ended (#1011). */
+function canChangeDeputy(absence: AbsenceWithCategory, today: string): boolean {
+	return (
+		(absence.status === "pending" || absence.status === "approved") &&
+		comparePlainDates(parsePlainDate(absence.endDate), parsePlainDate(today)) >= 0
+	);
+}
+
 /** Sick notes go on the employee's own sick leave unless it was rejected (#982). */
 function takesSickNotes(absence: AbsenceWithDays): boolean {
 	return absence.category.type === "sick" && absence.status !== "rejected";
@@ -57,6 +68,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	const sickNotes = useOwnAbsenceSickNotes(absences);
 	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithDays | null>(null);
 	const [attachingTo, setAttachingTo] = useState<AbsenceWithDays | null>(null);
+	const [changingDeputyOf, setChangingDeputyOf] = useState<AbsenceWithDays | null>(null);
 
 	// Attaching can turn "without certificate" into "with certificate".
 	const handleSickNotesChanged = () => {
@@ -184,6 +196,12 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 							}
 						/>
 					) : null}
+					{row.original.deputy ? (
+						<span className="text-xs">
+							<span className="text-muted-foreground">{t("absences.deputy.label", "Deputy")}</span>{" "}
+							<DeputyName deputy={row.original.deputy} className="font-medium" />
+						</span>
+					) : null}
 				</div>
 			),
 		},
@@ -231,13 +249,26 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 				const absence = row.original;
 				const canAttachSickNote = sickNotes.canAttach && takesSickNotes(absence);
 				const canCancel = canShowCancelAction(absence, currentDate);
-				if (!canCancel && !canAttachSickNote) return null;
+				const canChange = canChangeDeputy(absence, currentDate);
+				if (!canCancel && !canAttachSickNote && !canChange) return null;
 				const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
 				const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
 				const attachLabel = t("absences.sickNotes.attachAction", "Attach sick note");
+				const changeDeputyLabel = t("absences.deputy.changeAction", "Change deputy");
 
 				return (
 					<div className="flex justify-end gap-1">
+						{canChange ? (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setChangingDeputyOf(absence)}
+								aria-label={changeDeputyLabel}
+							>
+								<IconUserShare aria-hidden="true" className="size-4" />
+								<span className="sm:sr-only">{changeDeputyLabel}</span>
+							</Button>
+						) : null}
 						{canAttachSickNote ? (
 							<Button
 								variant="ghost"
@@ -329,6 +360,19 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 					}}
 					canAttach={sickNotes.canAttach && takesSickNotes(sickNotesOf)}
 					onChanged={handleSickNotesChanged}
+				/>
+			) : null}
+			{changingDeputyOf ? (
+				<ChangeDeputyDialog
+					absence={changingDeputyOf}
+					open
+					onOpenChange={(open) => {
+						if (!open) setChangingDeputyOf(null);
+					}}
+					onChanged={() => {
+						refresh();
+						onUpdate?.();
+					}}
 				/>
 			) : null}
 			{attachingTo ? (
