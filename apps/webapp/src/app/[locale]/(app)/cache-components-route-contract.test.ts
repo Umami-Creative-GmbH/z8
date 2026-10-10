@@ -1437,7 +1437,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(65);
+		expect(workQueueFiles).toHaveLength(66);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

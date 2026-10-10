@@ -1,4 +1,5 @@
 import type { EmailTemplateKey } from "@/db/schema";
+import { EXPORT_HISTORY_PATH } from "@/lib/export/types";
 import {
 	renderAbsenceRecordedByManager,
 	renderAbsenceRequestApproved,
@@ -475,7 +476,7 @@ export const EMAIL_TEMPLATE_REGISTRY = [
 			organizationName: "Acme Operations",
 			categories: ["Time entries", "Absences"],
 			fileSize: "2.4 MB",
-			downloadUrl: `${appUrl}/en/settings/export/history`,
+			downloadUrl: `${appUrl}/en${EXPORT_HISTORY_PATH}`,
 			expiresAt: "May 30, 2026, 10:05 (Europe/Berlin)",
 		},
 		renderDefault: renderExportReady,

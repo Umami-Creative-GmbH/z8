@@ -22,14 +22,12 @@ import {
 	getPendingExports,
 	processExport,
 } from "@/lib/export/export-service";
-import { CATEGORY_LABELS, type ExportCategory } from "@/lib/export/types";
+import { CATEGORY_LABELS, EXPORT_HISTORY_PATH, type ExportCategory } from "@/lib/export/types";
 import { createLogger } from "@/lib/logger";
 import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
-import { isValidTimeZone } from "@/lib/timezone/validation";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 
 const logger = createLogger("ExportProcessorJob");
-
-const EXPORT_HISTORY_PATH = "/settings/export/history";
 
 function maskEmailAddress(email: string): string {
 	return `${email.slice(0, 3)}***`;
@@ -87,7 +85,7 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 			email: emp.user.email,
 			name: buildAuthUserDisplayName(emp.user) || "Admin",
 			organizationName: org?.name || "Your Organization",
-			organizationTimezone: org?.timezone && isValidTimeZone(org.timezone) ? org.timezone : "UTC",
+			organizationTimezone: resolveOrganizationTimezone(org?.timezone ?? undefined).timezone,
 		};
 	} catch (error) {
 		logger.error({ exportId: exportRecord.id, error }, "Failed to get requester details");

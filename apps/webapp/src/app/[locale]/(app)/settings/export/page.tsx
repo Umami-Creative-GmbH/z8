@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { renderExportSettingsSections } from "./export-settings-sections";
+import { renderExportSettingsView } from "./export-settings-view";
 
 async function ExportSettingsContent() {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 
-	return renderExportSettingsSections({ organizationId });
+	return renderExportSettingsView({ organizationId });
 }
 
 function ExportSettingsLoading() {

@@ -1,14 +1,14 @@
 import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { renderExportSettingsSections } from "../export-settings-sections";
+import { renderExportSettingsView } from "../export-settings-view";
 
 // The export-ready email links here (#1022): a path survives the sign-in
 // redirect, which keeps only the path of the requested page.
 async function ExportHistorySettingsContent() {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 
-	return renderExportSettingsSections({ organizationId, initialTab: "history" });
+	return renderExportSettingsView({ organizationId, initialTab: "history" });
 }
 
 function ExportHistorySettingsLoading() {

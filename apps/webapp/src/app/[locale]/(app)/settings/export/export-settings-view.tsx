@@ -17,14 +17,14 @@ import { getExportHistoryAction, getStorageConfigAction } from "./actions";
  * has already authorized. Without `initialTab`, the page opens on New Export,
  * or on Storage Settings while storage is not configured.
  */
-export async function renderExportSettingsSections({
+export async function renderExportSettingsView({
 	organizationId,
 	initialTab,
 }: {
 	organizationId: string;
 	initialTab?: "history";
 }) {
-	// Parallelize S3 config, storage config, and export history fetches
+	// Parallelize translations, S3 config, storage config, and export history fetches
 	const [t, s3Configured, storageConfigResult, historyResult] =
 		await Promise.all([
 			getTranslate(),
