@@ -264,8 +264,7 @@ export function ExecutionHistoryDialog({
 											{execution.emailsSent !== null ? (
 												<span>
 													{execution.emailsSent}
-													{execution.emailsFailed &&
-														execution.emailsFailed > 0 && (
+													{(execution.emailsFailed ?? 0) > 0 && (
 															<TooltipProvider>
 																<Tooltip>
 																	<TooltipTrigger asChild>
