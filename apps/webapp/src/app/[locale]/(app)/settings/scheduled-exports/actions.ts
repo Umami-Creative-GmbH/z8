@@ -23,6 +23,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { validateScheduledReportConfig } from "@/lib/scheduled-exports/application/executors/registry";
+import { resolveRecipientEmails } from "@/lib/scheduled-exports/domain/recipient-emails";
 import {
 	calculateNextExecution,
 	getNextExecutions,
@@ -114,31 +115,6 @@ export interface ExecutionHistoryItem {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
-/** The organization's schedule, or a NotFoundError. */
-function findScheduledExport(organizationId: string, scheduleId: string) {
-	return Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const schedule = yield* dbService.query("scheduledExport.getById", () =>
-			dbService.db.query.scheduledExport.findFirst({
-				where: and(
-					eq(scheduledExport.id, scheduleId),
-					eq(scheduledExport.organizationId, organizationId),
-				),
-			}),
-		);
-		if (!schedule) {
-			return yield* Effect.fail(
-				new NotFoundError({
-					message: "Scheduled export not found",
-					entityType: "scheduled_export",
-					entityId: scheduleId,
-				}),
-			);
-		}
-		return schedule;
-	});
-}
-
 /** Refuses a report configuration its executor rejects, e.g. an unconfigured payroll format. */
 function validateReportConfig(
 	organizationId: string,
@@ -156,6 +132,25 @@ function validateReportConfig(
 			);
 		}
 	});
+}
+
+/** The normalised recipient emails for the schedule as it will be stored, or a validation failure. */
+function recipientEmailsFor(deliveryMethod: DeliveryMethod, emailRecipients: readonly string[]) {
+	const result = resolveRecipientEmails(deliveryMethod, emailRecipients);
+	return result.ok
+		? Effect.succeed(result.recipients)
+		: Effect.fail(new ValidationError({ message: result.message, field: "emailRecipients" }));
+}
+
+/** An unknown id and another organization's id fail the same way. */
+function scheduledExportNotFound(scheduleId: string) {
+	return Effect.fail(
+		new NotFoundError({
+			message: "Scheduled export not found",
+			entityType: "scheduled_export",
+			entityId: scheduleId,
+		}),
+	);
 }
 
 // ============================================
@@ -193,19 +188,10 @@ export async function createScheduledExportAction(
 			}
 		}
 
-		// Validate email recipients (only required for email-based delivery)
-		if (input.deliveryMethod === "s3_and_email" || input.deliveryMethod === "email_only") {
-			if (!input.emailRecipients || input.emailRecipients.length === 0) {
-				throw new Error("At least one email recipient is required for email delivery");
-			}
-
-			// Validate email format
-			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			const invalidEmails = input.emailRecipients.filter((email) => !emailRegex.test(email));
-			if (invalidEmails.length > 0) {
-				throw new Error(`Invalid email addresses: ${invalidEmails.join(", ")}`);
-			}
-		}
+		const emailRecipients = yield* recipientEmailsFor(
+			input.deliveryMethod,
+			input.emailRecipients ?? [],
+		);
 
 		yield* validateReportConfig(input.organizationId, input.reportType, input.reportConfig);
 
@@ -235,7 +221,7 @@ export async function createScheduledExportAction(
 					dateRangeStrategy: input.dateRangeStrategy,
 					customOffset: input.customOffset,
 					deliveryMethod: input.deliveryMethod,
-					emailRecipients: input.emailRecipients,
+					emailRecipients,
 					emailSubjectTemplate: input.emailSubjectTemplate,
 					useOrgS3Config: input.useOrgS3Config ?? true,
 					customS3Prefix: input.customS3Prefix,
@@ -391,16 +377,21 @@ export async function updateScheduledExportAction(
 			}
 		}
 
-		const scheduleChanged =
-			input.scheduleType !== undefined ||
-			input.cronExpression !== undefined ||
-			input.timezone !== undefined;
-		const existing =
-			input.reportConfig !== undefined || scheduleChanged
-				? yield* findScheduledExport(input.organizationId, input.id)
-				: undefined;
+		const dbService = yield* DatabaseService;
+		const existing = yield* dbService.query("scheduledExport.getForUpdate", () =>
+			dbService.db.query.scheduledExport.findFirst({
+				where: and(
+					eq(scheduledExport.id, input.id),
+					eq(scheduledExport.organizationId, input.organizationId),
+				),
+			}),
+		);
 
-		if (existing && input.reportConfig !== undefined) {
+		if (!existing) {
+			return yield* scheduledExportNotFound(input.id);
+		}
+
+		if (input.reportConfig !== undefined) {
 			yield* validateReportConfig(input.organizationId, existing.reportType, input.reportConfig);
 		}
 
@@ -408,6 +399,15 @@ export async function updateScheduledExportAction(
 		const updates: Partial<ScheduledExport> = {
 			updatedBy: session.user.id,
 		};
+
+		// Validate the recipients the schedule will have after this update
+		if (input.deliveryMethod !== undefined || input.emailRecipients !== undefined) {
+			const emailRecipients = yield* recipientEmailsFor(
+				input.deliveryMethod ?? (existing.deliveryMethod as DeliveryMethod),
+				input.emailRecipients ?? existing.emailRecipients,
+			);
+			if (input.emailRecipients !== undefined) updates.emailRecipients = emailRecipients;
+		}
 
 		if (input.name !== undefined) updates.name = input.name;
 		if (input.description !== undefined) updates.description = input.description;
@@ -419,13 +419,16 @@ export async function updateScheduledExportAction(
 		if (input.dateRangeStrategy !== undefined) updates.dateRangeStrategy = input.dateRangeStrategy;
 		if (input.customOffset !== undefined) updates.customOffset = input.customOffset;
 		if (input.deliveryMethod !== undefined) updates.deliveryMethod = input.deliveryMethod;
-		if (input.emailRecipients !== undefined) updates.emailRecipients = input.emailRecipients;
 		if (input.emailSubjectTemplate !== undefined)
 			updates.emailSubjectTemplate = input.emailSubjectTemplate;
 		if (input.isActive !== undefined) updates.isActive = input.isActive;
 
 		// Recalculate next execution if schedule changed
-		if (scheduleChanged && existing) {
+		if (
+			input.scheduleType !== undefined ||
+			input.cronExpression !== undefined ||
+			input.timezone !== undefined
+		) {
 			const scheduleConfig: ScheduleConfig = {
 				type: input.scheduleType || (existing.scheduleType as ScheduleType),
 				cronExpression: input.cronExpression ?? existing.cronExpression ?? undefined,
@@ -435,8 +438,8 @@ export async function updateScheduledExportAction(
 			updates.nextExecutionAt = nextExecutionAt.toJSDate();
 		}
 
-		const schedule = yield* Effect.promise(async () => {
-			const [updated] = await db
+		const schedule = yield* dbService.query("scheduledExport.update", async () => {
+			const [updated] = await dbService.db
 				.update(scheduledExport)
 				.set(updates)
 				.where(
@@ -451,7 +454,7 @@ export async function updateScheduledExportAction(
 		});
 
 		if (!schedule) {
-			throw new Error("Scheduled export not found");
+			return yield* scheduledExportNotFound(input.id);
 		}
 
 		revalidatePath("/settings/scheduled-exports");

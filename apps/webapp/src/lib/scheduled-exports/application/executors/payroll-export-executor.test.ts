@@ -34,6 +34,7 @@ vi.mock("@/lib/payroll-export", () => ({
 const { PayrollExportExecutor } = await import("./payroll-export-executor");
 
 const params: ExecuteParams = {
+	executionId: "execution-1",
 	organizationId: "org-1",
 	createdBy: "schedule-user",
 	payrollConfigId: "payroll-config-1",

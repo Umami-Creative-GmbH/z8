@@ -28,6 +28,13 @@ export async function resolveRecipientNotificationLocale({
 	}
 	if (!organizationId) return DEFAULT_LANGUAGE;
 
+	return resolveOrganizationNotificationLocale(organizationId);
+}
+
+/** The organization's notification language, for messages not tied to one recipient's choice. */
+export async function resolveOrganizationNotificationLocale(
+	organizationId: string,
+): Promise<string> {
 	const organizationSettings = await db.query.organizationNotificationSettings.findFirst({
 		where: eq(organizationNotificationSettings.organizationId, organizationId),
 		columns: { defaultLanguage: true },
