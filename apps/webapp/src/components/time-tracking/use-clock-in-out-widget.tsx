@@ -13,13 +13,13 @@ import {
 	useTimeClock,
 } from "@/lib/query";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
-import { isClockConnectionRequired } from "@/lib/time-tracking/browser-clock-command";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
+import { toastClockCommandError } from "./clock-command-error-toast";
 import { showSavedClockToast } from "./saved-clock-toast";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 
@@ -167,8 +167,6 @@ export function useClockInOutWidget(
 			return;
 		}
 
-		// Needing a connection in this organization is shown inline (#845).
-		if (isClockConnectionRequired(result)) return;
 		if (showAppendReviewRequiredToast(result, t)) return;
 
 		const holidayName =
@@ -184,7 +182,7 @@ export function useClockInOutWidget(
 			: result.error ||
 				t("timeTracking.errors.clockInFailed", "Failed to clock in");
 
-		toast.error(errorMessage, {
+		toastClockCommandError(result, errorMessage, {
 			description: holidayName
 				? t(
 						"timeTracking.errors.holidayBlockedDesc",
@@ -249,7 +247,6 @@ export function useClockInOutWidget(
 			return;
 		}
 
-		if (isClockConnectionRequired(result)) return;
 		const holidayName =
 			"holidayName" in result ? result.holidayName : undefined;
 		const errorMessage = holidayName
@@ -263,7 +260,7 @@ export function useClockInOutWidget(
 			: result.error ||
 				t("timeTracking.errors.clockOutFailed", "Failed to clock out");
 
-		toast.error(errorMessage, {
+		toastClockCommandError(result, errorMessage, {
 			description: holidayName
 				? t(
 						"timeTracking.errors.holidayBlockedDesc",

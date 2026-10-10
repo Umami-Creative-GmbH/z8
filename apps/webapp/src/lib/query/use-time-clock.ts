@@ -152,12 +152,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	// Offline, only an adopted organization may capture at all (#845, ADR 0002).
 	const canCaptureOffline =
 		pageSession !== null && offlineClockCaptureAllowed(commandCapabilities, pageSession);
-	// The last clock action was refused for needing a connection; shown inline while offline.
+	// The last clock command was refused for needing a connection; shown inline while offline.
 	const [connectionRefused, setConnectionRefused] = useState(false);
 	const clockPosition = useClockPosition(Boolean(session?.user?.id && activeOrganizationId));
 
 	/**
-	 * Refuses a clock action up front while offline in an organization that is not
+	 * Refuses a clock command up front while offline in an organization that is not
 	 * adopted, before any position or capture: nothing is stored. Null lets it run.
 	 */
 	function refuseWithoutConnection() {
@@ -462,7 +462,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isOnline,
 		isOffline,
 		captureMode: clockCaptureMode(isOffline, canFreeze, canCaptureOffline),
-		/** The last clock action needs a connection in this organization (#845); shown inline. */
+		/** The last clock command needs a connection in this organization (#845); shown inline. */
 		connectionRequired: isOffline && connectionRefused,
 		pendingCount,
 		isSyncing,

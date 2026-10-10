@@ -93,7 +93,7 @@ export function frozenClockCommandsAvailable(
 }
 
 /**
- * Whether a clock action may be captured on this device while offline (#845).
+ * Whether a clock command may be captured on this device while offline (#845).
  * Only an adopted organization accepts frozen clock commands (time-tracking ADR
  * 0002), so a capture anywhere else could never be sent. The page decides from
  * the capabilities it last read online for this account and organization;
@@ -112,7 +112,7 @@ export function offlineClockCaptureAllowed(
 	);
 }
 
-/** The outcome code of a clock action refused offline before anything was captured (#845). */
+/** The outcome code of a clock command refused offline before anything was captured (#845). */
 export const CLOCK_CONNECTION_REQUIRED = "connection_required";
 
 /** How the page words that refusal. */
@@ -130,7 +130,7 @@ export function clockConnectionRequired() {
 	};
 }
 
-/** Whether a clock action result is that refusal, shown inline rather than as an error. */
+/** Whether a clock command result is that refusal, shown inline rather than as an error. */
 export function isClockConnectionRequired(result: { success: boolean; code?: unknown }): boolean {
 	return !result.success && result.code === CLOCK_CONNECTION_REQUIRED;
 }

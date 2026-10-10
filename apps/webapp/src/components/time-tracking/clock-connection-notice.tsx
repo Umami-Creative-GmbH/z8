@@ -5,7 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { CLOCK_CONNECTION_REQUIRED_MESSAGE } from "@/lib/time-tracking/browser-clock-command";
 
 /**
- * The inline outcome of a clock action refused offline in an organization that
+ * The inline outcome of a clock command refused offline in an organization that
  * is not adopted (#845): nothing was saved, so it reads as advice, not an error.
  */
 export function ClockConnectionNotice({ show }: { show: boolean }) {
