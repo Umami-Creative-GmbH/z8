@@ -12,6 +12,7 @@ import {
 	timeRecord,
 } from "@/db/schema";
 import { calculateBusinessDays } from "@/lib/absences/date-utils";
+import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
 import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
@@ -1427,10 +1428,49 @@ function completeApprovedAbsenceAfterCommit(
 				currentEmployee,
 				result,
 			),
+			Effect.promise(() => notifyDeputiesOfApprovedAbsence(dbService, result)),
 		],
-		{ concurrency: 3 },
+		{ concurrency: 4 },
 	).pipe(Effect.map(() => undefined));
 }
+
+/** The approved absence's deputy, and those of vacations its sick override changed (#1013). */
+function notifyDeputiesOfApprovedAbsence(
+	dbService: ApprovalDbService,
+	result: ApprovedAbsenceResult,
+) {
+	return notifyAbsenceDeputies(dbService.db, {
+		organizationId: result.absence.organizationId,
+		events: [
+			{ kind: "approved", absenceId: result.absence.id },
+			{ kind: "vacation_override", summary: result.vacationOverrideSummary },
+		],
+	});
+}
+
+/**
+ * After-commit work of a canonical terminal absence decision, run once with
+ * the finalizer's result after the transition committed (never on a replay,
+ * where the finalizer does not run). Today it tells the deputies (#1013);
+ * further after-commit effects of canonical absence decisions belong here.
+ */
+async function completeCanonicalAbsenceTerminalAfterCommit(
+	dbService: ApprovalDbService,
+	terminal: CanonicalAbsenceTerminal,
+): Promise<void> {
+	if (terminal.transition.kind === "approve") {
+		await notifyDeputiesOfApprovedAbsence(
+			dbService,
+			terminal.result as ApprovedAbsenceResult,
+		);
+	}
+}
+
+/** What a canonical decision's terminal finalizer did, captured for after the commit. */
+export type CanonicalAbsenceTerminal = {
+	transition: { kind: "approve" } | { kind: "reject"; reason: string };
+	result: ApprovedAbsenceResult | RejectedAbsenceResult;
+};
 
 function notifyApprovedAbsenceAfterCommit(
 	dbService: ApprovalDbService,
@@ -1769,6 +1809,7 @@ function authenticatedAbsenceDecisionEffect(
 			const ability = await getAbility();
 			return ability?.cannot("manage", "Approval") === false;
 		};
+		let canonicalTerminal: CanonicalAbsenceTerminal | null = null;
 		const runtime = createAbsenceDecisionRuntime({
 			db: dbService.db,
 			query: dbService.query,
@@ -1776,6 +1817,9 @@ function authenticatedAbsenceDecisionEffect(
 				currentEmployee,
 				canManageOrganizationApproval,
 			}),
+			onTerminalFinalized: (terminal) => {
+				canonicalTerminal = terminal;
+			},
 		});
 		const execution = yield* Effect.tryPromise({
 			try: () =>
@@ -1835,6 +1879,15 @@ function authenticatedAbsenceDecisionEffect(
 				),
 			);
 		}
+		const committedTerminal = canonicalTerminal as CanonicalAbsenceTerminal | null;
+		if (execution.authority === "canonical" && committedTerminal) {
+			yield* Effect.promise(() =>
+				completeCanonicalAbsenceTerminalAfterCommit(
+					dbService as ApprovalDbService,
+					committedTerminal,
+				),
+			);
+		}
 		if (
 			execution.authority === "canonical" || execution.deliveryIntent
 		) {
@@ -1856,20 +1909,28 @@ export function createAbsenceDecisionRuntime(input: {
 	canManageApproval: Parameters<
 		typeof createProductionApprovalWorkflowRuntime
 	>[0]["canManageApproval"];
+	/**
+	 * Receives what the terminal finalizer did, inside the transaction; the
+	 * caller runs the after-commit work once the transition committed.
+	 */
+	onTerminalFinalized?: (terminal: CanonicalAbsenceTerminal) => void;
 }) {
 	return createProductionApprovalWorkflowRuntime({
 		db: input.db,
 		adapters: {
 			absence: {
 				clock: systemClock,
-				finalizeAbsenceTerminal: async (finalizerInput) =>
-					await finalizeAbsenceTerminalInTransaction({
+				finalizeAbsenceTerminal: async (finalizerInput) => {
+					const result = await finalizeAbsenceTerminalInTransaction({
 						...finalizerInput,
 						dbService: {
 							db: finalizerInput.dbService.db as ApprovalDbService["db"],
 							query: input.query,
 						},
-					}),
+					});
+					input.onTerminalFinalized?.({ transition: finalizerInput.transition, result });
+					return result;
+				},
 				deleteCancelledAbsence: async () => {
 					throw new Error(
 						"Absence cancellation is not wired into the decision runtime",
@@ -1992,6 +2053,7 @@ export async function decideBoundAbsenceInvocation(input: {
 		_name: string,
 		operation: () => Promise<T>,
 	) => Effect.promise(operation);
+	let canonicalTerminal: CanonicalAbsenceTerminal | null = null;
 	const runtime = createAbsenceDecisionRuntime({
 		db: input.database,
 		query,
@@ -1999,6 +2061,9 @@ export async function decideBoundAbsenceInvocation(input: {
 		// a card never reaches management or eligible-manager authority.
 		canManageApproval: async () => {
 			throw new BoundAssignmentNotCurrentError();
+		},
+		onTerminalFinalized: (terminal) => {
+			canonicalTerminal = terminal;
 		},
 	});
 	try {
@@ -2026,6 +2091,13 @@ export async function decideBoundAbsenceInvocation(input: {
 			throw new ApprovalEvidenceError("invariant", {
 				field: "invocation_decision",
 			});
+		}
+		const committedTerminal = canonicalTerminal as CanonicalAbsenceTerminal | null;
+		if (!execution.invocation.replayed && committedTerminal) {
+			await completeCanonicalAbsenceTerminalAfterCommit(
+				{ db: input.database as ApprovalDbService["db"], query },
+				committedTerminal,
+			);
 		}
 		return {
 			status: "decided",

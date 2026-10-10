@@ -58,6 +58,10 @@ vi.mock("@/lib/queue", () => ({
 	addCalendarSyncJob,
 }));
 
+vi.mock("@/lib/absences/deputy-notifier", () => ({
+	notifyAbsenceDeputies: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty,
 }));

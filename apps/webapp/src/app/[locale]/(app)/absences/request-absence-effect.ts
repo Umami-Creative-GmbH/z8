@@ -16,6 +16,7 @@ import {
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
+import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
 import { AuditTrail } from "@/lib/audit-trail";
 import {
@@ -1295,6 +1296,27 @@ function requestAbsenceWithResolverEffect(
 						"Absence auto-approved (no approval required)",
 					);
 				}
+				// A pending absence names nobody yet; one approved on creation (or
+				// vacations a sick absence changed) tells their deputies (#1013).
+				yield* Effect.promise(() =>
+					notifyAbsenceDeputies(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						events: [
+							{ kind: "vacation_override", summary: newAbsence.vacationOverrideSummary },
+							...(autoCompletion
+								? [
+										{
+											kind: "vacation_override" as const,
+											summary: autoCompletion.vacationOverrideSummary,
+										},
+									]
+								: []),
+							...(autoCompletion || !category.requiresApproval
+								? [{ kind: "approved" as const, absenceId: newAbsence.id }]
+								: []),
+						],
+					}),
+				);
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				span.end();

@@ -15,6 +15,7 @@ import type { JobsOptions } from "bullmq";
 import type { ApprovalDeliveryJobResult } from "@/lib/approvals/delivery/scheduled-job";
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
+import type { AbsenceDeputyRemindersJobResult } from "@/lib/jobs/absence-deputy-reminders";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
@@ -433,6 +434,17 @@ export const CRON_JOBS = {
 				"@/lib/jobs/personnel-file-expiry-reminders"
 			);
 			return runPersonnelFileExpiryRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:absence-deputy-reminders": {
+		schedule: "0 * * * *", // Hourly, so each absent employee's day starts soon after their midnight
+		description:
+			"Remind deputies the day before an approved absence they cover starts (once per absence and deputy)",
+		processor: async (): Promise<AbsenceDeputyRemindersJobResult> => {
+			const { runAbsenceDeputyRemindersJob } = await import("@/lib/jobs/absence-deputy-reminders");
+			return runAbsenceDeputyRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},

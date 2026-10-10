@@ -54,6 +54,11 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	personnel_file_expiry_upcoming: ["/personnel-files/", "/my-documents"],
 	personnel_file_expired_today: ["/personnel-files/", "/my-documents"],
 	personnel_file_due_for_deletion: "/personnel-files/",
+	// The deputy's dashboard, which shows whom they cover (#1013).
+	absence_deputy_assigned: "/",
+	absence_deputy_removed: "/",
+	absence_deputy_dates_changed: "/",
+	absence_deputy_reminder: "/",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
