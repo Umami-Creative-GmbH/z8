@@ -157,22 +157,30 @@ export async function authorizeLegacyDeputyDecision(
 }
 
 /**
- * Whether the actor covers for the request's current approver right now. A
- * request escalation transferred *to* that approver is theirs, so their
- * covering deputy may decide it (default 9); the full right, with four-eyes,
- * is judged later by the legacy decision path.
+ * Whether the actor covers for the request's current approver at the instant,
+ * on a kind deputies decide. A request escalation transferred *to* that
+ * approver is theirs, so their covering deputy may decide it (default 9); the
+ * full right, with four-eyes, is judged later by the decision path.
  */
 export async function coversCurrentApprover(
 	executor: DeputyDecisionReader,
-	input: { organizationId: string; approverEmployeeId: string; actorEmployeeId: string },
+	input: {
+		organizationId: string;
+		/** The request's entity type; other kinds are never covered. */
+		entityType: string;
+		approverEmployeeId: string;
+		actorEmployeeId: string;
+		at: Instant;
+	},
 ): Promise<boolean> {
+	if (!isDeputyDecisionEntityType(input.entityType)) return false;
 	if (input.approverEmployeeId === input.actorEmployeeId) return false;
 	return (
 		(await loadCover(executor, {
 			organizationId: input.organizationId,
 			approverId: input.approverEmployeeId,
 			deputyId: input.actorEmployeeId,
-			at: systemClock.nowInstant(),
+			at: input.at,
 		})) !== null
 	);
 }

@@ -17,7 +17,7 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { loadCover } from "../deputy/covering-store";
+import { loadCover } from "../deputy/deputy-reads";
 import type { ApprovalDatabase } from "../server/types";
 import type {
 	ApprovalActorKind,

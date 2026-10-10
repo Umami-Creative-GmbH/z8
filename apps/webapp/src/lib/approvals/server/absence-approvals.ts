@@ -607,8 +607,10 @@ export async function executeAbsenceDecisionInTransaction(
 				// The current approver's covering deputy (#1016, default 9).
 				!(await coversCurrentApprover(transactionDb, {
 					organizationId: input.organizationId,
+					entityType: "absence_entry",
 					approverEmployeeId: transferred.currentApproverEmployeeId,
 					actorEmployeeId: currentEmployee.id,
+					at: input.nowInstant(),
 				}))
 			) {
 				throw new ApprovalAssignmentReassignedError();

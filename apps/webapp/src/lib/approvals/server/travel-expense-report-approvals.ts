@@ -8,6 +8,7 @@ import {
 	travelExpenseReport,
 } from "@/db/schema";
 import { getAbility } from "@/lib/auth-helpers";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { failureOfCause as failureOf } from "@/lib/effect/cause-failure";
 import {
 	type AnyAppError,
@@ -604,8 +605,10 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		(binding !== null ||
 			!(await coversCurrentApprover(database as never, {
 				organizationId,
+				entityType: "travel_expense_report",
 				approverEmployeeId: request.approverId,
 				actorEmployeeId: actor.id,
+				at: systemClock.nowInstant(),
 			})))
 	) {
 		throw new ApprovalAssignmentReassignedError();

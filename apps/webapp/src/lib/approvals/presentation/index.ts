@@ -14,9 +14,10 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { readApprovalAuthoritySnapshot } from "../authority";
-import { loadCover } from "../deputy/covering-store";
+
+
 import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
-import { legacyDecidedEarlierStage, loadEmployeeName } from "../deputy/deputy-decision-store";
+import { legacyDecidedEarlierStage, loadCover, loadEmployeeName } from "../deputy/deputy-reads";
 import {
 	type ApprovalActionableCard,
 	type ApprovalCardDraft,

@@ -9,7 +9,6 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { isDeputyDecisionEntityType } from "@/lib/approvals/deputy/deputy-decision";
 import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
 	type ApprovalDecisionDiagnosticStage,
@@ -37,6 +36,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -163,11 +163,12 @@ export async function POST(
 			!isAssignedApprover &&
 			!isEligibleManager &&
 			!canManageApprovals &&
-			isDeputyDecisionEntityType(request.entityType) &&
 			(await coversCurrentApprover(db, {
 				organizationId: currentEmployee.organizationId,
+				entityType: request.entityType,
 				approverEmployeeId: request.approverId,
 				actorEmployeeId: currentEmployee.id,
+				at: systemClock.nowInstant(),
 			}));
 
 		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals && !isCoveringDeputy) {

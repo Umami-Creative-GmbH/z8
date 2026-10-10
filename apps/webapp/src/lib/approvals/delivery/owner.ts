@@ -14,7 +14,8 @@ import { createLogger } from "@/lib/logger";
 import { loadNotificationChannelPreferences } from "@/lib/notifications/notification-service";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { readApprovalAuthoritySnapshot } from "../authority";
-import { isCovering } from "../deputy/covering-store";
+
+
 import { loadEmployeeName } from "../deputy/deputy-decision-store";
 import type { EscalationAttentionInput } from "../escalation/attention";
 import {

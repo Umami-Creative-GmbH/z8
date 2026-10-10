@@ -24,9 +24,10 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { approvalAuthorityOf, approvalAuthoritySql } from "../authority";
-import { loadCover } from "../deputy/covering-store";
+import { loadCover, resolveDeputyCardRecipients } from "../deputy/deputy-reads";
 import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
-import { resolveDeputyCardRecipients } from "./deputy-cards";
+
+
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import type { ApprovalWorkflowType } from "../workflow/ports";
