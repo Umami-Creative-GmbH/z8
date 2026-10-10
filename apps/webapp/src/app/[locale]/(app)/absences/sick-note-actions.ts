@@ -2,15 +2,18 @@
 
 import { db } from "@/db";
 import { loadAbsenceSettings } from "@/lib/absences/absence-settings";
+import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
+import { MAX_STAGED_SICK_NOTES } from "@/lib/personnel-file/document.types";
 import {
 	type AbsenceSickNoteView,
 	countSickNotesForAbsences,
 	listAbsenceSickNotes,
 	type SickNoteMarker,
 } from "@/lib/personnel-file/sick-note-store";
+import { discardStagedSickNotes } from "@/lib/personnel-file/sick-note-upload";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 
 /**
@@ -63,6 +66,29 @@ export async function getOwnAbsenceSickNotesAction(
 	} catch (error) {
 		logger.error({ error }, "Failed to load sick notes of own absences");
 		return { success: false, error: "Failed to load sick notes" };
+	}
+}
+
+/**
+ * Deletes sick-note uploads a dialog staged but will never send (#983), e.g.
+ * when uploading a later file failed. Only the signed-in user's own uploads
+ * are touched.
+ */
+export async function discardStagedSickNoteUploadsAction(
+	tusFileKeys: readonly string[],
+): Promise<void> {
+	try {
+		const authContext = await getAuthContext();
+		if (!authContext || !Array.isArray(tusFileKeys)) return;
+		await discardStagedSickNotes(
+			authContext.user.id,
+			tusFileKeys
+				.filter((key): key is string => typeof key === "string")
+				.slice(0, MAX_STAGED_SICK_NOTES)
+				.map((tusFileKey) => ({ tusFileKey })),
+		);
+	} catch (error) {
+		logger.error({ error }, "Failed to discard staged sick note uploads");
 	}
 }
 

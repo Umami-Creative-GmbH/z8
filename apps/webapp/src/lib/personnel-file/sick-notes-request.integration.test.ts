@@ -114,6 +114,9 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 }));
 
 const { requestAbsence } = await import("@/app/[locale]/(app)/absences/actions");
+const { discardStagedSickNoteUploadsAction } = await import(
+	"@/app/[locale]/(app)/absences/sick-note-actions"
+);
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 
 const ORG = "t983-org";
@@ -453,6 +456,20 @@ describe.each(["legacy", "canonical"] as const)(
 				[ids.anna, leave.startDate],
 			);
 			expect(rows).toEqual([]);
+		});
+
+		it("deletes the dialog's own staged uploads when it gives up before requesting", async () => {
+			signIn("owner");
+			const owners = stage("owner.pdf");
+			signIn("anna");
+			const annas = [stage("a.pdf"), stage("b.pdf")];
+
+			await discardStagedSickNoteUploadsAction([
+				...annas.map((note) => note.tusFileKey),
+				owners.tusFileKey,
+			]);
+
+			expect([...harness.tus.keys()]).toEqual([owners.tusFileKey]);
 		});
 
 		describe("when sick notes may not be attached", () => {

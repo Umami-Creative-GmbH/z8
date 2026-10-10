@@ -4,6 +4,7 @@ import type { db as appDb } from "@/db";
 import { createLogger } from "@/lib/logger";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 import type { PersonnelFileAccess, SickNoteAttachRefusal, SickNoteAuthority } from "./access";
+import { MAX_STAGED_SICK_NOTES } from "./document.types";
 import { validateDocumentMetadata } from "./document-rules";
 import type { EmployeeDocumentView } from "./document-store";
 import { recordUploadedPersonnelDocument } from "./document-upload";
@@ -24,9 +25,6 @@ import { deleteTusUpload } from "./storage";
 type Database = typeof appDb;
 
 const logger = createLogger("StagedSickNotes");
-
-/** At most this many sick notes come with one absence request. */
-export const MAX_STAGED_SICK_NOTES = 10;
 
 export interface StagedSickNoteInput {
 	/** The finished TUS upload of the actor. */
