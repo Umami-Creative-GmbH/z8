@@ -5,6 +5,7 @@
  * the kiosk-authentication helper. Only the user session is mocked.
  */
 
+import { randomInt } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -158,11 +159,20 @@ describe("kiosk enrolment on PostgreSQL", () => {
 		return result.data;
 	}
 
+	/**
+	 * Each pairing attempt comes from its own client address, so the per-IP
+	 * pairing limiter (kept in a local Redis across runs, when one is reachable)
+	 * never refuses this suite. The limiter itself is covered by the route's unit test.
+	 */
+	function freshClientIp() {
+		return `198.18.${randomInt(0, 256)}.${randomInt(1, 255)}`;
+	}
+
 	function pair(code: unknown) {
 		return pairRoute.POST(
 			new Request("http://localhost/api/kiosk/pair", {
 				method: "POST",
-				headers: { "content-type": "application/json" },
+				headers: { "content-type": "application/json", "x-forwarded-for": freshClientIp() },
 				body: JSON.stringify({ code }),
 			}),
 		);
