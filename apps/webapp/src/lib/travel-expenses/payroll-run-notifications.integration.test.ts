@@ -1,7 +1,8 @@
 /**
  * #855: with the payroll channel, expense officers are told once per payroll
  * run awaiting their confirmation instead of once per approved report; reports
- * a run leaves out, removes or discards still notify per report, once.
+ * a run leaves out or removes still notify per report, once. A discard does
+ * not: the next export includes the freed reports or leaves them out.
  *
  * Reports are submitted and approved through the real actions and routes,
  * exported through the real export service, against a disposable PostgreSQL
@@ -515,7 +516,7 @@ describe("payroll run notifications for expense officers (#855)", () => {
 		expect(await readyNotifications()).toHaveLength(2);
 	});
 
-	it("tells the covering officers about a report removed from a run or freed by a discard", async () => {
+	it("tells the covering officers about a report removed from a run, not about a discard", async () => {
 		const removed = await approvedReceipt("requester", "100.00");
 		const discarded = await approvedReceipt("requester", "20.50");
 		const jobId = await exportPayroll("datev_lohn", current);
@@ -535,12 +536,13 @@ describe("payroll run notifications for expense officers (#855)", () => {
 			success: true,
 			data: { status: "discarded", reportIds: [discarded] },
 		});
-		expect(await readyRecipients(discarded)).toEqual(["t855-allOfficer", "t855-berlinOfficer"]);
+		// A discard is usually followed by a re-export: the next run decides.
+		expect(await readyRecipients(discarded)).toEqual([]);
 		expect(await readyRecipients(removed)).toEqual(["t855-allOfficer"]);
 
-		// Taken by the next run, then left out of none: nobody is told twice.
+		// Taken by the next run: nobody is told twice.
 		await exportPayroll("datev_lohn", overlapping);
-		expect(await readyNotifications()).toHaveLength(3);
+		expect(await readyNotifications()).toHaveLength(1);
 		expect((await runNotifications()).map((row) => row.message)).toContain(
 			runMessage(overlapping, "DATEV Lohn & Gehalt", 2),
 		);

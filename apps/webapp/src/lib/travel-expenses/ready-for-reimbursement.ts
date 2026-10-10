@@ -21,9 +21,10 @@ import { loadSettlementAccount, type SettlementAccount } from "./settlement-stor
  *
  * With the payroll channel (#855, decision 19) approvals notify nobody: a
  * payroll run notifies per run instead (`payroll-run-notifications.ts`). A
- * report that needs a bank transfer after all, because a run left it out, it
- * was removed from a run or its run was discarded, notifies per report then,
- * under the same once-per-officer-and-approved-revision key.
+ * report that needs a bank transfer after all, because a run left it out or
+ * it was removed from a run, notifies per report then, under the same
+ * once-per-officer-and-approved-revision key. A discarded run notifies nobody:
+ * the next export decides about its reports.
  */
 
 const logger = createLogger("TravelExpenseOfficerNotifications");
@@ -221,8 +222,8 @@ async function notifyCoveringOfficers(
 
 /**
  * Notifies the covering officers of approved reports that no payroll run
- * carries after all (#855): a run left them out, they were removed from a run
- * or their run was discarded. Whatever the channel, each notifies once per
+ * carries after all (#855): a run left them out or they were removed from a
+ * run. Whatever the channel, each notifies once per
  * officer and latest approved revision, sharing the approval's key: a report
  * whose approval already notified, or that a run left out before, notifies
  * nobody again. `exceptUserId` is the officer who freed them. Call it after

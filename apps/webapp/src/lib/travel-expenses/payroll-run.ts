@@ -614,14 +614,9 @@ export async function discardPayrollRun(
 		});
 		return { status: "discarded", reportIds };
 	});
-	if (result.status === "discarded") {
-		// Freed reports may need a bank transfer now (#855).
-		await notifyReportsLeftOutOfPayrollRun(database, {
-			organizationId,
-			reportIds: result.reportIds,
-			exceptUserId: input.actorUserId,
-		});
-	}
+	// No officer notification here (#855): a discard is usually followed by a
+	// re-export, which includes the freed reports or notifies about those it
+	// leaves out.
 	return result;
 }
 
