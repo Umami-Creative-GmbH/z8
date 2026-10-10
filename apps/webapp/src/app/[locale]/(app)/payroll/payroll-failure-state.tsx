@@ -51,7 +51,7 @@ export function PayrollFailureState({
 						<CardDescription>
 							{t(
 								"payroll.onlyFormerEmployees.description",
-								"There is no payroll period to prepare, but you can still record and cancel their overtime payouts.",
+								"You can still record and cancel their overtime payouts, and export below the months in which they were employed.",
 							)}
 						</CardDescription>
 					</CardHeader>
