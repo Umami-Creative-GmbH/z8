@@ -156,6 +156,7 @@ export class ScheduledExportOrchestrator {
 
 			// Execute report
 			const exportResult = await executor.execute({
+				executionId: execution.id,
 				organizationId: schedule.organizationId,
 				reportConfig,
 				dateRange,
