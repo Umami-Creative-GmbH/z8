@@ -1,552 +1,94 @@
 ---
-title: Conditional Access Policies
-description: Configure fine-grained access controls based on user context, location, and device
+title: Access Controls
+description: Enforce SSO, domain and invite restrictions, and default role templates for an organization
 icon: Lock
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-Conditional Access Policies allow administrators to enforce security requirements based on user context, such as IP address, geographic location, device trust, and authentication method. These policies help organizations meet compliance requirements and protect sensitive workforce data.
+Z8 controls who can access an organization through its enterprise identity setup: SSO enforcement, domain and invite restrictions, and the role template applied to provisioned users. Each user also manages their own sign-in security.
+
+<Callout type="info" title="Not Yet Available">
+  Z8 does not offer IP, location, device, or session access policies. Organizations cannot restrict access by IP address or country, require trusted or managed devices, require MFA or passkeys for all members, or set session duration, idle timeout, or concurrent session limits.
+</Callout>
 
 ---
 
-## Overview
+## Organization Access Policy
 
-Conditional Access extends basic authentication by evaluating additional factors before granting access:
+Organization owners and admins configure the access policy in **Settings -> Enterprise -> Enterprise Identity Setup**, in the **Access Policy** step.
 
-| Factor | Description |
-|--------|-------------|
-| **IP Address** | Restrict access to specific IP ranges or block known threats |
-| **Geographic Location** | Allow or block access from specific countries |
-| **Device Trust** | Require registered or managed devices |
-| **Authentication Method** | Enforce MFA, passkeys, or hardware security keys |
-| **Session Limits** | Control concurrent sessions and timeouts |
+1. Complete the **Provider**, **Domain**, **SSO Configuration**, and **Test User** steps first.
+2. In **Access Policy**, choose the rules that apply to your organization:
 
-Policies are evaluated in priority order, with higher priority policies taking precedence.
+   | Option | Effect once activated |
+   |--------|-----------------------|
+   | **Require SSO** | Members can only open the organization in a session that was signed in through the organization's SSO provider. A session started any other way must sign in through the identity provider first. |
+   | **Restrict to verified domain** | Invite codes can only be redeemed by users whose email address belongs to the enterprise identity domain. |
+   | **Restrict invites** | Email invitations can only be sent to addresses in the enterprise identity domain. |
+
+3. Optionally select a **Default role template** (see below).
+4. Choose **Save access policy**.
+5. In **Review & Activate**, choose **Activate enterprise identity**.
+
+The rules take effect only after activation. **Require SSO** also needs the enterprise identity domain to be added and verified in **Settings -> Enterprise -> Domain & Branding**; activation fails without it.
+
+<Callout type="warn" title="Avoid Locking Yourself Out">
+  Before activating **Require SSO**, confirm that your own admin account can sign in through the configured identity provider.
+</Callout>
 
 ---
 
 ## Role Templates
 
-Role Templates provide a way to bundle permissions and conditional access policies into reusable configurations. When users join your organization via SSO or SCIM, they can be automatically assigned the appropriate role template based on their identity provider groups.
+A role template defines the employee role and organization-level team permissions given to a user who is provisioned through SCIM.
 
-### Understanding Role Templates
+### Default Role Template
 
-A role template includes:
+Choose the **Default role template** in the **Access Policy** step. The list shows the active role templates owned by your organization and the global templates available to all organizations. Select **No default template** to clear it.
 
-- **Employee Role**: Admin, manager, or employee
-- **Team Permissions**: What team management actions the user can perform
-- **Access Policy**: Which conditional access policy applies to users with this role
+A SCIM connection cannot be created until a default role template is selected. See [SCIM Provisioning](/docs/guide/admin-guide/scim-provisioning).
 
-### Creating a Role Template
+### How SCIM Applies a Template
 
-1. Go to **Settings** > **Security** > **Role Templates**
-2. Click **New Template**
-3. Configure the template:
-   - **Name**: Descriptive name (e.g., "Standard Employee", "Remote Contractor")
-   - **Description**: Explain when this template should be used
-   - **Employee Role**: Select admin, manager, or employee
-4. Set team permissions:
-   - Can create teams
-   - Can manage team members
-   - Can manage team settings
-   - Can approve team requests
-5. Optionally link an access policy
-6. Click **Create Template**
+When SCIM provisions or updates a user, Z8:
 
-### Global vs Organization Templates
+1. Uses the role template mapped to the user's SCIM Group `externalId`, if one exists, and otherwise the connection's default role template.
+2. Sets the user's employee role and organization-level team permissions from the template, and adds the template's default team if it has one.
+3. Records a `role_template_applied` provisioning event whenever the applied template changes.
 
-- **Global Templates**: Available to all organizations, created by system administrators
-- **Organization Templates**: Specific to one organization, created by org admins
+Z8 does not overwrite a role that was assigned manually, through SSO, or through an invite code.
 
-Organization templates take precedence when names conflict.
-
-### IdP Group Mappings
-
-Map identity provider groups to role templates for automatic provisioning:
-
-1. Go to **Settings** > **Security** > **IdP Mappings**
-2. Click **Add Mapping**
-3. Select the IdP type (SSO or SCIM)
-4. Enter the IdP group ID
-5. Select the role template to apply
-6. Set priority (higher = evaluated first)
-7. Click **Save**
-
-When a user authenticates via SSO or is provisioned via SCIM, the system:
-1. Identifies their IdP groups
-2. Finds matching mappings (highest priority first)
-3. Applies the corresponding role template
-
-<Callout type="info" title="Assignment Sources">
-  Role templates track how they were assigned: manually, via SCIM, via SSO, or via invite code. This helps with auditing and troubleshooting.
+<Callout type="info" title="No Template Editor">
+  Z8 has no settings page for creating role templates or group-to-template mappings. Choose from the templates already available to your organization.
 </Callout>
 
 ---
 
-## Access Policies
-
-Access policies define the security requirements for accessing your organization. Each policy can combine multiple conditions.
-
-### Creating an Access Policy
-
-1. Go to **Settings** > **Security** > **Access Policies**
-2. Click **New Policy**
-3. Configure the policy:
-   - **Name**: Descriptive name (e.g., "Office Only", "Strict Security")
-   - **Description**: Document the policy's purpose
-   - **Priority**: Higher numbers are evaluated first (default: 0)
-   - **Enabled**: Toggle policy on/off
-4. Configure restrictions (see sections below)
-5. Click **Create Policy**
-
-### Policy Priority
-
-When multiple policies exist, they're evaluated in priority order (highest first). The first policy that denies access stops evaluation. If all policies pass, access is granted.
-
-Example priority setup:
-- **Priority 100**: "Block Sanctioned Countries" - Blocks specific countries
-- **Priority 50**: "Office Network" - Requires office IP for sensitive roles
-- **Priority 0**: "Default Policy" - Basic MFA requirement
-
-### Policy Actions
-
-When a policy condition is violated, the system takes one of three actions:
-
-| Action | Description |
-|--------|-------------|
-| **Blocked** | Access denied, user cannot proceed |
-| **Challenged** | User prompted for additional authentication (MFA, passkey) |
-| **Logged** | Access allowed but logged for review |
-
----
-
-## IP Restrictions
-
-Control access based on the user's IP address using CIDR notation.
-
-### IP Allowlist (Whitelist)
-
-Restrict access to only specific IP ranges:
-
-1. In your access policy, find **IP Restrictions**
-2. Under **Allowed IPs**, click **Add Range**
-3. Enter the CIDR range (e.g., `10.0.0.0/8` or `192.168.1.100/32`)
-4. Add multiple ranges as needed
-5. Save the policy
-
-When an allowlist is configured, users MUST connect from one of the specified ranges. All other IPs are blocked.
-
-**Common CIDR examples:**
-
-| CIDR | Description |
-|------|-------------|
-| `192.168.1.100/32` | Single IP address |
-| `192.168.1.0/24` | 256 addresses (192.168.1.0 - 192.168.1.255) |
-| `10.0.0.0/8` | Class A network (10.x.x.x) |
-| `0.0.0.0/0` | All IPv4 addresses |
-
-### IP Blocklist (Blacklist)
-
-Block specific IP ranges:
-
-1. In your access policy, find **IP Restrictions**
-2. Under **Blocked IPs**, click **Add Range**
-3. Enter the CIDR range to block
-4. Add multiple ranges as needed
-5. Save the policy
-
-Blocklists are evaluated before allowlists. If an IP is in both lists, it will be blocked.
-
-<Callout type="warn" title="VPN Considerations">
-  If your organization uses VPNs, ensure VPN exit IPs are included in your allowlist. Remote workers connecting via VPN will use the VPN's IP address, not their home IP.
-</Callout>
-
----
-
-## Device Requirements
-
-Require users to access Z8 from trusted devices.
-
-### Trusted Device Sources
-
-Devices can become trusted through several methods:
-
-| Source | Description |
-|--------|-------------|
-| **Passkey** | Device has a registered passkey for this user |
-| **Admin Registered** | Administrator manually registered the device |
-| **Remember Device** | User opted to remember device during login |
-| **MDM** | Device is enrolled in Mobile Device Management |
-
-### Enabling Device Trust Requirements
-
-1. In your access policy, find **Device Requirements**
-2. Enable **Require Trusted Device**
-3. Save the policy
-
-When enabled, users on untrusted devices will be prompted to register their device or use a passkey.
-
-### Registering Trusted Devices
-
-**Users can register devices by:**
-
-1. Using a passkey (automatically trusts the device)
-2. Clicking "Remember this device" during login
-3. Having an administrator register the device
-
-**Administrators can register devices by:**
-
-1. Go to **Settings** > **Security** > **Trusted Devices**
-2. Click **Register Device**
-3. Enter the user and device details
-4. Click **Register**
-
-### MDM Integration
-
-For enterprise environments with Mobile Device Management:
-
-1. Configure your MDM provider (Intune, Jamf, Workspace ONE, etc.)
-2. Set up MDM integration in **Settings** > **Integrations** > **MDM**
-3. Devices enrolled in MDM are automatically trusted
-4. Compliance status is synced from MDM
-
-MDM-enrolled devices include additional metadata:
-- MDM provider name
-- MDM device ID
-- Compliance status
-- Last compliance check timestamp
-
-### Device Fingerprinting
-
-The system creates a unique fingerprint for each device based on:
-- User agent string
-- Platform (Windows, macOS, Linux, iOS, Android)
-- Screen characteristics
-- Browser/app version
-
-This fingerprint is hashed and stored securely. One fingerprint can only be trusted once per user per organization.
-
-### Revoking Device Trust
-
-To revoke a trusted device:
-
-1. Go to **Settings** > **Security** > **Trusted Devices**
-2. Find the device in the list
-3. Click **Revoke**
-4. Optionally enter a reason
-5. Confirm revocation
-
-Revoked devices will need to re-establish trust through an approved method.
-
----
-
-## Location-Based Access Controls
-
-Restrict access based on geographic location using ISO 3166-1 country codes.
-
-### Allowing Specific Countries
-
-Restrict access to only certain countries:
-
-1. In your access policy, find **Location Restrictions**
-2. Under **Allowed Countries**, select countries from the dropdown
-3. Save the policy
-
-When allowed countries are configured, users MUST be in one of those countries. Access from all other countries is blocked.
-
-### Blocking Specific Countries
-
-Block access from certain countries:
-
-1. In your access policy, find **Location Restrictions**
-2. Under **Blocked Countries**, select countries to block
-3. Save the policy
-
-<Callout type="warn" title="Geolocation Accuracy">
-  Location is determined by IP geolocation, which may not be 100% accurate. VPN users will appear to be in the VPN server's country.
-</Callout>
-
-### Common Use Cases
-
-**Compliance Requirements:**
-- GDPR: Restrict processing to EU countries
-- Data residency: Allow only countries where you operate
-
-**Security:**
-- Block high-risk countries
-- Restrict contractors to their work location
-
----
-
-## Authentication Requirements
-
-Enforce strong authentication methods.
-
-### MFA Requirements
-
-Require multi-factor authentication:
-
-1. In your access policy, find **Authentication Requirements**
-2. Enable **Require MFA**
-3. Save the policy
-
-Users without MFA enabled will be prompted to set it up.
-
-### Hardware MFA Requirements
-
-Require hardware security keys or passkeys (stronger than TOTP):
-
-1. In your access policy, enable **Require Hardware MFA**
-2. Save the policy
-
-This blocks TOTP-only authentication. Users must use:
-- Passkey (device biometrics)
-- Hardware security key (YubiKey, etc.)
-
-### Passkey Requirements
-
-Require passkey authentication specifically:
-
-1. In your access policy, enable **Require Passkey**
-2. Save the policy
-
-Users must authenticate using a registered passkey. Password + TOTP is not sufficient.
-
----
-
-## Session Constraints
-
-Control session behavior and limits.
-
-### Session Duration
-
-Limit how long sessions remain valid:
-
-1. In your access policy, find **Session Settings**
-2. Set **Maximum Session Duration** (in minutes)
-3. Save the policy
-
-After this duration, users must re-authenticate regardless of activity.
-
-### Idle Timeout
-
-Terminate sessions after inactivity:
-
-1. Set **Idle Timeout** (in minutes)
-2. Save the policy
-
-Sessions with no activity for this duration are automatically terminated.
-
-### Concurrent Session Limits
-
-Control how many simultaneous sessions a user can have:
-
-1. Toggle **Allow Concurrent Sessions**
-2. If enabled, set **Maximum Concurrent Sessions** (default: 5)
-3. Save the policy
-
-When the limit is reached:
-- New logins are blocked, OR
-- Oldest sessions are terminated (configurable)
-
-<Callout type="info" title="Session Tracking">
-  Session activity is tracked separately from the main session. The system records last activity time, request count, and MFA verification status for policy enforcement.
-</Callout>
-
----
-
-## Policy Evaluation
-
-Understanding how policies are evaluated helps with troubleshooting and policy design.
-
-### Evaluation Order
-
-1. **Get Active Policies**: Fetch all enabled policies for the organization
-2. **Sort by Priority**: Order policies from highest to lowest priority
-3. **Evaluate Each Policy**: Check each condition in order:
-   - IP blocklist (blocked IPs)
-   - IP allowlist (if configured, IP must be in list)
-   - Blocked countries
-   - Allowed countries (if configured, country must be in list)
-   - Trusted device requirement
-   - Passkey requirement
-   - MFA requirement
-   - Hardware MFA requirement
-   - Concurrent session limit
-4. **First Denial Wins**: If any check fails, access is denied
-5. **All Pass = Allowed**: If all policies pass, access is granted
-
-### Access Context
-
-The following information is collected for policy evaluation:
-
-| Field | Description |
-|-------|-------------|
-| `userId` | The authenticated user |
-| `sessionId` | Current session identifier |
-| `organizationId` | Organization being accessed |
-| `ipAddress` | Client IP address |
-| `country` | ISO country code from geolocation |
-| `region` | Region/state from geolocation |
-| `city` | City from geolocation |
-| `userAgent` | Browser/app user agent |
-| `deviceFingerprint` | Hashed device identifier |
-| `mfaVerified` | Whether MFA was completed |
-| `mfaMethod` | Type of MFA used (TOTP, passkey, etc.) |
-| `passkeyUsed` | Whether a passkey was used |
-
-### Violation Types
-
-When access is denied, the violation type indicates which check failed:
-
-| Violation Type | Description |
-|----------------|-------------|
-| `ip_blocked` | IP is in the blocklist |
-| `ip_not_whitelisted` | IP is not in the allowlist |
-| `country_blocked` | Country is in the blocked list |
-| `country_not_allowed` | Country is not in the allowed list |
-| `untrusted_device` | Device is not trusted |
-| `mfa_required` | MFA verification required but not completed |
-| `passkey_required` | Passkey authentication required |
-| `session_expired` | Session exceeded maximum duration |
-| `session_idle_timeout` | Session exceeded idle timeout |
-| `concurrent_session_limit` | Maximum concurrent sessions exceeded |
-
----
-
-## Violation Logging
-
-All access violations are logged for compliance and security auditing.
-
-### What Gets Logged
-
-Each violation log entry includes:
-
-- **Organization ID**: Which organization was accessed
-- **User ID**: The affected user (if authenticated)
-- **Session ID**: The session that violated the policy
-- **Violation Type**: Which check failed
-- **Policy ID**: Which policy triggered the violation
-- **IP Address**: Client IP
-- **Country**: Geolocation country
-- **User Agent**: Client software
-- **Request Path**: URL being accessed
-- **Request Method**: HTTP method
-- **Action Taken**: Blocked, challenged, or logged
-- **Metadata**: Additional context (device fingerprint, concurrent session count, etc.)
-- **Timestamp**: When the violation occurred
-
-### Viewing Violation Logs
-
-1. Go to **Settings** > **Security** > **Access Logs**
-2. Filter by:
-   - Date range
-   - User
-   - Violation type
-   - Action taken
-   - Policy
-3. Click any entry for full details
-
-### Export for Compliance
-
-Export violation logs for compliance reporting:
-
-1. Go to **Settings** > **Security** > **Access Logs**
-2. Set your filters
-3. Click **Export**
-4. Choose format (CSV or JSON)
-
----
-
-## Best Practices
-
-### Start Permissive, Tighten Gradually
-
-1. Start with logging-only policies to understand your traffic patterns
-2. Review logs for a week to identify legitimate access patterns
-3. Gradually add restrictions based on findings
-4. Monitor for false positives after each change
-
-### Use Policy Layering
-
-Create policies at different priority levels:
-
-- **High Priority (100+)**: Critical blocks (sanctioned countries, known threats)
-- **Medium Priority (50-99)**: Role-based restrictions (contractors, remote workers)
-- **Low Priority (0-49)**: Default baseline requirements
-
-### Document Your Policies
-
-For each policy, document:
-- Why it exists
-- Who it affects
-- What happens when violated
-- Who to contact for exceptions
-
-### Plan for Exceptions
-
-Create a process for handling legitimate exceptions:
-
-1. User requests exception via support ticket
-2. Security team reviews the request
-3. If approved, create a time-limited exception policy
-4. Document the exception and review date
-
-### Regular Policy Reviews
-
-Schedule quarterly reviews:
-
-1. Review violation logs for patterns
-2. Check if policies still match business needs
-3. Remove obsolete policies
-4. Update documentation
+## Personal Security Settings
+
+Each user manages their own sign-in security in **Settings -> Security**. These are personal settings, not organization policies.
+
+| Section | What users can do |
+|---------|-------------------|
+| **Change Password** | Update their password |
+| **Two-Factor Authentication** | Enable or disable two-factor authentication for their account |
+| **Passkeys** | Add and delete passkeys for passwordless sign-in |
+| **Social Accounts** | Connect and disconnect the social sign-in providers enabled for the deployment |
+| **Active Sessions** | Review their sessions, revoke a single session, or choose **Revoke All Other Sessions** |
 
 ---
 
 ## Troubleshooting
 
-### User blocked unexpectedly
+### A member cannot open the organization
 
-1. Check **Settings** > **Security** > **Access Logs** for the violation
-2. Note the violation type and policy ID
-3. Verify user's IP, location, and device status
-4. Check if they're using a VPN that changes their apparent location
-5. Review the triggering policy's configuration
+**Require SSO** is active and the member's current session was not signed in through the organization's SSO provider. They need to complete sign-in with the identity provider.
 
-### Policy not taking effect
+### Activation fails with Require SSO selected
 
-1. Verify the policy is enabled
-2. Check the policy priority (might be overridden by higher priority policy)
-3. Ensure the policy is assigned to the right organization
-4. Check if there's a conflicting role template assignment
-5. User may need to log out and back in
+In **Settings -> Enterprise -> Domain & Branding**, add the enterprise identity domain with **Add Domain** and verify it with **Verify Domain**. Then activate again.
 
-### Device trust issues
+### An invitation or invite code is rejected
 
-1. Check if the device is registered in **Trusted Devices**
-2. Verify the device fingerprint matches
-3. Check if the trust has expired (for remember_device type)
-4. Ensure MDM integration is working (for MDM devices)
-5. Try re-registering the device
-
-### MFA challenges not appearing
-
-1. Verify MFA requirement is enabled in the policy
-2. Check if user already verified MFA in current session
-3. Review mfaVerifiedAt timestamp in session extension
-4. Ensure user has MFA methods configured
-
-### Concurrent session errors
-
-1. Check current session count in **Settings** > **Security** > **Sessions**
-2. Verify the maxConcurrentSessions setting
-3. User can terminate other sessions from their profile
-4. Admin can force-terminate sessions if needed
-
-### Geolocation incorrect
-
-1. IP geolocation is not 100% accurate
-2. VPN/proxy usage will show the exit server's location
-3. Corporate proxies may show headquarters location
-4. Consider using IP allowlists instead for office-based restrictions
+**Restrict invites** or **Restrict to verified domain** is active. Use an email address in the enterprise identity domain, or change the access policy.
