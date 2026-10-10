@@ -74,8 +74,14 @@ describe("scheduled audit report storage key", () => {
 			first.s3Key,
 			second.s3Key,
 		]);
-		expect(first.s3Url).toBe(`https://storage.test/${first.s3Key}`);
-		expect(second.s3Url).toBe(`https://storage.test/${second.s3Key}`);
+		expect(first.fileUrl).toMatchObject({
+			url: `https://storage.test/${first.s3Key}`,
+			lifetimeSeconds: 604800,
+		});
+		expect(second.fileUrl).toMatchObject({
+			url: `https://storage.test/${second.s3Key}`,
+			lifetimeSeconds: 604800,
+		});
 	});
 
 	it("keeps organization A's reports out of organization B's prefix", async () => {
