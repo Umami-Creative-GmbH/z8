@@ -335,7 +335,11 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 		]);
 	}
 
-	async function expectRefused(actor: SeededEmployee, target: SeededEmployee) {
+	async function expectRefused(
+		actor: SeededEmployee,
+		target: SeededEmployee,
+		{ readOnly = false }: { readOnly?: boolean } = {},
+	) {
 		expect(await recordPayout(actor, target)).toMatchObject({
 			success: false,
 			code: "not_permitted",
@@ -345,10 +349,12 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 			success: false,
 			code: "not_permitted",
 		});
-		expect(await readSection(actor, target)).toMatchObject({
-			success: false,
-			code: "not_permitted",
-		});
+		// The employee and a direct manager see the history read-only (#996); anyone else nothing.
+		expect(await readSection(actor, target)).toMatchObject(
+			readOnly
+				? { success: true, data: { canManage: false } }
+				: { success: false, code: "not_permitted" },
+		);
 		actAs(fixture.ownerUserId);
 		await actions.cancelBalanceAdjustmentAction({
 			employeeId: target.employeeId,
@@ -375,8 +381,9 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 	});
 
 	it("refuses grant holders on their own record; another holder or an owner may act on it", async () => {
-		await expectRefused(allHolder, allHolder);
-		await expectRefused(specificHolder, specificHolder);
+		// They still see their own history, read-only (#996).
+		await expectRefused(allHolder, allHolder, { readOnly: true });
+		await expectRefused(specificHolder, specificHolder, { readOnly: true });
 		await expectRecordAndCancel(allHolder, specificHolder, allGrantId);
 	});
 
@@ -435,7 +442,7 @@ describe("overtime payouts by payroll grant holders on PostgreSQL", () => {
 	});
 
 	it("refuses managers and employees without a grant", async () => {
-		await expectRefused(manager, direct);
+		await expectRefused(manager, direct, { readOnly: true });
 		await expectRefused(member, direct);
 	});
 

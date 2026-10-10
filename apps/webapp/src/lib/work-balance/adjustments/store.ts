@@ -29,6 +29,7 @@ import {
 	type OpeningBalanceInEffect,
 	readOpeningBalanceInEffect,
 } from "./ledger";
+import { type BalanceAdjustmentChange, notifyBalanceAdjustmentChanges } from "./notifications";
 import { refuseOpeningBalance, refuseOvertimePayout } from "./rules";
 import {
 	type BalanceAdjustmentErrorCode,
@@ -45,7 +46,8 @@ import {
  * A write commits the adjustment, its audit entry and the employee's dirty
  * mark (from the adjustment's day) together, then refreshes that employee's
  * stored balance right away, so every balance view shows it without waiting
- * for the balance worker. Employees who have left are refreshed too.
+ * for the balance worker. Employees who have left are refreshed too. Then the
+ * employee is notified of the change (#996).
  */
 
 const logger = createLogger("BalanceAdjustments");
@@ -198,6 +200,21 @@ export async function recordOvertimePayout(
 	});
 
 	await refreshAfterCommit({ ...input, dirtyFromDate: input.day });
+	await notifyBalanceAdjustmentChanges(database, {
+		organizationId: input.organizationId,
+		changes: [
+			{
+				event: "recorded",
+				employeeId: input.employeeId,
+				adjustment: {
+					id: adjustmentId,
+					kind: "overtime_payout",
+					day: input.day,
+					minutes: -input.amountMinutes,
+				},
+			},
+		],
+	});
 	return { adjustmentId };
 }
 
@@ -285,6 +302,16 @@ export async function cancelBalanceAdjustment(
 	} else {
 		await refreshAfterCommit({ ...input, dirtyFromDate: cancelled.day });
 	}
+	await notifyBalanceAdjustmentChanges(database, {
+		organizationId: input.organizationId,
+		changes: [
+			{
+				event: "cancelled",
+				employeeId: input.employeeId,
+				adjustment: { ...cancelled, cancellationReason: reason },
+			},
+		],
+	});
 	return { adjustmentId: input.adjustmentId };
 }
 
@@ -353,7 +380,8 @@ export async function checkOpeningBalance(
  * opening balance write can move where the calculation starts, earlier or
  * later). The caller refreshes the balance after the commit; see
  * `setOpeningBalance`. The bulk upload (#999) can write many rows in one
- * transaction this way.
+ * transaction this way, then pass every result's `changes` to
+ * `notifyBalanceAdjustmentChanges` after the commit (#996).
  */
 export async function writeOpeningBalance(
 	tx: WorkBalanceDbClient & Pick<typeof globalDb, "update">,
@@ -369,7 +397,7 @@ export async function writeOpeningBalance(
 		/** Written to both audit entries, e.g. the payroll grant that authorized it (#995). */
 		auditMetadata?: Record<string, unknown> | null;
 	},
-): Promise<{ adjustmentId: string; cancelledAdjustmentId: string | null }> {
+): Promise<OpeningBalanceWritten> {
 	await lockEmployeeLedger(tx, input);
 	const checked = await checkOpeningBalance(tx, input);
 	const at = dateFromInstant(input.now);
@@ -440,23 +468,62 @@ export async function writeOpeningBalance(
 		metadata: input.auditMetadata ?? null,
 	});
 	await requestEmployeeWorkBalanceFullRebuild(input, { dbClient: tx });
-	return { adjustmentId: inserted.id, cancelledAdjustmentId: checked.replaces?.id ?? null };
+	// The employee is told about both after the commit: the replaced one as
+	// cancelled with the new reason, then the new one as recorded (#996).
+	const changes: BalanceAdjustmentChange[] = [];
+	if (checked.replaces) {
+		changes.push({
+			event: "cancelled",
+			employeeId: input.employeeId,
+			adjustment: {
+				id: checked.replaces.id,
+				kind: "opening_balance",
+				day: checked.replaces.day,
+				minutes: checked.replaces.minutes,
+				cancellationReason: checked.reason,
+			},
+		});
+	}
+	changes.push({
+		event: "recorded",
+		employeeId: input.employeeId,
+		adjustment: {
+			id: inserted.id,
+			kind: "opening_balance",
+			day: checked.day,
+			minutes: checked.minutes,
+		},
+	});
+	return {
+		adjustmentId: inserted.id,
+		cancelledAdjustmentId: checked.replaces?.id ?? null,
+		changes,
+	};
 }
+
+export type OpeningBalanceWritten = {
+	adjustmentId: string;
+	cancelledAdjustmentId: string | null;
+	/** What to notify the employee of once the transaction committed (#996). */
+	changes: BalanceAdjustmentChange[];
+};
 
 /**
  * Sets the employee's opening balance in its own transaction (see
  * `writeOpeningBalance`), then rebuilds the stored work balance right away, so
- * every balance view shows it, employees who have left included.
+ * every balance view shows it, employees who have left included, and notifies
+ * the employee (#996).
  */
 export async function setOpeningBalance(
 	database: BalanceAdjustmentDatabase,
 	audit: AuditTrail,
 	input: Parameters<typeof writeOpeningBalance>[2],
 ): Promise<{ adjustmentId: string; cancelledAdjustmentId: string | null }> {
-	const result = await database.transaction((tx) =>
+	const { changes, ...result } = await database.transaction((tx) =>
 		writeOpeningBalance(tx as unknown as Parameters<typeof writeOpeningBalance>[0], audit, input),
 	);
 	await refreshAfterCommit({ ...input, fullRebuild: true });
+	await notifyBalanceAdjustmentChanges(database, { organizationId: input.organizationId, changes });
 	return result;
 }
 
