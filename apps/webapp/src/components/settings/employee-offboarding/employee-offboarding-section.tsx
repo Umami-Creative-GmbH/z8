@@ -27,6 +27,8 @@ import {
 import { departureCutoffDate } from "@/lib/employee-lifecycle/cutoff-display";
 import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
 import { useEmployeeOffboarding, useRequestIdentity } from "@/lib/query/use-employee-offboarding";
+import { RecordOvertimePayoutDialog } from "../work-balance/record-overtime-payout-dialog";
+import { useRecordOvertimePayout } from "../work-balance/use-employee-work-balance";
 import { DepartureCard } from "./departure-card";
 import { DepartureForm } from "./departure-form";
 import { FollowUpList } from "./follow-up-list";
@@ -56,6 +58,8 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 	});
 	const [panel, setPanel] = useState<Panel>(null);
 	const [confirmCancel, setConfirmCancel] = useState(false);
+	const [recordingFinalPayout, setRecordingFinalPayout] = useState(false);
+	const recordFinalPayout = useRecordOvertimePayout(props.employeeId, offboarding.refetch);
 	const cancelIdentity = useRequestIdentity();
 	const view = offboarding.view;
 	const teamsQuery = useQuery({
@@ -87,6 +91,7 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 	};
 	// A panel for a different employee never mutates this one.
 	const targetEmployeeId = view.employeeId;
+	const finalPayout = view.workBalance?.finalPayout ?? null;
 
 	async function cancelDeparture() {
 		if (!view?.departure) return;
@@ -136,8 +141,24 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 				onOffboardNow={() => setPanel({ kind: "departure", mode: "immediate" })}
 				onCancelDeparture={() => setConfirmCancel(true)}
 				onRehire={() => setPanel({ kind: "rehire" })}
+				onRecordFinalPayout={() => setRecordingFinalPayout(true)}
 				followUpList={followUpList}
 			/>
+
+			{finalPayout && (
+				<RecordOvertimePayoutDialog
+					key={`${targetEmployeeId}:${finalPayout.defaultDay}:${finalPayout.defaultMinutes}`}
+					open={recordingFinalPayout}
+					onOpenChange={setRecordingFinalPayout}
+					today={finalPayout.latestDay}
+					initial={{ day: finalPayout.defaultDay, amountMinutes: finalPayout.defaultMinutes }}
+					title={t(
+						"settings.employees.offboarding.workBalance.recordFinalPayout",
+						"Record final overtime payout",
+					)}
+					onRecord={(input) => recordFinalPayout.mutateAsync(input)}
+				/>
+			)}
 
 			<ActionPanel open={panel !== null} onOpenChange={(open) => (open ? undefined : closePanel())}>
 				<ActionPanelContent>

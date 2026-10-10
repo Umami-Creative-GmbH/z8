@@ -24,3 +24,19 @@ export function requireBalanceAdjustmentWriter(): Promise<OrganizationActor> {
 			),
 	);
 }
+
+/**
+ * Whether the signed-in user may record balance adjustments in the given
+ * organization: the same rule as `requireBalanceAdjustmentWriter`, without
+ * throwing. Other screens use it to decide whether to offer a payout, such as
+ * the final payout in the offboarding review (#1002); recording re-checks.
+ */
+export async function mayWriteBalanceAdjustments(organizationId: string): Promise<boolean> {
+	try {
+		const writer = await requireBalanceAdjustmentWriter();
+		return writer.organizationId === organizationId;
+	} catch (error) {
+		if (error instanceof BalanceAdjustmentRefusal) return false;
+		throw error;
+	}
+}

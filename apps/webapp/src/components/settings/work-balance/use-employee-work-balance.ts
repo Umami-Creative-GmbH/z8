@@ -51,3 +51,23 @@ export function useEmployeeWorkBalance(employeeId: string) {
 
 	return { section, recordPayout, cancelAdjustment };
 }
+
+/**
+ * Records an overtime payout from outside the Work balance section, such as
+ * the final payout in the offboarding review (#1002). The section refreshes
+ * too; `onSettled` refreshes the caller's own view.
+ */
+export function useRecordOvertimePayout(employeeId: string, onSettled?: () => Promise<unknown>) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (input: Omit<RecordOvertimePayoutInput, "employeeId">) =>
+			unwrap(recordOvertimePayoutAction({ ...input, employeeId })),
+		onSettled: () =>
+			Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: [...EMPLOYEE_WORK_BALANCE_QUERY_KEY, employeeId],
+				}),
+				onSettled?.(),
+			]),
+	});
+}
