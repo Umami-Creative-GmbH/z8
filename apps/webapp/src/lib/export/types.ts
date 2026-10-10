@@ -13,7 +13,9 @@ export type ExportCategory =
 	| "vacation"
 	| "schedules"
 	| "shifts"
-	| "audit_logs";
+	| "audit_logs"
+	| "projects"
+	| "customers";
 
 export const EXPORT_CATEGORIES: ExportCategory[] = [
 	"employees",
@@ -26,6 +28,8 @@ export const EXPORT_CATEGORIES: ExportCategory[] = [
 	"schedules",
 	"shifts",
 	"audit_logs",
+	"projects",
+	"customers",
 ];
 
 export const CATEGORY_LABELS: Record<ExportCategory, string> = {
@@ -39,4 +43,6 @@ export const CATEGORY_LABELS: Record<ExportCategory, string> = {
 	schedules: "Work Schedules",
 	shifts: "Shifts",
 	audit_logs: "Audit Logs",
+	projects: "Projects",
+	customers: "Customers",
 };

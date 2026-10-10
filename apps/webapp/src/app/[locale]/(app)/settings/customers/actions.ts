@@ -12,6 +12,12 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import {
+	keepCustomFieldRefusal,
+	saveFormCustomFieldValues,
+} from "@/lib/organization/custom-fields/form-values";
+import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
+import {
 	ensureSettingsActorCanAccessCustomerTarget,
 	ensureSettingsActorCanAccessProjectTarget,
 	getManagedCustomerIdsForSettingsActor,
@@ -35,6 +41,8 @@ export interface CustomerData {
 	createdBy: string;
 	updatedAt: Date;
 	updatedBy: string | null;
+	/** A required custom field the viewer sees has no value (#818). */
+	missingRequiredCustomFields?: boolean;
 }
 
 export interface CreateCustomerInput {
@@ -47,6 +55,8 @@ export interface CreateCustomerInput {
 	contactPerson?: string;
 	phone?: string;
 	website?: string;
+	/** The dialog's custom field values (#818); required fields are enforced when present. */
+	customFieldValues?: CustomFieldValuesInput;
 }
 
 export interface UpdateCustomerInput {
@@ -57,6 +67,8 @@ export interface UpdateCustomerInput {
 	contactPerson?: string | null;
 	phone?: string | null;
 	website?: string | null;
+	/** The dialog's custom field values (#818); required fields are enforced when present. */
+	customFieldValues?: CustomFieldValuesInput;
 }
 
 /**
@@ -89,12 +101,27 @@ export async function getCustomers(
 					});
 				});
 
+				const visibleCustomers = managedCustomerIds
+					? customers.filter((customerRecord) => managedCustomerIds.has(customerRecord.id))
+					: customers;
+				const missingRequired = yield* dbService.query(
+					"customFields.customersMissingRequired",
+					() =>
+						findRecordsMissingRequiredValues(dbService.db, {
+							organizationId,
+							entity: "customer",
+							recordIds: visibleCustomers.map((customerRecord) => customerRecord.id),
+							viewer: { kind: "actor", userId: actor.session.user.id },
+						}),
+				);
+
 				span.setStatus({ code: SpanStatusCode.OK });
-				return managedCustomerIds
-					? (customers.filter((customerRecord) =>
-							managedCustomerIds.has(customerRecord.id),
-						) as CustomerData[])
-					: (customers as CustomerData[]);
+				return visibleCustomers.map(
+					(customerRecord): CustomerData => ({
+						...(customerRecord as CustomerData),
+						missingRequiredCustomFields: missingRequired.has(customerRecord.id),
+					}),
+				);
 			}).pipe(
 				Effect.catch((error) =>
 					Effect.gen(function* () {
@@ -203,35 +230,45 @@ export async function createCustomer(
 					);
 				}
 
-				const created = yield* dbService.query("customer.create", async () => {
-					return await db.transaction(async (tx) => {
-						const [newCustomer] = await tx
-							.insert(customer)
-							.values({
+				const created = yield* dbService
+					.query("customer.create", async () => {
+						return await db.transaction(async (tx) => {
+							const [newCustomer] = await tx
+								.insert(customer)
+								.values({
+									organizationId: input.organizationId,
+									name: input.name,
+									address: input.address || null,
+									vatId: input.vatId || null,
+									email: input.email || null,
+									contactPerson: input.contactPerson || null,
+									phone: input.phone || null,
+									website: input.website || null,
+									isActive: true,
+									createdBy: session.user.id,
+									updatedAt: new Date(),
+								})
+								.returning();
+
+							if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
+								await tx
+									.update(project)
+									.set({ customerId: newCustomer.id, updatedBy: session.user.id })
+									.where(eq(project.id, scopedProjectId));
+							}
+
+							await saveFormCustomFieldValues(tx, {
 								organizationId: input.organizationId,
-								name: input.name,
-								address: input.address || null,
-								vatId: input.vatId || null,
-								email: input.email || null,
-								contactPerson: input.contactPerson || null,
-								phone: input.phone || null,
-								website: input.website || null,
-								isActive: true,
-								createdBy: session.user.id,
-								updatedAt: new Date(),
-							})
-							.returning();
+								actorUserId: session.user.id,
+								entity: "customer",
+								recordId: newCustomer.id,
+								values: input.customFieldValues,
+							});
 
-						if (scopedProjectId && scopedProjectOrganizationId === input.organizationId) {
-							await tx
-								.update(project)
-								.set({ customerId: newCustomer.id, updatedBy: session.user.id })
-								.where(eq(project.id, scopedProjectId));
-						}
-
-						return newCustomer;
-					});
-				});
+							return newCustomer;
+						});
+					})
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -338,6 +375,7 @@ export async function updateCustomer(
 				}
 
 				// Build update object
+				const { customFieldValues: _customFieldValues, ...customerChanges } = input;
 				const updateData: Partial<typeof customer.$inferInsert> = {
 					updatedBy: session.user.id,
 				};
@@ -350,10 +388,29 @@ export async function updateCustomer(
 				if (input.phone !== undefined) updateData.phone = input.phone;
 				if (input.website !== undefined) updateData.website = input.website;
 
-				// Update the customer
-				yield* dbService.query("customer.update", async () => {
-					await db.update(customer).set(updateData).where(eq(customer.id, customerId));
-				});
+				// Update the customer, with the dialog's custom field values (#818) in the same transaction.
+				yield* dbService
+					.query("customer.update", async () => {
+						await dbService.db.transaction(async (tx) => {
+							await tx
+								.update(customer)
+								.set(updateData)
+								.where(
+									and(
+										eq(customer.id, customerId),
+										eq(customer.organizationId, existingCustomer.organizationId),
+									),
+								);
+							await saveFormCustomFieldValues(tx, {
+								organizationId: existingCustomer.organizationId,
+								actorUserId: session.user.id,
+								entity: "customer",
+								recordId: customerId,
+								values: input.customFieldValues,
+							});
+						});
+					})
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -362,7 +419,7 @@ export async function updateCustomer(
 					targetId: customerId,
 					targetType: "customer",
 					organizationId: existingCustomer.organizationId,
-					changes: input as Record<string, unknown>,
+					changes: customerChanges as Record<string, unknown>,
 					metadata: { previousName: existingCustomer.name },
 					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import {
 	type DatevConfigResult,
+	type PayrollIdentifierFieldOption,
 	saveDatevConfigAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
@@ -38,12 +39,20 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { PersonnelNumberType } from "@/lib/payroll-export/personnel-identifier";
 import type { DatevLohnConfig } from "@/lib/payroll-export/types";
+import {
+	customFieldIdentifierItems,
+	identifierFromSelectValue,
+	identifierSelectValue,
+} from "./payroll-identifier-options";
 
 interface DatevConfigFormProps {
 	organizationId: string;
 	initialConfig?: DatevConfigResult | null;
 	onConfigSaved?: () => void;
+	/** Employee custom fields that can be the personnel number (#821). */
+	identifierFields?: readonly PayrollIdentifierFieldOption[];
 }
 
 const mandantennummerSchema = z
@@ -60,6 +69,7 @@ export function DatevConfigForm({
 	organizationId,
 	initialConfig,
 	onConfigSaved,
+	identifierFields = [],
 }: DatevConfigFormProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -277,12 +287,17 @@ export function DatevConfigForm({
 									</TooltipProvider>
 								</div>
 								<Select
-									value={field.state.value}
-									onValueChange={(v) =>
-										field.handleChange(v as "employeeNumber" | "employeeId")
-									}
+									value={identifierSelectValue(
+										field.state.value,
+										formValues.personnelNumberCustomFieldId,
+									)}
+									onValueChange={(value) => {
+										const next = identifierFromSelectValue(value);
+										form.setFieldValue("personnelNumberCustomFieldId", next.customFieldId);
+										field.handleChange(next.choice as PersonnelNumberType);
+									}}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="personnelNumberType">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -298,6 +313,7 @@ export function DatevConfigForm({
 												"Internal Employee ID",
 											)}
 										</SelectItem>
+										{customFieldIdentifierItems(t, identifierFields, formValues.personnelNumberCustomFieldId)}
 									</SelectContent>
 								</Select>
 							</div>

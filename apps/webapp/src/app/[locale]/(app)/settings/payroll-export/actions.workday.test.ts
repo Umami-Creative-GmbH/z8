@@ -57,6 +57,12 @@ vi.mock("@/db/schema", () => ({
 	employee: {},
 }));
 
+// The identifier field store (#821) has its own PostgreSQL suite.
+vi.mock("@/lib/payroll-export/personnel-identifier-store", () => ({
+	listPayrollIdentifierFields: vi.fn(async () => []),
+	savePayrollExportConfig: vi.fn(),
+}));
+
 vi.mock("@/lib/auth-helpers", () => ({
 	isOrgAdminCasl: mockState.isOrgAdminCasl,
 }));

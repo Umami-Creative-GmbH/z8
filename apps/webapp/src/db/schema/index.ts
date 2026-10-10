@@ -37,6 +37,8 @@ export * from "./cost-center";
 // Coverage targets (minimum staffing requirements)
 export * from "./coverage";
 export * from "./cron-job";
+// Custom fields on employees, projects and customers (#769)
+export * from "./custom-field";
 // Custom roles (configurable permissions)
 export * from "./custom-role";
 export * from "./customer";

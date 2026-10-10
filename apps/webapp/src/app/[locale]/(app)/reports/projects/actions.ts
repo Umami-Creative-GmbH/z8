@@ -29,6 +29,7 @@ import {
 	sumVisibleBillableFigures,
 } from "@/lib/reports/project-billable-report";
 import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
+import { readProjectReportCustomFields } from "@/lib/reports/project-report-custom-fields";
 import {
 	canViewProjectReport,
 	canViewProjectReports,
@@ -378,6 +379,16 @@ export async function getProjectDetailedReport(
 
 				// Completed work by the employee-local day of its start (#794, #902).
 				const range = reportDayRangeFromDates(startDate, endDate);
+				// Custom fields the reader's base role sees, as of the period's last day (#820).
+				const customFields = yield* dbService.query("getProjectReportCustomFields", () =>
+					readProjectReportCustomFields(dbService.db, {
+						organizationId,
+						readerUserId: authContext.user.id,
+						projectId,
+						customerId: projectData.customer?.id ?? null,
+						asOf: range.toDay,
+					}),
+				);
 				const work = yield* dbService.query("getWorkPeriods", () =>
 					loadReportedProjectWork(dbService.db, organizationId, {
 						projectIds: [projectId],
@@ -451,7 +462,13 @@ export async function getProjectDetailedReport(
 				// Calculate summary
 				const totalMinutes = work.reduce((sum, item) => sum + item.durationMinutes, 0);
 				const totalHours = totalMinutes / 60;
-				const info = projectInfo(projectData);
+				const info: ProjectInfo = {
+					...projectInfo(projectData),
+					customer: projectData.customer
+						? { ...projectData.customer, customFields: customFields.customer ?? [] }
+						: null,
+					customFields: customFields.project,
+				};
 				const budgetHours = info.budgetHours;
 				const percentBudgetUsed = budgetHours ? (totalHours / budgetHours) * 100 : null;
 				const remainingBudgetHours = budgetHours ? budgetHours - totalHours : null;

@@ -105,6 +105,48 @@ export function toCSV(data: Record<string, unknown>[], columns?: string[]): stri
 	return [headerRow, ...dataRows].join("\n");
 }
 
+/** A column of a CSV table dataset: the row key it reads and the header it shows. */
+export interface CsvTableColumn {
+	key: string;
+	header: string;
+}
+
+/**
+ * A dataset that brings its own columns (#820: projects and customers, whose
+ * custom field columns depend on the organization and the requester).
+ *
+ * Unlike `toCSV`, a table never guesses dates from column names: a `Date`
+ * value is written as an ISO instant, everything else as it is. So a custom
+ * field named "Start date" keeps its ISO calendar date ("2024-02-29"), and a
+ * text such as a VAT ID "2024" is never read as a year.
+ */
+export interface CsvTable {
+	format: "csv-table";
+	columns: CsvTableColumn[];
+	rows: Record<string, unknown>[];
+}
+
+export function isCsvTable(data: unknown): data is CsvTable {
+	return (
+		typeof data === "object" &&
+		data !== null &&
+		(data as { format?: unknown }).format === "csv-table"
+	);
+}
+
+/** A CSV table with its header row, also when it has no rows. */
+export function csvTableToCSV(table: CsvTable): string {
+	const cell = (value: unknown) => {
+		if (value instanceof Date) return escapeCSV(value.toISOString());
+		if (typeof value === "object" && value !== null) return escapeCSV(JSON.stringify(value));
+		return escapeCSV(value);
+	};
+	return [
+		table.columns.map((column) => escapeCSV(column.header)).join(","),
+		...table.rows.map((row) => table.columns.map((column) => cell(row[column.key])).join(",")),
+	].join("\n");
+}
+
 /**
  * Column definitions for different export types
  */
@@ -207,5 +249,13 @@ export function timeEntryCsvColumns(rows: readonly Record<string, unknown>[]): s
  * Check if a category should be exported as CSV (large volume data)
  */
 export function isCSVCategory(category: string): boolean {
-	return ["time_entries", "work_periods", "absences", "shifts", "audit_logs"].includes(category);
+	return [
+		"time_entries",
+		"work_periods",
+		"absences",
+		"shifts",
+		"audit_logs",
+		"projects",
+		"customers",
+	].includes(category);
 }

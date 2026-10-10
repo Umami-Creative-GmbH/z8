@@ -69,6 +69,10 @@ export function StepReport({ form, payrollConfigs }: StepReportProps) {
 		},
 		{ id: "absences", label: t("settings.scheduledExports.dataCategories.absences", "Absences") },
 		{ id: "projects", label: t("settings.scheduledExports.dataCategories.projects", "Projects") },
+		{
+			id: "customers",
+			label: t("settings.scheduledExports.dataCategories.customers", "Customers"),
+		},
 	];
 
 	return (

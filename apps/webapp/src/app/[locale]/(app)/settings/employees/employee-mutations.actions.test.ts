@@ -62,6 +62,12 @@ vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	},
 }));
 
+// Custom field values (#818) are covered by the PostgreSQL suites.
+vi.mock("@/lib/organization/custom-fields/form-values", () => ({
+	keepCustomFieldRefusal: (effect: unknown) => effect,
+	saveFormCustomFieldValues: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
 	requestEmployeeWorkBalanceFullRebuild:

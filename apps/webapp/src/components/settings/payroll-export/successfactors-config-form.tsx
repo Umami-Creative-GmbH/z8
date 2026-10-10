@@ -7,11 +7,13 @@ import {
 	IconPlugConnected,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
+	type PayrollIdentifierFieldOption,
 	type SuccessFactorsConfigResult,
 	saveSuccessFactorsConfigAction,
 	testSuccessFactorsConnectionAction,
@@ -43,11 +45,18 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { SuccessFactorsConfig } from "@/lib/payroll-export/types";
+import {
+	customFieldIdentifierItems,
+	identifierFromSelectValue,
+	identifierSelectValue,
+} from "./payroll-identifier-options";
 
 interface SuccessFactorsConfigFormProps {
 	organizationId: string;
 	initialConfig?: SuccessFactorsConfigResult | null;
 	onConfigSaved?: () => void;
+	/** Employee custom fields that can be the match key (#821). */
+	identifierFields?: readonly PayrollIdentifierFieldOption[];
 }
 
 const DEFAULT_CONFIG: SuccessFactorsConfig = {
@@ -69,6 +78,7 @@ function SuccessFactorsSettingsView({
 	organizationId,
 	initialConfig,
 	onConfigSaved,
+	identifierFields = [],
 	t,
 }: SuccessFactorsConfigFormProps & { t: Translate }) {
 	const [isPending, startTransition] = useTransition();
@@ -100,6 +110,10 @@ function SuccessFactorsSettingsView({
 					);
 			}),
 	});
+	const identifierFieldId = useStore(
+		form.store,
+		(state) => state.values.employeeMatchCustomFieldId,
+	);
 	const testConnection = async () => {
 		setIsTestingConnection(true);
 		const result = await testSuccessFactorsConnectionAction({
@@ -200,14 +214,16 @@ function SuccessFactorsSettingsView({
 									)}
 								/>
 								<Select
-									value={field.state.value}
-									onValueChange={(value) =>
+									value={identifierSelectValue(field.state.value, identifierFieldId)}
+									onValueChange={(value) => {
+										const next = identifierFromSelectValue(value);
+										form.setFieldValue("employeeMatchCustomFieldId", next.customFieldId);
 										field.handleChange(
-											value as "userId" | "personIdExternal" | "email",
-										)
-									}
+											next.choice as SuccessFactorsConfig["employeeMatchStrategy"],
+										);
+									}}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="employeeMatchStrategy">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -229,6 +245,7 @@ function SuccessFactorsSettingsView({
 												"Email Address",
 											)}
 										</SelectItem>
+										{customFieldIdentifierItems(t, identifierFields, identifierFieldId)}
 									</SelectContent>
 								</Select>
 							</div>

@@ -43,6 +43,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import { CustomFieldDraftsSection } from "./custom-fields/custom-field-values-section";
+import { useCustomFieldDrafts } from "./custom-fields/use-custom-field-drafts";
 import { ProjectColorPicker } from "./project-color-picker";
 import {
 	ProjectTemplatePreview,
@@ -93,6 +95,15 @@ function useProjectDialogController({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!project;
 	const billableTimeEnabled = useBillableTimeEnabled();
+	// The "Custom fields" section (#818); saved with the project.
+	const customFields = useCustomFieldDrafts({
+		entity: "project",
+		recordId: project?.id ?? null,
+		enabled: open,
+		onOpenChange,
+		onSaved: onSuccess,
+	});
+	const succeed = customFields.handleSaved;
 
 	const { data: customersData } = useQuery({
 		queryKey: queryKeys.customers.selection(organizationId),
@@ -144,6 +155,7 @@ function useProjectDialogController({
 			const billableDefault = billableTimeEnabled
 				? { billableDefault: customerId ? value.billableDefault : false }
 				: {};
+			const customFieldValues = customFields.values();
 
 			if (isEditing && project) {
 				const result = await updateProject(project.id, {
@@ -155,6 +167,7 @@ function useProjectDialogController({
 					deadline: deadline ?? null,
 					customerId: customerId ?? null,
 					...billableDefault,
+					customFieldValues,
 				}).catch(() => null);
 
 				if (!result) {
@@ -167,7 +180,7 @@ function useProjectDialogController({
 
 				if (result.success) {
 					toast.success(t("settings.projects.updated", "Project updated"));
-					onSuccess();
+					succeed();
 				} else {
 					toast.error(
 						result.error ||
@@ -186,6 +199,7 @@ function useProjectDialogController({
 					status: value.status,
 					customerId: customerId ?? null,
 					...billableDefault,
+					customFieldValues,
 				}).catch(() => null);
 
 				if (result?.success) {
@@ -193,7 +207,7 @@ function useProjectDialogController({
 					if (result.data.skipped.length > 0) {
 						toast.warning(skippedMembersMessage(result.data.skipped));
 					}
-					onSuccess();
+					succeed();
 				} else {
 					toast.error(
 						result?.error ||
@@ -214,6 +228,7 @@ function useProjectDialogController({
 				deadline,
 				customerId,
 				...billableDefault,
+				customFieldValues,
 			}).catch(() => null);
 
 			if (!result) {
@@ -226,7 +241,7 @@ function useProjectDialogController({
 
 			if (result.success) {
 				toast.success(t("settings.projects.created", "Project created"));
-				onSuccess();
+				succeed();
 			} else {
 				toast.error(
 					result.error ||
@@ -251,10 +266,12 @@ function useProjectDialogController({
 	return {
 		billableTimeEnabled,
 		customers,
+		customFields,
 		form,
 		isEditing,
 		isSubmitting,
-		onOpenChange,
+		// Closing the dialog drops unsaved custom field drafts.
+		onOpenChange: customFields.handleOpenChange,
 		t,
 		templateChoices,
 		templateId,
@@ -268,7 +285,7 @@ export function ProjectDialog(props: ProjectDialogProps) {
 	const controller = useProjectDialogController(props);
 
 	return (
-		<ActionPanel open={props.open} onOpenChange={props.onOpenChange}>
+		<ActionPanel open={props.open} onOpenChange={controller.onOpenChange}>
 			<ActionPanelContent>
 				<ProjectDialogHeader controller={controller} />
 				<ProjectDialogForm controller={controller} />
@@ -314,6 +331,7 @@ function ProjectDialogForm({
 	const {
 		billableTimeEnabled,
 		customers,
+		customFields,
 		form,
 		isEditing,
 		isSubmitting,
@@ -582,6 +600,8 @@ function ProjectDialogForm({
 						</form.Field>
 					</>
 				)}
+
+				<CustomFieldDraftsSection drafts={customFields} disabled={isSubmitting} />
 			</ActionPanelBody>
 
 			<ActionPanelFooter>

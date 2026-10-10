@@ -20,6 +20,7 @@ import {
 	IconDatabaseImport,
 	IconDroplet,
 	IconFileText,
+	IconForms,
 	IconGavel,
 	IconGitBranch,
 	IconHistory,
@@ -86,4 +87,5 @@ export const SETTINGS_ICON_MAP: Record<
 	"brand-telegram": IconBrandTelegram,
 	"database-import": IconDatabaseImport,
 	receipt: IconReceipt,
+	forms: IconForms,
 };

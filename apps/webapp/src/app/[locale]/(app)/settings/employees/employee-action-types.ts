@@ -27,6 +27,8 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
 	membership: EmployeeMembershipSummary | null;
+	/** A required custom field the viewer sees has no value (#818); set by the directory list. */
+	missingRequiredCustomFields?: boolean;
 };
 
 export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraft.$inferSelect & {
