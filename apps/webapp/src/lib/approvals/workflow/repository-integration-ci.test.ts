@@ -20,6 +20,7 @@ describe("approval workflow repository integration CI contract", () => {
 		// `apps/webapp/**` covers vitest.config.ts and the shared suite runner.
 		expect(workflow).toMatch(`on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     branches:
       - main
     paths:

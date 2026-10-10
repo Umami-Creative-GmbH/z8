@@ -2,6 +2,7 @@ name: Tests
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     branches:
       - main
     paths:
@@ -36,6 +37,7 @@ concurrency:
 
 jobs:
   changes:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     name: Select test groups
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -84,13 +86,13 @@ jobs:
 
   debounce:
     needs: changes
-    if: needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true'
+    if: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && (needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true') }}
     uses: ./.github/workflows/ci-debounce.yml
 
   unit-tests:
     name: Tests (shard ${{ matrix.shard }})
     needs: [changes, debounce]
-    if: needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true'
+    if: ${{ (github.event_name != 'pull_request' || !github.event.pull_request.draft) && (needs.changes.outputs.webapp == 'true' || needs.changes.outputs.workspace == 'true' || needs.changes.outputs.docker == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -162,6 +164,7 @@ jobs:
     name: PostgreSQL integration tests
     needs: [changes, unit-tests]
     if: >-
+      (github.event_name != 'pull_request' || !github.event.pull_request.draft) &&
       !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.webapp == 'true' &&
       (needs.unit-tests.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.diagnose_integration))
     runs-on: ubuntu-latest
@@ -226,7 +229,7 @@ jobs:
 
   tests:
     name: Tests
-    if: always()
+    if: ${{ always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft) }}
     needs: [changes, debounce, unit-tests, integration-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 2

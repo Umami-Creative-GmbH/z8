@@ -1,6 +1,7 @@
 name: Desktop Windows
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     branches: [dev, main]
     paths:
       - 'apps/desktop/**'
@@ -18,8 +19,10 @@ concurrency:
   cancel-in-progress: true
 jobs:
   debounce:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     uses: ./.github/workflows/ci-debounce.yml
   windows:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     needs: debounce
     runs-on: windows-latest
     timeout-minutes: 45

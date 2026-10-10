@@ -2,6 +2,7 @@ name: Check Package Lock Sync
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     # The generated target manifests only depend on package manifests, the lockfile, and the
     # import statements of webapp code files (see docker/scripts/prepare-target-runtime.mjs).
     # Tests are never reachable from a target entry point.
@@ -26,11 +27,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: check-package-lock-sync-${{ github.ref }}
+  group: check-package-lock-sync-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   check-package-lock-sync:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     name: Check Package Lock Sync
     runs-on: ubuntu-latest
     timeout-minutes: 20
