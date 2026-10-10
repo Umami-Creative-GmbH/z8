@@ -76,6 +76,9 @@ export async function boundDecisionNotice(
 		organizationId: recipient.organizationId,
 		reference,
 	});
+	if (result.status === "not_covering") {
+		return { ...noLongerCoveringText(t, result.approverName), reviewLabel, reviewUrl };
+	}
 	if (result.status !== "decided") {
 		return {
 			title: t("bot.approval.reviewRequiredTitle", "Review required"),
@@ -104,6 +107,29 @@ export async function boundDecisionNotice(
 			: text,
 		reviewLabel,
 		reviewUrl,
+	};
+}
+
+/**
+ * A deputy card (#1017) whose recipient no longer covers for the absent
+ * approver: it decides nothing, from a press or after its retirement.
+ */
+function noLongerCoveringText(
+	t: BotTranslateFn,
+	approverName: string,
+): { title: string; text: string } {
+	const params = { approver: approverName };
+	return {
+		title: t(
+			"bot.approval.status.noLongerCoveringTitle",
+			"No longer covering for {approver}",
+			params,
+		),
+		text: t(
+			"bot.approval.status.noLongerCovering",
+			"You are no longer covering for {approver}, so this card can't decide anything. No decision was made here. Review the request in Z8 if you still have access.",
+			params,
+		),
 	};
 }
 
@@ -146,6 +172,11 @@ export interface ApprovalStatusNoticeInput {
 	 * or reassignment, #300). Its outcome is not theirs to learn from the card.
 	 */
 	reassigned?: boolean;
+	/**
+	 * A deputy card (#1017) whose recipient no longer covers: the absent
+	 * approver's display name. A committed outcome still wins (decision 11).
+	 */
+	noLongerCoveringFor?: string;
 }
 
 /**
@@ -184,6 +215,9 @@ export async function approvalStatusNotice(
 			reviewLabel,
 			reviewUrl,
 		};
+	}
+	if (display && status.noLongerCoveringFor !== undefined) {
+		return { ...noLongerCoveringText(t, status.noLongerCoveringFor), reviewLabel, reviewUrl };
 	}
 	if (display && status.reassigned) {
 		return {

@@ -11,6 +11,7 @@ import {
 } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { kickApprovalDelivery } from "../delivery/kick";
+import { isDeputyCardAssignmentPending } from "../deputy/deputy-decision";
 import { TimeCorrectionApprovalAdapterError } from "../domain-adapters/time-correction.adapter";
 import { OrdinaryWorkPeriodApprovalAdapterError } from "../domain-adapters/work-period.adapter";
 import { ApprovalAssignmentReassignedError } from "../escalation/decision-authority";
@@ -101,7 +102,10 @@ type BoundTimeDecisionInput = {
  * by the engine first) may decide; a card never reaches management or
  * eligible-manager authority.
  */
-function boundTimeRuntime(database: ApprovalWorkflowDatabase) {
+function boundTimeRuntime(
+	database: ApprovalWorkflowDatabase,
+	options: { deputyCard?: { actingForEmployeeId?: string; assignmentId: string } } = {},
+) {
 	return createProductionApprovalWorkflowRuntime({
 		db: database,
 		adapters: {
@@ -123,7 +127,14 @@ function boundTimeRuntime(database: ApprovalWorkflowDatabase) {
 				finalizeTerminal: finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 			},
 		},
-		canManageApproval: async () => {
+		canManageApproval: async ({ workflow, command }) => {
+			// A deputy card (#1017) goes on to the engine's covering-deputy grant.
+			if (
+				options.deputyCard &&
+				isDeputyCardAssignmentPending(options.deputyCard, workflow, command)
+			) {
+				return false;
+			}
 			throw new BoundAssignmentNotCurrentError();
 		},
 		clock: systemClock,
@@ -232,10 +243,12 @@ export async function decideBoundTimeInvocation(
 		return { status: "not_found" };
 	}
 	const reason = input.action === "reject" ? (input.reason ?? "") : null;
+	const createRuntime = (runtimeDatabase: ApprovalWorkflowDatabase) =>
+		boundTimeRuntime(runtimeDatabase, { deputyCard: binding });
 	try {
 		if (workflow.workflowType === "time_correction") {
 			const execution = await executeTimeCorrectionDecisionInTransaction({
-				createRuntime: boundTimeRuntime,
+				createRuntime,
 				database: database as ApprovalDbService["db"],
 				bound,
 				organizationId: input.organizationId,
@@ -269,7 +282,7 @@ export async function decideBoundTimeInvocation(
 			execute: () =>
 				executeOrdinaryWorkPeriodDecisionInTransaction({
 					dbService,
-					createRuntime: boundTimeRuntime,
+					createRuntime,
 					bound,
 					organizationId: input.organizationId,
 					approvalRequestId: binding.assignmentId,

@@ -1347,6 +1347,13 @@
       "breakpoints": true
     },
     {
+      "idx": 192,
+      "version": "7",
+      "when": 1800892800000,
+      "tag": "0192_approval_deputy_cards",
+      "breakpoints": true
+    },
+    {
       "idx": 193,
       "version": "7",
       "when": 1800979200000,

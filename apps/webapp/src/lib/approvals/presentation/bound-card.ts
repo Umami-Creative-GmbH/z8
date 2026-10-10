@@ -418,6 +418,8 @@ export async function prepareBoundLegacyAbsenceCard(
 		display: DisplayContext;
 		t: BotTranslateFn;
 		fits?: (draft: ApprovalCardDraft) => boolean;
+		/** A deputy card (#1017): the absent approver whose request it is. */
+		actingForEmployeeId?: string;
 	},
 ): Promise<ApprovalActionableCard | null> {
 	const { organizationId } = input;
@@ -430,7 +432,7 @@ export async function prepareBoundLegacyAbsenceCard(
 				eq(approvalRequest.id, input.approvalRequestId),
 				eq(approvalRequest.organizationId, organizationId),
 				eq(approvalRequest.entityType, "absence_entry"),
-				eq(approvalRequest.approverId, input.recipientEmployeeId),
+				eq(approvalRequest.approverId, input.actingForEmployeeId ?? input.recipientEmployeeId),
 				eq(approvalRequest.status, "pending"),
 			),
 		)
@@ -493,6 +495,7 @@ export async function prepareBoundLegacyAbsenceCard(
 		legacyApprovalRequestId: input.approvalRequestId,
 		submittedRevisionId: revision.id,
 		revision: cycle,
+		...(input.actingForEmployeeId ? { actingForEmployeeId: input.actingForEmployeeId } : {}),
 	});
 	return { ...draft, bindingId };
 }

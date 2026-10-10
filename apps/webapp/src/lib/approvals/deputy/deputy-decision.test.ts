@@ -6,6 +6,7 @@ import {
 	decideDeputyRight,
 	deputyActorLabel,
 	deputyDecisionRefusalError,
+	isDeputyCardAssignmentPending,
 	isDeputyDecisionRefusal,
 } from "./deputy-decision";
 
@@ -152,5 +153,59 @@ describe("deputyActorLabel", () => {
 
 	it("is just the actor without acting for", () => {
 		expect(deputyActorLabel("Yara", null)).toBe("Yara");
+	});
+});
+
+describe("isDeputyCardAssignmentPending", () => {
+	const at = parseInstant("2026-06-04T10:00:00Z");
+	function snapshot(assignment: Record<string, unknown>) {
+		return {
+			stages: [
+				{
+					id: "s1",
+					sequence: 1,
+					status: "pending",
+					assignments: [
+						{
+							id: "a1",
+							stageId: "s1",
+							status: "pending",
+							approverEmployeeId: X,
+							resolvedAt: null,
+							resolvedBy: null,
+							assignedAt: at,
+							...assignment,
+						},
+					],
+				},
+			],
+		} as unknown as ApprovalWorkflowSnapshot;
+	}
+	const approve = { type: "approve" as const, stageId: "s1", assignmentId: "a1" };
+
+	it("holds while a deputy card's bound assignment is still pending with X", () => {
+		expect(
+			isDeputyCardAssignmentPending(
+				{ actingForEmployeeId: X, assignmentId: "a1" },
+				snapshot({}),
+				approve,
+			),
+		).toBe(true);
+	});
+
+	it("never holds for an ordinary card", () => {
+		expect(isDeputyCardAssignmentPending({ assignmentId: "a1" }, snapshot({}), approve)).toBe(
+			false,
+		);
+	});
+
+	it("no longer holds once the assignment was replaced or decided", () => {
+		const binding = { actingForEmployeeId: X, assignmentId: "a1" };
+		expect(isDeputyCardAssignmentPending(binding, snapshot({ status: "cancelled" }), approve)).toBe(
+			false,
+		);
+		expect(
+			isDeputyCardAssignmentPending(binding, snapshot({}), { ...approve, assignmentId: "a2" }),
+		).toBe(false);
 	});
 });

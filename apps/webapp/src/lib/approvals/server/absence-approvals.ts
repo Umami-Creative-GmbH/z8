@@ -56,7 +56,7 @@ import {
 import { addCalendarSyncJob } from "@/lib/queue";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { assertReviewBindingAuthority } from "../authority";
-import type { ActingFor } from "../deputy/deputy-decision";
+import { type ActingFor, isDeputyCardAssignmentPending } from "../deputy/deputy-decision";
 import {
 	asDeputyDecider,
 	coversCurrentApprover,
@@ -2103,8 +2103,10 @@ export async function decideBoundAbsenceInvocation(input: {
 		db: input.database,
 		query,
 		// Only the current assignee (checked by the engine first) may decide;
-		// a card never reaches management or eligible-manager authority.
-		canManageApproval: async () => {
+		// a card never reaches management or eligible-manager authority. A
+		// deputy card (#1017) goes on to the engine's covering-deputy grant.
+		canManageApproval: async ({ workflow, command }) => {
+			if (isDeputyCardAssignmentPending(binding, workflow, command)) return false;
 			throw new BoundAssignmentNotCurrentError();
 		},
 		onTerminalFinalized: (terminal) => {

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import type { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -69,6 +69,64 @@ export async function loadCover(
 /** Whether the deputy covers for this approver at the instant. */
 export async function isCovering(executor: CoveringExecutor, query: CoverQuery): Promise<boolean> {
 	return (await loadCover(executor, query)) !== null;
+}
+
+/** A cover seen from the absent approver's side: who covers for them. */
+export interface CoveringDeputy extends Cover {
+	/** The deputy Y (employee id). */
+	deputyId: string;
+}
+
+/**
+ * The reverse lookup, for deputy cards (#1017): every deputy covering for one
+ * of these approvers at the instant. Candidates come from the approvers'
+ * approved absences naming a deputy; each is then judged by the same rules as
+ * `loadCover`, so an inactive deputy, one without inbox access, or the switch
+ * being off yields nothing.
+ */
+export async function loadCoveringDeputies(
+	executor: CoveringExecutor,
+	query: { organizationId: string; approverIds: readonly string[]; at: Instant },
+): Promise<CoveringDeputy[]> {
+	if (query.approverIds.length === 0) return [];
+	const at = query.at.round({ smallestUnit: "millisecond", roundingMode: "trunc" });
+	const utcDay = at.toZonedDateTimeISO("UTC").toPlainDate();
+	const rows = await executor
+		.select({
+			approverId: absenceEntry.employeeId,
+			deputyId: absenceEntry.deputyEmployeeId,
+		})
+		.from(absenceEntry)
+		.where(
+			and(
+				eq(absenceEntry.organizationId, query.organizationId),
+				inArray(absenceEntry.employeeId, [...query.approverIds]),
+				isNotNull(absenceEntry.deputyEmployeeId),
+				eq(absenceEntry.status, "approved"),
+				lte(absenceEntry.startDate, utcDay.add({ days: 1 }).toString()),
+				gte(absenceEntry.endDate, utcDay.subtract({ days: 1 }).toString()),
+			),
+		)
+		.orderBy(absenceEntry.employeeId, absenceEntry.deputyEmployeeId);
+	const candidates = new Map<string, { approverId: string; deputyId: string }>();
+	for (const row of rows) {
+		if (!row.deputyId || row.deputyId === row.approverId) continue;
+		candidates.set(`${row.approverId}:${row.deputyId}`, {
+			approverId: row.approverId,
+			deputyId: row.deputyId,
+		});
+	}
+	const covering: CoveringDeputy[] = [];
+	for (const candidate of candidates.values()) {
+		const cover = await loadCover(executor, {
+			organizationId: query.organizationId,
+			approverId: candidate.approverId,
+			deputyId: candidate.deputyId,
+			at,
+		});
+		if (cover) covering.push({ ...cover, deputyId: candidate.deputyId });
+	}
+	return covering;
 }
 
 /** `loadCoveredApprovers` over the caller's `DatabaseService`. */
