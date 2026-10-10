@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { balanceAdjustment } from "@/db/schema";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
@@ -149,4 +149,41 @@ export async function readWorkBalanceAdjustments(
 		countFrom,
 		adjustmentMinutes: (openingBalance?.minutes ?? 0) + payoutMinutes,
 	};
+}
+
+/**
+ * The uncancelled overtime payouts of the given employees whose day lies from
+ * `fromDate` through `throughDate` (local dates, inclusive), by day: what the
+ * DATEV, Lexware and Sage payroll files carry (#1001). Opening balances are
+ * never exported. Minutes are signed as stored, so a payout is negative.
+ */
+export async function listOvertimePayouts(
+	client: BalanceAdjustmentReadClient,
+	input: {
+		organizationId: string;
+		employeeIds: readonly string[];
+		fromDate: string;
+		throughDate: string;
+	},
+): Promise<Array<{ id: string; employeeId: string; day: string; minutes: number }>> {
+	if (input.employeeIds.length === 0) return [];
+	return client
+		.select({
+			id: balanceAdjustment.id,
+			employeeId: balanceAdjustment.employeeId,
+			day: balanceAdjustment.day,
+			minutes: balanceAdjustment.minutes,
+		})
+		.from(balanceAdjustment)
+		.where(
+			and(
+				eq(balanceAdjustment.organizationId, input.organizationId),
+				inArray(balanceAdjustment.employeeId, [...input.employeeIds]),
+				eq(balanceAdjustment.kind, "overtime_payout"),
+				isNull(balanceAdjustment.cancelledAt),
+				gte(balanceAdjustment.day, input.fromDate),
+				lte(balanceAdjustment.day, input.throughDate),
+			),
+		)
+		.orderBy(asc(balanceAdjustment.day), asc(balanceAdjustment.recordedAt));
 }

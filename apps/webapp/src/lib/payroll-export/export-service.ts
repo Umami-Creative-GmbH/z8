@@ -41,6 +41,7 @@ import { successFactorsConnector } from "./connectors/successfactors-connector";
 import {
 	countWorkPeriods,
 	fetchAbsencesForExport,
+	fetchOvertimePayoutsForExport,
 	fetchWorkPeriodsForExport,
 	getPayrollExportConfig,
 	getWageTypeMappings,
@@ -51,6 +52,7 @@ import { successFactorsFormatter } from "./exporters/successfactors/successfacto
 import { workdayConnector } from "./exporters/workday/workday-connector";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
+import { carriesOvertimePayouts } from "./formatters/overtime-payouts";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
 import {
 	employeesWithoutIdentifier,
@@ -192,7 +194,7 @@ export async function createExportJob(params: {
 	const employeesWithOtherRows =
 		identifierFieldId === null
 			? []
-			: await employeesWithAbsencesOrExpenseLines({
+			: await employeesWithNonWorkRows({
 					organizationId: params.organizationId,
 					formatId: params.formatId,
 					filters: params.filters,
@@ -409,6 +411,10 @@ export async function processExportJob({
 		// BRANCH: File-based formatter (DATEV, etc.)
 		if (formatter) {
 			const formatId = job.config.formatId;
+			// Overtime payouts (#1001), read now like absences; the formatter maps them.
+			const overtimePayouts = carriesOvertimePayouts(formatId)
+				? await identify.rows(await fetchOvertimePayoutsForExport(job.organizationId, filters))
+				: [];
 			const payrollRun =
 				isExpensePayrollFormat(formatId) &&
 				(await exportIsPayrollRun(db, { organizationId: job.organizationId, formatId }));
@@ -423,6 +429,7 @@ export async function processExportJob({
 						[],
 						mappings,
 						job.config.config as Record<string, unknown>,
+						overtimePayouts,
 					),
 				);
 			}
@@ -460,6 +467,7 @@ export async function processExportJob({
 						expenseLines,
 						mappings,
 						job.config.config as Record<string, unknown>,
+						overtimePayouts,
 					),
 				);
 			});
@@ -519,6 +527,7 @@ async function writeFileExport(
 				fileSizeBytes: contentBuffer.length,
 				workPeriodCount: exportResult.metadata.workPeriodCount,
 				employeeCount: exportResult.metadata.employeeCount,
+				unmappedOvertimePayouts: exportResult.metadata.unmappedOvertimePayouts,
 				completedAt: new Date(),
 				expiresAt: DateTime.now().plus({ days: 30 }).toJSDate(),
 			})
@@ -540,6 +549,7 @@ async function writeFileExport(
 			fileSizeBytes: contentBuffer.length,
 			workPeriodCount: exportResult.metadata.workPeriodCount,
 			employeeCount: exportResult.metadata.employeeCount,
+			unmappedOvertimePayouts: exportResult.metadata.unmappedOvertimePayouts,
 			completedAt: new Date(),
 		})
 		.where(
@@ -606,11 +616,12 @@ async function collectExportWorkInput(params: {
 }
 
 /**
- * The employees an export carries absences or expense lines for (#821): they
- * need an identifier value like employees with work. Absences are the ones the
- * export reads; expense lines those a payroll run of the format would include.
+ * The employees an export carries absences, overtime payouts (#1001) or expense
+ * lines for (#821): they need an identifier value like employees with work.
+ * Absences and payouts are the ones the export reads; expense lines those a
+ * payroll run of the format would include.
  */
-async function employeesWithAbsencesOrExpenseLines(input: {
+async function employeesWithNonWorkRows(input: {
 	organizationId: string;
 	formatId: string;
 	filters: PayrollExportFilters;
@@ -620,6 +631,10 @@ async function employeesWithAbsencesOrExpenseLines(input: {
 		canonicalReadiness: input.scopedCollection ? "absences" : "cutover",
 	});
 	const employeeIds = new Set(absences.map((absence) => absence.employeeId));
+	if (carriesOvertimePayouts(input.formatId)) {
+		const payouts = await fetchOvertimePayoutsForExport(input.organizationId, input.filters);
+		for (const payout of payouts) employeeIds.add(payout.employeeId);
+	}
 	if (
 		formatters.has(input.formatId) &&
 		(await exportIsPayrollRun(db, {
@@ -864,6 +879,7 @@ export async function getExportJobHistory(
 		errorMessage: job.errorMessage,
 		filters: job.filters,
 		payrollRunIncludedReports: included.get(job.id) ?? 0,
+		unmappedOvertimePayoutCount: job.unmappedOvertimePayouts.length,
 	}));
 }
 
