@@ -18,6 +18,7 @@ import type {
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
+import { wageTypeCodeFor } from "../wage-type-code";
 
 const logger = createLogger("LexwareLohnFormatter");
 
@@ -204,8 +205,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 
 			if (period.workCategoryId) {
 				const mapping = workCategoryMappings.get(period.workCategoryId);
-				// Prefer lexwareWageTypeCode, fall back to legacy wageTypeCode
-				const mappedCode = mapping?.lexwareWageTypeCode || mapping?.wageTypeCode;
+				const mappedCode = wageTypeCodeFor(mapping, "lexware");
 				if (mapping && mappedCode) {
 					wageTypeCode = mappedCode;
 				}
@@ -248,8 +248,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	): void {
 		for (const absence of absences) {
 			const mapping = absenceCategoryMappings.get(absence.absenceCategoryId);
-			// Prefer lexwareWageTypeCode, fall back to legacy wageTypeCode
-			const mappedCode = mapping?.lexwareWageTypeCode || mapping?.wageTypeCode;
+			const mappedCode = wageTypeCodeFor(mapping, "lexware");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
 			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);

@@ -19,6 +19,7 @@ import type {
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
+import { wageTypeCodeFor } from "../wage-type-code";
 
 const logger = createLogger("SageLohnFormatter");
 
@@ -193,22 +194,16 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			const dateStr = period.startTime.toISODate()!;
 			const hours = period.durationMinutes / 60;
 
-			// Determine wage type code (prefer Sage-specific, fall back to DATEV, then legacy)
+			// Determine wage type code (use Sage-specific column)
 			let wageTypeCode = DEFAULT_WAGE_TYPE_CODE;
 			let note = "";
 
 			if (period.workCategoryId) {
 				const mapping = workCategoryMappings.get(period.workCategoryId);
-				const mappedCode =
-					mapping?.sageWageTypeCode || mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+				const mappedCode = wageTypeCodeFor(mapping, "sage");
 				if (mapping && mappedCode) {
 					wageTypeCode = mappedCode;
-					note =
-						mapping.sageWageTypeName ||
-						mapping.datevWageTypeName ||
-						mapping.wageTypeName ||
-						period.workCategoryName ||
-						"";
+					note = mapping.sageWageTypeName || period.workCategoryName || "";
 				} else {
 					note = period.workCategoryName || "";
 				}
@@ -252,19 +247,12 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	): void {
 		for (const absence of absences) {
 			const mapping = absenceCategoryMappings.get(absence.absenceCategoryId);
-			// Prefer Sage-specific, fall back to DATEV, then legacy
-			const mappedCode =
-				mapping?.sageWageTypeCode || mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+			const mappedCode = wageTypeCodeFor(mapping, "sage");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
 			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
 			const wageTypeCode = mappedCode;
-			const note =
-				mapping.sageWageTypeName ||
-				mapping.datevWageTypeName ||
-				mapping.wageTypeName ||
-				absence.absenceCategoryName ||
-				"";
+			const note = mapping.sageWageTypeName || absence.absenceCategoryName || "";
 
 			// Calculate days
 			const startDate = DateTime.fromISO(absence.startDate).startOf("day");

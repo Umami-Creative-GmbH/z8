@@ -100,14 +100,17 @@ export const payrollExportConfig = pgTable(
  * Wage type mappings (normalized)
  * Maps work categories and absence types to payroll-specific codes
  * Example: "Working time" → DATEV code 1000, "Vacation" → 1600
+ *
+ * One mapping set per organization (#816): each row carries a code per format,
+ * and every format's export reads only its own column.
  */
 export const payrollWageTypeMapping = pgTable(
 	"payroll_wage_type_mapping",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		configId: uuid("config_id")
+		organizationId: text("organization_id")
 			.notNull()
-			.references(() => payrollExportConfig.id, { onDelete: "cascade" }),
+			.references(() => organization.id, { onDelete: "cascade" }),
 
 		// Source: either a work category OR an absence category OR a special type
 		workCategoryId: uuid("work_category_id").references(() => workCategory.id, {
@@ -148,20 +151,20 @@ export const payrollWageTypeMapping = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		index("payrollWageTypeMapping_configId_idx").on(table.configId),
+		index("payrollWageTypeMapping_organizationId_idx").on(table.organizationId),
 		index("payrollWageTypeMapping_workCategoryId_idx").on(table.workCategoryId),
 		index("payrollWageTypeMapping_absenceCategoryId_idx").on(table.absenceCategoryId),
-		// Unique constraint: one mapping per work category per config
-		uniqueIndex("payrollWageTypeMapping_config_workCategory_idx")
-			.on(table.configId, table.workCategoryId)
+		// Unique constraint: one mapping per work category per organization
+		uniqueIndex("payrollWageTypeMapping_org_workCategory_idx")
+			.on(table.organizationId, table.workCategoryId)
 			.where(sql`work_category_id IS NOT NULL AND is_active = true`),
-		// Unique constraint: one mapping per absence category per config
-		uniqueIndex("payrollWageTypeMapping_config_absenceCategory_idx")
-			.on(table.configId, table.absenceCategoryId)
+		// Unique constraint: one mapping per absence category per organization
+		uniqueIndex("payrollWageTypeMapping_org_absenceCategory_idx")
+			.on(table.organizationId, table.absenceCategoryId)
 			.where(sql`absence_category_id IS NOT NULL AND is_active = true`),
-		// Unique constraint: one mapping per special category per config
-		uniqueIndex("payrollWageTypeMapping_config_specialCategory_idx")
-			.on(table.configId, table.specialCategory)
+		// Unique constraint: one mapping per special category per organization
+		uniqueIndex("payrollWageTypeMapping_org_specialCategory_idx")
+			.on(table.organizationId, table.specialCategory)
 			.where(sql`special_category IS NOT NULL AND is_active = true`),
 	],
 );

@@ -12,6 +12,7 @@ import type {
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
+import { wageTypeCodeFor } from "../wage-type-code";
 
 const logger = createLogger("DatevLohnFormatter");
 
@@ -192,11 +193,10 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 			if (period.workCategoryId) {
 				const mapping = workCategoryMappings.get(period.workCategoryId);
-				// Prefer datevWageTypeCode, fall back to legacy wageTypeCode for migration
-				const mappedCode = mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+				const mappedCode = wageTypeCodeFor(mapping, "datev");
 				if (mapping && mappedCode) {
 					wageTypeCode = mappedCode;
-					note = mapping.datevWageTypeName || mapping.wageTypeName || period.workCategoryName || "";
+					note = mapping.datevWageTypeName || period.workCategoryName || "";
 				} else {
 					note = period.workCategoryName || "";
 				}
@@ -240,14 +240,12 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	): void {
 		for (const absence of absences) {
 			const mapping = absenceCategoryMappings.get(absence.absenceCategoryId);
-			// Prefer datevWageTypeCode, fall back to legacy wageTypeCode for migration
-			const mappedCode = mapping?.datevWageTypeCode || mapping?.wageTypeCode;
+			const mappedCode = wageTypeCodeFor(mapping, "datev");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
 			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
 			const wageTypeCode = mappedCode;
-			const note =
-				mapping.datevWageTypeName || mapping.wageTypeName || absence.absenceCategoryName || "";
+			const note = mapping.datevWageTypeName || absence.absenceCategoryName || "";
 
 			// Calculate days (DATEV typically uses days for absences, not hours)
 			// Use startOf('day') to ensure consistent date comparison

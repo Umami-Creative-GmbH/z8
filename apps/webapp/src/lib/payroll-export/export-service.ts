@@ -290,7 +290,7 @@ export async function processExportJob({
 			fetchAbsencesForExport(job.organizationId, filters, {
 				canonicalReadiness: storedInput ? "absences" : "cutover",
 			}),
-			getWageTypeMappings(job.configId),
+			getWageTypeMappings(job.organizationId),
 		]);
 
 		// BRANCH: API-based exporter (Personio, etc.)

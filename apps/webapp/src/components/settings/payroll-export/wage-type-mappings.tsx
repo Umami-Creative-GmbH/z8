@@ -5,7 +5,6 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useEffectEvent, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
-	type DatevConfigResult,
 	deleteMappingAction,
 	getAbsenceCategoriesAction,
 	getMappingsAction,
@@ -70,7 +69,8 @@ import type { WageTypeMapping } from "@/lib/payroll-export/types";
 
 interface WageTypeMappingsProps {
 	organizationId: string;
-	config: DatevConfigResult | null;
+	/** Whether any export format that reads wage type mappings is configured. */
+	hasMappingFormat: boolean;
 }
 interface WorkCategory {
 	id: string;
@@ -111,7 +111,7 @@ const EMPTY_DRAFT: MappingDraft = {
 
 export function WageTypeMappings({
 	organizationId,
-	config,
+	hasMappingFormat,
 }: WageTypeMappingsProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -140,14 +140,13 @@ export function WageTypeMappings({
 		});
 	const loadData = useEffectEvent(refreshData);
 	useEffect(() => {
-		if (config) loadData();
-	}, [config]);
+		if (hasMappingFormat) loadData();
+	}, [hasMappingFormat]);
 	const saveMapping = () => {
-		if (!config) return;
+		if (!hasMappingFormat) return;
 		startTransition(async () => {
 			const result = await saveMappingAction({
 				organizationId,
-				configId: config.id,
 				workCategoryId:
 					draft.sourceType === "work_category" ? draft.workCategoryId : null,
 				absenceCategoryId:
@@ -198,7 +197,7 @@ export function WageTypeMappings({
 				);
 		});
 
-	if (!config)
+	if (!hasMappingFormat)
 		return (
 			<Card>
 				<CardHeader>
