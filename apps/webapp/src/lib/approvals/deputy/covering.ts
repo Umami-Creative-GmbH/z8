@@ -21,7 +21,7 @@
  */
 
 import { compareInstants, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
-import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
+import { absentEmployeeTimezone } from "@/lib/absences/deputy-missing";
 
 /** An absence as covering reads it. Dates are inclusive `YYYY-MM-DD` calendar dates. */
 export interface CoverAbsenceFacts {
@@ -113,9 +113,9 @@ export function approverDayAt(
 	approver: CoverApproverFacts,
 	organizationTimezone: string | null,
 ): string {
-	const { timezone } = resolvePersonalTimezone({
-		userTimezone: approver.userTimezone ?? undefined,
-		organizationTimezone: organizationTimezone ?? undefined,
+	const timezone = absentEmployeeTimezone({
+		userTimezone: approver.userTimezone,
+		organizationTimezone,
 	});
 	return plainDateAt(at, timezone).toString();
 }

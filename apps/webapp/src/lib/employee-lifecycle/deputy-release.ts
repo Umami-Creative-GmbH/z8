@@ -3,12 +3,11 @@ import "server-only";
 import { and, asc, eq, gte, inArray, or } from "drizzle-orm";
 import { organization } from "@/db/auth-schema";
 import { absenceEntry, employee, userSettings } from "@/db/schema";
-import { absenceNotEndedAt } from "@/lib/absences/deputy-missing";
+import { absenceNotEndedAt, absentEmployeeTimezone } from "@/lib/absences/deputy-missing";
 import { recordDeputyChange } from "@/lib/absences/deputy-store";
 import type { AuditTrail } from "@/lib/audit-trail";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
-import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
 
 type DeputyReleaseClient = Pick<WorkTransactionClient, "select" | "update" | "insert">;
 
@@ -87,10 +86,8 @@ async function loadDeputyAssignmentsNotEnded(
 			absenceNotEndedAt(
 				row.endDate,
 				input.at,
-				resolvePersonalTimezone({
-					userTimezone: row.userTimezone ?? undefined,
-					organizationTimezone: row.organizationTimezone ?? undefined,
-				}).timezone,
+				absentEmployeeTimezone(row),
+
 			),
 		)
 		.map(({ absenceId, absentEmployeeId, startDate, endDate }) => ({

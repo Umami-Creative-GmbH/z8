@@ -32,7 +32,7 @@ import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/tempor
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { absentEmployeeTimezone } from "@/lib/absences/deputy-missing";
 import {
 	buildCoverReturnSummaryNotification,
 	buildCoverStartedNotification,
@@ -356,10 +356,8 @@ async function sendReturnSummaries(database: Database, deps: Deps): Promise<Tall
 	for (const row of rows) {
 		const absenceId = row.absenceId as string;
 		try {
-			const timezone = resolveEffectiveTimezone(
-				row.userTimezone ?? undefined,
-				row.organizationTimezone ?? undefined,
-			);
+			const timezone = absentEmployeeTimezone(row);
+
 			const today = plainDateAt(deps.now, timezone);
 			const endDate = returnSummaryEndDate(row, today);
 			if (!endDate || today.toString() <= endDate) continue;
