@@ -277,8 +277,9 @@ export interface ExpenseLineData {
 
 /**
  * One uncancelled overtime payout (#1001, a balance adjustment of #993) whose
- * day lies within the export's dates. The DATEV, Lexware and Sage files carry
- * it as hours under the wage type mapped to the "overtime" special category.
+ * day lies within the export's dates. The DATEV, Lexware, Sage and SAP
+ * SuccessFactors CSV files carry it as hours under the wage type mapped to the
+ * "overtime" special category (#1050).
  */
 export interface OvertimePayoutData {
 	/** The balance adjustment's id. */

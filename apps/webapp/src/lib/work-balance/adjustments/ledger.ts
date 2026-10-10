@@ -162,8 +162,9 @@ export async function readWorkBalanceAdjustments(
 /**
  * The uncancelled overtime payouts of the given employees whose day lies from
  * `fromDate` through `throughDate` (local dates, inclusive), by day: what the
- * DATEV, Lexware and Sage payroll files carry (#1001). Opening balances are
- * never exported. Minutes are signed as stored, so a payout is negative.
+ * DATEV, Lexware, Sage and SAP SuccessFactors CSV payroll files carry (#1001,
+ * #1050). Opening balances are never exported. Minutes are signed as stored,
+ * so a payout is negative.
  */
 export async function listOvertimePayouts(
 	client: BalanceAdjustmentReadClient,
