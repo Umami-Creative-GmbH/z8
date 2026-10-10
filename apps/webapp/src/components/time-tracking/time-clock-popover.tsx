@@ -19,6 +19,7 @@ import {
 } from "@/lib/projects/project-task-model";
 import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import type { AssignedProject } from "@/lib/query/use-assigned-projects";
+import { isClockConnectionRequired } from "@/lib/time-tracking/browser-clock-command";
 import { namedTaskId, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -26,6 +27,7 @@ import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-prefer
 import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { billableChoice } from "./billable-choice";
 import { BillableWorkSwitch } from "./billable-work-switch";
+import { ClockConnectionNotice } from "./clock-connection-notice";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
@@ -92,6 +94,8 @@ function ClockOutNotesView({
 
 interface ClockControlsViewProps {
 	captureMode: ClockCaptureMode;
+	/** The last action needs a connection in this organization (#845). */
+	connectionRequired: boolean;
 	onClockIn: () => Promise<void>;
 	onClockOut: () => Promise<void>;
 	activeStartTime: string | Date | null;
@@ -125,6 +129,7 @@ interface ClockControlsViewProps {
 
 function ClockControlsView({
 	captureMode,
+	connectionRequired,
 	onClockIn,
 	onClockOut,
 	activeStartTime,
@@ -223,6 +228,7 @@ function ClockControlsView({
 			{(!isClockedIn || isLocalCapture) && (
 				<WorkLocationSelector value={workLocationType} onChange={onWorkLocationChange} t={t} />
 			)}
+			<ClockConnectionNotice show={connectionRequired} />
 			<ClockActionButtons
 				captureMode={captureMode}
 				onClockIn={onClockIn}
@@ -262,6 +268,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		isUpdatingNotes,
 		isMutating,
 		captureMode,
+		connectionRequired,
 	} = useTimeClock();
 	const { uiState, dispatch, assignedProjects, availableWorkCategories } = useTimeClockPopoverState(
 		{ employeeId, isClockedIn },
@@ -295,6 +302,8 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 				toast.success(t("timeTracking.clockInSuccess", "Clocked in successfully"));
 			}
 			setOpen(false);
+		} else if (isClockConnectionRequired(result)) {
+			// Shown inline in the open popover (#845); nothing was saved.
 		} else if (!showAppendReviewRequiredToast(result, t)) {
 			const holidayName = "holidayName" in result ? result.holidayName : undefined;
 			const errorMessage = holidayName
@@ -350,7 +359,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 			} else {
 				setOpen(false);
 			}
-		} else {
+		} else if (!isClockConnectionRequired(result)) {
 			const holidayName = "holidayName" in result ? result.holidayName : undefined;
 			// A refused task names its stable reason (#873), worded here.
 			const taskRefusal = projectTaskRefusalMessage(
@@ -418,6 +427,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		dispatch,
 		handleSaveNotes,
 		captureMode,
+		connectionRequired,
 		handleClockIn,
 		handleClockOut,
 		activeWorkPeriod,
@@ -449,6 +459,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		dispatch,
 		handleSaveNotes,
 		captureMode,
+		connectionRequired,
 		handleClockIn,
 		handleClockOut,
 		activeWorkPeriod,
@@ -514,6 +525,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 						) : (
 							<ClockControlsView
 								captureMode={captureMode}
+								connectionRequired={connectionRequired}
 								onClockIn={handleClockIn}
 								onClockOut={handleClockOut}
 								activeStartTime={activeWorkPeriod?.startTime ?? null}

@@ -53,6 +53,7 @@ const SHELL_SOURCES = [
 	"components/time-tracking/work-category-selector.tsx",
 	"components/time-tracking/clock-in-out-widget-parts.tsx",
 	"components/time-tracking/billable-work-switch.tsx",
+	"components/time-tracking/clock-connection-notice.tsx",
 	"components/time-tracking/saved-clock-toast.ts",
 	"components/time-tracking/append-review-toast.ts",
 	"components/time-tracking/timezone-mismatch-dialog.tsx",

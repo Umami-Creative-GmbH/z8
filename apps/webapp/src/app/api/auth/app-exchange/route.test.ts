@@ -78,30 +78,50 @@ describe("POST /api/auth/app-exchange", () => {
 		expect(await response.json()).toEqual({ error: "Code and verifier are required" });
 	});
 
-	it("returns the session token when a valid mobile code is exchanged", async () => {
-		mockState.consumeAppAuthCode.mockResolvedValue({
-			status: "success",
-			sessionToken: "session-token",
-		});
+	it.each(["mobile", "desktop"] as const)(
+		"returns the session token when a valid %s code is exchanged",
+		async (app) => {
+			mockState.consumeAppAuthCode.mockResolvedValue({
+				status: "success",
+				sessionToken: "session-token",
+			});
+
+			const response = await POST(
+				new Request("https://app.example.com/api/auth/app-exchange", {
+					body: JSON.stringify({ code: "ONE-TIME-CODE", verifier: "VERIFIER" }),
+					headers: {
+						"Content-Type": "application/json",
+						"X-Z8-App-Type": app,
+					},
+					method: "POST",
+				}),
+			);
+
+			expect(response.status).toBe(200);
+			expect(mockState.consumeAppAuthCode).toHaveBeenCalledWith({
+				app,
+				code: "ONE-TIME-CODE",
+				verifier: "VERIFIER",
+			});
+			expect(await response.json()).toEqual({ token: "session-token" });
+		},
+	);
+
+	it.each([undefined, "extension"])("rejects an unsupported app type: %s", async (app) => {
+		const headers: Record<string, string> = { "Content-Type": "application/json" };
+		if (app) headers["X-Z8-App-Type"] = app;
 
 		const response = await POST(
 			new Request("https://app.example.com/api/auth/app-exchange", {
 				body: JSON.stringify({ code: "ONE-TIME-CODE", verifier: "VERIFIER" }),
-				headers: {
-					"Content-Type": "application/json",
-					"X-Z8-App-Type": "mobile",
-				},
+				headers,
 				method: "POST",
 			}),
 		);
 
-		expect(response.status).toBe(200);
-		expect(mockState.consumeAppAuthCode).toHaveBeenCalledWith({
-			app: "mobile",
-			code: "ONE-TIME-CODE",
-			verifier: "VERIFIER",
-		});
-		expect(await response.json()).toEqual({ token: "session-token" });
+		expect(response.status).toBe(400);
+		expect(mockState.consumeAppAuthCode).not.toHaveBeenCalled();
+		expect(await response.json()).toEqual({ error: "Supported app type required" });
 	});
 
 	it("requires a verifier to exchange app auth codes", async () => {
