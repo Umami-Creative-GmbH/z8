@@ -1,13 +1,14 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManagedEmployee } from "./team-members-data";
 import { TeamMembersList } from "./team-members-list";
 
-const { getActivityMock } = vi.hoisted(() => ({
+const { getActivityMock, useBalanceAdjustmentSectionMock } = vi.hoisted(() => ({
 	getActivityMock: vi.fn(),
+	useBalanceAdjustmentSectionMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -43,6 +44,13 @@ vi.mock("@/lib/query", () => ({
 		getActivity: getActivityMock,
 		getBreak: () => null,
 	}),
+}));
+vi.mock("@/components/settings/work-balance/use-employee-work-balance", () => ({
+	useBalanceAdjustmentSection: useBalanceAdjustmentSectionMock,
+	isRefusal: () => false,
+}));
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({ locale: "en-GB", timezone: "UTC", timeFormat: "24h" }),
 }));
 vi.mock("@/navigation", () => ({
 	Link: ({
@@ -101,7 +109,55 @@ const timeBalance = (
 describe("TeamMembersList", () => {
 	beforeEach(() => {
 		getActivityMock.mockReset().mockReturnValue(null);
+		useBalanceAdjustmentSectionMock.mockReset().mockReturnValue({
+			isLoading: false,
+			isError: false,
+			error: null,
+			data: {
+				canManage: false,
+				adjustments: [
+					{
+						id: "adjustment-1",
+						kind: "overtime_payout",
+						day: "2026-10-08",
+						minutes: -300,
+						reason: "Paid with the October payroll",
+						recordedAt: "2026-10-09T08:00:00.000Z",
+						recordedBy: { userId: "user-admin", name: "Owner" },
+						cancellation: null,
+					},
+				],
+			},
+		});
 	});
+
+	it.each([
+		["card", false],
+		["table", true],
+	])(
+		"opens the employee's balance adjustment history from the balance badge in %s view",
+		(_view, tableView) => {
+			render(
+				<TeamMembersList
+					employees={[employee({ timeBalance: timeBalance("employee-1", 600, 480) })]}
+				/>,
+			);
+			if (tableView) fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
+
+			const badge = screen.getByRole("button", { name: "All-time balance: +2:00h" });
+			// Its own control, not part of the link to the employee page.
+			expect(badge.closest("a")).toBeNull();
+			expect(useBalanceAdjustmentSectionMock).not.toHaveBeenCalled();
+
+			fireEvent.click(badge);
+
+			const dialog = screen.getByRole("dialog");
+			expect(within(dialog).getByText("Paid with the October payroll")).toBeTruthy();
+			expect(useBalanceAdjustmentSectionMock).toHaveBeenCalledWith("employee-1");
+			// Read-only: no cancel action.
+			expect(within(dialog).queryByRole("button", { name: "Cancel" })).toBeNull();
+		},
+	);
 
 	it("labels the search input for assistive technology", () => {
 		render(<TeamMembersList employees={[employee({})]} />);

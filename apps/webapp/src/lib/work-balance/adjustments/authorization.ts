@@ -1,5 +1,6 @@
 import "server-only";
 
+import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type OrganizationActor,
@@ -7,6 +8,7 @@ import {
 } from "@/lib/auth/current-organization-actor";
 import { canManageCurrentOrganizationSettings } from "@/lib/auth-helpers";
 import { findBalanceAdjustmentGrant } from "@/lib/payroll-access/adjustment-coverage";
+import { isUuid } from "@/lib/validations/uuid";
 import { BalanceAdjustmentRefusal } from "./types";
 
 /** Why the actor may record and cancel the employee's balance adjustments. */
@@ -27,26 +29,29 @@ export type BalanceAdjustmentWriter = OrganizationActor & { authority: BalanceAd
  *   (#995, `findBalanceAdjustmentGrant`). Without a
  *   target, as for an organization-wide action, only owners and admins pass.
  *
- * #996 adds read-only access for the employee and their managers.
+ * The employee and their managers only see them: `requireBalanceAdjustmentViewer` (#996).
  */
 export async function requireBalanceAdjustmentWriter(target?: {
 	employeeId: string;
 }): Promise<BalanceAdjustmentWriter> {
 	const actor = await requireOrganizationActor(notPermitted);
-	if (await canManageCurrentOrganizationSettings()) {
-		return { ...actor, authority: { via: "organization_admin" } };
-	}
-	if (target) {
-		const grant = await findBalanceAdjustmentGrant(db, {
-			organizationId: actor.organizationId,
-			actorUserId: actor.userId,
-			employeeId: target.employeeId,
-		});
-		if (grant) {
-			return { ...actor, authority: { via: "payroll_access_grant", grantId: grant.grantId } };
-		}
-	}
-	throw notPermitted();
+	const authority = await findWriterAuthority(actor, target);
+	if (!authority) throw notPermitted();
+	return { ...actor, authority };
+}
+
+async function findWriterAuthority(
+	actor: OrganizationActor,
+	target: { employeeId: string } | undefined,
+): Promise<BalanceAdjustmentAuthority | null> {
+	if (await canManageCurrentOrganizationSettings()) return { via: "organization_admin" };
+	if (!target) return null;
+	const grant = await findBalanceAdjustmentGrant(db, {
+		organizationId: actor.organizationId,
+		actorUserId: actor.userId,
+		employeeId: target.employeeId,
+	});
+	return grant ? { via: "payroll_access_grant", grantId: grant.grantId } : null;
 }
 
 /**
@@ -87,4 +92,56 @@ export async function mayWriteBalanceAdjustments(input: {
 		if (error instanceof BalanceAdjustmentRefusal) return false;
 		throw error;
 	}
+}
+
+/** An actor who may see an employee's balance adjustments; `canManage` also records and cancels. */
+export type BalanceAdjustmentViewer = OrganizationActor & { canManage: boolean };
+
+const notPermittedToView = () =>
+	new BalanceAdjustmentRefusal(
+		"not_permitted",
+		"Only the employee, their managers, and those who may record adjustments can see them.",
+	);
+
+/**
+ * Who may see an employee's balance adjustments (#996): everyone who may
+ * record and cancel them (`requireBalanceAdjustmentWriter`, then `canManage`),
+ * the employee themselves, and their managers (`employee_managers`, primary or
+ * not). Employees and managers see them read-only, and only while they can use
+ * the organization. Anyone else is refused without learning whether the
+ * employee exists.
+ */
+export async function requireBalanceAdjustmentViewer(
+	database: Pick<typeof db, "execute">,
+	input: { employeeId: string },
+): Promise<BalanceAdjustmentViewer> {
+	const actor = await requireOrganizationActor(notPermittedToView);
+	const target = isUuid(input.employeeId) ? { employeeId: input.employeeId } : undefined;
+	if (await findWriterAuthority(actor, target)) return { ...actor, canManage: true };
+	if (!target) throw notPermittedToView();
+
+	const related = await database.execute(sql`
+		SELECT 1 FROM employee subject
+		WHERE subject.id = ${target.employeeId}::uuid
+			AND subject.organization_id = ${actor.organizationId}
+			AND (
+				(
+					subject.user_id = ${actor.userId}
+					AND subject.is_active = true
+					AND NOT employee_departure_denies_access(subject.organization_id, subject.id, now())
+				)
+				OR EXISTS (
+					SELECT 1 FROM employee_managers link
+					JOIN employee manager ON manager.id = link.manager_id
+					WHERE link.employee_id = subject.id
+						AND manager.organization_id = ${actor.organizationId}
+						AND manager.user_id = ${actor.userId}
+						AND manager.is_active = true
+						AND NOT employee_departure_denies_access(manager.organization_id, manager.id, now())
+				)
+			)
+		LIMIT 1
+	`);
+	if (related.rows.length === 0) throw notPermittedToView();
+	return { ...actor, canManage: false };
 }
