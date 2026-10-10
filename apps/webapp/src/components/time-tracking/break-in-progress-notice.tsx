@@ -1,14 +1,17 @@
 "use client";
 
 import { IconClockPause } from "@tabler/icons-react";
-import { useTranslate } from "@tolgee/react";
-import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
+import { useTolgee, useTranslate } from "@tolgee/react";
+import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { cn } from "@/lib/utils";
 
 /**
  * A break in progress, read-only (#861, Time Tracking ADR 0007): the employee
  * is on a break started at a kiosk. The time shows in the zone observed where
- * the break started, as its endpoint will be recorded.
+ * the break started, as its endpoint will be recorded, in the app's language
+ * and the viewer's time format; never in the viewer's own zone.
  */
 export function BreakInProgressNotice({
 	since,
@@ -17,15 +20,18 @@ export function BreakInProgressNotice({
 	className,
 }: {
 	since: Date | string;
+	/** The zone recorded with the break's start; UTC when a legacy row has none. */
 	zone: string | null;
 	timeFormat?: TimeFormat;
 	className?: string;
 }) {
 	const { t } = useTranslate();
-	const time = new Intl.DateTimeFormat(undefined, {
-		...getTimeFormatDateTimeOptions(timeFormat),
-		...(zone ? { timeZone: zone } : {}),
-	}).format(new Date(since));
+	const tolgee = useTolgee(["language"]);
+	const time = formatInstant(
+		typeof since === "string" ? parseInstant(since) : instantFromDate(since),
+		{ locale: tolgee.getLanguage() ?? "en", timeFormat, timezone: zone ?? "UTC" },
+		"time",
+	);
 
 	return (
 		<span

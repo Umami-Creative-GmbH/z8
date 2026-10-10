@@ -10,6 +10,7 @@ import {
 import { EmployeeActivityText } from "./employee-activity-text";
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "de" }),
 	useTranslate: () => ({
 		t: (
 			key: string,
