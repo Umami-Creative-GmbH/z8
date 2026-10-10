@@ -26,6 +26,12 @@
 	<string>Z8 uses the camera when you photograph a receipt or another attachment.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Z8 opens your photos when you attach a receipt or another picture.</string>
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<false/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

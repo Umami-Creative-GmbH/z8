@@ -106,6 +106,40 @@ describe("Capacitor configuration", () => {
 		assert.equal(config.android?.resolveServiceWorkerRequests, true);
 	});
 
+	it("shows native push in the foreground and links the Firebase package for SwiftPM (#843)", () => {
+		assert.deepEqual(config.plugins?.FirebaseMessaging, {
+			presentationOptions: ["alert", "badge", "sound"],
+		});
+		assert.deepEqual(config.experimental?.ios?.spm?.packageOptions, {
+			"@capacitor-firebase/messaging": { symlink: true },
+		});
+	});
+
+	it("registers the web app's native push plugin under the name the web app calls", () => {
+		const client = readFileSync(
+			new URL("../webapp/src/lib/store-app/native-push.ts", import.meta.url),
+			"utf8",
+		);
+		const pkg = JSON.parse(readFileSync(new URL("package.json", import.meta.url), "utf8"));
+
+		assert.match(client, /registerPlugin<NativePushPlugin>\("FirebaseMessaging"\)/);
+		assert.match(pkg.dependencies["@capacitor-firebase/messaging"], /^\d+\.\d+\.\d+$/);
+	});
+
+	it("keeps FCM from creating a device token before the user turns push on", () => {
+		const manifest = readFileSync(
+			new URL("android/app/src/main/AndroidManifest.xml", import.meta.url),
+			"utf8",
+		);
+		const plist = readFileSync(new URL("ios/App/App/Info.plist", import.meta.url), "utf8");
+
+		assert.match(
+			manifest,
+			/android:name="firebase_messaging_auto_init_enabled"\s+android:value="false"/,
+		);
+		assert.match(plist, /<key>FirebaseMessagingAutoInitEnabled<\/key>\s*<false\/>/);
+	});
+
 	it("uses the same user-agent marker the web app looks for", () => {
 		const helper = readFileSync(
 			new URL("../webapp/src/lib/store-app/shell.ts", import.meta.url),

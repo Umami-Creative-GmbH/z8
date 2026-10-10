@@ -31,6 +31,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 import { authClient } from "@/lib/auth-client";
+import { removeNativePushTokenBeforeSignOut } from "@/lib/store-app/native-push";
 import { useRouter } from "@/navigation";
 
 export function NavUser({
@@ -60,6 +61,8 @@ export function NavUser({
 			});
 		};
 		try {
+			// Store app: drop this device's push token while the session still exists (#843).
+			await removeNativePushTokenBeforeSignOut();
 			await authClient.signOut({
 				fetchOptions: {
 					onSuccess: () => {

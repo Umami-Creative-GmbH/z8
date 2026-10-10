@@ -105,6 +105,19 @@ export function createCapacitorConfig(settings: ShellSettings): CapacitorConfig 
 				backgroundColor: "#3860c6",
 				showSpinner: false,
 			},
+			// Native push through FCM (#843). iOS shows pushes while the app is open too.
+			FirebaseMessaging: {
+				presentationOptions: ["alert", "badge", "sound"],
+			},
+		},
+		experimental: {
+			ios: {
+				spm: {
+					// Avoids a SwiftPM package identity collision of the Firebase plugin
+					// (see the plugin README); needs Capacitor CLI 8.4+.
+					packageOptions: { "@capacitor-firebase/messaging": { symlink: true } },
+				},
+			},
 		},
 	};
 }

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
 import { authClient, useSession } from "@/lib/auth-client";
+import { removeNativePushTokenBeforeSignOut } from "@/lib/store-app/native-push";
 import { useRouter } from "@/navigation";
 import {
 	AcceptInvitationFormBody,
@@ -156,6 +157,8 @@ export function AcceptInvitationForm({
 	};
 
 	const handleSignOut = async () => {
+		// Store app: drop this device's push token while the session still exists (#843).
+		await removeNativePushTokenBeforeSignOut();
 		await authClient.signOut({
 			fetchOptions: {
 				onSuccess: () => {

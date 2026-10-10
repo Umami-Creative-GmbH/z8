@@ -7,3 +7,5 @@ DerivedData/
 .swiftpm/config/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+# Machine-local plugin links written by `cap sync` (experimental.ios.spm.packageOptions)
+/symlinks
