@@ -16,14 +16,20 @@ export function payoutMinutes(input: { hours: number; minutes: number }): number
  * Why an overtime payout may not be recorded, or null when it may (#993). The
  * amount must be positive, its day no later than today in the employee's
  * timezone and outside a closed month, and the amount no more than the work
- * balance at the end of its day as computed now. Later corrections to work may
- * still leave the balance negative; that is accepted.
+ * balance at the end of its day as computed now. Nor may it leave the balance
+ * below zero at the end of the day of any later uncancelled payout. Later
+ * corrections to work may still leave the balance negative; that is accepted.
  */
 export function refuseOvertimePayout(input: {
 	amountMinutes: number;
 	day: PlainDate;
 	today: PlainDate;
 	balanceAtEndOfDayMinutes: number;
+	/**
+	 * The work balance at the end of the day of each uncancelled payout dated
+	 * after `day`, as computed now (each already counts its own payout).
+	 */
+	laterPayoutBalancesMinutes?: readonly number[];
 	/**
 	 * The day of the opening balance in effect (#997): a payout on or before it
 	 * would no longer count, so it is refused (ADR-0008).
@@ -38,6 +44,7 @@ export function refuseOvertimePayout(input: {
 	| "month_closed"
 	| "before_opening_balance"
 	| "exceeds_balance"
+	| "exceeds_later_balance"
 > | null {
 	if (!(input.amountMinutes > 0)) return "amount_not_positive";
 	if (comparePlainDates(input.day, input.today) > 0) return "future_day";
@@ -46,6 +53,9 @@ export function refuseOvertimePayout(input: {
 		return "before_opening_balance";
 	}
 	if (input.amountMinutes > input.balanceAtEndOfDayMinutes) return "exceeds_balance";
+	if ((input.laterPayoutBalancesMinutes ?? []).some((balance) => input.amountMinutes > balance)) {
+		return "exceeds_later_balance";
+	}
 	return null;
 }
 

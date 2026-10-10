@@ -46,6 +46,11 @@ export type BalanceAdjustmentErrorCode =
 	| "amount_not_positive"
 	| "future_day"
 	| "exceeds_balance"
+	/**
+	 * The payout would leave the work balance below zero at the end of the day
+	 * of a later uncancelled payout.
+	 */
+	| "exceeds_later_balance"
 	| "already_cancelled"
 	/** #997: a payout on or before the day of the opening balance in effect. */
 	| "before_opening_balance"

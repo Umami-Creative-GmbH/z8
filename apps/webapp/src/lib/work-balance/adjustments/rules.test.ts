@@ -177,6 +177,20 @@ describe("refusing an overtime payout", () => {
 		).toBe("month_closed");
 	});
 
+	it("refuses a payout that would leave the balance below zero after a later payout", () => {
+		// 12h at the end of its day; a later payout already brought the balance to 3h.
+		const later = {
+			day: parsePlainDate("2026-10-01"),
+			today,
+			balanceAtEndOfDayMinutes: 720,
+			laterPayoutBalancesMinutes: [180],
+		};
+		expect(refuseOvertimePayout({ amountMinutes: 240, ...later })).toBe("exceeds_later_balance");
+		expect(refuseOvertimePayout({ amountMinutes: 180, ...later })).toBeNull();
+		// Its own day still comes first.
+		expect(refuseOvertimePayout({ amountMinutes: 800, ...later })).toBe("exceeds_balance");
+	});
+
 	it("refuses a payout of more than the balance at the end of its day", () => {
 		expect(
 			refuseOvertimePayout({

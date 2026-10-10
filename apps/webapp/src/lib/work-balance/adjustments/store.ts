@@ -151,17 +151,31 @@ export async function recordOvertimePayout(
 			comparePlainDates(day, today) <= 0 &&
 			!closedMonth &&
 			(!openingBalanceDay || comparePlainDates(day, openingBalanceDay) > 0);
-		const balanceAtEndOfDayMinutes = needsBalance
-			? await computeEmployeeWorkBalanceAtEndOfDay(
-					{ organizationId: input.organizationId, employee: subject, day: input.day },
-					client,
-				)
-			: 0;
+		const balanceAtEndOf = (balanceDay: string) =>
+			computeEmployeeWorkBalanceAtEndOfDay(
+				{ organizationId: input.organizationId, employee: subject, day: balanceDay },
+				client,
+			);
+		const balanceAtEndOfDayMinutes = needsBalance ? await balanceAtEndOf(input.day) : 0;
+		// The payout lowers the balance on every later day too, so it may not take
+		// the balance below zero at the end of any later payout's day (#993).
+		const laterPayoutBalancesMinutes: number[] = [];
+		if (needsBalance && input.amountMinutes <= balanceAtEndOfDayMinutes) {
+			const laterDays = new Set(
+				(await listUncancelledPayouts(client, input))
+					.map((payout) => payout.day)
+					.filter((payoutDay) => payoutDay > input.day),
+			);
+			for (const laterDay of laterDays) {
+				laterPayoutBalancesMinutes.push(await balanceAtEndOf(laterDay));
+			}
+		}
 		const refused = refuseOvertimePayout({
 			amountMinutes: input.amountMinutes,
 			day,
 			today,
 			balanceAtEndOfDayMinutes,
+			laterPayoutBalancesMinutes,
 			openingBalanceDay,
 			closedMonth,
 		});

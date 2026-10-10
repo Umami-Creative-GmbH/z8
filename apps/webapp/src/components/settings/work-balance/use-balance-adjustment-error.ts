@@ -62,6 +62,11 @@ export function useBalanceAdjustmentErrorMessage() {
 						"settings.employees.workBalance.errors.conflictingPayouts",
 						"Overtime payouts are dated on or before this day. Cancel them first or choose an earlier day.",
 					);
+				case "exceeds_later_balance":
+					return t(
+						"settings.employees.workBalance.errors.exceedsLaterBalance",
+						"The payout would leave the work balance below zero after a later overtime payout. Cancel that payout first or record less.",
+					);
 				case "month_closed":
 					return details.closedMonth
 						? t(

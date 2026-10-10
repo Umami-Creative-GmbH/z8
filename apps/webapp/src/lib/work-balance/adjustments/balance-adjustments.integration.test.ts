@@ -278,6 +278,21 @@ describe("overtime payouts on PostgreSQL", () => {
 		expect(await balanceMinutes()).toBe(0);
 	});
 
+	it("refuses a payout that would leave the balance below zero after a later payout", async () => {
+		// 12h at the end of the work day; a 10h payout the day after leaves 2h.
+		expect(await recordPayout({ hours: 10 })).toMatchObject({ success: true });
+
+		// 5h fits the 12h of the work day itself, but would take the later payout's day to -3h.
+		expect(await recordPayout({ day: workDay.toString(), hours: 5 })).toMatchObject({
+			success: false,
+			code: "exceeds_later_balance",
+		});
+		expect(await recordPayout({ day: workDay.toString(), hours: 2 })).toMatchObject({
+			success: true,
+		});
+		expect(await balanceMinutes()).toBe(0);
+	});
+
 	it("cancels a payout, which restores the balance and stays in the history as cancelled", async () => {
 		const recorded = await recordPayout();
 		const adjustmentId = recorded.success ? recorded.data.adjustmentId : "";
