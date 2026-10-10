@@ -8,7 +8,12 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { canDeleteOwnSickNote, canManageDocument, type PersonnelFileAccess } from "./access";
+import {
+	canDeleteOwnSickNote,
+	canManageDocument,
+	type PersonnelFileAccess,
+	type SickNoteAuthority,
+} from "./access";
 import { loadEmployeeRef, visibleDocumentsCondition } from "./access-store";
 import { writeDocumentAudit } from "./audit";
 import type { DocumentCategory, DocumentVisibility, PayPeriod } from "./document.types";
@@ -167,8 +172,8 @@ export async function finalizePersonnelDocumentUpload(
 		checksumSha256: string;
 		/** "employee" when the employee uploaded into their own file (#867). */
 		source?: "employee";
-		/** The employee attaches the sick note to their own absence (#982). */
-		sickNote?: { absenceId: string; access: PersonnelFileAccess };
+		/** The sick note is attached to this absence, on the given authority (#982). */
+		sickNote?: { absenceId: string; access: PersonnelFileAccess; authority: SickNoteAuthority };
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<FinalizePersonnelDocumentResult> {
@@ -179,6 +184,7 @@ export async function finalizePersonnelDocumentUpload(
 			absence = await lockSickNoteAbsence(tx, input.sickNote.access, {
 				absenceId: input.sickNote.absenceId,
 				employeeId: input.employeeId,
+				authority: input.sickNote.authority,
 			});
 			if (!absence) return { kind: "absence_unavailable" };
 		}

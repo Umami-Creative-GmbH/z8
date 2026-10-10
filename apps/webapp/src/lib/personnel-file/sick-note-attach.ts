@@ -8,6 +8,7 @@ import { AuditAction } from "@/lib/audit-logger";
 import {
 	type PersonnelFileAccess,
 	type SickNoteAttachRefusal,
+	type SickNoteAuthority,
 	sickNoteAttachRefusal,
 } from "./access";
 
@@ -70,7 +71,7 @@ export type SickNoteAttachTarget =
 async function decideSickNoteTarget(
 	database: Reader,
 	access: PersonnelFileAccess,
-	input: { absenceId: string; lock: boolean },
+	input: { absenceId: string; authority: SickNoteAuthority; lock: boolean },
 ): Promise<SickNoteAttachTarget> {
 	const query = database
 		.select(absenceColumns())
@@ -93,24 +94,36 @@ async function decideSickNoteTarget(
 		loadAbsenceSettings(database, access.organizationId),
 	]);
 	if (!row) return { kind: "not_found" };
-	const reason = sickNoteAttachRefusal(access, {
+	const reason = attachRefusalUnder(input.authority, access, {
 		employeeSickNoteUpload: settings.employeeSickNoteUpload,
 		absence: row,
 	});
 	return reason ? { kind: "refused", reason } : { kind: "ok", absence: absenceOf(row) };
 }
 
+function attachRefusalUnder(
+	authority: SickNoteAuthority,
+	access: PersonnelFileAccess,
+	input: Parameters<typeof sickNoteAttachRefusal>[1],
+): SickNoteAttachRefusal | null {
+	switch (authority) {
+		case "employee":
+			return sickNoteAttachRefusal(access, input);
+	}
+}
+
 /**
- * Whether the actor may attach a sick note to the absence now. Absences of
- * other organizations are not found; everything else is decided by
- * `sickNoteAttachRefusal`.
+ * Whether the actor may attach a sick note to the absence now, on the given
+ * authority (the employee's own by default). Absences of other organizations
+ * are not found; everything else is decided by `sickNoteAttachRefusal`.
  */
 export function loadSickNoteAttachTarget(
 	database: Reader,
 	access: PersonnelFileAccess,
 	absenceId: string,
+	authority: SickNoteAuthority = "employee",
 ): Promise<SickNoteAttachTarget> {
-	return decideSickNoteTarget(database, access, { absenceId, lock: false });
+	return decideSickNoteTarget(database, access, { absenceId, authority, lock: false });
 }
 
 /**
@@ -121,9 +134,13 @@ export function loadSickNoteAttachTarget(
 export async function lockSickNoteAbsence(
 	tx: Transaction,
 	access: PersonnelFileAccess,
-	input: { absenceId: string; employeeId: string },
+	input: { absenceId: string; employeeId: string; authority: SickNoteAuthority },
 ): Promise<SickNoteAbsence | null> {
-	const target = await decideSickNoteTarget(tx, access, { absenceId: input.absenceId, lock: true });
+	const target = await decideSickNoteTarget(tx, access, {
+		absenceId: input.absenceId,
+		authority: input.authority,
+		lock: true,
+	});
 	return target.kind === "ok" && target.absence.employeeId === input.employeeId
 		? target.absence
 		: null;

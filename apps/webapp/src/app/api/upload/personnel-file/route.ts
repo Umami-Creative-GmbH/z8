@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
@@ -8,31 +7,15 @@ import {
 	canUploadOwnDocument,
 	isOwnDocument,
 	managedCategoriesFor,
+	type SickNoteAttachRefusal,
 } from "@/lib/personnel-file/access";
-import type { SickNoteAttachRefusal } from "@/lib/personnel-file/access";
 import { loadEmployeeRef } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import { DEFAULT_VISIBILITY, isDocumentCategory } from "@/lib/personnel-file/document.types";
 import { validateDocumentMetadata } from "@/lib/personnel-file/document-rules";
-import {
-	finalizePersonnelDocumentUpload,
-	personnelDocumentStorageKey,
-} from "@/lib/personnel-file/document-store";
+import { recordUploadedPersonnelDocument } from "@/lib/personnel-file/document-upload";
 import { notifyDocumentShared, notifyEmployeeUpload } from "@/lib/personnel-file/notifications";
 import { loadSickNoteAttachTarget } from "@/lib/personnel-file/sick-note-attach";
-import {
-	deletePersonnelDocumentObject,
-	deleteTusUpload,
-	readUploadedPersonnelDocument,
-} from "@/lib/personnel-file/storage";
-import {
-	markPersonnelFileUploadFailed,
-	runPersonnelFileCleanup,
-	type StoredPersonnelFileObject,
-	stagePersonnelFileUpload,
-} from "@/lib/personnel-file/upload-ledger";
-import { uploadPrivateObject } from "@/lib/storage/export-s3-client";
-import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const logger = createLogger("PersonnelFileUpload");
 
@@ -151,88 +134,26 @@ export async function POST(request: NextRequest) {
 			return notFound();
 		}
 
-		const safeTusFileKey = sanitizeTusFileKey(tusFileKey, access.userId);
-		if (!safeTusFileKey) {
+		const finalized = await recordUploadedPersonnelDocument(db, {
+			access,
+			employeeId: employee.id,
+			tusFileKey,
+			fileName,
+			metadata: validated.value,
+			...(own ? { source: "employee" as const } : {}),
+			...(absenceId ? { sickNote: { absenceId, authority: "employee" as const } } : {}),
+		});
+
+		if (finalized.kind === "invalid_file_key") {
 			return NextResponse.json({ error: "Invalid file key" }, { status: 400 });
 		}
-
-		const upload = await readUploadedPersonnelDocument({ tusFileKey: safeTusFileKey, fileName });
-		if (!upload.ok) {
-			return NextResponse.json({ error: upload.error }, { status: upload.status });
+		if (finalized.kind === "unreadable") {
+			return NextResponse.json({ error: finalized.error }, { status: finalized.status });
 		}
-
-		const documentId = randomUUID();
-		const staged = {
-			documentId,
-			organizationId: access.organizationId,
-			employeeId: employee.id,
-			uploadedBy: access.userId,
-			storageKey: personnelDocumentStorageKey({
-				organizationId: access.organizationId,
-				employeeId: employee.id,
-				documentId,
-				fileName: upload.fileName,
-			}),
-		};
-
-		// Durable before the object exists, so any later failure leaves cleanup work.
-		await stagePersonnelFileUpload(db, staged);
-
-		let stored: StoredPersonnelFileObject | null = null;
-		let finalized: Awaited<ReturnType<typeof finalizePersonnelDocumentUpload>>;
-		try {
-			stored = await uploadPrivateObject(
-				access.organizationId,
-				staged.storageKey,
-				upload.buffer,
-				upload.mimeType,
-				{
-					"uploaded-by": access.userId,
-					"original-key": safeTusFileKey,
-					"upload-timestamp": new Date().toISOString(),
-					"content-sha256": upload.checksumSha256,
-				},
-			);
-			finalized = await finalizePersonnelDocumentUpload(db, {
-				...staged,
-				metadata: validated.value,
-				stored,
-				fileName: upload.fileName,
-				mimeType: upload.mimeType,
-				sizeBytes: upload.buffer.length,
-				checksumSha256: upload.checksumSha256,
-				...(own ? { source: "employee" as const } : {}),
-				...(absenceId ? { sickNote: { absenceId, access } } : {}),
-			});
-		} catch (error) {
-			await markPersonnelFileUploadFailed(db, {
-				...staged,
-				stored,
-				reason: "finalization_failed",
-			}).catch((markError) =>
-				logger.error({ error: markError }, "Failed to record personnel file upload cleanup"),
-			);
-			throw error;
-		}
-
-		await deleteTusUpload(safeTusFileKey);
-
 		if (finalized.kind === "absence_unavailable") {
-			// Cancelled, rejected or no longer allowed while the file was stored.
-			await markPersonnelFileUploadFailed(db, { ...staged, stored, reason: "finalization_failed" });
-			await runPersonnelFileCleanup(db, {
-				deleteObject: deletePersonnelDocumentObject,
-				only: { documentId, organizationId: access.organizationId },
-			}).catch((error) => logger.error({ error }, "Deferred personnel file upload cleanup"));
 			return NextResponse.json({ error: ABSENCE_UNAVAILABLE }, { status: 409 });
 		}
-
 		if (finalized.kind === "not_pending") {
-			// Cleanup claimed the staged object meanwhile (a very slow upload).
-			await runPersonnelFileCleanup(db, {
-				deleteObject: deletePersonnelDocumentObject,
-				only: { documentId, organizationId: access.organizationId },
-			}).catch((error) => logger.error({ error }, "Deferred personnel file upload cleanup"));
 			return NextResponse.json(
 				{ error: "The upload took too long. Please upload the file again." },
 				{ status: 409 },

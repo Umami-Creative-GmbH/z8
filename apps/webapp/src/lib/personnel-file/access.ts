@@ -113,6 +113,12 @@ export function canUploadOwnDocument(
 export type SickNoteAttachRefusal = "setting_off" | "not_own" | "not_sick" | "rejected";
 
 /**
+ * On whose behalf a sick note is attached to an absence (ADR 0002). Only the
+ * employee themselves so far (#982, #983), decided by `sickNoteAttachRefusal`.
+ */
+export type SickNoteAuthority = "employee";
+
+/**
  * Whether the actor may upload a sick note to the absence as its employee: only
  * to their own sick-leave absence that is pending or approved, and only while
  * the organization lets employees attach sick notes. This is the one way an
