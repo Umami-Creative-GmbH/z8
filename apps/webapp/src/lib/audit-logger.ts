@@ -66,6 +66,7 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_CONVERSION_RECORDED = "travel_expense.conversion_recorded",
 	TRAVEL_EXPENSE_CONVERSION_REMOVED = "travel_expense.conversion_removed",
 	TRAVEL_EXPENSE_REIMBURSEMENT_CURRENCY_UPDATED = "travel_expense.reimbursement_currency_updated",
+	TRAVEL_EXPENSE_REIMBURSEMENT_CHANNEL_CHANGED = "travel_expense.reimbursement_channel_changed",
 	TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED = "travel_expense.policy_version_activated",
 	TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN = "travel_expense.policy_version_withdrawn",
 	TRAVEL_EXPENSE_REFERENCE_RATE_APPROVED = "travel_expense.reference_rate_approved",
