@@ -1,11 +1,8 @@
 import { DateTime } from "luxon";
 import { fromJSDate } from "@/lib/datetime/luxon-utils";
-import {
-	calculateBusinessDaysWithHalfDays,
-	calculateCarryoverExpiryDate,
-	getYearRange,
-} from "./date-utils";
-import type { AbsenceWithCategory, Holiday, VacationBalance } from "./types";
+import { countAbsenceDays, type IsWorkingDay, mondayToFriday } from "./absence-days";
+import { calculateCarryoverExpiryDate, getYearRange } from "./date-utils";
+import type { AbsenceWithCategory, VacationBalance } from "./types";
 
 interface VacationAllowanceData {
 	defaultAnnualDays: string; // decimal from DB
@@ -32,7 +29,7 @@ export function calculateVacationBalance({
 	organizationAllowance,
 	employeeAllowance,
 	absences,
-	holidays = [],
+	isWorkingDay = mondayToFriday,
 	currentDate,
 	year,
 	adjustmentTotal = 0,
@@ -41,7 +38,8 @@ export function calculateVacationBalance({
 	organizationAllowance: VacationAllowanceData;
 	employeeAllowance?: EmployeeAllowanceData | null;
 	absences: AbsenceWithCategory[];
-	holidays?: Holiday[];
+	/** The employee's working days; defaults to Monday to Friday. */
+	isWorkingDay?: IsWorkingDay;
 	currentDate: Date | DateTime;
 	year: number;
 	adjustmentTotal?: number; // Sum of all vacation adjustment events
@@ -101,15 +99,7 @@ export function calculateVacationBalance({
 			const clippedAbsence = clipAbsenceToRange(absence, start, end);
 			if (!clippedAbsence) return sum;
 
-			// Use half-day aware calculation
-			const days = calculateBusinessDaysWithHalfDays(
-				clippedAbsence.startDate,
-				clippedAbsence.startPeriod,
-				clippedAbsence.endDate,
-				clippedAbsence.endPeriod,
-				holidays,
-			);
-			return sum + days;
+			return sum + countAbsenceDays(clippedAbsence, isWorkingDay);
 		}, 0);
 
 	// 5. Calculate pending days (pending requests that count against vacation)
@@ -125,15 +115,7 @@ export function calculateVacationBalance({
 			const clippedAbsence = clipAbsenceToRange(absence, start, end);
 			if (!clippedAbsence) return sum;
 
-			// Use half-day aware calculation
-			const days = calculateBusinessDaysWithHalfDays(
-				clippedAbsence.startDate,
-				clippedAbsence.startPeriod,
-				clippedAbsence.endDate,
-				clippedAbsence.endPeriod,
-				holidays,
-			);
-			return sum + days;
+			return sum + countAbsenceDays(clippedAbsence, isWorkingDay);
 		}, 0);
 
 	// 6. Calculate remaining days

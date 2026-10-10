@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	getCurrentEmployee: vi.fn(),
 	getHolidays: vi.fn(),
+	loadWorkingDays: vi.fn(),
 	getVacationBalance: vi.fn(),
 	categoryFindFirst: vi.fn(),
 	organizationFindFirst: vi.fn(),
@@ -42,6 +43,10 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester: mockState.getPrimaryEligibleManagerIdForRequester,
+}));
+
+vi.mock("@/lib/absences/absence-days-resolver", () => ({
+	loadWorkingDays: mockState.loadWorkingDays,
 }));
 
 vi.mock("./current-employee", () => ({
@@ -86,6 +91,9 @@ describe("getAbsencePlanPreview", () => {
 			remainingDays: 14,
 		});
 		mockState.getHolidays.mockResolvedValue([]);
+		mockState.loadWorkingDays.mockResolvedValue(
+			(day: { dayOfWeek: number }) => day.dayOfWeek <= 5,
+		);
 		mockState.absenceFindMany.mockResolvedValue([]);
 		mockState.shiftFindMany.mockResolvedValue([]);
 		mockState.coverageRuleFindMany.mockResolvedValue([]);
@@ -96,7 +104,7 @@ describe("getAbsencePlanPreview", () => {
 
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.requestedDays).toBe(2);
+			expect(result.data.requestedAbsenceDays).toBe(2);
 			expect(result.data.balance?.remainingAfterRequest).toBe(12);
 			expect(result.data.approvalSignal).toBe("likely");
 		}
@@ -118,6 +126,32 @@ describe("getAbsencePlanPreview", () => {
 				"No manager is assigned, so this request follows the current auto-approval behavior.",
 			);
 		}
+	});
+
+	it("counts absence days on the current employee's working days", async () => {
+		mockState.loadWorkingDays.mockResolvedValue(
+			(day: { dayOfWeek: number }) => day.dayOfWeek <= 4,
+		);
+
+		const week = await getAbsencePlanPreview({
+			...previewRequest,
+			startDate: "2026-10-12",
+			endDate: "2026-10-16",
+		});
+		const friday = await getAbsencePlanPreview({
+			...previewRequest,
+			startDate: "2026-10-16",
+			endDate: "2026-10-16",
+		});
+
+		expect(mockState.loadWorkingDays).toHaveBeenCalledWith({
+			organizationId: "org-current",
+			employeeId: "emp-current",
+			startDate: "2026-10-12",
+			endDate: "2026-10-16",
+		});
+		expect(week.success && week.data.requestedAbsenceDays).toBe(4);
+		expect(friday.success && friday.data.refusal).toBe("no_working_days");
 	});
 
 	it("calls getVacationBalance with the current employee id and calendar year", async () => {

@@ -132,7 +132,8 @@ const categories = [
 ];
 
 const riskyPreview: AbsencePlanPreview = {
-	requestedDays: 2,
+	requestedAbsenceDays: 2,
+	refusal: null,
 	balance: {
 		year: 2026,
 		remainingDays: 10,
@@ -387,6 +388,8 @@ describe("RequestAbsenceDialog", () => {
 		});
 		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "09:00" } });
 		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "13:00" } });
+		// Vacation waits for the plan preview's absence days.
+		await screen.findByText("Coverage may be tight for this request.");
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
@@ -410,9 +413,58 @@ describe("RequestAbsenceDialog", () => {
 
 		fillRequiredFields();
 		fireEvent.change(screen.getByLabelText("End Date"), { target: { value: "2026-05-14" } });
+		expect(await screen.findByText("Insufficient vacation balance for this request")).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+		const submit = screen.getByRole("button", { name: "Submit Request" });
+		expect(submit.hasAttribute("disabled")).toBe(true);
+		fireEvent.click(submit);
 
 		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
+	});
+
+	it("shows the absence days the plan preview counted", async () => {
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: { ...riskyPreview, requestedAbsenceDays: 4 },
+		});
+		renderDialog();
+
+		fillRequiredFields();
+
+		expect(await screen.findByText("Absence days:")).toBeTruthy();
+		expect(screen.getAllByText("{count} days").length).toBeGreaterThan(0);
+	});
+
+	it("blocks vacation that the plan preview refuses for having no working days", async () => {
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: { ...riskyPreview, requestedAbsenceDays: 0, refusal: "no_working_days" },
+		});
+		renderDialog();
+
+		fillRequiredFields();
+
+		expect(await screen.findByText("This range contains no working days.")).toBeTruthy();
+		const submit = screen.getByRole("button", { name: "Submit Request" });
+		expect(submit.hasAttribute("disabled")).toBe(true);
+		fireEvent.click(submit);
+		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
+	});
+
+	it("shows the no-working-days message when the server refuses the request", async () => {
+		requestAbsenceMock.mockResolvedValue({
+			success: false,
+			error: "This range contains no working days.",
+			code: "AbsenceDaysRefusedError",
+		});
+		renderDialog();
+
+		fillRequiredFields();
+		await screen.findByText("Coverage may be tight for this request.");
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith("This range contains no working days."),
+		);
 	});
 });

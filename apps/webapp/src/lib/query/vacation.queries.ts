@@ -15,12 +15,10 @@ import {
 	vacationAdjustment,
 	vacationAllowance,
 } from "@/db/schema";
-import {
-	calculateBusinessDaysWithHalfDays,
-	calculateCarryoverExpiryDate,
-} from "@/lib/absences/date-utils";
-import type { DayPeriod, Holiday } from "@/lib/absences/types";
-import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
+import { countAbsenceDays, type IsWorkingDay } from "@/lib/absences/absence-days";
+import { getAbsenceDaysOfAbsences, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
+import { calculateCarryoverExpiryDate } from "@/lib/absences/date-utils";
+import type { DayPeriod } from "@/lib/absences/types";
 
 export interface VacationAllowanceRecord {
 	id: string;
@@ -52,7 +50,8 @@ export interface EmployeeVacationAllowanceRecord {
 }
 
 export interface VacationTakenResult {
-	holidays: Holiday[];
+	/** The employee's working days in the year. */
+	isWorkingDay: IsWorkingDay;
 	totalDays: number;
 	entries: Array<{
 		id: string;
@@ -340,8 +339,8 @@ export async function getVacationTakenInYear(
 	const endOfYear = `${year}-12-31`;
 
 	const emp = await db.query.employee.findFirst({ where: eq(employee.id, employeeId) });
-	if (!emp) return { totalDays: 0, entries: [], holidays: [] };
-	const [entries, holidays] = await Promise.all([
+	if (!emp) return { totalDays: 0, entries: [], isWorkingDay: () => false };
+	const [entries, isWorkingDay] = await Promise.all([
 		db
 			.select({
 				id: absenceEntry.id,
@@ -370,7 +369,7 @@ export async function getVacationTakenInYear(
 					gte(absenceEntry.endDate, startOfYear),
 				),
 			),
-		getVacationHolidays({
+		loadWorkingDays({
 			organizationId: emp.organizationId,
 			employeeId,
 			startDate: startOfYear,
@@ -381,13 +380,14 @@ export async function getVacationTakenInYear(
 	const result = entries.map((entry) => {
 		const clippedStartDate = entry.startDate < startOfYear ? startOfYear : entry.startDate;
 		const clippedEndDate = entry.endDate > endOfYear ? endOfYear : entry.endDate;
-		// Use half-day aware calculation
-		const days = calculateBusinessDaysWithHalfDays(
-			clippedStartDate,
-			clippedStartDate === entry.startDate ? entry.startPeriod : "full_day",
-			clippedEndDate,
-			clippedEndDate === entry.endDate ? entry.endPeriod : "full_day",
-			holidays,
+		const days = countAbsenceDays(
+			{
+				startDate: clippedStartDate,
+				startPeriod: clippedStartDate === entry.startDate ? entry.startPeriod : "full_day",
+				endDate: clippedEndDate,
+				endPeriod: clippedEndDate === entry.endDate ? entry.endPeriod : "full_day",
+			},
+			isWorkingDay,
 		);
 		return {
 			id: entry.id,
@@ -401,7 +401,7 @@ export async function getVacationTakenInYear(
 	});
 
 	return {
-		holidays,
+		isWorkingDay,
 		totalDays: result.reduce((sum, e) => sum + e.days, 0),
 		entries: result,
 	};
@@ -486,32 +486,20 @@ export async function getPendingVacationRequests(
 		)
 		.orderBy(absenceEntry.startDate);
 
-	return Promise.all(
-		results.map(async (r) => ({
-			id: r.id,
-			employeeId: r.employeeId,
-			employeeName:
-				[r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
-			startDate: r.startDate,
-			startPeriod: r.startPeriod,
-			endDate: r.endDate,
-			endPeriod: r.endPeriod,
-			days: calculateBusinessDaysWithHalfDays(
-				r.startDate,
-				r.startPeriod,
-				r.endDate,
-				r.endPeriod,
-				await getVacationHolidays({
-					organizationId,
-					employeeId: r.employeeId,
-					startDate: r.startDate,
-					endDate: r.endDate,
-				}),
-			),
-			notes: r.notes,
-			createdAt: r.createdAt,
-		})),
-	);
+	const absenceDays = await getAbsenceDaysOfAbsences({ organizationId, absences: results });
+
+	return results.map((r, index) => ({
+		id: r.id,
+		employeeId: r.employeeId,
+		employeeName: [r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
+		startDate: r.startDate,
+		startPeriod: r.startPeriod,
+		endDate: r.endDate,
+		endPeriod: r.endPeriod,
+		days: absenceDays[index] ?? 0,
+		notes: r.notes,
+		createdAt: r.createdAt,
+	}));
 }
 
 /**

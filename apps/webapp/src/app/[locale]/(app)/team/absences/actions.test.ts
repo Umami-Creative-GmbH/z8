@@ -17,6 +17,7 @@ import {
 	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
+import { workingDaysFrom } from "@/lib/absences/working-days";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absence-permissions";
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
@@ -879,18 +880,66 @@ describe("manager vacation holiday recovery", () => {
 						},
 					},
 				],
-				holidays: [
-					{
-						id: "silvester",
-						name: "Silvester",
-						categoryId: "company",
-						startDate: new Date("2026-12-31T00:00:00Z"),
-						endDate: new Date("2026-12-31T00:00:00Z"),
-					},
-				],
+				isWorkingDay: workingDaysFrom({
+					assignments: [],
+					holidays: [
+						{
+							id: "silvester",
+							name: "Silvester",
+							categoryId: "company",
+							startDate: new Date("2026-12-31T00:00:00Z"),
+							endDate: new Date("2026-12-31T00:00:00Z"),
+						},
+					],
+				}),
 			});
 			expect(metrics.remainingVacationDays).toBe(27);
 			expect(metrics.usedVacationDays + metrics.pendingVacationDays).toBe(3);
 		},
 	);
+});
+
+describe("manager absence metrics on working days (#979)", () => {
+	it("counts vacation and sick days on the employee's working days", () => {
+		const absence = (id: string, type: "vacation" | "sick") => ({
+			id,
+			employeeId: "employee-1",
+			// Monday 12 to Sunday 18 October 2026.
+			startDate: type === "vacation" ? "2026-10-12" : "2026-10-19",
+			startPeriod: "full_day" as const,
+			endDate: type === "vacation" ? "2026-10-18" : "2026-10-25",
+			endPeriod: "full_day" as const,
+			status: "approved" as const,
+			notes: null,
+			sickDetail: null,
+			approvedBy: null,
+			approvedAt: null,
+			rejectionReason: null,
+			createdAt: new Date("2026-10-05T00:00:00Z"),
+			category: {
+				id: type,
+				name: type,
+				type,
+				color: null,
+				countsAgainstVacation: type === "vacation",
+			},
+		});
+
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			absences: [absence("vacation", "vacation"), absence("sick", "sick")],
+			isWorkingDay: (day) => day.dayOfWeek <= 4,
+		});
+
+		expect(metrics.usedVacationDays).toBe(4);
+		expect(metrics.sickDays).toBe(4);
+		expect(metrics.remainingVacationDays).toBe(26);
+	});
 });

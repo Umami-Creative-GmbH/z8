@@ -8,10 +8,9 @@ import {
 	absenceEntry,
 	approvalRequest,
 	employee,
-	holiday,
 	timeRecord,
 } from "@/db/schema";
-import { calculateBusinessDays } from "@/lib/absences/date-utils";
+import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
 import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
 import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
@@ -1024,12 +1023,15 @@ function updateAbsenceStatus(
 		);
 }
 
-function loadHolidays(dbService: ApprovalDbService, organizationId: string) {
-	return dbService.query("getHolidays", async () => {
-		return await dbService.db.query.holiday.findMany({
-			where: eq(holiday.organizationId, organizationId),
-		});
-	});
+/** The absence's absence days for its employee (Absences ADR 0001). */
+function loadAbsenceDays(dbService: ApprovalDbService, absence: AbsenceRecord) {
+	return dbService.query("getAbsenceDays", () =>
+		getAbsenceDays({
+			organizationId: absence.organizationId,
+			employeeId: absence.employeeId,
+			absence,
+		}),
+	);
 }
 
 async function syncCanonicalAbsenceApprovalStateAt(
@@ -1441,12 +1443,7 @@ function notifyApprovedAbsenceAfterCommit(
 	return Effect.gen(function* () {
 		const emailService = yield* EmailService;
 		const { absence } = result;
-		const holidays = yield* loadHolidays(dbService, absence.employee.organizationId);
-		const days = calculateBusinessDays(
-			new Date(absence.startDate),
-			new Date(absence.endDate),
-			holidays,
-		);
+		const days = yield* loadAbsenceDays(dbService, absence);
 		const emailContext = yield* buildAbsenceEmailContext(absence, currentEmployee, days);
 		const html = yield* Effect.promise(() => renderAbsenceRequestApproved(emailContext));
 
@@ -1567,12 +1564,7 @@ function notifyRejectedAbsenceAfterCommit(
 	return Effect.gen(function* () {
 		const emailService = yield* EmailService;
 		const { absence } = result;
-		const holidays = yield* loadHolidays(dbService, absence.employee.organizationId);
-		const days = calculateBusinessDays(
-			new Date(absence.startDate),
-			new Date(absence.endDate),
-			holidays,
-		);
+		const days = yield* loadAbsenceDays(dbService, absence);
 		const emailContext = yield* buildAbsenceEmailContext(absence, currentEmployee, days);
 		const html = yield* Effect.promise(() =>
 			renderAbsenceRequestRejected({

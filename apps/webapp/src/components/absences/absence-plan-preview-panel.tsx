@@ -55,9 +55,7 @@ export function AbsencePlanPreviewPanel({
 
 	if (error) {
 		return (
-			<output
-				className="rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-sm"
-			>
+			<output className="rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-sm">
 				{t(
 					"absences.planPreview.unavailable",
 					"Planning preview unavailable. You can still submit your request.",
@@ -111,7 +109,7 @@ export function AbsencePlanPreviewPanel({
 							</p>
 							<MetricRow
 								label={t("absences.planPreview.requested", "Requested")}
-								value={formatDays(preview.requestedDays, t)}
+								value={formatDays(preview.requestedAbsenceDays, t)}
 							/>
 							<MetricRow
 								label={t("absences.planPreview.remainingAfter", "Remaining after request")}
@@ -222,8 +220,19 @@ export function AbsencePlanPreviewPanel({
 								</li>
 							))}
 						</ul>
-						{preview.warnings.length > 0 ? (
+						{preview.refusal || preview.warnings.length > 0 ? (
 							<ul className="space-y-1 text-sm">
+								{preview.refusal === "no_working_days" && (
+									<li className="flex items-start gap-2 text-destructive" role="alert">
+										<IconAlertTriangle className="mt-0.5 size-4" aria-hidden="true" />
+										<span className="min-w-0 break-words">
+											{t(
+												"absences.planPreview.noWorkingDays",
+												"This range contains no working days.",
+											)}
+										</span>
+									</li>
+								)}
 								{preview.warnings.map((warning) => (
 									<li className="flex items-start gap-2 text-destructive" key={warning}>
 										<IconAlertTriangle className="mt-0.5 size-4" aria-hidden="true" />

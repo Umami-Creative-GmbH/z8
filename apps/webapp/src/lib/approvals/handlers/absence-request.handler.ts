@@ -11,9 +11,10 @@ import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
-	calculateBusinessDaysWithHalfDays,
-	formatDateRange,
-} from "@/lib/absences/date-utils";
+	getAbsenceDays,
+	getAbsenceDaysOfAbsences,
+} from "@/lib/absences/absence-days-resolver";
+import { formatDateRange } from "@/lib/absences/date-utils";
 import type { SickDetail } from "@/lib/absences/types";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -41,6 +42,8 @@ interface AbsenceWithRelations {
 	sickDetail: SickDetail | null;
 	status: "pending" | "approved" | "rejected";
 	createdAt: Date;
+	/** The absence's absence days for the employee (Absences ADR 0001). */
+	absenceDays: number;
 	employee: {
 		id: string;
 		userId: string;
@@ -104,11 +107,23 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 							},
 						);
 
+						const absenceDays = yield* dbService.query(
+							"batchGetAbsenceDays",
+							() =>
+								getAbsenceDaysOfAbsences({
+									organizationId: params.organizationId,
+									absences,
+								}),
+						);
+
 						const map = new Map<string, AbsenceWithRelations>();
-						for (const absence of absences) {
+						for (const [index, absence] of absences.entries()) {
 							map.set(
 								absence.id,
-								redactNonSickAbsenceSickDetail(absence as AbsenceWithRelations),
+								redactNonSickAbsenceSickDetail({
+									...absence,
+									absenceDays: absenceDays[index] ?? 0,
+								} as AbsenceWithRelations),
 							);
 						}
 						return map;
@@ -217,7 +232,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 				const dbService = yield* DatabaseService;
 
 				// Fetch absence with full details
-				const absence = yield* dbService
+				const found = yield* dbService
 					.query("getAbsenceDetail", async () => {
 						return await dbService.db.query.absenceEntry.findFirst({
 							where: and(
@@ -233,7 +248,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 					.pipe(
 						Effect.flatMap((a) =>
 							a
-								? Effect.succeed(a as AbsenceWithRelations)
+								? Effect.succeed(a)
 								: Effect.fail(
 										new NotFoundError({
 											message: "Absence not found",
@@ -244,7 +259,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 						),
 					);
 
-				if (absence.employee.organizationId !== organizationId) {
+				if (found.employee.organizationId !== organizationId) {
 					return yield* Effect.fail(
 						new NotFoundError({
 							message: "Absence not found in this organization",
@@ -253,6 +268,14 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 						}),
 					);
 				}
+				const absenceDays = yield* dbService.query("getAbsenceDetailDays", () =>
+					getAbsenceDays({
+						organizationId,
+						employeeId: found.employeeId,
+						absence: found,
+					}),
+				);
+				const absence = { ...found, absenceDays } as AbsenceWithRelations;
 
 				// Fetch approval request
 				const request = yield* dbService
@@ -438,14 +461,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 		},
 
 		getDisplayMetadata: (entity) => {
-			const days = calculateBusinessDaysWithHalfDays(
-				entity.startDate,
-				entity.startPeriod,
-				entity.endDate,
-				entity.endPeriod,
-				[],
-			);
-
+			const days = entity.absenceDays;
 			const daysText = days === 1 ? "1 day" : `${days} days`;
 			const dateRange = formatDateRange(entity.startDate, entity.endDate);
 

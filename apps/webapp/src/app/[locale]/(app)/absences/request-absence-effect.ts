@@ -12,9 +12,11 @@ import {
 	timeRecordAbsence,
 } from "@/db/schema";
 import {
-	calculateBusinessDaysWithHalfDays,
-	dateRangesOverlap,
-} from "@/lib/absences/date-utils";
+	NO_WORKING_DAYS_MESSAGE,
+	refuseAbsenceDays,
+} from "@/lib/absences/absence-days";
+import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
+import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import {
 	type NormalizedAbsenceDurationInput,
 	normalizeAbsenceDurationInput,
@@ -65,6 +67,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import {
+	AbsenceDaysRefusedError,
 	type AnyAppError,
 	ConflictError,
 	NotFoundError,
@@ -912,7 +915,7 @@ function renderManagerApprovalEmail(params: {
 	employeeRecord: { user: { name: string } };
 	data: AbsenceRequest;
 	categoryName: string;
-	businessDays: number;
+	absenceDays: number;
 }) {
 	return Effect.gen(function* () {
 		const appUrl = yield* Effect.promise(() =>
@@ -925,7 +928,7 @@ function renderManagerApprovalEmail(params: {
 				startDate: formatDisplayDate(params.data.startDate),
 				endDate: formatDisplayDate(params.data.endDate),
 				absenceType: params.categoryName,
-				days: params.businessDays,
+				days: params.absenceDays,
 				notes: params.data.notes || undefined,
 				approvalUrl: `${appUrl}/approvals/inbox`,
 			}),
@@ -941,7 +944,7 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 	absenceId: string;
 	data: AbsenceRequest;
 	categoryName: string;
-	businessDays: number;
+	absenceDays: number;
 }) {
 	try {
 		const [manager, employeeRecord] = await Effect.runPromise(
@@ -963,7 +966,7 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 			startDate: params.data.startDate,
 			endDate: params.data.endDate,
 			managerName: manager.user.name,
-			days: params.businessDays,
+			days: params.absenceDays,
 		});
 		const managerHtml = await Effect.runPromise(
 			renderManagerApprovalEmail({
@@ -972,7 +975,7 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 				employeeRecord,
 				data: params.data,
 				categoryName: params.categoryName,
-				businessDays: params.businessDays,
+				absenceDays: params.absenceDays,
 			}),
 		);
 		await Effect.runPromise(
@@ -1114,6 +1117,29 @@ function requestAbsenceWithResolverEffect(
 					yield* Effect.fail(createSickDetailValidationError(sickDetailError));
 				}
 
+				const absenceDays = yield* dbService.query(
+					"getRequestedAbsenceDays",
+					() =>
+						getAbsenceDays({
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							absence: toAbsenceEntryDurationFields(normalizedData),
+						}),
+				);
+				span.setAttribute("absence.absence_days", absenceDays);
+				const refusal = refuseAbsenceDays({
+					countsAgainstVacation: category.countsAgainstVacation,
+					absenceDays,
+				});
+				if (refusal) {
+					return yield* Effect.fail(
+						new AbsenceDaysRefusedError({
+							message: NO_WORKING_DAYS_MESSAGE,
+							reason: refusal,
+						}),
+					);
+				}
+
 				const defaultApproverId = category.requiresApproval
 					? yield* getAbsenceDefaultApproverId(dbService, currentEmployee)
 					: null;
@@ -1131,20 +1157,11 @@ function requestAbsenceWithResolverEffect(
 					category.requiresApproval,
 				);
 
-				const businessDays = calculateBusinessDaysWithHalfDays(
-					requestData.startDate,
-					requestData.startPeriod,
-					requestData.endDate,
-					requestData.endPeriod,
-					[],
-				);
-				span.setAttribute("absence.business_days", businessDays);
-
 				logger.info(
 					{
 						categoryId: requestData.categoryId,
 						categoryName: category.name,
-						businessDays,
+						absenceDays,
 						requiresApproval: category.requiresApproval,
 					},
 					"Absence request validated",
@@ -1200,7 +1217,7 @@ function requestAbsenceWithResolverEffect(
 								absenceId: newAbsence.id,
 								data: requestData,
 								categoryName: category.name,
-								businessDays,
+								absenceDays,
 							}),
 						);
 						if (newAbsence.legacyDeliveryIntent) {

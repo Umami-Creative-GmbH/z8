@@ -80,6 +80,12 @@ export class ExternalServiceError extends Data.TaggedError("ExternalServiceError
 	cause?: unknown;
 }> {}
 
+/** An absence request refused for its absence days, such as vacation on no working day (#979). */
+export class AbsenceDaysRefusedError extends Data.TaggedError("AbsenceDaysRefusedError")<{
+	message: string;
+	reason: "no_working_days";
+}> {}
+
 export type AnyAppError =
 	| ValidationError
 	| AuthenticationError
@@ -91,4 +97,5 @@ export type AnyAppError =
 	| StripeError
 	| BillingError
 	| QueueError
-	| ExternalServiceError;
+	| ExternalServiceError
+	| AbsenceDaysRefusedError;

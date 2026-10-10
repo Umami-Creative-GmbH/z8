@@ -14,7 +14,11 @@ import {
 	timeRecordAbsence,
 	vacationAllowance,
 } from "@/db/schema";
-import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
+import {
+	getAbsenceDays,
+	loadWorkingDaysForEmployees,
+} from "@/lib/absences/absence-days-resolver";
+import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
@@ -24,7 +28,6 @@ import {
 	getBlockingOverlapMessage,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
-import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
@@ -751,7 +754,7 @@ async function addMetricsToRows(
 	const employeeIds = rows.map((row) => row.id);
 	const yearStart = `${year}-01-01`;
 	const yearEnd = `${year}-12-31`;
-	const [allowance, employeeAllowances, absences, employeeHolidays] = await Promise.all([
+	const [allowance, employeeAllowances, absences, workingDaysByEmployeeId] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
 				eq(vacationAllowance.organizationId, organizationId),
@@ -775,23 +778,14 @@ async function addMetricsToRows(
 			),
 			with: { category: true },
 		}),
-		Promise.all(
-			employeeIds.map(
-				async (employeeId) =>
-					[
-						employeeId,
-						await getVacationHolidays({
-							organizationId,
-							employeeId,
-							startDate: yearStart,
-							endDate: yearEnd,
-						}),
-					] as const,
-			),
-		),
+		loadWorkingDaysForEmployees({
+			organizationId,
+			employeeIds,
+			startDate: yearStart,
+			endDate: yearEnd,
+		}),
 	]);
 
-	const holidaysByEmployeeId = new Map(employeeHolidays);
 	const allowancesByEmployeeId = new Map(
 		employeeAllowances.map((employeeAllowance) => [
 			employeeAllowance.employeeId,
@@ -818,7 +812,7 @@ async function addMetricsToRows(
 				: null,
 			employeeAllowance: allowancesByEmployeeId.get(row.id) ?? null,
 			absences: absencesByEmployeeId.get(row.id) ?? [],
-			holidays: holidaysByEmployeeId.get(row.id) ?? [],
+			isWorkingDay: workingDaysByEmployeeId.get(row.id),
 		});
 
 		return {
@@ -924,19 +918,11 @@ async function notifyEmployeeOfManagerRecordedAbsence(params: {
 }) {
 	try {
 		const { onAbsenceRecordedByManager } = await import("@/lib/notifications/triggers");
-		const holidays = await getVacationHolidays({
+		const days = await getAbsenceDays({
 			organizationId: params.actor.organizationId,
 			employeeId: params.target.id,
-			startDate: params.input.startDate,
-			endDate: params.input.endDate,
+			absence: params.input,
 		});
-		const days = calculateBusinessDaysWithHalfDays(
-			params.input.startDate,
-			params.input.startPeriod,
-			params.input.endDate,
-			params.input.endPeriod,
-			holidays,
-		);
 
 		await onAbsenceRecordedByManager({
 			absenceId: params.absenceId,

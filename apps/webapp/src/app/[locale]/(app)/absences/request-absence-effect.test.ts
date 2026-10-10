@@ -21,6 +21,7 @@ const callerMocks = vi.hoisted(() => ({
 	absenceEntryFindMany: vi.fn(),
 	createAbsenceApprovalWorkflow: vi.fn(),
 	employeeFindFirst: vi.fn(),
+	getAbsenceDays: vi.fn(),
 	notificationPreferenceFindMany: vi.fn(),
 	notificationInsert: vi.fn(),
 	userFindFirst: vi.fn(),
@@ -51,6 +52,11 @@ vi.mock("@/db", () => ({
 			set: vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) })),
 		})),
 	},
+}));
+
+// Absence days (#979): absences/absence-days-resolver.integration.test.ts.
+vi.mock("@/lib/absences/absence-days-resolver", () => ({
+	getAbsenceDays: callerMocks.getAbsenceDays,
 }));
 
 // Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
@@ -248,6 +254,7 @@ beforeEach(() => {
 		requiresApproval: true,
 	});
 	callerMocks.absenceEntryFindMany.mockResolvedValue([]);
+	callerMocks.getAbsenceDays.mockResolvedValue(2);
 	callerMocks.notificationPreferenceFindMany.mockResolvedValue([]);
 	callerMocks.userFindFirst.mockResolvedValue({
 		name: "Avery Employee",
@@ -429,6 +436,84 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 			).not.toHaveBeenCalled();
 		},
 	);
+});
+
+describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
+	it("counts the request's absence days for the employee in their organization", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+
+		await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(callerMocks.getAbsenceDays).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			absence: {
+				startDate: "2026-05-11",
+				startPeriod: "full_day",
+				endDate: "2026-05-12",
+				endPeriod: "full_day",
+			},
+		});
+	});
+
+	it("refuses vacation that covers no working day before recording anything", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.getAbsenceDays.mockResolvedValue(0);
+
+		const result = await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(result).toEqual({
+			success: false,
+			error: "This range contains no working days.",
+			code: "AbsenceDaysRefusedError",
+		});
+		expect(callerMocks.transaction).not.toHaveBeenCalled();
+		expect(callerMocks.createAbsenceApprovalWorkflow).not.toHaveBeenCalled();
+	});
+
+	it("accepts sick leave that covers no working day", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.getAbsenceDays.mockResolvedValue(0);
+		callerMocks.absenceCategoryFindFirst.mockResolvedValue({
+			id: "category-1",
+			name: "Sick leave",
+			type: "sick",
+			countsAgainstVacation: false,
+			requiresApproval: true,
+		});
+		callerMocks.employeeFindFirst
+			.mockResolvedValueOnce({
+				id: "manager-1",
+				userId: "manager-user-1",
+				organizationId: "org-1",
+				user: { name: "Morgan Manager", email: "manager@example.com" },
+			})
+			.mockResolvedValueOnce({
+				id: "employee-1",
+				userId: "user-1",
+				organizationId: "org-1",
+				user: { name: "Avery Employee", email: "avery@example.com" },
+			});
+
+		const result = await requestAbsenceForEmployeeEffect(
+			{ ...absenceRequest, sickDetail: "with_certificate" },
+			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
+	});
 });
 
 describe("validateAbsenceSickDetail", () => {

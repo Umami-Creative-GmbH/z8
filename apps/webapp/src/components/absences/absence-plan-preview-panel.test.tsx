@@ -15,7 +15,8 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 const riskyPreview: AbsencePlanPreview = {
-	requestedDays: 6,
+	requestedAbsenceDays: 6,
+	refusal: null,
 	balance: {
 		year: 2026,
 		remainingDays: 4,
@@ -179,5 +180,15 @@ describe("AbsencePlanPreviewPanel", () => {
 		const { container } = render(<AbsencePlanPreviewPanel />);
 
 		expect(container.firstChild).toBeNull();
+	});
+
+	it("shows a refusal for vacation that covers no working day", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{ ...nonVacationPreview, requestedAbsenceDays: 0, refusal: "no_working_days" }}
+			/>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toBe("This range contains no working days.");
 	});
 });

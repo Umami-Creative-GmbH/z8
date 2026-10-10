@@ -1,49 +1,5 @@
 import { DateTime } from "luxon";
 import { fromJSDate } from "@/lib/datetime/luxon-utils";
-import { countBusinessDays, utcHolidayDate } from "./business-days";
-import type { DayPeriod, Holiday } from "./types";
-
-/**
- * Calculate the number of business days between two dates
- * Excludes weekends (Saturday/Sunday) and organization holidays
- *
- * @param startDate - Start date (inclusive)
- * @param endDate - End date (inclusive)
- * @param holidays - Array of holidays to exclude
- * @returns Number of business days
- */
-export function calculateBusinessDays(
-	startDate: Date | DateTime,
-	endDate: Date | DateTime,
-	holidays: Holiday[] = [],
-): number {
-	const start =
-		startDate instanceof Date ? utcHolidayDate(startDate).toString() : startDate.toISODate();
-	const end = endDate instanceof Date ? utcHolidayDate(endDate).toString() : endDate.toISODate();
-	if (!start || !end) throw new Error("Invalid date");
-	return countBusinessDays(start, "full_day", end, "full_day", holidays);
-}
-
-/**
- * Calculate the number of business days with half-day support.
- * Returns number with 0.5 increments for half-days.
- *
- * @param startDate - Start date in YYYY-MM-DD format
- * @param startPeriod - Period of start day (full_day, am, pm)
- * @param endDate - End date in YYYY-MM-DD format
- * @param endPeriod - Period of end day (full_day, am, pm)
- * @param holidays - Array of holidays to exclude
- * @returns Number of business days (with 0.5 increments)
- */
-export function calculateBusinessDaysWithHalfDays(
-	startDate: string,
-	startPeriod: DayPeriod,
-	endDate: string,
-	endPeriod: DayPeriod,
-	holidays: Holiday[] = [],
-): number {
-	return countBusinessDays(startDate, startPeriod, endDate, endPeriod, holidays);
-}
 
 /**
  * Get the start and end dates for a specific year
