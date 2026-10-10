@@ -216,8 +216,10 @@ export async function classifyPayrollRunCandidates(
 				format: input.format,
 				period,
 				codes,
-				// No payroll run is confirmed before confirmation exists (#853).
-				priorLines: [],
+				// What earlier confirmed runs carried (#853, decision 17).
+				priorLines: account.confirmedPayrollRuns.flatMap((run) =>
+					run.lines.map(({ kind, amount, currency }) => ({ kind, amount, currency })),
+				),
 			}),
 		};
 	});

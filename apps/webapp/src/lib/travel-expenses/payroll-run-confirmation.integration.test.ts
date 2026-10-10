@@ -97,6 +97,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 const actions = await import("@/app/[locale]/(app)/travel-expenses/report-actions");
 const adjustments = await import("@/app/[locale]/(app)/travel-expenses/adjustment-actions");
 const finance = await import("@/app/[locale]/(app)/travel-expenses/finance-actions");
+const reopen = await import("@/app/[locale]/(app)/travel-expenses/report-reopen-actions");
 const officerGrants = await import(
 	"@/app/[locale]/(app)/settings/travel-expenses/expense-officer-actions"
 );
@@ -549,6 +550,12 @@ describe("confirming a payroll run as paid (#853)", () => {
 	it("records only what is still owed after an adjustment lowered it, and flags the run as overpaid", async () => {
 		const reportId = await approvedHotel("100.00");
 		const run = await exportPayroll(current);
+		// The run's file carries it like an export: correcting it needs an adjustment, not a reopen.
+		signIn("manager");
+		expect(await reopen.getTravelExpenseReportReopenState(reportId)).toEqual({
+			success: true,
+			data: expect.objectContaining({ status: "adjustment_required" }),
+		});
 		await approvedAdjustment(reportId, "70.00");
 
 		const rows = await confirmed("officer", run.jobId);

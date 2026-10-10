@@ -48,6 +48,30 @@ export async function countRunsIncludingReports(
 	return rows.length;
 }
 
+/**
+ * Whether a payroll run carries or carried any of the reports: an unconfirmed
+ * run includes it, or a confirmed run paid it (#853). Such a report counts as
+ * exported: a correction is an adjustment, never a reopen.
+ */
+export async function isCarriedByPayrollRun(
+	database: Executor,
+	input: { organizationId: string; reportIds: readonly string[] },
+): Promise<boolean> {
+	if (input.reportIds.length === 0) return false;
+	const [row] = await database
+		.select({ id: travelExpensePayrollRunInclusion.id })
+		.from(travelExpensePayrollRunInclusion)
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				inArray(travelExpensePayrollRunInclusion.state, ["included", "confirmed"]),
+				inArray(travelExpensePayrollRunInclusion.reportId, [...input.reportIds]),
+			),
+		)
+		.limit(1);
+	return Boolean(row);
+}
+
 /** A confirmed payroll run that paid a report (#853), as its account shows it. */
 export interface ConfirmedPayrollRun extends Omit<IncludedPayrollRun, "includedAt"> {
 	confirmedAt: string;

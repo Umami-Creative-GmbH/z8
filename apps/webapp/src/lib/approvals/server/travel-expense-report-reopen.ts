@@ -25,6 +25,7 @@ import {
 	hasRecordedSettlement,
 	loadSettlementAccount,
 } from "@/lib/travel-expenses/settlement-store";
+import { isCarriedByPayrollRun } from "@/lib/travel-expenses/payroll-run-inclusion-read";
 import { acquireApprovalWriteGate } from "../authority";
 import { kickApprovalDelivery } from "../delivery/kick";
 import { type LegacyDecisionEvidenceRecord, listLegacyDecisionEvidence } from "../evidence/store";
@@ -261,11 +262,15 @@ async function evaluateReopen(
 							hasRecordedSettlement(database, { organizationId, source: { type: "report", id } }),
 						),
 					).then((found) => found.some(Boolean)),
-					Promise.all(
-						settledReportIds.map((id) =>
-							loadTravelExpenseReportExportState(database, { organizationId, reportId: id }),
+					Promise.all([
+						...settledReportIds.map((id) =>
+							loadTravelExpenseReportExportState(database, { organizationId, reportId: id }).then(
+								(state) => state.exported,
+							),
 						),
-					).then((states) => states.some((state) => state.exported)),
+						// A payroll run's file carries it like an export (#853).
+						isCarriedByPayrollRun(database, { organizationId, reportIds: settledReportIds }),
+					]).then((found) => found.some(Boolean)),
 				])
 			: [false, false];
 	return {

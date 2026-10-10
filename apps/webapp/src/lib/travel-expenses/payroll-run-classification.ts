@@ -90,8 +90,11 @@ export function classifyPayrollRunCandidate(
 	const result = computePayrollLines({
 		source: "report",
 		revision: revision.facts,
-		// No reimbursement names a payroll run before confirmation exists (#853).
-		settlementEntries: account.entries.map((entry) => ({ kind: entry.kind, payrollRunId: null })),
+		// A confirmed payroll run's reimbursement names the run (#853).
+		settlementEntries: account.entries.map((entry) => ({
+			kind: entry.kind,
+			payrollRunId: entry.payrollRun?.id ?? null,
+		})),
 		priorLines: input.priorLines,
 	});
 	if (!result.ok) {
