@@ -256,6 +256,10 @@ const parsedEnv = createEnv({
 		VAPID_SUBJECT: z.string().optional(),
 		RESEND_API_KEY: z.string().optional(),
 		EMAIL_FROM: z.string().optional(),
+
+		// Store app listings for the "Get the app" banner (#847). Unset = no banner on that platform.
+		STORE_APP_IOS_URL: z.url({ protocol: /^https$/ }).optional(),
+		STORE_APP_ANDROID_URL: z.url({ protocol: /^https$/ }).optional(),
 	},
 	client: {
 		NEXT_PUBLIC_APP_URL: z.url().optional(),
@@ -450,6 +454,8 @@ const parsedEnv = createEnv({
 		VAPID_SUBJECT: process.env.VAPID_SUBJECT,
 		RESEND_API_KEY: process.env.RESEND_API_KEY,
 		EMAIL_FROM: process.env.EMAIL_FROM,
+		STORE_APP_IOS_URL: process.env.STORE_APP_IOS_URL,
+		STORE_APP_ANDROID_URL: process.env.STORE_APP_ANDROID_URL,
 	},
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((env, ctx) => {

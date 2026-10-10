@@ -32,6 +32,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"offline",
 		"presence",
 		"roles",
+		"storeAppBanner",
 		"user",
 		"userAvatar",
 		"billing.trialBanner",
