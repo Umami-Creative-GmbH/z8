@@ -3,33 +3,21 @@
 import { IconAlertTriangle } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useId } from "react";
-import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { Badge } from "@/components/ui/badge";
-import { DatePicker } from "@/components/ui/date-picker";
-import { formatDateOnly } from "@/components/ui/date-picker-utils";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { CUSTOM_FIELD_TEXT_MAX_LENGTH } from "@/lib/organization/custom-fields/definition-rules";
-import {
-	type CustomFieldValue,
-	customFieldDraftOf,
-} from "@/lib/organization/custom-fields/value-rules";
+	type CustomFieldHistoryDraft,
+	customFieldHistoryDraftsOf,
+} from "@/lib/organization/custom-fields/history-rules";
+import { customFieldDraftOf } from "@/lib/organization/custom-fields/value-rules";
 import type {
 	CustomFieldSection,
 	CustomFieldSectionField,
 } from "@/lib/organization/custom-fields/values";
+import { CustomFieldControl } from "./custom-field-control";
+import { useCustomFieldValueText } from "./custom-field-value-text";
+import { TrackedCustomFieldInput } from "./tracked-custom-field-input";
 import type { CustomFieldDrafts } from "./use-custom-field-drafts";
-
-type Translate = ReturnType<typeof useTranslate>["t"];
-
-const NONE = "__none__";
 
 /** Marks a record with a required custom field that has no value (#818). */
 export function MissingRequiredValuesBadge({ className }: { className?: string }) {
@@ -42,37 +30,10 @@ export function MissingRequiredValuesBadge({ className }: { className?: string }
 	);
 }
 
-/** A value as text: select labels, Yes/No, dates in the app locale. */
-export function useCustomFieldValueText() {
-	const { t } = useTranslate();
-	const locale = useAppLocale();
-	return (field: CustomFieldSectionField, value: CustomFieldValue | undefined): string => {
-		if (!value) return "—";
-		switch (value.type) {
-			case "boolean":
-				return value.value
-					? t("settings.customFields.values.yes", "Yes")
-					: t("settings.customFields.values.no", "No");
-			case "date":
-				return formatDateOnly(value.value, locale) || value.value;
-			case "select": {
-				const option = field.options.find((candidate) => candidate.id === value.value);
-				if (!option) return "—";
-				return option.archived
-					? t("settings.customFields.values.archivedOption", "{label} (archived)", {
-							label: option.label,
-						})
-					: option.label;
-			}
-			default:
-				return value.value;
-		}
-	};
-}
-
 /**
  * The read-only "Custom fields" list: field names and values. Used for fields
- * the viewer may see but not change, and for the own-profile view.
+ * the viewer may see but not change, and for the own-profile view (tracked
+ * fields show their value as of today there).
  */
 export function CustomFieldValueList({
 	fields,
@@ -97,24 +58,32 @@ export function CustomFieldValueList({
 /**
  * The "Custom fields" section of a record's form (#818): the active fields the
  * viewer sees, in order. Fields the viewer may change are inputs; the others
- * are shown read-only. Renders nothing when the viewer sees no field.
+ * are shown read-only. Tracked fields (#819) show their value as of today and
+ * their history, editable through `onHistoryChange`. Renders nothing when the
+ * viewer sees no field.
  */
 export function CustomFieldValuesSection({
 	section,
 	drafts,
 	onDraftChange,
+	historyDrafts = {},
+	onHistoryChange,
 	disabled = false,
 }: {
 	section: CustomFieldSection | null;
 	drafts: Readonly<Record<string, string>>;
 	onDraftChange: (fieldId: string, draft: string) => void;
+	/** Edited histories of tracked fields, by field id (absent = the saved history). */
+	historyDrafts?: Readonly<Record<string, CustomFieldHistoryDraft[]>>;
+	onHistoryChange?: (fieldId: string, entries: CustomFieldHistoryDraft[]) => void;
 	disabled?: boolean;
 }) {
 	const { t } = useTranslate();
 	const headingId = useId();
 	if (!section || section.fields.length === 0) return null;
-	const editable = section.fields.filter((field) => field.editable);
-	const readOnly = section.fields.filter((field) => !field.editable);
+	const editable = section.fields.filter((field) => field.editable && !field.tracked);
+	const tracked = section.fields.filter((field) => field.tracked);
+	const readOnly = section.fields.filter((field) => !field.editable && !field.tracked);
 	const missing = new Set(section.missingRequiredFieldIds);
 
 	return (
@@ -135,11 +104,27 @@ export function CustomFieldValuesSection({
 							missing={missing.has(field.id)}
 							onChange={(draft) => onDraftChange(field.id, draft)}
 							disabled={disabled}
-							t={t}
 						/>
 					))}
 				</div>
 			) : null}
+			{tracked.map((field) => (
+				<TrackedCustomFieldInput
+					key={field.id}
+					field={field}
+					entries={
+						historyDrafts[field.id] ?? customFieldHistoryDraftsOf(section.history[field.id] ?? [])
+					}
+					today={section.today}
+					missing={missing.has(field.id)}
+					onChange={
+						field.editable && onHistoryChange
+							? (entries) => onHistoryChange(field.id, entries)
+							: undefined
+					}
+					disabled={disabled}
+				/>
+			))}
 			{readOnly.length > 0 ? (
 				<CustomFieldValueList fields={readOnly} values={section.values} />
 			) : null}
@@ -152,7 +137,10 @@ export function CustomFieldDraftsSection({
 	drafts,
 	disabled,
 }: {
-	drafts: Pick<CustomFieldDrafts, "section" | "drafts" | "setDraft">;
+	drafts: Pick<
+		CustomFieldDrafts,
+		"section" | "drafts" | "setDraft" | "historyDrafts" | "setHistoryDraft"
+	>;
 	disabled?: boolean;
 }) {
 	return (
@@ -160,6 +148,8 @@ export function CustomFieldDraftsSection({
 			section={drafts.section}
 			drafts={drafts.drafts}
 			onDraftChange={drafts.setDraft}
+			historyDrafts={drafts.historyDrafts}
+			onHistoryChange={drafts.setHistoryDraft}
 			disabled={disabled}
 		/>
 	);
@@ -171,14 +161,12 @@ function CustomFieldInput({
 	missing,
 	onChange,
 	disabled,
-	t,
 }: {
 	field: CustomFieldSectionField;
 	draft: string;
 	missing: boolean;
 	onChange: (draft: string) => void;
 	disabled: boolean;
-	t: Translate;
 }) {
 	const id = `custom-field-${field.id}`;
 	return (
@@ -194,115 +182,7 @@ function CustomFieldInput({
 				onChange={onChange}
 				disabled={disabled}
 				invalid={missing && draft === ""}
-				t={t}
 			/>
 		</div>
 	);
-}
-
-function CustomFieldControl({
-	id,
-	field,
-	draft,
-	onChange,
-	disabled,
-	invalid,
-	t,
-}: {
-	id: string;
-	field: CustomFieldSectionField;
-	draft: string;
-	onChange: (draft: string) => void;
-	disabled: boolean;
-	invalid: boolean;
-	t: Translate;
-}) {
-	switch (field.type) {
-		case "date":
-			return (
-				<DatePicker
-					id={id}
-					value={draft}
-					onChange={onChange}
-					required={field.required}
-					disabled={disabled}
-					aria-invalid={invalid || undefined}
-				/>
-			);
-		case "select":
-			return (
-				<Select
-					value={draft || NONE}
-					onValueChange={(value) =>
-						onChange(value === NONE || typeof value !== "string" ? "" : value)
-					}
-					disabled={disabled}
-				>
-					<SelectTrigger id={id} aria-invalid={invalid || undefined}>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value={NONE}>
-							{t("settings.customFields.values.notSet", "Not set")}
-						</SelectItem>
-						{field.options
-							.filter((option) => !option.archived || option.id === draft)
-							.map((option) => (
-								<SelectItem key={option.id} value={option.id}>
-									{option.archived
-										? t("settings.customFields.values.archivedOption", "{label} (archived)", {
-												label: option.label,
-											})
-										: option.label}
-								</SelectItem>
-							))}
-					</SelectContent>
-				</Select>
-			);
-		case "boolean":
-			return (
-				<Select
-					value={draft || NONE}
-					onValueChange={(value) =>
-						onChange(value === NONE || typeof value !== "string" ? "" : value)
-					}
-					disabled={disabled}
-				>
-					<SelectTrigger id={id}>
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value={NONE}>
-							{t("settings.customFields.values.notSet", "Not set")}
-						</SelectItem>
-						<SelectItem value="true">{t("settings.customFields.values.yes", "Yes")}</SelectItem>
-						<SelectItem value="false">{t("settings.customFields.values.no", "No")}</SelectItem>
-					</SelectContent>
-				</Select>
-			);
-		case "number":
-			return (
-				<Input
-					id={id}
-					inputMode="decimal"
-					autoComplete="off"
-					value={draft}
-					onChange={(event) => onChange(event.target.value)}
-					disabled={disabled}
-					aria-invalid={invalid || undefined}
-				/>
-			);
-		default:
-			return (
-				<Input
-					id={id}
-					autoComplete="off"
-					maxLength={CUSTOM_FIELD_TEXT_MAX_LENGTH}
-					value={draft}
-					onChange={(event) => onChange(event.target.value)}
-					disabled={disabled}
-					aria-invalid={invalid || undefined}
-				/>
-			);
-	}
 }

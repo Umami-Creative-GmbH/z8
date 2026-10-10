@@ -5,6 +5,10 @@ import { useState } from "react";
 import { getCustomFieldSection } from "@/app/[locale]/(app)/settings/custom-fields/value-actions";
 import type { CustomFieldEntity } from "@/lib/organization/custom-fields/definition-rules";
 import {
+	type CustomFieldHistoryDraft,
+	customFieldHistoryChangesOf,
+} from "@/lib/organization/custom-fields/history-rules";
+import {
 	type CustomFieldValuesInput,
 	customFieldValuesOfDrafts,
 } from "@/lib/organization/custom-fields/value-rules";
@@ -14,6 +18,8 @@ import { queryKeys } from "@/lib/query";
  * The "Custom fields" section of a record's form (#818): the section as the
  * server decides it for the viewer, and the drafts of the fields edited in this
  * form. Drafts hold only edited fields, so untouched fields keep their value.
+ * Tracked fields (#819) keep their edited history list; the save sends only its
+ * differences to the saved history (`{ history: [...] }`).
  */
 export function useCustomFieldDrafts(input: {
 	entity: CustomFieldEntity;
@@ -39,21 +45,40 @@ export function useCustomFieldDrafts(input: {
 		enabled: input.enabled,
 	});
 	const [drafts, setDrafts] = useState<Record<string, string>>({});
-	const reset = () => setDrafts({});
+	const [historyDrafts, setHistoryDrafts] = useState<Record<string, CustomFieldHistoryDraft[]>>({});
+	const reset = () => {
+		setDrafts({});
+		setHistoryDrafts({});
+	};
 
 	return {
 		section,
 		drafts,
-		isDirty: Object.keys(drafts).length > 0,
+		historyDrafts,
+		isDirty: Object.keys(drafts).length > 0 || Object.keys(historyDrafts).length > 0,
 		setDraft: (fieldId: string, draft: string) =>
 			setDrafts((current) => ({ ...current, [fieldId]: draft })),
+		setHistoryDraft: (fieldId: string, entries: CustomFieldHistoryDraft[]) =>
+			setHistoryDrafts((current) => ({ ...current, [fieldId]: entries })),
 		reset,
 		/**
 		 * What the save sends. Undefined while the section isn't loaded: the save
 		 * then neither writes values nor checks required fields it couldn't show.
 		 */
-		values: (): CustomFieldValuesInput | undefined =>
-			section ? customFieldValuesOfDrafts(section.fields, drafts) : undefined,
+		values: (): CustomFieldValuesInput | undefined => {
+			if (!section) return undefined;
+			const values: CustomFieldValuesInput = customFieldValuesOfDrafts(
+				section.fields.filter((field) => !field.tracked),
+				drafts,
+			);
+			for (const field of section.fields) {
+				const edited = historyDrafts[field.id];
+				if (!field.tracked || !field.editable || !edited) continue;
+				const history = customFieldHistoryChangesOf(section.history[field.id] ?? [], edited);
+				if (history.length > 0) values[field.id] = { history };
+			}
+			return values;
+		},
 		handleOpenChange: (open: boolean) => {
 			if (!open) reset();
 			input.onOpenChange?.(open);

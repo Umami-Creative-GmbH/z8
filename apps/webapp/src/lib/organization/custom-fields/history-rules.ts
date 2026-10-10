@@ -175,6 +175,29 @@ export function applyCustomFieldHistoryChanges(
 	return { ok: true, entries: result, effects };
 }
 
+/**
+ * An entry of a tracked field's history as a form edits it: `entryId` null =
+ * added in the form; `key` identifies the row in the form.
+ */
+export interface CustomFieldHistoryDraft {
+	key: string;
+	entryId: string | null;
+	validFrom: string;
+	value: CustomFieldValue;
+}
+
+/** A saved history as the form's starting draft. */
+export function customFieldHistoryDraftsOf(
+	entries: readonly CustomFieldHistoryEntry[],
+): CustomFieldHistoryDraft[] {
+	return entries.map((entry) => ({
+		key: entry.id,
+		entryId: entry.id,
+		validFrom: entry.validFrom,
+		value: entry.value,
+	}));
+}
+
 /** The value input a history change sends for a value. */
 function inputOf(value: CustomFieldValue): CustomFieldValueInput {
 	return value.value;
