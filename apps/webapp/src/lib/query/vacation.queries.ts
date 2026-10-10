@@ -15,8 +15,13 @@ import {
 	vacationAdjustment,
 	vacationAllowance,
 } from "@/db/schema";
-import { countAbsenceDays, type IsWorkingDay } from "@/lib/absences/absence-days";
-import { getAbsenceDaysOfAbsences, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
+import {
+	clipAbsenceDayRange,
+	countAbsenceDays,
+	type IsWorkingDay,
+	mondayToFriday,
+} from "@/lib/absences/absence-days";
+import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { calculateCarryoverExpiryDate } from "@/lib/absences/date-utils";
 import type { DayPeriod } from "@/lib/absences/types";
 
@@ -339,7 +344,7 @@ export async function getVacationTakenInYear(
 	const endOfYear = `${year}-12-31`;
 
 	const emp = await db.query.employee.findFirst({ where: eq(employee.id, employeeId) });
-	if (!emp) return { totalDays: 0, entries: [], isWorkingDay: () => false };
+	if (!emp) return { totalDays: 0, entries: [], isWorkingDay: mondayToFriday };
 	const [entries, isWorkingDay] = await Promise.all([
 		db
 			.select({
@@ -369,7 +374,7 @@ export async function getVacationTakenInYear(
 					gte(absenceEntry.endDate, startOfYear),
 				),
 			),
-		loadWorkingDays({
+		loadWorkingDays(db, {
 			organizationId: emp.organizationId,
 			employeeId,
 			startDate: startOfYear,
@@ -378,17 +383,8 @@ export async function getVacationTakenInYear(
 	]);
 
 	const result = entries.map((entry) => {
-		const clippedStartDate = entry.startDate < startOfYear ? startOfYear : entry.startDate;
-		const clippedEndDate = entry.endDate > endOfYear ? endOfYear : entry.endDate;
-		const days = countAbsenceDays(
-			{
-				startDate: clippedStartDate,
-				startPeriod: clippedStartDate === entry.startDate ? entry.startPeriod : "full_day",
-				endDate: clippedEndDate,
-				endPeriod: clippedEndDate === entry.endDate ? entry.endPeriod : "full_day",
-			},
-			isWorkingDay,
-		);
+		const clipped = clipAbsenceDayRange(entry, { startDate: startOfYear, endDate: endOfYear });
+		const days = clipped ? countAbsenceDays(clipped, isWorkingDay) : 0;
 		return {
 			id: entry.id,
 			startDate: entry.startDate,
@@ -486,9 +482,9 @@ export async function getPendingVacationRequests(
 		)
 		.orderBy(absenceEntry.startDate);
 
-	const absenceDays = await getAbsenceDaysOfAbsences({ organizationId, absences: results });
+	const absenceDays = await getAbsenceDaysByAbsenceId(db, { organizationId, absences: results });
 
-	return results.map((r, index) => ({
+	return results.map((r) => ({
 		id: r.id,
 		employeeId: r.employeeId,
 		employeeName: [r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
@@ -496,7 +492,7 @@ export async function getPendingVacationRequests(
 		startPeriod: r.startPeriod,
 		endDate: r.endDate,
 		endPeriod: r.endPeriod,
-		days: absenceDays[index] ?? 0,
+		days: absenceDays.get(r.id) ?? 0,
 		notes: r.notes,
 		createdAt: r.createdAt,
 	}));

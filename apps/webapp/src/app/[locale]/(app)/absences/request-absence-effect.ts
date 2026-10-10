@@ -13,7 +13,7 @@ import {
 } from "@/db/schema";
 import {
 	NO_WORKING_DAYS_MESSAGE,
-	refuseAbsenceDays,
+	refusalForAbsenceDays,
 } from "@/lib/absences/absence-days";
 import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
@@ -1120,14 +1120,14 @@ function requestAbsenceWithResolverEffect(
 				const absenceDays = yield* dbService.query(
 					"getRequestedAbsenceDays",
 					() =>
-						getAbsenceDays({
+						getAbsenceDays(dbService.db, {
 							organizationId: currentEmployee.organizationId,
 							employeeId: currentEmployee.id,
 							absence: toAbsenceEntryDurationFields(normalizedData),
 						}),
 				);
 				span.setAttribute("absence.absence_days", absenceDays);
-				const refusal = refuseAbsenceDays({
+				const refusal = refusalForAbsenceDays({
 					countsAgainstVacation: category.countsAgainstVacation,
 					absenceDays,
 				});

@@ -144,7 +144,7 @@ describe("getAbsencePlanPreview", () => {
 			endDate: "2026-10-16",
 		});
 
-		expect(mockState.loadWorkingDays).toHaveBeenCalledWith({
+		expect(mockState.loadWorkingDays).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-current",
 			employeeId: "emp-current",
 			startDate: "2026-10-12",

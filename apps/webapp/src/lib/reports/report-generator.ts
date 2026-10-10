@@ -364,7 +364,7 @@ export async function aggregateAbsences(
 		},
 		orderBy: (absences, { asc }) => [asc(absences.startDate)],
 	});
-	const isWorkingDay = await loadWorkingDays({
+	const isWorkingDay = await loadWorkingDays(db, {
 		organizationId,
 		employeeId,
 		startDate: rangeStartStr,

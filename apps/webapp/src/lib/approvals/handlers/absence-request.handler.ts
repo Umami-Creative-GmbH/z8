@@ -12,7 +12,7 @@ import { DateTime } from "luxon";
 import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
 	getAbsenceDays,
-	getAbsenceDaysOfAbsences,
+	getAbsenceDaysByAbsenceId,
 } from "@/lib/absences/absence-days-resolver";
 import { formatDateRange } from "@/lib/absences/date-utils";
 import type { SickDetail } from "@/lib/absences/types";
@@ -110,19 +110,19 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 						const absenceDays = yield* dbService.query(
 							"batchGetAbsenceDays",
 							() =>
-								getAbsenceDaysOfAbsences({
+								getAbsenceDaysByAbsenceId(dbService.db, {
 									organizationId: params.organizationId,
 									absences,
 								}),
 						);
 
 						const map = new Map<string, AbsenceWithRelations>();
-						for (const [index, absence] of absences.entries()) {
+						for (const absence of absences) {
 							map.set(
 								absence.id,
 								redactNonSickAbsenceSickDetail({
 									...absence,
-									absenceDays: absenceDays[index] ?? 0,
+									absenceDays: absenceDays.get(absence.id) ?? 0,
 								} as AbsenceWithRelations),
 							);
 						}
@@ -232,7 +232,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 				const dbService = yield* DatabaseService;
 
 				// Fetch absence with full details
-				const found = yield* dbService
+				const absenceRow = yield* dbService
 					.query("getAbsenceDetail", async () => {
 						return await dbService.db.query.absenceEntry.findFirst({
 							where: and(
@@ -259,7 +259,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 						),
 					);
 
-				if (found.employee.organizationId !== organizationId) {
+				if (absenceRow.employee.organizationId !== organizationId) {
 					return yield* Effect.fail(
 						new NotFoundError({
 							message: "Absence not found in this organization",
@@ -269,13 +269,13 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 					);
 				}
 				const absenceDays = yield* dbService.query("getAbsenceDetailDays", () =>
-					getAbsenceDays({
+					getAbsenceDays(dbService.db, {
 						organizationId,
-						employeeId: found.employeeId,
-						absence: found,
+						employeeId: absenceRow.employeeId,
+						absence: absenceRow,
 					}),
 				);
-				const absence = { ...found, absenceDays } as AbsenceWithRelations;
+				const absence = { ...absenceRow, absenceDays } as AbsenceWithRelations;
 
 				// Fetch approval request
 				const request = yield* dbService

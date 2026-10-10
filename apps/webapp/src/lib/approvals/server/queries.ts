@@ -8,7 +8,7 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
-import { getAbsenceDaysOfAbsences } from "@/lib/absences/absence-days-resolver";
+import { getAbsenceDaysByAbsenceId } from "@/lib/absences/absence-days-resolver";
 import type { SickDetail } from "@/lib/absences/types";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
 import { logger } from "@/lib/logger";
@@ -408,7 +408,7 @@ export async function getPendingApprovals(): Promise<{
 	}
 
 	const absenceRecords = absences as AbsenceLookupRecord[];
-	const absenceDays = await getAbsenceDaysOfAbsences({
+	const absenceDaysByAbsenceId = await getAbsenceDaysByAbsenceId(db, {
 		organizationId: currentEmployee.organizationId,
 		absences: absenceRecords,
 	});
@@ -418,9 +418,7 @@ export async function getPendingApprovals(): Promise<{
 		absencesById,
 		periodsById,
 		categoryNamesById,
-		absenceDaysByAbsenceId: new Map(
-			absenceRecords.map((absence, index) => [absence.id, absenceDays[index] ?? 0]),
-		),
+		absenceDaysByAbsenceId,
 		sickNotesByAbsenceId: await loadSickNoteMarkers({
 			organizationId: currentEmployee.organizationId,
 			viewerUserId: currentEmployee.userId,

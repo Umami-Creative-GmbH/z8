@@ -1,7 +1,12 @@
 import { DateTime } from "luxon";
 import { fromJSDate } from "@/lib/datetime/luxon-utils";
-import { countAbsenceDays, type IsWorkingDay, mondayToFriday } from "./absence-days";
-import { calculateCarryoverExpiryDate, getYearRange } from "./date-utils";
+import {
+	clipAbsenceDayRange,
+	countAbsenceDays,
+	type IsWorkingDay,
+	mondayToFriday,
+} from "./absence-days";
+import { calculateCarryoverExpiryDate } from "./date-utils";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
 
 interface VacationAllowanceData {
@@ -85,38 +90,18 @@ export function calculateVacationBalance({
 	// 3. Add manual adjustments (sum of adjustment events)
 	totalDays += adjustmentTotal;
 
-	// 4. Calculate used days (approved absences that count against vacation)
-	const { start, end } = getYearRange(year);
-	const usedDays = absences
-		.filter((absence) => {
-			const isApproved = absence.status === "approved";
-			const countsAgainstVacation = absence.category.countsAgainstVacation;
-			const inYear = absenceOverlapsRange(absence, start, end);
-
-			return isApproved && countsAgainstVacation && inYear;
-		})
-		.reduce((sum, absence) => {
-			const clippedAbsence = clipAbsenceToRange(absence, start, end);
-			if (!clippedAbsence) return sum;
-
-			return sum + countAbsenceDays(clippedAbsence, isWorkingDay);
+	// 4. Absence days of approved (used) and pending vacation inside the calendar year
+	const calendarYear = { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
+	const vacationDaysInYear = (status: AbsenceWithCategory["status"]) =>
+		absences.reduce((sum, absence) => {
+			if (absence.status !== status || !absence.category.countsAgainstVacation) return sum;
+			const clipped = clipAbsenceDayRange(absence, calendarYear);
+			return clipped ? sum + countAbsenceDays(clipped, isWorkingDay) : sum;
 		}, 0);
+	const usedDays = vacationDaysInYear("approved");
 
 	// 5. Calculate pending days (pending requests that count against vacation)
-	const pendingDays = absences
-		.filter((absence) => {
-			const isPending = absence.status === "pending";
-			const countsAgainstVacation = absence.category.countsAgainstVacation;
-			const inYear = absenceOverlapsRange(absence, start, end);
-
-			return isPending && countsAgainstVacation && inYear;
-		})
-		.reduce((sum, absence) => {
-			const clippedAbsence = clipAbsenceToRange(absence, start, end);
-			if (!clippedAbsence) return sum;
-
-			return sum + countAbsenceDays(clippedAbsence, isWorkingDay);
-		}, 0);
+	const pendingDays = vacationDaysInYear("pending");
 
 	// 6. Calculate remaining days
 	const remainingDays = Math.max(0, totalDays - usedDays - pendingDays);
@@ -129,41 +114,6 @@ export function calculateVacationBalance({
 		remainingDays,
 		carryoverDays: carryoverDays > 0 ? carryoverDays : undefined,
 		carryoverExpiryDate,
-	};
-}
-
-function absenceOverlapsRange(
-	absence: AbsenceWithCategory,
-	rangeStart: DateTime,
-	rangeEnd: DateTime,
-) {
-	const absenceStart = DateTime.fromISO(absence.startDate, {
-		zone: "utc",
-	}).startOf("day");
-	const absenceEnd = DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day");
-
-	return absenceStart <= rangeEnd && absenceEnd >= rangeStart;
-}
-
-function clipAbsenceToRange(
-	absence: AbsenceWithCategory,
-	rangeStart: DateTime,
-	rangeEnd: DateTime,
-): Pick<AbsenceWithCategory, "startDate" | "startPeriod" | "endDate" | "endPeriod"> | null {
-	const absenceStart = DateTime.fromISO(absence.startDate, {
-		zone: "utc",
-	}).startOf("day");
-	const absenceEnd = DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day");
-	const clippedStart = absenceStart < rangeStart ? rangeStart : absenceStart;
-	const clippedEnd = absenceEnd > rangeEnd ? rangeEnd : absenceEnd;
-
-	if (clippedStart > clippedEnd) return null;
-
-	return {
-		startDate: clippedStart.toISODate() ?? absence.startDate,
-		startPeriod: clippedStart.hasSame(absenceStart, "day") ? absence.startPeriod : "full_day",
-		endDate: clippedEnd.toISODate() ?? absence.endDate,
-		endPeriod: clippedEnd.hasSame(absenceEnd, "day") ? absence.endPeriod : "full_day",
 	};
 }
 

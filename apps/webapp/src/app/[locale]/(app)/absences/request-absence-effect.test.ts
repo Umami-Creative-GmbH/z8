@@ -449,7 +449,7 @@ describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
 			approvalLifecycle as never,
 		);
 
-		expect(callerMocks.getAbsenceDays).toHaveBeenCalledWith({
+		expect(callerMocks.getAbsenceDays).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",
 			absence: {

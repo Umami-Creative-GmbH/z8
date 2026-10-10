@@ -1309,6 +1309,7 @@ describe("absence requester decision notifications", () => {
 			}),
 		);
 		expect(getAbsenceDays).toHaveBeenCalledWith(
+			expect.anything(),
 			expect.objectContaining({ organizationId: "org-1" }),
 		);
 		expect(onAbsenceRequestRejected).not.toHaveBeenCalled();

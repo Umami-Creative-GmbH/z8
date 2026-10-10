@@ -56,7 +56,7 @@ function assignment(
 		assignmentType: "employee",
 		effectiveFrom: null,
 		effectiveUntil: null,
-		createdAt: new Date("2026-01-01T00:00:00Z"),
+		createdAt: Temporal.Instant.from("2026-01-01T00:00:00Z"),
 		...overrides,
 	};
 }
@@ -151,11 +151,11 @@ describe("workingDaysFrom", () => {
 	it("uses the policy in effect on each day across a policy change", () => {
 		const before = assignment({
 			schedule: mondayToFridaySchedule,
-			effectiveUntil: new Date("2026-10-14T23:59:59.999Z"),
+			effectiveUntil: Temporal.Instant.from("2026-10-14T23:59:59.999Z"),
 		});
 		const after = assignment({
 			schedule: mondayToThursday,
-			effectiveFrom: new Date("2026-10-15T00:00:00Z"),
+			effectiveFrom: Temporal.Instant.from("2026-10-15T00:00:00Z"),
 		});
 		const isWorkingDay = workingDaysFrom({ assignments: [before, after], holidays: [] });
 
@@ -183,7 +183,7 @@ describe("workingDaysFrom", () => {
 		const open = assignment({ schedule: mondayToFridaySchedule });
 		const fromMidday = assignment({
 			schedule: mondayToThursday,
-			effectiveFrom: new Date("2026-10-16T12:00:00Z"),
+			effectiveFrom: Temporal.Instant.from("2026-10-16T12:00:00Z"),
 		});
 		const isWorkingDay = workingDaysFrom({ assignments: [open, fromMidday], holidays: [] });
 
@@ -195,11 +195,11 @@ describe("workingDaysFrom", () => {
 	it("breaks ties between equal starts by the newest assignment", () => {
 		const older = assignment({
 			schedule: mondayToFridaySchedule,
-			createdAt: new Date("2026-01-01T00:00:00Z"),
+			createdAt: Temporal.Instant.from("2026-01-01T00:00:00Z"),
 		});
 		const newer = assignment({
 			schedule: mondayToThursday,
-			createdAt: new Date("2026-02-01T00:00:00Z"),
+			createdAt: Temporal.Instant.from("2026-02-01T00:00:00Z"),
 		});
 		expect(
 			workingDaysOfWeek(workingDaysFrom({ assignments: [newer, older], holidays: [] })),
@@ -216,8 +216,8 @@ describe("workingDaysFrom", () => {
 		});
 		const employee = assignment({
 			schedule: mondayToThursday,
-			effectiveFrom: new Date("2026-10-15T00:00:00Z"),
-			effectiveUntil: new Date("2026-10-15T23:59:59.999Z"),
+			effectiveFrom: Temporal.Instant.from("2026-10-15T00:00:00Z"),
+			effectiveUntil: Temporal.Instant.from("2026-10-15T23:59:59.999Z"),
 		});
 		const isWorkingDay = workingDaysFrom({ assignments: [organization, employee], holidays: [] });
 

@@ -9,7 +9,7 @@ import {
 	employeeVacationAllowance,
 	vacationAllowance,
 } from "@/db/schema";
-import { getAbsenceDaysOfAbsences, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
+import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { getYearRange } from "@/lib/absences/date-utils";
 import type {
 	AbsenceWithCategory,
@@ -71,7 +71,7 @@ export async function getVacationBalance(
 				category: true,
 			},
 		}),
-		loadWorkingDays({
+		loadWorkingDays(db, {
 			organizationId: emp.organizationId,
 			employeeId,
 			startDate: startOfYear,
@@ -111,6 +111,7 @@ export async function getAbsenceEntries(
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
+			or(isNull(absenceEntry.organizationId), eq(absenceEntry.organizationId, emp.organizationId)),
 			lte(absenceEntry.startDate, endDate),
 			gte(absenceEntry.endDate, startDate),
 		),
@@ -121,13 +122,13 @@ export async function getAbsenceEntries(
 	});
 
 	const typedAbsences = (absences as unknown as AbsenceWithCategory[]).map(mapAbsenceWithCategory);
-	const absenceDays = await getAbsenceDaysOfAbsences({
+	const absenceDays = await getAbsenceDaysByAbsenceId(db, {
 		organizationId: emp.organizationId,
 		absences: typedAbsences,
 	});
-	return typedAbsences.map((absence, index) => ({
+	return typedAbsences.map((absence) => ({
 		...absence,
-		absenceDays: absenceDays[index] ?? 0,
+		absenceDays: absenceDays.get(absence.id) ?? 0,
 	}));
 }
 

@@ -225,12 +225,7 @@ export function AbsencePlanPreviewPanel({
 								{preview.refusal === "no_working_days" && (
 									<li className="flex items-start gap-2 text-destructive" role="alert">
 										<IconAlertTriangle className="mt-0.5 size-4" aria-hidden="true" />
-										<span className="min-w-0 break-words">
-											{t(
-												"absences.planPreview.noWorkingDays",
-												"This range contains no working days.",
-											)}
-										</span>
+										<span className="min-w-0 break-words">{noWorkingDaysMessage(t)}</span>
 									</li>
 								)}
 								{preview.warnings.map((warning) => (
@@ -251,6 +246,11 @@ export function AbsencePlanPreviewPanel({
 			</CardContent>
 		</Card>
 	);
+}
+
+/** The refusal of vacation that covers no working day, in the viewer's language (#979). */
+export function noWorkingDaysMessage(t: TranslateFn) {
+	return t("absences.planPreview.noWorkingDays", "This range contains no working days.");
 }
 
 function PreviewSection({ title, children }: { title: string; children: ReactNode }) {

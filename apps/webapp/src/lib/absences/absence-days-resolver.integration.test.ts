@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getAbsenceEntries, getVacationBalance } from "@/app/[locale]/(app)/absences/queries";
+import { db } from "@/db";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -20,7 +21,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { getPendingVacationRequests, getVacationTakenInYear } from "@/lib/query/vacation.queries";
-import { getAbsenceDays, getAbsenceDaysOfAbsences } from "./absence-days-resolver";
+import { getAbsenceDays, getAbsenceDaysByAbsenceId } from "./absence-days-resolver";
 import type { WeekdayName } from "./working-days";
 
 const queries = vi.hoisted(() => ({ count: 0 }));
@@ -132,7 +133,7 @@ describe("absence days resolved from work policies and holidays", () => {
 		// Mon 12 to Sun 18 October.
 		const absence = fullDays({ startDate: "2026-10-12", endDate: "2026-10-18" });
 
-		expect(await getAbsenceDays({ organizationId, employeeId, absence })).toBe(5);
+		expect(await getAbsenceDays(db, { organizationId, employeeId, absence })).toBe(5);
 
 		const disabled = await createPolicy(
 			organizationId,
@@ -144,7 +145,7 @@ describe("absence days resolved from work policies and holidays", () => {
 		);
 		await assign(organizationId, disabled, { assignmentType: "employee", employeeId });
 
-		expect(await getAbsenceDays({ organizationId, employeeId, absence })).toBe(5);
+		expect(await getAbsenceDays(db, { organizationId, employeeId, absence })).toBe(5);
 	});
 
 	it("counts a Monday-to-Thursday week as 4 days and a Monday-to-Saturday Saturday as 1", async () => {
@@ -168,9 +169,11 @@ describe("absence days resolved from work policies and holidays", () => {
 			{ assignmentType: "employee", employeeId: saturdayWorker.employeeId },
 		);
 
-		expect(await getAbsenceDays({ organizationId, employeeId, absence: fullDays(WEEK) })).toBe(4);
+		expect(await getAbsenceDays(db, { organizationId, employeeId, absence: fullDays(WEEK) })).toBe(
+			4,
+		);
 		expect(
-			await getAbsenceDays({
+			await getAbsenceDays(db, {
 				organizationId,
 				employeeId: saturdayWorker.employeeId,
 				absence: fullDays({ startDate: "2026-10-17", endDate: "2026-10-17" }),
@@ -197,7 +200,7 @@ describe("absence days resolved from work policies and holidays", () => {
 		);
 
 		expect(
-			await getAbsenceDays({
+			await getAbsenceDays(db, {
 				organizationId,
 				employeeId,
 				absence: fullDays({ startDate: "2026-10-12", endDate: "2026-10-23" }),
@@ -254,15 +257,21 @@ describe("absence days resolved from work policies and holidays", () => {
 		// Mon 12 to Sun 18 October.
 		const week = fullDays({ startDate: "2026-10-12", endDate: "2026-10-18" });
 		expect(
-			await getAbsenceDaysOfAbsences({
+			await getAbsenceDaysByAbsenceId(db, {
 				organizationId,
 				absences: [
-					{ ...week, employeeId },
-					{ ...week, employeeId: teamMember.employeeId },
-					{ ...week, employeeId: individual.employeeId },
+					{ ...week, id: "organization", employeeId },
+					{ ...week, id: "team", employeeId: teamMember.employeeId },
+					{ ...week, id: "individual", employeeId: individual.employeeId },
 				],
 			}),
-		).toEqual([7, 2, 4]);
+		).toEqual(
+			new Map([
+				["organization", 7],
+				["team", 2],
+				["individual", 4],
+			]),
+		);
 	});
 
 	it("decides simple presets whatever the schedule cycle", async () => {
@@ -278,7 +287,9 @@ describe("absence days resolved from work policies and holidays", () => {
 			{ assignmentType: "employee", employeeId },
 		);
 
-		expect(await getAbsenceDays({ organizationId, employeeId, absence: fullDays(WEEK) })).toBe(2);
+		expect(await getAbsenceDays(db, { organizationId, employeeId, absence: fullDays(WEEK) })).toBe(
+			2,
+		);
 	});
 
 	it("ignores another organization's policies", async () => {
@@ -292,14 +303,14 @@ describe("absence days resolved from work policies and holidays", () => {
 		await assign(organizationId, foreignPolicy, { assignmentType: "employee", employeeId });
 
 		expect(
-			await getAbsenceDays({
+			await getAbsenceDays(db, {
 				organizationId,
 				employeeId,
 				absence: fullDays({ startDate: "2026-10-12", endDate: "2026-10-18" }),
 			}),
 		).toBe(5);
 		expect(
-			await getAbsenceDays({
+			await getAbsenceDays(db, {
 				organizationId: foreignOrganization,
 				employeeId,
 				absence: fullDays({ startDate: "2026-10-12", endDate: "2026-10-18" }),
@@ -361,14 +372,19 @@ describe("absence days resolved from work policies and holidays", () => {
 		]);
 
 		expect(
-			await getAbsenceDaysOfAbsences({
+			await getAbsenceDaysByAbsenceId(db, {
 				organizationId,
 				absences: [
-					{ ...fullDays(WEEK), employeeId },
-					{ ...fullDays(WEEK), employeeId: colleague.employeeId },
+					{ ...fullDays(WEEK), id: "own", employeeId },
+					{ ...fullDays(WEEK), id: "colleague", employeeId: colleague.employeeId },
 				],
 			}),
-		).toEqual([3, 5]);
+		).toEqual(
+			new Map([
+				["own", 3],
+				["colleague", 5],
+			]),
+		);
 	});
 
 	it("resolves a range in a bounded number of queries per employee, not per day", async () => {
@@ -389,9 +405,9 @@ describe("absence days resolved from work policies and holidays", () => {
 
 		async function countQueries(range: { startDate: string; endDate: string }) {
 			queries.count = 0;
-			await getAbsenceDaysOfAbsences({
+			await getAbsenceDaysByAbsenceId(db, {
 				organizationId,
-				absences: employeeIds.map((id) => ({ ...fullDays(range), employeeId: id })),
+				absences: employeeIds.map((id) => ({ ...fullDays(range), id, employeeId: id })),
 			});
 			return queries.count;
 		}

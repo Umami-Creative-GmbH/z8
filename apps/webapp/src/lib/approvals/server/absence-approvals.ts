@@ -1026,7 +1026,7 @@ function updateAbsenceStatus(
 /** The absence's absence days for its employee (Absences ADR 0001). */
 function loadAbsenceDays(dbService: ApprovalDbService, absence: AbsenceRecord) {
 	return dbService.query("getAbsenceDays", () =>
-		getAbsenceDays({
+		getAbsenceDays(dbService.db, {
 			organizationId: absence.organizationId,
 			employeeId: absence.employeeId,
 			absence,

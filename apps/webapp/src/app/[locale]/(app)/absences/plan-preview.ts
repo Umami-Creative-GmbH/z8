@@ -113,7 +113,7 @@ export async function getAbsencePlanPreview(
 		] = await Promise.all([
 			getVacationBalance(currentEmployee.id, range.start.year, timezone),
 			getHolidays(currentEmployee.id, range.startDate, range.endDate),
-			loadWorkingDays({
+			loadWorkingDays(db, {
 				organizationId: currentEmployee.organizationId,
 				employeeId: currentEmployee.id,
 				startDate: request.startDate,

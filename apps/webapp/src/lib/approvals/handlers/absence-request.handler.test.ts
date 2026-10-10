@@ -16,8 +16,9 @@ import {
 
 const absenceDaysMocks = vi.hoisted(() => ({
 	getAbsenceDays: vi.fn(async () => 4),
-	getAbsenceDaysOfAbsences: vi.fn(async (input: { absences: unknown[] }) =>
-		input.absences.map(() => 4),
+	getAbsenceDaysByAbsenceId: vi.fn(
+		async (_database: unknown, input: { absences: Array<{ id: string }> }) =>
+			new Map(input.absences.map((absence) => [absence.id, 4])),
 	),
 }));
 
@@ -180,7 +181,7 @@ describe("absence approval handler tenant scope", () => {
 			collectColumnNames(absenceFindMany.mock.calls[0]?.[0]?.where),
 		).toEqual(expect.arrayContaining(["id", "organization_id"]));
 		// The summary shows the absence days resolved for the requester (#979).
-		expect(absenceDaysMocks.getAbsenceDaysOfAbsences).toHaveBeenCalledWith({
+		expect(absenceDaysMocks.getAbsenceDaysByAbsenceId).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			absences: [expect.objectContaining({ id: "absence-1" })],
 		});
@@ -340,7 +341,7 @@ describe("absence approval handler tenant scope", () => {
 		);
 
 		expect(result.approval.organizationId).toBe("org-1");
-		expect(absenceDaysMocks.getAbsenceDays).toHaveBeenCalledWith({
+		expect(absenceDaysMocks.getAbsenceDays).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",
 			absence: expect.objectContaining({ id: "absence-1" }),

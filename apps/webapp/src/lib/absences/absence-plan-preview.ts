@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { dateRangesOverlap, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
-import { type AbsenceDaysRefusal, type IsWorkingDay, refuseAbsenceDays } from "./absence-days";
+import { type AbsenceDaysRefusal, type IsWorkingDay, refusalForAbsenceDays } from "./absence-days";
 import { countRequestedAbsenceDays, normalizeAbsenceDurationInput } from "./duration";
 import type { AbsenceRequest, Holiday, VacationBalance } from "./types";
 
@@ -93,7 +93,7 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		endDate: fromJSDate(holiday.endDate, "utc").endOf("day").toJSDate(),
 	}));
 	const requestedAbsenceDays = countRequestedAbsenceDays(normalizedRequest, input.isWorkingDay);
-	const refusal = refuseAbsenceDays({
+	const refusal = refusalForAbsenceDays({
 		countsAgainstVacation: input.category.countsAgainstVacation,
 		absenceDays: requestedAbsenceDays,
 	});

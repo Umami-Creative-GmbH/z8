@@ -97,7 +97,7 @@ export const NO_WORKING_DAYS_MESSAGE = "This range contains no working days.";
  * Vacation that covers no working day is refused; categories that don't count against
  * vacation, such as sick leave, are accepted with 0 absence days.
  */
-export function refuseAbsenceDays(input: {
+export function refusalForAbsenceDays(input: {
 	countsAgainstVacation: boolean;
 	absenceDays: number;
 }): AbsenceDaysRefusal | null {

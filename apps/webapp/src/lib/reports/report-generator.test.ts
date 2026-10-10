@@ -195,7 +195,7 @@ describe("report generator", () => {
 		);
 
 		expect(result.vacation.approved).toBe(1);
-		expect(mockState.loadWorkingDays).toHaveBeenCalledWith({
+		expect(mockState.loadWorkingDays).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",
 			startDate: "2026-05-01",

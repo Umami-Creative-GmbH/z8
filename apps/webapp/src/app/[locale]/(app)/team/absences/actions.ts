@@ -778,7 +778,7 @@ async function addMetricsToRows(
 			),
 			with: { category: true },
 		}),
-		loadWorkingDaysForEmployees({
+		loadWorkingDaysForEmployees(db, {
 			organizationId,
 			employeeIds,
 			startDate: yearStart,
@@ -918,7 +918,7 @@ async function notifyEmployeeOfManagerRecordedAbsence(params: {
 }) {
 	try {
 		const { onAbsenceRecordedByManager } = await import("@/lib/notifications/triggers");
-		const days = await getAbsenceDays({
+		const days = await getAbsenceDays(db, {
 			organizationId: params.actor.organizationId,
 			employeeId: params.target.id,
 			absence: params.input,

@@ -25,9 +25,9 @@ export interface WorkingDaySchedule {
 export interface WorkingDayPolicyAssignment {
 	id: string;
 	assignmentType: "organization" | "team" | "employee";
-	effectiveFrom: Date | null;
-	effectiveUntil: Date | null;
-	createdAt: Date;
+	effectiveFrom: Temporal.Instant | null;
+	effectiveUntil: Temporal.Instant | null;
+	createdAt: Temporal.Instant;
 	/** Null when the policy's scheduling is disabled or it has no schedule. */
 	schedule: WorkingDaySchedule | null;
 }
@@ -70,17 +70,17 @@ function inForceOn(assignment: WorkingDayPolicyAssignment, day: Temporal.PlainDa
 	const dayStart = day.toZonedDateTime("UTC").epochMilliseconds;
 	const nextDayStart = day.add({ days: 1 }).toZonedDateTime("UTC").epochMilliseconds;
 	return (
-		(!assignment.effectiveFrom || assignment.effectiveFrom.getTime() < nextDayStart) &&
-		(!assignment.effectiveUntil || assignment.effectiveUntil.getTime() >= dayStart)
+		(!assignment.effectiveFrom || assignment.effectiveFrom.epochMilliseconds < nextDayStart) &&
+		(!assignment.effectiveUntil || assignment.effectiveUntil.epochMilliseconds >= dayStart)
 	);
 }
 
 /** The work policy service's order: latest start first (open start last), then newest. */
 function compareAssignments(left: WorkingDayPolicyAssignment, right: WorkingDayPolicyAssignment) {
-	const leftFrom = left.effectiveFrom?.getTime() ?? Number.NEGATIVE_INFINITY;
-	const rightFrom = right.effectiveFrom?.getTime() ?? Number.NEGATIVE_INFINITY;
+	const leftFrom = left.effectiveFrom?.epochMilliseconds ?? Number.NEGATIVE_INFINITY;
+	const rightFrom = right.effectiveFrom?.epochMilliseconds ?? Number.NEGATIVE_INFINITY;
 	if (leftFrom !== rightFrom) return rightFrom - leftFrom;
-	const created = right.createdAt.getTime() - left.createdAt.getTime();
+	const created = right.createdAt.epochMilliseconds - left.createdAt.epochMilliseconds;
 	if (created !== 0) return created;
 	return right.id < left.id ? -1 : right.id > left.id ? 1 : 0;
 }

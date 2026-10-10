@@ -2,8 +2,9 @@ import "server-only";
 
 import { and, eq, gte, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
-import { db } from "@/db";
+import type { db } from "@/db";
 import { employee, workPolicyAssignment } from "@/db/schema";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type AbsenceDayRange,
 	countAbsenceDays,
@@ -12,6 +13,9 @@ import {
 } from "./absence-days";
 import { getVacationHolidays } from "./vacation-holidays";
 import { type WorkingDayPolicyAssignment, workingDaysFrom } from "./working-days";
+
+/** The caller's client: the global `db`, its `DatabaseService`'s, or a transaction. */
+export type AbsenceDaysDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export interface WorkingDaysRange {
 	/** First calendar day, `YYYY-MM-DD`. */
@@ -31,12 +35,13 @@ function utcDayStart(date: Temporal.PlainDate): Date {
  * long the range. An employee outside the organization gets no entry.
  */
 export async function loadWorkingDaysForEmployees(
+	database: AbsenceDaysDatabase,
 	input: WorkingDaysRange & { organizationId: string; employeeIds: readonly string[] },
 ): Promise<Map<string, IsWorkingDay>> {
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
-	const employees = await db
+	const employees = await database
 		.select({ id: employee.id, teamId: employee.teamId })
 		.from(employee)
 		.where(
@@ -67,7 +72,7 @@ export async function loadWorkingDaysForEmployees(
 	}
 
 	const [assignments, holidays] = await Promise.all([
-		db.query.workPolicyAssignment.findMany({
+		database.query.workPolicyAssignment.findMany({
 			where: and(
 				eq(workPolicyAssignment.organizationId, input.organizationId),
 				eq(workPolicyAssignment.isActive, true),
@@ -105,6 +110,7 @@ export async function loadWorkingDaysForEmployees(
 		Promise.all(
 			employees.map((row) =>
 				getVacationHolidays({
+					database,
 					organizationId: input.organizationId,
 					employeeId: row.id,
 					startDate: input.startDate,
@@ -120,9 +126,9 @@ export async function loadWorkingDaysForEmployees(
 		const workingDayAssignment: WorkingDayPolicyAssignment = {
 			id: assignment.id,
 			assignmentType: assignment.assignmentType,
-			effectiveFrom: assignment.effectiveFrom,
-			effectiveUntil: assignment.effectiveUntil,
-			createdAt: assignment.createdAt,
+			effectiveFrom: assignment.effectiveFrom ? instantFromDate(assignment.effectiveFrom) : null,
+			effectiveUntil: assignment.effectiveUntil ? instantFromDate(assignment.effectiveUntil) : null,
+			createdAt: instantFromDate(assignment.createdAt),
 			schedule: policy.scheduleEnabled ? (policy.schedule ?? null) : null,
 		};
 		return [
@@ -148,9 +154,10 @@ export async function loadWorkingDaysForEmployees(
 
 /** One employee's working days over a range; Monday to Friday when they aren't in the organization. */
 export async function loadWorkingDays(
+	database: AbsenceDaysDatabase,
 	input: WorkingDaysRange & { organizationId: string; employeeId: string },
 ): Promise<IsWorkingDay> {
-	const workingDays = await loadWorkingDaysForEmployees({
+	const workingDays = await loadWorkingDaysForEmployees(database, {
 		...input,
 		employeeIds: [input.employeeId],
 	});
@@ -158,12 +165,11 @@ export async function loadWorkingDays(
 }
 
 /** The absence days of one employee's absence: the one server-side source (Absences ADR 0001). */
-export async function getAbsenceDays(input: {
-	organizationId: string;
-	employeeId: string;
-	absence: AbsenceDayRange;
-}): Promise<number> {
-	const isWorkingDay = await loadWorkingDays({
+export async function getAbsenceDays(
+	database: AbsenceDaysDatabase,
+	input: { organizationId: string; employeeId: string; absence: AbsenceDayRange },
+): Promise<number> {
+	const isWorkingDay = await loadWorkingDays(database, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		startDate: input.absence.startDate,
@@ -173,29 +179,35 @@ export async function getAbsenceDays(input: {
 }
 
 /**
- * The absence days of many absences, possibly of many employees, in their input order. The
- * working days load once per employee, over the range all the absences span.
+ * The absence days of many absences, possibly of many employees, by absence id. The working
+ * days load once per employee, over the range all the absences span.
  */
-export async function getAbsenceDaysOfAbsences(input: {
-	organizationId: string;
-	absences: ReadonlyArray<AbsenceDayRange & { employeeId: string }>;
-}): Promise<number[]> {
+export async function getAbsenceDaysByAbsenceId(
+	database: AbsenceDaysDatabase,
+	input: {
+		organizationId: string;
+		absences: ReadonlyArray<AbsenceDayRange & { id: string; employeeId: string }>;
+	},
+): Promise<Map<string, number>> {
 	const [first, ...rest] = input.absences;
-	if (!first) return [];
+	if (!first) return new Map();
 
 	let { startDate, endDate } = first;
 	for (const absence of rest) {
 		if (absence.startDate < startDate) startDate = absence.startDate;
 		if (absence.endDate > endDate) endDate = absence.endDate;
 	}
-	const workingDays = await loadWorkingDaysForEmployees({
+	const workingDays = await loadWorkingDaysForEmployees(database, {
 		organizationId: input.organizationId,
 		employeeIds: input.absences.map((absence) => absence.employeeId),
 		startDate,
 		endDate,
 	});
 
-	return input.absences.map((absence) =>
-		countAbsenceDays(absence, workingDays.get(absence.employeeId) ?? mondayToFriday),
+	return new Map(
+		input.absences.map((absence) => [
+			absence.id,
+			countAbsenceDays(absence, workingDays.get(absence.employeeId) ?? mondayToFriday),
+		]),
 	);
 }

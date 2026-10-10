@@ -52,7 +52,7 @@ import type {
 } from "@/lib/absences/types";
 import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
-import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
+import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 
 interface RequestAbsenceDialogProps {
@@ -818,8 +818,4 @@ function BalanceRow({
 			</span>
 		</div>
 	);
-}
-
-function noWorkingDaysMessage(t: (key: string, defaultValue: string) => string) {
-	return t("absences.planPreview.noWorkingDays", "This range contains no working days.");
 }
