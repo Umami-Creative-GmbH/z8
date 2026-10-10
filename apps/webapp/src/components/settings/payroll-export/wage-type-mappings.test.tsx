@@ -79,19 +79,7 @@ describe("WageTypeMappings", () => {
 	});
 
 	it("loads every mapping input with the organization and preserves returned order", async () => {
-		render(
-			<WageTypeMappings
-				organizationId="org_123"
-				config={{
-					id: "cfg_123",
-					formatId: "datev_lohn",
-					isActive: true,
-					createdAt: new Date("2026-01-01T00:00:00.000Z"),
-					updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-					config: {} as never,
-				}}
-			/>,
-		);
+		render(<WageTypeMappings organizationId="org_123" hasMappingFormat />);
 
 		await waitFor(() =>
 			expect(screen.getByText("First category")).toBeTruthy(),
@@ -107,5 +95,16 @@ describe("WageTypeMappings", () => {
 			"First category",
 			"Overtime Reduction",
 		]);
+	});
+
+	it("asks for a payroll format before loading mappings when none is configured", () => {
+		render(
+			<WageTypeMappings organizationId="org_123" hasMappingFormat={false} />,
+		);
+
+		expect(
+			screen.getByText(/configure at least one payroll export format/),
+		).toBeTruthy();
+		expect(getMappingsActionMock).not.toHaveBeenCalled();
 	});
 });

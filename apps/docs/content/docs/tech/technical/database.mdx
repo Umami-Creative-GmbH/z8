@@ -113,7 +113,7 @@ This layout keeps approval, categorization, allocation, and payroll processing a
 Payroll export data stays organization-scoped end to end.
 
 - `payroll_export_config` stores the active export configuration for one organization and one export target.
-- `payroll_wage_type_mapping` maps work categories, absence categories, and special categories to target-specific payroll codes.
+- `payroll_wage_type_mapping` maps work categories, absence categories, and special categories to payroll codes. The organization owns one mapping set that serves every export target. Each row has one code column per target, and each target's export reads only its own column.
 - `payroll_export_job` stores filters, execution mode, status, and output metadata for each export run.
 - `payroll_export_sync_record` tracks record-level outcomes for API-based targets so partial success, retry, and audit review are possible.
 

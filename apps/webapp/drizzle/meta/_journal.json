@@ -1198,6 +1198,13 @@
       "when": 1798992000000,
       "tag": "0170_payroll_expense_wage_type_mapping",
       "breakpoints": true
+    },
+    {
+      "idx": 171,
+      "version": "7",
+      "when": 1799078400000,
+      "tag": "0171_payroll_wage_type_mapping_organization",
+      "breakpoints": true
     }
   ]
 }

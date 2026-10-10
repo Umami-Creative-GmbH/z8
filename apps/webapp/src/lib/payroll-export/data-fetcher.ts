@@ -339,12 +339,13 @@ export async function getPayrollExportConfig(
 }
 
 /**
- * Get wage type mappings for a configuration
+ * Get an organization's wage type mappings. One set serves every export format;
+ * each format reads its own code column (`wageTypeCodeFor`).
  */
-export async function getWageTypeMappings(configId: string): Promise<WageTypeMapping[]> {
+export async function getWageTypeMappings(organizationId: string): Promise<WageTypeMapping[]> {
 	const mappings = await db.query.payrollWageTypeMapping.findMany({
 		where: and(
-			eq(payrollWageTypeMapping.configId, configId),
+			eq(payrollWageTypeMapping.organizationId, organizationId),
 			eq(payrollWageTypeMapping.isActive, true),
 		),
 		with: {

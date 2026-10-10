@@ -42,10 +42,6 @@ import {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
-type PayrollWageTypeMappingWithConfig = typeof payrollWageTypeMapping.$inferSelect & {
-	config: Pick<typeof payrollExportConfig.$inferSelect, "organizationId">;
-};
-
 // ============================================
 // CONFIGURATION TYPES
 // ============================================
@@ -106,7 +102,6 @@ export interface SaveSageConfigInput {
 
 export interface SaveMappingInput {
 	organizationId: string;
-	configId: string;
 	workCategoryId?: string | null;
 	absenceCategoryId?: string | null;
 	specialCategory?: string | null;
@@ -1262,7 +1257,7 @@ export async function testWorkdayConnectionAction(input: {
 // ============================================
 
 /**
- * Get wage type mappings for organization's DATEV config
+ * Get the organization's wage type mappings (shared by every export format)
  */
 export async function getMappingsAction(
 	organizationId: string,
@@ -1284,19 +1279,7 @@ export async function getMappingsAction(
 			);
 		}
 
-		// Get config first
-		const configResult = yield* Effect.promise(() =>
-			getPayrollExportConfig(organizationId, "datev_lohn"),
-		);
-
-		if (!configResult) {
-			return [];
-		}
-
-		// Get mappings
-		const mappings = yield* Effect.promise(() => getWageTypeMappings(configResult.config.id));
-
-		return mappings;
+		return yield* Effect.promise(() => getWageTypeMappings(organizationId));
 	});
 
 	return runServerActionSafe(effect);
@@ -1338,19 +1321,8 @@ export async function saveMappingAction(
 			);
 		}
 
-		// Validate organization ownership of configId and category IDs
+		// Validate organization ownership of category IDs
 		yield* Effect.promise(async () => {
-			// Validate configId belongs to organization
-			const config = await db.query.payrollExportConfig.findFirst({
-				where: and(
-					eq(payrollExportConfig.id, input.configId),
-					eq(payrollExportConfig.organizationId, input.organizationId),
-				),
-			});
-			if (!config) {
-				throw new Error("Configuration not found or access denied");
-			}
-
 			if (input.workCategoryId) {
 				const category = await db.query.workCategory.findFirst({
 					where: and(
@@ -1379,7 +1351,7 @@ export async function saveMappingAction(
 		// Save mapping
 		const mapping = yield* Effect.promise(async () => {
 			// Check for existing mapping with same source
-			const whereConditions = [eq(payrollWageTypeMapping.configId, input.configId)];
+			const whereConditions = [eq(payrollWageTypeMapping.organizationId, input.organizationId)];
 
 			if (input.workCategoryId) {
 				whereConditions.push(eq(payrollWageTypeMapping.workCategoryId, input.workCategoryId));
@@ -1426,7 +1398,12 @@ export async function saveMappingAction(
 							input.successFactorsTimeTypeName ?? existing.successFactorsTimeTypeName,
 						isActive: true,
 					})
-					.where(eq(payrollWageTypeMapping.id, existing.id))
+					.where(
+						and(
+							eq(payrollWageTypeMapping.id, existing.id),
+							eq(payrollWageTypeMapping.organizationId, input.organizationId),
+						),
+					)
 					.returning();
 
 				return updated;
@@ -1435,7 +1412,7 @@ export async function saveMappingAction(
 				const [inserted] = await db
 					.insert(payrollWageTypeMapping)
 					.values({
-						configId: input.configId,
+						organizationId: input.organizationId,
 						workCategoryId: input.workCategoryId || null,
 						absenceCategoryId: input.absenceCategoryId || null,
 						specialCategory: input.specialCategory || null,
@@ -1524,24 +1501,21 @@ export async function deleteMappingAction(
 			);
 		}
 
-		// Validate mapping belongs to organization before deleting
+		// Delete only within the organization
 		yield* Effect.promise(async () => {
-			const mapping = await db.query.payrollWageTypeMapping.findFirst({
-				where: eq(payrollWageTypeMapping.id, input.mappingId),
-				with: { config: true },
-			});
+			const deleted = await db
+				.delete(payrollWageTypeMapping)
+				.where(
+					and(
+						eq(payrollWageTypeMapping.id, input.mappingId),
+						eq(payrollWageTypeMapping.organizationId, input.organizationId),
+					),
+				)
+				.returning({ id: payrollWageTypeMapping.id });
 
-			if (!mapping) {
-				throw new Error("Mapping not found");
-			}
-
-			const typedMapping = mapping as unknown as PayrollWageTypeMappingWithConfig;
-
-			if (typedMapping.config.organizationId !== input.organizationId) {
+			if (deleted.length === 0) {
 				throw new Error("Mapping not found or access denied");
 			}
-
-			await db.delete(payrollWageTypeMapping).where(eq(payrollWageTypeMapping.id, input.mappingId));
 		});
 
 		revalidatePath("/settings/payroll-export");

@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
+import { and, eq, exists, gte, inArray, lt, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { shiftCalendarDate, shiftDateBounds } from "@/lib/scheduling/shift-date";
@@ -592,12 +592,21 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		const rows = await db
 			.select({ id: payrollWageTypeMapping.id })
 			.from(payrollWageTypeMapping)
-			.innerJoin(payrollExportConfig, eq(payrollWageTypeMapping.configId, payrollExportConfig.id))
 			.where(
 				and(
-					eq(payrollExportConfig.organizationId, organizationId),
-					eq(payrollExportConfig.isActive, true),
+					eq(payrollWageTypeMapping.organizationId, organizationId),
 					eq(payrollWageTypeMapping.isActive, true),
+					exists(
+						db
+							.select({ id: payrollExportConfig.id })
+							.from(payrollExportConfig)
+							.where(
+								and(
+									eq(payrollExportConfig.organizationId, organizationId),
+									eq(payrollExportConfig.isActive, true),
+								),
+							),
+					),
 				),
 			)
 			.limit(1);

@@ -2522,14 +2522,13 @@ export const payrollExportConfigRelations = relations(payrollExportConfig, ({ on
 		references: [user.id],
 		relationName: "payrollExportConfig_updater",
 	}),
-	mappings: many(payrollWageTypeMapping),
 	jobs: many(payrollExportJob),
 }));
 
 export const payrollWageTypeMappingRelations = relations(payrollWageTypeMapping, ({ one }) => ({
-	config: one(payrollExportConfig, {
-		fields: [payrollWageTypeMapping.configId],
-		references: [payrollExportConfig.id],
+	organization: one(organization, {
+		fields: [payrollWageTypeMapping.organizationId],
+		references: [organization.id],
 	}),
 	workCategory: one(workCategory, {
 		fields: [payrollWageTypeMapping.workCategoryId],

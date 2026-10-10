@@ -5,6 +5,7 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import type { AbsenceData, WageTypeMapping } from "../../../types";
+import { wageTypeCodeFor } from "../../../wage-type-code";
 import type {
 	SFAbsenceRequest,
 	SuccessFactorsConfig,
@@ -113,15 +114,7 @@ export function transformAbsences(
  * Get SAP SuccessFactors time type code for an absence
  */
 function getTimeTypeForAbsence(mapping: WageTypeMapping | undefined): string | null {
-	if (!mapping) {
-		return null;
-	}
-
-	// Try SAP SuccessFactors-specific code first, then fall back to other codes
-	const timeType =
-		mapping.successFactorsTimeTypeCode || mapping.datevWageTypeCode || mapping.wageTypeCode;
-
-	return timeType || null;
+	return wageTypeCodeFor(mapping, "successFactors");
 }
 
 /**

@@ -139,6 +139,29 @@ describe("PersonioExporter identifier wiring", () => {
 		});
 	});
 
+	it("skips absences whose mapping carries payroll file codes, not a Personio time-off type (#816)", () => {
+		const absence: AbsenceData = {
+			id: "absence-file-code",
+			employeeId: "employee-1",
+			employeeNumber: "E-1",
+			email: "absence@example.com",
+			firstName: "Pat",
+			lastName: "Example",
+			startDate: "2026-07-28",
+			endDate: "2026-07-28",
+			absenceCategoryId: "category-1",
+			absenceCategoryName: "Vacation",
+			absenceType: "vacation",
+			status: "approved",
+		};
+		// Saved in the Wage Types tab: the legacy code copies the DATEV code.
+		const mapping = { ...createMapping(), wageTypeCode: "1600", datevWageTypeCode: "1600" };
+
+		const result = transformAbsences([absence], new Map([["category-1", mapping]]), "email");
+
+		expect(result).toEqual([null]);
+	});
+
 	it("passes the configured strategy to attendance and absence batches", async () => {
 		const period: WorkPeriodData = {
 			id: "period-batch",

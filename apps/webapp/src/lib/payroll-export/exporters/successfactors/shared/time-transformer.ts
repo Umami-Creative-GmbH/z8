@@ -4,6 +4,7 @@
  */
 import { createLogger } from "@/lib/logger";
 import type { WageTypeMapping, WorkPeriodData } from "../../../types";
+import { wageTypeCodeFor } from "../../../wage-type-code";
 import type {
 	SFTimeRecordRequest,
 	SuccessFactorsConfig,
@@ -120,11 +121,7 @@ function getTimeTypeForWorkPeriod(
 		return DEFAULT_TIME_TYPE;
 	}
 
-	// Try SAP SuccessFactors-specific code first, then fall back to other codes
-	const timeType =
-		mapping.successFactorsTimeTypeCode || mapping.datevWageTypeCode || mapping.wageTypeCode;
-
-	return timeType || DEFAULT_TIME_TYPE;
+	return wageTypeCodeFor(mapping, "successFactors") || DEFAULT_TIME_TYPE;
 }
 
 /**
