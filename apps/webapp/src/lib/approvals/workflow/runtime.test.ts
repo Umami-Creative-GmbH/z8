@@ -990,6 +990,29 @@ describe("approval workflow runtime", () => {
 			).rejects.toThrow(/forbidden command actor/i);
 		});
 
+		it("never grants a deputy decision on a kind deputies do not cover, such as expense claims", async () => {
+			let asked = false;
+			const authorization = createApprovalWorkflowAuthorization({
+				canManageApproval: async () => false,
+				deputyAuthority: {
+					coverFor: async () => {
+						asked = true;
+						return { approverId: ids.approver, absenceId: "absence-1" };
+					},
+				},
+			});
+			await expect(
+				authorization.authorize({
+					dbService: dbService().service,
+					organizationId: "org-1",
+					workflow: snapshot({ workflowType: "travel_expense", sourceType: "travel_expense_claim" }),
+					actor: deputyActor,
+					command: approve,
+				}),
+			).rejects.toThrow(/forbidden command actor/i);
+			expect(asked).toBe(false);
+		});
+
 		it("refuses the four-eyes case with a clear error", async () => {
 			const workflow = snapshot();
 			const [stage] = workflow.stages;

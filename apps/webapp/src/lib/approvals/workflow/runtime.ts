@@ -23,11 +23,12 @@ import {
 	preflightCanonicalWorkPeriodDecisionEvidence,
 	recordCanonicalWorkPeriodDecisionEvidence,
 } from "../evidence/work-period-evidence";
-import { loadCover } from "../deputy/covering-store";
+import { loadCover } from "../deputy/deputy-reads";
 import {
 	decidedEarlierStage,
 	decideDeputyRight,
 	deputyDecisionRefusalError,
+	isDeputyDecisionEntityType,
 } from "../deputy/deputy-decision";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
@@ -330,6 +331,9 @@ async function authorizeCoveringDeputy(input: {
 	actorEmployeeId: string;
 }): Promise<ApprovalCoveringDeputyGrant | null> {
 	const { workflow, command } = input;
+	// Deputies decide only absences, time approvals and travel reports (spec
+	// #802), whatever adapters exist; never expense claims.
+	if (!isDeputyDecisionEntityType(workflow.sourceType)) return null;
 	const stage = workflow.stages.find(
 		(item) => item.id === command.stageId && item.status === "pending",
 	);
