@@ -54,9 +54,11 @@ jobs:
           REVIEW_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           REVIEW_PR: ${{ github.event.pull_request.number }}
         run: |
-          $identity = [ordered]@{ commit = $env:REVIEW_HEAD_SHA; pullRequest = $env:REVIEW_PR; runId = $env:GITHUB_RUN_ID; runAttempt = $env:GITHUB_RUN_ATTEMPT; unsigned = $true }
+          $buildCommit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $identity = [ordered]@{ commit = $buildCommit; headCommit = $env:REVIEW_HEAD_SHA; pullRequest = $env:REVIEW_PR; runId = $env:GITHUB_RUN_ID; runAttempt = $env:GITHUB_RUN_ATTEMPT; unsigned = $true }
           $identity | ConvertTo-Json | Set-Content -LiteralPath 'apps/desktop/src-tauri/target/release/bundle/nsis/review-build.json'
-          "Unsigned review installer: commit=$env:REVIEW_HEAD_SHA, PR=$env:REVIEW_PR, run=$env:GITHUB_RUN_ID/$env:GITHUB_RUN_ATTEMPT" >> $env:GITHUB_STEP_SUMMARY
+          "Unsigned review installer: commit=$buildCommit, PR head=$env:REVIEW_HEAD_SHA, PR=$env:REVIEW_PR, run=$env:GITHUB_RUN_ID/$env:GITHUB_RUN_ATTEMPT" >> $env:GITHUB_STEP_SUMMARY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: desktop-windows-unsigned-review-only
