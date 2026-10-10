@@ -194,4 +194,28 @@ describe("getLocalizedNotificationContent", () => {
 			/^Anna Example hat eine Krankmeldung für 12\.\s?–\s?14\. Okt\. 2026 hochgeladen$/u,
 		);
 	});
+
+	it("shows the deputy reminder's last day in the reader's locale (#1013)", () => {
+		const localized = getLocalizedNotificationContent(
+			buildNotification({
+				title: "Absence cover starts tomorrow",
+				message: "From tomorrow you're covering for Sam Lee until 14 Oct 2026.",
+				metadata: JSON.stringify({
+					untilDay: "2026-10-14",
+					i18n: {
+						messageKey: "common:notifications.content.absenceDeputyReminder.message",
+						messageDefault:
+							"Ab morgen sind Sie Abwesenheitsvertretung für {name} bis {untilDate}.",
+						params: { name: "Sam Lee", untilDate: "14 Oct 2026" },
+					},
+				}),
+			}),
+			t,
+			"de",
+		);
+
+		expect(localized.message).toBe(
+			"Ab morgen sind Sie Abwesenheitsvertretung für Sam Lee bis 14. Okt. 2026.",
+		);
+	});
 });

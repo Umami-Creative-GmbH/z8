@@ -8,6 +8,8 @@ import {
 	IconCircleFilled,
 	IconClock,
 	IconShield,
+	IconUserMinus,
+	IconUserShare,
 	IconUsers,
 	IconX,
 } from "@tabler/icons-react";
@@ -102,6 +104,22 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconX className="size-4" />,
 				bgColor: "bg-red-100 dark:bg-red-900/30",
 				iconColor: "text-red-600 dark:text-red-400",
+			};
+
+		// Deputy on an absence (#1013)
+		case "absence_deputy_assigned":
+		case "absence_deputy_dates_changed":
+		case "absence_deputy_reminder":
+			return {
+				icon: <IconUserShare className="size-4" />,
+				bgColor: "bg-purple-100 dark:bg-purple-900/30",
+				iconColor: "text-purple-600 dark:text-purple-400",
+			};
+		case "absence_deputy_removed":
+			return {
+				icon: <IconUserMinus className="size-4" />,
+				bgColor: "bg-slate-100 dark:bg-slate-900/30",
+				iconColor: "text-slate-600 dark:text-slate-400",
 			};
 
 		// Team notifications

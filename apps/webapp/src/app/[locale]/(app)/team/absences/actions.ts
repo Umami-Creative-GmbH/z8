@@ -16,6 +16,7 @@ import {
 } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
+import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
 import {
 	normalizeAbsenceDurationInput,
@@ -512,6 +513,13 @@ export async function recordAbsenceForEmployee(
 			};
 		}
 		audit.forwardCommitted();
+		await notifyAbsenceDeputies(db, {
+			organizationId: actor.organizationId,
+			events: [
+				{ kind: "approved", absenceId: transactionResult.absenceId },
+				{ kind: "vacation_override", summary: transactionResult.vacationOverrideSummary },
+			],
+		});
 
 		void addCalendarSyncJob({
 			absenceId: transactionResult.absenceId,

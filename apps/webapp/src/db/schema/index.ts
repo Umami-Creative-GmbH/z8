@@ -4,6 +4,8 @@
 // ============================================
 
 export * from "./absence";
+// Deputy day-before reminder markers (#1013)
+export * from "./absence-deputy-reminder";
 // Conditional access policies
 export * from "./access-policy";
 export * from "./app-auth";

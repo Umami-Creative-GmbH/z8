@@ -1317,6 +1317,13 @@
       "when": 1800460800000,
       "tag": "0187_absence_deputy",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1800633600000,
+      "tag": "0189_absence_deputy_notifications",
+      "breakpoints": true
     }
   ]
 }
