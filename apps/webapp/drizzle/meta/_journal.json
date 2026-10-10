@@ -1345,6 +1345,13 @@
       "when": 1800806400000,
       "tag": "0191_approval_deputy_decision",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1800979200000,
+      "tag": "0193_approval_deputy_cover_summaries",
+      "breakpoints": true
     }
   ]
 }

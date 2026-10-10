@@ -85,6 +85,9 @@ export const NOTIFICATION_TYPES = [
 	"absence_deputy_reminder",
 	// A departed or deactivated deputy was cleared from an absence (#1014)
 	"absence_deputy_unavailable",
+	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
+	"approval_cover_started",
+	"approval_cover_return_summary",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -98,6 +101,8 @@ export function hasMandatoryInbox(type: NotificationType): boolean {
 const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"travel_expense_ready_for_reimbursement",
 	"travel_expense_payroll_run_awaiting_confirmation",
+	// The approver hears in the app what their deputy decided (#1018).
+	"approval_cover_return_summary",
 ]);
 
 /** Clocking reminders: in-app and push until the user turns on another channel. */

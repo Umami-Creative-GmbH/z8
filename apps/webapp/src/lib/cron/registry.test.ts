@@ -41,6 +41,18 @@ vi.mock("@/lib/jobs/absence-deputy-reminders", () => {
 	absenceDeputyReminders.imported();
 	return { runAbsenceDeputyRemindersJob: absenceDeputyReminders.run };
 });
+const deputyCoverSummaries = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({
+		coverStart: { candidates: 2, sent: 1 },
+		returnSummary: { candidates: 1, sent: 1 },
+		failed: 0,
+	})),
+}));
+vi.mock("@/lib/jobs/deputy-cover-summaries", () => {
+	deputyCoverSummaries.imported();
+	return { runDeputyCoverSummariesJob: deputyCoverSummaries.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -335,5 +347,22 @@ describe("absence deputy reminders cron (#1013)", () => {
 			}),
 		).toEqual({ candidates: 3, sent: 1 });
 		expect(absenceDeputyReminders.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("deputy cover summaries cron (#1018)", () => {
+	it("loads the summary job lazily and runs every 15 minutes, so a late approval is told soon", async () => {
+		expect(deputyCoverSummaries.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:deputy-cover-summaries"].schedule).toBe("*/15 * * * *");
+		expect(
+			await CRON_JOBS["cron:deputy-cover-summaries"].processor({
+				triggeredAt: "2026-10-25T06:00:00Z",
+			}),
+		).toEqual({
+			coverStart: { candidates: 2, sent: 1 },
+			returnSummary: { candidates: 1, sent: 1 },
+			failed: 0,
+		});
+		expect(deputyCoverSummaries.run).toHaveBeenCalledOnce();
 	});
 });

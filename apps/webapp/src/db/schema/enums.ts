@@ -281,6 +281,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"absence_deputy_reminder",
 	// A departed or deactivated deputy was cleared from an absence (#1014)
 	"absence_deputy_unavailable",
+	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
+	"approval_cover_started",
+	"approval_cover_return_summary",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

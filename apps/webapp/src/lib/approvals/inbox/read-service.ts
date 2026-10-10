@@ -376,6 +376,26 @@ async function countCoveringSections(input: {
 	);
 }
 
+/**
+ * How many approvals wait for this absent approver in their covering deputy's
+ * "Covering for" section: the same count the section shows (#1016), for the
+ * cover start summary (#1018).
+ */
+export async function countCoveredApproverPending(input: {
+	organizationId: string;
+	approverId: string;
+	now?: Date;
+}): Promise<number> {
+	const [section] = await countCoveringSections({
+		covers: [{ approverId: input.approverId, approverName: "" }],
+		organizationId: input.organizationId,
+		sources: getSupportedInboxSources(),
+		countCanonical: countOrdinaryCanonicalApprovals,
+		now: input.now ?? new Date(),
+	});
+	return section?.count ?? 0;
+}
+
 export function getApprovalInboxList(
 	params: ApprovalInboxListParams,
 ): Promise<ApprovalInboxListResult> {

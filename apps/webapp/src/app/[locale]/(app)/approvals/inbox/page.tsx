@@ -606,7 +606,14 @@ function ApprovalInboxRequestsCard({
 				</CardContent>
 			</Card>
 			{covering?.map((section) => (
-				<Card key={section.approverId} data-testid="approval-covering-section">
+				<Card
+					key={section.approverId}
+					// The cover start summary links here (#1018).
+					id={`covering-${section.approverId}`}
+					ref={scrollToLinkedSection}
+					className="scroll-mt-20"
+					data-testid="approval-covering-section"
+				>
 					<CardHeader className="pb-0">
 						<CardTitle className="flex items-center gap-2">
 							<IconUserShare className="size-5" aria-hidden="true" />
@@ -637,6 +644,14 @@ function ApprovalInboxRequestsCard({
 }
 
 type ApprovalInboxCoveringSection = NonNullable<ApprovalInboxListResult["covering"]>[number];
+
+/**
+ * The cover start summary links to a "Covering for" section (#1018). Sections
+ * arrive after the page loaded, so the linked one scrolls into view on mount.
+ */
+function scrollToLinkedSection(node: HTMLDivElement | null) {
+	if (node && window.location.hash === `#${node.id}`) node.scrollIntoView({ block: "start" });
+}
 
 function BulkRejectPanel({
 	t,

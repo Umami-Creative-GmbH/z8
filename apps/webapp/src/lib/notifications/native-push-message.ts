@@ -88,6 +88,8 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	absence_deputy_dates_changed: "schedule",
 	absence_deputy_reminder: "reminder",
 	absence_deputy_unavailable: "attention",
+	approval_cover_started: "review",
+	approval_cover_return_summary: "request_update",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

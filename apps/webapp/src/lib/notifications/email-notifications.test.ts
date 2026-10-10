@@ -147,6 +147,32 @@ describe("sendEmailNotification", () => {
 			sendEmailMock.mock.calls.map(([message]) => /href="([^"]+)"/.exec(message.html ?? "")?.[1]),
 		).toEqual(Array(4).fill("https://org.example.com/"));
 	});
+	it("links cover summaries to the inbox section and the deputy decisions (#1018)", async () => {
+		findUserMock.mockResolvedValue({ email: "alex@example.com", name: "Alex" });
+		await sendEmailNotification({
+			userId: "user_123",
+			organizationId: "org",
+			type: "approval_cover_started",
+			title: "You're covering approvals",
+			message: "You're covering Sam's approvals: 2 waiting.",
+			actionUrl: "/approvals/inbox#covering-emp-1",
+		});
+		await sendEmailNotification({
+			userId: "user_123",
+			organizationId: "org",
+			type: "approval_cover_return_summary",
+			title: "Decided while you were away",
+			message: "While you were away, Sam decided 2 approvals.",
+			actionUrl: "/approvals/deputy-decisions/abs-1?deputy=emp-2",
+		});
+		expect(renderOrganizationEmailTemplateMock).not.toHaveBeenCalled();
+		expect(
+			sendEmailMock.mock.calls.map(([message]) => /href="([^"]+)"/.exec(message.html ?? "")?.[1]),
+		).toEqual([
+			"https://org.example.com/approvals/inbox#covering-emp-1",
+			"https://org.example.com/approvals/deputy-decisions/abs-1?deputy=emp-2",
+		]);
+	});
 	beforeEach(() => {
 		debugMock.mockReset();
 		errorMock.mockReset();

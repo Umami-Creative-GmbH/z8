@@ -117,6 +117,8 @@ function getNotificationStyle(type: NotificationType): {
 		case "absence_deputy_assigned":
 		case "absence_deputy_dates_changed":
 		case "absence_deputy_reminder":
+		case "approval_cover_started":
+		case "approval_cover_return_summary":
 			return {
 				icon: <IconUserShare className="size-4" />,
 				bgColor: "bg-purple-100 dark:bg-purple-900/30",

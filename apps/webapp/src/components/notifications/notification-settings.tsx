@@ -61,6 +61,8 @@ const NOTIFICATION_CATEGORIES = [
 			"approval_request_approved",
 			"approval_request_rejected",
 			"approval_escalation_attention",
+			"approval_cover_started",
+			"approval_cover_return_summary",
 		] as NotificationType[],
 	},
 	{
@@ -269,6 +271,8 @@ const TYPE_LABELS: Record<
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
 	// A departed or deactivated deputy was cleared from an absence
 	absence_deputy_unavailable: "Deputy no longer available",
+	approval_cover_started: "Absence cover started",
+	approval_cover_return_summary: "Decided by your deputy",
 };
 
 // Channel icons and labels

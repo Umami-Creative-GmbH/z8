@@ -15,6 +15,8 @@ export * from "./approval-escalation";
 export * from "./approval-evidence";
 export * from "./approval-policy";
 export * from "./approval-deputy-decision";
+// Cover summary sent markers (#1018)
+export * from "./approval-deputy-cover-summary";
 export * from "./approval-setting";
 export * from "./approval-workflow";
 export * from "./audit";

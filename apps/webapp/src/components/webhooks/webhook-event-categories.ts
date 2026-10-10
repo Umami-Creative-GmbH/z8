@@ -17,6 +17,8 @@ export const EVENT_CATEGORIES = {
 			"approval_request_submitted",
 			"approval_request_approved",
 			"approval_request_rejected",
+			"approval_cover_started",
+			"approval_cover_return_summary",
 		],
 	},
 	timeTracking: {

@@ -61,6 +61,9 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	absence_deputy_reminder: "/",
 	// The absent employee gets their absences, managers the team absences (#1014).
 	absence_deputy_unavailable: ["/absences", "/team/absences"],
+	// The covering deputy's inbox section, the approver's deputy decisions (#1018).
+	approval_cover_started: "/approvals/inbox",
+	approval_cover_return_summary: "/approvals/deputy-decisions/",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
