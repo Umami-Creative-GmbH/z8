@@ -1,4 +1,10 @@
-import { IconChevronRight, IconFileStack, IconSettings, IconTrashX } from "@tabler/icons-react";
+import {
+	IconChevronRight,
+	IconFileStack,
+	IconFirstAidKit,
+	IconSettings,
+	IconTrashX,
+} from "@tabler/icons-react";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ExpiringDocumentsCard } from "@/components/personnel-file/expiring-documents";
@@ -9,7 +15,7 @@ import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { managesAnyDocuments } from "@/lib/personnel-file/access";
+import { managesAnyDocuments, managesCategory } from "@/lib/personnel-file/access";
 import { listManagedEmployees } from "@/lib/personnel-file/access-store";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import {
@@ -59,6 +65,14 @@ async function PersonnelFilesContent() {
 							<Link href="/personnel-files/payslip-batches">
 								<IconFileStack aria-hidden="true" className="size-4" />
 								{t("settings.personnelFiles.area.payslipBatch", "Payslip batch")}
+							</Link>
+						</Button>
+					) : null}
+					{managesCategory(current.access, "sick_note") ? (
+						<Button asChild variant="outline">
+							<Link href="/personnel-files/sick-leave">
+								<IconFirstAidKit aria-hidden="true" className="size-4" />
+								{t("settings.personnelFiles.area.sickLeave", "Sick leave")}
 							</Link>
 						</Button>
 					) : null}
