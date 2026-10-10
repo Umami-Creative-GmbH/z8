@@ -137,7 +137,7 @@ Team leads can create feeds showing all team member absences. This requires:
 
 ### Security Considerations
 
-ICS feed URLs contain a secret token for authentication. Anyone with the URL can view the calendar contents. **Important security practices:**
+ICS feed URLs contain a secret token for authentication. Anyone with the URL can view the calendar contents. Z8 stores only a fingerprint of the token, so the URL is shown once, when you create or regenerate the feed. If you lose it, regenerate the feed and subscribe again with the new URL. **Important security practices:**
 
 - **Do not share** ICS URLs publicly
 - **Regenerate** the URL if you suspect it has been compromised

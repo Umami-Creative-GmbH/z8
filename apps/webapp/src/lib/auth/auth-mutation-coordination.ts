@@ -32,7 +32,7 @@
  * existing after-commit timing.
  */
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
-import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import { createAuthMiddleware } from "better-auth/api";
 import { admin } from "better-auth/plugins/admin";
 import { type OrganizationOptions, organization } from "better-auth/plugins/organization";
 import { createOrganizationApprovalRollouts } from "@/lib/approvals/workflow/organization-rollout";
@@ -52,6 +52,7 @@ import {
 	completeRemovedMemberCleanupPostCommit,
 	revokeRemovedMemberAccessInTransaction,
 } from "./member-removal-cleanup";
+import { type BeforeHookContext, requestingSession } from "./requesting-session";
 
 type OrganizationHooks = NonNullable<OrganizationOptions["organizationHooks"]>;
 
@@ -127,7 +128,13 @@ async function cleanUpRemovedMember(input: { organizationId: string; userId: str
 
 export function createCoordinatedOrganizationHooks(
 	hooks: Required<
-		Pick<OrganizationHooks, "beforeUpdateOrganization" | "afterAcceptInvitation" | "afterAddMember">
+		Pick<
+			OrganizationHooks,
+			| "beforeUpdateOrganization"
+			| "beforeCreateInvitation"
+			| "afterAcceptInvitation"
+			| "afterAddMember"
+		>
 	>,
 ): OrganizationHooks {
 	return {
@@ -141,6 +148,7 @@ export function createCoordinatedOrganizationHooks(
 			await createOrganizationApprovalRollouts(transaction, organization.id);
 		},
 		beforeUpdateOrganization: hooks.beforeUpdateOrganization,
+		beforeCreateInvitation: hooks.beforeCreateInvitation,
 		beforeUpdateMemberRole: async ({ member, organization }) => {
 			await protectAuthMutation("organization member role update", {
 				organizationId: organization.id,
@@ -189,23 +197,8 @@ function stringField(body: unknown, field: string): string | null {
 	return typeof value === "string" && value ? value : null;
 }
 
-type BeforeHookContext = Parameters<typeof getSessionFromCtx>[0];
-
-/**
- * The requesting user, from the session cookie or a bearer session token.
- * Before-hooks see the request's original headers: the bearer plugin's
- * cookie is only merged in after every before-hook has run.
- */
 async function requestingUserId(ctx: BeforeHookContext): Promise<string | null> {
-	const session = await getSessionFromCtx(ctx);
-	if (session) return session.user.id;
-	const authorization =
-		ctx.headers?.get("authorization") ?? ctx.request?.headers.get("authorization");
-	if (authorization?.slice(0, 7).toLowerCase() !== "bearer ") return null;
-	const token = decodeURIComponent(authorization.slice(7).trim()).split(".")[0];
-	if (!token) return null;
-	const found = await ctx.context.internalAdapter.findSession(token);
-	return found && found.session.expiresAt > new Date() ? found.user.id : null;
+	return (await requestingSession(ctx))?.userId ?? null;
 }
 
 /**

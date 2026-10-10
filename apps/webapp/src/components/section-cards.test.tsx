@@ -63,6 +63,10 @@ vi.mock("@/components/dashboard/team-overview-widget", () => ({
 	TeamOverviewWidget: () => <div>hydrated widget</div>,
 }));
 
+vi.mock("@/components/dashboard/upcoming-shifts-widget", () => ({
+	UpcomingShiftsWidget: () => <div>hydrated widget</div>,
+}));
+
 vi.mock("@/components/dashboard/upcoming-time-off-widget", () => ({
 	UpcomingTimeOffWidget: () => <div>hydrated widget</div>,
 }));

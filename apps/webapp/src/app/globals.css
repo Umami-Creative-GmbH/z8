@@ -331,7 +331,8 @@
 /* Schedule-X Calendar Customizations - must be in @layer components to override theme */
 @layer components {
 	/* No rule here hides Schedule-X's header: one in this layer loses to the theme's unlayered CSS.
-	   The time calendar hides it in schedule-x-calendar.css; the shift scheduler navigates with it. */
+	   The time calendar hides it in schedule-x-calendar.css; the shift schedulers (planner and
+	   employee) navigate with it. */
 
 	/* Calendar container must constrain its children */
 	.sx-react-calendar-wrapper {

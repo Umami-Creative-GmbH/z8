@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { PlainDate, ZonedDateTime } from "@/lib/datetime/temporal-core";
 import { ShiftDialog } from "../shifts/shift-dialog";
+import { EmployeeShiftSchedule } from "./employee-shift-schedule";
 import {
 	CoverageHeatmapOverlay,
 	CoverageSummaryBar,
@@ -49,7 +50,20 @@ interface ShiftSchedulerProps {
 	focusDate: string | null;
 }
 
-export function ShiftScheduler({
+export function ShiftScheduler(props: ShiftSchedulerProps) {
+	if (!props.isManager) {
+		return (
+			<EmployeeShiftSchedule
+				organizationId={props.organizationId}
+				organizationTimezone={props.organizationTimezone}
+				focusDate={props.focusDate}
+			/>
+		);
+	}
+	return <PlannerShiftScheduler {...props} />;
+}
+
+function PlannerShiftScheduler({
 	organizationId,
 	organizationTimezone,
 	employeeId: _employeeId,

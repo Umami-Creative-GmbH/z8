@@ -48,6 +48,10 @@ import {
 	getStaticTrustedOrigins,
 } from "@/lib/auth-domain-config";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import {
+	enterpriseIdentityInvitationResendPlugin,
+	refuseInvitationOutsideEnterpriseIdentity,
+} from "@/lib/enterprise-identity/invitation-restriction";
 import { sessionSsoStore } from "@/lib/enterprise-identity/session-sso-store";
 import {
 	createSsoEnforcementPlugin,
@@ -668,6 +672,10 @@ export const auth = betterAuth({
 					rejectOrganizationSsoApprovalUpdate(organization);
 				},
 
+				// Enterprise identity "Restrict invites" for new invitations; resends
+				// skip this hook and are covered by the resend plugin below (#1024).
+				beforeCreateInvitation: refuseInvitationOutsideEnterpriseIdentity,
+
 				// Update user permissions when accepting invitation (after it commits)
 				afterAcceptInvitation: async ({ user, invitation, member }) => {
 					// Fetch the full invitation record to get custom invitation fields.
@@ -800,6 +808,7 @@ export const auth = betterAuth({
 			enableMetadata: true,
 		}),
 		createSsoEnforcementPlugin(sessionSsoStore),
+		enterpriseIdentityInvitationResendPlugin(),
 		// Server-only: hands an exchanged store app session to the web view (#842).
 		storeAppSessionPlugin(),
 		nextCookies(),
