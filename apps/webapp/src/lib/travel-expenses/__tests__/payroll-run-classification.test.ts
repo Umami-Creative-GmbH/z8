@@ -225,6 +225,17 @@ describe("classifyPayrollRunCandidate", () => {
 		).toEqual({ outcome: "skip", skip: { reason: "nothing_owed" } });
 	});
 
+	it("never includes a report whose lines would add up to nothing", () => {
+		// A run that carries nothing could never be confirmed as paid.
+		expect(
+			classifyPayrollRunCandidate(
+				report({
+					revision: { id: "r", facts: facts([receipt("hotel", "accommodation", "0.00")]) },
+				}),
+			),
+		).toEqual({ outcome: "skip", skip: { reason: "nothing_owed" } });
+	});
+
 	it("names every kind the format has no wage type for", () => {
 		const items = [
 			receipt("hotel", "accommodation", "100.00"),

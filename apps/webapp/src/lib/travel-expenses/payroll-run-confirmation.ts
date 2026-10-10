@@ -81,7 +81,10 @@ export interface PayrollRunConfirmationRow {
 	outcome: PayrollRunConfirmationOutcome;
 	/** What the run carried for the report, in EUR. */
 	frozenAmount: string;
-	/** The reimbursement recorded; null when nothing was recorded. */
+	/**
+	 * The reimbursement recorded ("0.00" when the run carried nothing for the
+	 * report); null when the report was not confirmed.
+	 */
 	amount: string | null;
 	/** Overpaid by payroll: what the run paid beyond what was owed. */
 	overpaid: string | null;
@@ -327,6 +330,18 @@ async function confirmInclusion(
 	// the account shows as overpaid and an officer records the recovery by hand.
 	const line = account.summary.currencies.find((entry) => entry.currency === PAYROLL_CURRENCY);
 	const balance = line ? units(line.balance) : ZERO;
+	if (frozen <= ZERO) {
+		// The run carried nothing for it (a run never takes such a report): closed
+		// without money, never left included for good.
+		await markConfirmed(tx, { ...input, entryId: null, amount: text(ZERO), overpaid: ZERO });
+		return {
+			row: row("confirmed", {
+				amount: text(ZERO),
+				remaining: line?.state === "outstanding" ? line.balance : null,
+			}),
+			recorded: null,
+		};
+	}
 	const owed = balance > ZERO ? balance : ZERO;
 	const overpaid = frozen > owed ? frozen - owed : ZERO;
 	const result = await recordSettlementEntryInTransaction(
@@ -358,31 +373,11 @@ async function confirmInclusion(
 			recorded: null,
 		};
 	}
-	const endedAt = dateFromInstant(now);
-	await tx
-		.update(travelExpensePayrollRunInclusion)
-		.set({ state: "confirmed", endedAt, endedByUserId: actor.userId })
-		.where(
-			and(
-				eq(travelExpensePayrollRunInclusion.id, input.inclusionId),
-				eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
-			),
-		);
-	await tx.insert(auditLog).values({
-		organizationId,
-		entityType: "travel_expense_report",
-		entityId: source.id,
-		action: AuditAction.TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_CONFIRMED,
-		performedBy: actor.userId,
-		changes: JSON.stringify({
-			payrollExportJobId: input.jobId,
-			entryId: result.entry.id,
-			amount: result.entry.amount,
-			currency: PAYROLL_CURRENCY,
-			occurredOn: input.payment.occurredOn,
-			overpaid: overpaid > ZERO ? text(overpaid) : null,
-		}),
-		timestamp: endedAt,
+	await markConfirmed(tx, {
+		...input,
+		entryId: result.entry.id,
+		amount: result.entry.amount,
+		overpaid,
 	});
 	const after = result.account.summary.currencies.find(
 		(entry) => entry.currency === PAYROLL_CURRENCY,
@@ -395,6 +390,52 @@ async function confirmInclusion(
 		}),
 		recorded: result,
 	};
+}
+
+/** The inclusion is confirmed, audited in the same transaction. */
+async function markConfirmed(
+	tx: Transaction,
+	input: {
+		actor: SettlementActor;
+		inclusionId: string;
+		source: SettlementSource;
+		jobId: string;
+		payment: SettlementPayment;
+		now: Instant;
+		/** The reimbursement recorded; null when the run carried nothing. */
+		entryId: string | null;
+		amount: string;
+		overpaid: bigint;
+	},
+): Promise<void> {
+	const { actor } = input;
+	const { organizationId } = actor;
+	const endedAt = dateFromInstant(input.now);
+	await tx
+		.update(travelExpensePayrollRunInclusion)
+		.set({ state: "confirmed", endedAt, endedByUserId: actor.userId })
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.id, input.inclusionId),
+				eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+			),
+		);
+	await tx.insert(auditLog).values({
+		organizationId,
+		entityType: "travel_expense_report",
+		entityId: input.source.id,
+		action: AuditAction.TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_CONFIRMED,
+		performedBy: actor.userId,
+		changes: JSON.stringify({
+			payrollExportJobId: input.jobId,
+			entryId: input.entryId,
+			amount: input.amount,
+			currency: PAYROLL_CURRENCY,
+			occurredOn: input.payment.occurredOn,
+			overpaid: input.overpaid > ZERO ? text(input.overpaid) : null,
+		}),
+		timestamp: endedAt,
+	});
 }
 
 export interface PayrollRunToConfirm {

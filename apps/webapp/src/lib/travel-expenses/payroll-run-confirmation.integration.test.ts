@@ -590,6 +590,25 @@ describe("confirming a payroll run as paid (#853)", () => {
 		expect(await entries(requesters)).toHaveLength(1);
 	});
 
+	it("closes an inclusion that carries nothing without recording money", async () => {
+		const reportId = await approvedHotel("100.00");
+		const run = await exportPayroll(current);
+		// A run never takes a report it carries nothing for; should one hold such a report, it is no dead end.
+		await admin.query(
+			"update travel_expense_payroll_run_inclusion set lines = '[]'::jsonb where report_id = $1",
+			[reportId],
+		);
+
+		expect(await confirmed("officer", run.jobId)).toEqual([
+			{ reportId, outcome: "confirmed", amount: "0.00", overpaid: null, remaining: "100.00" },
+		]);
+		expect(await entries(reportId)).toEqual([]);
+		expect(await inclusions(reportId)).toEqual([
+			{ state: "confirmed", job: run.jobId, ended_by: "t853-officer" },
+		]);
+		expect(await notifications("t853-requester")).toEqual([]);
+	});
+
 	it("records what payroll paid after an adjustment lowered it: the overpayment shows and is recovered by hand", async () => {
 		const reportId = await approvedHotel("100.00");
 		const run = await exportPayroll(current);
