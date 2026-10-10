@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 	getPayrollExportConfig: vi.fn(),
 	createExportJob: vi.fn(),
 	processExportJob: vi.fn(),
+	signDownloadLink: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -30,8 +31,12 @@ vi.mock("@/lib/payroll-export", () => ({
 	createExportJob: mocks.createExportJob,
 	processExportJob: mocks.processExportJob,
 }));
+vi.mock("../../infrastructure/download-link", () => ({
+	signDownloadLink: mocks.signDownloadLink,
+}));
 
 const { PayrollExportExecutor } = await import("./payroll-export-executor");
+const { parseInstant } = await import("@/lib/datetime/temporal-core");
 
 const params: ExecuteParams = {
 	organizationId: "org-1",
@@ -121,5 +126,59 @@ describe("scheduled payroll requester attribution", () => {
 
 		expect(result.success).toBe(false);
 		expect(mocks.createExportJob).not.toHaveBeenCalled();
+	});
+});
+
+describe("scheduled payroll file (#1008)", () => {
+	const s3Key = "payroll-exports/org-1/job-1/export.csv";
+	const link = {
+		url: "https://s3.example/exports-bucket/payroll-exports/org-1/job-1/export.csv?sig",
+		lifetimeSeconds: 900,
+		expiresAt: parseInstant("2026-10-10T12:15:00Z"),
+	};
+
+	beforeEach(() => {
+		vi.resetAllMocks();
+		mocks.getPayrollExportConfig.mockResolvedValue({ config: {} });
+		mocks.findEmployee.mockResolvedValue({ id: "employee-1" });
+		mocks.createExportJob.mockResolvedValue({ jobId: "job-1", isAsync: false });
+		mocks.signDownloadLink.mockResolvedValue(link);
+	});
+
+	it("stores the file whatever its size and records the job's key with a link signed for it", async () => {
+		mocks.processExportJob.mockResolvedValue({
+			s3Key,
+			downloadUrl: link.url,
+			result: { metadata: { workPeriodCount: 3 } },
+		});
+
+		const result = await new PayrollExportExecutor().execute(params);
+
+		expect(mocks.processExportJob).toHaveBeenCalledWith(
+			{ jobId: "job-1", organizationId: "org-1" },
+			{ storeFile: true },
+		);
+		// Signed with the private storage default, as the payroll job's own link is.
+		expect(mocks.signDownloadLink).toHaveBeenCalledWith("org-1", s3Key);
+		expect(result).toEqual({
+			success: true,
+			underlyingJobId: "job-1",
+			underlyingJobType: "payroll_export",
+			s3Key,
+			downloadLink: link,
+			recordCount: 3,
+		});
+	});
+
+	it("reports no file and no link when the format produces none", async () => {
+		// An API-based format (Personio) syncs records instead of producing a file.
+		mocks.processExportJob.mockResolvedValue({ apiResult: { totalRecords: 2 } });
+
+		const result = await new PayrollExportExecutor().execute(params);
+
+		expect(result.success).toBe(true);
+		expect(result.s3Key).toBeUndefined();
+		expect(result.downloadLink).toBeUndefined();
+		expect(mocks.signDownloadLink).not.toHaveBeenCalled();
 	});
 });

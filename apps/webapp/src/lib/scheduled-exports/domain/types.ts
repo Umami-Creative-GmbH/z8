@@ -5,6 +5,7 @@
  * These types are used across all layers of the application.
  */
 import type { DateTime } from "luxon";
+import type { Instant } from "@/lib/datetime/temporal-core";
 
 // ============================================
 // SCHEDULE CONFIGURATION
@@ -169,14 +170,25 @@ export interface ScheduledExportDefinition {
 // ============================================
 
 /**
+ * A presigned download URL with the lifetime it was signed with (#1008), so
+ * an email never states another expiry than the link's own.
+ */
+export interface SignedDownloadLink {
+	url: string;
+	lifetimeSeconds: number;
+	expiresAt: Instant;
+}
+
+/**
  * Result of an export execution
  */
 export interface ExecutionResult {
 	success: boolean;
 	underlyingJobId?: string;
 	underlyingJobType?: string;
+	/** The stored object's key; absent when the run produced no file. */
 	s3Key?: string;
-	s3Url?: string;
+	downloadLink?: SignedDownloadLink;
 	fileSizeBytes?: number;
 	recordCount?: number;
 	error?: string;

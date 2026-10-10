@@ -7,8 +7,9 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { auditLog, db } from "@/db";
 import { createLogger } from "@/lib/logger";
-import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
+import { uploadExport } from "@/lib/storage/export-s3-client";
 import type { AuditReportConfig, ExecutionResult, ReportConfig } from "../../domain/types";
+import { signDownloadLink } from "../../infrastructure/download-link";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("AuditReportExecutor");
@@ -76,14 +77,14 @@ export class AuditReportExecutor implements IReportExecutor {
 			// Upload to S3
 			await uploadExport(organizationId, s3Key, Buffer.from(csvContent, "utf-8"), "text/csv");
 
-			// Generate presigned URL
-			const s3Url = await getPresignedUrl(organizationId, s3Key, 604800); // 7 days
+			// Generate a 7-day download link
+			const downloadLink = await signDownloadLink(organizationId, s3Key, 604800);
 
 			return {
 				success: true,
 				underlyingJobType: "audit_report",
 				s3Key,
-				s3Url,
+				downloadLink,
 				fileSizeBytes: csvContent.length,
 				recordCount: filteredLogs.length,
 			};

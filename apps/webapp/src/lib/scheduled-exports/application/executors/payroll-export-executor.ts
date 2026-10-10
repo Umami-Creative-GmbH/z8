@@ -10,6 +10,7 @@ import { employee } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { createExportJob, getPayrollExportConfig, processExportJob } from "@/lib/payroll-export";
 import type { ExecutionResult, PayrollExportReportConfig, ReportConfig } from "../../domain/types";
+import { signDownloadLink } from "../../infrastructure/download-link";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("PayrollExportExecutor");
@@ -88,23 +89,20 @@ export class PayrollExportExecutor implements IReportExecutor {
 
 			logger.info({ jobId, isAsync }, "Payroll export job created");
 
-			// Process the job (handles both sync and async)
-			const result = await processExportJob({ jobId, organizationId });
+			// Process the job inline, storing its file whatever its size (#1008)
+			const result = await processExportJob({ jobId, organizationId }, { storeFile: true });
 
-			// Determine S3 key from result
-			let s3Key: string | undefined;
-			if (result.downloadUrl) {
-				// Extract S3 key from presigned URL (it's in the path)
-				const url = new URL(result.downloadUrl);
-				s3Key = url.pathname.slice(1); // Remove leading slash
-			}
+			// The job's own key; an API-based format stores no file. The link keeps the
+			// payroll job's default lifetime and carries it to the email.
+			const s3Key = result.s3Key;
+			const downloadLink = s3Key ? await signDownloadLink(organizationId, s3Key) : undefined;
 
 			return {
 				success: true,
 				underlyingJobId: jobId,
 				underlyingJobType: "payroll_export",
 				s3Key,
-				s3Url: result.downloadUrl,
+				downloadLink,
 				recordCount: result.result?.metadata?.workPeriodCount,
 			};
 		} catch (error) {
