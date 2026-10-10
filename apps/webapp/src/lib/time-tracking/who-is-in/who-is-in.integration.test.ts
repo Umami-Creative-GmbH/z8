@@ -301,14 +301,14 @@ describe("who-is-in board on PostgreSQL", () => {
 				employeeId: anna.employeeId,
 				name: "Anna Berger",
 				state: "clocked_in",
-				since: new Date("2026-10-10T06:30:00Z"),
+				since: parseInstant("2026-10-10T06:30:00Z"),
 				sinceZone: "+02:00",
 			},
 			{
 				employeeId: ben.employeeId,
 				name: "Ben Özdemir",
 				state: "on_break",
-				since: new Date("2026-10-10T09:45:00Z"),
+				since: parseInstant("2026-10-10T09:45:00Z"),
 				sinceZone: "Europe/Berlin",
 			},
 		]);

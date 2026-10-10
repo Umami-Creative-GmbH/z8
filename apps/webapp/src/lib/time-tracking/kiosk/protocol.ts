@@ -25,7 +25,7 @@ export type KioskRefusalCode = "kiosk_unknown" | "kiosk_revoked";
  *   employee's current state and today's day total (`KioskEmployeeSnapshot`).
  * - `POST /api/kiosk/clock` with `{ employeeId, pin, action, operationId?,
  *   breakMinutes? }` runs the action and answers `KioskClockResult`: the
- *   outcome plus the state and day total after it. `operationId` (a UUID the
+ *   outcome, when it took effect, and the state and day total after it. `operationId` (a UUID the
  *   device makes once per attempted action) makes a retried request replay
  *   instead of clocking twice; without it the server makes one.
  *
@@ -59,8 +59,11 @@ export type KioskEmployeeState =
 			breakZone: string;
 	  };
 
-/** Today's worked minutes in the kiosk's zone, live work included. */
-export type KioskDayTotal = { date: string; timezone: string; todayMinutes: number };
+/**
+ * The employee's day total (Time Tracking glossary): their work within the
+ * local day `date` in their timezone, as the web counts it, live work included.
+ */
+export type KioskDayTotal = { date: string; timezone: string; minutes: number };
 
 export type KioskEmployeeSnapshot = {
 	employee: { id: string; name: string };
@@ -68,9 +71,16 @@ export type KioskEmployeeSnapshot = {
 	dayTotal: KioskDayTotal;
 };
 
+/**
+ * When the action took effect, sampled by the server (a UTC ISO instant), and
+ * the zone to show it in. A day ended on a break ends at the break's start.
+ */
+export type KioskEventTime = { instant: string; zone: string };
+
 export type KioskClockResult = KioskEmployeeSnapshot & {
 	outcome: "executed" | "replayed";
 	action: KioskClockAction;
+	at: KioskEventTime;
 };
 
 /**

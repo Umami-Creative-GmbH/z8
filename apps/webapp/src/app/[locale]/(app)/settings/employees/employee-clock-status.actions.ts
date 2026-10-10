@@ -4,6 +4,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import { employee, timeEntry } from "@/db/schema";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
@@ -142,7 +143,7 @@ export async function getEmployeeClockStatuses(
 					lastActivityUtcOffsetMinutes: activity?.utcOffsetMinutes ?? null,
 					...(breakSince
 						? {
-								breakStartedAt: breakSince.toISOString(),
+								breakStartedAt: dateFromInstant(breakSince).toISOString(),
 								breakStartedZone: live?.breakZone ?? null,
 							}
 						: {}),

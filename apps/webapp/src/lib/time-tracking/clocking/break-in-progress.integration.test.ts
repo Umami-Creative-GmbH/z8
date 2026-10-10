@@ -292,7 +292,7 @@ describe("Clocking break in progress on PostgreSQL", () => {
 				{
 					employeeId: ids.employee,
 					workPeriodId: active.id,
-					workSince: new Date("2026-07-22T08:00:00Z"),
+					workSince: parseInstant("2026-07-22T08:00:00Z"),
 					state: "clocked_in",
 					breakSince: null,
 					breakZone: null,
@@ -304,9 +304,9 @@ describe("Clocking break in progress on PostgreSQL", () => {
 				{
 					employeeId: ids.employee,
 					workPeriodId: active.id,
-					workSince: new Date("2026-07-22T08:00:00Z"),
+					workSince: parseInstant("2026-07-22T08:00:00Z"),
 					state: "on_break",
-					breakSince: new Date("2026-07-22T09:45:00Z"),
+					breakSince: parseInstant("2026-07-22T09:45:00Z"),
 					breakZone: "Europe/Berlin",
 				},
 			]);
@@ -315,7 +315,7 @@ describe("Clocking break in progress on PostgreSQL", () => {
 			).resolves.toEqual([]);
 			await newClocking(resumeAt).clocking.resumeBreak(breakCommand());
 			await expect(readClockPresence(db, scope)).resolves.toMatchObject([
-				{ state: "clocked_in", workSince: new Date("2026-07-22T10:00:00Z"), breakSince: null },
+				{ state: "clocked_in", workSince: parseInstant("2026-07-22T10:00:00Z"), breakSince: null },
 			]);
 		});
 

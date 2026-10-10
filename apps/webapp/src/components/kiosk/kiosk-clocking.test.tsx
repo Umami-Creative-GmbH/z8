@@ -41,10 +41,10 @@ const kiosk: KioskDeviceInfo = {
 const anna = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "Anna Berger" };
 const ben = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ben Özdemir" };
 
-const dayTotal = { date: "2026-10-10", timezone: "Europe/Berlin", todayMinutes: 0 };
+const dayTotal = { date: "2026-10-10", timezone: "Europe/Berlin", minutes: 0 };
 
-function snapshot(state: KioskEmployeeSnapshot["state"], todayMinutes = 0): KioskEmployeeSnapshot {
-	return { employee: anna, state, dayTotal: { ...dayTotal, todayMinutes } };
+function snapshot(state: KioskEmployeeSnapshot["state"], minutes = 0): KioskEmployeeSnapshot {
+	return { employee: anna, state, dayTotal: { ...dayTotal, minutes } };
 }
 
 type Call = { url: string; init: RequestInit | undefined; body: Record<string, unknown> | null };
@@ -126,6 +126,7 @@ describe("kiosk clocking screen (#862)", () => {
 			...snapshot({ status: "clocked_in", workPeriodId: "wp-1", since: "2026-10-10T06:30:00Z" }),
 			outcome: "executed",
 			action: "clock_in",
+			at: { instant: "2026-10-10T06:30:00Z", zone: "Europe/Berlin" },
 		};
 		const calls = stubFetch(
 			kioskRoutes({
@@ -184,12 +185,13 @@ describe("kiosk clocking screen (#862)", () => {
 		before: KioskEmployeeSnapshot,
 		after: KioskEmployeeSnapshot,
 		action: KioskClockResult["action"],
+		at: KioskClockResult["at"],
 	) {
 		const calls = stubFetch(
 			kioskRoutes({
 				"/api/kiosk/employee-status": () => Response.json(before),
 				"/api/kiosk/clock": () =>
-					Response.json({ ...after, outcome: "executed", action } satisfies KioskClockResult),
+					Response.json({ ...after, outcome: "executed", action, at } satisfies KioskClockResult),
 			}),
 		);
 		fireEvent.click(await openHome());
@@ -207,6 +209,7 @@ describe("kiosk clocking screen (#862)", () => {
 			snapshot(clockedIn, 200),
 			snapshot({ ...onBreak, breakSince: "2026-10-10T09:45:00Z" }, 195),
 			"start_break",
+			{ instant: "2026-10-10T09:45:00Z", zone: "Europe/Berlin" },
 		);
 
 		expect(await screen.findByText(/^Clocked in since 8:30\sAM$/)).toBeTruthy();
@@ -226,6 +229,7 @@ describe("kiosk clocking screen (#862)", () => {
 			snapshot(onBreak, 210),
 			snapshot({ ...clockedIn, workPeriodId: "wp-2", since: "2026-10-10T10:20:00Z" }, 210),
 			"resume_break",
+			{ instant: "2026-10-10T10:20:00Z", zone: "Europe/Berlin" },
 		);
 
 		expect(await screen.findByText(/^On break since 12:00\sPM$/)).toBeTruthy();
@@ -242,6 +246,7 @@ describe("kiosk clocking screen (#862)", () => {
 			snapshot(onBreak, 210),
 			snapshot({ status: "clocked_out" }, 210),
 			"clock_out",
+			{ instant: "2026-10-10T10:00:00Z", zone: "Europe/Berlin" },
 		);
 
 		await screen.findByText(/^On break since/);
@@ -255,16 +260,19 @@ describe("kiosk clocking screen (#862)", () => {
 		expect(clockActions(calls)).toEqual(["clock_out"]);
 	});
 
-	it("clocks out and returns home at once on a tap", async () => {
+	it("clocks out, confirms the server's time, and returns home at once on a tap", async () => {
 		const calls = await turnWith(
 			snapshot(clockedIn, 200),
 			snapshot({ status: "clocked_out" }, 200),
 			"clock_out",
+			{ instant: "2026-10-10T14:05:00Z", zone: "Europe/Berlin" },
 		);
 
 		fireEvent.click(await screen.findByRole("button", { name: "Clock out" }));
 		const confirmation = await screen.findByRole("status", { name: "Done" });
 		expect(within(confirmation).getByText("Clocked out")).toBeTruthy();
+		// The instant the server recorded, not the device's clock (#761).
+		expect(within(confirmation).getByText(/^4:05\sPM$/)).toBeTruthy();
 		expect(clockActions(calls)).toEqual(["clock_out"]);
 
 		fireEvent.click(within(confirmation).getByText("Anna Berger"));
@@ -368,6 +376,31 @@ describe("kiosk clocking screen (#862)", () => {
 		expect(await screen.findByText("You are already clocked in.")).toBeTruthy();
 		expect(screen.getByText(/^Clocked in since 8:30\sAM$/)).toBeTruthy();
 		expect(screen.getByRole("button", { name: "Clock out" })).toBeTruthy();
+	});
+
+	it("shows the who-is-in board once an admin switches it on, without a reload (#761)", async () => {
+		let boardEnabled = false;
+		stubFetch(
+			kioskRoutes({
+				"/api/kiosk/session": () => Response.json({ kiosk: { ...kiosk, boardEnabled } }),
+				"/api/kiosk/board": () =>
+					Response.json({
+						enabled: boardEnabled,
+						entries: boardEnabled ? [{ name: "Ben Ö.", state: "in" }] : [],
+					}),
+			}),
+		);
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		await openHome();
+		expect(screen.queryByRole("heading", { name: "Who is in" })).toBeNull();
+
+		boardEnabled = true;
+		await act(async () => {
+			await vi.advanceTimersByTimeAsync(61_000);
+		});
+
+		expect(await screen.findByRole("heading", { name: "Who is in" })).toBeTruthy();
+		expect(screen.getByText("Ben Ö.")).toBeTruthy();
 	});
 
 	it("opens in the organization's language and goes back to it after a turn in another one", async () => {

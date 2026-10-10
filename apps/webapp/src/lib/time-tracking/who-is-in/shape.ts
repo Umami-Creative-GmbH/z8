@@ -1,4 +1,5 @@
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import type { ActiveAssignedEmployee } from "../assigned-locations/queries";
@@ -35,7 +36,7 @@ export type LocationPresenceEntry = {
 	name: string;
 	state: ClockPresence["state"];
 	/** Where the live work started, or the open break when on break. */
-	since: Date;
+	since: Instant;
 	/** The zone captured at that moment: the break's zone, or the clock-in's fixed offset. */
 	sinceZone: string;
 };

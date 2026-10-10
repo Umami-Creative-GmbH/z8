@@ -40,6 +40,7 @@ const { setOwnKioskPin } = await import("@/lib/time-tracking/kiosk/pin-store");
 const { hashKioskSecret } = await import("./credentials");
 const { KIOSK_TOKEN_HEADER } = await import("./protocol");
 const { createKioskClockService } = await import("./clock-service");
+const { readKioskEmployees } = await import("./home");
 const { proveKioskPin } = await import("@/lib/time-tracking/clocking/kiosk");
 const { createNotification } = await import("@/lib/notifications/notification-service");
 type ClockPrincipal = import("@/lib/time-tracking/clocking/types").ClockPrincipal;
@@ -80,6 +81,8 @@ const tokens = {
 } as const;
 const PIN = "4711";
 const KIOSK_ZONE = "Europe/Berlin";
+/** The employees' own timezone (their user settings), in which their day total counts. */
+const EMPLOYEE_ZONE = "UTC";
 
 function only<T>(rows: readonly T[]): T {
 	const [row] = rows;
@@ -313,13 +316,14 @@ describe("kiosk clocking on PostgreSQL", () => {
 				body: {
 					outcome: "executed",
 					action: "clock_in",
+					at: { instant: "2026-07-22T06:00:00Z", zone: KIOSK_ZONE },
 					employee: { id: ids.worker, name: "Wanda Worker" },
 					state: {
 						status: "clocked_in",
 						workPeriodId: expect.any(String),
 						since: "2026-07-22T06:00:00Z",
 					},
-					dayTotal: { date: "2026-07-22", timezone: KIOSK_ZONE, todayMinutes: 0 },
+					dayTotal: { date: "2026-07-22", timezone: EMPLOYEE_ZONE, minutes: 0 },
 				},
 			});
 			const [entry] = await entries();
@@ -355,8 +359,9 @@ describe("kiosk clocking on PostgreSQL", () => {
 				status: 200,
 				body: {
 					outcome: "executed",
+					at: { instant: "2026-07-22T10:00:00Z", zone: KIOSK_ZONE },
 					state: { status: "clocked_in", since: "2026-07-22T10:00:00Z" },
-					dayTotal: { todayMinutes: 210 },
+					dayTotal: { minutes: 210 },
 				},
 			});
 			expect(clockedOut).toEqual({
@@ -364,9 +369,11 @@ describe("kiosk clocking on PostgreSQL", () => {
 				body: {
 					outcome: "executed",
 					action: "clock_out",
+					// The server's instant, not the device's (#761 P9).
+					at: { instant: "2026-07-22T14:30:00Z", zone: KIOSK_ZONE },
 					employee: { id: ids.worker, name: "Wanda Worker" },
 					state: { status: "clocked_out" },
-					dayTotal: { date: "2026-07-22", timezone: KIOSK_ZONE, todayMinutes: 480 },
+					dayTotal: { date: "2026-07-22", timezone: EMPLOYEE_ZONE, minutes: 480 },
 				},
 			});
 			expect(
@@ -431,27 +438,29 @@ describe("kiosk clocking on PostgreSQL", () => {
 				body: {
 					outcome: "executed",
 					action: "start_break",
+					at: { instant: "2026-07-22T10:00:00Z", zone: KIOSK_ZONE },
 					state: {
 						status: "on_break",
 						since: "2026-07-22T06:00:00Z",
 						breakSince: "2026-07-22T10:00:00Z",
 						breakZone: KIOSK_ZONE,
 					},
-					dayTotal: { todayMinutes: 240 },
+					dayTotal: { minutes: 240 },
 				},
 			});
 			expect(statusOnBreak.status).toBe(200);
 			// The interrupted work keeps counting until the break ends (ADR 0007).
 			expect(await statusOnBreak.json()).toMatchObject({
 				state: { status: "on_break" },
-				dayTotal: { todayMinutes: 270 },
+				dayTotal: { minutes: 270 },
 			});
 			expect(resumed).toMatchObject({
 				status: 200,
 				body: {
 					outcome: "executed",
+					at: { instant: "2026-07-22T10:30:00Z", zone: KIOSK_ZONE },
 					state: { status: "clocked_in", since: "2026-07-22T10:30:00Z" },
-					dayTotal: { todayMinutes: 240 },
+					dayTotal: { minutes: 240 },
 				},
 			});
 			// The day ends at the open break's start.
@@ -459,8 +468,9 @@ describe("kiosk clocking on PostgreSQL", () => {
 				status: 200,
 				body: {
 					outcome: "executed",
+					at: { instant: "2026-07-22T13:00:00Z", zone: KIOSK_ZONE },
 					state: { status: "clocked_out" },
-					dayTotal: { todayMinutes: 390 },
+					dayTotal: { minutes: 390 },
 				},
 			});
 		});
@@ -679,6 +689,51 @@ describe("kiosk clocking on PostgreSQL", () => {
 			});
 		});
 
+		it("counts the day total in the employee's timezone, not the kiosk's (#761)", async () => {
+			now = parseInstant("2026-07-21T22:30:00Z");
+			await clock({ action: "clock_in" });
+			now = parseInstant("2026-07-21T23:30:00Z");
+			await clock({ action: "clock_out" });
+			now = parseInstant("2026-07-22T06:00:00Z");
+			const status = async (employeeId: string) => {
+				const response = await newService().service.status(
+					kioskRequest("employee-status", { employeeId, pin: PIN }),
+				);
+				return (await response.json()).dayTotal;
+			};
+
+			// 22:30-23:30 UTC is still July 21 for the worker (UTC), though July 22 at the Berlin kiosk.
+			expect(await status(ids.worker)).toEqual({
+				date: "2026-07-22",
+				timezone: EMPLOYEE_ZONE,
+				minutes: 0,
+			});
+			// Without a timezone of their own, an employee counts in the organization's.
+			await admin.query("delete from user_settings where user_id = $1", [ids.kioskOnlyUser]);
+			expect(await status(ids.kioskOnly)).toEqual({
+				date: "2026-07-22",
+				timezone: "Europe/Berlin",
+				minutes: 0,
+			});
+		});
+
+		it("names the employee on the list and after the PIN alike (#761)", async () => {
+			await admin.query(
+				`update "user" set first_name = 'Wanda', last_name = 'Weber' where id = $1`,
+				[ids.workerUser],
+			);
+			const response = await newService().service.status(
+				kioskRequest("employee-status", { employeeId: ids.worker, pin: PIN }),
+			);
+
+			expect(await response.json()).toMatchObject({
+				employee: { id: ids.worker, name: "Wanda Weber" },
+			});
+			expect(
+				await readKioskEmployees(db, { organizationId: ids.organization, locationId: ids.store }),
+			).toContainEqual({ id: ids.worker, name: "Wanda Weber" });
+		});
+
 		it("answers a Clocking refusal with the employee's state", async () => {
 			const response = await clock({ action: "clock_out" });
 			expect(response).toMatchObject({
@@ -686,7 +741,7 @@ describe("kiosk clocking on PostgreSQL", () => {
 				body: {
 					code: "not_clocked_in",
 					state: { status: "clocked_out" },
-					dayTotal: { todayMinutes: 0 },
+					dayTotal: { minutes: 0 },
 				},
 			});
 		});

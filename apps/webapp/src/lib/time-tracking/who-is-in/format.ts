@@ -1,4 +1,4 @@
-import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 
 /**
@@ -7,11 +7,10 @@ import { formatInstant } from "@/lib/datetime/temporal-format";
  * with the date added when it was on an earlier local day.
  */
 export function formatPresenceSince(
-	since: Date,
+	instant: Instant,
 	zone: string,
 	context: { locale: string; timeFormat: "12h" | "24h"; now: Instant },
 ): string {
-	const instant = instantFromDate(since);
 	const sameLocalDay = instant
 		.toZonedDateTimeISO(zone)
 		.toPlainDate()

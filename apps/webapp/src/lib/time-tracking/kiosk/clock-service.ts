@@ -6,12 +6,21 @@ import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { type Clock, instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import { buildDerivedUserName } from "@/lib/auth/derived-user-name";
+import {
+	type Clock,
+	type Instant,
+	instantFromDate,
+	instantToCanonicalString,
+} from "@/lib/datetime/temporal-core";
 import { isEmployeeActivelyAssignedToLocation } from "@/lib/time-tracking/assigned-locations/queries";
 import type { Clocking } from "@/lib/time-tracking/clocking/clocking";
 import { proveKioskPin } from "@/lib/time-tracking/clocking/kiosk";
 import type { ClockPrincipal } from "@/lib/time-tracking/clocking/types";
 import type { KioskPinVerification } from "@/lib/time-tracking/kiosk/verify-kiosk-pin";
+import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
+import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
 	type AuthenticatedKiosk,
 	kioskRefusalResponse,
@@ -23,7 +32,12 @@ import {
 	type KioskClockAction,
 	type KioskClockResult,
 	type KioskEmployeeSnapshot,
+	type KioskEventTime,
 } from "./protocol";
+import { kioskRefusalDetail } from "./refusal-detail";
+
+/** An employee's own calendar, in which their day total counts. */
+export type EmployeeCalendar = { timezone: string; weekStartDay: WeekStartDay };
 
 /**
  * The kiosk clocking endpoints (#860): a kiosk's device token, an employee and
@@ -42,7 +56,14 @@ export type KioskClockServiceDeps = {
 		employeeId: string,
 		pin: string,
 	) => Promise<KioskPinVerification>;
+	/** The employee's timezone and week start; defaults to their settings, else the organization's zone. */
+	employeeCalendar?: (input: {
+		userId: string;
+		organizationId: string;
+	}) => Promise<EmployeeCalendar>;
 };
+
+type KioskEmployee = { id: string; userId: string; name: string };
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
@@ -84,27 +105,47 @@ function refusalStatus(code: string) {
 	return 409;
 }
 
-/** A refusal's detail the device may show; causes stay on the server. */
-function refusalDetail(failure: { code: string } & Record<string, unknown>) {
-	const { cause: _cause, requirement: _requirement, ...detail } = failure;
-	for (const [key, value] of Object.entries(detail)) {
-		if (value && typeof value === "object" && "epochNanoseconds" in value) {
-			detail[key] = String(value);
-		}
+/** The user's timezone and week start as the web uses them for this employee. */
+async function settingsCalendar(input: {
+	userId: string;
+	organizationId: string;
+}): Promise<EmployeeCalendar> {
+	const [timezone, weekStartDay] = await Promise.all([
+		getEffectiveTimezone(input.userId, input.organizationId),
+		getUserWeekStartDay(input.userId),
+	]);
+	return { timezone, weekStartDay };
+}
+
+/**
+ * When an executed or replayed action took effect, as Clocking recorded it: the
+ * clock-in or clock-out entry (whose zone it captured), the start of a break in
+ * progress, or the resume of a break.
+ */
+function eventTime(
+	outcome:
+		| { result: { timestamp: Date; timezone: string | null } }
+		| { result: { start: Instant } },
+	kioskZone: string,
+): KioskEventTime {
+	if ("timestamp" in outcome.result) {
+		return {
+			instant: instantToCanonicalString(instantFromDate(outcome.result.timestamp)),
+			zone: outcome.result.timezone ?? kioskZone,
+		};
 	}
-	return detail;
+	return { instant: instantToCanonicalString(outcome.result.start), zone: kioskZone };
 }
 
 export function createKioskClockService(deps: KioskClockServiceDeps) {
 	const verifyPin = deps.verifyPin;
+	const employeeCalendar = deps.employeeCalendar ?? settingsCalendar;
 
 	/** The kiosk's employee behind a verified PIN, or the refusal to answer. */
 	async function admit(
 		body: { employeeId: string; pin: string },
 		kiosk: AuthenticatedKiosk,
-	): Promise<
-		{ response: Response } | { principal: ClockPrincipal; employee: { id: string; name: string } }
-	> {
+	): Promise<{ response: Response } | { principal: ClockPrincipal; employee: KioskEmployee }> {
 		const limit = await deps.limitPinAttempts(kiosk.kioskId);
 		if (!limit.allowed) {
 			return {
@@ -112,7 +153,13 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			};
 		}
 		const [subject] = await db
-			.select({ id: employee.id, userId: employee.userId, name: user.name })
+			.select({
+				id: employee.id,
+				userId: employee.userId,
+				name: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
+			})
 			.from(employee)
 			.innerJoin(user, eq(user.id, employee.userId))
 			.where(
@@ -158,21 +205,29 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 				userId: subject.userId,
 				pin: verification.proof,
 			},
-			employee: { id: subject.id, name: subject.name },
+			employee: {
+				id: subject.id,
+				userId: subject.userId,
+				// The same name as on the kiosk's list (`readKioskEmployees`).
+				name: buildDerivedUserName(subject.firstName ?? "", subject.lastName ?? "", subject.name),
+			},
 		};
 	}
 
 	async function snapshot(
 		kiosk: AuthenticatedKiosk,
-		subject: { id: string; name: string },
+		subject: KioskEmployee,
 	): Promise<KioskEmployeeSnapshot> {
 		const read = await readKioskEmployeeState(db, {
 			organizationId: kiosk.organizationId,
 			employeeId: subject.id,
-			timezone: kiosk.timezone,
+			calendar: await employeeCalendar({
+				userId: subject.userId,
+				organizationId: kiosk.organizationId,
+			}),
 			now: deps.clock.nowInstant(),
 		});
-		return { employee: subject, ...read };
+		return { employee: { id: subject.id, name: subject.name }, ...read };
 	}
 
 	/** Runs one kiosk action through Clocking as the kiosk principal. */
@@ -233,7 +288,7 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			return json(await snapshot(kiosk, admitted.employee));
 		},
 
-		/** `POST /api/kiosk/clock`: one action, then the employee's state and day total. */
+		/** `POST /api/kiosk/clock`: one action, when it took effect, then the state and day total. */
 		async clock(request: Request): Promise<Response> {
 			const authentication = await resolveKioskFromRequest(request, { clock: deps.clock });
 			if (!authentication.ok) return kioskRefusalResponse(authentication.reason);
@@ -247,14 +302,14 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			const outcome = await runAction(kiosk, admitted.principal, admitted.employee.id, body);
 			const after = await snapshot(kiosk, admitted.employee);
 			if (outcome.outcome === "refused") {
-				const { code } = outcome.failure;
-				const detail = refusalDetail(outcome.failure as { code: string });
-				const status = refusalStatus(code);
+				const detail = kioskRefusalDetail(outcome.failure as { code: string });
+				const status = refusalStatus(detail.code);
 				return json(status === 409 ? { ...detail, ...after } : detail, status);
 			}
 			const result: KioskClockResult = {
 				outcome: outcome.outcome,
 				action: body.action as KioskClockAction,
+				at: eventTime(outcome, kiosk.timezone),
 				...after,
 			};
 			return json(result);

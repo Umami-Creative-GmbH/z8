@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { workPeriod } from "@/db/schema";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { WorkTransactionClient } from "./web-clock-out-transaction";
 
 /**
@@ -14,10 +15,10 @@ export type ClockPresence = {
 	/** The live work, which an open break interrupts without ending it. */
 	workPeriodId: string;
 	/** Where the live work started. */
-	workSince: Date;
+	workSince: Instant;
 	state: "clocked_in" | "on_break";
 	/** Where the open break started; null unless on break. */
-	breakSince: Date | null;
+	breakSince: Instant | null;
 	/** The zone observed where the break started; null unless on break. */
 	breakZone: string | null;
 };
@@ -47,9 +48,11 @@ export async function readClockPresence(
 			),
 		);
 	return rows.map((row) => ({
-		...row,
+		employeeId: row.employeeId,
+		workPeriodId: row.workPeriodId,
+		workSince: instantFromDate(row.workSince),
 		state: row.breakSince ? "on_break" : "clocked_in",
-		breakSince: row.breakSince ?? null,
+		breakSince: row.breakSince ? instantFromDate(row.breakSince) : null,
 		breakZone: row.breakSince ? row.breakZone : null,
 	}));
 }

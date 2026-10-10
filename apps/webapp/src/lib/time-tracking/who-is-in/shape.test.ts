@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	kioskBoardName,
 	toKioskBoard,
@@ -24,7 +25,7 @@ const cleo = person("e-cleo", "Cleo", "Schmidt");
 const annaIn: WhoIsInPresence = {
 	employeeId: "e-anna",
 	workPeriodId: "wp-anna",
-	workSince: new Date("2026-10-10T06:30:00Z"),
+	workSince: parseInstant("2026-10-10T06:30:00Z"),
 	state: "clocked_in",
 	breakSince: null,
 	breakZone: null,
@@ -32,9 +33,9 @@ const annaIn: WhoIsInPresence = {
 const benOnBreak: WhoIsInPresence = {
 	employeeId: "e-ben",
 	workPeriodId: "wp-ben",
-	workSince: new Date("2026-10-10T07:00:00Z"),
+	workSince: parseInstant("2026-10-10T07:00:00Z"),
 	state: "on_break",
-	breakSince: new Date("2026-10-10T10:15:00Z"),
+	breakSince: parseInstant("2026-10-10T10:15:00Z"),
 	breakZone: "Europe/Berlin",
 };
 
@@ -101,14 +102,14 @@ describe("toLocationPresence", () => {
 				employeeId: "e-anna",
 				name: "Anna Berger",
 				state: "clocked_in",
-				since: new Date("2026-10-10T06:30:00Z"),
+				since: parseInstant("2026-10-10T06:30:00Z"),
 				sinceZone: "+02:00",
 			},
 			{
 				employeeId: "e-ben",
 				name: "Ben Özdemir",
 				state: "on_break",
-				since: new Date("2026-10-10T10:15:00Z"),
+				since: parseInstant("2026-10-10T10:15:00Z"),
 				sinceZone: "Europe/Berlin",
 			},
 		]);

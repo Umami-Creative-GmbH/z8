@@ -129,7 +129,7 @@ export function KioskEmployeePanel({
 				<p className="text-2xl">{stateText}</p>
 				<p className="text-lg text-muted-foreground">
 					{t("timeTracking.kiosk.employee.today", "Today: {duration}", {
-						duration: formatKioskDuration(snapshot.dayTotal.todayMinutes, locale),
+						duration: formatKioskDuration(snapshot.dayTotal.minutes, locale),
 					})}
 				</p>
 			</div>

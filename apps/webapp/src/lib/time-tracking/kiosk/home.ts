@@ -1,5 +1,6 @@
 import "server-only";
 
+import { buildDerivedUserName } from "@/lib/auth/derived-user-name";
 import { listActiveEmployeesAssignedToLocation } from "@/lib/time-tracking/assigned-locations/queries";
 import type { AuthenticatedKiosk } from "./authenticate";
 import type { KioskEmployeeListing } from "./protocol";
@@ -18,21 +19,14 @@ export async function readKioskEmployees(
 		organizationId: kiosk.organizationId,
 		locationId: kiosk.locationId,
 	});
+	// The user's names (#858 reads them from the user, never the deprecated employee
+	// columns), shaped as the clock endpoints name the employee after their PIN.
 	return employees.map((assigned) => ({
 		id: assigned.employeeId,
-		name: displayName(assigned),
+		name: buildDerivedUserName(
+			assigned.firstName ?? "",
+			assigned.lastName ?? "",
+			assigned.userName,
+		),
 	}));
-}
-
-/** The user's names (#858 reads them from the user, never the deprecated employee columns). */
-function displayName(names: {
-	firstName: string | null;
-	lastName: string | null;
-	userName: string;
-}): string {
-	const structured = [names.firstName, names.lastName]
-		.map((part) => part?.trim())
-		.filter(Boolean)
-		.join(" ");
-	return structured || names.userName;
 }

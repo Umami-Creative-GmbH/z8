@@ -61,33 +61,18 @@ type Flow =
 	| { step: "done"; confirmation: Confirmation };
 
 /**
- * The time a confirmation shows. Clock-in, break start and resume read it from
- * the state after the action; a day ended on a break ends at the break's
- * start; a clock-out shows the moment it was confirmed.
+ * What a confirmation shows: the time the server recorded for the action (a
+ * day ended on a break ends at the break's start), never the device's clock.
  */
-function confirmationOf(
-	action: KioskPanelAction,
-	before: KioskEmployeeSnapshot,
-	after: KioskClockResult,
-	kioskZone: string,
-): Confirmation {
-	const name = after.employee.name;
-	const { state } = after;
-	if (action === "start_break" && state.status === "on_break") {
-		return { name, action, at: state.breakSince, zone: state.breakZone || kioskZone };
-	}
-	if ((action === "clock_in" || action === "resume_break") && state.status === "clocked_in") {
-		return { name, action, at: state.since, zone: kioskZone };
-	}
-	if (action === "end_day" && before.state.status === "on_break") {
-		return {
-			name,
-			action,
-			at: before.state.breakSince,
-			zone: before.state.breakZone || kioskZone,
-		};
-	}
-	return { name, action, at: new Date().toISOString(), zone: kioskZone };
+function confirmationOf(action: KioskPanelAction, after: KioskClockResult): Confirmation {
+	return { name: after.employee.name, action, at: after.at.instant, zone: after.at.zone };
+}
+
+/** The kiosk as the server describes it now, from the heartbeat; null when unreadable. */
+async function kioskInfoOf(response: Response): Promise<KioskDeviceInfo | null> {
+	if (!response.ok) return null;
+	const body = (await response.json().catch(() => null)) as { kiosk?: KioskDeviceInfo } | null;
+	return body?.kiosk && typeof body.kiosk.boardEnabled === "boolean" ? body.kiosk : null;
 }
 
 /**
@@ -97,9 +82,17 @@ function confirmationOf(
  * is dropped when the kiosk returns home. Clocking needs a connection: while
  * offline the kiosk says so and sends nothing, and it never queues commands.
  */
-export function KioskPairedScreen({ token, kiosk, onRevoked, onUnpaired }: KioskPairedScreenProps) {
+export function KioskPairedScreen({
+	token,
+	kiosk: pairedKiosk,
+	onRevoked,
+	onUnpaired,
+}: KioskPairedScreenProps) {
 	const { t } = useTranslate();
 	const online = useOnlineStatus();
+	// The heartbeat keeps the kiosk current, so an admin's change (the board switched on) shows
+	// without reloading the page.
+	const [kiosk, setKiosk] = useState(pairedKiosk);
 	const language = useKioskLanguage(kiosk.language);
 	const message = useKioskRefusalMessage(kiosk.timezone, language.locale);
 	const labels = useKioskActionLabels();
@@ -120,7 +113,9 @@ export function KioskPairedScreen({ token, kiosk, onRevoked, onUnpaired }: Kiosk
 		const response = await kioskFetch(token, "/api/kiosk/session").catch(() => null);
 		if (!response) return;
 		const refusal = await kioskRefusalOf(response);
-		if (refusal) kioskRefused(refusal);
+		if (refusal) return kioskRefused(refusal);
+		const current = await kioskInfoOf(response);
+		if (current) setKiosk(current);
 	});
 
 	useEffect(() => {
@@ -172,7 +167,7 @@ export function KioskPairedScreen({ token, kiosk, onRevoked, onUnpaired }: Kiosk
 		if (result.kind === "ok") {
 			setFlow({
 				step: "done",
-				confirmation: confirmationOf(action, snapshot, result.body, kiosk.timezone),
+				confirmation: confirmationOf(action, result.body),
 			});
 			return;
 		}

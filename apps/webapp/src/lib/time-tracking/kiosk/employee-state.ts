@@ -6,26 +6,34 @@ import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,
 	type Instant,
-	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { readClockPresence } from "@/lib/time-tracking/clock-presence";
 import { buildDayTotalBasis, summarizeDayTotals } from "@/lib/time-tracking/day-totals";
 import type { WorkTransactionClient } from "@/lib/time-tracking/web-clock-out-transaction";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import type { KioskDayTotal, KioskEmployeeState } from "./protocol";
 
 /**
  * What the kiosk shows about an employee after their PIN (#860): whether they
- * are clocked out, clocked in or on a break in progress (#861), and today's day
- * total in the kiosk's zone, live work included (an open break keeps counting,
- * ADR 0007). Instants are canonical UTC strings; the device formats them in the
- * kiosk's zone.
+ * are clocked out, clocked in or on a break in progress (#861), and their day
+ * total. The day total is computed as the web computes it for the employee
+ * (`readTimeSummary`): in the employee's timezone and week start, never the
+ * kiosk's, live work included (an open break keeps counting, ADR 0007).
+ * Instants are canonical UTC strings.
  */
 export async function readKioskEmployeeState(
 	client: Pick<WorkTransactionClient, "select">,
-	input: { organizationId: string; employeeId: string; timezone: string; now: Instant },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		/** The employee's own calendar: their timezone and week start. */
+		calendar: { timezone: string; weekStartDay: WeekStartDay };
+		now: Instant;
+	},
 ): Promise<{ state: KioskEmployeeState; dayTotal: KioskDayTotal }> {
-	const { organizationId, employeeId, timezone, now } = input;
+	const { organizationId, employeeId, now } = input;
+	const { timezone, weekStartDay } = input.calendar;
 	const [presence] = await readClockPresence(client, { organizationId, employeeIds: [employeeId] });
 
 	const date = now.toZonedDateTimeISO(timezone).toPlainDate().toString();
@@ -51,24 +59,24 @@ export async function readKioskEmployeeState(
 	const basis = buildDayTotalBasis({
 		periods: periods.map((period) => ({ ...period, surchargeMinutes: null })),
 		timezone,
-		weekStartDay: "monday",
+		weekStartDay,
 	});
 	const dayTotal: KioskDayTotal = {
 		date,
 		timezone,
-		todayMinutes: summarizeDayTotals(basis, now).todayMinutes,
+		minutes: summarizeDayTotals(basis, now).todayMinutes,
 	};
 
 	if (!presence) return { state: { status: "clocked_out" }, dayTotal };
-	const since = instantToCanonicalString(instantFromDate(presence.workSince));
-	if (presence.state === "on_break" && presence.breakSince) {
+	const since = instantToCanonicalString(presence.workSince);
+	if (presence.state === "on_break" && presence.breakSince && presence.breakZone) {
 		return {
 			state: {
 				status: "on_break",
 				workPeriodId: presence.workPeriodId,
 				since,
-				breakSince: instantToCanonicalString(instantFromDate(presence.breakSince)),
-				breakZone: presence.breakZone ?? timezone,
+				breakSince: instantToCanonicalString(presence.breakSince),
+				breakZone: presence.breakZone,
 			},
 			dayTotal,
 		};

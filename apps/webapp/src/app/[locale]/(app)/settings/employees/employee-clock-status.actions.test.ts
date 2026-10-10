@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 
 const mocks = vi.hoisted(() => ({
 	descCalls: [] as Array<{ columnName: string; tableName: string | undefined }>,
@@ -265,7 +266,7 @@ describe("getEmployeeClockStatuses", () => {
 			activeRows: [
 				{
 					employeeId: "emp-1",
-					breakSince: new Date("2026-07-28T09:45:00.000Z"),
+					breakSince: parseInstant("2026-07-28T09:45:00Z"),
 					breakZone: "Europe/Berlin",
 				},
 				{ employeeId: "emp-2", breakSince: null, breakZone: null },
