@@ -88,13 +88,15 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 		// Add absences to aggregated data
 		aggregateAbsencesForCSV(absences, mappings, sfConfig.employeeMatchStrategy, aggregatedData);
 
-		// Overtime payouts (#1050): hours on the payout's day under the "overtime" time type. An
-		// employee the strategy cannot match keeps their internal id, like expense lines, so the
-		// import reports the row instead of the file dropping a payout.
+		// An employee the strategy cannot match keeps their internal id on payout and expense
+		// lines, so the import reports the line instead of the file dropping a payout or money.
+		const userIdOrInternalId = (row: OvertimePayoutData | ExpenseLineData) =>
+			getEmployeeIdentifier(row, sfConfig.employeeMatchStrategy) ?? row.employeeId;
+
+		// Overtime payouts (#1050): hours on the payout's day under the "overtime" time type.
 		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "successFactors");
 		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
-			personnelNumber: (payout) =>
-				getEmployeeIdentifier(payout, sfConfig.employeeMatchStrategy) ?? payout.employeeId,
+			personnelNumber: userIdOrInternalId,
 			period: (payout) => payout.day,
 			add: (existing, hours) => ({
 				hours: (existing?.hours ?? 0) + hours,
@@ -145,11 +147,10 @@ export class SuccessFactorsFormatter implements IPayrollExportFormatter {
 			}
 		}
 
-		// Expense lines carry no hours. An employee the strategy cannot match keeps their
-		// internal id, so the import reports the line instead of the file dropping money.
+		// Expense lines carry no hours.
 		for (const { personnelNumber, line } of expenseLinesInFileOrder(
 			expenseLines,
-			(line) => getEmployeeIdentifier(line, sfConfig.employeeMatchStrategy) ?? line.employeeId,
+			userIdOrInternalId,
 		)) {
 			lines.push(
 				[
