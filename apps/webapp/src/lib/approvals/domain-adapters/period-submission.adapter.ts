@@ -1,6 +1,7 @@
 import { AuditAction } from "@/lib/audit-logger";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
+	closePendingPeriodSubmission,
 	insertPeriodSubmissionAudit,
 	loadPeriodSubmissionForUpdate,
 	type PeriodSubmissionDatabase,
@@ -22,6 +23,7 @@ import {
 	PERIOD_SUBMISSION_SOURCE_TYPE,
 	PERIOD_SUBMISSION_WORKFLOW_TYPE,
 	type PeriodSubmissionApprovalSource,
+	periodSubmissionClosedCauseOf,
 } from "./period-submission-contract";
 import type {
 	ApprovalDomainAdapter,
@@ -116,8 +118,9 @@ export function periodSubmissionRoutingContext(input: {
 /**
  * The period submission adapter (#1059): canonical-only, self-contained (it needs no caller
  * dependencies), and the only writer of a submission's decision. Approve and reject record the
- * decision on the row and its audit entry in the engine's transaction. Cancelling (withdrawal,
- * #1060) is not supported yet.
+ * decision on the row and its audit entry in the engine's transaction. Cancelling a pending
+ * submission (withdrawal, #1060) closes the row, and only with one of the withdrawal entry
+ * point's reasons (`PERIOD_SUBMISSION_CANCEL_REASONS`).
  */
 export function createPeriodSubmissionApprovalAdapter(): ApprovalDomainAdapter<PeriodSubmissionApprovalSource> {
 	return {
@@ -167,8 +170,9 @@ export function createPeriodSubmissionApprovalAdapter(): ApprovalDomainAdapter<P
 				cancel: "cancelled",
 			}[input.command.kind];
 			if (
-				input.command.kind === "cancel" ||
 				input.command.kind === "submit" ||
+				(input.command.kind === "cancel" &&
+					periodSubmissionClosedCauseOf(input.command.reason) === null) ||
 				input.workflow.status !== "pending" ||
 				input.source.status !== "pending" ||
 				input.proposedStatus !== expected
@@ -178,13 +182,22 @@ export function createPeriodSubmissionApprovalAdapter(): ApprovalDomainAdapter<P
 		},
 		async preflightTerminal(input) {
 			validateContext(input);
+			const transition = input.transition;
 			if (
-				(input.transition.kind !== "approve" && input.transition.kind !== "reject") ||
-				input.transition.from !== "pending" ||
-				input.workflow.status !== input.transition.to ||
+				(transition.kind !== "approve" &&
+					transition.kind !== "reject" &&
+					transition.kind !== "cancel_pending") ||
+				transition.from !== "pending" ||
+				input.workflow.status !== transition.to ||
 				input.source.status !== "pending"
 			) {
 				fail("Period submission terminal transition is incompatible with its state");
+			}
+			if (
+				transition.kind === "cancel_pending" &&
+				periodSubmissionClosedCauseOf(transition.reason) === null
+			) {
+				fail("Period submission cancel reason is unknown");
 			}
 			if (input.actor.kind !== "employee" || !input.actor.userId) {
 				fail("Period submission terminal actor is invalid");
@@ -194,6 +207,41 @@ export function createPeriodSubmissionApprovalAdapter(): ApprovalDomainAdapter<P
 			await this.preflightTerminal(input);
 			if (input.actor.kind !== "employee" || !input.actor.userId) return fail();
 			const transition = input.transition;
+			if (transition.kind === "cancel_pending") {
+				// Withdrawal (#1060): the row closes here; the withdrawal entry point writes its audit
+				// entry with the actor who caused it, in the same transaction.
+				const closedCause = periodSubmissionClosedCauseOf(transition.reason);
+				if (!closedCause) return fail();
+				await closePendingPeriodSubmission(database(input.dbService), {
+					organizationId: input.organizationId,
+					submissionId: input.source.id,
+					workflowId: input.workflow.id,
+					closedAt: input.finalizedAt,
+					closedCause,
+				});
+				return normalizeStableData({
+					organizationId: input.organizationId,
+					workflowId: input.workflow.id,
+					sourceIdentity: {
+						organizationId: input.organizationId,
+						workflowType: PERIOD_SUBMISSION_WORKFLOW_TYPE,
+						sourceType: PERIOD_SUBMISSION_SOURCE_TYPE,
+						sourceId: input.source.id,
+					},
+					transitionKind: transition.kind,
+					terminalStatus: "cancelled",
+					sourceSnapshot: {
+						kind: PERIOD_SUBMISSION_WORKFLOW_TYPE,
+						startDate: input.source.startDate,
+						endDate: input.source.endDate,
+						status: "withdrawn",
+						closedCause,
+					},
+					eventPayload: { kind: PERIOD_SUBMISSION_WORKFLOW_TYPE, status: "withdrawn", closedCause },
+					compatibilityPayload: { entityType: PERIOD_SUBMISSION_SOURCE_TYPE, status: "withdrawn" },
+					finalizedAt: input.finalizedAt,
+				}) as ApprovalTerminalFinalizationResult;
+			}
 			if (transition.kind !== "approve" && transition.kind !== "reject") return fail();
 			const status = transition.kind === "approve" ? "approved" : "rejected";
 			const reason = transition.kind === "reject" ? transition.reason : null;
