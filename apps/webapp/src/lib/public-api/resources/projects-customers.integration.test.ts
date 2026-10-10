@@ -68,7 +68,7 @@ describe("projects and customers in the Public API", () => {
 			customerId: customers.Acme,
 		});
 		expect(JSON.stringify(rows)).not.toContain("Foreign");
-		expect(JSON.stringify(rows)).not.toMatch(/budget|120/);
+		expect(JSON.stringify(rows)).not.toMatch(/budget|rate|member/i);
 	});
 
 	it("filters projects by status and customer", async () => {
