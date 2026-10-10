@@ -34,6 +34,7 @@ import {
 import { ApprovalEvidenceError } from "./errors";
 import {
 	fingerprintPeriodSubmissionFacts,
+	isPeriodSubmissionSubmittedFacts,
 	PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION,
 	type PeriodSubmissionSubmittedFacts,
 	type PeriodSubmissionSubmittedLabels,
@@ -1951,8 +1952,7 @@ function parsePeriodSubmissionRevision(
 		facts.periodSubmissionId !== row.sourceId ||
 		facts.subjectEmployeeId !== row.subjectEmployeeId ||
 		facts.requesterEmployeeId !== row.requesterEmployeeId ||
-		!isRecord(facts.period) ||
-		!isRecord(facts.work) ||
+		!isPeriodSubmissionSubmittedFacts(facts) ||
 		!isRecord(labels) ||
 		!nullableString(labels.subjectName)
 	) {

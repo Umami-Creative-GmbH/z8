@@ -184,6 +184,140 @@ describe("period submissions on PostgreSQL", () => {
 		await expect(submit()).resolves.toEqual({ kind: "refused", reason: "already_submitted" });
 	});
 
+	it("captures the period's absences, holidays, target and recorded violations, read for its range only", async () => {
+		// The employee's account predates the week, so the work policy's target covers all of it.
+		await fixture.pool.query(
+			`update "user" set created_at = '2026-01-01T00:00:00Z'
+			 where id = (select user_id from employee where id = $1)`,
+			[employee.employeeId],
+		);
+		const policyId = randomUUID();
+		const scheduleId = randomUUID();
+		await fixture.pool.query(
+			`insert into work_policy (id, organization_id, name, schedule_enabled, regulation_enabled, created_by, updated_at)
+			 values ($1, $2, 'Weekdays', true, false, $3, now())`,
+			[policyId, organizationId, ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into work_policy_schedule (id, policy_id, schedule_cycle, schedule_type, working_days_preset, updated_at)
+			 values ($1, $2, 'weekly', 'detailed', 'custom', now())`,
+			[scheduleId, policyId],
+		);
+		for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday"]) {
+			await fixture.pool.query(
+				`insert into work_policy_schedule_day (schedule_id, day_of_week, hours_per_day, is_work_day)
+				 values ($1, $2, '8.00', true)`,
+				[scheduleId, day],
+			);
+		}
+		await fixture.pool.query(
+			`insert into work_policy_assignment (policy_id, organization_id, assignment_type, employee_id, priority, created_by, updated_at)
+			 values ($1, $2, 'employee', $3, 2, $4, now())`,
+			[policyId, organizationId, employee.employeeId, ownerUserId],
+		);
+		const holidayCategoryId = randomUUID();
+		await fixture.pool.query(
+			`insert into holiday_category (id, organization_id, type, name, updated_at)
+			 values ($1, $2, 'public_holiday', 'Public', now())`,
+			[holidayCategoryId, organizationId],
+		);
+		for (const [name, date] of [
+			["Founders' Day", "2026-03-06"],
+			["Next week", "2026-03-09"],
+		]) {
+			await fixture.pool.query(
+				`insert into holiday (organization_id, category_id, name, start_date, end_date, created_by, updated_at)
+				 values ($1, $2, $3, $4, $4, $5, now())`,
+				[organizationId, holidayCategoryId, name, new Date(`${date}T00:00:00Z`), ownerUserId],
+			);
+		}
+		await fixture.pool.query(
+			`insert into holiday_category_assignment (category_id, organization_id, assignment_type, created_by, updated_at)
+			 values ($1, $2, 'organization', $3, now())`,
+			[holidayCategoryId, organizationId, ownerUserId],
+		);
+		await fixture.absence({
+			organizationId,
+			employeeId: employee.employeeId,
+			startDate: "2026-02-27",
+			endDate: "2026-03-04",
+		});
+		await fixture.absence({
+			organizationId,
+			employeeId: employee.employeeId,
+			startDate: "2026-03-10",
+			endDate: "2026-03-10",
+		});
+		await fixture.absence({
+			organizationId,
+			employeeId: employee.employeeId,
+			startDate: "2026-03-05",
+			endDate: "2026-03-05",
+			status: "pending",
+		});
+		for (const [at, type] of [
+			["2026-03-01 23:30:00", "max_daily"], // 00:30 on Monday in Berlin
+			["2026-03-05 16:00:00", "break_required"],
+			["2026-03-01 22:30:00", "rest_period"], // Sunday before the week in Berlin
+			["2026-03-08 23:30:00", "max_weekly"], // Monday after the week in Berlin
+		]) {
+			await fixture.pool.query(
+				`insert into work_policy_violation (employee_id, organization_id, violation_date, violation_type)
+				 values ($1, $2, $3, $4)`,
+				[employee.employeeId, organizationId, at, type],
+			);
+		}
+		await fixture.work({
+			organizationId,
+			employeeId: employee.employeeId,
+			userId: employee.userId,
+			start: "2026-03-05T07:00:00Z",
+			end: "2026-03-05T16:00:00Z",
+		});
+
+		const result = await submit();
+		if (result.kind !== "submitted") throw new Error(`not submitted: ${result.reason}`);
+		const { rows } = await fixture.pool.query<{ facts: Record<string, unknown> }>(
+			"select facts from approval_submitted_revision where organization_id = $1 and workflow_id = $2",
+			[organizationId, result.workflowId],
+		);
+		expect(rows[0]?.facts).toMatchObject({
+			work: { totalMinutes: 540, dayTotals: { "2026-03-05": 540 } },
+			absences: [
+				{
+					categoryName: "Vacation",
+					startDate: "2026-03-02",
+					startPeriod: "full_day",
+					endDate: "2026-03-04",
+					endPeriod: "full_day",
+				},
+			],
+			holidays: [{ name: "Founders' Day", startDate: "2026-03-06", endDate: "2026-03-06" }],
+			// Monday to Wednesday are absent and Friday is a holiday: only Thursday has a target.
+			target: { totalMinutes: 480, dayTargets: { "2026-03-05": 480 } },
+			violations: [
+				{ date: "2026-03-02", type: "max_daily" },
+				{ date: "2026-03-05", type: "break_required" },
+			],
+		});
+	});
+
+	it("captures no target when no work policy gives one", async () => {
+		const result = await submit();
+		if (result.kind !== "submitted") throw new Error(`not submitted: ${result.reason}`);
+		const { rows } = await fixture.pool.query<{ facts: Record<string, unknown> }>(
+			"select facts from approval_submitted_revision where organization_id = $1 and workflow_id = $2",
+			[organizationId, result.workflowId],
+		);
+		expect(rows[0]?.facts).toMatchObject({
+			work: { totalMinutes: 0, dayTotals: {} },
+			absences: [],
+			holidays: [],
+			target: null,
+			violations: [],
+		});
+	});
+
 	it("routes by a matching period submission policy before the primary manager", async () => {
 		const approver = await fixture.employee({ organizationId });
 		const policyId = randomUUID();

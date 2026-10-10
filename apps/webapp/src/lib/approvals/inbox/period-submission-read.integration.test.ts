@@ -106,7 +106,23 @@ describe("period submissions in the approval inbox on PostgreSQL", () => {
 				expect.objectContaining({
 					value: { kind: "plain_date_range", start: "2026-03-02", end: "2026-03-08" },
 				}),
+				expect.objectContaining({
+					href: `/calendar/${employee.employeeId}?date=2026-03-02`,
+				}),
 			]),
+		});
+		// The full card (#1061) is built from the submitted facts: the day totals of the range.
+		expect(detail.sections[1]).toEqual({
+			type: "key_value",
+			title: { key: "approvals:approvals.periodSubmission.dayTotals", fallback: "Day totals" },
+			rows: [
+				{
+					label: expect.objectContaining({
+						params: { date: { kind: "plain_date", date: "2026-03-03" } },
+					}),
+					value: expect.objectContaining({ params: { total: "8:15" } }),
+				},
+			],
 		});
 
 		const other = await getApprovalInboxListFromSources({
