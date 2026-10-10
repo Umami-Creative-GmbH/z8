@@ -138,7 +138,7 @@ describe("runExportProcessor", () => {
 				organizationName: "Acme Operations",
 				categories: ["Time Tracking"],
 				fileSize: "2048 B",
-				downloadUrl: "https://app.example.com/en/settings/export/history",
+				downloadUrl: "https://app.example.com/en/settings/export/history/org_123",
 			}),
 			subjectOverride: "Your data export is ready - Acme Operations",
 		});
@@ -153,7 +153,7 @@ describe("runExportProcessor", () => {
 		);
 	});
 
-	it("links the export-ready email to the export history and states the file's expiry", async () => {
+	it("links the export-ready email to its organization's export history and states the file's expiry", async () => {
 		const exportRecord = {
 			id: "export_789",
 			organizationId: "org_789",
@@ -193,7 +193,7 @@ describe("runExportProcessor", () => {
 			expect.objectContaining({
 				templateKey: "export-ready",
 				data: expect.objectContaining({
-					downloadUrl: "https://app.example.com/de/settings/export/history",
+					downloadUrl: "https://app.example.com/de/settings/export/history/org_789",
 					expiresAt: "May 30, 2026, 10:05 (Europe/Berlin)",
 				}),
 			}),
@@ -229,7 +229,7 @@ describe("runExportProcessor", () => {
 		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				data: expect.objectContaining({
-					downloadUrl: "https://app.example.com/en/settings/export/history",
+					downloadUrl: "https://app.example.com/en/settings/export/history/org_790",
 					expiresAt: "May 30, 2026, 08:05 (UTC)",
 				}),
 			}),

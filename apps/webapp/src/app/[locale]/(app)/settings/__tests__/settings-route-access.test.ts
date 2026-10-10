@@ -30,6 +30,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"webhooks/page.tsx",
 	"export/page.tsx",
 	"export/history/page.tsx",
+	"export/history/[organizationId]/page.tsx",
 	"payroll-export/page.tsx",
 	"payroll-readiness/page.tsx",
 	"work-diagnostics/page.tsx",
