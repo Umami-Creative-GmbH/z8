@@ -1345,6 +1345,13 @@
       "when": 1800806400000,
       "tag": "0191_approval_deputy_decision",
       "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1800892800000,
+      "tag": "0192_approval_deputy_cards",
+      "breakpoints": true
     }
   ]
 }

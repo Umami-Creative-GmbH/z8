@@ -15,7 +15,9 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { loadCover } from "../deputy/covering-store";
 import type { ApprovalDatabase } from "../server/types";
 import type {
 	ApprovalActorKind,
@@ -458,12 +460,19 @@ export interface ReviewBindingTarget {
 	stageId: string;
 	assignmentId: string;
 	submittedRevisionId: string;
+	/**
+	 * A deputy card (#1017): the absent approver whose assignment it is. The
+	 * recipient must cover for them when the binding is issued.
+	 */
+	actingForEmployeeId?: string;
 }
 
 /**
  * Issues (or reuses) the opaque handle for one recipient's review of an exact
  * pending assignment and current submitted revision. Possession of the handle
  * never grants authority; the decision transaction revalidates everything.
+ * The recipient is the assignment's approver, or (#1017) the deputy covering
+ * for that approver now, named as `actingForEmployeeId`.
  */
 export async function issueReviewBinding(
 	database: ApprovalDatabase,
@@ -480,12 +489,15 @@ export async function issueReviewBinding(
 				eq(approvalStageAssignment.id, target.assignmentId),
 				eq(
 					approvalStageAssignment.approverEmployeeId,
-					target.recipientEmployeeId,
+					target.actingForEmployeeId ?? target.recipientEmployeeId,
 				),
 				eq(approvalStageAssignment.status, "pending"),
 			),
 		)
 		.limit(1);
+	if (target.actingForEmployeeId && !(await recipientCovers(database, target))) {
+		throw new ApprovalEvidenceError("binding_mismatch", { field: "target" });
+	}
 	// Kind-agnostic: the workflow's latest revision, whatever its kind (#325).
 	const current = await database
 		.select({ id: approvalSubmittedRevision.id })
@@ -527,6 +539,24 @@ export async function issueReviewBinding(
 	if (!id)
 		throw new ApprovalEvidenceError("invariant", { field: "review_binding" });
 	return id;
+}
+
+/** A deputy binding's recipient covers for the absent approver now (#1017). */
+async function recipientCovers(
+	database: ApprovalDatabase,
+	target: { organizationId: string; recipientEmployeeId: string; actingForEmployeeId?: string },
+): Promise<boolean> {
+	if (!target.actingForEmployeeId || target.actingForEmployeeId === target.recipientEmployeeId) {
+		return false;
+	}
+	return (
+		(await loadCover(database as never, {
+			organizationId: target.organizationId,
+			approverId: target.actingForEmployeeId,
+			deputyId: target.recipientEmployeeId,
+			at: systemClock.nowInstant(),
+		})) !== null
+	);
 }
 
 export interface ReviewBindingRecord extends ReviewBindingTarget {
@@ -571,6 +601,7 @@ export async function loadReviewBinding(
 		stageId: row.stageId,
 		assignmentId: row.assignmentId,
 		submittedRevisionId: row.submittedRevisionId,
+		...(row.actingForEmployeeId ? { actingForEmployeeId: row.actingForEmployeeId } : {}),
 	};
 }
 
@@ -961,6 +992,8 @@ export interface LegacyReviewBindingTarget {
 	recipientEmployeeId: string;
 	legacyApprovalRequestId: string;
 	submittedRevisionId: string;
+	/** A deputy card (#1017): the absent approver whose request it is. */
+	actingForEmployeeId?: string;
 }
 
 export interface LegacyReviewBindingRecord extends LegacyReviewBindingTarget {
@@ -1047,11 +1080,14 @@ export async function issueLegacyReviewBinding(
 			and(
 				eq(approvalRequest.id, target.legacyApprovalRequestId),
 				eq(approvalRequest.organizationId, target.organizationId),
-				eq(approvalRequest.approverId, target.recipientEmployeeId),
+				eq(approvalRequest.approverId, target.actingForEmployeeId ?? target.recipientEmployeeId),
 				eq(approvalRequest.status, "pending"),
 			),
 		)
 		.limit(1);
+	if (target.actingForEmployeeId && !(await recipientCovers(database, target))) {
+		throw new ApprovalEvidenceError("binding_mismatch", { field: "target" });
+	}
 	const revisions = await database
 		.select({ id: approvalSubmittedRevision.id })
 		.from(approvalSubmittedRevision)
@@ -1082,6 +1118,7 @@ export async function issueLegacyReviewBinding(
 		recipientEmployeeId: target.recipientEmployeeId,
 		legacyApprovalRequestId: target.legacyApprovalRequestId,
 		submittedRevisionId: target.submittedRevisionId,
+		...(target.actingForEmployeeId ? { actingForEmployeeId: target.actingForEmployeeId } : {}),
 	};
 	await database.insert(approvalReviewBinding).values(values).onConflictDoNothing();
 	const rows = await database
@@ -1141,6 +1178,7 @@ export async function loadLegacyReviewBinding(
 		recipientEmployeeId: row.recipientEmployeeId,
 		legacyApprovalRequestId: row.legacyApprovalRequestId,
 		submittedRevisionId: row.submittedRevisionId,
+		...(row.actingForEmployeeId ? { actingForEmployeeId: row.actingForEmployeeId } : {}),
 	};
 }
 

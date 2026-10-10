@@ -124,6 +124,30 @@ export function decidedEarlierStage(
 }
 
 /**
+ * A deputy card (#1017) decides through the engine's covering-deputy grant,
+ * never through management: true only while the card's bound assignment is
+ * the command's and still pending with the absent approver the card acts for.
+ * Anything else is refused by the bound decision owners as not current.
+ */
+export function isDeputyCardAssignmentPending(
+	binding: { actingForEmployeeId?: string | null; assignmentId: string },
+	workflow: Pick<ApprovalWorkflowSnapshot, "stages">,
+	command: { type: string; stageId?: string; assignmentId?: string },
+): boolean {
+	if (!binding.actingForEmployeeId || command.assignmentId !== binding.assignmentId) return false;
+	return workflow.stages.some(
+		(stage) =>
+			stage.status === "pending" &&
+			stage.assignments.some(
+				(assignment) =>
+					assignment.id === binding.assignmentId &&
+					assignment.status === "pending" &&
+					assignment.approverEmployeeId === binding.actingForEmployeeId,
+			),
+	);
+}
+
+/**
  * The English decider label for requester-facing text that has no
  * translation yet (notification messages, email props): "Y (deputy for X)".
  */

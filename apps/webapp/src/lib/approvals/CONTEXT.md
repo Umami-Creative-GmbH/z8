@@ -47,5 +47,5 @@ _Avoid_: delegation log, proxy record
 ### Cards
 
 **Review binding**:
-An opaque handle on a card, permanently tied to its organization, recipient, submission cycle, assignment, submitted revision and the approval authority it was issued under. It decides only under that same authority.
+An opaque handle on a card, permanently tied to its organization, recipient, submission cycle, assignment, submitted revision and the approval authority it was issued under. It decides only under that same authority. A deputy card's binding also names the absent approver its recipient acts for, and decides only while the recipient is still **Covering** for them.
 _Avoid_: card token, action handle

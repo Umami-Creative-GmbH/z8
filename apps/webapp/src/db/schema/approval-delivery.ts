@@ -133,6 +133,11 @@ export const approvalDeliveryMessage = pgTable(
 		recipientUserId: text("recipient_user_id")
 			.notNull()
 			.references(() => user.id, { onDelete: "cascade" }),
+		/**
+		 * A deputy card (#1017): the absent approver the recipient covers for.
+		 * Null for the approver's own cards.
+		 */
+		actingForEmployeeId: uuid("acting_for_employee_id"),
 		provider: text("provider").$type<ApprovalDeliveryProvider>().notNull(),
 		receiverScope: text("receiver_scope").notNull(),
 		destinationId: text("destination_id").notNull(),
@@ -164,6 +169,10 @@ export const approvalDeliveryMessage = pgTable(
 		index("approvalDeliveryMessage_org_legacy_cycle_idx")
 			.on(table.organizationId, table.legacyCycleId)
 			.where(sql`${table.legacyCycleId} IS NOT NULL`),
+		// The deputy card retirement pass (#1017) scans open deputy cards.
+		index("approvalDeliveryMessage_org_acting_for_idx")
+			.on(table.organizationId, table.actingForEmployeeId, table.recipientEmployeeId)
+			.where(sql`${table.actingForEmployeeId} IS NOT NULL AND ${table.state} = 'current'`),
 		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`),
 		check("approval_delivery_message_lifecycle_check", lifecycleCheck(table)),
 		check(
@@ -205,6 +214,11 @@ export const approvalDeliveryMessage = pgTable(
 			columns: [table.recipientEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
+		foreignKey({
+			name: "approval_delivery_message_acting_for_fk",
+			columns: [table.actingForEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}),
 	],
 );
 
@@ -236,6 +250,8 @@ export const approvalDeliveryWork = pgTable(
 		/** The submission cycle of a cycle-keyed legacy lifecycle (#384), by value. */
 		legacyCycleId: uuid("legacy_cycle_id"),
 		recipientEmployeeId: uuid("recipient_employee_id").notNull(),
+		/** Deputy card work (#1017): the absent approver the recipient covers for. */
+		actingForEmployeeId: uuid("acting_for_employee_id"),
 		messageId: uuid("message_id"),
 		/** The committed transfer whose replacement delivery owns this work. */
 		escalationTransferId: uuid("escalation_transfer_id"),
@@ -316,6 +332,11 @@ export const approvalDeliveryWork = pgTable(
 		foreignKey({
 			name: "approval_delivery_work_recipient_fk",
 			columns: [table.recipientEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}),
+		foreignKey({
+			name: "approval_delivery_work_acting_for_fk",
+			columns: [table.actingForEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
 	],
