@@ -55,12 +55,14 @@ export function mapPayrollWorkspaceActionError(
 	}
 
 	if (error instanceof PayrollIdentifierMissingError) {
+		// The employees are in the requester's export scope; the workspace lists them as blockers.
 		return new ConflictError({
 			message: missingIdentifierMessage(t),
 			conflictType: "payroll_identifier_missing",
 			details: {
 				organizationId: error.organizationId,
 				affectedEmployeeCount: error.employeeIds.length,
+				employeeIds: error.employeeIds,
 			},
 		});
 	}

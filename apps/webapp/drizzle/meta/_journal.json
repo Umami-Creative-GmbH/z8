@@ -1254,6 +1254,13 @@
       "when": 1799683200000,
       "tag": "0178_custom_field_value_history",
       "breakpoints": true
+    },
+    {
+      "idx": 179,
+      "version": "7",
+      "when": 1799769600000,
+      "tag": "0179_payroll_export_job_personnel_identifier",
+      "breakpoints": true
     }
   ]
 }

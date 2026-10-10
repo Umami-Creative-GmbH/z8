@@ -548,4 +548,27 @@ describe("assessPayrollWorkCollection with a custom field as personnel identifie
 
 		expect(result.blockers).toEqual([]);
 	});
+
+	it("blocks a scoped employee without a value whose absences or expense lines the export carries", () => {
+		const result = assessPayrollWorkCollection(
+			snapshot({ records: [work("a")], personnelIdentifiers: { [berlin.id]: "LOHN-7" } }),
+			{
+				...july,
+				personnelIdentifier: {
+					customFieldId: "field-1",
+					employeesWithOtherRows: [tokyo.id, berlin.id, "outsider"],
+				},
+			},
+		);
+
+		expect(result.blockers).toEqual([
+			{
+				kind: "missing_identifier",
+				sourceId: "field-1",
+				employeeId: tokyo.id,
+				at: null,
+				reason: null,
+			},
+		]);
+	});
 });

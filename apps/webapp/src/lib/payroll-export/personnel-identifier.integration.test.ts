@@ -20,6 +20,8 @@ const harness = vi.hoisted(() => ({
 	organizationId: null as string | null,
 	personioAttendances: [] as Array<{ employee: string | number }>,
 	personioStrategies: [] as string[],
+	/** Employees the payroll run carries expense lines for; empty = the real classification. */
+	expenseEmployeeIds: [] as string[],
 }));
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
@@ -66,6 +68,23 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	uploadExport: async () => undefined,
 	getPresignedUrl: async (_organizationId: string, key: string) => `https://exports.test/${key}`,
 }));
+vi.mock("@/lib/travel-expenses/payroll-run", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/travel-expenses/payroll-run")>();
+	return {
+		...original,
+		exportIsPayrollRun: async (...args: Parameters<typeof original.exportIsPayrollRun>) =>
+			harness.expenseEmployeeIds.length > 0 || original.exportIsPayrollRun(...args),
+		classifyPayrollRunCandidates: async (
+			...args: Parameters<typeof original.classifyPayrollRunCandidates>
+		) =>
+			harness.expenseEmployeeIds.length > 0
+				? (harness.expenseEmployeeIds.map((employeeId) => ({
+						account: { employeeId },
+						classification: { outcome: "include" },
+					})) as never)
+				: original.classifyPayrollRunCandidates(...args),
+	};
+});
 vi.mock("@/lib/queue", () => ({ addJob: async () => ({ id: "queued" }) }));
 vi.mock("@/lib/vault/secrets", () => ({ getOrgSecret: async () => "t821-secret" }));
 vi.mock("@/lib/payroll-export/exporters/personio/api-client", () => ({
@@ -96,6 +115,7 @@ const { listPayrollIdentifierFields, savePayrollExportConfig } = await import(
 );
 const { changeCustomFields } = await import("@/lib/organization/custom-fields/definitions");
 const { payrollIdentifierArchiveGuard } = await import("./personnel-identifier-usage");
+const { getPayrollWorkspaceSummary } = await import("@/lib/payroll-workspace/summary");
 const { db } = await import("@/db");
 
 const ORG = "t821-org";
@@ -283,6 +303,7 @@ describe("employee custom field as payroll identifier on PostgreSQL", () => {
 	beforeEach(async () => {
 		harness.personioAttendances.length = 0;
 		harness.personioStrategies.length = 0;
+		harness.expenseEmployeeIds = [];
 		await seed();
 		await activateCollection();
 	});
@@ -474,27 +495,140 @@ describe("employee custom field as payroll identifier on PostgreSQL", () => {
 		expect(rows[0]?.jobs).toBe(0);
 	});
 
-	it("reads the value at processing without scoped collection and refuses a missing one", async () => {
+	async function deactivateCollection() {
 		await admin.query("delete from payroll_work_collection_control where organization_id = $1", [
 			ORG,
 		]);
+	}
+
+	async function jobCount() {
+		const { rows } = await admin.query<{ jobs: number }>(
+			"select count(*)::int as jobs from payroll_export_job where organization_id = $1",
+			[ORG],
+		);
+		return rows[0]?.jobs;
+	}
+
+	/** An approved one-day absence in July, nothing else for the employee. */
+	async function approvedAbsence(employeeId: string, day: string) {
+		const categoryId = randomUUID();
+		const recordId = randomUUID();
+		await admin.query(
+			`insert into absence_category (id, organization_id, type, name, requires_work_time,
+				requires_approval, counts_against_vacation, is_active, created_at, updated_at)
+			 values ($1, $2, 'vacation', $3, false, true, true, true, now(), now())`,
+			[categoryId, ORG, `Vacation ${recordId.slice(0, 8)}`],
+		);
+		await admin.query(
+			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
+				approval_state, origin, created_at, created_by, updated_at)
+			 values ($1, $2, $3, 'absence', $4::date, $4::date + interval '1 day',
+				'approved', 'manual', now(), $5, now())`,
+			[recordId, ORG, employeeId, day, ids.ownerUser],
+		);
+		await admin.query(
+			`insert into time_record_absence (record_id, organization_id, record_kind, absence_category_id)
+			 values ($1, $2, 'absence', $3)`,
+			[recordId, ORG, categoryId],
+		);
+		await admin.query(
+			`insert into absence_entry (id, employee_id, category_id, start_date, end_date, status,
+				organization_id, canonical_record_id, created_at, updated_at)
+			 values ($1, $2, $3, $4, $4, 'approved', $5, $6, now(), now())`,
+			[randomUUID(), employeeId, categoryId, day, ORG, recordId],
+		);
+	}
+
+	it("blocks absence-only and expense-only employees without a value at collection", async () => {
+		await configure("datev_lohn", byField(ids.payrollId));
+		await textValue(ids.payrollId, ids.worker, "LG-0042");
+		await approvedWork(ids.worker, "2026-07-10");
+		await approvedAbsence(ids.peer, "2026-07-14");
+		harness.expenseEmployeeIds = [ids.owner];
+
+		const refusal = await createJuly().catch((error: unknown) => error);
+
+		expect(refusal).toBeInstanceOf(PayrollWorkCollectionBlockedError);
+		expect(
+			(refusal as InstanceType<typeof PayrollWorkCollectionBlockedError>).blockers.map(
+				(blocker) => [blocker.kind, blocker.employeeId],
+			),
+		).toEqual(
+			[
+				["missing_identifier", ids.owner],
+				["missing_identifier", ids.peer],
+			].toSorted((left, right) => left[1].localeCompare(right[1])),
+		);
+		expect(await jobCount()).toBe(0);
+	});
+
+	it("lists missing identifiers per employee in the payroll workspace summary", async () => {
+		await configure("datev_lohn", byField(ids.payrollId));
+		await approvedWork(ids.worker, "2026-07-10");
+		await approvedAbsence(ids.peer, "2026-07-14");
+		const summaryOf = () =>
+			getPayrollWorkspaceSummary({
+				organizationId: ORG,
+				allowedEmployeeIds: [ids.owner, ids.worker, ids.peer],
+				period: {
+					start: DateTime.fromISO(july.startDate, { zone: "utc" }),
+					end: DateTime.fromISO(july.endDate, { zone: "utc" }).endOf("day"),
+					label: july.label,
+				},
+				generatedBy: { id: ids.owner, name: "Owner" },
+			});
+		const missing = (summary: Awaited<ReturnType<typeof summaryOf>>) =>
+			summary.blockers
+				.filter((blocker) => blocker.type === "missing_identifier")
+				.map((blocker) => blocker.employeeId)
+				.toSorted();
+
+		const scoped = await summaryOf();
+		expect(missing(scoped)).toEqual([ids.worker, ids.peer].toSorted());
+		const keys = scoped.blockers.map((blocker) => `${blocker.type}:${blocker.id}`);
+		expect(new Set(keys).size).toBe(keys.length);
+
+		await deactivateCollection();
+		expect(missing(await summaryOf())).toEqual([ids.worker, ids.peer].toSorted());
+
+		await textValue(ids.payrollId, ids.worker, "LG-0042");
+		await textValue(ids.payrollId, ids.peer, "LG-0007");
+		expect(missing(await summaryOf())).toEqual([]);
+	});
+
+	it("freezes the value at job creation without scoped collection", async () => {
+		await deactivateCollection();
 		await configure("datev_lohn", byField(ids.trackedId));
 		await textValue(ids.trackedId, ids.worker, "MID-2", "2026-07-20");
 		await textValue(ids.trackedId, ids.worker, "NEXT-3", "2026-08-01");
 		await approvedWork(ids.worker, "2026-07-10");
-
-		const { content } = await exportJuly();
-		expect(content).toContain('"MID-2";"1000";4.00;');
-
-		await approvedWork(ids.peer, "2026-07-11");
 		const { jobId } = await createJuly();
-		await expect(processExportJob({ jobId, organizationId: ORG })).rejects.toBeInstanceOf(
-			PayrollIdentifierMissingError,
-		);
-		const { rows } = await admin.query("select status from payroll_export_job where id = $1", [
-			jobId,
+
+		// A back-dated change after the job exists doesn't reach its runs or retries.
+		await textValue(ids.trackedId, ids.worker, "LATE-4", "2026-07-25");
+		const first = await processExportJob({ jobId, organizationId: ORG });
+		const again = await processExportJob({ jobId, organizationId: ORG });
+
+		for (const run of [first, again]) {
+			expect(String(run.result?.content)).toContain('"MID-2";"1000";4.00;');
+			expect(String(run.result?.content)).not.toMatch(/LATE-4|NEXT-3/);
+		}
+	});
+
+	it("refuses a missing value without scoped collection before the job exists, naming the employees", async () => {
+		await deactivateCollection();
+		await configure("datev_lohn", byField(ids.payrollId));
+		await textValue(ids.payrollId, ids.worker, "LG-0042");
+		await approvedWork(ids.worker, "2026-07-10");
+		await approvedAbsence(ids.peer, "2026-07-14");
+
+		const refusal = await createJuly().catch((error: unknown) => error);
+
+		expect(refusal).toBeInstanceOf(PayrollIdentifierMissingError);
+		expect((refusal as InstanceType<typeof PayrollIdentifierMissingError>).employeeIds).toEqual([
+			ids.peer,
 		]);
-		expect(rows[0]?.status).toBe("failed");
+		expect(await jobCount()).toBe(0);
 	});
 
 	it("refuses to archive a field a configuration uses, naming the configuration", async () => {

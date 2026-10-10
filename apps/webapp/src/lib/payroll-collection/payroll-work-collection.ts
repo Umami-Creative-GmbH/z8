@@ -53,8 +53,13 @@ export interface PayrollCollectionRequest {
 	/**
 	 * The employee custom field the export configuration names as personnel
 	 * identifier or match key (#821); absent or null when it names none.
+	 * `employeesWithOtherRows`: employees the export also carries absences or
+	 * expense lines for; they need a value like employees with work.
 	 */
-	personnelIdentifier?: { customFieldId: string } | null;
+	personnelIdentifier?: {
+		customFieldId: string;
+		employeesWithOtherRows?: readonly string[];
+	} | null;
 }
 
 export interface PayrollCollectionEmployee {
@@ -338,18 +343,19 @@ export function assessPayrollWorkCollection(
 			)
 		: null;
 	if (personnelIdentifier) {
-		// Never a silent fallback to the employee number: work without a value blocks.
-		const withWork = new Set(work.map((line) => line.employeeId));
-		for (const employeeId of withWork) {
-			if (personnelIdentifier.values[employeeId] !== undefined) continue;
-			blockers.push({
-				kind: "missing_identifier",
-				sourceId: personnelIdentifier.customFieldId,
-				employeeId,
-				at: null,
-				reason: null,
-			});
-		}
+		// Never a silent fallback to the employee number: every row without a value blocks.
+		blockers.push(
+			...missingPersonnelIdentifierBlockers({
+				customFieldId: personnelIdentifier.customFieldId,
+				values: personnelIdentifier.values,
+				employeeIds: [
+					...work.map((line) => line.employeeId),
+					...(request.personnelIdentifier?.employeesWithOtherRows ?? []).filter((id) =>
+						scoped.has(id),
+					),
+				],
+			}),
+		);
 	}
 
 	const unsigned: Omit<CollectedPayrollWorkInput, "digest"> = {
@@ -385,6 +391,28 @@ export function assessPayrollWorkCollection(
 				compare(left.sourceId, right.sourceId),
 		),
 	};
+}
+
+/**
+ * One `missing_identifier` blocker per employee among `employeeIds` (those an
+ * export carries rows for) without a value of the identifier field, in ID order.
+ * Collection and the payroll workspace summary report them alike.
+ */
+export function missingPersonnelIdentifierBlockers(input: {
+	customFieldId: string;
+	values: Readonly<Record<string, string>>;
+	employeeIds: readonly string[];
+}): PayrollWorkBlocker[] {
+	return [...new Set(input.employeeIds)]
+		.filter((employeeId) => input.values[employeeId] === undefined)
+		.toSorted(compare)
+		.map((employeeId) => ({
+			kind: "missing_identifier",
+			sourceId: input.customFieldId,
+			employeeId,
+			at: null,
+			reason: null,
+		}));
 }
 
 /** The scoped employees' identifier values, read as of the period's last day. */
