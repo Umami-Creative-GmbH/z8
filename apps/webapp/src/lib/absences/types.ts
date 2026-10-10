@@ -58,7 +58,7 @@ export interface AbsenceWithCategory {
 		deputyRequired?: boolean;
 	};
 	/** Who covers while the employee is away (#1011); loaded where it is shown. */
-	deputy?: { id: string; name: string } | null;
+	deputy?: { id: string; name: string; canOpenProfile?: boolean } | null;
 	approvedBy: string | null;
 	approvedAt: Date | null;
 	rejectionReason: string | null;

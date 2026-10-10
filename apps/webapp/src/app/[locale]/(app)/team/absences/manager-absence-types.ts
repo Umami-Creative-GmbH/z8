@@ -1,3 +1,4 @@
+import type { DeputyDisplay } from "@/lib/absences/deputy-visibility";
 import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
@@ -99,6 +100,12 @@ export interface ManagerAbsenceCalendarEntry {
 	};
 	/** How many sick notes are attached to sick leave (#982); managers never open them. */
 	sickNoteCount?: number;
+	/** Who covers while the employee is away (#1012); absent when none is named. */
+	deputy?: DeputyDisplay | null;
+	/** The viewer may change the deputy now: the absence has not ended (#1012). */
+	canChangeDeputy?: boolean;
+	/** The absence's category requires a deputy (#1011). */
+	deputyRequired?: boolean;
 }
 
 export interface ManagerAbsenceCalendarDay {

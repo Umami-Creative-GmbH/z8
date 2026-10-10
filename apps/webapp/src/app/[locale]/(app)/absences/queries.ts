@@ -10,6 +10,11 @@ import {
 	vacationAllowance,
 } from "@/db/schema";
 import { getYearRange } from "@/lib/absences/date-utils";
+import {
+	type DeputyDisplay,
+	loadDeputyDisplays,
+	loadDeputyViewer,
+} from "@/lib/absences/deputy-display-store";
 import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
@@ -110,12 +115,41 @@ export async function getAbsenceEntries(
 		orderBy: [desc(absenceEntry.startDate)],
 	});
 
+	const deputies = await loadOwnAbsenceDeputies(
+		employeeId,
+		absences.flatMap((absence) => (absence.deputy ? [absence.deputy.id] : [])),
+	);
 	return absences.map((absence) =>
 		mapAbsenceWithCategory({
 			...(absence as unknown as AbsenceWithCategory),
-			deputy: absence.deputy ? { id: absence.deputy.id, name: absence.deputy.user.name } : null,
+			deputy: absence.deputy
+				? {
+						id: absence.deputy.id,
+						name: absence.deputy.user.name,
+						canOpenProfile: deputies.get(absence.deputy.id)?.canOpenProfile ?? false,
+					}
+				: null,
 		}),
 	);
+}
+
+/** The employee's own absences' deputies, linked when the employee may open their profile (#1012). */
+async function loadOwnAbsenceDeputies(employeeId: string, deputyEmployeeIds: string[]) {
+	if (deputyEmployeeIds.length === 0) return new Map<string, DeputyDisplay>();
+	const owner = await db.query.employee.findFirst({
+		where: eq(employee.id, employeeId),
+		columns: { userId: true, organizationId: true },
+	});
+	if (!owner) return new Map<string, DeputyDisplay>();
+	const viewer = await loadDeputyViewer(db, {
+		organizationId: owner.organizationId,
+		userId: owner.userId,
+	});
+	return loadDeputyDisplays(db, {
+		organizationId: owner.organizationId,
+		viewer,
+		deputyEmployeeIds,
+	});
 }
 
 export async function getHolidays(
