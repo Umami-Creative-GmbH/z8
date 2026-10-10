@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<title>Z8</title>
+		<style>
+			:root {
+				color-scheme: light dark;
+				--background: #ffffff;
+				--foreground: #0f172a;
+				--muted: #475569;
+				--brand: #3a5fc8;
+				--brand-foreground: #ffffff;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--background: #0b1120;
+					--foreground: #f1f5f9;
+					--muted: #94a3b8;
+					--brand: #6d8ee6;
+					--brand-foreground: #0b1120;
+				}
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				height: 100%;
+				margin: 0;
+			}
+			body {
+				display: grid;
+				place-items: center;
+				padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+				background: var(--background);
+				color: var(--foreground);
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+				text-align: center;
+			}
+			main {
+				max-width: 22rem;
+			}
+			svg {
+				width: 48px;
+				height: 48px;
+				color: var(--muted);
+			}
+			h1 {
+				margin: 16px 0 8px;
+				font-size: 1.25rem;
+				line-height: 1.3;
+			}
+			p {
+				margin: 0 0 24px;
+				color: var(--muted);
+				line-height: 1.5;
+			}
+			button {
+				min-height: 44px;
+				padding: 0 20px;
+				border: 0;
+				border-radius: 8px;
+				background: var(--brand);
+				color: var(--brand-foreground);
+				font: inherit;
+				font-weight: 600;
+			}
+			button:focus-visible {
+				outline: 2px solid var(--brand);
+				outline-offset: 3px;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<!-- Tabler "wifi-off" -->
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<path d="M12 18l.01 0" />
+				<path d="M9.172 15.172a4 4 0 0 1 5.656 0" />
+				<path d="M6.343 12.343a7.963 7.963 0 0 1 3.864 -2.14m4.163 .155a7.965 7.965 0 0 1 3.287 2" />
+				<path d="M3.515 9.515a12 12 0 0 1 3.544 -2.455m3.101 -.92a12 12 0 0 1 10.325 3.374" />
+				<path d="M3 3l18 18" />
+			</svg>
+			<h1 id="title">Z8 can't be reached</h1>
+			<p id="body">Check your internet connection. Z8 opens again as soon as you are back online.</p>
+			<button id="retry" type="button">Try again</button>
+		</main>
+		<script>
+			(() => {
+				// Native page outside the web app, so it carries its own de/en copy.
+				const copy = {
+					de: {
+						title: "Z8 ist nicht erreichbar",
+						body: "Prüfen Sie Ihre Internetverbindung. Z8 öffnet sich wieder, sobald Sie online sind.",
+						retry: "Erneut versuchen",
+					},
+				};
+				const language = (navigator.language || "en").slice(0, 2).toLowerCase();
+				const text = copy[language];
+				if (text) {
+					document.documentElement.lang = language;
+					document.getElementById("title").textContent = text.title;
+					document.getElementById("body").textContent = text.body;
+					document.getElementById("retry").textContent = text.retry;
+				}
+
+				// Android serves this page at the app origin; iOS serves it from
+				// capacitor://localhost, where shell-config.js names the origin.
+				const isAppOrigin = location.protocol === "https:" || location.protocol === "http:";
+				const appOrigin = () => (isAppOrigin ? location.origin : window.Z8_SHELL?.origin);
+
+				const open = () => {
+					const origin = appOrigin();
+					if (origin) {
+						location.replace(`${origin}/`);
+					}
+				};
+
+				if (!isAppOrigin) {
+					const script = document.createElement("script");
+					script.src = "shell-config.js";
+					document.head.append(script);
+				}
+
+				document.getElementById("retry").addEventListener("click", open);
+				window.addEventListener("online", open);
+			})();
+		</script>
+	</body>
+</html>
