@@ -11,6 +11,7 @@ import {
 	getAbsencePlanPreview,
 	requestAbsence,
 } from "@/app/[locale]/(app)/absences/actions";
+import { getOwnAbsenceSickNotesAction } from "@/app/[locale]/(app)/absences/sick-note-actions";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -24,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
 	Select,
 	SelectContent,
@@ -54,6 +56,18 @@ import { queryKeys } from "@/lib/query/keys";
 import { useRouter } from "@/navigation";
 import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
+import {
+	resolveStagedSickNoteFiles,
+	SickNoteFilesField,
+	type StagedSickNoteFile,
+	stagedSickNoteFilesComplete,
+	useSickNoteDefaults,
+} from "./sick-notes/sick-note-files-field";
+import {
+	StagedSickNoteUploadError,
+	type UploadedSickNote,
+	useStagedSickNoteUploads,
+} from "./sick-notes/use-staged-sick-note-uploads";
 
 interface RequestAbsenceDialogProps {
 	categories: Array<{
@@ -84,6 +98,8 @@ const createDefaultValues = (initialDate?: string) => ({
 	endTime: "",
 	notes: "",
 	sickDetail: "" as SickDetail | "",
+	/** Sick notes to attach once the sick leave is requested (#983). */
+	sickNotes: [] as StagedSickNoteFile[],
 });
 
 type RequestAbsenceFormValues = ReturnType<typeof createDefaultValues>;
@@ -177,7 +193,34 @@ function useRequestAbsenceDialogController({
 				);
 				return;
 			}
-			const result = await requestAbsence({
+			// Sick notes are uploaded first and attached once the absence exists (#983).
+			const stagedSickNotes =
+				selectedCategory?.type === "sick" && canAttachSickNotes
+					? value.sickNotes
+					: [];
+			let uploadedSickNotes: UploadedSickNote[] = [];
+			if (stagedSickNotes.length > 0) {
+				try {
+					uploadedSickNotes = await sickNoteUploads.stage(
+						resolveStagedSickNoteFiles(stagedSickNotes, sickNoteDefaults),
+					);
+				} catch (error) {
+					toast.error(
+						t(
+							"absences.sickNotes.request.uploadFailed",
+							"{fileName} could not be uploaded. Remove it or try again.",
+							{
+								fileName:
+									error instanceof StagedSickNoteUploadError
+										? error.fileName
+										: "",
+							},
+						),
+					);
+					return;
+				}
+			}
+			const request = {
 				categoryId: normalized.categoryId,
 				startDate: normalized.startDate,
 				startPeriod: normalized.startPeriod,
@@ -188,7 +231,11 @@ function useRequestAbsenceDialogController({
 				endTime: normalized.endTime,
 				notes: normalized.notes || undefined,
 				...(value.sickDetail ? { sickDetail: value.sickDetail } : {}),
-			});
+			};
+			const result =
+				uploadedSickNotes.length > 0
+					? await requestAbsence(request, uploadedSickNotes)
+					: await requestAbsence(request);
 			if (result.success) {
 				toast.success(
 					t(
@@ -196,6 +243,20 @@ function useRequestAbsenceDialogController({
 						"Absence request submitted successfully",
 					),
 				);
+				const failedSickNotes = result.data?.sickNotes?.failed ?? [];
+				if (failedSickNotes.length > 0) {
+					toast.warning(
+						t(
+							"absences.sickNotes.request.attachFailed",
+							"Your absence was requested, but {files} could not be attached. You can attach sick notes from the absence later.",
+							{
+								files: failedSickNotes
+									.map((failure) => failure.fileName)
+									.join(", "),
+							},
+						),
+					);
+				}
 				setOpen(false);
 				form.reset();
 				refresh();
@@ -233,6 +294,22 @@ function useRequestAbsenceDialogController({
 	const selectedCategory = categories.find(
 		(category) => category.id === selectedCategoryId,
 	);
+	const sickNotesQuery = useQuery({
+		queryKey: queryKeys.personnelFile.ownAbsenceSickNotes([]),
+		queryFn: async () => {
+			const result = await getOwnAbsenceSickNotesAction([]);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: open && selectedCategory?.type === "sick",
+	});
+	const canAttachSickNotes = sickNotesQuery.data?.canAttach ?? false;
+	const sickNoteDates = useStore(form.store, (state) => ({
+		startDate: state.values.startDate,
+		endDate: state.values.endDate,
+	}));
+	const sickNoteDefaults = useSickNoteDefaults(sickNoteDates);
+	const sickNoteUploads = useStagedSickNoteUploads();
 	const canLoadPlanPreview = Boolean(
 		open &&
 			planPreviewValues.categoryId &&
@@ -259,6 +336,9 @@ function useRequestAbsenceDialogController({
 		planPreviewQuery,
 		setOpen,
 		showSickDetail: selectedCategory?.type === "sick",
+		showSickNotes: selectedCategory?.type === "sick" && canAttachSickNotes,
+		sickNoteDates,
+		sickNoteUploads,
 		t,
 	};
 }
@@ -285,6 +365,9 @@ export function RequestAbsenceDialog({
 		planPreviewQuery,
 		setOpen,
 		showSickDetail,
+		showSickNotes,
+		sickNoteDates,
+		sickNoteUploads,
 		t,
 	} = useRequestAbsenceDialogController({
 		categories,
@@ -336,6 +419,13 @@ export function RequestAbsenceDialog({
 							showSickDetail={showSickDetail}
 						/>
 						<RequestAbsenceDurationFields form={form} />
+						{showSickNotes && (
+							<RequestAbsenceSickNotes
+								dates={sickNoteDates}
+								form={form}
+								uploads={sickNoteUploads}
+							/>
+						)}
 						<RequestAbsenceSummaryAndNotes
 							canLoadPlanPreview={canLoadPlanPreview}
 							categories={categories}
@@ -437,6 +527,7 @@ function RequestAbsenceCategoryFields({
 									"sick"
 								) {
 									form.setFieldValue("sickDetail", "");
+									form.setFieldValue("sickNotes", []);
 								}
 							}}
 						>
@@ -514,6 +605,90 @@ function RequestAbsenceCategoryFields({
 				</form.Field>
 			)}
 		</>
+	);
+}
+
+/** Optional sick notes, uploaded with the sick-leave request (#983). */
+function RequestAbsenceSickNotes({
+	dates,
+	form,
+	uploads,
+}: {
+	dates: { startDate: string; endDate: string };
+	form: RequestAbsenceFormApi;
+	uploads: ReturnType<typeof useStagedSickNoteUploads>;
+}) {
+	const { t } = useTranslate();
+	return (
+		<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+			{(isSubmitting: boolean) => (
+				<form.Field
+					name="sickNotes"
+					validators={{
+						onSubmit: ({ value }) =>
+							stagedSickNoteFilesComplete(value)
+								? undefined
+								: t(
+										"absences.sickNotes.files.incomplete",
+										"Give each sick note a title and a document date.",
+									),
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<section
+								aria-labelledby="request-absence-sick-notes"
+								className="space-y-2"
+							>
+								<div>
+									<h3
+										id="request-absence-sick-notes"
+										className="text-sm font-medium"
+									>
+										{t(
+											"absences.sickNotes.request.title",
+											"Sick note (optional)",
+										)}
+									</h3>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"absences.sickNotes.request.description",
+											"Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file. Your approver only sees that a sick note is attached.",
+										)}
+									</p>
+								</div>
+								<SickNoteFilesField
+									value={field.state.value}
+									onChange={field.handleChange}
+									dates={dates}
+									disabled={isSubmitting}
+									invalid={field.state.meta.errors.length > 0}
+								/>
+								<TFormMessage field={field} />
+								{uploads.isStaging ? (
+									<div className="space-y-1">
+										<Progress
+											value={uploads.progress}
+											aria-label={t(
+												"absences.sickNotes.attach.progress",
+												"Upload progress",
+											)}
+										/>
+										<p className="text-xs text-muted-foreground">
+											{t(
+												"absences.sickNotes.attach.progressCount",
+												"{done} of {total} uploaded",
+												{ done: uploads.done, total: uploads.total },
+											)}
+										</p>
+									</div>
+								) : null}
+							</section>
+						</TFormItem>
+					)}
+				</form.Field>
+			)}
+		</form.Subscribe>
 	);
 }
 

@@ -24,6 +24,14 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	getAbsencePlanPreview: vi.fn(),
 }));
 
+vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
+	getOwnAbsenceSickNotesAction: vi.fn(async () => ({
+		success: true,
+		data: { canAttach: false, markers: {} },
+	})),
+	discardStagedSickNoteUploadsAction: vi.fn(),
+}));
+
 vi.mock("sonner", () => ({
 	toast: {
 		error: vi.fn(),
