@@ -1,10 +1,14 @@
 import { z } from "zod";
+import { isReservedEmail } from "@/lib/auth/reserved-email";
 
 /**
- * Validation schema for sending member invitations
+ * Validation schema for sending member invitations. Kiosk-only placeholder
+ * addresses are never invited (ADR 0006, #857).
  */
 export const invitationSchema = z.object({
-	email: z.email("Invalid email address"),
+	email: z
+		.email("Invalid email address")
+		.refine((email) => !isReservedEmail(email), "This address cannot receive invitations"),
 	role: z.enum(["owner", "admin", "member"], {
 		message: "Role must be owner, admin, or member",
 	}),

@@ -50,6 +50,29 @@ async function expectSafeConflict(promise: Promise<unknown>) {
 }
 
 describe("resolveSCIMIdentity", () => {
+	it.each([
+		["primary email", { primaryEmail: "kiosk-1@kiosk.invalid" }],
+		["user name", { userName: "Kiosk-1@KIOSK.invalid" }],
+		["any listed email", { emails: [{ value: "kiosk-1@kiosk.invalid", primary: false }] }],
+	])("refuses a resource whose %s is a reserved kiosk-only address (#857)", async (_label, fields) => {
+		// Without the refusal, this subject would link to user_1.
+		const findOne = vi
+			.fn()
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
+			.mockResolvedValueOnce({ providerId: "provider_target", domain: "example.com" })
+			.mockResolvedValueOnce({ id: "member_1" });
+		const findMany = vi.fn().mockResolvedValueOnce([{ userId: "user_1" }]);
+		const input = resolutionInput("subject_target");
+
+		await expectSafeConflict(
+			resolveSCIMIdentity(
+				{ ...input, resource: { ...input.resource, ...fields } as typeof input.resource },
+				resolutionContext(findOne, findMany),
+			),
+		);
+		expect(findMany).not.toHaveBeenCalled();
+	});
+
 	it("links the user with the exact externalId on an active persisted provider in the target organization", async () => {
 		const findOne = vi
 			.fn()

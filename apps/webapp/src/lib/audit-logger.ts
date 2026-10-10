@@ -222,6 +222,14 @@ export enum AuditAction {
 	ASSIGNED_LOCATION_ADDED = "location.assigned_employee_added",
 	ASSIGNED_LOCATION_REMOVED = "location.assigned_employee_removed",
 
+	// Kiosk PINs and kiosk-only employees (#857)
+	KIOSK_PIN_ISSUED = "kiosk_pin.issued",
+	KIOSK_PIN_RESET = "kiosk_pin.reset",
+	KIOSK_PIN_UNLOCKED = "kiosk_pin.unlocked",
+	KIOSK_PIN_CHANGED = "kiosk_pin.changed",
+	KIOSK_ONLY_EMPLOYEE_CREATED = "kiosk_only_employee.created",
+	KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED = "kiosk_only_employee.email_added",
+
 	// Kiosk enrolment (#859)
 	KIOSK_CREATED = "kiosk.created",
 	KIOSK_UPDATED = "kiosk.updated",
@@ -300,6 +308,7 @@ export interface AuditLogEntry {
 		| "subarea_employee"
 		| "kiosk"
 		| "user"
+		| "kiosk_pin"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"

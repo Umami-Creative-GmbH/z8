@@ -259,6 +259,7 @@ describe("production auth plugin composition with installed Better Auth", () => 
 		expect(ids).toEqual([
 			"z8-turnstile-auth-guard",
 			"z8-account-ban",
+			"z8-reserved-email-guard",
 			"z8-social-org-oauth",
 			"bearer",
 			"scim",
