@@ -172,6 +172,27 @@ describe("loadAuthorizedApprovalDetail", () => {
 			});
 		});
 
+		it("lets an eligible manager's own right win: no Covering for mark, no four-eyes block", async () => {
+			state.findApprovalRequest.mockResolvedValue(absentApproversRequest);
+			state.getApprovalInboxDetail.mockResolvedValue(pendingDetail);
+			state.isEligibleManagerForApprovalRequest.mockResolvedValueOnce(true);
+			state.loadDeputyDetailAccess.mockResolvedValue({
+				kind: "covering",
+				cover: { approverId: "absent-1", approverName: "Xenia" },
+				decidedEarlierStage: true,
+			});
+
+			const result = await loadAuthorizedApprovalDetail({
+				userId: "user-1",
+				organizationId: "org-1",
+				approvalId: "approval-1",
+			});
+
+			expect(result).toEqual({ status: "found", detail: pendingDetail });
+			expect(state.loadDeputyDetailAccess).not.toHaveBeenCalled();
+			state.loadDeputyDetailAccess.mockReset();
+		});
+
 		it("refuses someone who neither covers for the approver nor decided it as deputy", async () => {
 			state.findApprovalRequest.mockResolvedValue(absentApproversRequest);
 

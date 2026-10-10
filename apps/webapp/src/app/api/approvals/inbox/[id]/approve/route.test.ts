@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { isDeputyDecisionEntityType } from "@/lib/approvals/deputy/deputy-decision";
 import {
 	createEmptyAbility,
 	defineAbilityFor,
@@ -229,8 +230,10 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 		expect(response.status).toBe(200);
 		expect(mockState.coversCurrentApprover).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
+			entityType: "time_entry",
 			approverEmployeeId: "absent-1",
 			actorEmployeeId: "employee-1",
+			at: expect.anything(),
 		});
 		expect(mockState.approveApprovalInboxItem).toHaveBeenCalledWith(
 			expect.objectContaining({ coveredApproverIds: ["absent-1"] }),
@@ -239,7 +242,10 @@ describe("POST /api/approvals/inbox/[id]/approve", () => {
 
 	it("never opens an expense claim to a covering deputy", async () => {
 		mockState.getAbility.mockResolvedValue(createManagerAbility());
-		mockState.coversCurrentApprover.mockResolvedValue(true);
+		// The store's contract: only deputy kinds are ever covered.
+		mockState.coversCurrentApprover.mockImplementation(async (_db: unknown, input: { entityType: string }) =>
+			isDeputyDecisionEntityType(input.entityType),
+		);
 		mockState.findApprovalRequest.mockResolvedValue({
 			id: "approval-1",
 			targetType: "compatibility_request",

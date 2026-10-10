@@ -223,8 +223,20 @@ export interface ApprovalInboxListResult {
 	counts: Record<ApprovalInboxType, number>;
 	supportedTypes: ApprovalInboxType[];
 	warnings: ApprovalInboxWarning[];
-	/** One "Covering for" section per covered approver, with their pending count (#1016). */
-	covering?: Array<ApprovalInboxCover & { count: number }>;
+	/**
+	 * One "Covering for" section per covered approver (#1016), with its own
+	 * rows; `items` holds only the viewer's own approvals.
+	 */
+	covering?: ApprovalInboxCoveringSection[];
+}
+
+/** A "Covering for" section: what waits for one absent approver the viewer covers for. */
+export interface ApprovalInboxCoveringSection extends ApprovalInboxCover {
+	/** Pending approvals the section lists; `rows.length` unless `hasMore`. */
+	count: number;
+	rows: ApprovalInboxItem[];
+	/** More wait than the section lists at once. */
+	hasMore: boolean;
 }
 
 export interface ApprovalInboxDecisionSuccess {

@@ -209,3 +209,18 @@ describe("isDeputyCardAssignmentPending", () => {
 		).toBe(false);
 	});
 });
+
+describe("coversCurrentApprover (#1016)", () => {
+	it("never covers a kind deputies do not decide, without reading anything", async () => {
+		const { coversCurrentApprover } = await import("./deputy-decision-store");
+		await expect(
+			coversCurrentApprover({} as never, {
+				organizationId: "org-1",
+				entityType: "travel_expense_claim",
+				approverEmployeeId: X,
+				actorEmployeeId: Y,
+				at: parseInstant("2026-06-04T10:00:00Z"),
+			}),
+		).resolves.toBe(false);
+	});
+});

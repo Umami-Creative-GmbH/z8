@@ -37,7 +37,7 @@ import type {
 	ApprovalInboxDecisionFailure,
 	ApprovalInboxFastLaneGroup,
 	ApprovalInboxItem,
-	ApprovalInboxListResult,
+	ApprovalInboxCoveringSection,
 	ApprovalInboxType,
 	ApprovalInboxWarning,
 } from "@/lib/approvals/inbox/types";
@@ -535,8 +535,8 @@ function ApprovalInboxRequestsCard({
 	/** One "Covering for" section per absent approver the viewer covers for (#1016). */
 	covering?: ApprovalInboxCoveringSection[];
 }) {
-	const selectableCount = items.filter(isDecidableByViewer).length;
-	const ownItems = covering?.length ? items.filter((item) => !item.coveringFor) : items;
+	const ownItems = items.filter((item) => !item.coveringFor);
+	const selectableCount = ownItems.filter(isDecidableByViewer).length;
 
 	return (
 		<div className="flex flex-col gap-6 px-4 lg:px-6">
@@ -628,14 +628,21 @@ function ApprovalInboxRequestsCard({
 					</CardHeader>
 					<CardContent className="pt-4">
 						<ApprovalInboxTable
-							items={items.filter(
-								(item) => item.coveringFor?.approverId === section.approverId,
-							)}
+							items={section.rows}
 							selectedIds={selectedIds}
 							onSelectItem={onSelectItem}
 							onRowClick={onRowClick}
 							isFetching={activityState.isFetching}
 						/>
+						{section.hasMore && (
+							<p className="mt-3 text-sm text-muted-foreground">
+								{t(
+									"approvals:approvals.coveringForShowingFirst",
+									"Showing the first {shown} of {count}.",
+									{ shown: section.rows.length, count: section.count },
+								)}
+							</p>
+						)}
 					</CardContent>
 				</Card>
 			))}
@@ -643,7 +650,7 @@ function ApprovalInboxRequestsCard({
 	);
 }
 
-type ApprovalInboxCoveringSection = NonNullable<ApprovalInboxListResult["covering"]>[number];
+
 
 /**
  * The cover start summary links to a "Covering for" section (#1018). Sections
@@ -911,8 +918,12 @@ function ApprovalInboxContent({
 	const bulkRejectMutation = useBulkReject();
 
 	const pages = data?.pages ?? [];
-	const items = pages.flatMap((page) => page.items);
 	const firstPage = pages[0];
+	// The viewer's own approvals, then each "Covering for" section's rows (#1016).
+	const items = [
+		...pages.flatMap((page) => page.items),
+		...(firstPage?.covering ?? []).flatMap((section) => section.rows),
+	];
 	const totalCount = firstPage?.total ?? 0;
 	const warnings = dedupeWarnings(pages.flatMap((page) => page.warnings));
 	const supportedTypes = firstPage?.supportedTypes ?? [];
@@ -941,7 +952,11 @@ function ApprovalInboxContent({
 			type: "selectionChanged",
 			itemIdsKey,
 			ids: checked
-				? new Set(items.filter(isDecidableByViewer).map((item) => item.id))
+				? new Set(
+						items
+							.filter((item) => !item.coveringFor && isDecidableByViewer(item))
+							.map((item) => item.id),
+					)
 				: new Set(),
 		});
 	};

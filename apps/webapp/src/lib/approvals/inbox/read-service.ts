@@ -43,7 +43,12 @@ import {
 	loadDeputyDecidedEarlierStages,
 	loadDeputyDecisionsForEntities,
 } from "../deputy/deputy-decision-store";
-import { coversByApprover, markCoveringFor, markDecidedEarlierStage } from "./covering-marks";
+import {
+	coversByApprover,
+	markCoveringFor,
+	markDecidedEarlierStage,
+	viewerHasOwnRight,
+} from "./covering-marks";
 import { markOwnRequest } from "./own-request";
 import { getAgeDays, serializeDate } from "./serialization";
 import {
@@ -55,6 +60,7 @@ import {
 import { buildInboxTriage } from "./triage";
 import type {
 	ApprovalInboxCover,
+	ApprovalInboxCoveringSection,
 	ApprovalInboxDetailResult,
 	ApprovalInboxDetailSection,
 	ApprovalInboxItem,
@@ -185,11 +191,8 @@ export async function getApprovalInboxListFromSources({
 	countCanonicalOrdinaryApprovals: countCanonical,
 	loadDeputyDecidedEarlierStages: loadDecidedEarlier = async () => new Set<string>(),
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
+	// Covered approvals are listed in their "Covering for" sections, not here.
 	const covers = coversByApprover(params.covering, params.approverId);
-	const coveredApproverIds = [...covers.keys()];
-	if (coveredApproverIds.length > 0) {
-		params = { ...params, coveredApproverIds };
-	}
 	const effectiveNow = now ?? new Date();
 	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
@@ -215,9 +218,7 @@ export async function getApprovalInboxListFromSources({
 			});
 		} else {
 			items.push(
-				...approvalsExit.value.map((approval) =>
-					markCoveringFor(toInboxItem(source, approval, effectiveNow), approval.approverId, covers),
-				),
+				...approvalsExit.value.map((approval) => toInboxItem(source, approval, effectiveNow)),
 			);
 		}
 	}
@@ -229,7 +230,7 @@ export async function getApprovalInboxListFromSources({
 				source.handler.getCount(params.approverId, params.organizationId, {
 					eligibleApprovalScopes: params.eligibleApprovalScopes,
 					includeAllApprovers: params.includeAllApprovers,
-					...(params.coveredApproverIds ? { coveredApproverIds: params.coveredApproverIds } : {}),
+
 				}),
 			),
 		})),
@@ -251,7 +252,6 @@ export async function getApprovalInboxListFromSources({
 					organizationId: params.organizationId,
 					eligibleApprovalScopes: params.eligibleApprovalScopes,
 					includeAllApprovers: params.includeAllApprovers,
-					coveredApproverIds: params.coveredApproverIds,
 					filters: canonicalFilters,
 					limit: limit + 1,
 					cursor: cursor ?? undefined,
@@ -264,7 +264,6 @@ export async function getApprovalInboxListFromSources({
 				organizationId: params.organizationId,
 				eligibleApprovalScopes: params.eligibleApprovalScopes,
 				includeAllApprovers: params.includeAllApprovers,
-				coveredApproverIds: params.coveredApproverIds,
 				filters: canonicalFilters,
 				now: effectiveNow,
 			})
@@ -275,30 +274,11 @@ export async function getApprovalInboxListFromSources({
 			).totalCount ?? canonicalOrdinary.length);
 	counts.time_entry = (counts.time_entry ?? 0) + canonicalTotal;
 	if ((params.status ?? "pending") === "pending" && includesTimeEntries) {
-		items.push(
-			...canonicalOrdinary.map((approval) =>
-				markCoveringFor(approval.item, approval.decisionTarget?.approverId, covers),
-			),
-		);
+		items.push(...canonicalOrdinary.map((approval) => approval.item));
 	}
-
-	// Four-eyes (#1016): a covered request whose earlier stage the viewer
-	// decided stays in its section without decisions.
-	const coveredRequestIds = items.flatMap((item) => (item.coveringFor ? [item.id] : []));
-	const decidedEarlier =
-		coveredRequestIds.length > 0
-			? await loadDecidedEarlier({
-					organizationId: params.organizationId,
-					deputyEmployeeId: params.approverId,
-					approvalRequestIds: coveredRequestIds,
-				})
-			: new Set<string>();
 
 	const sortedItems = items
 		.map((item) => markOwnRequest(item, params.approverId))
-		.map((item) =>
-			item.coveringFor && decidedEarlier.has(item.id) ? markDecidedEarlierStage(item) : item,
-		)
 		.sort(compareInboxItems);
 	const cursorFilteredItems = cursor
 		? sortedItems.filter((item) => compareInboxItemToCursor(item, cursor) > 0)
@@ -308,11 +288,13 @@ export async function getApprovalInboxListFromSources({
 	const lastItem = pagedItems.at(-1);
 	const covering =
 		(params.status ?? "pending") === "pending" && covers.size > 0
-			? await countCoveringSections({
+			? await loadCoveringSections({
 					covers: [...covers.values()],
-					organizationId: params.organizationId,
-					sources,
+					params,
+					sources: selectedSources,
+					loadCanonical: includesTimeEntries ? loadCanonical : undefined,
 					countCanonical,
+					loadDecidedEarlier,
 					now: effectiveNow,
 				})
 			: undefined;
@@ -337,8 +319,109 @@ export async function getApprovalInboxListFromSources({
 	};
 }
 
+/** The most rows one "Covering for" section lists at once. */
+const COVERING_SECTION_LIMIT = 100;
+
 /**
- * Each covered approver's section count: every pending approval of the deputy
+ * Each "Covering for" section's own rows (#1016): the absent approver's
+ * pending approvals of the deputy kinds, under the list's filters, except those
+ * the viewer decides in their own right (they are in the viewer's own list,
+ * default 8). Four-eyes and own-request marks apply. The count is the rows
+ * shown, or the approver's whole pending total when there are more.
+ */
+async function loadCoveringSections(input: {
+	covers: ApprovalInboxCover[];
+	params: ApprovalInboxListParams;
+	sources: ApprovalInboxSource[];
+	loadCanonical: GetApprovalInboxListFromSourcesInput["loadCanonicalOrdinaryApprovals"];
+	countCanonical: GetApprovalInboxListFromSourcesInput["countCanonicalOrdinaryApprovals"];
+	loadDecidedEarlier: NonNullable<
+		GetApprovalInboxListFromSourcesInput["loadDeputyDecidedEarlierStages"]
+	>;
+	now: Date;
+}): Promise<ApprovalInboxCoveringSection[]> {
+	const { params } = input;
+	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
+	const covers = new Map(input.covers.map((cover) => [cover.approverId, cover]));
+	return await Promise.all(
+		input.covers.map(async (cover) => {
+			const sectionParams: ApprovalInboxListParams = {
+				...params,
+				approverId: cover.approverId,
+				status: "pending",
+				limit: COVERING_SECTION_LIMIT + 1,
+				cursor: undefined,
+				covering: undefined,
+				eligibleApprovalScopes: undefined,
+				includeAllApprovers: undefined,
+				coveredApproverIds: undefined,
+			};
+			const loaded = await Promise.all(
+				deputySources.map(async (source) => {
+					const exit = await runtime.runPromiseExit(source.handler.getApprovals(sectionParams));
+					return Exit.isSuccess(exit)
+						? exit.value.map((approval) => ({
+								item: toInboxItem(source, approval, input.now),
+								approverId: approval.approverId,
+								requesterEmployeeId: approval.requester.id,
+							}))
+						: [];
+				}),
+			);
+			const canonical = input.loadCanonical
+				? (
+						await input.loadCanonical({
+							approverId: cover.approverId,
+							organizationId: params.organizationId,
+							filters: normalizeCanonicalFilters(params),
+							limit: COVERING_SECTION_LIMIT + 1,
+							now: input.now,
+						})
+					).map((approval) => ({
+						item: approval.item,
+						approverId: approval.decisionTarget?.approverId,
+						requesterEmployeeId: approval.decisionTarget?.requesterEmployeeId,
+					}))
+				: [];
+			const candidates = [...loaded.flat(), ...canonical];
+			const truncated = loaded.some((rows) => rows.length > COVERING_SECTION_LIMIT) ||
+				canonical.length > COVERING_SECTION_LIMIT;
+			const rows = candidates.flatMap((candidate) => {
+				if (viewerHasOwnRight(params, candidate)) return [];
+				const item = markCoveringFor(candidate.item, candidate.approverId, covers);
+				return item.coveringFor ? [markOwnRequest(item, params.approverId)] : [];
+			});
+			const decidedEarlier =
+				rows.length > 0
+					? await input.loadDecidedEarlier({
+							organizationId: params.organizationId,
+							deputyEmployeeId: params.approverId,
+							approvalRequestIds: rows.map((row) => row.id),
+						})
+					: new Set<string>();
+			const sorted = rows
+				.map((row) => (decidedEarlier.has(row.id) ? markDecidedEarlierStage(row) : row))
+				.sort(compareInboxItems);
+			const shown = sorted.slice(0, COVERING_SECTION_LIMIT);
+			const hasMore = truncated || sorted.length > COVERING_SECTION_LIMIT;
+			const count = hasMore
+				? ((
+						await countCoveringSections({
+							covers: [cover],
+							organizationId: params.organizationId,
+							sources: deputySources,
+							countCanonical: input.countCanonical,
+							now: input.now,
+						})
+					)[0]?.count ?? shown.length)
+				: shown.length;
+			return { ...cover, count, rows: shown, hasMore };
+		}),
+	);
+}
+
+/**
+ * Each covered approver's pending total: every pending approval of the deputy
  * kinds assigned to them, exactly as their own inbox counts it.
  */
 async function countCoveringSections(input: {
@@ -605,7 +688,18 @@ export async function getApprovalInboxDetail({
 			(candidate) => candidate.item.id === approvalId,
 		);
 		if (approval) {
-			const item = markCoveringFor(approval.detail.item, approval.decisionTarget?.approverId, covers);
+			const item = markCoveringFor(
+				approval.detail.item,
+				approval.decisionTarget?.approverId,
+				covers,
+				viewerHasOwnRight(
+					{ approverId, includeAllApprovers, eligibleApprovalScopes },
+					{
+						approverId: approval.decisionTarget?.approverId,
+						requesterEmployeeId: approval.decisionTarget?.requesterEmployeeId,
+					},
+				),
+			);
 			return item === approval.detail.item ? approval.detail : { ...approval.detail, item };
 		}
 		throw new ApprovalInboxBadRequestError("Approval not found");

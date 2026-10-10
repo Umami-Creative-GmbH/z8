@@ -107,16 +107,21 @@ export async function loadAuthorizedApprovalDetail(input: {
 					organizationId: currentEmployee.organizationId,
 				});
 		// The absent approver's covering deputy sees the same detail (#1016); the
-		// deputy rule follows the request's current approver.
-		const deputyAccess = isAssignedApprover ? null : await loadDeputyDetailAccess(db, {
-			organizationId: currentEmployee.organizationId,
-			approvalRequestId: request.id,
-			entityType: request.entityType,
-			status: request.status,
-			approverEmployeeId: request.approverId,
-			deputyEmployeeId: currentEmployee.id,
-			at: systemClock.nowInstant(),
-		});
+		// deputy rule follows the request's current approver. Own rights win
+		// (default 8): an approver, eligible manager or manager of approvals
+		// decides as themselves, with no "Covering for" mark or four-eyes block.
+		const deputyAccess =
+			isAssignedApprover || isEligibleManager || canManageApprovals
+				? null
+				: await loadDeputyDetailAccess(db, {
+						organizationId: currentEmployee.organizationId,
+						approvalRequestId: request.id,
+						entityType: request.entityType,
+						status: request.status,
+						approverEmployeeId: request.approverId,
+						deputyEmployeeId: currentEmployee.id,
+						at: systemClock.nowInstant(),
+					});
 		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals && !deputyAccess) {
 			return { status: "forbidden" };
 		}
