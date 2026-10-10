@@ -96,6 +96,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	time_off_in_lieu_available: "attention",
 	work_balance_adjustment_recorded: "working_time",
 	work_balance_adjustment_cancelled: "working_time",
+	period_submission_reminder: "reminder",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

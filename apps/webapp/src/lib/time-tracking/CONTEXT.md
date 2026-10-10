@@ -205,6 +205,10 @@ _Avoid_: Still-clocked-in reminder, overtime alert
 A clocking reminder, shortly before it happens, that the employee's live work is about to break their work policy's break rules for lack of a break.
 _Avoid_: Break overrun reminder, end-break reminder
 
+**Period submission reminder**:
+A reminder to the employee to submit an expected submission period that has ended without a pending or approved period submission: once when the period ends in their timezone, and once more after the organization's reminder delay. It is delivered like a clocking reminder, at most once each, and never submits anything.
+_Avoid_: Timesheet reminder, submission deadline
+
 ### Kiosks
 
 **Kiosk**:

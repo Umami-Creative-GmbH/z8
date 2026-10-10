@@ -71,6 +71,7 @@ export const EVENT_CATEGORIES = {
 			"missed_clock_in_reminder",
 			"forgotten_clock_out_reminder",
 			"break_due_reminder",
+			"period_submission_reminder",
 		],
 	},
 } as const;

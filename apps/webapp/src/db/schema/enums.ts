@@ -295,6 +295,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
 	"approval_cover_started",
 	"approval_cover_return_summary",
+	// Reminders to the employee to submit an ended submission period (#1064)
+	"period_submission_reminder",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
