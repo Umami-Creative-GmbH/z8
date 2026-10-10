@@ -9,13 +9,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { RATE_LIMIT_WINDOW_OPTIONS } from "@/lib/validations/api-key";
-
-const WINDOW_KEYS: Record<(typeof RATE_LIMIT_WINDOW_OPTIONS)[number]["value"], string> = {
-	1000: "settings.apiKeys.form.rateLimitWindow.second",
-	60000: "settings.apiKeys.form.rateLimitWindow.minute",
-	3600000: "settings.apiKeys.form.rateLimitWindow.hour",
-};
+import { RATE_LIMIT_WINDOW_OPTIONS, type RateLimitWindow } from "@/lib/validations/api-key";
 
 /** The time window a key's request limit counts in (#763). Values are milliseconds as strings. */
 export function RateLimitWindowField({
@@ -30,9 +24,14 @@ export function RateLimitWindowField({
 	onBlur: () => void;
 }) {
 	const { t } = useTranslate();
+	const labels: Record<RateLimitWindow, string> = {
+		1000: t("settings.apiKeys.form.rateLimitWindowSecond", "per second"),
+		60000: t("settings.apiKeys.form.rateLimitWindowMinute", "per minute"),
+		3600000: t("settings.apiKeys.form.rateLimitWindowHour", "per hour"),
+	};
 	return (
 		<div className="space-y-2">
-			<Label htmlFor={id}>{t("settings.apiKeys.form.rateLimitWindow", "Time window")}</Label>
+			<Label htmlFor={id}>{t("settings.apiKeys.form.rateLimitWindowLabel", "Time window")}</Label>
 			<Select<string>
 				value={value}
 				onValueChange={(next) => {
@@ -45,7 +44,7 @@ export function RateLimitWindowField({
 				<SelectContent>
 					{RATE_LIMIT_WINDOW_OPTIONS.map((option) => (
 						<SelectItem key={option.value} value={String(option.value)}>
-							{t(WINDOW_KEYS[option.value], option.label)}
+							{labels[option.value]}
 						</SelectItem>
 					))}
 				</SelectContent>
