@@ -187,6 +187,14 @@ describe("route catalog wiring", () => {
 		});
 		expect(uncoveredPages).toEqual([]);
 	});
+	it("loads the sick-note strings where sick notes are recorded and managed (#984)", () => {
+		expect(getRouteCatalogScope("/team/absences")?.namespaces).toEqual(
+			expect.arrayContaining(["calendar", "settings/people"]),
+		);
+		expect(getRouteCatalogScope("/personnel-files/employee-1")?.namespaces).toEqual(
+			expect.arrayContaining(["calendar", "settings/people"]),
+		);
+	});
 	it("uses segment boundaries and longest-prefix settings scopes", () => {
 		expect(
 			getRouteCatalogScope("/settings/clockodo-import")?.namespaces,

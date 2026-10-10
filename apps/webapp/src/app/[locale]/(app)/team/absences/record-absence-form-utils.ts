@@ -3,6 +3,7 @@ import {
 	normalizeAbsenceDurationInput,
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
+import type { StagedSickNoteFile } from "@/components/absences/sick-notes/sick-note-files-field";
 import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
 import type { RecordAbsenceForEmployeeInput } from "./manager-absence-types";
 
@@ -17,6 +18,8 @@ type RecordAbsenceFormValues = {
 	endTime: string;
 	notes: string;
 	sickDetail: SickDetail | "";
+	/** Sick notes to attach once the sick leave is recorded (#984). */
+	sickNotes: StagedSickNoteFile[];
 };
 
 const defaultValues: RecordAbsenceFormValues = {
@@ -30,6 +33,7 @@ const defaultValues: RecordAbsenceFormValues = {
 	endTime: "",
 	notes: "",
 	sickDetail: "",
+	sickNotes: [],
 };
 
 function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string | null {
@@ -37,7 +41,7 @@ function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string
 }
 
 function getDefaultRecordAbsenceFormValues(): RecordAbsenceFormValues {
-	return { ...defaultValues };
+	return { ...defaultValues, sickNotes: [] };
 }
 
 function buildRecordAbsenceForEmployeeInput(

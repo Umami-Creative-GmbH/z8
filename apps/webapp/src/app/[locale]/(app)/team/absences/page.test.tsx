@@ -26,6 +26,12 @@ vi.mock("../../absences/queries", () => ({
 	getAbsenceCategories: vi.fn(async () => []),
 }));
 
+vi.mock("@/db", () => ({ db: {} }));
+
+vi.mock("@/lib/personnel-file/access-store", () => ({
+	isPersonnelFilesEnabled: vi.fn(async () => true),
+}));
+
 vi.mock("../actions", () => ({
 	getCurrentEmployee: vi.fn(async () => ({
 		id: "employee-1",
