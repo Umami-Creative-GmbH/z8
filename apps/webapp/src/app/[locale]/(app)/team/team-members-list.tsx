@@ -52,6 +52,9 @@ type ManagedEmployeeWithPresence = ManagedEmployee & {
 	clockStatus?: EmployeeClockStatus;
 	lastActivityAt: string | null;
 	lastActivityUtcOffsetMinutes: number | null;
+	/** A break in progress (#861). */
+	breakStartedAt: string | null;
+	breakStartedZone: string | null;
 };
 
 const teamTableFeatures = tableFeatures({
@@ -135,6 +138,8 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 			clockStatus: presence.getStatus(employee.id),
 			lastActivityAt: activity?.lastActivityAt ?? null,
 			lastActivityUtcOffsetMinutes: activity?.lastActivityUtcOffsetMinutes ?? null,
+			breakStartedAt: presence.getBreak(employee.id)?.breakStartedAt ?? null,
+			breakStartedZone: presence.getBreak(employee.id)?.breakStartedZone ?? null,
 		};
 	});
 
@@ -335,6 +340,8 @@ function TeamMemberCards({
 									<EmployeeActivityText
 										lastActivityAt={employee.lastActivityAt}
 										lastActivityUtcOffsetMinutes={employee.lastActivityUtcOffsetMinutes}
+										breakStartedAt={employee.breakStartedAt}
+										breakStartedZone={employee.breakStartedZone}
 									/>
 								</div>
 							</div>
@@ -413,6 +420,8 @@ function TeamMembersTable({
 							<EmployeeActivityText
 								lastActivityAt={row.original.lastActivityAt}
 								lastActivityUtcOffsetMinutes={row.original.lastActivityUtcOffsetMinutes}
+								breakStartedAt={row.original.breakStartedAt}
+								breakStartedZone={row.original.breakStartedZone}
 							/>
 						</div>
 					</Link>

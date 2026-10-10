@@ -39,6 +39,8 @@ const PUBLIC_ROUTES = [
 	"/licenses",
 	"/join",
 	"/setup",
+	// Kiosk devices have no user session; they authenticate with a device token (#859).
+	"/kiosk",
 ];
 
 // Routes that authenticated users should be redirected away from

@@ -22,6 +22,7 @@ import {
 	IconServerCog,
 	IconSettings,
 	IconShieldCheck,
+	IconUserCheck,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -245,6 +246,11 @@ export function AppSidebar({
 			title: t("nav.teamAbsences", "Team Absences"),
 			url: "/team/absences",
 			icon: IconBeach,
+		},
+		{
+			title: t("nav.teamPresence", "Who Is In"),
+			url: "/team/presence",
+			icon: IconUserCheck,
 		},
 		// Only show Scheduling when shifts are enabled for the organization
 		...(navigationCapabilities.scheduling
