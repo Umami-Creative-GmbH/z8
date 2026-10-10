@@ -4,6 +4,7 @@ import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
+import { CoveringForWidget } from "@/components/dashboard/covering-for-widget";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { ManagerTodayWidget } from "@/components/dashboard/manager-today-widget";
@@ -37,6 +38,7 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"team-overview": TeamOverviewWidget,
 	"quick-stats": QuickStatsWidget,
 	"upcoming-shifts": UpcomingShiftsWidget,
+	"covering-for": CoveringForWidget,
 	"whos-out-today": WhosOutTodayWidget,
 	"upcoming-time-off": UpcomingTimeOffWidget,
 	"recently-approved": RecentlyApprovedWidget,

@@ -59,6 +59,8 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	absence_deputy_removed: "/",
 	absence_deputy_dates_changed: "/",
 	absence_deputy_reminder: "/",
+	// The absent employee gets their absences, managers the team absences (#1014).
+	absence_deputy_unavailable: ["/absences", "/team/absences"],
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

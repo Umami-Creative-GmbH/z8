@@ -83,6 +83,8 @@ export const NOTIFICATION_TYPES = [
 	"absence_deputy_removed",
 	"absence_deputy_dates_changed",
 	"absence_deputy_reminder",
+	// A departed or deactivated deputy was cleared from an absence (#1014)
+	"absence_deputy_unavailable",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

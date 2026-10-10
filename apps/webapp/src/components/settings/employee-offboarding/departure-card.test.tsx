@@ -40,6 +40,7 @@ function view(overrides: Partial<EmployeeOffboardingView>): EmployeeOffboardingV
 		failedTasks: [],
 		reviews: [],
 		futureWork: { shifts: 0, absences: 0, employmentTerms: 0 },
+		deputyAbsences: 0,
 		capabilities: none,
 		...overrides,
 	};
@@ -124,6 +125,24 @@ describe("DepartureCard", () => {
 			screen.getByRole("link", { name: "Absences on or after the cutoff: 1" }).getAttribute("href"),
 		).toBe("/calendar/employee-1?date=2026-10-01");
 		expect(kept.textContent).not.toContain("Employment terms");
+	});
+
+	it("lists the absences the employee is deputy on, linked to the team absences of the cutoff year", () => {
+		renderCard(view({ state: "scheduled", departure, deputyAbsences: 3 }));
+
+		const cover = screen.getByRole("list", { name: "Cover to rearrange" });
+		expect(
+			screen
+				.getByRole("link", { name: "Deputy on running or upcoming absences: 3" })
+				.getAttribute("href"),
+		).toBe("/team/absences?year=2026");
+		expect(cover.textContent).toContain("Deputy on running or upcoming absences: 3");
+	});
+
+	it("shows no deputy cover when the employee covers no absence", () => {
+		renderCard(view({ state: "scheduled", departure }));
+
+		expect(screen.queryByRole("list", { name: "Cover to rearrange" })).toBeNull();
 	});
 
 	it("shows no future-work list when nothing is dated after the cutoff", () => {

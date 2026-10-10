@@ -11,6 +11,7 @@ import {
 	IconUserMinus,
 	IconUserShare,
 	IconUsers,
+	IconUserX,
 	IconX,
 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -104,6 +105,12 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconX className="size-4" />,
 				bgColor: "bg-red-100 dark:bg-red-900/30",
 				iconColor: "text-red-600 dark:text-red-400",
+			};
+		case "absence_deputy_unavailable":
+			return {
+				icon: <IconUserX className="size-4" />,
+				bgColor: "bg-amber-100 dark:bg-amber-900/30",
+				iconColor: "text-amber-600 dark:text-amber-400",
 			};
 
 		// Deputy on an absence (#1013)

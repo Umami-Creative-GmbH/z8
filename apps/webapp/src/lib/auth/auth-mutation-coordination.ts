@@ -122,6 +122,7 @@ async function cleanUpRemovedMember(input: { organizationId: string; userId: str
 		completeRemovedMemberCleanupPostCommit({
 			organizationId: input.organizationId,
 			sessionTokens: outcome.sessionTokens,
+			releasedDeputies: outcome.releasedDeputies,
 		}),
 	);
 }

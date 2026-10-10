@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
@@ -12,6 +13,9 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: vi.fn() }),
+	Link: ({ children, href }: { children: ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
@@ -353,5 +357,33 @@ describe("AbsenceEntriesTable", () => {
 		expect(change).toHaveLength(1);
 		fireEvent.click(change[0] as HTMLElement);
 		expect(screen.getByText("changing the deputy of running")).toBeTruthy();
+	});
+
+	it("links the deputy's name only when the viewer may open their profile (#1012)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					buildAbsence({
+						id: "linked",
+						startDate: "2026-05-18",
+						endDate: "2026-05-22",
+						deputy: { id: "employee-2", name: "Ben Example", canOpenProfile: true },
+					}),
+					buildAbsence({
+						id: "plain",
+						startDate: "2026-06-18",
+						endDate: "2026-06-22",
+						deputy: { id: "employee-3", name: "Cleo Example", canOpenProfile: false },
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.getByRole("link", { name: "Ben Example" }).getAttribute("href")).toBe(
+			"/settings/employees/employee-2",
+		);
+		expect(screen.queryByRole("link", { name: "Cleo Example" })).toBeNull();
+		expect(screen.getByText("Cleo Example")).toBeTruthy();
 	});
 });

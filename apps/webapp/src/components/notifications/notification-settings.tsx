@@ -94,6 +94,7 @@ const NOTIFICATION_CATEGORIES = [
 			"absence_deputy_removed",
 			"absence_deputy_dates_changed",
 			"absence_deputy_reminder",
+			"absence_deputy_unavailable",
 		] as NotificationType[],
 	},
 	{
@@ -266,6 +267,8 @@ const TYPE_LABELS: Record<
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
+	// A departed or deactivated deputy was cleared from an absence
+	absence_deputy_unavailable: "Deputy no longer available",
 };
 
 // Channel icons and labels

@@ -1333,6 +1333,13 @@
       "breakpoints": true
     },
     {
+      "idx": 190,
+      "version": "7",
+      "when": 1800720000000,
+      "tag": "0190_absence_deputy_release",
+      "breakpoints": true
+    },
+    {
       "idx": 191,
       "version": "7",
       "when": 1800806400000,

@@ -33,6 +33,7 @@ import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core"
 import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
 import { ChangeDeputyDialog } from "./change-deputy-dialog";
+import { DeputyName } from "./deputy-name";
 import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
 import { AttachSickNoteDialog } from "./sick-notes/attach-sick-note-dialog";
 import { SickNoteMarker } from "./sick-notes/sick-note-marker";
@@ -202,7 +203,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 					{row.original.deputy ? (
 						<span className="text-xs">
 							<span className="text-muted-foreground">{t("absences.deputy.label", "Deputy")}</span>{" "}
-							<span className="font-medium">{row.original.deputy.name}</span>
+							<DeputyName deputy={row.original.deputy} className="font-medium" />
 						</span>
 					) : null}
 				</div>

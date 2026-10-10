@@ -77,6 +77,7 @@ function activeView(employeeId: string): EmployeeOffboardingView {
 		failedTasks: [],
 		reviews: [],
 		futureWork: { shifts: 0, absences: 0, employmentTerms: 0 },
+		deputyAbsences: 0,
 		capabilities: {
 			schedule: true,
 			cancel: false,

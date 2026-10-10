@@ -12,6 +12,7 @@ export type WidgetId =
 	| "team-overview"
 	| "quick-stats"
 	| "upcoming-shifts"
+	| "covering-for"
 	| "whos-out-today"
 	| "upcoming-time-off"
 	| "recently-approved"
@@ -32,6 +33,7 @@ export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
 	"quick-stats",
 	"upcoming-shifts",
 	"presence-status",
+	"covering-for",
 	"whos-out-today",
 	"upcoming-time-off",
 	"recently-approved",
@@ -89,6 +91,11 @@ export const WIDGET_CONFIGS: WidgetConfig[] = [
 		id: "presence-status",
 		label: "Work location",
 		labelKey: "dashboard.presence.workLocation",
+	},
+	{
+		id: "covering-for",
+		label: "Covering for",
+		labelKey: "dashboard.covering-for.title",
 	},
 	{
 		id: "whos-out-today",

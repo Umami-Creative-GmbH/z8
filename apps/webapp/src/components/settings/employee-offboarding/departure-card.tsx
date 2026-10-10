@@ -66,6 +66,7 @@ export function DepartureCard(props: DepartureCardProps) {
 
 				<FollowUpSummary followUp={followUp} />
 				<FutureWorkLinks view={view} />
+				<DeputyCoverLink view={view} />
 
 				<div className="flex flex-wrap gap-2">
 					{capabilities.schedule && (
@@ -181,6 +182,35 @@ function FollowUpSummary({ followUp }: { followUp: EmployeeOffboardingView["foll
 		<p className="text-sm" role="status">
 			{parts.join(" · ")}
 		</p>
+	);
+}
+
+/**
+ * Other employees' absences this employee is deputy on (#1014): the departure
+ * clears them, so the handover can arrange new cover beforehand. Links to the
+ * team absences of the cutoff's year, where those absences are managed.
+ */
+function DeputyCoverLink({ view }: { view: EmployeeOffboardingView }) {
+	const { t } = useTranslate();
+	const { departure, deputyAbsences } = view;
+	if (!departure || deputyAbsences <= 0) return null;
+	const year = departureCutoffDate(departure.cutoff, departure.timezone).slice(0, 4);
+	const title = t("settings.employees.offboarding.deputyCover.title", "Cover to rearrange");
+	return (
+		<div className="space-y-1 text-sm">
+			<p className="font-medium">{title}</p>
+			<ul aria-label={title} className="space-y-1">
+				<li>
+					<Link className="underline underline-offset-4" href={`/team/absences?year=${year}`}>
+						{t(
+							"settings.employees.offboarding.deputyCover.absences",
+							"Deputy on running or upcoming absences: {count}",
+							{ count: deputyAbsences },
+						)}
+					</Link>
+				</li>
+			</ul>
+		</div>
 	);
 }
 

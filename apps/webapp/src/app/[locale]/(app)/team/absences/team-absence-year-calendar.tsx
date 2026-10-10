@@ -1,15 +1,22 @@
 "use client";
 
+import { IconUserExclamation } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { useState } from "react";
+import { ChangeDeputyDialog } from "@/components/absences/change-deputy-dialog";
+import { DeputyName } from "@/components/absences/deputy-name";
 import { SickNoteMarker } from "@/components/absences/sick-notes/sick-note-marker";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { cn } from "@/lib/utils";
+import { useRouter } from "@/navigation";
 import { buildManagerAbsenceCalendarDays } from "./manager-absence-calendar-helpers";
 import type {
 	ManagerAbsenceCalendarDay,
+	ManagerAbsenceCalendarEntry,
 	ManagerAbsenceCalendarResult,
 } from "./manager-absence-types";
 
@@ -59,16 +66,22 @@ function TeamAbsenceDayDetails({
 	day,
 	date,
 	locale,
+	onChangeDeputy,
 }: {
 	dateKey: string;
 	day: ManagerAbsenceCalendarDay;
 	date: DateTime;
 	locale: string;
+	/** Offers changing the deputy of absences that have not ended (#1012). */
+	onChangeDeputy?: (entry: ManagerAbsenceCalendarEntry) => void;
 }) {
 	const { t } = useTranslate();
 
 	return (
-		<div className="space-y-2" data-testid={`team-absence-calendar-details-${dateKey}`}>
+		<div
+			className="space-y-2"
+			data-testid={onChangeDeputy ? undefined : `team-absence-calendar-details-${dateKey}`}
+		>
 			<p className="font-medium">{buildDayLabel(day, date, locale)}</p>
 			{day.entries.map((entry) => (
 				<div key={`${entry.id}-${dateKey}`} className="text-sm">
@@ -83,7 +96,33 @@ function TeamAbsenceDayDetails({
 								: t("team.absences.calendar.approved", "Approved")}
 						</span>
 					</p>
+					{entry.deputy ? (
+						<p className="text-muted-foreground">
+							<span>{t("team.absences.calendar.deputy", "Deputy:")}</span>{" "}
+							<DeputyName deputy={entry.deputy} className="text-foreground" />
+						</p>
+					) : null}
 					{entry.sickNoteCount ? <SickNoteMarker count={entry.sickNoteCount} /> : null}
+					{entry.deputyMissing ? (
+						<span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+							<IconUserExclamation aria-hidden="true" className="size-3.5" />
+							{t("team.absences.calendar.deputyMissing", "Deputy missing")}
+						</span>
+					) : null}
+					{onChangeDeputy && entry.canChangeDeputy ? (
+						<Button
+							type="button"
+							variant="link"
+							size="sm"
+							className="h-auto p-0"
+							onClick={() => onChangeDeputy(entry)}
+							aria-label={t("team.absences.calendar.changeDeputyOf", "Change deputy of {name}", {
+								name: entry.employeeName,
+							})}
+						>
+							{t("team.absences.calendar.changeDeputy", "Change deputy")}
+						</Button>
+					) : null}
 				</div>
 			))}
 		</div>
@@ -99,6 +138,7 @@ function TeamAbsenceMonth({
 	daysByDate,
 	todayDateKey,
 	locale,
+	onChangeDeputy,
 }: {
 	month: number;
 	year: number;
@@ -108,6 +148,7 @@ function TeamAbsenceMonth({
 	daysByDate: Map<string, ManagerAbsenceCalendarDay>;
 	todayDateKey: string | null;
 	locale: string;
+	onChangeDeputy: (entry: ManagerAbsenceCalendarEntry) => void;
 }) {
 	const days = getMonthDays(year, month);
 	const paddingDays = Array.from(
@@ -159,14 +200,23 @@ function TeamAbsenceMonth({
 						return <div key={dateKey}>{dayButton}</div>;
 					}
 
+					// A popover, not a tooltip: managers change a deputy from it (#1012).
 					return (
 						<div key={dateKey}>
-							<Tooltip>
-								<TooltipTrigger asChild>{dayButton}</TooltipTrigger>
-								<TooltipContent className="max-w-xs">
-									<TeamAbsenceDayDetails dateKey={dateKey} day={day} date={date} locale={locale} />
-								</TooltipContent>
-							</Tooltip>
+							<Popover>
+								<PopoverTrigger asChild openOnHover delay={150}>
+									{dayButton}
+								</PopoverTrigger>
+								<PopoverContent className="max-w-xs text-xs">
+									<TeamAbsenceDayDetails
+										dateKey={dateKey}
+										day={day}
+										date={date}
+										locale={locale}
+										onChangeDeputy={onChangeDeputy}
+									/>
+								</PopoverContent>
+							</Popover>
 							<div className="sr-only">
 								<TeamAbsenceDayDetails dateKey={dateKey} day={day} date={date} locale={locale} />
 							</div>
@@ -183,6 +233,10 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
 	const weekStartDay = useWeekStartDay();
+	const router = useRouter();
+	const [changingDeputyOf, setChangingDeputyOf] = useState<ManagerAbsenceCalendarEntry | null>(
+		null,
+	);
 	const calendarDays = buildManagerAbsenceCalendarDays(data.entries, data.year);
 	const daysByDate = new Map(calendarDays.map((day) => [day.date, day]));
 	const monthNames = [
@@ -265,23 +319,42 @@ export function TeamAbsenceYearCalendar({ data }: TeamAbsenceYearCalendarProps) 
 				</div>
 			</div>
 
-			<TooltipProvider delayDuration={150}>
-				<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-					{MONTH_NUMBERS.map((month) => (
-						<TeamAbsenceMonth
-							key={month}
-							month={month}
-							year={data.year}
-							monthName={monthNames[month - 1] ?? String(month)}
-							weekdays={weekdays}
-							weekStartDay={weekStartDay}
-							daysByDate={daysByDate}
-							todayDateKey={todayDateKey}
-							locale={locale}
-						/>
-					))}
-				</div>
-			</TooltipProvider>
+			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+				{MONTH_NUMBERS.map((month) => (
+					<TeamAbsenceMonth
+						key={month}
+						month={month}
+						year={data.year}
+						monthName={monthNames[month - 1] ?? String(month)}
+						weekdays={weekdays}
+						weekStartDay={weekStartDay}
+						daysByDate={daysByDate}
+						todayDateKey={todayDateKey}
+						locale={locale}
+						onChangeDeputy={setChangingDeputyOf}
+					/>
+				))}
+			</div>
+			{changingDeputyOf ? (
+				<ChangeDeputyDialog
+					absence={{
+						id: changingDeputyOf.id,
+						employeeId: changingDeputyOf.employeeId,
+						startDate: changingDeputyOf.startDate,
+						endDate: changingDeputyOf.endDate,
+						deputy: changingDeputyOf.deputy
+							? { id: changingDeputyOf.deputy.id, name: changingDeputyOf.deputy.name }
+							: null,
+						category: { deputyRequired: changingDeputyOf.deputyRequired ?? false },
+					}}
+					employeeName={changingDeputyOf.employeeName}
+					open
+					onOpenChange={(open) => {
+						if (!open) setChangingDeputyOf(null);
+					}}
+					onChanged={() => router.refresh()}
+				/>
+			) : null}
 		</section>
 	);
 }
