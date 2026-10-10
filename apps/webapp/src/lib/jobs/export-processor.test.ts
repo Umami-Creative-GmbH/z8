@@ -6,8 +6,8 @@ import {
 	cleanupExpiredExports,
 	getPendingExports,
 	processExport,
-	regeneratePresignedUrl,
 } from "@/lib/export/export-service";
+import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { runExportProcessor } from "./export-processor";
 
 const { infoMock, warnMock, errorMock } = vi.hoisted(() => ({
@@ -50,7 +50,10 @@ vi.mock("@/lib/export/export-service", () => ({
 	formatFileSize: (bytes: number | null) => `${bytes ?? 0} B`,
 	getPendingExports: vi.fn(),
 	processExport: vi.fn(),
-	regeneratePresignedUrl: vi.fn(),
+}));
+
+vi.mock("@/lib/notifications/recipient-locale", () => ({
+	resolveOrganizationNotificationLocale: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -66,11 +69,11 @@ const renderOrganizationEmailTemplateMock = vi.mocked(renderOrganizationEmailTem
 const getPendingExportsMock = vi.mocked(getPendingExports);
 const processExportMock = vi.mocked(processExport);
 const cleanupExpiredExportsMock = vi.mocked(cleanupExpiredExports);
-const regeneratePresignedUrlMock = vi.mocked(regeneratePresignedUrl);
 
 const findDataExportMock = vi.mocked(db.query.dataExport.findFirst);
 const findEmployeeMock = vi.mocked(db.query.employee.findFirst);
 const findOrganizationMock = vi.mocked(db.query.organization.findFirst);
+const resolveOrganizationLocaleMock = vi.mocked(resolveOrganizationNotificationLocale);
 
 describe("runExportProcessor", () => {
 	beforeEach(() => {
@@ -82,10 +85,10 @@ describe("runExportProcessor", () => {
 		getPendingExportsMock.mockReset();
 		processExportMock.mockReset();
 		cleanupExpiredExportsMock.mockReset();
-		regeneratePresignedUrlMock.mockReset();
 		findDataExportMock.mockReset();
 		findEmployeeMock.mockReset();
 		findOrganizationMock.mockReset();
+		resolveOrganizationLocaleMock.mockReset();
 
 		cleanupExpiredExportsMock.mockResolvedValue(0);
 		findEmployeeMock.mockResolvedValue({
@@ -93,6 +96,7 @@ describe("runExportProcessor", () => {
 			user: { email: "alex@example.com", name: "Alex Morgan" },
 		});
 		findOrganizationMock.mockResolvedValue({ name: "Acme Operations" });
+		resolveOrganizationLocaleMock.mockResolvedValue("en");
 		sendEmailMock.mockResolvedValue({ success: true, messageId: "msg_123" });
 	});
 
@@ -110,11 +114,14 @@ describe("runExportProcessor", () => {
 			completedAt: null,
 			expiresAt: null,
 		};
-		const completedRecord = { ...exportRecord, status: "completed" as const };
+		const completedRecord = {
+			...exportRecord,
+			status: "completed" as const,
+			expiresAt: new Date("2026-05-30T08:00:00.000Z"),
+		};
 
 		getPendingExportsMock.mockResolvedValue([exportRecord]);
 		findDataExportMock.mockResolvedValue(completedRecord);
-		regeneratePresignedUrlMock.mockResolvedValue("https://download.example.com/export_123.zip");
 		renderOrganizationEmailTemplateMock.mockResolvedValue({
 			subject: "Custom export ready",
 			html: "<p>Custom ready body</p>",
@@ -131,7 +138,7 @@ describe("runExportProcessor", () => {
 				organizationName: "Acme Operations",
 				categories: ["Time Tracking"],
 				fileSize: "2048 B",
-				downloadUrl: "https://download.example.com/export_123.zip",
+				downloadUrl: "https://app.example.com/en/settings/export/history",
 			}),
 			subjectOverride: "Your data export is ready - Acme Operations",
 		});
@@ -143,6 +150,89 @@ describe("runExportProcessor", () => {
 		});
 		expect(infoMock.mock.calls).not.toContainEqual(
 			expect.arrayContaining([expect.objectContaining({ email: "alex@example.com" })]),
+		);
+	});
+
+	it("links the export-ready email to the export history and states the file's expiry", async () => {
+		const exportRecord = {
+			id: "export_789",
+			organizationId: "org_789",
+			requestedById: "employee_789",
+			categories: ["absences"],
+			status: "pending" as const,
+			errorMessage: null,
+			s3Key: "exports/export_789.zip",
+			fileSizeBytes: 4096,
+			createdAt: new Date("2026-04-30T08:00:00.000Z"),
+			completedAt: null,
+			expiresAt: null,
+		};
+		const completedRecord = {
+			...exportRecord,
+			status: "completed" as const,
+			completedAt: new Date("2026-04-30T08:05:00.000Z"),
+			expiresAt: new Date("2026-05-30T08:05:00.000Z"),
+		};
+
+		getPendingExportsMock.mockResolvedValue([exportRecord]);
+		findDataExportMock.mockResolvedValue(completedRecord);
+		findOrganizationMock.mockResolvedValue({
+			name: "Acme Operations",
+			timezone: "Europe/Berlin",
+		});
+		resolveOrganizationLocaleMock.mockResolvedValue("de");
+		renderOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Export ready",
+			html: "<p>Ready</p>",
+			usedOverride: false,
+		});
+
+		await runExportProcessor();
+
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				templateKey: "export-ready",
+				data: expect.objectContaining({
+					downloadUrl: "https://app.example.com/de/settings/export/history",
+					expiresAt: "May 30, 2026, 10:05 (Europe/Berlin)",
+				}),
+			}),
+		);
+	});
+
+	it("states the file's expiry in UTC when the organization has no timezone", async () => {
+		const completedRecord = {
+			id: "export_790",
+			organizationId: "org_790",
+			requestedById: "employee_790",
+			categories: ["absences"],
+			status: "completed" as const,
+			errorMessage: null,
+			s3Key: "exports/export_790.zip",
+			fileSizeBytes: 4096,
+			createdAt: new Date("2026-04-30T08:00:00.000Z"),
+			completedAt: new Date("2026-04-30T08:05:00.000Z"),
+			expiresAt: new Date("2026-05-30T08:05:00.000Z"),
+		};
+
+		getPendingExportsMock.mockResolvedValue([{ ...completedRecord, status: "pending" as const }]);
+		findDataExportMock.mockResolvedValue(completedRecord);
+		findOrganizationMock.mockResolvedValue({ name: "Acme Operations", timezone: null });
+		renderOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Export ready",
+			html: "<p>Ready</p>",
+			usedOverride: false,
+		});
+
+		await runExportProcessor();
+
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					downloadUrl: "https://app.example.com/en/settings/export/history",
+					expiresAt: "May 30, 2026, 08:05 (UTC)",
+				}),
+			}),
 		);
 	});
 

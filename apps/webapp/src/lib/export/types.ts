@@ -3,6 +3,9 @@
  * This file is safe to import from client components
  */
 
+/** Locale-free settings route that opens Data Export on the Export History tab. */
+export const EXPORT_HISTORY_PATH = "/settings/export/history";
+
 export type ExportCategory =
 	| "employees"
 	| "teams"
