@@ -5,8 +5,8 @@ import {
 	RestPeriodBlocker,
 } from "@/components/compliance/compliance-alert-banner";
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
-import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
 import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
+import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
 import {
 	ActiveSessionSummary,
 	ClockActionButton,

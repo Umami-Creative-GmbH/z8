@@ -11,6 +11,7 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { autoClockOutClosureEnd } from "../automatic-clock-out/policy";
 import {
 	ClockingAccessError,
 	ClockingConflictError,
@@ -41,26 +42,7 @@ import { workCategoryIneligibility } from "../work-category-eligibility";
 import { WorkIntervalError } from "../work-duration";
 import { isWorkLocationType, type WorkLocationType } from "../work-location";
 import { isUnresolvedWorkPeriodReview } from "../work-period-review";
-import { autoClockOutClosureEnd } from "../automatic-clock-out/policy";
 import { authorizedSubject } from "./authorize";
-import {
-	BreakInProgressChangedError,
-	type BreakInProgressCommand,
-	BreakStartCollisionError,
-	type BreakStartWrite,
-	closureEnd,
-	committedResumeStart,
-	findLiveWork,
-	recordBreakInProgress,
-	replayBreakStart,
-	type ResumeBreakCommand,
-	type ResumeBreakOutcome,
-	resumesBreak,
-	type StartBreakOutcome,
-	type StartBreakRefusal,
-	settleBreakInProgress,
-	startFreshnessRefusal,
-} from "./break-in-progress";
 import {
 	type BreakClosure,
 	type BreakPlan,
@@ -69,6 +51,24 @@ import {
 	replayBreak,
 	takeBreak,
 } from "./break";
+import {
+	BreakInProgressChangedError,
+	type BreakInProgressCommand,
+	BreakStartCollisionError,
+	type BreakStartWrite,
+	closureEnd,
+	committedResumeStart,
+	findLiveWork,
+	type ResumeBreakCommand,
+	type ResumeBreakOutcome,
+	recordBreakInProgress,
+	replayBreakStart,
+	resumesBreak,
+	type StartBreakOutcome,
+	type StartBreakRefusal,
+	settleBreakInProgress,
+	startFreshnessRefusal,
+} from "./break-in-progress";
 import {
 	type ClockInPlan,
 	type ClockInStart,
@@ -95,7 +95,6 @@ import type {
 	BreakRefusal,
 	BreakStart,
 	ClockCommand,
-	ClockTarget,
 	ClockInCommand,
 	ClockInOutcome,
 	ClockInRefusal,
@@ -104,6 +103,7 @@ import type {
 	ClockOutOutcome,
 	ClockOutRefusal,
 	ClockRefusal,
+	ClockTarget,
 	OperationIdentity,
 } from "./types";
 
