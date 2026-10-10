@@ -12,6 +12,14 @@ import { createClocking } from "./clocking";
 import { afterCommitFollowUps, type ClockOutFollowUpEffects } from "./follow-ups";
 import { coordinatedTransactions } from "./transactions";
 
+export type {
+	BreakInProgressCommand,
+	ResumeBreakCommand,
+	ResumeBreakOutcome,
+	StartBreakOutcome,
+	StartBreakRefusal,
+	StartBreakResult,
+} from "./break-in-progress";
 export {
 	type Clocking,
 	type ClockLookup,

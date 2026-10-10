@@ -59,6 +59,13 @@ import {
 	type ProjectTaskIneligibility,
 	taskBookingIneligibility,
 } from "./project-eligibility";
+import {
+	KIOSK_CLOCK_WRITER_VERSION,
+	kioskDeviceInfo,
+	type ReceiptActor,
+	receiptActorColumns,
+	writerActor,
+} from "./receipt-actor";
 import { recordedTaskId, taskIdFollowingProject } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
@@ -75,12 +82,14 @@ export const DIRECT_HTTP_WRITER_VERSION = 1;
 /**
  * The adapter a live clock command arrived through; stored as device evidence.
  * `api` is direct HTTP: frozen clock commands and the legacy route's commands.
- * `employee-offboarding` is the departure's own clock-out (#485).
+ * `employee-offboarding` is the departure's own clock-out (#485). `kiosk` is kiosk
+ * clocking (#860), whose entries carry the kiosk's identity as their device.
  */
 export type ClockChannel =
 	| "web"
 	| "mobile"
 	| "api"
+	| "kiosk"
 	| "automatic-clock-out"
 	| `${BotPlatform}-bot`
 	| typeof DEPARTURE_CLOCK_OUT_WRITER.deviceInfo;
@@ -142,6 +151,8 @@ export type CloseActiveWorkWriter = {
 	deviceInfo: string;
 	/** Stored on the clock-out entry as its source address; bots record `"bot"`. */
 	ipAddress?: string | null;
+	/** The kiosk of a kiosk writer (#860): its receipts record the kiosk as actor. */
+	kioskId?: string;
 };
 
 /** The receipt writer of a live clock channel: bots share one, the platform stays in the command. */
@@ -152,6 +163,14 @@ export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter
 		return {
 			writer: "direct_http",
 			writerVersion: DIRECT_HTTP_WRITER_VERSION,
+			...clockSource(channel),
+		};
+	}
+	// A kiosk command's own writer also names its kiosk (`kioskClockWriter`).
+	if (channel === "kiosk") {
+		return {
+			writer: "kiosk_clock",
+			writerVersion: KIOSK_CLOCK_WRITER_VERSION,
 			...clockSource(channel),
 		};
 	}
@@ -188,9 +207,18 @@ export const AUTOMATIC_CLOCK_OUT_WRITER = {
 	ipAddress: null,
 } as const satisfies CloseActiveWorkWriter;
 
-export type CompletingActor =
-	| { kind: "human"; userId: string }
-	| { kind: "system"; process: "automatic_clock_out" };
+/** The receipt writer of a kiosk's clock commands (#860): its entries carry the kiosk. */
+export function kioskClockWriter(kioskId: string): CloseActiveWorkWriter {
+	return {
+		writer: "kiosk_clock",
+		writerVersion: KIOSK_CLOCK_WRITER_VERSION,
+		deviceInfo: kioskDeviceInfo(kioskId),
+		ipAddress: null,
+		kioskId,
+	};
+}
+
+export type CompletingActor = ReceiptActor;
 
 /** Versioned web request evidence. A retry must carry exactly the same command. */
 export type CloseActiveWorkCommand = CloseActiveWorkOperationCommand & {
@@ -468,11 +496,7 @@ export async function closeActiveWork(
 		commandVersion: input.command.version,
 		command: input.command,
 		appendAdmission: closed.result.append.admission,
-		actorKind: closed.result.actors.completing.kind,
-		actorUserId:
-			closed.result.actors.completing.kind === "human"
-				? closed.result.actors.completing.userId
-				: null,
+		...receiptActorColumns(closed.result.actors.completing),
 		workPeriodId: closed.result.workPeriodId,
 		resultVersion: CLOSE_ACTIVE_WORK_RESULT_VERSION,
 		result: closed.result,
@@ -694,10 +718,7 @@ export async function closeActiveWorkGraph(
 		owner: { employeeId },
 		actors: {
 			clockIn: { kind: "human", userId: clockIn.createdBy },
-			completing: input.completingActor ?? {
-				kind: "human",
-				userId: input.actorUserId,
-			},
+			completing: input.completingActor ?? writerActor(input.writer, input.actorUserId),
 		},
 		workPeriodId: period.id,
 		clockInEntryId: clockIn.id,

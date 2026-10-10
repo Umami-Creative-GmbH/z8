@@ -263,4 +263,28 @@ describe("email service system transport selection", () => {
 			}),
 		);
 	});
+
+	it("never sends to a reserved kiosk-only address, durable or not (#857)", async () => {
+		const transport = makeTransport("SMTP (System)", "system-smtp-message");
+		createSystemSmtpTransportMock.mockReturnValue(transport);
+		const { sendEmail } = await import("./email-service");
+		const reserved = {
+			to: " Kiosk-1234@KIOSK.invalid ",
+			subject: "Reset your password",
+			html: "<p>Reset</p>",
+			organizationId: "org_123",
+		};
+
+		await expect(sendEmail(reserved)).resolves.toEqual({
+			success: false,
+			unavailable: true,
+			error: "reserved_recipient",
+		});
+		await expect(sendEmail(reserved, { durable: true })).resolves.toEqual({
+			success: false,
+			unavailable: true,
+			error: "reserved_recipient",
+		});
+		expect(transport.send).not.toHaveBeenCalled();
+	});
 });

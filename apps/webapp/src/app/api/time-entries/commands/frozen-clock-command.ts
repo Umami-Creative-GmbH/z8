@@ -214,6 +214,8 @@ const FAILURE_REPLIES: Record<
 	holiday_blocked: { status: 422, code: "not_allowed_at_time" },
 	occupancy_conflict: { status: 409, code: "occupancy_conflict" },
 	under_review: { status: 409, code: "review_pending" },
+	// A break in progress is open (#861): the work is not available to this break.
+	on_break: { status: 409, code: "target_not_active" },
 	failed: { status: 500, code: "unknown" },
 	unconfirmed: { status: 500, code: "unknown" },
 };

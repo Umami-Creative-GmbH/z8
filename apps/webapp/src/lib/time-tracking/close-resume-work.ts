@@ -33,6 +33,7 @@ import {
 	findStandingClosure,
 } from "./close-active-work";
 import { findStandingStart, type StartLiveWorkResult, startLiveWorkGraph } from "./start-live-work";
+import { receiptActorColumns, writerActor } from "./receipt-actor";
 import { recordedTaskId } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
@@ -55,7 +56,8 @@ export type CloseResumeWorkResult = {
 	version: typeof CLOSE_RESUME_WORK_RESULT_VERSION;
 	operationId: string;
 	owner: { employeeId: string };
-	actor: { kind: "human"; userId: string };
+	/** A kiosk break (#860) records its kiosk, never a human authority. */
+	actor: { kind: "human"; userId: string } | { kind: "kiosk"; kioskId: string };
 	/** The target closed at the break start, as a close operation would record it. */
 	close: CloseActiveWorkResult;
 	/** The work resumed at the detected return, as a start operation would record it. */
@@ -227,7 +229,7 @@ export async function closeAndResumeWork(
 		version: CLOSE_RESUME_WORK_RESULT_VERSION,
 		operationId: command.operationId,
 		owner: { employeeId },
-		actor: { kind: "human", userId: input.actorUserId },
+		actor: writerActor(input.writer, input.actorUserId),
 		close: closed.result,
 		resume: resumed.result,
 	};
@@ -241,8 +243,7 @@ export async function closeAndResumeWork(
 		commandVersion: command.version,
 		command,
 		appendAdmission: resumed.result.append.admission,
-		actorKind: "human",
-		actorUserId: input.actorUserId,
+		...receiptActorColumns(result.actor),
 		// The source the break was bound to; the resumed period is in the result.
 		workPeriodId: closed.result.workPeriodId,
 		resultVersion: CLOSE_RESUME_WORK_RESULT_VERSION,

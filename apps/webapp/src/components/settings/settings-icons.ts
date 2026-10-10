@@ -18,6 +18,7 @@ import {
 	IconCreditCard,
 	IconDatabaseExport,
 	IconDatabaseImport,
+	IconDeviceTablet,
 	IconDroplet,
 	IconFileText,
 	IconForms,
@@ -87,5 +88,6 @@ export const SETTINGS_ICON_MAP: Record<
 	"brand-telegram": IconBrandTelegram,
 	"database-import": IconDatabaseImport,
 	receipt: IconReceipt,
+	"device-tablet": IconDeviceTablet,
 	forms: IconForms,
 };

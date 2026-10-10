@@ -39,6 +39,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"scheduled-exports/page.tsx",
 	"implementation-checklist/page.tsx",
 	"personnel-files/page.tsx",
+	"kiosks/page.tsx",
 	"custom-fields/page.tsx",
 ] as const;
 
@@ -134,6 +135,7 @@ describe("org-admin settings route access", () => {
 			"/settings/billable-time",
 			"/settings/position-capture",
 			"/settings/personnel-files",
+			"/settings/kiosks",
 			"/settings/custom-fields",
 		]);
 	});

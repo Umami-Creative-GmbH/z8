@@ -42,6 +42,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query";
 import { Link, useRouter } from "@/navigation";
+import { LocationAssignedEmployeesCard } from "./assigned-locations/location-assigned-employees-card";
 import { LocationDialog } from "./location-dialog";
 import { LocationEmployeeDialog } from "./location-employee-dialog";
 import { SubareaDialog } from "./subarea-dialog";
@@ -215,6 +216,8 @@ export function LocationDetail({
 					onAdd={() => setAddEmployeeOpen(true)}
 					onRemove={handleRemoveEmployee}
 				/>
+
+				{canManageLocations && <LocationAssignedEmployeesCard locationId={locationId} />}
 
 				<LocationSubareasCard
 					canManageLocations={canManageLocations}

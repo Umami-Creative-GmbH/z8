@@ -10,6 +10,7 @@ import {
 import { EmployeeActivityText } from "./employee-activity-text";
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "de" }),
 	useTranslate: () => ({
 		t: (
 			key: string,
@@ -153,6 +154,23 @@ describe("EmployeeActivityText", () => {
 		const activity = screen.getByText("seit 40min");
 		expect(activity.tagName).toBe("P");
 		expect(activity.className).toBe("text-xs text-muted-foreground");
+	});
+
+	it("shows a break in progress instead of the last activity (#861)", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime("2026-07-28T12:00:00Z");
+
+		render(
+			<EmployeeActivityText
+				lastActivityAt="2026-07-28T07:20:00Z"
+				lastActivityUtcOffsetMinutes={120}
+				breakStartedAt="2026-07-28T09:45:00Z"
+				breakStartedZone="Europe/Berlin"
+			/>,
+		);
+
+		expect(screen.getByText("On break since 11:45")).toBeTruthy();
+		expect(screen.queryByText(/seit/)).toBeNull();
 	});
 
 	it("renders nothing when activity metadata is incomplete", () => {

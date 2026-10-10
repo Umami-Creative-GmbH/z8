@@ -23,7 +23,7 @@ import { type ClosedLiveWork, durableFollowUps } from "../clocking/follow-ups";
 import { automaticClockOutTransactions } from "../clocking/transactions";
 import { runWorkTransaction, type WorkTransactionClient } from "../work-transaction";
 import { deriveAutoClockOutOperationId } from "./identity";
-import { autoClockOutCutoff } from "./policy";
+import { autoClockOutClosureEnd, autoClockOutCutoff } from "./policy";
 import { loadAutoClockOutSettings } from "./settings";
 import type { AutoClockOutCandidate, AutoClockOutDecision, AutoClockOutOutcome } from "./types";
 
@@ -178,11 +178,19 @@ export function createAutoClockOutCommands(deps: { database: typeof db; clock: C
 						)
 						.limit(1);
 					if (opening?.type !== "clock_in") return { status: "deferred", reason: "collision" };
+					// A forgotten break in progress ends the work at its start (#861); the
+					// closure is still due at the cutoff, which the execution keeps.
+					const breakStart = period.breakStartedAt
+						? instantFromDate(period.breakStartedAt)
+						: null;
 					const confirmed = {
 						...candidate,
 						settings,
 						start,
 						cutoff,
+						...(breakStart && compareInstants(breakStart, cutoff) < 0
+							? { closesAt: breakStart }
+							: {}),
 						timezone: resolveEffectiveTimezone(target.userTimezone, target.organizationTimezone),
 						provenanceUserId: opening.createdBy,
 					};
@@ -266,7 +274,7 @@ export function createAutoClockOutCommands(deps: { database: typeof db; clock: C
 						subject: { employeeId: candidate.employeeId },
 						identity: { origin: "derived", id: decision.operationId },
 						channel: "automatic-clock-out",
-						at: { kind: "occurred", instant: cutoff },
+						at: { kind: "occurred", instant: autoClockOutClosureEnd(decision) },
 						zone: { device: null, fallback: decision.timezone },
 						body: {
 							kind: "clock_out",

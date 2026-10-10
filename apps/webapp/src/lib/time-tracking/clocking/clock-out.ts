@@ -26,7 +26,6 @@ import {
 	CompletedWorkCollisionError,
 	closeActiveWork,
 	DEPARTURE_CLOCK_OUT_WRITER,
-	liveClockOutWriter,
 	MANAGER_ON_BEHALF_WRITER,
 	replayCloseActiveWork,
 	resolveTaskAttribution,
@@ -51,6 +50,7 @@ import {
 	isFrozen,
 	receiptCommandOf,
 } from "./frozen";
+import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
 import type { ClockOutCommand, ClockOutResult } from "./types";
 
@@ -190,12 +190,13 @@ export function planClockOut(command: ClockOutCommand, employee: Employee): Cloc
 		requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
 		browserTimezone: zone.device,
 		deviceInfo: channel,
+		...kioskReceiptEvidence(command),
 	};
 	return {
 		command,
 		employee,
 		receiptCommand: receiptCommandOf<CloseActiveWorkOperationCommand>(command, receiptCommand),
-		writer: liveClockOutWriter(channel),
+		writer: clockWriterOf(command),
 	};
 }
 
@@ -209,7 +210,9 @@ function receiptReplay(plan: ClockOutPlan, receipt: CloseActiveWorkReceipt): Clo
 	if (
 		principal.kind === "automatic_clock_out"
 			? actor.kind !== "system" || actor.process !== "automatic_clock_out"
-			: actor.kind !== "human" || actor.userId !== principal.userId
+			: principal.kind === "kiosk"
+				? actor.kind !== "kiosk" || actor.kioskId !== principal.kioskId
+				: actor.kind !== "human" || actor.userId !== principal.userId
 	) {
 		throw new CompletedWorkCollisionError();
 	}
@@ -493,7 +496,11 @@ async function closeLegacyClockOut(
 	);
 	const endTime = dateFromInstant(eventInstant);
 	let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
-	const closer = command.principal.kind !== "user" ? enlistedLegacyClocking : clockingService;
+	// Only the enlisted system principals close through the enlisted closer.
+	const closer =
+		command.principal.kind === "departure" || command.principal.kind === "automatic_clock_out"
+			? enlistedLegacyClocking
+			: clockingService;
 	const closed = await closer.clockOut({
 		coordination,
 		actionId: command.identity.id,
@@ -577,7 +584,12 @@ async function closeLegacyClockOut(
 }
 
 function completingActor(command: ClockOutCommand) {
-	return command.principal.kind === "automatic_clock_out"
-		? { kind: "system" as const, process: "automatic_clock_out" as const }
+	const { principal } = command;
+	if (principal.kind === "automatic_clock_out") {
+		return { kind: "system" as const, process: "automatic_clock_out" as const };
+	}
+	// A kiosk acts as itself: the employee's user is provenance only (#860).
+	return principal.kind === "kiosk"
+		? { kind: "kiosk" as const, kioskId: principal.kioskId }
 		: undefined;
 }
