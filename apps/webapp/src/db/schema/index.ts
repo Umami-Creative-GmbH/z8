@@ -113,6 +113,7 @@ export * from "./travel-expense-export";
 export * from "./travel-expense-adjustment";
 export * from "./expense-officer";
 export * from "./position-capture";
+export * from "./kiosk";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";
