@@ -18,7 +18,8 @@
         "absences": "Nieobecności",
         "employees": "Pracownicy",
         "projects": "Projekty",
-        "timeEntries": "Wpisy czasu"
+        "timeEntries": "Wpisy czasu",
+        "workPeriods": "Okresy pracy (z projektem i zadaniem)"
       },
       "dateRange": {
         "customOffset": "Niestandardowe przesunięcie",

@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} dzień pracy zdalnej",
       "hoursPerCycle": "Godziny na cykl",
       "hoursUnit": "godziny",
+      "latestClockIn": {
+        "dayLabel": "Najpóźniejsza godzina rozpoczęcia pracy w {day}",
+        "description": "Opcjonalna najpóźniejsza godzina rozpoczęcia pracy na dzień roboczy: w dniach bez zmiany pracownicy, którzy do tego czasu nie zarejestrują rozpoczęcia pracy, mogą otrzymać przypomnienie.",
+        "label": "Najpóźniejsza godzina rozpoczęcia pracy",
+        "simpleHint": "Ustawienie najpóźniejszej godziny rozpoczęcia pracy w poszczególne dni wymaga szczegółowego harmonogramu. Przełącz na Szczegółowy, aby ją ustawić."
+      },
       "monthly": "Miesięcznie",
       "preview": "Podgląd harmonogramu",
       "scheduleCycle": "Cykl harmonogramu",

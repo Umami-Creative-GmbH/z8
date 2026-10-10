@@ -14,6 +14,37 @@
       "saving": "Salvataggio in corso…",
       "title": "Timbratura di uscita automatica"
     },
+    "clockingReminders": {
+      "adminOnly": "Solo gli amministratori e i proprietari dell'organizzazione possono modificare queste impostazioni.",
+      "breakDue": {
+        "enabled": "Promemoria pausa prevista",
+        "lead": "Minuti prima della pausa prevista"
+      },
+      "description": "Invia un promemoria ai dipendenti quando non hanno timbrato l'entrata entro l'inizio del turno pubblicato, risultano ancora al lavoro dopo la fine del turno o stanno per lavorare più a lungo di quanto consentito dalle policy aziendali senza fare una pausa.",
+      "forgottenClockOut": {
+        "enabled": "Promemoria timbratura di uscita dimenticata",
+        "grace": "Minuti dopo l'orario di fine previsto"
+      },
+      "help": "I controlli vengono eseguiti ogni cinque minuti. Gli orari seguono il fuso orario di ciascun dipendente. Ogni promemoria viene inviato una sola volta per turno, oppure una volta per regola di pausa mentre la timbratura è attiva, all'interno dell'app e tramite notifica push, a meno che il dipendente non modifichi le proprie preferenze di notifica. Non viene inviato alcun promemoria di mancata timbratura di entrata in caso di assenza approvata o giorno festivo.",
+      "invalidLeadMinutes": "Inserisci un numero intero di minuti da 1 a 1440 prima della pausa prevista.",
+      "invalidMinutes": "Inserisci un numero intero di minuti da 0 a 1440.",
+      "missedClockIn": {
+        "enabled": "Promemoria mancata timbratura di entrata",
+        "grace": "Minuti dopo l'orario di inizio previsto"
+      },
+      "noRoles": "Scegli almeno un ruolo che deve ricevere i promemoria.",
+      "roles": {
+        "admin": "Amministratori",
+        "employee": "Dipendenti",
+        "label": "Invia promemoria a questi ruoli",
+        "manager": "Manager"
+      },
+      "save": "Salva modifiche",
+      "saved": "Impostazioni dei promemoria di timbratura salvate",
+      "saveFailed": "Impossibile aggiornare le impostazioni del promemoria di timbratura",
+      "saving": "Salvataggio…",
+      "title": "Promemoria di timbratura"
+    },
     "create": "Crea organizzazione",
     "createDialog": {
       "description": "Configura la tua organizzazione per iniziare",
@@ -72,12 +103,19 @@
       "demo-data-description": "Consenti agli amministratori di generare e cancellare dati di esempio dell'organizzazione per i test.",
       "description": "Abilita o disabilita funzionalità opzionali per la tua organizzazione",
       "owner-only": "Solo i proprietari dell'organizzazione possono modificare le impostazioni delle funzionalità.",
+      "owner-only-except-personnel-files": "Solo i proprietari dell'organizzazione possono modificare le impostazioni delle funzionalità, ad eccezione dei fascicoli del personale.",
+      "personnel-files": "Fascicoli del personale",
+      "personnel-files-description": "Conserva contratti, buste paga, certificati e altri documenti dei dipendenti in un fascicolo per ciascun dipendente.",
+      "personnel-files-disable-confirm": "Disattiva",
+      "personnel-files-disable-description": "Le pagine e i download dei fascicoli del personale sono nascosti a tutti. I documenti rimangono archiviati e continuano a essere considerati ai fini della conservazione. Riattivando i fascicoli del personale verrà ripristinato tutto.",
+      "personnel-files-disable-title": "Disattivare i fascicoli del personale?",
       "projects": "Progetti",
       "projects-description": "Assegna voci di tempo ai progetti, monitora budget e scadenze, e genera report di progetto.",
       "surcharges": "Supplementi",
       "surcharges-description": "Configura supplementi di tempo per straordinari, lavoro notturno, fine settimana e festività.",
       "title": "Funzionalità",
       "toggle-demo-data": "Attiva/disattiva dati demo",
+      "toggle-personnel-files": "Attiva/disattiva fascicoli del personale",
       "toggle-projects": "Attiva/disattiva progetti",
       "toggle-surcharges": "Attiva/disattiva supplementi",
       "toggle-works-council": "Attiva/disattiva Consiglio di fabbrica",

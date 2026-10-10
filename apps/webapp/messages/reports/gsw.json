@@ -196,6 +196,20 @@
         "team": "Team",
         "viewProject": "Projektdetails aaluege"
       },
+      "task": {
+        "description": "Buchte Stunde pro Ufgab i dere Periode. De gschätzti Fortschritt zellt jedi Stund, wo uf d Ufgab buecht worde isch.",
+        "done": "Fertig",
+        "estimate": "Gschätzte Fortschritt",
+        "estimateProgress": "{booked}h vo {estimate}h ({percent})",
+        "hours": "Stunde",
+        "hoursValue": "{hours}h",
+        "noTask": "Kä Ufgab",
+        "noTime": "I dere Periode isch kei Ziit uf das Projekt buecht worde",
+        "share": "Teile",
+        "task": "Ufgab",
+        "title": "Nach Ufgab",
+        "unknown": "Unbekannti Ufgab"
+      },
       "team": {
         "byEmployee": "Nach Mitarbeiter",
         "byTeam": "Nach Team",

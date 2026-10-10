@@ -14,6 +14,37 @@
       "saving": "Kaydediliyor…",
       "title": "Otomatik çıkış"
     },
+    "clockingReminders": {
+      "adminOnly": "Bu ayarları yalnızca kuruluş yöneticileri ve sahipleri değiştirebilir.",
+      "breakDue": {
+        "enabled": "Mola vakti hatırlatıcısı",
+        "lead": "Mola vaktinden önceki dakika sayısı"
+      },
+      "description": "Çalışanlara yayınlanan vardiyalarının başlangıcında giriş yapmadıklarında, vardiya bittikten sonra hâlâ çıkış yapmadıklarında veya çalışma politikalarının izin verdiğinden daha uzun süre mola vermeden çalışmak üzere olduklarında hatırlatma gönderin.",
+      "forgottenClockOut": {
+        "enabled": "Unutulan çıkış hatırlatıcısı",
+        "grace": "Beklenen bitişten sonraki dakika sayısı"
+      },
+      "help": "Kontroller her beş dakikada bir çalışır. Saatler her çalışanın saat dilimine göredir. Çalışan bildirim tercihlerini değiştirmediği sürece her hatırlatma vardiya başına bir kez veya giriş yapılmış durumdayken mola kuralı başına bir kez uygulama içi ve anlık bildirim olarak gönderilir. Onaylanmış bir izin veya resmî tatil gününde kaçırılan giriş hatırlatıcısı gönderilmez.",
+      "invalidLeadMinutes": "Mola vaktinden önce 1 ile 1440 arasında tam dakika girin.",
+      "invalidMinutes": "0 ile 1440 arasında tam dakika girin.",
+      "missedClockIn": {
+        "enabled": "Kaçırılan giriş hatırlatıcısı",
+        "grace": "Beklenen başlangıçtan sonraki dakika sayısı"
+      },
+      "noRoles": "Hatırlatıcıları alacak en az bir rol seçin.",
+      "roles": {
+        "admin": "Yöneticiler",
+        "employee": "Çalışanlar",
+        "label": "Bu rollere hatırlat",
+        "manager": "Müdürler"
+      },
+      "save": "Değişiklikleri kaydet",
+      "saved": "Giriş/çıkış hatırlatıcı ayarları kaydedildi",
+      "saveFailed": "Giriş/çıkış hatırlatıcı ayarları güncellenemedi",
+      "saving": "Kaydediliyor…",
+      "title": "Giriş/çıkış hatırlatıcıları"
+    },
     "create": "Kuruluş Oluştur",
     "createDialog": {
       "description": "Başlamak için kuruluşunuzu ayarlayın",
@@ -72,12 +103,19 @@
       "demo-data-description": "Yöneticilerin test amacıyla örnek kuruluş verileri oluşturmasına ve temizlemesine izin verin.",
       "description": "Kuruluşunuz için isteğe bağlı özellikleri etkinleştirin veya devre dışı bırakın",
       "owner-only": "Sadece kuruluş sahipleri özellik ayarlarını değiştirebilir.",
+      "owner-only-except-personnel-files": "Özlük dosyaları hariç, özellik ayarlarını yalnızca kuruluş sahipleri değiştirebilir.",
+      "personnel-files": "Özlük Dosyaları",
+      "personnel-files-description": "Sözleşmeleri, bordroları, sertifikaları ve diğer çalışan belgelerini çalışan başına bir özlük dosyasında saklayın.",
+      "personnel-files-disable-confirm": "Kapat",
+      "personnel-files-disable-description": "Özlük dosyası sayfaları ve indirmeler herkes için gizlenir. Belgeler saklanmaya devam eder ve saklama süresi kapsamında sayılır. Özlük dosyalarını tekrar açmak her şeyi geri yükler.",
+      "personnel-files-disable-title": "Özlük dosyaları kapatılsın mı?",
       "projects": "Projeler",
       "projects-description": "Zaman kayıtlarını projelere atayın, bütçeleri ve teslim tarihlerini takip edin ve proje raporları oluşturun.",
       "surcharges": "Ek Ücretler",
       "surcharges-description": "Fazla mesai, gece çalışması, hafta sonları ve tatiller için zaman ek ücretlerini yapılandırın.",
       "title": "Özellikler",
       "toggle-demo-data": "Demo verilerini aç/kapat",
+      "toggle-personnel-files": "Özlük dosyalarını aç/kapat",
       "toggle-projects": "Projeleri aç/kapat",
       "toggle-surcharges": "Ek ücretleri aç/kapat",
       "toggle-works-council": "İş Konseyini Aç/Kapat",

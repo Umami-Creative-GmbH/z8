@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} giorno di lavoro da casa",
       "hoursPerCycle": "Ore per ciclo",
       "hoursUnit": "ore",
+      "latestClockIn": {
+        "dayLabel": "Ultima timbratura in entrata il {day}",
+        "description": "Orario limite facoltativo per la timbratura in entrata per giorno lavorativo: nei giorni senza turno, i dipendenti che non hanno timbrato l'entrata entro tale orario possono ricevere un promemoria.",
+        "label": "Ultima timbratura in entrata",
+        "simpleHint": "L'orario limite di timbratura in entrata giornaliero richiede una pianificazione dettagliata. Passa a Dettagliata per impostarne uno."
+      },
       "monthly": "Mensile",
       "preview": "Anteprima orario",
       "scheduleCycle": "Ciclo di pianificazione",

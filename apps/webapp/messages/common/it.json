@@ -320,6 +320,40 @@
       "pagination": "paginazione"
     },
     "pending": "In sospeso",
+    "positionCaptureErrors": {
+      "adminOnly": "Solo i proprietari e gli amministratori dell'organizzazione possono gestire il rilevamento della posizione.",
+      "assignmentNotFound": "Questa assegnazione non esiste più.",
+      "employeeNotFound": "Questo dipendente non è stato trovato.",
+      "employeeProfileRequired": "È richiesto un profilo dipendente in questa organizzazione.",
+      "invalidTarget": "Scegli a chi applicare l'assegnazione.",
+      "noticeChanged": "L'informativa sulla posizione è cambiata. Consulta l'informativa attuale prima di decidere.",
+      "positionsForbidden": "Non sei autorizzato a visualizzare le posizioni di questo periodo di lavoro.",
+      "purposeRequired": "È richiesta una dichiarazione di finalità prima di poter attivare il rilevamento della posizione.",
+      "purposeTooLong": "La dichiarazione di finalità è troppo lunga.",
+      "retentionOutOfRange": "Il periodo di conservazione deve essere un numero intero di giorni compreso tra {min} e {max}.",
+      "signInRequired": "Accedi prima a un'organizzazione.",
+      "teamNotFound": "Questo team non è stato trovato.",
+      "workPeriodNotFound": "Questo periodo di lavoro non è stato trovato."
+    },
+    "positionConsent": {
+      "agree": "Accetta",
+      "description": "La tua organizzazione chiede di registrare la posizione del tuo dispositivo quando timbri l'entrata, l'uscita o fai una pausa. La tua timbratura è stata comunque registrata. Se accetti, le posizioni verranno registrate a partire dalla prossima timbratura.",
+      "notNow": "Non ora",
+      "title": "Registrare la tua posizione con le timbrature?"
+    },
+    "positionNotice": {
+      "never": "Le uscite timbrate per te da qualcun altro, le uscite automatiche, le importazioni e le correzioni non contengono mai una posizione. Se il tuo dispositivo non è in grado di fornire una posizione, la timbratura viene registrata senza di essa e non viene registrato alcun motivo.",
+      "purposeTitle": "Perché la tua organizzazione registra le posizioni",
+      "retention": "{days, plural, one {Ogni posizione viene eliminata # giorno dopo essere stata registrata. Le tue timbrature rimangono.} other {Ogni posizione viene eliminata # giorni dopo essere stata registrata. Le tue timbrature rimangono.}}",
+      "retentionTitle": "Per quanto tempo vengono conservate le posizioni",
+      "version": "Informativa sulla posizione, versione {version}",
+      "viewers": "Puoi vedere le tue posizioni. I proprietari e gli amministratori dell'organizzazione, e le persone a cui è stata concessa un'autorizzazione esplicita, possono vederle per un singolo periodo di lavoro, e ogni visualizzazione di questo tipo viene registrata affinché tu possa vederla. Essere il tuo responsabile non dà accesso. Il comitato aziendale non vede mai le singole posizioni.",
+      "viewersTitle": "Chi può vedere le posizioni",
+      "what": "Quando timbri l'entrata, l'uscita, inizi o finisci una pausa nell'app web Z8 sul tuo dispositivo, la posizione del dispositivo viene registrata con tale timbratura: latitudine, longitudine, precisione della posizione e momento in cui il dispositivo l'ha determinata. Non vengono registrati indirizzo, altitudine o velocità, né viene registrato alcunché tra una timbratura e l'altra.",
+      "whatTitle": "Cosa viene registrato",
+      "withdraw": "Le posizioni vengono registrate solo se acconsenti. Puoi revocare il consenso in qualsiasi momento in Impostazioni, Rilevamenti di posizione. La revoca interrompe la registrazione ed elimina immediatamente tutte le posizioni registrate. Il tuo consenso non ha alcun effetto sulle timbrature.",
+      "withdrawTitle": "La tua scelta"
+    },
     "present": "Presente",
     "previous": "Precedente",
     "recovering": "Ripristino in corso...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identità nascosta",
       "insufficientData": "Dati insufficienti",
       "policyChanges": "Modifiche ai criteri",
+      "positionStamps": {
+        "accessAt": "Quando",
+        "accessEmployees": "Posizioni di",
+        "accessKindDetail": "{count, plural, one {Dettaglio periodo di lavoro (# periodo di lavoro)} other {Dettaglio periodo di lavoro (# periodi di lavoro)}}",
+        "accessKindExport": "Esportazione dati",
+        "accessLog": "Registro degli accessi alla posizione",
+        "accessLogDescription": "Ogni volta che qualcuno diverso dal dipendente ha visualizzato o esportato le posizioni, a partire dalla più recente.",
+        "accessLogEmpty": "Nessuno ha visualizzato le posizioni.",
+        "accessViewer": "Visualizzato da",
+        "consentActive": "Consenso attivo",
+        "consentDescription": "{count, plural, one {Tra il # dipendente attivo per cui l'acquisizione è attivata. Tra gli indecisi sono inclusi i dipendenti che hanno scelto Non ora o che hanno acconsentito solo a una versione precedente dell'informativa.} other {Tra i # dipendenti attivi per cui l'acquisizione è attivata. Tra gli indecisi sono inclusi i dipendenti che hanno scelto Non ora o che hanno acconsentito solo a una versione precedente dell'informativa.}}",
+        "consentTitle": "Consenso alla posizione",
+        "consentUndecided": "Indeciso",
+        "consentWithdrawn": "Revocato",
+        "currentNotice": "Informativa attuale",
+        "deletedViewer": "Un utente eliminato",
+        "description": "Le modalità con cui l'organizzazione registra le posizioni dei dipendenti con le timbrature e chi le ha visualizzate. Il comitato aziendale non vede mai le singole posizioni.",
+        "employeeAssignmentCounts": "{on} attivati, {off} disattivati singolarmente",
+        "employeeAssignments": "Assegnazioni dipendenti",
+        "employeeCount": "{count, plural, one {# dipendente} other {# dipendenti}}",
+        "employeePseudonym": "Dipendente {ref}",
+        "enabled": "Acquisizione",
+        "noEmployeeAssignments": "Nessuna assegnazione di dipendenti.",
+        "noNotice": "Nessuna informativa pubblicata.",
+        "notAssigned": "Non assegnato",
+        "noTeamAssignments": "Nessuna assegnazione di team.",
+        "noticeHistory": "Versioni dell'informativa",
+        "noticeVersion": "{days, plural, one {Versione {version}, pubblicata il {publishedAt}, posizioni conservate per # giorno} other {Versione {version}, pubblicata il {publishedAt}, posizioni conservate per # giorni}}",
+        "off": "Disattivato",
+        "on": "Attivato",
+        "organizationAssignment": "Intera organizzazione",
+        "retention": "Conservazione",
+        "retentionDays": "{days, plural, one {# giorno} other {# giorni}}",
+        "teamAssignments": "Assegnazioni team",
+        "title": "Rilevamento posizione",
+        "viewerPseudonym": "Visualizzatore {ref}"
+      },
       "scheduleChanges": "Modifiche alla pianificazione",
       "scheduleDescription": "Voci di pianificazione filtrate per la privacy per il periodo selezionato.",
       "scheduleEmpty": "Nessuna voce di pianificazione trovata per questo periodo.",
@@ -505,9 +576,11 @@
     "finance": "Finanza",
     "financeAwaiting": "{count, plural, one {# spesa in attesa di rimborso} other {# spese in attesa di rimborso}}",
     "get-help": "Ottieni Aiuto",
+    "my-documents": "I miei documenti",
     "my-requests": "Le mie richieste",
     "org-explorer": "Esplora organizzazione",
     "payroll": "Paghe",
+    "personnel-files": "Fascicoli del personale",
     "platform-admin": "Amministratore piattaforma",
     "reports": "Rapporti",
     "scheduling": "Pianificazione",
@@ -545,6 +618,10 @@
         "message": "La timbratura di uscita è stata registrata automaticamente dopo {duration} minuti di lavoro ininterrotto alle {cutoff} ({timezone}) perché è stato raggiunto il limite di tempo della tua organizzazione.",
         "title": "Uscita registrata automaticamente"
       },
+      "breakDueReminder": {
+        "message": "La tua pausa è prevista per le {breakTime} ({timezone}). Fai una pausa entro tale orario per rispettare le regole aziendali sulle pause.",
+        "title": "È quasi ora di una pausa"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Le mansioni di approvazione richiedono un sostituto (uscita effettiva il {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Da verificare: timbratura di uscita per offboarding (uscita effettiva il {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Il lavoro futuro richiede una revisione (uscita effettiva il {cutoff}, {timezone}).",
         "title": "L'offboarding del dipendente richiede una revisione"
       },
+      "forgottenClockOutReminder": {
+        "message": "Il tuo turno è terminato alle {endTime} ({timezone}). Timbra l'uscita se hai finito di lavorare.",
+        "title": "Risulti ancora al lavoro"
+      },
+      "missedClockInReminder": {
+        "message": "Il tuo turno è iniziato alle {startTime} ({timezone}). Timbra l'entrata se stai lavorando.",
+        "title": "Non hai ancora timbrato l'entrata"
+      },
       "newAbsenceRequest": {
         "title": "Nuova richiesta di assenza"
       },
       "passwordChanged": {
         "message": "La tua password è stata modificata correttamente. Se non hai effettuato questa modifica, contatta immediatamente l'assistenza.",
         "title": "Password modificata"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Il documento \"{title}\" è stato condiviso con te.",
+        "title": "Nuovo documento nel tuo fascicolo personale"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# documento del dipendente deve essere eliminato. Rivedi e conferma l'eliminazione definitiva.} other {# documenti dei dipendenti devono essere eliminati. Rivedi e conferma l'eliminazione definitiva.}}",
+        "title": "Documenti da eliminare"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} ha caricato un certificato",
+        "other": "{name} ha caricato un documento",
+        "title": "Nuovo documento in un fascicolo del personale"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Il tuo documento \"{title}\" scade oggi.",
+        "message": "Il documento \"{title}\" di {employee} scade oggi.",
+        "title": "Un documento scade oggi"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Il tuo documento \"{title}\" scade il {expiryDate}.",
+        "message": "Il documento \"{title}\" di {employee} scade il {expiryDate}.",
+        "title": "Un documento scade a breve"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "La tua busta paga per {payPeriod} è stata condivisa con te.",
+        "title": "Nuova busta paga nel tuo fascicolo personale"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Hai raggiunto le ore richieste per {day} alle {endTime} ({timezone}). Timbra l'uscita se hai terminato di lavorare."
+      },
+      "policyMissedClockInReminder": {
+        "message": "La tua ultima timbratura di entrata oggi è stata alle {startTime} ({timezone}). Timbra l'entrata se stai lavorando."
       },
       "shiftAssigned": {
         "message": "Ti è stato assegnato un turno il {shiftDate} dalle {startTime} alle {endTime} da {assignedByName}.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Notifiche relative ai documenti condivisi con te nel tuo fascicolo personale",
+          "title": "Fascicolo personale"
+        },
         "travelExpenses": {
           "description": "Notifiche su rimborsi e recuperi delle tue spese di viaggio",
           "title": "Spese di viaggio"
@@ -646,6 +768,11 @@
         "errorToast": "Errore notifica push"
       },
       "toggleAria": "Notifiche {channel} per {type}",
+      "types": {
+        "break_due_reminder": "Pausa prevista",
+        "forgotten_clock_out_reminder": "Timbratura di uscita dimenticata",
+        "missed_clock_in_reminder": "Mancata timbratura di entrata"
+      },
       "updateFailed": "Aggiornamento preferenza non riuscito"
     },
     "search": {

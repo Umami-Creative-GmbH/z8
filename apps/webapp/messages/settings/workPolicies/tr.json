@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} evden çalışma",
       "hoursPerCycle": "Döngü Başına Saat",
       "hoursUnit": "saat",
+      "latestClockIn": {
+        "dayLabel": "{day} günü en geç giriş saati",
+        "description": "Çalışma günü başına isteğe bağlı en geç giriş saati: Vardiyasız günlerde, o saate kadar giriş yapmamış olan çalışanlara hatırlatma gönderilebilir.",
+        "label": "En geç giriş saati",
+        "simpleHint": "Günlük en geç giriş saati için ayrıntılı bir çalışma programı gerekir. Ayarlamak için Ayrıntılı seçeneğine geçin."
+      },
       "monthly": "Aylık",
       "preview": "Program Önizlemesi",
       "scheduleCycle": "Program döngüsü",

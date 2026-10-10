@@ -196,6 +196,20 @@
         "team": "Team",
         "viewProject": "Visualizza dettagli progetto"
       },
+      "task": {
+        "description": "Ore registrate per ogni attività in questo periodo. L'avanzamento stimato conteggia ogni ora registrata per l'attività.",
+        "done": "Completato",
+        "estimate": "Avanzamento stimato",
+        "estimateProgress": "{booked}h su {estimate}h ({percent})",
+        "hours": "Ore",
+        "hoursValue": "{hours}h",
+        "noTask": "Nessuna attività",
+        "noTime": "Non sono state registrate ore per questo progetto in questo periodo",
+        "share": "Condividi",
+        "task": "Attività",
+        "title": "Per attività",
+        "unknown": "Attività sconosciuta"
+      },
       "team": {
         "byEmployee": "Per dipendente",
         "byTeam": "Per team",

@@ -196,6 +196,20 @@
         "team": "Équipe",
         "viewProject": "Voir les détails du projet"
       },
+      "task": {
+        "description": "Heures imputées à chaque tâche sur cette période. L'avancement estimé comptabilise chaque heure imputée à la tâche.",
+        "done": "Terminé",
+        "estimate": "Avancement estimé",
+        "estimateProgress": "{booked}h sur {estimate}h ({percent})",
+        "hours": "Heures",
+        "hoursValue": "{hours}h",
+        "noTask": "Aucune tâche",
+        "noTime": "Aucun temps n'a été imputé à ce projet sur cette période",
+        "share": "Partager",
+        "task": "Tâche",
+        "title": "Par tâche",
+        "unknown": "Tâche inconnue"
+      },
       "team": {
         "byEmployee": "Par employé",
         "byTeam": "Par équipe",

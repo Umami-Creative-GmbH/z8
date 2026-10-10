@@ -320,6 +320,40 @@
       "pagination": "paginering"
     },
     "pending": "Ventende",
+    "positionCaptureErrors": {
+      "adminOnly": "Bare organisasjonseiere og -administratorer kan administrere posisjonsregistrering.",
+      "assignmentNotFound": "Dette oppdraget finnes ikke lenger.",
+      "employeeNotFound": "Denne ansatte ble ikke funnet.",
+      "employeeProfileRequired": "En ansattprofil i denne organisasjonen er påkrevd.",
+      "invalidTarget": "Velg hvem oppdraget gjelder for.",
+      "noticeChanged": "Posisjonsvarselet er endret. Se gjennom det gjeldende varselet før du bestemmer deg.",
+      "positionsForbidden": "Du har ikke tillatelse til å se posisjonene for denne arbeidsperioden.",
+      "purposeRequired": "En formålsbeskrivelse er påkrevd før posisjonsregistrering kan slås på.",
+      "purposeTooLong": "Formålsbeskrivelsen er for lang.",
+      "retentionOutOfRange": "Oppbevaringstiden må være et helt antall dager mellom {min} og {max}.",
+      "signInRequired": "Logg inn på en organisasjon først.",
+      "teamNotFound": "Dette teamet ble ikke funnet.",
+      "workPeriodNotFound": "Denne arbeidsperioden ble ikke funnet."
+    },
+    "positionConsent": {
+      "agree": "Godta",
+      "description": "Organisasjonen din ber om å registrere enhetens posisjon når du stempler inn, stempler ut eller tar en pause. Stemplingen din er uansett registrert. Hvis du samtykker, registreres posisjoner fra neste stempling.",
+      "notNow": "Ikke nå",
+      "title": "Registrere posisjonen din ved stemplinger?"
+    },
+    "positionNotice": {
+      "never": "Utstemplinger utført for deg av andre, automatiske utstemplinger, importeringer og korrigeringer inneholder aldri en posisjon. Hvis enheten din ikke kan oppgi en posisjon, registreres stemplingen uten, og ingenting registrerer hvorfor.",
+      "purposeTitle": "Hvorfor organisasjonen din registrerer posisjoner",
+      "retention": "{days, plural, one {Hver posisjon slettes # dag etter at den ble registrert. Stemplingene dine beholdes.} other {Hver posisjon slettes # dager etter at den ble registrert. Stemplingene dine beholdes.}}",
+      "retentionTitle": "Hvor lenge posisjoner beholdes",
+      "version": "Posisjonsvarsel, versjon {version}",
+      "viewers": "Du kan se dine egne posisjoner. Organisasjonseiere og -administratorer, samt personer som uttrykkelig har fått tillatelse, kan se dem for en enkelt arbeidsperiode, og enhver slik visning loggføres så du kan se det. Å være lederen din gir ikke tilgang. Bedriftsutvalget ser aldri individuelle posisjoner.",
+      "viewersTitle": "Hvem som kan se posisjoner",
+      "what": "Når du stempler inn, stempler ut, starter eller avslutter en pause i Z8-nettappen på enheten din, registreres posisjonen til enheten sammen med stemplingen: breddegrad, lengdegrad, hvor nøyaktig posisjonen er og når enheten fastslo den. Ingen adresse, høyde eller hastighet registreres, og ingenting registreres mellom stemplinger.",
+      "whatTitle": "Hva som registreres",
+      "withdraw": "Posisjoner registreres bare så lenge du samtykker. Du kan når som helst trekke samtykket under Innstillinger, Posisjonsstempler. Å trekke samtykket stopper registreringen og sletter umiddelbart alle dine registrerte posisjoner. Hvorvidt du samtykker har ingen innvirkning på stemplingene dine.",
+      "withdrawTitle": "Ditt valg"
+    },
     "present": "Tilstede",
     "previous": "Forrige",
     "recovering": "Gjenoppretter...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identitet skjult",
       "insufficientData": "Utilstrekkelige data",
       "policyChanges": "Retningslinjeendringer",
+      "positionStamps": {
+        "accessAt": "Når",
+        "accessEmployees": "Posisjoner for",
+        "accessKindDetail": "{count, plural, one {Arbeidsperiodedetaljer (# arbeidsperiode)} other {Arbeidsperiodedetaljer (# arbeidsperioder)}}",
+        "accessKindExport": "Dataeksport",
+        "accessLog": "Tilgangslogg for posisjoner",
+        "accessLogDescription": "Hver gang noen andre enn den ansatte har sett eller eksportert posisjoner, nyeste først.",
+        "accessLogEmpty": "Ingen har sett på posisjoner.",
+        "accessViewer": "Sett av",
+        "consentActive": "Aktivt samtykke",
+        "consentDescription": "{count, plural, one {Blant den # aktive ansatte registrering er slått på for. Uavklart omfatter ansatte som valgte Ikke nå eller bare godtok en tidligere varselversjon.} other {Blant de # aktive ansatte registrering er slått på for. Uavklart omfatter ansatte som valgte Ikke nå eller bare godtok en tidligere varselversjon.}}",
+        "consentTitle": "Posisjonssamtykke",
+        "consentUndecided": "Uavklart",
+        "consentWithdrawn": "Trukket tilbake",
+        "currentNotice": "Gjeldende varsel",
+        "deletedViewer": "En slettet bruker",
+        "description": "Hvordan organisasjonen registrerer ansattes posisjoner med stemplingshendelsene deres, og hvem som har sett på dem. Bedriftsutvalget ser aldri individuelle posisjoner.",
+        "employeeAssignmentCounts": "{on} slått på, {off} slått av individuelt",
+        "employeeAssignments": "Ansattildelinger",
+        "employeeCount": "{count, plural, one {# ansatt} other {# ansatte}}",
+        "employeePseudonym": "Ansatt {ref}",
+        "enabled": "Registrering",
+        "noEmployeeAssignments": "Ingen ansattildelinger.",
+        "noNotice": "Det er ikke publisert noe varsel.",
+        "notAssigned": "Ikke tildelt",
+        "noTeamAssignments": "Ingen teamtildelinger.",
+        "noticeHistory": "Varselversjoner",
+        "noticeVersion": "{days, plural, one {Versjon {version}, publisert {publishedAt}, posisjoner beholdes i # dag} other {Versjon {version}, publisert {publishedAt}, posisjoner beholdes i # dager}}",
+        "off": "Av",
+        "on": "På",
+        "organizationAssignment": "Hele organisasjonen",
+        "retention": "Oppbevaring",
+        "retentionDays": "{days, plural, one {# dag} other {# dager}}",
+        "teamAssignments": "Teamtildelinger",
+        "title": "Posisjonsregistrering",
+        "viewerPseudonym": "Visningsprogram {ref}"
+      },
       "scheduleChanges": "Tidsplanendringer",
       "scheduleDescription": "Personvernfiltrerte tidsplanoppføringer for den valgte perioden.",
       "scheduleEmpty": "Ingen tidsplanoppføringer funnet for denne perioden.",
@@ -505,9 +576,11 @@
     "finance": "Økonomi",
     "financeAwaiting": "{count, plural, one {# utgift venter på refusjon} other {# utgifter venter på refusjon}}",
     "get-help": "Få hjelp",
+    "my-documents": "Mine dokumenter",
     "my-requests": "Mine forespørsler",
     "org-explorer": "Organisasjonsutforsker",
     "payroll": "Lønn",
+    "personnel-files": "Personalmapper",
     "platform-admin": "Plattformadministrator",
     "reports": "Rapporter",
     "scheduling": "Planlegging",
@@ -545,6 +618,10 @@
         "message": "Du ble automatisk stemplet ut etter {duration} minutter med uavbrutt arbeid kl. {cutoff} ({timezone}) fordi organisasjonens tidsgrense ble nådd.",
         "title": "Automatisk stemplet ut"
       },
+      "breakDueReminder": {
+        "message": "Pausen din skal tas innen {breakTime} ({timezone}). Ta en pause innen det for å følge retningslinjene for pauser.",
+        "title": "Snart tid for en pause"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Godkjenningsoppgaver trenger en stedfortreder (fratredelse gjelder fra {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Må gjennomgås: utstempling ved offboarding (fratredelse gjelder fra {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Fremtidig arbeid må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone}).",
         "title": "Offboarding av ansatt må gjennomgås"
       },
+      "forgottenClockOutReminder": {
+        "message": "Vakten din var ferdig kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig med å jobbe.",
+        "title": "Du er fortsatt stemplet inn"
+      },
+      "missedClockInReminder": {
+        "message": "Vakten din startet kl. {startTime} ({timezone}). Stemple inn hvis du jobber.",
+        "title": "Du har ikke stemplet inn ennå"
+      },
       "newAbsenceRequest": {
         "title": "Ny fraværsforespørsel"
       },
       "passwordChanged": {
         "message": "Passordet ditt ble endret. Hvis du ikke har gjort denne endringen, må du kontakte brukerstøtte umiddelbart.",
         "title": "Passord endret"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Dokumentet \"{title}\" ble delt med deg.",
+        "title": "Nytt dokument i personalmappen din"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# ansattdokument skal nå slettes. Se gjennom og bekreft slettingen.} other {# ansattdokumenter skal nå slettes. Se gjennom og bekreft slettingen.}}",
+        "title": "Dokumenter som skal slettes"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} lastet opp et sertifikat",
+        "other": "{name} lastet opp et dokument",
+        "title": "Nytt dokument i en personalmappe"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Dokumentet ditt \"{title}\" utløper i dag.",
+        "message": "Dokumentet \"{title}\" for {employee} utløper i dag.",
+        "title": "Et dokument utløper i dag"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Dokumentet ditt \"{title}\" utløper {expiryDate}.",
+        "message": "Dokumentet \"{title}\" for {employee} utløper {expiryDate}.",
+        "title": "Et dokument utløper snart"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Lønnsslippen din for {payPeriod} ble delt med deg.",
+        "title": "Ny lønnsslipp i personalmappen din"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Du nådde påkrevd arbeidstid for {day} kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig på jobb."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Din siste innstempling i dag var kl. {startTime} ({timezone}). Stemple inn hvis du jobber."
       },
       "shiftAssigned": {
         "message": "Du har blitt tildelt en vakt den {shiftDate} fra {startTime} til {endTime} av {assignedByName}.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Varsler om dokumenter som er delt med deg i personalmappen din",
+          "title": "Personalmappe"
+        },
         "travelExpenses": {
           "description": "Varsler om refusjoner og tilbakekrav for reiseutgiftene dine",
           "title": "Reiseutgifter"
@@ -646,6 +768,11 @@
         "errorToast": "Feil med push-varsling"
       },
       "toggleAria": "{channel}-varsler for {type}",
+      "types": {
+        "break_due_reminder": "Tid for pause",
+        "forgotten_clock_out_reminder": "Glemt utstempling",
+        "missed_clock_in_reminder": "Manglende innstempling"
+      },
       "updateFailed": "Kunne ikke oppdatere innstilling"
     },
     "search": {

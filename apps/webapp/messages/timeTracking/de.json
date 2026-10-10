@@ -105,6 +105,11 @@
       "projectNotAllowed": "Zuweisung zu diesem Projekt nicht möglich",
       "restPeriodBlocked": "Ruhezeit nicht abgeschlossen",
       "restPeriodBlockedDesc": "Sie müssen die erforderliche Ruhezeit einhalten, bevor Sie sich einstempeln. Fordern Sie bei Bedarf eine Ausnahme an.",
+      "taskDone": "Diese Aufgabe ist erledigt, daher kann dafür keine Zeit gebucht werden",
+      "taskNotAllowed": "Für diese Aufgabe kann keine Zeit gebucht werden",
+      "taskNotFound": "Diese Aufgabe existiert nicht mehr",
+      "taskOtherProject": "Diese Aufgabe gehört zu einem anderen Projekt",
+      "taskProjectNotBookable": "Auf das Projekt dieser Aufgabe kann keine Zeit mehr gebucht werden",
       "workCategoryNotAllowed": "Zuweisung zu dieser Tätigkeitskategorie nicht möglich"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Erneut versuchen",
         "targetChanged": "Der Mitarbeiter wurde geändert, daher wurden Projekt und Kategorie zurückgesetzt.",
         "targetTimezone": "Zeiten beziehen sich auf die Zeitzone von {employee}: {timezone}",
+        "taskCleared": "Eine ausgewählte Aufgabe ist nicht mehr verfügbar und wurde entfernt.",
         "thisEmployee": "dieser Mitarbeiter",
         "utcFallback": "Weder für {employee} noch für die Organisation ist eine Zeitzone festgelegt, daher wird UTC verwendet."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Aktionen für Zeiteinträge",
       "title": "Zeiteinträge",
       "viewCalendar": "Kalender anzeigen"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (erledigt)",
+      "empty": "Keine Aufgabe gefunden",
+      "label": "Aufgabe",
+      "none": "Keine Aufgabe",
+      "search": "Aufgaben suchen…"
     },
     "timeline": {
       "dayPicker": "Zeitstrahl-Tagesauswahl",

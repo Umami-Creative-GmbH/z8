@@ -320,6 +320,40 @@
       "pagination": "pagination"
     },
     "pending": "Pending",
+    "positionCaptureErrors": {
+      "adminOnly": "Only organization owners and admins can manage position capture.",
+      "assignmentNotFound": "This assignment no longer exists.",
+      "employeeNotFound": "This employee was not found.",
+      "employeeProfileRequired": "An employee profile in this organization is required.",
+      "invalidTarget": "Choose who the assignment applies to.",
+      "noticeChanged": "The position notice has changed. Review the current notice before deciding.",
+      "positionsForbidden": "You are not allowed to see the positions of this work period.",
+      "purposeRequired": "A purpose statement is required before position capture can be switched on.",
+      "purposeTooLong": "The purpose statement is too long.",
+      "retentionOutOfRange": "Retention must be a whole number of days between {min} and {max}.",
+      "signInRequired": "Sign in to an organization first.",
+      "teamNotFound": "This team was not found.",
+      "workPeriodNotFound": "This work period was not found."
+    },
+    "positionConsent": {
+      "agree": "Agree",
+      "description": "Your organization asks to record your device's position when you clock in, clock out or take a break. Your clock event has been recorded either way. If you agree, positions are recorded from your next clock event.",
+      "notNow": "Not now",
+      "title": "Record your position with clock events?"
+    },
+    "positionNotice": {
+      "never": "Clock-outs done for you by someone else, automatic clock-outs, imports and corrections never carry a position. If your device cannot provide a position, your clock event is recorded without one, and nothing records why.",
+      "purposeTitle": "Why your organization records positions",
+      "retention": "{days, plural, one {Each position is deleted # day after it was recorded. Your clock events stay.} other {Each position is deleted # days after it was recorded. Your clock events stay.}}",
+      "retentionTitle": "How long positions are kept",
+      "version": "Position notice, version {version}",
+      "viewers": "You can see your own positions. Organization owners and admins, and people explicitly given permission, can see them for a single work period, and every such view is logged for you to see. Being your manager does not give access. The works council never sees individual positions.",
+      "viewersTitle": "Who can see positions",
+      "what": "When you clock in, clock out, start or end a break in the Z8 web app on your device, your device's position is recorded with that clock event: latitude, longitude, how accurate the position is and when the device determined it. No address, altitude or speed is recorded, and nothing is recorded between clock events.",
+      "whatTitle": "What is recorded",
+      "withdraw": "Positions are recorded only while you agree. You can withdraw at any time under Settings, Position stamps. Withdrawing stops recording and immediately deletes all your recorded positions. Whether you agree has no effect on your clock events.",
+      "withdrawTitle": "Your choice"
+    },
     "present": "Present",
     "previous": "Previous",
     "recovering": "Recovering...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identity hidden",
       "insufficientData": "Insufficient data",
       "policyChanges": "Policy changes",
+      "positionStamps": {
+        "accessAt": "When",
+        "accessEmployees": "Positions of",
+        "accessKindDetail": "{count, plural, one {Work period detail (# work period)} other {Work period detail (# work periods)}}",
+        "accessKindExport": "Data export",
+        "accessLog": "Position access log",
+        "accessLogDescription": "Every time someone other than the employee viewed or exported positions, newest first.",
+        "accessLogEmpty": "No one has viewed positions.",
+        "accessViewer": "Viewed by",
+        "consentActive": "Active consent",
+        "consentDescription": "{count, plural, one {Among the # active employee capture is switched on for. Undecided includes employees who chose Not now or agreed only to an earlier notice version.} other {Among the # active employees capture is switched on for. Undecided includes employees who chose Not now or agreed only to an earlier notice version.}}",
+        "consentTitle": "Position consent",
+        "consentUndecided": "Undecided",
+        "consentWithdrawn": "Withdrawn",
+        "currentNotice": "Current notice",
+        "deletedViewer": "A deleted user",
+        "description": "How the organization records employees' positions with their clock events, and who looked at them. The works council never sees individual positions.",
+        "employeeAssignmentCounts": "{on} switched on, {off} switched off individually",
+        "employeeAssignments": "Employee assignments",
+        "employeeCount": "{count, plural, one {# employee} other {# employees}}",
+        "employeePseudonym": "Employee {ref}",
+        "enabled": "Capture",
+        "noEmployeeAssignments": "No employee assignments.",
+        "noNotice": "No notice has been published.",
+        "notAssigned": "Not assigned",
+        "noTeamAssignments": "No team assignments.",
+        "noticeHistory": "Notice versions",
+        "noticeVersion": "{days, plural, one {Version {version}, published {publishedAt}, positions kept # day} other {Version {version}, published {publishedAt}, positions kept # days}}",
+        "off": "Off",
+        "on": "On",
+        "organizationAssignment": "Whole organization",
+        "retention": "Retention",
+        "retentionDays": "{days, plural, one {# day} other {# days}}",
+        "teamAssignments": "Team assignments",
+        "title": "Position capture",
+        "viewerPseudonym": "Viewer {ref}"
+      },
       "scheduleChanges": "Schedule changes",
       "scheduleDescription": "Privacy-filtered schedule entries for the selected period.",
       "scheduleEmpty": "No schedule entries found for this period.",
@@ -505,9 +576,11 @@
     "finance": "Finance",
     "financeAwaiting": "{count, plural, one {# expense awaiting reimbursement} other {# expenses awaiting reimbursement}}",
     "get-help": "Get Help",
+    "my-documents": "My Documents",
     "my-requests": "My Requests",
     "org-explorer": "Org Explorer",
     "payroll": "Payroll",
+    "personnel-files": "Personnel Files",
     "platform-admin": "Platform Admin",
     "reports": "Reports",
     "scheduling": "Scheduling",
@@ -545,6 +618,10 @@
         "message": "You were automatically clocked out after {duration} minutes of uninterrupted work at {cutoff} ({timezone}) because your organization's time limit was reached.",
         "title": "Automatically clocked out"
       },
+      "breakDueReminder": {
+        "message": "Your break is due at {breakTime} ({timezone}). Take a break by then to follow your work policy's break rules.",
+        "title": "Time for a break soon"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Future work needs review (departure effective {cutoff}, {timezone}).",
         "title": "Employee offboarding needs review"
       },
+      "forgottenClockOutReminder": {
+        "message": "Your shift ended at {endTime} ({timezone}). Clock out if you have finished working.",
+        "title": "You are still clocked in"
+      },
+      "missedClockInReminder": {
+        "message": "Your shift started at {startTime} ({timezone}). Clock in if you are working.",
+        "title": "You have not clocked in yet"
+      },
       "newAbsenceRequest": {
         "title": "New absence request"
       },
       "passwordChanged": {
         "message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
         "title": "Password changed"
+      },
+      "personnelFileDocumentShared": {
+        "message": "The document \"{title}\" was shared with you.",
+        "title": "New document in your personnel file"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# employee document is now due for deletion. Review and confirm the purge.} other {# employee documents are now due for deletion. Review and confirm the purge.}}",
+        "title": "Documents due for deletion"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} uploaded a certificate",
+        "other": "{name} uploaded a document",
+        "title": "New document in a personnel file"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Your document \"{title}\" expires today.",
+        "message": "The document \"{title}\" of {employee} expires today.",
+        "title": "A document expires today"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Your document \"{title}\" expires on {expiryDate}.",
+        "message": "The document \"{title}\" of {employee} expires on {expiryDate}.",
+        "title": "A document expires soon"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Your payslip for {payPeriod} was shared with you.",
+        "title": "New payslip in your personnel file"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "You reached the required hours for {day} at {endTime} ({timezone}). Clock out if you have finished working."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Your latest clock-in today was {startTime} ({timezone}). Clock in if you are working."
       },
       "shiftAssigned": {
         "message": "You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Notifications about documents shared with you in your personnel file",
+          "title": "Personnel File"
+        },
         "travelExpenses": {
           "description": "Notifications about reimbursements and recoveries of your travel expenses",
           "title": "Travel Expenses"
@@ -646,6 +768,11 @@
         "errorToast": "Push notification error"
       },
       "toggleAria": "{channel} notifications for {type}",
+      "types": {
+        "break_due_reminder": "Break due",
+        "forgotten_clock_out_reminder": "Forgotten clock-out",
+        "missed_clock_in_reminder": "Missed clock-in"
+      },
       "updateFailed": "Failed to update preference"
     },
     "search": {

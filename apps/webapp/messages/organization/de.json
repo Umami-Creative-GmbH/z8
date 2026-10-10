@@ -14,6 +14,37 @@
       "saving": "Wird gespeichert…",
       "title": "Automatisches Ausstempeln"
     },
+    "clockingReminders": {
+      "adminOnly": "Nur Organisations-Admins und -Eigentümer können diese Einstellungen ändern.",
+      "breakDue": {
+        "enabled": "Erinnerung an fällige Pause",
+        "lead": "Minuten vor Fälligkeit der Pause"
+      },
+      "description": "Mitarbeitende erinnern, wenn sie sich bis zum Beginn ihrer veröffentlichten Schicht noch nicht eingestempelt haben, nach deren Ende immer noch eingestempelt sind oder im Begriff sind, länger ohne Pause zu arbeiten, als es ihre Arbeitsrichtlinie erlaubt.",
+      "forgottenClockOut": {
+        "enabled": "Erinnerung an vergessenes Ausstempeln",
+        "grace": "Minuten nach dem erwarteten Ende"
+      },
+      "help": "Überprüfungen finden alle fünf Minuten statt. Die Zeiten richten sich nach der Zeitzone der jeweiligen Mitarbeitenden. Jede Erinnerung wird einmal pro Schicht oder einmal pro Pausenregel während der Arbeitszeit in der App und per Push gesendet, es sei denn, die Mitarbeitenden ändern ihre Benachrichtigungseinstellungen. Bei einer genehmigten Abwesenheit oder einem Feiertag wird keine Erinnerung an ein verpasstes Einstempeln gesendet.",
+      "invalidLeadMinutes": "Geben Sie ganze Minuten von 1 bis 1440 vor Fälligkeit der Pause ein.",
+      "invalidMinutes": "Geben Sie ganze Minuten von 0 bis 1440 ein.",
+      "missedClockIn": {
+        "enabled": "Erinnerung an verpasstes Einstempeln",
+        "grace": "Minuten nach dem erwarteten Beginn"
+      },
+      "noRoles": "Wählen Sie mindestens eine Rolle aus, die Erinnerungen erhalten soll.",
+      "roles": {
+        "admin": "Admins",
+        "employee": "Mitarbeitende",
+        "label": "Diese Rollen erinnern",
+        "manager": "Manager"
+      },
+      "save": "Änderungen speichern",
+      "saved": "Einstellungen für Einstempelerinnerungen gespeichert",
+      "saveFailed": "Einstellungen für Stempelerinnerungen konnten nicht aktualisiert werden",
+      "saving": "Wird gespeichert…",
+      "title": "Einstempelerinnerungen"
+    },
     "create": "Organisation erstellen",
     "createDialog": {
       "description": "Richten Sie Ihre Organisation ein, um zu beginnen",
@@ -72,12 +103,19 @@
       "demo-data-description": "Erlaubt Administratoren das Generieren und Löschen von Beispiel-Organisationsdaten zu Testzwecken.",
       "description": "Aktivieren oder deaktivieren Sie optionale Funktionen für Ihre Organisation",
       "owner-only": "Nur Organisationsinhaber können Funktionseinstellungen ändern.",
+      "owner-only-except-personnel-files": "Nur Organisationsinhaber können Funktionseinstellungen ändern, ausgenommen Personalakten.",
+      "personnel-files": "Personalakten",
+      "personnel-files-description": "Bewahren Sie Verträge, Gehaltsabrechnungen, Zertifikate und andere Mitarbeiterdokumente in einer Personalakte pro Mitarbeiter auf.",
+      "personnel-files-disable-confirm": "Ausschalten",
+      "personnel-files-disable-description": "Seiten und Downloads von Personalakten werden für alle ausgeblendet. Dokumente bleiben gespeichert und werden weiterhin für Aufbewahrungsfristen berücksichtigt. Das erneute Aktivieren der Personalakten stellt alles wieder her.",
+      "personnel-files-disable-title": "Personalakten ausschalten?",
       "projects": "Projekte",
       "projects-description": "Weisen Sie Zeiteinträge Projekten zu, verfolgen Sie Budgets und Fristen und generieren Sie Projektberichte.",
       "surcharges": "Zuschläge",
       "surcharges-description": "Konfigurieren Sie Zeitzuschläge für Überstunden, Nachtarbeit, Wochenenden und Feiertage.",
       "title": "Funktionen",
       "toggle-demo-data": "Demodaten umschalten",
+      "toggle-personnel-files": "Personalakten umschalten",
       "toggle-projects": "Projekte umschalten",
       "toggle-surcharges": "Zuschläge umschalten",
       "toggle-works-council": "Betriebsrat umschalten",

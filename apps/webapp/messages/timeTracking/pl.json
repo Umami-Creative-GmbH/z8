@@ -105,6 +105,11 @@
       "projectNotAllowed": "Nie można przypisać do tego projektu",
       "restPeriodBlocked": "Okres odpoczynku nie został zakończony",
       "restPeriodBlockedDesc": "Musisz zakończyć wymagany okres odpoczynku przed rozpoczęciem pracy. W razie potrzeby poproś o wyjątek.",
+      "taskDone": "To zadanie jest zakończone, więc nie można przypisać do niego czasu",
+      "taskNotAllowed": "Nie można przypisać czasu do tego zadania",
+      "taskNotFound": "To zadanie już nie istnieje",
+      "taskOtherProject": "To zadanie należy do innego projektu",
+      "taskProjectNotBookable": "Nie można już rejestrować czasu w projekcie tego zadania",
       "workCategoryNotAllowed": "Nie można przypisać do tej kategorii pracy"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Spróbuj ponownie",
         "targetChanged": "Pracownik został zmieniony, dlatego projekt i kategoria zostały wyczyszczone.",
         "targetTimezone": "Godziny są podane w strefie czasowej pracownika {employee}: {timezone}",
+        "taskCleared": "Wybrane zadanie nie jest już dostępne i zostało usunięte z wyboru.",
         "thisEmployee": "ten pracownik",
         "utcFallback": "Ani {employee}, ani organizacja nie ma ustawionej strefy czasowej, dlatego używana jest strefa UTC."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Akcje wpisu czasu",
       "title": "Wpisy czasu",
       "viewCalendar": "Zobacz kalendarz"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (ukończone)",
+      "empty": "Nie znaleziono zadania",
+      "label": "Zadanie",
+      "none": "Brak zadania",
+      "search": "Szukaj zadań…"
     },
     "timeline": {
       "dayPicker": "Wybór dnia na osi czasu",

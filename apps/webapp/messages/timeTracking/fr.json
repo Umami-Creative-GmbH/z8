@@ -105,6 +105,11 @@
       "projectNotAllowed": "Impossible d'affecter à ce projet",
       "restPeriodBlocked": "Période de repos non terminée",
       "restPeriodBlockedDesc": "Vous devez terminer la période de repos obligatoire avant de pointer. Demandez une exception si nécessaire.",
+      "taskDone": "Cette tâche est terminée, aucun temps ne peut y être enregistré",
+      "taskNotAllowed": "Impossible d'enregistrer du temps sur cette tâche",
+      "taskNotFound": "Cette tâche n'existe plus",
+      "taskOtherProject": "Cette tâche appartient à un autre projet",
+      "taskProjectNotBookable": "Il n'est plus possible d'enregistrer du temps sur le projet de cette tâche",
       "workCategoryNotAllowed": "Impossible d'affecter à cette catégorie de travail"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Réessayer",
         "targetChanged": "L'employé a changé, le projet et la catégorie ont donc été réinitialisés.",
         "targetTimezone": "Les heures sont dans le fuseau horaire de {employee} : {timezone}",
+        "taskCleared": "Une tâche sélectionnée n'est plus disponible et a été retirée.",
         "thisEmployee": "cet employé",
         "utcFallback": "Ni {employee} ni l'organisation n'ont de fuseau horaire défini, UTC est donc utilisé."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Actions sur les entrées de temps",
       "title": "Entrées de temps",
       "viewCalendar": "Voir le calendrier"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (terminée)",
+      "empty": "Aucune tâche trouvée",
+      "label": "Tâche",
+      "none": "Aucune tâche",
+      "search": "Rechercher des tâches…"
     },
     "timeline": {
       "dayPicker": "Sélecteur de jour de la chronologie",

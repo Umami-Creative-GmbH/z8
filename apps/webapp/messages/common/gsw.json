@@ -320,6 +320,40 @@
       "pagination": "Sitenummerierig"
     },
     "pending": "Usschtändig",
+    "positionCaptureErrors": {
+      "adminOnly": "Nur Inhaber und Admins vo de Organisation chönd d Standorterfassig verwalte.",
+      "assignmentNotFound": "Die Zueordnig git's nüme.",
+      "employeeNotFound": "De Mitarbeiter isch nöd gfunde worde.",
+      "employeeProfileRequired": "Es bruucht es Mitarbeiterprofil i dere Organisation.",
+      "invalidTarget": "Wähl us, für wen die Zueordnig gilt.",
+      "noticeChanged": "De Standorthinwiis hät gänderet. Überprüef de aktuell Hinwiis, bevor du entscheidisch.",
+      "positionsForbidden": "Du dörfsch d Positione vo dere Arbeitsperiode nöd gseh.",
+      "purposeRequired": "Es bruucht e Zwäckbeschriibig, bevor d Standorterfassig cha iigschaltet werde.",
+      "purposeTooLong": "D Zwäckbeschriibig isch z lang.",
+      "retentionOutOfRange": "D Ufbewahrigsdur muess e ganzi Zahl vo Täg zwüsche {min} und {max} si.",
+      "signInRequired": "Mäld di zersch binere Organisation aa.",
+      "teamNotFound": "Das Team isch nöd gfunde worde.",
+      "workPeriodNotFound": "Die Arbetsperiode isch nöd gfunde worde."
+    },
+    "positionConsent": {
+      "agree": "Iiverstande",
+      "description": "Dini Organisation bittet drum, de Standort vo dim Grät z erfasse, wänn du di i- oder usstemplisch oder e Pause machsch. Dis Ziteräignis isch so oder so erfasst worde. Wänn du zuestimmisch, werded Standört ab dim nächste Stempligseräignis erfasst.",
+      "notNow": "Nöd jetzt",
+      "title": "Standort bim Stemple erfasse?"
+    },
+    "positionNotice": {
+      "never": "Usstemplige, wo öpper anders für dich gmacht hät, automatischi Usstemplige, Import und Korrekture händ nie en Standort debii. Wänn dis Grät kein Standort chan aagëë, wird dis Ziteräignis ohni Standort erfasst, und es wird nöd erfasst, werum.",
+      "purposeTitle": "Werum dini Organisation Standört erfasst",
+      "retention": "{days, plural, one {Jede Standort wird # Tag nach de Erfassig glöscht. Dini Stempligseräignis bliibed.} other {Jede Standort wird # Täg nach de Erfassig glöscht. Dini Stempligseräignis bliibed.}}",
+      "retentionTitle": "Wie lang Standört bhalte werded",
+      "version": "Standort-Hiiwiis, Version {version}",
+      "viewers": "Du chasch dini eigene Standört gseh. Inhaber und Admins vo de Organisation sowie Persone mit expliziter Berächtigung chönd sie für e einzelni Arbetsperiode aaluege, und jede söttigi Zuegriff wird protokolliert, so dass du en gsehsch. Dini vorgsetzti Person z sii git no kein Zuegriff. De Betriibsroot gseht nie einzelni Standört.",
+      "viewersTitle": "Wer Standört gseh chan",
+      "what": "Wänn du di i de Z8 Web-App uf dim Grät i- oder usstemplisch, oder e Pause aafangsch oder beändisch, wird de Standort vo dim Grät mit däm Ziteräignis erfasst: Bräiti, Längi, wie gnau de Standort isch und wänn s Grät en ermittlet hät. Es wird kei Adrässe, Höchi oder Gschwindigkeit erfasst, und zwüschet de Stemplige wird gar nüt erfasst.",
+      "whatTitle": "Was erfasst wird",
+      "withdraw": "Standört werded nur erfasst, solang du iiverstande bisch. Du chasch dini Zuestimmig jederziit under Iistellige, Standort-Stämpfel widerrüefe. En Widerruef stoppt d Erfassig und löscht sofort all dini erfasste Standört. Ob du zuestimmisch oder nöd, hät kein Iifluss uf dini Stempligsdate.",
+      "withdrawTitle": "Dini Entscheidig"
+    },
     "present": "Aawesend",
     "previous": "Zrugg",
     "recovering": "Wird wiederhergstellt...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identität usblendet",
       "insufficientData": "Zwenig Daate",
       "policyChanges": "Richtlinie-Änderige",
+      "positionStamps": {
+        "accessAt": "Wänn",
+        "accessEmployees": "Standört vo",
+        "accessKindDetail": "{count, plural, other {Arbetsperiode-Detail (# Arbetsperiode)} }",
+        "accessKindExport": "Date-Export",
+        "accessLog": "Standort-Zuegriffsprotokoll",
+        "accessLogDescription": "Jedes Mal, wänn öpper anders als de Mitarbeiter Standört aagluegt oder exportiert hät, s Neuschte zerscht.",
+        "accessLogEmpty": "Niemert hät Standört aagluegt.",
+        "accessViewer": "Aagluegt vo",
+        "consentActive": "Aktivi Zuestimmig",
+        "consentDescription": "{count, plural, one {Under em # aktive Mitarbeiter, wo d Erfassig defür igschaltet isch. Unentschide beinhaltet Mitarbeiter, wo «Nöd jetzt» usgwählt oder nur enere früenere Version vo de Mitteilig zuegstimmt hend.} other {Under de # aktive Mitarbeiter, wo d Erfassig defür igschaltet isch. Unentschide beinhaltet Mitarbeiter, wo «Nöd jetzt» usgwählt oder nur enere früenere Version vo de Mitteilig zuegstimmt hend.}}",
+        "consentTitle": "Standort-Zuestimmig",
+        "consentUndecided": "Unentschide",
+        "consentWithdrawn": "Zruggzoge",
+        "currentNotice": "Aktuelli Mitteilig",
+        "deletedViewer": "En glöschte Benutzer",
+        "description": "Wie d Organisation d Standört vo de Mitarbeiter bi ihrne Stämpfelereignis erfasst und wer sie agluegt hät. De Betriibsroot gseht nie einzelni Standört.",
+        "employeeAssignmentCounts": "{on} igschaltet, {off} einzeln usgschaltet",
+        "employeeAssignments": "Mitarbeiter-Zueordnige",
+        "employeeCount": "{count, plural, other {# Mitarbeiter} }",
+        "employeePseudonym": "Mitarbeiter {ref}",
+        "enabled": "Erfassig",
+        "noEmployeeAssignments": "Kei Mitarbeiter-Zueordnige.",
+        "noNotice": "Es isch kei Mitteilig veröffentlicht worde.",
+        "notAssigned": "Nöd zuegordnet",
+        "noTeamAssignments": "Kei Team-Zueordnige.",
+        "noticeHistory": "Mitteiligsversione",
+        "noticeVersion": "{days, plural, one {Version {version}, veröffentlicht {publishedAt}, Standört # Tag bhalte} other {Version {version}, veröffentlicht {publishedAt}, Standört # Täg bhalte}}",
+        "off": "Us",
+        "on": "Ii",
+        "organizationAssignment": "Ganzi Organisation",
+        "retention": "Ufbewahrig",
+        "retentionDays": "{days, plural, one {# Tag} other {# Täg}}",
+        "teamAssignments": "Team-Zueordnige",
+        "title": "Standorterfassig",
+        "viewerPseudonym": "Viewer {ref}"
+      },
       "scheduleChanges": "Planänderige",
       "scheduleDescription": "Daateschutzgfiltereti Planiträg für di usgwählti Periode.",
       "scheduleEmpty": "Käi Planiträg für die Periode gfunde.",
@@ -505,9 +576,11 @@
     "finance": "Finanzen",
     "financeAwaiting": "{count, plural, one {# Ausgabe wartet auf Rückerstattung} other {# Ausgaben warten auf Rückerstattung}}",
     "get-help": "Hilf becho",
+    "my-documents": "Mini Dokumänt",
     "my-requests": "Mini Aafroge",
     "org-explorer": "Org-Explorer",
     "payroll": "Lohnabrechnig",
+    "personnel-files": "Personaldossiers",
     "platform-admin": "Plattform-Admin",
     "reports": "Bericht",
     "scheduling": "Planig",
@@ -545,6 +618,10 @@
         "message": "Sie wurden nach {duration} Minuten ununterbrochener Arbeit um {cutoff} ({timezone}) automatisch ausgestempelt, da das Zeitlimit Ihrer Organisation erreicht wurde.",
         "title": "Automatisch ausgestempelt"
       },
+      "breakDueReminder": {
+        "message": "Dini Pause isch um {breakTime} ({timezone}) fällig. Mach bis dänn Pause, zum d Pauseregle vo dim Betriib yzhalte.",
+        "title": "Bald Ziit für e Pause"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Stellvertretung (Austritt wirksam {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Überprüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Zukünftige Arbeit muss überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "title": "Offboarding von Mitarbeitenden muss überprüft werden"
       },
+      "forgottenClockOutReminder": {
+        "message": "Dini Schicht het um {endTime} ({timezone}) gändet. Stämpfel us, wänn du fertig gschaffet häsch.",
+        "title": "Du bisch immer no yygstämpflet"
+      },
+      "missedClockInReminder": {
+        "message": "Dini Schicht het um {startTime} ({timezone}) aagfange. Stämpfel ii, wänn du am Schaffe bisch.",
+        "title": "Du häsch di no nöd yygstämpflet"
+      },
       "newAbsenceRequest": {
         "title": "Neue Abwesenheitsanfrage"
       },
       "passwordChanged": {
         "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
         "title": "Passwort gänderet"
+      },
+      "personnelFileDocumentShared": {
+        "message": "S Dokumänt \"{title}\" isch mit dir teilt worde.",
+        "title": "Neus Dokumänt i dim Personaldossier"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# Mitarbeiterdokumänt isch jetzt zum Lösche fällig. Überprüef und bestätig d Löschig.} other {# Mitarbeiterdokumänt sind jetzt zum Lösche fällig. Überprüef und bestätig d Löschig.}}",
+        "title": "Dokumänt wo zum Lösche fällig sind"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} het es Zertifikat ufeghlade",
+        "other": "{name} het es Dokumänt ufeghlade",
+        "title": "Neus Dokumänt imene Personaldossier"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Dis Dokumänt \"{title}\" lauft hüt ab.",
+        "message": "S Dokumänt \"{title}\" vo {employee} lauft hüt ab.",
+        "title": "Es Dokumänt lauft hüt ab"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Dis Dokumänt \"{title}\" lauft am {expiryDate} ab.",
+        "message": "S Dokumänt \"{title}\" vo {employee} lauft am {expiryDate} ab.",
+        "title": "Es Dokumänt lauft bald ab"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Dini Lohnabrächnig für {payPeriod} isch mit dir teilt worde.",
+        "title": "Neui Lohnabrächnig i dim Personaldossier"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Sie haben die erforderlichen Stunden für {day} um {endTime} ({timezone}) erreicht. Stempeln Sie aus, wenn Sie mit der Arbeit fertig sind."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Ihr letztes Einstempeln heute war um {startTime} ({timezone}). Stempeln Sie ein, wenn Sie arbeiten."
       },
       "shiftAssigned": {
         "message": "Du bisch für en Schicht am {shiftDate} vo {startTime} bis {endTime} vom {assignedByName} yteilt worde.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Benachrichtigungen über Dokumente, die in Ihrem Personaldossier mit Ihnen geteilt wurden",
+          "title": "Personaldossier"
+        },
         "travelExpenses": {
           "description": "Benachrichtigungen über Rückerstattungen und Rückforderungen Ihrer Reisespesen",
           "title": "Reisespesen"
@@ -646,6 +768,11 @@
         "errorToast": "Fehler bi de Push-Benachrichtigunge"
       },
       "toggleAria": "{channel}-Benachrichtigunge für {type}",
+      "types": {
+        "break_due_reminder": "Pause fällig",
+        "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
+        "missed_clock_in_reminder": "Verpasstes Einstempeln"
+      },
       "updateFailed": "Iistellig hät nöd chönne aktualisiert werde"
     },
     "search": {

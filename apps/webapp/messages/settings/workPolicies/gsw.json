@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} Home-Office",
       "hoursPerCycle": "Stunde pro Zyklus",
       "hoursUnit": "Stunde",
+      "latestClockIn": {
+        "dayLabel": "Spötischti Iistempfelziit am {day}",
+        "description": "Optionali spötischti Iistempfelziit pro Arbetstag: A Täg ohni Schicht chönd Mitarbeiter, wo bis dänn nonig iigstempflet händ, e Erinnerig becho.",
+        "label": "Spötischti Iistempfelziit",
+        "simpleHint": "Für e spötischti Iistempfelziit pro Tag brucht s en detaillierte Ziitplan. Wechsle zu Detailliert, zum ein fäschtzlege."
+      },
       "monthly": "Monatlich",
       "preview": "Vorschau vom Ziitplan",
       "scheduleCycle": "Planigszyklus",

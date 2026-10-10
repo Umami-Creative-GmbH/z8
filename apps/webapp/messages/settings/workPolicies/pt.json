@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} home office",
       "hoursPerCycle": "Horas por Ciclo",
       "hoursUnit": "horas",
+      "latestClockIn": {
+        "dayLabel": "Picar ponto o mais tardar às {day}",
+        "description": "Limite máximo opcional para picar ponto por dia de trabalho: nos dias sem turno, os colaboradores que não tenham picado o ponto até essa hora podem receber um lembrete.",
+        "label": "Hora limite para picar ponto",
+        "simpleHint": "Uma hora limite para picar ponto por dia requer um horário detalhado. Mude para Detalhado para definir uma."
+      },
       "monthly": "Mensal",
       "preview": "Visualização da Escala",
       "scheduleCycle": "Ciclo de escala",

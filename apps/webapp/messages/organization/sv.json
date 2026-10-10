@@ -14,6 +14,37 @@
       "saving": "Sparar…",
       "title": "Automatisk utstämpling"
     },
+    "clockingReminders": {
+      "adminOnly": "Endast organisationens administratörer och ägare kan ändra dessa inställningar.",
+      "breakDue": {
+        "enabled": "Påminnelse om rast",
+        "lead": "Minuter innan rasten ska tas"
+      },
+      "description": "Påminn anställda när de inte har stämplat in vid starten av sitt publicerade arbetspass, fortfarande är instämplade efter att det har slutat eller är på väg att arbeta längre än deras arbetspolicy tillåter utan rast.",
+      "forgottenClockOut": {
+        "enabled": "Påminnelse om glömd utstämpling",
+        "grace": "Minuter efter förväntat slut"
+      },
+      "help": "Kontroller körs var femte minut. Tider följer varje anställds tidszon. Varje påminnelse skickas en gång per arbetspass, eller en gång per rastregel medan man är instämplad, i appen och via pushnotis såvida inte den anställde ändrar sina aviseringsinställningar. Ingen påminnelse om missad instämpling skickas vid godkänd frånvaro eller helgdag.",
+      "invalidLeadMinutes": "Ange hela minuter från 1 till 1440 innan rasten ska tas.",
+      "invalidMinutes": "Ange hela minuter från 0 till 1440.",
+      "missedClockIn": {
+        "enabled": "Påminnelse om missad instämpling",
+        "grace": "Minuter efter förväntad start"
+      },
+      "noRoles": "Välj minst en roll som ska få påminnelser.",
+      "roles": {
+        "admin": "Administratörer",
+        "employee": "Anställda",
+        "label": "Påminn dessa roller",
+        "manager": "Chefer"
+      },
+      "save": "Spara ändringar",
+      "saved": "Inställningarna för stämplingspåminnelser har sparats",
+      "saveFailed": "Det gick inte att uppdatera inställningarna för stämpelpåminnelser",
+      "saving": "Sparar…",
+      "title": "Stämplingspåminnelser"
+    },
     "create": "Skapa organisation",
     "createDialog": {
       "description": "Konfigurera din organisation för att komma igång",
@@ -72,12 +103,19 @@
       "demo-data-description": "Tillåt administratörer att generera och rensa exempeldata för organisationen i testsyfte.",
       "description": "Aktivera eller inaktivera valfria funktioner för din organisation",
       "owner-only": "Endast organisationsägare kan ändra funktionsinställningar.",
+      "owner-only-except-personnel-files": "Endast organisationsägare kan ändra funktionsinställningar, med undantag för personalakter.",
+      "personnel-files": "Personalakter",
+      "personnel-files-description": "Spara avtal, lönespecifikationer, intyg och andra medarbetardokument i en personalakt per anställd.",
+      "personnel-files-disable-confirm": "Stäng av",
+      "personnel-files-disable-description": "Sidor och nedladdningar för personalakter döljs för alla. Dokumenten förblir lagrade och räknas fortfarande för lagringsperioden. Om personalakter slås på igen återställs allt.",
+      "personnel-files-disable-title": "Stänga av personalakter?",
       "projects": "Projekt",
       "projects-description": "Koppla tidsregistreringar till projekt, följ upp budgetar och tidsfrister samt generera projektrapporter.",
       "surcharges": "Tillägg",
       "surcharges-description": "Konfigurera tidstillägg för övertid, nattarbete, helger och helgdagar.",
       "title": "Funktioner",
       "toggle-demo-data": "Växla demodata",
+      "toggle-personnel-files": "Slå på/av personalakter",
       "toggle-projects": "Växla projekt",
       "toggle-surcharges": "Växla tillägg",
       "toggle-works-council": "Aktivera/inaktivera företagsråd",

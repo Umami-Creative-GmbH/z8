@@ -196,6 +196,20 @@
         "team": "Ekip",
         "viewProject": "Proje detaylarını görüntüle"
       },
+      "task": {
+        "description": "Bu dönemde her bir göreve kaydedilen saatler. Tahmin ilerlemesi, göreve kaydedilen her saati hesaba katar.",
+        "done": "Tamamlandı",
+        "estimate": "Tahmin ilerlemesi",
+        "estimateProgress": "{estimate} sa / {booked} sa ({percent})",
+        "hours": "Saat",
+        "hoursValue": "{hours} sa",
+        "noTask": "Görev yok",
+        "noTime": "Bu dönemde bu projeye hiç zaman kaydedilmedi",
+        "share": "Paylaş",
+        "task": "Görev",
+        "title": "Göreve göre",
+        "unknown": "Bilinmeyen görev"
+      },
       "team": {
         "byEmployee": "Çalışana Göre",
         "byTeam": "Ekibe Göre",

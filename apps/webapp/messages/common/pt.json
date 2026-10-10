@@ -320,6 +320,40 @@
       "pagination": "paginação"
     },
     "pending": "Pendente",
+    "positionCaptureErrors": {
+      "adminOnly": "Apenas proprietários e administradores da organização podem gerenciar a captura de posições.",
+      "assignmentNotFound": "Esta atribuição não existe mais.",
+      "employeeNotFound": "Este funcionário não foi encontrado.",
+      "employeeProfileRequired": "É necessário ter um perfil de funcionário nesta organização.",
+      "invalidTarget": "Escolha a quem a atribuição se aplica.",
+      "noticeChanged": "O aviso de posição foi alterado. Revise o aviso atual antes de decidir.",
+      "positionsForbidden": "Você não tem permissão para ver as posições deste período de trabalho.",
+      "purposeRequired": "Uma declaração de finalidade é necessária antes que a captura de posições possa ser ativada.",
+      "purposeTooLong": "A declaração de finalidade é muito longa.",
+      "retentionOutOfRange": "A retenção deve ser um número inteiro de dias entre {min} e {max}.",
+      "signInRequired": "Faça login em uma organização primeiro.",
+      "teamNotFound": "Esta equipe não foi encontrada.",
+      "workPeriodNotFound": "Este período de trabalho não foi encontrado."
+    },
+    "positionConsent": {
+      "agree": "Concordar",
+      "description": "A sua organização solicita registrar a localização do seu dispositivo quando você registra entrada, saída ou faz uma pausa. O seu registro de ponto foi salvo mesmo assim. Se concordar, as localizações serão registradas a partir do seu próximo registro de ponto.",
+      "notNow": "Agora não",
+      "title": "Registrar sua localização nos registros de ponto?"
+    },
+    "positionNotice": {
+      "never": "Registros de saída feitos por outra pessoa para você, saídas automáticas, importações e correções nunca incluem uma localização. Se o seu dispositivo não puder fornecer uma localização, o registro de ponto será feito sem ela, e nada registrará o motivo.",
+      "purposeTitle": "Por que a sua organização registra localizações",
+      "retention": "{days, plural, one {Cada localização é excluída # dia após ter sido registrada. Seus registros de ponto permanecem.} other {Cada localização é excluída # dias após ter sido registrada. Seus registros de ponto permanecem.}}",
+      "retentionTitle": "Por quanto tempo as localizações são mantidas",
+      "version": "Aviso de localização, versão {version}",
+      "viewers": "Você pode ver suas próprias localizações. Proprietários e administradores da organização, bem como pessoas com permissão explícita, podem visualizá-las para um único período de trabalho, e cada visualização é registrada para você ver. Ser seu gestor não concede acesso. O conselho de trabalhadores nunca vê localizações individuais.",
+      "viewersTitle": "Quem pode ver as localizações",
+      "what": "Quando você registra entrada, saída, inicia ou termina uma pausa no aplicativo web Z8 no seu dispositivo, a localização do dispositivo é registrada com esse evento de ponto: latitude, longitude, a precisão da localização e quando o dispositivo a determinou. Nenhum endereço, altitude ou velocidade é registrado, e nada é registrado entre os registros de ponto.",
+      "whatTitle": "O que é registrado",
+      "withdraw": "As localizações são registradas apenas enquanto você concordar. Você pode revogar a qualquer momento em Configurações, Carimbos de localização. A revogação interrompe o registro e exclui imediatamente todas as suas localizações gravadas. Concordar ou não não afeta seus registros de ponto.",
+      "withdrawTitle": "Sua escolha"
+    },
     "present": "Presente",
     "previous": "Anterior",
     "recovering": "Recuperando...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identidade oculta",
       "insufficientData": "Dados insuficientes",
       "policyChanges": "Alterações de política",
+      "positionStamps": {
+        "accessAt": "Quando",
+        "accessEmployees": "Localizações de",
+        "accessKindDetail": "{count, plural, one {Detalhes do período de trabalho (# período de trabalho)} other {Detalhes do período de trabalho (# períodos de trabalho)}}",
+        "accessKindExport": "Exportação de dados",
+        "accessLog": "Registro de acesso a localizações",
+        "accessLogDescription": "Sempre que alguém além do funcionário visualizou ou exportou localizações, das mais recentes para as mais antigas.",
+        "accessLogEmpty": "Ninguém visualizou as localizações.",
+        "accessViewer": "Visualizado por",
+        "consentActive": "Consentimento ativo",
+        "consentDescription": "{count, plural, one {Entre o # funcionário ativo para o qual a captura está ativada. Indecisos inclui funcionários que escolheram Agora não ou concordaram apenas com uma versão anterior do aviso.} other {Entre os # funcionários ativos para os quais a captura está ativada. Indecisos inclui funcionários que escolheram Agora não ou concordaram apenas com uma versão anterior do aviso.}}",
+        "consentTitle": "Consentimento de localização",
+        "consentUndecided": "Indeciso",
+        "consentWithdrawn": "Revogado",
+        "currentNotice": "Aviso atual",
+        "deletedViewer": "Um usuário excluído",
+        "description": "Como a organização registra as localizações dos funcionários com seus registros de ponto e quem as visualizou. O comitê de empresa nunca vê localizações individuais.",
+        "employeeAssignmentCounts": "{on} ativado(s), {off} desativado(s) individualmente",
+        "employeeAssignments": "Atribuições de funcionários",
+        "employeeCount": "{count, plural, one {# funcionário} other {# funcionários}}",
+        "employeePseudonym": "Funcionário {ref}",
+        "enabled": "Capturar",
+        "noEmployeeAssignments": "Nenhuma atribuição de funcionário.",
+        "noNotice": "Nenhum aviso foi publicado.",
+        "notAssigned": "Não atribuído",
+        "noTeamAssignments": "Nenhuma atribuição de equipe.",
+        "noticeHistory": "Versões do aviso",
+        "noticeVersion": "{days, plural, one {Versão {version}, publicada em {publishedAt}, localizações mantidas por # dia} other {Versão {version}, publicada em {publishedAt}, localizações mantidas por # dias}}",
+        "off": "Desativado",
+        "on": "Ativado",
+        "organizationAssignment": "Toda a organização",
+        "retention": "Retenção",
+        "retentionDays": "{days, plural, one {# dia} other {# dias}}",
+        "teamAssignments": "Atribuições de equipe",
+        "title": "Captura de posição",
+        "viewerPseudonym": "Visualizador {ref}"
+      },
       "scheduleChanges": "Alterações de escala",
       "scheduleDescription": "Entradas de escala com filtro de privacidade para o período selecionado.",
       "scheduleEmpty": "Nenhuma entrada de escala encontrada para este período.",
@@ -505,9 +576,11 @@
     "finance": "Financeiro",
     "financeAwaiting": "{count, plural, one {# despesa aguardando reembolso} other {# despesas aguardando reembolso}}",
     "get-help": "Obter Ajuda",
+    "my-documents": "Meus documentos",
     "my-requests": "Minhas Solicitações",
     "org-explorer": "Explorador da Organização",
     "payroll": "Folha de pagamento",
+    "personnel-files": "Pastas funcionais",
     "platform-admin": "Administrador da plataforma",
     "reports": "Relatórios",
     "scheduling": "Agendamento",
@@ -545,6 +618,10 @@
         "message": "Sua saída foi registrada automaticamente após {duration} minutos de trabalho ininterrupto às {cutoff} ({timezone}) porque o limite de tempo da sua organização foi atingido.",
         "title": "Saída registrada automaticamente"
       },
+      "breakDueReminder": {
+        "message": "O seu intervalo deve começar às {breakTime} ({timezone}). Faça uma pausa até esse horário para seguir as regras de intervalo da sua política de trabalho.",
+        "title": "Hora do intervalo em breve"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: As funções de aprovação precisam de um substituto (saída efetiva em {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Requer revisão: registro de saída de desligamento (saída efetiva em {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: O trabalho futuro precisa de revisão (saída efetiva em {cutoff}, {timezone}).",
         "title": "O desligamento do colaborador precisa de revisão"
       },
+      "forgottenClockOutReminder": {
+        "message": "Seu turno terminou às {endTime} ({timezone}). Registre a saída se tiver terminado de trabalhar.",
+        "title": "Você ainda está com a entrada registrada"
+      },
+      "missedClockInReminder": {
+        "message": "Seu turno começou às {startTime} ({timezone}). Registre a entrada se estiver trabalhando.",
+        "title": "Você ainda não registrou o ponto"
+      },
       "newAbsenceRequest": {
         "title": "Nova solicitação de ausência"
       },
       "passwordChanged": {
         "message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
         "title": "Senha alterada"
+      },
+      "personnelFileDocumentShared": {
+        "message": "O documento \"{title}\" foi compartilhado com você.",
+        "title": "Novo documento na sua pasta funcional"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# documento de funcionário está pronto para exclusão. Revise e confirme a eliminação.} other {# documentos de funcionários estão prontos para exclusão. Revise e confirme a eliminação.}}",
+        "title": "Documentos prontos para exclusão"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} enviou um certificado",
+        "other": "{name} enviou um documento",
+        "title": "Novo documento em uma pasta funcional"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Seu documento \"{title}\" expira hoje.",
+        "message": "O documento \"{title}\" de {employee} expira hoje.",
+        "title": "Um documento expira hoje"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Seu documento \"{title}\" expira em {expiryDate}.",
+        "message": "O documento \"{title}\" de {employee} expira em {expiryDate}.",
+        "title": "Um documento expira em breve"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Seu recibo de pagamento referente a {payPeriod} foi compartilhado com você.",
+        "title": "Novo recibo de pagamento na sua pasta funcional"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Você atingiu as horas necessárias para {day} às {endTime} ({timezone}). Registre a saída se tiver terminado de trabalhar."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Seu último registro de entrada hoje foi às {startTime} ({timezone}). Registre a entrada se estiver trabalhando."
       },
       "shiftAssigned": {
         "message": "Você foi designado para um turno em {shiftDate} das {startTime} às {endTime} por {assignedByName}.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Notificações sobre documentos compartilhados com você em sua pasta funcional",
+          "title": "Pasta funcional"
+        },
         "travelExpenses": {
           "description": "Notificações sobre reembolsos e recuperações de suas despesas de viagem",
           "title": "Despesas de viagem"
@@ -646,6 +768,11 @@
         "errorToast": "Erro de notificação push"
       },
       "toggleAria": "Notificações {channel} para {type}",
+      "types": {
+        "break_due_reminder": "Intervalo pendente",
+        "forgotten_clock_out_reminder": "Saída não registrada",
+        "missed_clock_in_reminder": "Entrada não registrada"
+      },
       "updateFailed": "Falha ao atualizar preferência"
     },
     "search": {
