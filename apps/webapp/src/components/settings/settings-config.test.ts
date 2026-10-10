@@ -162,6 +162,21 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
+	it("shows kiosks in administration to org admins only", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "kiosks")).toMatchObject({
+			href: "/settings/kiosks",
+			icon: "device-tablet",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "kiosks")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "kiosks")).toBe(false);
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter((entry) => entry.group === "notifications");

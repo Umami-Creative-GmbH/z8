@@ -65,6 +65,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/platform-admin/worker-queue": ["common", "admin", "settings/generic"],
 	"/setup": ["common", "setup"],
 	"/init": ["common", "setup"],
+	"/kiosk": ["common", "timeTracking"],
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],

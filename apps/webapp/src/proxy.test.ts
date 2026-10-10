@@ -3,8 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("next-intl/middleware", () => ({
 	default: vi.fn(() => () => NextResponse.next()),
 }));
+const platform = vi.hoisted(() => ({ configured: false }));
 vi.mock("@/lib/setup/config-cache", () => ({
-	isPlatformConfigured: async () => false,
+	isPlatformConfigured: async () => platform.configured,
 }));
 vi.mock("@/lib/domain/platform-domain", () => ({
 	classifyDomainHost: () => null,
@@ -48,6 +49,19 @@ describe("proxy matcher", () => {
 			expect(response.headers.get("location")).toBeNull();
 			expect(response.headers.get("referrer-policy")).toBe("no-referrer");
 			expect(response.headers.get("cache-control")).toContain("no-store");
+		},
+	);
+
+	it.each(["/en/kiosk", "/de/kiosk?code=ABCDE-FGHJK"])(
+		"opens the kiosk page without a user session: %s",
+		async (path) => {
+			platform.configured = true;
+			try {
+				const response = await proxy(new NextRequest(`https://app.example.com${path}`));
+				expect(response.headers.get("location")).toBeNull();
+			} finally {
+				platform.configured = false;
+			}
 		},
 	);
 
