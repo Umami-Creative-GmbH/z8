@@ -224,6 +224,8 @@ export type RateLimitEndpoint = keyof typeof limiters;
 export interface RateLimitResult {
 	/** Whether the request is allowed */
 	allowed: boolean;
+	/** Requests allowed per window, when known */
+	limit?: number;
 	/** Number of remaining requests in the window */
 	remaining: number;
 	/** Timestamp when the rate limit resets (Unix epoch in milliseconds) */
@@ -312,6 +314,7 @@ export async function checkRateLimit(
 			logger.info({ identifier, endpoint, retryAfter }, "Rate limit exceeded");
 			return {
 				allowed: false,
+				limit: result.limit,
 				remaining: result.remaining,
 				resetAt: result.reset,
 				retryAfter: Math.max(0, retryAfter),
@@ -320,6 +323,7 @@ export async function checkRateLimit(
 
 		return {
 			allowed: true,
+			limit: result.limit,
 			remaining: result.remaining,
 			resetAt: result.reset,
 			retryAfter: 0,
@@ -572,6 +576,9 @@ export function createRateLimitResponse(
 ): Response {
 	const headers: Record<string, string> = {
 		"Retry-After": result.retryAfter.toString(),
+		...(result.limit === undefined
+			? {}
+			: { "X-RateLimit-Limit": result.limit.toString() }),
 		"X-RateLimit-Remaining": result.remaining.toString(),
 		"X-RateLimit-Reset": Math.floor(result.resetAt / 1000).toString(),
 	};

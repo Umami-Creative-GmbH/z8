@@ -74,12 +74,13 @@ export interface ApiKeySettings {
 
 type KeyRow = typeof apikey.$inferSelect;
 
-function parseJson(value: string | null): unknown {
+/** A JSON text column of the key; null when missing or unreadable. */
+export function parseStoredJson(value: string | null): unknown {
 	if (!value) return null;
 	try {
 		const parsed: unknown = JSON.parse(value);
 		// Older plugin versions stored metadata JSON-encoded twice.
-		return typeof parsed === "string" ? parseJson(parsed) : parsed;
+		return typeof parsed === "string" ? parseStoredJson(parsed) : parsed;
 	} catch {
 		return null;
 	}
@@ -132,7 +133,7 @@ async function withCreators(
 	rows: KeyRow[],
 ): Promise<ApiKeyView[]> {
 	const creatorIds = [
-		...new Set(rows.flatMap((row) => creatorOfMetadata(parseJson(row.metadata)) ?? [])),
+		...new Set(rows.flatMap((row) => creatorOfMetadata(parseStoredJson(row.metadata)) ?? [])),
 	];
 	const creators =
 		creatorIds.length === 0
@@ -163,7 +164,7 @@ async function withCreators(
 	const byId = new Map(creators.map((creator) => [creator.userId, creator]));
 
 	return rows.map((row) => {
-		const creatorId = creatorOfMetadata(parseJson(row.metadata));
+		const creatorId = creatorOfMetadata(parseStoredJson(row.metadata));
 		const creator = creatorId ? byId.get(creatorId) : undefined;
 		return {
 			id: row.id,
@@ -171,7 +172,7 @@ async function withCreators(
 			name: row.name ?? "",
 			start: row.start,
 			enabled: row.enabled ?? true,
-			scopes: scopesOfPermissions(parseJson(row.permissions)),
+			scopes: scopesOfPermissions(parseStoredJson(row.permissions)),
 			rateLimitEnabled: row.rateLimitEnabled ?? true,
 			rateLimitMax: row.rateLimitMax,
 			rateLimitTimeWindow: row.rateLimitTimeWindow,
@@ -204,7 +205,7 @@ function settingsAudit(row: {
 	return {
 		name: row.name,
 		enabled: row.enabled ?? true,
-		scopes: scopesOfPermissions(parseJson(row.permissions)),
+		scopes: scopesOfPermissions(parseStoredJson(row.permissions)),
 		rateLimitEnabled: row.rateLimitEnabled ?? true,
 		rateLimitMax: row.rateLimitMax,
 		rateLimitTimeWindow: row.rateLimitTimeWindow,
@@ -404,7 +405,7 @@ export async function revokeOrganizationApiKey(
 			keyId: row.id,
 			action: AuditAction.API_KEY_REVOKED,
 			changes: { before: settingsAudit(row) },
-			metadata: { start: row.start, createdBy: creatorOfMetadata(parseJson(row.metadata)) },
+			metadata: { start: row.start, createdBy: creatorOfMetadata(parseStoredJson(row.metadata)) },
 		});
 		return { ok: true } as const;
 	});
