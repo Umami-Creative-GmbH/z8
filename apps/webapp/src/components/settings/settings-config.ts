@@ -65,7 +65,8 @@ export type SettingsIconName =
 	| "brand-teams"
 	| "brand-telegram"
 	| "database-import"
-	| "receipt";
+	| "receipt"
+	| "device-tablet";
 
 export interface SettingsEntry {
 	id: string;
@@ -335,6 +336,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Record positions with employees' own clock events, with their consent",
 		href: "/settings/position-capture",
 		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
+		id: "kiosks",
+		titleKey: "settings.kiosks.title",
+		titleDefault: "Kiosks",
+		descriptionKey: "settings.kiosks.description",
+		descriptionDefault: "Shared devices at a location where employees clock with their kiosk PIN",
+		href: "/settings/kiosks",
+		icon: "device-tablet",
 		minimumTier: "orgAdmin",
 		group: "administration",
 	},
