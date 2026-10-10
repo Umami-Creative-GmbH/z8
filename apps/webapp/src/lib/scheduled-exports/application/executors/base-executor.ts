@@ -15,7 +15,7 @@ import type {
  * Parameters for report execution
  */
 export interface ExecuteParams {
-	/** The scheduled export execution this run records its result on */
+	/** The id of the run's record (`scheduled_export_execution`) */
 	executionId: string;
 	organizationId: string;
 	reportConfig: ReportConfig;

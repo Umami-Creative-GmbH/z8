@@ -17,7 +17,7 @@ const logger = createLogger("AuditReportExecutor");
  * An identifier used as one storage key segment. Refusing separators and dots
  * keeps every key under its own organization's prefix.
  */
-function keySegment(id: string): string {
+function assertKeySegment(id: string): string {
 	if (!/^[A-Za-z0-9_-]+$/.test(id)) {
 		throw new Error("Invalid identifier for an audit report storage key");
 	}
@@ -80,11 +80,11 @@ export class AuditReportExecutor implements IReportExecutor {
 			// Generate CSV content
 			const csvContent = this.generateCsv(filteredLogs, config.includeMetadata);
 
-			// One object per execution, so a later run never replaces a file an
-			// earlier one linked to. The file name keeps the date range readable.
+			// One object per run, so a later run never replaces a file an earlier
+			// one linked to. The file name keeps the date range readable.
 			const start = dateRange.start.toFormat("yyyyMMdd");
 			const end = dateRange.end.toFormat("yyyyMMdd");
-			const s3Key = `audit-reports/${keySegment(organizationId)}/${keySegment(executionId)}/audit_report_${start}_${end}.csv`;
+			const s3Key = `audit-reports/${assertKeySegment(organizationId)}/${assertKeySegment(executionId)}/audit_report_${start}_${end}.csv`;
 
 			// Upload to S3
 			await uploadExport(organizationId, s3Key, Buffer.from(csvContent, "utf-8"), "text/csv");

@@ -43,7 +43,7 @@ describe("scheduled audit report storage key", () => {
 		);
 	});
 
-	it("stores each execution under the organization's prefix, the execution id and the date range", async () => {
+	it("stores each run under the organization's prefix, the run id and the date range", async () => {
 		const result = await new AuditReportExecutor().execute(params);
 
 		expect(result).toMatchObject({
@@ -89,7 +89,7 @@ describe("scheduled audit report storage key", () => {
 	});
 
 	it.each([
-		["an execution id", { executionId: "../org-b/x" }],
+		["a run id", { executionId: "../org-b/x" }],
 		["an organization id", { organizationId: "org-a/../org-b" }],
 	])("refuses %s that would leave the organization's prefix", async (_label, override) => {
 		const result = await new AuditReportExecutor().execute({ ...params, ...override });
