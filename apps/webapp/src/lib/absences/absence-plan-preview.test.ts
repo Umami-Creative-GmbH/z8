@@ -33,6 +33,54 @@ const baseInput: AbsencePlanPreviewInput = {
 	hasManager: true,
 };
 
+describe("buildAbsencePlanPreview for time off in lieu", () => {
+	const timeOffInLieu: AbsencePlanPreviewInput = {
+		...baseInput,
+		category: {
+			id: "cat-toil",
+			name: "Time off in lieu",
+			requiresApproval: true,
+			countsAgainstVacation: false,
+			drawsOnWorkBalance: true,
+		},
+	};
+
+	it("shows the projected work balance after the request", () => {
+		const workBalance = {
+			currentBalanceMinutes: 1200,
+			drawnMinutes: 960,
+			projectedBalanceMinutes: 240,
+			wouldBeNegative: false,
+		};
+
+		const preview = buildAbsencePlanPreview({ ...timeOffInLieu, workBalance });
+
+		expect(preview.workBalance).toEqual(workBalance);
+		expect(preview.balance?.remainingAfterRequest).toBe(14);
+		expect(preview.warnings).toEqual([]);
+		expect(preview.approvalSignal).toBe("likely");
+	});
+
+	it("warns, without refusing, when the work balance would be negative", () => {
+		const preview = buildAbsencePlanPreview({
+			...timeOffInLieu,
+			workBalance: {
+				currentBalanceMinutes: 240,
+				drawnMinutes: 960,
+				projectedBalanceMinutes: -720,
+				wouldBeNegative: true,
+			},
+		});
+
+		expect(preview.warnings).toContain("Work balance would be negative after this request.");
+		expect(preview.approvalSignal).toBe("risky");
+	});
+
+	it("has no work balance projection for other categories", () => {
+		expect(buildAbsencePlanPreview(baseInput).workBalance).toBeNull();
+	});
+});
+
 describe("buildAbsencePlanPreview", () => {
 	it("calculates balance impact for vacation-counting categories", () => {
 		const preview = buildAbsencePlanPreview(baseInput);

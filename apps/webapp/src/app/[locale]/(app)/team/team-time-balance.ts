@@ -8,6 +8,7 @@ import {
 	employeeTimeBalance,
 	workPeriod,
 } from "@/db/schema";
+import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { runtime } from "@/lib/effect/runtime";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
@@ -227,7 +228,7 @@ async function calculateAbsenceAdjustedMinutes(input: {
 				eq(absenceEntry.organizationId, input.organizationId),
 				eq(absenceEntry.status, "approved"),
 				eq(absenceCategory.organizationId, input.organizationId),
-				eq(absenceCategory.requiresWorkTime, false),
+				absenceCategoryReleasesRequiredTime(),
 				lte(absenceEntry.startDate, input.rangeEnd.toISODate()!),
 				gte(absenceEntry.endDate, input.rangeStart.toISODate()!),
 			),

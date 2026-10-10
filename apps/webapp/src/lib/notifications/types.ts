@@ -78,6 +78,8 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// One-time notice to owners and admins that time off in lieu is available (#1000)
+	"time_off_in_lieu_available",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
