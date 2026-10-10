@@ -33,7 +33,7 @@ export type AssignableEmployee = { employeeId: string; name: string; email: stri
 
 // The NOT EXISTS subqueries below name the outer row table-qualified: Drizzle
 // renders bare column names in single-table selects, which would bind inside.
-const employeeName = sql<string>`coalesce(nullif(trim(concat_ws(' ', ${employee.firstName}, ${employee.lastName})), ''), ${user.name})`;
+const employeeName = sql<string>`coalesce(nullif(trim(concat_ws(' ', ${user.firstName}, ${user.lastName})), ''), ${user.name})`;
 
 /**
  * The employee's assigned locations (inactive ones included) and the active

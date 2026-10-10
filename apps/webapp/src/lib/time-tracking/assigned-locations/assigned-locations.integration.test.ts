@@ -259,6 +259,39 @@ describe("assigned locations on PostgreSQL", () => {
 		expect(active).toEqual([
 			expect.objectContaining({ employeeId: present.employeeId, userId: present.userId }),
 		]);
+
+		// Names come from the user, never the deprecated employee name columns.
+		await fixture.pool.query(
+			`update "user" set first_name = 'Pia', last_name = 'Present', name = 'Pia Present' where id = $1`,
+			[present.userId],
+		);
+		await fixture.pool.query(
+			`update employee set first_name = 'Stale', last_name = 'Employee' where id = $1`,
+			[present.employeeId],
+		);
+		expect(
+			await listActiveEmployeesAssignedToLocation(db, {
+				organizationId,
+				locationId: store,
+				now: NOW,
+			}),
+		).toEqual([
+			{
+				employeeId: present.employeeId,
+				userId: present.userId,
+				firstName: "Pia",
+				lastName: "Present",
+				userName: "Pia Present",
+			},
+		]);
+		actAs(owner.userId);
+		const locationSettings = await actions.getLocationAssignedEmployeesAction({
+			locationId: store,
+		});
+		expect(
+			locationSettings.success &&
+				locationSettings.data.assigned.find((row) => row.employeeId === present.employeeId)?.name,
+		).toBe("Pia Present");
 		expect(
 			await listActiveEmployeesAssignedToLocation(db, {
 				organizationId,
