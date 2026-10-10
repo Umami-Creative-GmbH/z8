@@ -32,12 +32,14 @@ const MESSAGING_SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
 const ASSERTION_LIFETIME_SECONDS = 3600;
 const ACCESS_TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
-/** FCM error codes that mean the token will never work again. */
-const INVALID_TOKEN_ERROR_CODES = new Set([
-	"UNREGISTERED",
-	"INVALID_ARGUMENT",
-	"SENDER_ID_MISMATCH",
-]);
+/**
+ * FCM error codes that mean the token will never work again. `INVALID_ARGUMENT`
+ * is not one of them: FCM also returns it for a malformed message, which would
+ * otherwise deactivate every device. It counts only when the error names the
+ * token field (`isTokenFieldViolation`).
+ */
+const INVALID_TOKEN_ERROR_CODES = new Set(["UNREGISTERED", "SENDER_ID_MISMATCH"]);
+const TOKEN_FIELD = "message.token";
 
 export function readFcmCredentials(env: {
 	FCM_PROJECT_ID?: string;
@@ -81,14 +83,37 @@ class FcmRequestError extends Error {
 	}
 }
 
-function fcmErrorCode(body: unknown): string | null {
-	const details = (body as { error?: { details?: Array<{ errorCode?: unknown }> } })?.error
-		?.details;
-	if (!Array.isArray(details)) return null;
+interface FcmErrorDetail {
+	errorCode?: unknown;
+	fieldViolations?: Array<{ field?: unknown }>;
+}
+
+function fcmErrorDetails(body: unknown): FcmErrorDetail[] {
+	const details = (body as { error?: { details?: unknown } })?.error?.details;
+	return Array.isArray(details)
+		? details.filter((detail): detail is FcmErrorDetail => typeof detail === "object" && !!detail)
+		: [];
+}
+
+function fcmErrorCode(details: FcmErrorDetail[]): string | null {
 	for (const detail of details) {
-		if (typeof detail?.errorCode === "string") return detail.errorCode;
+		if (typeof detail.errorCode === "string") return detail.errorCode;
 	}
 	return null;
+}
+
+/** A `google.rpc.BadRequest` detail that blames the device token itself. */
+function isTokenFieldViolation(details: FcmErrorDetail[]): boolean {
+	return details.some(
+		(detail) =>
+			Array.isArray(detail.fieldViolations) &&
+			detail.fieldViolations.some((violation) => violation?.field === TOKEN_FIELD),
+	);
+}
+
+function isInvalidTokenError(errorCode: string | null, details: FcmErrorDetail[]): boolean {
+	if (errorCode && INVALID_TOKEN_ERROR_CODES.has(errorCode)) return true;
+	return errorCode === "INVALID_ARGUMENT" && isTokenFieldViolation(details);
 }
 
 export function createFcmSender(
@@ -137,9 +162,9 @@ export function createFcmSender(
 					},
 				);
 				if (response.ok) return { kind: "sent" };
-				const body = await response.json().catch(() => null);
-				const errorCode = fcmErrorCode(body);
-				if (errorCode && INVALID_TOKEN_ERROR_CODES.has(errorCode)) return { kind: "invalid_token" };
+				const details = fcmErrorDetails(await response.json().catch(() => null));
+				const errorCode = fcmErrorCode(details);
+				if (isInvalidTokenError(errorCode, details)) return { kind: "invalid_token" };
 				if (response.status === 401) cached = null;
 				return {
 					kind: "failed",

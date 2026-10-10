@@ -25,15 +25,25 @@ function json(status: number, body: unknown) {
 	});
 }
 
-function fcmError(status: number, code: string, errorCode?: string) {
+function fcmError(status: number, code: string, errorCode?: string, violatedField?: string) {
 	return json(status, {
 		error: {
 			code: status,
 			status: code,
 			message: "error",
-			details: errorCode
-				? [{ "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError", errorCode }]
-				: [],
+			details: [
+				...(errorCode
+					? [{ "@type": "type.googleapis.com/google.firebase.fcm.v1.FcmError", errorCode }]
+					: []),
+				...(violatedField
+					? [
+							{
+								"@type": "type.googleapis.com/google.rpc.BadRequest",
+								fieldViolations: [{ field: violatedField, description: "Invalid value" }],
+							},
+						]
+					: []),
+			],
 		},
 	});
 }
@@ -131,7 +141,7 @@ describe("createFcmSender", () => {
 
 	it.each([
 		["an unregistered token", fcmError(404, "NOT_FOUND", "UNREGISTERED")],
-		["a malformed token", fcmError(400, "INVALID_ARGUMENT", "INVALID_ARGUMENT")],
+		["a malformed token", fcmError(400, "INVALID_ARGUMENT", "INVALID_ARGUMENT", "message.token")],
 		[
 			"a token of another Firebase project",
 			fcmError(403, "PERMISSION_DENIED", "SENDER_ID_MISMATCH"),
@@ -140,6 +150,22 @@ describe("createFcmSender", () => {
 		const sender = createFcmSender(credentials, { fetch: fakeGoogle(response) });
 
 		await expect(sender.send("dead", message)).resolves.toEqual({ kind: "invalid_token" });
+	});
+
+	it.each([
+		["names no field", fcmError(400, "INVALID_ARGUMENT", "INVALID_ARGUMENT")],
+		[
+			"names a message field",
+			fcmError(400, "INVALID_ARGUMENT", "INVALID_ARGUMENT", "message.data.path"),
+		],
+	])("keeps the token when an INVALID_ARGUMENT error %s", async (_case, response) => {
+		const sender = createFcmSender(credentials, { fetch: fakeGoogle(response) });
+
+		await expect(sender.send("t", message)).resolves.toEqual({
+			kind: "failed",
+			status: 400,
+			error: "INVALID_ARGUMENT",
+		});
 	});
 
 	it("reports quota and server errors as failures that keep the token", async () => {
