@@ -91,22 +91,25 @@ export function findPerDiemRuleSet(key: string): PerDiemRuleSet | null {
 	return PER_DIEM_RULE_SETS.find((entry) => entry.key === key) ?? null;
 }
 
-/** Whether `rules` cover every calendar day from `firstDay` through `lastDay`. */
-export function perDiemRulesCover(
-	rules: PerDiemRuleSet,
+/**
+ * Whether a verified entry covers every calendar day from `firstDay` through
+ * `lastDay`; an entry without `validThrough` covers every later day.
+ */
+export function validityCovers(
+	entry: { validFrom: string; validThrough?: string },
 	firstDay: string,
 	lastDay: string = firstDay,
 ): boolean {
 	return (
-		comparePlainDates(parsePlainDate(firstDay), parsePlainDate(rules.validFrom)) >= 0 &&
-		(!rules.validThrough ||
-			comparePlainDates(parsePlainDate(lastDay), parsePlainDate(rules.validThrough)) <= 0)
+		comparePlainDates(parsePlainDate(firstDay), parsePlainDate(entry.validFrom)) >= 0 &&
+		(!entry.validThrough ||
+			comparePlainDates(parsePlainDate(lastDay), parsePlainDate(entry.validThrough)) <= 0)
 	);
 }
 
 /** The verified rule set covering `date`, if any. */
 export function perDiemRulesOn(date: string): PerDiemRuleSet | null {
-	return PER_DIEM_RULE_SETS.find((entry) => perDiemRulesCover(entry, date)) ?? null;
+	return PER_DIEM_RULE_SETS.find((entry) => validityCovers(entry, date)) ?? null;
 }
 
 export type { PerDiemRates } from "./per-diem.types";
@@ -214,9 +217,5 @@ export function canAdoptPerDiemDefaultFrom(
 	entry: StatutoryPerDiemDefault,
 	effectiveFrom: string,
 ): boolean {
-	const day = parsePlainDate(effectiveFrom);
-	return (
-		comparePlainDates(day, parsePlainDate(entry.validFrom)) >= 0 &&
-		(!entry.validThrough || comparePlainDates(day, parsePlainDate(entry.validThrough)) <= 0)
-	);
+	return validityCovers(entry, effectiveFrom);
 }
