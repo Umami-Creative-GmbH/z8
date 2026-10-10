@@ -9,7 +9,9 @@ import type {
 	ApprovalTypeHandler,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import { runtime } from "@/lib/effect/runtime";
+import { buildAbsenceDeputySection } from "../presentation/absence-deputy";
 import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
@@ -364,6 +366,10 @@ export async function getApprovalInboxDetailFromRequest({
 	} else if (timeEvidence) {
 		review = buildTimeReviewSections(timeEvidence);
 	}
+	if (request.entityType === "absence_entry") {
+		// Who covers during the absence (#1011), after what was submitted.
+		sections.splice(1, 0, buildAbsenceDeputySection(absenceDeputyOf(detail.entity)));
+	}
 	if (review) {
 		sections.splice(1, 0, ...review.sections);
 		if (review.decisionsBlocked) {
@@ -568,6 +574,16 @@ const REQUEST_STATUS_TEXT: Record<
 		fallback: "Withdrawn",
 	},
 };
+
+function absenceDeputyOf(entity: unknown): AbsenceDeputyView | null {
+	if (typeof entity !== "object" || entity === null) return null;
+	const deputy = (entity as { deputy?: unknown }).deputy;
+	if (typeof deputy !== "object" || deputy === null) return null;
+	const { id, name, canDecideApprovals } = deputy as Record<string, unknown>;
+	return typeof id === "string" && typeof name === "string" && typeof canDecideApprovals === "boolean"
+		? { id, name, canDecideApprovals }
+		: null;
+}
 
 function buildDetailSections(
 	detail: ApprovalDetail,

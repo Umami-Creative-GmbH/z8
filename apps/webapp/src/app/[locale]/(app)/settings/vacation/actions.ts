@@ -54,6 +54,8 @@ type AbsenceCategoryWriteData = {
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	/** Absences of this category must name a deputy (#1011); off when left out. */
+	deputyRequired?: boolean;
 	color?: string | null;
 	isActive?: boolean;
 };
@@ -832,6 +834,7 @@ export async function createAbsenceCategory(
 						requiresWorkTime: normalized.requiresWorkTime,
 						requiresApproval: normalized.requiresApproval,
 						countsAgainstVacation: normalized.countsAgainstVacation,
+						deputyRequired: normalized.deputyRequired ?? false,
 						color: normalized.color,
 						isActive: data.isActive ?? true,
 					})
@@ -914,6 +917,8 @@ export async function updateAbsenceCategory(
 							requiresWorkTime: normalized.requiresWorkTime,
 							requiresApproval: normalized.requiresApproval,
 							countsAgainstVacation: normalized.countsAgainstVacation,
+							// Changing it never affects existing absences until their deputy changes.
+							deputyRequired: normalized.deputyRequired ?? category.deputyRequired,
 							color: normalized.color,
 							isActive: data.isActive,
 						})

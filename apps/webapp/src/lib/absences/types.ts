@@ -25,6 +25,8 @@ export interface AbsenceRequest {
 	endTime?: string;
 	notes?: string;
 	sickDetail?: SickDetail;
+	/** The colleague covering while the employee is away (#1011). */
+	deputyEmployeeId?: string;
 }
 
 export interface EmployeeAllowanceUpdate {
@@ -52,7 +54,11 @@ export interface AbsenceWithCategory {
 		type: string;
 		color: string | null;
 		countsAgainstVacation: boolean;
+		/** Absences of this category must name a deputy (#1011). */
+		deputyRequired?: boolean;
 	};
+	/** Who covers while the employee is away (#1011); loaded where it is shown. */
+	deputy?: { id: string; name: string } | null;
 	approvedBy: string | null;
 	approvedAt: Date | null;
 	rejectionReason: string | null;

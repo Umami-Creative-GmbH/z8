@@ -8,6 +8,8 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
+import { loadAbsenceDeputyViews } from "@/lib/absences/deputy-store";
 import type { SickDetail } from "@/lib/absences/types";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
 import { logger } from "@/lib/logger";
@@ -51,6 +53,7 @@ interface AbsenceLookupRecord {
 	endPeriod: "full_day" | "am" | "pm";
 	notes: string | null;
 	sickDetail: SickDetail | null;
+	deputyEmployeeId?: string | null;
 	category: {
 		name: string;
 		type: string;
@@ -175,6 +178,7 @@ export function buildPendingApprovalResult({
 	periodsById,
 	categoryNamesById = new Map<string, string>(),
 	sickNotesByAbsenceId = new Map<string, SickNoteMarker>(),
+	deputiesById = new Map<string, AbsenceDeputyView>(),
 }: {
 	pendingRequests: PendingRequestRecord[];
 	absencesById: Map<string, AbsenceLookupRecord>;
@@ -182,6 +186,8 @@ export function buildPendingApprovalResult({
 	categoryNamesById?: Map<string, string>;
 	/** "Sick note attached (n)" per sick-leave absence (#982). */
 	sickNotesByAbsenceId?: Map<string, SickNoteMarker>;
+	/** Each absence's deputy by employee id (#1011). */
+	deputiesById?: Map<string, AbsenceDeputyView>;
 }): {
 	absenceApprovals: ApprovalWithAbsence[];
 	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
@@ -213,6 +219,9 @@ export function buildPendingApprovalResult({
 						absence.category.type === "sick"
 							? (sickNotesByAbsenceId.get(absence.id) ?? null)
 							: null,
+					deputy: absence.deputyEmployeeId
+						? (deputiesById.get(absence.deputyEmployeeId) ?? null)
+						: null,
 					category: {
 						name: absence.category.name,
 						type: absence.category.type,
@@ -412,7 +421,31 @@ export async function getPendingApprovals(): Promise<{
 			viewerUserId: currentEmployee.userId,
 			absences: absences as AbsenceLookupRecord[],
 		}),
+		deputiesById: await loadDeputyViews({
+			organizationId: currentEmployee.organizationId,
+			absences: absences as AbsenceLookupRecord[],
+		}),
 	});
+}
+
+/** Each pending absence's deputy (#1011). Best effort, like the sick note markers. */
+async function loadDeputyViews(input: {
+	organizationId: string;
+	absences: AbsenceLookupRecord[];
+}): Promise<Map<string, AbsenceDeputyView>> {
+	const deputyEmployeeIds = input.absences.flatMap((absence) =>
+		absence.deputyEmployeeId ? [absence.deputyEmployeeId] : [],
+	);
+	if (deputyEmployeeIds.length === 0) return new Map();
+	try {
+		return await loadAbsenceDeputyViews(db, {
+			organizationId: input.organizationId,
+			deputyEmployeeIds,
+		});
+	} catch (error) {
+		logger.error({ error }, "Failed to load absence deputies for approvals");
+		return new Map();
+	}
 }
 
 /**

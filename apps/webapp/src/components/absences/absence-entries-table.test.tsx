@@ -34,6 +34,12 @@ vi.mock("./sick-notes/absence-sick-notes-panel", () => ({
 	),
 }));
 
+vi.mock("./change-deputy-dialog", () => ({
+	ChangeDeputyDialog: ({ absence }: { absence: { id: string } }) => (
+		<div>{`changing the deputy of ${absence.id}`}</div>
+	),
+}));
+
 vi.mock("./sick-notes/attach-sick-note-dialog", () => ({
 	AttachSickNoteDialog: ({ absence }: { absence: { id: string } }) => (
 		<div>{`attaching to ${absence.id}`}</div>
@@ -312,5 +318,40 @@ describe("AbsenceEntriesTable", () => {
 		expect(screen.getByPlaceholderText("Search by type, status, or notes…").className).toContain(
 			"bg-card",
 		);
+	});
+
+	it("shows the deputy and offers to change it until the absence has ended (#1011)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					buildAbsence({
+						id: "running",
+						status: "approved",
+						startDate: "2026-05-18",
+						endDate: "2026-05-22",
+						deputy: { id: "employee-2", name: "Ben Example" },
+					}),
+					buildAbsence({
+						id: "ended",
+						status: "approved",
+						startDate: "2026-05-11",
+						endDate: "2026-05-19",
+					}),
+					buildAbsence({
+						id: "rejected",
+						status: "rejected",
+						startDate: "2026-05-25",
+						endDate: "2026-05-25",
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.getByText("Ben Example")).toBeTruthy();
+		const change = screen.getAllByRole("button", { name: "Change deputy" });
+		expect(change).toHaveLength(1);
+		fireEvent.click(change[0] as HTMLElement);
+		expect(screen.getByText("changing the deputy of running")).toBeTruthy();
 	});
 });

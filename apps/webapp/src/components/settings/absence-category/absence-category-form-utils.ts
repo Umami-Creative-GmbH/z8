@@ -10,6 +10,8 @@ export interface AbsenceCategoryForSettings {
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	/** Absences of this category must name a deputy (#1011). */
+	deputyRequired: boolean;
 	color: string | null;
 	isActive: boolean;
 }
@@ -23,6 +25,7 @@ export type AbsenceCategoryFormValues = {
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	deputyRequired: boolean;
 	color: string;
 	isActive: boolean;
 };
@@ -38,6 +41,7 @@ export const defaultAbsenceCategoryFormValues: AbsenceCategoryFormValues = {
 	requiresWorkTime: false,
 	requiresApproval: true,
 	countsAgainstVacation: false,
+	deputyRequired: false,
 	color: DEFAULT_CATEGORY_COLOR,
 	isActive: true,
 };
@@ -74,6 +78,7 @@ export function getAbsenceCategoryFormValues(
 		requiresWorkTime: existingCategory.requiresWorkTime,
 		requiresApproval: existingCategory.requiresApproval,
 		countsAgainstVacation: existingCategory.countsAgainstVacation,
+		deputyRequired: existingCategory.deputyRequired,
 		color: existingCategory.color ?? DEFAULT_CATEGORY_COLOR,
 		isActive: existingCategory.isActive,
 	};
@@ -89,6 +94,7 @@ export function buildAbsenceCategoryPayload(value: AbsenceCategoryFormValues) {
 		requiresWorkTime: value.requiresWorkTime,
 		requiresApproval: value.requiresApproval,
 		countsAgainstVacation: value.countsAgainstVacation,
+		deputyRequired: value.deputyRequired,
 		color: value.color.trim(),
 		isActive: value.isActive,
 	};

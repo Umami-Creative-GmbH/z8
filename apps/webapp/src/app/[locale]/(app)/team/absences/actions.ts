@@ -15,6 +15,8 @@ import {
 	vacationAllowance,
 } from "@/db/schema";
 import { calculateBusinessDaysWithHalfDays, dateRangesOverlap } from "@/lib/absences/date-utils";
+import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
+import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
 import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
@@ -25,6 +27,7 @@ import {
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
+import { AuditTrail } from "@/lib/audit-trail";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
@@ -354,6 +357,22 @@ export async function recordAbsenceForEmployee(
 			};
 		}
 
+		const deputyEmployeeId = input.deputyEmployeeId || null;
+		const deputyRefusal = await checkDeputyNaming(db, {
+			organizationId: actor.organizationId,
+			absentEmployeeId: target.id,
+			deputyEmployeeId,
+			deputyRequired: category.deputyRequired,
+		});
+		if (deputyRefusal) {
+			return {
+				success: false,
+				error: DEPUTY_REFUSAL_MESSAGES[deputyRefusal],
+				code: "ValidationError",
+			};
+		}
+
+		const audit = new AuditTrail();
 		const transactionResult = await db.transaction(async (tx) => {
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtext(${managerAbsenceAdvisoryLockKey(target.id)}))`,
@@ -426,11 +445,22 @@ export async function recordAbsenceForEmployee(
 					endPeriod: entryDuration.endPeriod,
 					notes: normalizedInput.notes,
 					sickDetail: input.sickDetail ?? null,
+					deputyEmployeeId,
 					status: "approved",
 					approvedBy: actor.id,
 					approvedAt: currentTimestamp(),
 				})
 				.returning({ id: absenceEntry.id });
+			if (deputyEmployeeId) {
+				await recordDeputyChange(audit, tx, {
+					organizationId: actor.organizationId,
+					absenceId: absence.id,
+					absentEmployeeId: target.id,
+					actorUserId: actor.userId,
+					from: null,
+					to: deputyEmployeeId,
+				});
+			}
 
 			const canonicalValues = buildCanonicalAbsenceRecordValues({
 				organizationId: actor.organizationId,
@@ -481,6 +511,7 @@ export async function recordAbsenceForEmployee(
 				code: "ConflictError",
 			};
 		}
+		audit.forwardCommitted();
 
 		void addCalendarSyncJob({
 			absenceId: transactionResult.absenceId,

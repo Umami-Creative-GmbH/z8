@@ -58,6 +58,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			deputyRequired: false,
 			color: "#3b82f6",
 			isActive: true,
 		});
@@ -74,6 +75,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			deputyRequired: true,
 			color: null,
 			isActive: false,
 		};
@@ -87,6 +89,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			deputyRequired: true,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -98,6 +101,7 @@ describe("absence category form helpers", () => {
 				...defaultAbsenceCategoryFormValues,
 				name: "  Training  ",
 				description: "  Planned training time  ",
+				deputyRequired: true,
 				isActive: false,
 			}),
 		).toEqual({
@@ -109,6 +113,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			deputyRequired: true,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -183,5 +188,22 @@ describe("absence category form helpers", () => {
 		);
 
 		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Parental leave");
+	});
+
+	it("saves the Deputy required setting (#1011)", async () => {
+		const { createAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(createAbsenceCategory).mockResolvedValue({ success: false, error: "stop" });
+		render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "On-call leave" } });
+		fireEvent.click(screen.getByRole("checkbox", { name: "Deputy required" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+
+		await vi.waitFor(() =>
+			expect(createAbsenceCategory).toHaveBeenCalledWith(
+				expect.objectContaining({ name: "On-call leave", deputyRequired: true }),
+			),
+		);
 	});
 });

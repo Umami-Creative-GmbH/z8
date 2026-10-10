@@ -221,6 +221,23 @@ export function AbsenceApprovalsTable() {
 					) : row.original.absence.sickNotes ? (
 						<SickNoteMarker count={row.original.absence.sickNotes.count} />
 					) : null}
+					{row.original.absence.deputy && (
+						// Who covers, so the approver can reject when the cover does not work (#1011).
+						<span className="text-xs">
+							<span className="text-muted-foreground">
+								{t("approvals:approvals.deputy.label", "Deputy")}
+							</span>{" "}
+							<span className="font-medium">{row.original.absence.deputy.name}</span>
+							{!row.original.absence.deputy.canDecideApprovals && (
+								<span className="block text-amber-600 dark:text-amber-400">
+									{t(
+										"approvals:approvals.deputy.contactOnly",
+										"Contact only: cannot decide approvals",
+									)}
+								</span>
+							)}
+						</span>
+					)}
 				</div>
 			),
 		},

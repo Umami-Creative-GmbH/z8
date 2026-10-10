@@ -104,12 +104,18 @@ export async function getAbsenceEntries(
 		),
 		with: {
 			category: true,
+			// The deputy of the employee's own absences (#1011): an employee of the same organization.
+			deputy: { columns: { id: true }, with: { user: { columns: { name: true } } } },
 		},
 		orderBy: [desc(absenceEntry.startDate)],
 	});
 
-	const typedAbsences = absences as unknown as AbsenceWithCategory[];
-	return typedAbsences.map(mapAbsenceWithCategory);
+	return absences.map((absence) =>
+		mapAbsenceWithCategory({
+			...(absence as unknown as AbsenceWithCategory),
+			deputy: absence.deputy ? { id: absence.deputy.id, name: absence.deputy.user.name } : null,
+		}),
+	);
 }
 
 export async function getHolidays(
@@ -138,6 +144,7 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		color: string | null;
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
+		deputyRequired: boolean;
 	}>
 > {
 	const categories = await db.query.absenceCategory.findMany({
@@ -155,5 +162,6 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		color: c.color,
 		requiresApproval: c.requiresApproval,
 		countsAgainstVacation: c.countsAgainstVacation,
+		deputyRequired: c.deputyRequired,
 	}));
 }

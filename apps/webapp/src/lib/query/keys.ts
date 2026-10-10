@@ -71,6 +71,14 @@ export const queryKeys = {
 			["absence-plan-preview", orgId, input] as const,
 	},
 
+	// Deputies on absences (#1011)
+	absenceDeputies: {
+		all: ["absence-deputies"] as const,
+		candidates: <T extends object>(input: T) => ["absence-deputies", "candidates", input] as const,
+		capability: (deputyEmployeeId: string) =>
+			["absence-deputies", "capability", deputyEmployeeId] as const,
+	},
+
 	// Absence categories
 	absenceCategories: {
 		all: ["absence-categories"] as const,

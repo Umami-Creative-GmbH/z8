@@ -112,6 +112,8 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(result.item.id).toBe("approval-1");
 		expect(result.sections.map((section) => section.type)).toEqual([
 			"key_value",
+			// Who covers during the absence (#1011).
+			"key_value",
 			"timeline",
 		]);
 		expect(structuredClone(result)).toEqual(result);
@@ -119,7 +121,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 
 	it("states the request's status, type and summary as translatable texts (#687)", async () => {
 		const result = await getApprovalInboxDetailFromRequest({ request, handler: createHandler() });
-		const [requestSection, timeline] = result.sections;
+		const [requestSection, , timeline] = result.sections;
 		expect(requestSection).toEqual({
 			type: "key_value",
 			title: { key: "approvals:approvals.request", fallback: "Request" },
@@ -199,6 +201,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(result.sections.map((section) => section.type)).toEqual([
 			"key_value",
 			"callout",
+			"key_value",
 			"timeline",
 		]);
 		expect(result.actions).toMatchObject({
@@ -207,6 +210,34 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			canBulkApprove: false,
 		});
 		expect(structuredClone(result)).toEqual(result);
+	});
+
+	it("names the absence's deputy after the submitted facts, noting a contact only (#1011)", async () => {
+		const entity = {
+			id: "absence-1",
+			deputy: { id: "employee-2", name: "Ben Example", canDecideApprovals: false },
+		};
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: createHandler({ ...createDetail(), entity } as never),
+			loadAbsenceReviewEvidence: vi.fn(async () => null),
+		});
+
+		expect(result.sections[1]).toEqual({
+			type: "key_value",
+			title: { key: "approvals:approvals.deputy.title", fallback: "Cover" },
+			rows: [
+				{ label: { key: "approvals:approvals.deputy.label", fallback: "Deputy" }, value: "Ben Example" },
+				{
+					label: { key: "approvals:approvals.deputy.approvals", fallback: "Approvals" },
+					value: {
+						key: "approvals:approvals.deputy.contactOnly",
+						fallback: "Contact only: cannot decide approvals",
+					},
+					tone: "warning",
+				},
+			],
+		});
 	});
 
 	it("leaves absence actions unchanged when no canonical evidence applies", async () => {

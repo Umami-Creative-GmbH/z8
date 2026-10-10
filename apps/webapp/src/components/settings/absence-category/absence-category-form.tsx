@@ -486,6 +486,29 @@ export function AbsenceCategoryForm({
 									</div>
 								)}
 							</form.Field>
+
+							<form.Field name="deputyRequired">
+								{(field) => (
+									<div className="flex items-start gap-3 rounded-lg border p-4">
+										<Checkbox
+											id="absenceCategoryDeputyRequired"
+											checked={field.state.value}
+											onCheckedChange={(checked) => field.handleChange(checked === true)}
+										/>
+										<div className="space-y-1 leading-none">
+											<Label htmlFor="absenceCategoryDeputyRequired" className="cursor-pointer">
+												{t("settings.absenceCategories.form.deputyRequired", "Deputy required")}
+											</Label>
+											<p className="text-sm text-muted-foreground">
+												{t(
+													"settings.absenceCategories.form.deputyRequiredHelp",
+													"Every absence of this type must name a deputy who covers while the employee is away.",
+												)}
+											</p>
+										</div>
+									</div>
+								)}
+							</form.Field>
 						</div>
 
 						<form.Field name="isActive">

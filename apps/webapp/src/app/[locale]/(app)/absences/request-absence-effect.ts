@@ -15,6 +15,9 @@ import {
 	calculateBusinessDaysWithHalfDays,
 	dateRangesOverlap,
 } from "@/lib/absences/date-utils";
+import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
+import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
+import { AuditTrail } from "@/lib/audit-trail";
 import {
 	type NormalizedAbsenceDurationInput,
 	normalizeAbsenceDurationInput,
@@ -354,6 +357,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 		type: string;
 	};
 	createdBy: string;
+	/** The deputy named on the request (#1011), already checked. */
+	deputyEmployeeId?: string | null;
 	hasManagerApprovalWorkflow: boolean;
 	approvalWorkflow?: {
 		categoryId: string;
@@ -377,6 +382,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				currentEmployee,
 			))
 		: undefined;
+	const deputyEmployeeId = params.deputyEmployeeId ?? null;
+	const audit = new AuditTrail();
 
 	return dbService
 		.query("createRequestedAbsenceRecords", async () => {
@@ -422,9 +429,20 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						endPeriod: entryDuration.endPeriod,
 						notes: data.notes,
 						sickDetail: data.sickDetail ?? null,
+						deputyEmployeeId,
 						status: "pending",
 					})
 					.returning();
+				if (deputyEmployeeId) {
+					await recordDeputyChange(audit, tx, {
+						organizationId: currentEmployee.organizationId,
+						absenceId: newAbsence.id,
+						absentEmployeeId: currentEmployee.id,
+						actorUserId: createdBy,
+						from: null,
+						to: deputyEmployeeId,
+					});
+				}
 
 				const canonicalValues = buildCanonicalAbsenceRecordValues({
 					organizationId: currentEmployee.organizationId,
@@ -780,6 +798,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 			return await dbService.db.transaction((tx) => createRecords(tx));
 		})
 		.pipe(
+			// The deputy's audit entry leaves for the external service only once committed.
+			Effect.tap(() => Effect.sync(() => audit.forwardCommitted())),
 			Effect.mapError((error) => {
 				if (error.cause instanceof ValidationError) return error.cause;
 				if (
@@ -1114,6 +1134,24 @@ function requestAbsenceWithResolverEffect(
 					yield* Effect.fail(createSickDetailValidationError(sickDetailError));
 				}
 
+				const deputyRefusal = yield* dbService.query("checkAbsenceDeputy", () =>
+					checkDeputyNaming(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						absentEmployeeId: currentEmployee.id,
+						deputyEmployeeId: data.deputyEmployeeId,
+						deputyRequired: category.deputyRequired,
+					}),
+				);
+				if (deputyRefusal) {
+					yield* Effect.fail(
+						new ValidationError({
+							message: DEPUTY_REFUSAL_MESSAGES[deputyRefusal],
+							field: "deputyEmployeeId",
+							value: data.deputyEmployeeId,
+						}),
+					);
+				}
+
 				const defaultApproverId = category.requiresApproval
 					? yield* getAbsenceDefaultApproverId(dbService, currentEmployee)
 					: null;
@@ -1156,6 +1194,7 @@ function requestAbsenceWithResolverEffect(
 					data: requestData,
 					category,
 					createdBy: userId,
+					deputyEmployeeId: data.deputyEmployeeId ?? null,
 					submittedInput: data,
 					hasManagerApprovalWorkflow: category.requiresApproval,
 					approvalWorkflow: category.requiresApproval

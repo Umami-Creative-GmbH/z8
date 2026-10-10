@@ -62,4 +62,24 @@ describe("mapAbsenceWithCategory", () => {
 
 		expect(mapped.sickDetail).toBe("with_certificate");
 	});
+
+	it("keeps the deputy and whether the category requires one (#1011)", () => {
+		const mapped = mapAbsenceWithCategory(
+			buildAbsence({
+				deputy: { id: "employee-2", name: "Ben Example" },
+				category: {
+					id: "category-on-call",
+					name: "On-call leave",
+					type: "custom",
+					color: null,
+					countsAgainstVacation: false,
+					deputyRequired: true,
+				},
+			}),
+		);
+
+		expect(mapped.deputy).toEqual({ id: "employee-2", name: "Ben Example" });
+		expect(mapped.category.deputyRequired).toBe(true);
+		expect(mapAbsenceWithCategory(buildAbsence()).deputy).toBeNull();
+	});
 });

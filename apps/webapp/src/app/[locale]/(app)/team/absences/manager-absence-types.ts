@@ -127,4 +127,6 @@ export interface RecordAbsenceForEmployeeInput {
 	endTime?: string;
 	notes?: string;
 	sickDetail?: SickDetail;
+	/** The colleague covering while the employee is away (#1011). */
+	deputyEmployeeId?: string;
 }
