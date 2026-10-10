@@ -2,6 +2,9 @@
 
 import { DateTime } from "luxon";
 import { db } from "@/db";
+import type { AbsenceRequest } from "@/lib/absences/types";
+import type { ServerActionResult } from "@/lib/effect/result";
+import type { StagedSickNoteInput } from "@/lib/personnel-file/sick-note-upload";
 import { getCurrentEmployee as getCurrentEmployeeAction } from "./current-employee";
 import { cancelAbsenceRequest as cancelAbsenceRequestAction } from "./mutations";
 import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";
@@ -14,6 +17,10 @@ import {
 	requestAbsenceEffect as requestAbsenceAction,
 	requestAbsenceEffect,
 } from "./request-absence-effect";
+import {
+	type RequestedAbsence,
+	requestAbsenceWithSickNotes,
+} from "./request-with-sick-notes";
 
 export { requestAbsenceEffect };
 
@@ -112,8 +119,14 @@ export async function getAbsencePlanPreview(
 	return getAbsencePlanPreviewAction(...args);
 }
 
+/**
+ * Requests an absence for the signed-in employee. Sick notes staged in the
+ * request dialog (#983) are attached once the absence exists.
+ */
 export async function requestAbsence(
-	...args: Parameters<typeof requestAbsenceAction>
-) {
-	return requestAbsenceAction(...args);
+	data: AbsenceRequest,
+	stagedSickNotes?: readonly StagedSickNoteInput[],
+): Promise<ServerActionResult<RequestedAbsence>> {
+	if (stagedSickNotes === undefined) return requestAbsenceAction(data);
+	return requestAbsenceWithSickNotes(data, stagedSickNotes);
 }
