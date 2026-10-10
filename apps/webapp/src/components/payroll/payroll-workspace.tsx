@@ -12,6 +12,7 @@ import {
 	IconRefresh,
 	IconUsers,
 } from "@tabler/icons-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
@@ -72,6 +73,8 @@ import {
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
+import { queryKeys } from "@/lib/query/keys";
+import { PayrollRunsCard } from "./payroll-runs-card";
 
 type PayrollTranslate = ReturnType<typeof useTranslate>["t"];
 
@@ -387,6 +390,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		formatId,
 	} = state;
 	const [isPending, startTransition] = useTransition();
+	const queryClient = useQueryClient();
 	const isMountedRef = useMountedRef();
 	const blockersSummaryRef = useRef<HTMLDivElement | null>(null);
 
@@ -589,6 +593,10 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					? t("payroll.export.queued", "Payroll export queued")
 					: t("payroll.export.completed", "Payroll export completed"),
 			);
+			// A payroll run may now include expense reports (#852).
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.travelExpenses.scopedPayrollRuns(),
+			});
 		});
 	}
 
@@ -659,6 +667,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				onClearBlocker={clearPayrollBlocker}
 				t={t}
 			/>
+			<PayrollRunsCard />
 			<EmployeeTotalsCard employees={displayedEmployees} t={t} />
 		</div>
 	);

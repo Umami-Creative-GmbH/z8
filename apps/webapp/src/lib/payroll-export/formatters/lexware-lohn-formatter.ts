@@ -12,6 +12,7 @@ import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import type {
 	AbsenceData,
+	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
 	LexwareLohnConfig,
@@ -19,6 +20,11 @@ import type {
 	WorkPeriodData,
 } from "../types";
 import { wageTypeCodeFor } from "../wage-type-code";
+import {
+	commaDecimalAmount,
+	expenseLinesInFileOrder,
+	germanPersonnelNumber,
+} from "./expense-lines";
 
 const logger = createLogger("LexwareLohnFormatter");
 
@@ -64,6 +70,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 	transform(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
+		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
 	): ExportResult {
@@ -139,9 +146,27 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 			}
 		}
 
+		// Expense money lines (#852): the euro amount is the Wert, with no hours or rate.
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
+			germanPersonnelNumber(line, lexwareConfig),
+		)) {
+			const [year, month] = line.date.split("-");
+			const fields = [
+				this.escapeCSV(year),
+				this.escapeCSV(month),
+				this.escapeCSV(personnelNumber),
+				this.escapeCSV(line.wageTypeCode),
+				commaDecimalAmount(line.amount),
+			];
+			if (lexwareConfig.includeStunden) fields.push("");
+			if (lexwareConfig.includeStundensatz) fields.push("");
+			lines.push(fields.join(";"));
+		}
+
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
 
 		const dateRange = this.getDateRange(workPeriods, absences);
 		const fileName = this.generateFileName(dateRange);
@@ -319,6 +344,7 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		}
 		return absence.employeeId;
 	}
+
 
 	/**
 	 * Generate CSV header row

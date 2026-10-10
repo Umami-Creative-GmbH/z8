@@ -3,6 +3,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
@@ -23,6 +24,12 @@ import {
 	generatePayrollPDFFilename,
 } from "@/lib/payroll-workspace/pdf-exporter";
 import { getPayrollWorkspaceSummary } from "@/lib/payroll-workspace/summary";
+import {
+	type DiscardPayrollRunResult,
+	discardPayrollRun,
+	listUnconfirmedPayrollRuns,
+	type UnconfirmedPayrollRun,
+} from "@/lib/travel-expenses/payroll-run";
 import type {
 	DismissiblePayrollBlockerType,
 	PayrollWorkspaceSummary,
@@ -235,6 +242,53 @@ export async function startScopedPayrollExportAction(
 
 		return { jobId, isAsync, fileContent };
 	});
+}
+
+/** An unconfirmed payroll run (#852) whose every included report is in the reader's payroll scope. */
+export type ScopedPayrollRun = Omit<UnconfirmedPayrollRun, "employeeIds">;
+
+/** The unconfirmed payroll runs the payroll access holder may discard. */
+export async function getScopedPayrollRunsAction(): Promise<
+	ServerActionResult<ScopedPayrollRun[]>
+> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { authContext, allowedEmployeeIds } = await resolvePayrollScopeOnly(t);
+		const runs = await listUnconfirmedPayrollRuns(db, authContext.employee.organizationId);
+		return runs
+			.filter((run) => run.employeeIds.every((id) => allowedEmployeeIds.includes(id)))
+			.map(({ employeeIds: _employeeIds, ...run }) => run);
+	});
+}
+
+/**
+ * Discards an unconfirmed payroll run (#852) for a payroll access holder: only
+ * a run whose every included report belongs to an employee in their scope.
+ */
+export async function discardScopedPayrollRunAction(
+	jobId: string,
+): Promise<ServerActionResult<DiscardPayrollRunResult>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { authContext, allowedEmployeeIds } = await resolvePayrollScopeOnly(t);
+		if (!z.uuid().safeParse(jobId).success) return { status: "not_found" } as const;
+		const result = await discardPayrollRun(db, {
+			organizationId: authContext.employee.organizationId,
+			jobId,
+			actorUserId: authContext.user.id,
+			employeeScope: allowedEmployeeIds,
+		});
+		if (result.status === "discarded") revalidatePath("/payroll");
+		return result;
+	});
+}
+
+/** The reader's whole payroll scope, for actions that concern no period. */
+async function resolvePayrollScopeOnly(t: PayrollTranslate) {
+	const { authContext, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(t, {
+		startDate: "2000-01-01",
+		endDate: "2000-01-01",
+		label: t("payroll.export.formatAccessCheck", "Format access check"),
+	});
+	return { authContext, allowedEmployeeIds: scopedEmployeeIds };
 }
 
 export async function getConfiguredPayrollExportFormatsAction(): Promise<

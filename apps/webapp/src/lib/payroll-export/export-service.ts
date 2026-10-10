@@ -19,6 +19,11 @@ import {
 	isPayrollWorkCollectionActive,
 } from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
+import {
+	countIncludedReportsByRun,
+	exportIsPayrollRun,
+	includeReportsInPayrollRun,
+} from "@/lib/travel-expenses/payroll-run";
 import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
@@ -30,7 +35,9 @@ import {
 	fetchWorkPeriodsForExport,
 	getPayrollExportConfig,
 	getWageTypeMappings,
+	resolvePayrollRunEmployeeIds,
 } from "./data-fetcher";
+import { isExpensePayrollFormat } from "./expense-wage-type.types";
 import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
 import { workdayConnector } from "./exporters/workday/workday-connector";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
@@ -340,79 +347,57 @@ export async function processExportJob({
 
 		// BRANCH: File-based formatter (DATEV, etc.)
 		if (formatter) {
-			const exportResult = formatter.transform(
-				workPeriods,
-				absences,
-				mappings,
-				job.config.config as Record<string, unknown>,
-			);
-
-			let downloadUrl: string | undefined;
-
-			if (job.isAsync) {
-				// Upload to S3
-				const s3Key = `payroll-exports/${job.organizationId}/${job.id}/${exportResult.fileName}`;
-				const contentBuffer =
-					typeof exportResult.content === "string"
-						? Buffer.from(exportResult.content, exportResult.encoding)
-						: exportResult.content;
-
-				await uploadExport(job.organizationId, s3Key, contentBuffer, exportResult.mimeType);
-
-				// Generate download URL
-				downloadUrl = await getPresignedUrl(job.organizationId, s3Key);
-
-				// Update job with results
-				await db
-					.update(payrollExportJob)
-					.set({
-						status: "completed",
-						fileName: exportResult.fileName,
-						s3Key,
-						fileSizeBytes: contentBuffer.length,
-						workPeriodCount: exportResult.metadata.workPeriodCount,
-						employeeCount: exportResult.metadata.employeeCount,
-						completedAt: new Date(),
-						expiresAt: DateTime.now().plus({ days: 30 }).toJSDate(),
-					})
-					.where(
-						and(
-							eq(payrollExportJob.id, jobId),
-							eq(payrollExportJob.organizationId, organizationId),
-						),
-					);
-
-				logger.info({ jobId, organizationId, s3Key }, "Async file export completed");
-
-				return { downloadUrl };
-			} else {
-				// Sync export - update job and return result
-				const contentBuffer =
-					typeof exportResult.content === "string"
-						? Buffer.from(exportResult.content, exportResult.encoding)
-						: exportResult.content;
-
-				await db
-					.update(payrollExportJob)
-					.set({
-						status: "completed",
-						fileName: exportResult.fileName,
-						fileSizeBytes: contentBuffer.length,
-						workPeriodCount: exportResult.metadata.workPeriodCount,
-						employeeCount: exportResult.metadata.employeeCount,
-						completedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollExportJob.id, jobId),
-							eq(payrollExportJob.organizationId, organizationId),
-						),
-					);
-
-				logger.info({ jobId, organizationId }, "Sync file export completed");
-
-				return { result: exportResult };
+			const formatId = job.config.formatId;
+			const payrollRun =
+				isExpensePayrollFormat(formatId) &&
+				(await exportIsPayrollRun(db, { organizationId: job.organizationId, formatId }));
+			// Awaited inside the try: a failed delivery must reach the catch that marks the job failed.
+			if (!payrollRun) {
+				return await writeFileExport(
+					db,
+					job,
+					formatter.transform(
+						workPeriods,
+						absences,
+						[],
+						mappings,
+						job.config.config as Record<string, unknown>,
+					),
+				);
 			}
+
+			// A payroll run (#852): the inclusions commit with the finished job, or not at all,
+			// so a failed export never holds reports and earlier runs keep theirs.
+			const employeeIds = await resolvePayrollRunEmployeeIds(job.organizationId, filters);
+			return await db.transaction(async (tx) => {
+				const inclusion = await includeReportsInPayrollRun(tx, {
+					organizationId: job.organizationId,
+					jobId: job.id,
+					format: formatId,
+					period: { startDate: job.filters.dateRange.start, endDate: job.filters.dateRange.end },
+					employeeIds,
+				});
+				logger.info(
+					{
+						jobId,
+						organizationId,
+						includedReports: inclusion.includedReportIds.length,
+						skippedReports: inclusion.skipped,
+					},
+					"Payroll run included reports awaiting reimbursement",
+				);
+				return writeFileExport(
+					tx,
+					job,
+					formatter.transform(
+						workPeriods,
+						absences,
+						inclusion.expenseLines,
+						mappings,
+						job.config.config as Record<string, unknown>,
+					),
+				);
+			});
 		}
 
 		throw new Error("Neither formatter nor exporter available");
@@ -424,6 +409,73 @@ export async function processExportJob({
 
 		throw error;
 	}
+}
+
+/**
+ * Stores a file export's result: uploaded for an asynchronous job, returned
+ * inline for a synchronous one. `database` is the payroll run's transaction
+ * when the file carries expense lines (#852).
+ */
+async function writeFileExport(
+	database: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	job: { id: string; organizationId: string; isAsync: boolean },
+	exportResult: ExportResult,
+): Promise<{ result?: ExportResult; downloadUrl?: string }> {
+	const jobId = job.id;
+	const organizationId = job.organizationId;
+	const contentBuffer =
+		typeof exportResult.content === "string"
+			? Buffer.from(exportResult.content, exportResult.encoding)
+			: exportResult.content;
+
+	if (job.isAsync) {
+		// Upload to S3
+		const s3Key = `payroll-exports/${organizationId}/${jobId}/${exportResult.fileName}`;
+		await uploadExport(organizationId, s3Key, contentBuffer, exportResult.mimeType);
+
+		// Generate download URL
+		const downloadUrl = await getPresignedUrl(organizationId, s3Key);
+
+		// Update job with results
+		await database
+			.update(payrollExportJob)
+			.set({
+				status: "completed",
+				fileName: exportResult.fileName,
+				s3Key,
+				fileSizeBytes: contentBuffer.length,
+				workPeriodCount: exportResult.metadata.workPeriodCount,
+				employeeCount: exportResult.metadata.employeeCount,
+				completedAt: new Date(),
+				expiresAt: DateTime.now().plus({ days: 30 }).toJSDate(),
+			})
+			.where(
+				and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
+			);
+
+		logger.info({ jobId, organizationId, s3Key }, "Async file export completed");
+
+		return { downloadUrl };
+	}
+
+	// Sync export - update job and return result
+	await database
+		.update(payrollExportJob)
+		.set({
+			status: "completed",
+			fileName: exportResult.fileName,
+			fileSizeBytes: contentBuffer.length,
+			workPeriodCount: exportResult.metadata.workPeriodCount,
+			employeeCount: exportResult.metadata.employeeCount,
+			completedAt: new Date(),
+		})
+		.where(
+			and(eq(payrollExportJob.id, jobId), eq(payrollExportJob.organizationId, organizationId)),
+		);
+
+	logger.info({ jobId, organizationId }, "Sync file export completed");
+
+	return { result: exportResult };
 }
 
 /**
@@ -583,6 +635,10 @@ export async function getExportJobHistory(
 		orderBy: (job, { desc }) => [desc(job.createdAt)],
 		limit,
 	});
+	const included = await countIncludedReportsByRun(db, {
+		organizationId,
+		jobIds: jobs.map((job) => job.id),
+	});
 
 	return jobs.map((job) => ({
 		id: job.id,
@@ -595,6 +651,7 @@ export async function getExportJobHistory(
 		completedAt: job.completedAt,
 		errorMessage: job.errorMessage,
 		filters: job.filters,
+		payrollRunIncludedReports: included.get(job.id) ?? 0,
 	}));
 }
 

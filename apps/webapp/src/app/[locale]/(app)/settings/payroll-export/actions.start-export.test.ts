@@ -93,6 +93,8 @@ vi.mock("@/lib/payroll-export", () => ({
 	getProjectsForFilter: mockState.getProjectsForFilter,
 }));
 
+vi.mock("@/lib/travel-expenses/payroll-run", () => ({ discardPayrollRun: vi.fn() }));
+
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
 	const AuthService = Context.Service<{

@@ -1205,6 +1205,13 @@
       "when": 1799078400000,
       "tag": "0171_payroll_wage_type_mapping_organization",
       "breakpoints": true
+    },
+    {
+      "idx": 172,
+      "version": "7",
+      "when": 1799164800000,
+      "tag": "0172_travel_expense_payroll_run_inclusion",
+      "breakpoints": true
     }
   ]
 }

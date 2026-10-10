@@ -45,7 +45,7 @@ type Executor = Database | Transaction;
 /** Why an account of the batch is not offered for reimbursement. */
 export type ExportReimbursementSkip = Extract<
 	BulkReimbursementOutcome,
-	"out_of_scope" | "own_expense" | "already_reimbursed" | "overpaid_or_review"
+	"out_of_scope" | "own_expense" | "in_payroll_run" | "already_reimbursed" | "overpaid_or_review"
 >;
 
 export interface ExportBatchReimbursementAccount {
@@ -140,6 +140,7 @@ function skipOf(
 	actorEmployeeId: string,
 ): ExportReimbursementSkip | null {
 	if (account.employeeId === actorEmployeeId) return "own_expense";
+	if (account.payrollRun) return "in_payroll_run";
 	if (account.approved && account.summary.state === "settled") return "already_reimbursed";
 	return account.approved && fullReimbursementLine(account) ? null : "overpaid_or_review";
 }

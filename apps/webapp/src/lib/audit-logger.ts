@@ -86,6 +86,7 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_RECOVERY_RECORDED = "travel_expense.recovery_recorded",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED = "travel_expense.allowance_override_authorized",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED = "travel_expense.allowance_override_revoked",
+	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_REMOVED = "travel_expense.payroll_run_report_removed",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
@@ -113,6 +114,8 @@ export enum AuditAction {
 
 	// Payroll Export Operations (#851)
 	PAYROLL_EXPENSE_WAGE_TYPE_CHANGED = "payroll_export.expense_wage_type_changed",
+	// #852
+	PAYROLL_RUN_DISCARDED = "payroll_export.payroll_run_discarded",
 
 	// Position Capture Operations (#825)
 	POSITION_CAPTURE_SETTINGS_CHANGED = "position_capture.settings_changed",

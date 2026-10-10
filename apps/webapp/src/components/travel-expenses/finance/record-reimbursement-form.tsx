@@ -137,6 +137,11 @@ function outcomeMessage(t: Translate, result: RecordReimbursementResult): string
 				"travelExpenses.settlement.errors.ownExpense",
 				"You cannot record payments for your own expenses.",
 			);
+		case "in_payroll_run":
+			return t(
+				"travelExpenses.settlement.errors.inPayrollRun",
+				"A payroll run now includes this expense, so it is paid with payroll. Remove it from the run before recording a payment.",
+			);
 		default:
 			return null;
 	}

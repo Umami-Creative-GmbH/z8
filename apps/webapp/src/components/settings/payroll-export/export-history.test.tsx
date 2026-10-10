@@ -16,7 +16,9 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/payroll-export/actions", () => ({
 	getExportDownloadUrlAction: getExportDownloadUrlActionMock,
+	discardPayrollRunAction: vi.fn(),
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import { ExportHistory } from "./export-history";
 
@@ -30,6 +32,7 @@ const completedExport: PayrollExportJobSummary = {
 	createdAt: new Date("2026-07-01T10:00:00.000Z"),
 	completedAt: new Date("2026-07-01T10:01:00.000Z"),
 	errorMessage: null,
+	payrollRunIncludedReports: 0,
 	filters: {
 		dateRange: {
 			start: "2026-06-01T00:00:00.000Z",
