@@ -9,9 +9,11 @@ import type { db as globalDb } from "@/db";
  * (`employee.is_active = false`), so payroll can record a final overtime
  * payout after the last working day.
  *
- * Only balance adjustments use this. The payroll workspace, payroll exports
- * and the sidebar keep `resolvePayrollAccessibleEmployeeIds`, which drops
- * employees who have left.
+ * Only balance adjustments use this, and a grant holder's payroll export for
+ * the employees who left during or after its dates (#1001,
+ * `listDepartedEmployeesCoveredForExport`). The payroll workspace and the
+ * sidebar keep `resolvePayrollAccessibleEmployeeIds`, which drops employees
+ * who have left.
  *
  * The grant is the actor's one active grant in the organization. Its holder
  * must still have access: an approved member with an active employee profile
@@ -162,4 +164,33 @@ export async function listBalanceAdjustmentGrantEmployees(
 			isActive: row.is_active,
 		})),
 	};
+}
+
+/**
+ * The covered employees who have left with an effective departure whose
+ * cutoff lies after the start of `fromDate` in the departure's frozen zone:
+ * they worked on or after that day. A payroll grant holder's export (#1001)
+ * adds them, so final payouts and last-month hours reach payroll; every other
+ * payroll view keeps `resolvePayrollAccessibleEmployeeIds`. Empty when the
+ * actor holds no active grant in the organization.
+ */
+export async function listDepartedEmployeesCoveredForExport(
+	client: Reader,
+	input: { organizationId: string; actorUserId: string; fromDate: string },
+): Promise<string[]> {
+	const result = await client.execute<{ id: string }>(sql`
+		with ${holderGrant(input)}
+		select e.id
+		from holder_grant hg
+		join employee e on e.organization_id = hg.organization_id and e.is_active = false
+		where ${grantCoversEmployee}
+			and exists (
+				select 1 from employee_departure d
+				where d.organization_id = e.organization_id and d.employee_id = e.id
+					and d.status = 'effective'
+					and d.cutoff_at > (${input.fromDate}::date::timestamp at time zone d.timezone)
+			)
+		order by e.id
+	`);
+	return result.rows.map((row) => row.id);
 }
