@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	type AbsenceCategoryForSettings,
@@ -93,7 +94,26 @@ const absenceCategoryTypeOptions: Array<{
 		labelKey: "settings.absenceCategories.form.typeBereavement",
 		fallback: "Bereavement",
 	},
+	{
+		value: "time_off_in_lieu",
+		labelKey: "settings.absenceCategories.form.typeTimeOffInLieu",
+		fallback: "Time Off in Lieu",
+	},
 ];
+
+/** The form-side refusal of a rule combination the server refuses too (#1000). */
+function drawsOnWorkBalanceError(
+	drawsOnWorkBalance: boolean,
+	form: { getFieldValue(name: "countsAgainstVacation" | "requiresWorkTime"): boolean },
+) {
+	return (
+		findAbsenceCategoryRuleConflict({
+			drawsOnWorkBalance,
+			countsAgainstVacation: form.getFieldValue("countsAgainstVacation"),
+			requiresWorkTime: form.getFieldValue("requiresWorkTime"),
+		}) ?? undefined
+	);
+}
 
 function getFieldError(error: unknown) {
 	if (typeof error === "string") {
@@ -483,6 +503,57 @@ export function AbsenceCategoryForm({
 												)}
 											</p>
 										</div>
+									</div>
+								)}
+							</form.Field>
+
+							<form.Field
+								name="drawsOnWorkBalance"
+								validators={{
+									onChangeListenTo: ["countsAgainstVacation", "requiresWorkTime"],
+									onChange: ({ value, fieldApi }) => drawsOnWorkBalanceError(value, fieldApi.form),
+									onSubmit: ({ value, fieldApi }) => drawsOnWorkBalanceError(value, fieldApi.form),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2 rounded-lg border p-4">
+										<div className="flex items-start gap-3">
+											<Checkbox
+												id="absenceCategoryDrawsOnWorkBalance"
+												checked={field.state.value}
+												onCheckedChange={(checked) => field.handleChange(checked === true)}
+												aria-invalid={field.state.meta.errors.length > 0}
+												aria-describedby="absenceCategoryDrawsOnWorkBalanceHelp"
+											/>
+											<div className="space-y-1 leading-none">
+												<Label
+													htmlFor="absenceCategoryDrawsOnWorkBalance"
+													className="cursor-pointer"
+												>
+													{t(
+														"settings.absenceCategories.form.drawsOnWorkBalance",
+														"Draws on Work Balance",
+													)}
+												</Label>
+												<p
+													id="absenceCategoryDrawsOnWorkBalanceHelp"
+													className="text-sm text-muted-foreground"
+												>
+													{t(
+														"settings.absenceCategories.form.drawsOnWorkBalanceHelp",
+														"Time off in lieu: approved days keep their required time, so the employee's work balance falls by it. Vacation is not used.",
+													)}
+												</p>
+											</div>
+										</div>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive" role="alert" aria-live="polite">
+												{t(
+													"settings.absenceCategories.form.drawsOnWorkBalanceConflict",
+													'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+												)}
+											</p>
+										)}
 									</div>
 								)}
 							</form.Field>

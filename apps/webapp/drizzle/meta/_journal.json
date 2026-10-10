@@ -1352,6 +1352,41 @@
       "when": 1800892800000,
       "tag": "0192_closed_month_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1800979200000,
+      "tag": "0193_balance_adjustment",
+      "breakpoints": true
+    },
+    {
+      "idx": 194,
+      "version": "7",
+      "when": 1801065600000,
+      "tag": "0194_payroll_export_unmapped_overtime_payouts",
+      "breakpoints": true
+    },
+    {
+      "idx": 195,
+      "version": "7",
+      "when": 1801152000000,
+      "tag": "0195_time_off_in_lieu",
+      "breakpoints": true
+    },
+    {
+      "idx": 196,
+      "version": "7",
+      "when": 1801238400000,
+      "tag": "0196_balance_adjustment_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1801324800000,
+      "tag": "0197_balance_adjustment_closed_month_refusal",
+      "breakpoints": true
     }
   ]
 }

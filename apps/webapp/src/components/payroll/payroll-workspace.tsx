@@ -10,6 +10,7 @@ import {
 	IconFileExport,
 	IconLoader2,
 	IconRefresh,
+	IconScale,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -77,6 +78,7 @@ import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { queryKeys } from "@/lib/query/keys";
 import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
+import { OvertimePayoutReadinessAlert } from "./overtime-payout-readiness-alert";
 import { PayrollRunReadinessCard } from "./payroll-run-readiness-card";
 import { PayrollRunsCard } from "./payroll-runs-card";
 
@@ -600,6 +602,21 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					? t("payroll.export.queued", "Payroll export queued")
 					: t("payroll.export.completed", "Payroll export completed"),
 			);
+			if (result.data.unmappedOvertimePayoutCount) {
+				toast.warning(
+					t(
+						"payroll.export.unmappedOvertimePayouts",
+						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
+						{ count: result.data.unmappedOvertimePayoutCount },
+					),
+					{
+						description: t(
+							"payroll.export.unmappedOvertimePayoutsDescription",
+							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
+						),
+					},
+				);
+			}
 			// A payroll run may now include expense reports (#852), which changes readiness (#854).
 			void queryClient.invalidateQueries({
 				queryKey: queryKeys.travelExpenses.payrollRuns(),
@@ -682,6 +699,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				t={t}
 			/>
 			{filtersHaveNoMatches ? null : (
+				<OvertimePayoutReadinessAlert request={{ ...request, formatId }} />
+			)}
+			{filtersHaveNoMatches ? null : (
 				<PayrollRunReadinessCard request={{ ...request, formatId }} />
 			)}
 			<PayrollRunsCard />
@@ -692,7 +712,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 function PayrollHeader({ t }: { t: PayrollTranslate }) {
 	return (
-		<header className="space-y-1">
+		<header className="flex flex-wrap items-start justify-between gap-3">
 			<div className="space-y-1">
 				<h1 className="text-3xl font-semibold tracking-tight">{t("payroll.title", "Payroll")}</h1>
 				<p className="text-muted-foreground">
@@ -702,6 +722,12 @@ function PayrollHeader({ t }: { t: PayrollTranslate }) {
 					)}
 				</p>
 			</div>
+			<Button asChild variant="outline">
+				<Link href="/payroll/work-balances">
+					<IconScale aria-hidden="true" className="size-4" />
+					{t("payroll.workBalances.open", "Work balances")}
+				</Link>
+			</Button>
 		</header>
 	);
 }

@@ -2,6 +2,7 @@
 
 import { Effect } from "effect";
 import type { ZodType } from "zod";
+import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -21,11 +22,14 @@ import {
 	ResolveDepartureReviewError,
 	RetryDepartureTaskError,
 } from "@/lib/employee-lifecycle";
+import { offboardingWorkBalance } from "@/lib/employee-lifecycle/final-payout";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
 import type { ExecuteDepartureResult, LifecycleActor } from "@/lib/employee-lifecycle/types";
 import type {
 	EmployeeDeparturePreview,
+	EmployeeOffboardingState,
 	EmployeeOffboardingView,
+	OffboardingWorkBalance,
 } from "@/lib/employee-lifecycle/view-types";
 import { createLogger } from "@/lib/logger";
 import {
@@ -39,6 +43,9 @@ import {
 	retryDepartureTaskSchema,
 	scheduleDepartureSchema,
 } from "@/lib/validations/employee-offboarding";
+import { mayWriteBalanceAdjustments } from "@/lib/work-balance/adjustments/authorization";
+import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
+import { getEmployeeWorkBalance, loadWorkBalanceEmployee } from "@/lib/work-balance/service";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -329,9 +336,29 @@ export async function getEmployeeOffboardingViewAction(
 						}),
 					);
 				}
-				if (EMPLOYEE_OFFBOARDING_RELEASE_READY) return result.view;
+				if (EMPLOYEE_OFFBOARDING_RELEASE_READY) {
+					// Information only: a balance that fails to load never hides the departure.
+					const workBalance = yield* actorContext.dbService
+						.query("employeeOffboarding.workBalance", () =>
+							loadOffboardingWorkBalance(actorContext.dbService.db, {
+								organizationId: actorContext.organizationId,
+								employeeId,
+								state: result.view.state,
+							}),
+						)
+						.pipe(
+							Effect.catch((error) =>
+								Effect.sync(() => {
+									logger.error({ error }, "Failed to load the offboarding work balance");
+									return null;
+								}),
+							),
+						);
+					return { ...result.view, workBalance };
+				}
 				return {
 					...result.view,
+					workBalance: null,
 					capabilities: {
 						...result.view.capabilities,
 						schedule: false,
@@ -341,6 +368,35 @@ export async function getEmployeeOffboardingViewAction(
 					},
 				};
 			}),
+	});
+}
+
+/**
+ * The departing employee's work balance for the review (#1002): the same
+ * projection every balance view reads, and a final overtime payout when the
+ * viewer may record payouts (the #993 rule, re-checked when recording).
+ */
+async function loadOffboardingWorkBalance(
+	dbClient: WorkBalanceDbClient,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		state: EmployeeOffboardingState;
+	},
+): Promise<OffboardingWorkBalance | null> {
+	if (input.state === "active") return null;
+	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
+	const [subject, balance, mayRecordPayouts] = await Promise.all([
+		loadWorkBalanceEmployee(scope, dbClient),
+		getEmployeeWorkBalance(scope, dbClient),
+		mayWriteBalanceAdjustments(dbClient, scope),
+	]);
+	if (!subject) return null;
+	return offboardingWorkBalance({
+		state: input.state,
+		balance,
+		mayRecordPayouts,
+		today: plainDateAt(systemClock.nowInstant(), subject.timezone).toString(),
 	});
 }
 

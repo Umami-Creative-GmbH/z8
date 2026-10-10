@@ -16,6 +16,7 @@ import {
 	vacationAllowance,
 } from "@/db/schema";
 import type { LocaleTranslationMap } from "@/db/schema/absence";
+import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
@@ -43,7 +44,8 @@ export type AbsenceCategoryType =
 	| "unpaid"
 	| "parental"
 	| "bereavement"
-	| "custom";
+	| "custom"
+	| "time_off_in_lieu";
 
 type AbsenceCategoryWriteData = {
 	type: AbsenceCategoryType;
@@ -54,6 +56,8 @@ type AbsenceCategoryWriteData = {
 	requiresWorkTime: boolean;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	/** Time off in lieu (#1000); false when omitted. */
+	drawsOnWorkBalance?: boolean;
 	color?: string | null;
 	isActive?: boolean;
 };
@@ -92,6 +96,7 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 		description: normalizeOptionalText(data.description),
 		nameTranslations: normalizeTranslationMap(data.nameTranslations),
 		descriptionTranslations: normalizeTranslationMap(data.descriptionTranslations),
+		drawsOnWorkBalance: data.drawsOnWorkBalance ?? false,
 		color: normalizeOptionalText(data.color),
 	};
 }
@@ -101,6 +106,21 @@ function rejectBlankAbsenceCategoryName() {
 		new ConflictError({
 			message: "Absence category name cannot be blank",
 			conflictType: "invalid_absence_category_name",
+		}),
+	);
+}
+
+function rejectConflictingAbsenceCategoryRules(
+	normalized: ReturnType<typeof normalizeAbsenceCategoryData>,
+) {
+	const conflict = findAbsenceCategoryRuleConflict(normalized);
+	if (!conflict) return Effect.void;
+	return Effect.fail(
+		new ConflictError({
+			message:
+				'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+			conflictType: "invalid_absence_category_rules",
+			details: { conflict },
 		}),
 	);
 }
@@ -140,13 +160,14 @@ async function hasAbsenceCategoryAbsenceReferences(
 
 function hasOperationalAbsenceCategoryChanges(
 	category: typeof absenceCategory.$inferSelect,
-	normalized: AbsenceCategoryWriteData,
+	normalized: ReturnType<typeof normalizeAbsenceCategoryData>,
 ) {
 	return (
 		category.type !== normalized.type ||
 		category.requiresWorkTime !== normalized.requiresWorkTime ||
 		category.requiresApproval !== normalized.requiresApproval ||
-		category.countsAgainstVacation !== normalized.countsAgainstVacation
+		category.countsAgainstVacation !== normalized.countsAgainstVacation ||
+		category.drawsOnWorkBalance !== normalized.drawsOnWorkBalance
 	);
 }
 
@@ -816,6 +837,7 @@ export async function createAbsenceCategory(
 		if (!normalized.name) {
 			yield* rejectBlankAbsenceCategoryName();
 		}
+		yield* rejectConflictingAbsenceCategoryRules(normalized);
 
 		const dbService = yield* DatabaseService;
 		const [created] = yield* dbService
@@ -832,6 +854,7 @@ export async function createAbsenceCategory(
 						requiresWorkTime: normalized.requiresWorkTime,
 						requiresApproval: normalized.requiresApproval,
 						countsAgainstVacation: normalized.countsAgainstVacation,
+						drawsOnWorkBalance: normalized.drawsOnWorkBalance,
 						color: normalized.color,
 						isActive: data.isActive ?? true,
 					})
@@ -874,6 +897,7 @@ export async function updateAbsenceCategory(
 		if (!normalized.name) {
 			yield* rejectBlankAbsenceCategoryName();
 		}
+		yield* rejectConflictingAbsenceCategoryRules(normalized);
 
 		const updateResult = yield* dbService
 			.query("updateAbsenceCategory", async () => {
@@ -914,6 +938,7 @@ export async function updateAbsenceCategory(
 							requiresWorkTime: normalized.requiresWorkTime,
 							requiresApproval: normalized.requiresApproval,
 							countsAgainstVacation: normalized.countsAgainstVacation,
+							drawsOnWorkBalance: normalized.drawsOnWorkBalance,
 							color: normalized.color,
 							isActive: data.isActive,
 						})

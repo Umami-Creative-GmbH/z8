@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { FormerEmployeesExportCard } from "@/components/payroll/former-employees-export-card";
 import { PayrollWorkspace } from "@/components/payroll/payroll-workspace";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,6 +11,7 @@ import {
 	getPayrollWorkspaceSummaryAction,
 } from "./actions";
 import { PayrollFailureState } from "./payroll-failure-state";
+import { loadPayrollWorkBalanceEmployees } from "./work-balances/coverage";
 
 async function PayrollPageContent() {
 	// The current payroll period must be resolved per request.
@@ -30,7 +32,25 @@ async function PayrollPageContent() {
 	]);
 
 	if (!summaryResult.success) {
-		return <PayrollFailureState code={summaryResult.code} t={t} />;
+		// A grant whose active employees are gone still covers the employees who
+		// have left for their overtime payouts (#995).
+		const offerWorkBalances =
+			summaryResult.code === "AuthorizationError" &&
+			((await loadPayrollWorkBalanceEmployees())?.length ?? 0) > 0;
+		return (
+			<PayrollFailureState
+				code={summaryResult.code}
+				t={t}
+				offerWorkBalances={offerWorkBalances}
+				exportEntry={
+					// Their last months can still be exported (#1001).
+					<FormerEmployeesExportCard
+						initialMonth={start.toFormat("yyyy-MM")}
+						exportFormats={formatsResult.success ? formatsResult.data : []}
+					/>
+				}
+			/>
+		);
 	}
 
 	return (

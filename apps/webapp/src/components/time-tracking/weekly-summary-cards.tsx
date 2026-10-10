@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BalanceAdjustmentHistoryButton } from "@/components/work-balance/balance-adjustment-history-button";
 import { WorkBalanceCard } from "@/components/work-balance/work-balance-card";
 import { useLiveWorkNow } from "@/hooks/use-live-work-now";
 import type { LiveWork } from "@/lib/calendar/types";
@@ -99,7 +100,14 @@ export function WeeklySummaryCards({ summary: serverSummary, workBalance }: Prop
 				surchargeMinutes={summary.monthSurchargeMinutes}
 			/>
 
-			<WorkBalanceCard balance={workBalance} />
+			<WorkBalanceCard
+				balance={workBalance}
+				action={
+					workBalance ? (
+						<BalanceAdjustmentHistoryButton employeeId={workBalance.employeeId} />
+					) : null
+				}
+			/>
 		</div>
 	);
 }

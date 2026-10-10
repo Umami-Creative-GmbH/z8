@@ -86,6 +86,9 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	month_closed_automatically: "attention",
 	month_close_blocked: "attention",
 	month_reopened: "attention",
+	time_off_in_lieu_available: "attention",
+	work_balance_adjustment_recorded: "working_time",
+	work_balance_adjustment_cancelled: "working_time",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

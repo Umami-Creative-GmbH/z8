@@ -25,6 +25,7 @@ const employeeWorkBalanceSchema = z.object({
 	organizationId: z.string(),
 	actualMinutes: z.number().int(),
 	requiredMinutes: z.number().int(),
+	adjustmentMinutes: z.number().int().default(0),
 	balanceMinutes: z.number().int(),
 	computedFromDate: z.string(),
 	computedThroughDate: z.string(),

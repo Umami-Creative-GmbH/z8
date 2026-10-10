@@ -1573,6 +1573,8 @@ export async function startExportAction(input: StartExportInput): Promise<
 		isAsync: boolean;
 		downloadUrl?: string;
 		fileContent?: string;
+		/** Overtime payouts the file left out for want of an "overtime" mapping (#1001). */
+		unmappedOvertimePayoutCount?: number;
 	}>
 > {
 	const effect = Effect.gen(function* () {
@@ -1670,6 +1672,7 @@ export async function startExportAction(input: StartExportInput): Promise<
 						? result.content
 						: result.content.toString("utf-8")
 					: undefined,
+				unmappedOvertimePayoutCount: result?.metadata.unmappedOvertimePayouts.length ?? 0,
 			};
 		}
 

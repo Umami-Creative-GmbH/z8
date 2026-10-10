@@ -3,6 +3,7 @@
  * This file contains server-only code that accesses the database
  */
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -24,6 +25,7 @@ import {
 	team,
 	teamPermissions,
 	timeEntry,
+	user,
 	vacationAllowance,
 	vacationPolicyAssignment,
 	workPeriod,
@@ -35,9 +37,12 @@ import {
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db";
-import { customer, projectTask } from "@/db/schema";
+import { balanceAdjustment, customer, projectTask } from "@/db/schema";
 import { env } from "@/env";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import {
+	type AuthUserDisplayNameInput,
+	buildAuthUserDisplayName,
+} from "@/lib/auth/derived-user-name";
 import { type PlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
@@ -519,9 +524,22 @@ export async function fetchAbsences(organizationId: string) {
 
 	const employeeIds = orgEmployees.map((e) => e.id);
 
-	const categories = await db.query.absenceCategory.findMany({
-		where: eq(absenceCategory.organizationId, organizationId),
-	});
+	const categories = (
+		await db.query.absenceCategory.findMany({
+			where: eq(absenceCategory.organizationId, organizationId),
+		})
+	).map((cat) => ({
+		id: cat.id,
+		name: cat.name,
+		type: cat.type,
+		color: cat.color,
+		requiresApproval: cat.requiresApproval,
+		countsAgainstVacation: cat.countsAgainstVacation,
+		requiresWorkTime: cat.requiresWorkTime,
+		// Time off in lieu (#1000): an approved absence keeps its days' required time.
+		drawsOnWorkBalance: cat.drawsOnWorkBalance,
+		isActive: cat.isActive,
+	}));
 
 	if (employeeIds.length === 0) {
 		return { absences: [], categories };
@@ -562,15 +580,101 @@ export async function fetchAbsences(organizationId: string) {
 			rejectionReason: absence.rejectionReason,
 			createdAt: absence.createdAt,
 		})),
-		categories: categories.map((cat) => ({
-			id: cat.id,
-			name: cat.name,
-			type: cat.type,
-			color: cat.color,
-			requiresApproval: cat.requiresApproval,
-			countsAgainstVacation: cat.countsAgainstVacation,
-			requiresWorkTime: cat.requiresWorkTime,
-			isActive: cat.isActive,
+		categories,
+	};
+}
+
+const BALANCE_ADJUSTMENT_COLUMNS = [
+	"id",
+	"employeeId",
+	"employeeNumber",
+	"employeeName",
+	"kind",
+	"day",
+	"minutes",
+	"reason",
+	"recordedBy",
+	"recordedByName",
+	"recordedAt",
+	"cancelledBy",
+	"cancelledByName",
+	"cancelledAt",
+	"cancellationReason",
+] as const;
+
+/**
+ * Fetch every balance adjustment of an organization (#1003, spec #804):
+ * opening balances and overtime payouts, cancelled ones included with who
+ * cancelled them, when and why.
+ * Format: CSV table. `day` is the employee's local date as stored, `minutes`
+ * is signed (a payout is negative). Recorder and canceller are user ids with
+ * their display names; both are empty once that user was deleted.
+ */
+export async function fetchBalanceAdjustments(organizationId: string): Promise<CsvTable> {
+	logger.info({ organizationId }, "Fetching balance adjustments for export");
+
+	const subjectUser = alias(user, "subject_user");
+	const recorder = alias(user, "recorder");
+	const canceller = alias(user, "canceller");
+	const nameColumns = <T extends typeof subjectUser | typeof recorder | typeof canceller>(
+		table: T,
+	) => ({
+		firstName: table.firstName,
+		lastName: table.lastName,
+		name: table.name,
+		email: table.email,
+	});
+	const rows = await db
+		.select({
+			adjustment: balanceAdjustment,
+			employeeNumber: employee.employeeNumber,
+			subject: nameColumns(subjectUser),
+			recorder: nameColumns(recorder),
+			canceller: nameColumns(canceller),
+		})
+		.from(balanceAdjustment)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, balanceAdjustment.employeeId),
+				eq(employee.organizationId, balanceAdjustment.organizationId),
+			),
+		)
+		.leftJoin(subjectUser, eq(subjectUser.id, employee.userId))
+		.leftJoin(recorder, eq(recorder.id, balanceAdjustment.recordedBy))
+		.leftJoin(canceller, eq(canceller.id, balanceAdjustment.cancelledBy))
+		.where(eq(balanceAdjustment.organizationId, organizationId))
+		.orderBy(
+			asc(balanceAdjustment.employeeId),
+			asc(balanceAdjustment.day),
+			asc(balanceAdjustment.recordedAt),
+			asc(balanceAdjustment.id),
+		);
+
+	logger.info({ count: rows.length }, "Fetched balance adjustments");
+
+	const displayName = (person: AuthUserDisplayNameInput | null) =>
+		person ? buildAuthUserDisplayName(person) : "";
+
+	return {
+		format: "csv-table",
+		columns: BALANCE_ADJUSTMENT_COLUMNS.map((key) => ({ key, header: key })),
+		rows: rows.map(({ adjustment: a, ...row }) => ({
+			id: a.id,
+			employeeId: a.employeeId,
+			employeeNumber: row.employeeNumber,
+			employeeName: displayName(row.subject),
+			kind: a.kind,
+			day: a.day,
+			minutes: a.minutes,
+			reason: a.reason,
+			recordedBy: a.recordedBy,
+			recordedByName: displayName(row.recorder),
+			recordedAt: a.recordedAt,
+			cancelledBy: a.cancelledBy,
+			cancelledByName: displayName(row.canceller),
+			cancelledAt: a.cancelledAt,
+			cancellationReason: a.cancellationReason,
 		})),
 	};
 }
@@ -963,6 +1067,7 @@ export async function fetchExportData(
 		time_entries: () => fetchTimeEntries(organizationId, requester),
 		work_periods: () => fetchWorkPeriods(organizationId),
 		absences: () => fetchAbsences(organizationId),
+		balance_adjustments: () => fetchBalanceAdjustments(organizationId),
 		holidays: () => fetchHolidays(organizationId),
 		vacation: () => fetchVacation(organizationId),
 		schedules: () => fetchSchedules(organizationId),

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import type { AbsencePlanPreview, ApprovalSignal } from "@/lib/absences/absence-plan-preview";
 import { formatDays } from "@/lib/absences/date-utils";
 import { cn } from "@/lib/utils";
+import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 
 interface AbsencePlanPreviewPanelProps {
 	preview?: AbsencePlanPreview;
@@ -122,6 +123,36 @@ export function AbsencePlanPreviewPanel({
 						</p>
 					)}
 				</PreviewSection>
+
+				{preview.workBalance ? (
+					<PreviewSection title={t("absences.planPreview.workBalance", "Work balance")}>
+						<div className="space-y-2">
+							<MetricRow
+								label={t("absences.planPreview.workBalanceCurrent", "Current")}
+								value={formatSignedWorkBalance(preview.workBalance.currentBalanceMinutes)}
+							/>
+							<MetricRow
+								label={t("absences.planPreview.workBalanceDrawn", "Drawn by request")}
+								value={formatSignedWorkBalance(-preview.workBalance.drawnMinutes)}
+							/>
+							<MetricRow
+								label={t("absences.planPreview.workBalanceAfter", "After request")}
+								value={formatSignedWorkBalance(preview.workBalance.projectedBalanceMinutes)}
+							/>
+							{preview.workBalance.wouldBeNegative ? (
+								<p className="flex items-start gap-2 text-destructive text-sm">
+									<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+									<span>
+										{t(
+											"absences.planPreview.workBalanceNegative",
+											"Your work balance would be negative after this request. You can still submit it.",
+										)}
+									</span>
+								</p>
+							) : null}
+						</div>
+					</PreviewSection>
+				) : null}
 
 				<PreviewSection title={t("absences.planPreview.holidays", "Holidays")}>
 					{preview.holidays.length > 0 ? (

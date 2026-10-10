@@ -11,7 +11,12 @@ import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
+import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
+import {
+	hasActivePayrollAccessGrant,
+	intersectPayrollScope,
+	resolvePayrollAccessibleEmployeeIds,
+} from "@/lib/payroll-access/permissions";
 import {
 	createExportJob,
 	enqueuePayrollExportJob,
@@ -19,6 +24,7 @@ import {
 	getPayrollExportConfig,
 	type PayrollExportFilters,
 	processExportJob,
+	unmappedOvertimePayoutsForExport,
 } from "@/lib/payroll-export";
 import {
 	isPayrollWorkspaceExportFormatId,
@@ -189,13 +195,27 @@ export async function exportPayrollPdfAction(
 
 export async function startScopedPayrollExportAction(
 	request: PayrollWorkspaceRequest & { formatId: string },
-): Promise<ServerActionResult<{ jobId: string; isAsync: boolean; fileContent?: string }>> {
+): Promise<
+	ServerActionResult<{
+		jobId: string;
+		isAsync: boolean;
+		fileContent?: string;
+		/** Overtime payouts the file left out for want of an "overtime" mapping (#1001). */
+		unmappedOvertimePayoutCount?: number;
+	}>
+> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
-		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
-			t,
-			request,
-		);
+		const { authContext, period, employeeIds } = await resolvePayrollExportScope(t, request);
+		if (employeeIds.length === 0) {
+			throw new ValidationError({
+				message: t(
+					"payroll.export.nobodyEmployedInPeriod",
+					"No one in your payroll access was employed in this period.",
+				),
+				field: "startDate",
+			});
+		}
 
 		const configuredFormat = await getPayrollExportConfig(
 			authContext.employee.organizationId,
@@ -216,7 +236,7 @@ export async function startScopedPayrollExportAction(
 				start: period.start,
 				end: period.end,
 			},
-			employeeIds: scopedEmployeeIds,
+			employeeIds,
 		};
 
 		// Only an organization administrator executes eligible historical repairs (#322),
@@ -248,8 +268,112 @@ export async function startScopedPayrollExportAction(
 				: result.content.toString("utf-8")
 			: undefined;
 
-		return { jobId, isAsync, fileContent };
+		return {
+			jobId,
+			isAsync,
+			fileContent,
+			unmappedOvertimePayoutCount: result?.metadata.unmappedOvertimePayouts.length ?? 0,
+		};
 	});
+}
+
+/**
+ * Before exporting (#1001): how many uncancelled overtime payouts an export of
+ * this period, format and employee selection would leave out because no wage
+ * type is mapped to "overtime" for the format.
+ */
+export async function getOvertimePayoutExportReadinessAction(
+	request: PayrollWorkspaceRequest & { formatId: string },
+): Promise<ServerActionResult<{ unmappedPayoutCount: number }>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const formatId = validateExportFormatId(t, request.formatId);
+		const { authContext, period, employeeIds } = await resolvePayrollExportScope(t, request);
+		if (employeeIds.length === 0) return { unmappedPayoutCount: 0 };
+		const unmapped = await unmappedOvertimePayoutsForExport(
+			authContext.employee.organizationId,
+			formatId,
+			{ dateRange: { start: period.start, end: period.end }, employeeIds },
+		);
+		return { unmappedPayoutCount: unmapped.length };
+	});
+}
+
+/**
+ * How many employees an export of the period would cover (#1001): lets a grant
+ * that covers only employees who have left show, before exporting, that nobody
+ * was employed in the chosen period.
+ */
+export async function getPayrollExportScopeAction(
+	request: PayrollWorkspaceRequest,
+): Promise<ServerActionResult<{ employeeCount: number }>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const { employeeIds } = await resolvePayrollExportScope(t, request);
+		return { employeeCount: employeeIds.length };
+	});
+}
+
+/**
+ * The employees a payroll workspace export covers (#1001): the employees the
+ * grant covers in the workspace, plus the grant's employees who left on or
+ * after the period's first day, so final payouts and last-month hours reach
+ * payroll. An employee selection narrows both. A grant that covers only
+ * employees who have left may therefore export a period in which one of them
+ * was still employed; the scope is empty for a period after they all left.
+ * Every other payroll view keeps the workspace scope.
+ */
+async function resolvePayrollExportScope(
+	t: PayrollTranslate,
+	request: PayrollWorkspaceRequest,
+): Promise<{
+	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> };
+	period: { start: DateTime; end: DateTime; label: string };
+	employeeIds: string[];
+}> {
+	const authContext = await requirePayrollGrantHolder(t);
+	const period = validatePayrollWorkspaceRequest(t, request);
+	const requestedEmployeeIds = validateRequestedEmployeeIds(t, request.employeeIds);
+	const [allowedEmployeeIds, departedEmployeeIds] = await Promise.all([
+		resolvePayrollAccessibleEmployeeIds({
+			organizationId: authContext.employee.organizationId,
+			payrollEmployeeId: authContext.employee.id,
+		}),
+		listDepartedEmployeesCoveredForExport(db, {
+			organizationId: authContext.employee.organizationId,
+			actorUserId: authContext.user.id,
+			fromDate: parsePlainDate(request.startDate).toString(),
+		}),
+	]);
+	return {
+		authContext,
+		period,
+		employeeIds: intersectPayrollScope({
+			allowedEmployeeIds: [...allowedEmployeeIds, ...departedEmployeeIds],
+			requestedEmployeeIds,
+		}),
+	};
+}
+
+/** The signed-in employee, when they hold an active payroll access grant in the active organization. */
+async function requirePayrollGrantHolder(
+	t: PayrollTranslate,
+): Promise<AuthContext & { employee: NonNullable<AuthContext["employee"]> }> {
+	const authContext = await requireActiveOrganizationEmployee(t);
+	const holdsGrant = await hasActivePayrollAccessGrant({
+		organizationId: authContext.employee.organizationId,
+		payrollEmployeeId: authContext.employee.id,
+	});
+	if (!holdsGrant) {
+		throw new AuthorizationError({
+			message: t(
+				"payroll.errors.noAssignedEmployees",
+				"No payroll employees are assigned to your access scope",
+			),
+			userId: authContext.user.id,
+			resource: "payroll_workspace",
+			action: "read",
+		});
+	}
+	return authContext;
 }
 
 /** An unconfirmed payroll run (#852) whose every included report is in the reader's payroll scope. */
@@ -330,11 +454,8 @@ export async function getConfiguredPayrollExportFormatsAction(): Promise<
 	ServerActionResult<PayrollExportFormatOption[]>
 > {
 	return runPayrollWorkspaceAction(async (t) => {
-		const { authContext } = await resolvePayrollWorkspaceActionContext(t, {
-			startDate: "2000-01-01",
-			endDate: "2000-01-01",
-			label: t("payroll.export.formatAccessCheck", "Format access check"),
-		});
+		// Every grant holder, also one whose grant covers only employees who have left (#1001).
+		const authContext = await requirePayrollGrantHolder(t);
 
 		const configuredFormats = await db
 			.select({ id: payrollExportFormat.id, label: payrollExportFormat.name })
