@@ -15,8 +15,7 @@ import {
 } from "@/lib/approvals/evidence/period-submission-facts";
 import { capturePeriodSubmissionSubmittedRevision } from "@/lib/approvals/evidence/store";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
-import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
+import { createPeriodSubmissionApprovalRuntime } from "@/lib/approvals/server/period-submission-runtime";
 import {
 	ApprovalWorkflowStartError,
 	startApprovalWorkflow,
@@ -129,38 +128,6 @@ async function loadSubmittedWork(
 	};
 }
 
-function createPeriodSubmissionRuntime(
-	database: ApprovalWorkflowDatabase,
-	input: {
-		clock: Clock;
-		canManageApproval?: (actorEmployeeId: string) => Promise<boolean>;
-	},
-) {
-	const outside = async (): Promise<never> => {
-		throw new Error("Outside the period submission boundary");
-	};
-	return createProductionApprovalWorkflowRuntime({
-		db: database,
-		adapters: {
-			absence: {
-				clock: input.clock,
-				finalizeAbsenceTerminal: outside,
-				deleteCancelledAbsence: outside,
-			},
-			timeCorrection: {
-				clock: input.clock,
-				finalizeTimeCorrectionTerminal: outside,
-				deleteCancelledCorrections: outside,
-			},
-			ordinaryWorkPeriod: { finalizeTerminal: outside },
-		},
-		canManageApproval: async ({ actorEmployeeId, workflow }) =>
-			workflow.workflowType === PERIOD_SUBMISSION_WORKFLOW_TYPE &&
-			(await (input.canManageApproval?.(actorEmployeeId) ?? Promise.resolve(false))),
-		clock: input.clock,
-	});
-}
-
 /**
  * Submits one expected period of the user's own employee. The period is named by the first date
  * of its (clipped) range, as `deriveExpectedSubmissionPeriods` gives it. Refused before the
@@ -206,7 +173,7 @@ export async function submitPeriodSubmission(
 		return { kind: "refused", reason: "period_not_ended" };
 	}
 	const range = rangeOf(period);
-	const runtime = createPeriodSubmissionRuntime(database, { clock });
+	const runtime = createPeriodSubmissionApprovalRuntime(database, { clock });
 	try {
 		const submitted = await runtime.repository.withTransaction(async (context) => {
 			const tx = context.dbService.db as unknown as PeriodSubmissionDatabase;
@@ -451,7 +418,7 @@ export async function decidePeriodSubmission(
 		)
 		.limit(1);
 	if (!actor) throw new PeriodSubmissionDecisionError("not_found");
-	const runtime = createPeriodSubmissionRuntime(database, {
+	const runtime = createPeriodSubmissionApprovalRuntime(database, {
 		clock,
 		canManageApproval: async (actorEmployeeId) =>
 			input.allowOrganizationWideApprover === true &&
