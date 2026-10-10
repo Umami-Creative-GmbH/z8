@@ -37,4 +37,9 @@ Communication to and from subagents should be sparse. Communicate primarily thro
 
 8. If a draft PR exists, mark it ready for review. Otherwise, resolve each ticket the way the issue tracker closes work, and report the integration branch.
 
-9. Clean up all **implementer subagent** worktrees.
+9. Clean up every worktree this run created: implementer and merger worktrees, plus any baseline worktree you added for test comparisons. Do this as soon as the PR is ready or the integration branch is reported. Open user decisions don't block it. Leave the session's own worktree alone. For each worktree whose branch tip is on `origin/<integration branch>`:
+   - `git worktree remove --force <path>`
+   - If the folder still exists, run `Remove-Item -LiteralPath "<path>" -Recurse -Force` in PowerShell 7. On Windows, `git worktree remove` deletes the files but leaves pnpm's `node_modules` junctions and the folders that hold them. `Remove-Item` removes junctions without following them. Use the plain path: the permission guard blocks `rmdir /s` and `\\?\` paths.
+   - Delete the local branch. Remote implementer branches stay until the PR merges.
+
+   Then run `git worktree prune`. The step is done when `git worktree list` shows none of the run's worktrees and none of their folders remain under `.claude/worktrees`. If a folder can't be removed, list its exact path in the PR body or final report for the user.
