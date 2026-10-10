@@ -96,6 +96,22 @@
       "selected": "Período selecionado",
       "start": "Início"
     },
+    "run": {
+      "discard": {
+        "action": "Descartar processamento da folha",
+        "description": "{count, plural, one {O # relatório de despesas incluído aguardará reembolso novamente: a próxima exportação da folha de pagamento ou uma transferência bancária poderá incluí-lo. Descarte-o apenas se este arquivo não for pago com a folha de pagamento.} other {Os # relatórios de despesas incluídos aguardarão reembolso novamente: a próxima exportação da folha de pagamento ou uma transferência bancária poderá incluí-los. Descarte-o apenas se este arquivo não for pago com a folha de pagamento.}}",
+        "done": "Processamento da folha descartado. Seus relatórios de despesas aguardam reembolso novamente.",
+        "failed": "Não foi possível descartar o processamento da folha de pagamento.",
+        "notFound": "Este processamento da folha de pagamento não inclui mais nenhum relatório.",
+        "outOfScope": "Este processamento da folha inclui funcionários fora do escopo da sua folha de pagamento.",
+        "title": "Descartar este processamento da folha de pagamento?"
+      }
+    },
+    "runs": {
+      "description": "Estas exportações contêm relatórios de despesas que aguardam reembolso. Um responsável por despesas confirma cada processamento assim que a folha for paga; descarte um processamento cujo arquivo não tenha sido pago.",
+      "reports": "{count, plural, one {# relatório de despesas} other {# relatórios de despesas}}",
+      "title": "Processamentos da folha não confirmados"
+    },
     "scope": {
       "allManaged": "Todos os funcionários e equipes que gerencio",
       "apply": "Aplicar",

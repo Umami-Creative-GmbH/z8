@@ -99,6 +99,7 @@
         "downloadError": "İndirme URL'si alınamadı",
         "employees": "çalışanlar",
         "noExports": "Henüz dışa aktarma yok",
+        "payrollRun": "{count, plural, other {Bordro çalıştırması: # masraf raporu} }",
         "periods": "dönemler",
         "status": {
           "completed": "Tamamlandı",

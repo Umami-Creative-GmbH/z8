@@ -99,6 +99,7 @@
         "downloadError": "Impossibile ottenere l'URL di download",
         "employees": "dipendenti",
         "noExports": "Nessuna esportazione ancora",
+        "payrollRun": "{count, plural, one {Elaborazione paghe: # nota spese} other {Elaborazione paghe: # note spese}}",
         "periods": "periodi",
         "status": {
           "completed": "Completato",

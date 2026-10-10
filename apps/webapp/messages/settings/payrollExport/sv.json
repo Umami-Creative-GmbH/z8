@@ -99,6 +99,7 @@
         "downloadError": "Kunde inte hämta nedladdnings-URL",
         "employees": "anställda",
         "noExports": "Inga exporter ännu",
+        "payrollRun": "{count, plural, one {Lönekörning: # utläggsrapport} other {Lönekörning: # utläggsrapporter}}",
         "periods": "perioder",
         "status": {
           "completed": "Slutförd",

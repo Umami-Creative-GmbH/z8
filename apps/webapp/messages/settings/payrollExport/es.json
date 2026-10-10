@@ -99,6 +99,7 @@
         "downloadError": "Error al obtener la URL de descarga",
         "employees": "empleados",
         "noExports": "Aún no hay exportaciones",
+        "payrollRun": "{count, plural, one {Ejecución de nómina: # informe de gastos} other {Ejecución de nómina: # informes de gastos}}",
         "periods": "periodos",
         "status": {
           "completed": "Completado",

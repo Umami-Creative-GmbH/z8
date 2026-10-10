@@ -96,6 +96,22 @@
       "selected": "Seçili dönem",
       "start": "Başlangıç"
     },
+    "run": {
+      "discard": {
+        "action": "Bordro çalıştırmasını at",
+        "description": "{count, plural, other {İçerdiği # masraf raporu yeniden geri ödeme bekleyecek: sonraki bordro dışa aktarımı veya banka havalesi bunları alabilir. Yalnızca bu dosya bordro ile ödenmediyse atın.} }",
+        "done": "Bordro çalıştırması atıldı. Masraf raporları yeniden geri ödeme bekliyor.",
+        "failed": "Bordro çalıştırması atılamadı.",
+        "notFound": "Bu bordro çalıştırması artık herhangi bir rapor içermiyor.",
+        "outOfScope": "Bu bordro çalıştırması, bordro kapsamınız dışındaki çalışanları içeriyor.",
+        "title": "Bu bordro çalıştırması atılsın mı?"
+      }
+    },
+    "runs": {
+      "description": "Bu dışa aktarımlar, geri ödeme bekleyen masraf raporlarını içerir. Bir masraf yetkilisi, bordro ödendikten sonra her çalıştırmayı onaylar; dosyası ödenmemiş bir çalıştırmayı atın.",
+      "reports": "{count, plural, other {# masraf raporu} }",
+      "title": "Onaylanmamış bordro çalıştırmaları"
+    },
     "scope": {
       "allManaged": "Yönettiğim tüm çalışanlar ve ekipler",
       "apply": "Uygula",

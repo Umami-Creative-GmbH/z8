@@ -99,6 +99,7 @@
         "downloadError": "Falha ao obter URL de download",
         "employees": "funcionários",
         "noExports": "Nenhuma exportação ainda",
+        "payrollRun": "{count, plural, one {Processamento da folha: # relatório de despesas} other {Processamento da folha: # relatórios de despesas}}",
         "periods": "períodos",
         "status": {
           "completed": "Concluído",

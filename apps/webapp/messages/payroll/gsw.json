@@ -96,6 +96,22 @@
       "selected": "Uusgwählti Periode",
       "start": "Start"
     },
+    "run": {
+      "discard": {
+        "action": "Lohnlauf verwerfen",
+        "description": "{count, plural, one {Die # darin enthaltene Spesenabrechnung wartet wieder auf die Rückerstattung: Der nächste Lohnexport oder eine Banküberweisung kann sie übernehmen. Verwerfen Sie ihn nur, wenn diese Datei nicht über die Lohnabrechnung bezahlt wird.} other {Die # darin enthaltenen Spesenabrechnungen warten wieder auf die Rückerstattung: Der nächste Lohnexport oder eine Banküberweisung kann sie übernehmen. Verwerfen Sie ihn nur, wenn diese Datei nicht über die Lohnabrechnung bezahlt wird.}}",
+        "done": "Lohnlauf verworfen. Die zugehörigen Spesenabrechnungen warten wieder auf die Rückerstattung.",
+        "failed": "Der Lohnlauf konnte nicht verworfen werden.",
+        "notFound": "Dieser Lohnlauf enthält keine Berichte mehr.",
+        "outOfScope": "Dieser Lohnlauf enthält Mitarbeitende ausserhalb Ihres Abrechnungsbereichs.",
+        "title": "Diesen Lohnlauf verwerfen?"
+      }
+    },
+    "runs": {
+      "description": "Diese Exporte enthalten Spesenabrechnungen, die auf die Rückerstattung warten. Eine für Spesen zuständige Person bestätigt jeden Lauf, sobald die Lohnabrechnung ihn ausbezahlt hat; verwerfen Sie einen Lauf, dessen Datei nicht bezahlt wird.",
+      "reports": "{count, plural, one {# Spesenabrechnung} other {# Spesenabrechnungen}}",
+      "title": "Unbestätigte Lohnläufe"
+    },
     "scope": {
       "allManaged": "Alli Mitarbeiter und Teams, wo ich verwalte",
       "apply": "Überneh",

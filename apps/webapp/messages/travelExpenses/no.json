@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Hoppet over: allerede refundert",
           "balanceChanged": "Hoppet over: saldo endret",
           "failed": "Mislyktes",
+          "inPayrollRun": "Hoppet over: inkludert i en lønnskjøring",
           "outOfScope": "Hoppet over: utenfor omfang",
           "overpaidOrReview": "Hoppet over: for mye utbetalt eller krever gjennomgang",
           "ownExpense": "Hoppet over: din egen utgift",
@@ -247,6 +248,7 @@
           "search": "Søk etter team…"
         }
       },
+      "inPayrollRun": "Inkludert i {run}",
       "legacyClaim": "Eldre {type}-krav",
       "loading": "Laster inn økonomikø…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Neste",
         "page": "Side {page}",
         "previous": "Forrige"
+      },
+      "payrollRun": {
+        "included": "Inkludert i {run}. Den utbetales med den lønnen og registreres som refundert når kjøringen bekreftes.",
+        "label": "Lønnskjøring {period} ({format})",
+        "notIncluded": "Ingen lønnskjøring inkluderer denne utgiften lenger.",
+        "remove": "Fjern fra lønnskjøring",
+        "removed": "Fjernet fra lønnskjøringen. Utgiften avventer refusjon igjen.",
+        "removeDescription": "Fjern den bare hvis den ikke skal utbetales med denne kjøringen, for eksempel etter korrigering av lønnsfilen. Fjerningen registreres i revisjonsloggen.",
+        "removeFailed": "Utgiften kunne ikke fjernes fra lønnskjøringen.",
+        "removeTitle": "Fjerne denne utgiften fra lønnskjøringen?"
       },
       "queue": {
         "description": "Åpne et utlegg for å se oppgjøret og registrere en refusjon.",
@@ -1048,6 +1060,7 @@
         "exceedsOutstanding": "Beløpet er høyere enn det som er utestående.",
         "exceedsOverpayment": "Beløpet er høyere enn det som ble betalt for mye.",
         "failed": "Betalingen kunne ikke registreres. Vennligst prøv igjen.",
+        "inPayrollRun": "En lønnskjøring inkluderer nå denne utgiften, så den utbetales via lønn. Fjern den fra kjøringen før du registrerer en betaling.",
         "load": "Kunne ikke laste refusjonssaldoen. Vennligst prøv igjen.",
         "noOverpayment": "Ingenting ble overbetalt for denne utgiften.",
         "notApproved": "Denne utgiften er ikke lenger godkjent, så ingen betaling kan registreres.",

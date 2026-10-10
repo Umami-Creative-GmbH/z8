@@ -99,6 +99,7 @@
         "downloadError": "Kunne ikke hente nedlastings-URL",
         "employees": "ansatte",
         "noExports": "Ingen eksporter ennå",
+        "payrollRun": "{count, plural, one {Lønnskjøring: # utgiftsrapport} other {Lønnskjøring: # utgiftsrapporter}}",
         "periods": "perioder",
         "status": {
           "completed": "Fullført",

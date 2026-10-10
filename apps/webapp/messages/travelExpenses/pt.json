@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Ignorado: já reembolsado",
           "balanceChanged": "Ignorado: saldo alterado",
           "failed": "Falhou",
+          "inPayrollRun": "Ignorado: incluído em um processamento da folha",
           "outOfScope": "Ignorado: fora do escopo",
           "overpaidOrReview": "Ignorado: pago a mais ou precisa de revisão",
           "ownExpense": "Ignorado: sua própria despesa",
@@ -247,6 +248,7 @@
           "search": "Pesquisar equipes…"
         }
       },
+      "inPayrollRun": "Incluído em {run}",
       "legacyClaim": "Reivindicação herdada de {type}",
       "loading": "Carregando fila financeira…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Próximo",
         "page": "Página {page}",
         "previous": "Anterior"
+      },
+      "payrollRun": {
+        "included": "Incluído em {run}. É pago nessa folha de pagamento e registrado como reembolsado quando o processamento for confirmado.",
+        "label": "Processamento da folha {period} ({format})",
+        "notIncluded": "Nenhum processamento da folha inclui mais esta despesa.",
+        "remove": "Remover do processamento da folha",
+        "removed": "Removida do processamento da folha. A despesa aguarda reembolso novamente.",
+        "removeDescription": "Remova apenas se a folha de pagamento não for pagá-la neste processamento, por exemplo, após corrigir o arquivo da folha. A remoção é registrada no log de auditoria.",
+        "removeFailed": "Não foi possível remover a despesa do processamento da folha de pagamento.",
+        "removeTitle": "Remover esta despesa do processamento da folha de pagamento?"
       },
       "queue": {
         "description": "Abra uma despesa para ver sua liquidação e registrar um reembolso.",
@@ -1048,6 +1060,7 @@
         "exceedsOutstanding": "O valor é superior ao saldo pendente.",
         "exceedsOverpayment": "O valor é superior ao montante pago a mais.",
         "failed": "Não foi possível registrar o pagamento. Tente novamente.",
+        "inPayrollRun": "Um processamento da folha de pagamento agora inclui esta despesa, portanto ela é paga pela folha. Remova-a do processamento antes de registrar um pagamento.",
         "load": "Não foi possível carregar o saldo de reembolso. Tente novamente.",
         "noOverpayment": "Nada foi pago a mais nesta despesa.",
         "notApproved": "Esta despesa não está mais aprovada, portanto nenhum pagamento pode ser registrado.",

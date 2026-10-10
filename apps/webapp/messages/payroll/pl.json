@@ -96,6 +96,22 @@
       "selected": "Wybrany okres",
       "start": "Start"
     },
+    "run": {
+      "discard": {
+        "action": "Odrzuć przebieg listy płac",
+        "description": "{count, plural, one {Zawarty w nim # raport z wydatków będzie ponownie oczekiwać na zwrot kosztów: może go objąć kolejny eksport listy płac lub przelew bankowy. Odrzuć go tylko wtedy, gdy ten plik nie zostanie opłacony z listą płac.} other {Zawarte w nim # raportów z wydatków będzie ponownie oczekiwać na zwrot kosztów: może je objąć kolejny eksport listy płac lub przelew bankowy. Odrzuć go tylko wtedy, gdy ten plik nie zostanie opłacony z listą płac.}}",
+        "done": "Przebieg listy płac został odrzucony. Zawarte w nim raporty z wydatków ponownie oczekują na zwrot kosztów.",
+        "failed": "Nie udało się odrzucić przebiegu listy płac.",
+        "notFound": "Ten przebieg listy płac nie zawiera już żadnych raportów.",
+        "outOfScope": "Ten przebieg listy płac obejmuje pracowników spoza Twojego zakresu płacowego.",
+        "title": "Odrzucić ten przebieg listy płac?"
+      }
+    },
+    "runs": {
+      "description": "Te eksporty zawierają raporty z wydatków oczekujące na zwrot kosztów. Specjalista ds. wydatków potwierdza każdy przebieg po jego opłaceniu w ramach listy płac; odrzuć przebieg, którego plik nie został opłacony.",
+      "reports": "{count, plural, one {# raport z wydatków} other {# raportów z wydatków}}",
+      "title": "Niepotwierdzone przebiegi listy płac"
+    },
     "scope": {
       "allManaged": "Wszyscy pracownicy i zespoły, którymi zarządzam",
       "apply": "Zastosuj",

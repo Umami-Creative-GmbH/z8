@@ -96,6 +96,22 @@
       "selected": "Vald period",
       "start": "Start"
     },
+    "run": {
+      "discard": {
+        "action": "Kassera lönekörning",
+        "description": "{count, plural, one {Den # utläggsrapport den innehåller kommer att vänta på återbetalning igen: nästa löneexport eller en banköverföring kan ta den. Kassera den endast om denna fil inte betalas med lönen.} other {De # utläggsrapporter den innehåller kommer att vänta på återbetalning igen: nästa löneexport eller en banköverföring kan ta dem. Kassera den endast om denna fil inte betalas med lönen.}}",
+        "done": "Lönekörningen har kasserats. Dess utläggsrapporter väntar på återbetalning igen.",
+        "failed": "Lönekörningen kunde inte kasseras.",
+        "notFound": "Denna lönekörning innehåller inte längre några rapporter.",
+        "outOfScope": "Denna lönekörning innehåller medarbetare utanför ditt löneområde.",
+        "title": "Vill du kassera denna lönekörning?"
+      }
+    },
+    "runs": {
+      "description": "Dessa exporter innehåller utläggsrapporter som väntar på återbetalning. En utläggsansvarig bekräftar varje körning när lönen har betalats ut; kassera en körning vars fil inte betalas.",
+      "reports": "{count, plural, one {# utläggsrapport} other {# utläggsrapporter}}",
+      "title": "Obekräftade lönekörningar"
+    },
     "scope": {
       "allManaged": "Alla anställda och team som jag hanterar",
       "apply": "Tillämpa",

@@ -96,6 +96,22 @@
       "selected": "Valgt periode",
       "start": "Start"
     },
+    "run": {
+      "discard": {
+        "action": "Forkast lønnskjøring",
+        "description": "{count, plural, one {Den # utgiftsrapporten den inneholder vil igjen avvente refusjon: neste lønnseksport eller en bankoverføring kan ta den. Forkast den bare hvis denne filen ikke utbetales via lønn.} other {De # utgiftsrapportene den inneholder vil igjen avvente refusjon: neste lønnseksport eller en bankoverføring kan ta dem. Forkast den bare hvis denne filen ikke utbetales via lønn.}}",
+        "done": "Lønnskjøringen er forkastet. Utgiftsrapportene avventer refusjon igjen.",
+        "failed": "Lønnskjøringen kunne ikke forkastes.",
+        "notFound": "Denne lønnskjøringen inneholder ikke lenger noen rapporter.",
+        "outOfScope": "Denne lønnskjøringen inkluderer ansatte utenfor ditt lønnsområde.",
+        "title": "Forkaste denne lønnskjøringen?"
+      }
+    },
+    "runs": {
+      "description": "Disse eksporteringene inneholder utgiftsrapporter som avventer refusjon. En utgiftsansvarlig bekrefter hver kjøring når lønnen er utbetalt. Forkast en kjøring hvis filen ikke blir utbetalt.",
+      "reports": "{count, plural, one {# utgiftsrapport} other {# utgiftsrapporter}}",
+      "title": "Ubekreftede lønnskjøringer"
+    },
     "scope": {
       "allManaged": "Alle ansatte og team jeg leder",
       "apply": "Bruk",

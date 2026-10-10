@@ -99,6 +99,7 @@
         "downloadError": "Échec de l'obtention de l'URL de téléchargement",
         "employees": "employés",
         "noExports": "Aucune exportation pour le moment",
+        "payrollRun": "{count, plural, one {Cycle de paie : # note de frais} other {Cycle de paie : # notes de frais}}",
         "periods": "périodes",
         "status": {
           "completed": "Terminé",

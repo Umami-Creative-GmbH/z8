@@ -99,6 +99,7 @@
         "downloadError": "Failed to get download URL",
         "employees": "employees",
         "noExports": "No exports yet",
+        "payrollRun": "{count, plural, one {Payroll run: # expense report} other {Payroll run: # expense reports}}",
         "periods": "periods",
         "status": {
           "completed": "Completed",

@@ -96,6 +96,22 @@
       "selected": "Periodo selezionato",
       "start": "Inizio"
     },
+    "run": {
+      "discard": {
+        "action": "Scarta elaborazione paghe",
+        "description": "{count, plural, one {La # nota spese inclusa tornerà in attesa di rimborso: la prossima esportazione paghe o un bonifico bancario potrà prenderla in carico. Scartala solo se questo file non viene liquidato con le paghe.} other {Le # note spese incluse torneranno in attesa di rimborso: la prossima esportazione paghe o un bonifico bancario potrà prenderle in carico. Scartala solo se questo file non viene liquidato con le paghe.}}",
+        "done": "Elaborazione paghe scartata. Le relative note spese sono di nuovo in attesa di rimborso.",
+        "failed": "Impossibile scartare l'elaborazione paghe.",
+        "notFound": "Questa elaborazione paghe non include più alcuna nota spese.",
+        "outOfScope": "Questa elaborazione paghe include dipendenti che non rientrano nel tuo ambito paghe.",
+        "title": "Scartare questa elaborazione paghe?"
+      }
+    },
+    "runs": {
+      "description": "Queste esportazioni contengono note spese in attesa di rimborso. Un responsabile delle spese conferma ciascuna elaborazione una volta liquidata con le paghe; scarta un'elaborazione il cui file non viene liquidato.",
+      "reports": "{count, plural, one {# nota spese} other {# note spese}}",
+      "title": "Elaborazioni paghe non confermate"
+    },
     "scope": {
       "allManaged": "Tutti i dipendenti e i team che gestisco",
       "apply": "Applica",

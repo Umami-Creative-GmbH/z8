@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Omitido: ya reembolsado",
           "balanceChanged": "Omitido: el saldo ha cambiado",
           "failed": "Fallido",
+          "inPayrollRun": "Omitido: incluido en una ejecución de nómina",
           "outOfScope": "Omitido: fuera de ámbito",
           "overpaidOrReview": "Omitido: pagado en exceso o requiere revisión",
           "ownExpense": "Omitido: gasto propio",
@@ -247,6 +248,7 @@
           "search": "Buscar equipos…"
         }
       },
+      "inPayrollRun": "Incluido en {run}",
       "legacyClaim": "Solicitud de {type} heredada",
       "loading": "Cargando cola de finanzas…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Siguiente",
         "page": "Página {page}",
         "previous": "Anterior"
+      },
+      "payrollRun": {
+        "included": "Incluido en {run}. Se paga con esa nómina y se registra como reembolsado cuando se confirma la ejecución.",
+        "label": "Ejecución de nómina {period} ({format})",
+        "notIncluded": "Ninguna ejecución de nómina incluye ya este gasto.",
+        "remove": "Quitar de la ejecución de nómina",
+        "removed": "Quitado de la ejecución de nómina. El gasto vuelve a estar pendiente de reembolso.",
+        "removeDescription": "Quítelo solo si la nómina no lo pagará con esta ejecución, por ejemplo tras corregir el archivo de nómina. La eliminación se registra en el registro de auditoría.",
+        "removeFailed": "No se pudo quitar el gasto de la ejecución de nómina.",
+        "removeTitle": "¿Quitar este gasto de la ejecución de nómina?"
       },
       "queue": {
         "description": "Abra un gasto para ver su liquidación y registrar un reembolso.",
@@ -1048,6 +1060,7 @@
         "exceedsOutstanding": "El monto es mayor que el saldo pendiente.",
         "exceedsOverpayment": "El monto es mayor que lo pagado en exceso.",
         "failed": "No se pudo registrar el pago. Vuelva a intentarlo.",
+        "inPayrollRun": "Una ejecución de nómina incluye ahora este gasto, por lo que se paga con la nómina. Quítelo de la ejecución antes de registrar un pago.",
         "load": "No se pudo cargar el saldo del reembolso. Vuelva a intentarlo.",
         "noOverpayment": "No se pagó nada en exceso para este gasto.",
         "notApproved": "Este gasto ya no está aprobado, por lo que no se puede registrar ningún pago.",

@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Ignoré : déjà remboursé",
           "balanceChanged": "Ignoré : solde modifié",
           "failed": "Échec",
+          "inPayrollRun": "Ignoré : inclus dans un cycle de paie",
           "outOfScope": "Ignoré : hors périmètre",
           "overpaidOrReview": "Ignoré : trop-perçu ou vérification requise",
           "ownExpense": "Ignoré : votre propre dépense",
@@ -247,6 +248,7 @@
           "search": "Rechercher des équipes…"
         }
       },
+      "inPayrollRun": "Inclus dans {run}",
       "legacyClaim": "Ancienne demande de {type}",
       "loading": "Chargement de la file d'attente financière…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Suivant",
         "page": "Page {page}",
         "previous": "Précédent"
+      },
+      "payrollRun": {
+        "included": "Inclus dans {run}. La dépense est réglée avec cette paie et enregistrée comme remboursée lorsque le cycle est confirmé.",
+        "label": "Cycle de paie {period} ({format})",
+        "notIncluded": "Plus aucun cycle de paie n'inclut cette dépense.",
+        "remove": "Retirer du cycle de paie",
+        "removed": "Retirée du cycle de paie. La dépense est de nouveau en attente de remboursement.",
+        "removeDescription": "Ne la retirez que si la paie ne la règle pas avec ce cycle, par exemple après correction du fichier de paie. Ce retrait est consigné dans le journal d'audit.",
+        "removeFailed": "Impossible de retirer la dépense du cycle de paie.",
+        "removeTitle": "Retirer cette dépense du cycle de paie ?"
       },
       "queue": {
         "description": "Ouvrez une dépense pour consulter son règlement et enregistrer un remboursement.",
@@ -1048,6 +1060,7 @@
         "exceedsOutstanding": "Le montant est supérieur au montant restant dû.",
         "exceedsOverpayment": "Le montant est supérieur au trop-perçu.",
         "failed": "Impossible d'enregistrer le paiement. Veuillez réessayer.",
+        "inPayrollRun": "Un cycle de paie inclut désormais cette dépense, elle est donc payée avec la paie. Retirez-la du cycle avant d'enregistrer un paiement.",
         "load": "Impossible de charger le solde du remboursement. Veuillez réessayer.",
         "noOverpayment": "Il n'y a aucun trop-perçu pour cette dépense.",
         "notApproved": "Cette dépense n'est plus approuvée, aucun paiement ne peut donc être enregistré.",

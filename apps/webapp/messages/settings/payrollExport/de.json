@@ -99,6 +99,7 @@
         "downloadError": "Download-URL konnte nicht abgerufen werden",
         "employees": "Mitarbeiter",
         "noExports": "Noch keine Exporte vorhanden",
+        "payrollRun": "{count, plural, one {Abrechnungslauf: # Spesenabrechnung} other {Abrechnungslauf: # Spesenabrechnungen}}",
         "periods": "Zeiträume",
         "status": {
           "completed": "Abgeschlossen",

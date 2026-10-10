@@ -99,6 +99,7 @@
         "downloadError": "Download-URL konnte nöd abgruefe werde",
         "employees": "Mitarbeiter",
         "noExports": "No kei Export vorhande",
+        "payrollRun": "{count, plural, one {Lohnlauf: # Spesenabrechnung} other {Lohnlauf: # Spesenabrechnungen}}",
         "periods": "Periode",
         "status": {
           "completed": "Abgschlosse",

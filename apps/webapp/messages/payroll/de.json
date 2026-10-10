@@ -96,6 +96,22 @@
       "selected": "Ausgewählter Zeitraum",
       "start": "Start"
     },
+    "run": {
+      "discard": {
+        "action": "Abrechnungslauf verwerfen",
+        "description": "{count, plural, one {Die darin enthaltene # Spesenabrechnung wartet dann wieder auf Erstattung: Sie kann über den nächsten Abrechnungsexport oder per Banküberweisung abgewickelt werden. Verwerfen Sie den Lauf nur, wenn diese Datei nicht über die Gehaltsabrechnung ausgezahlt wird.} other {Die darin enthaltenen # Spesenabrechnungen warten dann wieder auf Erstattung: Sie können über den nächsten Abrechnungsexport oder per Banküberweisung abgewickelt werden. Verwerfen Sie den Lauf nur, wenn diese Datei nicht über die Gehaltsabrechnung ausgezahlt wird.}}",
+        "done": "Abrechnungslauf verworfen. Die zugehörigen Spesenabrechnungen warten wieder auf Erstattung.",
+        "failed": "Der Abrechnungslauf konnte nicht verworfen werden.",
+        "notFound": "Dieser Abrechnungslauf enthält keine Abrechnungen mehr.",
+        "outOfScope": "Dieser Abrechnungslauf enthält Mitarbeitende außerhalb Ihres Abrechnungsbereichs.",
+        "title": "Diesen Abrechnungslauf verwerfen?"
+      }
+    },
+    "runs": {
+      "description": "Diese Exporte enthalten Spesenabrechnungen, die auf Erstattung warten. Eine für Spesen zuständige Person bestätigt jeden Lauf, sobald er über die Gehaltsabrechnung ausgezahlt wurde; verwerfen Sie einen Lauf, dessen Datei nicht ausgezahlt wird.",
+      "reports": "{count, plural, one {# Spesenabrechnung} other {# Spesenabrechnungen}}",
+      "title": "Unbestätigte Abrechnungsläufe"
+    },
     "scope": {
       "allManaged": "Alle Mitarbeiter und Teams, die ich verwalte",
       "apply": "Anwenden",

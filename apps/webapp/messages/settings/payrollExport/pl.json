@@ -99,6 +99,7 @@
         "downloadError": "Nie udało się pobrać adresu URL do pobrania",
         "employees": "pracownicy",
         "noExports": "Brak eksportów",
+        "payrollRun": "{count, plural, one {Przebieg listy płac: # raport z wydatków} other {Przebieg listy płac: # raportów z wydatków}}",
         "periods": "okresy",
         "status": {
           "completed": "Ukończono",

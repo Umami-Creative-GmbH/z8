@@ -129,6 +129,7 @@
           "alreadyReimbursed": "Skipped: already reimbursed",
           "balanceChanged": "Skipped: balance changed",
           "failed": "Failed",
+          "inPayrollRun": "Skipped: included in a payroll run",
           "outOfScope": "Skipped: out of scope",
           "overpaidOrReview": "Skipped: overpaid or needs review",
           "ownExpense": "Skipped: your own expense",
@@ -247,6 +248,7 @@
           "search": "Search teams…"
         }
       },
+      "inPayrollRun": "Included in {run}",
       "legacyClaim": "Legacy {type} claim",
       "loading": "Loading finance queue…",
       "pagination": {
@@ -254,6 +256,16 @@
         "next": "Next",
         "page": "Page {page}",
         "previous": "Previous"
+      },
+      "payrollRun": {
+        "included": "Included in {run}. It is paid with that payroll and recorded as reimbursed when the run is confirmed.",
+        "label": "Payroll run {period} ({format})",
+        "notIncluded": "No payroll run includes this expense any more.",
+        "remove": "Remove from payroll run",
+        "removed": "Removed from the payroll run. The expense awaits reimbursement again.",
+        "removeDescription": "Remove it only if payroll will not pay it with this run, for example after correcting the payroll file. The removal is recorded in the audit log.",
+        "removeFailed": "The expense could not be removed from the payroll run.",
+        "removeTitle": "Remove this expense from the payroll run?"
       },
       "queue": {
         "description": "Open an expense to see its settlement and record a reimbursement.",
@@ -1048,6 +1060,7 @@
         "exceedsOutstanding": "The amount is more than is outstanding.",
         "exceedsOverpayment": "The amount is more than was overpaid.",
         "failed": "The payment could not be recorded. Please retry.",
+        "inPayrollRun": "A payroll run now includes this expense, so it is paid with payroll. Remove it from the run before recording a payment.",
         "load": "Unable to load the reimbursement balance. Please retry.",
         "noOverpayment": "Nothing was overpaid for this expense.",
         "notApproved": "This expense is no longer approved, so no payment can be recorded.",

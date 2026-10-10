@@ -96,6 +96,22 @@
       "selected": "Periodo seleccionado",
       "start": "Inicio"
     },
+    "run": {
+      "discard": {
+        "action": "Descartar ejecución de nómina",
+        "description": "{count, plural, one {El informe de gastos (#) que incluye volverá a estar pendiente de reembolso: la próxima exportación de nómina o una transferencia bancaria podrá incluirlo. Descártela solo si este archivo no se paga con la nómina.} other {Los # informes de gastos que incluye volverán a estar pendientes de reembolso: la próxima exportación de nómina o una transferencia bancaria podrán incluirlos. Descártela solo si este archivo no se paga con la nómina.}}",
+        "done": "Ejecución de nómina descartada. Sus informes de gastos vuelven a estar pendientes de reembolso.",
+        "failed": "No se pudo descartar la ejecución de nómina.",
+        "notFound": "Esta ejecución de nómina ya no incluye ningún informe.",
+        "outOfScope": "Esta ejecución de nómina incluye empleados fuera de su ámbito de nómina.",
+        "title": "¿Descartar esta ejecución de nómina?"
+      }
+    },
+    "runs": {
+      "description": "Estas exportaciones contienen informes de gastos pendientes de reembolso. Un responsable de gastos confirma cada ejecución una vez que la nómina la ha pagado; descarte una ejecución cuyo archivo no se pague.",
+      "reports": "{count, plural, one {# informe de gastos} other {# informes de gastos}}",
+      "title": "Ejecuciones de nómina sin confirmar"
+    },
     "scope": {
       "allManaged": "Todos los empleados y equipos que gestiono",
       "apply": "Aplicar",
