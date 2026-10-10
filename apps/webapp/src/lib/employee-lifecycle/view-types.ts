@@ -68,6 +68,12 @@ export interface EmployeeOffboardingView {
 	 * ended at the cutoff; the departure clears the deputy on them (#1014).
 	 */
 	deputyAbsences: number;
+	/**
+	 * The departing employee's work balance (#1002). Information only: it never
+	 * blocks the departure, its follow-up or the release gate. Null for an
+	 * employee who is not departing, and while offboarding is not released.
+	 */
+	workBalance: OffboardingWorkBalance | null;
 	capabilities: {
 		schedule: boolean;
 		cancel: boolean;
@@ -75,6 +81,23 @@ export interface EmployeeOffboardingView {
 		rehire: boolean;
 		resolve: boolean;
 	};
+}
+
+export interface OffboardingWorkBalance {
+	/** The figure every work-balance view reads; null while it is not calculated yet. */
+	balance: { balanceMinutes: number; computedThroughDate: string } | null;
+	/**
+	 * A final overtime payout, offered when the balance is positive and the
+	 * viewer may record overtime payouts. Recording it re-checks everything.
+	 */
+	finalPayout: {
+		/** Local date (`YYYY-MM-DD`) in the employee's effective timezone. */
+		defaultDay: string;
+		/** The whole remaining balance. */
+		defaultMinutes: number;
+		/** Today in the employee's effective timezone: a payout may not be dated later. */
+		latestDay: string;
+	} | null;
 }
 
 export interface DepartureReplacementOption {

@@ -3,7 +3,7 @@ import { organization, user } from "../auth-schema";
 import { currentTimestamp } from "./timestamp";
 
 /**
- * Organization-wide approval settings (#1015, migration 0194). No row means
+ * Organization-wide approval settings (#1015, migration 0199). No row means
  * the defaults (`DEFAULT_APPROVAL_SETTINGS` in
  * `lib/approvals/approval-settings.ts`). Users who can manage approvals
  * change them on the approval escalation settings page.

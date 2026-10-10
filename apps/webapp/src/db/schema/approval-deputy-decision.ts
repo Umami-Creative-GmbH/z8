@@ -15,7 +15,7 @@ import { employee } from "./organization";
 
 /**
  * The acting-for record (#1016, spec #802, Approvals ADR 0002, migration
- * 0197): one row per approval decision a covering deputy made for an absent
+ * 0202): one row per approval decision a covering deputy made for an absent
  * approver, under legacy or canonical authority, written in the decision's
  * transaction. The approver stays assigned; this row is what says "decided by
  * Y as deputy for X", for requester history, the audit trail, deputy cards

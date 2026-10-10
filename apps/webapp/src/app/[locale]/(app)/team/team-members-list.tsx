@@ -43,7 +43,9 @@ import {
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
+import { BalanceAdjustmentHistoryDialog } from "@/components/work-balance/balance-adjustment-history-button";
 import { useEmployeeClockStatuses } from "@/lib/query";
+import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 import { Link } from "@/navigation";
 import type { ManagedEmployee } from "./team-members-data";
@@ -79,34 +81,43 @@ function getBalanceVariant(balanceMinutes: number | null | undefined) {
 	return balanceMinutes > 0 ? ("default" as const) : ("secondary" as const);
 }
 
+/**
+ * The employee's work balance; it opens their balance adjustment history,
+ * read-only (#996). Everyone on this list is the viewer or someone they
+ * manage, and the server checks again when the history loads.
+ */
 function TimeBalanceBadge({
 	employee,
 	noBalanceLabel,
 	workBalanceLabel,
+	historyLabel,
 }: {
 	employee: ManagedEmployee;
 	noBalanceLabel: string;
 	workBalanceLabel: string;
+	historyLabel: string;
 }) {
 	const balance = employee.timeBalance;
 	const label = balance ? formatSignedWorkBalance(balance.balanceMinutes) : noBalanceLabel;
 	const accessibleLabel = `${workBalanceLabel}: ${label}`;
-	if (!balance) {
-		return (
-			<Badge variant="outline" aria-label={accessibleLabel} title={accessibleLabel}>
-				{noBalanceLabel}
-			</Badge>
-		);
-	}
 	return (
-		<Badge
-			variant={getBalanceVariant(balance.balanceMinutes)}
-			className="text-xs font-normal"
-			aria-label={accessibleLabel}
-			title={accessibleLabel}
-		>
-			{label}
-		</Badge>
+		<BalanceAdjustmentHistoryDialog
+			employeeId={employee.id}
+			trigger={
+				<Badge
+					asChild
+					variant={balance ? getBalanceVariant(balance.balanceMinutes) : "outline"}
+					className={cn(
+						"relative z-10 cursor-pointer focus-visible:ring-2 focus-visible:ring-ring",
+						balance && "text-xs font-normal",
+					)}
+				>
+					<button type="button" aria-label={accessibleLabel} title={historyLabel}>
+						{label}
+					</button>
+				</Badge>
+			}
+		/>
 	);
 }
 
@@ -126,6 +137,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 	const youLabel = t("team.member.you", "You");
 	const noBalanceLabel = t("team.balance.noBalance", "No balance");
 	const workBalanceLabel = t("workBalance.label", "All-time balance");
+	const historyLabel = t("workBalance.adjustments.open", "Balance adjustments");
 	const primaryManagerLabel = t("team.primaryManager", "You are the primary manager");
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
@@ -193,6 +205,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						youLabel={youLabel}
 						noBalanceLabel={noBalanceLabel}
 						workBalanceLabel={workBalanceLabel}
+						historyLabel={historyLabel}
 						primaryManagerLabel={primaryManagerLabel}
 						inactiveLabel={t("team.status.inactive", "Inactive")}
 					/>
@@ -202,6 +215,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						youLabel={youLabel}
 						noBalanceLabel={noBalanceLabel}
 						workBalanceLabel={workBalanceLabel}
+						historyLabel={historyLabel}
 						primaryManagerLabel={primaryManagerLabel}
 					/>
 				)
@@ -297,6 +311,7 @@ type TeamMemberPresentationProps = {
 	youLabel: string;
 	noBalanceLabel: string;
 	workBalanceLabel: string;
+	historyLabel: string;
 	primaryManagerLabel: string;
 };
 
@@ -305,77 +320,89 @@ function TeamMemberCards({
 	youLabel,
 	noBalanceLabel,
 	workBalanceLabel,
+	historyLabel,
 	primaryManagerLabel,
 	inactiveLabel,
 }: TeamMemberPresentationProps & { inactiveLabel: string }) {
 	return (
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{employees.map((employee) => (
-				<Link key={employee.id} href={`/settings/employees/${employee.id}`}>
-					<Card className="group relative h-full overflow-hidden py-0 transition-shadow hover:shadow-md">
-						<CardContent className="p-3">
-							<div className="flex items-center gap-3">
-								<UserAvatar
-									image={employee.user.image}
-									seed={employee.user.id}
-									name={employee.user.name}
-									clockStatus={employee.clockStatus ?? "unknown"}
-									size="md"
-								/>
-								<div className="min-w-0 flex-1">
-									<div className="flex items-center gap-1.5">
-										<h3 className="truncate text-sm font-medium">{employee.user.name}</h3>
-										{employee.isPrimaryManager && (
-											<IconUserCheck
-												className="size-3.5 shrink-0 text-primary"
-												title={primaryManagerLabel}
-											/>
-										)}
-										<YouBadge show={employee.isCurrentUser} label={youLabel} />
-									</div>
-									<p className="truncate text-xs text-muted-foreground">{employee.user.email}</p>
-									{employee.position && (
-										<p className="truncate text-xs text-muted-foreground">{employee.position}</p>
-									)}
-									<EmployeeActivityText
-										lastActivityAt={employee.lastActivityAt}
-										lastActivityUtcOffsetMinutes={employee.lastActivityUtcOffsetMinutes}
-										breakStartedAt={employee.breakStartedAt}
-										breakStartedZone={employee.breakStartedZone}
-									/>
-								</div>
-							</div>
-							<div className="mt-2 flex items-center justify-between">
-								<div className="flex flex-wrap gap-1">
-									{employee.team && (
-										<Badge variant="secondary" className="text-xs font-normal">
-											{employee.team.name}
-										</Badge>
-									)}
-									<TimeBalanceBadge
-										employee={employee}
-										noBalanceLabel={noBalanceLabel}
-										workBalanceLabel={workBalanceLabel}
-									/>
-									{!employee.isActive && (
-										<Badge variant="outline" className="text-xs font-normal">
-											{inactiveLabel}
-										</Badge>
-									)}
-									{employee.role !== "employee" && (
-										<Badge
-											variant={employee.role === "admin" ? "default" : "secondary"}
-											className="text-xs font-normal"
+				// The name is the link, stretched over the card, so the balance badge
+				// can be its own control (#996).
+				<Card
+					key={employee.id}
+					className="group relative h-full overflow-hidden py-0 transition-shadow focus-within:shadow-md hover:shadow-md"
+				>
+					<CardContent className="p-3">
+						<div className="flex items-center gap-3">
+							<UserAvatar
+								image={employee.user.image}
+								seed={employee.user.id}
+								name={employee.user.name}
+								clockStatus={employee.clockStatus ?? "unknown"}
+								size="md"
+							/>
+							<div className="min-w-0 flex-1">
+								<div className="flex items-center gap-1.5">
+									<h3 className="truncate text-sm font-medium">
+										<Link
+											href={`/settings/employees/${employee.id}`}
+											className="after:absolute after:inset-0 focus-visible:outline-none"
 										>
-											{employee.role}
-										</Badge>
+											{employee.user.name}
+										</Link>
+									</h3>
+									{employee.isPrimaryManager && (
+										<IconUserCheck
+											className="size-3.5 shrink-0 text-primary"
+											title={primaryManagerLabel}
+										/>
 									)}
+									<YouBadge show={employee.isCurrentUser} label={youLabel} />
 								</div>
-								<IconArrowRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+								<p className="truncate text-xs text-muted-foreground">{employee.user.email}</p>
+								{employee.position && (
+									<p className="truncate text-xs text-muted-foreground">{employee.position}</p>
+								)}
+								<EmployeeActivityText
+									lastActivityAt={employee.lastActivityAt}
+									lastActivityUtcOffsetMinutes={employee.lastActivityUtcOffsetMinutes}
+									breakStartedAt={employee.breakStartedAt}
+									breakStartedZone={employee.breakStartedZone}
+								/>
 							</div>
-						</CardContent>
-					</Card>
-				</Link>
+						</div>
+						<div className="mt-2 flex items-center justify-between">
+							<div className="flex flex-wrap gap-1">
+								{employee.team && (
+									<Badge variant="secondary" className="text-xs font-normal">
+										{employee.team.name}
+									</Badge>
+								)}
+								<TimeBalanceBadge
+									employee={employee}
+									noBalanceLabel={noBalanceLabel}
+									workBalanceLabel={workBalanceLabel}
+									historyLabel={historyLabel}
+								/>
+								{!employee.isActive && (
+									<Badge variant="outline" className="text-xs font-normal">
+										{inactiveLabel}
+									</Badge>
+								)}
+								{employee.role !== "employee" && (
+									<Badge
+										variant={employee.role === "admin" ? "default" : "secondary"}
+										className="text-xs font-normal"
+									>
+										{employee.role}
+									</Badge>
+								)}
+							</div>
+							<IconArrowRight className="size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+						</div>
+					</CardContent>
+				</Card>
 			))}
 		</div>
 	);
@@ -386,6 +413,7 @@ function TeamMembersTable({
 	youLabel,
 	noBalanceLabel,
 	workBalanceLabel,
+	historyLabel,
 	primaryManagerLabel,
 }: TeamMemberPresentationProps) {
 	const { t } = useTranslate();
@@ -475,6 +503,7 @@ function TeamMembersTable({
 						employee={row.original}
 						noBalanceLabel={noBalanceLabel}
 						workBalanceLabel={workBalanceLabel}
+						historyLabel={historyLabel}
 					/>
 				),
 			},
@@ -509,7 +538,7 @@ function TeamMembersTable({
 				),
 			},
 		],
-		[t, primaryManagerLabel, youLabel, workBalanceLabel, noBalanceLabel],
+		[t, primaryManagerLabel, youLabel, workBalanceLabel, noBalanceLabel, historyLabel],
 	);
 	const table = useTable({
 		features: teamTableFeatures,

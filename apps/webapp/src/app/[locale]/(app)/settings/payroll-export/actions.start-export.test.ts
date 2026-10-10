@@ -244,7 +244,15 @@ describe("startExportAction", () => {
 	it("processes synchronous exports inline with the organization scope", async () => {
 		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
 		mockState.processExportJob.mockResolvedValueOnce({
-			result: { content: "sync-content" },
+			result: {
+				content: "sync-content",
+				metadata: {
+					unmappedOvertimePayouts: [
+						{ id: "payout-1", employeeId: "employee-1", day: "2026-01-15", minutes: 300 },
+						{ id: "payout-2", employeeId: "employee-2", day: "2026-01-20", minutes: 60 },
+					],
+				},
+			},
 			downloadUrl: "https://example.com/export.csv",
 		});
 
@@ -262,6 +270,8 @@ describe("startExportAction", () => {
 				isAsync: false,
 				downloadUrl: "https://example.com/export.csv",
 				fileContent: "sync-content",
+				// #1001: the export reports the overtime payouts it could not carry.
+				unmappedOvertimePayoutCount: 2,
 			},
 		});
 		expect(mockState.processExportJob).toHaveBeenCalledExactlyOnceWith({

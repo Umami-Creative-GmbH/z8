@@ -257,6 +257,7 @@ export function isCSVCategory(category: string): boolean {
 		"time_entries",
 		"work_periods",
 		"absences",
+		"balance_adjustments",
 		"shifts",
 		"audit_logs",
 		"projects",

@@ -39,6 +39,12 @@ export const EXPORT_CATEGORY_COPY: Record<
 		descriptionKey: "settings.dataExport.categories.absences.description",
 		description: "Absence records and categories",
 	},
+	balance_adjustments: {
+		labelKey: "settings.dataExport.categories.balance_adjustments.label",
+		label: "Work Balance Adjustments",
+		descriptionKey: "settings.dataExport.categories.balance_adjustments.description",
+		description: "Opening balances and overtime payouts, including cancelled ones",
+	},
 	holidays: {
 		labelKey: "settings.dataExport.categories.holidays.label",
 		label: "Holidays",

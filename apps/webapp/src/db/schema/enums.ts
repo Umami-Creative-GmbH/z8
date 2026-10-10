@@ -26,6 +26,8 @@ export const absenceTypeEnum = pgEnum("absence_type", [
 	"parental",
 	"bereavement",
 	"custom",
+	// Built-in category drawing on the work balance (#1000)
+	"time_off_in_lieu",
 ]);
 export const approvalStatusEnum = pgEnum("approval_status", ["pending", "approved", "rejected"]);
 export const approvalWorkflowTypeEnum = pgEnum(
@@ -278,6 +280,11 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"month_closed_automatically",
 	"month_close_blocked",
 	"month_reopened",
+	// One-time notice to owners and admins that time off in lieu is available (#1000)
+	"time_off_in_lieu_available",
+	// A balance adjustment on the employee's own work balance (#996)
+	"work_balance_adjustment_recorded",
+	"work_balance_adjustment_cancelled",
 	// Deputy on an absence: named, removed, new dates, day-before reminder (#1013)
 	"absence_deputy_assigned",
 	"absence_deputy_removed",

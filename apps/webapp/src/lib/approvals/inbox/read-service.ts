@@ -18,6 +18,10 @@ import {
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
 import {
+	buildAbsenceWorkBalanceSections,
+	prepareAbsenceWorkBalance,
+} from "../presentation/absence-work-balance";
+import {
 	buildTimeReviewSections,
 	prepareTimeReviewEvidence,
 } from "../presentation/time-review";
@@ -116,6 +120,8 @@ interface GetApprovalInboxDetailFromRequestInput {
 	};
 	handler: ApprovalTypeHandler;
 	loadAbsenceReviewEvidence?: typeof prepareAbsenceReviewEvidence;
+	/** The projected work balance after time off in lieu (#1000). */
+	loadAbsenceWorkBalance?: typeof prepareAbsenceWorkBalance;
 	loadTravelExpenseReviewEvidence?: (input: {
 		organizationId: string;
 		claimId: string;
@@ -543,6 +549,7 @@ export async function getApprovalInboxDetailFromRequest({
 	request,
 	handler,
 	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
+	loadAbsenceWorkBalance = prepareAbsenceWorkBalance,
 	loadTravelExpenseReviewEvidence = prepareTravelExpenseReviewEvidence,
 	loadTravelExpenseReportReviewEvidence = (input) =>
 		prepareTravelExpenseReportReviewEvidence(input),
@@ -610,6 +617,17 @@ export async function getApprovalInboxDetailFromRequest({
 			entity: detail.entity,
 		});
 		if (evidence) review = buildAbsenceReviewSections(evidence);
+		// Shown for the employee's own projection; never a reason to hold the decision.
+		const workBalance = await loadAbsenceWorkBalance({
+			organizationId: request.organizationId,
+			entity: detail.entity,
+		}).catch(() => null);
+		if (workBalance) {
+			const workBalanceSections = buildAbsenceWorkBalanceSections(workBalance);
+			review = review
+				? { ...review, sections: [...review.sections, ...workBalanceSections] }
+				: { sections: workBalanceSections, decisionsBlocked: false };
+		}
 	} else if (request.entityType === "travel_expense_claim") {
 		// The claim's frozen submission and decision history (#296).
 		review = buildTravelExpenseReviewSections(

@@ -283,6 +283,59 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		});
 	});
 
+	it("shows the approver the projected work balance after time off in lieu and still allows approval", async () => {
+		const entity = { id: "absence-1", category: { drawsOnWorkBalance: true } };
+		const loadAbsenceWorkBalance = vi.fn(async () => ({
+			currentBalanceMinutes: 240,
+			drawnMinutes: 480,
+			projectedBalanceMinutes: -240,
+			wouldBeNegative: true,
+		}));
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: createHandler({ ...createDetail(), entity } as never),
+			loadAbsenceReviewEvidence: vi.fn(async () => null),
+			loadAbsenceWorkBalance,
+		});
+
+		expect(loadAbsenceWorkBalance).toHaveBeenCalledWith({ organizationId: "org-1", entity });
+		expect(result.sections).toContainEqual({
+			type: "key_value",
+			title: { key: "approvals:approvals.workBalance.title", fallback: "Work balance" },
+			rows: [
+				{
+					label: { key: "approvals:approvals.workBalance.current", fallback: "Current" },
+					value: "+4:00h",
+				},
+				{
+					label: { key: "approvals:approvals.workBalance.drawn", fallback: "Drawn by request" },
+					value: "-8:00h",
+				},
+				{
+					label: { key: "approvals:approvals.workBalance.after", fallback: "After approval" },
+					value: "-4:00h",
+					tone: "warning",
+				},
+			],
+		});
+		expect(result.sections).toContainEqual({
+			type: "callout",
+			title: {
+				key: "approvals:approvals.workBalance.negativeTitle",
+				fallback: "Work balance would be negative",
+			},
+			body: {
+				key: "approvals:approvals.workBalance.negativeBody",
+				fallback:
+					"Approving this time off in lieu leaves the employee's work balance negative. You can still approve it.",
+			},
+			tone: "warning",
+		});
+		expect(result.actions.canApprove).toBe(true);
+		expect(structuredClone(result)).toEqual(result);
+	});
+
 	it("leaves absence actions unchanged when no canonical evidence applies", async () => {
 		const result = await getApprovalInboxDetailFromRequest({
 			request,

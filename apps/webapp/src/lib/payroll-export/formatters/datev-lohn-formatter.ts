@@ -11,6 +11,7 @@ import type {
 	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
+	OvertimePayoutData,
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
@@ -20,6 +21,12 @@ import {
 	GERMAN_EXPENSE_LINE_NOTE,
 	germanPersonnelNumber,
 } from "./expense-lines";
+import {
+	addOvertimePayoutHours,
+	GERMAN_OVERTIME_PAYOUT_NOTE,
+	overtimePayoutsForFormat,
+	widenDateRangeByPayouts,
+} from "./overtime-payouts";
 
 const logger = createLogger("DatevLohnFormatter");
 
@@ -76,6 +83,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
+		overtimePayouts: OvertimePayoutData[] = [],
 	): ExportResult {
 		logger.info(
 			{ workPeriodCount: workPeriods.length, absenceCount: absences.length },
@@ -87,7 +95,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();
 		const absenceCategoryMappings = new Map<string, WageTypeMapping>();
-		const specialCategoryMappings = new Map<string, WageTypeMapping>();
 
 		for (const mapping of mappings) {
 			if (mapping.workCategoryId) {
@@ -95,9 +102,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			}
 			if (mapping.absenceCategoryId) {
 				absenceCategoryMappings.set(mapping.absenceCategoryId, mapping);
-			}
-			if (mapping.specialCategory) {
-				specialCategoryMappings.set(mapping.specialCategory, mapping);
 			}
 		}
 
@@ -110,6 +114,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 		// Add absence data
 		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, datevConfig);
+
+		// Overtime payouts (#1001): hours on the payout's day under the "overtime" wage type.
+		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "datev");
+		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
+			personnelNumber: (payout) => this.personnelNumber(payout, datevConfig),
+			period: (payout) => payout.day,
+			add: (existing, hours) => ({
+				hours: (existing?.hours ?? 0) + hours,
+				note: existing?.note || GERMAN_OVERTIME_PAYOUT_NOTE,
+			}),
+		});
 
 		// Generate CSV content
 		const lines: string[] = [];
@@ -158,14 +173,19 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
+		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
 
-		const dateRange = this.getDateRange(workPeriods, absences);
+		const dateRange = widenDateRangeByPayouts(
+			this.getDateRange(workPeriods, absences),
+			payouts.mapped,
+		);
 		const fileName = this.generateFileName(dateRange);
 
 		logger.info(
 			{
 				lineCount: lines.length,
 				employeeCount: uniqueEmployees.size,
+				unmappedOvertimePayoutCount: payouts.unmapped.length,
 				fileName,
 			},
 			"DATEV Lohn export generated",
@@ -186,6 +206,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 					start: dateRange.start?.toISODate() || "",
 					end: dateRange.end?.toISODate() || "",
 				},
+				unmappedOvertimePayouts: payouts.unmapped,
 			},
 		};
 	}
@@ -304,7 +325,10 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	 * The row's personnel number (`germanPersonnelNumber`, shared with expense
 	 * lines); an employee number that isn't set is logged before the fallback.
 	 */
-	private personnelNumber(row: WorkPeriodData | AbsenceData, config: DatevLohnConfig): string {
+	private personnelNumber(
+		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
+		config: DatevLohnConfig,
+	): string {
 		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
 			logger.warn(
 				{ employeeId: row.employeeId, rowId: row.id },

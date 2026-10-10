@@ -49,6 +49,7 @@ const mockState = vi.hoisted(() => ({
 	computeEmployeePeriodBalance: vi.fn(),
 	upsertEmployeeWorkBalancePeriod: vi.fn(),
 	rebuildEmployeeYearBalanceFromMonths: vi.fn(),
+	readWorkBalanceAdjustments: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -80,6 +81,10 @@ vi.mock("@/db", () => ({ db: mockState.db }));
 
 vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
+}));
+
+vi.mock("./adjustments/ledger", () => ({
+	readWorkBalanceAdjustments: mockState.readWorkBalanceAdjustments,
 }));
 
 vi.mock("./period-aggregation", () => ({
@@ -158,6 +163,12 @@ describe("work balance helpers", () => {
 		mockState.db.insert.mockReturnValue({ values: mockState.insertValues });
 		mockState.insertValues.mockReturnValue({ onConflictDoUpdate: mockState.onConflictDoUpdate });
 		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({});
+		mockState.readWorkBalanceAdjustments.mockReset();
+		mockState.readWorkBalanceAdjustments.mockResolvedValue({
+			openingBalance: null,
+			countFrom: null,
+			adjustmentMinutes: 0,
+		});
 		mockState.computeEmployeePeriodBalance.mockReset();
 		mockState.upsertEmployeeWorkBalancePeriod.mockReset();
 		mockState.rebuildEmployeeYearBalanceFromMonths.mockReset();
@@ -212,6 +223,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			actualMinutes: 2520,
 			requiredMinutes: 2400,
+			adjustmentMinutes: 0,
 			balanceMinutes: 120,
 			computedFromDate: "2026-05-01",
 			computedThroughDate: "2026-05-22",
@@ -222,6 +234,21 @@ describe("work balance helpers", () => {
 			refreshRequestedAt: null,
 			lastError: null,
 		});
+	});
+
+	it("adds balance adjustments into the work balance (#993)", () => {
+		const values = buildWorkBalanceValues({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 720,
+			requiredMinutes: 0,
+			adjustmentMinutes: -300,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		expect(values).toMatchObject({ actualMinutes: 720, adjustmentMinutes: -300, balanceMinutes: 420 });
 	});
 
 	it("formats signed all-time work balance values", () => {
@@ -327,6 +354,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			actualMinutes: 0,
 			requiredMinutes: 0,
+			adjustmentMinutes: 0,
 			balanceMinutes: 0,
 			computedFromDate: "2026-05-21",
 			computedThroughDate: "2026-05-21",
@@ -634,6 +662,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			actualMinutes: 0,
 			requiredMinutes: 0,
+			adjustmentMinutes: 0,
 			balanceMinutes: 0,
 			computedFromDate: "0001-01-01",
 			computedThroughDate: "0001-01-01",
@@ -649,6 +678,7 @@ describe("work balance helpers", () => {
 			set: {
 				actualMinutes: 0,
 				requiredMinutes: 0,
+				adjustmentMinutes: 0,
 				balanceMinutes: 0,
 				computedFromDate: "0001-01-01",
 				computedThroughDate: "0001-01-01",
@@ -934,7 +964,6 @@ describe("work balance helpers", () => {
 		// Projections awaiting a rebuild (organization-wide or the employee's user) are left to it.
 		expect(and).toHaveBeenCalledWith(
 			expect.anything(),
-			expect.anything(),
 			expect.objectContaining({
 				sql: expect.arrayContaining([
 					expect.stringContaining("not exists (select 1 from "),
@@ -943,6 +972,8 @@ describe("work balance helpers", () => {
 			}),
 			expect.anything(),
 		);
+		// Employees who have left are caught up through the end of their employment (#1002).
+		expect(eq).toHaveBeenCalledWith(employee.isActive, false);
 	});
 
 	it("refreshes old dirty months rebuilds years and upserts read model from closed plus hot totals", async () => {

@@ -1036,7 +1036,7 @@ assignment and X's own card.
   the approver's own rows, one `initial` row per provider for each deputy
   covering for the pending assignment's or legacy request's approver at the
   pass time. The row names the deputy as recipient and X in
-  `acting_for_employee_id` (migration `0198`). Dedupe:
+  `acting_for_employee_id` (migration `0203`). Dedupe:
   `deputy-initial:<assignment>:<deputy>:<provider>` and
   `deputy-legacy-initial:<request>:<deputy>:<provider>`; the deputy is in the
   key, so a deputy change mid-absence gets its own card.

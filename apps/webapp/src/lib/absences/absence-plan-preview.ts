@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { dateRangesOverlap, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
 import { type AbsenceDaysRefusal, type IsWorkingDay, refusalForAbsenceDays } from "./absence-days";
 import { countRequestedAbsenceDays, normalizeAbsenceDurationInput } from "./duration";
+import type { TimeOffInLieuPreview } from "./time-off-in-lieu-preview";
 import type { AbsenceRequest, Holiday, VacationBalance } from "./types";
 
 export type ApprovalSignal = "likely" | "needs_review" | "risky";
@@ -11,6 +12,8 @@ export interface AbsencePlanCategoryInput {
 	name: string;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	/** Time off in lieu (#1000). */
+	drawsOnWorkBalance?: boolean;
 }
 
 export interface ExistingAbsenceInput {
@@ -48,6 +51,8 @@ export interface AbsencePlanPreviewInput {
 	affectedShifts: unknown[];
 	coverage: CoverageEvaluationInput;
 	hasManager: boolean;
+	/** The projected work balance, for a category that draws on it. */
+	workBalance?: TimeOffInLieuPreview | null;
 }
 
 export interface AbsencePlanHolidayPreview {
@@ -77,6 +82,8 @@ export interface AbsencePlanPreview {
 	/** Set when the request would be refused on submission. */
 	refusal: AbsenceDaysRefusal | null;
 	balance: AbsencePlanBalancePreview | null;
+	/** Set only for a category that draws on the work balance. */
+	workBalance: TimeOffInLieuPreview | null;
 	holidays: AbsencePlanHolidayPreview[];
 	overlaps: ExistingAbsenceInput[];
 	affectedShifts: AbsencePlanAffectedShiftPreview[];
@@ -133,6 +140,19 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		warnings.push("Vacation balance would be negative after this request.");
 	}
 
+	const workBalance = input.category.drawsOnWorkBalance ? (input.workBalance ?? null) : null;
+	if (input.category.drawsOnWorkBalance) {
+		reasons.push(
+			workBalance
+				? "This absence draws on the work balance."
+				: "Work balance is unavailable right now.",
+		);
+	}
+	if (workBalance?.wouldBeNegative) {
+		hasRisk = true;
+		warnings.push("Work balance would be negative after this request.");
+	}
+
 	for (const overlap of overlaps) {
 		hasRisk = true;
 		warnings.push(`Request overlaps an existing ${overlap.status} absence.`);
@@ -162,6 +182,7 @@ export function buildAbsencePlanPreview(input: AbsencePlanPreviewInput): Absence
 		requestedAbsenceDays,
 		refusal,
 		balance,
+		workBalance,
 		holidays: holidays.map((holiday) => ({
 			id: holiday.id,
 			name: holiday.name,

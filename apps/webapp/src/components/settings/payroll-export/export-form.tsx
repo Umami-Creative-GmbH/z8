@@ -174,6 +174,21 @@ export function ExportForm({
 					t("settings.payrollExport.export.success", "Export downloaded"),
 				);
 			}
+			if (result.data.unmappedOvertimePayoutCount) {
+				toast.warning(
+					t(
+						"settings.payrollExport.export.unmappedOvertimePayouts",
+						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
+						{ count: result.data.unmappedOvertimePayoutCount },
+					),
+					{
+						description: t(
+							"settings.payrollExport.export.unmappedOvertimePayoutsDescription",
+							"No wage type is mapped to Overtime for this format. Map one under Wage Types and export again, or pay these hours out another way.",
+						),
+					},
+				);
+			}
 			onExportComplete?.();
 		});
 	};

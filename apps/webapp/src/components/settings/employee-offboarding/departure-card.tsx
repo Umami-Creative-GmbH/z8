@@ -1,16 +1,23 @@
 "use client";
 
-import { IconCalendar, IconUserMinus } from "@tabler/icons-react";
+import { IconCalendar, IconCash, IconUserMinus } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import {
 	departureCutoffDate,
 	formatDepartureCutoff,
 } from "@/lib/employee-lifecycle/cutoff-display";
-import type { EmployeeOffboardingView } from "@/lib/employee-lifecycle/view-types";
+import type {
+	EmployeeOffboardingView,
+	OffboardingWorkBalance,
+} from "@/lib/employee-lifecycle/view-types";
+import { cn } from "@/lib/utils";
+import { formatSignedWorkBalance, getWorkBalanceStatus } from "@/lib/work-balance/format";
 import { Link } from "@/navigation";
 import { useOffboardingLabels } from "./labels";
 
@@ -20,6 +27,8 @@ export type DepartureCardProps = {
 	onOffboardNow: () => void;
 	onCancelDeparture: () => void;
 	onRehire: () => void;
+	/** Opens the final overtime payout form; offered only when the view carries one. */
+	onRecordFinalPayout: () => void;
 	isMutating: boolean;
 	/** Follow-up list, rendered independently of the departure state. */
 	followUpList: ReactNode;
@@ -67,6 +76,14 @@ export function DepartureCard(props: DepartureCardProps) {
 				<FollowUpSummary followUp={followUp} />
 				<FutureWorkLinks view={view} />
 				<DeputyCoverLink view={view} />
+				{view.workBalance && (
+					<WorkBalanceSummary
+						employeeId={view.employeeId}
+						workBalance={view.workBalance}
+						locale={locale}
+						onRecordFinalPayout={props.onRecordFinalPayout}
+					/>
+				)}
 
 				<div className="flex flex-wrap gap-2">
 					{capabilities.schedule && (
@@ -216,6 +233,65 @@ function DeputyCoverLink({ view }: { view: EmployeeOffboardingView }) {
 				</li>
 			</ul>
 		</div>
+	);
+}
+
+/**
+ * The departing employee's work balance (#1002), with a final overtime payout
+ * when the server offers one. Information only: it never blocks the departure.
+ */
+function WorkBalanceSummary({
+	employeeId,
+	workBalance,
+	locale,
+	onRecordFinalPayout,
+}: {
+	employeeId: string;
+	workBalance: OffboardingWorkBalance;
+	locale: string;
+	onRecordFinalPayout: () => void;
+}) {
+	const { t } = useTranslate();
+	const { balance, finalPayout } = workBalance;
+	const status = balance ? getWorkBalanceStatus(balance.balanceMinutes) : "neutral";
+	const headingId = `offboarding-work-balance-${employeeId}`;
+	return (
+		<section aria-labelledby={headingId} className="space-y-1 text-sm">
+			<p id={headingId} className="font-medium">
+				{t("settings.employees.offboarding.workBalance.title", "Work balance")}
+			</p>
+			<p
+				className={cn(
+					"font-semibold text-lg tabular-nums",
+					status === "positive" && "text-emerald-600 dark:text-emerald-400",
+					status === "negative" && "text-destructive",
+				)}
+			>
+				{balance
+					? formatSignedWorkBalance(balance.balanceMinutes)
+					: t("workBalance.notCalculated", "Not calculated yet")}
+			</p>
+			{balance && (
+				<p className="text-muted-foreground text-xs">
+					{t("settings.employees.offboarding.workBalance.through", "Through {date}", {
+						date: formatPlainDate(
+							parsePlainDate(balance.computedThroughDate),
+							locale,
+							"dateMedium",
+						),
+					})}
+				</p>
+			)}
+			{finalPayout && (
+				<Button type="button" variant="outline" size="sm" onClick={onRecordFinalPayout}>
+					<IconCash className="size-4" aria-hidden="true" />
+					{t(
+						"settings.employees.offboarding.workBalance.recordFinalPayout",
+						"Record final overtime payout",
+					)}
+				</Button>
+			)}
+		</section>
 	);
 }
 

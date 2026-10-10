@@ -21,6 +21,7 @@ import type {
 	InvitationWithInviter,
 	MemberWithUserAndEmployee,
 } from "@/components/organization/people-management-types";
+import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -102,13 +103,16 @@ export function EmployeesPageClient(props: {
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
-			<div>
-				<h1 className="text-2xl font-semibold tracking-tight">
-					{t("settings.employees.title", "Employees")}
-				</h1>
-				<p className="text-sm text-muted-foreground">
-					{t("settings.employees.description", "Manage employees, members, and invites")}
-				</p>
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div>
+					<h1 className="text-2xl font-semibold tracking-tight">
+						{t("settings.employees.title", "Employees")}
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						{t("settings.employees.description", "Manage employees, members, and invites")}
+					</p>
+				</div>
+				<OpeningBalanceUploadDialog />
 			</div>
 
 			<Tabs defaultValue="employees" className="space-y-4">

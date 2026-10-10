@@ -12,6 +12,7 @@ import {
 	type ExistingAbsenceInput,
 } from "@/lib/absences/absence-plan-preview";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
+import { loadTimeOffInLieuPreview } from "@/lib/absences/time-off-in-lieu-preview.server";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import type { DayOfWeek } from "@/lib/coverage/domain/entities/coverage-rule";
@@ -144,6 +145,18 @@ export async function getAbsencePlanPreview(
 			}),
 		]);
 
+		const workBalance = category.drawsOnWorkBalance
+			? await loadTimeOffInLieuPreview({
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					absence: {
+						startDate: request.startDate,
+						startPeriod: request.startPeriod,
+						endDate: request.endDate,
+						endPeriod: request.endPeriod,
+					},
+				}).catch(() => null)
+			: null;
 		const typedExistingAbsences = existingAbsences as unknown as ExistingAbsenceRow[];
 		const typedAffectedShifts = toAffectedShifts(affectedShiftRows, timezone);
 		const coverage = await evaluateCoverageRisk({
@@ -160,6 +173,7 @@ export async function getAbsencePlanPreview(
 				name: category.name,
 				requiresApproval: category.requiresApproval,
 				countsAgainstVacation: category.countsAgainstVacation,
+				drawsOnWorkBalance: category.drawsOnWorkBalance,
 			},
 			request,
 			vacationBalance,
@@ -175,6 +189,7 @@ export async function getAbsencePlanPreview(
 			affectedShifts: typedAffectedShifts,
 			coverage,
 			hasManager: Boolean(managerId),
+			workBalance,
 		});
 
 		return { success: true, data };

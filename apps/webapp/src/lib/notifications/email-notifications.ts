@@ -64,6 +64,8 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	// The covering deputy's inbox section, the approver's deputy decisions (#1018).
 	approval_cover_started: "/approvals/inbox",
 	approval_cover_return_summary: "/approvals/deputy-decisions/",
+	work_balance_adjustment_recorded: "/time-tracking",
+	work_balance_adjustment_cancelled: "/time-tracking",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

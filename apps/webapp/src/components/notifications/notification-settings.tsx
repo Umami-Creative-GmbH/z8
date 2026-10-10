@@ -81,6 +81,8 @@ const NOTIFICATION_CATEGORIES = [
 			"month_closed_automatically",
 			"month_close_blocked",
 			"month_reopened",
+			"work_balance_adjustment_recorded",
+			"work_balance_adjustment_cancelled",
 		] as NotificationType[],
 	},
 	{
@@ -202,6 +204,8 @@ const NOTIFICATION_CATEGORIES = [
 /** Types whose labels are static `t()` calls in `getTypeLabel` (extractable with their defaults). */
 type StaticallyLabelledType =
 	| ClockingReminderType
+	| "work_balance_adjustment_recorded"
+	| "work_balance_adjustment_cancelled"
 	| AbsenceDeputyNotificationType
 	| "absence_deputy_unavailable"
 	| "approval_cover_started"
@@ -281,6 +285,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, str
 	month_closed_automatically: "Month closed automatically",
 	month_close_blocked: "Automatic month close blocked",
 	month_reopened: "Closed month reopened for your employees",
+	// One-time notice to owners and admins; not listed in any preference category
+	time_off_in_lieu_available: "Time off in lieu available",
 };
 
 // Channel icons and labels
@@ -407,6 +413,16 @@ function useNotificationSettingsViewModel() {
 				);
 			case "break_due_reminder":
 				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+			case "work_balance_adjustment_recorded":
+				return t(
+					"common:notifications.preferences.types.work_balance_adjustment_recorded",
+					"Balance adjustment recorded",
+				);
+			case "work_balance_adjustment_cancelled":
+				return t(
+					"common:notifications.preferences.types.work_balance_adjustment_cancelled",
+					"Balance adjustment cancelled",
+				);
 			case "absence_deputy_assigned":
 				return t(
 					"common:notifications.preferences.types.absence_deputy_assigned",

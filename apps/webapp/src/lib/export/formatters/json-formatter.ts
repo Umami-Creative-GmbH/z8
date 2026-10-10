@@ -90,6 +90,7 @@ export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 	time_entries: "Time clock entries and corrections",
 	work_periods: "Aggregated work sessions",
 	absences: "Absence records and categories",
+	balance_adjustments: "Opening balances and overtime payouts, including cancelled ones",
 	holidays: "Holiday calendar and presets",
 	vacation: "Vacation policies and allowances",
 	schedules: "Work schedule templates and assignments",

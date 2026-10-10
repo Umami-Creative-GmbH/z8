@@ -60,6 +60,10 @@ export enum AuditAction {
 	/** An absence's deputy was named, changed or removed (#1011). */
 	ABSENCE_DEPUTY_CHANGED = "absence.deputy_changed",
 
+	// Balance adjustments (#993): opening balances and overtime payouts
+	BALANCE_ADJUSTMENT_RECORDED = "balance_adjustment.recorded",
+	BALANCE_ADJUSTMENT_CANCELLED = "balance_adjustment.cancelled",
+
 	// Approval Operations
 	APPROVAL_SUBMITTED = "approval.submitted",
 	APPROVAL_APPROVED = "approval.approved",
@@ -326,6 +330,7 @@ export interface AuditLogEntry {
 		| "schedule"
 		| "time_entry"
 		| "absence"
+		| "balance_adjustment"
 		| "approval"
 		| "approval_setting"
 		| "vacation"

@@ -29,9 +29,16 @@ import {
 	assertCanonicalCutoverReady,
 } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { listOvertimePayouts } from "@/lib/work-balance/adjustments/ledger";
 import { buildPayrollQueryEnvelope } from "./calendar-boundaries";
 import { assertNoOpenDepartureClockRepairs } from "./offboarding-repair-guard";
-import type { AbsenceData, PayrollExportFilters, WageTypeMapping, WorkPeriodData } from "./types";
+import type {
+	AbsenceData,
+	OvertimePayoutData,
+	PayrollExportFilters,
+	WageTypeMapping,
+	WorkPeriodData,
+} from "./types";
 import {
 	type BlockedPayrollWorkRecord,
 	PayrollWorkAllocationBlockedError,
@@ -305,6 +312,60 @@ export async function fetchAbsencesForExport(
 		absenceType: a.absence?.absenceCategory?.type || null,
 		status: a.approvalState,
 	}));
+}
+
+/**
+ * The uncancelled overtime payouts (#1001) whose local day lies within the
+ * export's logical dates, for the employees the export covers, with the
+ * identity the payroll files name them by. Read when the job is processed,
+ * like absences. A project selection does not narrow them: a payout belongs
+ * to no project.
+ */
+export async function fetchOvertimePayoutsForExport(
+	organizationId: string,
+	filters: PayrollExportFilters,
+): Promise<OvertimePayoutData[]> {
+	if (hasEmptyEmployeeScope(filters)) {
+		return [];
+	}
+
+	const { startDate, endDate } = getLogicalDateRange(filters);
+	const payouts = await listOvertimePayouts(db, {
+		organizationId,
+		employeeIds: await resolveExportEmployeeIds(organizationId, filters),
+		fromDate: startDate,
+		throughDate: endDate,
+	});
+	if (payouts.length === 0) {
+		return [];
+	}
+
+	const people = await db.query.employee.findMany({
+		where: and(
+			eq(employee.organizationId, organizationId),
+			inArray(employee.id, [...new Set(payouts.map((payout) => payout.employeeId))]),
+		),
+		columns: { id: true, employeeNumber: true },
+		with: { user: { columns: { firstName: true, lastName: true, email: true } } },
+	});
+	const byId = new Map(people.map((person) => [person.id, person]));
+
+	logger.info({ organizationId, count: payouts.length }, "Fetched overtime payouts for payroll export");
+
+	return payouts.map((payout) => {
+		const person = byId.get(payout.employeeId);
+		return {
+			id: payout.id,
+			employeeId: payout.employeeId,
+			employeeNumber: person?.employeeNumber || null,
+			email: person?.user?.email || null,
+			firstName: person?.user?.firstName || null,
+			lastName: person?.user?.lastName || null,
+			day: payout.day,
+			// Stored negative: the payout lowers the work balance.
+			minutes: -payout.minutes,
+		};
+	});
 }
 
 /**
