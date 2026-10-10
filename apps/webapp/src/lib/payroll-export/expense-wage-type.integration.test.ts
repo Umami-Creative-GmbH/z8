@@ -4,6 +4,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { PAYROLL_LINE_KINDS } from "@/lib/travel-expenses/payroll-line-kind";
+import { saveReimbursementChannel } from "@/lib/travel-expenses/reimbursement-channel";
 import {
 	getExpenseWageTypeMappings,
 	resolveExpenseWageType,
@@ -194,6 +195,30 @@ describe("expense wage types on PostgreSQL (#851)", () => {
 		expect(
 			await resolveExpenseWageType(organizationId, "sage_lohn", "receipt_other", { database }),
 		).toBeNull();
+	});
+
+	it("keeps the mappings when the organization switches back to bank transfer", async () => {
+		const organizationId = await fixture.createOrganization();
+		const database = fixture.db;
+		await fixture.pool.query(
+			"insert into travel_expense_payroll_run_preview_control (organization_id, mode) values ($1, 'active')",
+			[organizationId],
+		);
+		const switchTo = (channel: string) =>
+			saveReimbursementChannel(
+				{ organizationId, actorUserId: fixture.ownerUserId, channel },
+				{ database },
+			);
+		await switchTo("payroll_run");
+		await save(organizationId, "mileage_excess", { lexware_lohn: "350" });
+
+		expect(await switchTo("bank_transfer")).toMatchObject({ kind: "saved" });
+
+		expect(
+			await resolveExpenseWageType(organizationId, "lexware_lohn", "mileage_excess", {
+				database,
+			}),
+		).toBe("350");
 	});
 
 	it("stores every payroll line kind", async () => {

@@ -102,6 +102,16 @@ function toFormValues(mappings: ExpenseWageTypeMapping[]): FormValues {
 	) as FormValues;
 }
 
+/** Changes whenever a saved code does, so the form restarts from the saved codes. */
+function mappingsVersion(mappings: ExpenseWageTypeMapping[]): string {
+	return mappings
+		.map(
+			({ kind, codes }) =>
+				`${kind}:${EXPENSE_PAYROLL_FORMATS.map((f) => codes[f] ?? "").join(",")}`,
+		)
+		.join(";");
+}
+
 function MappingsForm({ setting }: { setting: ExpenseWageTypeSetting }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -266,17 +276,7 @@ export function ExpenseWageTypeMappings() {
 						</Button>
 					</div>
 				)}
-				{data && (
-					<MappingsForm
-						key={data.mappings
-							.map(
-								({ kind, codes }) =>
-									`${kind}:${EXPENSE_PAYROLL_FORMATS.map((f) => codes[f] ?? "").join(",")}`,
-							)
-							.join(";")}
-						setting={data}
-					/>
-				)}
+				{data && <MappingsForm key={mappingsVersion(data.mappings)} setting={data} />}
 			</CardContent>
 		</Card>
 	);

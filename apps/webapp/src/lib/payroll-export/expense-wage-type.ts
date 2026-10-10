@@ -40,14 +40,28 @@ const CODE_COLUMNS = {
 	successfactors_csv: "successFactorsWageTypeCode",
 } as const satisfies Record<ExpensePayrollFormat, keyof MappingRow>;
 
+type CodeColumns = {
+	[Format in ExpensePayrollFormat as (typeof CODE_COLUMNS)[Format]]: string | null;
+};
+
 function rowCodes(row: MappingRow | undefined): ExpenseWageTypeCodes {
-	if (!row) return { ...EMPTY_EXPENSE_WAGE_TYPE_CODES };
-	return {
-		datev_lohn: row.datevWageTypeCode,
-		lexware_lohn: row.lexwareWageTypeCode,
-		sage_lohn: row.sageWageTypeCode,
-		successfactors_csv: row.successFactorsWageTypeCode,
-	};
+	const codes = { ...EMPTY_EXPENSE_WAGE_TYPE_CODES };
+	if (row) for (const format of EXPENSE_PAYROLL_FORMATS) codes[format] = row[CODE_COLUMNS[format]];
+	return codes;
+}
+
+function codeColumns(codes: ExpenseWageTypeCodes): CodeColumns {
+	return Object.fromEntries(
+		EXPENSE_PAYROLL_FORMATS.map((format) => [CODE_COLUMNS[format], codes[format]]),
+	) as CodeColumns;
+}
+
+/** The one row of `kind` in the organization. */
+function mappingOf(organizationId: string, kind: PayrollLineKind) {
+	return and(
+		eq(payrollExpenseWageTypeMapping.organizationId, organizationId),
+		eq(payrollExpenseWageTypeMapping.payrollLineKind, kind),
+	);
 }
 
 /** Every payroll line kind with its codes; unmapped kinds have `null` codes. */
@@ -73,12 +87,7 @@ export async function resolveExpenseWageType(
 	const [row] = await (options.database ?? appDb)
 		.select({ code: payrollExpenseWageTypeMapping[CODE_COLUMNS[format]] })
 		.from(payrollExpenseWageTypeMapping)
-		.where(
-			and(
-				eq(payrollExpenseWageTypeMapping.organizationId, organizationId),
-				eq(payrollExpenseWageTypeMapping.payrollLineKind, kind),
-			),
-		)
+		.where(mappingOf(organizationId, kind))
 		.limit(1);
 	return row?.code ?? null;
 }
@@ -106,12 +115,7 @@ export async function saveExpenseWageTypeMapping(
 		const [existing] = await tx
 			.select()
 			.from(payrollExpenseWageTypeMapping)
-			.where(
-				and(
-					eq(payrollExpenseWageTypeMapping.organizationId, organizationId),
-					eq(payrollExpenseWageTypeMapping.payrollLineKind, kind),
-				),
-			)
+			.where(mappingOf(organizationId, kind))
 			.for("update");
 		const previous = rowCodes(existing);
 		if (EXPENSE_PAYROLL_FORMATS.every((format) => previous[format] === codes[format])) {
@@ -119,23 +123,9 @@ export async function saveExpenseWageTypeMapping(
 		}
 
 		const now = new Date();
-		const values = {
-			datevWageTypeCode: codes.datev_lohn,
-			lexwareWageTypeCode: codes.lexware_lohn,
-			sageWageTypeCode: codes.sage_lohn,
-			successFactorsWageTypeCode: codes.successfactors_csv,
-			updatedAt: now,
-			updatedBy: actorUserId,
-		};
+		const values = { ...codeColumns(codes), updatedAt: now, updatedBy: actorUserId };
 		if (EXPENSE_PAYROLL_FORMATS.every((format) => codes[format] === null)) {
-			await tx
-				.delete(payrollExpenseWageTypeMapping)
-				.where(
-					and(
-						eq(payrollExpenseWageTypeMapping.organizationId, organizationId),
-						eq(payrollExpenseWageTypeMapping.payrollLineKind, kind),
-					),
-				);
+			await tx.delete(payrollExpenseWageTypeMapping).where(mappingOf(organizationId, kind));
 		} else {
 			await tx
 				.insert(payrollExpenseWageTypeMapping)
