@@ -29,7 +29,8 @@ export interface UpcomingShifts {
 
 /**
  * Where "upcoming" starts at `now`: today's shifts that have not ended yet, then every later
- * shift date. Days and wall times are the organization's.
+ * shift date. Days and wall times are the organization's. Yesterday's night shift is left out
+ * even while it still runs past midnight.
  */
 export function upcomingShiftWindow(now: Instant, organizationTimezone: string) {
 	const local = getInstantLocalMinuteFields(now, organizationTimezone);
@@ -42,7 +43,7 @@ export function upcomingShiftWindow(now: Instant, organizationTimezone: string) 
 	};
 }
 
-type UpcomingShiftRow = Pick<
+type UpcomingShiftRecord = Pick<
 	typeof shift.$inferSelect,
 	"id" | "date" | "startTime" | "endTime" | "notes"
 > & {
@@ -50,7 +51,7 @@ type UpcomingShiftRow = Pick<
 };
 
 export function toUpcomingShift(
-	row: UpcomingShiftRow,
+	row: UpcomingShiftRecord,
 	organizationTimezone: string,
 ): UpcomingShift {
 	return {
@@ -75,7 +76,7 @@ export async function loadUpcomingShifts(
 		limit: number;
 	},
 ): Promise<UpcomingShifts> {
-	const window = upcomingShiftWindow(input.now, input.organizationTimezone);
+	const bounds = upcomingShiftWindow(input.now, input.organizationTimezone);
 
 	const rows = await database.query.shift.findMany({
 		columns: { id: true, date: true, startTime: true, endTime: true, notes: true },
@@ -90,12 +91,13 @@ export async function loadUpcomingShifts(
 			eq(shift.employeeId, input.employeeId),
 			eq(shift.status, "published"),
 			or(
-				gte(shift.date, window.tomorrowStart),
+				gte(shift.date, bounds.tomorrowStart),
 				and(
-					gte(shift.date, window.todayStart),
-					lt(shift.date, window.tomorrowStart),
-					// Today's shift is upcoming until it ends; one ending at or before its start ends tomorrow.
-					or(gt(shift.endTime, window.currentTime), lte(shift.endTime, shift.startTime)),
+					gte(shift.date, bounds.todayStart),
+					lt(shift.date, bounds.tomorrowStart),
+					// Today's shift is upcoming until it ends; one ending at or before its start ends
+					// tomorrow (`shiftEndsNextDay`).
+					or(gt(shift.endTime, bounds.currentTime), lte(shift.endTime, shift.startTime)),
 				),
 			),
 		),
@@ -104,7 +106,7 @@ export async function loadUpcomingShifts(
 	});
 
 	return {
-		today: window.today,
+		today: bounds.today,
 		shifts: rows.map((row) => toUpcomingShift(row, input.organizationTimezone)),
 	};
 }

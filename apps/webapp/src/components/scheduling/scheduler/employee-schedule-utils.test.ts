@@ -6,8 +6,6 @@ import {
 	employeeScheduleWeek,
 	employeeShiftEvent,
 	groupShiftsByDay,
-	shiftEndsNextDay,
-	shiftPlaceLabel,
 } from "./employee-schedule-utils";
 
 function shift(overrides: Partial<ShiftWithRelations>): ShiftWithRelations {
@@ -122,21 +120,5 @@ describe("employeeShiftEvent", () => {
 		expect(employeeShiftEvent(shift({ subarea: null }), "Europe/Berlin", "Shift").title).toBe(
 			"Shift",
 		);
-	});
-});
-
-describe("shift labels", () => {
-	it("reads a shift ending at or before its start as ending the next day", () => {
-		expect(shiftEndsNextDay({ startTime: "22:00", endTime: "06:00" })).toBe(true);
-		expect(shiftEndsNextDay({ startTime: "08:00", endTime: "16:00" })).toBe(false);
-	});
-
-	it("names the location and subarea", () => {
-		expect(
-			shiftPlaceLabel(
-				shift({ subarea: { id: "s", name: "Floor", location: { id: "l", name: "Store" } } }),
-			),
-		).toBe("Store · Floor");
-		expect(shiftPlaceLabel(shift({ subarea: null }))).toBe("");
 	});
 });

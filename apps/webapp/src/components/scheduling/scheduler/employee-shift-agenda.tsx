@@ -7,8 +7,9 @@ import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import { Badge } from "@/components/ui/badge";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
 import { cn } from "@/lib/utils";
-import { groupShiftsByDay, shiftEndsNextDay, shiftPlaceLabel } from "./employee-schedule-utils";
+import { groupShiftsByDay } from "./employee-schedule-utils";
 
 /** A horizontal swipe at least this long (px) moves a week. */
 const SWIPE_DISTANCE = 60;
@@ -133,7 +134,7 @@ function AgendaShift({
 	onSelect: (shift: ShiftWithRelations) => void;
 }) {
 	const { t } = useTranslate();
-	const place = shiftPlaceLabel(shift);
+	const place = shiftPlaceLabel(shift.subarea?.location.name, shift.subarea?.name);
 
 	return (
 		<button

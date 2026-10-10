@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
-import { shiftEndsNextDay, shiftPlaceLabel } from "../scheduler/employee-schedule-utils";
+import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
 
 interface ShiftDetailsPanelProps {
 	open: boolean;
@@ -70,7 +70,7 @@ export function ShiftDetailsPanel({
 							</ShiftDetail>
 							{shift.subarea && (
 								<ShiftDetail label={t("scheduling:scheduling.shiftDetails.location", "Location")}>
-									{shiftPlaceLabel(shift)}
+									{shiftPlaceLabel(shift.subarea.location.name, shift.subarea.name)}
 								</ShiftDetail>
 							)}
 							{shift.notes && (

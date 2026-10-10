@@ -124,6 +124,17 @@ export function EmployeeShiftSchedule({
 		if (calendar && !isMobile) showAnchorInCalendar();
 	}, [calendar, isMobile]);
 
+	const detailsPanel = (
+		<ShiftDetailsPanel
+			open={selectedShift !== null}
+			onOpenChange={(open) => {
+				if (!open) setSelectedShift(null);
+			}}
+			shift={selectedShift}
+			organizationTimezone={organizationTimezone}
+		/>
+	);
+
 	if (!isMobile) {
 		return (
 			<div className="flex h-[calc(100vh-200px)] flex-col gap-4">
@@ -141,14 +152,7 @@ export function EmployeeShiftSchedule({
 						</div>
 					)}
 				</div>
-				<ShiftDetailsPanel
-					open={selectedShift !== null}
-					onOpenChange={(open) => {
-						if (!open) setSelectedShift(null);
-					}}
-					shift={selectedShift}
-					organizationTimezone={organizationTimezone}
-				/>
+				{detailsPanel}
 			</div>
 		);
 	}
@@ -202,14 +206,7 @@ export function EmployeeShiftSchedule({
 				/>
 			)}
 
-			<ShiftDetailsPanel
-				open={selectedShift !== null}
-				onOpenChange={(open) => {
-					if (!open) setSelectedShift(null);
-				}}
-				shift={selectedShift}
-				organizationTimezone={organizationTimezone}
-			/>
+			{detailsPanel}
 		</div>
 	);
 }

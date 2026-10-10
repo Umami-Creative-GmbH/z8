@@ -330,7 +330,9 @@
 
 /* Schedule-X Calendar Customizations - must be in @layer components to override theme */
 @layer components {
-	/* Hide Schedule-X's built-in header and view selection - we use custom controls */
+	/* Meant to hide Schedule-X's built-in header and view selection. In practice the theme's
+	   unlayered rules win over this layer, so the header stays visible, and the shift schedulers
+	   (planner and employee, #977) navigate with it. Hiding it for real needs replacement controls. */
 	.sx__calendar-header {
 		display: none;
 	}

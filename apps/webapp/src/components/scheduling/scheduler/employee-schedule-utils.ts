@@ -5,6 +5,7 @@ import {
 	type ZonedDateTime,
 } from "@/lib/datetime/temporal-core";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 
 /** The seven organization-local days of the week holding `anchor`, and their query range. */
@@ -55,11 +56,6 @@ export function groupShiftsByDay(
 	}));
 }
 
-/** Wall times only: a shift ending at or before its start ends on the next day. */
-export function shiftEndsNextDay(shift: Pick<ShiftWithRelations, "startTime" | "endTime">) {
-	return shift.endTime <= shift.startTime;
-}
-
 /**
  * A Schedule-X event for the employee's calendar. Schedule-X 4 takes timed events only as
  * `ZonedDateTime`, so wall times are placed in the organization's zone.
@@ -73,7 +69,7 @@ export function employeeShiftEvent(
 	const endDate = shiftEndsNextDay(shift) ? date.add({ days: 1 }) : date;
 	return {
 		id: shift.id,
-		title: shiftPlaceLabel(shift) || fallbackTitle,
+		title: shiftPlaceLabel(shift.subarea?.location.name, shift.subarea?.name) || fallbackTitle,
 		start: date
 			.toPlainDateTime(parsePlainTimeMinute(shift.startTime))
 			.toZonedDateTime(organizationTimezone),
@@ -82,9 +78,4 @@ export function employeeShiftEvent(
 			.toZonedDateTime(organizationTimezone),
 		calendarId: "published",
 	};
-}
-
-/** "Location · Subarea", or what is known of it. */
-export function shiftPlaceLabel(shift: Pick<ShiftWithRelations, "subarea">) {
-	return [shift.subarea?.location.name, shift.subarea?.name].filter(Boolean).join(" · ");
 }

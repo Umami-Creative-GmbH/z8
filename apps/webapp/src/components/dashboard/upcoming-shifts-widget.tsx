@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
 import type { UpcomingShift, UpcomingShifts } from "@/lib/scheduling/upcoming-shifts";
 import { Link } from "@/navigation";
 import { useShiftsEnabled } from "@/stores/organization-settings-store";
@@ -82,8 +83,7 @@ function UpcomingShiftRow({ shift, today }: { shift: UpcomingShift; today: strin
 	const locale = useTolgee().getLanguage() || "en";
 	const date = parsePlainDate(shift.date);
 	const daysUntil = date.since(parsePlainDate(today)).days;
-	const place = [shift.locationName, shift.subareaName].filter(Boolean).join(" · ");
-	const endsNextDay = shift.endTime <= shift.startTime;
+	const place = shiftPlaceLabel(shift.locationName, shift.subareaName);
 
 	return (
 		<Link
@@ -111,7 +111,7 @@ function UpcomingShiftRow({ shift, today }: { shift: UpcomingShift; today: strin
 					<span className="tabular-nums">
 						{shift.startTime} – {shift.endTime}
 					</span>
-					{endsNextDay && (
+					{shiftEndsNextDay(shift) && (
 						<span>({t("dashboard.upcoming-shifts.ends-next-day", "ends next day")})</span>
 					)}
 				</div>
