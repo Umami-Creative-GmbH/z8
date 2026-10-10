@@ -99,6 +99,8 @@ export enum AuditAction {
 	APPROVAL_ESCALATION_CONFLICTS_REVIEWED = "approval_escalation.conflicts_reviewed",
 	APPROVAL_ESCALATION_ATTENTION_DISPOSED = "approval_escalation.attention_disposed",
 	APPROVAL_ESCALATION_TRANSFERRED = "approval_escalation.transferred",
+	// "Deputies can decide approvals" turned on or off (#1015)
+	APPROVAL_SETTING_DEPUTY_DECISIONS_CHANGED = "approval_setting.deputy_decisions_changed",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
@@ -316,6 +318,7 @@ export interface AuditLogEntry {
 		| "time_entry"
 		| "absence"
 		| "approval"
+		| "approval_setting"
 		| "vacation"
 		| "surcharge_model"
 		| "surcharge_rule"
