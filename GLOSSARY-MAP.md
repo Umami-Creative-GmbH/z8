@@ -16,7 +16,7 @@
 
 ## Relationships
 
-- **Time Tracking → Approvals**: time corrections and work-period submissions are approval kinds; Approvals decides them and Time Tracking applies the outcome to work records
+- **Time Tracking → Approvals**: time corrections, work-period submissions and period submissions are approval kinds; Approvals decides them and Time Tracking applies the outcome to work records
 - **Admission ≠ lifecycle mode**: a Time Tracking organization's admission (`legacy`/`append`) and an Approvals kind's lifecycle mode are independent rollouts
 - **Approvals → Time Tracking**: approval decisions, corrections and cancellations that change work records run inside a Time Tracking **work transaction**, taking their approval write gate at the rank the acquisition protocol reserves for it
 - **Travel Expenses → Approvals**: a submitted expense report is an approval kind; Approvals decides it and Travel Expenses reimburses what was approved

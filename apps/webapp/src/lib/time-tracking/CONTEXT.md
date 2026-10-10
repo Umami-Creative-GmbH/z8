@@ -79,6 +79,20 @@ _Avoid_: Unlock
 How an organization's work records accept new entries: `legacy` or `append`. An organization whose admission is `append` is **adopted**.
 _Avoid_: Mode (reserved for an approval kind's lifecycle mode)
 
+### Period submissions
+
+**Period submission**:
+An employee's confirmation that their work and absences for one submission period are complete and correct, which an approver then accepts or rejects. Any later change to that work or those absences sends the period back to the employee to submit again; only a closed month freezes it.
+_Avoid_: Timesheet (Billable Time's itemized list for an invoice), timesheet submission, period sign-off
+
+**Submission period**:
+The week or calendar month, in the employee's timezone, that one period submission covers, clipped to their employment. Its range is fixed once submitted: a later timezone change does not move it.
+_Avoid_: Timesheet period, pay period
+
+**Submission cadence**:
+An organization's choice of week or calendar month as its submission period, with the day its weeks start for a weekly cadence. Organizations without one do not collect period submissions.
+_Avoid_: Submission frequency, timesheet interval
+
 ### Clocking
 
 **Clocking**:
