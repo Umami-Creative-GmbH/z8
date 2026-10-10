@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PAYROLL_EXPORT_FORMATS } from "@/lib/payroll-export/format-registry";
 
 const mockState = vi.hoisted(() => ({
 	getAuthContext: vi.fn(async () => ({
@@ -115,5 +116,39 @@ describe("startScopedPayrollExportAction", () => {
 			organizationId: "org-1",
 		});
 		expect(mockState.enqueuePayrollExportJob).not.toHaveBeenCalled();
+	});
+});
+
+describe("payroll workspace export formats", () => {
+	const registered = PAYROLL_EXPORT_FORMATS as unknown as object[];
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.createExportJob.mockResolvedValue({ jobId: "job-1", isAsync: true });
+	});
+
+	afterEach(() => {
+		registered.splice(registered.findIndex((format) => "id" in format && format.id === "fake_lohn"), 1);
+	});
+
+	it("exports in a file format registered for the workspace with no further edits", async () => {
+		registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: true });
+
+		await startScopedPayrollExportAction({ ...request, formatId: "fake_lohn" });
+
+		expect(mockState.createExportJob).toHaveBeenCalledWith(
+			expect.objectContaining({ formatId: "fake_lohn" }),
+		);
+	});
+
+	it.each([
+		"successfactors_csv",
+		"personio",
+		"unknown_lohn",
+	])("refuses %s, which the workspace does not offer", async (formatId) => {
+		registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: true });
+
+		await expect(startScopedPayrollExportAction({ ...request, formatId })).rejects.toBeDefined();
+		expect(mockState.createExportJob).not.toHaveBeenCalled();
 	});
 });

@@ -6,19 +6,18 @@
  */
 
 import type { PayrollLineKind } from "@/lib/travel-expenses/payroll-line-kind";
+import {
+	type PayrollExportFileFormatId,
+	payrollExportFileFormatIds,
+	payrollExportFormatKind,
+} from "./format-registry";
 
-export const EXPENSE_PAYROLL_FORMATS = [
-	"datev_lohn",
-	"lexware_lohn",
-	"sage_lohn",
-	"successfactors_csv",
-] as const;
-export type ExpensePayrollFormat = (typeof EXPENSE_PAYROLL_FORMATS)[number];
+/** The file formats of the format registry (#823). */
+export const EXPENSE_PAYROLL_FORMATS: readonly ExpensePayrollFormat[] = payrollExportFileFormatIds();
+export type ExpensePayrollFormat = PayrollExportFileFormatId;
 
 export function isExpensePayrollFormat(value: unknown): value is ExpensePayrollFormat {
-	return (
-		typeof value === "string" && (EXPENSE_PAYROLL_FORMATS as readonly string[]).includes(value)
-	);
+	return typeof value === "string" && payrollExportFormatKind(value) === "file";
 }
 
 /** One code per file format; `null` leaves the kind unmapped for that format. */
@@ -31,12 +30,9 @@ export interface ExpenseWageTypeMapping {
 
 export const MAX_EXPENSE_WAGE_TYPE_CODE_LENGTH = 32;
 
-export const EMPTY_EXPENSE_WAGE_TYPE_CODES: ExpenseWageTypeCodes = {
-	datev_lohn: null,
-	lexware_lohn: null,
-	sage_lohn: null,
-	successfactors_csv: null,
-};
+export const EMPTY_EXPENSE_WAGE_TYPE_CODES = Object.fromEntries(
+	EXPENSE_PAYROLL_FORMATS.map((format) => [format, null]),
+) as ExpenseWageTypeCodes;
 
 /**
  * A trimmed code, `null` for an empty one, or `undefined` when the value is not

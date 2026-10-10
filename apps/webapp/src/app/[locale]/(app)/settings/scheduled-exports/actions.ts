@@ -18,9 +18,10 @@ import type {
 	ScheduledExportReportConfig,
 } from "@/db/schema/scheduled-export";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
-import { AuthorizationError } from "@/lib/effect/errors";
+import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
+import { validateScheduledReportConfig } from "@/lib/scheduled-exports/application/executors/registry";
 import {
 	calculateNextExecution,
 	getNextExecutions,
@@ -112,6 +113,24 @@ export interface ExecutionHistoryItem {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
+/** Refuses a report configuration its executor rejects, e.g. an unconfigured payroll format. */
+function validateReportConfig(
+	organizationId: string,
+	reportType: string,
+	reportConfig: ScheduledExportReportConfig,
+) {
+	return Effect.gen(function* () {
+		const errors = yield* Effect.promise(() =>
+			validateScheduledReportConfig(organizationId, reportType, reportConfig),
+		);
+		if (errors.length > 0) {
+			yield* Effect.fail(
+				new ValidationError({ message: errors.join("; "), field: "reportConfig" }),
+			);
+		}
+	});
+}
+
 // ============================================
 // CREATE
 // ============================================
@@ -160,6 +179,8 @@ export async function createScheduledExportAction(
 				throw new Error(`Invalid email addresses: ${invalidEmails.join(", ")}`);
 			}
 		}
+
+		yield* validateReportConfig(input.organizationId, input.reportType, input.reportConfig);
 
 		// Calculate next execution time
 		const scheduleConfig: ScheduleConfig = {
@@ -341,6 +362,23 @@ export async function updateScheduledExportAction(
 					`Invalid cron expression: ${error instanceof Error ? error.message : "Unknown error"}`,
 				);
 			}
+		}
+
+		if (input.reportConfig !== undefined) {
+			const reportConfig = input.reportConfig;
+			const existing = yield* Effect.promise(() =>
+				db.query.scheduledExport.findFirst({
+					where: and(
+						eq(scheduledExport.id, input.id),
+						eq(scheduledExport.organizationId, input.organizationId),
+					),
+					columns: { reportType: true },
+				}),
+			);
+			if (!existing) {
+				throw new Error("Scheduled export not found");
+			}
+			yield* validateReportConfig(input.organizationId, existing.reportType, reportConfig);
 		}
 
 		// Build update object

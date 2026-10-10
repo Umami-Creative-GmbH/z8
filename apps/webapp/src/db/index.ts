@@ -233,7 +233,6 @@ export {
 	payrollExportConfig,
 	payrollExportConfigRelations,
 	payrollExportFormat,
-	payrollExportFormatEnum,
 	payrollExportFormatRelations,
 	payrollExportJob,
 	payrollExportJobRelations,

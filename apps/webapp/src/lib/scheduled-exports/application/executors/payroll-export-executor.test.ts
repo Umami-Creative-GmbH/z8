@@ -123,3 +123,57 @@ describe("scheduled payroll requester attribution", () => {
 		expect(mocks.createExportJob).not.toHaveBeenCalled();
 	});
 });
+
+describe("scheduled payroll export configuration", () => {
+	beforeEach(() => {
+		vi.resetAllMocks();
+	});
+
+	it.each([
+		"successfactors_api",
+		"successfactors_csv",
+		"workday_api",
+	])("accepts the registered format %s", (formatId) => {
+		expect(new PayrollExportExecutor().validateConfig({ formatId })).toEqual({ valid: true });
+	});
+
+	it("rejects an unknown format id", () => {
+		const result = new PayrollExportExecutor().validateConfig({ formatId: "lexware" });
+
+		expect(result.valid).toBe(false);
+		expect(result.errors).toEqual([expect.stringContaining("lexware")]);
+	});
+
+	it("rejects a missing format id", () => {
+		expect(new PayrollExportExecutor().validateConfig({}).valid).toBe(false);
+	});
+
+	it("accepts a format the organization has an active configuration for", async () => {
+		mocks.getPayrollExportConfig.mockResolvedValue({ config: { id: "config-1" } });
+
+		await expect(
+			new PayrollExportExecutor().validateForOrganization("org-1", { formatId: "workday_api" }),
+		).resolves.toEqual({ valid: true });
+		expect(mocks.getPayrollExportConfig).toHaveBeenCalledWith("org-1", "workday_api");
+	});
+
+	it("rejects a registered format the organization has not configured", async () => {
+		mocks.getPayrollExportConfig.mockResolvedValue(null);
+
+		const result = await new PayrollExportExecutor().validateForOrganization("org-1", {
+			formatId: "sage_lohn",
+		});
+
+		expect(result.valid).toBe(false);
+		expect(result.errors).toEqual([expect.stringContaining("sage_lohn")]);
+	});
+
+	it("rejects an unknown format without looking up a configuration", async () => {
+		const result = await new PayrollExportExecutor().validateForOrganization("org-1", {
+			formatId: "custom",
+		});
+
+		expect(result.valid).toBe(false);
+		expect(mocks.getPayrollExportConfig).not.toHaveBeenCalled();
+	});
+});
