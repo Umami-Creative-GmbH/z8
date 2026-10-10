@@ -149,6 +149,25 @@ export const queryKeys = {
 			] as const,
 	},
 
+	// Payroll workspace
+	payroll: {
+		/** Overtime payouts an export of the period, format and employees would leave out (#1001). */
+		overtimePayoutReadiness: (request: {
+			startDate: string;
+			endDate: string;
+			formatId: string;
+			employeeIds?: readonly string[];
+		}) =>
+			[
+				"payroll",
+				"overtime-payout-readiness",
+				request.startDate,
+				request.endDate,
+				request.formatId,
+				request.employeeIds?.join(",") ?? "scope",
+			] as const,
+	},
+
 	// Employees
 	employees: {
 		all: ["employees"] as const,

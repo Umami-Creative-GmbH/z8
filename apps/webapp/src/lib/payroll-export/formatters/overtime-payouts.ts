@@ -16,13 +16,20 @@ import { type WageTypeCodeFormat, wageTypeCodeFor } from "../wage-type-code";
 export const OVERTIME_PAYOUT_CATEGORY: SpecialWageCategory = "overtime";
 
 /**
- * The file formats that carry overtime payouts. SuccessFactors CSV and the API
- * connectors do not (follow-up issues of #804).
+ * The file formats that carry overtime payouts, with the code column each
+ * reads. SuccessFactors CSV and the API connectors do not (follow-ups of #1004).
  */
-const OVERTIME_PAYOUT_FORMATS: readonly string[] = ["datev_lohn", "lexware_lohn", "sage_lohn"];
+const OVERTIME_PAYOUT_FORMATS: Readonly<Record<string, WageTypeCodeFormat>> = {
+	datev_lohn: "datev",
+	lexware_lohn: "lexware",
+	sage_lohn: "sage",
+};
 
-export function carriesOvertimePayouts(formatId: string): boolean {
-	return OVERTIME_PAYOUT_FORMATS.includes(formatId);
+/** The code column a format pays overtime payouts under; null when it carries none. */
+export function overtimePayoutCodeFormat(formatId: string): WageTypeCodeFormat | null {
+	return Object.hasOwn(OVERTIME_PAYOUT_FORMATS, formatId)
+		? OVERTIME_PAYOUT_FORMATS[formatId]
+		: null;
 }
 
 /** Bemerkung of an overtime payout row in DATEV and Sage files. */

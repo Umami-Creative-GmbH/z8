@@ -52,7 +52,7 @@ import { successFactorsFormatter } from "./exporters/successfactors/successfacto
 import { workdayConnector } from "./exporters/workday/workday-connector";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
-import { carriesOvertimePayouts } from "./formatters/overtime-payouts";
+import { overtimePayoutCodeFormat, overtimePayoutsForFormat } from "./formatters/overtime-payouts";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
 import {
 	employeesWithoutIdentifier,
@@ -71,6 +71,7 @@ import type {
 	PayrollExportFilters,
 	PayrollExportJobSummary,
 	SerializedPayrollExportFilters,
+	UnmappedOvertimePayout,
 	WorkPeriodData,
 } from "./types";
 
@@ -412,7 +413,7 @@ export async function processExportJob({
 		if (formatter) {
 			const formatId = job.config.formatId;
 			// Overtime payouts (#1001), read now like absences; the formatter maps them.
-			const overtimePayouts = carriesOvertimePayouts(formatId)
+			const overtimePayouts = overtimePayoutCodeFormat(formatId)
 				? await identify.rows(await fetchOvertimePayoutsForExport(job.organizationId, filters))
 				: [];
 			const payrollRun =
@@ -631,7 +632,7 @@ async function employeesWithNonWorkRows(input: {
 		canonicalReadiness: input.scopedCollection ? "absences" : "cutover",
 	});
 	const employeeIds = new Set(absences.map((absence) => absence.employeeId));
-	if (carriesOvertimePayouts(input.formatId)) {
+	if (overtimePayoutCodeFormat(input.formatId)) {
 		const payouts = await fetchOvertimePayoutsForExport(input.organizationId, input.filters);
 		for (const payout of payouts) employeeIds.add(payout.employeeId);
 	}
@@ -848,6 +849,26 @@ export async function getPendingExportJobs(): Promise<string[]> {
 	});
 
 	return jobs.map((j) => j.id);
+}
+
+/**
+ * The overtime payouts (#1001) an export of the format, dates and employees
+ * would leave out because no wage type is mapped to "overtime" for the format:
+ * the payroll workspace warns before exporting. Empty for a format that carries
+ * no payouts.
+ */
+export async function unmappedOvertimePayoutsForExport(
+	organizationId: string,
+	formatId: string,
+	filters: PayrollExportFilters,
+): Promise<UnmappedOvertimePayout[]> {
+	const codeFormat = overtimePayoutCodeFormat(formatId);
+	if (!codeFormat) return [];
+	const [payouts, mappings] = await Promise.all([
+		fetchOvertimePayoutsForExport(organizationId, filters),
+		getWageTypeMappings(organizationId),
+	]);
+	return overtimePayoutsForFormat(payouts, mappings, codeFormat).unmapped;
 }
 
 /**

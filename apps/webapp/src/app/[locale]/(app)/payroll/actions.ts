@@ -11,6 +11,7 @@ import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { listDepartedEmployeesCoveredForExport } from "@/lib/payroll-access/adjustment-coverage";
 import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
 import {
 	createExportJob,
@@ -19,6 +20,7 @@ import {
 	getPayrollExportConfig,
 	type PayrollExportFilters,
 	processExportJob,
+	unmappedOvertimePayoutsForExport,
 } from "@/lib/payroll-export";
 import {
 	exportPayrollSummaryToPDF,
@@ -221,7 +223,7 @@ export async function startScopedPayrollExportAction(
 				start: period.start,
 				end: period.end,
 			},
-			employeeIds: scopedEmployeeIds,
+			employeeIds: await payrollExportEmployeeIds(t, authContext, request, scopedEmployeeIds),
 		};
 
 		// Only an organization administrator executes eligible historical repairs (#322),
@@ -260,6 +262,54 @@ export async function startScopedPayrollExportAction(
 			unmappedOvertimePayoutCount: result?.metadata.unmappedOvertimePayouts.length ?? 0,
 		};
 	});
+}
+
+/**
+ * Before exporting (#1001): how many uncancelled overtime payouts an export of
+ * this period, format and employee selection would leave out because no wage
+ * type is mapped to "overtime" for the format.
+ */
+export async function getOvertimePayoutExportReadinessAction(
+	request: PayrollWorkspaceRequest & { formatId: string },
+): Promise<ServerActionResult<{ unmappedPayoutCount: number }>> {
+	return runPayrollWorkspaceAction(async (t) => {
+		const formatId = validateExportFormatId(t, request.formatId);
+		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
+			t,
+			request,
+		);
+		const unmapped = await unmappedOvertimePayoutsForExport(
+			authContext.employee.organizationId,
+			formatId,
+			{
+				dateRange: { start: period.start, end: period.end },
+				employeeIds: await payrollExportEmployeeIds(t, authContext, request, scopedEmployeeIds),
+			},
+		);
+		return { unmappedPayoutCount: unmapped.length };
+	});
+}
+
+/**
+ * The employees a payroll workspace export covers (#1001): the workspace scope
+ * plus the grant's employees who left on or after the period's first day, so
+ * final payouts and last-month hours reach payroll. An employee selection
+ * narrows both. Every other payroll view keeps the workspace scope.
+ */
+async function payrollExportEmployeeIds(
+	t: PayrollTranslate,
+	authContext: AuthContext & { employee: NonNullable<AuthContext["employee"]> },
+	request: PayrollWorkspaceRequest,
+	scopedEmployeeIds: string[],
+): Promise<string[]> {
+	const departed = await listDepartedEmployeesCoveredForExport(db, {
+		organizationId: authContext.employee.organizationId,
+		actorUserId: authContext.user.id,
+		fromDate: parsePlainDate(request.startDate).toString(),
+	});
+	const requested = validateRequestedEmployeeIds(t, request.employeeIds);
+	const selected = requested ? departed.filter((id) => requested.includes(id)) : departed;
+	return [...new Set([...scopedEmployeeIds, ...selected])].toSorted();
 }
 
 /** An unconfirmed payroll run (#852) whose every included report is in the reader's payroll scope. */

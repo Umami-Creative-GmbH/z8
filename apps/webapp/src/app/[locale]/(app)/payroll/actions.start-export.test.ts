@@ -38,6 +38,10 @@ vi.mock("@/lib/payroll-access/permissions", () => ({
 			.sort(),
 }));
 
+vi.mock("@/lib/payroll-access/adjustment-coverage", () => ({
+	listDepartedEmployeesCoveredForExport: vi.fn(async () => []),
+}));
+
 vi.mock("@/lib/payroll-export", () => ({
 	createExportJob: mockState.createExportJob,
 	enqueuePayrollExportJob: mockState.enqueuePayrollExportJob,
