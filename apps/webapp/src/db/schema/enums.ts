@@ -274,6 +274,10 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Closed months (#762): automatic close, its blockers, and reopenings
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 	// Deputy on an absence: named, removed, new dates, day-before reminder (#1013)
 	"absence_deputy_assigned",
 	"absence_deputy_removed",
@@ -284,10 +288,6 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
 	"approval_cover_started",
 	"approval_cover_return_summary",
-	// Closed months (#762): automatic close, its blockers, and reopenings
-	"month_closed_automatically",
-	"month_close_blocked",
-	"month_reopened",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
