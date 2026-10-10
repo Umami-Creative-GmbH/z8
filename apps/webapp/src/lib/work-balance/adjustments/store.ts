@@ -16,6 +16,10 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import { closedMonthTouchedByDays } from "@/lib/time-tracking/closed-months/rules";
+import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
+import { acquireOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	computeEmployeeWorkBalanceAtEndOfDay,
 	loadWorkBalanceEmployee,
@@ -130,7 +134,7 @@ export async function recordOvertimePayout(
 ): Promise<{ adjustmentId: string }> {
 	const day = parseDay(input.day);
 	const reason = requireReason(input.reason);
-	const adjustmentId = await database.transaction(async (tx) => {
+	const adjustmentId = await inLedgerTransaction(database, async (tx) => {
 		const client = tx as unknown as WorkBalanceDbClient;
 		await lockEmployeeLedger(client, input);
 		const subject = await loadWorkBalanceEmployee(input, client);
@@ -139,11 +143,13 @@ export async function recordOvertimePayout(
 		// Checked under the ledger lock, so two payouts recorded at once cannot
 		// together exceed the balance, and no opening balance slips in between.
 		const today = plainDateAt(input.now, subject.timezone);
+		const closedMonth = await closedMonthOfDay(client, input);
 		const openingBalance = await readOpeningBalanceInEffect(client, input);
 		const openingBalanceDay = openingBalance ? parsePlainDate(openingBalance.day) : null;
 		const needsBalance =
 			input.amountMinutes > 0 &&
 			comparePlainDates(day, today) <= 0 &&
+			!closedMonth &&
 			(!openingBalanceDay || comparePlainDates(day, openingBalanceDay) > 0);
 		const balanceAtEndOfDayMinutes = needsBalance
 			? await computeEmployeeWorkBalanceAtEndOfDay(
@@ -157,7 +163,9 @@ export async function recordOvertimePayout(
 			today,
 			balanceAtEndOfDayMinutes,
 			openingBalanceDay,
+			closedMonth,
 		});
+		if (refused === "month_closed" && closedMonth) throw monthClosed(closedMonth);
 		if (refused) throw refusal(refused, `Overtime payout refused: ${refused}`);
 
 		const [inserted] = await tx
@@ -234,7 +242,7 @@ export async function cancelBalanceAdjustment(
 	},
 ): Promise<{ adjustmentId: string }> {
 	const reason = requireReason(input.reason);
-	const cancelled = await database.transaction(async (tx) => {
+	const cancelled = await inLedgerTransaction(database, async (tx) => {
 		const client = tx as unknown as WorkBalanceDbClient;
 		await lockEmployeeLedger(client, input);
 		const [current] = await tx
@@ -256,6 +264,8 @@ export async function cancelBalanceAdjustment(
 			.for("update");
 		if (!current) throw refusal("adjustment_not_found", "Balance adjustment not found");
 		if (current.cancelledAt) throw refusal("already_cancelled", "Already cancelled");
+		const closedMonth = await closedMonthOfDay(client, { ...input, day: current.day });
+		if (closedMonth) throw monthClosed(closedMonth);
 
 		const cancelledAt = dateFromInstant(input.now);
 		await tx
@@ -354,12 +364,15 @@ export async function checkOpeningBalance(
 	// One after another: the client may be a transaction.
 	const uncancelledPayouts = await listUncancelledPayouts(client, scope);
 	const replaces = await readOpeningBalanceInEffect(client, scope);
-	const dayInClosedMonth = await isDayInClosedMonth(client, { ...scope, day: input.day });
+	// Setting it cancels the one in effect, which a closed month refuses too.
+	const closedMonth =
+		(await closedMonthOfDay(client, { ...scope, day: input.day })) ??
+		(replaces ? await closedMonthOfDay(client, { ...scope, day: replaces.day }) : null);
 	const refused = refuseOpeningBalance({
 		day,
 		today: plainDateAt(input.now, subject.timezone),
 		uncancelledPayouts,
-		dayInClosedMonth,
+		closedMonth,
 	});
 	if (refused?.code === "conflicting_payouts") {
 		throw new BalanceAdjustmentRefusal(
@@ -368,6 +381,7 @@ export async function checkOpeningBalance(
 			{ conflictingPayouts: refused.conflictingPayouts },
 		);
 	}
+	if (refused?.code === "month_closed") throw monthClosed(refused.closedMonth);
 	if (refused) throw refusal(refused.code, `Opening balance refused: ${refused.code}`);
 	return { day: input.day, minutes: input.minutes, reason, replaces };
 }
@@ -519,7 +533,7 @@ export async function setOpeningBalance(
 	audit: AuditTrail,
 	input: Parameters<typeof writeOpeningBalance>[2],
 ): Promise<{ adjustmentId: string; cancelledAdjustmentId: string | null }> {
-	const { changes, ...result } = await database.transaction((tx) =>
+	const { changes, ...result } = await inLedgerTransaction(database, (tx) =>
 		writeOpeningBalance(tx as unknown as Parameters<typeof writeOpeningBalance>[0], audit, input),
 	);
 	await refreshAfterCommit({ ...input, fullRebuild: true });
@@ -528,24 +542,62 @@ export async function setOpeningBalance(
 }
 
 /**
- * Whether `day` lies in a closed month of the organization (ADR-0004). Closed
- * months (#762) are not built yet, so nothing is closed; #762 wires its check
- * here, which the opening balance check and the bulk upload already consult.
+ * The closed month (`YYYY-MM`, #762, Time Tracking ADR-0004) of the employee
+ * that an adjustment's day lies in, or null. The day is a local date in the
+ * employee's timezone, so it is matched by calendar month, as absence days
+ * are; the database refuses the same (migration 0197).
  */
-async function isDayInClosedMonth(
-	_client: WorkBalanceDbClient,
-	_input: { organizationId: string; employeeId: string; day: string },
-): Promise<boolean> {
-	return false;
+async function closedMonthOfDay(
+	client: Pick<WorkBalanceDbClient, "select">,
+	input: { organizationId: string; employeeId: string; day: string },
+): Promise<string | null> {
+	const ranges = await closedRangesForEmployee(client, input);
+	return closedMonthTouchedByDays(
+		{ startDate: input.day, endDate: input.day },
+		ranges.map((range) => range.month),
+	);
 }
 
-/** Serializes the ledger writes of one employee. */
+/**
+ * Serializes the ledger writes of one employee. It first takes the
+ * organization configuration guard shared, as absence writers do: a close or
+ * reopening in flight finishes before the closed-month check, and none starts
+ * until this write commits (ADR-0004).
+ */
 async function lockEmployeeLedger(
 	client: Pick<WorkBalanceDbClient, "execute">,
 	input: { organizationId: string; employeeId: string },
 ) {
+	await acquireOrganizationConfigurationGuard(client, input.organizationId);
 	const lockKey = `balance-adjustment:${input.organizationId}:${input.employeeId}`;
 	await client.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+}
+
+/**
+ * Runs a ledger write in its own transaction. The database's closed-month
+ * refusal (SQLSTATE Z8M01), should a write get past the store's own check,
+ * comes back as the same typed refusal.
+ */
+async function inLedgerTransaction<T>(
+	database: BalanceAdjustmentDatabase,
+	write: (tx: Parameters<Parameters<BalanceAdjustmentDatabase["transaction"]>[0]>[0]) => Promise<T>,
+): Promise<T> {
+	try {
+		return await database.transaction(write);
+	} catch (error) {
+		throw asMonthClosedRefusal(error);
+	}
+}
+
+/** A month-closed refusal of the database as the typed refusal; any other error unchanged. */
+export function asMonthClosedRefusal(error: unknown): unknown {
+	if (error instanceof BalanceAdjustmentRefusal) return error;
+	const closed = monthClosedRefusalOf(error);
+	return closed ? monthClosed(closed.month) : error;
+}
+
+function monthClosed(closedMonth: string) {
+	return new BalanceAdjustmentRefusal("month_closed", `${closedMonth} is closed`, { closedMonth });
 }
 
 /**

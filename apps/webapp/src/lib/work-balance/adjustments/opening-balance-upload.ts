@@ -12,6 +12,7 @@ import { type BalanceAdjustmentAuthority, balanceAdjustmentAuditMetadata } from 
 import { type BalanceAdjustmentChange, notifyBalanceAdjustmentChanges } from "./notifications";
 import { type OpeningBalanceCsvRow, parseOpeningBalanceCsv } from "./opening-balance-csv";
 import {
+	asMonthClosedRefusal,
 	type BalanceAdjustmentDatabase,
 	checkOpeningBalance,
 	refreshAfterCommit,
@@ -144,7 +145,7 @@ export async function commitOpeningBalanceUpload(
 		});
 	} catch (error) {
 		if (error instanceof UploadRejected) return { status: "has_errors", rows: error.rows };
-		throw error;
+		throw asMonthClosedRefusal(error);
 	}
 	audit.forwardCommitted();
 
@@ -190,9 +191,16 @@ async function checkRow(row: OpeningBalanceUploadRow, run: () => Promise<void>) 
 function rowErrorOf(refusal: BalanceAdjustmentRefusal): OpeningBalanceUploadRowError {
 	switch (refusal.code) {
 		case "conflicting_payouts":
-			return { code: "conflicting_payouts", conflictingPayouts: refusal.conflictingPayouts ?? [] };
-		case "future_day":
+			return {
+				code: "conflicting_payouts",
+				conflictingPayouts: refusal.details.conflictingPayouts ?? [],
+			};
 		case "month_closed":
+			return {
+				code: "month_closed",
+				...(refusal.details.closedMonth ? { closedMonth: refusal.details.closedMonth } : {}),
+			};
+		case "future_day":
 			return { code: refusal.code };
 		case "reason_required":
 			return { code: "reason_required" };

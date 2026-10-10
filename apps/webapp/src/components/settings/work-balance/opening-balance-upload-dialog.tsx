@@ -92,7 +92,11 @@ export function OpeningBalanceUploadDialog() {
 		}).catch(() => null);
 		setPending(null);
 		if (!result?.success) {
-			toast.error(actionError(result?.code ?? null));
+			toast.error(
+				actionError(result?.code ?? null, {
+					closedMonth: result?.success === false ? result.closedMonth : null,
+				}),
+			);
 			return null;
 		}
 		return result.data;

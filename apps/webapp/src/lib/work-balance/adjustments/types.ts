@@ -54,7 +54,10 @@ export type BalanceAdjustmentErrorCode =
 	 * refusal lists those payouts (`conflictingPayouts`).
 	 */
 	| "conflicting_payouts"
-	/** A day in a closed month (#762, ADR-0004); not raised until closed months exist. */
+	/**
+	 * The adjustment's day lies in a closed month of the employee (#762,
+	 * ADR-0004); the refusal names the month (`closedMonth`).
+	 */
 	| "month_closed"
 	/** Anything unexpected: the action failed for a reason the user cannot act on. */
 	| "failed";
@@ -68,34 +71,39 @@ export type ConflictingPayout = {
 	minutes: number;
 };
 
+/** What a refusal carries beside its code, for the client to show. */
+export type BalanceAdjustmentRefusalDetails = {
+	/** With `conflicting_payouts`: the payouts dated on or before the opening balance's day. */
+	conflictingPayouts?: ConflictingPayout[];
+	/** With `month_closed`: the closed month (`YYYY-MM`) the day lies in. */
+	closedMonth?: string;
+};
+
 /** A refusal the user can act on; thrown by the balance adjustment store and actions. */
 export class BalanceAdjustmentRefusal extends Error {
 	readonly code: BalanceAdjustmentErrorCode;
-	/** Set with `conflicting_payouts`: the payouts dated on or before the opening balance's day. */
-	readonly conflictingPayouts?: ConflictingPayout[];
+	readonly details: BalanceAdjustmentRefusalDetails;
 
 	constructor(
 		code: BalanceAdjustmentErrorCode,
 		message: string,
-		details?: { conflictingPayouts?: ConflictingPayout[] },
+		details: BalanceAdjustmentRefusalDetails = {},
 	) {
 		super(message);
 		this.name = "BalanceAdjustmentRefusal";
 		this.code = code;
-		if (details?.conflictingPayouts) this.conflictingPayouts = details.conflictingPayouts;
+		this.details = details;
 	}
 }
 
 /** A balance adjustment server action's result; a failure always carries a stable code. */
 export type BalanceAdjustmentActionResult<T> =
 	| { success: true; data: T }
-	| {
+	| ({
 			success: false;
 			error: string;
 			code: BalanceAdjustmentErrorCode;
-			/** With `conflicting_payouts` (#997). */
-			conflictingPayouts?: ConflictingPayout[];
-	  };
+	  } & BalanceAdjustmentRefusalDetails);
 
 /** Why one row of a bulk opening balance upload cannot be written (#999). */
 export type OpeningBalanceUploadRowErrorCode =
@@ -116,6 +124,8 @@ export type OpeningBalanceUploadRowError = {
 	code: OpeningBalanceUploadRowErrorCode;
 	/** With `conflicting_payouts`: the payouts dated on or before the row's day. */
 	conflictingPayouts?: ConflictingPayout[];
+	/** With `month_closed`: the closed month (`YYYY-MM`) the row's day lies in. */
+	closedMonth?: string;
 };
 
 /** One row of a bulk opening balance upload, as the preview shows it. */

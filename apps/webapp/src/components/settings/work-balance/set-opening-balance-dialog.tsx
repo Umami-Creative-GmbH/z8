@@ -100,7 +100,9 @@ export function SetOpeningBalanceDialog({
 				if (actionError?.code === "conflicting_payouts") {
 					setConflictingPayouts(actionError.conflictingPayouts);
 				}
-				toast.error(errorMessage(actionError?.code ?? null));
+				toast.error(
+					errorMessage(actionError?.code ?? null, { closedMonth: actionError?.closedMonth }),
+				);
 				return;
 			}
 			toast.success(t("settings.employees.workBalance.openingBalanceSet", "Opening balance set"));

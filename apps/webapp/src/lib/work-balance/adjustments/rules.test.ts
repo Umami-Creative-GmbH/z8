@@ -76,9 +76,9 @@ describe("refusing an opening balance (#997)", () => {
 				day: parsePlainDate("2026-09-30"),
 				today,
 				uncancelledPayouts: [],
-				dayInClosedMonth: true,
+				closedMonth: "2026-09",
 			}),
-		).toEqual({ code: "month_closed" });
+		).toEqual({ code: "month_closed", closedMonth: "2026-09" });
 	});
 });
 
@@ -163,6 +163,18 @@ describe("refusing an overtime payout", () => {
 				openingBalanceDay,
 			}),
 		).toBeNull();
+	});
+
+	it("refuses a payout dated in a closed month (#762)", () => {
+		expect(
+			refuseOvertimePayout({
+				amountMinutes: 60,
+				day: parsePlainDate("2026-09-15"),
+				today,
+				balanceAtEndOfDayMinutes: 720,
+				closedMonth: "2026-09",
+			}),
+		).toBe("month_closed");
 	});
 
 	it("refuses a payout of more than the balance at the end of its day", () => {

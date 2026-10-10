@@ -138,45 +138,36 @@ export async function setOpeningBalanceAction(
 ): Promise<
 	BalanceAdjustmentActionResult<{ adjustmentId: string; cancelledAdjustmentId: string | null }>
 > {
-	let refusal: BalanceAdjustmentRefusal | null = null;
-	const result = await runRefusalAction(
+	return runRefusalAction(
 		"balanceAdjustments.setOpeningBalance",
 		BalanceAdjustmentRefusal,
 		async (db) => {
-			try {
-				const { organizationId, userId, authority } = await requireWriterFor(input?.employeeId);
-				const employeeId = parseUuid(input?.employeeId);
-				const minutes = openingBalanceMinutes({
-					negative: input?.negative === true,
-					hours: Number(input?.hours),
-					minutes: Number(input?.minutes),
-				});
-				if (minutes === null) {
-					throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
-				}
-				const written = await withAuditTrail((audit) =>
-					setOpeningBalance(db, audit, {
-						organizationId,
-						actorUserId: userId,
-						employeeId,
-						day: input.day,
-						minutes,
-						reason: input.reason,
-						now: systemClock.nowInstant(),
-						auditMetadata: balanceAdjustmentAuditMetadata(authority),
-					}),
-				);
-				revalidateEmployeePaths(employeeId);
-				return written;
-			} catch (error) {
-				if (error instanceof BalanceAdjustmentRefusal) refusal = error;
-				throw error;
+			const { organizationId, userId, authority } = await requireWriterFor(input?.employeeId);
+			const employeeId = parseUuid(input?.employeeId);
+			const minutes = openingBalanceMinutes({
+				negative: input?.negative === true,
+				hours: Number(input?.hours),
+				minutes: Number(input?.minutes),
+			});
+			if (minutes === null) {
+				throw new BalanceAdjustmentRefusal("invalid_input", "Invalid hours or minutes");
 			}
+			const written = await withAuditTrail((audit) =>
+				setOpeningBalance(db, audit, {
+					organizationId,
+					actorUserId: userId,
+					employeeId,
+					day: input.day,
+					minutes,
+					reason: input.reason,
+					now: systemClock.nowInstant(),
+					auditMetadata: balanceAdjustmentAuditMetadata(authority),
+				}),
+			);
+			revalidateEmployeePaths(employeeId);
+			return written;
 		},
 	);
-	const conflictingPayouts = (refusal as BalanceAdjustmentRefusal | null)?.conflictingPayouts;
-	if (!result.success && conflictingPayouts) return { ...result, conflictingPayouts };
-	return result;
 }
 
 export async function cancelBalanceAdjustmentAction(

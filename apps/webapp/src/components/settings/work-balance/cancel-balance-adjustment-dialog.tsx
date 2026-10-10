@@ -43,7 +43,9 @@ export function CancelBalanceAdjustmentDialog({
 				await onCancelAdjustment({ adjustmentId: adjustment.id, reason: value.reason });
 			} catch (error) {
 				toast.error(
-					errorMessage(error instanceof BalanceAdjustmentActionError ? error.code : null),
+					error instanceof BalanceAdjustmentActionError
+						? errorMessage(error.code, { closedMonth: error.closedMonth })
+						: errorMessage(null),
 				);
 				return;
 			}

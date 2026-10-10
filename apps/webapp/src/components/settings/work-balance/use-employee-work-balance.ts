@@ -13,18 +13,25 @@ import {
 import type {
 	BalanceAdjustmentActionResult,
 	BalanceAdjustmentErrorCode,
+	BalanceAdjustmentRefusalDetails,
 	ConflictingPayout,
 } from "@/lib/work-balance/adjustments/types";
 
 export const EMPLOYEE_WORK_BALANCE_QUERY_KEY = ["employeeWorkBalanceSection"] as const;
 
 export class BalanceAdjustmentActionError extends Error {
+	/** With `conflicting_payouts` (#997): the payouts that keep the opening balance out. */
+	readonly conflictingPayouts: ConflictingPayout[];
+	/** With `month_closed` (#762): the closed month (`YYYY-MM`) the day lies in. */
+	readonly closedMonth: string | null;
+
 	constructor(
 		readonly code: BalanceAdjustmentErrorCode | null,
-		/** With `conflicting_payouts` (#997): the payouts that keep the opening balance out. */
-		readonly conflictingPayouts: ConflictingPayout[] = [],
+		details: BalanceAdjustmentRefusalDetails = {},
 	) {
 		super(code ?? "failed");
+		this.conflictingPayouts = details.conflictingPayouts ?? [];
+		this.closedMonth = details.closedMonth ?? null;
 	}
 }
 
@@ -39,7 +46,10 @@ async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>): Pro
 	const result = await action.catch(() => null);
 	if (!result) throw new BalanceAdjustmentActionError(null);
 	if (!result.success) {
-		throw new BalanceAdjustmentActionError(result.code, result.conflictingPayouts ?? []);
+		throw new BalanceAdjustmentActionError(result.code, {
+			conflictingPayouts: result.conflictingPayouts,
+			closedMonth: result.closedMonth,
+		});
 	}
 	return result.data;
 }

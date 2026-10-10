@@ -1380,6 +1380,13 @@
       "when": 1801238400000,
       "tag": "0196_balance_adjustment_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 197,
+      "version": "7",
+      "when": 1801324800000,
+      "tag": "0197_balance_adjustment_closed_month_refusal",
+      "breakpoints": true
     }
   ]
 }

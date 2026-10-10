@@ -15,9 +15,9 @@ export function payoutMinutes(input: { hours: number; minutes: number }): number
 /**
  * Why an overtime payout may not be recorded, or null when it may (#993). The
  * amount must be positive, its day no later than today in the employee's
- * timezone, and the amount no more than the work balance at the end of its day
- * as computed now. Later corrections to work may still leave the balance
- * negative; that is accepted.
+ * timezone and outside a closed month, and the amount no more than the work
+ * balance at the end of its day as computed now. Later corrections to work may
+ * still leave the balance negative; that is accepted.
  */
 export function refuseOvertimePayout(input: {
 	amountMinutes: number;
@@ -29,12 +29,19 @@ export function refuseOvertimePayout(input: {
 	 * would no longer count, so it is refused (ADR-0008).
 	 */
 	openingBalanceDay?: PlainDate | null;
+	/** The closed month (`YYYY-MM`) of the employee that `day` lies in, if any (#762). */
+	closedMonth?: string | null;
 }): Extract<
 	BalanceAdjustmentErrorCode,
-	"amount_not_positive" | "future_day" | "before_opening_balance" | "exceeds_balance"
+	| "amount_not_positive"
+	| "future_day"
+	| "month_closed"
+	| "before_opening_balance"
+	| "exceeds_balance"
 > | null {
 	if (!(input.amountMinutes > 0)) return "amount_not_positive";
 	if (comparePlainDates(input.day, input.today) > 0) return "future_day";
+	if (input.closedMonth) return "month_closed";
 	if (input.openingBalanceDay && comparePlainDates(input.day, input.openingBalanceDay) <= 0) {
 		return "before_opening_balance";
 	}
@@ -73,13 +80,15 @@ export function refuseOpeningBalance(input: {
 	today: PlainDate;
 	/** The employee's uncancelled overtime payouts, of any day. */
 	uncancelledPayouts: readonly ConflictingPayout[];
-	dayInClosedMonth?: boolean;
+	/** The closed month (`YYYY-MM`) of the employee that `day` lies in, if any. */
+	closedMonth?: string | null;
 }):
-	| { code: "future_day" | "month_closed" }
+	| { code: "future_day" }
+	| { code: "month_closed"; closedMonth: string }
 	| { code: "conflicting_payouts"; conflictingPayouts: ConflictingPayout[] }
 	| null {
 	if (comparePlainDates(input.day, input.today) > 0) return { code: "future_day" };
-	if (input.dayInClosedMonth) return { code: "month_closed" };
+	if (input.closedMonth) return { code: "month_closed", closedMonth: input.closedMonth };
 	const day = input.day.toString();
 	const conflictingPayouts = input.uncancelledPayouts.filter((payout) => payout.day <= day);
 	if (conflictingPayouts.length > 0) return { code: "conflicting_payouts", conflictingPayouts };

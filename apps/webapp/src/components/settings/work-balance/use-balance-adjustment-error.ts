@@ -1,14 +1,22 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useCallback } from "react";
+import { formatClosedMonthLabel } from "@/lib/time-tracking/closed-months/month-label";
 import type { BalanceAdjustmentErrorCode } from "@/lib/work-balance/adjustments/types";
 
-/** Translates a balance adjustment refusal code for a toast. */
+/**
+ * Translates a balance adjustment refusal code for a toast; a `month_closed`
+ * refusal names the closed month when it is known.
+ */
 export function useBalanceAdjustmentErrorMessage() {
 	const { t } = useTranslate();
+	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	return useCallback(
-		(code: BalanceAdjustmentErrorCode | null): string => {
+		(
+			code: BalanceAdjustmentErrorCode | null,
+			details: { closedMonth?: string | null } = {},
+		): string => {
 			switch (code) {
 				case "not_permitted":
 					return t(
@@ -55,10 +63,16 @@ export function useBalanceAdjustmentErrorMessage() {
 						"Overtime payouts are dated on or before this day. Cancel them first or choose an earlier day.",
 					);
 				case "month_closed":
-					return t(
-						"settings.employees.workBalance.errors.monthClosed",
-						"The day is in a closed month.",
-					);
+					return details.closedMonth
+						? t(
+								"settings.employees.workBalance.errors.monthClosedNamed",
+								"{month} is closed. It must be reopened before adjustments dated in it can be recorded or cancelled.",
+								{ month: formatClosedMonthLabel(details.closedMonth, locale) },
+							)
+						: t(
+								"settings.employees.workBalance.errors.monthClosed",
+								"The day is in a closed month.",
+							);
 				case "invalid_input":
 					return t(
 						"settings.employees.workBalance.errors.invalidInput",
@@ -71,6 +85,6 @@ export function useBalanceAdjustmentErrorMessage() {
 					);
 			}
 		},
-		[t],
+		[t, locale],
 	);
 }
