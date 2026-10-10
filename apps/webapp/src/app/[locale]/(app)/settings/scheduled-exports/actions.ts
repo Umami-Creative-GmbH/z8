@@ -21,7 +21,8 @@ import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { resolveExportRecipients } from "@/lib/scheduled-exports/domain/export-recipients";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { resolveRecipientEmails } from "@/lib/scheduled-exports/domain/recipient-emails";
 import {
 	calculateNextExecution,
 	getNextExecutions,
@@ -113,9 +114,9 @@ export interface ExecutionHistoryItem {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
-/** The normalised export recipients for the schedule as it will be stored, or a validation failure. */
-function exportRecipientsFor(deliveryMethod: DeliveryMethod, emailRecipients: readonly string[]) {
-	const result = resolveExportRecipients(deliveryMethod, emailRecipients);
+/** The normalised recipient emails for the schedule as it will be stored, or a validation failure. */
+function recipientEmailsFor(deliveryMethod: DeliveryMethod, emailRecipients: readonly string[]) {
+	const result = resolveRecipientEmails(deliveryMethod, emailRecipients);
 	return result.ok
 		? Effect.succeed(result.recipients)
 		: Effect.fail(new ValidationError({ message: result.message, field: "emailRecipients" }));
@@ -167,7 +168,7 @@ export async function createScheduledExportAction(
 			}
 		}
 
-		const emailRecipients = yield* exportRecipientsFor(
+		const emailRecipients = yield* recipientEmailsFor(
 			input.deliveryMethod,
 			input.emailRecipients ?? [],
 		);
@@ -354,8 +355,9 @@ export async function updateScheduledExportAction(
 			}
 		}
 
-		const existing = yield* Effect.promise(() =>
-			db.query.scheduledExport.findFirst({
+		const dbService = yield* DatabaseService;
+		const existing = yield* dbService.query("scheduledExport.getForUpdate", () =>
+			dbService.db.query.scheduledExport.findFirst({
 				where: and(
 					eq(scheduledExport.id, input.id),
 					eq(scheduledExport.organizationId, input.organizationId),
@@ -374,7 +376,7 @@ export async function updateScheduledExportAction(
 
 		// Validate the recipients the schedule will have after this update
 		if (input.deliveryMethod !== undefined || input.emailRecipients !== undefined) {
-			const emailRecipients = yield* exportRecipientsFor(
+			const emailRecipients = yield* recipientEmailsFor(
 				input.deliveryMethod ?? (existing.deliveryMethod as DeliveryMethod),
 				input.emailRecipients ?? existing.emailRecipients,
 			);
@@ -410,8 +412,8 @@ export async function updateScheduledExportAction(
 			updates.nextExecutionAt = nextExecutionAt.toJSDate();
 		}
 
-		const schedule = yield* Effect.promise(async () => {
-			const [updated] = await db
+		const schedule = yield* dbService.query("scheduledExport.update", async () => {
+			const [updated] = await dbService.db
 				.update(scheduledExport)
 				.set(updates)
 				.where(

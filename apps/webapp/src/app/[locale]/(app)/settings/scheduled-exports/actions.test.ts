@@ -33,9 +33,26 @@ vi.mock("@/lib/effect/services/auth.service", async () => {
 	return { AuthService, AuthServiceLive };
 });
 
+vi.mock("@/lib/effect/services/database.service", async () => {
+	const { Context, Effect, Layer } = await import("effect");
+	const dbModule = await import("@/db");
+	const DatabaseService = Context.Service<any>("DatabaseService");
+	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
+		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		get db() {
+			return dbModule.db;
+		},
+	});
+	return { DatabaseService, DatabaseServiceLive };
+});
+
 vi.mock("@/lib/effect/runtime", async () => {
+	const { Layer } = await import("effect");
 	const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
-	return (await import("@/test/effect-runtime")).runtimeModuleOver(AuthServiceLive);
+	const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+	return (await import("@/test/effect-runtime")).runtimeModuleOver(
+		Layer.mergeAll(AuthServiceLive, DatabaseServiceLive),
+	);
 });
 
 vi.mock("@/db", () => {
@@ -108,12 +125,12 @@ const createInput = {
 	emailRecipients: ["payroll@example.com"],
 } as const;
 
-describe("scheduled export recipient validation", () => {
-	beforeEach(() => {
-		mockState.schedules = [storedSchedule()];
-		mockState.adminOrgs = ["org-1", "org-2"];
-	});
+beforeEach(() => {
+	mockState.schedules = [storedSchedule()];
+	mockState.adminOrgs = ["org-1", "org-2"];
+});
 
+describe("scheduled export recipient validation", () => {
 	it("rejects an invalid address on update with the same error as create", async () => {
 		const created = await createScheduledExportAction({
 			...createInput,
@@ -147,6 +164,28 @@ describe("scheduled export recipient validation", () => {
 			error: "At least one email recipient is required for email delivery",
 		});
 		expect(mockState.schedules[0]?.deliveryMethod).toBe("s3_only");
+	});
+
+	it("refuses switching to email delivery with an empty list given", async () => {
+		mockState.schedules = [
+			storedSchedule({ deliveryMethod: "s3_only", emailRecipients: ["payroll@example.com"] }),
+		];
+
+		const result = await updateScheduledExportAction({
+			id: "schedule-1",
+			organizationId: "org-1",
+			deliveryMethod: "email_only",
+			emailRecipients: [],
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			error: "At least one email recipient is required for email delivery",
+		});
+		expect(mockState.schedules[0]).toMatchObject({
+			deliveryMethod: "s3_only",
+			emailRecipients: ["payroll@example.com"],
+		});
 	});
 
 	it("refuses clearing the recipients of a schedule that delivers by email", async () => {
@@ -198,11 +237,6 @@ describe("scheduled export recipient validation", () => {
 });
 
 describe("scheduled export update org scoping", () => {
-	beforeEach(() => {
-		mockState.schedules = [storedSchedule()];
-		mockState.adminOrgs = ["org-1", "org-2"];
-	});
-
 	it.each([
 		["a rename", { name: "Renamed" }],
 		["a change to the schedule timing", { scheduleType: "weekly", timezone: "UTC" }],
