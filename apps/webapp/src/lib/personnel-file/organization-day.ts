@@ -1,8 +1,7 @@
-import { eq } from "drizzle-orm";
 import type { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
-import { organization } from "@/db/auth-schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 
 /**
@@ -19,19 +18,6 @@ type Reader = Database | Pick<Transaction, "select">;
 export function todayInOrganization(now: Instant, timezone: unknown): Temporal.PlainDate {
 	const zone = resolveOrganizationTimezone(timezone).timezone;
 	return now.toZonedDateTimeISO(zone).toPlainDate();
-}
-
-/** The organization's resolved IANA timezone. */
-export async function loadOrganizationTimezone(
-	database: Reader,
-	organizationId: string,
-): Promise<string> {
-	const [row] = await database
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, organizationId))
-		.limit(1);
-	return resolveOrganizationTimezone(row?.timezone).timezone;
 }
 
 /** The organization's timezone and its calendar day at `now`. */

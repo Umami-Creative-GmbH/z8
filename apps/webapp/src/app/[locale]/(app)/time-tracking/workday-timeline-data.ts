@@ -1,10 +1,12 @@
-import { and, asc, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lt, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import { db } from "@/db";
 import { absenceEntry, approvalRequest, shift, workPeriod } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { createLogger } from "@/lib/logger";
+import { shiftCalendarDate, shiftDateBounds } from "@/lib/scheduling/shift-date";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { getSelfServiceRequests } from "@/lib/self-service-requests/get-self-service-requests";
 import type { SelfServiceRequestItem } from "@/lib/self-service-requests/types";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
@@ -42,7 +44,7 @@ interface WorkPeriodRow {
 
 interface ShiftRow {
 	id: string;
-	date: Date | string;
+	date: Date;
 	startTime: string;
 	endTime: string;
 	status: string;
@@ -76,12 +78,17 @@ export async function getWorkdayTimelineData({
 	const startBound = dateToDB(selectedDate.startUtc)!;
 	const endBound = dateToDB(selectedDate.endUtc)!;
 	const selectedLogicalDate = selectedDate.dateKey;
-	const selectedShiftDate = new Date(`${selectedLogicalDate}T00:00:00.000Z`);
 
 	try {
+		const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
 		const [workPeriods, shifts, absences, pendingRequests] = await Promise.all([
 			loadWorkPeriods({ employeeId, organizationId, startBound, endBound }),
-			loadShifts({ employeeId, organizationId, selectedShiftDate }),
+			loadShifts({
+				employeeId,
+				organizationId,
+				date: selectedLogicalDate,
+				organizationTimezone,
+			}),
 			loadAbsences({ employeeId, organizationId, selectedLogicalDate }),
 			getSelfServiceRequests({
 				employeeId,
@@ -112,6 +119,7 @@ export async function getWorkdayTimelineData({
 			data: normalizeWorkdayTimeline({
 				selectedDate,
 				timezone,
+				organizationTimezone,
 				timeFormat,
 				workPeriods,
 				shifts,
@@ -160,20 +168,25 @@ async function loadWorkPeriods({
 	}));
 }
 
+/** The published shifts whose organization-local `shift.date` is `date`. */
 async function loadShifts({
 	employeeId,
 	organizationId,
-	selectedShiftDate,
+	date,
+	organizationTimezone,
 }: {
 	employeeId: string;
 	organizationId: string;
-	selectedShiftDate: Date;
+	date: string;
+	organizationTimezone: string;
 }): Promise<WorkdayShiftSource[]> {
+	const bounds = shiftDateBounds(date, organizationTimezone);
 	const rows = (await db.query.shift.findMany({
 		where: and(
 			eq(shift.organizationId, organizationId),
 			eq(shift.employeeId, employeeId),
-			eq(shift.date, selectedShiftDate),
+			gte(shift.date, bounds.start),
+			lt(shift.date, bounds.endExclusive),
 			eq(shift.status, "published"),
 		),
 		orderBy: [asc(shift.startTime)],
@@ -181,7 +194,7 @@ async function loadShifts({
 
 	return rows.map((row) => ({
 		id: row.id,
-		date: formatLogicalDate(row.date),
+		date: shiftCalendarDate(row.date, organizationTimezone).toString(),
 		startTime: row.startTime,
 		endTime: row.endTime,
 		status: row.status,
