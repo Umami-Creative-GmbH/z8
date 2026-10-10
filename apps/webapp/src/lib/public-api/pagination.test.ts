@@ -20,6 +20,16 @@ describe("Public API cursors", () => {
 		expect(decodeCursor(encodeCursor(["x'); drop table"]), ["uuid"])).toBeNull();
 		expect(decodeCursor(encodeCursor(["2026-10-01"]), ["date"])).toEqual(["2026-10-01"]);
 		expect(decodeCursor(encodeCursor(["yesterday"]), ["instant"])).toBeNull();
+		// Date.parse would accept these; the work-period cursor needs a full instant.
+		expect(decodeCursor(encodeCursor(["2026-01-01"]), ["instant"])).toBeNull();
+		expect(decodeCursor(encodeCursor(["2026-01-01T00:00:00"]), ["instant"])).toBeNull();
+		expect(
+			decodeCursor(
+				encodeCursor(["2026-01-01T00:00:00.000Z", "4f8c2a1e-9b7d-4c3a-8e2f-1a2b3c4d5e6f"]),
+				["instant", "uuid"],
+			),
+		).not.toBeNull();
+		expect(decodeCursor(encodeCursor(["2026-02-30"]), ["date"])).toBeNull();
 	});
 
 	it("pages limit rows and points past the last one only when more follow", () => {

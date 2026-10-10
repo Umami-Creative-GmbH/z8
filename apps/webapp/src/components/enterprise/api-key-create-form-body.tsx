@@ -41,8 +41,8 @@ import {
 	DEFAULT_RATE_LIMIT_MAX,
 	DEFAULT_RATE_LIMIT_WINDOW,
 	EXPIRATION_OPTIONS,
-	SCOPE_LABELS,
 } from "@/lib/validations/api-key";
+import { useApiKeyScopeLabels } from "./api-key-labels";
 import { RateLimitWindowField } from "./api-key-rate-limit-window-field";
 
 export interface ApiKeyCreateDialogProps {
@@ -197,6 +197,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 		rateLimitMaxInvalidMessage,
 		t,
 	} = useApiKeyCreateController(props);
+	const scopeLabels = useApiKeyScopeLabels();
 
 	return (
 		<ActionPanel open={open} onOpenChange={handleOpenChange}>
@@ -337,10 +338,7 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 													htmlFor={scope}
 													className="text-sm font-normal cursor-pointer"
 												>
-													{t(
-														`settings.apiKeys.scope.${scope}`,
-														SCOPE_LABELS[scope],
-													)}
+													{scopeLabels[scope]}
 												</Label>
 											</div>
 										))}

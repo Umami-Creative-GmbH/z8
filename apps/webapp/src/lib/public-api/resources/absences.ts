@@ -97,7 +97,13 @@ export const listAbsences = defineEndpoint({
 					eq(employee.organizationId, principal.organizationId),
 				),
 			)
-			.innerJoin(absenceCategory, eq(absenceCategory.id, absenceEntry.categoryId))
+			.innerJoin(
+				absenceCategory,
+				and(
+					eq(absenceCategory.id, absenceEntry.categoryId),
+					eq(absenceCategory.organizationId, principal.organizationId),
+				),
+			)
 			.where(
 				and(
 					inArray(absenceEntry.status, query.status ? [query.status] : [...RETURNED_STATUSES]),

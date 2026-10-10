@@ -200,7 +200,7 @@ describe("the Public API pipeline on PostgreSQL", () => {
 			departureDate: null,
 		});
 		expect(byName.get("Cleo")).toMatchObject({ status: "departed", managerId: null, teamIds: [] });
-		expect(JSON.stringify(body)).not.toMatch(/1990-01-01|hourly|42/);
+		expect(JSON.stringify(body)).not.toMatch(/1990-01-01|birthday|hourly|contract/i);
 
 		const departed = (await (
 			await get("?status=departed", bearer(presented))
@@ -233,9 +233,19 @@ describe("the Public API pipeline on PostgreSQL", () => {
 			expect(response.headers.get("content-type")).toBe("application/problem+json");
 			expect(await response.json()).toMatchObject({ type: "invalid_key", status: 401 });
 		};
+		// A real, unexpired session of an owner of the organization.
+		const sessionToken = "t763p-real-session-token-of-the-owner";
+		await admin.query(
+			`insert into session (id, token, user_id, expires_at, updated_at, active_organization_id)
+			 values ('t763p-session', $1, $2, now() + interval '1 day', now(), $3)`,
+			[sessionToken, ids.admin, ids.organization],
+		);
 		await expectInvalid(await get());
-		await expectInvalid(await get("", { cookie: "__Secure-better-auth.session_token=abc.def" }));
-		await expectInvalid(await get("", bearer("a-session-token-not-an-api-key")));
+		await expectInvalid(
+			await get("", { cookie: `__Secure-better-auth.session_token=${sessionToken}` }),
+		);
+		await expectInvalid(await get("", { cookie: `better-auth.session_token=${sessionToken}` }));
+		await expectInvalid(await get("", bearer(sessionToken)));
 		await expectInvalid(await get("", bearer("z8_orgUnknownKeyUnknownKeyUnknownKeyUnknownKey")));
 		expect(await logRows()).toEqual([]);
 
@@ -257,6 +267,10 @@ describe("the Public API pipeline on PostgreSQL", () => {
 		});
 		const response = await get("", bearer(created.key));
 		expect(response.status).toBe(401);
+		// The key was identified, so the refusal reports the rate limits too.
+		expect(response.headers.get("x-ratelimit-limit")).toBe("100");
+		expect(response.headers.get("x-ratelimit-remaining")).toBe("100");
+		expect(response.headers.get("x-ratelimit-reset")).not.toBeNull();
 		expect(await logRows()).toEqual([
 			{
 				api_key_id: created.id,
@@ -286,6 +300,8 @@ describe("the Public API pipeline on PostgreSQL", () => {
 		world.billingEnabled = true;
 		const refused = await get("", bearer(created.key));
 		expect(refused.status).toBe(402);
+		expect(refused.headers.get("x-ratelimit-limit")).not.toBeNull();
+		expect(refused.headers.get("x-ratelimit-remaining")).not.toBeNull();
 		expect(await refused.json()).toMatchObject({ type: "billing_required" });
 
 		await admin.query(

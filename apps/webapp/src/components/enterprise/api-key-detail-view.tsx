@@ -17,12 +17,8 @@ import {
 } from "@/components/ui/table";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { formatInstant } from "@/lib/datetime/temporal-format";
-import { RATE_LIMIT_WINDOW_OPTIONS, SCOPE_LABELS } from "@/lib/validations/api-key";
 import { Link } from "@/navigation";
-
-const WINDOW_LABELS = new Map<number, string>(
-	RATE_LIMIT_WINDOW_OPTIONS.map((option) => [option.value, option.label]),
-);
+import { useApiKeyScopeLabels, useRateLimitWindowLabels } from "./api-key-labels";
 
 function statusVariant(status: number) {
 	if (status < 300) return "secondary" as const;
@@ -34,19 +30,28 @@ function statusVariant(status: number) {
 export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 	const { t } = useTranslate();
 	const display = useDisplayContext();
+	const scopeLabels = useApiKeyScopeLabels();
+	const windowLabels = useRateLimitWindowLabels();
 	const { key, requests } = detail;
 	const at = (iso: string | null) =>
 		iso ? formatInstant(Temporal.Instant.from(iso), display, "dateTimeMedium") : "-";
+	const creatorName = key.creator
+		? key.creator.name || key.creator.email || key.creator.userId
+		: null;
+	const windowLabel =
+		key.rateLimitTimeWindow !== null && key.rateLimitTimeWindow in windowLabels
+			? windowLabels[key.rateLimitTimeWindow as keyof typeof windowLabels]
+			: null;
 
 	const facts: [string, string][] = [
 		[t("settings.apiKeys.prefix", "Key Prefix"), key.prefix ?? "-"],
 		[
 			t("settings.apiKeys.detail.creator", "Created by"),
-			key.creator
-				? `${key.creator.name || key.creator.email || key.creator.userId}${
-						key.creator.departed ? ` (${t("settings.apiKeys.creatorDeparted", "Departed")})` : ""
-					}`
-				: "-",
+			creatorName === null
+				? "-"
+				: key.creator?.departed
+					? t("settings.apiKeys.detail.creatorDeparted", "{name} (departed)", { name: creatorName })
+					: creatorName,
 		],
 		[t("settings.apiKeys.detail.createdAt", "Created"), at(key.createdAt)],
 		[t("settings.apiKeys.lastUsed", "Last Used"), at(key.lastRequest)],
@@ -56,9 +61,17 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 		],
 		[
 			t("settings.apiKeys.detail.rateLimit", "Rate limit"),
-			key.rateLimitEnabled && key.rateLimitMax
-				? `${key.rateLimitMax} ${WINDOW_LABELS.get(key.rateLimitTimeWindow ?? 0) ?? ""}`.trim()
-				: t("settings.apiKeys.detail.noRateLimit", "Off"),
+			!key.rateLimitEnabled || !key.rateLimitMax
+				? t("settings.apiKeys.detail.noRateLimit", "Off")
+				: windowLabel
+					? t("settings.apiKeys.detail.rateLimitValue", "{max} {window}", {
+							max: key.rateLimitMax,
+							window: windowLabel,
+						})
+					: t("settings.apiKeys.detail.rateLimitMilliseconds", "{max} per {window} ms", {
+							max: key.rateLimitMax,
+							window: key.rateLimitTimeWindow ?? 0,
+						}),
 		],
 	];
 
@@ -104,7 +117,7 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 									) : (
 										key.scopes.map((scope) => (
 											<Badge key={scope} variant="outline">
-												{t(`settings.apiKeys.scope.${scope}`, SCOPE_LABELS[scope])}
+												{scopeLabels[scope]}
 											</Badge>
 										))
 									)}

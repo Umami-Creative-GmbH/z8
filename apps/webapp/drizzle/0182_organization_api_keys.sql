@@ -13,6 +13,8 @@ DECLARE
 	org_id text;
 	creator_id text;
 	perms jsonb;
+	existing jsonb;
+	held text[];
 BEGIN
 	FOR r IN SELECT * FROM "apikey" FOR UPDATE LOOP
 		BEGIN
@@ -43,34 +45,50 @@ BEGIN
 			creator_id := r.reference_id;
 		END IF;
 
-		IF r.reference_id = org_id AND r.permissions IS NOT NULL THEN
-			perms := r.permissions::jsonb;
-		ELSE
-			SELECT coalesce(jsonb_object_agg(resource, actions), '{}'::jsonb)
-			INTO perms
-			FROM (
-				SELECT split_part(scope, ':', 1) AS resource,
-					jsonb_agg(split_part(scope, ':', 2) ORDER BY ordinal) AS actions
-				FROM (
-					SELECT v.scope, v.ordinal
-					FROM unnest(ARRAY[
-						'time-entries:read',
-						'absences:read',
-						'absences:read-health',
-						'employees:read',
-						'projects:read',
-						'customers:read'
-					]) WITH ORDINALITY AS v(scope, ordinal)
-					WHERE jsonb_typeof(meta -> 'scopes') = 'array'
-						AND (meta -> 'scopes') ? v.scope
-				) granted
-				GROUP BY split_part(scope, ':', 1)
-			) grouped;
+		-- The scopes the key holds: from its metadata, or from its permissions
+		-- when it is already organization-owned. Only v1 key scopes are kept.
+		BEGIN
+			existing := r.permissions::jsonb;
+		EXCEPTION WHEN others THEN
+			existing := NULL;
+		END;
+		IF existing IS NULL OR jsonb_typeof(existing) <> 'object' THEN
+			existing := '{}'::jsonb;
 		END IF;
+		held := ARRAY(
+			SELECT jsonb_array_elements_text(meta -> 'scopes')
+			WHERE jsonb_typeof(meta -> 'scopes') = 'array'
+		) || ARRAY(
+			SELECT e.resource || ':' || action
+			FROM jsonb_each(existing) AS e(resource, actions),
+				jsonb_array_elements_text(
+					CASE WHEN jsonb_typeof(e.actions) = 'array' THEN e.actions ELSE '[]'::jsonb END
+				) AS action
+		);
+
+		SELECT coalesce(jsonb_object_agg(resource, actions), '{}'::jsonb)
+		INTO perms
+		FROM (
+			SELECT split_part(scope, ':', 1) AS resource,
+				jsonb_agg(split_part(scope, ':', 2) ORDER BY ordinal) AS actions
+			FROM (
+				SELECT v.scope, v.ordinal
+				FROM unnest(ARRAY[
+					'time-entries:read',
+					'absences:read',
+					'absences:read-health',
+					'employees:read',
+					'projects:read',
+					'customers:read'
+				]) WITH ORDINALITY AS v(scope, ordinal)
+				WHERE v.scope = ANY(held)
+			) granted
+			GROUP BY split_part(scope, ':', 1)
+		) grouped;
 
 		UPDATE "apikey" SET
 			"id" = CASE
-				WHEN r.id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN r.id
+				WHEN r.id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' THEN r.id
 				ELSE gen_random_uuid()::text
 			END,
 			"reference_id" = org_id,

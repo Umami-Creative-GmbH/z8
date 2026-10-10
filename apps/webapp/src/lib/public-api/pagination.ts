@@ -35,23 +35,16 @@ export function encodeCursor(values: readonly CursorValue[]): string {
 /** What each part of a list's sort key must be. */
 export type CursorPart = "string" | "number" | "uuid" | "instant" | "date";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** The same formats the query parameters accept, so a decoded part is always usable. */
+const CURSOR_PARTS: Record<CursorPart, z.ZodType> = {
+	number: z.number().finite(),
+	string: z.string(),
+	uuid: z.uuid(),
+	date: z.iso.date(),
+	instant: z.iso.datetime({ offset: true }),
+};
 
-function matches(value: unknown, part: CursorPart): boolean {
-	switch (part) {
-		case "number":
-			return typeof value === "number" && Number.isFinite(value);
-		case "string":
-			return typeof value === "string";
-		case "uuid":
-			return typeof value === "string" && UUID.test(value);
-		case "date":
-			return typeof value === "string" && DATE.test(value);
-		case "instant":
-			return typeof value === "string" && !Number.isNaN(Date.parse(value));
-	}
-}
+const matches = (value: unknown, part: CursorPart) => CURSOR_PARTS[part].safeParse(value).success;
 
 /** The sort key a cursor holds, or null when it is not a cursor of this list. */
 export function decodeCursor(cursor: string, shape: readonly CursorPart[]): CursorValue[] | null {

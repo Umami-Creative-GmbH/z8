@@ -7,13 +7,18 @@ import type { ApiKeyDetail } from "@/app/[locale]/(app)/settings/enterprise/api-
 import { ApiKeyDetailView } from "./api-key-detail-view";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name])),
+	}),
 }));
 vi.mock("@/hooks/use-display-context", () => ({
 	useDisplayContext: () => ({ locale: "en-GB", timezone: "Europe/Berlin", timeFormat: "24h" }),
 }));
 vi.mock("@/navigation", () => ({
-	Link: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
+	Link: ({ href, children }: { href: string; children: ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 const detail: ApiKeyDetail = {
@@ -62,7 +67,7 @@ describe("ApiKeyDetailView", () => {
 		render(<ApiKeyDetailView detail={detail} />);
 
 		expect(screen.getByRole("heading", { name: "Payroll sync" })).toBeTruthy();
-		expect(screen.getByText("Ada Admin (Departed)")).toBeTruthy();
+		expect(screen.getByText("Ada Admin (departed)")).toBeTruthy();
 		expect(screen.getByText("Read absence health detail")).toBeTruthy();
 		expect(screen.getByText("10 per minute")).toBeTruthy();
 		expect(screen.getByRole("link", { name: /All API keys/ }).getAttribute("href")).toBe(

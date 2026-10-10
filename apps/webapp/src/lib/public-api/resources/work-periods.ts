@@ -2,18 +2,11 @@ import { and, asc, eq, gte, isNull, lt, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { timeEntry, workPeriod } from "@/db/schema";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { defineEndpoint } from "../endpoint";
 import { decodeCursor, invalidCursor, pageOf, pageQueryShape, pageSchema } from "../pagination";
 import { idSchema, instantSchema } from "../schemas";
 import { checkInstantRange, instantRangeShape, utcIso } from "./date-range";
-
-/** A fixed UTC offset, `+HH:MM` or `-HH:MM`. */
-export function formatUtcOffset(minutes: number): string {
-	const sign = minutes < 0 ? "-" : "+";
-	const absolute = Math.abs(minutes);
-	const hours = String(Math.floor(absolute / 60)).padStart(2, "0");
-	return `${sign}${hours}:${String(absolute % 60).padStart(2, "0")}`;
-}
 
 const endpointSchema = z
 	.object({
@@ -42,6 +35,12 @@ export const workPeriodSchema = z
 
 const clockIn = alias(timeEntry, "clock_in");
 const clockOut = alias(timeEntry, "clock_out");
+/**
+ * The sort key of the list. Writers may store sub-millisecond start times, but a
+ * cursor carries milliseconds, so the list sorts and resumes on the start
+ * truncated to milliseconds: a row is never compared with a rounded copy of itself.
+ */
+const startMillis = sql<Date>`date_trunc('milliseconds', ${workPeriod.startTime})`;
 
 export const listWorkPeriods = defineEndpoint({
 	method: "GET",
@@ -99,11 +98,11 @@ export const listWorkPeriods = defineEndpoint({
 					lt(workPeriod.startTime, sql`${utcIso(query.to)}::timestamp`),
 					query.employeeId ? eq(workPeriod.employeeId, query.employeeId) : undefined,
 					after
-						? sql`(${workPeriod.startTime}, ${workPeriod.id}) > (${utcIso(String(after[0]))}::timestamp, ${String(after[1])}::uuid)`
+						? sql`(${startMillis}, ${workPeriod.id}) > (${utcIso(String(after[0]))}::timestamp, ${String(after[1])}::uuid)`
 						: undefined,
 				),
 			)
-			.orderBy(asc(workPeriod.startTime), asc(workPeriod.id))
+			.orderBy(asc(startMillis), asc(workPeriod.id))
 			.limit(query.limit + 1);
 
 		const page = pageOf(
@@ -113,10 +112,13 @@ export const listWorkPeriods = defineEndpoint({
 				id: row.id,
 				employeeId: row.employeeId,
 				projectId: row.projectId,
-				start: { at: row.startTime.toISOString(), utcOffset: formatUtcOffset(row.startOffset) },
+				start: {
+					at: row.startTime.toISOString(),
+					utcOffset: offsetMinutesToTimeZoneId(row.startOffset),
+				},
 				end:
 					row.endTime && row.endOffset !== null
-						? { at: row.endTime.toISOString(), utcOffset: formatUtcOffset(row.endOffset) }
+						? { at: row.endTime.toISOString(), utcOffset: offsetMinutesToTimeZoneId(row.endOffset) }
 						: null,
 				durationMinutes: row.endTime ? row.durationMinutes : null,
 				approvalStatus:

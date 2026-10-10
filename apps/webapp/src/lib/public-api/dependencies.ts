@@ -27,13 +27,24 @@ export interface BetterAuthKeyVerification {
 	} | null;
 }
 
-/** The key's own limit after a verified request; null when the key has none. */
-export function keyLimitOf(
-	key: NonNullable<BetterAuthKeyVerification["key"]>,
-	now: Date,
-): RateLimitState | null {
+type KeyRateLimitFields = NonNullable<BetterAuthKeyVerification["key"]>;
+
+/**
+ * A key's own limit as the headers report it; null when the key has none. The
+ * plugin restarts a key's window once a full window has passed since its last
+ * request, so an older last request means the whole limit is left.
+ */
+export function keyLimitOf(key: KeyRateLimitFields, now: Date): RateLimitState | null {
 	if (key.rateLimitEnabled === false || !key.rateLimitMax || !key.rateLimitTimeWindow) return null;
-	const lastRequest = key.lastRequest ? new Date(key.lastRequest).getTime() : now.getTime();
+	const nowMs = now.getTime();
+	const lastRequest = key.lastRequest ? new Date(key.lastRequest).getTime() : null;
+	if (lastRequest === null || nowMs - lastRequest > key.rateLimitTimeWindow) {
+		return {
+			limit: key.rateLimitMax,
+			remaining: key.rateLimitMax,
+			resetAt: nowMs + key.rateLimitTimeWindow,
+		};
+	}
 	return {
 		limit: key.rateLimitMax,
 		remaining: key.rateLimitMax - (key.requestCount ?? 0),
@@ -43,7 +54,7 @@ export function keyLimitOf(
 
 export function keyVerificationOf(
 	result: BetterAuthKeyVerification,
-	rateLimitMax: number | null,
+	storedLimit: RateLimitState | null,
 	now: Date,
 ): KeyVerification {
 	if (result.valid && result.key) return { ok: true, limit: keyLimitOf(result.key, now) };
@@ -53,8 +64,8 @@ export function keyVerificationOf(
 			ok: false,
 			reason: "rate_limited",
 			retryAfterSeconds: Math.max(1, Math.ceil(tryAgainIn / 1000)),
-			limit: rateLimitMax
-				? { limit: rateLimitMax, remaining: 0, resetAt: now.getTime() + tryAgainIn }
+			limit: storedLimit
+				? { limit: storedLimit.limit, remaining: 0, resetAt: now.getTime() + tryAgainIn }
 				: null,
 		};
 	}
@@ -83,9 +94,14 @@ export function createPublicApiDependencies(
 		now,
 		clientIp: collaborators.clientIp,
 		onError: collaborators.onError,
-		identifyKey: (key) => identifyApiKey(database, key),
+		async identifyKey(key) {
+			const identified = await identifyApiKey(database, key);
+			return identified
+				? { principal: identified.principal, limit: keyLimitOf(identified.rateLimit, now()) }
+				: null;
+		},
 		verifyKey: async (key, identified) =>
-			keyVerificationOf(await collaborators.verifyApiKey(key), identified.rateLimitMax, now()),
+			keyVerificationOf(await collaborators.verifyApiKey(key), identified.limit, now()),
 		checkOrganizationLimit: collaborators.checkOrganizationLimit,
 		async hasBillingAccess(organizationId) {
 			if (!collaborators.billingEnabled()) return true;

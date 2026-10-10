@@ -4,6 +4,7 @@ import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
@@ -188,7 +189,7 @@ export async function createApiKey(
 			const dbService = yield* DatabaseService;
 
 			const expiresAt = input.expiresInDays
-				? new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000)
+				? dateFromInstant(systemClock.nowInstant().add({ hours: input.expiresInDays * 24 }))
 				: null;
 			const outcome = yield* dbService.query("apiKeys.create", () =>
 				createOrganizationApiKey(dbService.db, {

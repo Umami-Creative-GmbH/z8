@@ -4,18 +4,6 @@ import { API_KEY_SCOPES, type ApiKeyScope } from "@/lib/public-api/scopes";
 export { API_KEY_SCOPES, type ApiKeyScope };
 
 /**
- * Human-readable labels for the key scopes
- */
-export const SCOPE_LABELS: Record<ApiKeyScope, string> = {
-	"time-entries:read": "Read time entries",
-	"absences:read": "Read absences",
-	"absences:read-health": "Read absence health detail",
-	"employees:read": "Read employees",
-	"projects:read": "Read projects",
-	"customers:read": "Read customers",
-};
-
-/**
  * Expiration options for API keys
  */
 export const EXPIRATION_OPTIONS = [
@@ -28,15 +16,12 @@ export const EXPIRATION_OPTIONS = [
 ] as const;
 
 /**
- * Time windows an admin can choose for a key's rate limit, in milliseconds.
+ * Time windows an admin can choose for a key's rate limit, in milliseconds:
+ * a second, a minute, an hour.
  */
-export const RATE_LIMIT_WINDOW_OPTIONS = [
-	{ value: 1_000, label: "per second" },
-	{ value: 60_000, label: "per minute" },
-	{ value: 3_600_000, label: "per hour" },
-] as const;
+export const RATE_LIMIT_WINDOWS = [1_000, 60_000, 3_600_000] as const;
 
-export type RateLimitWindow = (typeof RATE_LIMIT_WINDOW_OPTIONS)[number]["value"];
+export type RateLimitWindow = (typeof RATE_LIMIT_WINDOWS)[number];
 
 export const DEFAULT_RATE_LIMIT_MAX = 100;
 export const DEFAULT_RATE_LIMIT_WINDOW: RateLimitWindow = 60_000;

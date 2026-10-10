@@ -2,11 +2,13 @@
  * The Public API v1 request pipeline (#763). Every `/api/v1` route runs it:
  *
  * 1. Authentication: only `Authorization: Bearer <api key>`. Browser sessions
- *    and session Bearer tokens are never accepted here.
+ *    and session Bearer tokens are never accepted here. Once the key is
+ *    identified, the request counts against the organization's ceiling, and
+ *    Better Auth's verification checks the key and its own rate limit.
  * 2. Billing: an organization without billing access gets 402.
- * 3. Rate limits: the key's own limit (enforced by Better Auth's verification)
- *    and a per-organization ceiling. Every response for an identified key
- *    carries `X-RateLimit-*`; a 429 also carries `Retry-After`.
+ * 3. Rate limits: every response for an identified key carries the
+ *    `X-RateLimit-*` headers of the tighter limit (key or organization); a 429
+ *    also carries `Retry-After`.
  * 4. Scope: the endpoint's key scope, else 403.
  * 5. The endpoint reads the key's organization only.
  * 6. Every request of an identified key goes to the key request log.
@@ -17,7 +19,7 @@
  */
 import type { z } from "zod";
 import type { EndpointResult, PublicApiEndpoint, PublicApiReader } from "./endpoint";
-import type { ApiKeyPrincipal, IdentifiedApiKey } from "./keys/principal";
+import type { ApiKeyPrincipal } from "./keys/principal";
 import { type Problem, problem, problemResponse } from "./problem";
 
 /** One rate limit's state, as the `X-RateLimit-*` headers report it. */
@@ -32,6 +34,12 @@ export type KeyVerification =
 	| { ok: true; limit: RateLimitState | null }
 	| { ok: false; reason: "invalid_key" }
 	| { ok: false; reason: "rate_limited"; retryAfterSeconds: number; limit: RateLimitState | null };
+
+/** The stored key a presented key belongs to, with its own limit before this request. */
+export interface IdentifiedKey {
+	principal: ApiKeyPrincipal;
+	limit: RateLimitState | null;
+}
 
 export interface OrganizationLimitCheck extends RateLimitState {
 	allowed: boolean;
@@ -52,9 +60,9 @@ export interface KeyRequestLogEntry {
 export interface PublicApiDependencies {
 	database: PublicApiReader;
 	/** The stored key a presented key belongs to, without counting a request. */
-	identifyKey(key: string): Promise<IdentifiedApiKey | null>;
+	identifyKey(key: string): Promise<IdentifiedKey | null>;
 	/** Better Auth's verification: enabled, unexpired, within the key's own limit. */
-	verifyKey(key: string, identified: IdentifiedApiKey): Promise<KeyVerification>;
+	verifyKey(key: string, identified: IdentifiedKey): Promise<KeyVerification>;
 	hasBillingAccess(organizationId: string): Promise<boolean>;
 	checkOrganizationLimit(organizationId: string): Promise<OrganizationLimitCheck>;
 	recordRequest(entry: KeyRequestLogEntry): Promise<void>;
@@ -148,15 +156,23 @@ export async function handlePublicApiRequest<Query extends z.ZodObject, Response
 	if (!identified) {
 		return problemResponse(problem("invalid_key", { detail: "The API key is not valid." }));
 	}
-
-	const { principal } = identified;
 	let status = 500;
 	let rowCount: number | null = null;
 	try {
-		const response = await respond();
+		const response = await respondToKey(
+			dependencies,
+			endpoint,
+			request,
+			key,
+			identified,
+			(rows) => {
+				rowCount = rows;
+			},
+		);
 		status = response.status;
 		return response;
 	} finally {
+		const { principal } = identified;
 		await dependencies
 			.recordRequest({
 				organizationId: principal.organizationId,
@@ -175,66 +191,75 @@ export async function handlePublicApiRequest<Query extends z.ZodObject, Response
 				}),
 			);
 	}
+}
 
-	async function respond(): Promise<globalThis.Response> {
-		const verification = await dependencies.verifyKey(
-			key as string,
-			identified as IdentifiedApiKey,
+/**
+ * The response to a request whose key was identified. Every such request
+ * counts against the organization's ceiling, so each response, refusals
+ * included, carries the `X-RateLimit-*` headers of the tighter limit.
+ */
+async function respondToKey<Query extends z.ZodObject, Response extends z.ZodType>(
+	dependencies: PublicApiDependencies,
+	endpoint: PublicApiEndpoint<Query, Response>,
+	request: Request,
+	key: string,
+	identified: IdentifiedKey,
+	recordRows: (rows: number) => void,
+): Promise<globalThis.Response> {
+	const { principal } = identified;
+	const organizationLimit = await dependencies.checkOrganizationLimit(principal.organizationId);
+	if (!organizationLimit.allowed) {
+		return problemResponse(
+			problem("rate_limited", { detail: "The organization's request limit is used up." }),
+			{
+				...rateLimitHeaders(bindingLimit([organizationLimit, identified.limit])),
+				"Retry-After": String(organizationLimit.retryAfterSeconds),
+			},
 		);
-		if (!verification.ok && verification.reason === "invalid_key") {
-			return problemResponse(
-				problem("invalid_key", { detail: "The API key is revoked, disabled or expired." }),
-			);
-		}
-		if (!verification.ok) {
-			return problemResponse(
-				problem("rate_limited", { detail: "This key's request limit is used up." }),
-				{
-					...rateLimitHeaders(verification.limit),
-					"Retry-After": String(verification.retryAfterSeconds),
-				},
-			);
-		}
-
-		if (!(await dependencies.hasBillingAccess(principal.organizationId))) {
-			return problemResponse(
-				problem("billing_required", {
-					detail: "The organization's subscription does not allow API access.",
-				}),
-				rateLimitHeaders(verification.limit),
-			);
-		}
-
-		const organizationLimit = await dependencies.checkOrganizationLimit(principal.organizationId);
-		const headers = rateLimitHeaders(bindingLimit([verification.limit, organizationLimit]));
-		if (!organizationLimit.allowed) {
-			return problemResponse(
-				problem("rate_limited", {
-					detail: "The organization's request limit is used up.",
-				}),
-				{
-					...rateLimitHeaders(organizationLimit),
-					"Retry-After": String(organizationLimit.retryAfterSeconds),
-				},
-			);
-		}
-
-		let result: EndpointResult<z.input<Response>>;
-		try {
-			result = await runEndpoint(dependencies, endpoint, principal, request);
-		} catch (error) {
-			dependencies.onError?.(error, {
-				route: endpoint.path,
-				organizationId: principal.organizationId,
-			});
-			return problemResponse(problem("server_error"), headers);
-		}
-		if (!result.ok) return problemResponse(result.problem, headers);
-
-		rowCount = result.rowCount;
-		return new globalThis.Response(JSON.stringify(result.body), {
-			status: 200,
-			headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
-		});
 	}
+
+	const verification = await dependencies.verifyKey(key, identified);
+	if (!verification.ok && verification.reason === "invalid_key") {
+		return problemResponse(
+			problem("invalid_key", { detail: "The API key is revoked, disabled or expired." }),
+			rateLimitHeaders(bindingLimit([organizationLimit, identified.limit])),
+		);
+	}
+	if (!verification.ok) {
+		return problemResponse(
+			problem("rate_limited", { detail: "This key's request limit is used up." }),
+			{
+				...rateLimitHeaders(bindingLimit([verification.limit, organizationLimit])),
+				"Retry-After": String(verification.retryAfterSeconds),
+			},
+		);
+	}
+
+	const headers = rateLimitHeaders(bindingLimit([verification.limit, organizationLimit]));
+	if (!(await dependencies.hasBillingAccess(principal.organizationId))) {
+		return problemResponse(
+			problem("billing_required", {
+				detail: "The organization's subscription does not allow API access.",
+			}),
+			headers,
+		);
+	}
+
+	let result: EndpointResult<z.input<Response>>;
+	try {
+		result = await runEndpoint(dependencies, endpoint, principal, request);
+	} catch (error) {
+		dependencies.onError?.(error, {
+			route: endpoint.path,
+			organizationId: principal.organizationId,
+		});
+		return problemResponse(problem("server_error"), headers);
+	}
+	if (!result.ok) return problemResponse(result.problem, headers);
+
+	recordRows(result.rowCount);
+	return new globalThis.Response(JSON.stringify(result.body), {
+		status: 200,
+		headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
+	});
 }

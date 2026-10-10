@@ -55,7 +55,7 @@ Use the address you sign in to Z8 at. Every endpoint, its parameters and its res
 
 ## Rate limits
 
-Each request counts against the key's own limit and against a limit for your whole organization. Every response carries:
+Each request counts against the key's own limit and against a limit for your whole organization. Every response to a request with a known key, refusals included, carries:
 
 - `X-RateLimit-Limit`: requests allowed in the current window of the tighter limit.
 - `X-RateLimit-Remaining`: requests left in that window.

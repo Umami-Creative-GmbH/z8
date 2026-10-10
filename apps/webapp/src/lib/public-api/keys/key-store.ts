@@ -15,11 +15,11 @@ import "server-only";
 import { defaultKeyHasher } from "@better-auth/api-key";
 import { generateRandomString } from "better-auth/crypto";
 import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
+import { z } from "zod";
 import type { db } from "@/db";
 import { apikey, member, user } from "@/db/auth-schema";
 import { auditLog, employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
-import { isUuid } from "@/lib/billable-time/input";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
 	type ApiKeyPermissions,
@@ -27,6 +27,7 @@ import {
 	permissionsOfScopes,
 	scopesOfPermissions,
 } from "@/lib/public-api/scopes";
+import { MAX_API_KEYS_PER_ORG } from "@/lib/validations/api-key";
 
 type Database = typeof db;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -38,7 +39,11 @@ export const API_KEY_PREFIX = "z8_org";
 const KEY_LENGTH = 64;
 /** Characters of the key shown in the key list: the prefix and the first four random ones. */
 const START_LENGTH = API_KEY_PREFIX.length + 4;
-export const MAX_KEYS_PER_ORGANIZATION = 10;
+export const MAX_KEYS_PER_ORGANIZATION = MAX_API_KEYS_PER_ORG;
+/** The plugin configuration every Z8 key belongs to (Z8 configures only the default one). */
+export const API_KEY_CONFIG_ID = "default";
+
+const isKeyId = (value: string) => z.uuid().safeParse(value).success;
 
 export interface ApiKeyView {
 	id: string;
@@ -117,7 +122,7 @@ export async function getOrganizationApiKey(
 	organizationId: string,
 	keyId: string,
 ): Promise<ApiKeyView | null> {
-	if (!isUuid(keyId)) return null;
+	if (!isKeyId(keyId)) return null;
 	const rows = await reader
 		.select()
 		.from(apikey)
@@ -276,7 +281,7 @@ export async function createOrganizationApiKey(
 			.insert(apikey)
 			.values({
 				id: crypto.randomUUID(),
-				configId: "default",
+				configId: API_KEY_CONFIG_ID,
 				name: input.name,
 				start: key.slice(0, START_LENGTH),
 				prefix: API_KEY_PREFIX,
@@ -327,7 +332,7 @@ export async function updateOrganizationApiKey(
 		now?: Date;
 	},
 ): Promise<{ ok: true } | { ok: false; reason: "key_not_found" }> {
-	if (!isUuid(input.keyId)) return { ok: false, reason: "key_not_found" };
+	if (!isKeyId(input.keyId)) return { ok: false, reason: "key_not_found" };
 	return database.transaction(async (tx) => {
 		const [row] = await tx
 			.select()
@@ -392,7 +397,7 @@ export async function revokeOrganizationApiKey(
 	database: Database,
 	input: { organizationId: string; actorUserId: string; keyId: string },
 ): Promise<{ ok: true } | { ok: false; reason: "key_not_found" }> {
-	if (!isUuid(input.keyId)) return { ok: false, reason: "key_not_found" };
+	if (!isKeyId(input.keyId)) return { ok: false, reason: "key_not_found" };
 	return database.transaction(async (tx) => {
 		const [row] = await tx
 			.delete(apikey)

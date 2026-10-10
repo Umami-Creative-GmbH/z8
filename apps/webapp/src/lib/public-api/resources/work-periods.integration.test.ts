@@ -135,6 +135,11 @@ describe("work periods in the Public API", () => {
 			start: ["2026-10-05T06:00:00Z", 120],
 			end: ["2026-10-05T16:00:00Z", -240],
 		});
+		// Written by SQL, with microseconds a millisecond cursor cannot hold.
+		await period("micro", {
+			start: ["2026-10-04T06:00:00.123456Z", 120],
+			end: ["2026-10-04T07:00:00.000000Z", 120],
+		});
 		await period("pending", {
 			start: ["2026-10-06T06:00:00Z", 120],
 			end: ["2026-10-06T10:00:00Z", 120],
@@ -211,6 +216,7 @@ describe("work periods in the Public API", () => {
 				periods.corrected,
 				periods.travel,
 				periods.pending,
+				periods.micro,
 				periods.running,
 			]),
 		);
@@ -222,13 +228,13 @@ describe("work periods in the Public API", () => {
 		);
 		expect(shifted.map((row) => row.id)).toEqual([periods.berlin]);
 		const filtered = await walkPublicApi(listWorkPeriods, key, `${october}&employeeId=${ana}`);
-		expect(filtered).toHaveLength(5);
+		expect(filtered).toHaveLength(6);
 	});
 
 	it("walks the cursor over every period once, in start order", async () => {
 		const rows = await walkPublicApi(listWorkPeriods, key, october, 1);
-		expect(rows).toHaveLength(5);
-		expect(new Set(rows.map((row) => row.id)).size).toBe(5);
+		expect(rows).toHaveLength(6);
+		expect(new Set(rows.map((row) => row.id)).size).toBe(6);
 		const starts = rows.map((row) => (row.start as { at: string }).at);
 		expect(starts).toEqual([...starts].sort());
 	});

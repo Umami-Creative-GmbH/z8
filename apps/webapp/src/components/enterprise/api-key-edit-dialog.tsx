@@ -34,14 +34,14 @@ import {
 	type ApiKeyScope,
 	DEFAULT_RATE_LIMIT_MAX,
 	DEFAULT_RATE_LIMIT_WINDOW,
-	RATE_LIMIT_WINDOW_OPTIONS,
-	SCOPE_LABELS,
+	RATE_LIMIT_WINDOWS,
 } from "@/lib/validations/api-key";
+import { useApiKeyScopeLabels } from "./api-key-labels";
 import { RateLimitWindowField } from "./api-key-rate-limit-window-field";
 
 /** A stored window the picker offers, else the default (older keys may hold others). */
 function windowOf(value: number | null) {
-	return RATE_LIMIT_WINDOW_OPTIONS.some((option) => option.value === value)
+	return RATE_LIMIT_WINDOWS.some((windowMs) => windowMs === value)
 		? (value as number)
 		: DEFAULT_RATE_LIMIT_WINDOW;
 }
@@ -199,6 +199,7 @@ function ApiKeyEditDialogForm({
 	onOpenChange,
 }: ApiKeyEditDialogFormProps) {
 	const { t } = useTranslate();
+	const scopeLabels = useApiKeyScopeLabels();
 	const queryClient = useQueryClient();
 	const formDefaultValues = getApiKeyEditDefaultValues(apiKey);
 	const validationMessages = getValidationMessages(t);
@@ -372,10 +373,7 @@ function ApiKeyEditDialogForm({
 														htmlFor={`edit-${scope}`}
 														className="text-sm font-normal cursor-pointer"
 													>
-														{t(
-															`settings.apiKeys.scope.${scope}`,
-															SCOPE_LABELS[scope],
-														)}
+														{scopeLabels[scope]}
 													</Label>
 												</div>
 											))}

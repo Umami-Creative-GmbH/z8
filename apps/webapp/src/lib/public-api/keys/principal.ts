@@ -4,7 +4,12 @@ import { defaultKeyHasher } from "@better-auth/api-key";
 import { and, eq } from "drizzle-orm";
 import { apikey } from "@/db/auth-schema";
 import { type ApiKeyScope, scopesOfPermissions } from "@/lib/public-api/scopes";
-import { type ApiKeyReader, creatorOfMetadata, parseStoredJson } from "./key-store";
+import {
+	API_KEY_CONFIG_ID,
+	type ApiKeyReader,
+	creatorOfMetadata,
+	parseStoredJson,
+} from "./key-store";
 
 /**
  * Who a Public API request acts as (ADR 0001): the key's organization, limited
@@ -35,10 +40,18 @@ export function principalOfKeyRow(row: {
 	};
 }
 
+/** A key's own rate limit as stored, before the current request is counted. */
+export interface StoredKeyRateLimit {
+	rateLimitEnabled: boolean | null;
+	rateLimitMax: number | null;
+	rateLimitTimeWindow: number | null;
+	requestCount: number | null;
+	lastRequest: Date | null;
+}
+
 export interface IdentifiedApiKey {
 	principal: ApiKeyPrincipal;
-	/** The key's own request limit per window, when it has one. */
-	rateLimitMax: number | null;
+	rateLimit: StoredKeyRateLimit;
 }
 
 /**
@@ -60,13 +73,17 @@ export async function identifyApiKey(
 			metadata: apikey.metadata,
 			rateLimitEnabled: apikey.rateLimitEnabled,
 			rateLimitMax: apikey.rateLimitMax,
+			rateLimitTimeWindow: apikey.rateLimitTimeWindow,
+			requestCount: apikey.requestCount,
+			lastRequest: apikey.lastRequest,
 		})
 		.from(apikey)
-		.where(and(eq(apikey.key, hashed), eq(apikey.configId, "default")))
+		.where(and(eq(apikey.key, hashed), eq(apikey.configId, API_KEY_CONFIG_ID)))
 		.limit(1);
 	if (!row) return null;
+	const { rateLimitEnabled, rateLimitMax, rateLimitTimeWindow, requestCount, lastRequest } = row;
 	return {
 		principal: principalOfKeyRow(row),
-		rateLimitMax: row.rateLimitEnabled === false ? null : row.rateLimitMax,
+		rateLimit: { rateLimitEnabled, rateLimitMax, rateLimitTimeWindow, requestCount, lastRequest },
 	};
 }

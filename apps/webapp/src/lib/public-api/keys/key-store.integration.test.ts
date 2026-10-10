@@ -339,6 +339,13 @@ describe("organization API keys on PostgreSQL", () => {
 				JSON.stringify({ organizationId: ids.organization, scopes: ["projects:write"] }),
 			),
 		);
+		// Already organization-owned, but holding scopes v1 no longer offers.
+		await legacy(
+			"t763kLegacyOrgOwned",
+			ids.organization,
+			JSON.stringify({ createdBy: ids.adminB }),
+			JSON.stringify({ "time-entries": ["read", "write"], reports: ["read"] }),
+		);
 		// No organization: unusable, deleted.
 		await legacy("t763kLegacyOrphan", ids.adminA, JSON.stringify({ displayName: "lost" }));
 
@@ -348,7 +355,7 @@ describe("organization API keys on PostgreSQL", () => {
 			"select id from apikey where reference_id = any($1::text[]) or id like 't763kLegacy%'",
 			[[ids.organization, ids.adminA, ids.adminB]],
 		);
-		expect(rows).toHaveLength(2);
+		expect(rows).toHaveLength(3);
 		const keys = await listOrganizationApiKeys(db, ids.organization);
 		const byName = new Map(keys.map((key) => [key.name, key]));
 		expect(byName.get("Old BI export")).toMatchObject({
@@ -358,10 +365,19 @@ describe("organization API keys on PostgreSQL", () => {
 			rateLimitTimeWindow: 1000,
 			creator: { userId: ids.adminA },
 		});
-		expect(byName.get("legacy")).toMatchObject({
-			scopes: [],
-			creator: { userId: ids.adminB },
-		});
+		expect(
+			keys
+				.filter((key) => key.name === "legacy")
+				.map((key) => key.scopes)
+				.sort(),
+		).toEqual([[], ["time-entries:read"]]);
+		const { rows: stored } = await admin.query<{ permissions: string }>(
+			"select permissions from apikey where reference_id = $1 and name = 'legacy' and permissions like '%time-entries%'",
+			[ids.organization],
+		);
+		expect(stored.map((row) => JSON.parse(row.permissions))).toEqual([
+			{ "time-entries": ["read"] },
+		]);
 		for (const key of keys) {
 			expect(key.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 		}

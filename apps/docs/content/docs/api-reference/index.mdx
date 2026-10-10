@@ -34,7 +34,7 @@ Errors are `application/problem+json` (RFC 9457) with a stable `type`: `invalid_
 
 ## Rate limits
 
-Every response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` for the tighter of the key's own limit and your organization's limit. A `429 rate_limited` response also carries `Retry-After`.
+Every response to a request with a known key, refusals included, carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` for the tighter of the key's own limit and your organization's limit. A `429 rate_limited` response also carries `Retry-After`.
 
 ## Versioning
 

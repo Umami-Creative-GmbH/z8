@@ -71,8 +71,8 @@ export const listEmployees = defineEndpoint({
 			.select({
 				id: employee.id,
 				teamId: employee.teamId,
-				firstName: sql<string | null>`coalesce(${employee.firstName}, ${user.firstName})`,
-				lastName: sql<string | null>`coalesce(${employee.lastName}, ${user.lastName})`,
+				firstName: sql<string | null>`coalesce(${user.firstName}, ${employee.firstName})`,
+				lastName: sql<string | null>`coalesce(${user.lastName}, ${employee.lastName})`,
 				workEmail: user.email,
 				employeeNumber: employee.employeeNumber,
 				active: hasAccess,
