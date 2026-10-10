@@ -56,6 +56,13 @@ import {
 import { addCalendarSyncJob } from "@/lib/queue";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { assertReviewBindingAuthority } from "../authority";
+import type { ActingFor } from "../deputy/deputy-decision";
+import {
+	asDeputyDecider,
+	coversCurrentApprover,
+	loadLegacyActingFor,
+	recordCanonicalDeputyDecisionOf,
+} from "../deputy/deputy-decision-store";
 import type { ApprovalActionOptions } from "../domain/types";
 import { captureAbsenceLegacyApprovalState } from "../domain-adapters/absence-legacy-state";
 import {
@@ -482,6 +489,7 @@ export async function executeAbsenceDecisionInTransaction(
 					replayed: null as LegacyDecisionEvidenceRecord | null,
 					invocation: { replayed: true, evidence } as AbsenceInvocationOutcome,
 					deliveryIntent: false,
+					actingFor: null as ActingFor | null,
 				};
 			}
 			// A fresh invocation needs current admission, read under the rollout
@@ -579,6 +587,7 @@ export async function executeAbsenceDecisionInTransaction(
 					replayed,
 					invocation: null,
 					deliveryIntent: false,
+					actingFor: null,
 				};
 			}
 			// An escalation transfer revoked the former holders' authority: only
@@ -594,7 +603,13 @@ export async function executeAbsenceDecisionInTransaction(
 			if (
 				transferred &&
 				transferred.currentApproverEmployeeId !== currentEmployee.id &&
-				!(await input.canManageOrganizationApproval?.())
+				!(await input.canManageOrganizationApproval?.()) &&
+				// The current approver's covering deputy (#1016, default 9).
+				!(await coversCurrentApprover(transactionDb, {
+					organizationId: input.organizationId,
+					approverEmployeeId: transferred.currentApproverEmployeeId,
+					actorEmployeeId: currentEmployee.id,
+				}))
 			) {
 				throw new ApprovalAssignmentReassignedError();
 			}
@@ -698,6 +713,14 @@ export async function executeAbsenceDecisionInTransaction(
 						approvalRequestId: decidedRequestId,
 					})
 				: false;
+			// The shared legacy path stored whom a covering deputy acted for (#1016).
+			const actingFor =
+				decidedRequestId && domainResult
+					? await loadLegacyActingFor(transactionDb, {
+							organizationId: input.organizationId,
+							approvalRequestId: decidedRequestId,
+						})
+					: null;
 			return {
 				mode: gate.mode,
 				authority: gate.authority,
@@ -707,6 +730,7 @@ export async function executeAbsenceDecisionInTransaction(
 				replayed: null,
 				invocation: invocationOutcome,
 				deliveryIntent,
+				actingFor,
 			};
 		}
 
@@ -767,6 +791,15 @@ export async function executeAbsenceDecisionInTransaction(
 						: { reviewedBindingId: input.reviewedBindingId }),
 				},
 			);
+		// A covering deputy's decision: the acting-for record and audit (#1016).
+		const actingFor = await recordCanonicalDeputyDecisionOf(transactionDb, {
+			organizationId: input.organizationId,
+			command,
+			result: commandResult,
+			entityType: "absence_entry",
+			entityId: input.absenceId,
+			performedByUserId: currentEmployee.userId,
+		});
 		let invocationOutcome: AbsenceInvocationOutcome | null = null;
 		if (invocation) {
 			// Same transaction as the transition, evidence and receipt.
@@ -799,6 +832,7 @@ export async function executeAbsenceDecisionInTransaction(
 			replayed: null as LegacyDecisionEvidenceRecord | null,
 			invocation: invocationOutcome,
 			deliveryIntent: false,
+			actingFor,
 		};
 	});
 }
@@ -1241,12 +1275,13 @@ export function approveAbsenceWithCurrentApproverEffect(
 		{ ...options, transactional: true },
 		{
 			updateEntity: persistApprovedAbsence,
-			afterCommit: (result, committedDbService, entityId, approver) =>
-				completeApprovedAbsenceAfterCommit(
-					committedDbService,
-					entityId,
-					approver,
-					result,
+			afterCommit: (result, committedDbService, entityId, approver, decision) =>
+				Effect.promise(() =>
+					asDeputyDecider(committedDbService.db, approver, decision?.actingFor),
+				).pipe(
+					Effect.flatMap((decider) =>
+						completeApprovedAbsenceAfterCommit(committedDbService, entityId, decider, result),
+					),
 				),
 		},
 	);
@@ -1273,13 +1308,19 @@ export function rejectAbsenceWithCurrentApproverEffect(
 		{
 			updateEntity: (decisionDbService, entityId, approver) =>
 				persistRejectedAbsence(decisionDbService, entityId, approver, reason),
-			afterCommit: (result, committedDbService, entityId, approver) =>
-				completeRejectedAbsenceAfterCommit(
-					committedDbService,
-					entityId,
-					approver,
-					reason,
-					result,
+			afterCommit: (result, committedDbService, entityId, approver, decision) =>
+				Effect.promise(() =>
+					asDeputyDecider(committedDbService.db, approver, decision?.actingFor),
+				).pipe(
+					Effect.flatMap((decider) =>
+						completeRejectedAbsenceAfterCommit(
+							committedDbService,
+							entityId,
+							decider,
+							reason,
+							result,
+						),
+					),
 				),
 		},
 	);
@@ -1853,18 +1894,22 @@ function authenticatedAbsenceDecisionEffect(
 		if (
 			execution.authority === "legacy" && execution.domainResult
 		) {
+			// Requester-facing text names a deputy as "Y (deputy for X)" (#1016).
+			const decider = yield* Effect.promise(() =>
+				asDeputyDecider(dbService.db, execution.actor, execution.actingFor),
+			);
 			const postCommit =
 				action === "approve"
 					? completeApprovedAbsenceAfterCommit(
 							dbService as ApprovalDbService,
 							absenceId,
-							execution.actor,
+							decider,
 							execution.domainResult as ApprovedAbsenceResult,
 						)
 					: completeRejectedAbsenceAfterCommit(
 							dbService as ApprovalDbService,
 							absenceId,
-							execution.actor,
+							decider,
 							reason ?? "",
 							execution.domainResult as RejectedAbsenceResult,
 						);

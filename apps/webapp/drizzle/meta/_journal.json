@@ -1331,6 +1331,13 @@
       "when": 1800633600000,
       "tag": "0189_absence_deputy_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1800806400000,
+      "tag": "0191_approval_deputy_decision",
+      "breakpoints": true
     }
   ]
 }

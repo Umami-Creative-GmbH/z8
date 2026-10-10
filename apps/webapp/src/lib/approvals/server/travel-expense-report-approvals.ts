@@ -28,6 +28,11 @@ import {
 	approvalReassignedConflict,
 } from "../escalation/decision-authority";
 import { wasLegacyRequestTransferred } from "../escalation/legacy-transfer-store";
+import {
+	asDeputyDecider,
+	coversCurrentApprover,
+	loadLegacyActingFor,
+} from "../deputy/deputy-decision-store";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	findLegacyDecisionEvidenceByRequest,
@@ -594,7 +599,14 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		request.approverId !== actor.id &&
 		(await wasLegacyRequestTransferred(database, { organizationId, approvalRequestId })) &&
 		// A card carries no management authority.
-		(binding !== null || !(await input.canManageOrganizationApproval?.()))
+		(binding !== null || !(await input.canManageOrganizationApproval?.())) &&
+		// The current approver's covering deputy (#1016, default 9).
+		(binding !== null ||
+			!(await coversCurrentApprover(database as never, {
+				organizationId,
+				approverEmployeeId: request.approverId,
+				actorEmployeeId: actor.id,
+			})))
 	) {
 		throw new ApprovalAssignmentReassignedError();
 	}
@@ -702,7 +714,17 @@ async function notifyRequester(
 	database: ApprovalDatabase,
 	input: TravelExpenseReportDecisionInput,
 	revision: Pick<TravelExpenseReportSubmittedFacts["totals"], "reimbursable" | "currency">,
+	approvalRequestId: string,
 ) {
+	// A covering deputy's decision reads "Y (deputy for X)" (#1016).
+	const decider = await asDeputyDecider(
+		database as never,
+		input.actor,
+		await loadLegacyActingFor(database as never, {
+			organizationId: input.organizationId,
+			approvalRequestId,
+		}),
+	);
 	const [requester] = await database
 		.select({ userId: employee.userId })
 		.from(travelExpenseReport)
@@ -719,7 +741,7 @@ async function notifyRequester(
 		reportId: input.reportId,
 		requesterUserId: requester.userId,
 		organizationId: input.organizationId,
-		approverName: input.actor.user.name,
+		approverName: decider.user.name,
 		action: input.action,
 		reimbursable: revision.reimbursable,
 		currency: revision.currency,
@@ -740,7 +762,7 @@ export async function afterTravelExpenseReportDecision(
 	if (outcome.kind !== "decided") return;
 	if (outcome.reportStatus !== "submitted") {
 		// The decided revision's own totals; never a guessed amount.
-		await notifyRequester(database, decision, outcome.totals).catch((error) =>
+		await notifyRequester(database, decision, outcome.totals, outcome.approvalRequestId).catch((error) =>
 			logger.error({ error, reportId: decision.reportId }, "Report decision notification failed"),
 		);
 	}

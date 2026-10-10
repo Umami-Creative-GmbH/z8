@@ -13,6 +13,22 @@ const state = vi.hoisted(() => ({
 // Mock databases cannot model the advisory locks: corrections run on the work
 // transaction fake (real ledger, recorded guards) over the database of the
 // suite's approval context. The PostgreSQL suites prove the protocol.
+// Deputy decisions read and write the acting-for record; verified against
+// PostgreSQL in deputy-decisions.integration.test.ts (#1016).
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/deputy/deputy-decision-store")>()),
+	coversCurrentApprover: async () => false,
+	loadLegacyActingFor: async () => null,
+	recordCanonicalDeputyDecisionOf: async () => null,
+	authorizeLegacyDeputyDecision: async () => {
+		const { deputyDecisionRefusalError } = await import("@/lib/approvals/deputy/deputy-decision");
+		throw deputyDecisionRefusalError("not_covering", {
+			actorEmployeeId: "actor",
+			resource: "approval_request",
+			action: "approve",
+		});
+	},
+}));
 vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) => {
 	const actual =
 		await importOriginal<typeof import("@/lib/approvals/server/time-correction-work-transaction")>();

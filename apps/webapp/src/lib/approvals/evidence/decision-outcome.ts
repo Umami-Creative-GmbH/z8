@@ -1,4 +1,5 @@
 import type { Instant } from "@/lib/datetime/temporal-core";
+import type { ActingFor } from "../deputy/deputy-decision";
 import type {
 	ApprovalCommandResult,
 	ApprovalEventActorIdentity,
@@ -15,6 +16,8 @@ export interface CommandDecisionOutcome {
 	/** The whole request as of this operation; an approval can leave it pending. */
 	requestOutcome: ApprovalWorkflowStatus;
 	actor: Extract<ApprovalEventActorIdentity, { kind: "employee" }>;
+	/** The absent approver a covering deputy decided for (#1016), from the event. */
+	actingFor: ActingFor | null;
 	/** Persisted assignment resolution time, never render or retry time. */
 	decidedAt: Instant;
 	eventIds: string[];
@@ -64,12 +67,22 @@ export function deriveCommandDecisionOutcome(input: {
 			field: "decision_event",
 		});
 	}
+	const metadata = event.metadata as Record<string, unknown> | null | undefined;
+	const actingFor =
+		typeof metadata?.actingForEmployeeId === "string" &&
+		typeof metadata.actingForAbsenceId === "string"
+			? {
+					approverEmployeeId: metadata.actingForEmployeeId,
+					absenceId: metadata.actingForAbsenceId,
+				}
+			: null;
 	return {
 		stageId: input.command.stageId,
 		assignmentId: assignment.id,
 		assignmentOutcome: expected,
 		requestOutcome: input.result.snapshot.status,
 		actor: event.actor,
+		actingFor,
 		decidedAt: assignment.resolvedAt,
 		eventIds: input.result.events.map((candidate) => candidate.id),
 	};

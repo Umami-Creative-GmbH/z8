@@ -14,6 +14,7 @@ export * from "./approval-delivery";
 export * from "./approval-escalation";
 export * from "./approval-evidence";
 export * from "./approval-policy";
+export * from "./approval-deputy-decision";
 export * from "./approval-setting";
 export * from "./approval-workflow";
 export * from "./audit";

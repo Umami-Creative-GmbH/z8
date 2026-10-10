@@ -52,6 +52,22 @@ const {
 
 // Mock-database harnesses run with time correction evidence capture inactive;
 // capture, holds and decision evidence are verified against PostgreSQL (#301).
+// Deputy decisions read and write the acting-for record; verified against
+// PostgreSQL in deputy-decisions.integration.test.ts (#1016).
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/deputy/deputy-decision-store")>()),
+	coversCurrentApprover: async () => false,
+	loadLegacyActingFor: async () => null,
+	recordCanonicalDeputyDecisionOf: async () => null,
+	authorizeLegacyDeputyDecision: async () => {
+		const { deputyDecisionRefusalError } = await import("@/lib/approvals/deputy/deputy-decision");
+		throw deputyDecisionRefusalError("not_covering", {
+			actorEmployeeId: "actor",
+			resource: "approval_request",
+			action: "approve",
+		});
+	},
+}));
 vi.mock("../evidence/time-correction-evidence", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../evidence/time-correction-evidence")>()),
 	prepareLegacyTimeCorrectionDecisionEvidence: async () => null,

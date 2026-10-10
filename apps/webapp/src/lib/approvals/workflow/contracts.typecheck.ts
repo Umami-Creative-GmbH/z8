@@ -26,6 +26,7 @@ import type {
 	ApprovalPlannedEntityReference,
 	ApprovalTransitionIdentityResolution,
 	ApprovalTransitionPlan,
+	ApprovalCoveringDeputyGrant,
 	ApprovalWorkflowAuthorization,
 	ApprovalWorkflowEventSnapshot,
 	ApprovalWorkflowSnapshot,
@@ -119,6 +120,7 @@ type _AuthorizationIncludesRequesterCancellation = Assert<
 		| "manage_approval"
 		| "system"
 		| "offboarding_reassignment"
+		| ApprovalCoveringDeputyGrant
 	>
 >;
 

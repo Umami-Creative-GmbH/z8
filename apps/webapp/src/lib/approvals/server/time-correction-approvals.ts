@@ -102,6 +102,11 @@ import {
 	assertNotReplacedByEscalation,
 	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
+import {
+	asDeputyDecider,
+	loadLegacyActingFor,
+	recordCanonicalDeputyDecisionOf,
+} from "../deputy/deputy-decision-store";
 import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
 import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
@@ -4611,6 +4616,15 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 		workPeriodId: request.entityId,
 		correction,
 	});
+	// A covering deputy's decision reads "Y (deputy for X)" (#1016).
+	const actor = await asDeputyDecider(
+		input.dbService.db as never,
+		input.actor,
+		await loadLegacyActingFor(input.dbService.db as never, {
+			organizationId: input.actor.organizationId,
+			approvalRequestId: request.id,
+		}),
+	);
 	if (effects.terminal.kind === "approved") {
 		if (effects.terminal.dirtyFromDate) {
 			await markEmployeeWorkBalanceDirtyIfNeeded({
@@ -4622,7 +4636,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 		notifyApprovedCorrection(
 			result.period,
 			request.entityId,
-			input.actor,
+			actor,
 			result.originalNotificationTime,
 			result.correctedNotificationTime,
 		);
@@ -4631,7 +4645,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	notifyRejectedCorrection(
 		result.period,
 		request.entityId,
-		input.actor,
+		actor,
 		input.reason ?? request.rejectionReason ?? "",
 		result.originalNotificationTime,
 		result.correctedNotificationTime,
@@ -5399,6 +5413,23 @@ export async function executeTimeCorrectionDecisionInTransaction(
 									},
 					},
 				);
+			// A covering deputy's decision: the acting-for record and audit (#1016).
+			await recordCanonicalDeputyDecisionOf(transactionDb as never, {
+				organizationId: input.organizationId,
+				command:
+					input.action === "approve"
+						? { type: "approve", stageId: target.stage.id, assignmentId: target.assignment.id }
+						: {
+								type: "reject",
+								stageId: target.stage.id,
+								assignmentId: target.assignment.id,
+								reason: input.reason ?? "",
+							},
+				result: commandResult,
+				entityType: "time_entry",
+				entityId: period.id,
+				performedByUserId: actor.userId,
+			});
 			const invocation =
 				input.bound && boundCommand
 					? await recordTimeInvocationDecision(transactionDb, {
@@ -5634,6 +5665,7 @@ export function decideTimeCorrectionWithStableTargetEffect(
 								ordinary.result,
 								currentEmployee,
 								dbService,
+								approvalRequestId,
 							),
 						);
 					} catch (dispatchError) {
@@ -5665,6 +5697,7 @@ export function decideTimeCorrectionWithStableTargetEffect(
 						execution.domainResult as WorkPeriodApprovalResult,
 						currentEmployee,
 						dbService,
+						approvalRequestId,
 					),
 				);
 			}
