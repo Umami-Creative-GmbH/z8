@@ -184,7 +184,7 @@ function buildWorkPolicyFormValues(
 	};
 }
 
-export function WorkPolicyDialog({
+function useWorkPolicyForm({
 	open,
 	onOpenChange,
 	organizationId,
@@ -360,6 +360,47 @@ export function WorkPolicyDialog({
 		}));
 	})();
 
+	return {
+		open,
+		onOpenChange,
+		isEditing,
+		t,
+		form,
+		scheduleEnabled,
+		regulationEnabled,
+		presenceEnabled,
+		days,
+		totalHours,
+		previewDays,
+		homeOfficeDaysPerCycle,
+		scheduleCycle,
+		presenceMode,
+		isPending,
+	};
+}
+
+export function WorkPolicyDialog({
+	open,
+	onOpenChange,
+	organizationId,
+	editingPolicy,
+	onSuccess,
+}: WorkPolicyDialogProps) {
+	const {
+		isEditing,
+		t,
+		form,
+		scheduleEnabled,
+		regulationEnabled,
+		presenceEnabled,
+		days,
+		totalHours,
+		previewDays,
+		homeOfficeDaysPerCycle,
+		scheduleCycle,
+		presenceMode,
+		isPending,
+	} = useWorkPolicyForm({ open, onOpenChange, organizationId, editingPolicy, onSuccess });
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
 			<ActionPanelContent size="wide">

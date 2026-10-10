@@ -13,6 +13,39 @@ export default {
 		],
 		overrides: [
 			{
+				// TanStack Form performs client validation and owns submission. Native navigation would bypass it.
+				files: ["**/components/billable-time/billable-currency-form.tsx"],
+				rules: ["react-doctor/no-prevent-default"],
+			},
+			{
+				// Redacted immutable server snapshots have no interactive row state, reordering or filtering.
+				// Adding employee identifiers as keys would undermine the review model's privacy boundary.
+				files: ["**/components/works-council/position-capture-review-section.tsx"],
+				rules: ["react-doctor/no-array-index-as-key"],
+			},
+			{
+				// Decompress one ZIP member at a time to bound transient memory for large payslip batches.
+				files: ["**/components/personnel-file/payslip-batch-files.ts"],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+			{
+				// Rate steps shorten/delete a predecessor before inserting a successor; the overlap constraint requires this order.
+				files: ["**/src/lib/billable-time/rate-periods.ts"],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+			{
+				// Bulk amendments share ranked organization/owner guards and run after-commit work in order.
+				files: ["**/src/lib/billable-time/bulk-billability-work.ts"],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+			{
+				// Job delivery is intentionally bounded to one tenant/reminder at a time. Retention recipient lookups
+				// populate a shared cache; a claim precedes each delivery and the result records who was notified.
+				files: ["**/src/lib/jobs/clocking-reminders.ts", "**/src/lib/personnel-file/expiry-reminders.ts", "**/src/lib/personnel-file/retention-reminders.ts"],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+
+			{
 				// Legacy storage is guarded against nonempty rows, then dropped immediately after disabling RLS.
 				files: ["**/drizzle/0062_better_auth_scim_storage.sql"],
 				rules: ["react-doctor/supabase-rls-policy-risk"],
@@ -30,6 +63,16 @@ export default {
 				// advisory guards), read-your-writes and append-chain predecessors, and a failed
 				// statement aborts the transaction for every statement queued behind it.
 				files: [
+					"**/settings/clockodo-import/actions.ts",
+					"**/src/lib/billable-time/settings.ts",
+					"**/src/lib/personnel-file/payslip-batch-store.ts",
+					"**/src/lib/personnel-file/retention-store.ts",
+					"**/src/lib/personnel-file/upload-ledger.ts",
+					"**/src/lib/projects/project-from-template.ts",
+					"**/src/lib/projects/project-templates.ts",
+					"**/src/lib/time-record/migration/backfill.ts",
+					"**/src/lib/time-tracking/position-capture/export-positions.ts",
+					"**/src/lib/time-tracking/position-capture/resolver.ts",
 					"**/absences/mutations.ts",
 					"**/time-tracking/actions/clocking.ts",
 					"**/src/lib/approvals/delivery/store.ts",

@@ -64,8 +64,6 @@ const DEFAULT_RATES: Partial<Record<TaxTreatmentKind, string>> = {
 	domestic_reduced: "7",
 };
 
-export const DEFAULT_TAX_TREATMENT: TaxTreatmentView = { kind: "domestic_standard", rate: "19" };
-
 /** The validation message for a tax treatment, or undefined when it is valid. */
 export function useTaxTreatmentError() {
 	const { t } = useTranslate();

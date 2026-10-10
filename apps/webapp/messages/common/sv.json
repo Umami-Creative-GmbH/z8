@@ -320,6 +320,40 @@
       "pagination": "sidnumrering"
     },
     "pending": "Väntande",
+    "positionCaptureErrors": {
+      "adminOnly": "Endast organisationsägare och administratörer kan hantera positionsregistrering.",
+      "assignmentNotFound": "Det här uppdraget finns inte längre.",
+      "employeeNotFound": "Den anställde hittades inte.",
+      "employeeProfileRequired": "En medarbetarprofil i den här organisationen krävs.",
+      "invalidTarget": "Välj vem uppdraget gäller för.",
+      "noticeChanged": "Positionsmeddelandet har ändrats. Granska det aktuella meddelandet innan du bestämmer dig.",
+      "positionsForbidden": "Du har inte behörighet att se positionerna för den här arbetsperioden.",
+      "purposeRequired": "En syftesbeskrivning krävs innan positionsregistrering kan aktiveras.",
+      "purposeTooLong": "Syftesbeskrivningen är för lång.",
+      "retentionOutOfRange": "Lagringstiden måste vara ett helt antal dagar mellan {min} och {max}.",
+      "signInRequired": "Logga in på en organisation först.",
+      "teamNotFound": "Det här teamet hittades inte.",
+      "workPeriodNotFound": "Den här arbetsperioden hittades inte."
+    },
+    "positionConsent": {
+      "agree": "Godkänn",
+      "description": "Din organisation ber om att få registrera din enhets position när du stämplar in, stämplar ut eller tar en paus. Din stämplingshändelse har registrerats oavsett. Om du godkänner registreras positioner från och med din nästa stämplingshändelse.",
+      "notNow": "Inte nu",
+      "title": "Registrera din position vid stämplingshändelser?"
+    },
+    "positionNotice": {
+      "never": "Utstämplingar som görs åt dig av någon annan, automatiska utstämplingar, importer och korrigeringar innehåller aldrig en position. Om din enhet inte kan tillhandahålla en position registreras din stämplingshändelse utan en sådan, och ingenting registreras om varför.",
+      "purposeTitle": "Varför din organisation registrerar positioner",
+      "retention": "{days, plural, one {Varje position raderas # dag efter att den registrerades. Dina stämplingshändelser sparas.} other {Varje position raderas # dagar efter att den registrerades. Dina stämplingshändelser sparas.}}",
+      "retentionTitle": "Hur länge positioner sparas",
+      "version": "Positionsmeddelande, version {version}",
+      "viewers": "Du kan se dina egna positioner. Organisationsägare och administratörer, samt personer med uttrycklig behörighet, kan se dem för en enskild arbetsperiod, och varje sådan visning loggas så att du kan se den. Att vara din chef ger inte åtkomst. Företagsrådet ser aldrig enskilda positioner.",
+      "viewersTitle": "Vem som kan se positioner",
+      "what": "När du stämplar in, stämplar ut, påbörjar eller avslutar en paus i Z8-webbappen på din enhet registreras din enhets position vid den stämplingshändelsen: latitud, longitud, hur noggrann positionen är och när enheten fastställde den. Ingen adress, altitud eller hastighet registreras, och ingenting registreras mellan stämplingshändelser.",
+      "whatTitle": "Vad som registreras",
+      "withdraw": "Positioner registreras endast så länge du samtycker. Du kan när som helst återkalla detta under Inställningar, Positionsstämplar. Om du återkallar samtycket stoppas registreringen och alla dina registrerade positioner raderas omedelbart. Huruvida du samtycker påverkar inte dina stämplingshändelser.",
+      "withdrawTitle": "Ditt val"
+    },
     "present": "Närvarande",
     "previous": "Föregående",
     "recovering": "Återställer...",
@@ -400,6 +434,43 @@
       "identityHidden": "Identitet dold",
       "insufficientData": "Otillräckliga data",
       "policyChanges": "Policyändringar",
+      "positionStamps": {
+        "accessAt": "När",
+        "accessEmployees": "Positioner för",
+        "accessKindDetail": "{count, plural, one {Arbetsperiodsdetaljer (# arbetsperiod)} other {Arbetsperiodsdetaljer (# arbetsperioder)}}",
+        "accessKindExport": "Dataexport",
+        "accessLog": "Positionsåtkomstlogg",
+        "accessLogDescription": "Varje gång någon annan än medarbetaren visade eller exporterade positioner, med de senaste först.",
+        "accessLogEmpty": "Ingen har visat positioner.",
+        "accessViewer": "Visad av",
+        "consentActive": "Aktivt samtycke",
+        "consentDescription": "{count, plural, one {Bland den # aktiva anställde som registrering är aktiverad för. Ej beslutat inkluderar anställda som valde Inte nu eller endast godkände en tidigare meddelandeversion.} other {Bland de # aktiva anställda som registrering är aktiverad för. Ej beslutat inkluderar anställda som valde Inte nu eller endast godkände en tidigare meddelandeversion.}}",
+        "consentTitle": "Positionssamtycke",
+        "consentUndecided": "Ej beslutat",
+        "consentWithdrawn": "Återkallat",
+        "currentNotice": "Aktuellt meddelande",
+        "deletedViewer": "En borttagen användare",
+        "description": "Hur organisationen registrerar anställdas positioner vid deras stämplingar och vem som har tittat på dem. Företagsrådet ser aldrig enskilda positioner.",
+        "employeeAssignmentCounts": "{on} aktiverade, {off} inaktiverade individuellt",
+        "employeeAssignments": "Medarbetartilldelningar",
+        "employeeCount": "{count, plural, one {# anställd} other {# anställda}}",
+        "employeePseudonym": "Anställd {ref}",
+        "enabled": "Registrering",
+        "noEmployeeAssignments": "Inga medarbetartilldelningar.",
+        "noNotice": "Inget meddelande har publicerats.",
+        "notAssigned": "Ej tilldelad",
+        "noTeamAssignments": "Inga teamtilldelningar.",
+        "noticeHistory": "Meddelandeversioner",
+        "noticeVersion": "{days, plural, one {Version {version}, publicerad {publishedAt}, positioner sparas i # dag} other {Version {version}, publicerad {publishedAt}, positioner sparas i # dagar}}",
+        "off": "Av",
+        "on": "På",
+        "organizationAssignment": "Hela organisationen",
+        "retention": "Lagringstid",
+        "retentionDays": "{days, plural, one {# dag} other {# dagar}}",
+        "teamAssignments": "Teamtilldelningar",
+        "title": "Positionsregistrering",
+        "viewerPseudonym": "Visare {ref}"
+      },
       "scheduleChanges": "Schemaändringar",
       "scheduleDescription": "Integritetsfiltrerade schemaposter för den valda perioden.",
       "scheduleEmpty": "Inga schemaposter hittades för denna period.",
@@ -505,9 +576,11 @@
     "finance": "Ekonomi",
     "financeAwaiting": "{count, plural, other {# utlägg väntar på ersättning} }",
     "get-help": "Få hjälp",
+    "my-documents": "Mina dokument",
     "my-requests": "Mina förfrågningar",
     "org-explorer": "Organisationsutforskare",
     "payroll": "Lön",
+    "personnel-files": "Personalakter",
     "platform-admin": "Plattformsadministratör",
     "reports": "Rapporter",
     "scheduling": "Schemaläggning",
@@ -545,6 +618,10 @@
         "message": "Du stämplades automatiskt ut efter {duration} minuters oavbrutet arbete klockan {cutoff} ({timezone}) eftersom din organisations tidsgräns nåddes.",
         "title": "Automatiskt utstämplad"
       },
+      "breakDueReminder": {
+        "message": "Det är dags för din rast kl. {breakTime} ({timezone}). Ta en rast senast då för att följa din arbetspolicys rastregler.",
+        "title": "Snart dags för rast"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Godkännandeuppgifter behöver en ersättare (avgång gäller från {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Behöver granskas: utstämpling vid offboarding (avgång gäller från {cutoff}, {timezone}).",
@@ -553,12 +630,53 @@
         "future_work": "{employeeName}: Framtida arbete behöver granskas (avgång gäller från {cutoff}, {timezone}).",
         "title": "Offboarding av medarbetare behöver granskas"
       },
+      "forgottenClockOutReminder": {
+        "message": "Ditt arbetspass slutade kl. {endTime} ({timezone}). Stämpla ut om du har slutat arbeta.",
+        "title": "Du är fortfarande instämplad"
+      },
+      "missedClockInReminder": {
+        "message": "Ditt arbetspass började kl. {startTime} ({timezone}). Stämpla in om du arbetar.",
+        "title": "Du har inte stämplat in än"
+      },
       "newAbsenceRequest": {
         "title": "Ny frånvaroansökan"
       },
       "passwordChanged": {
         "message": "Ditt lösenord har ändrats. Om du inte har gjort denna ändring, kontakta supporten omedelbart.",
         "title": "Lösenordet har ändrats"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Dokumentet \"{title}\" delades med dig.",
+        "title": "Nytt dokument i din personalakt"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, other {# medarbetardokument ska nu raderas. Granska och bekräfta raderingen.} }",
+        "title": "Dokument som ska raderas"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} laddade upp ett intyg",
+        "other": "{name} laddade upp ett dokument",
+        "title": "Nytt dokument i en personalakt"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Ditt dokument \"{title}\" löper ut idag.",
+        "message": "Dokumentet \"{title}\" för {employee} löper ut idag.",
+        "title": "Ett dokument löper ut idag"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Ditt dokument \"{title}\" löper ut den {expiryDate}.",
+        "message": "Dokumentet \"{title}\" för {employee} löper ut den {expiryDate}.",
+        "title": "Ett dokument löper snart ut"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Din lönespecifikation för {payPeriod} har delats med dig.",
+        "title": "Ny lönespecifikation i din personalakt"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Du uppnådde de obligatoriska timmarna för {day} kl. {endTime} ({timezone}). Stämpla ut om du har arbetat klart."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Din senaste instämpling idag var kl. {startTime} ({timezone}). Stämpla in om du arbetar."
       },
       "shiftAssigned": {
         "message": "Du har blivit tilldelad ett arbetspass den {shiftDate} från {startTime} till {endTime} av {assignedByName}.",
@@ -613,6 +731,10 @@
     },
     "preferences": {
       "categories": {
+        "personnelFile": {
+          "description": "Aviseringar om dokument som delas med dig i din personalakt",
+          "title": "Personalakt"
+        },
         "travelExpenses": {
           "description": "Aviseringar om ersättningar och återbetalningar för dina reseutlägg",
           "title": "Reseutlägg"
@@ -646,6 +768,11 @@
         "errorToast": "Push-aviseringsfel"
       },
       "toggleAria": "{channel}-aviseringar för {type}",
+      "types": {
+        "break_due_reminder": "Dags för rast",
+        "forgotten_clock_out_reminder": "Glömd utstämpling",
+        "missed_clock_in_reminder": "Missad instämpling"
+      },
       "updateFailed": "Det gick inte att uppdatera inställningen"
     },
     "search": {

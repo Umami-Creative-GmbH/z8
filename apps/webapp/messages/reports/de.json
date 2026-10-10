@@ -196,6 +196,20 @@
         "team": "Team",
         "viewProject": "Projektdetails anzeigen"
       },
+      "task": {
+        "description": "Auf jede Aufgabe gebuchte Stunden in diesem Zeitraum. Der Schätzungsfortschritt zählt jede auf die Aufgabe gebuchte Stunde.",
+        "done": "Fertig",
+        "estimate": "Schätzungsfortschritt",
+        "estimateProgress": "{booked} Std. von {estimate} Std. ({percent})",
+        "hours": "Stunden",
+        "hoursValue": "{hours} Std.",
+        "noTask": "Keine Aufgabe",
+        "noTime": "In diesem Zeitraum wurde keine Zeit auf dieses Projekt gebucht",
+        "share": "Teilen",
+        "task": "Aufgabe",
+        "title": "Nach Aufgabe",
+        "unknown": "Unbekannte Aufgabe"
+      },
       "team": {
         "byEmployee": "Nach Mitarbeiter",
         "byTeam": "Nach Team",

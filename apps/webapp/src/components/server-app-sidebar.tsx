@@ -36,6 +36,48 @@ export async function ServerAppSidebar({
 	showWorksCouncilNav = false,
 	...props
 }: ServerAppSidebarProps) {
+	const {
+		organizations,
+		currentOrganization,
+		activeEmployee,
+		featureFlags,
+		settingsAccessTier,
+		showPayrollNav,
+		showFinanceNav,
+		canShowWorksCouncilNav,
+		activeOrganizationId,
+		showPersonnelFilesNav,
+		authContext,
+		canCreateOrganizations,
+	} = await resolveSidebarAccess(showWorksCouncilNav);
+	return (
+		<AppSidebar
+			{...props}
+			organizations={organizations}
+			currentOrganization={currentOrganization}
+			employeeRole={activeEmployee?.role ?? null}
+			navigationCapabilities={{
+				scheduling: featureFlags.shiftsEnabled,
+				compliance: settingsAccessTier === "orgAdmin",
+				payroll: Boolean(showPayrollNav),
+				finance: showFinanceNav,
+				worksCouncil: canShowWorksCouncilNav,
+				// My documents (#865): the employee's own shared documents, while the feature is on.
+				myDocuments:
+					featureFlags.personnelFilesEnabled &&
+					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
+				personnelFiles: showPersonnelFilesNav,
+				platformAdmin: authContext?.user.role === "admin",
+			}}
+			settingsAccessTier={settingsAccessTier ?? "member"}
+			billingEnabled={env.BILLING_ENABLED === "true"}
+			featureFlags={featureFlags}
+			canCreateOrganizations={canCreateOrganizations}
+		/>
+	);
+}
+
+async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 	const [organizations, authContext, settingsAccessTier] = await Promise.all([
 		getUserOrganizations(),
 		getAuthContext(),
@@ -83,33 +125,21 @@ export async function ServerAppSidebar({
 	if (featureFlags.personnelFilesEnabled) {
 		const personnelFileAccess = await loadCurrentPersonnelFileAccess();
 		showPersonnelFilesNav =
-			personnelFileAccess.status === "resolved" &&
-			managesAnyDocuments(personnelFileAccess.access);
+			personnelFileAccess.status === "resolved" && managesAnyDocuments(personnelFileAccess.access);
 	}
 
-	return (
-		<AppSidebar
-			{...props}
-			organizations={organizations}
-			currentOrganization={currentOrganization}
-			employeeRole={activeEmployee?.role ?? null}
-			navigationCapabilities={{
-				scheduling: featureFlags.shiftsEnabled,
-				compliance: settingsAccessTier === "orgAdmin",
-				payroll: Boolean(showPayrollNav),
-				finance: showFinanceNav,
-				worksCouncil: canShowWorksCouncilNav,
-				// My documents (#865): the employee's own shared documents, while the feature is on.
-				myDocuments:
-					featureFlags.personnelFilesEnabled &&
-					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
-				personnelFiles: showPersonnelFilesNav,
-				platformAdmin: authContext?.user.role === "admin",
-			}}
-			settingsAccessTier={settingsAccessTier ?? "member"}
-			billingEnabled={env.BILLING_ENABLED === "true"}
-			featureFlags={featureFlags}
-			canCreateOrganizations={canCreateOrganizations}
-		/>
-	);
+	return {
+		organizations,
+		currentOrganization,
+		activeEmployee,
+		featureFlags,
+		settingsAccessTier,
+		showPayrollNav,
+		showFinanceNav,
+		canShowWorksCouncilNav,
+		activeOrganizationId,
+		showPersonnelFilesNav,
+		authContext,
+		canCreateOrganizations,
+	};
 }

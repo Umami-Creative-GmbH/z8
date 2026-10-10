@@ -196,6 +196,20 @@
         "team": "Zespół",
         "viewProject": "Wyświetl szczegóły projektu"
       },
+      "task": {
+        "description": "Godziny zarejestrowane dla każdego zadania w tym okresie. Postęp szacunkowy uwzględnia każdą godzinę zarejestrowaną dla zadania.",
+        "done": "Gotowe",
+        "estimate": "Postęp szacunkowy",
+        "estimateProgress": "{booked}h z {estimate}h ({percent})",
+        "hours": "Godziny",
+        "hoursValue": "{hours}h",
+        "noTask": "Brak zadania",
+        "noTime": "W tym okresie nie zarejestrowano czasu dla tego projektu",
+        "share": "Udostępnij",
+        "task": "Zadanie",
+        "title": "Według zadań",
+        "unknown": "Nieznane zadanie"
+      },
       "team": {
         "byEmployee": "Według pracownika",
         "byTeam": "Według zespołu",

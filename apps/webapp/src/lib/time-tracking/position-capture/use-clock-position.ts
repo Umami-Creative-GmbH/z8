@@ -83,14 +83,14 @@ export function useClockPosition(enabled: boolean) {
 		if (cached !== undefined || !online) return cached ?? null;
 		// Not loaded yet: wait briefly, never long enough to hold the clock action up.
 		const timeout = after(STATUS_WAIT_MS, null);
-		try {
+		return await (async () => {
 			return await Promise.race([
 				queryClient.fetchQuery({ queryKey, queryFn: readClockPositionStatus }).catch(() => null),
 				timeout.elapsed,
 			]);
-		} finally {
+		})().finally(() => {
 			timeout.cancel();
-		}
+		});
 	}
 
 	async function captureWithoutBudget(online: boolean): Promise<ClockEventPosition> {
@@ -113,14 +113,14 @@ export function useClockPosition(enabled: boolean) {
 	async function capture(online: boolean): Promise<ClockEventPosition> {
 		if (!enabled) return NO_POSITION;
 		const budget = after(CLOCK_EVENT_POSITION_BUDGET_MS, NO_POSITION);
-		try {
+		return await (async () => {
 			return await Promise.race([
 				captureWithoutBudget(online).catch(() => NO_POSITION),
 				budget.elapsed,
 			]);
-		} finally {
+		})().finally(() => {
 			budget.cancel();
-		}
+		});
 	}
 
 	/** Shows the consent question after a submitted clock event; never awaited by the event. */

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { BillableTimeSettingsLoading } from "@/components/billable-time/billable-time-settings-loading";
 import { db } from "@/db";
 import { isBillableCurrencyLocked } from "@/lib/billable-time/currency-lock";
 import { requireBillableTimeSettingsAccess } from "@/lib/billable-time/settings-access";
@@ -17,23 +17,9 @@ async function BillableTimeSettingsPageContent() {
 	);
 }
 
-function BillableTimeSettingsPageLoading() {
-	return (
-		<div className="p-6">
-			<div className="mx-auto max-w-3xl space-y-6">
-				<div className="space-y-2">
-					<Skeleton className="h-8 w-56" />
-					<Skeleton className="h-5 w-full max-w-xl" />
-				</div>
-				<Skeleton className="h-48 w-full" />
-			</div>
-		</div>
-	);
-}
-
 export default function BillableTimeSettingsPage() {
 	return (
-		<Suspense fallback={<BillableTimeSettingsPageLoading />}>
+		<Suspense fallback={<BillableTimeSettingsLoading />}>
 			<BillableTimeSettingsPageContent />
 		</Suspense>
 	);

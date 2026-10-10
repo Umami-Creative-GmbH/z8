@@ -105,6 +105,11 @@
       "projectNotAllowed": "Bu projeye atama yapılamaz",
       "restPeriodBlocked": "Dinlenme süresi tamamlanmadı",
       "restPeriodBlockedDesc": "Giriş yapmadan önce gerekli dinlenme süresini tamamlamalısınız. Gerekirse bir istisna talebinde bulunun.",
+      "taskDone": "Bu görev tamamlandı, bu nedenle göreve süre kaydedilemez",
+      "taskNotAllowed": "Bu göreve süre kaydedilemiyor",
+      "taskNotFound": "Bu görev artık mevcut değil",
+      "taskOtherProject": "Bu görev başka bir projeye ait",
+      "taskProjectNotBookable": "Bu görevin projesine artık süre kaydedilemez",
       "workCategoryNotAllowed": "Bu çalışma kategorisine atama yapılamaz"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Yeniden dene",
         "targetChanged": "Çalışan değiştiği için proje ve kategori temizlendi.",
         "targetTimezone": "Saatler, {employee} saat dilimindedir: {timezone}",
+        "taskCleared": "Seçilen bir görev artık mevcut değil ve temizlendi.",
         "thisEmployee": "bu çalışan",
         "utcFallback": "Ne {employee} ne de kuruluş için bir saat dilimi ayarlanmamış, bu nedenle UTC kullanılıyor."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Zaman girişi eylemleri",
       "title": "Zaman Kayıtları",
       "viewCalendar": "Takvimi Görüntüle"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (tamamlandı)",
+      "empty": "Görev bulunamadı",
+      "label": "Görev",
+      "none": "Görev yok",
+      "search": "Görevleri ara…"
     },
     "timeline": {
       "dayPicker": "Zaman çizelgesi gün seçici",

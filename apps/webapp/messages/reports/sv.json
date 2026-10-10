@@ -196,6 +196,20 @@
         "team": "Team",
         "viewProject": "Visa projektdetaljer"
       },
+      "task": {
+        "description": "Timmar bokade på varje uppgift under denna period. Förlopp mot uppskattning räknar varje timme som bokats på uppgiften.",
+        "done": "Klar",
+        "estimate": "Förlopp mot uppskattning",
+        "estimateProgress": "{booked}h av {estimate}h ({percent})",
+        "hours": "Timmar",
+        "hoursValue": "{hours}h",
+        "noTask": "Ingen uppgift",
+        "noTime": "Ingen tid bokades på detta projekt under denna period",
+        "share": "Dela",
+        "task": "Uppgift",
+        "title": "Per uppgift",
+        "unknown": "Okänd uppgift"
+      },
       "team": {
         "byEmployee": "Per anställd",
         "byTeam": "Per team",

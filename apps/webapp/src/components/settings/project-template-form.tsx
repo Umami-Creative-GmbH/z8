@@ -60,6 +60,7 @@ import {
  */
 
 interface TaskFormValues {
+	id: string;
 	name: string;
 	description: string;
 	estimateHours: string;
@@ -104,6 +105,7 @@ function formValuesOf(template: ProjectTemplate): TemplateFormValues {
 		deadlineOffsetDays:
 			template.deadlineOffsetDays === null ? "" : String(template.deadlineOffsetDays),
 		tasks: template.tasks.map((task) => ({
+			id: task.id,
 			name: task.name,
 			description: task.description ?? "",
 			estimateHours: hoursFormText(task.estimateHours),
@@ -147,7 +149,7 @@ async function selectionOptions<T extends SelectionOption>(
 	return result.data;
 }
 
-export function ProjectTemplateForm({
+function useProjectTemplateForm({
 	organizationId,
 	template,
 	onCancel,
@@ -249,6 +251,49 @@ export function ProjectTemplateForm({
 
 	const hasRemoved = removedManagers.length + removedTeams.length + removedEmployees.length > 0;
 
+	return {
+		template,
+		t,
+		form,
+		iconLabels,
+		taskRules,
+		items,
+		removedManagers,
+		employees,
+		removedTeams,
+		teams,
+		removedEmployees,
+		hasRemoved,
+		onCancel,
+		isEditing,
+	};
+}
+
+export function ProjectTemplateForm({
+	organizationId,
+	template,
+	onCancel,
+	onSaved,
+}: {
+	organizationId: string;
+	template: ProjectTemplate | null;
+	onCancel: () => void;
+	onSaved: () => void;
+}) {
+	const {
+		t,
+		form,
+		iconLabels,
+		taskRules,
+		items,
+		removedManagers,
+		employees,
+		removedTeams,
+		teams,
+		removedEmployees,
+		hasRemoved,
+		isEditing,
+	} = useProjectTemplateForm({ organizationId, template, onCancel, onSaved });
 	return (
 		// TanStack Form owns the submission lifecycle; see .react-doctor/false-positives.md.
 		// react-doctor-disable-next-line react-doctor/no-prevent-default
@@ -447,132 +492,7 @@ export function ProjectTemplateForm({
 					)}
 				</p>
 
-				<form.Field name="tasks" mode="array">
-					{(tasksField) => (
-						<section className="space-y-2">
-							<h4 className="text-sm font-medium">
-								{t("settings.projects.templates.tasks.title", "Tasks")}
-							</h4>
-							{tasksField.state.value.length === 0 ? (
-								<p className="text-sm text-muted-foreground">
-									{t(
-										"settings.projects.templates.tasks.empty",
-										"No tasks. Projects created from this template start with these tasks.",
-									)}
-								</p>
-							) : (
-								<ol className="space-y-3">
-									{tasksField.state.value.map((_, index) => {
-										const position = index + 1;
-										return (
-											// biome-ignore lint/suspicious/noArrayIndexKey: TanStack Form array rows are addressed by index.
-											<li key={index} className="grid gap-2 rounded-md border p-3">
-												<div className="flex items-start gap-2">
-													<form.Field
-														name={`tasks[${index}].name`}
-														validators={{ onSubmit: taskRules.name }}
-													>
-														{(field) => (
-															<div className="grid flex-1 gap-1">
-																<Input
-																	{...PROJECT_TASK_NAME_INPUT}
-																	aria-label={t(
-																		"settings.projects.templates.tasks.name",
-																		"Task {position} name",
-																		{ position },
-																	)}
-																	aria-invalid={fieldHasError(field)}
-																	placeholder={t(
-																		"settings.projects.templates.tasks.namePlaceholder",
-																		"Task name",
-																	)}
-																	value={field.state.value}
-																	onChange={(event) => field.handleChange(event.target.value)}
-																	onBlur={field.handleBlur}
-																/>
-																<TFormMessage field={field} />
-															</div>
-														)}
-													</form.Field>
-													<form.Field
-														name={`tasks[${index}].estimateHours`}
-														validators={{ onSubmit: taskRules.estimate }}
-													>
-														{(field) => (
-															<div className="grid w-28 gap-1">
-																<Input
-																	{...PROJECT_TASK_ESTIMATE_INPUT}
-																	aria-label={t(
-																		"settings.projects.templates.tasks.estimate",
-																		"Task {position} estimate (hours)",
-																		{ position },
-																	)}
-																	aria-invalid={fieldHasError(field)}
-																	placeholder={t(
-																		"settings.projects.templates.tasks.estimatePlaceholder",
-																		"Hours",
-																	)}
-																	value={field.state.value}
-																	onChange={(event) => field.handleChange(event.target.value)}
-																	onBlur={field.handleBlur}
-																/>
-																<TFormMessage field={field} />
-															</div>
-														)}
-													</form.Field>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon"
-														className="size-9 shrink-0"
-														aria-label={t(
-															"settings.projects.templates.tasks.remove",
-															"Remove task {position}",
-															{ position },
-														)}
-														onClick={() => tasksField.removeValue(index)}
-													>
-														<IconTrash className="size-4" aria-hidden="true" />
-													</Button>
-												</div>
-												<form.Field name={`tasks[${index}].description`}>
-													{(field) => (
-														<Textarea
-															rows={1}
-															aria-label={t(
-																"settings.projects.templates.tasks.description",
-																"Task {position} description",
-																{ position },
-															)}
-															placeholder={t(
-																"settings.projects.templates.tasks.descriptionPlaceholder",
-																"Description (optional)",
-															)}
-															value={field.state.value}
-															onChange={(event) => field.handleChange(event.target.value)}
-															onBlur={field.handleBlur}
-														/>
-													)}
-												</form.Field>
-											</li>
-										);
-									})}
-								</ol>
-							)}
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() =>
-									tasksField.pushValue({ name: "", description: "", estimateHours: "" })
-								}
-							>
-								<IconPlus className="size-4" aria-hidden="true" />
-								{t("settings.projects.templates.tasks.add", "Add task")}
-							</Button>
-						</section>
-					)}
-				</form.Field>
+				<TemplateTaskFields form={form} t={t} taskRules={taskRules} />
 
 				<form.Field name="managerEmployeeIds" mode="array">
 					{(field) => (
@@ -647,5 +567,144 @@ export function ProjectTemplateForm({
 				</form.Subscribe>
 			</ActionPanelFooter>
 		</form>
+	);
+}
+
+function TemplateTaskFields({
+	form,
+	t,
+	taskRules,
+}: Pick<ReturnType<typeof useProjectTemplateForm>, "form" | "t" | "taskRules">) {
+	return (
+		<form.Field name="tasks" mode="array">
+			{(tasksField) => (
+				<section className="space-y-2">
+					<h4 className="text-sm font-medium">
+						{t("settings.projects.templates.tasks.title", "Tasks")}
+					</h4>
+					{tasksField.state.value.length === 0 ? (
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.projects.templates.tasks.empty",
+								"No tasks. Projects created from this template start with these tasks.",
+							)}
+						</p>
+					) : (
+						<ol className="space-y-3">
+							{tasksField.state.value.map((task, index) => {
+								const position = index + 1;
+								return (
+									<li key={task.id} className="grid gap-2 rounded-md border p-3">
+										<div className="flex items-start gap-2">
+											<form.Field
+												name={`tasks[${index}].name`}
+												validators={{ onSubmit: taskRules.name }}
+											>
+												{(field) => (
+													<div className="grid flex-1 gap-1">
+														<Input
+															{...PROJECT_TASK_NAME_INPUT}
+															aria-label={t(
+																"settings.projects.templates.tasks.name",
+																"Task {position} name",
+																{ position },
+															)}
+															aria-invalid={fieldHasError(field)}
+															placeholder={t(
+																"settings.projects.templates.tasks.namePlaceholder",
+																"Task name",
+															)}
+															value={field.state.value}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+														/>
+														<TFormMessage field={field} />
+													</div>
+												)}
+											</form.Field>
+											<form.Field
+												name={`tasks[${index}].estimateHours`}
+												validators={{ onSubmit: taskRules.estimate }}
+											>
+												{(field) => (
+													<div className="grid w-28 gap-1">
+														<Input
+															{...PROJECT_TASK_ESTIMATE_INPUT}
+															aria-label={t(
+																"settings.projects.templates.tasks.estimate",
+																"Task {position} estimate (hours)",
+																{ position },
+															)}
+															aria-invalid={fieldHasError(field)}
+															placeholder={t(
+																"settings.projects.templates.tasks.estimatePlaceholder",
+																"Hours",
+															)}
+															value={field.state.value}
+															onChange={(event) => field.handleChange(event.target.value)}
+															onBlur={field.handleBlur}
+														/>
+														<TFormMessage field={field} />
+													</div>
+												)}
+											</form.Field>
+											<Button
+												type="button"
+												variant="ghost"
+												size="icon"
+												className="size-9 shrink-0"
+												aria-label={t(
+													"settings.projects.templates.tasks.remove",
+													"Remove task {position}",
+													{ position },
+												)}
+												onClick={() => tasksField.removeValue(index)}
+											>
+												<IconTrash className="size-4" aria-hidden="true" />
+											</Button>
+										</div>
+										<form.Field name={`tasks[${index}].description`}>
+											{(field) => (
+												<Textarea
+													rows={1}
+													aria-label={t(
+														"settings.projects.templates.tasks.description",
+														"Task {position} description",
+														{ position },
+													)}
+													placeholder={t(
+														"settings.projects.templates.tasks.descriptionPlaceholder",
+														"Description (optional)",
+													)}
+													value={field.state.value}
+													onChange={(event) => field.handleChange(event.target.value)}
+													onBlur={field.handleBlur}
+												/>
+											)}
+										</form.Field>
+									</li>
+								);
+							})}
+						</ol>
+					)}
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							tasksField.pushValue({
+								id: crypto.randomUUID(),
+								name: "",
+								description: "",
+								estimateHours: "",
+							})
+						}
+					>
+						<IconPlus className="size-4" aria-hidden="true" />
+						{t("settings.projects.templates.tasks.add", "Add task")}
+					</Button>
+				</section>
+			)}
+		</form.Field>
 	);
 }

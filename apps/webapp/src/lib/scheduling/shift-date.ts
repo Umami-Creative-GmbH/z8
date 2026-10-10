@@ -5,7 +5,8 @@ import {
 	type PlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
-import { resolveScheduleWallTime } from "./schedule-local-input";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { resolveScheduleDateRange, resolveScheduleWallTime } from "./schedule-local-input";
 
 /**
  * `shift.date` stores the organization-local midnight of the shift's calendar date as a UTC
@@ -26,6 +27,14 @@ export function shiftStoredDate(date: string, organizationTimezone: string): Dat
 	);
 }
 
+/**
+ * A shift's calendar date as people read it in English messages, e.g. "Fri, Oct 9". Pass the
+ * organization-local date (`shiftCalendarDate`), so the server's zone never moves the day.
+ */
+export function formatShiftDate(date: PlainDate): string {
+	return formatPlainDate(date, "en-US", "weekdayMonthDay");
+}
+
 /** The `shift.date` bounds of the organization-local calendar day `date` (`YYYY-MM-DD`). */
 export function shiftDateBounds(
 	date: string,
@@ -33,4 +42,20 @@ export function shiftDateBounds(
 ): { start: Date; endExclusive: Date } {
 	const day = localDayRange(date, organizationTimezone);
 	return { start: dateFromInstant(day.start), endExclusive: dateFromInstant(day.endExclusive) };
+}
+
+/**
+ * The `shift.date` bounds of the organization-local calendar days from `startDate` up to, not
+ * including, `endDateExclusive`. Query them with `gte(start)` and `lt(endExclusive)`.
+ */
+export function shiftDateRangeBounds(
+	startDate: string | PlainDate,
+	endDateExclusive: string | PlainDate,
+	organizationTimezone: string,
+): { start: Date; endExclusive: Date } {
+	const range = resolveScheduleDateRange(
+		{ startDate: startDate.toString(), endDateExclusive: endDateExclusive.toString() },
+		organizationTimezone,
+	);
+	return { start: dateFromInstant(range.start), endExclusive: dateFromInstant(range.endExclusive) };
 }

@@ -19,6 +19,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/db", () => ({
 	db: {
+		// The organization's timezone lookup.
+		select: () => ({
+			from: () => ({ where: () => ({ limit: async () => [{ timezone: "Europe/Berlin" }] }) }),
+		}),
 		query: {
 			workPeriod: { findMany: mocks.workPeriodFindMany },
 			approvalRequest: { findMany: mocks.approvalRequestFindMany },

@@ -105,6 +105,11 @@
       "projectNotAllowed": "Kan inte tilldela till det här projektet",
       "restPeriodBlocked": "Viloperioden är inte slutförd",
       "restPeriodBlockedDesc": "Du måste slutföra den obligatoriska viloperioden innan du stämplar in. Begär ett undantag vid behov.",
+      "taskDone": "Den här uppgiften är slutförd, så ingen tid kan bokas på den",
+      "taskNotAllowed": "Det går inte att boka tid på den här uppgiften",
+      "taskNotFound": "Den här uppgiften finns inte längre",
+      "taskOtherProject": "Den här uppgiften tillhör ett annat projekt",
+      "taskProjectNotBookable": "Tid kan inte längre bokas på den här uppgiftens projekt",
       "workCategoryNotAllowed": "Kan inte tilldela till den här arbetskategorin"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Försök igen",
         "targetChanged": "Medarbetaren ändrades, så projekt och kategori rensades.",
         "targetTimezone": "Tider visas i tidszonen för {employee}: {timezone}",
+        "taskCleared": "En vald uppgift är inte längre tillgänglig och rensades.",
         "thisEmployee": "denna medarbetare",
         "utcFallback": "Varken {employee} eller organisationen har någon angiven tidszon, så UTC används."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Åtgärder för tidsregistrering",
       "title": "Tidsregistreringar",
       "viewCalendar": "Visa kalender"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (klar)",
+      "empty": "Ingen uppgift hittades",
+      "label": "Uppgift",
+      "none": "Ingen uppgift",
+      "search": "Sök uppgifter…"
     },
     "timeline": {
       "dayPicker": "Dagväljare för tidslinje",

@@ -88,7 +88,7 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 	const agree = async () => {
 		if (!notice) return;
 		setPending("agree");
-		try {
+		await (async () => {
 			const result = await agreeToPositionNoticeAction({ noticeId: notice.id });
 			if (result.success) {
 				toast.success(t("settings.positionStamps.agreed", "Thank you. Your consent is recorded."));
@@ -99,14 +99,14 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 						t("settings.positionStamps.agreeFailed", "Your consent could not be saved"),
 				);
 			}
-		} finally {
+		})().finally(() => {
 			setPending(null);
-		}
+		});
 	};
 
 	const withdraw = async () => {
 		setPending("withdraw");
-		try {
+		await (async () => {
 			const result = await withdrawPositionConsentAction();
 			if (result.success) {
 				toast.success(
@@ -123,9 +123,9 @@ export function OwnPositionStampsPanel({ data, accessLog = null }: OwnPositionSt
 						t("settings.positionStamps.withdrawFailed", "Your consent could not be withdrawn"),
 				);
 			}
-		} finally {
+		})().finally(() => {
 			setPending(null);
-		}
+		});
 	};
 
 	return (

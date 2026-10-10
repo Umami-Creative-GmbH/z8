@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} Home-Office",
       "hoursPerCycle": "Stunden pro Zyklus",
       "hoursUnit": "Stunden",
+      "latestClockIn": {
+        "dayLabel": "Späteste Einstempelzeit am {day}",
+        "description": "Optionale späteste Einstempelzeit pro Arbeitstag: An Tagen ohne Schicht können Mitarbeiter, die sich bis dahin nicht eingestempelt haben, eine Erinnerung erhalten.",
+        "label": "Späteste Einstempelzeit",
+        "simpleHint": "Eine späteste Einstempelzeit pro Tag erfordert einen detaillierten Zeitplan. Wechseln Sie zu „Detailliert“, um eine festzulegen."
+      },
       "monthly": "Monatlich",
       "preview": "Zeitplan-Vorschau",
       "scheduleCycle": "Zeitplanzyklus",

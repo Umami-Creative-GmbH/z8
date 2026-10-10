@@ -9,13 +9,14 @@ export function isConstraintViolation(
 	constraints: string | readonly string[],
 ): boolean {
 	const names: readonly string[] = typeof constraints === "string" ? [constraints] : constraints;
+	const constraintNames = new Set(names);
 	let candidate: unknown = error;
 	for (let depth = 0; depth < 5 && candidate && typeof candidate === "object"; depth += 1) {
 		const current = candidate as { code?: unknown; constraint?: unknown; cause?: unknown };
 		if (
 			current.code === code &&
 			typeof current.constraint === "string" &&
-			names.includes(current.constraint)
+			constraintNames.has(current.constraint)
 		) {
 			return true;
 		}

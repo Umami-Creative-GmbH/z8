@@ -72,7 +72,7 @@ function previousMonth(timeZone: string) {
  * A confirm that timed out is retried with the same key, so it never creates a
  * second draft.
  */
-export function HandOffForm({
+function useHandOffForm({
 	customers,
 	actions,
 	onHandedOff,
@@ -159,6 +159,23 @@ export function HandOffForm({
 		});
 	}
 
+	return { t, form, setPreview, customers, id, preview, isConfirming, retryable, confirm };
+}
+
+export function HandOffForm({
+	customers,
+	actions,
+	onHandedOff,
+}: {
+	customers: readonly HandOffCustomerOption[];
+	actions: HandOffFormActions;
+	onHandedOff: (draftId: string) => void;
+}) {
+	const { t, form, setPreview, id, preview, isConfirming, retryable, confirm } = useHandOffForm({
+		customers,
+		actions,
+		onHandedOff,
+	});
 	return (
 		<Card>
 			<CardHeader>

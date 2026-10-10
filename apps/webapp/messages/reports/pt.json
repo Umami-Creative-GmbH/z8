@@ -196,6 +196,20 @@
         "team": "Equipa",
         "viewProject": "Ver detalhes do projeto"
       },
+      "task": {
+        "description": "Horas registradas em cada tarefa neste período. O progresso da estimativa conta cada hora registrada na tarefa.",
+        "done": "Concluído",
+        "estimate": "Progresso da estimativa",
+        "estimateProgress": "{booked}h de {estimate}h ({percent})",
+        "hours": "Horas",
+        "hoursValue": "{hours}h",
+        "noTask": "Sem tarefa",
+        "noTime": "Nenhum tempo foi registrado neste projeto neste período",
+        "share": "Compartilhar",
+        "task": "Tarefa",
+        "title": "Por tarefa",
+        "unknown": "Tarefa desconhecida"
+      },
       "team": {
         "byEmployee": "Por funcionário",
         "byTeam": "Por equipa",

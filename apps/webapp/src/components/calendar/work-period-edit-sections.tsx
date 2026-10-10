@@ -13,21 +13,15 @@ import type { TFnType } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
 import { TaskSelectorView } from "@/components/time-tracking/task-selector";
-import { useAssignedProjects } from "@/lib/query/use-assigned-projects";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import {
-	type DisplayContext,
-	formatInstant,
-} from "@/lib/datetime/temporal-format";
-import {
-	formatDuration,
-	type WorkPeriodDialogMetadata,
-} from "./work-period-dialog-utils";
+import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
+import { useAssignedProjects } from "@/lib/query/use-assigned-projects";
+import { formatDuration, type WorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 
 export function ApprovalStatusBanner({
 	status,
@@ -89,26 +83,18 @@ export function WorkPeriodHeader({
 					className={`size-3 rounded-full ${status === "pending" ? "opacity-60" : ""}`}
 					style={{ backgroundColor: event.color }}
 				/>
-				<span className="font-semibold">
-					{t("calendar.edit.title", "Work Period")}
-				</span>
+				<span className="font-semibold">{t("calendar.edit.title", "Work Period")}</span>
 				{status === "pending" ? (
 					<Badge variant="outline" className="border-amber-500 text-amber-600">
 						{t("calendar.status.pending", "Pending")}
 					</Badge>
 				) : null}
 				{status === "rejected" ? (
-					<Badge variant="destructive">
-						{t("calendar.status.rejected", "Rejected")}
-					</Badge>
+					<Badge variant="destructive">{t("calendar.status.rejected", "Rejected")}</Badge>
 				) : null}
 			</div>
 			<div className="text-sm text-muted-foreground">
-				{formatInstant(
-					instantFromDate(event.date),
-					displayContext,
-					"dateMedium",
-				)}
+				{formatInstant(instantFromDate(event.date), displayContext, "dateMedium")}
 			</div>
 		</>
 	);
@@ -121,8 +107,7 @@ export function WorkPeriodDurationSection({
 	metadata: WorkPeriodDialogMetadata;
 	t: TFnType;
 }) {
-	const hasSurcharge =
-		!!metadata.surchargeMinutes && metadata.surchargeMinutes > 0;
+	const hasSurcharge = !!metadata.surchargeMinutes && metadata.surchargeMinutes > 0;
 
 	return (
 		<div>
@@ -135,29 +120,20 @@ export function WorkPeriodDurationSection({
 						<span className="text-muted-foreground">
 							{t("calendar.details.baseWorked", "Base worked")}
 						</span>
-						<span className="tabular-nums">
-							{formatDuration(metadata.durationMinutes)}
-						</span>
+						<span className="tabular-nums">{formatDuration(metadata.durationMinutes)}</span>
 					</div>
 					<div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
 						<span>{t("calendar.details.surcharge", "Surcharge")}</span>
-						<span className="tabular-nums">
-							+{formatDuration(metadata.surchargeMinutes!)}
-						</span>
+						<span className="tabular-nums">+{formatDuration(metadata.surchargeMinutes!)}</span>
 					</div>
 					<div className="flex justify-between border-t pt-1 font-medium">
 						<span>{t("calendar.details.credited", "Credited")}</span>
-						<span className="tabular-nums">
-							{formatDuration(metadata.totalCreditedMinutes!)}
-						</span>
+						<span className="tabular-nums">{formatDuration(metadata.totalCreditedMinutes!)}</span>
 					</div>
 					{metadata.surchargeBreakdown?.length ? (
 						<div className="mt-2 space-y-1 border-t pt-2">
 							<span className="text-xs text-muted-foreground">
-								{t(
-									"calendar.details.surchargeBreakdown",
-									"Surcharge Breakdown",
-								)}
+								{t("calendar.details.surchargeBreakdown", "Surcharge Breakdown")}
 							</span>
 							{metadata.surchargeBreakdown.map((rule) => (
 								<div
@@ -166,9 +142,7 @@ export function WorkPeriodDurationSection({
 								>
 									<span>
 										{rule.ruleName}{" "}
-										<span className="text-muted-foreground">
-											({rule.percentage}%)
-										</span>
+										<span className="text-muted-foreground">({rule.percentage}%)</span>
 									</span>
 									<span className="tabular-nums text-emerald-600 dark:text-emerald-400">
 										+{formatDuration(rule.surchargeMinutes)}
@@ -179,9 +153,7 @@ export function WorkPeriodDurationSection({
 					) : null}
 				</div>
 			) : (
-				<p className="font-medium">
-					{formatDuration(metadata.durationMinutes)}
-				</p>
+				<p className="font-medium">{formatDuration(metadata.durationMinutes)}</p>
 			)}
 		</div>
 	);
@@ -231,12 +203,7 @@ export function ProjectEditSection({
 					{t("calendar.details.project", "Project")}
 				</span>
 				{canEdit && !isEditing ? (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={onStartEdit}
-						className="h-7 px-2"
-					>
+					<Button variant="ghost" size="sm" onClick={onStartEdit} className="h-7 px-2">
 						<IconPencil className="mr-1 size-4" />
 						{t("common.edit", "Edit")}
 					</Button>
@@ -255,12 +222,7 @@ export function ProjectEditSection({
 					/>
 					{billableEditor}
 					<div className="flex gap-2">
-						<Button
-							size="sm"
-							onClick={onSave}
-							disabled={isSaving}
-							className="flex-1"
-						>
+						<Button size="sm" onClick={onSave} disabled={isSaving} className="flex-1">
 							{isSaving ? (
 								<IconLoader2 className="mr-1 size-4 animate-spin" />
 							) : (
@@ -268,51 +230,14 @@ export function ProjectEditSection({
 							)}
 							{t("common.save", "Save")}
 						</Button>
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={onCancel}
-							disabled={isSaving}
-						>
+						<Button size="sm" variant="outline" onClick={onCancel} disabled={isSaving}>
 							<IconX className="mr-1 size-4" />
 							{t("common.cancel", "Cancel")}
 						</Button>
 					</div>
 				</div>
 			) : (
-				<div className="flex items-center gap-2">
-					{metadata.projectColor ? (
-						<div
-							className="size-3 rounded-full"
-							style={{ backgroundColor: metadata.projectColor }}
-						/>
-					) : (
-						<IconBriefcase className="size-4 text-muted-foreground" />
-					)}
-					{metadata.projectName ? (
-						<p className="font-medium">
-							{metadata.projectName}
-							{metadata.taskName ? (
-								<>
-									<span className="text-muted-foreground" aria-hidden="true">
-										{" · "}
-									</span>
-									<span>
-										{metadata.taskState === "done"
-											? t("calendar.details.taskDone", "{name} (done)", {
-													name: metadata.taskName,
-												})
-											: metadata.taskName}
-									</span>
-								</>
-							) : null}
-						</p>
-					) : (
-						<p className="text-sm italic text-muted-foreground">
-							{t("calendar.edit.noProject", "No project assigned")}
-						</p>
-					)}
-				</div>
+				<BookedProjectSummary metadata={metadata} t={t} />
 			)}
 		</div>
 	);
@@ -399,12 +324,7 @@ export function NotesEditSection({
 					{t("calendar.details.notes", "Notes")}
 				</span>
 				{!isEditing ? (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={onStartEdit}
-						className="h-7 px-2"
-					>
+					<Button variant="ghost" size="sm" onClick={onStartEdit} className="h-7 px-2">
 						<IconPencil className="mr-1 size-4" />
 						{t("common.edit", "Edit")}
 					</Button>
@@ -414,10 +334,7 @@ export function NotesEditSection({
 			{isEditing ? (
 				<div className="space-y-2">
 					<Textarea
-						placeholder={t(
-							"timeTracking.notesPlaceholder",
-							"What did you work on?",
-						)}
+						placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
 						value={notes}
 						onChange={(event) => onNotesChange(event.target.value)}
 						rows={3}
@@ -425,12 +342,7 @@ export function NotesEditSection({
 						autoFocus
 					/>
 					<div className="flex gap-2">
-						<Button
-							size="sm"
-							onClick={onSave}
-							disabled={isSaving}
-							className="flex-1"
-						>
+						<Button size="sm" onClick={onSave} disabled={isSaving} className="flex-1">
 							{isSaving ? (
 								<IconLoader2 className="mr-1 size-4 animate-spin" />
 							) : (
@@ -438,12 +350,7 @@ export function NotesEditSection({
 							)}
 							{t("common.save", "Save")}
 						</Button>
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={onCancel}
-							disabled={isSaving}
-						>
+						<Button size="sm" variant="outline" onClick={onCancel} disabled={isSaving}>
 							<IconX className="mr-1 size-4" />
 							{t("common.cancel", "Cancel")}
 						</Button>
@@ -473,6 +380,44 @@ export function WorkPeriodSummaryBlock({
 				{t("calendar.details.employee", "Employee")}
 			</span>
 			<p className="font-medium">{metadata.employeeName}</p>
+		</div>
+	);
+}
+
+function BookedProjectSummary({
+	metadata,
+	t,
+}: Pick<Parameters<typeof ProjectEditSection>[0], "metadata" | "t">) {
+	return (
+		<div className="flex items-center gap-2">
+			{metadata.projectColor ? (
+				<div className="size-3 rounded-full" style={{ backgroundColor: metadata.projectColor }} />
+			) : (
+				<IconBriefcase className="size-4 text-muted-foreground" />
+			)}
+			{metadata.projectName ? (
+				<p className="font-medium">
+					{metadata.projectName}
+					{metadata.taskName ? (
+						<>
+							<span className="text-muted-foreground" aria-hidden="true">
+								{" · "}
+							</span>
+							<span>
+								{metadata.taskState === "done"
+									? t("calendar.details.taskDone", "{name} (done)", {
+											name: metadata.taskName,
+										})
+									: metadata.taskName}
+							</span>
+						</>
+					) : null}
+				</p>
+			) : (
+				<p className="text-sm italic text-muted-foreground">
+					{t("calendar.edit.noProject", "No project assigned")}
+				</p>
+			)}
 		</div>
 	);
 }

@@ -83,7 +83,9 @@ function AccessEntry({
 					) : (
 						<ul className="flex flex-wrap gap-x-3">
 							{entry.employees.identities.map((identity, index) => (
-								// biome-ignore lint/suspicious/noArrayIndexKey: labels may repeat as "Identity hidden"
+								// This immutable server-rendered snapshot has no row state or client filtering; identities are deliberately redacted.
+								// react-doctor-disable-next-line react-doctor/no-array-index-as-key
+								// biome-ignore lint/suspicious/noArrayIndexKey: read-only redacted server snapshot
 								<li key={index}>{identityLabel(identity, "employee", t)}</li>
 							))}
 						</ul>
@@ -212,7 +214,7 @@ export function PositionCaptureReviewSection({
 							<ul className="divide-y rounded-md border text-sm">
 								{review.employeeAssignments.rows.map((row, index) => (
 									<li
-										// biome-ignore lint/suspicious/noArrayIndexKey: labels may repeat as "Identity hidden"
+										// biome-ignore lint/suspicious/noArrayIndexKey: read-only redacted server snapshot
 										key={index}
 										className="flex justify-between gap-4 px-3 py-2"
 									>

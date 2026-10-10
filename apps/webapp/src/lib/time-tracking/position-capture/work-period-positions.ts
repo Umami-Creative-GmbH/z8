@@ -176,8 +176,10 @@ async function correctionChains(
 	const chainOf = new Map<string, string[]>();
 	for (const start of entryIds) {
 		const chain: string[] = [];
+		const seen = new Set<string>();
 		let current: string | null = start;
-		while (current && entries.has(current) && !chain.includes(current)) {
+		while (current && entries.has(current) && !seen.has(current)) {
+			seen.add(current);
 			chain.push(current);
 			current = entries.get(current)?.replacesEntryId ?? null;
 		}

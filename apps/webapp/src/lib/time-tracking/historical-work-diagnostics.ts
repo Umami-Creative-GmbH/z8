@@ -678,6 +678,8 @@ export function assessHistoricalWork(
 			// conflict for review, never a value to fill in.
 			if (period.projectId !== null && record.projectIds.includes(period.projectId)) {
 				const periodBillable = period.isBillable ?? false;
+				// One lookup against this record's small project list, not repeated lookups against a shared list.
+				// react-doctor-disable-next-line react-doctor/js-set-map-lookups
 				const canonicalBillable = (record.billableProjectIds ?? []).includes(period.projectId);
 				if (periodBillable !== canonicalBillable) {
 					push({

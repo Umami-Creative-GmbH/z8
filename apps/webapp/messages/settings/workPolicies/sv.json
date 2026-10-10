@@ -286,6 +286,12 @@
       "homeOfficeDaysPreview": "{count} hemarbete",
       "hoursPerCycle": "Timmar per cykel",
       "hoursUnit": "timmar",
+      "latestClockIn": {
+        "dayLabel": "Senaste instämpling på {day}",
+        "description": "Valfri senaste instämpling per arbetsdag: på dagar utan arbetspass kan anställda som inte har stämplat in tills dess få en påminnelse.",
+        "label": "Senaste instämpling",
+        "simpleHint": "Senaste instämpling per dag kräver ett detaljerat schema. Växla till Detaljerat för att ställa in en."
+      },
       "monthly": "Månadsvis",
       "preview": "Förhandsgranskning av schema",
       "scheduleCycle": "Schemacykel",

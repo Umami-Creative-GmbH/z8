@@ -18,7 +18,8 @@
         "absences": "Fravær",
         "employees": "Ansatte",
         "projects": "Prosjekter",
-        "timeEntries": "Timeregistreringer"
+        "timeEntries": "Timeregistreringer",
+        "workPeriods": "Arbeidsperioder (med prosjekt og oppgave)"
       },
       "dateRange": {
         "customOffset": "Egendefinert forskyvning",

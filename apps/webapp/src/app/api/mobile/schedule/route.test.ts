@@ -12,7 +12,7 @@ const mockState = vi.hoisted(() => ({
 	requireMobileSessionContext: vi.fn(),
 	requireMobileEmployee: vi.fn(),
 	getMobileEffectiveSchedule: vi.fn(),
-	findManyShifts: vi.fn(),
+	loadMobileScheduleShifts: vi.fn(),
 }));
 
 vi.mock("@/app/api/mobile/shared", () => ({
@@ -25,14 +25,8 @@ vi.mock("@/lib/mobile/effective-schedule", () => ({
 	getMobileEffectiveSchedule: mockState.getMobileEffectiveSchedule,
 }));
 
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			shift: {
-				findMany: mockState.findManyShifts,
-			},
-		},
-	},
+vi.mock("@/lib/mobile/schedule-shifts", () => ({
+	loadMobileScheduleShifts: mockState.loadMobileScheduleShifts,
 }));
 
 const { GET } = await import("./route");
@@ -63,10 +57,10 @@ describe("GET /api/mobile/schedule", () => {
 			homeOfficeDaysPerCycle: null,
 			days: [],
 		});
-		mockState.findManyShifts.mockResolvedValue([
+		mockState.loadMobileScheduleShifts.mockResolvedValue([
 			{
 				id: "shift-1",
-				date: new Date("2026-04-12T23:00:00.000Z"),
+				date: "2026-04-12",
 				startTime: "09:00",
 				endTime: "17:00",
 				status: "published",
@@ -85,7 +79,10 @@ describe("GET /api/mobile/schedule", () => {
 
 		expect(response.status).toBe(200);
 		expect(mockState.requireMobileEmployee).toHaveBeenCalledWith("user-1", "org-1");
-		expect(mockState.findManyShifts).toHaveBeenCalledOnce();
+		expect(mockState.loadMobileScheduleShifts).toHaveBeenCalledOnce();
+		const [input] = mockState.loadMobileScheduleShifts.mock.calls[0] ?? [];
+		expect(input).toMatchObject({ organizationId: "org-1", employeeId: "emp-1" });
+		expect(input.now.toString()).toBe("2026-04-11T12:00:00Z");
 		expect(mockState.getMobileEffectiveSchedule).toHaveBeenCalledWith("emp-1", "org-1");
 		expect(await response.json()).toEqual({
 			activeOrganizationId: "org-1",

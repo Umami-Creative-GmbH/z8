@@ -2,9 +2,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const packagePath = fileURLToPath(
-	new URL("../../../../package.json", import.meta.url),
-);
+const packagePath = fileURLToPath(new URL("../../../../package.json", import.meta.url));
 
 const workflowPath = fileURLToPath(
 	new URL("../../../../../../.github/workflows/tests.yml", import.meta.url),
@@ -40,9 +38,9 @@ describe("approval workflow repository integration CI contract", () => {
       - ".github/scripts/**"
       - ".github/workflows/tests.yml"
   workflow_dispatch:`);
-		expect(workflow).toContain(`services:
-      postgres:
-        image: postgres:16`);
+		expect(workflow).toMatch(
+			/services:\n {6}postgres:\n(?: {8}#[^\n]*\n)* {8}image: public\.ecr\.aws\/docker\/library\/postgres:16/,
+		);
 		expect(workflow).toContain(
 			`- name: Run PostgreSQL integration suites
         id: test-run

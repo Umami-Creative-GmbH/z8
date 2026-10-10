@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export function personnelFileZipUrl(employeeId: string, options: { sharedOnly: boolean }): string {
+function personnelFileZipUrl(employeeId: string, options: { sharedOnly: boolean }): string {
 	return `/api/personnel-files/employees/${employeeId}/zip?sharedOnly=${options.sharedOnly ? "1" : "0"}`;
 }
 

@@ -196,6 +196,20 @@
         "team": "Team",
         "viewProject": "Vis prosjektdetaljer"
       },
+      "task": {
+        "description": "Timer ført på hver oppgave i denne perioden. Fremdrift mot estimat teller hver time ført på oppgaven.",
+        "done": "Ferdig",
+        "estimate": "Fremdrift mot estimat",
+        "estimateProgress": "{booked}t av {estimate}t ({percent})",
+        "hours": "Timer",
+        "hoursValue": "{hours}t",
+        "noTask": "Ingen oppgave",
+        "noTime": "Ingen tid ble ført på dette prosjektet i denne perioden",
+        "share": "Del",
+        "task": "Oppgave",
+        "title": "Etter oppgave",
+        "unknown": "Ukjent oppgave"
+      },
       "team": {
         "byEmployee": "Per ansatt",
         "byTeam": "Per team",

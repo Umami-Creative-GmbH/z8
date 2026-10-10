@@ -105,6 +105,11 @@
       "projectNotAllowed": "No se puede asignar a este proyecto",
       "restPeriodBlocked": "Periodo de descanso no completado",
       "restPeriodBlockedDesc": "Debe completar el periodo de descanso requerido antes de marcar la entrada. Solicite una excepción si es necesario.",
+      "taskDone": "Esta tarea está completada, por lo que no se puede registrar tiempo en ella",
+      "taskNotAllowed": "No se puede registrar tiempo en esta tarea",
+      "taskNotFound": "Esta tarea ya no existe",
+      "taskOtherProject": "Esta tarea pertenece a otro proyecto",
+      "taskProjectNotBookable": "Ya no se puede registrar tiempo en el proyecto de esta tarea",
       "workCategoryNotAllowed": "No se puede asignar a esta categoría de trabajo"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Reintentar",
         "targetChanged": "El empleado cambió, por lo que se eliminaron el proyecto y la categoría.",
         "targetTimezone": "Las horas corresponden a la zona horaria de {employee}: {timezone}",
+        "taskCleared": "Una tarea seleccionada ya no está disponible y se ha quitado.",
         "thisEmployee": "este empleado",
         "utcFallback": "Ni {employee} ni la organización tienen una zona horaria configurada, por lo que se utiliza UTC."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Acciones de entrada de tiempo",
       "title": "Entradas de tiempo",
       "viewCalendar": "Ver calendario"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (completada)",
+      "empty": "No se encontró ninguna tarea",
+      "label": "Tarea",
+      "none": "Sin tarea",
+      "search": "Buscar tareas…"
     },
     "timeline": {
       "dayPicker": "Selector de día en la línea de tiempo",

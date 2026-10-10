@@ -105,6 +105,11 @@
       "projectNotAllowed": "Kan ikke tilordne til dette prosjektet",
       "restPeriodBlocked": "Hvileperioden er ikke fullført",
       "restPeriodBlockedDesc": "Du må fullføre den påkrevde hvileperioden før du stempler inn. Be om et unntak ved behov.",
+      "taskDone": "Denne oppgaven er fullført, så det kan ikke føres tid på den",
+      "taskNotAllowed": "Kan ikke føre tid på denne oppgaven",
+      "taskNotFound": "Denne oppgaven finnes ikke lenger",
+      "taskOtherProject": "Denne oppgaven tilhører et annet prosjekt",
+      "taskProjectNotBookable": "Tid kan ikke lenger føres på denne oppgavens prosjekt",
       "workCategoryNotAllowed": "Kan ikke tilordne til denne arbeidskategorien"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Prøv igjen",
         "targetChanged": "Den ansatte ble endret, så prosjektet og kategorien ble fjernet.",
         "targetTimezone": "Tidspunkter er i tidssonen til {employee}: {timezone}",
+        "taskCleared": "En valgt oppgave er ikke lenger tilgjengelig og ble fjernet.",
         "thisEmployee": "denne ansatte",
         "utcFallback": "Verken {employee} eller organisasjonen har en angitt tidssone, så UTC brukes."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Handlinger for timeføring",
       "title": "Timeregistreringer",
       "viewCalendar": "Vis kalender"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (fullført)",
+      "empty": "Ingen oppgave funnet",
+      "label": "Oppgave",
+      "none": "Ingen oppgave",
+      "search": "Søk etter oppgaver…"
     },
     "timeline": {
       "dayPicker": "Dagvelger for tidslinje",

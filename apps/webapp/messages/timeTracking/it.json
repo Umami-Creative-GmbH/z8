@@ -105,6 +105,11 @@
       "projectNotAllowed": "Impossibile assegnare a questo progetto",
       "restPeriodBlocked": "Periodo di riposo non completato",
       "restPeriodBlockedDesc": "Devi completare il periodo di riposo obbligatorio prima di timbrare l'ingresso. Richiedi un'eccezione se necessario.",
+      "taskDone": "Questa attività è completata, quindi non è possibile registrarvi ore",
+      "taskNotAllowed": "Impossibile registrare ore per questa attività",
+      "taskNotFound": "Questa attività non esiste più",
+      "taskOtherProject": "Questa attività appartiene a un altro progetto",
+      "taskProjectNotBookable": "Non è più possibile registrare tempo per il progetto di questa attività",
       "workCategoryNotAllowed": "Impossibile assegnare a questa categoria di lavoro"
     },
     "manualEntry": {
@@ -120,6 +125,7 @@
         "retry": "Riprova",
         "targetChanged": "Il dipendente è cambiato, quindi il progetto e la categoria sono stati cancellati.",
         "targetTimezone": "Gli orari sono nel fuso orario di {employee}: {timezone}",
+        "taskCleared": "Un'attività selezionata non è più disponibile ed è stata rimossa.",
         "thisEmployee": "questo dipendente",
         "utcFallback": "Né {employee} né l'organizzazione hanno un fuso orario impostato, quindi viene utilizzato UTC."
       },
@@ -248,6 +254,13 @@
       "rowActions": "Azioni voce di tempo",
       "title": "Voci orarie",
       "viewCalendar": "Visualizza calendario"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (completata)",
+      "empty": "Nessuna attività trovata",
+      "label": "Attività",
+      "none": "Nessuna attività",
+      "search": "Cerca attività…"
     },
     "timeline": {
       "dayPicker": "Selettore giorno della timeline",

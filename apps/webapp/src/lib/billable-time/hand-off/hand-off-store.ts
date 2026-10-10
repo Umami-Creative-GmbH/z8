@@ -236,16 +236,18 @@ async function loadHandOffContext(
 	const selected = new Set(request.projectIds ?? known);
 	const range = { fromDay: request.period.from, toDay: request.period.to };
 
-	const work = await loadReportedProjectWork(reader, organizationId, {
-		projectIds: [...selected],
-		range,
-	});
 	// Projects without an active customer (none, or a deleted one): their
 	// billable work is "without customer" and never in any hand-off.
-	const customerless = await reader
-		.select({ id: project.id, name: project.name })
-		.from(project)
-		.where(and(eq(project.organizationId, organizationId), not(projectHasActiveCustomerSql())));
+	const [work, customerless] = await Promise.all([
+		loadReportedProjectWork(reader, organizationId, {
+			projectIds: [...selected],
+			range,
+		}),
+		reader
+			.select({ id: project.id, name: project.name })
+			.from(project)
+			.where(and(eq(project.organizationId, organizationId), not(projectHasActiveCustomerSql()))),
+	]);
 	const customerlessWork = (
 		await loadReportedProjectWork(reader, organizationId, {
 			projectIds: customerless.map((row) => row.id),
@@ -265,14 +267,15 @@ async function loadHandOffContext(
 			invoiced: item.invoiced != null,
 		}))
 		.sort(compareCandidates);
-	const rates = await loadReportRates(
-		reader,
-		organizationId,
-		work.filter((item) => item.isBillable && !item.invoiced),
-		{ includeCost: false },
-	);
-
-	const connection = await getActiveAccountingConnection(reader, organizationId);
+	const [rates, connection] = await Promise.all([
+		loadReportRates(
+			reader,
+			organizationId,
+			work.filter((item) => item.isBillable && !item.invoiced),
+			{ includeCost: false },
+		),
+		getActiveAccountingConnection(reader, organizationId),
+	]);
 	const connector = connection ? dependencies.registry.get(connection.providerKind) : null;
 	const capabilities = connector?.capabilities ?? null;
 	const [contact, taxTreatment] = await Promise.all([
@@ -431,16 +434,18 @@ export async function listHandOffCustomers(
 	reader: Reader,
 	organizationId: string,
 ): Promise<HandOffCustomerOption[]> {
-	const customers = await reader
-		.select({ id: customer.id, name: customer.name })
-		.from(customer)
-		.where(and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)))
-		.orderBy(asc(customer.name), asc(customer.id));
-	const projects = await reader
-		.select({ id: project.id, name: project.name, customerId: project.customerId })
-		.from(project)
-		.where(eq(project.organizationId, organizationId))
-		.orderBy(asc(project.name), asc(project.id));
+	const [customers, projects] = await Promise.all([
+		reader
+			.select({ id: customer.id, name: customer.name })
+			.from(customer)
+			.where(and(eq(customer.organizationId, organizationId), eq(customer.isActive, true)))
+			.orderBy(asc(customer.name), asc(customer.id)),
+		reader
+			.select({ id: project.id, name: project.name, customerId: project.customerId })
+			.from(project)
+			.where(eq(project.organizationId, organizationId))
+			.orderBy(asc(project.name), asc(project.id)),
+	]);
 	const links = await Promise.all(
 		customers.map((row) => getCustomerContactLink(reader, organizationId, row.id)),
 	);
@@ -761,17 +766,19 @@ async function openDraftProvider(
 				| "credentials_missing";
 	  }
 > {
-	const [draftConnection] = await reader
-		.select({ accountRef: accountingConnection.accountRef })
-		.from(accountingConnection)
-		.where(
-			and(
-				eq(accountingConnection.id, draft.connectionId),
-				eq(accountingConnection.organizationId, draft.organizationId),
-			),
-		)
-		.limit(1);
-	const opened = await openAccountingProvider(reader, dependencies, draft.organizationId);
+	const [[draftConnection], opened] = await Promise.all([
+		reader
+			.select({ accountRef: accountingConnection.accountRef })
+			.from(accountingConnection)
+			.where(
+				and(
+					eq(accountingConnection.id, draft.connectionId),
+					eq(accountingConnection.organizationId, draft.organizationId),
+				),
+			)
+			.limit(1),
+		openAccountingProvider(reader, dependencies, draft.organizationId),
+	]);
 	if (!opened.ok) return { ok: false, reason: opened.reason };
 	if (
 		opened.connection.providerKind !== draft.providerKind ||
@@ -1535,22 +1542,20 @@ export async function getInvoiceDraftDetail(
 		.limit(1);
 	if (!row) return null;
 	const draft = row.draft;
-	const lines = await reader
-		.select()
-		.from(invoiceDraftLine)
-		.where(
-			and(
-				eq(invoiceDraftLine.organizationId, input.organizationId),
-				eq(invoiceDraftLine.invoiceDraftId, draft.id),
-			),
-		)
-		.orderBy(asc(invoiceDraftLine.position));
-	const work = await invoicedWorkViews(
-		reader,
-		input.organizationId,
-		eq(invoicedWork.invoiceDraftId, draft.id),
-	);
-	const connection = await getActiveAccountingConnection(reader, input.organizationId);
+	const [lines, work, connection] = await Promise.all([
+		reader
+			.select()
+			.from(invoiceDraftLine)
+			.where(
+				and(
+					eq(invoiceDraftLine.organizationId, input.organizationId),
+					eq(invoiceDraftLine.invoiceDraftId, draft.id),
+				),
+			)
+			.orderBy(asc(invoiceDraftLine.position)),
+		invoicedWorkViews(reader, input.organizationId, eq(invoicedWork.invoiceDraftId, draft.id)),
+		getActiveAccountingConnection(reader, input.organizationId),
+	]);
 	const connector =
 		connection && isAccountingProviderKind(draft.providerKind)
 			? dependencies.registry.get(draft.providerKind)

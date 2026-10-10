@@ -51,24 +51,30 @@ const mockState = vi.hoisted(() => ({
 	rebuildEmployeeYearBalanceFromMonths: vi.fn(),
 }));
 
-vi.mock("drizzle-orm", async (importOriginal) => ({
-	...(await importOriginal<typeof import("drizzle-orm")>()),
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	asc: vi.fn((value: unknown) => value),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
-	inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
-	isNotNull: vi.fn((value: unknown) => ({ isNotNull: value })),
-	isNull: vi.fn((value: unknown) => ({ isNull: value })),
-	lt: vi.fn((left: unknown, right: unknown) => ({ lt: [left, right] })),
-	lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
-	min: vi.fn((value: unknown) => ({ min: value })),
-	or: vi.fn((...args: unknown[]) => ({ or: args })),
-	sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
-		sql: Array.from(strings),
-		values,
-	})),
-}));
+vi.mock("drizzle-orm", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("drizzle-orm")>();
+	return {
+		...actual,
+		and: vi.fn((...args: unknown[]) => ({ and: args })),
+		asc: vi.fn((value: unknown) => value),
+		eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
+		gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
+		inArray: vi.fn((left: unknown, right: unknown) => ({ inArray: [left, right] })),
+		isNotNull: vi.fn((value: unknown) => ({ isNotNull: value })),
+		isNull: vi.fn((value: unknown) => ({ isNull: value })),
+		lt: vi.fn((left: unknown, right: unknown) => ({ lt: [left, right] })),
+		lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),
+		min: vi.fn((value: unknown) => ({ min: value })),
+		or: vi.fn((...args: unknown[]) => ({ or: args })),
+		sql: Object.assign(
+			vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+				sql: Array.from(strings),
+				values,
+			})),
+			{ raw: actual.sql.raw },
+		),
+	};
+});
 
 vi.mock("@/db", () => ({ db: mockState.db }));
 
