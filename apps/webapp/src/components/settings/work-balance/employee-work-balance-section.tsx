@@ -20,7 +20,8 @@ import { useEmployeeWorkBalance } from "./use-employee-work-balance";
  * The Work balance section of an employee's settings page (#993): the current
  * work balance, the history of balance adjustments, and recording and
  * cancelling overtime payouts. Render it only for organization owners and
- * admins; the actions refuse everyone else.
+ * admins, and on the payroll area's Work balances page for payroll grant
+ * holders (#995); the actions refuse everyone else.
  */
 export function EmployeeWorkBalanceSection({ employeeId }: { employeeId: string }) {
 	const { t } = useTranslate();

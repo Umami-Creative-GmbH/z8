@@ -10,6 +10,7 @@ import {
 	IconFileExport,
 	IconLoader2,
 	IconRefresh,
+	IconScale,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -694,7 +695,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 function PayrollHeader({ t }: { t: PayrollTranslate }) {
 	return (
-		<header className="space-y-1">
+		<header className="flex flex-wrap items-start justify-between gap-3">
 			<div className="space-y-1">
 				<h1 className="text-3xl font-semibold tracking-tight">{t("payroll.title", "Payroll")}</h1>
 				<p className="text-muted-foreground">
@@ -704,6 +705,12 @@ function PayrollHeader({ t }: { t: PayrollTranslate }) {
 					)}
 				</p>
 			</div>
+			<Button asChild variant="outline">
+				<Link href="/payroll/work-balances">
+					<IconScale aria-hidden="true" className="size-4" />
+					{t("payroll.workBalances.open", "Work balances")}
+				</Link>
+			</Button>
 		</header>
 	);
 }
