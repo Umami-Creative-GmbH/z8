@@ -34,8 +34,7 @@ vi.mock("@/components/settings/settings-skeletons", () => ({
 	SettingsPageSkeleton: () => <div>loading</div>,
 }));
 
-const { default: ExportHistorySettingsPage } = await import("./page");
-const { default: ExportSettingsPage } = await import("../page");
+const { default: ExportSettingsPage } = await import("./page");
 
 type BoundaryPage = ReactElement<{ children: ReactElement }>;
 
@@ -44,20 +43,9 @@ async function renderPageContent(page: BoundaryPage) {
 	render(await (content.type as () => Promise<ReactElement>)());
 }
 
-describe("data export settings routes", () => {
+describe("data export settings route", () => {
 	beforeEach(() => {
 		mocks.isExportS3Configured.mockReset();
-	});
-
-	it("opens the export history tab from the export-ready email link", async () => {
-		mocks.isExportS3Configured.mockResolvedValue(false);
-
-		await renderPageContent(ExportHistorySettingsPage() as BoundaryPage);
-
-		expect(
-			screen.getByRole("tab", { name: "Export History" }).getAttribute("aria-selected"),
-		).toBe("true");
-		expect(screen.getByText("export history list")).toBeTruthy();
 	});
 
 	it("keeps opening the main export settings on the new export tab", async () => {

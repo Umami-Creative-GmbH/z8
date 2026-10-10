@@ -88,10 +88,10 @@ describe("proxy redirects use the public origin", () => {
 
 	it("returns a signed-out export-ready email link to the export history after sign-in", async () => {
 		const response = await proxy(
-			listeningRequest("/de/settings/export/history", { host: "z8.example.com" }),
+			listeningRequest("/de/settings/export/history/org_123", { host: "z8.example.com" }),
 		);
 		expect(response.headers.get("location")).toBe(
-			"https://z8.example.com/de/sign-in?callbackUrl=%2Fsettings%2Fexport%2Fhistory",
+			"https://z8.example.com/de/sign-in?callbackUrl=%2Fsettings%2Fexport%2Fhistory%2Forg_123",
 		);
 	});
 

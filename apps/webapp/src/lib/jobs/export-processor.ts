@@ -22,7 +22,7 @@ import {
 	getPendingExports,
 	processExport,
 } from "@/lib/export/export-service";
-import { CATEGORY_LABELS, EXPORT_HISTORY_PATH, type ExportCategory } from "@/lib/export/types";
+import { CATEGORY_LABELS, type ExportCategory, exportHistoryPath } from "@/lib/export/types";
 import { createLogger } from "@/lib/logger";
 import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -108,8 +108,10 @@ async function sendSuccessEmail(exportRecord: ExportRecord): Promise<void> {
 	try {
 		// A presigned URL would expire long before the email is read, so the
 		// email links to the export history, which signs a fresh URL per download.
+		// The path names the export's organization so a multi-org admin is not
+		// shown the history of whichever organization is active.
 		const locale = await resolveOrganizationNotificationLocale(exportRecord.organizationId);
-		const downloadUrl = `${getDefaultAppBaseUrl()}/${locale}${EXPORT_HISTORY_PATH}`;
+		const downloadUrl = `${getDefaultAppBaseUrl()}/${locale}${exportHistoryPath(exportRecord.organizationId)}`;
 
 		// Format categories for display
 		const categoryNames = exportRecord.categories.map(

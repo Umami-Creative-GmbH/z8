@@ -616,9 +616,9 @@ const SHELL_WORK_QUEUE = [
 		requiresSynchronousDefaultExport: true,
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/export/history/page.tsx",
-		fallbackComponent: "ExportHistorySettingsLoading",
-		contentComponent: "ExportHistorySettingsContent",
+		file: "src/app/[locale]/(app)/settings/export/history/[organizationId]/page.tsx",
+		fallbackComponent: "OrganizationExportHistoryLoading",
+		contentComponent: "OrganizationExportHistoryContent",
 		fallbackFrameClass: "flex flex-1 flex-col gap-6 p-4 md:p-6",
 		fallbackAriaLabel: "Loading data export settings",
 		requiresSynchronousDefaultExport: true,
