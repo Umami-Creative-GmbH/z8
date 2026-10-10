@@ -1,0 +1,87 @@
+import { and, eq, inArray } from "drizzle-orm";
+import type { db as appDb } from "@/db";
+import {
+	payrollExportConfig,
+	payrollExportJob,
+	travelExpensePayrollRunInclusion,
+} from "@/db/schema";
+import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
+
+/**
+ * Which unconfirmed payroll run includes a report (#852): the check every
+ * reimbursement path makes, and what officers see. One indexed read for any
+ * number of reports; the partial unique index guarantees at most one run each.
+ */
+
+type Database = typeof appDb;
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+type Executor = Database | Transaction;
+
+export interface IncludedPayrollRun {
+	/** The payroll export job that is the run. */
+	jobId: string;
+	formatId: string;
+	/** The payroll period, as logical dates. */
+	periodStart: string;
+	periodEnd: string;
+	includedAt: string;
+}
+
+/** The organization's payroll runs that still include a report: its unconfirmed runs. */
+export async function countRunsIncludingReports(
+	database: Pick<Database, "selectDistinct">,
+	organizationId: string,
+): Promise<number> {
+	const rows = await database
+		.selectDistinct({ jobId: travelExpensePayrollRunInclusion.payrollExportJobId })
+		.from(travelExpensePayrollRunInclusion)
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+			),
+		);
+	return rows.length;
+}
+
+export async function loadIncludedPayrollRuns(
+	database: Executor,
+	input: { organizationId: string; reportIds: readonly string[] },
+): Promise<Map<string, IncludedPayrollRun>> {
+	const runs = new Map<string, IncludedPayrollRun>();
+	if (input.reportIds.length === 0) return runs;
+	const rows = await database
+		.select({
+			reportId: travelExpensePayrollRunInclusion.reportId,
+			jobId: travelExpensePayrollRunInclusion.payrollExportJobId,
+			includedAt: travelExpensePayrollRunInclusion.includedAt,
+			filters: payrollExportJob.filters,
+			formatId: payrollExportConfig.formatId,
+		})
+		.from(travelExpensePayrollRunInclusion)
+		.innerJoin(
+			payrollExportJob,
+			and(
+				eq(payrollExportJob.id, travelExpensePayrollRunInclusion.payrollExportJobId),
+				eq(payrollExportJob.organizationId, travelExpensePayrollRunInclusion.organizationId),
+			),
+		)
+		.innerJoin(payrollExportConfig, eq(payrollExportConfig.id, payrollExportJob.configId))
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+				inArray(travelExpensePayrollRunInclusion.reportId, [...input.reportIds]),
+			),
+		);
+	for (const row of rows) {
+		runs.set(row.reportId, {
+			jobId: row.jobId,
+			formatId: row.formatId,
+			periodStart: row.filters.dateRange.start,
+			periodEnd: row.filters.dateRange.end,
+			includedAt: instantToCanonicalString(instantFromDate(row.includedAt)),
+		});
+	}
+	return runs;
+}

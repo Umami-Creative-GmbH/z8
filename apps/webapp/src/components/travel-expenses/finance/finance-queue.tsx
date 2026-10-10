@@ -53,6 +53,7 @@ import {
 	isReimbursableInFull,
 	settlementSourceKey,
 } from "./bulk-reimbursement-dialog";
+import { payrollRunLabel } from "./payroll-run-notice";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -514,6 +515,13 @@ export function FinanceQueue({ coverage }: { coverage?: FinanceQueueCoverage } =
 													<span>
 														{t("travelExpenses.finance.approvedOn", "Approved {date}", {
 															date: formatRecordedInstant(locale, account.basis.approvedAt),
+														})}
+													</span>
+												)}
+												{account.payrollRun && (
+													<span className="font-medium text-foreground">
+														{t("travelExpenses.finance.inPayrollRun", "Included in {run}", {
+															run: payrollRunLabel(t, locale, account.payrollRun),
 														})}
 													</span>
 												)}

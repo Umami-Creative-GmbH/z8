@@ -88,7 +88,8 @@ export function settlementSourceKey(source: SettlementSource): string {
 
 /** Whether one payment in the account currency reimburses the account in full. */
 export function isReimbursableInFull(account: SettlementAccount): boolean {
-	return fullReimbursementLine(account) !== null;
+	// A report a payroll run includes is paid with that run (#852).
+	return !account.payrollRun && fullReimbursementLine(account) !== null;
 }
 
 /**
@@ -128,6 +129,11 @@ function outcomeText(
 			return t("travelExpenses.finance.bulk.outcome.balanceChanged", "Skipped: balance changed");
 		case "out_of_scope":
 			return t("travelExpenses.finance.bulk.outcome.outOfScope", "Skipped: out of scope");
+		case "in_payroll_run":
+			return t(
+				"travelExpenses.finance.bulk.outcome.inPayrollRun",
+				"Skipped: included in a payroll run",
+			);
 		case "failed":
 			return t("travelExpenses.finance.bulk.outcome.failed", "Failed");
 	}

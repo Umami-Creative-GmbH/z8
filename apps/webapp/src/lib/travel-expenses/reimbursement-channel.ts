@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db as appDb } from "@/db";
 import { auditLog, travelExpenseSettings } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { countRunsIncludingReports } from "./payroll-run-inclusion-read";
 import { isPayrollRunPreviewOpen } from "./payroll-run-preview";
 import {
 	DEFAULT_REIMBURSEMENT_CHANNEL,
@@ -38,15 +39,15 @@ export async function getReimbursementChannel(
 }
 
 /**
- * The organization's payroll runs that are not confirmed yet.
- * They can still be confirmed or discarded after a switch to bank transfer.
- * Always 0 until payroll runs exist (#852, #853).
+ * The organization's payroll runs that are not confirmed yet: those that
+ * still include a report (#852). They can still be confirmed or discarded
+ * after a switch to bank transfer.
  */
 export async function countUnconfirmedPayrollRuns(
-	_organizationId: string,
-	_options: { database?: Executor } = {},
+	organizationId: string,
+	options: { database?: Pick<Database, "selectDistinct"> } = {},
 ): Promise<number> {
-	return 0;
+	return countRunsIncludingReports(options.database ?? appDb, organizationId);
 }
 
 export type SaveReimbursementChannelResult =

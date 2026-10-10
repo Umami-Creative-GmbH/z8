@@ -108,6 +108,7 @@ export * from "./travel-expense-project";
 export * from "./travel-expense-reference-rate";
 export * from "./travel-expense-review";
 export * from "./travel-expense-settlement";
+export * from "./travel-expense-payroll-run";
 export * from "./travel-expense-export";
 export * from "./travel-expense-adjustment";
 export * from "./expense-officer";

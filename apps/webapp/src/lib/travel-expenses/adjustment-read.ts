@@ -169,6 +169,21 @@ async function isRevisionApproved(
 	return Boolean(row);
 }
 
+/**
+ * The approved adjustment whose frozen revision holds the corrected report in
+ * force, or undefined without one. Latest approval first; equal instants fall
+ * back to the revision id, so every reader names the same revision.
+ */
+export function latestApprovedAdjustment(
+	approved: readonly ApprovedAdjustment[],
+): ApprovedAdjustment | undefined {
+	return approved.toSorted((left, right) => {
+		const byApproval = right.approvedAt.epochMilliseconds - left.approvedAt.epochMilliseconds;
+		if (byApproval !== 0) return byApproval;
+		return left.revisionId < right.revisionId ? 1 : -1;
+	})[0];
+}
+
 export type AdjustmentBaselineResult =
 	| { status: "ok"; baseline: AdjustmentBaseline; approved: ApprovedAdjustment[] }
 	| { status: "not_found" }
@@ -183,13 +198,7 @@ export type AdjustmentBaselineResult =
 export function effectiveAdjustmentSource(
 	result: Extract<AdjustmentBaselineResult, { status: "ok" }>,
 ): { reportId: string; revisionId: string } {
-	// Latest approval first; equal instants fall back to the revision id, so the
-	// copy and the later check always name the same revision.
-	const latest = result.approved.toSorted((left, right) => {
-		const byApproval = right.approvedAt.epochMilliseconds - left.approvedAt.epochMilliseconds;
-		if (byApproval !== 0) return byApproval;
-		return left.revisionId < right.revisionId ? 1 : -1;
-	})[0];
+	const latest = latestApprovedAdjustment(result.approved);
 	return latest
 		? { reportId: latest.reportId, revisionId: latest.revisionId }
 		: { reportId: result.baseline.originalReportId, revisionId: result.baseline.revisionId };

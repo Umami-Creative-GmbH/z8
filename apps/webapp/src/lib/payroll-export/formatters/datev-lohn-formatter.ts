@@ -7,12 +7,14 @@ import { createLogger } from "@/lib/logger";
 import type {
 	AbsenceData,
 	DatevLohnConfig,
+	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
 import { wageTypeCodeFor } from "../wage-type-code";
+import { expenseLinesInFileOrder, GERMAN_EXPENSE_LINE_NOTE } from "./expense-lines";
 
 const logger = createLogger("DatevLohnFormatter");
 
@@ -70,6 +72,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	transform(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
+		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
 	): ExportResult {
@@ -135,9 +138,25 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			}
 		}
 
+		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
+			this.getPersonnelNumberFromExpenseLine(line, datevConfig),
+		)) {
+			lines.push(
+				[
+					this.escapeCSV(personnelNumber),
+					this.escapeCSV(line.wageTypeCode),
+					line.amount,
+					this.escapeCSV(line.date),
+					this.escapeCSV(GERMAN_EXPENSE_LINE_NOTE),
+				].join(";"),
+			);
+		}
+
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
 
 		const dateRange = this.getDateRange(workPeriods, absences);
 		const fileName = this.generateFileName(dateRange);
@@ -310,6 +329,19 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			);
 		}
 		return absence.employeeId;
+	}
+
+	/**
+	 * Get personnel number of an expense line based on config
+	 */
+	private getPersonnelNumberFromExpenseLine(
+		line: ExpenseLineData,
+		config: DatevLohnConfig,
+	): string {
+		if (config.personnelNumberType === "employeeNumber" && line.employeeNumber) {
+			return line.employeeNumber;
+		}
+		return line.employeeId;
 	}
 
 	/**

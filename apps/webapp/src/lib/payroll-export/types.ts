@@ -242,6 +242,26 @@ export interface AbsenceData {
 	status: string;
 }
 
+/**
+ * One expense money line of a payroll run (#852): an employee's euro amount
+ * under one wage type, summed over the reports the run includes. A money
+ * amount, never hours; file formats label it so.
+ */
+export interface ExpenseLineData {
+	employeeId: string;
+	employeeNumber: string | null;
+	email?: string | null;
+	firstName: string | null;
+	lastName: string | null;
+	/** The expense wage type the organization mapped for this file format. */
+	wageTypeCode: string;
+	/** Euros at two decimals with a "." separator, e.g. "123.40". */
+	amount: string;
+	currency: "EUR";
+	/** The payroll period's last day (ISO date): the line's date where a format needs one. */
+	date: string;
+}
+
 // ============================================
 // EXPORT RESULT TYPES
 // ============================================
@@ -280,6 +300,11 @@ export interface PayrollExportJobSummary {
 	completedAt: Date | null;
 	errorMessage: string | null;
 	filters: SerializedPayrollExportFilters;
+	/**
+	 * How many reports awaiting reimbursement the export's payroll run still
+	 * includes (#852); 0 when it is no unconfirmed payroll run.
+	 */
+	payrollRunIncludedReports: number;
 }
 
 // ============================================
@@ -304,11 +329,14 @@ export interface IPayrollExportFormatter {
 	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] };
 
 	/**
-	 * Transform work periods and absences to export format
+	 * Transform work periods, absences and expense money lines to export format.
+	 * Expense lines arrive already mapped and summed per employee and wage type
+	 * (#852); with the bank-transfer channel there are none.
 	 */
 	transform(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
+		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
 	): ExportResult;

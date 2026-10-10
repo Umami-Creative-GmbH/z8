@@ -1,0 +1,641 @@
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
+import type { db as appDb } from "@/db";
+import { organization, user } from "@/db/auth-schema";
+import {
+	auditLog,
+	employee,
+	payrollExportConfig,
+	payrollExportJob,
+	travelExpensePayrollRunInclusion,
+	travelExpenseReport,
+	type TravelExpensePayrollRunInclusionLine,
+} from "@/db/schema";
+import { loadTravelExpenseReportSubmittedRevisions } from "@/lib/approvals/evidence/travel-expense-report-store";
+import { AuditAction } from "@/lib/audit-logger";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	instantToCanonicalString,
+	parseInstant,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { formatUnits, parseUnits } from "@/lib/money/exact-decimal";
+import { getExpenseWageTypeMappings } from "@/lib/payroll-export/expense-wage-type";
+import {
+	type ExpensePayrollFormat,
+	isExpensePayrollFormat,
+} from "@/lib/payroll-export/expense-wage-type.types";
+import type { ExpenseLineData } from "@/lib/payroll-export/types";
+import { latestApprovedAdjustment, loadApprovedAdjustments } from "./adjustment-read";
+import { isAwaitingReimbursement } from "./finance-queue-store";
+import { STORED_AMOUNT_SCALE } from "./money";
+import type { OfficerScope } from "./officer-scope";
+import { isSourceInOfficerScope } from "./officer-scope-read";
+import {
+	computePayrollLines,
+	type PayrollExclusionReason,
+	type PayrollLine,
+} from "./payroll-lines";
+import { isPayrollRunPreviewOpen } from "./payroll-run-preview";
+import { getReimbursementChannel } from "./reimbursement-channel";
+import { buildSettlementAccounts, type SettlementActor } from "./settlement-store";
+
+/**
+ * Payroll runs (#852, ADR 0003). With the payroll reimbursement channel, a
+ * payroll file export is a payroll run: it takes the reports awaiting
+ * reimbursement of the employees it covers, freezes their payroll lines with
+ * the wage-type codes of its format, and its file carries them as money lines.
+ * It records no reimbursement; until the run is confirmed (#853), an included
+ * report cannot be reimbursed any other way.
+ *
+ * Every write here locks the reports' rows first, the lock every settlement
+ * write takes, so including, removing and recording money never interleave.
+ */
+
+type Database = typeof appDb;
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+type Executor = Database | Transaction;
+
+/** Why a run did not take a report that awaits reimbursement in its scope. */
+export type PayrollRunSkipReason =
+	| PayrollExclusionReason
+	/** A payroll line kind has no wage type mapped for the run's format. */
+	| "unmapped_wage_type"
+	/** An unconfirmed run of another period includes it. */
+	| "included_in_other_run";
+
+export interface PayrollRunInclusionResult {
+	/** The money lines the run's file carries, one per employee and wage type. */
+	expenseLines: ExpenseLineData[];
+	includedReportIds: string[];
+	skipped: Array<{ reportId: string; reason: PayrollRunSkipReason }>;
+}
+
+const EMPTY_RESULT: PayrollRunInclusionResult = {
+	expenseLines: [],
+	includedReportIds: [],
+	skipped: [],
+};
+
+/**
+ * Whether an export of `formatId` is a payroll run: a file format that carries
+ * expense lines, for an organization paying with the payroll run while it
+ * passes the preview gate. API connectors and bank transfer never are.
+ */
+export async function exportIsPayrollRun(
+	database: Executor,
+	input: { organizationId: string; formatId: string },
+): Promise<boolean> {
+	if (!isExpensePayrollFormat(input.formatId)) return false;
+	const [channel, previewOpen] = await Promise.all([
+		getReimbursementChannel(input.organizationId, { database }),
+		isPayrollRunPreviewOpen(input.organizationId, { database }),
+	]);
+	return channel === "payroll_run" && previewOpen;
+}
+
+/**
+ * Includes in the run of `jobId` every report that awaits reimbursement, was
+ * approved on or before the period's last day (in the organization's zone),
+ * belongs to an employee of `employeeIds` and is not included in an
+ * unconfirmed run of another period. Each is passed to `computePayrollLines`;
+ * only reports whose every line kind is mapped are included.
+ *
+ * Exporting the same period again replaces what earlier unconfirmed runs of
+ * that period included for these employees: those inclusions are superseded,
+ * whether or not this run takes the report again. A retried export of the
+ * same job first discards what it included before.
+ *
+ * Runs inside the caller's transaction, so the inclusions commit with the
+ * file the caller writes from the returned lines, or not at all.
+ */
+export async function includeReportsInPayrollRun(
+	tx: Transaction,
+	input: {
+		organizationId: string;
+		jobId: string;
+		format: ExpensePayrollFormat;
+		period: { startDate: string; endDate: string };
+		employeeIds: readonly string[];
+	},
+	now: Instant = systemClock.nowInstant(),
+): Promise<PayrollRunInclusionResult> {
+	const { organizationId, jobId, period } = input;
+	const endedAt = dateFromInstant(now);
+	await tx
+		.update(travelExpensePayrollRunInclusion)
+		.set({ state: "discarded", endedAt })
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+				eq(travelExpensePayrollRunInclusion.payrollExportJobId, jobId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+			),
+		);
+	if (input.employeeIds.length === 0) return EMPTY_RESULT;
+
+	// The reports' rows first, in a fixed order: the lock settlement writes take.
+	const reports = await tx
+		.select({ row: travelExpenseReport })
+		.from(travelExpenseReport)
+		.where(
+			and(
+				eq(travelExpenseReport.organizationId, organizationId),
+				eq(travelExpenseReport.status, "approved"),
+				inArray(travelExpenseReport.employeeId, [...input.employeeIds]),
+			),
+		)
+		.orderBy(asc(travelExpenseReport.id))
+		.for("update");
+
+	// Earlier unconfirmed runs of the same period lose these employees' reports.
+	await supersedeSamePeriodInclusions(tx, { ...input, endedAt });
+
+	const accounts = await buildSettlementAccounts(
+		tx,
+		organizationId,
+		reports.map(({ row }) => ({ row, employeeName: null })),
+		[],
+	);
+	const periodEnd = await periodEndExclusive(tx, organizationId, period.endDate);
+	const awaiting = accounts.filter(
+		(account) =>
+			account.approved &&
+			account.adjustmentOf === null &&
+			account.basis?.approvedAt &&
+			compareInstants(parseInstant(account.basis.approvedAt), periodEnd) < 0 &&
+			isAwaitingReimbursement(account),
+	);
+	if (awaiting.length === 0) return EMPTY_RESULT;
+
+	const revisions = await latestApprovedRevisions(tx, {
+		organizationId,
+		reports: awaiting.map((account) => ({
+			reportId: account.source.id,
+			revisionId: account.basis?.revisionId ?? "",
+			submissionCycle: account.basis?.submissionCycle ?? 0,
+		})),
+	});
+	const codes = await wageTypeCodes(tx, organizationId, input.format);
+
+	const skipped: PayrollRunInclusionResult["skipped"] = [];
+	const included: Array<{
+		reportId: string;
+		employeeId: string;
+		basisRevisionId: string;
+		lines: TravelExpensePayrollRunInclusionLine[];
+	}> = [];
+	for (const account of awaiting) {
+		const reportId = account.source.id;
+		if (account.payrollRun) {
+			// Still included after the supersede: a run of another period holds it.
+			skipped.push({ reportId, reason: "included_in_other_run" });
+			continue;
+		}
+		const revision = revisions.get(reportId);
+		if (!revision) throw new Error(`Approved revision of report ${reportId} not readable`);
+		const result = computePayrollLines({
+			source: "report",
+			revision: revision.facts,
+			// No reimbursement names a payroll run before confirmation exists (#853).
+			settlementEntries: account.entries.map((entry) => ({ kind: entry.kind, payrollRunId: null })),
+			priorLines: [],
+		});
+		if (!result.ok) {
+			skipped.push({ reportId, reason: result.reason });
+			continue;
+		}
+		const mapped = mapLines(result.lines, codes);
+		if (!mapped) {
+			skipped.push({ reportId, reason: "unmapped_wage_type" });
+			continue;
+		}
+		included.push({
+			reportId,
+			employeeId: account.employeeId,
+			basisRevisionId: revision.id,
+			lines: mapped,
+		});
+	}
+	if (included.length > 0) {
+		await tx.insert(travelExpensePayrollRunInclusion).values(
+			included.map((inclusion) => ({
+				organizationId,
+				payrollExportJobId: jobId,
+				...inclusion,
+				includedAt: endedAt,
+			})),
+		);
+	}
+	return {
+		expenseLines: await expenseLines(tx, organizationId, included, period.endDate),
+		includedReportIds: included.map((inclusion) => inclusion.reportId),
+		skipped,
+	};
+}
+
+/** The instant the period's last day ends in the organization's zone. */
+async function periodEndExclusive(
+	tx: Transaction,
+	organizationId: string,
+	endDate: string,
+): Promise<Instant> {
+	const [row] = await tx
+		.select({ timezone: organization.timezone })
+		.from(organization)
+		.where(eq(organization.id, organizationId))
+		.limit(1);
+	return localDayRange(endDate, row?.timezone ?? "UTC").endExclusive;
+}
+
+async function supersedeSamePeriodInclusions(
+	tx: Transaction,
+	input: {
+		organizationId: string;
+		jobId: string;
+		period: { startDate: string; endDate: string };
+		employeeIds: readonly string[];
+		endedAt: Date;
+	},
+): Promise<void> {
+	const held = await tx
+		.select({
+			id: travelExpensePayrollRunInclusion.id,
+			filters: payrollExportJob.filters,
+		})
+		.from(travelExpensePayrollRunInclusion)
+		.innerJoin(
+			payrollExportJob,
+			and(
+				eq(payrollExportJob.id, travelExpensePayrollRunInclusion.payrollExportJobId),
+				eq(payrollExportJob.organizationId, travelExpensePayrollRunInclusion.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+				ne(travelExpensePayrollRunInclusion.payrollExportJobId, input.jobId),
+				inArray(travelExpensePayrollRunInclusion.employeeId, [...input.employeeIds]),
+			),
+		);
+	const samePeriod = held
+		.filter(
+			({ filters }) =>
+				filters.dateRange.start === input.period.startDate &&
+				filters.dateRange.end === input.period.endDate,
+		)
+		.map(({ id }) => id);
+	if (samePeriod.length === 0) return;
+	await tx
+		.update(travelExpensePayrollRunInclusion)
+		.set({ state: "superseded", endedAt: input.endedAt, supersededByJobId: input.jobId })
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+				inArray(travelExpensePayrollRunInclusion.id, samePeriod),
+			),
+		);
+}
+
+/**
+ * Each report's latest approved revision: the latest approved adjustment's,
+ * which holds the whole corrected report, else the original's.
+ */
+async function latestApprovedRevisions(
+	tx: Transaction,
+	input: {
+		organizationId: string;
+		reports: ReadonlyArray<{ reportId: string; revisionId: string; submissionCycle: number }>;
+	},
+) {
+	const adjustments = await loadApprovedAdjustments(tx, {
+		organizationId: input.organizationId,
+		originalReportIds: input.reports.map((report) => report.reportId),
+	});
+	const sources = new Map(
+		input.reports.map((report) => {
+			const latest = latestApprovedAdjustment(adjustments.get(report.reportId) ?? []);
+			return [
+				report.reportId,
+				latest
+					? { reportId: latest.reportId, submissionCycle: latest.submissionCycle }
+					: { reportId: report.reportId, submissionCycle: report.submissionCycle },
+			];
+		}),
+	);
+	const loaded = await loadTravelExpenseReportSubmittedRevisions(tx, {
+		organizationId: input.organizationId,
+		cycles: [...sources.values()],
+	});
+	return new Map(
+		[...sources.entries()].flatMap(([reportId, source]) => {
+			const revision = loaded.get(source.reportId);
+			return revision ? [[reportId, revision] as const] : [];
+		}),
+	);
+}
+
+async function wageTypeCodes(
+	tx: Transaction,
+	organizationId: string,
+	format: ExpensePayrollFormat,
+): Promise<Map<string, string>> {
+	const mappings = await getExpenseWageTypeMappings(organizationId, { database: tx });
+	return new Map(
+		mappings.flatMap((mapping) => {
+			const code = mapping.codes[format];
+			return code ? [[mapping.kind, code] as const] : [];
+		}),
+	);
+}
+
+/** The lines with their wage types, or null when any kind is unmapped. */
+function mapLines(
+	lines: readonly PayrollLine[],
+	codes: ReadonlyMap<string, string>,
+): TravelExpensePayrollRunInclusionLine[] | null {
+	const mapped: TravelExpensePayrollRunInclusionLine[] = [];
+	for (const line of lines) {
+		const wageTypeCode = codes.get(line.kind);
+		if (!wageTypeCode) return null;
+		mapped.push({ ...line, wageTypeCode });
+	}
+	return mapped;
+}
+
+/** One money line per employee and wage type, summed over the included reports. */
+async function expenseLines(
+	tx: Transaction,
+	organizationId: string,
+	included: ReadonlyArray<{ employeeId: string; lines: TravelExpensePayrollRunInclusionLine[] }>,
+	date: string,
+): Promise<ExpenseLineData[]> {
+	if (included.length === 0) return [];
+	const totals = new Map<string, { employeeId: string; wageTypeCode: string; units: bigint }>();
+	for (const inclusion of included) {
+		for (const line of inclusion.lines) {
+			const key = `${inclusion.employeeId}\u0000${line.wageTypeCode}`;
+			const units = parseUnits(line.amount, STORED_AMOUNT_SCALE);
+			if (units === null) throw new RangeError(`Not a stored amount: ${line.amount}`);
+			const total = totals.get(key) ?? {
+				employeeId: inclusion.employeeId,
+				wageTypeCode: line.wageTypeCode,
+				units: BigInt(0),
+			};
+			total.units += units;
+			totals.set(key, total);
+		}
+	}
+	const people = await tx
+		.select({
+			id: employee.id,
+			employeeNumber: employee.employeeNumber,
+			email: user.email,
+			firstName: user.firstName,
+			lastName: user.lastName,
+		})
+		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				inArray(employee.id, [...new Set(included.map((inclusion) => inclusion.employeeId))]),
+			),
+		);
+	const byId = new Map(people.map((person) => [person.id, person]));
+	return [...totals.values()].map((total) => {
+		const person = byId.get(total.employeeId);
+		return {
+			employeeId: total.employeeId,
+			employeeNumber: person?.employeeNumber ?? null,
+			email: person?.email ?? null,
+			firstName: person?.firstName ?? null,
+			lastName: person?.lastName ?? null,
+			wageTypeCode: total.wageTypeCode,
+			amount: formatUnits(total.units, STORED_AMOUNT_SCALE),
+			currency: "EUR",
+			date,
+		};
+	});
+}
+
+/** How many reports each of the jobs' runs still includes; jobs without any are absent. */
+export async function countIncludedReportsByRun(
+	database: Executor,
+	input: { organizationId: string; jobIds: readonly string[] },
+): Promise<Map<string, number>> {
+	const counts = new Map<string, number>();
+	if (input.jobIds.length === 0) return counts;
+	const rows = await database
+		.select({ jobId: travelExpensePayrollRunInclusion.payrollExportJobId })
+		.from(travelExpensePayrollRunInclusion)
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, input.organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+				inArray(travelExpensePayrollRunInclusion.payrollExportJobId, [...input.jobIds]),
+			),
+		);
+	for (const { jobId } of rows) counts.set(jobId, (counts.get(jobId) ?? 0) + 1);
+	return counts;
+}
+
+export interface UnconfirmedPayrollRun {
+	jobId: string;
+	formatId: string;
+	periodStart: string;
+	periodEnd: string;
+	exportedAt: string;
+	includedReports: number;
+	/** The employees whose reports the run includes. */
+	employeeIds: string[];
+}
+
+/** The organization's unconfirmed payroll runs, most recently exported first. */
+export async function listUnconfirmedPayrollRuns(
+	database: Executor,
+	organizationId: string,
+): Promise<UnconfirmedPayrollRun[]> {
+	const rows = await database
+		.select({
+			jobId: travelExpensePayrollRunInclusion.payrollExportJobId,
+			employeeId: travelExpensePayrollRunInclusion.employeeId,
+			filters: payrollExportJob.filters,
+			createdAt: payrollExportJob.createdAt,
+			formatId: payrollExportConfig.formatId,
+		})
+		.from(travelExpensePayrollRunInclusion)
+		.innerJoin(
+			payrollExportJob,
+			and(
+				eq(payrollExportJob.id, travelExpensePayrollRunInclusion.payrollExportJobId),
+				eq(payrollExportJob.organizationId, travelExpensePayrollRunInclusion.organizationId),
+			),
+		)
+		.innerJoin(payrollExportConfig, eq(payrollExportConfig.id, payrollExportJob.configId))
+		.where(
+			and(
+				eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+				eq(travelExpensePayrollRunInclusion.state, "included"),
+			),
+		);
+	const runs = new Map<string, UnconfirmedPayrollRun>();
+	for (const row of rows) {
+		const run = runs.get(row.jobId) ?? {
+			jobId: row.jobId,
+			formatId: row.formatId,
+			periodStart: row.filters.dateRange.start,
+			periodEnd: row.filters.dateRange.end,
+			exportedAt: instantToCanonicalString(instantFromDate(row.createdAt)),
+			includedReports: 0,
+			employeeIds: [],
+		};
+		run.includedReports += 1;
+		if (!run.employeeIds.includes(row.employeeId)) run.employeeIds.push(row.employeeId);
+		runs.set(row.jobId, run);
+	}
+	return [...runs.values()].toSorted((left, right) =>
+		right.exportedAt.localeCompare(left.exportedAt),
+	);
+}
+
+export type DiscardPayrollRunResult =
+	| { status: "discarded"; reportIds: string[] }
+	/** The run includes no report (any more): nothing to discard. */
+	| { status: "not_found" }
+	/** It includes reports of employees outside the actor's payroll scope. */
+	| { status: "out_of_scope" };
+
+/**
+ * Discards an unconfirmed payroll run: every report it still includes is
+ * free again for the next export or a bank-transfer reimbursement. Whoever may
+ * start payroll exports may discard: administrators any run (`"all"`), a
+ * payroll access holder a run of employees in their payroll scope only.
+ * Audited in the same transaction.
+ */
+export async function discardPayrollRun(
+	database: Database,
+	input: {
+		organizationId: string;
+		jobId: string;
+		actorUserId: string;
+		employeeScope: "all" | readonly string[];
+	},
+	now: Instant = systemClock.nowInstant(),
+): Promise<DiscardPayrollRunResult> {
+	const { organizationId, jobId } = input;
+	return database.transaction(async (tx): Promise<DiscardPayrollRunResult> => {
+		const held = await tx
+			.select({
+				id: travelExpensePayrollRunInclusion.id,
+				reportId: travelExpensePayrollRunInclusion.reportId,
+				employeeId: travelExpensePayrollRunInclusion.employeeId,
+			})
+			.from(travelExpensePayrollRunInclusion)
+			.where(
+				and(
+					eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+					eq(travelExpensePayrollRunInclusion.payrollExportJobId, jobId),
+					eq(travelExpensePayrollRunInclusion.state, "included"),
+				),
+			)
+			.orderBy(asc(travelExpensePayrollRunInclusion.id))
+			.for("update");
+		if (held.length === 0) return { status: "not_found" };
+		const scope = input.employeeScope;
+		if (scope !== "all" && !held.every((inclusion) => scope.includes(inclusion.employeeId))) {
+			return { status: "out_of_scope" };
+		}
+		const endedAt = dateFromInstant(now);
+		await tx
+			.update(travelExpensePayrollRunInclusion)
+			.set({ state: "discarded", endedAt, endedByUserId: input.actorUserId })
+			.where(
+				inArray(
+					travelExpensePayrollRunInclusion.id,
+					held.map((inclusion) => inclusion.id),
+				),
+			);
+		const reportIds = held.map((inclusion) => inclusion.reportId);
+		await tx.insert(auditLog).values({
+			organizationId,
+			entityType: "payroll_export_job",
+			entityId: jobId,
+			action: AuditAction.PAYROLL_RUN_DISCARDED,
+			performedBy: input.actorUserId,
+			changes: JSON.stringify({ reportIds }),
+			timestamp: endedAt,
+		});
+		return { status: "discarded", reportIds };
+	});
+}
+
+export type RemoveFromPayrollRunResult =
+	| { status: "removed"; jobId: string }
+	/** Not a report of the organization in the actor's reimbursement scope. */
+	| { status: "not_found" }
+	/** No unconfirmed run includes it. */
+	| { status: "not_included" };
+
+/**
+ * Takes one report out of the unconfirmed run that includes it, so it can be
+ * paid by bank transfer or taken by the next export. For officers who record
+ * reimbursements (`scope` is their reimbursement scope), owners and admins.
+ * Audited in the same transaction.
+ */
+export async function removeReportFromPayrollRun(
+	database: Database,
+	input: { actor: SettlementActor; scope: OfficerScope; reportId: string },
+	now: Instant = systemClock.nowInstant(),
+): Promise<RemoveFromPayrollRunResult> {
+	const { actor, reportId } = input;
+	const { organizationId } = actor;
+	return database.transaction(async (tx): Promise<RemoveFromPayrollRunResult> => {
+		const [report] = await tx
+			.select({ employeeId: travelExpenseReport.employeeId })
+			.from(travelExpenseReport)
+			.where(
+				and(
+					eq(travelExpenseReport.id, reportId),
+					eq(travelExpenseReport.organizationId, organizationId),
+				),
+			)
+			.limit(1)
+			.for("update");
+		if (!report) return { status: "not_found" };
+		const inScope = await isSourceInOfficerScope(tx, input.scope, {
+			organizationId,
+			source: { type: "report", id: reportId },
+			employeeId: report.employeeId,
+		});
+		if (!inScope) return { status: "not_found" };
+		const endedAt = dateFromInstant(now);
+		const [removed] = await tx
+			.update(travelExpensePayrollRunInclusion)
+			.set({ state: "removed", endedAt, endedByUserId: actor.userId })
+			.where(
+				and(
+					eq(travelExpensePayrollRunInclusion.organizationId, organizationId),
+					eq(travelExpensePayrollRunInclusion.reportId, reportId),
+					eq(travelExpensePayrollRunInclusion.state, "included"),
+				),
+			)
+			.returning({ jobId: travelExpensePayrollRunInclusion.payrollExportJobId });
+		if (!removed) return { status: "not_included" };
+		await tx.insert(auditLog).values({
+			organizationId,
+			entityType: "travel_expense_report",
+			entityId: reportId,
+			action: AuditAction.TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_REMOVED,
+			performedBy: actor.userId,
+			changes: JSON.stringify({ payrollExportJobId: removed.jobId }),
+			timestamp: endedAt,
+		});
+		return { status: "removed", jobId: removed.jobId };
+	});
+}

@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import {
 	absenceCategory,
 	db,
@@ -39,6 +40,7 @@ import {
 	type WageTypeMapping,
 	type WorkdayConfig,
 } from "@/lib/payroll-export";
+import { type DiscardPayrollRunResult, discardPayrollRun } from "@/lib/travel-expenses/payroll-run";
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
@@ -1814,6 +1816,49 @@ export async function getExportDownloadUrlAction(
 		const url = yield* Effect.promise(() => getExportDownloadUrl(organizationId, jobId));
 
 		return url;
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Discards an unconfirmed payroll run (#852): the reports it includes are free
+ * again for the next export or a bank-transfer reimbursement. Administrators
+ * start exports here for every employee, so they may discard any run.
+ */
+export async function discardPayrollRunAction(
+	organizationId: string,
+	jobId: string,
+): Promise<ServerActionResult<DiscardPayrollRunResult>> {
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
+
+		if (!hasPermission) {
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "payroll_export",
+					action: "discard",
+				}),
+			);
+		}
+		if (!z.uuid().safeParse(jobId).success) return { status: "not_found" } as const;
+
+		const dbService = yield* DatabaseService;
+		const result = yield* dbService.query("payrollRun.discard", () =>
+			discardPayrollRun(dbService.db, {
+				organizationId,
+				jobId,
+				actorUserId: session.user.id,
+				employeeScope: "all",
+			}),
+		);
+		if (result.status === "discarded") revalidatePath("/settings/payroll-export");
+		return result;
 	});
 
 	return runServerActionSafe(effect);

@@ -35,6 +35,8 @@ export const BULK_REIMBURSEMENT_OUTCOMES = [
 	"already_reimbursed",
 	"balance_changed",
 	"out_of_scope",
+	/** An unconfirmed payroll run includes the report (#852). */
+	"in_payroll_run",
 	"failed",
 ] as const;
 export type BulkReimbursementOutcome = (typeof BULK_REIMBURSEMENT_OUTCOMES)[number];
@@ -78,6 +80,8 @@ function outcomeOf(result: RecordSettlementResult): BulkReimbursementOutcome {
 			return "reimbursed";
 		case "own_expense":
 			return "own_expense";
+		case "in_payroll_run":
+			return "in_payroll_run";
 		case "not_found":
 			// Out of scope reads as not found everywhere (#747).
 			return "out_of_scope";

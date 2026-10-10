@@ -98,7 +98,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/settings/enterprise": ["common", "settings/generic", "settings/enterprise"],
 	"/settings/holidays": ["common", "settings/generic", "settings/holidays"],
 	"/settings/permissions": ["common", "settings/generic", "settings/people"],
-	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport"],
+	// `payroll`: the payroll run discard dialog (#852) is shared with the payroll workspace.
+	"/settings/payroll-export": ["common", "settings/generic", "settings/payrollExport", "payroll"],
 	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
 	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],

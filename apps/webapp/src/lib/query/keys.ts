@@ -125,6 +125,8 @@ export const queryKeys = {
 			["travel-expenses", "reports", reportId, "adjustments"] as const,
 		legacyConversion: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "legacy-conversion"] as const,
+		/** The payroll access holder's unconfirmed payroll runs (#852). */
+		scopedPayrollRuns: () => ["travel-expenses", "payroll-runs", "scoped"] as const,
 	},
 
 	// Employees

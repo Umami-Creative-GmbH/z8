@@ -154,6 +154,7 @@ describe("wage type mapping resolution", () => {
 		const result = new LexwareLohnFormatter().transform(
 			[nightShift(ids.workCategory)],
 			[],
+			[],
 			mappings,
 			LEXWARE_CONFIG,
 		);
@@ -170,11 +171,13 @@ describe("wage type mapping resolution", () => {
 		const datev = new DatevLohnFormatter().transform(
 			[period],
 			[],
+			[],
 			await mappingsForExport("datev_lohn"),
 			DATEV_CONFIG,
 		);
 		const lexware = new LexwareLohnFormatter().transform(
 			[period],
+			[],
 			[],
 			await mappingsForExport("lexware_lohn"),
 			LEXWARE_CONFIG,

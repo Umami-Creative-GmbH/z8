@@ -34,6 +34,11 @@ import {
 import type { ReimbursingOfficer } from "@/lib/travel-expenses/officer-scope";
 import { isSourceInOfficerScope } from "@/lib/travel-expenses/officer-scope-read";
 import {
+	type RemoveFromPayrollRunResult,
+	removeReportFromPayrollRun,
+} from "@/lib/travel-expenses/payroll-run";
+import type { IncludedPayrollRun } from "@/lib/travel-expenses/payroll-run-inclusion-read";
+import {
 	parseSettlementCommand,
 	type SettlementCommandFieldError,
 	type SettlementPlanRefusal,
@@ -81,6 +86,8 @@ export interface SettlementAccountView {
 function ownerView(account: SettlementAccount): SettlementAccount {
 	return {
 		...account,
+		// The employee sees nothing new while a payroll run includes the report (#852).
+		payrollRun: null,
 		entries: account.entries.map((entry) => ({
 			...entry,
 			recordedByUserId: null,
@@ -278,6 +285,8 @@ export type RecordReimbursementResult =
 	| { status: "recorded"; replayed: boolean; account: SettlementAccount }
 	| { status: "invalid"; errors: SettlementCommandFieldError[] }
 	| { status: "refused"; reason: SettlementPlanRefusal; account: SettlementAccount }
+	/** An unconfirmed payroll run includes the report (#852); remove it from the run first. */
+	| { status: "in_payroll_run"; payrollRun: IncludedPayrollRun }
 	| { status: "idempotency_conflict" | "not_approved" | "own_expense" | "adjustment_report" };
 
 /**
@@ -325,6 +334,11 @@ export async function recordTravelExpenseReimbursementAction(
 					success: true,
 					data: { status: "refused", reason: result.reason, account: result.account },
 				};
+			case "in_payroll_run":
+				return {
+					success: true,
+					data: { status: "in_payroll_run", payrollRun: result.payrollRun },
+				};
 			case "recorded":
 				if (!result.replayed) {
 					logAudit({
@@ -355,6 +369,34 @@ export async function recordTravelExpenseReimbursementAction(
 	} catch (error) {
 		logger.error({ error }, "Failed to record a travel expense reimbursement");
 		return { success: false, error: "Failed to record the reimbursement" };
+	}
+}
+
+/**
+ * Takes a report out of the unconfirmed payroll run that includes it (#852),
+ * so it can be reimbursed by bank transfer or taken by the next export. For
+ * expense officers who record reimbursements in their scope, owners and admins;
+ * audited.
+ */
+export async function removeTravelExpenseFromPayrollRunAction(input: {
+	reportId: string;
+}): Promise<ServerActionResult<RemoveFromPayrollRunResult>> {
+	try {
+		const parsed = z.object({ reportId: z.uuid() }).safeParse(input);
+		if (!parsed.success) return { success: false, error: "Not found" };
+		const actor = await loadFinanceActor();
+		if (!actor?.scopes.settle) return { success: false, error: "Unauthorized" };
+		const result = await removeReportFromPayrollRun(db, {
+			actor,
+			scope: actor.scopes.settle,
+			reportId: parsed.data.reportId,
+		});
+		if (result.status === "not_found") return { success: false, error: "Not found" };
+		if (result.status === "removed") revalidatePath("/travel-expenses");
+		return { success: true, data: result };
+	} catch (error) {
+		logger.error({ error }, "Failed to remove a travel expense from a payroll run");
+		return { success: false, error: "Failed to remove the report from the payroll run" };
 	}
 }
 

@@ -13,6 +13,7 @@ import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import type {
 	AbsenceData,
+	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
 	SageLohnConfig,
@@ -20,6 +21,11 @@ import type {
 	WorkPeriodData,
 } from "../types";
 import { wageTypeCodeFor } from "../wage-type-code";
+import {
+	commaDecimalAmount,
+	expenseLinesInFileOrder,
+	GERMAN_EXPENSE_LINE_NOTE,
+} from "./expense-lines";
 
 const logger = createLogger("SageLohnFormatter");
 
@@ -72,6 +78,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	transform(
 		workPeriods: WorkPeriodData[],
 		absences: AbsenceData[],
+		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
 	): ExportResult {
@@ -140,9 +147,27 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			}
 		}
 
+		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
+			this.getPersonnelNumberFromExpenseLine(line, sageConfig),
+		)) {
+			const amount =
+				sageConfig.outputFormat === "sage_native" ? commaDecimalAmount(line.amount) : line.amount;
+			lines.push(
+				[
+					this.escapeCSV(personnelNumber),
+					this.escapeCSV(line.wageTypeCode),
+					this.escapeCSV(amount),
+					this.escapeCSV(line.date),
+					this.escapeCSV(GERMAN_EXPENSE_LINE_NOTE),
+				].join(";"),
+			);
+		}
+
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
 
 		const dateRange = this.getDateRange(workPeriods, absences);
 		const fileName = this.generateFileName(dateRange);
@@ -315,6 +340,16 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			);
 		}
 		return absence.employeeId;
+	}
+
+	/**
+	 * Get personnel number of an expense line based on config
+	 */
+	private getPersonnelNumberFromExpenseLine(line: ExpenseLineData, config: SageLohnConfig): string {
+		if (config.personnelNumberType === "employeeNumber" && line.employeeNumber) {
+			return line.employeeNumber;
+		}
+		return line.employeeId;
 	}
 
 	/**

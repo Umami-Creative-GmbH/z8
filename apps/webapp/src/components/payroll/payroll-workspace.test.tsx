@@ -37,6 +37,10 @@ vi.mock("next-intl", () => ({
 	useLocale: () => activeLocale,
 }));
 vi.mock("sonner", () => ({ toast: toastMocks }));
+vi.mock("@tanstack/react-query", () => ({
+	useQueryClient: () => ({ invalidateQueries: async () => undefined }),
+}));
+vi.mock("./payroll-runs-card", () => ({ PayrollRunsCard: () => null }));
 vi.mock("@/app/[locale]/(app)/payroll/actions", () => ({
 	dismissPayrollBlockerAction: actionMocks.dismissPayrollBlockerAction,
 	exportPayrollPdfAction: actionMocks.exportPayrollPdfAction,

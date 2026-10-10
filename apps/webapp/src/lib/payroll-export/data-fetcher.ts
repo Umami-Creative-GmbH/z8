@@ -625,6 +625,19 @@ function serializeFilters(filters: PayrollExportFilters) {
 	};
 }
 
+/**
+ * The employees whose expense amounts a payroll run carries (#852): the
+ * export's employee set, so a payroll access holder's run covers only their
+ * payroll scope. An explicitly empty selection covers nobody.
+ */
+export async function resolvePayrollRunEmployeeIds(
+	organizationId: string,
+	filters: PayrollExportFilters,
+): Promise<string[]> {
+	if (hasEmptyEmployeeScope(filters)) return [];
+	return resolveExportEmployeeIds(organizationId, filters);
+}
+
 /** Employees an export covers: the explicit selection, else the organization (optionally by team). */
 async function resolveExportEmployeeIds(
 	organizationId: string,

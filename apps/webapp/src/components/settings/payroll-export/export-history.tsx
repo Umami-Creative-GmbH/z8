@@ -11,7 +11,11 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { getExportDownloadUrlAction } from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import {
+	discardPayrollRunAction,
+	getExportDownloadUrlAction,
+} from "@/app/[locale]/(app)/settings/payroll-export/actions";
+import { DiscardPayrollRunButton } from "@/components/payroll/discard-payroll-run-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -192,6 +196,15 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 										) : (
 											"-"
 										)}
+										{exp.payrollRunIncludedReports > 0 && (
+											<Badge variant="outline" className="ml-2">
+												{t(
+													"settings.payrollExport.history.payrollRun",
+													"Payroll run: {count, plural, one {# expense report} other {# expense reports}}",
+													{ count: exp.payrollRunIncludedReports },
+												)}
+											</Badge>
+										)}
 									</TableCell>
 									<TableCell>{formatFileSize(exp.fileSizeBytes)}</TableCell>
 									<TableCell className="text-muted-foreground">
@@ -200,24 +213,32 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 										)}
 									</TableCell>
 									<TableCell>
-										{exp.status === "completed" && exp.fileName && (
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => handleDownload(exp.id)}
-												disabled={isPending}
-												aria-label={t(
-													"settings.payrollExport.history.download",
-													"Download export",
-												)}
-											>
-												{isPending ? (
-													<IconLoader2 className="size-4 animate-spin" />
-												) : (
-													<IconDownload className="size-4" />
-												)}
-											</Button>
-										)}
+										<div className="flex items-center gap-1">
+											{exp.payrollRunIncludedReports > 0 && (
+												<DiscardPayrollRunButton
+													includedReports={exp.payrollRunIncludedReports}
+													discard={() => discardPayrollRunAction(organizationId, exp.id)}
+												/>
+											)}
+											{exp.status === "completed" && exp.fileName && (
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() => handleDownload(exp.id)}
+													disabled={isPending}
+													aria-label={t(
+														"settings.payrollExport.history.download",
+														"Download export",
+													)}
+												>
+													{isPending ? (
+														<IconLoader2 className="size-4 animate-spin" />
+													) : (
+														<IconDownload className="size-4" />
+													)}
+												</Button>
+											)}
+										</div>
 									</TableCell>
 								</TableRow>
 							))}
