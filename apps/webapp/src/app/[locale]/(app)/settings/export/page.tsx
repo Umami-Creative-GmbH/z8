@@ -1,101 +1,12 @@
 import { Suspense } from "react";
-import { ExportForm } from "@/components/settings/export/export-form";
-import { ExportHistory } from "@/components/settings/export/export-history";
-import { StorageSettingsForm } from "@/components/settings/export/storage-settings-form";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
-import {
-	Card,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
-import { isExportS3Configured } from "@/lib/storage/export-s3-client";
-import { getTranslate } from "@/tolgee/server";
-import { getExportHistoryAction, getStorageConfigAction } from "./actions";
+import { renderExportSettingsSections } from "./export-settings-sections";
 
 async function ExportSettingsContent() {
-	const [t, { organizationId }] = await Promise.all([
-		getTranslate(),
-		requireOrgAdminSettingsAccess(),
-	]);
+	const { organizationId } = await requireOrgAdminSettingsAccess();
 
-	// Parallelize S3 config, storage config, and export history fetches
-	const [s3Configured, storageConfigResult, historyResult] = await Promise.all([
-		isExportS3Configured(organizationId),
-		getStorageConfigAction(organizationId),
-		getExportHistoryAction(organizationId),
-	]);
-
-	const storageConfig = storageConfigResult.success
-		? storageConfigResult.data
-		: null;
-	const exports = historyResult.success ? historyResult.data : [];
-
-	return (
-		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">
-					{t("settings.dataExport.title", "Data Export")}
-				</h1>
-				<p className="text-muted-foreground">
-					{t(
-						"settings.dataExport.description",
-						"Export your organization's data",
-					)}
-				</p>
-			</div>
-
-			<Tabs
-				defaultValue={s3Configured ? "export" : "storage"}
-				className="w-full"
-			>
-				<TabsList>
-					<TabsTrigger value="export">
-						{t("settings.dataExport.tabs.newExport", "New Export")}
-					</TabsTrigger>
-					<TabsTrigger value="history">
-						{t("settings.dataExport.tabs.exportHistory", "Export History")}
-					</TabsTrigger>
-					<TabsTrigger value="storage">
-						{t("settings.dataExport.tabs.storageSettings", "Storage Settings")}
-					</TabsTrigger>
-				</TabsList>
-				<TabsContent value="export" className="mt-4">
-					{s3Configured ? (
-						<ExportForm organizationId={organizationId} />
-					) : (
-						<Card className="border-warning">
-							<CardHeader>
-								<CardTitle>
-									{t(
-										"settings.dataExport.storageNotConfigured.title",
-										"Storage Not Configured",
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.dataExport.storageNotConfigured.description",
-										"Configure S3 storage before creating exports",
-									)}
-								</CardDescription>
-							</CardHeader>
-						</Card>
-					)}
-				</TabsContent>
-				<TabsContent value="history" className="mt-4">
-					<ExportHistory exports={exports} organizationId={organizationId} />
-				</TabsContent>
-				<TabsContent value="storage" className="mt-4">
-					<StorageSettingsForm
-						organizationId={organizationId}
-						initialConfig={storageConfig}
-					/>
-				</TabsContent>
-			</Tabs>
-		</div>
-	);
+	return renderExportSettingsSections({ organizationId });
 }
 
 function ExportSettingsLoading() {
