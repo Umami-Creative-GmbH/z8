@@ -88,9 +88,29 @@ export interface CanonicalInboxApproval {
 /** A page of approvals; `totalCount` is every match before the limit, when known. */
 export type CanonicalInboxApprovalBatch = CanonicalInboxApproval[] & { totalCount?: number };
 
+/** One inbox decision on a listed assignment, after the inbox's own checks. */
+export interface CanonicalInboxDecisionInput {
+	target: CanonicalInboxDecisionTarget;
+	actorEmployeeId: string;
+	action: "approve" | "reject";
+	/** Trimmed and never empty for a rejection; absent for an approval. */
+	reason?: string;
+	/** The actor decides as a manager of approvals, not as an assigned approver. */
+	allowOrganizationWideApprover: boolean;
+}
+
 export interface CanonicalInboxRead {
 	/** The inbox type the read's items are listed, filtered and counted under. */
 	readonly type: ApprovalInboxType;
+	/** The workflow kinds whose assignments the read lists. */
+	readonly workflowTypes: readonly ApprovalWorkflowType[];
 	load(input: CanonicalInboxLoadInput): Promise<CanonicalInboxApprovalBatch>;
 	count(input: CanonicalInboxCountInput): Promise<number>;
+	/**
+	 * Decides one of the read's assignments in its own transaction, re-checking
+	 * the actor's right there. The inbox has already refused self-decisions,
+	 * stale targets and a rejection without a reason. Without it, the inbox
+	 * type's legacy handler decides (the ordinary work-period kinds).
+	 */
+	decide?(input: CanonicalInboxDecisionInput): Promise<void>;
 }

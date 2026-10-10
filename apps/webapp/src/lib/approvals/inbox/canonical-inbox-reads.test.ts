@@ -73,6 +73,7 @@ function approval(id: string, type: ApprovalInboxType, createdAt: string): Canon
 function otherRead(approvals: CanonicalInboxApproval[], total = approvals.length) {
 	return {
 		type: OTHER_TYPE,
+		workflowTypes: ["compliance_exception"],
 		load: vi.fn(async (input: { assignmentId?: string }) =>
 			Object.assign(
 				approvals.filter(
@@ -106,6 +107,7 @@ describe("canonical inbox reads", () => {
 	it("registers the ordinary work-period read under time entries", () => {
 		expect(CANONICAL_INBOX_READS).toContainEqual({
 			type: "time_entry",
+			workflowTypes: ["manual_time_submission", "policy_clock_out"],
 			load: loadOrdinaryCanonicalApprovals,
 			count: countOrdinaryCanonicalApprovals,
 		});

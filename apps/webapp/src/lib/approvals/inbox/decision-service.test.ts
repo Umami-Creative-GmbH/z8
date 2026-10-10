@@ -29,6 +29,7 @@ const {
 
 vi.mock("@/lib/approvals/inbox/ordinary-canonical-read", () => ({
 	loadOrdinaryCanonicalApprovals: loadOrdinaryCanonicalApprovalsMock,
+	countOrdinaryCanonicalApprovals: vi.fn(async () => 0),
 }));
 
 vi.mock("@/db", () => ({
