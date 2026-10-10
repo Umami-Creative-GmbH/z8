@@ -279,6 +279,74 @@ export async function readCustomFieldValues(
 	return { fields, values, missingRequired };
 }
 
+/** A field of a record's custom fields section, with whether the viewer may change it. */
+export interface CustomFieldSectionField extends CustomFieldDefinitionView {
+	editable: boolean;
+}
+
+/** What the "Custom fields" section of one record (or a record being created) shows. */
+export interface CustomFieldSection {
+	/** The active fields the viewer sees, in order. */
+	fields: CustomFieldSectionField[];
+	/** The record's values today, by field id (only fields in `fields`). */
+	values: Record<string, CustomFieldValue>;
+	/** Required fields in `fields` without a value today (the "missing required values" indicator). */
+	missingRequiredFieldIds: string[];
+}
+
+/**
+ * The custom fields section of one record as a viewer at `level` sees it,
+ * today in the organization's timezone. `recordId` null = a record being
+ * created (fields only). The caller checks that the viewer reaches the record.
+ */
+export async function readCustomFieldSection(
+	reader: CustomFieldReader,
+	input: {
+		organizationId: string;
+		entity: CustomFieldEntity;
+		recordId: string | null;
+		level: CustomFieldViewerLevel | null;
+	},
+): Promise<CustomFieldSection> {
+	const read = await readCustomFieldValues(reader, {
+		organizationId: input.organizationId,
+		entity: input.entity,
+		recordIds: input.recordId ? [input.recordId] : [],
+		asOf: await customFieldsToday(reader, input.organizationId),
+		viewer: { kind: "level", level: input.level },
+	});
+	return {
+		fields: read.fields.map((field) => ({
+			...field,
+			editable: canEditCustomField(input.level, field.editLevel),
+		})),
+		values: input.recordId ? (read.values[input.recordId] ?? {}) : {},
+		missingRequiredFieldIds: input.recordId ? (read.missingRequired[input.recordId] ?? []) : [],
+	};
+}
+
+/**
+ * The records among `recordIds` with a missing required value today, among
+ * the fields `viewer` sees (the list markers). The caller passes reachable
+ * records only.
+ */
+export async function findRecordsMissingRequiredValues(
+	reader: CustomFieldReader,
+	input: {
+		organizationId: string;
+		entity: CustomFieldEntity;
+		recordIds: readonly string[];
+		viewer: CustomFieldViewer;
+	},
+): Promise<Set<string>> {
+	if (input.recordIds.length === 0) return new Set();
+	const read = await readCustomFieldValues(reader, {
+		...input,
+		asOf: await customFieldsToday(reader, input.organizationId),
+	});
+	return new Set(Object.keys(read.missingRequired));
+}
+
 // ---------------------------------------------------------------------------
 // Writes
 // ---------------------------------------------------------------------------

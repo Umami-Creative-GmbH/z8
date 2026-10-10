@@ -36,6 +36,15 @@ vi.mock("drizzle-orm", () => ({
 	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
 }));
 
+vi.mock("@/lib/organization/custom-fields/values", () => ({
+	findRecordsMissingRequiredValues: vi.fn(async () => new Set<string>()),
+}));
+
+vi.mock("@/lib/organization/custom-fields/form-values", () => ({
+	keepCustomFieldRefusal: (error: unknown) => error,
+	saveFormCustomFieldValues: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/db/schema", () => ({
 	customer: {
 		id: "id",

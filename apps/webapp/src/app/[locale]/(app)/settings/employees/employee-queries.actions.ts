@@ -14,6 +14,8 @@ import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organiz
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import type { DatabaseClient, DatabaseQuery } from "@/lib/effect/services/database.service";
+import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
 import type {
 	EmployeeDetailRecord,
 	EmployeeDirectoryRow,
@@ -237,6 +239,35 @@ function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmploye
 	};
 }
 
+/**
+ * Marks the employee rows with a missing required custom field value among the
+ * fields the actor sees (#818). Invitation drafts have no values.
+ */
+function markMissingRequiredCustomFields(
+	actor: {
+		organizationId: string;
+		session: { user: { id: string } };
+		dbService: { readonly db: DatabaseClient; readonly query: DatabaseQuery };
+	},
+	rows: EmployeeDirectoryRow[],
+) {
+	return Effect.gen(function* () {
+		const employeeIds = rows.filter((row) => row.kind === "employee").map((row) => row.id);
+		const missing = yield* actor.dbService.query("customFields.employeesMissingRequired", () =>
+			findRecordsMissingRequiredValues(actor.dbService.db, {
+				organizationId: actor.organizationId,
+				entity: "employee",
+				recordIds: employeeIds,
+				viewer: { kind: "actor", userId: actor.session.user.id },
+			}),
+		);
+		return rows.map(
+			(row): EmployeeDirectoryRow =>
+				row.kind === "employee" ? { ...row, missingRequiredCustomFields: missing.has(row.id) } : row,
+		);
+	});
+}
+
 function loadEmployeePage(params: EmployeeListParams) {
 	return Effect.gen(function* () {
 		const actor = yield* getEmployeeSettingsActorContext({ queryName: "loadEmployeePage:actor" });
@@ -302,7 +333,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 
 			const total = totalResult[0]?.total ?? 0;
 			return {
-				employees: rows.map(mapEmployeeRow),
+				employees: yield* markMissingRequiredCustomFields(actor, rows.map(mapEmployeeRow)),
 				total,
 				hasMore: offset + rows.length < total,
 			};
@@ -353,7 +384,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 		const pagedEmployees = employees.slice(offset, offset + limit);
 
 		return {
-			employees: pagedEmployees,
+			employees: yield* markMissingRequiredCustomFields(actor, pagedEmployees),
 			total: employees.length,
 			hasMore: offset + pagedEmployees.length < employees.length,
 		};
