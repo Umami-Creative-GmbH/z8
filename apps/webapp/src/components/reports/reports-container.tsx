@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ReportData, ReportDateRange } from "@/lib/reports/types";
 import { ExportButtons } from "./export-buttons";
+import { ReportCustomFieldsCard } from "./report-custom-fields";
 import { ReportFilters } from "./report-filters";
 import { ReportPreviewTable } from "./report-preview-table";
 import { ReportSummaryCards } from "./report-summary-cards";
@@ -79,6 +80,9 @@ export function ReportsContainer({ currentEmployeeId }: ReportsContainerProps) {
 				<>
 					{/* Summary Cards */}
 					<ReportSummaryCards reportData={reportData} />
+
+					{/* Custom fields the requester sees, as of the period's last day */}
+					<ReportCustomFieldsCard fields={reportData.employee.customFields} />
 
 					{/* Export Actions */}
 					<Card>

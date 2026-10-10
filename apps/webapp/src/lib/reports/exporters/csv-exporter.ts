@@ -3,6 +3,7 @@
  * Simple text-based export suitable for spreadsheet import
  */
 
+import { customFieldReportText } from "@/lib/organization/custom-fields/report-values";
 import type { ReportData } from "../types";
 
 /**
@@ -43,6 +44,15 @@ export function exportToCSV(reportData: ReportData): string {
 	lines.push(`Report Period,${escapeCsv(reportData.period.label)}`);
 	lines.push(`Generated On,${format(new Date(), "yyyy-MM-dd HH:mm:ss")}`);
 	lines.push("");
+
+	// Custom fields the requester sees, as of the period's last day (#820)
+	if (reportData.employee.customFields.length > 0) {
+		lines.push("Custom Fields");
+		for (const field of reportData.employee.customFields) {
+			lines.push(`${escapeCsv(field.name)},${escapeCsv(customFieldReportText(field))}`);
+		}
+		lines.push("");
+	}
 
 	// Work Hours Summary
 	lines.push("Work Hours Summary");

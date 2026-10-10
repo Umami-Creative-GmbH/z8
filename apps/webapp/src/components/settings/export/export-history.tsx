@@ -40,9 +40,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { formatDateOnly, formatTimeOnly } from "@/lib/datetime/format";
+import type { ExportCategory } from "@/lib/export/types";
 import { type ExportRecord, formatFileSize } from "@/lib/export/utils";
 import { useRouter } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
+import { EXPORT_CATEGORY_COPY } from "./export-category-copy";
 
 interface ExportHistoryProps {
 	exports: ExportRecord[];
@@ -181,7 +183,12 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 									<div className="flex flex-wrap gap-1">
 										{exp.categories.slice(0, 3).map((cat) => (
 											<Badge key={cat} variant="secondary" className="text-xs">
-												{t(`settings.dataExport.categories.${cat}.label`, cat)}
+												{cat in EXPORT_CATEGORY_COPY
+													? t(
+															EXPORT_CATEGORY_COPY[cat as ExportCategory].labelKey,
+															EXPORT_CATEGORY_COPY[cat as ExportCategory].label,
+														)
+													: cat}
 											</Badge>
 										))}
 										{exp.categories.length > 3 && (

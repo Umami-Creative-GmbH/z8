@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { EXPORT_CATEGORIES, type ExportCategory } from "@/lib/export/types";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
+import { EXPORT_CATEGORY_COPY } from "./export-category-copy";
 
 interface ExportFormProps {
 	organizationId: string;
@@ -122,12 +123,15 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 										htmlFor={category}
 										className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 									>
-										{t(`settings.dataExport.categories.${category}.label`, category)}
+										{t(
+											EXPORT_CATEGORY_COPY[category].labelKey,
+											EXPORT_CATEGORY_COPY[category].label,
+										)}
 									</Label>
 									<p className="text-xs text-muted-foreground">
 										{t(
-											`settings.dataExport.categories.${category}.description`,
-											`Export ${category} data`,
+											EXPORT_CATEGORY_COPY[category].descriptionKey,
+											EXPORT_CATEGORY_COPY[category].description,
 										)}
 									</p>
 								</div>

@@ -96,6 +96,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			(project) =>
 				project.name.toLowerCase().includes(searchLower) ||
 				project.description?.toLowerCase().includes(searchLower) ||
+				project.customer?.name.toLowerCase().includes(searchLower) ||
 				project.status.toLowerCase().includes(searchLower),
 		);
 	})();
@@ -183,6 +184,15 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 							</div>
 						)}
 					</div>
+				</div>
+			),
+		},
+		{
+			id: "customer",
+			header: t("reports.projects.table.customer", "Customer"),
+			cell: ({ row }) => (
+				<div className="text-sm">
+					{row.original.customer?.name ?? <span className="text-muted-foreground">—</span>}
 				</div>
 			),
 		},
