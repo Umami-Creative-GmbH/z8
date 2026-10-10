@@ -144,7 +144,12 @@ export async function closeMonthAutomatically(
 		database
 			.update(closedMonthAutoCloseRun)
 			.set({ outcome })
-			.where(eq(closedMonthAutoCloseRun.id, claimed.id));
+			.where(
+				and(
+					eq(closedMonthAutoCloseRun.organizationId, input.organizationId),
+					eq(closedMonthAutoCloseRun.id, claimed.id),
+				),
+			);
 
 	switch (result.kind) {
 		case "closed":

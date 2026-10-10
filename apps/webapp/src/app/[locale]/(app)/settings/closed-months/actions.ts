@@ -132,8 +132,6 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 					database
 						.select({
 							id: employee.id,
-							firstName: employee.firstName,
-							lastName: employee.lastName,
 							userName: user.name,
 							teamId: employee.teamId,
 						})
@@ -169,10 +167,7 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 					employees: employees
 						.map((row) => ({
 							id: row.id,
-							name:
-								[row.firstName, row.lastName].filter(Boolean).join(" ").trim() ||
-								row.userName ||
-								"—",
+							name: row.userName?.trim() || "—",
 							teamId: row.teamId,
 						}))
 						.sort((left, right) => left.name.localeCompare(right.name)),

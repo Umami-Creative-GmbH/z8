@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
-import { organization } from "@/db/auth-schema";
+import { organization, user } from "@/db/auth-schema";
 import {
 	absenceEntry,
 	approvalRequest,
@@ -105,8 +105,9 @@ interface CoveredEmployee {
 	range: { start: Instant; endExclusive: Instant };
 }
 
-function employeeName(row: { firstName: string | null; lastName: string | null }): string {
-	return [row.firstName, row.lastName].filter(Boolean).join(" ").trim() || "—";
+/** The employee's display name comes from their user (#264 name source). */
+function employeeName(row: { userName: string | null }): string {
+	return row.userName?.trim() || "—";
 }
 
 // ============================================
@@ -182,6 +183,37 @@ export async function assertAbsenceDaysOpen(
 			throw monthClosedError(touched);
 		}
 	}
+}
+
+/**
+ * `assertAbsenceDaysOpen` for an absence known by id: its employee and days
+ * are read from the row. A missing row is left to the writer to refuse.
+ */
+export async function assertAbsenceOpenById(
+	transaction: Pick<Transaction, "execute" | "select">,
+	input: { organizationId: string; absenceId: string },
+): Promise<void> {
+	await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
+	const [absence] = await transaction
+		.select({
+			employeeId: absenceEntry.employeeId,
+			startDate: absenceEntry.startDate,
+			endDate: absenceEntry.endDate,
+		})
+		.from(absenceEntry)
+		.where(
+			and(
+				eq(absenceEntry.id, input.absenceId),
+				eq(absenceEntry.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	if (!absence) return;
+	await assertAbsenceDaysOpen(transaction, {
+		organizationId: input.organizationId,
+		employeeId: absence.employeeId,
+		days: [{ startDate: absence.startDate, endDate: absence.endDate }],
+	});
 }
 
 export interface MonthClosureStatus {
@@ -269,12 +301,12 @@ async function employeesInScope(
 	const rows = await transaction
 		.select({
 			id: employee.id,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			userName: user.name,
 			teamId: employee.teamId,
 			userTimezone: userSettings.timezone,
 		})
 		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
 		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 		.where(
 			and(
@@ -626,9 +658,12 @@ export async function reopenMonth(
 				.update(closedMonthEmployee)
 				.set({ reopenedAt: sql`now()`, reopeningId })
 				.where(
-					inArray(
-						closedMonthEmployee.id,
-						rows.map((row) => row.id),
+					and(
+						eq(closedMonthEmployee.organizationId, input.organizationId),
+						inArray(
+							closedMonthEmployee.id,
+							rows.map((row) => row.id),
+						),
 					),
 				);
 		}
