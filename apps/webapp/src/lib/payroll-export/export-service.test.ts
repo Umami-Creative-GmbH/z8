@@ -135,6 +135,7 @@ vi.mock("./formatters/sage-lohn-formatter", () => ({
 vi.mock("./data-fetcher", () => ({
 	countWorkPeriods: vi.fn(),
 	fetchAbsencesForExport: vi.fn(),
+	fetchOvertimePayoutsForExport: vi.fn(async () => []),
 	fetchWorkPeriodsForExport: vi.fn(),
 	getPayrollExportConfig: vi.fn(),
 	getWageTypeMappings: vi.fn(),

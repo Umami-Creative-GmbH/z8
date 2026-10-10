@@ -19,6 +19,10 @@ import type { db as globalDb } from "@/db";
  * covers every employee of the organization; any other scope covers the
  * employees assigned directly, the employees whose team is assigned, and the
  * members (`team_membership`) of an assigned team.
+ *
+ * A holder never covers their own employee record (or any other profile of
+ * their user), even when the grant names it: an owner, an admin or another
+ * holder records their adjustments.
  */
 
 type Reader = Pick<typeof globalDb, "execute">;
@@ -31,10 +35,10 @@ export type BalanceAdjustmentGrantEmployee = {
 	isActive: boolean;
 };
 
-/** The actor's active grant, as a CTE `holder_grant (id, organization_id, scope)`. */
+/** The actor's active grant, as a CTE `holder_grant (id, organization_id, scope, holder_user_id)`. */
 function holderGrant(input: { organizationId: string; actorUserId: string }): SQL {
 	return sql`holder_grant as (
-		select g.id, g.organization_id, g.scope
+		select g.id, g.organization_id, g.scope, h.user_id as holder_user_id
 		from payroll_access_grant g
 		join employee h on h.id = g.payroll_employee_id and h.organization_id = g.organization_id
 		join member m on m.user_id = h.user_id and m.organization_id = h.organization_id
@@ -51,6 +55,7 @@ function holderGrant(input: { organizationId: string; actorUserId: string }): SQ
 /** Whether the grant aliased `hg` covers the employee aliased `e`, departed or not. */
 const grantCoversEmployee = sql`(
 	e.organization_id = hg.organization_id
+	and e.user_id is distinct from hg.holder_user_id
 	and (
 		hg.scope = 'all'
 		or exists (
