@@ -40,6 +40,10 @@ const { setOwnKioskPin } = await import("@/lib/time-tracking/kiosk/pin-store");
 const { hashKioskSecret } = await import("./credentials");
 const { KIOSK_TOKEN_HEADER } = await import("./protocol");
 const { createKioskClockService } = await import("./clock-service");
+const { proveKioskPin } = await import("@/lib/time-tracking/clocking/kiosk");
+type ClockPrincipal = import("@/lib/time-tracking/clocking/types").ClockPrincipal;
+type ClockInCommand = import("@/lib/time-tracking/clocking/types").ClockInCommand;
+type KioskPinProof = import("@/lib/time-tracking/clocking/types").KioskPinProof;
 
 const ids = {
 	organization: "t860-kiosk-org",
@@ -326,6 +330,294 @@ describe("kiosk clocking on PostgreSQL", () => {
 				[ids.worker],
 			);
 			expect(only(rows)).toEqual({ work_location_type: "office" });
+		});
+
+		it("takes a break and clocks out, recording the kiosk on every entry and receipt", async () => {
+			const { service, followUps } = newService();
+			const run = async (body: Record<string, unknown>) => {
+				const response = await service.clock(
+					kioskRequest("clock", { employeeId: ids.worker, pin: PIN, ...body }),
+				);
+				return { status: response.status, body: await response.json() };
+			};
+			await run({ action: "clock_in" });
+			now = parseInstant("2026-07-22T10:00:00Z");
+			const breakTaken = await run({ action: "break", breakMinutes: 30 });
+			now = parseInstant("2026-07-22T14:30:00Z");
+			const clockedOut = await run({ action: "clock_out" });
+
+			expect(breakTaken).toMatchObject({
+				status: 200,
+				body: {
+					outcome: "executed",
+					state: { status: "clocked_in", since: "2026-07-22T10:00:00Z" },
+					dayTotal: { todayMinutes: 210 },
+				},
+			});
+			expect(clockedOut).toEqual({
+				status: 200,
+				body: {
+					outcome: "executed",
+					action: "clock_out",
+					employee: { id: ids.worker, name: "Wanda Worker" },
+					state: { status: "clocked_out" },
+					dayTotal: { date: "2026-07-22", timezone: KIOSK_ZONE, todayMinutes: 480 },
+				},
+			});
+			expect((await entries()).map((entry) => [entry.type, entry.device_info, entry.created_by])).toEqual([
+				["clock_in", `kiosk:${ids.kiosk}`, ids.workerUser],
+				["clock_out", `kiosk:${ids.kiosk}`, ids.workerUser],
+				["clock_in", `kiosk:${ids.kiosk}`, ids.workerUser],
+				["clock_out", `kiosk:${ids.kiosk}`, ids.workerUser],
+			]);
+			// The break and the clock-out both closed work and ran the clock-out follow-ups.
+			expect(followUps.closures).toHaveLength(2);
+			const { rows: receipts } = await admin.query(
+				`select kind, writer, actor_kind, actor_user_id, kiosk_id, command->>'kioskId' as command_kiosk,
+				        command->>'deviceInfo' as channel
+				 from completed_work_operation where employee_id = $1 order by created_at`,
+				[ids.worker],
+			);
+			if (mode === "inactive") {
+				// Legacy admission keeps no receipts; the entries name the kiosk.
+				expect(receipts).toEqual([]);
+				return;
+			}
+			const kiosk = {
+				writer: "kiosk_clock",
+				actor_kind: "kiosk",
+				actor_user_id: null,
+				kiosk_id: ids.kiosk,
+				command_kiosk: ids.kiosk,
+				channel: "kiosk",
+			};
+			expect(receipts).toEqual([
+				{ kind: "start_live_work", ...kiosk },
+				{ kind: "close_resume_work", ...kiosk },
+				{ kind: "close_active_work", ...kiosk },
+			]);
+		});
+
+		it("starts a break in progress, resumes it, and ends the day while on a later break", async () => {
+			const { service } = newService();
+			const run = async (action: string) => {
+				const response = await service.clock(
+					kioskRequest("clock", { employeeId: ids.worker, pin: PIN, action }),
+				);
+				return { status: response.status, body: await response.json() };
+			};
+			await run("clock_in");
+			now = parseInstant("2026-07-22T10:00:00Z");
+			const started = await run("start_break");
+			now = parseInstant("2026-07-22T10:30:00Z");
+			const statusOnBreak = await service.status(
+				kioskRequest("employee-status", { employeeId: ids.worker, pin: PIN }),
+			);
+			const resumed = await run("resume_break");
+			now = parseInstant("2026-07-22T13:00:00Z");
+			await run("start_break");
+			now = parseInstant("2026-07-22T13:45:00Z");
+			const endOfDay = await run("clock_out");
+
+			expect(started).toMatchObject({
+				status: 200,
+				body: {
+					outcome: "executed",
+					action: "start_break",
+					state: {
+						status: "on_break",
+						since: "2026-07-22T06:00:00Z",
+						breakSince: "2026-07-22T10:00:00Z",
+						breakZone: KIOSK_ZONE,
+					},
+					dayTotal: { todayMinutes: 240 },
+				},
+			});
+			expect(statusOnBreak.status).toBe(200);
+			// The interrupted work keeps counting until the break ends (ADR 0007).
+			expect(await statusOnBreak.json()).toMatchObject({
+				state: { status: "on_break" },
+				dayTotal: { todayMinutes: 270 },
+			});
+			expect(resumed).toMatchObject({
+				status: 200,
+				body: {
+					outcome: "executed",
+					state: { status: "clocked_in", since: "2026-07-22T10:30:00Z" },
+					dayTotal: { todayMinutes: 240 },
+				},
+			});
+			// The day ends at the open break's start.
+			expect(endOfDay).toMatchObject({
+				status: 200,
+				body: { outcome: "executed", state: { status: "clocked_out" }, dayTotal: { todayMinutes: 390 } },
+			});
+		});
+
+		it("replays a retried action with the same operation instead of clocking twice", async () => {
+			const operationId = randomUUID();
+			const first = await clock({ action: "clock_in", operationId });
+			now = parseInstant("2026-07-22T06:01:00Z");
+			const retry = await clock({ action: "clock_in", operationId });
+
+			expect(first.body.outcome).toBe("executed");
+			expect(retry).toMatchObject({ status: 200, body: { outcome: "replayed", state: { status: "clocked_in" } } });
+			expect(await entries()).toHaveLength(1);
+		});
+	});
+
+	describe("refusals", () => {
+		it("refuses an employee who is not assigned to the kiosk's location without checking the PIN", async () => {
+			const response = await clock({ employeeId: ids.stranger, action: "clock_in" });
+			expect(response).toEqual({ status: 403, body: { code: "employee_not_assigned" } });
+			expect(await entries(ids.stranger)).toEqual([]);
+		});
+
+		it("refuses another organization's employee", async () => {
+			const response = await clock({ employeeId: ids.foreign, action: "clock_in" });
+			expect(response).toEqual({ status: 403, body: { code: "employee_not_assigned" } });
+			expect(await entries(ids.foreign)).toEqual([]);
+		});
+
+		it("refuses a revoked kiosk", async () => {
+			const response = await clock({ action: "clock_in" }, tokens.revoked);
+			expect(response).toMatchObject({ status: 401, body: { code: "kiosk_revoked" } });
+			expect(await entries()).toEqual([]);
+		});
+
+		it("answers a wrong PIN without clocking", async () => {
+			const response = await clock({ action: "clock_in", pin: "0000" });
+			expect(response).toEqual({ status: 403, body: { code: "wrong_pin" } });
+			expect(await entries()).toEqual([]);
+		});
+
+		it("answers a locked PIN without clocking, even when it is then right", async () => {
+			for (let attempt = 1; attempt < 5; attempt++) {
+				expect((await clock({ action: "clock_in", pin: "0000" })).body).toEqual({ code: "wrong_pin" });
+			}
+			const fifth = await clock({ action: "clock_in", pin: "0000" });
+			const right = await clock({ action: "clock_in" });
+
+			const locked = { status: 423, body: { code: "pin_locked", lockedUntil: expect.any(String) } };
+			expect(fifth).toEqual(locked);
+			expect(right).toEqual(locked);
+			expect(await entries()).toEqual([]);
+		});
+
+		it("refuses PIN attempts over the kiosk's limit before checking the PIN", async () => {
+			const followUps = recordingFollowUps();
+			const limited = createKioskClockService({
+				clocking: createClocking({
+					clock: { nowInstant: () => now } as never,
+					transactions: coordinatedTransactions(),
+					followUps,
+				}),
+				clock: { nowInstant: () => now },
+				limitPinAttempts: async (kioskId) => {
+					expect(kioskId).toBe(ids.kiosk);
+					return { allowed: false, retryAfter: 42 };
+				},
+			});
+			const response = await limited.clock(
+				kioskRequest("clock", { employeeId: ids.worker, pin: PIN, action: "clock_in" }),
+			);
+			expect(response.status).toBe(429);
+			expect(await response.json()).toEqual({ code: "rate_limited", retryAfter: 42 });
+			expect(await entries()).toEqual([]);
+		});
+
+		describe("Clocking's own kiosk authorization", () => {
+			function clockIn(principal: ClockPrincipal, overrides: Partial<ClockInCommand> = {}) {
+				return createClocking({
+					clock: { nowInstant: () => now } as never,
+					transactions: coordinatedTransactions(),
+					followUps: recordingFollowUps(),
+				}).run({
+					organizationId: ids.organization,
+					principal,
+					subject: { employeeId: ids.worker },
+					identity: { origin: "server", id: randomUUID() },
+					channel: "kiosk",
+					at: { kind: "now" },
+					zone: { device: KIOSK_ZONE, fallback: KIOSK_ZONE },
+					body: { kind: "clock_in", workLocationType: "office" },
+					...overrides,
+				});
+			}
+
+			async function proof(kioskId: string = ids.kiosk) {
+				const proven = await proveKioskPin({
+					organizationId: ids.organization,
+					kioskId,
+					employeeId: ids.worker,
+					pin: PIN,
+				});
+				if (proven.status !== "verified") throw new Error(proven.status);
+				return proven.proof;
+			}
+
+			const kioskPrincipal = (pin: KioskPinProof, kioskId: string = ids.kiosk): ClockPrincipal => ({
+				kind: "kiosk",
+				kioskId,
+				userId: ids.workerUser,
+				pin,
+			});
+			const denied = { outcome: "refused", failure: { code: "access_denied" } };
+
+			it("runs with a proof the PIN check issued", async () => {
+				await expect(clockIn(kioskPrincipal(await proof()))).resolves.toMatchObject({
+					outcome: "executed",
+				});
+			});
+
+			it("refuses a proof built without the PIN check", async () => {
+				const forged = { organizationId: ids.organization, kioskId: ids.kiosk, employeeId: ids.worker };
+				await expect(clockIn(kioskPrincipal(forged))).resolves.toEqual(denied);
+			});
+
+			it("refuses a proof issued at another kiosk", async () => {
+				await expect(
+					clockIn(kioskPrincipal(await proof(ids.revokedKiosk), ids.kiosk)),
+				).resolves.toEqual(denied);
+			});
+
+			it("refuses a kiosk revoked after the PIN was checked", async () => {
+				const pin = await proof();
+				await admin.query("update kiosk set revoked_at = now() where id = $1", [ids.kiosk]);
+				await expect(clockIn(kioskPrincipal(pin))).resolves.toEqual(denied);
+			});
+
+			it("refuses an employee unassigned after the PIN was checked", async () => {
+				const pin = await proof();
+				await admin.query("delete from employee_assigned_location where employee_id = $1", [
+					ids.worker,
+				]);
+				await expect(clockIn(kioskPrincipal(pin))).resolves.toEqual(denied);
+			});
+
+			it("refuses a device zone other than the kiosk's, an occurred instant and on behalf", async () => {
+				for (const overrides of [
+					{ zone: { device: "UTC", fallback: KIOSK_ZONE } },
+					{ at: { kind: "occurred", instant: now } },
+					{ subject: { employeeId: ids.worker, onBehalf: true } },
+					{ channel: "web" },
+				] as Partial<ClockInCommand>[]) {
+					await expect(clockIn(kioskPrincipal(await proof()), overrides)).resolves.toEqual(denied);
+				}
+			});
+
+			it("keeps the kiosk channel the kiosk principal's alone", async () => {
+				await expect(clockIn({ kind: "user", userId: ids.workerUser })).resolves.toEqual(denied);
+				expect(await entries()).toEqual([]);
+			});
+		});
+
+		it("answers a Clocking refusal with the employee's state", async () => {
+			const response = await clock({ action: "clock_out" });
+			expect(response).toMatchObject({
+				status: 409,
+				body: { code: "not_clocked_in", state: { status: "clocked_out" }, dayTotal: { todayMinutes: 0 } },
+			});
 		});
 	});
 });

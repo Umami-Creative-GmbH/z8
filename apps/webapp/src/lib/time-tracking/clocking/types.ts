@@ -42,7 +42,24 @@ export type ClockPrincipal =
 			userId: string;
 			operationId: string;
 			workPeriodId: string;
-	  };
+	  }
+	/**
+	 * Kiosk clocking (#860): a kiosk, together with the employee's kiosk PIN
+	 * verified in this request, runs the employee's own clocking. `userId` is the
+	 * employee's user: creator provenance only, never human authority.
+	 */
+	| { kind: "kiosk"; kioskId: string; userId: string; pin: KioskPinProof };
+
+/**
+ * Proof that this request verified an employee's kiosk PIN at a kiosk. Only the
+ * kiosk PIN check (`proveKioskPin`) issues one; a proof built any other way is
+ * refused, and each proof expires shortly after it was issued.
+ */
+export type KioskPinProof = {
+	readonly organizationId: string;
+	readonly kioskId: string;
+	readonly employeeId: string;
+};
 
 /**
  * The employee whose live work changes: the principal's own, or, `onBehalf`,
