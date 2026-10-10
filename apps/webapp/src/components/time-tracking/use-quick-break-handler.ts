@@ -2,10 +2,12 @@
 
 import type { TFnType } from "@tolgee/react";
 import { toast } from "sonner";
+import { isClockConnectionRequired } from "@/lib/time-tracking/browser-clock-command";
 
 type AddBreakMutation = (params: { breakMinutes: number }) => Promise<{
 	success: boolean;
 	error?: string;
+	code?: string;
 }>;
 
 export function useQuickBreakHandler(addBreak: AddBreakMutation, t: TFnType) {
@@ -23,7 +25,8 @@ export function useQuickBreakHandler(addBreak: AddBreakMutation, t: TFnType) {
 			result.error ||
 			t("timeTracking.quickBreak.errors.failed", "Failed to add break. Please try again.");
 
-		toast.error(errorMessage);
+		// Needing a connection in this organization is shown inline (#845).
+		if (!isClockConnectionRequired(result)) toast.error(errorMessage);
 		return { success: false, error: errorMessage };
 	};
 }
