@@ -7,6 +7,7 @@ import type {
 	DocumentCategory,
 	DocumentVisibility,
 	PayPeriod,
+	PersonnelDocumentFileProblem,
 } from "@/lib/personnel-file/document.types";
 
 /** Translated names of the document categories and visibilities (CONTEXT.md terms). */
@@ -24,6 +25,22 @@ export function usePersonnelFileLabels() {
 		hr_only: t("settings.personnelFiles.visibility.hrOnly", "HR-only"),
 	};
 	return { categories, visibilities };
+}
+
+/** Why a chosen file cannot be uploaded, as `personnelDocumentFileProblem` reports it. */
+export function usePersonnelFileProblemMessages(): Record<PersonnelDocumentFileProblem, string> {
+	const { t } = useTranslate();
+	return {
+		heic: t(
+			"settings.personnelFiles.upload.heic",
+			"HEIC images are not supported. Export the photo as JPEG and upload it again.",
+		),
+		unsupported_type: t(
+			"settings.personnelFiles.upload.unsupportedType",
+			"Upload a PDF, JPEG, PNG or WebP file.",
+		),
+		too_large: t("settings.personnelFiles.upload.tooLarge", "The file can be at most 20 MB."),
+	};
 }
 
 /** A pay period as the month name and year in the app language. */

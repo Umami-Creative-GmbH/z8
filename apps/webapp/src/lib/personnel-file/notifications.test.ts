@@ -52,6 +52,31 @@ describe("buildEmployeeUploadNotification", () => {
 			i18n: { messageKey: "common:notifications.content.personnelFileEmployeeUpload.other" },
 		});
 	});
+
+	it("names the absence of a sick note and leads to the employee's sick notes (#982)", () => {
+		const params = buildEmployeeUploadNotification({
+			...input,
+			document: {
+				...input.document,
+				title: "Sick note 12–14 Oct 2026",
+				category: "sick_note",
+				absence: { startDate: "2026-10-12", endDate: "2026-10-14" },
+			},
+		});
+		expect(params.message.replace(/\s/gu, " ")).toMatch(
+			/^Anna Example uploaded a sick note for 12\s?–\s?14 Oct 2026$/,
+		);
+		expect(params.actionUrl).toBe(
+			"/personnel-files/44444444-4444-4444-8444-444444444444?category=sick_note",
+		);
+		expect(params.metadata).toMatchObject({
+			category: "sick_note",
+			i18n: {
+				messageKey: "common:notifications.content.personnelFileEmployeeUpload.sickNote",
+				params: { name: "Anna Example", dateRange: expect.stringContaining("Oct 2026") },
+			},
+		});
+	});
 });
 
 describe("buildDocumentSharedNotification", () => {

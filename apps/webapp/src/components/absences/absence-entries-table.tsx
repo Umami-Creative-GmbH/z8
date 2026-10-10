@@ -1,6 +1,6 @@
 "use client";
 
-import { IconX } from "@tabler/icons-react";
+import { IconPaperclip, IconX } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -31,6 +31,10 @@ import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-d
 import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
+import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
+import { AttachSickNoteDialog } from "./sick-notes/attach-sick-note-dialog";
+import { SickNoteMarker } from "./sick-notes/sick-note-marker";
+import { useOwnAbsenceSickNotes } from "./sick-notes/use-own-absence-sick-notes";
 
 interface AbsenceEntriesTableProps {
 	absences: AbsenceWithCategory[];
@@ -44,11 +48,26 @@ function canShowCancelAction(absence: AbsenceWithCategory, today: string): boole
 	return false;
 }
 
+/** Sick notes go on the employee's own sick leave unless it was rejected (#982). */
+function takesSickNotes(absence: AbsenceWithCategory): boolean {
+	return absence.category.type === "sick" && absence.status !== "rejected";
+}
+
 export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
+	const sickNotes = useOwnAbsenceSickNotes(absences);
+	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithCategory | null>(null);
+	const [attachingTo, setAttachingTo] = useState<AbsenceWithCategory | null>(null);
+
+	// Attaching can turn "without certificate" into "with certificate".
+	const handleSickNotesChanged = () => {
+		void sickNotes.refresh();
+		refresh();
+		onUpdate?.();
+	};
 
 	// Format period for display
 	const formatPeriod = (period: DayPeriod): string => {
@@ -159,6 +178,16 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 							)}
 						</span>
 					)}
+					{row.original.category.type === "sick" ? (
+						<SickNoteMarker
+							count={sickNotes.markers[row.original.id]?.count ?? 0}
+							onOpen={
+								sickNotes.markers[row.original.id]?.viewable
+									? () => setSickNotesOf(row.original)
+									: undefined
+							}
+						/>
+					) : null}
 				</div>
 			),
 		},
@@ -209,53 +238,69 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			),
 			cell: ({ row }) => {
 				const absence = row.original;
-				if (!canShowCancelAction(absence, currentDate)) return null;
+				const canAttachSickNote = sickNotes.canAttach && takesSickNotes(absence);
+				const canCancel = canShowCancelAction(absence, currentDate);
+				if (!canCancel && !canAttachSickNote) return null;
 				const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
 				const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
+				const attachLabel = t("absences.sickNotes.attachAction", "Attach sick note");
 
 				return (
-					<div className="flex justify-end">
-						<Tooltip>
-							<AlertDialog>
-								<TooltipTrigger asChild>
-									<AlertDialogTrigger asChild>
-										<Button
-											variant="ghost"
-											size="sm"
-											disabled={cancelingId === absence.id}
-											aria-label={cancelLabel}
-										>
-											<IconX className="size-4" />
-											{/* Touch screens cannot show the tooltip (#846). */}
-											<span className="sm:sr-only">{cancelLabel}</span>
-										</Button>
-									</AlertDialogTrigger>
-								</TooltipTrigger>
-								<TooltipContent>{cancelTooltip}</TooltipContent>
-								<AlertDialogContent>
-									<AlertDialogHeader>
-										<AlertDialogTitle>
-											{t("absences.dialog.cancelTitle", "Cancel Absence")}
-										</AlertDialogTitle>
-										<AlertDialogDescription>
-											{t(
-												"absences.dialog.cancelDescription",
-												"Are you sure you want to cancel this absence? This action cannot be undone.",
-											)}
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<AlertDialogFooter>
-										<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-										<AlertDialogAction
-											onClick={() => handleCancel(absence.id)}
-											className="bg-destructive text-white hover:bg-destructive/90"
-										>
-											{t("absences.dialog.confirmCancel", "Yes, cancel absence")}
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-						</Tooltip>
+					<div className="flex justify-end gap-1">
+						{canAttachSickNote ? (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setAttachingTo(absence)}
+								aria-label={attachLabel}
+							>
+								<IconPaperclip aria-hidden="true" className="size-4" />
+								<span className="sm:sr-only">{attachLabel}</span>
+							</Button>
+						) : null}
+						{canCancel ? (
+							<Tooltip>
+								<AlertDialog>
+									<TooltipTrigger asChild>
+										<AlertDialogTrigger asChild>
+											<Button
+												variant="ghost"
+												size="sm"
+												disabled={cancelingId === absence.id}
+												aria-label={cancelLabel}
+											>
+												<IconX className="size-4" />
+												{/* Touch screens cannot show the tooltip (#846). */}
+												<span className="sm:sr-only">{cancelLabel}</span>
+											</Button>
+										</AlertDialogTrigger>
+									</TooltipTrigger>
+									<TooltipContent>{cancelTooltip}</TooltipContent>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>
+												{t("absences.dialog.cancelTitle", "Cancel Absence")}
+											</AlertDialogTitle>
+											<AlertDialogDescription>
+												{t(
+													"absences.dialog.cancelDescription",
+													"Are you sure you want to cancel this absence? This action cannot be undone.",
+												)}
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+											<AlertDialogAction
+												onClick={() => handleCancel(absence.id)}
+												className="bg-destructive text-white hover:bg-destructive/90"
+											>
+												{t("absences.dialog.confirmCancel", "Yes, cancel absence")}
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							</Tooltip>
+						) : null}
 					</div>
 				);
 			},
@@ -284,6 +329,27 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 						: t("absences.table.noRequests", "No absence requests found.")
 				}
 			/>
+			{sickNotesOf ? (
+				<AbsenceSickNotesPanel
+					absence={sickNotesOf}
+					open
+					onOpenChange={(open) => {
+						if (!open) setSickNotesOf(null);
+					}}
+					canAttach={sickNotes.canAttach && takesSickNotes(sickNotesOf)}
+					onChanged={handleSickNotesChanged}
+				/>
+			) : null}
+			{attachingTo ? (
+				<AttachSickNoteDialog
+					absence={attachingTo}
+					open
+					onOpenChange={(open) => {
+						if (!open) setAttachingTo(null);
+					}}
+					onAttached={handleSickNotesChanged}
+				/>
+			) : null}
 		</div>
 	);
 }

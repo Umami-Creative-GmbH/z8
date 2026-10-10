@@ -55,6 +55,8 @@ export enum AuditAction {
 	ABSENCE_APPROVED = "absence.approved",
 	ABSENCE_REJECTED = "absence.rejected",
 	ABSENCE_CANCELLED = "absence.cancelled",
+	/** An attached sick note turned "without certificate" into "with certificate" (#982). */
+	ABSENCE_SICK_DETAIL_CHANGED = "absence.sick_detail_changed",
 
 	// Approval Operations
 	APPROVAL_SUBMITTED = "approval.submitted",

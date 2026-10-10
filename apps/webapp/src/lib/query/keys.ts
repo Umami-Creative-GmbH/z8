@@ -188,6 +188,12 @@ export const queryKeys = {
 		myDocuments: () => ["personnel-file", "my-documents"] as const,
 		officerGrants: () => ["personnel-file", "settings", "officer-grants"] as const,
 		payslipBatch: (batchId: string) => ["personnel-file", "payslip-batch", batchId] as const,
+		/** Sick notes on absences (#982). */
+		sickNotesAll: () => ["personnel-file", "sick-notes"] as const,
+		ownAbsenceSickNotes: (absenceIds: readonly string[]) =>
+			["personnel-file", "sick-notes", "own", ...absenceIds] as const,
+		absenceSickNotes: (absenceId: string) =>
+			["personnel-file", "sick-notes", "absence", absenceId] as const,
 	},
 
 	// Employee clock statuses

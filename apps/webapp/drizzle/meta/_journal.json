@@ -1273,35 +1273,42 @@
       "idx": 181,
       "version": "7",
       "when": 1799942400000,
-      "tag": "0181_employee_kiosk_pin",
+      "tag": "0181_absence_sick_notes",
       "breakpoints": true
     },
     {
       "idx": 182,
       "version": "7",
       "when": 1800028800000,
-      "tag": "0182_employee_assigned_location",
+      "tag": "0182_employee_kiosk_pin",
       "breakpoints": true
     },
     {
       "idx": 183,
       "version": "7",
       "when": 1800115200000,
-      "tag": "0183_kiosk",
+      "tag": "0183_employee_assigned_location",
       "breakpoints": true
     },
     {
       "idx": 184,
       "version": "7",
       "when": 1800201600000,
-      "tag": "0184_work_period_break_in_progress",
+      "tag": "0184_kiosk",
       "breakpoints": true
     },
     {
       "idx": 185,
       "version": "7",
       "when": 1800288000000,
-      "tag": "0185_kiosk_clocking",
+      "tag": "0185_work_period_break_in_progress",
+      "breakpoints": true
+    },
+    {
+      "idx": 186,
+      "version": "7",
+      "when": 1800374400000,
+      "tag": "0186_kiosk_clocking",
       "breakpoints": true
     }
   ]

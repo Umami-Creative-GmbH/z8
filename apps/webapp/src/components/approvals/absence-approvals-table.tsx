@@ -13,13 +13,20 @@ import {
 	rejectAbsence,
 } from "@/app/[locale]/(app)/approvals/actions";
 import { CategoryBadge } from "@/components/absences/category-badge";
+import {
+	SICK_NOTE_MARKER_LINK_CLASS,
+	SickNoteMarker,
+	SickNoteMarkerLabel,
+} from "@/components/absences/sick-notes/sick-note-marker";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
 import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
+import { personnelFilePath } from "@/lib/personnel-file/paths";
 import { queryKeys } from "@/lib/query";
+import { Link } from "@/navigation";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
 // Format days display (handle half days)
@@ -203,6 +210,17 @@ export function AbsenceApprovalsTable() {
 							)}
 						</span>
 					)}
+					{row.original.absence.sickNotes?.viewable ? (
+						// Only for an approver who may open them through personnel file access (#982).
+						<Link
+							href={personnelFilePath(row.original.absence.employeeId, { category: "sick_note" })}
+							className={SICK_NOTE_MARKER_LINK_CLASS}
+						>
+							<SickNoteMarkerLabel count={row.original.absence.sickNotes.count} />
+						</Link>
+					) : row.original.absence.sickNotes ? (
+						<SickNoteMarker count={row.original.absence.sickNotes.count} />
+					) : null}
 				</div>
 			),
 		},
