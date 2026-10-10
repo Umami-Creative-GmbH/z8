@@ -130,8 +130,19 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (impo
 vi.mock("@/lib/approvals/delivery/kick", async () =>
 	(await import("@/test/integration-harness")).deliveryKick(),
 );
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
+	>()),
+	sendManualEntryApprovalNotifications: async () => undefined,
+	sendManualEntryApprovedNotification: async () => undefined,
+}));
 
 const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
+const { submitHistoricalPolicyClockOut } = await import(
+	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
+);
 const { requestTimeCorrection } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions/corrections"
 );
@@ -198,7 +209,12 @@ describe("deputy decisions (PostgreSQL)", () => {
 		]);
 	}
 
-	async function seed(options: { absence: "canonical" | "legacy"; twoStageChain?: boolean }) {
+	async function seed(options: {
+		absence: "canonical" | "legacy";
+		/** The time approval kinds' authority; legacy unless said otherwise. */
+		time?: "canonical" | "legacy";
+		twoStageChain?: boolean;
+	}) {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
@@ -211,13 +227,21 @@ describe("deputy decisions (PostgreSQL)", () => {
 			 values ($1, 'absence', $2, $3, $4, $4)`,
 			[ids.organization, options.absence, options.absence, timestamp],
 		);
+		const time = options.time ?? "legacy";
 		for (const kind of TIME_KINDS) {
 			await admin.query(
 				`insert into approval_workflow_rollout
 				 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
-				 values ($1, $2, 'legacy', 'legacy', $3, $3)`,
-				[ids.organization, kind, timestamp],
+				 values ($1, $2, $3, $4, $5, $5)`,
+				[ids.organization, kind, time, time, timestamp],
 			);
+			if (time === "canonical") {
+				await admin.query(
+					`insert into approval_evidence_control (organization_id, workflow_type, mode)
+					 values ($1, $2, 'capture')`,
+					[ids.organization, kind],
+				);
+			}
 		}
 		await admin.query(
 			`insert into approval_escalation_control
@@ -469,8 +493,23 @@ describe("deputy decisions (PostgreSQL)", () => {
 				capabilities: Record<string, unknown>;
 			}>;
 			total: number;
-			covering?: Array<{ approverId: string; approverName: string; count: number }>;
+			covering?: Array<{
+				approverId: string;
+				approverName: string;
+				count: number;
+				hasMore: boolean;
+				rows: Array<{
+					id: string;
+					coveringFor?: { approverId: string; approverName: string };
+					capabilities: Record<string, unknown>;
+				}>;
+			}>;
 		};
+	}
+
+	/** Every "Covering for" section's rows. */
+	function coveredRows(inbox: Awaited<ReturnType<typeof inboxAs>>) {
+		return (inbox.covering ?? []).flatMap((section) => section.rows);
 	}
 
 	async function detailAs(userId: string, approvalId: string) {
@@ -519,16 +558,24 @@ describe("deputy decisions (PostgreSQL)", () => {
 			if (!submitted.workflow_id) throw new Error("Canonical submission has no workflow");
 
 			const inbox = await inboxAs(ids.deputyUser);
-			const item = only(inbox.items.filter((entry) => entry.id === submitted.id));
+			const item = only(coveredRows(inbox).filter((entry) => entry.id === submitted.id));
 			expect(item.coveringFor).toEqual({
 				approverId: ids.approver,
 				approverName: "Xavier Approver",
 			});
 			expect(item.capabilities).toMatchObject({ canApprove: true, canReject: true });
+			// The section lists its own rows, as many as it counts (#1016).
 			expect(inbox.covering).toEqual([
-				{ approverId: ids.approver, approverName: "Xavier Approver", count: 1 },
+				expect.objectContaining({
+					approverId: ids.approver,
+					approverName: "Xavier Approver",
+					count: 1,
+					hasMore: false,
+				}),
 			]);
-			expect(inbox.total).toBe(1);
+			// Not the deputy's own approval: their own list stays empty.
+			expect(inbox.items).toHaveLength(0);
+			expect(inbox.total).toBe(0);
 			expect((await detailAs(ids.deputyUser, submitted.id)).status).toBe(200);
 			// Someone who neither covers nor manages sees nothing of X's.
 			expect((await inboxAs(ids.otherUser)).items).toHaveLength(0);
@@ -620,7 +667,7 @@ describe("deputy decisions (PostgreSQL)", () => {
 			// Y's own request, assigned to X: read-only in the section, refused.
 			const own = await submitAbsence(ids.deputyUser);
 			const ownItem = only(
-				(await inboxAs(ids.deputyUser)).items.filter((entry) => entry.id === own.id),
+				coveredRows(await inboxAs(ids.deputyUser)).filter((entry) => entry.id === own.id),
 			);
 			expect(ownItem.capabilities).toMatchObject({ canApprove: false, ownRequest: true });
 			expect(await decideAs(ids.deputyUser, own.id, "approve")).toMatchObject({
@@ -642,7 +689,7 @@ describe("deputy decisions (PostgreSQL)", () => {
 			expect(first.request.approver_id).toBe(ids.approver);
 
 			const inbox = await inboxAs(ids.deputyUser);
-			expect(inbox.items.map((entry) => entry.coveringFor?.approverId)).toEqual([
+			expect(coveredRows(inbox).map((entry) => entry.coveringFor?.approverId)).toEqual([
 				ids.approver,
 				ids.approver,
 			]);
@@ -714,7 +761,7 @@ describe("deputy decisions (PostgreSQL)", () => {
 			expect(secondStage.approver_id).toBe(ids.approver);
 
 			const item = only(
-				(await inboxAs(ids.deputyUser)).items.filter((entry) => entry.id === secondStage.id),
+				coveredRows(await inboxAs(ids.deputyUser)).filter((entry) => entry.id === secondStage.id),
 			);
 			expect(item).toMatchObject({
 				coveringFor: { approverId: ids.approver },
@@ -746,9 +793,121 @@ describe("deputy decisions (PostgreSQL)", () => {
 			);
 			expect(only(rows).approver_id).toBe(ids.backup);
 
-			expect((await inboxAs(ids.deputyUser)).items).toHaveLength(0);
+			expect(coveredRows(await inboxAs(ids.deputyUser))).toHaveLength(0);
 			expect((await decideAs(ids.deputyUser, submitted.request.id, "approve")).status).toBe(404);
 			expect(await deputyRecords()).toEqual([]);
 		});
+	});
+
+	describe("canonical time approvals", () => {
+		/** The pending compatibility request of the one canonical cycle of this kind. */
+		async function pendingCycle(kind: "manual_time_submission" | "policy_clock_out") {
+			const { rows } = await admin.query<{
+				request_id: string;
+				assignment_id: string;
+				approver_id: string;
+				entity_id: string;
+			}>(
+				`select r.id as request_id, a.id as assignment_id,
+				   a.approver_employee_id as approver_id, r.entity_id
+				 from approval_request r
+				 join approval_workflow_stage s on s.legacy_approval_request_id = r.id
+				 join approval_workflow w on w.id = s.workflow_id
+				 join approval_stage_assignment a on a.stage_id = s.id and a.status = 'pending'
+				 where r.organization_id = $1 and r.entity_type = 'time_entry'
+				   and r.status = 'pending' and w.workflow_type = $2`,
+				[ids.organization, kind],
+			);
+			return only(rows);
+		}
+
+		async function submitManual() {
+			actAs(ids.requesterUser);
+			const result = await createManualTimeEntry({
+				version: 2,
+				submissionId: randomUUID(),
+				targetEmployeeId: ids.requester,
+				date: "2026-07-20",
+				clockIn: { time: "09:00", occurrence: null, displayedOffsetMinutes: 0 },
+				clockOut: { time: "17:30", occurrence: null, displayedOffsetMinutes: 0 },
+				zone: { basis: "browser", timezone: "UTC" },
+				browserTimezone: "UTC",
+				reason: "Forgot to clock",
+				projectId: null,
+				workCategoryId: null,
+			});
+			actAs(null);
+			expect(result).toMatchObject({ success: true, data: { requiresApproval: true } });
+		}
+
+		async function submitPolicyClockOut() {
+			actAs(ids.requesterUser);
+			await expect(
+				clockIn("office", {
+					instant: parseInstant("2026-07-21T08:00:00Z"),
+					browserTimezone: "UTC",
+				}),
+			).resolves.toMatchObject({ success: true });
+			await expect(
+				clockOut(undefined, undefined, {
+					submissionId: randomUUID(),
+					instant: parseInstant("2026-07-21T12:00:00Z"),
+					browserTimezone: "UTC",
+				}),
+			).resolves.toMatchObject({ success: true });
+			actAs(null);
+			const { rows } = await admin.query<{ id: string }>(
+				`select id from work_period where employee_id = $1 and start_time = $2 and deleted_at is null`,
+				[ids.requester, new Date("2026-07-21T08:00:00Z")],
+			);
+			await submitHistoricalPolicyClockOut({
+				organizationId: ids.organization,
+				employeeId: ids.requester,
+				userId: ids.requesterUser,
+				workPeriodId: only(rows).id,
+			});
+		}
+
+		it.each(["manual_time_submission", "policy_clock_out"] as const)(
+			"lets the covering deputy decide a canonical %s for the absent approver, recording both people",
+			async (kind) => {
+				await seed({ absence: "legacy", time: "canonical" });
+				await (kind === "manual_time_submission" ? submitManual() : submitPolicyClockOut());
+				const cycle = await pendingCycle(kind);
+				expect(cycle.approver_id).toBe(ids.approver);
+
+				const rows = coveredRows(await inboxAs(ids.deputyUser));
+				expect(
+					rows.some((row) => row.id === cycle.request_id || row.id === cycle.assignment_id),
+				).toBe(true);
+
+				expect(await decideAs(ids.deputyUser, cycle.request_id, "approve")).toMatchObject({
+					status: 200,
+				});
+
+				expect(await deputyRecords()).toEqual([
+					expect.objectContaining({
+						deputy_employee_id: ids.deputy,
+						acting_for_employee_id: ids.approver,
+						absence_id: ids.coveringAbsence,
+						authority: "canonical",
+						entity_type: "time_entry",
+						entity_id: cycle.entity_id,
+						has_workflow: true,
+						decision: "approved",
+					}),
+				]);
+				expect(await auditFor(cycle.request_id)).toEqual([
+					expect.objectContaining({
+						performed_by: ids.deputyUser,
+						metadata: expect.objectContaining({
+							deputyDecision: true,
+							actingForEmployeeId: ids.approver,
+							authority: "canonical",
+						}),
+					}),
+				]);
+			},
+		);
 	});
 });
