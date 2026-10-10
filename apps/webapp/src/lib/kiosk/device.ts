@@ -3,6 +3,7 @@
 import {
 	KIOSK_TOKEN_HEADER,
 	KIOSK_TOKEN_STORAGE_KEY,
+	type KioskClockRefusal,
 	type KioskDeviceInfo,
 	type KioskRefusalCode,
 } from "./protocol";
@@ -50,6 +51,49 @@ export async function kioskRefusalOf(response: Response): Promise<KioskRefusalCo
 	if (response.status !== 401) return null;
 	const body = (await response.json().catch(() => null)) as { code?: unknown } | null;
 	return body?.code === "kiosk_revoked" ? "kiosk_revoked" : "kiosk_unknown";
+}
+
+/**
+ * What a kiosk call came back with (#862): the answer, a refusal with its
+ * `code`, a refused device token (`kiosk`), or no connection (`offline`). A
+ * call made while the browser reports itself offline is never sent.
+ */
+export type KioskCallResult<T> =
+	| { kind: "ok"; body: T }
+	| { kind: "refused"; status: number; refusal: KioskClockRefusal }
+	| { kind: "kiosk"; code: KioskRefusalCode }
+	| { kind: "offline" };
+
+export async function kioskCall<T>(
+	token: string,
+	path: string,
+	init: RequestInit = {},
+): Promise<KioskCallResult<T>> {
+	if (typeof navigator !== "undefined" && navigator.onLine === false) return { kind: "offline" };
+	let response: Response;
+	try {
+		response = await kioskFetch(token, path, init);
+	} catch {
+		return { kind: "offline" };
+	}
+	const kioskRefusal = await kioskRefusalOf(response);
+	if (kioskRefusal) return { kind: "kiosk", code: kioskRefusal };
+	const body = (await response.json().catch(() => null)) as unknown;
+	if (response.ok && body !== null) return { kind: "ok", body: body as T };
+	const refusal =
+		body && typeof body === "object" && typeof (body as { code?: unknown }).code === "string"
+			? (body as KioskClockRefusal)
+			: { code: "failed" };
+	return { kind: "refused", status: response.status, refusal };
+}
+
+/** A kiosk call with a JSON body. */
+export function kioskPost<T>(token: string, path: string, body: unknown) {
+	return kioskCall<T>(token, path, {
+		method: "POST",
+		headers: { "content-type": "application/json", accept: "application/json" },
+		body: JSON.stringify(body),
+	});
 }
 
 export type KioskSession =

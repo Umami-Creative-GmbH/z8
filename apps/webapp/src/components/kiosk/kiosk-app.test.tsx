@@ -12,6 +12,12 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("@/navigation", () => ({
+	usePathname: () => "/kiosk",
+	useRouter: () => ({ replace: vi.fn() }),
+}));
+
 const kiosk: KioskDeviceInfo = {
 	id: "22222222-2222-4222-8222-222222222222",
 	name: "Front door",
@@ -19,6 +25,7 @@ const kiosk: KioskDeviceInfo = {
 	locationName: "Store",
 	timezone: "Europe/Berlin",
 	boardEnabled: false,
+	language: "en",
 };
 
 type Route = (request: { url: string; init: RequestInit | undefined }) => Response;
