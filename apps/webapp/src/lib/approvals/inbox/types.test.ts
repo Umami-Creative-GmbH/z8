@@ -11,6 +11,7 @@ describe("approval inbox contract types", () => {
 			"time_entry",
 			"travel_expense_claim",
 			"travel_expense_report",
+			"period_submission",
 		]);
 		expect(SUPPORTED_APPROVAL_INBOX_TYPES).not.toContain("shift_request");
 	});

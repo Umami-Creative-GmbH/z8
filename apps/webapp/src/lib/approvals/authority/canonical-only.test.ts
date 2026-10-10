@@ -143,7 +143,7 @@ describe("a canonical-only approval kind", () => {
 		}
 		expect(modes.get("compliance_exception")).toEqual(["complete", "canonical"]);
 		expect(modes.get("absence")).toEqual(["legacy", "legacy"]);
-		expect(modes.size).toBe(7);
+		expect(modes.size).toBe(8);
 	});
 
 	it("refuses to enter shadow before touching the database", async () => {

@@ -21,6 +21,7 @@ import { eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import type { PoolClient } from "pg";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { APPROVAL_KIND_START } from "@/lib/approvals/workflow/kind-start";
 import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -251,17 +252,20 @@ describe("coordinated organization creation on PostgreSQL", () => {
 		};
 	}
 
-	const legacyRollouts = [...APPROVAL_WORKFLOW_TYPES].sort().map((workflowType) => ({
-		workflow_type: workflowType,
-		lifecycle_mode: "legacy",
-		side_effect_mode: "legacy",
-	}));
+	// A canonical-only kind (#1058, #1059) starts in complete mode; 0107 backfills only the
+	// kinds that start legacy.
+	const createdRollouts = [...APPROVAL_WORKFLOW_TYPES].sort().map((workflowType) =>
+		APPROVAL_KIND_START[workflowType] === "canonical_only"
+			? { workflow_type: workflowType, lifecycle_mode: "complete", side_effect_mode: "canonical" }
+			: { workflow_type: workflowType, lifecycle_mode: "legacy", side_effect_mode: "legacy" },
+	);
+	const legacyRollouts = createdRollouts.filter((row) => row.lifecycle_mode === "legacy");
 
 	async function expectCreatedTogether() {
 		const created = await createdRows();
 		expect(created.organizations).toBe(1);
 		expect(created.members).toEqual([{ user_id: ownerUser, role: "owner" }]);
-		expect(created.rollouts).toEqual(legacyRollouts);
+		expect(created.rollouts).toEqual(createdRollouts);
 		expect(created.activeOrganizationId).toBe(created.organizationId);
 		expect(harness.provisioned).toEqual([`added:${ownerUser}`]);
 		return created;
