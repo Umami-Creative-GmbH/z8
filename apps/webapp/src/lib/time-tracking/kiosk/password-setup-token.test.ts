@@ -38,9 +38,9 @@ async function setup() {
 describe("password setup link for a former kiosk-only employee (#857)", () => {
 	it("lets the user choose a password and then sign in", async () => {
 		const { auth, context, user } = await setup();
-		await expect(
-			auth.api.signInEmail({ body: { email, password } }),
-		).rejects.toMatchObject({ status: "UNAUTHORIZED" });
+		await expect(auth.api.signInEmail({ body: { email, password } })).rejects.toMatchObject({
+			status: "UNAUTHORIZED",
+		});
 
 		const token = await createPasswordSetupToken(context, user.id);
 		await expect(

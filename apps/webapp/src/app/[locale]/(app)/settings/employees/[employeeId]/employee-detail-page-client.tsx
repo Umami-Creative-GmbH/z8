@@ -15,6 +15,7 @@ import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/empl
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
+import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
@@ -322,6 +323,8 @@ function EmployeeRecordSections({
 				organizationId={employee.organizationId}
 				canManageSkills={isOrgAdminOrManager}
 			/>
+
+			<EmployeeKioskCard employeeId={employeeId} />
 
 			{isOrgAdminOrManager && (
 				<EmployeeOffboardingSection

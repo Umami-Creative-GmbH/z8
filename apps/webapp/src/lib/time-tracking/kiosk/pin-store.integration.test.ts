@@ -163,7 +163,11 @@ describe("kiosk PIN store on PostgreSQL", () => {
 		expect(rows[0].pin_hash).not.toContain(pin);
 		await expect(verify(pin, clock)).resolves.toEqual({ status: "verified" });
 		await expect(
-			readKioskPinStatus(db, { organizationId: org, actorUserId: ids.ownerUser, employeeId: ids.worker }),
+			readKioskPinStatus(db, {
+				organizationId: org,
+				actorUserId: ids.ownerUser,
+				employeeId: ids.worker,
+			}),
 		).resolves.toEqual({ hasPin: true, lockedUntil: null });
 	});
 
@@ -192,11 +196,16 @@ describe("kiosk PIN store on PostgreSQL", () => {
 			employeeId: ids.worker,
 		});
 
-		if (second !== first) await expect(verify(first, clock)).resolves.toEqual({ status: "wrong_pin" });
+		if (second !== first)
+			await expect(verify(first, clock)).resolves.toEqual({ status: "wrong_pin" });
 		await expect(verify(second, clock)).resolves.toEqual({ status: "verified" });
 		expect(
 			await refusalOf(
-				resetKioskPin(db, { organizationId: org, actorUserId: ids.adminUser, employeeId: ids.manager }),
+				resetKioskPin(db, {
+					organizationId: org,
+					actorUserId: ids.adminUser,
+					employeeId: ids.manager,
+				}),
 			),
 		).toBe("no_pin");
 	});
@@ -204,7 +213,11 @@ describe("kiosk PIN store on PostgreSQL", () => {
 	it("lets owners, admins and the direct manager manage a PIN, and nobody else", async () => {
 		await expect(issueFor(ids.managerUser)).resolves.toMatchObject({ pin: expect.any(String) });
 		await expect(
-			unlockKioskPin(db, { organizationId: org, actorUserId: ids.managerUser, employeeId: ids.worker }),
+			unlockKioskPin(db, {
+				organizationId: org,
+				actorUserId: ids.managerUser,
+				employeeId: ids.worker,
+			}),
 		).resolves.toBeUndefined();
 
 		for (const actorUserId of [ids.otherManagerUser, ids.workerUser, ids.foreignUser]) {
@@ -295,11 +308,19 @@ describe("kiosk PIN store on PostgreSQL", () => {
 		const wrong = pin === "000000" ? "111111" : "000000";
 		for (let attempt = 1; attempt <= 5; attempt += 1) await verify(wrong, clock);
 
-		await unlockKioskPin(db, { organizationId: org, actorUserId: ids.managerUser, employeeId: ids.worker });
+		await unlockKioskPin(db, {
+			organizationId: org,
+			actorUserId: ids.managerUser,
+			employeeId: ids.worker,
+		});
 
 		await expect(verify(pin, clock)).resolves.toEqual({ status: "verified" });
 		await expect(
-			readKioskPinStatus(db, { organizationId: org, actorUserId: ids.ownerUser, employeeId: ids.worker }),
+			readKioskPinStatus(db, {
+				organizationId: org,
+				actorUserId: ids.ownerUser,
+				employeeId: ids.worker,
+			}),
 		).resolves.toEqual({ hasPin: true, lockedUntil: null });
 	});
 
@@ -326,8 +347,16 @@ describe("kiosk PIN store on PostgreSQL", () => {
 
 	it("records issue, reset and unlock in the audit log", async () => {
 		await issueFor(ids.ownerUser);
-		await resetKioskPin(db, { organizationId: org, actorUserId: ids.adminUser, employeeId: ids.worker });
-		await unlockKioskPin(db, { organizationId: org, actorUserId: ids.managerUser, employeeId: ids.worker });
+		await resetKioskPin(db, {
+			organizationId: org,
+			actorUserId: ids.adminUser,
+			employeeId: ids.worker,
+		});
+		await unlockKioskPin(db, {
+			organizationId: org,
+			actorUserId: ids.managerUser,
+			employeeId: ids.worker,
+		});
 
 		const { rows } = await pool.query(
 			`select action, performed_by from audit_log

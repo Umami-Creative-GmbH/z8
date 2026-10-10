@@ -19,9 +19,7 @@ const { createKioskOnlyEmployee, addEmailToKioskOnlyEmployee } = await import(
 const { issueKioskPin, verifyEmployeeKioskPin } = await import("./pin-store");
 const { KioskPinRefusal } = await import("./pin-errors");
 const { isReservedEmail } = await import("@/lib/auth/reserved-email");
-const { countBillableSeats } = await import(
-	"@/lib/effect/services/billing/billable-seat-count"
-);
+const { countBillableSeats } = await import("@/lib/effect/services/billing/billable-seat-count");
 
 const ids = {
 	organization: "t857-kiosk-org",
@@ -200,7 +198,11 @@ describe("kiosk-only employees on PostgreSQL", () => {
 		).toBe("not_allowed");
 		expect(
 			await refusalOf(
-				createKioskOnlyEmployee(db, { ...input, actorUserId: ids.adminUser, teamId: ids.foreignTeam }),
+				createKioskOnlyEmployee(db, {
+					...input,
+					actorUserId: ids.adminUser,
+					teamId: ids.foreignTeam,
+				}),
 			),
 		).toBe("team_not_found");
 		expect(
@@ -282,7 +284,10 @@ describe("kiosk-only employees on PostgreSQL", () => {
 			firstName: "Jamie",
 			lastName: "Doe",
 		});
-		const add = (email: string, overrides: Partial<{ actorUserId: string; employeeId: string }> = {}) =>
+		const add = (
+			email: string,
+			overrides: Partial<{ actorUserId: string; employeeId: string }> = {},
+		) =>
 			addEmailToKioskOnlyEmployee(
 				db,
 				{

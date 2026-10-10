@@ -91,10 +91,7 @@ async function requireKioskPinManager(db: Database, input: KioskPinManagementInp
 				.select({ id: employee.id })
 				.from(employee)
 				.where(
-					and(
-						eq(employee.id, input.employeeId),
-						eq(employee.organizationId, input.organizationId),
-					),
+					and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
 				)
 				.limit(1)
 		: [];
@@ -139,7 +136,10 @@ export async function issueKioskPin(
 		.onConflictDoNothing({ target: employeeKioskPin.employeeId })
 		.returning({ id: employeeKioskPin.id });
 	if (inserted.length === 0) {
-		throw new KioskPinRefusal("pin_exists", "This employee already has a kiosk PIN. Reset it instead.");
+		throw new KioskPinRefusal(
+			"pin_exists",
+			"This employee already has a kiosk PIN. Reset it instead.",
+		);
 	}
 	await auditPin(AuditAction.KIOSK_PIN_ISSUED, input);
 	return { pin };

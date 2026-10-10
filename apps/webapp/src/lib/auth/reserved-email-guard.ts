@@ -24,7 +24,10 @@ const emailBodyFields = new Map<string, string>([
 ]);
 
 /** Endpoints that act for the signed-in user, refused when that user's address is reserved. */
-const sessionPaths = new Set(["/passkey/generate-register-options", "/passkey/verify-registration"]);
+const sessionPaths = new Set([
+	"/passkey/generate-register-options",
+	"/passkey/verify-registration",
+]);
 
 function normalizedPath(path: string | undefined) {
 	return path ? path.replace(/\/+$/, "") : "";

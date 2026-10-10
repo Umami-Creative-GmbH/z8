@@ -193,7 +193,10 @@ export async function addEmailToKioskOnlyEmployee(
 		throw new KioskPinRefusal("reserved_email", "This address cannot be used.");
 	}
 	try {
-		await assertEnterpriseIdentityInvitationAllowed({ organizationId: input.organizationId, email });
+		await assertEnterpriseIdentityInvitationAllowed({
+			organizationId: input.organizationId,
+			email,
+		});
 	} catch {
 		throw new KioskPinRefusal(
 			"email_not_allowed",

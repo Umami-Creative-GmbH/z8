@@ -55,7 +55,11 @@ export async function getEmployeeKioskStateAction(
 					.limit(1)
 			: [];
 		if (!target) return null;
-		const input = { organizationId: actor.organizationId, actorUserId: actor.userId, employeeId: id };
+		const input = {
+			organizationId: actor.organizationId,
+			actorUserId: actor.userId,
+			employeeId: id,
+		};
 		const [canManagePin, principal] = await Promise.all([
 			canManageEmployeeKioskPin(db, input),
 			loadOrganizationPrincipalContext(db, {
