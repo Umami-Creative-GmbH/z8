@@ -3,10 +3,13 @@
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
+import { DeputyName } from "@/components/absences/deputy-name";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { CalendarEvent } from "@/lib/calendar/types";
+import type { AbsenceEvent, CalendarEvent } from "@/lib/calendar/types";
+
+type AbsenceDeputy = NonNullable<AbsenceEvent["metadata"]["deputy"]>;
 
 interface DayDetailsProps {
 	selectedDate: Date | null;
@@ -99,6 +102,15 @@ export function DayDetails({ selectedDate, events, timezone: selectedTimezone }:
 														{event.metadata.status}
 													</Badge>
 												</div>
+												{event.metadata.deputy ? (
+													<div>
+														{t("calendar.dayDetails.deputy", "Deputy")}:{" "}
+														<DeputyName
+															deputy={event.metadata.deputy as AbsenceDeputy}
+															className="text-foreground"
+														/>
+													</div>
+												) : null}
 											</>
 										)}
 										{event.type === "work_period" && (

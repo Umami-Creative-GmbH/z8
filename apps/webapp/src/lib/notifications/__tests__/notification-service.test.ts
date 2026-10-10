@@ -313,6 +313,24 @@ describe("Notification Service", () => {
 			slack: false,
 		});
 	});
+	test("the approver's cover return summary is in-app only until they turn on another channel (#1018)", async () => {
+		mockFindMany.mockImplementation(async () => []);
+		const { loadNotificationChannelPreferences } = await import("../notification-service");
+		expect(
+			await loadNotificationChannelPreferences("user-1", "approval_cover_return_summary"),
+		).toEqual({
+			in_app: true,
+			push: false,
+			email: false,
+			teams: false,
+			telegram: false,
+			discord: false,
+			slack: false,
+		});
+		expect(
+			(await loadNotificationChannelPreferences("user-1", "approval_cover_started")).email,
+		).toBe(true);
+	});
 	test.each([
 		"missed_clock_in_reminder",
 		"forgotten_clock_out_reminder",

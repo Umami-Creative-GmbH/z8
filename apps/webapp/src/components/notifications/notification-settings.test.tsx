@@ -148,6 +148,21 @@ describe("NotificationSettings", () => {
 		}
 	});
 
+	it("lets a deputy switch the channels of each deputy notification (#1013)", () => {
+		render(<NotificationSettings />);
+
+		for (const label of [
+			"Named as absence deputy",
+			"No longer absence deputy",
+			"Absence deputy dates changed",
+			"Absence cover starts tomorrow",
+		]) {
+			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
+		}
+	});
+
 	it("keeps push switch enabled when browser push is supported but not subscribed", () => {
 		usePushNotificationsMock.mockReturnValue({
 			isSupported: true,

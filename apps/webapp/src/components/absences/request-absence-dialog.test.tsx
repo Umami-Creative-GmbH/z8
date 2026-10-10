@@ -24,6 +24,19 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	getAbsencePlanPreview: vi.fn(),
 }));
 
+vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
+	getDeputyCandidates: vi.fn().mockResolvedValue({
+		success: true,
+		data: [{ id: "deputy-ben", name: "Ben Example", image: null, awayPeriods: [] }],
+	}),
+	getDeputyDecisionCapability: vi.fn().mockResolvedValue({
+		success: true,
+		data: { canDecideApprovals: true },
+	}),
+}));
+
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("sonner", () => ({
 	toast: {
 		error: vi.fn(),
@@ -128,6 +141,15 @@ const categories = [
 		color: null,
 		requiresApproval: true,
 		countsAgainstVacation: false,
+	},
+	{
+		id: "on-call",
+		name: "On-call leave",
+		type: "custom",
+		color: null,
+		requiresApproval: true,
+		countsAgainstVacation: false,
+		deputyRequired: true,
 	},
 ];
 
@@ -420,6 +442,34 @@ describe("RequestAbsenceDialog", () => {
 		fireEvent.click(submit);
 
 		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
+	});
+
+	it("requires a deputy for an absence type that requires one (#1011)", async () => {
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "on-call" } });
+		fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		expect(
+			await screen.findByText("Choose a deputy: this absence type requires one."),
+		).toBeTruthy();
+		expect(requestAbsenceMock).not.toHaveBeenCalled();
+	});
+
+	it("submits the picked deputy (#1011)", async () => {
+		renderDialog();
+
+		fillRequiredFields();
+		await screen.findByRole("option", { name: "Ben Example" });
+		fireEvent.change(screen.getByLabelText("Deputy"), { target: { value: "deputy-ben" } });
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(requestAbsenceMock).toHaveBeenCalledWith(
+				expect.objectContaining({ categoryId: "vacation", deputyEmployeeId: "deputy-ben" }),
+			),
+		);
 	});
 
 	it("shows the absence days the plan preview counted", async () => {

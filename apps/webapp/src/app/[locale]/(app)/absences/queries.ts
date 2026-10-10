@@ -11,6 +11,11 @@ import {
 } from "@/db/schema";
 import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { getYearRange } from "@/lib/absences/date-utils";
+import {
+	type DeputyDisplay,
+	loadDeputyDisplays,
+	loadDeputyViewer,
+} from "@/lib/absences/deputy-display-store";
 import type {
 	AbsenceWithCategory,
 	AbsenceWithDays,
@@ -117,11 +122,28 @@ export async function getAbsenceEntries(
 		),
 		with: {
 			category: true,
+			// The deputy of the employee's own absences (#1011): an employee of the same organization.
+			deputy: { columns: { id: true }, with: { user: { columns: { name: true } } } },
 		},
 		orderBy: [desc(absenceEntry.startDate)],
 	});
 
-	const typedAbsences = (absences as unknown as AbsenceWithCategory[]).map(mapAbsenceWithCategory);
+	const deputies = await loadOwnAbsenceDeputies(
+		employeeId,
+		absences.flatMap((absence) => (absence.deputy ? [absence.deputy.id] : [])),
+	);
+	const typedAbsences = absences.map((absence) =>
+		mapAbsenceWithCategory({
+			...(absence as unknown as AbsenceWithCategory),
+			deputy: absence.deputy
+				? {
+						id: absence.deputy.id,
+						name: absence.deputy.user.name,
+						canOpenProfile: deputies.get(absence.deputy.id)?.canOpenProfile ?? false,
+					}
+				: null,
+		}),
+	);
 	const absenceDays = await getAbsenceDaysByAbsenceId(db, {
 		organizationId: emp.organizationId,
 		absences: typedAbsences,
@@ -130,6 +152,25 @@ export async function getAbsenceEntries(
 		...absence,
 		absenceDays: absenceDays.get(absence.id) ?? 0,
 	}));
+}
+
+/** The employee's own absences' deputies, linked when the employee may open their profile (#1012). */
+async function loadOwnAbsenceDeputies(employeeId: string, deputyEmployeeIds: string[]) {
+	if (deputyEmployeeIds.length === 0) return new Map<string, DeputyDisplay>();
+	const owner = await db.query.employee.findFirst({
+		where: eq(employee.id, employeeId),
+		columns: { userId: true, organizationId: true },
+	});
+	if (!owner) return new Map<string, DeputyDisplay>();
+	const viewer = await loadDeputyViewer(db, {
+		organizationId: owner.organizationId,
+		userId: owner.userId,
+	});
+	return loadDeputyDisplays(db, {
+		organizationId: owner.organizationId,
+		viewer,
+		deputyEmployeeIds,
+	});
 }
 
 export async function getHolidays(
@@ -158,6 +199,7 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		color: string | null;
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
+		deputyRequired: boolean;
 	}>
 > {
 	const categories = await db.query.absenceCategory.findMany({
@@ -175,5 +217,6 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		color: c.color,
 		requiresApproval: c.requiresApproval,
 		countsAgainstVacation: c.countsAgainstVacation,
+		deputyRequired: c.deputyRequired,
 	}));
 }

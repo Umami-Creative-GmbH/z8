@@ -2,6 +2,7 @@
 
 import { IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +15,11 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import {
+	DeputyPicker,
+	deputyRefusalText,
+	deputyRequiredText,
+} from "@/components/absences/deputy-picker";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -49,6 +55,8 @@ type AbsenceCategoryOption = {
 	color: string | null;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	/** Absences of this type must name a deputy (#1011). */
+	deputyRequired?: boolean;
 };
 
 type RecordAbsenceDialogProps = {
@@ -104,6 +112,16 @@ function useRecordAbsenceDialogForm({
 				setDateRangeError(null);
 				onOpenChange(false);
 				refresh();
+				return;
+			}
+
+			const deputyError = deputyRefusalText(t, result.refusal);
+			if (deputyError) {
+				// The server refused the deputy: show it on the deputy field.
+				form.setFieldMeta("deputyEmployeeId", (meta) => ({
+					...meta,
+					errorMap: { ...meta.errorMap, onServer: deputyError },
+				}));
 				return;
 			}
 
@@ -328,6 +346,12 @@ export function RecordAbsenceDialog({
 							options={durationOptions}
 						/>
 
+						<RecordAbsenceDeputyField
+							categories={categories}
+							employee={employee}
+							form={form}
+						/>
+
 						<form.Field name="notes">
 							{(field) => (
 								<TFormItem>
@@ -471,6 +495,62 @@ function RecordAbsenceDateFields({
 				)}
 			</p>
 		</div>
+	);
+}
+
+function RecordAbsenceDeputyField({
+	categories,
+	employee,
+	form,
+}: {
+	categories: AbsenceCategoryOption[];
+	employee: RecordAbsenceDialogProps["employee"];
+	form: RecordAbsenceFormApi;
+}) {
+	const { t } = useTranslate();
+	const { categoryId, startDate, endDate } = useStore(form.store, (state) => ({
+		categoryId: state.values.categoryId,
+		startDate: state.values.startDate,
+		endDate: state.values.endDate,
+	}));
+	const required = Boolean(
+		categories.find((category) => category.id === categoryId)?.deputyRequired,
+	);
+	if (!employee) return null;
+	return (
+		<form.Field
+			name="deputyEmployeeId"
+			validators={{
+				onSubmit: ({ value, fieldApi }) =>
+					!value &&
+					categories.find(
+						(category) =>
+							category.id === fieldApi.form.getFieldValue("categoryId"),
+					)?.deputyRequired
+						? deputyRequiredText(t)
+						: undefined,
+			}}
+		>
+			{(field) => (
+				<TFormItem>
+					<TFormLabel hasError={fieldHasError(field)} required={required}>
+						{t("team.absences.recordDialog.deputy", "Deputy")}
+					</TFormLabel>
+					<TFormControl hasError={fieldHasError(field)}>
+						<DeputyPicker
+							value={field.state.value}
+							onChange={field.handleChange}
+							onBlur={field.handleBlur}
+							startDate={startDate}
+							endDate={endDate || startDate}
+							employeeId={employee.id}
+							required={required}
+						/>
+					</TFormControl>
+					<TFormMessage field={field} />
+				</TFormItem>
+			)}
+		</form.Field>
 	);
 }
 

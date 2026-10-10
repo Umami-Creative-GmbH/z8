@@ -1021,3 +1021,133 @@ The #408 suite adds the expansion gate for a legacy time event committed
 before #470 (seeded rows): it expands into its request's cycle under legacy
 authority and keeps waiting under canonical authority in the same pass.
 Reverting the expansion change makes all 15 time cases fail.
+
+## Deputy cards — #1017
+
+Spec #802, Approvals ADR 0002 (deputies act for the absent approver). While
+deputy Y covers for the absent approver X (the covering rules of
+`lib/approvals/deputy/covering.ts`, #1015), an approval assigned to X also
+sends Y a card on Y's own channels. Nothing is reassigned: X keeps the
+assignment and X's own card.
+
+### Ownership and planning
+
+- Both plans (`planWorkflowEffects`, `planLegacyLifecycleEffects`) add, after
+  the approver's own rows, one `initial` row per provider for each deputy
+  covering for the pending assignment's or legacy request's approver at the
+  pass time. The row names the deputy as recipient and X in
+  `acting_for_employee_id` (migration `0203`). Dedupe:
+  `deputy-initial:<assignment>:<deputy>:<provider>` and
+  `deputy-legacy-initial:<request>:<deputy>:<provider>`; the deputy is in the
+  key, so a deputy change mid-absence gets its own card.
+- **Assigned while covering.** The plan re-runs from current state on every
+  later intent, so only approvals that became X's while Y already covered
+  qualify: canonical `greatest(assigned_at, stage activated_at)`, legacy
+  `approval_request.created_at` (UTC). Approvals X held before cover started
+  get no card (Y's cover summary, #1018, lists them).
+- Deputy kinds only (absence, time kinds, expense reports); never expense
+  claims. Never Y's own request (#697). Replacement assignments and
+  transferred requests stay escalation's (#300/#408): no deputy cards.
+- The approver's existing cancellation of obsolete `initial` work covers
+  deputy work, keyed on the assignment or request.
+
+### Sending and binding
+
+- The executor rechecks that the approval is still X's (legacy: the request's
+  approver is X) and that Y covers for X at send time (`not_covering`
+  otherwise), then checks Y's own membership, preference
+  (`approval_request_submitted`) and destination like any card.
+- The presentation (`prepareApprovalPresentation({ actingForEmployeeId })`)
+  loads X's request and assignment, refuses a deputy card for a non-deputy
+  kind, Y's own request, a request where Y decided an earlier stage
+  (four-eyes) or when Y no longer covers (`not_entitled`), and shows a first
+  fact **Covering for: X** (`bot.approval.card.coveringFor`). Provider limits
+  count that fact.
+- The binding is issued to Y for X's assignment or legacy request, with
+  `approval_review_binding.acting_for_employee_id = X`; issue requires the
+  approver to be X and Y to cover for X now. Delivered messages record
+  `acting_for_employee_id` too.
+
+### Pressing a deputy card
+
+- `attemptBoundBotApproval` checks a deputy binding before any owner runs
+  (`deputy/deputy-card-press.ts`): while the bound approval is pending with X
+  and Y no longer covers for X (absence ended, cancelled or revoked, deputy
+  changed, switch off, inbox access lost), the result is `not_covering`. The
+  press decides nothing, is acknowledged **No longer covering for X**, and a
+  still-pending card is edited into that notice without controls (Telegram,
+  Teams and Discord through the shared `boundDecisionNotice`). A legacy
+  request escalation moved to someone else decides nothing and is
+  acknowledged **Reassigned** (Telegram).
+- Otherwise the owners decide as before. A canonical deputy binding reaches
+  the engine's covering-deputy grant (#1016) instead of failing as "not the
+  current assignee"; management authority stays unreachable from a card. The
+  decision records the acting-for row (#1016). A canonical escalation
+  transfer cancels X's assignment, so the press is refused and acknowledged
+  **Reassigned**.
+
+### Retirement
+
+- Every organization-wide delivery pass runs `planDeputyCardRetirements`:
+  for each open deputy card (`state = current`, actionable) whose recipient
+  no longer covers for its X at the pass time, one refresh with dedupe
+  `deputy-retire:<message>`. Cover ending moves no lifecycle version, so this
+  refresh has its own identity; if the deputy covers again by the time it
+  runs, it finishes `cancelled/still_covering` and a later pass re-arms it.
+- The refresh edits a still-pending deputy card into **No longer covering for
+  X** and retires it (`state = retired`, no controls) without changing its
+  status version.
+- Decision 11: when the approval is later decided by anyone, the versioned
+  refresh shows the outcome on the retired deputy card too, like any card. A
+  card still current when the decision lands refreshes normally.
+- Escalation: canonical deputy cards share X's assignment, so a transfer
+  retires them as **Reassigned**. Legacy deputy cards count as X's former
+  cards (`coalesce(acting_for_employee_id, recipient_employee_id)` in the
+  replaced check, the pending check and escalation's retirement scope).
+
+### Copy (Tolgee, English defaults in code)
+
+- `bot.approval.card.coveringFor`: "Covering for"
+- `bot.approval.status.noLongerCoveringTitle`: "No longer covering for {approver}"
+- `bot.approval.status.noLongerCovering`: "You are no longer covering for
+  {approver}, so this card can't decide anything. No decision was made here.
+  Review the request in Z8 if you still have access."
+
+German copy uses "Abwesenheitsvertretung".
+
+### Open points (#1017)
+
+- Card preference: deputy cards use `approval_request_submitted`; there is no
+  separate preference type.
+- Retirement runs every minute with `cron:approval-delivery` (and on
+  organization-wide kicks); there is no event-driven kick from a deputy change,
+  absence cancellation or the switch yet.
+- Time kinds and expense reports share the code path with absences but are
+  verified by typecheck and shared code only.
+
+### Verification (#1017)
+
+PostgreSQL 16 (`lib/approvals/delivery/deputy-cards.integration.test.ts`): the
+real `requestAbsenceEffect`, `processApprovalDeliveries`,
+`processDueEscalations`, `processEscalationReplacementDeliveries`,
+`handleTelegramUpdate` and `approveAbsenceEffect`, 13 cases:
+
+- Canonical: one card to X and one to Y; Y's message and binding name Y as
+  recipient and X as acting-for, the card shows "Covering for"; reruns send
+  nothing. No Y card for an assignment made before cover started, or after
+  cover ended.
+- Y's press decides as a deputy decision (acting-for row with X and the
+  absence); both cards then show the outcome.
+- After cover ended, after a deputy change and with the switch off, Y's press
+  decides nothing, is acknowledged "No longer covering for Morgan Manager" and
+  the card loses its controls; X's card is untouched.
+- The retirement pass edits Y's open card after a deputy change and after
+  cover ended; a later web decision shows the outcome on it.
+- Canonical and legacy: after an escalation transfer Y's press decides nothing
+  and is acknowledged Reassigned; escalation's pass retires Y's card.
+- Legacy absence authority: Y gets a legacy-bound card and decides from it
+  (legacy acting-for row); after a deputy change the press is refused.
+
+Unit seams: `bot-platform/approval-status-notice.test.ts`,
+`bot-platform/bound-decision-notice.test.ts` (the notice) and
+`deputy/deputy-decision.test.ts` (`isDeputyCardAssignmentPending`).

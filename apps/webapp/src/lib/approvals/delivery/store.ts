@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, gt, inArray, lt, ne, type SQL, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, lt, ne, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type ApprovalDeliveryEffect,
@@ -17,8 +17,16 @@ import {
 	approvalWorkflowStage,
 	workPeriod,
 } from "@/db/schema";
-import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { decodeApprovalDatabaseTimestamptz } from "../approval-database-row";
 import { approvalAuthorityOf, approvalAuthoritySql } from "../authority";
+import { loadCoveredApproverIds, resolveDeputyCardRecipients } from "../deputy/deputy-reads";
+import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import type { ApprovalWorkflowType } from "../workflow/ports";
@@ -318,6 +326,20 @@ function refreshDedupeKey(messageId: string, workflowVersion: number): string {
 	return `approval-delivery:v1:refresh:${messageId}:${workflowVersion}`;
 }
 
+/** The deputy is part of the key: a deputy change mid-absence never collides. */
+function deputyInitialDedupeKey(assignmentId: string, deputyId: string, provider: string): string {
+	return `approval-delivery:v1:deputy-initial:${assignmentId}:${deputyId}:${provider}`;
+}
+
+function deputyLegacyInitialDedupeKey(
+	approvalRequestId: string,
+	deputyId: string,
+	provider: string,
+): string {
+	return `approval-delivery:v1:deputy-legacy-initial:${approvalRequestId}:${deputyId}:${provider}`;
+}
+
+
 /**
  * A legacy-authoritative lifecycle (#296): a source and its legacy requests,
  * which are the assignment equivalents. With a `cycleId` (#384) it is one
@@ -397,10 +419,26 @@ function legacyRecipientReplacedSql(input: {
 	)`;
 }
 
+/**
+ * Whose card a delivery work or message is: a deputy card (#1017) belongs to
+ * the absent approver it acts for, any other card to its recipient.
+ */
+export function cardHolderEmployeeId(card: {
+	actingForEmployeeId?: string | null;
+	recipientEmployeeId: string;
+}): string {
+	return card.actingForEmployeeId ?? card.recipientEmployeeId;
+}
+
+/** `cardHolderEmployeeId` of a delivery message row `m`. */
+const messageHolderSql = sql`coalesce(m.acting_for_employee_id, m.recipient_employee_id)`;
+
+// A deputy card is its absent approver's card for this purpose: it is
+// replaced once escalation moved the request away from the approver it covers.
 const legacyMessageReplacedSql = legacyRecipientReplacedSql({
 	organizationId: sql`m.organization_id`,
 	approvalRequestId: sql`m.legacy_approval_request_id`,
-	recipientEmployeeId: sql`m.recipient_employee_id`,
+	recipientEmployeeId: messageHolderSql,
 });
 
 /**
@@ -456,11 +494,14 @@ async function planWorkflowEffects(
 		workflowId: string;
 		outboxId: string | null;
 		providers: readonly ApprovalDeliveryProvider[];
+		/** The pass time covering is judged at (deputy cards, #1017). */
+		now: Instant;
 	},
 ): Promise<{ created: number; cancelled: number }> {
 	const pending = rows(
 		await transaction.execute(sql`
-			select a.id, a.approver_employee_id
+			select a.id, a.approver_employee_id, w.requester_employee_id, w.source_type,
+				greatest(a.assigned_at, coalesce(s.activated_at, a.assigned_at)) as assigned_at
 			from approval_stage_assignment a
 			join approval_workflow_stage s
 				on s.id = a.stage_id and s.organization_id = a.organization_id
@@ -489,6 +530,47 @@ async function planWorkflowEffects(
 					assignmentId,
 					recipientEmployeeId: text(assignment.approver_employee_id, "approver"),
 					dedupeKey: initialDedupeKey(assignmentId, provider),
+				})
+				.onConflictDoNothing({
+					target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
+				})
+				.returning({ id: approvalDeliveryWork.id });
+			created += inserted.length;
+		}
+	}
+	// Deputy cards (#1017): the covering deputy of an absent approver gets a
+	// card of their own for the approver's assignment, once per provider and
+	// deputy. Obsolete ones are cancelled with the approver's below.
+	const deputies = await resolveDeputyCardRecipients(transaction, {
+		organizationId: input.organizationId,
+		now: input.now,
+		candidates: pending.flatMap((assignment) =>
+			isDeputyDecisionEntityType(text(assignment.source_type, "source type"))
+				? [
+						{
+							key: text(assignment.id, "assignment"),
+							approverId: text(assignment.approver_employee_id, "approver"),
+							assignedAt: instantFromDate(decodeApprovalDatabaseTimestamptz(assignment.assigned_at)),
+							requesterEmployeeId: nullableText(assignment.requester_employee_id),
+						},
+					]
+				: [],
+		),
+	});
+	for (const deputy of deputies) {
+		for (const provider of input.providers) {
+			const inserted = await transaction
+				.insert(approvalDeliveryWork)
+				.values({
+					organizationId: input.organizationId,
+					outboxId: input.outboxId,
+					workflowId: input.workflowId,
+					effect: "initial",
+					provider,
+					assignmentId: deputy.key,
+					recipientEmployeeId: deputy.deputyId,
+					actingForEmployeeId: deputy.approverId,
+					dedupeKey: deputyInitialDedupeKey(deputy.key, deputy.deputyId, provider),
 				})
 				.onConflictDoNothing({
 					target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
@@ -533,12 +615,16 @@ async function planLegacyLifecycleEffects(
 		organizationId: string;
 		lifecycle: LegacyDeliveryLifecycle;
 		providers: readonly ApprovalDeliveryProvider[];
+		/** The pass time covering is judged at (deputy cards, #1017). */
+		now: Instant;
 	},
 ): Promise<{ created: number; cancelled: number }> {
 	const { lifecycle } = input;
 	const pending = rows(
 		await transaction.execute(sql`
-			select r.id, r.approver_id
+			select r.id, r.approver_id, r.requested_by,
+				-- Written without a zone, in UTC.
+				(r.created_at at time zone 'UTC') as assigned_at
 			from approval_request r
 			where ${legacyLifecycleRequestsSql(input.organizationId, lifecycle)}
 				and r.status = 'pending'
@@ -573,6 +659,40 @@ async function planLegacyLifecycleEffects(
 					legacyApprovalRequestId: approvalRequestId,
 					recipientEmployeeId: text(request.approver_id, "approver"),
 					dedupeKey: legacyInitialDedupeKey(approvalRequestId, provider),
+				})
+				.onConflictDoNothing({
+					target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
+				})
+				.returning({ id: approvalDeliveryWork.id });
+			created += inserted.length;
+		}
+	}
+	// Deputy cards (#1017) for the deputy kinds; never for expense claims.
+	const deputies = isDeputyDecisionEntityType(lifecycle.sourceType)
+		? await resolveDeputyCardRecipients(transaction, {
+				organizationId: input.organizationId,
+				now: input.now,
+				candidates: pending.map((request) => ({
+					key: text(request.id, "legacy request"),
+					approverId: text(request.approver_id, "approver"),
+					assignedAt: instantFromDate(decodeApprovalDatabaseTimestamptz(request.assigned_at)),
+					requesterEmployeeId: nullableText(request.requested_by),
+				})),
+			})
+		: [];
+	for (const deputy of deputies) {
+		for (const provider of input.providers) {
+			const inserted = await transaction
+				.insert(approvalDeliveryWork)
+				.values({
+					organizationId: input.organizationId,
+					...legacy,
+					effect: "initial",
+					provider,
+					legacyApprovalRequestId: deputy.key,
+					recipientEmployeeId: deputy.deputyId,
+					actingForEmployeeId: deputy.approverId,
+					dedupeKey: deputyLegacyInitialDedupeKey(deputy.key, deputy.deputyId, provider),
 				})
 				.onConflictDoNothing({
 					target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
@@ -711,7 +831,8 @@ async function planLegacyMessageRefreshes(
 				}
 				${
 					input.recipientEmployeeId
-						? sql`and m.recipient_employee_id = ${input.recipientEmployeeId}::uuid`
+						? // The former holder's cards, and the cards of their deputies (#1017).
+							sql`and ${messageHolderSql} = ${input.recipientEmployeeId}::uuid`
 						: sql``
 				}
 		`),
@@ -1014,11 +1135,14 @@ export async function expandApprovalDeliveryIntents(input: {
 	organizationId: string;
 	limit: number;
 	workflowId?: string;
+	/** The pass time; deputy cards (#1017) judge covering at it. */
+	now?: Instant;
 }): Promise<ApprovalDeliveryExpansionSummary> {
-	const canonical = await expandCanonicalIntents(input);
+	const now = input.now ?? systemClock.nowInstant();
+	const canonical = await expandCanonicalIntents({ ...input, now });
 	const legacy = input.workflowId
 		? { expanded: 0, created: 0, cancelled: 0 }
-		: await expandLegacyIntents(input);
+		: await expandLegacyIntents({ ...input, now });
 	return {
 		expanded: canonical.expanded + legacy.expanded,
 		created: canonical.created + legacy.created,
@@ -1030,6 +1154,7 @@ async function expandCanonicalIntents(input: {
 	organizationId: string;
 	limit: number;
 	workflowId?: string;
+	now: Instant;
 }): Promise<ApprovalDeliveryExpansionSummary> {
 	return db.transaction(async (transaction) => {
 		const intents = rows(
@@ -1089,6 +1214,7 @@ async function expandCanonicalIntents(input: {
 				workflowId,
 				outboxId: plan.outboxId,
 				providers: plan.providers,
+				now: input.now,
 			});
 			created += result.created;
 			cancelled += result.cancelled;
@@ -1106,6 +1232,7 @@ async function expandCanonicalIntents(input: {
 async function expandLegacyIntents(input: {
 	organizationId: string;
 	limit: number;
+	now: Instant;
 }): Promise<ApprovalDeliveryExpansionSummary> {
 	return db.transaction(async (transaction) => {
 		const intents = rows(
@@ -1166,6 +1293,7 @@ async function expandLegacyIntents(input: {
 				organizationId: input.organizationId,
 				lifecycle: plan.lifecycle,
 				providers: plan.providers,
+				now: input.now,
 			});
 			created += result.created;
 			cancelled += result.cancelled;
@@ -1194,6 +1322,8 @@ export interface ClaimedApprovalDeliveryWork {
 	/** Legacy lifecycles only: the source and the recipient's legacy request. */
 	legacy: (LegacyDeliveryLifecycle & { approvalRequestId: string }) | null;
 	recipientEmployeeId: string;
+	/** Deputy card work (#1017): the absent approver the recipient covers for. */
+	actingForEmployeeId: string | null;
 	messageId: string | null;
 	/** Set when escalation's replacement delivery owns this work (#300). */
 	escalationTransferId: string | null;
@@ -1286,7 +1416,7 @@ export async function claimApprovalDeliveryWork(input: {
 					), d.workflow_type) as workflow_type,
 					d.effect, d.provider, d.assignment_id, d.legacy_source_type,
 					d.legacy_source_id, d.legacy_approval_request_id, d.legacy_cycle_id,
-					d.recipient_employee_id,
+					d.recipient_employee_id, d.acting_for_employee_id,
 					d.message_id, d.escalation_transfer_id, d.retry_count, d.attempt_count
 			`),
 		);
@@ -1314,6 +1444,7 @@ export async function claimApprovalDeliveryWork(input: {
 								}
 							: null,
 					recipientEmployeeId: text(row.recipient_employee_id, "recipient"),
+					actingForEmployeeId: nullableText(row.acting_for_employee_id),
 					messageId: typeof row.message_id === "string" ? row.message_id : null,
 					escalationTransferId: nullableText(row.escalation_transfer_id),
 					claimToken,
@@ -1619,6 +1750,8 @@ interface DeliveredMessageRemote {
 	approvalRequestId: string | null;
 	recipientEmployeeId: string;
 	recipientUserId: string;
+	/** A deputy card (#1017): the absent approver the recipient covers for. */
+	actingForEmployeeId?: string | null;
 	provider: ApprovalDeliveryProvider;
 	receiverScope: string;
 	destinationId: string;
@@ -1815,7 +1948,8 @@ export async function isApprovalDeliveryMessagePending(
 		| "assignmentId"
 		| "legacyApprovalRequestId"
 		| "recipientEmployeeId"
-	>,
+	> &
+		Partial<Pick<ApprovalDeliveryMessageRecord, "actingForEmployeeId">>,
 ): Promise<boolean> {
 	if (message.lifecycle === "legacy") {
 		if (!message.legacyApprovalRequestId) return false;
@@ -1872,16 +2006,19 @@ export async function isApprovalDeliveryAssignmentReplaced(
 		| "assignmentId"
 		| "legacyApprovalRequestId"
 		| "recipientEmployeeId"
-	>,
+	> &
+		Partial<Pick<ApprovalDeliveryMessageRecord, "actingForEmployeeId">>,
 ): Promise<boolean> {
 	if (message.lifecycle === "legacy") {
 		if (!message.legacyApprovalRequestId) return false;
+		// A deputy card (#1017) follows the absent approver it covers for.
+		const holder = cardHolderEmployeeId(message);
 		const [replaced] = rows(
 			await db.execute(sql`
 				select ${legacyRecipientReplacedSql({
 					organizationId: sql`${message.organizationId}`,
 					approvalRequestId: sql`${message.legacyApprovalRequestId}::uuid`,
-					recipientEmployeeId: sql`${message.recipientEmployeeId}::uuid`,
+					recipientEmployeeId: sql`${holder}::uuid`,
 				})} as replaced
 			`),
 		);
@@ -1932,6 +2069,102 @@ export async function retireApprovalDeliveryMessage(
 		)
 		.returning({ id: approvalDeliveryMessage.id });
 	return updated.length === 1;
+}
+
+/**
+ * Deputy card retirement (#1017): plans a refresh for every open deputy card
+ * of the organization whose recipient no longer covers for the approver it
+ * acts for at `now` (the absence ended, was cancelled or revoked, the deputy
+ * changed, the switch is off, or the deputy lost inbox access or left). Cover
+ * ending moves no lifecycle version, so these refreshes have their own dedupe
+ * identity, once per message. Run with every delivery pass.
+ */
+export async function planDeputyCardRetirements(input: {
+	organizationId: string;
+	now: Instant;
+}): Promise<number> {
+	const open = await db
+		.selectDistinct({
+			actingForEmployeeId: approvalDeliveryMessage.actingForEmployeeId,
+			recipientEmployeeId: approvalDeliveryMessage.recipientEmployeeId,
+		})
+		.from(approvalDeliveryMessage)
+		.where(
+			and(
+				eq(approvalDeliveryMessage.organizationId, input.organizationId),
+				isNotNull(approvalDeliveryMessage.actingForEmployeeId),
+				eq(approvalDeliveryMessage.state, "current"),
+				eq(approvalDeliveryMessage.controls, "actionable"),
+			),
+		);
+	// Each deputy's covers are judged once, for all of their open cards.
+	const coveredByDeputy = new Map<string, Set<string>>();
+	let planned = 0;
+	for (const pair of open) {
+		if (!pair.actingForEmployeeId) continue;
+		let covered = coveredByDeputy.get(pair.recipientEmployeeId);
+		if (!covered) {
+			covered = await loadCoveredApproverIds(db, {
+				organizationId: input.organizationId,
+				deputyId: pair.recipientEmployeeId,
+				at: input.now,
+			});
+			coveredByDeputy.set(pair.recipientEmployeeId, covered);
+		}
+		if (covered.has(pair.actingForEmployeeId)) continue;
+		const inserted = rows(
+			await db.execute(sql`
+				insert into approval_delivery_work (
+					organization_id, lifecycle, workflow_id, effect, provider, assignment_id,
+					workflow_type, legacy_source_type, legacy_source_id, legacy_approval_request_id,
+					legacy_cycle_id, recipient_employee_id, acting_for_employee_id, message_id,
+					dedupe_key
+				)
+				select m.organization_id, m.lifecycle, m.workflow_id, 'refresh', m.provider,
+					m.assignment_id, m.workflow_type, m.legacy_source_type, m.legacy_source_id,
+					m.legacy_approval_request_id, m.legacy_cycle_id, m.recipient_employee_id,
+					m.acting_for_employee_id, m.id,
+					'approval-delivery:v1:deputy-retire:' || m.id::text
+				from approval_delivery_message m
+				where m.organization_id = ${input.organizationId}
+					and m.acting_for_employee_id = ${pair.actingForEmployeeId}::uuid
+					and m.recipient_employee_id = ${pair.recipientEmployeeId}::uuid
+					and m.state = 'current'
+					and m.controls = 'actionable'
+				on conflict (organization_id, dedupe_key) do update
+					set status = 'pending', available_at = now(), last_outcome = null,
+						processed_at = null, updated_at = now()
+					-- Re-armed only when it found the deputy still covering last time.
+					where approval_delivery_work.status = 'cancelled'
+						and approval_delivery_work.last_outcome = 'still_covering'
+				returning id
+			`),
+		);
+		planned += inserted.length;
+	}
+	return planned;
+}
+
+/**
+ * Retires a deputy card that no longer covers (#1017) without claiming a
+ * newer status: it keeps the version it reflects, so a later decision of the
+ * approval still refreshes it to the outcome (decision 11).
+ */
+export async function retireDeputyCardMessage(
+	executor: ApprovalDeliveryExecutor,
+	input: { organizationId: string; messageId: string; state: "retired" | "gone" },
+): Promise<void> {
+	await executor
+		.update(approvalDeliveryMessage)
+		.set({ state: input.state, controls: "none" })
+		.where(
+			and(
+				eq(approvalDeliveryMessage.organizationId, input.organizationId),
+				eq(approvalDeliveryMessage.id, input.messageId),
+				isNotNull(approvalDeliveryMessage.actingForEmployeeId),
+				ne(approvalDeliveryMessage.state, "gone"),
+			),
+		);
 }
 
 /** Removes controls without claiming a newer status (e.g. a review notice). */

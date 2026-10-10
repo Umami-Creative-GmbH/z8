@@ -6,6 +6,7 @@
  */
 
 import { and, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -35,6 +36,10 @@ import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
 import { getAllActiveTenants } from "../tenant-resolver";
 import type { DailyDigestData } from "../types";
+
+// The absence's deputy (#1012) in "Who's out".
+const deputyEmployee = alias(employee, "deputy_employee");
+const deputyUser = alias(user, "deputy_user");
 
 const logger = createLogger("TeamsDailyDigest");
 
@@ -453,11 +458,7 @@ export async function buildDigestDataForManager(
 	// Phase 2: Queries that depend on managedEmployeeIds
 	// These run in parallel with each other
 	// =========================================
-	let employeesOut: Array<{
-		name: string;
-		category: string;
-		returnDate: string;
-	}> = [];
+	let employeesOut: DailyDigestData["employeesOut"] = [];
 	let employeesClockedIn: Array<{
 		name: string;
 		clockedInAt: string;
@@ -480,13 +481,24 @@ export async function buildDigestDataForManager(
 					endDate: absenceEntry.endDate,
 					employeeName: user.name,
 					categoryName: absenceCategory.name,
+					deputyName: deputyUser.name,
 				})
 				.from(absenceEntry)
 				.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
 				.innerJoin(user, eq(employee.userId, user.id))
 				.leftJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+				// Who covers (#1012), only an employee of the same organization.
+				.leftJoin(
+					deputyEmployee,
+					and(
+						eq(deputyEmployee.id, absenceEntry.deputyEmployeeId),
+						eq(deputyEmployee.organizationId, organizationId),
+					),
+				)
+				.leftJoin(deputyUser, eq(deputyUser.id, deputyEmployee.userId))
 				.where(
 					and(
+						eq(absenceEntry.organizationId, organizationId),
 						eq(absenceEntry.status, "approved"),
 						lte(absenceEntry.startDate, todayStr),
 						gte(absenceEntry.endDate, todayStr),
@@ -528,6 +540,7 @@ export async function buildDigestDataForManager(
 			name: a.employeeName || "Unknown",
 			category: a.categoryName || "Leave",
 			returnDate: fmtWeekdayShortDate(DateTime.fromISO(a.endDate).plus({ days: 1 }), locale),
+			deputyName: a.deputyName,
 		}));
 
 		activeWorkPeriods = activeWorkPeriodsResult;

@@ -8,6 +8,7 @@ import {
 	employeeDepartureReview,
 	employeeDepartureTask,
 } from "@/db/schema/employee-lifecycle";
+import { AuditTrail } from "@/lib/audit-trail";
 import {
 	compareInstants,
 	dateFromInstant,
@@ -20,6 +21,7 @@ import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/offi
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
 import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { captureApprovalHandoverDuties } from "./approval-handover";
+import { releaseDeputyAssignments } from "./deputy-release";
 import { enqueueReviewNotifications } from "./notifications";
 import { evaluateDepartureAuthority } from "./owner-invariant";
 import type {
@@ -137,6 +139,7 @@ export async function executeDepartureInTransaction(
 			AND is_active = true
 	`);
 	await revokeHeldAccessGrants(tx, identity, departure.createdBy);
+	await releaseHeldDeputyAssignments(tx, identity, cutoff, departure.createdBy);
 
 	const clockResult = await closeRunningPeriod(scope, identity, clockOut, {
 		cutoff,
@@ -292,6 +295,48 @@ async function revokeHeldAccessGrants(
 		officerEmployeeId: identity.employeeId,
 		auditMetadata,
 	});
+}
+
+/**
+ * Clears the employee as deputy on the absences that have not ended at the
+ * cutoff (#1014), audited under the departure's initiator as a system side
+ * effect. The audit rows commit with the departure; they are not forwarded to
+ * the external audit service, because the transaction may be retried. Each
+ * cleared absence queues one durable notification task with its dates, so a
+ * later cancellation cannot lose them.
+ */
+async function releaseHeldDeputyAssignments(
+	tx: LifecycleClient,
+	identity: DepartureIdentity,
+	cutoff: Instant,
+	actorUserId: string,
+) {
+	const released = await releaseDeputyAssignments(tx, new AuditTrail(), {
+		organizationId: identity.organizationId,
+		deputyEmployeeId: identity.employeeId,
+		at: cutoff,
+		actorUserId,
+		reason: "employee_departure",
+		metadata: {
+			departureId: identity.departureId,
+			employmentPeriodId: identity.employmentPeriodId,
+		},
+	});
+	if (released.length === 0) return;
+	await tx
+		.insert(employeeDepartureTask)
+		.values(
+			released.map((assignment) => ({
+				organizationId: identity.organizationId,
+				employeeId: identity.employeeId,
+				employmentPeriodId: identity.employmentPeriodId,
+				departureId: identity.departureId,
+				kind: "notify_deputy_release" as const,
+				dedupeKey: `deputy-release:${identity.departureId}:${assignment.absenceId}`,
+				payload: { ...assignment },
+			})),
+		)
+		.onConflictDoNothing();
 }
 
 /**

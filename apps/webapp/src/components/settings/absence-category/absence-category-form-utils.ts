@@ -1,4 +1,5 @@
 import type { AbsenceCategoryType } from "@/app/[locale]/(app)/settings/vacation/actions";
+import { canRequireDeputy } from "@/lib/absences/deputy";
 
 export interface AbsenceCategoryForSettings {
 	id: string;
@@ -11,6 +12,8 @@ export interface AbsenceCategoryForSettings {
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
 	drawsOnWorkBalance: boolean;
+	/** Absences of this category must name a deputy (#1011). */
+	deputyRequired: boolean;
 	color: string | null;
 	isActive: boolean;
 }
@@ -25,6 +28,7 @@ export type AbsenceCategoryFormValues = {
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
 	drawsOnWorkBalance: boolean;
+	deputyRequired: boolean;
 	color: string;
 	isActive: boolean;
 };
@@ -41,6 +45,7 @@ export const defaultAbsenceCategoryFormValues: AbsenceCategoryFormValues = {
 	requiresApproval: true,
 	countsAgainstVacation: false,
 	drawsOnWorkBalance: false,
+	deputyRequired: false,
 	color: DEFAULT_CATEGORY_COLOR,
 	isActive: true,
 };
@@ -78,6 +83,7 @@ export function getAbsenceCategoryFormValues(
 		requiresApproval: existingCategory.requiresApproval,
 		countsAgainstVacation: existingCategory.countsAgainstVacation,
 		drawsOnWorkBalance: existingCategory.drawsOnWorkBalance,
+		deputyRequired: existingCategory.deputyRequired,
 		color: existingCategory.color ?? DEFAULT_CATEGORY_COLOR,
 		isActive: existingCategory.isActive,
 	};
@@ -94,6 +100,7 @@ export function buildAbsenceCategoryPayload(value: AbsenceCategoryFormValues) {
 		requiresApproval: value.requiresApproval,
 		countsAgainstVacation: value.countsAgainstVacation,
 		drawsOnWorkBalance: value.drawsOnWorkBalance,
+		deputyRequired: canRequireDeputy(value.type) && value.deputyRequired,
 		color: value.color.trim(),
 		isActive: value.isActive,
 	};

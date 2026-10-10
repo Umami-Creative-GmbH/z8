@@ -16,8 +16,10 @@ import type { ApprovalDeliveryJobResult } from "@/lib/approvals/delivery/schedul
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { AbsenceCategoryNoticesJobResult } from "@/lib/jobs/absence-category-notices";
+import type { AbsenceDeputyRemindersJobResult } from "@/lib/jobs/absence-deputy-reminders";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
+import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
@@ -435,6 +437,28 @@ export const CRON_JOBS = {
 				"@/lib/jobs/personnel-file-expiry-reminders"
 			);
 			return runPersonnelFileExpiryRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:absence-deputy-reminders": {
+		schedule: "0 * * * *", // Hourly, so each absent employee's day starts soon after their midnight
+		description:
+			"Remind deputies the day before an approved absence they cover starts (once per absence and deputy)",
+		processor: async (): Promise<AbsenceDeputyRemindersJobResult> => {
+			const { runAbsenceDeputyRemindersJob } = await import("@/lib/jobs/absence-deputy-reminders");
+			return runAbsenceDeputyRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:deputy-cover-summaries": {
+		schedule: "*/15 * * * *", // Each absent approver's day, and a late approval, are told soon
+		description:
+			"Tell covering deputies what waits when cover starts, and approvers what their deputy decided when back (once per absence and deputy)",
+		processor: async (): Promise<DeputyCoverSummariesJobResult> => {
+			const { runDeputyCoverSummariesJob } = await import("@/lib/jobs/deputy-cover-summaries");
+			return runDeputyCoverSummariesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},

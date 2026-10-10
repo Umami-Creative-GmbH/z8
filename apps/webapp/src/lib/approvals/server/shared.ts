@@ -18,6 +18,14 @@ import {
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import type { ActingFor } from "../deputy/deputy-decision";
+import {
+	authorizeLegacyDeputyDecision,
+	type DeputyDecisionEntityType,
+	deputyDecisionAuditMetadata,
+	recordDeputyDecision,
+} from "../deputy/deputy-decision-store";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	ApprovalAssignmentReassignedError,
@@ -171,10 +179,13 @@ function loadPendingApprovalRequest(
 							}),
 						);
 					}
+					// A non-approver without an own-right option is judged as a possible
+					// covering deputy by the caller (#1016); the request was addressed by ID.
 					if (
+						pendingRequest.approverId !== approverId &&
 						!options?.allowAnyApprover &&
 						!options?.allowOrganizationWideApprover &&
-						pendingRequest.approverId !== approverId
+						!options?.approvalRequestId
 					) {
 						return Effect.fail(
 							new AuthorizationError({
@@ -187,7 +198,8 @@ function loadPendingApprovalRequest(
 					}
 					if (
 						(options?.allowAnyApprover ||
-							options?.allowOrganizationWideApprover) &&
+							options?.allowOrganizationWideApprover ||
+							pendingRequest.approverId !== approverId) &&
 						pendingRequest.organizationId !== actorOrganizationId
 					) {
 						return Effect.fail(
@@ -271,6 +283,12 @@ type ApprovalEntityPreflight<R = never> = (
 	options?: ApprovalActionOptions,
 ) => Effect.Effect<unknown, AnyAppError, R>;
 
+/** How the committed legacy decision was made, for after-commit work. */
+export interface LegacyDecisionContext {
+	/** Set when a covering deputy decided for the absent approver (#1016). */
+	actingFor: ActingFor | null;
+}
+
 interface ApprovalPostCommitHandlers<T, R = never> {
 	updateEntity: ApprovalEntityUpdater<T, R>;
 	afterCommit: (
@@ -278,12 +296,14 @@ interface ApprovalPostCommitHandlers<T, R = never> {
 		dbService: ApprovalDbService,
 		entityId: string,
 		currentEmployee: CurrentApprover,
+		decision: LegacyDecisionContext,
 	) => Effect.Effect<void, AnyAppError, R>;
 }
 
 interface ApprovalExecutionResult<T> {
 	domainResult: T | undefined;
 	didRunDomainUpdate: boolean;
+	decision: LegacyDecisionContext;
 }
 
 function runAfterCommitBestEffort<T, R>(
@@ -293,9 +313,10 @@ function runAfterCommitBestEffort<T, R>(
 	entityType: ApprovalEntityType,
 	entityId: string,
 	currentEmployee: CurrentApprover,
+	decision: LegacyDecisionContext,
 ) {
 	return handlers
-		.afterCommit(result, dbService, entityId, currentEmployee)
+		.afterCommit(result, dbService, entityId, currentEmployee, decision)
 		.pipe(
 			Effect.catchCause((cause) => {
 				const error = isInterruptOnly(cause) ? Cause.pretty(cause) : failureOfCause(cause);
@@ -344,44 +365,65 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 			action,
 			options,
 		);
+		let actingFor: ActingFor | null = null;
 		if (
-			options?.allowAnyApprover &&
-			!options.allowOrganizationWideApprover &&
+			!options?.allowOrganizationWideApprover &&
 			approval.approverId !== currentEmployee.id
 		) {
-			const eligible = yield* Effect.tryPromise({
-				try: () =>
-					isEligibleManagerForApprovalRequest({
-						db: dbService.db,
-						approvalRequestId: approval.id,
-						managerEmployeeId: currentEmployee.id,
-						organizationId: currentEmployee.organizationId,
-					}),
-				catch: (error) => error as AnyAppError,
-			});
-			if (!eligible) {
-				return yield* Effect.fail(
-					new AuthorizationError({
-						message: "You are not authorized to decide this request",
-						userId: currentEmployee.id,
-						resource: entityType,
-						action,
-					}),
-				);
-			}
-			// Eligible-manager status never bypasses an escalation replacement
-			// (#255 §4, #439): the owners refuse it first; this keeps the fallback
-			// itself closed for every legacy kind.
-			const transferred = yield* Effect.tryPromise({
-				try: () =>
-					wasLegacyRequestTransferred(dbService.db, {
-						organizationId: currentEmployee.organizationId,
-						approvalRequestId: approval.id,
-					}),
-				catch: (error) => error as AnyAppError,
-			});
-			if (transferred) {
-				return yield* Effect.fail(approvalReassignedConflict(new ApprovalAssignmentReassignedError()));
+			// Own rights win (#1016 default 8): an eligible manager decides as
+			// themselves; only someone without one may decide as a covering deputy.
+			const eligible = options?.allowAnyApprover
+				? yield* Effect.tryPromise({
+						try: () =>
+							isEligibleManagerForApprovalRequest({
+								db: dbService.db,
+								approvalRequestId: approval.id,
+								managerEmployeeId: currentEmployee.id,
+								organizationId: currentEmployee.organizationId,
+							}),
+						catch: (error) => error as AnyAppError,
+					})
+				: false;
+			if (eligible) {
+				// Eligible-manager status never bypasses an escalation replacement
+				// (#255 §4, #439): the owners refuse it first; this keeps the fallback
+				// itself closed for every legacy kind.
+				const transferred = yield* Effect.tryPromise({
+					try: () =>
+						wasLegacyRequestTransferred(dbService.db, {
+							organizationId: currentEmployee.organizationId,
+							approvalRequestId: approval.id,
+						}),
+					catch: (error) => error as AnyAppError,
+				});
+				if (transferred) {
+					return yield* Effect.fail(
+						approvalReassignedConflict(new ApprovalAssignmentReassignedError()),
+					);
+				}
+			} else {
+				// The deputy right follows the request's current approver, so a
+				// transfer away from the absent approver ends it by itself.
+				// A refusal keeps its type; a database failure stays a DatabaseError.
+				actingFor = yield* dbService
+					.query("approvals.authorizeLegacyDeputyDecision", () =>
+						authorizeLegacyDeputyDecision(dbService.db, {
+							organizationId: currentEmployee.organizationId,
+							approvalRequestId: approval.id,
+							entityType,
+							approverEmployeeId: approval.approverId,
+							actorEmployeeId: currentEmployee.id,
+							action,
+							at: systemClock.nowInstant(),
+						}),
+					)
+					.pipe(
+						Effect.mapError((error) =>
+							error._tag === "DatabaseError" && error.cause instanceof AuthorizationError
+								? error.cause
+								: error,
+						),
+					);
 			}
 		}
 
@@ -419,6 +461,22 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 			didRunDomainUpdate = true;
 		}
 
+		if (actingFor) {
+			const recordedFor = actingFor;
+			yield* dbService.query("approvals.recordLegacyDeputyDecision", () =>
+				recordDeputyDecision(dbService.db, {
+					organizationId: currentEmployee.organizationId,
+					deputyEmployeeId: currentEmployee.id,
+					actingFor: recordedFor,
+					authority: "legacy",
+					entityType: entityType as DeputyDecisionEntityType,
+					entityId,
+					approvalRequestId: approval.id,
+					decision: statusUpdate.status,
+				}),
+			);
+		}
+
 		yield* auditLogger.log({
 			organizationId: currentEmployee.organizationId,
 			approvalId: approval.id,
@@ -429,6 +487,7 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 			previousStatus: approval.status,
 			newStatus: statusUpdate.status,
 			reason: rejectionReason,
+			...(actingFor ? { metadata: deputyDecisionAuditMetadata(actingFor) } : {}),
 		});
 
 		logger.info(
@@ -444,6 +503,7 @@ function executeApprovalWithCurrentEmployee<T, R = never>(
 		return {
 			domainResult,
 			didRunDomainUpdate,
+			decision: { actingFor },
 		} satisfies ApprovalExecutionResult<T>;
 	});
 }
@@ -486,6 +546,7 @@ export function processApprovalWithCurrentEmployee<T, R = never>(
 					entityType,
 					entityId,
 					currentEmployee,
+					execution.decision,
 				);
 			}
 			return execution.domainResult;
@@ -550,6 +611,7 @@ export function processApprovalWithCurrentEmployee<T, R = never>(
 				entityType,
 				entityId,
 				currentEmployee,
+				execution.decision,
 			);
 		}
 		return execution.domainResult;

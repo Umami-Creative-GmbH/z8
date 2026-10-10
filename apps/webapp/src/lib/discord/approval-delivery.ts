@@ -76,6 +76,7 @@ export const discordApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		const card = await prepareApprovalPresentation({
 			approvalId: input.approvalRequestId,
 			recipientEmployeeId: input.recipientEmployeeId,
+			actingForEmployeeId: input.actingForEmployeeId ?? null,
 			organizationId: input.organizationId,
 			provider: "discord",
 			fits: fitsDiscordMessage,

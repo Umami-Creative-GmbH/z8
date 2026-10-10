@@ -24,6 +24,8 @@ export const absenceRequestSchema = z.object({
 	endDate: z.coerce.date(),
 	notes: z.string().optional(),
 	sickDetail: sickDetailSchema.optional(),
+	/** The colleague covering while the employee is away (#1011). */
+	deputyEmployeeId: z.uuid().optional(),
 });
 
 /**

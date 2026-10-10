@@ -4,6 +4,8 @@
 // ============================================
 
 export * from "./absence";
+// Deputy day-before reminder markers (#1013)
+export * from "./absence-deputy-reminder";
 // Conditional access policies
 export * from "./access-policy";
 export * from "./app-auth";
@@ -12,6 +14,10 @@ export * from "./approval-delivery";
 export * from "./approval-escalation";
 export * from "./approval-evidence";
 export * from "./approval-policy";
+export * from "./approval-deputy-decision";
+// Cover summary sent markers (#1018)
+export * from "./approval-deputy-cover-summary";
+export * from "./approval-setting";
 export * from "./approval-workflow";
 export * from "./audit";
 // Audit export (signed packages, WORM retention)

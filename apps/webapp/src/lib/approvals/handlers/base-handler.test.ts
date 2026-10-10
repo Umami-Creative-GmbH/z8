@@ -334,6 +334,39 @@ describe("fetchApprovals", () => {
 		});
 	});
 
+	it("includes the pending approvals of approvers the viewer covers for (#1016)", () => {
+		const conditions = buildBaseConditions("time_entry", {
+			approverId: "deputy-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 20,
+			coveredApproverIds: ["absent-1"],
+		});
+
+		expect(conditions[3]).toEqual({
+			or: [
+				{ eq: [expect.anything(), "deputy-1"] },
+				{ inArray: [expect.anything(), ["absent-1"]] },
+			],
+		});
+	});
+
+	it("never widens expense claims or decided history to a covering deputy", () => {
+		for (const [entityType, status] of [
+			["travel_expense_claim", "pending"],
+			["absence_entry", "approved"],
+		] as const) {
+			const conditions = buildBaseConditions(entityType, {
+				approverId: "deputy-1",
+				organizationId: "org-1",
+				status,
+				limit: 20,
+				coveredApproverIds: ["absent-1"],
+			});
+			expect(conditions[3]).toEqual({ eq: [expect.anything(), "deputy-1"] });
+		}
+	});
+
 	it("can include approvals assigned to other approvers for admin briefings", () => {
 		const conditions = buildBaseConditions("absence_entry", {
 			approverId: "admin-1",

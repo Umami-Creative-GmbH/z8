@@ -188,7 +188,10 @@ export function buildDailyDigestBlocks(
 	if (data.employeesOut.length > 0) {
 		const outList = data.employeesOut
 			.slice(0, 5)
-			.map((e) => `  ${e.name} - ${e.category} (returns ${e.returnDate})`)
+			.map(
+				(e) =>
+					`  ${e.name} - ${e.category} (returns ${e.returnDate})${e.deputyName ? ` · Deputy: ${e.deputyName}` : ""}`,
+			)
 			.join("\n");
 		let outText = `*Who's Out:*\n${outList}`;
 		if (data.employeesOut.length > 5) {

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { AuditTrail } from "@/lib/audit-trail";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
@@ -19,6 +20,12 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import {
+	type ReleasedDeputyAssignments,
+	releaseDeputyAssignmentsOnDeactivation,
+} from "@/lib/employee-lifecycle/deputy-release";
+import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
 import { hasEndedEmploymentWithoutRehire } from "@/lib/employee-lifecycle/employment-periods";
 import { createLogger } from "@/lib/logger";
 import {
@@ -46,6 +53,8 @@ type LifecycleTransactionResult =
 				typeof employee.$inferSelect,
 				"id" | "userId" | "isActive"
 			>;
+			/** Absences the deactivated employee stopped covering (#1014). */
+			releasedDeputies?: ReleasedDeputyAssignments | null;
 	  }
 	| { type: "not_found" }
 	| { type: "actor_membership_missing" }
@@ -275,7 +284,18 @@ function setEmployeeLifecycleState(
 									.returning({ id: employee.id });
 								if (!updatedEmployee) return { type: "not_found" };
 
-								return { type: "success", changed: true, targetEmployee };
+								// The deactivated employee stops being anyone's deputy (#1014).
+								const releasedDeputies = isActive
+									? null
+									: await releaseDeputyAssignmentsOnDeactivation(tx, new AuditTrail(), {
+											organizationId: actor.organizationId,
+											employeeId: validatedEmployeeId,
+											actorUserId: actor.session.user.id,
+											at: systemClock.nowInstant(),
+											reason: "employee_deactivated",
+										});
+
+								return { type: "success", changed: true, targetEmployee, releasedDeputies };
 							},
 							actor.dbService.db,
 						);
@@ -392,6 +412,14 @@ function setEmployeeLifecycleState(
 					);
 				}
 
+				if (transactionResult.releasedDeputies) {
+					const releasedDeputies = transactionResult.releasedDeputies;
+					// After the commit, on the caller's database client (#1014); never throws.
+					yield* Effect.promise(() =>
+						notifyReleasedDeputyAssignments(releasedDeputies, actor.dbService.db),
+					);
+				}
+
 				revalidateEmployeesCache(actor.organizationId);
 
 				if (revocationFailed) {
@@ -500,6 +528,8 @@ export async function removeEmployeeAccessAction(
 							completeRemovedMemberCleanup({
 								organizationId: actor.organizationId,
 								userId: targetEmployee.userId,
+								// Its deputy release is audited under this admin (#1014).
+								actorUserId: actor.session.user.id,
 							}),
 						catch: () =>
 							new ValidationError({

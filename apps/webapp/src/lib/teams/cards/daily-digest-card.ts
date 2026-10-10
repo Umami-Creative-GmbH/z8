@@ -117,6 +117,19 @@ export function buildDailyDigestCard(
 										text: `**${emp.name}**`,
 										wrap: true,
 									},
+									...(emp.deputyName
+										? [
+												{
+													type: "TextBlock",
+													text: t("teamsBot:digest.deputy", "Deputy: {name}", {
+														name: emp.deputyName,
+													}),
+													isSubtle: true,
+													spacing: "none",
+													wrap: true,
+												},
+											]
+										: []),
 								],
 							},
 							{
@@ -402,7 +415,10 @@ export function buildDailyDigestText(
 					name: emp.name,
 					category: emp.category,
 					returnDate: emp.returnDate,
-				}),
+				}) +
+					(emp.deputyName
+						? ` · ${t("teamsBot:digest.deputy", "Deputy: {name}", { name: emp.deputyName })}`
+						: ""),
 			);
 		}
 		if (data.employeesOut.length > 5) {

@@ -817,6 +817,8 @@ describe("PendingMemberService rejection isolation", () => {
 			expect.objectContaining({ query: fake.db.query }),
 			"user-1",
 			"org-1",
+			// The rejecting admin performs the deputy release audit (#1014).
+			{ actorUserId: "admin-1" },
 		);
 		expect(
 			removalCleanupMock.completePostCommit,

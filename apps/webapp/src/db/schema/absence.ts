@@ -46,6 +46,8 @@ export const absenceCategory = pgTable(
 		// Time off in lieu (#1000): an approved absence keeps its days' required time, so the
 		// work balance falls by it. Never combined with the vacation or work-time rules.
 		drawsOnWorkBalance: boolean("draws_on_work_balance").default(false).notNull(),
+		/** Absences of this category must always name a deputy (#1011). */
+		deputyRequired: boolean("deputy_required").default(false).notNull(),
 		color: text("color"), // For UI display
 		isActive: boolean("is_active").default(true).notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -111,6 +113,17 @@ export const absenceEntry = pgTable(
 		organizationId: text("organization_id").references(() => organization.id, {
 			onDelete: "cascade",
 		}),
+		/**
+		 * The colleague covering while the employee is away (#1011): an employee
+		 * of the same organization, never the absent employee. Not part of what
+		 * the approver approves.
+		 */
+		deputyEmployeeId: uuid("deputy_employee_id"),
+		/**
+		 * When the current deputy was named (#1017): covering, and so deputy
+		 * cards, never reach back before it. Null without a deputy.
+		 */
+		deputyAssignedAt: timestamp("deputy_assigned_at", { withTimezone: true }),
 
 		// Legacy-to-canonical linkage used during big-bang cutover.
 		canonicalRecordId: uuid("canonical_record_id"),
@@ -154,6 +167,19 @@ export const absenceEntry = pgTable(
 		index("absenceEntry_employeeId_status_idx").on(table.employeeId, table.status),
 		// Target of org-scoped references such as a sick note's link (#982).
 		unique("absenceEntry_id_organizationId_idx").on(table.id, table.organizationId),
+		// Migration 0198 deletes with SET NULL ("deputy_employee_id") only, keeping the organization.
+		foreignKey({
+			name: "absence_entry_deputy_employee_fk",
+			columns: [table.deputyEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("set null"),
+		check(
+			"absence_entry_deputy_check",
+			sql`${table.deputyEmployeeId} IS NULL OR (${table.organizationId} IS NOT NULL AND ${table.deputyEmployeeId} <> ${table.employeeId})`,
+		),
+		index("absenceEntry_org_deputyEmployeeId_idx")
+			.on(table.organizationId, table.deputyEmployeeId)
+			.where(sql`${table.deputyEmployeeId} IS NOT NULL`),
 	],
 );
 

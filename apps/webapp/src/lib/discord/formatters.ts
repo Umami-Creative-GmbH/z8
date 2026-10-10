@@ -193,7 +193,10 @@ export function buildDailyDigestEmbed(
 	} else {
 		const outList = data.employeesOut
 			.slice(0, 5)
-			.map((emp) => `${emp.name} - ${emp.category} (returns ${emp.returnDate})`)
+			.map(
+				(emp) =>
+					`${emp.name} - ${emp.category} (returns ${emp.returnDate})${emp.deputyName ? ` · Deputy: ${emp.deputyName}` : ""}`,
+			)
 			.join("\n");
 		const suffix = data.employeesOut.length > 5 ? `\n+${data.employeesOut.length - 5} more` : "";
 		fields.push({ name: "Who's Out", value: outList + suffix, inline: false });

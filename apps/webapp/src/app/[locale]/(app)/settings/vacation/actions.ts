@@ -17,6 +17,7 @@ import {
 } from "@/db/schema";
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
+import { canRequireDeputy } from "@/lib/absences/deputy";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
@@ -58,6 +59,8 @@ type AbsenceCategoryWriteData = {
 	countsAgainstVacation: boolean;
 	/** Time off in lieu (#1000); false when omitted. */
 	drawsOnWorkBalance?: boolean;
+	/** Absences of this category must name a deputy (#1011); off when left out. */
+	deputyRequired?: boolean;
 	color?: string | null;
 	isActive?: boolean;
 };
@@ -98,6 +101,10 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 		descriptionTranslations: normalizeTranslationMap(data.descriptionTranslations),
 		drawsOnWorkBalance: data.drawsOnWorkBalance ?? false,
 		color: normalizeOptionalText(data.color),
+		// Sick leave never requires a deputy (#1011).
+		...(data.deputyRequired !== undefined || data.type === "sick"
+			? { deputyRequired: canRequireDeputy(data.type) && data.deputyRequired === true }
+			: {}),
 	};
 }
 
@@ -855,6 +862,7 @@ export async function createAbsenceCategory(
 						requiresApproval: normalized.requiresApproval,
 						countsAgainstVacation: normalized.countsAgainstVacation,
 						drawsOnWorkBalance: normalized.drawsOnWorkBalance,
+						deputyRequired: normalized.deputyRequired ?? false,
 						color: normalized.color,
 						isActive: data.isActive ?? true,
 					})
@@ -939,6 +947,8 @@ export async function updateAbsenceCategory(
 							requiresApproval: normalized.requiresApproval,
 							countsAgainstVacation: normalized.countsAgainstVacation,
 							drawsOnWorkBalance: normalized.drawsOnWorkBalance,
+							// Changing it never affects existing absences until their deputy changes.
+							deputyRequired: normalized.deputyRequired ?? category.deputyRequired,
 							color: normalized.color,
 							isActive: data.isActive,
 						})

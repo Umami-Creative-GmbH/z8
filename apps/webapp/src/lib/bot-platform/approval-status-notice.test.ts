@@ -90,6 +90,34 @@ describe("approvalStatusNotice", () => {
 		expect(notice.reviewUrl).toBe("https://org.z8.test/approvals/review/org/compatibility/r");
 	});
 
+	it("tells a deputy whose cover ended that the card no longer decides (#1017)", async () => {
+		const notice = await approvalStatusNotice(
+			{ workflowStatus: "pending", evidence: null, noLongerCoveringFor: "Morgan Manager" },
+			display,
+			"org",
+			reference,
+		);
+		expect(notice.title).toBe("No longer covering for Morgan Manager");
+		expect(notice.text).toBe(
+			"You are no longer covering for Morgan Manager, so this card can't decide anything. No decision was made here. Review the request in Z8 if you still have access.",
+		);
+		expect(notice.reviewUrl).toBe("https://org.z8.test/approvals/review/org/compatibility/r");
+	});
+
+	it("shows a decided outcome on a former deputy card rather than the cover notice", async () => {
+		const notice = await approvalStatusNotice(
+			{
+				workflowStatus: "approved",
+				evidence: evidence("approved", "approved"),
+				noLongerCoveringFor: "Morgan Manager",
+			},
+			display,
+			"org",
+			reference,
+		);
+		expect(notice.title).toBe("Request approved");
+	});
+
 	it("keeps a reassigned card generic for a recipient who is no longer entitled", async () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "pending", evidence: null, reassigned: true },

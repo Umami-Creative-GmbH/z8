@@ -49,6 +49,22 @@ const legacyTransferMocks = vi.hoisted(() => ({
 	wasTransferred: vi.fn(async () => false),
 }));
 
+// Deputy decisions read and write the acting-for record; verified against
+// PostgreSQL in deputy-decisions.integration.test.ts (#1016).
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/deputy/deputy-decision-store")>()),
+	coversCurrentApprover: async () => false,
+	loadDeputyActingFor: async () => null,
+	recordCanonicalDeputyDecisionOf: async () => null,
+	authorizeLegacyDeputyDecision: async () => {
+		const { deputyDecisionRefusalError } = await import("@/lib/approvals/deputy/deputy-decision");
+		throw deputyDecisionRefusalError("not_covering", {
+			actorEmployeeId: "actor",
+			resource: "approval_request",
+			action: "approve",
+		});
+	},
+}));
 vi.mock("../escalation/legacy-transfer-store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../escalation/legacy-transfer-store")>()),
 	assertLegacyTransferDecisionAuthority: legacyTransferMocks.assertDecisionAuthority,

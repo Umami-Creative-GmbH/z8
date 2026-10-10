@@ -54,6 +54,16 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	personnel_file_expiry_upcoming: ["/personnel-files/", "/my-documents"],
 	personnel_file_expired_today: ["/personnel-files/", "/my-documents"],
 	personnel_file_due_for_deletion: "/personnel-files/",
+	// The deputy's dashboard, which shows whom they cover (#1013).
+	absence_deputy_assigned: "/",
+	absence_deputy_removed: "/",
+	absence_deputy_dates_changed: "/",
+	absence_deputy_reminder: "/",
+	// The absent employee gets their absences, managers the team absences (#1014).
+	absence_deputy_unavailable: ["/absences", "/team/absences"],
+	// The covering deputy's inbox section, the approver's deputy decisions (#1018).
+	approval_cover_started: "/approvals/inbox",
+	approval_cover_return_summary: "/approvals/deputy-decisions/",
 	work_balance_adjustment_recorded: "/time-tracking",
 	work_balance_adjustment_cancelled: "/time-tracking",
 };

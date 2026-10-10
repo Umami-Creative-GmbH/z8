@@ -1,5 +1,6 @@
 import type { Effect } from "effect";
 import type { db } from "@/db";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import type { SickDetail } from "@/lib/absences/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import type { SickNoteMarker } from "@/lib/personnel-file/sick-note-store";
@@ -37,6 +38,8 @@ export interface ApprovalWithAbsence {
 		sickDetail: SickDetail | null;
 		/** "Sick note attached (n)" on sick leave (#982); null without notes. */
 		sickNotes: SickNoteMarker | null;
+		/** Who covers while the employee is away (#1011); null without a deputy. */
+		deputy: AbsenceDeputyView | null;
 		category: {
 			name: string;
 			type: string;

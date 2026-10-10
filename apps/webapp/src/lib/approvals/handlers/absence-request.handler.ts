@@ -15,6 +15,8 @@ import {
 	getAbsenceDaysByAbsenceId,
 } from "@/lib/absences/absence-days-resolver";
 import { formatDateRange } from "@/lib/absences/date-utils";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
+import { loadAbsenceDeputyViews } from "@/lib/absences/deputy-store";
 import type { SickDetail } from "@/lib/absences/types";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -40,6 +42,9 @@ interface AbsenceWithRelations {
 	endPeriod: "full_day" | "am" | "pm";
 	notes: string | null;
 	sickDetail: SickDetail | null;
+	deputyEmployeeId?: string | null;
+	/** Set on the detail only (#1011). */
+	deputy?: AbsenceDeputyView | null;
 	status: "pending" | "approved" | "rejected";
 	createdAt: Date;
 	/** The absence's absence days for the employee (Absences ADR 0001). */
@@ -312,6 +317,16 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 					absence,
 					request.createdAt,
 				);
+				// Who covers, so the approver can reject when the cover does not work (#1011).
+				const deputyEmployeeId = absence.deputyEmployeeId;
+				const deputy = deputyEmployeeId
+					? ((yield* dbService.query("approvals.getAbsenceDeputy", () =>
+							loadAbsenceDeputyViews(dbService.db, {
+								organizationId,
+								deputyEmployeeIds: [deputyEmployeeId],
+							}),
+						)).get(deputyEmployeeId) ?? null)
+					: null;
 
 				// Build timeline
 				const timeline: ApprovalTimelineEvent[] = [
@@ -382,7 +397,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 						sla: buildSLAInfo(slaDeadline),
 						display: AbsenceRequestHandler.getDisplayMetadata(absence),
 					},
-					entity: redactNonSickAbsenceSickDetail(absence),
+					entity: { ...redactNonSickAbsenceSickDetail(absence), deputy },
 					timeline,
 				} as ApprovalDetail<AbsenceWithRelations>;
 			}),

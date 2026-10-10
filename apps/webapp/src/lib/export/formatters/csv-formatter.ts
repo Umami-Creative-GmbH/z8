@@ -199,6 +199,10 @@ export const CSV_COLUMNS = {
 		"approvedAt",
 		"rejectionReason",
 		"createdAt",
+		// Appended last so readers of the older column order keep working (#1012).
+		// Key names must avoid "date", "time" and "at", which toCSV treats as dates.
+		"deputyEmployeeId",
+		"deputyName",
 	],
 	shifts: [
 		"id",

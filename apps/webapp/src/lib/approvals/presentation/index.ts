@@ -9,13 +9,23 @@ import {
 	approvalWorkflowStage,
 	employee,
 } from "@/db/schema";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { readApprovalAuthoritySnapshot } from "../authority";
+import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
+import {
+	legacyDecidedEarlierStage,
+	loadAbsenceDeputyView,
+	loadCover,
+	loadEmployeeName,
+} from "../deputy/deputy-reads";
 import {
 	type ApprovalActionableCard,
 	type ApprovalCardDraft,
+	type ApprovalCardFact,
 	type ApprovalCardTarget,
 	type ApprovalReviewSummary,
 	prepareAbsenceReviewSummary,
@@ -69,22 +79,41 @@ export async function prepareApprovalPresentation(input: {
 	 * controls (#294), within its own limits; otherwise it gets a notice.
 	 */
 	summary?: { fits: (summary: ApprovalReviewSummary) => boolean };
+	/**
+	 * A deputy card (#1017): the absent approver X the recipient covers for. The
+	 * approval must still be X's, the recipient must cover for X now, and the
+	 * card names X and is bound to the recipient and X's assignment.
+	 */
+	actingForEmployeeId?: string | null;
 }): Promise<
 	| ApprovalReviewNotice
 	| ApprovalActionableCard
 	| ApprovalReviewSummary
 	| { status: "undisclosable" }
 > {
+	const actingFor = input.actingForEmployeeId ?? null;
+	const approverEmployeeId = actingFor ?? input.recipientEmployeeId;
 	const request = await db.query.approvalRequest.findFirst({
 		where: and(
 			eq(approvalRequest.id, input.approvalId),
 			eq(approvalRequest.organizationId, input.organizationId),
-			eq(approvalRequest.approverId, input.recipientEmployeeId),
+			eq(approvalRequest.approverId, approverEmployeeId),
 			eq(approvalRequest.status, "pending"),
 		),
-		columns: { id: true, metadata: true, entityType: true },
+		columns: { id: true, metadata: true, entityType: true, entityId: true, requestedBy: true },
 	});
 	if (!request) return { status: "undisclosable" };
+	const coveringFor = actingFor
+		? await deputyCardCover({
+				organizationId: input.organizationId,
+				approvalRequestId: request.id,
+				entityType: request.entityType,
+				requesterEmployeeId: request.requestedBy,
+				approverEmployeeId: actingFor,
+				deputyEmployeeId: input.recipientEmployeeId,
+			})
+		: null;
+	if (actingFor && !coveringFor) return { status: "undisclosable" };
 	// Under legacy absence authority the pending legacy request is the
 	// authority; a shadow/ready observation mirroring it is never consulted
 	// (#384).
@@ -139,10 +168,7 @@ export async function prepareApprovalPresentation(input: {
 				eq(approvalStageAssignment.organizationId, input.organizationId),
 				eq(approvalStageAssignment.workflowId, workflow.id),
 				eq(approvalStageAssignment.stageId, stage.id),
-				eq(
-					approvalStageAssignment.approverEmployeeId,
-					input.recipientEmployeeId,
-				),
+				eq(approvalStageAssignment.approverEmployeeId, approverEmployeeId),
 				eq(approvalStageAssignment.status, "pending"),
 			),
 			columns: { id: true },
@@ -155,6 +181,7 @@ export async function prepareApprovalPresentation(input: {
 			workflowId: workflow.id,
 			stageId: stage.id,
 			assignmentId: assignment.id,
+			...(actingFor ? { actingForEmployeeId: actingFor } : {}),
 		};
 	} else if (request.metadata?.workflow || request.metadata?.stage) {
 		return { status: "undisclosable" };
@@ -182,6 +209,41 @@ export async function prepareApprovalPresentation(input: {
 	});
 	if (!display) return { status: "undisclosable" };
 	const t = await getBotTranslate(display.locale);
+	// A deputy card names the absent approver first; an absence card ends with
+	// who covers during it (#1011). Provider limits count both.
+	const coveringFact = coveringFor
+		? {
+				label: t("bot.approval.card.coveringFor", "Covering for"),
+				value: coveringFor.approverName,
+			}
+		: null;
+	// Only an absence card that can be bound (canonical or legacy authority) shows it.
+	const deputyFact =
+		request.entityType === "absence_entry" && input.provider && (canonicalTarget || legacyAbsence)
+			? absenceDeputyFact(
+					await loadAbsenceDeputyView(db, {
+						organizationId: input.organizationId,
+						absenceId: request.entityId,
+					}),
+					t,
+				)
+			: null;
+	const withCover = <T extends { facts: ApprovalCardFact[] }>(card: T): T =>
+		coveringFact || deputyFact
+			? {
+					...card,
+					facts: [
+						...(coveringFact ? [coveringFact] : []),
+						...card.facts,
+						...(deputyFact ? [deputyFact] : []),
+					],
+				}
+			: card;
+	const providerFits = input.fits;
+	const fits = providerFits
+		? { fits: (draft: ApprovalCardDraft) => providerFits(withCover(draft)) }
+		: {};
+	const deputy = actingFor ? { actingForEmployeeId: actingFor } : {};
 	if (input.provider && canonicalTarget) {
 		const cardInput = {
 			target: canonicalTarget,
@@ -190,25 +252,26 @@ export async function prepareApprovalPresentation(input: {
 			recipientUserId: recipient.userId,
 			display,
 			t,
-			...(input.fits ? { fits: input.fits } : {}),
+			...fits,
 		};
 		const card = canonicalTimeKind
 			? await prepareBoundTimeCard(db, cardInput)
 			: await prepareBoundAbsenceCard(db, cardInput);
-		if (card) return card;
+		if (card) return withCover(card);
 		if (input.summary) {
+			const summaryFits = input.summary.fits;
 			const summaryInput = {
 				target: canonicalTarget,
 				approvalRequestId: request.id,
 				recipientUserId: recipient.userId,
 				display,
 				t,
-				fits: input.summary.fits,
+				fits: (summary: ApprovalReviewSummary) => summaryFits(withCover(summary)),
 			};
 			const summary = canonicalTimeKind
 				? await prepareTimeReviewSummary(db, summaryInput)
 				: await prepareAbsenceReviewSummary(db, summaryInput);
-			if (summary) return summary;
+			if (summary) return withCover(summary);
 		}
 	} else if (input.provider && legacyAbsence) {
 		// Legacy-authoritative absences bind the exact legacy request (#384).
@@ -220,9 +283,10 @@ export async function prepareApprovalPresentation(input: {
 			provider: input.provider,
 			display,
 			t,
-			...(input.fits ? { fits: input.fits } : {}),
+			...fits,
+			...deputy,
 		});
-		if (card) return card;
+		if (card) return withCover(card);
 	} else if (input.provider && legacyTime) {
 		// Legacy-authoritative time approvals bind the exact legacy request (#432).
 		const card = await prepareBoundLegacyTimeCard(db, {
@@ -233,11 +297,13 @@ export async function prepareApprovalPresentation(input: {
 			provider: input.provider,
 			display,
 			t,
-			...(input.fits ? { fits: input.fits } : {}),
+			...fits,
+			...deputy,
 		});
-		if (card) return card;
+		if (card) return withCover(card);
 	} else if (input.provider && request.entityType === "travel_expense_claim") {
 		// Legacy-authoritative expense claims bind the exact legacy request (#296).
+		// Claims are never a deputy kind, so no deputy card reaches here.
 		const card = await prepareBoundTravelExpenseCard(db, {
 			organizationId: input.organizationId,
 			approvalRequestId: request.id,
@@ -259,9 +325,10 @@ export async function prepareApprovalPresentation(input: {
 			provider: input.provider,
 			display,
 			t,
-			...(input.fits ? { fits: input.fits } : {}),
+			...fits,
+			...deputy,
 		});
-		if (card) return card;
+		if (card) return withCover(card);
 	}
 	logger.warn(
 		{
@@ -287,6 +354,69 @@ export async function prepareApprovalPresentation(input: {
 			reference: { kind: "compatibility", approvalRequestId: request.id },
 		}),
 	};
+}
+
+/**
+ * The absence card's "Deputy" fact (#1011): the current deputy, noted when a
+ * contact only; "None named" without one. Null when the absence is gone.
+ */
+function absenceDeputyFact(
+	deputy: AbsenceDeputyView | null | undefined,
+	t: Awaited<ReturnType<typeof getBotTranslate>>,
+): ApprovalCardFact | null {
+	if (deputy === undefined) return null;
+	const label = t("bot.approval.card.deputy", "Deputy");
+	if (!deputy) return { label, value: t("bot.approval.card.deputyNone", "None named") };
+	return {
+		label,
+		value: deputy.canDecideApprovals
+			? deputy.name
+			: t("bot.approval.card.deputyContactOnly", "{name} (contact only)", { name: deputy.name }),
+	};
+}
+
+/**
+ * Whether a deputy card (#1017) may be shown: the approval is of a deputy kind,
+ * not the deputy's own request (#697), the deputy covers for the approver now,
+ * and did not decide an earlier stage of the same request (four-eyes). Returns
+ * the approver's display name, or null when no deputy card may be shown.
+ */
+async function deputyCardCover(input: {
+	organizationId: string;
+	approvalRequestId: string;
+	entityType: string;
+	requesterEmployeeId: string | null;
+	approverEmployeeId: string;
+	deputyEmployeeId: string;
+}): Promise<{ approverName: string } | null> {
+	if (!isDeputyDecisionEntityType(input.entityType)) return null;
+	if (
+		input.requesterEmployeeId === input.deputyEmployeeId ||
+		input.approverEmployeeId === input.deputyEmployeeId
+	) {
+		return null;
+	}
+	const cover = await loadCover(db, {
+		organizationId: input.organizationId,
+		approverId: input.approverEmployeeId,
+		deputyId: input.deputyEmployeeId,
+		at: systemClock.nowInstant(),
+	});
+	if (!cover) return null;
+	if (
+		await legacyDecidedEarlierStage(db, {
+			organizationId: input.organizationId,
+			approvalRequestId: input.approvalRequestId,
+			actorEmployeeId: input.deputyEmployeeId,
+		})
+	) {
+		return null;
+	}
+	const approverName = await loadEmployeeName(db, {
+		organizationId: input.organizationId,
+		employeeId: input.approverEmployeeId,
+	});
+	return approverName ? { approverName } : null;
 }
 
 export type {

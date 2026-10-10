@@ -78,6 +78,9 @@ vi.mock("@/components/dashboard/vacation-balance-widget", () => ({
 vi.mock("@/components/dashboard/whos-out-today-widget", () => ({
 	WhosOutTodayWidget: () => <div>hydrated widget</div>,
 }));
+vi.mock("@/components/dashboard/covering-for-widget", () => ({
+	CoveringForWidget: () => <div>hydrated widget</div>,
+}));
 
 import { SectionCards } from "./section-cards";
 

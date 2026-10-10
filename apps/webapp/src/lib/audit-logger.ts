@@ -57,6 +57,8 @@ export enum AuditAction {
 	ABSENCE_CANCELLED = "absence.cancelled",
 	/** An attached sick note turned "without certificate" into "with certificate" (#982). */
 	ABSENCE_SICK_DETAIL_CHANGED = "absence.sick_detail_changed",
+	/** An absence's deputy was named, changed or removed (#1011). */
+	ABSENCE_DEPUTY_CHANGED = "absence.deputy_changed",
 
 	// Balance adjustments (#993): opening balances and overtime payouts
 	BALANCE_ADJUSTMENT_RECORDED = "balance_adjustment.recorded",
@@ -101,6 +103,8 @@ export enum AuditAction {
 	APPROVAL_ESCALATION_CONFLICTS_REVIEWED = "approval_escalation.conflicts_reviewed",
 	APPROVAL_ESCALATION_ATTENTION_DISPOSED = "approval_escalation.attention_disposed",
 	APPROVAL_ESCALATION_TRANSFERRED = "approval_escalation.transferred",
+	// "Deputies can decide approvals" turned on or off (#1015)
+	APPROVAL_SETTING_DEPUTY_DECISIONS_CHANGED = "approval_setting.deputy_decisions_changed",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
@@ -328,6 +332,7 @@ export interface AuditLogEntry {
 		| "absence"
 		| "balance_adjustment"
 		| "approval"
+		| "approval_setting"
 		| "vacation"
 		| "surcharge_model"
 		| "surcharge_rule"
