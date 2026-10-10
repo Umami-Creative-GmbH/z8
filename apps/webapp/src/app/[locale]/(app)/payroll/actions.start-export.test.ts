@@ -102,13 +102,28 @@ describe("startScopedPayrollExportAction", () => {
 
 	it("processes synchronous exports inline with the trusted organization scope", async () => {
 		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
-		mockState.processExportJob.mockResolvedValueOnce({ result: { content: "sync-content" } });
+		mockState.processExportJob.mockResolvedValueOnce({
+			result: {
+				content: "sync-content",
+				metadata: {
+					unmappedOvertimePayouts: [
+						{ id: "payout-1", employeeId: "employee-1", day: "2026-01-15", minutes: 300 },
+					],
+				},
+			},
+		});
 
 		const result = await startScopedPayrollExportAction(request);
 
 		expect(result).toEqual({
 			success: true,
-			data: { jobId: "job-sync", isAsync: false, fileContent: "sync-content" },
+			data: {
+				jobId: "job-sync",
+				isAsync: false,
+				fileContent: "sync-content",
+				// #1001: the export reports the overtime payouts it could not carry.
+				unmappedOvertimePayoutCount: 1,
+			},
 		});
 		expect(mockState.processExportJob).toHaveBeenCalledExactlyOnceWith({
 			jobId: "job-sync",

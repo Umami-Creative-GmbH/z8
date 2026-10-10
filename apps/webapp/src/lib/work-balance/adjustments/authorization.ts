@@ -23,7 +23,8 @@ export type BalanceAdjustmentWriter = OrganizationActor & { authority: BalanceAd
  * - Owners and admins of the active organization, for any of its employees (#993).
  * - With a `target`, also the holder of an active payroll access grant whose
  *   coverage for balance adjustments includes that employee, including an
- *   employee who has left (#995, `findBalanceAdjustmentGrant`). Without a
+ *   employee who has left, but never the holder's own record
+ *   (#995, `findBalanceAdjustmentGrant`). Without a
  *   target, as for an organization-wide action, only owners and admins pass.
  *
  * #996 adds read-only access for the employee and their managers.

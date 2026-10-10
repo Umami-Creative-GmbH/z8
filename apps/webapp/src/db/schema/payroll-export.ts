@@ -13,6 +13,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { UnmappedOvertimePayout } from "@/lib/payroll-export/types";
 import type { PayrollLineKind } from "@/lib/travel-expenses/payroll-line-kind";
 import { currentTimestamp } from "./timestamp";
 
@@ -260,6 +261,11 @@ export const payrollExportJob = pgTable(
 		fileSizeBytes: integer("file_size_bytes"),
 		workPeriodCount: integer("work_period_count"), // Total periods processed
 		employeeCount: integer("employee_count"), // Total employees in export
+		// Overtime payouts the file left out for want of an "overtime" wage type (#1001)
+		unmappedOvertimePayouts: jsonb("unmapped_overtime_payouts")
+			.$type<UnmappedOvertimePayout[]>()
+			.default([])
+			.notNull(),
 
 		// API export results (for Personio and similar)
 		syncedRecordCount: integer("synced_record_count"), // Successfully synced to external system

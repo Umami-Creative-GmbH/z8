@@ -186,7 +186,15 @@ export async function exportPayrollPdfAction(
 
 export async function startScopedPayrollExportAction(
 	request: PayrollWorkspaceRequest & { formatId: string },
-): Promise<ServerActionResult<{ jobId: string; isAsync: boolean; fileContent?: string }>> {
+): Promise<
+	ServerActionResult<{
+		jobId: string;
+		isAsync: boolean;
+		fileContent?: string;
+		/** Overtime payouts the file left out for want of an "overtime" mapping (#1001). */
+		unmappedOvertimePayoutCount?: number;
+	}>
+> {
 	return runPayrollWorkspaceAction(async (t) => {
 		const formatId = validateExportFormatId(t, request.formatId);
 		const { authContext, period, scopedEmployeeIds } = await resolvePayrollWorkspaceActionContext(
@@ -245,7 +253,12 @@ export async function startScopedPayrollExportAction(
 				: result.content.toString("utf-8")
 			: undefined;
 
-		return { jobId, isAsync, fileContent };
+		return {
+			jobId,
+			isAsync,
+			fileContent,
+			unmappedOvertimePayoutCount: result?.metadata.unmappedOvertimePayouts.length ?? 0,
+		};
 	});
 }
 
