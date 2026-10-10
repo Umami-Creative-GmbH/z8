@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS "kiosk" (
 	"revoked_at" timestamp with time zone,
 	"revoked_by" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"created_by" text NOT NULL,
+	"created_by" text,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_by" text,
 	CONSTRAINT "kiosk_id_organizationId_idx" UNIQUE("id","organization_id"),
@@ -50,7 +50,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
-	ALTER TABLE "kiosk" ADD CONSTRAINT "kiosk_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+	ALTER TABLE "kiosk" ADD CONSTRAINT "kiosk_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;
 EXCEPTION
 	WHEN duplicate_object THEN null;
 END $$;
@@ -61,8 +61,8 @@ EXCEPTION
 	WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "kiosk_token_hash_idx" ON "kiosk" USING btree ("token_hash");
+CREATE UNIQUE INDEX IF NOT EXISTS "kiosk_tokenHash_idx" ON "kiosk" USING btree ("token_hash");
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "kiosk_pairing_code_hash_idx" ON "kiosk" USING btree ("pairing_code_hash");
+CREATE UNIQUE INDEX IF NOT EXISTS "kiosk_pairingCodeHash_idx" ON "kiosk" USING btree ("pairing_code_hash");
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "kiosk_organizationId_idx" ON "kiosk" USING btree ("organization_id");

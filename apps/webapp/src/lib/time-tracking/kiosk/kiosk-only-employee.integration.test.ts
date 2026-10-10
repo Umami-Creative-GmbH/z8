@@ -325,6 +325,16 @@ describe("kiosk-only employees on PostgreSQL", () => {
 			[created.employeeId],
 		);
 		expect(history.rows[0].count).toBe(1);
+		// Both writes committed their audit entries with them.
+		const audited = await pool.query(
+			`select action, performed_by from audit_log
+			 where employee_id = $1 and action like 'kiosk_only_employee.%' order by action`,
+			[created.employeeId],
+		);
+		expect(audited.rows).toEqual([
+			{ action: "kiosk_only_employee.created", performed_by: ids.adminUser },
+			{ action: "kiosk_only_employee.email_added", performed_by: ids.ownerUser },
+		]);
 	});
 
 	it("refuses unusable addresses, ordinary employees and non-admins", async () => {

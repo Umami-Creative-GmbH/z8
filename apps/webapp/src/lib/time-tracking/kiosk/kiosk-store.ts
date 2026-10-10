@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull } from "drizzle-orm";
 import { auditLog, kiosk, location, organizationNotificationSettings } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
@@ -205,6 +205,7 @@ export type KioskConfigurationChange = Partial<{
 export async function updateKiosk(
 	tx: KioskClient,
 	input: Actor & { kioskId: string; change: KioskConfigurationChange },
+	clock: Clock = systemClock,
 ): Promise<void> {
 	const current = await lockManagedKiosk(tx, input.organizationId, input.kioskId);
 	const { change } = input;
@@ -229,7 +230,7 @@ export async function updateKiosk(
 
 	await tx
 		.update(kiosk)
-		.set({ ...next, updatedAt: new Date(), updatedBy: input.actorUserId })
+		.set({ ...next, updatedAt: dateFromInstant(clock.nowInstant()), updatedBy: input.actorUserId })
 		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)));
 	await tx.insert(auditLog).values({
 		organizationId: input.organizationId,
@@ -261,7 +262,7 @@ export async function issueKioskPairingCode(
 			pairingCodeHash: pairing.hash,
 			pairingCodeExpiresAt: pairing.expiresAt,
 			pairingCodeIssuedBy: input.actorUserId,
-			updatedAt: new Date(),
+			updatedAt: dateFromInstant(clock.nowInstant()),
 			updatedBy: input.actorUserId,
 		})
 		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)));
@@ -282,9 +283,13 @@ export async function issueKioskPairingCode(
  * Revokes a kiosk for good: its next request is refused. The token hash stays
  * so the device can be told it was revoked; any open pairing code is dropped.
  */
-export async function revokeKiosk(tx: KioskClient, input: Actor & { kioskId: string }) {
+export async function revokeKiosk(
+	tx: KioskClient,
+	input: Actor & { kioskId: string },
+	clock: Clock = systemClock,
+) {
 	await lockManagedKiosk(tx, input.organizationId, input.kioskId);
-	const now = new Date();
+	const now = dateFromInstant(clock.nowInstant());
 	await tx
 		.update(kiosk)
 		.set({
@@ -384,6 +389,8 @@ export async function pairKiosk(
 				eq(kiosk.pairingCodeHash, hashKioskSecret(code)),
 				gt(kiosk.pairingCodeExpiresAt, now),
 				isNull(kiosk.revokedAt),
+				// A code whose issuing admin no longer exists is refused like any invalid code.
+				isNotNull(kiosk.pairingCodeIssuedBy),
 			),
 		)
 		.returning({
@@ -394,17 +401,16 @@ export async function pairKiosk(
 			timezone: kiosk.timezone,
 			boardEnabled: kiosk.boardEnabled,
 			issuedBy: kiosk.pairingCodeIssuedBy,
-			createdBy: kiosk.createdBy,
 		});
-	if (!paired) return { status: "invalid_code" };
+	if (!paired?.issuedBy) return { status: "invalid_code" };
 
-	const { issuedBy, createdBy, ...pairedKiosk } = paired;
+	const { issuedBy, ...pairedKiosk } = paired;
 	await tx.insert(auditLog).values({
 		organizationId: paired.organizationId,
 		entityType: "kiosk",
 		entityId: paired.kioskId,
 		action: AuditAction.KIOSK_PAIRED,
-		performedBy: issuedBy ?? createdBy,
+		performedBy: issuedBy,
 		metadata: JSON.stringify({ pairedBy: "kiosk_device", pairingCodeIssuedBy: issuedBy }),
 		ipAddress: input.ipAddress ?? null,
 		userAgent: input.userAgent ?? null,

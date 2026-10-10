@@ -49,9 +49,7 @@ export const kiosk = pgTable(
 		revokedAt: timestamp("revoked_at", { withTimezone: true }),
 		revokedBy: text("revoked_by").references(() => user.id, { onDelete: "set null" }),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		createdBy: text("created_by")
-			.notNull()
-			.references(() => user.id),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 	},
@@ -62,8 +60,8 @@ export const kiosk = pgTable(
 			foreignColumns: [location.id, location.organizationId],
 		}).onDelete("cascade"),
 		unique("kiosk_id_organizationId_idx").on(table.id, table.organizationId),
-		uniqueIndex("kiosk_token_hash_idx").on(table.tokenHash),
-		uniqueIndex("kiosk_pairing_code_hash_idx").on(table.pairingCodeHash),
+		uniqueIndex("kiosk_tokenHash_idx").on(table.tokenHash),
+		uniqueIndex("kiosk_pairingCodeHash_idx").on(table.pairingCodeHash),
 		index("kiosk_organizationId_idx").on(table.organizationId),
 		check(
 			"kiosk_pairing_code_check",

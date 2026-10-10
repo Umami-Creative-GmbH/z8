@@ -4,8 +4,8 @@ import { randomInt } from "node:crypto";
 import { hashPassword, verifyPassword } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
-import { employee, employeeKioskPin } from "@/db/schema";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { auditLog, employee, employeeKioskPin } from "@/db/schema";
+import { AuditAction } from "@/lib/audit-logger";
 import { isOrganizationAdminPrincipal } from "@/lib/authorization/organization-admin";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
 import {
@@ -27,6 +27,7 @@ import {
 import { KioskPinRefusal } from "./pin-errors";
 
 type Database = typeof rootDatabase;
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 /**
  * What a kiosk PIN verification answers, and nothing more: the PIN matched,
@@ -106,15 +107,22 @@ async function requireKioskPinManager(db: Database, input: KioskPinManagementInp
 	}
 }
 
-function auditPin(action: AuditAction, input: KioskPinManagementInput) {
-	return logAudit({
-		action,
-		actorId: input.actorUserId,
-		employeeId: input.employeeId,
-		targetId: input.employeeId,
-		targetType: "kiosk_pin",
+/**
+ * The PIN change's audit entry, written in the change's own transaction like
+ * every other kiosk write (kiosks, assigned locations), so both commit together.
+ */
+function auditPin(
+	tx: Pick<Transaction, "insert">,
+	action: AuditAction,
+	input: { organizationId: string; actorUserId: string; employeeId: string },
+) {
+	return tx.insert(auditLog).values({
 		organizationId: input.organizationId,
-		timestamp: new Date(),
+		entityType: "kiosk_pin",
+		entityId: input.employeeId,
+		action,
+		performedBy: input.actorUserId,
+		employeeId: input.employeeId,
 	});
 }
 
@@ -125,23 +133,26 @@ export async function issueKioskPin(
 ): Promise<{ pin: string }> {
 	await requireKioskPinManager(db, input);
 	const pin = generateKioskPin();
-	const inserted = await db
-		.insert(employeeKioskPin)
-		.values({
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			pinHash: await hashPassword(pin),
-			setByUserId: input.actorUserId,
-		})
-		.onConflictDoNothing({ target: employeeKioskPin.employeeId })
-		.returning({ id: employeeKioskPin.id });
-	if (inserted.length === 0) {
-		throw new KioskPinRefusal(
-			"pin_exists",
-			"This employee already has a kiosk PIN. Reset it instead.",
-		);
-	}
-	await auditPin(AuditAction.KIOSK_PIN_ISSUED, input);
+	const pinHash = await hashPassword(pin);
+	await db.transaction(async (tx) => {
+		const inserted = await tx
+			.insert(employeeKioskPin)
+			.values({
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				pinHash,
+				setByUserId: input.actorUserId,
+			})
+			.onConflictDoNothing({ target: employeeKioskPin.employeeId })
+			.returning({ id: employeeKioskPin.id });
+		if (inserted.length === 0) {
+			throw new KioskPinRefusal(
+				"pin_exists",
+				"This employee already has a kiosk PIN. Reset it instead.",
+			);
+		}
+		await auditPin(tx, AuditAction.KIOSK_PIN_ISSUED, input);
+	});
 	return { pin };
 }
 
@@ -152,36 +163,41 @@ export async function resetKioskPin(
 ): Promise<{ pin: string }> {
 	await requireKioskPinManager(db, input);
 	const pin = generateKioskPin();
-	const updated = await db
-		.update(employeeKioskPin)
-		.set({
-			pinHash: await hashPassword(pin),
-			failedAttempts: 0,
-			lockedUntil: null,
-			setByUserId: input.actorUserId,
-			updatedAt: new Date(),
-		})
-		.where(employeePin(input.organizationId, input.employeeId))
-		.returning({ id: employeeKioskPin.id });
-	if (updated.length === 0) {
-		throw new KioskPinRefusal("no_pin", "This employee has no kiosk PIN yet. Issue one instead.");
-	}
-	await auditPin(AuditAction.KIOSK_PIN_RESET, input);
+	const pinHash = await hashPassword(pin);
+	await db.transaction(async (tx) => {
+		const updated = await tx
+			.update(employeeKioskPin)
+			.set({
+				pinHash,
+				failedAttempts: 0,
+				lockedUntil: null,
+				setByUserId: input.actorUserId,
+				updatedAt: new Date(),
+			})
+			.where(employeePin(input.organizationId, input.employeeId))
+			.returning({ id: employeeKioskPin.id });
+		if (updated.length === 0) {
+			throw new KioskPinRefusal("no_pin", "This employee has no kiosk PIN yet. Issue one instead.");
+		}
+		await auditPin(tx, AuditAction.KIOSK_PIN_RESET, input);
+	});
 	return { pin };
 }
 
 /** Lifts a lockout and starts the failure count again. */
 export async function unlockKioskPin(db: Database, input: KioskPinManagementInput): Promise<void> {
 	await requireKioskPinManager(db, input);
-	const updated = await db
-		.update(employeeKioskPin)
-		.set({ failedAttempts: 0, lockedUntil: null, updatedAt: new Date() })
-		.where(employeePin(input.organizationId, input.employeeId))
-		.returning({ id: employeeKioskPin.id });
-	if (updated.length === 0) {
-		throw new KioskPinRefusal("no_pin", "This employee has no kiosk PIN.");
-	}
-	await auditPin(AuditAction.KIOSK_PIN_UNLOCKED, input);
+	await db.transaction(async (tx) => {
+		const updated = await tx
+			.update(employeeKioskPin)
+			.set({ failedAttempts: 0, lockedUntil: null, updatedAt: new Date() })
+			.where(employeePin(input.organizationId, input.employeeId))
+			.returning({ id: employeeKioskPin.id });
+		if (updated.length === 0) {
+			throw new KioskPinRefusal("no_pin", "This employee has no kiosk PIN.");
+		}
+		await auditPin(tx, AuditAction.KIOSK_PIN_UNLOCKED, input);
+	});
 }
 
 /** Whether the employee has a PIN and is locked out, for those who may manage it. */
@@ -257,32 +273,30 @@ export async function setOwnKioskPin(
 		throw new KioskPinRefusal("employee_not_found", "You have no employee profile here.");
 	}
 	const pinHash = await hashPassword(input.pin);
-	await db
-		.insert(employeeKioskPin)
-		.values({
-			organizationId: input.organizationId,
-			employeeId: own.id,
-			pinHash,
-			setByUserId: input.userId,
-		})
-		.onConflictDoUpdate({
-			target: employeeKioskPin.employeeId,
-			set: {
+	await db.transaction(async (tx) => {
+		await tx
+			.insert(employeeKioskPin)
+			.values({
+				organizationId: input.organizationId,
+				employeeId: own.id,
 				pinHash,
-				failedAttempts: 0,
-				lockedUntil: null,
 				setByUserId: input.userId,
-				updatedAt: new Date(),
-			},
+			})
+			.onConflictDoUpdate({
+				target: employeeKioskPin.employeeId,
+				set: {
+					pinHash,
+					failedAttempts: 0,
+					lockedUntil: null,
+					setByUserId: input.userId,
+					updatedAt: new Date(),
+				},
+			});
+		await auditPin(tx, AuditAction.KIOSK_PIN_CHANGED, {
+			organizationId: input.organizationId,
+			actorUserId: input.userId,
+			employeeId: own.id,
 		});
-	await logAudit({
-		action: AuditAction.KIOSK_PIN_CHANGED,
-		actorId: input.userId,
-		employeeId: own.id,
-		targetId: own.id,
-		targetType: "kiosk_pin",
-		organizationId: input.organizationId,
-		timestamp: new Date(),
 	});
 }
 

@@ -237,6 +237,23 @@ describe("kiosk enrolment on PostgreSQL", () => {
 		]);
 	});
 
+	it("outlives the admin who created it, whose open pairing code then no longer pairs (#761)", async () => {
+		const created = await createdKiosk();
+		// The audit trail would keep the user; a retention purge or anonymization removes it first.
+		await pool.query("delete from audit_log where performed_by = $1", [ids.adminUser]);
+		await pool.query("delete from employee where user_id = $1", [ids.adminUser]);
+		await pool.query("delete from member where user_id = $1", [ids.adminUser]);
+
+		await pool.query('delete from "user" where id = $1', [ids.adminUser]);
+
+		const { rows } = await pool.query(
+			"select created_by, pairing_code_issued_by from kiosk where id = $1",
+			[created.kioskId],
+		);
+		expect(rows).toEqual([{ created_by: null, pairing_code_issued_by: null }]);
+		expect((await pair(created.pairingCode)).status).toBe(401);
+	});
+
 	it("offers the organization's zone as a new kiosk's zone (#761)", async () => {
 		expect(await admin.getKioskAdminDataAction()).toMatchObject({
 			success: true,

@@ -4,8 +4,8 @@ import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { db as rootDatabase } from "@/db";
 import { member, user } from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { auditLog, employee, team } from "@/db/schema";
+import { AuditAction } from "@/lib/audit-logger";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { acquireEmployeeIdentityLock } from "@/lib/auth/employee-identity-lock";
 import { normalizeInvitationEmail } from "@/lib/auth/employee-invitation-draft";
@@ -157,6 +157,14 @@ export async function createKioskOnlyEmployee(
 					locationId,
 				});
 			}
+			await tx.insert(auditLog).values({
+				organizationId: input.organizationId,
+				entityType: "employee",
+				entityId: created.id,
+				action: AuditAction.KIOSK_ONLY_EMPLOYEE_CREATED,
+				performedBy: input.actorUserId,
+				employeeId: created.id,
+			});
 			return created.id;
 		},
 		db,
@@ -172,15 +180,6 @@ export async function createKioskOnlyEmployee(
 		memberId,
 		userId,
 		change: "added",
-	});
-	await logAudit({
-		action: AuditAction.KIOSK_ONLY_EMPLOYEE_CREATED,
-		actorId: input.actorUserId,
-		employeeId,
-		targetId: employeeId,
-		targetType: "employee",
-		organizationId: input.organizationId,
-		timestamp: now,
 	});
 	return { employeeId, userId };
 }
@@ -262,6 +261,14 @@ export async function addEmailToKioskOnlyEmployee(
 				.update(user)
 				.set({ email, emailVerified: false, updatedAt: new Date() })
 				.where(eq(user.id, target.userId));
+			await tx.insert(auditLog).values({
+				organizationId: input.organizationId,
+				entityType: "employee",
+				entityId: input.employeeId,
+				action: AuditAction.KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED,
+				performedBy: input.actorUserId,
+				employeeId: input.employeeId,
+			});
 			return target.userId;
 		})
 		.catch((error: unknown) => {
@@ -270,16 +277,6 @@ export async function addEmailToKioskOnlyEmployee(
 			}
 			throw error;
 		});
-
-	await logAudit({
-		action: AuditAction.KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED,
-		actorId: input.actorUserId,
-		employeeId: input.employeeId,
-		targetId: input.employeeId,
-		targetType: "employee",
-		organizationId: input.organizationId,
-		timestamp: new Date(),
-	});
 
 	try {
 		const invitationUrl = await deps.createPasswordSetupUrl(input.organizationId, userId);
