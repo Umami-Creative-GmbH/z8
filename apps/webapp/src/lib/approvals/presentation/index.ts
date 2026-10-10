@@ -217,8 +217,9 @@ export async function prepareApprovalPresentation(input: {
 				value: coveringFor.approverName,
 			}
 		: null;
+	// Only an absence card that can be bound (canonical or legacy authority) shows it.
 	const deputyFact =
-		request.entityType === "absence_entry"
+		request.entityType === "absence_entry" && input.provider && (canonicalTarget || legacyAbsence)
 			? absenceDeputyFact(
 					await loadAbsenceDeputyView(db, {
 						organizationId: input.organizationId,
