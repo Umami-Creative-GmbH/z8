@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
 import { StoreAppSignInForm } from "@/components/login/store-app-sign-in-form";
@@ -13,7 +12,6 @@ export async function generateStaticParams() {
 
 /** The store app shell signs in through the system browser (#842), so it gets the email screen. */
 async function SignInContent() {
-	await connection();
 	const userAgent = (await headers()).get("user-agent");
 	return getStoreAppPlatformFromUserAgent(userAgent) ? <StoreAppSignInForm /> : <LoginForm />;
 }
