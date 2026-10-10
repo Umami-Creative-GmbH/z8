@@ -1,5 +1,6 @@
 import { parseInstant, parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
 import { signedAmount } from "@/lib/travel-expenses/money";
+import { isWholeMonth } from "@/lib/travel-expenses/payroll-run-period";
 
 /**
  * Locale formatting of travel expense values, shared by the report pages, the
@@ -60,13 +61,7 @@ export function formatPlainDateRange(locale: string, start: string | null, end: 
 export function formatPayrollPeriod(locale: string, start: string, end: string): string {
 	try {
 		const first = parsePlainDate(start);
-		const last = parsePlainDate(end);
-		if (
-			first.day === 1 &&
-			last.year === first.year &&
-			last.month === first.month &&
-			last.day === first.daysInMonth
-		) {
+		if (isWholeMonth(first, parsePlainDate(end))) {
 			return first.toLocaleString(locale, { month: "long", year: "numeric" });
 		}
 	} catch {
