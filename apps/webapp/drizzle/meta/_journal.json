@@ -1289,6 +1289,13 @@
       "when": 1800115200000,
       "tag": "0183_closed_month_refusal",
       "breakpoints": true
+    },
+    {
+      "idx": 184,
+      "version": "7",
+      "when": 1800201600000,
+      "tag": "0184_closed_month_notifications",
+      "breakpoints": true
     }
   ]
 }

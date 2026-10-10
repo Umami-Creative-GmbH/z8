@@ -18,6 +18,8 @@ type NotificationMetadata = {
 	categoryName?: string;
 	/** Plain days the `dateRange` param stands for, formatted in the reader's locale (#982). */
 	dateRangeDays?: { startDate: string; endDate: string };
+	/** A closed month (`YYYY-MM`) the `month` param stands for, in the reader's locale (#762). */
+	closedMonth?: string;
 	i18n?: {
 		titleKey?: string;
 		titleDefault?: string;
@@ -104,13 +106,29 @@ function localizedParams(
 	locale: string,
 ): Record<string, TranslationParam> | undefined {
 	const params = metadata.i18n?.params;
+	if (!params) return params;
 	const days = metadata.dateRangeDays;
-	if (!params || !days) return params;
+	const localized = { ...params };
 	try {
-		return { ...params, dateRange: formatAbsenceDateRange(days.startDate, days.endDate, locale) };
+		if (days) {
+			localized.dateRange = formatAbsenceDateRange(days.startDate, days.endDate, locale);
+		}
+		if (metadata.closedMonth) {
+			localized.month = formatClosedMonth(metadata.closedMonth, locale);
+		}
 	} catch {
 		return params;
 	}
+	return localized;
+}
+
+/** `2026-03` as `March 2026` in the reader's locale. */
+function formatClosedMonth(month: string, locale: string): string {
+	return new Intl.DateTimeFormat(locale, {
+		month: "long",
+		year: "numeric",
+		timeZone: "UTC",
+	}).format(new Date(`${month}-01T00:00:00Z`));
 }
 
 export function getLocalizedNotificationContent(

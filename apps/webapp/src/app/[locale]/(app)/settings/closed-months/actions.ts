@@ -11,6 +11,12 @@ import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	type ClosedMonthSettings,
+	loadClosedMonthSettings,
+	saveClosedMonthSettings,
+} from "@/lib/time-tracking/closed-months/automatic-close";
+import { notifyReopening } from "@/lib/time-tracking/closed-months/notifications";
 import { canCloseMonths, canReopenMonths } from "@/lib/time-tracking/closed-months/permissions";
 import { parseClosedMonth } from "@/lib/time-tracking/closed-months/rules";
 import {
@@ -80,6 +86,7 @@ export interface ClosedMonthsOverview {
 	history: ClosedMonthsHistoryRow[];
 	teams: Array<{ id: string; name: string }>;
 	employees: Array<{ id: string; name: string; teamId: string | null }>;
+	settings: ClosedMonthSettings;
 }
 
 /** The last twelve months, newest first, as `YYYY-MM` in the organization's timezone. */
@@ -111,7 +118,7 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 					.where(eq(organization.id, actor.organizationId))
 					.limit(1);
 				const timezone = org?.timezone || "UTC";
-				const [months, history, teams, employees] = await Promise.all([
+				const [months, history, teams, employees, settings] = await Promise.all([
 					monthClosureStatuses(database, {
 						organizationId: actor.organizationId,
 						months: recentMonths(timezone),
@@ -133,6 +140,7 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 						.from(employee)
 						.leftJoin(user, eq(user.id, employee.userId))
 						.where(eq(employee.organizationId, actor.organizationId)),
+					loadClosedMonthSettings(database, actor.organizationId),
 				]);
 				const actorIds = [
 					...new Set(history.flatMap((row) => (row.actorUserId ? [row.actorUserId] : []))),
@@ -150,6 +158,7 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 					canClose: actor.canClose,
 					canReopen: actor.canReopen,
 					timezone,
+					settings,
 					months,
 					history: history.map((row) => ({
 						...row,
@@ -218,7 +227,20 @@ export async function reopenMonthAction(input: {
 					actorUserId: actor.userId,
 				}),
 			);
-			if (result.kind === "reopened") revalidatePath(SETTINGS_PATH);
+			if (result.kind === "reopened") {
+				revalidatePath(SETTINGS_PATH);
+				// After commit and best effort: the reopening stands without its notifications.
+				yield* Effect.promise(() =>
+					notifyReopening(dbService.db, {
+						organizationId: actor.organizationId,
+						month,
+						reopeningId: result.reopeningId,
+						employeeIds: result.employeeIds,
+						reason: input.reason.trim(),
+						actorUserId: actor.userId,
+					}).catch(() => 0),
+				);
+			}
 			return result;
 		}),
 	);
@@ -266,6 +288,35 @@ export async function getMonthClosureStatuses(input: {
 					: undefined;
 				return monthClosureStatuses(dbService.db, { organizationId, months, employeeIds });
 			});
+		}),
+	);
+}
+
+/** Turns automatic close on or off and sets its days; needs the close permission. */
+export async function saveClosedMonthSettingsAction(
+	settings: ClosedMonthSettings,
+): Promise<ServerActionResult<ClosedMonthSettings>> {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const actor = yield* closedMonthsActor("close");
+			const dbService = yield* DatabaseService;
+			const saved = yield* dbService.query("closedMonths.saveSettings", () =>
+				saveClosedMonthSettings(dbService.db, {
+					organizationId: actor.organizationId,
+					actorUserId: actor.userId,
+					settings,
+				}),
+			);
+			if ("invalid" in saved) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Choose between 1 and 60 days",
+						field: "autoCloseAfterDays",
+					}),
+				);
+			}
+			revalidatePath(SETTINGS_PATH);
+			return saved;
 		}),
 	);
 }
