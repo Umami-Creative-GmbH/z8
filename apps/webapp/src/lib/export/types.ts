@@ -9,6 +9,7 @@ export type ExportCategory =
 	| "time_entries"
 	| "work_periods"
 	| "absences"
+	| "balance_adjustments"
 	| "holidays"
 	| "vacation"
 	| "schedules"
@@ -23,6 +24,7 @@ export const EXPORT_CATEGORIES: ExportCategory[] = [
 	"time_entries",
 	"work_periods",
 	"absences",
+	"balance_adjustments",
 	"holidays",
 	"vacation",
 	"schedules",
@@ -38,6 +40,7 @@ export const CATEGORY_LABELS: Record<ExportCategory, string> = {
 	time_entries: "Time Tracking",
 	work_periods: "Work Periods",
 	absences: "Absences",
+	balance_adjustments: "Work Balance Adjustments",
 	holidays: "Holidays",
 	vacation: "Vacation Policies",
 	schedules: "Work Schedules",
