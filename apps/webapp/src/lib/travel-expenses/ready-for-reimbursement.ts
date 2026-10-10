@@ -39,7 +39,7 @@ const readyCopy = {
 		messageDefault:
 			"An approved adjustment raised what is owed on {employee}'s expense report {report}. Awaiting reimbursement: {amounts}.",
 	},
-	leftOut: {
+	left_out: {
 		messageKey: "common:notifications.content.travelExpenseLeftOutOfPayrollRun.message",
 		messageDefault:
 			"{employee}'s expense report {report} isn't reimbursed through a payroll run. Awaiting reimbursement: {amounts}.",
@@ -54,9 +54,9 @@ const readyTitle = {
 export interface ReadyForReimbursement {
 	/**
 	 * `adjustment`: an approved adjustment (#615) raised what the account owes.
-	 * `leftOut`: no payroll run carries the report, which awaits a bank transfer (#855).
+	 * `left_out`: no payroll run carries the report, which awaits a bank transfer (#855).
 	 */
-	kind: "approved" | "adjustment" | "leftOut";
+	kind: "approved" | "adjustment" | "left_out";
 	/** The account money is owed on: the report's own, or the adjusted original's. */
 	account: SettlementAccount;
 	/** The approved revision of the decided report; one notification each. */
@@ -115,7 +115,7 @@ export function leftOutOfPayrollRun(
 	if (!account.approved || account.adjustmentOf !== null || account.payrollRun) return null;
 	const awaiting = awaitingAmounts(account);
 	if (awaiting.length === 0) return null;
-	return { kind: "leftOut", account, revisionId, awaiting };
+	return { kind: "left_out", account, revisionId, awaiting };
 }
 
 function reportLabel(account: SettlementAccount): string {

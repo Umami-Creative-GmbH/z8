@@ -285,7 +285,7 @@ describe("leftOutOfPayrollRun (#855)", () => {
 		const approved = account({ payrollRun: null });
 		const due = leftOutOfPayrollRun(approved, "revision-1");
 		expect(due).toEqual({
-			kind: "leftOut",
+			kind: "left_out",
 			account: approved,
 			revisionId: "revision-1",
 			awaiting: [{ currency: "EUR", amount: "89.90" }],
