@@ -1,4 +1,19 @@
 import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
+import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
+
+/**
+ * The absent employee's timezone, the one zone every deputy rule judges days
+ * in (spec #802): their own setting, then the organization's, then UTC.
+ */
+export function absentEmployeeTimezone(zones: {
+	userTimezone: string | null | undefined;
+	organizationTimezone: string | null | undefined;
+}): string {
+	return resolvePersonalTimezone({
+		userTimezone: zones.userTimezone ?? undefined,
+		organizationTimezone: zones.organizationTimezone ?? undefined,
+	}).timezone;
+}
 
 /**
  * Whether an absence has not ended at an instant: its last day is on or after

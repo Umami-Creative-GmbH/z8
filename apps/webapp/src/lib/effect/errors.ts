@@ -5,6 +5,8 @@ export class ValidationError extends Data.TaggedError("ValidationError")<{
 	message: string;
 	field?: string;
 	value?: unknown;
+	/** A machine-readable refusal for forms, e.g. a deputy refusal (#1011). */
+	refusal?: string;
 }> {}
 
 export class AuthenticationError extends Data.TaggedError("AuthenticationError")<{

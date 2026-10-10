@@ -14,6 +14,8 @@ export type ServerActionResult<T> =
 			holidayName?: string;
 			/** `YYYY-MM` of a "month closed" refusal (#762), with `code: "MonthClosedError"`. */
 			closedMonth?: string;
+		/** A machine-readable refusal a form maps to its own copy, e.g. a deputy refusal (#1011). */
+		refusal?: string;
 	  };
 
 export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): ServerActionResult<T> {
@@ -50,6 +52,9 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 					typeof appError.value === "string"
 				) {
 					result.holidayName = appError.value;
+				}
+				if (appError._tag === "ValidationError" && appError.refusal) {
+					result.refusal = appError.refusal;
 				}
 				if (appError._tag === "MonthClosedError") {
 					result.closedMonth = appError.month;

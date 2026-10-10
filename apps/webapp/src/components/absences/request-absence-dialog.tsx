@@ -195,7 +195,7 @@ function useRequestAbsenceDialogController({
 				...(value.sickDetail ? { sickDetail: value.sickDetail } : {}),
 				...(value.deputyEmployeeId ? { deputyEmployeeId: value.deputyEmployeeId } : {}),
 			});
-			const deputyError = result.success ? null : deputyRefusalText(t, result.error);
+			const deputyError = result.success ? null : deputyRefusalText(t, result.refusal);
 			if (deputyError) {
 				// The server refused the deputy: show it on the deputy field.
 				form.setFieldMeta("deputyEmployeeId", (meta) => ({

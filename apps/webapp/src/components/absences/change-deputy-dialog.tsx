@@ -60,7 +60,7 @@ export function ChangeDeputyDialog({
 				onOpenChange(false);
 				return;
 			}
-			const deputyError = deputyRefusalText(t, result.error);
+			const deputyError = deputyRefusalText(t, result.refusal);
 			if (deputyError) {
 				form.setFieldMeta("deputyEmployeeId", (meta) => ({
 					...meta,
@@ -68,7 +68,14 @@ export function ChangeDeputyDialog({
 				}));
 				return;
 			}
-			toast.error(result.error || t("absences.deputy.changeFailed", "Could not save the deputy"));
+			toast.error(
+				result.code === "ConflictError"
+					? t(
+							"absences.deputy.errors.ended",
+							"The deputy can no longer be changed: this absence has ended.",
+						)
+					: t("absences.deputy.changeFailed", "Could not save the deputy"),
+			);
 		},
 	});
 

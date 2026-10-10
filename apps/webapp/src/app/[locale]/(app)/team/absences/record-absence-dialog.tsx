@@ -115,7 +115,7 @@ function useRecordAbsenceDialogForm({
 				return;
 			}
 
-			const deputyError = deputyRefusalText(t, result.error);
+			const deputyError = deputyRefusalText(t, result.refusal);
 			if (deputyError) {
 				// The server refused the deputy: show it on the deputy field.
 				form.setFieldMeta("deputyEmployeeId", (meta) => ({

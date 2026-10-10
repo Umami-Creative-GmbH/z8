@@ -3,12 +3,16 @@ import "server-only";
 import { and, asc, eq, gte, inArray, lte, ne, or } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { absenceCategory, absenceEntry, employee, employeeManagers } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type AuditInsertClient, type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
+import { loadApprovalSettings } from "@/lib/approvals/approval-settings";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
+import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
+import type { EmployeeRole } from "@/lib/validations/employee";
 import {
 	type AbsenceDeputyView,
 	canDeputyDecideApprovals,
@@ -19,7 +23,9 @@ import {
 	deputyAwayPeriods,
 	type PlainDateSpan,
 } from "./deputy";
+import { loadAbsentEmployeeTodays } from "./deputy-missing-store";
 import { notifyAbsenceDeputies } from "./deputy-notifier";
+import { loadManagedEmployeeIds } from "./managed-employees";
 
 type Database = typeof db;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -57,8 +63,11 @@ export async function checkDeputyNaming(
 		deputyRequired: boolean;
 	},
 ): Promise<DeputyRefusal | null> {
+	// A malformed id names nobody: refused as unavailable, never sent to the database.
 	const deputy =
-		input.deputyEmployeeId && input.deputyEmployeeId !== input.absentEmployeeId
+		input.deputyEmployeeId &&
+		input.deputyEmployeeId !== input.absentEmployeeId &&
+		isCanonicalUuid(input.deputyEmployeeId)
 			? await loadDeputyCandidate(executor, {
 					organizationId: input.organizationId,
 					deputyEmployeeId: input.deputyEmployeeId,
@@ -113,9 +122,9 @@ export async function changeAbsenceDeputy(
 		organizationId: string;
 		absenceId: string;
 		deputyEmployeeId: string | null;
-		actor: { employeeId: string; userId: string; role: "admin" | "manager" | "employee" };
-		/** The organization's plain date today. */
-		today: string;
+		actor: { employeeId: string; userId: string; role: EmployeeRole };
+		/** Now: the absence ends after its last day in the absent employee's timezone. */
+		at: Instant;
 	},
 ): Promise<ChangeAbsenceDeputyResult> {
 	let previousDeputyEmployeeId: string | null = null;
@@ -141,23 +150,24 @@ export async function changeAbsenceDeputy(
 				.for("update", { of: absenceEntry });
 			if (!absence) return { kind: "not_found" };
 
-			const [managerLink] =
+			const [managed, todays] = await Promise.all([
 				input.actor.role === "manager"
-					? await tx
-							.select({ id: employeeManagers.id })
-							.from(employeeManagers)
-							.where(
-								and(
-									eq(employeeManagers.employeeId, absence.employeeId),
-									eq(employeeManagers.managerId, input.actor.employeeId),
-								),
-							)
-							.limit(1)
-					: [];
+					? loadManagedEmployeeIds(tx, {
+							organizationId: input.organizationId,
+							managerEmployeeId: input.actor.employeeId,
+							employeeIds: [absence.employeeId],
+						})
+					: new Set<string>(),
+				loadAbsentEmployeeTodays(tx, {
+					organizationId: input.organizationId,
+					employeeIds: [absence.employeeId],
+					at: input.at,
+				}),
+			]);
 			const access = checkDeputyChangeAccess({
-				actor: { ...input.actor, managesAbsentEmployee: Boolean(managerLink) },
+				actor: { ...input.actor, managesAbsentEmployee: managed.has(absence.employeeId) },
 				absence,
-				today: input.today,
+				today: todays.get(absence.employeeId) ?? plainDateAt(input.at, "UTC").toString(),
 			});
 			if (access === "forbidden") return { kind: "not_found" };
 			if (access === "absence_closed") return { kind: "absence_closed" };
@@ -286,30 +296,56 @@ export async function listDeputyCandidates(
 }
 
 /**
- * Whether the deputy can use the approval inbox (`canDeputyDecideApprovals`),
- * from their current role and permissions in the organization. An employee of
- * another organization, or without access, cannot.
+ * Whether the deputy can decide approvals for the absent employee: deputy
+ * decisions are switched on for the organization (#1015) and the deputy is
+ * an active employee of it who can use the approval inbox
+ * (`canDeputyDecideApprovals`). Anyone else is a contact only.
  */
 export async function loadDeputyDecisionCapability(
 	database: Pick<Database, "select">,
 	input: { organizationId: string; deputyEmployeeId: string },
 ): Promise<boolean> {
-	const [deputy] = await database
-		.select({ userId: employee.userId })
+	const capabilities = await loadDeputyDecisionCapabilities(database, {
+		organizationId: input.organizationId,
+		deputyEmployeeIds: [input.deputyEmployeeId],
+	});
+	return capabilities.get(input.deputyEmployeeId) ?? false;
+}
+
+/** `loadDeputyDecisionCapability` for several deputies, reading the switch once. */
+async function loadDeputyDecisionCapabilities(
+	database: Pick<Database, "select">,
+	input: { organizationId: string; deputyEmployeeIds: readonly string[] },
+): Promise<Map<string, boolean>> {
+	const capabilities = new Map<string, boolean>();
+	const deputyEmployeeIds = [...new Set(input.deputyEmployeeIds)];
+	if (deputyEmployeeIds.length === 0) return capabilities;
+	const settings = await loadApprovalSettings(database, input.organizationId);
+	if (!settings.deputyDecisionsEnabled) return capabilities;
+	const deputies = await database
+		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)
 		.where(
 			and(
-				eq(employee.id, input.deputyEmployeeId),
 				eq(employee.organizationId, input.organizationId),
+				inArray(employee.id, deputyEmployeeIds),
+				employeeHasOrganizationAccess(),
 			),
-		)
-		.limit(1);
-	if (!deputy) return false;
-	const principal = await loadOrganizationPrincipalContext(database, {
-		userId: deputy.userId,
-		organizationId: input.organizationId,
-	});
-	return principal.employee?.id === input.deputyEmployeeId && canDeputyDecideApprovals(principal);
+		);
+	// One principal per deputy: roles and custom permissions decide inbox access.
+	await Promise.all(
+		deputies.map(async (deputy) => {
+			const principal = await loadOrganizationPrincipalContext(database, {
+				userId: deputy.userId,
+				organizationId: input.organizationId,
+			});
+			capabilities.set(
+				deputy.id,
+				principal.employee?.id === deputy.id && canDeputyDecideApprovals(principal),
+			);
+		}),
+	);
+	return capabilities;
 }
 
 /** An absence's deputy as its approver sees them, by deputy employee id (#1011). */
@@ -319,24 +355,26 @@ export async function loadAbsenceDeputyViews(
 ): Promise<Map<string, AbsenceDeputyView>> {
 	const deputyEmployeeIds = [...new Set(input.deputyEmployeeIds)];
 	if (deputyEmployeeIds.length === 0) return new Map();
-	const deputies = await database
-		.select({ id: employee.id, name: user.name })
-		.from(employee)
-		.innerJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(
-				eq(employee.organizationId, input.organizationId),
-				inArray(employee.id, deputyEmployeeIds),
+	const [deputies, capabilities] = await Promise.all([
+		database
+			.select({ id: employee.id, name: user.name })
+			.from(employee)
+			.innerJoin(user, eq(user.id, employee.userId))
+			.where(
+				and(
+					eq(employee.organizationId, input.organizationId),
+					inArray(employee.id, deputyEmployeeIds),
+				),
 			),
-		);
-	const views = await Promise.all(
-		deputies.map(async (deputy) => ({
-			...deputy,
-			canDecideApprovals: await loadDeputyDecisionCapability(database, {
-				organizationId: input.organizationId,
-				deputyEmployeeId: deputy.id,
-			}),
-		})),
+		loadDeputyDecisionCapabilities(database, {
+			organizationId: input.organizationId,
+			deputyEmployeeIds,
+		}),
+	]);
+	return new Map(
+		deputies.map((deputy) => [
+			deputy.id,
+			{ ...deputy, canDecideApprovals: capabilities.get(deputy.id) ?? false },
+		]),
 	);
-	return new Map(views.map((view) => [view.id, view]));
 }

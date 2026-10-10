@@ -3,18 +3,13 @@ import "server-only";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import type { db } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
-import {
-	absenceCategory,
-	absenceEntry,
-	employee,
-	employeeManagers,
-	userSettings,
-} from "@/db/schema";
+import { absenceCategory, absenceEntry, employee, userSettings } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { buildCoverDuties, type CoverDuties, UPCOMING_COVER_DAYS } from "./cover-duties";
 import { canOpenEmployeeProfile, type DeputyDisplay, type DeputyViewer } from "./deputy-visibility";
+import { loadManagedEmployeeIds } from "./managed-employees";
 
 export type { DeputyDisplay };
 
@@ -62,16 +57,10 @@ export async function loadDeputyViewer(
 				),
 			)
 			.limit(1),
-		executor
-			.select({ employeeId: employeeManagers.employeeId })
-			.from(employeeManagers)
-			.innerJoin(employee, eq(employee.id, employeeManagers.employeeId))
-			.where(
-				and(
-					eq(employeeManagers.managerId, viewer.id),
-					eq(employee.organizationId, input.organizationId),
-				),
-			),
+		loadManagedEmployeeIds(executor, {
+			organizationId: input.organizationId,
+			managerEmployeeId: viewer.id,
+		}),
 	]);
 	const membershipRole = membership[0]?.role;
 	return {
@@ -79,7 +68,7 @@ export async function loadDeputyViewer(
 		role: viewer.role,
 		isOrganizationAdmin:
 			hasOrganizationRole(membershipRole, "owner") || hasOrganizationRole(membershipRole, "admin"),
-		managedEmployeeIds: new Set(managed.map((row) => row.employeeId)),
+		managedEmployeeIds: managed,
 	};
 }
 

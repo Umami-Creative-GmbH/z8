@@ -20,6 +20,10 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({ data: { session: { activeOrganizationId: "org-1" } } }),
+}));
+
 vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
 	getDeputyCandidates: vi.fn(),
 	getDeputyDecisionCapability: vi.fn(),
@@ -102,9 +106,9 @@ beforeEach(() => {
 			{ id: CARLA, name: "Carla Example", image: null, awayPeriods: [] },
 		],
 	});
-	vi.mocked(getDeputyDecisionCapability).mockImplementation(async (id: string) => ({
+	vi.mocked(getDeputyDecisionCapability).mockImplementation(async ({ deputyEmployeeId }) => ({
 		success: true,
-		data: { canDecideApprovals: id === CARLA },
+		data: { canDecideApprovals: deputyEmployeeId === CARLA },
 	}));
 });
 
@@ -144,7 +148,9 @@ describe("DeputyPicker", () => {
 
 		fireEvent.change(screen.getByLabelText("Deputy"), { target: { value: CARLA } });
 
-		await waitFor(() => expect(getDeputyDecisionCapability).toHaveBeenCalledWith(CARLA));
+		await waitFor(() =>
+			expect(getDeputyDecisionCapability).toHaveBeenCalledWith({ deputyEmployeeId: CARLA }),
+		);
 		expect(screen.queryByText(/is away during these dates/)).toBeNull();
 		expect(screen.queryByText(/contact only/)).toBeNull();
 	});

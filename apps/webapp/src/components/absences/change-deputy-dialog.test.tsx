@@ -118,8 +118,9 @@ describe("ChangeDeputyDialog", () => {
 	it("shows a refused deputy on the deputy field", async () => {
 		vi.mocked(changeAbsenceDeputy).mockResolvedValue({
 			success: false,
-			error: "The deputy must be an active employee of this organization.",
+			error: "Server wording",
 			code: "ValidationError",
+			refusal: "deputy_unavailable",
 		});
 		const onChanged = renderDialog();
 

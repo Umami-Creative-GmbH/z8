@@ -2,7 +2,7 @@
 
 import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { organization, user } from "@/db/auth-schema";
+import { user } from "@/db/auth-schema";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -21,7 +21,10 @@ import {
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import { loadDeputyDisplays, loadDeputyViewer } from "@/lib/absences/deputy-display-store";
-import { findDeputyMissingAbsenceIds } from "@/lib/absences/deputy-missing-store";
+import {
+	findDeputyMissingAbsenceIds,
+	loadAbsentEmployeeTodays,
+} from "@/lib/absences/deputy-missing-store";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
 import {
@@ -35,7 +38,7 @@ import {
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { AuditTrail } from "@/lib/audit-trail";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { countSickNotesForAbsences } from "@/lib/personnel-file/sick-note-store";
@@ -284,11 +287,9 @@ export async function getManagerAbsenceCalendar(params: {
 			at: systemClock.nowInstant(),
 			absences: rows,
 		});
-		// Every listed absence is one the actor manages; its deputy can change until it has ended (#1012).
-		const { deputies, today } = await loadCalendarDeputies(
-			actor,
-			rows.flatMap((row) => (row.deputyEmployeeId ? [row.deputyEmployeeId] : [])),
-		);
+		// Every listed absence is one the actor manages; its deputy can change
+		// until it has ended on the absent employee's own day (#1012).
+		const { deputies, todays } = await loadCalendarDeputies(actor, rows);
 
 		return {
 			success: true,
@@ -299,7 +300,7 @@ export async function getManagerAbsenceCalendar(params: {
 					...(sickNotes.has(row.id) ? { sickNoteCount: sickNotes.get(row.id)?.count } : {}),
 					...(deputyMissing.has(row.id) ? { deputyMissing: true as const } : {}),
 					deputy: row.deputyEmployeeId ? (deputies.get(row.deputyEmployeeId) ?? null) : null,
-					canChangeDeputy: row.endDate >= today,
+					canChangeDeputy: row.endDate >= (todays.get(row.employeeId) ?? row.endDate),
 					deputyRequired: row.deputyRequired,
 					id: row.id,
 					employeeId: row.employeeId,
@@ -394,6 +395,7 @@ export async function recordAbsenceForEmployee(
 				success: false,
 				error: DEPUTY_REFUSAL_MESSAGES[deputyRefusal],
 				code: "ValidationError",
+				refusal: deputyRefusal,
 			};
 		}
 
@@ -618,23 +620,30 @@ export async function recordAbsenceForEmployee(
 	}
 }
 
-/** The deputies the actor sees on the calendar, and the organization's date today (#1012). */
-async function loadCalendarDeputies(actor: ManagerAbsenceActor, deputyEmployeeIds: string[]) {
-	const [viewer, org] = await Promise.all([
-		loadDeputyViewer(db, { organizationId: actor.organizationId, userId: actor.userId }),
-		db
-			.select({ timezone: organization.timezone })
-			.from(organization)
-			.where(eq(organization.id, actor.organizationId))
-			.limit(1),
-	]);
-	const deputies = await loadDeputyDisplays(db, {
+/** The deputies the actor sees on the calendar, and each absent employee's date today (#1012). */
+async function loadCalendarDeputies(
+	actor: ManagerAbsenceActor,
+	absences: ReadonlyArray<{ employeeId: string; deputyEmployeeId: string | null }>,
+) {
+	const viewer = await loadDeputyViewer(db, {
 		organizationId: actor.organizationId,
-		viewer,
-		deputyEmployeeIds,
+		userId: actor.userId,
 	});
-	const today = plainDateAt(systemClock.nowInstant(), org[0]?.timezone || "UTC").toString();
-	return { deputies, today };
+	const [deputies, todays] = await Promise.all([
+		loadDeputyDisplays(db, {
+			organizationId: actor.organizationId,
+			viewer,
+			deputyEmployeeIds: absences.flatMap((row) =>
+				row.deputyEmployeeId ? [row.deputyEmployeeId] : [],
+			),
+		}),
+		loadAbsentEmployeeTodays(db, {
+			organizationId: actor.organizationId,
+			employeeIds: absences.map((row) => row.employeeId),
+			at: systemClock.nowInstant(),
+		}),
+	]);
+	return { deputies, todays };
 }
 
 async function resolveActor(): Promise<ServerActionResult<ManagerAbsenceActor>> {

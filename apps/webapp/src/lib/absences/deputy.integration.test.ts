@@ -6,6 +6,7 @@
  * delivery, calendar queue and work balance marking are replaced.
  */
 
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -328,6 +329,7 @@ describe.each(["legacy", "canonical"] as const)("deputy on an absence (#1011, %s
 			[ids.anna, "An employee cannot be their own deputy."],
 			[ids.leaver, "The deputy must be an active employee of this organization."],
 			[ids.outsider, "The deputy must be an active employee of this organization."],
+			["not-a-uuid", "The deputy must be an active employee of this organization."],
 		] as const) {
 			expect(await request("anna", { deputyEmployeeId, category: ids.onCall })).toMatchObject({
 				success: false,
@@ -468,6 +470,33 @@ describe.each(["legacy", "canonical"] as const)("deputy on an absence (#1011, %s
 		expect(await deputyAudit(ended)).toEqual([]);
 	});
 
+	it("judges the change deadline on the absent employee's own day, not the organization's", async () => {
+		// Kiritimati (UTC+14) is always at least a day ahead of Etc/GMT+12 (UTC-12).
+		await admin.query("update organization set timezone = 'Pacific/Kiritimati' where id = $1", [
+			ORG,
+		]);
+		await admin.query("update user_settings set timezone = 'Etc/GMT+12' where user_id = $1", [
+			userOf("anna"),
+		]);
+		try {
+			const annasToday = Temporal.Now.plainDateISO("Etc/GMT+12").toString();
+			const lastDay = await insertAbsence({
+				employeeId: ids.anna,
+				startDate: annasToday,
+				endDate: annasToday,
+			});
+			signIn("manager");
+			expect(
+				await deputyActions.changeAbsenceDeputy({ absenceId: lastDay, deputyEmployeeId: ids.ben }),
+			).toEqual({ success: true, data: { deputyEmployeeId: ids.ben } });
+		} finally {
+			await admin.query("update organization set timezone = 'UTC' where id = $1", [ORG]);
+			await admin.query("update user_settings set timezone = 'UTC' where user_id = $1", [
+				userOf("anna"),
+			]);
+		}
+	});
+
 	it("swaps but never removes a required deputy, and refuses invalid deputies", async () => {
 		const absenceId = await insertAbsence({
 			employeeId: ids.anna,
@@ -528,13 +557,51 @@ describe.each(["legacy", "canonical"] as const)("deputy on an absence (#1011, %s
 		).toMatchObject({ success: false, code: "NotFoundError" });
 
 		signIn("anna");
-		expect(await deputyActions.getDeputyDecisionCapability(ids.ben)).toEqual({
+		expect(await deputyActions.getDeputyDecisionCapability({ deputyEmployeeId: ids.ben })).toEqual({
 			success: true,
 			data: { canDecideApprovals: false },
 		});
-		expect(await deputyActions.getDeputyDecisionCapability(ids.manager)).toEqual({
-			success: true,
-			data: { canDecideApprovals: true },
-		});
+		expect(
+			await deputyActions.getDeputyDecisionCapability({ deputyEmployeeId: ids.manager }),
+		).toEqual({ success: true, data: { canDecideApprovals: true } });
+	});
+
+	it("bounds what the picker reveals: its dates, the actor's own absences and the candidate set", async () => {
+		signIn("anna");
+		// No more than a year of colleagues' away periods at once.
+		expect(
+			await deputyActions.getDeputyCandidates({ startDate: "2027-01-01", endDate: "2028-06-30" }),
+		).toMatchObject({ success: false, code: "ValidationError" });
+
+		// Only for an absence the actor may name a deputy on.
+		signIn("ben");
+		expect(
+			await deputyActions.getDeputyDecisionCapability({
+				deputyEmployeeId: ids.manager,
+				employeeId: ids.anna,
+			}),
+		).toMatchObject({ success: false, code: "NotFoundError" });
+		// Nobody outside the picker's candidates: inactive, other organizations, oneself.
+		for (const deputyEmployeeId of [ids.leaver, ids.outsider, ids.ben]) {
+			expect(await deputyActions.getDeputyDecisionCapability({ deputyEmployeeId })).toEqual({
+				success: true,
+				data: { canDecideApprovals: false },
+			});
+		}
+	});
+
+	it("shows every deputy as a contact only while deputy decisions are switched off", async () => {
+		await admin.query(
+			"insert into approval_setting (organization_id, deputy_decisions_enabled) values ($1, false)",
+			[ORG],
+		);
+		try {
+			signIn("anna");
+			expect(
+				await deputyActions.getDeputyDecisionCapability({ deputyEmployeeId: ids.manager }),
+			).toEqual({ success: true, data: { canDecideApprovals: false } });
+		} finally {
+			await admin.query("delete from approval_setting where organization_id = $1", [ORG]);
+		}
 	});
 });

@@ -14,7 +14,7 @@ import {
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
-import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
+import { absentEmployeeTimezone } from "./deputy-missing";
 import { canSeeAbsenceCategory, type DeputyViewer } from "./deputy-visibility";
 
 /** How many days ahead an absence counts as upcoming cover (inclusive). */
@@ -69,10 +69,10 @@ export function buildCoverDuties(input: {
 
 	for (const absence of input.absences) {
 		if (absence.status !== "approved") continue;
-		const timezone = resolvePersonalTimezone({
-			userTimezone: absence.absentEmployeeTimezone ?? undefined,
-			organizationTimezone: input.organizationTimezone ?? undefined,
-		}).timezone;
+		const timezone = absentEmployeeTimezone({
+			userTimezone: absence.absentEmployeeTimezone,
+			organizationTimezone: input.organizationTimezone,
+		});
 		const today = plainDateAt(input.now, timezone);
 		const start = parsePlainDate(absence.startDate);
 		const end = parsePlainDate(absence.endDate);

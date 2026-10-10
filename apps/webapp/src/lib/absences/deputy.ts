@@ -7,6 +7,7 @@
 import { canAccessApprovalInbox, defineAbilityFor } from "@/lib/authorization/ability";
 import type { PrincipalContext } from "@/lib/authorization/types";
 import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { EmployeeRole } from "@/lib/validations/employee";
 
 /** Why a deputy cannot be named (or left out) on an absence. */
 export type DeputyRefusal =
@@ -23,6 +24,14 @@ export const DEPUTY_REFUSAL_MESSAGES: Readonly<Record<DeputyRefusal, string>> = 
 	deputy_is_absent_employee: "An employee cannot be their own deputy.",
 	deputy_unavailable: "The deputy must be an active employee of this organization.",
 };
+
+/**
+ * Whether a category type may require a deputy (#1011): any but sick leave,
+ * where nobody plans the absence ahead.
+ */
+export function canRequireDeputy(categoryType: string): boolean {
+	return categoryType !== "sick";
+}
 
 /** The named deputy as loaded by id; null when no employee has that id. */
 export interface DeputyCandidateFacts {
@@ -67,13 +76,13 @@ export type DeputyChangeAccess = "allowed" | "forbidden" | "absence_closed";
 /**
  * The absent employee, their eligible managers and admins change an absence's
  * deputy; nobody else. Pending and approved absences can change it until the
- * absence has ended (it still can on its last day). `today` is the plain date
- * in the organization's timezone, as for cancelling an absence.
+ * absence has ended (it still can on its last day). `today` is the absent
+ * employee's plain date, in their timezone (`absentEmployeeTimezone`).
  */
 export function checkDeputyChangeAccess(input: {
 	actor: {
 		employeeId: string;
-		role: "admin" | "manager" | "employee";
+		role: EmployeeRole;
 		/** The actor is an eligible manager of the absent employee. */
 		managesAbsentEmployee: boolean;
 	};

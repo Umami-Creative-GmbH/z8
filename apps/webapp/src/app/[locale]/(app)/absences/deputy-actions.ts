@@ -2,8 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
-import { employee, employeeManagers } from "@/db/schema";
+import { employee } from "@/db/schema";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import {
 	changeAbsenceDeputy as changeAbsenceDeputyInStore,
@@ -14,7 +13,9 @@ import {
 import { comparePlainDates, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { loadManagedEmployeeIds } from "@/lib/absences/managed-employees";
 import { createLogger } from "@/lib/logger";
+import type { EmployeeRole } from "@/lib/validations/employee";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 
 /**
@@ -29,7 +30,7 @@ interface DeputyActor {
 	employeeId: string;
 	userId: string;
 	organizationId: string;
-	role: "admin" | "manager" | "employee";
+	role: EmployeeRole;
 }
 
 async function resolveActor(): Promise<DeputyActor | null> {
@@ -66,6 +67,21 @@ function isPlainDate(value: unknown): value is string {
 	}
 }
 
+/**
+ * The longest requested range the picker marks colleagues' away periods for:
+ * one absence's dates, never a window onto colleagues' plans beyond that.
+ */
+const MAX_PICKER_RANGE_DAYS = 366;
+
+function isPickerRange(startDate: string, endDate: string): boolean {
+	const start = parsePlainDate(startDate);
+	const end = parsePlainDate(endDate);
+	return (
+		comparePlainDates(start, end) <= 0 &&
+		comparePlainDates(end, start.add({ days: MAX_PICKER_RANGE_DAYS - 1 })) <= 0
+	);
+}
+
 /** The absent employee is the actor, or one an admin or their manager records for. */
 async function mayActForEmployee(actor: DeputyActor, employeeId: string): Promise<boolean> {
 	if (employeeId === actor.employeeId) return true;
@@ -77,17 +93,12 @@ async function mayActForEmployee(actor: DeputyActor, employeeId: string): Promis
 	if (!target) return false;
 	if (actor.role === "admin") return true;
 	if (actor.role !== "manager") return false;
-	const [link] = await db
-		.select({ id: employeeManagers.id })
-		.from(employeeManagers)
-		.where(
-			and(
-				eq(employeeManagers.employeeId, employeeId),
-				eq(employeeManagers.managerId, actor.employeeId),
-			),
-		)
-		.limit(1);
-	return Boolean(link);
+	const managed = await loadManagedEmployeeIds(db, {
+		organizationId: actor.organizationId,
+		managerEmployeeId: actor.employeeId,
+		employeeIds: [employeeId],
+	});
+	return managed.has(employeeId);
 }
 
 /**
@@ -108,9 +119,7 @@ export async function getDeputyCandidates(input: {
 		const requested =
 			startDate === undefined && endDate === undefined
 				? null
-				: isPlainDate(startDate) &&
-						isPlainDate(endDate) &&
-						comparePlainDates(parsePlainDate(startDate), parsePlainDate(endDate)) <= 0
+				: isPlainDate(startDate) && isPlainDate(endDate) && isPickerRange(startDate, endDate)
 					? { startDate, endDate }
 					: undefined;
 		if (requested === undefined) {
@@ -134,19 +143,31 @@ export async function getDeputyCandidates(input: {
 	}
 }
 
-/** Whether a picked deputy can decide approvals, or is shown as a contact only. */
-export async function getDeputyDecisionCapability(
-	deputyEmployeeId: string,
-): Promise<ServerActionResult<{ canDecideApprovals: boolean }>> {
+/**
+ * Whether the deputy picked on the signed-in employee's absence (or on
+ * `employeeId`'s, when recording for them) can decide approvals, or is shown
+ * as a contact only. Answers only for the picker's candidates: anyone else,
+ * and every deputy while deputy decisions are switched off, is a contact.
+ */
+export async function getDeputyDecisionCapability(input: {
+	deputyEmployeeId: string;
+	employeeId?: string;
+}): Promise<ServerActionResult<{ canDecideApprovals: boolean }>> {
 	try {
 		const actor = await resolveActor();
 		if (!actor) return unauthenticated();
-		const canDecideApprovals = isCanonicalUuid(deputyEmployeeId)
-			? await loadDeputyDecisionCapability(db, {
-					organizationId: actor.organizationId,
-					deputyEmployeeId,
-				})
-			: false;
+		const absentEmployeeId = input?.employeeId ?? actor.employeeId;
+		if (!isCanonicalUuid(absentEmployeeId) || !(await mayActForEmployee(actor, absentEmployeeId))) {
+			return { success: false, error: "Employee not found", code: "NotFoundError" };
+		}
+		const deputyEmployeeId = input?.deputyEmployeeId;
+		const canDecideApprovals =
+			isCanonicalUuid(deputyEmployeeId) && deputyEmployeeId !== absentEmployeeId
+				? await loadDeputyDecisionCapability(db, {
+						organizationId: actor.organizationId,
+						deputyEmployeeId,
+					})
+				: false;
 		return { success: true, data: { canDecideApprovals } };
 	} catch (error) {
 		logger.error({ error }, "Failed to load deputy decision capability");
@@ -174,25 +195,15 @@ export async function changeAbsenceDeputy(input: {
 				success: false,
 				error: DEPUTY_REFUSAL_MESSAGES.deputy_unavailable,
 				code: "ValidationError",
+				refusal: "deputy_unavailable",
 			};
 		}
-		const [org] = await db
-			.select({ timezone: organization.timezone })
-			.from(organization)
-			.where(eq(organization.id, actor.organizationId))
-			.limit(1);
-		const today = systemClock
-			.nowInstant()
-			.toZonedDateTimeISO(org?.timezone || "UTC")
-			.toPlainDate()
-			.toString();
-
 		const result = await changeAbsenceDeputyInStore(db, {
 			organizationId: actor.organizationId,
 			absenceId: input.absenceId,
 			deputyEmployeeId,
 			actor,
-			today,
+			at: systemClock.nowInstant(),
 		});
 		switch (result.kind) {
 			case "changed":
@@ -211,6 +222,7 @@ export async function changeAbsenceDeputy(input: {
 					success: false,
 					error: DEPUTY_REFUSAL_MESSAGES[result.refusal],
 					code: "ValidationError",
+					refusal: result.refusal,
 				};
 		}
 	} catch (error) {

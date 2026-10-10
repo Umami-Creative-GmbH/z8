@@ -1159,7 +1159,7 @@ function requestAbsenceWithResolverEffect(
 						new ValidationError({
 							message: DEPUTY_REFUSAL_MESSAGES[deputyRefusal],
 							field: "deputyEmployeeId",
-							value: data.deputyEmployeeId,
+							refusal: deputyRefusal,
 						}),
 					);
 				}

@@ -15,21 +15,25 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { DEPUTY_REFUSAL_MESSAGES, type PlainDateSpan } from "@/lib/absences/deputy";
+import type { DeputyRefusal, PlainDateSpan } from "@/lib/absences/deputy";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
+import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-/** The deputy field's error for a server refusal (#1011), or null for any other error. */
-export function deputyRefusalText(t: Translate, message: string | undefined): string | null {
-	switch (message) {
-		case DEPUTY_REFUSAL_MESSAGES.deputy_required:
+/**
+ * The deputy field's error for a server refusal code (#1011, the failed
+ * result's `refusal`), or null for any other failure.
+ */
+export function deputyRefusalText(t: Translate, refusal: string | undefined): string | null {
+	switch (refusal as DeputyRefusal | undefined) {
+		case "deputy_required":
 			return deputyRequiredText(t);
-		case DEPUTY_REFUSAL_MESSAGES.deputy_is_absent_employee:
+		case "deputy_is_absent_employee":
 			return t("absences.deputy.errors.self", "An employee cannot be their own deputy.");
-		case DEPUTY_REFUSAL_MESSAGES.deputy_unavailable:
+		case "deputy_unavailable":
 			return t(
 				"absences.deputy.errors.unavailable",
 				"The deputy must be an active employee of this organization.",
@@ -100,6 +104,8 @@ export function DeputyPicker({
 }: DeputyPickerProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const { data: session } = useSession();
+	const organizationId = session?.session?.activeOrganizationId ?? "";
 	const range =
 		isPlainDate(startDate) && isPlainDate(endDate || startDate)
 			? { startDate, endDate: endDate || startDate }
@@ -109,7 +115,7 @@ export function DeputyPicker({
 		...(employeeId ? { employeeId } : {}),
 	};
 	const candidatesQuery = useQuery({
-		queryKey: queryKeys.absenceDeputies.candidates(input),
+		queryKey: queryKeys.absenceDeputies.candidates(organizationId, input),
 		queryFn: async () => {
 			const result = await getDeputyCandidates(input);
 			if (!result.success) throw new Error(result.error);
@@ -117,9 +123,15 @@ export function DeputyPicker({
 		},
 	});
 	const capabilityQuery = useQuery({
-		queryKey: queryKeys.absenceDeputies.capability(value),
+		queryKey: queryKeys.absenceDeputies.capability(organizationId, {
+			deputyEmployeeId: value,
+			...(employeeId ? { employeeId } : {}),
+		}),
 		queryFn: async () => {
-			const result = await getDeputyDecisionCapability(value);
+			const result = await getDeputyDecisionCapability({
+				deputyEmployeeId: value,
+				...(employeeId ? { employeeId } : {}),
+			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

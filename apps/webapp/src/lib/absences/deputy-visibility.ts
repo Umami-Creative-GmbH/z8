@@ -3,6 +3,8 @@
  * absence (#802, #1012). Being named deputy grants no extra visibility.
  */
 
+import type { EmployeeRole } from "@/lib/validations/employee";
+
 /** An absence's deputy as a viewer sees them. */
 export interface DeputyDisplay {
 	id: string;
@@ -13,7 +15,7 @@ export interface DeputyDisplay {
 
 /** The signed-in employee looking at absences. */
 export interface DeputyViewer {
-	role: "admin" | "manager" | "employee";
+	role: EmployeeRole;
 	/** The employees the viewer is an eligible manager of. */
 	managedEmployeeIds: ReadonlySet<string>;
 }
@@ -35,7 +37,7 @@ export function canSeeAbsenceCategory(viewer: DeputyViewer, absentEmployeeId: st
  */
 export function canOpenEmployeeProfile(input: {
 	viewerIsOrganizationAdmin: boolean;
-	viewerRole: "admin" | "manager" | "employee";
+	viewerRole: EmployeeRole;
 	managesEmployee: boolean;
 }): boolean {
 	if (input.viewerIsOrganizationAdmin) return true;
