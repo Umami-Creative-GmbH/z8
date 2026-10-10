@@ -48,6 +48,9 @@ import { runPersonnelFileCleanup } from "@/lib/personnel-file/upload-ledger";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { removeCanonicalAbsenceRecordInTransaction } from "./actions.canonical";
 import { getCurrentEmployee } from "./current-employee";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 
 export interface CancelAbsenceEmployeeContext {
 	id: string;
@@ -149,6 +152,23 @@ async function deleteScopedAbsence(
 		actorUserId: string;
 	},
 ): Promise<string[]> {
+	// Cancelling an absence that touches a closed month is refused (#762). Its
+	// days are read from the row: callers may hand over only its identity.
+	const [days] = await transactionDb
+		.select({ startDate: absenceEntry.startDate, endDate: absenceEntry.endDate })
+		.from(absenceEntry)
+		.where(
+			and(
+				eq(absenceEntry.id, input.absence.id),
+				eq(absenceEntry.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	await assertAbsenceDaysOpen(transactionDb, {
+		organizationId: input.organizationId,
+		employeeId: input.absence.employeeId,
+		days: days ? [days] : [],
+	});
 	// Cancelling deletes the absence's sick notes in the same transaction (#982,
 	// Personnel File ADR 0002), each audited; rejecting keeps them.
 	const deletedSickNoteIds = await deleteSickNotesOfCancelledAbsence(transactionDb, {
@@ -800,6 +820,8 @@ export async function cancelAbsenceRequestForEmployee(
 		}
 		return { success: true };
 	} catch (error) {
+		const closed = monthClosedRefusalOf(error);
+		if (closed) return { success: false, error: await monthClosedMessage(closed.month) };
 		return {
 			success: false,
 			error:

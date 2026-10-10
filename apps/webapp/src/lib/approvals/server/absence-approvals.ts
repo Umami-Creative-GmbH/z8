@@ -131,6 +131,7 @@ import type {
 	CurrentApprover,
 } from "./types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
 
 const logger = createLogger("AbsenceApprovals");
 
@@ -940,6 +941,28 @@ function updateAbsenceStatus(
 ) {
 	return dbService
 		.query("updateAbsenceStatus", async () => {
+			// Deciding an absence that touches a closed month is refused (#762).
+			const [decided] = await dbService.db
+				.select({
+					employeeId: absenceEntry.employeeId,
+					startDate: absenceEntry.startDate,
+					endDate: absenceEntry.endDate,
+				})
+				.from(absenceEntry)
+				.where(
+					and(
+						eq(absenceEntry.id, entityId),
+						eq(absenceEntry.organizationId, currentEmployee.organizationId),
+					),
+				)
+				.limit(1);
+			if (decided) {
+				await assertAbsenceDaysOpen(dbService.db, {
+					organizationId: currentEmployee.organizationId,
+					employeeId: decided.employeeId,
+					days: [{ startDate: decided.startDate, endDate: decided.endDate }],
+				});
+			}
 			const updatedRows = await dbService.db
 				.update(absenceEntry)
 				.set({

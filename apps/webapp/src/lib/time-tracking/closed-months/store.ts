@@ -170,7 +170,7 @@ export function workInterval(start: Date, end: Date | null): WorkInterval {
  * before the check, and none starts until the absence write commits.
  */
 export async function assertAbsenceDaysOpen(
-	transaction: Transaction,
+	transaction: Pick<Transaction, "execute" | "select">,
 	input: { organizationId: string; employeeId: string; days: readonly DayRange[] },
 ): Promise<void> {
 	await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
@@ -250,19 +250,6 @@ export async function monthClosureStatuses(
 						: "partly_closed",
 		};
 	});
-}
-
-/** The calendar months a range of local dates spans, oldest first. */
-export function monthsBetween(startDate: string, endDate: string): ClosedMonthKey[] {
-	const months: ClosedMonthKey[] = [];
-	let cursor = monthOfFirstDay(`${startDate.slice(0, 7)}-01`);
-	const last = monthOfFirstDay(`${endDate.slice(0, 7)}-01`);
-	while (cursor <= last && months.length < 240) {
-		months.push(cursor);
-		const [year, month] = cursor.split("-").map(Number);
-		cursor = month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, "0")}`;
-	}
-	return months;
 }
 
 // ============================================

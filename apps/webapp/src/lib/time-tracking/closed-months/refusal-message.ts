@@ -1,4 +1,4 @@
-import { englishMonthLabel } from "./refusal";
+import { englishMonthLabel, monthClosedRefusalOf } from "./refusal";
 import { type ClosedMonthKey, firstDayOfMonth } from "./rules";
 
 const MONTH_CLOSED_FALLBACK =
@@ -18,6 +18,27 @@ function monthLabel(month: ClosedMonthKey, locale: string): string {
 	} catch {
 		return englishMonthLabel(month);
 	}
+}
+
+/**
+ * The failed server-action result of a month-closed refusal carried by `error`
+ * (the writer's own or the database's), as `runServerActionSafe` returns it;
+ * null for any other error. For actions that catch errors themselves.
+ */
+export async function monthClosedActionResult(error: unknown): Promise<{
+	success: false;
+	error: string;
+	code: "MonthClosedError";
+	closedMonth: string;
+} | null> {
+	const closed = monthClosedRefusalOf(error);
+	if (!closed) return null;
+	return {
+		success: false,
+		error: await monthClosedMessage(closed.month),
+		code: "MonthClosedError",
+		closedMonth: closed.month,
+	};
 }
 
 /**
