@@ -5,6 +5,7 @@ import { isOrganizationFeature } from "./organization-features";
 
 const getSessionMock = vi.fn();
 const canAccessOrganizationWithSsoMock = vi.fn();
+const assertEnterpriseIdentityInvitationAllowedMock = vi.fn();
 const createInvitationMock = vi.fn();
 const cancelInvitationMock = vi.fn();
 const updateMemberRoleMock = vi.fn();
@@ -114,7 +115,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/enterprise-identity/enforcement", () => ({
-	assertEnterpriseIdentityInvitationAllowed: vi.fn(async () => undefined),
+	assertEnterpriseIdentityInvitationAllowed: assertEnterpriseIdentityInvitationAllowedMock,
 }));
 
 vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
@@ -218,6 +219,9 @@ describe("organization invitation actions", () => {
 		vi.clearAllMocks();
 		getSessionMock.mockReset();
 		canAccessOrganizationWithSsoMock.mockReset().mockResolvedValue(true);
+		assertEnterpriseIdentityInvitationAllowedMock
+			.mockReset()
+			.mockResolvedValue(undefined);
 		createInvitationMock.mockReset();
 		cancelInvitationMock.mockReset();
 		updateMemberRoleMock.mockReset();
@@ -1341,6 +1345,51 @@ describe("organization invitation actions", () => {
 			headers: await headersMock.mock.results[0]?.value,
 		});
 		expect(cancelInvitationMock).not.toHaveBeenCalled();
+	});
+
+	it("checks the enterprise identity invite restriction for the invitation's organization before resending", async () => {
+		invitationFindFirstMock.mockResolvedValue({
+			id: "invite-old",
+			organizationId: "org-1",
+			email: "  Invitee@Example.COM  ",
+			role: "member",
+			status: "pending",
+			targetTeamId: null,
+			canCreateOrganizations: false,
+		});
+		createInvitationMock.mockResolvedValue({ id: "invite-replacement" });
+
+		const result = await resendInvitation("org-1", "invite-old");
+
+		expect(result).toMatchObject({ success: true });
+		expect(assertEnterpriseIdentityInvitationAllowedMock).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			email: "invitee@example.com",
+		});
+	});
+
+	it("refuses to resend an invitation outside the enterprise identity domain", async () => {
+		invitationFindFirstMock.mockResolvedValue({
+			id: "invite-old",
+			organizationId: "org-1",
+			email: "invitee@example.com",
+			role: "member",
+			status: "pending",
+			targetTeamId: null,
+			canCreateOrganizations: false,
+		});
+		assertEnterpriseIdentityInvitationAllowedMock.mockRejectedValue(
+			new Error("Email must use the enterprise identity domain acme.test"),
+		);
+
+		const result = await resendInvitation("org-1", "invite-old");
+
+		expect(result).toMatchObject({
+			success: false,
+			error: "Email must use the enterprise identity domain acme.test",
+		});
+		expect(createInvitationMock).not.toHaveBeenCalled();
+		expect(persistEmployeeInvitationDraftMock).not.toHaveBeenCalled();
 	});
 
 	it("persists returned resend state through the shared transactional helper", async () => {
