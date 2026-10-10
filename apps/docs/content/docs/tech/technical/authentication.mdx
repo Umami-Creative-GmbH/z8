@@ -127,7 +127,7 @@ Flow summary:
 
 The store app runs these steps from its web view:
 
-1. Signed out, `/sign-in` shows an email screen in the shell. `POST /api/auth/app-sign-in` returns the app-login URL. It is on the organization's verified custom sign-in domain when the email's domain belongs to exactly one organization (a verified custom domain under it, or a verified SSO provider domain), otherwise on the app origin. Only the domain decides, so the answer does not reveal whether an account exists.
+1. Signed out, `/sign-in` shows an email screen in the shell. `POST /api/auth/app-sign-in` returns the app-login URL. It is on the organization's verified custom sign-in domain when the email's domain belongs to exactly one organization (a verified custom domain under it, or a verified SSO provider domain), otherwise on the app origin. Only the domain decides, so the answer does not reveal whether an account exists. It does reveal, for an email domain, that the organization is a Z8 customer and which custom sign-in domain it uses. This was accepted because that domain is public anyway, through DNS and its branded sign-in page.
 2. The system browser (`ASWebAuthenticationSession` on iOS, Custom Tabs on Android) signs in on that domain with its own methods.
 3. The web view exchanges the code with `X-Z8-App-Type: mobile` at its own origin. The request must carry that origin in `Origin`. The response sets the Better Auth session cookie for the same session row and never returns the token, so the active organization, SSO provenance and revocation stay server-side.
 

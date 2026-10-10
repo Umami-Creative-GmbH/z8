@@ -1,34 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { selectStoreAppSignInDomain } from "./sign-in-domain";
+import { organizationsOfEmailDomain, selectStoreAppSignInDomain } from "./sign-in-domain";
 
 const acmeCustomDomain = { organizationId: "org-acme", domain: "time.acme.example" };
 
-describe("store app sign-in domain", () => {
-	it("starts on the custom sign-in domain that sits under the email's domain", () => {
+describe("organizations of an email domain", () => {
+	it("finds the organization with a custom sign-in domain under the email's domain", () => {
 		expect(
-			selectStoreAppSignInDomain("Ada@Acme.Example", {
+			organizationsOfEmailDomain("acme.example", {
 				customDomains: [acmeCustomDomain],
 				ssoProviders: [],
 			}),
-		).toBe("time.acme.example");
+		).toEqual(new Set(["org-acme"]));
 	});
 
-	it("starts on a custom sign-in domain equal to the email's domain", () => {
+	it("finds the organization with a custom sign-in domain equal to the email's domain", () => {
 		expect(
-			selectStoreAppSignInDomain("ada@acme.example", {
-				customDomains: [{ organizationId: "org-acme", domain: "acme.example" }],
+			organizationsOfEmailDomain("acme.example", {
+				customDomains: [{ organizationId: "org-acme", domain: "Acme.Example" }],
 				ssoProviders: [],
 			}),
-		).toBe("acme.example");
+		).toEqual(new Set(["org-acme"]));
 	});
 
-	it("follows the organization whose verified SSO domain matches the email", () => {
+	it("finds the organization whose verified SSO domain matches the email", () => {
 		expect(
-			selectStoreAppSignInDomain("ada@acme.example", {
-				customDomains: [{ organizationId: "org-acme", domain: "zeit.acme-gruppe.example" }],
-				ssoProviders: [{ organizationId: "org-acme", domain: "acme.example" }],
+			organizationsOfEmailDomain("acme.example", {
+				customDomains: [],
+				ssoProviders: [
+					{ organizationId: "org-acme", domain: "acme.example" },
+					{ organizationId: null, domain: "acme.example" },
+				],
 			}),
-		).toBe("zeit.acme-gruppe.example");
+		).toEqual(new Set(["org-acme"]));
 	});
 
 	it.each([
@@ -36,40 +39,41 @@ describe("store app sign-in domain", () => {
 		["a domain that only starts with the email's domain", "acme.example.attacker.example"],
 	])("ignores %s", (_case, domain) => {
 		expect(
-			selectStoreAppSignInDomain("ada@acme.example", {
+			organizationsOfEmailDomain("acme.example", {
 				customDomains: [{ organizationId: "org-other", domain }],
-				ssoProviders: [],
+				ssoProviders: [{ organizationId: "org-other", domain: "other.example" }],
 			}),
-		).toBeNull();
+		).toEqual(new Set());
+	});
+});
+
+describe("store app sign-in domain", () => {
+	it("starts on the one verified custom domain of the one matching organization", () => {
+		expect(
+			selectStoreAppSignInDomain(new Set(["org-acme"]), [
+				{ organizationId: "org-acme", domain: "Zeit.Acme-Gruppe.Example" },
+				{ organizationId: "org-other", domain: "time.other.example" },
+			]),
+		).toBe("zeit.acme-gruppe.example");
 	});
 
 	it("uses the main origin when the email's domain points at more than one organization", () => {
 		expect(
-			selectStoreAppSignInDomain("ada@acme.example", {
-				customDomains: [acmeCustomDomain],
-				ssoProviders: [{ organizationId: "org-other", domain: "acme.example" }],
-			}),
+			selectStoreAppSignInDomain(new Set(["org-acme", "org-other"]), [acmeCustomDomain]),
 		).toBeNull();
 	});
 
-	it("uses the main origin when the matching organization has no verified custom domain", () => {
+	it("uses the main origin when no organization matches", () => {
+		expect(selectStoreAppSignInDomain(new Set(), [acmeCustomDomain])).toBeNull();
+	});
+
+	it("uses the main origin when the organization has no or several verified custom domains", () => {
+		expect(selectStoreAppSignInDomain(new Set(["org-acme"]), [])).toBeNull();
 		expect(
-			selectStoreAppSignInDomain("ada@acme.example", {
-				customDomains: [{ organizationId: "org-other", domain: "time.other.example" }],
-				ssoProviders: [{ organizationId: "org-acme", domain: "acme.example" }],
-			}),
+			selectStoreAppSignInDomain(new Set(["org-acme"]), [
+				acmeCustomDomain,
+				{ organizationId: "org-acme", domain: "login.acme.example" },
+			]),
 		).toBeNull();
 	});
-
-	it.each(["not-an-email", "ada@", "@acme.example", "ada@acme.example/path"])(
-		"uses the main origin for %j",
-		(email) => {
-			expect(
-				selectStoreAppSignInDomain(email, {
-					customDomains: [acmeCustomDomain],
-					ssoProviders: [],
-				}),
-			).toBeNull();
-		},
-	);
 });
