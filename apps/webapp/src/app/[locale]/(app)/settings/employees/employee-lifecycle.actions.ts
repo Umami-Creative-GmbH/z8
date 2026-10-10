@@ -414,7 +414,10 @@ function setEmployeeLifecycleState(
 
 				if (transactionResult.releasedDeputies) {
 					const releasedDeputies = transactionResult.releasedDeputies;
-					yield* Effect.promise(() => notifyReleasedDeputyAssignments(releasedDeputies));
+					// After the commit, on the caller's database client (#1014); never throws.
+					yield* Effect.promise(() =>
+						notifyReleasedDeputyAssignments(releasedDeputies, actor.dbService.db),
+					);
 				}
 
 				revalidateEmployeesCache(actor.organizationId);
@@ -525,6 +528,8 @@ export async function removeEmployeeAccessAction(
 							completeRemovedMemberCleanup({
 								organizationId: actor.organizationId,
 								userId: targetEmployee.userId,
+								// Its deputy release is audited under this admin (#1014).
+								actorUserId: actor.session.user.id,
 							}),
 						catch: () =>
 							new ValidationError({

@@ -201,13 +201,16 @@ export async function notifyDeputyUnavailable(
 }
 
 /**
- * After-commit notifications for a deactivation outside a departure: best
- * effort, logged, never undoing the committed release.
+ * After the commit of a deactivation outside a departure: forwards the
+ * release's audit entries to the external audit service, as a manual deputy
+ * change does, then notifies. Best effort, logged, never undoing the
+ * committed release.
  */
 export async function notifyDeputyUnavailableAfterCommit(
 	deps: { database: NotificationDatabase; transport: DeputyUnavailableTransport },
 	released: ReleasedDeputyAssignments | null | undefined,
 ): Promise<void> {
+	released?.audit?.forwardCommitted();
 	if (!released || released.assignments.length === 0) return;
 	try {
 		await notifyDeputyUnavailable(deps, released);

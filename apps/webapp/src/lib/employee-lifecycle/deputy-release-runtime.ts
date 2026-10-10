@@ -7,16 +7,18 @@ import type { ReleasedDeputyAssignments } from "./deputy-release";
 import { notifyDeputyUnavailableAfterCommit } from "./deputy-release-notifications";
 
 /**
- * Production after-commit notifications for a deactivation that cleared the
- * employee as deputy (#1014). Best effort: a failure is logged and never
- * undoes the committed deactivation.
+ * Production after-commit step for a deactivation that cleared the employee
+ * as deputy (#1014): forwards its audit entries and notifies. Best effort: a
+ * failure is logged and never undoes the committed deactivation. An effect
+ * passes its `DatabaseService` client.
  */
 export function notifyReleasedDeputyAssignments(
 	released: ReleasedDeputyAssignments | null | undefined,
+	database: Pick<typeof db, "select" | "query"> = db,
 ): Promise<void> {
 	return notifyDeputyUnavailableAfterCommit(
 		{
-			database: db,
+			database,
 			transport: {
 				send: (params) => createNotification(params),
 				locale: resolveRecipientNotificationLocale,

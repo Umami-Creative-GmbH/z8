@@ -619,7 +619,10 @@ describe("employee lifecycle actions", () => {
 				reason: "employee_deactivated",
 			},
 		);
-		expect(mocks.notifyReleasedDeputyAssignments).toHaveBeenCalledExactlyOnceWith(released);
+		expect(mocks.notifyReleasedDeputyAssignments).toHaveBeenCalledExactlyOnceWith(
+			released,
+			expect.anything(),
+		);
 		expect(events.indexOf("deputies-released")).toBeLessThan(
 			events.indexOf("transaction-committed"),
 		);
@@ -1058,6 +1061,7 @@ describe("removeEmployeeAccessAction", () => {
 		expect(mocks.completeRemovedMemberCleanup).toHaveBeenCalledExactlyOnceWith({
 			organizationId,
 			userId: targetUserId,
+			actorUserId: "actor-user",
 		});
 		expect(mocks.authRemoveMember).not.toHaveBeenCalled();
 		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(
@@ -1172,6 +1176,7 @@ describe("removeEmployeeAccessAction", () => {
 		expect(mocks.completeRemovedMemberCleanup).toHaveBeenCalledExactlyOnceWith({
 			organizationId,
 			userId: targetUserId,
+			actorUserId: "actor-user",
 		});
 		expect(mocks.revalidateEmployeesCache).toHaveBeenCalledExactlyOnceWith(
 			organizationId,

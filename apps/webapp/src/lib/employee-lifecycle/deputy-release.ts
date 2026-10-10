@@ -34,6 +34,11 @@ export interface ReleasedDeputyAssignments {
 	/** Distinguishes this release in notification idempotency keys. */
 	eventKey: string;
 	assignments: DeputyAssignment[];
+	/**
+	 * The release's audit entries, forwarded to the external audit service
+	 * after the commit (`notifyDeputyUnavailableAfterCommit`).
+	 */
+	audit?: AuditTrail;
 }
 
 /**
@@ -188,5 +193,6 @@ export async function releaseDeputyAssignmentsOnDeactivation(
 		deputyEmployeeId: input.employeeId,
 		eventKey: `${input.reason}:${input.at.epochMilliseconds}`,
 		assignments,
+		audit,
 	};
 }

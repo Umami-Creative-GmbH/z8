@@ -498,6 +498,8 @@ describe("departure clears the employee as deputy (#1014)", () => {
 					endDate: "2026-10-05",
 				},
 			],
+			// Forwarded to the external audit service after the commit.
+			audit: expect.any(AuditTrail),
 		});
 		expect(await deputyAudits(absence)).toEqual([
 			expect.objectContaining({
@@ -545,6 +547,34 @@ describe("departure clears the employee as deputy (#1014)", () => {
 			expect.objectContaining({
 				// Nobody else is known to have acted: the removed member's own user.
 				performedBy: deputy.userId,
+				metadata: { actorKind: "system", reason: "member_removed" },
+			}),
+		]);
+	});
+
+	it("audits a removed member's deputy release under the removing admin when known", async () => {
+		const deputy = await fixture.seedEmployee();
+		const anna = await fixture.seedEmployee();
+		const absence = await seedAbsence({
+			absent: anna,
+			deputy,
+			startDate: "2026-12-07",
+			endDate: "2026-12-09",
+		});
+		await fixture.pool.query("delete from member where id = $1", [deputy.memberId]);
+
+		await fixture.db.transaction((tx) =>
+			revokeRemovedMemberAccessInTransaction(
+				tx as unknown as Parameters<typeof revokeRemovedMemberAccessInTransaction>[0],
+				deputy.userId,
+				fixture.organizationId,
+				{ actorUserId: fixture.ownerUserId },
+			),
+		);
+
+		expect(await deputyAudits(absence)).toEqual([
+			expect.objectContaining({
+				performedBy: fixture.ownerUserId,
 				metadata: { actorKind: "system", reason: "member_removed" },
 			}),
 		]);

@@ -41,9 +41,10 @@ export async function revokeRemovedMemberAccess(
 		db: MemberRemovalDb;
 		deleteSecondarySession: (token: string) => Promise<void>;
 	} = memberAccessRevocationDependencies,
+	options: { actorUserId?: string } = {},
 ) {
 	const outcome = await dependencies.db.transaction((tx) =>
-		revokeRemovedMemberAccessInTransaction(tx, userId, organizationId),
+		revokeRemovedMemberAccessInTransaction(tx, userId, organizationId, options),
 	);
 
 	await Promise.all(
@@ -66,7 +67,7 @@ export async function revokeRemovedMemberAccessInTransaction(
 	userId: string,
 	organizationId: string,
 	options: {
-		/** Who removed the member, when known (pending-member rejection). */
+		/** Who removed the member, when known (an admin's removal or rejection). */
 		actorUserId?: string;
 	} = {},
 ): Promise<RemovedMemberAccessOutcome> {
@@ -114,8 +115,9 @@ export async function revokeRemovedMemberAccessInTransaction(
 		)
 		.returning({ id: employee.id });
 
-	// The removed member stops being anyone's deputy (#1014); without a known
-	// actor the audit names the removed member's own user, marked as system.
+	// The removed member stops being anyone's deputy (#1014), audited under the
+	// removing admin; only without a known one, under the removed member's own
+	// user. Either way marked as a system side effect.
 	const releasedDeputies = deactivated[0]
 		? await releaseDeputyAssignmentsOnDeactivation(dbClient, new AuditTrail(), {
 				organizationId,
@@ -163,6 +165,8 @@ export async function completeRemovedMemberCleanup(
 	input: {
 		organizationId: string;
 		userId: string;
+		/** The admin removing the member, for the audit of its side effects. */
+		actorUserId?: string;
 	},
 	dependencies: {
 		revokeRemovedMemberAccess?: typeof revokeRemovedMemberAccess;
@@ -172,10 +176,11 @@ export async function completeRemovedMemberCleanup(
 	} = postRemovalCleanupDependencies,
 ) {
 	if (dependencies.revokeRemovedMemberAccess) {
-		await dependencies.revokeRemovedMemberAccess(
-			input.userId,
-			input.organizationId,
-		);
+		await (input.actorUserId
+			? dependencies.revokeRemovedMemberAccess(input.userId, input.organizationId, undefined, {
+					actorUserId: input.actorUserId,
+				})
+			: dependencies.revokeRemovedMemberAccess(input.userId, input.organizationId));
 		await dependencies.reconcileBillingSeatsForOrganization(
 			input.organizationId,
 			{ strict: true },
@@ -187,11 +192,9 @@ export async function completeRemovedMemberCleanup(
 		throw new Error("Member cleanup dependencies are incomplete");
 	}
 	const outcome = await dependencies.db.transaction((tx) =>
-		revokeRemovedMemberAccessInTransaction(
-			tx,
-			input.userId,
-			input.organizationId,
-		),
+		revokeRemovedMemberAccessInTransaction(tx, input.userId, input.organizationId, {
+			actorUserId: input.actorUserId,
+		}),
 	);
 	await completeRemovedMemberCleanupPostCommit(
 		{

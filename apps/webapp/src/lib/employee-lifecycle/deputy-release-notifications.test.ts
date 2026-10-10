@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { buildDeputyUnavailableNotification } from "./deputy-release-notifications";
+import { describe, expect, it, vi } from "vitest";
+import type { AuditTrail } from "@/lib/audit-trail";
+import {
+	buildDeputyUnavailableNotification,
+	notifyDeputyUnavailableAfterCommit,
+} from "./deputy-release-notifications";
 
 const base = {
 	organizationId: "org-1",
@@ -72,5 +76,34 @@ describe("buildDeputyUnavailableNotification", () => {
 		const notification = buildDeputyUnavailableNotification({ ...base, audience: "manager" });
 
 		expect(JSON.stringify(notification)).not.toMatch(/categor|sick|vacation/i);
+	});
+});
+
+describe("notifyDeputyUnavailableAfterCommit (#1014)", () => {
+	it("forwards the release's audit entries to the external audit service, like a manual change", async () => {
+		const forwardCommitted = vi.fn();
+		await notifyDeputyUnavailableAfterCommit(
+			{
+				// Notifications fail here; the audit still goes out.
+				database: {} as never,
+				transport: { send: vi.fn(), locale: vi.fn() },
+			},
+			{
+				organizationId: "org-1",
+				deputyEmployeeId: "deputy-1",
+				eventKey: "employee_deactivated:1",
+				assignments: [
+					{
+						absenceId: "absence-1",
+						absentEmployeeId: "anna",
+						startDate: "2026-10-01",
+						endDate: "2026-10-05",
+					},
+				],
+				audit: { forwardCommitted } as unknown as AuditTrail,
+			},
+		);
+
+		expect(forwardCommitted).toHaveBeenCalledOnce();
 	});
 });
