@@ -11,6 +11,7 @@ import {
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { runtime } from "@/lib/effect/runtime";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
+import { sumBalanceAdjustmentMinutes } from "@/lib/work-balance/adjustments/ledger";
 import type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
 
 export type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
@@ -74,6 +75,8 @@ export function buildEmployeeTimeBalanceValues(input: {
 	actualMinutes: number;
 	expectedMinutes: number;
 	absenceAdjustedMinutes: number;
+	/** Uncancelled balance adjustments dated in the year (#993). */
+	balanceAdjustmentMinutes?: number;
 	calculatedAt: Date;
 }) {
 	return {
@@ -83,7 +86,7 @@ export function buildEmployeeTimeBalanceValues(input: {
 		actualMinutes: input.actualMinutes,
 		expectedMinutes: input.expectedMinutes,
 		absenceAdjustedMinutes: input.absenceAdjustedMinutes,
-		balanceMinutes: calculateBalanceMinutes(input),
+		balanceMinutes: calculateBalanceMinutes(input) + (input.balanceAdjustmentMinutes ?? 0),
 		calculatedAt: input.calculatedAt,
 	};
 }
@@ -138,7 +141,7 @@ export async function refreshEmployeeTimeBalances(input: {
 
 	const balanceRows = await Promise.all(
 		employeeIds.map(async (employeeId) => {
-			const [expected, absenceAdjustedMinutes] = await Promise.all([
+			const [expected, absenceAdjustedMinutes, balanceAdjustmentMinutes] = await Promise.all([
 				runtime.runPromise(
 					calculateExpectedWorkHoursForEmployee(
 						employeeId,
@@ -154,6 +157,13 @@ export async function refreshEmployeeTimeBalances(input: {
 					rangeStart: range.start,
 					rangeEnd: range.end,
 				}),
+				// Overtime payouts lower this balance too; worked minutes stay as worked.
+				sumBalanceAdjustmentMinutes(db, {
+					organizationId: input.organizationId,
+					employeeId,
+					fromDate: range.start.toISODate()!,
+					throughDate: range.end.toISODate()!,
+				}),
 			]);
 			const values = buildEmployeeTimeBalanceValues({
 				employeeId,
@@ -162,6 +172,7 @@ export async function refreshEmployeeTimeBalances(input: {
 				actualMinutes: actualByEmployee.get(employeeId) ?? 0,
 				expectedMinutes: expected.totalMinutes,
 				absenceAdjustedMinutes,
+				balanceAdjustmentMinutes,
 				calculatedAt,
 			});
 

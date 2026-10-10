@@ -49,6 +49,7 @@ const mockState = vi.hoisted(() => ({
 	computeEmployeePeriodBalance: vi.fn(),
 	upsertEmployeeWorkBalancePeriod: vi.fn(),
 	rebuildEmployeeYearBalanceFromMonths: vi.fn(),
+	sumBalanceAdjustmentMinutes: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -80,6 +81,10 @@ vi.mock("@/db", () => ({ db: mockState.db }));
 
 vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
+}));
+
+vi.mock("./adjustments/ledger", () => ({
+	sumBalanceAdjustmentMinutes: mockState.sumBalanceAdjustmentMinutes,
 }));
 
 vi.mock("./period-aggregation", () => ({
@@ -158,6 +163,8 @@ describe("work balance helpers", () => {
 		mockState.db.insert.mockReturnValue({ values: mockState.insertValues });
 		mockState.insertValues.mockReturnValue({ onConflictDoUpdate: mockState.onConflictDoUpdate });
 		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({});
+		mockState.sumBalanceAdjustmentMinutes.mockReset();
+		mockState.sumBalanceAdjustmentMinutes.mockResolvedValue(0);
 		mockState.computeEmployeePeriodBalance.mockReset();
 		mockState.upsertEmployeeWorkBalancePeriod.mockReset();
 		mockState.rebuildEmployeeYearBalanceFromMonths.mockReset();
@@ -212,6 +219,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			actualMinutes: 2520,
 			requiredMinutes: 2400,
+			adjustmentMinutes: 0,
 			balanceMinutes: 120,
 			computedFromDate: "2026-05-01",
 			computedThroughDate: "2026-05-22",
@@ -222,6 +230,21 @@ describe("work balance helpers", () => {
 			refreshRequestedAt: null,
 			lastError: null,
 		});
+	});
+
+	it("adds balance adjustments into the work balance (#993)", () => {
+		const values = buildWorkBalanceValues({
+			employeeId: "employee-1",
+			organizationId: "org-1",
+			actualMinutes: 720,
+			requiredMinutes: 0,
+			adjustmentMinutes: -300,
+			computedFromDate: "2026-05-01",
+			computedThroughDate: "2026-05-22",
+			computedAt: new Date("2026-05-22T12:00:00.000Z"),
+		});
+
+		expect(values).toMatchObject({ actualMinutes: 720, adjustmentMinutes: -300, balanceMinutes: 420 });
 	});
 
 	it("formats signed all-time work balance values", () => {
@@ -327,6 +350,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			actualMinutes: 0,
 			requiredMinutes: 0,
+			adjustmentMinutes: 0,
 			balanceMinutes: 0,
 			computedFromDate: "2026-05-21",
 			computedThroughDate: "2026-05-21",
@@ -634,6 +658,7 @@ describe("work balance helpers", () => {
 			organizationId: "org-1",
 			actualMinutes: 0,
 			requiredMinutes: 0,
+			adjustmentMinutes: 0,
 			balanceMinutes: 0,
 			computedFromDate: "0001-01-01",
 			computedThroughDate: "0001-01-01",
@@ -649,6 +674,7 @@ describe("work balance helpers", () => {
 			set: {
 				actualMinutes: 0,
 				requiredMinutes: 0,
+				adjustmentMinutes: 0,
 				balanceMinutes: 0,
 				computedFromDate: "0001-01-01",
 				computedThroughDate: "0001-01-01",

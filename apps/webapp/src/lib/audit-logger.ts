@@ -58,6 +58,10 @@ export enum AuditAction {
 	/** An attached sick note turned "without certificate" into "with certificate" (#982). */
 	ABSENCE_SICK_DETAIL_CHANGED = "absence.sick_detail_changed",
 
+	// Balance adjustments (#993): opening balances and overtime payouts
+	BALANCE_ADJUSTMENT_RECORDED = "balance_adjustment.recorded",
+	BALANCE_ADJUSTMENT_CANCELLED = "balance_adjustment.cancelled",
+
 	// Approval Operations
 	APPROVAL_SUBMITTED = "approval.submitted",
 	APPROVAL_APPROVED = "approval.approved",
@@ -313,6 +317,7 @@ export interface AuditLogEntry {
 		| "schedule"
 		| "time_entry"
 		| "absence"
+		| "balance_adjustment"
 		| "approval"
 		| "vacation"
 		| "surcharge_model"

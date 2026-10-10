@@ -18,6 +18,8 @@ export * from "./audit";
 export * from "./audit-export";
 export * from "./audit-pack";
 export * from "./automatic-clock-out";
+// Balance adjustments: opening balances and overtime payouts (#804)
+export * from "./balance-adjustment";
 // Billable Time module (#768): what work is charged to customers. Not the Z8 subscription.
 export * from "./billable-time";
 // Billing & subscriptions (Stripe integration)
