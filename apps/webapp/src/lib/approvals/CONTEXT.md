@@ -40,6 +40,10 @@ _Avoid_: delegated decision, proxy approval, on-behalf decision (that term means
 A deputy covers for an approver on each day, in the approver's timezone, of the approver's approved absence that names them and does not count as working time, while the organization lets deputies decide approvals and the deputy is active and can use the approval inbox. Resolved only by `deputy/covering-store.ts`.
 _Avoid_: standing in, substituting, "Vertretung" (German copy says "Abwesenheitsvertretung")
 
+**Acting-for record**:
+The stored fact that a deputy decision was made: the deputy, the approver acted for, the absence that made the cover, the authority, the subject and the outcome. One row per decision in `approval_deputy_decision`, written in the decision's transaction (`deputy/deputy-decision-store.ts`); canonical decision events carry the same acting-for in their metadata. Own rights win: an approver, eligible manager or manager of approvals never makes a deputy decision.
+_Avoid_: delegation log, proxy record
+
 ### Cards
 
 **Review binding**:
