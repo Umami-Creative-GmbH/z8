@@ -37,11 +37,11 @@ A decision made by an approver's deputy, during the approver's approved absence,
 _Avoid_: delegated decision, proxy approval, on-behalf decision (that term means acting for the requester)
 
 **Covering**:
-A deputy covers for an approver on each day, in the approver's timezone, of the approver's approved absence that names them and does not count as working time, while the organization lets deputies decide approvals and the deputy is active and can use the approval inbox. Resolved only by `deputy/covering-store.ts`.
+A deputy covers for an approver on each day, in the approver's timezone, of the approver's approved absence that names them and does not count as working time, while the organization lets deputies decide approvals and the deputy is active and can use the approval inbox. Covering never reaches back before the absence was approved or before this deputy was named, so a later approval or a replacement deputy brings no cards for approvals already waiting. Resolved only by `deputy/covering-store.ts`.
 _Avoid_: standing in, substituting, "Vertretung" (German copy says "Abwesenheitsvertretung")
 
 **Acting-for record**:
-The stored fact that a deputy decision was made: the deputy, the approver acted for, the absence that made the cover, the authority, the subject and the outcome. One row per decision in `approval_deputy_decision`, written in the decision's transaction (`deputy/deputy-decision-store.ts`); canonical decision events carry the same acting-for in their metadata. Own rights win: an approver, eligible manager or manager of approvals never makes a deputy decision.
+The stored fact that a deputy decision was made: the deputy, the approver acted for, the absence that made the cover, the authority, the subject and the outcome. One row per decision in `approval_deputy_decision`, written in the decision's transaction (`deputy/deputy-decision-store.ts`), keeping the absence by value with its dates so a cancelled absence still gets its return summary; canonical decision events carry the same acting-for in their metadata. Own rights win: an approver, eligible manager or manager of approvals never makes a deputy decision.
 _Avoid_: delegation log, proxy record
 
 ### Cards

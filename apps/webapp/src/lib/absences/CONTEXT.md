@@ -31,7 +31,7 @@ The colleague an employee names on an absence to cover for them while they are a
 _Avoid_: substitute, stand-in, delegate, proxy; "Vertretung" (unqualified) in German copy, use "Abwesenheitsvertretung"
 
 **Deputy required**:
-An absence category whose absences must always name a deputy.
+An absence category whose absences must always name a deputy. Sick leave never requires one.
 _Avoid_: mandatory deputy, deputy rule
 
 A deputy is not the escalation **backup manager** (who takes over one overdue approval) and not the offboarding **replacement** (who permanently takes over a departed employee's duties).
