@@ -42,9 +42,8 @@ function predecessor(sources: ReturnType<typeof fresh>) {
 	}
 	for (const { data } of sources) merge(tree, data);
 	for (const { namespace, data } of sources)
-		if (namespace !== "common")
-			for (const [key, value] of Object.entries(data))
-				tree[`${namespace}:${key}`] = value;
+		for (const [key, value] of Object.entries(data))
+			tree[`${namespace}:${key}`] = value;
 	return tree;
 }
 function empty(locale: string): CatalogSlice {
