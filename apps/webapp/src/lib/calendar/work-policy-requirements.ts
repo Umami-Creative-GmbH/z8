@@ -503,127 +503,134 @@ async function getFirstCompletedWorkPeriodBeforeAccount(params: {
 	return row?.value ?? null;
 }
 
-export async function getDailyWorkRequirementsForEmployee(params: {
+type DailyWorkRequirementsParams = {
 	organizationId: string;
 	employeeId: string;
 	startDate: Date;
 	endDate: Date;
 	timezone?: string | null;
-}): Promise<DailyWorkRequirements> {
-	return runtime.runPromise(
-		Effect.gen(function* () {
-			const database = yield* DatabaseService;
-			const scopedEmployee = yield* database.query(
-				"getEmployeeForCalendarRequirements",
-				async () => {
-					return database.db.query.employee.findFirst({
-						where: and(
-							eq(employee.id, params.employeeId),
-							eq(employee.organizationId, params.organizationId),
-						),
-						columns: { id: true, startDate: true, contractType: true },
-						with: { user: { columns: { createdAt: true } } },
-					});
-				},
-			);
-			if (!scopedEmployee) return {};
+};
 
-			const requestedStartDate = DateTime.fromJSDate(params.startDate, { zone: "utc" });
-			const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
-				zone: "utc",
+/**
+ * The employee's daily work requirements from `startDate`'s day through `endDate`'s, as an effect
+ * on the caller's `DatabaseService` and `WorkPolicyService`.
+ */
+export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequirementsParams) {
+	return Effect.gen(function* () {
+		const database = yield* DatabaseService;
+		const scopedEmployee = yield* database.query("getEmployeeForCalendarRequirements", async () => {
+			return database.db.query.employee.findFirst({
+				where: and(
+					eq(employee.id, params.employeeId),
+					eq(employee.organizationId, params.organizationId),
+				),
+				columns: { id: true, startDate: true, contractType: true },
+				with: { user: { columns: { createdAt: true } } },
 			});
-			const firstCompletedWorkPeriodBeforeAccount = yield* Effect.promise(() =>
-				getFirstCompletedWorkPeriodBeforeAccount({
-					database,
-					organizationId: params.organizationId,
-					employeeId: params.employeeId,
-					accountCreatedAt: scopedEmployee.user.createdAt,
-				}),
-			);
-			const employeeStartDate = scopedEmployee.startDate
-				? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
-				: accountCreatedDate;
-			const normalStartDate = DateTime.max(accountCreatedDate, employeeStartDate);
-			const lowerBoundDate = firstCompletedWorkPeriodBeforeAccount
-				? DateTime.min(
-						DateTime.fromJSDate(firstCompletedWorkPeriodBeforeAccount, { zone: "utc" }),
-						normalStartDate,
-					)
-				: normalStartDate;
-			const effectiveStartDate = DateTime.max(requestedStartDate, lowerBoundDate).toJSDate();
-			if (effectiveStartDate > params.endDate) return {};
+		});
+		if (!scopedEmployee) return {};
 
-			const service = yield* WorkPolicyService;
-			const fallbackPolicy = yield* service.getEffectivePolicy(params.employeeId);
-			const historyRequirements = yield* Effect.promise(() =>
-				buildEmploymentHistoryDailyRequirements({
-					database,
-					organizationId: params.organizationId,
-					employeeId: params.employeeId,
-					startDate: effectiveStartDate,
-					endDate: params.endDate,
-					timezone: params.timezone,
-					fallbackPolicy,
-				}),
-			);
-			const requirements =
-				historyRequirements ??
-				(scopedEmployee.contractType === "hourly"
-					? yield* Effect.promise(() =>
-							getPublishedShiftRequirementsForEmployee({
-								database,
-								organizationId: params.organizationId,
-								employeeId: params.employeeId,
-								startDate: effectiveStartDate,
-								endDate: params.endDate,
-								timezone: params.timezone,
-							}),
-						)
-					: buildDailyWorkRequirements({
-							policy: fallbackPolicy,
+		const requestedStartDate = DateTime.fromJSDate(params.startDate, { zone: "utc" });
+		const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
+			zone: "utc",
+		});
+		const firstCompletedWorkPeriodBeforeAccount = yield* Effect.promise(() =>
+			getFirstCompletedWorkPeriodBeforeAccount({
+				database,
+				organizationId: params.organizationId,
+				employeeId: params.employeeId,
+				accountCreatedAt: scopedEmployee.user.createdAt,
+			}),
+		);
+		const employeeStartDate = scopedEmployee.startDate
+			? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
+			: accountCreatedDate;
+		const normalStartDate = DateTime.max(accountCreatedDate, employeeStartDate);
+		const lowerBoundDate = firstCompletedWorkPeriodBeforeAccount
+			? DateTime.min(
+					DateTime.fromJSDate(firstCompletedWorkPeriodBeforeAccount, { zone: "utc" }),
+					normalStartDate,
+				)
+			: normalStartDate;
+		const effectiveStartDate = DateTime.max(requestedStartDate, lowerBoundDate).toJSDate();
+		if (effectiveStartDate > params.endDate) return {};
+
+		const service = yield* WorkPolicyService;
+		const fallbackPolicy = yield* service.getEffectivePolicy(params.employeeId);
+		const historyRequirements = yield* Effect.promise(() =>
+			buildEmploymentHistoryDailyRequirements({
+				database,
+				organizationId: params.organizationId,
+				employeeId: params.employeeId,
+				startDate: effectiveStartDate,
+				endDate: params.endDate,
+				timezone: params.timezone,
+				fallbackPolicy,
+			}),
+		);
+		const requirements =
+			historyRequirements ??
+			(scopedEmployee.contractType === "hourly"
+				? yield* Effect.promise(() =>
+						getPublishedShiftRequirementsForEmployee({
+							database,
+							organizationId: params.organizationId,
+							employeeId: params.employeeId,
 							startDate: effectiveStartDate,
 							endDate: params.endDate,
 							timezone: params.timezone,
-						}));
-			const approvedAbsences = yield* Effect.promise(() =>
-				getApprovedAbsenceRanges({
-					database,
-					organizationId: params.organizationId,
-					employeeId: params.employeeId,
-					startDate: effectiveStartDate,
-					endDate: params.endDate,
-					timezone: params.timezone,
-				}),
-			);
+						}),
+					)
+				: buildDailyWorkRequirements({
+						policy: fallbackPolicy,
+						startDate: effectiveStartDate,
+						endDate: params.endDate,
+						timezone: params.timezone,
+					}));
+		const approvedAbsences = yield* Effect.promise(() =>
+			getApprovedAbsenceRanges({
+				database,
+				organizationId: params.organizationId,
+				employeeId: params.employeeId,
+				startDate: effectiveStartDate,
+				endDate: params.endDate,
+				timezone: params.timezone,
+			}),
+		);
 
-			// Days outside employment (after a departure, or between stints) require nothing.
-			const employmentCoverage = yield* database.query("getEmploymentCoverageForRequirements", () =>
-				loadEmploymentCoverage(database.db, {
-					organizationId: params.organizationId,
-					employeeId: params.employeeId,
-				}),
-			);
-			const employedRequirements = clipRequirementsToEmployment(
-				requirements,
-				employmentCoverage,
-				params.timezone,
-			);
+		// Days outside employment (after a departure, or between stints) require nothing.
+		const employmentCoverage = yield* database.query("getEmploymentCoverageForRequirements", () =>
+			loadEmploymentCoverage(database.db, {
+				organizationId: params.organizationId,
+				employeeId: params.employeeId,
+			}),
+		);
+		const employedRequirements = clipRequirementsToEmployment(
+			requirements,
+			employmentCoverage,
+			params.timezone,
+		);
 
-			const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements(
-				employedRequirements,
-				approvedAbsences,
-			);
-			const assignedHolidays = yield* Effect.promise(() =>
-				getAssignedHolidaysForEmployee({
-					organizationId: params.organizationId,
-					employeeId: params.employeeId,
-					startDate: effectiveStartDate,
-					endDate: params.endDate,
-				}),
-			);
+		const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements(
+			employedRequirements,
+			approvedAbsences,
+		);
+		const assignedHolidays = yield* Effect.promise(() =>
+			getAssignedHolidaysForEmployee({
+				organizationId: params.organizationId,
+				employeeId: params.employeeId,
+				startDate: effectiveStartDate,
+				endDate: params.endDate,
+			}),
+		);
 
-			// biome-ignore format: source-level regression test asserts this call order.
-			return applyAssignedHolidayAdjustmentsToRequirements(absenceAdjustedRequirements, assignedHolidays);
-		}),
-	);
+		// biome-ignore format: source-level regression test asserts this call order.
+		return applyAssignedHolidayAdjustmentsToRequirements(absenceAdjustedRequirements, assignedHolidays);
+	});
+}
+
+export async function getDailyWorkRequirementsForEmployee(
+	params: DailyWorkRequirementsParams,
+): Promise<DailyWorkRequirements> {
+	return runtime.runPromise(loadDailyWorkRequirementsForEmployee(params));
 }

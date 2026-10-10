@@ -1,19 +1,20 @@
 import { createHash } from "node:crypto";
 import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import { schedulePublishComplianceAck, shift, workPeriod } from "@/db/schema";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseError } from "@/lib/effect/errors";
+import {
+	buildEmployeeComplianceInput,
+	normalizeScheduleComplianceRegulation,
+} from "@/lib/scheduling/compliance/employee-compliance-input";
 import { evaluateScheduleCompliance } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
 import type {
 	EmployeeScheduleComplianceInput,
-	ScheduleComplianceRegulation,
 	ScheduleComplianceResult,
 	ScheduleComplianceWindow,
 } from "@/lib/scheduling/compliance/types";
-import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { DatabaseService } from "./database.service";
 import { WorkPolicyService } from "./work-policy.service";
 
@@ -41,80 +42,6 @@ export interface RecordPublishAcknowledgmentInput {
 	warningCountTotal: number;
 	warningCountsByType: Record<string, number>;
 	evaluationFingerprint: string;
-}
-
-interface Interval {
-	start: DateTime;
-	end: DateTime;
-}
-
-function addMinutes(target: Record<string, number>, dayKey: string | null, minutes: number): void {
-	if (!dayKey || minutes <= 0) {
-		return;
-	}
-	target[dayKey] = (target[dayKey] ?? 0) + minutes;
-}
-
-function normalizeRegulation(
-	regulation: {
-		minRestPeriodMinutes: number | null;
-		maxDailyMinutes: number | null;
-		overtimeDailyThresholdMinutes: number | null;
-		overtimeWeeklyThresholdMinutes: number | null;
-		overtimeMonthlyThresholdMinutes: number | null;
-	} | null,
-): ScheduleComplianceRegulation {
-	if (!regulation) {
-		return {};
-	}
-
-	return {
-		...(regulation.minRestPeriodMinutes != null
-			? { minRestPeriodMinutes: regulation.minRestPeriodMinutes }
-			: {}),
-		...(regulation.maxDailyMinutes != null ? { maxDailyMinutes: regulation.maxDailyMinutes } : {}),
-		...(regulation.overtimeDailyThresholdMinutes != null
-			? {
-					overtimeDailyThresholdMinutes: regulation.overtimeDailyThresholdMinutes,
-				}
-			: {}),
-		...(regulation.overtimeWeeklyThresholdMinutes != null
-			? {
-					overtimeWeeklyThresholdMinutes: regulation.overtimeWeeklyThresholdMinutes,
-				}
-			: {}),
-		...(regulation.overtimeMonthlyThresholdMinutes != null
-			? {
-					overtimeMonthlyThresholdMinutes: regulation.overtimeMonthlyThresholdMinutes,
-				}
-			: {}),
-	};
-}
-
-function toShiftInterval(params: {
-	date: Date;
-	startTime: string;
-	endTime: string;
-	timezone: string;
-}): Interval | null {
-	const baseDate = shiftCalendarDate(params.date, params.timezone).toString();
-
-	const start = DateTime.fromISO(`${baseDate}T${params.startTime}`, {
-		zone: params.timezone,
-	});
-	let end = DateTime.fromISO(`${baseDate}T${params.endTime}`, {
-		zone: params.timezone,
-	});
-
-	if (!start.isValid || !end.isValid) {
-		return null;
-	}
-
-	if (end <= start) {
-		end = end.plus({ days: 1 });
-	}
-
-	return { start, end };
 }
 
 function buildFingerprint(params: {
@@ -231,7 +158,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 					const effectiveRegulation =
 						employeeIds.length === 0
 							? {}
-							: normalizeRegulation(
+							: normalizeScheduleComplianceRegulation(
 									(yield* Effect.forEach(employeeIds, (employeeId) =>
 										workPolicyService
 											.getEffectivePolicy(employeeId)
@@ -256,68 +183,14 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 						periodsByEmployee.set(period.employeeId, existing);
 					}
 
-					const employees: EmployeeScheduleComplianceInput[] = employeeIds.map((employeeId) => {
-						const actualMinutesByDay: Record<string, number> = {};
-						const scheduledMinutesByDay: Record<string, number> = {};
-						const intervals: Interval[] = [];
-
-						for (const employeePeriod of periodsByEmployee.get(employeeId) ?? []) {
-							const endTime = employeePeriod.endTime;
-							if (!endTime) {
-								continue;
-							}
-							const start = DateTime.fromJSDate(employeePeriod.startTime).setZone(input.timezone);
-							const end = DateTime.fromJSDate(endTime).setZone(input.timezone);
-							const minutes =
-								employeePeriod.durationMinutes ??
-								Math.max(0, Math.round(end.diff(start, "minutes").minutes));
-
-							addMinutes(actualMinutesByDay, start.toISODate(), minutes);
-							intervals.push({ start, end });
-						}
-
-						for (const employeeShift of shiftsByEmployee.get(employeeId) ?? []) {
-							const interval = toShiftInterval({
-								date: employeeShift.date,
-								startTime: employeeShift.startTime,
-								endTime: employeeShift.endTime,
-								timezone: input.timezone,
-							});
-
-							if (!interval) {
-								continue;
-							}
-
-							const minutes = Math.max(
-								0,
-								Math.round(interval.end.diff(interval.start, "minutes").minutes),
-							);
-							addMinutes(scheduledMinutesByDay, interval.start.toISODate(), minutes);
-							intervals.push(interval);
-						}
-
-						intervals.sort((a, b) => a.start.toMillis() - b.start.toMillis());
-
-						const restTransitions: EmployeeScheduleComplianceInput["restTransitions"] = [];
-						for (let index = 1; index < intervals.length; index++) {
-							const previous = intervals[index - 1];
-							const current = intervals[index];
-							// The evaluator judges only transitions into the window.
-							if (current.start > previous.end) {
-								restTransitions.push({
-									fromEndIso: previous.end.toISO() ?? previous.end.toUTC().toISO() ?? "",
-									toStartIso: current.start.toISO() ?? current.start.toUTC().toISO() ?? "",
-								});
-							}
-						}
-
-						return {
+					const employees: EmployeeScheduleComplianceInput[] = employeeIds.map((employeeId) =>
+						buildEmployeeComplianceInput({
 							employeeId,
-							actualMinutesByDay,
-							scheduledMinutesByDay,
-							restTransitions,
-						};
-					});
+							shifts: shiftsByEmployee.get(employeeId) ?? [],
+							workPeriods: periodsByEmployee.get(employeeId) ?? [],
+							timezone: input.timezone,
+						}),
+					);
 
 					const evaluationResult = evaluateScheduleCompliance({
 						timezone: input.timezone,
