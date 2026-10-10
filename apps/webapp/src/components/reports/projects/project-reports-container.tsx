@@ -29,6 +29,7 @@ import { ProjectFilters } from "./project-filters";
 import { ProjectHealthAlerts } from "./project-health-alerts";
 import { ProjectHoursChart } from "./project-hours-chart";
 import { ProjectPortfolioTable } from "./project-portfolio-table";
+import { ProjectReportDetails } from "./project-report-details";
 import { ProjectSummaryCards } from "./project-summary-cards";
 import { ProjectTaskBreakdown } from "./project-task-breakdown";
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
@@ -294,6 +295,9 @@ function DetailedProjectReport({
 						project={detailedReport.project}
 						summary={detailedReport.summary}
 					/>
+
+					{/* Customer and custom fields (#820) */}
+					<ProjectReportDetails project={detailedReport.project} />
 
 					{/* Budget Progress */}
 					{detailedReport.summary.budgetHours && (

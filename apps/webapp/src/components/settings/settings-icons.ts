@@ -21,6 +21,7 @@ import {
 	IconDeviceTablet,
 	IconDroplet,
 	IconFileText,
+	IconForms,
 	IconGavel,
 	IconGitBranch,
 	IconHistory,
@@ -88,4 +89,5 @@ export const SETTINGS_ICON_MAP: Record<
 	"database-import": IconDatabaseImport,
 	receipt: IconReceipt,
 	"device-tablet": IconDeviceTablet,
+	forms: IconForms,
 };

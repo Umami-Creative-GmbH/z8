@@ -212,6 +212,18 @@ export interface PayrollExportJobFilters {
 }
 
 /**
+ * A custom field personnel identifier frozen when a job without collected work
+ * input is created (#821): the values every run and retry of the job uses.
+ */
+export interface PayrollExportJobPersonnelIdentifier {
+	customFieldId: string;
+	/** The period's last day, the date the values were read as of. */
+	asOf: string;
+	/** Values by employee ID; an employee without a value is absent. */
+	values: Record<string, string>;
+}
+
+/**
  * Payroll export jobs
  * Tracks export requests with filters and status
  */
@@ -231,6 +243,9 @@ export const payrollExportJob = pgTable(
 
 		// Export filters (stored as JSON for flexibility)
 		filters: jsonb("filters").$type<PayrollExportJobFilters>().notNull(),
+
+		// The frozen custom field identifier of a job without collected input (#821)
+		personnelIdentifier: jsonb("personnel_identifier").$type<PayrollExportJobPersonnelIdentifier>(),
 
 		// Execution mode
 		isAsync: boolean("is_async").default(false).notNull(),
@@ -264,6 +279,8 @@ export const payrollExportJob = pgTable(
 		index("payrollExportJob_createdAt_idx").on(table.createdAt),
 		// Composite index for finding pending async jobs
 		index("payrollExportJob_status_isAsync_idx").on(table.status, table.isAsync),
+		// The target of organization-scoped references: a reimbursement names its payroll run (#853).
+		uniqueIndex("payrollExportJob_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
 

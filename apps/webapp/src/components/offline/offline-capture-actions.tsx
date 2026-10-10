@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
  */
 export type ClockCaptureMode = "server" | "local-queue" | "local-review";
 
+// Long German labels wrap inside the button instead of leaving the narrow clock popover (#846).
+export const WRAPPING_LABEL = "h-auto min-h-9 max-w-full whitespace-normal";
+
 /** Both endpoints stay available without inventing an active server period. */
 export function ClockCaptureControls({
 	mode,
@@ -42,12 +45,22 @@ export function ClockCaptureControls({
 						)}
 			</p>
 			<div className="flex flex-wrap gap-2">
-				<Button variant="outline" disabled={disabled} onClick={() => void onClockIn()}>
+				<Button
+					variant="outline"
+					className={WRAPPING_LABEL}
+					disabled={disabled}
+					onClick={() => void onClockIn()}
+				>
 					{queued
 						? t("common:offline.capture.queueStart", "Save clock-in")
 						: t("common:offline.capture.start", "Save clock-in for review")}
 				</Button>
-				<Button variant="outline" disabled={disabled} onClick={() => void onClockOut()}>
+				<Button
+					variant="outline"
+					className={WRAPPING_LABEL}
+					disabled={disabled}
+					onClick={() => void onClockOut()}
+				>
 					{queued
 						? t("common:offline.capture.queueEnd", "Save clock-out")
 						: t("common:offline.capture.end", "Save clock-out for review")}

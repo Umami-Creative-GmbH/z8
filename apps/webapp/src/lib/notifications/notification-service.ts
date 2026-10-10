@@ -212,7 +212,10 @@ export async function deliverNotificationToChannel(
 						url: params.actionUrl,
 					},
 				},
-				options.durable ? { throwOnError: true } : undefined,
+				{
+					organizationId: params.organizationId,
+					...(options.durable ? { throwOnError: true } : {}),
+				},
 			);
 			if (options.durable && result.failed > 0) throw new Error("push_delivery_failed");
 			if (options.durable && result.sent === 0) return "unavailable";
@@ -372,7 +375,9 @@ export async function createNotification(
 			};
 
 			// Fire and forget - don't await to avoid blocking
-			void sendPushToUser(params.userId, pushPayload).catch((error) => {
+			void sendPushToUser(params.userId, pushPayload, {
+				organizationId: params.organizationId,
+			}).catch((error) => {
 				logger.error(
 					{ error, userId: params.userId, type: params.type },
 					"Failed to send push notification",

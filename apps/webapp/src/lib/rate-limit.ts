@@ -139,6 +139,12 @@ const passwordResetConfig = parseRateLimitEnv(
 );
 const apiConfig = parseRateLimitEnv(env.RATE_LIMIT_API, 100, 60);
 const exportConfig = parseRateLimitEnv(env.RATE_LIMIT_EXPORT, 5, 3600);
+// ICS feeds (#991): calendar apps poll about hourly, and one team feed URL may be
+// subscribed by many people. Hits are counted per feed, not per IP, because
+// Google and Microsoft fetch every subscriber's feed from shared addresses.
+const icsFeedConfig = { requests: 120, seconds: 3600 };
+// Unknown feed secrets are counted per client IP.
+const icsFeedMissConfig = { requests: 30, seconds: 600 };
 
 const limiters = {
 	/** Auth endpoints: configurable via RATE_LIMIT_AUTH (default: 10 requests per 60 seconds) */
@@ -205,6 +211,26 @@ const limiters = {
 		prefix: "ratelimit:kiosk-pin",
 		analytics: false,
 	}),
+	/** ICS feed fetches, keyed by feed id (120 per hour) */
+	icsFeed: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(
+			icsFeedConfig.requests,
+			`${icsFeedConfig.seconds} s`,
+		),
+		prefix: "ratelimit:ics-feed",
+		analytics: false,
+	}),
+	/** ICS feed fetches with an unknown secret, keyed by client IP (30 per 10 minutes) */
+	icsFeedMiss: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(
+			icsFeedMissConfig.requests,
+			`${icsFeedMissConfig.seconds} s`,
+		),
+		prefix: "ratelimit:ics-feed-miss",
+		analytics: false,
+	}),
 };
 
 export type RateLimitEndpoint = keyof typeof limiters;
@@ -238,6 +264,14 @@ export const RATE_LIMIT_CONFIGS = {
 	},
 	kioskPairing: { maxRequests: 10, windowSeconds: 600 },
 	kioskPinAttempts: { maxRequests: 30, windowSeconds: 60 },
+	icsFeed: {
+		maxRequests: icsFeedConfig.requests,
+		windowSeconds: icsFeedConfig.seconds,
+	},
+	icsFeedMiss: {
+		maxRequests: icsFeedMissConfig.requests,
+		windowSeconds: icsFeedMissConfig.seconds,
+	},
 };
 
 /**

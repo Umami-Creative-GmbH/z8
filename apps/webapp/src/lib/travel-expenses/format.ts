@@ -1,5 +1,6 @@
 import { parseInstant, parsePlainDate, parsePlainTimeMinute } from "@/lib/datetime/temporal-core";
 import { signedAmount } from "@/lib/travel-expenses/money";
+import { isWholeMonth } from "@/lib/travel-expenses/payroll-run-period";
 
 /**
  * Locale formatting of travel expense values, shared by the report pages, the
@@ -51,6 +52,22 @@ export function formatPlainDateRange(locale: string, start: string | null, end: 
 	if (start) return formatPlainDate(locale, start);
 	if (end) return formatPlainDate(locale, end);
 	return null;
+}
+
+/**
+ * A payroll period (#853): the month ("October 2026") when it is one whole
+ * calendar month, else its first and last day.
+ */
+export function formatPayrollPeriod(locale: string, start: string, end: string): string {
+	try {
+		const first = parsePlainDate(start);
+		if (isWholeMonth(first, parsePlainDate(end))) {
+			return first.toLocaleString(locale, { month: "long", year: "numeric" });
+		}
+	} catch {
+		// Not dates: shown as stored below.
+	}
+	return formatPlainDateRange(locale, start, end) ?? `${start} – ${end}`;
 }
 
 /**

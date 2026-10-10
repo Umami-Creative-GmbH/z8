@@ -27,6 +27,8 @@ import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { billableChoice } from "./billable-choice";
 import { BillableWorkSwitch } from "./billable-work-switch";
 import { BreakInProgressNotice } from "./break-in-progress-notice";
+import { toastClockCommandError } from "./clock-command-error-toast";
+import { ClockConnectionNotice } from "./clock-connection-notice";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
@@ -93,6 +95,8 @@ function ClockOutNotesView({
 
 interface ClockControlsViewProps {
 	captureMode: ClockCaptureMode;
+	/** The last clock command needs a connection in this organization (#845). */
+	connectionRequired: boolean;
 	onClockIn: () => Promise<void>;
 	onClockOut: () => Promise<void>;
 	activeStartTime: string | Date | null;
@@ -129,6 +133,7 @@ interface ClockControlsViewProps {
 
 function ClockControlsView({
 	captureMode,
+	connectionRequired,
 	onClockIn,
 	onClockOut,
 	activeStartTime,
@@ -236,6 +241,7 @@ function ClockControlsView({
 			{(!isClockedIn || isLocalCapture) && (
 				<WorkLocationSelector value={workLocationType} onChange={onWorkLocationChange} t={t} />
 			)}
+			<ClockConnectionNotice show={connectionRequired} />
 			<ClockActionButtons
 				captureMode={captureMode}
 				onClockIn={onClockIn}
@@ -275,6 +281,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		isUpdatingNotes,
 		isMutating,
 		captureMode,
+		connectionRequired,
 	} = useTimeClock();
 	const { uiState, dispatch, assignedProjects, availableWorkCategories } = useTimeClockPopoverState(
 		{ employeeId, isClockedIn },
@@ -316,7 +323,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 					})
 				: result.error || t("timeTracking.errors.clockInFailed", "Failed to clock in");
 
-			toast.error(errorMessage, {
+			toastClockCommandError(result, errorMessage, {
 				description: holidayName
 					? t(
 							"timeTracking.errors.holidayBlockedDesc",
@@ -378,7 +385,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 					result.error ||
 					t("timeTracking.errors.clockOutFailed", "Failed to clock out");
 
-			toast.error(errorMessage, {
+			toastClockCommandError(result, errorMessage, {
 				description: holidayName
 					? t(
 							"timeTracking.errors.holidayBlockedDesc",
@@ -431,6 +438,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		dispatch,
 		handleSaveNotes,
 		captureMode,
+		connectionRequired,
 		handleClockIn,
 		handleClockOut,
 		activeWorkPeriod,
@@ -462,6 +470,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 		dispatch,
 		handleSaveNotes,
 		captureMode,
+		connectionRequired,
 		handleClockIn,
 		handleClockOut,
 		activeWorkPeriod,
@@ -527,6 +536,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 						) : (
 							<ClockControlsView
 								captureMode={captureMode}
+								connectionRequired={connectionRequired}
 								onClockIn={handleClockIn}
 								onClockOut={handleClockOut}
 								activeStartTime={activeWorkPeriod?.startTime ?? null}

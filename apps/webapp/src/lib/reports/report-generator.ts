@@ -27,6 +27,8 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
+import { readCustomFieldReportValues } from "@/lib/organization/custom-fields/report-reads";
+import type { CustomFieldViewer } from "@/lib/organization/custom-fields/values";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
@@ -135,6 +137,13 @@ export async function generateEmployeeReport(
 	startDate: Date,
 	endDate: Date,
 	calendarRange?: ReportCalendarRange,
+	options: {
+		/**
+		 * Whose base role decides which custom fields the report shows (#820);
+		 * without one the report shows none.
+		 */
+		customFieldViewer?: CustomFieldViewer;
+	} = {},
 ): Promise<ReportData> {
 	// Fetch employee info
 	const emp = await db.query.employee.findFirst({
@@ -153,7 +162,7 @@ export async function generateEmployeeReport(
 
 	// Aggregate data in parallel
 	const reportRange = getReportRange(startDate, endDate, calendarRange);
-	const [periods, absences, homeOffice, expectedHours] = await Promise.all([
+	const [periods, absences, homeOffice, expectedHours, customFields] = await Promise.all([
 		loadCompletedWorkPeriods(employeeId, organizationId, reportRange),
 		aggregateAbsences(
 			employeeId,
@@ -178,6 +187,14 @@ export async function generateEmployeeReport(
 				calendarRange?.timezone ?? "utc",
 			),
 		),
+		// Values as of the period's last day in the report's (organization) zone.
+		readCustomFieldReportValues(db, {
+			organizationId,
+			entity: "employee",
+			recordIds: [employeeId],
+			asOf: parsePlainDate(reportRange.endDate),
+			viewer: options.customFieldViewer ?? { kind: "level", level: null },
+		}),
 	]);
 	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
 
@@ -208,6 +225,7 @@ export async function generateEmployeeReport(
 			email: emp.user.email,
 			contractType: emp.contractType,
 			currentHourlyRate: emp.currentHourlyRate,
+			customFields: customFields.byRecord[employeeId] ?? [],
 		},
 		period: {
 			startDate: calendarRange?.startDate ?? format(startDate, "yyyy-MM-dd"),

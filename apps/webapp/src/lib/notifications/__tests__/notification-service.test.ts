@@ -295,6 +295,24 @@ describe("Notification Service", () => {
 				.email,
 		).toBe(true);
 	});
+	test("an expense officer's payroll run notice is in-app only, like the ready-for-reimbursement notice", async () => {
+		mockFindMany.mockImplementation(async () => []);
+		const { loadNotificationChannelPreferences } = await import("../notification-service");
+		expect(
+			await loadNotificationChannelPreferences(
+				"user-1",
+				"travel_expense_payroll_run_awaiting_confirmation",
+			),
+		).toEqual({
+			in_app: true,
+			push: false,
+			email: false,
+			teams: false,
+			telegram: false,
+			discord: false,
+			slack: false,
+		});
+	});
 	test.each([
 		"missed_clock_in_reminder",
 		"forgotten_clock_out_reminder",
@@ -407,8 +425,16 @@ describe("Notification Service", () => {
 				message: "Test message",
 			});
 
-			// Push is fire-and-forget, so we just check it was called
+			// Push is fire-and-forget; one call covers web and native push, and
+			// carries the organization the native tap switches to (#843).
 			expect(mockIsPushAvailable).toHaveBeenCalled();
+			expect(mockSendPushToUser).toHaveBeenCalledWith(
+				"user-1",
+				expect.objectContaining({
+					data: expect.objectContaining({ type: "approval_request_submitted" }),
+				}),
+				{ organizationId: "org-1" },
+			);
 		});
 
 		test("does not send push when push preference is disabled", async () => {
@@ -428,7 +454,8 @@ describe("Notification Service", () => {
 				message: "Test message",
 			});
 
-			// sendPushToUser should not be called when preference is disabled
+			// The push preference governs both channels: sendPushToUser is the
+			// only way to web and native push, so neither is reached (#843).
 			expect(mockSendPushToUser).not.toHaveBeenCalled();
 		});
 	});

@@ -44,6 +44,7 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	travel_expense_partially_reimbursed: "/travel-expenses/",
 	travel_expense_recovery_recorded: "/travel-expenses/",
 	travel_expense_ready_for_reimbursement: "/travel-expenses/",
+	travel_expense_payroll_run_awaiting_confirmation: "/travel-expenses/",
 	missed_clock_in_reminder: "/time-tracking",
 	forgotten_clock_out_reminder: "/time-tracking",
 	break_due_reminder: "/time-tracking",

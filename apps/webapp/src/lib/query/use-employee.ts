@@ -25,6 +25,7 @@ import {
 	getEmployeeEffectiveScheduleDetails,
 	getWorkPolicies,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import type { CreateRateHistory, UpdateEmployee } from "@/lib/validations/employee";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
@@ -51,6 +52,9 @@ type ManagerRelation = {
 export type EmployeeDetail = EmployeeDetailRecord & {
 	managers?: ManagerRelation[];
 };
+
+/** An employee detail save: the form's fields plus its custom field values (#818, real employees only). */
+type EmployeeDetailUpdate = UpdateEmployee & { customFieldValues?: CustomFieldValuesInput };
 
 interface UseEmployeeOptions {
 	employeeId: string;
@@ -264,7 +268,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 	// Update employee mutation
 	const updateMutation = useMutation({
-		mutationFn: async (data: UpdateEmployee) => {
+		mutationFn: async (input: EmployeeDetailUpdate) => {
+			const { customFieldValues, ...data } = input;
 			const isAcceptedDraft =
 				employeeQuery.data?.kind === "invitationDraft" &&
 				Boolean(employeeQuery.data.realEmployeeId);
@@ -279,7 +284,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 
 			return employeeQuery.data?.kind === "invitationDraft"
 				? updateEmployeeInvitationDraft(employeeId, data)
-				: updateEmployee(employeeId, data);
+				: updateEmployee(employeeId, data, customFieldValues);
 		},
 		onSuccess: (result) => {
 			if (result.success) {
@@ -290,6 +295,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.employees.all,
 				});
+				queryClient.invalidateQueries({ queryKey: queryKeys.customFields.all });
 			}
 		},
 	});

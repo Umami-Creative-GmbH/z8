@@ -66,7 +66,8 @@ export type SettingsIconName =
 	| "brand-telegram"
 	| "database-import"
 	| "receipt"
-	| "device-tablet";
+	| "device-tablet"
+	| "forms";
 
 export interface SettingsEntry {
 	id: string;
@@ -476,6 +477,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "projectsEnabled",
+	},
+	{
+		id: "custom-fields",
+		titleKey: "settings.customFields.title",
+		titleDefault: "Custom fields",
+		descriptionKey: "settings.customFields.description",
+		descriptionDefault: "Your own fields on employees, projects and customers",
+		href: "/settings/custom-fields",
+		icon: "forms",
+		minimumTier: "orgAdmin",
+		group: "administration",
 	},
 	{
 		id: "billable-time",

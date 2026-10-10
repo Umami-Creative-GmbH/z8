@@ -273,6 +273,8 @@ describe("production auth plugin composition with installed Better Auth", () => 
 			"z8-auth-mutation-coordination",
 			"api-key",
 			"z8-sso-enforcement",
+			"z8-enterprise-identity-invitation-resend",
+			"z8-store-app-session",
 			"next-cookies",
 			"z8-scim-callback-models",
 		]);

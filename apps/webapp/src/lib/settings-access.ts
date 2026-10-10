@@ -37,6 +37,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/position-capture",
 	"/settings/personnel-files",
 	"/settings/kiosks",
+	"/settings/custom-fields",
 ] as const;
 
 export type SettingsAccessMembershipRole = OrganizationRoleValue;

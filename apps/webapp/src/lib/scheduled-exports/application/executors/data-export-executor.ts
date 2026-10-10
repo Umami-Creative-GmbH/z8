@@ -24,7 +24,9 @@ const VALID_CATEGORIES = [
 	// Work periods carry the project and task columns (#876).
 	"work_periods",
 	"absences",
+	// Projects and customers carry their custom field columns (#820).
 	"projects",
+	"customers",
 	"holidays",
 ] as const;
 

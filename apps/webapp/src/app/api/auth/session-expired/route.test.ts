@@ -27,4 +27,17 @@ describe("session-expired redirects", () => {
 		expect(redirect.searchParams.get("callbackUrl")).toBe("/settings?tab=security");
 		expect(response.cookies.get("better-auth.session_token")?.value).toBe("");
 	});
+
+	// Browsers ignore a __Secure- cookie written without Secure, deletions included. A
+	// revoked HTTPS session would otherwise loop between sign-in and this route.
+	it("expires __Secure- session cookies with the Secure attribute", async () => {
+		const response = await GET(
+			new NextRequest("https://app.example/api/auth/session-expired?locale=en"),
+		);
+		const secureDeletion = response.headers
+			.getSetCookie()
+			.find((entry) => entry.startsWith("__Secure-better-auth.session_token="));
+		expect(secureDeletion).toMatch(/;\s*Secure/i);
+		expect(secureDeletion).toMatch(/Expires=Thu, 01 Jan 1970/i);
+	});
 });

@@ -125,8 +125,28 @@ export const queryKeys = {
 			["travel-expenses", "reports", reportId, "adjustments"] as const,
 		legacyConversion: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "legacy-conversion"] as const,
+		/** Every payroll run query: the runs and payroll run readiness. */
+		payrollRuns: () => ["travel-expenses", "payroll-runs"] as const,
 		/** The payroll access holder's unconfirmed payroll runs (#852). */
 		scopedPayrollRuns: () => ["travel-expenses", "payroll-runs", "scoped"] as const,
+		/** The unconfirmed payroll runs the reader may confirm as paid (#853). */
+		payrollRunsToConfirm: () => ["travel-expenses", "payroll-runs", "to-confirm"] as const,
+		/** What a payroll run of the period, format and employees would not carry (#854). */
+		payrollRunReadiness: (request: {
+			startDate: string;
+			endDate: string;
+			formatId: string;
+			employeeIds?: readonly string[];
+		}) =>
+			[
+				"travel-expenses",
+				"payroll-runs",
+				"readiness",
+				request.startDate,
+				request.endDate,
+				request.formatId,
+				request.employeeIds?.join(",") ?? "scope",
+			] as const,
 	},
 
 	// Employees
@@ -333,6 +353,13 @@ export const queryKeys = {
 		all: ["shift-requests"] as const,
 		pending: (approverId: string) => ["shift-requests", "pending", approverId] as const,
 		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
+	},
+
+	// Custom field values (#818): the "Custom fields" section of a record (null = being created)
+	customFields: {
+		all: ["custom-fields"] as const,
+		section: (entity: string, recordId: string | null) =>
+			["custom-fields", "section", entity, recordId ?? "new"] as const,
 	},
 
 	// Customers

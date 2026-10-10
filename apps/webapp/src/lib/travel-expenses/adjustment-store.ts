@@ -34,6 +34,7 @@ import {
 } from "./adjustment-read";
 import { copyAllowanceOverrides } from "./allowance-override-copy";
 import { loadTravelExpenseReportExportState } from "./export-store";
+import { isCarriedByPayrollRun } from "./payroll-run-inclusion-read";
 import type { ReportOwner } from "./report-store";
 import { hasRecordedSettlement } from "./settlement-store";
 
@@ -298,19 +299,24 @@ export async function createTravelExpenseAdjustment(
 				});
 		const approved = baseline?.status === "ok";
 		const source = { type: "report" as const, id: original.id };
-		const [exportState, reimbursed] = approved
+		const [exportState, reimbursed, inPayrollRun] = approved
 			? await Promise.all([
 					loadTravelExpenseReportExportState(tx, {
 						organizationId: owner.organizationId,
 						reportId: original.id,
 					}),
 					hasRecordedSettlement(tx, { organizationId: owner.organizationId, source }),
+					isCarriedByPayrollRun(tx, {
+						organizationId: owner.organizationId,
+						reportIds: [original.id],
+					}),
 				])
-			: [null, false];
+			: [null, false, false];
 		const eligibility = adjustmentEligibility({
 			approved,
 			isAdjustment,
-			exported: exportState?.exported ?? false,
+			// A payroll run's file carries it like an export (#853).
+			exported: (exportState?.exported ?? false) || inPayrollRun,
 			reimbursed,
 		});
 		if (!eligibility.ok) return { status: "ineligible", reason: eligibility.reason } as const;
@@ -469,15 +475,19 @@ export async function loadOwnReportAdjustments(
 				})
 			: null;
 	const approved = baseline?.status === "ok";
-	const [exportState, reimbursed] = approved
+	const [exportState, reimbursed, inPayrollRun] = approved
 		? await Promise.all([
 				loadTravelExpenseReportExportState(database, scope),
 				hasRecordedSettlement(database, {
 					organizationId: owner.organizationId,
 					source: { type: "report", id: report.id },
 				}),
+				isCarriedByPayrollRun(database, {
+					organizationId: owner.organizationId,
+					reportIds: [report.id],
+				}),
 			])
-		: [null, false];
+		: [null, false, false];
 	const links = await database
 		.select({
 			reportId: travelExpenseReportAdjustment.reportId,
@@ -531,7 +541,7 @@ export async function loadOwnReportAdjustments(
 		eligibility: adjustmentEligibility({
 			approved,
 			isAdjustment: false,
-			exported: exportState?.exported ?? false,
+			exported: (exportState?.exported ?? false) || inPayrollRun,
 			reimbursed,
 		}),
 		baseline: baseline?.status === "ok" ? baseline.baseline : null,

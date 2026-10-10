@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { EmployeeEmailLabel } from "@/components/settings/kiosk/employee-email-label";
+import { MissingRequiredValuesBadge } from "@/components/settings/custom-fields/custom-field-values-section";
 import { Badge } from "@/components/ui/badge";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
@@ -65,6 +66,9 @@ export function createEmployeeColumns({
 							<div className="truncate text-sm text-muted-foreground">
 								<EmployeeEmailLabel email={row.original.user.email} />
 							</div>
+							{row.original.kind === "employee" && row.original.missingRequiredCustomFields && (
+								<MissingRequiredValuesBadge className="mt-1" />
+							)}
 						</div>
 					</div>
 				);

@@ -8,12 +8,14 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	deletePersonioCredentialsAction,
+	type PayrollIdentifierFieldOption,
 	type PersonioConfigResult,
 	savePersonioConfigAction,
 	savePersonioCredentialsAction,
@@ -57,11 +59,18 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { PersonioConfig } from "@/lib/payroll-export";
+import {
+	customFieldIdentifierItems,
+	identifierFromSelectValue,
+	identifierSelectValue,
+} from "./payroll-identifier-options";
 
 interface PersonioConfigFormProps {
 	organizationId: string;
 	initialConfig?: PersonioConfigResult | null;
 	onConfigSaved?: () => void;
+	/** Employee custom fields that can be the match key (#821). */
+	identifierFields?: readonly PayrollIdentifierFieldOption[];
 }
 
 const DEFAULT_CONFIG: PersonioConfig = {
@@ -77,6 +86,7 @@ export function PersonioConfigForm({
 	organizationId,
 	initialConfig,
 	onConfigSaved,
+	identifierFields = [],
 }: PersonioConfigFormProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -176,6 +186,7 @@ export function PersonioConfigForm({
 				isPending={isPending}
 				run={run}
 				onConfigSaved={onConfigSaved}
+				identifierFields={identifierFields}
 			/>
 		</div>
 	);
@@ -458,6 +469,7 @@ function PersonioSettingsCard({
 	isPending,
 	run,
 	onConfigSaved,
+	identifierFields,
 }: {
 	t: Translate;
 	organizationId: string;
@@ -465,6 +477,7 @@ function PersonioSettingsCard({
 	isPending: boolean;
 	run: RunTransition;
 	onConfigSaved?: () => void;
+	identifierFields: readonly PayrollIdentifierFieldOption[];
 }) {
 	const [isTesting, setIsTesting] = useState(false);
 	const form = useForm({
@@ -494,6 +507,10 @@ function PersonioSettingsCard({
 					);
 			}),
 	});
+	const identifierFieldId = useStore(
+		form.store,
+		(state) => state.values.employeeMatchCustomFieldId,
+	);
 	const testConnection = async () => {
 		setIsTesting(true);
 		const result = await testPersonioConnectionAction(organizationId).catch(
@@ -547,12 +564,14 @@ function PersonioSettingsCard({
 									)}
 								</Label>
 								<Select
-									value={field.state.value}
-									onValueChange={(value) =>
-										field.handleChange(value as "employeeNumber" | "email")
-									}
+									value={identifierSelectValue(field.state.value, identifierFieldId)}
+									onValueChange={(value) => {
+										const next = identifierFromSelectValue(value);
+										form.setFieldValue("employeeMatchCustomFieldId", next.customFieldId);
+										field.handleChange(next.choice as PersonioConfig["employeeMatchStrategy"]);
+									}}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="employeeMatchStrategy">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -568,6 +587,7 @@ function PersonioSettingsCard({
 												"Email Address",
 											)}
 										</SelectItem>
+										{customFieldIdentifierItems(t, identifierFields, identifierFieldId)}
 									</SelectContent>
 								</Select>
 							</div>

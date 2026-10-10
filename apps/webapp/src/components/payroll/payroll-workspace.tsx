@@ -15,12 +15,12 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { Temporal } from "temporal-polyfill";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type React from "react";
 import { useEffect, useReducer, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	dismissPayrollBlockerAction,
 	exportPayrollPdfAction,
@@ -74,6 +74,7 @@ import {
 } from "@/lib/payroll-workspace/blocker-identity";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { queryKeys } from "@/lib/query/keys";
+import { PayrollRunReadinessCard } from "./payroll-run-readiness-card";
 import { PayrollRunsCard } from "./payroll-runs-card";
 
 type PayrollTranslate = ReturnType<typeof useTranslate>["t"];
@@ -593,9 +594,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					? t("payroll.export.queued", "Payroll export queued")
 					: t("payroll.export.completed", "Payroll export completed"),
 			);
-			// A payroll run may now include expense reports (#852).
+			// A payroll run may now include expense reports (#852), which changes readiness (#854).
 			void queryClient.invalidateQueries({
-				queryKey: queryKeys.travelExpenses.scopedPayrollRuns(),
+				queryKey: queryKeys.travelExpenses.payrollRuns(),
 			});
 		});
 	}
@@ -667,6 +668,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				onClearBlocker={clearPayrollBlocker}
 				t={t}
 			/>
+			{filtersHaveNoMatches ? null : (
+				<PayrollRunReadinessCard request={{ ...request, formatId }} />
+			)}
 			<PayrollRunsCard />
 			<EmployeeTotalsCard employees={displayedEmployees} t={t} />
 		</div>
@@ -1466,6 +1470,12 @@ function PayrollBlockersAlert({
 								"Open approvals",
 							);
 							href = "/approvals/inbox?types=absence_entry";
+							break;
+						case "missing_identifier":
+							// The configured custom field identifier has no value (#821).
+							blockerType = t("payroll.blockers.missingIdentifier", "Missing identifier");
+							actionLabel = t("payroll.blockers.openEmployee", "Open employee");
+							href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
 							break;
 					}
 

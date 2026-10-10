@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { OwnCustomFieldsCard } from "@/components/settings/custom-fields/own-custom-fields-card";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
@@ -7,6 +8,7 @@ import { db } from "@/db";
 import { userSettings } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
+import { getOwnCustomFieldValues } from "../custom-fields/value-actions";
 import {
 	getCurrentTimezone,
 	getTimeFormat,
@@ -18,13 +20,14 @@ import {
 
 export default async function ProfilePage() {
 	// Parallelize auth, timezone, and translation fetches
-	const [authContext, currentTimezone, currentWeekStartDay, currentTimeFormat, t] =
+	const [authContext, currentTimezone, currentWeekStartDay, currentTimeFormat, t, ownCustomFields] =
 		await Promise.all([
 			requireUser(),
 			getCurrentTimezone(),
 			getWeekStartDay(),
 			getTimeFormat(),
 			getTranslate(),
+			getOwnCustomFieldValues(),
 		]);
 	const settings = await db.query.userSettings.findFirst({
 		where: eq(userSettings.userId, authContext.user.id),
@@ -48,6 +51,8 @@ export default async function ProfilePage() {
 				</div>
 
 				<ProfileForm user={user} />
+
+				{ownCustomFields.success ? <OwnCustomFieldsCard section={ownCustomFields.data} /> : null}
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings

@@ -40,6 +40,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"implementation-checklist/page.tsx",
 	"personnel-files/page.tsx",
 	"kiosks/page.tsx",
+	"custom-fields/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -135,6 +136,7 @@ describe("org-admin settings route access", () => {
 			"/settings/position-capture",
 			"/settings/personnel-files",
 			"/settings/kiosks",
+			"/settings/custom-fields",
 		]);
 	});
 

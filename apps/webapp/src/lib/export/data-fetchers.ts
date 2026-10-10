@@ -2,7 +2,7 @@
  * Data fetchers for export functionality
  * This file contains server-only code that accesses the database
  */
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -34,12 +34,22 @@ import {
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db";
-import { projectTask } from "@/db/schema";
+import { customer, projectTask } from "@/db/schema";
 import { env } from "@/env";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { type PlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import {
+	type CustomFieldReportColumn,
+	readCustomFieldReportValues,
+} from "@/lib/organization/custom-fields/report-reads";
+import {
+	type CustomFieldReportValue,
+	customFieldReportText,
+} from "@/lib/organization/custom-fields/report-values";
+import { type CustomFieldViewer, customFieldsToday } from "@/lib/organization/custom-fields/values";
 import { attachExportPositionStamps } from "@/lib/time-tracking/position-capture/export-positions";
+import type { CsvTable } from "./formatters/csv-formatter";
 
 // Import types for internal use
 import type { ExportCategory } from "./types";
@@ -62,10 +72,89 @@ export { CATEGORY_LABELS, EXPORT_CATEGORIES, type ExportCategory } from "./types
 const logger = createLogger("ExportDataFetchers");
 
 /**
- * Fetch all employees for an organization
- * Format: JSON (structured data with relations)
+ * How the export sees custom fields (#820): through the requester's base role
+ * as it is now (for a scheduled export, its creator's role when the run
+ * starts), with values as of today in the organization's business zone. A
+ * requester whose employee record can't be found sees no custom fields.
+ * Resolved once per requester and organization: the categories of one export
+ * share it.
  */
-export async function fetchEmployees(organizationId: string) {
+function exportCustomFieldView(
+	organizationId: string,
+	requester: ExportRequester,
+): Promise<CustomFieldView> {
+	const byOrganization =
+		customFieldViews.get(requester) ?? new Map<string, Promise<CustomFieldView>>();
+	customFieldViews.set(requester, byOrganization);
+	const cached = byOrganization.get(organizationId);
+	if (cached) return cached;
+	const view = readCustomFieldView(organizationId, requester);
+	byOrganization.set(organizationId, view);
+	return view;
+}
+
+type CustomFieldView = { viewer: CustomFieldViewer; asOf: PlainDate };
+
+const customFieldViews = new WeakMap<ExportRequester, Map<string, Promise<CustomFieldView>>>();
+
+async function readCustomFieldView(
+	organizationId: string,
+	requester: ExportRequester,
+): Promise<CustomFieldView> {
+	const [requesterEmployee, asOf] = await Promise.all([
+		db.query.employee.findFirst({
+			where: and(
+				eq(employee.id, requester.requestedByEmployeeId),
+				eq(employee.organizationId, organizationId),
+			),
+			columns: { userId: true },
+		}),
+		customFieldsToday(db, organizationId),
+	]);
+	return {
+		viewer: requesterEmployee
+			? { kind: "actor", userId: requesterEmployee.userId }
+			: { kind: "level", level: null },
+		asOf,
+	};
+}
+
+/** Custom field values as export cells: booleans as true/false, no value as empty. */
+function customFieldCells(values: readonly CustomFieldReportValue[]) {
+	return Object.fromEntries(
+		values.map((value) => [
+			customFieldColumnKey(value.fieldId),
+			customFieldReportText(value, { yes: "true", no: "false" }),
+		]),
+	);
+}
+
+const customFieldColumnKey = (fieldId: string) => `customField:${fieldId}`;
+
+/** One JSON property per column, in column order: `customField:<name>` -> value or null. */
+function customFieldProperties(
+	columns: readonly CustomFieldReportColumn[],
+	values: readonly CustomFieldReportValue[],
+) {
+	const valueByField = new Map(values.map((value) => [value.fieldId, value.value]));
+	return Object.fromEntries(
+		columns.map((column) => [
+			`customField:${column.name}`,
+			valueByField.get(column.fieldId) ?? null,
+		]),
+	);
+}
+
+/**
+ * Fetch all employees for an organization
+ * Format: JSON (structured data with relations). After its built-in
+ * properties, each row carries one property per active employee custom field
+ * the requester sees (#820), in the fields' defined order, keyed
+ * `customField:<field name>` (null without a value). The prefix keeps the keys
+ * apart from the built-in ones and never integer-like, so JSON keeps them in
+ * field order.
+ */
+export async function fetchEmployees(organizationId: string, requester: ExportRequester) {
 	logger.info({ organizationId }, "Fetching employees for export");
 
 	const employees = await db.query.employee.findMany({
@@ -101,6 +190,15 @@ export async function fetchEmployees(organizationId: string) {
 				})
 			: [];
 
+	const { viewer, asOf } = await exportCustomFieldView(organizationId, requester);
+	const customFields = await readCustomFieldReportValues(db, {
+		organizationId,
+		entity: "employee",
+		recordIds: employeeIds,
+		asOf,
+		viewer,
+	});
+
 	logger.info({ count: employees.length }, "Fetched employees");
 
 	return {
@@ -121,6 +219,7 @@ export async function fetchEmployees(organizationId: string) {
 			email: emp.user?.email,
 			name: emp.user?.name,
 			timezone: emp.userSettings?.timezone,
+			...customFieldProperties(customFields.columns, customFields.byRecord[emp.id] ?? []),
 		})),
 		managerRelations: relevantManagerRelations.map((mr) => ({
 			employeeId: mr.employeeId,
@@ -165,6 +264,137 @@ export async function fetchTeams(organizationId: string) {
 			canApproveTeamRequests: p.canApproveTeamRequests,
 		})),
 	};
+}
+
+/**
+ * Fetch all projects of an organization (#820)
+ * Format: CSV table. Built-in columns, then one column per active project
+ * custom field the requester sees, labelled with the field name, in order.
+ */
+export async function fetchProjects(
+	organizationId: string,
+	requester: ExportRequester,
+): Promise<CsvTable> {
+	logger.info({ organizationId }, "Fetching projects for export");
+
+	const rows = await db
+		.select({ project, customerName: customer.name })
+		.from(project)
+		.leftJoin(
+			customer,
+			and(eq(customer.id, project.customerId), eq(customer.organizationId, organizationId)),
+		)
+		.where(eq(project.organizationId, organizationId))
+		.orderBy(asc(project.name));
+	const { viewer, asOf } = await exportCustomFieldView(organizationId, requester);
+	const customFields = await readCustomFieldReportValues(db, {
+		organizationId,
+		entity: "project",
+		recordIds: rows.map((row) => row.project.id),
+		asOf,
+		viewer,
+	});
+
+	logger.info({ count: rows.length }, "Fetched projects");
+
+	return {
+		format: "csv-table",
+		columns: [
+			...[
+				"id",
+				"name",
+				"description",
+				"status",
+				"customerId",
+				"customerName",
+				"budgetHours",
+				"deadline",
+				"isActive",
+				"createdAt",
+			].map((key) => ({ key, header: key })),
+			...customFieldColumns(customFields.columns),
+		],
+		rows: rows.map(({ project: p, customerName }) => ({
+			id: p.id,
+			name: p.name,
+			description: p.description,
+			status: p.status,
+			customerId: customerName === null ? null : p.customerId,
+			customerName,
+			budgetHours: p.budgetHours === null ? null : Number(p.budgetHours),
+			deadline: p.deadline,
+			isActive: p.isActive,
+			createdAt: p.createdAt,
+			...customFieldCells(customFields.byRecord[p.id] ?? []),
+		})),
+	};
+}
+
+/**
+ * Fetch all customers of an organization (#820)
+ * Format: CSV table. Built-in columns, then one column per active customer
+ * custom field the requester sees, labelled with the field name, in order.
+ */
+export async function fetchCustomers(
+	organizationId: string,
+	requester: ExportRequester,
+): Promise<CsvTable> {
+	logger.info({ organizationId }, "Fetching customers for export");
+
+	const customers = await db
+		.select()
+		.from(customer)
+		.where(eq(customer.organizationId, organizationId))
+		.orderBy(asc(customer.name));
+	const { viewer, asOf } = await exportCustomFieldView(organizationId, requester);
+	const customFields = await readCustomFieldReportValues(db, {
+		organizationId,
+		entity: "customer",
+		recordIds: customers.map((row) => row.id),
+		asOf,
+		viewer,
+	});
+
+	logger.info({ count: customers.length }, "Fetched customers");
+
+	return {
+		format: "csv-table",
+		columns: [
+			...[
+				"id",
+				"name",
+				"address",
+				"vatId",
+				"email",
+				"contactPerson",
+				"phone",
+				"website",
+				"isActive",
+				"createdAt",
+			].map((key) => ({ key, header: key })),
+			...customFieldColumns(customFields.columns),
+		],
+		rows: customers.map((c) => ({
+			id: c.id,
+			name: c.name,
+			address: c.address,
+			vatId: c.vatId,
+			email: c.email,
+			contactPerson: c.contactPerson,
+			phone: c.phone,
+			website: c.website,
+			isActive: c.isActive,
+			createdAt: c.createdAt,
+			...customFieldCells(customFields.byRecord[c.id] ?? []),
+		})),
+	};
+}
+
+function customFieldColumns(columns: readonly CustomFieldReportColumn[]) {
+	return columns.map((column) => ({
+		key: customFieldColumnKey(column.fieldId),
+		header: column.name,
+	}));
 }
 
 /**
@@ -776,7 +1006,7 @@ export async function fetchExportData(
 
 	// Map categories to their fetch functions
 	const categoryFetchers: Record<ExportCategory, () => Promise<unknown>> = {
-		employees: () => fetchEmployees(organizationId),
+		employees: () => fetchEmployees(organizationId, requester),
 		teams: () => fetchTeams(organizationId),
 		time_entries: () => fetchTimeEntries(organizationId, requester),
 		work_periods: () => fetchWorkPeriods(organizationId),
@@ -786,6 +1016,8 @@ export async function fetchExportData(
 		schedules: () => fetchSchedules(organizationId),
 		shifts: () => fetchShifts(organizationId),
 		audit_logs: () => fetchAuditLogs(organizationId),
+		projects: () => fetchProjects(organizationId, requester),
+		customers: () => fetchCustomers(organizationId, requester),
 	};
 
 	// Fetch all requested categories in parallel

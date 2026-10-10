@@ -34,9 +34,10 @@ import {
 	userSettings,
 	workCategory,
 } from "@/db/schema";
-import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
 import { createLogger } from "@/lib/logger";
+import { readPersonnelIdentifierValues } from "@/lib/payroll-export/personnel-identifier-store";
 import { withAppendEvidenceSnapshot } from "@/lib/time-tracking/append-assurance-reader";
 import {
 	applyHistoricalGapRepair,
@@ -116,12 +117,16 @@ export async function collectPayrollWork(
 		organizationId: string;
 		filters: PayrollCollectionFilters;
 		repairActorUserId: string | null;
+		/** The configured custom field identifier, read and frozen in the snapshot (#821). */
+		personnelIdentifier?: PayrollCollectionRequest["personnelIdentifier"];
 	},
 ): Promise<CollectedPayrollWorkRead> {
 	const repair = input.repairActorUserId
 		? await repairEligibleGaps(db, input.organizationId, input.filters, input.repairActorUserId)
 		: ({ status: "not_requested" } as const);
-	const collection = await readPayrollWorkCollection(db, input.organizationId, input.filters);
+	const collection = await readPayrollWorkCollection(db, input.organizationId, input.filters, {
+		personnelIdentifier: input.personnelIdentifier ?? null,
+	});
 	return { collection, repair };
 }
 
@@ -133,6 +138,7 @@ export function readPayrollWorkCollection(
 	db: Database,
 	organizationId: string,
 	filters: PayrollCollectionFilters,
+	options: Pick<PayrollCollectionRequest, "personnelIdentifier"> = {},
 ): Promise<PayrollWorkCollection> {
 	return withAppendEvidenceSnapshot(db, async (reader) => {
 		const employeeIds = await resolveScopeEmployeeIds(reader, organizationId, filters);
@@ -143,6 +149,7 @@ export function readPayrollWorkCollection(
 			employeeIds,
 			teamIds: filters.teamIds ?? null,
 			projectIds: filters.projectIds ?? null,
+			personnelIdentifier: options.personnelIdentifier ?? null,
 		};
 		const snapshot = await readPayrollCollectionSnapshot(reader, request);
 		return assessPayrollWorkCollection(snapshot, request);
@@ -227,6 +234,7 @@ async function readPayrollCollectionSnapshot(
 			records: [],
 			diagnostics: { completeness: { status: "complete", widenedTo: "requested" }, findings: [] },
 			departureRepairs: [],
+			personnelIdentifiers: {},
 		};
 	}
 
@@ -250,6 +258,15 @@ async function readPayrollCollectionSnapshot(
 			.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 			.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, chunk))),
 	);
+	// The identifier as of the period's last day, in this snapshot (#821).
+	const personnelIdentifiers = request.personnelIdentifier
+		? await readPersonnelIdentifierValues(reader, {
+				organizationId,
+				customFieldId: request.personnelIdentifier.customFieldId,
+				employeeIds,
+				asOf: parsePlainDate(request.endDate),
+			})
+		: undefined;
 
 	// Every record that can touch an employee-local window, in any approval state:
 	// open work, reversed endpoints and everything overlapping the widest envelope.
@@ -419,6 +436,7 @@ async function readPayrollCollectionSnapshot(
 			employeeId: repair.employeeId,
 			affectedEndAt: repair.affectedEndAt ? instantFromDate(repair.affectedEndAt) : null,
 		})),
+		personnelIdentifiers,
 	};
 }
 

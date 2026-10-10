@@ -15,6 +15,8 @@ import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-lo
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
+import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
+import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
@@ -127,13 +129,23 @@ export function EmployeeDetailPageClient({
 	const employeeData = useEmployee({ employeeId, accessTier });
 	const { employee, schedule, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
 	const canManageEmployeeDetails = accessTier === "orgAdmin" || accessTier === "manager";
+	// The "Custom fields" section (#818), saved with the employee details.
+	const customFields = useCustomFieldDrafts({
+		entity: "employee",
+		recordId: employeeId,
+		enabled: employee?.kind === "employee",
+	});
 
 	const form = useForm({
 		defaultValues: defaultFormValues,
 		onSubmitInvalid: ({ formApi }) => focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
 			const payload = buildEmployeeUpdatePayload(value);
-			const result = await updateEmployee(payload).catch(() => null);
+			const result = await updateEmployee({
+				...payload,
+				// Undefined for invitation drafts: their section is never loaded.
+				customFieldValues: customFields.values(),
+			}).catch(() => null);
 
 			if (!result) {
 				toast.error(
@@ -146,6 +158,7 @@ export function EmployeeDetailPageClient({
 				toast.success(
 					t("settings.employees.detailView.updateSuccess", "Employee updated successfully"),
 				);
+				customFields.reset();
 				push("/settings/employees");
 			} else {
 				toast.error(
@@ -204,6 +217,12 @@ export function EmployeeDetailPageClient({
 						isUpdating={isUpdating}
 						onCancel={() => push("/settings/employees")}
 						t={t}
+						hasCustomFieldChanges={customFields.isDirty}
+						customFields={
+							isDraft ? null : (
+								<CustomFieldDraftsSection drafts={customFields} disabled={isUpdating} />
+							)
+						}
 					/>
 				)}
 			</div>

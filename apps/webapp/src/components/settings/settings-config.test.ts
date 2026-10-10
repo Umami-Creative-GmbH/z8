@@ -177,6 +177,35 @@ describe("settings visibility tiers", () => {
 		expect(memberEntries.some((entry) => entry.id === "kiosks")).toBe(false);
 	});
 
+	it("shows custom fields to org admins next to customers and projects", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "custom-fields")).toMatchObject({
+			href: "/settings/custom-fields",
+			icon: "forms",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		const administrationIds = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "administration",
+		).map((entry) => entry.id);
+		expect(administrationIds.indexOf("custom-fields")).toBe(
+			administrationIds.indexOf("projects") + 1,
+		);
+		expect(
+			filterSettingsByFeatureFlags(orgAdminEntries, { projectsEnabled: false }).some(
+				(entry) => entry.id === "custom-fields",
+			),
+		).toBe(true);
+		expect(managerEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/custom-fields")).toBe(true);
+		expect(canResolvedTierAccessRoute("manager", "/settings/custom-fields")).toBe(false);
+		expect(canResolvedTierAccessRoute("member", "/settings/custom-fields")).toBe(false);
+	});
+
 	it("groups notification preferences and channel configuration together", () => {
 		const entries = getVisibleSettings("orgAdmin", true);
 		const notificationEntries = entries.filter((entry) => entry.group === "notifications");

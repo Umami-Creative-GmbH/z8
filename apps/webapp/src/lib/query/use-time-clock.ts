@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
 	addBreakToActiveSession,
 	getTimeClockStatus,
@@ -13,7 +13,9 @@ import { useSession } from "@/lib/auth-client";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { BookedProjectTask } from "@/lib/projects/project-task-model";
 import {
+	clockConnectionRequired,
 	frozenClockCommandsAvailable,
+	offlineClockCaptureAllowed,
 	prepareBrowserClockCommand,
 } from "@/lib/time-tracking/browser-clock-command";
 import type { ClockCommandPosition } from "@/lib/time-tracking/clock-command";
@@ -150,7 +152,22 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			: null;
 	const canFreeze =
 		pageSession !== null && frozenClockCommandsAvailable(commandCapabilities, pageSession);
+	// Offline, only an adopted organization may capture at all (#845, ADR 0002).
+	const canCaptureOffline =
+		pageSession !== null && offlineClockCaptureAllowed(commandCapabilities, pageSession);
+	// The last clock command was refused for needing a connection; shown inline while offline.
+	const [connectionRefused, setConnectionRefused] = useState(false);
 	const clockPosition = useClockPosition(Boolean(session?.user?.id && activeOrganizationId));
+
+	/**
+	 * Refuses a clock command up front while offline in an organization that is not
+	 * adopted, before any position or capture: nothing is stored. Null lets it run.
+	 */
+	function refuseWithoutConnection() {
+		const refused = isOffline && !canCaptureOffline;
+		setConnectionRefused(refused);
+		return refused ? clockConnectionRequired() : null;
+	}
 
 	/**
 	 * The employee's own clock event as it happens (#826): fixes the event
@@ -226,6 +243,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
+			const refused = refuseWithoutConnection();
+			if (refused) return refused;
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_in", params, event);
 			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
@@ -303,6 +322,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
+			const refused = refuseWithoutConnection();
+			if (refused) return refused;
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_out", params, event);
 			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
@@ -388,6 +409,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			breakMinutes: number;
 			submissionId: string;
 		}) => {
+			const refused = refuseWithoutConnection();
+			if (refused) return refused;
 			if (isOffline) {
 				return {
 					success: false as const,
@@ -441,7 +464,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// Offline state
 		isOnline,
 		isOffline,
-		captureMode: clockCaptureMode(isOffline, canFreeze),
+		captureMode: clockCaptureMode(isOffline, canFreeze, canCaptureOffline),
+		/** The last clock command needs a connection in this organization (#845); shown inline. */
+		connectionRequired: isOffline && connectionRefused,
 		pendingCount,
 		isSyncing,
 
@@ -491,7 +516,8 @@ function clockStatusView(status: TimeClockState | undefined) {
 	};
 }
 
-function clockCaptureMode(isOffline: boolean, canFreeze: boolean) {
-	if (!isOffline) return "server" as const;
+/** Offline in an organization that is not adopted, the normal controls refuse each action (#845). */
+function clockCaptureMode(isOffline: boolean, canFreeze: boolean, canCaptureOffline: boolean) {
+	if (!isOffline || !canCaptureOffline) return "server" as const;
 	return canFreeze ? ("local-queue" as const) : ("local-review" as const);
 }

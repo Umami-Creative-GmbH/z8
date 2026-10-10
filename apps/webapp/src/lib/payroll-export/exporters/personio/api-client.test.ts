@@ -736,6 +736,32 @@ describe("PersonioApiClient authenticated requests", () => {
 		});
 	});
 
+	it("matches a custom field identifier against the Personio personnel number (#821)", async () => {
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(authSuccess())
+			.mockResolvedValueOnce(
+				jsonResponse({
+					success: true,
+					data: [personioEmployeeResource(73, "person@example.com", "LG-0042")],
+				}),
+			)
+			.mockResolvedValueOnce(attendanceSuccess(903));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await expect(
+			new PersonioApiClient(credentials).createAttendance(
+				{ ...attendance, employee: "LG-0042" },
+				"customField",
+			),
+		).resolves.toEqual({ success: true, externalId: 903 });
+
+		const [, postOptions] = fetchMock.mock.calls[2] as [string, RequestInit];
+		expect(JSON.parse(postOptions.body as string)).toEqual({
+			attendances: [{ ...attendance, employee: 73 }],
+		});
+	});
+
 	it("finds a personnel number beyond the first employee page", async () => {
 		const firstPage = Array.from({ length: 100 }, (_, index) =>
 			personioEmployeeResource(

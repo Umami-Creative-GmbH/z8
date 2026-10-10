@@ -8,7 +8,7 @@
 import { and, eq, inArray, isNotNull, lt, ne } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
-import { employee, pushSubscription } from "@/db/schema";
+import { employee, pushDeviceToken, pushSubscription } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { createLogger } from "@/lib/logger";
 
@@ -160,7 +160,8 @@ async function permanentlyDeleteOrganization(
 			},
 		},
 		async (tx) => {
-			// Push subscriptions are user-level (no organization reference): only
+			// Push subscriptions and native push device tokens (#843) are
+			// user-level (no organization reference): only
 			// users left without any membership or employee elsewhere lose them
 			// (#437). Their guards are held, so no other organization can gain
 			// them before commit. Water intake logs are personal wellness history,
@@ -194,6 +195,9 @@ async function permanentlyDeleteOrganization(
 					await tx
 						.delete(pushSubscription)
 						.where(inArray(pushSubscription.userId, departingUserIds));
+					await tx
+						.delete(pushDeviceToken)
+						.where(inArray(pushDeviceToken.userId, departingUserIds));
 				}
 			}
 

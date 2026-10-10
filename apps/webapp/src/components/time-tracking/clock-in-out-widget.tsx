@@ -7,6 +7,7 @@ import {
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
 import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
 import { BreakInProgressNotice } from "@/components/time-tracking/break-in-progress-notice";
+import { ClockConnectionNotice } from "@/components/time-tracking/clock-connection-notice";
 import {
 	ActiveSessionSummary,
 	ClockActionButton,
@@ -128,6 +129,8 @@ export function ClockInOutWidget({
 						t={widget.t}
 					/>
 				) : null}
+
+				<ClockConnectionNotice show={widget.connectionRequired} />
 
 				<ClockCaptureControls
 					mode={widget.captureMode}

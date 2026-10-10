@@ -16,4 +16,4 @@ With the payroll reimbursement channel, the payroll export also carries the amou
 
 - Confirmation can be partial. Reports outside every confirming officer's scope stay included until someone with scope confirms them, and the coverage gap names them.
 - A report is included in at most one unconfirmed run. Exporting the same period and employees again replaces the earlier unconfirmed inclusions, and a confirmed run is final.
-- Confirmation never records more than is still owed. If an adjustment lowered the amount after the export, the officer records the overpayment as a recovery outside payroll.
+- Confirmation records the full amount the run carried, because that is what payroll paid. If an adjustment lowered the amount after the export, the report shows as overpaid, and the officer records the recovery by hand, outside payroll.

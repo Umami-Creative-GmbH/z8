@@ -87,6 +87,8 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED = "travel_expense.allowance_override_authorized",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED = "travel_expense.allowance_override_revoked",
 	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_REMOVED = "travel_expense.payroll_run_report_removed",
+	// #853: a payroll run confirmed as paid recorded the report's reimbursement.
+	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_CONFIRMED = "travel_expense.payroll_run_report_confirmed",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
@@ -145,6 +147,11 @@ export enum AuditAction {
 	// Personnel file ZIP download (#871)
 	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",
+
+	// ICS Feed Operations (#991)
+	ICS_FEED_CREATED = "ics_feed.created",
+	ICS_FEED_REGENERATED = "ics_feed.regenerated",
+	ICS_FEED_REVOKED = "ics_feed.revoked",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
@@ -206,6 +213,27 @@ export enum AuditAction {
 	INVOICE_DRAFT_FAILED = "billable_time.invoice_draft_failed",
 	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
 	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
+
+	// Custom field definitions (#817)
+	CUSTOM_FIELD_CREATED = "custom_field.created",
+	CUSTOM_FIELD_RENAMED = "custom_field.renamed",
+	CUSTOM_FIELD_UPDATED = "custom_field.updated",
+	CUSTOM_FIELD_REORDERED = "custom_field.reordered",
+	CUSTOM_FIELD_ARCHIVED = "custom_field.archived",
+	CUSTOM_FIELD_RESTORED = "custom_field.restored",
+	CUSTOM_FIELD_OPTION_ADDED = "custom_field.option_added",
+	CUSTOM_FIELD_OPTION_RENAMED = "custom_field.option_renamed",
+	CUSTOM_FIELD_OPTION_REORDERED = "custom_field.option_reordered",
+	CUSTOM_FIELD_OPTION_ARCHIVED = "custom_field.option_archived",
+	CUSTOM_FIELD_OPTION_RESTORED = "custom_field.option_restored",
+	// Custom field values (#818): on the employee, project or customer record.
+	CUSTOM_FIELD_VALUE_SET = "custom_field_value.set",
+	CUSTOM_FIELD_VALUE_CHANGED = "custom_field_value.changed",
+	CUSTOM_FIELD_VALUE_CLEARED = "custom_field_value.cleared",
+	// Tracked custom field history (#819): dated entries added, corrected or deleted.
+	CUSTOM_FIELD_VALUE_HISTORY_ADDED = "custom_field_value.history_added",
+	CUSTOM_FIELD_VALUE_HISTORY_CORRECTED = "custom_field_value.history_corrected",
+	CUSTOM_FIELD_VALUE_HISTORY_DELETED = "custom_field_value.history_deleted",
 
 	// Location Operations
 	LOCATION_CREATED = "location.created",
@@ -301,6 +329,8 @@ export interface AuditLogEntry {
 		| "invoiced_work"
 		| "project_task"
 		| "project_template"
+		| "custom_field"
+		| "custom_field_option"
 		| "work_period"
 		| "location"
 		| "subarea"
@@ -314,7 +344,8 @@ export interface AuditLogEntry {
 		| "works_council_settings"
 		| "works_council_export"
 		| "travel_expense_policy_version"
-		| "travel_expense_export";
+		| "travel_expense_export"
+		| "ics_feed";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

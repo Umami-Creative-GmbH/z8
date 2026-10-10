@@ -72,7 +72,7 @@ describe("proxy matcher", () => {
 
 	it("covers API routes", () => {
 		expect(matchesProxy("/api/time-entries")).toBe(true);
-		expect(matchesProxy("/api/mobile/home")).toBe(true);
+		expect(matchesProxy("/api/auth/app-exchange")).toBe(true);
 	});
 
 	it("passes API requests to route handlers without page middleware", async () => {

@@ -4,6 +4,7 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
+import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
 	AbsenceData,
 	DatevLohnConfig,
@@ -60,12 +61,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			errors.push("Beraternummer must be 1-7 digits");
 		}
 
-		if (
-			!datevConfig.personnelNumberType ||
-			!["employeeNumber", "employeeId"].includes(datevConfig.personnelNumberType)
-		) {
-			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
-		}
+		const personnelNumberError = personnelNumberTypeError(config);
+		if (personnelNumberError) errors.push(personnelNumberError);
 
 		return {
 			valid: errors.length === 0,
@@ -206,7 +203,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
 
-			const personnelNumber = this.getPersonnelNumber(period, config);
+			const personnelNumber = this.personnelNumber(period, config);
 			const dateStr = period.startTime.toISODate()!;
 			const hours = period.durationMinutes / 60;
 
@@ -266,7 +263,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			const mappedCode = wageTypeCodeFor(mapping, "datev");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
-			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
+			const personnelNumber = this.personnelNumber(absence, config);
 			const wageTypeCode = mappedCode;
 			const note = mapping.datevWageTypeName || absence.absenceCategoryName || "";
 
@@ -304,35 +301,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	}
 
 	/**
-	 * Get personnel number from work period based on config
+	 * The row's personnel number (`germanPersonnelNumber`, shared with expense
+	 * lines); an employee number that isn't set is logged before the fallback.
 	 */
-	private getPersonnelNumber(period: WorkPeriodData, config: DatevLohnConfig): string {
-		if (config.personnelNumberType === "employeeNumber") {
-			if (period.employeeNumber) {
-				return period.employeeNumber;
-			}
+	private personnelNumber(row: WorkPeriodData | AbsenceData, config: DatevLohnConfig): string {
+		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
 			logger.warn(
-				{ employeeId: period.employeeId, periodId: period.id },
+				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
 			);
 		}
-		return period.employeeId;
-	}
-
-	/**
-	 * Get personnel number from absence based on config
-	 */
-	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: DatevLohnConfig): string {
-		if (config.personnelNumberType === "employeeNumber") {
-			if (absence.employeeNumber) {
-				return absence.employeeNumber;
-			}
-			logger.warn(
-				{ employeeId: absence.employeeId, absenceId: absence.id },
-				"Employee number not set, falling back to employeeId for absence",
-			);
-		}
-		return absence.employeeId;
+		return germanPersonnelNumber(row, config);
 	}
 
 

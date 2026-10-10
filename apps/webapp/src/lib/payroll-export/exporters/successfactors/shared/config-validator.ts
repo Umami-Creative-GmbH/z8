@@ -1,6 +1,7 @@
 /**
  * Configuration validation for SAP SuccessFactors
  */
+import { customFieldMatchError } from "../../../personnel-identifier";
 import type { SuccessFactorsConfig } from "../types";
 
 /**
@@ -21,10 +22,14 @@ export function validateSuccessFactorsConfig(config: Record<string, unknown>): V
 	// Validate employee match strategy
 	if (
 		sfConfig.employeeMatchStrategy &&
-		!["userId", "personIdExternal", "email"].includes(sfConfig.employeeMatchStrategy)
+		!["userId", "personIdExternal", "email", "customField"].includes(sfConfig.employeeMatchStrategy)
 	) {
-		errors.push("Employee match strategy must be 'userId', 'personIdExternal', or 'email'");
+		errors.push(
+			"Employee match strategy must be 'userId', 'personIdExternal', 'email' or 'customField'",
+		);
 	}
+	const customFieldError = customFieldMatchError(config);
+	if (customFieldError) errors.push(customFieldError);
 
 	// Validate instance URL format
 	if (sfConfig.instanceUrl) {

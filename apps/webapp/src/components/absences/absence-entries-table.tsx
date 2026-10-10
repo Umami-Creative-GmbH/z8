@@ -226,6 +226,8 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 											aria-label={cancelLabel}
 										>
 											<IconX className="size-4" />
+											{/* Touch screens cannot show the tooltip (#846). */}
+											<span className="sm:sr-only">{cancelLabel}</span>
 										</Button>
 									</AlertDialogTrigger>
 								</TooltipTrigger>
@@ -275,6 +277,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 				columns={columns}
 				data={filteredAbsences}
 				className="bg-card"
+				pinLastColumn
 				emptyMessage={
 					search
 						? t("absences.table.noSearchResults", "No absences match your search.")

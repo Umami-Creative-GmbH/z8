@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { clearBetterAuthSessionCookies } from "@/lib/auth/session-cookies";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 /**
@@ -22,20 +23,6 @@ export async function GET(request: NextRequest) {
 		requestedLocale && ALL_LANGUAGES.includes(requestedLocale) ? requestedLocale : DEFAULT_LANGUAGE;
 	const callbackUrl = searchParams.get("callbackUrl");
 
-	// List of all better-auth cookies to clear
-	const authCookies = [
-		"__Secure-better-auth.session-token",
-		"__Secure-better-auth.session_token",
-		"__Secure-better-auth.session_data",
-		"__Secure-better-auth.session-token.sig",
-		"__Secure-better-auth.session_token.sig",
-		"better-auth.session-token",
-		"better-auth.session_token",
-		"better-auth.session_data",
-		"better-auth.session-token.sig",
-		"better-auth.session_token.sig",
-	];
-
 	// Build sign-in URL with locale
 	const signInUrl = new URL(`/${locale}/sign-in`, request.url);
 
@@ -47,12 +34,7 @@ export async function GET(request: NextRequest) {
 	const response = NextResponse.redirect(signInUrl);
 
 	// Clear all auth cookies on the redirect response.
-	for (const cookieName of authCookies) {
-		response.cookies.delete({
-			name: cookieName,
-			path: "/",
-		});
-	}
+	clearBetterAuthSessionCookies(response);
 
 	return response;
 }

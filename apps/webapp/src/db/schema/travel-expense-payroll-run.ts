@@ -22,12 +22,15 @@ import { travelExpenseReport } from "./travel-expense";
  * - `superseded`: a later export of the same period took it into its own run.
  * - `removed`: an officer took it out of the run (audited).
  * - `discarded`: the run was discarded, or its export never produced a file.
+ * - `confirmed`: an officer confirmed the run paid it (#853); final. Its lines
+ *   are what earlier payroll runs carried for the report.
  */
 export const TRAVEL_EXPENSE_PAYROLL_RUN_INCLUSION_STATES = [
 	"included",
 	"superseded",
 	"removed",
 	"discarded",
+	"confirmed",
 ] as const;
 export type TravelExpensePayrollRunInclusionState =
 	(typeof TRAVEL_EXPENSE_PAYROLL_RUN_INCLUSION_STATES)[number];
@@ -71,8 +74,9 @@ export const travelExpensePayrollRunInclusion = pgTable(
 			.default("included")
 			.notNull(),
 		includedAt: timestamp("included_at", { withTimezone: true }).defaultNow().notNull(),
+		// When it stopped being included; for `confirmed`, when the run was confirmed.
 		endedAt: timestamp("ended_at", { withTimezone: true }),
-		// Who removed the report or discarded the run; null for a superseded or failed export.
+		// Who removed, discarded or confirmed it; null for a superseded or failed export.
 		endedByUserId: text("ended_by_user_id"),
 		// The run that took the report over; set only when superseded.
 		supersededByJobId: uuid("superseded_by_job_id").references(() => payrollExportJob.id, {
@@ -94,12 +98,15 @@ export const travelExpensePayrollRunInclusion = pgTable(
 		),
 		check(
 			"travel_expense_payroll_run_inclusion_state_check",
-			sql`${table.state} IN ('included', 'superseded', 'removed', 'discarded')`,
+			sql`${table.state} IN ('included', 'superseded', 'removed', 'discarded', 'confirmed')`,
 		),
 		check(
 			"travel_expense_payroll_run_inclusion_ended_check",
 			sql`(${table.state} = 'included') = (${table.endedAt} IS NULL)
 			AND (${table.supersededByJobId} IS NULL OR ${table.state} = 'superseded')`,
 		),
+		index("travelExpensePayrollRunInclusion_org_report_confirmed_idx")
+			.on(table.organizationId, table.reportId)
+			.where(sql`${table.state} = 'confirmed'`),
 	],
 );
