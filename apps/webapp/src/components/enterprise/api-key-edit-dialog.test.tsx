@@ -105,6 +105,13 @@ function renderDialog() {
 	return render(<Harness />);
 }
 
+/** Waits for the dialog's open auto-focus on Name, which otherwise can land late under load and take keystrokes meant for another field. */
+async function waitForOpenFocus() {
+	await waitFor(() =>
+		expect(document.activeElement).toBe(screen.getByRole("textbox", { name: /Name/ })),
+	);
+}
+
 async function renderPendingDialog() {
 	const user = userEvent.setup();
 	let resolveUpdate: ((result: { success: true }) => void) | undefined;
@@ -384,6 +391,7 @@ describe("ApiKeyEditDialog", () => {
 	])("rejects a %s rate limit", async (_case, value, message) => {
 		const user = userEvent.setup();
 		renderDialog();
+		await waitForOpenFocus();
 		const rateLimit = screen.getByLabelText("Max requests");
 
 		await user.clear(rateLimit);

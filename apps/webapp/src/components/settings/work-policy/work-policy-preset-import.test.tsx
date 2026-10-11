@@ -104,6 +104,27 @@ const customPreset = {
 	sourceLabel: "Custom",
 } as unknown as WorkPolicyPresetWithSource;
 
+/**
+ * Opens the review for using the system preset as a policy. Waits for the dialog's
+ * open auto-focus on Name: landing late under load, it stole keystrokes meant for
+ * the field being edited ("German Labor Law7").
+ */
+async function renderUseAsPolicyReview() {
+	renderWithQueryClient(
+		<WorkPolicyPresetReviewDialog
+			open
+			onOpenChange={vi.fn()}
+			organizationId="org-1"
+			mode="useAsPolicy"
+			preset={systemPreset}
+			onSuccess={vi.fn()}
+		/>,
+	);
+	await waitFor(() =>
+		expect(document.activeElement).toBe(screen.getByLabelText("Name")),
+	);
+}
+
 describe("WorkPolicyPresetImport", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -236,16 +257,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 	it("creates a policy from a reviewed preset without making it default", async () => {
 		const user = userEvent.setup();
 
-		renderWithQueryClient(
-			<WorkPolicyPresetReviewDialog
-				open
-				onOpenChange={vi.fn()}
-				organizationId="org-1"
-				mode="useAsPolicy"
-				preset={systemPreset}
-				onSuccess={vi.fn()}
-			/>,
-		);
+		await renderUseAsPolicyReview();
 
 		await user.clear(screen.getByLabelText("Name"));
 		await user.type(screen.getByLabelText("Name"), "Reviewed Policy");
@@ -262,16 +274,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 	it("submits edited regulation limits from the review dialog", async () => {
 		const user = userEvent.setup();
 
-		renderWithQueryClient(
-			<WorkPolicyPresetReviewDialog
-				open
-				onOpenChange={vi.fn()}
-				organizationId="org-1"
-				mode="useAsPolicy"
-				preset={systemPreset}
-				onSuccess={vi.fn()}
-			/>,
-		);
+		await renderUseAsPolicyReview();
 
 		await user.clear(screen.getByLabelText("Max daily hours"));
 		await user.type(screen.getByLabelText("Max daily hours"), "9");
@@ -298,16 +301,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 	it("submits edited break rule values from the review dialog", async () => {
 		const user = userEvent.setup();
 
-		renderWithQueryClient(
-			<WorkPolicyPresetReviewDialog
-				open
-				onOpenChange={vi.fn()}
-				organizationId="org-1"
-				mode="useAsPolicy"
-				preset={systemPreset}
-				onSuccess={vi.fn()}
-			/>,
-		);
+		await renderUseAsPolicyReview();
 
 		await user.clear(screen.getByLabelText("After working hours"));
 		await user.type(screen.getByLabelText("After working hours"), "7");
@@ -335,16 +329,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 	it("submits edited schedule defaults from the review dialog", async () => {
 		const user = userEvent.setup();
 
-		renderWithQueryClient(
-			<WorkPolicyPresetReviewDialog
-				open
-				onOpenChange={vi.fn()}
-				organizationId="org-1"
-				mode="useAsPolicy"
-				preset={systemPreset}
-				onSuccess={vi.fn()}
-			/>,
-		);
+		await renderUseAsPolicyReview();
 
 		await user.click(screen.getByRole("combobox", { name: "Schedule cycle" }));
 		await user.click(await screen.findByRole("option", { name: "Monthly" }));
@@ -368,16 +353,7 @@ describe("WorkPolicyPresetReviewDialog", () => {
 	it("submits edited break option values from the review dialog", async () => {
 		const user = userEvent.setup();
 
-		renderWithQueryClient(
-			<WorkPolicyPresetReviewDialog
-				open
-				onOpenChange={vi.fn()}
-				organizationId="org-1"
-				mode="useAsPolicy"
-				preset={systemPreset}
-				onSuccess={vi.fn()}
-			/>,
-		);
+		await renderUseAsPolicyReview();
 
 		await user.clear(screen.getByLabelText("Split count"));
 		await user.type(screen.getByLabelText("Split count"), "2");
