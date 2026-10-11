@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useProjectHoursFormat } from "./use-project-hours-format";
 
 interface ProjectBudgetProgressProps {
 	budgetHours: number;
@@ -22,6 +23,7 @@ const budgetStatusStyles = {
 
 export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetProgressProps) {
 	const { t } = useTranslate();
+	const format = useProjectHoursFormat();
 
 	const percentUsed = (usedHours / budgetHours) * 100;
 	const remainingHours = budgetHours - usedHours;
@@ -54,16 +56,16 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 		if (isOverBudget) {
 			const overBy = usedHours - budgetHours;
 			return t("reports.projects.budget.exceededBy", "Exceeded budget by {hours} hours", {
-				hours: overBy.toFixed(1),
+				hours: format.number(overBy),
 			});
 		}
 		if (isNearBudget) {
 			return t("reports.projects.budget.onlyRemaining", "Only {hours} hours remaining", {
-				hours: remainingHours.toFixed(1),
+				hours: format.number(remainingHours),
 			});
 		}
 		return t("reports.projects.budget.hoursRemaining", "{hours} hours remaining in budget", {
-			hours: remainingHours.toFixed(1),
+			hours: format.number(remainingHours),
 		});
 	};
 
@@ -89,12 +91,12 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 					<div className="flex justify-between text-sm">
 						<span className="text-muted-foreground">
 							{t("reports.projects.budget.hoursUsed", "{hours}h used", {
-								hours: usedHours.toFixed(1),
+								hours: format.number(usedHours),
 							})}
 						</span>
 						<span className="font-medium">
 							{t("reports.projects.budget.hoursBudget", "{hours}h budget", {
-								hours: budgetHours.toFixed(1),
+								hours: format.number(budgetHours),
 							})}
 						</span>
 					</div>
@@ -135,7 +137,7 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 						</div>
 					</div>
 					<div className="text-center">
-						<div className="text-2xl font-bold tabular-nums">{usedHours.toFixed(1)}h</div>
+						<div className="text-2xl font-bold tabular-nums">{format.hours(usedHours)}</div>
 						<div className="text-xs text-muted-foreground">
 							{t("reports.projects.budget.hoursLogged", "Hours Logged")}
 						</div>
@@ -147,10 +149,7 @@ export function ProjectBudgetProgress({ budgetHours, usedHours }: ProjectBudgetP
 								remainingHours < 0 ? "text-red-500" : "text-green-500",
 							)}
 						>
-							{remainingHours >= 0
-								? remainingHours.toFixed(1)
-								: Math.abs(remainingHours).toFixed(1)}
-							h
+							{format.hours(Math.abs(remainingHours))}
 						</div>
 						<div className="text-xs text-muted-foreground">
 							{remainingHours >= 0

@@ -4,6 +4,7 @@ import { IconAlertTriangle, IconBriefcase, IconClock, IconUsers } from "@tabler/
 import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProjectInfo } from "@/lib/reports/project-types";
+import { useProjectHoursFormat } from "./use-project-hours-format";
 
 interface ProjectSummaryCardsProps {
 	data: {
@@ -32,6 +33,7 @@ export function ProjectSummaryCards({
 	summary,
 }: ProjectSummaryCardsProps) {
 	const { t } = useTranslate();
+	const format = useProjectHoursFormat();
 
 	if (isSingleProject && project && summary) {
 		return (
@@ -45,7 +47,7 @@ export function ProjectSummaryCards({
 						<IconClock className="size-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{summary.totalHours.toFixed(1)}h</div>
+						<div className="text-2xl font-bold">{format.hours(summary.totalHours)}</div>
 						<p className="text-xs text-muted-foreground">
 							{t("reports.projects.cards.workPeriods", "{count} work periods", {
 								count: summary.workPeriodCount,
@@ -87,8 +89,8 @@ export function ProjectSummaryCards({
 						<p className="text-xs text-muted-foreground">
 							{summary.budgetHours !== null
 								? t("reports.projects.cards.hoursOfBudget", "{used}h of {total}h", {
-										used: summary.totalHours.toFixed(1),
-										total: summary.budgetHours,
+										used: format.number(summary.totalHours),
+										total: format.compactNumber(summary.budgetHours),
 									})
 								: t("reports.projects.cards.noBudgetSet", "No budget set")}
 						</p>
@@ -104,7 +106,7 @@ export function ProjectSummaryCards({
 						<IconClock className="size-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{summary.averageHoursPerDay.toFixed(1)}h</div>
+						<div className="text-2xl font-bold">{format.hours(summary.averageHoursPerDay)}</div>
 						<p className="text-xs text-muted-foreground">
 							{t("reports.projects.cards.hoursPerDay", "Hours per day")}
 						</p>
@@ -143,7 +145,7 @@ export function ProjectSummaryCards({
 					<IconClock className="size-4 text-muted-foreground" />
 				</CardHeader>
 				<CardContent>
-					<div className="text-2xl font-bold">{data.totalHours.toFixed(1)}h</div>
+					<div className="text-2xl font-bold">{format.hours(data.totalHours)}</div>
 					<p className="text-xs text-muted-foreground">
 						{t("reports.projects.cards.acrossAllProjects", "Across all projects")}
 					</p>
