@@ -206,7 +206,8 @@ export async function revokeShareLinksCreatorsCannotSee(
 		isNull(reportShareLink.revokedAt),
 		sql`${reportShareLink.expiresAt} > ${dateFromInstant(scope.now)}`,
 	];
-	if (scope.organizationId) conditions.push(eq(reportShareLink.organizationId, scope.organizationId));
+	if (scope.organizationId)
+		conditions.push(eq(reportShareLink.organizationId, scope.organizationId));
 	if (scope.creatorUserId) conditions.push(eq(reportShareLink.createdBy, scope.creatorUserId));
 	if (scope.creatorEmployeeId) {
 		conditions.push(eq(reportShareLink.creatorEmployeeId, scope.creatorEmployeeId));
@@ -851,4 +852,3 @@ export async function openShareLink(
 		snapshot: link.snapshot,
 	};
 }
-

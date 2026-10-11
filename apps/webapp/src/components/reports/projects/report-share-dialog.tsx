@@ -156,7 +156,10 @@ export function ReportShareDialog({
 				</DialogHeader>
 
 				{createdUrl ? (
-					<section aria-labelledby="share-created-title" className="space-y-3 rounded-lg border p-4">
+					<section
+						aria-labelledby="share-created-title"
+						className="space-y-3 rounded-lg border p-4"
+					>
 						<h3 id="share-created-title" className="font-medium">
 							{t("reports.share.created.title", "Your share link")}
 						</h3>
@@ -272,9 +275,13 @@ export function ReportShareDialog({
 										<SelectContent>
 											{EXPIRY_CHOICES.map((days) => (
 												<SelectItem key={days} value={String(days)}>
-													{t("reports.share.form.expiryDays", "{days, plural, one {# day} other {# days}}", {
-														days,
-													})}
+													{t(
+														"reports.share.form.expiryDays",
+														"{days, plural, one {# day} other {# days}}",
+														{
+															days,
+														},
+													)}
 												</SelectItem>
 											))}
 										</SelectContent>

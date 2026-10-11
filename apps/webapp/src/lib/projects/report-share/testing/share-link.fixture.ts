@@ -64,7 +64,15 @@ export function shareLinkFixture(tag: string, uuidPrefix: string) {
 				`insert into time_entry
 				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone, timezone_source, hash, created_by)
 				 values ($1, $2, $3, $4, $5, 0, 'Etc/UTC', 'user_setting', $7, $6)`,
-				[entryId, options.employeeId, ids.organization, type, timestamp, ids.ownerUser, `hash-${entryId}`],
+				[
+					entryId,
+					options.employeeId,
+					ids.organization,
+					type,
+					timestamp,
+					ids.ownerUser,
+					`hash-${entryId}`,
+				],
 			);
 		}
 		const id = randomUUID();

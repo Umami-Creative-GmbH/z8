@@ -55,7 +55,9 @@ describe("report share link pages in the proxy", () => {
 	});
 
 	it("serves a share link without a session, in the recipient's browser language, without a redirect", async () => {
-		const response = await open(`/share/${TOKEN}`, { "accept-language": "ja;q=1, fr-CH;q=0.9, en;q=0.5" });
+		const response = await open(`/share/${TOKEN}`, {
+			"accept-language": "ja;q=1, fr-CH;q=0.9, en;q=0.5",
+		});
 
 		expect(response.headers.get("location")).toBeNull();
 		expect(response.headers.get("x-middleware-rewrite")).toBe(
@@ -98,7 +100,10 @@ describe("report share link pages in the proxy", () => {
 
 		expect(share.checked).toEqual([
 			{ identifier: "203.0.113.7", endpoint: "reportShare" },
-			{ identifier: expect.stringMatching(/^report-share:[0-9a-f]{64}$/), endpoint: "reportShareToken" },
+			{
+				identifier: expect.stringMatching(/^report-share:[0-9a-f]{64}$/),
+				endpoint: "reportShareToken",
+			},
 		]);
 
 		share.limited.add("reportShareToken");

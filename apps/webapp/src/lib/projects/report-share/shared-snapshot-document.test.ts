@@ -71,7 +71,12 @@ describe("shared snapshot document", () => {
 		const without = buildSharedSnapshotDocument(projectSnapshot(withRevenue), context);
 		const withEmployees = buildSharedSnapshotDocument(
 			projectSnapshot(withRevenue, [
-				{ employeeName: "Robin Worker", totalMinutes: 480, workPeriodCount: 4, billable: withRevenue },
+				{
+					employeeName: "Robin Worker",
+					totalMinutes: 480,
+					workPeriodCount: 4,
+					billable: withRevenue,
+				},
 			]),
 			context,
 		);
@@ -90,7 +95,12 @@ describe("shared snapshot document", () => {
 				workPeriodCount: 4,
 				billable: withRevenue,
 				projects: [
-					{ project: { name: "Website" }, totalMinutes: 480, workPeriodCount: 4, billable: withRevenue },
+					{
+						project: { name: "Website" },
+						totalMinutes: 480,
+						workPeriodCount: 4,
+						billable: withRevenue,
+					},
 				],
 			},
 			billableTime: { currency: "EUR", ratesResolvedAt: "2026-05-02T08:00:00Z" },

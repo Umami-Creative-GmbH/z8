@@ -10,4 +10,3 @@ export const SHARE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 export function shareLinkPath(token: string): string {
 	return `/share/${token}`;
 }
-

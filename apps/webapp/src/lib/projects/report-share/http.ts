@@ -24,9 +24,7 @@ export function pickShareLocale(
 		.split(",")
 		.map((part, index) => {
 			const [tag = "", ...params] = part.trim().split(";");
-			const quality = params
-				.map((param) => param.trim())
-				.find((param) => param.startsWith("q="));
+			const quality = params.map((param) => param.trim()).find((param) => param.startsWith("q="));
 			const q = quality ? Number(quality.slice(2)) : 1;
 			return { tag: tag.trim().toLowerCase(), q: Number.isFinite(q) ? q : 0, index };
 		})

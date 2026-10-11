@@ -213,7 +213,10 @@ describe("opening report share links on PostgreSQL", () => {
 
 		expect(await sweepShareLinks(db, { now: later })).toEqual({ expired: 1, creatorLostAccess: 1 });
 
-		expect(await storedLink(expiring.id)).toMatchObject({ snapshot: null, revoke_reason: "expired" });
+		expect(await storedLink(expiring.id)).toMatchObject({
+			snapshot: null,
+			revoke_reason: "expired",
+		});
 		expect(await storedLink(departed.id)).toMatchObject({
 			snapshot: null,
 			revoke_reason: "creator_lost_access",
@@ -233,7 +236,11 @@ describe("opening report share links on PostgreSQL", () => {
 				reader: { userId, isOrganizationAdmin },
 			});
 		expect(await viewsOf(ids.organization, ids.pmUser, false)).toEqual([
-			{ viewedAt: "2026-10-05T09:00:00Z", ipAddress: "203.0.113.7", userAgent: "Mozilla/5.0 (Recipient)" },
+			{
+				viewedAt: "2026-10-05T09:00:00Z",
+				ipAddress: "203.0.113.7",
+				userAgent: "Mozilla/5.0 (Recipient)",
+			},
 		]);
 		expect(await viewsOf(ids.organization, ids.ownerUser, true)).toHaveLength(1);
 		expect(await viewsOf(ids.organization, ids.teamManagerUser, false)).toBeNull();

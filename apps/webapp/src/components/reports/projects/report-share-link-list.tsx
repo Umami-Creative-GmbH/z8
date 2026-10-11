@@ -271,7 +271,10 @@ function ReportShareLinkViews({ linkId }: { linkId: string }) {
 	return (
 		<ul className="space-y-1 rounded-md bg-muted/40 p-2 text-xs">
 			{query.data.map((view) => (
-				<li key={`${view.viewedAt}-${view.ipAddress}`} className="grid gap-x-3 sm:grid-cols-[auto_auto_1fr]">
+				<li
+					key={`${view.viewedAt}-${view.ipAddress}`}
+					className="grid gap-x-3 sm:grid-cols-[auto_auto_1fr]"
+				>
 					<span className="tabular-nums">
 						{formatInstant(Temporal.Instant.from(view.viewedAt), display, "dateTimeMedium")}
 					</span>

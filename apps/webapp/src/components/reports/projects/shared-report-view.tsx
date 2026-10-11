@@ -41,7 +41,12 @@ interface SharedReportViewProps {
 	snapshot: SharedSnapshot;
 }
 
-const NUMERIC_KINDS: ReadonlySet<ReportColumnKind> = new Set(["hours", "money", "count", "percent"]);
+const NUMERIC_KINDS: ReadonlySet<ReportColumnKind> = new Set([
+	"hours",
+	"money",
+	"count",
+	"percent",
+]);
 
 /**
  * The recipient page of a report share link (#806): the shared snapshot as
@@ -81,21 +86,14 @@ function SharedReportContent({
 			<header className="space-y-3">
 				<p className="text-sm font-medium text-muted-foreground">{organizationName}</p>
 				<h1 className="text-2xl font-semibold tracking-tight text-balance">{document.title}</h1>
-				<dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
-					<div className="flex items-center gap-1.5">
+				<ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+					<li className="flex items-center gap-1.5">
 						<IconShare aria-hidden="true" className="size-4" />
-						<dt className="sr-only">{t("reports.share.page.sharedByLabel", "Shared by")}</dt>
-						<dd>{t("reports.share.page.sharedBy", "Shared by {name}", { name: creatorName })}</dd>
-					</div>
-					<div>
-						<dt className="inline">{t("reports.share.page.takenAt", "Snapshot taken")}: </dt>
-						<dd className="inline">{takenAt}</dd>
-					</div>
-					<div>
-						<dt className="inline">{t("reports.share.page.expiresAt", "Link expires")}: </dt>
-						<dd className="inline">{expiresOn}</dd>
-					</div>
-				</dl>
+						{t("reports.share.page.sharedBy", "Shared by {name}", { name: creatorName })}
+					</li>
+					<li>{t("reports.share.page.takenAt", "Snapshot taken {date}", { date: takenAt })}</li>
+					<li>{t("reports.share.page.expiresAt", "Link expires {date}", { date: expiresOn })}</li>
+				</ul>
 				<ReportDocumentExportButtons
 					buildDocument={(context) =>
 						buildSharedSnapshotDocument(snapshot, { ...context, generatedAt: takenAt })

@@ -161,7 +161,13 @@ describe("report share links on PostgreSQL", () => {
 		const { snapshot } = await storedLink(created.id);
 		expect(snapshot.summary.billable).toMatchObject({ access: "shared", revenue: "0.00" });
 		const json = JSON.stringify(snapshot);
-		for (const key of ["cost", "margin", "marginPercent", "unpricedWorkCount", "pendingReviewCount"]) {
+		for (const key of [
+			"cost",
+			"margin",
+			"marginPercent",
+			"unpricedWorkCount",
+			"pendingReviewCount",
+		]) {
 			expect(json).not.toContain(`"${key}"`);
 		}
 	});
@@ -197,10 +203,9 @@ describe("report share links on PostgreSQL", () => {
 		const link = await storedLink(created.id);
 		expect(link.token_digest).toBe(createHash("sha256").update(token).digest("hex"));
 		expect(JSON.stringify(link)).not.toContain(token);
-		const { rows } = await admin.query(
-			"select * from audit_log where organization_id = $1",
-			[ids.organization],
-		);
+		const { rows } = await admin.query("select * from audit_log where organization_id = $1", [
+			ids.organization,
+		]);
 		expect(JSON.stringify(rows)).not.toContain(token);
 	});
 
@@ -227,7 +232,9 @@ describe("report share links on PostgreSQL", () => {
 		]);
 
 		actAs(ids.pmUser);
-		const [summary] = await unwrap(listReportShareLinks({ kind: "project", projectId: ids.website }));
+		const [summary] = await unwrap(
+			listReportShareLinks({ kind: "project", projectId: ids.website }),
+		);
 		expect(summary).toMatchObject({
 			id: created.id,
 			status: "revoked",
@@ -256,9 +263,7 @@ describe("report share links on PostgreSQL", () => {
 		actAs(ids.otherUser, ids.otherOrganization);
 		expect(await listReportShareLinks()).toEqual({ success: true, data: [] });
 		await expect(refusal(revokeReportShareLink(created.id))).resolves.toMatch(/not found/i);
-		await expect(
-			refusal(createReportShareLink(projectLink(ids.website))),
-		).resolves.toBeTruthy();
+		await expect(refusal(createReportShareLink(projectLink(ids.website)))).resolves.toBeTruthy();
 		expect((await storedLink(created.id)).revoked_at).toBeNull();
 	});
 });

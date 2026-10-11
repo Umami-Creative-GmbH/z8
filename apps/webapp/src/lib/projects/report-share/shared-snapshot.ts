@@ -78,7 +78,9 @@ function sharedRow(
 		totalMinutes: row.totalMinutes,
 		workPeriodCount: row.workPeriodCount,
 		...(row.billable
-			? { billable: sharedBillableFigures(row.billable, { revenue: options.figures === "revenue" }) }
+			? {
+					billable: sharedBillableFigures(row.billable, { revenue: options.figures === "revenue" }),
+				}
 			: {}),
 	};
 }
@@ -130,7 +132,12 @@ export function takeCustomerSnapshot(
 						...sharedRow(summary, options),
 					})),
 				}
-			: { customer: { name: options.customer.name }, totalMinutes: 0, workPeriodCount: 0, projects: [] },
+			: {
+					customer: { name: options.customer.name },
+					totalMinutes: 0,
+					workPeriodCount: 0,
+					projects: [],
+				},
 		...sharedBillableTime(report.billableTime, options),
 	};
 }

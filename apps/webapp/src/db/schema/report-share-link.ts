@@ -89,14 +89,9 @@ export const reportShareLink = pgTable(
 		index("reportShareLink_org_createdAt_idx").on(table.organizationId, table.createdAt),
 		index("reportShareLink_org_project_idx").on(table.organizationId, table.projectId),
 		index("reportShareLink_org_customer_idx").on(table.organizationId, table.customerId),
-		index("reportShareLink_live_idx")
-			.on(table.expiresAt)
-			.where(sql`${table.revokedAt} IS NULL`),
+		index("reportShareLink_live_idx").on(table.expiresAt).where(sql`${table.revokedAt} IS NULL`),
 		check("report_share_link_kind_check", sql.raw(textIn("kind", REPORT_SHARE_LINK_KINDS))),
-		check(
-			"report_share_link_figures_check",
-			sql.raw(textIn("figures", REPORT_SHARE_LINK_FIGURES)),
-		),
+		check("report_share_link_figures_check", sql.raw(textIn("figures", REPORT_SHARE_LINK_FIGURES))),
 		check("report_share_link_range_check", sql`${table.toDay} >= ${table.fromDay}`),
 		check("report_share_link_expiry_check", sql`${table.expiresAt} > ${table.createdAt}`),
 		check(

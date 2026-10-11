@@ -51,13 +51,14 @@ function shareLinkActor() {
 	return Effect.gen(function* () {
 		const authContext = yield* Effect.tryPromise({
 			try: async () => await requireAuth(),
-			catch: () =>
-				new AuthorizationError({ message: "Approved organization membership required" }),
+			catch: () => new AuthorizationError({ message: "Approved organization membership required" }),
 		});
 		const organizationId = authContext.session.activeOrganizationId;
 		const currentEmployee = authContext.employee;
 		if (!organizationId || !currentEmployee) {
-			return yield* Effect.fail(new AuthorizationError({ message: "Active organization required" }));
+			return yield* Effect.fail(
+				new AuthorizationError({ message: "Active organization required" }),
+			);
 		}
 		const dbService = yield* DatabaseService;
 		const viewer = yield* dbService.query("reportShareLink.getViewer", () =>
