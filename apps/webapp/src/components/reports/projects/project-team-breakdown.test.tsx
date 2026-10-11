@@ -1,12 +1,11 @@
 /* @vitest-environment jsdom */
 
-import { render } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 
-vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({
-		t: (_key: string, fallback?: string) => fallback ?? _key,
-	}),
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({ locale: "de-DE", timezone: "UTC", timeFormat: "24h" }),
 }));
 
 vi.mock("next/dynamic", () => ({
@@ -16,6 +15,26 @@ vi.mock("next/dynamic", () => ({
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
 
 describe("ProjectTeamBreakdown", () => {
+	it("lists each employee's hours in the viewer's locale", () => {
+		render(
+			<ProjectTeamBreakdown
+				teamBreakdown={[]}
+				employeeBreakdown={[
+					{
+						employeeId: "employee-1",
+						employeeName: "Ada",
+						totalHours: 12.5,
+						percentOfTotal: 100,
+						workPeriodCount: 3,
+					} as never,
+				]}
+			/>,
+		);
+
+		const row = screen.getByRole("row", { name: /Ada/ });
+		expect(within(row).getByText("12,5 h")).toBeTruthy();
+	});
+
 	it("renders frozen report inputs without mutating them", () => {
 		const members = Object.freeze([
 			Object.freeze({

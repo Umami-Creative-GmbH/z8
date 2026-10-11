@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import type { ProjectSummary } from "@/lib/reports/project-types";
 import { cn } from "@/lib/utils";
 import { MarginValue, useBillableFigureFormat } from "./billable-figures";
+import { useProjectHoursFormat } from "./use-project-hours-format";
 
 interface ProjectPortfolioTableProps {
 	projects: ProjectSummary[];
@@ -38,6 +39,7 @@ function getBudgetProgressColor(percent: number | null) {
 export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPortfolioTableProps) {
 	const { t } = useTranslate();
 	const format = useBillableFigureFormat();
+	const hoursFormat = useProjectHoursFormat();
 	const [search, setSearch] = useState("");
 
 	const formatDeadlineStatus = (daysUntilDeadline: number | null) => {
@@ -209,7 +211,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 			accessorKey: "totalHours",
 			header: () => <div className="text-right">{t("reports.projects.table.hours", "Hours")}</div>,
 			cell: ({ row }) => (
-				<div className="text-right tabular-nums">{row.original.totalHours.toFixed(1)}h</div>
+				<div className="text-right tabular-nums">{hoursFormat.hours(row.original.totalHours)}</div>
 			),
 		},
 		...billableColumns,
@@ -227,7 +229,9 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 							<span className="text-muted-foreground">
 								{project.percentBudgetUsed?.toFixed(0)}%
 							</span>
-							<span className="text-muted-foreground">{project.budgetHours}h</span>
+							<span className="text-muted-foreground">
+								{hoursFormat.compactHours(project.budgetHours)}
+							</span>
 						</div>
 						<Progress
 							value={Math.min(project.percentBudgetUsed ?? 0, 100)}
