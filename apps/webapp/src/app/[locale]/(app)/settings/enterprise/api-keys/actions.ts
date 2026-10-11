@@ -3,6 +3,7 @@
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
+import type { KeyRequestChannel } from "@/db/schema/public-api";
 import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -127,6 +128,8 @@ export interface ApiKeyDetail {
 	/** The key's most recent requests from the key request log, newest first. */
 	requests: {
 		id: string;
+		/** `api` for the Public API, `mcp` for an MCP tool call (#795). */
+		channel: KeyRequestChannel;
 		method: string;
 		route: string;
 		status: number;

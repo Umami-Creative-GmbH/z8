@@ -1,4 +1,4 @@
-import { SETUP_REQUEST_PATH } from "@/lib/setup/telemetry";
+import { REPORT_SHARE_REQUEST_PATH, SETUP_REQUEST_PATH } from "@/lib/setup/telemetry";
 
 type RequestErrorRequest = {
 	headers?: Headers | { cookie?: string | string[] };
@@ -20,7 +20,9 @@ export const onRequestError = async (
 ) => {
 	if (
 		process.env.NEXT_RUNTIME !== "nodejs" ||
-		(request.path && SETUP_REQUEST_PATH.test(request.path))
+		(request.path &&
+			(SETUP_REQUEST_PATH.test(request.path) ||
+				REPORT_SHARE_REQUEST_PATH.test(request.path)))
 	) {
 		return;
 	}

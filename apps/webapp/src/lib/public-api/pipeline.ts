@@ -16,8 +16,13 @@
  *
  * The pipeline takes its collaborators as dependencies, so suites run it
  * against PostgreSQL with real key verification.
+ *
+ * The MCP server (#795) runs the same steps: `admitKeyRequest` for every HTTP
+ * request, `executeEndpoint` for each tool call and `recordKeyRequest` for
+ * the key request log.
  */
 import type { z } from "zod";
+import type { KeyRequestChannel } from "@/db/schema/public-api";
 import type { EndpointResult, PublicApiEndpoint, PublicApiReader } from "./endpoint";
 import type { ApiKeyPrincipal } from "./keys/principal";
 import { type Problem, problem, problemResponse } from "./problem";
@@ -49,6 +54,7 @@ export interface OrganizationLimitCheck extends RateLimitState {
 export interface KeyRequestLogEntry {
 	organizationId: string;
 	apiKeyId: string;
+	channel: KeyRequestChannel;
 	method: string;
 	route: string;
 	status: number;
@@ -119,11 +125,105 @@ function validationProblem(error: z.ZodError): Problem {
 	});
 }
 
-async function runEndpoint<Query extends z.ZodObject, Response extends z.ZodType>(
+/**
+ * How the pipeline answers a request's API key. Every request of an
+ * identified key counts against the organization's ceiling, so a refusal of
+ * an identified key carries its principal (for the key request log) and its
+ * response carries the `X-RateLimit-*` headers of the tighter limit.
+ */
+export type KeyAdmission =
+	| { outcome: "unidentified"; response: globalThis.Response }
+	| { outcome: "refused"; principal: ApiKeyPrincipal; response: globalThis.Response }
+	| { outcome: "admitted"; principal: ApiKeyPrincipal; headers: Record<string, string> };
+
+/**
+ * Admits one request by its API key: identifies the key, counts the request
+ * against the organization's ceiling and the key's own limit, verifies the key
+ * and checks the organization's billing access.
+ */
+export async function admitKeyRequest(
+	dependencies: PublicApiDependencies,
+	request: Request,
+): Promise<KeyAdmission> {
+	const key = presentedApiKey(request);
+	if (!key) {
+		return {
+			outcome: "unidentified",
+			response: problemResponse(
+				problem("invalid_key", { detail: "Send an API key as `Authorization: Bearer <key>`." }),
+			),
+		};
+	}
+	const identified = await dependencies.identifyKey(key);
+	if (!identified) {
+		return {
+			outcome: "unidentified",
+			response: problemResponse(problem("invalid_key", { detail: "The API key is not valid." })),
+		};
+	}
+
+	const { principal } = identified;
+	const refuse = (response: globalThis.Response): KeyAdmission => ({
+		outcome: "refused",
+		principal,
+		response,
+	});
+	const organizationLimit = await dependencies.checkOrganizationLimit(principal.organizationId);
+	if (!organizationLimit.allowed) {
+		return refuse(
+			problemResponse(
+				problem("rate_limited", { detail: "The organization's request limit is used up." }),
+				{
+					...rateLimitHeaders(bindingLimit([organizationLimit, identified.limit])),
+					"Retry-After": String(organizationLimit.retryAfterSeconds),
+				},
+			),
+		);
+	}
+
+	const verification = await dependencies.verifyKey(key, identified);
+	if (!verification.ok && verification.reason === "invalid_key") {
+		return refuse(
+			problemResponse(
+				problem("invalid_key", { detail: "The API key is revoked, disabled or expired." }),
+				rateLimitHeaders(bindingLimit([organizationLimit, identified.limit])),
+			),
+		);
+	}
+	if (!verification.ok) {
+		return refuse(
+			problemResponse(problem("rate_limited", { detail: "This key's request limit is used up." }), {
+				...rateLimitHeaders(bindingLimit([verification.limit, organizationLimit])),
+				"Retry-After": String(verification.retryAfterSeconds),
+			}),
+		);
+	}
+
+	const headers = rateLimitHeaders(bindingLimit([verification.limit, organizationLimit]));
+	if (!(await dependencies.hasBillingAccess(principal.organizationId))) {
+		return refuse(
+			problemResponse(
+				problem("billing_required", {
+					detail: "The organization's subscription does not allow API access.",
+				}),
+				headers,
+			),
+		);
+	}
+	return { outcome: "admitted", principal, headers };
+}
+
+/**
+ * Runs an endpoint for an admitted key: the key scope, then the endpoint's
+ * query schema, then the endpoint itself. `input` is the query as its channel
+ * delivers it: URL parameters on `/api/v1`, tool arguments over MCP. A thrown
+ * error is reported and becomes `server_error`.
+ */
+export async function executeEndpoint<Query extends z.ZodObject, Response extends z.ZodType>(
 	dependencies: PublicApiDependencies,
 	endpoint: PublicApiEndpoint<Query, Response>,
 	principal: ApiKeyPrincipal,
-	request: Request,
+	input: unknown,
 ): Promise<EndpointResult<z.input<Response>>> {
 	if (!principal.scopes.includes(endpoint.scope)) {
 		return {
@@ -134,9 +234,30 @@ async function runEndpoint<Query extends z.ZodObject, Response extends z.ZodType
 			}),
 		};
 	}
-	const query = endpoint.query.safeParse(queryOf(request));
+	const query = endpoint.query.safeParse(input);
 	if (!query.success) return { ok: false, problem: validationProblem(query.error) };
-	return endpoint.run({ principal, query: query.data, database: dependencies.database });
+	try {
+		return await endpoint.run({ principal, query: query.data, database: dependencies.database });
+	} catch (error) {
+		dependencies.onError?.(error, {
+			route: endpoint.path,
+			organizationId: principal.organizationId,
+		});
+		return { ok: false, problem: problem("server_error") };
+	}
+}
+
+/** Writes one key request log record. A failed write is reported, never thrown. */
+export async function recordKeyRequest(
+	dependencies: PublicApiDependencies,
+	entry: KeyRequestLogEntry,
+): Promise<void> {
+	await dependencies.recordRequest(entry).catch((error) =>
+		dependencies.onError?.(error, {
+			route: entry.route,
+			organizationId: entry.organizationId,
+		}),
+	);
 }
 
 /** Runs one Public API request through the pipeline and returns its response. */
@@ -146,25 +267,17 @@ export async function handlePublicApiRequest<Query extends z.ZodObject, Response
 	request: Request,
 ): Promise<globalThis.Response> {
 	const requestedAt = dependencies.now();
-	const key = presentedApiKey(request);
-	if (!key) {
-		return problemResponse(
-			problem("invalid_key", { detail: "Send an API key as `Authorization: Bearer <key>`." }),
-		);
-	}
-	const identified = await dependencies.identifyKey(key);
-	if (!identified) {
-		return problemResponse(problem("invalid_key", { detail: "The API key is not valid." }));
-	}
+	const admission = await admitKeyRequest(dependencies, request);
+	if (admission.outcome === "unidentified") return admission.response;
+
 	let status = 500;
 	let rowCount: number | null = null;
 	try {
-		const response = await respondToKey(
+		const response = await respondToAdmission(
 			dependencies,
 			endpoint,
+			admission,
 			request,
-			key,
-			identified,
 			(rows) => {
 				rowCount = rows;
 			},
@@ -172,94 +285,43 @@ export async function handlePublicApiRequest<Query extends z.ZodObject, Response
 		status = response.status;
 		return response;
 	} finally {
-		const { principal } = identified;
-		await dependencies
-			.recordRequest({
-				organizationId: principal.organizationId,
-				apiKeyId: principal.apiKeyId,
-				method: endpoint.method,
-				route: endpoint.path,
-				status,
-				rowCount,
-				ipAddress: dependencies.clientIp(request),
-				requestedAt,
-			})
-			.catch((error) =>
-				dependencies.onError?.(error, {
-					route: endpoint.path,
-					organizationId: principal.organizationId,
-				}),
-			);
+		await recordKeyRequest(dependencies, {
+			organizationId: admission.principal.organizationId,
+			apiKeyId: admission.principal.apiKeyId,
+			channel: "api",
+			method: endpoint.method,
+			route: endpoint.path,
+			status,
+			rowCount,
+			ipAddress: dependencies.clientIp(request),
+			requestedAt,
+		});
 	}
 }
 
-/**
- * The response to a request whose key was identified. Every such request
- * counts against the organization's ceiling, so each response, refusals
- * included, carries the `X-RateLimit-*` headers of the tighter limit.
- */
-async function respondToKey<Query extends z.ZodObject, Response extends z.ZodType>(
+async function respondToAdmission<Query extends z.ZodObject, Response extends z.ZodType>(
 	dependencies: PublicApiDependencies,
 	endpoint: PublicApiEndpoint<Query, Response>,
+	admission: Exclude<KeyAdmission, { outcome: "unidentified" }>,
 	request: Request,
-	key: string,
-	identified: IdentifiedKey,
 	recordRows: (rows: number) => void,
 ): Promise<globalThis.Response> {
-	const { principal } = identified;
-	const organizationLimit = await dependencies.checkOrganizationLimit(principal.organizationId);
-	if (!organizationLimit.allowed) {
-		return problemResponse(
-			problem("rate_limited", { detail: "The organization's request limit is used up." }),
-			{
-				...rateLimitHeaders(bindingLimit([organizationLimit, identified.limit])),
-				"Retry-After": String(organizationLimit.retryAfterSeconds),
-			},
-		);
-	}
-
-	const verification = await dependencies.verifyKey(key, identified);
-	if (!verification.ok && verification.reason === "invalid_key") {
-		return problemResponse(
-			problem("invalid_key", { detail: "The API key is revoked, disabled or expired." }),
-			rateLimitHeaders(bindingLimit([organizationLimit, identified.limit])),
-		);
-	}
-	if (!verification.ok) {
-		return problemResponse(
-			problem("rate_limited", { detail: "This key's request limit is used up." }),
-			{
-				...rateLimitHeaders(bindingLimit([verification.limit, organizationLimit])),
-				"Retry-After": String(verification.retryAfterSeconds),
-			},
-		);
-	}
-
-	const headers = rateLimitHeaders(bindingLimit([verification.limit, organizationLimit]));
-	if (!(await dependencies.hasBillingAccess(principal.organizationId))) {
-		return problemResponse(
-			problem("billing_required", {
-				detail: "The organization's subscription does not allow API access.",
-			}),
-			headers,
-		);
-	}
-
-	let result: EndpointResult<z.input<Response>>;
-	try {
-		result = await runEndpoint(dependencies, endpoint, principal, request);
-	} catch (error) {
-		dependencies.onError?.(error, {
-			route: endpoint.path,
-			organizationId: principal.organizationId,
-		});
-		return problemResponse(problem("server_error"), headers);
-	}
-	if (!result.ok) return problemResponse(result.problem, headers);
+	if (admission.outcome === "refused") return admission.response;
+	const result = await executeEndpoint(
+		dependencies,
+		endpoint,
+		admission.principal,
+		queryOf(request),
+	);
+	if (!result.ok) return problemResponse(result.problem, admission.headers);
 
 	recordRows(result.rowCount);
 	return new globalThis.Response(JSON.stringify(result.body), {
 		status: 200,
-		headers: { ...headers, "Content-Type": "application/json", "Cache-Control": "no-store" },
+		headers: {
+			...admission.headers,
+			"Content-Type": "application/json",
+			"Cache-Control": "no-store",
+		},
 	});
 }

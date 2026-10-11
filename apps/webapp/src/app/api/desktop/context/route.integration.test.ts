@@ -235,21 +235,85 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 		await cleanup();
 	});
 
-	it("offers each listed project's open tasks by name, and nothing else", async () => {
+	it.each(["planned", "active", "paused"])(
+		"offers each assigned %s project's open tasks by name, and nothing else",
+		async (status) => {
+			await admin.query("update project set status = $1 where id = $2", [status, ids.projectA]);
+			const context = await read();
+
+			expect(context.status).toBe(200);
+			expect(context.body.liveWork).toBeNull();
+			expect(context.body.projects).toEqual([
+				{
+					id: ids.projectA,
+					name: "Alpha",
+					tasks: [
+						{ id: "f8750000-0000-4000-8000-0000000000a3", name: "Build" },
+						{ id: "f8750000-0000-4000-8000-0000000000a2", name: "design" },
+					],
+				},
+				{ id: ids.projectB, name: "Beta", tasks: [] },
+			]);
+		},
+	);
+
+	it.each(["completed", "archived"])(
+		"does not offer an assigned %s project or its open tasks (#929)",
+		async (status) => {
+			await admin.query("update project set status = $1 where id = $2", [status, ids.projectA]);
+
+			const context = await read();
+
+			expect(context.status).toBe(200);
+			expect(context.body.projects).toEqual([{ id: ids.projectB, name: "Beta", tasks: [] }]);
+		},
+	);
+
+	it("does not offer an inactive assigned project (#929)", async () => {
+		await admin.query("update project set is_active = false where id = $1", [ids.projectA]);
+
 		const context = await read();
 
 		expect(context.status).toBe(200);
-		expect(context.body.liveWork).toBeNull();
-		expect(context.body.projects).toEqual([
-			{
-				id: ids.projectA,
-				name: "Alpha",
-				tasks: [
-					{ id: "f8750000-0000-4000-8000-0000000000a3", name: "Build" },
-					{ id: "f8750000-0000-4000-8000-0000000000a2", name: "design" },
-				],
-			},
-			{ id: ids.projectB, name: "Beta", tasks: [] },
+		expect(context.body.projects).toEqual([{ id: ids.projectB, name: "Beta", tasks: [] }]);
+	});
+
+	it("offers no projects when the organization has projects disabled (#929)", async () => {
+		await admin.query("update organization set projects_enabled = false where id = $1", [
+			ids.organization,
+		]);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		expect(context.body.projectsEnabled).toBe(false);
+		expect(context.body.projects).toEqual([]);
+	});
+
+	it("offers team assignments once, with open tasks and projects by name (#929)", async () => {
+		const teamId = "f9290000-0000-4000-8000-000000000001";
+		await admin.query(
+			"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Desktop team', now())",
+			[teamId, ids.organization],
+		);
+		await admin.query("update employee set team_id = $1 where id = $2", [teamId, ids.employee]);
+		await admin.query(
+			`insert into project_assignment (project_id, organization_id, assignment_type, team_id, created_by)
+			 values ($1, $3, 'team', $4, $5), ($2, $3, 'team', $4, $5)`,
+			[ids.projectA, ids.unassigned, ids.organization, teamId, ids.user],
+		);
+		await admin.query("update project set name = 'Zulu' where id = $1", [ids.projectA]);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		expect(context.body.projects.map((project: { id: string }) => project.id)).toEqual([
+			ids.projectB,
+			ids.unassigned,
+			ids.projectA,
+		]);
+		expect(context.body.projects[1].tasks).toEqual([
+			{ id: "f8750000-0000-4000-8000-0000000000c2", name: "Hidden" },
 		]);
 	});
 

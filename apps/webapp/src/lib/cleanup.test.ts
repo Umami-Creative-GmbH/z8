@@ -4,6 +4,7 @@ import { cleanupExpiredExports } from "@/lib/export/export-service";
 import { runClockingReminderOccasionRetention } from "@/lib/jobs/clocking-reminder-occasion-retention";
 import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
 import { runKeyRequestLogRetention } from "@/lib/jobs/public-api-request-log-retention";
+import { runReportShareLinkViewRetention } from "@/lib/jobs/report-share-links";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import { runCleanup } from "./cleanup";
 
@@ -37,6 +38,10 @@ vi.mock("@/lib/jobs/public-api-request-log-retention", () => ({
 	runKeyRequestLogRetention: vi.fn(),
 }));
 
+vi.mock("@/lib/jobs/report-share-links", () => ({
+	runReportShareLinkViewRetention: vi.fn(),
+}));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: infoMock,
@@ -51,6 +56,7 @@ const deleteOldNotificationsMock = vi.mocked(deleteOldNotifications);
 const runPositionRecordRetentionMock = vi.mocked(runPositionRecordRetention);
 const runClockingReminderOccasionRetentionMock = vi.mocked(runClockingReminderOccasionRetention);
 const runKeyRequestLogRetentionMock = vi.mocked(runKeyRequestLogRetention);
+const runReportShareLinkViewRetentionMock = vi.mocked(runReportShareLinkViewRetention);
 
 describe("runCleanup", () => {
 	beforeEach(() => {
@@ -64,6 +70,8 @@ describe("runCleanup", () => {
 		runClockingReminderOccasionRetentionMock.mockReset();
 		runKeyRequestLogRetentionMock.mockReset();
 		runKeyRequestLogRetentionMock.mockResolvedValue(0);
+		runReportShareLinkViewRetentionMock.mockReset();
+		runReportShareLinkViewRetentionMock.mockResolvedValue(0);
 	});
 
 	it("routes expired export cleanup to cleanupExpiredExports", async () => {
@@ -145,6 +153,25 @@ describe("runCleanup", () => {
 		expect(infoMock).toHaveBeenCalledWith(
 			{ accessLogEntries: 4, consents: 2, declines: 1 },
 			"Cleaned up position records past the audit-log lifetime",
+		);
+	});
+
+	it("deletes report share link views past the same audit-log lifetime", async () => {
+		deleteOldAuditLogsMock.mockResolvedValue(11);
+		runPositionRecordRetentionMock.mockResolvedValue({
+			accessLogEntries: 0,
+			consents: 0,
+			declines: 0,
+		});
+		runReportShareLinkViewRetentionMock.mockResolvedValue(6);
+
+		const result = await runCleanup({ type: "cleanup", task: "old_audit_logs" });
+
+		expect(runReportShareLinkViewRetentionMock).toHaveBeenCalledWith(365);
+		expect(result).toEqual({ deletedCount: 17 });
+		expect(infoMock).toHaveBeenCalledWith(
+			{ count: 6 },
+			"Cleaned up report share link views past the audit-log lifetime",
 		);
 	});
 });

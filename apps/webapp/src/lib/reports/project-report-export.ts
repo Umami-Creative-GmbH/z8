@@ -16,7 +16,12 @@
  */
 
 import { Temporal } from "temporal-polyfill";
-import type { BillableFigures, InvoicingFigures } from "@/lib/billable-time/report-figures";
+import type {
+	BillableFigures,
+	InvoicingFigures,
+	ReportBillableFigures,
+	SharedBillableFigures,
+} from "@/lib/billable-time/report-figures";
 import { customFieldReportText } from "@/lib/organization/custom-fields/report-values";
 import type {
 	ReportCell,
@@ -24,11 +29,8 @@ import type {
 	ReportDocument,
 	ReportTable,
 } from "./exporters/report-document";
-import type {
-	BillableTimeReportContext,
-	CustomerBillableReport,
-	ProjectDetailedReport,
-} from "./project-types";
+import type { BillableTimeReportContext } from "./project-types";
+import type { CustomFieldReportValue } from "./types";
 
 export interface ProjectReportExportLabels {
 	projectReportTitle: string;
@@ -63,6 +65,8 @@ export interface ProjectReportExportLabels {
 	costUnknown: string;
 	roundingNote: string;
 	ratesNote: string;
+	/** The rates note of a shared snapshot (#806). */
+	snapshotRatesNote: string;
 	costUnknownNote: string;
 	invoicedHours: string;
 	invoicedRevenue: string;
@@ -115,6 +119,7 @@ export const DEFAULT_PROJECT_REPORT_EXPORT_LABELS: ProjectReportExportLabels = {
 		"Amounts are summed exactly and rounded half up to the cent once per row; totals add up the rows.",
 	ratesNote:
 		"Revenue uses the rates in effect when the report was generated. Unpriced work has no rate and adds no revenue.",
+	snapshotRatesNote: "Revenue uses the rates in effect when this snapshot was taken.",
 	costUnknownNote:
 		"Cost unknown: some of the work has no cost rate, so its cost and margin are not shown.",
 	invoicedHours: "Invoiced hours",
@@ -139,11 +144,52 @@ export interface ProjectReportExportContext {
 	generatedAt: string;
 }
 
-/** The figures of one table row, whatever the row is (project, employee, customer). */
+/**
+ * The figures of one table row, whatever the row is (project, employee,
+ * customer): the viewer's own Billable Time figures, or a shared snapshot's.
+ */
 export interface ReportFigureRow {
 	totalMinutes: number;
 	workPeriodCount: number;
-	billable?: BillableFigures;
+	billable?: ReportBillableFigures;
+}
+
+/** The viewer's own figures of a row; a shared snapshot's rows have none. */
+function viewerFigures(row: ReportFigureRow): BillableFigures | undefined {
+	return row.billable && row.billable.access !== "shared" ? row.billable : undefined;
+}
+
+/** A shared snapshot's figures of a row (#806). */
+function sharedFigures(row: ReportFigureRow): SharedBillableFigures | undefined {
+	return row.billable?.access === "shared" ? row.billable : undefined;
+}
+
+/** What the project report document reads from a project's detailed report. */
+export interface ProjectReportDocumentInput {
+	project: {
+		name: string;
+		customer?: { name: string; customFields?: CustomFieldReportValue[] } | null;
+		customFields?: CustomFieldReportValue[];
+	};
+	period: { startDate: string; endDate: string };
+	summary: ReportFigureRow;
+	/** The employee table; left out of the document when absent. */
+	employeeBreakdown?: readonly (ReportFigureRow & { employeeName: string })[];
+	timeSeries: readonly { date: string; hours: number }[];
+	billableTime?: BillableTimeReportContext;
+}
+
+type CustomerDocumentRow = ReportFigureRow & {
+	projects: readonly (ReportFigureRow & { project: { name: string } })[];
+};
+
+/** What the customer report document reads from the customer view. */
+export interface CustomerReportDocumentInput {
+	period: { startDate: string; endDate: string };
+	billableTime?: BillableTimeReportContext;
+	customers: readonly (CustomerDocumentRow & { customer: { name: string } })[];
+	withoutCustomer: CustomerDocumentRow | null;
+	totals: ReportFigureRow;
 }
 
 export interface ReportFigureColumn extends ReportColumn {
@@ -178,10 +224,12 @@ export const hoursFigureGroup: ReportFigureGroup = {
 export const billableFigureGroup: ReportFigureGroup = {
 	id: "billable",
 	columns: (rows, { labels, currency }) => {
-		if (!rows.some((row) => row.billable)) return [];
+		if (!rows.some(viewerFigures)) return [];
 		const money = (label: string) => (currency ? `${label} (${currency})` : label);
-		const figure = (read: (figures: BillableFigures) => ReportCell) => (row: ReportFigureRow) =>
-			row.billable ? read(row.billable) : "";
+		const figure = (read: (figures: BillableFigures) => ReportCell) => (row: ReportFigureRow) => {
+			const figures = viewerFigures(row);
+			return figures ? read(figures) : "";
+		};
 		const columns: ReportFigureColumn[] = [
 			{
 				key: "billableHours",
@@ -195,7 +243,7 @@ export const billableFigureGroup: ReportFigureGroup = {
 				kind: "hours",
 				value: figure((f) => hours(f.nonBillableMinutes)),
 			},
-			...(rows.some((row) => (row.billable?.withoutCustomerMinutes ?? 0) > 0)
+			...(rows.some((row) => (viewerFigures(row)?.withoutCustomerMinutes ?? 0) > 0)
 				? [
 						{
 							key: "withoutCustomerHours",
@@ -230,7 +278,7 @@ export const billableFigureGroup: ReportFigureGroup = {
 				value: figure((f) => f.pendingReviewCount),
 			},
 		];
-		if (rows.some((row) => row.billable?.access === "full")) {
+		if (rows.some((row) => viewerFigures(row)?.access === "full")) {
 			const full = (read: (figures: Extract<BillableFigures, { access: "full" }>) => ReportCell) =>
 				figure((f) => (f.access === "full" ? read(f) : ""));
 			columns.push(
@@ -257,10 +305,12 @@ export const billableFigureGroup: ReportFigureGroup = {
 export const invoicingFigureGroup: ReportFigureGroup = {
 	id: "invoicing",
 	columns: (rows, { labels, currency }) => {
-		if (!rows.some((row) => row.billable?.invoicing)) return [];
+		if (!rows.some((row) => viewerFigures(row)?.invoicing)) return [];
 		const money = (label: string) => (currency ? `${label} (${currency})` : label);
-		const figure = (read: (figures: InvoicingFigures) => ReportCell) => (row: ReportFigureRow) =>
-			row.billable?.invoicing ? read(row.billable.invoicing) : "";
+		const figure = (read: (figures: InvoicingFigures) => ReportCell) => (row: ReportFigureRow) => {
+			const invoicing = viewerFigures(row)?.invoicing;
+			return invoicing ? read(invoicing) : "";
+		};
 		return [
 			{
 				key: "invoicedHours",
@@ -301,6 +351,53 @@ export const PROJECT_REPORT_FIGURE_GROUPS: readonly ReportFigureGroup[] = [
 	hoursFigureGroup,
 	billableFigureGroup,
 	invoicingFigureGroup,
+];
+
+/**
+ * A shared snapshot's figures (#806): billable and non-billable hours, and
+ * revenue when the snapshot shares it. It has no column for cost, margin,
+ * unpriced work, pending reviews, work without customer or invoicing.
+ */
+export const sharedFigureGroup: ReportFigureGroup = {
+	id: "shared",
+	columns: (rows, { labels, currency }) => {
+		if (!rows.some(sharedFigures)) return [];
+		const figure =
+			(read: (figures: SharedBillableFigures) => ReportCell) => (row: ReportFigureRow) => {
+				const figures = sharedFigures(row);
+				return figures ? read(figures) : "";
+			};
+		return [
+			{
+				key: "billableHours",
+				header: labels.billableHours,
+				kind: "hours",
+				value: figure((f) => hours(f.billableMinutes)),
+			},
+			{
+				key: "nonBillableHours",
+				header: labels.nonBillableHours,
+				kind: "hours",
+				value: figure((f) => hours(f.nonBillableMinutes)),
+			},
+			...(rows.some((row) => sharedFigures(row)?.revenue !== undefined)
+				? [
+						{
+							key: "revenue",
+							header: currency ? `${labels.revenue} (${currency})` : labels.revenue,
+							kind: "money" as const,
+							value: figure((f) => f.revenue ?? ""),
+						},
+					]
+				: []),
+		];
+	},
+};
+
+/** The only figure groups a shared snapshot's document renders (#806). */
+export const SHARED_SNAPSHOT_FIGURE_GROUPS: readonly ReportFigureGroup[] = [
+	hoursFigureGroup,
+	sharedFigureGroup,
 ];
 
 interface FigureTableInput<Row extends ReportFigureRow> {
@@ -370,10 +467,15 @@ function billableNotes(
 	rows: readonly ReportFigureRow[],
 	labels: ProjectReportExportLabels,
 ): string[] {
-	if (!rows.some((row) => row.billable)) return [];
+	if (!rows.some(viewerFigures)) {
+		// A shared snapshot notes its amounts only when it shares revenue.
+		return rows.some((row) => sharedFigures(row)?.revenue !== undefined)
+			? [labels.roundingNote, labels.snapshotRatesNote]
+			: [];
+	}
 	const notes = [labels.roundingNote, labels.ratesNote];
-	if (rows.some((row) => row.billable?.invoicing)) notes.push(labels.invoicingNote);
-	if (rows.some((row) => row.billable?.access === "full")) notes.push(labels.costUnknownNote);
+	if (rows.some((row) => viewerFigures(row)?.invoicing)) notes.push(labels.invoicingNote);
+	if (rows.some((row) => viewerFigures(row)?.access === "full")) notes.push(labels.costUnknownNote);
 	return notes;
 }
 
@@ -382,7 +484,7 @@ function billableNotes(
  * fields first, each in their defined order; none when neither has any.
  */
 function customFieldsTables(
-	report: ProjectDetailedReport,
+	report: ProjectReportDocumentInput,
 	labels: ProjectReportExportLabels,
 ): ReportTable[] {
 	const rows = [
@@ -412,7 +514,7 @@ function customFieldsTables(
 
 /** The export document of one project's detailed report. */
 export function buildProjectReportDocument(
-	report: ProjectDetailedReport,
+	report: ProjectReportDocumentInput,
 	context: ProjectReportExportContext,
 	groups: readonly ReportFigureGroup[] = PROJECT_REPORT_FIGURE_GROUPS,
 ): ReportDocument {
@@ -448,16 +550,22 @@ export function buildProjectReportDocument(
 				groups,
 				tableContext,
 			),
-			figureTable(
-				{
-					title: labels.employeesTable,
-					leading: [{ key: "employee", header: labels.employee, value: (row) => row.employeeName }],
-					rows: report.employeeBreakdown,
-					totals: { label: labels.total, row: summaryRow },
-				},
-				groups,
-				tableContext,
-			),
+			...(report.employeeBreakdown
+				? [
+						figureTable(
+							{
+								title: labels.employeesTable,
+								leading: [
+									{ key: "employee", header: labels.employee, value: (row) => row.employeeName },
+								],
+								rows: report.employeeBreakdown,
+								totals: { label: labels.total, row: summaryRow },
+							},
+							groups,
+							tableContext,
+						),
+					]
+				: []),
 			{
 				title: labels.dailyHoursTable,
 				columns: [
@@ -477,12 +585,12 @@ export function buildProjectReportDocument(
 
 /** The export document of the customer view. */
 export function buildCustomerReportDocument(
-	view: CustomerBillableReport,
+	view: CustomerReportDocumentInput,
 	context: ProjectReportExportContext,
 	groups: readonly ReportFigureGroup[] = PROJECT_REPORT_FIGURE_GROUPS,
 ): ReportDocument {
 	const { labels } = context;
-	const tableContext = { ...context, currency: view.billableTime.currency };
+	const tableContext = { ...context, currency: view.billableTime?.currency ?? null };
 	// Customers, then projects without an (active) customer as a group of their own.
 	const customerGroups = [
 		...view.customers.map((row) => ({ ...row, name: row.customer.name })),

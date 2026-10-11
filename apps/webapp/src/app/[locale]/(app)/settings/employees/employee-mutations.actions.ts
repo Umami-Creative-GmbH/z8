@@ -29,6 +29,7 @@ import {
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import {
 	type AssignManagers,
 	assignManagersSchema,
@@ -291,6 +292,17 @@ export async function updateEmployeeAction(
 						),
 					)
 					.pipe(keepCustomFieldRefusal);
+
+				// A lower role or a deactivation can take projects away from the employee's share links (#806).
+				if ("role" in employeeUpdateData || "isActive" in employeeUpdateData) {
+					yield* dbService.query("reportShareLink.revokeAfterEmployeeUpdate", () =>
+						revokeShareLinksAfterAccessChange(dbService.db, {
+							organizationId: targetEmployee.organizationId,
+							creator: { employeeId },
+							actorUserId: session.user.id,
+						}),
+					);
+				}
 
 				if (
 					actor.accessTier === "orgAdmin" &&

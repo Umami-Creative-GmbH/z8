@@ -11,7 +11,7 @@ vi.mock("./recipient-locale", () => ({
 }));
 
 vi.mock("@/tolgee/shared", () => ({
-	ALL_LANGUAGES: ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"],
+	ALL_LANGUAGES: ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw", "no", "sv"],
 	DEFAULT_LANGUAGE: "en",
 	ALL_NAMESPACES: ["common", "admin"],
 	loadNamespaces: loadNamespacesMock,

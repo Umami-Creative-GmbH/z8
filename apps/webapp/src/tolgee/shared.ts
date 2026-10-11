@@ -4,7 +4,22 @@ import { DevTools, Tolgee } from "@tolgee/web";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
-export const ALL_LANGUAGES = ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"];
+// Adding a language: extend this list, LANGUAGE_CONFIG, the calendar locale maps and the
+// Tolgee push list; `language-coverage.test.ts` names any that are missing.
+export const ALL_LANGUAGES = [
+	"en",
+	"de",
+	"fr",
+	"es",
+	"it",
+	"pt",
+	"el",
+	"pl",
+	"tr",
+	"gsw",
+	"no",
+	"sv",
+];
 
 export const DEFAULT_LANGUAGE = "en";
 
@@ -66,6 +81,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/setup": ["common", "setup"],
 	"/init": ["common", "setup"],
 	"/kiosk": ["common", "timeTracking"],
+	// The public report share link page (#806) renders project report copy.
+	"/share": ["common", "reports"],
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],
@@ -109,6 +126,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
 	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/report-share-links": ["common", "settings/generic", "reports"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],
 	"/settings/scheduled-exports": ["common", "settings/generic", "settings/scheduledExports"],
 	"/settings/shifts": ["common", "settings/generic", "settings/rules"],

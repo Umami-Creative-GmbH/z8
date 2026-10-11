@@ -79,11 +79,10 @@ function manageableProjects(manager: ProjectTaskManager, reader: Reader, project
 	);
 }
 
-/** Whether the caller may manage the tasks of this project of their organization. */
-export async function canManageProjectTasks(
+async function hasManageableProject(
 	manager: ProjectTaskManager,
-	projectId: string,
-	reader: Reader = db,
+	reader: Reader,
+	projectId?: string,
 ): Promise<boolean> {
 	const [row] = await reader
 		.select({ id: project.id })
@@ -91,6 +90,24 @@ export async function canManageProjectTasks(
 		.where(manageableProjects(manager, reader, projectId))
 		.limit(1);
 	return row !== undefined;
+}
+
+/** Whether the caller may manage the tasks of this project of their organization. */
+export async function canManageProjectTasks(
+	manager: ProjectTaskManager,
+	projectId: string,
+	reader: Reader = db,
+): Promise<boolean> {
+	return hasManageableProject(manager, reader, projectId);
+}
+
+/** Whether the caller may manage the tasks of at least one project of the organization. */
+export async function managesProjectTasks(
+	input: { userId: string; organizationId: string },
+	reader: Reader = db,
+): Promise<boolean> {
+	const manager = await loadProjectTaskManager(input, reader);
+	return manager ? hasManageableProject(manager, reader) : false;
 }
 
 export type TaskManagedProject = Pick<

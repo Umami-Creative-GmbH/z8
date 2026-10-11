@@ -27,6 +27,8 @@ export interface StaticAppSearchInput {
 	showComplianceNav: boolean;
 	showPayrollNav?: boolean;
 	featureFlags?: FeatureFlagState;
+	/** The user manages a project below the manager tier (#928). */
+	managesProject?: boolean;
 }
 
 export interface LiveAppSearchResults {

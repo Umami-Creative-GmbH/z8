@@ -54,6 +54,23 @@ describe("buildStaticAppSearchResults", () => {
 		).toBe(false);
 	});
 
+	it("finds the Projects setting for an employee who manages a project (#928)", () => {
+		const input = {
+			t,
+			employeeRole: "employee" as const,
+			settingsAccessTier: "member" as const,
+			billingEnabled: true,
+			showComplianceNav: false,
+			featureFlags: enabledFeatures,
+		};
+		const settingHrefs = (managesProject: boolean) =>
+			buildStaticAppSearchResults({ ...input, managesProject })
+				.filter((result) => result.type === "setting")
+				.map((result) => result.href);
+
+		expect(settingHrefs(true)).toEqual([...settingHrefs(false), "/settings/projects"]);
+	});
+
 	it("shows manager navigation and manager settings without org-admin settings", () => {
 		const results = buildStaticAppSearchResults({
 			t: (key, defaultValue) =>

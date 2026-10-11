@@ -33,6 +33,7 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import type { ProjectTimeSeriesPoint } from "@/lib/reports/project-types";
+import { useProjectHoursFormat } from "./use-project-hours-format";
 
 interface ProjectHoursChartProps {
 	data: ProjectTimeSeriesPoint[];
@@ -41,6 +42,7 @@ interface ProjectHoursChartProps {
 export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 	const { t } = useTranslate();
 	const { locale } = useDisplayContext();
+	const format = useProjectHoursFormat();
 
 	const chartConfig = {
 		hours: {
@@ -111,13 +113,13 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 								tickLine={false}
 								axisLine={false}
 								tickMargin={8}
-								tickFormatter={(value: number) => `${value}h`}
+								tickFormatter={(value: number) => format.compactHours(value)}
 							/>
 							<ChartTooltip
 								content={
 									<ChartTooltipContent
 										formatter={(value) => [
-											`${Number(value).toFixed(1)}h`,
+											format.hours(Number(value)),
 											t("reports.projects.chart.hoursLabel", "Hours"),
 										]}
 									/>
@@ -159,13 +161,13 @@ export function ProjectHoursChart({ data }: ProjectHoursChartProps) {
 								tickLine={false}
 								axisLine={false}
 								tickMargin={8}
-								tickFormatter={(value: number) => `${value}h`}
+								tickFormatter={(value: number) => format.compactHours(value)}
 							/>
 							<ChartTooltip
 								content={
 									<ChartTooltipContent
 										formatter={(value) => [
-											`${Number(value).toFixed(1)}h`,
+											format.hours(Number(value)),
 											t("reports.projects.chart.cumulativeLabel", "Cumulative"),
 										]}
 									/>

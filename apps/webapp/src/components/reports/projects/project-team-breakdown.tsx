@@ -62,6 +62,7 @@ import type {
 	ProjectTeamMember,
 	ProjectTeamBreakdown as TeamBreakdownData,
 } from "@/lib/reports/project-types";
+import { useProjectHoursFormat } from "./use-project-hours-format";
 
 interface ProjectTeamBreakdownProps {
 	teamBreakdown: TeamBreakdownData[];
@@ -86,6 +87,7 @@ export function ProjectTeamBreakdown({
 	employeeBreakdown,
 }: ProjectTeamBreakdownProps) {
 	const { t } = useTranslate();
+	const format = useProjectHoursFormat();
 	const [activeTab, setActiveTab] = useState<"employees" | "teams">(
 		"employees",
 	);
@@ -186,7 +188,7 @@ export function ProjectTeamBreakdown({
 										content={
 											<ChartTooltipContent
 												formatter={(value) => [
-													`${Number(value).toFixed(1)}h`,
+													format.hours(Number(value)),
 													t("reports.projects.team.hoursLabel", "Hours"),
 												]}
 											/>
@@ -235,7 +237,7 @@ export function ProjectTeamBreakdown({
 													{emp.employeeName}
 												</TableCell>
 												<TableCell className="text-right tabular-nums">
-													{emp.totalHours.toFixed(1)}h
+													{format.hours(emp.totalHours)}
 												</TableCell>
 												<TableCell className="text-right tabular-nums">
 													{emp.percentOfTotal.toFixed(0)}%
@@ -275,13 +277,13 @@ export function ProjectTeamBreakdown({
 										type="number"
 										tickLine={false}
 										axisLine={false}
-										tickFormatter={(value: number) => `${value}h`}
+										tickFormatter={(value: number) => format.compactHours(value)}
 									/>
 									<ChartTooltip
 										content={
 											<ChartTooltipContent
 												formatter={(value) => [
-													`${Number(value).toFixed(1)}h`,
+													format.hours(Number(value)),
 													t("reports.projects.team.hoursLabel", "Hours"),
 												]}
 											/>
@@ -302,8 +304,7 @@ export function ProjectTeamBreakdown({
 										<div className="flex items-center justify-between">
 											<span className="font-medium">{team.teamName}</span>
 											<Badge variant="secondary">
-												{team.totalHours.toFixed(1)}h (
-												{team.percentOfTotal.toFixed(0)}%)
+												{format.hours(team.totalHours)} ({team.percentOfTotal.toFixed(0)}%)
 											</Badge>
 										</div>
 										<div className="pl-4 space-y-1">
@@ -314,7 +315,7 @@ export function ProjectTeamBreakdown({
 												>
 													<span>{member.employeeName}</span>
 													<span className="tabular-nums">
-														{member.totalHours.toFixed(1)}h
+														{format.hours(member.totalHours)}
 													</span>
 												</div>
 											))}

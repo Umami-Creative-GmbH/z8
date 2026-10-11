@@ -219,6 +219,15 @@ export const queryKeys = {
 			] as const,
 	},
 
+	// Report share links (#806)
+	reportShareLinks: {
+		all: ["report-share-links"] as const,
+		/** One report's links, or the organization's without a target. */
+		list: (target: { kind: string; id: string } | null) =>
+			["report-share-links", "list", target?.kind ?? "all", target?.id ?? "all"] as const,
+		views: (linkId: string) => ["report-share-links", "views", linkId] as const,
+	},
+
 	// Personnel file (#865)
 	personnelFile: {
 		all: ["personnel-file"] as const,

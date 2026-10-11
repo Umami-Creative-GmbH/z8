@@ -33,6 +33,7 @@ import { ProjectReportDetails } from "./project-report-details";
 import { ProjectSummaryCards } from "./project-summary-cards";
 import { ProjectTaskBreakdown } from "./project-task-breakdown";
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
+import { ReportShareDialog } from "./report-share-dialog";
 
 export function ProjectReportsContainer() {
 	const { t } = useTranslate();
@@ -272,7 +273,19 @@ function DetailedProjectReport({
 		<TabsContent value="project" className="space-y-6">
 			{detailedReport && (
 				<>
-					<div className="flex justify-end">
+					<div className="flex flex-wrap justify-end gap-2">
+						<ReportShareDialog
+							target={{ kind: "project", projectId: detailedReport.project.id }}
+							reportName={detailedReport.project.name}
+							period={{
+								// The filter's days as UTC midnights (`reportDayRangeFromDates`).
+								fromDay: detailedReport.period.startDate.slice(0, 10),
+								toDay: detailedReport.period.endDate.slice(0, 10),
+							}}
+							canShareRevenue={Boolean(
+								detailedReport.summary.billable && detailedReport.billableTime,
+							)}
+						/>
 						<ReportDocumentExportButtons
 							buildDocument={(context) => buildProjectReportDocument(detailedReport, context)}
 						/>

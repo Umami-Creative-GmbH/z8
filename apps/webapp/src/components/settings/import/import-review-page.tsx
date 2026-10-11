@@ -5,12 +5,12 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { startImportCommitAction } from "@/app/[locale]/(app)/settings/import/review-actions";
 import {
-	type CustomerImportPaging,
 	type CustomerImportReviewRow,
 	CustomerImportReviewTable,
 	type CustomerLinkTarget,
 } from "@/components/settings/import/customer-import-review-table";
 import { ImportIssueGroups } from "@/components/settings/import/import-issue-groups";
+import type { ImportReviewPaging } from "@/components/settings/import/import-review-paging";
 import {
 	type ImportReviewRow,
 	ImportReviewTable,
@@ -25,6 +25,10 @@ export interface ImportReviewSummary {
 	blockedRows: number;
 	committedRows: number;
 	issueCount: number;
+	/** Rows of the whole batch whose issue severity is blocking. */
+	blockingIssueRows: number;
+	/** Rows of the whole batch whose issue severity is warning. */
+	warningIssueRows: number;
 }
 
 interface ImportReviewPageProps {
@@ -32,6 +36,8 @@ interface ImportReviewPageProps {
 	batchId: string;
 	summary: ImportReviewSummary;
 	rows: ImportReviewRow[];
+	/** Which page of the batch's staged rows `rows` is. */
+	paging?: ImportReviewPaging;
 	/** Billable Time is on: show each work row's billable value (#907). */
 	showBillability?: boolean;
 	/** A customer import from the accounting connection (#906): per-contact decisions. */
@@ -39,7 +45,6 @@ interface ImportReviewPageProps {
 		rows: CustomerImportReviewRow[];
 		linkTargets: CustomerLinkTarget[];
 		editable: boolean;
-		paging?: CustomerImportPaging;
 	};
 }
 
@@ -71,6 +76,7 @@ export function ImportReviewPage({
 	batchId,
 	summary,
 	rows,
+	paging,
 	showBillability = false,
 	customerImport,
 }: ImportReviewPageProps) {
@@ -140,12 +146,20 @@ export function ImportReviewPage({
 					rows={customerImport.rows}
 					linkTargets={customerImport.linkTargets}
 					editable={customerImport.editable}
-					paging={customerImport.paging}
+					paging={paging}
 				/>
 			) : (
 				<>
-					<ImportIssueGroups rows={rows} />
-					<ImportReviewTable rows={rows} showBillability={showBillability} />
+					<ImportIssueGroups
+						blockingIssueRows={summary.blockingIssueRows}
+						warningIssueRows={summary.warningIssueRows}
+					/>
+					<ImportReviewTable
+						batchId={batchId}
+						rows={rows}
+						paging={paging}
+						showBillability={showBillability}
+					/>
 				</>
 			)}
 		</div>

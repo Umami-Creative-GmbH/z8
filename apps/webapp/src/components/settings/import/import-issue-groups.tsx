@@ -1,11 +1,13 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import type { ImportReviewRow } from "@/components/settings/import/import-review-table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ImportIssueGroupsProps {
-	rows: ImportReviewRow[];
+	/** Rows of the whole batch, not just the shown page, with a blocking issue. */
+	blockingIssueRows: number;
+	/** Rows of the whole batch with a warning issue. */
+	warningIssueRows: number;
 }
 
 const issueGroups = [
@@ -35,10 +37,8 @@ const issueGroups = [
 	},
 ];
 
-export function ImportIssueGroups({ rows }: ImportIssueGroupsProps) {
+export function ImportIssueGroups({ blockingIssueRows, warningIssueRows }: ImportIssueGroupsProps) {
 	const { t } = useTranslate();
-	const blockingRows = rows.filter((row) => row.issueSeverity === "blocking").length;
-	const warningRows = rows.filter((row) => row.issueSeverity === "warning").length;
 
 	return (
 		<section aria-labelledby="import-issue-groups-heading" className="space-y-3">
@@ -70,9 +70,9 @@ export function ImportIssueGroups({ rows }: ImportIssueGroupsProps) {
 			</div>
 			<p className="text-muted-foreground text-sm">
 				{t(
-					"settings.import.review.issueGroups.currentMarkers",
-					"Current rows include {blockingRows} blocking and {warningRows} warning issue markers.",
-					{ blockingRows, warningRows },
+					"settings.import.review.issueGroups.importMarkers",
+					"The import's rows include {blockingRows} blocking and {warningRows} warning issue markers.",
+					{ blockingRows: blockingIssueRows, warningRows: warningIssueRows },
 				)}
 			</p>
 		</section>
