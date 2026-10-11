@@ -28,6 +28,7 @@ const {
 	hasActivePayrollAccessGrantMock,
 	loadFinanceActorMock,
 	loadCurrentPersonnelFileAccessMock,
+	loadCollectsPeriodSubmissionsMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -43,6 +44,7 @@ const {
 	hasActivePayrollAccessGrantMock: vi.fn(),
 	loadFinanceActorMock: vi.fn(),
 	loadCurrentPersonnelFileAccessMock: vi.fn(),
+	loadCollectsPeriodSubmissionsMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -72,6 +74,10 @@ vi.mock("@/lib/travel-expenses/finance-access", () => ({
 
 vi.mock("@/lib/personnel-file/current-access", () => ({
 	loadCurrentPersonnelFileAccess: loadCurrentPersonnelFileAccessMock,
+}));
+
+vi.mock("@/lib/time-tracking/period-submissions/settings", () => ({
+	loadCollectsPeriodSubmissions: loadCollectsPeriodSubmissionsMock,
 }));
 
 vi.mock("@/components/travel-expenses/finance/finance-nav-badge", () => ({
@@ -166,6 +172,8 @@ describe("app sidebar compliance navigation", () => {
 		hasActivePayrollAccessGrantMock.mockReset();
 		loadFinanceActorMock.mockReset();
 		loadCurrentPersonnelFileAccessMock.mockReset();
+		loadCollectsPeriodSubmissionsMock.mockReset();
+		loadCollectsPeriodSubmissionsMock.mockResolvedValue(false);
 		vi.resetModules();
 	});
 
@@ -666,8 +674,26 @@ describe("app sidebar compliance navigation", () => {
 		);
 	});
 
-	it("renders Period Submissions in the Team section for managers (#1063)", () => {
-		render(<AppSidebar employeeRole="manager" />);
+	it("renders Period Submissions in the Team section only while the organization collects them (#1075)", () => {
+		const { rerender } = render(<AppSidebar employeeRole="manager" />);
+		expect(navTeamSpy.mock.lastCall?.[0].map((item) => item.url)).not.toContain(
+			"/team/period-submissions",
+		);
+
+		rerender(
+			<AppSidebar
+				employeeRole="manager"
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					finance: false,
+					worksCouncil: false,
+					periodSubmissions: true,
+					platformAdmin: false,
+				}}
+			/>,
+		);
 
 		expect(navTeamSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
@@ -679,6 +705,80 @@ describe("app sidebar compliance navigation", () => {
 			]),
 		);
 	});
+
+	it.each([
+		["shows", "manager", true, true],
+		["shows", "admin", true, true],
+		["hides", "manager", false, false],
+		["hides", "employee", true, false],
+	] as const)(
+		"%s Period Submissions navigation for role %s while collecting is %s (#1075)",
+		async (_verb, role, collects, periodSubmissions) => {
+			vi.stubEnv("BILLING_ENABLED", "false");
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+			getUserOrganizationsMock.mockResolvedValue([
+				{
+					id: "org_1",
+					shiftsEnabled: false,
+					projectsEnabled: false,
+					surchargesEnabled: false,
+					demoDataEnabled: true,
+					worksCouncilEnabled: false,
+				},
+			]);
+			getAuthContextMock.mockResolvedValue({
+				user: { role: "user" },
+				session: { activeOrganizationId: "org_1" },
+				employee: { id: "emp_1", organizationId: "org_1", role },
+			});
+			getCurrentSettingsAccessTierMock.mockResolvedValueOnce(
+				role === "admin" ? "orgAdmin" : role === "manager" ? "manager" : "member",
+			);
+			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
+			loadFinanceActorMock.mockResolvedValue(null);
+			loadCollectsPeriodSubmissionsMock.mockResolvedValue(collects);
+
+			vi.doMock("@/lib/auth-helpers", () => ({
+				getUserOrganizations: getUserOrganizationsMock,
+				getAuthContext: getAuthContextMock,
+				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+				requireAbility: requireAbilityMock,
+			}));
+			vi.doMock("@/lib/organization/creation-policy.server", () => ({
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+			}));
+			vi.doMock("./app-sidebar", () => ({
+				AppSidebar: (props: Record<string, unknown>) => {
+					appSidebarSpy(props);
+					return <div data-testid="server-sidebar-proxy" />;
+				},
+			}));
+
+			try {
+				const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+				render(await ServerAppSidebar({}));
+
+				expect(appSidebarSpy).toHaveBeenCalledWith(
+					expect.objectContaining({
+						navigationCapabilities: expect.objectContaining({ periodSubmissions }),
+					}),
+				);
+				if (role === "employee") {
+					expect(loadCollectsPeriodSubmissionsMock).not.toHaveBeenCalled();
+				} else {
+					// Scoped to the session's active organization.
+					expect(loadCollectsPeriodSubmissionsMock).toHaveBeenCalledWith(
+						expect.anything(),
+						"org_1",
+						expect.anything(),
+					);
+				}
+			} finally {
+				vi.doUnmock("./app-sidebar");
+			}
+		},
+	);
 
 	it("renders Team Absences after Team for managers only", () => {
 		const { rerender } = render(<AppSidebar employeeRole="manager" />);

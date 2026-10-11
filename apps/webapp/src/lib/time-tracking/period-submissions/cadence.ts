@@ -214,6 +214,14 @@ export function submissionCadenceStatusAt(
 }
 
 /**
+ * Whether the organization collects period submissions now or has scheduled to: a cadence other
+ * than off is in effect or upcoming. A switch-off stops collecting only once it takes effect.
+ */
+export function collectsPeriodSubmissions(status: SubmissionCadenceStatus): boolean {
+	return status.inEffect.kind !== "off" || (status.upcoming?.cadence.kind ?? "off") !== "off";
+}
+
+/**
  * A submission period as the cadence schedules it, before employment and coverage are applied.
  * `startDate`/`endDate` are clipped to the time its cadence was in effect; `cadenceStartDate` and
  * `cadenceEndDate` are the whole week or month, which identifies the period across employees.

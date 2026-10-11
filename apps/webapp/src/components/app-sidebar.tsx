@@ -66,6 +66,8 @@ export interface NavigationCapabilities {
 	myDocuments?: boolean;
 	/** Owners, admins and active personnel file officers while personnel files are on (#866). */
 	personnelFiles?: boolean;
+	/** Managers and above while the organization collects period submissions (#1075). */
+	periodSubmissions?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -97,6 +99,7 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	worksCouncil: false,
 	myDocuments: false,
 	personnelFiles: false,
+	periodSubmissions: false,
 	platformAdmin: false,
 };
 
@@ -257,11 +260,16 @@ export function AppSidebar({
 			url: "/team/presence",
 			icon: IconUserCheck,
 		},
-		{
-			title: t("nav.teamPeriodSubmissions", "Period Submissions"),
-			url: "/team/period-submissions",
-			icon: IconCalendarCheck,
-		},
+		// Only while the organization collects period submissions (current or scheduled cadence)
+		...(navigationCapabilities.periodSubmissions
+			? [
+					{
+						title: t("nav.teamPeriodSubmissions", "Period Submissions"),
+						url: "/team/period-submissions",
+						icon: IconCalendarCheck,
+					},
+				]
+			: []),
 		// Only show Scheduling when shifts are enabled for the organization
 		...(navigationCapabilities.scheduling
 			? [
