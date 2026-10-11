@@ -71,3 +71,29 @@ export function periodSubmissionViewStatus(
 export function isPeriodSubmittable(status: PeriodSubmissionViewStatus): boolean {
 	return status !== "submitted" && status !== "approved";
 }
+
+/**
+ * Whether a period shows the range of its latest submission: the range that was submitted stays
+ * while that submission is pending or decided (approved, rejected). A period awaiting submission
+ * or sent back after a change shows its expected range, which a new submission would take.
+ */
+export function showsSubmittedRange(status: PeriodSubmissionViewStatus): boolean {
+	return status === "submitted" || status === "approved" || status === "rejected";
+}
+
+/**
+ * The latest submission of each period, keyed by the period's first day: the newest
+ * `submittedAt` wins. Every reader of a period's status takes its latest submission this way.
+ */
+export function latestSubmissionByPeriod<T extends { startDate: string; submittedAt: Date }>(
+	submissions: readonly T[],
+): Map<string, T> {
+	const latest = new Map<string, T>();
+	for (const submission of submissions) {
+		const current = latest.get(submission.startDate);
+		if (!current || submission.submittedAt.getTime() > current.submittedAt.getTime()) {
+			latest.set(submission.startDate, submission);
+		}
+	}
+	return latest;
+}

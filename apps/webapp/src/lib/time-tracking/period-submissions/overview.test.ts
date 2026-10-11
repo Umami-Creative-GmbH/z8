@@ -268,4 +268,23 @@ describe("the overview's rows", () => {
 			["Submitted", "2026-03-02", "2026-03-08", "2026-03-08T12:00:00.000Z"],
 		]);
 	});
+
+	it("keeps a decided submission's range, as the employee's own view does, but not a sent-back one", () => {
+		// The expected range ends earlier now (a departure) than the range that was submitted.
+		const shorter = [week("2026-03-02", "2026-03-06")];
+		const { rows } = buildOverviewRows({
+			selected,
+			now: afterPeriod,
+			employees: [
+				employee("Rejected", [submitted("rejected")], shorter),
+				employee("Approved", [submitted("approved")], shorter),
+				employee("Sent back", [submitted("outdated", { closedCause: "change" })], shorter),
+			],
+		});
+		expect(Object.fromEntries(rows.map((row) => [row.name, row.endDate]))).toEqual({
+			Rejected: "2026-03-08",
+			Approved: "2026-03-08",
+			"Sent back": "2026-03-06",
+		});
+	});
 });

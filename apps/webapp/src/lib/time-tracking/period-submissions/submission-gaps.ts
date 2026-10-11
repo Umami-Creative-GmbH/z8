@@ -1,6 +1,7 @@
 import { comparePlainDates, type PlainDate } from "@/lib/datetime/temporal-core";
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
 import {
+	latestSubmissionByPeriod,
 	type PeriodSubmissionClosedCause,
 	type PeriodSubmissionStatus,
 	type PeriodSubmissionViewStatus,
@@ -42,13 +43,7 @@ export function periodSubmissionGaps(input: {
 	submissions: readonly PeriodSubmissionGapSubmission[];
 	today: PlainDate;
 }): PeriodSubmissionGap[] {
-	const latest = new Map<string, PeriodSubmissionGapSubmission>();
-	for (const submission of input.submissions) {
-		const current = latest.get(submission.startDate);
-		if (!current || submission.submittedAt.getTime() > current.submittedAt.getTime()) {
-			latest.set(submission.startDate, submission);
-		}
-	}
+	const latest = latestSubmissionByPeriod(input.submissions);
 	const gaps: PeriodSubmissionGap[] = [];
 	for (const period of input.periods) {
 		if (comparePlainDates(period.startDate, input.today) > 0) continue;
