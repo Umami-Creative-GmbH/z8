@@ -24,7 +24,14 @@ vi.mock("@/app/[locale]/(app)/settings/import/review-actions", () => ({
 	startImportCommitAction: vi.fn(),
 }));
 
-vi.mock("@/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
+vi.mock("@/navigation", () => ({
+	useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 
 const baseSummary = {
 	totalRows: 4,
@@ -33,6 +40,8 @@ const baseSummary = {
 	blockedRows: 0,
 	committedRows: 0,
 	issueCount: 3,
+	blockingIssueRows: 0,
+	warningIssueRows: 0,
 };
 
 const acceptedRow = {
@@ -191,5 +200,42 @@ describe("ImportReviewPage", () => {
 			screen.getByText("The time overlaps work already recorded for this employee."),
 		).toBeTruthy();
 		expect(screen.getByText("Held for review")).toBeTruthy();
+	});
+
+	it("pages through a work import's rows instead of cutting them off (#937)", () => {
+		render(
+			<ImportReviewPage
+				organizationId="org_1"
+				batchId="batch_1"
+				summary={{ ...baseSummary, totalRows: 250 }}
+				rows={[{ ...acceptedRow, id: "row_101" }]}
+				paging={{ page: 2, pageCount: 3 }}
+			/>,
+		);
+
+		const pages = screen.getByRole("navigation", { name: "Row pages" });
+		expect(pages.textContent).toContain("Page 2 of 3");
+		expect(screen.getByRole("link", { name: "Previous page" }).getAttribute("href")).toBe(
+			"/settings/import/batch_1?page=1",
+		);
+		expect(screen.getByRole("link", { name: "Next page" }).getAttribute("href")).toBe(
+			"/settings/import/batch_1?page=3",
+		);
+	});
+
+	it("counts issue markers across the whole import, not just the shown page (#937)", () => {
+		render(
+			<ImportReviewPage
+				organizationId="org_1"
+				batchId="batch_1"
+				summary={{ ...baseSummary, totalRows: 250, blockingIssueRows: 140, warningIssueRows: 30 }}
+				rows={[{ ...acceptedRow, id: "row_101", rowStatus: "blocked", issueSeverity: "blocking" }]}
+				paging={{ page: 2, pageCount: 3 }}
+			/>,
+		);
+
+		expect(
+			screen.getByText("The import's rows include 140 blocking and 30 warning issue markers."),
+		).toBeTruthy();
 	});
 });
