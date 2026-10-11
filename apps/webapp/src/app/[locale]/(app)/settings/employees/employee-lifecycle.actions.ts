@@ -28,6 +28,7 @@ import {
 import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
 import { hasEndedEmploymentWithoutRehire } from "@/lib/employee-lifecycle/employment-periods";
 import { createLogger } from "@/lib/logger";
+import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -412,6 +413,17 @@ function setEmployeeLifecycleState(
 					);
 				}
 
+				if (transactionResult.changed && !isActive) {
+					// A deactivated owner or admin can no longer own scheduled exports (#988).
+					yield* actor.dbService.query("scheduledExport.pauseAfterDeactivation", () =>
+						pauseSchedulesAfterOwnerAccessChange(actor.dbService.db, {
+							organizationId: actor.organizationId,
+							owner: { userId: transactionResult.targetEmployee.userId },
+							actorUserId: actor.session.user.id,
+						}),
+					);
+				}
+
 				if (transactionResult.releasedDeputies) {
 					const releasedDeputies = transactionResult.releasedDeputies;
 					// After the commit, on the caller's database client (#1014); never throws.
@@ -609,6 +621,15 @@ export async function removeEmployeeAccessAction(
 					yield* retryPostRemovalCleanup();
 					return;
 				}
+
+				// A removed owner or admin can no longer own scheduled exports (#988).
+				yield* actor.dbService.query("scheduledExport.pauseAfterRemoval", () =>
+					pauseSchedulesAfterOwnerAccessChange(actor.dbService.db, {
+						organizationId: actor.organizationId,
+						owner: { userId: targetEmployee.userId },
+						actorUserId: actor.session.user.id,
+					}),
+				);
 
 				revalidateEmployeesCache(actor.organizationId);
 			}),

@@ -43,7 +43,7 @@ export class DataExportExecutor implements IReportExecutor {
 	 * Execute a data export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, reportConfig, createdBy, emailRecipients = [] } = params;
+		const { organizationId, reportConfig, ownerId, emailRecipients = [] } = params;
 		const config = reportConfig as DataExportReportConfig;
 
 		logger.info(
@@ -57,9 +57,9 @@ export class DataExportExecutor implements IReportExecutor {
 		try {
 			// Find employee ID from user ID for requestedBy
 			let requestedById: string | undefined;
-			if (createdBy) {
+			if (ownerId) {
 				const emp = await db.query.employee.findFirst({
-					where: and(eq(employee.userId, createdBy), eq(employee.organizationId, organizationId)),
+					where: and(eq(employee.userId, ownerId), eq(employee.organizationId, organizationId)),
 					columns: { id: true },
 				});
 				requestedById = emp?.id;
@@ -69,7 +69,7 @@ export class DataExportExecutor implements IReportExecutor {
 				return {
 					success: false,
 					error:
-						"Unable to determine requester for data export. The schedule creator may not have an employee record.",
+						"Unable to determine requester for data export. The schedule owner may not have an employee record.",
 				};
 			}
 

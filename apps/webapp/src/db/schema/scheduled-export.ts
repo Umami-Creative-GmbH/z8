@@ -131,6 +131,12 @@ export const scheduledExport = pgTable(
 		lastExecutionAt: timestamp("last_execution_at", { withTimezone: true }),
 		nextExecutionAt: timestamp("next_execution_at", { withTimezone: true }),
 
+		// The org admin the schedule acts on behalf of (#988). Automated runs are attributed to
+		// them, and the schedule pauses when they are no longer an org admin.
+		ownerId: text("owner_id")
+			.notNull()
+			.references(() => user.id),
+
 		// Audit fields
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		createdBy: text("created_by")
@@ -146,6 +152,7 @@ export const scheduledExport = pgTable(
 		index("scheduledExport_isActive_idx").on(table.isActive),
 		index("scheduledExport_nextExecutionAt_idx").on(table.nextExecutionAt),
 		index("scheduledExport_reportType_idx").on(table.reportType),
+		index("scheduledExport_org_owner_idx").on(table.organizationId, table.ownerId),
 		// Composite index for finding due executions efficiently
 		index("scheduledExport_active_nextExecution_idx")
 			.on(table.isActive, table.nextExecutionAt)

@@ -30,6 +30,7 @@ import {
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import {
 	type AssignManagers,
 	assignManagersSchema,
@@ -299,6 +300,14 @@ export async function updateEmployeeAction(
 						revokeShareLinksAfterAccessChange(dbService.db, {
 							organizationId: targetEmployee.organizationId,
 							creator: { employeeId },
+							actorUserId: session.user.id,
+						}),
+					);
+					// A deactivated owner or admin can no longer own scheduled exports (#988).
+					yield* dbService.query("scheduledExport.pauseAfterEmployeeUpdate", () =>
+						pauseSchedulesAfterOwnerAccessChange(dbService.db, {
+							organizationId: targetEmployee.organizationId,
+							owner: { employeeId },
 							actorUserId: session.user.id,
 						}),
 					);

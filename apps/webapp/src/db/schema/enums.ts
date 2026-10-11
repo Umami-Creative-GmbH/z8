@@ -301,6 +301,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"period_submission_sent_back",
 	// A submitted period approved or rejected, to the employee (#805)
 	"period_submission_decided",
+	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
+	"scheduled_export_paused",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

@@ -37,6 +37,7 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
@@ -902,6 +903,14 @@ export async function updateMemberRole(
 					revokeShareLinksAfterAccessChange(dbService.db, {
 						organizationId,
 						creator: { userId: targetMember.userId },
+						actorUserId: session.user.id,
+					}),
+				);
+				// An owner or admin who becomes a member can no longer own scheduled exports (#988).
+				yield* dbService.query("scheduledExport.pauseAfterRoleUpdate", () =>
+					pauseSchedulesAfterOwnerAccessChange(dbService.db, {
+						organizationId,
+						owner: { userId: targetMember.userId },
 						actorUserId: session.user.id,
 					}),
 				);

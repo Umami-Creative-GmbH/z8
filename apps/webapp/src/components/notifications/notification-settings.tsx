@@ -149,6 +149,7 @@ const NOTIFICATION_CATEGORIES = [
 			"team_member_added",
 			"team_member_removed",
 			"employee_offboarding_review",
+			"scheduled_export_paused",
 		] as NotificationType[],
 	},
 	{
@@ -290,6 +291,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, str
 	month_reopened: "Closed month reopened for your employees",
 	// One-time notice to owners and admins; not listed in any preference category
 	time_off_in_lieu_available: "Time off in lieu available",
+	// To every owner and admin when a schedule's owner is no longer an org admin (#988)
+	scheduled_export_paused: "Scheduled export paused (owners and admins)",
 };
 
 // Channel icons and labels
