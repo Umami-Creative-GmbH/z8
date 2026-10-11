@@ -151,8 +151,8 @@ export function ImportReviewPage({
 			) : (
 				<>
 					<ImportIssueGroups
-						blockingRows={summary.blockingIssueRows}
-						warningRows={summary.warningIssueRows}
+						blockingIssueRows={summary.blockingIssueRows}
+						warningIssueRows={summary.warningIssueRows}
 					/>
 					<ImportReviewTable
 						batchId={batchId}

@@ -5,9 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface ImportIssueGroupsProps {
 	/** Rows of the whole batch, not just the shown page, with a blocking issue. */
-	blockingRows: number;
+	blockingIssueRows: number;
 	/** Rows of the whole batch with a warning issue. */
-	warningRows: number;
+	warningIssueRows: number;
 }
 
 const issueGroups = [
@@ -37,7 +37,7 @@ const issueGroups = [
 	},
 ];
 
-export function ImportIssueGroups({ blockingRows, warningRows }: ImportIssueGroupsProps) {
+export function ImportIssueGroups({ blockingIssueRows, warningIssueRows }: ImportIssueGroupsProps) {
 	const { t } = useTranslate();
 
 	return (
@@ -72,7 +72,7 @@ export function ImportIssueGroups({ blockingRows, warningRows }: ImportIssueGrou
 				{t(
 					"settings.import.review.issueGroups.importMarkers",
 					"The import's rows include {blockingRows} blocking and {warningRows} warning issue markers.",
-					{ blockingRows, warningRows },
+					{ blockingRows: blockingIssueRows, warningRows: warningIssueRows },
 				)}
 			</p>
 		</section>
