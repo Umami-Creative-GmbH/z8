@@ -77,6 +77,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	settingsAccessTier?: SettingsAccessTier;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
+	/** The user manages a project below the manager tier (#928). */
+	managesProject?: boolean;
 	canCreateOrganizations?: boolean;
 }
 
@@ -128,6 +130,7 @@ export function AppSidebar({
 	settingsAccessTier = "member",
 	billingEnabled = false,
 	featureFlags,
+	managesProject = false,
 	canCreateOrganizations = false,
 	...props
 }: AppSidebarProps) {
@@ -141,6 +144,7 @@ export function AppSidebar({
 		showComplianceNav: navigationCapabilities.compliance,
 		showPayrollNav: navigationCapabilities.payroll,
 		featureFlags,
+		managesProject,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);

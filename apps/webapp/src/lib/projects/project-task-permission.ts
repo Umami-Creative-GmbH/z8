@@ -93,6 +93,25 @@ export async function canManageProjectTasks(
 	return row !== undefined;
 }
 
+/**
+ * Whether the caller may manage the tasks of at least one project of the
+ * organization: the settings navigation offers project managers below the
+ * manager tier their tasks-only Projects view by this (#928).
+ */
+export async function managesProjectTasks(
+	input: { userId: string; organizationId: string },
+	reader: Reader = db,
+): Promise<boolean> {
+	const manager = await loadProjectTaskManager(input, reader);
+	if (!manager) return false;
+	const [row] = await reader
+		.select({ id: project.id })
+		.from(project)
+		.where(manageableProjects(manager, reader))
+		.limit(1);
+	return row !== undefined;
+}
+
 export type TaskManagedProject = Pick<
 	typeof project.$inferSelect,
 	"id" | "name" | "color" | "status"

@@ -38,6 +38,7 @@ describe("SettingsPage", () => {
 		vi.clearAllMocks();
 		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
 			authContext: {
+				user: { id: "user-1" },
 				session: { activeOrganizationId: "org-1" },
 				employee: null,
 			},

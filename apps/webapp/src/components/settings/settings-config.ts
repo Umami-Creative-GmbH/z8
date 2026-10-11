@@ -23,6 +23,8 @@ interface ResolveSettingsVisibilityInput {
 	accessTier: SettingsAccessTier;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
+	/** The caller manages at least one project of the organization (#928). */
+	managesProject?: boolean;
 }
 
 export type SettingsIconName =
@@ -84,6 +86,8 @@ export interface SettingsEntry {
 	requiredFeature?: FeatureFlag;
 	/** If true, only show when BILLING_ENABLED=true (checked at runtime) */
 	requiresBilling?: boolean;
+	/** If true, also show below `minimumTier` to users who manage a project (#928) */
+	visibleToProjectManagers?: boolean;
 }
 
 export interface SettingsGroupConfig {
@@ -478,6 +482,8 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		minimumTier: "manager",
 		group: "administration",
 		requiredFeature: "projectsEnabled",
+		// Project managers below the manager tier get a tasks-only view (#872).
+		visibleToProjectManagers: true,
 	},
 	{
 		id: "custom-fields",
@@ -755,9 +761,13 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 export function getVisibleSettings(
 	accessTier: SettingsAccessTier,
 	billingEnabled = false,
+	managesProject = false,
 ): SettingsEntry[] {
 	return SETTINGS_ENTRIES.filter((entry) => {
-		if (!hasSettingsAccessTier(accessTier, entry.minimumTier)) return false;
+		const projectManagerAccess = managesProject && entry.visibleToProjectManagers === true;
+		if (!hasSettingsAccessTier(accessTier, entry.minimumTier) && !projectManagerAccess) {
+			return false;
+		}
 		if (entry.requiresBilling && !billingEnabled) return false;
 		return true;
 	});
@@ -798,11 +808,12 @@ export function getResolvedSettingsVisibility({
 	accessTier,
 	billingEnabled = false,
 	featureFlags,
+	managesProject = false,
 }: ResolveSettingsVisibilityInput): {
 	visibleSettings: SettingsEntry[];
 	visibleGroups: SettingsGroupConfig[];
 } {
-	const tierVisibleSettings = getVisibleSettings(accessTier, billingEnabled);
+	const tierVisibleSettings = getVisibleSettings(accessTier, billingEnabled, managesProject);
 	const visibleSettings = featureFlags
 		? filterSettingsByFeatureFlags(tierVisibleSettings, featureFlags)
 		: tierVisibleSettings;

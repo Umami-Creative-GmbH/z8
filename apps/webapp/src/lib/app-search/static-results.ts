@@ -105,6 +105,7 @@ export function buildStaticAppSearchResults({
 	showComplianceNav,
 	showPayrollNav,
 	featureFlags,
+	managesProject,
 }: StaticAppSearchInput): AppSearchResult[] {
 	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map(
 		(destination) => ({
@@ -192,6 +193,7 @@ export function buildStaticAppSearchResults({
 		accessTier: settingsAccessTier,
 		billingEnabled,
 		featureFlags,
+		managesProject,
 	});
 
 	const settingsResults: AppSearchResult[] = visibleSettings.map((setting) => ({

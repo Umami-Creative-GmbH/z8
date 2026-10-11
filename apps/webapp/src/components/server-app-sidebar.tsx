@@ -9,6 +9,7 @@ import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
+import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
@@ -47,6 +48,7 @@ export async function ServerAppSidebar({
 		canShowWorksCouncilNav,
 		activeOrganizationId,
 		showPersonnelFilesNav,
+		managesProject,
 		authContext,
 		canCreateOrganizations,
 	} = await resolveSidebarAccess(showWorksCouncilNav);
@@ -72,6 +74,7 @@ export async function ServerAppSidebar({
 			settingsAccessTier={settingsAccessTier ?? "member"}
 			billingEnabled={env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}
+			managesProject={managesProject}
 			canCreateOrganizations={canCreateOrganizations}
 		/>
 	);
@@ -127,6 +130,14 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		showPersonnelFilesNav =
 			personnelFileAccess.status === "resolved" && managesAnyDocuments(personnelFileAccess.access);
 	}
+	// App search offers project managers below the manager tier their Projects view (#928).
+	const managesProject =
+		featureFlags.projectsEnabled &&
+		(await managesProjectBelowManagerTier(
+			settingsAccessTier,
+			authContext?.user.id ?? null,
+			activeOrganizationId,
+		));
 
 	return {
 		organizations,
@@ -139,6 +150,7 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		canShowWorksCouncilNav,
 		activeOrganizationId,
 		showPersonnelFilesNav,
+		managesProject,
 		authContext,
 		canCreateOrganizations,
 	};

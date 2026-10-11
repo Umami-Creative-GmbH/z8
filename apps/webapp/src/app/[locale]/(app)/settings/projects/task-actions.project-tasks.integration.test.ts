@@ -77,6 +77,7 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 
 const tasks = await import("./task-actions");
 const { findProjectTask, listProjectTasks } = await import("@/lib/projects/project-tasks");
+const { managesProjectTasks } = await import("@/lib/projects/project-task-permission");
 
 const ids = {
 	organization: "t872-task-org",
@@ -536,6 +537,25 @@ describe("project tasks on PostgreSQL", () => {
 			}
 			expect(await taskRows()).toMatchObject([{ id, name: "Design", state: "open" }]);
 			expect(audit.logAudit).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe("the settings navigation check (#928)", () => {
+		const managesTasks = (userId: string, organizationId: string = ids.organization) =>
+			managesProjectTasks({ userId, organizationId });
+
+		it("is true for a plain employee who manages a project", async () => {
+			expect(await managesTasks(ids.employeeUser)).toBe(true);
+		});
+
+		it("is false for a plain employee who manages no project and a departed project manager", async () => {
+			expect(await managesTasks(ids.plainUser)).toBe(false);
+			expect(await managesTasks(ids.formerManagerUser)).toBe(false);
+		});
+
+		it("is false in an organization where the user manages no project", async () => {
+			expect(await managesTasks(ids.employeeUser, ids.otherOrganization)).toBe(false);
+			expect(await managesTasks(ids.otherUser)).toBe(false);
 		});
 	});
 
