@@ -16,6 +16,10 @@
       "label": "Rozliczalne",
       "noCustomer": "Tylko praca nad projektem z klientem może być rozliczalna"
     },
+    "breakInProgress": {
+      "description": "Masz przerwę",
+      "since": "Na przerwie od {time}"
+    },
     "budget": "Budżet",
     "clockedOutSuccess": "Wylogowano z systemu!",
     "clockIn": "Rozpocznij pracę",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Tylko praca nad projektem, który ma klienta, może być rozliczalna",
       "breakAwaitingApproval": "Ten okres pracy oczekuje na zatwierdzenie i nie można go edytować. Dodaj przerwę po jego rozpatrzeniu.",
       "breakDurationInvalid": "Wprowadź czas trwania przerwy wynoszący co najmniej 1 minutę.",
+      "breakInProgressOpen": "Jesteś na przerwie. Wznów pracę przed dodaniem kolejnej przerwy.",
       "breakNotAllowed": "Nie możesz dodać przerwy do tego okresu pracy.",
       "breakOccupied": "Przerwa nakłada się na inny zarejestrowany czas pracy.",
       "breakPendingCorrection": "Dla tego okresu pracy oczekuje już zatwierdzenie korekty czasu. Dodaj przerwę po jego rozpatrzeniu.",
@@ -84,12 +89,14 @@
       "breakTooLong": "Czas trwania przerwy musi być krótszy niż Twoja bieżąca sesja.",
       "clockAttributionNotAllowed": "Wybrany projekt lub kategoria jest niedostępna",
       "clockCommandRejected": "Serwer nie zaakceptował tej operacji rejestracji czasu",
+      "clockConnectionRequired": "Rejestracja czasu pracy wymaga połączenia w tej organizacji. Połącz się ponownie i spróbuj jeszcze raz.",
       "clockInAppendReview": "Twoja historia czasu pracy wymaga weryfikacji, zanim będziesz mógł zarejestrować rozpoczęcie pracy. Skontaktuj się z administratorem.",
       "clockInCollision": "To rozpoczęcie pracy koliduje z wcześniejszym żądaniem. Odśwież i spróbuj ponownie.",
       "clockInFailed": "Nie udało się rozpocząć pracy",
       "clockInNotAllowed": "Nie możesz zarejestrować wejścia.",
       "clockInOccupied": "Ten czas pokrywa się z inną zarejestrowaną pracą",
       "clockInRetry": "Nie udało się zarejestrować wejścia. Spróbuj ponownie.",
+      "clockMonthClosed": "Ten czas dotyczy zamkniętego miesiąca i nie można go zmienić do momentu ponownego otwarcia miesiąca.",
       "clockNotAllowedAtTime": "Rejestracja czasu pracy nie jest obecnie dozwolona",
       "clockOutAppendReview": "Twoja historia czasu pracy wymaga weryfikacji, zanim zarejestrujesz wyjście. Skontaktuj się z administratorem.",
       "clockOutBeforeClockIn": "Godzina wyjścia musi być późniejsza niż godzina wejścia",
@@ -117,6 +124,97 @@
       "taskOtherProject": "To zadanie należy do innego projektu",
       "taskProjectNotBookable": "Nie można już rejestrować czasu w projekcie tego zadania",
       "workCategoryNotAllowed": "Nie można przypisać do tej kategorii pracy"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Zarejestruj wejście",
+        "clockOut": "Zarejestruj wyjście",
+        "endDay": "Zakończ dzień",
+        "resume": "Wznów pracę",
+        "startBreak": "Rozpocznij przerwę"
+      },
+      "board": {
+        "empty": "Nikt nie jest obecnie w pracy.",
+        "title": "Kto jest w pracy"
+      },
+      "done": {
+        "button": "Gotowe",
+        "clockIn": "Zarejestrowano wejście",
+        "clockOut": "Zarejestrowano wyjście",
+        "endDay": "Dzień zakończony",
+        "endDayNote": "Twój dzień zakończył się w momencie rozpoczęcia przerwy.",
+        "resume": "Powrót do pracy",
+        "returning": "Powrót do początku za {seconds} s",
+        "startBreak": "Rozpoczęto przerwę",
+        "title": "Gotowe"
+      },
+      "employee": {
+        "back": "Anuluj",
+        "endDayHint": "Zakończenie dnia teraz spowoduje zakończenie pracy w momencie rozpoczęcia przerwy.",
+        "today": "Dzisiaj: {duration}"
+      },
+      "home": {
+        "empty": "Nikt nie jest jeszcze przypisany do tej lokalizacji. Skontaktuj się z administratorem.",
+        "loadFailed": "Nie udało się załadować nazwisk. Sprawdź połączenie z siecią.",
+        "loading": "Wczytywanie nazwisk…",
+        "noMatch": "Żadne nazwisko nie pasuje do wyszukiwania.",
+        "search": "Znajdź swoje nazwisko",
+        "title": "Dotknij swojego nazwiska, aby zarejestrować wejście lub wyjście"
+      },
+      "loading": "Uruchamianie kiosku…",
+      "offline": {
+        "banner": "Kiosk jest w trybie offline. Rejestracja czasu pracy nie jest możliwa do momentu przywrócenia połączenia.",
+        "refused": "Kiosk jest w trybie offline. Nic nie zostało zarejestrowane; rejestracja czasu pracy działa tylko w trybie online."
+      },
+      "pairing": {
+        "codeDescription": "Kod jest jednorazowy i wygasa po 10 minutach od momentu wygenerowania.",
+        "codeLabel": "Kod parowania",
+        "description": "Właściciel lub administrator tworzy kiosk w sekcji Ustawienia › Kioski i przekazuje Ci kod parowania.",
+        "invalidCode": "Ten kod jest nieprawidłowy lub wygasł. Poproś administratora o nowy kod parowania.",
+        "malformedCode": "Wprowadź 10-znakowy kod dokładnie tak, jak pokazano w ustawieniach.",
+        "rateLimited": "Zbyt wiele prób. Odczekaj kilka minut i spróbuj ponownie.",
+        "submit": "Sparuj to urządzenie",
+        "title": "Skonfiguruj ten kiosk",
+        "unreachable": "Kiosk nie może połączyć się z serwerem. Sprawdź połączenie sieciowe i spróbuj ponownie."
+      },
+      "pin": {
+        "back": "To nie Ty? Wróć",
+        "checking": "Sprawdzanie…",
+        "delete": "Usuń ostatnią cyfrę",
+        "entered": "Wprowadzono cyfr: {count}",
+        "locked": "Zbyt wiele nieprawidłowych kodów PIN. Twój PIN jest zablokowany do {time}. Spróbuj ponownie po tym czasie lub poproś menedżera o jego odblokowanie.",
+        "none": "Nie masz jeszcze kodu PIN do kiosku. Poproś o niego swojego menedżera.",
+        "notAssigned": "Nie możesz rejestrować czasu pracy na tym kiosku. Skontaktuj się ze swoim menedżerem.",
+        "prompt": "Wprowadź swój PIN do kiosku",
+        "rateLimited": "Zbyt wiele prób wprowadzenia kodu PIN na tym kiosku. Spróbuj ponownie za {seconds} s.",
+        "submit": "OK",
+        "wrong": "Ten PIN jest nieprawidłowy. Spróbuj ponownie."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Masz już zarejestrowane wejście.",
+        "billing": "Rejestracja czasu pracy jest obecnie niedostępna dla Twojej organizacji. Skontaktuj się z administratorem.",
+        "generic": "To się nie powiodło. Nic nie zostało zarejestrowane. Spróbuj ponownie lub skontaktuj się z przełożonym.",
+        "holiday": "Rejestracja czasu pracy jest dziś zablokowana ze względu na święto. Skontaktuj się z przełożonym.",
+        "monthClosed": "Ten czas dotyczy zamkniętego miesiąca i nie można go zmienić. Skontaktuj się ze swoim przełożonym.",
+        "noBreak": "Nie jesteś na przerwie.",
+        "notClockedIn": "Nie masz zarejestrowanego wejścia.",
+        "onBreak": "Jesteś już na przerwie.",
+        "unconfirmed": "Kiosk nie mógł potwierdzić, czy zostało to zapisane. Sprawdź swój status przed ponowną próbą.",
+        "underReview": "Twój dzisiejszy czas pracy oczekuje na weryfikację. Skontaktuj się z przełożonym."
+      },
+      "retry": "Spróbuj ponownie",
+      "revoked": {
+        "description": "Ten kiosk nie może być już używany do rejestracji czasu pracy. Skontaktuj się z administratorem.",
+        "pairAgain": "Sparuj za pomocą nowego kodu",
+        "title": "Kiosk unieważniony"
+      },
+      "state": {
+        "clockedIn": "W pracy od {time}",
+        "clockedOut": "Nie zarejestrowano wejścia",
+        "onBreak": "Na przerwie od {time}"
+      },
+      "unreachableDescription": "Kiosk nie może połączyć się z serwerem. Sprawdź połączenie sieciowe; rejestracja czasu pracy działa tylko w trybie online.",
+      "unreachableTitle": "Kiosk offline"
     },
     "manualEntry": {
       "addButton": "Dodaj wpis ręczny",
@@ -198,6 +296,39 @@
     "noProject": "Brak projektu",
     "notesPlaceholder": "Nad czym pracowałeś?",
     "notesSaved": "Notatki zapisane",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "Wniosek o nieobecność na {dates} nie został rozpatrzony.",
+        "liveWork": "Praca rozpoczęta {start} nadal trwa.",
+        "manualWork": "Ręczny czas pracy w dniu {start} oczekuje na decyzję.",
+        "timeCorrection": "Korekta czasu pracy z dnia {start} oczekuje na decyzję."
+      },
+      "description": "Potwierdź, że Twój czas pracy i nieobecności w każdym okresie są kompletne i prawidłowe.",
+      "opensOn": "Możesz przesłać od {date}.",
+      "refusal": {
+        "alreadySubmitted": "Ten okres został już przesłany.",
+        "noApprover": "Nikt nie może jeszcze zatwierdzić tego okresu. Poproś administratora o przypisanie Ci przełożonego.",
+        "notEnded": "Możesz przesłać ten okres począwszy od jego ostatniego dnia.",
+        "notExpected": "Ten okres nie wymaga przesyłania.",
+        "periodOpen": "Ten okres jest nadal otwarty"
+      },
+      "rejectionReason": "Powód: {reason}",
+      "status": {
+        "approved": "Zatwierdzono",
+        "awaiting": "Oczekuje na przesłanie",
+        "rejected": "Odrzucono",
+        "sentBack": "Zwrócono po zmianie",
+        "submitted": "Przesłano"
+      },
+      "submit": "Prześlij",
+      "submitFailed": "Nie udało się przesłać okresu",
+      "submitted": "Okres został przesłany do zatwierdzenia",
+      "title": "Zgłoszenia okresów",
+      "withdraw": "Wycofaj",
+      "withdrawFailed": "Nie udało się wycofać zgłoszenia",
+      "withdrawn": "Zgłoszenie zostało wycofane",
+      "withdrawRefused": "To zgłoszenie zostało już rozpatrzone i nie można go wycofać."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Dodaj przerwę",

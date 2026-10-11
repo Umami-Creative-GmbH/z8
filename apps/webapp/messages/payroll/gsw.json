@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Falsch-Positiv wird ufghebt",
       "dateUnavailable": "Datum nid verfügbar",
       "missingClockOut": "Stämpelig bim Usgoh fählt",
+      "missingIdentifier": "Fählendi Chännig",
       "needReview": "{count} Lohnabrächnigshindernis bruched e Prüefig",
       "offboardingClockRepair": "Offboarding-Usstämple mues repariert werde",
       "openApprovals": "Offeni Freigabe",
       "openCalendar": "Kaländer öffne",
+      "openEmployee": "Mitarbeiter öffne",
       "openWork": "Arbet ohni Usstämple",
       "openWorkDiagnostics": "Arbetsdiagnose öffne",
       "pendingAbsence": "Pendendi Abweseheit",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds mues es Array si",
       "employeeIdsMustContainOnlyStrings": "employeeIds dörfe nume Strings enthaute",
       "endDateAfterStart": "S'Änddatum mues glich oder nach em Startdatum si",
+      "exportBlockedByMissingIdentifier": "Export blockiert: Einigi Mitarbeiter hend kein Wert fürs benutzerdefinierte Feld, wo als Lohnabrechnigs-ID bruucht wird",
       "exportBlockedByOffboardingClockRepair": "Export blockiert: Zersch s'Offboarding-Usstämpfle korrigiere",
       "exportBlockedByUncertainWork": "Export blockiert: Zersch die unklari Arbet im uswählte Bereich kläre",
       "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Zersch d'Arbetsminute kläre, wo no überprüeft wärde müend",
       "exportFormatNotConfigured": "S'Format für de Lohnabrechnungs-Export isch nid konfiguriert",
+      "exportIdentifierChanged": "D'Iistellig für d'Lohnabrechnigs-ID isch gänderet worde, nachdem dä Export gsammlet worde isch. Start en neue Export.",
       "invalidBlockerId": "Ungültigi Lohnabrächnigs-Blocker-ID",
       "invalidBlockerType": "Ungültige Lohnabrächnigs-Blocker-Typ",
       "mustBeIsoDate": "{field} mues es ISO-Datum si",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Lohnabrechnungs-Export abgschlosse",
       "formatAccessCheck": "Format-Zuegriffsprüefig",
+      "nobodyEmployedInPeriod": "Niemand in Ihrem Lohnbuchhaltungszugriff war in diesem Zeitraum angestellt.",
       "noConfiguredTarget": "Keis konfigurierts Lohnabrechnungs-Exportziil",
       "queued": "Lohnabrechnungs-Export isch i d'Warteschlange igreiht",
       "selectFormat": "Format wähle",
-      "target": "Lohnabrechnungs-Exportziil"
+      "target": "Lohnabrechnungs-Exportziil",
+      "unmappedOvertimePayouts": "{count, plural, one {# Überstundenauszahlung wurde nicht exportiert} other {# Überstundenauszahlungen wurden nicht exportiert}}",
+      "unmappedOvertimePayoutsDescription": "Für dieses Format ist den Überstunden keine Lohnart zugewiesen. Bitten Sie einen Organisationsadministrator, eine zuzuweisen, oder zahlen Sie diese Stunden auf andere Weise aus."
     },
     "filters": {
       "noMatchingEmployees": "Keini Mitarbeiter stimme mit de gwählte Lohnabrechnungs-Filter überi."
+    },
+    "formerEmployeesExport": {
+      "description": "Exportieren Sie einen Monat, in dem eine dieser Personen noch angestellt war: Die letzten Stunden und die abschliessenden Überstundenauszahlungen werden in die Datei übernommen.",
+      "export": "Exportieren",
+      "nextMonth": "Nächster Monat",
+      "previousMonth": "Vorheriger Monat",
+      "title": "Lohnabrechnung für ausgetretene Mitarbeitende exportieren"
+    },
+    "onlyFormerEmployees": {
+      "description": "Sie können deren Überstundenauszahlungen weiterhin erfassen und stornieren sowie unten die Monate exportieren, in denen sie angestellt waren.",
+      "title": "In Ihrem Lohnbuchhaltungszugriff befinden sich nur ausgetretene Mitarbeitende"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Für dieses Format ist den Überstunden keine Lohnart zugewiesen, weshalb der Export diese Auszahlungen auslässt. Bitten Sie einen Organisationsadministrator, eine zuzuweisen, oder zahlen Sie diese Stunden auf andere Weise aus.",
+      "title": "{count, plural, one {# Überstundenauszahlung wird nicht exportiert} other {# Überstundenauszahlungen werden nicht exportiert}}"
     },
     "period": {
       "current": "Aktuelli Periode",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Lohnlauf verwerfen",
+        "confirmed": "Dä Lohnlauf isch für einigi Bricht scho als zahlt bestätigt und cha drum nümme verworfe werde. Entfern stattdesse einzelni Bricht druus.",
         "description": "{count, plural, one {Die # darin enthaltene Spesenabrechnung wartet wieder auf die Rückerstattung: Der nächste Lohnexport oder eine Banküberweisung kann sie übernehmen. Verwerfen Sie ihn nur, wenn diese Datei nicht über die Lohnabrechnung bezahlt wird.} other {Die # darin enthaltenen Spesenabrechnungen warten wieder auf die Rückerstattung: Der nächste Lohnexport oder eine Banküberweisung kann sie übernehmen. Verwerfen Sie ihn nur, wenn diese Datei nicht über die Lohnabrechnung bezahlt wird.}}",
         "done": "Lohnlauf verworfen. Die zugehörigen Spesenabrechnungen warten wieder auf die Rückerstattung.",
         "failed": "Der Lohnlauf konnte nicht verworfen werden.",
@@ -106,6 +129,29 @@
         "outOfScope": "Dieser Lohnlauf enthält Mitarbeitende ausserhalb Ihres Abrechnungsbereichs.",
         "title": "Diesen Lohnlauf verwerfen?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "vo Hand gsetzt",
+        "exceptionalItinerary": "Reiseroute wird vo de gsetzliche Reglige nöd abdeckt",
+        "outsideVerifiedTables": "kei überprüefti gsetzlichi Tabelle für die Täg"
+      },
+      "description": "Die Späse warted uf d'Rückerstattig, aber en Export vo dere Periode und dem Format laht si us. De Export isch nöd blockiert: Zahl si per Banküberwiisig us de Finanz-Warteschlang.",
+      "payByBankTransfer": "Per Banküberwiisig zahle",
+      "reason": {
+        "apiConnector": "Das Format isch en API-Konnektor, wo nie Späsebeträg übertreit.",
+        "currencyNotEur": "Nöd in Euro: Lohnläuf überträged nur Euro-Beträg.",
+        "includedInOtherRun": "Im unbestätigte Lohnlauf {period} ({format}) enthalte.",
+        "legacyClaim": "Alti Aasprüch werded nie über d'Lohnabrechnig zahlt.",
+        "negativeDifference": "E Aapassig hät das reduziert, was früeneri Lohnläuf gha hend für: {kinds}.",
+        "noStatutoryBaseline": "Kei gsetzlichi Grundlag für: {items}.",
+        "nothingOwed": "D'Lohnziile lönd nüüt übrig, wo d'Lohnabrechnig chan überneh.",
+        "reimbursedOutsidePayroll": "Scho teilwiis per Banküberwiisig zahlt oder zrugggholt: D'Lohnabrechnig chan de Rest nöd überneh.",
+        "unmappedWageType": "Für das Format isch kei Lohnart zuegordnet für: {kinds}."
+      },
+      "title": "Späsebricht, wo dä Lohnlauf nöd überneh wird",
+      "unknownEmployee": "Mitarbeiter"
     },
     "runs": {
       "description": "Diese Exporte enthalten Spesenabrechnungen, die auf die Rückerstattung warten. Eine für Spesen zuständige Person bestätigt jeden Lauf, sobald die Lohnabrechnung ihn ausbezahlt hat; verwerfen Sie einen Lauf, dessen Datei nicht bezahlt wird.",
@@ -140,6 +186,17 @@
       "description": "Lohndate händ nöd sicher chönne vorbereitet wärde.",
       "help": "Bitte probier's spöter nomal. Wenn s'Problem wyterhin bestaht, wänd di an en Administrator vo de Organisation.",
       "title": "Lohndate vorübergehend nöd verfügbar"
+    },
+    "workBalances": {
+      "back": "Arbeitszeitsaldi",
+      "backToPayroll": "Lohnabrechnung",
+      "description": "Erfassen und stornieren Sie Überstundenauszahlungen für die Mitarbeitenden in Ihrem Lohnzugriffsbereich, einschliesslich ausgetretener Mitarbeitender.",
+      "empty": "In Ihrem Lohnzugriffsbereich befinden sich noch keine Mitarbeitenden.",
+      "former": "Ehemalige/-r Mitarbeitende/-r",
+      "loading": "Arbeitszeitsaldi werden geladen",
+      "loadingEmployee": "Arbeitszeitsaldo wird geladen",
+      "open": "Arbeitszeitsaldi",
+      "title": "Arbeitszeitsaldi"
     }
   }
 }

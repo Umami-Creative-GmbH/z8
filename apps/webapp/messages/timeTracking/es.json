@@ -16,6 +16,10 @@
       "label": "Facturable",
       "noCustomer": "Solo el trabajo en un proyecto con un cliente puede ser facturable"
     },
+    "breakInProgress": {
+      "description": "Estás en una pausa",
+      "since": "En descanso desde {time}"
+    },
     "budget": "Presupuesto",
     "clockedOutSuccess": "Has marcado salida!",
     "clockIn": "Entrada",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Solo el trabajo en un proyecto que tiene un cliente puede ser facturable",
       "breakAwaitingApproval": "Este período de trabajo está pendiente de aprobación y no se puede editar. Agregue el descanso una vez que se haya resuelto.",
       "breakDurationInvalid": "Ingrese una duración de descanso de al menos 1 minuto.",
+      "breakInProgressOpen": "Estás en un descanso. Reanúdalo antes de agregar otro descanso.",
       "breakNotAllowed": "No puede agregar un descanso a este trabajo.",
       "breakOccupied": "El descanso se superpone con otro trabajo registrado.",
       "breakPendingCorrection": "Ya hay una aprobación de corrección de tiempo pendiente para este período de trabajo. Agregue el descanso una vez que se haya resuelto.",
@@ -84,12 +89,14 @@
       "breakTooLong": "La duración del descanso debe ser menor que la de su sesión actual.",
       "clockAttributionNotAllowed": "El proyecto o categoría seleccionado no está disponible",
       "clockCommandRejected": "El servidor no aceptó esta acción de registro",
+      "clockConnectionRequired": "El registro de jornada requiere conexión en esta organización. Vuelve a conectarte e inténtalo de nuevo.",
       "clockInAppendReview": "Su historial de tiempo debe revisarse antes de que pueda registrar su entrada. Póngase en contacto con su administrador.",
       "clockInCollision": "Este registro de entrada entra en conflicto con una solicitud anterior. Actualice e inténtelo de nuevo.",
       "clockInFailed": "Error al marcar entrada",
       "clockInNotAllowed": "No puedes registrar la entrada.",
       "clockInOccupied": "Esta hora se superpone con otro trabajo registrado",
       "clockInRetry": "Error al registrar la entrada. Inténtalo de nuevo.",
+      "clockMonthClosed": "Este tiempo está en un mes cerrado y no se puede modificar hasta que se reabra el mes.",
       "clockNotAllowedAtTime": "No está permitido registrar horas en este momento",
       "clockOutAppendReview": "Tu historial de horas debe revisarse antes de que puedas registrar la salida. Ponte en contacto con tu administrador.",
       "clockOutBeforeClockIn": "La hora de salida debe ser posterior a la de entrada",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Esta tarea pertenece a otro proyecto",
       "taskProjectNotBookable": "Ya no se puede registrar tiempo en el proyecto de esta tarea",
       "workCategoryNotAllowed": "No se puede asignar a esta categoría de trabajo"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Registrar entrada",
+        "clockOut": "Registrar salida",
+        "endDay": "Finalizar jornada",
+        "resume": "Reanudar trabajo",
+        "startBreak": "Iniciar descanso"
+      },
+      "board": {
+        "empty": "Nadie ha registrado su entrada en este momento.",
+        "title": "Quién está presente"
+      },
+      "done": {
+        "button": "Listo",
+        "clockIn": "Entrada registrada",
+        "clockOut": "Salida registrada",
+        "endDay": "Jornada finalizada",
+        "endDayNote": "Tu jornada finalizó al inicio de tu descanso.",
+        "resume": "Volver al trabajo",
+        "returning": "Volver al inicio en {seconds} s",
+        "startBreak": "Descanso iniciado",
+        "title": "Listo"
+      },
+      "employee": {
+        "back": "Cancelar",
+        "endDayHint": "Finalizar la jornada ahora dará por terminado tu trabajo al inicio de tu descanso.",
+        "today": "Hoy: {duration}"
+      },
+      "home": {
+        "empty": "Aún no hay nadie asignado a esta ubicación. Consulta con tu administrador.",
+        "loadFailed": "No se pudieron cargar los nombres. Comprueba la conexión de red.",
+        "loading": "Cargando nombres…",
+        "noMatch": "Ningún nombre coincide con tu búsqueda.",
+        "search": "Busca tu nombre",
+        "title": "Toca tu nombre para registrar la entrada o la salida"
+      },
+      "loading": "Iniciando el quiosco…",
+      "offline": {
+        "banner": "El quiosco está sin conexión. No es posible registrar la jornada hasta que se restablezca la conexión.",
+        "refused": "El quiosco está sin conexión. No se ha registrado nada; solo se puede registrar la jornada con conexión."
+      },
+      "pairing": {
+        "codeDescription": "El código es de un solo uso y caduca 10 minutos después de haberse emitido.",
+        "codeLabel": "Código de vinculación",
+        "description": "Un propietario o administrador crea el quiosco en Configuración › Quioscos y te facilita un código de vinculación.",
+        "invalidCode": "Este código no es válido o ha caducado. Pídele un nuevo código de vinculación a tu administrador.",
+        "malformedCode": "Introduce el código de 10 caracteres exactamente como se muestra en la configuración.",
+        "rateLimited": "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.",
+        "submit": "Vincular este dispositivo",
+        "title": "Configurar este quiosco",
+        "unreachable": "El quiosco no puede conectarse con el servidor. Comprueba la conexión de red e inténtalo de nuevo."
+      },
+      "pin": {
+        "back": "¿No eres tú? Volver",
+        "checking": "Comprobando…",
+        "delete": "Borrar el último dígito",
+        "entered": "{count} dígitos introducidos",
+        "locked": "Demasiados PIN incorrectos. Tu PIN está bloqueado hasta las {time}. Inténtalo de nuevo a esa hora o pide a tu supervisor que lo desbloquee.",
+        "none": "Aún no tienes un PIN para el quiosco. Pídeselo a tu supervisor.",
+        "notAssigned": "No puedes registrar tu jornada en este quiosco. Consulta con tu supervisor.",
+        "prompt": "Introduce tu PIN del quiosco",
+        "rateLimited": "Demasiados intentos de PIN en este quiosco. Inténtalo de nuevo en {seconds} segundos.",
+        "submit": "Aceptar",
+        "wrong": "Ese PIN no es correcto. Inténtalo de nuevo."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Ya has registrado tu entrada.",
+        "billing": "El registro de jornada no está disponible para tu organización en este momento. Ponte en contacto con tu administrador.",
+        "generic": "No funcionó. No se ha registrado nada. Inténtalo de nuevo o consulta con tu responsable.",
+        "holiday": "El registro de jornada está bloqueado hoy por ser festivo. Consulta con tu responsable.",
+        "monthClosed": "Este tiempo está en un mes cerrado y no se puede modificar. Consulta con tu responsable.",
+        "noBreak": "No estás en una pausa.",
+        "notClockedIn": "No has registrado tu entrada.",
+        "onBreak": "Ya estás en una pausa.",
+        "unconfirmed": "El quiosco no ha podido confirmar si esto se guardó. Comprueba tu estado antes de volver a intentarlo.",
+        "underReview": "Tus horas de hoy están en revisión. Consulta con tu responsable."
+      },
+      "retry": "Intentar de nuevo",
+      "revoked": {
+        "description": "Este quiosco ya no se puede utilizar para registrar la jornada. Ponte en contacto con tu administrador.",
+        "pairAgain": "Vincular con un nuevo código",
+        "title": "Quiosco revocado"
+      },
+      "state": {
+        "clockedIn": "Entrada registrada desde {time}",
+        "clockedOut": "Sin registro de entrada",
+        "onBreak": "En pausa desde {time}"
+      },
+      "unreachableDescription": "El quiosco no puede conectarse con el servidor. Comprueba la conexión de red; el registro de jornada solo funciona con conexión.",
+      "unreachableTitle": "Quiosco sin conexión"
     },
     "manualEntry": {
       "addButton": "Añadir entrada manual",
@@ -198,6 +296,39 @@
     "noProject": "Sin proyecto",
     "notesPlaceholder": "¿En qué trabajaste?",
     "notesSaved": "Notas guardadas",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "Una solicitud de ausencia para {dates} está pendiente de decisión.",
+        "liveWork": "El trabajo iniciado {start} sigue en curso.",
+        "manualWork": "El trabajo manual del {start} está pendiente de resolución.",
+        "timeCorrection": "Una corrección horaria para el trabajo del {start} está pendiente de resolución."
+      },
+      "description": "Confirma que tu trabajo y ausencias para cada periodo estén completos y sean correctos.",
+      "opensOn": "Puedes enviarlo a partir del {date}.",
+      "refusal": {
+        "alreadySubmitted": "Este periodo ya se ha enviado.",
+        "noApprover": "Nadie puede aprobar este periodo todavía. Pide a un administrador que te asigne un responsable.",
+        "notEnded": "Puedes enviar este periodo a partir de su último día.",
+        "notExpected": "No es necesario enviar este periodo.",
+        "periodOpen": "Este periodo sigue abierto"
+      },
+      "rejectionReason": "Motivo: {reason}",
+      "status": {
+        "approved": "Aprobado",
+        "awaiting": "Pendiente de envío",
+        "rejected": "Rechazado",
+        "sentBack": "Devuelto tras un cambio",
+        "submitted": "Enviado"
+      },
+      "submit": "Enviar",
+      "submitFailed": "No se ha podido enviar el periodo",
+      "submitted": "Periodo enviado para aprobación",
+      "title": "Envíos de periodos",
+      "withdraw": "Retirar",
+      "withdrawFailed": "No se ha podido retirar el envío",
+      "withdrawn": "Envío retirado",
+      "withdrawRefused": "Este envío ya se ha resuelto y ya no se puede retirar."
+    },
     "project": "Proyecto",
     "quickBreak": {
       "addBreak": "Añadir pausa",

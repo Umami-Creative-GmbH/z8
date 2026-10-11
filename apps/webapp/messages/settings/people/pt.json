@@ -158,6 +158,30 @@
         "description": "Convide membros e analise solicitações de entrada pendentes",
         "title": "Convites"
       },
+      "kioskPin": {
+        "addEmailDescription": "Ele receberá um convite para escolher uma senha e poderá fazer login. O PIN do quiosque e o histórico permanecerão inalterados.",
+        "addEmailHeading": "Adicionar um e-mail",
+        "addEmailSubmit": "Adicionar e-mail e convidar",
+        "confirmReset": "Substituir o PIN",
+        "description": "O PIN pessoal que este funcionário insere para registrar o ponto em um quiosque.",
+        "done": "Concluído",
+        "emailAdded": "E-mail adicionado. O convite está a caminho.",
+        "emailAddedNotSent": "E-mail adicionado, mas o convite não pôde ser enviado. O funcionário pode usar \"Esqueci a senha\" com este endereço.",
+        "emailLabel": "Endereço de e-mail",
+        "hasPin": "Um PIN do quiosque está configurado.",
+        "issue": "Emitir PIN",
+        "kioskOnlyBadge": "Apenas quiosque",
+        "kioskOnlyDescription": "Este funcionário não tem e-mail nem login. Ele apenas registra o ponto em quiosques com o PIN.",
+        "kioskOnlyNoEmail": "Apenas quiosque, sem e-mail",
+        "lockedUntil": "Bloqueado após muitas tentativas incorretas de PIN até {time}.",
+        "noPin": "Nenhum PIN do quiosque ainda.",
+        "pinHeading": "PIN do quiosque",
+        "reset": "Redefinir PIN",
+        "shownOnce": "Forneça este PIN ao funcionário agora. Ele é exibido apenas uma vez.",
+        "title": "Acesso ao quiosque",
+        "unlock": "Desbloquear",
+        "unlocked": "PIN do quiosque desbloqueado"
+      },
       "lifecycle": {
         "actionsLabel": "Ações do funcionário para {name}",
         "deactivate": "Desativar",
@@ -207,12 +231,17 @@
         "currency": "Moeda",
         "currencyInvalid": "Insira um código de moeda de três letras.",
         "departurePanelDescription": "O acesso e o uso de licença paga terminam no horário limite exibido abaixo. O histórico do colaborador é mantido.",
+        "deputyCover": {
+          "absences": "Substituto em ausências em andamento ou futuras: {count}",
+          "title": "Substituições para reorganizar"
+        },
         "editDeparture": "Editar desligamento",
         "effective": "Desligamento efetivo",
         "effectiveDescription": "Acesso encerrado às {cutoff} ({timezone}).",
         "employmentGap": "Sem vínculo empregatício {startDate} – {endDate}",
         "employmentStint": "Período de trabalho {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Este funcionário é substituto em ausências em andamento ou futuras. Ele será removido como substituto quando o desligamento entrar em vigor, e as pessoas afetadas serão notificadas.",
           "finalOwner": "Atribua e ative outro proprietário aprovado antes da saída deste colaborador.",
           "futureAbsences": "As ausências após o horário limite permanecem registradas. Revise-as em ausências.",
           "futureShifts": "Os turnos após o horário limite permanecem atribuídos. Revise-os na escala.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Processamento de pausas e adicionais",
           "clockRepair": "Reparo do temporizador",
           "dispatchDeparture": "Agendamento de desligamento",
+          "notifyDeputyRelease": "Notificação de substituto não mais disponível",
           "notifyReview": "Notificação de revisão",
           "sessionRevocation": "Encerramento de sessão"
         },
         "team": "Equipe",
         "title": "Contratação e desligamento",
         "unknownLegacyDate": "Data não registrada",
-        "weeklyHoursInvalid": "Insira as horas semanais entre 0 e 168."
+        "weeklyHoursInvalid": "Insira as horas semanais entre 0 e 168.",
+        "workBalance": {
+          "recordFinalPayout": "Registar pagamento final de horas extraordinárias",
+          "through": "Até {date}",
+          "title": "Saldo de trabalho"
+        }
       },
       "tabs": {
         "employees": "Funcionários",
@@ -324,7 +359,115 @@
         "inviteCodes": "Códigos de convite",
         "members": "Membros"
       },
-      "title": "Funcionários"
+      "title": "Funcionários",
+      "workBalance": {
+        "adjustmentCancelled": "Ajuste cancelado",
+        "cancelDescription": "{summary}. Permanece no histórico como cancelado e deixa de contar para o saldo de trabalho.",
+        "cancellationReason": "Porque foi cancelado?",
+        "cancelSubmit": "Cancelar ajuste",
+        "cancelTitle": "Cancelar ajuste",
+        "conflictingPayoutsDescription": "Deixariam de ser contabilizados. Cancele-os primeiro ou escolha um dia anterior.",
+        "conflictingPayoutsTitle": "Pagamentos de horas extraordinárias neste dia ou antes",
+        "current": "Saldo de trabalho atual",
+        "day": "Dia",
+        "dayDescription": "No fuso horário do colaborador. O saldo exibido vai até ontem, portanto, um pagamento com data de hoje passa a valer a partir de amanhã.",
+        "dayRequired": "Escolha um dia.",
+        "description": "Trabalho concluído menos o tempo necessário, junto com o saldo inicial e os pagamentos de horas extras. Ajustes nunca são editados: se houver um erro, ele é cancelado.",
+        "direction": "Saldo",
+        "errors": {
+          "adjustmentNotFound": "Este ajuste não existe mais para este colaborador.",
+          "alreadyCancelled": "Este ajuste já foi cancelado.",
+          "amountNotPositive": "Insira um pagamento maior que zero.",
+          "beforeOpeningBalance": "A data do pagamento deve ser posterior ao dia do saldo inicial em vigor.",
+          "conflictingPayouts": "Há pagamentos de horas extras com data igual ou anterior a este dia. Cancele-os primeiro ou escolha um dia anterior.",
+          "employeeNotFound": "Colaborador não encontrado.",
+          "exceedsBalance": "O pagamento é maior do que o saldo de trabalho do colaborador ao final daquele dia.",
+          "exceedsLaterBalance": "O pagamento deixaria o saldo de trabalho abaixo de zero após um pagamento posterior de horas extras. Cancele esse pagamento primeiro ou registre um valor menor.",
+          "failed": "Não foi possível atualizar o saldo de trabalho. Tente novamente.",
+          "futureDay": "A data não pode ser posterior a hoje no fuso horário do colaborador.",
+          "invalidInput": "Verifique o dia, as horas e os minutos, e o motivo.",
+          "monthClosed": "O dia está em um mês fechado.",
+          "monthClosedNamed": "{month} está fechado. Ele deve ser reaberto antes que ajustes com datas nesse mês possam ser registrados ou cancelados.",
+          "notPermitted": "Apenas proprietários e administradores da organização, e a equipe de folha de pagamento para os colaboradores abrangidos pelo seu acesso, podem registrar ou cancelar ajustes de saldo.",
+          "reasonRequired": "Insira um motivo."
+        },
+        "history": "Ajustes de saldo",
+        "hours": "Horas",
+        "hoursInvalid": "Insira horas inteiras.",
+        "keepAdjustment": "Manter ajuste",
+        "loadFailed": "Não foi possível carregar o saldo de trabalho.",
+        "loading": "Carregando saldo de trabalho",
+        "minutes": "Minutos",
+        "minutesInvalid": "Insira os minutos de 0 a 59.",
+        "negative": "Horas devidas (−)",
+        "openingBalanceDay": "Saldo ao final de",
+        "openingBalanceDayDescription": "No fuso horário do funcionário. O saldo volta a contar a partir do dia seguinte.",
+        "openingBalanceReasonPlaceholder": "Por exemplo: saldo transferido do sistema anterior…",
+        "openingBalanceSet": "Saldo inicial definido",
+        "payoutReasonPlaceholder": "Por exemplo: pago na folha de pagamento de outubro…",
+        "payoutRecorded": "Pagamento de horas extras registrado",
+        "positive": "Horas extras (+)",
+        "reason": "Motivo",
+        "recordPayout": "Registrar pagamento de horas extras",
+        "recordPayoutDescription": "Registre as horas extras pagas como salário. Isso reduz o saldo de trabalho a partir do final desse dia e não pode ser superior ao saldo desse mesmo dia.",
+        "recordPayoutSubmit": "Registrar pagamento",
+        "recordPayoutTitle": "Registrar pagamento de horas extras",
+        "replacesOpeningBalance": "O saldo inicial em vigor é cancelado, com este motivo.",
+        "setOpeningBalance": "Definir saldo inicial",
+        "setOpeningBalanceDescription": "O saldo inicial substitui o saldo de trabalho até o respectivo dia, inclusive. O trabalho e o tempo obrigatório anteriores a essa data permanecem registrados, mas deixam de contar.",
+        "setOpeningBalanceSubmit": "Definir saldo inicial",
+        "setOpeningBalanceTitle": "Definir saldo inicial",
+        "through": "Até {date}",
+        "title": "Saldo de trabalho",
+        "upload": {
+          "allReady": "{total, plural, one {# linha está pronta; {replacing, plural, =0 {nenhuma substitui um saldo inicial em vigor} one {# substitui um saldo inicial em vigor} other {# substituem um saldo inicial em vigor}}.} other {Todas as # linhas estão prontas; {replacing, plural, =0 {nenhuma substitui um saldo inicial em vigor} one {# substitui um saldo inicial em vigor} other {# substituem um saldo inicial em vigor}}.}}",
+          "checking": "Verificando o arquivo…",
+          "columns": {
+            "balance": "Saldo",
+            "day": "Dia",
+            "employee": "Funcionário",
+            "reason": "Motivo",
+            "row": "Linha",
+            "status": "Status"
+          },
+          "committed": "{count, plural, one {# saldo inicial definido} other {# saldos iniciais definidos}}",
+          "description": "Defina o saldo inicial de vários funcionários a partir de um arquivo CSV com as colunas employee_number, day (AAAA-MM-DD ou DD.MM.AAAA), balance (horas e minutos como 12:30 ou -4:15) e reason. Cada saldo inicial substitui o saldo de trabalho do funcionário até esse dia, inclusive, e cancela o saldo em vigor. Nada será salvo enquanto qualquer linha tiver um erro.",
+          "errors": {
+            "ambiguousEmployee": "Vários funcionários têm este número. Atribua um número exclusivo a cada um primeiro.",
+            "conflictingPayouts": "Os pagamentos de horas extras têm data igual ou anterior a este dia:",
+            "duplicateEmployee": "Este funcionário tem mais de uma linha. Mantenha apenas uma.",
+            "employeeNumberRequired": "Insira o número do funcionário.",
+            "futureDay": "A data é posterior a hoje no fuso horário do funcionário.",
+            "invalidAmount": "Insira o saldo em horas e minutos, como 12:30 ou -4:15.",
+            "invalidDay": "Insira a data como AAAA-MM-DD ou DD.MM.AAAA.",
+            "monthClosed": "A data está em um mês fechado.",
+            "outOfScope": "Este funcionário está fora do seu acesso à folha de pagamento.",
+            "reasonRequired": "Insira um motivo.",
+            "reasonTooLong": "Mantenha o motivo em até 1000 caracteres.",
+            "unknown": "Esta linha não pode ser salva.",
+            "unknownEmployee": "Nenhum funcionário tem este número."
+          },
+          "file": "Arquivo CSV",
+          "fileErrors": {
+            "fileTooLarge": "O arquivo é muito grande. Divida-o em vários envios.",
+            "missingColumns": "Estão faltando as seguintes colunas no arquivo: {columns}.",
+            "noRows": "O arquivo não tem linhas abaixo do cabeçalho.",
+            "tooManyRows": "O arquivo tem mais de 2000 linhas. Divida-o em vários envios.",
+            "unreadable": "Não foi possível ler o arquivo. Salve-o como CSV (UTF-8) e tente novamente."
+          },
+          "former": "Ex-funcionário",
+          "hasErrors": "{errors, plural, one {# de {total} linhas tem um erro. Corrija o arquivo e envie-o novamente.} other {# de {total} linhas têm erros. Corrija o arquivo e envie-o novamente.}}",
+          "hasErrorsTitle": "Corrija as linhas com erros",
+          "invalidFile": "O arquivo não pode ser usado",
+          "open": "Carregar saldos iniciais",
+          "ready": "Pronto",
+          "refusedTitle": "Nada foi salvo",
+          "replaces": "Substitui o saldo inicial de {balance} em {day}",
+          "submit": "{count, plural, one {Definir # saldo inicial} other {Definir # saldos iniciais}}",
+          "template": "Baixar modelo",
+          "title": "Carregar saldos iniciais"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Adicionar alteração",
@@ -552,6 +695,7 @@
         "loadingFile": "Carregando o arquivo pessoal",
         "manageOfficers": "Responsáveis pelos arquivos pessoais",
         "payslipBatch": "Lote de holerites",
+        "sickLeave": "Licença médica",
         "title": "Arquivos Pessoais"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Visibilidade"
       },
       "list": {
+        "absence": "Para licença médica {dateRange}",
         "delete": "Excluir {title}",
         "download": "Baixar {title}",
         "edit": "Editar {title}",
@@ -771,6 +916,83 @@
         "description": "Escolha quem, além de proprietários e administradores, gerencia documentos de colaboradores.",
         "loading": "Carregando configurações dos dossiês de pessoal",
         "title": "Dossiês de pessoal"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Datas",
+          "duration": "Duração",
+          "employee": "Colaborador",
+          "sickDetail": "Detalhe da licença médica",
+          "sickNotes": "Atestados médicos",
+          "status": "Status"
+        },
+        "description": "Ausências por licença médica dos colaboradores cujos atestados médicos você gerencia, com os atestados anexados a elas. Nada aqui lembra ou solicita aos colaboradores.",
+        "empty": "Nenhuma licença médica neste período corresponde aos filtros.",
+        "filters": {
+          "allEmployees": "Todos os colaboradores",
+          "allSickDetails": "Todos os detalhes da licença médica",
+          "allStatuses": "Pendentes e aprovados",
+          "allTeams": "Todas as equipes",
+          "employee": "Colaborador",
+          "formerEmployee": "{name} (ex-colaborador)",
+          "from": "De",
+          "notes": "Atestados médicos",
+          "notesAll": "Todos",
+          "notesMissing": "Com certificado, sem atestado",
+          "notesPresent": "Possui atestado",
+          "reset": "Redefinir filtros",
+          "sickDetail": "Detalhe da licença médica",
+          "status": "Status",
+          "team": "Equipe",
+          "to": "Até"
+        },
+        "loading": "Carregando licença médica",
+        "notes": {
+          "count": "{count, plural, one {# nota} other {# notas}}",
+          "none": "Nenhuma nota"
+        },
+        "pagination": {
+          "next": "Próxima página",
+          "page": "Página {page} de {pageCount}",
+          "pageSize": "Linhas por página",
+          "previous": "Página anterior",
+          "summary": "{first}–{last} de {total}"
+        },
+        "sickDetail": {
+          "childSick": "Filho doente",
+          "other": "Outro",
+          "withCertificate": "Com atestado",
+          "withoutCertificate": "Sem atestado"
+        },
+        "status": {
+          "approved": "Aprovado",
+          "pending": "Pendente"
+        },
+        "title": "Licença médica"
+      },
+      "sickNotes": {
+        "cardDescription": "Licenças médicas pendentes e aprovadas deste funcionário. Anexe um novo atestado médico ou vincule um que já esteja no prontuário de pessoal.",
+        "cardTitle": "Licença médica",
+        "chooseAbsence": "Escolha uma ausência.",
+        "chooseNote": "Escolha um atestado médico.",
+        "link": "Vincular",
+        "linked": "Atestado médico vinculado",
+        "linkExistingDescription": "Escolha um atestado médico do prontuário de pessoal para a licença médica {dateRange}.",
+        "linkExistingTitle": "Vincular um atestado médico",
+        "linkFailed": "Não foi possível vincular o atestado médico.",
+        "linkToAbsence": "Vincular {title} à licença médica",
+        "linkToAbsenceDescription": "Escolha a licença médica coberta por \"{title}\". Uma licença médica registrada sem atestado passará a contar como com atestado.",
+        "linkToAbsenceTitle": "Vincular à licença médica",
+        "loadFailed": "Não foi possível carregar a lista.",
+        "manage": "Anexar ou vincular",
+        "manageFor": "Anexar ou vincular atestados médicos de {name}, {dateRange}",
+        "noSickLeave": "Este funcionário não tem licença médica pendente ou aprovada.",
+        "notes": "Atestados médicos",
+        "noUnlinkedNotes": "Não há atestados médicos na ficha deste funcionário que não estejam vinculados a uma ausência.",
+        "openNotes": "Atestados médicos para {dateRange}",
+        "unlinked": "Atestado médico desvinculado",
+        "unlinkFailed": "Não foi possível desvincular o atestado médico.",
+        "unlinkFromAbsence": "Desvincular {title} da sua licença médica"
       },
       "tabs": {
         "access": "Acesso",

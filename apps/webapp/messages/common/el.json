@@ -143,6 +143,17 @@
       "upgrade": "Αναβάθμιση"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Κλείσιμο αυτού του μήνα",
+    "status": {
+      "closed": "Κλειστός",
+      "open": "Ανοιχτός",
+      "partlyClosed": "Μερικώς κλειστός ({closed} από {total})"
+    },
+    "stripLabel": "Κλειστοί μήνες",
+    "unclosedDescription": "Η εργασία και οι απουσίες σε αυτούς τους μήνες μπορούν ακόμα να αλλάξουν μετά την εξαγωγή. Κλείστε έναν μήνα μόλις οριστικοποιηθεί η μισθοδοσία του.",
+    "unclosedTitle": "Δεν έχουν κλείσει όλοι οι μήνες σε αυτό το εύρος"
+  },
   "colors": {
     "blue": "Μπλε",
     "green": "Πράσινο",
@@ -219,6 +230,9 @@
     "enabled": "Ενεργοποιημένο",
     "error": "Σφάλμα",
     "error-occurred": "Παρουσιάστηκε σφάλμα",
+    "errors": {
+      "monthClosed": "Ο μήνας {month} είναι κλειστός. Πρέπει να ανοίξει ξανά προτού αλλάξουν οι καταχωρίσεις εργασίας ή οι απουσίες του."
+    },
     "fieldPresets": "Προεπιλογές {label}",
     "focusInput": "Εστίαση στο πεδίο εισαγωγής",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Βοήθεια",
     "my-documents": "Τα έγγραφά μου",
     "my-requests": "Τα αιτήματά μου",
+    "my-schedule": "Το πρόγραμμά μου",
     "org-explorer": "Εξερεύνηση Οργανισμού",
     "payroll": "Μισθοδοσία",
     "personnel-files": "Φάκελοι προσωπικού",
@@ -588,6 +603,8 @@
     "team": "Ομάδα",
     "teamAbsences": "Απουσίες Ομάδας",
     "team-label": "Ομάδα",
+    "teamPeriodSubmissions": "Υποβολές περιόδου",
+    "teamPresence": "Ποιοι είναι παρόντες",
     "time-tracking": "Καταγραφή χρόνου",
     "today": "Σήμερα",
     "travel-expenses": "Έξοδα ταξιδιού",
@@ -603,6 +620,27 @@
       "viewAll": "Προβολή όλων των ειδοποιήσεων"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Αναπληρώνετε τον/την {name} ({dateRange}).",
+        "title": "Είστε αναπληρωτής απουσίας"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Η αναπλήρωση για τον/την {name} ισχύει πλέον για {dateRange}.",
+        "title": "Οι ημερομηνίες αναπληρωτή απουσίας άλλαξαν"
+      },
+      "absenceDeputyReminder": {
+        "message": "Από αύριο αναπληρώνετε τον/την {name} έως τις {untilDate}.",
+        "title": "Η αναπλήρωση απουσίας ξεκινά αύριο"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Δεν αναπληρώνετε πλέον τον/την {name} ({dateRange}).",
+        "title": "Δεν είστε πλέον αναπληρωτής απουσίας"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "Ο/Η {deputyName} δεν είναι πλέον διαθέσιμος/-η ως αναπληρωτής για την απουσία του/της {employeeName} από {startDate} έως {endDate}.",
+        "message": "Ο/Η {deputyName} δεν είναι πλέον διαθέσιμος/-η ως αναπληρωτής για την απουσία σας από {startDate} έως {endDate}.",
+        "title": "Ο αναπληρωτής δεν είναι πλέον διαθέσιμος"
+      },
       "absenceRecorded": {
         "message": "Ο/Η {managerName} κατέγραψε {absenceType} για {dateRange} εκ μέρους σας.",
         "title": "Η απουσία καταγράφηκε"
@@ -614,9 +652,36 @@
         "message": "Το αίτημά σας για {categoryName} για {dateRange} υποβλήθηκε και εκκρεμεί έγκριση.",
         "title": "Το αίτημα απουσίας υποβλήθηκε"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Όσο απουσιάζατε, ο/η {name} έλαβε απόφαση για # έγκριση.} other {Όσο απουσιάζατε, ο/η {name} έλαβε απόφαση για # εγκρίσεις.}}",
+        "title": "Αποφασίστηκαν όσο απουσιάζατε"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Καλύπτετε τις εγκρίσεις του/της {name}: καμία σε εκκρεμότητα προς το παρόν.} other {Καλύπτετε τις εγκρίσεις του/της {name}: # σε εκκρεμότητα.}}",
+        "title": "Καλύπτετε εγκρίσεις"
+      },
       "automaticClockOut": {
+        "breakMessage": "Καταγράφηκε αυτόματα η έξοδός σας στην έναρξη του διαλείμματός σας στις {cutoff} ({timezone}), επειδή το διάλειμμα δεν ολοκληρώθηκε εντός του χρονικού ορίου των {duration} λεπτών του οργανισμού σας.",
         "message": "Καταγράφηκε αυτόματα η έξοδός σας μετά από {duration} λεπτά αδιάλειπτης εργασίας στις {cutoff} ({timezone}) επειδή συμπληρώθηκε το χρονικό όριο του οργανισμού σας.",
         "title": "Αυτόματη καταγραφή εξόδου"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Το αρχικό υπόλοιπο ύψους {amount} για την περίοδο {dateRange} ακυρώθηκε. Αιτία: {reason}",
+          "title": "Το αρχικό υπόλοιπο ακυρώθηκε"
+        },
+        "openingBalanceRecorded": {
+          "message": "Ένα αρχικό υπόλοιπο ύψους {amount} για την περίοδο {dateRange} καταχωρίστηκε στο υπόλοιπο εργασίας σας.",
+          "title": "Το αρχικό υπόλοιπο καταχωρίστηκε"
+        },
+        "payoutCancelled": {
+          "message": "Η πληρωμή υπερωριών ύψους {amount} για την περίοδο {dateRange} ακυρώθηκε. Αιτία: {reason}",
+          "title": "Η πληρωμή υπερωριών ακυρώθηκε"
+        },
+        "payoutRecorded": {
+          "message": "Μια πληρωμή υπερωριών ύψους {amount} για την περίοδο {dateRange} καταχωρίστηκε στο υπόλοιπο εργασίας σας.",
+          "title": "Η πληρωμή υπερωριών καταχωρίστηκε"
+        }
       },
       "breakDueReminder": {
         "message": "Το διάλειμμά σας είναι προγραμματισμένο για τις {breakTime} ({timezone}). Κάντε ένα διάλειμμα μέχρι τότε για να τηρήσετε τους κανόνες διαλειμμάτων της πολιτικής εργασίας σας.",
@@ -638,12 +703,48 @@
         "message": "Η βάρδιά σας ξεκίνησε στις {startTime} ({timezone}). Καταχωρίστε είσοδο εάν εργάζεστε.",
         "title": "Δεν έχετε καταχωρίσει είσοδο ακόμα"
       },
+      "monthCloseBlocked": {
+        "message": "Ο μήνας {month} δεν έκλεισε αυτόματα. Αιτήματα απουσίας σε εκκρεμότητα: {absenceRequests}. Αιτήματα χρόνου σε εκκρεμότητα: {timeRequests}. Ενεργές καταγραφές εργασίας: {liveWork}. Ο μήνας δεν έχει λήξει ακόμα: {notEnded}. Εργαζόμενοι: {employees}. Θα γίνει νέα προσπάθεια αύριο.",
+        "title": "Δεν ήταν δυνατό το κλείσιμο του μήνα"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, one {Ο μήνας {month} έκλεισε αυτόματα για # εργαζόμενο. Οι καταχωρίσεις εργασίας και οι απουσίες του δεν μπορούν πλέον να αλλάξουν εκτός εάν ανοίξει ξανά.} other {Ο μήνας {month} έκλεισε αυτόματα για # εργαζόμενους. Οι καταχωρίσεις εργασίας και οι απουσίες του δεν μπορούν πλέον να αλλάξουν εκτός εάν ανοίξει ξανά.}}",
+        "title": "Ο μήνας έκλεισε"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {Ο μήνας {month} άνοιξε ξανά για έναν από τους εργαζομένους σας: {reason}} other {Ο μήνας {month} άνοιξε ξανά για # από τους εργαζομένους σας: {reason}}}",
+        "title": "Ο μήνας άνοιξε ξανά"
+      },
       "newAbsenceRequest": {
         "title": "Νέο αίτημα απουσίας"
       },
       "passwordChanged": {
         "message": "Ο κωδικός πρόσβασής σας άλλαξε με επιτυχία. Εάν δεν πραγματοποιήσατε εσείς αυτήν την αλλαγή, επικοινωνήστε αμέσως με την υποστήριξη.",
         "title": "Ο κωδικός πρόσβασης άλλαξε"
+      },
+      "periodSubmissionApproved": {
+        "message": "Ο χρόνος σας για το διάστημα {startDate} – {endDate} εγκρίθηκε.",
+        "title": "Ο χρόνος σας εγκρίθηκε"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Ο χρόνος σας για το διάστημα {startDate} – {endDate} τροποποιήθηκε μετά την έγκρισή του. Ελέγξτε τον χρόνο σας και υποβάλετέ τον ξανά.",
+        "title": "Ο εγκεκριμένος χρόνος σας δεν είναι πλέον ενημερωμένος"
+      },
+      "periodSubmissionRejected": {
+        "message": "Ο χρόνος σας για το διάστημα {startDate} – {endDate} απορρίφθηκε: {reason}. Ελέγξτε τον χρόνο σας και υποβάλετέ τον ξανά.",
+        "title": "Ο χρόνος σας απορρίφθηκε"
+      },
+      "periodSubmissionReminder": {
+        "message": "Η περίοδός σας {startDate} – {endDate} έχει λήξει. Ελέγξτε τον χρόνο σας και υποβάλετέ τον για έγκριση.",
+        "title": "Υποβάλετε τον χρόνο σας για έγκριση"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Η περίοδός σας {startDate} – {endDate} δεν έχει υποβληθεί ακόμη. Ελέγξτε τον χρόνο σας και υποβάλετέ τον για έγκριση.",
+        "title": "Ο χρόνος σας δεν έχει υποβληθεί ακόμη"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Ο χρόνος σας για το διάστημα {startDate} – {endDate} άλλαξε μετά την υποβολή του, επομένως η υποβολή αποσύρθηκε. Ελέγξτε τον χρόνο σας και υποβάλετέ τον ξανά.",
+        "title": "Υποβάλετε ξανά τον χρόνο σας"
       },
       "personnelFileDocumentShared": {
         "message": "Το έγγραφο \"{title}\" κοινοποιήθηκε σε εσάς.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} μεταφόρτωσε ένα πιστοποιητικό",
         "other": "{name} μεταφόρτωσε ένα έγγραφο",
+        "sickNote": "Ο/Η {name} μεταφόρτωσε μια ιατρική βεβαίωση για {dateRange}",
+        "sickNoteOnBehalf": "Ο/Η {uploader} μεταφόρτωσε ένα αναρρωτικό σημείωμα για {name}, {dateRange}",
         "title": "Νέο έγγραφο σε φάκελο προσωπικού"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "Αφαιρεθήκατε από την ομάδα {teamName} από τον/την {performedByName}.",
         "title": "Αφαίρεση από την ομάδα"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Οι εργαζόμενοι μπορούν πλέον να λαμβάνουν άδεια έναντι του υπολοίπου εργασίας τους. Η νέα κατηγορία απουσίας παραμένει ανενεργή μέχρι να την ενεργοποιήσετε στις ρυθμίσεις απουσιών.",
+        "title": "Η άδεια έναντι υπερωρίας είναι διαθέσιμη"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Μια εγκεκριμένη προσαρμογή αύξησε το οφειλόμενο ποσό στην αναφορά εξόδων {report} του/της {employee}. Σε αναμονή αποζημίωσης: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "Η αναφορά εξόδων {report} του/της {employee} δεν αποζημιώνεται μέσω εκτέλεσης μισθοδοσίας. Εκκρεμεί αποζημίωση: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} από το έξοδο ταξιδιού σας έχουν αποζημιωθεί (αναφορά πληρωμής {reference}). Απομένουν ακόμη {remaining} {remainingCurrency} σε αναμονή αποζημίωσης.",
         "title": "Το έξοδο αποζημιώθηκε μερικώς"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} από τα έξοδα ταξιδιού σας αποζημιώθηκαν με τη μισθοδοσία {period}. Απομένουν {remaining} {remainingCurrency} προς αποζημίωση."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Η εκτέλεση μισθοδοσίας {period} ({format}) περιμένει την επιβεβαίωσή σας. Αναφορές στο πεδίο ευθύνης σας: {count}.",
+        "title": "Εκτέλεση μισθοδοσίας σε αναμονή επιβεβαίωσης"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "Η αναφορά εξόδων {report} του/της {employee} έχει εγκριθεί. Σε αναμονή αποζημίωσης: {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Το έξοδο ταξιδιού σας έχει αποζημιωθεί πλήρως: {amount} {currency}, αναφορά πληρωμής {reference}.",
         "title": "Το έξοδο αποζημιώθηκε"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Τα έξοδα ταξιδιού σας αποζημιώθηκαν πλήρως με τη μισθοδοσία {period}: {amount} {currency}."
       }
     },
     "description": "Ελέγξτε ενημερώσεις, εγκρίσεις και ειδοποιήσεις συστήματος σε ένα χρονολόγιο.",
@@ -728,6 +848,42 @@
       "ariaLabel": "Φιλτράρισμα ειδοποιήσεων κατά κατάσταση ανάγνωσης",
       "read": "Αναγνωσμένα",
       "unread": "Μη αναγνωσμένα"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Κάτι απαιτεί την προσοχή σας"
+      },
+      "body": "Ανοίξτε το Z8 για να δείτε τις λεπτομέρειες.",
+      "document": {
+        "title": "Νέα σχετικά με τα έγγραφά σας"
+      },
+      "project": {
+        "title": "Νέα σχετικά με ένα έργο"
+      },
+      "reminder": {
+        "title": "Υπενθύμιση από το Z8"
+      },
+      "requestUpdate": {
+        "title": "Το αίτημά σας ενημερώθηκε"
+      },
+      "review": {
+        "title": "Έχετε ένα αίτημα προς έλεγχο"
+      },
+      "schedule": {
+        "title": "Το πρόγραμμά σας άλλαξε"
+      },
+      "security": {
+        "title": "Ειδοποίηση ασφαλείας για τον λογαριασμό σας"
+      },
+      "team": {
+        "title": "Οι ομάδες σας άλλαξαν"
+      },
+      "travelExpense": {
+        "title": "Νέα σχετικά με τα έξοδα ταξιδιού σας"
+      },
+      "workingTime": {
+        "title": "Νέα σχετικά με τον χρόνο εργασίας σας"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +925,21 @@
       },
       "toggleAria": "Ειδοποιήσεις {channel} για {type}",
       "types": {
+        "absence_deputy_assigned": "Ορισμός ως αναπληρωτής απουσίας",
+        "absence_deputy_dates_changed": "Οι ημερομηνίες αναπληρωτή απουσίας άλλαξαν",
+        "absence_deputy_reminder": "Η αναπλήρωση απουσίας ξεκινά αύριο",
+        "absence_deputy_removed": "Δεν είστε πλέον αναπληρωτής απουσίας",
+        "absence_deputy_unavailable": "Ο αναπληρωτής δεν είναι πλέον διαθέσιμος",
+        "approval_cover_return_summary": "Αποφασίστηκε από τον αναπληρωτή σας",
+        "approval_cover_started": "Η κάλυψη απουσίας ξεκίνησε",
         "break_due_reminder": "Ώρα για διάλειμμα",
         "forgotten_clock_out_reminder": "Ξεχασμένη έξοδος",
-        "missed_clock_in_reminder": "Παράλειψη εισόδου"
+        "missed_clock_in_reminder": "Παράλειψη εισόδου",
+        "period_submission_decided": "Ο υποβληθείς χρόνος εγκρίθηκε ή απορρίφθηκε",
+        "period_submission_reminder": "Υποβάλετε τον χρόνο σας",
+        "period_submission_sent_back": "Ο χρόνος επιστράφηκε μετά από αλλαγή",
+        "work_balance_adjustment_cancelled": "Η προσαρμογή υπολοίπου ακυρώθηκε",
+        "work_balance_adjustment_recorded": "Η προσαρμογή υπολοίπου καταχωρίστηκε"
       },
       "updateFailed": "Αποτυχία ενημέρωσης προτίμησης"
     },
@@ -858,7 +1026,8 @@
       "relativeMinutes": "από {minutes}λ"
     },
     "clockedIn": "Έναρξη βάρδιας",
-    "clockedOut": "Λήξη βάρδιας"
+    "clockedOut": "Λήξη βάρδιας",
+    "onBreak": "Σε διάλειμμα"
   },
   "rateLimit": {
     "countdownLabel": "δευτερόλεπτα μέχρι να μπορείτε να δοκιμάσετε ξανά",
@@ -877,6 +1046,12 @@
   "status": {
     "active": "Ενεργό",
     "inactive": "Ανενεργό"
+  },
+  "storeAppBanner": {
+    "description": "Λάβετε υπενθυμίσεις και ειδοποιήσεις έγκρισης στην εφαρμογή.",
+    "dismiss": "Απόρριψη πρότασης εφαρμογής",
+    "getApp": "Λήψη της εφαρμογής",
+    "title": "Το Z8 για το τηλέφωνό σας"
   },
   "table": {
     "clearFilters": "Εκκαθάριση φίλτρων",
@@ -955,6 +1130,24 @@
     "pronounsMaxLength": "Οι αντωνυμίες πρέπει να περιέχουν έως 50 χαρακτήρες"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Ακύρωση",
+      "cancelled": "Ακυρώθηκε",
+      "cancelledBy": "Ακυρώθηκε από {name} στις {date}: {reason}",
+      "description": "Πληρωμές υπερωριών και αρχικά υπόλοιπα σε αυτό το υπόλοιπο εργασίας. Τυχόν εσφαλμένη εγγραφή ακυρώνεται, δεν διαγράφεται ποτέ, επομένως οι ακυρωμένες παραμένουν στη λίστα.",
+      "empty": "Δεν υπάρχουν προσαρμογές υπολοίπου ακόμα.",
+      "kind": {
+        "openingBalance": "Αρχικό υπόλοιπο",
+        "overtimePayout": "Πληρωμή υπερωριών"
+      },
+      "loadFailed": "Δεν ήταν δυνατή η φόρτωση των προσαρμογών υπολοίπου.",
+      "loading": "Φόρτωση προσαρμογών υπολοίπου",
+      "notPermitted": "Μπορείτε να δείτε τις προσαρμογές υπολοίπου του εαυτού σας και των εργαζομένων που διαχειρίζεστε.",
+      "open": "Προσαρμογές υπολοίπου",
+      "recordedBy": "Καταγράφηκε από {name} στις {date}",
+      "title": "Προσαρμογές υπολοίπου",
+      "unknownUser": "ένας διαγραμμένος χρήστης"
+    },
     "label": "Συνολικό υπόλοιπο",
     "notCalculated": "Δεν έχει υπολογιστεί ακόμα",
     "pendingDescription": "Ο εργαζόμενος θα υπολογίσει αυτό το υπόλοιπο σύντομα.",

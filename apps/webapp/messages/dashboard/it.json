@@ -15,6 +15,13 @@
       "today": "Oggi!",
       "tomorrow": "Domani"
     },
+    "covering-for": {
+      "description": "Colleghi che sostituisci durante la loro assenza",
+      "error": "Impossibile caricare i tuoi incarichi di sostituzione",
+      "running": "Sostituzione di {name} fino al {date}",
+      "title": "Sostituzione di",
+      "upcoming": "In arrivo: sostituzione di {name} dal {start} al {end}"
+    },
     "customize": {
       "empty-description": "Usa l'icona di personalizzazione della dashboard per riabilitare i singoli widget o ripristina il layout per mostrare di nuovo tutti i widget.",
       "empty-title": "Tutti i widget della dashboard sono nascosti",
@@ -129,6 +136,17 @@
       "teams": "Team",
       "teams-button": "Team",
       "title": "Organizzazione"
+    },
+    "upcoming-shifts": {
+      "description": "I tuoi prossimi turni pianificati",
+      "empty": "Nessun turno imminente",
+      "empty-description": "I tuoi prossimi turni pubblicati appariranno qui.",
+      "ends-next-day": "termina il giorno successivo",
+      "error": "Impossibile caricare i tuoi prossimi turni",
+      "title": "Prossimi turni",
+      "today": "Oggi",
+      "tomorrow": "Domani",
+      "view-schedule": "Visualizza orario"
     },
     "upcoming-time-off": {
       "absence": "assenza",

@@ -168,6 +168,16 @@
       "policyUpdated": "Policyn har uppdaterats",
       "required": "Obligatoriskt",
       "saveFailed": "Det gick inte att spara policyn",
+      "sickNotes": {
+        "description": "Läkarintyg sparas i den anställdes personalakt. Godkännare och chefer ser bara att ett intyg har bifogats.",
+        "disabled": "Anställda kan inte längre bifoga läkarintyg",
+        "enabled": "Anställda kan nu bifoga läkarintyg",
+        "help": "Anställda bifogar foton eller PDF-filer av sina läkarintyg till sin egen sjukanmälan. I Tyskland hämtar arbetsgivare det elektroniska läkarintyget (eAU) från sjukkassor, så foton är främst relevanta för privat försäkring, mini-jobs, Österrike och Schweiz, samt vård av sjukt barn.",
+        "openOrganizationSettings": "Öppna organisationsinställningar",
+        "personnelFilesRequired": "Läkarintyg sparas i personalakter. Aktivera personalakter i organisationsinställningarna först.",
+        "title": "Läkarintyg",
+        "toggle": "Anställda kan bifoga läkarintyg"
+      },
       "since": "sedan",
       "startingOn": "med början den",
       "tab": {

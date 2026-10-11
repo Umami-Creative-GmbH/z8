@@ -15,9 +15,16 @@
       "createCategory": "Criar categoria de ausência",
       "createCategoryButton": "Criar categoria",
       "deactivate": "Desativar",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Folga descontada do saldo de trabalho",
+          "name": "Folga compensatória"
+        }
+      },
       "deleteDescription": "Tem certeza de que deseja excluir \"{name}\"? Categorias usadas por ausências existentes não podem ser excluídas e devem ser desativadas.",
       "deleteFailed": "Não foi possível excluir a categoria",
       "deleteTitle": "Excluir categoria de ausência",
+      "drawsOnWorkBalance": "Desconta do saldo de trabalho",
       "editCategory": "Editar \"{name}\"",
       "form": {
         "active": "Ativo",
@@ -26,11 +33,17 @@
         "colorHelp": "Marcador de calendário",
         "countsAgainstVacation": "Conta contra o saldo de férias",
         "countsAgainstVacationHelp": "Deduzir dias aprovados do saldo de férias do funcionário.",
+        "deputyRequired": "Substituto obrigatório",
+        "deputyRequiredHelp": "Toda ausência deste tipo deve indicar um substituto durante o afastamento do funcionário.",
+        "deputyRequiredSick": "Licença médica nunca exige um substituto.",
         "description": "Descrição",
         "descriptionHelp": "Orientação opcional exibida para administradores e revisores.",
         "descriptionPlaceholder": "ex: Use para dias de treinamento ou certificação aprovados…",
         "descriptionTranslation": "Descrição em {locale}",
         "descriptionTranslationPlaceholder": "Descrição localizada",
+        "drawsOnWorkBalance": "Desconta do Saldo de Trabalho",
+        "drawsOnWorkBalanceConflict": "\"Desconta do saldo de trabalho\" não pode ser combinado com \"Conta como férias\" ou \"Exige tempo de trabalho\".",
+        "drawsOnWorkBalanceHelp": "Folga compensatória: os dias aprovados mantêm o tempo exigido, portanto o saldo de trabalho do funcionário é reduzido por ele. As férias não são usadas.",
         "name": "Nome",
         "nameHelp": "Use um rótulo claro que os funcionários e aprovadores reconhecerão.",
         "nameMaxLength": "Use 100 caracteres ou menos",
@@ -46,7 +59,8 @@
         "translationsHelp": "Rótulos localizados opcionais para funcionários que usam outro idioma no aplicativo.",
         "type": "Tipo",
         "typeHelp": "Agrupa relatórios e fluxos de trabalho de ausência subsequentes.",
-        "typePlaceholder": "Selecione o tipo de categoria"
+        "typePlaceholder": "Selecione o tipo de categoria",
+        "typeTimeOffInLieu": "Folga Compensatória"
       },
       "header": {
         "approval": "Aprovação",
@@ -72,6 +86,7 @@
         "parental": "Licença parental",
         "personal": "Pessoal",
         "sick": "Licença médica",
+        "timeOffInLieu": "Folga Compensatória",
         "unpaid": "Não remunerado",
         "vacation": "Férias"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Alguns canais ativos estavam com o escalonamento desativado. Eles ainda não entregam mensagens de escalonamento.",
         "inactiveSourceEnabled": "Alguns canais inativos estavam com o escalonamento ativado. Eles não foram considerados para a política.",
         "invalidTimeout": "Um canal tinha um tempo limite inválido e não foi usado para a janela de resposta."
+      },
+      "deputyDecisions": {
+        "description": "Os funcionários indicam um substituto em suas ausências. Enquanto um aprovador estiver em ausência aprovada, seu substituto poderá ver e decidir sobre as aprovações atribuídas a ele.",
+        "disabled": "Substitutos não podem mais decidir aprovações. Eles permanecem apenas como contatos.",
+        "enabled": "Os substitutos agora podem decidir aprovações enquanto o aprovador estiver ausente.",
+        "help": "Apenas substitutos que têm acesso à caixa de entrada de aprovações podem decidir, e somente nos dias de ausência do aprovador. O aprovador mantém suas aprovações. Quando desativado, os substitutos são apenas contatos.",
+        "title": "Substitutos",
+        "toggle": "Substitutos podem decidir aprovações"
       },
       "description": "Revise a política de escalonamento da organização, como ela foi migrada das configurações do canal e as condições que exigem um gerente de aprovação.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Ausência",
         "complianceException": "Exceção de conformidade",
         "manualTimeSubmission": "Envio manual de horas",
+        "periodSubmission": "Envio de período",
         "policyClockOut": "Saída por política",
         "shiftRequest": "Solicitação de turno",
         "timeCorrection": "Correção de horário",

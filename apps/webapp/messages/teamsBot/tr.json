@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Şu Anda Giriş Yapmış Olanlar",
+    "deputy": "Vekil: {name}",
     "everyoneAvailable": "Bugün herkes müsait",
     "noOneClockedIn": "Henüz giriş yapan kimse yok",
     "noPendingApprovals": "Bekleyen onay yok",

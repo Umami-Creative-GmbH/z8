@@ -91,6 +91,8 @@
           "missingConfiguration": "konfiguracja",
           "missingCredentials": "poświadczenia"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# wypłata za nadgodziny nie została wyeksportowana} few {# wypłaty za nadgodziny nie zostały wyeksportowane} other {# wypłat za nadgodziny nie zostało wyeksportowanych} }",
+        "unmappedOvertimePayoutsDescription": "Dla tego formatu żaden typ wynagrodzenia nie jest przypisany do Nadgodzin. Przypisz go w sekcji Typy wynagrodzeń i wyeksportuj ponownie lub rozlicz te godziny w inny sposób.",
         "year": "Rok"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Rozmiar",
           "status": "Status"
         },
-        "title": "Historia eksportu"
+        "title": "Historia eksportu",
+        "unmappedOvertimePayouts": "{count, plural, one {# wypłata za nadgodziny nie została wyeksportowana: brak typu wynagrodzenia dla Nadgodzin} few {# wypłaty za nadgodziny nie zostały wyeksportowane: brak typu wynagrodzenia dla Nadgodzin} other {# wypłat za nadgodziny nie zostało wyeksportowanych: brak typu wynagrodzenia dla Nadgodzin} }"
+      },
+      "identifier": {
+        "customField": "Pole niestandardowe: {name}",
+        "unavailableField": "Pole niestandardowe (niedostępne)"
       },
       "lexware": {
         "configured": "Skonfigurowano",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Wszyscy aktywni pracownicy mają potwierdzoną historię zatrudnienia dla tego okresu rozliczeniowego.",
           "descriptionWarning": "Niektórzy aktywni pracownicy nie mają potwierdzonej historii zatrudnienia dla tego okresu rozliczeniowego."
+        },
+        "periodSubmissions": {
+          "description": "Oczekiwane przesłania okresów w tym zakresie, które są brakujące, odrzucone, zwrócone po zmianie lub wciąż oczekujące na decyzję. Nie blokują one eksportu listy płac.",
+          "title": "Przesłania okresów"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Okresy w tym zakresie, które jeszcze się nie skończyły, więc nie można ich przesłać. Zarejestrowany czas może ulec zmianie po eksporcie.",
+          "title": "Nadal trwające przesłania okresów"
         }
       },
       "checkStatus": {

@@ -168,6 +168,16 @@
       "policyUpdated": "Polityka została pomyślnie zaktualizowana",
       "required": "Wymagane",
       "saveFailed": "Nie udało się zapisać polityki",
+      "sickNotes": {
+        "description": "Zwolnienia lekarskie są przechowywane w aktach osobowych pracownika. Osoby zatwierdzające i menedżerowie widzą jedynie informację o załączeniu dokumentu.",
+        "disabled": "Pracownicy nie mogą już załączać zwolnień lekarskich",
+        "enabled": "Pracownicy mogą teraz załączać zwolnienia lekarskie",
+        "help": "Pracownicy dołączają zdjęcia lub pliki PDF swoich zwolnień lekarskich do wniosków o zwolnienie. W Niemczech pracodawcy pobierają elektroniczne zwolnienia lekarskie (eAU) z kas chorych, więc zdjęcia są istotne głównie w przypadku ubezpieczeń prywatnych, mini-jobów, w Austrii i Szwajcarii oraz zwolnień na opiekę nad chorym dzieckiem.",
+        "openOrganizationSettings": "Otwórz ustawienia organizacji",
+        "personnelFilesRequired": "Zwolnienia lekarskie są przechowywane w aktach osobowych. Najpierw włącz akta osobowe w ustawieniach organizacji.",
+        "title": "Zwolnienia lekarskie",
+        "toggle": "Pracownicy mogą załączać zwolnienia lekarskie"
+      },
       "since": "od",
       "startingOn": "rozpoczynając od",
       "tab": {

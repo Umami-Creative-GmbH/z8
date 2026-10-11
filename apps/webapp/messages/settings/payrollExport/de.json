@@ -91,6 +91,8 @@
           "missingConfiguration": "Konfiguration",
           "missingCredentials": "Anmeldedaten"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# Überstundenauszahlung wurde nicht exportiert} other {# Überstundenauszahlungen wurden nicht exportiert}}",
+        "unmappedOvertimePayoutsDescription": "Für dieses Format ist Überstunden keine Lohnart zugeordnet. Ordnen Sie unter Lohnarten eine zu und exportieren Sie erneut oder zahlen Sie diese Stunden auf andere Weise aus.",
         "year": "Jahr"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Größe",
           "status": "Status"
         },
-        "title": "Exporthistorie"
+        "title": "Exporthistorie",
+        "unmappedOvertimePayouts": "{count, plural, one {# Überstundenauszahlung nicht exportiert: keine Lohnart für Überstunden} other {# Überstundenauszahlungen nicht exportiert: keine Lohnart für Überstunden}}"
+      },
+      "identifier": {
+        "customField": "Benutzerdefiniertes Feld: {name}",
+        "unavailableField": "Benutzerdefiniertes Feld (nicht verfügbar)"
       },
       "lexware": {
         "configured": "Konfiguriert",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Alle aktiven Mitarbeitenden haben einen bestätigten Beschäftigungsverlauf für diesen Abrechnungszeitraum.",
           "descriptionWarning": "Einige aktive Mitarbeitende haben keinen bestätigten Beschäftigungsverlauf für diesen Abrechnungszeitraum."
+        },
+        "periodSubmissions": {
+          "description": "Erwartete Zeitraumeinreichungen in diesem Bereich, die fehlen, abgelehnt wurden, nach einer Änderung zurückgesendet wurden oder noch auf eine Entscheidung warten. Sie blockieren den Lohn- und Gehaltsexport nicht.",
+          "title": "Zeitraumeinreichungen"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Zeiträume in diesem Bereich, die noch nicht beendet sind und daher nicht eingereicht werden können. Die Zeiten können sich nach dem Export noch ändern.",
+          "title": "Noch laufende Zeitraumeinreichungen"
         }
       },
       "checkStatus": {

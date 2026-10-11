@@ -141,6 +141,17 @@
       "description": "E Iiladig zum Bitritt zu {organizationName} versende",
       "emailLabel": "E-Mail-Adress",
       "error": "Fehler bim Versende vo de Iiladig",
+      "kioskOnly": {
+        "description": "Für Mitarbeiter ohni Gschäfts-E-Mail. Sie chönd sich nöd aamälde und stämpled nur a Kiosks mit ihrem PIN. Du chasch spöter es E-Mail hinzuefüege.",
+        "firstName": "Vorname",
+        "label": "Nur Kiosk, kei E-Mail",
+        "lastName": "Nachname",
+        "locations": "Zuegwiseni Standört",
+        "locationsDescription": "D'Kiosks a däne Standört zeiget de Mitarbeiter aa.",
+        "noLocations": "No kei aktivi Standört. Du chasch spöter Standört zuewiise.",
+        "submit": "Mitarbeiter erstelle",
+        "success": "Nur-Kiosk-Mitarbeiter erstellt"
+      },
       "noTargetTeam": "Keis Team",
       "roleDescriptions": {
         "admin": "Cha Mitgliider iilade und Iistellige verwalte",
@@ -242,6 +253,41 @@
       "searchLabel": "Mitarbeiter sueche",
       "searchPlaceholder": "Mitarbeiter sueche…",
       "teamBadge": "Team"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Nur d Organisations-Admins und -Bsitzer chönd die Istellige ändere.",
+      "cadence": {
+        "label": "Iireichigs-Rhythmus",
+        "monthly": "Monetlich",
+        "off": "Us",
+        "weekly": "Wöchentlich"
+      },
+      "description": "Mitarbeiter uffordere, jedi Wuche oder jede Monet zur Gnähmigung iizreiche und z bestätige, dass ihri Arbet und Absänze vollständig und richtig sind.",
+      "help": "Periode richted sich nach de Ziitzone vom jeweilige Mitarbeiter und werded a d Aastellig aapasst. S Iischalte fangt mit de erste volle Periode aa. En Änderig wird bim nächste Periode-Übergang wirksam, wo de alti und de neui Rhythmus teiled; en Wächsel zwüschet wöchentlich und monetlich cha drum mehreri Mönet duure. Mitarbeiter werded erinneret, wenn e Periode z End gaht und nomal nach de hie igstellte Täg. Mitarbeiter, wo nur de Kiosk nutzed, müend keini Periode iireiche.",
+      "invalidDelay": "Gib ganzi Täg vo {min} bis {max} ii.",
+      "save": "Änderige speichere",
+      "saved": "Istellige für d Periode-Iireichig gspeicheret",
+      "saveFailed": "D Istellige für d Periode-Iireichig händ nid chönne aktualisiert werde",
+      "saving": "Wird gspeicheret…",
+      "secondReminderDelay": "Täg bis zur zweite Erinnerig",
+      "title": "Periode-Iireichige",
+      "upcoming": {
+        "monthly": "Monetlichi Periode fanged am {date} aa.",
+        "off": "Ab {date} werded keini Periode erwartet. Di aktuell Periode wird immer no erwartet.",
+        "untilMonthly": "Bis dänn laufed monatlichi Periode wiiter.",
+        "untilWeekly": "Bis dänn laufed wöchentlichi Periode wiiter.",
+        "weekly": "Wöchentlichi Periode fanged am {date} aa."
+      },
+      "weekday": {
+        "friday": "Fritig",
+        "monday": "Mäntig",
+        "saturday": "Samschtig",
+        "sunday": "Sunntig",
+        "thursday": "Donschtig",
+        "tuesday": "Ziischtig",
+        "wednesday": "Mittwuch"
+      },
+      "weekStart": "Wuche fanged aa am"
     },
     "recover": {
       "button": "Organisation wiederherstelle",

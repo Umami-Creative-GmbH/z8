@@ -158,6 +158,30 @@
         "description": "Mitglieder einladen und ausstehende Beitrittsanfragen prüfen",
         "title": "Einladungen"
       },
+      "kioskPin": {
+        "addEmailDescription": "Si bechömid en Iiladig zum es Passwort uswähle und chönd sich dänn aamälde. Ihre Kiosk-PIN und Verlauf bliibid wie si sind.",
+        "addEmailHeading": "E-Mail hinzuefüege",
+        "addEmailSubmit": "E-Mail hinzuefüege und iilade",
+        "confirmReset": "PIN ersetze",
+        "description": "De persönlichi PIN, wo de Mitarbeiter iigit, zum sich am Kiosk iizstämple.",
+        "done": "Fertig",
+        "emailAdded": "E-Mail hinzuegfüegt. D Iiladig isch unterwägs.",
+        "emailAddedNotSent": "E-Mail hinzuegfüegt, aber d Iiladig hät nöd chönne gschickt wärde. De Mitarbeiter chan mit dere Adrässe «Passwort vergässe» nutze.",
+        "emailLabel": "E-Mail-Adrässe",
+        "hasPin": "En Kiosk-PIN isch gsetzt.",
+        "issue": "PIN vergee",
+        "kioskOnlyBadge": "Nume Kiosk",
+        "kioskOnlyDescription": "Dä Mitarbeiter hät kei E-Mail und keis Login. Er stämplet nume am Kiosk mit sim PIN ii.",
+        "kioskOnlyNoEmail": "Nume Kiosk, kei E-Mail",
+        "lockedUntil": "Wäge z villne falsche PIN-Iigaabe gsperrt bis {time}.",
+        "noPin": "No kei Kiosk-PIN.",
+        "pinHeading": "Kiosk-PIN",
+        "reset": "PIN zruggsetze",
+        "shownOnce": "Gänd dä PIN jetzt em Mitarbeiter. Er wird nume eimol aazeigt.",
+        "title": "Kiosk-Zugang",
+        "unlock": "Entsperren",
+        "unlocked": "Kiosk-PIN entsperrt"
+      },
       "lifecycle": {
         "actionsLabel": "Mitarbeiteraktionen für {name}",
         "deactivate": "Deaktivieren",
@@ -207,12 +231,17 @@
         "currency": "Währig",
         "currencyInvalid": "Gib en dreistellige Währigscode ii.",
         "departurePanelDescription": "De Zuegriff und d Nutzig vo zahlte Plätz ändet am Stichtag, wo une aazeigt wird. De Mitarbeiterverlauf bliibt erhalte.",
+        "deputyCover": {
+          "absences": "Stellvertretig bi laufende oder bevorstehende Abwäseheite: {count}",
+          "title": "Vertretige zum Neuorganisiere"
+        },
         "editDeparture": "Ustritt bearbeite",
         "effective": "Ustritt wirksam",
         "effectiveDescription": "De Zuegriff hät am {cutoff} ({timezone}) gendet.",
         "employmentGap": "Nöd aagstellt {startDate} – {endDate}",
         "employmentStint": "Anstellung {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Die Person isch Stellvertretig bi laufende oder bevorstehende Abwäseheite. Si wird als Stellvertretig entfernt, sobald de Ustritt in Chraft tritt, und die betroffene Persone werdet benachrichtigt.",
           "finalOwner": "Wiis en andere bstätigte Bsitzer zue und aktivier en, bevor dä Mitarbeiter gaht.",
           "futureAbsences": "Abweseheite nach em Stichtag bliibed erfasst. Überprüef si bi de Abweseheite.",
           "futureShifts": "Schichte nach em Stichtag bliibed zuegwise. Überprüef si i de Schichtplanig.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Pausen- und Zuschlagsverarbeitung",
           "clockRepair": "Timer-Reparatur",
           "dispatchDeparture": "Austrittsplanung",
+          "notifyDeputyRelease": "Benachrichtigung: Stellvertretig nümme verfüegbar",
           "notifyReview": "Überprüfungsbenachrichtigung",
           "sessionRevocation": "Sitzungsabmeldung"
         },
         "team": "Team",
         "title": "Anstellung und Austritt",
         "unknownLegacyDate": "Datum nicht erfasst",
-        "weeklyHoursInvalid": "Geben Sie Wochenstunden zwischen 0 und 168 ein."
+        "weeklyHoursInvalid": "Geben Sie Wochenstunden zwischen 0 und 168 ein.",
+        "workBalance": {
+          "recordFinalPayout": "Abschliessende Überstundenauszahlung erfassen",
+          "through": "Bis {date}",
+          "title": "Arbeitszeitsaldo"
+        }
       },
       "tabs": {
         "employees": "Mitarbeitende",
@@ -324,7 +359,115 @@
         "inviteCodes": "Iiladigscodes",
         "members": "Mitglieder"
       },
-      "title": "Mitarbeiter"
+      "title": "Mitarbeiter",
+      "workBalance": {
+        "adjustmentCancelled": "Korrektur storniert",
+        "cancelDescription": "{summary}. Der Eintrag bleibt im Verlauf als storniert bestehen und zählt nicht mehr zum Arbeitszeitsaldo.",
+        "cancellationReason": "Warum wird dies storniert?",
+        "cancelSubmit": "Korrektur stornieren",
+        "cancelTitle": "Korrektur stornieren",
+        "conflictingPayoutsDescription": "Sie würden nicht mehr zählen. Stornieren Sie diese zuerst oder wählen Sie einen früheren Tag.",
+        "conflictingPayoutsTitle": "Überstundenauszahlungen an oder vor diesem Tag",
+        "current": "Aktueller Arbeitszeitsaldo",
+        "day": "Tag",
+        "dayDescription": "In der Zeitzone des Mitarbeitenden. Der angezeigte Saldo gilt bis gestern, daher zählt eine Auszahlung mit heutigem Datum ab morgen.",
+        "dayRequired": "Einen Tag auswählen.",
+        "description": "Geleistete Arbeit minus Sollzeit, zusammen mit dem Anfangssaldo und Überstundenauszahlungen. Anpassungen werden nie bearbeitet: Eine fehlerhafte Anpassung wird storniert.",
+        "direction": "Saldo",
+        "errors": {
+          "adjustmentNotFound": "Diese Anpassung existiert für diesen Mitarbeitenden nicht mehr.",
+          "alreadyCancelled": "Diese Anpassung ist bereits storniert.",
+          "amountNotPositive": "Geben Sie eine Auszahlung von mehr als null ein.",
+          "beforeOpeningBalance": "Das Datum der Auszahlung muss nach dem Tag des gültigen Anfangssaldos liegen.",
+          "conflictingPayouts": "Überstundenauszahlungen sind auf oder vor diesen Tag datiert. Stornieren Sie diese zuerst oder wählen Sie einen früheren Tag.",
+          "employeeNotFound": "Mitarbeitender nicht gefunden.",
+          "exceedsBalance": "Die Auszahlung übersteigt den Arbeitssaldo des Mitarbeitenden am Ende dieses Tages.",
+          "exceedsLaterBalance": "Die Auszahlung würde den Arbeitssaldo nach einer späteren Überstundenauszahlung unter null sinken lassen. Stornieren Sie zuerst diese Auszahlung oder erfassen Sie einen geringeren Betrag.",
+          "failed": "Der Arbeitssaldo konnte nicht aktualisiert werden. Versuchen Sie es erneut.",
+          "futureDay": "Der Tag darf in der Zeitzone des Mitarbeitenden nicht nach heute liegen.",
+          "invalidInput": "Überprüfen Sie den Tag, die Stunden und Minuten sowie den Grund.",
+          "monthClosed": "Der Tag liegt in einem abgeschlossenen Monat.",
+          "monthClosedNamed": "{month} ist abgeschlossen. Er muss wieder geöffnet werden, bevor Anpassungen mit Datum in diesem Monat erfasst oder storniert werden können.",
+          "notPermitted": "Nur Organisationsinhaber und Admins sowie Lohnbuchhaltungs-Mitarbeitende für die Mitarbeitenden in ihrem Zuständigkeitsbereich können Saldoanpassungen erfassen oder stornieren.",
+          "reasonRequired": "Geben Sie einen Grund ein."
+        },
+        "history": "Saldoanpassungen",
+        "hours": "Stunden",
+        "hoursInvalid": "Ganze Stunden eingeben.",
+        "keepAdjustment": "Anpassung behalten",
+        "loadFailed": "Der Arbeitssaldo konnte nicht geladen werden.",
+        "loading": "Arbeitssaldo wird geladen",
+        "minutes": "Minuten",
+        "minutesInvalid": "Minuten von 0 bis 59 eingeben.",
+        "negative": "Geschuldete Stunden (−)",
+        "openingBalanceDay": "Saldo per Ende",
+        "openingBalanceDayDescription": "In der Zeitzone des Mitarbeiters. Der Saldo zählt ab dem nächsten Tag wieder.",
+        "openingBalanceReasonPlaceholder": "Zum Beispiel: Saldoübertrag aus dem vorherigen System …",
+        "openingBalanceSet": "Eröffnungssaldo festgelegt",
+        "payoutReasonPlaceholder": "Zum Beispiel: Mit der Oktober-Lohnabrechnung ausbezahlt …",
+        "payoutRecorded": "Überstundenauszahlung erfasst",
+        "positive": "Überstunden (+)",
+        "reason": "Grund",
+        "recordPayout": "Überstundenauszahlung erfassen",
+        "recordPayoutDescription": "Als Lohn ausbezahlte Überstunden erfassen. Dies verringert den Arbeitssaldo per Ende dieses Tages und kann nicht höher sein als der Saldo an diesem Tag.",
+        "recordPayoutSubmit": "Auszahlung erfassen",
+        "recordPayoutTitle": "Überstundenauszahlung erfassen",
+        "replacesOpeningBalance": "Der gültige Eröffnungssaldo wird mit dieser Begründung storniert.",
+        "setOpeningBalance": "Eröffnungssaldo festlegen",
+        "setOpeningBalanceDescription": "Der Eröffnungssaldo ersetzt den Arbeitssaldo bis einschliesslich dieses Tages. Die Arbeits- und Sollzeit davor bleibt erfasst, zählt jedoch nicht mehr.",
+        "setOpeningBalanceSubmit": "Eröffnungssaldo festlegen",
+        "setOpeningBalanceTitle": "Eröffnungssaldo festlegen",
+        "through": "Bis {date}",
+        "title": "Arbeitssaldo",
+        "upload": {
+          "allReady": "{total, plural, one {# Zeile ist bereit; {replacing, plural, =0 {keine ersetzt einen wirksamen Eröffnungssaldo} one {# ersetzt einen wirksamen Eröffnungssaldo} other {# ersetzen einen wirksamen Eröffnungssaldo}}.} other {Alle # Zeilen sind bereit; {replacing, plural, =0 {keine ersetzt einen wirksamen Eröffnungssaldo} one {# ersetzt einen wirksamen Eröffnungssaldo} other {# ersetzen einen wirksamen Eröffnungssaldo}}.}}",
+          "checking": "Datei wird überprüft …",
+          "columns": {
+            "balance": "Saldo",
+            "day": "Tag",
+            "employee": "Mitarbeiter",
+            "reason": "Grund",
+            "row": "Zile",
+            "status": "Status"
+          },
+          "committed": "{count, plural, one {# Eröffnigssaldo gsetzt} other {# Eröffnigssaldi gsetzt}}",
+          "description": "Setz de Eröffnigssaldo vo mehrere Mitarbeiter us ere CSV-Datei mit de Spalte employee_number, day (YYYY-MM-DD oder DD.MM.YYYY), balance (Stunde und Minute wie 12:30 oder -4:15) und reason. Jede Eröffnigssaldo ersetzt de Arbeitszeitsaldo vom Mitarbeiter bis und mit däm Tag und hebt de bisher gültigi uf. Es wird nüt gspycheret, solang irgend e Zile en Fehler het.",
+          "errors": {
+            "ambiguousEmployee": "Mehreri Mitarbeiter händ die Nummere. Gib zersch jedem e eidütigi Nummere.",
+            "conflictingPayouts": "Überstunde-Uuszahlige sind uf oder vor däm Tag datiert:",
+            "duplicateEmployee": "Dä Mitarbeiter het meh als ei Zile. Bhalt nur eini.",
+            "employeeNumberRequired": "Gib d Mitarbeiternummere ii.",
+            "futureDay": "De Tag liit nach em hütige Tag i de Zitzone vom Mitarbeiter.",
+            "invalidAmount": "Gib de Saldo als Stunde und Minute ii, wie z. B. 12:30 oder -4:15.",
+            "invalidDay": "Gib de Tag als YYYY-MM-DD oder DD.MM.YYYY ii.",
+            "monthClosed": "De Tag liit imene abgschlossene Monet.",
+            "outOfScope": "Dä Mitarbeiter liit usserhalb vo dim Lohnzuegriff.",
+            "reasonRequired": "Gib en Grund ii.",
+            "reasonTooLong": "Bschränk de Grund uf maximal 1000 Zeiche.",
+            "unknown": "Die Zile cha nöd gspycheret werde.",
+            "unknownEmployee": "Kä Mitarbeiter het die Nummere."
+          },
+          "file": "CSV-Datei",
+          "fileErrors": {
+            "fileTooLarge": "D Datei isch z gross. Teil si in mehreri Uploads uf.",
+            "missingColumns": "I de Datei fehled die Spalte: {columns}.",
+            "noRows": "D Datei het kä Zile under de Chopfzile.",
+            "tooManyRows": "D Datei het meh als 2000 Zile. Teil si in mehreri Uploads uf.",
+            "unreadable": "D Datei hät nöd chönne gläse wärde. Spychere si als CSV (UTF-8) ab und probier's nomal."
+          },
+          "former": "Ehemalige Mitarbeiter",
+          "hasErrors": "{errors, plural, one {# vo {total} Ziile hät en Fehler. Korrigier d Datei und lad si nomal ufe.} other {# vo {total} Ziile händ Fehler. Korrigier d Datei und lad si nomal ufe.}}",
+          "hasErrorsTitle": "Ziile mit Fehler korrigiere",
+          "invalidFile": "D Datei cha nöd verwändet wärde",
+          "open": "Aafangssaldi ufelade",
+          "ready": "Parat",
+          "refusedTitle": "Nüt isch gspycheret worde",
+          "replaces": "Ersetzt de Aafangssaldo vo {balance} am {day}",
+          "submit": "{count, plural, one {# Aafangssaldo setze} other {# Aafangssaldi setze}}",
+          "template": "Vorlage abelade",
+          "title": "Aafangssaldi ufelade"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Änderig hinzufüege",
@@ -552,6 +695,7 @@
         "loadingFile": "Personaldossier wird glade",
         "manageOfficers": "Personaldossier-Verantwortlichi",
         "payslipBatch": "Lohnabrechnigs-Stapel",
+        "sickLeave": "Krankheitsabsenz",
         "title": "Personaldossiers"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Sichtbarkeit"
       },
       "list": {
+        "absence": "Für Krankmeldung {dateRange}",
         "delete": "{title} löschen",
         "download": "{title} herunterladen",
         "edit": "{title} bearbeiten",
@@ -771,6 +916,83 @@
         "description": "Wählen Sie aus, wer ausser Inhabern und Admins Mitarbeiterdokumente verwaltet.",
         "loading": "Einstellungen für Personaldossiers werden geladen",
         "title": "Personaldossiers"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Daten",
+          "duration": "Dauer",
+          "employee": "Mitarbeitende",
+          "sickDetail": "Krankheitsdetail",
+          "sickNotes": "Arztzeugnisse",
+          "status": "Status"
+        },
+        "description": "Krankheitsabsenzen der Mitarbeitenden, deren Arztzeugnisse Sie verwalten, mit den angehängten Arztzeugnissen. Hier werden Mitarbeitende weder erinnert noch aufgefordert.",
+        "empty": "Keine Krankheitsabsenz in diesem Zeitraum entspricht den Filtern.",
+        "filters": {
+          "allEmployees": "Alle Mitarbeitenden",
+          "allSickDetails": "Alle Krankheitsdetails",
+          "allStatuses": "Ausstehend und genehmigt",
+          "allTeams": "Alle Teams",
+          "employee": "Mitarbeitende",
+          "formerEmployee": "{name} (ehemalig)",
+          "from": "Von",
+          "notes": "Arztzeugnisse",
+          "notesAll": "Alle",
+          "notesMissing": "Mit Zertifikat, ohne Notiz",
+          "notesPresent": "Hat Notiz",
+          "reset": "Filter zurücksetzen",
+          "sickDetail": "Krankheitsdetail",
+          "status": "Status",
+          "team": "Team",
+          "to": "Bis"
+        },
+        "loading": "Krankheitsabwesenheit wird geladen",
+        "notes": {
+          "count": "{count, plural, one {# Notiz} other {# Notizen}}",
+          "none": "Keine Notiz"
+        },
+        "pagination": {
+          "next": "Nächste Seite",
+          "page": "Seite {page} von {pageCount}",
+          "pageSize": "Zeilen pro Seite",
+          "previous": "Vorherige Seite",
+          "summary": "{first}–{last} von {total}"
+        },
+        "sickDetail": {
+          "childSick": "Kind krank",
+          "other": "Sonstiges",
+          "withCertificate": "Mit Arztzeugnis",
+          "withoutCertificate": "Ohne Arztzeugnis"
+        },
+        "status": {
+          "approved": "Genehmigt",
+          "pending": "Ausstehend"
+        },
+        "title": "Krankheitsabwesenheit"
+      },
+      "sickNotes": {
+        "cardDescription": "Ausstehende und genehmigte Krankheitsabwesenheiten dieses Mitarbeitenden. Fügen Sie ein neues Arztzeugnis an oder verknüpfen Sie eines, das sich bereits im Personaldossier befindet.",
+        "cardTitle": "Krankheitsabwesenheit",
+        "chooseAbsence": "Wählen Sie eine Abwesenheit aus.",
+        "chooseNote": "Wählen Sie ein Arztzeugnis aus.",
+        "link": "Verknüpfen",
+        "linked": "Arztzeugnis verknüpft",
+        "linkExistingDescription": "Wählen Sie ein Arztzeugnis aus dem Personaldossier für die Krankheitsabwesenheit {dateRange} aus.",
+        "linkExistingTitle": "Arztzeugnis verknüpfen",
+        "linkFailed": "Das Arztzeugnis konnte nicht verknüpft werden.",
+        "linkToAbsence": "{title} mit Krankheitsabwesenheit verknüpfen",
+        "linkToAbsenceDescription": "Wähle die Krankheitsabsenz aus, die \"{title}\" abdeckt. Eine ohne Zeugnis erfasste Krankheitsabsenz gilt danach als mit Zeugnis.",
+        "linkToAbsenceTitle": "Mit Krankheitsabsenz verknüpfen",
+        "loadFailed": "Die Liste konnte nicht geladen werden.",
+        "manage": "Anhängen oder verknüpfen",
+        "manageFor": "Arztzeugnisse für {name}, {dateRange} anhängen oder verknüpfen",
+        "noSickLeave": "Dieser Mitarbeiter hat keine ausstehenden oder genehmigten Krankheitsabsenzen.",
+        "notes": "Arztzeugnisse",
+        "noUnlinkedNotes": "In diesem Personaldossier gibt es keine Arztzeugnisse, die nicht mit einer Absenz verknüpft sind.",
+        "openNotes": "Arztzeugnisse für {dateRange}",
+        "unlinked": "Verknüpfung des Arztzeugnisses aufgehoben",
+        "unlinkFailed": "Die Verknüpfung des Arztzeugnisses konnte nicht aufgehoben werden.",
+        "unlinkFromAbsence": "Verknüpfung von {title} mit der Krankheitsabsenz aufheben"
       },
       "tabs": {
         "access": "Zugriff",

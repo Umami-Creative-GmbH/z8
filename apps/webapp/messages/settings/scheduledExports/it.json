@@ -16,6 +16,7 @@
       },
       "dataCategories": {
         "absences": "Assenze",
+        "customers": "Clienti",
         "employees": "Dipendenti",
         "projects": "Progetti",
         "timeEntries": "Voci di tempo",

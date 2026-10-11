@@ -141,6 +141,17 @@
       "description": "Send en invitasjon til å bli med i {organizationName}",
       "emailLabel": "E-postadresse",
       "error": "Kunne ikke sende invitasjon",
+      "kioskOnly": {
+        "description": "For ansatte uten bedrifts-e-post. De kan ikke logge inn, og stempler kun på kiosker med PIN-koden sin. Du kan legge til en e-postadresse senere.",
+        "firstName": "Fornavn",
+        "label": "Kun kiosk, ingen e-post",
+        "lastName": "Etternavn",
+        "locations": "Tildelte lokasjoner",
+        "locationsDescription": "Kioskene på disse lokasjonene viser den ansatte.",
+        "noLocations": "Ingen aktive lokasjoner ennå. Du kan tildele lokasjoner senere.",
+        "submit": "Opprett ansatt",
+        "success": "Kiosk-ansatt opprettet"
+      },
       "noTargetTeam": "Ingen team",
       "roleDescriptions": {
         "admin": "Kan invitere medlemmer og administrere innstillinger",
@@ -242,6 +253,41 @@
       "searchLabel": "Søk etter ansatte",
       "searchPlaceholder": "Søk etter ansatte…",
       "teamBadge": "Team"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Bare organisasjonsadministratorer og -eiere kan endre disse innstillingene.",
+      "cadence": {
+        "label": "Innsendingsfrekvens",
+        "monthly": "Månedlig",
+        "off": "Av",
+        "weekly": "Ukentlig"
+      },
+      "description": "Be ansatte sende inn hver uke eller måned til godkjenning for å bekrefte at arbeidstid og fravær er fullstendig og korrekt.",
+      "help": "Perioder følger hver ansatts tidssone og tilpasses ansettelsesforholdet. Aktivering starter med den første fulle perioden. En endring trer i kraft ved neste periodeskille som gammel og ny frekvens deler, så en endring mellom ukentlig og månedlig kan ta flere måneder. Ansatte blir påminnet når en periode slutter, og igjen etter antallet dager som er angitt her. Ansatte som kun bruker kiosk, sender ikke inn perioder.",
+      "invalidDelay": "Oppgi hele dager fra {min} til {max}.",
+      "save": "Lagre endringer",
+      "saved": "Innstillinger for periodeinnsending er lagret",
+      "saveFailed": "Kunne ikke oppdatere innstillinger for periodeinnsending",
+      "saving": "Lagrer…",
+      "secondReminderDelay": "Dager til andre påminnelse",
+      "title": "Periodeinnsendinger",
+      "upcoming": {
+        "monthly": "Månedlige perioder starter {date}.",
+        "off": "Ingen perioder forventes fra {date}. Den gjeldende perioden forventes fortsatt.",
+        "untilMonthly": "Frem til da fortsetter månedlige perioder.",
+        "untilWeekly": "Frem til da fortsetter ukentlige perioder.",
+        "weekly": "Ukentlige perioder starter {date}."
+      },
+      "weekday": {
+        "friday": "Fredag",
+        "monday": "Mandag",
+        "saturday": "Lørdag",
+        "sunday": "Søndag",
+        "thursday": "Torsdag",
+        "tuesday": "Tirsdag",
+        "wednesday": "Onsdag"
+      },
+      "weekStart": "Uker starter på"
     },
     "recover": {
       "button": "Gjenopprett organisasjon",

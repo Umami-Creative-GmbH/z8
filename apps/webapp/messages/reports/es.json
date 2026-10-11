@@ -7,6 +7,11 @@
       "pleaseWait": "Por favor, espere mientras compilamos sus datos",
       "selectPeriod": "Seleccione un período y haga clic en \"Generar informe\" para comenzar"
     },
+    "customFields": {
+      "no": "No",
+      "title": "Campos personalizados",
+      "yes": "Sí"
+    },
     "description": "Genere informes completos de horas de trabajo y ausencias con datos de home office relevantes para impuestos",
     "employeeSelector": {
       "error": "No se pudo cargar a los miembros del equipo",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Sin cliente",
         "withoutCustomerHint": "{hours} facturables sin cliente, no se puede transferir"
       },
+      "details": {
+        "customer": "Cliente",
+        "customerFields": "Campos de cliente",
+        "noCustomer": "Sin cliente",
+        "projectFields": "Campos de proyecto",
+        "title": "Detalles"
+      },
       "export": {
         "billableHours": "Horas facturables",
         "changedAfterInvoicing": "Modificado después de la facturación",
@@ -164,6 +176,10 @@
         "customer": "Cliente",
         "customerReportTitle": "Informe de cliente",
         "customersTable": "Clientes",
+        "customFieldName": "Campo",
+        "customFieldRecord": "Registro",
+        "customFieldsTable": "Campos personalizados",
+        "customFieldValue": "Valor",
         "dailyHoursTable": "Horas por día",
         "date": "Fecha",
         "employee": "Empleado",
@@ -176,6 +192,7 @@
         "invoicingNote": "Los ingresos facturados conservan las tarifas de su borrador de factura; los ingresos no facturados utilizan las tarifas vigentes cuando se generó el informe.",
         "margin": "Margen",
         "marginPercent": "Margen %",
+        "no": "No",
         "nonBillableHours": "Horas no facturables",
         "pendingReview": "Correcciones o envíos pendientes",
         "period": "Período",
@@ -194,7 +211,8 @@
         "unpricedWork": "Trabajo sin precio",
         "withoutCustomer": "Sin cliente",
         "withoutCustomerHours": "Horas facturables sin cliente",
-        "workPeriods": "Periodos de trabajo"
+        "workPeriods": "Periodos de trabajo",
+        "yes": "Sí"
       },
       "filter": {
         "activeOnly": "Solo activos",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Presupuesto",
+        "customer": "Cliente",
         "daysLeft": "{days}d quedan",
         "daysOverdue": "{days}d de retraso",
         "deadline": "Plazo",

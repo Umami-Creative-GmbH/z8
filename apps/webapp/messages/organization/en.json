@@ -141,6 +141,17 @@
       "description": "Send an invitation to join {organizationName}",
       "emailLabel": "Email Address",
       "error": "Failed to send invitation",
+      "kioskOnly": {
+        "description": "For staff without a company email. They cannot sign in and clock only at kiosks with their PIN. You can add an email later.",
+        "firstName": "First name",
+        "label": "Kiosk only, no email",
+        "lastName": "Last name",
+        "locations": "Assigned locations",
+        "locationsDescription": "The kiosks at these locations list the employee.",
+        "noLocations": "No active locations yet. You can assign locations later.",
+        "submit": "Create employee",
+        "success": "Kiosk-only employee created"
+      },
       "noTargetTeam": "No team",
       "roleDescriptions": {
         "admin": "Can invite members and manage settings",
@@ -242,6 +253,41 @@
       "searchLabel": "Search employees",
       "searchPlaceholder": "Search employees…",
       "teamBadge": "Team"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Only organization admins and owners can change these settings.",
+      "cadence": {
+        "label": "Submission cadence",
+        "monthly": "Monthly",
+        "off": "Off",
+        "weekly": "Weekly"
+      },
+      "description": "Ask employees to submit each week or month for approval, confirming that their work and absences are complete and correct.",
+      "help": "Periods follow each employee's timezone and are clipped to their employment. Switching on starts with the first full period. A change takes effect at the next period boundary the old and new cadence share, so a change between weekly and monthly can take several months. Employees are reminded when a period ends and again after the days set here. Kiosk-only employees do not submit periods.",
+      "invalidDelay": "Enter whole days from {min} to {max}.",
+      "save": "Save changes",
+      "saved": "Period submission settings saved",
+      "saveFailed": "Failed to update period submission settings",
+      "saving": "Saving…",
+      "secondReminderDelay": "Days until the second reminder",
+      "title": "Period submissions",
+      "upcoming": {
+        "monthly": "Monthly periods start on {date}.",
+        "off": "No periods are expected from {date}. The current period is still expected.",
+        "untilMonthly": "Until then, monthly periods continue.",
+        "untilWeekly": "Until then, weekly periods continue.",
+        "weekly": "Weekly periods start on {date}."
+      },
+      "weekday": {
+        "friday": "Friday",
+        "monday": "Monday",
+        "saturday": "Saturday",
+        "sunday": "Sunday",
+        "thursday": "Thursday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday"
+      },
+      "weekStart": "Weeks start on"
     },
     "recover": {
       "button": "Recover Organization",

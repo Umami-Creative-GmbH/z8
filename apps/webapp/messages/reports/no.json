@@ -7,6 +7,11 @@
       "pleaseWait": "Vennligst vent mens vi sammenstiller dataene dine",
       "selectPeriod": "Velg en periode og klikk på «Generer rapport» for å komme i gang"
     },
+    "customFields": {
+      "no": "Nei",
+      "title": "Egendefinerte felt",
+      "yes": "Ja"
+    },
     "description": "Generer omfattende rapporter over arbeidstimer og fravær med skatterelevante hjemmekontordata",
     "employeeSelector": {
       "error": "Kunne ikke laste inn teammedlemmer",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Uten kunde",
         "withoutCustomerHint": "{hours} fakturerbart uten kunde, kan ikke overleveres"
       },
+      "details": {
+        "customer": "Kunde",
+        "customerFields": "Kundefelt",
+        "noCustomer": "Ingen kunde",
+        "projectFields": "Prosjektfelt",
+        "title": "Detaljer"
+      },
       "export": {
         "billableHours": "Fakturerbare timer",
         "changedAfterInvoicing": "Endret etter fakturering",
@@ -164,6 +176,10 @@
         "customer": "Kunde",
         "customerReportTitle": "Kunderapport",
         "customersTable": "Kunder",
+        "customFieldName": "Felt",
+        "customFieldRecord": "Oppføring",
+        "customFieldsTable": "Egendefinerte felt",
+        "customFieldValue": "Verdi",
         "dailyHoursTable": "Timer per dag",
         "date": "Dato",
         "employee": "Ansatt",
@@ -176,6 +192,7 @@
         "invoicingNote": "Fakturert omsetning beholder satsene fra fakturautkastet; ufakturert omsetning bruker satsene som gjaldt da rapporten ble generert.",
         "margin": "Margin",
         "marginPercent": "Margin %",
+        "no": "Nei",
         "nonBillableHours": "Ikke-fakturerbare timer",
         "pendingReview": "Ventende korrigeringer eller innsendinger",
         "period": "Periode",
@@ -194,7 +211,8 @@
         "unpricedWork": "Upriset arbeid",
         "withoutCustomer": "Uten kunde",
         "withoutCustomerHours": "Fakturerbare timer uten kunde",
-        "workPeriods": "Arbeidsperioder"
+        "workPeriods": "Arbeidsperioder",
+        "yes": "Ja"
       },
       "filter": {
         "activeOnly": "Kun aktive",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budsjett",
+        "customer": "Kunde",
         "daysLeft": "{days}d igjen",
         "daysOverdue": "{days}d på overtid",
         "deadline": "Frist",

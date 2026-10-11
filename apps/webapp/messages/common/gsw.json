@@ -143,6 +143,17 @@
       "upgrade": "Upgrade"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Diesen Monat abschliessen",
+    "status": {
+      "closed": "Abgeschlossen",
+      "open": "Offen",
+      "partlyClosed": "Teilweise abgeschlossen ({closed} von {total})"
+    },
+    "stripLabel": "Abgeschlossene Monate",
+    "unclosedDescription": "Arbeit und Abwesenheiten in diesen Monaten können sich nach dem Export noch ändern. Schliessen Sie einen Monat ab, sobald die Lohnabrechnung definitiv ist.",
+    "unclosedTitle": "Nöd jede Monet i dem Zittruum isch abgschlosse"
+  },
   "colors": {
     "blue": "Blau",
     "green": "Grüen",
@@ -219,6 +230,9 @@
     "enabled": "Aktiviert",
     "error": "Fehler",
     "error-occurred": "Es isch en Fehler ufträtte",
+    "errors": {
+      "monthClosed": "{month} isch abgschlosse. Er muess wider göffnet werde, bevor d Arbet oder d Absänze gänderet werde chönd."
+    },
     "fieldPresets": "{label}-Voristellige",
     "focusInput": "Iigab fokussiere",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Hilf becho",
     "my-documents": "Mini Dokumänt",
     "my-requests": "Mini Aafroge",
+    "my-schedule": "Min Isatzplan",
     "org-explorer": "Org-Explorer",
     "payroll": "Lohnabrechnig",
     "personnel-files": "Personaldossiers",
@@ -588,6 +603,8 @@
     "team": "Team",
     "teamAbsences": "Team-Abweseheite",
     "team-label": "Team",
+    "teamPeriodSubmissions": "Periode-Iigabe",
+    "teamPresence": "Wer da isch",
     "time-tracking": "Ziiterfassig",
     "today": "Hüt",
     "travel-expenses": "Spesä",
@@ -603,6 +620,27 @@
       "viewAll": "Alli Benachrichtigunge aaluege"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Du vertrittst {name} ({dateRange}).",
+        "title": "Du bist Abwesenheitsstellvertretung"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Deine Stellvertretung für {name} läuft neu {dateRange}.",
+        "title": "Daten der Abwesenheitsstellvertretung geändert"
+      },
+      "absenceDeputyReminder": {
+        "message": "Ab morgen vertrittst du {name} bis {untilDate}.",
+        "title": "Abwesenheitsstellvertretung beginnt morgen"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Du vertrittst {name} ({dateRange}) nicht mehr.",
+        "title": "Du bist nicht mehr Abwesenheitsstellvertretung"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} steht als Stellvertretung für die Abwesenheit von {employeeName} vom {startDate} bis {endDate} nicht mehr zur Verfügung.",
+        "message": "{deputyName} steht als Stellvertretung für deine Abwesenheit vom {startDate} bis {endDate} nicht mehr zur Verfügung.",
+        "title": "Stellvertretung nicht mehr verfügbar"
+      },
       "absenceRecorded": {
         "message": "{managerName} hät {absenceType} für {dateRange} i dim Name iitrait.",
         "title": "Absänz erfasst"
@@ -614,9 +652,36 @@
         "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
         "title": "Abwäseheitsaafrag ygreicht"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Während deiner Abwesenheit hat {name} über # Genehmigung entschieden.} other {Während deiner Abwesenheit hat {name} über # Genehmigungen entschieden.}}",
+        "title": "Während deiner Abwesenheit entschieden"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Du vertrittst die Genehmigungen von {name}: Noch nichts ausstehend.} other {Du vertrittst die Genehmigungen von {name}: # ausstehend.}}",
+        "title": "Du vertrittst Genehmigungen"
+      },
       "automaticClockOut": {
+        "breakMessage": "Du bisch automatisch am Afang vo dinere Pause um {cutoff} ({timezone}) usgstämpflet worde, will d Pause nöd innerhalb vo de Zytlimite vo dinere Organisation vo {duration} Minute beendet worde isch.",
         "message": "Sie wurden nach {duration} Minuten ununterbrochener Arbeit um {cutoff} ({timezone}) automatisch ausgestempelt, da das Zeitlimit Ihrer Organisation erreicht wurde.",
         "title": "Automatisch ausgestempelt"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Der Anfangssaldo von {amount} für {dateRange} wurde storniert. Grund: {reason}",
+          "title": "Anfangssaldo storniert"
+        },
+        "openingBalanceRecorded": {
+          "message": "Ein Anfangssaldo von {amount} für {dateRange} wurde auf Ihrem Arbeitszeitsaldo erfasst.",
+          "title": "Anfangssaldo erfasst"
+        },
+        "payoutCancelled": {
+          "message": "Die Überstundenauszahlung von {amount} für {dateRange} wurde storniert. Grund: {reason}",
+          "title": "Überstundenauszahlung storniert"
+        },
+        "payoutRecorded": {
+          "message": "Eine Überstundenauszahlung von {amount} für {dateRange} wurde auf Ihrem Arbeitszeitsaldo erfasst.",
+          "title": "Überstundenauszahlung erfasst"
+        }
       },
       "breakDueReminder": {
         "message": "Dini Pause isch um {breakTime} ({timezone}) fällig. Mach bis dänn Pause, zum d Pauseregle vo dim Betriib yzhalte.",
@@ -638,12 +703,48 @@
         "message": "Dini Schicht het um {startTime} ({timezone}) aagfange. Stämpfel ii, wänn du am Schaffe bisch.",
         "title": "Du häsch di no nöd yygstämpflet"
       },
+      "monthCloseBlocked": {
+        "message": "{month} isch nöd automatisch abgschlosse worde. Unentschidnigi Absänzaaträg: {absenceRequests}. Unentschidnigi Ziitaaträg: {timeRequests}. Laufendi Arbet: {liveWork}. Monet nonig beendet: {notEnded}. Mitarbeiter: {employees}. Es wird morn nomal probiert.",
+        "title": "Monet hät nöd chönne abgschlosse werde"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, other {{month} isch automatisch für # Mitarbeiter abgschlosse worde. D Arbet und d Absänze chönd nüme gänderet werde, ussert er wird wider göffnet.} }",
+        "title": "Monet abgschlosse"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} isch für ein vo dine Mitarbeiter wider göffnet worde: {reason}} other {{month} isch für # vo dine Mitarbeiter wider göffnet worde: {reason}}}",
+        "title": "Monet wider göffnet"
+      },
       "newAbsenceRequest": {
         "title": "Neue Abwesenheitsanfrage"
       },
       "passwordChanged": {
         "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
         "title": "Passwort gänderet"
+      },
+      "periodSubmissionApproved": {
+        "message": "Dini Ziit für {startDate} – {endDate} isch gnämigt worde.",
+        "title": "Dini Ziit isch gnämigt worde"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Dini Ziit für {startDate} – {endDate} hät sich gänderet, nachdem si gnämigt worde isch. Überprüef dini Ziit und gib si nomol ii.",
+        "title": "Dini gnämigti Ziit isch nüme aktuell"
+      },
+      "periodSubmissionRejected": {
+        "message": "Dini Ziit für {startDate} – {endDate} isch abglehnt worde: {reason}. Überprüef dini Ziit und gib si nomol ii.",
+        "title": "Dini Ziit isch abglehnt worde"
+      },
+      "periodSubmissionReminder": {
+        "message": "Dini Periode {startDate} – {endDate} isch z End gange. Überprüef dini Ziit und riich si zur Gnähmigung ii.",
+        "title": "Riich dini Ziit zur Gnähmigung ii"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Dini Periode {startDate} – {endDate} isch immer no nid iigreicht. Überprüef dini Ziit und riich si zur Gnähmigung ii.",
+        "title": "Dini Ziit isch immer no nid iigreicht"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Dini Ziit für {startDate} – {endDate} hät sich gänderet, nachdem du si iigreicht häsch, drum isch d Iireichig zruggzoge worde. Überprüef dini Ziit und riich si nomal ii.",
+        "title": "Riich dini Ziit nomal ii"
       },
       "personnelFileDocumentShared": {
         "message": "S Dokumänt \"{title}\" isch mit dir teilt worde.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} het es Zertifikat ufeghlade",
         "other": "{name} het es Dokumänt ufeghlade",
+        "sickNote": "{name} hät es Arztzügnis für {dateRange} ufeglade",
+        "sickNoteOnBehalf": "{uploader} hat ein Arztzeugnis für {name}, {dateRange} hochgeladen",
         "title": "Neus Dokumänt imene Personaldossier"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
         "title": "Us em Team entfernt"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Mitarbeitende können nun Kompensation über ihren Arbeitszeitsaldo beziehen. Die neue Abwesenheitskategorie bleibt inaktiv, bis Sie sie in den Abwesenheitseinstellungen aktivieren.",
+        "title": "Kompensation ist verfügbar"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Eine genehmigte Anpassung hat den geschuldeten Betrag für den Spesenbericht {report} von {employee} erhöht. Wartet auf Rückerstattung: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "{employee}s Speseabrechnig {report} wird nöd über en Lohnlauf vergüetet. Wartet uf Vergüetig: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} Ihrer Reisespesen wurden rückerstattet (Zahlungsreferenz {reference}). {remaining} {remainingCurrency} warten noch auf Rückerstattung.",
         "title": "Spesen teilweise rückerstattet"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} vo dine Reisespese sind mit em Lohnlauf {period} vergüetet worde. {remaining} {remainingCurrency} wartet no uf Vergüetig."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "De Lohnlauf {period} ({format}) wartet uf dini Bestätigung. Bricht i dim Beriich: {count}.",
+        "title": "Lohnlauf wartet uf Bestätigung"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "Der Spesenbericht {report} von {employee} ist genehmigt. Wartet auf Rückerstattung: {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Ihre Reisespesen wurden vollständig rückerstattet: {amount} {currency}, Zahlungsreferenz {reference}.",
         "title": "Spesen rückerstattet"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Dini Reisespese sind mit em Lohnlauf {period} vollständig vergüetet worde: {amount} {currency}."
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
@@ -728,6 +848,42 @@
       "ariaLabel": "Benachrichtigunge nach Läseschtatus filtere",
       "read": "Gläse",
       "unread": "Ungiläse"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Öppis bruucht dini Ufmerksamkeit"
+      },
+      "body": "Mach Z8 uf, zum d Details z gseh.",
+      "document": {
+        "title": "Neuigkeite zu dine Dokumänt"
+      },
+      "project": {
+        "title": "Neuigkeite zu me Projekt"
+      },
+      "reminder": {
+        "title": "Erinnerig vo Z8"
+      },
+      "requestUpdate": {
+        "title": "Dini Afrag isch aktualisiert worde"
+      },
+      "review": {
+        "title": "Du häsch en Afrag zum Überprüefe"
+      },
+      "schedule": {
+        "title": "Din Isatzplan hät sich gänderet"
+      },
+      "security": {
+        "title": "Sicherheitshiiwis für dis Konto"
+      },
+      "team": {
+        "title": "Dini Teams händ sich gänderet"
+      },
+      "travelExpense": {
+        "title": "Neuigkeite zu dine Reisespese"
+      },
+      "workingTime": {
+        "title": "Neuigkeite zu dinere Arbetszit"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +925,21 @@
       },
       "toggleAria": "{channel}-Benachrichtigunge für {type}",
       "types": {
+        "absence_deputy_assigned": "Als Abwesenheitsstellvertretung benannt",
+        "absence_deputy_dates_changed": "Daten der Abwesenheitsstellvertretung geändert",
+        "absence_deputy_reminder": "Abwesenheitsstellvertretung beginnt morgen",
+        "absence_deputy_removed": "Nicht mehr Abwesenheitsstellvertretung",
+        "absence_deputy_unavailable": "Stellvertretig nümme verfüegbar",
+        "approval_cover_return_summary": "Vo dinere Stellvertretig entschide",
+        "approval_cover_started": "Abwäseheitsvertretig gstartet",
         "break_due_reminder": "Pause fällig",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
-        "missed_clock_in_reminder": "Verpasstes Einstempeln"
+        "missed_clock_in_reminder": "Verpasstes Einstempeln",
+        "period_submission_decided": "Iigreichti Ziit gnähmigt oder abglehnt",
+        "period_submission_reminder": "Riich dini Ziit ii",
+        "period_submission_sent_back": "Ziit nachere Änderig zrugggschickt",
+        "work_balance_adjustment_cancelled": "Saldoanpassung storniert",
+        "work_balance_adjustment_recorded": "Saldoanpassung erfasst"
       },
       "updateFailed": "Iistellig hät nöd chönne aktualisiert werde"
     },
@@ -858,7 +1026,8 @@
       "relativeMinutes": "sit {minutes}min"
     },
     "clockedIn": "Iigstämplet",
-    "clockedOut": "Uusgstämplet"
+    "clockedOut": "Uusgstämplet",
+    "onBreak": "I de Pause"
   },
   "rateLimit": {
     "countdownLabel": "Sekunden, bis Sie es erneut versuchen können",
@@ -877,6 +1046,12 @@
   "status": {
     "active": "Aktiv",
     "inactive": "Inaktiv"
+  },
+  "storeAppBanner": {
+    "description": "Chumm Erinnerige und Gnähmigungs-Benachrichtigunge i de App über.",
+    "dismiss": "App-Vorschlag verwärfe",
+    "getApp": "Hol der d'App",
+    "title": "Z8 für dis Handy"
   },
   "table": {
     "clearFilters": "Filter zruggsetze",
@@ -955,6 +1130,24 @@
     "pronounsMaxLength": "Pronomen dürfen maximal 50 Zeichen lang sein"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Abbrechen",
+      "cancelled": "Abgebrochen",
+      "cancelledBy": "Storniert von {name} am {date}: {reason}",
+      "description": "Überstundenauszahlungen und Anfangssaldi für dieses Arbeitszeitsaldo. Ein fehlerhafter Eintrag wird storniert und nie gelöscht, sodass stornierte Einträge aufgeführt bleiben.",
+      "empty": "Noch keine Saldoanpassungen vorhanden.",
+      "kind": {
+        "openingBalance": "Anfangssaldo",
+        "overtimePayout": "Überstundenauszahlung"
+      },
+      "loadFailed": "Die Saldoanpassungen konnten nicht geladen werden.",
+      "loading": "Saldoanpassungen werden geladen",
+      "notPermitted": "Sie können Ihre eigenen Saldoanpassungen und die der von Ihnen verwalteten Mitarbeitenden einsehen.",
+      "open": "Saldoanpassungen",
+      "recordedBy": "Erfasst von {name} am {date}",
+      "title": "Saldoanpassungen",
+      "unknownUser": "ein gelöschter Benutzer"
+    },
     "label": "Gsamtbilanz",
     "notCalculated": "No nöd berächnet",
     "pendingDescription": "De Arbeiter wird die Bilanz bald berächne.",

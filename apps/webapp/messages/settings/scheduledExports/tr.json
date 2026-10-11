@@ -16,6 +16,7 @@
       },
       "dataCategories": {
         "absences": "İzinler",
+        "customers": "Müşteriler",
         "employees": "Çalışanlar",
         "projects": "Projeler",
         "timeEntries": "Zaman Kayıtları",

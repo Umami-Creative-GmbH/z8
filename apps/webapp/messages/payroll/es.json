@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Eliminando falso positivo",
       "dateUnavailable": "Fecha no disponible",
       "missingClockOut": "Falta registro de salida",
+      "missingIdentifier": "Falta el identificador",
       "needReview": "{count} bloqueos de nómina requieren revisión",
       "offboardingClockRepair": "El registro de salida por baja de empleado necesita corrección",
       "openApprovals": "Aprobaciones pendientes",
       "openCalendar": "Abrir calendario",
+      "openEmployee": "Abrir empleado",
       "openWork": "Trabajo sin registro de salida",
       "openWorkDiagnostics": "Abrir diagnóstico de trabajo",
       "pendingAbsence": "Ausencia pendiente",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds debe ser una matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds solo debe contener cadenas",
       "endDateAfterStart": "La fecha de finalización debe ser igual o posterior a la fecha de inicio",
+      "exportBlockedByMissingIdentifier": "Exportación bloqueada: algunos empleados no tienen ningún valor para el campo personalizado utilizado como identificador de nómina",
       "exportBlockedByOffboardingClockRepair": "Exportación bloqueada: corrige primero el fichaje de salida por baja",
       "exportBlockedByUncertainWork": "Exportación bloqueada: resuelve primero el trabajo incierto en el alcance seleccionado",
       "exportBlockedByUnresolvedWorkMinutes": "Exportación bloqueada: resuelve primero los minutos de trabajo que requieren revisión",
       "exportFormatNotConfigured": "El formato de exportación de nómina no está configurado",
+      "exportIdentifierChanged": "La configuración del identificador de nómina cambió después de recopilar esta exportación. Inicie una nueva exportación.",
       "invalidBlockerId": "ID de bloqueo de nómina no válido",
       "invalidBlockerType": "Tipo de bloqueo de nómina no válido",
       "mustBeIsoDate": "{field} debe ser una fecha ISO",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Exportación de nómina completada",
       "formatAccessCheck": "Verificación de acceso al formato",
+      "nobodyEmployedInPeriod": "Ninguna persona a la que tienes acceso en nómina estuvo contratada en este período.",
       "noConfiguredTarget": "No hay un destino de exportación de nómina configurado",
       "queued": "Exportación de nómina en cola",
       "selectFormat": "Seleccionar formato",
-      "target": "Destino de exportación de nómina"
+      "target": "Destino de exportación de nómina",
+      "unmappedOvertimePayouts": "{count, plural, one {# pago de horas extra no se exportó} other {# pagos de horas extra no se exportaron}}",
+      "unmappedOvertimePayoutsDescription": "No hay ningún tipo de salario asignado a Horas extra para este formato. Pide a un administrador de la organización que asigne uno o paga estas horas de otra manera."
     },
     "filters": {
       "noMatchingEmployees": "Ningún empleado coincide con los filtros de nómina seleccionados."
+    },
+    "formerEmployeesExport": {
+      "description": "Exporta un mes en el que cualquiera de ellos aún estuviera contratado: sus últimas horas y pagos finales de horas extra se incluirán en el archivo.",
+      "export": "Exportar",
+      "nextMonth": "Mes siguiente",
+      "previousMonth": "Mes anterior",
+      "title": "Exportar nómina de los empleados que se han marchado"
+    },
+    "onlyFormerEmployees": {
+      "description": "Aún puedes registrar y cancelar sus pagos de horas extra, y exportar a continuación los meses en los que estuvieron contratados.",
+      "title": "En tu acceso a nómina solo figuran los empleados que se han marchado"
+    },
+    "overtimePayoutReadiness": {
+      "description": "No hay ningún tipo de salario asignado a Horas extra para este formato, por lo que la exportación excluye estos pagos. Pide a un administrador de la organización que asigne uno o paga estas horas de otra manera.",
+      "title": "{count, plural, one {# pago de horas extra no se exportará} other {# pagos de horas extra no se exportarán}}"
     },
     "period": {
       "current": "Periodo actual",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Descartar ejecución de nómina",
+        "confirmed": "Esta ejecución de nómina ya está confirmada como pagada para algunos informes, por lo que ya no se puede descartar. En su lugar, elimine informes individuales de ella.",
         "description": "{count, plural, one {El informe de gastos (#) que incluye volverá a estar pendiente de reembolso: la próxima exportación de nómina o una transferencia bancaria podrá incluirlo. Descártela solo si este archivo no se paga con la nómina.} other {Los # informes de gastos que incluye volverán a estar pendientes de reembolso: la próxima exportación de nómina o una transferencia bancaria podrán incluirlos. Descártela solo si este archivo no se paga con la nómina.}}",
         "done": "Ejecución de nómina descartada. Sus informes de gastos vuelven a estar pendientes de reembolso.",
         "failed": "No se pudo descartar la ejecución de nómina.",
@@ -106,6 +129,29 @@
         "outOfScope": "Esta ejecución de nómina incluye empleados fuera de su ámbito de nómina.",
         "title": "¿Descartar esta ejecución de nómina?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "establecido manualmente",
+        "exceptionalItinerary": "itinerario no cubierto por las normas legales",
+        "outsideVerifiedTables": "no hay una tabla legal verificada para sus días"
+      },
+      "description": "Estos gastos están pendientes de reembolso, pero una exportación de este período y formato los excluye. La exportación no está bloqueada: páguelos mediante transferencia bancaria desde la cola de finanzas.",
+      "payByBankTransfer": "Pagar por transferencia bancaria",
+      "reason": {
+        "apiConnector": "Este formato es un conector de API, que nunca incluye importes de gastos.",
+        "currencyNotEur": "No está en euros: las ejecuciones de nómina solo admiten importes en euros.",
+        "includedInOtherRun": "Incluido en la ejecución de nómina sin confirmar {period} ({format}).",
+        "legacyClaim": "Las reclamaciones heredadas nunca se pagan a través de la nómina.",
+        "negativeDifference": "Un ajuste redujo lo que incluían ejecuciones de nómina anteriores para: {kinds}.",
+        "noStatutoryBaseline": "Sin base legal para: {items}.",
+        "nothingOwed": "Sus líneas de nómina no dejan nada pendiente para que la nómina lo incluya.",
+        "reimbursedOutsidePayroll": "Ya se ha pagado parcialmente por transferencia bancaria o recuperado: la nómina no puede asumir el resto.",
+        "unmappedWageType": "No hay ningún tipo de salario asignado en este formato para: {kinds}."
+      },
+      "title": "Informes de gastos que esta ejecución de nómina no incluirá",
+      "unknownEmployee": "Empleado"
     },
     "runs": {
       "description": "Estas exportaciones contienen informes de gastos pendientes de reembolso. Un responsable de gastos confirma cada ejecución una vez que la nómina la ha pagado; descarte una ejecución cuyo archivo no se pague.",
@@ -140,6 +186,17 @@
       "description": "No se pudieron preparar los datos de nómina de forma segura.",
       "help": "Inténtalo de nuevo más tarde. Si el problema continúa, contacta con un administrador de la organización.",
       "title": "Nóminas no disponibles temporalmente"
+    },
+    "workBalances": {
+      "back": "Saldos de trabajo",
+      "backToPayroll": "Nómina",
+      "description": "Registre y cancele pagos de horas extras de los empleados cubiertos por su acceso a la nómina, incluidos los empleados que se han marchado.",
+      "empty": "Todavía no hay empleados dentro del alcance de su acceso a la nómina.",
+      "former": "Exempleado",
+      "loading": "Cargando saldos de trabajo",
+      "loadingEmployee": "Cargando el saldo de trabajo",
+      "open": "Saldos de trabajo",
+      "title": "Saldos de trabajo"
     }
   }
 }

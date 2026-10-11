@@ -143,6 +143,17 @@
       "upgrade": "Atualizar"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Fechar este mês",
+    "status": {
+      "closed": "Fechado",
+      "open": "Aberto",
+      "partlyClosed": "Parcialmente fechado ({closed} de {total})"
+    },
+    "stripLabel": "Meses fechados",
+    "unclosedDescription": "O trabalho e as ausências nestes meses ainda podem mudar após a exportação. Feche um mês assim que a folha de pagamento estiver finalizada.",
+    "unclosedTitle": "Nem todos os meses neste intervalo estão fechados"
+  },
   "colors": {
     "blue": "Azul",
     "green": "Verde",
@@ -219,6 +230,9 @@
     "enabled": "Ativado",
     "error": "Erro",
     "error-occurred": "Ocorreu um erro",
+    "errors": {
+      "monthClosed": "{month} está fechado. Deve ser reaberto antes que o trabalho ou as ausências possam ser alterados."
+    },
     "fieldPresets": "Predefinições de {label}",
     "focusInput": "Focar campo",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Obter Ajuda",
     "my-documents": "Meus documentos",
     "my-requests": "Minhas Solicitações",
+    "my-schedule": "Minha Escala",
     "org-explorer": "Explorador da Organização",
     "payroll": "Folha de pagamento",
     "personnel-files": "Pastas funcionais",
@@ -588,6 +603,8 @@
     "team": "Equipa",
     "teamAbsences": "Ausências da Equipe",
     "team-label": "Equipa",
+    "teamPeriodSubmissions": "Envios de Período",
+    "teamPresence": "Quem Está Presente",
     "time-tracking": "Rastreio de Tempo",
     "today": "Hoje",
     "travel-expenses": "Despesas de Viagem",
@@ -603,6 +620,27 @@
       "viewAll": "Ver todas as notificações"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Você está substituindo {name} ({dateRange}).",
+        "title": "Você é um substituto de ausência"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Sua substituição de {name} agora é {dateRange}.",
+        "title": "Datas do substituto de ausência alteradas"
+      },
+      "absenceDeputyReminder": {
+        "message": "A partir de amanhã você substituirá {name} até {untilDate}.",
+        "title": "A substituição de ausência começa amanhã"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Você não substitui mais {name} ({dateRange}).",
+        "title": "Você não é mais um substituto de ausência"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} não está mais disponível como substituto para a ausência de {employeeName} de {startDate} a {endDate}.",
+        "message": "{deputyName} não está mais disponível como substituto para sua ausência de {startDate} a {endDate}.",
+        "title": "Substituto não está mais disponível"
+      },
       "absenceRecorded": {
         "message": "{managerName} registrou {absenceType} para {dateRange} em seu nome.",
         "title": "Ausência registrada"
@@ -614,9 +652,36 @@
         "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
         "title": "Solicitação de ausência enviada"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Enquanto você estava ausente, {name} decidiu # aprovação.} other {Enquanto você estava ausente, {name} decidiu # aprovações.}}",
+        "title": "Decidido enquanto você estava ausente"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Você está cobrindo as aprovações de {name}: nada pendente ainda.} other {Você está cobrindo as aprovações de {name}: # pendentes.}}",
+        "title": "Você está cobrindo aprovações"
+      },
       "automaticClockOut": {
+        "breakMessage": "Sua saída foi registrada automaticamente no início do seu intervalo às {cutoff} ({timezone}) porque o intervalo não foi finalizado dentro do tempo limite de {duration} minutos da sua organização.",
         "message": "Sua saída foi registrada automaticamente após {duration} minutos de trabalho ininterrupto às {cutoff} ({timezone}) porque o limite de tempo da sua organização foi atingido.",
         "title": "Saída registrada automaticamente"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "O saldo inicial de {amount} para {dateRange} foi cancelado. Motivo: {reason}",
+          "title": "Saldo inicial cancelado"
+        },
+        "openingBalanceRecorded": {
+          "message": "Um saldo inicial de {amount} para {dateRange} foi registrado no seu saldo de horas.",
+          "title": "Saldo inicial registrado"
+        },
+        "payoutCancelled": {
+          "message": "O pagamento de horas extras de {amount} para {dateRange} foi cancelado. Motivo: {reason}",
+          "title": "Pagamento de horas extras cancelado"
+        },
+        "payoutRecorded": {
+          "message": "Um pagamento de horas extras de {amount} para {dateRange} foi registrado no seu saldo de horas.",
+          "title": "Pagamento de horas extras registrado"
+        }
       },
       "breakDueReminder": {
         "message": "O seu intervalo deve começar às {breakTime} ({timezone}). Faça uma pausa até esse horário para seguir as regras de intervalo da sua política de trabalho.",
@@ -638,12 +703,48 @@
         "message": "Seu turno começou às {startTime} ({timezone}). Registre a entrada se estiver trabalhando.",
         "title": "Você ainda não registrou o ponto"
       },
+      "monthCloseBlocked": {
+        "message": "{month} não foi fechado automaticamente. Pedidos de ausência pendentes: {absenceRequests}. Pedidos de tempo pendentes: {timeRequests}. Trabalho ainda em curso: {liveWork}. Mês ainda não terminado: {notEnded}. Funcionários: {employees}. Será feita uma nova tentativa amanhã.",
+        "title": "Não foi possível fechar o mês"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, one {{month} foi fechado automaticamente para # funcionário. O trabalho e as ausências já não podem ser alterados, a menos que seja reaberto.} other {{month} foi fechado automaticamente para # funcionários. O trabalho e as ausências já não podem ser alterados, a menos que seja reaberto.}}",
+        "title": "Mês fechado"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} foi reaberto para um dos seus funcionários: {reason}} other {{month} foi reaberto para # dos seus funcionários: {reason}}}",
+        "title": "Mês reaberto"
+      },
       "newAbsenceRequest": {
         "title": "Nova solicitação de ausência"
       },
       "passwordChanged": {
         "message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
         "title": "Senha alterada"
+      },
+      "periodSubmissionApproved": {
+        "message": "Suas horas de {startDate} – {endDate} foram aprovadas.",
+        "title": "Suas horas foram aprovadas"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Suas horas de {startDate} – {endDate} foram alteradas após a aprovação. Revise suas horas e envie novamente.",
+        "title": "Suas horas aprovadas estão desatualizadas"
+      },
+      "periodSubmissionRejected": {
+        "message": "Suas horas de {startDate} – {endDate} foram rejeitadas: {reason}. Revise suas horas e envie novamente.",
+        "title": "Suas horas foram rejeitadas"
+      },
+      "periodSubmissionReminder": {
+        "message": "O seu período {startDate} – {endDate} terminou. Revise suas horas e envie-as para aprovação.",
+        "title": "Envie suas horas para aprovação"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "O seu período {startDate} – {endDate} ainda não foi enviado. Revise suas horas e envie-as para aprovação.",
+        "title": "Suas horas ainda não foram enviadas"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Suas horas para {startDate} – {endDate} foram alteradas após o envio, portanto o envio foi cancelado. Revise suas horas e envie-as novamente.",
+        "title": "Envie suas horas novamente"
       },
       "personnelFileDocumentShared": {
         "message": "O documento \"{title}\" foi compartilhado com você.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} enviou um certificado",
         "other": "{name} enviou um documento",
+        "sickNote": "{name} enviou um atestado médico para {dateRange}",
+        "sickNoteOnBehalf": "{uploader} enviou um atestado médico para {name}, {dateRange}",
         "title": "Novo documento em uma pasta funcional"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "Você foi removido da equipe {teamName} por {performedByName}.",
         "title": "Removido da equipe"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Os funcionários agora podem tirar folga utilizando o saldo de horas. A nova categoria de ausência permanece inativa até que você a ative nas configurações de ausência.",
+        "title": "Folga compensatória disponível"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Um ajuste aprovado aumentou o valor devido no relatório de despesas {report} de {employee}. Aguardando reembolso: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "O relatório de despesas {report} de {employee} não é reembolsado por meio de um processamento de folha de pagamento. Aguardando reembolso: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} da sua despesa de viagem foi reembolsado (referência de pagamento {reference}). {remaining} {remainingCurrency} ainda aguarda reembolso.",
         "title": "Despesa parcialmente reembolsada"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} das suas despesas de viagem foi reembolsado na folha de pagamento {period}. {remaining} {remainingCurrency} ainda aguarda reembolso."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "O processamento da folha de pagamento {period} ({format}) está aguardando sua confirmação. Relatórios sob sua responsabilidade: {count}.",
+        "title": "Processamento da folha aguardando confirmação"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "O relatório de despesas {report} de {employee} foi aprovado. Aguardando reembolso: {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Sua despesa de viagem foi totalmente reembolsada: {amount} {currency}, referência de pagamento {reference}.",
         "title": "Despesa reembolsada"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Sua despesa de viagem foi totalmente reembolsada com a folha de pagamento {period}: {amount} {currency}."
       }
     },
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
@@ -728,6 +848,42 @@
       "ariaLabel": "Filtrar notificações por status de leitura",
       "read": "Lido",
       "unread": "Não lido"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Algo precisa da sua atenção"
+      },
+      "body": "Abra o Z8 para ver os detalhes.",
+      "document": {
+        "title": "Novidades sobre seus documentos"
+      },
+      "project": {
+        "title": "Novidades sobre um projeto"
+      },
+      "reminder": {
+        "title": "Lembrete do Z8"
+      },
+      "requestUpdate": {
+        "title": "Sua solicitação foi atualizada"
+      },
+      "review": {
+        "title": "Você tem uma solicitação para revisar"
+      },
+      "schedule": {
+        "title": "Sua escala foi alterada"
+      },
+      "security": {
+        "title": "Aviso de segurança para sua conta"
+      },
+      "team": {
+        "title": "Suas equipes mudaram"
+      },
+      "travelExpense": {
+        "title": "Novidades sobre suas despesas de viagem"
+      },
+      "workingTime": {
+        "title": "Novidades sobre sua jornada de trabalho"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +925,21 @@
       },
       "toggleAria": "Notificações {channel} para {type}",
       "types": {
+        "absence_deputy_assigned": "Nomeado como substituto de ausência",
+        "absence_deputy_dates_changed": "Datas do substituto de ausência alteradas",
+        "absence_deputy_reminder": "A substituição de ausência começa amanhã",
+        "absence_deputy_removed": "Não é mais substituto de ausência",
+        "absence_deputy_unavailable": "Substituto não está mais disponível",
+        "approval_cover_return_summary": "Decidido pelo seu substituto",
+        "approval_cover_started": "Cobertura de ausência iniciada",
         "break_due_reminder": "Intervalo pendente",
         "forgotten_clock_out_reminder": "Saída não registrada",
-        "missed_clock_in_reminder": "Entrada não registrada"
+        "missed_clock_in_reminder": "Entrada não registrada",
+        "period_submission_decided": "Horas enviadas aprovadas ou rejeitadas",
+        "period_submission_reminder": "Envie suas horas",
+        "period_submission_sent_back": "Horas devolvidas após uma alteração",
+        "work_balance_adjustment_cancelled": "Ajuste de saldo cancelado",
+        "work_balance_adjustment_recorded": "Ajuste de saldo registrado"
       },
       "updateFailed": "Falha ao atualizar preferência"
     },
@@ -858,7 +1026,8 @@
       "relativeMinutes": "desde {minutes}min"
     },
     "clockedIn": "Registrou entrada",
-    "clockedOut": "Registrou saída"
+    "clockedOut": "Registrou saída",
+    "onBreak": "Em pausa"
   },
   "rateLimit": {
     "countdownLabel": "segundos até poder tentar novamente",
@@ -877,6 +1046,12 @@
   "status": {
     "active": "Ativo",
     "inactive": "Inativo"
+  },
+  "storeAppBanner": {
+    "description": "Receba lembretes e notificações de aprovação no aplicativo.",
+    "dismiss": "Dispensar sugestão do aplicativo",
+    "getApp": "Baixar o aplicativo",
+    "title": "Z8 para seu celular"
   },
   "table": {
     "clearFilters": "Limpar filtros",
@@ -955,6 +1130,24 @@
     "pronounsMaxLength": "Os pronomes devem ter 50 caracteres ou menos"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Cancelar",
+      "cancelled": "Cancelado",
+      "cancelledBy": "Cancelado por {name} em {date}: {reason}",
+      "description": "Pagamentos de horas extras e saldos iniciais neste saldo de trabalho. Registros incorretos são cancelados, nunca excluídos, portanto os cancelados continuam listados.",
+      "empty": "Ainda não há ajustes de saldo.",
+      "kind": {
+        "openingBalance": "Saldo inicial",
+        "overtimePayout": "Pagamento de horas extras"
+      },
+      "loadFailed": "Não foi possível carregar os ajustes de saldo.",
+      "loading": "Carregando ajustes de saldo",
+      "notPermitted": "Você pode ver os ajustes de saldo próprios e dos colaboradores que gerencia.",
+      "open": "Ajustes de saldo",
+      "recordedBy": "Registrado por {name} em {date}",
+      "title": "Ajustes de saldo",
+      "unknownUser": "um usuário excluído"
+    },
     "label": "Saldo total",
     "notCalculated": "Ainda não calculado",
     "pendingDescription": "O trabalhador calculará este saldo em breve.",

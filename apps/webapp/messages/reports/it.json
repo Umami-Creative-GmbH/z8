@@ -7,6 +7,11 @@
       "pleaseWait": "Attendi mentre compiliamo i tuoi dati",
       "selectPeriod": "Seleziona un periodo e clicca su \"Genera report\" per iniziare"
     },
+    "customFields": {
+      "no": "No",
+      "title": "Campi personalizzati",
+      "yes": "Sì"
+    },
     "description": "Genera report completi su ore lavorative e assenze con dati su smart working rilevanti ai fini fiscali",
     "employeeSelector": {
       "error": "Impossibile caricare i membri del team",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Senza cliente",
         "withoutCustomerHint": "{hours} fatturabili senza cliente, impossibile trasferire"
       },
+      "details": {
+        "customer": "Cliente",
+        "customerFields": "Campi cliente",
+        "noCustomer": "Nessun cliente",
+        "projectFields": "Campi progetto",
+        "title": "Dettagli"
+      },
       "export": {
         "billableHours": "Ore fatturabili",
         "changedAfterInvoicing": "Modificato dopo la fatturazione",
@@ -164,6 +176,10 @@
         "customer": "Cliente",
         "customerReportTitle": "Report cliente",
         "customersTable": "Clienti",
+        "customFieldName": "Campo",
+        "customFieldRecord": "Record",
+        "customFieldsTable": "Campi personalizzati",
+        "customFieldValue": "Valore",
         "dailyHoursTable": "Ore al giorno",
         "date": "Data",
         "employee": "Dipendente",
@@ -176,6 +192,7 @@
         "invoicingNote": "I ricavi fatturati mantengono le tariffe della bozza di fattura; i ricavi non fatturati utilizzano le tariffe in vigore al momento della generazione del report.",
         "margin": "Margine",
         "marginPercent": "Margine %",
+        "no": "No",
         "nonBillableHours": "Ore non fatturabili",
         "pendingReview": "Correzioni o invii in sospeso",
         "period": "Periodo",
@@ -194,7 +211,8 @@
         "unpricedWork": "Lavoro senza prezzo",
         "withoutCustomer": "Senza cliente",
         "withoutCustomerHours": "Ore fatturabili senza cliente",
-        "workPeriods": "Periodi di lavoro"
+        "workPeriods": "Periodi di lavoro",
+        "yes": "Sì"
       },
       "filter": {
         "activeOnly": "Solo attivi",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Cliente",
         "daysLeft": "{days}g rimanenti",
         "daysOverdue": "{days}g di ritardo",
         "deadline": "Scadenza",

@@ -143,6 +143,17 @@
       "upgrade": "Yükselt"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Bu ayı kapat",
+    "status": {
+      "closed": "Kapalı",
+      "open": "Açık",
+      "partlyClosed": "Kısmen kapalı ({total} üzerinden {closed})"
+    },
+    "stripLabel": "Kapalı aylar",
+    "unclosedDescription": "Bu aylardaki çalışmalar ve devamsızlıklar dışa aktarımdan sonra da değişebilir. Bordrosu kesinleştiğinde ayı kapatın.",
+    "unclosedTitle": "Bu aralıktaki tüm aylar kapatılmadı"
+  },
   "colors": {
     "blue": "Mavi",
     "green": "Yeşil",
@@ -219,6 +230,9 @@
     "enabled": "Etkin",
     "error": "Hata",
     "error-occurred": "Bir hata oluştu",
+    "errors": {
+      "monthClosed": "{month} kapalı. Çalışma veya devamsızlık kayıtlarının değiştirilebilmesi için yeniden açılmalıdır."
+    },
     "fieldPresets": "{label} ön ayarları",
     "focusInput": "Giriş alanına odaklan",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Yardım Al",
     "my-documents": "Belgelerim",
     "my-requests": "Taleplerim",
+    "my-schedule": "Programım",
     "org-explorer": "Kuruluş Gezgini",
     "payroll": "Bordro",
     "personnel-files": "Özlük Dosyaları",
@@ -588,6 +603,8 @@
     "team": "Ekip",
     "teamAbsences": "Ekip Devamsızlıkları",
     "team-label": "Ekip",
+    "teamPeriodSubmissions": "Dönem Gönderimleri",
+    "teamPresence": "Kimler Burada",
     "time-tracking": "Zaman Takibi",
     "today": "Bugün",
     "travel-expenses": "Seyahat Masrafları",
@@ -603,6 +620,27 @@
       "viewAll": "Tüm bildirimleri görüntüle"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "{name} yerine vekillik yapıyorsunuz ({dateRange}).",
+        "title": "İzin vekilisiniz"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "{name} yerine vekillik süreniz artık {dateRange} olarak güncellendi.",
+        "title": "İzin vekilliği tarihleri değişti"
+      },
+      "absenceDeputyReminder": {
+        "message": "Yarından itibaren {untilDate} tarihine kadar {name} yerine vekillik yapacaksınız.",
+        "title": "İzin vekilliği yarın başlıyor"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Artık {name} yerine vekillik yapmıyorsunuz ({dateRange}).",
+        "title": "Artık izin vekili değilsiniz"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName}, {startDate} - {endDate} tarihleri arasında {employeeName} kişisinin izninde artık vekil olarak uygun değil.",
+        "message": "{deputyName}, {startDate} - {endDate} tarihleri arasındaki izniniz için artık vekil olarak uygun değil.",
+        "title": "Vekil artık uygun değil"
+      },
       "absenceRecorded": {
         "message": "{managerName}, sizin adınıza {dateRange} için {absenceType} kaydetti.",
         "title": "İzin kaydedildi"
@@ -614,9 +652,36 @@
         "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
         "title": "Devamsızlık talebi gönderildi"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, other {Siz yokken {name} # onayı karara bağladı.} }",
+        "title": "Siz yokken karara bağlandı"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {{name} adlı kişinin onaylarına vekillik ediyorsunuz: henüz bekleyen yok.} other {{name} adlı kişinin onaylarına vekillik ediyorsunuz: # bekleyen var.}}",
+        "title": "Onaylara vekillik ediyorsunuz"
+      },
       "automaticClockOut": {
+        "breakMessage": "Mola, kuruluşunuzun belirlediği {duration} dakikalık süre sınırı içinde sonlandırılmadığından, molanızın başlangıç saati olan {cutoff} ({timezone}) itibarıyla çıkışınız otomatik olarak yapıldı.",
         "message": "Kuruluşunuzun zaman sınırına ulaşıldığı için {cutoff} ({timezone}) itibarıyla {duration} dakikalık kesintisiz çalışmanın ardından otomatik olarak çıkışınız yapıldı.",
         "title": "Otomatik olarak çıkış yapıldı"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "{dateRange} için {amount} açılış bakiyesi iptal edildi. Neden: {reason}",
+          "title": "Açılış bakiyesi iptal edildi"
+        },
+        "openingBalanceRecorded": {
+          "message": "{dateRange} dönemi için {amount} tutarındaki açılış bakiyesi çalışma bakiyenize kaydedildi.",
+          "title": "Açılış bakiyesi kaydedildi"
+        },
+        "payoutCancelled": {
+          "message": "{dateRange} dönemi için {amount} tutarındaki fazla mesai ödemesi iptal edildi. Neden: {reason}",
+          "title": "Fazla mesai ödemesi iptal edildi"
+        },
+        "payoutRecorded": {
+          "message": "{dateRange} dönemi için {amount} tutarındaki fazla mesai ödemesi çalışma bakiyenize kaydedildi.",
+          "title": "Fazla mesai ödemesi kaydedildi"
+        }
       },
       "breakDueReminder": {
         "message": "Molanız {breakTime} ({timezone}) saatinde planlanmıştır. Çalışma politikanızın mola kurallarına uymak için o zamana kadar mola verin.",
@@ -638,12 +703,48 @@
         "message": "Vardiyanız {startTime} ({timezone}) saatinde başladı. Çalışıyorsanız giriş yapın.",
         "title": "Henüz giriş yapmadınız"
       },
+      "monthCloseBlocked": {
+        "message": "{month} otomatik olarak kapatılmadı. Karara bağlanmamış devamsızlık talepleri: {absenceRequests}. Karara bağlanmamış zaman talepleri: {timeRequests}. Hâlâ devam eden çalışma: {liveWork}. Henüz sona ermemiş ay: {notEnded}. Çalışanlar: {employees}. Yarın tekrar denenecek.",
+        "title": "Ay kapatılamadı"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, other {{month} # çalışan için otomatik olarak kapatıldı. Yeniden açılmadığı sürece çalışma ve devamsızlık kayıtları artık değiştirilemez.} }",
+        "title": "Ay kapatıldı"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} bir çalışanınız için yeniden açıldı: {reason}} other {{month} # çalışanınız için yeniden açıldı: {reason}}}",
+        "title": "Ay yeniden açıldı"
+      },
       "newAbsenceRequest": {
         "title": "Yeni izin talebi"
       },
       "passwordChanged": {
         "message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
         "title": "Parola değiştirildi"
+      },
+      "periodSubmissionApproved": {
+        "message": "{startDate} – {endDate} arası çalışma süreniz onaylandı.",
+        "title": "Çalışma süreniz onaylandı"
+      },
+      "periodSubmissionOutdated": {
+        "message": "{startDate} – {endDate} arası çalışma süreniz onaylandıktan sonra değişti. Çalışma sürenizi gözden geçirin ve tekrar gönderin.",
+        "title": "Onaylanan çalışma süreniz güncel değil"
+      },
+      "periodSubmissionRejected": {
+        "message": "{startDate} – {endDate} arası çalışma süreniz reddedildi: {reason}. Çalışma sürenizi gözden geçirin ve tekrar gönderin.",
+        "title": "Çalışma süreniz reddedildi"
+      },
+      "periodSubmissionReminder": {
+        "message": "{startDate} – {endDate} döneminiz sona erdi. Çalışma sürenizi gözden geçirin ve onay için gönderin.",
+        "title": "Çalışma sürenizi onaya gönderin"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "{startDate} – {endDate} döneminiz henüz gönderilmedi. Çalışma sürenizi gözden geçirin ve onay için gönderin.",
+        "title": "Çalışma süreniz henüz gönderilmedi"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "{startDate} – {endDate} dönemi için girdiğiniz süre gönderildikten sonra değişti, bu nedenle gönderim geri çekildi. Çalışma sürenizi gözden geçirin ve tekrar gönderin.",
+        "title": "Çalışma sürenizi tekrar gönderin"
       },
       "personnelFileDocumentShared": {
         "message": "\"{title}\" adlı belge sizinle paylaşıldı.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} bir sertifika yükledi",
         "other": "{name} bir belge yükledi",
+        "sickNote": "{name}, {dateRange} için bir hastalık raporu yükledi",
+        "sickNoteOnBehalf": "{uploader}, {name} için bir hastalık raporu yükledi, {dateRange}",
         "title": "Bir özlük dosyasında yeni belge"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
         "title": "Ekipten çıkarıldı"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Çalışanlar artık çalışma bakiyeleri karşılığında izin kullanabilir. Yeni izin kategorisi, siz izin ayarlarından etkinleştirene kadar devre dışı kalır.",
+        "title": "Telafi izni kullanılabilir"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Onaylanan bir düzeltme, {employee} adlı çalışanın {report} masraf raporunda ödenecek tutarı artırdı. Geri ödeme bekliyor: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "{employee} adlı personelin {report} masraf raporu bordro çalıştırmasıyla geri ödenmedi. Geri ödeme bekleyen: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "Seyahat masrafınızın {amount} {currency} tutarındaki kısmı geri ödendi (ödeme referansı: {reference}). Kalan {remaining} {remainingCurrency} hâlâ geri ödeme bekliyor.",
         "title": "Masraf kısmen geri ödendi"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "Seyahat masrafınızın {amount} {currency} kadarı {period} bordrosu ile geri ödendi. {remaining} {remainingCurrency} tutarındaki kısım hâlâ geri ödeme bekliyor."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "{period} ({format}) bordro çalıştırması onayınızı bekliyor. Kapsamınızdaki rapor sayısı: {count}.",
+        "title": "Onay bekleyen bordro çalıştırması"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "{employee} adlı çalışanın {report} masraf raporu onaylandı. Geri ödeme bekliyor: {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Seyahat masrafınızın tamamı geri ödendi: {amount} {currency}, ödeme referansı: {reference}.",
         "title": "Masraf geri ödendi"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Seyahat masrafınız {period} bordrosu ile tamamen geri ödendi: {amount} {currency}."
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
@@ -728,6 +848,42 @@
       "ariaLabel": "Bildirimleri okuma durumuna göre filtrele",
       "read": "Okundu",
       "unread": "Okunmadı"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "İlgilenmeniz gereken bir konu var"
+      },
+      "body": "Ayrıntıları görmek için Z8'i açın.",
+      "document": {
+        "title": "Belgeleriniz hakkında gelişmeler"
+      },
+      "project": {
+        "title": "Bir proje hakkında gelişmeler"
+      },
+      "reminder": {
+        "title": "Z8'den hatırlatma"
+      },
+      "requestUpdate": {
+        "title": "Talebiniz güncellendi"
+      },
+      "review": {
+        "title": "İncelemeniz gereken bir talep var"
+      },
+      "schedule": {
+        "title": "Programınız değişti"
+      },
+      "security": {
+        "title": "Hesabınız için güvenlik bildirimi"
+      },
+      "team": {
+        "title": "Ekipleriniz değişti"
+      },
+      "travelExpense": {
+        "title": "Seyahat masraflarınız hakkında gelişmeler"
+      },
+      "workingTime": {
+        "title": "Çalışma süreniz hakkında haberler"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +925,21 @@
       },
       "toggleAria": "{type} için {channel} bildirimleri",
       "types": {
+        "absence_deputy_assigned": "İzin vekili olarak belirlendi",
+        "absence_deputy_dates_changed": "İzin vekilliği tarihleri değişti",
+        "absence_deputy_reminder": "İzin vekilliği yarın başlıyor",
+        "absence_deputy_removed": "Artık izin vekili değil",
+        "absence_deputy_unavailable": "Vekil artık uygun değil",
+        "approval_cover_return_summary": "Vekiliniz tarafından karara bağlandı",
+        "approval_cover_started": "İzin vekilliği başladı",
         "break_due_reminder": "Mola vakti",
         "forgotten_clock_out_reminder": "Unutulan çıkış",
-        "missed_clock_in_reminder": "Kaçırılan giriş"
+        "missed_clock_in_reminder": "Kaçırılan giriş",
+        "period_submission_decided": "Gönderilen süre onaylandı veya reddedildi",
+        "period_submission_reminder": "Çalışma sürenizi gönderin",
+        "period_submission_sent_back": "Bir değişiklik sonrasında geri gönderilen süre",
+        "work_balance_adjustment_cancelled": "Bakiye düzeltmesi iptal edildi",
+        "work_balance_adjustment_recorded": "Bakiye düzeltmesi kaydedildi"
       },
       "updateFailed": "Tercih güncellenemedi"
     },
@@ -858,7 +1026,8 @@
       "relativeMinutes": "{minutes} dakikadan beri"
     },
     "clockedIn": "Giriş yapıldı",
-    "clockedOut": "Çıkış yapıldı"
+    "clockedOut": "Çıkış yapıldı",
+    "onBreak": "Molada"
   },
   "rateLimit": {
     "countdownLabel": "yeniden deneyebilmeniz için kalan saniye",
@@ -877,6 +1046,12 @@
   "status": {
     "active": "Aktif",
     "inactive": "Pasif"
+  },
+  "storeAppBanner": {
+    "description": "Uygulamada hatırlatıcılar ve onay bildirimleri alın.",
+    "dismiss": "Uygulama önerisini yoksay",
+    "getApp": "Uygulamayı edinin",
+    "title": "Telefonunuz için Z8"
   },
   "table": {
     "clearFilters": "Filtreleri temizle",
@@ -955,6 +1130,24 @@
     "pronounsMaxLength": "Zamirler 50 karakter veya daha az olmalıdır"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "İptal",
+      "cancelled": "İptal edildi",
+      "cancelledBy": "{name} tarafından {date} tarihinde iptal edildi: {reason}",
+      "description": "Bu çalışma bakiyesindeki fazla mesai ödemeleri ve açılış bakiyeleri. Hatalı olanlar asla silinmez, iptal edilir; bu nedenle iptal edilenler listede kalmaya devam eder.",
+      "empty": "Henüz bakiye düzeltmesi yok.",
+      "kind": {
+        "openingBalance": "Açılış bakiyesi",
+        "overtimePayout": "Fazla mesai ödemesi"
+      },
+      "loadFailed": "Bakiye düzeltmeleri yüklenemedi.",
+      "loading": "Bakiye düzeltmeleri yükleniyor",
+      "notPermitted": "Kendinizin ve yönettiğiniz çalışanların bakiye düzeltmelerini görebilirsiniz.",
+      "open": "Bakiye düzeltmeleri",
+      "recordedBy": "{name} tarafından {date} tarihinde kaydedildi",
+      "title": "Bakiye düzeltmeleri",
+      "unknownUser": "silinmiş bir kullanıcı"
+    },
     "label": "Tüm zamanların bakiyesi",
     "notCalculated": "Henüz hesaplanmadı",
     "pendingDescription": "Çalışan bu bakiyeyi yakında hesaplayacaktır.",

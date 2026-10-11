@@ -7,6 +7,11 @@
       "pleaseWait": "Por favor, aguarde enquanto compilamos seus dados",
       "selectPeriod": "Selecione um período e clique em \"Gerar Relatório\" para começar"
     },
+    "customFields": {
+      "no": "Não",
+      "title": "Campos personalizados",
+      "yes": "Sim"
+    },
     "description": "Gere relatórios completos de horas de trabalho e ausências com dados de teletrabalho relevantes para impostos",
     "employeeSelector": {
       "error": "Não foi possível carregar os membros da equipe",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Sem cliente",
         "withoutCustomerHint": "{hours} faturáveis sem cliente, não pode ser repassado"
       },
+      "details": {
+        "customer": "Cliente",
+        "customerFields": "Campos do cliente",
+        "noCustomer": "Nenhum cliente",
+        "projectFields": "Campos do projeto",
+        "title": "Detalhes"
+      },
       "export": {
         "billableHours": "Horas faturáveis",
         "changedAfterInvoicing": "Alterado após o faturamento",
@@ -164,6 +176,10 @@
         "customer": "Cliente",
         "customerReportTitle": "Relatório de cliente",
         "customersTable": "Clientes",
+        "customFieldName": "Campo",
+        "customFieldRecord": "Registro",
+        "customFieldsTable": "Campos personalizados",
+        "customFieldValue": "Valor",
         "dailyHoursTable": "Horas por dia",
         "date": "Data",
         "employee": "Funcionário",
@@ -176,6 +192,7 @@
         "invoicingNote": "A receita faturada mantém as tarifas do seu rascunho de fatura; a receita não faturada usa as tarifas em vigor quando o relatório foi gerado.",
         "margin": "Margem",
         "marginPercent": "Margem %",
+        "no": "Não",
         "nonBillableHours": "Horas não faturáveis",
         "pendingReview": "Correções ou envios pendentes",
         "period": "Período",
@@ -194,7 +211,8 @@
         "unpricedWork": "Trabalho não precificado",
         "withoutCustomer": "Sem cliente",
         "withoutCustomerHours": "Horas faturáveis sem cliente",
-        "workPeriods": "Períodos de trabalho"
+        "workPeriods": "Períodos de trabalho",
+        "yes": "Sim"
       },
       "filter": {
         "activeOnly": "Apenas ativos",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Orçamento",
+        "customer": "Cliente",
         "daysLeft": "{days}d restantes",
         "daysOverdue": "{days}d em atraso",
         "deadline": "Prazo",

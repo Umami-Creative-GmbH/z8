@@ -133,6 +133,18 @@
     "sso-not-configured": "SSO não está configurado para este domínio",
     "step-one": "1. Use o e-mail convidado",
     "step-two": "2. Retorne aqui e participe",
+    "storeApp": {
+      "continue": "Continuar",
+      "description": "Insira seu e-mail profissional. Em seguida, você fará login na página de login da sua organização no navegador do seu celular.",
+      "error": {
+        "browser": "Não foi possível abrir a página de login. Tente novamente.",
+        "expired": "O login não foi concluído ou expirou. Tente novamente.",
+        "rateLimited": "Muitas tentativas de login. Aguarde um momento e tente novamente.",
+        "unavailable": "Não foi possível conectar ao Z8. Verifique sua conexão e tente novamente."
+      },
+      "title": "Entrar no Z8",
+      "waiting": "Aguardando login…"
+    },
     "terms": {
       "privacy": "Política de Privacidade",
       "service": "Termos de Serviço"

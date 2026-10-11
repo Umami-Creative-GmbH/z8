@@ -158,6 +158,30 @@
         "description": "Üyeleri davet edin ve bekleyen katılım isteklerini inceleyin",
         "title": "Davetler"
       },
+      "kioskPin": {
+        "addEmailDescription": "Şifre belirlemek için bir davet alırlar ve ardından giriş yapabilirler. Kiosk PIN'leri ve geçmişleri olduğu gibi kalır.",
+        "addEmailHeading": "E-posta ekle",
+        "addEmailSubmit": "E-posta ekle ve davet et",
+        "confirmReset": "PIN'i Değiştir",
+        "description": "Bu çalışanın bir kioskta giriş-çıkış yapmak için girdiği kişisel PIN.",
+        "done": "Bitti",
+        "emailAdded": "E-posta eklendi. Davet yolda.",
+        "emailAddedNotSent": "E-posta eklendi ancak davet gönderilemedi. Çalışan bu adresle \"Şifremi unuttum\" seçeneğini kullanabilir.",
+        "emailLabel": "E-posta adresi",
+        "hasPin": "Bir kiosk PIN'i ayarlandı.",
+        "issue": "PIN Ver",
+        "kioskOnlyBadge": "Yalnızca kiosk",
+        "kioskOnlyDescription": "Bu çalışanın e-postası ve giriş yetkisi yoktur. Giriş-çıkış işlemlerini yalnızca kiosklar üzerinden PIN'leri ile yaparlar.",
+        "kioskOnlyNoEmail": "Yalnızca kiosk, e-posta yok",
+        "lockedUntil": "Çok fazla yanlış PIN denemesi nedeniyle {time} zamanına kadar kilitlendi.",
+        "noPin": "Henüz kiosk PIN'i yok.",
+        "pinHeading": "Kiosk PIN'i",
+        "reset": "PIN'i Sıfırla",
+        "shownOnce": "Bu PIN'i şimdi çalışana verin. Yalnızca bir kez gösterilir.",
+        "title": "Kiosk erişimi",
+        "unlock": "Kilidi aç",
+        "unlocked": "Kiosk PIN kilidi açıldı"
+      },
       "lifecycle": {
         "actionsLabel": "{name} için çalışan işlemleri",
         "deactivate": "Devre dışı bırak",
@@ -207,12 +231,17 @@
         "currency": "Para birimi",
         "currencyInvalid": "Üç harfli bir para birimi kodu girin.",
         "departurePanelDescription": "Erişim ve ücretli koltuk kullanımı aşağıda belirtilen kesilme zamanında sona erer. Çalışan geçmişi saklanır.",
+        "deputyCover": {
+          "absences": "Devam eden veya yaklaşan izinlerde vekillik: {count}",
+          "title": "Yeniden düzenlenecek vekillikler"
+        },
         "editDeparture": "Ayrılışı düzenle",
         "effective": "Ayrılışın geçerlilik tarihi",
         "effectiveDescription": "Erişim {cutoff} ({timezone}) itibarıyla sona erdi.",
         "employmentGap": "İstihdam edilmedi {startDate} – {endDate}",
         "employmentStint": "İstihdam {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Bu çalışan, devam eden veya yaklaşan izinlerde vekildir. İşten ayrılma yürürlüğe girdiğinde vekillik görevinden kaldırılır ve etkilenen kişilere bildirim gönderilir.",
           "finalOwner": "Bu çalışan ayrılmadan önce onaylanmış başka bir sahip atayın ve etkinleştirin.",
           "futureAbsences": "Kesilme zamanından sonraki devamsızlıklar kayıtlı kalır. Bunları devamsızlıklar bölümünde inceleyin.",
           "futureShifts": "Kesilme zamanından sonraki vardiyalar atanmış olarak kalır. Bunları vardiya planlamasında inceleyin.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Mola ve ek ücret işleme",
           "clockRepair": "Zamanlayıcı onarımı",
           "dispatchDeparture": "Ayrılış planlama",
+          "notifyDeputyRelease": "Vekil artık uygun değil bildirimi",
           "notifyReview": "İnceleme bildirimi",
           "sessionRevocation": "Oturum kapatma"
         },
         "team": "Ekip",
         "title": "İstihdam ve ayrılma",
         "unknownLegacyDate": "Tarih kaydedilmedi",
-        "weeklyHoursInvalid": "0 ile 168 arasında haftalık çalışma saati girin."
+        "weeklyHoursInvalid": "0 ile 168 arasında haftalık çalışma saati girin.",
+        "workBalance": {
+          "recordFinalPayout": "Nihai fazla mesai ödemesini kaydet",
+          "through": "{date} tarihine kadar",
+          "title": "Çalışma bakiyesi"
+        }
       },
       "tabs": {
         "employees": "Çalışanlar",
@@ -324,7 +359,115 @@
         "inviteCodes": "Davet Kodları",
         "members": "Üyeler"
       },
-      "title": "Çalışanlar"
+      "title": "Çalışanlar",
+      "workBalance": {
+        "adjustmentCancelled": "Düzeltme iptal edildi",
+        "cancelDescription": "{summary}. Geçmişte iptal edildi olarak kalır ve artık çalışma bakiyesine dahil edilmez.",
+        "cancellationReason": "Neden iptal edildi?",
+        "cancelSubmit": "Düzeltmeyi iptal et",
+        "cancelTitle": "Düzeltmeyi iptal et",
+        "conflictingPayoutsDescription": "Artık hesaba katılmazlar. Önce onları iptal edin veya daha önceki bir gün seçin.",
+        "conflictingPayoutsTitle": "Bu tarihteki veya öncesindeki fazla mesai ödemeleri",
+        "current": "Mevcut çalışma bakiyesi",
+        "day": "Gün",
+        "dayDescription": "Çalışanın saat diliminde. Gösterilen bakiye dün dahil geçerlidir, dolayısıyla bugünün tarihini taşıyan bir ödeme yarından itibaren hesaba katılır.",
+        "dayRequired": "Bir gün seçin.",
+        "description": "Tamamlanan çalışmadan gereken sürenin çıkarılmasıyla birlikte açılış bakiyesi ve fazla mesai ödemeleri. Düzeltmeler asla düzenlenmez: Hatalı olanlar iptal edilir.",
+        "direction": "Bakiye",
+        "errors": {
+          "adjustmentNotFound": "Bu düzeltme artık bu çalışan için mevcut değil.",
+          "alreadyCancelled": "Bu düzeltme zaten iptal edilmiş.",
+          "amountNotPositive": "Sıfırdan büyük bir ödeme girin.",
+          "beforeOpeningBalance": "Ödeme, yürürlükteki açılış bakiyesi gününden sonraki bir tarihe ait olmalıdır.",
+          "conflictingPayouts": "Bu tarihte veya bu tarihten önce yapılmış fazla mesai ödemeleri var. Önce bunları iptal edin veya daha önceki bir gün seçin.",
+          "employeeNotFound": "Çalışan bulunamadı.",
+          "exceedsBalance": "Ödeme, çalışanın o günün sonundaki çalışma bakiyesinden fazladır.",
+          "exceedsLaterBalance": "Bu ödeme, daha sonraki bir fazla mesai ödemesinin ardından çalışma bakiyesini sıfırın altına düşürür. Önce söz konusu ödemeyi iptal edin veya daha düşük bir tutar kaydedin.",
+          "failed": "Çalışma bakiyesi güncellenemedi. Tekrar deneyin.",
+          "futureDay": "Gün, çalışanın saat dilimine göre bugünden sonra olamaz.",
+          "invalidInput": "Günü, saat ve dakikayı ve nedeni kontrol edin.",
+          "monthClosed": "Gün kapalı bir ayda yer alıyor.",
+          "monthClosedNamed": "{month} kapalı. Bu tarihe ait düzeltmelerin kaydedilebilmesi veya iptal edilebilmesi için önce ayın yeniden açılması gerekir.",
+          "notPermitted": "Bakiye düzeltmelerini yalnızca kuruluş sahipleri ve yöneticileri ile bordro erişimleri kapsamındaki çalışanlar için bordro personeli kaydedebilir veya iptal edebilir.",
+          "reasonRequired": "Bir neden girin."
+        },
+        "history": "Bakiye düzeltmeleri",
+        "hours": "Saat",
+        "hoursInvalid": "Tam saat girin.",
+        "keepAdjustment": "Düzeltmeyi koru",
+        "loadFailed": "Çalışma bakiyesi yüklenemedi.",
+        "loading": "Çalışma bakiyesi yükleniyor",
+        "minutes": "Dakika",
+        "minutesInvalid": "0 ile 59 arasında bir dakika girin.",
+        "negative": "Borçlu olunan saatler (−)",
+        "openingBalanceDay": "Sonu itibarıyla bakiye",
+        "openingBalanceDayDescription": "Çalışanın saat diliminde. Bakiye bir sonraki günden itibaren yeniden sayılır.",
+        "openingBalanceReasonPlaceholder": "Örneğin: önceki sistemden devredilen bakiye…",
+        "openingBalanceSet": "Açılış bakiyesi ayarlandı",
+        "payoutReasonPlaceholder": "Örneğin: Ekim bordrosu ile ödendi…",
+        "payoutRecorded": "Fazla mesai ödemesi kaydedildi",
+        "positive": "Fazla mesai (+)",
+        "reason": "Neden",
+        "recordPayout": "Fazla mesai ödemesini kaydet",
+        "recordPayoutDescription": "Ücret olarak ödenen fazla mesaiyi kaydedin. İlgili günün sonundan itibaren çalışma bakiyesini düşürür ve o günkü bakiyeden fazla olamaz.",
+        "recordPayoutSubmit": "Ödemeyi kaydet",
+        "recordPayoutTitle": "Fazla mesai ödemesini kaydet",
+        "replacesOpeningBalance": "Geçerli açılış bakiyesi bu gerekçeyle iptal edilir.",
+        "setOpeningBalance": "Açılış bakiyesini ayarla",
+        "setOpeningBalanceDescription": "Açılış bakiyesi, ilgili gün dahil olmak üzere o güne kadarki çalışma bakiyesinin yerine geçer. O tarihten önceki çalışma ve zorunlu süreler kayıtlarda kalır ancak artık hesaba katılmaz.",
+        "setOpeningBalanceSubmit": "Açılış bakiyesini ayarla",
+        "setOpeningBalanceTitle": "Açılış bakiyesini ayarla",
+        "through": "{date} tarihine kadar",
+        "title": "Çalışma bakiyesi",
+        "upload": {
+          "allReady": "{total, plural, one {# satır hazır; {replacing, plural, =0 {hiçbiri geçerli bir açılış bakiyesinin yerine geçmiyor} one {# tanesi geçerli bir açılış bakiyesinin yerine geçiyor} other {# tanesi geçerli bir açılış bakiyesinin yerine geçiyor}}.} other {# satırın tümü hazır; {replacing, plural, =0 {hiçbiri geçerli bir açılış bakiyesinin yerine geçmiyor} one {# tanesi geçerli bir açılış bakiyesinin yerine geçiyor} other {# tanesi geçerli bir açılış bakiyesinin yerine geçiyor}}.}}",
+          "checking": "Dosya kontrol ediliyor…",
+          "columns": {
+            "balance": "Bakiye",
+            "day": "Gün",
+            "employee": "Çalışan",
+            "reason": "Gerekçe",
+            "row": "Satır",
+            "status": "Durum"
+          },
+          "committed": "{count, plural, other {# açılış bakiyesi ayarlandı} }",
+          "description": "employee_number, day (YYYY-MM-DD veya DD.MM.YYYY), balance (12:30 veya -4:15 gibi saat ve dakika) ve reason sütunlarını içeren bir CSV dosyasından birçok çalışanın açılış bakiyesini ayarlayın. Her açılış bakiyesi, çalışanın ilgili gün dahil olmak üzere o güne kadarki çalışma bakiyesinin yerine geçer ve geçerli olanı iptal eder. Herhangi bir satırda hata olduğu sürece hiçbir şey kaydedilmez.",
+          "errors": {
+            "ambiguousEmployee": "Birden fazla çalışan bu numaraya sahip. Öncelikle her birine benzersiz bir numara verin.",
+            "conflictingPayouts": "Fazla mesai ödemeleri bu tarih veya öncesi tarihlidir:",
+            "duplicateEmployee": "Bu çalışanın birden fazla satırı var. Yalnızca birini tutun.",
+            "employeeNumberRequired": "Çalışan numarasını girin.",
+            "futureDay": "Gün, çalışanın saat dilimine göre bugünden sonradır.",
+            "invalidAmount": "Bakiyeyi 12:30 veya -4:15 gibi saat ve dakika olarak girin.",
+            "invalidDay": "Günü YYYY-MM-DD veya DD.MM.YYYY olarak girin.",
+            "monthClosed": "Gün, kapalı bir ayda yer alıyor.",
+            "outOfScope": "Bu çalışan bordro erişiminizin dışında.",
+            "reasonRequired": "Bir neden girin.",
+            "reasonTooLong": "Nedeni en fazla 1000 karakterle sınırlı tutun.",
+            "unknown": "Bu satır kaydedilemiyor.",
+            "unknownEmployee": "Bu numaraya sahip çalışan yok."
+          },
+          "file": "CSV dosyası",
+          "fileErrors": {
+            "fileTooLarge": "Dosya çok büyük. Dosyayı birkaç yüklemeye bölün.",
+            "missingColumns": "Dosyada şu sütunlar eksik: {columns}.",
+            "noRows": "Dosyada başlığın altında hiçbir satır yok.",
+            "tooManyRows": "Dosyada 2000'den fazla satır var. Dosyayı birkaç yüklemeye bölün.",
+            "unreadable": "Dosya okunamadı. Dosyayı CSV (UTF-8) olarak kaydedip tekrar deneyin."
+          },
+          "former": "Eski çalışan",
+          "hasErrors": "{errors, plural, other {{total} satırdan # tanesinde hata var. Dosyayı düzeltip tekrar yükleyin.} }",
+          "hasErrorsTitle": "Hatalı satırları düzeltin",
+          "invalidFile": "Dosya kullanılamıyor",
+          "open": "Açılış bakiyelerini yükle",
+          "ready": "Hazır",
+          "refusedTitle": "Hiçbir şey kaydedilmedi",
+          "replaces": "{day} tarihindeki {balance} açılış bakiyesinin yerine geçer",
+          "submit": "{count, plural, other {# açılış bakiyesi belirle} }",
+          "template": "Şablonu indir",
+          "title": "Açılış bakiyelerini yükle"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Değişiklik Ekle",
@@ -552,6 +695,7 @@
         "loadingFile": "Özlük dosyası yükleniyor",
         "manageOfficers": "Özlük dosyası yetkilileri",
         "payslipBatch": "Bordro grubu",
+        "sickLeave": "Hastalık izni",
         "title": "Özlük Dosyaları"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Görünürlük"
       },
       "list": {
+        "absence": "{dateRange} hastalık izni için",
         "delete": "{title} öğesini sil",
         "download": "{title} öğesini indir",
         "edit": "{title} öğesini düzenle",
@@ -771,6 +916,83 @@
         "description": "Sahipler ve yöneticiler dışında çalışan belgelerini kimin yöneteceğini seçin.",
         "loading": "Özlük dosyası ayarları yükleniyor",
         "title": "Özlük Dosyaları"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Tarihler",
+          "duration": "Süre",
+          "employee": "Çalışan",
+          "sickDetail": "Hastalık detayı",
+          "sickNotes": "Hastalık raporları",
+          "status": "Durum"
+        },
+        "description": "Hastalık raporlarını yönettiğiniz çalışanların hastalık izni devamsızlıkları ve bunlara ekli hastalık raporları. Buradaki hiçbir işlem çalışanlara hatırlatma yapmaz veya talepte bulunmaz.",
+        "empty": "Bu dönemde filtrelerle eşleşen hastalık izni bulunmuyor.",
+        "filters": {
+          "allEmployees": "Tüm çalışanlar",
+          "allSickDetails": "Tüm hastalık detayları",
+          "allStatuses": "Bekleyen ve onaylanan",
+          "allTeams": "Tüm ekipler",
+          "employee": "Çalışan",
+          "formerEmployee": "{name} (eski)",
+          "from": "Başlangıç",
+          "notes": "Hastalık raporları",
+          "notesAll": "Tümü",
+          "notesMissing": "Raporlu, not yok",
+          "notesPresent": "Not var",
+          "reset": "Filtreleri sıfırla",
+          "sickDetail": "Hastalık detayı",
+          "status": "Durum",
+          "team": "Ekip",
+          "to": "Bitiş"
+        },
+        "loading": "Hastalık izni yükleniyor",
+        "notes": {
+          "count": "{count, plural, other {# not} }",
+          "none": "Not yok"
+        },
+        "pagination": {
+          "next": "Sonraki sayfa",
+          "page": "Sayfa {page} / {pageCount}",
+          "pageSize": "Sayfa başına satır",
+          "previous": "Önceki sayfa",
+          "summary": "{first}–{last} / {total}"
+        },
+        "sickDetail": {
+          "childSick": "Çocuk hastalığı",
+          "other": "Diğer",
+          "withCertificate": "Raporlu",
+          "withoutCertificate": "Raporsuz"
+        },
+        "status": {
+          "approved": "Onaylandı",
+          "pending": "Beklemede"
+        },
+        "title": "Hastalık izni"
+      },
+      "sickNotes": {
+        "cardDescription": "Bu çalışanın beklemede olan ve onaylanmış hastalık izinleri. Yeni bir hastalık raporu ekleyin veya personel dosyasında zaten bulunan bir rapora bağlayın.",
+        "cardTitle": "Hastalık izni",
+        "chooseAbsence": "Bir devamsızlık seçin.",
+        "chooseNote": "Bir hastalık raporu seçin.",
+        "link": "Bağla",
+        "linked": "Hastalık raporu bağlandı",
+        "linkExistingDescription": "{dateRange} tarih aralığındaki hastalık izni için özlük dosyasından bir hastalık raporu seçin.",
+        "linkExistingTitle": "Hastalık raporu bağla",
+        "linkFailed": "Hastalık raporu bağlanamadı.",
+        "linkToAbsence": "{title} adlı raporu hastalık iznine bağla",
+        "linkToAbsenceDescription": "\"{title}\" belgesinin kapsadığı hastalık iznini seçin. Raporsuz olarak kaydedilmiş bir hastalık izni bu işlemden sonra raporlu sayılır.",
+        "linkToAbsenceTitle": "Hastalık iznine bağla",
+        "loadFailed": "Liste yüklenemedi.",
+        "manage": "Ekle veya bağla",
+        "manageFor": "{name} için hastalık raporlarını ekleyin veya bağlayın, {dateRange}",
+        "noSickLeave": "Bu çalışanın bekleyen veya onaylanmış bir hastalık izni bulunmuyor.",
+        "notes": "Hastalık raporları",
+        "noUnlinkedNotes": "Bu özlük dosyasında bir devamsızlığa bağlanmamış hiçbir hastalık raporu yok.",
+        "openNotes": "{dateRange} dönemi hastalık raporları",
+        "unlinked": "Hastalık raporunun bağlantısı kaldırıldı",
+        "unlinkFailed": "Hastalık raporunun bağlantısı kaldırılamadı.",
+        "unlinkFromAbsence": "{title} adlı belgenin hastalık izniyle olan bağlantısını kaldır"
       },
       "tabs": {
         "access": "Erişim",

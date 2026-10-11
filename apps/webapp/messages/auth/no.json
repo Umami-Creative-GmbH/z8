@@ -133,6 +133,18 @@
     "sso-not-configured": "SSO er ikke konfigurert for dette domenet",
     "step-one": "1. Bruk den inviterte e-postadressen",
     "step-two": "2. Gå tilbake hit og bli med",
+    "storeApp": {
+      "continue": "Fortsett",
+      "description": "Skriv inn jobb-e-posten din. Du logger deretter inn på organisasjonens innloggingsside i nettleseren på telefonen din.",
+      "error": {
+        "browser": "Innloggingssiden kunne ikke åpnes. Prøv igjen.",
+        "expired": "Innloggingen ble ikke fullført eller har utløpt. Prøv igjen.",
+        "rateLimited": "For mange innloggingsforsøk. Vent et øyeblikk og prøv igjen.",
+        "unavailable": "Fikk ikke kontakt med Z8. Sjekk tilkoblingen og prøv igjen."
+      },
+      "title": "Logg inn på Z8",
+      "waiting": "Venter på innlogging…"
+    },
     "terms": {
       "privacy": "Personvernerklæring",
       "service": "Tjenestevilkår"

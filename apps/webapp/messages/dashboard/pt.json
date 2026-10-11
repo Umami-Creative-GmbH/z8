@@ -15,6 +15,13 @@
       "today": "Hoje!",
       "tomorrow": "Amanhã"
     },
+    "covering-for": {
+      "description": "Colegas que você está substituindo durante a ausência deles",
+      "error": "Falha ao carregar suas responsabilidades de substituição",
+      "running": "Substituindo {name} até {date}",
+      "title": "Substituindo",
+      "upcoming": "Em breve: substituindo {name} de {start} até {end}"
+    },
     "customize": {
       "empty-description": "Use o ícone de personalização do painel para reativar widgets individuais ou redefina o layout para exibir todos os widgets novamente.",
       "empty-title": "Todos os widgets do painel estão ocultos",
@@ -129,6 +136,17 @@
       "teams": "Equipas",
       "teams-button": "Equipas",
       "title": "Organização"
+    },
+    "upcoming-shifts": {
+      "description": "Seus próximos turnos planejados",
+      "empty": "Sem turnos futuros",
+      "empty-description": "Seus próximos turnos publicados aparecerão aqui.",
+      "ends-next-day": "termina no dia seguinte",
+      "error": "Falha ao carregar seus próximos turnos",
+      "title": "Próximos turnos",
+      "today": "Hoje",
+      "tomorrow": "Amanhã",
+      "view-schedule": "Ver escala"
     },
     "upcoming-time-off": {
       "absence": "ausência",

@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Ubicación asignada agregada",
+      "employeeDescription": "Las ubicaciones en las que trabaja este empleado. Los quioscos solo aceptan empleados asignados a su ubicación.",
+      "employeeEmpty": "Sin ubicaciones asignadas",
+      "employeeLabel": "Empleado",
+      "employeePlaceholder": "Seleccionar un empleado",
+      "employeeTitle": "Ubicaciones asignadas",
+      "errors": {
+        "adminOnly": "Solo los propietarios y administradores de la organización pueden administrar las ubicaciones asignadas.",
+        "employeeNotFound": "Empleado no encontrado.",
+        "failed": "No se pudieron actualizar las ubicaciones asignadas. Inténtalo de nuevo.",
+        "invalidSelection": "Elige de la lista.",
+        "locationNotFound": "Ubicación no encontrada."
+      },
+      "locationDescription": "Los empleados que trabajan en esta ubicación. Sus quioscos solo los aceptan a ellos.",
+      "locationEmpty": "Sin empleados asignados",
+      "locationLabel": "Ubicación",
+      "locationPlaceholder": "Seleccionar una ubicación",
+      "locationTitle": "Empleados asignados",
+      "noEmployeesLeft": "Todos los empleados activos están asignados a esta ubicación.",
+      "noLocationsLeft": "No hay más ubicaciones activas para asignar.",
+      "removed": "Ubicación asignada eliminada"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Cliente (Responsable)",
@@ -407,6 +430,75 @@
       "description": "Gestione su suscripción, métodos de pago y facturas",
       "title": "Facturación y suscripción"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Días después del fin de mes",
+        "daysHelp": "Si algo bloquea el cierre, se notificará a todas las personas autorizadas a cerrar y se volverá a intentar al día siguiente.",
+        "daysInvalid": "Introduce un número entero de días del 1 al 60",
+        "description": "Cierra el mes anterior para toda la organización un número de días después de que termine. Un mes que se haya reabierto nunca se volverá a cerrar automáticamente.",
+        "enabled": "Cerrar meses automáticamente",
+        "save": "Guardar",
+        "saved": "Cierre automático guardado",
+        "title": "Cierre automático"
+      },
+      "blockedTitle": "El mes no se puede cerrar todavía. Resuelve esto primero:",
+      "blocker": {
+        "absenceRequest": "solicitud de ausencia sin resolver {startDate} – {endDate}",
+        "liveWork": "aún fichado desde {start}",
+        "notEnded": "el mes no ha terminado en su zona horaria",
+        "periodSubmission": "envío de período pendiente de decisión {startDate} – {endDate}",
+        "timeRequest": "solicitud sin resolver sobre el trabajo desde {start}"
+      },
+      "close": "Cerrar",
+      "closeDescription": "Nadie puede modificar el trabajo, las atribuciones ni las ausencias en un mes cerrado hasta que se vuelva a abrir. El mes de cada empleado se fija en su propia zona horaria.",
+      "closeSubmit": "Cerrar mes",
+      "closeSuccess": "{count, plural, one {{month} cerrado para # empleado} other {{month} cerrado para # empleados}}",
+      "closeTitle": "Cerrar {month}",
+      "description": "Cierra los meses después de la nómina para que su trabajo y ausencias ya no puedan cambiar",
+      "employeesLabel": "Empleados",
+      "employeesRequired": "Selecciona al menos un empleado",
+      "history": {
+        "automatic": "Automáticamente",
+        "closed": "Cerrado",
+        "employees": "{count, plural, one {# empleado} other {# empleados}}",
+        "reopened": "Reabierto",
+        "unknownActor": "Desconocido"
+      },
+      "historyEmpty": "Todavía no se ha cerrado ningún mes.",
+      "historyTitle": "Historial",
+      "monthsDescription": "Cerrar un mes congela el trabajo, la atribución y las ausencias para la nómina. Las notas se pueden seguir editando.",
+      "monthsTitle": "Meses",
+      "nothingToClose": "Todos en este ámbito ya están cerrados para este mes.",
+      "nothingToReopen": "Nadie en esta selección está cerrado para este mes.",
+      "reasonLabel": "Motivo",
+      "reasonPlaceholder": "¿Por qué es necesario modificar este mes?…",
+      "reasonRequired": "Introduce un motivo para la reapertura",
+      "reopen": "Reabrir",
+      "reopenDescription": "Los empleados reabiertos permanecen abiertos hasta que se vuelva a cerrar el mes. Se notifica a sus responsables.",
+      "reopenScopeLabel": "Reabrir para",
+      "reopenSubmit": "Reabrir mes",
+      "reopenSuccess": "{count, plural, one {{month} reabierto para # empleado} other {{month} reabierto para # empleados}}",
+      "reopenTitle": "Reabrir {month}",
+      "scope": {
+        "all": "Todo",
+        "deletedTeam": "Equipo eliminado",
+        "employees": "Empleados seleccionados",
+        "organization": "Organización"
+      },
+      "scopeLabel": "Cerrar para",
+      "teamNotFound": "Este equipo ya no existe.",
+      "title": "Meses cerrados",
+      "warning": {
+        "periodNotSubmitted": "período {startDate} – {endDate} no enviado",
+        "periodRejected": "período {startDate} – {endDate} rechazado",
+        "periodRunning": "período {startDate} – {endDate} aún en curso, todavía no se puede enviar",
+        "periodSentBack": "período {startDate} – {endDate} devuelto tras un cambio"
+      },
+      "warnings": {
+        "more": "y {count} más",
+        "title": "No todos los envíos de períodos de este mes están aprobados. Esto no impide el cierre:"
+      }
+    },
     "compliance": {
       "description": "Revise y gestione las solicitudes de excepción de cumplimiento de los miembros del equipo",
       "title": "Cumplimiento de la Ley de Tiempo de Trabajo (ArbZG)"
@@ -468,14 +560,208 @@
       "updated": "Cliente actualizado",
       "updateFailed": "Error al actualizar el cliente"
     },
+    "customFields": {
+      "accessSummary": "Visible para: {visibility} · Editado por: {edit}",
+      "activeCount": "{count} de {max} campos activos",
+      "activeList": "Campos personalizados activos",
+      "add": "Agregar campo personalizado",
+      "archivedList": "Campos personalizados archivados",
+      "archivedTitle": "Archivado",
+      "archiveField": "Archivar {name}",
+      "capReached": "Cada tipo de registro puede tener como máximo 25 campos personalizados activos. Archiva uno para añadir otro.",
+      "description": "Tus propios campos en empleados, proyectos y clientes",
+      "editField": "Editar {name}",
+      "empty": "Aún no hay campos personalizados.",
+      "entity": {
+        "customer": "Clientes",
+        "employee": "Empleados",
+        "project": "Proyectos"
+      },
+      "form": {
+        "boundsHelp": "Deja un límite en blanco para no establecer restricciones.",
+        "create": "Crear campo",
+        "createTitle": "Añadir campo personalizado",
+        "description": "Un campo personalizado en {entity}.",
+        "editLevel": "Quién puede editar los valores",
+        "editLevelHelp": "Los empleados nunca editan los valores de los campos personalizados.",
+        "editTitle": "Editar campo personalizado",
+        "integerOnly": "Solo números enteros",
+        "max": "Máximo",
+        "min": "Mínimo",
+        "name": "Nombre",
+        "nameRequired": "Introduce un nombre",
+        "options": "Opciones",
+        "optionsHelp": "Una opción por línea.",
+        "required": "Obligatorio",
+        "requiredHelp": "Los formularios no permiten guardar un registro sin un valor.",
+        "save": "Guardar cambios",
+        "tracked": "Mantener un historial",
+        "trackedFixed": "No se puede cambiar si un campo mantiene un historial después de crearlo.",
+        "trackedHelp": "Cada valor incluye la fecha a partir de la cual es válido.",
+        "type": "Tipo",
+        "typeFixed": "El tipo no se puede cambiar después de crear el campo.",
+        "visibility": "Quién puede ver los valores"
+      },
+      "level": {
+        "admin": "Administradores",
+        "employee": "Todos, incluido el empleado",
+        "manager": "Gerentes y administradores"
+      },
+      "options": {
+        "add": "Añadir opción",
+        "archive": "Archivar {label}",
+        "archived": "Archivado",
+        "label": "Nombre de la opción",
+        "list": "Opciones",
+        "moveDown": "Mover {label} hacia abajo",
+        "moveUp": "Mover {label} hacia arriba",
+        "new": "Nueva opción",
+        "restore": "Restaurar {label}",
+        "title": "Opciones"
+      },
+      "refusal": {
+        "booleanRequired": "Un campo de sí/no no puede ser obligatorio.",
+        "duplicateOption": "Este campo ya tiene una opción activa con este nombre.",
+        "editBroaderThanVisibility": "Todos los que pueden editar valores también deben poder verlos.",
+        "employeesNeverEdit": "Los empleados no pueden editar los valores de los campos personalizados.",
+        "fieldArchived": "Restaura este campo personalizado antes de modificarlo.",
+        "invalidChange": "No se puede guardar este cambio. Recarga la página e inténtalo de nuevo.",
+        "invalidLevel": "Elige quién puede ver y editar los valores.",
+        "invalidName": "Introduce un nombre de 100 caracteres como máximo.",
+        "invalidOptionLabel": "Introduce una opción de 100 caracteres como máximo.",
+        "lastActiveOption": "Un campo de selección necesita al menos una opción activa.",
+        "nameTaken": "Un campo personalizado activo en este tipo de registro ya tiene este nombre.",
+        "notFound": "Este campo personalizado ya no existe. Recarga la página.",
+        "notSelect": "Solo los campos de selección tienen opciones.",
+        "numberBounds": "Introduce un mínimo y un máximo como números, donde el mínimo no supere al máximo.",
+        "optionArchived": "Restaura esta opción primero.",
+        "selectNeedsOption": "Añade al menos una opción a un campo de selección.",
+        "staleOrder": "La lista cambió mientras tanto. Recarga la página e inténtalo de nuevo.",
+        "tooManyFields": "Este tipo de registro ya tiene 25 campos personalizados activos. Archiva uno primero.",
+        "trackedFixed": "El registro del historial de un campo personalizado no se puede cambiar después de crearlo.",
+        "typeFixed": "El tipo de un campo personalizado no se puede cambiar después de crearlo.",
+        "usedAsPayrollIdentifier": "Este campo es el identificador de personal de la configuración de exportación de nóminas {configurations}. Elige primero otro identificador allí."
+      },
+      "reorderField": "Reordenar {name}",
+      "required": "Obligatorio",
+      "restore": "Restaurar",
+      "restoreField": "Restaurar {name}",
+      "saveFailed": "No se pudo guardar el cambio.",
+      "title": "Campos personalizados",
+      "tracked": "Con seguimiento",
+      "type": {
+        "boolean": "Sí/No",
+        "date": "Fecha",
+        "number": "Número",
+        "select": "Selección",
+        "text": "Texto"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Ya existe un valor a partir de esa fecha.",
+        "fieldArchived": "Este campo está archivado.",
+        "forField": "Campo personalizado \"{field}\": {message}",
+        "invalidDate": "Introduce una fecha válida.",
+        "invalidNumber": "Introduce un número.",
+        "invalidValidFrom": "Introduce una fecha de inicio válida.",
+        "invalidValue": "Introduce un valor válido.",
+        "missingRequired": "Este campo es obligatorio.",
+        "missingValue": "Introduce un valor para cada fecha.",
+        "notEditable": "No puedes cambiar este campo.",
+        "numberNotInteger": "Introduce un número entero.",
+        "numberOutOfRange": "Introduce un número dentro del rango permitido.",
+        "optionArchived": "Esta opción está archivada. Elige otra.",
+        "textTooLong": "Introduce como máximo 255 caracteres.",
+        "trackedField": "Este campo guarda un historial. Añade un cambio con fecha en su lugar.",
+        "unknownField": "Este campo ya no existe. Recarga la página e inténtalo de nuevo.",
+        "unknownHistoryEntry": "El historial ha cambiado mientras tanto. Recarga la página e inténtalo de nuevo."
+      },
+      "values": {
+        "archivedOption": "{label} (archivado)",
+        "history": {
+          "add": "Añadir cambio",
+          "apply": "Aplicar",
+          "correct": "Corrige el valor válido desde {date}",
+          "delete": "Eliminar el valor válido desde {date}",
+          "duplicateValidFrom": "Ya existe un valor válido desde esta fecha.",
+          "empty": "Aún no hay valores.",
+          "from": "Desde {date}",
+          "label": "Historial de {name}",
+          "needsValidFrom": "Elige la fecha a partir de la cual el valor es válido.",
+          "needsValue": "Introduce un valor.",
+          "today": "Hoy",
+          "validFrom": "Válido desde",
+          "value": "Valor"
+        },
+        "missingRequired": "Faltan valores obligatorios",
+        "no": "No",
+        "notSet": "No establecido",
+        "ownDescription": "Gestionado por tu organización. Pide a un administrador o a tu responsable que los cambie.",
+        "title": "Campos personalizados",
+        "yes": "Sí"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Registros y categorías de ausencias",
+          "label": "Ausencias"
+        },
+        "audit_logs": {
+          "description": "Registro de auditoría de actividad",
+          "label": "Registros de auditoría"
+        },
+        "balance_adjustments": {
+          "description": "Saldos iniciales y pagos de horas extras, incluidos los cancelados",
+          "label": "Ajustes de saldos de trabajo"
+        },
+        "customers": {
+          "description": "Clientes con sus campos personalizados de cliente",
+          "label": "Clientes"
+        },
+        "employees": {
+          "description": "Perfiles de empleados, relaciones con responsables y campos personalizados de empleado",
+          "label": "Empleados"
+        },
+        "holidays": {
+          "description": "Calendario de festivos y ajustes preestablecidos",
+          "label": "Días festivos"
+        },
+        "projects": {
+          "description": "Proyectos con sus campos personalizados de cliente y de proyecto",
+          "label": "Proyectos"
+        },
+        "schedules": {
+          "description": "Plantillas de horarios de trabajo y asignaciones",
+          "label": "Horarios de trabajo"
+        },
+        "shifts": {
+          "description": "Datos de programación de turnos",
+          "label": "Turnos"
+        },
+        "teams": {
+          "description": "Estructura del equipo y permisos",
+          "label": "Equipos"
+        },
+        "time_entries": {
+          "description": "Registros de fichaje y correcciones",
+          "label": "Control horario"
+        },
+        "vacation": {
+          "description": "Políticas de vacaciones y asignaciones",
+          "label": "Políticas de vacaciones"
+        },
+        "work_periods": {
+          "description": "Sesiones de trabajo agregadas",
+          "label": "Períodos de trabajo"
+        }
+      },
       "description": "Exportar los datos de tu organización",
       "form": {
         "aboutAsync": "Las exportaciones se procesan de forma asíncrona",
+        "aboutDownloadFromHistory": "Descargue las exportaciones finalizadas desde el Historial de exportaciones",
         "aboutEmail": "Recibirás un correo electrónico cuando esté listo",
-        "aboutLinkValidity": "Los enlaces de descarga son válidos durante 24 horas",
+        "aboutFileRetention": "Los archivos de exportación se eliminan después de 30 días",
         "aboutOrgDataOnly": "Solo se incluyen los datos de tu organización",
-        "aboutStorageDuration": "Los archivos de exportación se almacenan durante 7 días",
         "aboutTitle": "Acerca de la exportación de datos",
         "description": "Selecciona las categorías de datos que deseas exportar",
         "selectAll": "Seleccionar todo",
@@ -508,6 +794,9 @@
         "statusFailed": "Fallido",
         "statusPending": "Pendiente",
         "statusProcessing": "Procesando",
+        "switchOrganizationAction": "Cambiar a {organization}",
+        "switchOrganizationBody": "Esta exportación pertenece a {organization}. Cambia a esa organización para abrir su historial de exportaciones; tu acceso se volverá a comprobar tras el cambio.",
+        "switchOrganizationTitle": "Cambia de organización para ver esta exportación",
         "title": "Historial de exportaciones",
         "unexpectedError": "Ocurrió un error inesperado"
       },
@@ -1008,6 +1297,7 @@
           "attributionNotAllowed": "El proyecto no está disponible, o el trabajo facturable requiere un proyecto que tenga un cliente.",
           "invalidInterval": "Las horas del proveedor carecen de un desfase explícito, no están en orden o están en el futuro.",
           "label": "Retenido para revisión",
+          "monthClosed": "El tiempo está en un mes cerrado. Se puede importar una vez que se reabra el mes.",
           "occupancyConflict": "El horario se superpone con trabajo ya registrado para este empleado.",
           "operationCollision": "Esta fila entra en conflicto con su importación confirmada anterior.",
           "providerDurationMismatch": "La duración del proveedor difiere de las horas de inicio y fin.",
@@ -1041,6 +1331,98 @@
         "title": "Revisión de importación"
       },
       "title": "Importar datos"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Otra cuenta ya utiliza esta dirección.",
+        "emailNotAllowed": "La política de inicio de sesión de su organización no permite esta dirección.",
+        "employeeNotFound": "No se encontró a este empleado.",
+        "failed": "Algo salió mal. Por favor, inténtelo de nuevo.",
+        "invalidEmail": "Introduzca una dirección de correo electrónico válida.",
+        "invalidName": "Introduzca un nombre de hasta 100 caracteres.",
+        "invalidPin": "Un PIN de quiosco tiene entre 4 y 6 dígitos.",
+        "locationNotFound": "No se encontró esta ubicación.",
+        "noPin": "Este empleado aún no tiene un PIN de quiosco.",
+        "notAllowed": "No tienes permiso para hacer esto.",
+        "notKioskOnly": "Este empleado ya tiene una dirección de correo electrónico.",
+        "pinExists": "Este empleado ya tiene un PIN de quiosco. Restablécelo en su lugar.",
+        "reservedEmail": "Esta dirección no se puede usar.",
+        "signInRequired": "Inicia sesión para continuar.",
+        "teamNotFound": "No se encontró este equipo."
+      }
+    },
+    "kiosks": {
+      "add": "Añadir quiosco",
+      "boardOn": "Panel de presencia activado",
+      "columns": {
+        "actions": "Acciones",
+        "lastSeen": "Última conexión",
+        "location": "Ubicación",
+        "name": "Nombre",
+        "status": "Estado"
+      },
+      "create": "Crear quiosco",
+      "created": "Quiosco creado",
+      "createDescription": "Recibirás un código de vinculación para introducirlo en el dispositivo del quiosco.",
+      "createFailed": "No se pudo crear el quiosco",
+      "createTitle": "Añadir quiosco",
+      "description": "Dispositivos compartidos en una ubicación donde los empleados fichan con su PIN de quiosco",
+      "edit": "Editar",
+      "editDescription": "Los cambios se aplicarán en la próxima solicitud del quiosco.",
+      "editTitle": "Editar quiosco",
+      "empty": "Aún no hay quioscos.",
+      "errors": {
+        "adminOnly": "Solo los propietarios y administradores de la organización pueden gestionar quioscos.",
+        "invalidName": "Introduce un nombre de hasta 100 caracteres.",
+        "invalidSelection": "Comprueba los datos introducidos e inténtalo de nuevo.",
+        "invalidTimezone": "Elige una zona horaria.",
+        "kioskNotFound": "No se encontró este quiosco.",
+        "kioskRevoked": "Este quiosco está revocado.",
+        "locationNotFound": "Elige una ubicación activa de esta organización."
+      },
+      "fields": {
+        "board": "Panel de presencia",
+        "boardDescription": "Muestra en el quiosco quién está presente o en descanso, por nombre e inicial del apellido.",
+        "location": "Ubicación",
+        "locationDescription": "El quiosco solo acepta empleados asignados a esta ubicación.",
+        "locationPlaceholder": "Elige una ubicación",
+        "name": "Nombre",
+        "namePlaceholder": "p. ej., Entrada de personal",
+        "timezone": "Zona horaria",
+        "timezoneDescription": "Los registros de fichaje de este quiosco utilizan esta zona."
+      },
+      "issueCodeConfirm": "Emitir nuevo código",
+      "listDescription": "Cada quiosco pertenece a una ubicación. Vincula un dispositivo abriendo la página del quiosco en él e introduciendo el código de vinculación.",
+      "listTitle": "Quioscos",
+      "loadFailed": "No se pudieron cargar los quioscos.",
+      "neverSeen": "Nunca",
+      "noLocations": "Crea una ubicación primero: cada quiosco pertenece a una ubicación.",
+      "pairAgain": "Vincular de nuevo",
+      "pairFailed": "No se pudo emitir un nuevo código de vinculación",
+      "pairingCodeLabel": "Código de vinculación",
+      "pairingDescription": "En el dispositivo del quiosco, escanee el código QR o abra la página del quiosco e introduzca el código. El código funciona una sola vez y caduca después de 10 minutos.",
+      "pairingDone": "Listo",
+      "pairingTitle": "Vincular {name}",
+      "pairPairedDescription": "El token del dispositivo se renovará: el dispositivo vinculado dejará de funcionar inmediatamente y deberá vincularse de nuevo con el nuevo código.",
+      "pairTitle": "¿Vincular {name} de nuevo?",
+      "pairUnpairedDescription": "Un nuevo código de vinculación sustituye al anterior.",
+      "revoke": "Revocar",
+      "revokeConfirm": "Revocar quiosco",
+      "revoked": "Quiosco revocado",
+      "revokeDescription": "El quiosco dejará de funcionar en su próxima solicitud y no se podrá volver a vincular. Cree un nuevo quiosco para reemplazarlo.",
+      "revokeFailed": "No se pudo revocar el quiosco",
+      "revokeTitle": "¿Revocar {name}?",
+      "rotateConfirm": "Rotar token y volver a vincular",
+      "save": "Guardar",
+      "saved": "Quiosco guardado",
+      "saveFailed": "No se pudo guardar el quiosco",
+      "status": {
+        "awaitingPairing": "Esperando vinculación",
+        "codeExpired": "No vinculado, código caducado",
+        "paired": "Vinculado",
+        "revoked": "Revocado"
+      },
+      "title": "Quioscos"
     },
     "licenses": {
       "footer": "Esta aplicación utiliza software de código abierto. Gracias a todos los mantenedores y colaboradores de estos paquetes.",
@@ -1652,6 +2034,16 @@
     },
     "security": {
       "description": "Gestiona tu contraseña, autenticación de dos factores, claves de acceso y sesiones activas",
+      "kioskPin": {
+        "descriptionChange": "Tiene un PIN de quiosco. Elija uno nuevo de 4 a 6 dígitos para reemplazarlo.",
+        "descriptionSet": "Elija un PIN de 4 a 6 dígitos para fichar en los quioscos de su organización.",
+        "mismatch": "Los PIN no coinciden.",
+        "newPin": "Nuevo PIN",
+        "repeatPin": "Repetir PIN",
+        "save": "Guardar PIN",
+        "saved": "PIN del quiosco guardado",
+        "title": "PIN del quiosco"
+      },
       "title": "Configuración de seguridad",
       "twoFactor": {
         "backupCodesCopied": "Códigos de respaldo copiados al portapapeles",
@@ -2052,6 +2444,7 @@
         "replaceDescription": "Ya hay una versión activa que comienza el {date}. Al guardar se sustituirá; la versión sustituida se conservará en el historial.",
         "replaceTitle": "Sustituir la versión que comienza ese día",
         "rules": "La idoneidad se rige por {reference} ({version}), verificada para los días de viaje del {from} al {through}. Los viajes al extranjero solo se calculan por día con las tarifas para el extranjero adoptadas; los demás días e itinerarios especiales se marcan para un cálculo manual.",
+        "rulesOpenEnded": "La elegibilidad sigue las pautas de {reference} ({version}), verificada para días de viaje desde {from} hasta que cambie la ley. Los viajes al extranjero se tarifan por día únicamente con las tarifas extranjeras adoptadas; otros días e itinerarios especiales se marcan para un cálculo manual.",
         "saved": "Versión de tarifas de dietas activada",
         "saveFailed": "No se pudieron guardar las tarifas de dietas.",
         "source": "Fuente",

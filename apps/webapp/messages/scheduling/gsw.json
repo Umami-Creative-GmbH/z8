@@ -16,8 +16,17 @@
       "understaffed": "Unterbesetzt",
       "utilization": "{percent}% Usglaschtig"
     },
+    "mySchedule": {
+      "loadFailed": "Dini Schichte händ nöd chönne glade werde. Bitte probier's spöter nomal.",
+      "nextWeek": "Nöchscht Wuche",
+      "noShifts": "Kei Schichte",
+      "previousWeek": "Vorherigi Wuche",
+      "shift": "Schicht",
+      "today": "Hüt"
+    },
     "page": {
-      "employeeDescription": "Lueg dini Schichte a und nimm verfüegbari Schichte aa",
+      "employeeScheduleDescription": "Dini veröffentlichte Schichte, Wuche für Wuche",
+      "employeeTitle": "Min Schichtplan",
       "managerDescription": "Mitarbeiterschichte verwalte und plane",
       "title": "Schichtplan"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Schicht mit Überschniidigswarnig gspeicheret",
         "updated": "Schicht aktualisiert"
       }
+    },
+    "shiftDetails": {
+      "close": "Schlüsse",
+      "date": "Datum",
+      "description": "Dini planti Schicht",
+      "endsNextDay": "ändet am nöchschte Tag",
+      "location": "Standort",
+      "notes": "Notize",
+      "time": "Zit",
+      "title": "Schicht-Details"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Cha vo jede überno werde",
@@ -111,6 +130,35 @@
       "validating": "Fähigkeite wärded prüeft…",
       "validatingDescription": "Mitarbeiterqualifikations-Prüefig",
       "warningMessage": "Du chasch die Schicht immer no zueordne, aber es wird als Überschriibig protokolliert."
+    },
+    "staffingSuggestions": {
+      "empty": "Kei verfüegbari Mitarbeiter für die Schicht",
+      "error": "Vorschläg händ nöd chönne glade werde",
+      "loading": "Verfüegbari Mitarbeiter sueche…",
+      "note": {
+        "missingPreferredSkill": "Fählt bevorzugti Fähigkeit: {skill}"
+      },
+      "pick": "Uuswähle",
+      "pickLabel": "{name} zuewiise",
+      "reason": {
+        "noContractedTarget": "Kei vertraglichi Vorgab",
+        "plannedHours": "{planned} vo {target} h die Wuche plant",
+        "requestedThisShift": "Hät die Schicht aagforderet",
+        "restPeriodOk": "Ruehziit OK",
+        "skillsHeld": "Hät {skills}"
+      },
+      "requested": "Hät die Schicht aagforderet",
+      "showAll": "Alli aazeige ({count})",
+      "showFewer": "Weniger aazeige",
+      "title": "Vorgschlageni Mitarbeiter",
+      "warning": {
+        "expiredRequiredSkill": "{skill} isch am {date} abglaufe",
+        "maxHours": "Über em Tagesmaximum ({total} vo {max} h)",
+        "missingRequiredSkill": "Erforderlichi Fähigkeit fehlt: {skill}",
+        "overtime": "{period, select, daily {Täglichi} weekly {Wöchentlichi} other {Monatlichi}} Überzit ({total} vo {threshold} h)",
+        "pendingAbsence": "Pendanti Abwäseheit: {category}",
+        "restTime": "Ruehziit z churz ({rest} vo {required} h)"
+      }
     },
     "templates": {
       "dragHint": "Zieh e Vorlag uf de Kaländer, zum e Schicht z'erstelle",

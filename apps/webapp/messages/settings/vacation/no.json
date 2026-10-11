@@ -168,6 +168,16 @@
       "policyUpdated": "Retningslinjen ble oppdatert",
       "required": "Påkrevd",
       "saveFailed": "Kunne ikke lagre retningslinje",
+      "sickNotes": {
+        "description": "Sykmeldinger lagres i den ansattes personalmappe. Godkjennere og ledere ser bare at en er lagt ved.",
+        "disabled": "Ansatte kan ikke lenger legge ved sykmeldinger",
+        "enabled": "Ansatte kan nå legge ved sykmeldinger",
+        "help": "Ansatte legger ved bilder eller PDF-er av sykmeldingene sine til sitt eget sykefravær. I Tyskland henter arbeidsgivere den elektroniske sykmeldingen (eAU) fra helseforsikringsselskapene, så bilder er hovedsakelig relevante for privat forsikring, minijobber, Østerrike og Sveits, samt sykt barn-meldinger.",
+        "openOrganizationSettings": "Åpne organisasjonsinnstillinger",
+        "personnelFilesRequired": "Sykmeldinger lagres i personalmapper. Aktiver personalmapper i organisasjonsinnstillingene først.",
+        "title": "Sykmeldinger",
+        "toggle": "Ansatte kan legge ved sykmeldinger"
+      },
       "since": "siden",
       "startingOn": "fra og med",
       "tab": {

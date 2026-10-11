@@ -91,6 +91,8 @@
           "missingConfiguration": "configurazione",
           "missingCredentials": "credenziali"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# liquidazione degli straordinari non è stata esportata} other {# liquidazioni degli straordinari non sono state esportate}}",
+        "unmappedOvertimePayoutsDescription": "Nessuna voce retributiva è mappata su Straordinario per questo formato. Mappane una in Voci retributive ed esporta di nuovo, oppure liquida queste ore in un altro modo.",
         "year": "Anno"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Dimensione",
           "status": "Stato"
         },
-        "title": "Cronologia esportazioni"
+        "title": "Cronologia esportazioni",
+        "unmappedOvertimePayouts": "{count, plural, one {# liquidazione degli straordinari non esportata: nessuna voce retributiva per Straordinario} other {# liquidazioni degli straordinari non esportate: nessuna voce retributiva per Straordinario}}"
+      },
+      "identifier": {
+        "customField": "Campo personalizzato: {name}",
+        "unavailableField": "Campo personalizzato (non disponibile)"
       },
       "lexware": {
         "configured": "Configurato",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Tutti i dipendenti attivi dispongono di uno storico lavorativo confermato per questo periodo di paga.",
           "descriptionWarning": "Alcuni dipendenti attivi non dispongono di uno storico lavorativo confermato per questo periodo di paga."
+        },
+        "periodSubmissions": {
+          "description": "Invii di periodo previsti in questo intervallo che risultano mancanti, rifiutati, restituiti dopo una modifica o ancora in attesa di decisione. Non bloccano l'esportazione delle buste paga.",
+          "title": "Invii dei periodi"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Periodi in questo intervallo non ancora terminati, che pertanto non possono essere inviati. Le ore registrate possono ancora variare dopo l'esportazione.",
+          "title": "Invii dei periodi ancora in corso"
         }
       },
       "checkStatus": {

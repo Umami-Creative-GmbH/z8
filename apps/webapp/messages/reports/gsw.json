@@ -7,6 +7,11 @@
       "pleaseWait": "Bitte warte, während wir deine Daten zusammenstellen",
       "selectPeriod": "Wähle einen Zeitraum aus und klicke auf \"Bericht erstellen\", um zu beginnen"
     },
+    "customFields": {
+      "no": "Nei",
+      "title": "Benutzerdefinierti Felder",
+      "yes": "Ja"
+    },
     "description": "Generier umfassendi Arbetziit- und Absenzbricht mit stüürrelevante Home-Office-Date",
     "employeeSelector": {
       "error": "Teammitglieder chönd nöd glade werde",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Ohni Chund",
         "withoutCustomerHint": "{hours} verrechebar ohni Chund, cha nöd übergeh werde"
       },
+      "details": {
+        "customer": "Chund",
+        "customerFields": "Chundefälder",
+        "noCustomer": "Kein Chund",
+        "projectFields": "Projektfälder",
+        "title": "Details"
+      },
       "export": {
         "billableHours": "Verrechebari Schtunde",
         "changedAfterInvoicing": "Nach de Rächnigsstellig gänderet",
@@ -164,6 +176,10 @@
         "customer": "Kunde",
         "customerReportTitle": "Kundenbericht",
         "customersTable": "Kunden",
+        "customFieldName": "Fäld",
+        "customFieldRecord": "Iitrag",
+        "customFieldsTable": "Benutzerdefinierti Fälder",
+        "customFieldValue": "Wärt",
         "dailyHoursTable": "Stunden pro Tag",
         "date": "Datum",
         "employee": "Mitarbeiter",
@@ -176,6 +192,7 @@
         "invoicingNote": "Verrechneter Umsatz behält die Ansätze des Rechnungsentwurfs bei; nicht verrechneter Umsatz verwendet die Ansätze, die bei der Erstellung des Berichts gültig waren.",
         "margin": "Marge",
         "marginPercent": "Marge %",
+        "no": "Nei",
         "nonBillableHours": "Nicht verrechenbare Stunden",
         "pendingReview": "Ausstehende Korrekturen oder Einreichungen",
         "period": "Zeitraum",
@@ -194,7 +211,8 @@
         "unpricedWork": "Arbet ohni Priis",
         "withoutCustomer": "Ohni Chund",
         "withoutCustomerHours": "Verrechebari Stunde ohni Chund",
-        "workPeriods": "Arbetsperiode"
+        "workPeriods": "Arbetsperiode",
+        "yes": "Ja"
       },
       "filter": {
         "activeOnly": "Nur aktiv",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Chund",
         "daysLeft": "{days} Täg übrig",
         "daysOverdue": "{days} Täg überfällig",
         "deadline": "Frist",

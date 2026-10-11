@@ -143,6 +143,17 @@
       "upgrade": "Mettre à niveau"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Clôturer ce mois",
+    "status": {
+      "closed": "Clôturé",
+      "open": "Ouvert",
+      "partlyClosed": "Partiellement clôturé ({closed} sur {total})"
+    },
+    "stripLabel": "Mois clôturés",
+    "unclosedDescription": "Le temps de travail et les absences de ces mois peuvent encore changer après l'exportation. Clôturez un mois une fois sa paie finalisée.",
+    "unclosedTitle": "Tous les mois de cette période ne sont pas clôturés"
+  },
   "colors": {
     "blue": "Bleu",
     "green": "Vert",
@@ -219,6 +230,9 @@
     "enabled": "Activé",
     "error": "Erreur",
     "error-occurred": "Une erreur s'est produite",
+    "errors": {
+      "monthClosed": "{month} est clôturé. Il doit être rouvert avant de pouvoir modifier les temps de travail ou les absences."
+    },
     "fieldPresets": "Préréglages {label}",
     "focusInput": "Cibler le champ",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Obtenir de l'aide",
     "my-documents": "Mes documents",
     "my-requests": "Mes demandes",
+    "my-schedule": "Mon planning",
     "org-explorer": "Explorateur d'organisation",
     "payroll": "Paie",
     "personnel-files": "Dossiers du personnel",
@@ -588,6 +603,8 @@
     "team": "Équipe",
     "teamAbsences": "Absences de l'équipe",
     "team-label": "Équipe",
+    "teamPeriodSubmissions": "Soumissions de période",
+    "teamPresence": "Qui est présent",
     "time-tracking": "Suivi du temps",
     "today": "Aujourd'hui",
     "travel-expenses": "Frais de déplacement",
@@ -603,6 +620,27 @@
       "viewAll": "Voir toutes les notifications"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Vous remplacez {name} ({dateRange}).",
+        "title": "Vous êtes remplaçant d'absence"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Votre remplacement pour {name} est désormais prévu {dateRange}.",
+        "title": "Dates de remplacement modifiées"
+      },
+      "absenceDeputyReminder": {
+        "message": "À partir de demain, vous remplacez {name} jusqu'au {untilDate}.",
+        "title": "Le remplacement commence demain"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Vous ne remplacez plus {name} ({dateRange}).",
+        "title": "Vous n'êtes plus remplaçant d'absence"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} n'est plus disponible en tant que remplaçant pour l'absence de {employeeName} du {startDate} au {endDate}.",
+        "message": "{deputyName} n'est plus disponible en tant que remplaçant pour votre absence du {startDate} au {endDate}.",
+        "title": "Remplaçant plus disponible"
+      },
       "absenceRecorded": {
         "message": "{managerName} a enregistré {absenceType} pour {dateRange} en votre nom.",
         "title": "Absence enregistrée"
@@ -614,9 +652,36 @@
         "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
         "title": "Demande d'absence envoyée"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Pendant votre absence, {name} a traité # approbation.} other {Pendant votre absence, {name} a traité # approbations.}}",
+        "title": "Traité pendant votre absence"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Vous gérez les approbations de {name} : aucune en attente pour l'instant.} other {Vous gérez les approbations de {name} : # en attente.}}",
+        "title": "Vous gérez les approbations"
+      },
       "automaticClockOut": {
+        "breakMessage": "Vous avez été automatiquement dépointé au début de votre pause à {cutoff} ({timezone}), car celle-ci n'a pas pris fin dans la limite de {duration} minutes autorisée par votre organisation.",
         "message": "Vous avez été automatiquement dépointé après {duration} minutes de travail ininterrompu à {cutoff} ({timezone}) car la limite de temps de votre organisation a été atteinte.",
         "title": "Dépointé automatiquement"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Le solde initial de {amount} pour {dateRange} a été annulé. Motif : {reason}",
+          "title": "Solde initial annulé"
+        },
+        "openingBalanceRecorded": {
+          "message": "Un solde initial de {amount} pour {dateRange} a été enregistré sur votre solde de travail.",
+          "title": "Solde initial enregistré"
+        },
+        "payoutCancelled": {
+          "message": "Le paiement des heures supplémentaires de {amount} pour {dateRange} a été annulé. Motif : {reason}",
+          "title": "Paiement des heures supplémentaires annulé"
+        },
+        "payoutRecorded": {
+          "message": "Un paiement d'heures supplémentaires de {amount} pour {dateRange} a été enregistré sur votre solde de travail.",
+          "title": "Paiement des heures supplémentaires enregistré"
+        }
       },
       "breakDueReminder": {
         "message": "Votre pause est prévue à {breakTime} ({timezone}). Prenez une pause d'ici là pour respecter les règles de pause de votre entreprise.",
@@ -638,12 +703,48 @@
         "message": "Votre quart de travail a commencé à {startTime} ({timezone}). Pointez votre arrivée si vous êtes en train de travailler.",
         "title": "Vous n'avez pas encore pointé votre arrivée"
       },
+      "monthCloseBlocked": {
+        "message": "{month} n'a pas été clôturé automatiquement. Demandes d'absence en attente : {absenceRequests}. Demandes de temps en attente : {timeRequests}. Travail toujours en cours : {liveWork}. Mois non terminé : {notEnded}. Employés : {employees}. Une nouvelle tentative aura lieu demain.",
+        "title": "Impossible de clôturer le mois"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, one {{month} a été clôturé automatiquement pour # employé. Les temps de travail et les absences ne peuvent plus être modifiés à moins qu'il ne soit rouvert.} other {{month} a été clôturé automatiquement pour # employés. Les temps de travail et les absences ne peuvent plus être modifiés à moins qu'il ne soit rouvert.}}",
+        "title": "Mois clôturé"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} a été rouvert pour l'un de vos employés : {reason}} other {{month} a été rouvert pour # de vos employés : {reason}}}",
+        "title": "Mois rouvert"
+      },
       "newAbsenceRequest": {
         "title": "Nouvelle demande d'absence"
       },
       "passwordChanged": {
         "message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
         "title": "Mot de passe modifié"
+      },
+      "periodSubmissionApproved": {
+        "message": "Vos heures pour {startDate} – {endDate} ont été approuvées.",
+        "title": "Vos heures ont été approuvées"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Vos heures pour {startDate} – {endDate} ont été modifiées après avoir été approuvées. Vérifiez vos heures et soumettez-les à nouveau.",
+        "title": "Vos heures approuvées ne sont plus à jour"
+      },
+      "periodSubmissionRejected": {
+        "message": "Vos heures pour {startDate} – {endDate} ont été rejetées : {reason}. Vérifiez vos heures et soumettez-les à nouveau.",
+        "title": "Vos heures ont été rejetées"
+      },
+      "periodSubmissionReminder": {
+        "message": "Votre période {startDate} – {endDate} est terminée. Vérifiez vos heures et soumettez-les pour approbation.",
+        "title": "Soumettez vos heures pour approbation"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Votre période {startDate} – {endDate} n'a toujours pas été soumise. Vérifiez vos heures et soumettez-les pour approbation.",
+        "title": "Vos heures n'ont toujours pas été soumises"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Vos heures pour {startDate} – {endDate} ont été modifiées après leur envoi, la soumission a donc été annulée. Vérifiez vos heures et soumettez-les à nouveau.",
+        "title": "Soumettez à nouveau vos heures"
       },
       "personnelFileDocumentShared": {
         "message": "Le document « {title} » a été partagé avec vous.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} a importé un certificat",
         "other": "{name} a importé un document",
+        "sickNote": "{name} a importé un arrêt maladie pour {dateRange}",
+        "sickNoteOnBehalf": "{uploader} a importé un arrêt de travail pour {name}, {dateRange}",
         "title": "Nouveau document dans un dossier du personnel"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",
         "title": "Retiré de l'équipe"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Les employés peuvent désormais prendre des congés sur leur solde de travail. La nouvelle catégorie d'absence reste inactive jusqu'à ce que vous l'activiez dans les paramètres d'absence.",
+        "title": "Le repos compensateur est disponible"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Un ajustement approuvé a augmenté le montant dû sur la note de frais {report} de {employee}. En attente de remboursement : {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "La note de frais {report} de {employee} n'est pas remboursée via un cycle de paie. En attente de remboursement : {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} de vos frais de déplacement ont été remboursés (référence de paiement {reference}). {remaining} {remainingCurrency} restent en attente de remboursement.",
         "title": "Dépense partiellement remboursée"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} de vos frais de déplacement ont été remboursés avec la paie de {period}. {remaining} {remainingCurrency} sont toujours en attente de remboursement."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Le cycle de paie {period} ({format}) est en attente de votre confirmation. Rapports dans votre périmètre : {count}.",
+        "title": "Cycle de paie en attente de confirmation"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "La note de frais {report} de {employee} est approuvée. En attente de remboursement : {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Vos frais de déplacement ont été intégralement remboursés : {amount} {currency}, référence de paiement {reference}.",
         "title": "Dépense remboursée"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Vos frais de déplacement ont été intégralement remboursés avec la paie de {period} : {amount} {currency}."
       }
     },
     "description": "Consultez les mises à jour, les approbations et les alertes système dans une seule chronologie.",
@@ -728,6 +848,42 @@
       "ariaLabel": "Filtrer les notifications par état de lecture",
       "read": "Lu",
       "unread": "Non lu"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Un élément requiert votre attention"
+      },
+      "body": "Ouvrez Z8 pour voir les détails.",
+      "document": {
+        "title": "Du nouveau concernant vos documents"
+      },
+      "project": {
+        "title": "Du nouveau concernant un projet"
+      },
+      "reminder": {
+        "title": "Rappel de Z8"
+      },
+      "requestUpdate": {
+        "title": "Votre demande a été mise à jour"
+      },
+      "review": {
+        "title": "Vous avez une demande à examiner"
+      },
+      "schedule": {
+        "title": "Votre planning a changé"
+      },
+      "security": {
+        "title": "Avis de sécurité pour votre compte"
+      },
+      "team": {
+        "title": "Vos équipes ont changé"
+      },
+      "travelExpense": {
+        "title": "Du nouveau concernant vos frais de déplacement"
+      },
+      "workingTime": {
+        "title": "Actualités concernant votre temps de travail"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +925,21 @@
       },
       "toggleAria": "Notifications {channel} pour {type}",
       "types": {
+        "absence_deputy_assigned": "Désigné remplaçant d'absence",
+        "absence_deputy_dates_changed": "Dates de remplacement modifiées",
+        "absence_deputy_reminder": "Le remplacement commence demain",
+        "absence_deputy_removed": "Plus remplaçant d'absence",
+        "absence_deputy_unavailable": "Remplaçant plus disponible",
+        "approval_cover_return_summary": "Décidé par votre remplaçant",
+        "approval_cover_started": "Remplacement d'absence commencé",
         "break_due_reminder": "Pause requise",
         "forgotten_clock_out_reminder": "Oubli de pointage de sortie",
-        "missed_clock_in_reminder": "Pointage d'arrivée manqué"
+        "missed_clock_in_reminder": "Pointage d'arrivée manqué",
+        "period_submission_decided": "Heures soumises approuvées ou rejetées",
+        "period_submission_reminder": "Soumettez vos heures",
+        "period_submission_sent_back": "Heures renvoyées après une modification",
+        "work_balance_adjustment_cancelled": "Ajustement du solde annulé",
+        "work_balance_adjustment_recorded": "Ajustement du solde enregistré"
       },
       "updateFailed": "Échec de la mise à jour de la préférence"
     },
@@ -858,7 +1026,8 @@
       "relativeMinutes": "depuis {minutes}min"
     },
     "clockedIn": "Pointage effectué (entrée)",
-    "clockedOut": "Pointage effectué (sortie)"
+    "clockedOut": "Pointage effectué (sortie)",
+    "onBreak": "En pause"
   },
   "rateLimit": {
     "countdownLabel": "secondes avant de pouvoir réessayer",
@@ -877,6 +1046,12 @@
   "status": {
     "active": "Actif",
     "inactive": "Inactif"
+  },
+  "storeAppBanner": {
+    "description": "Recevez des rappels et des notifications d'approbation dans l'application.",
+    "dismiss": "Ignorer la suggestion d'application",
+    "getApp": "Télécharger l'application",
+    "title": "Z8 pour votre téléphone"
   },
   "table": {
     "clearFilters": "Effacer les filtres",
@@ -955,6 +1130,24 @@
     "pronounsMaxLength": "Les pronoms doivent comporter 50 caractères ou moins"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Annuler",
+      "cancelled": "Annulé",
+      "cancelledBy": "Annulé par {name} le {date} : {reason}",
+      "description": "Paiements des heures supplémentaires et soldes initiaux sur ce solde d'heures. En cas d'erreur, un élément est annulé et jamais supprimé ; les éléments annulés restent donc visibles.",
+      "empty": "Aucun ajustement de solde pour le moment.",
+      "kind": {
+        "openingBalance": "Solde initial",
+        "overtimePayout": "Paiement des heures supplémentaires"
+      },
+      "loadFailed": "Impossible de charger les ajustements de solde.",
+      "loading": "Chargement des ajustements de solde",
+      "notPermitted": "Vous pouvez voir vos ajustements de solde et ceux des employés que vous gérez.",
+      "open": "Ajustements de solde",
+      "recordedBy": "Enregistré par {name} le {date}",
+      "title": "Ajustements de solde",
+      "unknownUser": "un utilisateur supprimé"
+    },
     "label": "Solde total",
     "notCalculated": "Pas encore calculé",
     "pendingDescription": "Le travailleur calculera bientôt ce solde.",

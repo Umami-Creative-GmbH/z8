@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Approvato",
+        "changeDeputy": "Cambia sostituto",
+        "changeDeputyOf": "Cambia sostituto di {name}",
+        "deputy": "Sostituto:",
+        "deputyMissing": "Sostituto mancante",
         "description": "Assenze approvate e in attesa per il team e l'anno selezionati.",
         "error": {
           "description": "Riprova tra un momento.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} in attesa",
         "title": "Calendario annuale",
         "totalDays": "{count} assente"
+      },
+      "deputyFilter": {
+        "clear": "Mostra tutte le assenze",
+        "notice": "Mostra solo le assenze che questo dipendente copre come sostituto."
       },
       "description": "Esamina le indennità e registra le assenze approvate per il tuo team.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Categoria",
         "categoryPlaceholder": "Seleziona una categoria di assenza…",
+        "deputy": "Sostituto",
         "description": "Registra un'assenza approvata direttamente per il dipendente selezionato.",
         "endDate": "Data di fine",
         "endDateHelper": "Lascia vuoto per un'assenza in giornata.",
@@ -66,6 +75,11 @@
         "required": "{label} è obbligatorio",
         "sickDetail": "Dettaglio malattia",
         "sickDetailPlaceholder": "Seleziona dettaglio malattia…",
+        "sickNotes": {
+          "description": "Aggiungi foto o PDF del certificato medico ricevuto: file PDF, JPEG, PNG o WebP fino a 20 MB ciascuno. Ciascun file viene salvato come certificato medico autonomo nel fascicolo personale del dipendente ed è visibile a quest'ultimo. In seguito, solo chi gestisce i certificati medici del dipendente potrà aprirlo.",
+          "title": "Certificato medico (facoltativo)"
+        },
+        "sickNotesFailed": "L'assenza è stata registrata, ma non è stato possibile allegare {files}. Chi gestisce i certificati medici potrà allegarli in un secondo momento.",
         "startDate": "Data di inizio",
         "submit": "Registra assenza",
         "success": "Assenza registrata",
@@ -116,6 +130,51 @@
       "next": "Successivo",
       "previous": "Precedente",
       "showing": "Visualizzazione da {from} a {to} di {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Scegli una frequenza di invio nelle impostazioni dell'organizzazione",
+      "columns": {
+        "calendar": "Calendario",
+        "employee": "Dipendente",
+        "period": "Periodo",
+        "status": "Stato"
+      },
+      "descriptionAll": "Chi ha inviato il periodo selezionato. Approva o rifiuta le richieste nella posta in arrivo delle approvazioni.",
+      "descriptionManaged": "Chi tra i dipendenti che gestisci ha inviato il periodo selezionato. Approva o rifiuta le richieste nella posta in arrivo delle approvazioni.",
+      "empty": "Nessuna delle persone visibili deve inviare questo periodo.",
+      "loading": "Caricamento degli invii del periodo",
+      "notSubmitted": "Non inviato",
+      "off": "La tua organizzazione non raccoglie gli invii del periodo.",
+      "openCalendar": "Calendario",
+      "openCalendarOf": "Apri il calendario di {name}",
+      "openInbox": "Apri la posta in arrivo delle approvazioni",
+      "owing": "{count, plural, one {# dipendente non ha ancora inviato questo periodo.} other {# dipendenti non hanno ancora inviato questo periodo.}}",
+      "period": "Periodo di invio",
+      "running": "Questo periodo è ancora in corso. I dipendenti possono inviarlo a partire dall'ultimo giorno.",
+      "status": {
+        "approved": "Approvato",
+        "awaiting": "In attesa di invio",
+        "rejected": "Rifiutato",
+        "sentBack": "Rimandato indietro dopo una modifica",
+        "submitted": "Inviato"
+      },
+      "summary": "Stati",
+      "title": "Invii del periodo"
+    },
+    "presence": {
+      "allLocations": "Tutte le sedi",
+      "columns": {
+        "name": "Nome",
+        "since": "Da",
+        "state": "Stato"
+      },
+      "description": "Scegli una sede per vedere chi ha effettuato l'accesso o è in pausa.",
+      "descriptionAll": "Dipendenti assegnati a questa sede che hanno effettuato l'accesso o sono in pausa.",
+      "descriptionManaged": "Dipendenti da te gestiti assegnati a questa sede che hanno effettuato l'accesso o sono in pausa.",
+      "empty": "Nessuno tra gli utenti visibili ha effettuato l'accesso in questa sede al momento.",
+      "locationTitle": "Chi è presente: {location}",
+      "noLocations": "La tua organizzazione non ha ancora sedi attive.",
+      "title": "Chi è presente"
     },
     "primaryManager": "Sei il manager principale",
     "search": {

@@ -258,6 +258,28 @@
         "previous": "Anterior"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Confirmar como pago",
+          "description": "A folha de pagamento pagou este processamento de {format}? Os relatórios de despesas em seu escopo são registrados como reembolsados com ele. Seus próprios relatórios e relatórios fora do seu escopo permanecem no processamento.",
+          "descriptionCounted": "{count, plural, one {A folha de pagamento pagou este processamento de {format}? # relatório de despesas em seu escopo ({amount}) é registrado como reembolsado com ele. Seus próprios relatórios e relatórios fora do seu escopo permanecem no processamento.} other {A folha de pagamento pagou este processamento de {format}? # relatórios de despesas em seu escopo ({amount}) são registrados como reembolsados com ele. Seus próprios relatórios e relatórios fora do seu escopo permanecem no processamento.}}",
+          "failed": "Não foi possível confirmar o processamento da folha de pagamento. Tente novamente; nada é registrado em duplicidade.",
+          "outcome": {
+            "confirmed": "Reembolsado: {amount}",
+            "confirmedWithRemainder": "Reembolsado: {amount}. {remaining} ainda aguarda reembolso para o próximo processamento.",
+            "outOfScope": "Não confirmado: fora do seu escopo. Permanece no processamento para um responsável que o cubra.",
+            "overpaidByPayroll": "Reembolsado {amount}, {overpaid} a mais do que ainda era devido. A despesa agora foi paga em excesso: registre a recuperação manualmente.",
+            "ownExpense": "Não confirmado: sua própria despesa. Permanece no processamento para que outra pessoa confirme."
+          },
+          "payday": "Dia de pagamento",
+          "paydayHint": "O dia de pagamento em que a folha de pagamento pagou este processamento. Todos os reembolsos deste processamento são registrados nele.",
+          "results": {
+            "nothing": "Não havia nada restante para confirmar neste processamento. Nenhum reembolso foi registrado.",
+            "summary": "{confirmed} de {total} confirmados",
+            "title": "Resultados da confirmação"
+          },
+          "submit": "Confirmar como pago",
+          "title": "Confirmar processamento da folha {period} como pago"
+        },
         "included": "Incluído em {run}. É pago nessa folha de pagamento e registrado como reembolsado quando o processamento for confirmado.",
         "label": "Processamento da folha {period} ({format})",
         "notIncluded": "Nenhum processamento da folha inclui mais esta despesa.",
@@ -266,6 +288,11 @@
         "removeDescription": "Remova apenas se a folha de pagamento não for pagá-la neste processamento, por exemplo, após corrigir o arquivo da folha. A remoção é registrada no log de auditoria.",
         "removeFailed": "Não foi possível remover a despesa do processamento da folha de pagamento.",
         "removeTitle": "Remover esta despesa do processamento da folha de pagamento?"
+      },
+      "payrollRuns": {
+        "description": "Estes processamentos da folha contêm relatórios de despesas aguardando reembolso. Assim que a folha tiver pago um processamento, confirme-o para registrar os reembolsos.",
+        "reports": "{count, plural, one {# relatório de despesas para você confirmar, {amount}} other {# relatórios de despesas para você confirmar, {amount}}}",
+        "title": "Processamentos da folha aguardando confirmação"
       },
       "queue": {
         "description": "Abra uma despesa para ver sua liquidação e registrar um reembolso.",
@@ -452,6 +479,7 @@
         "newTrip": "Nova viagem"
       },
       "approvedBy": "Aprovado por {name} em {date}.",
+      "approvedByDeputy": "Aprovado por {name} (substituto de {actingForName}) em {date}.",
       "awaitingReview": "Aguardando revisão.",
       "awaitingReviewer": "Aguardando revisão por {name}.",
       "backToApprovals": "Voltar para aprovações",
@@ -576,7 +604,9 @@
         "description": "Cada etapa deste relatório, as mais antigas primeiro. Os horários são exibidos em UTC.",
         "detail": {
           "approvalRecorded": "Por {name}; aguardando aprovação adicional.",
+          "approvalRecordedByDeputy": "Por {name} (substituto de {actingForName}); aguardando aprovação adicional.",
           "by": "Por {name}",
+          "byDeputy": "Por {name} (substituto de {actingForName})",
           "inCycle": "Envio {number} · {detail}",
           "selfApproved": "Ninguém mais pôde revisar este relatório."
         },
@@ -843,6 +873,7 @@
         "verifying": "Verificando o comprovante…"
       },
       "rejectedBy": "Rejeitado por {name}",
+      "rejectedByDeputy": "Rejeitado por {name} (substituto de {actingForName})",
       "reopen": {
         "action": "Reabrir para correção",
         "changed": "O relatório foi alterado nesse meio-tempo e não foi reaberto. Revise-o novamente.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Valor aprovado pago pelo funcionário",
       "entry": {
         "exportBatch": "Da exportação solicitada em {date}",
+        "payrollRun": "Reembolsado com a folha {period}",
         "recordedBy": "Registrado por {name}, {date}",
         "recovery": "Recuperado {amount}",
         "reimbursement": "Pago {amount}"

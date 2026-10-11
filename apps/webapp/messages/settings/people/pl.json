@@ -158,6 +158,30 @@
         "description": "Zaproś członków i przejrzyj oczekujące prośby o dołączenie",
         "title": "Zaproszenia"
       },
+      "kioskPin": {
+        "addEmailDescription": "Otrzymają zaproszenie do utworzenia hasła i będą mogli się zalogować. Ich PIN do kiosku oraz historia pozostaną bez zmian.",
+        "addEmailHeading": "Dodaj adres e-mail",
+        "addEmailSubmit": "Dodaj adres e-mail i wyślij zaproszenie",
+        "confirmReset": "Zastąp PIN",
+        "description": "Osobisty kod PIN, który ten pracownik wprowadza, aby rejestrować czas pracy w kiosku.",
+        "done": "Gotowe",
+        "emailAdded": "Adres e-mail został dodany. Zaproszenie jest w drodze.",
+        "emailAddedNotSent": "Adres e-mail został dodany, ale nie udało się wysłać zaproszenia. Pracownik może skorzystać z opcji Nie pamiętam hasła, używając tego adresu.",
+        "emailLabel": "Adres e-mail",
+        "hasPin": "PIN do kiosku jest ustawiony.",
+        "issue": "Nadaj PIN",
+        "kioskOnlyBadge": "Tylko kiosk",
+        "kioskOnlyDescription": "Ten pracownik nie ma adresu e-mail ani możliwości logowania. Rejestruje czas pracy wyłącznie w kioskach za pomocą kodu PIN.",
+        "kioskOnlyNoEmail": "Tylko kiosk, brak adresu e-mail",
+        "lockedUntil": "Zablokowano do {time} z powodu zbyt wielu błędnych prób wprowadzenia kodu PIN.",
+        "noPin": "Brak PIN-u do kiosku.",
+        "pinHeading": "PIN do kiosku",
+        "reset": "Zresetuj PIN",
+        "shownOnce": "Przekaż ten kod PIN pracownikowi teraz. Zostanie wyświetlony tylko raz.",
+        "title": "Dostęp do kiosku",
+        "unlock": "Odblokuj",
+        "unlocked": "PIN do kiosku został odblokowany"
+      },
       "lifecycle": {
         "actionsLabel": "Działania dotyczące pracownika {name}",
         "deactivate": "Dezaktywuj",
@@ -207,12 +231,17 @@
         "currency": "Waluta",
         "currencyInvalid": "Wprowadź trzyliterowy kod waluty.",
         "departurePanelDescription": "Dostęp oraz korzystanie z płatnego miejsca kończą się w terminie granicznym wskazanym poniżej. Historia pracownika zostanie zachowana.",
+        "deputyCover": {
+          "absences": "Zastępca w trwających lub nadchodzących nieobecnościach: {count}",
+          "title": "Zastępstwa do przeorganizowania"
+        },
         "editDeparture": "Edytuj odejście",
         "effective": "Wejście w życie odejścia",
         "effectiveDescription": "Dostęp zakończył się o {cutoff} ({timezone}).",
         "employmentGap": "Brak zatrudnienia {startDate} – {endDate}",
         "employmentStint": "Zatrudnienie {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Ten pracownik jest zastępcą w trwających lub nadchodzących nieobecnościach. Zostanie usunięty jako zastępca, gdy odejście wejdzie w życie, a osoby, których to dotyczy, zostaną powiadomione.",
           "finalOwner": "Przypisz i aktywuj innego zatwierdzonego właściciela przed odejściem tego pracownika.",
           "futureAbsences": "Nieobecności po terminie granicznym pozostają zarejestrowane. Przejrzyj je w sekcji nieobecności.",
           "futureShifts": "Zmiany po terminie granicznym pozostają przypisane. Przejrzyj je w sekcji grafiku.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Przetwarzanie przerw i dodatków",
           "clockRepair": "Naprawa timera",
           "dispatchDeparture": "Planowanie odejścia",
+          "notifyDeputyRelease": "Powiadomienie o niedostępności zastępcy",
           "notifyReview": "Powiadomienie o weryfikacji",
           "sessionRevocation": "Wylogowanie z sesji"
         },
         "team": "Zespół",
         "title": "Zatrudnienie i odejście",
         "unknownLegacyDate": "Nie zarejestrowano daty",
-        "weeklyHoursInvalid": "Wprowadź liczbę godzin w tygodniu z zakresu od 0 do 168."
+        "weeklyHoursInvalid": "Wprowadź liczbę godzin w tygodniu z zakresu od 0 do 168.",
+        "workBalance": {
+          "recordFinalPayout": "Zarejestruj końcową wypłatę za nadgodziny",
+          "through": "Do {date}",
+          "title": "Bilans czasu pracy"
+        }
       },
       "tabs": {
         "employees": "Pracownicy",
@@ -324,7 +359,115 @@
         "inviteCodes": "Kody zaproszeń",
         "members": "Członkowie"
       },
-      "title": "Pracownicy"
+      "title": "Pracownicy",
+      "workBalance": {
+        "adjustmentCancelled": "Korekta anulowana",
+        "cancelDescription": "{summary}. Pozostaje w historii jako anulowana i nie wlicza się już do bilansu czasu pracy.",
+        "cancellationReason": "Dlaczego została anulowana?",
+        "cancelSubmit": "Anuluj korektę",
+        "cancelTitle": "Anuluj korektę",
+        "conflictingPayoutsDescription": "Nie będą się już wliczać. Najpierw je anuluj lub wybierz wcześniejszy dzień.",
+        "conflictingPayoutsTitle": "Wypłaty za nadgodziny w tym dniu lub wcześniej",
+        "current": "Bieżący bilans czasu pracy",
+        "day": "Dzień",
+        "dayDescription": "W strefie czasowej pracownika. Wyświetlane saldo obejmuje okres do wczoraj, więc wypłata z dzisiejszą datą jest uwzględniana od jutra.",
+        "dayRequired": "Wybierz dzień.",
+        "description": "Przepracowany czas pomniejszony o wymagany czas, wraz z saldem początkowym i wypłatami za nadgodziny. Korekty nie podlegają edycji: błędna korekta zostaje anulowana.",
+        "direction": "Saldo",
+        "errors": {
+          "adjustmentNotFound": "Ta korekta już nie istnieje dla tego pracownika.",
+          "alreadyCancelled": "Ta korekta została już anulowana.",
+          "amountNotPositive": "Wprowadź wypłatę większą niż zero.",
+          "beforeOpeningBalance": "Data wypłaty musi być późniejsza niż data obowiązującego salda początkowego.",
+          "conflictingPayouts": "Wypłaty za nadgodziny mają datę przypadającą w tym dniu lub przed nim. Najpierw je anuluj lub wybierz wcześniejszy dzień.",
+          "employeeNotFound": "Nie znaleziono pracownika.",
+          "exceedsBalance": "Wypłata jest większa niż saldo czasu pracy pracownika na koniec tego dnia.",
+          "exceedsLaterBalance": "Wypłata spowodowałaby spadek salda czasu pracy poniżej zera po późniejszej wypłacie za nadgodziny. Najpierw anuluj tamtą wypłatę lub zarejestruj mniejszą wartość.",
+          "failed": "Nie udało się zaktualizować salda czasu pracy. Spróbuj ponownie.",
+          "futureDay": "Dzień nie może przypadać po dzisiejszej dacie w strefie czasowej pracownika.",
+          "invalidInput": "Sprawdź dzień, godziny i minuty oraz powód.",
+          "monthClosed": "Ten dzień przypada w zamkniętym miesiącu.",
+          "monthClosedNamed": "Miesiąc {month} jest zamknięty. Należy go ponownie otworzyć, zanim będzie można rejestrować lub anulować korekty z datą przypadającą w tym miesiącu.",
+          "notPermitted": "Tylko właściciele i administratorzy organizacji oraz pracownicy działu kadr i płac (w odniesieniu do pracowników objętych ich zakresem uprawnień płacowych) mogą rejestrować lub anulować korekty salda.",
+          "reasonRequired": "Wprowadź powód."
+        },
+        "history": "Korekty salda",
+        "hours": "Godziny",
+        "hoursInvalid": "Wprowadź pełne godziny.",
+        "keepAdjustment": "Zachowaj korektę",
+        "loadFailed": "Nie udało się załadować salda czasu pracy.",
+        "loading": "Ładowanie salda czasu pracy",
+        "minutes": "Minuty",
+        "minutesInvalid": "Wprowadź minuty z zakresu od 0 do 59.",
+        "negative": "Godziny do odpracowania (−)",
+        "openingBalanceDay": "Saldo na koniec",
+        "openingBalanceDayDescription": "W strefie czasowej pracownika. Saldo nalicza się ponownie od następnego dnia.",
+        "openingBalanceReasonPlaceholder": "Na przykład: saldo przeniesione z poprzedniego systemu…",
+        "openingBalanceSet": "Ustawiono saldo początkowe",
+        "payoutReasonPlaceholder": "Na przykład: wypłacone z wynagrodzeniem za październik…",
+        "payoutRecorded": "Zarejestrowano wypłatę nadgodzin",
+        "positive": "Nadgodziny (+)",
+        "reason": "Powód",
+        "recordPayout": "Zarejestruj wypłatę nadgodzin",
+        "recordPayoutDescription": "Zarejestruj nadgodziny wypłacone jako wynagrodzenie. Obniża to saldo czasu pracy od końca danego dnia i nie może przekraczać salda z tego dnia.",
+        "recordPayoutSubmit": "Zarejestruj wypłatę",
+        "recordPayoutTitle": "Zarejestruj wypłatę nadgodzin",
+        "replacesOpeningBalance": "Obowiązujące saldo początkowe zostaje anulowane z tym powodem.",
+        "setOpeningBalance": "Ustaw saldo początkowe",
+        "setOpeningBalanceDescription": "Saldo początkowe zastępuje saldo czasu pracy do tego dnia włącznie. Czas przepracowany i wymagany sprzed tej daty pozostaje w ewidencji, ale nie jest już wliczany.",
+        "setOpeningBalanceSubmit": "Ustaw saldo początkowe",
+        "setOpeningBalanceTitle": "Ustaw saldo początkowe",
+        "through": "Do {date}",
+        "title": "Saldo czasu pracy",
+        "upload": {
+          "allReady": "{total, plural, one {# wiersz jest gotowy; {replacing, plural, =0 {żaden nie zastępuje obowiązującego salda początkowego} one {# zastępuje obowiązujące saldo początkowe} few {# zastępują obowiązujące saldo początkowe} many {# zastępuje obowiązujące saldo początkowe} other {# zastępuje obowiązujące saldo początkowe}}.} few {Wszystkie # wiersze są gotowe; {replacing, plural, =0 {żaden nie zastępuje obowiązującego salda początkowego} one {# zastępuje obowiązujące saldo początkowe} few {# zastępują obowiązujące saldo początkowe} many {# zastępuje obowiązujące saldo początkowe} other {# zastępuje obowiązujące saldo początkowe}}.} other {Wszystkie # wierszy jest gotowych; {replacing, plural, =0 {żaden nie zastępuje obowiązującego salda początkowego} one {# zastępuje obowiązujące saldo początkowe} few {# zastępują obowiązujące saldo początkowe} many {# zastępuje obowiązujące saldo początkowe} other {# zastępuje obowiązujące saldo początkowe}}.} }",
+          "checking": "Sprawdzanie pliku…",
+          "columns": {
+            "balance": "Saldo",
+            "day": "Dzień",
+            "employee": "Pracownik",
+            "reason": "Powód",
+            "row": "Wiersz",
+            "status": "Status"
+          },
+          "committed": "{count, plural, one {Ustawiono # bilans otwarcia} few {Ustawiono # bilanse otwarcia} other {Ustawiono # bilansów otwarcia} }",
+          "description": "Ustaw bilans otwarcia dla wielu pracowników z pliku CSV zawierającego kolumny employee_number, day (YYYY-MM-DD lub DD.MM.YYYY), balance (godziny i minuty, np. 12:30 lub -4:15) oraz reason. Każdy bilans otwarcia zastępuje saldo czasu pracy pracownika do tego dnia włącznie i anuluje dotychczas obowiązujący. Nic nie zostanie zapisane, jeśli w którymkolwiek wierszu wystąpi błąd.",
+          "errors": {
+            "ambiguousEmployee": "Kilku pracowników ma ten numer. Najpierw przypisz każdemu unikalny numer.",
+            "conflictingPayouts": "Wypłaty za nadgodziny są datowane na ten dzień lub wcześniej:",
+            "duplicateEmployee": "Ten pracownik ma więcej niż jeden wiersz. Zachowaj jeden.",
+            "employeeNumberRequired": "Wprowadź numer pracownika.",
+            "futureDay": "Dzień przypada po dzisiejszej dacie w strefie czasowej pracownika.",
+            "invalidAmount": "Wprowadź saldo w godzinach i minutach, np. 12:30 lub -4:15.",
+            "invalidDay": "Wprowadź dzień w formacie YYYY-MM-DD lub DD.MM.YYYY.",
+            "monthClosed": "Dzień przypada w zamkniętym miesiącu.",
+            "outOfScope": "Ten pracownik znajduje się poza Twoim dostępem do listy płac.",
+            "reasonRequired": "Wprowadź powód.",
+            "reasonTooLong": "Powód może mieć maksymalnie 1000 znaków.",
+            "unknown": "Nie można zapisać tego wiersza.",
+            "unknownEmployee": "Żaden pracownik nie ma tego numeru."
+          },
+          "file": "Plik CSV",
+          "fileErrors": {
+            "fileTooLarge": "Plik jest zbyt duży. Podziel go na kilka części.",
+            "missingColumns": "W pliku brakuje następujących kolumn: {columns}.",
+            "noRows": "Plik nie zawiera żadnych wierszy poniżej nagłówka.",
+            "tooManyRows": "Plik zawiera ponad 2000 wierszy. Podziel go na kilka części.",
+            "unreadable": "Nie udało się odczytać pliku. Zapisz go w formacie CSV (UTF-8) i spróbuj ponownie."
+          },
+          "former": "Były pracownik",
+          "hasErrors": "{errors, plural, one {# z {total} wierszy zawiera błąd. Popraw plik i prześlij go ponownie.} few {# z {total} wierszy zawierają błędy. Popraw plik i prześlij go ponownie.} other {# z {total} wierszy zawiera błędy. Popraw plik i prześlij go ponownie.} }",
+          "hasErrorsTitle": "Popraw wiersze z błędami",
+          "invalidFile": "Nie można użyć pliku",
+          "open": "Prześlij bilanse otwarcia",
+          "ready": "Gotowe",
+          "refusedTitle": "Nic nie zostało zapisane",
+          "replaces": "Zastępuje bilans otwarcia {balance} w dniu {day}",
+          "submit": "{count, plural, one {Ustaw # bilans otwarcia} few {Ustaw # bilanse otwarcia} other {Ustaw # bilansów otwarcia} }",
+          "template": "Pobierz szablon",
+          "title": "Prześlij bilanse otwarcia"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Dodaj zmianę",
@@ -552,6 +695,7 @@
         "loadingFile": "Wczytywanie akt osobowych",
         "manageOfficers": "Osoby zarządzające aktami osobowymi",
         "payslipBatch": "Partia pasków płacowych",
+        "sickLeave": "Zwolnienie lekarskie",
         "title": "Akta osobowe"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Widoczność"
       },
       "list": {
+        "absence": "Dla zwolnienia lekarskiego {dateRange}",
         "delete": "Usuń {title}",
         "download": "Pobierz {title}",
         "edit": "Edytuj {title}",
@@ -771,6 +916,83 @@
         "description": "Wybierz, kto poza właścicielami i administratorami zarządza dokumentami pracowników.",
         "loading": "Ładowanie ustawień akt osobowych",
         "title": "Akta osobowe"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Daty",
+          "duration": "Czas trwania",
+          "employee": "Pracownik",
+          "sickDetail": "Szczegóły zwolnienia",
+          "sickNotes": "Zwolnienia lekarskie",
+          "status": "Status"
+        },
+        "description": "Nieobecności chorobowe pracowników, których zwolnieniami lekarskimi zarządzasz, wraz z dołączonymi do nich zwolnieniami. Nic w tym miejscu nie wysyła przypomnień ani próśb do pracowników.",
+        "empty": "Żadne zwolnienie lekarskie w tym okresie nie pasuje do filtrów.",
+        "filters": {
+          "allEmployees": "Wszyscy pracownicy",
+          "allSickDetails": "Wszystkie szczegóły zwolnień",
+          "allStatuses": "Oczekujące i zatwierdzone",
+          "allTeams": "Wszystkie zespoły",
+          "employee": "Pracownik",
+          "formerEmployee": "{name} (były)",
+          "from": "Od",
+          "notes": "Zwolnienia lekarskie",
+          "notesAll": "Wszystkie",
+          "notesMissing": "Z zaświadczeniem, bez zwolnienia",
+          "notesPresent": "Ma zwolnienie",
+          "reset": "Zresetuj filtry",
+          "sickDetail": "Szczegóły zwolnienia",
+          "status": "Status",
+          "team": "Zespół",
+          "to": "Do"
+        },
+        "loading": "Wczytywanie zwolnienia lekarskiego",
+        "notes": {
+          "count": "{count, plural, one {# notatka} many {# notatek} other {# notatki} }",
+          "none": "Brak notatki"
+        },
+        "pagination": {
+          "next": "Następna strona",
+          "page": "Strona {page} z {pageCount}",
+          "pageSize": "Wierszy na stronę",
+          "previous": "Poprzednia strona",
+          "summary": "{first}–{last} z {total}"
+        },
+        "sickDetail": {
+          "childSick": "Choroba dziecka",
+          "other": "Inne",
+          "withCertificate": "Z zaświadczeniem",
+          "withoutCertificate": "Bez zaświadczenia"
+        },
+        "status": {
+          "approved": "Zatwierdzone",
+          "pending": "Oczekujące"
+        },
+        "title": "Zwolnienie lekarskie"
+      },
+      "sickNotes": {
+        "cardDescription": "Oczekujące i zatwierdzone zwolnienia lekarskie tego pracownika. Załącz nowe zaświadczenie lekarskie lub powiąż zaświadczenie, które znajduje się już w aktach osobowych.",
+        "cardTitle": "Zwolnienie lekarskie",
+        "chooseAbsence": "Wybierz nieobecność.",
+        "chooseNote": "Wybierz zaświadczenie lekarskie.",
+        "link": "Powiąż",
+        "linked": "Powiązano zaświadczenie lekarskie",
+        "linkExistingDescription": "Wybierz zaświadczenie lekarskie z akt osobowych dla zwolnienia lekarskiego {dateRange}.",
+        "linkExistingTitle": "Powiąż zaświadczenie lekarskie",
+        "linkFailed": "Nie udało się powiązać zaświadczenia lekarskiego.",
+        "linkToAbsence": "Powiąż {title} ze zwolnieniem lekarskim",
+        "linkToAbsenceDescription": "Wybierz zwolnienie lekarskie, które obejmuje „{title}”. Zwolnienie lekarskie zarejestrowane bez zaświadczenia będzie wówczas uznawane za zwolnienie z zaświadczeniem.",
+        "linkToAbsenceTitle": "Powiąż ze zwolnieniem lekarskim",
+        "loadFailed": "Nie udało się załadować listy.",
+        "manage": "Załącz lub powiąż",
+        "manageFor": "Załącz lub powiąż zaświadczenia lekarskie dla: {name}, {dateRange}",
+        "noSickLeave": "Ten pracownik nie ma żadnych oczekujących ani zatwierdzonych zwolnień lekarskich.",
+        "notes": "Zaświadczenia lekarskie",
+        "noUnlinkedNotes": "W tych aktach osobowych nie ma zaświadczeń lekarskich, które nie byłyby powiązane z nieobecnością.",
+        "openNotes": "Zaświadczenia lekarskie dla okresu {dateRange}",
+        "unlinked": "Odłączono zaświadczenie lekarskie",
+        "unlinkFailed": "Nie udało się odłączyć zaświadczenia lekarskiego.",
+        "unlinkFromAbsence": "Odłącz {title} od zwolnienia lekarskiego"
       },
       "tabs": {
         "access": "Dostęp",

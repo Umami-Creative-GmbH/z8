@@ -141,6 +141,17 @@
       "description": "{organizationName} organizasyonuna katılmak için davetiye gönder",
       "emailLabel": "E-posta Adresi",
       "error": "Davetiye gönderilemedi",
+      "kioskOnly": {
+        "description": "Şirket e-postası olmayan personel içindir. Giriş yapamazlar ve yalnızca kiosk'larda PIN kodları ile giriş-çıkış yapabilirler. Daha sonra bir e-posta ekleyebilirsiniz.",
+        "firstName": "Ad",
+        "label": "Yalnızca kiosk, e-posta yok",
+        "lastName": "Soyad",
+        "locations": "Atanan konumlar",
+        "locationsDescription": "Bu konumlardaki kiosk'lar çalışanı listeler.",
+        "noLocations": "Henüz aktif konum yok. Konumları daha sonra atayabilirsiniz.",
+        "submit": "Çalışan oluştur",
+        "success": "Yalnızca kiosk çalışanı oluşturuldu"
+      },
       "noTargetTeam": "Ekip yok",
       "roleDescriptions": {
         "admin": "Üye davet edebilir ve ayarları yönetebilir",
@@ -242,6 +253,41 @@
       "searchLabel": "Çalışanları ara",
       "searchPlaceholder": "Çalışanları ara…",
       "teamBadge": "Ekip"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Bu ayarları yalnızca kuruluş yöneticileri ve sahipleri değiştirebilir.",
+      "cadence": {
+        "label": "Gönderim sıklığı",
+        "monthly": "Aylık",
+        "off": "Kapalı",
+        "weekly": "Haftalık"
+      },
+      "description": "Çalışanlardan, çalışma ve devamsızlık kayıtlarının eksiksiz ve doğru olduğunu onaylayarak her hafta veya her ay onay için gönderim yapmalarını isteyin.",
+      "help": "Dönemler her çalışanın saat dilimini izler ve istihdam sürelerine göre sınırlandırılır. Etkinleştirme ilk tam dönemle başlar. Bir değişiklik, eski ve yeni sıklığın paylaştığı bir sonraki dönem sınırında yürürlüğe girer; bu nedenle haftalık ve aylık arasındaki bir değişiklik birkaç ay sürebilir. Çalışanlara bir dönem sona erdiğinde ve burada belirlenen gün sayısından sonra tekrar hatırlatma yapılır. Yalnızca Kiosk kullanan çalışanlar dönem gönderimi yapmaz.",
+      "invalidDelay": "{min} ile {max} arasında tam gün girin.",
+      "save": "Değişiklikleri kaydet",
+      "saved": "Dönem gönderim ayarları kaydedildi",
+      "saveFailed": "Dönem gönderim ayarları güncellenemedi",
+      "saving": "Kaydediliyor…",
+      "secondReminderDelay": "İkinci hatırlatıcıya kadar kalan gün sayısı",
+      "title": "Dönem gönderimleri",
+      "upcoming": {
+        "monthly": "Aylık dönemler {date} tarihinde başlar.",
+        "off": "{date} tarihinden itibaren herhangi bir dönem beklenmiyor. Mevcut dönem hâlâ bekleniyor.",
+        "untilMonthly": "O zamana kadar aylık dönemler devam eder.",
+        "untilWeekly": "O zamana kadar haftalık dönemler devam eder.",
+        "weekly": "Haftalık dönemler {date} tarihinde başlar."
+      },
+      "weekday": {
+        "friday": "Cuma",
+        "monday": "Pazartesi",
+        "saturday": "Cumartesi",
+        "sunday": "Pazar",
+        "thursday": "Perşembe",
+        "tuesday": "Salı",
+        "wednesday": "Çarşamba"
+      },
+      "weekStart": "Haftanın başlangıç günü"
     },
     "recover": {
       "button": "Kuruluşu Kurtar",

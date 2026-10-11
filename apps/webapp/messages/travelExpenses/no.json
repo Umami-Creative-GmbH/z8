@@ -258,6 +258,28 @@
         "previous": "Forrige"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Bekreft som betalt",
+          "description": "Har lønnsavdelingen utbetalt denne {format}-kjøringen? Utgiftsrapportene innenfor ditt ansvarsområde registreres som refundert med den. Dine egne rapporter og rapporter utenfor ansvarsområdet ditt blir værende i kjøringen.",
+          "descriptionCounted": "{count, plural, one {Har lønnsavdelingen utbetalt denne {format}-kjøringen? # utgiftsrapport innenfor ditt ansvarsområde ({amount}) registreres som refundert med den. Dine egne rapporter og rapporter utenfor ansvarsområdet ditt blir værende i kjøringen.} other {Har lønnsavdelingen utbetalt denne {format}-kjøringen? # utgiftsrapporter innenfor ditt ansvarsområde ({amount}) registreres som refundert med den. Dine egne rapporter og rapporter utenfor ansvarsområdet ditt blir værende i kjøringen.}}",
+          "failed": "Lønnskjøringen kunne ikke bekreftes. Prøv igjen; ingenting blir registrert to ganger.",
+          "outcome": {
+            "confirmed": "Refundert {amount}",
+            "confirmedWithRemainder": "Refundert {amount}. {remaining} venter fortsatt på refusjon til neste kjøring.",
+            "outOfScope": "Ikke bekreftet: utenfor ditt ansvarsområde. Den forblir i kjøringen for en saksbehandler som dekker det.",
+            "overpaidByPayroll": "Refundert {amount}, {overpaid} mer enn det som gjensto. Utgiften er nå overbetalt: registrer tilbakebetalingen manuelt.",
+            "ownExpense": "Ikke bekreftet: din egen utgift. Den forblir i kjøringen så noen andre kan bekrefte den."
+          },
+          "payday": "Lønningsdag",
+          "paydayHint": "Lønningsdagen da lønnen for denne kjøringen ble utbetalt. Alle refusjoner i denne kjøringen registreres på den.",
+          "results": {
+            "nothing": "Ingenting i denne kjøringen gjensto å bekrefte. Ingen refusjon er registrert.",
+            "summary": "{confirmed} av {total} bekreftet",
+            "title": "Bekreftelsesresultater"
+          },
+          "submit": "Bekreft som betalt",
+          "title": "Bekreft lønnskjøring {period} som betalt"
+        },
         "included": "Inkludert i {run}. Den utbetales med den lønnen og registreres som refundert når kjøringen bekreftes.",
         "label": "Lønnskjøring {period} ({format})",
         "notIncluded": "Ingen lønnskjøring inkluderer denne utgiften lenger.",
@@ -266,6 +288,11 @@
         "removeDescription": "Fjern den bare hvis den ikke skal utbetales med denne kjøringen, for eksempel etter korrigering av lønnsfilen. Fjerningen registreres i revisjonsloggen.",
         "removeFailed": "Utgiften kunne ikke fjernes fra lønnskjøringen.",
         "removeTitle": "Fjerne denne utgiften fra lønnskjøringen?"
+      },
+      "payrollRuns": {
+        "description": "Disse lønnskjøringene inneholder utgiftsrapporter som venter på refusjon. Når lønn for en kjøring er utbetalt, bekrefter du den for å registrere refusjonene.",
+        "reports": "{count, plural, one {# utgiftsrapport du må bekrefte, {amount}} other {# utgiftsrapporter du må bekrefte, {amount}}}",
+        "title": "Lønnskjøringer som venter på bekreftelse"
       },
       "queue": {
         "description": "Åpne et utlegg for å se oppgjøret og registrere en refusjon.",
@@ -452,6 +479,7 @@
         "newTrip": "Ny reise"
       },
       "approvedBy": "Godkjent av {name} den {date}.",
+      "approvedByDeputy": "Godkjent av {name} (stedfortreder for {actingForName}) den {date}.",
       "awaitingReview": "Venter på gjennomgang.",
       "awaitingReviewer": "Venter på gjennomgang av {name}.",
       "backToApprovals": "Tilbake til godkjenninger",
@@ -576,7 +604,9 @@
         "description": "Hvert trinn i denne rapporten, eldste først. Tidspunkter vises i UTC.",
         "detail": {
           "approvalRecorded": "Av {name}; venter på videre godkjenning.",
+          "approvalRecordedByDeputy": "Av {name} (stedfortreder for {actingForName}); venter på videre godkjenning.",
           "by": "Av {name}",
+          "byDeputy": "Av {name} (stedfortreder for {actingForName})",
           "inCycle": "Innsending {number} · {detail}",
           "selfApproved": "Ingen andre kunne vurdere denne rapporten."
         },
@@ -843,6 +873,7 @@
         "verifying": "Kontrollerer kvitteringen…"
       },
       "rejectedBy": "Avvist av {name}",
+      "rejectedByDeputy": "Avvist av {name} (stedfortreder for {actingForName})",
       "reopen": {
         "action": "Gjenåpne for korrigering",
         "changed": "Rapporten ble endret i mellomtiden og ble ikke gjenåpnet. Gå gjennom den på nytt.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Godkjent beløp betalt av ansatt",
       "entry": {
         "exportBatch": "Fra eksporten forespurt {date}",
+        "payrollRun": "Refundert med lønn {period}",
         "recordedBy": "Registrert av {name}, {date}",
         "recovery": "Gjenvunnet {amount}",
         "reimbursement": "Betalt {amount}"

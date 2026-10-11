@@ -141,6 +141,17 @@
       "description": "Einladung zum Beitritt zu {organizationName} senden",
       "emailLabel": "E-Mail-Adresse",
       "error": "Fehler beim Senden der Einladung",
+      "kioskOnly": {
+        "description": "Für Mitarbeiter ohne geschäftliche E-Mail. Sie können sich nicht anmelden und stempeln nur an Kiosken mit ihrer PIN. Sie können später eine E-Mail-Adresse hinzufügen.",
+        "firstName": "Vorname",
+        "label": "Nur Kiosk, keine E-Mail",
+        "lastName": "Nachname",
+        "locations": "Zugewiesene Standorte",
+        "locationsDescription": "Die Kioske an diesen Standorten listen den Mitarbeiter auf.",
+        "noLocations": "Noch keine aktiven Standorte. Sie können Standorte später zuweisen.",
+        "submit": "Mitarbeiter erstellen",
+        "success": "Nur-Kiosk-Mitarbeiter erstellt"
+      },
       "noTargetTeam": "Kein Team",
       "roleDescriptions": {
         "admin": "Kann Mitglieder einladen und Einstellungen verwalten",
@@ -242,6 +253,41 @@
       "searchLabel": "Mitarbeiter suchen",
       "searchPlaceholder": "Mitarbeiter suchen…",
       "teamBadge": "Team"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Nur Organisations-Admins und -Inhaber können diese Einstellungen ändern.",
+      "cadence": {
+        "label": "Einreichungsintervall",
+        "monthly": "Monatlich",
+        "off": "Aus",
+        "weekly": "Wöchentlich"
+      },
+      "description": "Mitarbeitende dazu auffordern, jede Woche oder jeden Monat zur Genehmigung einzureichen und zu bestätigen, dass ihre Arbeits- und Abwesenheitszeiten vollständig und korrekt sind.",
+      "help": "Zeiträume richten sich nach der Zeitzone des jeweiligen Mitarbeitenden und sind auf deren Anstellungszeitraum begrenzt. Die Aktivierung beginnt mit dem ersten vollen Zeitraum. Eine Änderung wird an der nächsten gemeinsamen Zeitraumgrenze des alten und neuen Intervalls wirksam, daher kann ein Wechsel zwischen wöchentlich und monatlich mehrere Monate dauern. Mitarbeitende werden erinnert, wenn ein Zeitraum endet, sowie erneut nach der hier festgelegten Anzahl an Tagen. Reine Kiosk-Mitarbeitende reichen keine Zeiträume ein.",
+      "invalidDelay": "Geben Sie ganze Tage von {min} bis {max} ein.",
+      "save": "Änderungen speichern",
+      "saved": "Einstellungen für Zeitraumeinreichung gespeichert",
+      "saveFailed": "Einstellungen für Zeitraumeinreichung konnten nicht aktualisiert werden",
+      "saving": "Wird gespeichert…",
+      "secondReminderDelay": "Tage bis zur zweiten Erinnerung",
+      "title": "Zeitraumeinreichungen",
+      "upcoming": {
+        "monthly": "Monatliche Zeiträume beginnen am {date}.",
+        "off": "Ab dem {date} werden keine Zeiträume mehr erwartet. Der aktuelle Zeitraum wird weiterhin erwartet.",
+        "untilMonthly": "Bis dahin gelten weiterhin monatliche Zeiträume.",
+        "untilWeekly": "Bis dahin gelten weiterhin wöchentliche Zeiträume.",
+        "weekly": "Wöchentliche Zeiträume beginnen am {date}."
+      },
+      "weekday": {
+        "friday": "Freitag",
+        "monday": "Montag",
+        "saturday": "Samstag",
+        "sunday": "Sonntag",
+        "thursday": "Donnerstag",
+        "tuesday": "Dienstag",
+        "wednesday": "Mittwoch"
+      },
+      "weekStart": "Wochen beginnen am"
     },
     "recover": {
       "button": "Organisation wiederherstellen",

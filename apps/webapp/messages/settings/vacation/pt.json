@@ -168,6 +168,16 @@
       "policyUpdated": "Política atualizada com sucesso",
       "required": "Obrigatório",
       "saveFailed": "Falha ao salvar política",
+      "sickNotes": {
+        "description": "Os atestados médicos são mantidos no dossiê do funcionário. Aprovadores e gestores apenas veem que há um anexado.",
+        "disabled": "Os funcionários não podem mais anexar atestados médicos",
+        "enabled": "Os funcionários agora podem anexar atestados médicos",
+        "help": "Os funcionários anexam fotos ou PDFs dos seus atestados médicos às suas próprias licenças médicas. Na Alemanha, os empregadores obtêm o atestado médico eletrônico (eAU) junto aos planos de saúde, portanto as fotos são importantes principalmente para seguros privados, minijobs, Áustria e Suíça, e atestados por doença dos filhos.",
+        "openOrganizationSettings": "Abrir configurações da organização",
+        "personnelFilesRequired": "Os atestados médicos são armazenados nos dossiês dos funcionários. Ative primeiro os dossiês dos funcionários nas configurações da organização.",
+        "title": "Atestados médicos",
+        "toggle": "Os funcionários podem anexar atestados médicos"
+      },
       "since": "desde",
       "startingOn": "começando em",
       "tab": {

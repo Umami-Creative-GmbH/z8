@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Limpando falso positivo",
       "dateUnavailable": "Data indisponível",
       "missingClockOut": "Saída não registrada",
+      "missingIdentifier": "Identificador ausente",
       "needReview": "{count} bloqueios de folha de pagamento precisam de revisão",
       "offboardingClockRepair": "O registro de saída de desligamento precisa de reparo",
       "openApprovals": "Aprovações pendentes",
       "openCalendar": "Abrir calendário",
+      "openEmployee": "Abrir colaborador",
       "openWork": "Trabalho sem registro de saída",
       "openWorkDiagnostics": "Abrir diagnósticos de trabalho",
       "pendingAbsence": "Ausência pendente",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds deve ser uma matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve conter apenas strings",
       "endDateAfterStart": "A data de término deve ser igual ou posterior à data de início",
+      "exportBlockedByMissingIdentifier": "Exportação bloqueada: alguns colaboradores não têm valor para o campo personalizado usado como identificador da folha de pagamento",
       "exportBlockedByOffboardingClockRepair": "Exportação bloqueada: corrija primeiro o registro de saída do desligamento",
       "exportBlockedByUncertainWork": "Exportação bloqueada: resolva primeiro o trabalho incerto no escopo selecionado",
       "exportBlockedByUnresolvedWorkMinutes": "Exportação bloqueada: resolva primeiro os minutos de trabalho que precisam de revisão",
       "exportFormatNotConfigured": "O formato de exportação da folha de pagamento não está configurado",
+      "exportIdentifierChanged": "A configuração do identificador da folha de pagamento foi alterada após a coleta desta exportação. Inicie uma nova exportação.",
       "invalidBlockerId": "ID de bloqueio da folha de pagamento inválido",
       "invalidBlockerType": "Tipo de bloqueio da folha de pagamento inválido",
       "mustBeIsoDate": "{field} deve ser uma data ISO",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Exportação da folha de pagamento concluída",
       "formatAccessCheck": "Verificação de acesso ao formato",
+      "nobodyEmployedInPeriod": "Nenhum colaborador sob seu acesso à folha de pagamento esteve contratado neste período.",
       "noConfiguredTarget": "Nenhum destino de exportação da folha de pagamento configurado",
       "queued": "Exportação da folha de pagamento na fila",
       "selectFormat": "Selecionar formato",
-      "target": "Destino de exportação da folha de pagamento"
+      "target": "Destino de exportação da folha de pagamento",
+      "unmappedOvertimePayouts": "{count, plural, one {# pagamento de horas extras não foi exportado} other {# pagamentos de horas extras não foram exportados}}",
+      "unmappedOvertimePayoutsDescription": "Nenhum tipo de remuneração está mapeado para Horas extras neste formato. Peça a um administrador da organização para mapear um ou pague essas horas de outra forma."
     },
     "filters": {
       "noMatchingEmployees": "Nenhum funcionário corresponde aos filtros de folha de pagamento selecionados."
+    },
+    "formerEmployeesExport": {
+      "description": "Exporte um mês em que algum deles ainda estivesse contratado: suas últimas horas e pagamentos finais de horas extras serão incluídos no arquivo.",
+      "export": "Exportar",
+      "nextMonth": "Próximo mês",
+      "previousMonth": "Mês anterior",
+      "title": "Exportar folha de pagamento de colaboradores desligados"
+    },
+    "onlyFormerEmployees": {
+      "description": "Você ainda pode registrar e cancelar pagamentos de horas extras deles, e exportar abaixo os meses em que estiveram contratados.",
+      "title": "Apenas colaboradores desligados estão no seu acesso à folha de pagamento"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Nenhum tipo de remuneração está mapeado para Horas extras neste formato, portanto a exportação deixará esses pagamentos de fora. Peça a um administrador da organização para mapear um ou pague essas horas de outra forma.",
+      "title": "{count, plural, one {# pagamento de horas extras não será exportado} other {# pagamentos de horas extras não serão exportados}}"
     },
     "period": {
       "current": "Período atual",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Descartar processamento da folha",
+        "confirmed": "Este processamento de folha de pagamento já foi confirmado como pago para alguns relatórios, portanto não pode mais ser descartado. Em vez disso, remova relatórios individuais dele.",
         "description": "{count, plural, one {O # relatório de despesas incluído aguardará reembolso novamente: a próxima exportação da folha de pagamento ou uma transferência bancária poderá incluí-lo. Descarte-o apenas se este arquivo não for pago com a folha de pagamento.} other {Os # relatórios de despesas incluídos aguardarão reembolso novamente: a próxima exportação da folha de pagamento ou uma transferência bancária poderá incluí-los. Descarte-o apenas se este arquivo não for pago com a folha de pagamento.}}",
         "done": "Processamento da folha descartado. Seus relatórios de despesas aguardam reembolso novamente.",
         "failed": "Não foi possível descartar o processamento da folha de pagamento.",
@@ -106,6 +129,29 @@
         "outOfScope": "Este processamento da folha inclui funcionários fora do escopo da sua folha de pagamento.",
         "title": "Descartar este processamento da folha de pagamento?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "definido manualmente",
+        "exceptionalItinerary": "itinerário não coberto pelas regras estatutárias",
+        "outsideVerifiedTables": "nenhuma tabela estatutária verificada para estes dias"
+      },
+      "description": "Estas despesas aguardam reembolso, mas uma exportação deste período e formato as exclui. A exportação não está bloqueada: pague-as por transferência bancária na fila financeira.",
+      "payByBankTransfer": "Pagar por transferência bancária",
+      "reason": {
+        "apiConnector": "Este formato é um conector de API, que nunca inclui valores de despesas.",
+        "currencyNotEur": "Não está em euros: os processamentos de folha de pagamento incluem apenas valores em euros.",
+        "includedInOtherRun": "Incluído no processamento de folha de pagamento não confirmado {period} ({format}).",
+        "legacyClaim": "Solicitações legadas nunca são pagas pela folha de pagamento.",
+        "negativeDifference": "Um ajuste reduziu o valor que os processamentos de folha de pagamento anteriores incluíam para: {kinds}.",
+        "noStatutoryBaseline": "Nenhuma base estatutária para: {items}.",
+        "nothingOwed": "Suas linhas de folha de pagamento não deixam saldo a ser incluído na folha de pagamento.",
+        "reimbursedOutsidePayroll": "Já pago parcialmente por transferência bancária ou recuperado: a folha de pagamento não pode processar o restante.",
+        "unmappedWageType": "Nenhum tipo de salário está mapeado para este formato para: {kinds}."
+      },
+      "title": "Relatórios de despesas que este processamento de folha de pagamento não incluirá",
+      "unknownEmployee": "Colaborador"
     },
     "runs": {
       "description": "Estas exportações contêm relatórios de despesas que aguardam reembolso. Um responsável por despesas confirma cada processamento assim que a folha for paga; descarte um processamento cujo arquivo não tenha sido pago.",
@@ -140,6 +186,17 @@
       "description": "Não foi possível preparar os dados da folha de pagamento com segurança.",
       "help": "Tente novamente mais tarde. Se o problema persistir, entre em contato com um administrador da organização.",
       "title": "Folha de pagamento temporariamente indisponível"
+    },
+    "workBalances": {
+      "back": "Saldos de trabalho",
+      "backToPayroll": "Folha de pagamento",
+      "description": "Registe e cancele pagamentos de horas extraordinárias para os colaboradores abrangidos pelo seu acesso à folha de pagamento, incluindo colaboradores cessantes.",
+      "empty": "Ainda não existem colaboradores no âmbito do seu acesso à folha de pagamento.",
+      "former": "Ex-colaborador",
+      "loading": "A carregar saldos de trabalho",
+      "loadingEmployee": "A carregar o saldo de trabalho",
+      "open": "Saldos de trabalho",
+      "title": "Saldos de trabalho"
     }
   }
 }

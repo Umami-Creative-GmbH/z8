@@ -16,6 +16,10 @@
       "label": "Fakturerbar",
       "noCustomer": "Endast arbete på ett projekt med en kund kan vara fakturerbart"
     },
+    "breakInProgress": {
+      "description": "Du har rast",
+      "since": "På rast sedan {time}"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Du har stämplat ut!",
     "clockIn": "Stämpla in",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Endast arbete på ett projekt som har en kund kan vara fakturerbart",
       "breakAwaitingApproval": "Denna arbetsperiod väntar på godkännande och kan inte redigeras. Lägg till pausen när den har hanterats.",
       "breakDurationInvalid": "Ange en pauslängd på minst 1 minut.",
+      "breakInProgressOpen": "Du har rast. Återuppta arbetet innan du lägger till en ny rast.",
       "breakNotAllowed": "Du kan inte lägga till en paus i detta arbete.",
       "breakOccupied": "Pausen överlappar annat registrerat arbete.",
       "breakPendingCorrection": "Ett godkännande av tidskorrigering väntar redan för denna arbetsperiod. Lägg till pausen när den har hanterats.",
@@ -84,12 +89,14 @@
       "breakTooLong": "Pausens längd måste vara kortare än ditt nuvarande arbetspass.",
       "clockAttributionNotAllowed": "Det valda projektet eller den valda kategorin är inte tillgänglig",
       "clockCommandRejected": "Servern accepterade inte denna stämplingsåtgärd",
+      "clockConnectionRequired": "Stämpling kräver en anslutning i den här organisationen. Återanslut och försök igen.",
       "clockInAppendReview": "Din tidshistorik behöver granskas innan du kan stämpla in. Kontakta din administratör.",
       "clockInCollision": "Denna instämpling står i konflikt med en tidigare begäran. Uppdatera och försök igen.",
       "clockInFailed": "Det gick inte att stämpla in",
       "clockInNotAllowed": "Du kan inte stämpla in.",
       "clockInOccupied": "Den här tiden överlappar annat registrerat arbete",
       "clockInRetry": "Det gick inte att stämpla in. Försök igen.",
+      "clockMonthClosed": "Den här tiden är i en stängd månad och kan inte ändras förrän månaden har öppnats igen.",
       "clockNotAllowedAtTime": "Stämpling är inte tillåten vid den här tidpunkten",
       "clockOutAppendReview": "Din tidshistorik behöver granskas innan du kan stämpla ut. Kontakta din administratör.",
       "clockOutBeforeClockIn": "Utstämpling måste ske efter instämpling",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Den här uppgiften tillhör ett annat projekt",
       "taskProjectNotBookable": "Tid kan inte längre bokas på den här uppgiftens projekt",
       "workCategoryNotAllowed": "Kan inte tilldela till den här arbetskategorin"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Stämpla in",
+        "clockOut": "Stämpla ut",
+        "endDay": "Avsluta dagen",
+        "resume": "Återuppta arbete",
+        "startBreak": "Starta rast"
+      },
+      "board": {
+        "empty": "Ingen är instämplad just nu.",
+        "title": "Vilka är här"
+      },
+      "done": {
+        "button": "Klar",
+        "clockIn": "Instämplad",
+        "clockOut": "Utstämplad",
+        "endDay": "Dagen avslutad",
+        "endDayNote": "Din dag avslutades när din rast började.",
+        "resume": "Tillbaka till arbetet",
+        "returning": "Tillbaka till start om {seconds} s",
+        "startBreak": "Rast påbörjad",
+        "title": "Klar"
+      },
+      "employee": {
+        "back": "Avbryt",
+        "endDayHint": "Om du avslutar dagen nu avslutas ditt arbete vid rastens början.",
+        "today": "Idag: {duration}"
+      },
+      "home": {
+        "empty": "Ingen har tilldelats den här platsen ännu. Fråga din administratör.",
+        "loadFailed": "Namnen kunde inte läsas in. Kontrollera nätverksanslutningen.",
+        "loading": "Läser in namn…",
+        "noMatch": "Inget namn matchar din sökning.",
+        "search": "Hitta ditt namn",
+        "title": "Tryck på ditt namn för att stämpla in eller ut"
+      },
+      "loading": "Startar kiosken…",
+      "offline": {
+        "banner": "Kiosken är offline. Det går inte att stämpla förrän anslutningen är tillbaka.",
+        "refused": "Kiosken är offline. Inget registrerades; stämpling fungerar endast online."
+      },
+      "pairing": {
+        "codeDescription": "Koden fungerar en gång och går ut 10 minuter efter att den utfärdades.",
+        "codeLabel": "Parkopplingskod",
+        "description": "En ägare eller administratör skapar kiosken i Inställningar › Kiosker och ger dig en parkopplingskod.",
+        "invalidCode": "Den här koden är ogiltig eller har gått ut. Be din administratör om en ny parkopplingskod.",
+        "malformedCode": "Ange den 10 tecken långa koden exakt som den visas i inställningarna.",
+        "rateLimited": "För många försök. Vänta några minuter och försök sedan igen.",
+        "submit": "Parkoppla denna enhet",
+        "title": "Konfigurera denna kiosk",
+        "unreachable": "Kiosken kan inte nå servern. Kontrollera nätverksanslutningen och försök igen."
+      },
+      "pin": {
+        "back": "Inte du? Tillbaka",
+        "checking": "Kontrollerar…",
+        "delete": "Radera sista siffran",
+        "entered": "{count} siffror angivna",
+        "locked": "För många felaktiga PIN-koder. Din PIN-kod är låst fram till {time}. Försök igen då, eller be din chef att låsa upp den.",
+        "none": "Du har ingen kiosk-PIN-kod ännu. Be din chef om en.",
+        "notAssigned": "Du kan inte stämpla vid denna kiosk. Fråga din chef.",
+        "prompt": "Ange din kiosk-PIN-kod",
+        "rateLimited": "För många PIN-försök vid denna kiosk. Försök igen om {seconds} sekunder.",
+        "submit": "OK",
+        "wrong": "PIN-koden är inte korrekt. Försök igen."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Du är redan instämplad.",
+        "billing": "Stämpling är inte tillgänglig för din organisation just nu. Kontakta din administratör.",
+        "generic": "Det fungerade inte. Ingenting registrerades. Försök igen eller fråga din chef.",
+        "holiday": "Stämpling är blockerad idag på grund av en helgdag. Fråga din chef.",
+        "monthClosed": "Den här tiden är i en stängd månad och kan inte ändras. Fråga din chef.",
+        "noBreak": "Du är inte på rast.",
+        "notClockedIn": "Du är inte instämplad.",
+        "onBreak": "Du är redan på rast.",
+        "unconfirmed": "Kiosken kunde inte bekräfta om detta sparades. Kontrollera din status innan du försöker igen.",
+        "underReview": "Din tid för idag granskas. Fråga din chef."
+      },
+      "retry": "Försök igen",
+      "revoked": {
+        "description": "Denna kiosk kan inte längre användas för stämpling. Kontakta din administratör.",
+        "pairAgain": "Parkoppla med en ny kod",
+        "title": "Kiosk återkallad"
+      },
+      "state": {
+        "clockedIn": "Instämplad sedan {time}",
+        "clockedOut": "Inte instämplad",
+        "onBreak": "På rast sedan {time}"
+      },
+      "unreachableDescription": "Kiosken kan inte nå servern. Kontrollera nätverksanslutningen; stämpling fungerar endast online.",
+      "unreachableTitle": "Kiosk offline"
     },
     "manualEntry": {
       "addButton": "Lägg till manuell registrering",
@@ -198,6 +296,39 @@
     "noProject": "Inget projekt",
     "notesPlaceholder": "Vad har du arbetat med?",
     "notesSaved": "Anteckningar sparade",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "En frånvaroansökan för {dates} är oavgjord.",
+        "liveWork": "Arbete som påbörjades {start} pågår fortfarande.",
+        "manualWork": "Manuellt arbete den {start} är inte beslutat.",
+        "timeCorrection": "En tidskorrigering för arbete den {start} är inte beslutad."
+      },
+      "description": "Bekräfta att ditt arbete och din frånvaro för varje period är fullständiga och korrekta.",
+      "opensOn": "Du kan skicka in från och med {date}.",
+      "refusal": {
+        "alreadySubmitted": "Den här perioden har redan skickats in.",
+        "noApprover": "Ingen kan godkänna den här perioden ännu. Be en administratör att tilldela dig en chef.",
+        "notEnded": "Du kan skicka in den här perioden från och med dess sista dag.",
+        "notExpected": "Den här perioden behöver inte skickas in.",
+        "periodOpen": "Den här perioden är fortfarande öppen"
+      },
+      "rejectionReason": "Orsak: {reason}",
+      "status": {
+        "approved": "Godkänd",
+        "awaiting": "Väntar på att skickas in",
+        "rejected": "Avvisad",
+        "sentBack": "Skickades tillbaka efter en ändring",
+        "submitted": "Inskickad"
+      },
+      "submit": "Skicka in",
+      "submitFailed": "Perioden kunde inte skickas in",
+      "submitted": "Perioden har skickats in för godkännande",
+      "title": "Periodinskickningar",
+      "withdraw": "Återkalla",
+      "withdrawFailed": "Inskickningen kunde inte återkallas",
+      "withdrawn": "Inskickningen har återkallats",
+      "withdrawRefused": "Den här inskickningen har redan beslutats och kan inte längre återkallas."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Lägg till paus",

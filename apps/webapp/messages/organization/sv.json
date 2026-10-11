@@ -141,6 +141,17 @@
       "description": "Skicka en inbjudan att gå med i {organizationName}",
       "emailLabel": "E-postadress",
       "error": "Det gick inte att skicka inbjudan",
+      "kioskOnly": {
+        "description": "För personal utan företags-e-post. De kan inte logga in och stämplar endast vid kiosker med sin PIN-kod. Du kan lägga till en e-postadress senare.",
+        "firstName": "Förnamn",
+        "label": "Endast kiosk, ingen e-post",
+        "lastName": "Efternamn",
+        "locations": "Tilldelade platser",
+        "locationsDescription": "Kioskerna på dessa platser visar den anställde.",
+        "noLocations": "Inga aktiva platser ännu. Du kan tilldela platser senare.",
+        "submit": "Skapa anställd",
+        "success": "Anställd för endast kiosk skapad"
+      },
       "noTargetTeam": "Inget team",
       "roleDescriptions": {
         "admin": "Kan bjuda in medlemmar och hantera inställningar",
@@ -242,6 +253,41 @@
       "searchLabel": "Sök anställda",
       "searchPlaceholder": "Sök anställda…",
       "teamBadge": "Team"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Endast organisationens administratörer och ägare kan ändra dessa inställningar.",
+      "cadence": {
+        "label": "Inskickningsintervall",
+        "monthly": "Månadsvis",
+        "off": "Av",
+        "weekly": "Veckovis"
+      },
+      "description": "Be anställda att skicka in varje vecka eller månad för godkännande och bekräfta att deras arbete och frånvaro är fullständiga och korrekta.",
+      "help": "Perioder följer varje anställds tidszon och begränsas till deras anställning. Aktivering startar med den första hela perioden. En ändring träder i kraft vid nästa periodgräns som det gamla och nya intervallet delar, så en ändring mellan veckovis och månadsvis kan ta flera månader. Anställda påminns när en period slutar och igen efter de dagar som angetts här. Anställda som endast använder kiosk skickar inte in perioder.",
+      "invalidDelay": "Ange hela dagar från {min} till {max}.",
+      "save": "Spara ändringar",
+      "saved": "Inställningarna för periodinskickning har sparats",
+      "saveFailed": "Det gick inte att uppdatera inställningarna för periodinskickning",
+      "saving": "Sparar…",
+      "secondReminderDelay": "Dagar till den andra påminnelsen",
+      "title": "Periodinskickningar",
+      "upcoming": {
+        "monthly": "Månadsvisa perioder börjar den {date}.",
+        "off": "Inga perioder förväntas från {date}. Den aktuella perioden förväntas fortfarande.",
+        "untilMonthly": "Fram till dess fortsätter månatliga perioder.",
+        "untilWeekly": "Fram till dess fortsätter veckovisa perioder.",
+        "weekly": "Veckovisa perioder börjar {date}."
+      },
+      "weekday": {
+        "friday": "Fredag",
+        "monday": "Måndag",
+        "saturday": "Lördag",
+        "sunday": "Söndag",
+        "thursday": "Torsdag",
+        "tuesday": "Tisdag",
+        "wednesday": "Onsdag"
+      },
+      "weekStart": "Veckor börjar på"
     },
     "recover": {
       "button": "Återställ organisation",

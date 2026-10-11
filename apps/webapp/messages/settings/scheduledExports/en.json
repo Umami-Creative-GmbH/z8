@@ -16,6 +16,7 @@
       },
       "dataCategories": {
         "absences": "Absences",
+        "customers": "Customers",
         "employees": "Employees",
         "projects": "Projects",
         "timeEntries": "Time Entries",

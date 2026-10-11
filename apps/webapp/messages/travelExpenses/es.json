@@ -258,6 +258,28 @@
         "previous": "Anterior"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Confirmar como pagado",
+          "description": "¿Nómina pagó esta ejecución de {format}? Los informes de gastos dentro de tu alcance quedan registrados como reembolsados con ella. Tus propios informes y los informes fuera de tu alcance permanecerán en la ejecución.",
+          "descriptionCounted": "{count, plural, one {¿Nómina pagó esta ejecución de {format}? # informe de gastos dentro de tu alcance ({amount}) queda registrado como reembolsado con ella. Tus propios informes y los informes fuera de tu alcance permanecerán en la ejecución.} other {¿Nómina pagó esta ejecución de {format}? # informes de gastos dentro de tu alcance ({amount}) quedan registrados como reembolsados con ella. Tus propios informes y los informes fuera de tu alcance permanecerán en la ejecución.}}",
+          "failed": "No se pudo confirmar la ejecución de la nómina. Vuelve a intentarlo; nada se registrará dos veces.",
+          "outcome": {
+            "confirmed": "Reembolsado {amount}",
+            "confirmedWithRemainder": "Reembolsado {amount}. {remaining} aún espera el reembolso para la próxima ejecución.",
+            "outOfScope": "No confirmado: fuera de su ámbito. Permanece en el ciclo para el responsable que lo cubra.",
+            "overpaidByPayroll": "Reembolsado {amount}, {overpaid} más de lo que aún se adeudaba. El gasto ahora tiene un pago en exceso: registre la recuperación manualmente.",
+            "ownExpense": "No confirmado: gasto propio. Permanece en el ciclo para que otra persona lo confirme."
+          },
+          "payday": "Día de pago",
+          "paydayHint": "El día de pago en el que la nómina liquidó este ciclo. Cada reembolso de este ciclo se registra en él.",
+          "results": {
+            "nothing": "No quedó nada pendiente de confirmar en este ciclo. No se ha registrado ningún reembolso.",
+            "summary": "{confirmed} de {total} confirmados",
+            "title": "Resultados de la confirmación"
+          },
+          "submit": "Confirmar como pagado",
+          "title": "Confirmar el ciclo de nómina {period} como pagado"
+        },
         "included": "Incluido en {run}. Se paga con esa nómina y se registra como reembolsado cuando se confirma la ejecución.",
         "label": "Ejecución de nómina {period} ({format})",
         "notIncluded": "Ninguna ejecución de nómina incluye ya este gasto.",
@@ -266,6 +288,11 @@
         "removeDescription": "Quítelo solo si la nómina no lo pagará con esta ejecución, por ejemplo tras corregir el archivo de nómina. La eliminación se registra en el registro de auditoría.",
         "removeFailed": "No se pudo quitar el gasto de la ejecución de nómina.",
         "removeTitle": "¿Quitar este gasto de la ejecución de nómina?"
+      },
+      "payrollRuns": {
+        "description": "Estos ciclos de nómina incluyen notas de gastos pendientes de reembolso. Una vez que la nómina haya pagado un ciclo, confírmelo para registrar los reembolsos.",
+        "reports": "{count, plural, one {# nota de gastos para que la confirme, {amount}} other {# notas de gastos para que las confirme, {amount}}}",
+        "title": "Ciclos de nómina pendientes de confirmación"
       },
       "queue": {
         "description": "Abra un gasto para ver su liquidación y registrar un reembolso.",
@@ -452,6 +479,7 @@
         "newTrip": "Nuevo viaje"
       },
       "approvedBy": "Aprobado por {name} el {date}.",
+      "approvedByDeputy": "Aprobado por {name} (suplente de {actingForName}) el {date}.",
       "awaitingReview": "Pendiente de revisión.",
       "awaitingReviewer": "Pendiente de revisión por {name}.",
       "backToApprovals": "Volver a aprobaciones",
@@ -576,7 +604,9 @@
         "description": "Cada paso de este informe, los más antiguos primero. Las horas se muestran en UTC.",
         "detail": {
           "approvalRecorded": "Por {name}; a la espera de aprobación adicional.",
+          "approvalRecordedByDeputy": "Por {name} (suplente de {actingForName}); en espera de aprobación adicional.",
           "by": "Por {name}",
+          "byDeputy": "Por {name} (suplente de {actingForName})",
           "inCycle": "Envío {number} · {detail}",
           "selfApproved": "Nadie más pudo revisar este informe."
         },
@@ -843,6 +873,7 @@
         "verifying": "Comprobando el recibo…"
       },
       "rejectedBy": "Rechazado por {name}",
+      "rejectedByDeputy": "Rechazado por {name} (suplente de {actingForName})",
       "reopen": {
         "action": "Reabrir para corrección",
         "changed": "El informe cambió mientras tanto y no se reabrió. Revíselo de nuevo.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Monto aprobado pagado por el empleado",
       "entry": {
         "exportBatch": "De la exportación solicitada el {date}",
+        "payrollRun": "Reembolsado con la nómina {period}",
         "recordedBy": "Registrado por {name}, {date}",
         "recovery": "Recuperado {amount}",
         "reimbursement": "Pagado {amount}"

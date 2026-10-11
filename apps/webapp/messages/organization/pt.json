@@ -141,6 +141,17 @@
       "description": "Enviar um convite para participar de {organizationName}",
       "emailLabel": "Endereço de e-mail",
       "error": "Falha ao enviar convite",
+      "kioskOnly": {
+        "description": "Para colaboradores sem e-mail da empresa. Eles não podem fazer login e registram ponto apenas em quiosques usando o PIN. Você pode adicionar um e-mail mais tarde.",
+        "firstName": "Nome",
+        "label": "Apenas quiosque, sem e-mail",
+        "lastName": "Sobrenome",
+        "locations": "Locais atribuídos",
+        "locationsDescription": "Os quiosques nesses locais listam o colaborador.",
+        "noLocations": "Nenhum local ativo ainda. Você pode atribuir locais mais tarde.",
+        "submit": "Criar colaborador",
+        "success": "Colaborador apenas de quiosque criado"
+      },
       "noTargetTeam": "Sem equipe",
       "roleDescriptions": {
         "admin": "Pode convidar membros e gerenciar configurações",
@@ -242,6 +253,41 @@
       "searchLabel": "Pesquisar funcionários",
       "searchPlaceholder": "Pesquisar funcionários…",
       "teamBadge": "Equipe"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Apenas administradores e proprietários da organização podem alterar essas configurações.",
+      "cadence": {
+        "label": "Frequência de envio",
+        "monthly": "Mensal",
+        "off": "Desativado",
+        "weekly": "Semanal"
+      },
+      "description": "Solicite aos funcionários que enviem a cada semana ou mês para aprovação, confirmando que seu trabalho e suas ausências estão completos e corretos.",
+      "help": "Os períodos seguem o fuso horário de cada funcionário e são limitados ao período de trabalho. A ativação começa com o primeiro período completo. Uma alteração entra em vigor no próximo limite de período compartilhado entre a frequência antiga e a nova, portanto uma alteração entre semanal e mensal pode levar vários meses. Os funcionários são lembrados quando um período termina e novamente após os dias definidos aqui. Funcionários que usam apenas o quiosque não enviam períodos.",
+      "invalidDelay": "Insira dias inteiros de {min} a {max}.",
+      "save": "Salvar alterações",
+      "saved": "Configurações de envio de período salvas",
+      "saveFailed": "Falha ao atualizar as configurações de envio de período",
+      "saving": "Salvando…",
+      "secondReminderDelay": "Dias até o segundo lembrete",
+      "title": "Envios de período",
+      "upcoming": {
+        "monthly": "Os períodos mensais começam em {date}.",
+        "off": "Nenhum período é esperado a partir de {date}. O período atual ainda é esperado.",
+        "untilMonthly": "Até lá, os períodos mensais continuam.",
+        "untilWeekly": "Até lá, os períodos semanais continuam.",
+        "weekly": "Os períodos semanais começam em {date}."
+      },
+      "weekday": {
+        "friday": "Sexta-feira",
+        "monday": "Segunda-feira",
+        "saturday": "Sábado",
+        "sunday": "Domingo",
+        "thursday": "Quinta-feira",
+        "tuesday": "Terça-feira",
+        "wednesday": "Quarta-feira"
+      },
+      "weekStart": "As semanas começam em"
     },
     "recover": {
       "button": "Recuperar Organização",

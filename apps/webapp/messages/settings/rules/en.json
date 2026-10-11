@@ -15,9 +15,16 @@
       "createCategory": "Create Absence Category",
       "createCategoryButton": "Create Category",
       "deactivate": "Deactivate",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Time off taken against the work balance",
+          "name": "Time off in lieu"
+        }
+      },
       "deleteDescription": "Are you sure you want to delete \"{name}\"? Categories used by existing absences cannot be deleted and should be deactivated instead.",
       "deleteFailed": "Could not delete category",
       "deleteTitle": "Delete Absence Category",
+      "drawsOnWorkBalance": "Draws on work balance",
       "editCategory": "Edit \"{name}\"",
       "form": {
         "active": "Active",
@@ -26,11 +33,17 @@
         "colorHelp": "Calendar marker",
         "countsAgainstVacation": "Counts Against Vacation Balance",
         "countsAgainstVacationHelp": "Deduct approved days from the employee vacation allowance.",
+        "deputyRequired": "Deputy required",
+        "deputyRequiredHelp": "Every absence of this type must name a deputy who covers while the employee is away.",
+        "deputyRequiredSick": "Sick leave never requires a deputy.",
         "description": "Description",
         "descriptionHelp": "Optional guidance shown to admins and reviewers.",
         "descriptionPlaceholder": "e.g., Use for approved training or certification days…",
         "descriptionTranslation": "{locale} description",
         "descriptionTranslationPlaceholder": "Localized description",
+        "drawsOnWorkBalance": "Draws on Work Balance",
+        "drawsOnWorkBalanceConflict": "\"Draws on work balance\" cannot be combined with \"Counts against vacation\" or \"Requires work time\".",
+        "drawsOnWorkBalanceHelp": "Time off in lieu: approved days keep their required time, so the employee's work balance falls by it. Vacation is not used.",
         "name": "Name",
         "nameHelp": "Use a clear label employees and approvers will recognize.",
         "nameMaxLength": "Use 100 characters or fewer",
@@ -46,7 +59,8 @@
         "translationsHelp": "Optional localized labels for employees using another app language.",
         "type": "Type",
         "typeHelp": "Groups reports and downstream absence workflows.",
-        "typePlaceholder": "Select category type"
+        "typePlaceholder": "Select category type",
+        "typeTimeOffInLieu": "Time Off in Lieu"
       },
       "header": {
         "approval": "Approval",
@@ -72,6 +86,7 @@
         "parental": "Parental Leave",
         "personal": "Personal",
         "sick": "Sick Leave",
+        "timeOffInLieu": "Time Off in Lieu",
         "unpaid": "Unpaid",
         "vacation": "Vacation"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Some active channels had escalations turned off. They still do not deliver escalation messages.",
         "inactiveSourceEnabled": "Some inactive channels had escalations turned on. They did not count toward the policy.",
         "invalidTimeout": "A channel had an invalid timeout and was not used for the response window."
+      },
+      "deputyDecisions": {
+        "description": "Employees name a deputy on their absences. While an approver is on an approved absence, their deputy can see and decide the approvals still assigned to them.",
+        "disabled": "Deputies can no longer decide approvals. They stay contacts.",
+        "enabled": "Deputies can now decide approvals while the approver is away.",
+        "help": "Only deputies who can use the approval inbox decide, and only on the approver's absence days. The approver keeps their approvals. When this is off, deputies are contacts only.",
+        "title": "Deputies",
+        "toggle": "Deputies can decide approvals"
       },
       "description": "Review the organization escalation policy, how it was migrated from channel settings, and conditions that need an approval manager.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Absence",
         "complianceException": "Compliance exception",
         "manualTimeSubmission": "Manual time submission",
+        "periodSubmission": "Period submission",
         "policyClockOut": "Policy clock-out",
         "shiftRequest": "Shift request",
         "timeCorrection": "Time correction",

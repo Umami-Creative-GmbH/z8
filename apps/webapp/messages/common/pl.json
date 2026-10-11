@@ -143,6 +143,17 @@
       "upgrade": "Uaktualnij"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Zamknij ten miesiąc",
+    "status": {
+      "closed": "Zamknięty",
+      "open": "Otwarty",
+      "partlyClosed": "Częściowo zamknięty ({closed} z {total})"
+    },
+    "stripLabel": "Zamknięte miesiące",
+    "unclosedDescription": "Czas pracy i nieobecności w tych miesiącach mogą nadal ulec zmianie po wyeksportowaniu. Zamknij miesiąc, gdy płace zostaną ostatecznie rozliczone.",
+    "unclosedTitle": "Nie każdy miesiąc w tym zakresie jest zamknięty"
+  },
   "colors": {
     "blue": "Niebieski",
     "green": "Zielony",
@@ -219,6 +230,9 @@
     "enabled": "Włączone",
     "error": "Błąd",
     "error-occurred": "Wystąpił błąd",
+    "errors": {
+      "monthClosed": "Miesiąc {month} jest zamknięty. Należy go otworzyć ponownie, zanim będzie można zmienić czas pracy lub nieobecności."
+    },
     "fieldPresets": "Ustawienia wstępne {label}",
     "focusInput": "Aktywuj pole",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Uzyskaj pomoc",
     "my-documents": "Moje dokumenty",
     "my-requests": "Moje wnioski",
+    "my-schedule": "Mój harmonogram",
     "org-explorer": "Eksplorator organizacji",
     "payroll": "Płace",
     "personnel-files": "Akta osobowe",
@@ -588,6 +603,8 @@
     "team": "Zespół",
     "teamAbsences": "Nieobecności zespołu",
     "team-label": "Zespół",
+    "teamPeriodSubmissions": "Zgłoszenia okresów",
+    "teamPresence": "Kto jest obecny",
     "time-tracking": "Rejestracja czasu pracy",
     "today": "Dzisiaj",
     "travel-expenses": "Wydatki podróżne",
@@ -603,6 +620,27 @@
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Zastępujesz użytkownika {name} ({dateRange}).",
+        "title": "Jesteś zastępcą na czas nieobecności"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Twoje zastępstwo za użytkownika {name} obejmuje teraz {dateRange}.",
+        "title": "Zmieniono daty zastępstwa na czas nieobecności"
+      },
+      "absenceDeputyReminder": {
+        "message": "Od jutra zastępujesz użytkownika {name} do {untilDate}.",
+        "title": "Zastępstwo na czas nieobecności rozpoczyna się jutro"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Już nie zastępujesz użytkownika {name} ({dateRange}).",
+        "title": "Nie jesteś już zastępcą na czas nieobecności"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} nie jest już dostępny(-a) jako zastępca na czas nieobecności pracownika {employeeName} od {startDate} do {endDate}.",
+        "message": "{deputyName} nie jest już dostępny(-a) jako zastępca na czas Twojej nieobecności od {startDate} do {endDate}.",
+        "title": "Zastępca nie jest już dostępny"
+      },
       "absenceRecorded": {
         "message": "{managerName} zarejestrował(a) {absenceType} dla {dateRange} w Twoim imieniu.",
         "title": "Zarejestrowano nieobecność"
@@ -614,9 +652,36 @@
         "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
         "title": "Wniosek o nieobecność wysłany"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Podczas Twojej nieobecności {name} rozpatrzył(a) # zatwierdzenie.} few {Podczas Twojej nieobecności {name} rozpatrzył(a) # zatwierdzenia.} other {Podczas Twojej nieobecności {name} rozpatrzył(a) # zatwierdzeń.} }",
+        "title": "Rozpatrzone podczas Twojej nieobecności"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Zastępujesz użytkownika {name} w zatwierdzeniach: nic jeszcze nie czeka.} one {Zastępujesz użytkownika {name} w zatwierdzeniach: # oczekujące.} few {Zastępujesz użytkownika {name} w zatwierdzeniach: # oczekujące.} other {Zastępujesz użytkownika {name} w zatwierdzeniach: # oczekujących.} }",
+        "title": "Zastępujesz w zatwierdzeniach"
+      },
       "automaticClockOut": {
+        "breakMessage": "Automatycznie zarejestrowano Twoje wyjście na początku przerwy o {cutoff} ({timezone}), ponieważ przerwa nie została zakończona w określonym przez Twoją organizację limicie {duration} minut.",
         "message": "Automatycznie zarejestrowano wyjście po {duration} minutach nieprzerwanej pracy o {cutoff} ({timezone}), ponieważ osiągnięto limit czasu w Twojej organizacji.",
         "title": "Automatycznie zarejestrowano wyjście"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Saldo początkowe w wysokości {amount} dla {dateRange} zostało anulowane. Powód: {reason}",
+          "title": "Anulowano saldo początkowe"
+        },
+        "openingBalanceRecorded": {
+          "message": "Saldo początkowe w wysokości {amount} dla {dateRange} zostało zarejestrowane w Twoim saldzie czasu pracy.",
+          "title": "Zarejestrowano saldo początkowe"
+        },
+        "payoutCancelled": {
+          "message": "Wypłata za nadgodziny w wysokości {amount} dla {dateRange} została anulowana. Powód: {reason}",
+          "title": "Anulowano wypłatę za nadgodziny"
+        },
+        "payoutRecorded": {
+          "message": "Wypłata za nadgodziny w wysokości {amount} dla {dateRange} została zarejestrowana w Twoim saldzie czasu pracy.",
+          "title": "Zarejestrowano wypłatę za nadgodziny"
+        }
       },
       "breakDueReminder": {
         "message": "Twoja przerwa przypada na {breakTime} ({timezone}). Wykorzystaj przerwę do tego czasu, aby przestrzegać zasad dotyczących przerw w pracy.",
@@ -638,12 +703,48 @@
         "message": "Twoja zmiana rozpoczęła się o {startTime} ({timezone}). Zarejestruj wejście, jeśli pracujesz.",
         "title": "Nie masz jeszcze zarejestrowanego wejścia"
       },
+      "monthCloseBlocked": {
+        "message": "Miesiąc {month} nie został zamknięty automatycznie. Nierozpatrzone wnioski o nieobecność: {absenceRequests}. Nierozpatrzone wnioski o czas pracy: {timeRequests}. Trwająca praca: {liveWork}. Miesiąc jeszcze się nie zakończył: {notEnded}. Pracownicy: {employees}. Ponowna próba nastąpi jutro.",
+        "title": "Nie udało się zamknąć miesiąca"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, one {{month} został zamknięty automatycznie dla # pracownika. Czas pracy i nieobecności nie mogą już ulec zmianie, chyba że zostanie otwarty ponownie.} other {{month} został zamknięty automatycznie dla # pracowników. Czas pracy i nieobecności nie mogą już ulec zmianie, chyba że zostanie otwarty ponownie.}}",
+        "title": "Miesiąc zamknięty"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} został ponownie otwarty dla jednego z Twoich pracowników: {reason}} other {{month} został ponownie otwarty dla # z Twoich pracowników: {reason}}}",
+        "title": "Miesiąc ponownie otwarty"
+      },
       "newAbsenceRequest": {
         "title": "Nowy wniosek o nieobecność"
       },
       "passwordChanged": {
         "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
         "title": "Hasło zmienione"
+      },
+      "periodSubmissionApproved": {
+        "message": "Twój czas pracy za okres {startDate} – {endDate} został zatwierdzony.",
+        "title": "Twój czas pracy został zatwierdzony"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Twój czas pracy za okres {startDate} – {endDate} zmienił się po zatwierdzeniu. Przejrzyj swój czas pracy i prześlij go ponownie.",
+        "title": "Twój zatwierdzony czas pracy jest nieaktualny"
+      },
+      "periodSubmissionRejected": {
+        "message": "Twój czas pracy za okres {startDate} – {endDate} został odrzucony: {reason}. Przejrzyj swój czas pracy i prześlij go ponownie.",
+        "title": "Twój czas pracy został odrzucony"
+      },
+      "periodSubmissionReminder": {
+        "message": "Twój okres {startDate} – {endDate} zakończył się. Sprawdź swój czas pracy i prześlij go do zatwierdzenia.",
+        "title": "Prześlij czas pracy do zatwierdzenia"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Twój okres {startDate} – {endDate} nadal nie został przesłany. Sprawdź swój czas pracy i prześlij go do zatwierdzenia.",
+        "title": "Twój czas pracy nadal nie został przesłany"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Twój czas pracy w okresie {startDate} – {endDate} zmienił się po przesłaniu, dlatego zgłoszenie zostało wycofane. Sprawdź swój czas pracy i prześlij go ponownie.",
+        "title": "Prześlij czas pracy ponownie"
       },
       "personnelFileDocumentShared": {
         "message": "Dokument \"{title}\" został Ci udostępniony.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} przesłał(a) certyfikat",
         "other": "{name} przesłał(a) dokument",
+        "sickNote": "{name} przesłał(a) zwolnienie lekarskie za okres {dateRange}",
+        "sickNoteOnBehalf": "{uploader} przesłał(a) zwolnienie lekarskie dla {name}, {dateRange}",
         "title": "Nowy dokument w aktach osobowych"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
         "title": "Usunięto z zespołu"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Pracownicy mogą teraz odbierać czas wolny z salda czasu pracy. Nowa kategoria nieobecności pozostanie nieaktywna do momentu włączenia jej w ustawieniach nieobecności.",
+        "title": "Odbiór nadgodzin jest dostępny"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Zatwierdzona korekta zwiększyła kwotę należną w raporcie wydatków {report} pracownika {employee}. Oczekuje na zwrot: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "Raport wydatków {report} pracownika {employee} nie jest rozliczany za pośrednictwem listy płac. Oczekuje na zwrot: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "Zwrócono {amount} {currency} z Twoich wydatków na podróż (numer referencyjny płatności: {reference}). {remaining} {remainingCurrency} nadal oczekuje na zwrot.",
         "title": "Wydatek częściowo zwrócony"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "Kwota {amount} {currency} z Twoich kosztów podróży została zwrócona na liście płac {period}. Kwota {remaining} {remainingCurrency} nadal oczekuje na zwrot."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Lista płac {period} ({format}) oczekuje na Twoje potwierdzenie. Raporty w Twoim zakresie: {count}.",
+        "title": "Lista płac oczekująca na potwierdzenie"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "Raport wydatków {report} pracownika {employee} został zatwierdzony. Oczekuje na zwrot: {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Twój wydatek na podróż został w pełni zwrócony: {amount} {currency}, numer referencyjny płatności {reference}.",
         "title": "Wydatek zwrócony"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Twoje koszty podróży zostały w całości zwrócone na liście płac {period}: {amount} {currency}."
       }
     },
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
@@ -728,6 +848,42 @@
       "ariaLabel": "Filtruj powiadomienia według statusu odczytu",
       "read": "Przeczytane",
       "unread": "Nieprzeczytane"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Coś wymaga Twojej uwagi"
+      },
+      "body": "Otwórz Z8, aby zobaczyć szczegóły.",
+      "document": {
+        "title": "Wiadomości dotyczące Twoich dokumentów"
+      },
+      "project": {
+        "title": "Wiadomości dotyczące projektu"
+      },
+      "reminder": {
+        "title": "Przypomnienie od Z8"
+      },
+      "requestUpdate": {
+        "title": "Twój wniosek został zaktualizowany"
+      },
+      "review": {
+        "title": "Masz wniosek do rozpatrzenia"
+      },
+      "schedule": {
+        "title": "Twój harmonogram uległ zmianie"
+      },
+      "security": {
+        "title": "Powiadomienie o bezpieczeństwie Twojego konta"
+      },
+      "team": {
+        "title": "Twoje zespoły uległy zmianie"
+      },
+      "travelExpense": {
+        "title": "Wiadomości dotyczące Twoich kosztów podróży"
+      },
+      "workingTime": {
+        "title": "Aktualności dotyczące Twojego czasu pracy"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +925,21 @@
       },
       "toggleAria": "Powiadomienia {channel} dla {type}",
       "types": {
+        "absence_deputy_assigned": "Wyznaczono Cię na zastępcę na czas nieobecności",
+        "absence_deputy_dates_changed": "Zmieniono daty zastępstwa na czas nieobecności",
+        "absence_deputy_reminder": "Zastępstwo na czas nieobecności rozpoczyna się jutro",
+        "absence_deputy_removed": "Nie jesteś już zastępcą na czas nieobecności",
+        "absence_deputy_unavailable": "Zastępca nie jest już dostępny",
+        "approval_cover_return_summary": "Rozpatrzone przez Twojego zastępcę",
+        "approval_cover_started": "Rozpoczęto zastępstwo",
         "break_due_reminder": "Czas na przerwę",
         "forgotten_clock_out_reminder": "Zapomniana rejestracja wyjścia",
-        "missed_clock_in_reminder": "Brak rejestracji wejścia"
+        "missed_clock_in_reminder": "Brak rejestracji wejścia",
+        "period_submission_decided": "Przesłany czas pracy zatwierdzony lub odrzucony",
+        "period_submission_reminder": "Prześlij czas pracy",
+        "period_submission_sent_back": "Czas pracy odesłany po wprowadzeniu zmiany",
+        "work_balance_adjustment_cancelled": "Anulowano korektę salda",
+        "work_balance_adjustment_recorded": "Zarejestrowano korektę salda"
       },
       "updateFailed": "Nie udało się zaktualizować preferencji"
     },
@@ -858,7 +1026,8 @@
       "relativeMinutes": "od {minutes} min"
     },
     "clockedIn": "Rozpoczęto pracę",
-    "clockedOut": "Zakończono pracę"
+    "clockedOut": "Zakończono pracę",
+    "onBreak": "Na przerwie"
   },
   "rateLimit": {
     "countdownLabel": "sekund do ponowienia próby",
@@ -877,6 +1046,12 @@
   "status": {
     "active": "Aktywny",
     "inactive": "Nieaktywny"
+  },
+  "storeAppBanner": {
+    "description": "Otrzymuj przypomnienia i powiadomienia o zatwierdzeniach w aplikacji.",
+    "dismiss": "Odrzuć sugestię aplikacji",
+    "getApp": "Pobierz aplikację",
+    "title": "Z8 na Twój telefon"
   },
   "table": {
     "clearFilters": "Wyczyść filtry",
@@ -955,6 +1130,24 @@
     "pronounsMaxLength": "Zaimki mogą mieć maksymalnie 50 znaków"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Anuluj",
+      "cancelled": "Anulowano",
+      "cancelledBy": "Anulowane przez: {name} w dniu {date}: {reason}",
+      "description": "Wypłaty za nadgodziny i bilanse otwarcia w tym saldzie pracy. Błędny wpis jest anulowany, a nie usuwany, dlatego anulowane pozycje pozostają na liście.",
+      "empty": "Brak korekt salda.",
+      "kind": {
+        "openingBalance": "Bilans otwarcia",
+        "overtimePayout": "Wypłata za nadgodziny"
+      },
+      "loadFailed": "Nie udało się załadować korekt salda.",
+      "loading": "Wczytywanie korekt salda",
+      "notPermitted": "Możesz przeglądać korekty salda swoje oraz zarządzanych pracowników.",
+      "open": "Korekty salda",
+      "recordedBy": "Zarejestrowane przez: {name} w dniu {date}",
+      "title": "Korekty salda",
+      "unknownUser": "usunięty użytkownik"
+    },
     "label": "Bilans całkowity",
     "notCalculated": "Jeszcze nie obliczono",
     "pendingDescription": "Pracownik wkrótce obliczy ten bilans.",

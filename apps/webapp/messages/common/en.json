@@ -143,6 +143,17 @@
       "upgrade": "Upgrade"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Close this month",
+    "status": {
+      "closed": "Closed",
+      "open": "Open",
+      "partlyClosed": "Partly closed ({closed} of {total})"
+    },
+    "stripLabel": "Closed months",
+    "unclosedDescription": "Work and absences in these months can still change after the export. Close a month once its payroll is final.",
+    "unclosedTitle": "Not every month in this range is closed"
+  },
   "colors": {
     "blue": "Blue",
     "green": "Green",
@@ -219,6 +230,9 @@
     "enabled": "Enabled",
     "error": "Error",
     "error-occurred": "An error occurred",
+    "errors": {
+      "monthClosed": "{month} is closed. It must be reopened before its work or absences can change."
+    },
     "fieldPresets": "{label} presets",
     "focusInput": "Focus input",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Get Help",
     "my-documents": "My Documents",
     "my-requests": "My Requests",
+    "my-schedule": "My Schedule",
     "org-explorer": "Org Explorer",
     "payroll": "Payroll",
     "personnel-files": "Personnel Files",
@@ -588,6 +603,8 @@
     "team": "Team",
     "teamAbsences": "Team Absences",
     "team-label": "Team",
+    "teamPeriodSubmissions": "Period Submissions",
+    "teamPresence": "Who Is In",
     "time-tracking": "Time Tracking",
     "today": "Today",
     "travel-expenses": "Travel Expenses",
@@ -603,6 +620,27 @@
       "viewAll": "View all notifications"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "You're covering for {name} ({dateRange}).",
+        "title": "You're an absence deputy"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Your cover for {name} now runs {dateRange}.",
+        "title": "Absence deputy dates changed"
+      },
+      "absenceDeputyReminder": {
+        "message": "From tomorrow you're covering for {name} until {untilDate}.",
+        "title": "Absence cover starts tomorrow"
+      },
+      "absenceDeputyRemoved": {
+        "message": "You no longer cover for {name} ({dateRange}).",
+        "title": "You're no longer an absence deputy"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} is no longer available as deputy for {employeeName}'s absence from {startDate} to {endDate}.",
+        "message": "{deputyName} is no longer available as deputy for your absence from {startDate} to {endDate}.",
+        "title": "Deputy no longer available"
+      },
       "absenceRecorded": {
         "message": "{managerName} recorded {absenceType} for {dateRange} on your behalf.",
         "title": "Absence recorded"
@@ -614,9 +652,36 @@
         "message": "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
         "title": "Absence request submitted"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {While you were away, {name} decided # approval.} other {While you were away, {name} decided # approvals.}}",
+        "title": "Decided while you were away"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {You're covering {name}'s approvals: nothing waiting yet.} other {You're covering {name}'s approvals: # waiting.}}",
+        "title": "You're covering approvals"
+      },
       "automaticClockOut": {
+        "breakMessage": "You were automatically clocked out at the start of your break at {cutoff} ({timezone}) because the break was not ended within your organization's time limit of {duration} minutes.",
         "message": "You were automatically clocked out after {duration} minutes of uninterrupted work at {cutoff} ({timezone}) because your organization's time limit was reached.",
         "title": "Automatically clocked out"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "The opening balance of {amount} for {dateRange} was cancelled. Reason: {reason}",
+          "title": "Opening balance cancelled"
+        },
+        "openingBalanceRecorded": {
+          "message": "An opening balance of {amount} for {dateRange} was recorded on your work balance.",
+          "title": "Opening balance recorded"
+        },
+        "payoutCancelled": {
+          "message": "The overtime payout of {amount} for {dateRange} was cancelled. Reason: {reason}",
+          "title": "Overtime payout cancelled"
+        },
+        "payoutRecorded": {
+          "message": "An overtime payout of {amount} for {dateRange} was recorded on your work balance.",
+          "title": "Overtime payout recorded"
+        }
       },
       "breakDueReminder": {
         "message": "Your break is due at {breakTime} ({timezone}). Take a break by then to follow your work policy's break rules.",
@@ -638,12 +703,48 @@
         "message": "Your shift started at {startTime} ({timezone}). Clock in if you are working.",
         "title": "You have not clocked in yet"
       },
+      "monthCloseBlocked": {
+        "message": "{month} was not closed automatically. Undecided absence requests: {absenceRequests}. Undecided time requests: {timeRequests}. Work still running: {liveWork}. Month not yet ended: {notEnded}. Employees: {employees}. It will be tried again tomorrow.",
+        "title": "Month could not be closed"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, one {{month} was closed automatically for # employee. Its work and absences can no longer change unless it is reopened.} other {{month} was closed automatically for # employees. Its work and absences can no longer change unless it is reopened.}}",
+        "title": "Month closed"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} was reopened for one of your employees: {reason}} other {{month} was reopened for # of your employees: {reason}}}",
+        "title": "Month reopened"
+      },
       "newAbsenceRequest": {
         "title": "New absence request"
       },
       "passwordChanged": {
         "message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
         "title": "Password changed"
+      },
+      "periodSubmissionApproved": {
+        "message": "Your time for {startDate} – {endDate} was approved.",
+        "title": "Your time was approved"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Your time for {startDate} – {endDate} changed after it was approved. Review your time and submit it again.",
+        "title": "Your approved time is out of date"
+      },
+      "periodSubmissionRejected": {
+        "message": "Your time for {startDate} – {endDate} was rejected: {reason}. Review your time and submit it again.",
+        "title": "Your time was rejected"
+      },
+      "periodSubmissionReminder": {
+        "message": "Your period {startDate} – {endDate} has ended. Review your time and submit it for approval.",
+        "title": "Submit your time for approval"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Your period {startDate} – {endDate} is still not submitted. Review your time and submit it for approval.",
+        "title": "Your time is still not submitted"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Your time for {startDate} – {endDate} changed after you submitted it, so the submission was withdrawn. Review your time and submit it again.",
+        "title": "Submit your time again"
       },
       "personnelFileDocumentShared": {
         "message": "The document \"{title}\" was shared with you.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} uploaded a certificate",
         "other": "{name} uploaded a document",
+        "sickNote": "{name} uploaded a sick note for {dateRange}",
+        "sickNoteOnBehalf": "{uploader} uploaded a sick note for {name}, {dateRange}",
         "title": "New document in a personnel file"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "You have been removed from the {teamName} team by {performedByName}.",
         "title": "Removed from team"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Employees can now take time off against their work balance. The new absence category stays inactive until you turn it on in the absence settings.",
+        "title": "Time off in lieu is available"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "An approved adjustment raised what is owed on {employee}'s expense report {report}. Awaiting reimbursement: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "{employee}'s expense report {report} isn't reimbursed through a payroll run. Awaiting reimbursement: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} of your travel expense has been reimbursed (payment reference {reference}). {remaining} {remainingCurrency} is still awaiting reimbursement.",
         "title": "Expense partially reimbursed"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} of your travel expense has been reimbursed with payroll {period}. {remaining} {remainingCurrency} is still awaiting reimbursement."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Payroll run {period} ({format}) is waiting for your confirmation. Reports in your scope: {count}.",
+        "title": "Payroll run awaiting confirmation"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "{employee}'s expense report {report} is approved. Awaiting reimbursement: {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Your travel expense has been fully reimbursed: {amount} {currency}, payment reference {reference}.",
         "title": "Expense reimbursed"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Your travel expense has been fully reimbursed with payroll {period}: {amount} {currency}."
       }
     },
     "description": "Review updates, approvals, and system alerts in one timeline.",
@@ -805,9 +925,21 @@
       },
       "toggleAria": "{channel} notifications for {type}",
       "types": {
+        "absence_deputy_assigned": "Named as absence deputy",
+        "absence_deputy_dates_changed": "Absence deputy dates changed",
+        "absence_deputy_reminder": "Absence cover starts tomorrow",
+        "absence_deputy_removed": "No longer absence deputy",
+        "absence_deputy_unavailable": "Deputy no longer available",
+        "approval_cover_return_summary": "Decided by your deputy",
+        "approval_cover_started": "Absence cover started",
         "break_due_reminder": "Break due",
         "forgotten_clock_out_reminder": "Forgotten clock-out",
-        "missed_clock_in_reminder": "Missed clock-in"
+        "missed_clock_in_reminder": "Missed clock-in",
+        "period_submission_decided": "Submitted time approved or rejected",
+        "period_submission_reminder": "Submit your time",
+        "period_submission_sent_back": "Time sent back after a change",
+        "work_balance_adjustment_cancelled": "Balance adjustment cancelled",
+        "work_balance_adjustment_recorded": "Balance adjustment recorded"
       },
       "updateFailed": "Failed to update preference"
     },
@@ -894,7 +1026,8 @@
       "relativeMinutes": "since {minutes}min"
     },
     "clockedIn": "Clocked in",
-    "clockedOut": "Clocked out"
+    "clockedOut": "Clocked out",
+    "onBreak": "On break"
   },
   "rateLimit": {
     "countdownLabel": "seconds until you can retry",
@@ -915,10 +1048,10 @@
     "inactive": "Inactive"
   },
   "storeAppBanner": {
-    "title": "Z8 for your phone",
     "description": "Get reminders and approval notifications in the app.",
+    "dismiss": "Dismiss app suggestion",
     "getApp": "Get the app",
-    "dismiss": "Dismiss app suggestion"
+    "title": "Z8 for your phone"
   },
   "table": {
     "clearFilters": "Clear filters",
@@ -997,6 +1130,24 @@
     "pronounsMaxLength": "Pronouns must be 50 characters or less"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Cancel",
+      "cancelled": "Cancelled",
+      "cancelledBy": "Cancelled by {name} on {date}: {reason}",
+      "description": "Overtime payouts and opening balances on this work balance. A mistaken one is cancelled, never deleted, so cancelled ones stay listed.",
+      "empty": "No balance adjustments yet.",
+      "kind": {
+        "openingBalance": "Opening balance",
+        "overtimePayout": "Overtime payout"
+      },
+      "loadFailed": "The balance adjustments could not be loaded.",
+      "loading": "Loading balance adjustments",
+      "notPermitted": "You can see the balance adjustments of yourself and of employees you manage.",
+      "open": "Balance adjustments",
+      "recordedBy": "Recorded by {name} on {date}",
+      "title": "Balance adjustments",
+      "unknownUser": "a deleted user"
+    },
     "label": "All-time balance",
     "notCalculated": "Not calculated yet",
     "pendingDescription": "The worker will calculate this balance soon.",

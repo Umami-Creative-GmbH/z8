@@ -168,6 +168,16 @@
       "policyUpdated": "Politika başarıyla güncellendi",
       "required": "Zorunlu",
       "saveFailed": "Politika kaydedilemedi",
+      "sickNotes": {
+        "description": "Hastalık raporları çalışanın özlük dosyasında saklanır. Onaylayanlar ve yöneticiler yalnızca bir raporun eklenmiş olduğunu görür.",
+        "disabled": "Çalışanlar artık hastalık raporu ekleyemez",
+        "enabled": "Çalışanlar artık hastalık raporu ekleyebilir",
+        "help": "Çalışanlar, hastalık raporlarının fotoğraflarını veya PDF'lerini kendi hastalık izinlerine ekler. Almanya'da işverenler elektronik hastalık raporunu (eAU) sağlık sigortası kurumlarından alır; bu nedenle fotoğraflar çoğunlukla özel sigorta, mini-job'lar, Avusturya ve İsviçre ile çocuk hastalık raporları için geçerlidir.",
+        "openOrganizationSettings": "Kuruluş ayarlarını aç",
+        "personnelFilesRequired": "Hastalık raporları özlük dosyalarında saklanır. Önce kuruluş ayarlarından özlük dosyalarını etkinleştirin.",
+        "title": "Hastalık raporları",
+        "toggle": "Çalışanlar hastalık raporu ekleyebilir"
+      },
       "since": "itibaren",
       "startingOn": "başlangıç tarihi",
       "tab": {

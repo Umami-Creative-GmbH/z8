@@ -24,6 +24,31 @@
       "nextYear": "Nächsts Jahr",
       "previousYear": "Vorherigs Jahr"
     },
+    "deputy": {
+      "away": "Abwesend {dates}",
+      "awayOption": "{name} · Abwesend {dates}",
+      "awayWarning": "{name} isch während däne Date abwesend. Du chasch d Person trotzdem uswähle.",
+      "changeAction": "Stellvertretig ändere",
+      "changed": "Stellvertretig gspeicheret",
+      "changeDescription": "D Stellvertretig übernimmt, während du abwesend bisch. Si z ändere bruucht käi neui Gnähmigung.",
+      "changeDescriptionFor": "D Stellvertretig übernimmt, während {name} abwesend isch. Si z ändere bruucht käi neui Gnähmigung.",
+      "changeFailed": "D Stellvertretig hät nöd chönne gspeicheret wärde",
+      "changeTitle": "Stellvertretig ändere",
+      "contactOnly": "{name} wird nur als Kontakt aazeigt und cha nöd über Gnähmigunge entscheide.",
+      "errors": {
+        "ended": "D Stellvertretig cha nümme gänderet wärde: Die Abwäseheit isch verbii.",
+        "required": "Wähl e Stellvertretig uus: Dä Abwäseheitstyp bruucht eini.",
+        "self": "En Mitarbeiter cha nöd syni eigeti Stellvertretig sii.",
+        "unavailable": "D Stellvertretig muess en aktive Mitarbeiter vo dere Organisation sii."
+      },
+      "help": "Dä Kolleg oder die Kollegin, wo übernimmt, während du abwesend bisch. Si wärded nöd gfragt, zum zuestimme.",
+      "label": "Stellvertretig",
+      "labelOptional": "Stellvertretig (optional)",
+      "labelRequired": "Stellvertretung *",
+      "none": "Keine Stellvertretung",
+      "placeholder": "Stellvertretung auswählen…",
+      "save": "Stellvertretung speichern"
+    },
     "dialog": {
       "cancelDescription": "Bischt du sicher, dass du dä Abweseheitsatrag storniere wotsch? Die Aktion chan nöd rückgängig gmacht wärde.",
       "cancelTitle": "Abweseheitsatrag storniere",
@@ -36,10 +61,10 @@
     },
     "featureName": "Abweseheite verwalte",
     "form": {
+      "absenceDays": "Abwesenheitstage:",
       "absenceType": "Abweseheitsart *",
       "autoApproved": "(Automatisch gnämigt)",
       "balanceAfterRequest": "Guthabe nach em Antrag:",
-      "businessDays": "Arbeitstäg:",
       "daysRemaining": "Verblibendi Täg:",
       "description": "Reich en Antrag für Ziit ab. Din Vorgesetzte wird zur Gnähmigung benachrichtigt.",
       "duration": "Absenzduur",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Kei Risiko bi de Besetzig",
       "noCoverageRulesConfigured": "Kei Besetzigsregle für die betroffene Schichte konfiguriert",
       "noHolidays": "Kei Fiirtig im Zytruum zuegwiise",
+      "noWorkingDays": "Dieser Bereich enthält keine Arbeitstage.",
       "remainingAfter": "Verblibend nach Aafrog",
       "requested": "Aagfröget",
       "title": "Smart Planner",
-      "unavailable": "Planigsvorschau nöd verfüegbar. Ihr chönd d'Aafrog trotzdem absche."
+      "unavailable": "Planigsvorschau nöd verfüegbar. Ihr chönd d'Aafrog trotzdem absche.",
+      "workBalance": "Arbeitszeitsaldo",
+      "workBalanceAfter": "Nach Antrag",
+      "workBalanceCurrent": "Aktuell",
+      "workBalanceDrawn": "Durch Antrag bezogen",
+      "workBalanceNegative": "Ihr Arbeitszeitsaldo wäre nach diesem Antrag negativ. Sie können ihn trotzdem einreichen."
     },
     "requestAbsence": "Abweseheit aafordere",
+    "sickNotes": {
+      "attachAction": "Chrankmäldig aahänke",
+      "attach": {
+        "defaultTitle": "Chrankmäldig {dateRange}",
+        "description": "Füeg Föteli oder PDFs vo dinere Chrankmäldig dezue: PDF-, JPEG-, PNG- oder WebP-Dateie mit maximal je 20 MB. Jedi Datei wird als eigeti Chrankmäldig in dim Personaldossier gspycheret.",
+        "documentDate": "Dokumäntedatum",
+        "failed": "Uffelade fählgschlage",
+        "fileRequired": "Wähl mindestens ei Datei us.",
+        "officerDescription": "Fotos oder PDFs des Arztzeugnisses hinzufügen: PDF-, JPEG-, PNG- oder WebP-Dateien mit jeweils bis zu 20 MB. Jede Datei wird als eigenes Arztzeugnis im Personaldossier des Mitarbeitenden gespeichert.",
+        "progress": "Fortschritt bim Uffelade",
+        "progressCount": "{done} vo {total} uffeglade",
+        "share": "Mit dem Mitarbeitenden teilen",
+        "sharedNote": "Du gsehsch dini Chrankmäldige under «Mini Dokumänt» und bi dere Abwäseheit. D Gnähmigungsperson gseht nur, dass e Chrankmäldig aaghängt isch. Du chasch e Chrankmäldig innerhalb vo 24 Stunde nach em Uffelade lösche.",
+        "shareHint": "Aus: Nur HR, der Mitarbeitende sieht nur, dass ein Arztzeugnis angehängt ist. Ein: Der Mitarbeitende sieht es unter «Meine Dokumente».",
+        "submit": "Aahänke",
+        "success": "{count, plural, one {Chrankmäldig aaghängt} other {# Chrankmäldige aaghängt}}",
+        "title": "Chrankmäldig aahänke",
+        "titleLabel": "Titel"
+      },
+      "files": {
+        "chooseFiles": "Dateien auswählen",
+        "defaultTitleUndated": "Arztzeugnis",
+        "incomplete": "Geben Sie jedem Arztzeugnis einen Titel und ein Dokumentendatum.",
+        "remove": "{fileName} entfernen",
+        "takePhoto": "Foto aufnehmen",
+        "tooMany": "Sie können bis zu {max} Dateien hinzufügen."
+      },
+      "marker": "Chrankmäldig aaghängt ({count})",
+      "panel": {
+        "delete": "{title} lösche",
+        "description": "Arztzügnis für d Abwäseheit {dateRange}.",
+        "empty": "Kei Arztzügnis, wo du chasch uftue.",
+        "linkExisting": "Arztzeugnis verknüpfen",
+        "loadFailed": "D Arztzügnis händ nöd chönne glade werde.",
+        "title": "Arztzügnis",
+        "unlink": "Verknüpfung von {title} aufheben",
+        "unlinked": "Verknüpfung des Arztzeugnisses aufgehoben",
+        "unlinkFailed": "Die Verknüpfung des Arztzeugnisses konnte nicht aufgehoben werden."
+      },
+      "request": {
+        "attachFailed": "Ihre Abwesenheit wurde beantragt, aber {files} konnte nicht angehängt werden. Sie können Arztzeugnisse später über die Abwesenheit anhängen.",
+        "description": "Fotos oder PDFs Ihres Arztzeugnisses hinzufügen: PDF-, JPEG-, PNG- oder WebP-Dateien mit jeweils bis zu 20 MB. Jede Datei wird als eigenes Arztzeugnis in Ihrem Personaldossier gespeichert. Ihre genehmigende Person sieht nur, dass ein Arztzeugnis angehängt ist.",
+        "title": "Arztzeugnis (optional)",
+        "uploadFailed": "{fileName} konnte nicht hochgeladen werden. Entfernen Sie die Datei oder versuchen Sie es erneut."
+      }
+    },
     "status": {
       "approved": "Gnehmigt",
       "pending": "Hängig",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Ziiterfassig blockiert",
       "category": "Kategori",
+      "deputy": "Stellvertretung",
       "duration": "Duur",
       "employee": "Aagstellte",
       "noEvents": "Kei Termin für dä Tag",
@@ -177,6 +255,7 @@
       "category": "Kategori",
       "credited": "Gueretschiert",
       "dateRange": "Datumsberiich",
+      "deputy": "Stellvertretung",
       "duration": "Duur",
       "editedBy": "Bearbeitet vo",
       "employee": "Aagstellte",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "KW",
+      "closedDay": "In einem abgeschlossenen Monat",
       "dayEvents": "{count, plural, one {# Event: {titles}} other {# Events: {titles}}}",
       "dayLabel": "{date}: {actual} erfasst, {required} nötig, {delta} {status}.",
       "description": "Tägliche, wöchentliche und monatliche Richtlinienstunden",

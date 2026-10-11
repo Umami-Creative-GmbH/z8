@@ -16,8 +16,17 @@
       "understaffed": "Understaffed",
       "utilization": "{percent}% utilization"
     },
+    "mySchedule": {
+      "loadFailed": "Your shifts could not be loaded. Please try again later.",
+      "nextWeek": "Next week",
+      "noShifts": "No shifts",
+      "previousWeek": "Previous week",
+      "shift": "Shift",
+      "today": "Today"
+    },
     "page": {
-      "employeeDescription": "View your shifts and pick up available shifts",
+      "employeeScheduleDescription": "Your published shifts, week by week",
+      "employeeTitle": "My Schedule",
       "managerDescription": "Manage and plan employee shifts",
       "title": "Shift Schedule"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Shift saved with overlap warning",
         "updated": "Shift updated"
       }
+    },
+    "shiftDetails": {
+      "close": "Close",
+      "date": "Date",
+      "description": "Your planned shift",
+      "endsNextDay": "ends next day",
+      "location": "Location",
+      "notes": "Notes",
+      "time": "Time",
+      "title": "Shift details"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Anyone can pick up",
@@ -111,6 +130,35 @@
       "validating": "Validating Skills…",
       "validatingDescription": "Checking employee qualifications",
       "warningMessage": "You can still assign this shift, but it will be logged as an override."
+    },
+    "staffingSuggestions": {
+      "empty": "No available employees for this shift",
+      "error": "Suggestions could not be loaded",
+      "loading": "Finding available employees…",
+      "note": {
+        "missingPreferredSkill": "Lacks preferred skill: {skill}"
+      },
+      "pick": "Pick",
+      "pickLabel": "Assign {name}",
+      "reason": {
+        "noContractedTarget": "No contracted target",
+        "plannedHours": "{planned} of {target} h planned this week",
+        "requestedThisShift": "Requested this shift",
+        "restPeriodOk": "Rest period OK",
+        "skillsHeld": "Has {skills}"
+      },
+      "requested": "Requested this shift",
+      "showAll": "Show all ({count})",
+      "showFewer": "Show fewer",
+      "title": "Suggested employees",
+      "warning": {
+        "expiredRequiredSkill": "{skill} expired on {date}",
+        "maxHours": "Over the daily maximum ({total} of {max} h)",
+        "missingRequiredSkill": "Missing required skill: {skill}",
+        "overtime": "{period, select, daily {Daily} weekly {Weekly} other {Monthly}} overtime ({total} of {threshold} h)",
+        "pendingAbsence": "Pending absence: {category}",
+        "restTime": "Rest period too short ({rest} of {required} h)"
+      }
     },
     "templates": {
       "dragHint": "Drag a template onto the calendar to create a shift",

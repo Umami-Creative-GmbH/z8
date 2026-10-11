@@ -258,6 +258,28 @@
         "previous": "Föregående"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Bekräfta som betald",
+          "description": "Har löneavdelningen betalat denna {format}-körning? Utläggsrapporterna inom ditt ansvarsområde registreras som ersatta med den. Dina egna rapporter och rapporter utanför ditt ansvarsområde blir kvar i körningen.",
+          "descriptionCounted": "{count, plural, one {Har löneavdelningen betalat denna {format}-körning? # utläggsrapport inom ditt ansvarsområde ({amount}) registreras som ersatt med den. Dina egna rapporter och rapporter utanför ditt ansvarsområde blir kvar i körningen.} other {Har löneavdelningen betalat denna {format}-körning? # utläggsrapporter inom ditt ansvarsområde ({amount}) registreras som ersatta med den. Dina egna rapporter och rapporter utanför ditt ansvarsområde blir kvar i körningen.}}",
+          "failed": "Lönekörningen kunde inte bekräftas. Försök igen; ingenting registreras två gånger.",
+          "outcome": {
+            "confirmed": "Ersatt {amount}",
+            "confirmedWithRemainder": "Ersatt {amount}. {remaining} väntar fortfarande på ersättning inför nästa körning.",
+            "outOfScope": "Ej bekräftad: utanför ditt ansvarsområde. Den ligger kvar i körningen för en handläggare som ansvarar för den.",
+            "overpaidByPayroll": "Ersatte {amount}, {overpaid} mer än vad som återstod att betala. Utlägget är nu överbetalt: registrera återkravet manuellt.",
+            "ownExpense": "Ej bekräftad: ditt eget utlägg. Det ligger kvar i körningen för någon annan att bekräfta."
+          },
+          "payday": "Lönedag",
+          "paydayHint": "Lönedagen då lön betalade denna körning. Alla ersättningar i denna körning registreras på den.",
+          "results": {
+            "nothing": "Det fanns inget kvar att bekräfta i denna körning. Ingen ersättning registreras.",
+            "summary": "{confirmed} av {total} bekräftade",
+            "title": "Bekräftelseresultat"
+          },
+          "submit": "Bekräfta som utbetald",
+          "title": "Bekräfta lönekörning {period} som utbetald"
+        },
         "included": "Ingår i {run}. Det betalas med den lönen och registreras som återbetalt när körningen bekräftas.",
         "label": "Lönekörning {period} ({format})",
         "notIncluded": "Ingen lönekörning innehåller detta utlägg längre.",
@@ -266,6 +288,11 @@
         "removeDescription": "Ta endast bort det om lönen inte kommer att betala ut det med denna körning, till exempel efter att lönefilen har korrigerats. Borttagningen registreras i granskningsloggen.",
         "removeFailed": "Utlägget kunde inte tas bort från lönekörningen.",
         "removeTitle": "Vill du ta bort detta utlägg från lönekörningen?"
+      },
+      "payrollRuns": {
+        "description": "Dessa lönekörningar innehåller utläggsrapporter som väntar på ersättning. När lön har betalat en körning bekräftar du den för att registrera ersättningarna.",
+        "reports": "{count, plural, one {# utläggsrapport för dig att bekräfta, {amount}} other {# utläggsrapporter för dig att bekräfta, {amount}}}",
+        "title": "Lönekörningar som väntar på bekräftelse"
       },
       "queue": {
         "description": "Öppna ett utlägg för att se dess reglering och registrera en ersättning.",
@@ -452,6 +479,7 @@
         "newTrip": "Ny resa"
       },
       "approvedBy": "Godkänd av {name} den {date}.",
+      "approvedByDeputy": "Godkänd av {name} (ställföreträdare för {actingForName}) den {date}.",
       "awaitingReview": "Väntar på granskning.",
       "awaitingReviewer": "Väntar på granskning av {name}.",
       "backToApprovals": "Tillbaka till godkännanden",
@@ -576,7 +604,9 @@
         "description": "Varje steg i denna rapport, äldsta först. Tider visas i UTC.",
         "detail": {
           "approvalRecorded": "Av {name}; väntar på ytterligare godkännande.",
+          "approvalRecordedByDeputy": "Av {name} (ställföreträdare för {actingForName}); väntar på ytterligare godkännande.",
           "by": "Av {name}",
+          "byDeputy": "Av {name} (ställföreträdare för {actingForName})",
           "inCycle": "Inlämning {number} · {detail}",
           "selfApproved": "Ingen annan kunde granska denna rapport."
         },
@@ -843,6 +873,7 @@
         "verifying": "Kontrollerar kvittot…"
       },
       "rejectedBy": "Avvisad av {name}",
+      "rejectedByDeputy": "Avvisad av {name} (ställföreträdare för {actingForName})",
       "reopen": {
         "action": "Återöppna för korrigering",
         "changed": "Rapporten ändrades under tiden och öppnades inte igen. Granska den igen.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Godkänt belopp betalt av anställd",
       "entry": {
         "exportBatch": "Från exporten som begärdes {date}",
+        "payrollRun": "Ersatt via lön {period}",
         "recordedBy": "Registrerad av {name}, {date}",
         "recovery": "Återfått {amount}",
         "reimbursement": "Betalat {amount}"

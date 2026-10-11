@@ -258,6 +258,28 @@
         "previous": "Poprzednia"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Potwierdź jako opłacone",
+          "description": "Dział płac opłacił ten przebieg {format}? Raporty z wydatków w Twoim zakresie zostaną zarejestrowane jako zwrócone wraz z nim. Twoje własne raporty oraz raporty spoza Twojego zakresu pozostaną w tym przebiegu.",
+          "descriptionCounted": "{count, plural, one {Dział płac opłacił ten przebieg {format}? # raport z wydatków w Twoim zakresie ({amount}) zostanie zarejestrowany jako zwrócony wraz z nim. Twoje własne raporty oraz raporty spoza Twojego zakresu pozostaną w tym przebiegu.} other {Dział płac opłacił ten przebieg {format}? # raportów z wydatków w Twoim zakresie ({amount}) zostanie zarejestrowanych jako zwrócone wraz z nim. Twoje własne raporty oraz raporty spoza Twojego zakresu pozostaną w tym przebiegu.}}",
+          "failed": "Nie udało się potwierdzić przebiegu listy płac. Spróbuj ponownie; nic nie zostanie zarejestrowane dwukrotnie.",
+          "outcome": {
+            "confirmed": "Zwrócono {amount}",
+            "confirmedWithRemainder": "Zwrócono {amount}. {remaining} nadal oczekuje na zwrot w następnym przebiegu.",
+            "outOfScope": "Nie potwierdzono: poza Twoim zakresem uprawnień. Pozostaje w cyklu dla osoby odpowiedzialnej.",
+            "overpaidByPayroll": "Zwrócono {amount}, o {overpaid} więcej, niż wynosiła należność. Wydatek jest teraz nadpłacony: zarejestruj odzyskanie nadpłaty ręcznie.",
+            "ownExpense": "Nie potwierdzono: Twój własny wydatek. Pozostaje w cyklu do potwierdzenia przez inną osobę."
+          },
+          "payday": "Dzień wypłaty",
+          "paydayHint": "Dzień wypłaty, w którym zrealizowano ten cykl płacowy. Przypisany jest do niego każdy zwrot kosztów z tego cyklu.",
+          "results": {
+            "nothing": "W tym cyklu nie pozostało nic do potwierdzenia. Żaden zwrot nie został zarejestrowany.",
+            "summary": "{confirmed} z {total} potwierdzono",
+            "title": "Wyniki potwierdzenia"
+          },
+          "submit": "Potwierdź jako opłacone",
+          "title": "Potwierdź cykl płacowy {period} jako opłacony"
+        },
         "included": "Uwzględniono w {run}. Wydatek jest wypłacany z tą listą płac i rejestrowany jako zwrócony po potwierdzeniu przebiegu.",
         "label": "Przebieg listy płac {period} ({format})",
         "notIncluded": "Żaden przebieg listy płac nie obejmuje już tego wydatku.",
@@ -266,6 +288,11 @@
         "removeDescription": "Usuń go tylko wtedy, gdy nie zostanie opłacony w ramach tego przebiegu listy płac, na przykład po skorygowaniu pliku płacowego. Usunięcie zostanie zarejestrowane w dzienniku audytu.",
         "removeFailed": "Nie udało się usunąć wydatku z przebiegu listy płac.",
         "removeTitle": "Usunąć ten wydatek z przebiegu listy płac?"
+      },
+      "payrollRuns": {
+        "description": "Te cykle płacowe zawierają raporty z wydatków oczekujące na zwrot. Gdy cykl zostanie opłacony przez dział płac, potwierdź go, aby zarejestrować zwroty.",
+        "reports": "{count, plural, one {# raport z wydatków do potwierdzenia, {amount}} few {# raporty z wydatków do potwierdzenia, {amount}} many {# raportów z wydatków do potwierdzenia, {amount}} other {# raportu z wydatków do potwierdzenia, {amount}}}",
+        "title": "Cykle płacowe oczekujące na potwierdzenie"
       },
       "queue": {
         "description": "Otwórz wydatek, aby zobaczyć jego rozliczenie i zarejestrować zwrot kosztów.",
@@ -452,6 +479,7 @@
         "newTrip": "Nowa podróż"
       },
       "approvedBy": "Zatwierdzono przez {name} w dniu {date}.",
+      "approvedByDeputy": "Zatwierdzone przez: {name} (zastępca {actingForName}) w dniu {date}.",
       "awaitingReview": "Oczekuje na weryfikację.",
       "awaitingReviewer": "Oczekuje na weryfikację przez {name}.",
       "backToApprovals": "Powrót do zatwierdzeń",
@@ -576,7 +604,9 @@
         "description": "Wszystkie etapy tego raportu, od najstarszych. Godziny podano w strefie UTC.",
         "detail": {
           "approvalRecorded": "Przez: {name}; oczekuje na dalsze zatwierdzenie.",
+          "approvalRecordedByDeputy": "Przez: {name} (zastępca {actingForName}); oczekuje na dalsze zatwierdzenie.",
           "by": "Przez: {name}",
+          "byDeputy": "Przez: {name} (zastępca {actingForName})",
           "inCycle": "Zgłoszenie {number} · {detail}",
           "selfApproved": "Nikt inny nie mógł zweryfikować tego raportu."
         },
@@ -843,6 +873,7 @@
         "verifying": "Sprawdzanie rachunku…"
       },
       "rejectedBy": "Odrzucone przez {name}",
+      "rejectedByDeputy": "Odrzucone przez: {name} (zastępca {actingForName})",
       "reopen": {
         "action": "Otwórz ponownie do poprawy",
         "changed": "Raport zmienił się w międzyczasie i nie został ponownie otwarty. Przejrzyj go ponownie.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Zatwierdzona kwota opłacona przez pracownika",
       "entry": {
         "exportBatch": "Z eksportu zleconego {date}",
+        "payrollRun": "Zwrócono z wynagrodzeniem za {period}",
         "recordedBy": "Zarejestrowane przez: {name}, {date}",
         "recovery": "Odzyskano {amount}",
         "reimbursement": "Zapłacono {amount}"

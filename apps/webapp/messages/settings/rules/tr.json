@@ -15,9 +15,16 @@
       "createCategory": "İzin Kategorisi Oluştur",
       "createCategoryButton": "Kategori Oluştur",
       "deactivate": "Devre dışı bırak",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Çalışma bakiyesinden kullanılan izin",
+          "name": "Telafi izni"
+        }
+      },
       "deleteDescription": "\"{name}\" öğesini silmek istediğinizden emin misiniz? Mevcut izinler tarafından kullanılan kategoriler silinemez, bunun yerine devre dışı bırakılmalıdır.",
       "deleteFailed": "Kategori silinemedi",
       "deleteTitle": "İzin Kategorisini Sil",
+      "drawsOnWorkBalance": "Çalışma bakiyesinden düşer",
       "editCategory": "\"{name}\" öğesini düzenle",
       "form": {
         "active": "Aktif",
@@ -26,11 +33,17 @@
         "colorHelp": "Takvim işareti",
         "countsAgainstVacation": "İzin Bakiyesinden Düşer",
         "countsAgainstVacationHelp": "Onaylanan günleri çalışanın izin hakkından düşer.",
+        "deputyRequired": "Vekil zorunlu",
+        "deputyRequiredHelp": "Bu türdeki her izin için çalışan izinliyken yerine vekillik edecek bir vekil belirlenmelidir.",
+        "deputyRequiredSick": "Hastalık izni hiçbir zaman vekil gerektirmez.",
         "description": "Açıklama",
         "descriptionHelp": "Yöneticilere ve inceleyenlere gösterilen isteğe bağlı rehber.",
         "descriptionPlaceholder": "ör. Onaylı eğitim veya sertifika günleri için kullanın…",
         "descriptionTranslation": "{locale} açıklaması",
         "descriptionTranslationPlaceholder": "Yerelleştirilmiş açıklama",
+        "drawsOnWorkBalance": "Çalışma Bakiyesinden Düşer",
+        "drawsOnWorkBalanceConflict": "\"Çalışma bakiyesinden düşer\", \"Yıllık izinden sayılır\" veya \"Çalışma süresi gerektirir\" ile birleştirilemez.",
+        "drawsOnWorkBalanceHelp": "Telafi izni: Onaylanan günler zorunlu sürelerini korur, böylece çalışanın çalışma bakiyesi bu süre kadar düşer. Yıllık izin kullanılmaz.",
         "name": "Ad",
         "nameHelp": "Çalışanların ve onaylayanların tanıyacağı net bir etiket kullanın.",
         "nameMaxLength": "100 karakter veya daha az kullanın",
@@ -46,7 +59,8 @@
         "translationsHelp": "Farklı bir uygulama dili kullanan çalışanlar için isteğe bağlı yerelleştirilmiş etiketler.",
         "type": "Tür",
         "typeHelp": "Raporları ve sonraki izin iş akışlarını gruplandırır.",
-        "typePlaceholder": "Kategori türünü seçin"
+        "typePlaceholder": "Kategori türünü seçin",
+        "typeTimeOffInLieu": "Telafi İzni"
       },
       "header": {
         "approval": "Onay",
@@ -72,6 +86,7 @@
         "parental": "Ebeveyn İzni",
         "personal": "Kişisel",
         "sick": "Hastalık İzni",
+        "timeOffInLieu": "Telafi İzni",
         "unpaid": "Ücretsiz İzin",
         "vacation": "Yıllık İzin"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Bazı etkin kanallarda eskalasyonlar kapalıydı. Bunlar hâlâ eskalasyon mesajlarını iletmiyor.",
         "inactiveSourceEnabled": "Bazı etkin olmayan kanallarda eskalasyonlar açıktı. Bunlar politikaya dahil edilmedi.",
         "invalidTimeout": "Bir kanal geçersiz bir zaman aşımına sahipti ve yanıt aralığı için kullanılmadı."
+      },
+      "deputyDecisions": {
+        "description": "Çalışanlar izinlerinde bir vekil belirler. Bir onaylayıcı onaylanmış bir izindeyken, vekili onaylayıcıya atanmış durumdaki onayları görebilir ve karara bağlayabilir.",
+        "disabled": "Vekiller artık onayları karara bağlayamaz. Yalnızca irtibat kişisi olarak kalırlar.",
+        "enabled": "Vekiller artık onaylayıcı izinliyken onayları karara bağlayabilir.",
+        "help": "Yalnızca onay gelen kutusunu kullanabilen vekiller, yalnızca onaylayanın izinli olduğu günlerde karar verebilir. Onaylayan kişi onaylarını korur. Bu ayar kapalı olduğunda, vekiller yalnızca irtibat kişisi olur.",
+        "title": "Vekiller",
+        "toggle": "Vekiller onaylar hakkında karar verebilir"
       },
       "description": "Kuruluş eskalasyon politikasını, bunun kanal ayarlarından nasıl aktarıldığını ve bir onay yöneticisi gerektiren koşulları gözden geçirin.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Devamsızlık",
         "complianceException": "Uyumluluk istisnası",
         "manualTimeSubmission": "Manuel zaman bildirimi",
+        "periodSubmission": "Dönem gönderimi",
         "policyClockOut": "Politika çıkış kaydı",
         "shiftRequest": "Vardiya talebi",
         "timeCorrection": "Zaman düzeltmesi",

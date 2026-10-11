@@ -15,6 +15,13 @@
       "today": "Today!",
       "tomorrow": "Tomorrow"
     },
+    "covering-for": {
+      "description": "Colleagues you are the deputy for while they are away",
+      "error": "Failed to load your cover duties",
+      "running": "Covering for {name} until {date}",
+      "title": "Covering for",
+      "upcoming": "Upcoming: covering for {name} from {start} to {end}"
+    },
     "customize": {
       "empty-description": "Use the dashboard customization icon to re-enable individual widgets, or reset the layout to show every widget again.",
       "empty-title": "All dashboard widgets are hidden",
@@ -129,6 +136,17 @@
       "teams": "Teams",
       "teams-button": "Teams",
       "title": "Organization"
+    },
+    "upcoming-shifts": {
+      "description": "Your next planned shifts",
+      "empty": "No upcoming shifts",
+      "empty-description": "Your next published shifts will show up here.",
+      "ends-next-day": "ends next day",
+      "error": "Failed to load your upcoming shifts",
+      "title": "Upcoming Shifts",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "view-schedule": "View schedule"
     },
     "upcoming-time-off": {
       "absence": "absence",

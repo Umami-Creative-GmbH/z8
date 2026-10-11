@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Tilldelad plats lades till",
+      "employeeDescription": "Platserna som den här medarbetaren arbetar på. Kiosker godkänner endast medarbetare som är tilldelade till deras plats.",
+      "employeeEmpty": "Inga tilldelade platser",
+      "employeeLabel": "Medarbetare",
+      "employeePlaceholder": "Välj en medarbetare",
+      "employeeTitle": "Tilldelade platser",
+      "errors": {
+        "adminOnly": "Endast organisationsägare och administratörer kan hantera tilldelade platser.",
+        "employeeNotFound": "Medarbetaren hittades inte.",
+        "failed": "Tilldelade platser kunde inte uppdateras. Försök igen.",
+        "invalidSelection": "Välj från listan.",
+        "locationNotFound": "Platsen hittades inte."
+      },
+      "locationDescription": "Medarbetarna som arbetar på den här platsen. Dess kiosker godkänner endast dem.",
+      "locationEmpty": "Inga tilldelade medarbetare",
+      "locationLabel": "Plats",
+      "locationPlaceholder": "Välj en plats",
+      "locationTitle": "Tilldelade medarbetare",
+      "noEmployeesLeft": "Alla aktiva medarbetare är tilldelade den här platsen.",
+      "noLocationsLeft": "Det finns inga fler aktiva platser att tilldela.",
+      "removed": "Tilldelad plats togs bort"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Kund (Personuppgiftsansvarig)",
@@ -407,6 +430,75 @@
       "description": "Hantera din prenumeration, betalningsmetoder och fakturor",
       "title": "Fakturering & prenumeration"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Dagar efter månadsslut",
+        "daysHelp": "Om något blockerar stängningen meddelas alla som har behörighet att stänga, och ett nytt försök görs nästa dag.",
+        "daysInvalid": "Ange ett helt antal dagar från 1 till 60",
+        "description": "Stäng föregående månad för hela organisationen ett visst antal dagar efter att den slutat. En månad som har återöppnats stängs aldrig automatiskt igen.",
+        "enabled": "Stäng månader automatiskt",
+        "save": "Spara",
+        "saved": "Automatisk stängning sparad",
+        "title": "Automatisk stängning"
+      },
+      "blockedTitle": "Månaden kan inte stängas ännu. Åtgärda följande först:",
+      "blocker": {
+        "absenceRequest": "obeslutad frånvaroansökan {startDate} – {endDate}",
+        "liveWork": "fortfarande instämplad sedan {start}",
+        "notEnded": "månaden har inte slutat i deras tidszon",
+        "periodSubmission": "ej beslutad periodinlämning {startDate} – {endDate}",
+        "timeRequest": "obeslutad förfrågan om arbete från {start}"
+      },
+      "close": "Stäng",
+      "closeDescription": "Ingen kan ändra arbete, tilldelning eller frånvaro i en stängd månad förrän den återöppnas. Varje medarbetares månad fastställs i dennes egen tidszon.",
+      "closeSubmit": "Stäng månad",
+      "closeSuccess": "{count, plural, one {{month} stängd för # anställd} other {{month} stängd för # anställda}}",
+      "closeTitle": "Stäng {month}",
+      "description": "Stäng månader efter lönekörning så att arbete och frånvaro inte längre kan ändras",
+      "employeesLabel": "Anställda",
+      "employeesRequired": "Välj minst en anställd",
+      "history": {
+        "automatic": "Automatiskt",
+        "closed": "Stängd",
+        "employees": "{count, plural, one {# anställd} other {# anställda}}",
+        "reopened": "Återöppnad",
+        "unknownActor": "Okänd"
+      },
+      "historyEmpty": "Ingen månad har stängts ännu.",
+      "historyTitle": "Historik",
+      "monthsDescription": "Att stänga en månad låser dess arbete, tilldelning och frånvaro för lönekörning. Anteckningar förblir redigerbara.",
+      "monthsTitle": "Månader",
+      "nothingToClose": "Alla inom detta omfång är redan stängda för denna månad.",
+      "nothingToReopen": "Ingen i det här urvalet är stängd för denna månad.",
+      "reasonLabel": "Anledning",
+      "reasonPlaceholder": "Varför behöver denna månad ändras?…",
+      "reasonRequired": "Ange en anledning till återöppnandet",
+      "reopen": "Återöppna",
+      "reopenDescription": "Återöppnade anställda förblir öppna tills månaden stängs igen. Deras chefer meddelas.",
+      "reopenScopeLabel": "Återöppna för",
+      "reopenSubmit": "Återöppna månad",
+      "reopenSuccess": "{count, plural, one {{month} återöppnad för # anställd} other {{month} återöppnad för # anställda}}",
+      "reopenTitle": "Återöppna {month}",
+      "scope": {
+        "all": "Allt",
+        "deletedTeam": "Borttaget team",
+        "employees": "Valda medarbetare",
+        "organization": "Organisation"
+      },
+      "scopeLabel": "Stäng för",
+      "teamNotFound": "Det här teamet finns inte längre.",
+      "title": "Stängda månader",
+      "warning": {
+        "periodNotSubmitted": "period {startDate} – {endDate} ej inlämnad",
+        "periodRejected": "period {startDate} – {endDate} avvisad",
+        "periodRunning": "period {startDate} – {endDate} pågår fortfarande, kan ännu inte lämnas in",
+        "periodSentBack": "period {startDate} – {endDate} tillbakaskickad efter en ändring"
+      },
+      "warnings": {
+        "more": "och {count} till",
+        "title": "Alla periodinlämningar för den här månaden är inte godkända. Detta hindrar inte stängningen:"
+      }
+    },
     "compliance": {
       "description": "Granska och hantera förfrågningar om efterlevnadsundantag från teammedlemmar",
       "title": "ArbZG-efterlevnad"
@@ -468,14 +560,208 @@
       "updated": "Kunden har uppdaterats",
       "updateFailed": "Det gick inte att uppdatera kunden"
     },
+    "customFields": {
+      "accessSummary": "Synlig för: {visibility} · Redigeras av: {edit}",
+      "activeCount": "{count} av {max} aktiva fält",
+      "activeList": "Aktiva anpassade fält",
+      "add": "Lägg till anpassat fält",
+      "archivedList": "Arkiverade anpassade fält",
+      "archivedTitle": "Arkiverade",
+      "archiveField": "Arkivera {name}",
+      "capReached": "Varje posttyp kan ha högst 25 aktiva anpassade fält. Arkivera ett för att lägga till ett annat.",
+      "description": "Dina egna fält för anställda, projekt och kunder",
+      "editField": "Redigera {name}",
+      "empty": "Inga anpassade fält ännu.",
+      "entity": {
+        "customer": "Kunder",
+        "employee": "Anställda",
+        "project": "Projekt"
+      },
+      "form": {
+        "boundsHelp": "Lämna en gräns tom för obegränsat.",
+        "create": "Skapa fält",
+        "createTitle": "Lägg till anpassat fält",
+        "description": "Ett anpassat fält för {entity}.",
+        "editLevel": "Vem kan redigera värden",
+        "editLevelHelp": "Anställda redigerar aldrig värden för anpassade fält.",
+        "editTitle": "Redigera anpassat fält",
+        "integerOnly": "Endast heltal",
+        "max": "Maximum",
+        "min": "Minimum",
+        "name": "Namn",
+        "nameRequired": "Ange ett namn",
+        "options": "Alternativ",
+        "optionsHelp": "Ett alternativ per rad.",
+        "required": "Obligatoriskt",
+        "requiredHelp": "Formulär kan inte sparas utan ett värde.",
+        "save": "Spara ändringar",
+        "tracked": "Spara historik",
+        "trackedFixed": "Huruvida ett fält sparar historik kan inte ändras efter att det har skapats.",
+        "trackedHelp": "Varje värde har det datum från vilket det är giltigt.",
+        "type": "Typ",
+        "typeFixed": "Typen kan inte ändras efter att fältet har skapats.",
+        "visibility": "Vem som kan se värden"
+      },
+      "level": {
+        "admin": "Administratörer",
+        "employee": "Alla, inklusive den anställda",
+        "manager": "Chefer och administratörer"
+      },
+      "options": {
+        "add": "Lägg till alternativ",
+        "archive": "Arkivera {label}",
+        "archived": "Arkiverad",
+        "label": "Alternativnamn",
+        "list": "Alternativ",
+        "moveDown": "Flytta ner {label}",
+        "moveUp": "Flytta upp {label}",
+        "new": "Nytt alternativ",
+        "restore": "Återställ {label}",
+        "title": "Alternativ"
+      },
+      "refusal": {
+        "booleanRequired": "Ett ja/nej-fält kan inte vara obligatoriskt.",
+        "duplicateOption": "Det här fältet har redan ett aktivt alternativ med detta namn.",
+        "editBroaderThanVisibility": "Alla som kan redigera värden måste också kunna se dem.",
+        "employeesNeverEdit": "Anställda kan inte redigera anpassade fältvärden.",
+        "fieldArchived": "Återställ detta anpassade fält innan du ändrar det.",
+        "invalidChange": "Den här ändringen kan inte sparas. Ladda om sidan och försök igen.",
+        "invalidLevel": "Välj vem som kan se och redigera värden.",
+        "invalidName": "Ange ett namn på högst 100 tecken.",
+        "invalidOptionLabel": "Ange ett alternativ på högst 100 tecken.",
+        "lastActiveOption": "Ett urvalsfält behöver minst ett aktivt alternativ.",
+        "nameTaken": "Ett aktivt anpassat fält på den här posttypen har redan det här namnet.",
+        "notFound": "Det här anpassade fältet finns inte längre. Ladda om sidan.",
+        "notSelect": "Endast urvalsfält har alternativ.",
+        "numberBounds": "Ange ett minimum och maximum som tal, där minimum inte är högre än maximum.",
+        "optionArchived": "Återställ det här alternativet först.",
+        "selectNeedsOption": "Lägg till minst ett alternativ i ett urvalsfält.",
+        "staleOrder": "Listan har ändrats under tiden. Ladda om sidan och försök igen.",
+        "tooManyFields": "Den här posttypen har redan 25 aktiva anpassade fält. Arkivera ett först.",
+        "trackedFixed": "Huruvida ett anpassat fält sparar historik kan inte ändras efter att det har skapats.",
+        "typeFixed": "Typen för ett anpassat fält kan inte ändras efter att det har skapats.",
+        "usedAsPayrollIdentifier": "Det här fältet är personalidentifieraren för löneexportkonfigurationen {configurations}. Välj en annan identifierare där först."
+      },
+      "reorderField": "Ändra ordning på {name}",
+      "required": "Obligatoriskt",
+      "restore": "Återställ",
+      "restoreField": "Återställ {name}",
+      "saveFailed": "Ändringen kunde inte sparas.",
+      "title": "Anpassade fält",
+      "tracked": "Spåras",
+      "type": {
+        "boolean": "Ja/Nej",
+        "date": "Datum",
+        "number": "Nummer",
+        "select": "Välj",
+        "text": "Text"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Det finns redan ett värde som börjar på det datumet.",
+        "fieldArchived": "Det här fältet är arkiverat.",
+        "forField": "Anpassat fält \"{field}\": {message}",
+        "invalidDate": "Ange ett giltigt datum.",
+        "invalidNumber": "Ange ett tal.",
+        "invalidValidFrom": "Ange ett giltigt startdatum.",
+        "invalidValue": "Ange ett giltigt värde.",
+        "missingRequired": "Det här fältet är obligatoriskt.",
+        "missingValue": "Ange ett värde för varje datum.",
+        "notEditable": "Du kan inte ändra det här fältet.",
+        "numberNotInteger": "Ange ett heltal.",
+        "numberOutOfRange": "Ange ett tal inom det tillåtna intervallet.",
+        "optionArchived": "Det här alternativet är arkiverat. Välj ett annat.",
+        "textTooLong": "Ange högst 255 tecken.",
+        "trackedField": "Det här fältet sparar historik. Lägg till en daterad ändring i stället.",
+        "unknownField": "Det här fältet finns inte längre. Ladda om sidan och försök igen.",
+        "unknownHistoryEntry": "Historiken ändrades under tiden. Ladda om sidan och försök igen."
+      },
+      "values": {
+        "archivedOption": "{label} (arkiverad)",
+        "history": {
+          "add": "Lägg till ändring",
+          "apply": "Tillämpa",
+          "correct": "Korrigera värdet som gäller från {date}",
+          "delete": "Ta bort värdet som är giltigt från {date}",
+          "duplicateValidFrom": "Det finns redan ett värde som är giltigt från detta datum.",
+          "empty": "Inga värden än.",
+          "from": "Från {date}",
+          "label": "Historik för {name}",
+          "needsValidFrom": "Välj vilket datum värdet ska gälla från.",
+          "needsValue": "Ange ett värde.",
+          "today": "Idag",
+          "validFrom": "Giltigt från",
+          "value": "Värde"
+        },
+        "missingRequired": "Obligatoriska värden saknas",
+        "no": "Nej",
+        "notSet": "Inte angivet",
+        "ownDescription": "Hanteras av din organisation. Be en administratör eller din chef att ändra dem.",
+        "title": "Anpassade fält",
+        "yes": "Ja"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Frånvaroposter och kategorier",
+          "label": "Frånvaro"
+        },
+        "audit_logs": {
+          "description": "Granskningshistorik för aktiviteter",
+          "label": "Granskningsloggar"
+        },
+        "balance_adjustments": {
+          "description": "Ingående saldon och utbetalningar av övertid, inklusive makulerade",
+          "label": "Justeringar av arbetssaldo"
+        },
+        "customers": {
+          "description": "Kunder med sina anpassade kundfält",
+          "label": "Kunder"
+        },
+        "employees": {
+          "description": "Medarbetarprofiler, chefsrelationer och anpassade medarbetarfält",
+          "label": "Medarbetare"
+        },
+        "holidays": {
+          "description": "Helgdagskalender och förinställningar",
+          "label": "Helgdagar"
+        },
+        "projects": {
+          "description": "Projekt med tillhörande anpassade fält för kunder och projekt",
+          "label": "Projekt"
+        },
+        "schedules": {
+          "description": "Mallar och tilldelningar för arbetsscheman",
+          "label": "Arbetsscheman"
+        },
+        "shifts": {
+          "description": "Data för skiftschemaläggning",
+          "label": "Skift"
+        },
+        "teams": {
+          "description": "Teamstruktur och behörigheter",
+          "label": "Team"
+        },
+        "time_entries": {
+          "description": "Stämpelklocksposter och korrigeringar",
+          "label": "Tidsregistrering"
+        },
+        "vacation": {
+          "description": "Semesterpolicyer och tilldelningar",
+          "label": "Semesterpolicyer"
+        },
+        "work_periods": {
+          "description": "Sammanställda arbetspass",
+          "label": "Arbetsperioder"
+        }
+      },
       "description": "Exportera din organisations data",
       "form": {
         "aboutAsync": "Exporter bearbetas asynkront",
+        "aboutDownloadFromHistory": "Ladda ned slutförda exporter från Exporthistorik",
         "aboutEmail": "Du får ett e-postmeddelande när det är klart",
-        "aboutLinkValidity": "Nedladdningslänkar är giltiga i 24 timmar",
+        "aboutFileRetention": "Exportfiler tas bort efter 30 dagar",
         "aboutOrgDataOnly": "Endast din organisations data inkluderas",
-        "aboutStorageDuration": "Exportfiler sparas i 7 dagar",
         "aboutTitle": "Om dataexport",
         "description": "Välj de datakategorier du vill exportera",
         "selectAll": "Markera alla",
@@ -508,6 +794,9 @@
         "statusFailed": "Misslyckades",
         "statusPending": "Väntar",
         "statusProcessing": "Bearbetar",
+        "switchOrganizationAction": "Byt till {organization}",
+        "switchOrganizationBody": "Denna export tillhör {organization}. Byt till den organisationen för att öppna dess exporthistorik; din behörighet kontrolleras igen efter bytet.",
+        "switchOrganizationTitle": "Byt organisation för att se denna export",
         "title": "Exporthistorik",
         "unexpectedError": "Ett oväntat fel uppstod"
       },
@@ -1008,6 +1297,7 @@
           "attributionNotAllowed": "Projektet är inte tillgängligt, eller så kräver fakturerbart arbete ett projekt som har en kund.",
           "invalidInterval": "Leverantörens tider saknar en explicit tidsförskjutning, är inte i ordning eller ligger i framtiden.",
           "label": "Kvarhållen för granskning",
+          "monthClosed": "Tiden är i en stängd månad. Den kan importeras när månaden har öppnats igen.",
           "occupancyConflict": "Tiden överlappar arbete som redan har registrerats för den här anställde.",
           "operationCollision": "Den här raden är i konflikt med en tidigare verkställd import.",
           "providerDurationMismatch": "Leverantörens varaktighet skiljer sig från start- och sluttiderna.",
@@ -1041,6 +1331,98 @@
         "title": "Importgranskning"
       },
       "title": "Importera data"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Ett annat konto använder redan den här adressen.",
+        "emailNotAllowed": "Din organisations inloggningspolicy tillåter inte den här adressen.",
+        "employeeNotFound": "Den här medarbetaren hittades inte.",
+        "failed": "Något gick fel. Försök igen.",
+        "invalidEmail": "Ange en giltig e-postadress.",
+        "invalidName": "Ange ett förnamn på högst 100 tecken.",
+        "invalidPin": "En PIN-kod för kiosk har 4 till 6 siffror.",
+        "locationNotFound": "Den här platsen hittades inte.",
+        "noPin": "Den här medarbetaren har ingen kiosk-PIN-kod ännu.",
+        "notAllowed": "Du har inte behörighet att göra detta.",
+        "notKioskOnly": "Den här medarbetaren har redan en e-postadress.",
+        "pinExists": "Den här medarbetaren har redan en kiosk-PIN-kod. Återställ den istället.",
+        "reservedEmail": "Den här adressen kan inte användas.",
+        "signInRequired": "Logga in för att fortsätta.",
+        "teamNotFound": "Det här teamet hittades inte."
+      }
+    },
+    "kiosks": {
+      "add": "Lägg till kiosk",
+      "boardOn": "Närvarotavla på",
+      "columns": {
+        "actions": "Åtgärder",
+        "lastSeen": "Senast sedd",
+        "location": "Plats",
+        "name": "Namn",
+        "status": "Status"
+      },
+      "create": "Skapa kiosk",
+      "created": "Kiosken har skapats",
+      "createDescription": "Du får en parkopplingskod som du anger på kioskenheten.",
+      "createFailed": "Kiosken kunde inte skapas",
+      "createTitle": "Lägg till kiosk",
+      "description": "Delade enheter på en plats där medarbetare stämplar med sin kiosk-PIN-kod",
+      "edit": "Redigera",
+      "editDescription": "Ändringarna tillämpas vid kioskens nästa förfrågan.",
+      "editTitle": "Redigera kiosk",
+      "empty": "Inga kiosker ännu.",
+      "errors": {
+        "adminOnly": "Endast organisationsägare och administratörer kan hantera kiosker.",
+        "invalidName": "Ange ett namn på upp till 100 tecken.",
+        "invalidSelection": "Kontrollera dina uppgifter och försök igen.",
+        "invalidTimezone": "Välj en tidszon.",
+        "kioskNotFound": "Denna kiosk hittades inte.",
+        "kioskRevoked": "Denna kiosk har återkallats.",
+        "locationNotFound": "Välj en aktiv plats för denna organisation."
+      },
+      "fields": {
+        "board": "Närvarotavla",
+        "boardDescription": "Visar på kiosken vem som är på plats eller har rast, med förnamn och första bokstaven i efternamnet.",
+        "location": "Plats",
+        "locationDescription": "Kiosken accepterar endast anställda som är tilldelade denna plats.",
+        "locationPlaceholder": "Välj en plats",
+        "name": "Namn",
+        "namePlaceholder": "t.ex. Personalingång",
+        "timezone": "Tidszon",
+        "timezoneDescription": "Stämplingar som registreras på denna kiosk använder denna tidszon."
+      },
+      "issueCodeConfirm": "Skapa ny kod",
+      "listDescription": "Varje kiosk tillhör en plats. Parkoppla en enhet genom att öppna kiosksidan på den och ange parkopplingskoden.",
+      "listTitle": "Kiosker",
+      "loadFailed": "Det gick inte att läsa in kiosker.",
+      "neverSeen": "Aldrig",
+      "noLocations": "Skapa en plats först: varje kiosk tillhör en plats.",
+      "pairAgain": "Parkoppla igen",
+      "pairFailed": "En ny parkopplingskod kunde inte skapas",
+      "pairingCodeLabel": "Parkopplingskod",
+      "pairingDescription": "På kioskenheten skannar du QR-koden eller öppnar kiosksidan och anger koden. Koden fungerar en gång och upphör att gälla efter 10 minuter.",
+      "pairingDone": "Klar",
+      "pairingTitle": "Parkoppla {name}",
+      "pairPairedDescription": "Enhetstoken roteras: den parkopplade enheten slutar omedelbart att fungera och måste parkopplas igen med den nya koden.",
+      "pairTitle": "Parkoppla {name} igen?",
+      "pairUnpairedDescription": "En ny parkopplingskod ersätter den tidigare.",
+      "revoke": "Återkalla",
+      "revokeConfirm": "Återkalla kiosk",
+      "revoked": "Kiosk återkallad",
+      "revokeDescription": "Kiosken slutar fungera vid nästa begäran och kan inte parkopplas igen. Skapa en ny kiosk för att ersätta den.",
+      "revokeFailed": "Kiosken kunde inte återkallas",
+      "revokeTitle": "Återkalla {name}?",
+      "rotateConfirm": "Rotera token och parkoppla igen",
+      "save": "Spara",
+      "saved": "Kiosk sparad",
+      "saveFailed": "Kiosken kunde inte sparas",
+      "status": {
+        "awaitingPairing": "Väntar på parkoppling",
+        "codeExpired": "Inte parkopplad, koden har gått ut",
+        "paired": "Parkopplad",
+        "revoked": "Återkallad"
+      },
+      "title": "Kiosker"
     },
     "licenses": {
       "footer": "Denna applikation använder programvara med öppen källkod. Tack till alla underhållare och bidragsgivare för dessa paket.",
@@ -1652,6 +2034,16 @@
     },
     "security": {
       "description": "Hantera ditt lösenord, tvåfaktorsautentisering, lösenordsnycklar och aktiva sessioner",
+      "kioskPin": {
+        "descriptionChange": "Du har en PIN-kod för kiosk. Välj en ny med 4 till 6 siffror för att ersätta den.",
+        "descriptionSet": "Välj en PIN-kod med 4 till 6 siffror för att stämpla vid din organisations kiosker.",
+        "mismatch": "PIN-koderna matchar inte.",
+        "newPin": "Ny PIN-kod",
+        "repeatPin": "Upprepa PIN-kod",
+        "save": "Spara PIN-kod",
+        "saved": "PIN-kod för kiosk sparad",
+        "title": "PIN-kod för kiosk"
+      },
       "title": "Säkerhetsinställningar",
       "twoFactor": {
         "backupCodesCopied": "Reservkoder har kopierats till urklipp",
@@ -2052,6 +2444,7 @@
         "replaceDescription": "En aktiv version startar redan den {date}. Om du sparar ersätts den; den ersatta versionen sparas i historiken.",
         "replaceTitle": "Ersätt versionen som startar den dagen",
         "rules": "Behörighet följer {reference} ({version}), verifierad för resdagar från {from} till och med {through}. Utlandsresor prissätts per dag endast med antagna utlandstraktamenten; övriga dagar och särskilda resrutter flaggas för manuell beräkning.",
+        "rulesOpenEnded": "Berättigande följer {reference} ({version}), verifierat för resdagar från {from} tills lagen ändras. Utlandsresor prissätts endast per dag med fastställda utlandssatser; övriga dagar och särskilda resrutter flaggas för manuell beräkning.",
         "saved": "Version av traktamentessatser aktiverad",
         "saveFailed": "Traktamentessatserna kunde inte sparas.",
         "source": "Källa",

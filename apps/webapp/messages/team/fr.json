@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Approuvé",
+        "changeDeputy": "Changer de remplaçant",
+        "changeDeputyOf": "Changer le remplaçant de {name}",
+        "deputy": "Remplaçant :",
+        "deputyMissing": "Remplaçant manquant",
         "description": "Absences approuvées et en attente pour l'équipe et l'année sélectionnées.",
         "error": {
           "description": "Veuillez réessayer dans un instant.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} en attente",
         "title": "Calendrier annuel",
         "totalDays": "{count} absent"
+      },
+      "deputyFilter": {
+        "clear": "Afficher toutes les absences",
+        "notice": "Affichage uniquement des absences que cet employé couvre en tant que remplaçant."
       },
       "description": "Examinez les droits et enregistrez les absences approuvées pour votre équipe.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Catégorie",
         "categoryPlaceholder": "Sélectionnez une catégorie d'absence…",
+        "deputy": "Remplaçant",
         "description": "Enregistrez une absence approuvée directement pour l'employé sélectionné.",
         "endDate": "Date de fin",
         "endDateHelper": "Laisser vide pour une absence le jour même.",
@@ -66,6 +75,11 @@
         "required": "{label} est requis",
         "sickDetail": "Détail de maladie",
         "sickDetailPlaceholder": "Sélectionner le détail de maladie…",
+        "sickNotes": {
+          "description": "Ajoutez des photos ou des PDF du certificat médical qui vous a été remis : fichiers PDF, JPEG, PNG ou WebP de 20 Mo maximum chacun. Chaque fichier est enregistré comme un certificat médical distinct dans le dossier du personnel de l'employé, et l'employé peut le voir. Par la suite, seules les personnes gérant les certificats médicaux de l'employé peuvent l'ouvrir.",
+          "title": "Certificat médical (facultatif)"
+        },
+        "sickNotesFailed": "L'absence a été enregistrée, mais impossible de joindre {files}. Une personne qui gère les certificats médicaux pourra les joindre plus tard.",
         "startDate": "Date de début",
         "submit": "Enregistrer l'absence",
         "success": "Absence enregistrée",
@@ -116,6 +130,51 @@
       "next": "Suivant",
       "previous": "Précédent",
       "showing": "Affichage de {from} à {to} sur {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Choisissez une fréquence de soumission dans les paramètres de l'organisation",
+      "columns": {
+        "calendar": "Calendrier",
+        "employee": "Employé",
+        "period": "Période",
+        "status": "Statut"
+      },
+      "descriptionAll": "Qui a soumis la période sélectionnée. Approuvez ou rejetez les soumissions dans la boîte de réception des approbations.",
+      "descriptionManaged": "Parmi les employés que vous gérez, qui a soumis la période sélectionnée. Approuvez ou rejetez les soumissions dans la boîte de réception des approbations.",
+      "empty": "Aucune des personnes que vous pouvez voir ne doit soumettre cette période.",
+      "loading": "Chargement des soumissions de la période",
+      "notSubmitted": "Non soumis",
+      "off": "Votre organisation ne recueille pas les soumissions de périodes.",
+      "openCalendar": "Calendrier",
+      "openCalendarOf": "Ouvrir le calendrier de {name}",
+      "openInbox": "Ouvrir la boîte de réception des approbations",
+      "owing": "{count, plural, one {# employé n'a pas encore soumis cette période.} other {# employés n'ont pas encore soumis cette période.}}",
+      "period": "Période de soumission",
+      "running": "Cette période est toujours en cours. Les employés peuvent la soumettre à partir de son dernier jour.",
+      "status": {
+        "approved": "Approuvé",
+        "awaiting": "En attente de soumission",
+        "rejected": "Rejeté",
+        "sentBack": "Renvoyé après modification",
+        "submitted": "Soumis"
+      },
+      "summary": "Statuts",
+      "title": "Soumissions de périodes"
+    },
+    "presence": {
+      "allLocations": "Tous les sites",
+      "columns": {
+        "name": "Nom",
+        "since": "Depuis",
+        "state": "Statut"
+      },
+      "description": "Choisissez un site pour voir qui a pointé ou est en pause à cet endroit.",
+      "descriptionAll": "Employés assignés à ce site qui ont pointé ou sont en pause.",
+      "descriptionManaged": "Employés que vous gérez assignés à ce site qui ont pointé ou sont en pause.",
+      "empty": "Personne que vous pouvez voir n'a pointé sur ce site actuellement.",
+      "locationTitle": "Qui est présent : {location}",
+      "noLocations": "Votre organisation n'a pas encore de sites actifs.",
+      "title": "Qui est présent"
     },
     "primaryManager": "Vous êtes le manager principal",
     "search": {

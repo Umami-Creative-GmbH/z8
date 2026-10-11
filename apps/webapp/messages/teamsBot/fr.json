@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Actuellement pointé(e)",
+    "deputy": "Remplaçant : {name}",
     "everyoneAvailable": "Tout le monde est disponible aujourd'hui",
     "noOneClockedIn": "Personne n'est encore pointé",
     "noPendingApprovals": "Aucune approbation en attente",

@@ -16,6 +16,7 @@
       },
       "dataCategories": {
         "absences": "Απουσίες",
+        "customers": "Πελάτες",
         "employees": "Εργαζόμενοι",
         "projects": "Έργα",
         "timeEntries": "Εγγραφές χρόνου",

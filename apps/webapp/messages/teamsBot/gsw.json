@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Aktuell iigstempelt",
+    "deputy": "Stellvertretung: {name}",
     "everyoneAvailable": "All sind hüt verfüegbar",
     "noOneClockedIn": "Es isch no niemert iigstempelt",
     "noPendingApprovals": "Kei offeni Gnehmigunge",

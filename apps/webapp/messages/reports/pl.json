@@ -7,6 +7,11 @@
       "pleaseWait": "Proszę czekać, trwa kompilacja danych",
       "selectPeriod": "Wybierz okres i kliknij „Generuj raport”, aby rozpocząć"
     },
+    "customFields": {
+      "no": "Nie",
+      "title": "Pola niestandardowe",
+      "yes": "Tak"
+    },
     "description": "Generuj kompleksowe raporty dotyczące godzin pracy i nieobecności wraz z danymi o pracy zdalnej istotnymi dla celów podatkowych",
     "employeeSelector": {
       "error": "Nie można załadować członków zespołu",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Bez klienta",
         "withoutCustomerHint": "{hours} rozliczalnych bez klienta, nie można przekazać"
       },
+      "details": {
+        "customer": "Klient",
+        "customerFields": "Pola klienta",
+        "noCustomer": "Brak klienta",
+        "projectFields": "Pola projektu",
+        "title": "Szczegóły"
+      },
       "export": {
         "billableHours": "Godziny rozliczalne",
         "changedAfterInvoicing": "Zmieniono po zafakturowaniu",
@@ -164,6 +176,10 @@
         "customer": "Klient",
         "customerReportTitle": "Raport klienta",
         "customersTable": "Klienci",
+        "customFieldName": "Pole",
+        "customFieldRecord": "Rekord",
+        "customFieldsTable": "Pola niestandardowe",
+        "customFieldValue": "Wartość",
         "dailyHoursTable": "Godziny dziennie",
         "date": "Data",
         "employee": "Pracownik",
@@ -176,6 +192,7 @@
         "invoicingNote": "Zafakturowany przychód zachowuje stawki z wersji roboczej faktury; niezafakturowany przychód korzysta ze stawek obowiązujących w momencie wygenerowania raportu.",
         "margin": "Marża",
         "marginPercent": "Marża %",
+        "no": "Nie",
         "nonBillableHours": "Godziny niepodlegające rozliczeniu",
         "pendingReview": "Oczekujące korekty lub zgłoszenia",
         "period": "Okres",
@@ -194,7 +211,8 @@
         "unpricedWork": "Niewyceniona praca",
         "withoutCustomer": "Bez klienta",
         "withoutCustomerHours": "Godziny rozliczalne bez klienta",
-        "workPeriods": "Okresy pracy"
+        "workPeriods": "Okresy pracy",
+        "yes": "Tak"
       },
       "filter": {
         "activeOnly": "Tylko aktywne",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budżet",
+        "customer": "Klient",
         "daysLeft": "pozostało {days} dni",
         "daysOverdue": "{days} dni po terminie",
         "deadline": "Termin",

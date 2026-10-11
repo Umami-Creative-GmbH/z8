@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Godkänd",
+        "changeDeputy": "Ändra ersättare",
+        "changeDeputyOf": "Ändra ersättare för {name}",
+        "deputy": "Ersättare:",
+        "deputyMissing": "Ersättare saknas",
         "description": "Godkänd och väntande frånvaro för valt team och år.",
         "error": {
           "description": "Försök igen om en stund.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} väntande",
         "title": "Årskalender",
         "totalDays": "{count} frånvarande"
+      },
+      "deputyFilter": {
+        "clear": "Visa all frånvaro",
+        "notice": "Visar endast frånvaron som denna medarbetare täcker som ställföreträdare."
       },
       "description": "Granska saldon och registrera godkänd frånvaro för ditt team.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Kategori",
         "categoryPlaceholder": "Välj en frånvarokategori…",
+        "deputy": "Ställföreträdare",
         "description": "Registrera en godkänd frånvaro direkt för den valda medarbetaren.",
         "endDate": "Slutdatum",
         "endDateHelper": "Lämna tomt för frånvaro samma dag.",
@@ -66,6 +75,11 @@
         "required": "{label} är obligatoriskt",
         "sickDetail": "Sjukdetalj",
         "sickDetailPlaceholder": "Välj sjukdetalj…",
+        "sickNotes": {
+          "description": "Lägg till foton eller PDF-filer av sjukintyget du fick: PDF-, JPEG-, PNG- eller WebP-filer på upp till 20 MB vardera. Varje fil sparas som ett eget sjukintyg i medarbetarens personalakt, och medarbetaren ser det. Därefter kan endast de som hanterar medarbetarens sjukintyg öppna det.",
+          "title": "Sjukintyg (valfritt)"
+        },
+        "sickNotesFailed": "Frånvaron registrerades, men {files} kunde inte bifogas. Någon som hanterar sjukintyg kan bifoga dem senare.",
         "startDate": "Startdatum",
         "submit": "Registrera frånvaro",
         "success": "Frånvaro registrerad",
@@ -116,6 +130,51 @@
       "next": "Nästa",
       "previous": "Föregående",
       "showing": "Visar {from} till {to} av {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Välj ett inlämningsintervall i organisationsinställningarna",
+      "columns": {
+        "calendar": "Kalender",
+        "employee": "Medarbetare",
+        "period": "Period",
+        "status": "Status"
+      },
+      "descriptionAll": "Vem som har skickat in den valda perioden. Godkänn eller avvisa inskick i inkorgen för godkännande.",
+      "descriptionManaged": "Vilka av de medarbetare du hanterar som har skickat in den valda perioden. Godkänn eller avvisa inskick i inkorgen för godkännande.",
+      "empty": "Ingen du kan se förväntas skicka in denna period.",
+      "loading": "Läser in inskickade perioder",
+      "notSubmitted": "Ej inskickad",
+      "off": "Din organisation samlar inte in inskickade perioder.",
+      "openCalendar": "Kalender",
+      "openCalendarOf": "Öppna kalendern för {name}",
+      "openInbox": "Öppna inkorgen för godkännande",
+      "owing": "{count, plural, other {# medarbetare har inte skickat in denna period ännu.} }",
+      "period": "Inskickningsperiod",
+      "running": "Denna period pågår fortfarande. Medarbetare kan skicka in den från och med dess sista dag.",
+      "status": {
+        "approved": "Godkänd",
+        "awaiting": "Inväntar inskick",
+        "rejected": "Avvisad",
+        "sentBack": "Tillbakaskickad efter en ändring",
+        "submitted": "Inskickad"
+      },
+      "summary": "Statusar",
+      "title": "Inskickade perioder"
+    },
+    "presence": {
+      "allLocations": "Alla platser",
+      "columns": {
+        "name": "Namn",
+        "since": "Sedan",
+        "state": "Status"
+      },
+      "description": "Välj en plats för att se vem som är instämplad eller har rast där.",
+      "descriptionAll": "Anställda kopplade till denna plats som är instämplade eller har rast.",
+      "descriptionManaged": "Anställda du hanterar som är kopplade till denna plats och är instämplade eller har rast.",
+      "empty": "Ingen som du har behörighet att se är instämplad på denna plats just nu.",
+      "locationTitle": "Vem är på plats: {location}",
+      "noLocations": "Din organisation har inga aktiva platser ännu.",
+      "title": "Vem är på plats"
     },
     "primaryManager": "Du är primär chef",
     "search": {

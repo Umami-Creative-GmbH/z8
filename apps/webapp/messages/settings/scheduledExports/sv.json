@@ -16,6 +16,7 @@
       },
       "dataCategories": {
         "absences": "Frånvaro",
+        "customers": "Kunder",
         "employees": "Anställda",
         "projects": "Projekt",
         "timeEntries": "Tidsregistreringar",

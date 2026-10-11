@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Attualmente in servizio",
+    "deputy": "Sostituto: {name}",
     "everyoneAvailable": "Oggi sono tutti disponibili",
     "noOneClockedIn": "Nessuno è ancora in servizio",
     "noPendingApprovals": "Nessuna approvazione in sospeso",

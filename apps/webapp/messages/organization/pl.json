@@ -141,6 +141,17 @@
       "description": "Wyślij zaproszenie do dołączenia do {organizationName}",
       "emailLabel": "Adres e-mail",
       "error": "Nie udało się wysłać zaproszenia",
+      "kioskOnly": {
+        "description": "Dla pracowników bez służbowego adresu e-mail. Nie mogą się logować i rejestrują czas pracy tylko w kioskach za pomocą kodu PIN. Adres e-mail możesz dodać później.",
+        "firstName": "Imię",
+        "label": "Tylko kiosk, bez adresu e-mail",
+        "lastName": "Nazwisko",
+        "locations": "Przypisane lokalizacje",
+        "locationsDescription": "Kioski w tych lokalizacjach wyświetlają pracownika.",
+        "noLocations": "Brak jeszcze aktywnych lokalizacji. Możesz przypisać lokalizacje później.",
+        "submit": "Utwórz pracownika",
+        "success": "Utworzono pracownika (tylko kiosk)"
+      },
       "noTargetTeam": "Brak zespołu",
       "roleDescriptions": {
         "admin": "Może zapraszać członków i zarządzać ustawieniami",
@@ -242,6 +253,41 @@
       "searchLabel": "Szukaj pracowników",
       "searchPlaceholder": "Szukaj pracowników…",
       "teamBadge": "Zespół"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Tylko administratorzy i właściciele organizacji mogą zmieniać te ustawienia.",
+      "cadence": {
+        "label": "Częstotliwość przesyłania",
+        "monthly": "Miesięcznie",
+        "off": "Wyłączone",
+        "weekly": "Tygodniowo"
+      },
+      "description": "Poproś pracowników o przesyłanie każdego tygodnia lub miesiąca do zatwierdzenia z potwierdzeniem, że zarejestrowany czas pracy i nieobecności są kompletne oraz prawidłowe.",
+      "help": "Okresy uwzględniają strefę czasową każdego pracownika i są dopasowane do okresu zatrudnienia. Włączenie rozpoczyna się od pierwszego pełnego okresu. Zmiana wchodzi w życie na kolejnej granicy okresu wspólnej dla starej i nowej częstotliwości, dlatego przejście między cyklem tygodniowym a miesięcznym może potrwać kilka miesięcy. Pracownicy otrzymują przypomnienie o zakończeniu okresu oraz ponownie po liczbie dni określonej tutaj. Pracownicy korzystający wyłącznie z kiosku nie przesyłają okresów.",
+      "invalidDelay": "Wprowadź pełne dni od {min} do {max}.",
+      "save": "Zapisz zmiany",
+      "saved": "Zapisano ustawienia przesyłania okresów",
+      "saveFailed": "Nie udało się zaktualizować ustawień przesyłania okresów",
+      "saving": "Zapisywanie…",
+      "secondReminderDelay": "Dni do drugiego przypomnienia",
+      "title": "Przesyłanie okresów",
+      "upcoming": {
+        "monthly": "Okresy miesięczne rozpoczynają się {date}.",
+        "off": "Od {date} nie są oczekiwane żadne okresy. Bieżący okres jest nadal oczekiwany.",
+        "untilMonthly": "Do tego czasu kontynuowane są okresy miesięczne.",
+        "untilWeekly": "Do tego czasu kontynuowane są okresy tygodniowe.",
+        "weekly": "Okresy tygodniowe rozpoczynają się {date}."
+      },
+      "weekday": {
+        "friday": "Piątek",
+        "monday": "Poniedziałek",
+        "saturday": "Sobota",
+        "sunday": "Niedziela",
+        "thursday": "Czwartek",
+        "tuesday": "Wtorek",
+        "wednesday": "Środa"
+      },
+      "weekStart": "Tydzień rozpoczyna się w"
     },
     "recover": {
       "button": "Odzyskaj organizację",

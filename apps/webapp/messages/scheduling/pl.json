@@ -16,8 +16,17 @@
       "understaffed": "Niedobór personelu",
       "utilization": "Wykorzystanie: {percent}%"
     },
+    "mySchedule": {
+      "loadFailed": "Nie udało się załadować Twoich zmian. Spróbuj ponownie później.",
+      "nextWeek": "Następny tydzień",
+      "noShifts": "Brak zmian",
+      "previousWeek": "Poprzedni tydzień",
+      "shift": "Zmiana",
+      "today": "Dzisiaj"
+    },
     "page": {
-      "employeeDescription": "Zobacz swoje zmiany i wybierz dostępne",
+      "employeeScheduleDescription": "Twoje opublikowane zmiany, tydzień po tygodniu",
+      "employeeTitle": "Mój grafik",
       "managerDescription": "Zarządzaj i planuj zmiany pracowników",
       "title": "Harmonogram zmian"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Zmiana zapisana z ostrzeżeniem o nakładaniu się",
         "updated": "Zmiana zaktualizowana"
       }
+    },
+    "shiftDetails": {
+      "close": "Zamknij",
+      "date": "Data",
+      "description": "Twoja zaplanowana zmiana",
+      "endsNextDay": "kończy się następnego dnia",
+      "location": "Lokalizacja",
+      "notes": "Notatki",
+      "time": "Czas",
+      "title": "Szczegóły zmiany"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Każdy może przejąć",
@@ -111,6 +130,35 @@
       "validating": "Weryfikacja umiejętności…",
       "validatingDescription": "Sprawdzanie kwalifikacji pracownika",
       "warningMessage": "Nadal możesz przypisać tę zmianę, ale zostanie ona zarejestrowana jako nadpisanie."
+    },
+    "staffingSuggestions": {
+      "empty": "Brak dostępnych pracowników na tę zmianę",
+      "error": "Nie udało się załadować sugestii",
+      "loading": "Wyszukiwanie dostępnych pracowników…",
+      "note": {
+        "missingPreferredSkill": "Brak preferowanej umiejętności: {skill}"
+      },
+      "pick": "Wybierz",
+      "pickLabel": "Przypisz {name}",
+      "reason": {
+        "noContractedTarget": "Brak zakontraktowanego wymiaru",
+        "plannedHours": "Zaplanowano {planned} z {target} h w tym tygodniu",
+        "requestedThisShift": "Zawnioskowano o tę zmianę",
+        "restPeriodOk": "Okres odpoczynku prawidłowy",
+        "skillsHeld": "Posiada: {skills}"
+      },
+      "requested": "Zawnioskowano o tę zmianę",
+      "showAll": "Pokaż wszystkich ({count})",
+      "showFewer": "Pokaż mniej",
+      "title": "Sugerowani pracownicy",
+      "warning": {
+        "expiredRequiredSkill": "{skill} – ważność wygasła w dniu {date}",
+        "maxHours": "Przekroczono dzienny limit ({total} z {max} h)",
+        "missingRequiredSkill": "Brak wymaganej umiejętności: {skill}",
+        "overtime": "{period, select, daily {Dzienne} weekly {Tygodniowe} other {Miesięczne}} nadgodziny ({total} z {threshold} h)",
+        "pendingAbsence": "Oczekująca nieobecność: {category}",
+        "restTime": "Zbyt krótki okres odpoczynku ({rest} z {required} h)"
+      }
     },
     "templates": {
       "dragHint": "Przeciągnij szablon do kalendarza, aby utworzyć zmianę",

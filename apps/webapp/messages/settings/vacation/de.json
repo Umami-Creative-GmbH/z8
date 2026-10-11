@@ -168,6 +168,16 @@
       "policyUpdated": "Richtlinie erfolgreich aktualisiert",
       "required": "Erforderlich",
       "saveFailed": "Speichern der Richtlinie fehlgeschlagen",
+      "sickNotes": {
+        "description": "Krankmeldungen werden in der Personalakte der Mitarbeitenden aufbewahrt. Genehmigende und Führungskräfte sehen nur, dass ein Dokument angehängt ist.",
+        "disabled": "Mitarbeitende können keine Krankmeldungen mehr anhängen",
+        "enabled": "Mitarbeitende können jetzt Krankmeldungen anhängen",
+        "help": "Mitarbeitende hängen Fotos oder PDFs ihrer Krankmeldungen an ihre eigene Krankmeldung an. In Deutschland rufen Arbeitgeber die elektronische Arbeitsunfähigkeitsbescheinigung (eAU) bei den Krankenkassen ab, daher sind Fotos hauptsächlich für Privatversicherte, Minijobs, Österreich und die Schweiz sowie Kind-Krankmeldungen relevant.",
+        "openOrganizationSettings": "Organisationseinstellungen öffnen",
+        "personnelFilesRequired": "Krankmeldungen werden in Personalakten gespeichert. Aktivieren Sie Personalakten zuerst in den Organisationseinstellungen.",
+        "title": "Krankmeldungen",
+        "toggle": "Mitarbeitende können Krankmeldungen anhängen"
+      },
       "since": "seit",
       "startingOn": "beginnend am",
       "tab": {

@@ -7,6 +7,11 @@
       "pleaseWait": "Veuillez patienter pendant que nous compilons vos données",
       "selectPeriod": "Sélectionnez une période et cliquez sur « Générer le rapport » pour commencer"
     },
+    "customFields": {
+      "no": "Non",
+      "title": "Champs personnalisés",
+      "yes": "Oui"
+    },
     "description": "Générez des rapports complets sur les heures de travail et les absences avec des données de télétravail pertinentes pour les impôts",
     "employeeSelector": {
       "error": "Impossible de charger les membres de l'équipe",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Sans client",
         "withoutCustomerHint": "{hours} facturables sans client, ne peuvent pas être transmis"
       },
+      "details": {
+        "customer": "Client",
+        "customerFields": "Champs client",
+        "noCustomer": "Aucun client",
+        "projectFields": "Champs projet",
+        "title": "Détails"
+      },
       "export": {
         "billableHours": "Heures facturables",
         "changedAfterInvoicing": "Modifié après facturation",
@@ -164,6 +176,10 @@
         "customer": "Client",
         "customerReportTitle": "Rapport client",
         "customersTable": "Clients",
+        "customFieldName": "Champ",
+        "customFieldRecord": "Enregistrement",
+        "customFieldsTable": "Champs personnalisés",
+        "customFieldValue": "Valeur",
         "dailyHoursTable": "Heures par jour",
         "date": "Date",
         "employee": "Employé",
@@ -176,6 +192,7 @@
         "invoicingNote": "Les revenus facturés conservent les taux de leur brouillon de facture ; les revenus non facturés utilisent les taux en vigueur au moment de la génération du rapport.",
         "margin": "Marge",
         "marginPercent": "Marge %",
+        "no": "Non",
         "nonBillableHours": "Heures non facturables",
         "pendingReview": "Corrections ou soumissions en attente",
         "period": "Période",
@@ -194,7 +211,8 @@
         "unpricedWork": "Travail non tarifé",
         "withoutCustomer": "Sans client",
         "withoutCustomerHours": "Heures facturables sans client",
-        "workPeriods": "Périodes de travail"
+        "workPeriods": "Périodes de travail",
+        "yes": "Oui"
       },
       "filter": {
         "activeOnly": "Actifs seulement",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Client",
         "daysLeft": "{days}j restants",
         "daysOverdue": "{days}j de retard",
         "deadline": "Date limite",

@@ -15,9 +15,16 @@
       "createCategory": "Skapa frånvarokategori",
       "createCategoryButton": "Skapa kategori",
       "deactivate": "Inaktivera",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Ledighet som tas från arbetssaldot",
+          "name": "Kompledighet"
+        }
+      },
       "deleteDescription": "Är du säker på att du vill ta bort \"{name}\"? Kategorier som används för befintlig frånvaro kan inte tas bort och bör inaktiveras i stället.",
       "deleteFailed": "Det gick inte att ta bort kategorin",
       "deleteTitle": "Ta bort frånvarokategori",
+      "drawsOnWorkBalance": "Dras från arbetssaldo",
       "editCategory": "Redigera \"{name}\"",
       "form": {
         "active": "Aktiv",
@@ -26,11 +33,17 @@
         "colorHelp": "Kalendermarkör",
         "countsAgainstVacation": "Räknas av mot semestersaldo",
         "countsAgainstVacationHelp": "Dra av godkända dagar från medarbetarens semestersaldo.",
+        "deputyRequired": "Ersättare krävs",
+        "deputyRequiredHelp": "Varje frånvaro av denna typ måste ange en ersättare som täcker upp när medarbetaren är borta.",
+        "deputyRequiredSick": "Sjukfrånvaro kräver aldrig en ersättare.",
         "description": "Beskrivning",
         "descriptionHelp": "Valfri vägledning som visas för administratörer och granskare.",
         "descriptionPlaceholder": "t.ex. Använd för godkända utbildnings- eller certifieringsdagar…",
         "descriptionTranslation": "{locale}-beskrivning",
         "descriptionTranslationPlaceholder": "Lokaliserad beskrivning",
+        "drawsOnWorkBalance": "Dras från arbetssaldo",
+        "drawsOnWorkBalanceConflict": "\"Dras från arbetssaldo\" kan inte kombineras med \"Räknas som semester\" eller \"Kräver arbetstid\".",
+        "drawsOnWorkBalanceHelp": "Kompledighet: godkända dagar behåller sin obligatoriska arbetstid, så den anställdes arbetssaldo minskar med den. Semester används inte.",
         "name": "Namn",
         "nameHelp": "Använd en tydlig etikett som anställda och godkännare känner igen.",
         "nameMaxLength": "Använd 100 tecken eller färre",
@@ -46,7 +59,8 @@
         "translationsHelp": "Valfria lokaliserade etiketter för anställda som använder ett annat appspråk.",
         "type": "Typ",
         "typeHelp": "Grupperar rapporter och efterföljande frånvaroflöden.",
-        "typePlaceholder": "Välj kategorityp"
+        "typePlaceholder": "Välj kategorityp",
+        "typeTimeOffInLieu": "Kompledighet"
       },
       "header": {
         "approval": "Godkännande",
@@ -72,6 +86,7 @@
         "parental": "Föräldraledighet",
         "personal": "Personligt",
         "sick": "Sjukfrånvaro",
+        "timeOffInLieu": "Kompledighet",
         "unpaid": "Obetald",
         "vacation": "Semester"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Vissa aktiva kanaler hade eskaleringar avstängda. De levererar fortfarande inte eskaleringsmeddelanden.",
         "inactiveSourceEnabled": "Vissa inaktiva kanaler hade eskaleringar aktiverade. De räknades inte in i policyn.",
         "invalidTimeout": "En kanal hade en ogiltig tidsgräns och användes inte för svarsfönstret."
+      },
+      "deputyDecisions": {
+        "description": "Medarbetare anger en ersättare vid sin frånvaro. När en godkännare har en godkänd frånvaro kan deras ersättare se och besluta om godkännanden som fortfarande är tilldelade dem.",
+        "disabled": "Ersättare kan inte längre besluta om godkännanden. De förblir kontaktpersoner.",
+        "enabled": "Ersättare kan nu besluta om godkännanden medan godkännaren är borta.",
+        "help": "Endast ersättare som har tillgång till inkorgen för godkännanden kan fatta beslut, och endast under godkännarens frånvarodagar. Godkännaren behåller sina godkännanden. När detta är inaktiverat är ersättare endast kontaktpersoner.",
+        "title": "Ersättare",
+        "toggle": "Ersättare kan besluta om godkännanden"
       },
       "description": "Granska organisationens eskaleringspolicy, hur den migrerades från kanalinställningar och villkor som kräver en godkännandeansvarig.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Frånvaro",
         "complianceException": "Efterlevnadsundantag",
         "manualTimeSubmission": "Manuell tidsinlämning",
+        "periodSubmission": "Periodinlämning",
         "policyClockOut": "Policyutstämpling",
         "shiftRequest": "Skiftförfrågan",
         "timeCorrection": "Tidskorrigering",

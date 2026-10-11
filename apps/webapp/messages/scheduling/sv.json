@@ -16,8 +16,17 @@
       "understaffed": "Underbemannad",
       "utilization": "{percent}% beläggning"
     },
+    "mySchedule": {
+      "loadFailed": "Dina arbetspass kunde inte läsas in. Försök igen senare.",
+      "nextWeek": "Nästa vecka",
+      "noShifts": "Inga arbetspass",
+      "previousWeek": "Föregående vecka",
+      "shift": "Arbetspass",
+      "today": "Idag"
+    },
     "page": {
-      "employeeDescription": "Se dina pass och ta tillgängliga arbetspass",
+      "employeeScheduleDescription": "Dina publicerade arbetspass, vecka för vecka",
+      "employeeTitle": "Mitt schema",
       "managerDescription": "Hantera och planera medarbetares arbetspass",
       "title": "Arbetsschema"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Passet sparades med överlappningsvarning",
         "updated": "Passet har uppdaterats"
       }
+    },
+    "shiftDetails": {
+      "close": "Stäng",
+      "date": "Datum",
+      "description": "Ditt planerade arbetspass",
+      "endsNextDay": "slutar nästa dag",
+      "location": "Plats",
+      "notes": "Anteckningar",
+      "time": "Tid",
+      "title": "Passdetaljer"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Vem som helst kan ta passet",
@@ -111,6 +130,35 @@
       "validating": "Validerar kompetenser…",
       "validatingDescription": "Kontrollerar anställdas kvalifikationer",
       "warningMessage": "Du kan fortfarande tilldela detta pass, men det kommer att loggas som en överstyrning."
+    },
+    "staffingSuggestions": {
+      "empty": "Inga tillgängliga medarbetare för detta pass",
+      "error": "Det gick inte att läsa in förslag",
+      "loading": "Söker efter tillgängliga medarbetare…",
+      "note": {
+        "missingPreferredSkill": "Saknar föredragen kompetens: {skill}"
+      },
+      "pick": "Välj",
+      "pickLabel": "Tilldela {name}",
+      "reason": {
+        "noContractedTarget": "Inget avtalat mål",
+        "plannedHours": "{planned} av {target} h planerade denna vecka",
+        "requestedThisShift": "Har önskat detta pass",
+        "restPeriodOk": "Viloperiod OK",
+        "skillsHeld": "Har {skills}"
+      },
+      "requested": "Har önskat detta pass",
+      "showAll": "Visa alla ({count})",
+      "showFewer": "Visa färre",
+      "title": "Föreslagna medarbetare",
+      "warning": {
+        "expiredRequiredSkill": "{skill} löpte ut den {date}",
+        "maxHours": "Över dagligt max ({total} av {max} h)",
+        "missingRequiredSkill": "Obligatorisk kompetens saknas: {skill}",
+        "overtime": "{period, select, daily {Daglig} weekly {Veckovis} other {Månatlig}} övertid ({total} av {threshold} h)",
+        "pendingAbsence": "Väntande frånvaro: {category}",
+        "restTime": "Viloperioden är för kort ({rest} av {required} h)"
+      }
     },
     "templates": {
       "dragHint": "Dra en mall till kalendern för att skapa ett pass",

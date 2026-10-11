@@ -24,6 +24,31 @@
       "nextYear": "Anno prossimo",
       "previousYear": "Anno precedente"
     },
+    "deputy": {
+      "away": "Assente {dates}",
+      "awayOption": "{name} · Assente {dates}",
+      "awayWarning": "{name} è assente in queste date. Puoi comunque selezionare questa persona.",
+      "changeAction": "Cambia sostituto",
+      "changed": "Sostituto salvato",
+      "changeDescription": "Il sostituto copre la tua assenza. La modifica non richiede una nuova approvazione.",
+      "changeDescriptionFor": "Il sostituto copre l'assenza di {name}. La modifica non richiede una nuova approvazione.",
+      "changeFailed": "Impossibile salvare il sostituto",
+      "changeTitle": "Cambia sostituto",
+      "contactOnly": "{name} verrà mostrato solo come contatto e non potrà prendere decisioni sulle approvazioni.",
+      "errors": {
+        "ended": "Non è più possibile modificare il sostituto: questa assenza è terminata.",
+        "required": "Scegli un sostituto: questo tipo di assenza ne richiede uno.",
+        "self": "Un dipendente non può essere il sostituto di se stesso.",
+        "unavailable": "Il sostituto deve essere un dipendente attivo di questa organizzazione."
+      },
+      "help": "Il collega che ti sostituisce durante l'assenza. Non è richiesta la sua accettazione.",
+      "label": "Sostituto",
+      "labelOptional": "Sostituto (facoltativo)",
+      "labelRequired": "Sostituto *",
+      "none": "Nessun sostituto",
+      "placeholder": "Seleziona un sostituto…",
+      "save": "Salva sostituto"
+    },
     "dialog": {
       "cancelDescription": "Sei sicuro di voler annullare questa richiesta di assenza? Questa azione non può essere annullata.",
       "cancelTitle": "Annulla richiesta di assenza",
@@ -36,10 +61,10 @@
     },
     "featureName": "gestisci assenze",
     "form": {
+      "absenceDays": "Giorni di assenza:",
       "absenceType": "Tipo di assenza *",
       "autoApproved": "(Approvato automaticamente)",
       "balanceAfterRequest": "Saldo dopo la richiesta:",
-      "businessDays": "Giorni lavorativi:",
       "daysRemaining": "Giorni rimanenti:",
       "description": "Invia una richiesta di ferie. Il tuo manager riceverà una notifica per l'approvazione.",
       "duration": "Durata assenza",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Nessun rischio di copertura pubblicato",
       "noCoverageRulesConfigured": "Nessuna regola di copertura configurata per i turni interessati",
       "noHolidays": "Nessuna festività assegnata nell'intervallo",
+      "noWorkingDays": "Questo intervallo non contiene giorni lavorativi.",
       "remainingAfter": "Rimanenti dopo la richiesta",
       "requested": "Richiesto",
       "title": "Pianificatore intelligente",
-      "unavailable": "Anteprima di pianificazione non disponibile. Puoi comunque inviare la tua richiesta."
+      "unavailable": "Anteprima di pianificazione non disponibile. Puoi comunque inviare la tua richiesta.",
+      "workBalance": "Saldo ore",
+      "workBalanceAfter": "Dopo la richiesta",
+      "workBalanceCurrent": "Attuale",
+      "workBalanceDrawn": "Detratto dalla richiesta",
+      "workBalanceNegative": "Il tuo saldo ore risulterebbe negativo dopo questa richiesta. Puoi comunque inviarla."
     },
     "requestAbsence": "Richiedi assenza",
+    "sickNotes": {
+      "attachAction": "Allega certificato di malattia",
+      "attach": {
+        "defaultTitle": "Certificato di malattia {dateRange}",
+        "description": "Aggiungi foto o PDF del certificato di malattia: file PDF, JPEG, PNG o WebP fino a 20 MB ciascuno. Ogni file viene salvato come singolo certificato di malattia nel tuo fascicolo personale.",
+        "documentDate": "Data del documento",
+        "failed": "Caricamento non riuscito",
+        "fileRequired": "Seleziona almeno un file.",
+        "officerDescription": "Aggiungi foto o PDF del certificato di malattia: file PDF, JPEG, PNG o WebP fino a 20 MB ciascuno. Ogni file viene salvato come singolo certificato di malattia nel fascicolo personale del dipendente.",
+        "progress": "Avanzamento del caricamento",
+        "progressCount": "{done} di {total} caricati",
+        "share": "Condividi con il dipendente",
+        "sharedNote": "Puoi visualizzare i tuoi certificati di malattia in Documenti personali e in questa assenza. Il tuo approvatore vede solo che è allegato un certificato di malattia. Puoi eliminare un certificato di malattia entro 24 ore dal caricamento.",
+        "shareHint": "Disattivato: solo HR, il dipendente vede solo che è allegato un certificato di malattia. Attivato: il dipendente lo vede in I miei documenti.",
+        "submit": "Allega",
+        "success": "{count, plural, one {Certificato di malattia allegato} other {# certificati di malattia allegati}}",
+        "title": "Allega certificato di malattia",
+        "titleLabel": "Titolo"
+      },
+      "files": {
+        "chooseFiles": "Scegli file",
+        "defaultTitleUndated": "Certificato di malattia",
+        "incomplete": "Assegna a ogni certificato di malattia un titolo e una data del documento.",
+        "remove": "Rimuovi {fileName}",
+        "takePhoto": "Scatta foto",
+        "tooMany": "Puoi aggiungere fino a {max} file."
+      },
+      "marker": "Certificato di malattia allegato ({count})",
+      "panel": {
+        "delete": "Elimina {title}",
+        "description": "Certificati medici per l'assenza {dateRange}.",
+        "empty": "Non ci sono certificati medici che puoi aprire.",
+        "linkExisting": "Collega certificato di malattia",
+        "loadFailed": "Impossibile caricare i certificati medici.",
+        "title": "Certificati medici",
+        "unlink": "Scollega {title}",
+        "unlinked": "Certificato di malattia scollegato",
+        "unlinkFailed": "Impossibile scollegare il certificato di malattia."
+      },
+      "request": {
+        "attachFailed": "La richiesta di assenza è stata inviata, ma non è stato possibile allegare {files}. Puoi allegare i certificati di malattia dall'assenza in un secondo momento.",
+        "description": "Aggiungi foto o PDF del tuo certificato di malattia: file PDF, JPEG, PNG o WebP fino a 20 MB ciascuno. Ogni file viene salvato come singolo certificato di malattia nel tuo fascicolo personale. Il tuo approvatore vede solo che è allegato un certificato di malattia.",
+        "title": "Certificato di malattia (facoltativo)",
+        "uploadFailed": "Impossibile caricare {fileName}. Rimuovilo o riprova."
+      }
+    },
     "status": {
       "approved": "Approvato",
       "pending": "In attesa",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Inserimento orari bloccato",
       "category": "Categoria",
+      "deputy": "Sostituto",
       "duration": "Durata",
       "employee": "Dipendente",
       "noEvents": "Nessun evento per questo giorno",
@@ -177,6 +255,7 @@
       "category": "Categoria",
       "credited": "Accreditato",
       "dateRange": "Intervallo date",
+      "deputy": "Sostituto",
       "duration": "Durata",
       "editedBy": "Modificato da",
       "employee": "Dipendente",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "KW",
+      "closedDay": "In un mese chiuso",
       "dayEvents": "{count, plural, one {# evento: {titles}} other {# eventi: {titles}}}",
       "dayLabel": "{date}: {actual} registrato, {required} richiesto, {delta} {status}.",
       "description": "Ore di politica giornaliere, settimanali e mensili",

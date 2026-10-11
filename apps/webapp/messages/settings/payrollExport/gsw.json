@@ -91,6 +91,8 @@
           "missingConfiguration": "Konfiguration",
           "missingCredentials": "Zugangsdate"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# Überstundenauszahlung wurde nicht exportiert} other {# Überstundenauszahlungen wurden nicht exportiert}}",
+        "unmappedOvertimePayoutsDescription": "Für dieses Format ist den Überstunden keine Lohnart zugewiesen. Weisen Sie unter «Lohnarten» eine zu und exportieren Sie erneut, oder zahlen Sie diese Stunden auf andere Weise aus.",
         "year": "Jahr"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Grössi",
           "status": "Status"
         },
-        "title": "Export-Verlauf"
+        "title": "Export-Verlauf",
+        "unmappedOvertimePayouts": "{count, plural, one {# Überstundenauszahlung nicht exportiert: keine Lohnart für Überstunden} other {# Überstundenauszahlungen nicht exportiert: keine Lohnart für Überstunden}}"
+      },
+      "identifier": {
+        "customField": "Benutzerdefinierts Fäld: {name}",
+        "unavailableField": "Benutzerdefinierts Fäld (nöd verfüegbar)"
       },
       "lexware": {
         "configured": "Konfiguriert",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Alle aktiven Mitarbeitenden haben einen bestätigten Anstellungsverlauf für diese Lohnabrechnungsperiode.",
           "descriptionWarning": "Einige aktive Mitarbeitende haben keinen bestätigten Anstellungsverlauf für diese Lohnabrechnungsperiode."
+        },
+        "periodSubmissions": {
+          "description": "Erwarteti Periode-Iireichige i däm Bereich, wo fehled, abglehnt worde sind, nachere Änderig zrugggschickt worde sind oder no uf en Entscheid warted. Si blockiered de Lohnexport nöd.",
+          "title": "Periode-Iireichige"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Periode i däm Bereich, wo no nöd z Änd sind und drum nonig chönd iigreicht werde. Ihri Ziit chan sich nach em Export immer no ändere.",
+          "title": "Periode-Iireichige, wo no laufed"
         }
       },
       "checkStatus": {

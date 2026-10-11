@@ -16,6 +16,10 @@
       "label": "Billable",
       "noCustomer": "Only work on a project with a customer can be billable"
     },
+    "breakInProgress": {
+      "description": "You're on a break",
+      "since": "On break since {time}"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Only work on a project that has a customer can be billable",
       "breakAwaitingApproval": "This work period is awaiting approval and cannot be edited. Add the break once it is resolved.",
       "breakDurationInvalid": "Enter a break duration of at least 1 minute.",
+      "breakInProgressOpen": "You are on a break. Resume it before adding another break.",
       "breakNotAllowed": "You cannot add a break to this work.",
       "breakOccupied": "The break overlaps other recorded work.",
       "breakPendingCorrection": "A time correction approval is already pending for this work period. Add the break once it is resolved.",
@@ -91,6 +96,7 @@
       "clockInNotAllowed": "You cannot clock in.",
       "clockInOccupied": "This time overlaps other recorded work",
       "clockInRetry": "Failed to clock in. Please try again.",
+      "clockMonthClosed": "This time is in a closed month and cannot be changed until the month is reopened.",
       "clockNotAllowedAtTime": "Clocking is not allowed at this time",
       "clockOutAppendReview": "Your time history needs review before you can clock out. Please contact your administrator.",
       "clockOutBeforeClockIn": "Clock-out must be after clock-in",
@@ -118,6 +124,97 @@
       "taskOtherProject": "This task belongs to another project",
       "taskProjectNotBookable": "Time can no longer be booked to this task's project",
       "workCategoryNotAllowed": "Cannot assign to this work category"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Clock in",
+        "clockOut": "Clock out",
+        "endDay": "End day",
+        "resume": "Resume work",
+        "startBreak": "Start break"
+      },
+      "board": {
+        "empty": "Nobody is clocked in right now.",
+        "title": "Who is in"
+      },
+      "done": {
+        "button": "Done",
+        "clockIn": "Clocked in",
+        "clockOut": "Clocked out",
+        "endDay": "Day ended",
+        "endDayNote": "Your day ended at the start of your break.",
+        "resume": "Back to work",
+        "returning": "Back to the start in {seconds} s",
+        "startBreak": "Break started",
+        "title": "Done"
+      },
+      "employee": {
+        "back": "Cancel",
+        "endDayHint": "Ending the day now ends your work at the start of your break.",
+        "today": "Today: {duration}"
+      },
+      "home": {
+        "empty": "Nobody is assigned to this location yet. Ask your admin.",
+        "loadFailed": "The names could not be loaded. Check the network connection.",
+        "loading": "Loading names…",
+        "noMatch": "No name matches your search.",
+        "search": "Find your name",
+        "title": "Tap your name to clock in or out"
+      },
+      "loading": "Starting kiosk…",
+      "offline": {
+        "banner": "The kiosk is offline. Clocking is not possible until the connection is back.",
+        "refused": "The kiosk is offline. Nothing was recorded; clocking works only while online."
+      },
+      "pairing": {
+        "codeDescription": "The code works once and expires 10 minutes after it was issued.",
+        "codeLabel": "Pairing code",
+        "description": "An owner or admin creates the kiosk in Settings › Kiosks and gives you a pairing code.",
+        "invalidCode": "This code is invalid or has expired. Ask your admin for a new pairing code.",
+        "malformedCode": "Enter the 10-character code exactly as shown in settings.",
+        "rateLimited": "Too many attempts. Wait a few minutes, then try again.",
+        "submit": "Pair this device",
+        "title": "Set up this kiosk",
+        "unreachable": "The kiosk cannot reach the server. Check the network connection and try again."
+      },
+      "pin": {
+        "back": "Not you? Back",
+        "checking": "Checking…",
+        "delete": "Delete last digit",
+        "entered": "{count} digits entered",
+        "locked": "Too many wrong PINs. Your PIN is locked until {time}. Try again then, or ask your manager to unlock it.",
+        "none": "You have no kiosk PIN yet. Ask your manager for one.",
+        "notAssigned": "You cannot clock at this kiosk. Ask your manager.",
+        "prompt": "Enter your kiosk PIN",
+        "rateLimited": "Too many PIN attempts at this kiosk. Try again in {seconds} seconds.",
+        "submit": "OK",
+        "wrong": "That PIN is not correct. Try again."
+      },
+      "refusal": {
+        "alreadyClockedIn": "You are already clocked in.",
+        "billing": "Clocking is not available for your organization right now. Contact your admin.",
+        "generic": "That did not work. Nothing was recorded. Try again or ask your manager.",
+        "holiday": "Clocking is blocked today because of a holiday. Ask your manager.",
+        "monthClosed": "This time is in a closed month and cannot be changed. Ask your manager.",
+        "noBreak": "You are not on a break.",
+        "notClockedIn": "You are not clocked in.",
+        "onBreak": "You are already on a break.",
+        "unconfirmed": "The kiosk could not confirm whether this was saved. Check your status before you try again.",
+        "underReview": "Your time for today is under review. Ask your manager."
+      },
+      "retry": "Try again",
+      "revoked": {
+        "description": "This kiosk can no longer be used for clocking. Please contact your admin.",
+        "pairAgain": "Pair with a new code",
+        "title": "Kiosk revoked"
+      },
+      "state": {
+        "clockedIn": "Clocked in since {time}",
+        "clockedOut": "Not clocked in",
+        "onBreak": "On break since {time}"
+      },
+      "unreachableDescription": "The kiosk cannot reach the server. Check the network connection; clocking works only while online.",
+      "unreachableTitle": "Kiosk offline"
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
@@ -199,6 +296,39 @@
     "noProject": "No project",
     "notesPlaceholder": "What did you work on?",
     "notesSaved": "Notes saved",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "An absence request for {dates} is undecided.",
+        "liveWork": "Work started {start} is still running.",
+        "manualWork": "Manual work on {start} is undecided.",
+        "timeCorrection": "A time correction for work on {start} is undecided."
+      },
+      "description": "Confirm that your work and absences for each period are complete and correct.",
+      "opensOn": "You can submit from {date}.",
+      "refusal": {
+        "alreadySubmitted": "This period has already been submitted.",
+        "noApprover": "No one can approve this period yet. Ask an administrator to assign you a manager.",
+        "notEnded": "You can submit this period from its last day onward.",
+        "notExpected": "This period does not need to be submitted.",
+        "periodOpen": "This period is still open"
+      },
+      "rejectionReason": "Reason: {reason}",
+      "status": {
+        "approved": "Approved",
+        "awaiting": "Awaiting submission",
+        "rejected": "Rejected",
+        "sentBack": "Sent back after a change",
+        "submitted": "Submitted"
+      },
+      "submit": "Submit",
+      "submitFailed": "The period could not be submitted",
+      "submitted": "Period submitted for approval",
+      "title": "Period submissions",
+      "withdraw": "Withdraw",
+      "withdrawFailed": "The submission could not be withdrawn",
+      "withdrawn": "Submission withdrawn",
+      "withdrawRefused": "This submission was already decided and can no longer be withdrawn."
+    },
     "project": "Project",
     "quickBreak": {
       "addBreak": "Add break",

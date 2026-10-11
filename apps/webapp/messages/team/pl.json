@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Zatwierdzone",
+        "changeDeputy": "Zmień zastępcę",
+        "changeDeputyOf": "Zmień zastępcę dla: {name}",
+        "deputy": "Zastępca:",
+        "deputyMissing": "Brak zastępcy",
         "description": "Zatwierdzone i oczekujące nieobecności dla wybranego zespołu i roku.",
         "error": {
           "description": "Spróbuj ponownie za chwilę.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count, plural, one {# oczekujący} few {# oczekujące} many {# oczekujących} other {# oczekującego}}",
         "title": "Kalendarz roczny",
         "totalDays": "{count, plural, one {# nieobecny} few {# nieobecnych} many {# nieobecnych} other {# nieobecnego}}"
+      },
+      "deputyFilter": {
+        "clear": "Pokaż wszystkie nieobecności",
+        "notice": "Wyświetlanie tylko nieobecności, w których ten pracownik pełni zastępstwo."
       },
       "description": "Przeglądaj limity i rejestruj zatwierdzone nieobecności dla swojego zespołu.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Kategoria",
         "categoryPlaceholder": "Wybierz kategorię nieobecności…",
+        "deputy": "Zastępca",
         "description": "Zarejestruj zatwierdzoną nieobecność bezpośrednio dla wybranego pracownika.",
         "endDate": "Data zakończenia",
         "endDateHelper": "Pozostaw puste w przypadku nieobecności jednodniowej.",
@@ -66,6 +75,11 @@
         "required": "{label} jest wymagane",
         "sickDetail": "Szczegóły zwolnienia lekarskiego",
         "sickDetailPlaceholder": "Wybierz szczegóły zwolnienia…",
+        "sickNotes": {
+          "description": "Dodaj zdjęcia lub pliki PDF przekazanego zaświadczenia lekarskiego: pliki PDF, JPEG, PNG lub WebP o rozmiarze do 20 MB każdy. Każdy plik jest zapisywany jako osobne zaświadczenie lekarskie w aktach osobowych pracownika, a pracownik ma do niego wgląd. Później otworzyć je mogą tylko osoby zarządzające zaświadczeniami lekarskimi pracownika.",
+          "title": "Zaświadczenie lekarskie (opcjonalnie)"
+        },
+        "sickNotesFailed": "Nieobecność została zarejestrowana, ale nie udało się załączyć plików {files}. Osoba zarządzająca zaświadczeniami lekarskimi może dodać je później.",
         "startDate": "Data rozpoczęcia",
         "submit": "Zarejestruj nieobecność",
         "success": "Nieobecność zarejestrowana",
@@ -116,6 +130,51 @@
       "next": "Dalej",
       "previous": "Wstecz",
       "showing": "Wyświetlanie od {from} do {to} z {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Wybierz cykl przesyłania w ustawieniach organizacji",
+      "columns": {
+        "calendar": "Kalendarz",
+        "employee": "Pracownik",
+        "period": "Okres",
+        "status": "Status"
+      },
+      "descriptionAll": "Kto przesłał wybrany okres. Zatwierdzaj lub odrzucaj zgłoszenia w skrzynce zatwierdzeń.",
+      "descriptionManaged": "Kto z zarządzanych przez Ciebie pracowników przesłał wybrany okres. Zatwierdzaj lub odrzucaj zgłoszenia w skrzynce zatwierdzeń.",
+      "empty": "Od żadnej z widocznych dla Ciebie osób nie oczekuje się przesłania tego okresu.",
+      "loading": "Wczytywanie zgłoszeń okresów",
+      "notSubmitted": "Nieprzesłany",
+      "off": "Twoja organizacja nie zbiera zgłoszeń okresów.",
+      "openCalendar": "Kalendarz",
+      "openCalendarOf": "Otwórz kalendarz użytkownika {name}",
+      "openInbox": "Otwórz skrzynkę zatwierdzeń",
+      "owing": "{count, plural, one {# pracownik nie przesłał jeszcze tego okresu.} other {# pracowników nie przesłało jeszcze tego okresu.}}",
+      "period": "Okres przesyłania",
+      "running": "Ten okres nadal trwa. Pracownicy mogą go przesłać od jego ostatniego dnia.",
+      "status": {
+        "approved": "Zatwierdzony",
+        "awaiting": "Oczekuje na przesłanie",
+        "rejected": "Odrzucony",
+        "sentBack": "Odesłany po zmianie",
+        "submitted": "Przesłany"
+      },
+      "summary": "Statusy",
+      "title": "Zgłoszenia okresów"
+    },
+    "presence": {
+      "allLocations": "Wszystkie lokalizacje",
+      "columns": {
+        "name": "Imię i nazwisko",
+        "since": "Od",
+        "state": "Status"
+      },
+      "description": "Wybierz lokalizację, aby zobaczyć, kto zarejestrował wejście lub ma przerwę.",
+      "descriptionAll": "Pracownicy przypisani do tej lokalizacji, którzy zarejestrowali wejście lub mają przerwę.",
+      "descriptionManaged": "Pracownicy, którymi zarządzasz, przypisani do tej lokalizacji, którzy zarejestrowali wejście lub mają przerwę.",
+      "empty": "Żadna z widocznych dla Ciebie osób nie ma obecnie zarejestrowanego wejścia w tej lokalizacji.",
+      "locationTitle": "Kto jest w pracy: {location}",
+      "noLocations": "Twoja organizacja nie ma jeszcze aktywnych lokalizacji.",
+      "title": "Kto jest w pracy"
     },
     "primaryManager": "Jesteś głównym menedżerem",
     "search": {

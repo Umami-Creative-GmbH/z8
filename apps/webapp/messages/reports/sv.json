@@ -7,6 +7,11 @@
       "pleaseWait": "Vänligen vänta medan vi sammanställer dina data",
       "selectPeriod": "Välj en period och klicka på \"Generera rapport\" för att komma igång"
     },
+    "customFields": {
+      "no": "Nej",
+      "title": "Anpassade fält",
+      "yes": "Ja"
+    },
     "description": "Generera omfattande rapporter över arbetstimmar och frånvaro med skatterelaterade uppgifter om hemarbete",
     "employeeSelector": {
       "error": "Det gick inte att läsa in teammedlemmar",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Utan kund",
         "withoutCustomerHint": "{hours} debiterbart utan kund, kan inte överlämnas"
       },
+      "details": {
+        "customer": "Kund",
+        "customerFields": "Kundfält",
+        "noCustomer": "Ingen kund",
+        "projectFields": "Projektfält",
+        "title": "Detaljer"
+      },
       "export": {
         "billableHours": "Debiterbara timmar",
         "changedAfterInvoicing": "Ändrat efter fakturering",
@@ -164,6 +176,10 @@
         "customer": "Kund",
         "customerReportTitle": "Kundrapport",
         "customersTable": "Kunder",
+        "customFieldName": "Fält",
+        "customFieldRecord": "Post",
+        "customFieldsTable": "Anpassade fält",
+        "customFieldValue": "Värde",
         "dailyHoursTable": "Timmar per dag",
         "date": "Datum",
         "employee": "Anställd",
@@ -176,6 +192,7 @@
         "invoicingNote": "Fakturerade intäkter behåller priserna från fakturautkastet; ofakturerade intäkter använder de priser som gällde när rapporten genererades.",
         "margin": "Marginal",
         "marginPercent": "Marginal %",
+        "no": "Nej",
         "nonBillableHours": "Ej debiterbara timmar",
         "pendingReview": "Väntande korrigeringar eller inlämningar",
         "period": "Period",
@@ -194,7 +211,8 @@
         "unpricedWork": "Oprissatt arbete",
         "withoutCustomer": "Utan kund",
         "withoutCustomerHours": "Fakturerbara timmar utan kund",
-        "workPeriods": "Arbetsperioder"
+        "workPeriods": "Arbetsperioder",
+        "yes": "Ja"
       },
       "filter": {
         "activeOnly": "Endast aktiva",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Kund",
         "daysLeft": "{days}d kvar",
         "daysOverdue": "{days}d försenad",
         "deadline": "Deadline",

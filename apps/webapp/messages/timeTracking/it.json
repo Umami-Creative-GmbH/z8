@@ -16,6 +16,10 @@
       "label": "Fatturabile",
       "noCustomer": "Solo il lavoro su un progetto con un cliente può essere fatturabile"
     },
+    "breakInProgress": {
+      "description": "Sei in pausa",
+      "since": "In pausa dalle {time}"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Hai timbrato l'uscita!",
     "clockIn": "Entrata",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Solo il lavoro su un progetto che ha un cliente può essere fatturabile",
       "breakAwaitingApproval": "Questo periodo di lavoro è in attesa di approvazione e non può essere modificato. Aggiungi la pausa dopo la risoluzione.",
       "breakDurationInvalid": "Inserisci una durata della pausa di almeno 1 minuto.",
+      "breakInProgressOpen": "Sei in pausa. Riprendila prima di aggiungere un'altra pausa.",
       "breakNotAllowed": "Non puoi aggiungere una pausa a questa sessione di lavoro.",
       "breakOccupied": "La pausa si sovrappone ad altre attività lavorative registrate.",
       "breakPendingCorrection": "È già presente un'approvazione di rettifica oraria in sospeso per questo periodo di lavoro. Aggiungi la pausa dopo la risoluzione.",
@@ -84,12 +89,14 @@
       "breakTooLong": "La durata della pausa deve essere inferiore a quella della sessione corrente.",
       "clockAttributionNotAllowed": "Il progetto o la categoria selezionata non è disponibile",
       "clockCommandRejected": "Il server non ha accettato questa timbratura",
+      "clockConnectionRequired": "La timbratura richiede una connessione in questa organizzazione. Riconnettiti e riprova.",
       "clockInAppendReview": "La tua cronologia oraria deve essere revisionata prima di poter registrare l'ingresso. Contatta l'amministratore.",
       "clockInCollision": "Questo ingresso è in conflitto con una richiesta precedente. Aggiorna la pagina e riprova.",
       "clockInFailed": "Timbratura entrata non riuscita",
       "clockInNotAllowed": "Non puoi timbrare l'entrata.",
       "clockInOccupied": "Questo orario si sovrappone ad altre attività registrate",
       "clockInRetry": "Impossibile timbrare l'entrata. Riprova.",
+      "clockMonthClosed": "Questo orario rientra in un mese chiuso e non può essere modificato fino alla riapertura del mese.",
       "clockNotAllowedAtTime": "La timbratura non è consentita in questo momento",
       "clockOutAppendReview": "La tua cronologia ore richiede una revisione prima di poter timbrare l'uscita. Contatta l'amministratore.",
       "clockOutBeforeClockIn": "L'uscita deve essere successiva all'entrata",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Questa attività appartiene a un altro progetto",
       "taskProjectNotBookable": "Non è più possibile registrare tempo per il progetto di questa attività",
       "workCategoryNotAllowed": "Impossibile assegnare a questa categoria di lavoro"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Timbra entrata",
+        "clockOut": "Timbra uscita",
+        "endDay": "Termina giornata",
+        "resume": "Riprendi lavoro",
+        "startBreak": "Inizia pausa"
+      },
+      "board": {
+        "empty": "Nessuno ha timbrato l'entrata in questo momento.",
+        "title": "Chi è presente"
+      },
+      "done": {
+        "button": "Fatto",
+        "clockIn": "Entrata registrata",
+        "clockOut": "Uscita registrata",
+        "endDay": "Giornata terminata",
+        "endDayNote": "La tua giornata è terminata all'inizio della pausa.",
+        "resume": "Torna al lavoro",
+        "returning": "Ritorno all'inizio tra {seconds} s",
+        "startBreak": "Pausa iniziata",
+        "title": "Fatto"
+      },
+      "employee": {
+        "back": "Annulla",
+        "endDayHint": "Terminando la giornata adesso, il lavoro si concluderà all'inizio della pausa.",
+        "today": "Oggi: {duration}"
+      },
+      "home": {
+        "empty": "Nessuno è ancora assegnato a questa sede. Chiedi al tuo amministratore.",
+        "loadFailed": "Impossibile caricare i nomi. Controlla la connessione di rete.",
+        "loading": "Caricamento nomi…",
+        "noMatch": "Nessun nome corrisponde alla ricerca.",
+        "search": "Trova il tuo nome",
+        "title": "Tocca il tuo nome per timbrare l'entrata o l'uscita"
+      },
+      "loading": "Avvio del chiosco in corso…",
+      "offline": {
+        "banner": "Il chiosco è offline. La timbratura non è possibile finché non viene ripristinata la connessione.",
+        "refused": "Il chiosco è offline. Non è stato registrato nulla; la timbratura funziona solo online."
+      },
+      "pairing": {
+        "codeDescription": "Il codice è monouso e scade 10 minuti dopo l'emissione.",
+        "codeLabel": "Codice di associazione",
+        "description": "Un proprietario o amministratore crea il chiosco in Impostazioni › Chioschi e ti fornisce un codice di associazione.",
+        "invalidCode": "Questo codice non è valido o è scaduto. Chiedi un nuovo codice di associazione all'amministratore.",
+        "malformedCode": "Inserisci il codice di 10 caratteri esattamente come mostrato nelle impostazioni.",
+        "rateLimited": "Troppi tentativi. Attendi qualche minuto e riprova.",
+        "submit": "Associa questo dispositivo",
+        "title": "Configura questo chiosco",
+        "unreachable": "Il chiosco non riesce a raggiungere il server. Verifica la connessione di rete e riprova."
+      },
+      "pin": {
+        "back": "Non sei tu? Indietro",
+        "checking": "Verifica in corso…",
+        "delete": "Elimina l'ultima cifra",
+        "entered": "{count} cifre inserite",
+        "locked": "Troppi PIN errati. Il tuo PIN è bloccato fino alle {time}. Riprova a quell'ora o chiedi al tuo responsabile di sbloccarlo.",
+        "none": "Non hai ancora un PIN per il chiosco. Chiedine uno al tuo responsabile.",
+        "notAssigned": "Non puoi timbrare presso questo chiosco. Rivolgiti al tuo responsabile.",
+        "prompt": "Inserisci il PIN del chiosco",
+        "rateLimited": "Troppi tentativi di inserimento del PIN su questo chiosco. Riprova tra {seconds} secondi.",
+        "submit": "OK",
+        "wrong": "Il PIN non è corretto. Riprova."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Hai già timbrato l'entrata.",
+        "billing": "La timbratura non è al momento disponibile per la tua organizzazione. Contatta l'amministratore.",
+        "generic": "Operazione non riuscita. Non è stato registrato nulla. Riprova o rivolgiti al tuo responsabile.",
+        "holiday": "Oggi la timbratura è bloccata a causa di una festività. Rivolgiti al tuo responsabile.",
+        "monthClosed": "Questo orario rientra in un mese chiuso e non può essere modificato. Rivolgiti al tuo manager.",
+        "noBreak": "Non sei in pausa.",
+        "notClockedIn": "Non hai timbrato l'entrata.",
+        "onBreak": "Sei già in pausa.",
+        "unconfirmed": "Il chiosco non è riuscito a confermare il salvataggio. Controlla il tuo stato prima di riprovare.",
+        "underReview": "Le tue ore di oggi sono in fase di revisione. Rivolgiti al tuo responsabile."
+      },
+      "retry": "Riprova",
+      "revoked": {
+        "description": "Questo chiosco non può più essere utilizzato per la timbratura. Contatta l'amministratore.",
+        "pairAgain": "Associa con un nuovo codice",
+        "title": "Chiosco revocato"
+      },
+      "state": {
+        "clockedIn": "In servizio dalle {time}",
+        "clockedOut": "Entrata non registrata",
+        "onBreak": "In pausa dalle {time}"
+      },
+      "unreachableDescription": "Il chiosco non riesce a raggiungere il server. Controlla la connessione di rete; la timbratura funziona solo online.",
+      "unreachableTitle": "Chiosco offline"
     },
     "manualEntry": {
       "addButton": "Aggiungi voce manuale",
@@ -198,6 +296,39 @@
     "noProject": "Nessun progetto",
     "notesPlaceholder": "Su cosa hai lavorato?",
     "notesSaved": "Note salvate",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "Una richiesta di assenza per {dates} è in sospeso.",
+        "liveWork": "Il lavoro iniziato {start} è ancora in corso.",
+        "manualWork": "Il lavoro manuale del {start} è in sospeso.",
+        "timeCorrection": "Una correzione dell'orario per il lavoro del {start} è in sospeso."
+      },
+      "description": "Conferma che le ore lavorate e le assenze per ciascun periodo siano complete e corrette.",
+      "opensOn": "Puoi inviare a partire dal {date}.",
+      "refusal": {
+        "alreadySubmitted": "Questo periodo è già stato inviato.",
+        "noApprover": "Nessuno può ancora approvare questo periodo. Chiedi a un amministratore di assegnarti un responsabile.",
+        "notEnded": "Puoi inviare questo periodo a partire dal suo ultimo giorno.",
+        "notExpected": "Non è necessario inviare questo periodo.",
+        "periodOpen": "Questo periodo è ancora aperto"
+      },
+      "rejectionReason": "Motivo: {reason}",
+      "status": {
+        "approved": "Approvato",
+        "awaiting": "In attesa di invio",
+        "rejected": "Rifiutato",
+        "sentBack": "Restituito dopo una modifica",
+        "submitted": "Inviato"
+      },
+      "submit": "Invia",
+      "submitFailed": "Impossibile inviare il periodo",
+      "submitted": "Periodo inviato per l'approvazione",
+      "title": "Invii dei periodi",
+      "withdraw": "Ritira",
+      "withdrawFailed": "Impossibile ritirare l'invio",
+      "withdrawn": "Invio ritirato",
+      "withdrawRefused": "Questo invio è già stato deciso e non può più essere ritirato."
+    },
     "project": "Progetto",
     "quickBreak": {
       "addBreak": "Aggiungi pausa",

@@ -7,6 +7,11 @@
       "pleaseWait": "Bitte warten Sie, während wir Ihre Daten zusammenstellen",
       "selectPeriod": "Wählen Sie einen Zeitraum aus und klicken Sie auf „Bericht generieren“, um zu beginnen"
     },
+    "customFields": {
+      "no": "Nein",
+      "title": "Benutzerdefinierte Felder",
+      "yes": "Ja"
+    },
     "description": "Erstellen Sie umfassende Arbeitszeit- und Abwesenheitsberichte mit steuerrelevanten Homeoffice-Daten",
     "employeeSelector": {
       "error": "Teammitglieder konnten nicht geladen werden",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Ohne Kunde",
         "withoutCustomerHint": "{hours} abrechenbar ohne Kunde, kann nicht übergeben werden"
       },
+      "details": {
+        "customer": "Kunde",
+        "customerFields": "Kundenfelder",
+        "noCustomer": "Kein Kunde",
+        "projectFields": "Projektfelder",
+        "title": "Details"
+      },
       "export": {
         "billableHours": "Abrechenbare Stunden",
         "changedAfterInvoicing": "Nach Rechnungsstellung geändert",
@@ -164,6 +176,10 @@
         "customer": "Kunde",
         "customerReportTitle": "Kundenbericht",
         "customersTable": "Kunden",
+        "customFieldName": "Feld",
+        "customFieldRecord": "Datensatz",
+        "customFieldsTable": "Benutzerdefinierte Felder",
+        "customFieldValue": "Wert",
         "dailyHoursTable": "Stunden pro Tag",
         "date": "Datum",
         "employee": "Mitarbeiter",
@@ -176,6 +192,7 @@
         "invoicingNote": "Für abgerechneten Umsatz gelten die Sätze des Rechnungsentwurfs; für nicht abgerechneten Umsatz gelten die zum Zeitpunkt der Berichterstellung gültigen Sätze.",
         "margin": "Marge",
         "marginPercent": "Marge %",
+        "no": "Nein",
         "nonBillableHours": "Nicht abrechenbare Stunden",
         "pendingReview": "Ausstehende Korrekturen oder Einreichungen",
         "period": "Zeitraum",
@@ -194,7 +211,8 @@
         "unpricedWork": "Unbepreiste Arbeit",
         "withoutCustomer": "Ohne Kunde",
         "withoutCustomerHours": "Abrechenbare Stunden ohne Kunde",
-        "workPeriods": "Arbeitszeiträume"
+        "workPeriods": "Arbeitszeiträume",
+        "yes": "Ja"
       },
       "filter": {
         "activeOnly": "Nur Aktive",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Kunde",
         "daysLeft": "{days}T übrig",
         "daysOverdue": "{days}T überfällig",
         "deadline": "Frist",

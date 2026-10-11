@@ -7,6 +7,11 @@
       "pleaseWait": "Lütfen verileriniz derlenirken bekleyin",
       "selectPeriod": "Başlamak için bir dönem seçin ve \"Rapor Oluştur\"a tıklayın"
     },
+    "customFields": {
+      "no": "Hayır",
+      "title": "Özel alanlar",
+      "yes": "Evet"
+    },
     "description": "Vergiyle ilgili evden çalışma verileriyle kapsamlı çalışma saati ve devamsızlık raporları oluşturun",
     "employeeSelector": {
       "error": "Ekip üyeleri yüklenemedi",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Müşterisiz",
         "withoutCustomerHint": "Müşterisiz {hours} faturalandırılabilir çalışma, devredilemez"
       },
+      "details": {
+        "customer": "Müşteri",
+        "customerFields": "Müşteri alanları",
+        "noCustomer": "Müşteri yok",
+        "projectFields": "Proje alanları",
+        "title": "Detaylar"
+      },
       "export": {
         "billableHours": "Faturalandırılabilir saatler",
         "changedAfterInvoicing": "Faturalandırmadan sonra değiştirildi",
@@ -164,6 +176,10 @@
         "customer": "Müşteri",
         "customerReportTitle": "Müşteri raporu",
         "customersTable": "Müşteriler",
+        "customFieldName": "Alan",
+        "customFieldRecord": "Kayıt",
+        "customFieldsTable": "Özel alanlar",
+        "customFieldValue": "Değer",
         "dailyHoursTable": "Gün başına saat",
         "date": "Tarih",
         "employee": "Çalışan",
@@ -176,6 +192,7 @@
         "invoicingNote": "Faturalanan gelir, fatura taslağındaki ücretleri korur; faturalanmamış gelir ise rapor oluşturulduğunda geçerli olan ücretleri kullanır.",
         "margin": "Marj",
         "marginPercent": "% Marj",
+        "no": "Hayır",
         "nonBillableHours": "Faturalandırılamayan saatler",
         "pendingReview": "Bekleyen düzeltmeler veya gönderimler",
         "period": "Dönem",
@@ -194,7 +211,8 @@
         "unpricedWork": "Fiyatlandırılmamış iş",
         "withoutCustomer": "Müşterisiz",
         "withoutCustomerHours": "Müşterisiz faturalandırılabilir saatler",
-        "workPeriods": "Çalışma dönemleri"
+        "workPeriods": "Çalışma dönemleri",
+        "yes": "Evet"
       },
       "filter": {
         "activeOnly": "Sadece Aktif",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Bütçe",
+        "customer": "Müşteri",
         "daysLeft": "{days} gün kaldı",
         "daysOverdue": "{days} gün gecikti",
         "deadline": "Teslim Tarihi",

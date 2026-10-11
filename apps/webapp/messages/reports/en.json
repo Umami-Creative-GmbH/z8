@@ -7,6 +7,11 @@
       "pleaseWait": "Please wait while we compile your data",
       "selectPeriod": "Select a period and click \"Generate Report\" to get started"
     },
+    "customFields": {
+      "no": "No",
+      "title": "Custom fields",
+      "yes": "Yes"
+    },
     "description": "Generate comprehensive work hour and absence reports with tax-relevant home office data",
     "employeeSelector": {
       "error": "Unable to load team members",
@@ -154,6 +159,13 @@
         "withoutCustomer": "Without customer",
         "withoutCustomerHint": "{hours} billable without customer, cannot be handed off"
       },
+      "details": {
+        "customer": "Customer",
+        "customerFields": "Customer fields",
+        "noCustomer": "No customer",
+        "projectFields": "Project fields",
+        "title": "Details"
+      },
       "export": {
         "billableHours": "Billable hours",
         "changedAfterInvoicing": "Changed after invoicing",
@@ -164,6 +176,10 @@
         "customer": "Customer",
         "customerReportTitle": "Customer report",
         "customersTable": "Customers",
+        "customFieldName": "Field",
+        "customFieldRecord": "Record",
+        "customFieldsTable": "Custom fields",
+        "customFieldValue": "Value",
         "dailyHoursTable": "Hours per day",
         "date": "Date",
         "employee": "Employee",
@@ -176,6 +192,7 @@
         "invoicingNote": "Invoiced revenue keeps the rates of its invoice draft; un-invoiced revenue uses the rates in effect when the report was generated.",
         "margin": "Margin",
         "marginPercent": "Margin %",
+        "no": "No",
         "nonBillableHours": "Non-billable hours",
         "pendingReview": "Pending corrections or submissions",
         "period": "Period",
@@ -194,7 +211,8 @@
         "unpricedWork": "Unpriced work",
         "withoutCustomer": "Without customer",
         "withoutCustomerHours": "Billable hours without customer",
-        "workPeriods": "Work periods"
+        "workPeriods": "Work periods",
+        "yes": "Yes"
       },
       "filter": {
         "activeOnly": "Active Only",
@@ -256,6 +274,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Customer",
         "daysLeft": "{days}d left",
         "daysOverdue": "{days}d overdue",
         "deadline": "Deadline",

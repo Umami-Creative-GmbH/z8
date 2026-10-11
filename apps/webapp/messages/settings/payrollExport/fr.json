@@ -91,6 +91,8 @@
           "missingConfiguration": "configuration",
           "missingCredentials": "identifiants"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# paiement d'heures supplémentaires n'a pas été exporté} other {# paiements d'heures supplémentaires n'ont pas été exportés}}",
+        "unmappedOvertimePayoutsDescription": "Aucun type de salaire n'est associé aux Heures supplémentaires pour ce format. Associez-en un sous Types de salaire et réexportez, ou payez ces heures d'une autre manière.",
         "year": "Année"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Taille",
           "status": "Statut"
         },
-        "title": "Historique des exportations"
+        "title": "Historique des exportations",
+        "unmappedOvertimePayouts": "{count, plural, one {# paiement d'heures supplémentaires non exporté : aucun type de salaire pour les Heures supplémentaires} other {# paiements d'heures supplémentaires non exportés : aucun type de salaire pour les Heures supplémentaires}}"
+      },
+      "identifier": {
+        "customField": "Champ personnalisé : {name}",
+        "unavailableField": "Champ personnalisé (non disponible)"
       },
       "lexware": {
         "configured": "Configuré",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Tous les employés actifs ont un historique d'emploi confirmé pour cette période de paie.",
           "descriptionWarning": "Certains employés actifs n'ont pas d'historique d'emploi confirmé pour cette période de paie."
+        },
+        "periodSubmissions": {
+          "description": "Soumissions de période attendues dans cette plage qui sont manquantes, rejetées, renvoyées après modification ou toujours en attente de décision. Elles ne bloquent pas l'export de paie.",
+          "title": "Soumissions de période"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Périodes dans cette plage qui ne sont pas encore terminées et ne peuvent donc pas être soumises. Leurs heures peuvent encore changer après l'export.",
+          "title": "Soumissions de période toujours en cours"
         }
       },
       "checkStatus": {

@@ -258,6 +258,28 @@
         "previous": "Precedente"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Conferma come pagato",
+          "description": "L'ufficio paghe ha pagato questo ciclo {format}? Le note spese di tua competenza vengono registrate come rimborsate con esso. Le tue note spese e quelle al di fuori della tua competenza rimangono nel ciclo.",
+          "descriptionCounted": "{count, plural, one {L'ufficio paghe ha pagato questo ciclo {format}? # nota spese di tua competenza ({amount}) viene registrata come rimborsata con esso. Le tue note spese e quelle al di fuori della tua competenza rimangono nel ciclo.} other {L'ufficio paghe ha pagato questo ciclo {format}? # note spese di tua competenza ({amount}) vengono registrate come rimborsate con esso. Le tue note spese e quelle al di fuori della tua competenza rimangono nel ciclo.}}",
+          "failed": "Impossibile confermare il ciclo paghe. Riprova; non verrà registrato nulla due volte.",
+          "outcome": {
+            "confirmed": "Rimborsato {amount}",
+            "confirmedWithRemainder": "Rimborsato {amount}. {remaining} ancora in attesa di rimborso per il prossimo ciclo.",
+            "outOfScope": "Non confermata: fuori dal tuo ambito di competenza. Rimane nell'elaborazione per un responsabile incaricato.",
+            "overpaidByPayroll": "Rimborsati {amount}, {overpaid} in più rispetto a quanto ancora dovuto. La spesa ora risulta pagata in eccesso: registra il recupero manualmente.",
+            "ownExpense": "Non confermata: è una tua spesa. Rimane nell'elaborazione affinché qualcun altro la confermi."
+          },
+          "payday": "Giorno di paga",
+          "paydayHint": "Il giorno di paga in cui sono state liquidate le buste paga di questa elaborazione. Ogni rimborso di questa elaborazione viene registrato in tale data.",
+          "results": {
+            "nothing": "Non c'era nulla da confermare in questa elaborazione. Nessun rimborso registrato.",
+            "summary": "{confirmed} su {total} confermati",
+            "title": "Risultati della conferma"
+          },
+          "submit": "Conferma come pagato",
+          "title": "Conferma l'elaborazione stipendi {period} come pagata"
+        },
         "included": "Inclusa in {run}. Viene liquidata con tale elaborazione paghe e registrata come rimborsata quando l'elaborazione viene confermata.",
         "label": "Elaborazione paghe {period} ({format})",
         "notIncluded": "Nessuna elaborazione paghe include più questa spesa.",
@@ -266,6 +288,11 @@
         "removeDescription": "Rimuovila solo se non verrà liquidata con questa elaborazione paghe, ad esempio dopo aver corretto il file delle paghe. La rimozione viene registrata nel registro di controllo.",
         "removeFailed": "Impossibile rimuovere la spesa dall'elaborazione paghe.",
         "removeTitle": "Rimuovere questa spesa dall'elaborazione paghe?"
+      },
+      "payrollRuns": {
+        "description": "Queste elaborazioni stipendi contengono note spese in attesa di rimborso. Una volta effettuato il pagamento dell'elaborazione, confermala per registrare i rimborsi.",
+        "reports": "{count, plural, one {# nota spese da confermare, {amount}} other {# note spese da confermare, {amount}}}",
+        "title": "Elaborazioni stipendi in attesa di conferma"
       },
       "queue": {
         "description": "Apri una spesa per visualizzarne la liquidazione e registrare un rimborso.",
@@ -452,6 +479,7 @@
         "newTrip": "Nuovo viaggio"
       },
       "approvedBy": "Approvato da {name} il {date}.",
+      "approvedByDeputy": "Approvato da {name} (sostituto di {actingForName}) il {date}.",
       "awaitingReview": "In attesa di revisione.",
       "awaitingReviewer": "In attesa di revisione da parte di {name}.",
       "backToApprovals": "Torna alle approvazioni",
@@ -576,7 +604,9 @@
         "description": "Ogni passaggio di questa nota spese, a partire dal meno recente. Gli orari sono indicati in UTC.",
         "detail": {
           "approvalRecorded": "Da {name}; in attesa di ulteriore approvazione.",
+          "approvalRecordedByDeputy": "Da {name} (sostituto di {actingForName}); in attesa di ulteriore approvazione.",
           "by": "Da {name}",
+          "byDeputy": "Da {name} (sostituto di {actingForName})",
           "inCycle": "Invio {number} · {detail}",
           "selfApproved": "Nessun altro ha potuto esaminare questa nota spese."
         },
@@ -843,6 +873,7 @@
         "verifying": "Verifica della ricevuta in corso…"
       },
       "rejectedBy": "Rifiutata da {name}",
+      "rejectedByDeputy": "Rifiutato da {name} (sostituto di {actingForName})",
       "reopen": {
         "action": "Riapri per correzione",
         "changed": "Nel frattempo la nota spese è cambiata e non è stata riaperta. Rivedila.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Importo approvato pagato dal dipendente",
       "entry": {
         "exportBatch": "Dall'esportazione richiesta il {date}",
+        "payrollRun": "Rimborsato con l'elaborazione stipendi {period}",
         "recordedBy": "Registrato da {name}, {date}",
         "recovery": "Recuperato {amount}",
         "reimbursement": "Pagato {amount}"

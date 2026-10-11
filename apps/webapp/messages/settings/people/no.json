@@ -158,6 +158,30 @@
         "description": "Inviter medlemmer og vurder ventende forespørsler om medlemskap",
         "title": "Invitasjoner"
       },
+      "kioskPin": {
+        "addEmailDescription": "De mottar en invitasjon til å velge et passord og kan deretter logge inn. Kiosk-PIN-koden og historikken deres forblir uendret.",
+        "addEmailHeading": "Legg til en e-postadresse",
+        "addEmailSubmit": "Legg til e-postadresse og inviter",
+        "confirmReset": "Erstatt PIN-koden",
+        "description": "Den personlige PIN-koden denne ansatte taster inn for å stemple på en kiosk.",
+        "done": "Ferdig",
+        "emailAdded": "E-postadresse lagt til. Invitasjonen er på vei.",
+        "emailAddedNotSent": "E-postadresse lagt til, men invitasjonen kunne ikke sendes. Den ansatte kan bruke Glemt passord med denne adressen.",
+        "emailLabel": "E-postadresse",
+        "hasPin": "En kiosk-PIN er angitt.",
+        "issue": "Tildel PIN-kode",
+        "kioskOnlyBadge": "Kun kiosk",
+        "kioskOnlyDescription": "Denne ansatte har ingen e-postadresse og ingen innlogging. De stempler kun på kiosker med PIN-koden sin.",
+        "kioskOnlyNoEmail": "Kun kiosk, ingen e-postadresse",
+        "lockedUntil": "Låst etter for mange feil PIN-koder frem til {time}.",
+        "noPin": "Ingen kiosk-PIN ennå.",
+        "pinHeading": "Kiosk-PIN",
+        "reset": "Tilbakestill PIN-kode",
+        "shownOnce": "Gi denne PIN-koden til den ansatte nå. Den vises kun én gang.",
+        "title": "Kiosktilgang",
+        "unlock": "Lås opp",
+        "unlocked": "Kiosk-PIN låst opp"
+      },
       "lifecycle": {
         "actionsLabel": "Ansatthandlinger for {name}",
         "deactivate": "Deaktiver",
@@ -207,12 +231,17 @@
         "currency": "Valuta",
         "currencyInvalid": "Angi en valutakode på tre bokstaver.",
         "departurePanelDescription": "Tilgang og bruk av betalt plass avsluttes ved skjæringstidspunktet nedenfor. Ansatthistorikken beholdes.",
+        "deputyCover": {
+          "absences": "Stedfortreder for pågående eller kommende fravær: {count}",
+          "title": "Dekning som må omorganiseres"
+        },
         "editDeparture": "Rediger fratredelse",
         "effective": "Fratredelse trer i kraft",
         "effectiveDescription": "Tilgangen ble avsluttet {cutoff} ({timezone}).",
         "employmentGap": "Ikke ansatt {startDate} – {endDate}",
         "employmentStint": "Ansettelse {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Denne ansatte er stedfortreder for pågående eller kommende fravær. Vedkommende fjernes som stedfortreder når fratredelsen trer i kraft, og de berørte personene blir varslet.",
           "finalOwner": "Tilordne og aktiver en annen godkjent eier før denne ansatte slutter.",
           "futureAbsences": "Fravær etter skjæringstidspunktet forblir registrert. Se over dem i fravær.",
           "futureShifts": "Vakter etter skjæringstidspunktet forblir tildelt. Se over dem i vaktplanlegging.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Behandling av pauser og tillegg",
           "clockRepair": "Reparasjon av tidtaker",
           "dispatchDeparture": "Planlegging av fratredelse",
+          "notifyDeputyRelease": "Varsel om at stedfortreder ikke lenger er tilgjengelig",
           "notifyReview": "Varsel om gjennomgang",
           "sessionRevocation": "Avlogging av økt"
         },
         "team": "Team",
         "title": "Ansettelse og fratredelse",
         "unknownLegacyDate": "Dato ikke registrert",
-        "weeklyHoursInvalid": "Angi ukentlige timer mellom 0 og 168."
+        "weeklyHoursInvalid": "Angi ukentlige timer mellom 0 og 168.",
+        "workBalance": {
+          "recordFinalPayout": "Registrer endelig overtidsutbetaling",
+          "through": "Til og med {date}",
+          "title": "Arbeidssaldo"
+        }
       },
       "tabs": {
         "employees": "Ansatte",
@@ -324,7 +359,115 @@
         "inviteCodes": "Invitasjonskoder",
         "members": "Medlemmer"
       },
-      "title": "Ansatte"
+      "title": "Ansatte",
+      "workBalance": {
+        "adjustmentCancelled": "Justering kansellert",
+        "cancelDescription": "{summary}. Den forblir i historikken som kansellert og teller ikke lenger mot arbeidssaldoen.",
+        "cancellationReason": "Hvorfor er den kansellert?",
+        "cancelSubmit": "Kanseller justering",
+        "cancelTitle": "Kanseller justering",
+        "conflictingPayoutsDescription": "De vil ikke lenger telle. Kanseller dem først eller velg en tidligere dag.",
+        "conflictingPayoutsTitle": "Overtidsutbetalinger på eller før denne dagen",
+        "current": "Gjeldende arbeidssaldo",
+        "day": "Dag",
+        "dayDescription": "I den ansattes tidssone. Saldoen som vises gjelder til og med i går, så en utbetaling datert i dag teller fra i morgen.",
+        "dayRequired": "Velg en dag.",
+        "description": "Fullført arbeid minus påkrevd tid, sammen med inngående saldo og overtidsutbetalinger. Justeringer redigeres aldri: en feilaktig justering kanselleres.",
+        "direction": "Saldo",
+        "errors": {
+          "adjustmentNotFound": "Denne justeringen finnes ikke lenger for denne ansatte.",
+          "alreadyCancelled": "Denne justeringen er allerede kansellert.",
+          "amountNotPositive": "Angi en utbetaling på mer enn null.",
+          "beforeOpeningBalance": "Utbetalingen må være datert etter dagen for gjeldende inngående saldo.",
+          "conflictingPayouts": "Overtidsutbetalinger er datert på eller før denne dagen. Kanseller dem først eller velg en tidligere dag.",
+          "employeeNotFound": "Fant ikke den ansatte.",
+          "exceedsBalance": "Utbetalingen er høyere enn den ansattes arbeidssaldo ved slutten av den dagen.",
+          "exceedsLaterBalance": "Utbetalingen vil føre til at arbeidssaldoen blir negativ etter en senere overtidsutbetaling. Kanseller den utbetalingen først, eller registrer et lavere beløp.",
+          "failed": "Kunne ikke oppdatere arbeidssaldoen. Prøv igjen.",
+          "futureDay": "Dagen kan ikke være etter i dag i den ansattes tidssone.",
+          "invalidInput": "Sjekk dagen, timene og minuttene, samt årsaken.",
+          "monthClosed": "Dagen er i en lukket måned.",
+          "monthClosedNamed": "{month} er lukket. Den må gjenåpnes før justeringer datert i den kan registreres eller kanselleres.",
+          "notPermitted": "Bare organisasjonseiere og -administratorer, samt lønnsansvarlige for de ansatte lønnstilgangen deres dekker, kan registrere eller kansellere saldojusteringer.",
+          "reasonRequired": "Angi en årsak."
+        },
+        "history": "Saldojusteringer",
+        "hours": "Timer",
+        "hoursInvalid": "Angi hele timer.",
+        "keepAdjustment": "Behold justering",
+        "loadFailed": "Kunne ikke laste inn arbeidssaldoen.",
+        "loading": "Laster inn arbeidssaldo",
+        "minutes": "Minutter",
+        "minutesInvalid": "Angi minutter fra 0 til 59.",
+        "negative": "Skyldige timer (−)",
+        "openingBalanceDay": "Saldo ved utgangen av",
+        "openingBalanceDayDescription": "I den ansattes tidssone. Saldoen telles igjen fra neste dag.",
+        "openingBalanceReasonPlaceholder": "For eksempel: saldo overført fra forrige system …",
+        "openingBalanceSet": "Åpningssaldo angitt",
+        "payoutReasonPlaceholder": "For eksempel: utbetalt med lønnen for oktober …",
+        "payoutRecorded": "Overtidsutbetaling registrert",
+        "positive": "Overtid (+)",
+        "reason": "Årsak",
+        "recordPayout": "Registrer overtidsutbetaling",
+        "recordPayoutDescription": "Registrer overtid utbetalt som lønn. Den reduserer arbeidssaldoen fra slutten av dagen og kan ikke være større enn saldoen den dagen.",
+        "recordPayoutSubmit": "Registrer utbetaling",
+        "recordPayoutTitle": "Registrer overtidsutbetaling",
+        "replacesOpeningBalance": "Gjeldende åpningssaldo oppheves med denne begrunnelsen.",
+        "setOpeningBalance": "Angi åpningssaldo",
+        "setOpeningBalanceDescription": "Åpningssaldoen erstatter arbeidssaldoen til og med denne dagen. Arbeid og påkrevd tid før dette forblir registrert, men telles ikke lenger med.",
+        "setOpeningBalanceSubmit": "Angi åpningssaldo",
+        "setOpeningBalanceTitle": "Angi åpningssaldo",
+        "through": "Til og med {date}",
+        "title": "Arbeidssaldo",
+        "upload": {
+          "allReady": "{total, plural, one {# rad er klar; {replacing, plural, =0 {ingen erstatter en gjeldende åpningssaldo} one {# erstatter en gjeldende åpningssaldo} other {# erstatter en gjeldende åpningssaldo}}.} other {Alle # rader er klare; {replacing, plural, =0 {ingen erstatter en gjeldende åpningssaldo} one {# erstatter en gjeldende åpningssaldo} other {# erstatter en gjeldende åpningssaldo}}.}}",
+          "checking": "Kontrollerer filen …",
+          "columns": {
+            "balance": "Saldo",
+            "day": "Dag",
+            "employee": "Ansatt",
+            "reason": "Årsak",
+            "row": "Rad",
+            "status": "Status"
+          },
+          "committed": "{count, plural, one {# åpningsbalanse angitt} other {# åpningsbalanser angitt}}",
+          "description": "Angi åpningsbalansen for flere ansatte fra en CSV-fil med kolonnene employee_number, day (YYYY-MM-DD eller DD.MM.YYYY), balance (timer og minutter, som 12:30 eller -4:15) og reason. Hver åpningsbalanse erstatter den ansattes arbeidssaldo til og med denne dagen, og opphever den gjeldende. Ingenting lagres så lenge en rad inneholder feil.",
+          "errors": {
+            "ambiguousEmployee": "Flere ansatte har dette nummeret. Gi hver enkelt et unikt nummer først.",
+            "conflictingPayouts": "Overtidsutbetalinger er datert på eller før denne dagen:",
+            "duplicateEmployee": "Denne ansatte har mer enn én rad. Behold én.",
+            "employeeNumberRequired": "Angi ansattnummeret.",
+            "futureDay": "Dagen er etter i dag i den ansattes tidssone.",
+            "invalidAmount": "Angi saldoen som timer og minutter, for eksempel 12:30 eller -4:15.",
+            "invalidDay": "Angi dagen som YYYY-MM-DD eller DD.MM.YYYY.",
+            "monthClosed": "Dagen er i en lukket måned.",
+            "outOfScope": "Denne ansatte er utenfor din lønnstilgang.",
+            "reasonRequired": "Angi en årsak.",
+            "reasonTooLong": "Begrens årsaken til 1000 tegn.",
+            "unknown": "Denne raden kan ikke lagres.",
+            "unknownEmployee": "Ingen ansatt har dette nummeret."
+          },
+          "file": "CSV-fil",
+          "fileErrors": {
+            "fileTooLarge": "Filen er for stor. Del den opp i flere opplastinger.",
+            "missingColumns": "Filen mangler disse kolonnene: {columns}.",
+            "noRows": "Filen har ingen rader under overskriften.",
+            "tooManyRows": "Filen har mer enn 2000 rader. Del den opp i flere opplastinger.",
+            "unreadable": "Filen kunne ikke leses. Lagre den som CSV (UTF-8) og prøv igjen."
+          },
+          "former": "Tidligere ansatt",
+          "hasErrors": "{errors, plural, one {# av {total} rader har en feil. Korriger filen og last den opp igjen.} other {# av {total} rader har feil. Korriger filen og last den opp igjen.}}",
+          "hasErrorsTitle": "Rett opp radene med feil",
+          "invalidFile": "Filen kan ikke brukes",
+          "open": "Last opp åpningssaldoer",
+          "ready": "Klar",
+          "refusedTitle": "Ingenting ble lagret",
+          "replaces": "Erstatter åpningssaldoen på {balance} den {day}",
+          "submit": "{count, plural, one {Angi # åpningssaldo} other {Angi # åpningssaldoer}}",
+          "template": "Last ned mal",
+          "title": "Last opp åpningssaldoer"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Legg til endring",
@@ -552,6 +695,7 @@
         "loadingFile": "Laster inn personalmappen",
         "manageOfficers": "Ansvarlige for personalmapper",
         "payslipBatch": "Lønnslipp-pulje",
+        "sickLeave": "Sykefravær",
         "title": "Personalmapper"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Synlighet"
       },
       "list": {
+        "absence": "For sykefravær {dateRange}",
         "delete": "Slett {title}",
         "download": "Last ned {title}",
         "edit": "Rediger {title}",
@@ -771,6 +916,83 @@
         "description": "Velg hvem som administrerer ansattdokumenter i tillegg til eiere og administratorer.",
         "loading": "Laster inn innstillinger for personalmapper",
         "title": "Personalmapper"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Datoer",
+          "duration": "Varighet",
+          "employee": "Ansatt",
+          "sickDetail": "Sykedetalj",
+          "sickNotes": "Sykmeldinger",
+          "status": "Status"
+        },
+        "description": "Sykefravær for de ansatte du administrerer sykmeldinger for, med sykmeldingene vedlagt. Ingenting her påminner eller spør ansatte.",
+        "empty": "Ingen sykefravær i denne perioden samsvarer med filtrene.",
+        "filters": {
+          "allEmployees": "Alle ansatte",
+          "allSickDetails": "Alle sykedetaljer",
+          "allStatuses": "Ventende og godkjent",
+          "allTeams": "Alle team",
+          "employee": "Ansatt",
+          "formerEmployee": "{name} (tidligere)",
+          "from": "Fra",
+          "notes": "Sykmeldinger",
+          "notesAll": "Alle",
+          "notesMissing": "Med attest, ingen sykmelding",
+          "notesPresent": "Har sykmelding",
+          "reset": "Tilbakestill filtre",
+          "sickDetail": "Sykedetalj",
+          "status": "Status",
+          "team": "Team",
+          "to": "Til"
+        },
+        "loading": "Laster inn sykefravær",
+        "notes": {
+          "count": "{count, plural, one {# notat} other {# notater}}",
+          "none": "Ingen notater"
+        },
+        "pagination": {
+          "next": "Neste side",
+          "page": "Side {page} av {pageCount}",
+          "pageSize": "Rader per side",
+          "previous": "Forrige side",
+          "summary": "{first}–{last} av {total}"
+        },
+        "sickDetail": {
+          "childSick": "Sykt barn",
+          "other": "Annet",
+          "withCertificate": "Med legeerklæring",
+          "withoutCertificate": "Uten legeerklæring"
+        },
+        "status": {
+          "approved": "Godkjent",
+          "pending": "Avventer"
+        },
+        "title": "Sykefravær"
+      },
+      "sickNotes": {
+        "cardDescription": "Avventende og godkjent sykefravær for denne ansatte. Legg ved en ny sykmelding, eller koble til en som allerede finnes i personalmappen.",
+        "cardTitle": "Sykefravær",
+        "chooseAbsence": "Velg et fravær.",
+        "chooseNote": "Velg en sykmelding.",
+        "link": "Koble til",
+        "linked": "Sykmelding koblet til",
+        "linkExistingDescription": "Velg en sykmelding fra personalmappen for sykefraværet {dateRange}.",
+        "linkExistingTitle": "Koble til en sykmelding",
+        "linkFailed": "Sykmeldingen kunne ikke kobles til.",
+        "linkToAbsence": "Koble {title} til sykefravær",
+        "linkToAbsenceDescription": "Velg hvilket sykefravær \"{title}\" dekker. Et sykefravær som er registrert uten legeerklæring, teller da som med legeerklæring.",
+        "linkToAbsenceTitle": "Koble til sykefravær",
+        "loadFailed": "Listen kunne ikke lastes inn.",
+        "manage": "Legg ved eller koble til",
+        "manageFor": "Legg ved eller koble til sykmeldinger for {name}, {dateRange}",
+        "noSickLeave": "Denne ansatte har ingen ventende eller godkjente sykefravær.",
+        "notes": "Sykmeldinger",
+        "noUnlinkedNotes": "Det er ingen sykmeldinger i denne personalmappen som ikke er koblet til et fravær.",
+        "openNotes": "Sykmeldinger for {dateRange}",
+        "unlinked": "Sykmelding koblet fra",
+        "unlinkFailed": "Sykmeldingen kunne ikke kobles fra.",
+        "unlinkFromAbsence": "Koble {title} fra sykefraværet"
       },
       "tabs": {
         "access": "Tilgang",

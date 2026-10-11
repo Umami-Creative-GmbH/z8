@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Innstemplet for øyeblikket",
+    "deputy": "Stedfortreder: {name}",
     "everyoneAvailable": "Alle er tilgjengelige i dag",
     "noOneClockedIn": "Ingen har stemplet inn ennå",
     "noPendingApprovals": "Ingen ventende godkjenninger",

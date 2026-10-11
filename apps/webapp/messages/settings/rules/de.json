@@ -15,9 +15,16 @@
       "createCategory": "Abwesenheitskategorie erstellen",
       "createCategoryButton": "Kategorie erstellen",
       "deactivate": "Deaktivieren",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Vom Arbeitszeitsaldo abgezogene Abwesenheit",
+          "name": "Freizeitausgleich"
+        }
+      },
       "deleteDescription": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Kategorien, die bereits für Abwesenheiten verwendet werden, können nicht gelöscht und sollten stattdessen deaktiviert werden.",
       "deleteFailed": "Kategorie konnte nicht gelöscht werden",
       "deleteTitle": "Abwesenheitskategorie löschen",
+      "drawsOnWorkBalance": "Wird vom Arbeitszeitsaldo abgezogen",
       "editCategory": "\"{name}\" bearbeiten",
       "form": {
         "active": "Aktiv",
@@ -26,11 +33,17 @@
         "colorHelp": "Kalendermarkierung",
         "countsAgainstVacation": "Wird vom Urlaubsguthaben abgezogen",
         "countsAgainstVacationHelp": "Genehmigte Tage vom Urlaubsanspruch des Mitarbeiters abziehen.",
+        "deputyRequired": "Vertretung erforderlich",
+        "deputyRequiredHelp": "Für jede Abwesenheit dieser Art muss eine Vertretung benannt werden, die während der Abwesenheit der Person übernimmt.",
+        "deputyRequiredSick": "Bei Krankheit ist nie eine Vertretung erforderlich.",
         "description": "Beschreibung",
         "descriptionHelp": "Optionale Hinweise für Administratoren und Prüfer.",
         "descriptionPlaceholder": "z. B. für genehmigte Schulungs- oder Zertifizierungstage verwenden...",
         "descriptionTranslation": "{locale} Beschreibung",
         "descriptionTranslationPlaceholder": "Lokalisierte Beschreibung",
+        "drawsOnWorkBalance": "Wird vom Arbeitszeitsaldo abgezogen",
+        "drawsOnWorkBalanceConflict": "„Wird vom Arbeitszeitsaldo abgezogen“ kann nicht mit „Wird auf den Urlaub angerechnet“ oder „Erfordert Arbeitszeit“ kombiniert werden.",
+        "drawsOnWorkBalanceHelp": "Freizeitausgleich: Genehmigte Tage behalten ihre Sollzeit, sodass sich der Arbeitszeitsaldo der Mitarbeiter entsprechend verringert. Urlaub wird nicht beansprucht.",
         "name": "Name",
         "nameHelp": "Verwenden Sie eine klare Bezeichnung, die Mitarbeiter und Genehmiger verstehen.",
         "nameMaxLength": "Maximal 100 Zeichen verwenden",
@@ -46,7 +59,8 @@
         "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeiter, die eine andere App-Sprache verwenden.",
         "type": "Typ",
         "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheits-Workflows.",
-        "typePlaceholder": "Kategorietyp auswählen"
+        "typePlaceholder": "Kategorietyp auswählen",
+        "typeTimeOffInLieu": "Freizeitausgleich"
       },
       "header": {
         "approval": "Genehmigung",
@@ -72,6 +86,7 @@
         "parental": "Elternzeit",
         "personal": "Persönlich",
         "sick": "Krankheit",
+        "timeOffInLieu": "Freizeitausgleich",
         "unpaid": "Unbezahlt",
         "vacation": "Urlaub"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Bei einigen aktiven Kanälen waren Eskalationen deaktiviert. Sie übermitteln weiterhin keine Eskalationsnachrichten.",
         "inactiveSourceEnabled": "Bei einigen inaktiven Kanälen waren Eskalationen aktiviert. Sie zählten nicht für die Richtlinie.",
         "invalidTimeout": "Ein Kanal hatte ein ungültiges Timeout und wurde nicht für das Antwortfenster verwendet."
+      },
+      "deputyDecisions": {
+        "description": "Mitarbeitende geben bei ihren Abwesenheiten eine Vertretung an. Während eine genehmigende Person sich in einer genehmigten Abwesenheit befindet, kann ihre Vertretung die ihr weiterhin zugewiesenen Genehmigungen einsehen und entscheiden.",
+        "disabled": "Vertretungen können Genehmigungen nicht mehr entscheiden. Sie bleiben Ansprechpartner.",
+        "enabled": "Vertretungen können jetzt Genehmigungen entscheiden, während die genehmigende Person abwesend ist.",
+        "help": "Nur Vertretungen, die den Genehmigungseingang nutzen können, treffen Entscheidungen, und nur an den Abwesenheitstagen der genehmigenden Person. Die genehmigende Person behält ihre Genehmigungen. Wenn dies deaktiviert ist, fungieren Vertretungen nur als Ansprechpartner.",
+        "title": "Vertretungen",
+        "toggle": "Vertretungen können Genehmigungen entscheiden"
       },
       "description": "Überprüfen Sie die Eskalationsrichtlinie der Organisation, wie sie aus den Kanaleinstellungen migriert wurde und welche Bedingungen einen Genehmigungsmanager erfordern.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Abwesenheit",
         "complianceException": "Compliance-Ausnahme",
         "manualTimeSubmission": "Manuelle Zeiteinreichung",
+        "periodSubmission": "Zeitraumeinreichung",
         "policyClockOut": "Richtlinien-Ausstempeln",
         "shiftRequest": "Schichtanfrage",
         "timeCorrection": "Zeitkorrektur",

@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Assigned location added",
+      "employeeDescription": "The locations this employee works at. Kiosks accept only employees assigned to their location.",
+      "employeeEmpty": "No assigned locations",
+      "employeeLabel": "Employee",
+      "employeePlaceholder": "Select an employee",
+      "employeeTitle": "Assigned locations",
+      "errors": {
+        "adminOnly": "Only organization owners and admins can manage assigned locations.",
+        "employeeNotFound": "Employee not found.",
+        "failed": "Assigned locations could not be updated. Try again.",
+        "invalidSelection": "Choose from the list.",
+        "locationNotFound": "Location not found."
+      },
+      "locationDescription": "The employees who work at this location. Its kiosks accept only them.",
+      "locationEmpty": "No assigned employees",
+      "locationLabel": "Location",
+      "locationPlaceholder": "Select a location",
+      "locationTitle": "Assigned employees",
+      "noEmployeesLeft": "All active employees are assigned to this location.",
+      "noLocationsLeft": "There are no further active locations to assign.",
+      "removed": "Assigned location removed"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Client (Controller)",
@@ -407,6 +430,75 @@
       "description": "Manage your subscription, payment methods, and invoices",
       "title": "Billing & Subscription"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Days after month-end",
+        "daysHelp": "If something blocks the close, everyone allowed to close is told and it is tried again the next day.",
+        "daysInvalid": "Enter a whole number of days from 1 to 60",
+        "description": "Close the month before for the whole organization a number of days after it ends. A month that was reopened is never closed automatically again.",
+        "enabled": "Close months automatically",
+        "save": "Save",
+        "saved": "Automatic close saved",
+        "title": "Automatic close"
+      },
+      "blockedTitle": "The month cannot be closed yet. Resolve these first:",
+      "blocker": {
+        "absenceRequest": "undecided absence request {startDate} – {endDate}",
+        "liveWork": "still clocked in since {start}",
+        "notEnded": "the month has not ended in their timezone",
+        "periodSubmission": "undecided period submission {startDate} – {endDate}",
+        "timeRequest": "undecided request about work from {start}"
+      },
+      "close": "Close",
+      "closeDescription": "Nobody can change work, attribution or absences in a closed month until it is reopened. Each employee's month is fixed in their own timezone.",
+      "closeSubmit": "Close month",
+      "closeSuccess": "{count, plural, one {{month} closed for # employee} other {{month} closed for # employees}}",
+      "closeTitle": "Close {month}",
+      "description": "Close months after payroll so their work and absences can no longer change",
+      "employeesLabel": "Employees",
+      "employeesRequired": "Select at least one employee",
+      "history": {
+        "automatic": "Automatically",
+        "closed": "Closed",
+        "employees": "{count, plural, one {# employee} other {# employees}}",
+        "reopened": "Reopened",
+        "unknownActor": "Unknown"
+      },
+      "historyEmpty": "No month has been closed yet.",
+      "historyTitle": "History",
+      "monthsDescription": "Closing a month freezes its work, attribution and absences for payroll. Notes stay editable.",
+      "monthsTitle": "Months",
+      "nothingToClose": "Everyone in this scope is already closed for this month.",
+      "nothingToReopen": "Nobody in this selection is closed for this month.",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Why does this month need to change?…",
+      "reasonRequired": "Enter a reason for the reopening",
+      "reopen": "Reopen",
+      "reopenDescription": "Reopened employees stay open until the month is closed again. Their managers are told.",
+      "reopenScopeLabel": "Reopen for",
+      "reopenSubmit": "Reopen month",
+      "reopenSuccess": "{count, plural, one {{month} reopened for # employee} other {{month} reopened for # employees}}",
+      "reopenTitle": "Reopen {month}",
+      "scope": {
+        "all": "Everything",
+        "deletedTeam": "Deleted team",
+        "employees": "Selected employees",
+        "organization": "Organization"
+      },
+      "scopeLabel": "Close for",
+      "teamNotFound": "This team no longer exists.",
+      "title": "Closed months",
+      "warning": {
+        "periodNotSubmitted": "period {startDate} – {endDate} not submitted",
+        "periodRejected": "period {startDate} – {endDate} rejected",
+        "periodRunning": "period {startDate} – {endDate} still running, not yet submittable",
+        "periodSentBack": "period {startDate} – {endDate} sent back after a change"
+      },
+      "warnings": {
+        "more": "and {count} more",
+        "title": "Not every period submission for this month is approved. This does not stop the close:"
+      }
+    },
     "compliance": {
       "description": "Review and manage compliance exception requests from team members",
       "title": "ArbZG Compliance"
@@ -468,14 +560,208 @@
       "updated": "Customer updated",
       "updateFailed": "Failed to update customer"
     },
+    "customFields": {
+      "accessSummary": "Visible to: {visibility} · Edited by: {edit}",
+      "activeCount": "{count} of {max} active fields",
+      "activeList": "Active custom fields",
+      "add": "Add custom field",
+      "archivedList": "Archived custom fields",
+      "archivedTitle": "Archived",
+      "archiveField": "Archive {name}",
+      "capReached": "Each record type can have at most 25 active custom fields. Archive one to add another.",
+      "description": "Your own fields on employees, projects and customers",
+      "editField": "Edit {name}",
+      "empty": "No custom fields yet.",
+      "entity": {
+        "customer": "Customers",
+        "employee": "Employees",
+        "project": "Projects"
+      },
+      "form": {
+        "boundsHelp": "Leave a bound empty for no limit.",
+        "create": "Create field",
+        "createTitle": "Add custom field",
+        "description": "A custom field on {entity}.",
+        "editLevel": "Who can edit values",
+        "editLevelHelp": "Employees never edit custom field values.",
+        "editTitle": "Edit custom field",
+        "integerOnly": "Whole numbers only",
+        "max": "Maximum",
+        "min": "Minimum",
+        "name": "Name",
+        "nameRequired": "Enter a name",
+        "options": "Options",
+        "optionsHelp": "One option per line.",
+        "required": "Required",
+        "requiredHelp": "Forms refuse to save a record without a value.",
+        "save": "Save changes",
+        "tracked": "Keep a history",
+        "trackedFixed": "Whether a field keeps a history can't change after it is created.",
+        "trackedHelp": "Each value carries the date it is valid from.",
+        "type": "Type",
+        "typeFixed": "The type can't change after the field is created.",
+        "visibility": "Who can see values"
+      },
+      "level": {
+        "admin": "Admins",
+        "employee": "Everyone, including the employee",
+        "manager": "Managers and admins"
+      },
+      "options": {
+        "add": "Add option",
+        "archive": "Archive {label}",
+        "archived": "Archived",
+        "label": "Option name",
+        "list": "Options",
+        "moveDown": "Move {label} down",
+        "moveUp": "Move {label} up",
+        "new": "New option",
+        "restore": "Restore {label}",
+        "title": "Options"
+      },
+      "refusal": {
+        "booleanRequired": "A yes/no field can't be required.",
+        "duplicateOption": "This field already has an active option with this name.",
+        "editBroaderThanVisibility": "Everyone who can edit values must also be able to see them.",
+        "employeesNeverEdit": "Employees can't edit custom field values.",
+        "fieldArchived": "Restore this custom field before changing it.",
+        "invalidChange": "This change can't be saved. Reload the page and try again.",
+        "invalidLevel": "Choose who can see and edit values.",
+        "invalidName": "Enter a name of at most 100 characters.",
+        "invalidOptionLabel": "Enter an option of at most 100 characters.",
+        "lastActiveOption": "A select field needs at least one active option.",
+        "nameTaken": "An active custom field on this record type already has this name.",
+        "notFound": "This custom field no longer exists. Reload the page.",
+        "notSelect": "Only select fields have options.",
+        "numberBounds": "Enter a minimum and maximum as numbers, with the minimum not above the maximum.",
+        "optionArchived": "Restore this option first.",
+        "selectNeedsOption": "Add at least one option to a select field.",
+        "staleOrder": "The list changed in the meantime. Reload the page and try again.",
+        "tooManyFields": "This record type already has 25 active custom fields. Archive one first.",
+        "trackedFixed": "Whether a custom field keeps a history can't change after it is created.",
+        "typeFixed": "A custom field's type can't change after it is created.",
+        "usedAsPayrollIdentifier": "This field is the personnel identifier of the payroll export configuration {configurations}. Choose another identifier there first."
+      },
+      "reorderField": "Reorder {name}",
+      "required": "Required",
+      "restore": "Restore",
+      "restoreField": "Restore {name}",
+      "saveFailed": "The change could not be saved.",
+      "title": "Custom fields",
+      "tracked": "Tracked",
+      "type": {
+        "boolean": "Yes/No",
+        "date": "Date",
+        "number": "Number",
+        "select": "Select",
+        "text": "Text"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "There is already a value starting on that date.",
+        "fieldArchived": "This field is archived.",
+        "forField": "Custom field \"{field}\": {message}",
+        "invalidDate": "Enter a valid date.",
+        "invalidNumber": "Enter a number.",
+        "invalidValidFrom": "Enter a valid start date.",
+        "invalidValue": "Enter a valid value.",
+        "missingRequired": "This field is required.",
+        "missingValue": "Enter a value for each date.",
+        "notEditable": "You can't change this field.",
+        "numberNotInteger": "Enter a whole number.",
+        "numberOutOfRange": "Enter a number within the allowed range.",
+        "optionArchived": "This option is archived. Choose another one.",
+        "textTooLong": "Enter at most 255 characters.",
+        "trackedField": "This field keeps a history. Add a dated change instead.",
+        "unknownField": "This field no longer exists. Reload the page and try again.",
+        "unknownHistoryEntry": "The history changed in the meantime. Reload the page and try again."
+      },
+      "values": {
+        "archivedOption": "{label} (archived)",
+        "history": {
+          "add": "Add change",
+          "apply": "Apply",
+          "correct": "Correct the value valid from {date}",
+          "delete": "Delete the value valid from {date}",
+          "duplicateValidFrom": "There is already a value valid from this date.",
+          "empty": "No values yet.",
+          "from": "From {date}",
+          "label": "History of {name}",
+          "needsValidFrom": "Choose the date the value is valid from.",
+          "needsValue": "Enter a value.",
+          "today": "Today",
+          "validFrom": "Valid from",
+          "value": "Value"
+        },
+        "missingRequired": "Missing required values",
+        "no": "No",
+        "notSet": "Not set",
+        "ownDescription": "Kept by your organization. Ask an admin or your manager to change them.",
+        "title": "Custom fields",
+        "yes": "Yes"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Absence records and categories",
+          "label": "Absences"
+        },
+        "audit_logs": {
+          "description": "Activity audit trail",
+          "label": "Audit Logs"
+        },
+        "balance_adjustments": {
+          "description": "Opening balances and overtime payouts, including cancelled ones",
+          "label": "Work Balance Adjustments"
+        },
+        "customers": {
+          "description": "Customers with their customer custom fields",
+          "label": "Customers"
+        },
+        "employees": {
+          "description": "Employee profiles, manager relationships and employee custom fields",
+          "label": "Employees"
+        },
+        "holidays": {
+          "description": "Holiday calendar and presets",
+          "label": "Holidays"
+        },
+        "projects": {
+          "description": "Projects with their customer and project custom fields",
+          "label": "Projects"
+        },
+        "schedules": {
+          "description": "Work schedule templates and assignments",
+          "label": "Work Schedules"
+        },
+        "shifts": {
+          "description": "Shift scheduling data",
+          "label": "Shifts"
+        },
+        "teams": {
+          "description": "Team structure and permissions",
+          "label": "Teams"
+        },
+        "time_entries": {
+          "description": "Time clock entries and corrections",
+          "label": "Time Tracking"
+        },
+        "vacation": {
+          "description": "Vacation policies and allowances",
+          "label": "Vacation Policies"
+        },
+        "work_periods": {
+          "description": "Aggregated work sessions",
+          "label": "Work Periods"
+        }
+      },
       "description": "Export your organization's data",
       "form": {
         "aboutAsync": "Exports are processed asynchronously",
+        "aboutDownloadFromHistory": "Download finished exports from Export History",
         "aboutEmail": "You'll receive an email when ready",
-        "aboutLinkValidity": "Download links are valid for 24 hours",
+        "aboutFileRetention": "Export files are deleted after 30 days",
         "aboutOrgDataOnly": "Only your organization's data is included",
-        "aboutStorageDuration": "Export files are stored for 7 days",
         "aboutTitle": "About Data Export",
         "description": "Select the data categories you want to export",
         "selectAll": "Select All",
@@ -508,6 +794,9 @@
         "statusFailed": "Failed",
         "statusPending": "Pending",
         "statusProcessing": "Processing",
+        "switchOrganizationAction": "Switch to {organization}",
+        "switchOrganizationBody": "This export belongs to {organization}. Switch to that organization to open its export history; your access is checked again after switching.",
+        "switchOrganizationTitle": "Switch organization to see this export",
         "title": "Export History",
         "unexpectedError": "An unexpected error occurred"
       },
@@ -1008,6 +1297,7 @@
           "attributionNotAllowed": "The project is not available, or billable work needs a project that has a customer.",
           "invalidInterval": "The provider times lack an explicit offset, are not in order, or lie in the future.",
           "label": "Held for review",
+          "monthClosed": "The time is in a closed month. It can be imported once the month is reopened.",
           "occupancyConflict": "The time overlaps work already recorded for this employee.",
           "operationCollision": "This row conflicts with its earlier committed import.",
           "providerDurationMismatch": "The provider duration differs from the start and end times.",
@@ -1041,6 +1331,98 @@
         "title": "Import Review"
       },
       "title": "Import Data"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Another account already uses this address.",
+        "emailNotAllowed": "Your organization's sign-in policy does not allow this address.",
+        "employeeNotFound": "This employee was not found.",
+        "failed": "Something went wrong. Please try again.",
+        "invalidEmail": "Enter a valid email address.",
+        "invalidName": "Enter a first name of up to 100 characters.",
+        "invalidPin": "A kiosk PIN has 4 to 6 digits.",
+        "locationNotFound": "This location was not found.",
+        "noPin": "This employee has no kiosk PIN yet.",
+        "notAllowed": "You are not allowed to do this.",
+        "notKioskOnly": "This employee already has an email address.",
+        "pinExists": "This employee already has a kiosk PIN. Reset it instead.",
+        "reservedEmail": "This address cannot be used.",
+        "signInRequired": "Sign in to continue.",
+        "teamNotFound": "This team was not found."
+      }
+    },
+    "kiosks": {
+      "add": "Add kiosk",
+      "boardOn": "Who-is-in board on",
+      "columns": {
+        "actions": "Actions",
+        "lastSeen": "Last seen",
+        "location": "Location",
+        "name": "Name",
+        "status": "Status"
+      },
+      "create": "Create kiosk",
+      "created": "Kiosk created",
+      "createDescription": "You receive a pairing code to enter on the kiosk device.",
+      "createFailed": "The kiosk could not be created",
+      "createTitle": "Add kiosk",
+      "description": "Shared devices at a location where employees clock with their kiosk PIN",
+      "edit": "Edit",
+      "editDescription": "Changes apply to the kiosk's next request.",
+      "editTitle": "Edit kiosk",
+      "empty": "No kiosks yet.",
+      "errors": {
+        "adminOnly": "Only organization owners and admins can manage kiosks.",
+        "invalidName": "Enter a name of up to 100 characters.",
+        "invalidSelection": "Check your input and try again.",
+        "invalidTimezone": "Choose a time zone.",
+        "kioskNotFound": "This kiosk was not found.",
+        "kioskRevoked": "This kiosk is revoked.",
+        "locationNotFound": "Choose an active location of this organization."
+      },
+      "fields": {
+        "board": "Who-is-in board",
+        "boardDescription": "Shows on the kiosk who is in or on break, by first name and last initial.",
+        "location": "Location",
+        "locationDescription": "The kiosk accepts only employees assigned to this location.",
+        "locationPlaceholder": "Choose a location",
+        "name": "Name",
+        "namePlaceholder": "e.g. Staff entrance",
+        "timezone": "Time zone",
+        "timezoneDescription": "Clock events recorded at this kiosk use this zone."
+      },
+      "issueCodeConfirm": "Issue new code",
+      "listDescription": "Each kiosk belongs to one location. Pair a device by opening the kiosk page on it and entering the pairing code.",
+      "listTitle": "Kiosks",
+      "loadFailed": "Kiosks could not be loaded.",
+      "neverSeen": "Never",
+      "noLocations": "Create a location first: every kiosk belongs to one location.",
+      "pairAgain": "Pair again",
+      "pairFailed": "A new pairing code could not be issued",
+      "pairingCodeLabel": "Pairing code",
+      "pairingDescription": "On the kiosk device, scan the QR code or open the kiosk page and enter the code. The code works once and expires after 10 minutes.",
+      "pairingDone": "Done",
+      "pairingTitle": "Pair {name}",
+      "pairPairedDescription": "The device token is rotated: the paired device stops working immediately and must be paired again with the new code.",
+      "pairTitle": "Pair {name} again?",
+      "pairUnpairedDescription": "A new pairing code replaces the previous one.",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke kiosk",
+      "revoked": "Kiosk revoked",
+      "revokeDescription": "The kiosk stops working on its next request and cannot be paired again. Create a new kiosk to replace it.",
+      "revokeFailed": "The kiosk could not be revoked",
+      "revokeTitle": "Revoke {name}?",
+      "rotateConfirm": "Rotate token and pair again",
+      "save": "Save",
+      "saved": "Kiosk saved",
+      "saveFailed": "The kiosk could not be saved",
+      "status": {
+        "awaitingPairing": "Waiting for pairing",
+        "codeExpired": "Not paired, code expired",
+        "paired": "Paired",
+        "revoked": "Revoked"
+      },
+      "title": "Kiosks"
     },
     "licenses": {
       "footer": "This application uses open source software. Thank you to all the maintainers and contributors of these packages.",
@@ -1652,6 +2034,16 @@
     },
     "security": {
       "description": "Manage your password, two-factor authentication, passkeys, and active sessions",
+      "kioskPin": {
+        "descriptionChange": "You have a kiosk PIN. Choose a new one of 4 to 6 digits to replace it.",
+        "descriptionSet": "Choose a PIN of 4 to 6 digits to clock at your organization's kiosks.",
+        "mismatch": "The PINs do not match.",
+        "newPin": "New PIN",
+        "repeatPin": "Repeat PIN",
+        "save": "Save PIN",
+        "saved": "Kiosk PIN saved",
+        "title": "Kiosk PIN"
+      },
       "title": "Security Settings",
       "twoFactor": {
         "backupCodesCopied": "Backup codes copied to clipboard",
@@ -2052,6 +2444,7 @@
         "replaceDescription": "An active version already starts on {date}. Saving replaces it; the replaced version is kept in the history.",
         "replaceTitle": "Replace the version starting that day",
         "rules": "Eligibility follows {reference} ({version}), verified for travel days from {from} to {through}. Trips abroad are priced per day only with adopted foreign rates; other days and special itineraries are flagged for a manual calculation.",
+        "rulesOpenEnded": "Eligibility follows {reference} ({version}), verified for travel days from {from} until the law changes. Trips abroad are priced per day only with adopted foreign rates; other days and special itineraries are flagged for a manual calculation.",
         "saved": "Per diem rate version activated",
         "saveFailed": "The per diem rates could not be saved.",
         "source": "Source",

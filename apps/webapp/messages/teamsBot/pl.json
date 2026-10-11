@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Aktualnie zalogowani",
+    "deputy": "Zastępca: {name}",
     "everyoneAvailable": "Wszyscy są dziś dostępni",
     "noOneClockedIn": "Nikt jeszcze nie rozpoczął pracy",
     "noPendingApprovals": "Brak oczekujących zatwierdzeń",

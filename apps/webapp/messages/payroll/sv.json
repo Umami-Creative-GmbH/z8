@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Rensar falskt positiv",
       "dateUnavailable": "Datum inte tillgängligt",
       "missingClockOut": "Saknad utstämpling",
+      "missingIdentifier": "Identifierare saknas",
       "needReview": "{count} lönehinder behöver granskas",
       "offboardingClockRepair": "Utstämpling vid offboarding behöver åtgärdas",
       "openApprovals": "Öppna godkännanden",
       "openCalendar": "Öppna kalender",
+      "openEmployee": "Öppna anställd",
       "openWork": "Arbete utan utstämpling",
       "openWorkDiagnostics": "Öppna arbetsdiagnostik",
       "pendingAbsence": "Väntande frånvaro",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds måste vara en array",
       "employeeIdsMustContainOnlyStrings": "employeeIds får endast innehålla strängar",
       "endDateAfterStart": "Slutdatum måste vara samma som eller efter startdatum",
+      "exportBlockedByMissingIdentifier": "Exporten är blockerad: vissa anställda saknar värde för det anpassade fält som används som löneidentifierare",
       "exportBlockedByOffboardingClockRepair": "Export blockerad: åtgärda utstämplingen för offboarding först",
       "exportBlockedByUncertainWork": "Export blockerad: åtgärda det osäkra arbetet i det valda omfånget först",
       "exportBlockedByUnresolvedWorkMinutes": "Export blockerad: åtgärda arbetsminuterna som behöver granskas först",
       "exportFormatNotConfigured": "Exportformat för lön är inte konfigurerat",
+      "exportIdentifierChanged": "Inställningen för löneidentifierare ändrades efter att denna export samlades in. Starta en ny export.",
       "invalidBlockerId": "Ogiltigt ID för löneblockering",
       "invalidBlockerType": "Ogiltig typ av löneblockering",
       "mustBeIsoDate": "{field} måste vara ett ISO-datum",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Löneexport slutförd",
       "formatAccessCheck": "Behörighetskontroll för format",
+      "nobodyEmployedInPeriod": "Ingen inom din lönebehörighet var anställd under denna period.",
       "noConfiguredTarget": "Inget konfigurerat mål för löneexport",
       "queued": "Löneexport har placerats i kö",
       "selectFormat": "Välj format",
-      "target": "Mål för löneexport"
+      "target": "Mål för löneexport",
+      "unmappedOvertimePayouts": "{count, plural, one {# övertidsutbetalning exporterades inte} other {# övertidsutbetalningar exporterades inte}}",
+      "unmappedOvertimePayoutsDescription": "Ingen löneart är kopplad till Övertid för detta format. Be en organisationsadministratör att koppla en, eller betala ut dessa timmar på ett annat sätt."
     },
     "filters": {
       "noMatchingEmployees": "Inga anställda matchar de valda lönefiltren."
+    },
+    "formerEmployeesExport": {
+      "description": "Exportera en månad då någon av dem fortfarande var anställd: deras sista timmar och slutgiltiga övertidsutbetalningar inkluderas i filen.",
+      "export": "Exportera",
+      "nextMonth": "Nästa månad",
+      "previousMonth": "Föregående månad",
+      "title": "Exportera lön för tidigare anställda"
+    },
+    "onlyFormerEmployees": {
+      "description": "Du kan fortfarande registrera och avbryta deras övertidsutbetalningar, samt exportera de månader nedan då de var anställda.",
+      "title": "Endast tidigare anställda ingår i din lönebehörighet"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Ingen löneart är kopplad till Övertid för detta format, så exporten utelämnar dessa utbetalningar. Be en organisationsadministratör att koppla en, eller betala ut dessa timmar på ett annat sätt.",
+      "title": "{count, plural, one {# övertidsutbetalning kommer inte att exporteras} other {# övertidsutbetalningar kommer inte att exporteras}}"
     },
     "period": {
       "current": "Aktuell period",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Kassera lönekörning",
+        "confirmed": "Denna lönekörning har redan bekräftats som betald för vissa rapporter och kan inte längre kasseras. Ta bort enskilda rapporter från den i stället.",
         "description": "{count, plural, one {Den # utläggsrapport den innehåller kommer att vänta på återbetalning igen: nästa löneexport eller en banköverföring kan ta den. Kassera den endast om denna fil inte betalas med lönen.} other {De # utläggsrapporter den innehåller kommer att vänta på återbetalning igen: nästa löneexport eller en banköverföring kan ta dem. Kassera den endast om denna fil inte betalas med lönen.}}",
         "done": "Lönekörningen har kasserats. Dess utläggsrapporter väntar på återbetalning igen.",
         "failed": "Lönekörningen kunde inte kasseras.",
@@ -106,6 +129,29 @@
         "outOfScope": "Denna lönekörning innehåller medarbetare utanför ditt löneområde.",
         "title": "Vill du kassera denna lönekörning?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "manuellt angiven",
+        "exceptionalItinerary": "resplan som inte omfattas av lagstadgade regler",
+        "outsideVerifiedTables": "ingen verifierad lagstadgad tabell för dess dagar"
+      },
+      "description": "Dessa utlägg väntar på ersättning, men en export för denna period och detta format utesluter dem. Exporten är inte blockerad: betala dem via banköverföring från ekonomikön.",
+      "payByBankTransfer": "Betala via banköverföring",
+      "reason": {
+        "apiConnector": "Detta format är en API-koppling, som aldrig överför utläggsbelopp.",
+        "currencyNotEur": "Inte i euro: lönekörningar hanterar endast belopp i euro.",
+        "includedInOtherRun": "Ingår i den obekräftade lönekörningen {period} ({format}).",
+        "legacyClaim": "Äldre anspråk betalas aldrig via lönen.",
+        "negativeDifference": "En justering sänkte beloppet som tidigare lönekörningar överförde för: {kinds}.",
+        "noStatutoryBaseline": "Ingen lagstadgad baslinje för: {items}.",
+        "nothingOwed": "Dess lönerader lämnar inget kvar för lönen att överföra.",
+        "reimbursedOutsidePayroll": "Redan delvis betald via banköverföring eller återkrävd: lönen kan inte ta resten.",
+        "unmappedWageType": "Ingen löneart är mappad för detta format för: {kinds}."
+      },
+      "title": "Utläggsrapporter som denna lönekörning inte överför",
+      "unknownEmployee": "Anställd"
     },
     "runs": {
       "description": "Dessa exporter innehåller utläggsrapporter som väntar på återbetalning. En utläggsansvarig bekräftar varje körning när lönen har betalats ut; kassera en körning vars fil inte betalas.",
@@ -140,6 +186,17 @@
       "description": "Lönedata kunde inte förberedas på ett säkert sätt.",
       "help": "Försök igen senare. Om problemet kvarstår, kontakta en organisationsadministratör.",
       "title": "Lön är tillfälligt otillgänglig"
+    },
+    "workBalances": {
+      "back": "Arbetssaldon",
+      "backToPayroll": "Lön",
+      "description": "Registrera och makulera utbetalningar av övertid för de anställda som din lönebehörighet omfattar, inklusive anställda som har slutat.",
+      "empty": "Inga anställda ingår i ditt behörighetsområde för lön ännu.",
+      "former": "Tidigare anställd",
+      "loading": "Läser in arbetssaldon",
+      "loadingEmployee": "Läser in arbetssaldot",
+      "open": "Arbetssaldon",
+      "title": "Arbetssaldon"
     }
   }
 }

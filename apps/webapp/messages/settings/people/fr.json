@@ -158,6 +158,30 @@
         "description": "Inviter des membres et examiner les demandes d'adhésion en attente",
         "title": "Invitations"
       },
+      "kioskPin": {
+        "addEmailDescription": "Cette personne recevra une invitation pour choisir un mot de passe et pourra ensuite se connecter. Son code PIN de borne et son historique restent inchangés.",
+        "addEmailHeading": "Ajouter une adresse e-mail",
+        "addEmailSubmit": "Ajouter l'e-mail et inviter",
+        "confirmReset": "Remplacer le code PIN",
+        "description": "Le code PIN personnel que cet employé saisit pour pointer sur une borne.",
+        "done": "Terminé",
+        "emailAdded": "Adresse e-mail ajoutée. L'invitation est en cours d'envoi.",
+        "emailAddedNotSent": "Adresse e-mail ajoutée, mais l'invitation n'a pas pu être envoyée. L'employé peut utiliser « Mot de passe oublié » avec cette adresse.",
+        "emailLabel": "Adresse e-mail",
+        "hasPin": "Un code PIN de borne est configuré.",
+        "issue": "Générer un code PIN",
+        "kioskOnlyBadge": "Borne uniquement",
+        "kioskOnlyDescription": "Cet employé n'a pas d'adresse e-mail ni d'identifiant de connexion. Il pointe uniquement sur les bornes à l'aide de son code PIN.",
+        "kioskOnlyNoEmail": "Borne uniquement, pas d'e-mail",
+        "lockedUntil": "Bloqué après un trop grand nombre de codes PIN erronés jusqu'à {time}.",
+        "noPin": "Aucun code PIN de borne pour le moment.",
+        "pinHeading": "Code PIN de la borne",
+        "reset": "Réinitialiser le code PIN",
+        "shownOnce": "Transmettez ce code PIN à l'employé dès maintenant. Il ne sera affiché qu'une seule fois.",
+        "title": "Accès au kiosque",
+        "unlock": "Déverrouiller",
+        "unlocked": "Code PIN du kiosque déverrouillé"
+      },
       "lifecycle": {
         "actionsLabel": "Actions de l'employé pour {name}",
         "deactivate": "Désactiver",
@@ -207,12 +231,17 @@
         "currency": "Devise",
         "currencyInvalid": "Saisissez un code de devise à trois lettres.",
         "departurePanelDescription": "L'accès et l'utilisation de la licence payante prennent fin à la date limite indiquée ci-dessous. L'historique de l'employé est conservé.",
+        "deputyCover": {
+          "absences": "Remplaçant pour des absences en cours ou à venir : {count}",
+          "title": "Remplacements à réorganiser"
+        },
         "editDeparture": "Modifier le départ",
         "effective": "Départ effectif",
         "effectiveDescription": "L'accès a pris fin à {cutoff} ({timezone}).",
         "employmentGap": "Non employé {startDate} – {endDate}",
         "employmentStint": "Période d'emploi {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Cet employé est remplaçant pour des absences en cours ou à venir. Il sera retiré en tant que remplaçant dès que son départ prendra effet, et les personnes concernées en seront informées.",
           "finalOwner": "Attribuez et activez un autre propriétaire approuvé avant le départ de cet employé.",
           "futureAbsences": "Les absences postérieures à la date limite restent enregistrées. Examinez-les dans les absences.",
           "futureShifts": "Les créneaux postérieurs à la date limite restent attribués. Examinez-les dans le planning.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Traitement des pauses et des majorations",
           "clockRepair": "Réparation du minuteur",
           "dispatchDeparture": "Planification du départ",
+          "notifyDeputyRelease": "Notification d'indisponibilité du remplaçant",
           "notifyReview": "Notification de révision",
           "sessionRevocation": "Déconnexion de session"
         },
         "team": "Équipe",
         "title": "Emploi et départ",
         "unknownLegacyDate": "Date non enregistrée",
-        "weeklyHoursInvalid": "Saisissez un nombre d'heures hebdomadaires compris entre 0 et 168."
+        "weeklyHoursInvalid": "Saisissez un nombre d'heures hebdomadaires compris entre 0 et 168.",
+        "workBalance": {
+          "recordFinalPayout": "Enregistrer le paiement final des heures supplémentaires",
+          "through": "Jusqu'au {date}",
+          "title": "Solde d'heures"
+        }
       },
       "tabs": {
         "employees": "Employés",
@@ -324,7 +359,115 @@
         "inviteCodes": "Codes d'invitation",
         "members": "Membres"
       },
-      "title": "Employés"
+      "title": "Employés",
+      "workBalance": {
+        "adjustmentCancelled": "Ajustement annulé",
+        "cancelDescription": "{summary}. Il reste dans l'historique avec le statut annulé et n'est plus pris en compte dans le solde d'heures.",
+        "cancellationReason": "Pourquoi est-ce annulé ?",
+        "cancelSubmit": "Annuler l'ajustement",
+        "cancelTitle": "Annuler l'ajustement",
+        "conflictingPayoutsDescription": "Ils ne seraient plus pris en compte. Annulez-les d'abord ou choisissez un jour antérieur.",
+        "conflictingPayoutsTitle": "Paiements d'heures supplémentaires ce jour ou avant",
+        "current": "Solde d'heures actuel",
+        "day": "Jour",
+        "dayDescription": "Dans le fuseau horaire de l'employé. Le solde affiché s'arrête à hier ; un paiement daté d'aujourd'hui sera donc pris en compte à partir de demain.",
+        "dayRequired": "Sélectionnez un jour.",
+        "description": "Temps de travail effectué moins le temps requis, ainsi que le solde initial et les paiements d'heures supplémentaires. Les ajustements ne sont jamais modifiés : en cas d'erreur, ils sont annulés.",
+        "direction": "Solde",
+        "errors": {
+          "adjustmentNotFound": "Cet ajustement n'existe plus pour cet employé.",
+          "alreadyCancelled": "Cet ajustement est déjà annulé.",
+          "amountNotPositive": "Saisissez un paiement supérieur à zéro.",
+          "beforeOpeningBalance": "Le paiement doit être daté après le jour du solde initial en vigueur.",
+          "conflictingPayouts": "Des paiements d'heures supplémentaires sont datés à ce jour ou avant. Annulez-les d'abord ou choisissez une date antérieure.",
+          "employeeNotFound": "Employé introuvable.",
+          "exceedsBalance": "Le paiement est supérieur au solde de travail de l'employé à la fin de cette journée.",
+          "exceedsLaterBalance": "Le paiement ferait passer le solde de travail sous zéro après un paiement ultérieur d'heures supplémentaires. Annulez d'abord ce paiement ou enregistrez un montant inférieur.",
+          "failed": "Impossible de mettre à jour le solde de travail. Réessayez.",
+          "futureDay": "La date ne peut pas être postérieure à aujourd'hui dans le fuseau horaire de l'employé.",
+          "invalidInput": "Vérifiez le jour, les heures et les minutes, ainsi que le motif.",
+          "monthClosed": "La date se trouve dans un mois clôturé.",
+          "monthClosedNamed": "{month} est clôturé. Il doit être rouvert avant que les ajustements datés de ce mois puissent être enregistrés ou annulés.",
+          "notPermitted": "Seuls les propriétaires et administrateurs de l'organisation, ainsi que les gestionnaires de paie pour les employés couverts par leurs accès, peuvent enregistrer ou annuler des ajustements de solde.",
+          "reasonRequired": "Indiquez un motif."
+        },
+        "history": "Ajustements de solde",
+        "hours": "Heures",
+        "hoursInvalid": "Saisissez des heures entières.",
+        "keepAdjustment": "Conserver l'ajustement",
+        "loadFailed": "Impossible de charger le solde de travail.",
+        "loading": "Chargement du solde de travail",
+        "minutes": "Minutes",
+        "minutesInvalid": "Saisissez les minutes de 0 à 59.",
+        "negative": "Heures dues (−)",
+        "openingBalanceDay": "Solde à la fin du",
+        "openingBalanceDayDescription": "Dans le fuseau horaire de l'employé. Le décompte du solde reprend dès le jour suivant.",
+        "openingBalanceReasonPlaceholder": "Par exemple : solde reporté du système précédent…",
+        "openingBalanceSet": "Solde initial défini",
+        "payoutReasonPlaceholder": "Par exemple : payé avec la paie d'octobre…",
+        "payoutRecorded": "Paiement des heures supplémentaires enregistré",
+        "positive": "Heures supplémentaires (+)",
+        "reason": "Motif",
+        "recordPayout": "Enregistrer le paiement des heures supplémentaires",
+        "recordPayoutDescription": "Enregistrez les heures supplémentaires payées comme salaire. Cela réduit le solde de travail à partir de la fin de cette journée et ne peut pas dépasser le solde de ce jour.",
+        "recordPayoutSubmit": "Enregistrer le paiement",
+        "recordPayoutTitle": "Enregistrer le paiement des heures supplémentaires",
+        "replacesOpeningBalance": "Le solde initial en vigueur est annulé pour ce motif.",
+        "setOpeningBalance": "Définir le solde initial",
+        "setOpeningBalanceDescription": "Le solde initial remplace le solde de travail jusqu'au jour concerné inclus. Les heures travaillées et requises antérieures restent enregistrées, mais ne sont plus prises en compte.",
+        "setOpeningBalanceSubmit": "Définir le solde initial",
+        "setOpeningBalanceTitle": "Définir le solde initial",
+        "through": "Jusqu'au {date}",
+        "title": "Solde de travail",
+        "upload": {
+          "allReady": "{total, plural, one {# ligne est prête ; {replacing, plural, =0 {aucune ne remplace un solde initial en vigueur} one {# remplace un solde initial en vigueur} other {# remplacent un solde initial en vigueur}}.} other {Toutes les # lignes sont prêtes ; {replacing, plural, =0 {aucune ne remplace un solde initial en vigueur} one {# remplace un solde initial en vigueur} other {# remplacent un solde initial en vigueur}}.}}",
+          "checking": "Vérification du fichier…",
+          "columns": {
+            "balance": "Solde",
+            "day": "Jour",
+            "employee": "Employé",
+            "reason": "Motif",
+            "row": "Ligne",
+            "status": "Statut"
+          },
+          "committed": "{count, plural, one {# solde initial défini} other {# soldes initiaux définis}}",
+          "description": "Définissez le solde initial de plusieurs employés à partir d'un fichier CSV contenant les colonnes employee_number, day (AAAA-MM-JJ ou JJ.MM.AAAA), balance (heures et minutes, par exemple 12:30 ou -4:15) et reason. Chaque solde initial remplace le solde de travail de l'employé jusqu'à ce jour inclus, et annule celui en vigueur. Rien n'est enregistré tant qu'une ligne contient une erreur.",
+          "errors": {
+            "ambiguousEmployee": "Plusieurs employés possèdent ce numéro. Attribuez d'abord un numéro unique à chacun.",
+            "conflictingPayouts": "Les paiements d'heures supplémentaires sont datés du jour même ou d'un jour antérieur :",
+            "duplicateEmployee": "Cet employé a plusieurs lignes. N'en conservez qu'une.",
+            "employeeNumberRequired": "Saisissez le numéro d'employé.",
+            "futureDay": "La date est postérieure à aujourd'hui dans le fuseau horaire de l'employé.",
+            "invalidAmount": "Saisissez le solde en heures et minutes, par exemple 12:30 ou -4:15.",
+            "invalidDay": "Saisissez la date au format AAAA-MM-JJ ou JJ.MM.AAAA.",
+            "monthClosed": "La date se situe dans un mois clôturé.",
+            "outOfScope": "Cet employé n'est pas couvert par vos accès à la paie.",
+            "reasonRequired": "Saisissez un motif.",
+            "reasonTooLong": "Limitez le motif à 1 000 caractères.",
+            "unknown": "Impossible d'enregistrer cette ligne.",
+            "unknownEmployee": "Aucun employé ne possède ce numéro."
+          },
+          "file": "Fichier CSV",
+          "fileErrors": {
+            "fileTooLarge": "Le fichier est trop volumineux. Divisez-le en plusieurs importations.",
+            "missingColumns": "Les colonnes suivantes sont manquantes dans le fichier : {columns}.",
+            "noRows": "Le fichier ne contient aucune ligne sous l'en-tête.",
+            "tooManyRows": "Le fichier contient plus de 2 000 lignes. Divisez-le en plusieurs importations.",
+            "unreadable": "Impossible de lire le fichier. Enregistrez-le au format CSV (UTF-8) et réessayez."
+          },
+          "former": "Ancien employé",
+          "hasErrors": "{errors, plural, one {# ligne sur {total} contient une erreur. Corrigez le fichier et importez-le à nouveau.} other {# lignes sur {total} contiennent des erreurs. Corrigez le fichier et importez-le à nouveau.}}",
+          "hasErrorsTitle": "Corriger les lignes comportant des erreurs",
+          "invalidFile": "Le fichier ne peut pas être utilisé",
+          "open": "Importer les soldes initiaux",
+          "ready": "Prêt",
+          "refusedTitle": "Rien n'a été enregistré",
+          "replaces": "Remplace le solde initial de {balance} le {day}",
+          "submit": "{count, plural, one {Définir # solde initial} other {Définir # soldes initiaux}}",
+          "template": "Télécharger le modèle",
+          "title": "Importer les soldes initiaux"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Ajouter une modification",
@@ -552,6 +695,7 @@
         "loadingFile": "Chargement du dossier du personnel",
         "manageOfficers": "Gestionnaires des dossiers du personnel",
         "payslipBatch": "Lot de bulletins de paie",
+        "sickLeave": "Congé maladie",
         "title": "Dossiers du personnel"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Visibilité"
       },
       "list": {
+        "absence": "Pour le congé maladie {dateRange}",
         "delete": "Supprimer {title}",
         "download": "Télécharger {title}",
         "edit": "Modifier {title}",
@@ -771,6 +916,83 @@
         "description": "Choisissez qui, en plus des propriétaires et des administrateurs, gère les documents des employés.",
         "loading": "Chargement des paramètres des dossiers du personnel",
         "title": "Dossiers du personnel"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Dates",
+          "duration": "Durée",
+          "employee": "Employé",
+          "sickDetail": "Détail de la maladie",
+          "sickNotes": "Arrêts de travail",
+          "status": "Statut"
+        },
+        "description": "Absences pour maladie des employés dont vous gérez les arrêts de travail, avec les arrêts de travail joints. Rien ici ne relance ni ne sollicite les employés.",
+        "empty": "Aucun congé maladie sur cette période ne correspond aux filtres.",
+        "filters": {
+          "allEmployees": "Tous les employés",
+          "allSickDetails": "Tous les détails de la maladie",
+          "allStatuses": "En attente et approuvés",
+          "allTeams": "Toutes les équipes",
+          "employee": "Employé",
+          "formerEmployee": "{name} (ancien)",
+          "from": "Du",
+          "notes": "Arrêts de travail",
+          "notesAll": "Tous",
+          "notesMissing": "Avec certificat, sans justificatif",
+          "notesPresent": "Avec justificatif",
+          "reset": "Réinitialiser les filtres",
+          "sickDetail": "Détail de la maladie",
+          "status": "Statut",
+          "team": "Équipe",
+          "to": "Au"
+        },
+        "loading": "Chargement des arrêts maladie",
+        "notes": {
+          "count": "{count, plural, one {# note} other {# notes}}",
+          "none": "Aucune note"
+        },
+        "pagination": {
+          "next": "Page suivante",
+          "page": "Page {page} sur {pageCount}",
+          "pageSize": "Lignes par page",
+          "previous": "Page précédente",
+          "summary": "{first}–{last} sur {total}"
+        },
+        "sickDetail": {
+          "childSick": "Enfant malade",
+          "other": "Autre",
+          "withCertificate": "Avec certificat",
+          "withoutCertificate": "Sans certificat"
+        },
+        "status": {
+          "approved": "Approuvé",
+          "pending": "En attente"
+        },
+        "title": "Arrêt maladie"
+      },
+      "sickNotes": {
+        "cardDescription": "Arrêts maladie en attente et approuvés de cet employé. Joignez un nouveau certificat médical ou associez-en un figurant déjà dans le dossier du personnel.",
+        "cardTitle": "Arrêt maladie",
+        "chooseAbsence": "Choisissez une absence.",
+        "chooseNote": "Choisissez un certificat médical.",
+        "link": "Associer",
+        "linked": "Certificat médical associé",
+        "linkExistingDescription": "Choisissez un certificat médical dans le dossier du personnel pour l'arrêt maladie {dateRange}.",
+        "linkExistingTitle": "Associer un certificat médical",
+        "linkFailed": "Le certificat médical n'a pas pu être associé.",
+        "linkToAbsence": "Associer {title} à l'arrêt maladie",
+        "linkToAbsenceDescription": "Choisissez l'arrêt maladie couvert par « {title} ». Un arrêt maladie enregistré sans certificat est alors considéré comme avec certificat.",
+        "linkToAbsenceTitle": "Associer au congé maladie",
+        "loadFailed": "Impossible de charger la liste.",
+        "manage": "Joindre ou associer",
+        "manageFor": "Joindre ou associer des certificats médicaux pour {name}, {dateRange}",
+        "noSickLeave": "Cet employé n'a aucun congé maladie en attente ou approuvé.",
+        "notes": "Certificats médicaux",
+        "noUnlinkedNotes": "Il n'y a aucun certificat médical dans ce dossier du personnel qui ne soit pas associé à une absence.",
+        "openNotes": "Certificats médicaux pour {dateRange}",
+        "unlinked": "Certificat médical dissocié",
+        "unlinkFailed": "Impossible de dissocier le certificat médical.",
+        "unlinkFromAbsence": "Dissocier {title} de son congé maladie"
       },
       "tabs": {
         "access": "Accès",

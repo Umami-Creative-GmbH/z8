@@ -168,6 +168,16 @@
       "policyUpdated": "Politique mise à jour avec succès",
       "required": "Requis",
       "saveFailed": "Échec de l'enregistrement de la politique",
+      "sickNotes": {
+        "description": "Les arrêts maladie sont conservés dans le dossier du personnel de l'employé. Les approbateurs et les responsables voient uniquement qu'un document est joint.",
+        "disabled": "Les employés ne peuvent plus joindre d'arrêts maladie",
+        "enabled": "Les employés peuvent désormais joindre des arrêts maladie",
+        "help": "Les employés joignent des photos ou des PDF de leurs arrêts maladie à leur congé maladie. En Allemagne, les employeurs récupèrent l'arrêt maladie électronique (eAU) auprès des caisses d'assurance maladie, les photos concernent donc principalement l'assurance privée, les mini-jobs, l'Autriche et la Suisse, ainsi que les arrêts pour enfant malade.",
+        "openOrganizationSettings": "Ouvrir les paramètres de l'organisation",
+        "personnelFilesRequired": "Les arrêts maladie sont stockés dans les dossiers du personnel. Activez d'abord les dossiers du personnel dans les paramètres de l'organisation.",
+        "title": "Arrêts maladie",
+        "toggle": "Les employés peuvent joindre des arrêts maladie"
+      },
       "since": "depuis",
       "startingOn": "à partir du",
       "tab": {

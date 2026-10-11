@@ -143,6 +143,17 @@
       "upgrade": "Oppgrader"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Lukk denne måneden",
+    "status": {
+      "closed": "Lukket",
+      "open": "Åpen",
+      "partlyClosed": "Delvis lukket ({closed} av {total})"
+    },
+    "stripLabel": "Lukkede måneder",
+    "unclosedDescription": "Arbeid og fravær i disse månedene kan fortsatt endres etter eksporten. Lukk en måned når lønnen er ferdigstilt.",
+    "unclosedTitle": "Ikke alle måneder i denne perioden er lukket"
+  },
   "colors": {
     "blue": "Blå",
     "green": "Grønn",
@@ -219,6 +230,9 @@
     "enabled": "Aktivert",
     "error": "Feil",
     "error-occurred": "Det oppsto en feil",
+    "errors": {
+      "monthClosed": "{month} er lukket. Den må gjenåpnes før arbeid eller fravær kan endres."
+    },
     "fieldPresets": "{label}-forhåndsinnstillinger",
     "focusInput": "Fokuser inndatafelt",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Få hjelp",
     "my-documents": "Mine dokumenter",
     "my-requests": "Mine forespørsler",
+    "my-schedule": "Min tidsplan",
     "org-explorer": "Organisasjonsutforsker",
     "payroll": "Lønn",
     "personnel-files": "Personalmapper",
@@ -588,6 +603,8 @@
     "team": "Team",
     "teamAbsences": "Teamfravær",
     "team-label": "Team",
+    "teamPeriodSubmissions": "Periodeinnsendinger",
+    "teamPresence": "Hvem er på jobb",
     "time-tracking": "Tidsregistrering",
     "today": "I dag",
     "travel-expenses": "Reiseutgifter",
@@ -603,6 +620,27 @@
       "viewAll": "Vis alle varsler"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Du er stedfortreder for {name} ({dateRange}).",
+        "title": "Du er fraværsstedfortreder"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Perioden din som stedfortreder for {name} gjelder nå {dateRange}.",
+        "title": "Datoer for fraværsstedfortreder er endret"
+      },
+      "absenceDeputyReminder": {
+        "message": "Fra i morgen er du stedfortreder for {name} frem til {untilDate}.",
+        "title": "Fraværsdekning starter i morgen"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Du er ikke lenger stedfortreder for {name} ({dateRange}).",
+        "title": "Du er ikke lenger fraværsstedfortreder"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} er ikke lenger tilgjengelig som stedfortreder for {employeeName}s fravær fra {startDate} til {endDate}.",
+        "message": "{deputyName} er ikke lenger tilgjengelig som stedfortreder for fraværet ditt fra {startDate} til {endDate}.",
+        "title": "Stedfortreder er ikke lenger tilgjengelig"
+      },
       "absenceRecorded": {
         "message": "{managerName} registrerte {absenceType} for {dateRange} på dine vegne.",
         "title": "Fravær registrert"
@@ -614,9 +652,36 @@
         "message": "Forespørselen din om {categoryName} for {dateRange} er sendt inn og venter på godkjenning.",
         "title": "Fraværsforespørsel sendt inn"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Mens du var borte, behandlet {name} # godkjenning.} other {Mens du var borte, behandlet {name} # godkjenninger.}}",
+        "title": "Behandlet mens du var borte"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Du dekker {name}s godkjenninger: ingenting venter ennå.} other {Du dekker {name}s godkjenninger: # venter.}}",
+        "title": "Du dekker godkjenninger"
+      },
       "automaticClockOut": {
+        "breakMessage": "Du ble automatisk stemplet ut ved starten av pausen din kl. {cutoff} ({timezone}) fordi pausen ikke ble avsluttet innen organisasjonens tidsfrist på {duration} minutter.",
         "message": "Du ble automatisk stemplet ut etter {duration} minutter med uavbrutt arbeid kl. {cutoff} ({timezone}) fordi organisasjonens tidsgrense ble nådd.",
         "title": "Automatisk stemplet ut"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Åpningssaldoen på {amount} for {dateRange} ble kansellert. Årsak: {reason}",
+          "title": "Åpningssaldo kansellert"
+        },
+        "openingBalanceRecorded": {
+          "message": "En åpningssaldo på {amount} for {dateRange} ble registrert på arbeidssaldoen din.",
+          "title": "Åpningssaldo registrert"
+        },
+        "payoutCancelled": {
+          "message": "Overtidsutbetalingen på {amount} for {dateRange} ble kansellert. Årsak: {reason}",
+          "title": "Overtidsutbetaling kansellert"
+        },
+        "payoutRecorded": {
+          "message": "En overtidsutbetaling på {amount} for {dateRange} ble registrert på arbeidssaldoen din.",
+          "title": "Overtidsutbetaling registrert"
+        }
       },
       "breakDueReminder": {
         "message": "Pausen din skal tas innen {breakTime} ({timezone}). Ta en pause innen det for å følge retningslinjene for pauser.",
@@ -638,12 +703,48 @@
         "message": "Vakten din startet kl. {startTime} ({timezone}). Stemple inn hvis du jobber.",
         "title": "Du har ikke stemplet inn ennå"
       },
+      "monthCloseBlocked": {
+        "message": "{month} ble ikke lukket automatisk. Ubehandlede fraværsforespørsler: {absenceRequests}. Ubehandlede timeforespørsler: {timeRequests}. Pågående arbeid: {liveWork}. Måneden er ennå ikke over: {notEnded}. Ansatte: {employees}. Det vil bli forsøkt på nytt i morgen.",
+        "title": "Måneden kunne ikke lukkes"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, one {{month} ble lukket automatisk for # ansatt. Arbeid og fravær kan ikke lenger endres med mindre den gjenåpnes.} other {{month} ble lukket automatisk for # ansatte. Arbeid og fravær kan ikke lenger endres med mindre den gjenåpnes.}}",
+        "title": "Måned lukket"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} ble gjenåpnet for én av dine ansatte: {reason}} other {{month} ble gjenåpnet for # av dine ansatte: {reason}}}",
+        "title": "Måned gjenåpnet"
+      },
       "newAbsenceRequest": {
         "title": "Ny fraværsforespørsel"
       },
       "passwordChanged": {
         "message": "Passordet ditt ble endret. Hvis du ikke har gjort denne endringen, må du kontakte brukerstøtte umiddelbart.",
         "title": "Passord endret"
+      },
+      "periodSubmissionApproved": {
+        "message": "Tiden din for {startDate} – {endDate} ble godkjent.",
+        "title": "Tiden din ble godkjent"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Tiden din for {startDate} – {endDate} ble endret etter at den ble godkjent. Se over tiden din og send inn på nytt.",
+        "title": "Den godkjente tiden din er utdatert"
+      },
+      "periodSubmissionRejected": {
+        "message": "Tiden din for {startDate} – {endDate} ble avvist: {reason}. Se over tiden din og send inn på nytt.",
+        "title": "Timene dine ble avvist"
+      },
+      "periodSubmissionReminder": {
+        "message": "Perioden din {startDate} – {endDate} er over. Se over timene dine og send dem inn til godkjenning.",
+        "title": "Send inn timene dine til godkjenning"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Perioden din {startDate} – {endDate} er fortsatt ikke sendt inn. Se over timene dine og send dem inn til godkjenning.",
+        "title": "Timene dine er fortsatt ikke sendt inn"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Timene dine for {startDate} – {endDate} ble endret etter at du sendte dem inn, så innsendingen ble trukket tilbake. Se over timene dine og send dem inn på nytt.",
+        "title": "Send inn timene dine på nytt"
       },
       "personnelFileDocumentShared": {
         "message": "Dokumentet \"{title}\" ble delt med deg.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} lastet opp et sertifikat",
         "other": "{name} lastet opp et dokument",
+        "sickNote": "{name} lastet opp en sykmelding for {dateRange}",
+        "sickNoteOnBehalf": "{uploader} lastet opp en sykmelding for {name}, {dateRange}",
         "title": "Nytt dokument i en personalmappe"
       },
       "personnelFileExpiredToday": {
@@ -690,12 +793,26 @@
         "message": "Du har blitt fjernet fra teamet {teamName} av {performedByName}.",
         "title": "Fjernet fra team"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Ansatte kan nå ta avspasering mot arbeidssaldoen sin. Den nye fraværskategorien forblir inaktiv til du aktiverer den i fraværsinnstillingene.",
+        "title": "Avspasering er tilgjengelig"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "En godkjent justering økte skyldig beløp på {employee}s utgiftsrapport {report}. Venter på refusjon: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "{employee}s utgiftsrapport {report} refunderes ikke via en lønnskjøring. Venter på refusjon: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} av reiseutgiften din har blitt refundert (betalingsreferanse {reference}). {remaining} {remainingCurrency} venter fortsatt på refusjon.",
         "title": "Utgift delvis refundert"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} av reiseutgiftene dine har blitt refundert med lønnen for {period}. {remaining} {remainingCurrency} venter fortsatt på refusjon."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Lønnskjøring {period} ({format}) venter på bekreftelsen din. Rapporter i ditt ansvarsområde: {count}.",
+        "title": "Lønnskjøring venter på bekreftelse"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "{employee}s utgiftsrapport {report} er godkjent. Venter på refusjon: {amounts}.",
@@ -708,6 +825,9 @@
       "travelExpenseReimbursed": {
         "message": "Reiseutgiften din har blitt fullt refundert: {amount} {currency}, betalingsreferanse {reference}.",
         "title": "Utgift refundert"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Reiseutgiftene dine har blitt fullt refundert med lønnen for {period}: {amount} {currency}."
       }
     },
     "description": "Gjennomgå oppdateringer, godkjenninger og systemvarsler på én tidslinje.",
@@ -728,6 +848,42 @@
       "ariaLabel": "Filtrer varsler etter lesestatus",
       "read": "Lest",
       "unread": "Ulest"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Noe krever din oppmerksomhet"
+      },
+      "body": "Åpne Z8 for å se detaljene.",
+      "document": {
+        "title": "Nyheter om dokumentene dine"
+      },
+      "project": {
+        "title": "Nyheter om et prosjekt"
+      },
+      "reminder": {
+        "title": "Påminnelse fra Z8"
+      },
+      "requestUpdate": {
+        "title": "Forespørselen din ble oppdatert"
+      },
+      "review": {
+        "title": "Du har en forespørsel til vurdering"
+      },
+      "schedule": {
+        "title": "Tidsplanen din er endret"
+      },
+      "security": {
+        "title": "Sikkerhetsvarsel for kontoen din"
+      },
+      "team": {
+        "title": "Teamene dine er endret"
+      },
+      "travelExpense": {
+        "title": "Nyheter om reiseutgiftene dine"
+      },
+      "workingTime": {
+        "title": "Nyheter om arbeidstiden din"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +925,21 @@
       },
       "toggleAria": "{channel}-varsler for {type}",
       "types": {
+        "absence_deputy_assigned": "Utnevnt som fraværsstedfortreder",
+        "absence_deputy_dates_changed": "Datoer for fraværsstedfortreder er endret",
+        "absence_deputy_reminder": "Fraværsdekning starter i morgen",
+        "absence_deputy_removed": "Ikke lenger fraværsstedfortreder",
+        "absence_deputy_unavailable": "Stedfortreder er ikke lenger tilgjengelig",
+        "approval_cover_return_summary": "Avgjort av din stedfortreder",
+        "approval_cover_started": "Fraværsdekning startet",
         "break_due_reminder": "Tid for pause",
         "forgotten_clock_out_reminder": "Glemt utstempling",
-        "missed_clock_in_reminder": "Manglende innstempling"
+        "missed_clock_in_reminder": "Manglende innstempling",
+        "period_submission_decided": "Innsendte timer godkjent eller avvist",
+        "period_submission_reminder": "Send inn timene dine",
+        "period_submission_sent_back": "Timer sendt i retur etter en endring",
+        "work_balance_adjustment_cancelled": "Saldojustering kansellert",
+        "work_balance_adjustment_recorded": "Saldojustering registrert"
       },
       "updateFailed": "Kunne ikke oppdatere innstilling"
     },
@@ -858,7 +1026,8 @@
       "relativeMinutes": "siden {minutes}min"
     },
     "clockedIn": "Stemplet inn",
-    "clockedOut": "Stemplet ut"
+    "clockedOut": "Stemplet ut",
+    "onBreak": "På pause"
   },
   "rateLimit": {
     "countdownLabel": "sekunder til du kan prøve igjen",
@@ -877,6 +1046,12 @@
   "status": {
     "active": "Aktiv",
     "inactive": "Inaktiv"
+  },
+  "storeAppBanner": {
+    "description": "Få påminnelser og godkjenningsvarsler i appen.",
+    "dismiss": "Avvis app-forslag",
+    "getApp": "Last ned appen",
+    "title": "Z8 for telefonen din"
   },
   "table": {
     "clearFilters": "Nullstill filtre",
@@ -955,6 +1130,24 @@
     "pronounsMaxLength": "Pronomen må være 50 tegn eller færre"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Avbryt",
+      "cancelled": "Kansellert",
+      "cancelledBy": "Kansellert av {name} den {date}: {reason}",
+      "description": "Overtidsutbetalinger og åpningssaldoer på denne arbeidssaldoen. En feilaktig post kanselleres, slettes aldri, så kansellerte poster forblir oppført.",
+      "empty": "Ingen saldojusteringer ennå.",
+      "kind": {
+        "openingBalance": "Åpningssaldo",
+        "overtimePayout": "Overtidsutbetaling"
+      },
+      "loadFailed": "Kunne ikke laste inn saldojusteringene.",
+      "loading": "Laster inn saldojusteringer",
+      "notPermitted": "Du kan se saldojusteringene for deg selv og for ansatte du administrerer.",
+      "open": "Saldojusteringer",
+      "recordedBy": "Registrert av {name} den {date}",
+      "title": "Saldojusteringer",
+      "unknownUser": "en slettet bruker"
+    },
     "label": "Totalsaldo",
     "notCalculated": "Ikke beregnet ennå",
     "pendingDescription": "Systemet vil beregne denne saldoen snart.",

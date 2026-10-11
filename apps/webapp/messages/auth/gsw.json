@@ -133,6 +133,18 @@
     "sso-not-configured": "SSO isch für die Domain nöd konfiguriert",
     "step-one": "1. Die iigladeni E-Mail-Adrässe verwände",
     "step-two": "2. Da zruggcho und biiträte",
+    "storeApp": {
+      "continue": "Wiiter",
+      "description": "Gib dini Gschäfts-E-Mail ii. Du mäldisch di dänn uf de Aamäldesite vo dinere Organisation im Browser vo dim Handy aa.",
+      "error": {
+        "browser": "D Aamäldesite hät nöd chönne göffnet wärde. Bitte probier's nomal.",
+        "expired": "D Aamäldig isch nöd abgschlosse worde oder isch abgloffe. Bitte probier's nomal.",
+        "rateLimited": "Z vill Aamäldeversüech. Bitte wart en Momänt und probier's nomal.",
+        "unavailable": "Z8 hät nöd chönne erreicht wärde. Überprüef dini Verbindig und probier's nomal."
+      },
+      "title": "Bi Z8 aamälde",
+      "waiting": "Warte uf d Aamäldig…"
+    },
     "terms": {
       "privacy": "Dateschutzerchlärig",
       "service": "Nutzigsbedingige"

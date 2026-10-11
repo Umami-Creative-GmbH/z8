@@ -24,6 +24,31 @@
       "nextYear": "Próximo ano",
       "previousYear": "Ano anterior"
     },
+    "deputy": {
+      "away": "Ausente {dates}",
+      "awayOption": "{name} · Ausente {dates}",
+      "awayWarning": "{name} está ausente nestas datas. Você ainda pode escolher essa pessoa.",
+      "changeAction": "Alterar substituto",
+      "changed": "Substituto salvo",
+      "changeDescription": "O substituto cobre sua ausência. A alteração não requer uma nova aprovação.",
+      "changeDescriptionFor": "O substituto cobre a ausência de {name}. A alteração não requer uma nova aprovação.",
+      "changeFailed": "Não foi possível salvar o substituto",
+      "changeTitle": "Alterar substituto",
+      "contactOnly": "{name} será exibido(a) apenas como contato e não poderá decidir aprovações.",
+      "errors": {
+        "ended": "O substituto não pode mais ser alterado: esta ausência terminou.",
+        "required": "Escolha um substituto: este tipo de ausência exige um.",
+        "self": "Um funcionário não pode ser seu próprio substituto.",
+        "unavailable": "O substituto deve ser um funcionário ativo desta organização."
+      },
+      "help": "O colega que cobre sua ausência. Ele não precisa aceitar.",
+      "label": "Substituto",
+      "labelOptional": "Substituto (Opcional)",
+      "labelRequired": "Substituto *",
+      "none": "Sem substituto",
+      "placeholder": "Selecionar um substituto…",
+      "save": "Salvar substituto"
+    },
     "dialog": {
       "cancelDescription": "Tem a certeza que deseja cancelar este pedido de ausência? Esta ação não pode ser desfeita.",
       "cancelTitle": "Cancelar pedido de ausência",
@@ -36,10 +61,10 @@
     },
     "featureName": "gerir ausências",
     "form": {
+      "absenceDays": "Dias de ausência:",
       "absenceType": "Tipo de ausência *",
       "autoApproved": "(Aprovado automaticamente)",
       "balanceAfterRequest": "Saldo após o pedido:",
-      "businessDays": "Dias úteis:",
       "daysRemaining": "Dias restantes:",
       "description": "Envie um pedido de folga. O seu gerente será notificado para aprovação.",
       "duration": "Duração da ausência",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Sem risco de cobertura publicado",
       "noCoverageRulesConfigured": "Nenhuma regra de cobertura configurada para os turnos afetados",
       "noHolidays": "Nenhum feriado atribuído no período",
+      "noWorkingDays": "Este intervalo não contém dias úteis.",
       "remainingAfter": "Restante após a solicitação",
       "requested": "Solicitado",
       "title": "Planejador inteligente",
-      "unavailable": "Visualização do planejamento indisponível. Você ainda pode enviar sua solicitação."
+      "unavailable": "Visualização do planejamento indisponível. Você ainda pode enviar sua solicitação.",
+      "workBalance": "Saldo de horas",
+      "workBalanceAfter": "Após solicitação",
+      "workBalanceCurrent": "Atual",
+      "workBalanceDrawn": "Deduzido pela solicitação",
+      "workBalanceNegative": "Seu saldo de horas ficaria negativo após esta solicitação. Você ainda pode enviá-la."
     },
     "requestAbsence": "Pedir ausência",
+    "sickNotes": {
+      "attachAction": "Anexar atestado médico",
+      "attach": {
+        "defaultTitle": "Atestado médico {dateRange}",
+        "description": "Adicione fotos ou PDFs do seu atestado médico: arquivos PDF, JPEG, PNG ou WebP de até 20 MB cada. Cada arquivo é salvo como um atestado próprio no seu registro de funcionário.",
+        "documentDate": "Data do documento",
+        "failed": "Falha no envio",
+        "fileRequired": "Escolha pelo menos um arquivo.",
+        "officerDescription": "Adicione fotos ou PDFs do atestado médico: arquivos PDF, JPEG, PNG ou WebP de até 20 MB cada. Cada arquivo é salvo como um atestado médico individual no registro do colaborador.",
+        "progress": "Progresso do envio",
+        "progressCount": "{done} de {total} enviados",
+        "share": "Compartilhar com o colaborador",
+        "sharedNote": "Você pode ver seus atestados médicos em Meus Documentos e nesta ausência. Seu aprovador só verá que um atestado foi anexado. Você pode excluir um atestado em até 24 horas após o envio.",
+        "shareHint": "Desativado: apenas para o RH; o colaborador apenas vê que há um atestado médico em anexo. Ativado: o colaborador pode visualizá-lo em Meus Documentos.",
+        "submit": "Anexar",
+        "success": "{count, plural, one {Atestado médico anexado} other {# atestados médicos anexados}}",
+        "title": "Anexar atestado médico",
+        "titleLabel": "Título"
+      },
+      "files": {
+        "chooseFiles": "Escolher arquivos",
+        "defaultTitleUndated": "Atestado médico",
+        "incomplete": "Dê a cada atestado médico um título e uma data do documento.",
+        "remove": "Remover {fileName}",
+        "takePhoto": "Tirar foto",
+        "tooMany": "Você pode adicionar até {max} arquivos."
+      },
+      "marker": "Atestado médico anexado ({count})",
+      "panel": {
+        "delete": "Excluir {title}",
+        "description": "Atestados médicos para a ausência {dateRange}.",
+        "empty": "Nenhum atestado médico disponível para abrir.",
+        "linkExisting": "Vincular atestado médico",
+        "loadFailed": "Não foi possível carregar os atestados médicos.",
+        "title": "Atestados médicos",
+        "unlink": "Desvincular {title}",
+        "unlinked": "Atestado médico desvinculado",
+        "unlinkFailed": "Não foi possível desvincular o atestado médico."
+      },
+      "request": {
+        "attachFailed": "Sua ausência foi solicitada, mas não foi possível anexar {files}. Você pode anexar atestados médicos pela ausência mais tarde.",
+        "description": "Adicione fotos ou PDFs do seu atestado médico: arquivos PDF, JPEG, PNG ou WebP de até 20 MB cada. Cada arquivo é salvo como um atestado médico individual no seu registro de funcionário. Seu aprovador apenas vê que há um atestado médico em anexo.",
+        "title": "Atestado médico (opcional)",
+        "uploadFailed": "Não foi possível enviar {fileName}. Remova-o ou tente novamente."
+      }
+    },
     "status": {
       "approved": "Aprovado",
       "pending": "Pendente",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Entradas de tempo bloqueadas",
       "category": "Categoria",
+      "deputy": "Substituto",
       "duration": "Duração",
       "employee": "Funcionário",
       "noEvents": "Sem eventos para este dia",
@@ -177,6 +255,7 @@
       "category": "Categoria",
       "credited": "Creditado",
       "dateRange": "Intervalo de datas",
+      "deputy": "Substituto",
       "duration": "Duração",
       "editedBy": "Editado por",
       "employee": "Funcionário",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "Semana",
+      "closedDay": "Em um mês fechado",
       "dayEvents": "{count, plural, one {# evento: {titles}} other {# eventos: {titles}}}",
       "dayLabel": "{date}: {actual} registrado, {required} necessário, {delta} {status}.",
       "description": "Horas de política diárias, semanais e mensais",

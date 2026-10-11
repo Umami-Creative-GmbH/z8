@@ -168,6 +168,16 @@
       "policyUpdated": "Policy updated successfully",
       "required": "Required",
       "saveFailed": "Failed to save policy",
+      "sickNotes": {
+        "description": "Sick notes are kept in the employee's personnel file. Approvers and managers only see that one is attached.",
+        "disabled": "Employees can no longer attach sick notes",
+        "enabled": "Employees can now attach sick notes",
+        "help": "Employees attach photos or PDFs of their sick notes to their own sick leave. In Germany, employers fetch the electronic sick note (eAU) from health insurers, so photos matter mainly for private insurance, mini-jobs, Austria and Switzerland, and child-sick notes.",
+        "openOrganizationSettings": "Open organization settings",
+        "personnelFilesRequired": "Sick notes are stored in personnel files. Turn on personnel files in the organization settings first.",
+        "title": "Sick notes",
+        "toggle": "Employees can attach sick notes"
+      },
       "since": "since",
       "startingOn": "starting on",
       "tab": {

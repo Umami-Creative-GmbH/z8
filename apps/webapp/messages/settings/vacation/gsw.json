@@ -168,6 +168,16 @@
       "policyUpdated": "Regelung erfolgreich aktualisiert",
       "required": "Erforderlich",
       "saveFailed": "Speichern der Regelung fehlgeschlagen",
+      "sickNotes": {
+        "description": "Arztzeugnisse werden im Personaldossier der Mitarbeitenden aufbewahrt. Genehmigende und Führungskräfte sehen nur, dass eines angehängt ist.",
+        "disabled": "Mitarbeitende können keine Arztzeugnisse mehr anhängen",
+        "enabled": "Mitarbeitende können jetzt Arztzeugnisse anhängen",
+        "help": "Mitarbeitende hängen Fotos oder PDFs ihrer Arztzeugnisse an ihre eigene Krankmeldung an. In Deutschland rufen Arbeitgeber die elektronische Arbeitsunfähigkeitsbescheinigung (eAU) bei den Krankenkassen ab, daher sind Fotos vor allem für die private Versicherung, Minijobs, Österreich und die Schweiz sowie Kinderkrankschreibungen relevant.",
+        "openOrganizationSettings": "Organisationseinstellungen öffnen",
+        "personnelFilesRequired": "Arztzeugnisse werden in Personaldossiers gespeichert. Aktivieren Sie Personaldossiers zuerst in den Organisationseinstellungen.",
+        "title": "Arztzeugnisse",
+        "toggle": "Mitarbeitende können Arztzeugnisse anhängen"
+      },
       "since": "seit",
       "startingOn": "beginnend am",
       "tab": {
