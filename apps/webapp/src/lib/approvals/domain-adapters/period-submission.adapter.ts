@@ -28,6 +28,7 @@ import {
 import type {
 	ApprovalDomainAdapter,
 	ApprovalDomainAdapterContext,
+	ApprovalTerminalAdapterInput,
 	ApprovalTerminalFinalizationResult,
 } from "./types";
 
@@ -116,6 +117,23 @@ export function periodSubmissionRoutingContext(input: {
 }
 
 /**
+ * Approvals and rejections are an employee's; a withdrawal is the employee's, a manager's after a
+ * change, or the writer seam's system capability after a change (#1062), never a system cancel
+ * for any other reason.
+ */
+function isTerminalActorAllowed(
+	actor: ApprovalTerminalAdapterInput<PeriodSubmissionApprovalSource>["actor"],
+	transition: ApprovalTerminalAdapterInput<PeriodSubmissionApprovalSource>["transition"],
+): boolean {
+	if (actor.kind === "employee") return Boolean(actor.userId);
+	return (
+		actor.kind === "system" &&
+		transition.kind === "cancel_pending" &&
+		periodSubmissionClosedCauseOf(transition.reason) === "change"
+	);
+}
+
+/**
  * The period submission adapter (#1059): canonical-only, self-contained (it needs no caller
  * dependencies), and the only writer of a submission's decision. Approve and reject record the
  * decision on the row and its audit entry in the engine's transaction. Cancelling a pending
@@ -199,13 +217,12 @@ export function createPeriodSubmissionApprovalAdapter(): ApprovalDomainAdapter<P
 			) {
 				fail("Period submission cancel reason is unknown");
 			}
-			if (input.actor.kind !== "employee" || !input.actor.userId) {
+			if (!isTerminalActorAllowed(input.actor, transition)) {
 				fail("Period submission terminal actor is invalid");
 			}
 		},
 		async finalizeTerminal(input) {
 			await this.preflightTerminal(input);
-			if (input.actor.kind !== "employee" || !input.actor.userId) return fail();
 			const transition = input.transition;
 			if (transition.kind === "cancel_pending") {
 				// Withdrawal (#1060): the row closes here; the withdrawal entry point writes its audit
@@ -243,6 +260,7 @@ export function createPeriodSubmissionApprovalAdapter(): ApprovalDomainAdapter<P
 				}) as ApprovalTerminalFinalizationResult;
 			}
 			if (transition.kind !== "approve" && transition.kind !== "reject") return fail();
+			if (input.actor.kind !== "employee" || !input.actor.userId) return fail();
 			const status = transition.kind === "approve" ? "approved" : "rejected";
 			const reason = transition.kind === "reject" ? transition.reason : null;
 			const client = database(input.dbService);

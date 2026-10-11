@@ -336,6 +336,7 @@ describe("Notification Service", () => {
 		"forgotten_clock_out_reminder",
 		"break_due_reminder",
 		"period_submission_reminder",
+		"period_submission_sent_back",
 	] as const)("a %s arrives in-app and by push until the employee turns on another channel", async (type) => {
 		mockFindMany.mockImplementation(async () => []);
 		const { loadNotificationChannelPreferences } = await import("../notification-service");

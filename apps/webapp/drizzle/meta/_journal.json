@@ -1457,6 +1457,13 @@
       "when": 1802188800000,
       "tag": "0207_period_submission_reminder",
       "breakpoints": true
+    },
+    {
+      "idx": 208,
+      "version": "7",
+      "when": 1802275200000,
+      "tag": "0208_period_submission_sent_back",
+      "breakpoints": true
     }
   ]
 }

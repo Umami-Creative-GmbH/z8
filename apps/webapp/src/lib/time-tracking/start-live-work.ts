@@ -28,6 +28,7 @@ import {
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { canonicalJson } from "./canonical-json";
 import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -317,6 +318,12 @@ export async function startLiveWorkGraph(
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!period) throw new ClockingConflictError("Failed to create work period");
+	// Work started in a submitted period (e.g. later on its last day) sends it back (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		work: [{ start: input.eventInstant, end: input.eventInstant }],
+	});
 
 	const result: StartLiveWorkResult = {
 		version: START_LIVE_WORK_RESULT_VERSION,

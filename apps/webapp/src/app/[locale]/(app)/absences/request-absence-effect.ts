@@ -108,6 +108,7 @@ import {
 	validateAbsenceSickDetail,
 } from "./request-absence-effect-helpers";
 import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 const logger = createLogger("AbsenceActionsEffect");
 
@@ -445,6 +446,13 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						status: "pending",
 					})
 					.returning();
+				// A requested absence in a submitted period sends it back (#1062); the sick
+				// override's adjusted vacation days lie inside the requested days.
+				await sendBackChangedPeriodSubmissions(tx, {
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					days: [{ startDate: data.startDate, endDate: data.endDate }],
+				});
 				if (deputyEmployeeId) {
 					await recordDeputyChange(audit, tx, {
 						organizationId: currentEmployee.organizationId,

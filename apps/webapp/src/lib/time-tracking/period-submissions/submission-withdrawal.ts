@@ -7,6 +7,7 @@ import {
 	PERIOD_SUBMISSION_WORKFLOW_TYPE,
 } from "@/lib/approvals/domain-adapters/period-submission-contract";
 import { createPeriodSubmissionApprovalRuntime } from "@/lib/approvals/server/period-submission-runtime";
+import { PERIOD_SUBMISSION_CHANGE_SYSTEM_ID } from "@/lib/approvals/workflow/ports";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { AuditAction } from "@/lib/audit-logger";
 import { type Clock, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
@@ -56,8 +57,9 @@ class WithdrawalRefused extends Error {
  * - `cause: "employee"`: the employee takes it back; `actor` must be the submitter's user.
  * - `cause: "change"` (#1062): the period changed. A user actor other than the submitter cancels
  *   under a management grant scoped to this one cancel; that user must be an active employee of
- *   the organization. A `system` actor cancels as the submitter and is audited as the submitter
- *   with `automatic: true`.
+ *   the organization. A `system` actor cancels with the writer seam's narrow system capability
+ *   (`PERIOD_SUBMISSION_CHANGE_SYSTEM_ID`), so a departed submitter's submission is withdrawn
+ *   too, and is audited as the submitter with `automatic: true`.
  *
  * Returns `not_pending` (and changes nothing) when the submission is missing, not pending, or
  * not the actor's own for an employee withdrawal. Delivery is not kicked: callers kick after
@@ -132,7 +134,10 @@ export async function withdrawPeriodSubmissionInTransaction(
 				workflowId,
 				expectedVersion: snapshot.version,
 				idempotencyKey: `period-submission-withdrawal:${row.id}`,
-				principal: { kind: "employee", userId: actorUserId },
+				principal:
+					input.actor.kind === "system"
+						? { kind: "system", systemId: PERIOD_SUBMISSION_CHANGE_SYSTEM_ID }
+						: { kind: "employee", userId: actorUserId },
 				command: { type: "cancel", reason: PERIOD_SUBMISSION_CANCEL_REASONS[input.cause] },
 			});
 		});

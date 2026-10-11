@@ -44,6 +44,7 @@ import {
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
 import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -574,6 +575,12 @@ export async function closeActiveWorkGraph(
 		organizationId,
 		employeeId,
 		intervals: [{ start, end: input.eventInstant }],
+	});
+	// Completing work sends the submitted periods it touches back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		work: [{ start, end: input.eventInstant }],
 	});
 	const durationMinutes = deriveWorkDurationMinutes(start, input.eventInstant);
 	const projectId = await resolveAttribution(
