@@ -1,10 +1,5 @@
-import {
-	dateFromInstant,
-	type Instant,
-	instantFromDate,
-	type PlainDate,
-	plainDateAt,
-} from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, type PlainDate } from "@/lib/datetime/temporal-core";
+import { daysUntilProjectDeadline, projectDeadlineDay } from "@/lib/projects/project-deadline-days";
 import type { ReportDayRange } from "./project-report-work";
 import type {
 	ProjectBudgetHealthTotals,
@@ -38,9 +33,9 @@ export function buildProjectHealthFields(
 	const { budgetHours, cumulativeHours, deadline, now, timeZone } = params;
 	const percentBudgetUsed =
 		budgetHours && budgetHours > 0 ? (cumulativeHours / budgetHours) * 100 : null;
-	const deadlineDay = deadline ? plainDateAt(instantFromDate(deadline), "UTC") : null;
-	const daysUntilDeadline = deadlineDay
-		? plainDateAt(now, timeZone).until(deadlineDay, { largestUnit: "days" }).days
+	const deadlineDay = deadline ? projectDeadlineDay(deadline) : null;
+	const daysUntilDeadline = deadline
+		? daysUntilProjectDeadline({ deadline, now, timeZone })
 		: null;
 
 	return {
