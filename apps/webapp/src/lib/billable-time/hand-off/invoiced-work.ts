@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
-import { invoicedWork, workPeriod } from "@/db/schema";
+import { invoicedWork } from "@/db/schema";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 
 /**
@@ -13,12 +13,15 @@ type Reader = Pick<Transaction, "select">;
 /**
  * Set-based predicate: the `work_period` row in scope of the query is invoiced
  * work. Select it as a column or use it as a condition (`not(...)` to skip it).
+ * The `work_period` columns are qualified by hand: selected without a join,
+ * Drizzle renders `${workPeriod.id}` as a bare "id", which binds to
+ * `invoiced_work.id` (#1073).
  */
 export function invoicedWorkPeriodSql(): SQL<boolean> {
 	return sql<boolean>`exists (
 		select 1 from ${invoicedWork}
-		where ${invoicedWork.organizationId} = ${workPeriod.organizationId}
-			and ${invoicedWork.workPeriodId} = ${workPeriod.id}
+		where ${invoicedWork.organizationId} = "work_period"."organization_id"
+			and ${invoicedWork.workPeriodId} = "work_period"."id"
 			and ${invoicedWork.releasedAt} is null
 	)`;
 }
