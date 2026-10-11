@@ -72,18 +72,21 @@ export interface ClockingReminderEmployee {
 	timezone: string;
 }
 
-/** Active, not departed employees of the organization whose role receives reminders. */
+/**
+ * Active, not departed employees of the organization whose role receives reminders; every role
+ * when `roles` is null (period submission reminders go to every employee).
+ */
 export async function listClockingReminderEmployees(
 	input: {
-		organization: ClockingReminderOrganization;
-		roles: readonly ClockingReminderRole[];
+		organization: Pick<ClockingReminderOrganization, "organizationId" | "timezone">;
+		roles: readonly ClockingReminderRole[] | null;
 		now: Instant;
 		after: string | null;
 		limit: number;
 	},
 	database: Database,
 ): Promise<ClockingReminderEmployee[]> {
-	if (input.roles.length === 0) return [];
+	if (input.roles?.length === 0) return [];
 	const rows = await database
 		.select({
 			employeeId: employee.id,
@@ -95,7 +98,7 @@ export async function listClockingReminderEmployees(
 		.where(
 			and(
 				eq(employee.organizationId, input.organization.organizationId),
-				inArray(employee.role, [...input.roles]),
+				input.roles ? inArray(employee.role, [...input.roles]) : undefined,
 				employeeHasOrganizationAccess(input.now),
 				input.after ? gt(employee.id, input.after) : undefined,
 			),

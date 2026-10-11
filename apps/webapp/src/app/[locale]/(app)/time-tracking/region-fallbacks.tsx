@@ -27,6 +27,9 @@ export function TimelineLoading() {
 export function HistoryLoading() {
 	return <RegionLoading height="h-80" />;
 }
+export function PeriodsLoading() {
+	return <RegionLoading height="h-32" />;
+}
 
 export function SummaryLoading() {
 	const { t } = useTranslate();

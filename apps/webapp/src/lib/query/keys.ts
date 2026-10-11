@@ -182,6 +182,13 @@ export const queryKeys = {
 			] as const,
 	},
 
+	// Closed months
+	closedMonths: {
+		/** What a close of the month for the scope would warn about (#1065). */
+		closeWarnings: (month: string, scope: string) =>
+			["closed-months", "close-warnings", month, scope] as const,
+	},
+
 	// Employees
 	employees: {
 		all: ["employees"] as const,

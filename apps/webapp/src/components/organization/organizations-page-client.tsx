@@ -5,11 +5,13 @@ import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 import type { ClockingReminderSettings } from "@/lib/time-tracking/clocking-reminders/settings-policy";
+import type { PeriodSubmissionSettings } from "@/lib/time-tracking/period-submissions/settings-policy";
 import { OrganizationTab } from "./organization-tab";
 
 interface OrganizationsPageClientProps {
 	autoClockOutSettings: AutoClockOutSettings;
 	clockingReminderSettings: ClockingReminderSettings;
+	periodSubmissionSettings: PeriodSubmissionSettings;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
 	currentMemberRole: "owner" | "admin" | "member";
@@ -21,6 +23,7 @@ interface OrganizationsPageClientProps {
 export function OrganizationsPageClient({
 	autoClockOutSettings,
 	clockingReminderSettings,
+	periodSubmissionSettings,
 	organization,
 	memberCount,
 	currentMemberRole,
@@ -46,6 +49,7 @@ export function OrganizationsPageClient({
 				<OrganizationTab
 					autoClockOutSettings={autoClockOutSettings}
 					clockingReminderSettings={clockingReminderSettings}
+					periodSubmissionSettings={periodSubmissionSettings}
 					organization={organization}
 					memberCount={memberCount}
 					currentMemberRole={currentMemberRole}

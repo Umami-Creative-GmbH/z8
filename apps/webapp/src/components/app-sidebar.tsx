@@ -3,6 +3,7 @@
 import {
 	IconBeach,
 	IconCalendar,
+	IconCalendarCheck,
 	IconCalendarEvent,
 	IconCalendarTime,
 	IconCash,
@@ -251,6 +252,11 @@ export function AppSidebar({
 			title: t("nav.teamPresence", "Who Is In"),
 			url: "/team/presence",
 			icon: IconUserCheck,
+		},
+		{
+			title: t("nav.teamPeriodSubmissions", "Period Submissions"),
+			url: "/team/period-submissions",
+			icon: IconCalendarCheck,
 		},
 		// Only show Scheduling when shifts are enabled for the organization
 		...(navigationCapabilities.scheduling

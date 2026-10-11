@@ -33,6 +33,13 @@ import {
 } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import {
+	fingerprintPeriodSubmissionFacts,
+	isPeriodSubmissionSubmittedFacts,
+	PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION,
+	type PeriodSubmissionSubmittedFacts,
+	type PeriodSubmissionSubmittedLabels,
+} from "./period-submission-facts";
+import {
 	fingerprintTravelExpenseMaterialFacts,
 	TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseSubmittedFacts,
@@ -1899,4 +1906,153 @@ export async function loadLegacyTimeCorrectionSubmittedRevision(
 	}
 	const row = rows[0];
 	return row ? parseTimeCorrectionRevision(row, input.organizationId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Period submissions (#1059). Canonical-only: every revision references its
+// workflow, and capture never depends on an evidence control.
+// ---------------------------------------------------------------------------
+
+export interface PeriodSubmissionSubmittedRevisionRecord {
+	id: string;
+	organizationId: string;
+	workflowId: string;
+	periodSubmissionId: string;
+	requestCycleKey: string;
+	revision: number;
+	subjectEmployeeId: string;
+	submitter: { kind: "employee"; employeeId: string; userId: string };
+	materialFingerprint: string;
+	facts: PeriodSubmissionSubmittedFacts;
+	labels: PeriodSubmissionSubmittedLabels;
+	submittedAt: Instant;
+}
+
+function parsePeriodSubmissionRevision(
+	row: SubmittedRevisionRow,
+	organizationId: string,
+): PeriodSubmissionSubmittedRevisionRecord {
+	const facts = row.facts;
+	const labels = row.labels;
+	if (
+		row.authority !== "canonical" ||
+		!row.workflowId ||
+		row.organizationId !== organizationId ||
+		row.workflowType !== "period_submission" ||
+		row.sourceType !== "period_submission" ||
+		row.schemaVersion !== PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION ||
+		row.provenance !== "captured_at_submission" ||
+		row.submitterActorKind !== "employee" ||
+		!row.submitterEmployeeId ||
+		!row.submitterUserId ||
+		!isRecord(facts) ||
+		facts.kind !== "period_submission" ||
+		facts.schemaVersion !== PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION ||
+		facts.organizationId !== row.organizationId ||
+		facts.periodSubmissionId !== row.sourceId ||
+		facts.subjectEmployeeId !== row.subjectEmployeeId ||
+		facts.requesterEmployeeId !== row.requesterEmployeeId ||
+		!isPeriodSubmissionSubmittedFacts(facts) ||
+		!isRecord(labels) ||
+		!nullableString(labels.subjectName)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "period_submission_submitted_revision",
+		});
+	}
+	const parsedFacts = facts as unknown as PeriodSubmissionSubmittedFacts;
+	if (fingerprintPeriodSubmissionFacts(parsedFacts) !== row.materialFingerprint) {
+		throw new ApprovalEvidenceError("invariant", { field: "material_fingerprint" });
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		workflowId: row.workflowId,
+		periodSubmissionId: row.sourceId,
+		requestCycleKey: row.requestCycleKey,
+		revision: row.revision,
+		subjectEmployeeId: row.subjectEmployeeId,
+		submitter: {
+			kind: "employee",
+			employeeId: row.submitterEmployeeId,
+			userId: row.submitterUserId,
+		},
+		materialFingerprint: row.materialFingerprint,
+		facts: parsedFacts,
+		labels: { subjectName: labels.subjectName },
+		submittedAt: instantFromDate(row.submittedAt),
+	};
+}
+
+/**
+ * Written by the period submission owner in the submission's transaction, after routing
+ * created the workflow. A second capture for the same workflow is a contradiction.
+ */
+export async function capturePeriodSubmissionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workflowId: string;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: PeriodSubmissionSubmittedFacts;
+		labels: PeriodSubmissionSubmittedLabels;
+		submitter: { employeeId: string; userId: string };
+	},
+): Promise<PeriodSubmissionSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const inserted = await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: "canonical",
+			workflowId: input.workflowId,
+			workflowType: "period_submission",
+			sourceType: "period_submission",
+			sourceId: input.facts.periodSubmissionId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: "employee",
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint: fingerprintPeriodSubmissionFacts(input.facts),
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.returning();
+	const row = inserted[0];
+	if (inserted.length !== 1 || !row) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "period_submission_submitted_revision",
+		});
+	}
+	return parsePeriodSubmissionRevision(row, input.organizationId);
+}
+
+/** The submitted revision of a period submission's workflow, scoped to its organization. */
+export async function loadPeriodSubmissionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; workflowId: string },
+): Promise<PeriodSubmissionSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.workflowId, input.workflowId),
+				eq(approvalSubmittedRevision.workflowType, "period_submission"),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parsePeriodSubmissionRevision(row, input.organizationId) : null;
 }

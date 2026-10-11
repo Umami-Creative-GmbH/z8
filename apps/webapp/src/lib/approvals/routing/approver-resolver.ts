@@ -129,17 +129,31 @@ function resolveDisposition(
 	return { activationMode: "human", approverEmployeeIds };
 }
 
+/**
+ * Kinds a requester never completes by being their own approver (#1059). The requester is never a
+ * candidate of their own stage, so a stage that resolves to the requester among others goes to the
+ * others. One that resolves to the requester alone runs the stage's configured fallback without
+ * the requester (a `fail` fallback refuses). Only the default stage (the primary manager, no policy)
+ * falls back to the organization's admins other than the requester. Without anyone it is refused.
+ */
+const REQUESTER_NEVER_AUTO_APPROVES: ReadonlySet<string> = new Set(["period_submission"]);
+
+/** Whether a stage came from a matched policy or from the default approver (no policy). */
+export type ApprovalStageOrigin = "policy" | "default_approver";
+
 export function resolveApprovalStageReviewers({
 	context,
 	stage,
 	directory,
 	requesterMode = "new_submission",
+	stageOrigin = "policy",
 }: {
 	context: ApprovalRoutingContext;
 	stage: ApprovalStageResolverSnapshot;
 	directory: ApprovalStageReviewerDirectory;
 	/** `existing_workflow` only for a stage of an already persisted workflow. */
 	requesterMode?: RequesterEligibilityMode;
+	stageOrigin?: ApprovalStageOrigin;
 }): ApprovalStageReviewerResolution {
 	if (
 		stage.approverType !== "direct_manager" &&
@@ -229,26 +243,43 @@ export function resolveApprovalStageReviewers({
 			})()
 		: [];
 
+	const fallbackCandidateIds = (): string[] => {
+		switch (stage.fallbackBehavior) {
+			case "fail":
+				return [];
+			case "default_manager": {
+				const result = resolveEligibleManagers(managerInput);
+				return result.ok ? result.managerIds : [];
+			}
+			case "organization_admin":
+				return activeOrganizationAdminIds(directory, context.organizationId);
+			default:
+				throw new ApprovalStageActivationError(
+					"invalid_stage_resolver",
+					"Unsupported fallback behavior.",
+				);
+		}
+	};
+
+	if (REQUESTER_NEVER_AUTO_APPROVES.has(context.workflowType)) {
+		const withoutRequester = (ids: string[]) =>
+			ids.filter((id) => id !== context.requesterEmployeeId);
+		const primary = withoutRequester(primaryCandidateIds);
+		if (primary.length > 0) {
+			return resolveDisposition(primary, context);
+		}
+		const requesterWasTheOnlyCandidate = primaryCandidateIds.length > 0;
+		if (stageOrigin === "default_approver" && requesterWasTheOnlyCandidate) {
+			return resolveDisposition(
+				withoutRequester(activeOrganizationAdminIds(directory, context.organizationId)),
+				context,
+			);
+		}
+		return resolveDisposition(withoutRequester(fallbackCandidateIds()), context);
+	}
+
 	if (primaryCandidateIds.length > 0) {
 		return resolveDisposition(primaryCandidateIds, context);
 	}
-
-	switch (stage.fallbackBehavior) {
-		case "fail":
-			return resolveDisposition([], context);
-		case "default_manager": {
-			const result = resolveEligibleManagers(managerInput);
-			return resolveDisposition(result.ok ? result.managerIds : [], context);
-		}
-		case "organization_admin":
-			return resolveDisposition(
-				activeOrganizationAdminIds(directory, context.organizationId),
-				context,
-			);
-		default:
-			throw new ApprovalStageActivationError(
-				"invalid_stage_resolver",
-				"Unsupported fallback behavior.",
-			);
-	}
+	return resolveDisposition(fallbackCandidateIds(), context);
 }

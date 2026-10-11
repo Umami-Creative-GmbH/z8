@@ -1,4 +1,4 @@
-import type { Instant } from "@/lib/datetime/temporal-core";
+import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import type { ClockingReminderType, DueClockingReminder } from "./occasion";
 
@@ -31,7 +31,56 @@ const reminderCopy = {
 		messageDefault:
 			"Your break is due at {breakTime} ({timezone}). Take a break by then to follow your work policy's break rules.",
 	},
+	period_submission_reminder: {
+		titleKey: "common:notifications.content.periodSubmissionReminder.title",
+		titleDefault: "Submit your time for approval",
+		messageKey: "common:notifications.content.periodSubmissionReminder.message",
+		messageDefault:
+			"Your period {startDate} – {endDate} has ended. Review your time and submit it for approval.",
+	},
+	// A pending submission withdrawn after a change (#1062); an outdated approval has its own copy.
+	period_submission_sent_back: {
+		titleKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.title",
+		titleDefault: "Submit your time again",
+		messageKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.message",
+		messageDefault:
+			"Your time for {startDate} – {endDate} changed after you submitted it, so the submission was withdrawn. Review your time and submit it again.",
+	},
+	// An approved period (#805); a rejection has its own copy with the approver's reason.
+	period_submission_decided: {
+		titleKey: "common:notifications.content.periodSubmissionApproved.title",
+		titleDefault: "Your time was approved",
+		messageKey: "common:notifications.content.periodSubmissionApproved.message",
+		messageDefault: "Your time for {startDate} – {endDate} was approved.",
+	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
+
+/** A rejected period, with the approver's reason (#805). */
+const periodSubmissionRejectedCopy = {
+	titleKey: "common:notifications.content.periodSubmissionRejected.title",
+	titleDefault: "Your time was rejected",
+	messageKey: "common:notifications.content.periodSubmissionRejected.message",
+	messageDefault:
+		"Your time for {startDate} – {endDate} was rejected: {reason}. Review your time and submit it again.",
+} as const satisfies ReminderCopy;
+
+/** The second reminder of a period still unsubmitted after the organization's delay (#1064). */
+const periodSubmissionSecondReminderCopy = {
+	titleKey: "common:notifications.content.periodSubmissionSecondReminder.title",
+	titleDefault: "Your time is still not submitted",
+	messageKey: "common:notifications.content.periodSubmissionSecondReminder.message",
+	messageDefault:
+		"Your period {startDate} – {endDate} is still not submitted. Review your time and submit it for approval.",
+} as const satisfies ReminderCopy;
+
+/** An approved period whose approval went out of date after a change (#1062). */
+const periodSubmissionOutdatedCopy = {
+	titleKey: "common:notifications.content.periodSubmissionOutdated.title",
+	titleDefault: "Your approved time is out of date",
+	messageKey: "common:notifications.content.periodSubmissionOutdated.message",
+	messageDefault:
+		"Your time for {startDate} – {endDate} changed after it was approved. Review your time and submit it again.",
+} as const satisfies ReminderCopy;
 
 /**
  * Reminders judged by the work policy rather than a shift (#830) keep their type's title; the
@@ -70,7 +119,26 @@ export function buildClockingReminderNotification(input: {
 	const { reminder, timezone, locale } = input;
 	const params: Record<string, string> = { timezone };
 	let copy: ReminderCopy = reminderCopy[reminder.type];
-	if (reminder.shift) {
+	const formatDate = (date: PlainDate) => date.toLocaleString(locale, { dateStyle: "medium" });
+	if (reminder.type === "period_submission_decided") {
+		const period = reminder.decidedPeriod;
+		if (period?.outcome === "rejected") {
+			copy = periodSubmissionRejectedCopy;
+			params.reason = period.reason ?? "";
+		}
+		params.startDate = formatDate(period?.startDate ?? reminder.day);
+		params.endDate = formatDate(period?.endDate ?? reminder.day);
+	} else if (reminder.type === "period_submission_sent_back") {
+		const period = reminder.sentBackPeriod;
+		if (period?.outcome === "outdated") copy = periodSubmissionOutdatedCopy;
+		params.startDate = formatDate(period?.startDate ?? reminder.day);
+		params.endDate = formatDate(period?.endDate ?? reminder.day);
+	} else if (reminder.type === "period_submission_reminder") {
+		const period = reminder.submissionPeriod;
+		if (period?.stage === "after_delay") copy = periodSubmissionSecondReminderCopy;
+		params.startDate = formatDate(period?.startDate ?? reminder.day);
+		params.endDate = formatDate(period?.endDate ?? reminder.day);
+	} else if (reminder.shift) {
 		params.startTime = formatTime(reminder.shift.start, locale, timezone);
 		params.endTime = formatTime(reminder.shift.end, locale, timezone);
 	} else if (reminder.type !== "break_due_reminder") {

@@ -40,6 +40,16 @@ describe("Discord bound card layout", () => {
 		expect(payload.allowed_mentions).toEqual({ parse: [] });
 	});
 
+	it("links Reject to the review when the card cannot collect a reason", () => {
+		const payload = discordActionableCard({ ...card, rejectInReview: true });
+		const buttons = payload.components?.flatMap((row) => row.components) ?? [];
+		expect(parseBoundApprovalCustomId(buttons[0]?.custom_id ?? "")).toEqual({
+			action: "approve",
+			bindingId,
+		});
+		expect(buttons[1]).toEqual({ type: 2, style: 5, label: "Reject", url: reviewUrl });
+	});
+
 	it("shows provider-visible text literally, never as markdown links", () => {
 		const content = discordActionableCard(card).content ?? "";
 		expect(content).toContain("\\[Avery\\]\\(https://evil.test\\) @everyone");

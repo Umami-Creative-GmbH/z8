@@ -112,7 +112,7 @@ const blockedCopy = {
 	titleDefault: "Month could not be closed",
 	messageKey: "common:notifications.content.monthCloseBlocked.message",
 	messageDefault:
-		"{month} was not closed automatically. Undecided absence requests: {absenceRequests}. Undecided time requests: {timeRequests}. Work still running: {liveWork}. Month not yet ended: {notEnded}. Employees: {employees}. It will be tried again tomorrow.",
+		"{month} was not closed automatically. Undecided absence requests: {absenceRequests}. Undecided time requests: {timeRequests}. Work still running: {liveWork}. Pending period submissions: {periodSubmissions}. Month not yet ended: {notEnded}. Employees: {employees}. It will be tried again tomorrow.",
 } as const;
 
 const reopenedCopy = {
@@ -202,6 +202,7 @@ function blockerParams(blockers: readonly CloseMonthBlocker[]) {
 		absenceRequests: count("absence_request"),
 		timeRequests: count("time_request"),
 		liveWork: count("live_work"),
+		periodSubmissions: count("period_submission"),
 		notEnded: count("month_not_ended"),
 		employees:
 			names.length > LISTED_EMPLOYEES ? `${listed} +${names.length - LISTED_EMPLOYEES}` : listed,

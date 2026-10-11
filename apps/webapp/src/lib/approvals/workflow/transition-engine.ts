@@ -23,6 +23,7 @@ import {
 	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	isCoveringDeputyGrant,
 	isOffboardingHandoverPrincipal,
+	PERIOD_SUBMISSION_CHANGE_SYSTEM_ID,
 } from "./ports";
 import type { ApprovalWorkflowRepository } from "./repository";
 import type { ApprovalWorkflowCommand } from "./state-machine";
@@ -254,6 +255,7 @@ function assertSnapshotScope(
 function allowsAuthorization(
 	request: ApprovalWorkflowCommandRequest,
 	authorization: ApprovalWorkflowAuthorizationGrant,
+	workflowType: string,
 ): boolean {
 	if (isOffboardingHandoverPrincipal(request.principal)) {
 		// The departure-handover capability only replaces its captured duty.
@@ -275,6 +277,17 @@ function allowsAuthorization(
 	) {
 		// The narrow scheduled capability replaces an overdue assignment only.
 		return authorization === "system" && request.command.type === "escalate";
+	}
+	if (
+		request.principal.kind === "system" &&
+		request.principal.systemId === PERIOD_SUBMISSION_CHANGE_SYSTEM_ID
+	) {
+		// The period submission writer seam (#1062) only withdraws a period submission.
+		return (
+			authorization === "system" &&
+			request.command.type === "cancel" &&
+			workflowType === "period_submission"
+		);
 	}
 	if (authorization === "active_assignment" || isCoveringDeputyGrant(authorization)) {
 		return (
@@ -530,7 +543,13 @@ export function createApprovalTransitionEngine(
 							principal: request.principal,
 							replay: claim.result,
 						});
-					if (!allowsAuthorization(request, replayAuthorization)) {
+					if (
+						!allowsAuthorization(
+							request,
+							replayAuthorization,
+							workflow.workflowType,
+						)
+					) {
 						throw engineError("forbidden", { command: request.command.type });
 					}
 				}
@@ -564,7 +583,9 @@ export function createApprovalTransitionEngine(
 				command: request.command,
 				principal: request.principal,
 			});
-			if (!allowsAuthorization(request, authorization)) {
+			if (
+				!allowsAuthorization(request, authorization, workflow.workflowType)
+			) {
 				throw engineError("forbidden", { command: request.command.type });
 			}
 

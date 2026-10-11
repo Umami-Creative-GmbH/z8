@@ -23,6 +23,7 @@ import {
 	decideBoundAbsenceInvocation,
 	decideBoundLegacyAbsenceInvocation,
 } from "@/lib/approvals/server/absence-approvals";
+import { decideBoundPeriodSubmissionInvocation } from "@/lib/approvals/server/period-submission-bound-decision";
 import { decideBoundLegacyTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-report-bound-decision";
 import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
@@ -244,9 +245,12 @@ export async function attemptBoundBotApproval(
 					? await decideBoundLegacyTimeInvocation(decision)
 					: // Claims (#296) and reports (#623) share the kind; the revision names the subject.
 						await decideBoundLegacyTravelExpenseInvocation(decision)
-			: isTimeApprovalWorkflowType(workflowType)
-				? await decideBoundTimeInvocation(decision)
-				: await decideBoundAbsenceInvocation(decision);
+			: workflowType === "period_submission"
+				? // Canonical-only (#1059): its own owner, keyed by the bound assignment.
+					await decideBoundPeriodSubmissionInvocation(decision)
+				: isTimeApprovalWorkflowType(workflowType)
+					? await decideBoundTimeInvocation(decision)
+					: await decideBoundAbsenceInvocation(decision);
 	return result.status === "review_required"
 		? { status: "review_required" }
 		: result;

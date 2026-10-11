@@ -7,6 +7,8 @@ export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"time_entry",
 	"travel_expense_claim",
 	"travel_expense_report",
+	// Canonical-only (#1059): no legacy source, listed by its canonical read.
+	"period_submission",
 ] as const;
 
 export type ApprovalInboxType = (typeof SUPPORTED_APPROVAL_INBOX_TYPES)[number];

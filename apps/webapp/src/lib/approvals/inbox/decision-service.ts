@@ -29,7 +29,9 @@ import { failureOfCause } from "@/lib/effect/cause-failure";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
-import { loadOrdinaryCanonicalApprovals } from "./ordinary-canonical-read";
+import type { ApprovalWorkflowType } from "@/lib/approvals/workflow/types";
+import type { CanonicalInboxRead } from "./canonical-inbox-read";
+import { CANONICAL_INBOX_READS } from "./canonical-inbox-reads";
 import {
 	getSupportedInboxHandler,
 	isSupportedInboxType,
@@ -79,12 +81,13 @@ export interface PersistedApprovalRequestForDecision {
 	approverId: string;
 	requesterEmployeeId: string;
 	status: ApprovalInboxStatus;
-	workflowKind: TimeApprovalKind | null;
+	/** A time request's kind, or a registered canonical read's workflow kind. */
+	workflowKind: TimeApprovalKind | ApprovalWorkflowType | null;
 }
 
 export function canAttemptApprovalInboxDecisionTarget(input: {
 	status: ApprovalInboxStatus | string;
-	workflowKind: TimeApprovalKind | null;
+	workflowKind: TimeApprovalKind | ApprovalWorkflowType | null;
 }): boolean {
 	return (
 		input.status === "pending" ||
@@ -92,6 +95,105 @@ export function canAttemptApprovalInboxDecisionTarget(input: {
 			(input.workflowKind === "manual_time_submission" ||
 				input.workflowKind === "policy_clock_out"))
 	);
+}
+
+/**
+ * The inbox's checks before any decision, whatever authority admitted the
+ * actor and whoever decides: no self-decision, a decidable target and a
+ * rejection reason. Returns the trimmed reason.
+ */
+function assertDecisionAttempt({
+	request,
+	actorEmployeeId,
+	action,
+	reason,
+}: {
+	request: PersistedApprovalRequestForDecision;
+	actorEmployeeId: string;
+	action: InboxDecisionAction;
+	reason?: string;
+}): string | undefined {
+	if (
+		isOwnRequestDecision({
+			requesterEmployeeId: request.requesterEmployeeId,
+			actorEmployeeId,
+		})
+	) {
+		throw ownRequestDecisionError({
+			actorEmployeeId,
+			resource: request.entityType,
+			action,
+		});
+	}
+
+	if (!canAttemptApprovalInboxDecisionTarget(request)) {
+		throw new Error(`Request is already ${request.status}`);
+	}
+
+	const trimmedReason = reason?.trim();
+	if (action === "reject" && !trimmedReason) {
+		throw new Error("Rejection reason is required");
+	}
+	return trimmedReason;
+}
+
+type CanonicalDecider = CanonicalInboxRead & Required<Pick<CanonicalInboxRead, "decide">>;
+
+/**
+ * The registered canonical read that decides this target itself (#1058), or
+ * null when a legacy handler decides it.
+ */
+function canonicalDeciderOf(
+	request: PersistedApprovalRequestForDecision,
+	reads: readonly CanonicalInboxRead[] = CANONICAL_INBOX_READS,
+): CanonicalDecider | null {
+	if (request.targetType !== "canonical_assignment" || !request.workflowKind) return null;
+	const kind = request.workflowKind;
+	const read = reads.find(
+		(candidate) =>
+			candidate.type === request.entityType &&
+			(candidate.workflowTypes as readonly string[]).includes(kind),
+	);
+	return read?.decide ? (read as CanonicalDecider) : null;
+}
+
+/** Decides a registered canonical kind's assignment through its own read. */
+async function decideCanonicalInboxItem({
+	request,
+	read,
+	actorEmployeeId,
+	action,
+	reason,
+	allowOrganizationWideApprover,
+}: {
+	request: PersistedApprovalRequestForDecision;
+	read: CanonicalDecider;
+	actorEmployeeId: string;
+	action: InboxDecisionAction;
+	reason?: string;
+	allowOrganizationWideApprover?: boolean;
+}): Promise<ApprovalInboxDecisionSuccess> {
+	if (!isSupportedInboxType(request.entityType)) {
+		throw new Error(`Unsupported approval type: ${request.entityType}`);
+	}
+	const trimmedReason = assertDecisionAttempt({ request, actorEmployeeId, action, reason });
+	await read.decide({
+		target: {
+			...request,
+			targetType: "canonical_assignment",
+			entityType: request.entityType,
+			workflowKind: request.workflowKind as ApprovalWorkflowType,
+		},
+		actorEmployeeId,
+		action,
+		...(trimmedReason ? { reason: trimmedReason } : {}),
+		allowOrganizationWideApprover: allowOrganizationWideApprover === true,
+	});
+	return {
+		id: request.id,
+		type: request.entityType,
+		status: action === "approve" ? "approved" : "rejected",
+	};
 }
 
 export async function decideApprovalInboxItemFromRequest({
@@ -115,36 +217,10 @@ export async function decideApprovalInboxItemFromRequest({
 	runEffect?: DecisionEffectRunner;
 }): Promise<ApprovalInboxDecisionSuccess> {
 	const requestType = request.entityType;
-	if (!isSupportedInboxType(requestType)) {
+	if (!isSupportedInboxType(requestType) || handler.type !== requestType) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
 	}
-
-	if (handler.type !== requestType) {
-		throw new Error(`Unsupported approval type: ${request.entityType}`);
-	}
-
-	// Single and bulk decisions both land here, whatever authority admitted the actor.
-	if (
-		isOwnRequestDecision({
-			requesterEmployeeId: request.requesterEmployeeId,
-			actorEmployeeId,
-		})
-	) {
-		throw ownRequestDecisionError({
-			actorEmployeeId,
-			resource: requestType,
-			action,
-		});
-	}
-
-	if (!canAttemptApprovalInboxDecisionTarget(request)) {
-		throw new Error(`Request is already ${request.status}`);
-	}
-
-	const trimmedReason = reason?.trim();
-	if (action === "reject" && !trimmedReason) {
-		throw new Error("Rejection reason is required");
-	}
+	const trimmedReason = assertDecisionAttempt({ request, actorEmployeeId, action, reason });
 	const actionOptions: ApprovalActionOptions =
 		actorEmployeeId === request.approverId
 			? { approvalRequestId: request.id }
@@ -223,6 +299,28 @@ export async function bulkDecideApprovalInboxItemsFromRequests({
 						message: "Approval not found",
 					},
 				};
+			}
+
+			const canonicalDecider = canonicalDeciderOf(request);
+			if (canonicalDecider) {
+				try {
+					return {
+						status: "succeeded" as const,
+						success: await decideCanonicalInboxItem({
+							request,
+							read: canonicalDecider,
+							actorEmployeeId,
+							action,
+							reason,
+							allowOrganizationWideApprover: includeAllApprovers === true,
+						}),
+					};
+				} catch (error) {
+					return {
+						status: "failed" as const,
+						failure: await decisionFailure(request.id, error),
+					};
+				}
 			}
 
 			const handler = resolveHandler(request.entityType);
@@ -312,6 +410,16 @@ export async function approveApprovalInboxItem({
 		eligibleApprovalScopes,
 		coveredApproverIds,
 	});
+	const canonicalDecider = canonicalDeciderOf(request);
+	if (canonicalDecider) {
+		return decideCanonicalInboxItem({
+			request,
+			read: canonicalDecider,
+			actorEmployeeId,
+			action: "approve",
+			allowOrganizationWideApprover: includeAllApprovers === true,
+		});
+	}
 	const handler = getSupportedInboxHandler(request.entityType);
 	if (!handler) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
@@ -352,6 +460,17 @@ export async function rejectApprovalInboxItem({
 		eligibleApprovalScopes,
 		coveredApproverIds,
 	});
+	const canonicalDecider = canonicalDeciderOf(request);
+	if (canonicalDecider) {
+		return decideCanonicalInboxItem({
+			request,
+			read: canonicalDecider,
+			actorEmployeeId,
+			action: "reject",
+			reason,
+			allowOrganizationWideApprover: includeAllApprovers === true,
+		});
+	}
 	const handler = getSupportedInboxHandler(request.entityType);
 	if (!handler) {
 		throw new Error(`Unsupported approval type: ${request.entityType}`);
@@ -476,18 +595,21 @@ export async function loadApprovalInboxDecisionTarget({
 	});
 
 	if (!request) {
-		const canonical = await loadOrdinaryCanonicalApprovals({
-			database,
-			organizationId,
-			approverId: "canonical-decision-discovery",
-			includeAllApprovers: true,
-			assignmentId: approvalId,
-			limit: 1,
-		});
-		const canonicalTarget = canonical.find(
-			(candidate) => candidate.item.id === approvalId,
-		)?.decisionTarget;
-		if (canonicalTarget) return canonicalTarget;
+		// An assignment belongs to one kind: the first registered read that lists it.
+		for (const read of CANONICAL_INBOX_READS) {
+			const canonical = await read.load({
+				database,
+				organizationId,
+				approverId: "canonical-decision-discovery",
+				includeAllApprovers: true,
+				assignmentId: approvalId,
+				limit: 1,
+			});
+			const canonicalTarget = canonical.find(
+				(candidate) => candidate.item.id === approvalId,
+			)?.decisionTarget;
+			if (canonicalTarget) return canonicalTarget;
+		}
 		const assignment = await database.query.approvalStageAssignment.findFirst({
 			where: and(
 				eq(approvalStageAssignment.id, approvalId),
@@ -535,14 +657,20 @@ export async function loadApprovalInboxDecisionTargets({
 	);
 	const canonical =
 		missingIds.length > 0
-			? await loadOrdinaryCanonicalApprovals({
-					database,
-					organizationId,
-					approverId: "canonical-decision-discovery",
-					includeAllApprovers: true,
-					assignmentIds: missingIds,
-					limit: missingIds.length,
-				})
+			? (
+					await Promise.all(
+						CANONICAL_INBOX_READS.map((read) =>
+							read.load({
+								database,
+								organizationId,
+								approverId: "canonical-decision-discovery",
+								includeAllApprovers: true,
+								assignmentIds: missingIds,
+								limit: missingIds.length,
+							}),
+						),
+					)
+				).flat()
 			: [];
 	const missingIdSet = new Set(missingIds);
 	const canonicalById = new Map(
@@ -638,10 +766,16 @@ function toPersistedCanonicalDecisionRequest(
 ): PersistedApprovalRequestForDecision | null {
 	const workflow = assignment?.workflow;
 	const stage = assignment?.stage;
+	// A decided period submission (#1059) is reported as already decided, like the time kinds.
+	const periodSubmission =
+		workflow?.workflowType === "period_submission" &&
+		workflow.sourceType === "period_submission";
 	const supportedWorkflow =
-		workflow?.workflowType === "manual_time_submission" ||
-		workflow?.workflowType === "policy_clock_out" ||
-		workflow?.workflowType === "time_correction";
+		periodSubmission ||
+		(workflow?.sourceType === "time_entry" &&
+			(workflow.workflowType === "manual_time_submission" ||
+				workflow.workflowType === "policy_clock_out" ||
+				workflow.workflowType === "time_correction"));
 	const ordinaryWorkflow =
 		workflow?.workflowType === "manual_time_submission" ||
 		workflow?.workflowType === "policy_clock_out";
@@ -671,7 +805,6 @@ function toPersistedCanonicalDecisionRequest(
 		workflow.organizationId !== organizationId ||
 		stage.organizationId !== organizationId ||
 		stage.workflowId !== workflow.id ||
-		workflow.sourceType !== "time_entry" ||
 		!workflow.sourceId ||
 		!workflow.requesterEmployeeId ||
 		!supportedWorkflow ||
@@ -682,13 +815,15 @@ function toPersistedCanonicalDecisionRequest(
 	return {
 		id: assignment.id,
 		targetType: "canonical_assignment",
-		entityType: "time_entry",
+		entityType: periodSubmission ? "period_submission" : "time_entry",
 		entityId: workflow.sourceId,
 		organizationId,
 		approverId: assignment.approverEmployeeId,
 		requesterEmployeeId: workflow.requesterEmployeeId,
 		status: assignment.status as ApprovalInboxStatus,
-		workflowKind: workflow.workflowType as TimeApprovalKind,
+		workflowKind: periodSubmission
+			? "period_submission"
+			: (workflow.workflowType as TimeApprovalKind),
 	};
 }
 

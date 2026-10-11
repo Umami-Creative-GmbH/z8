@@ -138,6 +138,7 @@ const WORKFLOW_TYPES = new Set([
 	"travel_expense",
 	"shift_request",
 	"compliance_exception",
+	"period_submission",
 ]);
 const STAGE_STATUSES = new Set([
 	"waiting",

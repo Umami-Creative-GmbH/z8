@@ -11,6 +11,7 @@ import {
 	closedMonthEmployee,
 	closedMonthReopening,
 	employee,
+	periodSubmission,
 	team,
 	userSettings,
 	workPeriod,
@@ -21,7 +22,9 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { periodSubmissionOverlaps } from "@/lib/time-tracking/period-submissions/period-overlap";
 import {
 	acquireOrganizationConfigurationGuard,
 	withOrganizationConfigurationMutation,
@@ -83,6 +86,16 @@ export type CloseMonthBlocker =
 			startTime: string;
 			/** The employee's effective timezone, to show `startTime` in. */
 			timezone: string;
+	  }
+	| {
+			/** A pending period submission (#805) whose period touches the month. */
+			kind: "period_submission";
+			employeeId: string;
+			employeeName: string;
+			submissionId: string;
+			/** The submitted period's first and last local day. */
+			startDate: string;
+			endDate: string;
 	  };
 
 export type CloseMonthResult =
@@ -101,7 +114,7 @@ export type ReopenMonthResult =
 	| { kind: "nothing_to_reopen"; month: ClosedMonthKey }
 	| { kind: "reason_required" };
 
-interface CoveredEmployee {
+export interface CoveredEmployee {
 	id: string;
 	name: string;
 	teamId: string | null;
@@ -292,8 +305,12 @@ export async function monthClosureStatuses(
 // CLOSE
 // ============================================
 
-async function employeesInScope(
-	transaction: Transaction,
+/**
+ * The employees a close of the month for the scope covers: those not closed for it yet, each
+ * with their month as instants in their effective timezone.
+ */
+export async function employeesInScope(
+	transaction: ClosedMonthReader,
 	input: { organizationId: string; scope: CloseMonthScope; month: ClosedMonthKey },
 ) {
 	const organizationRow = await transaction
@@ -400,6 +417,41 @@ async function closeBlockers(
 			absenceId: absence.id,
 			startDate: absence.startDate,
 			endDate: absence.endDate,
+		});
+	}
+
+	// A pending period submission is an undecided request about every month its
+	// period's local days touch: a week spanning two months blocks both.
+	const pendingSubmissions = await transaction
+		.select({
+			id: periodSubmission.id,
+			employeeId: periodSubmission.employeeId,
+			startDate: periodSubmission.startDate,
+			endDate: periodSubmission.endDate,
+		})
+		.from(periodSubmission)
+		.where(
+			and(
+				eq(periodSubmission.organizationId, input.organizationId),
+				inArray(periodSubmission.employeeId, ids),
+				eq(periodSubmission.status, "pending"),
+				periodSubmissionOverlaps(
+					first,
+					parsePlainDate(first).add({ months: 1 }).subtract({ days: 1 }).toString(),
+				),
+			),
+		)
+		.orderBy(asc(periodSubmission.startDate));
+	for (const submission of pendingSubmissions) {
+		const covered = byId.get(submission.employeeId);
+		if (!covered) continue;
+		blockers.push({
+			kind: "period_submission",
+			employeeId: covered.id,
+			employeeName: covered.name,
+			submissionId: submission.id,
+			startDate: submission.startDate,
+			endDate: submission.endDate,
 		});
 	}
 

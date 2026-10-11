@@ -22,7 +22,10 @@ import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
+import { workInterval } from "@/lib/time-tracking/closed-months/store";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
 	replayCommittedSplit,
 	replaySplitCompletedWork,
@@ -44,7 +47,6 @@ import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transa
 import { getCurrentEmployee, getCurrentSession, getRequestMetadata, getUserTimezone } from "./auth";
 import { calculateAndPersistSurcharges } from "./compliance";
 import { logger } from "./shared";
-import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 
 export type SplitWorkPeriodResult = ServerActionResult<{
 	firstPeriodId: string;
@@ -409,6 +411,13 @@ async function splitLegacyWorkPeriod(
 		})
 		.returning();
 	if (!secondWorkPeriod) throw new Error("Second work period insert failed");
+	// Splitting work in a submitted period sends it back to the employee (#805).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: input.actorUserId,
+		work: [workInterval(locked.startTime, locked.endTime)],
+	});
 	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
 	await carryInvoicedWorkToSplit(tx, {
 		organizationId,

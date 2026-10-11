@@ -43,7 +43,6 @@ import {
 	isClosureCarriedByAutomaticBreak,
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
-import { assertWorkOpen } from "./closed-months/store";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -51,6 +50,8 @@ import {
 	createDatabaseClockingStore,
 	type Entry,
 } from "./clocking-core";
+import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -61,6 +62,7 @@ import {
 	taskBookingIneligibility,
 } from "./project-eligibility";
 import {
+	humanActorUserId,
 	KIOSK_CLOCK_WRITER_VERSION,
 	kioskDeviceInfo,
 	type ReceiptActor,
@@ -574,6 +576,15 @@ export async function closeActiveWorkGraph(
 		organizationId,
 		employeeId,
 		intervals: [{ start, end: input.eventInstant }],
+	});
+	// Completing work sends the submitted periods it touches back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: humanActorUserId(
+			input.completingActor ?? writerActor(input.writer, input.actorUserId),
+		),
+		work: [{ start, end: input.eventInstant }],
 	});
 	const durationMinutes = deriveWorkDurationMinutes(start, input.eventInstant);
 	const projectId = await resolveAttribution(
