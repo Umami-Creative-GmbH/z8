@@ -90,6 +90,8 @@ export * from "./project";
 export * from "./project-assignment-history";
 // Public API key request log (#763)
 export * from "./public-api";
+// Report share links and their view log (#806)
+export * from "./report-share-link";
 // All relations (centralized)
 export * from "./relations";
 // Scheduled exports
