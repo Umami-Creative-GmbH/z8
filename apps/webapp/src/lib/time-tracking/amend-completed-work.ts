@@ -1333,6 +1333,16 @@ async function amendActiveAttribution(
 		)
 		.returning({ id: workPeriod.id });
 	if (updated.length !== 1) throw staleSource();
+	// Live work's attribution covers it from its start on: submitted periods it touches go
+	// back to the employee (#805).
+	if (Object.values(changes).some(Boolean)) {
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId,
+			employeeId,
+			causedByUserId: input.actorUserId,
+			work: [{ start: instantFromDate(period.startTime), end: null }],
+		});
+	}
 
 	const [clockIn] = await tx
 		.select({ utcOffsetMinutes: timeEntry.utcOffsetMinutes })

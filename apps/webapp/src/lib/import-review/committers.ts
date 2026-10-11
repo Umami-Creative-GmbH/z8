@@ -32,7 +32,7 @@ import { reviewedImportRowMapping, withReviewedImportTransaction } from "./impor
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
-import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { assertAbsenceDaysOpen, workInterval } from "@/lib/time-tracking/closed-months/store";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 type CommitRowError = { rowId: string; message: string };
@@ -450,6 +450,16 @@ async function commitWorkPeriod(
 			isBillable: attribution?.isBillable ?? false,
 		})
 		.returning({ id: workPeriod.id });
+	// Imported work in a submitted period sends it back to the employee (#805); live work
+	// counts at its start.
+	await sendBackChangedPeriodSubmissions(database, {
+		organizationId: job.organizationId,
+		employeeId: payload.employeeId,
+		causedByUserId: job.committedBy,
+		work: [
+			workInterval(startAt.toJSDate(), endAt?.toJSDate() ?? startAt.toJSDate()),
+		],
+	});
 
 	await markCommitted(database, row.id, job, "work_period", period.id);
 }

@@ -31,6 +31,7 @@ import {
 	resolveTaskAttribution,
 } from "../close-active-work";
 import { approvalDbServiceForTransaction } from "../ordinary-approval-runtime";
+import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import {
 	findPolicyClockOutSubmissionEvidence,
 	requireReplayOnlySubmission,
@@ -52,7 +53,7 @@ import {
 } from "./frozen";
 import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
-import type { ClockOutCommand, ClockOutResult } from "./types";
+import { type ClockOutCommand, type ClockOutResult, principalCausingUserId } from "./types";
 
 type Employee = typeof employee.$inferSelect;
 
@@ -562,6 +563,13 @@ async function closeLegacyClockOut(
 			receipt: null,
 		};
 	}
+	// Completing work sends the submitted periods it touches back to the employee (#805).
+	await sendBackChangedPeriodSubmissions(coordination.db, {
+		organizationId: employee.organizationId,
+		employeeId: employee.id,
+		causedByUserId: principalCausingUserId(command.principal),
+		work: [{ start: instantFromDate(closed.activePeriod.startTime), end: eventInstant }],
+	});
 	return {
 		disposition: "executed",
 		entry: closed.entry as ClockOutResult,

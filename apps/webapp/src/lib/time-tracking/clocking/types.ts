@@ -51,6 +51,14 @@ export type ClockPrincipal =
 	| { kind: "kiosk"; kioskId: string; userId: string; pin: KioskPinProof };
 
 /**
+ * The human whose action a clocking is: the signed-in user, or the one who recorded a departure.
+ * A kiosk or an automatic clock-out names only creator provenance, so none.
+ */
+export function principalCausingUserId(principal: ClockPrincipal): string | null {
+	return principal.kind === "user" || principal.kind === "departure" ? principal.userId : null;
+}
+
+/**
  * Proof that this request verified an employee's kiosk PIN at a kiosk. Only the
  * kiosk PIN check (`proveKioskPin`) issues one; a proof built any other way is
  * refused, and each proof expires shortly after it was issued.

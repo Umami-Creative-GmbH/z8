@@ -23,6 +23,7 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "../policy-clock-out-surcharge-snapshot";
+import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import { findLiveWorkOccupant } from "../start-live-work";
 import { createTimeEntry, type TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
@@ -40,7 +41,7 @@ import {
 } from "./frozen";
 import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
-import type { BreakCommand, BreakResult } from "./types";
+import { type BreakCommand, type BreakResult, principalCausingUserId } from "./types";
 
 type Employee = typeof employee.$inferSelect;
 
@@ -413,6 +414,16 @@ async function takeLegacyBreak(
 		})
 		.returning({ id: workPeriod.id });
 	if (!resumedPeriod) throw new Error("New work period was not inserted");
+	// The closed work and the resumed start send a submitted period back (#805).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: principalCausingUserId(command.principal),
+		work: [
+			{ start, end: endpoints.close.instant },
+			{ start: endpoints.resume.instant, end: endpoints.resume.instant },
+		],
+	});
 
 	return {
 		disposition: "executed",
