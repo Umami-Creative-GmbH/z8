@@ -105,6 +105,40 @@ describe("proxy redirects use the public origin", () => {
 		expect(response.headers.get("location")).toBe("https://z8.example.com/de/");
 	});
 
+	it.each(["gsw", "sv"])(
+		"keeps the %s route locale when sending a signed-out request to sign-in",
+		async (locale) => {
+			const response = await proxy(
+				listeningRequest(`/${locale}/time-tracking`, { host: "z8.example.com" }),
+			);
+			expect(response.headers.get("location")).toBe(
+				`https://z8.example.com/${locale}/sign-in?callbackUrl=%2Ftime-tracking`,
+			);
+		},
+	);
+
+	it.each(["gsw", "sv"])(
+		"keeps the %s route locale when sending a signed-in user to the dashboard",
+		async (locale) => {
+			const response = await proxy(
+				listeningRequest(`/${locale}/sign-in`, {
+					host: "z8.example.com",
+					cookie: SESSION_COOKIE,
+				}),
+			);
+			expect(response.headers.get("location")).toBe(`https://z8.example.com/${locale}/`);
+		},
+	);
+
+	it("does not treat an unsupported two-letter segment as a route locale", async () => {
+		const response = await proxy(
+			listeningRequest("/xx/time-tracking", { host: "z8.example.com" }),
+		);
+		expect(response.headers.get("location")).toBe(
+			"https://z8.example.com/en/sign-in?callbackUrl=%2Fxx%2Ftime-tracking",
+		);
+	});
+
 	it("redirects an unconfigured platform to setup on the validated Host", async () => {
 		mocks.configured = false;
 		const response = await proxy(

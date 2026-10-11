@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
+import { splitRouteLocale } from "@/i18n/route-locale";
 import { routing } from "@/i18n/routing";
 import {
 	classifyDomainHost,
@@ -153,24 +154,16 @@ export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Extract locale and path without locale for consistent handling
-	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
-	const locale =
-		pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+	const { locale: routeLocale, pathWithoutLocale } = splitRouteLocale(pathname);
+	const locale = routeLocale ?? DEFAULT_LANGUAGE;
 	const isApiRoute = pathname.startsWith("/api/");
 	// API handlers perform authentication and authorization without page middleware.
 	if (isApiRoute) {
 		return NextResponse.next();
 	}
 
-	const setupLocale = routing.locales.find(
-		(candidate) =>
-			pathname === `/${candidate}/setup` ||
-			pathname.startsWith(`/${candidate}/setup/`),
-	);
 	const isSetupPage =
-		Boolean(setupLocale) ||
-		pathWithoutLocale === "/setup" ||
-		pathWithoutLocale.startsWith("/setup/");
+		pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
 	const domainClassification = classifyDomainHost(request.headers.get("host"));
 	if (domainClassification?.type === "unknownPlatform") {
 		const response = new NextResponse("Not found", { status: 404 });
@@ -196,7 +189,7 @@ export async function proxy(request: NextRequest) {
 		for (const code of request.nextUrl.searchParams.getAll("code")) {
 			authorizeUrl.searchParams.append("code", code);
 		}
-		authorizeUrl.searchParams.set("locale", setupLocale || locale);
+		authorizeUrl.searchParams.set("locale", locale);
 		const response = NextResponse.rewrite(authorizeUrl);
 		applySetupResponseHeaders(response);
 		return response;
@@ -217,7 +210,7 @@ export async function proxy(request: NextRequest) {
 		const configured = await isPlatformConfigured();
 		if (configured) {
 			const homeUrl = await publicRedirectUrl(
-				`/${setupLocale || locale}/`,
+				`/${locale}/`,
 				request,
 			);
 			const response = NextResponse.redirect(homeUrl);
@@ -291,8 +284,6 @@ export async function proxy(request: NextRequest) {
 	if (!hasSessionCookie) {
 		// Not authenticated - redirect to sign-in if trying to access protected route
 		if (!isPublicRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const signInUrl = await publicRedirectUrl(`/${locale}/sign-in`, request);
 			signInUrl.searchParams.set("callbackUrl", pathWithoutLocale);
 			return NextResponse.redirect(signInUrl);
@@ -300,8 +291,6 @@ export async function proxy(request: NextRequest) {
 	} else {
 		// Authenticated - redirect away from auth routes
 		if (isAuthRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const dashboardUrl = await publicRedirectUrl(`/${locale}/`, request);
 			return NextResponse.redirect(dashboardUrl);
 		}

@@ -35,6 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
+import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	type AbsenceCategoryForSettings,
@@ -370,7 +371,7 @@ export function AbsenceCategoryForm({
 							</div>
 							<div className="space-y-4">
 								{ALL_LANGUAGES.map((locale) => {
-									const localeLabel = locale.toUpperCase();
+									const localeLabel = LANGUAGE_CONFIG[locale]?.name ?? locale.toUpperCase();
 
 									return (
 										<div key={locale} className="grid gap-3 md:grid-cols-2">

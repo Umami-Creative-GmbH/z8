@@ -16,6 +16,7 @@ import { handleApprovalCallback, handleBoundApprovalCallback } from "./approval-
 import { parseBoundApprovalCallback } from "./bound-approval";
 import { saveConversation } from "./conversation-manager";
 import { escapeMarkdownV2, markdownToHtml } from "./formatters";
+import { TELEGRAM_LANGUAGE_BUTTONS, telegramLanguageLabel } from "./language-buttons";
 import type {
 	ApprovalCallbackData,
 	CommandCallbackData,
@@ -27,16 +28,6 @@ import type {
 import { claimLinkCode, resolveTelegramUser } from "./user-resolver";
 
 const logger = createLogger("TelegramBotHandler");
-
-/** Language display config for inline keyboard */
-const LANGUAGE_BUTTONS: Array<{ code: string; label: string }> = [
-	{ code: "en", label: "\u{1F1EC}\u{1F1E7} English" },
-	{ code: "de", label: "\u{1F1E9}\u{1F1EA} Deutsch" },
-	{ code: "fr", label: "\u{1F1EB}\u{1F1F7} Fran\u00E7ais" },
-	{ code: "es", label: "\u{1F1EA}\u{1F1F8} Espa\u00F1ol" },
-	{ code: "it", label: "\u{1F1EE}\u{1F1F9} Italiano" },
-	{ code: "pt", label: "\u{1F1E7}\u{1F1F7} Portugu\u00EAs" },
-];
 
 /**
  * Handle an incoming Telegram webhook update
@@ -266,15 +257,17 @@ async function handleLanguageCommand(
 
 	// Build 2 buttons per row
 	const rows: TelegramInlineKeyboardButton[][] = [];
-	for (let i = 0; i < LANGUAGE_BUTTONS.length; i += 2) {
-		const row: TelegramInlineKeyboardButton[] = LANGUAGE_BUTTONS.slice(i, i + 2).map((lang) => {
-			const data: LanguageCallbackData = { a: "lang", l: lang.code };
-			const label = lang.code === currentLocale ? `${lang.label} \u2713` : lang.label;
-			return {
-				text: label,
-				callback_data: JSON.stringify(data),
-			};
-		});
+	for (let i = 0; i < TELEGRAM_LANGUAGE_BUTTONS.length; i += 2) {
+		const row: TelegramInlineKeyboardButton[] = TELEGRAM_LANGUAGE_BUTTONS.slice(i, i + 2).map(
+			(lang) => {
+				const data: LanguageCallbackData = { a: "lang", l: lang.code };
+				const label = lang.code === currentLocale ? `${lang.label} \u2713` : lang.label;
+				return {
+					text: label,
+					callback_data: JSON.stringify(data),
+				};
+			},
+		);
 		rows.push(row);
 	}
 
@@ -311,7 +304,7 @@ async function handleLanguageCallback(
 
 	// Get translator in the new locale
 	const t = await getBotTranslate(newLocale);
-	const langLabel = LANGUAGE_BUTTONS.find((b) => b.code === newLocale)?.label || newLocale;
+	const langLabel = telegramLanguageLabel(newLocale);
 
 	// Edit the original message to show confirmation
 	await editMessageText(bot.botToken, {
