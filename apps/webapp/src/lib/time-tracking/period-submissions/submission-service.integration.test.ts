@@ -345,6 +345,60 @@ describe("period submissions on PostgreSQL", () => {
 		});
 	});
 
+	it("audits each intermediate stage approval of a chain with its approver", async () => {
+		const payroll = await fixture.employee({ organizationId });
+		const policyId = randomUUID();
+		await fixture.pool.query(
+			`insert into approval_policy (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, $2, 'Chain', true, 1, $3, now())`,
+			[policyId, organizationId, ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into approval_policy_stage
+			 (id, organization_id, policy_id, step_order, label, approver_type, approver_employee_id, fallback_behavior, updated_at)
+			 values ($1, $2, $3, 1, 'Manager', 'specific_employee', $4, 'fail', now()),
+			        ($5, $2, $3, 2, 'Payroll', 'specific_employee', $6, 'fail', now())`,
+			[
+				randomUUID(),
+				organizationId,
+				policyId,
+				manager.employeeId,
+				randomUUID(),
+				payroll.employeeId,
+			],
+		);
+		const result = await submit();
+		if (result.kind !== "submitted") throw new Error("not submitted");
+		const [first] = await pendingAssignment(result.workflowId);
+		if (!first) throw new Error("no assignment");
+		await decide(first.id, "approve");
+		expect((await submissionRows()).map((row) => row.status)).toEqual(["pending"]);
+		const [second] = await pendingAssignment(result.workflowId);
+		if (!second) throw new Error("no second assignment");
+		await decide(second.id, "approve", { actor: payroll.employeeId });
+
+		// Both decisions share the test clock, so the entries are listed by action.
+		expect(await auditActions()).toEqual([
+			{ action: "period_submission.submitted", performed_by: employee.userId },
+			{ action: "period_submission.approved", performed_by: payroll.userId },
+			{ action: "period_submission.stage_approved", performed_by: manager.userId },
+		]);
+		const { rows } = await fixture.pool.query<{ metadata: string; timestamp: Date }>(
+			`select metadata, timestamp from audit_log
+			 where organization_id = $1 and action = 'period_submission.stage_approved'`,
+			[organizationId],
+		);
+		expect(rows.map((row) => JSON.parse(row.metadata))).toEqual([
+			expect.objectContaining({
+				approverEmployeeId: manager.employeeId,
+				stageOrder: 1,
+				stageLabel: "Manager",
+				at: "2026-03-09T09:00:00Z",
+			}),
+		]);
+		expect(rows.map((row) => row.timestamp)).toEqual([new Date("2026-03-09T09:00:00Z")]);
+	});
+
 	it("approves, with an audit entry, and refuses the employee deciding their own submission", async () => {
 		const result = await submit();
 		if (result.kind !== "submitted") throw new Error("not submitted");

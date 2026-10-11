@@ -161,6 +161,8 @@ export enum AuditAction {
 	// Period submissions (#805), written in the transaction of the change
 	PERIOD_SUBMISSION_SUBMITTED = "period_submission.submitted",
 	PERIOD_SUBMISSION_APPROVED = "period_submission.approved",
+	/** One stage of a multi-stage chain approved; the submission stays pending. */
+	PERIOD_SUBMISSION_STAGE_APPROVED = "period_submission.stage_approved",
 	PERIOD_SUBMISSION_REJECTED = "period_submission.rejected",
 	/** By the employee (#1060) or automatically after a change (#1062): see `closedCause`. */
 	PERIOD_SUBMISSION_WITHDRAWN = "period_submission.withdrawn",

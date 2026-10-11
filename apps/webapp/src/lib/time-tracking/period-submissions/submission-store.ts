@@ -330,6 +330,7 @@ export async function outdateApprovedPeriodSubmission(
 export type PeriodSubmissionAuditAction =
 	| AuditAction.PERIOD_SUBMISSION_SUBMITTED
 	| AuditAction.PERIOD_SUBMISSION_APPROVED
+	| AuditAction.PERIOD_SUBMISSION_STAGE_APPROVED
 	| AuditAction.PERIOD_SUBMISSION_REJECTED
 	| AuditAction.PERIOD_SUBMISSION_WITHDRAWN
 	| AuditAction.PERIOD_SUBMISSION_OUTDATED;

@@ -26,6 +26,7 @@ import {
 	periodSubmissionClosedCauseOf,
 } from "./period-submission-contract";
 import type {
+	ApprovalDecisionEvidenceRecordInput,
 	ApprovalDomainAdapter,
 	ApprovalDomainAdapterContext,
 	ApprovalTerminalAdapterInput,
@@ -131,6 +132,40 @@ function isTerminalActorAllowed(
 		transition.kind === "cancel_pending" &&
 		periodSubmissionClosedCauseOf(transition.reason) === "change"
 	);
+}
+
+/**
+ * An approval that completes one stage of a chain but not the workflow writes
+ * `period_submission.stage_approved` (actor, time, stage), in the decision's transaction. The
+ * terminal decision writes its own entry in `finalizeTerminal`.
+ */
+async function auditIntermediateStageApproval(
+	input: ApprovalDecisionEvidenceRecordInput<PeriodSubmissionApprovalSource>,
+): Promise<void> {
+	if (input.command.type !== "approve" || input.finalization !== null) return;
+	if (input.actor.kind !== "employee" || !input.actor.userId) return;
+	const stage = input.result.snapshot.stages.find((entry) => entry.id === input.command.stageId);
+	if (stage?.status !== "approved" || !stage.decidedAt) return;
+	await insertPeriodSubmissionAudit(database(input.dbService), {
+		organizationId: input.organizationId,
+		submission: {
+			id: input.source.id,
+			employeeId: input.source.employeeId,
+			startDate: input.source.startDate,
+			endDate: input.source.endDate,
+			timezone: input.source.timezone,
+			approvalWorkflowId: input.source.approvalWorkflowId,
+		},
+		action: AuditAction.PERIOD_SUBMISSION_STAGE_APPROVED,
+		actorUserId: input.actor.userId,
+		at: stage.decidedAt,
+		metadata: {
+			approverEmployeeId: input.actor.employeeId,
+			stageId: stage.id,
+			stageOrder: stage.sequence,
+			stageLabel: stage.label,
+		},
+	});
 }
 
 /**
@@ -333,6 +368,7 @@ export function createPeriodSubmissionApprovalAdapter(): ApprovalDomainAdapter<P
 			});
 		},
 		async recordDecisionEvidence(input) {
+			await auditIntermediateStageApproval(input);
 			await recordPeriodSubmissionDecisionEvidence(input.dbService.db as never, {
 				organizationId: input.organizationId,
 				workflow: input.workflow,
