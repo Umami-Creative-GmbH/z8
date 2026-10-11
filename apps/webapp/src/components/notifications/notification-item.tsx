@@ -111,6 +111,8 @@ function getNotificationStyle(type: NotificationType): {
 				iconColor: "text-red-600 dark:text-red-400",
 			};
 		case "absence_deputy_unavailable":
+		// A schedule's owner is no longer an org admin (#988)
+		case "scheduled_export_paused":
 			return {
 				icon: <IconUserX className="size-4" />,
 				bgColor: "bg-amber-100 dark:bg-amber-900/30",

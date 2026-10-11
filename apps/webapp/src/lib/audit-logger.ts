@@ -303,6 +303,18 @@ export enum AuditAction {
 	KIOSK_TOKEN_ROTATED = "kiosk.token_rotated",
 	KIOSK_REVOKED = "kiosk.revoked",
 
+	// Scheduled exports (#988): the schedule lifecycle and one entry per run. Automatic
+	// actions are attributed to the schedule owner.
+	SCHEDULED_EXPORT_CREATED = "scheduled_export.created",
+	SCHEDULED_EXPORT_UPDATED = "scheduled_export.updated",
+	SCHEDULED_EXPORT_DELETED = "scheduled_export.deleted",
+	SCHEDULED_EXPORT_PAUSED = "scheduled_export.paused",
+	SCHEDULED_EXPORT_RESUMED = "scheduled_export.resumed",
+	SCHEDULED_EXPORT_RUN_REQUESTED = "scheduled_export.run_requested",
+	SCHEDULED_EXPORT_OWNER_CHANGED = "scheduled_export.owner_changed",
+	SCHEDULED_EXPORT_DELIVERED = "scheduled_export.delivered",
+	SCHEDULED_EXPORT_RUN_FAILED = "scheduled_export.run_failed",
+
 	// Audit Pack Operations
 	AUDIT_PACK_CREATED = "audit_pack.created",
 	AUDIT_PACK_DOWNLOADED = "audit_pack.downloaded",
@@ -386,7 +398,8 @@ export interface AuditLogEntry {
 		| "travel_expense_export"
 		| "ics_feed"
 		| "api_key"
-		| "report_share_link";
+		| "report_share_link"
+		| "scheduled_export";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

@@ -32,7 +32,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 	 * Execute a payroll export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, reportConfig, dateRange, filters, createdBy } = params;
+		const { organizationId, reportConfig, dateRange, filters, ownerId } = params;
 		const config = reportConfig as PayrollExportReportConfig;
 
 		logger.info(
@@ -57,10 +57,10 @@ export class PayrollExportExecutor implements IReportExecutor {
 				};
 			}
 
-			const requester = createdBy
+			const requester = ownerId
 				? await db.query.employee.findFirst({
 						where: and(
-							eq(employee.userId, createdBy),
+							eq(employee.userId, ownerId),
 							eq(employee.organizationId, organizationId),
 						),
 						columns: { id: true },
@@ -71,7 +71,7 @@ export class PayrollExportExecutor implements IReportExecutor {
 				return {
 					success: false,
 					error:
-						"Unable to determine requester for payroll export. The schedule creator may not have an employee record.",
+						"Unable to determine requester for payroll export. The schedule owner may not have an employee record.",
 				};
 			}
 

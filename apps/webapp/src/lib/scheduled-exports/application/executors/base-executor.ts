@@ -22,8 +22,8 @@ export interface ExecuteParams {
 	dateRange: CalculatedDateRange;
 	filters?: FilterConfig;
 	payrollConfigId?: string;
-	/** User ID who created the scheduled export (for audit trail) */
-	createdBy?: string;
+	/** The schedule owner: the org admin the run acts on behalf of (#988). */
+	ownerId?: string;
 	/**
 	 * The addresses the delivered file's download link is mailed to. A data
 	 * export includes position stamps only if each one belongs to a user of the

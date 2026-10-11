@@ -12,11 +12,13 @@ import {
 	IconPlayerPlay,
 	IconPlus,
 	IconTrash,
+	IconUserCog,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import { toast } from "sonner";
 import useSWR from "swr";
 import {
 	deleteScheduledExportAction,
@@ -82,6 +84,10 @@ const RunNowDialog = dynamic(
 		ssr: false,
 	},
 );
+const ChangeOwnerDialog = dynamic(
+	() => import("./change-owner-dialog").then((m) => m.ChangeOwnerDialog),
+	{ ssr: false },
+);
 
 interface ScheduledExportsTableProps {
 	organizationId: string;
@@ -106,6 +112,8 @@ export function ScheduledExportsTable({
 	const [runNowSchedule, setRunNowSchedule] =
 		useState<ScheduledExportSummary | null>(null);
 	const [deleteSchedule, setDeleteSchedule] =
+		useState<ScheduledExportSummary | null>(null);
+	const [ownerSchedule, setOwnerSchedule] =
 		useState<ScheduledExportSummary | null>(null);
 
 	// Filter options and payroll configs for the dialog
@@ -212,26 +220,36 @@ export function ScheduledExportsTable({
 			s.id === scheduleId ? { ...s, isActive } : s,
 		);
 
-		await mutate(
-			async () => {
-				const result = await toggleScheduledExportAction(
-					organizationId,
-					scheduleId,
-					isActive,
-				);
-				if (result.success) {
-					return optimisticData;
-				}
-				throw new Error(
-					t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
-				);
-			},
-			{
-				optimisticData,
-				rollbackOnError: true,
-				revalidate: false,
-			},
-		);
+		try {
+			await mutate(
+				async () => {
+					const result = await toggleScheduledExportAction(
+						organizationId,
+						scheduleId,
+						isActive,
+					);
+					if (result.success) {
+						return optimisticData;
+					}
+					// Resuming is refused while the owner is no longer an org admin (#988).
+					throw new Error(
+						result.error ||
+							t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
+					);
+				},
+				{
+					optimisticData,
+					rollbackOnError: true,
+					revalidate: false,
+				},
+			);
+		} catch (toggleError) {
+			toast.error(
+				toggleError instanceof Error
+					? toggleError.message
+					: t("settings.scheduledExports.error.toggleFailed", "Toggle failed"),
+			);
+		}
 	};
 
 	// Delete schedule with optimistic update
@@ -341,6 +359,7 @@ export function ScheduledExportsTable({
 					onDelete={setDeleteSchedule}
 					onEdit={handleOpenEdit}
 					onHistory={setHistorySchedule}
+					onChangeOwner={setOwnerSchedule}
 					onRunNow={setRunNowSchedule}
 					onToggle={handleToggle}
 					schedules={schedules}
@@ -371,6 +390,15 @@ export function ScheduledExportsTable({
 				payrollConfigs={payrollConfigs}
 				runNowSchedule={runNowSchedule}
 			/>
+			{ownerSchedule && (
+				<ChangeOwnerDialog
+					open={Boolean(ownerSchedule)}
+					onOpenChange={(open: boolean) => !open && setOwnerSchedule(null)}
+					organizationId={organizationId}
+					schedule={ownerSchedule}
+					onSuccess={() => mutate()}
+				/>
+			)}
 		</div>
 	);
 }
@@ -469,6 +497,7 @@ interface SchedulesCardProps {
 	formatDate: (date: Date | null) => string;
 	getReportTypeLabel: (type: string) => string;
 	getScheduleLabel: (schedule: ScheduledExportSummary) => string;
+	onChangeOwner: (schedule: ScheduledExportSummary) => void;
 	onDelete: (schedule: ScheduledExportSummary) => void;
 	onEdit: (scheduleId: string) => void;
 	onHistory: (schedule: ScheduledExportSummary) => void;
@@ -481,6 +510,7 @@ function SchedulesCard({
 	formatDate,
 	getReportTypeLabel,
 	getScheduleLabel,
+	onChangeOwner,
 	onDelete,
 	onEdit,
 	onHistory,
@@ -517,6 +547,9 @@ function SchedulesCard({
 								{t("settings.scheduledExports.table.schedule", "Schedule")}
 							</TableHead>
 							<TableHead>
+								{t("settings.scheduledExports.table.owner", "Owner")}
+							</TableHead>
+							<TableHead>
 								{t("settings.scheduledExports.table.lastRun", "Last Run")}
 							</TableHead>
 							<TableHead>
@@ -539,6 +572,7 @@ function SchedulesCard({
 								getReportTypeLabel={getReportTypeLabel}
 								getScheduleLabel={getScheduleLabel}
 								key={schedule.id}
+								onChangeOwner={onChangeOwner}
 								onDelete={onDelete}
 								onEdit={onEdit}
 								onHistory={onHistory}
@@ -558,6 +592,7 @@ function ScheduledExportRow({
 	formatDate,
 	getReportTypeLabel,
 	getScheduleLabel,
+	onChangeOwner,
 	onDelete,
 	onEdit,
 	onHistory,
@@ -593,6 +628,18 @@ function ScheduledExportRow({
 					{getScheduleLabel(schedule)}
 				</div>
 				<div className="text-xs text-muted-foreground">{schedule.timezone}</div>
+			</TableCell>
+			<TableCell>
+				<div>{schedule.ownerName ?? schedule.ownerId}</div>
+				{!schedule.ownerEligible && (
+					<div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+						<IconAlertCircle className="size-3.5" aria-hidden="true" />
+						{t(
+							"settings.scheduledExports.table.ownerNotAdmin",
+							"No longer an org admin",
+						)}
+					</div>
+				)}
 			</TableCell>
 			<TableCell className="text-muted-foreground">
 				{formatDate(schedule.lastExecutionAt)}
@@ -669,6 +716,10 @@ function ScheduledExportRow({
 							<IconPlayerPlay className="size-4 mr-2" aria-hidden="true" />
 							{t("settings.scheduledExports.actions.runNow", "Run Now")}
 						</DropdownMenuItem>
+						<DropdownMenuItem onClick={() => onChangeOwner(schedule)}>
+							<IconUserCog className="size-4 mr-2" aria-hidden="true" />
+							{t("settings.scheduledExports.actions.changeOwner", "Change Owner")}
+						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							className="text-destructive"
@@ -710,6 +761,15 @@ function ScheduledExportsHelp() {
 						{t(
 							"settings.scheduledExports.help.deliveryDesc",
 							"Exports are uploaded to S3 and email notifications with download links are sent to configured recipients.",
+						)}
+					</p>
+					<p>
+						<strong>
+							{t("settings.scheduledExports.help.owner", "Owner:")}
+						</strong>{" "}
+						{t(
+							"settings.scheduledExports.help.ownerDesc",
+							"Each schedule runs on behalf of an org admin. If its owner stops being an org admin or leaves, the schedule pauses and every org admin is notified so one can take it over.",
 						)}
 					</p>
 					<p>

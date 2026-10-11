@@ -57,7 +57,7 @@ describe("DataExportExecutor file URL (#1008)", () => {
 
 		const result = await new DataExportExecutor().execute({
 			organizationId: "org-1",
-			createdBy: "owner-user",
+			ownerId: "owner-user",
 			reportConfig: { categories: ["employees"] },
 			// Fixtures for the executor's existing Luxon boundary; no date calculations.
 			dateRange: {

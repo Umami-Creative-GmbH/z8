@@ -41,7 +41,7 @@ const { parseInstant } = await import("@/lib/datetime/temporal-core");
 const params: ExecuteParams = {
 	executionId: "execution-1",
 	organizationId: "org-1",
-	createdBy: "schedule-user",
+	ownerId: "schedule-user",
 	payrollConfigId: "payroll-config-1",
 	reportConfig: { formatId: "datev_lohn" },
 	// Fixtures for the executor's existing Luxon boundary; no date calculations.
@@ -62,7 +62,7 @@ describe("scheduled payroll requester attribution", () => {
 		mocks.processExportJob.mockResolvedValue({});
 	});
 
-	it("attributes the job to the schedule creator's organization-scoped employee", async () => {
+	it("attributes the job to the schedule owner's organization-scoped employee", async () => {
 		const result = await new PayrollExportExecutor().execute(params);
 
 		expect(result.success).toBe(true);
@@ -83,15 +83,15 @@ describe("scheduled payroll requester attribution", () => {
 		);
 	});
 
-	it("does not fall back to the payroll config creator when the schedule creator is missing", async () => {
+	it("does not fall back to the payroll config creator when the schedule owner is missing", async () => {
 		const result = await new PayrollExportExecutor().execute({
 			...params,
-			createdBy: undefined,
+			ownerId: undefined,
 		});
 
 		expect(result).toEqual({
 			success: false,
-			error: expect.stringContaining("schedule creator"),
+			error: expect.stringContaining("schedule owner"),
 		});
 		expect(mocks.findEmployee).not.toHaveBeenCalled();
 		expect(mocks.createExportJob).not.toHaveBeenCalled();

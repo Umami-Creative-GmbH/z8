@@ -64,6 +64,16 @@ Set up automated delivery for payroll, data, and audit exports from **Settings**
    - date-range behavior and optional filters
 4. Save the schedule
 
+#### Schedule owner
+
+Every schedule runs on behalf of an org admin, its **owner**. You become the owner of the schedules you create. Automated runs are recorded in the audit log under the owner.
+
+- If the owner stops being an org admin, is deactivated, is removed from the organization or leaves, the schedule pauses. Every org admin is notified.
+- Any org admin can take a schedule over from the actions menu with **Change Owner**. Changing the owner doesn't resume the schedule: turn it back on afterwards.
+- A schedule can't be resumed or run now while its owner isn't an org admin.
+
+Creating, editing, pausing, resuming, running, re-assigning and deleting a schedule are all recorded in the audit log, together with one entry for each run.
+
 Use **Settings** -> **Export Operations** to monitor failures, next run times, and recent activity across those scheduled jobs.
 
 ---
