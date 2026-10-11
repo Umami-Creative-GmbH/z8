@@ -36,6 +36,7 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
+import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
@@ -894,6 +895,15 @@ export async function updateMemberRole(
 						newRole: validatedData.role,
 					},
 					"Member role updated successfully",
+				);
+
+				// An owner or admin who becomes a member can lose projects in their share links (#806).
+				yield* Effect.promise(() =>
+					revokeShareLinksAfterAccessChange({
+						organizationId,
+						creator: { userId: targetMember.userId },
+						actorUserId: session.user.id,
+					}),
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });

@@ -197,6 +197,7 @@ export async function revokeShareLinksCreatorsCannotSee(
 	scope: {
 		organizationId?: string;
 		creatorUserId?: string;
+		creatorEmployeeId?: string;
 		actorUserId?: string | null;
 		now: Temporal.Instant;
 	},
@@ -207,6 +208,9 @@ export async function revokeShareLinksCreatorsCannotSee(
 	];
 	if (scope.organizationId) conditions.push(eq(reportShareLink.organizationId, scope.organizationId));
 	if (scope.creatorUserId) conditions.push(eq(reportShareLink.createdBy, scope.creatorUserId));
+	if (scope.creatorEmployeeId) {
+		conditions.push(eq(reportShareLink.creatorEmployeeId, scope.creatorEmployeeId));
+	}
 	const links = await client
 		.select()
 		.from(reportShareLink)

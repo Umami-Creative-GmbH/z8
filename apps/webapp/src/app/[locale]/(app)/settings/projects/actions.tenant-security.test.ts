@@ -39,6 +39,10 @@ const projectReportWorkSource = readFileSync(
 	fileURLToPath(new URL("../../../../../lib/reports/project-report-work.ts", import.meta.url)),
 	"utf8",
 );
+const projectReportReadersSource = readFileSync(
+	fileURLToPath(new URL("../../../../../lib/reports/project-report-readers.ts", import.meta.url)),
+	"utf8",
+);
 
 function functionBody(source: string, name: string) {
 	const start = source.indexOf(`export async function ${name}`);
@@ -121,9 +125,15 @@ describe("project relationship tenant security", () => {
 		expect(body).toContain("yield* projectReportReader()");
 		expect(readerBody).toContain("await requireAuth()");
 		expect(readerBody).toContain("authContext.session.activeOrganizationId");
-		// Employees and work are read in that organization only (#902 moved the work query).
-		expect(body).toContain("eq(employee.organizationId, organizationId)");
-		expect(body).toContain("loadReportedProjectWork(dbService.db, organizationId");
+		// Employees and work are read in that organization only (#902 moved the work query, #806
+		// the report into the readers that report share links use too).
+		expect(body).toContain("yield* readProjectDetailedReport(");
+		const readerReport = projectReportReadersSource.slice(
+			projectReportReadersSource.indexOf("export function readProjectDetailedReport"),
+			projectReportReadersSource.indexOf("export function readCustomerBillableReport"),
+		);
+		expect(readerReport).toContain("eq(employee.organizationId, organizationId)");
+		expect(readerReport).toContain("loadReportedProjectWork(dbService.db, organizationId");
 		const workBody = functionBody(projectReportWorkSource, "loadReportedProjectWork");
 		expect(workBody).toContain("eq(workPeriod.organizationId, organizationId)");
 		expect(workBody).toContain("eq(project.organizationId, organizationId)");
