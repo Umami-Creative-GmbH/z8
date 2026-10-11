@@ -9,6 +9,7 @@ import { createLogger } from "@/lib/logger";
 import { checkRateLimit, getClientIp, RATE_LIMIT_CONFIGS } from "@/lib/rate-limit";
 import { createPublicApiDependencies } from "./dependencies";
 import type { PublicApiEndpoint } from "./endpoint";
+import { createMcpEndpoint } from "./mcp/server";
 import { handlePublicApiRequest, type PublicApiDependencies } from "./pipeline";
 
 const logger = createLogger("PublicApi");
@@ -47,4 +48,15 @@ export function publicApiRoute<Query extends z.ZodObject, Response extends z.Zod
 		await connection();
 		return handlePublicApiRequest(productionDependencies(), endpoint, request);
 	};
+}
+
+let mcpEndpoint: ((request: Request) => Promise<Response>) | undefined;
+
+/** The route handler of the MCP server (#795), for every method of `/api/mcp`. */
+export async function mcpRoute(request: Request): Promise<Response> {
+	await connection();
+	mcpEndpoint ??= createMcpEndpoint(productionDependencies(), {
+		onProtocolError: (error) => logger.warn({ error }, "MCP request rejected"),
+	});
+	return mcpEndpoint(request);
 }

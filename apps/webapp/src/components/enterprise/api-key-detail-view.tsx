@@ -38,6 +38,10 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 	const creatorName = key.creator
 		? key.creator.name || key.creator.email || key.creator.userId
 		: null;
+	const channelLabels = {
+		api: t("settings.apiKeys.detail.channelApi", "API"),
+		mcp: t("settings.apiKeys.detail.channelMcp", "MCP"),
+	};
 	const windowLabel =
 		key.rateLimitTimeWindow !== null && key.rateLimitTimeWindow in windowLabels
 			? windowLabels[key.rateLimitTimeWindow as keyof typeof windowLabels]
@@ -148,6 +152,7 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 									<TableHeader>
 										<TableRow>
 											<TableHead>{t("settings.apiKeys.detail.time", "Time")}</TableHead>
+											<TableHead>{t("settings.apiKeys.detail.channel", "Channel")}</TableHead>
 											<TableHead>{t("settings.apiKeys.detail.request", "Request")}</TableHead>
 											<TableHead>{t("settings.apiKeys.detail.status", "Status")}</TableHead>
 											<TableHead className="text-right">
@@ -161,6 +166,9 @@ export function ApiKeyDetailView({ detail }: { detail: ApiKeyDetail }) {
 											<TableRow key={request.id}>
 												<TableCell className="whitespace-nowrap">
 													{at(request.requestedAt)}
+												</TableCell>
+												<TableCell>
+													<Badge variant="outline">{channelLabels[request.channel]}</Badge>
 												</TableCell>
 												<TableCell className="font-mono text-sm">
 													{request.method} {request.route}

@@ -17,6 +17,9 @@
       "description": "API-Keys für de programmtechnisch Zuegriff uf dini Organisationsdate verwalte",
       "detail": {
         "back": "Alli API-Schlüssel",
+        "channel": "Kanal",
+        "channelApi": "API",
+        "channelMcp": "MCP",
         "createdAt": "Erstellt",
         "creator": "Erstellt vo",
         "creatorDeparted": "{name} (usgschide)",

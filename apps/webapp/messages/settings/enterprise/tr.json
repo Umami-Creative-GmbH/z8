@@ -17,6 +17,9 @@
       "description": "Kuruluş verilerinize programatik erişim için API anahtarlarını yönetin",
       "detail": {
         "back": "Tüm API anahtarları",
+        "channel": "Kanal",
+        "channelApi": "API",
+        "channelMcp": "MCP",
         "createdAt": "Oluşturuldu",
         "creator": "Oluşturan",
         "creatorDeparted": "{name} (ayrıldı)",

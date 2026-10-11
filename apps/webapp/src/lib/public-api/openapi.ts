@@ -28,7 +28,8 @@ const problemSchema = z
 	})
 	.meta({ title: "Problem" });
 
-function jsonSchema(schema: z.ZodType, io: "input" | "output"): JsonSchema {
+/** A route schema as JSON Schema, the form the OpenAPI document and the MCP tools (#795) share. */
+export function jsonSchema(schema: z.ZodType, io: "input" | "output"): JsonSchema {
 	const { $schema: _, ...rest } = z.toJSONSchema(schema, {
 		io,
 		unrepresentable: "any",

@@ -17,6 +17,9 @@
       "description": "Zarządzaj kluczami API dla dostępu programistycznego do danych Twojej organizacji",
       "detail": {
         "back": "Wszystkie klucze API",
+        "channel": "Kanał",
+        "channelApi": "API",
+        "channelMcp": "MCP",
         "createdAt": "Utworzono",
         "creator": "Utworzone przez",
         "creatorDeparted": "{name} (odszedł/a)",

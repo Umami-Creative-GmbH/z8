@@ -36,6 +36,10 @@ Errors are `application/problem+json` (RFC 9457) with a stable `type`: `invalid_
 
 Every response to a request with a known key, refusals included, carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` for the tighter of the key's own limit and your organization's limit. A `429 rate_limited` response also carries `Retry-After`.
 
+## MCP server
+
+AI assistants can read the same data as tools through the [MCP server](/docs/api-reference/mcp) at `/api/mcp`, with the same API keys, scopes and rate limits.
+
 ## Versioning
 
 Within `/api/v1`, changes only add fields or endpoints. Ignore fields you don't know. Removing or renaming anything would require `/api/v2`.

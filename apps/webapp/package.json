@@ -50,6 +50,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@faker-js/faker": "^10.6.0",
     "@marsidev/react-turnstile": "^1.6.1",
+    "@modelcontextprotocol/server": "2.3.1",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/auto-instrumentations-node": "^0.81.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.223.0",
@@ -154,6 +155,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@modelcontextprotocol/client": "2.3.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",

@@ -1,0 +1,81 @@
+---
+title: MCP Server
+description: Let AI assistants read your organization's Z8 data through the Model Context Protocol
+icon: Code
+---
+
+Z8 offers the Public API as an [MCP](https://modelcontextprotocol.io) server, so AI assistants and agents can read your organization's data as tools. It is read-only and serves exactly what the same API key could read through `/api/v1`: the same rows, fields, scopes, rate limits and errors.
+
+## Server URL and authentication
+
+- **URL:** `https://ui.z8-time.app/api/mcp`
+- **Transport:** Streamable HTTP. The server is stateless, so it keeps no session between requests.
+- **Authentication:** an organization API key, sent as `Authorization: Bearer z8_org…`. Create one under **Settings → Enterprise → API Keys** (see [API Keys](/docs/guide/admin-guide/api-keys)).
+
+<Callout type="warn" title="Use a dedicated key for MCP">
+  Whatever a tool returns is sent to your MCP client's LLM provider. Create a separate key for MCP with only the scopes the assistant needs, and **without** `absences:read-health`, so health detail never leaves Z8.
+</Callout>
+
+## Tools
+
+The assistant sees only the tools its key's scopes allow. Calling a tool without its scope returns a tool error with `scope_missing`.
+
+| Tool | Same as | Required scope |
+|---|---|---|
+| `list_work_periods` | [`GET /api/v1/work-periods`](/docs/api-reference/listWorkPeriods) | `time-entries:read` |
+| `list_absences` | [`GET /api/v1/absences`](/docs/api-reference/listAbsences) | `absences:read` |
+| `list_employees` | [`GET /api/v1/employees`](/docs/api-reference/listEmployees) | `employees:read` |
+| `list_projects` | [`GET /api/v1/projects`](/docs/api-reference/listProjects) | `projects:read` |
+| `list_customers` | [`GET /api/v1/customers`](/docs/api-reference/listCustomers) | `customers:read` |
+
+Each tool takes its endpoint's query parameters as arguments and returns the same page as structured content: `{ "data": [...], "nextCursor": "..." }`. To read the next page, the assistant passes `nextCursor` back as `cursor`.
+
+The data rules are the same as for the API, and each tool's description repeats them for the assistant:
+
+- Work periods are UTC instants, each with the UTC offset where it was recorded. Running work has no end.
+- Absences are local calendar dates with an optional half day. Without `absences:read-health`, a sick absence is plain `absent`.
+- `list_work_periods` and `list_absences` require a `from`/`to` range of at most 366 days.
+
+## Set up a client
+
+### Claude Code
+
+```bash
+claude mcp add --transport http z8 https://ui.z8-time.app/api/mcp \
+  --header "Authorization: Bearer z8_org…"
+```
+
+### Cursor
+
+Add the server to `.cursor/mcp.json` in your project, or `~/.cursor/mcp.json` for every project:
+
+```json
+{
+  "mcpServers": {
+    "z8": {
+      "url": "https://ui.z8-time.app/api/mcp",
+      "headers": { "Authorization": "Bearer z8_org…" }
+    }
+  }
+}
+```
+
+### Other clients
+
+Any MCP client that connects to a Streamable HTTP server with a custom header works. Configure:
+
+- the URL `https://ui.z8-time.app/api/mcp`;
+- the header `Authorization: Bearer z8_org…`.
+
+Clients that speak an older protocol revision (2025-era, starting with `initialize`) are served statelessly too.
+
+<Callout type="info" title="Web connectors that need OAuth cannot connect yet">
+  The server accepts API keys only. Connectors that require an OAuth sign-in, such as custom connectors on claude.ai or in ChatGPT, cannot connect yet.
+</Callout>
+
+## Errors, rate limits and the request log
+
+- Before any tool runs, a request is refused with a plain HTTP status and problem JSON, exactly as on `/api/v1`: `401 invalid_key`, `402 billing_required` or `429 rate_limited` with `Retry-After`. The server never asks the client to start an OAuth flow.
+- Inside a tool call, `scope_missing`, `validation_failed` and `not_found` come back as a tool result with `isError: true`. Its text is the same problem JSON, so the assistant can correct its arguments.
+- Every request to `/api/mcp` counts against the key's limit and your organization's limit, the same budget as `/api/v1`.
+- Each tool call appears in the key's recent requests with the channel **MCP**. Connecting and listing tools read no data and are not logged.
