@@ -4,6 +4,11 @@ const mockState = vi.hoisted(() => ({
 	getCurrentSettingsRouteContext: vi.fn(),
 	requireUser: vi.fn(),
 	findOrganization: vi.fn(),
+	managesProjectBelowManagerTier: vi.fn(),
+}));
+
+vi.mock("@/lib/projects/project-manager-settings-access", () => ({
+	managesProjectBelowManagerTier: mockState.managesProjectBelowManagerTier,
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({
@@ -38,6 +43,7 @@ describe("SettingsPage", () => {
 		vi.clearAllMocks();
 		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
 			authContext: {
+				user: { id: "user-1" },
 				session: { activeOrganizationId: "org-1" },
 				employee: null,
 			},
@@ -50,6 +56,34 @@ describe("SettingsPage", () => {
 			demoDataEnabled: true,
 			worksCouncilEnabled: true,
 		});
+		mockState.managesProjectBelowManagerTier.mockResolvedValue(false);
+	});
+
+	it("lists Projects for a member-tier user who manages a project of the active organization (#928)", async () => {
+		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
+			authContext: {
+				user: { id: "user-1" },
+				session: { activeOrganizationId: "org-1" },
+				employee: null,
+			},
+			accessTier: "member",
+		});
+		const settingHrefs = async () => {
+			const page = await SettingsPage();
+			const grid = page.props.children.props.children;
+			return grid.props.visibleSettings.map((entry: { href: string }) => entry.href);
+		};
+
+		expect(await settingHrefs()).not.toContain("/settings/projects");
+
+		mockState.managesProjectBelowManagerTier.mockResolvedValue(true);
+
+		expect(await settingHrefs()).toContain("/settings/projects");
+		expect(mockState.managesProjectBelowManagerTier).toHaveBeenCalledWith(
+			"member",
+			"user-1",
+			"org-1",
+		);
 	});
 
 	it("passes the Works Council settings entry to the grid when the org feature is enabled", async () => {
