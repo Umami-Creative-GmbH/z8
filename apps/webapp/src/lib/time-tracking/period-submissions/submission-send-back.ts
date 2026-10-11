@@ -59,7 +59,16 @@ const NOTHING: SendBackPeriodSubmissionsResult = { withdrawn: [], outdated: [] }
  */
 export async function sendBackChangedPeriodSubmissions(
 	client: PeriodSubmissionChangeClient,
-	input: { organizationId: string; employeeId: string } & PeriodChange,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		/**
+		 * The user who made the change (an employee, a manager, an admin, an importer), recorded on
+		 * the automatic audit entries next to the submitter they are about; null for a change nobody
+		 * signed in made (a job, a kiosk, the system).
+		 */
+		causedByUserId: string | null;
+	} & PeriodChange,
 	dependencies: { clock?: Clock } = {},
 ): Promise<SendBackPeriodSubmissionsResult> {
 	const work = input.work ?? [];
@@ -131,7 +140,7 @@ export async function sendBackChangedPeriodSubmissions(
 					organizationId: input.organizationId,
 					submissionId: row.id,
 					cause: "change",
-					actor: { kind: "system" },
+					actor: { kind: "system", causedByUserId: input.causedByUserId },
 				},
 				{ clock },
 			);
@@ -153,7 +162,7 @@ export async function sendBackChangedPeriodSubmissions(
 			actorUserId: row.submitterUserId,
 			at: now,
 			closedCause: "change",
-			metadata: { automatic: true },
+			metadata: { automatic: true, causedByUserId: input.causedByUserId },
 		});
 		result.outdated.push(row.id);
 	}

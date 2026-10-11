@@ -210,6 +210,7 @@ async function deleteScopedAbsence(
 	await sendBackChangedPeriodSubmissions(transactionDb, {
 		organizationId: input.organizationId,
 		employeeId: row.employeeId,
+		causedByUserId: input.actorUserId,
 		days: [{ startDate: row.startDate, endDate: row.endDate }],
 	});
 	await removeCanonicalAbsenceRecordInTransaction(transactionDb, {

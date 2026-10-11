@@ -945,7 +945,12 @@ export async function amendCompletedWork(
 		];
 		await assertWorkOpen(tx, { organizationId, employeeId, intervals });
 		// The same change sends a submitted period back to the employee (#1062).
-		await sendBackChangedPeriodSubmissions(tx, { organizationId, employeeId, work: intervals });
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId,
+			employeeId,
+			causedByUserId: input.actorUserId,
+			work: intervals,
+		});
 	}
 
 	// Correction entries: exact predecessor from the append collaborator.

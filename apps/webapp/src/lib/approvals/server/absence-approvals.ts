@@ -1045,6 +1045,7 @@ function updateAbsenceStatus(
 				await sendBackChangedPeriodSubmissions(dbService.db, {
 					organizationId: currentEmployee.organizationId,
 					employeeId: updatedAbsence.employeeId,
+					causedByUserId: currentEmployee.userId,
 					days: [
 						{
 							startDate: updatedAbsence.startDate,

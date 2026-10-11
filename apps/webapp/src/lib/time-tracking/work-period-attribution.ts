@@ -274,6 +274,7 @@ async function changeLegacyWorkPeriodProject(
 		taskId?: string | null;
 		billable?: boolean;
 		authorizedProjectId: string | null;
+		actorUserId: string;
 	},
 ): Promise<void> {
 	const [period] = await tx
@@ -373,6 +374,7 @@ async function changeLegacyWorkPeriodProject(
 		await sendBackChangedPeriodSubmissions(tx, {
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
+			causedByUserId: input.actorUserId,
 			work: [workInterval(period.startTime, period.endTime)],
 		});
 	}

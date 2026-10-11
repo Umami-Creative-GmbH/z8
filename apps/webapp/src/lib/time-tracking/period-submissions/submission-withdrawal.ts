@@ -30,8 +30,13 @@ import {
 
 type Database = typeof applicationDatabase;
 
-/** Who caused a withdrawal. `system` is a change nobody signed in made (#1062). */
-export type PeriodSubmissionWithdrawalActor = { kind: "user"; userId: string } | { kind: "system" };
+/**
+ * Who caused a withdrawal. `system` is the writer seam's automatic withdrawal after a change
+ * (#1062); `causedByUserId` is the user whose change it was, or null when nobody signed in made it.
+ */
+export type PeriodSubmissionWithdrawalActor =
+	| { kind: "user"; userId: string }
+	| { kind: "system"; causedByUserId?: string | null };
 
 export type WithdrawPeriodSubmissionResult =
 	| { kind: "withdrawn"; submissionId: string; workflowId: string }
@@ -152,7 +157,9 @@ export async function withdrawPeriodSubmissionInTransaction(
 		actorUserId,
 		at: now,
 		closedCause: input.cause,
-		...(input.actor.kind === "system" ? { metadata: { automatic: true } } : {}),
+		...(input.actor.kind === "system"
+			? { metadata: { automatic: true, causedByUserId: input.actor.causedByUserId ?? null } }
+			: {}),
 	});
 	return { kind: "withdrawn", submissionId: row.id, workflowId };
 }

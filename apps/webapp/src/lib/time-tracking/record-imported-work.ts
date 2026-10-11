@@ -328,6 +328,7 @@ export async function recordImportedWork(
 	await sendBackChangedPeriodSubmissions(tx, {
 		organizationId,
 		employeeId,
+		causedByUserId: input.importerUserId,
 		work: [{ start: interval.start, end: end ?? interval.start }],
 	});
 

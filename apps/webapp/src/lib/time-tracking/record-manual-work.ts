@@ -330,6 +330,7 @@ export async function recordManualWork(
 	await sendBackChangedPeriodSubmissions(tx, {
 		organizationId,
 		employeeId,
+		causedByUserId: input.actorUserId,
 		work: [{ start: facts.start, end: facts.end }],
 	});
 

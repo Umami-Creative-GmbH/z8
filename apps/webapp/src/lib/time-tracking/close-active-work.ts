@@ -64,6 +64,7 @@ import {
 import {
 	KIOSK_CLOCK_WRITER_VERSION,
 	kioskDeviceInfo,
+	humanActorUserId,
 	type ReceiptActor,
 	receiptActorColumns,
 	writerActor,
@@ -580,6 +581,9 @@ export async function closeActiveWorkGraph(
 	await sendBackChangedPeriodSubmissions(tx, {
 		organizationId,
 		employeeId,
+		causedByUserId: humanActorUserId(
+			input.completingActor ?? writerActor(input.writer, input.actorUserId),
+		),
 		work: [{ start, end: input.eventInstant }],
 	});
 	const durationMinutes = deriveWorkDurationMinutes(start, input.eventInstant);

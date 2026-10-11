@@ -526,6 +526,7 @@ async function commitAbsence(
 	await sendBackChangedPeriodSubmissions(database, {
 		organizationId: job.organizationId,
 		employeeId: payload.employeeId,
+		causedByUserId: job.committedBy,
 		days: [{ startDate, endDate }],
 	});
 

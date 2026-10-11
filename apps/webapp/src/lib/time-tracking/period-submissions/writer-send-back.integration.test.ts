@@ -356,6 +356,18 @@ describe("writers send a submitted period back on PostgreSQL (#1062)", () => {
 			status: "withdrawn",
 			workflow: "cancelled",
 		});
+		// The entry is about the submitter and names the manager whose change it was.
+		const { rows } = await admin.query<{ performed_by: string; metadata: string }>(
+			`select performed_by, metadata from audit_log
+			 where organization_id = $1 and entity_id = $2 and action = 'period_submission.withdrawn'`,
+			[ORG, submitted.submissionId],
+		);
+		expect(rows.map((row) => [row.performed_by, JSON.parse(row.metadata)])).toEqual([
+			[
+				userOf("requester"),
+				expect.objectContaining({ automatic: true, causedByUserId: userOf("manager") }),
+			],
+		]);
 	});
 
 	it("neither a note nor a change outside the period sends it back", async () => {

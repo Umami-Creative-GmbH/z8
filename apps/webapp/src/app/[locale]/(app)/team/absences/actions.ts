@@ -513,6 +513,7 @@ export async function recordAbsenceForEmployee(
 			await sendBackChangedPeriodSubmissions(tx, {
 				organizationId: actor.organizationId,
 				employeeId: target.id,
+				causedByUserId: actor.userId,
 				days: [{ startDate: normalizedInput.startDate, endDate: normalizedInput.endDate }],
 			});
 			if (deputyEmployeeId) {
