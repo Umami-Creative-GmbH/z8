@@ -451,7 +451,14 @@ function ProjectDialogForm({
 											field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
 										}
 									>
-										<SelectTrigger id="customerId">
+										<SelectTrigger
+										id="customerId"
+										aria-describedby={
+											deletedCustomerName && !field.state.value
+												? "customerDeletedHint"
+												: undefined
+										}
+									>
 											<SelectValue
 												placeholder={t(
 													"settings.projects.field.customerPlaceholder",
@@ -472,7 +479,10 @@ function ProjectDialogForm({
 									</Select>
 								)}
 								{deletedCustomerName && !field.state.value && (
-									<p className="text-sm text-muted-foreground">
+									<p
+										id="customerDeletedHint"
+										className="text-sm text-muted-foreground"
+									>
 										{t(
 											"settings.projects.field.customerDeleted",
 											"{name} was deleted. Pick another customer or keep the project without one.",

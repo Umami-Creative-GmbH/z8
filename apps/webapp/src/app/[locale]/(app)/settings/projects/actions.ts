@@ -285,7 +285,7 @@ export async function getProjects(
 				});
 
 				// Billable Time (#768): a deleted customer leaves the project without customer (#938).
-				const withActiveCustomer = yield* dbService.query("getProjectActiveCustomers", async () => {
+				const withActiveCustomer = yield* dbService.query("project.activeCustomers",async () => {
 					const rows =
 						projectIds.length > 0
 							? await db
