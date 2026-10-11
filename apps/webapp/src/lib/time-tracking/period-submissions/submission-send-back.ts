@@ -75,6 +75,8 @@ export async function sendBackChangedPeriodSubmissions(
 	const work = input.work ?? [];
 	const days = input.days ?? [];
 	if (work.length === 0 && days.length === 0) return NOTHING;
+	// The writers' clients (a work transaction's `scope.db`, an import's commit client) hide
+	// `transaction` on purpose; at runtime each is a drizzle transaction the engine nests in.
 	const database = client as unknown as PeriodSubmissionDatabase;
 	const [collecting] = await database
 		.select({ id: periodSubmissionCadenceChange.id })

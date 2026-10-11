@@ -8,8 +8,8 @@ import { deriveExpectedSubmissionPeriods } from "./expected-periods";
 import { loadExpectedSubmissionFactsByEmployee } from "./organization-expected-periods";
 import { periodSubmissionOverlaps } from "./period-overlap";
 import { loadSubmissionCadenceHistory } from "./settings";
+import { employeeDisplayName } from "./overview-store";
 import { type PeriodSubmissionGap, periodSubmissionGaps } from "./submission-gaps";
-import type { PeriodSubmissionClosedCause, PeriodSubmissionStatus } from "./submission-status";
 
 export interface EmployeePeriodSubmissionGap extends PeriodSubmissionGap {
 	employeeId: string;
@@ -47,7 +47,7 @@ export async function loadPeriodSubmissionGaps(
 	if (input.employeeIds?.length === 0) return { collected, gaps: [] };
 
 	const employees = await database
-		.select({ id: employee.id, userName: user.name })
+		.select({ id: employee.id, name: employeeDisplayName })
 		.from(employee)
 		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
@@ -89,15 +89,10 @@ export async function loadPeriodSubmissionGaps(
 	const gaps: EmployeePeriodSubmissionGap[] = employees.flatMap((row) => {
 		const facts = factsByEmployee.get(row.id);
 		if (!facts) return [];
-		const employeeName = row.userName?.trim() || "—";
+		const employeeName = row.name?.trim() || "—";
 		return periodSubmissionGaps({
 			periods: deriveExpectedSubmissionPeriods(facts, input.window),
-			submissions: (submissionsByEmployee.get(row.id) ?? []).map((submission) => ({
-				startDate: submission.startDate,
-				status: submission.status as PeriodSubmissionStatus,
-				closedCause: submission.closedCause as PeriodSubmissionClosedCause | null,
-				submittedAt: submission.submittedAt,
-			})),
+			submissions: submissionsByEmployee.get(row.id) ?? [],
 			today: plainDateAt(input.now, facts.timezone),
 		}).map((gap) => ({ ...gap, employeeId: row.id, employeeName, timezone: facts.timezone }));
 	});

@@ -33,7 +33,9 @@ export type PeriodSubmissionOverview =
 			counts: OverviewStatusCounts;
 	  };
 
-const displayName = sql<string>`coalesce(nullif(trim(concat_ws(' ', ${user.firstName}, ${user.lastName})), ''), ${user.name})`;
+/** An employee's name as period submission screens show it: first and last name, else the user name. */
+export const employeeDisplayName = sql<string>`coalesce(nullif(trim(concat_ws(' ', ${user.firstName}, ${user.lastName})), ''), ${user.name})`;
+const displayName = employeeDisplayName;
 
 /** The active employees of the organization in the viewer's scope, by name. */
 async function listScopedEmployees(
