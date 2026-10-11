@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
+import { splitRouteLocale } from "@/i18n/route-locale";
 import { routing } from "@/i18n/routing";
 import {
 	classifyDomainHost,
@@ -82,42 +83,20 @@ async function rebaseLocaleRedirect(
 	response.headers.set("location", publicUrl.toString());
 }
 
-// Only supported locales count as a route prefix; three-letter tags such as `gsw` included.
-function splitRouteLocale(pathname: string): {
-	locale: string | undefined;
-	pathWithoutLocale: string;
-} {
-	const locale = routing.locales.find(
-		(candidate) => pathname === `/${candidate}` || pathname.startsWith(`/${candidate}/`),
-	);
-	return {
-		locale,
-		pathWithoutLocale: locale ? pathname.slice(locale.length + 1) || "/" : pathname,
-	};
-}
-
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Extract locale and path without locale for consistent handling
-	const routeLocale = splitRouteLocale(pathname);
-	const { pathWithoutLocale } = routeLocale;
-	const locale = routeLocale.locale ?? DEFAULT_LANGUAGE;
+	const { locale: routeLocale, pathWithoutLocale } = splitRouteLocale(pathname);
+	const locale = routeLocale ?? DEFAULT_LANGUAGE;
 	const isApiRoute = pathname.startsWith("/api/");
 	// API handlers perform authentication and authorization without page middleware.
 	if (isApiRoute) {
 		return NextResponse.next();
 	}
 
-	const setupLocale = routing.locales.find(
-		(candidate) =>
-			pathname === `/${candidate}/setup` ||
-			pathname.startsWith(`/${candidate}/setup/`),
-	);
 	const isSetupPage =
-		Boolean(setupLocale) ||
-		pathWithoutLocale === "/setup" ||
-		pathWithoutLocale.startsWith("/setup/");
+		pathWithoutLocale === "/setup" || pathWithoutLocale.startsWith("/setup/");
 	const domainClassification = classifyDomainHost(request.headers.get("host"));
 	if (domainClassification?.type === "unknownPlatform") {
 		const response = new NextResponse("Not found", { status: 404 });
@@ -143,7 +122,7 @@ export async function proxy(request: NextRequest) {
 		for (const code of request.nextUrl.searchParams.getAll("code")) {
 			authorizeUrl.searchParams.append("code", code);
 		}
-		authorizeUrl.searchParams.set("locale", setupLocale || locale);
+		authorizeUrl.searchParams.set("locale", locale);
 		const response = NextResponse.rewrite(authorizeUrl);
 		applySetupResponseHeaders(response);
 		return response;
@@ -164,7 +143,7 @@ export async function proxy(request: NextRequest) {
 		const configured = await isPlatformConfigured();
 		if (configured) {
 			const homeUrl = await publicRedirectUrl(
-				`/${setupLocale || locale}/`,
+				`/${locale}/`,
 				request,
 			);
 			const response = NextResponse.redirect(homeUrl);
