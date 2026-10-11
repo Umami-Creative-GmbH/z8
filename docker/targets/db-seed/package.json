@@ -6,8 +6,8 @@
 	"dependencies": {
 		"@opentelemetry/api": "^1.9.1",
 		"@t3-oss/env-nextjs": "^0.13.11",
-		"dotenv": "^18.0.5",
-		"drizzle-orm": "^0.45.3",
+		"dotenv": "^18.0.7",
+		"drizzle-orm": "^0.45.4",
 		"luxon": "^3.7.2",
 		"next": "16.4.0",
 		"pg": "^8.23.1",
