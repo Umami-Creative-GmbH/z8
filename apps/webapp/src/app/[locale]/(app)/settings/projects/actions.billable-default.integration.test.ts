@@ -359,6 +359,33 @@ describe("project billable default on PostgreSQL", () => {
 		expect(await billableDefault(ids.unmanagedProject)).toBe(false);
 	});
 
+	it("lists a project whose customer was deleted without customer, naming the deleted one (#938)", async () => {
+		await actAs(ids.ownerUser, () => customers.deleteCustomer(ids.customer));
+
+		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+
+		expect(listed.success).toBe(true);
+		if (!listed.success) return;
+		expect(listed.data.find((project) => project.id === ids.customerProject)).toMatchObject({
+			customerId: null,
+			customerName: null,
+			deletedCustomerName: "Acme",
+		});
+		expect(listed.data.find((project) => project.id === ids.internalProject)).toMatchObject({
+			customerId: null,
+			customerName: null,
+			deletedCustomerName: null,
+		});
+	});
+
+	it("lists a project with an active customer under that customer (#938)", async () => {
+		const listed = await actAs(ids.ownerUser, () => projects.getProjects(ids.organization));
+
+		expect(
+			listed.success && listed.data.find((project) => project.id === ids.customerProject),
+		).toMatchObject({ customerId: ids.customer, customerName: "Acme", deletedCustomerName: null });
+	});
+
 	it("switches the billable default off on the customer's projects when the customer is deleted", async () => {
 		await actAs(ids.ownerUser, () =>
 			projects.updateProject(ids.customerProject, { billableDefault: true }),

@@ -88,6 +88,7 @@ function project(overrides: Partial<ProjectWithDetails> = {}): ProjectWithDetail
 		deadline: null,
 		customerId: null,
 		customerName: null,
+		deletedCustomerName: null,
 		isActive: true,
 		createdAt: new Date("2026-01-01T00:00:00Z"),
 		createdBy: "user-1",

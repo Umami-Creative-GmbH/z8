@@ -45,6 +45,7 @@ vi.mock("@/lib/reports/completed-work", () => ({
 	completedWorkPeriodCondition: vi.fn(() => ({ completedWork: true })),
 }));
 vi.mock("@/lib/billable-time/project-customer", () => ({
+	projectHasActiveCustomerSql: vi.fn(() => ({ projectHasActiveCustomer: true })),
 	readProjectActiveCustomerId: vi.fn(async () => "customer-active"),
 }));
 
@@ -183,9 +184,12 @@ vi.mock("@/db", () => ({
 		},
 		select: vi.fn(() => ({
 			from: vi.fn(() => ({
-				where: vi.fn(() => ({
-					groupBy: vi.fn(async () => mockState.hoursBooked),
-				})),
+				// Awaited directly: the projects with an active customer (none here).
+				where: vi.fn(() =>
+					Object.assign(Promise.resolve([]), {
+						groupBy: vi.fn(async () => mockState.hoursBooked),
+					}),
+				),
 			})),
 		})),
 		update: vi.fn(() => ({
