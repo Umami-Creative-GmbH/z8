@@ -17,9 +17,6 @@
       "description": "Hantera API-nycklar för programmatisk åtkomst till din organisations data",
       "detail": {
         "back": "Alla API-nycklar",
-        "channel": "Kanal",
-        "channelApi": "API",
-        "channelMcp": "MCP",
         "createdAt": "Skapad",
         "creator": "Skapad av",
         "creatorDeparted": "{name} (har slutat)",

@@ -17,9 +17,6 @@
       "description": "Gérez les clés API pour un accès par programmation aux données de votre organisation",
       "detail": {
         "back": "Toutes les clés API",
-        "channel": "Canal",
-        "channelApi": "API",
-        "channelMcp": "MCP",
         "createdAt": "Créé",
         "creator": "Créé par",
         "creatorDeparted": "{name} (parti)",

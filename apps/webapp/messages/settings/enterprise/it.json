@@ -17,9 +17,6 @@
       "description": "Gestisci le chiavi API per l'accesso programmatico ai dati della tua organizzazione",
       "detail": {
         "back": "Tutte le chiavi API",
-        "channel": "Canale",
-        "channelApi": "API",
-        "channelMcp": "MCP",
         "createdAt": "Data creazione",
         "creator": "Creata da",
         "creatorDeparted": "{name} (cessato)",

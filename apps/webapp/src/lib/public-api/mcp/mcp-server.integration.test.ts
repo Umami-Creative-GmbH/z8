@@ -151,14 +151,18 @@ describe("the MCP server on PostgreSQL", () => {
 		await admin.query('delete from "user" where id = any($1::text[])', [users]);
 	}
 
-	async function key(scopes: readonly string[], organizationId: string = ids.organization) {
+	async function key(
+		scopes: readonly string[],
+		organizationId: string = ids.organization,
+		rateLimitMax = 1000,
+	) {
 		const outcome = await createOrganizationApiKey(db, {
 			organizationId,
 			actorUserId: organizationId === ids.other ? ids.otherAdmin : ids.admin,
 			name: "MCP suite",
 			scopes: scopes as never,
 			rateLimitEnabled: true,
-			rateLimitMax: 1000,
+			rateLimitMax,
 			rateLimitTimeWindow: 60_000,
 			expiresAt: null,
 		});
@@ -495,6 +499,26 @@ describe("the MCP server on PostgreSQL", () => {
 		expect(refused.headers.get("x-ratelimit-remaining")).toBe("0");
 		expect(await refused.json()).toMatchObject({ type: "rate_limited" });
 		expect((await callV1("/api/v1/employees", presented, "")).status).toBe(429);
+	});
+
+	it("spends the key's own limit on every MCP request, tools/list included, shared with /api/v1", async () => {
+		const { key: presented } = await key(ALL_SCOPES, ids.organization, 3);
+		const listTools = () =>
+			post(
+				{ jsonrpc: "2.0", id: 1, method: "tools/list" },
+				{ authorization: `Bearer ${presented}` },
+			);
+
+		expect((await callV1("/api/v1/employees", presented, "")).status).toBe(200);
+		const listed = await listTools();
+		expect(listed.status).toBe(200);
+		expect(listed.headers.get("x-ratelimit-remaining")).toBe("1");
+		expect((await callV1("/api/v1/employees", presented, "")).status).toBe(200);
+
+		const refused = await listTools();
+		expect(refused.status).toBe(429);
+		expect(Number(refused.headers.get("retry-after"))).toBeGreaterThan(0);
+		expect(await refused.json()).toMatchObject({ type: "rate_limited" });
 	});
 
 	it("logs each tool call once with channel mcp, and nothing for initialize or tools/list", async () => {

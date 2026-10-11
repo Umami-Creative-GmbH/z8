@@ -2,8 +2,7 @@ import "server-only";
 
 import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
-import { publicApiRequestLog } from "@/db/schema";
-import type { KeyRequestChannel } from "@/db/schema/public-api";
+import { type KeyRequestChannel, publicApiRequestLog } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 
 /** How long the key request log keeps a request (#763). */

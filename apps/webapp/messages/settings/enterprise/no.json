@@ -17,9 +17,6 @@
       "description": "Administrer API-nøkler for programmatisk tilgang til organisasjonens data",
       "detail": {
         "back": "Alle API-nøkler",
-        "channel": "Kanal",
-        "channelApi": "API",
-        "channelMcp": "MCP",
         "createdAt": "Opprettet",
         "creator": "Opprettet av",
         "creatorDeparted": "{name} (sluttet)",

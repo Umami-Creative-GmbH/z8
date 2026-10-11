@@ -32,7 +32,7 @@ import {
 	recordKeyRequest,
 } from "../pipeline";
 import { type Problem, problem } from "../problem";
-import { mcpToolsFor, PUBLIC_API_TOOLS } from "./tools";
+import { type McpTool, mcpToolsFor, PUBLIC_API_TOOLS } from "./tools";
 
 export const MCP_ROUTE = "/api/mcp";
 
@@ -64,6 +64,16 @@ function admittedRequestOf(context: McpRequestContext): AdmittedRequest {
 	return admitted;
 }
 
+const toolNamed = (name: unknown) => PUBLIC_API_TOOLS.find((tool) => tool.name === name);
+
+type LoggedRoute = Pick<ToolCallRecord, "method" | "route">;
+
+/** A tool call is logged under its tool's `/api/v1` route; an unknown tool under the MCP route. */
+const loggedRouteOf = (tool: McpTool | undefined): LoggedRoute =>
+	tool
+		? { method: tool.endpoint.method, route: tool.endpoint.path }
+		: { method: "POST", route: MCP_ROUTE };
+
 function toolError(body: Problem): CallToolResult {
 	return { isError: true, content: [{ type: "text", text: JSON.stringify(body) }] };
 }
@@ -79,24 +89,15 @@ function buildServer(dependencies: PublicApiDependencies, admitted: AdmittedRequ
 		tools: mcpToolsFor(admitted.principal.scopes).map((tool) => tool.definition),
 	}));
 	server.setRequestHandler("tools/call", async (request) => {
-		const tool = PUBLIC_API_TOOLS.find((candidate) => candidate.name === request.params.name);
+		const tool = toolNamed(request.params.name);
 		if (!tool) {
-			await admitted.recordToolCall({
-				method: "POST",
-				route: MCP_ROUTE,
-				status: 404,
-				rowCount: null,
-			});
+			await admitted.recordToolCall({ ...loggedRouteOf(tool), status: 404, rowCount: null });
 			return toolError(
 				problem("not_found", { detail: `There is no tool named ${request.params.name}.` }),
 			);
 		}
-		const record: ToolCallRecord = {
-			method: tool.endpoint.method,
-			route: tool.endpoint.path,
-			status: 500,
-			rowCount: null,
-		};
+		// Stays a server error unless the endpoint answers.
+		const record: ToolCallRecord = { ...loggedRouteOf(tool), status: 500, rowCount: null };
 		try {
 			const result = await executeEndpoint(
 				dependencies,
@@ -122,27 +123,43 @@ function buildServer(dependencies: PublicApiDependencies, admitted: AdmittedRequ
 	return server;
 }
 
-/** The tool a refused request tried to call; null for any other request. */
-async function refusedToolCallOf(request: Request): Promise<ToolCallRecord | null> {
+/** The request body as text; null once it grows past `maxBytes`. */
+async function boundedBodyText(request: Request, maxBytes: number): Promise<string | null> {
+	if (!request.body) return "";
+	const reader = request.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let size = 0;
+	for (;;) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		size += value.byteLength;
+		if (size > maxBytes) {
+			await reader.cancel();
+			return null;
+		}
+		chunks.push(value);
+	}
+	return Buffer.concat(chunks).toString("utf8");
+}
+
+/**
+ * Where a refused request's tool call is logged; null when the request is no
+ * tool call. At most `MAX_INSPECTED_BODY_BYTES` of the body are read.
+ */
+async function refusedToolCallOf(request: Request): Promise<LoggedRoute | null> {
 	if (request.method !== "POST") return null;
-	const length = Number(request.headers.get("content-length") ?? 0);
-	if (length > MAX_INSPECTED_BODY_BYTES) return null;
 	let message: unknown;
 	try {
-		message = JSON.parse(await request.text());
+		const text = await boundedBodyText(request, MAX_INSPECTED_BODY_BYTES);
+		if (text === null) return null;
+		message = JSON.parse(text);
 	} catch {
 		return null;
 	}
 	if (typeof message !== "object" || message === null || Array.isArray(message)) return null;
 	const { method, params } = message as { method?: unknown; params?: { name?: unknown } };
 	if (method !== "tools/call") return null;
-	const tool = PUBLIC_API_TOOLS.find((candidate) => candidate.name === params?.name);
-	return {
-		method: tool?.endpoint.method ?? "POST",
-		route: tool?.endpoint.path ?? MCP_ROUTE,
-		status: 0,
-		rowCount: null,
-	};
+	return loggedRouteOf(toolNamed(params?.name));
 }
 
 function withHeaders(response: Response, extra: Record<string, string>): Response {
@@ -189,7 +206,9 @@ export function createMcpEndpoint(
 
 		if (admission.outcome === "refused") {
 			const toolCall = await refusedToolCallOf(request);
-			if (toolCall) await recordToolCall({ ...toolCall, status: admission.response.status });
+			if (toolCall) {
+				await recordToolCall({ ...toolCall, status: admission.response.status, rowCount: null });
+			}
 			return admission.response;
 		}
 

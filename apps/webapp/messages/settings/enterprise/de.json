@@ -17,9 +17,6 @@
       "description": "Verwalten Sie API-Schlüssel für den programmatischen Zugriff auf Ihre Organisationsdaten",
       "detail": {
         "back": "Alle API-Schlüssel",
-        "channel": "Kanal",
-        "channelApi": "API",
-        "channelMcp": "MCP",
         "createdAt": "Erstellt",
         "creator": "Erstellt von",
         "creatorDeparted": "{name} (ausgeschieden)",

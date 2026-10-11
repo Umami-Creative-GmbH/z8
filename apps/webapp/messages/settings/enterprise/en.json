@@ -17,9 +17,6 @@
       "description": "Manage API keys for programmatic access to your organization data",
       "detail": {
         "back": "All API keys",
-        "channel": "Channel",
-        "channelApi": "API",
-        "channelMcp": "MCP",
         "createdAt": "Created",
         "creator": "Created by",
         "creatorDeparted": "{name} (departed)",
