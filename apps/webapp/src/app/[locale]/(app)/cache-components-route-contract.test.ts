@@ -27,6 +27,7 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/works-council/page.tsx",
 	"src/app/[locale]/(auth)/layout.tsx",
 	"src/app/[locale]/(setup)/setup/page.tsx",
+	"src/app/[locale]/(share)/share/[token]/page.tsx",
 	"src/app/[locale]/onboarding/layout.tsx",
 ] as const;
 
@@ -190,6 +191,15 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reason:
 			"OpenTelemetry database instrumentation creates synchronous random trace IDs per request.",
 		operation: "const configured = await isPlatformConfigured();",
+	},
+	{
+		file: "src/app/[locale]/(share)/share/[token]/page.tsx",
+		contentComponent: "SharePageContent",
+		fallbackComponent: "SharePageLoading",
+		reasonCategory: "authorization-audit",
+		reason:
+			"A report share link token is checked and every recipient view is logged per request (#806).",
+		operation: "const opened = await openShareLink(db, {",
 	},
 ] as const;
 
@@ -735,6 +745,14 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "SetupPageContent",
 		fallbackFrameClass: "w-full max-w-md",
 		fallbackAriaLabel: "Loading platform setup",
+		requiresSynchronousDefaultExport: true,
+	},
+	{
+		file: "src/app/[locale]/(share)/share/[token]/page.tsx",
+		fallbackComponent: "SharePageLoading",
+		contentComponent: "SharePageContent",
+		fallbackFrameClass: "mx-auto w-full max-w-5xl space-y-6 px-4 py-10",
+		fallbackAriaLabel: "Loading shared report",
 		requiresSynchronousDefaultExport: true,
 	},
 ] as const;
@@ -1352,7 +1370,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(17);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(18);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
@@ -1437,7 +1455,7 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(66);
+		expect(workQueueFiles).toHaveLength(67);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

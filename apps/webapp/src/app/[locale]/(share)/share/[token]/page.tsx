@@ -47,6 +47,7 @@ function SharePageLoading() {
 
 async function SharePageContent({ params }: SharePageProps) {
 	const { locale, token } = await params;
+	// A report share link token is checked and every recipient view is logged per request (#806).
 	await connection();
 	const opened = await openShareLink(db, {
 		token,

@@ -6,7 +6,7 @@
 
 import { createHash } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { shareLinkFixture } from "@/lib/projects/report-share/testing/share-link.fixture";
+import { shareLinkFixture } from "@/lib/projects/report-share/__tests__/share-link-fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({

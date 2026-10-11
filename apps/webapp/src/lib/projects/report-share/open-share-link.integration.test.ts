@@ -21,7 +21,7 @@ import {
 	shareLinkCreatorLocale,
 	sweepShareLinks,
 } from "./report-share-links";
-import { shareLinkFixture } from "./testing/share-link.fixture";
+import { shareLinkFixture } from "./__tests__/share-link-fixture";
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
