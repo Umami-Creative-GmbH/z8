@@ -9,7 +9,10 @@ import { and, eq, notInArray } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, project, projectManager, projectNotificationState } from "@/db/schema";
+import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { daysUntilProjectDeadline } from "@/lib/projects/project-deadline-days";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { createNotification } from "./notification-service";
 import type { NotificationType } from "./types";
 
@@ -337,10 +340,12 @@ function getDeadlineWarningMessage(
 	projectName: string,
 	deadline: Date,
 ): string {
+	// The deadline day is stored as its UTC midnight.
 	const dateStr = deadline.toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
+		timeZone: "UTC",
 	});
 
 	switch (threshold) {
@@ -467,23 +472,33 @@ export async function getProjectTotalHours(
  *
  * @returns Summary of processed projects
  */
-export async function checkAndSendDeadlineNotifications(): Promise<{
+export async function checkAndSendDeadlineNotifications(clock: Clock = systemClock): Promise<{
 	checked: number;
 	notificationsSent: number;
 }> {
 	const projects = await getProjectsWithUpcomingDeadlines();
 	let notificationsSent = 0;
 
-	const now = new Date();
+	const now = clock.nowInstant();
+	// Today is the organization's calendar date, as in the project reports.
+	const timeZones = new Map<string, Promise<string>>();
+	const organizationTimeZone = (organizationId: string) => {
+		let timeZone = timeZones.get(organizationId);
+		if (!timeZone) {
+			timeZone = loadOrganizationTimezone(db, organizationId);
+			timeZones.set(organizationId, timeZone);
+		}
+		return timeZone;
+	};
 
 	const results = await Promise.all(
 		projects.map(async (project) => {
 			try {
-				// Calculate days until deadline
-				const deadlineTime = project.deadline.getTime();
-				const nowTime = now.getTime();
-				const diffMs = deadlineTime - nowTime;
-				const daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+				const daysUntilDeadline = daysUntilProjectDeadline({
+					deadline: project.deadline,
+					now,
+					timeZone: await organizationTimeZone(project.organizationId),
+				});
 
 				await checkProjectDeadlineWarnings({
 					projectId: project.id,
