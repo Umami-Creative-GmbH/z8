@@ -11,6 +11,12 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
+}));
+
 function workRow(id: string, billability: ImportReviewRow["billability"]): ImportReviewRow {
 	return {
 		id,
@@ -39,7 +45,7 @@ function cellOf(rowId: string) {
 
 describe("ImportReviewTable billability (#907)", () => {
 	it("shows each staged entry's billable value and why work imports as non-billable", () => {
-		render(<ImportReviewTable rows={rows} showBillability />);
+		render(<ImportReviewTable batchId="batch_1" rows={rows} showBillability />);
 
 		expect(screen.getByRole("columnheader", { name: "Billable" })).toBeTruthy();
 		expect(cellOf("billable").getByText("Billable")).toBeTruthy();
@@ -67,7 +73,7 @@ describe("ImportReviewTable billability (#907)", () => {
 	});
 
 	it("hides billability while Billable Time is off", () => {
-		render(<ImportReviewTable rows={rows} showBillability={false} />);
+		render(<ImportReviewTable batchId="batch_1" rows={rows} showBillability={false} />);
 
 		expect(screen.queryByRole("columnheader", { name: "Billable" })).toBeNull();
 		expect(screen.queryByText("Non-billable")).toBeNull();

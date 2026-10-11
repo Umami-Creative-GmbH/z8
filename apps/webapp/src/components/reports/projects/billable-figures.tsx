@@ -14,7 +14,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useDisplayContext } from "@/hooks/use-display-context";
-import { formatBillableAmount, formatBillableHours } from "@/lib/billable-time/format";
+import { formatBillableAmount } from "@/lib/billable-time/format";
 import { CHANGED_AFTER_INVOICING_HREF } from "@/lib/billable-time/hand-off/views";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
@@ -24,17 +24,15 @@ import type {
 	ProjectTeamMember,
 } from "@/lib/reports/project-types";
 import { Link } from "@/navigation";
+import { useProjectHoursFormat } from "./use-project-hours-format";
 
 /** Formats Billable Time amounts and hours for the viewer's locale. */
 export function useBillableFigureFormat() {
-	const { t } = useTranslate();
 	const { locale } = useDisplayContext();
+	const hoursFormat = useProjectHoursFormat();
 	return {
 		money: (amount: string, currency: string) => formatBillableAmount(locale, amount, currency),
-		hours: (value: number) =>
-			t("reports.projects.billable.hoursValue", "{hours} h", {
-				hours: formatBillableHours(locale, value, 1),
-			}),
+		hours: hoursFormat.hours,
 	};
 }
 

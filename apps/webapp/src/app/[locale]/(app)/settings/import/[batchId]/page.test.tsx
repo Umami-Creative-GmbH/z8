@@ -212,35 +212,42 @@ describe("ImportReviewRoute", () => {
 		});
 	});
 
-	it.each([
-		["2", 2, 100],
-		["3", 3, 200],
-		// Past the end: the last page.
-		["9", 3, 200],
-		["0", 1, 0],
-		["abc", 1, 0],
-	])("pages a customer import: ?page=%s shows page %i", async (page, shown, offset) => {
-		mockState.findBatch.mockResolvedValue({
-			id: "batch-1",
-			organizationId: "org-1",
-			provider: "accounting",
-			status: "needs_review",
-		});
-		mockState.getImportReviewSummary.mockResolvedValue({ totalRows: 250 });
-		mockState.listImportReviewRows.mockResolvedValue([]);
-		mockState.listCustomerAccounting.mockResolvedValue([]);
+	describe.each([
+		// A customer import from the accounting connection (#906).
+		["customer", "accounting"],
+		// A work import (#937).
+		["Clockodo", "clockodo"],
+	])("pages a %s import", (_kind, provider) => {
+		it.each([
+			["2", 2, 100],
+			["3", 3, 200],
+			// Past the end: the last page.
+			["9", 3, 200],
+			["0", 1, 0],
+			["abc", 1, 0],
+		])("?page=%s shows page %i", async (page, shown, offset) => {
+			mockState.findBatch.mockResolvedValue({
+				id: "batch-1",
+				organizationId: "org-1",
+				provider,
+				status: "needs_review",
+			});
+			mockState.getImportReviewSummary.mockResolvedValue({ totalRows: 250 });
+			mockState.listImportReviewRows.mockResolvedValue([]);
+			mockState.listCustomerAccounting.mockResolvedValue([]);
 
-		const reviewPage = await renderRequestContent("batch-1", { page });
+			const reviewPage = await renderRequestContent("batch-1", { page });
 
-		expect(mockState.listImportReviewRows).toHaveBeenCalledWith({
-			batchId: "batch-1",
-			organizationId: "org-1",
-			limit: 100,
-			offset,
-		});
-		expect(reviewPage.props.children.props.children.props.customerImport.paging).toEqual({
-			page: shown,
-			pageCount: 3,
+			expect(mockState.listImportReviewRows).toHaveBeenCalledWith({
+				batchId: "batch-1",
+				organizationId: "org-1",
+				limit: 100,
+				offset,
+			});
+			expect(reviewPage.props.children.props.children.props.paging).toEqual({
+				page: shown,
+				pageCount: 3,
+			});
 		});
 	});
 

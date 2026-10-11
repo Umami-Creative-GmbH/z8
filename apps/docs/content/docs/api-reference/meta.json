@@ -5,6 +5,7 @@
   "icon": "Code",
   "pages": [
     "index",
+    "mcp",
     "listWorkPeriods",
     "listAbsences",
     "listEmployees",
