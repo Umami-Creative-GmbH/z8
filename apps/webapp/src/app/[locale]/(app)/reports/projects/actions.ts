@@ -6,6 +6,7 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, project, workPeriod } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-helpers";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { type AnyAppError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import {
 	type AppServices,
@@ -35,17 +36,14 @@ import {
 	readProjectDetailedReport,
 	statusConditions,
 } from "@/lib/reports/project-report-readers";
-import {
-	loadReportedProjectWork,
-	reportDayRangeFromDates,
-	reportDayRangeFromDays,
-} from "@/lib/reports/project-report-work";
+import { loadReportedProjectWork, reportDayRangeFromDays } from "@/lib/reports/project-report-work";
 import type {
 	CustomerBillableReport,
 	ProjectDetailedReport,
 	ProjectPortfolioData,
 	ProjectSummary,
 } from "@/lib/reports/project-types";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 const logger = createLogger("ProjectReportsActions");
 
@@ -90,11 +88,27 @@ function visibleProjectConditions(viewer: ProjectReportViewer) {
 }
 
 /**
+ * The report's calendar days, sent as ISO dates ("2026-03-31") and both
+ * inclusive; never read in a time zone.
+ */
+function reportDays(fromDay: string, toDay: string) {
+	const range = reportDayRangeFromDays(fromDay, toDay);
+	return range
+		? Effect.succeed(range)
+		: Effect.fail(
+				new ValidationError({
+					message: "Choose a period whose end is not before its start",
+					field: "period",
+				}),
+			);
+}
+
+/**
  * Get portfolio overview of all projects in the organization
  */
 export async function getProjectsOverview(
-	startDate: Date,
-	endDate: Date,
+	fromDay: string,
+	toDay: string,
 	statusFilter?: string[],
 ): Promise<ServerActionResult<ProjectPortfolioData>> {
 	const tracer = trace.getTracer("project-reports");
@@ -103,12 +117,13 @@ export async function getProjectsOverview(
 		"getProjectsOverview",
 		{
 			attributes: {
-				"report.start_date": startDate.toISOString(),
-				"report.end_date": endDate.toISOString(),
+				"report.start_date": String(fromDay),
+				"report.end_date": String(toDay),
 			},
 		},
 		(span) => {
 			return Effect.gen(function* () {
+				const range = yield* reportDays(fromDay, toDay);
 				const { authContext, dbService, organizationId, currentEmployee, viewer } =
 					yield* projectReportReader();
 
@@ -133,7 +148,6 @@ export async function getProjectsOverview(
 				const projectIds = projects.map((p) => p.id);
 
 				// Completed work by the employee-local day of its start (#794, #902).
-				const range = reportDayRangeFromDates(startDate, endDate);
 				const work = yield* dbService.query("getReportedProjectWork", () =>
 					loadReportedProjectWork(dbService.db, organizationId, { projectIds, range }),
 				);
@@ -169,7 +183,11 @@ export async function getProjectsOverview(
 					return new Map(rows.map((row) => [row.projectId ?? "", row.totalMinutes]));
 				});
 
-				const now = new Date();
+				// Deadline health counts days from today in the organization's timezone.
+				const timeZone = yield* dbService.query("getOrganizationTimezone", () =>
+					loadOrganizationTimezone(dbService.db, organizationId),
+				);
+				const now = systemClock.nowInstant();
 				const projectSummaries: ProjectSummary[] = projects.map((p): ProjectSummary => {
 					const projectWork = workByProject.get(p.id) ?? [];
 					const totalMinutes = projectWork.reduce((sum, item) => sum + item.durationMinutes, 0);
@@ -178,13 +196,6 @@ export async function getProjectsOverview(
 					const budgetHours = p.budgetHours ? Number(p.budgetHours) : null;
 					const percentBudgetUsed = budgetHours ? (cumulativeHours / budgetHours) * 100 : null;
 
-					// Calculate days until deadline
-					let daysUntilDeadline: number | null = null;
-					if (p.deadline) {
-						const diffMs = p.deadline.getTime() - now.getTime();
-						daysUntilDeadline = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-					}
-
 					const healthFields = buildProjectHealthFields({
 						projectName: p.name,
 						budgetHours,
@@ -192,8 +203,8 @@ export async function getProjectsOverview(
 						cumulativeHours,
 						deadline: p.deadline,
 						now,
-						rangeStart: startDate,
-						rangeEnd: endDate,
+						timeZone,
+						range,
 					});
 
 					const billable = pricing?.figures(p.id, projectWork);
@@ -203,7 +214,6 @@ export async function getProjectsOverview(
 						totalHours,
 						totalMinutes,
 						percentBudgetUsed,
-						daysUntilDeadline,
 						uniqueEmployees: new Set(projectWork.map((item) => item.employeeId)).size,
 						workPeriodCount: projectWork.length,
 						...(billable ? { billable } : {}),
@@ -263,8 +273,8 @@ export async function getProjectsOverview(
  */
 export async function getProjectDetailedReport(
 	projectId: string,
-	startDate: Date,
-	endDate: Date,
+	fromDay: string,
+	toDay: string,
 ): Promise<ServerActionResult<ProjectDetailedReport>> {
 	const tracer = trace.getTracer("project-reports");
 
@@ -273,12 +283,13 @@ export async function getProjectDetailedReport(
 		{
 			attributes: {
 				"project.id": projectId,
-				"report.start_date": startDate.toISOString(),
-				"report.end_date": endDate.toISOString(),
+				"report.start_date": String(fromDay),
+				"report.end_date": String(toDay),
 			},
 		},
 		(span) => {
 			return Effect.gen(function* () {
+				const range = yield* reportDays(fromDay, toDay);
 				const { authContext, organizationId, viewer } = yield* projectReportReader();
 
 				span.setAttribute("user.id", authContext.user.id);
@@ -298,7 +309,7 @@ export async function getProjectDetailedReport(
 					viewer,
 					projectId,
 					// Completed work by the employee-local day of its start (#794, #902).
-					range: reportDayRangeFromDates(startDate, endDate),
+					range,
 				});
 
 				span.setAttribute("report.total_hours", report.summary.totalHours);
@@ -346,16 +357,7 @@ export async function getCustomerBillableReport(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				// The report's calendar days, both inclusive (never read in a time zone).
-				const range = reportDayRangeFromDays(fromDay, toDay);
-				if (!range) {
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "Choose a period whose end is not before its start",
-							field: "period",
-						}),
-					);
-				}
+				const range = yield* reportDays(fromDay, toDay);
 				const { authContext, organizationId, viewer } = yield* projectReportReader();
 				span.setAttribute("user.id", authContext.user.id);
 

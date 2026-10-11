@@ -53,11 +53,8 @@ export function ProjectReportsContainer() {
 		await runWithCleanup(
 			async () => {
 				try {
-					const result = await getProjectsOverview(
-						new Date(range.startDate),
-						new Date(range.endDate),
-						statusFilter,
-					);
+					// The report's calendar days, as ISO dates (`reportDayRangeFromDays`).
+					const result = await getProjectsOverview(range.startDate, range.endDate, statusFilter);
 
 					if (!result.success) {
 						setError(
@@ -107,8 +104,8 @@ export function ProjectReportsContainer() {
 				try {
 					const result = await getProjectDetailedReport(
 						projectId,
-						new Date(dateRange.startDate),
-						new Date(dateRange.endDate),
+						dateRange.startDate,
+						dateRange.endDate,
 					);
 
 					if (!result.success) {
@@ -278,7 +275,7 @@ function DetailedProjectReport({
 							target={{ kind: "project", projectId: detailedReport.project.id }}
 							reportName={detailedReport.project.name}
 							period={{
-								// The filter's days as UTC midnights (`reportDayRangeFromDates`).
+								// The report's days as UTC midnights (`readProjectDetailedReport`).
 								fromDay: detailedReport.period.startDate.slice(0, 10),
 								toDay: detailedReport.period.endDate.slice(0, 10),
 							}}

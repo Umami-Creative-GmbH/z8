@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import {
 	buildProjectHealthFields,
@@ -7,9 +8,13 @@ import {
 } from "./project-health";
 import type { ProjectSummary } from "./project-types";
 
-const now = new Date("2026-05-09T12:00:00.000Z");
-const rangeStart = new Date("2026-05-01T00:00:00.000Z");
-const rangeEnd = new Date("2026-05-10T00:00:00.000Z");
+const now = Temporal.Instant.from("2026-05-09T12:00:00Z");
+const timeZone = "UTC";
+// 1–10 May, both inclusive: ten report days.
+const range = {
+	fromDay: Temporal.PlainDate.from("2026-05-01"),
+	toDay: Temporal.PlainDate.from("2026-05-10"),
+};
 
 function buildSummary(overrides: Partial<ProjectSummary>): ProjectSummary {
 	return {
@@ -47,8 +52,8 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: 100,
 				deadline: null,
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_70" });
 		expect(
@@ -59,8 +64,8 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: 100,
 				deadline: null,
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_90" });
 		expect(
@@ -71,8 +76,8 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: 100,
 				deadline: null,
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ budgetSeverity: "critical", budgetAlertType: "budget_100" });
 	});
@@ -86,8 +91,8 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: null,
 				deadline: new Date("2026-05-23T18:00:00.000Z"),
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ deadlineSeverity: "warning", deadlineAlertType: "deadline_14d" });
 		expect(
@@ -98,8 +103,8 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: null,
 				deadline: new Date("2026-05-16T18:00:00.000Z"),
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ deadlineSeverity: "warning", deadlineAlertType: "deadline_7d" });
 		expect(
@@ -110,8 +115,8 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: null,
 				deadline: new Date("2026-05-10T18:00:00.000Z"),
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ deadlineSeverity: "critical", deadlineAlertType: "deadline_1d" });
 		expect(
@@ -122,8 +127,8 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: null,
 				deadline: new Date("2026-05-09T18:00:00.000Z"),
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ deadlineSeverity: "critical", deadlineAlertType: "deadline_today" });
 		expect(
@@ -134,10 +139,84 @@ describe("buildProjectHealthFields", () => {
 				budgetHours: null,
 				deadline: new Date("2026-05-08T18:00:00.000Z"),
 				now,
-				rangeStart,
-				rangeEnd,
+				timeZone,
+				range,
 			}),
 		).toMatchObject({ deadlineSeverity: "critical", deadlineAlertType: "deadline_overdue" });
+	});
+
+	it("counts the calendar days from today to the deadline day", () => {
+		const daysUntil = (deadline: string, at = now) =>
+			buildProjectHealthFields({
+				projectName: "Days",
+				rangeHours: 0,
+				cumulativeHours: 0,
+				budgetHours: null,
+				// The project form stores the deadline day as its UTC midnight.
+				deadline: new Date(deadline),
+				now: at,
+				timeZone,
+				range,
+			}).daysUntilDeadline;
+
+		expect(daysUntil("2026-05-23")).toBe(14);
+		expect(daysUntil("2026-05-09")).toBe(0);
+		expect(daysUntil("2026-05-06")).toBe(-3);
+		// Late in the evening the deadline is still one calendar day away, not under a day.
+		expect(daysUntil("2026-05-10", Temporal.Instant.from("2026-05-09T23:59:00Z"))).toBe(1);
+		expect(
+			buildProjectHealthFields({
+				projectName: "No Deadline",
+				rangeHours: 0,
+				cumulativeHours: 0,
+				budgetHours: null,
+				deadline: null,
+				now,
+				timeZone,
+				range,
+			}).daysUntilDeadline,
+		).toBeNull();
+	});
+
+	it("takes today's date in the organization's timezone, not the server's or the viewer's", () => {
+		// 23:30 UTC on 9 May is already 10 May in Berlin, and still 9 May in New York.
+		const lateEvening = Temporal.Instant.from("2026-05-09T23:30:00Z");
+		const deadlineOn10May = (zone: string) =>
+			buildProjectHealthFields({
+				projectName: "Zoned",
+				rangeHours: 0,
+				cumulativeHours: 0,
+				budgetHours: null,
+				deadline: new Date("2026-05-10T00:00:00.000Z"),
+				now: lateEvening,
+				timeZone: zone,
+				range,
+			});
+
+		expect(deadlineOn10May("Europe/Berlin")).toMatchObject({
+			daysUntilDeadline: 0,
+			deadlineAlertType: "deadline_today",
+		});
+		expect(deadlineOn10May("America/New_York")).toMatchObject({
+			daysUntilDeadline: 1,
+			deadlineAlertType: "deadline_1d",
+		});
+	});
+
+	it("spreads range hours over every report day, both ends included", () => {
+		const oneDay = buildProjectHealthFields({
+			projectName: "One Day",
+			rangeHours: 10,
+			cumulativeHours: 10,
+			budgetHours: 30,
+			deadline: new Date("2026-05-20T00:00:00.000Z"),
+			now,
+			timeZone,
+			range: { fromDay: range.fromDay, toDay: range.fromDay },
+		});
+
+		// A single report day burns all 10 hours a day; the remaining 20 last two days.
+		expect(oneDay.forecastBudgetExhaustionDate?.toISOString()).toBe("2026-05-11T12:00:00.000Z");
 	});
 
 	it("forecasts selected-range burn rate budget exhaustion before deadline", () => {
@@ -148,12 +227,13 @@ describe("buildProjectHealthFields", () => {
 			budgetHours: 100,
 			deadline: new Date("2026-05-20T00:00:00.000Z"),
 			now,
-			rangeStart,
-			rangeEnd,
+			timeZone,
+			range,
 		});
 
+		// 80 hours over ten report days is 8 a day; the remaining 20 last 2.5 days.
 		expect(result.forecastSeverity).toBe("warning");
-		expect(result.forecastBudgetExhaustionDate?.toISOString()).toBe("2026-05-11T18:00:00.000Z");
+		expect(result.forecastBudgetExhaustionDate?.toISOString()).toBe("2026-05-12T00:00:00.000Z");
 		expect(result.forecastMessage).toBe(
 			"Forecast Risk budget may be exhausted before its deadline at the current burn rate.",
 		);
@@ -162,13 +242,13 @@ describe("buildProjectHealthFields", () => {
 	it("uses cumulative hours for remaining budget and selected-range hours for forecast burn rate", () => {
 		const result = buildProjectHealthFields({
 			projectName: "Cumulative Forecast Risk",
-			rangeHours: 18,
+			rangeHours: 20,
 			cumulativeHours: 95,
 			budgetHours: 100,
 			deadline: new Date("2026-05-20T00:00:00.000Z"),
 			now,
-			rangeStart,
-			rangeEnd,
+			timeZone,
+			range,
 		});
 
 		expect(result).toMatchObject({ budgetSeverity: "warning", budgetAlertType: "budget_90" });
@@ -177,7 +257,7 @@ describe("buildProjectHealthFields", () => {
 	});
 
 	it("does not forecast without average daily hours, budget, or deadline", () => {
-		const base = { projectName: "No Forecast", now, rangeStart, rangeEnd };
+		const base = { projectName: "No Forecast", now, timeZone, range };
 
 		expect(
 			buildProjectHealthFields({
