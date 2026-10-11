@@ -91,9 +91,7 @@ const ids = {
 	foreignProject: "90200000-0000-4000-8000-0000000000a4",
 } as const;
 const users = [ids.ownerUser, ids.pmUser, ids.teamManagerUser, ids.workerUser, ids.otherUser];
-const rangeStart = new Date("2026-03-01");
-const rangeEnd = new Date("2026-04-30");
-// The customer view takes the report's calendar days as ISO dates.
+// The project reports take the report's calendar days as ISO dates.
 const fromDay = "2026-03-01";
 const toDay = "2026-04-30";
 
@@ -392,7 +390,7 @@ describe("billable project reports on PostgreSQL", () => {
 
 	it("gives owners revenue, cost and margin per project, with unpriced work and unknown cost flagged", async () => {
 		actAs(ids.ownerUser);
-		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
+		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
 		const byId = new Map(overview.projects.map((summary) => [summary.id, summary]));
 
 		expect(byId.get(ids.website)).toMatchObject({
@@ -432,7 +430,7 @@ describe("billable project reports on PostgreSQL", () => {
 
 	it("keys the detail report on the employee-local day of each start, with per-employee figures", async () => {
 		actAs(ids.ownerUser);
-		const report = await unwrap(getProjectDetailedReport(ids.website, rangeStart, rangeEnd));
+		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
 
 		expect(report.summary).toMatchObject({ totalMinutes: 480, billable: websiteFull });
 		expect(report.timeSeries.map(({ date, hours }) => [date, hours])).toEqual([
@@ -451,8 +449,8 @@ describe("billable project reports on PostgreSQL", () => {
 
 	it("gives project managers hours and revenue for their projects, with no cost or margin field", async () => {
 		actAs(ids.pmUser);
-		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
-		const report = await unwrap(getProjectDetailedReport(ids.website, rangeStart, rangeEnd));
+		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
+		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
 		const customers = await unwrap(getCustomerBillableReport(fromDay, toDay));
 
 		expect(overview.projects.map((summary) => summary.id)).toEqual([ids.website]);
@@ -481,14 +479,14 @@ describe("billable project reports on PostgreSQL", () => {
 			expect(csv).not.toMatch(/cost|margin/i);
 		}
 
-		const otherProject = await getProjectDetailedReport(ids.support, rangeStart, rangeEnd);
+		const otherProject = await getProjectDetailedReport(ids.support, fromDay, toDay);
 		expect(otherProject.success).toBe(false);
 	});
 
 	it("shows team managers who manage no project nothing more than hours", async () => {
 		actAs(ids.teamManagerUser);
-		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
-		const report = await unwrap(getProjectDetailedReport(ids.website, rangeStart, rangeEnd));
+		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
+		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
 
 		expect(overview.projects).toHaveLength(3);
 		expect(overview.projects.every((summary) => summary.billable === undefined)).toBe(true);
@@ -549,7 +547,7 @@ describe("billable project reports on PostgreSQL", () => {
 		await admin.query("update customer set is_active = false where id = $1", [ids.customer]);
 		actAs(ids.ownerUser);
 
-		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
+		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
 		const website = overview.projects.find((summary) => summary.id === ids.website);
 		expect(website?.customer).toBeNull();
 		expect(website?.billable).toMatchObject({
@@ -572,8 +570,8 @@ describe("billable project reports on PostgreSQL", () => {
 			ids.organization,
 		]);
 		actAs(ids.ownerUser);
-		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
-		const report = await unwrap(getProjectDetailedReport(ids.website, rangeStart, rangeEnd));
+		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
+		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
 
 		expect(overview.projects.every((summary) => summary.billable === undefined)).toBe(true);
 		expect(report.summary.billable).toBeUndefined();
@@ -583,8 +581,8 @@ describe("billable project reports on PostgreSQL", () => {
 
 	it("never reads another organization's projects", async () => {
 		actAs(ids.ownerUser);
-		const foreign = await getProjectDetailedReport(ids.foreignProject, rangeStart, rangeEnd);
-		const overview = await unwrap(getProjectsOverview(rangeStart, rangeEnd));
+		const foreign = await getProjectDetailedReport(ids.foreignProject, fromDay, toDay);
+		const overview = await unwrap(getProjectsOverview(fromDay, toDay));
 
 		expect(foreign.success).toBe(false);
 		expect(overview.projects.map((summary) => summary.id)).not.toContain(ids.foreignProject);

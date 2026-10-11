@@ -443,8 +443,8 @@ function figureTable<Row extends ReportFigureRow>(
 
 /**
  * A report period bound as a calendar day. The customer view sends ISO dates;
- * the project report sends the UTC midnight its filter chose for the day (see
- * `reportDayRangeFromDates`), so that instant's UTC date is the day.
+ * the project report sends the UTC midnight of the day (see
+ * `readProjectDetailedReport`), so that instant's UTC date is the day.
  */
 function dayOf(bound: string): string {
 	if (/^\d{4}-\d{2}-\d{2}$/.test(bound)) return bound;

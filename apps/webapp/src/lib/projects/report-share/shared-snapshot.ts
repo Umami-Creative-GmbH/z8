@@ -101,7 +101,7 @@ function sharedBillableTime(
 
 /**
  * A report period bound as a calendar day. The project report carries the
- * UTC midnight its filter chose for the day (`reportDayRangeFromDates`).
+ * UTC midnight of the day (`readProjectDetailedReport`).
  */
 function periodDay(bound: string): string {
 	return /^\d{4}-\d{2}-\d{2}$/.test(bound) ? bound : bound.slice(0, 10);

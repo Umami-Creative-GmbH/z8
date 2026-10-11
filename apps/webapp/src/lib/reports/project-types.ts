@@ -56,6 +56,8 @@ export interface ProjectHealthFields {
 	forecastSeverity: ProjectHealthSeverity;
 	forecastBudgetExhaustionDate: Date | null;
 	forecastMessage: string | null;
+	/** Calendar days from today (in the organization's timezone) to the deadline day. */
+	daysUntilDeadline: number | null;
 }
 
 export interface ProjectBudgetHealthTotals {
@@ -85,7 +87,6 @@ export interface ProjectSummary extends ProjectInfo, ProjectHealthFields {
 	totalHours: number;
 	totalMinutes: number;
 	percentBudgetUsed: number | null;
-	daysUntilDeadline: number | null;
 	uniqueEmployees: number;
 	workPeriodCount: number;
 	/** Billable Time figures for the range, when the viewer may see them. */
