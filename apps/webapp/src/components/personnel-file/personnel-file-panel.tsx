@@ -77,23 +77,24 @@ export function PersonnelFilePanel({
 
 	async function unlink(document: EmployeeDocumentView) {
 		setUnlinkingId(document.id);
-		try {
-			const result = await unlinkSickNoteAction({ documentId: document.id });
-			if (!result.success) {
-				toast.error(
-					result.error ||
-						t(
-							"settings.personnelFiles.sickNotes.unlinkFailed",
-							"The sick note could not be unlinked.",
-						),
-				);
-				return;
-			}
-			toast.success(t("settings.personnelFiles.sickNotes.unlinked", "Sick note unlinked"));
-			refreshSickNotes();
-		} finally {
-			setUnlinkingId(null);
-		}
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await unlinkSickNoteAction({ documentId: document.id })
+			.then((result) => {
+				if (!result.success) {
+					toast.error(
+						result.error ||
+							t(
+								"settings.personnelFiles.sickNotes.unlinkFailed",
+								"The sick note could not be unlinked.",
+							),
+					);
+					return;
+				}
+				toast.success(t("settings.personnelFiles.sickNotes.unlinked", "Sick note unlinked"));
+				refreshSickNotes();
+			})
+			.finally(() => setUnlinkingId(null));
 	}
 
 	return (

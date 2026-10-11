@@ -43,8 +43,16 @@ let latest: StagedSickNoteFile[] = [];
 
 function Harness({ dates }: { dates: { startDate: string; endDate: string } }) {
 	const [value, setValue] = useState<StagedSickNoteFile[]>([]);
-	latest = value;
-	return <SickNoteFilesField value={value} onChange={setValue} dates={dates} />;
+	return (
+		<SickNoteFilesField
+			value={value}
+			onChange={(next) => {
+				latest = next;
+				setValue(next);
+			}}
+			dates={dates}
+		/>
+	);
 }
 
 const october = { startDate: "2026-10-12", endDate: "2026-10-14" };

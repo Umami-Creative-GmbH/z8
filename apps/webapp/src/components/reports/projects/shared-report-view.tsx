@@ -2,7 +2,6 @@
 
 import { IconShare } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useMemo } from "react";
 import { Temporal } from "temporal-polyfill";
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import {
@@ -76,10 +75,7 @@ function SharedReportContent({
 	const takenAt = formatInstant(Temporal.Instant.from(createdAt), display, "dateTimeMedium");
 	const expiresOn = formatInstant(Temporal.Instant.from(expiresAt), display, "dateTimeMedium");
 	// The snapshot's time stands in for "generated on": the figures are as of then.
-	const document = useMemo(
-		() => buildSharedSnapshotDocument(snapshot, { labels, generatedAt: takenAt }),
-		[snapshot, labels, takenAt],
-	);
+	const document = buildSharedSnapshotDocument(snapshot, { labels, generatedAt: takenAt });
 
 	return (
 		<main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:py-10">

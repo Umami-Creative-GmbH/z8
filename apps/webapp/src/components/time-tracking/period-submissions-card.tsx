@@ -141,59 +141,67 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 		inFlight.current = true;
 		setSubmitting(startDate);
 		setOpenPeriod(null);
-		try {
-			const result = await submitPeriod({ periodStartDate: startDate });
-			if (!result.success) {
-				toast.error(
-					t("timeTracking.periodSubmissions.submitFailed", "The period could not be submitted"),
-				);
-				return;
-			}
-			if (result.data.kind === "refused") {
-				if (result.data.reason === "period_open") {
-					setOpenPeriod({ startDate, blockers: result.data.blockers });
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await submitPeriod({ periodStartDate: startDate })
+			.then((result) => {
+				if (!result.success) {
+					toast.error(
+						t("timeTracking.periodSubmissions.submitFailed", "The period could not be submitted"),
+					);
+					return;
 				}
-				toast.error(refusalMessage(result.data.reason));
-				return;
-			}
-			toast.success(t("timeTracking.periodSubmissions.submitted", "Period submitted for approval"));
-			startTransition(() => refresh());
-		} finally {
-			inFlight.current = false;
-			setSubmitting(null);
-		}
+				if (result.data.kind === "refused") {
+					if (result.data.reason === "period_open") {
+						setOpenPeriod({ startDate, blockers: result.data.blockers });
+					}
+					toast.error(refusalMessage(result.data.reason));
+					return;
+				}
+				toast.success(
+					t("timeTracking.periodSubmissions.submitted", "Period submitted for approval"),
+				);
+				startTransition(() => refresh());
+			})
+			.finally(() => {
+				inFlight.current = false;
+				setSubmitting(null);
+			});
 	}
 
 	async function handleWithdraw(startDate: string) {
 		if (inFlight.current) return;
 		inFlight.current = true;
 		setSubmitting(startDate);
-		try {
-			const result = await withdrawPeriod({ periodStartDate: startDate });
-			if (!result.success) {
-				toast.error(
-					t(
-						"timeTracking.periodSubmissions.withdrawFailed",
-						"The submission could not be withdrawn",
-					),
-				);
-				return;
-			}
-			if (result.data.kind === "refused") {
-				toast.error(
-					t(
-						"timeTracking.periodSubmissions.withdrawRefused",
-						"This submission was already decided and can no longer be withdrawn.",
-					),
-				);
-			} else {
-				toast.success(t("timeTracking.periodSubmissions.withdrawn", "Submission withdrawn"));
-			}
-			startTransition(() => refresh());
-		} finally {
-			inFlight.current = false;
-			setSubmitting(null);
-		}
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await withdrawPeriod({ periodStartDate: startDate })
+			.then((result) => {
+				if (!result.success) {
+					toast.error(
+						t(
+							"timeTracking.periodSubmissions.withdrawFailed",
+							"The submission could not be withdrawn",
+						),
+					);
+					return;
+				}
+				if (result.data.kind === "refused") {
+					toast.error(
+						t(
+							"timeTracking.periodSubmissions.withdrawRefused",
+							"This submission was already decided and can no longer be withdrawn.",
+						),
+					);
+				} else {
+					toast.success(t("timeTracking.periodSubmissions.withdrawn", "Submission withdrawn"));
+				}
+				startTransition(() => refresh());
+			})
+			.finally(() => {
+				inFlight.current = false;
+				setSubmitting(null);
+			});
 	}
 
 	return (

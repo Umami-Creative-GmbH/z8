@@ -19,6 +19,9 @@ async function activeOrganizationId(): Promise<string | null> {
  * organization first when needed. Renders nothing; a no-op in browsers.
  */
 export function NativePushBridge() {
+	// The listener attaches asynchronously: the cleanup removes it, and a listener
+	// that lands after unmount removes itself (.react-doctor/false-positives.md).
+	// react-doctor-disable-next-line react-doctor/effect-needs-cleanup
 	useEffect(() => {
 		let disposed = false;
 		let stop: (() => Promise<void>) | null = null;
@@ -26,16 +29,15 @@ export function NativePushBridge() {
 		void (async () => {
 			const client = await getNativePushClient();
 			if (!client || disposed) return;
-			const remove = await client.listen((data) => {
+			stop = await client.listen((data) => {
 				void activeOrganizationId().then((organizationId) => {
 					window.location.assign(nativePushTapTarget(data, organizationId));
 				});
 			});
 			if (disposed) {
-				void remove();
+				void stop();
 				return;
 			}
-			stop = remove;
 			await client.refresh();
 		})().catch((error: unknown) => {
 			console.error("Native push setup failed:", error);

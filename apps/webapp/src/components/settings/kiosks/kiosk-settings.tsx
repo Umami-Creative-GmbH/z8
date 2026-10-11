@@ -62,7 +62,7 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 		if (!confirmation) return;
 		const { kind, kiosk } = confirmation;
 		setPending(true);
-		try {
+		const apply = async () => {
 			if (kind === "pair") {
 				const result = await issueKioskPairingCodeAction({ kioskId: kiosk.id });
 				if (!result.success) {
@@ -85,10 +85,13 @@ export function KioskSettings({ data }: KioskSettingsProps) {
 				toast.success(t("settings.kiosks.revoked", "Kiosk revoked"));
 			}
 			router.refresh();
-		} finally {
+		};
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await apply().finally(() => {
 			setPending(false);
 			setConfirmation(null);
-		}
+		});
 	}
 
 	return (
