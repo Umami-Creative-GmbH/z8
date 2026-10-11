@@ -87,6 +87,27 @@ describe("payroll readiness period submission warning on PostgreSQL", () => {
 		expect(affected).not.toContain(foreigner.employeeId);
 	});
 
+	it("names a week still running at the run's end apart from the missing ones", async () => {
+		const org = await weeklyOrganization();
+		await fixture.employee({ organizationId: org.organizationId });
+
+		// On Thursday 30 April the week 27 April – 3 May has not ended.
+		const result = await getPayrollReadiness({
+			organizationId: org.organizationId,
+			period: april,
+			now: DateTime.fromISO("2026-04-30T12:00:00.000Z", { zone: "utc" }),
+		});
+
+		const checks = result.groups.flatMap((group) => group.checks);
+		// Four ended weeks are missing for the owner and the employee; the fifth is running.
+		expect(periodSubmissionCheck(result)).toMatchObject({ count: 8 });
+		expect(checks.find((check) => check.id === "period-submissions-running")).toMatchObject({
+			status: "warning",
+			severity: "info",
+			count: 2,
+		});
+	});
+
 	it("has no period submission check while the cadence is off", async () => {
 		const org = await fixture.organization("UTC");
 		await fixture.employee({ organizationId: org.organizationId });

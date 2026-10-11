@@ -253,12 +253,43 @@ describe("getPayrollReadiness", () => {
 		});
 	});
 
+	it("shows a period still running in the range apart, never as missing", async () => {
+		mockState.loadPeriodSubmissionGaps.mockResolvedValue({
+			collected: true,
+			gaps: [
+				{
+					employeeId: "employee-1",
+					employeeName: "Ada Lovelace",
+					timezone: "Europe/Berlin",
+					startDate: "2026-04-27",
+					endDate: "2026-05-03",
+					status: "running",
+				},
+			],
+		});
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("ready");
+		expect(getCheck(result, "period-submissions")).toMatchObject({ status: "pass", count: 0 });
+		expect(getCheck(result, "period-submissions-running")).toMatchObject({
+			group: "time",
+			status: "warning",
+			severity: "info",
+			required: false,
+			count: 1,
+			titleKey: "settings.payrollReadiness.checks.periodSubmissionsRunning.title",
+			affectedEmployees: [{ id: "employee-1", name: "Ada Lovelace", employeeNumber: null }],
+		});
+	});
+
 	it("passes the period submission check when every expected submission is approved", async () => {
 		mockState.loadPeriodSubmissionGaps.mockResolvedValue({ collected: true, gaps: [] });
 
 		const result = await getPayrollReadiness(defaultInput());
 
 		expect(getCheck(result, "period-submissions")).toMatchObject({ status: "pass", count: 0 });
+		expect(findCheck(result, "period-submissions-running")).toBeUndefined();
 	});
 
 	it("blocks while a departure timer repair is open in the period", async () => {

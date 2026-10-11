@@ -62,6 +62,12 @@ export function CloseMonthWarningList({ warnings }: { warnings: readonly CloseMo
 					"period {startDate} – {endDate} sent back after a change",
 					range,
 				);
+			case "running":
+				return t(
+					"settings.closedMonths.warning.periodRunning",
+					"period {startDate} – {endDate} still running, not yet submittable",
+					range,
+				);
 		}
 	};
 	const listed = warnings.slice(0, LISTED_WARNINGS);

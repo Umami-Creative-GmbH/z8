@@ -28,8 +28,9 @@ export interface PeriodSubmissionGapReport {
 
 /**
  * The missing or unapproved submissions (#1065) of the organization's employees (or the given
- * ones) for the expected periods overlapping `window` (local days, inclusive) that ended before
- * `now` in each employee's zone. With no cadence in effect in the window nothing is collected
+ * ones) for the expected periods overlapping `window` (local days, inclusive) that started by
+ * `now` in each employee's zone; one still running without a submission is `running`, not
+ * missing. With no cadence in effect in the window nothing is collected
  * and no employee is read. Every query is scoped to the organization.
  */
 export async function loadPeriodSubmissionGaps(
