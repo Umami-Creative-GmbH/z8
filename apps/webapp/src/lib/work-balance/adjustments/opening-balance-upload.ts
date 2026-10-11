@@ -221,8 +221,8 @@ async function loadUploadScope(
 		.select({
 			id: employee.id,
 			employeeNumber: employee.employeeNumber,
-			firstName: employee.firstName,
-			lastName: employee.lastName,
+			firstName: user.firstName,
+			lastName: user.lastName,
 			userName: user.name,
 			isActive: employee.isActive,
 		})
