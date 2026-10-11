@@ -134,6 +134,7 @@ describe("automatic month close on PostgreSQL", () => {
 			absenceRequests: 1,
 			timeRequests: 0,
 			liveWork: 0,
+			periodSubmissions: 0,
 		});
 
 		// Still blocked when April comes due: both months are attempted, March first.

@@ -6,16 +6,18 @@ import { getLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
+import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
 import { getTranslate } from "@/tolgee/server";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
-import { readHistoryRegion, readSummaryRegion } from "./region-data";
+import { readHistoryRegion, readPeriodsRegion, readSummaryRegion } from "./region-data";
 import {
 	ClockLoading,
 	HistoryLoading,
+	PeriodsLoading,
 	RegionLoadError,
 	SummaryLoading,
 	TimelineLoading,
@@ -123,6 +125,33 @@ export async function SummaryRegion({
 	);
 }
 
+export async function PeriodsRegion({
+	context,
+}: {
+	context: EmployeeRenderContext;
+}): Promise<ReactNode> {
+	let data: Awaited<ReturnType<typeof readPeriodsRegion>>;
+	try {
+		data = await readPeriodsRegion(context);
+	} catch (error) {
+		unstable_rethrow(error);
+		const t = await getTranslate();
+		return (
+			<div className="px-4 lg:px-6">
+				<RegionLoadError
+					label={t("timeTracking.periodSubmissions.title", "Period submissions")}
+				/>
+			</div>
+		);
+	}
+	if (!data || data.periods.length === 0) return null;
+	return (
+		<div className="px-4 lg:px-6">
+			<PeriodSubmissionsCard periods={data.periods} />
+		</div>
+	);
+}
+
 export async function HistoryRegion({
 	context,
 }: {
@@ -187,6 +216,9 @@ export async function TimeTrackingPageContent({
 			</Suspense>
 			<Suspense fallback={<SummaryLoading />}>
 				<SummaryRegion context={context} />
+			</Suspense>
+			<Suspense fallback={<PeriodsLoading />}>
+				<PeriodsRegion context={context} />
 			</Suspense>
 			<Suspense fallback={<HistoryLoading />}>
 				<HistoryRegion context={context} />

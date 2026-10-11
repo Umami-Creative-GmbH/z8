@@ -37,6 +37,7 @@ const ZERO_APPROVAL_COUNTS: Record<ApprovalType, number> = {
 	shift_request: 0,
 	travel_expense_claim: 0,
 	travel_expense_report: 0,
+	period_submission: 0,
 };
 
 function compareApprovalItems(a: UnifiedApprovalItem, b: UnifiedApprovalItem) {

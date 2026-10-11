@@ -9,16 +9,18 @@ import { type ReactElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
+import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
 import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-cards";
 import { getTranslate } from "@/tolgee/server";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
-import { readHistoryRegion, readSummaryRegion } from "./region-data";
+import { readHistoryRegion, readPeriodsRegion, readSummaryRegion } from "./region-data";
 import {
 	ClockLoading,
 	HistoryLoading,
+	PeriodsLoading,
 	RegionLoadError,
 	SummaryLoading,
 	TimelineLoading,
@@ -26,6 +28,7 @@ import {
 import {
 	ClockRegion,
 	HistoryRegion,
+	PeriodsRegion,
 	SummaryRegion,
 	TimelineRegion,
 	TimeTrackingPageContent,
@@ -64,7 +67,11 @@ vi.mock("./render-context", () => ({ getTimeTrackingRenderContext: vi.fn() }));
 vi.mock("./read-queries", () => ({ readActiveWorkPeriod: vi.fn() }));
 vi.mock("./region-data", () => ({
 	readHistoryRegion: vi.fn(),
+	readPeriodsRegion: vi.fn(),
 	readSummaryRegion: vi.fn(),
+}));
+vi.mock("@/components/time-tracking/period-submissions-card", () => ({
+	PeriodSubmissionsCard: () => null,
 }));
 vi.mock("./workday-timeline-data", () => ({ getWorkdayTimelineData: vi.fn() }));
 vi.mock("@/components/errors/no-employee-error", () => ({
@@ -190,8 +197,9 @@ describe("independent time tracking region components", () => {
 			}>;
 			fallback: ReactElement;
 		}>[];
-		expect(boundaries).toHaveLength(4);
+		expect(boundaries).toHaveLength(5);
 		expect(boundaries.map((boundary) => boundary.type)).toEqual([
+			Suspense,
 			Suspense,
 			Suspense,
 			Suspense,
@@ -201,20 +209,22 @@ describe("independent time tracking region components", () => {
 			ClockRegion,
 			TimelineRegion,
 			SummaryRegion,
+			PeriodsRegion,
 			HistoryRegion,
 		]);
 		expect(boundaries.map((boundary) => boundary.props.fallback.type)).toEqual([
 			ClockLoading,
 			TimelineLoading,
 			SummaryLoading,
+			PeriodsLoading,
 			HistoryLoading,
 		]);
 		expect(
 			boundaries.map((boundary) => boundary.props.children.props.context),
-		).toEqual([context, context, context, context]);
+		).toEqual([context, context, context, context, context]);
 		expect(
 			boundaries.map((boundary) => boundary.props.children.props.searchParams),
-		).toEqual([undefined, date.promise, undefined, undefined]);
+		).toEqual([undefined, date.promise, undefined, undefined, undefined]);
 		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
 		expect(readSummaryRegion).not.toHaveBeenCalled();
 		expect(readHistoryRegion).not.toHaveBeenCalled();
@@ -269,6 +279,26 @@ describe("independent time tracking region components", () => {
 		});
 	});
 
+	it("shows the period view only where the organization collects period submissions", async () => {
+		vi.mocked(readPeriodsRegion).mockResolvedValue(null);
+		expect(await PeriodsRegion({ context })).toBeNull();
+		const periods = [
+			{
+				startDate: "2026-03-02",
+				endDate: "2026-03-08",
+				status: "awaiting_submission" as const,
+				rejectionReason: null,
+				submittedAt: null,
+				canSubmit: true,
+				opensOn: "2026-03-08",
+			},
+		];
+		vi.mocked(readPeriodsRegion).mockResolvedValue({ timezone: "Europe/Berlin", periods });
+		const view = leaf(await PeriodsRegion({ context }));
+		expect(view.type).toBe(PeriodSubmissionsCard);
+		expect(view.props).toEqual({ periods });
+	});
+
 	const regions = [
 		{
 			name: "clock",
@@ -279,6 +309,11 @@ describe("independent time tracking region components", () => {
 			name: "summary",
 			read: readSummaryRegion,
 			run: () => SummaryRegion({ context }),
+		},
+		{
+			name: "periods",
+			read: readPeriodsRegion,
+			run: () => PeriodsRegion({ context }),
 		},
 		{
 			name: "history",

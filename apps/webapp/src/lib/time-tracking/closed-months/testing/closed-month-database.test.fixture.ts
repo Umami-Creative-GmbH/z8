@@ -36,6 +36,29 @@ export type ClosedMonthDatabaseFixture = LifecycleDatabaseFixture & {
 		endDate: string;
 		status?: "pending" | "approved" | "rejected";
 	}): Promise<string>;
+	/** Appends a submission cadence change (#805); no rows means the cadence is off. */
+	submissionCadence(input: {
+		organizationId: string;
+		cadence: "off" | "weekly" | "monthly";
+		changedAt: string;
+		changedBy: string;
+	}): Promise<void>;
+	/**
+	 * A period submission row without a workflow (#805). `start`/`end` are the submitted local
+	 * days in `timezone`; a weekly row's whole week is the Monday week containing `start`.
+	 */
+	periodSubmission(input: {
+		organizationId: string;
+		employeeId: string;
+		submittedBy: string;
+		cadence: "weekly" | "monthly";
+		startDate: string;
+		endDate: string;
+		cadenceStartDate?: string;
+		cadenceEndDate?: string;
+		timezone?: string;
+		status?: "pending" | "approved" | "rejected" | "withdrawn" | "outdated";
+	}): Promise<string>;
 };
 
 export async function createClosedMonthDatabaseFixture(): Promise<ClosedMonthDatabaseFixture> {
@@ -165,6 +188,58 @@ export async function createClosedMonthDatabaseFixture(): Promise<ClosedMonthDat
 					input.endDate,
 					input.status ?? "approved",
 					input.organizationId,
+				],
+			);
+			return id;
+		},
+		async submissionCadence(input) {
+			await pool.query(
+				`insert into period_submission_cadence_change
+				 (id, organization_id, cadence, week_start_day, changed_at, changed_by)
+				 values ($1, $2, $3, $4, $5::timestamptz, $6)`,
+				[
+					randomUUID(),
+					input.organizationId,
+					input.cadence,
+					input.cadence === "weekly" ? "monday" : null,
+					input.changedAt,
+					input.changedBy,
+				],
+			);
+		},
+		async periodSubmission(input) {
+			const id = randomUUID();
+			const status = input.status ?? "pending";
+			const timezone = input.timezone ?? "UTC";
+			const decided = status === "approved" || status === "rejected" || status === "outdated";
+			const closed = status === "withdrawn" || status === "outdated";
+			await pool.query(
+				`insert into period_submission
+				 (id, organization_id, employee_id, cadence, week_start_day, timezone,
+				  start_date, end_date, cadence_start_date, cadence_end_date, range_start, range_end,
+				  status, submitted_by, submitted_at, decided_at, decision_reason, closed_at, closed_cause)
+				 values ($1, $2, $3, $4, $5, $6, $7::date, $8::date, $9::date, $10::date,
+				  ($7::date)::timestamp at time zone $6, ($8::date + 1)::timestamp at time zone $6,
+				  $11, $12, ($8::date + 1)::timestamp at time zone $6,
+				  case when $13 then ($8::date + 2)::timestamp at time zone $6 end,
+				  case when $11 = 'rejected' then 'Please fix' end,
+				  case when $14 then ($8::date + 3)::timestamp at time zone $6 end,
+				  case when $14 then 'change' end)`,
+				[
+					id,
+					input.organizationId,
+					input.employeeId,
+					input.cadence,
+					input.cadence === "weekly" ? "monday" : null,
+					timezone,
+					input.startDate,
+					input.endDate,
+					input.cadenceStartDate ?? input.startDate,
+					input.cadenceEndDate ?? input.endDate,
+					status,
+					input.submittedBy,
+					decided,
+					closed,
 				],
 			);
 			return id;

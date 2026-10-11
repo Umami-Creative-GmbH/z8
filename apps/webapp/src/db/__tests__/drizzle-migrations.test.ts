@@ -1,5 +1,6 @@
 import { existsSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { APPROVAL_KIND_START } from "@/lib/approvals/workflow/kind-start";
 import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
 import { readTestText } from "@/test/read-test-text";
 
@@ -3692,11 +3693,15 @@ describe("approval workflow rollout pre-creation migration (#359)", () => {
 		expect(migration).not.toBe("");
 	});
 
-	it("backfills exactly the application's approval workflow types", () => {
+	it("backfills exactly the legacy-starting approval workflow types", () => {
 		const typeList = migration.match(/ARRAY\[([^\]]*)\]::"approval_workflow_type"\[\]/)?.[1];
 		const workflowTypes = [...(typeList ?? "").matchAll(/'([a-z_]+)'/g)].map((match) => match[1]);
 
-		expect(workflowTypes).toEqual([...APPROVAL_WORKFLOW_TYPES]);
+		// 0107 is immutable: kinds added later start canonical-only (#1058) and
+		// need no legacy row, so the backfill stays the kinds that existed then.
+		expect(workflowTypes).toEqual(
+			APPROVAL_WORKFLOW_TYPES.filter((type) => APPROVAL_KIND_START[type] === "legacy"),
+		);
 	});
 
 	it("only inserts missing legacy rows for every organization, idempotently", () => {

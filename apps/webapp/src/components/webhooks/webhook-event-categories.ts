@@ -27,6 +27,7 @@ export const EVENT_CATEGORIES = {
 			"time_correction_submitted",
 			"time_correction_approved",
 			"time_correction_rejected",
+			"period_submission_decided",
 		],
 	},
 	shifts: {
@@ -71,6 +72,8 @@ export const EVENT_CATEGORIES = {
 			"missed_clock_in_reminder",
 			"forgotten_clock_out_reminder",
 			"break_due_reminder",
+			"period_submission_reminder",
+			"period_submission_sent_back",
 		],
 	},
 } as const;

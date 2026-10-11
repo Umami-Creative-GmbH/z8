@@ -11,6 +11,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { clockingService } from "../clocking-service";
 import { type ClockChannel, CompletedWorkCollisionError } from "../close-active-work";
+import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import {
 	findLiveWorkOccupant,
 	replayStartLiveWork,
@@ -28,7 +29,12 @@ import {
 } from "./frozen";
 import { clockWriterOf, kioskReceiptEvidence } from "./kiosk";
 import { assertLegacyAccepted } from "./legacy-command";
-import type { ClockInCommand, ClockInRefusal, ClockInResult } from "./types";
+import {
+	type ClockInCommand,
+	type ClockInRefusal,
+	type ClockInResult,
+	principalCausingUserId,
+} from "./types";
 
 type Employee = typeof employee.$inferSelect;
 
@@ -222,6 +228,12 @@ export async function startClockIn(
 		action: { instant: eventInstant, ...capture },
 		source: { ipAddress: plan.writer.ipAddress ?? null, deviceInfo: plan.writer.deviceInfo },
 		workLocationType: command.body.workLocationType,
+	});
+	// Work started in a submitted period sends it back to the employee (#805).
+	await sendBackChangedPeriodSubmissions(scope.db, {
+		...scopeIds,
+		causedByUserId: principalCausingUserId(command.principal),
+		work: [{ start: eventInstant, end: eventInstant }],
 	});
 	return { disposition: "executed", entry: entry as ClockInResult };
 }

@@ -2,6 +2,7 @@
 
 import {
 	IconAlertTriangle,
+	IconCalendarCheck,
 	IconCalendarOff,
 	IconClockEdit,
 	IconReceipt,
@@ -31,6 +32,7 @@ const TYPE_ICONS: Record<ApprovalInboxType, React.ComponentType<{ className?: st
 	time_entry: IconClockEdit,
 	travel_expense_claim: IconReceipt,
 	travel_expense_report: IconReceipt,
+	period_submission: IconCalendarCheck,
 };
 
 const RISK_BADGE_VARIANTS: Record<

@@ -7,8 +7,12 @@ Deciding approval requests and delivering their cards while each organization mo
 ### Rollout
 
 **Lifecycle mode**:
-The rollout stage of one approval kind in one organization: `legacy`, `shadow`, `ready`, `canonical` or `complete`. It only moves forward; an organization with no recorded stage is in `legacy`.
+The rollout stage of one approval kind in one organization: `legacy`, `shadow`, `ready`, `canonical` or `complete`. It only moves forward; an organization with no recorded stage is in the kind's starting stage (`legacy`, or `complete` for a **Canonical-only kind**).
 _Avoid_: rollout mode, cutover state
+
+**Canonical-only kind**:
+An approval kind decided by canonical workflows from its first day in every organization (ADR-0002, period submissions): its lifecycle mode starts and stays `complete`, it has no cutover, and no legacy request is ever written for it. Declared in `workflow/kind-start.ts`.
+_Avoid_: canonical-first, greenfield kind
 
 **Approval authority**:
 Which record decides an approval: **legacy** (legacy requests decide; lifecycle mode `legacy`, `shadow` or `ready`) or **canonical** (canonical workflows decide; `canonical` or `complete`).

@@ -52,6 +52,7 @@ function completeAdapters() {
 		travel_expense: adapter("travel_expense", false),
 		shift_request: adapter("shift_request", false),
 		compliance_exception: adapter("compliance_exception", false),
+		period_submission: adapter("period_submission", false),
 	};
 }
 

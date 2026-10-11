@@ -46,6 +46,8 @@ import {
 	onTimeCorrectionRejected,
 } from "@/lib/notifications/triggers";
 import type { CompletedWorkFollowUp } from "@/lib/time-tracking/close-active-work";
+import { workInterval } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
 	advanceCorrectionWorkRevision,
 	correctedDurationMinutes,
@@ -3129,6 +3131,24 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		)
 		.returning({ id: workPeriod.id });
 	requireSingleMutation(updatedPeriods, period.id);
+	// The approved correction changes the work: a submitted period it touches, before or
+	// after, goes back to the employee (#805).
+	await sendBackChangedPeriodSubmissions(input.dbService.db, {
+		organizationId: input.organizationId,
+		employeeId: period.employeeId,
+		causedByUserId: input.actorUserId,
+		work: [
+			workInterval(period.startTime, period.endTime),
+			...(correctedPeriod.isDeletion
+				? []
+				: [
+						{
+							start: correctedPeriod.clockIn.instant,
+							end: correctedPeriod.clockOut?.instant ?? null,
+						},
+					]),
+		],
+	});
 
 	if (canonical && hasEndpointCorrection) {
 		const updatedCanonical = await input.dbService.db

@@ -36,7 +36,8 @@ export function fitsDiscordMessage(card: ApprovalCardDraft): boolean {
 
 /**
  * Bound card layout: approve/reject carry only the binding handle; the review
- * link never sends an interaction, and no mention can notify anyone.
+ * link never sends an interaction, and no mention can notify anyone. A card
+ * whose rejection needs a reason links Reject to the review instead.
  */
 export function discordActionableCard(card: ApprovalActionableCard): DiscordMessagePayload {
 	return {
@@ -52,12 +53,14 @@ export function discordActionableCard(card: ApprovalActionableCard): DiscordMess
 						label: card.approveLabel,
 						custom_id: encodeBoundApprovalCustomId("approve", card.bindingId),
 					},
-					{
-						type: 2,
-						style: ButtonStyle.DANGER,
-						label: card.rejectLabel,
-						custom_id: encodeBoundApprovalCustomId("reject", card.bindingId),
-					},
+					card.rejectInReview
+						? { type: 2, style: ButtonStyle.LINK, label: card.rejectLabel, url: card.reviewUrl }
+						: {
+								type: 2,
+								style: ButtonStyle.DANGER,
+								label: card.rejectLabel,
+								custom_id: encodeBoundApprovalCustomId("reject", card.bindingId),
+							},
 					{ type: 2, style: ButtonStyle.LINK, label: card.reviewLabel, url: card.reviewUrl },
 				],
 			},

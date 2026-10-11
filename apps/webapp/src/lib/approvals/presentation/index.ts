@@ -33,6 +33,7 @@ import {
 	prepareBoundLegacyAbsenceCard,
 } from "./bound-card";
 import { readTimeRequestAuthority } from "../evidence/legacy-time";
+import { type CanonicalAssignmentReference, prepareCanonicalOnlyPresentation } from "./period-submission-card";
 import { approvalReviewUrl } from "./review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import {
@@ -67,7 +68,13 @@ export interface ApprovalReviewNotice {
  * Infrastructure failures propagate; lack of entitlement discloses nothing.
  */
 export async function prepareApprovalPresentation(input: {
-	approvalId: string;
+	/** The legacy request the card names; null for a canonical-only kind. */
+	approvalId: string | null;
+	/**
+	 * The exact assignment of a canonical-only kind (#1059), which has no legacy
+	 * request: its card is prepared from canonical rows and its submitted revision.
+	 */
+	canonicalAssignment?: CanonicalAssignmentReference;
 	recipientEmployeeId: string;
 	organizationId: string;
 	/** Only a provider passed here can ever receive an actionable card. */
@@ -91,11 +98,24 @@ export async function prepareApprovalPresentation(input: {
 	| ApprovalReviewSummary
 	| { status: "undisclosable" }
 > {
+	if (input.canonicalAssignment) {
+		return prepareCanonicalOnlyPresentation({
+			organizationId: input.organizationId,
+			recipientEmployeeId: input.recipientEmployeeId,
+			canonicalAssignment: input.canonicalAssignment,
+			...(input.provider ? { provider: input.provider } : {}),
+			...(input.fits ? { fits: input.fits } : {}),
+			...(input.summary ? { summary: input.summary } : {}),
+			actingForEmployeeId: input.actingForEmployeeId ?? null,
+		});
+	}
+	const approvalId = input.approvalId;
+	if (!approvalId) return { status: "undisclosable" };
 	const actingFor = input.actingForEmployeeId ?? null;
 	const approverEmployeeId = actingFor ?? input.recipientEmployeeId;
 	const request = await db.query.approvalRequest.findFirst({
 		where: and(
-			eq(approvalRequest.id, input.approvalId),
+			eq(approvalRequest.id, approvalId),
 			eq(approvalRequest.organizationId, input.organizationId),
 			eq(approvalRequest.approverId, approverEmployeeId),
 			eq(approvalRequest.status, "pending"),
@@ -332,7 +352,7 @@ export async function prepareApprovalPresentation(input: {
 	}
 	logger.warn(
 		{
-			approvalId: input.approvalId,
+			approvalId,
 			organizationId: input.organizationId,
 			condition: "unbound_review_required",
 		},

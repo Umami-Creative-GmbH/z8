@@ -1,6 +1,10 @@
 import { sql } from "drizzle-orm";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import { type ApprovalAuthorityScope, approvalRolloutLockScope } from "../authority";
+import {
+	type ApprovalAuthorityScope,
+	approvalRolloutLockScope,
+	isCanonicalOnlyApprovalKind,
+} from "../authority";
 import type {
 	ApprovalDbService,
 	ApprovalEventActorIdentity,
@@ -47,6 +51,12 @@ export function validateCutoverTransition(
 	if (!input.organizationId || !input.actor.kind || !input.evidence.reason) {
 		throw new Error(
 			"Cutover transition requires organization, actor, and evidence",
+		);
+	}
+	// A canonical-only kind starts and stays in `complete` (Approvals ADR-0002).
+	if (isCanonicalOnlyApprovalKind(input.workflowType)) {
+		throw new Error(
+			`Canonical-only approval kind ${input.workflowType} has no cutover (${input.from} -> ${input.to})`,
 		);
 	}
 	if (NEXT_MODE[input.from] !== input.to) {

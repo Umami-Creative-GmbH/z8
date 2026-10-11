@@ -29,6 +29,18 @@ const {
 
 vi.mock("@/lib/approvals/inbox/ordinary-canonical-read", () => ({
 	loadOrdinaryCanonicalApprovals: loadOrdinaryCanonicalApprovalsMock,
+	countOrdinaryCanonicalApprovals: vi.fn(async () => 0),
+}));
+
+// Period submissions (#1059) list nothing here; their read runs on PostgreSQL.
+vi.mock("@/lib/approvals/inbox/period-submission-read", () => ({
+	periodSubmissionInboxRead: {
+		type: "period_submission",
+		workflowTypes: ["period_submission"],
+		load: async () => Object.assign([], { totalCount: 0 }),
+		count: async () => 0,
+		decide: async () => {},
+	},
 }));
 
 vi.mock("@/db", () => ({

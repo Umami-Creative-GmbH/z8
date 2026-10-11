@@ -50,6 +50,12 @@ const {
 	},
 }));
 
+// An approved correction sends a submitted period back (#805); verified against PostgreSQL in
+// correction-lifecycle.integration.test.ts.
+vi.mock("@/lib/time-tracking/period-submissions/submission-send-back", () => ({
+	sendBackChangedPeriodSubmissions: async () => ({ withdrawn: [], outdated: [] }),
+}));
+
 // Mock-database harnesses run with time correction evidence capture inactive;
 // capture, holds and decision evidence are verified against PostgreSQL (#301).
 // Deputy decisions read and write the acting-for record; verified against

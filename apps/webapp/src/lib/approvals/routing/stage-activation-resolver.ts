@@ -398,6 +398,9 @@ export function createDatabaseStageActivationResolver(
 				context,
 				stage,
 				requesterMode: input.requesterMode ?? "new_submission",
+				// start-workflow writes `{ kind: "default" }` when no policy matched.
+				stageOrigin:
+					input.workflow.policySnapshot.kind === "default" ? "default_approver" : "policy",
 				directory: {
 					employees: decodeEmployees(directory.employees),
 					managerLinks: decodeManagerLinks(directory.managerLinks),

@@ -2350,6 +2350,44 @@ describe("approval transition engine atomic orchestration", () => {
 		expect(fixture.calls).not.toContain("loadSource");
 	});
 
+	it.each([
+		{
+			label: "cancel another kind",
+			snapshot: engineSnapshot(),
+			command: { type: "cancel" as const, reason: "period_submission_withdrawn_after_change" },
+		},
+		{
+			label: "approve a period submission",
+			snapshot: engineSnapshot({
+				workflowType: "period_submission",
+				sourceType: "period_submission",
+			}),
+			command: {
+				type: "approve" as const,
+				stageId: engineIds.stage,
+				assignmentId: engineIds.assignment,
+			},
+		},
+	])("forbids the period submission change principal to $label (#1062)", async ({
+		snapshot,
+		command,
+	}) => {
+		const fixture = engineFixture({
+			authorization: "system",
+			actor: { kind: "system", employeeId: null, userId: null },
+			snapshot,
+		});
+		await expect(
+			fixture.engine.execute(
+				engineRequest({
+					principal: { kind: "system", systemId: "period-submission-change" },
+					command,
+				}),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
+		expect(fixture.calls).not.toContain("loadSource");
+	});
+
 	it("rejects a system principal resolved as an employee actor", async () => {
 		const fixture = engineFixture({ authorization: "system" });
 		await expect(

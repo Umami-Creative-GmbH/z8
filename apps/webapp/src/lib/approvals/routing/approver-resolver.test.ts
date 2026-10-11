@@ -313,6 +313,86 @@ describe("resolveApprovalStageReviewers", () => {
 		});
 	});
 
+	describe("a period submission routed to its own requester (#1059)", () => {
+		const periodContext = (): ApprovalRoutingContext => ({
+			...context(),
+			workflowType: "period_submission",
+			source: { type: "period_submission", id: "submission-1" },
+		});
+		const requesterIsAdmin = () =>
+			directory({
+				employees: directory().employees.map((employee) =>
+					employee.id === "requester" ? { ...employee, role: "admin" } : employee,
+				),
+			});
+
+		it("never auto-approves: the other candidates of the stage decide", () => {
+			expect(
+				resolveApprovalStageReviewers({
+					context: periodContext(),
+					stage: stage({ approverType: "org_admin" }),
+					directory: requesterIsAdmin(),
+				}),
+			).toEqual({ activationMode: "human", approverEmployeeIds: ["admin-a", "admin-b"] });
+		});
+
+		it("is left to the organization's admins when the requester is their own default approver", () => {
+			expect(
+				resolveApprovalStageReviewers({
+					context: periodContext(),
+					stage: stage({ approverType: "specific_employee", approverEmployeeId: "requester" }),
+					stageOrigin: "default_approver",
+					directory: directory(),
+				}),
+			).toEqual({ activationMode: "human", approverEmployeeIds: ["admin-a", "admin-b"] });
+		});
+
+		it("honours a policy stage's fail fallback when the requester is its only candidate", () => {
+			expectActivationError(
+				() =>
+					resolveApprovalStageReviewers({
+						context: periodContext(),
+						stage: stage({ approverType: "specific_employee", approverEmployeeId: "requester" }),
+						directory: directory(),
+					}),
+				"no_eligible_reviewer",
+				"No eligible reviewer.",
+			);
+		});
+
+		it("uses a policy stage's own fallback when the requester is its only candidate", () => {
+			expect(
+				resolveApprovalStageReviewers({
+					context: periodContext(),
+					stage: stage({
+						approverType: "specific_employee",
+						approverEmployeeId: "requester",
+						fallbackBehavior: "organization_admin",
+					}),
+					directory: requesterIsAdmin(),
+				}),
+			).toEqual({ activationMode: "human", approverEmployeeIds: ["admin-a", "admin-b"] });
+		});
+
+		it("is refused when nobody but the requester could decide", () => {
+			expectActivationError(
+				() =>
+					resolveApprovalStageReviewers({
+						context: periodContext(),
+						stage: stage({ approverType: "specific_employee", approverEmployeeId: "requester" }),
+						stageOrigin: "default_approver",
+						directory: directory({
+							employees: directory().employees.filter(
+								(employee) => employee.role !== "admin",
+							),
+						}),
+					}),
+				"no_eligible_reviewer",
+				"No eligible reviewer.",
+			);
+		});
+	});
+
 	it("uses every sorted normal manager when default_manager follows an ineligible primary", () => {
 		expect(
 			resolveApprovalStageReviewers({

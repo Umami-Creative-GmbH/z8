@@ -15,7 +15,9 @@ import {
 	travelExpenseReport,
 	travelExpenseReportItem,
 } from "@/db/schema";
+import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
+import { loadPeriodSubmissionGaps } from "@/lib/time-tracking/period-submissions/submission-gaps-store";
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
 export type PayrollReadinessSeverity = "info" | "warning" | "blocker";
@@ -227,6 +229,7 @@ export async function getPayrollReadiness(
 		travelExpenseClaims,
 		pendingTravelExpenseReports,
 		clockRepairLookup,
+		periodSubmissionLookup,
 	] = await Promise.all([
 		db.query.timeRecord.findMany({
 			where: and(
@@ -340,6 +343,19 @@ export async function getPayrollReadiness(
 			(repairs) => ({ available: true as const, repairs }),
 			() => ({ available: false as const, repairs: [] }),
 		),
+		// Missing or unapproved period submissions (#1065) for the range's logical dates; a
+		// warning only, and no check at all while no submission cadence is in effect.
+		loadPeriodSubmissionGaps(db, {
+			organizationId,
+			window: {
+				from: parsePlainDate(selectedStartDate),
+				to: parsePlainDate(selectedEndDate),
+			},
+			now: instantFromDate(now.toJSDate()),
+		}).then(
+			(report) => ({ available: true as const, ...report }),
+			() => ({ available: false as const, collected: true, gaps: [] }),
+		),
 	]);
 
 	const wageMappings =
@@ -376,6 +392,60 @@ export async function getPayrollReadiness(
 		})),
 	];
 	const travelExpenseCount = travelExpenseClaims.length + pendingTravelExpenseReports.length;
+	// A period still running in the range is not missing: it cannot be submitted yet.
+	const periodSubmissionGaps = periodSubmissionLookup.gaps.filter((gap) => gap.status !== "running");
+	const runningPeriods = periodSubmissionLookup.gaps.filter((gap) => gap.status === "running");
+	const affectedBy = (gaps: typeof periodSubmissionLookup.gaps) =>
+		uniqueAffectedEmployees(
+			gaps.map((gap) => ({
+				employeeId: gap.employeeId,
+				employee: activeEmployeesById.get(gap.employeeId) ?? {
+					id: gap.employeeId,
+					user: { name: gap.employeeName },
+				},
+			})),
+		);
+	const periodSubmissionCheck: PayrollReadinessCheck[] = periodSubmissionLookup.collected
+		? [
+				buildCheck({
+					id: "period-submissions",
+					group: "time",
+					title: "Period submissions",
+					titleKey: "settings.payrollReadiness.checks.periodSubmissions.title",
+					description:
+						"Expected period submissions in this range that are missing, rejected, sent back after a change or still awaiting a decision. They do not block payroll export.",
+					descriptionKey: "settings.payrollReadiness.checks.periodSubmissions.description",
+					status: !periodSubmissionLookup.available
+						? "unavailable"
+						: periodSubmissionGaps.length > 0
+							? "warning"
+							: "pass",
+					severity: periodSubmissionGaps.length > 0 ? "warning" : "info",
+					required: false,
+					count: periodSubmissionGaps.length,
+					affectedEmployees: affectedBy(periodSubmissionGaps),
+				}),
+				...(runningPeriods.length > 0
+					? [
+							buildCheck({
+								id: "period-submissions-running",
+								group: "time",
+								title: "Period submissions still running",
+								titleKey: "settings.payrollReadiness.checks.periodSubmissionsRunning.title",
+								description:
+									"Periods in this range that have not ended yet, so they cannot be submitted. Their time can still change after the export.",
+								descriptionKey:
+									"settings.payrollReadiness.checks.periodSubmissionsRunning.description",
+								status: "warning",
+								severity: "info",
+								required: false,
+								count: runningPeriods.length,
+								affectedEmployees: affectedBy(runningPeriods),
+							}),
+						]
+					: []),
+			]
+		: [];
 
 	const checks: PayrollReadinessCheck[] = [
 		buildCheck({
@@ -428,6 +498,7 @@ export async function getPayrollReadiness(
 			actionHref: "/time-tracking",
 			affectedEmployees: uniqueAffectedEmployees(staleActiveWorkRecords),
 		}),
+		...periodSubmissionCheck,
 		buildCheck({
 			id: "no-time-without-absence",
 			group: "time",

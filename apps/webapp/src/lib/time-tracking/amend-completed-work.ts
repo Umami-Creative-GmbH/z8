@@ -79,6 +79,7 @@ import {
 import { canonicalJson } from "./canonical-json";
 import { monthClosedRefusalOf } from "./closed-months/refusal";
 import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import {
@@ -938,13 +939,17 @@ export async function amendCompletedWork(
 	// Work and attribution touching a closed month are frozen, before or after
 	// the change; notes alone are not (#762).
 	if (Object.values(changes).some(Boolean)) {
-		await assertWorkOpen(tx, {
+		const intervals = [
+			{ start: instantFromDate(period.startTime), end: instantFromDate(period.endTime) },
+			{ start: resulting.startAt, end: resulting.endAt },
+		];
+		await assertWorkOpen(tx, { organizationId, employeeId, intervals });
+		// The same change sends a submitted period back to the employee (#1062).
+		await sendBackChangedPeriodSubmissions(tx, {
 			organizationId,
 			employeeId,
-			intervals: [
-				{ start: instantFromDate(period.startTime), end: instantFromDate(period.endTime) },
-				{ start: resulting.startAt, end: resulting.endAt },
-			],
+			causedByUserId: input.actorUserId,
+			work: intervals,
 		});
 	}
 
@@ -1328,6 +1333,16 @@ async function amendActiveAttribution(
 		)
 		.returning({ id: workPeriod.id });
 	if (updated.length !== 1) throw staleSource();
+	// Live work's attribution covers it from its start on: submitted periods it touches go
+	// back to the employee (#805).
+	if (Object.values(changes).some(Boolean)) {
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId,
+			employeeId,
+			causedByUserId: input.actorUserId,
+			work: [{ start: instantFromDate(period.startTime), end: null }],
+		});
+	}
 
 	const [clockIn] = await tx
 		.select({ utcOffsetMinutes: timeEntry.utcOffsetMinutes })

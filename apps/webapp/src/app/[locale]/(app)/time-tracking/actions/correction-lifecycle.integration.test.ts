@@ -1287,6 +1287,50 @@ describe("approval-based correction lifecycles on PostgreSQL", () => {
 		expect(rows).toHaveLength(0);
 	});
 
+	it("sends the submitted week back when a legacy correction is approved (#805)", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await setAdmission("inactive");
+		await admin.query(
+			`insert into period_submission_cadence_change
+			 (id, organization_id, cadence, week_start_day, changed_at, changed_by)
+			 values ($1, $2, 'weekly', 'monday', '2026-07-01T00:00:00Z', $3)`,
+			[randomUUID(), ids.organization, ids.adminUser],
+		);
+		const { submitPeriodSubmission } = await import(
+			"@/lib/time-tracking/period-submissions/submission-service"
+		);
+		const submitted = await submitPeriodSubmission(
+			{ organizationId: ids.organization, userId: ids.requesterUser, periodStartDate: "2026-07-20" },
+			{ database: db, clock: { nowInstant: () => at("2026-07-26T12:00:00Z") } },
+		);
+		if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+
+		// The correction is requested after submitting; only its approval changes the work.
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		const { rows: pendingRows } = await admin.query<{ status: string }>(
+			"select status from period_submission where id = $1",
+			[submitted.submissionId],
+		);
+		expect(pendingRows).toEqual([{ status: "pending" }]);
+		await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+
+		const { rows } = await admin.query<{ status: string; closed_cause: string | null }>(
+			"select status, closed_cause from period_submission where id = $1",
+			[submitted.submissionId],
+		);
+		expect(rows).toEqual([{ status: "withdrawn", closed_cause: "change" }]);
+		const { rows: audit } = await admin.query<{ metadata: string }>(
+			`select metadata from audit_log
+			 where organization_id = $1 and entity_id = $2 and action = 'period_submission.withdrawn'`,
+			[ids.organization, submitted.submissionId],
+		);
+		expect(audit.map((row) => JSON.parse(row.metadata))).toEqual([
+			expect.objectContaining({ automatic: true, causedByUserId: ids.managerUser }),
+		]);
+	});
+
 	describe("requester cancellation of a direct legacy correction (#463)", () => {
 		/** The observation the work period is bound to, with its holders and closing event. */
 		async function observation(workPeriodId: string) {

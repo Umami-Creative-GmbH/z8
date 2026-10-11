@@ -1,5 +1,6 @@
 import type { db as rootDatabase } from "@/db";
 import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { runPeriodSubmissionRemindersWith } from "@/lib/jobs/period-submission-reminders";
 import { createLogger } from "@/lib/logger";
 import type { BreakDueRegulation } from "@/lib/time-tracking/break-due";
 import {
@@ -99,6 +100,12 @@ export async function runClockingRemindersWith(
 		}
 		if (organizations.length < ORGANIZATION_PAGE) break;
 		afterOrganization = organizations[organizations.length - 1].organizationId;
+	}
+	// Period submission reminders (#1064) visit the organizations collecting period submissions,
+	// whatever their clocking reminder settings.
+	const periods = await runPeriodSubmissionRemindersWith(deps);
+	for (const key of Object.keys(result) as (keyof ClockingRemindersResult)[]) {
+		result[key] += periods[key];
 	}
 	logger.info(result, "Clocking reminders completed");
 	return result;

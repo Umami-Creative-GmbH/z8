@@ -14,6 +14,7 @@ import {
 	replayOrAmendCompletedWork,
 } from "./amend-completed-work";
 import { assertWorkOpen, workInterval } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
@@ -273,6 +274,7 @@ async function changeLegacyWorkPeriodProject(
 		taskId?: string | null;
 		billable?: boolean;
 		authorizedProjectId: string | null;
+		actorUserId: string;
 	},
 ): Promise<void> {
 	const [period] = await tx
@@ -363,6 +365,19 @@ async function changeLegacyWorkPeriodProject(
 				isNull(workPeriod.deletedAt),
 			),
 		);
+	// Changed attribution sends a submitted period back to the employee (#1062).
+	if (
+		projectId !== period.projectId ||
+		taskId !== period.taskId ||
+		isBillable !== period.isBillable
+	) {
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			causedByUserId: input.actorUserId,
+			work: [workInterval(period.startTime, period.endTime)],
+		});
+	}
 	if (!period.canonicalRecordId) return;
 	await tx
 		.delete(timeRecordAllocation)
