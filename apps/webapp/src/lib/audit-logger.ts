@@ -158,6 +158,14 @@ export enum AuditAction {
 	CLOSED_MONTH_CLOSED = "closed_month.closed",
 	CLOSED_MONTH_REOPENED = "closed_month.reopened",
 	CLOSED_MONTH_SETTINGS_CHANGED = "closed_month.settings_changed",
+	// Period submissions (#805), written in the transaction of the change
+	PERIOD_SUBMISSION_SUBMITTED = "period_submission.submitted",
+	PERIOD_SUBMISSION_APPROVED = "period_submission.approved",
+	PERIOD_SUBMISSION_REJECTED = "period_submission.rejected",
+	/** By the employee (#1060) or automatically after a change (#1062): see `closedCause`. */
+	PERIOD_SUBMISSION_WITHDRAWN = "period_submission.withdrawn",
+	/** An approval that went out of date after a change (#1062). */
+	PERIOD_SUBMISSION_OUTDATED = "period_submission.outdated",
 	// Personnel file ZIP download (#871)
 	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",

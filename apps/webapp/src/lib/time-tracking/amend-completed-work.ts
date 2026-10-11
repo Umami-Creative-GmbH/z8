@@ -79,6 +79,7 @@ import {
 import { canonicalJson } from "./canonical-json";
 import { monthClosedRefusalOf } from "./closed-months/refusal";
 import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import {
@@ -938,14 +939,13 @@ export async function amendCompletedWork(
 	// Work and attribution touching a closed month are frozen, before or after
 	// the change; notes alone are not (#762).
 	if (Object.values(changes).some(Boolean)) {
-		await assertWorkOpen(tx, {
-			organizationId,
-			employeeId,
-			intervals: [
-				{ start: instantFromDate(period.startTime), end: instantFromDate(period.endTime) },
-				{ start: resulting.startAt, end: resulting.endAt },
-			],
-		});
+		const intervals = [
+			{ start: instantFromDate(period.startTime), end: instantFromDate(period.endTime) },
+			{ start: resulting.startAt, end: resulting.endAt },
+		];
+		await assertWorkOpen(tx, { organizationId, employeeId, intervals });
+		// The same change sends a submitted period back to the employee (#1062).
+		await sendBackChangedPeriodSubmissions(tx, { organizationId, employeeId, work: intervals });
 	}
 
 	// Correction entries: exact predecessor from the append collaborator.

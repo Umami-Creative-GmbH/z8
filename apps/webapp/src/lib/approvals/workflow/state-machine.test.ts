@@ -80,6 +80,7 @@ function createAuthorizationRegistry() {
 			"compliance_exception",
 			"compliance_exception",
 		),
+		period_submission: adapter("period_submission", "period_submission"),
 	});
 }
 

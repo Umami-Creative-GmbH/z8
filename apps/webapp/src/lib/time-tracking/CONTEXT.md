@@ -119,6 +119,10 @@ _Avoid_: Timesheet period, pay period
 An organization's choice of week or calendar month as its submission period, with the day its weeks start for a weekly cadence. Organizations without one do not collect period submissions.
 _Avoid_: Submission frequency, timesheet interval
 
+**Sent back after a change**:
+A submitted period whose work, work attribution or absences changed afterwards, by any writer, even in part; notes do not count. A pending period submission is withdrawn automatically (its approval is cancelled); an approved one goes out of date, and its approval stays as history. Either way the period awaits submission again, and the employee is told once.
+_Avoid_: Rejected (an approver's decision), reopened (a closed month's term), invalidated
+
 ### Clocking
 
 **Clocking**:
@@ -204,6 +208,10 @@ _Avoid_: Still-clocked-in reminder, overtime alert
 **Break-due reminder**:
 A clocking reminder, shortly before it happens, that the employee's live work is about to break their work policy's break rules for lack of a break.
 _Avoid_: Break overrun reminder, end-break reminder
+
+**Period submission reminder**:
+A reminder to the employee to submit an expected submission period that has ended without a pending or approved period submission: once when the period ends in their timezone, and once more after the organization's reminder delay. It is delivered like a clocking reminder, at most once each, and never submits anything.
+_Avoid_: Timesheet reminder, submission deadline
 
 ### Kiosks
 

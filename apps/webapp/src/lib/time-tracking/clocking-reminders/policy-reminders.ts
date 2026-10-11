@@ -17,7 +17,10 @@ export interface PolicyDayFacts {
 	requiredMinutes(day: PlainDate): Promise<number>;
 }
 
-type PolicyDayReminderType = Exclude<ClockingReminderType, "break_due_reminder">;
+type PolicyDayReminderType = Exclude<
+	ClockingReminderType,
+	"break_due_reminder" | "period_submission_reminder" | "period_submission_sent_back"
+>;
 
 /**
  * The reminders due now that the employee's work policy judges: a missed clock-in on an

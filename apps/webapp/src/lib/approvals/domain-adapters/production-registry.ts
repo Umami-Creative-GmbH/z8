@@ -1,4 +1,6 @@
 import { createApprovalDomainAdapterRegistry } from "./registry";
+import { createPeriodSubmissionApprovalAdapter } from "./period-submission.adapter";
+import type { PeriodSubmissionApprovalSource } from "./period-submission-contract";
 import type { ApprovalDomainAdapter } from "./types";
 import type { OrdinaryWorkPeriodApprovalSource } from "./work-period-contract";
 
@@ -41,7 +43,16 @@ export function createProductionApprovalDomainAdapterRegistry(input: {
 	timeCorrection: ApprovalDomainAdapter<unknown>;
 	manualTimeSubmission: ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>;
 	policyClockOut: ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>;
+	/** Canonical-only and self-contained (#1059); defaults to the production adapter. */
+	periodSubmission?: ApprovalDomainAdapter<PeriodSubmissionApprovalSource>;
 }) {
+	const periodSubmission = input.periodSubmission ?? createPeriodSubmissionApprovalAdapter();
+	if (
+		periodSubmission.workflowType !== "period_submission" ||
+		periodSubmission.sourceType !== "period_submission"
+	) {
+		throw new Error("Adapter registration mismatch for period_submission/period_submission");
+	}
 	if (
 		input.absence.workflowType !== "absence" ||
 		input.absence.sourceType !== "absence_entry"
@@ -86,5 +97,6 @@ export function createProductionApprovalDomainAdapterRegistry(input: {
 			"compliance_exception",
 			"compliance_exception",
 		),
+		period_submission: periodSubmission,
 	});
 }

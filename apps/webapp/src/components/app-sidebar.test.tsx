@@ -2,6 +2,7 @@
 
 import {
 	IconBeach,
+	IconCalendarCheck,
 	IconGavel,
 	IconHelp,
 	IconMessageCircle,
@@ -661,6 +662,20 @@ describe("app sidebar compliance navigation", () => {
 		expect(navTeamSpy).toHaveBeenLastCalledWith(
 			expect.arrayContaining([
 				expect.objectContaining({ title: "Scheduling", url: "/scheduling" }),
+			]),
+		);
+	});
+
+	it("renders Period Submissions in the Team section for managers (#1063)", () => {
+		render(<AppSidebar employeeRole="manager" />);
+
+		expect(navTeamSpy).toHaveBeenLastCalledWith(
+			expect.arrayContaining([
+				expect.objectContaining({
+					title: "Period Submissions",
+					url: "/team/period-submissions",
+					icon: IconCalendarCheck,
+				}),
 			]),
 		);
 	});

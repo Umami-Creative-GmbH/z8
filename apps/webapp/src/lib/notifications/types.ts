@@ -97,6 +97,10 @@ export const NOTIFICATION_TYPES = [
 	// A balance adjustment on the employee's own work balance (#996)
 	"work_balance_adjustment_recorded",
 	"work_balance_adjustment_cancelled",
+	// Reminders to the employee to submit an ended submission period (#1064)
+	"period_submission_reminder",
+	// A submitted period sent back to the employee after a change (#1062)
+	"period_submission_sent_back",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -123,6 +127,8 @@ const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"missed_clock_in_reminder",
 	"forgotten_clock_out_reminder",
 	"break_due_reminder",
+	"period_submission_reminder",
+	"period_submission_sent_back",
 ]);
 
 /** Whether a channel is on for a type the user stored no preference for. */

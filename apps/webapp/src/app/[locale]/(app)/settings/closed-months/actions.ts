@@ -16,6 +16,10 @@ import {
 	loadClosedMonthSettings,
 	saveClosedMonthSettings,
 } from "@/lib/time-tracking/closed-months/automatic-close";
+import {
+	type CloseMonthWarning,
+	monthCloseWarnings,
+} from "@/lib/time-tracking/closed-months/close-warnings";
 import { notifyReopening } from "@/lib/time-tracking/closed-months/notifications";
 import { canCloseMonths, canReopenMonths } from "@/lib/time-tracking/closed-months/permissions";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -199,6 +203,31 @@ export async function closeMonthAction(input: {
 			);
 			if (result.kind === "closed") revalidatePath(SETTINGS_PATH);
 			return result;
+		}),
+	);
+}
+
+/**
+ * What a close of the month for the scope would warn about without refusing it (#1065):
+ * missing or unapproved period submissions. Needs the close permission.
+ */
+export async function getMonthCloseWarningsAction(input: {
+	month: string;
+	scope: CloseMonthScope;
+}): Promise<ServerActionResult<CloseMonthWarning[]>> {
+	return runServerActionSafe(
+		Effect.gen(function* () {
+			const actor = yield* closedMonthsActor("close");
+			const month = yield* parseMonth(input.month);
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query("closedMonths.closeWarnings", () =>
+				monthCloseWarnings(dbService.db, {
+					organizationId: actor.organizationId,
+					month,
+					scope: input.scope,
+					now: systemClock.nowInstant(),
+				}),
+			);
 		}),
 	);
 }

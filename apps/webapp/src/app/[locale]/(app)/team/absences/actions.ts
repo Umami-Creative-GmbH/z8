@@ -76,6 +76,7 @@ import type {
 } from "./manager-absence-types";
 import { monthClosedActionResult } from "@/lib/time-tracking/closed-months/refusal-message";
 import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 const logger = createLogger("ManagerAbsenceActions");
 const ACCESS_ERROR = "Employee not found or not accessible";
@@ -508,6 +509,12 @@ export async function recordAbsenceForEmployee(
 					approvedAt: currentTimestamp(),
 				})
 				.returning({ id: absenceEntry.id });
+			// A recorded absence in a submitted period sends it back to the employee (#1062).
+			await sendBackChangedPeriodSubmissions(tx, {
+				organizationId: actor.organizationId,
+				employeeId: target.id,
+				days: [{ startDate: normalizedInput.startDate, endDate: normalizedInput.endDate }],
+			});
 			if (deputyEmployeeId) {
 				await recordDeputyChange(audit, tx, {
 					organizationId: actor.organizationId,

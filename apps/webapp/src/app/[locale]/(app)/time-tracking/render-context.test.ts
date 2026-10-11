@@ -50,12 +50,14 @@ vi.mock("@/tolgee/server", () => ({ getTranslate: vi.fn() }));
 vi.mock("./read-queries", () => ({ readActiveWorkPeriod: vi.fn() }));
 vi.mock("./region-data", () => ({
 	readHistoryRegion: vi.fn(),
+	readPeriodsRegion: vi.fn(),
 	readSummaryRegion: vi.fn(),
 }));
 vi.mock("./workday-timeline-data", () => ({ getWorkdayTimelineData: vi.fn() }));
 vi.mock("./region-fallbacks", () => ({
 	ClockLoading: () => null,
 	HistoryLoading: () => null,
+	PeriodsLoading: () => null,
 	RegionLoadError: () => null,
 	SummaryLoading: () => null,
 	TimelineLoading: () => null,
@@ -71,6 +73,9 @@ vi.mock("@/components/time-tracking/personal-workday-timeline", () => ({
 }));
 vi.mock("@/components/time-tracking/time-entries-table", () => ({
 	TimeEntriesTable: () => null,
+}));
+vi.mock("@/components/time-tracking/period-submissions-card", () => ({
+	PeriodSubmissionsCard: () => null,
 }));
 vi.mock("@/components/time-tracking/weekly-summary-cards", () => ({
 	WeeklySummaryCards: () => null,
