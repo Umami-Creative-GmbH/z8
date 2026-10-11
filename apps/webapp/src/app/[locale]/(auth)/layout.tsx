@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import Script from "next/script";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { AuthBackgroundImage } from "@/components/auth-background-image";
-import { selectRandomAuthBackgroundImage } from "@/components/auth-background-images";
+import { AuthBackground } from "@/components/auth-background";
 import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -43,9 +42,12 @@ export default function AuthLayout({
 }) {
 	return (
 		<RouteTranslationBoundary route="/sign-in" params={params}>
-			<Suspense fallback={<AuthLayoutLoading />}>
-				<AuthLayoutContent>{children}</AuthLayoutContent>
-			</Suspense>
+			<div className="relative min-h-svh overflow-x-hidden bg-background">
+				<AuthBackground />
+				<Suspense fallback={<AuthLayoutLoading />}>
+					<AuthLayoutContent>{children}</AuthLayoutContent>
+				</Suspense>
+			</div>
 		</RouteTranslationBoundary>
 	);
 }
@@ -58,11 +60,13 @@ function AuthLayoutLoading() {
 				labelKey: "common.loadingRegions.authentication",
 				labelDefault: "Loading authentication",
 			}}
-			className="relative min-h-svh overflow-x-hidden bg-background"
+			className="relative z-10 min-h-svh overflow-x-hidden"
 			data-testid="auth-layout-loading"
 			role="status"
 		>
-			<section className={`flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}>
+			<section
+				className={`flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}
+			>
 				<div
 					aria-hidden="true"
 					className="flex h-9 items-center justify-end gap-2"
@@ -98,7 +102,7 @@ export async function AuthLayoutContent({
 }: {
 	children: React.ReactNode;
 }) {
-	// Host, domain, consent, Turnstile, and random auth data must remain request-specific.
+	// Host, domain, consent, and Turnstile data must remain request-specific.
 	await connection();
 	const headersList = await headers();
 	const host = headersList.get("host");
@@ -163,7 +167,6 @@ export async function AuthLayoutContent({
 		parseCookieConsentScript(cookieConsentScript);
 	const { content: cookieConsentScriptContent, ...cookieConsentScriptProps } =
 		parsedCookieConsentScript ?? {};
-	const backgroundImage = selectRandomAuthBackgroundImage();
 
 	return (
 		<DomainAuthProvider domainContext={domainContext}>
@@ -183,24 +186,23 @@ export async function AuthLayoutContent({
 					{cookieConsentScriptContent}
 				</Script>
 			) : null}
-			<div className="relative min-h-svh overflow-x-hidden bg-background">
-				<AuthBackgroundImage initialImage={backgroundImage} />
-				<section className={`relative z-10 flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}>
-					<div className="auth-shell-controls auth-shell-controls-readable flex items-center justify-end gap-2 drop-shadow-sm [&_[data-slot=dropdown-menu-trigger]]:!border-white/20 [&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85 [&_[data-slot=dropdown-menu-trigger]]:!text-white [&_[data-slot=dropdown-menu-trigger]]:!shadow-lg [&_[data-slot=dropdown-menu-trigger]]:!shadow-slate-950/20 [&_[data-slot=dropdown-menu-trigger]]:!backdrop-blur-xl [&_[data-slot=dropdown-menu-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]]:!border-white/20 [&_[data-slot=select-trigger]]:!bg-slate-950/85 [&_[data-slot=select-trigger]]:!text-white [&_[data-slot=select-trigger]]:!shadow-lg [&_[data-slot=select-trigger]]:!shadow-slate-950/20 [&_[data-slot=select-trigger]]:!backdrop-blur-xl [&_[data-slot=select-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]_svg]:!text-white">
-						<ThemeToggle />
-						<FontSizeToggle />
-						<LanguageSwitcher />
-					</div>
+			<section
+				className={`relative z-10 flex min-h-svh flex-col px-4 sm:px-8 lg:px-10 ${pageSafeAreaPaddingClassName}`}
+			>
+				<div className="auth-shell-controls auth-shell-controls-readable flex items-center justify-end gap-2 drop-shadow-sm [&_[data-slot=dropdown-menu-trigger]]:!border-white/20 [&_[data-slot=dropdown-menu-trigger]]:!bg-slate-950/85 [&_[data-slot=dropdown-menu-trigger]]:!text-white [&_[data-slot=dropdown-menu-trigger]]:!shadow-lg [&_[data-slot=dropdown-menu-trigger]]:!shadow-slate-950/20 [&_[data-slot=dropdown-menu-trigger]]:!backdrop-blur-xl [&_[data-slot=dropdown-menu-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]]:!border-white/20 [&_[data-slot=select-trigger]]:!bg-slate-950/85 [&_[data-slot=select-trigger]]:!text-white [&_[data-slot=select-trigger]]:!shadow-lg [&_[data-slot=select-trigger]]:!shadow-slate-950/20 [&_[data-slot=select-trigger]]:!backdrop-blur-xl [&_[data-slot=select-trigger]:hover]:!bg-slate-950/95 [&_[data-slot=select-trigger]_svg]:!text-white">
+					<ThemeToggle />
+					<FontSizeToggle />
+					<LanguageSwitcher />
+				</div>
 
-					<main className="flex flex-1 items-center justify-center py-8 sm:py-10">
-						<div className="w-full max-w-3xl">{children}</div>
-					</main>
+				<main className="flex flex-1 items-center justify-center py-8 sm:py-10">
+					<div className="w-full max-w-3xl">{children}</div>
+				</main>
 
-					<div className="pt-2 pb-2 drop-shadow-sm">
-						<InfoFooter />
-					</div>
-				</section>
-			</div>
+				<div className="pt-2 pb-2 drop-shadow-sm">
+					<InfoFooter />
+				</div>
+			</section>
 		</DomainAuthProvider>
 	);
 }

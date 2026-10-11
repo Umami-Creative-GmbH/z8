@@ -89,7 +89,7 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		fallbackComponent: "AuthLayoutLoading",
 		reasonCategory: "trusted-request-auth",
 		reason:
-			"Host, domain, consent, Turnstile, and random auth data must remain request-specific.",
+			"Host, domain, consent, and Turnstile data must remain request-specific.",
 		operation: "const headersList = await headers();",
 	},
 	{
@@ -678,7 +678,7 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(auth)/layout.tsx",
 		fallbackComponent: "AuthLayoutLoading",
 		contentComponent: "AuthLayoutContent",
-		fallbackFrameClass: "relative min-h-svh overflow-x-hidden bg-background",
+		fallbackFrameClass: "relative z-10 min-h-svh overflow-x-hidden",
 		fallbackAriaLabel: "Loading authentication",
 		requiresSynchronousDefaultExport: true,
 	},
