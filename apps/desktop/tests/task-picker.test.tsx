@@ -4,7 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { ClosingAttributionFields } from "../src/components/ClosingAttributionFields";
 import { useClosingAttribution } from "../src/hooks/useClosingAttribution";
 import { LocaleProvider } from "../src/lib/i18n";
-import type { ClosingAttribution, DesktopContext } from "../src/types";
+import type {
+	ClosingAttribution,
+	DesktopContext,
+	ProjectTask,
+} from "../src/types";
 
 afterEach(cleanup);
 
@@ -46,6 +50,19 @@ function context(overrides: Partial<DesktopContext> = {}): DesktopContext {
 			workLocationType: "office",
 		},
 		...overrides,
+	};
+}
+
+/** Running work on Alpha; `task` is left out to mimic an older server. */
+function workOnAlpha(
+	reported: { task?: ProjectTask | null } = {},
+): DesktopContext["liveWork"] {
+	return {
+		id: "period-1",
+		projectId: ALPHA,
+		workCategoryId: null,
+		workLocationType: "office",
+		...reported,
 	};
 }
 
@@ -142,13 +159,7 @@ describe("task picker in the closing attribution", () => {
 	it("names the running task while the project is kept (#930)", async () => {
 		const view = setup(
 			context({
-				liveWork: {
-					id: "period-1",
-					projectId: ALPHA,
-					workCategoryId: null,
-					workLocationType: "office",
-					task: { id: BUILD, name: "Build" },
-				},
+				liveWork: workOnAlpha({ task: { id: BUILD, name: "Build" } }),
 			}),
 		);
 		const task = view.task();
@@ -172,17 +183,7 @@ describe("task picker in the closing attribution", () => {
 	});
 
 	it("says there is no task to keep when the running work has none (#930)", async () => {
-		const view = setup(
-			context({
-				liveWork: {
-					id: "period-1",
-					projectId: ALPHA,
-					workCategoryId: null,
-					workLocationType: "office",
-					task: null,
-				},
-			}),
-		);
+		const view = setup(context({ liveWork: workOnAlpha({ task: null }) }));
 		expect(optionLabels(view.task()!)).toEqual(["No task", "Build", "design"]);
 		expect(await view.clockOut()).toStrictEqual({
 			project: { kind: "preserve" },
@@ -191,17 +192,11 @@ describe("task picker in the closing attribution", () => {
 	});
 
 	it("still names a running task that was marked done (#930)", async () => {
-		const view = setup(
-			context({
-				liveWork: {
-					id: "period-1",
-					projectId: ALPHA,
-					workCategoryId: null,
-					workLocationType: "office",
-					task: { id: "77777777-7777-4777-8777-777777777777", name: "Kickoff" },
-				},
-			}),
-		);
+		const done = {
+			id: "77777777-7777-4777-8777-777777777777",
+			name: "Kickoff",
+		};
+		const view = setup(context({ liveWork: workOnAlpha({ task: done }) }));
 		expect(optionLabels(view.task()!)[0]).toBe("Keep current task: Kickoff");
 		expect(await view.clockOut()).toStrictEqual({
 			project: { kind: "preserve" },
@@ -210,16 +205,7 @@ describe("task picker in the closing attribution", () => {
 	});
 
 	it("keeps the generic label when an older server does not report the running task", async () => {
-		const view = setup(
-			context({
-				liveWork: {
-					id: "period-1",
-					projectId: ALPHA,
-					workCategoryId: null,
-					workLocationType: "office",
-				},
-			}),
-		);
+		const view = setup(context({ liveWork: workOnAlpha() }));
 		expect(optionLabels(view.task()!)).toEqual([
 			"Keep current task",
 			"No task",
@@ -238,12 +224,7 @@ describe("task picker in the closing attribution", () => {
 		// An older webapp: projects without `tasks`, and it refuses a `task` key.
 		const legacy = context({
 			projects: [{ id: ALPHA, name: "Alpha" }],
-			liveWork: {
-				id: "period-1",
-				projectId: ALPHA,
-				workCategoryId: null,
-				workLocationType: "office",
-			},
+			liveWork: workOnAlpha(),
 		});
 		const view = setup(legacy);
 		expect(view.task()).toBeNull();
@@ -274,13 +255,7 @@ describe("task picker in the closing attribution", () => {
 			<LocaleProvider language="de">
 				<Closing
 					context={context({
-						liveWork: {
-							id: "period-1",
-							projectId: ALPHA,
-							workCategoryId: null,
-							workLocationType: "office",
-							task: { id: BUILD, name: "Build" },
-						},
+						liveWork: workOnAlpha({ task: { id: BUILD, name: "Build" } }),
 					})}
 					onClockOut={vi.fn()}
 				/>
