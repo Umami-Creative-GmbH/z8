@@ -1,9 +1,9 @@
-import { attributionAvailability } from "../lib/attribution-availability";
-import { useI18n } from "../lib/i18n";
 import {
 	offeredTasks,
 	type useClosingAttribution,
 } from "../hooks/useClosingAttribution";
+import { attributionAvailability } from "../lib/attribution-availability";
+import { useI18n } from "../lib/i18n";
 import type { DesktopContext } from "../types";
 export function ClosingAttributionFields({
 	form,
@@ -66,7 +66,10 @@ export function ClosingAttributionFields({
 			<form.Subscribe selector={(state) => state.values.project}>
 				{(project) => {
 					const { tasks, keepsProject } = offeredTasks(context, project);
-					if (!tasks.length) return null;
+					const currentTask = keepsProject
+						? context.liveWork?.currentTask
+						: null;
+					if (!tasks.length && !currentTask) return null;
 					return (
 						<form.Field name="task">
 							{(field) => (
@@ -79,7 +82,9 @@ export function ClosingAttributionFields({
 										onChange={(event) => field.handleChange(event.target.value)}
 									>
 										<option value="">
-											{t(keepsProject ? "Keep current task" : "No task")}
+											{currentTask
+												? `${t("Keep current task:")} ${currentTask.name}`
+												: t("No task")}
 										</option>
 										{keepsProject && (
 											<option value="clear">{t("No task")}</option>

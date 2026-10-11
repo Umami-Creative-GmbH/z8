@@ -6,6 +6,7 @@ import type {
 	DesktopContext,
 	ProjectTask,
 } from "../types";
+
 function intent(value: string): AttributionIntent {
 	if (value === "preserve") return { kind: "preserve" };
 	if (value === "clear") return { kind: "clear" };
@@ -57,7 +58,7 @@ export function useClosingAttribution(context?: DesktopContext) {
 			const chosen =
 				(task === "clear" &&
 					offered.keepsProject &&
-					offered.tasks.length > 0) ||
+					(offered.tasks.length > 0 || !!current?.liveWork?.currentTask)) ||
 				offered.tasks.some((candidate) => candidate.id === task);
 			return {
 				project: available.project ? intent(project) : { kind: "preserve" },
