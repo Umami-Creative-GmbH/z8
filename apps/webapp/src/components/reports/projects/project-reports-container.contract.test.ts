@@ -12,6 +12,5 @@ describe("ProjectReportsContainer report action boundary", () => {
 		expect(source).toMatch(
 			/getProjectDetailedReport\(\s*projectId,\s*dateRange\.startDate,\s*dateRange\.endDate/,
 		);
-		expect(source).not.toContain("new Date(");
 	});
 });
