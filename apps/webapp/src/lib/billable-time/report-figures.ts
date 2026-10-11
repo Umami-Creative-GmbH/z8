@@ -132,6 +132,41 @@ export interface BillableMarginFigures extends BillableFiguresBase {
 
 export type BillableFigures = BillableRevenueFigures | BillableMarginFigures;
 
+/**
+ * Figures of a shared snapshot (#806): billable and non-billable hours, and
+ * revenue only when the link shares it. Cost, margin, unpriced work, pending
+ * reviews, work without customer and invoicing are internal and have no field.
+ */
+export interface SharedBillableFigures {
+	access: "shared";
+	currency: string;
+	billableMinutes: number;
+	billableHours: number;
+	nonBillableMinutes: number;
+	nonBillableHours: number;
+	/** Two-decimal amount in `currency`; absent when the link shares hours only. */
+	revenue?: string;
+}
+
+/** Any figures a report row can carry: the viewer's own, or a shared snapshot's. */
+export type ReportBillableFigures = BillableFigures | SharedBillableFigures;
+
+/** The share-safe part of a viewer's figures, picked field by field. */
+export function sharedBillableFigures(
+	figures: BillableFigures,
+	options: { revenue: boolean },
+): SharedBillableFigures {
+	return {
+		access: "shared",
+		currency: figures.currency,
+		billableMinutes: figures.billableMinutes,
+		billableHours: figures.billableHours,
+		nonBillableMinutes: figures.nonBillableMinutes,
+		nonBillableHours: figures.nonBillableHours,
+		...(options.revenue ? { revenue: figures.revenue } : {}),
+	};
+}
+
 export interface BillableFiguresOptions {
 	access: BillableFiguresAccess;
 	currency: string;
