@@ -15,6 +15,8 @@ export const CANONICAL_ESCALATION_WORKFLOW_TYPES = [
 	"manual_time_submission",
 	"policy_clock_out",
 	"time_correction",
+	// Canonical-only (#1059): its inbox lists each assignment directly (spec #805).
+	"period_submission",
 ] as const satisfies readonly ApprovalWorkflowType[];
 
 export type CanonicalEscalationWorkflowType = (typeof CANONICAL_ESCALATION_WORKFLOW_TYPES)[number];
@@ -98,16 +100,19 @@ export function isUntransferableEscalationRoute(value: unknown): boolean {
 
 /**
  * Why a canonical assignment's replacement would have no working inbox and
- * decision path, if so. Every admitted kind is discovered and decided on the
- * web through its canonical-to-legacy representative, which names exactly
- * one approver: without that mirror (`complete`) or beside pending parallel
- * assignments the transfer is held, not attempted.
+ * decision path, if so. A kind with a legacy history is discovered and decided
+ * on the web through its canonical-to-legacy representative, which names
+ * exactly one approver: without that mirror (`complete`) or beside pending
+ * parallel assignments the transfer is held, not attempted. A canonical-only
+ * kind's inbox read lists every pending assignment itself, so its replacement
+ * always has a path.
  */
 export function unsupportedCanonicalReplacementRoute(input: {
 	workflowType: CanonicalEscalationWorkflowType;
 	compatibilityWriting: boolean;
 	pendingSiblingCount: number;
 }): string | null {
+	if (input.workflowType === "period_submission") return null;
 	if (!input.compatibilityWriting) {
 		return input.workflowType === "absence"
 			? "absence_inbox_requires_compatibility_mirror"
