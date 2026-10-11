@@ -9,6 +9,7 @@ import {
 	submitPeriod,
 	withdrawPeriod,
 } from "@/app/[locale]/(app)/time-tracking/actions/period-submissions";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +17,12 @@ import type { EmployeePeriodViewRow } from "@/lib/time-tracking/period-submissio
 import type { PeriodSubmissionBlocker } from "@/lib/time-tracking/period-submissions/submission-blockers";
 import type { PeriodSubmissionRefusal } from "@/lib/time-tracking/period-submissions/submission-service";
 import type { PeriodSubmissionViewStatus } from "@/lib/time-tracking/period-submissions/submission-status";
-import { formatPlainDate, formatPlainDateRange } from "@/lib/travel-expenses/format";
+import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	formatInstant,
+	formatPlainDate,
+	formatPlainDateRange,
+} from "@/lib/datetime/temporal-format";
 import { useRouter } from "@/navigation";
 
 interface Props {
@@ -42,6 +48,7 @@ const STATUS_VARIANTS: Record<
 export function PeriodSubmissionsCard({ periods }: Props) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const timeFormat = useTimeFormat();
 	const { refresh } = useRouter();
 	const [submitting, setSubmitting] = useState<string | null>(null);
 	const [openPeriod, setOpenPeriod] = useState<{
@@ -65,10 +72,12 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 		}
 	};
 
-	const at = (instant: string, timeZone: string) =>
-		new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
-			new Date(instant),
-		);
+	// A blocker's work time in the period's own zone, never the viewer's.
+	const at = (instant: string, timezone: string) =>
+		formatInstant(parseInstant(instant), { locale, timezone, timeFormat }, "dateTimeMedium");
+	const day = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
+	const days = (start: string, end: string) =>
+		formatPlainDateRange(parsePlainDate(start), parsePlainDate(end), locale, "dateMedium");
 
 	const blockerMessage = (blocker: PeriodSubmissionBlocker) => {
 		switch (blocker.kind) {
@@ -94,12 +103,7 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 				return t(
 					"timeTracking.periodSubmissions.blocker.absenceRequest",
 					"An absence request for {dates} is undecided.",
-					{
-						dates:
-							blocker.startDate === blocker.endDate
-								? formatPlainDate(locale, blocker.startDate)
-								: formatPlainDateRange(locale, blocker.startDate, blocker.endDate),
-					},
+					{ dates: days(blocker.startDate, blocker.endDate) },
 				);
 		}
 	};
@@ -212,9 +216,7 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 						>
 							<div className="flex flex-col gap-1">
 								<span className="font-medium tabular-nums">
-									{period.startDate === period.endDate
-										? formatPlainDate(locale, period.startDate)
-										: formatPlainDateRange(locale, period.startDate, period.endDate)}
+									{days(period.startDate, period.endDate)}
 								</span>
 								{period.status === "rejected" && period.rejectionReason ? (
 									<span className="text-sm text-muted-foreground">
@@ -228,7 +230,7 @@ export function PeriodSubmissionsCard({ periods }: Props) {
 									period.status === "sent_back_after_change") ? (
 									<span className="text-sm text-muted-foreground">
 										{t("timeTracking.periodSubmissions.opensOn", "You can submit from {date}.", {
-											date: formatPlainDate(locale, period.opensOn),
+											date: day(period.opensOn),
 										})}
 									</span>
 								) : null}

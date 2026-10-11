@@ -27,7 +27,8 @@ import type {
 	OverviewStatusCounts,
 } from "@/lib/time-tracking/period-submissions/overview";
 import type { PeriodSubmissionViewStatus } from "@/lib/time-tracking/period-submissions/submission-status";
-import { formatPlainDate, formatPlainDateRange } from "@/lib/travel-expenses/format";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import { cn } from "@/lib/utils";
 import { Link, useRouter } from "@/navigation";
 
@@ -97,7 +98,7 @@ export function PeriodSubmissionOverview({
 	const statusLabel = usePeriodSubmissionStatusLabel();
 	const pickerId = useId();
 	const range = (start: string, end: string) =>
-		start === end ? formatPlainDate(locale, start) : formatPlainDateRange(locale, start, end);
+		formatPlainDateRange(parsePlainDate(start), parsePlainDate(end), locale, "dateMedium");
 	const owing = rows.filter((row) => row.highlighted).length;
 
 	function selectPeriod(startDate: string) {
