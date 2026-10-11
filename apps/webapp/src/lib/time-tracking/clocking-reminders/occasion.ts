@@ -7,6 +7,7 @@ export type ClockingReminderType = Extract<
 	| "forgotten_clock_out_reminder"
 	| "break_due_reminder"
 	| "period_submission_reminder"
+	| "period_submission_sent_back"
 >;
 
 /**
@@ -45,7 +46,9 @@ export type ClockingReminderOccasionSource =
 			employeeId: string;
 			endDate: PlainDate;
 			stage: SubmissionPeriodReminderStage;
-	  };
+	  }
+	/** One period submission sent back to the employee after a change (#1062). */
+	| { kind: "period_submission"; submissionId: string };
 
 /** The organization-unique key that dedupes one reminder occasion. */
 export function clockingReminderOccasionKey(
@@ -61,6 +64,8 @@ export function clockingReminderOccasionKey(
 			return `${type}:live_work:${source.workPeriodId}:${breakRuleKey(source.rule)}`;
 		case "submission_period":
 			return `${type}:submission_period:${source.employeeId}:${source.endDate.toString()}:${source.stage}`;
+		case "period_submission":
+			return `${type}:period_submission:${source.submissionId}`;
 	}
 }
 
@@ -87,6 +92,15 @@ export interface DueClockingReminder {
 		startDate: PlainDate;
 		endDate: PlainDate;
 		stage: SubmissionPeriodReminderStage;
+	};
+	/**
+	 * The submitted period a change sent back (#1062): a pending submission was withdrawn, or an
+	 * approved one went out of date.
+	 */
+	sentBackPeriod?: {
+		startDate: PlainDate;
+		endDate: PlainDate;
+		outcome: "withdrawn" | "outdated";
 	};
 }
 

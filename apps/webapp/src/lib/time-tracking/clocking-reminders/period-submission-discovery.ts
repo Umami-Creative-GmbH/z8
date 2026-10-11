@@ -1,8 +1,10 @@
-import { and, asc, eq, gt, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { periodSubmission } from "@/db/schema";
+import { employee, periodSubmission, userSettings } from "@/db/schema";
 import { periodSubmissionCadenceChange } from "@/db/schema/period-submission";
+import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { LIVE_PERIOD_SUBMISSION_STATUSES } from "@/lib/time-tracking/period-submissions/submission-status";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 
@@ -72,4 +74,88 @@ export async function loadSubmittedPeriodEndDates(
 		submitted.set(row.employeeId, dates);
 	}
 	return submitted;
+}
+
+/** A submitted period a change sent back (#1062), with the employee to tell. */
+export interface SentBackPeriodSubmission {
+	submissionId: string;
+	employeeId: string;
+	userId: string;
+	/** The employee's own timezone, otherwise the organization's. */
+	timezone: string;
+	startDate: string;
+	endDate: string;
+	outcome: "withdrawn" | "outdated";
+	closedAt: Instant;
+}
+
+/**
+ * The organization's submissions sent back after a change in `[since, now]` whose employee still
+ * has access and has not submitted the period again, oldest first, in one query.
+ */
+export async function listSentBackPeriodSubmissions(
+	input: {
+		organization: PeriodSubmissionReminderOrganization;
+		since: Instant;
+		now: Instant;
+		limit: number;
+	},
+	database: Database,
+): Promise<SentBackPeriodSubmission[]> {
+	const rows = await database
+		.select({
+			submissionId: periodSubmission.id,
+			employeeId: periodSubmission.employeeId,
+			userId: employee.userId,
+			userTimezone: userSettings.timezone,
+			startDate: periodSubmission.startDate,
+			endDate: periodSubmission.endDate,
+			status: periodSubmission.status,
+			closedAt: periodSubmission.closedAt,
+		})
+		.from(periodSubmission)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, periodSubmission.employeeId),
+				eq(employee.organizationId, periodSubmission.organizationId),
+			),
+		)
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
+		.where(
+			and(
+				eq(periodSubmission.organizationId, input.organization.organizationId),
+				eq(periodSubmission.closedCause, "change"),
+				inArray(periodSubmission.status, ["withdrawn", "outdated"]),
+				gte(periodSubmission.closedAt, dateFromInstant(input.since)),
+				lte(periodSubmission.closedAt, dateFromInstant(input.now)),
+				employeeHasOrganizationAccess(input.now),
+				// Table-qualified: inside the subquery a bare column would bind to its own table.
+				sql`not exists (
+					select 1 from period_submission resubmitted
+					where resubmitted.organization_id = "period_submission"."organization_id"
+						and resubmitted.employee_id = "period_submission"."employee_id"
+						and resubmitted.start_date = "period_submission"."start_date"
+						and resubmitted.status in ('pending', 'approved')
+				)`,
+			),
+		)
+		.orderBy(asc(periodSubmission.closedAt), asc(periodSubmission.id))
+		.limit(input.limit);
+	return rows.flatMap((row) =>
+		row.closedAt && (row.status === "withdrawn" || row.status === "outdated")
+			? [
+					{
+						submissionId: row.submissionId,
+						employeeId: row.employeeId,
+						userId: row.userId,
+						timezone: resolveEffectiveTimezone(row.userTimezone, input.organization.timezone),
+						startDate: row.startDate,
+						endDate: row.endDate,
+						outcome: row.status,
+						closedAt: instantFromDate(row.closedAt),
+					},
+				]
+			: [],
+	);
 }

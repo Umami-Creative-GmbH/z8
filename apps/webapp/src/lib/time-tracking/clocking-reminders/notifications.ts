@@ -38,6 +38,14 @@ const reminderCopy = {
 		messageDefault:
 			"Your period {startDate} – {endDate} has ended. Review your time and submit it for approval.",
 	},
+	// A pending submission withdrawn after a change (#1062); an outdated approval has its own copy.
+	period_submission_sent_back: {
+		titleKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.title",
+		titleDefault: "Submit your time again",
+		messageKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.message",
+		messageDefault:
+			"Your time for {startDate} – {endDate} changed after you submitted it, so the submission was withdrawn. Review your time and submit it again.",
+	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
 
 /** The second reminder of a period still unsubmitted after the organization's delay (#1064). */
@@ -47,6 +55,15 @@ const periodSubmissionSecondReminderCopy = {
 	messageKey: "common:notifications.content.periodSubmissionSecondReminder.message",
 	messageDefault:
 		"Your period {startDate} – {endDate} is still not submitted. Review your time and submit it for approval.",
+} as const satisfies ReminderCopy;
+
+/** An approved period whose approval went out of date after a change (#1062). */
+const periodSubmissionOutdatedCopy = {
+	titleKey: "common:notifications.content.periodSubmissionOutdated.title",
+	titleDefault: "Your approved time is out of date",
+	messageKey: "common:notifications.content.periodSubmissionOutdated.message",
+	messageDefault:
+		"Your time for {startDate} – {endDate} changed after it was approved. Review your time and submit it again.",
 } as const satisfies ReminderCopy;
 
 /**
@@ -86,10 +103,15 @@ export function buildClockingReminderNotification(input: {
 	const { reminder, timezone, locale } = input;
 	const params: Record<string, string> = { timezone };
 	let copy: ReminderCopy = reminderCopy[reminder.type];
-	if (reminder.type === "period_submission_reminder") {
+	const formatDate = (date: PlainDate) => date.toLocaleString(locale, { dateStyle: "medium" });
+	if (reminder.type === "period_submission_sent_back") {
+		const period = reminder.sentBackPeriod;
+		if (period?.outcome === "outdated") copy = periodSubmissionOutdatedCopy;
+		params.startDate = formatDate(period?.startDate ?? reminder.day);
+		params.endDate = formatDate(period?.endDate ?? reminder.day);
+	} else if (reminder.type === "period_submission_reminder") {
 		const period = reminder.submissionPeriod;
 		if (period?.stage === "after_delay") copy = periodSubmissionSecondReminderCopy;
-		const formatDate = (date: PlainDate) => date.toLocaleString(locale, { dateStyle: "medium" });
 		params.startDate = formatDate(period?.startDate ?? reminder.day);
 		params.endDate = formatDate(period?.endDate ?? reminder.day);
 	} else if (reminder.shift) {

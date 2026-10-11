@@ -106,3 +106,59 @@ describe("period submission reminder notifications", () => {
 		});
 	});
 });
+
+describe("period submission sent back notifications (#1062)", () => {
+	function build(outcome: "withdrawn" | "outdated") {
+		return buildClockingReminderNotification({
+			reminder: {
+				type: "period_submission_sent_back",
+				occasionKey: "period_submission_sent_back:period_submission:submission-1",
+				day: parsePlainDate("2026-03-08"),
+				expectedAt: at("2026-03-10T09:00:00Z"),
+				shift: null,
+				sentBackPeriod: {
+					startDate: parsePlainDate("2026-03-02"),
+					endDate: parsePlainDate("2026-03-08"),
+					outcome,
+				},
+			},
+			organizationId: "org-1",
+			userId: "user-1",
+			timezone: "Europe/Berlin",
+			locale: "en",
+		});
+	}
+
+	it("tells the employee to submit again after their pending submission was withdrawn", () => {
+		expect(build("withdrawn")).toMatchObject({
+			type: "period_submission_sent_back",
+			title: "Submit your time again",
+			message:
+				"Your time for Mar 2, 2026 – Mar 8, 2026 changed after you submitted it, so the submission was withdrawn. Review your time and submit it again.",
+			actionUrl: "/time-tracking",
+			idempotencyKey:
+				"clocking-reminder:period_submission_sent_back:period_submission:submission-1",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.title",
+					messageKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.message",
+					params: { startDate: "Mar 2, 2026", endDate: "Mar 8, 2026" },
+				},
+			},
+		});
+	});
+
+	it("tells the employee their approval is out of date after a change to an approved period", () => {
+		expect(build("outdated")).toMatchObject({
+			title: "Your approved time is out of date",
+			message:
+				"Your time for Mar 2, 2026 – Mar 8, 2026 changed after it was approved. Review your time and submit it again.",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.periodSubmissionOutdated.title",
+					messageKey: "common:notifications.content.periodSubmissionOutdated.message",
+				},
+			},
+		});
+	});
+});

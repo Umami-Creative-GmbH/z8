@@ -179,6 +179,7 @@ const NOTIFICATION_CATEGORIES = [
 			"forgotten_clock_out_reminder",
 			"break_due_reminder",
 			"period_submission_reminder",
+			"period_submission_sent_back",
 		] as NotificationType[],
 	},
 	{
@@ -418,6 +419,11 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.period_submission_reminder",
 					"Submit your time",
+				);
+			case "period_submission_sent_back":
+				return t(
+					"common:notifications.preferences.types.period_submission_sent_back",
+					"Time sent back after a change",
 				);
 			case "work_balance_adjustment_recorded":
 				return t(

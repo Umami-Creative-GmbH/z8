@@ -1,5 +1,5 @@
 import type { db as rootDatabase } from "@/db";
-import { type Clock, plainDateAt } from "@/lib/datetime/temporal-core";
+import { type Clock, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
 	type ClockingReminderTransport,
@@ -10,9 +10,13 @@ import {
 	listClockingReminderEmployees,
 	loadRecordedOccasionKeys,
 } from "@/lib/time-tracking/clocking-reminders/discovery";
-import type { DueClockingReminder } from "@/lib/time-tracking/clocking-reminders/occasion";
+import {
+	clockingReminderOccasionKey,
+	type DueClockingReminder,
+} from "@/lib/time-tracking/clocking-reminders/occasion";
 import {
 	listPeriodSubmissionReminderOrganizations,
+	listSentBackPeriodSubmissions,
 	loadSubmittedPeriodEndDates,
 	type PeriodSubmissionReminderOrganization,
 } from "@/lib/time-tracking/clocking-reminders/period-submission-discovery";
@@ -31,6 +35,10 @@ import {
 const logger = createLogger("PeriodSubmissionReminders");
 const ORGANIZATION_PAGE = 100;
 const EMPLOYEE_PAGE = 200;
+/** Sent-back notices per organization and run; the rest follow on the next run. */
+const SENT_BACK_PAGE = 500;
+/** A sent-back notice is due this long after the change; kept under the 7-day occasion retention. */
+export const PERIOD_SUBMISSION_SENT_BACK_DUE_DAYS = 3;
 
 export interface PeriodSubmissionRemindersResult {
 	organizations: number;
@@ -76,6 +84,7 @@ export async function runPeriodSubmissionRemindersWith(
 		for (const organization of organizations) {
 			result.organizations++;
 			try {
+				await notifySentBackPeriods(organization, deps, result);
 				await remindOrganization(organization, deps, result);
 			} catch (error) {
 				result.failed++;
@@ -89,6 +98,87 @@ export async function runPeriodSubmissionRemindersWith(
 		afterOrganization = organizations[organizations.length - 1].organizationId;
 	}
 	return result;
+}
+
+/**
+ * Tells employees once that a change sent their submitted period back (#1062): a pending
+ * submission was withdrawn, or an approval went out of date. The change's transaction only closes
+ * the submission; this run delivers through the clocking reminder delivery, which claims each
+ * notice once. A notice not delivered within its due window is dropped, which keeps it inside the
+ * occasion retention, so it is never sent twice.
+ */
+async function notifySentBackPeriods(
+	organization: PeriodSubmissionReminderOrganization,
+	deps: PeriodSubmissionRemindersDeps,
+	result: PeriodSubmissionRemindersResult,
+) {
+	const now = deps.clock.nowInstant();
+	const sentBack = await listSentBackPeriodSubmissions(
+		{
+			organization,
+			since: now.subtract({ hours: PERIOD_SUBMISSION_SENT_BACK_DUE_DAYS * 24 }),
+			now,
+			limit: SENT_BACK_PAGE,
+		},
+		deps.database,
+	);
+	const notices = sentBack.map((submission) => ({
+		submission,
+		reminder: {
+			type: "period_submission_sent_back" as const,
+			occasionKey: clockingReminderOccasionKey("period_submission_sent_back", {
+				kind: "period_submission",
+				submissionId: submission.submissionId,
+			}),
+			day: parsePlainDate(submission.endDate),
+			expectedAt: submission.closedAt,
+			shift: null,
+			sentBackPeriod: {
+				startDate: parsePlainDate(submission.startDate),
+				endDate: parsePlainDate(submission.endDate),
+				outcome: submission.outcome,
+			},
+		} satisfies DueClockingReminder,
+	}));
+	const recorded = await loadRecordedOccasionKeys(
+		{
+			organizationId: organization.organizationId,
+			occasionKeys: notices.map((notice) => notice.reminder.occasionKey),
+		},
+		deps.database,
+	);
+	// One notice at a time, in order, as the reminders below.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
+	for (const { submission, reminder } of notices) {
+		if (recorded.has(reminder.occasionKey)) continue;
+		try {
+			const outcome = await sendClockingReminder(
+				{
+					reminder,
+					recipient: {
+						organizationId: organization.organizationId,
+						employeeId: submission.employeeId,
+						userId: submission.userId,
+						timezone: submission.timezone,
+					},
+					now,
+				},
+				{ database: deps.database, transport: deps.transport },
+			);
+			if (outcome === "sent") result.sent++;
+			else result.alreadySent++;
+		} catch (error) {
+			result.failed++;
+			logger.error(
+				{
+					err: error,
+					organizationId: organization.organizationId,
+					submissionId: submission.submissionId,
+				},
+				"Period submission sent-back notice failed",
+			);
+		}
+	}
 }
 
 async function remindOrganization(

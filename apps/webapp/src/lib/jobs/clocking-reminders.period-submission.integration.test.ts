@@ -236,4 +236,116 @@ describe("period submission reminders on PostgreSQL", () => {
 		await runThroughTheWeek();
 		expect(await reminders(person)).toEqual([]);
 	});
+
+	describe("sent back after a change (#1062)", () => {
+		async function sentBack(
+			person: SeededEmployee,
+			organizationId: string,
+			outcome: "withdrawn" | "outdated",
+			closedAt: string,
+		) {
+			const row = await insertPendingPeriodSubmission(fixture.db, {
+				organizationId,
+				employeeId: person.employeeId,
+				cadence: "weekly",
+				weekStartDay: "monday",
+				timezone: "Europe/Berlin",
+				startDate: "2026-03-09",
+				endDate: "2026-03-15",
+				cadenceStartDate: "2026-03-09",
+				cadenceEndDate: "2026-03-15",
+				rangeStart: at("2026-03-08T23:00:00Z"),
+				rangeEnd: at(WEEK_ENDS),
+				submittedBy: person.userId,
+				submittedAt: at("2026-03-15T12:00:00Z"),
+			});
+			await fixture.pool.query(
+				`update period_submission
+				 set status = $2, closed_at = $3, closed_cause = 'change',
+				     decided_at = case when $2 = 'outdated' then '2026-03-16T09:00:00Z'::timestamptz end
+				 where id = $1`,
+				[row.id, outcome, closedAt],
+			);
+			return row.id;
+		}
+
+		async function notices(person: SeededEmployee) {
+			const { rows } = await fixture.pool.query<{ metadata: string; message: string }>(
+				`select metadata, message from notification
+				 where user_id = $1 and type = 'period_submission_sent_back' order by created_at`,
+				[person.userId],
+			);
+			return rows.map((row) => ({
+				titleKey: JSON.parse(row.metadata).i18n.titleKey as string,
+				message: row.message,
+			}));
+		}
+
+		it("tells the employee once that a pending submission was withdrawn or an approval went out of date", async () => {
+			const organizationId = await organization();
+			const withdrawn = await fixture.seedEmployee({ organizationId });
+			const outdated = await fixture.seedEmployee({ organizationId });
+			await sentBack(withdrawn, organizationId, "withdrawn", "2026-03-17T09:00:00Z");
+			const outdatedId = await sentBack(
+				outdated,
+				organizationId,
+				"outdated",
+				"2026-03-17T10:00:00Z",
+			);
+
+			await Promise.all([run("2026-03-17T10:05:00Z"), run("2026-03-17T10:05:00Z")]);
+			await run("2026-03-18T08:00:00Z");
+
+			expect(await notices(withdrawn)).toEqual([
+				{
+					titleKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.title",
+					message:
+						"Your time for Mar 9, 2026 – Mar 15, 2026 changed after you submitted it, so the submission was withdrawn. Review your time and submit it again.",
+				},
+			]);
+			expect(await notices(outdated)).toEqual([
+				{
+					titleKey: "common:notifications.content.periodSubmissionOutdated.title",
+					message:
+						"Your time for Mar 9, 2026 – Mar 15, 2026 changed after it was approved. Review your time and submit it again.",
+				},
+			]);
+			const { rows } = await fixture.pool.query<{ occasion_key: string }>(
+				`select occasion_key from clocking_reminder_occasion
+				 where employee_id = $1 and type = 'period_submission_sent_back'`,
+				[outdated.employeeId],
+			);
+			expect(rows).toEqual([
+				{ occasion_key: `period_submission_sent_back:period_submission:${outdatedId}` },
+			]);
+		});
+
+		it("does not tell an employee who already submitted again, or once the notice is overdue", async () => {
+			const organizationId = await organization();
+			const resubmitted = await fixture.seedEmployee({ organizationId });
+			const overdue = await fixture.seedEmployee({ organizationId });
+			await sentBack(resubmitted, organizationId, "withdrawn", "2026-03-17T09:00:00Z");
+			await insertPendingPeriodSubmission(fixture.db, {
+				organizationId,
+				employeeId: resubmitted.employeeId,
+				cadence: "weekly",
+				weekStartDay: "monday",
+				timezone: "Europe/Berlin",
+				startDate: "2026-03-09",
+				endDate: "2026-03-15",
+				cadenceStartDate: "2026-03-09",
+				cadenceEndDate: "2026-03-15",
+				rangeStart: at("2026-03-08T23:00:00Z"),
+				rangeEnd: at(WEEK_ENDS),
+				submittedBy: resubmitted.userId,
+				submittedAt: at("2026-03-17T09:30:00Z"),
+			});
+			await sentBack(overdue, organizationId, "outdated", "2026-03-17T09:00:00Z");
+
+			await run("2026-03-20T09:01:00Z");
+
+			expect(await notices(resubmitted)).toEqual([]);
+			expect(await notices(overdue)).toEqual([]);
+		});
+	});
 });
