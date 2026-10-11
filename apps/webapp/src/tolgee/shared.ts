@@ -4,7 +4,22 @@ import { DevTools, Tolgee } from "@tolgee/web";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
-export const ALL_LANGUAGES = ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"];
+// Adding a language: extend this list, LANGUAGE_CONFIG, the calendar locale maps and the
+// Tolgee push list; `language-coverage.test.ts` names any that are missing.
+export const ALL_LANGUAGES = [
+	"en",
+	"de",
+	"fr",
+	"es",
+	"it",
+	"pt",
+	"el",
+	"pl",
+	"tr",
+	"gsw",
+	"no",
+	"sv",
+];
 
 export const DEFAULT_LANGUAGE = "en";
 

@@ -82,13 +82,27 @@ async function rebaseLocaleRedirect(
 	response.headers.set("location", publicUrl.toString());
 }
 
+// Only supported locales count as a route prefix; three-letter tags such as `gsw` included.
+function splitRouteLocale(pathname: string): {
+	locale: string | undefined;
+	pathWithoutLocale: string;
+} {
+	const locale = routing.locales.find(
+		(candidate) => pathname === `/${candidate}` || pathname.startsWith(`/${candidate}/`),
+	);
+	return {
+		locale,
+		pathWithoutLocale: locale ? pathname.slice(locale.length + 1) || "/" : pathname,
+	};
+}
+
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Extract locale and path without locale for consistent handling
-	const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?:\/|$)/, "/");
-	const locale =
-		pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
+	const routeLocale = splitRouteLocale(pathname);
+	const { pathWithoutLocale } = routeLocale;
+	const locale = routeLocale.locale ?? DEFAULT_LANGUAGE;
 	const isApiRoute = pathname.startsWith("/api/");
 	// API handlers perform authentication and authorization without page middleware.
 	if (isApiRoute) {
@@ -218,8 +232,6 @@ export async function proxy(request: NextRequest) {
 	if (!hasSessionCookie) {
 		// Not authenticated - redirect to sign-in if trying to access protected route
 		if (!isPublicRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const signInUrl = await publicRedirectUrl(`/${locale}/sign-in`, request);
 			signInUrl.searchParams.set("callbackUrl", pathWithoutLocale);
 			return NextResponse.redirect(signInUrl);
@@ -227,8 +239,6 @@ export async function proxy(request: NextRequest) {
 	} else {
 		// Authenticated - redirect away from auth routes
 		if (isAuthRoute) {
-			const locale =
-				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
 			const dashboardUrl = await publicRedirectUrl(`/${locale}/`, request);
 			return NextResponse.redirect(dashboardUrl);
 		}

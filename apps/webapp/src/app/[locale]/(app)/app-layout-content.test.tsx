@@ -241,16 +241,19 @@ beforeEach(() => {
 });
 
 describe("authenticated app layout gates", () => {
-	it("redirects a supported saved locale before checking billing", async () => {
-		mockState.findUserSettings.mockResolvedValue({ locale: "de" });
-		const { errors } = await serverRender("/en/time-tracking");
-		expect(mockState.redirect).toHaveBeenCalledWith("/de/time-tracking");
-		expect(errors).toEqual([
-			expect.objectContaining({ message: "TEST_REDIRECT:/de/time-tracking" }),
-		]);
-		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
-		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith("organization-1", "user-1");
-	});
+	it.each(["de", "no", "sv"])(
+		"redirects a supported saved locale %s before checking billing",
+		async (locale) => {
+			mockState.findUserSettings.mockResolvedValue({ locale });
+			const { errors } = await serverRender("/en/time-tracking");
+			expect(mockState.redirect).toHaveBeenCalledWith(`/${locale}/time-tracking`);
+			expect(errors).toEqual([
+				expect.objectContaining({ message: `TEST_REDIRECT:/${locale}/time-tracking` }),
+			]);
+			expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
+			expect(mockState.getOrganizationSettings).toHaveBeenCalledWith("organization-1", "user-1");
+		},
+	);
 
 	it.each([null, "", "invalid", "en"])("does not redirect saved locale %j", async (locale) => {
 		mockState.findUserSettings.mockResolvedValue({ locale });
