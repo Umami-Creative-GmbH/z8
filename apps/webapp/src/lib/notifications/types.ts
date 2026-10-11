@@ -101,6 +101,8 @@ export const NOTIFICATION_TYPES = [
 	"period_submission_reminder",
 	// A submitted period sent back to the employee after a change (#1062)
 	"period_submission_sent_back",
+	// A submitted period approved or rejected, to the employee (#805)
+	"period_submission_decided",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -129,6 +131,7 @@ const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"break_due_reminder",
 	"period_submission_reminder",
 	"period_submission_sent_back",
+	"period_submission_decided",
 ]);
 
 /** Whether a channel is on for a type the user stored no preference for. */

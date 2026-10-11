@@ -77,6 +77,7 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_submitted",
 			"time_correction_approved",
 			"time_correction_rejected",
+			"period_submission_decided",
 			"automatic_clock_out",
 			"month_closed_automatically",
 			"month_close_blocked",
@@ -424,6 +425,11 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.period_submission_sent_back",
 					"Time sent back after a change",
+				);
+			case "period_submission_decided":
+				return t(
+					"common:notifications.preferences.types.period_submission_decided",
+					"Submitted time approved or rejected",
 				);
 			case "work_balance_adjustment_recorded":
 				return t(

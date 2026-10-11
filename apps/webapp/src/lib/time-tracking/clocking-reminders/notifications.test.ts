@@ -107,6 +107,55 @@ describe("period submission reminder notifications", () => {
 	});
 });
 
+describe("period submission decided notifications (#805)", () => {
+	function build(outcome: "approved" | "rejected", reason: string | null = null) {
+		return buildClockingReminderNotification({
+			reminder: {
+				type: "period_submission_decided",
+				occasionKey: "period_submission_decided:period_submission:submission-1",
+				day: parsePlainDate("2026-03-08"),
+				expectedAt: at("2026-03-09T09:00:00Z"),
+				shift: null,
+				decidedPeriod: {
+					startDate: parsePlainDate("2026-03-02"),
+					endDate: parsePlainDate("2026-03-08"),
+					outcome,
+					reason,
+				},
+			},
+			organizationId: "org-1",
+			userId: "user-1",
+			timezone: "Europe/Berlin",
+			locale: "en",
+		});
+	}
+
+	it("tells the employee their period was approved", () => {
+		expect(build("approved")).toMatchObject({
+			type: "period_submission_decided",
+			title: "Your time was approved",
+			message: "Your time for Mar 2, 2026 – Mar 8, 2026 was approved.",
+			actionUrl: "/time-tracking",
+			idempotencyKey: "clocking-reminder:period_submission_decided:period_submission:submission-1",
+		});
+	});
+
+	it("tells the employee their period was rejected, with the approver's reason", () => {
+		expect(build("rejected", "Friday {is} missing")).toMatchObject({
+			title: "Your time was rejected",
+			message:
+				"Your time for Mar 2, 2026 – Mar 8, 2026 was rejected: Friday {is} missing. Review your time and submit it again.",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.periodSubmissionRejected.title",
+					messageKey: "common:notifications.content.periodSubmissionRejected.message",
+					params: { reason: "Friday {is} missing" },
+				},
+			},
+		});
+	});
+});
+
 describe("period submission sent back notifications (#1062)", () => {
 	function build(outcome: "withdrawn" | "outdated") {
 		return buildClockingReminderNotification({

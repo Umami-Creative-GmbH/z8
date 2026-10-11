@@ -46,7 +46,23 @@ const reminderCopy = {
 		messageDefault:
 			"Your time for {startDate} – {endDate} changed after you submitted it, so the submission was withdrawn. Review your time and submit it again.",
 	},
+	// An approved period (#805); a rejection has its own copy with the approver's reason.
+	period_submission_decided: {
+		titleKey: "common:notifications.content.periodSubmissionApproved.title",
+		titleDefault: "Your time was approved",
+		messageKey: "common:notifications.content.periodSubmissionApproved.message",
+		messageDefault: "Your time for {startDate} – {endDate} was approved.",
+	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
+
+/** A rejected period, with the approver's reason (#805). */
+const periodSubmissionRejectedCopy = {
+	titleKey: "common:notifications.content.periodSubmissionRejected.title",
+	titleDefault: "Your time was rejected",
+	messageKey: "common:notifications.content.periodSubmissionRejected.message",
+	messageDefault:
+		"Your time for {startDate} – {endDate} was rejected: {reason}. Review your time and submit it again.",
+} as const satisfies ReminderCopy;
 
 /** The second reminder of a period still unsubmitted after the organization's delay (#1064). */
 const periodSubmissionSecondReminderCopy = {
@@ -104,7 +120,15 @@ export function buildClockingReminderNotification(input: {
 	const params: Record<string, string> = { timezone };
 	let copy: ReminderCopy = reminderCopy[reminder.type];
 	const formatDate = (date: PlainDate) => date.toLocaleString(locale, { dateStyle: "medium" });
-	if (reminder.type === "period_submission_sent_back") {
+	if (reminder.type === "period_submission_decided") {
+		const period = reminder.decidedPeriod;
+		if (period?.outcome === "rejected") {
+			copy = periodSubmissionRejectedCopy;
+			params.reason = period.reason ?? "";
+		}
+		params.startDate = formatDate(period?.startDate ?? reminder.day);
+		params.endDate = formatDate(period?.endDate ?? reminder.day);
+	} else if (reminder.type === "period_submission_sent_back") {
 		const period = reminder.sentBackPeriod;
 		if (period?.outcome === "outdated") copy = periodSubmissionOutdatedCopy;
 		params.startDate = formatDate(period?.startDate ?? reminder.day);
