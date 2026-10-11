@@ -117,7 +117,7 @@ export function ProjectPortfolioTable({ projects, onProjectSelect }: ProjectPort
 					),
 					cell: ({ row }) => (
 						<div className="text-right tabular-nums">
-							{row.original.billable ? format.hours(row.original.billable.billableHours) : "—"}
+							{row.original.billable ? hoursFormat.hours(row.original.billable.billableHours) : "—"}
 						</div>
 					),
 				},
