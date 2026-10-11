@@ -1,5 +1,5 @@
 import type { db as rootDatabase } from "@/db";
-import { type Clock, type Instant, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { type Clock, type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
 	type ClockingReminderTransport,
@@ -25,7 +25,10 @@ import {
 	evaluatePeriodSubmissionReminders,
 	PERIOD_SUBMISSION_REMINDER_DUE_DAYS,
 } from "@/lib/time-tracking/clocking-reminders/period-submission-reminders";
-import { scheduledSubmissionPeriods } from "@/lib/time-tracking/period-submissions/cadence";
+import {
+	daysAroundForEveryZone,
+	scheduledSubmissionPeriods,
+} from "@/lib/time-tracking/period-submissions/cadence";
 import { loadExpectedSubmissionPeriodFacts } from "@/lib/time-tracking/period-submissions/employee-expected-periods";
 import { deriveExpectedSubmissionPeriods } from "@/lib/time-tracking/period-submissions/expected-periods";
 import {
@@ -257,13 +260,11 @@ async function remindOrganization(
 	let after: string | null = null;
 	for (;;) {
 		const now = deps.clock.nowInstant();
-		// Periods whose second reminder can still be due end at most this many days ago; a day of
-		// margin each side covers every timezone.
-		const utcToday = plainDateAt(now, "UTC");
-		const window = {
-			from: utcToday.subtract({ days: delayDays + PERIOD_SUBMISSION_REMINDER_DUE_DAYS + 2 }),
-			to: utcToday.add({ days: 1 }),
-		};
+		// Periods whose second reminder can still be due end at most this many days ago.
+		const window = daysAroundForEveryZone(now, {
+			before: delayDays + PERIOD_SUBMISSION_REMINDER_DUE_DAYS + 1,
+			after: 0,
+		});
 		const employees = await listClockingReminderEmployees(
 			{ organization, roles: null, now, after, limit: EMPLOYEE_PAGE },
 			deps.database,

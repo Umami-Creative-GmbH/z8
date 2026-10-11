@@ -47,6 +47,30 @@ const maxDate = (left: PlainDate, right: PlainDate) =>
 	comparePlainDates(left, right) >= 0 ? left : right;
 
 /**
+ * The work policy's requirement per local date (`YYYY-MM-DD`) in [startDate, endDate] in the
+ * employee's zone, after absences and holidays, through the shared calendar reader (which uses the
+ * application database). Days with a requirement stay keyed after absences and holidays release it.
+ */
+export async function loadDailyWorkRequirements(input: {
+	organizationId: string;
+	employeeId: string;
+	timezone: string;
+	startDate: PlainDate;
+	endDate: PlainDate;
+}) {
+	const { getDailyWorkRequirementsForEmployee } = await import(
+		"@/lib/calendar/work-policy-requirements"
+	);
+	return getDailyWorkRequirementsForEmployee({
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		startDate: dateFromInstant(input.startDate.toZonedDateTime(input.timezone).toInstant()),
+		endDate: dateFromInstant(input.endDate.toZonedDateTime(input.timezone).toInstant()),
+		timezone: input.timezone,
+	});
+}
+
+/**
  * Days in [startDate, endDate] on which the employee's schedule expects no work. Without any
  * scheduled working day in the range (no work policy schedule, or an hourly contract without
  * published shifts) no day is treated as non-working.
@@ -58,29 +82,18 @@ export async function loadNonWorkingDays(input: {
 	startDate: PlainDate;
 	endDate: PlainDate;
 }): Promise<Set<string>> {
-	const { getDailyWorkRequirementsForEmployee } = await import(
-		"@/lib/calendar/work-policy-requirements"
-	);
-	const requirements = await getDailyWorkRequirementsForEmployee({
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		startDate: dateFromInstant(input.startDate.toZonedDateTime(input.timezone).toInstant()),
-		endDate: dateFromInstant(input.endDate.toZonedDateTime(input.timezone).toInstant()),
-		timezone: input.timezone,
-	});
-	// Days with a requirement stay keyed after absences and holidays release it.
+	const requirements = await loadDailyWorkRequirements(input);
 	if (Object.keys(requirements).length === 0) return new Set();
 	return new Set(eachDayKey(input.startDate, input.endDate).filter((key) => !requirements[key]));
 }
 
-export async function loadPublicHolidays(
-	database: Database,
+/** The holidays assigned to the employee that overlap [startDate, endDate], as stored. */
+export async function loadAssignedHolidays(
+	database: Database | Parameters<Parameters<Database["transaction"]>[0]>[0],
 	input: { organizationId: string; employeeId: string; startDate: PlainDate; endDate: PlainDate },
-): Promise<Set<string>> {
-	const { getAssignedHolidayDateKeys, getAssignedHolidaysForEmployee } = await import(
-		"@/lib/calendar/assigned-holidays"
-	);
-	const holidays = await getAssignedHolidaysForEmployee({
+) {
+	const { getAssignedHolidaysForEmployee } = await import("@/lib/calendar/assigned-holidays");
+	return getAssignedHolidaysForEmployee({
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		// Holiday dates are calendar dates stored as UTC midnights.
@@ -88,7 +101,14 @@ export async function loadPublicHolidays(
 		endDate: new Date(`${input.endDate}T23:59:59.999Z`),
 		database,
 	});
-	return getAssignedHolidayDateKeys(holidays);
+}
+
+export async function loadPublicHolidays(
+	database: Database,
+	input: { organizationId: string; employeeId: string; startDate: PlainDate; endDate: PlainDate },
+): Promise<Set<string>> {
+	const { getAssignedHolidayDateKeys } = await import("@/lib/calendar/assigned-holidays");
+	return getAssignedHolidayDateKeys(await loadAssignedHolidays(database, input));
 }
 
 /**

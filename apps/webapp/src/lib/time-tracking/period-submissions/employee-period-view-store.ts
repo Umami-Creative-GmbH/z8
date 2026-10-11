@@ -1,5 +1,6 @@
 import type { db } from "@/db";
 import { type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
+import { daysAroundForEveryZone } from "./cadence";
 import { loadExpectedSubmissionPeriodFacts } from "./employee-expected-periods";
 import { buildEmployeePeriodView, type EmployeePeriodViewRow } from "./employee-period-view";
 import { deriveExpectedSubmissionPeriods } from "./expected-periods";
@@ -23,12 +24,8 @@ export async function loadEmployeePeriodView(
 	database: typeof db,
 	input: { organizationId: string; employeeId: string; now: Instant },
 ): Promise<EmployeePeriodView | null> {
-	// The window is widened by a day each side: the employee's zone is read with the facts.
-	const utcToday = plainDateAt(input.now, "UTC");
-	const window = {
-		from: utcToday.subtract({ days: VIEW_LOOKBACK_DAYS + 1 }),
-		to: utcToday.add({ days: 1 }),
-	};
+	// The employee's zone is read with the facts.
+	const window = daysAroundForEveryZone(input.now, { before: VIEW_LOOKBACK_DAYS, after: 0 });
 	const facts = await loadExpectedSubmissionPeriodFacts(database, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,

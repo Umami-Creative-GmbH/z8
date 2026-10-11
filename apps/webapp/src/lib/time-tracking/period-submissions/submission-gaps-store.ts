@@ -3,7 +3,7 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, periodSubmission } from "@/db/schema";
 import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
-import { scheduledSubmissionPeriods } from "./cadence";
+import { scheduledSubmissionPeriods, widenedForEveryZone } from "./cadence";
 import { deriveExpectedSubmissionPeriods } from "./expected-periods";
 import { loadExpectedSubmissionFactsByEmployee } from "./organization-expected-periods";
 import { periodSubmissionOverlaps } from "./period-overlap";
@@ -41,12 +41,8 @@ export async function loadPeriodSubmissionGaps(
 	},
 ): Promise<PeriodSubmissionGapReport> {
 	const history = await loadSubmissionCadenceHistory(database, input.organizationId);
-	// Widened by a day each side: every employee's zone is within a day of UTC.
 	const collected =
-		scheduledSubmissionPeriods(history, "UTC", {
-			from: input.window.from.subtract({ days: 1 }),
-			to: input.window.to.add({ days: 1 }),
-		}).length > 0;
+		scheduledSubmissionPeriods(history, "UTC", widenedForEveryZone(input.window)).length > 0;
 	if (!collected) return { collected, gaps: [] };
 	if (input.employeeIds?.length === 0) return { collected, gaps: [] };
 

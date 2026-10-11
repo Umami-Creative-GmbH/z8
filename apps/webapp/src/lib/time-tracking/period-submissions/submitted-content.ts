@@ -18,6 +18,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
+import { loadAssignedHolidays, loadDailyWorkRequirements } from "./organization-expected-periods";
 import type { PeriodSubmissionDatabase } from "./submission-store";
 
 /**
@@ -133,15 +134,7 @@ async function loadHolidays(
 	database: PeriodSubmissionDatabase,
 	input: PeriodSubmissionContentInput,
 ): Promise<PeriodSubmissionHolidayFact[]> {
-	const { getAssignedHolidaysForEmployee } = await import("@/lib/calendar/assigned-holidays");
-	const holidays = await getAssignedHolidaysForEmployee({
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		// Holiday dates are calendar dates stored as UTC midnights.
-		startDate: new Date(`${input.startDate}T00:00:00.000Z`),
-		endDate: new Date(`${input.endDate}T23:59:59.999Z`),
-		database,
-	});
+	const holidays = await loadAssignedHolidays(database, input);
 	const facts = new Map<string, PeriodSubmissionHolidayFact>();
 	for (const holiday of holidays) {
 		const start = laterDate(
@@ -172,16 +165,7 @@ async function loadHolidays(
 async function loadTarget(
 	input: PeriodSubmissionContentInput,
 ): Promise<PeriodSubmissionContent["target"]> {
-	const { getDailyWorkRequirementsForEmployee } = await import(
-		"@/lib/calendar/work-policy-requirements"
-	);
-	const requirements = await getDailyWorkRequirementsForEmployee({
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		startDate: dateFromInstant(input.startDate.toZonedDateTime(input.timezone).toInstant()),
-		endDate: dateFromInstant(input.endDate.toZonedDateTime(input.timezone).toInstant()),
-		timezone: input.timezone,
-	});
+	const requirements = await loadDailyWorkRequirements(input);
 	const start = input.startDate.toString();
 	const end = input.endDate.toString();
 	const inRange = Object.entries(requirements).filter(([date]) => date >= start && date <= end);
