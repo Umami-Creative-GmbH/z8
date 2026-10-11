@@ -11,8 +11,3 @@ export function shareLinkPath(token: string): string {
 	return `/share/${token}`;
 }
 
-/**
- * Any share page path, with or without a locale prefix, as logs and telemetry
- * must not record it: the token is a credential.
- */
-export const SHARE_REQUEST_PATH = /\/(?:[a-z]{2,3}\/)?share\/[^/?#]+/;

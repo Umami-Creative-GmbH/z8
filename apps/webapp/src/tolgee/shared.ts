@@ -66,6 +66,8 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/setup": ["common", "setup"],
 	"/init": ["common", "setup"],
 	"/kiosk": ["common", "timeTracking"],
+	// The public report share link page (#806) renders project report copy.
+	"/share": ["common", "reports"],
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],

@@ -231,6 +231,20 @@ const limiters = {
 		prefix: "ratelimit:ics-feed-miss",
 		analytics: false,
 	}),
+	/** Report share link pages (#806) per client IP, any token or none (30 per 10 minutes) */
+	reportShare: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(30, "600 s"),
+		prefix: "ratelimit:report-share",
+		analytics: false,
+	}),
+	/** Report share link pages (#806) per token digest (120 per hour) */
+	reportShareToken: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(120, "3600 s"),
+		prefix: "ratelimit:report-share-token",
+		analytics: false,
+	}),
 };
 
 export type RateLimitEndpoint = keyof typeof limiters;
@@ -274,6 +288,8 @@ export const RATE_LIMIT_CONFIGS = {
 		maxRequests: icsFeedMissConfig.requests,
 		windowSeconds: icsFeedMissConfig.seconds,
 	},
+	reportShare: { maxRequests: 30, windowSeconds: 600 },
+	reportShareToken: { maxRequests: 120, windowSeconds: 3600 },
 };
 
 /**

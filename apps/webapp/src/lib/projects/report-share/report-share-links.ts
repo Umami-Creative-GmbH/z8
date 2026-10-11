@@ -762,6 +762,8 @@ export type OpenedShareLink =
 	| {
 			status: "available";
 			organizationName: string;
+			/** The organization's time zone, in which the page shows its dates. */
+			organizationTimeZone: string;
 			creatorName: string;
 			createdAt: string;
 			expiresAt: string;
@@ -821,7 +823,11 @@ export async function openShareLink(
 	}
 
 	const [names] = await client
-		.select({ organizationName: organization.name, creatorName: user.name })
+		.select({
+			organizationName: organization.name,
+			organizationTimeZone: organization.timezone,
+			creatorName: user.name,
+		})
 		.from(organization)
 		.innerJoin(user, eq(user.id, link.createdBy))
 		.where(eq(organization.id, link.organizationId))
@@ -837,6 +843,7 @@ export async function openShareLink(
 	return {
 		status: "available",
 		organizationName: names.organizationName,
+		organizationTimeZone: names.organizationTimeZone ?? "UTC",
 		creatorName: names.creatorName,
 		createdAt: instantFromDate(link.createdAt).toString(),
 		expiresAt: instantFromDate(link.expiresAt).toString(),
