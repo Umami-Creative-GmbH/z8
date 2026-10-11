@@ -248,6 +248,48 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 		]);
 	});
 
+	/** The employee's running work on Alpha, booked to `taskId`. */
+	async function startWork(taskId: string | null) {
+		const clockIn = "f9300000-0000-4000-8000-000000000001";
+		const start = new Date("2026-07-01T08:00:00Z");
+		await admin.query(
+			`insert into time_entry (id, employee_id, organization_id, type, timestamp, utc_offset_minutes,
+			  timezone, timezone_source, hash, previous_hash, created_by)
+			 values ($1, $2, $3, 'clock_in', $4, 0, 'UTC', 'backfill', $6, null, $5)`,
+			[clockIn, ids.employee, ids.organization, start, ids.user, `hash-${clockIn}`],
+		);
+		await admin.query(
+			`insert into work_period (id, organization_id, employee_id, clock_in_id, project_id, task_id,
+			  start_time, is_active, updated_at)
+			 values ('f9300000-0000-4000-8000-000000000002', $1, $2, $3, $4, $5, $6, true, $6)`,
+			[ids.organization, ids.employee, clockIn, ids.projectA, taskId, start],
+		);
+	}
+
+	it.each([
+		["an open", "f8750000-0000-4000-8000-0000000000a3", "Build"],
+		["a done", "f8750000-0000-4000-8000-0000000000a4", "Shipped"],
+	])("reports the running work's task when it has %s task (#930)", async (_, taskId, name) => {
+		await startWork(taskId);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		expect(context.body.liveWork).toMatchObject({
+			projectId: ids.projectA,
+			task: { id: taskId, name },
+		});
+	});
+
+	it("reports no task for running work without one (#930)", async () => {
+		await startWork(null);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		expect(context.body.liveWork).toMatchObject({ projectId: ids.projectA, task: null });
+	});
+
 	it("reads only the active organization's projects and tasks", async () => {
 		harness.organizationId = ids.otherOrganization;
 

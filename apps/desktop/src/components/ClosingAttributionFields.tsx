@@ -65,8 +65,16 @@ export function ClosingAttributionFields({
 				))}
 			<form.Subscribe selector={(state) => state.values.project}>
 				{(project) => {
-					const { tasks, keepsProject } = offeredTasks(context, project);
+					const { tasks, keptTask } = offeredTasks(context, project);
 					if (!tasks.length) return null;
+					// Omitting the task keeps whatever the work has: name it, or say
+					// there is none. An older server does not say, so stay generic.
+					const keepLabel =
+						keptTask === null
+							? t("No task")
+							: keptTask
+								? t("Keep current task: {name}", { name: keptTask.name })
+								: t("Keep current task");
 					return (
 						<form.Field name="task">
 							{(field) => (
@@ -78,10 +86,8 @@ export function ClosingAttributionFields({
 										disabled={disabled}
 										onChange={(event) => field.handleChange(event.target.value)}
 									>
-										<option value="">
-											{t(keepsProject ? "Keep current task" : "No task")}
-										</option>
-										{keepsProject && (
+										<option value="">{keepLabel}</option>
+										{keptTask !== null && (
 											<option value="clear">{t("No task")}</option>
 										)}
 										{tasks.map((task) => (

@@ -14,17 +14,18 @@ function intent(value: string): AttributionIntent {
 
 /**
  * The open tasks offered for the project the closing work will have (#882):
- * the chosen project, or the current one while it is kept. `keepsProject`
- * tells whether the work's current task can survive the close. A context from
- * a server without tasks, or one where projects are unavailable, offers none,
- * so no task is ever sent to it.
+ * the chosen project, or the current one while it is kept. `keptTask` is the
+ * running task that survives the close while the project is kept (#930): null
+ * when there is none to keep, undefined when an older server does not say. A
+ * context from a server without tasks, or one where projects are unavailable,
+ * offers none, so no task is ever sent to it.
  */
 export function offeredTasks(
 	context: DesktopContext | undefined,
 	projectValue: string,
-): { tasks: ProjectTask[]; keepsProject: boolean } {
+): { tasks: ProjectTask[]; keptTask: ProjectTask | null | undefined } {
 	if (!attributionAvailability(context).project)
-		return { tasks: [], keepsProject: false };
+		return { tasks: [], keptTask: null };
 	const current = context?.liveWork?.projectId ?? null;
 	const projectId =
 		projectValue === "preserve"
@@ -37,7 +38,8 @@ export function offeredTasks(
 		: undefined;
 	return {
 		tasks: project?.tasks ?? [],
-		keepsProject: !!projectId && projectId === current,
+		keptTask:
+			!!projectId && projectId === current ? context?.liveWork?.task : null,
 	};
 }
 
@@ -56,7 +58,7 @@ export function useClosingAttribution(context?: DesktopContext) {
 			const offered = offeredTasks(current, project);
 			const chosen =
 				(task === "clear" &&
-					offered.keepsProject &&
+					offered.keptTask !== null &&
 					offered.tasks.length > 0) ||
 				offered.tasks.some((candidate) => candidate.id === task);
 			return {

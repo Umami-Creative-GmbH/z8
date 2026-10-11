@@ -139,7 +139,7 @@ describe("task picker in the closing attribution", () => {
 		expect((view.task() as HTMLSelectElement).value).toBe("");
 	});
 
-	it("offers the current project's tasks while the project is kept", async () => {
+	it("names the running task while the project is kept (#930)", async () => {
 		const view = setup(
 			context({
 				liveWork: {
@@ -147,12 +147,13 @@ describe("task picker in the closing attribution", () => {
 					projectId: ALPHA,
 					workCategoryId: null,
 					workLocationType: "office",
+					task: { id: BUILD, name: "Build" },
 				},
 			}),
 		);
 		const task = view.task();
 		expect(optionLabels(task!)).toEqual([
-			"Keep current task",
+			"Keep current task: Build",
 			"No task",
 			"Build",
 			"design",
@@ -163,6 +164,69 @@ describe("task picker in the closing attribution", () => {
 		});
 
 		await userEvent.selectOptions(task!, "clear");
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+			task: { kind: "clear" },
+		});
+	});
+
+	it("says there is no task to keep when the running work has none (#930)", async () => {
+		const view = setup(
+			context({
+				liveWork: {
+					id: "period-1",
+					projectId: ALPHA,
+					workCategoryId: null,
+					workLocationType: "office",
+					task: null,
+				},
+			}),
+		);
+		expect(optionLabels(view.task()!)).toEqual(["No task", "Build", "design"]);
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+		});
+	});
+
+	it("still names a running task that was marked done (#930)", async () => {
+		const view = setup(
+			context({
+				liveWork: {
+					id: "period-1",
+					projectId: ALPHA,
+					workCategoryId: null,
+					workLocationType: "office",
+					task: { id: "77777777-7777-4777-8777-777777777777", name: "Kickoff" },
+				},
+			}),
+		);
+		expect(optionLabels(view.task()!)[0]).toBe("Keep current task: Kickoff");
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+		});
+	});
+
+	it("keeps the generic label when an older server does not report the running task", async () => {
+		const view = setup(
+			context({
+				liveWork: {
+					id: "period-1",
+					projectId: ALPHA,
+					workCategoryId: null,
+					workLocationType: "office",
+				},
+			}),
+		);
+		expect(optionLabels(view.task()!)).toEqual([
+			"Keep current task",
+			"No task",
+			"Build",
+			"design",
+		]);
+		await userEvent.selectOptions(view.task()!, "clear");
 		expect(await view.clockOut()).toStrictEqual({
 			project: { kind: "preserve" },
 			workCategory: { kind: "preserve" },
@@ -203,6 +267,30 @@ describe("task picker in the closing attribution", () => {
 		);
 		const task = screen.getByRole("combobox", { name: "Aufgabe" });
 		expect(optionLabels(task)[0]).toBe("Keine Aufgabe");
+	});
+
+	it("names the kept running task in German (#930)", () => {
+		render(
+			<LocaleProvider language="de">
+				<Closing
+					context={context({
+						liveWork: {
+							id: "period-1",
+							projectId: ALPHA,
+							workCategoryId: null,
+							workLocationType: "office",
+							task: { id: BUILD, name: "Build" },
+						},
+					})}
+					onClockOut={vi.fn()}
+				/>
+			</LocaleProvider>,
+		);
+		const task = screen.getByRole("combobox", { name: "Aufgabe" });
+		expect(optionLabels(task).slice(0, 2)).toEqual([
+			"Aktuelle Aufgabe beibehalten: Build",
+			"Keine Aufgabe",
+		]);
 	});
 	it("drops a chosen task that is no longer open when work ends", async () => {
 		const onClockOut = vi.fn<(attribution: ClosingAttribution) => void>();

@@ -88,6 +88,9 @@ export async function GET() {
 					workCategoryId: true,
 					workLocationType: true,
 				},
+				// The running task, open or done, so the closing picker can name what it
+				// keeps (#930). The task key holds it to the period's project and organization.
+				with: { task: { columns: { id: true, name: true } } },
 			}),
 		]);
 		const [summary, projects] = await Promise.all([
@@ -123,7 +126,8 @@ export async function GET() {
 				projectsEnabled: organizationSettings?.projectsEnabled ?? false,
 				projects: projectsWithTasks,
 				categories: categories.map(({ id, name }) => ({ id, name })),
-				liveWork: liveWork ?? null,
+				// `liveWork.task` is additive; older clients ignore it.
+				liveWork: liveWork ? { ...liveWork, task: liveWork.task ?? null } : null,
 			},
 			{ headers: { "Cache-Control": "private, no-store" } },
 		);

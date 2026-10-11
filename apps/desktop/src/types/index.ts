@@ -199,5 +199,7 @@ export interface DesktopContext {
 		projectId: string | null;
 		workCategoryId: string | null;
 		workLocationType: WorkLocationType | null;
+		/** The running task, open or done (#930); older servers omit it. */
+		task?: ProjectTask | null;
 	} | null;
 }

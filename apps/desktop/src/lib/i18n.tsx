@@ -65,6 +65,7 @@ const german: Record<string, string> = {
 	"No assignment": "Keine Zuordnung",
 	Task: "Aufgabe",
 	"Keep current task": "Aktuelle Aufgabe beibehalten",
+	"Keep current task: {name}": "Aktuelle Aufgabe beibehalten: {name}",
 	"No task": "Keine Aufgabe",
 	"The chosen task was marked done.":
 		"Die gewählte Aufgabe wurde als erledigt markiert.",
@@ -212,7 +213,11 @@ export function useI18n() {
 	const language = useContext(LocaleContext);
 	return {
 		language,
-		t: (message: string) =>
-			language === "de" ? (german[message] ?? message) : message,
+		/** `{key}` placeholders are filled from `params` after translating. */
+		t: (message: string, params: Record<string, string> = {}) =>
+			(language === "de" ? (german[message] ?? message) : message).replace(
+				/\{(\w+)\}/g,
+				(placeholder, key: string) => params[key] ?? placeholder,
+			),
 	};
 }
