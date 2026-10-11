@@ -10,6 +10,7 @@ import { cleanupExpiredExports } from "@/lib/export/export-service";
 import { runClockingReminderOccasionRetention } from "@/lib/jobs/clocking-reminder-occasion-retention";
 import { runPositionRecordRetention } from "@/lib/jobs/position-record-retention";
 import { runKeyRequestLogRetention } from "@/lib/jobs/public-api-request-log-retention";
+import { runReportShareLinkViewRetention } from "@/lib/jobs/report-share-links";
 import { createLogger } from "@/lib/logger";
 import { deleteOldNotifications } from "@/lib/notifications/notification-service";
 import type { CleanupJobData } from "@/lib/queue";
@@ -63,6 +64,13 @@ export async function runCleanup(data: CleanupJobData): Promise<{
 			logger.info(positionRecords, "Cleaned up position records past the audit-log lifetime");
 			deletedCount +=
 				positionRecords.accessLogEntries + positionRecords.consents + positionRecords.declines;
+			// Report share link views follow the audit-log lifetime too (#806).
+			const shareLinkViews = await runReportShareLinkViewRetention(AUDIT_LOG_RETENTION_DAYS);
+			logger.info(
+				{ count: shareLinkViews },
+				"Cleaned up report share link views past the audit-log lifetime",
+			);
+			deletedCount += shareLinkViews;
 			break;
 		}
 

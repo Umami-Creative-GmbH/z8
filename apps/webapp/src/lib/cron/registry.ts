@@ -391,6 +391,17 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
+	"cron:report-share-link-sweep": {
+		schedule: "*/15 * * * *", // Every 15 minutes
+		description:
+			"Expire report share links and revoke those whose creator lost access, deleting their snapshots",
+		processor: async (): Promise<{ expired: number; creatorLostAccess: number }> => {
+			const { runReportShareLinkSweep } = await import("@/lib/jobs/report-share-links");
+			return runReportShareLinkSweep();
+		},
+		defaultJobOptions: { attempts: 2, priority: 8 },
+	},
+
 	"cron:position-stamp-purge": {
 		schedule: "0 1 * * *", // Daily at 1 AM
 		description:
