@@ -22,6 +22,7 @@ import {
 	BillableFiguresCard,
 	useBillableFigureFormat,
 } from "./billable-figures";
+import { ReportShareDialog } from "./report-share-dialog";
 
 const WITHOUT_CUSTOMER_KEY = "without-customer";
 
@@ -117,20 +118,35 @@ export function CustomerBillableView({ report, onProjectSelect }: CustomerBillab
 										<Fragment key={row.key}>
 											<TableRow>
 												<TableCell className="font-medium">
-													<Button
-														variant="ghost"
-														size="sm"
-														className="-ml-2 gap-1"
-														aria-expanded={isOpen}
-														onClick={() => toggle(row.key)}
-													>
-														{isOpen ? (
-															<IconChevronDown className="size-4" aria-hidden="true" />
-														) : (
-															<IconChevronRight className="size-4" aria-hidden="true" />
+													<div className="flex items-center gap-2">
+														<Button
+															variant="ghost"
+															size="sm"
+															className="-ml-2 gap-1"
+															aria-expanded={isOpen}
+															onClick={() => toggle(row.key)}
+														>
+															{isOpen ? (
+																<IconChevronDown className="size-4" aria-hidden="true" />
+															) : (
+																<IconChevronRight className="size-4" aria-hidden="true" />
+															)}
+															{row.name}
+														</Button>
+														{/* One customer per share link (#806); never the without-customer group. */}
+														{row.key !== WITHOUT_CUSTOMER_KEY && (
+															<ReportShareDialog
+																target={{ kind: "customer", customerId: row.key }}
+																reportName={row.name}
+																period={{
+																	fromDay: report.period.startDate,
+																	toDay: report.period.endDate,
+																}}
+																canShareRevenue
+																size="sm"
+															/>
 														)}
-														{row.name}
-													</Button>
+													</div>
 													{row.billable.withoutCustomerWorkCount > 0 && (
 														<div className="text-xs font-normal text-amber-700 dark:text-amber-400">
 															{t(

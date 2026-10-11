@@ -111,6 +111,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
 	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/report-share-links": ["common", "settings/generic", "reports"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],
 	"/settings/scheduled-exports": ["common", "settings/generic", "settings/scheduledExports"],
 	"/settings/shifts": ["common", "settings/generic", "settings/rules"],

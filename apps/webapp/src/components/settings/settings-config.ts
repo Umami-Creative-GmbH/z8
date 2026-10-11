@@ -68,7 +68,8 @@ export type SettingsIconName =
 	| "database-import"
 	| "receipt"
 	| "device-tablet"
-	| "forms";
+	| "forms"
+	| "share";
 
 export interface SettingsEntry {
 	id: string;
@@ -558,6 +559,18 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "history",
 		minimumTier: "orgAdmin",
 		group: "enterprise",
+	},
+	{
+		id: "report-share-links",
+		titleKey: "settings.reportShareLinks.title",
+		titleDefault: "Report Share Links",
+		descriptionKey: "settings.reportShareLinks.description",
+		descriptionDefault: "See and revoke every link that shares a project or customer report",
+		href: "/settings/report-share-links",
+		icon: "share",
+		minimumTier: "orgAdmin",
+		group: "enterprise",
+		requiredFeature: "projectsEnabled",
 	},
 	{
 		id: "works-council",
