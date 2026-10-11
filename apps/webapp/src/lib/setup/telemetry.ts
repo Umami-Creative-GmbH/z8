@@ -8,10 +8,15 @@ import type {
 export const SETUP_REQUEST_PATH =
 	/\/(?:[a-z]{2,3}\/)?setup(?:[/?]|$)|\/api\/setup(?:[/?]|$)/;
 
+// Report share link pages (#806): the path's token opens the shared snapshot.
+export const REPORT_SHARE_REQUEST_PATH = /(?:^|\/)(?:[a-z]{2,3}\/)?share\/[^/?#]+/;
+
 function containsSetupData(value: unknown): boolean {
 	return (
 		typeof value === "string" &&
-		(SETUP_REQUEST_PATH.test(value) || value.includes("{setup-bootstrap}"))
+		(SETUP_REQUEST_PATH.test(value) ||
+			REPORT_SHARE_REQUEST_PATH.test(value) ||
+			value.includes("{setup-bootstrap}"))
 	);
 }
 

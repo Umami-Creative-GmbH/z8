@@ -12,6 +12,10 @@ import {
 	createRateLimitResponse,
 	getClientIp,
 } from "@/lib/rate-limit";
+import {
+	applyShareResponseHeaders,
+	pickShareLocale,
+} from "@/lib/projects/report-share/http";
 import { applySecurityHeaders } from "@/lib/security";
 import { applySetupResponseHeaders } from "@/lib/setup/http";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
@@ -80,6 +84,69 @@ async function rebaseLocaleRedirect(
 		request,
 	);
 	response.headers.set("location", publicUrl.toString());
+}
+
+// `/share/<token>`, or with an explicit language prefix such as `/de/share/<token>`.
+const SHARE_PAGE_PATH = /^\/(?:([a-z]{2,3})\/)?share\/([^/]+)\/?$/;
+
+async function sha256Hex(value: string): Promise<string> {
+	const digest = await crypto.subtle.digest(
+		"SHA-256",
+		new TextEncoder().encode(value),
+	);
+	return Array.from(new Uint8Array(digest), (byte) =>
+		byte.toString(16).padStart(2, "0"),
+	).join("");
+}
+
+/**
+ * Report share link pages (#806): rate-limited per client IP and per token,
+ * never cached, indexed or referred, and rendered without the locale
+ * redirect, so the token never travels in a second request. The language is
+ * the URL's prefix, else the recipient's browser language, else the creator's.
+ */
+async function handleSharePage(
+	request: NextRequest,
+	prefix: string | undefined,
+	token: string,
+): Promise<Response> {
+	const prefixLocale = routing.locales.find((candidate) => candidate === prefix);
+	if (prefix !== undefined && !prefixLocale) {
+		const response = new NextResponse("Not found", { status: 404 });
+		applySecurityHeaders(response);
+		return applyShareResponseHeaders(response);
+	}
+	for (const [identifier, endpoint] of [
+		[getClientIp(request), "reportShare"],
+		[`report-share:${await sha256Hex(token)}`, "reportShareToken"],
+	] as const) {
+		const rateLimit = await checkRateLimit(identifier, endpoint);
+		if (!rateLimit.allowed) {
+			return applyShareResponseHeaders(
+				createRateLimitResponse(rateLimit, request),
+			);
+		}
+	}
+
+	let response: NextResponse;
+	if (prefixLocale) {
+		response = NextResponse.next();
+	} else {
+		const locale =
+			pickShareLocale(
+				request.headers.get("accept-language"),
+				routing.locales,
+			) ??
+			(await (
+				await import("@/lib/projects/report-share/creator-locale")
+			).shareLinkCreatorLocaleForToken(token)) ??
+			DEFAULT_LANGUAGE;
+		response = NextResponse.rewrite(
+			new URL(`/${locale}/share/${token}`, request.url),
+		);
+	}
+	applySecurityHeaders(response);
+	return applyShareResponseHeaders(response);
 }
 
 export async function proxy(request: NextRequest) {
@@ -157,6 +224,12 @@ export async function proxy(request: NextRequest) {
 			applySetupResponseHeaders(response);
 			return response;
 		}
+	}
+
+	// Report share link pages open without a session; the token in the path is the credential.
+	const sharePage = pathname.match(SHARE_PAGE_PATH);
+	if (sharePage) {
+		return handleSharePage(request, sharePage[1], sharePage[2] ?? "");
 	}
 
 	// Rate limiting for auth pages. API routes are excluded by the matcher below and

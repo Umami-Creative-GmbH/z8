@@ -62,6 +62,10 @@ export function useProjectReportExportLabels(): ProjectReportExportLabels {
 			"reports.projects.export.ratesNote",
 			"Revenue uses the rates in effect when the report was generated. Unpriced work has no rate and adds no revenue.",
 		),
+		snapshotRatesNote: t(
+			"reports.projects.export.snapshotRatesNote",
+			"Revenue uses the rates in effect when this snapshot was taken.",
+		),
 		costUnknownNote: t(
 			"reports.projects.export.costUnknownNote",
 			"Cost unknown: some of the work has no cost rate, so its cost and margin are not shown.",

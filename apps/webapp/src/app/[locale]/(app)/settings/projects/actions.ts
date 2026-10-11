@@ -32,6 +32,7 @@ import {
 	insertProjectAssignments,
 	insertProjectManagers,
 } from "@/lib/projects/project-creation";
+import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	projectBillableDefault,
@@ -876,6 +877,15 @@ export async function removeProjectManager(
 					changes: { employeeId },
 					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
+
+				// A share link stops once its creator no longer sees every project in it (#806).
+				yield* actor.dbService.query("reportShareLink.revokeAfterManagerRemoval", () =>
+					revokeShareLinksAfterAccessChange(actor.dbService.db, {
+						organizationId: existingProject.organizationId,
+						creator: { employeeId },
+						actorUserId: session.user.id,
+					}),
+				);
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });

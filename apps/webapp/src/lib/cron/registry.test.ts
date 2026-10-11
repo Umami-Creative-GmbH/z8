@@ -25,6 +25,14 @@ vi.mock("@/lib/jobs/position-stamp-purge", () => {
 	positionStampPurge.imported();
 	return { runPositionStampPurge: positionStampPurge.run };
 });
+const reportShareLinks = vi.hoisted(() => ({
+	imported: vi.fn(),
+	sweep: vi.fn(async () => ({ expired: 2, creatorLostAccess: 1 })),
+}));
+vi.mock("@/lib/jobs/report-share-links", () => {
+	reportShareLinks.imported();
+	return { runReportShareLinkSweep: reportShareLinks.sweep };
+});
 const clockingReminders = vi.hoisted(() => ({
 	imported: vi.fn(),
 	run: vi.fn(async () => ({ sent: 2 })),
@@ -312,6 +320,23 @@ describe("position stamp purge cron", () => {
 			}),
 		).toEqual({ success: true, deletedCount: 3 });
 		expect(positionStampPurge.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("report share link sweep cron", () => {
+	it("loads the sweep lazily and expires and revokes links every 15 minutes", async () => {
+		expect(reportShareLinks.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:report-share-link-sweep"]).toMatchObject({
+			schedule: "*/15 * * * *",
+			defaultJobOptions: { attempts: 2, priority: 8 },
+		});
+
+		expect(
+			await CRON_JOBS["cron:report-share-link-sweep"].processor({
+				triggeredAt: "2026-10-11T09:15:00Z",
+			}),
+		).toEqual({ expired: 2, creatorLostAccess: 1 });
+		expect(reportShareLinks.sweep).toHaveBeenCalledOnce();
 	});
 });
 

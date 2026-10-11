@@ -185,6 +185,11 @@ export enum AuditAction {
 	API_KEY_UPDATED = "api_key.updated",
 	API_KEY_REVOKED = "api_key.revoked",
 
+	// Report share links (#806); recipient views go to the share link view log instead
+	REPORT_SHARE_LINK_CREATED = "report_share_link.created",
+	REPORT_SHARE_LINK_REVOKED = "report_share_link.revoked",
+	REPORT_SHARE_LINK_AUTO_REVOKED = "report_share_link.auto_revoked",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",
@@ -380,7 +385,8 @@ export interface AuditLogEntry {
 		| "travel_expense_policy_version"
 		| "travel_expense_export"
 		| "ics_feed"
-		| "api_key";
+		| "api_key"
+		| "report_share_link";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

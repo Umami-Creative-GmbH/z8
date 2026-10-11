@@ -18,6 +18,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/email-templates",
 	"/settings/enterprise/api-keys",
 	"/settings/enterprise/audit-log",
+	"/settings/report-share-links",
 	"/settings/telegram",
 	"/settings/slack",
 	"/settings/discord",

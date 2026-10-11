@@ -3,6 +3,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const REPORTS_PROJECTS_ROOT = fileURLToPath(new URL(".", import.meta.url));
+// The project detail report and the customer view, shared with report share links (#806).
+const READERS_SOURCE = fileURLToPath(
+	new URL("../../../../../lib/reports/project-report-readers.ts", import.meta.url),
+);
 
 function stripComments(source: string): string {
 	return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
@@ -35,8 +39,10 @@ describe("project report portfolio scope", () => {
 
 		expect(source).toContain("const organizationId = authContext.session.activeOrganizationId");
 		expect(source).toContain("const currentEmployee = authContext.employee");
-		expect(source).toContain("eq(project.organizationId, organizationId)");
 		expect(source).toContain("eq(workPeriod.organizationId, organizationId)");
+		const readers = stripComments(readFileSync(READERS_SOURCE, "utf8"));
+		expect(readers).toContain("eq(project.organizationId, organizationId)");
+		expect(readers).toContain("eq(workPeriod.organizationId, organizationId)");
 	});
 
 	it("uses the active-organization employee supplied by requireAuth", () => {
@@ -56,7 +62,7 @@ describe("project report portfolio scope", () => {
 	});
 
 	it("serializes detailed report period boundaries as ISO strings", () => {
-		const source = stripComments(readFileSync(`${REPORTS_PROJECTS_ROOT}/actions.ts`, "utf8"));
+		const source = stripComments(readFileSync(READERS_SOURCE, "utf8"));
 
 		expect(source).toContain("startDate: startDate.toISOString()");
 		expect(source).toContain("endDate: endDate.toISOString()");

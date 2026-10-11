@@ -32,6 +32,7 @@ import {
 	IconPercentage,
 	IconReceipt,
 	IconServer,
+	IconShare,
 	IconShield,
 	IconShieldCheck,
 	IconTag,
@@ -92,4 +93,5 @@ export const SETTINGS_ICON_MAP: Record<
 	receipt: IconReceipt,
 	"device-tablet": IconDeviceTablet,
 	forms: IconForms,
+	share: IconShare,
 };
