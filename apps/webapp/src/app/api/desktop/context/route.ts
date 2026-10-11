@@ -88,6 +88,8 @@ export async function GET() {
 					workCategoryId: true,
 					workLocationType: true,
 				},
+				// The task foreign key confines it to this work's project and organization.
+				with: { task: { columns: { id: true, name: true } } },
 			}),
 		]);
 		const [summary, projects] = await Promise.all([
@@ -123,7 +125,15 @@ export async function GET() {
 				projectsEnabled: organizationSettings?.projectsEnabled ?? false,
 				projects: projectsWithTasks,
 				categories: categories.map(({ id, name }) => ({ id, name })),
-				liveWork: liveWork ?? null,
+				liveWork: liveWork
+					? {
+							id: liveWork.id,
+							projectId: liveWork.projectId,
+							workCategoryId: liveWork.workCategoryId,
+							workLocationType: liveWork.workLocationType,
+							currentTask: liveWork.task ?? null,
+						}
+					: null,
 			},
 			{ headers: { "Cache-Control": "private, no-store" } },
 		);

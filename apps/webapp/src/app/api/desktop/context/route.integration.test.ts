@@ -14,7 +14,9 @@ const harness = vi.hoisted(() => ({
 	organizationId: null as string | null,
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -152,9 +154,75 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 		);
 	}
 
+	async function startWork(taskId: string | null, otherOrganization = false) {
+		const organizationId = otherOrganization
+			? ids.otherOrganization
+			: ids.organization;
+		const employeeId = otherOrganization ? ids.otherEmployee : ids.employee;
+		const projectId = otherOrganization
+			? ids.otherOrganizationProject
+			: ids.projectA;
+		const [entry] = (
+			await admin.query(
+				`insert into time_entry
+			 (employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone, timezone_source, hash, created_by)
+			 values ($1, $2, 'clock_in', now(), 0, 'UTC', 'user_setting', 't930-context', $3) returning id`,
+				[employeeId, organizationId, ids.user],
+			)
+		).rows;
+		await admin.query(
+			`insert into work_period
+			 (employee_id, organization_id, clock_in_id, project_id, task_id, start_time, updated_at)
+			 values ($1, $2, $3, $4, $5, now(), now())`,
+			[employeeId, organizationId, entry.id, projectId, taskId],
+		);
+	}
+
+	it("reports the task already on live work even after it is done (#930)", async () => {
+		await startWork("f8750000-0000-4000-8000-0000000000a4");
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		expect(context.body.liveWork.currentTask).toEqual({
+			id: "f8750000-0000-4000-8000-0000000000a4",
+			name: "Shipped",
+		});
+	});
+	it("reports an open task on live work (#930)", async () => {
+		await startWork("f8750000-0000-4000-8000-0000000000a3");
+		const context = await read();
+		expect(context.status).toBe(200);
+		expect(context.body.liveWork.currentTask).toEqual({
+			id: "f8750000-0000-4000-8000-0000000000a3",
+			name: "Build",
+		});
+	});
+
+	it("reports no current task for taskless live work (#930)", async () => {
+		await startWork(null);
+		const context = await read();
+		expect(context.status).toBe(200);
+		expect(context.body.liveWork.currentTask).toBeNull();
+	});
+
+	it("reads only the active organization's live work and task (#930)", async () => {
+		await startWork("f8750000-0000-4000-8000-0000000000a3");
+		await startWork("f8750000-0000-4000-8000-0000000000d2", true);
+		harness.organizationId = ids.otherOrganization;
+		const context = await read();
+		expect(context.status).toBe(200);
+		expect(context.body.liveWork.currentTask).toEqual({
+			id: "f8750000-0000-4000-8000-0000000000d2",
+			name: "Foreign task",
+		});
+	});
 	async function read() {
 		const response = await route.GET();
-		return { status: response.status, body: (await response.json()) as Record<string, any> };
+		return {
+			status: response.status,
+			body: (await response.json()) as Record<string, any>,
+		};
 	}
 
 	beforeEach(async () => {
@@ -174,6 +242,7 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 			const context = await read();
 
 			expect(context.status).toBe(200);
+			expect(context.body.liveWork).toBeNull();
 			expect(context.body.projects).toEqual([
 				{
 					id: ids.projectA,
@@ -254,11 +323,14 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 		const context = await read();
 
 		expect(context.status).toBe(200);
+		expect(context.body.liveWork).toBeNull();
 		expect(context.body.projects).toEqual([
 			{
 				id: ids.otherOrganizationProject,
 				name: "Foreign",
-				tasks: [{ id: "f8750000-0000-4000-8000-0000000000d2", name: "Foreign task" }],
+				tasks: [
+					{ id: "f8750000-0000-4000-8000-0000000000d2", name: "Foreign task" },
+				],
 			},
 		]);
 	});

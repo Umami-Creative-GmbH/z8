@@ -199,5 +199,7 @@ export interface DesktopContext {
 		projectId: string | null;
 		workCategoryId: string | null;
 		workLocationType: WorkLocationType | null;
+		/** The booked task, including done tasks; older servers omit this field. */
+		currentTask?: { id: string; name: string } | null;
 	} | null;
 }
