@@ -4,8 +4,9 @@
  * SSO store and logger are replaced.
  */
 
-import { createHash, randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { shareLinkFixture } from "@/lib/projects/report-share/testing/share-link.fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -64,28 +65,8 @@ const { createReportShareLink, listReportShareLinks, revokeReportShareLink } = a
 	"./share-actions"
 );
 
-const ids = {
-	organization: "t806-org",
-	otherOrganization: "t806-other-org",
-	ownerUser: "t806-owner-user",
-	pmUser: "t806-pm-user",
-	teamManagerUser: "t806-team-manager-user",
-	workerUser: "t806-worker-user",
-	otherUser: "t806-other-user",
-	owner: "80600000-0000-4000-8000-000000000001",
-	pm: "80600000-0000-4000-8000-000000000002",
-	teamManager: "80600000-0000-4000-8000-000000000003",
-	worker: "80600000-0000-4000-8000-000000000004",
-	otherEmployee: "80600000-0000-4000-8000-000000000005",
-	acme: "80600000-0000-4000-8000-0000000000c1",
-	globex: "80600000-0000-4000-8000-0000000000c2",
-	foreignCustomer: "80600000-0000-4000-8000-0000000000c3",
-	website: "80600000-0000-4000-8000-0000000000a1",
-	support: "80600000-0000-4000-8000-0000000000a2",
-	portal: "80600000-0000-4000-8000-0000000000a3",
-	foreignProject: "80600000-0000-4000-8000-0000000000a4",
-} as const;
-const users = [ids.ownerUser, ids.pmUser, ids.teamManagerUser, ids.workerUser, ids.otherUser];
+const fixture = shareLinkFixture("t806", "8060");
+const { ids } = fixture;
 const period = { fromDay: "2026-03-01", toDay: "2026-03-31" };
 
 function actAs(userId: string, organizationId: string = ids.organization) {
@@ -113,178 +94,9 @@ describe("report share links on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 	const admin = integrationAdminPool();
 
-	async function cleanup() {
-		for (const organizationId of [ids.organization, ids.otherOrganization]) {
-			await admin.query("delete from audit_log where organization_id = $1", [organizationId]);
-			await admin.query("delete from report_share_link where organization_id = $1", [
-				organizationId,
-			]);
-			await admin.query("delete from work_period where organization_id = $1", [organizationId]);
-			await admin.query("delete from time_entry where organization_id = $1", [organizationId]);
-		}
-		await admin.query("delete from organization where id = any($1::text[])", [
-			[ids.organization, ids.otherOrganization],
-		]);
-		await admin.query('delete from "user" where id = any($1::text[])', [users]);
-	}
+	beforeEach(() => fixture.seed(admin));
 
-	async function work(options: {
-		employeeId: string;
-		projectId: string;
-		start: string;
-		end: string;
-		minutes: number;
-		organizationId?: string;
-	}) {
-		const organizationId = options.organizationId ?? ids.organization;
-		const clockInId = randomUUID();
-		const clockOutId = randomUUID();
-		for (const [entryId, type, timestamp] of [
-			[clockInId, "clock_in", options.start],
-			[clockOutId, "clock_out", options.end],
-		]) {
-			await admin.query(
-				`insert into time_entry
-				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone, timezone_source, hash, created_by)
-				 values ($1, $2, $3, $4, $5, 0, 'Etc/UTC', 'user_setting', $7, $6)`,
-				[entryId, options.employeeId, organizationId, type, timestamp, ids.ownerUser, `hash-${entryId}`],
-			);
-		}
-		await admin.query(
-			`insert into work_period
-			 (id, employee_id, organization_id, clock_in_id, clock_out_id, project_id, is_billable, start_time,
-			  end_time, duration_minutes, is_active, approval_status, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, true, $7, $8, $9, false, 'approved', now())`,
-			[
-				randomUUID(),
-				options.employeeId,
-				organizationId,
-				clockInId,
-				clockOutId,
-				options.projectId,
-				options.start,
-				options.end,
-				options.minutes,
-			],
-		);
-	}
-
-	beforeEach(async () => {
-		await cleanup();
-		await admin.query(
-			`insert into organization (id, name, slug, timezone, projects_enabled, billable_time_enabled, created_at)
-			 values ($1, 'T806 GmbH', $1, 'UTC', true, true, now()), ($2, 'T806 other', $2, 'UTC', true, true, now())`,
-			[ids.organization, ids.otherOrganization],
-		);
-		await admin.query(
-			`insert into billable_time_settings (organization_id, billable_currency) values ($1, 'EUR'), ($2, 'EUR')`,
-			[ids.organization, ids.otherOrganization],
-		);
-		await admin.query(
-			`insert into "user" (id, name, email, created_at, updated_at)
-			 select user_id, user_id, user_id || '@example.test', now(), now() from unnest($1::text[]) as user_id`,
-			[users],
-		);
-		await admin.query(
-			`insert into member (id, organization_id, user_id, role, status, created_at) values
-			 ('t806-m-owner', $1, $2, 'owner', 'approved', now()),
-			 ('t806-m-pm', $1, $3, 'member', 'approved', now()),
-			 ('t806-m-tm', $1, $4, 'member', 'approved', now()),
-			 ('t806-m-worker', $1, $5, 'member', 'approved', now()),
-			 ('t806-m-other', $6, $7, 'owner', 'approved', now())`,
-			[
-				ids.organization,
-				ids.ownerUser,
-				ids.pmUser,
-				ids.teamManagerUser,
-				ids.workerUser,
-				ids.otherOrganization,
-				ids.otherUser,
-			],
-		);
-		await admin.query(
-			`insert into employee (id, user_id, organization_id, role, updated_at) values
-			 ($1, $2, $11, 'admin', now()),
-			 ($3, $4, $11, 'employee', now()),
-			 ($5, $6, $11, 'manager', now()),
-			 ($7, $8, $11, 'employee', now()),
-			 ($9, $10, $12, 'admin', now())`,
-			[
-				ids.owner,
-				ids.ownerUser,
-				ids.pm,
-				ids.pmUser,
-				ids.teamManager,
-				ids.teamManagerUser,
-				ids.worker,
-				ids.workerUser,
-				ids.otherEmployee,
-				ids.otherUser,
-				ids.organization,
-				ids.otherOrganization,
-			],
-		);
-		await admin.query(
-			`insert into customer (id, organization_id, name, created_by, updated_at) values
-			 ($1, $2, 'Acme', $3, now()), ($4, $2, 'Globex', $3, now()), ($5, $6, 'Foreign customer', $7, now())`,
-			[
-				ids.acme,
-				ids.organization,
-				ids.ownerUser,
-				ids.globex,
-				ids.foreignCustomer,
-				ids.otherOrganization,
-				ids.otherUser,
-			],
-		);
-		await admin.query(
-			`insert into project (id, organization_id, name, status, customer_id, billable_default, created_by, updated_at) values
-			 ($1, $5, 'Website', 'active', $6, true, $7, now()),
-			 ($2, $5, 'Support', 'active', $6, true, $7, now()),
-			 ($3, $5, 'Portal', 'active', $8, true, $7, now()),
-			 ($4, $9, 'Foreign project', 'active', $10, true, $11, now())`,
-			[
-				ids.website,
-				ids.support,
-				ids.portal,
-				ids.foreignProject,
-				ids.organization,
-				ids.acme,
-				ids.ownerUser,
-				ids.globex,
-				ids.otherOrganization,
-				ids.foreignCustomer,
-				ids.otherUser,
-			],
-		);
-		await admin.query(
-			`insert into project_manager (project_id, employee_id, assigned_by) values ($1, $3, $4), ($2, $3, $4)`,
-			[ids.website, ids.support, ids.pm, ids.ownerUser],
-		);
-		await work({
-			employeeId: ids.worker,
-			projectId: ids.website,
-			start: "2026-03-02T08:00:00Z",
-			end: "2026-03-02T16:00:00Z",
-			minutes: 480,
-		});
-		await work({
-			employeeId: ids.worker,
-			projectId: ids.support,
-			start: "2026-03-03T08:00:00Z",
-			end: "2026-03-03T10:00:00Z",
-			minutes: 120,
-		});
-		await work({
-			employeeId: ids.worker,
-			projectId: ids.portal,
-			start: "2026-03-04T08:00:00Z",
-			end: "2026-03-04T12:00:00Z",
-			minutes: 240,
-		});
-	});
-
-	afterAll(cleanup);
+	afterAll(() => fixture.cleanup(admin));
 
 	function projectLink(projectId: string, overrides: Record<string, unknown> = {}) {
 		return {
