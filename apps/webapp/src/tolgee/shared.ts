@@ -19,6 +19,12 @@ export const ALL_LANGUAGES = [
 	"gsw",
 	"no",
 	"sv",
+	"ro",
+	"hr",
+	"bs",
+	"sq",
+	"uk",
+	"ru",
 ];
 
 export const DEFAULT_LANGUAGE = "en";

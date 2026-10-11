@@ -235,6 +235,7 @@ const sourceShape0: CatalogSourceMetadata = {
 				positionStamps: 1,
 				profile: 1,
 				projects: 1,
+				reportShareLinks: 1,
 				security: 1,
 				sessions: 1,
 				socialAccounts: 1,
@@ -432,4 +433,10 @@ export const CATALOG_SOURCE_METADATA: Readonly<
 	gsw: sourceShape0,
 	no: sourceShape0,
 	sv: sourceShape0,
+	ro: sourceShape0,
+	hr: sourceShape0,
+	bs: sourceShape0,
+	sq: sourceShape0,
+	uk: sourceShape0,
+	ru: sourceShape0,
 };

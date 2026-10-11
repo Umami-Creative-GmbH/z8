@@ -26,6 +26,12 @@ module.exports = {
 			"gsw",
 			"no",
 			"sv",
+			"ro",
+			"hr",
+			"bs",
+			"sq",
+			"uk",
+			"ru",
 		],
 	},
 	pull: {
