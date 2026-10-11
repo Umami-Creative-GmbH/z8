@@ -405,7 +405,7 @@ describe("period submissions on PostgreSQL", () => {
 		expect(await legacyRequests()).toBe(0);
 	});
 
-	it("goes to an admin, never to the employee, when the employee is their own approver", async () => {
+	async function selfApprovalPolicy(fallback: "fail" | "organization_admin") {
 		const policyId = randomUUID();
 		await fixture.pool.query(
 			`insert into approval_policy (id, organization_id, name, is_active, priority, created_by, updated_at)
@@ -415,9 +415,19 @@ describe("period submissions on PostgreSQL", () => {
 		await fixture.pool.query(
 			`insert into approval_policy_stage
 			 (id, organization_id, policy_id, step_order, label, approver_type, approver_employee_id, fallback_behavior, updated_at)
-			 values ($1, $2, $3, 1, 'Self', 'specific_employee', $4, 'fail', now())`,
-			[randomUUID(), organizationId, policyId, employee.employeeId],
+			 values ($1, $2, $3, 1, 'Self', 'specific_employee', $4, $5, now())`,
+			[randomUUID(), organizationId, policyId, employee.employeeId, fallback],
 		);
+	}
+
+	it("refuses, never auto-approving, when a policy names the employee with a fail fallback", async () => {
+		await selfApprovalPolicy("fail");
+		await expect(submit()).resolves.toEqual({ kind: "refused", reason: "no_approver" });
+		expect(await submissionRows()).toEqual([]);
+	});
+
+	it("goes to an admin, never to the employee, when the policy's fallback is the admins", async () => {
+		await selfApprovalPolicy("organization_admin");
 		const result = await submit();
 		expect(result).toMatchObject({ kind: "submitted" });
 		if (result.kind !== "submitted") return;
