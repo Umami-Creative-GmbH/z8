@@ -7,6 +7,7 @@ import {
 import { type Clock, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
+	collectsPeriodSubmissions,
 	DEFAULT_SUBMISSION_WEEK_START_DAY,
 	SUBMISSION_CADENCE_OFF,
 	type SubmissionCadence,
@@ -85,6 +86,24 @@ export async function loadPeriodSubmissionSettings(
 			settingsRows[0]?.secondReminderDelayDays ?? DEFAULT_SECOND_REMINDER_DELAY_DAYS,
 		revision: settingsRows[0]?.revision ?? 0,
 	};
+}
+
+/**
+ * Whether the organization collects period submissions now or has scheduled to, in its timezone.
+ * Navigation to the period submission overview follows it (#1075).
+ */
+export async function loadCollectsPeriodSubmissions(
+	database: Reader,
+	organizationId: string,
+	deps: { clock: Clock },
+): Promise<boolean> {
+	const history = await loadSubmissionCadenceHistory(database, organizationId);
+	// Most organizations never saved a cadence; they need no timezone read.
+	if (history.length === 0) return false;
+	const timezone = await loadOrganizationTimezone(database, organizationId);
+	return collectsPeriodSubmissions(
+		submissionCadenceStatusAt(history, timezone, deps.clock.nowInstant()),
+	);
 }
 
 /**

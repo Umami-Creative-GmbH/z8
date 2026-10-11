@@ -1,7 +1,11 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { daysAroundForEveryZone, submissionCadenceStatusAt } from "./cadence";
+import {
+	collectsPeriodSubmissions,
+	daysAroundForEveryZone,
+	submissionCadenceStatusAt,
+} from "./cadence";
 
 const at = (value: string) => Temporal.Instant.from(value);
 
@@ -51,6 +55,40 @@ describe("submissionCadenceStatusAt", () => {
 				upcoming: { cadence: { kind: "monthly" }, fromDate: parsePlainDate("2026-06-01") },
 			},
 		);
+	});
+});
+
+describe("collectsPeriodSubmissions", () => {
+	const collectsAt = (
+		history: Parameters<typeof submissionCadenceStatusAt>[0],
+		now: string,
+	): boolean =>
+		collectsPeriodSubmissions(submissionCadenceStatusAt(history, "Europe/Berlin", at(now)));
+	const weeklyOn = {
+		cadence: { kind: "weekly", weekStartDay: "monday" } as const,
+		changedAt: at("2026-03-04T10:00:00Z"),
+	};
+
+	it("is false for an organization that never saved a cadence", () => {
+		expect(collectsAt([], "2026-03-04T10:00:00Z")).toBe(false);
+	});
+
+	it("is true once a cadence is scheduled, before its first period starts", () => {
+		expect(collectsAt([weeklyOn], "2026-03-05T10:00:00Z")).toBe(true);
+	});
+
+	it("is true while a cadence is in effect", () => {
+		expect(collectsAt([weeklyOn], "2026-03-10T10:00:00Z")).toBe(true);
+	});
+
+	it("stays true until a switch-off takes effect, then turns false", () => {
+		// Switched off on Wednesday: the current week still has to be submitted.
+		const history = [
+			weeklyOn,
+			{ cadence: { kind: "off" } as const, changedAt: at("2026-03-11T10:00:00Z") },
+		];
+		expect(collectsAt(history, "2026-03-12T10:00:00Z")).toBe(true);
+		expect(collectsAt(history, "2026-03-16T10:00:00Z")).toBe(false);
 	});
 });
 

@@ -5,6 +5,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import {
+	loadCollectsPeriodSubmissions,
 	loadPeriodSubmissionSettings,
 	loadSubmissionCadenceHistory,
 	savePeriodSubmissionSettings,
@@ -109,5 +110,35 @@ describe("period submission settings on PostgreSQL", () => {
 				(change) => change.cadence.kind,
 			),
 		).toEqual(["monthly", "off"]);
+	});
+
+	it("reports whether an organization collects period submissions, scoped to it", async () => {
+		const collecting = await fixture.createOrganization();
+		const other = await fixture.createOrganization();
+		const save = (
+			cadence: Parameters<typeof savePeriodSubmissionSettings>[0]["cadence"],
+			at: string,
+		) =>
+			savePeriodSubmissionSettings(
+				{
+					organizationId: collecting,
+					actorUserId: fixture.ownerUserId,
+					cadence,
+					secondReminderDelayDays: 3,
+				},
+				{ database: fixture.db, clock: clockAt(at) },
+			);
+		const collectsAt = (organizationId: string, at: string) =>
+			loadCollectsPeriodSubmissions(fixture.db, organizationId, { clock: clockAt(at) });
+
+		expect(await collectsAt(collecting, "2026-01-10T09:00:00Z")).toBe(false);
+		await save({ kind: "monthly" }, "2026-01-15T09:00:00Z");
+		// Scheduled from 1 February, so already collecting.
+		expect(await collectsAt(collecting, "2026-01-16T09:00:00Z")).toBe(true);
+		expect(await collectsAt(other, "2026-01-16T09:00:00Z")).toBe(false);
+		await save({ kind: "off" }, "2026-02-10T09:00:00Z");
+		// The switch-off takes effect on 1 March.
+		expect(await collectsAt(collecting, "2026-02-20T09:00:00Z")).toBe(true);
+		expect(await collectsAt(collecting, "2026-03-02T09:00:00Z")).toBe(false);
 	});
 });
