@@ -425,7 +425,17 @@ function ProjectManagementTable({
 								</Badge>
 							</TableCell>
 							<TableCell>
-								{project.customerName || <span className="text-muted-foreground">-</span>}
+								{project.customerName ||
+									(project.deletedCustomerName ? (
+										// The project is without customer for Billable Time (#938).
+										<span className="text-muted-foreground">
+											{t("settings.projects.customerDeleted", "{name} (deleted)", {
+												name: project.deletedCustomerName,
+											})}
+										</span>
+									) : (
+										<span className="text-muted-foreground">-</span>
+									))}
 							</TableCell>
 							<TableCell>
 								{budgetProgress ? (

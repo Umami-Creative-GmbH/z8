@@ -267,6 +267,8 @@ function useProjectDialogController({
 		billableTimeEnabled,
 		customers,
 		customFields,
+		// The deleted customer is never a choice; the project starts without customer (#938).
+		deletedCustomerName: project?.deletedCustomerName ?? null,
 		form,
 		isEditing,
 		isSubmitting,
@@ -332,6 +334,7 @@ function ProjectDialogForm({
 		billableTimeEnabled,
 		customers,
 		customFields,
+		deletedCustomerName,
 		form,
 		isEditing,
 		isSubmitting,
@@ -434,38 +437,59 @@ function ProjectDialogForm({
 				</form.Field>
 
 				{/* Customer */}
-				{customers.length > 0 && (
+				{(customers.length > 0 || deletedCustomerName) && (
 					<form.Field name="customerId">
 						{(field) => (
 							<div className="grid gap-2">
-								<Label htmlFor="customerId">
+								<Label htmlFor={customers.length > 0 ? "customerId" : undefined}>
 									{t("settings.projects.field.customer", "Customer")}
 								</Label>
-								<Select
-									value={field.state.value || NO_CUSTOMER_VALUE}
-									onValueChange={(value) =>
-										field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
-									}
-								>
-									<SelectTrigger id="customerId">
-										<SelectValue
-											placeholder={t(
-												"settings.projects.field.customerPlaceholder",
-												"Select a customer",
-											)}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={NO_CUSTOMER_VALUE}>
-											{t("settings.projects.field.noCustomer", "No customer")}
-										</SelectItem>
-										{customers.map((c) => (
-											<SelectItem key={c.id} value={c.id}>
-												{c.name}
+								{customers.length > 0 && (
+									<Select
+										value={field.state.value || NO_CUSTOMER_VALUE}
+										onValueChange={(value) =>
+											field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
+										}
+									>
+										<SelectTrigger
+										id="customerId"
+										aria-describedby={
+											deletedCustomerName && !field.state.value
+												? "customerDeletedHint"
+												: undefined
+										}
+									>
+											<SelectValue
+												placeholder={t(
+													"settings.projects.field.customerPlaceholder",
+													"Select a customer",
+												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value={NO_CUSTOMER_VALUE}>
+												{t("settings.projects.field.noCustomer", "No customer")}
 											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+											{customers.map((c) => (
+												<SelectItem key={c.id} value={c.id}>
+													{c.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+								{deletedCustomerName && !field.state.value && (
+									<p
+										id="customerDeletedHint"
+										className="text-sm text-muted-foreground"
+									>
+										{t(
+											"settings.projects.field.customerDeleted",
+											"{name} was deleted. Pick another customer or keep the project without one.",
+											{ name: deletedCustomerName },
+										)}
+									</p>
+								)}
 							</div>
 						)}
 					</form.Field>

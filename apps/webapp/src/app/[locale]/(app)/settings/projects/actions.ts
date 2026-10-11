@@ -16,7 +16,10 @@ import {
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { readProjectActiveCustomerId } from "@/lib/billable-time/project-customer";
+import {
+	projectHasActiveCustomerSql,
+	readProjectActiveCustomerId,
+} from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
@@ -65,8 +68,11 @@ export interface ProjectWithDetails {
 	color: string | null;
 	budgetHours: string | null;
 	deadline: Date | null;
+	/** The project's active customer (#768); null without customer or once the customer is deleted. */
 	customerId: string | null;
 	customerName: string | null;
+	/** The deleted customer the project still points at, for display only (#938). */
+	deletedCustomerName: string | null;
 	/** Whether new work on the project starts as billable work (#900). */
 	billableDefault: boolean;
 	isActive: boolean;
@@ -93,7 +99,7 @@ export interface ProjectWithDetails {
 }
 
 type ProjectWithCustomer = typeof project.$inferSelect & {
-	customer: Pick<typeof customer.$inferSelect, "id" | "name"> | null;
+	customer: Pick<typeof customer.$inferSelect, "id" | "name" | "organizationId"> | null;
 };
 
 type ProjectManagerWithEmployee = typeof projectManager.$inferSelect & {
@@ -213,7 +219,7 @@ export async function getProjects(
 						orderBy: [desc(project.createdAt)],
 						with: {
 							customer: {
-								columns: { id: true, name: true },
+								columns: { id: true, name: true, organizationId: true },
 							},
 						},
 					});
@@ -279,6 +285,24 @@ export async function getProjects(
 						: [];
 				});
 
+				// Billable Time (#768): a deleted customer leaves the project without customer (#938).
+				const withActiveCustomer = yield* dbService.query("project.activeCustomers",async () => {
+					const rows =
+						projectIds.length > 0
+							? await db
+									.select({ id: project.id })
+									.from(project)
+									.where(
+										and(
+											inArray(project.id, projectIds),
+											eq(project.organizationId, organizationId),
+											projectHasActiveCustomerSql(),
+										),
+									)
+							: [];
+					return new Set(rows.map((row) => row.id));
+				});
+
 				const typedManagers = managers as unknown as ProjectManagerWithEmployee[];
 				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
 				const managersByProject = new Map<string, ProjectWithDetails["managers"]>();
@@ -329,29 +353,35 @@ export async function getProjects(
 				);
 
 				// Map to ProjectWithDetails
-				const result: ProjectWithDetails[] = scopedProjects.map((p) => ({
-					id: p.id,
-					organizationId: p.organizationId,
-					name: p.name,
-					description: p.description,
-					status: p.status as ProjectStatus,
-					icon: p.icon,
-					color: p.color,
-					budgetHours: p.budgetHours,
-					deadline: p.deadline,
-					customerId: p.customerId,
-					customerName: p.customer?.name ?? null,
-					billableDefault: p.billableDefault,
-					isActive: p.isActive,
-					createdAt: p.createdAt,
-					createdBy: p.createdBy,
-					updatedAt: p.updatedAt,
-					updatedBy: p.updatedBy,
-					managers: managersByProject.get(p.id) ?? [],
-					assignments: assignmentsByProject.get(p.id) ?? [],
-					totalHoursBooked: hoursMap.get(p.id) || 0,
-					missingRequiredCustomFields: missingRequired.has(p.id),
-				}));
+				const result: ProjectWithDetails[] = scopedProjects.map((p) => {
+					const hasActiveCustomer = withActiveCustomer.has(p.id);
+					// Never name another organization's customer.
+					const ownCustomer = p.customer?.organizationId === organizationId ? p.customer : null;
+					return {
+						id: p.id,
+						organizationId: p.organizationId,
+						name: p.name,
+						description: p.description,
+						status: p.status as ProjectStatus,
+						icon: p.icon,
+						color: p.color,
+						budgetHours: p.budgetHours,
+						deadline: p.deadline,
+						customerId: hasActiveCustomer ? p.customerId : null,
+						customerName: hasActiveCustomer ? (ownCustomer?.name ?? null) : null,
+						deletedCustomerName: hasActiveCustomer ? null : (ownCustomer?.name ?? null),
+						billableDefault: p.billableDefault,
+						isActive: p.isActive,
+						createdAt: p.createdAt,
+						createdBy: p.createdBy,
+						updatedAt: p.updatedAt,
+						updatedBy: p.updatedBy,
+						managers: managersByProject.get(p.id) ?? [],
+						assignments: assignmentsByProject.get(p.id) ?? [],
+						totalHoursBooked: hoursMap.get(p.id) || 0,
+						missingRequiredCustomFields: missingRequired.has(p.id),
+					};
+				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;
