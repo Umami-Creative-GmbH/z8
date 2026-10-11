@@ -45,6 +45,7 @@ import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-complet
 import { calculateHash } from "./blockchain";
 import { canonicalJson } from "./canonical-json";
 import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	CompletedWorkCollisionError,
 	type CompletedWorkFollowUp,
@@ -473,6 +474,12 @@ export async function splitCompletedWork(
 		organizationId,
 		employeeId,
 		intervals: [{ start: sourceStart, end: sourceEnd }],
+	});
+	// ... and sends a submitted period back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		work: [{ start: sourceStart, end: sourceEnd }],
 	});
 
 	const decisions = await tx

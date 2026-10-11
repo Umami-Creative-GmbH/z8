@@ -33,6 +33,7 @@ import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 type CommitRowError = { rowId: string; message: string };
 type CommitSummary = {
@@ -521,6 +522,12 @@ async function commitAbsence(
 			notes: payload.note ?? null,
 		})
 		.returning({ id: absenceEntry.id });
+	// An imported absence in a submitted period sends it back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(database, {
+		organizationId: job.organizationId,
+		employeeId: payload.employeeId,
+		days: [{ startDate, endDate }],
+	});
 
 	await markCommitted(database, row.id, job, "absence_entry", absence.id);
 	return { status: "committed" };

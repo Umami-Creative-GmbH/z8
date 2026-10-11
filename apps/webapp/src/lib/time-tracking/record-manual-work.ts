@@ -50,6 +50,7 @@ import type {
 	ManualTimeEntryCommand,
 } from "./manual-command";
 import type { ManualWorkTransactionContext } from "./manual-work-transaction";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -325,6 +326,12 @@ export async function recordManualWork(
 	const [clockIn, clockOut] = appended;
 	if (!clockIn || !clockOut)
 		throw new CompletedWorkIntegrityError("Manual work needs both entries");
+	// Manual work in a submitted period sends it back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		work: [{ start: facts.start, end: facts.end }],
+	});
 
 	const startAt = dateFromInstant(facts.start);
 	const endAt = dateFromInstant(facts.end);

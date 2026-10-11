@@ -139,6 +139,7 @@ import type {
 } from "./types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
 import { assertAbsenceOpenById } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 const logger = createLogger("AbsenceApprovals");
 
@@ -1037,6 +1038,20 @@ function updateAbsenceStatus(
 				throw new Error(
 					"Scoped pending absence links changed during finalization",
 				);
+			}
+			// A decided absence in a submitted period sends it back (#1062). Submitting is
+			// refused while the absence is pending, so this finds nothing in practice.
+			if (updatedAbsence) {
+				await sendBackChangedPeriodSubmissions(dbService.db, {
+					organizationId: currentEmployee.organizationId,
+					employeeId: updatedAbsence.employeeId,
+					days: [
+						{
+							startDate: updatedAbsence.startDate,
+							endDate: updatedAbsence.endDate,
+						},
+					],
+				});
 			}
 
 			const workBalanceDirtyMark =

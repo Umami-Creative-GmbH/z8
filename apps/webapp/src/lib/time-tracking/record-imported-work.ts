@@ -36,6 +36,7 @@ import type { ImportProvider } from "@/lib/import-review/types";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { closedRangeTouchedByWork } from "./closed-months/rules";
 import { closedRangesForEmployee } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { canonicalJson } from "./canonical-json";
 import {
 	type AppendedClockEntry,
@@ -323,6 +324,12 @@ export async function recordImportedWork(
 	}
 	const [clockIn, clockOut] = appended;
 	if (!clockIn) throw new Error("Imported work has no clock-in entry");
+	// Imported work in a submitted period sends it back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		work: [{ start: interval.start, end: end ?? interval.start }],
+	});
 
 	const startAt = dateFromInstant(interval.start);
 	const endAt = end ? dateFromInstant(end) : null;

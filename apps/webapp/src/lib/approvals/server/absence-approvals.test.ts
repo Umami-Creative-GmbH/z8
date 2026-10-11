@@ -17,6 +17,10 @@ const {
 	getAbsenceDays: vi.fn().mockResolvedValue(4),
 }));
 
+// The period submission seam (#1062) has its own PostgreSQL suites; here nothing is submitted.
+vi.mock("@/lib/time-tracking/period-submissions/submission-send-back", () => ({
+	sendBackChangedPeriodSubmissions: vi.fn(async () => ({ withdrawn: [], outdated: [] })),
+}));
 // The closed-month check (#762) has its own PostgreSQL suites; here it never refuses.
 vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/time-tracking/closed-months/store")>()),

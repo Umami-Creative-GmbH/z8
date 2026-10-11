@@ -52,6 +52,7 @@ import { getCurrentEmployee } from "./current-employee";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import { assertAbsenceOpenById } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 export interface CancelAbsenceEmployeeContext {
 	id: string;
@@ -190,6 +191,8 @@ async function deleteScopedAbsence(
 			status: absenceEntry.status,
 			approvalWorkflowId: absenceEntry.approvalWorkflowId,
 			canonicalRecordId: absenceEntry.canonicalRecordId,
+			startDate: absenceEntry.startDate,
+			endDate: absenceEntry.endDate,
 		});
 	const row = deleted[0];
 	if (
@@ -203,6 +206,12 @@ async function deleteScopedAbsence(
 	) {
 		fail("Absence changed before cancellation could complete");
 	}
+	// A cancelled absence in a submitted period sends it back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(transactionDb, {
+		organizationId: input.organizationId,
+		employeeId: row.employeeId,
+		days: [{ startDate: row.startDate, endDate: row.endDate }],
+	});
 	await removeCanonicalAbsenceRecordInTransaction(transactionDb, {
 		organizationId: input.organizationId,
 		canonicalRecordId: input.expectedCanonicalRecordId,
