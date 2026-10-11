@@ -27,7 +27,7 @@ export interface StaticAppSearchInput {
 	showComplianceNav: boolean;
 	showPayrollNav?: boolean;
 	featureFlags?: FeatureFlagState;
-	/** The user manages at least one project of the organization (#928). */
+	/** The user manages a project below the manager tier (#928). */
 	managesProject?: boolean;
 }
 

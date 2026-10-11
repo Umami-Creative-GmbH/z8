@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import type { SettingsAccessTier } from "@/lib/settings-access";
+import { hasSettingsAccessTier, type SettingsAccessTier } from "@/lib/settings-access";
 import { managesProjectTasks } from "./project-task-permission";
 
 /**
@@ -15,7 +15,8 @@ export const managesProjectBelowManagerTier = cache(
 		userId: string | null,
 		organizationId: string | null,
 	): Promise<boolean> => {
-		if (accessTier !== "member" || !userId || !organizationId) return false;
+		if (!accessTier || hasSettingsAccessTier(accessTier, "manager")) return false;
+		if (!userId || !organizationId) return false;
 		return managesProjectTasks({ userId, organizationId });
 	},
 );
