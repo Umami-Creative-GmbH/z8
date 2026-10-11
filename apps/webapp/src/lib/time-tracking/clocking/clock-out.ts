@@ -31,11 +31,11 @@ import {
 	resolveTaskAttribution,
 } from "../close-active-work";
 import { approvalDbServiceForTransaction } from "../ordinary-approval-runtime";
-import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import {
 	findPolicyClockOutSubmissionEvidence,
 	requireReplayOnlySubmission,
 } from "../ordinary-submission-evidence";
+import { sendBackChangedPeriodSubmissions } from "../period-submissions/submission-send-back";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,

@@ -6,9 +6,9 @@ import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/tempor
 import { scheduledSubmissionPeriods, widenedForEveryZone } from "./cadence";
 import { deriveExpectedSubmissionPeriods } from "./expected-periods";
 import { loadExpectedSubmissionFactsByEmployee } from "./organization-expected-periods";
+import { employeeDisplayName } from "./overview-store";
 import { periodSubmissionOverlaps } from "./period-overlap";
 import { loadSubmissionCadenceHistory } from "./settings";
-import { employeeDisplayName } from "./overview-store";
 import { type PeriodSubmissionGap, periodSubmissionGaps } from "./submission-gaps";
 
 export interface EmployeePeriodSubmissionGap extends PeriodSubmissionGap {

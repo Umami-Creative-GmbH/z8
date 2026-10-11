@@ -27,8 +27,6 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { canonicalJson } from "./canonical-json";
-import { assertWorkOpen } from "./closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -42,6 +40,8 @@ import {
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 } from "./close-active-work";
+import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { humanActorUserId, receiptActorColumns, writerActor } from "./receipt-actor";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkLocationType } from "./work-location";

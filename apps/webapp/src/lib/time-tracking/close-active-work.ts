@@ -43,8 +43,6 @@ import {
 	isClosureCarriedByAutomaticBreak,
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
-import { assertWorkOpen } from "./closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -52,6 +50,8 @@ import {
 	createDatabaseClockingStore,
 	type Entry,
 } from "./clocking-core";
+import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -62,9 +62,9 @@ import {
 	taskBookingIneligibility,
 } from "./project-eligibility";
 import {
+	humanActorUserId,
 	KIOSK_CLOCK_WRITER_VERSION,
 	kioskDeviceInfo,
-	humanActorUserId,
 	type ReceiptActor,
 	receiptActorColumns,
 	writerActor,

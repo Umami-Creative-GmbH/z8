@@ -17,15 +17,6 @@ import {
 	periodSubmissionHours,
 } from "../presentation/period-submission-review";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
-import type {
-	CanonicalInboxApproval,
-	CanonicalInboxApprovalBatch,
-	CanonicalInboxCountInput,
-	CanonicalInboxDecisionInput,
-	CanonicalInboxLoadInput,
-	CanonicalInboxRead,
-	CanonicalInboxReadDatabase,
-} from "./canonical-inbox-read";
 import {
 	canonicalInboxCursor,
 	canonicalInboxFilters,
@@ -36,6 +27,15 @@ import {
 	canonicalInboxVisibility,
 	resultRows,
 } from "./canonical-inbox-query";
+import type {
+	CanonicalInboxApproval,
+	CanonicalInboxApprovalBatch,
+	CanonicalInboxCountInput,
+	CanonicalInboxDecisionInput,
+	CanonicalInboxLoadInput,
+	CanonicalInboxRead,
+	CanonicalInboxReadDatabase,
+} from "./canonical-inbox-read";
 import { getAgeDays } from "./serialization";
 import { buildInboxTriage } from "./triage";
 import type {
