@@ -79,7 +79,6 @@
         "description": "Nur abgschlosseni Arbet. De Umsatz verwendet d Tarife, wo am {date} gültig gsi sind.",
         "employee": "Mitarbeiter",
         "hasUnpriced": "Hät Arbet ohni Priis",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Verrechneti Stunde",
         "invoicedRevenue": "Verrechnete Umsatz",
         "invoicedRevenueHint": "Zu de Tarife vo de Rächnigsentwürf",
@@ -203,6 +202,7 @@
         "ratesResolvedAt": "Ansätze per",
         "revenue": "Umsatz",
         "roundingNote": "Beträge werden exakt summiert und einmal pro Zeile kaufmännisch auf den Cent gerundet; Gesamtsummen addieren die Zeilen.",
+        "snapshotRatesNote": "De Umsatz basiert uf de Tarife, wo zum Zitpunkt vo dere Momentufnahm gültig gsi sind.",
         "summaryTable": "Zämefassig",
         "total": "Total",
         "uninvoicedHours": "Nöd verrechneti Stunde",
@@ -258,6 +258,7 @@
         "overBudget": "Über em Budget",
         "overBudgetDescription": "Budget überschritte"
       },
+      "hoursValue": "{hours} h",
       "page": {
         "accessDenied": "Zuegriff verweigeret",
         "description": "Analysier Projektstunde, Budgetnutzig und Team-Biiträg",
@@ -325,6 +326,89 @@
         "portfolioGenerated": "Portfolio-Bricht isch erstellt worde",
         "projectGenerated": "Bricht für {name} isch erstellt worde",
         "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
+      }
+    },
+    "share": {
+      "action": "Teile",
+      "created": {
+        "another": "En andere Link erstelle",
+        "copied": "Kopiert",
+        "copy": "Kopiere",
+        "copyFailed": "Kopier de Link, indem du en uswählsch",
+        "description": "Kopier en jetzt: Er wird nume eimol aazeigt. Zum en spöter nomol z'teile, erstell en neue Link.",
+        "title": "Din Freigabe-Link",
+        "urlLabel": "Freigabe-Link"
+      },
+      "create": {
+        "failed": "De Freigabe-Link hät nöd chönne erstellt werde"
+      },
+      "dialog": {
+        "description": "Jedi Person mit em Link chan e schribgschützti Momentufnahm vo dem Bricht für {period} aaluege, so wie'ner jetzt isch, bis de Link ablauft. Chöschte und Marge werded nie teilt.",
+        "title": "{name} teile"
+      },
+      "figures": {
+        "hours": "Nur Stunde",
+        "revenue": "Stunde + Umsatz"
+      },
+      "form": {
+        "create": "Link erstelle",
+        "employees": "Ufschlüsselig nach Mitarbeiter",
+        "employeesDescription": "Zeigt d Stunde vo jedem Mitarbeiter under sim echte Name aa.",
+        "expiry": "Lauft ab nach",
+        "expiryDays": "{days, plural, one {# Tag} other {# Täg}}",
+        "figures": "Zahle",
+        "revenueUnavailable": "Du gsehsch kei Umsatz uf däm Bricht, drum chasch en nöd teile."
+      },
+      "kind": {
+        "customer": "Chundebricht",
+        "project": "Projektbricht"
+      },
+      "list": {
+        "createdBy": "Erstellt vo {name} am {date}",
+        "deletedReport": "Glöscht",
+        "empty": "No kei Freigaab-Links.",
+        "expired": "Abgloffe am {date}",
+        "expires": "Lauft ab am {date}",
+        "failed": "Freigaab-Links händ nöd chönne glade werde.",
+        "lastViewed": "zletscht am {date}",
+        "loading": "Freigaab-Links wärded glade…",
+        "revokedAutomatically": "Automatisch widerruefe am {date}: D Person, wo's erstellt hät, gseht nümme alli Projekt dinne",
+        "revokedBy": "Widerruefe vo {name} am {date}",
+        "someone": "öpper",
+        "title": "Links zu däm Bricht",
+        "views": "{count, plural, one {# Ufruef} other {# Ufrüef}}",
+        "withEmployees": "Mit Mitarbeiter-Ufschlüsselig",
+        "withoutEmployees": "Ohni Mitarbeiter-Ufschlüsselig"
+      },
+      "page": {
+        "expiresAt": "Link lauft am {date} ab",
+        "footer": "En schriibgschützte Schnappschuss, teilt us Z8. Spöteri Änderige a de Arbet dehinder wärded nöd aazeigt.",
+        "loading": "Geteilte Bricht wird glade",
+        "sharedBy": "Teilt vo {name}",
+        "takenAt": "Snapshot gmacht am {date}",
+        "unavailableDescription": "De Link isch villicht abgloffe oder widerruefe worde, oder er isch unvollständig. Frag d Person, wo ihn mit dir teilt hät, nach eme neue Link.",
+        "unavailableTitle": "Dä Link isch nöd verfügbar"
+      },
+      "revoke": {
+        "action": "Widerruefe",
+        "cancel": "Abbräche",
+        "confirm": "Link widerruefe",
+        "description": "De Link funktioniert ab sofort nümme und sin Snapshot wird glöscht. Sin Iitrag und s Aasichtsprotokoll werded bhalte.",
+        "done": "Link widerruefe",
+        "failed": "De Link hät nöd chönne widerruefe werde",
+        "title": "Dä Link widerruefe?"
+      },
+      "status": {
+        "active": "Aktiv",
+        "expired": "Abgloffe",
+        "revoked": "Widerruefe"
+      },
+      "views": {
+        "empty": "Es hät no niemert dä Link ufgmacht.",
+        "failed": "Aasichte händ nöd chönne glade werde.",
+        "loading": "Aasichte werded glade…",
+        "unknownAgent": "Unbekannte Browser",
+        "unknownIp": "Unbekannti IP-Adrässe"
       }
     },
     "summary": {

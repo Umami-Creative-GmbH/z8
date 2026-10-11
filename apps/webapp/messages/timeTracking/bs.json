@@ -1,0 +1,442 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Dodajte napomenu o svom radu (opcionalno)",
+    "autoAdjusted": {
+      "description": "Pauza od {breakMinutes} minuta automatski je dodana radi usklađivanja s propisom {regulationName}.",
+      "indicator": "Automatski prilagođeno radi usklađenosti",
+      "originalDuration": "Izvorno: {duration}",
+      "title": "Automatski prilagođeno radi usklađenosti",
+      "toast": {
+        "description": "Dodana je pauza od {breakMinutes} minuta radi usklađivanja s propisima o radnom vremenu.",
+        "title": "Pauza je automatski dodana radi usklađenosti"
+      }
+    },
+    "billable": {
+      "description": "Naplativi rad za klijenta projekta",
+      "label": "Naplativo",
+      "noCustomer": "Samo rad na projektu s klijentom može biti naplativ"
+    },
+    "breakInProgress": {
+      "description": "Na pauzi ste",
+      "since": "Na pauzi od {time}"
+    },
+    "budget": "Budžet",
+    "clockedOutSuccess": "Evidentirali ste odlazak!",
+    "clockIn": "Evidentiraj dolazak",
+    "clockingIn": "Evidentiranje dolaska…",
+    "clockingOut": "Evidentiranje odlaska…",
+    "clockInSavedForReview": "Prijava je spremljena na ovom uređaju za pregled; nije potvrđena na serveru",
+    "clockInSavedForSending": "Prijava je spremljena na ovom uređaju. Šalje se automatski i još nije potvrđena.",
+    "clockInSavedHeld": "Prijava je spremljena na ovom uređaju, ali nije poslana. Pregledajte spremljene zapise.",
+    "clockInSuccess": "Dolazak je uspješno evidentiran",
+    "clockOut": "Evidentiraj odlazak",
+    "clockOutSavedForReview": "Odjava je spremljena na ovom uređaju za pregled; nije potvrđena na serveru",
+    "clockOutSavedForSending": "Odjava je spremljena na ovom uređaju. Šalje se automatski i još nije potvrđena.",
+    "clockOutSavedHeld": "Odjava je spremljena na ovom uređaju, ali nije poslana. Pregledajte spremljene zapise.",
+    "clockOutSuccess": "Odlazak je uspješno evidentiran",
+    "compliance": {
+      "violation": "Kršenje propisa",
+      "warning": "Obavještenje o usklađenosti"
+    },
+    "correction": {
+      "clockIn": "Evidentiraj dolazak",
+      "clockInDate": "Datum prijave",
+      "clockInTime": "Vrijeme prijave",
+      "clockOut": "Evidentiraj odlazak",
+      "clockOutDate": "Datum odjave",
+      "clockOutTime": "Vrijeme odjave",
+      "editDescription": "Unesite izmjene u svoj unos radnog vremena za danas.",
+      "editEntry": "Uredi unos radnog vremena",
+      "editTitle": "Uredi unos radnog vremena",
+      "errors": {
+        "invalidTimeRange": "Vrijeme odlaska mora biti nakon vremena dolaska",
+        "noChanges": "Najmanje jedna vrijednost korekcije se mora promijeniti",
+        "submitFailed": "Slanje ispravke nije uspjelo",
+        "updateFailed": "Ažuriranje unosa radnog vremena nije uspjelo"
+      },
+      "noteLabel": "Napomena (opcionalno)",
+      "notePlaceholder": "Dodajte napomenu o ovoj promjeni…",
+      "reasonLabel": "Razlog za ispravku",
+      "reasonPlaceholder": "Objasnite zašto je ova ispravka potrebna…",
+      "requestCorrection": "Zatraži ispravku vremena",
+      "requestDescription": "Pošaljite zahtjev za ispravku ovog unosa radnog vremena. Vaš menadžer ga mora odobriti.",
+      "requestTitle": "Zatraži ispravku vremena",
+      "saveChanges": "Sačuvaj promjene",
+      "saving": "Čuvanje…",
+      "submitRequest": "Pošalji zahtjev",
+      "submitting": "Slanje…",
+      "success": {
+        "applied": "Ispravka je uspješno primijenjena",
+        "submitted": "Zahtjev za ispravku poslan na odobrenje menadžeru",
+        "updated": "Unos vremena uspješno ažuriran"
+      },
+      "timezoneNote": "Vremena su prikazana u vašoj lokalnoj vremenskoj zoni ({timezone})"
+    },
+    "currentlyClockedIn": "Trenutno ste prijavljeni",
+    "deadline": "Rok",
+    "errors": {
+      "alreadyClockedIn": "Već ste prijavljeni",
+      "appendReviewRequired": "Prijava zahtijeva pregled vaše historije radnog vremena",
+      "appendReviewRequiredDesc": "Vaši raniji unosi vremena nisu se mogli potvrditi, pa nova prijava nije spremljena. Molimo kontaktirajte svog administratora.",
+      "billableNotAllowed": "Samo rad na projektu koji ima klijenta može biti naplativ",
+      "breakAwaitingApproval": "Ovaj radni period čeka odobrenje i ne može se uređivati. Dodajte pauzu nakon što bude riješen.",
+      "breakDurationInvalid": "Unesite trajanje pauze od najmanje 1 minute.",
+      "breakInProgressOpen": "Na pauzi ste. Nastavite s radom prije dodavanja druge pauze.",
+      "breakNotAllowed": "Ne možete dodati pauzu ovom radu.",
+      "breakOccupied": "Pauza se preklapa s drugim evidentiranim radom.",
+      "breakPendingCorrection": "Odobrenje ispravke vremena je već na čekanju za ovaj radni period. Dodajte pauzu nakon što bude riješeno.",
+      "breakRetry": "Dodavanje pauze nije uspjelo. Pokušajte ponovo.",
+      "breakTooLong": "Trajanje pauze mora biti kraće od vaše trenutne sesije.",
+      "clockAttributionNotAllowed": "Odabrani projekat ili kategorija nisu dostupni",
+      "clockCommandRejected": "Server nije prihvatio ovu radnju evidentiranja vremena",
+      "clockConnectionRequired": "Evidentiranje radnog vremena zahtijeva vezu u ovoj organizaciji. Ponovo se povežite i pokušajte opet.",
+      "clockInAppendReview": "Vaša historija radnog vremena zahtijeva pregled prije nego što se možete prijaviti. Molimo kontaktirajte svog administratora.",
+      "clockInCollision": "Ova prijava je u sukobu s ranijim zahtjevom. Osvježite i pokušajte ponovo.",
+      "clockInFailed": "Prijava nije uspjela",
+      "clockInNotAllowed": "Ne možete se prijaviti.",
+      "clockInOccupied": "Ovo vrijeme se preklapa s drugim evidentiranim radom",
+      "clockInRetry": "Prijava rada nije uspjela. Pokušajte ponovo.",
+      "clockMonthClosed": "Ovo vrijeme je u zatvorenom mjesecu i ne može se mijenjati dok se mjesec ponovo ne otvori.",
+      "clockNotAllowedAtTime": "Evidentiranje radnog vremena trenutno nije dozvoljeno",
+      "clockOutAppendReview": "Vaša historija radnog vremena zahtijeva pregled prije nego što se možete odjaviti. Obratite se svom administratoru.",
+      "clockOutBeforeClockIn": "Vrijeme odjave mora biti nakon vremena prijave",
+      "clockOutCollision": "Ova odjava je u konfliktu s ranijim zahtjevom ili izmijenjenim radom. Osvježite stranicu i pokušajte ponovo.",
+      "clockOutFailed": "Odjava nije uspjela",
+      "clockOutNotAllowed": "Ne možete odjaviti ovaj rad.",
+      "clockOutRetry": "Odjava rada nije uspjela. Pokušajte ponovo.",
+      "clockTargetNotActive": "Ovaj radni period više nije aktivan. Osvježite status evidencije.",
+      "clockTargetUnknown": "Radni period za zatvaranje nije pronađen. Osvježite status evidencije.",
+      "employeeProfileNotFound": "Profil zaposlenika nije pronađen",
+      "holidayBlocked": "Nije moguće odjaviti se na praznik: {holidayName}",
+      "holidayBlockedBreak": "Nije moguće nastaviti rad nakon pauze na dan {holidayName}",
+      "holidayBlockedClockIn": "Nije se moguće prijaviti na dan {holidayName}",
+      "holidayBlockedDesc": "Ovaj dan je označen kao neradni dan i unosi radnog vremena nisu dozvoljeni",
+      "invalidWorkLocation": "Nevažeća vrsta lokacije rada",
+      "notAuthenticated": "Niste autentificirani",
+      "notClockedIn": "Trenutno niste prijavljeni",
+      "notesSaveFailed": "Čuvanje bilješki nije uspjelo",
+      "projectNotAllowed": "Nije moguće dodijeliti ovom projektu",
+      "restPeriodBlocked": "Period odmora nije završen",
+      "restPeriodBlockedDesc": "Morate završiti obavezni period odmora prije prijave rada. Zatražite izuzetak ako je potrebno.",
+      "taskDone": "Ovaj zadatak je završen, pa se na njega ne može evidentirati vrijeme",
+      "taskNotAllowed": "Nije moguće evidentirati vrijeme na ovaj zadatak",
+      "taskNotFound": "Ovaj zadatak više ne postoji",
+      "taskOtherProject": "Ovaj zadatak pripada drugom projektu",
+      "taskProjectNotBookable": "Vrijeme se više ne može evidentirati na projekt ovog zadatka",
+      "workCategoryNotAllowed": "Nije moguće dodijeliti ovoj kategoriji rada"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Prijava",
+        "clockOut": "Odjava",
+        "endDay": "Završi dan",
+        "resume": "Nastavi s radom",
+        "startBreak": "Započni pauzu"
+      },
+      "board": {
+        "empty": "Niko trenutno nije prijavljen.",
+        "title": "Ko je prisutan"
+      },
+      "done": {
+        "button": "Gotovo",
+        "clockIn": "Prijavljeno",
+        "clockOut": "Odjavljeno",
+        "endDay": "Dan završen",
+        "endDayNote": "Vaš dan je završen na početku vaše pauze.",
+        "resume": "Povratak na posao",
+        "returning": "Povratak na početak za {seconds} s",
+        "startBreak": "Pauza započeta",
+        "title": "Gotovo"
+      },
+      "employee": {
+        "back": "Otkaži",
+        "endDayHint": "Završavanjem dana sada završavate svoj rad na početku pauze.",
+        "today": "Danas: {duration}"
+      },
+      "home": {
+        "empty": "Niko još nije dodijeljen ovoj lokaciji. Obratite se svom administratoru.",
+        "loadFailed": "Nije moguće učitati imena. Provjerite mrežnu vezu.",
+        "loading": "Učitavanje imena…",
+        "noMatch": "Nijedno ime ne odgovara vašoj pretrazi.",
+        "search": "Pronađite svoje ime",
+        "title": "Dodirnite svoje ime za prijavu ili odjavu"
+      },
+      "loading": "Pokretanje kioska…",
+      "offline": {
+        "banner": "Kiosk je van mreže. Evidentiranje nije moguće dok se veza ne uspostavi.",
+        "refused": "Kiosk je van mreže. Ništa nije zabilježeno; evidentiranje radi samo na mreži."
+      },
+      "pairing": {
+        "codeDescription": "Kod se može iskoristiti jednom i ističe 10 minuta nakon izdavanja.",
+        "codeLabel": "Kod za uparivanje",
+        "description": "Vlasnik ili administrator kreira kiosk u Postavke › Kiosci i daje vam kod za uparivanje.",
+        "invalidCode": "Ovaj kod je nevažeći ili je istekao. Zatražite novi kod za uparivanje od administratora.",
+        "malformedCode": "Unesite kod od 10 znakova tačno onako kako je prikazan u postavkama.",
+        "rateLimited": "Previše pokušaja. Sačekajte nekoliko minuta, a zatim pokušajte ponovo.",
+        "submit": "Upari ovaj uređaj",
+        "title": "Podesi ovaj kiosk",
+        "unreachable": "Kiosk ne može uspostaviti vezu sa serverom. Provjerite mrežnu vezu i pokušajte ponovo."
+      },
+      "pin": {
+        "back": "Niste vi? Nazad",
+        "checking": "Provjera…",
+        "delete": "Obriši zadnju cifru",
+        "entered": "Uneseno cifara: {count}",
+        "locked": "Previše netačnih PIN-ova. Vaš PIN je zaključan do {time}. Pokušajte ponovo tada ili zatražite od menadžera da ga otključa.",
+        "none": "Još uvijek nemate PIN za kiosk. Zatražite ga od svog menadžera.",
+        "notAssigned": "Ne možete evidentirati radno vrijeme na ovom kiosku. Obratite se svom menadžeru.",
+        "prompt": "Unesite svoj PIN za kiosk",
+        "rateLimited": "Previše pokušaja unosa PIN-a na ovom kiosku. Pokušajte ponovo za {seconds} sekundi.",
+        "submit": "U redu",
+        "wrong": "Taj PIN nije tačan. Pokušajte ponovo."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Već ste prijavljeni.",
+        "billing": "Evidentiranje radnog vremena trenutno nije dostupno za vašu organizaciju. Obratite se administratoru.",
+        "generic": "To nije uspjelo. Ništa nije zabilježeno. Pokušajte ponovo ili se obratite svom menadžeru.",
+        "holiday": "Evidentiranje radnog vremena je danas blokirano zbog praznika. Obratite se svom menadžeru.",
+        "monthClosed": "Ovo vrijeme je u zatvorenom mjesecu i ne može se mijenjati. Obratite se svom menadžeru.",
+        "noBreak": "Niste na pauzi.",
+        "notClockedIn": "Niste prijavljeni.",
+        "onBreak": "Već ste na pauzi.",
+        "unconfirmed": "Kiosk nije mogao potvrditi da li je ovo sačuvano. Provjerite svoj status prije nego što pokušate ponovo.",
+        "underReview": "Vaše radno vrijeme za danas je na pregledu. Obratite se svom menadžeru."
+      },
+      "retry": "Pokušaj ponovo",
+      "revoked": {
+        "description": "Ovaj kiosk se više ne može koristiti za evidenciju radnog vremena. Molimo obratite se svom administratoru.",
+        "pairAgain": "Upari s novim kodom",
+        "title": "Kiosk je opozvan"
+      },
+      "state": {
+        "clockedIn": "Prijavljeni od {time}",
+        "clockedOut": "Niste prijavljeni",
+        "onBreak": "Na pauzi od {time}"
+      },
+      "unreachableDescription": "Kiosk ne može uspostaviti vezu sa serverom. Provjerite mrežnu vezu; evidencija radnog vremena radi samo na mreži.",
+      "unreachableTitle": "Kiosk je van mreže"
+    },
+    "manualEntry": {
+      "addButton": "Dodaj ručni unos",
+      "clockInLabel": "Prijavi rad",
+      "clockOutLabel": "Evidentiraj odlazak",
+      "context": {
+        "choicesCleared": "Odabrani projekat ili kategorija više nisu dostupni i uklonjeni su.",
+        "loadFailed": "Nije moguće učitati vremensku zonu i opcije za ovaj unos.",
+        "loading": "Učitavanje opcija unosa…",
+        "notAuthorized": "Ne možete kreirati unose vremena za ovog zaposlenika.",
+        "organizationFallback": "{employee} nema ličnu vremensku zonu, pa se koristi vremenska zona organizacije.",
+        "retry": "Pokušajte ponovo",
+        "targetChanged": "Zaposlenik je promijenjen, pa su projekat i kategorija poništeni.",
+        "targetTimezone": "Vremena su u vremenskoj zoni korisnika {employee}: {timezone}",
+        "taskCleared": "Odabrani zadatak više nije dostupan i uklonjen je.",
+        "thisEmployee": "ovaj zaposlenik",
+        "utcFallback": "Ni {employee} ni organizacija nemaju postavljenu vremensku zonu, pa se koristi UTC."
+      },
+      "dateLabel": "Datum",
+      "description": "Kreirajte unos radnog vremena za prošli datum. Možda će biti potrebno odobrenje u skladu s pravilima vaše organizacije o promjenama.",
+      "errors": {
+        "collision": "Ovaj unos je u konfliktu s ranijom prijavom ili izmijenjenim radom. Provjerite svoje postojeće unose.",
+        "createFailed": "Kreiranje unosa radnog vremena nije uspjelo",
+        "futureDate": "Nije moguće kreirati unose za buduće datume",
+        "futureTime": "Nije moguće kreirati unose za buduće vrijeme",
+        "historyReview": "Ova historija radnog vremena zahtijeva pregled prije nego što se novi unosi mogu sačuvati. Obratite se svom administratoru.",
+        "invalidTime": "Unesite potpuno, važeće vrijeme",
+        "invalidTimeRange": "Vrijeme odjave mora biti nakon vremena prijave",
+        "nonexistentTime": "Ovo vrijeme ne postoji na ovaj datum zbog pomjeranja sata unaprijed.",
+        "occurrenceRequired": "Ovo vrijeme se pojavljuje dva puta na ovaj datum. Odaberite na koje mislite.",
+        "overlap": "Ovo vrijeme se preklapa s evidentiranim radom. Odaberite raspon koji se ne preklapa s postojećim unosima.",
+        "reconfirm": "Vremenska zona ili vremena su promijenjena. Pregledajte unos i pošaljite ga ponovo.",
+        "refresh": "Postavke ručnog unosa su promijenjene. Pregledajte unos i pošaljite ga ponovo.",
+        "tooLong": "Period rada ne može biti duži od 24 sata"
+      },
+      "occurrence": {
+        "earlier": "Prvo, {offset}",
+        "later": "Drugo, {offset}",
+        "legend": "{time} se pojavljuje dva puta na ovaj datum. Na koje mislite?"
+      },
+      "reasonLabel": "Razlog",
+      "reasonPlaceholder": "Opišite na čemu ste radili…",
+      "recovery": {
+        "check": "Provjerite status",
+        "checkFailed": "Provjera ovog unosa trenutno nije uspjela. Pokušajte ponovo kasnije.",
+        "contextMismatch": "Prijavljeni ste na drugi račun ili organizaciju. Prebacite se nazad da biste obradili ovaj unos.",
+        "description": "Ovi unosi su poslani s ove kartice bez potvrđenog rezultata. Ništa se neće ponovo poslati osim ako vi to ne odaberete.",
+        "discard": "Odbaci",
+        "editAsNew": "Uredite kao novi unos",
+        "notCommitted": "Spremanje nije pronađeno.",
+        "notCommittedToast": "Za ovaj unos nije pronađeno spremanje. Pokušajte ponovo sa istim podacima ili ga uredite kao novi unos.",
+        "retry": "Pokušajte ponovo identično",
+        "saved": "Ovaj unos je sačuvan.",
+        "savedForApproval": "Ovaj unos je sačuvan i poslan na odobrenje. Njegov trenutni status: {status}.",
+        "status": {
+          "approved": "odobreno",
+          "pending": "na čekanju",
+          "rejected": "odbijeno"
+        },
+        "stillUncertain": "Još uvijek nije potvrđeno. Unos je sačuvan; pokušajte ponovo kada budete na mreži.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Nepotvrđeni unosi",
+        "uncertain": "Nije potvrđeno. Možda je već sačuvano.",
+        "uncertainToast": "Nismo mogli potvrditi je li ovaj unos sačuvan. Zadržan je pod Nepotvrđeni unosi, gdje možete ponovo pokušati sa istim podacima ili provjeriti njegov status.",
+        "unsupported": "Njegov status se ne može provjeriti. Možda je već sačuvan.",
+        "unsupportedToast": "Status ovog unosa se trenutno ne može provjeriti. Ponovni pokušaj šalje potpuno isti unos."
+      },
+      "submit": "Kreiraj unos",
+      "submitting": "Kreiranje…",
+      "success": {
+        "adjusted": "Vremena su prilagođena na {clockIn} - {clockOut} kako bi se izbjeglo preklapanje",
+        "created": "Unos radnog vremena uspješno je kreiran",
+        "pendingApproval": "Unos radnog vremena poslan je na odobrenje menadžeru"
+      },
+      "title": "Dodaj ručni unos radnog vremena",
+      "titleForEmployee": "Dodaj ručni unos vremena za {employee}"
+    },
+    "noCategory": "Bez kategorije (100%)",
+    "noProject": "Nema projekta",
+    "notesPlaceholder": "Na čemu ste radili?",
+    "notesSaved": "Bilješke sačuvane",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "Zahtjev za odsustvo za {dates} je neriješen.",
+        "liveWork": "Rad započet {start} još uvijek traje.",
+        "manualWork": "Ručni rad na {start} je neriješen.",
+        "timeCorrection": "Korekcija vremena za rad na {start} je neriješena."
+      },
+      "description": "Potvrdite da su vaš rad i odsustva za svaki period potpuni i tačni.",
+      "opensOn": "Možete podnijeti od {date}.",
+      "refusal": {
+        "alreadySubmitted": "Ovaj period je već podnesen.",
+        "noApprover": "Niko još ne može odobriti ovaj period. Zatražite od administratora da vam dodijeli menadžera.",
+        "notEnded": "Ovaj period možete podnijeti od njegovog posljednjeg dana pa nadalje.",
+        "notExpected": "Ovaj period nije potrebno podnijeti.",
+        "periodOpen": "Ovaj period je još uvijek otvoren"
+      },
+      "rejectionReason": "Razlog: {reason}",
+      "status": {
+        "approved": "Odobreno",
+        "awaiting": "Čeka na podnošenje",
+        "rejected": "Odbijeno",
+        "sentBack": "Vraćeno nakon izmjene",
+        "submitted": "Podneseno"
+      },
+      "submit": "Podnesi",
+      "submitFailed": "Period se nije mogao podnijeti",
+      "submitted": "Period je podnesen na odobrenje",
+      "title": "Podnošenja perioda",
+      "withdraw": "Povuci",
+      "withdrawFailed": "Podnošenje se nije moglo povući",
+      "withdrawn": "Podnošenje je povučeno",
+      "withdrawRefused": "O ovom podnošenju je već odlučeno i više se ne može povući."
+    },
+    "project": "Projekat",
+    "quickBreak": {
+      "addBreak": "Dodaj pauzu",
+      "apply": "Primijeni",
+      "applying": "Primjena…",
+      "durationLabel": "Trajanje pauze u minutama",
+      "errors": {
+        "addFailed": "Dodavanje pauze nije uspjelo. Pokušajte ponovo.",
+        "durationTooShort": "Unesite trajanje pauze od najmanje 1 minute.",
+        "failed": "Dodavanje pauze nije uspjelo. Pokušajte ponovo."
+      },
+      "helper": "Zabilježite pauzu koja završava sada i ostanite prijavljeni.",
+      "success": "Pauza dodana",
+      "successDescription": "Još uvijek ste prijavljeni.",
+      "title": "Dodaj pauzu"
+    },
+    "readyToClockIn": "Spremni za početak rada?",
+    "restPeriodWarning": "Upozorenje o periodu odmora",
+    "restPeriodWarningMessage": "Niste završili obavezni period odmora. Prijava dolaska sada bit će evidentirana kao prekršaj.",
+    "selectCategory": "Odaberite kategoriju",
+    "selectProject": "Odaberite projekat",
+    "sessionReminders": {
+      "breakOpen": "Preostalo {remaining} min pauze",
+      "breakRequired": "Pauza je sada obavezna",
+      "breakRequiredMessage": "Napravite pauzu prije nego što nastavite sa sesijom.",
+      "breakSoon": "Pauza uskoro",
+      "dismissBreak": "Odbaci podsjetnik za pauzu",
+      "dismissHydration": "Odbaci podsjetnik za hidrataciju",
+      "hydration": "Hidratacija",
+      "hydrationProgress": "{intake}/{goal} čaša danas",
+      "logOneGlass": "+1 čaša",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min do pauze",
+      "snoozeToday": "Odgodi za danas",
+      "subtitle": "Tokom ove smjene",
+      "title": "Podsjetnici za sesiju"
+    },
+    "startedAt": "Započeto u",
+    "summary": {
+      "baseWorked": "Osnovni rad",
+      "surcharge": "Dodatak",
+      "thisMonth": "Ovaj mjesec",
+      "thisWeek": "Ova sedmica",
+      "today": "Danas"
+    },
+    "table": {
+      "active": "Aktivno",
+      "approved": "Vremenski unos je odobren",
+      "approveEntry": "Odobri unos",
+      "approveFailed": "Odobravanje unosa nije uspjelo",
+      "approving": "Odobravanje...",
+      "billable": "Naplativo",
+      "clockIn": "Prijavi dolazak",
+      "clockOut": "Prijavi odlazak",
+      "corrected": "Ispravljeno",
+      "date": "Datum",
+      "description": "Opis",
+      "duration": "Trajanje",
+      "emptyState": "Nisu pronađeni vremenski unosi za ovu sedmicu.",
+      "recordedLocalTime": "Evidentirano lokalno vrijeme",
+      "rowActions": "Radnje vremenskog unosa",
+      "title": "Vremenski unosi",
+      "viewCalendar": "Prikaži kalendar"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (završeno)",
+      "empty": "Nijedan zadatak nije pronađen",
+      "label": "Zadatak",
+      "none": "Nema zadatka",
+      "search": "Pretraži zadatke…"
+    },
+    "timeline": {
+      "dayPicker": "Birač dana vremenske trake",
+      "emptyDescription": "Još uvijek nema smjena, odsustava ili unosa radnog vremena za odabrani dan.",
+      "emptyTitle": "Nema zabilježenih aktivnosti za ovaj dan.",
+      "nextDay": "Sljedeći dan",
+      "previousDay": "Prethodni dan",
+      "title": "Vremenska traka radnog dana",
+      "today": "Danas",
+      "unavailableDescription": "Evidencija radnog vremena i dalje radi. Pokušajte osvježiti ovaj prikaz kasnije.",
+      "unavailableTitle": "Vremenska traka nije dostupna"
+    },
+    "timezoneMismatch": {
+      "cancel": "Otkaži",
+      "continueOnce": "Nastavi jednom",
+      "description": "Vremenska zona vašeg uređaja je {browserTimezone}, ali vaša sačuvana vremenska zona je {savedTimezone}.",
+      "help": "Odaberite želite li koristiti vremensku zonu svog uređaja samo za ovu radnju ili ažurirati sačuvanu vremensku zonu prije nastavka.",
+      "title": "Potvrdite vremensku zonu za ovaj unos",
+      "updateTimezoneAndContinue": "Ažuriraj vremensku zonu i nastavi"
+    },
+    "title": "Praćenje radnog vremena",
+    "unknownCategory": "Nepoznata kategorija",
+    "unknownProject": "Nepoznat projekat",
+    "welcomeBack": "Dobrodošli nazad, {name}",
+    "workCategory": "Kategorija rada",
+    "workLocation": "Lokacija rada",
+    "workLocationHome": "Kuća",
+    "workLocationOffice": "Kancelarija",
+    "workLocationOther": "Ostalo",
+    "workLocationRemote": "Rad na daljinu"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Dnevni cilj je postignut! Samo tako nastavite!",
+      "logError": "Bilježenje unosa vode nije uspjelo",
+      "logged": "Unos vode je zabilježen! {progress}% dnevnog cilja",
+      "snoozed": "Podsjetnici za vodu su odgođeni za danas",
+      "snoozeError": "Odgađanje podsjetnika nije uspjelo"
+    }
+  }
+}

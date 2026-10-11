@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Din senaste instämpling idag var kl. {startTime} ({timezone}). Stämpla in om du arbetar."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" pausades eftersom dess ägare, {ownerName}, inte längre är organisationsadministratör. Gör dig själv eller en annan organisationsadministratör till dess ägare för att återuppta den.",
+        "title": "Schemalagd export pausad"
+      },
       "shiftAssigned": {
         "message": "Du har blivit tilldelad ett arbetspass den {shiftDate} från {startTime} till {endTime} av {assignedByName}.",
         "title": "Arbetspass tilldelat"

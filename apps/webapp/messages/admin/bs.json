@@ -1,0 +1,462 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Historijska korisnička mjesta i MRR su procijenjeni. Tačna rekonstrukcija zahtijeva buduće snimke stanja ili evidenciju naplate."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Signali o korisničkim mjestima i ponavljajućim prihodima za stanje naplate.",
+          "summary": "Komercijalni sažetak: {seats} mjesta i {mrr} procijenjeni MRR.",
+          "title": "Komercijalno"
+        },
+        "engagement": {
+          "description": "Korištenje platforme putem aktivnih korisnika i sesija.",
+          "summary": "Sažetak angažmana: {activeUsers} aktivnih korisnika i {sessions} sesija.",
+          "title": "Angažman"
+        },
+        "growth": {
+          "description": "Novi korisnici i organizacije koji pristupaju platformi.",
+          "summary": "Sažetak rasta: {signups} registracija i {organizations} organizacija.",
+          "title": "Rast"
+        },
+        "operations": {
+          "description": "Obim praćenja vremena generisan aktivnošću zakupca.",
+          "summary": "Sažetak operacija: {timeRecords} vremenskih zapisa.",
+          "title": "Operacije"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Spremnik za analitiku",
+          "label": "Interval"
+        },
+        "range": {
+          "ariaLabel": "Raspon analitike",
+          "label": "Raspon"
+        }
+      },
+      "description": "Pratite rast platforme, angažman, operativne aktivnosti i trendove naplate.",
+      "emptyState": {
+        "noData": "Nema podataka za ovaj raspon"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Korisnici aktivni u odabranom rasponu",
+          "title": "Aktivni korisnici"
+        },
+        "mrr": {
+          "description": "Procjena mjesečnog ponavljajućeg prihoda",
+          "title": "Procijenjeni MRR"
+        },
+        "organizations": {
+          "description": "Aktivni radni prostori na platformi",
+          "title": "Organizacije"
+        },
+        "seats": {
+          "description": "Trenutna plaćena ili probna korisnička mjesta",
+          "title": "Licencirana mjesta"
+        },
+        "sessions": {
+          "description": "Autentificirane sesije",
+          "title": "Sesije"
+        },
+        "signups": {
+          "description": "Novi računi na platformi",
+          "title": "Registracije"
+        },
+        "timeRecords": {
+          "description": "Podneseni operativni zapisi",
+          "title": "Vremenski zapisi"
+        }
+      },
+      "preview": {
+        "description": "Rast platforme i angažman u odabranom rasponu.",
+        "title": "Trendovi analitike",
+        "viewFull": "Prikaži kompletnu analitiku"
+      },
+      "sectionDescription": "Ažurirano na osnovu trenutnih podataka platforme za odabrani raspon i interval.",
+      "sectionTitle": "Trendovi analitike",
+      "title": "Analitika platforme",
+      "values": {
+        "notAvailable": "Nije dostupno"
+      }
+    },
+    "billing": {
+      "description": "Pratite pretplate, prihode i status plaćanja",
+      "failedToSyncSeats": "Sinhronizacija mjesta nije uspjela",
+      "intervals": {
+        "month": "Mjesečno",
+        "year": "Godišnje"
+      },
+      "metrics": {
+        "activeSubscriptions": "Aktivne pretplate",
+        "activeSubscriptionsDescription": "{trialingCount} probnih, {activeCount} plaćenih",
+        "conversionRate": "Stopa konverzije",
+        "conversionRateDescription": "Iz probnih u plaćene",
+        "licensedSeats": "Licencirana mjesta",
+        "licensedSeatsDescription": "Kroz sve pretplate",
+        "mrr": "MRR",
+        "mrrDescription": "Mjesečni ponavljajući prihod",
+        "pastDue": "Prekoračen rok",
+        "pastDueDescription": "Problemi s plaćanjem",
+        "trialing": "Probni period u toku",
+        "trialingDescription": "U probnom periodu"
+      },
+      "seatsSynced": "Mjesta su sinhronizovana",
+      "sections": {
+        "recentSubscriptions": "Nedavne pretplate",
+        "revenueMetrics": "Metrike prihoda"
+      },
+      "status": {
+        "active": "Aktivno",
+        "canceled": "Otkazano",
+        "pastDue": "Prekoračen rok",
+        "trialing": "Probni period"
+      },
+      "syncSeatsFor": "Sinhronizujte mjesta za {organizationName}",
+      "table": {
+        "actions": "Radnje",
+        "billing": "Naplata",
+        "created": "Kreirano",
+        "demoUsers": "Demo korisnici",
+        "licensedSeats": "Licencirana mjesta",
+        "noSubscriptions": "Još nema pretplata",
+        "organization": "Organizacija",
+        "periodEnd": "Kraj perioda",
+        "status": "Status",
+        "usedSeats": "Iskorištena mjesta"
+      },
+      "title": "Kontrolna tabla za naplatu"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Osvježi dijagnostiku"
+      },
+      "clientDescription": "Sigurna konfiguracija platforme i stanje servisa na nivou aplikacije. Posljednji put osvježeno {date}.",
+      "description": "Sigurna konfiguracija platforme i provjere ispravnosti implementacije samo za aplikaciju.",
+      "emailTest": {
+        "actions": {
+          "send": "Pošalji testnu e-poruku"
+        },
+        "description": "Pošaljite dijagnostičku e-poruku putem sistemskog prijenosa e-pošte.",
+        "messageId": "ID poruke: {messageId}",
+        "recipient": "E-pošta primaoca",
+        "smtpOverride": {
+          "description": "Ostavite prazno da biste koristili konfigurisani sistemski prijenos e-pošte. Ako je popunjeno, test koristi isključivo ove SMTP postavke.",
+          "fromEmail": "E-pošta pošiljaoca",
+          "fromName": "Ime pošiljaoca",
+          "host": "SMTP host",
+          "ipMode": "IP način rada",
+          "ipMode.auto": "Automatski",
+          "ipMode.ipv4": "Samo IPv4",
+          "ipMode.ipv6": "Samo IPv6",
+          "password": "SMTP lozinka",
+          "port": "SMTP port",
+          "requireTls": "Zahtijevaj STARTTLS",
+          "secure": "Koristi TLS",
+          "title": "Privremeno nadjačavanje SMTP-a",
+          "username": "SMTP korisničko ime"
+        },
+        "success": "Testna e-poruka poslana na {recipient}.",
+        "title": "Test isporuke e-pošte"
+      },
+      "keyManager": {
+        "actions": {
+          "test": "Testiraj enkripciju"
+        },
+        "ciphertextPreview": "Pregled šifriranog teksta",
+        "description": "Pokrenite end-to-end test enkripcije/dekripcije ključa platforme.",
+        "input": "Ulaz",
+        "keyStatus": "Status ključa",
+        "keyStatus.created": "Kreiran je novi ključ platforme",
+        "keyStatus.reused": "Ponovo je iskorišten postojeći ključ platforme",
+        "output": "Izlaz",
+        "platformKeyId": "ID ključa platforme",
+        "result": {
+          "match": "Ulaz i izlaz se podudaraju",
+          "mismatch": "Ulaz i izlaz se razlikuju"
+        },
+        "status": {
+          "pending": "Test enkripcije je u toku."
+        },
+        "title": "Enkripcija putem Scaleway Key Managera"
+      },
+      "recommendedActions": {
+        "description": "Riješite ove stavke kako biste vratili dijagnostiku u ispravno stanje.",
+        "title": "Preporučene radnje"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Sigurna stanja konfiguracije implementacije. Tajne vrijednosti se nikada ne prikazuju.",
+          "title": "Konfiguracija platforme"
+        },
+        "health": {
+          "description": "Provjere na nivou aplikacije za infrastrukturne zavisnosti koje koristi web aplikacija.",
+          "title": "Stanje servisa"
+        }
+      },
+      "statusAnnouncement": "Status dijagnostike {status}. Posljednji put osvježeno {date}.",
+      "status": {
+        "disabled": "Onemogućeno",
+        "error": "Greška",
+        "healthy": "Ispravno",
+        "warning": "Upozorenje"
+      },
+      "title": "Dijagnostika implementacije"
+    },
+    "layout": {
+      "exitAdmin": "Napusti administratorski panel",
+      "menuTitle": "Administratorski meni",
+      "nav": {
+        "analytics": "Analitika",
+        "billing": "Naplata",
+        "diagnostics": "Dijagnostika implementacije",
+        "organizations": "Organizacije",
+        "overview": "Pregled",
+        "settings": "Postavke",
+        "systemEmailTemplates": "Sistemski šabloni e-pošte",
+        "users": "Korisnici",
+        "workerQueue": "Red čekanja radnika"
+      },
+      "openMenu": "Otvori administratorski meni",
+      "subtitle": "Upravljanje platformom",
+      "title": "Administratorska konzola"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Izbriši organizaciju",
+        "reactivate": "Ponovo aktiviraj organizaciju",
+        "suspend": "Suspenduj organizaciju"
+      },
+      "badges": {
+        "deleted": "Izbrisano",
+        "suspended": "Suspendovano"
+      },
+      "deleteDialog": {
+        "confirmButton": "Izbriši organizaciju",
+        "confirmLabel": "Upišite \"{name}\" za potvrdu",
+        "confirmPlaceholder": "Naziv organizacije",
+        "description": "Ova radnja će izbrisati \"{name}\" i sve povezane podatke. Ovo se ne može poništiti.",
+        "immediateDelete": "Izbriši odmah (preskoči period počeka od 5 dana)",
+        "skipNotification": "Preskoči obavještenje o brisanju članovima organizacije",
+        "title": "Izbriši organizaciju"
+      },
+      "description": "Pregledajte i upravljajte svim organizacijama na platformi",
+      "filters": {
+        "all": "Sve",
+        "deleted": "Izbrisano",
+        "suspended": "Suspendovano"
+      },
+      "pagination": {
+        "showing": "Prikazano od {from} do {to} od ukupno {total} organizacija"
+      },
+      "searchPlaceholder": "Pretraži po nazivu ili slugu…",
+      "suspendDialog": {
+        "confirmButton": "Suspenduj organizaciju",
+        "description": "Suspendujte \"{name}\" i postavite je u način rada samo za čitanje. Članovi će moći pregledati podatke, ali neće moći ništa kreirati niti uređivati.",
+        "reason": "Razlog",
+        "reasonPlaceholder": "Unesite razlog za suspenziju ove organizacije…",
+        "title": "Suspenduj organizaciju"
+      },
+      "table": {
+        "created": "Kreirano",
+        "employees": "Zaposleni",
+        "loadErrorTitle": "Nije moguće učitati organizacije",
+        "members": "Članovi",
+        "noOrganizationsFound": "Nema pronađenih organizacija",
+        "organization": "Organizacija"
+      },
+      "title": "Upravljanje organizacijama",
+      "toasts": {
+        "deletedGracePeriod": "Organizacija \"{name}\" je zakazana za brisanje za 5 dana",
+        "deletedImmediate": "Organizacija \"{name}\" je zakazana za trenutno brisanje",
+        "suspended": "Organizacija \"{name}\" je suspendovana",
+        "unsuspended": "Organizaciji \"{name}\" je ukinuta suspenzija"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Trendovi analitike"
+      },
+      "description": "Metrike platforme i brze radnje",
+      "metrics": {
+        "bannedUsers": "Blokirani korisnici",
+        "bannedUsersDescription": "Ograničen pristup",
+        "licensedSeats": "Licencirana mjesta",
+        "licensedSeatsDescription": "U svim pretplatama",
+        "mrr": "MRR",
+        "mrrDescription": "Mjesečni ponavljajući prihod (€)",
+        "organizations": "Organizacije",
+        "organizationsDescription": "Aktivni radni prostori",
+        "suspended": "Suspendovano",
+        "suspendedDescription": "Organizacije samo za čitanje",
+        "title": "Metrike platforme",
+        "totalUsers": "Ukupno korisnika",
+        "totalUsersDescription": "Registrovani računi na platformi"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Metrike prihoda i status pretplate",
+          "title": "Naplata i pretplate"
+        },
+        "diagnostics": {
+          "description": "Pregledajte sigurnu konfiguraciju i provjere ispravnosti aplikacije",
+          "title": "Dijagnostika implementacije"
+        },
+        "organizations": {
+          "description": "Suspendujte, obrišite ili pregledajte organizacije",
+          "title": "Upravljanje organizacijama"
+        },
+        "systemEmailTemplates": {
+          "description": "Uredite tekst sistemskih i poruka za naplatu u vlasništvu platforme",
+          "title": "Sistemski šabloni e-pošte"
+        },
+        "title": "Brze radnje",
+        "users": {
+          "description": "Blokirajte/odblokirajte korisnike, upravljajte sesijama, pregledajte aktivnosti",
+          "title": "Upravljanje korisnicima"
+        }
+      },
+      "title": "Pregled"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Sačuvaj promjene"
+      },
+      "approvalMaintenance": {
+        "approvalHint": "Naslijeđeni zahtjev za odobrenje ili kanonski UUID toka posla.",
+        "approvalId": "ID odobrenja",
+        "chain": "Lanac odobravanja",
+        "decisionEvidence": "Dokaz o odluci",
+        "delete": "Prisilno izbriši",
+        "deleting": "Brisanje…",
+        "deliveryIntent": "Namjera isporuke",
+        "deliveryMessage": "Isporučena poruka",
+        "deliveryWork": "Rad na isporuci",
+        "description": "Trajno uklonite odobrenje i s njim povezane zapise o odobrenju. Izvorni zapisi i njihovi statusi se zadržavaju.",
+        "errors": {
+          "ambiguous": "Ovaj ID postoji u oba spremišta odobrenja. Nijedno odobrenje nije izbrisano.",
+          "approvalInvalid": "Unesite važeći UUID odobrenja.",
+          "failed": "Nije uspjelo dovršavanje brisanja. Provjerite ID odobrenja prije ponovnog pokušaja.",
+          "invalidInput": "Unesite ID organizacije i važeći UUID odobrenja.",
+          "notFound": "Odobrenje nije pronađeno u ovoj organizaciji.",
+          "organizationRequired": "Unesite ID organizacije.",
+          "unauthorized": "Potreban je administratorski pristup platformi."
+        },
+        "escalationAttention": "Pažnja za eskalaciju",
+        "escalationTransfer": "Prijenos eskalacije",
+        "legacy": "Naslijeđeni zahtjev",
+        "organizationHint": "Organizacija koja je vlasnik odobrenja.",
+        "organizationId": "ID organizacije",
+        "reviewBinding": "Povezivanje pregleda",
+        "submittedRevision": "Podnesena revizija",
+        "success": "Odobrenje je izbrisano. Uklonjeni zapisi:",
+        "title": "Prisilno izbriši odobrenje",
+        "workflow": "Tok posla"
+      },
+      "cookieConsent": {
+        "description": "Ubačeno na stranice za autentifikaciju radi usklađenosti s GDPR-om",
+        "helperPrefix": "Ostavite prazno da biste onemogućili. Učitava se sa",
+        "helperSuffix": "strategijom.",
+        "scriptContent": "Sadržaj skripte",
+        "scriptPlaceholder": "<!-- Primjer: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Ili prilagođena skripta -->\n<script>\n  // Ovdje unesite vašu logiku za saglasnost za kolačiće\n</script>",
+        "title": "Skripta za saglasnost za kolačiće"
+      },
+      "description": "Globalna konfiguracija platforme za sve organizacije",
+      "title": "Postavke platforme",
+      "toasts": {
+        "cookieConsentSaved": "Skripta za saglasnost za kolačiće je uspješno sačuvana",
+        "saveFailed": "Čuvanje nije uspjelo"
+      },
+      "turnstile": {
+        "deploymentNote": "Konfigurisano putem varijabli okruženja prilikom implementacije. Enterprise organizacije mogu preinačiti u Postavkama domene.",
+        "description": "Zaštita od botova za obrasce za autentifikaciju",
+        "secretKey": "Tajni ključ",
+        "siteKey": "Ključ stranice",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Vrati na sistemski šablon",
+        "save": "Sačuvaj",
+        "sendTest": "Pošalji test"
+      },
+      "defaultFallback": "Zadana rezerva",
+      "defaultFallbackDescription": "Ako ovaj šablon koristi sistemske zadane postavke, Z8 šalje tekst i predmet platforme:",
+      "description": "Upravljajte sistemskim i e-porukama za naplatu platforme. Ovi šabloni se šalju isključivo putem sistemskog prijenosa e-pošte i nisu vezani za organizaciju.",
+      "editBodyBeforeSaving": "Uredite tijelo e-poruke prije spremanja prvog prilagođenog šablona.",
+      "empty": "Nema dostupnih sistemskih šablona e-pošte platforme.",
+      "eyebrow": "Sistemski prijenos",
+      "reset": "Sistemski šablon e-pošte vraćen na zadano",
+      "resetDialog": {
+        "confirm": "Vrati sistemski šablon platforme",
+        "description": "Ovim se briše globalno predefinisanje platforme za ovaj sistemski šablon e-pošte i vraćaju ugrađeni predmet i tijelo. Stvarne e-poruke za naplatu i sistemske poruke koristit će zadani tekst platforme nakon vraćanja.",
+        "title": "Vratiti sistemski šablon platforme?"
+      },
+      "resetFailed": "Vraćanje sistemskog šablona e-pošte nije uspjelo",
+      "saved": "Sistemski šablon e-pošte je spremljen",
+      "saveFailed": "Spremanje sistemskog šablona e-pošte nije uspjelo",
+      "status": {
+        "customized": "Prilagođeno",
+        "default": "Zadano"
+      },
+      "systemTemplates": "Sistemski šabloni",
+      "testFailed": "Slanje testne e-pošte nije uspjelo",
+      "testSent": "Testna e-pošta je poslana na vaš račun",
+      "title": "Sistemski šabloni e-pošte",
+      "transportNotice": "Koristite ovo područje za globalni tekst za naplatu i sistemsku e-poštu. Postavke prijenosa e-pošte organizacije se zanemaruju za ove poruke; testna i stvarna slanja koriste sistemski prijenos platforme."
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Do {date}",
+        "banned": "Blokiran",
+        "user": "Korisnik"
+      },
+      "banDialog": {
+        "confirmButton": "Blokiraj korisnika",
+        "description": "Zabranite pristup platformi korisniku {email}.",
+        "expiry": "Datum isteka (opcionalno)",
+        "permanentBanHint": "Ostavite prazno za trajnu blokadu",
+        "reason": "Razlog",
+        "reasonPlaceholder": "Unesite razlog za blokiranje ovog korisnika…",
+        "title": "Blokiraj korisnika"
+      },
+      "description": "Pregledajte i upravljajte svim korisnicima na platformi",
+      "filters": {
+        "allUsers": "Svi korisnici",
+        "banned": "Blokirani"
+      },
+      "pagination": {
+        "showing": "Prikazano od {from} do {to} od {total} korisnika"
+      },
+      "searchLabel": "Pretraži korisnike po e-pošti",
+      "searchPlaceholder": "Pretražite po imenu ili e-pošti…",
+      "sessionsDialog": {
+        "description": "Aktivne sesije za {email}",
+        "noSessions": "Nema aktivnih sesija",
+        "revokeAll": "Opozovi sve sesije",
+        "title": "Korisničke sesije",
+        "unknownDevice": "Nepoznat uređaj",
+        "unknownIp": "Nepoznata IP adresa"
+      },
+      "table": {
+        "created": "Kreirano",
+        "noOrganizations": "Nema organizacija",
+        "noUsersFound": "Nema pronađenih korisnika",
+        "organizations": "Organizacije",
+        "role": "Uloga",
+        "user": "Korisnik"
+      },
+      "title": "Upravljanje korisnicima",
+      "toasts": {
+        "banned": "Korisnik {email} je banovan",
+        "sessionRevoked": "Sesija je opozvana",
+        "sessionsRevoked": "Opozvano sesija: {count}",
+        "unbanned": "Korisniku {email} je ukinut ban"
+      }
+    }
+  }
+}

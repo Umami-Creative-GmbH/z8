@@ -1,0 +1,105 @@
+{
+  "approval": {
+    "absenceRequest": "Запрос на отсутствие",
+    "actions": {
+      "approve": "Утвердить",
+      "approving": "Утверждение...",
+      "reject": "Отклонить",
+      "rejecting": "Отклонение...",
+      "viewInZ8": "Просмотреть в Z8"
+    },
+    "durationDays": "{count, plural, one {# день} many {# дней} other {# дня} }",
+    "facts": {
+      "approvedBy": "Утвердил(а)",
+      "corrected": "Исправлено",
+      "dates": "Даты",
+      "duration": "Продолжительность",
+      "email": "Эл. почта",
+      "from": "От",
+      "original": "Исходное",
+      "reason": "Причина",
+      "rejectedBy": "Кем отклонено",
+      "resolved": "Решено",
+      "status": "Статус",
+      "submitted": "Отправлено",
+      "type": "Тип"
+    },
+    "status": {
+      "approved": "ОДОБРЕНО",
+      "rejected": "ОТКЛОНЕНО"
+    },
+    "timeCorrectionRequest": "Запрос на исправление времени"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Критический",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (использовано исключение)",
+      "lastDays": "Последние {days} дн.",
+      "legend": "\uD83D\uDD34 Нарушение  \uD83D\uDFE0 Критично  \uD83D\uDFE1 Предупреждение  \uD83D\uDCDD Запрос на рассмотрении",
+      "moreRequestsMarkdown": "_Еще +{count} запросов_",
+      "moreViolationsMarkdown": "_Еще +{count} нарушений_",
+      "pending": "На рассмотрении",
+      "pendingExceptions": "Запросы на исключения на рассмотрении",
+      "recentViolations": "Недавние нарушения",
+      "reviewExceptions": "Просмотреть исключения",
+      "textCriticalAlerts": "**Критические оповещения:** {count}",
+      "textMore": "  Еще +{count}",
+      "textPendingExceptions": "**Исключения на рассмотрении:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Запросы на рассмотрении:**",
+      "textRecentViolations": "**Недавние нарушения:**",
+      "textTitle": "**⚠️ Сводка соответствия — последние {days} дн.**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Нарушения:** {count}",
+      "titleWithIcon": "⚠️ Сводка соответствия",
+      "viewDashboard": "Посмотреть панель соответствия",
+      "violations": "Нарушения"
+    },
+    "coverage": {
+      "clockedIn": "На смене",
+      "moreLocationsMarkdown": "_Еще +{count} локаций..._",
+      "scheduled": "Запланировано",
+      "titleWithIcon": "\uD83D\uDCCA Отчет о покрытии",
+      "variance": "Отклонение",
+      "viewFullSchedule": "Посмотреть полное расписание"
+    }
+  },
+  "common": {
+    "more": "Еще +{count}",
+    "moreBullet": "• Еще +{count}"
+  },
+  "digest": {
+    "currentlyClockedIn": "Сейчас на смене",
+    "deputy": "Заместитель: {name}",
+    "everyoneAvailable": "Сегодня все доступны",
+    "noOneClockedIn": "Пока никто не вышел на смену",
+    "noPendingApprovals": "Нет запросов на утверждении",
+    "openDashboard": "Открыть панель Z8",
+    "openShifts": "Открытые смены",
+    "pendingApprovals": "Ожидающие согласования",
+    "pendingExceptionRequests": "{count, plural, one {# запрос на исключение ожидает рассмотрения} few {# запроса на исключение ожидают рассмотрения} other {# запросов на исключение ожидают рассмотрения} }",
+    "returns": "Возвращается {date}",
+    "since": "С {time}",
+    "textClockedInEmployee": "• {name} - с {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Соответствие требованиям:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Пробелы в покрытии:**",
+    "textCurrentlyClockedIn": "**Сейчас на смене:**",
+    "textEmployeeOut": "• {name} - {category} (возвращается {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Открытые смены:**",
+    "textPendingApprovalsCount": "**Ожидают согласования:** {count}",
+    "textPendingApprovalsNone": "**Ожидают согласования:** нет",
+    "textTitle": "**Ежедневный дайджест — {date}**",
+    "textWhosOut": "**Отсутствуют:**",
+    "title": "Ежедневный дайджест",
+    "todayTomorrow": "Сегодня: {today} | Завтра: {tomorrow}",
+    "viewApprovals": "Просмотреть согласования",
+    "whosOutToday": "Кто сегодня отсутствует"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Сверхурочные за день",
+    "overtime_monthly": "Сверхурочные за месяц",
+    "overtime_weekly": "Сверхурочные за неделю",
+    "rest_period": "Период отдыха"
+  }
+}

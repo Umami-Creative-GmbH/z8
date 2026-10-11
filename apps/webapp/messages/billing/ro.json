@@ -1,0 +1,88 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Abonamentul dvs. a fost anulat. Reabonați-vă pentru a recăpăta accesul.",
+      "paymentFailed": "Ultima dvs. plată a eșuat. Vă rugăm să vă actualizați metoda de plată.",
+      "required": "Este necesar un abonament pentru a utiliza această aplicație.",
+      "trialExpired": "Perioada dvs. de probă a expirat. Abonați-vă pentru a continua să utilizați aplicația."
+    },
+    "activeSeats": "Locuri active",
+    "alerts": {
+      "canceledDescription": "Finalizarea comenzii a fost anulată. Puteți încerca din nou oricând sunteți gata.",
+      "subscriptionRequired": "Abonament obligatoriu",
+      "successDescription": "Abonamentul dvs. a fost activat. Vă mulțumim pentru abonare!",
+      "successTitle": "Succes!"
+    },
+    "bestValue": "Cea mai bună ofertă",
+    "billedMonthly": "facturat lunar",
+    "cancelsOn": "Se anulează la {date}",
+    "checkoutCreateFailed": "Nu s-a putut crea sesiunea de finalizare a comenzii",
+    "checkoutStartFailed": "Nu s-a putut iniția finalizarea comenzii",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout colectează detaliile de plată acum. Abonamentul dvs. plătit începe numai după expirarea perioadei de probă.",
+      "trialContinuesTitle": "Perioada dvs. de probă continuă după upgrade"
+    },
+    "choosePlan": "Alegeți-vă planul",
+    "choosePlanDescription": "Începeți cu o perioadă de probă gratuită de 14 zile. Nu este necesar un card de credit pentru a începe.",
+    "chooseUpgradePlanDescription": "Alegeți o frecvență de facturare acum. Abonamentul cu plată începe doar după perioada de probă rămasă.",
+    "currentPlan": "Plan actual",
+    "days": "{count} zile",
+    "description": "Gestionați-vă abonamentul și detaliile de facturare",
+    "faq": {
+      "afterTrial": {
+        "answer": "După ce perioada de probă de 14 zile se încheie, veți fi taxat pentru planul de abonament selectat. Puteți anula oricând înainte de sfârșitul perioadei de probă pentru a evita taxarea.",
+        "question": "Ce se întâmplă după perioada de probă?"
+      },
+      "perSeat": {
+        "answer": "Sunteți facturat în funcție de numărul de membri activi din organizația dvs. Când adăugați sau eliminați membri, abonamentul dvs. este ajustat automat.",
+        "question": "Cum funcționează facturarea per loc?"
+      },
+      "switch": {
+        "answer": "Da! Puteți schimba planurile în orice moment din portalul de facturare. Modificările intră în vigoare la următorul ciclu de facturare.",
+        "question": "Pot comuta între lunar și anual?"
+      },
+      "title": "Întrebări frecvente"
+    },
+    "features": {
+      "allFeatures": "Toate funcționalitățile incluse",
+      "cancelAnytime": "Anulați oricând",
+      "yearlyDiscount": "25% reducere față de lunar"
+    },
+    "interval": {
+      "monthlyBilling": "Facturare lunară",
+      "yearlyBilling": "Facturare anuală"
+    },
+    "manageBilling": "Gestionați facturarea",
+    "monthlyCost": "Cost lunar",
+    "nextBilling": "Următoarea facturare",
+    "opening": "Se deschide...",
+    "perSeatMonth": "/loc/lună",
+    "plans": {
+      "monthly": {
+        "description": "Facturare flexibilă de la lună la lună",
+        "title": "Lunar"
+      },
+      "yearly": {
+        "description": "Economisiți 25% cu facturarea anuală",
+        "title": "Anual"
+      }
+    },
+    "portalOpenFailed": "Nu s-a putut deschide portalul de facturare",
+    "priceSeatMonth": "€{price}/loc/lună",
+    "priceSeatMonthYearly": "€{price}/loc/lună (facturat anual)",
+    "seatBilledAnnually": "€{price}/loc facturat anual",
+    "starting": "Se inițializează...",
+    "startTrial": "Începe perioada de probă gratuită",
+    "status": {
+      "canceled": "Anulat",
+      "pastDue": "Restant",
+      "trial": "Perioadă de probă"
+    },
+    "title": "Facturare și abonament",
+    "trialEnds": "Perioada de probă se încheie",
+    "upgradeMonthly": "Upgrade lunar",
+    "upgradeYearly": "Upgrade anual",
+    "vatNotice": "Prețurile afișate sunt prețuri nete fără TVA. TVA-ul va fi adăugat unde este cazul.",
+    "yearTotal": "€{amount}/an în total"
+  }
+}

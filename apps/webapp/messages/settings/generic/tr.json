@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} aynı ada sahip ve zaten başka bir kişiyle ilişkilendirilmiş",
           "noMatch": "Eşleşme yok",
           "paging": {
-            "label": "Kişi sayfaları",
-            "next": "Sonraki sayfa",
-            "position": "Sayfa {page} / {pageCount}",
-            "previous": "Önceki sayfa"
+            "label": "Kişi sayfaları"
           },
           "suggestion": {
             "customerNumber": "{name}, aynı müşteri numarasına sahip bir kişi bağlantısına sahip",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "Sağlayıcı, saatlerini belirtmeden molaları bildirdiği için çalışılan aralık bilinmiyor."
         },
         "issueGroups": {
-          "currentMarkers": "Mevcut satırlar {blockingRows} engelleyici ve {warningRows} uyarı işareti içeriyor.",
           "description": "Gruplandırılmış inceleme alanları, kabul edilen satırlar kaydedilmeden önce kalite kontrollerinin görünür kalmasına yardımcı olur.",
+          "importMarkers": "İçe aktarılan satırlarda {blockingRows} engelleyici ve {warningRows} uyarı sorunu işareti bulunuyor.",
           "title": "Sorun grupları"
+        },
+        "paging": {
+          "next": "Sonraki sayfa",
+          "position": "Sayfa {page} / {pageCount}",
+          "previous": "Önceki sayfa"
         },
         "rows": {
           "billable": "Faturalandırılabilir",
           "empty": "Bu içe aktarma grubu için hazırlanan satır bulunmuyor.",
           "entity": "Varlık",
+          "paging": {
+            "label": "Satır sayfaları"
+          },
           "rowId": "Satır Kimliği",
           "sourceId": "Kaynak Kimliği",
           "status": "Durum",
@@ -1783,6 +1788,7 @@
       "create": "Proje Oluştur",
       "created": "Proje oluşturuldu",
       "createFailed": "Proje oluşturulamadı",
+      "customerDeleted": "{name} (silindi)",
       "description": "Projeleri, bütçeleri, teslim tarihlerini ve zaman atamalarını yönetin",
       "dialog": {
         "create": "Proje Oluştur",
@@ -1807,6 +1813,7 @@
         "color": "Renk",
         "colorOption": "{color} rengini seç",
         "customer": "Müşteri",
+        "customerDeleted": "{name} silindi. Başka bir müşteri seçin veya projeyi müşteri olmadan bırakın.",
         "customerPlaceholder": "Bir müşteri seçin",
         "deadline": "Teslim Tarihi",
         "description": "Açıklama",
@@ -2031,6 +2038,11 @@
       "title": "Projeler",
       "updated": "Proje güncellendi",
       "updateFailed": "Proje güncellenemedi"
+    },
+    "reportShareLinks": {
+      "description": "Bir proje veya müşteri raporu paylaşan tüm bağlantıları görün ve iptal edin",
+      "pageDescription": "Z8 dışındaki birine bir proje veya müşteri raporunun sabitlenmiş anlık görüntüsünü gösteren bağlantılar. Bir bağlantıyı iptal etmek, çalışmasını anında durdurur ve anlık görüntüsünü siler.",
+      "title": "Rapor Paylaşım Bağlantıları"
     },
     "security": {
       "description": "Parolanızı, iki faktörlü kimlik doğrulamayı, geçiş anahtarlarını ve aktif oturumları yönetin",

@@ -1,0 +1,245 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Mungesat (pushime, leje mjekësore)",
+        "changePolicies": "Politikat e ndryshimit",
+        "description": "Llojet e të dhënave demo që mund të gjeneroni",
+        "locations": "Vendndodhjet dhe nënzonat",
+        "shifts": "Shabllonet e turneve dhe turnet",
+        "supported": "Aktualisht mbështeten:",
+        "teamsProjects": "Ekipet dhe projektet",
+        "timeEntries": "Regjistrimet e kohës dhe periudhat e punës",
+        "title": "Llojet e të dhënave të disponueshme",
+        "workCategories": "Grupet e kategorive të punës"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} mungesa u fshinë",
+          "button": "Pastro të gjitha të dhënat",
+          "changePoliciesDeleted": "{count} politika të ndryshimit u fshinë",
+          "dialog": {
+            "confirm": "Pastro të gjitha të dhënat",
+            "description": "Ky veprim nuk mund të zhbëhet. Të gjitha regjistrimet e kohës, mungesat, ekipet, projektet dhe të dhënat e lidhura do të fshihen përgjithmonë.",
+            "title": "Të pastrohen të gjitha të dhënat e kohës?"
+          },
+          "items": {
+            "absences": "Të gjitha regjistrimet e mungesave",
+            "changePolicies": "Të gjitha politikat e ndryshimit",
+            "locations": "Të gjitha vendndodhjet dhe nënzonat",
+            "shifts": "Të gjithë shabllonet e turneve dhe turnet",
+            "teamsProjects": "Të gjitha ekipet dhe projektet",
+            "timeEntries": "Të gjitha regjistrimet e kohës dhe periudhat e punës",
+            "vacationAllowances": "Të gjitha kuotat e pushimeve",
+            "workCategories": "Të gjitha kategoritë e punës"
+          },
+          "locationsDeleted": "{count} vendndodhje u fshinë",
+          "managerAssignmentsDeleted": "{count} caktime menaxherësh u fshinë",
+          "projectsDeleted": "{count} projekte u fshinë",
+          "shiftRequestsDeleted": "{count} kërkesa për turne u fshinë",
+          "shiftsDeleted": "{count} turne u fshinë",
+          "shiftTemplatesDeleted": "{count} shabllone turnesh u fshinë",
+          "subareasDeleted": "{count} nënzona u fshinë",
+          "successTitle": "Të dhënat u pastruan me sukses!",
+          "teamsDeleted": "{count} ekipe u fshinë",
+          "timeEntriesDeleted": "{count} regjistrime të kohës u fshinë",
+          "title": "Pastro të dhënat e kohës",
+          "vacationAllowancesReset": "{count} leje pushimi u rivendosën",
+          "willDelete": "Kjo do të fshijë përgjithmonë:",
+          "workCategoriesDeleted": "{count} kategori pune u fshinë",
+          "workCategorySetsDeleted": "{count} grupe të kategorive të punës u fshinë",
+          "workPeriodsDeleted": "{count} periudha pune u fshinë"
+        },
+        "clearing": "Duke pastruar...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} mungesa u fshinë",
+          "adminPreserved": "Llogaritë e administratorëve do të ruhen",
+          "button": "Fshij punonjësit jo-administratorë",
+          "dialog": {
+            "confirm": "Fshij punonjësit jo-administratorë",
+            "description": "Ky veprim nuk mund të zhbëhet. Të gjithë punonjësit jo-administratorë dhe të dhënat e tyre përkatëse do të fshihen përgjithmonë.",
+            "title": "Të fshihen punonjësit jo-administratorë?"
+          },
+          "employeesDeleted": "{count} punonjës u fshinë",
+          "items": {
+            "demoUsers": "Të gjitha llogaritë demo të përdoruesve",
+            "employees": "Të gjithë punonjësit jo-administratorë",
+            "managerAssignments": "Të gjitha caktimet e menaxherëve",
+            "timeEntries": "Regjistrimet e tyre të kohës dhe periudhat e punës"
+          },
+          "membersDeleted": "{count} anëtarë u fshinë",
+          "successTitle": "Punonjësit jo-administratorë u fshinë me sukses!",
+          "timeEntriesDeleted": "{count} regjistrime kohe u fshinë",
+          "title": "Fshij punonjësit jo-administratorë",
+          "usersDeleted": "{count} përdorues u fshinë",
+          "willDelete": "Kjo do të fshijë përgjithmonë:"
+        },
+        "deleting": "Duke fshirë...",
+        "description": "Veprime shkatërruese që nuk mund të zhbëhen",
+        "title": "Zona e rrezikut",
+        "typeDelete": "Shkruani DELETE për të konfirmuar",
+        "typeDeletePlaceholder": "DELETE"
+      },
+      "description": "Gjeneroni të dhëna shembull për testim ose pastroni të dhënat ekzistuese lidhur me kohën",
+      "errors": {
+        "generationFailed": "Gjenerimi dështoi. Ju lutemi provoni përsëri.",
+        "noOrganization": "Nuk është zgjedhur asnjë organizatë"
+      },
+      "form": {
+        "approvalsTesting": {
+          "label": "Testimi i miratimeve",
+          "pendingAbsences": {
+            "description": "Krijo kërkesa për mungesë që presin miratimin e menaxherit",
+            "title": "Miratime mungesash në pritje"
+          },
+          "pendingTimeCorrections": {
+            "description": "Krijo korrigjime kohe që presin miratimin e menaxherit",
+            "title": "Miratime të korrigjimit të kohës në pritje"
+          }
+        },
+        "dataTypes": {
+          "absences": {
+            "description": "Pushime vjetore, leje mjekësore dhe mungesa të tjera",
+            "title": "Mungesat"
+          },
+          "changePolicies": {
+            "description": "Politikat e ndryshimit të regjistrimit të kohës",
+            "title": "Politikat e ndryshimit"
+          },
+          "label": "Llojet e të dhënave",
+          "locations": {
+            "countLabel": "Numri i vendndodhjeve:",
+            "description": "Vendndodhjet e punës dhe nënzonat",
+            "title": "Vendndodhjet"
+          },
+          "projects": {
+            "countLabel": "Numri i projekteve:",
+            "description": "Projekte shembull për regjistrimin e kohës",
+            "title": "Projektet"
+          },
+          "shiftScheduling": {
+            "description": "Shabllonet e turneve dhe turnet e planifikuara",
+            "requiresLocations": "Kërkon që Vendndodhjet të jenë të aktivizuara",
+            "title": "Planifikimi i turneve"
+          },
+          "teams": {
+            "countLabel": "Numri i ekipeve:",
+            "description": "Krijoni ekipe dhe caktoni punonjës",
+            "title": "Ekipet"
+          },
+          "timeEntries": {
+            "description": "Regjistrimet e hyrjeve/daljeve dhe periudhat e punës",
+            "title": "Regjistrimet e kohës"
+          },
+          "workCategories": {
+            "assignLabel": "Cakto gjithashtu në periudhat e punës",
+            "description": "Grupet e kategorive për periudhat e punës",
+            "title": "Kategoritë e punës"
+          }
+        },
+        "dateRange": {
+          "hint": "Intervali kohor për të dhënat e gjeneruara",
+          "label": "Intervali i datave",
+          "last30": "30 ditët e fundit",
+          "last60": "60 ditët e fundit",
+          "last90": "90 ditët e fundit",
+          "thisYear": "Këtë vit"
+        },
+        "employees": {
+          "all": "Të gjithë punonjësit ({count})",
+          "label": "Punonjësit",
+          "selectSpecific": "Zgjidhni punonjës specifikë"
+        }
+      },
+      "generateData": {
+        "button": "Gjenero të dhëna",
+        "description": "Krijoni të dhëna shembull realiste për organizatën tuaj",
+        "title": "Gjenero të dhëna demo"
+      },
+      "generateEmployees": {
+        "button": "Gjenero {count} punonjës",
+        "countHint": "Maksimumi 50 punonjës njëherësh",
+        "countLabel": "Numri i punonjësve",
+        "description": "Krijoni llogari demo për punonjësit për testim",
+        "employeesCreated": "{count} punonjës u krijuan",
+        "generating": "Duke gjeneruar...",
+        "includeManagers": "Përfshi caktimet e menaxherëve",
+        "managersCreated": "{count} caktime menaxherësh",
+        "managersHint": "Caktoni menaxherë rastësisht për punonjësit e rinj",
+        "options": "Opsionet",
+        "successTitle": "Punonjësit u gjeneruan me sukses!",
+        "title": "Gjenero punonjës",
+        "usersCreated": "{count} përdorues u krijuan"
+      },
+      "results": {
+        "success": "Të dhënat demo u gjeneruan me sukses!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Duke krijuar regjistrimet e mungesave",
+          "label": "Mungesat"
+        },
+        "assignCategories": {
+          "description": "Duke caktuar kategoritë e punës në periudha",
+          "label": "Cakto kategoritë"
+        },
+        "changePolicies": {
+          "description": "Duke krijuar politikat e ndryshimit",
+          "label": "Politikat e ndryshimit"
+        },
+        "locations": {
+          "description": "Duke krijuar vendndodhjet dhe nënzonat",
+          "label": "Vendndodhjet"
+        },
+        "managers": {
+          "description": "Duke caktuar menaxherë për punonjësit",
+          "label": "Caktimet e menaxherëve"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Duke krijuar kërkesa për miratimin e mungesave në pritje",
+          "label": "Miratimet e Mungesave në Pritje"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Duke krijuar kërkesa për miratimin e korrigjimeve të kohës në pritje",
+          "label": "Miratimet e Korrigjimit të Kohës në Pritje"
+        },
+        "projects": {
+          "description": "Duke krijuar projekte shembull",
+          "label": "Projektet"
+        },
+        "shifts": {
+          "description": "Duke krijuar turnet dhe kërkesat",
+          "label": "Turnet"
+        },
+        "shiftTemplates": {
+          "description": "Duke krijuar shabllonet e turneve",
+          "label": "Shabllonet e turneve"
+        },
+        "teams": {
+          "description": "Duke krijuar ekipe dhe duke caktuar punonjës",
+          "label": "Ekipet"
+        },
+        "timeEntries": {
+          "description": "Duke krijuar regjistrimet e kohës dhe periudhat e punës",
+          "label": "Regjistrimet e kohës"
+        },
+        "workCategories": {
+          "description": "Duke krijuar grupet e kategorive të punës dhe kategoritë",
+          "label": "Kategoritë e punës"
+        }
+      },
+      "title": "Të dhëna demo",
+      "wizard": {
+        "backToConfig": "Kthehu te konfigurimi",
+        "complete": "Përfundo",
+        "configure": "Konfiguro",
+        "generate": "Gjenero",
+        "generateMore": "Gjenero më shumë të dhëna"
+      }
+    },
+    "demoData": {
+      "description": "Gjeneroni të dhëna shembull për testim ose fshini të gjitha të dhënat që lidhen me kohën",
+      "title": "Të dhëna demo"
+    }
+  }
+}

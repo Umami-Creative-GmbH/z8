@@ -1,0 +1,2757 @@
+{
+  "settings": {
+    "assignedLocations": {
+      "added": "Vendndodhja e caktuar u shtua",
+      "employeeDescription": "Vendndodhjet ku punon ky punonjës. Kioskat pranojnë vetëm punonjësit e caktuar në vendndodhjen e tyre.",
+      "employeeEmpty": "Nuk ka vendndodhje të caktuara",
+      "employeeLabel": "Punonjësi",
+      "employeePlaceholder": "Zgjidhni një punonjës",
+      "employeeTitle": "Vendndodhjet e caktuara",
+      "errors": {
+        "adminOnly": "Vetëm pronarët e organizatës dhe administratorët mund të menaxhojnë vendndodhjet e caktuara.",
+        "employeeNotFound": "Punonjësi nuk u gjet.",
+        "failed": "Vendndodhjet e caktuara nuk mund të përditësoheshin. Provoni përsëri.",
+        "invalidSelection": "Zgjidhni nga lista.",
+        "locationNotFound": "Vendndodhja nuk u gjet."
+      },
+      "locationDescription": "Punonjësit që punojnë në këtë vendndodhje. Kioskat e saj pranojnë vetëm ata.",
+      "locationEmpty": "Nuk ka punonjës të caktuar",
+      "locationLabel": "Vendndodhja",
+      "locationPlaceholder": "Zgjidhni një vendndodhje",
+      "locationTitle": "Punonjësit e caktuar",
+      "noEmployeesLeft": "Të gjithë punonjësit aktivë janë të caktuar në këtë vendndodhje.",
+      "noLocationsLeft": "Nuk ka vendndodhje të tjera aktive për t'u caktuar.",
+      "removed": "Vendndodhja e caktuar u hoq"
+    },
+    "avv": {
+      "contractDetails": {
+        "controller": "Klienti (Kontrolluesi)",
+        "descriptionPrefix": "Kjo marrëveshje rregullon përpunimin e të dhënave personale në emër të organizatës suaj dhe ",
+        "processor": "Kontraktori (Përpunuesi)",
+        "title": "Detajet e kontratës"
+      },
+      "description": "Shkarkoni marrëveshjen tuaj për përpunimin e të dhënave në përputhje me Nenin 28 të GDPR.",
+      "download": {
+        "button": "Shkarko marrëveshjen e përpunimit të të dhënave si PDF",
+        "downloaded": "Marrëveshja e përpunimit të të dhënave u shkarkua",
+        "downloadFailed": "Shkarkimi dështoi",
+        "errorOccurred": "Ndodhi një gabim",
+        "filename": "Skedari: {filename}",
+        "generating": "Duke gjeneruar PDF…"
+      },
+      "hosting": {
+        "descriptionPrefix": "Të gjitha të dhënat mbahen në serverët e ",
+        "descriptionSuffix": ". Nuk përdoren nën-përpunues të tjerë.",
+        "title": "Hostimi & Nën-përpunuesit"
+      },
+      "title": "Marrëveshja për Përpunimin e të Dhënave (DPA)"
+    },
+    "billableTime": {
+      "accounting": {
+        "apiKey": "Çelësi API",
+        "apiKeyHelp": "Ruhet në depon e sekreteve të organizatës suaj. Z8 nuk e shfaq më kurrë atë.",
+        "apiKeyRequired": "Vendosni çelësin API",
+        "chooseTool": "Zgjidhni një mjet kontabiliteti",
+        "connect": "Lidh",
+        "connected": "Lidhur",
+        "connectedOnBy": "{date} nga {name}",
+        "connectedToast": "Mjeti i kontabilitetit u lidh",
+        "connection": {
+          "description": "Z8 krijon drafte faturash në mjetin tuaj të kontabilitetit, ku llogaritari juaj i finalizon ato. Z8 nuk lëshon kurrë fatura dhe nuk krijon kontakte atje.",
+          "title": "Lidhja e kontabilitetit"
+        },
+        "contactPerson": {
+          "help": "sevdesk cakton një përdorues të llogarisë suaj si person kontakti në çdo faturë. Ngarkoni përdoruesit me çelësin API më lart dhe zgjidhni një.",
+          "label": "Personi i kontaktit",
+          "load": "Ngarko përdoruesit e sevdesk",
+          "none": "Kjo llogari nuk ka përdorues aktivë të sevdesk.",
+          "placeholder": "Zgjidhni një përdorues të sevdesk"
+        },
+        "contacts": {
+          "customerNumber": "Klienti nr. {number}",
+          "link": "Lidh",
+          "linked": "Lidhur",
+          "minLength": "Vendosni të paktën {count} karaktere",
+          "noResults": "Asnjë kontakt nuk përputhet. Krijoni kontaktin fillimisht në mjetin e kontabilitetit; Z8 nuk krijon kurrë kontakte atje.",
+          "search": "Kërkoni kontakte në mjet",
+          "searching": "Duke kërkuar…",
+          "searchPlaceholder": "Emri ose numri i klientit",
+          "truncated": "Përputhen më shumë kontakte. Ngushtoni kërkimin për t'i parë ato."
+        },
+        "customer": {
+          "changeContact": "Ndrysho kontaktin",
+          "contactLink": "Kontakti në mjetin e kontabilitetit",
+          "description": "Kontakti te i cili shkojnë draftet e faturave të këtij klienti dhe mënyra se si tatohen.",
+          "entry": "Kontabiliteti",
+          "linkContact": "Lidh kontaktin",
+          "linked": "Kontakti u lidh",
+          "linkedIn": "Në {tool}",
+          "linkedInWithNumber": "Klienti nr. {number} në {tool}",
+          "notConnected": "Lidhni fillimisht një mjet kontabiliteti te cilësimet e Kohës së Faturueshme.",
+          "notLinked": "Nuk është lidhur. Një klient ka nevojë për një lidhje kontakti përpara dorëzimit të parë.",
+          "openSettings": "Hap cilësimet e kontabilitetit",
+          "overrideTax": "Përcakto të vetë klientit",
+          "taxCleared": "Zbatohet përsëri trajtimi tatimor i parazgjedhur i lidhjes",
+          "taxDefault": "{treatment} (e parazgjedhur e lidhjes)",
+          "taxHelp": "Përdoret për draftet e faturave të këtij klienti. Llogaritari e kontrollon atë në çdo draft.",
+          "taxNoDefault": "E parazgjedhura e lidhjes zbatohet sapo të lidhet një mjet kontabiliteti.",
+          "taxOverride": "{treatment} (e vetë klientit)",
+          "taxSaved": "Trajtimi tatimor u ruajt",
+          "taxTreatment": "Trajtimi tatimor",
+          "title": "Kontabiliteti për {name}",
+          "unlink": "Hiq lidhjen",
+          "unlinked": "Lidhja e kontaktit u hoq",
+          "useDefault": "Përdor vlerën e paracaktuar të lidhjes"
+        },
+        "customers": {
+          "actions": "Veprimet",
+          "contact": "Kontakt",
+          "customer": "Klient",
+          "defaultTax": "E paracaktuar: {treatment}",
+          "description": "Lidhni çdo klient me kontaktin e tij ekzistues në mjetin e kontabilitetit përpara dorëzimit të parë dhe ndryshoni trajtimin tatimor aty ku nevojitet.",
+          "edit": "Modifiko",
+          "empty": "Ende nuk ka klientë",
+          "inactive": "Joaktiv",
+          "notLinked": "I palidhur",
+          "tax": "Trajtimi tatimor",
+          "title": "Klientët"
+        },
+        "defaultTax": "Trajtimi tatimor i paracaktuar",
+        "defaultTaxHelp": "Vlera e paracaktuar për draftet e faturave të çdo klienti. Një klient mund ta mbishkruajë atë.",
+        "defaultTaxSaved": "Trajtimi tatimor i paracaktuar u ruajt",
+        "editDefaultTax": "Ndrysho trajtimin tatimor të paracaktuar",
+        "hint": {
+          "lexwareOffice": "Kërkon planin Lexware Office XL dhe drafte në EUR. Krijoni çelësin në app.lexware.de te Public API, mundësisht për një përdorues të dedikuar të Lexware.",
+          "sevdesk": "Përdorni token-in API të një përdoruesi të sevdesk. Token-i mbart lejet e plota të atij përdoruesi, prandaj rekomandohet një përdorues i dedikuar."
+        },
+        "import": {
+          "hint": "Shikoni klientët e mjetit të kontabilitetit që nuk janë lidhur ende, pastaj krijojini ose lidhini ata.",
+          "start": "Importo klientët"
+        },
+        "keyMissing": "Çelësi API mungon nga ruajtja e sigurt. Zëvendësoni lidhjen me një çelës të ri.",
+        "netPrices": {
+          "label": "Kjo llogari e sevdesk i regjistron çmimet e faturës si çmime neto",
+          "required": "Z8 dorëzon çmime neto. Konfirmoni që sevdesk i regjistron çmimet si çmime neto"
+        },
+        "noProviders": "Asnjë mjet kontabiliteti nuk mund të lidhet ende në këtë instalim.",
+        "providerUnavailable": "Ky mjet nuk është i disponueshëm në këtë instalim. Zëvendësoni ose hiqni lidhjen.",
+        "remove": "Hiq lidhjen",
+        "removeConfirm": "Hiq lidhjen",
+        "removed": "Lidhja e kontabilitetit u hoq",
+        "removeDescription": "Z8 fshin çelësin API dhe nuk mund të krijojë më drafte faturash. Draftet që ndodhen tashmë në mjet qëndrojnë aty. Lidhjet e kontakteve rikthehen nëse rilidhni të njëjtën llogari.",
+        "removeTitle": "Të hiqet lidhja e kontabilitetit?",
+        "replace": "Zëvendëso lidhjen",
+        "replaced": "Lidhja e kontabilitetit u zëvendësua",
+        "replaceHelp": "Lidhja e re zëvendëson atë aktuale dhe çelësi i saj fshihet. Lidhjet e kontakteve ruhen kur çelësi i ri i përket të njëjtës llogari në të njëjtin mjet.",
+        "replaceSubmit": "Zëvendëso lidhjen",
+        "tax": {
+          "domesticReduced": "Vendore, normë e reduktuar",
+          "domesticStandard": "Vendore, normë standarde",
+          "euReverseCharge": "Ngarkesë e anasjelltë në BE",
+          "invalid": "Vendosni një normë mbi 0 dhe më së shumti 100 %, me më së shumti dy shifra dhjetore",
+          "kind": "Trajtimi tatimor",
+          "rate": "Norma e TVSH-së",
+          "thirdCountryService": "Shërbim në një vend të tretë",
+          "vatFree": "Pa TVSH",
+          "withRate": "{label} ({rate} %)"
+        },
+        "tool": "Mjet",
+        "toolUnavailable": "{tool} (ende jo i disponueshëm)"
+      },
+      "bulk": {
+        "again": "Ndrysho më shumë punë",
+        "alreadyBillable": "Tashmë e faturueshme",
+        "alreadyNonBillable": "Tashmë e pafaturueshme",
+        "apply": "Zbato",
+        "billable": "E faturueshme",
+        "dateRequired": "Zgjidhni një datë",
+        "description": "Shënoni punën e projektit në një interval datash si të faturueshme ose jo të faturueshme.",
+        "failed": "Nuk u ndryshua: puna ndryshoi gjatë zbatimit",
+        "fromDay": "Nga",
+        "help": "Ndryshon punën e përfunduar në këtë projekt. Datat paraqesin ditën lokale të secilit punonjës kur ka filluar puna. Puna me një korrigjim ose dorëzim në pritje mbahet pezull.",
+        "hours": "{hours} h",
+        "hoursColumn": "Orët",
+        "markedBillable": "Shënuar si e faturueshme",
+        "markedNonBillable": "Shënuar si e pafaturueshme",
+        "nonBillable": "E pafaturueshme",
+        "open": "Shëno punën si të faturueshme",
+        "outcome": "Punë",
+        "preview": "Parapamje",
+        "rangeOrder": "Data e përfundimit nuk duhet të jetë para datës së fillimit",
+        "skipped": {
+          "heldBack": "Mbajtur pezull: një korrigjim ose dorëzim është në pritje",
+          "invoiced": "Faturuar: në një draft fature, nuk ndryshohet kurrë në masë"
+        },
+        "stale": "Puna ka ndryshuar që nga pamja paraprake. Asgjë nuk u ndryshua; kontrolloni pamjen e re paraprake dhe aplikojeni përsëri.",
+        "target": "Shëno punën si",
+        "title": "Shëno punën në {name}",
+        "toDay": "Deri",
+        "willMarkBillable": "Do të shënohet si e faturueshme",
+        "willMarkNonBillable": "Do të shënohet si e pafaturueshme",
+        "workPeriods": "Periudhat e punës"
+      },
+      "costRates": {
+        "actions": "Veprimet",
+        "employee": "Punonjës",
+        "employeeDescription": "Kostoja e plotë e brendshme për orë e këtij punonjësi, e përdorur për marzhin. E ndarë nga paga.",
+        "employeeTitle": "Tarifa e kostos",
+        "empty": "Nuk ka ende normë kostoje. Marzhi për punën e këtij punonjësi shfaqet si kosto e panjohur.",
+        "history": "Historiku",
+        "hourly": "Orar",
+        "inactive": "Joaktiv",
+        "intro": "Norma e kostos është kostoja e plotë e brendshme për orë e një punonjësi në {currency}, e cila përdoret për marzhin. Ajo është e ndarë nga paga: ndryshimi i njërës nuk e ndryshon kurrë tjetrën.",
+        "loadError": "Tarifat e kostos nuk mund të ngarkoheshin",
+        "noEmployees": "Ende nuk ka punonjës",
+        "panelDescription": "Tarifa e kostos",
+        "ratePerHour": "{rate}/orë",
+        "saved": "Tarifa e kostos u ruajt",
+        "set": "Cakto tarifën e kostos",
+        "setRateHelp": "Norma e re e kostos zbatohet nga kjo datë deri në ndryshimin e ardhshëm. Ajo nuk ndryshon kurrë pagën, listëpagesën ose fitimet për orë.",
+        "startsOn": "Fillon më {date}",
+        "today": "Sot",
+        "unchanged": "Ajo tarifë kostoje tashmë zbatohet",
+        "unknown": "Kosto e panjohur",
+        "useWage": "Fillo nga paga prej {rate}"
+      },
+      "currency": {
+        "description": "Monedha e vetme në të cilën shprehen tarifat tuaja të faturueshme, tarifat e kostos, të ardhurat dhe marzhi.",
+        "help": "Të gjitha tarifat e faturueshme, tarifat e kostos, të ardhurat dhe marzha përdorin këtë monedhë. Ajo nuk mund të ndryshohet pasi të ekzistojë një tarifë e faturueshme ose tarifë kostoje.",
+        "label": "Monedha e faturueshme",
+        "locked": "Tarifat e faturueshme ose tarifat e kostos tashmë e përdorin këtë monedhë, prandaj ajo nuk mund të ndryshohet më.",
+        "save": "Ruaj monedhën",
+        "saved": "Monedha e faturueshme u ruajt",
+        "title": "Monedha e faturueshme"
+      },
+      "description": "Monedha e faturueshme dhe ajo që organizata juaj u faturon klientëve për punën",
+      "handOff": {
+        "blocker": {
+          "currency": "Mjeti i kontabilitetit nuk mund të pranojë drafte në {currency}.",
+          "noContactLink": "Lidhni fillimisht këtë klient me një kontakt në mjetin e kontabilitetit te faqja Kontabiliteti.",
+          "notConnected": "Lidhni fillimisht një mjet kontabiliteti te faqja Kontabiliteti.",
+          "nothing": "Nuk ka punë të faturueshme dhe të pafaturuar për t'u dorëzuar në këtë periudhë.",
+          "off": "Koha e faturueshme është e çaktivizuar.",
+          "providerUnavailable": "Mjeti i lidhur i kontabilitetit nuk është i disponueshëm në këtë instalim.",
+          "taxTreatment": "Mjeti i kontabilitetit nuk mund të pranojë trajtimin tatimor të këtij klienti.",
+          "tooManyWorkLines": "Drafti do të kishte {lines} rreshta pune; mjeti i kontabilitetit pranon më së shumti {max}. Zgjidhni më pak projekte ose një periudhë më të shkurtër.",
+          "unpriced": "{count, plural, one {# periudhë pune nuk ka tarifë të faturueshme. Shtoni një tarifë përpara dorëzimit.} other {# periudha pune nuk kanë tarifë të faturueshme. Shtoni një tarifë përpara dorëzimit.}}"
+        },
+        "changed": {
+          "billability": "Faturueshmëria",
+          "project": "Projekti",
+          "removed": "I fshirë",
+          "split": "Ndaj",
+          "times": "Kohët"
+        },
+        "confirmed": "Drafti i faturës u krijua",
+        "detail": {
+          "checking": "Po kontrollohet drafti në mjet…",
+          "gone": "Mjeti i kontabilitetit nuk e ka më këtë draft. Nëse është fshirë me qëllim, lironi dorëzimin në mënyrë që puna e tij të mund të dorëzohet përsëri.",
+          "loading": "Dorëzimi",
+          "openInTool": "Hape në mjetin e kontabilitetit",
+          "pending": "Mjeti i kontabilitetit nuk e ka krijuar ende këtë draft. Riprovoni për të përfunduar dorëzimin.",
+          "pendingUnknown": "Mjeti i kontabilitetit nuk u përgjigj. Riprovoni për të përfunduar këtë dorëzim: ai gjen një draft që është krijuar tashmë dhe nuk krijon kurrë një të dytë.",
+          "releaseReason": "Liruar: {reason}",
+          "timesheet": "Fleta e orarit",
+          "timesheetHelp": "Puna e detajuar pas këtij dorëzimi, për t'u dërguar së bashku me faturën.",
+          "title": "Dorëzimi te {customer}",
+          "toolStatus": "Në mjet: {status}"
+        },
+        "form": {
+          "allProjects": "Të gjitha projektet",
+          "customer": "Klienti",
+          "customerNotLinked": "{name} (jo i lidhur)",
+          "customerPlaceholder": "Zgjidhni një klient",
+          "customerRequired": "Zgjidhni një klient",
+          "english": "Anglisht",
+          "from": "Nga",
+          "german": "Gjermanisht",
+          "language": "Gjuha e draftit",
+          "periodInvalid": "Periudha nuk mund të përfundojë përpara se të fillojë",
+          "preview": "Parapamje",
+          "projects": "Projektet",
+          "projectsRequired": "Zgjidhni të paktën një projekt",
+          "timesheet": "Shto fletën e orarit si rreshta teksti",
+          "timesheetHelp": "Një rresht për çdo periudhë pune, brenda kufirit të rreshtave të mjetit të kontabilitetit. Mund ta shkarkoni gjithmonë fletën e orarit.",
+          "to": "Deri"
+        },
+        "hoursValue": "{hours} h",
+        "list": {
+          "actions": "Veprimet",
+          "changed": "{count, plural, one {# periudhë pune ndryshoi pas faturimit} other {# periudha pune ndryshuan pas faturimit}}",
+          "customer": "Klienti",
+          "description": "Drafte faturash të krijuara në mjetin e kontabilitetit. Hapni një për të kontrolluar statusin e tij, për të shkarkuar fletën e orëve ose për ta lëshuar atë.",
+          "empty": "Ende nuk ka dorëzime",
+          "gone": "Fshirë në mjet",
+          "open": "Hap",
+          "period": "Periudha",
+          "status": "Statusi",
+          "title": "Dorëzimet",
+          "total": "Totali neto"
+        },
+        "marks": {
+          "clear": "Pastro shënimin",
+          "clearAll": "Pastro të gjitha shënimet",
+          "cleared": "{count, plural, one {# shënim u pastrua} other {# shënime u pastruan}}",
+          "help": "Kjo punë e faturuar u korrigjua pas dorëzimit të saj. Korrigjoni faturën në mjetin e kontabilitetit nëse nevojitet (për shembull me një notë krediti), pastaj pastroni shënimin.",
+          "title": "Ndryshuar pas faturimit"
+        },
+        "new": {
+          "description": "Krijoni një draft fature në mjetin e kontabilitetit nga puna e pafaturuar dhe e faturueshme e një klienti. Kontabilisti e finalizon atë atje.",
+          "title": "Dorëzim i ri"
+        },
+        "pending": "Mjeti i kontabilitetit nuk e ka konfirmuar ende draftin. Provoni përsëri dorëzimin.",
+        "period": "{from} – {to}",
+        "preview": {
+          "alreadyInvoiced": "Tashmë e faturuar",
+          "alreadyInvoicedHint": "Kjo punë është në një draft tjetër fature dhe është lënë jashtë.",
+          "amount": "Shuma",
+          "confirm": "Krijo draft fature",
+          "heldBack": "Punë e mbajtur pezull",
+          "heldBackHint": "Një korrigjim ose dorëzim për këtë punë është ende në pritje. Ajo lihet jashtë derisa të vendoset.",
+          "hours": "Orët",
+          "line": "Rresht",
+          "nonBillable": "{count, plural, one {# periudhë pune e pafaturueshme ({hours} orë) nuk dorëzohet.} other {# periudha pune të pafaturueshme ({hours} orë) nuk dorëzohen.}}",
+          "rate": "Tarifa",
+          "retry": "Riprovo dorëzimin",
+          "retryHint": "Riprovimi është i sigurt: ai përfundon të njëjtin dorëzim dhe nuk krijon kurrë një draft të dytë.",
+          "taxHint": "plus taksën sipas trajtimit tatimor, e zbatuar në mjetin e kontabilitetit",
+          "timesheetLines": "{count, plural, one {# rresht teksti nga fleta e orëve i shtohet draftit.} other {# rreshta teksti nga fleta e orëve u shtohen draftit.}}",
+          "timesheetOmitted": "{count, plural, one {Mjeti i kontabilitetit pranon vetëm një numër të caktuar rreshtash: # periudhë pune është lënë jashtë rreshtave të tekstit. Shkarkimi i fletës së orëve i përmban të gjitha.} other {Mjeti i kontabilitetit pranon vetëm një numër të caktuar rreshtash: # periudha pune janë lënë jashtë rreshtave të tekstit. Shkarkimi i fletës së orëve i përmban të gjitha.}}",
+          "title": "Parapamje",
+          "total": "Totali neto",
+          "unpriced": "Punë pa çmim",
+          "unpricedHint": "Punë e faturueshme pa tarifë faturimi. Shtoni një tarifë në faqen e tarifave të faturueshme, pastaj shikoni sërish parapamjen.",
+          "withoutCustomer": "{count, plural, one {# periudhë pune e faturueshme ({hours} orë) në projekte pa klient ({projects}) nuk mund të dorëzohet.} other {# periudha pune të faturueshme ({hours} orë) në projekte pa klient ({projects}) nuk mund të dorëzohen.}}"
+        },
+        "release": {
+          "action": "Lësho",
+          "confirm": "Lësho",
+          "description": "Puna e saj bëhet sërish e pafaturuar dhe mund të dorëzohet nga e para. Z8 nuk e ndryshon draftin në mjetin e kontabilitetit: fshijeni ose anulojeni vetë atje.",
+          "done": "{count, plural, one {U lëshua. # periudhë pune është sërish e pafaturuar.} other {U lëshuan. # periudha pune janë sërish të pafaturuara.}}",
+          "reason": "Arsyeja (opsionale)",
+          "title": "Dëshironi ta lëshoni këtë dorëzim?"
+        },
+        "status": {
+          "created": "Drafti u krijua",
+          "failed": "Dështoi",
+          "pending": "Në pritje të mjetit",
+          "released": "U lëshua"
+        },
+        "timesheet": {
+          "customer": "Klienti",
+          "date": "Data",
+          "employee": "Punonjësi",
+          "end": "Përfundimi",
+          "footer": "Gjeneruar nga Z8",
+          "generatedAt": "Gjeneruar më",
+          "hours": "Orët",
+          "note": "Orët janë sipas zonës kohore ku u regjistrua puna. Orët rrumbullakosen në dy shifra dhjetore për çdo periudhë pune.",
+          "period": "Periudha",
+          "project": "Projekti",
+          "start": "Fillimi",
+          "table": "Puna",
+          "title": "Regjistri i orëve",
+          "total": "Totali"
+        }
+      },
+      "nav": {
+        "accounting": "Kontabiliteti",
+        "costRates": "Tarifat e kostos",
+        "currency": "Monedha e faturueshme",
+        "handOff": "Dorëzimi",
+        "label": "Cilësimet e kohës së faturueshme",
+        "rates": "Tarifat e faturueshme"
+      },
+      "rates": {
+        "actions": "Veprimet",
+        "add": "Shto tarifë",
+        "addDescription": "Zgjidhni nivelin e tarifës dhe për çfarë shërben tarifa.",
+        "chooseCustomer": "Zgjidhni një klient",
+        "chooseEmployee": "Zgjidhni një punonjës",
+        "chooseProject": "Zgjidhni një projekt",
+        "closedPeriod": "{from} deri më {to}",
+        "customer": "Klienti",
+        "customerRate": "Tarifa e faturueshme",
+        "customerRateTitle": "Tarifa e faturueshme për {name}",
+        "dateRequired": "Zgjidhni ditën e parë kur zbatohet",
+        "effectiveFrom": "Zbatohet nga",
+        "employee": "Punonjësi",
+        "employeeProjectRateFor": "Tarifa e faturueshme për {name} në këtë projekt",
+        "employeeProjectRateTitle": "Tarifa e faturueshme për {name} në {project}",
+        "employeeRateDescription": "Çfarë i faturon organizata juaj klientëve për orë pune të këtij punonjësi kur nuk zbatohet asnjë tarifë projekti, klienti ose punonjësi në projekt.",
+        "employeeRateTitle": "Tarifa e faturueshme",
+        "empty": "Nuk është caktuar ende asnjë tarifë",
+        "emptyCustomer": "Nuk ka tarifë për klientin. Zbatohet tarifa e secilit punonjës.",
+        "emptyEmployee": "Nuk ka tarifë për punonjësin. Puna pa një tarifë më specifike mbetet pa çmim.",
+        "emptyEmployeeProject": "Nuk ka tarifë për këtë punonjës në këtë projekt. Zbatohet tarifa e projektit, e klientit ose e punonjësit.",
+        "emptyProject": "Nuk ka tarifë për projektin. Zbatohet tarifa e klientit ose e punonjësit.",
+        "endRate": "Përfundo tarifën",
+        "endRateHelp": "Nga kjo datë, kjo tarifë nuk zbatohet më deri në ndryshimin e ardhshëm të tarifës.",
+        "endsFrom": "Nuk zbatohet më nga",
+        "for": "Për",
+        "history": "Historiku",
+        "hourlyRate": "Tarifa orare",
+        "inEffect": "Në fuqi",
+        "inEffectTodayHint": "Në fuqi sot: {rate}",
+        "intro": "Tarifat janë në {currency} për orë. Për çdo punë zbatohet tarifa më specifike në fuqi në ditën kur ka filluar ajo: punonjësi në një projekt, pastaj projekti, pastaj klienti, pastaj punonjësi.",
+        "level": {
+          "customer": "Klienti",
+          "customerDescription": "Zbatohet për punën në projektet e klientit pa një tarifë projekti.",
+          "employee": "Punonjësi",
+          "employeeDescription": "Tarifa standarde e punonjësit, e përdorur kur nuk zbatohet asnjë tarifë më specifike.",
+          "employeeProject": "Punonjësi në një projekt",
+          "employeeProjectDescription": "Ka përparësi mbi çdo tarifë tjetër për punën e këtij punonjësi në këtë projekt.",
+          "project": "Projekti",
+          "projectDescription": "Zbatohet për të gjithë punën në projekt pa një tarifë punonjës-në-projekt."
+        },
+        "levelLabel": "Niveli i tarifës",
+        "loadError": "Tarifat e faturueshme nuk mund të ngarkoheshin",
+        "noneAtLevel": "Ende nuk ka tarifa në këtë nivel",
+        "noRateToday": "Pa tarifë",
+        "openPeriod": "Nga {from}",
+        "perHour": "{currency}/orë",
+        "project": "Projekti",
+        "projectRate": "Tarifa e faturueshme",
+        "projectRateTitle": "Tarifa e faturueshme për {name}",
+        "rateInvalid": "Vendosni një tarifë orare pozitive me më së shumti dy shifra dhjetore",
+        "ratePerHour": "{rate}/orë",
+        "saved": "Tarifa e faturueshme u ruajt",
+        "saveEnd": "Përfundo tarifën",
+        "saveRate": "Ruaj tarifën",
+        "setRate": "Cakto tarifën",
+        "setRateHelp": "Tarifa e re zbatohet nga kjo datë deri në ndryshimin e ardhshëm të tarifës. Datat më të hershme ricaktojnë çmimin për punën që nuk është faturuar ende.",
+        "startsOn": "Fillon më {date}",
+        "today": "Sot",
+        "unchanged": "Ajo tarifë tashmë zbatohet"
+      },
+      "title": "Koha e faturueshme"
+    },
+    "billing": {
+      "description": "Menaxhoni pajtimin tuaj, mënyrat e pagesës dhe faturat",
+      "title": "Faturimi & Pajtimi"
+    },
+    "closedMonths": {
+      "automatic": {
+        "days": "Ditë pas fundit të muajit",
+        "daysHelp": "Nëse diçka pengon mbylljen, të gjithë ata që lejohen të mbyllin njoftohen dhe provohet përsëri të nesërmen.",
+        "daysInvalid": "Vendosni një numër të plotë ditësh nga 1 deri në 60",
+        "description": "Mbyllni muajin e mëparshëm për të gjithë organizatën disa ditë pas përfundimit të tij. Një muaj që është rihapur nuk mbyllet më kurrë automatikisht.",
+        "enabled": "Mbyll muajt automatikisht",
+        "save": "Ruaj",
+        "saved": "Mbyllja automatike u ruajt",
+        "title": "Mbyllje automatike"
+      },
+      "blockedTitle": "Muaji nuk mund të mbyllet ende. Zgjidhni këto më parë:",
+      "blocker": {
+        "absenceRequest": "kërkesë e pashqyrtuar për mungesë {startDate} – {endDate}",
+        "liveWork": "ende i regjistruar në punë që nga {start}",
+        "notEnded": "muaji nuk ka përfunduar në zonën e tyre kohore",
+        "periodSubmission": "dorëzim i pavendosur i periudhës {startDate} – {endDate}",
+        "timeRequest": "kërkesë e pashqyrtuar për punën nga {start}"
+      },
+      "close": "Mbyll",
+      "closeDescription": "Askush nuk mund të ndryshojë punën, atribuimin ose mungesat në një muaj të mbyllur derisa të rihapet. Muaji i secilit punonjës fiksohet në zonën e vet kohore.",
+      "closeSubmit": "Mbyll muajin",
+      "closeSuccess": "{count, plural, other {{month} u mbyll për # punonjës} }",
+      "closeTitle": "Mbyll {month}",
+      "description": "Mbyllini muajt pas listëpagesës në mënyrë që puna dhe mungesat e tyre të mos mund të ndryshohen më",
+      "employeesLabel": "Punonjësit",
+      "employeesRequired": "Zgjidhni të paktën një punonjës",
+      "history": {
+        "automatic": "Automatikisht",
+        "closed": "Mbyllur",
+        "employees": "{count, plural, other {# punonjës} }",
+        "reopened": "Rihapur",
+        "unknownActor": "E panjohur"
+      },
+      "historyEmpty": "Ende nuk është mbyllur asnjë muaj.",
+      "historyTitle": "Historiku",
+      "monthsDescription": "Mbyllja e një muaji ngrin punën, atribuimin dhe mungesat e tij për listëpagesën. Shënimet mbeten të modifikueshme.",
+      "monthsTitle": "Muajt",
+      "nothingToClose": "Gjithsecili në këtë fushëveprim është mbyllur tashmë për këtë muaj.",
+      "nothingToReopen": "Askush në këtë përzgjedhje nuk është mbyllur për këtë muaj.",
+      "reasonLabel": "Arsyeja",
+      "reasonPlaceholder": "Pse duhet të ndryshojë ky muaj?…",
+      "reasonRequired": "Vendosni një arsye për rihapjen",
+      "reopen": "Rihap",
+      "reopenDescription": "Punonjësit e rihapur qëndrojnë të hapur derisa muaji të mbyllet sërish. Menaxherët e tyre njoftohen.",
+      "reopenScopeLabel": "Rihap për",
+      "reopenSubmit": "Rihap muajin",
+      "reopenSuccess": "{count, plural, other {{month} u rihap për # punonjës} }",
+      "reopenTitle": "Rihap {month}",
+      "scope": {
+        "all": "Gjithçka",
+        "deletedTeam": "Ekipi i fshirë",
+        "employees": "Punonjësit e përzgjedhur",
+        "organization": "Organizata"
+      },
+      "scopeLabel": "Mbyll për",
+      "teamNotFound": "Ky ekip nuk ekziston më.",
+      "title": "Muajt e mbyllur",
+      "warning": {
+        "periodNotSubmitted": "periudha {startDate} – {endDate} nuk është dorëzuar",
+        "periodRejected": "periudha {startDate} – {endDate} është refuzuar",
+        "periodRunning": "periudha {startDate} – {endDate} është ende në vazhdim, ende e padorëzueshme",
+        "periodSentBack": "periudha {startDate} – {endDate} është kthyer mbrapsht pas një ndryshimi"
+      },
+      "warnings": {
+        "more": "dhe {count} të tjera",
+        "title": "Jo çdo dorëzim periudhe për këtë muaj është miratuar. Kjo nuk e ndalon mbylljen:"
+      }
+    },
+    "compliance": {
+      "description": "Shqyrtoni dhe menaxhoni kërkesat për përjashtime nga përputhshmëria prej anëtarëve të ekipit",
+      "title": "Përputhshmëria me ArbZG"
+    },
+    "customDomains": {
+      "description": "Konfiguroni domenin e personalizuar, identitetin vizual dhe SSO-në për organizatën tuaj",
+      "title": "Domeni & Identiteti vizual"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Personi i kontaktit",
+        "email": "Email",
+        "name": "Emri i kompanisë",
+        "phone": "Telefoni"
+      },
+      "create": "Shto klient",
+      "created": "Klienti u krijua",
+      "createFailed": "Krijimi i klientit dështoi",
+      "deleted": "Klienti u fshi",
+      "delete": {
+        "description": "A jeni i sigurt që dëshironi të fshini \"{name}\"? Projektet e caktuara për këtë klient do të vazhdojnë të funksionojnë, por referenca e klientit do të hiqet.",
+        "title": "Fshi klientin"
+      },
+      "deleteFailed": "Fshirja e klientit dështoi",
+      "description": "Menaxhoni kontaktet e klientëve për caktimet në projekte",
+      "dialog": {
+        "create": "Shto klient",
+        "createDescription": "Shtoni një klient të ri për caktimet në projekte",
+        "createTitle": "Shto klient",
+        "editDescription": "Përditëso detajet e klientit",
+        "editTitle": "Ndrysho klientin",
+        "save": "Ruaj ndryshimet"
+      },
+      "empty": {
+        "description": "Shtoni klientin tuaj të parë për ta caktuar në projekte.",
+        "title": "Ende nuk ka klientë"
+      },
+      "field": {
+        "address": "Adresa",
+        "addressPlaceholder": "Rruga, Qyteti, Kodi Postar",
+        "contactPerson": "Personi i kontaktit",
+        "contactPersonPlaceholder": "p.sh., John Smith",
+        "email": "Email",
+        "name": "Emri i kompanisë",
+        "namePlaceholder": "Vendosni emrin e kompanisë",
+        "phone": "Telefoni",
+        "project": "Projekti",
+        "projectPlaceholder": "Zgjidhni një projekt",
+        "vatId": "Numri i TVSH-së",
+        "website": "Faqja e internetit"
+      },
+      "list": {
+        "description": "Gjithsej {count} klientë",
+        "title": "Të gjithë klientët"
+      },
+      "managerNoProjects": "Nuk ka projekte të menaxhuara të disponueshme. Krijoni ose menaxhoni një projekt përpara se të shtoni klientë.",
+      "projectRequired": "Zgjidhni fillimisht një projekt",
+      "title": "Klientët",
+      "updated": "Klienti u përditësua",
+      "updateFailed": "Përditësimi i klientit dështoi"
+    },
+    "customFields": {
+      "accessSummary": "E dukshme për: {visibility} · Modifikuar nga: {edit}",
+      "activeCount": "{count} nga {max} fusha aktive",
+      "activeList": "Fushat e personalizuara aktive",
+      "add": "Shto fushë të personalizuar",
+      "archivedList": "Fushat e personalizuara të arkivuara",
+      "archivedTitle": "Arkivuar",
+      "archiveField": "Arkivo {name}",
+      "capReached": "Çdo lloj regjistrimi mund të ketë maksimumi 25 fusha të personalizuara aktive. Arkivoni njërën për të shtuar një tjetër.",
+      "description": "Fushat tuaja për punonjësit, projektet dhe klientët",
+      "editField": "Modifiko {name}",
+      "empty": "Ende nuk ka fusha të personalizuara.",
+      "entity": {
+        "customer": "Klientët",
+        "employee": "Punonjësit",
+        "project": "Projektet"
+      },
+      "form": {
+        "boundsHelp": "Lëreni një kufi bosh për pa limit.",
+        "create": "Krijo fushën",
+        "createTitle": "Shto fushë të personalizuar",
+        "description": "Një fushë e personalizuar te {entity}.",
+        "editLevel": "Kush mund t'i modifikojë vlerat",
+        "editLevelHelp": "Punonjësit nuk i modifikojnë kurrë vlerat e fushave të personalizuara.",
+        "editTitle": "Modifiko fushën e personalizuar",
+        "integerOnly": "Vetëm numra të plotë",
+        "max": "Maksimumi",
+        "min": "Minimumi",
+        "name": "Emri",
+        "nameRequired": "Vendosni një emër",
+        "options": "Opsionet",
+        "optionsHelp": "Një opsion për rresht.",
+        "required": "E detyrueshme",
+        "requiredHelp": "Formularët refuzojnë të ruajnë një regjistrim pa vlerë.",
+        "save": "Ruaj ndryshimet",
+        "tracked": "Ruaj historikun",
+        "trackedFixed": "Nëse një fushë ruan historikun nuk mund të ndryshohet pasi të krijohet.",
+        "trackedHelp": "Çdo vlerë mban datën nga e cila është e vlefshme.",
+        "type": "Lloji",
+        "typeFixed": "Lloji nuk mund të ndryshohet pasi fusha të krijohet.",
+        "visibility": "Kush mund t'i shohë vlerat"
+      },
+      "level": {
+        "admin": "Administratorët",
+        "employee": "Të gjithë, duke përfshirë punonjësin",
+        "manager": "Menaxherët dhe administratorët"
+      },
+      "options": {
+        "add": "Shto opsion",
+        "archive": "Arkivo {label}",
+        "archived": "I arkivuar",
+        "label": "Emri i opsionit",
+        "list": "Opsionet",
+        "moveDown": "Lëvize {label} poshtë",
+        "moveUp": "Lëvize {label} lart",
+        "new": "Opsion i ri",
+        "restore": "Rikthe {label}",
+        "title": "Opsionet"
+      },
+      "refusal": {
+        "booleanRequired": "Një fushë po/jo nuk mund të jetë e detyrueshme.",
+        "duplicateOption": "Kjo fushë ka tashmë një opsion aktiv me këtë emër.",
+        "editBroaderThanVisibility": "Të gjithë ata që mund të modifikojnë vlerat duhet gjithashtu të jenë në gjendje t'i shohin ato.",
+        "employeesNeverEdit": "Punonjësit nuk mund t'i modifikojnë vlerat e fushave të personalizuara.",
+        "fieldArchived": "Rikthejeni këtë fushë të personalizuar përpara se ta ndryshoni.",
+        "invalidChange": "Ky ndryshim nuk mund të ruhet. Ringarkoni faqen dhe provoni përsëri.",
+        "invalidLevel": "Zgjidhni kush mund t'i shohë dhe t'i modifikojë vlerat.",
+        "invalidName": "Vendosni një emër me më së shumti 100 karaktere.",
+        "invalidOptionLabel": "Vendosni një opsion me më së shumti 100 karaktere.",
+        "lastActiveOption": "Një fushë përzgjedhjeje ka nevojë për të paktën një opsion aktiv.",
+        "nameTaken": "Një fushë aktive e personalizuar në këtë lloj regjistrimi e ka tashmë këtë emër.",
+        "notFound": "Kjo fushë e personalizuar nuk ekziston më. Ringarkoni faqen.",
+        "notSelect": "Vetëm fushat me përzgjedhje kanë opsione.",
+        "numberBounds": "Futni një minimum dhe një maksimum si numra, ku minimumi të mos jetë më i madh se maksimumi.",
+        "optionArchived": "Rivendosni këtë opsion së pari.",
+        "selectNeedsOption": "Shtoni të paktën një opsion në një fushë me përzgjedhje.",
+        "staleOrder": "Lista ka ndryshuar ndërkohë. Ringarkoni faqen dhe provoni përsëri.",
+        "tooManyFields": "Ky lloj regjistrimi ka tashmë 25 fusha të personalizuara aktive. Arkivoni një së pari.",
+        "trackedFixed": "Nëse një fushë e personalizuar ruan historik nuk mund të ndryshohet pasi të jetë krijuar.",
+        "typeFixed": "Lloji i një fushe të personalizuar nuk mund të ndryshohet pasi të jetë krijuar.",
+        "usedAsPayrollIdentifier": "Kjo fushë është identifikuesi i personelit i konfigurimit të eksportit të listëpagesave {configurations}. Zgjidhni më parë një identifikues tjetër atje."
+      },
+      "reorderField": "Rirendit {name}",
+      "required": "E detyrueshme",
+      "restore": "Rivendos",
+      "restoreField": "Rivendos {name}",
+      "saveFailed": "Ndryshimi nuk mund të ruhej.",
+      "title": "Fusha të personalizuara",
+      "tracked": "E gjurmuar",
+      "type": {
+        "boolean": "Po/Jo",
+        "date": "Datë",
+        "number": "Numër",
+        "select": "Përzgjedhje",
+        "text": "Tekst"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Ekziston tashmë një vlerë që fillon në atë datë.",
+        "fieldArchived": "Kjo fushë është arkivuar.",
+        "forField": "Fusha e personalizuar \"{field}\": {message}",
+        "invalidDate": "Futni një datë të vlefshme.",
+        "invalidNumber": "Futni një numër.",
+        "invalidValidFrom": "Futni një datë fillimi të vlefshme.",
+        "invalidValue": "Futni një vlerë të vlefshme.",
+        "missingRequired": "Kjo fushë është e detyrueshme.",
+        "missingValue": "Futni një vlerë për çdo datë.",
+        "notEditable": "Nuk mund ta ndryshoni këtë fushë.",
+        "numberNotInteger": "Futni një numër të plotë.",
+        "numberOutOfRange": "Futni një numër brenda kufijve të lejuar.",
+        "optionArchived": "Ky opsion është arkivuar. Zgjidhni një tjetër.",
+        "textTooLong": "Futni më së shumti 255 karaktere.",
+        "trackedField": "Kjo fushë ruan historik. Në vend të kësaj, shtoni një ndryshim me datë.",
+        "unknownField": "Kjo fushë nuk ekziston më. Ringarkoni faqen dhe provoni përsëri.",
+        "unknownHistoryEntry": "Historiku ka ndryshuar ndërkohë. Ringarkoni faqen dhe provoni përsëri."
+      },
+      "values": {
+        "archivedOption": "{label} (arkivuar)",
+        "history": {
+          "add": "Shto ndryshim",
+          "apply": "Zbato",
+          "correct": "Korrigjoni vlerën e vlefshme nga {date}",
+          "delete": "Fshini vlerën e vlefshme nga {date}",
+          "duplicateValidFrom": "Ekziston tashmë një vlerë e vlefshme nga kjo datë.",
+          "empty": "Ende nuk ka vlera.",
+          "from": "Nga {date}",
+          "label": "Historiku i {name}",
+          "needsValidFrom": "Zgjidhni datën nga e cila vlera është e vlefshme.",
+          "needsValue": "Futni një vlerë.",
+          "today": "Sot",
+          "validFrom": "E vlefshme nga",
+          "value": "Vlera"
+        },
+        "missingRequired": "Mungojnë vlerat e kërkuara",
+        "no": "Jo",
+        "notSet": "Nuk është caktuar",
+        "ownDescription": "Ruhen nga organizata juaj. Kërkojini një administratori ose menaxherit tuaj t'i ndryshojë ato.",
+        "title": "Fusha të personalizuara",
+        "yes": "Po"
+      }
+    },
+    "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Regjistrimet dhe kategoritë e mungesave",
+          "label": "Mungesat"
+        },
+        "audit_logs": {
+          "description": "Gjurmët e auditimit të aktivitetit",
+          "label": "Regjistrat e auditimit"
+        },
+        "balance_adjustments": {
+          "description": "Bilancet fillestare dhe pagesat e orëve shtesë, përfshirë ato të anuluara",
+          "label": "Rregullimet e bilancit të punës"
+        },
+        "customers": {
+          "description": "Klientët me fushat e tyre të personalizuara të klientit",
+          "label": "Klientët"
+        },
+        "employees": {
+          "description": "Profilet e punonjësve, marrëdhëniet e menaxherëve dhe fushat e personalizuara të punonjësve",
+          "label": "Punonjësit"
+        },
+        "holidays": {
+          "description": "Kalendari i festave dhe paracaktimet",
+          "label": "Festat"
+        },
+        "projects": {
+          "description": "Projektet me fushat e tyre të personalizuara të klientit dhe projektit",
+          "label": "Projektet"
+        },
+        "schedules": {
+          "description": "Shabllonet dhe caktimet e orarit të punës",
+          "label": "Oraret e punës"
+        },
+        "shifts": {
+          "description": "Të dhënat e planifikimit të turneve",
+          "label": "Turnet"
+        },
+        "teams": {
+          "description": "Struktura dhe lejet e ekipit",
+          "label": "Ekipet"
+        },
+        "time_entries": {
+          "description": "Regjistrimet dhe korrigjimet e orës së punës",
+          "label": "Ndjekja e kohës"
+        },
+        "vacation": {
+          "description": "Politikat dhe kuotat e pushimeve",
+          "label": "Politikat e pushimeve"
+        },
+        "work_periods": {
+          "description": "Seancat e grumbulluara të punës",
+          "label": "Periudhat e punës"
+        }
+      },
+      "description": "Eksportoni të dhënat e organizatës suaj",
+      "form": {
+        "aboutAsync": "Eksportet përpunohen në mënyrë asinkrone",
+        "aboutDownloadFromHistory": "Shkarkoni eksportet e përfunduara nga Historiku i eksporteve",
+        "aboutEmail": "Do të merrni një email kur të jetë gati",
+        "aboutFileRetention": "Skedarët e eksportit fshihen pas 30 ditësh",
+        "aboutOrgDataOnly": "Përfshihen vetëm të dhënat e organizatës suaj",
+        "aboutTitle": "Rreth eksportimit të të dhënave",
+        "description": "Zgjidhni kategoritë e të dhënave që dëshironi të eksportoni",
+        "selectAll": "Zgjidh të gjitha",
+        "selectAtLeastOne": "Ju lutemi zgjidhni të paktën një kategori",
+        "startExport": "Nis eksportimin ({count})",
+        "startingExport": "Po nis eksportimi...",
+        "submitError": "Nisja e eksportimit dështoi",
+        "submitSuccess": "Eksportimi nisi me sukses",
+        "title": "Eksporto të dhënat",
+        "unexpectedError": "Ndodhi një gabim i papritur"
+      },
+      "history": {
+        "columnActions": "Veprimet",
+        "columnCategories": "Kategoritë",
+        "columnDate": "Data",
+        "columnSize": "Madhësia",
+        "columnStatus": "Statusi",
+        "deleteDialogDescription": "A jeni i sigurt që dëshironi ta fshini këtë eksportim? Ky veprim nuk mund të kthehet prapa.",
+        "deleteDialogTitle": "Fshi eksportimin",
+        "deleteError": "Fshirja e eksportimit dështoi",
+        "deleteSuccess": "Eksportimi u fshi",
+        "description": "Eksportimet tuaja të mëparshme të të dhënave",
+        "download": "Shkarko",
+        "downloadError": "Shkarkimi dështoi",
+        "downloadSuccess": "Shkarkimi nisi",
+        "emptyDescription": "Nuk ka ende eksporte",
+        "emptyHint": "Krijoni eksportimin tuaj të parë duke përdorur formularin e mësipërm",
+        "moreCategories": "+{count} të tjera",
+        "statusCompleted": "Përfunduar",
+        "statusFailed": "Dështoi",
+        "statusPending": "Në pritje",
+        "statusProcessing": "Po përpunohet",
+        "switchOrganizationAction": "Kalo te {organization}",
+        "switchOrganizationBody": "Ky eksport i përket {organization}. Kaloni te ajo organizatë për të hapur historikun e saj të eksporteve; qasja juaj kontrollohet përsëri pas kalimit.",
+        "switchOrganizationTitle": "Ndërroni organizatën për të parë këtë eksport",
+        "title": "Historiku i eksporteve",
+        "unexpectedError": "Ndodhi një gabim i papritur"
+      },
+      "storage": {
+        "accessKeyDescription": "ID-ja e çelësit tuaj të aksesit në AWS",
+        "accessKeyId": "ID-ja e çelësit të aksesit",
+        "bucketDescription": "Emri i bucket-it tuaj S3",
+        "bucketName": "Emri i bucket-it",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Lidhja dështoi",
+        "connectionSuccess": "Lidhja u krye me sukses",
+        "deleteDialogDescription": "A jeni i sigurt që dëshironi ta fshini këtë konfigurim të hapësirës ruajtëse?",
+        "deleteDialogTitle": "Fshi konfigurimin",
+        "deleteError": "Fshirja e konfigurimit dështoi",
+        "deleteSuccess": "Konfigurimi u fshi",
+        "description": "Konfiguroni hapësirën tuaj ruajtëse të pajtueshme me S3 për eksportet",
+        "endpoint": "Endpoint i personalizuar (Opsionale)",
+        "endpointDescription": "Për shërbime të pajtueshme me S3 si MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Lëreni bosh për të ruajtur kredencialet ekzistuese",
+        "lastVerified": "Verifikuar së fundmi: {date}",
+        "region": "Rajoni",
+        "regionDescription": "Rajoni AWS ku ndodhet bucket-i juaj",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Ruaj konfigurimin",
+        "saveError": "Ruajtja e konfigurimit dështoi",
+        "saveSuccess": "Konfigurimi u ruajt",
+        "saveSuccessDescription": "Cilësimet e hapësirës tuaj ruajtëse S3 u ruajtën",
+        "saving": "Duke ruajtur...",
+        "secretAccessKey": "Çelësi sekret i aksesit",
+        "secretKeyDescription": "Çelësi juaj sekret i aksesit në AWS",
+        "testConnection": "Testo lidhjen",
+        "testFailed": "Testimi i lidhjes dështoi",
+        "testing": "Duke testuar...",
+        "title": "Konfigurimi i hapësirës ruajtëse S3",
+        "unexpectedError": "Ndodhi një gabim i papritur",
+        "verified": "Verifikuar"
+      },
+      "storageNotConfigured": {
+        "description": "Konfiguroni hapësirën ruajtëse S3 përpara se të krijoni eksporte",
+        "title": "Hapësira ruajtëse nuk është konfiguruar"
+      },
+      "tabs": {
+        "exportHistory": "Historiku i eksporteve",
+        "newExport": "Eksport i ri",
+        "storageSettings": "Cilësimet e hapësirës ruajtëse"
+      },
+      "title": "Eksportimi i të dhënave"
+    },
+    "emailConfig": {
+      "description": "Konfiguroni një ofrues të personalizuar të email-it për email-et e organizatës",
+      "title": "Konfigurimi i email-it"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Rivendos te shablloni i sistemit",
+        "save": "Ruaj",
+        "sendTest": "Dërgo provë"
+      },
+      "categories": {
+        "absences": "Mungesat",
+        "auth": "Qasja në llogari",
+        "billing": "Faturimi",
+        "exports": "Eksportet",
+        "security": "Siguria",
+        "teams": "Ekipet",
+        "timecorrections": "Korrigjimet e orarit"
+      },
+      "defaultFallback": "Rezervë e paracaktuar",
+      "defaultFallbackDescription": "Nëse ky shabllon përdor parazgjedhjen e sistemit, Z8 dërgon kopjen dhe subjektin e sistemit:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Njofton punonjësin se një menaxher ka regjistruar një mungesë në emër të tij.",
+          "label": "Mungesa u regjistrua nga menaxheri"
+        },
+        "absence-request-approved": {
+          "description": "Njofton punonjësin se kërkesa e tij për mungesë u miratua.",
+          "label": "Kërkesa për mungesë u miratua"
+        },
+        "absence-request-pending-approval": {
+          "description": "Njofton menaxherin se një kërkesë për mungesë kërkon miratim.",
+          "label": "Kërkesa për mungesë në pritje të miratimit"
+        },
+        "absence-request-rejected": {
+          "description": "Njofton punonjësin se kërkesa e tij për mungesë u refuzua.",
+          "label": "Kërkesa për mungesë u refuzua"
+        },
+        "absence-request-submitted": {
+          "description": "Konfirmon se punonjësi ka dërguar një kërkesë për mungesë.",
+          "label": "Kërkesa për mungesë u dërgua"
+        },
+        "email-verification": {
+          "description": "Dërgohet kur një përdorues duhet të verifikojë adresën e tij të emailit.",
+          "label": "Verifikimi i emailit"
+        },
+        "export-failed": {
+          "description": "Njofton përdoruesin se eksporti i kërkuar nuk mund të gjenerohej.",
+          "label": "Eksportimi dështoi"
+        },
+        "export-ready": {
+          "description": "Njofton përdoruesin se eksporti i kërkuar është gati për shkarkim.",
+          "label": "Eksportimi është gati"
+        },
+        "organization-invitation": {
+          "description": "Dërgohet kur një përdorues ftohet të bashkohet me një organizatë.",
+          "label": "Ftesë për organizatë"
+        },
+        "password-reset": {
+          "description": "Dërgohet kur një përdorues kërkon një lidhje për rivendosjen e fjalëkalimit.",
+          "label": "Rivendosja e fjalëkalimit"
+        },
+        "security-alert": {
+          "description": "Njofton përdoruesin për një ngjarje të rëndësishme sigurie të llogarisë.",
+          "label": "Sinjalizim sigurie"
+        },
+        "team-member-added": {
+          "description": "Njofton anëtarin se u shtua në një ekip.",
+          "label": "Anëtari i ekipit u shtua"
+        },
+        "team-member-removed": {
+          "description": "Njofton anëtarin se u hoq nga një ekip.",
+          "label": "Anëtari i ekipit u hoq"
+        },
+        "time-correction-approved": {
+          "description": "Njofton punonjësin se korrigjimi i orarit të tij u miratua.",
+          "label": "Korrigjimi i orarit u miratua"
+        },
+        "time-correction-pending-approval": {
+          "description": "Njofton menaxherin se një korrigjim orari kërkon miratim.",
+          "label": "Korrigjimi i orarit në pritje të miratimit"
+        },
+        "time-correction-rejected": {
+          "description": "Njofton punonjësin se korrigjimi i orarit të tij u refuzua.",
+          "label": "Korrigjimi i orarit u refuzua"
+        }
+      },
+      "description": "Personalizoni email-et që dërgon organizata juaj",
+      "editBodyBeforeSaving": "Modifikoni trupin e email-it përpara se të ruani një shabllon të parë të personalizuar.",
+      "editor": {
+        "bodyDescription": "Hartoni emailin me HTML të pasur që dërgohet për këtë ngjarje të sistemit.",
+        "bodyPlaceholder": "Shkruani përmbajtjen e emailit operativ...",
+        "emailBody": "Trupi i emailit",
+        "fallbackDescription": "Përdoret për vlefshmëri dhe si një alternativë e sigurt nëse redaktuesi vizual nuk mund të shfaqet.",
+        "htmlFallback": "HTML rezervë",
+        "loading": "Po ngarkohet redaktuesi i emailit…",
+        "subject": "Subjekti"
+      },
+      "emailTemplates": "Shabllonet e emailit",
+      "empty": "Nuk ka shabllone email-i të disponueshëm për këtë organizatë.",
+      "eyebrow": "Komunikimet operacionale",
+      "reset": "Shablloni i email-it u rikthye në shabllonin e sistemit",
+      "resetFailed": "Dështoi rikthimi i shabllonit të email-it",
+      "saved": "Shablloni i email-it u ruajt",
+      "saveFailed": "Dështoi ruajtja e shabllonit të email-it",
+      "status": {
+        "customized": "I personalizuar",
+        "default": "I parazgjedhur"
+      },
+      "systemTemplates": "Shabllonet e sistemit",
+      "testFailed": "Dështoi dërgimi i email-it provë",
+      "testSent": "Email-i provë u dërgua në llogarinë tuaj",
+      "title": "Shabllonet e email-it",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Lloji i mungesës"
+        },
+        "addedByName": {
+          "label": "Shtuar nga"
+        },
+        "approvalUrl": {
+          "label": "URL-ja e miratimit"
+        },
+        "approverName": {
+          "label": "Emri i miratuesit"
+        },
+        "appUrl": {
+          "label": "URL-ja e aplikacionit"
+        },
+        "categories": {
+          "label": "Kategoritë"
+        },
+        "correctedClockIn": {
+          "label": "Ora e korrigjuar e hyrjes"
+        },
+        "correctedClockOut": {
+          "label": "Ora e korrigjuar e daljes"
+        },
+        "date": {
+          "label": "Data"
+        },
+        "days": {
+          "label": "Ditë"
+        },
+        "downloadUrl": {
+          "label": "URL-ja e shkarkimit"
+        },
+        "email": {
+          "label": "Email"
+        },
+        "employeeName": {
+          "label": "Emri i punonjësit"
+        },
+        "endDate": {
+          "label": "Data e përfundimit"
+        },
+        "errorMessage": {
+          "label": "Mesazhi i gabimit"
+        },
+        "eventType": {
+          "label": "Lloji i ngjarjes"
+        },
+        "expiresAt": {
+          "label": "Skadon më"
+        },
+        "fileSize": {
+          "label": "Madhësia e skedarit"
+        },
+        "invitationUrl": {
+          "label": "URL-ja e ftesës"
+        },
+        "inviterName": {
+          "label": "Emri i ftuesit"
+        },
+        "ipAddress": {
+          "label": "Adresa IP"
+        },
+        "managerName": {
+          "label": "Emri i menaxherit"
+        },
+        "memberName": {
+          "label": "Emri i anëtarit"
+        },
+        "notes": {
+          "label": "Shënime"
+        },
+        "organizationName": {
+          "label": "Emri i organizatës"
+        },
+        "originalClockIn": {
+          "label": "Regjistrimi origjinal i hyrjes"
+        },
+        "originalClockOut": {
+          "label": "Regjistrimi origjinal i daljes"
+        },
+        "reason": {
+          "label": "Arsyeja"
+        },
+        "recipientName": {
+          "label": "Emri i marrësit"
+        },
+        "rejectionReason": {
+          "label": "Arsyeja e refuzimit"
+        },
+        "removedByName": {
+          "label": "Hequr nga"
+        },
+        "resetUrl": {
+          "label": "URL-ja e rivendosjes"
+        },
+        "retryUrl": {
+          "label": "URL-ja e riprovimit"
+        },
+        "role": {
+          "label": "Roli"
+        },
+        "securitySettingsUrl": {
+          "label": "URL-ja e cilësimeve të sigurisë"
+        },
+        "startDate": {
+          "label": "Data e fillimit"
+        },
+        "teamName": {
+          "label": "Emri i ekipit"
+        },
+        "teamUrl": {
+          "label": "URL-ja e ekipit"
+        },
+        "timestamp": {
+          "label": "Vula kohore"
+        },
+        "userAgent": {
+          "label": "Agjenti i përdoruesit"
+        },
+        "userName": {
+          "label": "Emri i përdoruesit"
+        },
+        "verificationUrl": {
+          "label": "URL-ja e verifikimit"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Variablat e lejuara",
+        "description": "Vendosni vetëm mbajtës vendesh të miratuar. Vlerat zëvendësohen kur dërgohet emaili.",
+        "fallbackSafe": "Rezervë e sigurt",
+        "insert": "Vendos {label}"
+      }
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Kthehu te Cilësimet",
+        "tryAgain": "Provo përsëri"
+      },
+      "description": "Ndodhi një gabim gjatë ngarkimit të faqes së cilësimeve. Ky mund të jetë një problem i përkohshëm.",
+      "errorId": "ID-ja e gabimit: {digest}",
+      "title": "Diçka shkoi keq"
+    },
+    "export": {
+      "description": "Eksporto të dhënat e organizatës për kopje rezervë ose migrim",
+      "title": "Eksportimi i të dhënave"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Kërkesa për eksportimin e auditimit u regjistrua.",
+          "title": "Eksportimi i auditimit"
+        },
+        "payroll": {
+          "description": "Detyra e eksportimit të listëpagesave u regjistrua.",
+          "title": "Eksportimi i listëpagesave"
+        },
+        "scheduled": {
+          "description": "Ekzekutimi i eksportimit të planifikuar u regjistrua.",
+          "title": "Eksportim i planifikuar"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Kërkesa e fundit për eksportimin e auditimit nuk përfundoi.",
+          "title": "Eksportimi i auditimit dështoi"
+        },
+        "blockedSchedule": {
+          "description": "{name} ka nevojë për një konfigurim të eksportimit të listëpagesave para se të mund të ekzekutohet.",
+          "title": "Eksportimi i planifikuar i listëpagesave është bllokuar"
+        },
+        "description": "Probleme me eksportin që mund të kenë nevojë për vëmendjen e administratorit.",
+        "empty": "Nuk ka sinjalizime tani",
+        "payrollFailed": {
+          "description": "Eksportimi i fundit i listëpagesave nuk përfundoi.",
+          "title": "Eksportimi i listëpagesave dështoi"
+        },
+        "scheduledFailed": {
+          "description": "{name} nuk përfundoi me sukses.",
+          "title": "Eksportimi i planifikuar dështoi"
+        },
+        "title": "Sinjalizimet"
+      },
+      "description": "Monitoroni aktivitetin e listëpagesave, auditimit dhe eksportimeve të planifikuara për organizatën tuaj.",
+      "errors": {
+        "alerts": "Disa sinjalizime mund të jenë të papërfunduara për sa kohë të dhënat e eksportimit nuk janë të disponueshme.",
+        "recentActivity": "Disa të dhëna të aktivitetit janë përkohësisht të padisponueshme.",
+        "summary": "Numërimet bazohen në të dhënat e eksportimit që mund të ngarkoheshin.",
+        "upcomingRuns": "Të dhënat e eksportimit të planifikuar janë përkohësisht të padisponueshme."
+      },
+      "links": {
+        "audit": "Hap cilësimet e eksportimit të auditimit",
+        "payroll": "Hap cilësimet e eksportimit të listëpagesave",
+        "scheduled": "Hap cilësimet e eksportimit të planifikuar"
+      },
+      "partialData": "Të dhëna të pjesshme",
+      "recentActivity": {
+        "description": "Ngjarjet më të fundit të eksportimit të listëpagesave, auditimit dhe atyre të planifikuara.",
+        "empty": "Nuk ka aktivitet të fundit eksportimi",
+        "export": "Eksporto",
+        "link": "Cilësimet",
+        "status": "Statusi",
+        "title": "Aktiviteti i fundit",
+        "when": "Ndodhur"
+      },
+      "severity": {
+        "error": "Gabim",
+        "warning": "Paralajmërim"
+      },
+      "status": {
+        "assembling": "Duke përgatitur paketën",
+        "collecting": "Duke mbledhur të dhëna",
+        "completed": "Përfunduar",
+        "failed": "Dështoi",
+        "hardening": "Duke zbatuar përforcimin",
+        "lineageExpanding": "Duke zgjeruar origjinën",
+        "pending": "Në pritje",
+        "processing": "Duke u përpunuar",
+        "requested": "Kërkuar"
+      },
+      "summary": {
+        "activeSchedules": "Programet aktive",
+        "activeSchedulesDescription": "Programet e përsëritura të eksportit janë aktive.",
+        "failedRuns": "Ekzekutimet e dështuara (7 ditë)",
+        "failedRunsDescription": "Ekzekutimet e dështuara të listëpagesave, auditimit dhe programeve gjatë javës së fundit.",
+        "lastAuditPack": "Paketa e fundit e auditimit",
+        "lastAuditPackDescription": "Gjenerimi më i fundit i paketës së auditimit.",
+        "lastPayrollExport": "Eksporti i fundit i listëpagesave",
+        "lastPayrollExportDescription": "Përfundimi më i fundit i eksportit të listëpagesave.",
+        "none": "Kurrë"
+      },
+      "title": "Operacionet e eksportimit",
+      "upcomingRuns": {
+        "description": "Eksportet e ardhshme të programuara në radhë për këtë organizatë.",
+        "empty": "Nuk ka ekzekutime të ardhshme",
+        "link": "Cilësimet",
+        "name": "Emri",
+        "title": "Ekzekutimet e ardhshme",
+        "when": "Programuar për"
+      }
+    },
+    "group": {
+      "account": "Llogaria",
+      "administration": "Administrimi",
+      "data": "Të dhënat",
+      "enterprise": "Ndërmarrja",
+      "notifications": "Njoftimet",
+      "organization": "Organizata"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Shënoje si të përfunduar",
+        "markIncomplete": "Shënoje si të papërfunduar"
+      },
+      "description": "Përfundoni hapat e konfigurimit përpara se të ftoni të gjithë ekipin tuaj, në mënyrë që regjistrimi i kohës, miratimet dhe proceset e listëpagesave të jenë gati për përdorim të përditshëm.",
+      "errors": {
+        "updateItem": "Dështoi përditësimi i artikullit të listës së kontrollit."
+      },
+      "eyebrow": "Implementimi i klientit",
+      "progress": {
+        "ariaLabel": "Progresi i listës së kontrollit të implementimit",
+        "completedCount": "{completed} nga {total} të përfunduara",
+        "label": "Ecuria e konfigurimit",
+        "percentComplete": "{percent}% e përfunduar"
+      },
+      "status": {
+        "complete": "E përfunduar",
+        "manuallyComplete": "Përfundo manualisht",
+        "needsReview": "Kërkon shqyrtim",
+        "notStarted": "Nuk ka filluar"
+      },
+      "title": "Lista e kontrollit të zbatimit"
+    },
+    "import": {
+      "description": "Importoni të dhëna nga ofrues të mbështetur si Clockodo dhe Clockin.",
+      "review": {
+        "billability": {
+          "alreadyBilled": "Tashmë e faturuar në Clockodo. Importuar si punë e faturueshme, jo si punë e faturuar.",
+          "billable": "E faturueshme",
+          "noBillableValue": "E përgatitur pa një vlerë të faturueshme; regjistrohet si punë e pafaturueshme.",
+          "noCustomer": "E faturueshme në Clockodo, por projekti Z8 nuk ka klient.",
+          "nonBillable": "E pafaturueshme",
+          "noProject": "E faturueshme në Clockodo, por regjistrimi nuk ka projekt.",
+          "unmappedProject": "E faturueshme në Clockodo, por projekti Clockodo nuk është i lidhur me një projekt Z8."
+        },
+        "commitAccepted": "Regjistro rreshtat e pranuar",
+        "commitFailed": "Nisja e regjistrimit të importit dështoi",
+        "commitQueued": "U vendosën në radhë {count} rreshta të pranuar për regjistrim",
+        "committing": "Duke u regjistruar...",
+        "customers": {
+          "contact": "Kontakt",
+          "createUnmatched": "{count, plural, one {Krijo një klient për # kontakt pa përputhje} other {Krijo klientë për # kontakte pa përputhje}}",
+          "decision": {
+            "create": "Krijo klient të ri",
+            "for": "Vendimi për {name}",
+            "label": "Vendimi",
+            "link": "Lidh me {name}",
+            "linkChosen": "Lidh me klientin e zgjedhur",
+            "linkSuggested": "Lidh me {name} (e sugjeruar)",
+            "placeholder": "Zgjidhni…",
+            "skip": "Kapërce"
+          },
+          "decisionFailed": "Vendimi nuk mund të ruhej",
+          "description": "Zgjidhni për çdo kontakt nëse dëshironi të krijoni një klient të ri, ta lidhni me një klient ekzistues apo ta kapërceni. Klientët e krijuar dhe të lidhur marrin një lidhje kontakti. Asgjë nuk ndryshohet në mjetin e kontabilitetit.",
+          "details": "Detajet",
+          "duplicateInTool": "Një kontakt tjetër në mjetin e kontabilitetit ka të njëjtin emër; vetëm një klient mund ta ketë atë.",
+          "empty": "Çdo kontakt klienti i mjetit të kontabilitetit është tashmë i lidhur me një klient.",
+          "hold": {
+            "billableTimeOff": "Koha e faturueshme u çaktivizua.",
+            "connectionChanged": "Lidhja e kontabilitetit ndryshoi. Nisni një importim të ri të klientëve.",
+            "contactAlreadyLinked": "Ndërkohë ky kontakt u lidh me një klient.",
+            "customerAlreadyLinked": "Klienti i zgjedhur është tashmë i lidhur me një kontakt tjetër.",
+            "customerNameTaken": "Një klient me këtë emër ekziston tashmë. Lidheni atë në vend të kësaj, ose kapërceni kontaktin.",
+            "invalidRow": "Kontakti nuk ka një emër të përdorshëm.",
+            "linkTargetMissing": "Klienti i zgjedhur nuk ekziston më."
+          },
+          "match": "Përputhje në Z8",
+          "nameTaken": "{name} ka të njëjtin emër dhe është tashmë i lidhur me një kontakt tjetër",
+          "noMatch": "Nuk ka përputhje",
+          "paging": {
+            "label": "Faqet e kontakteve"
+          },
+          "suggestion": {
+            "customerNumber": "{name} ka një lidhje kontakti me të njëjtin numër klienti",
+            "name": "{name} ka të njëjtin emër"
+          },
+          "title": "Kontaktet e klientit"
+        },
+        "description": "Shqyrtoni rreshtat e përgatitur të importit, zgjidhni problemet bllokuese dhe regjistroni të dhënat e pranuara kur grupi të jetë gati.",
+        "hold": {
+          "appendReviewRequired": "Historiku i orarit të punonjësit duhet të shqyrtohet përpara se të mund të shtohen hyrje të reja.",
+          "attributionNotAllowed": "Projekti nuk është i disponueshëm, ose puna e faturueshme kërkon një projekt që ka një klient.",
+          "invalidInterval": "Orët e ofruesit nuk kanë një diferencë kohore të qartë, nuk janë në rend ose janë në të ardhmen.",
+          "label": "Pezulluar për shqyrtim",
+          "monthClosed": "Koha është në një muaj të mbyllur. Ajo mund të importohet pasi të rihapet muaji.",
+          "occupancyConflict": "Koha mbivendoset me punën e regjistruar tashmë për këtë punonjës.",
+          "operationCollision": "Ky rresht bie në konflikt me importin e tij të kryer më parë.",
+          "providerDurationMismatch": "Kohëzgjatja e ofruesit ndryshon nga orët e fillimit dhe mbarimit.",
+          "sourceCollision": "Ky regjistrim i ofruesit tashmë është importuar.",
+          "unlocatedBreak": "Ofruesi raporton pushime pa oraret e tyre, kështu që intervali i punuar është i panjohur."
+        },
+        "issueGroups": {
+          "description": "Zonat e grupuara të shqyrtimit ndihmojnë në mbajtjen të dukshme të kontrolleve të cilësisë përpara se të regjistrohen rreshtat e pranuar.",
+          "importMarkers": "Rreshtat e importit përmbajnë {blockingRows} shënues problemesh bllokuese dhe {warningRows} paralajmëruese.",
+          "title": "Grupet e problemeve"
+        },
+        "paging": {
+          "next": "Faqja tjetër",
+          "position": "Faqja {page} nga {pageCount}",
+          "previous": "Faqja e mëparshme"
+        },
+        "rows": {
+          "billable": "E faturueshme",
+          "empty": "Nuk ka rreshta të përgatitur në dispozicion për këtë grup importi.",
+          "entity": "Entiteti",
+          "paging": {
+            "label": "Faqet e rreshtave"
+          },
+          "rowId": "ID e rreshtit",
+          "sourceId": "ID e burimit",
+          "status": "Statusi",
+          "title": "Rreshtat"
+        },
+        "status": {
+          "accepted": "Pranuar",
+          "blocked": "Bllokuar",
+          "commitFailed": "Regjistrimi dështoi",
+          "committed": "Regjistruar",
+          "committing": "Duke regjistruar",
+          "needsMapping": "Nevojitet hartëzim",
+          "rejected": "Refuzuar",
+          "staged": "I përgatitur"
+        },
+        "title": "Shqyrtimi i importit"
+      },
+      "title": "Importo të dhëna"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Një llogari tjetër tashmë përdor këtë adresë.",
+        "emailNotAllowed": "Politika e identifikimit të organizatës suaj nuk e lejon këtë adresë.",
+        "employeeNotFound": "Ky punonjës nuk u gjet.",
+        "failed": "Diçka shkoi keq. Ju lutemi provoni përsëri.",
+        "invalidEmail": "Vendosni një adresë të vlefshme emaili.",
+        "invalidName": "Vendosni një emër deri në 100 karaktere.",
+        "invalidPin": "PIN-i i kioskës ka 4 deri në 6 shifra.",
+        "locationNotFound": "Kjo vendndodhje nuk u gjet.",
+        "noPin": "Ky punonjës nuk ka ende një PIN kioske.",
+        "notAllowed": "Nuk ju lejohet ta bëni këtë.",
+        "notKioskOnly": "Ky punonjës tashmë ka një adresë emaili.",
+        "pinExists": "Ky punonjës tashmë ka një PIN kioske. Rivendoseni atë në vend të kësaj.",
+        "reservedEmail": "Kjo adresë nuk mund të përdoret.",
+        "signInRequired": "Identifikohuni për të vazhduar.",
+        "teamNotFound": "Ky ekip nuk u gjet."
+      }
+    },
+    "kiosks": {
+      "add": "Shto kioskë",
+      "boardOn": "Tabela «Kush është brenda» aktive",
+      "columns": {
+        "actions": "Veprimet",
+        "lastSeen": "Parë për herë të fundit",
+        "location": "Vendndodhja",
+        "name": "Emri",
+        "status": "Statusi"
+      },
+      "create": "Krijo kioskë",
+      "created": "Kioska u krijua",
+      "createDescription": "Do të merrni një kod çiftimi për ta futur në pajisjen e kioskës.",
+      "createFailed": "Kioska nuk mund të krijohej",
+      "createTitle": "Shto kioskë",
+      "description": "Pajisje të përbashkëta në një vendndodhje ku punonjësit regjistrojnë orarin me PIN-in e tyre të kioskës",
+      "edit": "Modifiko",
+      "editDescription": "Ndryshimet zbatohen në kërkesën e radhës të kioskës.",
+      "editTitle": "Modifiko kioskën",
+      "empty": "Ende nuk ka kioska.",
+      "errors": {
+        "adminOnly": "Vetëm pronarët dhe administratorët e organizatës mund të menaxhojnë kioskat.",
+        "invalidName": "Futni një emër me deri në 100 karaktere.",
+        "invalidSelection": "Kontrolloni të dhënat tuaja dhe provoni përsëri.",
+        "invalidTimezone": "Zgjidhni një brez orar.",
+        "kioskNotFound": "Kjo kioskë nuk u gjet.",
+        "kioskRevoked": "Kjo kioskë është revokuar.",
+        "locationNotFound": "Zgjidhni një vendndodhje aktive të kësaj organizate."
+      },
+      "fields": {
+        "board": "Tabela «Kush është brenda»",
+        "boardDescription": "Shfaq në kioskë se kush është i pranishëm ose në pushim, sipas emrit dhe inicialit të mbiemrit.",
+        "location": "Vendndodhja",
+        "locationDescription": "Kioska pranon vetëm punonjës të caktuar në këtë vendndodhje.",
+        "locationPlaceholder": "Zgjidhni një vendndodhje",
+        "name": "Emri",
+        "namePlaceholder": "p.sh. Hyrja e stafit",
+        "timezone": "Brezi orar",
+        "timezoneDescription": "Regjistrimet e orarit të kryera në këtë kioskë përdorin këtë brez orar."
+      },
+      "issueCodeConfirm": "Lësho kod të ri",
+      "listDescription": "Çdo kioskë i përket një vendndodhjeje. Çiftoni një pajisje duke hapur faqen e kioskës në të dhe duke futur kodin e çiftimit.",
+      "listTitle": "Kioskat",
+      "loadFailed": "Kioskat nuk mund të ngarkoheshin.",
+      "neverSeen": "Kurrë",
+      "noLocations": "Krijoni fillimisht një vendndodhje: çdo kioskë i përket një vendndodhjeje.",
+      "pairAgain": "Çifto përsëri",
+      "pairFailed": "Nuk mund të lëshohej një kod i ri çiftimi",
+      "pairingCodeLabel": "Kodi i çiftimit",
+      "pairingDescription": "Në pajisjen e kioskës, skanoni kodin QR ose hapni faqen e kioskës dhe futni kodin. Kodi funksionon vetëm një herë dhe skadon pas 10 minutash.",
+      "pairingDone": "U krye",
+      "pairingTitle": "Çifto {name}",
+      "pairPairedDescription": "Tokeni i pajisjes ndërrohet: pajisja e çiftuar pushon së funksionuari menjëherë dhe duhet të çiftohet përsëri me kodin e ri.",
+      "pairTitle": "Të çiftohet përsëri {name}?",
+      "pairUnpairedDescription": "Një kod i ri çiftimi zëvendëson kodin e mëparshëm.",
+      "revoke": "Revoko",
+      "revokeConfirm": "Revoko kioskën",
+      "revoked": "Kioska u revokua",
+      "revokeDescription": "Kioska ndalon së funksionuari në kërkesën e saj të radhës dhe nuk mund të çiftohet përsëri. Krijoni një kioskë të re për ta zëvendësuar atë.",
+      "revokeFailed": "Kioska nuk mund të revokohej",
+      "revokeTitle": "Të revokohet {name}?",
+      "rotateConfirm": "Rrotullo tokenin dhe çifto përsëri",
+      "save": "Ruaj",
+      "saved": "Kioska u ruajt",
+      "saveFailed": "Kioska nuk mund të ruhej",
+      "status": {
+        "awaitingPairing": "Po pritet çiftimi",
+        "codeExpired": "Nuk është çiftuar, kodi ka skaduar",
+        "paired": "Çiftuar",
+        "revoked": "Revokuar"
+      },
+      "title": "Kioskat"
+    },
+    "licenses": {
+      "footer": "Ky aplikacion përdor softuer me burim të hapur. Faleminderit të gjithë mirëmbajtësve dhe kontribuuesve të këtyre paketave.",
+      "homepage": "Faqja kryesore",
+      "license": "Licenca",
+      "licenseTypesCount": "{count} lloje licencash",
+      "links": "Lidhjet",
+      "noPackages": "Nuk u gjet asnjë paketë.",
+      "package": "Paketa",
+      "packagesCount": "{count} paketa",
+      "repository": "Repozitori",
+      "searchPlaceholder": "Kërkoni paketa ose licenca...",
+      "unknown": "E panjohur"
+    },
+    "locations": {
+      "address": "Adresa",
+      "assignEmployee": "Cakto punonjës",
+      "assignEmployeeDescription": "Caktoni një punonjës si mbikëqyrës për këtë vendndodhje",
+      "assignEmployeeToSubarea": "Cakto punonjës në nënzonë",
+      "assignEmployeeToSubareaDescription": "Caktoni një punonjës si mbikëqyrës për {subareaName}",
+      "backToList": "Kthehu te vendndodhjet",
+      "create": "Krijo vendndodhje",
+      "created": "Vendndodhja u krijua",
+      "createFailed": "Krijimi i vendndodhjes dështoi",
+      "deleted": "Vendndodhja u fshi",
+      "deleteDescription": "A jeni të sigurt që dëshironi ta fshini këtë vendndodhje? Kjo do të fshijë gjithashtu të gjitha nënzonat dhe caktimet e punonjësve.",
+      "deleteFailed": "Fshirja e vendndodhjes dështoi",
+      "deleteSubareaDescription": "A jeni të sigurt që dëshironi ta fshini këtë nënzonë? Kjo do të heqë gjithashtu të gjitha caktimet e punonjësve.",
+      "deleteSubareaTitle": "Fshij nënzonën",
+      "deleteTitle": "Fshij vendndodhjen",
+      "description": "Menaxhoni vendndodhjet dhe nënzonat e organizatës",
+      "details": "Detajet e vendndodhjes",
+      "dialog": {
+        "create": "Krijo vendndodhje",
+        "createDescription": "Krijoni një vendndodhje të re për organizatën tuaj",
+        "createTitle": "Krijo vendndodhje",
+        "editDescription": "Përditëso detajet e vendndodhjes",
+        "editTitle": "Modifiko vendndodhjen",
+        "save": "Ruaj ndryshimet"
+      },
+      "employee": "Punonjësi",
+      "employeeAssigned": "Punonjësi u caktua",
+      "employeeAssignFailed": "Caktimi i punonjësit dështoi",
+      "employeeRemoved": "Punonjësi u hoq",
+      "employeeRemoveFailed": "Heqja e punonjësit dështoi",
+      "field": {
+        "active": "Aktiv",
+        "activeHelp": "Vendndodhjet joaktive nuk do të shfaqen në listat e përzgjedhjes",
+        "city": "Qyteti",
+        "cityPlaceholder": "p.sh., Nju Jork",
+        "cityPostal": "Qyteti / Kodi postar",
+        "country": "Kodi i shtetit",
+        "countryHelp": "Kodi ISO 3166-1 alpha-2",
+        "countryPlaceholder": "p.sh., US, DE",
+        "name": "Emri",
+        "namePlaceholder": "p.sh., Zyra qendrore",
+        "postalCode": "Kodi postar",
+        "postalCodePlaceholder": "p.sh., 10001",
+        "street": "Rruga",
+        "streetPlaceholder": "p.sh., Rruga Kryesore 123",
+        "subareaActiveHelp": "Nënzonat joaktive nuk do të shfaqen në listat e përzgjedhjes",
+        "subareaName": "Emri",
+        "subareaNamePlaceholder": "p.sh., Kasa, Magazina, Bistro"
+      },
+      "name": "Emri",
+      "noAvailableEmployees": "Të gjithë punonjësit janë caktuar tashmë në këtë vendndodhje",
+      "noAvailableEmployeesSubarea": "Të gjithë punonjësit janë caktuar tashmë në këtë nënzonë",
+      "noLocations": "Ende nuk ka vendndodhje",
+      "noLocationsDescription": "Krijoni vendndodhjen tuaj të parë për të organizuar hapësirën tuaj të punës.",
+      "noSubareas": "Ende nuk ka nënzona",
+      "noSupervisors": "Nuk ka mbikëqyrës të caktuar",
+      "notFound": "Vendndodhja nuk u gjet",
+      "primary": "Kryesor",
+      "primarySupervisor": "Mbikëqyrësi kryesor",
+      "primarySupervisorHelp": "Caktoje si mbikëqyrësin kryesor për këtë vendndodhje",
+      "primarySupervisorSubareaHelp": "Caktoje si mbikëqyrësin kryesor për këtë nënzonë",
+      "selectEmployee": "Ju lutemi zgjidhni një punonjës",
+      "selectEmployeePlaceholder": "Zgjidhni një punonjës",
+      "subareaCreated": "Nënzona u krijua",
+      "subareaCreateFailed": "Krijimi i nënzonës dështoi",
+      "subareaDeleted": "Nënzona u fshi",
+      "subareaDeleteFailed": "Fshirja e nënzonës dështoi",
+      "subareaDialog": {
+        "create": "Shto nënzonë",
+        "createDescription": "Shtoni një nënzonë të re në këtë vendndodhje",
+        "createTitle": "Shto nënzonë",
+        "editDescription": "Përditëso detajet e nënzonës",
+        "editTitle": "Ndrysho nënzonën",
+        "save": "Ruaj ndryshimet"
+      },
+      "subareas": "Nënzonat",
+      "subareasDescription": "Zonat brenda kësaj vendndodhjeje",
+      "subareaUpdated": "Nënzona u përditësua",
+      "subareaUpdateFailed": "Përditësimi i nënzonës dështoi",
+      "supervisors": "Mbikëqyrësit",
+      "supervisorsDescription": "Punonjësit e caktuar në këtë vendndodhje",
+      "title": "Vendndodhjet",
+      "updated": "Vendndodhja u përditësua",
+      "updateFailed": "Përditësimi i vendndodhjes dështoi"
+    },
+    "notifications": {
+      "approvals": "Njoftimet e miratimit",
+      "approvalsDescription": "Dërgoni kërkesa për miratim dhe përditësime të statusit të miratimit.",
+      "commands": "Komandat",
+      "commandsDescription": "Lejoni komandat e mbështetura të vendit të punës nga ky kanal.",
+      "connectBeforeChanging": "Lidhni ose konfiguroni këtë integrim përpara se të ndryshoni cilësimet e njoftimeve.",
+      "dailyDigest": "Përmbledhja ditore",
+      "dailyDigestDescription": "Dërgoni një përmbledhje ditore të mungesave, orareve dhe punëve në pritje.",
+      "description": "Zgjidhni se si dhe kur dëshironi të njoftoheni",
+      "digestTime": "Ora e përmbledhjes",
+      "discord": {
+        "description": "Konfiguroni njoftimet e Discord për organizatën tuaj."
+      },
+      "escalations": "Përshkallëzimet",
+      "escalationsDescription": "Përshkallëzoni kërkesat e miratimit pa përgjigje pas skadimit të kohës së konfiguruar.",
+      "featureSettings": "Cilësimet e veçorive",
+      "featureSettingsDescription": "Zgjidhni cilat njoftime dhe komanda të organizatës janë të disponueshme përmes këtij kanali.",
+      "hours": "orë",
+      "manageEnabledFeatures": "Menaxhoni se cilat veçori njoftimi janë të aktivizuara për këtë integrim.",
+      "notConnected": "{channelName} nuk është lidhur",
+      "saved": "Cilësimet e njoftimeve për {channelName} u ruajtën",
+      "saveFailed": "Ruajtja e cilësimeve të njoftimeve për {channelName} dështoi",
+      "saveSettings": "Ruaj cilësimet",
+      "slack": {
+        "description": "Konfiguroni njoftimet e Slack për organizatën tuaj."
+      },
+      "status": {
+        "active": "Aktiv",
+        "configured": "I konfiguruar",
+        "disabled": "I çaktivizuar",
+        "disconnected": "I shkëputur",
+        "error": "Gabim",
+        "notConfigured": "I pakonfiguruar",
+        "pending": "Në pritje",
+        "unknown": "Status i panjohur"
+      },
+      "teams": {
+        "description": "Konfiguroni njoftimet e Microsoft Teams për organizatën tuaj."
+      },
+      "timeout": "Koha e skadimit",
+      "timezone": "Zona kohore",
+      "timezonePlaceholder": "Europe/Berlin…",
+      "title": "Cilësimet e njoftimeve"
+    },
+    "organizations": {
+      "description": "Menaxhoni detajet dhe konfigurimin e organizatës",
+      "notFound": {
+        "description": "Organizata nuk mund të gjendej ose nuk keni qasje në të.",
+        "title": "Organizata Nuk u Gjet"
+      },
+      "title": "Organizata"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Ekipi u krijua me sukses",
+          "description": "Krijoni një ekip të ri për të organizuar punonjësit tuaj",
+          "descriptionLabel": "Përshkrimi (Opsionale)",
+          "descriptionPlaceholder": "Një përshkrim i shkurtër i këtij ekipi",
+          "fallbackManagerHelp": "Përdoret për miratime kur një anëtar i ekipit nuk ka një menaxher të drejtpërdrejtë.",
+          "fallbackManagerLabel": "Menaxher Rezervë",
+          "fallbackManagerPlaceholder": "Zgjidhni një menaxher rezervë",
+          "nameLabel": "Emri i Ekipit",
+          "namePlaceholder": "Inxhinieri, Shitje, Marketing...",
+          "noFallbackManager": "Nuk ka menaxher rezervë",
+          "submit": "Krijo Ekip",
+          "title": "Krijo Ekip"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Shto Çelës Kalimi",
+      "addedOn": "Shtuar më {date}",
+      "addError": "Dështoi shtimi i çelësit të kalimit",
+      "addSuccess": "Çelësi i kalimit u shtua me sukses",
+      "defaultName": "Çelës kalimi {date}",
+      "deleteDialogDescription": "Ky çelës kalimi nuk do të mund të përdoret më për të hyrë në llogarinë tuaj. Ky veprim nuk mund të zhbëhet.",
+      "deleteDialogTitle": "Të fshihet çelësi i kalimit?",
+      "deleteError": "Dështoi fshirja e çelësit të kalimit",
+      "deleteSuccess": "Çelësi i kalimit u fshi me sukses",
+      "description": "Menaxhoni çelësat e kalimit për autentifikim pa fjalëkalim",
+      "empty": "Nuk ka çelësa kalimi të konfiguruar",
+      "emptyDescription": "Shtoni një çelës kalimi për të aktivizuar autentifikimin pa fjalëkalim",
+      "loadError": "Dështoi ngarkimi i çelësave të kalimit",
+      "title": "Çelësat e Kalimit",
+      "unnamed": "Çelës Kalimi pa Emër"
+    },
+    "payrollAccess": {
+      "add": "Shto zyrtar të listëpagesave",
+      "addTitle": "Shto zyrtar të listëpagesave",
+      "allScope": "Të gjitha ekipet dhe punonjësit",
+      "allScopeDescription": "Përfshin punonjësit aktualë dhe të ardhshëm në këtë organizatë.",
+      "deniedDescription": "Vetëm administratorët e autorizuar të organizatës mund të menaxhojnë zyrtarët e listëpagesave.",
+      "deniedTitle": "Kërkohet qasje në cilësimet e zyrtarit të listëpagesave",
+      "departedEmployeesKept": "{names} u larguan nga organizata. Ata mbeten në këtë autorizim derisa t'i hiqni.",
+      "description": "Aktivizoni zyrtarët e listëpagesave dhe caktoni ekipet ose punonjësit që ata mund të përfshijnë në rrjedhat e punës së listëpagesave.",
+      "edit": "Ndrysho",
+      "editorDescription": "Zgjidhni një zyrtar të listëpagesave dhe përcaktoni nëse mund të ketë qasje te të gjithë apo në një fushëveprim specifik.",
+      "editTitle": "Ndrysho zyrtarin e listëpagesave",
+      "employees": "Punonjësit",
+      "noGrants": "Ende nuk është shtuar asnjë zyrtar i listëpagesave.",
+      "noScope": "Nuk është caktuar asnjë fushëveprim i listëpagesës",
+      "noTeams": "Nuk ka ekipe të disponueshme",
+      "payrollEmployee": "Zyrtar i listëpagesave",
+      "revoke": "Revoko",
+      "revokeConfirm": "Revoko aksesin",
+      "revoked": "Aksesi i zyrtarit të listëpagesave u revokua",
+      "revokeDescription": "{name} humb menjëherë aksesin në hapësirën e punës të listëpagesave. Shtimi i tyre përsëri më vonë krijon një autorizim të ri.",
+      "revokeFailed": "Dështoi revokimi i aksesit të zyrtarit të listëpagesave",
+      "revokeTitle": "Të revokohet aksesi i zyrtarit të listëpagesave?",
+      "save": "Ruaj zyrtarin e listëpagesave",
+      "saved": "Cilësimet e zyrtarit të listëpagesave u ruajtën",
+      "saveFailed": "Ruajtja e cilësimeve të zyrtarit të listëpagesave dështoi",
+      "scope": "Fushëveprimi i qasjes",
+      "scopeSummaryEmployees": "{count} punonjës",
+      "scopeSummaryTeams": "{count} ekipe",
+      "scopeSummaryTeamsEmployees": "{teamCount} ekipe, {employeeCount} punonjës",
+      "selectEmployees": "Zgjidhni punonjësit",
+      "selectPayrollEmployee": "Zgjidhni punonjësin",
+      "specificScope": "Ekipe ose punonjës specifikë",
+      "specificScopeDescription": "Kufizoni qasjen në listëpagesë vetëm për ekipet e përzgjedhura dhe punonjësit individualë.",
+      "teams": "Ekipet",
+      "title": "Zyrtarët e listëpagesave"
+    },
+    "positionCapture": {
+      "addAssignment": "Shto caktim",
+      "assignmentFailed": "Caktimi nuk u ruajt",
+      "assignmentRemoved": "Caktimi u hoq",
+      "assignmentRemoveFailed": "Caktimi nuk u hoq",
+      "assignmentSaved": "Caktimi u ruajt",
+      "assignmentsDescription": "Caktimi më specifik ka përparësi: caktimi individual i punonjësit mbi atë të ekipit parësor, dhe ai i ekipit mbi atë të të gjithë organizatës. Përdorni “off” për të përjashtuar një ekip ose punonjës.",
+      "assignmentsList": "Caktimet e regjistrimit",
+      "assignmentsTitle": "Për kë zbatohet regjistrimi",
+      "captureDescription": "Regjistroni vendndodhjen e një punonjësi gjatë hyrjes, daljes dhe pushimeve të tij, vetëm me pëlqimin e tij. Aktivizimi i regjistrimit nuk zbatohet për askënd derisa ta caktoni më poshtë.",
+      "captureOff": "Regjistrimi joaktiv",
+      "captureOn": "Regjistrimi aktiv",
+      "captureTitle": "Regjistrimi",
+      "description": "Regjistroni vendndodhjet gjatë veprimeve të orarit të punonjësve, me pëlqimin e tyre",
+      "employee": "Punonjës",
+      "enabled": "Regjistro vendndodhjet",
+      "enabledDescription": "Çaktivizimi i kësaj ndalon regjistrimin për të gjithë. Vendndodhjet e regjistruara ruhen deri në datën e fshirjes së tyre.",
+      "noAssignments": "Nuk është caktuar askush. Regjistrimi nuk zbatohet për askënd derisa ta caktoni.",
+      "noNotice": "Ende nuk është publikuar asnjë njoftim. Ruajtja e një deklarate qëllimi publikon versionin 1.",
+      "noticeDescription": "Ajo me të cilën bien dakord punonjësit: teksti fiks i Z8 dhe deklarata juaj e qëllimit. Modifikimi i qëllimit ose mbajtja e vendndodhjeve për më gjatë publikon një version të ri; shkurtimi i kohëzgjatjes së ruajtjes nuk e bën këtë.",
+      "noticeTitle": "Njoftimi për vendndodhjen",
+      "previousVersions": "Versionet e mëparshme",
+      "publishesVersion": "Ruajtja publikon versionin {version} të njoftimit. Çdo pëlqim ekzistues skadon derisa punonjësit të bien sërish dakord.",
+      "purpose": "Deklarata e qëllimit",
+      "purposeDescription": "U shfaqet punonjësve në njoftimin për vendndodhjen. Shpjegoni pse organizata juaj regjistron vendndodhjet.",
+      "purposeRequired": "Shkruani një deklaratë qëllimi përpara se të aktivizoni regjistrimin.",
+      "removeAssignment": "Hiq {target}",
+      "retention": "Ruajtja (ditë)",
+      "retentionDescription": "Çdo vendndodhje fshihet pas kaq ditësh nga regjistrimi i saj. Shkurtimi i kësaj periudhe gjithashtu afron datat ekzistuese të fshirjes.",
+      "retentionRange": "Vendosni një numër të plotë ditësh midis {min} dhe {max}.",
+      "save": "Ruaj cilësimet",
+      "saved": "Cilësimet e regjistrimit të vendndodhjes u ruajtën",
+      "savedWithNotice": "Cilësimet u ruajtën. Versioni {version} i njoftimit u publikua; punonjësve u kërkohet të bien dakord me të.",
+      "saveFailed": "Cilësimet e regjistrimit të vendndodhjes nuk u ruajtën",
+      "selectEmployee": "Zgjidhni një punonjës",
+      "selectTeam": "Zgjidhni një ekip",
+      "targetEmployee": "Një punonjës",
+      "targetEmployeeLabel": "Punonjësi: {name}",
+      "targetOrganization": "E gjithë organizata",
+      "targetTeam": "Një ekip",
+      "targetTeamLabel": "Ekipi: {name}",
+      "targetType": "Zbatohet për",
+      "team": "Ekipi",
+      "title": "Regjistrimi i pozicionit",
+      "versionSummary": "{days, plural, other {Versioni {version}, publikuar më {date}, ruajtur për # ditë} }"
+    },
+    "positionStamps": {
+      "accessLogDeletedViewer": "Një përdorues i fshirë",
+      "accessLogDescription": "Sa herë që dikujt tjetër i shfaqen pozicionet tuaja të regjistruara, listohet këtu.",
+      "accessLogEmpty": "Pozicionet tuaja nuk i janë shfaqur askujt tjetër.",
+      "accessLogExport": "Eksportimi i të dhënave",
+      "accessLogRemovedWorkPeriod": "Një periudhë pune që nuk ekziston më",
+      "accessLogTitle": "Kush i pa pozicionet tuaja",
+      "accessLogWorkPeriod": "Periudha e punës më {date}",
+      "agree": "Pajtohem",
+      "agreed": "Faleminderit. Pëlqimi juaj është regjistruar.",
+      "agreeFailed": "Pëlqimi juaj nuk mund të ruhej",
+      "captureOff": "Regjistrimi i pozicionit nuk është aktivizuar për ju.",
+      "captureOffBadge": "Regjistrimi joaktiv",
+      "captureOn": "Regjistrimi i pozicionit është aktivizuar për ju.",
+      "captureOnBadge": "Regjistrimi aktiv",
+      "consentActive": "Keni rënë dakord me versionin {version} më {date}.",
+      "consentDeclined": "Keni zgjedhur “Jo tani” për versionin {version} më {date}.",
+      "consentLapsed": "Keni rënë dakord me versionin {previous}. Njoftimi ka ndryshuar, kështu që nuk regjistrohet asnjë pozicion derisa të bini dakord me versionin {current}.",
+      "consentUndecided": "Nuk keni vendosur ende.",
+      "consentWithdrawn": "E keni tërhequr pëlqimin tuaj më {date}.",
+      "description": "Nëse pozicioni juaj regjistrohet me ngjarjet e orarit tuaj, dhe pëlqimi juaj",
+      "noNotice": "Organizata juaj nuk ka publikuar një njoftim për pozicionin.",
+      "noticeDescription": "Kjo është ajo me të cilën pajtoheni. Publikohet një version i ri kur ndryshon qëllimi ose pozicionet ruhen më gjatë.",
+      "noticeTitle": "Njoftimi mbi pozicionin",
+      "statusTitle": "Statusi juaj",
+      "title": "Vulat e pozicionit",
+      "unavailable": "Vulat e pozicionit janë të disponueshme pasi të keni një profil punonjësi në këtë organizatë.",
+      "withdraw": "Tërhiq pëlqimin",
+      "withdrawConfirm": "Tërhiq dhe fshij pozicionet",
+      "withdrawDescription": "Nuk do të regjistrohet më asnjë pozicion dhe kjo fshin menjëherë të gjitha pozicionet e regjistruara me ngjarjet e orarit tuaj. Ngjarjet e orarit tuaj mbeten të pandryshuara. Ky veprim nuk mund të zhbëhet.",
+      "withdrawFailed": "Pëlqimi juaj nuk mund të tërhiqej",
+      "withdrawn": "Pëlqimi u tërhoq. Pozicionet tuaja të regjistruara janë fshirë.",
+      "withdrawTitle": "Dëshironi të tërhiqni pëlqimin tuaj?"
+    },
+    "profile": {
+      "avatarRemoved": "Avatari u hoq me sukses",
+      "avatarRemoveFailed": "Dështoi heqja e avatarit",
+      "avatarSaveFailed": "Dështoi ruajtja e avatarit",
+      "avatarUploaded": "Avatari u ngarkua me sukses",
+      "avatarUploadFailed": "Dështoi ngarkimi i avatarit",
+      "birthday": {
+        "hint": "Ditëlindja juaj na ndihmon të festojmë me ju",
+        "label": "Ditëlindja",
+        "placeholder": "Zgjidhni ditëlindjen tuaj"
+      },
+      "changePicture": "Ndrysho Foton",
+      "description": "Menaxhoni të dhënat dhe preferencat tuaja personale",
+      "email": "Email",
+      "emailReadonly": "Emaili nuk mund të ndryshohet",
+      "firstName": "Emri",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Femër",
+        "label": "Gjinia",
+        "male": "Mashkull",
+        "other": "Tjetër"
+      },
+      "helpImproveProduct": "Na ndihmoni ta përmirësojmë këtë aplikacion",
+      "helpImproveProductDescription": "Ndani të dhëna mbi përdorimin në mënyrë që ta bëjmë Z8 më të besueshëm dhe më të dobishëm.",
+      "information": "Të Dhënat e Profilit",
+      "informationDescription": "Përditësoni të dhënat tuaja personale dhe foton e profilit",
+      "lastName": "Mbiemri",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Të dhënat personale",
+      "pronouns": "Përemrat",
+      "pronouns.custom": "Përemra të personalizuar",
+      "pronouns.customPlaceholder": "p.sh., xe/xem…",
+      "pronouns.placeholder": "Zgjidhni përemrat",
+      "removePicture": "Hiq foton",
+      "saving": "Duke ruajtur…",
+      "title": "Cilësimet e profilit",
+      "updateFailed": "Përditësimi i profilit dështoi",
+      "updateProfile": "Përditëso profilin",
+      "updateSuccess": "Profili u përditësua me sukses",
+      "uploading": "Duke ngarkuar",
+      "uploadProfilePicture": "Ngarko foton e profilit"
+    },
+    "projects": {
+      "column": {
+        "budget": "Buxheti",
+        "customer": "Klienti",
+        "deadline": "Afati",
+        "name": "Emri",
+        "status": "Statusi",
+        "tasks": "Detyrat",
+        "team": "Ekipi"
+      },
+      "create": "Krijo projekt",
+      "created": "Projekti u krijua",
+      "createFailed": "Krijimi i projektit dështoi",
+      "customerDeleted": "{name} (e fshirë)",
+      "description": "Menaxhoni projektet, buxhetet, afatet dhe caktimet e kohës",
+      "dialog": {
+        "create": "Krijo projekt",
+        "createDescription": "Krijoni një projekt të ri për gjurmimin e kohës",
+        "createTitle": "Krijo projekt",
+        "editDescription": "Përditëso detajet e projektit",
+        "editTitle": "Ndrysho projektin",
+        "save": "Ruaj ndryshimet"
+      },
+      "empty": {
+        "description": "Krijoni projektin tuaj të parë për të filluar gjurmimin e kohës për të.",
+        "title": "Ende nuk ka projekte"
+      },
+      "field": {
+        "billableDefault": "E faturueshme si parazgjedhje",
+        "billableDefaultHelp": "Puna e re në këtë projekt nis si e faturueshme. Puna ekzistuese e ruan statusin e faturueshmërisë.",
+        "billableDefaultNeedsCustomer": "Zgjidhni një klient për ta bërë punën e re të faturueshme si parazgjedhje.",
+        "budget": "Buxheti (orë)",
+        "budgetHelp": "Lëreni bosh për buxhet të pakufizuar",
+        "budgetPlaceholder": "p.sh., 100",
+        "clearColor": "Pastro ngjyrën",
+        "color": "Ngjyra",
+        "colorOption": "Zgjidh ngjyrën {color}",
+        "customer": "Klienti",
+        "customerDeleted": "{name} u fshi. Zgjidhni një klient tjetër ose mbajeni projektin pa klient.",
+        "customerPlaceholder": "Zgjidhni një klient",
+        "deadline": "Afati",
+        "description": "Përshkrimi",
+        "descriptionPlaceholder": "Përshkrim opsional i projektit",
+        "name": "Emri",
+        "namePlaceholder": "Vendosni emrin e projektit",
+        "noCustomer": "Pa klient",
+        "status": "Statusi"
+      },
+      "fromTemplate": {
+        "blank": "Projekt bosh",
+        "budget": "Buxhet prej {hours} h",
+        "copies": "Kopjuar nga shablloni",
+        "deadline": "{days, plural, other {Afati i fundit # ditë pas krijimit} }",
+        "deadlineSameDay": "Afati i fundit në ditën e krijimit",
+        "memberCount": "{count, plural, one {# menaxher ose caktim} other {# menaxherë dhe caktime}}",
+        "previewLabel": "Nga {name}",
+        "reasonAdminOnly": "vetëm administratorët e organizatës caktojnë menaxherë projekti",
+        "reasonDeparted": "u largua nga organizata",
+        "reasonRemoved": "nuk ekziston më",
+        "skipped": "Nuk u kopjuan: {members}",
+        "skippedMember": "{name}: {reason}",
+        "skippedMemberReason": "{name} ({reason})",
+        "startFrom": "Fillo nga",
+        "taskCount": "{count, plural, one {# detyrë} other {# detyra}}",
+        "willSkip": "Nuk do të kopjohet"
+      },
+      "list": {
+        "description": "{count} projekte gjithsej",
+        "title": "Të gjitha projektet"
+      },
+      "members": {
+        "addManager": "Shto menaxher projekti",
+        "assignEmployee": "Cakto punonjës",
+        "assignTeam": "Cakto ekip",
+        "count": "{count, plural, one {# anëtar} other {# anëtarë}}",
+        "employeeAssigned": "Punonjësi u caktua",
+        "employeeAssignFailed": "Caktimi i punonjësit dështoi",
+        "employeePicker": "Punonjësi për t'u caktuar",
+        "employees": "Punonjësit",
+        "manage": "Menaxho anëtarët e {name}",
+        "managerAdded": "Menaxheri i projektit u shtua",
+        "managerAddFailed": "Shtimi i menaxherit të projektit dështoi",
+        "managerPicker": "Menaxheri i projektit për t'u shtuar",
+        "managers": "Menaxherët e projektit",
+        "managersReadOnly": "Vetëm administratorët e organizatës mund të ndryshojnë menaxherët e projektit.",
+        "noEmployees": "Nuk ka punonjës të caktuar",
+        "noManagers": "Nuk ka menaxherë projekti",
+        "noTeams": "Nuk ka ekipe të caktuara",
+        "remove": "Hiq {name}",
+        "removed": "{name} u hoq",
+        "removeFailed": "Heqja e {name} dështoi",
+        "selectEmployee": "Zgjidh një punonjës",
+        "selectTeam": "Zgjidh një ekip",
+        "teamAssigned": "Ekipi u caktua",
+        "teamAssignFailed": "Caktimi i ekipit dështoi",
+        "teamPicker": "Ekipi për t'u caktuar",
+        "teams": "Ekipet",
+        "title": "Anëtarët e projektit"
+      },
+      "saveAsTemplate": {
+        "action": "Ruaj {name} si shabllon",
+        "description": "Shablloni merr ikonën, ngjyrën, buxhetin, detyrat e hapura, menaxherët dhe caktimet e këtij projekti. Ai nuk ka zhvendosje afati.",
+        "failed": "Ruajtja e shabllonit dështoi",
+        "formLabel": "Ruaj {name} si një shabllon",
+        "name": "Emri i shabllonit",
+        "saved": "Shablloni {name} u ruajt",
+        "submit": "Ruaj si shabllon",
+        "title": "Ruaj si shabllon"
+      },
+      "tabs": {
+        "projects": "Projektet",
+        "templates": "Shabllonet"
+      },
+      "tasks": {
+        "add": "Shto detyrë",
+        "added": "Detyra u shtua",
+        "addFailed": "Shtimi i detyrës dështoi",
+        "addTitle": "Shto një detyrë",
+        "confirmDelete": "Konfirmo fshirjen e {name}",
+        "delete": "Fshi",
+        "deleteAction": "Fshi {name}",
+        "deleted": "{name} u fshi",
+        "deleteFailed": "Fshirja e {name} dështoi",
+        "deleteQuestion": "Të fshihet kjo detyrë?",
+        "edit": "Redakto {name}",
+        "editAction": "Redakto {name}",
+        "empty": "Ende nuk ka detyra. Detyrat i lejojnë njerëzit të tregojnë se në çfarë u shpenzua koha e tyre në projekt.",
+        "estimate": "Vlerësimi: {hours} h",
+        "field": {
+          "description": "Përshkrimi",
+          "estimate": "Vlerësimi (orë)",
+          "estimateInvalid": "Futni një numër pozitiv orësh",
+          "name": "Emri",
+          "namePlaceholder": "p.sh., Dizajn",
+          "nameRequired": "Futni një emër detyre"
+        },
+        "listLabel": "Detyrat e {name}",
+        "listTitle": "Detyrat e projektit",
+        "manage": "Menaxho detyrat e {name}",
+        "managedTitle": "Projektet tuaja",
+        "managerDescription": "Menaxhoni detyrat e projekteve që menaxhoni",
+        "markDone": "Shëno {name} si të përfunduar",
+        "markDoneFailed": "Shënimi i detyrës si e përfunduar dështoi",
+        "markedDone": "Detyra u shënua si e përfunduar",
+        "open": "Detyrat",
+        "projectCount": "{count, plural, one {# projekt} other {# projekte}}",
+        "reopen": "Rihap {name}",
+        "reopened": "Detyra u rihap",
+        "reopenFailed": "Dështoi rihapja e detyrës",
+        "save": "Ruaj",
+        "stateDone": "U krye",
+        "title": "Detyrat",
+        "updated": "Detyra u përditësua",
+        "updateFailed": "Dështoi përditësimi i detyrës"
+      },
+      "templates": {
+        "budgetHours": "{hours} h",
+        "column": {
+          "actions": "Veprimet",
+          "budget": "Buxheti",
+          "deadline": "Afati i fundit",
+          "name": "Emri",
+          "people": "Personat",
+          "tasks": "Detyrat"
+        },
+        "confirmDelete": "Konfirmo fshirjen e {name}",
+        "create": "Krijo shabllon",
+        "created": "Shablloni u krijua",
+        "createFailed": "Dështoi krijimi i shabllonit",
+        "createLabel": "Krijo shabllon projekti",
+        "createTitle": "Krijo shabllon",
+        "deadlineOffset": "{count, plural, other {# ditë pas krijimit} }",
+        "deadlineSameDay": "Në ditën e krijimit",
+        "delete": "Fshi",
+        "deleteAction": "Fshi {name}",
+        "deleted": "{name} u fshi",
+        "deleteFailed": "Dështoi fshirja e {name}",
+        "deleteQuestion": "Të fshihet ky shabllon?",
+        "description": "Plane për projekte të reja: detyrat, buxheti, afati i fundit, menaxherët dhe anëtarët.",
+        "dialogDescription": "Projektet e reja të krijuara nga ky shabllon kopjojnë përmbajtjen e tij një herë.",
+        "editAction": "Modifiko {name}",
+        "editLabel": "Modifiko {name}",
+        "editTitle": "Modifiko shabllonin",
+        "employees": {
+          "empty": "Nuk ka punonjës të caktuar",
+          "picker": "Punonjësi për t'u caktuar",
+          "title": "Punonjësit"
+        },
+        "empty": {
+          "description": "Ruaj një herë detyrat, buxhetin dhe personat që cakton për çdo projekt të ngjashëm, dhe nis projekte të reja prej tij.",
+          "title": "Ende nuk ka shabllone"
+        },
+        "field": {
+          "budget": "Buxheti (orë)",
+          "budgetDeadlineHelp": "Lëre bosh për një buxhet të pakufizuar ose pa afat të fundit.",
+          "budgetInvalid": "Vendos një numër pozitiv orësh",
+          "color": "Ngjyra",
+          "deadlineOffset": "Afati i fundit (ditë pas krijimit)",
+          "deadlineOffsetInvalid": "Vendos ditë të plota nga 0 deri në {max}",
+          "description": "Përshkrimi",
+          "icon": "Ikona",
+          "name": "Emri",
+          "namePlaceholder": "p.sh., Rilançimi i faqes së internetit",
+          "nameRequired": "Vendos një emër shablloni",
+          "noIcon": "Pa ikonë"
+        },
+        "icons": {
+          "briefcase": "Çantë dokumentesh",
+          "bulb": "Llambë",
+          "chartBar": "Grafik me shtylla",
+          "cloud": "Re",
+          "code": "Kod",
+          "database": "Bazë të dhënash",
+          "devices": "Pajisje",
+          "palette": "Paletë",
+          "rocket": "Raketë",
+          "settings": "Cilësimet",
+          "shoppingCart": "Shporta e blerjeve",
+          "users": "Persona"
+        },
+        "listCount": "{count, plural, one {# shabllon} other {# shabllone}}",
+        "listTitle": "Të gjithë shabllonet",
+        "managers": {
+          "empty": "Nuk ka menaxherë projekti",
+          "picker": "Menaxheri i projektit për t'u shtuar",
+          "title": "Menaxherët e projektit"
+        },
+        "member": {
+          "departed": "U largua nga organizata",
+          "remove": "Hiq {name}",
+          "removed": "Nuk ekziston më",
+          "removedHelp": "Ekipet dhe punonjësit që nuk ekzistojnë më hiqen kur ruani.",
+          "unknown": "I panjohur"
+        },
+        "peopleCount": "{count, plural, one {# person ose ekip} other {# persona dhe ekipe}}",
+        "save": "Ruaj ndryshimet",
+        "selectEmployee": "Zgjidhni një punonjës",
+        "selectTeam": "Zgjidhni një ekip",
+        "taskCount": "{count, plural, one {# detyrë} other {# detyra}}",
+        "tasks": {
+          "add": "Shto detyrë",
+          "description": "Përshkrimi i detyrës {position}",
+          "descriptionPlaceholder": "Përshkrimi (opsionale)",
+          "empty": "Nuk ka detyra. Projektet e krijuara nga ky shabllon fillojnë me këto detyra.",
+          "estimate": "Vlerësimi i detyrës {position} (orë)",
+          "estimatePlaceholder": "Orë",
+          "name": "Emri i detyrës {position}",
+          "namePlaceholder": "Emri i detyrës",
+          "remove": "Hiq detyrën {position}",
+          "title": "Detyrat"
+        },
+        "teams": {
+          "empty": "Nuk është caktuar asnjë ekip",
+          "picker": "Ekipi për t'u caktuar",
+          "title": "Ekipet"
+        },
+        "title": "Shabllonet e projektit",
+        "updated": "Shablloni u përditësua",
+        "updateFailed": "Përditësimi i shabllonit dështoi"
+      },
+      "title": "Projektet",
+      "updated": "Projekti u përditësua",
+      "updateFailed": "Përditësimi i projektit dështoi"
+    },
+    "reportShareLinks": {
+      "description": "Shikoni dhe revokoni çdo lidhje që ndan një raport projekti ose klienti",
+      "pageDescription": "Lidhje që i shfaqin një pamje të ngrirë të një raporti projekti ose klienti dikujt jashtë Z8. Revokimi i një lidhjeje e ndalon atë menjëherë dhe e fshin pamjen e saj.",
+      "title": "Lidhjet e ndarjes së raporteve"
+    },
+    "security": {
+      "description": "Menaxhoni fjalëkalimin tuaj, vërtetimin me dy faktorë, çelësat e kalimit dhe seancat aktive",
+      "kioskPin": {
+        "descriptionChange": "Ju keni një PIN për kioskën. Zgjidhni një të ri prej 4 deri në 6 shifra për ta zëvendësuar atë.",
+        "descriptionSet": "Zgjidhni një PIN prej 4 deri në 6 shifra për të regjistruar orarin në kioskat e organizatës suaj.",
+        "mismatch": "Kodet PIN nuk përputhen.",
+        "newPin": "PIN i ri",
+        "repeatPin": "Përsërit PIN-in",
+        "save": "Ruaj PIN-in",
+        "saved": "PIN-i i kioskës u ruajt",
+        "title": "PIN-i i kioskës"
+      },
+      "title": "Cilësimet e Sigurisë",
+      "twoFactor": {
+        "backupCodesCopied": "Kodet rezervë u kopjuan në kujtesën e përkohshme",
+        "backupCodesRegenerated": "Kodet rezervë u rigjeneruan",
+        "cancel": "Anulo",
+        "confirmPasswordToEnable": "Ju lutemi konfirmoni fjalëkalimin tuaj për të aktivizuar vërtetimin me dy faktorë",
+        "confirmPasswordToRegenerate": "Ju lutemi konfirmoni fjalëkalimin tuaj për të rigjeneruar kodet rezervë",
+        "continue": "Vazhdo",
+        "copyCodes": "Kopjo kodet",
+        "description": "Shtoni një shtresë shtesë sigurie në llogarinë tuaj",
+        "disable": "Çaktivizo",
+        "disable2fa": "Çaktivizo 2FA",
+        "disableDescription": "Kjo do të heqë nivelin shtesë të sigurisë nga llogaria juaj. Ju lutemi vendosni fjalëkalimin tuaj për të konfirmuar.",
+        "disabledToast": "Autentifikimi me dy faktorë u çaktivizua",
+        "disableFailed": "Çaktivizimi i 2FA dështoi",
+        "disableTitle": "Të çaktivizohet autentifikimi me dy faktorë?",
+        "enable": "Aktivizo Vërtetimin me Dy Faktorë",
+        "enabledToast": "Autentifikimi me dy faktorë u aktivizua",
+        "enablePasswordRequiredDescription": "Ju lutemi vendosni fjalëkalimin tuaj për të aktivizuar 2FA",
+        "enterAuthenticatorCode": "Vendosni kodin 6-shifror nga aplikacioni juaj i autentifikimit",
+        "enterPasswordTitle": "Vendosni Fjalëkalimin Tuaj",
+        "enterSixDigitCode": "Ju lutemi vendosni një kod 6-shifror",
+        "invalidCode": "Kod i pavlefshëm",
+        "passwordLabel": "Fjalëkalimi",
+        "passwordPlaceholder": "Vendosni fjalëkalimin tuaj...",
+        "passwordRequired": "Fjalëkalimi është i detyrueshëm",
+        "regenerateBackupCodes": "Rigjenero Kodet Rezervë",
+        "regenerateCodes": "Rigjenero Kodet",
+        "regenerateFailed": "Rigjenerimi i kodeve të rezervës dështoi",
+        "saveBackupCodesDescription": "Ruajini këto kode në një vend të sigurt. Mund t'i përdorni për të hyrë në llogarinë tuaj nëse humbni qasjen në aplikacionin tuaj të autentifikimit. Çdo kod mund të përdoret vetëm një herë.",
+        "saveBackupCodesTitle": "Ruani kodet tuaja rezervë",
+        "savedCodes": "I kam ruajtur këto kode",
+        "scanQrCode": "Skanoni kodin QR me aplikacionin tuaj të autentifikimit",
+        "setupFailed": "Konfigurimi i 2FA dështoi",
+        "setupTitle": "Konfiguroni autentifikimin me dy faktorë",
+        "status": {
+          "disabled": "Çaktivizuar",
+          "enabled": "Aktivizuar"
+        },
+        "title": "Vërtetimi me Dy Faktorë",
+        "unexpectedError": "Ndodhi një gabim i papritur",
+        "verificationFailed": "Verifikimi dështoi",
+        "verifyAndEnable": "Verifiko dhe aktivizo"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} në {os}",
+      "current": "Sesioni Aktual",
+      "description": "Menaxhoni sesionet tuaja aktive në pajisje të ndryshme",
+      "devices": {
+        "desktop": "Desktop",
+        "mobile": "Celular",
+        "tablet": "Tablet"
+      },
+      "none": "Nuk ka sesione aktive",
+      "othersRevoked": "Të gjitha sesionet e tjera u revokuan me sukses",
+      "revoke": "Revoko",
+      "revokeAllFailed": "Dështoi revokimi i sesioneve të tjera",
+      "revokeAllOthers": "Revoko të Gjitha Sesionet e Tjera",
+      "revoked": "Sesioni u revokua me sukses",
+      "revokeFailed": "Dështoi revokimi i sesionit",
+      "revoking": "Duke revokuar…",
+      "securityTip": "Nëse shihni një sesion që nuk e njihni, revokojeni menjëherë dhe ndryshoni fjalëkalimin tuaj.",
+      "signedIn": "Identifikuar",
+      "title": "Sesionet Aktive",
+      "unknownBrowser": "Shfletues i Panjohur",
+      "unknownOs": "Sistem Operativ i Panjohur"
+    },
+    "socialAccounts": {
+      "connect": "Lidh",
+      "connected": "Lidhur",
+      "connectedAs": "Lidhur si {accountId}",
+      "connectFailed": "Lidhja e llogarisë dështoi",
+      "connecting": "Duke u lidhur…",
+      "connectProvider": "Lidhni llogarinë tuaj {provider}",
+      "description": "Lidhni llogaritë tuaja sociale për një hyrje më të lehtë",
+      "disconnect": "Shkëput",
+      "disconnectDescription": "Kjo do të heqë lidhjen me llogarinë tuaj sociale. Mund ta rilidhni në çdo moment.",
+      "disconnectFailed": "Dështoi shkëputja e llogarisë",
+      "disconnectSuccess": "Llogaria u shkëput me sukses",
+      "disconnectTitle": "Të shkëputet llogaria?",
+      "loadFailed": "Dështoi ngarkimi i llogarive të lidhura",
+      "title": "Llogaritë Sociale",
+      "unexpectedError": "Ndodhi një gabim i papritur"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Sesionet Aktive",
+        "activeSessionsDescription": "Sesionet aktuale të bazës së të dhënave",
+        "approvalRequests": "Kërkesat për Miratim",
+        "approvedAbsences": "Mungesat e Miratuara",
+        "employees": "Punonjësit",
+        "employeesDescription": "{active} aktivë, {inactive} joaktivë",
+        "pendingAbsences": "Mungesa në pritje",
+        "pendingCount": "{count} në pritje",
+        "rejectedAbsences": "Mungesa të refuzuara",
+        "teams": "Ekipet",
+        "thisMonth": "Këtë muaj",
+        "timeEntries": "Regjistrimet e kohës",
+        "totalAbsences": "Totali i mungesave",
+        "totalTimeEntries": "Totali i regjistrimeve të kohës",
+        "vsLastMonth": "krahasuar me muajin e kaluar"
+      },
+      "description": "Shikoni statistikat dhe metrikat për instancën tuaj",
+      "lastUpdated": "Përditësuar së fundmi",
+      "loadError": "Ngarkimi i statistikave dështoi",
+      "managerDescription": "Shqyrtoni analizat vetëm për lexim për ekipet që menaxhoni.",
+      "sections": {
+        "absenceBreakdown": "Ndarja e mungesave",
+        "activityMetrics": "Metrikat e aktivitetit",
+        "coreCounts": "Numërimet kryesore",
+        "managedScope": "Fusha e ekipit të menaxhuar",
+        "systemHealth": "Gjendja e sistemit"
+      },
+      "title": "Statistika"
+    },
+    "timeFormat": {
+      "description": "Zgjidhni mënyrën se si shfaqet ora në të gjithë aplikacionin.",
+      "label": "Formati i orës",
+      "options": {
+        "12h": "12-orësh (8:00 AM)",
+        "24h": "24-orësh (08:00)"
+      },
+      "save": "Ruaj formatin e orës",
+      "title": "Formati i orës",
+      "updateError": "Ndodhi një gabim gjatë përditësimit të formatit të orës",
+      "updateFailed": "Përditësimi i formatit të orës dështoi",
+      "updateSuccess": "Formati i orës u përditësua me sukses"
+    },
+    "timezone": {
+      "currentTimePrefix": "Ora aktuale në {timezone}:",
+      "description": "Caktoni zonën tuaj kohore për shfaqjen e saktë të datës dhe orës në të gjithë aplikacionin",
+      "picker": {
+        "empty": "Nuk u gjet asnjë zonë kohore.",
+        "groups": {
+          "africa": "Afrikë",
+          "americas": "Amerikë",
+          "asia": "Azi",
+          "australiaPacific": "Australi dhe Paqësor",
+          "europe": "Evropë",
+          "utcOther": "UTC/Të tjera"
+        },
+        "labels": {
+          "africaCairo": "Ora e Evropës Lindore (Kajro)",
+          "africaJohannesburg": "Ora e Afrikës së Jugut (Johanesburg)",
+          "africaLagos": "Ora e Afrikës Perëndimore (Lagos)",
+          "africaNairobi": "Ora e Afrikës Lindore (Nairobi)",
+          "americaAnchorage": "Ora e Alaskës (Ankorazh)",
+          "americaBuenosAires": "Ora e Argjentinës (Buenos Aires)",
+          "americaChicago": "Ora Qendrore (Çikago)",
+          "americaDenver": "Ora e Maleve (Denver)",
+          "americaLosAngeles": "Ora e Paqësorit (Los Anxhelos)",
+          "americaMexicoCity": "Ora Qendrore (Qyteti i Meksikos)",
+          "americaNewYork": "Ora Lindore (Nju Jork)",
+          "americaSaoPaulo": "Ora e Brazilisë (São Paulo)",
+          "americaToronto": "Ora Lindore (Toronto)",
+          "americaVancouver": "Ora e Paqësorit (Vancouver)",
+          "asiaBangkok": "Ora e Indokinës (Bangkok)",
+          "asiaDubai": "Ora Standarde e Gjirit (Dubai)",
+          "asiaHongKong": "Ora e Hong Kongut (Hong Kong)",
+          "asiaKolkata": "Ora Standarde e Indisë (Kolkata)",
+          "asiaSeoul": "Ora Standarde e Koresë (Seul)",
+          "asiaShanghai": "Ora Standarde e Kinës (Shangai)",
+          "asiaSingapore": "Ora e Singaporit (Singapor)",
+          "asiaTokyo": "Ora Standarde e Japonisë (Tokio)",
+          "australiaBrisbane": "Ora Lindore Australiane (Brisbane)",
+          "australiaMelbourne": "Ora Lindore Australiane (Melburn)",
+          "australiaPerth": "Ora Perëndimore Australiane (Perth)",
+          "australiaSydney": "Ora Lindore Australiane (Sidnej)",
+          "europeAmsterdam": "Ora e Evropës Qendrore (Amsterdam)",
+          "europeAthens": "Ora e Evropës Lindore (Athinë)",
+          "europeBerlin": "Ora e Evropës Qendrore (Berlin)",
+          "europeBrussels": "Ora e Evropës Qendrore (Bruksel)",
+          "europeHelsinki": "Ora e Evropës Lindore (Helsinki)",
+          "europeIstanbul": "Ora e Turqisë (Stamboll)",
+          "europeLondon": "GMT/BST (Londër)",
+          "europeMadrid": "Ora e Evropës Qendrore (Madrid)",
+          "europeMoscow": "Ora e Moskës (Moskë)",
+          "europeParis": "Ora e Evropës Qendrore (Paris)",
+          "europeRome": "Ora e Evropës Qendrore (Romë)",
+          "europeStockholm": "Ora e Evropës Qendrore (Stokholm)",
+          "europeVienna": "Ora e Evropës Qendrore (Vjenë)",
+          "europeWarsaw": "Ora e Evropës Qendrore (Varshavë)",
+          "pacificAuckland": "Ora e Zelandës së Re (Auckland)",
+          "pacificHonolulu": "Ora e Havait (Honolulu)",
+          "utc": "Koha Universale e Koordinuar (UTC)"
+        },
+        "search": "Kërko zonën kohore…"
+      },
+      "save": "Ruaj zonën kohore",
+      "title": "Zona kohore",
+      "updateError": "Ndodhi një gabim gjatë përditësimit të zonës kohore",
+      "updateFailed": "Përditësimi i zonës kohore dështoi",
+      "updateSuccess": "Zona kohore u përditësua me sukses"
+    },
+    "title": "Cilësimet",
+    "travelExpenses": {
+      "allowanceOverrides": {
+        "amount": "Shuma ({currency})",
+        "authorize": "Autorizo dietën",
+        "basis": "Llogaritja",
+        "basisDescription": "P.sh. 2 ditë të pjesshme × 39.00 EUR + 1 ditë e plotë × 58.00 EUR − mëngjesi 11.60 EUR.",
+        "dialogDescription": "{employee}: {facts}. Shuma zbatohet vetëm për pikërisht këto fakte; punonjësi dhe shqyrtuesi e shohin atë bashkë me arsyen, dëshminë dhe llogaritjen tuaj.",
+        "dialogTitle": "Cakto kompensimin manualisht",
+        "empty": "Asnjë raport draft nuk ka ndonjë kompensim që kërkon llogaritje manuale.",
+        "errors": {
+          "amount": "Vendosni shumën në monedhën e raportit, me më së shumti dy shifra dhjetore. Kilometrazhi duhet të jetë më i madh se zero.",
+          "basis": "Tregoni se si u llogarit shuma.",
+          "evidence": "Emërtoni dëshminë mbi të cilën bazohet shuma, p.sh. një tabelë zyrtare tarifash ose një konfirmim.",
+          "reason": "Shpjegoni pse kompensimi po caktohet manualisht."
+        },
+        "evidence": "Dëshmi",
+        "evidenceDescription": "Mbi çfarë bazohet shuma, p.sh. tabela dhe botimi zyrtar i tarifave, ose një konfirmim me shkrim.",
+        "intro": "Kilometrazhi dhe dieta që sistemi nuk mund t'i llogarisë, sepse asnjë politikë nuk i mbulon ose udhëtimi është jashtë rregullave të mbështetura. Caktoni shumën manualisht bashkë me arsyen, dëshminë dhe llogaritjen. Ajo zbatohet vetëm për faktet për të cilat është caktuar dhe i shfaqet punonjësit dhe shqyrtuesit.",
+        "loadFailed": "Kompensimet e jashtëzakonshme nuk mund të ngarkoheshin.",
+        "mileage": "Kilometrazhi",
+        "ordinary": "Rezultati i politikës: {amount}",
+        "ownReport": "Ky është raporti juaj: një administrator tjetër shpenzimesh duhet të vendosë.",
+        "perDiem": "Dieta",
+        "reason": "Arsyeja",
+        "record": "Cakto kompensimin manualisht",
+        "replace": "Zëvendëso kompensimin manual",
+        "revoke": "Shfuqizo",
+        "revokeFailed": "Kompensimi manual nuk mund të shfuqizohej. Lista u rifreskua.",
+        "saved": "Kompensimi manual u autorizua",
+        "saveFailed": "Kompensimi manual nuk mund të ruhej. Ju lutemi provoni përsëri.",
+        "self": "Nuk mund të caktoni një kompensim në raportin tuaj.",
+        "stale": "Ky shpenzim ndryshoi ose u dorëzua ndërkohë. Lista u rifreskua.",
+        "title": "Kompensime të jashtëzakonshme"
+      },
+      "approver": {
+        "description": "Shqyrton raportet e shpenzimeve të punonjësve që nuk kanë menaxher tjetër ose menaxher ekipi përveç vetes. Vetëm menaxherët dhe administratorët aktivë mund të shqyrtojnë te kutia e miratimeve. Askush nuk e shqyrton kurrë raportin e vet.",
+        "intro": "Raportet e dorëzuara të shpenzimeve shkojnë te menaxheri i drejtpërdrejtë i punonjësit, pastaj te menaxheri i ekipit të tyre dhe më pas te miratuesi i shpenzimeve i zgjedhur këtu.",
+        "label": "Miratuesi i shpenzimeve",
+        "loadFailed": "Miratuesi i shpenzimeve nuk mund të ngarkohej.",
+        "none": "Nuk ka miratues shpenzimesh",
+        "ownerSelfApproval": "Përderisa askush tjetër nuk mund të shqyrtojë raportet e pronarit të organizatës, ato miratohen automatikisht gjatë dorëzimit dhe shënohen si të tilla; raportet me një shpjegim për faturë që mungon ose me një dietë të caktuar manualisht ende kërkojnë një shqyrtues.",
+        "save": "Ruaj miratuesin",
+        "saved": "Miratuesi i shpenzimeve u ruajt",
+        "saveFailed": "Ruajtja e miratuesit të shpenzimeve dështoi",
+        "title": "Shqyrtimi i raportit të shpenzimeve"
+      },
+      "currency": {
+        "choose": "Zgjidhni një monedhë me më së shumti dy shifra dhjetore, p.sh. EUR ose CHF.",
+        "description": "Raportet e reja të shpenzimeve rimbursohen në këtë monedhë; raportet ekzistuese ruajnë të tyren. Pragu i shumës së miratimit krahasohet në EUR, kështu që për sa kohë ekzistojnë rregulla miratimi të bazuara në shumë, raportet në një monedhë tjetër nuk mund të dorëzohen.",
+        "intro": "Faturat në monedha të tjera ruajnë shumën e tyre origjinale dhe konvertohen nëpërmjet një ngarkese të vërtetuar në kartë ose një kursi të dokumentuar.",
+        "label": "Monedha e rimbursimit",
+        "loadFailed": "Monedha e rimbursimit nuk mund të ngarkohej.",
+        "save": "Ruaj monedhën",
+        "saved": "Monedha e rimbursimit u ruajt",
+        "saveFailed": "Monedha e rimbursimit nuk mund të ruhej.",
+        "title": "Monedha e rimbursimit"
+      },
+      "effectiveFrom": "Efektive nga",
+      "effectiveTo": "Efektive deri",
+      "legacy": {
+        "description": "Ruhet vetëm për referencë. Këto të dhëna nuk janë përdorur kurrë për të llogaritur shpenzimet dhe nuk mund të modifikohen më; konfiguroni më lart tarifat e kilometrazhit me datë.",
+        "title": "Të dhënat e mëparshme të politikave"
+      },
+      "mileage": {
+        "activate": "Aktivizo versionin",
+        "add": "Shto versionin e tarifës",
+        "addTitle": "Shto një version të tarifës së kilometrazhit",
+        "adopt": "Zbato këto tarifa",
+        "adoptDescription": "Normat dhe burimi janë marrë nga katalogu i verifikuar: {reference} ({version}).",
+        "adoptTitle": "Mirato normat ligjore gjermane",
+        "currency": "Monedha",
+        "currencyDescription": "Duhet të përputhet me monedhën e rimbursimit të raporteve; kilometrazhi nuk konvertohet kurrë.",
+        "defaultRate": "{vehicle}: {rate} për km",
+        "defaultSource": "{reference}. Verifikuar më {verifiedOn} kundrejt {version}; mund të miratohet nga {validFrom}.",
+        "description": "Normat për kilometër për udhëtime pune me automjetet personale të punonjësve. Një normë zbatohet nga data e fillimit të saj deri në fillimin e versionit tjetër. Raportet e dorëzuara ruajnë normën me të cilën janë llogaritur.",
+        "dialogDescription": "Versioni zbatohet nga data e fillimit të tij deri në fillimin e versionit tjetër. Versionet e mëparshme dhe raportet e dorëzuara nuk ndryshohen.",
+        "empty": "Punonjësit mund të fusin kilometrazhin, por ai mbetet draft derisa një normë të mbulojë datën e tij. Miratoni normat ligjore të verifikuara ose futni normat e vetë organizatës suaj.",
+        "emptyTitle": "Nuk është konfiguruar asnjë normë kilometrazhi",
+        "errors": {
+          "beforeDefault": "Normat ligjore u verifikuan vetëm nga fillimi i këtij botimi; zgjidhni një datë më të vonë ose futni normat tuaja për ditët e mëparshme.",
+          "currency": "Futni një kod monedhe me tre shkronja, p.sh. EUR.",
+          "date": "Zgjidhni ditën e parë kur zbatohet norma.",
+          "invalid": "Kontrolloni këtë vlerë.",
+          "rate": "Futni një normë pozitive për kilometër me maksimumi katër shifra dhjetore, p.sh. 0.30.",
+          "rateRequired": "Futni një normë për të paktën një automjet.",
+          "tooLong": "Ky tekst është shumë i gjatë."
+        },
+        "germanDefaultTitle": "Normat fikse ligjore gjermane",
+        "history": "Versionet e zëvendësuara dhe të tërhequra ({count})",
+        "historyEntry": "Nga {date}: {rates} · {source}",
+        "loadFailed": "Normat e kilometrazhit nuk mund të ngarkoheshin.",
+        "notCovered": "nuk mbulohet",
+        "note": "Shënim (opsionale)",
+        "openEnded": "deri në një njoftim të dytë",
+        "rateFor": "Norma për km: {vehicle}",
+        "replace": "Zëvendëso",
+        "replaceConfirm": "Zëvendëso versionin",
+        "replaceDescription": "Një version aktiv tashmë fillon më {date}. Ruajtja e zëvendëson atë; versioni i zëvendësuar ruhet në historik.",
+        "replaceTitle": "Zëvendëso versionin që fillon atë ditë",
+        "saved": "Versioni i normës së kilometrazhit u aktivizua",
+        "saveFailed": "Norma e kilometrazhit nuk mund të ruhej.",
+        "source": "Burimi",
+        "sourceReference": "Burimi",
+        "sourceReferencePlaceholder": "p.sh. Politika e udhëtimit, marrëveshja e punës 3/2026",
+        "stale": "Ndërkohë normat kanë ndryshuar. Kontrolloni versionet aktuale dhe provoni përsëri.",
+        "title": "Normat e kilometrazhit",
+        "until": "deri më {date}",
+        "validFrom": "E vlefshme nga",
+        "validUntil": "E vlefshme deri më",
+        "withdraw": "Tërheq",
+        "withdrawConfirm": "Tërheq versionin",
+        "withdrawDescription": "Kilometrazhi me datë nga {date} kthehet në versionin e mëparshëm, ose mbetet i pallogaritur nëse nuk ekziston asnjë. Raportet e dorëzuara ruajnë normën me të cilën janë llogaritur.",
+        "withdrawFailed": "Versioni i normës nuk mund të tërhiqej. Ringarkoni versionet dhe provoni përsëri.",
+        "withdrawn": "Versioni i normës u tërhoq",
+        "withdrawTitle": "Të tërhiqet ky version i normës?"
+      },
+      "mileageRate": "Kilometrazhi / km",
+      "navDescription": "Shqyrtimi i raportit të shpenzimeve, faturat, monedhat, tarifat e kilometrazhit dhe të dietave, si dhe përjashtimet.",
+      "officers": {
+        "add": "Shto zyrtar shpenzimesh",
+        "addTitle": "Shto zyrtar shpenzimesh",
+        "allScope": "Të gjithë punonjësit",
+        "allScopeDescription": "Çdo raport shpenzimesh i miratuar i kësaj organizate.",
+        "canExport": "Mund të eksportojë",
+        "canRecordReimbursements": "Mund të regjistrojë rimbursime",
+        "capabilities": "Mundësitë",
+        "capabilitiesBoth": "Lexon, eksporton dhe regjistron rimbursime",
+        "capabilitiesDescription": "Pa asnjërën prej tyre, zyrtari mund të lexojë vetëm raportet në fushën e tij të veprimit, për shembull si auditor. Regjistrimi i rimbursimeve përfshin rikuperimet. Askush nuk mund të regjistrojë pagesa për shpenzimet e veta.",
+        "capabilitiesExport": "Lexon dhe eksporton",
+        "capabilitiesRead": "Vetëm lexim",
+        "capabilitiesReimburse": "Lexon dhe regjistron rimbursime",
+        "departedNamed": "{names} u larguan nga organizata. Raportet e tyre të miratuara mbeten te ky zyrtar.",
+        "edit": "Ndrysho",
+        "editorDescription": "Zgjidhni se raportet e miratuara të shpenzimeve të kujt trajton zyrtari dhe çfarë lejohet të bëjë me to. Zyrtarët shohin gjithmonë raportet brenda fushës së tyre të veprimit.",
+        "editTitle": "Ndrysho zyrtarin e shpenzimeve",
+        "employees": "Punonjësit",
+        "empty": "Ende nuk ka zyrtarë shpenzimesh. Pronarët dhe administratorët menaxhojnë raportet e miratuara të shpenzimeve.",
+        "intro": "Zyrtarët e shpenzimeve eksportojnë raporte shpenzimesh të miratuara për kontabilitet dhe regjistrojnë rimbursime, për të gjithë punonjësit ose për ekipe dhe punonjës të caktuar. Pronarët dhe administratorët e kanë gjithmonë këtë akses. Miratimi i raporteve nuk e jep kurrë këtë të drejtë.",
+        "loadFailed": "Zyrtarët e shpenzimeve nuk mund të ngarkoheshin.",
+        "noTeams": "Nuk ka ekipe të disponueshme",
+        "officer": "Zyrtar shpenzimesh",
+        "revoke": "Revoko",
+        "revokeConfirm": "Revoko aksesin",
+        "revoked": "Zyrtari i shpenzimeve u revokua",
+        "revokeDescription": "{name} humb menjëherë aksesin në raportet e miratuara të shpenzimeve. Shtimi i tyre përsëri më vonë krijon një autorizim të ri.",
+        "revokeFailed": "Dështoi revokimi i zyrtarit të shpenzimeve",
+        "revokeTitle": "Të revokohet zyrtari i shpenzimeve?",
+        "save": "Ruaj zyrtarin e shpenzimeve",
+        "saved": "Zyrtari i shpenzimeve u ruajt",
+        "saveFailed": "Dështoi ruajtja e zyrtarit të shpenzimeve",
+        "scope": "Fushëveprimi i zyrtarit",
+        "scopeSummary": "{teamCount, plural, one {# ekip, {employeeCount, plural, one {# punonjës} other {# punonjës}}} other {# ekipe, {employeeCount, plural, one {# punonjës} other {# punonjës}}}}",
+        "selectEmployees": "Zgjidhni punonjësit",
+        "selectOfficer": "Zgjidhni punonjësin",
+        "specificScope": "Ekipe ose punonjës specifikë",
+        "specificScopeDescription": "Raportet e punonjësve të emërtuar dhe raportet punonjësi i të cilëve i përkiste njërit prej ekipeve kur u miratua raporti. Një ndryshim i mëvonshëm i ekipit nuk e zhvendos raportin.",
+        "teams": "Ekipet",
+        "title": "Zyrtarët e shpenzimeve"
+      },
+      "pageDescription": "Zgjidhni se kush i shqyrton raportet e shpenzimeve, si trajtohen faturat që mungojnë dhe monedhat e huaja, cilat tarifa kilometrazhi dhe dietash zbatohen, si dhe cilat përjashtime autorizohen.",
+      "perDiem": {
+        "activate": "Aktivizo versionin",
+        "add": "Shto version norme",
+        "addTitle": "Shto një version norme diete",
+        "adopt": "Mirato këto shuma",
+        "adoptDescription": "Shumat dhe burimi janë marrë nga katalogu i verifikuar: {reference} ({version}).",
+        "adoptTitle": "Zbato dietën ligjore gjermane",
+        "amounts": "Shumat",
+        "breakfast": "Zbritje për mëngjesin e siguruar",
+        "currency": "Monedha",
+        "currencyDescription": "Duhet të përputhet me monedhën e rimbursimit të raporteve; dieta ditore nuk konvertohet kurrë.",
+        "defaultSource": "{reference}. Verifikuar më {verifiedOn} kundrejt {version}; mund të zbatohet nga {validFrom}.",
+        "description": "Dietat ditore për udhëtimet brenda vendit dhe zbritjet për vaktet që siguron organizata. Normat zbatohen nga data e tyre e fillimit derisa të fillojë versioni tjetër; raportet e dorëzuara ruajnë normat me të cilat janë llogaritur.",
+        "dialogDescription": "Versioni zbatohet nga data e tij e fillimit derisa të fillojë versioni tjetër. Versionet e mëparshme dhe raportet e dorëzuara nuk ndryshohen.",
+        "dinner": "Zbritje për darkën e siguruar",
+        "empty": "Punonjësit mund të vendosin dietat ditore gjatë udhëtimeve, por ato mbeten draft derisa normat të mbulojnë ditët e udhëtimit. Zbatoni shumat e verifikuara ligjore ose vendosni ato të vetë organizatës suaj.",
+        "emptyTitle": "Nuk është konfiguruar asnjë normë e dietave ditore",
+        "errors": {
+          "afterDefault": "Këto shuma ligjore u verifikuan vetëm për një vit; zgjidhni një datë brenda atij viti.",
+          "amount": "Vendosni një shumë me maksimumi dy shifra dhjetore, p.sh. 14.00.",
+          "beforeDefault": "Shumat ligjore u verifikuan vetëm nga fillimi i këtij botimi; zgjidhni një datë më të vonshme ose vendosni shumat e vetë organizatës suaj për ditët e mëparshme.",
+          "currency": "Vendosni një kod monedhe prej tre shkronjash, p.sh. EUR.",
+          "date": "Zgjidhni ditën e parë kur zbatohen normat.",
+          "exceedsFullDay": "Kjo shumë nuk mund të tejkalojë dietën për ditë të plotë.",
+          "invalid": "Kontrolloni këtë vlerë.",
+          "tooLong": "Ky tekst është shumë i gjatë."
+        },
+        "foreignTable": "Përfshin normat zyrtare për jashtë vendit ({version}) për {countries} shtete dhe {places} qytete, të zbatuara për ditët e udhëtimit nga {from} deri më {through}. Vendet dhe territoret e palistuara ndjekin rregullat zyrtare rezervë; çdo gjë tjetër shënohet për llogaritje manuale.",
+        "fullDay": "Ditë e plotë (24 orë larg)",
+        "germanDefaultTitle": "Dieta ditore ligjore gjermane brenda vendit",
+        "germanForeignDefaultTitle": "Dieta ditore ligjore gjermane me normat zyrtare për jashtë vendit",
+        "history": "Versionet e zëvendësuara dhe të tërhequra ({count})",
+        "historyEntry": "Nga {date}: ditë e plotë {fullDay}, ditë e pjesshme {partialDay} · {source}",
+        "loadFailed": "Normat e dietave ditore nuk mund të ngarkoheshin.",
+        "lunch": "Zbritje për drekën e siguruar",
+        "notCovered": "pa norma brenda vendit",
+        "note": "Shënim (opsionale)",
+        "openEnded": "deri në një njoftim të dytë",
+        "partialDay": "Ditë udhëtimi ose më shumë se 8 orë larg",
+        "replace": "Zëvendëso",
+        "replaceConfirm": "Zëvendëso versionin",
+        "replaceDescription": "Një version aktiv tashmë fillon më {date}. Ruajtja e zëvendëson atë; versioni i zëvendësuar ruhet në historik.",
+        "replaceTitle": "Zëvendëso versionin që fillon atë ditë",
+        "rules": "Kualifikueshmëria ndjek {reference} ({version}), e verifikuar për ditët e udhëtimit nga {from} deri më {through}. Udhëtimet jashtë vendit çmohen për ditë vetëm me normat e miratuara për jashtë vendit; ditët e tjera dhe itineraret speciale shënohen për llogaritje manuale.",
+        "rulesOpenEnded": "Përshtatshmëria ndjek {reference} ({version}), e verifikuar për ditët e udhëtimit nga {from} derisa ligji të ndryshojë. Udhëtimet jashtë vendit çmohen vetëm për ditë me tarifat e huaja të miratuara; ditët e tjera dhe itineraret e veçanta shënohen për llogaritje manuale.",
+        "saved": "Versioni i normave të dietave ditore u aktivizua",
+        "saveFailed": "Normat e dietave ditore nuk mund të ruheshin.",
+        "source": "Burimi",
+        "sourceReference": "Burimi",
+        "sourceReferencePlaceholder": "p.sh. Politika e udhëtimit, marrëveshja e punës 3/2026",
+        "stale": "Normat kanë ndryshuar ndërkohë. Kontrolloni versionet aktuale dhe provoni përsëri.",
+        "title": "Normat e dietave ditore",
+        "until": "deri më {date}",
+        "validFrom": "E vlefshme nga",
+        "validUntil": "E vlefshme deri më",
+        "withdraw": "Tërhiq",
+        "withdrawConfirm": "Tërhiq versionin",
+        "withdrawDescription": "Ditët e udhëtimit nga {date} kthehen në versionin e mëparshëm, ose mbeten të pallogaritura nëse nuk ekziston asnjë. Raportet e dorëzuara ruajnë normat me të cilat janë llogaritur.",
+        "withdrawFailed": "Versioni i normave nuk mund të tërhiqej. Ringarkoni versionet dhe provoni përsëri.",
+        "withdrawn": "Versioni i kursit u tërhoq",
+        "withdrawTitle": "Të tërhiqet ky version i kursit?"
+      },
+      "perDiemRate": "Dieta / ditë",
+      "projectExceptions": {
+        "authorize": "Autorizo përjashtimin",
+        "authorizedBy": "Autorizuar nga {name}",
+        "employee": "Punonjësi",
+        "employeePlaceholder": "Zgjidhni një punonjës",
+        "empty": "Nuk është autorizuar asnjë përjashtim.",
+        "errors": {
+          "afterHistoryCapture": "Përjashtimet mbulojnë vetëm datat para se të regjistroheshin caktimet e projektit. Për datat e mëvonshme, vendosin caktimet e regjistruara: caktojeni punonjësin në projekt.",
+          "date": "Vendosni një datë të vlefshme.",
+          "dateOrder": "Dita e fundit nuk mund të jetë para së parës.",
+          "employee": "Zgjidhni një punonjës.",
+          "evidence": "Emërtoni dëshminë mbi të cilën bazohet kjo, p.sh. një plan personeli ose kontratë.",
+          "future": "Përjashtimet mbulojnë vetëm shpenzimet e kaluara. Caktojeni punonjësin në projekt për punën aktuale.",
+          "project": "Zgjidhni një projekt.",
+          "reason": "Shpjegoni pse punonjësi mund ta përdorte projektin atëherë."
+        },
+        "evidence": "Dëshmi",
+        "evidenceDescription": "Çfarë tregon se punonjësi ka punuar në projekt atëherë, p.sh. një plan personeli, kontratë ose konfirmim me shkrim nga drejtuesi i projektit.",
+        "intro": "Punonjësit mund t'ua atribuojnë shpenzimet projekteve ku ishin caktuar në datën e shpenzimit. Historiku i caktimeve regjistrohet që nga futja e projekteve të shpenzimeve; për datat e mëparshme, ose punën e kryer pa një caktim, autorizoni një përjashtim këtu me arsyen dhe dëshminë përkatëse. Shqyrtuesit e shohin çdo përjashtim.",
+        "loadFailed": "Përjashtimet e atribuimit të projektit nuk mund të ngarkoheshin.",
+        "project": "Projekti",
+        "projectPlaceholder": "Zgjidhni një projekt",
+        "reason": "Arsyeja",
+        "saved": "Përjashtimi u autorizua",
+        "saveFailed": "Përjashtimi nuk mund të regjistrohej.",
+        "title": "Përjashtimet e atribuimit të projektit",
+        "validFrom": "Data e parë e shpenzimit e mbuluar",
+        "validTo": "Data e fundit e shpenzimit e mbuluar"
+      },
+      "rates": {
+        "dialogDescription": "{employee}: {amount} më {date}. Rezultati rrumbullakoset nga gjysma lart në {currency} dhe i shfaqet punonjësit dhe shqyrtuesit si kurs i autorizuar.",
+        "dialogTitle": "Dokumentoni një kurs këmbimi",
+        "direction": "Kuotuar si",
+        "empty": "Asnjë draft-raport nuk ka shpenzim në një monedhë tjetër.",
+        "errors": {
+          "afterExpenseDate": "Kursi nuk mund të jetë me datë pas shpenzimit.",
+          "date": "Vendosni datën e kursit.",
+          "evidenceRequired": "Emërtoni dokumentin ose rreshtin e pasqyrës që tregon kursin.",
+          "expenseDateMissing": "Shpenzimi nuk ka ende datë. Kërkojini punonjësit ta shtojë atë më parë.",
+          "pair": "Kuotoni kursin për monedhat e këtij shpenzimi.",
+          "rate": "Vendosni një kurs pozitiv me më së shumti 10 shifra dhjetore, p.sh. 0.9215.",
+          "reasonRequired": "Dokumentoni se nga vjen kursi.",
+          "tooEarly": "Përdorni një kurs me datë më së shumti {days} ditë para shpenzimit.",
+          "tooLong": "Ky tekst është shumë i gjatë."
+        },
+        "evidence": "Dëshmia e kursit",
+        "evidenceDescription": "Ku mund të verifikohet kursi, p.sh. ekstrakti dhe rreshti i kartës, ose numri i dokumentit të kursit të publikuar.",
+        "intro": "Punonjësit konvertojnë faturën e huaj me tarifimin e dëshmuar në kartë. Kur nuk ka asnjë, dokumentoni këtu kursin me datën dhe burimin e tij. Një kurs i dokumentuar i shfaqet shqyrtuesit si kurs i autorizuar.",
+        "loadFailed": "Shpenzimet në monedhë të huaj nuk mund të ngarkoheshin.",
+        "noPreview": "Vendosni një kurs, datë, dokumentacion dhe dëshmi të vlefshme për të parë rezultatin.",
+        "outOfRange": "Me këtë kurs shpenzimi do të rrumbullakosej në zero ose do të tejkalonte shumën e lejuar.",
+        "preview": "Llogaritet si {amount}.",
+        "rate": "Kursi (x)",
+        "rateDate": "Data e kursit",
+        "reason": "Dokumentacioni",
+        "reasonDescription": "Nga vjen kursi dhe pse nuk përdoret pagesa me kartë, p.sh. kursi i pasqyrës bankare të kartës së udhëtimit.",
+        "record": "Dokumento kursin",
+        "remove": "Hiq konvertimin",
+        "removeFailed": "Konvertimi nuk mund të hiqej. Lista u rifreskua.",
+        "replace": "Zëvendëso kursin",
+        "save": "Autorizo kursin",
+        "saved": "Kursi i dokumentuar u ruajt",
+        "saveFailed": "Kursi nuk mund të ruhej. Ju lutemi provoni përsëri.",
+        "self": "Nuk mund të autorizoni një kurs në raportin tuaj. Kërkojini një administratori tjetër të shpenzimeve.",
+        "stale": "Ky shpenzim ndryshoi ose u dorëzua ndërkohë. Lista u rifreskua.",
+        "title": "Shpenzimet në valutë të huaj në drafte",
+        "unconverted": "Ende pa konvertim"
+      },
+      "receiptExceptions": {
+        "description": "Punonjësit mund të dorëzojnë një shpenzim fature pa faturën përkatëse vetëm duke shpjeguar pse mungon ajo. Rishikuesit duhet të pranojnë çdo përjashtim për të miratuar raportin. Faturat mbeten të detyrueshme për çdo gjë tjetër, dhe çaktivizimi i këtij opsioni i mban të pandryshuara raportet e dorëzuara tashmë.",
+        "intro": "Shpenzimet me faturë kërkojnë një faturë. Mund të lejoni një përjashtim të shpjeguar për faturat që kanë humbur ose nuk janë lëshuar kurrë.",
+        "label": "Lejo përjashtimet e shpjeguara për fatura që mungojnë",
+        "loadFailed": "Cilësimi për faturat që mungojnë nuk mund të ngarkohej.",
+        "save": "Ruaj cilësimin",
+        "saved": "Cilësimi për faturat që mungojnë u ruajt",
+        "saveFailed": "Ruajtja e cilësimit për faturat që mungojnë dështoi",
+        "title": "Faturat që mungojnë"
+      },
+      "referenceRates": {
+        "acknowledge": "E kuptoj që BQE-ja i publikon këto kurse vetëm për informacion, për një grup të kufizuar valutash dhe vetëm në ditë pune, dhe se organizata jonë zgjedh të rimbursojë me to.",
+        "acknowledgedEcb": "{name} pranoi më {date} se BQE-ja i publikon këto kurse vetëm për informacion, për një grup të kufizuar valutash dhe vetëm në ditë pune.",
+        "acknowledgeRequired": "Konfirmoni se e kuptoni mënyrën se si mund të përdoren kurset e referencës.",
+        "approve": "Mirato kurset e referencës të BQE-së",
+        "approved": "Kurset e referencës të BQE-së u miratuan",
+        "approvedBy": "Miratuar nga {name} më {date}.",
+        "approveFailed": "Kurset e referencës nuk mund të miratoheshin.",
+        "fetchFailing": "Marrja e fundit dështoi. Shpenzimet e datuara pas marrjes së fundit të suksesshme kërkojnë një pagesë me kartë ose një kurs të dokumentuar derisa marrja e ardhshme të jetë e suksesshme.",
+        "firstFetch": "Kurset merren çdo orë. Deri në marrjen e parë, shpenzimet vazhdojnë të kërkojnë një pagesë me kartë ose kurs të dokumentuar.",
+        "intro": "Me miratim, një shpenzim në valutë të huaj pa një pagesë me kartë ose kurs të dokumentuar konvertohet me kursin e referencës në euro të Bankës Qendrore Evropiane të datës së shpenzimit. Në fundjavë dhe festa të TARGET zbatohet publikimi më i fundit i mëparshëm dhe shfaqet data reale e tij. Valutat që BQE nuk i publikon dhe datat pa një kurs të mundshëm për t'u marrë, kërkojnë ende një pagesë me kartë ose kurs të dokumentuar. Raportet e dorëzuara mbajnë kursin me të cilin janë dorëzuar.",
+        "latestFetch": "Marrja e fundit e suksesshme",
+        "latestPublication": "Publikimi më i fundit",
+        "loadFailed": "Cilësimet e kursit të referencës nuk mund të ngarkoheshin.",
+        "notFetched": "Ende nuk është marrë",
+        "revoke": "Ndalo përdorimin e kurseve të referencës",
+        "revokeFailed": "Kurset e referencës nuk mund të çaktivizoheshin.",
+        "title": "Kurset e këmbimit të referencës"
+      },
+      "title": "Politikat e shpenzimeve të udhëtimit"
+    },
+    "webhooks": {
+      "description": "Konfiguroni pikat përfundimtare të webhook-ut për të marrë njoftime në kohë reale për ngjarjet",
+      "title": "Webhooks"
+    },
+    "weekStart": {
+      "description": "Zgjidhni nëse kalendarët dhe përmbledhjet javore fillojnë të dielën apo të hënën.",
+      "label": "Dita e parë e javës",
+      "save": "Ruaj fillimin e javës",
+      "title": "Java fillon më",
+      "updateError": "Ndodhi një gabim gjatë përditësimit të ditës së fillimit të javës",
+      "updateFailed": "Përditësimi i ditës së fillimit të javës dështoi",
+      "updateSuccess": "Dita e fillimit të javës u përditësua me sukses"
+    },
+    "wellness": {
+      "cardDescShort": "Qëndroni të hidratuar ndërsa punoni",
+      "cardTitle": "Kujtuesit e ujit",
+      "dailyGoal": "Synimi ditor",
+      "decreaseDailyGoal": "Ule synimin ditor",
+      "description": "Konfiguroni kujtuesit e ujit dhe ndjekjen e hidratimit gjatë sesioneve tuaja të punës",
+      "glasses": "gota",
+      "increaseDailyGoal": "Rrit synimin ditor",
+      "reminderFrequency": "Shpeshtësia e kujtuesit",
+      "saved": "Cilësimet e mirëqenies u ruajtën",
+      "saveError": "Ruajtja e cilësimeve të mirëqenies dështoi",
+      "title": "Cilësimet e mirëqenies"
+    },
+    "workBalanceRecalculation": {
+      "confirm": "Konfirmo rikalkulimin",
+      "confirmMessage": "Konfirmoni përpara se ta vendosni në radhë këtë rikalkulim.",
+      "description": "Vendosni në radhë një rindërtim të plotë të agregateve mujore dhe vjetore të bilancit të punës për {employeeName}. Kjo detyrë mirëmbajtjeje ekzekutohet në sfond dhe nuk e bllokon këtë faqe.",
+      "queued": "Rikalkulimi u vendos në radhë",
+      "recalculate": "Rikalkulo bilancin e punës",
+      "requestError": "Dështoi vendosja në radhë e rillogaritjes së bilancit të punës",
+      "requestSuccess": "Rillogaritja e bilancit të punës u vendos në radhë",
+      "title": "Rikalkulimi i bilancit të punës"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Aktiv",
+        "activeDescription": "Po përpunohet aktualisht",
+        "completed": "Përfunduar",
+        "completedDescription": "Përfunduar së fundmi",
+        "delayed": "Me vonesë",
+        "delayedDescription": "Planifikuar për më vonë",
+        "failed": "Dështuar",
+        "failedDescription": "Dështuar së fundmi",
+        "paused": "Në pauzë",
+        "queueState": "Radha",
+        "queueStateDescription": "Nëse punëtorët mund të marrin punë në pritje",
+        "running": "Në ekzekutim",
+        "unknown": "E panjohur",
+        "waiting": "Në pritje",
+        "waitingDescription": "Detyra në pritje për t'u përpunuar"
+      },
+      "common": {
+        "unknown": "E panjohur"
+      },
+      "connected": "Lidhur",
+      "description": "Monitoroni përpunimin e detyrave në prapavijë dhe ekzekutimet e punëve cron",
+      "disconnected": "Shkëputur",
+      "lastUpdated": "Përditësuar së fundmi",
+      "loadError": "Ngarkimi i statusit të radhës dështoi",
+      "noExecutions": "Nuk u gjet asnjë ekzekutim i fundit",
+      "noScheduledJobs": "Nuk u gjet asnjë detyrë e planifikuar",
+      "recentExecutions": {
+        "allJobs": "Të gjitha punët",
+        "error": "Dështoi ngarkimi i ekzekutimeve",
+        "filterLabel": "Filtro sipas punës",
+        "loading": "Po ngarkohen ekzekutimet…"
+      },
+      "recentExecutionsDescription": "50 ekzekutimet e fundit të detyrave të regjistruara në bazën e të dhënave.",
+      "reliability": {
+        "averageDuration": "Kohëzgjatja mesatare",
+        "avgDuration": "Kohëzgjatja mesatare",
+        "avgDurationDescription": "Ekzekutimet me të dhëna kohëzgjatjeje",
+        "completed": "Përfunduar",
+        "durationTrend": "Ecuria e kohëzgjatjes",
+        "durationTrendDescription": "Koha mesatare e ekzekutimit për ekzekutimet që raportuan të dhëna të kohëzgjatjes.",
+        "failed": "Dështuar",
+        "failedRuns": "Ekzekutime të dështuara",
+        "failedRunsDescription": "30 ditët e fundit",
+        "failing": "Po dështon",
+        "healthy": "I shëndetshëm",
+        "jobHealth": "Shëndeti i detyrës",
+        "jobHealthDescription": "Besueshmëria për çdo detyrë bazuar në ekzekutimet e fundit dhe oraret e përsëritshme.",
+        "noDurationData": "Nuk ka të dhëna për kohëzgjatjen për këtë periudhë.",
+        "noExecutionHistory": "Nuk ka histori të ekzekutimit të cron-it për këtë periudhë.",
+        "noJobs": "Nuk u gjetën të dhëna për besueshmërinë",
+        "runOutcomes": "Rezultatet e ekzekutimit",
+        "runOutcomesDescription": "Ekzekutimet e përfunduara dhe të dështuara të cron-it gjatë {days} ditëve të fundit.",
+        "stale": "I vjetruar",
+        "staleJobs": "Detyra të vjetruara",
+        "staleJobsDescription": "Kaluar orarit të parashikuar",
+        "successRate": "Shkalla e suksesit",
+        "successRateDescription": "Ekzekutimet përfundimtare cron",
+        "title": "Besueshmëria",
+        "unknown": "E panjohur",
+        "warning": "Paralajmërim"
+      },
+      "scheduleControls": {
+        "cancel": "Anulo",
+        "confirmationLabel": "Shkruani konfirmimin",
+        "edit": "Ndrysho",
+        "failed": "Ndryshimi i planifikimit dështoi",
+        "highRiskDescription": "Ndryshimi i kësaj pune mund të ndikojë në faturim, pastrim, integrime, pajtueshmëri ose automatizim operacional.",
+        "highRiskTitle": "Planifikim me rrezik të lartë",
+        "mismatch": "BullMQ aktualisht ndryshon nga planifikimi i ruajtur; nisja e worker-it do ta harmonizojë atë.",
+        "presetLabel": "Paracaktim i planifikimit",
+        "readOnly": "Ky planifikim i parazgjedhur nuk ka ende një paracaktim të modifikueshëm.",
+        "reset": "Rivendos",
+        "resetSaved": "Planifikimi u rivendos",
+        "save": "Ruaj planifikimin",
+        "saved": "Planifikimi u ruajt",
+        "warningPrefix": "U ruajt me paralajmërim"
+      },
+      "scheduledJobsDescription": "Detyra të përsëritshme të konfiguruara në procesues. Këto ekzekutohen automatikisht sipas orarit.",
+      "schedule": {
+        "overridden": "I mbishkruar"
+      },
+      "sections": {
+        "jobMetrics": "Metrikat e detyrave (30 ditët e fundit)",
+        "queueCounts": "Statusi i radhës",
+        "recentExecutions": "Ekzekutimet e fundit",
+        "scheduledJobs": "Detyrat cron të planifikuara"
+      },
+      "status": {
+        "completed": "Përfunduar",
+        "failed": "Dështuar",
+        "pending": "Në pritje",
+        "running": "Në ekzekutim"
+      },
+      "table": {
+        "actions": "Veprimet",
+        "avgDuration": "Kohëzgjatja mesatare",
+        "default": "I parazgjedhur",
+        "duration": "Kohëzgjatja",
+        "error": "Gabim",
+        "failed": "Dështuar",
+        "health": "Gjendja",
+        "jobName": "Emri i detyrës",
+        "lastRun": "Ekzekutimi i fundit",
+        "nextRun": "Ekzekutimi i radhës",
+        "schedule": "Orari",
+        "startedAt": "Filluar më",
+        "status": "Statusi",
+        "successful": "I suksesshëm",
+        "successRate": "Shkalla e suksesit",
+        "totalRuns": "Gjithsej ekzekutime"
+      },
+      "title": "Radha e procesuesit"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Emrat e kategorive",
+        "grouped": "Të grupuara",
+        "hidden": "Të fshehura"
+      },
+      "absenceVisibility": "Dukshmëria e mungesave",
+      "description": "Konfiguroni qasjen e sigurt për privatësinë e këshillit të punës dhe eksportet e rishikimit",
+      "exportEnabled": "Aktivizo eksportet e rishikimit",
+      "exportEnabledDescription": "Lejoni përdoruesit e autorizuar të këshillit të punës të gjenerojnë paketa shqyrtimi me filtër privatësie.",
+      "formDescription": "Konfiguroni qasjen e sigurt për privatësinë e këshillit të punës dhe eksportet e rishikimit për këtë organizatë.",
+      "identity": {
+        "aggregated": "Të agreguara",
+        "named": "Me emër",
+        "pseudonymized": "Të pseudonimizuara"
+      },
+      "identityVisibility": "Dukshmëria e identitetit",
+      "minimumThreshold": "Pragu minimal i agregimit",
+      "minimumThresholdDescription": "Grupet nën këtë madhësi fshihen për të zvogëluar rrezikun e ri-identifikimit.",
+      "save": "Ruaj cilësimet",
+      "saved": "Cilësimet e Këshillit të Punës u ruajtën",
+      "saveError": "Dështoi ruajtja e cilësimeve të Këshillit të Punës",
+      "title": "Modaliteti i Këshillit të Punës",
+      "visibleLocationIds": "ID-të e dukshme të vendndodhjeve",
+      "visibleLocationIdsDescription": "ID vendndodhjesh opsionale të ndara me presje. Lëreni bosh për të përfshirë të gjitha vendndodhjet.",
+      "visibleTeamIds": "ID-të e dukshme të ekipeve",
+      "visibleTeamIdsDescription": "ID ekipeve opsionale të ndara me presje. Lëreni bosh për të përfshirë të gjitha ekipet."
+    }
+  }
+}

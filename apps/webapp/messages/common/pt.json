@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Seu último registro de entrada hoje foi às {startTime} ({timezone}). Registre a entrada se estiver trabalhando."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" foi pausado porque seu proprietário, {ownerName}, não é mais um administrador da organização. Torne a si mesmo ou a outro administrador da organização o proprietário para retomá-lo.",
+        "title": "Exportação agendada pausada"
+      },
       "shiftAssigned": {
         "message": "Você foi designado para um turno em {shiftDate} das {startTime} às {endTime} por {assignedByName}.",
         "title": "Turno designado"

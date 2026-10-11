@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} a le même nom et est déjà associé à un autre contact",
           "noMatch": "Aucune correspondance",
           "paging": {
-            "label": "Pages de contacts",
-            "next": "Page suivante",
-            "position": "Page {page} sur {pageCount}",
-            "previous": "Page précédente"
+            "label": "Pages de contacts"
           },
           "suggestion": {
             "customerNumber": "{name} a un lien de contact avec le même numéro de client",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "Le prestataire indique des pauses sans leurs horaires, l'intervalle travaillé est donc inconnu."
         },
         "issueGroups": {
-          "currentMarkers": "Les lignes actuelles incluent {blockingRows} marqueurs de problème bloquants et {warningRows} avertissements.",
           "description": "Les zones d'examen regroupées aident à garder les contrôles de qualité visibles avant que les lignes acceptées ne soient validées.",
+          "importMarkers": "Les lignes de l'importation comportent {blockingRows} marqueurs de problème bloquants et {warningRows} marqueurs d'avertissement.",
           "title": "Groupes de problèmes"
+        },
+        "paging": {
+          "next": "Page suivante",
+          "position": "Page {page} sur {pageCount}",
+          "previous": "Page précédente"
         },
         "rows": {
           "billable": "Facturable",
           "empty": "Aucune ligne mise en attente n'est disponible pour ce lot d'importation.",
           "entity": "Entité",
+          "paging": {
+            "label": "Pages de lignes"
+          },
           "rowId": "ID de ligne",
           "sourceId": "ID source",
           "status": "Statut",
@@ -1783,6 +1788,7 @@
       "create": "Créer un projet",
       "created": "Projet créé",
       "createFailed": "Échec de la création du projet",
+      "customerDeleted": "{name} (supprimé)",
       "description": "Gérez les projets, les budgets, les dates limites et les affectations de temps",
       "dialog": {
         "create": "Créer un projet",
@@ -1807,6 +1813,7 @@
         "color": "Couleur",
         "colorOption": "Sélectionner la couleur {color}",
         "customer": "Client",
+        "customerDeleted": "{name} a été supprimé. Choisissez un autre client ou conservez le projet sans client.",
         "customerPlaceholder": "Sélectionner un client",
         "deadline": "Date limite",
         "description": "Description",
@@ -2031,6 +2038,11 @@
       "title": "Projets",
       "updated": "Projet mis à jour",
       "updateFailed": "Échec de la mise à jour du projet"
+    },
+    "reportShareLinks": {
+      "description": "Consultez et révoquez chaque lien partageant un rapport de projet ou de client",
+      "pageDescription": "Liens affichant un instantané figé d'un rapport de projet ou de client à une personne externe à Z8. Révoquer un lien le désactive immédiatement et supprime son instantané.",
+      "title": "Liens de partage de rapports"
     },
     "security": {
       "description": "Gérez votre mot de passe, l'authentification à deux facteurs, les clés d'accès et les sessions actives",

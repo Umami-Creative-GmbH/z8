@@ -1,0 +1,205 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Evidentiraj odsutnost za {name}"
+      },
+      "calendar": {
+        "approved": "Odobreno",
+        "changeDeputy": "Promijeni zamjenika",
+        "changeDeputyOf": "Promijeni zamjenika za korisnika {name}",
+        "deputy": "Zamjenik:",
+        "deputyMissing": "Nedostaje zamjenik",
+        "description": "Odobrene odsutnosti i odsutnosti na čekanju za odabrani tim i godinu.",
+        "error": {
+          "description": "Pokušajte ponovno za trenutak.",
+          "title": "Nije moguće učitati kalendar"
+        },
+        "legend": {
+          "approved": "Odobreno",
+          "pending": "Na čekanju"
+        },
+        "pending": "Na čekanju",
+        "pendingDays": "{count} na čekanju",
+        "title": "Godišnji kalendar",
+        "totalDays": "{count} odsutnih"
+      },
+      "deputyFilter": {
+        "clear": "Prikaži sve odsutnosti",
+        "notice": "Prikazuju se samo odsutnosti koje ovaj zaposlenik pokriva kao zamjenik."
+      },
+      "description": "Pregledajte slobodne dane i evidentirajte odobrene odsutnosti za svoj tim.",
+      "empty": {
+        "description": "Pokušajte prilagoditi filtre ili pretragu kako biste pronašli članove tima.",
+        "label": "Nisu pronađeni zaposlenici",
+        "title": "Nisu pronađeni zaposlenici"
+      },
+      "error": {
+        "description": "Pokušajte ponovno za trenutak.",
+        "title": "Učitavanje odsutnosti nije uspjelo"
+      },
+      "feature": "upravljanje odsutnostima tima",
+      "filters": {
+        "allTeams": "Svi timovi",
+        "searchLabel": "Pretraži zaposlenike",
+        "searchPlaceholder": "Pretraži zaposlenike…",
+        "searchSubmit": "Pretraži",
+        "teamLabel": "Filtriraj po timu",
+        "teamPlaceholder": "Tim",
+        "yearLabel": "Filtriraj po godini",
+        "yearPlaceholder": "Godina"
+      },
+      "pagination": {
+        "next": "Sljedeće",
+        "nextLabel": "Sljedeća stranica",
+        "page": "Stranica {page} od {pageCount}",
+        "previous": "Prethodno",
+        "previousLabel": "Prethodna stranica",
+        "showing": "Prikazano {firstItem} do {lastItem} od {total}"
+      },
+      "recordDialog": {
+        "category": "Kategorija",
+        "categoryPlaceholder": "Odaberite kategoriju odsutnosti…",
+        "deputy": "Zamjenik",
+        "description": "Evidentirajte odobrenu odsutnost izravno za odabranog zaposlenika.",
+        "endDate": "Datum završetka",
+        "endDateHelper": "Ostavite prazno za jednodnevnu odsutnost.",
+        "failure": "Evidentiranje odsutnosti nije uspjelo",
+        "noCategories": "Nema dostupnih kategorija",
+        "noEmployee": "Odaberite zaposlenika prije evidentiranja odsutnosti",
+        "notes": "Bilješke",
+        "notesPlaceholder": "Dodajte interni kontekst za ovaj zapis…",
+        "pickEndDate": "Odaberite datum završetka…",
+        "pickStartDate": "Odaberite datum početka…",
+        "recording": "Evidentiranje…",
+        "required": "{label} je obavezno",
+        "sickDetail": "Pojedinosti o bolovanju",
+        "sickDetailPlaceholder": "Odaberite pojedinosti o bolovanju…",
+        "sickNotes": {
+          "description": "Dodajte fotografije ili PDF-ove predane liječničke potvrde: PDF, JPEG, PNG ili WebP datoteke do 20 MB svaka. Svaka se datoteka sprema kao zasebna liječnička potvrda u kadrovski dosje zaposlenika i vidljiva je zaposleniku. Nakon toga je mogu otvoriti samo osobe koje upravljaju liječničkim potvrdama zaposlenika.",
+          "title": "Liječnička potvrda (neobavezno)"
+        },
+        "sickNotesFailed": "Odsutnost je zabilježena, ali datoteke {files} nije bilo moguće priložiti. Osoba koja upravlja liječničkim potvrdama može ih priložiti kasnije.",
+        "startDate": "Datum početka",
+        "submit": "Evidentiraj odsutnost",
+        "success": "Odsutnost je evidentirana",
+        "title": "Evidentiraj odsutnost",
+        "titleForEmployee": "Evidentiraj odsutnost za {name}"
+      },
+      "sort": {
+        "ascending": "uzlazno",
+        "by": "Poredaj po {label}",
+        "byWithDirection": "Poredaj po {label} ({direction})",
+        "descending": "silazno"
+      },
+      "table": {
+        "actions": "Radnje",
+        "allowance": "Dodijeljeno",
+        "employee": "Zaposlenik",
+        "left": "Preostalo",
+        "pending": "Na čekanju",
+        "sick": "Bolovanje",
+        "teamOrPosition": "Tim ili radno mjesto",
+        "used": "Iskorišteno"
+      },
+      "title": "Odsutnosti tima"
+    },
+    "balance": {
+      "noBalance": "Nema stanja"
+    },
+    "description": "Pregledajte i upravljajte zaposlenicima kojima ste izravno nadređeni",
+    "empty": {
+      "action": "Idi na postavke zaposlenika",
+      "description": "Zaposlenici kojima ste dodijeljeni kao voditelj prikazat će se ovdje. Dodjelama timova možete upravljati u postavkama zaposlenika.",
+      "title": "Još nema članova tima"
+    },
+    "error": {
+      "description": "Učitavanje članova vašeg tima nije uspjelo.",
+      "title": "Nešto je pošlo po zlu"
+    },
+    "feature": "pregledajte svoj tim",
+    "member": "član",
+    "members": "članovi",
+    "member.you": "Vi",
+    "noResults": {
+      "action": "Očisti pretraživanje",
+      "description": "Nijedan član tima ne odgovara upitu \"{query}\"",
+      "title": "Nema pronađenih rezultata"
+    },
+    "pagination": {
+      "next": "Sljedeće",
+      "previous": "Prethodno",
+      "showing": "Prikazuje se {from} do {to} od {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Odaberite učestalost predaje u postavkama organizacije",
+      "columns": {
+        "calendar": "Kalendar",
+        "employee": "Zaposlenik",
+        "period": "Razdoblje",
+        "status": "Status"
+      },
+      "descriptionAll": "Tko je predao odabrano razdoblje. Odobrite ili odbijte prijave u pristigloj pošti za odobrenja.",
+      "descriptionManaged": "Tko je od zaposlenika kojima upravljate predao odabrano razdoblje. Odobrite ili odbijte prijave u pristigloj pošti za odobrenja.",
+      "empty": "Nitko koga možete vidjeti ne treba predati ovo razdoblje.",
+      "loading": "Učitavanje prijava razdoblja",
+      "notSubmitted": "Nije predano",
+      "off": "Vaša organizacija ne prikuplja prijave razdoblja.",
+      "openCalendar": "Kalendar",
+      "openCalendarOf": "Otvorite kalendar korisnika {name}",
+      "openInbox": "Otvorite pristiglu poštu za odobrenja",
+      "owing": "{count, plural, one {# zaposlenik još nije predao ovo razdoblje.} few {# zaposlenika još nisu predala ovo razdoblje.} other {# zaposlenika još nije predalo ovo razdoblje.}}",
+      "period": "Razdoblje predaje",
+      "running": "Ovo razdoblje još traje. Zaposlenici ga mogu predati od njegova zadnjeg dana.",
+      "status": {
+        "approved": "Odobreno",
+        "awaiting": "Čeka predaju",
+        "rejected": "Odbijeno",
+        "sentBack": "Vraćeno nakon promjene",
+        "submitted": "Predano"
+      },
+      "summary": "Statusi",
+      "title": "Prijave razdoblja"
+    },
+    "presence": {
+      "allLocations": "Sve lokacije",
+      "columns": {
+        "name": "Ime",
+        "since": "Od",
+        "state": "Status"
+      },
+      "description": "Odaberite lokaciju kako biste vidjeli tko je tamo prijavljen na radu ili na pauzi.",
+      "descriptionAll": "Zaposlenici dodijeljeni ovoj lokaciji koji su prijavljeni na radu ili na pauzi.",
+      "descriptionManaged": "Zaposlenici kojima upravljate, a dodijeljeni su ovoj lokaciji i prijavljeni su na radu ili na pauzi.",
+      "empty": "Nitko od vama vidljivih zaposlenika trenutačno nije prijavljen na ovoj lokaciji.",
+      "locationTitle": "Tko je prisutan: {location}",
+      "noLocations": "Vaša organizacija još nema aktivnih lokacija.",
+      "title": "Tko je prisutan"
+    },
+    "primaryManager": "Vi ste primarni voditelj",
+    "search": {
+      "ariaLabel": "Pretraži članove tima",
+      "placeholder": "Pretražujte po imenu, e-pošti, radnom mjestu ili timu..."
+    },
+    "status": {
+      "active": "Aktivan",
+      "inactive": "Neaktivan"
+    },
+    "table": {
+      "employee": "Zaposlenik",
+      "position": "Radno mjesto",
+      "role": "Uloga",
+      "sort": {
+        "ascending": "uzlazno",
+        "descending": "silazno"
+      },
+      "status": "Status",
+      "team": "Tim"
+    },
+    "title": "Vaš tim",
+    "view": {
+      "cards": "Prikaz kartica",
+      "table": "Tablični prikaz"
+    }
+  }
+}

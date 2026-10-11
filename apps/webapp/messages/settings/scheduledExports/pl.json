@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Zmień właściciela",
         "delete": "Usuń",
         "edit": "Edytuj",
         "runNow": "Uruchom teraz",
@@ -123,6 +124,8 @@
         "dateRangesDesc": "Obliczane automatycznie na podstawie częstotliwości harmonogramu (np. poprzedni miesiąc dla eksportów miesięcznych).",
         "delivery": "Dostarczanie:",
         "deliveryDesc": "Eksporty są przesyłane do S3, a powiadomienia e-mail z linkami do pobrania są wysyłane do skonfigurowanych odbiorców.",
+        "owner": "Właściciel:",
+        "ownerDesc": "Każdy harmonogram działa w imieniu administratora organizacji. Jeśli jego właściciel przestanie być administratorem organizacji lub odejdzie, harmonogram zostanie wstrzymany, a każdy administrator organizacji otrzyma powiadomienie, aby umożliwić jego przejęcie.",
         "scheduleTypes": "Typy harmonogramów:",
         "scheduleTypesDesc": "Codziennie, co tydzień (poniedziałek), co miesiąc (1. dzień), co kwartał (1. dzień stycznia/kwietnia/lipca/października) lub niestandardowe wyrażenia cron."
       },
@@ -149,6 +152,18 @@
         "viewError": "Wyświetl szczegóły błędu"
       },
       "newSchedule": "Nowy harmonogram",
+      "owner": {
+        "changed": "Zmieniono właściciela",
+        "changeFailed": "Nie udało się zmienić właściciela",
+        "description": "\"{name}\" działa w imieniu swojego właściciela, który musi być administratorem organizacji. Automatyczne uruchomienia są rejestrowane w dzienniku audytu na koncie właściciela.",
+        "label": "Właściciel",
+        "pauseNote": "Zmiana właściciela nie wznawia wstrzymanego harmonogramu. Włącz go ponownie po przypisaniu właściciela.",
+        "placeholder": "Wybierz administratora organizacji…",
+        "required": "Wybierz administratora organizacji",
+        "saving": "Zapisywanie…",
+        "submit": "Zmień właściciela",
+        "title": "Zmień właściciela"
+      },
       "report": {
         "auditReport": "Raport audytu",
         "auditReportDesc": "Raporty audytu zawierają wszystkie dane śledzenia czasu z podpisami kryptograficznymi i znacznikami czasu w celu zapewnienia zgodności z GoBD. Eksport będzie przechowywany z ochroną WORM (Write Once Read Many).",
@@ -264,6 +279,8 @@
         "never": "Nigdy",
         "nextRun": "Następne uruchomienie",
         "openMenu": "Otwórz menu akcji",
+        "owner": "Właściciel",
+        "ownerNotAdmin": "Nie jest już administratorem organizacji",
         "paused": "Wstrzymany",
         "schedule": "Harmonogram",
         "status": "Status",

@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Change Owner",
         "delete": "Delete",
         "edit": "Edit",
         "runNow": "Run Now",
@@ -123,6 +124,8 @@
         "dateRangesDesc": "Automatically calculated based on the schedule frequency (e.g., previous month for monthly exports).",
         "delivery": "Delivery:",
         "deliveryDesc": "Exports are uploaded to S3 and email notifications with download links are sent to configured recipients.",
+        "owner": "Owner:",
+        "ownerDesc": "Each schedule runs on behalf of an org admin. If its owner stops being an org admin or leaves, the schedule pauses and every org admin is notified so one can take it over.",
         "scheduleTypes": "Schedule Types:",
         "scheduleTypesDesc": "Daily, Weekly (Monday), Monthly (1st), Quarterly (Jan/Apr/Jul/Oct 1st), or custom cron expressions."
       },
@@ -149,6 +152,18 @@
         "viewError": "View error details"
       },
       "newSchedule": "New Schedule",
+      "owner": {
+        "changed": "Owner changed",
+        "changeFailed": "Couldn't change the owner",
+        "description": "\"{name}\" runs on behalf of its owner, who must be an org admin. Automated runs are recorded in the audit log under the owner.",
+        "label": "Owner",
+        "pauseNote": "Changing the owner doesn't resume a paused schedule. Turn it back on once it has an owner.",
+        "placeholder": "Select an org admin…",
+        "required": "Choose an org admin",
+        "saving": "Saving…",
+        "submit": "Change owner",
+        "title": "Change owner"
+      },
       "report": {
         "auditReport": "Audit Report",
         "auditReportDesc": "Audit reports include all time tracking data with cryptographic signatures and timestamps for GoBD compliance. The export will be stored with WORM (Write Once Read Many) protection.",
@@ -264,6 +279,8 @@
         "never": "Never",
         "nextRun": "Next Run",
         "openMenu": "Open actions menu",
+        "owner": "Owner",
+        "ownerNotAdmin": "No longer an org admin",
         "paused": "Paused",
         "schedule": "Schedule",
         "status": "Status",

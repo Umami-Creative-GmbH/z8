@@ -1,0 +1,44 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Mirato",
+      "approveLabel": "Mirato {title}",
+      "description": "Kërkesa në pritje të një vendimi nga menaxheri.",
+      "empty": "Nuk ka miratime në pritje.",
+      "openInbox": "Hap kutinë hyrëse",
+      "ownRequest": "Kërkesa juaj: vendos një miratues tjetër.",
+      "pendingAriaLabel": "Miratimet në pritje",
+      "reject": "Refuzo",
+      "rejectLabel": "Refuzo {title}",
+      "title": "Miratimet",
+      "toast": {
+        "approved": "Kërkesa u miratua",
+        "approveError": "Kërkesa nuk mund të miratohet",
+        "rejected": "Kërkesa u refuzua",
+        "rejectError": "Kërkesa nuk mund të refuzohet"
+      }
+    },
+    "briefing": {
+      "badge": "Sot",
+      "description": "Rishikoni artikujt që kërkojnë veprim sot, pastaj kaloni drejtpërdrejt te procesi i duhur i punës.",
+      "needsAction": {
+        "description": "Filloni këtu për ndjekjen më urgjente operacionale.",
+        "empty": "Çdo gjë në rregull. Nuk kërkohet asnjë veprim nga menaxheri për momentin.",
+        "title": "Kërkon veprim"
+      },
+      "sections": {
+        "empty": "Nuk u zbulua asnjë problem."
+      },
+      "severity": {
+        "critical": "Kritike",
+        "high": "E lartë",
+        "info": "Info",
+        "warning": "Paralajmërim"
+      },
+      "summaryAriaLabel": "Përmbledhja për sot",
+      "supportingSectionsAriaLabel": "Seksionet mbështetëse",
+      "title": "Informimi ditor i menaxherit",
+      "updatedAt": "{date} - Përditësuar më {time}"
+    }
+  }
+}

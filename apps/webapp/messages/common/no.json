@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Din siste innstempling i dag var kl. {startTime} ({timezone}). Stemple inn hvis du jobber."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" ble satt på pause fordi eieren, {ownerName}, ikke lenger er en organisasjonsadministrator. Gjør deg selv eller en annen organisasjonsadministrator til eier for å gjenoppta den.",
+        "title": "Planlagt eksport satt på pause"
+      },
       "shiftAssigned": {
         "message": "Du har blitt tildelt en vakt den {shiftDate} fra {startTime} til {endTime} av {assignedByName}.",
         "title": "Vakt tildelt"

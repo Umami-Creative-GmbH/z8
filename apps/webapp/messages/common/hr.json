@@ -1,0 +1,1163 @@
+{
+  "actions": {
+    "cancel": "Odustani",
+    "delete": "Izbriši",
+    "refresh": "Osvježi"
+  },
+  "analytics": {
+    "export": {
+      "export": "Izvezi",
+      "exportAsCsv": "Izvezi kao CSV",
+      "exportAsExcel": "Izvezi kao Excel",
+      "exportedAsFormat": "Izvezeno kao {format}",
+      "exportingFormat": "Izvoz {format}…",
+      "failedAsFormat": "Izvoz kao {format} nije uspio"
+    }
+  },
+  "appSearch": {
+    "commandDescription": "Pretražite stranice, ljude, timove, postavke ili radnje",
+    "commandPlaceholder": "Pretražite stranice, ljude, timove, postavke ili radnje…",
+    "commands": {
+      "addManualTimeEntry": {
+        "keywords": {
+          "entry": "unos",
+          "hours": "sati",
+          "manual": "ručno",
+          "time": "vrijeme"
+        },
+        "subtitle": "Evidentirajte sate za prošlu smjenu ili ispravak",
+        "title": "Dodaj ručni unos vremena"
+      },
+      "createProject": {
+        "keywords": {
+          "create": "stvori",
+          "project": "projekt",
+          "settings": "postavke"
+        },
+        "subtitle": "Otvorite postavke projekta za definiranje novog projekta",
+        "title": "Izradi projekt"
+      },
+      "inviteTeammate": {
+        "keywords": {
+          "invite": "pozovi",
+          "member": "član",
+          "teammate": "član tima"
+        },
+        "subtitle": "Otvorite upravljanje organizacijom za dodavanje kolege",
+        "title": "Pozovi člana tima"
+      },
+      "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "odobrenja",
+          "inbox": "ulazna pošta",
+          "review": "pregled"
+        },
+        "subtitle": "Pregledajte zahtjeve zaposlenika na čekanju",
+        "title": "Otvori pretinac za odobrenja"
+      },
+      "openMyRequests": {
+        "keywords": {
+          "mine": "moje",
+          "requests": "zahtjevi"
+        },
+        "subtitle": "Pregledajte svoje podnesene izostanke i troškove",
+        "title": "Otvori moje zahtjeve"
+      },
+      "openPayroll": {
+        "keywords": {
+          "export": "izvoz",
+          "payroll": "obračun plaća",
+          "wages": "plaće"
+        },
+        "subtitle": "Pregledajte radni prostor za obračun plaća",
+        "title": "Otvori obračun plaća"
+      },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "izvoz",
+          "payroll": "obračun plaća",
+          "readiness": "spremnost"
+        },
+        "subtitle": "Provjerite jesu li podaci o radnom vremenu spremni za obračun plaća",
+        "title": "Otvori spremnost za obračun plaća"
+      },
+      "openSettings": {
+        "keywords": {
+          "preferences": "preferencije",
+          "settings": "postavke"
+        },
+        "subtitle": "Upravljajte svojim profilom, sigurnošću i postavkama organizacije",
+        "title": "Otvori postavke"
+      },
+      "requestAbsence": {
+        "keywords": {
+          "absence": "odsutnost",
+          "timeOff": "slobodni dani",
+          "vacation": "godišnji odmor"
+        },
+        "subtitle": "Započnite zahtjev za godišnji odmor, bolovanje ili slobodne dane",
+        "title": "Zatraži izostanak"
+      },
+      "submitTravelExpense": {
+        "keywords": {
+          "expense": "trošak",
+          "reimbursement": "nadoknada troškova",
+          "travel": "putovanje"
+        },
+        "subtitle": "Izradite zahtjev za naknadu putnih troškova",
+        "title": "Podnesi putni trošak"
+      }
+    },
+    "empty": "Nema pronađenih rezultata.",
+    "groups": {
+      "actions": "Radnje",
+      "pages": "Stranice",
+      "people": "Ljudi",
+      "settings": "Postavke",
+      "teams": "Timovi"
+    },
+    "search": "Pretraži",
+    "searchOrRunCommand": "Pretražite ili pokrenite naredbu",
+    "teamAbsences": {
+      "description": "Pregledajte metriku izostanaka zaposlenika i evidentirajte izostanke",
+      "keywords": {
+        "absence": "odsutnost",
+        "manager": "voditelj",
+        "sick": "bolovanje",
+        "team": "tim",
+        "vacation": "godišnji odmor"
+      }
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Vaše probno razdoblje je završilo ili pretplata više ne vrijedi. Ažurirajte podatke o naplati za nastavak korištenja Z8.",
+      "goToBilling": "Prijeđi na naplatu",
+      "memberDescription": "Ova organizacija je suspendirana. Obratite se administratoru organizacije radi ažuriranja podataka o naplati.",
+      "title": "Organizacija je suspendirana"
+    },
+    "trialBanner": {
+      "description": "Preostalo je još {days} dana. Dodajte podatke o plaćanju sada; vaša plaćena pretplata započinje nakon probnog razdoblja.",
+      "dismiss": "Odbaci traku probnog razdoblja",
+      "title": "Aktivno 14-dnevno probno razdoblje",
+      "upgrade": "Nadogradi"
+    }
+  },
+  "closedMonths": {
+    "closeThisMonth": "Zatvorite ovaj mjesec",
+    "status": {
+      "closed": "Zatvoreno",
+      "open": "Otvoreno",
+      "partlyClosed": "Djelomično zatvoreno ({closed} od {total})"
+    },
+    "stripLabel": "Zatvoreni mjeseci",
+    "unclosedDescription": "Rad i odsutnosti u ovim mjesecima još se mogu mijenjati nakon izvoza. Zatvorite mjesec kada je njegov obračun plaća konačan.",
+    "unclosedTitle": "Nije svaki mjesec u ovom rasponu zatvoren"
+  },
+  "colors": {
+    "blue": "Plava",
+    "green": "Zelena",
+    "indigo": "Indigo",
+    "orange": "Narančasta",
+    "pink": "Ružičasta",
+    "purple": "Ljubičasta",
+    "red": "Crvena",
+    "teal": "Tirkizna"
+  },
+  "common": {
+    "actions": "Radnje",
+    "active": "Aktivno",
+    "add": "Dodaj",
+    "adding": "Dodavanje...",
+    "all": "Sve",
+    "appName": "Z8",
+    "approve": "Odobri",
+    "assign": "Dodijeli",
+    "back": "Natrag",
+    "brandLogo": "{brand} logotip",
+    "breadcrumb": {
+      "breadcrumb": "navigacijski put",
+      "more": "Više"
+    },
+    "cancel": "Odustani",
+    "carousel": {
+      "nextSlide": "Sljedeći slajd",
+      "previousSlide": "Prethodni slajd",
+      "roleDescription": "vrtuljak",
+      "slideRoleDescription": "slajd"
+    },
+    "clear": "Očisti",
+    "clearSearch": "Očisti pretragu",
+    "clearSelection": "Očisti",
+    "close": "Zatvori",
+    "confirm": "Potvrdi",
+    "continue": "Nastavi",
+    "copy": "Kopiraj",
+    "create": "Stvori",
+    "current": "Trenutačno",
+    "datePicker": {
+      "clearDate": "Izbriši datum",
+      "placeholder": "Odaberite datum"
+    },
+    "days": {
+      "count": "{count} dana",
+      "friday": "Petak",
+      "half": "0,5 dana",
+      "label": "dani",
+      "monday": "Ponedjeljak",
+      "one": "1 dan",
+      "saturday": "Subota",
+      "sunday": "Nedjelja",
+      "thursday": "Četvrtak",
+      "tuesday": "Utorak",
+      "wednesday": "Srijeda"
+    },
+    "delete": "Izbriši",
+    "deleting": "Brisanje...",
+    "deployment": {
+      "skew": {
+        "description": "Ponovno učitajte stranicu za nastavak. Vaša posljednja radnja nije spremljena.",
+        "title": "Z8 je ažuriran"
+      }
+    },
+    "description": "Opis",
+    "deselectAll": "Odznači sve",
+    "details": "Pojedinosti",
+    "download": "Preuzmi",
+    "duplicate": "Dupliciraj",
+    "durationMinutes": "{count} min",
+    "edit": "Uredi",
+    "enabled": "Omogućeno",
+    "error": "Pogreška",
+    "error-occurred": "Došlo je do pogreške",
+    "errors": {
+      "monthClosed": "{month} je zatvoren. Mora se ponovno otvoriti prije nego što se rad ili odsutnosti mogu mijenjati."
+    },
+    "fieldPresets": "{label} predlošci",
+    "focusInput": "Fokusiraj unos",
+    "gender": {
+      "female": "Žensko",
+      "male": "Muško",
+      "other": "Ostalo"
+    },
+    "goToDashboard": "Idi na nadzornu ploču",
+    "inactive": "Neaktivno",
+    "label": "Oznaka",
+    "loading": "Učitavanje...",
+    "loadingLabel": "Učitavanje",
+    "loadingRegions": {
+      "absences": "Učitavanje odsutnosti",
+      "adminConsole": "Učitavanje administratorske konzole",
+      "analyticsNavigation": "Učitavanje analitičke navigacije",
+      "application": "Učitavanje aplikacije",
+      "auditExportSettings": "Učitavanje postavki izvoza revizije",
+      "authentication": "Učitavanje autentifikacije",
+      "changePolicySettings": "Učitavanje postavki pravila promjena",
+      "coverageRuleSettings": "Učitavanje postavki pravila pokrivenosti",
+      "customerSettings": "Učitavanje postavki klijenata",
+      "customRoleSettings": "Učitavanje postavki prilagođenih uloga",
+      "dashboard": "Učitavanje nadzorne ploče",
+      "dataExportSettings": "Učitavanje postavki izvoza podataka",
+      "demoDataSettings": "Učitavanje postavki demo podataka",
+      "deploymentDiagnostics": "Učitavanje dijagnostike implementacije",
+      "employeeReports": "Učitavanje izvješća o zaposlenicima",
+      "employeeVacationAllowances": "Učitavanje prava zaposlenika na godišnji odmor",
+      "exportOperations": "Učitavanje operacija izvoza",
+      "holidaySettings": "Učitavanje postavki blagdana",
+      "importReview": "Učitavanje pregleda uvoza",
+      "importSettings": "Učitavanje postavki uvoza",
+      "locationSettings": "Učitavanje postavki lokacije",
+      "onboarding": "Učitavanje uvođenja u posao",
+      "payrollExportSettings": "Učitavanje postavki izvoza obračuna plaća",
+      "payrollReadiness": "Učitavanje spremnosti za obračun plaća",
+      "payrollWorkspace": "Učitavanje radnog prostora za obračun plaća",
+      "platformAdminOverview": "Učitavanje administratorskog pregleda platforme",
+      "platformAnalytics": "Učitavanje analitike platforme",
+      "platformBilling": "Učitavanje naplate platforme",
+      "platformSetup": "Učitavanje postavljanja platforme",
+      "projectReports": "Učitavanje izvješća o projektima",
+      "projectSettings": "Učitavanje postavki projekta",
+      "scheduledExports": "Učitavanje zakazanih izvoza",
+      "shiftSchedule": "Učitavanje rasporeda smjena",
+      "shiftTemplateSettings": "Učitavanje postavki predložaka smjena",
+      "skillSettings": "Učitavanje postavki vještina",
+      "surchargeSettings": "Učitavanje postavki doplata",
+      "team": "Učitavanje tima",
+      "todaySManagerBriefing": "Učitavanje današnjeg sažetka za voditelje",
+      "travelExpenses": "Učitavanje putnih troškova",
+      "travelExpenseSettings": "Učitavanje postavki putnih troškova",
+      "twoFactorVerification": "Učitavanje dvofaktorske provjere",
+      "vacationSettings": "Učitavanje postavki godišnjeg odmora",
+      "wellnessSettings": "Učitavanje postavki wellnessa",
+      "workCategorySettings": "Učitavanje postavki kategorija rada",
+      "workerQueue": "Učitavanje reda čekanja radnika",
+      "workPolicySettings": "Učitavanje postavki pravila rada",
+      "worksCouncilPortal": "Učitavanje portala radničkog vijeća",
+      "yourRequests": "Učitavanje vaših zahtjeva"
+    },
+    "loadMore": "Učitaj više",
+    "months": {
+      "april": "Travanj",
+      "august": "Kolovoz",
+      "december": "Prosinac",
+      "february": "Veljača",
+      "january": "Siječanj",
+      "july": "Srpanj",
+      "june": "Lipanj",
+      "march": "Ožujak",
+      "may": "Svibanj",
+      "november": "Studeni",
+      "october": "Listopad",
+      "september": "Rujan"
+    },
+    "more": "više",
+    "moreActions": "Više radnji",
+    "moveDown": "Premjesti dolje",
+    "moveUp": "Premjesti gore",
+    "name": "Ime",
+    "new": "Novo",
+    "next": "Dalje",
+    "notApplicable": "N/D",
+    "not-available": "Nije dostupno",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Obavijesti} other {Obavijesti (# nepročitanih)}}"
+    },
+    "open": "Otvori",
+    "openEnded": "Bez roka završetka",
+    "openMenu": "Otvori izbornik",
+    "optional": "neobavezno",
+    "or": "Ili",
+    "pagination": {
+      "goToNextPage": "Idi na sljedeću stranicu",
+      "goToPreviousPage": "Idi na prethodnu stranicu",
+      "morePages": "Više stranica",
+      "pagination": "paginacija"
+    },
+    "pending": "Na čekanju",
+    "positionCaptureErrors": {
+      "adminOnly": "Samo vlasnici i administratori organizacije mogu upravljati bilježenjem lokacije.",
+      "assignmentNotFound": "Ova dodjela više ne postoji.",
+      "employeeNotFound": "Ovaj zaposlenik nije pronađen.",
+      "employeeProfileRequired": "Potreban je profil zaposlenika u ovoj organizaciji.",
+      "invalidTarget": "Odaberite na koga se dodjela odnosi.",
+      "noticeChanged": "Obavijest o bilježenju lokacije se promijenila. Pregledajte trenutačnu obavijest prije donošenja odluke.",
+      "positionsForbidden": "Nemate dopuštenje za pregled lokacija ovog radnog razdoblja.",
+      "purposeRequired": "Prije uključivanja bilježenja lokacije potrebno je navesti izjavu o svrsi.",
+      "purposeTooLong": "Izjava o svrsi je predugačka.",
+      "retentionOutOfRange": "Razdoblje zadržavanja mora biti cijeli broj dana između {min} i {max}.",
+      "signInRequired": "Najprije se prijavite u organizaciju.",
+      "teamNotFound": "Ovaj tim nije pronađen.",
+      "workPeriodNotFound": "Ovo radno razdoblje nije pronađeno."
+    },
+    "positionConsent": {
+      "agree": "Slažem se",
+      "description": "Vaša organizacija traži bilježenje lokacije vašeg uređaja kada se prijavite, odjavite ili uzmete pauzu. Vaš zapis radnog vremena zabilježen je u svakom slučaju. Ako se složite, lokacije će se bilježiti od vašeg sljedećeg zapisa radnog vremena.",
+      "notNow": "Ne sada",
+      "title": "Želite li bilježiti lokaciju uz zapise radnog vremena?"
+    },
+    "positionNotice": {
+      "never": "Odjave koje netko drugi napravi umjesto vas, automatske odjave, uvozi i ispravci nikada ne sadrže lokaciju. Ako vaš uređaj ne može pružiti lokaciju, vaš zapis radnog vremena bilježi se bez nje i nigdje se ne bilježi razlog.",
+      "purposeTitle": "Zašto vaša organizacija bilježi lokacije",
+      "retention": "{days, plural, one {Svaka se lokacija briše # dan nakon što je zabilježena. Vaši zapisi radnog vremena ostaju.} other {Svaka se lokacija briše # dana nakon što je zabilježena. Vaši zapisi radnog vremena ostaju.} }",
+      "retentionTitle": "Koliko se dugo čuvaju lokacije",
+      "version": "Obavijest o bilježenju lokacije, verzija {version}",
+      "viewers": "Možete vidjeti vlastite lokacije. Vlasnici i administratori organizacije te osobe s izričitim dopuštenjem mogu ih vidjeti za pojedinačno radno razdoblje, a svaki takav pregled bilježi se kako biste ga mogli vidjeti. Biti vaš voditelj ne daje pristup. Radničko vijeće nikada ne vidi pojedinačne lokacije.",
+      "viewersTitle": "Tko može vidjeti lokacije",
+      "what": "Kada se u web-aplikaciji Z8 na svom uređaju prijavite, odjavite, započnete ili završite pauzu, lokacija vašeg uređaja bilježi se uz taj zapis radnog vremena: zemljopisna širina, zemljopisna dužina, točnost lokacije i vrijeme kada ju je uređaj odredio. Ne bilježe se adresa, nadmorska visina ni brzina, niti se išta bilježi između zapisa radnog vremena.",
+      "whatTitle": "Što se bilježi",
+      "withdraw": "Lokacije se bilježe samo dok na to pristajete. Pristanak možete povući u bilo kojem trenutku u odjeljku Postavke, Oznake lokacije. Povlačenjem se zaustavlja bilježenje i odmah brišu sve vaše zabilježene lokacije. Pristanak nema utjecaja na vaše zapise radnog vremena.",
+      "withdrawTitle": "Vaš izbor"
+    },
+    "present": "Prisutan",
+    "previous": "Prethodno",
+    "recovering": "Oporavljanje...",
+    "refresh": "Osvježi",
+    "refreshing": "Osvježavanje...",
+    "reject": "Odbij",
+    "rejecting": "Odbijanje…",
+    "remove": "Ukloni",
+    "removing": "Uklanjanje...",
+    "reset": "Poništi",
+    "retry": "Pokušaj ponovno",
+    "save": "Spremi",
+    "saveChanges": "Spremi promjene",
+    "saving": "Spremanje...",
+    "selectAll": "Odaberi sve",
+    "selected": "odabrano",
+    "select-language": "Odaberi jezik",
+    "set": "skup",
+    "sets": "skupovi",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Prikazuje bočnu traku za mobilne uređaje.",
+      "sidebar": "Bočna traka",
+      "toggleSidebar": "Prikaži/sakrij bočnu traku"
+    },
+    "skip": "Preskoči",
+    "start": "Početak",
+    "status": "Status",
+    "submitting": "Slanje…",
+    "sw": {
+      "update": {
+        "description": "Nova verzija je spremna. Ponovno učitajte za ažuriranje.",
+        "later": "Kasnije",
+        "reload": "Ponovno učitaj",
+        "title": "Dostupno je ažuriranje"
+      }
+    },
+    "timeInput": {
+      "openTimePicker": "Otvori birač vremena",
+      "switchPeriod": "Prebaci na {period}"
+    },
+    "to": "do",
+    "today": "Danas",
+    "unexpectedError": "Došlo je do neočekivane pogreške",
+    "unknown": "Nepoznato",
+    "unknownEmployee": "Nepoznati zaposlenik",
+    "unknownTeam": "Nepoznati tim",
+    "unnamed": "Neimenovano",
+    "update": "Ažuriraj",
+    "updating": "Ažuriranje...",
+    "uploading": "Učitavanje...",
+    "validate": "Provjeri valjanost",
+    "validationError": "Pogreška provjere valjanosti",
+    "weekdays": {
+      "fr": "Pe",
+      "fri": "Pet",
+      "mo": "Po",
+      "mon": "Pon",
+      "sa": "Su",
+      "sat": "Sub",
+      "su": "Ne",
+      "sun": "Ned",
+      "th": "Če",
+      "thu": "Čet",
+      "tu": "Ut",
+      "tue": "Uto",
+      "we": "Sr",
+      "wed": "Sri"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Promjene koje utječu na radnu snagu, ograničene na ovu organizaciju i razdoblje.",
+      "changeLogEmpty": "Nisu pronađene promjene za ovo razdoblje.",
+      "changeReviewLog": "Dnevnik pregleda promjena",
+      "complianceFindings": "Nalazi usklađenosti",
+      "description": "Pregled radne snage filtriran prema privatnosti za odabrano razdoblje.",
+      "disabledDescription": "Način rada radničkog vijeća nije omogućen za ovu organizaciju.",
+      "exportReviewPack": "Izvezi paket za pregled",
+      "from": "Od",
+      "identityHidden": "Identitet skriven",
+      "insufficientData": "Nedovoljno podataka",
+      "policyChanges": "Promjene pravila",
+      "positionStamps": {
+        "accessAt": "Kada",
+        "accessEmployees": "Lokacije za",
+        "accessKindDetail": "{count, plural, one {Pojedinosti o radnom razdoblju (# radno razdoblje)} few {Pojedinosti o radnom razdoblju (# radna razdoblja)} other {Pojedinosti o radnom razdoblju (# radnih razdoblja)}}",
+        "accessKindExport": "Izvoz podataka",
+        "accessLog": "Dnevnik pristupa lokacijama",
+        "accessLogDescription": "Svaki put kada je netko osim zaposlenika pregledao ili izvezao lokacije, najnovije prvo.",
+        "accessLogEmpty": "Nitko nije pregledao lokacije.",
+        "accessViewer": "Pregledao/la",
+        "consentActive": "Aktivni pristanak",
+        "consentDescription": "{count, plural, one {Od # aktivnog zaposlenika za kojeg je uključeno bilježenje. Status „Neodlučeno” uključuje zaposlenike koji su odabrali „Ne sada” ili su pristali samo na raniju verziju obavijesti.} few {Od # aktivna zaposlenika za koje je uključeno bilježenje. Status „Neodlučeno” uključuje zaposlenike koji su odabrali „Ne sada” ili su pristali samo na raniju verziju obavijesti.} other {Od # aktivnih zaposlenika za koje je uključeno bilježenje. Status „Neodlučeno” uključuje zaposlenike koji su odabrali „Ne sada” ili su pristali samo na raniju verziju obavijesti.}}",
+        "consentTitle": "Pristanak na bilježenje lokacije",
+        "consentUndecided": "Neodlučeno",
+        "consentWithdrawn": "Povučeno",
+        "currentNotice": "Trenutačna obavijest",
+        "deletedViewer": "Izbrisani korisnik",
+        "description": "Kako organizacija bilježi lokacije zaposlenika s njihovim evidencijama radnog vremena i tko ih je pregledao. Radničko vijeće nikada ne vidi pojedinačne lokacije.",
+        "employeeAssignmentCounts": "{on} uključeno, {off} isključeno pojedinačno",
+        "employeeAssignments": "Dodjele zaposlenika",
+        "employeeCount": "{count, plural, one {# zaposlenik} other {# zaposlenika} }",
+        "employeePseudonym": "Zaposlenik {ref}",
+        "enabled": "Evidentiranje",
+        "noEmployeeAssignments": "Nema dodjela zaposlenika.",
+        "noNotice": "Nijedna obavijest nije objavljena.",
+        "notAssigned": "Nije dodijeljeno",
+        "noTeamAssignments": "Nema dodjela timova.",
+        "noticeHistory": "Verzije obavijesti",
+        "noticeVersion": "{days, plural, one {Verzija {version}, objavljeno {publishedAt}, lokacije se čuvaju # dan} other {Verzija {version}, objavljeno {publishedAt}, lokacije se čuvaju # dana} }",
+        "off": "Isključeno",
+        "on": "Uključeno",
+        "organizationAssignment": "Cijela organizacija",
+        "retention": "Razdoblje čuvanja",
+        "retentionDays": "{days, plural, one {# dan} other {# dana} }",
+        "teamAssignments": "Dodjele timova",
+        "title": "Evidentiranje lokacije",
+        "viewerPseudonym": "Pregledavatelj {ref}"
+      },
+      "scheduleChanges": "Promjene rasporeda",
+      "scheduleDescription": "Unosi rasporeda filtrirani prema privatnosti za odabrano razdoblje.",
+      "scheduleEmpty": "Nisu pronađeni unosi rasporeda za ovo razdoblje.",
+      "scheduleEntry": "{identity} - {start} do {end}",
+      "scheduleReview": "Pregled rasporeda",
+      "title": "Radničko vijeće",
+      "to": "Do",
+      "unassignedTeam": "Nedodijeljeni tim",
+      "updateRange": "Ažuriraj raspon"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} zaposlenika odabrano",
+    "countWithMore": "{count} zaposlenika (još +{more})",
+    "inactive": "Neaktivno",
+    "noEmployeesFound": "Nema pronađenih zaposlenika",
+    "removeSelected": "Uklonite {name}",
+    "role": "Uloga",
+    "searchPlaceholder": "Pretražite po imenu, e-pošti ili radnom mjestu...",
+    "selected": "{count} odabrano",
+    "selectEmployee": "Odaberi zaposlenika",
+    "selectEmployees": "Odaberi zaposlenike",
+    "selectMultipleEmployees": "Odaberite jednog ili više zaposlenika s popisa",
+    "selectOneEmployee": "Odaberite zaposlenika s popisa",
+    "status": "Status",
+    "team": "Tim",
+    "totalEmployees": "{count} zaposlenika",
+    "tryDifferentSearch": "Pokušajte prilagoditi pretragu ili filtre"
+  },
+  "errors": {
+    "failedToLoad": "Učitavanje podataka nije uspjelo",
+    "noEmployee": {
+      "contactAdmin": "Obratite se administratoru",
+      "createOrg": "Stvorite organizaciju",
+      "description": "Potreban vam je profil zaposlenika kako biste {feature}. Molimo stvorite organizaciju ili se obratite svom administratoru.",
+      "emailBody": "Pozdrav,nntreba mi postavljen profil zaposlenika za pristup značajkama platforme. Možete li mi pomoći s tim?nnHvala vam!",
+      "emailSubject": "Potrebno je postaviti profil zaposlenika",
+      "helpText": "Ako ste pozvani u organizaciju, zatražite od svog administratora da postavi vaš profil zaposlenika.",
+      "title": "Potreban je profil zaposlenika"
+    },
+    "noOrganization": {
+      "createOrg": "Stvorite organizaciju",
+      "description": "Još niste dio nijedne organizacije. Stvorite je kako biste započeli ili pričekajte pozivnicu.",
+      "title": "Organizacija nije pronađena",
+      "waiting": "Čekate pozivnicu?",
+      "waitingDesc": "Vaš administrator poslat će vam pozivnicu e-poštom. Provjerite svoju pristiglu poštu i mapu neželjene pošte."
+    },
+    "notFound": {
+      "description": "Stranica je možda premještena, veza je možda zastarjela ili je adresa netočna.",
+      "title": "Stranica nije pronađena"
+    },
+    "unexpected": {
+      "description": "Trenutačno nismo mogli učitati ovu stranicu. Pokušajte ponovno ili se vratite na sigurno mjesto u aplikaciji.",
+      "digest": "Referenca: {digest}",
+      "title": "Nešto je pošlo po zlu"
+    }
+  },
+  "generic": {
+    "done": "Gotovo",
+    "submit": "Pošalji"
+  },
+  "header": {
+    "clock-in": "Prijava dolaska",
+    "clock-out": "Prijava odlaska",
+    "timezone": {
+      "current": "Trenutačna vremenska zona {timezone}, {time}, {offset}",
+      "savedTimezone": "Spremljena vremenska zona",
+      "saveTimezone": "Spremi vremensku zonu",
+      "saving": "Spremanje...",
+      "updated": "Vremenska zona uspješno je ažurirana",
+      "updateError": "Došlo je do pogreške prilikom ažuriranja vremenske zone",
+      "updateFailed": "Ažuriranje vremenske zone nije uspjelo"
+    }
+  },
+  "info": {
+    "agb": "Uvjeti i odredbe",
+    "back-to-login": "Natrag na prijavu",
+    "imprint": "Impresum",
+    "licenses": "Licence otvorenog koda",
+    "openSourceLicenses": "Licence otvorenog koda",
+    "trust-center": "Centar za povjerenje"
+  },
+  "loading": {
+    "application": "Učitavanje aplikacije",
+    "authentication": "Učitavanje provjere autentičnosti",
+    "calendar": "Učitavanje kalendara",
+    "chart": "Učitavanje grafikona",
+    "licenses": "Učitavanje licenci",
+    "platformAnalytics": "Učitavanje analitike platforme",
+    "settings": "Učitavanje postavki",
+    "setup": "Učitavanje postavljanja",
+    "teamAbsences": "Učitavanje tablice odsutnosti tima",
+    "workerQueue": "Učitavanje reda čekanja radnika"
+  },
+  "nav": {
+    "absences": "Odsutnosti",
+    "analytics": "Analitika",
+    "approvals": "Odobrenja",
+    "calendar": "Kalendar",
+    "compliance": "Usklađenost",
+    "dashboard": "Nadzorna ploča",
+    "feedback": "Povratne informacije",
+    "finance": "Financije",
+    "financeAwaiting": "{count, plural, one {# trošak čeka povrat} few {# troška čekaju povrat} other {# troškova čeka povrat}}",
+    "get-help": "Pomoć",
+    "my-documents": "Moji dokumenti",
+    "my-requests": "Moji zahtjevi",
+    "my-schedule": "Moj raspored",
+    "org-explorer": "Preglednik organizacije",
+    "payroll": "Obračun plaća",
+    "personnel-files": "Dosjei zaposlenika",
+    "platform-admin": "Administrator platforme",
+    "reports": "Izvještaji",
+    "scheduling": "Raspored",
+    "settings": "Postavke",
+    "team": "Tim",
+    "teamAbsences": "Odsutnosti tima",
+    "team-label": "Tim",
+    "teamPeriodSubmissions": "Slanja razdoblja",
+    "teamPresence": "Tko je prisutan",
+    "time-tracking": "Evidencija radnog vremena",
+    "today": "Danas",
+    "travel-expenses": "Putni troškovi",
+    "worksCouncil": "Radničko vijeće"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Izbriši sve",
+      "markAllRead": "Označi sve pročitanim",
+      "markAsRead": "Označi kao pročitano",
+      "markRead": "Označi pročitanim",
+      "settings": "Postavke obavijesti",
+      "viewAll": "Prikaži sve obavijesti"
+    },
+    "content": {
+      "absenceDeputyAssigned": {
+        "message": "Mijenjate korisnika {name} ({dateRange}).",
+        "title": "Vi ste zamjenik za odsutnost"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Vaša zamjena za korisnika {name} sada traje {dateRange}.",
+        "title": "Datumi zamjene za odsutnost su promijenjeni"
+      },
+      "absenceDeputyReminder": {
+        "message": "Od sutra mijenjate korisnika {name} do {untilDate}.",
+        "title": "Zamjena za odsutnost počinje sutra"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Više ne mijenjate korisnika {name} ({dateRange}).",
+        "title": "Više niste zamjenik za odsutnost"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} više nije dostupan/na kao zamjenik za odsutnost korisnika {employeeName} od {startDate} do {endDate}.",
+        "message": "{deputyName} više nije dostupan/na kao zamjenik za vašu odsutnost od {startDate} do {endDate}.",
+        "title": "Zamjenik više nije dostupan"
+      },
+      "absenceRecorded": {
+        "message": "{managerName} je evidentirao/la {absenceType} za {dateRange} u vaše ime.",
+        "title": "Odsutnost evidentirana"
+      },
+      "absenceRequestRejected": {
+        "title": "Zahtjev za odsutnost odbijen"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Vaš zahtjev za {categoryName} za razdoblje {dateRange} je podnesen i čeka odobrenje.",
+        "title": "Zahtjev za odsutnost podnesen"
+      },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Dok ste bili odsutni, {name} je donio odluku o # odobrenju.} other {Dok ste bili odsutni, {name} je donio odluku o # odobrenja.} }",
+        "title": "Odlučeno dok ste bili odsutni"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Mijenjate {name} u odobravanju: nema zahtjeva na čekanju.} one {Mijenjate {name} u odobravanju: # zahtjev na čekanju.} other {Mijenjate {name} u odobravanju: # zahtjeva na čekanju.} }",
+        "title": "Mijenjate u odobravanju"
+      },
+      "automaticClockOut": {
+        "breakMessage": "Automatski ste odjavljeni na početku stanke u {cutoff} ({timezone}) jer stanka nije završena unutar vremenskog ograničenja vaše organizacije od {duration} minuta.",
+        "message": "Automatski ste odjavljeni nakon {duration} minuta neprekidnog rada u {cutoff} ({timezone}) jer je dosegnuto vremensko ograničenje vaše organizacije.",
+        "title": "Automatski odjavljeno"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Početni saldo od {amount} za razdoblje {dateRange} je poništen. Razlog: {reason}",
+          "title": "Početni saldo poništen"
+        },
+        "openingBalanceRecorded": {
+          "message": "Početni saldo od {amount} za razdoblje {dateRange} evidentiran je na vašem saldu radnih sati.",
+          "title": "Početni saldo evidentiran"
+        },
+        "payoutCancelled": {
+          "message": "Isplata prekovremenih sati od {amount} za razdoblje {dateRange} je poništena. Razlog: {reason}",
+          "title": "Isplata prekovremenih sati poništena"
+        },
+        "payoutRecorded": {
+          "message": "Isplata prekovremenih sati od {amount} za razdoblje {dateRange} evidentirana je na vašem saldu radnih sati.",
+          "title": "Isplata prekovremenih sati evidentirana"
+        }
+      },
+      "breakDueReminder": {
+        "message": "Vrijeme je za vašu pauzu u {breakTime} ({timezone}). Uzmite pauzu do tada kako biste se pridržavali pravila o pauzama.",
+        "title": "Uskoro je vrijeme za pauzu"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "{employeeName}: Za dužnosti odobravanja potrebna je zamjena (odlazak stupa na snagu {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Potreban pregled: odjava pri odlasku (odlazak stupa na snagu {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Potreban je popravak mjerača vremena (odlazak stupa na snagu {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Potrebno je pregledati buduće uvjete zaposlenja (odlazak stupa na snagu {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Potrebno je pregledati budući rad (odlazak stupa na snagu {cutoff}, {timezone}).",
+        "title": "Odlazak zaposlenika zahtijeva pregled"
+      },
+      "forgottenClockOutReminder": {
+        "message": "Vaša smjena završila je u {endTime} ({timezone}). Odjavite se ako ste završili s radom.",
+        "title": "Još uvijek ste prijavljeni"
+      },
+      "missedClockInReminder": {
+        "message": "Vaša smjena započela je u {startTime} ({timezone}). Prijavite se ako radite.",
+        "title": "Još se niste prijavili"
+      },
+      "monthCloseBlocked": {
+        "message": "{month} nije automatski zatvoren. Neriješeni zahtjevi za odsutnost: {absenceRequests}. Neriješeni zahtjevi za radno vrijeme: {timeRequests}. Rad još uvijek u tijeku: {liveWork}. Mjesec još nije završio: {notEnded}. Zaposlenici: {employees}. Pokušat će se ponovno sutra.",
+        "title": "Mjesec se nije mogao zatvoriti"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, other {{month} je automatski zatvoren za # zaposlenika. Njegov rad i odsutnosti više se ne mogu mijenjati osim ako se ponovno ne otvori.} }",
+        "title": "Mjesec zatvoren"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} je ponovno otvoren za jednog od vaših zaposlenika: {reason}} few {{month} je ponovno otvoren za # od vaših zaposlenika: {reason}} other {{month} je ponovno otvoren za # vaših zaposlenika: {reason}}}",
+        "title": "Mjesec ponovno otvoren"
+      },
+      "newAbsenceRequest": {
+        "title": "Novi zahtjev za odsustvo"
+      },
+      "passwordChanged": {
+        "message": "Vaša lozinka uspješno je promijenjena. Ako niste zatražili ovu promjenu, odmah se obratite podršci.",
+        "title": "Lozinka promijenjena"
+      },
+      "periodSubmissionApproved": {
+        "message": "Vaše radno vrijeme za {startDate} – {endDate} je odobreno.",
+        "title": "Vaše radno vrijeme je odobreno"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Vaše radno vrijeme za {startDate} – {endDate} promijenjeno je nakon što je odobreno. Pregledajte svoje radno vrijeme i pošaljite ga ponovno.",
+        "title": "Vaše odobreno radno vrijeme je zastarjelo"
+      },
+      "periodSubmissionRejected": {
+        "message": "Vaše radno vrijeme za {startDate} – {endDate} je odbijeno: {reason}. Pregledajte svoje radno vrijeme i pošaljite ga ponovno.",
+        "title": "Vaše radno vrijeme je odbijeno"
+      },
+      "periodSubmissionReminder": {
+        "message": "Vaše razdoblje {startDate} – {endDate} je završilo. Pregledajte svoje radno vrijeme i pošaljite ga na odobrenje.",
+        "title": "Pošaljite svoje radno vrijeme na odobrenje"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Vaše razdoblje {startDate} – {endDate} još uvijek nije poslano. Pregledajte svoje radno vrijeme i pošaljite ga na odobrenje.",
+        "title": "Vaše radno vrijeme još uvijek nije poslano"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Vaše radno vrijeme za {startDate} – {endDate} promijenilo se nakon što ste ga poslali, pa je slanje povučeno. Pregledajte svoje radno vrijeme i pošaljite ga ponovno.",
+        "title": "Ponovno pošaljite svoje radno vrijeme"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Dokument „{title}” podijeljen je s vama.",
+        "title": "Novi dokument u vašem dosjeu"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# dokument zaposlenika sada je spreman za brisanje. Pregledajte i potvrdite trajno brisanje.} few {# dokumenta zaposlenika sada su spremna za brisanje. Pregledajte i potvrdite trajno brisanje.} other {# dokumenata zaposlenika sada je spremno za brisanje. Pregledajte i potvrdite trajno brisanje.}}",
+        "title": "Dokumenti spremni za brisanje"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} je prenio/la potvrdu",
+        "other": "{name} je prenio/la dokument",
+        "sickNote": "{name} je učitao/la doznaku o bolovanju za {dateRange}",
+        "sickNoteOnBehalf": "Korisnik {uploader} prenio je potvrdu o bolovanju za: {name}, {dateRange}",
+        "title": "Novi dokument u dosjeu zaposlenika"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Vaš dokument „{title}” istječe danas.",
+        "message": "Dokument „{title}” zaposlenika {employee} istječe danas.",
+        "title": "Dokument istječe danas"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Vaš dokument „{title}” istječe {expiryDate}.",
+        "message": "Dokument „{title}” zaposlenika {employee} istječe {expiryDate}.",
+        "title": "Dokument uskoro istječe"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Vaš platni listić za razdoblje {payPeriod} podijeljen je s vama.",
+        "title": "Novi platni listić u vašem dosjeu"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Dosegnuli ste potrebne radne sate za dan {day} u {endTime} ({timezone}). Odjavite se ako ste završili s radom."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Vaša posljednja prijava danas bila je u {startTime} ({timezone}). Prijavite se ako radite."
+      },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" je pauziran jer njegov vlasnik, {ownerName}, više nije administrator organizacije. Postavite sebe ili drugog administratora organizacije kao vlasnika kako biste ga nastavili.",
+        "title": "Zakazani izvoz je pauziran"
+      },
+      "shiftAssigned": {
+        "message": "Dodijeljena vam je smjena dana {shiftDate} od {startTime} do {endTime}. Dodijelio: {assignedByName}.",
+        "title": "Smjena dodijeljena"
+      },
+      "teamMemberAdded": {
+        "message": "Korisnik {performedByName} dodao vas je u tim {teamName}.",
+        "title": "Dodani u tim"
+      },
+      "teamMemberRemoved": {
+        "message": "{performedByName} vas je uklonio/la iz tima {teamName}.",
+        "title": "Uklonjeni iz tima"
+      },
+      "timeOffInLieuAvailable": {
+        "message": "Zaposlenici sada mogu uzimati slobodne sate na temelju svog salda radnih sati. Nova kategorija odsutnosti ostaje neaktivna dok je ne uključite u postavkama odsutnosti.",
+        "title": "Dostupni su zamjenski slobodni sati"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Odobreno usklađenje povećalo je iznos duga na izvještaju o troškovima {report} zaposlenika {employee}. Čeka povrat: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "Izvješće o troškovima zaposlenika {employee} ({report}) ne nadoknađuje se putem obračuna plaće. Čeka na nadoknadu: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "Vraćen je iznos od {amount} {currency} za vaš putni trošak (referenca plaćanja {reference}). Još {remaining} {remainingCurrency} čeka povrat.",
+        "title": "Trošak djelomično refundiran"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} vaših putnih troškova nadoknađeno je s obračunom plaće za {period}. {remaining} {remainingCurrency} još čeka na nadoknadu."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Obračun plaće {period} ({format}) čeka vašu potvrdu. Izvješća u vašem djelokrugu: {count}.",
+        "title": "Obračun plaće čeka potvrdu"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "Izvještaj o troškovima {report} zaposlenika {employee} je odobren. Čeka povrat: {amounts}.",
+        "title": "Spremno za povrat"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Evidentiran je povrat od {amount} {currency} za vaš putni trošak (referenca plaćanja {reference}).",
+        "title": "Evidentiran povrat troška"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Vaš putni trošak u potpunosti je refundiran: {amount} {currency}, referenca plaćanja {reference}.",
+        "title": "Trošak refundiran"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Vaši putni troškovi u potpunosti su nadoknađeni s obračunom plaće za {period}: {amount} {currency}."
+      }
+    },
+    "description": "Pregledajte ažuriranja, odobrenja i upozorenja sustava na jednoj vremenskoj traci.",
+    "empty": {
+      "description": "Sve ste pregledali! Nove obavijesti pojavit će se ovdje.",
+      "inboxDescription": "Sve ste pregledali. Nova ažuriranja pojavit će se ovdje.",
+      "noMatchesDescription": "Prilagodite pretraživanje ili filtar pročitanih stavki da biste proširili ovaj prikaz ulazne pošte.",
+      "noMatchesTitle": "Nema podudarnih obavijesti",
+      "title": "Nema obavijesti",
+      "unreadDescription": "Sve ste pregledali. Nova nepročitana ažuriranja pojavit će se ovdje.",
+      "unreadTitle": "Nema nepročitanih obavijesti"
+    },
+    "error": {
+      "title": "Učitavanje obavijesti nije uspjelo"
+    },
+    "filters": {
+      "all": "Sve",
+      "ariaLabel": "Filtriraj obavijesti prema statusu pročitanosti",
+      "read": "Pročitano",
+      "unread": "Nepročitano"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Nešto zahtijeva vašu pažnju"
+      },
+      "body": "Otvorite Z8 da biste vidjeli pojedinosti.",
+      "document": {
+        "title": "Novosti o vašim dokumentima"
+      },
+      "project": {
+        "title": "Novosti o projektu"
+      },
+      "reminder": {
+        "title": "Podsjetnik iz Z8"
+      },
+      "requestUpdate": {
+        "title": "Vaš je zahtjev ažuriran"
+      },
+      "review": {
+        "title": "Imate zahtjev za pregled"
+      },
+      "schedule": {
+        "title": "Vaš raspored se promijenio"
+      },
+      "security": {
+        "title": "Sigurnosna obavijest za vaš račun"
+      },
+      "team": {
+        "title": "Vaši timovi su se promijenili"
+      },
+      "travelExpense": {
+        "title": "Novosti o vašim putnim troškovima"
+      },
+      "workingTime": {
+        "title": "Novosti o vašem radnom vremenu"
+      }
+    },
+    "preferences": {
+      "categories": {
+        "personnelFile": {
+          "description": "Obavijesti o dokumentima podijeljenima s vama u vašem dosjeu",
+          "title": "Dosje zaposlenika"
+        },
+        "travelExpenses": {
+          "description": "Obavijesti o isplatama i povratima vaših putnih troškova",
+          "title": "Putni troškovi"
+        }
+      },
+      "disabled": "Obavijest je onemogućena",
+      "enabled": "Obavijest je omogućena",
+      "mandatoryInbox": "Uvijek se isporučuje u vašu pristiglu poštu",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Primajte upozorenja za zahtjeve koji čekaju odobrenje",
+          "requestUpdates": "Primajte obavijesti kada vaši zahtjevi budu odobreni ili odbijeni",
+          "teamSecurity": "Budite informirani o novostima u timu i sigurnosnim ažuriranjima"
+        },
+        "description": "Omogućite push obavijesti za primanje trenutnih ažuriranja o odobrenjima, ispravcima radnog vremena i važnim promjenama u timu – čak i kada ne upotrebljavate aplikaciju.",
+        "enable": "Omogući obavijesti",
+        "notNow": "Ne sada",
+        "title": "Ostanite u tijeku"
+      },
+      "push": {
+        "blockedDescription": "Vaš preglednik blokira push obavijesti. Da biste ih omogućili, morate ažurirati postavke preglednika.",
+        "blockedHelp": "Kliknite ikonu lokota u adresnoj traci preglednika i dopustite obavijesti za ovu stranicu, a zatim osvježite stranicu.",
+        "blockedTitle": "Push obavijesti su blokirane",
+        "enableButton": "Omogući push obavijesti",
+        "enableDescription": "Primajte obavijesti odmah, čak i kada ne upotrebljavate aplikaciju",
+        "enabledIndicator": "Push obavijesti su omogućene",
+        "enabledToast": "Push obavijesti omogućene",
+        "enabledToastDescription": "Sada ćete primati push obavijesti u pregledniku",
+        "enableFailedToast": "Nije bilo moguće omogućiti push obavijesti",
+        "enableTitle": "Omogući push obavijesti",
+        "errorToast": "Pogreška push obavijesti"
+      },
+      "toggleAria": "{channel} obavijesti za {type}",
+      "types": {
+        "absence_deputy_assigned": "Imenovani ste zamjenikom za odsutnost",
+        "absence_deputy_dates_changed": "Datumi zamjene za odsutnost su promijenjeni",
+        "absence_deputy_reminder": "Zamjena za odsutnost počinje sutra",
+        "absence_deputy_removed": "Više niste zamjenik za odsutnost",
+        "absence_deputy_unavailable": "Zamjenik više nije dostupan",
+        "approval_cover_return_summary": "Odluku donio vaš zamjenik",
+        "approval_cover_started": "Zamjena za odsutnost je započela",
+        "break_due_reminder": "Vrijeme je za pauzu",
+        "forgotten_clock_out_reminder": "Zaboravljena odjava",
+        "missed_clock_in_reminder": "Propuštena prijava",
+        "period_submission_decided": "Poslano radno vrijeme je odobreno ili odbijeno",
+        "period_submission_reminder": "Pošaljite svoje radno vrijeme",
+        "period_submission_sent_back": "Radno vrijeme vraćeno nakon promjene",
+        "work_balance_adjustment_cancelled": "Prilagodba salda poništena",
+        "work_balance_adjustment_recorded": "Prilagodba salda evidentirana"
+      },
+      "updateFailed": "Ažuriranje postavke nije uspjelo"
+    },
+    "search": {
+      "ariaLabel": "Pretraži obavijesti",
+      "placeholder": "Pretraži obavijesti..."
+    },
+    "selection": {
+      "selectAll": "Odaberi sve vidljivo",
+      "selectAllAria": "Odaberi sve vidljive obavijesti",
+      "selectNamedAria": "Odaberi {title}",
+      "visibleSelected": "{count} vidljivih odabrano"
+    },
+    "time": {
+      "justNow": "upravo sada"
+    },
+    "timeline": {
+      "earlier": "Ranije",
+      "today": "Danas",
+      "yesterday": "Jučer"
+    },
+    "title": "Obavijesti",
+    "toasts": {
+      "deleted": "Izbrisano {count} obavijesti",
+      "deleteFailed": "Brisanje obavijesti nije uspjelo",
+      "markedRead": "Označeno {count} obavijesti kao pročitano",
+      "markReadFailed": "Označavanje obavijesti pročitanima nije uspjelo"
+    },
+    "unreadBadge": "{count} nepročitanih",
+    "unreadCountOverflow": "99+"
+  },
+  "offline": {
+    "banner": {
+      "archived": "Arhivirani dokazi evidencije radnog vremena zadržani su na ovom uređaju",
+      "offline": "Izvan mreže ste",
+      "offlineSaved": "Izvan mreže — {count} zapis(a) spremljeno lokalno za pregled",
+      "offlineWaiting": "Izvan mreže — {count} radnja(e) evidencije radnog vremena poslat će se kad ponovno budete na mreži",
+      "refresh": "Osvježi status",
+      "refreshing": "Provjera {count} spremljenih zapisa…",
+      "reviewRequired": "{count} zapis(a) spremljeno lokalno — potreban pregled",
+      "unverified": "Dokazi evidencije radnog vremena spremljeni su na ovom uređaju. Povežite se za pregled svih spremljenih zapisa.",
+      "waiting": "{count} radnja(e) evidencije radnog vremena spremljeno na ovom uređaju, još nije poslano"
+    },
+    "capture": {
+      "description": "Spremite događaj na ovaj uređaj za pregled. Status evidencije radnog vremena na poslužitelju neće se promijeniti.",
+      "end": "Spremi prijavu odlaska za pregled",
+      "queueDescription": "Niste na mreži. Radnje evidencije radnog vremena spremaju se na ovaj uređaj i automatski šalju kad ponovno budete na mreži.",
+      "queueEnd": "Spremi odjavu",
+      "queueStart": "Spremi prijavu",
+      "start": "Spremi prijavu dolaska za pregled"
+    },
+    "recovery": {
+      "archive": "Arhiviraj i zadrži dokaze",
+      "archived": "Arhivirano — dokazi zadržani",
+      "command": {
+        "blockedPredecessor": "Pauzirano — prethodna radnja prijave/odjave na ovom uređaju zahtijeva pregled",
+        "committed": "Spremljeno na poslužitelju",
+        "exhausted": "Slanje je zaustavljeno nakon uzastopnih neuspjeha — nije potvrđeno na poslužitelju",
+        "pausedAccess": "Pauzirano — prijavite se ponovno s pristupom za evidenciju radnog vremena u ovoj organizaciji",
+        "pausedContext": "Pauzirano — prijavite se na račun i organizaciju za koje je spremljeno",
+        "pausedServer": "Pauzirano — poslužitelj još ne prihvaća ovu radnju prijave/odjave",
+        "pending": "Čeka na slanje — nije potvrđeno na poslužitelju",
+        "rejected": "Nije spremljeno — poslužitelj je odbio zahtjev ({code})",
+        "review": "Zahtijeva pregled — poslužitelj nije prihvatio zahtjev ({code})",
+        "waitingPredecessor": "Čeka se prethodna radnja prijave/odjave na ovom uređaju"
+      },
+      "descriptionOutcomes": "Ovi su zapisi spremljeni na ovom uređaju. Osim ako za zapis nije navedeno da je spremljen na poslužitelju, njegov ishod na poslužitelju nije potvrđen. Provjerite postojeće unose radnog vremena sa svojim voditeljem prije slanja zamjenskog rada. Arhiviranjem se čuvaju dokazi i ne poništava se rad na poslužitelju.",
+      "empty": "Nema dostupnih zapisa. Za starije zapise bez dokaza o računu potreban je pregled na razini organizacije; zapisi bez dokaza o organizaciji zahtijevaju zasebno autorizirani oporavak.",
+      "evidence": "Izvorni dokazi i status oporavka",
+      "export": "Izvezi dostupne dokaze",
+      "exportError": "Izvoz spremljenih zapisa nije uspio",
+      "held": "Potreban pregled — nije potvrđeno na poslužitelju",
+      "loadError": "Čitanje spremljenih zapisa nije uspjelo",
+      "loading": "Čitanje spremljenih zapisa…",
+      "review": "Pregledaj spremljene zapise",
+      "title": "Spremljeni zapisi evidencije radnog vremena"
+    }
+  },
+  "presence": {
+    "activity": {
+      "lastActivity": "posljednja aktivnost {date}",
+      "relativeHours": "od prije {hours}h",
+      "relativeHoursMinutes": "od prije {hours}h {minutes}min",
+      "relativeMinutes": "od prije {minutes}min"
+    },
+    "clockedIn": "Prijavljen",
+    "clockedOut": "Odjavljen",
+    "onBreak": "Na pauzi"
+  },
+  "rateLimit": {
+    "countdownLabel": "sekundi do ponovnog pokušaja",
+    "jsonMessage": "Prekoračeno je ograničenje učestalosti. Pokušajte ponovno kasnije.",
+    "message": "Poslali ste previše zahtjeva. Pričekajte prije ponovnog pokušaja.",
+    "retryButton": "Pokušajte ponovno",
+    "retryingButton": "Ponovni pokušaj...",
+    "title": "Previše zahtjeva",
+    "waitingButton": "Pričekajte..."
+  },
+  "roles": {
+    "admin": "Administrator",
+    "employee": "Zaposlenik",
+    "manager": "Voditelj"
+  },
+  "status": {
+    "active": "Aktivan",
+    "inactive": "Neaktivan"
+  },
+  "storeAppBanner": {
+    "description": "Primajte podsjetnike i obavijesti o odobrenjima u aplikaciji.",
+    "dismiss": "Odbaci prijedlog aplikacije",
+    "getApp": "Preuzmite aplikaciju",
+    "title": "Z8 za vaš telefon"
+  },
+  "table": {
+    "clearFilters": "Očisti filtre",
+    "clearSort": "Poništi sortiranje",
+    "description": "Prikaz ukupnog broja posjetitelja u posljednjih 6 mjeseci. Ovo je samo nasumični tekst za testiranje izgleda. Proteže se u više redaka i trebao bi se prelamati.",
+    "goToFirstPage": "Idi na prvu stranicu",
+    "goToLastPage": "Idi na posljednju stranicu",
+    "goToNextPage": "Idi na sljedeću stranicu",
+    "goToPreviousPage": "Idi na prethodnu stranicu",
+    "header": "Zaglavlje",
+    "limit": "Ograničenje",
+    "noResults": "Nema rezultata.",
+    "pageOfPages": "Stranica {current} od {total}",
+    "reviewer": "Recenzent",
+    "rowsPerPage": "Redaka po stranici",
+    "searchPlaceholder": "Pretraži...",
+    "selectedOfTotal": "Odabrano: {selected} od {total} redaka",
+    "select-reviewer": "Odaberite recenzenta",
+    "select-status": "Odaberite status",
+    "select-type": "Odaberite vrstu",
+    "showing-visitors": "Prikaz ukupnog broja posjetitelja za posljednjih 6 mjeseci",
+    "sortAscending": "Uzlazno",
+    "sortDescending": "Silazno",
+    "status": "Status",
+    "status-options": {
+      "done": "Dovršeno",
+      "in-progress": "U tijeku",
+      "not-started": "Nije započeto"
+    },
+    "target": "Cilj",
+    "totalRows": "{total} redaka",
+    "trending-up": "Trend porasta od 5,2 % ovog mjeseca",
+    "type": "Vrsta",
+    "type-options": {
+      "capabilities": "Mogućnosti",
+      "cover-page": "Naslovna stranica",
+      "design": "Dizajn",
+      "executive-summary": "Izvršni sažetak",
+      "focus-documents": "Fokusni dokumenti",
+      "narrative": "Narativ",
+      "table-of-contents": "Sadržaj",
+      "technical-approach": "Tehnički pristup"
+    }
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours} h {minutes} m",
+    "hoursOnly": "{hours} h",
+    "pm": "PM"
+  },
+  "userAvatar": {
+    "alt": "Korisnički avatar"
+  },
+  "user": {
+    "font-size": "Veličina fonta",
+    "language": "Jezik",
+    "logging-out": "Odjava...",
+    "log-out": "Odjava",
+    "log-out-failed": "Odjava nije uspjela. Pokušajte ponovno.",
+    "profile": "Profil",
+    "security": "Sigurnost",
+    "theme": "Tema",
+    "theme-dark": "Tamna",
+    "theme-light": "Svijetla",
+    "theme-location-required": "Za temu temeljenu na vremenu potrebno je dopuštenje za lokaciju.",
+    "theme-system": "Sustav",
+    "theme-time": "Temeljeno na vremenu",
+    "theme-time-info": "Način rada prema vremenu koristi način {currentMode}. Prebacuje se na {nextMode} u {time}.",
+    "theme-toggle": "Promijeni temu"
+  },
+  "validation": {
+    "first-name-required": "Ime je obavezno",
+    "invalid-email": "Nevažeća adresa e-pošte",
+    "last-name-required": "Prezime je obavezno",
+    "password-required": "Lozinka je obavezna",
+    "pronounsMaxLength": "Zamjenice moraju sadržavati najviše 50 znakova"
+  },
+  "workBalance": {
+    "adjustments": {
+      "cancel": "Odustani",
+      "cancelled": "Poništeno",
+      "cancelledBy": "Poništio/la {name} dana {date}: {reason}",
+      "description": "Isplate prekovremenih sati i početna stanja na ovom saldu radnih sati. Pogrešni unosi se poništavaju, nikada se ne brišu, stoga poništeni ostaju prikazani na popisu.",
+      "empty": "Još nema prilagodbi salda.",
+      "kind": {
+        "openingBalance": "Početni saldo",
+        "overtimePayout": "Isplata prekovremenih sati"
+      },
+      "loadFailed": "Nije bilo moguće učitati prilagodbe salda.",
+      "loading": "Učitavanje prilagodbi salda",
+      "notPermitted": "Možete vidjeti vlastite prilagodbe salda i prilagodbe zaposlenika kojima upravljate.",
+      "open": "Prilagodbe salda",
+      "recordedBy": "Evidentirao/la {name} dana {date}",
+      "title": "Prilagodbe salda",
+      "unknownUser": "izbrisani korisnik"
+    },
+    "label": "Ukupno stanje",
+    "notCalculated": "Još nije izračunato",
+    "pendingDescription": "Pozadinski proces uskoro će izračunati ovo stanje.",
+    "updatedEveryThreeHours": "Ažurira se svaka 3 sata"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Učitavanje radničkog vijeća"
+  }
+}

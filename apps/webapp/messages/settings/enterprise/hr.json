@@ -1,0 +1,676 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Aktivan",
+      "copyKey": "Kopiraj API ključ",
+      "copyPrefix": "Kopiraj prefiks",
+      "create": "Stvori ključ",
+      "created": "API ključ je uspješno stvoren",
+      "createdBy": "od {name}",
+      "createDescription": "Stvorite novi API ključ za programski pristup. Ključ će biti prikazan samo jednom.",
+      "createdOn": "Stvoreno {date}",
+      "createTitle": "Stvori API ključ",
+      "creatorDeparted": "Bivši zaposlenik",
+      "deleted": "API ključ je izbrisan",
+      "deleteDescription": "Jeste li sigurni da želite izbrisati API ključ \"{name}\"? Sve aplikacije koje koriste ovaj ključ odmah će izgubiti pristup. Ova se radnja ne može poništiti.",
+      "deleteTitle": "Izbriši API ključ",
+      "description": "Upravljajte API ključevima za programski pristup podacima vaše organizacije",
+      "detail": {
+        "back": "Svi API ključevi",
+        "channel": "Kanal",
+        "channelApi": "API",
+        "channelMcp": "MCP",
+        "createdAt": "Stvoreno",
+        "creator": "Izradio/la",
+        "creatorDeparted": "{name} (bivši zaposlenik)",
+        "ip": "IP adresa",
+        "noRateLimit": "Isključeno",
+        "noRequests": "Nema zahtjeva u posljednjih 90 dana.",
+        "rateLimit": "Ograničenje broja zahtjeva",
+        "rateLimitMilliseconds": "{max} po {window} ms",
+        "rateLimitValue": "{max} {window}",
+        "request": "Zahtjev",
+        "requests": "Nedavni zahtjevi",
+        "requestsDescription": "Svaki zahtjev upućen ovim ključem, najnoviji na početku. Zahtjevi se čuvaju 90 dana.",
+        "rows": "Redovi",
+        "status": "Status",
+        "time": "Vrijeme"
+      },
+      "disabled": "Onemogućen",
+      "editCreated": "Stvoreno {date}",
+      "editDescription": "Ažurirajte postavke za ovaj API ključ. Napomena: Ne možete pregledati niti promijeniti sam ključ.",
+      "editTitle": "Uredi API ključ",
+      "empty": {
+        "description": "Stvorite svoj prvi API ključ kako biste omogućili programski pristup svojoj organizaciji.",
+        "title": "Nema API ključeva"
+      },
+      "expired": "Isteklo",
+      "expires": "Istječe",
+      "expiresInDays": "Istječe za {days} d.",
+      "form": {
+        "create": "Stvori ključ",
+        "enabled": "Ključ je omogućen",
+        "enabledHelp": "Onemogućeni ključevi odbit će sve API zahtjeve",
+        "expiration": "Istek",
+        "invalid": "Pregledajte neispravna polja obrasca",
+        "name": "Naziv",
+        "nameHelp": "Opisni naziv za prepoznavanje ovog ključa",
+        "nameMax": "Naziv može imati najviše 100 znakova",
+        "nameMin": "Naziv mora imati najmanje 3 znaka",
+        "nameMinLength": "Naziv mora imati najmanje 3 znaka",
+        "namePlaceholder": "npr. Produkcijski API",
+        "rateLimit": "Omogući ograničavanje brzine zahtjeva",
+        "rateLimitMaxExceeded": "Ograničenje broja zahtjeva može biti najviše 10.000 zahtjeva",
+        "rateLimitMaxInvalid": "Unesite cijeli broj od 10 do 10.000",
+        "rateLimitMaxRequests": "Maks. broj zahtjeva",
+        "rateLimitMin": "Ograničenje broja zahtjeva mora biti najmanje 10 zahtjeva",
+        "rateLimitRequired": "Ograničenje broja zahtjeva je obavezno",
+        "rateLimitWholeNumber": "Ograničenje broja zahtjeva mora biti cijeli broj",
+        "rateLimitWindowHour": "po satu",
+        "rateLimitWindowLabel": "Vremenski prozor",
+        "rateLimitWindowMinute": "po minuti",
+        "rateLimitWindowSecond": "po sekundi",
+        "scopes": "Dozvole",
+        "scopesRequired": "Odaberite barem jednu dozvolu"
+      },
+      "keyCopied": "API ključ kopiran je u međuspremnik",
+      "lastUsed": "Zadnje korišteno",
+      "name": "Naziv",
+      "neverExpires": "Nikada ne istječe",
+      "noPermissions": "Nema dopuštenja",
+      "prefix": "Prefiks ključa",
+      "prefixCopied": "Prefiks ključa kopiran",
+      "scopeLabel": {
+        "absencesRead": "Čitanje odsutnosti",
+        "absencesReadHealth": "Čitanje zdravstvenih pojedinosti odsutnosti",
+        "customersRead": "Čitanje klijenata",
+        "employeesRead": "Čitanje zaposlenika",
+        "projectsRead": "Čitanje projekata",
+        "timeEntriesRead": "Čitanje unosa radnog vremena"
+      },
+      "scopes": "Dozvole",
+      "security": {
+        "description": "API ključevi pružaju potpuni pristup podacima vaše organizacije unutar opsega njihovih dozvola. Čuvajte ih na sigurnom i nikada ih nemojte dijeliti u javnim repozitorijima ili kodu na strani klijenta.",
+        "title": "Sigurnosna obavijest"
+      },
+      "showClose": "Zatvori",
+      "showCloseAnyway": "Ipak zatvori",
+      "showConfirmWarning": "Jeste li sigurni? Još niste kopirali ključ.",
+      "showCopied": "Ključ je kopiran u međuspremnik",
+      "showDescription": "Vaš novi API ključ \"{name}\" je stvoren. Kopirajte ga sada – više ga nećete moći vidjeti!",
+      "showDone": "Gotovo",
+      "showExpires": "Istječe:",
+      "showLabel": "Vaš API ključ",
+      "showName": "Naziv:",
+      "showNever": "Nikada",
+      "showTitle": "API ključ je stvoren",
+      "showWarning": "Ovo je jedini put da ćete vidjeti ovaj ključ. Obavezno ga kopirajte i sigurno pohranite.",
+      "showWarningTitle": "Važno:",
+      "status": "Status",
+      "title": "API ključevi",
+      "unknownCreator": "bivši administrator",
+      "updated": "API ključ je ažuriran",
+      "usage": "Iskorišteno {count} od {max} ključeva"
+    },
+    "branding": {
+      "appName": {
+        "description": "Zamijenite zadani naziv aplikacije prikazan na stranici za prijavu.",
+        "title": "Naziv aplikacije"
+      },
+      "background": {
+        "description": "Učitajte prilagođenu pozadinsku sliku za stranicu za prijavu.",
+        "hint": "Preporučeno: 1920x1080px ili veće, JPEG ili PNG visoke kvalitete",
+        "preview": "Pretpregled pozadine",
+        "remove": "Ukloni pozadinu",
+        "title": "Pozadinska slika",
+        "upload": "Učitaj pozadinsku sliku"
+      },
+      "backgroundUploadFailed": "Učitavanje pozadinske slike nije uspjelo",
+      "backgroundUploadSuccess": "Pozadinska slika uspješno je učitana",
+      "colors": {
+        "accent": "Boja naglaska (neobavezno)",
+        "accentHex": "Heksadecimalna vrijednost naglašene boje",
+        "accentHint": "Sekundarna boja za isticanje",
+        "description": "Prilagodite primarnu i naglašenu boju za svoju stranicu za prijavu.",
+        "primary": "Primarna boja",
+        "primaryHex": "Heksadecimalna vrijednost primarne boje",
+        "primaryHint": "Upotrebljava se za gumbe, poveznice i stanja fokusa",
+        "title": "Boje teme"
+      },
+      "logo": {
+        "description": "Učitajte logotip svoje organizacije za prikaz na stranici za prijavu.",
+        "hint": "Preporučeno: 200x200px, PNG ili SVG s prozirnom pozadinom",
+        "preview": "Pretpregled logotipa",
+        "remove": "Ukloni logotip",
+        "title": "Logotip",
+        "upload": "Učitaj sliku logotipa"
+      },
+      "logoUploadFailed": "Učitavanje logotipa nije uspjelo",
+      "logoUploadSuccess": "Logotip je uspješno učitan",
+      "save": "Spremi postavke brendiranja",
+      "saveFailed": "Spremanje postavki brendiranja nije uspjelo",
+      "saveSuccess": "Postavke brendiranja su spremljene"
+    },
+    "enterprise": {
+      "addProvider": "Dodaj pružatelja usluge",
+      "clientId": "ID klijenta",
+      "clientIdRequired": "ID klijenta je obavezan",
+      "clientSecret": "Tajna klijenta",
+      "clientSecretRequired": "Tajna klijenta je obavezna",
+      "configureCallbackUrl": "Konfigurirajte URL za povratni poziv:",
+      "domain": "Domena",
+      "domains": {
+        "add": "Dodaj prilagođenu domenu",
+        "addDescription": "Dodajte prilagođenu domenu kako biste omogućili stranice za prijavu specifične za organizaciju. Morat ćete potvrditi vlasništvo putem DNS zapisa.",
+        "addDomain": "Dodaj domenu",
+        "added": "Domena je uspješno dodana",
+        "addFailed": "Dodavanje domene nije uspjelo",
+        "adding": "Dodavanje…",
+        "authConfigDescription": "Konfigurirajte koji su načini provjere autentičnosti dostupni korisnicima koji se prijavljuju putem domene {domain}",
+        "authConfigTitle": "Konfiguracija provjere autentičnosti",
+        "authConfigUpdated": "Konfiguracija provjere autentičnosti je ažurirana",
+        "authConfigUpdateFailed": "Ažuriranje konfiguracije provjere autentičnosti nije uspjelo",
+        "authMethod": {
+          "emailPassword": "E-pošta / Lozinka",
+          "passkey": "Passkey",
+          "social": "Društvene mreže ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "konfigurirano",
+        "cookieConsentScript": "Skripta za privolu za kolačiće",
+        "cookieConsentScriptHelp": "Umeće se samo na stranicama za provjeru autentičnosti za ovu prilagođenu domenu. Ostavite prazno da biste onemogućili.",
+        "cookieConsentStatus": "Privola za kolačiće {status}",
+        "copiedToClipboard": "Kopirano u međuspremnik",
+        "customDomain": "Prilagođena domena",
+        "customDomainDescription": "Konfigurirajte prilagođenu domenu kako biste omogućili stranicu za prijavu specifičnu za organizaciju s vašim brendiranjem.",
+        "defaultUrl": {
+          "canonical": "Kanonski"
+        },
+        "defaultUrls": "Zadani URL-ovi",
+        "defaultUrlsDescription": "Ovi URL-ovi kojima upravlja platforma rade automatski bez prilagođenog postavljanja DNS-a.",
+        "deleteAria": "Izbriši prilagođenu domenu {domain}",
+        "deleted": "Domena je izbrisana",
+        "deleteDescription": "Jeste li sigurni da želite izbrisati „{domain}”? Ova se radnja ne može poništiti. Korisnici se više neće moći prijaviti putem ove prilagođene domene.",
+        "deleteFailed": "Brisanje domene nije uspjelo",
+        "deleteTitle": "Izbriši domenu",
+        "description": "Konfigurirajte prilagođenu domenu za prijavu, vizualni identitet i pružatelje SSO usluga za svoju organizaciju.",
+        "dnsPropagation": "Propagacija DNS-a",
+        "dnsPropagationDescription": "Za propagaciju DNS promjena može biti potrebno do 48 sati, iako često završi u roku od nekoliko minuta. Možete kliknuti \"Verificiraj\" nakon što dodate TXT zapis.",
+        "domain": "Domena",
+        "domainHelp": "Unesite domenu putem koje će korisnici pristupati stranici za prijavu.",
+        "domainInvalid": "Unesite valjanu domenu (npr. login.example.com)",
+        "domainPageSettings": "Postavke stranice domene",
+        "domainRequired": "Domena je obavezna",
+        "editAuthSettingsAria": "Uredite postavke provjere autentičnosti za domenu {domain}",
+        "emailPassword": "E-pošta i lozinka",
+        "emailPasswordHelp": "Omogućite korisnicima prijavu putem e-pošte i lozinke",
+        "empty": "Prilagođena domena još nije konfigurirana.",
+        "enabledAuthMethods": "Omogućeni načini provjere autentičnosti",
+        "guidedSetup": {
+          "action": "Vođeno postavljanje",
+          "description": "Konfigurirajte SSO, SCIM, pravila pristupa i provjere aktivacije u jednom zaštićenom tijeku.",
+          "title": "Vođeno postavljanje"
+        },
+        "keepExistingSecretKey": "Ostavite prazno kako biste zadržali postojeći tajni ključ",
+        "nameHost": "Naziv / Host",
+        "notConfigured": "nije konfigurirano",
+        "passkey": "Pristupni ključ",
+        "passkeyHelp": "Omogućite prijavu bez lozinke pomoću pristupnih ključeva",
+        "regenerateToken": "Ponovno generiraj token",
+        "regenerateTokenFailed": "Ponovno generiranje tokena nije uspjelo",
+        "regenerateTokenSuccess": "Generiran je novi verifikacijski token",
+        "regenerating": "Ponovno generiranje…",
+        "saveConfiguration": "Spremi konfiguraciju",
+        "secretKey": "Tajni ključ",
+        "secretKeyPlaceholder": "Unesite tajni ključ",
+        "secretKeyRequired": "Obavezno prilikom postavljanja ključa web-mjesta",
+        "siteKey": "Ključ web-mjesta",
+        "socialProviders": "Društveni pružatelji",
+        "socialProvidersHelp": "Omogućite mogućnosti prijave putem društvenih mreža za ovu domenu",
+        "sso": "Jedinstvena prijava (SSO)",
+        "ssoHelp": "Omogućite poslovnu prijavu temeljenu na OIDC-u",
+        "status": {
+          "pending": "Čeka verifikaciju",
+          "verified": "Verificirano"
+        },
+        "title": "Prilagođena domena i vizualni identitet",
+        "tokenExpired": "Token je istekao",
+        "tokenExpiredDescription": "Verifikacijski token je istekao. Ponovno generirajte novi token.",
+        "tokenExpires": "Token istječe: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Zaštita od botova za obrasce za provjeru autentičnosti. Obavezno za poslovne domene.",
+        "turnstileSiteKeyStatus": "Turnstile ključ web-mjesta: {status}",
+        "txtRecordInstruction": "Dodajte sljedeći TXT zapis u svoj DNS:",
+        "value": "Vrijednost",
+        "verifiedSuccess": "Domena je uspješno verificirana",
+        "verify": "Verificiraj",
+        "verifyDomain": "Verificiraj domenu",
+        "verifyFailed": "Verifikacija domene nije uspjela",
+        "verifying": "Provjera…",
+        "verifyOwnership": "Potvrdite vlasništvo nad domenom",
+        "verifyOwnershipDescription": "Dodajte DNS TXT zapis za potvrdu vlasništva nad domenom {domain}"
+      },
+      "email": {
+        "apiKey": "API ključ",
+        "apiKeyHint": "Ostavite prazno kako biste zadržali postojeći ključ. Preuzmite svoj API ključ s resend.com",
+        "create": "Izradi konfiguraciju",
+        "delete": "Izbriši konfiguraciju",
+        "deleteConfirm": "Jeste li sigurni da želite izbrisati ovu konfiguraciju e-pošte?",
+        "deleted": "Konfiguracija e-pošte je izbrisana",
+        "deleteFailed": "Brisanje nije uspjelo",
+        "description": "Konfigurirajte prilagođenog pružatelja usluga e-pošte za svoju organizaciju. Sve poruke e-pošte organizacije koristit će ovu konfiguraciju umjesto zadane postavke sustava.",
+        "fromEmail": "E-pošta pošiljatelja",
+        "fromName": "Ime pošiljatelja",
+        "isActive": "Omogući ovu konfiguraciju e-pošte",
+        "lastTest": "Zadnje testiranje",
+        "passwordHint": "Ostavite prazno kako biste zadržali postojeću lozinku",
+        "recommended": "Preporučeno",
+        "resendConfig": "Resend konfiguracija",
+        "save": "Spremi promjene",
+        "saved": "Konfiguracija e-pošte je spremljena",
+        "saveFailed": "Spremanje nije uspjelo",
+        "scalewayConnected": "Scaleway spremište tajni je spremno",
+        "scalewayConnectedDesc": "Ova organizacija ima verificirani ključ Scaleway Key Managera za šifriranu pohranu tajni.",
+        "scalewayKeyPending": "Scaleway ključ još nije generiran",
+        "scalewayKeyPendingDesc": "Ključ organizacije za Scaleway bit će generiran kada spremite tajnu poput Resend API ključa ili SMTP lozinke.",
+        "scalewayUnavailable": "Scaleway spremište tajni nije dostupno",
+        "scalewayUnavailableDesc": "Konfigurirani Scaleway ključ organizacije nije se mogao verificirati. Tajne se ne mogu sigurno pohranjivati dok se ovo ne riješi.",
+        "secretSet": "Postavljeno",
+        "sendTest": "Pošalji test",
+        "smtpConfig": "SMTP konfiguracija",
+        "smtpHost": "SMTP host",
+        "smtpIpMode": "IP način rada",
+        "smtpIpMode.auto": "Automatski",
+        "smtpIpModeHint": "Upotrijebite „Automatski” osim ako vaš pružatelj SMTP usluge ne zahtijeva određenu IP obitelj.",
+        "smtpIpMode.ipv4": "Samo IPv4",
+        "smtpIpMode.ipv6": "Samo IPv6",
+        "smtpPassword": "Lozinka",
+        "smtpPort": "Port",
+        "smtpRequireTls": "Zahtijevaj nadogradnju na STARTTLS",
+        "smtpSecure": "Koristi TLS (port 465)",
+        "smtpServer": "SMTP poslužitelj",
+        "smtpUsername": "Korisničko ime",
+        "testEmailRequired": "Unesite testnu adresu e-pošte",
+        "testFailed": "Slanje testne e-pošte nije uspjelo",
+        "testFailure": "Neuspješno",
+        "testSection": "Pošalji testnu e-poštu",
+        "testSent": "Testna e-pošta uspješno je poslana",
+        "testSuccess": "Uspješno",
+        "title": "Konfiguracija e-pošte",
+        "transportType": "Pružatelj usluga e-pošte",
+        "vaultConnected": "Vault je povezan",
+        "vaultConnectedDesc": "Tajne se sigurno pohranjuju u HashiCorp Vaultu.",
+        "vaultSealed": "Vault je zapečaćen",
+        "vaultSealedDesc": "HashiCorp Vault je zapečaćen. Otpečatite ga kako biste pohranili tajne.",
+        "vaultUnavailable": "Vault nije dostupan",
+        "vaultUnavailableDesc": "HashiCorp Vault nije dostupan. Tajne se ne mogu sigurno pohraniti."
+      },
+      "emailConfig": {
+        "yourCompanyName": "Naziv vaše tvrtke"
+      },
+      "enableProviderHelp": "Omogućite ili onemogućite ovog pružatelja usluga",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Spremi pravila pristupa"
+          },
+          "defaultRoleTemplate": "Zadani predložak uloge",
+          "description": "Postavite primjenu domene, pozivnica i SSO-a nakon što pilot test prođe.",
+          "noDefaultTemplate": "Nema zadanog predloška",
+          "placeholder": {
+            "roleTemplate": "Odaberite predložak uloge"
+          },
+          "requireSso": "Zahtijevaj SSO",
+          "requireSsoHelp": "Zaposlenici moraju koristiti poslovni IdP.",
+          "restrictDomain": "Ograniči na verificiranu domenu",
+          "restrictDomainHelp": "Blokiraj račune izvan odabrane domene.",
+          "restrictInvites": "Ograniči pozivnice",
+          "restrictInvitesHelp": "Dozvoli samo pozivnice usklađene s pravilima pristupa.",
+          "title": "Pravila pristupa"
+        },
+        "badge": {
+          "now": "Sada",
+          "queued": "U redu čekanja",
+          "ready": "Spremno"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Provjeri status domene"
+          },
+          "description": "Provjerite granicu zakupca prije nametanja SSO-a za zaposlenike.",
+          "help": "DNS verifikacija koristi postojeće radnje verifikacije SSO domene. Dovršite tu verifikaciju prije aktiviranja obavezne primjene.",
+          "notSelected": "Nije odabrano",
+          "selected": "Odabrana domena",
+          "status": {
+            "pending": "Na čekanju",
+            "verified": "Verificirano"
+          },
+          "title": "Domena"
+        },
+        "hero": {
+          "description": "Konfigurirajte SSO, SCIM i obaveznu primjenu za organizaciju {organizationId} uz zaštićenu aktivaciju.",
+          "eyebrow": "Poslovni identitet",
+          "title": "Kontrolni popis operativnih naredbi"
+        },
+        "provider": {
+          "action": {
+            "save": "Spremi davatelja"
+          },
+          "description": "Odaberite predložak davatelja identiteta, protokol, ID davatelja i domenu e-pošte.",
+          "error": {
+            "domainRequired": "Domena je obavezna",
+            "providerIdRequired": "ID davatelja je obavezan"
+          },
+          "label": {
+            "domain": "Domena e-pošte",
+            "preset": "Predložak davatelja",
+            "protocol": "Protokol",
+            "providerId": "ID davatelja"
+          },
+          "placeholder": {
+            "domain": "npr. example.com…",
+            "protocol": "Odaberite protokol",
+            "provider": "Odaberite davatelja",
+            "providerId": "npr. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Upotrijebite bilo kojeg davatelja identiteta usklađenog sa standardima OIDC ili SAML 2.0."
+            },
+            "googleWorkspace": {
+              "description": "Upotrijebite Google Workspace OIDC za SSO i opcionalnu sinkronizaciju imenika."
+            },
+            "microsoftEntra": {
+              "description": "Upotrijebite Microsoft Entra ID za poslovni SSO i opcionalno dodjeljivanje resursa."
+            },
+            "okta": {
+              "description": "Upotrijebite Okta Workforce Identity za SAML ili OIDC jednostruku prijavu."
+            }
+          },
+          "title": "Davatelj"
+        },
+        "rail": {
+          "title": "Traka spremnosti"
+        },
+        "review": {
+          "action": {
+            "activate": "Aktiviraj poslovni identitet"
+          },
+          "activationSummary": "Sažetak aktivacije",
+          "description": "Pregledajte provjere zaštićene aktivacije prije omogućavanja kontrola poslovnog identiteta.",
+          "lockoutWarning": "Upozorenje o zaključavanju trenutnog administratora",
+          "lockoutWarningHelp": "Prije aktivacije potvrdite da se vaš trenutni administratorski račun može prijaviti putem konfiguriranog davatelja. Obavezna primjena može blokirati zamjensku prijavu lozinkom za odabranu domenu.",
+          "missingRequirement": "{item} je obavezno prije aktivacije",
+          "prerequisitesComplete": "Preduvjeti za davatelja, verificiranu domenu i testiranje SSO-a su dovršeni.",
+          "requirement": {
+            "domain": "Verificirana domena",
+            "provider": "Davatelj",
+            "ssoTest": "SSO test"
+          },
+          "title": "Pregled i aktivacija"
+        },
+        "scim": {
+          "action": {
+            "create": "Stvori SCIM vezu",
+            "creating": "Stvaranje SCIM veze",
+            "decommission": "Stavi izvan pogona",
+            "reconcile": "Osvježi status stvaranja",
+            "refresh": "Osvježi status",
+            "rotate": "Rotiraj vjerodajnicu",
+            "selectRole": "Prvo odaberite zadani predložak uloge"
+          },
+          "credential": {
+            "close": "Zatvori",
+            "confirmClose": "Prije zatvaranja potvrdite da je vjerodajnica spremljena.",
+            "copied": "Vjerodajnica je kopirana u međuspremnik.",
+            "copy": "Kopiraj vjerodajnicu",
+            "description": "Kopirajte i pohranite ovu vjerodajnicu sada. Više se ne može prikazati.",
+            "label": "Vjerodajnica",
+            "saved": "Spremio/la sam ovu vjerodajnicu",
+            "title": "SCIM vjerodajnica",
+            "warning": "Ova se vjerodajnica prikazuje samo jednom. Pohranite je na siguran način kod svog pružatelja identiteta."
+          },
+          "credentials": {
+            "credential": "Vjerodajnica",
+            "empty": "Nije izdana nijedna vjerodajnica.",
+            "expires": "Istječe",
+            "lastUsedAria": "Zadnje korišteno: {value} UTC",
+            "revoke": "Opozovi",
+            "status": {
+              "active": "aktivno",
+              "revoked": "opozvano"
+            },
+            "title": "Vjerodajnice",
+            "unused": "Još nije korišteno"
+          },
+          "description": "SCIM provjera ažurira se nakon što vaš davatelj identiteta pošalje testnog korisnika ili promjenu grupe.",
+          "dialog": {
+            "cancel": "Odustani",
+            "decommission": {
+              "description": "Ovo trajno stavlja izvan pogona SCIM dodjelu resursa i ne može se poništiti.",
+              "title": "Stavi SCIM izvan pogona"
+            },
+            "revoke": {
+              "description": "Ovo odmah sprječava vjerodajnicu u dodjeljivanju korisnika.",
+              "title": "Opozovi vjerodajnicu"
+            }
+          },
+          "endpoint": "Krajnja točka",
+          "events": {
+            "empty": "Nije zabilježen nijedan događaj dodjele.",
+            "error": "Nije moguće učitati događaje. Osvježite status i pokušajte ponovno.",
+            "title": "Nedavni događaji"
+          },
+          "expiry": "Istek vjerodajnice",
+          "expiry.value": "1 godina",
+          "refreshHelp": "Osvježite status kako biste učitali sigurne metapodatke o vezi.",
+          "status": {
+            "active-unverified": "aktivno nepotvrđeno",
+            "creating": "stvaranje",
+            "creation_failed": "stvaranje nije uspjelo",
+            "decommissioned": "stavljeno izvan pogona",
+            "decommissioning": "stavljanje izvan pogona",
+            "disconnected": "odspojeno",
+            "refreshing": "osvježavanje",
+            "revoking": "opozivanje",
+            "rotating": "rotiranje",
+            "verified": "potvrđeno"
+          },
+          "title": "SCIM dodjela resursa",
+          "toast": {
+            "createError": "Nije moguće stvoriti SCIM vezu.",
+            "reconcileError": "Nije moguće uskladiti stvaranje SCIM-a.",
+            "refreshError": "Nije moguće osvježiti SCIM status.",
+            "rotateError": "Nije moguće rotirati SCIM vjerodajnicu.",
+            "updateError": "Nije moguće ažurirati SCIM vezu."
+          },
+          "verification": "Potvrda",
+          "verification.awaiting": "Čeka se upotreba od strane pružatelja",
+          "verification.observed": "Uočeno",
+          "wizardDescription": "Konfigurirajte upravljanu dodjelu korisnika bez promjene aktivacije tvrtke."
+        },
+        "sso": {
+          "action": {
+            "register": "Registrirajte SSO davatelja"
+          },
+          "description": "Registrirajte vanjski IdP pomoću OIDC vjerodajnica klijenta ili SAML metapodataka.",
+          "error": {
+            "saveProviderFirst": "Spremite davatelja i domenu prije registracije SSO-a"
+          },
+          "label": {
+            "clientId": "ID klijenta",
+            "clientSecret": "Tajna klijenta",
+            "issuer": "Izdavatelj",
+            "metadata": "SAML metapodaci"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Zalijepite XML metapodataka IdP-a…"
+          },
+          "saml": {
+            "acsPath": "ACS putanja relativna u odnosu na preglednik: {path}",
+            "acsUrl": "Konfigurirajte svoj IdP s ovim URL-om usluge obrade tvrdnji (ACS): {path}"
+          },
+          "title": "SSO konfiguracija"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Zabilježi neuspjeh",
+            "recordPass": "Zabilježi uspjeh"
+          },
+          "defaultFailure": "Testiranje SSO-a uživo nije uspjelo",
+          "description": "Zabilježite rezultat testiranja vanjskog SSO-a uživo prije primjene.",
+          "error": {
+            "saveProviderFirst": "Spremite davatelja prije bilježenja testa"
+          },
+          "help": "Ovo bilježi rezultat testiranja vanjskog SSO-a uživo. Prvo pokrenite prijavu u IdP-u, a zatim ovdje zabilježite uspjeh ili neuspjeh radi zaštite aktivacije.",
+          "label": {
+            "email": "E-pošta testnog korisnika",
+            "failureNote": "Napomena o neuspjehu"
+          },
+          "status": {
+            "failed": "Nije uspjelo",
+            "notRun": "Nije pokrenuto",
+            "passed": "Uspjelo"
+          },
+          "title": "Testni korisnik"
+        },
+        "status": {
+          "activated": "Aktivirano",
+          "draft": "Skica"
+        },
+        "step": {
+          "accessPolicy": "Pravila pristupa",
+          "accessPolicy.description": "Postavite pravila primjene",
+          "domain": "Domena",
+          "domain.description": "Potvrdite granice zakupca",
+          "provider": "Davatelj",
+          "provider.description": "Odaberite izvor identiteta",
+          "review": "Pregled i aktivacija",
+          "review.description": "Zaštita aktivacije",
+          "scim": "SCIM dodjela resursa",
+          "scim.description": "Povežite i upravljajte svojom vezom za SCIM dodjelu resursa",
+          "sso": "SSO konfiguracija",
+          "sso.description": "Registrirajte OIDC ili SAML",
+          "ssoTest": "Testni korisnik",
+          "ssoTest.description": "Zabilježite rezultat prijave uživo"
+        },
+        "toast": {
+          "accessPolicyFailed": "Spremanje pravila pristupa nije uspjelo",
+          "accessPolicySaved": "Pravila pristupa su spremljena",
+          "activated": "Postavljanje poslovnog identiteta je aktivirano",
+          "activateFailed": "Aktivacija postavljanja nije uspjela",
+          "domainStatusFailed": "Osvježavanje statusa domene nije uspjelo",
+          "domainStatusRefreshed": "Status domene je osvježen",
+          "providerSaved": "Pružatelj identiteta je spremljen",
+          "providerSaveFailed": "Spremanje pružatelja usluge nije uspjelo",
+          "ssoRegistered": "SSO pružatelj je registriran",
+          "ssoRegisterFailed": "Registracija SSO pružatelja nije uspjela",
+          "ssoTestFailed": "SSO test označen kao neuspješan",
+          "ssoTestPassed": "SSO test označen kao uspješan",
+          "ssoTestRecordFailed": "Zapisivanje SSO testa nije uspjelo"
+        }
+      },
+      "keepExistingSecretHelp": "Ostavite prazno kako biste zadržali postojeću tajnu",
+      "leaveBlankKeepExisting": "Ostavite prazno kako biste zadržali postojeće",
+      "provider": "Pružatelj",
+      "socialOAuth": {
+        "addDescription": "Konfigurirajte vlastitu OAuth aplikaciju za prijavu putem društvenih mreža.",
+        "addProviderError": "Dodavanje pružatelja nije uspjelo",
+        "addTitle": "Dodaj pružatelja OAuth-a za društvene mreže",
+        "appleKeyIdHelp": "ID ključa povezan s vašim privatnim ključem",
+        "appleKeyIdRequired": "ID ključa je obavezan za Apple",
+        "appleTeamIdHelp": "Može se pronaći na vašem Apple Developer računu",
+        "appleTeamIdRequired": "ID tima je obavezan za Apple",
+        "authentication": "Autentifikacija",
+        "clientIdPlaceholder": "Vaš OAuth ID klijenta",
+        "clientSecretPlaceholder": "Vaša OAuth tajna klijenta",
+        "configured": "{provider} OAuth je uspješno konfiguriran",
+        "createAppAt": "Izradite OAuth aplikaciju na",
+        "deleteError": "Brisanje OAuth konfiguracije nije uspjelo",
+        "description": "Konfigurirajte vlastite OAuth vjerodajnice za prijavu putem društvenih mreža. To omogućuje vašim korisnicima prijavu putem OAuth aplikacija vaše organizacije umjesto dijeljenih vjerodajnica.",
+        "developerConsole": "{provider} razvojna konzola",
+        "editDescription": "Ažurirajte svoje OAuth vjerodajnice.",
+        "editTitle": "Uredi {provider} OAuth",
+        "empty": "Nema konfiguriranih prilagođenih društvenih OAuth pružatelja.",
+        "emptyDescription": "Dodajte vlastite OAuth vjerodajnice kako biste zamijenili dijeljene vjerodajnice.",
+        "howItWorks": "Kako to funkcionira",
+        "instructions": {
+          "addProvider": "Ovdje dodajte pružatelja sa svojim vjerodajnicama",
+          "copyCredentials": "Kopirajte ID klijenta i tajnu klijenta",
+          "createApp": "Izradite OAuth aplikaciju u konzoli za razvojne programere pružatelja",
+          "customDomain": "Korisnici koji se prijavljuju putem vaše prilagođene domene koristit će vašu OAuth aplikaciju"
+        },
+        "keyId": "ID ključa",
+        "pasteYourP8PrivateKeyContents": "Zalijepite sadržaj svog privatnog .p8 ključa",
+        "privateKey": "Privatni ključ (.p8)",
+        "removed": "{provider} OAuth je uklonjen",
+        "removeDialogDescription": "Jeste li sigurni da želite ukloniti ovu OAuth konfiguraciju? Korisnici će se vratiti na dijeljene OAuth vjerodajnice (ako su dostupne).",
+        "removeDialogTitle": "Ukloni društvenog OAuth pružatelja",
+        "teamId": "ID tima",
+        "title": "Pružatelji prijave putem društvenih mreža",
+        "unverified": "Nepotvrđeno",
+        "updateConfigError": "Ažuriranje konfiguracije nije uspjelo",
+        "updated": "{provider} OAuth je uspješno ažuriran"
+      },
+      "sso": {
+        "addDescription": "Konfigurirajte OIDC pružatelja identiteta za poslovnu jedinstvenu prijavu (SSO).",
+        "addError": "Dodavanje SSO pružatelja nije uspjelo",
+        "addSuccess": "SSO pružatelj je uspješno dodan",
+        "addTitle": "Dodaj SSO pružatelja",
+        "clientIdPlaceholder": "Vaš OIDC ID klijenta",
+        "clientSecretPlaceholder": "Vaša OIDC tajna klijenta",
+        "deleteDialogDescription": "Jeste li sigurni da želite izbrisati ovog SSO pružatelja? Korisnici se više neće moći prijaviti putem ovog pružatelja identiteta.",
+        "deleteDialogTitle": "Izbriši SSO pružatelja",
+        "deleteError": "Brisanje SSO pružatelja nije uspjelo",
+        "deleteProviderAria": "Izbriši SSO pružatelja {provider}",
+        "deleteSuccess": "SSO pružatelj je izbrisan",
+        "description": "Dodajte OIDC pružatelje identiteta kako biste omogućili SSO za svoju organizaciju.",
+        "domainInvalid": "Unesite valjanu domenu (npr. example.com)",
+        "domainRequired": "Domena je obavezna",
+        "domainVerified": "Domena je verificirana",
+        "emailDomain": "Domena e-pošte",
+        "emailDomainHelp": "Korisnici s ovom domenom e-pošte moći će koristiti SSO",
+        "empty": "Još nema konfiguriranih SSO pružatelja.",
+        "emptyDescription": "Dodajte OIDC pružatelja kako biste omogućili poslovnu jednokratnu prijavu (SSO).",
+        "instructions": {
+          "copyCredentials": "Kopirajte URL izdavača, Client ID i Client Secret iz svog IdP-a",
+          "createApp": "Izradite OIDC aplikaciju kod svog pružatelja identiteta (Okta, Azure AD itd.)",
+          "verifyDomain": "Ovdje dodajte pružatelja i verificirajte domenu e-pošte putem DNS TXT zapisa"
+        },
+        "issuerUrl": "URL izdavača",
+        "issuerUrlHelp": "OIDC URL izdavača vašeg pružatelja identiteta",
+        "issuerUrlRequired": "URL izdavača je obavezan",
+        "providerId": "ID pružatelja",
+        "providerIdHelp": "Jedinstveni identifikator za ovog pružatelja (mala slova, bez razmaka)",
+        "providerIdInvalid": "ID pružatelja smije sadržavati samo mala slova, brojeve i spojnice",
+        "providerIdRequired": "ID pružatelja je obavezan",
+        "setupInstructions": "Upute za postavljanje",
+        "title": "Pružatelji identiteta",
+        "token": "Token",
+        "tokenError": "Generiranje tokena za verifikaciju domene nije uspjelo",
+        "tokenGenerated": "Verifikacijski token je generiran",
+        "txtToken": "TXT token:",
+        "validUrlRequired": "Unesite valjani URL",
+        "verified": "Verificirano",
+        "verify": "Verificiraj",
+        "verifyError": "Verifikacija domene nije uspjela. Provjerite svoj DNS TXT zapis i pokušajte ponovno."
+      },
+      "tab": {
+        "branding": "Brendiranje",
+        "domains": "Prilagođena domena",
+        "social-oauth": "Prijava putem društvenih mreža",
+        "sso": "SSO pružatelji"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Upravljajte SSO-om, SCIM dodjelom, ograničenjima domene, pravilima pozivanja i zadanim ulogama za ovu organizaciju.",
+      "title": "Postavljanje poslovnog identiteta"
+    }
+  }
+}

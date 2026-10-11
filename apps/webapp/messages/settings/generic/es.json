@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} tiene el mismo nombre y ya está vinculado a otro contacto",
           "noMatch": "Sin coincidencias",
           "paging": {
-            "label": "Páginas de contactos",
-            "next": "Página siguiente",
-            "position": "Página {page} de {pageCount}",
-            "previous": "Página anterior"
+            "label": "Páginas de contactos"
           },
           "suggestion": {
             "customerNumber": "{name} tiene un enlace de contacto con el mismo número de cliente",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "El proveedor reporta descansos sin sus horarios, por lo que se desconoce el intervalo trabajado."
         },
         "issueGroups": {
-          "currentMarkers": "Las filas actuales incluyen {blockingRows} marcadores de problemas de bloqueo y {warningRows} de advertencia.",
           "description": "Las áreas de revisión agrupadas ayudan a mantener visibles los controles de calidad antes de confirmar las filas aceptadas.",
+          "importMarkers": "Las filas de la importación incluyen {blockingRows} marcadores de problemas bloqueantes y {warningRows} de advertencia.",
           "title": "Grupos de problemas"
+        },
+        "paging": {
+          "next": "Página siguiente",
+          "position": "Página {page} de {pageCount}",
+          "previous": "Página anterior"
         },
         "rows": {
           "billable": "Facturable",
           "empty": "No hay filas almacenadas disponibles para este lote de importación.",
           "entity": "Entidad",
+          "paging": {
+            "label": "Páginas de filas"
+          },
           "rowId": "ID de fila",
           "sourceId": "ID de origen",
           "status": "Estado",
@@ -1783,6 +1788,7 @@
       "create": "Crear proyecto",
       "created": "Proyecto creado",
       "createFailed": "Error al crear el proyecto",
+      "customerDeleted": "{name} (eliminado)",
       "description": "Gestiona proyectos, presupuestos, fechas límite y asignaciones de tiempo",
       "dialog": {
         "create": "Crear proyecto",
@@ -1807,6 +1813,7 @@
         "color": "Color",
         "colorOption": "Seleccionar color {color}",
         "customer": "Cliente",
+        "customerDeleted": "Se eliminó a {name}. Elige otro cliente o mantén el proyecto sin ninguno.",
         "customerPlaceholder": "Seleccionar un cliente",
         "deadline": "Fecha límite",
         "description": "Descripción",
@@ -2031,6 +2038,11 @@
       "title": "Proyectos",
       "updated": "Proyecto actualizado",
       "updateFailed": "Error al actualizar el proyecto"
+    },
+    "reportShareLinks": {
+      "description": "Consulta y revoca todos los enlaces que comparten un informe de proyecto o de cliente",
+      "pageDescription": "Enlaces que muestran una instantánea fija de un informe de proyecto o de cliente a personas externas a Z8. Al revocar un enlace, deja de funcionar de inmediato y se elimina su instantánea.",
+      "title": "Enlaces para compartir informes"
     },
     "security": {
       "description": "Gestiona tu contraseña, autenticación de dos factores, claves de acceso y sesiones activas",

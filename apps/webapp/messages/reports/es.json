@@ -79,7 +79,6 @@
         "description": "Solo trabajo completado. Los ingresos utilizan las tarifas vigentes el {date}.",
         "employee": "Empleado",
         "hasUnpriced": "Tiene trabajo sin valorar",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Horas facturadas",
         "invoicedRevenue": "Ingresos facturados",
         "invoicedRevenueHint": "A las tarifas de sus borradores de factura",
@@ -203,6 +202,7 @@
         "ratesResolvedAt": "Tarifas a fecha de",
         "revenue": "Ingresos",
         "roundingNote": "Los importes se suman con exactitud y se redondean al alza al centavo una vez por fila; los totales suman las filas.",
+        "snapshotRatesNote": "Los ingresos utilizan las tarifas vigentes cuando se tomó esta instantánea.",
         "summaryTable": "Resumen",
         "total": "Total",
         "uninvoicedHours": "Horas no facturadas",
@@ -258,6 +258,7 @@
         "overBudget": "Por encima del presupuesto",
         "overBudgetDescription": "Presupuesto excedido"
       },
+      "hoursValue": "{hours} h",
       "page": {
         "accessDenied": "Acceso denegado",
         "description": "Analice horas del proyecto, uso del presupuesto y contribuciones del equipo",
@@ -325,6 +326,89 @@
         "portfolioGenerated": "Informe de portafolio generado",
         "projectGenerated": "Informe generado para {name}",
         "unexpectedError": "Ocurrió un error inesperado"
+      }
+    },
+    "share": {
+      "action": "Compartir",
+      "created": {
+        "another": "Crear otro enlace",
+        "copied": "Copiado",
+        "copy": "Copiar",
+        "copyFailed": "Copia el enlace seleccionándolo",
+        "description": "Cópialo ahora: solo se muestra una vez. Para volver a compartirlo más tarde, crea un nuevo enlace.",
+        "title": "Tu enlace para compartir",
+        "urlLabel": "Enlace para compartir"
+      },
+      "create": {
+        "failed": "No se pudo crear el enlace para compartir"
+      },
+      "dialog": {
+        "description": "Cualquier persona con el enlace puede ver una instantánea de solo lectura de este informe para {period}, tal como está ahora, hasta que el enlace caduque. El costo y el margen nunca se comparten.",
+        "title": "Compartir {name}"
+      },
+      "figures": {
+        "hours": "Solo horas",
+        "revenue": "Horas + ingresos"
+      },
+      "form": {
+        "create": "Crear enlace",
+        "employees": "Desglose por empleado",
+        "employeesDescription": "Muestra las horas de cada empleado con su nombre real.",
+        "expiry": "Caduca después de",
+        "expiryDays": "{days, plural, one {# día} other {# días}}",
+        "figures": "Cifras",
+        "revenueUnavailable": "No ves los ingresos en este informe, por lo que no puedes compartirlo."
+      },
+      "kind": {
+        "customer": "Informe de cliente",
+        "project": "Informe de proyecto"
+      },
+      "list": {
+        "createdBy": "Creado por {name} el {date}",
+        "deletedReport": "Eliminado",
+        "empty": "Aún no hay enlaces compartidos.",
+        "expired": "Caducó el {date}",
+        "expires": "Caduca el {date}",
+        "failed": "No se pudieron cargar los enlaces para compartir.",
+        "lastViewed": "el pasado {date}",
+        "loading": "Cargando enlaces para compartir…",
+        "revokedAutomatically": "Revocado automáticamente el {date}: el creador ya no ve todos los proyectos incluidos",
+        "revokedBy": "Revocado por {name} el {date}",
+        "someone": "alguien",
+        "title": "Enlaces a este informe",
+        "views": "{count, plural, one {# visualización} other {# visualizaciones}}",
+        "withEmployees": "Con desglose por empleado",
+        "withoutEmployees": "Sin desglose por empleado"
+      },
+      "page": {
+        "expiresAt": "El enlace caduca el {date}",
+        "footer": "Una instantánea de solo lectura compartida desde Z8. Los cambios posteriores en el trabajo subyacente no se muestran.",
+        "loading": "Cargando informe compartido",
+        "sharedBy": "Compartido por {name}",
+        "takenAt": "Instantánea tomada el {date}",
+        "unavailableDescription": "Es posible que el enlace haya caducado, haya sido revocado o esté incompleto. Pídele un nuevo enlace a la persona que lo compartió contigo.",
+        "unavailableTitle": "Este enlace no está disponible"
+      },
+      "revoke": {
+        "action": "Revocar",
+        "cancel": "Cancelar",
+        "confirm": "Revocar enlace",
+        "description": "El enlace dejará de funcionar de inmediato y su instantánea se eliminará. Se conservarán su registro y el historial de visualizaciones.",
+        "done": "Enlace revocado",
+        "failed": "No se pudo revocar el enlace",
+        "title": "¿Revocar este enlace?"
+      },
+      "status": {
+        "active": "Activo",
+        "expired": "Caducado",
+        "revoked": "Revocado"
+      },
+      "views": {
+        "empty": "Nadie ha abierto este enlace todavía.",
+        "failed": "No se pudieron cargar las visualizaciones.",
+        "loading": "Cargando visualizaciones…",
+        "unknownAgent": "Navegador desconocido",
+        "unknownIp": "Dirección IP desconocida"
       }
     },
     "summary": {

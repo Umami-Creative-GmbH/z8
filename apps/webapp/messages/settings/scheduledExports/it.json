@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Cambia proprietario",
         "delete": "Elimina",
         "edit": "Modifica",
         "runNow": "Esegui ora",
@@ -123,6 +124,8 @@
         "dateRangesDesc": "Calcolati automaticamente in base alla frequenza della pianificazione (ad es. mese precedente per le esportazioni mensili).",
         "delivery": "Consegna:",
         "deliveryDesc": "Le esportazioni vengono caricate su S3 e le notifiche email con i link per il download vengono inviate ai destinatari configurati.",
+        "owner": "Proprietario:",
+        "ownerDesc": "Ogni pianificazione viene eseguita per conto di un amministratore dell'organizzazione. Se il proprietario cessa di essere un amministratore dell'organizzazione o la abbandona, la pianificazione viene messa in pausa e tutti gli amministratori dell'organizzazione ricevono una notifica affinché uno di loro possa subentrare.",
         "scheduleTypes": "Tipi di pianificazione:",
         "scheduleTypesDesc": "Giornaliera, settimanale (lunedì), mensile (1°), trimestrale (1° di gen/apr/lug/ott) o espressioni cron personalizzate."
       },
@@ -149,6 +152,18 @@
         "viewError": "Visualizza dettagli errore"
       },
       "newSchedule": "Nuova pianificazione",
+      "owner": {
+        "changed": "Proprietario modificato",
+        "changeFailed": "Impossibile cambiare il proprietario",
+        "description": "\"{name}\" viene eseguita per conto del suo proprietario, che deve essere un amministratore dell'organizzazione. Le esecuzioni automatiche vengono registrate nel registro di controllo a nome del proprietario.",
+        "label": "Proprietario",
+        "pauseNote": "La modifica del proprietario non riavvia una pianificazione in pausa. Riattivala una volta assegnato un proprietario.",
+        "placeholder": "Seleziona un amministratore dell'organizzazione…",
+        "required": "Scegli un amministratore dell'organizzazione",
+        "saving": "Salvataggio in corso…",
+        "submit": "Cambia proprietario",
+        "title": "Cambia proprietario"
+      },
       "report": {
         "auditReport": "Rapporto di audit",
         "auditReportDesc": "I rapporti di audit includono tutti i dati di monitoraggio del tempo con firme crittografiche e timestamp per la conformità GoBD. L'esportazione sarà archiviata con protezione WORM (Write Once Read Many).",
@@ -264,6 +279,8 @@
         "never": "Mai",
         "nextRun": "Prossima esecuzione",
         "openMenu": "Apri menu azioni",
+        "owner": "Proprietario",
+        "ownerNotAdmin": "Non più un amministratore dell'organizzazione",
         "paused": "In pausa",
         "schedule": "Pianificazione",
         "status": "Stato",

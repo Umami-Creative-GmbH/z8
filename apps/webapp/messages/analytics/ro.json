@@ -1,0 +1,203 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "vezi statisticile",
+      "restrictedDescription": "Statisticile sunt disponibile doar pentru administratori și manageri.",
+      "restrictedTitle": "Acces restricționat"
+    },
+    "common": {
+      "days": "Zile",
+      "employee": "Angajat",
+      "employees": "Angajați",
+      "hours": "Ore",
+      "loadingOrganizationSettings": "Se încarcă setările organizației înainte de activarea presetărilor.",
+      "noDataAvailable": "Nu sunt date disponibile",
+      "noDataForPeriod": "Nu sunt date disponibile pentru perioada selectată",
+      "overtime": "Ore suplimentare",
+      "overtimeHours": "Ore suplimentare",
+      "team": "Echipă",
+      "totalHours": "Total ore",
+      "unavailable": "Indisponibil",
+      "undertime": "Ore sub normă",
+      "undertimeHours": "Ore sub normă"
+    },
+    "layout": {
+      "description": "Informații detaliate despre performanța echipei, orele de lucru și tiparele de absență",
+      "tabs": {
+        "overtimeBurnDown": "Reducere ore suplimentare",
+        "overview": "Prezentare generală",
+        "teamPerformance": "Performanța echipei",
+        "vacationTrends": "Tendințe concedii",
+        "workHours": "Ore de lucru"
+      },
+      "title": "Analize"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Defalcare",
+      "breakdownDescription": "Detalii privind reducerea orelor suplimentare la nivel de {label}",
+      "breakdownEmpty": "Nu sunt încă disponibile date defalcate",
+      "byCostCenter": "După centrul de cost",
+      "byManager": "După manager",
+      "byTeam": "După echipă",
+      "costCenter": "Centru de cost",
+      "currentOvertime": "Ore suplimentare curente",
+      "description": "Urmăriți reducerea săptămânală a orelor suplimentare la nivelul echipelor.",
+      "errors": {
+        "loadData": "Nu s-au putut încărca datele privind reducerea orelor suplimentare"
+      },
+      "filters": {
+        "allCostCenters": "Toate centrele de cost",
+        "allManagers": "Toți managerii",
+        "allTeams": "Toate echipele",
+        "breakdownLabel": "Dimensiune de defalcare",
+        "costCenterLabel": "Filtru centru de cost",
+        "managerLabel": "Filtru manager",
+        "teamLabel": "Filtru echipă"
+      },
+      "improvingGroups": "Grupuri în îmbunătățire",
+      "improvingGroupsDescription": "Grupuri cu ore suplimentare în scădere",
+      "manager": "Manager",
+      "previousOvertime": "Ore suplimentare anterioare",
+      "previousPeriodDescription": "Comparativ cu perioada anterioară",
+      "selectedRangeDescription": "Pentru intervalul de date și filtrele selectate",
+      "title": "Reducere ore suplimentare",
+      "trendDirection": "Direcția tendinței",
+      "trendDirectionDescription": "Traiectoria generală a orelor suplimentare",
+      "trend": {
+        "down": "În scădere",
+        "flat": "Constant",
+        "up": "În creștere"
+      },
+      "weeklyTrend": {
+        "description": "Tendința săptămânală de reducere a orelor suplimentare",
+        "empty": "Nu există încă date despre tendințe",
+        "title": "Tendință săptămânală burn-down"
+      },
+      "weekOverWeek": "De la o săptămână la alta"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Distribuția absențelor pe categorii",
+        "title": "Tipare de absență"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% aprobate",
+        "avgDecision": "{hours} h decizie medie",
+        "byManager": "După manager",
+        "byTeam": "După echipă",
+        "byType": "După tip",
+        "description": "Echipe și tipuri de cereri cu activități în așteptare sau avertismente SLA",
+        "empty": "Nu au fost găsite blocaje de aprobare",
+        "pendingSummary": "{pendingCount} în așteptare - {slaWarnings} avertismente SLA",
+        "title": "Blocaje de aprobare",
+        "unavailable": "Blocajele de aprobare nu au putut fi încărcate"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Din cererile soluționate au fost aprobate",
+          "title": "Rată de aprobare",
+          "unavailableDescription": "Analizele privind aprobările nu au putut fi încărcate"
+        },
+        "avgWorkHours": {
+          "description": "Per angajat în perioada selectată",
+          "title": "Medie ore de lucru"
+        },
+        "totalAbsenceDays": {
+          "description": "Total zile în perioada selectată",
+          "title": "Total zile de absență"
+        },
+        "totalEmployees": {
+          "description": "Angajați activi în organizație",
+          "title": "Total angajați"
+        }
+      },
+      "loadingLabel": "Se încarcă datele analitice",
+      "workHoursByTeam": {
+        "description": "Total ore de lucru înregistrate per echipă",
+        "title": "Ore de lucru după echipă"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Medie per angajat",
+      "comparison": {
+        "description": "Total ore de lucru după echipă pentru perioada selectată",
+        "title": "Comparație echipe"
+      },
+      "details": {
+        "description": "Detalierea orelor de lucru după echipă și angajat",
+        "title": "Detalii privind performanța echipei"
+      },
+      "employeeCount": "Număr de angajați",
+      "errors": {
+        "loadData": "Nu s-au putut încărca datele de performanță ale echipei"
+      },
+      "onTrack": "În grafic",
+      "variance": {
+        "description": "Variația orelor față de orele de lucru prevăzute",
+        "empty": "Nu sunt disponibile date despre variație",
+        "title": "Ore suplimentare și deficit de ore"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Alocate",
+      "balance": {
+        "description": "Zile alocate, efectuate și rămase per angajat",
+        "title": "Sold concediu"
+      },
+      "daysRemaining": "{count} zile rămase",
+      "daysTaken": "{count} zile efectuate",
+      "errors": {
+        "loadData": "Nu s-au putut încărca datele despre tendințele concediilor"
+      },
+      "monthlyUsage": {
+        "description": "Zile de concediu efectuate pe lună",
+        "empty": "Nu sunt disponibile date despre utilizarea lunară",
+        "title": "Utilizarea lunară a concediilor"
+      },
+      "peakMonths": {
+        "description": "Lunile cu cea mai mare activitate de concediu",
+        "empty": "Nu sunt disponibile date despre lunile de vârf",
+        "title": "Luni de vârf pentru concedii"
+      },
+      "remaining": "Rămase",
+      "taken": "Efectuate",
+      "utilization": {
+        "description": "Utilizarea generală a zilelor de concediu în cadrul organizației",
+        "overall": "Utilizare generală",
+        "title": "Utilizarea concediilor"
+      },
+      "utilizationLabel": "Utilizare",
+      "utilizationPercent": "% utilizare",
+      "vacationDays": "Zile de concediu"
+    },
+    "workHours": {
+      "actualHours": "Ore efective",
+      "avgHoursPerWeek": "Medie ore/săptămână",
+      "daily": {
+        "description": "Ore de lucru efective vs. preconizate pe zi",
+        "empty": "Nu sunt disponibile date privind orele zilnice",
+        "title": "Ore zilnice de lucru"
+      },
+      "distribution": {
+        "description": "Comparația orelor de lucru ale angajaților (bară orizontală)",
+        "empty": "Nu sunt disponibile date privind distribuția",
+        "title": "Distribuția orelor de lucru"
+      },
+      "employeeComparison": {
+        "description": "Total ore și variația față de orele preconizate per angajat",
+        "title": "Ore de lucru angajați"
+      },
+      "errors": {
+        "loadData": "Nu s-au putut încărca datele analitice privind orele de lucru"
+      },
+      "expectedHours": "Ore preconizate",
+      "hoursPerWeekAbbreviation": "h/săpt.",
+      "variance": "Variație",
+      "varianceTrend": {
+        "description": "Variația orelor față de orele de lucru preconizate în timp",
+        "empty": "Nu sunt disponibile date privind evoluția",
+        "title": "Evoluția orelor suplimentare și deficitare"
+      }
+    }
+  }
+}

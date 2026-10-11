@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "La tua ultima timbratura di entrata oggi è stata alle {startTime} ({timezone}). Timbra l'entrata se stai lavorando."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" è stato sospeso perché il suo proprietario, {ownerName}, non è più un amministratore dell'organizzazione. Per riattivarlo, assegna la proprietà a te o a un altro amministratore dell'organizzazione.",
+        "title": "Esportazione pianificata in pausa"
+      },
       "shiftAssigned": {
         "message": "Ti è stato assegnato un turno il {shiftDate} dalle {startTime} alle {endTime} da {assignedByName}.",
         "title": "Turno assegnato"

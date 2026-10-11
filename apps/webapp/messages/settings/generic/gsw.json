@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} hät de gliich Name und isch scho mit emene andere Kontakt verchnüpft",
           "noMatch": "Kein Träffer",
           "paging": {
-            "label": "Kontakt-Siite",
-            "next": "Nöchschti Siite",
-            "position": "Siite {page} vo {pageCount}",
-            "previous": "Vorherigi Siite"
+            "label": "Kontakt-Siite"
           },
           "suggestion": {
             "customerNumber": "{name} hät e Kontaktverchnüpfig mit de gliiche Chundenummere",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "De Abieter mäldet Pause ohni Zite, drum isch s gschaffte Intervall unbekannt."
         },
         "issueGroups": {
-          "currentMarkers": "Die aktuellen Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Überprüfungsbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übernommen werden.",
+          "importMarkers": "D'Zile vom Import enthalted {blockingRows} blockierendi und {warningRows} warnendi Problem-Markierige.",
           "title": "Problemgruppen"
+        },
+        "paging": {
+          "next": "Nöchsti Siite",
+          "position": "Siite {page} vo {pageCount}",
+          "previous": "Vorherigi Siite"
         },
         "rows": {
           "billable": "Verrechebar",
           "empty": "Für diesen Import-Stapel sind keine Zeilen vorhanden.",
           "entity": "Entität",
+          "paging": {
+            "label": "Zile-Siite"
+          },
           "rowId": "Zeilen-ID",
           "sourceId": "Quell-ID",
           "status": "Status",
@@ -1783,6 +1788,7 @@
       "create": "Projekt erstelle",
       "created": "Projekt erstellt",
       "createFailed": "Projekt-Erstellig isch fählgschlage",
+      "customerDeleted": "{name} (glöscht)",
       "description": "Projekte, Budget, Friste und Ziiterfassige verwalte",
       "dialog": {
         "create": "Projekt erstelle",
@@ -1807,6 +1813,7 @@
         "color": "Farb",
         "colorOption": "Farbe {color} auswählen",
         "customer": "Chunde",
+        "customerDeleted": "{name} isch glöscht worde. Wähl en andere Chund us oder bhalt s Projekt ohni Chund.",
         "customerPlaceholder": "Chunde uswähle",
         "deadline": "Frist",
         "description": "Beschriibig",
@@ -2031,6 +2038,11 @@
       "title": "Projekt",
       "updated": "Projekt aktualisiert",
       "updateFailed": "Projekt-Aktualisierig isch fählgschlage"
+    },
+    "reportShareLinks": {
+      "description": "Alli Links aaluege und widerruefe, wo es Projekt- oder en Chundebricht teiled",
+      "pageDescription": "Links, wo öpperem usserhalb vo Z8 en iigfrorene Snapshot vome Projekt- oder Chundebricht zeiged. Wänn en Link widerruefe wird, funktioniert er sofort nümme und sin Snapshot wird glöscht.",
+      "title": "Bricht-Freigaabelinks"
     },
     "security": {
       "description": "Passwort, Zwei-Faktor-Authentifizierig, Passkeys und aktivi Sitzige verwalte",

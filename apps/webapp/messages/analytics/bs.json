@@ -1,0 +1,203 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "pregledaj analitiku",
+      "restrictedDescription": "Analitika je dostupna samo administratorima i menadžerima.",
+      "restrictedTitle": "Pristup je ograničen"
+    },
+    "common": {
+      "days": "Dani",
+      "employee": "Zaposlenik",
+      "employees": "Zaposlenici",
+      "hours": "Sati",
+      "loadingOrganizationSettings": "Učitavanje postavki organizacije prije omogućavanja zadanih postavki.",
+      "noDataAvailable": "Nema dostupnih podataka",
+      "noDataForPeriod": "Nema dostupnih podataka za odabrani period",
+      "overtime": "Prekovremeni rad",
+      "overtimeHours": "Prekovremeni sati",
+      "team": "Tim",
+      "totalHours": "Ukupno sati",
+      "unavailable": "Nedostupno",
+      "undertime": "Manjak sati",
+      "undertimeHours": "Sati manjka"
+    },
+    "layout": {
+      "description": "Sveobuhvatan uvid u učinak tima, radne sate i obrasce odsustva",
+      "tabs": {
+        "overtimeBurnDown": "Smanjenje prekovremenih sati",
+        "overview": "Pregled",
+        "teamPerformance": "Učinak tima",
+        "vacationTrends": "Trendovi godišnjih odmora",
+        "workHours": "Radni sati"
+      },
+      "title": "Analitika"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Raspodjela",
+      "breakdownDescription": "Detalji smanjenja prekovremenih sati na nivou: {label}",
+      "breakdownEmpty": "Podaci o raspodjeli još nisu dostupni",
+      "byCostCenter": "Po mjestu troška",
+      "byManager": "Po menadžeru",
+      "byTeam": "Po timu",
+      "costCenter": "Troškovni centar",
+      "currentOvertime": "Trenutni prekovremeni rad",
+      "description": "Pratite sedmično smanjenje prekovremenog rada u svim timovima.",
+      "errors": {
+        "loadData": "Učitavanje podataka o smanjenju prekovremenog rada nije uspjelo"
+      },
+      "filters": {
+        "allCostCenters": "Svi troškovni centri",
+        "allManagers": "Svi menadžeri",
+        "allTeams": "Svi timovi",
+        "breakdownLabel": "Dimenzija raščlanjivanja",
+        "costCenterLabel": "Filter troškovnog centra",
+        "managerLabel": "Filter menadžera",
+        "teamLabel": "Filter tima"
+      },
+      "improvingGroups": "Grupe s poboljšanjem",
+      "improvingGroupsDescription": "Grupe sa smanjenjem prekovremenog rada",
+      "manager": "Menadžer",
+      "previousOvertime": "Prethodni prekovremeni rad",
+      "previousPeriodDescription": "U poređenju s prethodnim periodom",
+      "selectedRangeDescription": "Za odabrani raspon datuma i filtere",
+      "title": "Smanjenje prekovremenog rada",
+      "trendDirection": "Smjer trenda",
+      "trendDirectionDescription": "Ukupna putanja prekovremenog rada",
+      "trend": {
+        "down": "Pad",
+        "flat": "Bez promjene",
+        "up": "Rast"
+      },
+      "weeklyTrend": {
+        "description": "Sedmični trend smanjenja prekovremenog rada",
+        "empty": "Podaci o trendu još nisu dostupni",
+        "title": "Sedmični trend smanjenja"
+      },
+      "weekOverWeek": "Iz sedmice u sedmicu"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Raspodjela odsustava po kategorijama",
+        "title": "Obrasci odsustava"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% odobreno",
+        "avgDecision": "{hours} h prosj. vrijeme odluke",
+        "byManager": "Po menadžeru",
+        "byTeam": "Po timu",
+        "byType": "Po vrsti",
+        "description": "Timovi i vrste zahtjeva sa stavkama na čekanju ili SLA upozorenjima",
+        "empty": "Nisu pronađena uska grla u odobravanju",
+        "pendingSummary": "{pendingCount} na čekanju - {slaWarnings} SLA upozorenja",
+        "title": "Uska grla u odobravanju",
+        "unavailable": "Nije uspjelo učitavanje uskih grla u odobravanju"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "Odobrenih od riješenih zahtjeva",
+          "title": "Stopa odobravanja",
+          "unavailableDescription": "Nije uspjelo učitavanje analitike odobravanja"
+        },
+        "avgWorkHours": {
+          "description": "Po zaposleniku u odabranom periodu",
+          "title": "Prosj. radni sati"
+        },
+        "totalAbsenceDays": {
+          "description": "Ukupno dana u odabranom periodu",
+          "title": "Ukupno dana odsustva"
+        },
+        "totalEmployees": {
+          "description": "Aktivni zaposlenici u organizaciji",
+          "title": "Ukupno zaposlenika"
+        }
+      },
+      "loadingLabel": "Učitavanje analitičkih podataka",
+      "workHoursByTeam": {
+        "description": "Ukupno evidentirani radni sati po timu",
+        "title": "Radni sati po timu"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Prosjek po zaposleniku",
+      "comparison": {
+        "description": "Ukupni radni sati po timu za odabrani period",
+        "title": "Usporedba timova"
+      },
+      "details": {
+        "description": "Pregled radnih sati po timu i zaposleniku",
+        "title": "Detalji o učinku tima"
+      },
+      "employeeCount": "Broj zaposlenika",
+      "errors": {
+        "loadData": "Učitavanje podataka o učinku tima nije uspjelo"
+      },
+      "onTrack": "Po planu",
+      "variance": {
+        "description": "Odstupanje sati od očekivanih radnih sati",
+        "empty": "Nema dostupnih podataka o odstupanju",
+        "title": "Prekovremeni i manjak sati"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Dodijeljeno",
+      "balance": {
+        "description": "Dani dodijeljeni, iskorišteni i preostali po zaposleniku",
+        "title": "Stanje godišnjeg odmora"
+      },
+      "daysRemaining": "Preostalo dana: {count}",
+      "daysTaken": "Iskorišteno dana: {count}",
+      "errors": {
+        "loadData": "Učitavanje podataka o trendovima godišnjih odmora nije uspjelo"
+      },
+      "monthlyUsage": {
+        "description": "Iskorišteni dani godišnjeg odmora po mjesecu",
+        "empty": "Nema dostupnih podataka o mjesečnom korištenju",
+        "title": "Mjesečno korištenje godišnjeg odmora"
+      },
+      "peakMonths": {
+        "description": "Mjeseci s najviše korištenja godišnjeg odmora",
+        "empty": "Nema dostupnih podataka o vršnim mjesecima",
+        "title": "Mjeseci s najviše godišnjih odmora"
+      },
+      "remaining": "Preostalo",
+      "taken": "Iskorišteno",
+      "utilization": {
+        "description": "Ukupno korištenje dana godišnjeg odmora u cijeloj organizaciji",
+        "overall": "Ukupna iskorištenost",
+        "title": "Iskorištenost godišnjeg odmora"
+      },
+      "utilizationLabel": "Iskorištenost",
+      "utilizationPercent": "Iskorištenost %",
+      "vacationDays": "Dani godišnjeg odmora"
+    },
+    "workHours": {
+      "actualHours": "Stvarni sati",
+      "avgHoursPerWeek": "Prosj. sati/sedmično",
+      "daily": {
+        "description": "Stvarni u odnosu na očekivane radne sate po danu",
+        "empty": "Nema dostupnih podataka o dnevnim satima",
+        "title": "Dnevni radni sati"
+      },
+      "distribution": {
+        "description": "Usporedba radnih sati zaposlenika (horizontalni grafikon)",
+        "empty": "Nema dostupnih podataka o distribuciji",
+        "title": "Distribucija radnih sati"
+      },
+      "employeeComparison": {
+        "description": "Ukupni sati i odstupanje od očekivanih po zaposleniku",
+        "title": "Radni sati zaposlenika"
+      },
+      "errors": {
+        "loadData": "Učitavanje analitičkih podataka o radnim satima nije uspjelo"
+      },
+      "expectedHours": "Očekivani sati",
+      "hoursPerWeekAbbreviation": "h/sed",
+      "variance": "Odstupanje",
+      "varianceTrend": {
+        "description": "Odstupanje sati od očekivanih radnih sati tokom vremena",
+        "empty": "Nema dostupnih podataka o trendu",
+        "title": "Trend prekovremenih sati i manjka sati"
+      }
+    }
+  }
+}

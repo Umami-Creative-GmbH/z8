@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} har samma namn och är redan kopplad till en annan kontakt",
           "noMatch": "Ingen matchning",
           "paging": {
-            "label": "Kontaktsidor",
-            "next": "Nästa sida",
-            "position": "Sida {page} av {pageCount}",
-            "previous": "Föregående sida"
+            "label": "Kontaktsidor"
           },
           "suggestion": {
             "customerNumber": "{name} har en kontaktkoppling med samma kundnummer",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "Leverantören rapporterar pauser utan tidsangivelser, så det arbetade intervallet är okänt."
         },
         "issueGroups": {
-          "currentMarkers": "Aktuella rader innehåller {blockingRows} blockerande markeringar och {warningRows} varningsmarkeringar.",
           "description": "Grupperade granskningsområden hjälper till att hålla kvalitetskontroller synliga innan godkända rader verkställs.",
+          "importMarkers": "Importens rader innehåller {blockingRows} blockerande och {warningRows} varnande problemmarkeringar.",
           "title": "Problemgrupper"
+        },
+        "paging": {
+          "next": "Nästa sida",
+          "position": "Sida {page} av {pageCount}",
+          "previous": "Föregående sida"
         },
         "rows": {
           "billable": "Fakturerbar",
           "empty": "Det finns inga mellanlagrade rader tillgängliga för denna importbatch.",
           "entity": "Entitet",
+          "paging": {
+            "label": "Radsidor"
+          },
           "rowId": "Rad-ID",
           "sourceId": "Käll-ID",
           "status": "Status",
@@ -1783,6 +1788,7 @@
       "create": "Skapa projekt",
       "created": "Projektet har skapats",
       "createFailed": "Kunde inte skapa projektet",
+      "customerDeleted": "{name} (borttagen)",
       "description": "Hantera projekt, budgetar, deadlines och tidstilldelningar",
       "dialog": {
         "create": "Skapa projekt",
@@ -1807,6 +1813,7 @@
         "color": "Färg",
         "colorOption": "Välj färg {color}",
         "customer": "Kund",
+        "customerDeleted": "{name} togs bort. Välj en annan kund eller behåll projektet utan någon.",
         "customerPlaceholder": "Välj en kund",
         "deadline": "Deadline",
         "description": "Beskrivning",
@@ -2031,6 +2038,11 @@
       "title": "Projekt",
       "updated": "Projektet har uppdaterats",
       "updateFailed": "Det gick inte att uppdatera projektet"
+    },
+    "reportShareLinks": {
+      "description": "Se och återkalla alla länkar som delar en projekt- eller kundrapport",
+      "pageDescription": "Länkar som visar en låst ögonblicksbild av en projekt- eller kundrapport för någon utanför Z8. Att återkalla en länk gör att den genast slutar fungera och raderar dess ögonblicksbild.",
+      "title": "Delningslänkar för rapporter"
     },
     "security": {
       "description": "Hantera ditt lösenord, tvåfaktorsautentisering, lösenordsnycklar och aktiva sessioner",

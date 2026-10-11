@@ -1,0 +1,169 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Personal adecvat",
+      "byLocation": "După locație:",
+      "gapCount": "{count} deficit de personal",
+      "gaps": "lacune",
+      "hideOverlay": "Ascunde suprapunerea de acoperire",
+      "metSlots": "{count} adecvat",
+      "overSlots": "{count} supradimensionat",
+      "overstaffed": "Supradimensionat",
+      "showOverlay": "Afișează suprapunerea țintelor de acoperire",
+      "summary": "Rezumat acoperire:",
+      "toggleLabel": "Acoperire",
+      "underSlots": "{count} subdimensionat",
+      "understaffed": "Subdimensionat",
+      "utilization": "{percent}% utilizare"
+    },
+    "mySchedule": {
+      "loadFailed": "Turele dvs. nu au putut fi încărcate. Vă rugăm să încercați din nou mai târziu.",
+      "nextWeek": "Săptămâna viitoare",
+      "noShifts": "Nicio tură",
+      "previousWeek": "Săptămâna precedentă",
+      "shift": "Tură",
+      "today": "Astăzi"
+    },
+    "page": {
+      "employeeScheduleDescription": "Turele dvs. publicate, săptămână de săptămână",
+      "employeeTitle": "Programul meu",
+      "managerDescription": "Gestionați și planificați turele angajaților",
+      "title": "Program de ture"
+    },
+    "publish": {
+      "acknowledgeAndPublish": "Confirmați și publicați",
+      "acknowledgmentDescription": "Publicarea va continua, dar acest program are avertismente de conformitate care trebuie confirmate mai întâi.",
+      "button": "Publicați ({count})",
+      "cancel": "Anulare",
+      "complianceAcknowledgmentRequired": "Este necesară confirmarea conformității",
+      "complianceWarnings": "{count, plural, one {Verificările de conformitate au identificat # avertisment; va trebui să îl confirmați înainte de publicare.} other {Verificările de conformitate au identificat # avertismente; va trebui să le confirmați înainte de publicare.}}",
+      "coverageWarning": "Unele intervale de timp nu îndeplinesc cerințele minime de personal.",
+      "maxHours": "Ore maxime: {count}",
+      "notifyEmployees": "{count, plural, one {Publicați # tură ciornă și notificați angajații} other {Publicați # ture ciornă și notificați angajații}}",
+      "overtime": "Ore suplimentare: {count}",
+      "publishing": "Se publică…",
+      "restTime": "Timp de odihnă: {count}",
+      "totalFindings": "{count, plural, one {# constatare în total} other {# constatări în total}}",
+      "warningsDetectedBeforePublish": "Avertismente detectate înainte de publicare"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "{count} problemă(e) detectată(e) înainte de publicare.",
+        "maxHours": "Ore maxime: {count}",
+        "overtime": "Ore suplimentare: {count}",
+        "restTime": "Timp de odihnă: {count}",
+        "title": "Avertismente de conformitate în acest interval de date"
+      },
+      "focus": {
+        "anonymous": "Se afișează turele unui singur angajat",
+        "employee": "Se afișează turele pentru {name}",
+        "showAll": "Afișează toate turele"
+      },
+      "loading": "Se încarcă programul...",
+      "publish": {
+        "failed": "Publicarea turelor a eșuat",
+        "published": "S-au publicat {count} tură(e)"
+      },
+      "shiftUpdate": {
+        "failed": "Actualizarea turei a eșuat",
+        "overlapDescription": "Această tură se suprapune cu alte {count} tură(e)",
+        "overlapWarning": "Tură salvată cu avertisment de suprapunere",
+        "updated": "Tură actualizată"
+      }
+    },
+    "shiftDetails": {
+      "close": "Închide",
+      "date": "Dată",
+      "description": "Tura dvs. planificată",
+      "endsNextDay": "se termină în ziua următoare",
+      "location": "Locație",
+      "notes": "Note",
+      "time": "Oră",
+      "title": "Detalii tură"
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Oricine poate prelua",
+      "assignTo": "Atribuie către",
+      "confirmDelete": "Confirmă ștergerea",
+      "created": "Tură creată",
+      "createDescription": "Completați detaliile pentru noua tură",
+      "createShift": "Creează tură",
+      "createTitle": "Creează tură",
+      "date": "Dată",
+      "deleted": "Tură ștearsă",
+      "deleteFailed": "Ștergerea turei a eșuat",
+      "draft": "Ciornă",
+      "editDescription": "Actualizați detaliile turei de mai jos",
+      "editTitle": "Editează tura",
+      "endTime": "Oră de sfârșit",
+      "noTemplate": "Fără șablon",
+      "notes": "Note (opțional)",
+      "notesPlaceholder": "Orice instrucțiuni speciale sau note...",
+      "openShift": "Tură deschisă",
+      "openShiftHelp": "Lăsați ca „Tură deschisă” pentru a permite angajaților să o revendice",
+      "pickDate": "Selectați o dată",
+      "published": "Publicată",
+      "savedWithWarnings": "Tură salvată cu avertismente",
+      "saveFailed": "Salvarea turei a eșuat",
+      "selectEmployee": "Selectați un angajat",
+      "selectSubarea": "Selectați o subzonă…",
+      "selectTemplate": "Selectați un șablon",
+      "startTime": "Oră de început",
+      "status": "Stare:",
+      "subarea": "Subzonă",
+      "subareaHelp": "Unde va avea loc această tură",
+      "template": "Șablon (opțional)",
+      "templateHelp": "Selectarea unui șablon va completa automat orele",
+      "updated": "Tură actualizată",
+      "updateShift": "Actualizează tura"
+    },
+    "skills": {
+      "expiredCertifications": "Certificări expirate:",
+      "expiredOn": "(Expirat la {date})",
+      "missingPreferred": "Competențe preferate lipsă:",
+      "missingPreferredCount": "{count} preferate lipsă",
+      "missingRequired": "Competențe obligatorii lipsă:",
+      "preferred": "Preferat",
+      "preferredSkillsMissing": "Competențe preferate lipsă",
+      "requirementsNotMet": "Cerințele de competență nu sunt îndeplinite",
+      "unqualified": "Necalificat",
+      "validating": "Se validează competențele…",
+      "validatingDescription": "Se verifică calificările angajatului",
+      "warningMessage": "Puteți atribui în continuare această tură, dar va fi înregistrată ca o derogare."
+    },
+    "staffingSuggestions": {
+      "empty": "Niciun angajat disponibil pentru această tură",
+      "error": "Sugestiile nu au putut fi încărcate",
+      "loading": "Se caută angajați disponibili…",
+      "note": {
+        "missingPreferredSkill": "Lipsește competența preferată: {skill}"
+      },
+      "pick": "Selectează",
+      "pickLabel": "Alocă {name}",
+      "reason": {
+        "noContractedTarget": "Fără normă contractuală",
+        "plannedHours": "{planned} din {target} h planificate în această săptămână",
+        "requestedThisShift": "A solicitat această tură",
+        "restPeriodOk": "Perioadă de odihnă OK",
+        "skillsHeld": "Are {skills}"
+      },
+      "requested": "A solicitat această tură",
+      "showAll": "Afișează tot ({count})",
+      "showFewer": "Afișează mai puține",
+      "title": "Angajați sugerați",
+      "warning": {
+        "expiredRequiredSkill": "{skill} a expirat la {date}",
+        "maxHours": "Peste maximul zilnic ({total} din {max} h)",
+        "missingRequiredSkill": "Lipsește competența obligatorie: {skill}",
+        "overtime": "{period, select, daily {Ore suplimentare zilnice} weekly {Ore suplimentare săptămânale} other {Ore suplimentare lunare}} ({total} din {threshold} h)",
+        "pendingAbsence": "Absență în așteptare: {category}",
+        "restTime": "Perioadă de odihnă prea scurtă ({rest} din {required} h)"
+      }
+    },
+    "templates": {
+      "dragHint": "Trageți un șablon în calendar pentru a crea o tură",
+      "empty": "Niciun șablon disponibil. Creați șabloane în Setări pentru a adăuga rapid ture.",
+      "title": "Șabloane de tură"
+    }
+  }
+}

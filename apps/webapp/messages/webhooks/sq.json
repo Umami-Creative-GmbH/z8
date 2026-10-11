@@ -1,0 +1,93 @@
+{
+  "webhooks": {
+    "copy-failed": "Kopjimi në kujtesën e fragmenteve dështoi",
+    "create": "Shto Webhook",
+    "create-failed": "Krijimi i webhook-ut dështoi",
+    "delete-confirm": {
+      "description": "Kjo do të fshijë përgjithmonë pikën fundore të webhook-ut dhe të gjithë historikun e dërgimit. Ky veprim nuk mund të zhbëhet.",
+      "title": "Të fshihet webhook-u?"
+    },
+    "deleted": "Webhook-u u fshi",
+    "delete-failed": "Fshirja e webhook-ut dështoi",
+    "deliveries": "Dërgesat",
+    "description": "Konfiguroni pikat përfundimtare të webhook-eve për të marrë njoftime në kohë reale kur ndodhin ngjarje në organizatën tuaj.",
+    "disabled": "Webhook-u u çaktivizua",
+    "empty": {
+      "description": "Krijoni webhook-un tuaj të parë për të filluar marrjen e njoftimeve të ngjarjeve.",
+      "title": "Nuk është konfiguruar asnjë webhook"
+    },
+    "enabled": "Webhook-u u aktivizua",
+    "events": "Ngjarjet",
+    "form": {
+      "create": "Krijo Webhook",
+      "create-description": "Konfiguroni një endpoint të ri webhook për të marrë njoftime për ngjarjet.",
+      "create-title": "Krijo Webhook",
+      "description": "Përshkrimi",
+      "description-placeholder": "Për çfarë përdoret ky webhook?",
+      "deselect-all": "Çpërzgjidh të gjitha",
+      "edit-description": "Përditësoni konfigurimin e endpoint-it të webhook-ut.",
+      "edit-title": "Modifiko Webhook-un",
+      "events": "Ngjarjet për t'u marrë",
+      "events-hint": "Ngjarjet e zgjedhura: {count}",
+      "events-required": "Duhet të zgjidhet të paktën një ngjarje",
+      "name": "Emri",
+      "name-placeholder": "Webhook-u im",
+      "name-required": "Emri është i detyrueshëm",
+      "select-all": "Zgjidh të gjitha",
+      "url": "URL-ja e endpoint-it",
+      "url-hint": "HTTPS kërkohet në mjedisin e prodhimit. Ngjarjet do të dërgohen si kërkesa POST.",
+      "url-required": "URL-ja është e detyrueshme"
+    },
+    "last-delivery": "E fundit",
+    "logs": {
+      "attempt": "Përpjekje",
+      "description": "Përpjekjet e fundit të dërgimit të webhook-ut dhe rezultatet e tyre.",
+      "duration": "Kohëzgjatja",
+      "empty": "Ende nuk ka regjistrime dërgimi",
+      "error": "Gabim",
+      "event": "Ngjarje",
+      "failed": "Dështuar",
+      "http": "HTTP",
+      "loadError": "Ngarkimi i regjistrave të dërgimit dështoi",
+      "payload": "Payload",
+      "pending": "Në pritje",
+      "response": "Përgjigjja",
+      "retrying": "Duke u riprovuar",
+      "showing": "Duke shfaqur {start}-{end} nga {total}",
+      "status": "Statusi",
+      "success": "Sukses",
+      "time": "Koha",
+      "title": "Regjistrimet e dërgimit"
+    },
+    "regenerate-failed": "Rigjenerimi i çelësit sekret dështoi",
+    "regenerate-secret": "Rigjenero çelësin sekret",
+    "secret-copied": "Çelësi sekret u kopjua në kujtesën e fragmenteve",
+    "secret-dialog": {
+      "copy-secret": "Kopjo çelësin sekret në kujtesën e fragmenteve",
+      "description": "Ky çelës sekret përdoret për të verifikuar nënshkrimet e webhook-ut. Ruajeni në mënyrë të sigurt.",
+      "done": "E kam ruajtur çelësin sekret",
+      "secret": "Çelësi sekret i nënshkrimit",
+      "title": "Çelësi sekret i webhook-ut",
+      "verification": "Verifikimi i nënshkrimit",
+      "verification-hint": "Verifikoni nënshkrimet e webhook-ut duke përdorur HMAC-SHA256. Nënshkrimi dërgohet në header-in X-Z8-Signature.",
+      "warning": "Ky çelës sekret do të shfaqet vetëm një herë. Sigurohuni që ta ruani tani.",
+      "warning-title": "E rëndësishme"
+    },
+    "secret-regenerated": "Çelësi sekret u rigjenerua",
+    "status": {
+      "degraded": "I degraduar",
+      "failing": "Po dështon",
+      "healthy": "Funksional",
+      "inactive": "Joaktiv"
+    },
+    "success-rate": "Sukses",
+    "test": "Dërgo provë",
+    "test-failed": "Dështoi dërgimi i webhook-ut të provës",
+    "test-sent": "Webhook-u i provës u dërgua",
+    "title": "Webhooks",
+    "toggle-active": "Aktivizo/çaktivizo webhook-un",
+    "updated": "Webhook-u u përditësua",
+    "update-failed": "Përditësimi i webhook-ut dështoi",
+    "view-logs": "Shiko regjistrat"
+  }
+}

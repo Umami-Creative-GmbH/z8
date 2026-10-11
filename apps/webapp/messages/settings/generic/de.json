@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} hat denselben Namen und ist bereits mit einem anderen Kontakt verknüpft",
           "noMatch": "Keine Übereinstimmung",
           "paging": {
-            "label": "Kontaktseiten",
-            "next": "Nächste Seite",
-            "position": "Seite {page} von {pageCount}",
-            "previous": "Vorherige Seite"
+            "label": "Kontaktseiten"
           },
           "suggestion": {
             "customerNumber": "{name} hat eine Kontaktverknüpfung mit derselben Kundennummer",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "Der Anbieter meldet Pausen ohne Zeitangaben, daher ist das Arbeitsintervall unbekannt."
         },
         "issueGroups": {
-          "currentMarkers": "Aktuelle Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Prüfbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übertragen werden.",
+          "importMarkers": "Die Zeilen des Imports enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "title": "Problemgruppen"
+        },
+        "paging": {
+          "next": "Nächste Seite",
+          "position": "Seite {page} von {pageCount}",
+          "previous": "Vorherige Seite"
         },
         "rows": {
           "billable": "Abrechenbar",
           "empty": "Für diesen Importstapel sind keine bereitgestellten Zeilen verfügbar.",
           "entity": "Entität",
+          "paging": {
+            "label": "Zeilenseiten"
+          },
           "rowId": "Zeilen-ID",
           "sourceId": "Quell-ID",
           "status": "Status",
@@ -1783,6 +1788,7 @@
       "create": "Projekt erstellen",
       "created": "Projekt erstellt",
       "createFailed": "Projekt konnte nicht erstellt werden",
+      "customerDeleted": "{name} (gelöscht)",
       "description": "Verwalten Sie Projekte, Budgets, Fristen und Zeiterfassungen",
       "dialog": {
         "create": "Projekt erstellen",
@@ -1807,6 +1813,7 @@
         "color": "Farbe",
         "colorOption": "Farbe {color} auswählen",
         "customer": "Kunde",
+        "customerDeleted": "{name} wurde gelöscht. Wählen Sie einen anderen Kunden oder behalten Sie das Projekt ohne Kunden bei.",
         "customerPlaceholder": "Kunden auswählen",
         "deadline": "Frist",
         "description": "Beschreibung",
@@ -2031,6 +2038,11 @@
       "title": "Projekte",
       "updated": "Projekt aktualisiert",
       "updateFailed": "Projekt konnte nicht aktualisiert werden"
+    },
+    "reportShareLinks": {
+      "description": "Alle Links einsehen und widerrufen, über die ein Projekt- oder Kundenbericht geteilt wird",
+      "pageDescription": "Links, die Personen außerhalb von Z8 einen statischen Snapshot eines Projekt- oder Kundenberichts anzeigen. Das Widerrufen eines Links deaktiviert ihn sofort und löscht seinen Snapshot.",
+      "title": "Berichtsfreigabe-Links"
     },
     "security": {
       "description": "Verwalten Sie Ihr Passwort, die Zwei-Faktor-Authentifizierung, Passkeys und aktive Sitzungen",

@@ -1,0 +1,2757 @@
+{
+  "settings": {
+    "assignedLocations": {
+      "added": "Locația alocată a fost adăugată",
+      "employeeDescription": "Locațiile în care lucrează acest angajat. Chioșcurile acceptă doar angajați alocați locației lor.",
+      "employeeEmpty": "Nicio locație alocată",
+      "employeeLabel": "Angajat",
+      "employeePlaceholder": "Selectați un angajat",
+      "employeeTitle": "Locații alocate",
+      "errors": {
+        "adminOnly": "Doar proprietarii și administratorii organizației pot gestiona locațiile atribuite.",
+        "employeeNotFound": "Angajatul nu a fost găsit.",
+        "failed": "Locațiile atribuite nu au putut fi actualizate. Încercați din nou.",
+        "invalidSelection": "Alegeți din listă.",
+        "locationNotFound": "Locația nu a fost găsită."
+      },
+      "locationDescription": "Angajații care lucrează în această locație. Chioșcurile acesteia îi acceptă doar pe ei.",
+      "locationEmpty": "Niciun angajat atribuit",
+      "locationLabel": "Locație",
+      "locationPlaceholder": "Selectați o locație",
+      "locationTitle": "Angajați atribuiți",
+      "noEmployeesLeft": "Toți angajații activi sunt atribuiți acestei locații.",
+      "noLocationsLeft": "Nu mai există alte locații active de atribuit.",
+      "removed": "Locația atribuită a fost eliminată"
+    },
+    "avv": {
+      "contractDetails": {
+        "controller": "Client (Operator)",
+        "descriptionPrefix": "Acest acord reglementează prelucrarea datelor cu caracter personal în numele organizației dvs. și ",
+        "processor": "Contractant (Persoană împuternicită)",
+        "title": "Detalii contract"
+      },
+      "description": "Descărcați acordul de prelucrare a datelor în conformitate cu art. 28 din GDPR.",
+      "download": {
+        "button": "Descărcați acordul de prelucrare a datelor în format PDF",
+        "downloaded": "Acordul de prelucrare a datelor a fost descărcat",
+        "downloadFailed": "Descărcarea a eșuat",
+        "errorOccurred": "A apărut o eroare",
+        "filename": "Fișier: {filename}",
+        "generating": "Se generează PDF-ul…"
+      },
+      "hosting": {
+        "descriptionPrefix": "Toate datele sunt găzduite pe serverele ",
+        "descriptionSuffix": ". Nu sunt utilizați alți subprocesatori.",
+        "title": "Găzduire și subprocesatori"
+      },
+      "title": "Acord de prelucrare a datelor (DPA)"
+    },
+    "billableTime": {
+      "accounting": {
+        "apiKey": "Cheie API",
+        "apiKeyHelp": "Stocată în depozitul secret al organizației dvs. Z8 nu o va mai afișa niciodată.",
+        "apiKeyRequired": "Introduceți cheia API",
+        "chooseTool": "Alegeți un instrument de contabilitate",
+        "connect": "Conectare",
+        "connected": "Conectat",
+        "connectedOnBy": "{date} de către {name}",
+        "connectedToast": "Instrument de contabilitate conectat",
+        "connection": {
+          "description": "Z8 creează ciorne de facturi în instrumentul dvs. de contabilitate, unde contabilul dvs. le finalizează. Z8 nu emite niciodată facturi și nu creează contacte acolo.",
+          "title": "Conexiune contabilitate"
+        },
+        "contactPerson": {
+          "help": "sevdesk desemnează un utilizator al contului dvs. ca persoană de contact pe fiecare factură. Încărcați utilizatorii folosind cheia API de mai sus și alegeți unul.",
+          "label": "Persoană de contact",
+          "load": "Încarcă utilizatorii sevdesk",
+          "none": "Acest cont nu are utilizatori sevdesk activi.",
+          "placeholder": "Alegeți un utilizator sevdesk"
+        },
+        "contacts": {
+          "customerNumber": "Nr. client {number}",
+          "link": "Asociază",
+          "linked": "Asociat",
+          "minLength": "Introduceți cel puțin {count} caractere",
+          "noResults": "Niciun contact nu corespunde. Creați mai întâi contactul în instrumentul de contabilitate; Z8 nu creează niciodată contacte acolo.",
+          "search": "Căutați contacte în instrument",
+          "searching": "Se caută…",
+          "searchPlaceholder": "Nume sau număr client",
+          "truncated": "Există mai multe contacte care corespund. Restrângeți căutarea pentru a le vedea."
+        },
+        "customer": {
+          "changeContact": "Modifică contactul",
+          "contactLink": "Contact în instrumentul de contabilitate",
+          "description": "Contactul la care ajung ciornele de factură ale acestui client și regimul fiscal aplicat.",
+          "entry": "Contabilitate",
+          "linkContact": "Asociază contactul",
+          "linked": "Contact asociat",
+          "linkedIn": "În {tool}",
+          "linkedInWithNumber": "Client nr. {number} în {tool}",
+          "notConnected": "Conectați mai întâi un instrument de contabilitate în setările Timp facturabil.",
+          "notLinked": "Neasociat. Un client necesită asocierea unui contact înainte de primul transfer.",
+          "openSettings": "Deschide setările de contabilitate",
+          "overrideTax": "Setează specific clientului",
+          "taxCleared": "Se aplică din nou regimul fiscal implicit al conexiunii",
+          "taxDefault": "{treatment} (implicit pentru conexiune)",
+          "taxHelp": "Utilizat pentru ciornele de factură ale acestui client. Contabilul îl verifică pe fiecare ciornă.",
+          "taxNoDefault": "Valoarea implicită a conexiunii se aplică odată ce este conectat un instrument de contabilitate.",
+          "taxOverride": "{treatment} (specific clientului)",
+          "taxSaved": "Regim fiscal salvat",
+          "taxTreatment": "Regim fiscal",
+          "title": "Contabilitate pentru {name}",
+          "unlink": "Elimină asocierea",
+          "unlinked": "Asocierea contactului a fost eliminată",
+          "useDefault": "Utilizează valoarea implicită a conexiunii"
+        },
+        "customers": {
+          "actions": "Acțiuni",
+          "contact": "Contact",
+          "customer": "Client",
+          "defaultTax": "Implicit: {treatment}",
+          "description": "Asociați fiecare client cu contactul său existent din instrumentul de contabilitate înainte de primul transfer și suprascrieți regimul fiscal unde este necesar.",
+          "edit": "Editează",
+          "empty": "Încă nu există clienți",
+          "inactive": "Inactiv",
+          "notLinked": "Neasociat",
+          "tax": "Regim fiscal",
+          "title": "Clienți"
+        },
+        "defaultTax": "Regim fiscal implicit",
+        "defaultTaxHelp": "Valoarea implicită pentru ciornele de factură ale fiecărui client. Un client o poate suprascrie.",
+        "defaultTaxSaved": "Regimul fiscal implicit a fost salvat",
+        "editDefaultTax": "Modifică regimul fiscal implicit",
+        "hint": {
+          "lexwareOffice": "Necesită planul Lexware Office XL și ciorne în EUR. Creați cheia la app.lexware.de la secțiunea Public API, de preferat pentru un utilizator Lexware dedicat.",
+          "sevdesk": "Utilizați tokenul API al unui utilizator sevdesk. Tokenul deține permisiunile complete ale acelui utilizator, astfel încât se recomandă un utilizator dedicat."
+        },
+        "import": {
+          "hint": "Examinați clienții din instrumentul de contabilitate care nu sunt încă asociați, apoi creați-i sau asociați-i.",
+          "start": "Importă clienți"
+        },
+        "keyMissing": "Cheia API lipsește din depozitul securizat. Înlocuiți conexiunea cu o cheie nouă.",
+        "netPrices": {
+          "label": "Acest cont sevdesk introduce prețurile de pe factură ca prețuri nete",
+          "required": "Z8 transmite prețuri nete. Confirmați că sevdesk introduce prețurile ca prețuri nete"
+        },
+        "noProviders": "Niciun instrument de contabilitate nu poate fi conectat încă în această instalare.",
+        "providerUnavailable": "Acest instrument nu este disponibil în această instalare. Înlocuiți sau eliminați conexiunea.",
+        "remove": "Eliminați conexiunea",
+        "removeConfirm": "Eliminați conexiunea",
+        "removed": "Conexiunea de contabilitate a fost eliminată",
+        "removeDescription": "Z8 șterge cheia API și nu mai poate crea ciorne de facturi. Ciornele existente deja în instrument rămân acolo. Legăturile de contact reapar dacă reconectați același cont.",
+        "removeTitle": "Eliminați conexiunea de contabilitate?",
+        "replace": "Înlocuiți conexiunea",
+        "replaced": "Conexiunea de contabilitate a fost înlocuită",
+        "replaceHelp": "Noua conexiune o înlocuiește pe cea actuală, iar cheia acesteia este ștearsă. Legăturile de contact se păstrează dacă noua cheie aparține aceluiași cont din același instrument.",
+        "replaceSubmit": "Înlocuiți conexiunea",
+        "tax": {
+          "domesticReduced": "Intern, cotă redusă",
+          "domesticStandard": "Intern, cotă standard",
+          "euReverseCharge": "Taxare inversă UE",
+          "invalid": "Introduceți o cotă mai mare de 0 și de cel mult 100 %, cu cel mult două zecimale",
+          "kind": "Regim fiscal",
+          "rate": "Cotă TVA",
+          "thirdCountryService": "Serviciu către o țară terță",
+          "vatFree": "Scutit de TVA",
+          "withRate": "{label} ({rate} %)"
+        },
+        "tool": "Instrument",
+        "toolUnavailable": "{tool} (nu este disponibil încă)"
+      },
+      "bulk": {
+        "again": "Modificați mai multe activități",
+        "alreadyBillable": "Deja facturabil",
+        "alreadyNonBillable": "Deja nefacturabil",
+        "apply": "Aplicați",
+        "billable": "Facturabil",
+        "dateRequired": "Alegeți o dată",
+        "description": "Marcați activitatea proiectului dintr-un interval de date ca facturabilă sau nefacturabilă.",
+        "failed": "Nemodificat: activitatea s-a modificat în timpul aplicării",
+        "fromDay": "De la",
+        "help": "Modifică activitatea finalizată pentru acest proiect. Datele reprezintă ziua locală a fiecărui angajat în care a început activitatea. Activitatea cu o corecție sau o trimitere în așteptare este reținută.",
+        "hours": "{hours} h",
+        "hoursColumn": "Ore",
+        "markedBillable": "Marcat ca facturabil",
+        "markedNonBillable": "Marcat ca nefacturabil",
+        "nonBillable": "Nefacturabil",
+        "open": "Marcați activitatea ca facturabilă",
+        "outcome": "Activitate",
+        "preview": "Previzualizare",
+        "rangeOrder": "Data de încheiere nu trebuie să fie înainte de data de început",
+        "skipped": {
+          "heldBack": "Reținut: o corecție sau o trimitere este în așteptare",
+          "invoiced": "Facturat: într-o ciornă de factură, nu se modifică niciodată în masă"
+        },
+        "stale": "Activitatea s-a modificat de la previzualizare. Nu a fost modificat nimic; verificați noua previzualizare și aplicați din nou.",
+        "target": "Marcați activitatea ca",
+        "title": "Marcați activitatea pentru {name}",
+        "toDay": "Până la",
+        "willMarkBillable": "Va fi marcat ca facturabil",
+        "willMarkNonBillable": "Va fi marcat ca nefacturabil",
+        "workPeriods": "Perioade de lucru"
+      },
+      "costRates": {
+        "actions": "Acțiuni",
+        "employee": "Angajat",
+        "employeeDescription": "Costul intern complet pe oră al acestui angajat, utilizat pentru marjă. Separat de salariu.",
+        "employeeTitle": "Tarif de cost",
+        "empty": "Niciun tarif de cost încă. Marja pentru munca acestui angajat apare ca având cost necunoscut.",
+        "history": "Istoric",
+        "hourly": "Orar",
+        "inactive": "Inactiv",
+        "intro": "Un tarif de cost este costul intern complet pe oră al unui angajat în {currency}, utilizat pentru marjă. Este separat de salariu: modificarea unuia nu îl va modifica niciodată pe celălalt.",
+        "loadError": "Tarifele de cost nu au putut fi încărcate",
+        "noEmployees": "Niciun angajat încă",
+        "panelDescription": "Tarif de cost",
+        "ratePerHour": "{rate}/h",
+        "saved": "Tariful de cost a fost salvat",
+        "set": "Setare tarif de cost",
+        "setRateHelp": "Noul tarif de cost se aplică de la această dată până la următoarea modificare. Nu modifică niciodată salariul, statul de plată sau veniturile orare.",
+        "startsOn": "Începe la {date}",
+        "today": "Astăzi",
+        "unchanged": "Acel tarif de cost se aplică deja",
+        "unknown": "Cost necunoscut",
+        "useWage": "Pornire de la salariul de {rate}"
+      },
+      "currency": {
+        "description": "Moneda unică în care sunt exprimate tarifele facturabile, tarifele de cost, veniturile și marja dumneavoastră.",
+        "help": "Toate tarifele facturabile, tarifele de cost, veniturile și marja utilizează această monedă. Aceasta nu poate fi modificată odată ce există un tarif facturabil sau un tarif de cost.",
+        "label": "Monedă facturabilă",
+        "locked": "Tarifele facturabile sau tarifele de cost utilizează deja această monedă, prin urmare nu mai poate fi modificată.",
+        "save": "Salvare monedă",
+        "saved": "Moneda facturabilă a fost salvată",
+        "title": "Monedă facturabilă"
+      },
+      "description": "Moneda facturabilă și sumele percepute clienților de către organizația dumneavoastră pentru munca depusă",
+      "handOff": {
+        "blocker": {
+          "currency": "Instrumentul de contabilitate nu poate accepta ciorne în {currency}.",
+          "noContactLink": "Asociați mai întâi acest client cu un contact din instrumentul de contabilitate pe pagina Contabilitate.",
+          "notConnected": "Conectați mai întâi un instrument de contabilitate pe pagina Contabilitate.",
+          "nothing": "Nu există activitate facturabilă nefacturată de transferat în această perioadă.",
+          "off": "Timpul facturabil este dezactivat.",
+          "providerUnavailable": "Instrumentul de contabilitate conectat nu este disponibil în această instalare.",
+          "taxTreatment": "Instrumentul de contabilitate nu poate accepta regimul fiscal al acestui client.",
+          "tooManyWorkLines": "Ciorna ar conține {lines} linii de lucru; instrumentul de contabilitate acceptă cel mult {max}. Alegeți mai puține proiecte sau o perioadă mai scurtă.",
+          "unpriced": "{count, plural, one {# perioadă de lucru nu are tarif facturabil. Adăugați un tarif înainte de transfer.} few {# perioade de lucru nu au tarif facturabil. Adăugați un tarif înainte de transfer.} other {# de perioade de lucru nu au tarif facturabil. Adăugați un tarif înainte de transfer.}}"
+        },
+        "changed": {
+          "billability": "Facturabilitate",
+          "project": "Proiect",
+          "removed": "Șters",
+          "split": "Divizat",
+          "times": "Ore"
+        },
+        "confirmed": "Ciorna de factură a fost creată",
+        "detail": {
+          "checking": "Se verifică ciorna în instrument…",
+          "gone": "Instrumentul de contabilitate nu mai are această ciornă. Dacă a fost ștearsă intenționat, deblocați transferul pentru ca activitatea să poată fi transferată din nou.",
+          "loading": "Transfer",
+          "openInTool": "Deschide în instrumentul de contabilitate",
+          "pending": "Instrumentul de contabilitate nu a creat încă această ciornă. Reîncercați pentru a finaliza transferul.",
+          "pendingUnknown": "Instrumentul de contabilitate nu a răspuns. Reîncercați pentru a finaliza acest transfer: va găsi o ciornă deja creată și nu va crea niciodată o a doua.",
+          "releaseReason": "Eliberat: {reason}",
+          "timesheet": "Pontaj",
+          "timesheetHelp": "Munca detaliată din spatele acestui transfer, de trimis împreună cu factura.",
+          "title": "Transfer către {customer}",
+          "toolStatus": "În instrument: {status}"
+        },
+        "form": {
+          "allProjects": "Toate proiectele",
+          "customer": "Client",
+          "customerNotLinked": "{name} (neasociat)",
+          "customerPlaceholder": "Alegeți un client",
+          "customerRequired": "Alegeți un client",
+          "english": "Engleză",
+          "from": "De la",
+          "german": "Germană",
+          "language": "Limba ciornei",
+          "periodInvalid": "Perioada nu se poate termina înainte de a începe",
+          "preview": "Previzualizare",
+          "projects": "Proiecte",
+          "projectsRequired": "Alegeți cel puțin un proiect",
+          "timesheet": "Adăugați pontajul ca linii de text",
+          "timesheetHelp": "Câte o linie pentru fiecare perioadă de lucru, în limita de linii a instrumentului de contabilitate. Puteți descărca oricând pontajul.",
+          "to": "Până la"
+        },
+        "hoursValue": "{hours} h",
+        "list": {
+          "actions": "Acțiuni",
+          "changed": "{count, plural, one {# perioadă de lucru modificată după facturare} few {# perioade de lucru modificate după facturare} other {# de perioade de lucru modificate după facturare}}",
+          "customer": "Client",
+          "description": "Ciorne de factură create în instrumentul de contabilitate. Deschideți una pentru a-i verifica starea, a-i descărca pontajul sau a o elibera.",
+          "empty": "Niciun transfer încă",
+          "gone": "Șters în instrument",
+          "open": "Deschide",
+          "period": "Perioadă",
+          "status": "Stare",
+          "title": "Transferuri",
+          "total": "Total net"
+        },
+        "marks": {
+          "clear": "Elimină marcajul",
+          "clearAll": "Elimină toate marcajele",
+          "cleared": "{count, plural, one {# marcaj eliminat} few {# marcaje eliminate} other {# de marcaje eliminate}}",
+          "help": "Această muncă facturată a fost corectată după transferul său. Corectați factura în instrumentul de contabilitate dacă este necesar (de exemplu, printr-o notă de credit), apoi eliminați marcajul.",
+          "title": "Modificat după facturare"
+        },
+        "new": {
+          "description": "Creați o ciornă de factură în instrumentul de contabilitate pe baza muncii facturabile nefacturate a unui client. Contabilul o finalizează acolo.",
+          "title": "Transfer nou"
+        },
+        "pending": "Instrumentul de contabilitate nu a confirmat încă ciorna. Reîncercați transferul.",
+        "period": "{from} – {to}",
+        "preview": {
+          "alreadyInvoiced": "Deja facturat",
+          "alreadyInvoicedHint": "Această muncă este inclusă într-o altă ciornă de factură și este omisă.",
+          "amount": "Sumă",
+          "confirm": "Creează ciornă de factură",
+          "heldBack": "Muncă reținută",
+          "heldBackHint": "O corecție sau o trimitere pentru această activitate este încă în așteptare. Aceasta este exclusă până la luarea unei decizii.",
+          "hours": "Ore",
+          "line": "Linie",
+          "nonBillable": "{count, plural, one {# perioadă de lucru nefacturabilă ({hours} h) nu este transferată.} other {# perioade de lucru nefacturabile ({hours} h) nu sunt transferate.}}",
+          "rate": "Tarif",
+          "retry": "Reîncearcă transferul",
+          "retryHint": "Reîncercarea este sigură: finalizează același transfer și nu creează niciodată o a doua ciornă.",
+          "taxHint": "plus taxe conform tratamentului fiscal, aplicate în instrumentul de contabilitate",
+          "timesheetLines": "{count, plural, one {# linie de text din foaia de pontaj este adăugată la ciornă.} other {# linii de text din foaia de pontaj sunt adăugate la ciornă.}}",
+          "timesheetOmitted": "{count, plural, one {Instrumentul de contabilitate acceptă doar un număr limitat de linii: # perioadă de lucru este omisă din liniile de text. Descărcarea foii de pontaj le include pe toate.} other {Instrumentul de contabilitate acceptă doar un număr limitat de linii: # perioade de lucru sunt omise din liniile de text. Descărcarea foii de pontaj le include pe toate.}}",
+          "title": "Previzualizare",
+          "total": "Total net",
+          "unpriced": "Activitate fără tarif",
+          "unpricedHint": "Activitate facturabilă fără un tarif facturabil. Adăugați un tarif pe pagina Tarife facturabile, apoi previzualizați din nou.",
+          "withoutCustomer": "{count, plural, one {# perioadă de lucru facturabilă ({hours} h) pentru proiecte fără client ({projects}) nu poate fi transferată.} other {# perioade de lucru facturabile ({hours} h) pentru proiecte fără client ({projects}) nu pot fi transferate.}}"
+        },
+        "release": {
+          "action": "Eliberare",
+          "confirm": "Eliberare",
+          "description": "Activitatea asociată redevine nefacturată și poate fi transferată din nou. Z8 nu modifică ciorna din instrumentul de contabilitate: ștergeți-o sau anulați-o direct acolo.",
+          "done": "{count, plural, one {Eliberat. # perioadă de lucru este din nou nefacturată.} other {Eliberat. # perioade de lucru sunt din nou nefacturate.}}",
+          "reason": "Motiv (opțional)",
+          "title": "Eliberați acest transfer?"
+        },
+        "status": {
+          "created": "Ciornă creată",
+          "failed": "Eșuat",
+          "pending": "În așteptarea instrumentului",
+          "released": "Eliberat"
+        },
+        "timesheet": {
+          "customer": "Client",
+          "date": "Dată",
+          "employee": "Angajat",
+          "end": "Sfârșit",
+          "footer": "Generat de Z8",
+          "generatedAt": "Generat la",
+          "hours": "Ore",
+          "note": "Orele sunt exprimate în fusul orar local unde a fost înregistrată activitatea. Orele sunt rotunjite la două zecimale per perioadă de lucru.",
+          "period": "Perioadă",
+          "project": "Proiect",
+          "start": "Început",
+          "table": "Activitate",
+          "title": "Foaie de pontaj",
+          "total": "Total"
+        }
+      },
+      "nav": {
+        "accounting": "Contabilitate",
+        "costRates": "Tarife de cost",
+        "currency": "Monedă facturabilă",
+        "handOff": "Transfer",
+        "label": "Setări timp facturabil",
+        "rates": "Tarife facturabile"
+      },
+      "rates": {
+        "actions": "Acțiuni",
+        "add": "Adăugare tarif",
+        "addDescription": "Alegeți nivelul tarifului și destinația acestuia.",
+        "chooseCustomer": "Alegeți un client",
+        "chooseEmployee": "Alegeți un angajat",
+        "chooseProject": "Alegeți un proiect",
+        "closedPeriod": "{from} până la {to}",
+        "customer": "Client",
+        "customerRate": "Tarif facturabil",
+        "customerRateTitle": "Tarif facturabil pentru {name}",
+        "dateRequired": "Alegeți prima zi în care se aplică",
+        "effectiveFrom": "Se aplică de la",
+        "employee": "Angajat",
+        "employeeProjectRateFor": "Tarif facturabil pentru {name} la acest proiect",
+        "employeeProjectRateTitle": "Tarif facturabil pentru {name} la {project}",
+        "employeeRateDescription": "Ceea ce organizația dumneavoastră facturează clienților pe oră de muncă a acestui angajat atunci când nu se aplică niciun tarif de proiect, client sau angajat pe proiect.",
+        "employeeRateTitle": "Tarif facturabil",
+        "empty": "Niciun tarif stabilit încă",
+        "emptyCustomer": "Fără tarif de client. Se aplică tariful fiecărui angajat.",
+        "emptyEmployee": "Fără tarif de angajat. Munca fără un tarif mai specific este neevaluată.",
+        "emptyEmployeeProject": "Fără tarif pentru acest angajat la acest proiect. Se aplică tariful de proiect, de client sau de angajat.",
+        "emptyProject": "Fără tarif de proiect. Se aplică tariful de client sau de angajat.",
+        "endRate": "Încheie tariful",
+        "endRateHelp": "Începând cu această dată, acest tarif nu se mai aplică până la următoarea modificare de tarif.",
+        "endsFrom": "Nu se mai aplică de la",
+        "for": "Pentru",
+        "history": "Istoric",
+        "hourlyRate": "Tarif orar",
+        "inEffect": "În vigoare",
+        "inEffectTodayHint": "În vigoare astăzi: {rate}",
+        "intro": "Tarifele sunt exprimate în {currency} pe oră. Pentru fiecare activitate efectuată, se aplică cel mai specific tarif în vigoare în ziua în care a început: angajat pe proiect, apoi proiect, apoi client, apoi angajat.",
+        "level": {
+          "customer": "Client",
+          "customerDescription": "Se aplică muncii la proiectele clientului fără un tarif de proiect.",
+          "employee": "Angajat",
+          "employeeDescription": "Tariful standard al angajatului, utilizat atunci când nu se aplică un tarif mai specific.",
+          "employeeProject": "Angajat pe proiect",
+          "employeeProjectDescription": "Are prioritate față de orice alt tarif pentru munca acestui angajat la acest proiect.",
+          "project": "Proiect",
+          "projectDescription": "Se aplică pentru toată munca la proiect fără un tarif de angajat pe proiect."
+        },
+        "levelLabel": "Nivel de tarif",
+        "loadError": "Tarifele facturabile nu au putut fi încărcate",
+        "noneAtLevel": "Niciun tarif la acest nivel încă",
+        "noRateToday": "Fără tarif",
+        "openPeriod": "De la {from}",
+        "perHour": "{currency}/h",
+        "project": "Proiect",
+        "projectRate": "Tarif facturabil",
+        "projectRateTitle": "Tarif facturabil pentru {name}",
+        "rateInvalid": "Introduceți un tarif orar pozitiv cu cel mult două zecimale",
+        "ratePerHour": "{rate}/h",
+        "saved": "Tarif facturabil salvat",
+        "saveEnd": "Încheie tariful",
+        "saveRate": "Salvează tariful",
+        "setRate": "Setează tariful",
+        "setRateHelp": "Noul tarif se aplică de la această dată până la următoarea modificare de tarif. Datele anterioare recalculează munca ce nu a fost încă facturată.",
+        "startsOn": "Începe pe {date}",
+        "today": "Astăzi",
+        "unchanged": "Acel tarif se aplică deja"
+      },
+      "title": "Timp facturabil"
+    },
+    "billing": {
+      "description": "Gestionați-vă abonamentul, metodele de plată și facturile",
+      "title": "Facturare și abonament"
+    },
+    "closedMonths": {
+      "automatic": {
+        "days": "Zile după sfârșitul lunii",
+        "daysHelp": "Dacă ceva blochează închiderea, toți cei care au permisiunea de a închide sunt notificați și se încearcă din nou a doua zi.",
+        "daysInvalid": "Introduceți un număr întreg de zile între 1 și 60",
+        "description": "Închideți luna precedentă pentru întreaga organizație la un număr de zile după încheierea acesteia. O lună care a fost redeschisă nu se mai închide niciodată automat.",
+        "enabled": "Închide lunile automat",
+        "save": "Salvează",
+        "saved": "Închiderea automată a fost salvată",
+        "title": "Închidere automată"
+      },
+      "blockedTitle": "Luna nu poate fi închisă încă. Rezolvați mai întâi aceste probleme:",
+      "blocker": {
+        "absenceRequest": "cerere de absență nesoluționată {startDate} – {endDate}",
+        "liveWork": "pontat încă din {start}",
+        "notEnded": "luna nu s-a încheiat pe fusul orar al acestora",
+        "periodSubmission": "trimitere de perioadă în așteptarea unei decizii {startDate} – {endDate}",
+        "timeRequest": "cerere nesoluționată privind activitatea din {start}"
+      },
+      "close": "Închide",
+      "closeDescription": "Nimeni nu poate modifica activitatea, alocările sau absențele dintr-o lună închisă până când aceasta nu este redeschisă. Luna fiecărui angajat este fixată în funcție de propriul fus orar.",
+      "closeSubmit": "Închide luna",
+      "closeSuccess": "{count, plural, one {{month} închisă pentru # angajat} few {{month} închisă pentru # angajați} other {{month} închisă pentru # de angajați}}",
+      "closeTitle": "Închide {month}",
+      "description": "Închideți lunile după salarizare pentru ca activitatea și absențele să nu mai poată fi modificate",
+      "employeesLabel": "Angajați",
+      "employeesRequired": "Selectați cel puțin un angajat",
+      "history": {
+        "automatic": "Automat",
+        "closed": "Închis",
+        "employees": "{count, plural, one {# angajat} few {# angajați} other {# de angajați}}",
+        "reopened": "Redeschis",
+        "unknownActor": "Necunoscut"
+      },
+      "historyEmpty": "Nicio lună nu a fost închisă încă.",
+      "historyTitle": "Istoric",
+      "monthsDescription": "Închiderea unei luni blochează activitatea, alocările și absențele pentru salarizare. Notițele rămân editabile.",
+      "monthsTitle": "Luni",
+      "nothingToClose": "Toată lumea din acest domeniu este deja închisă pentru această lună.",
+      "nothingToReopen": "Nimeni din această selecție nu este închis pentru această lună.",
+      "reasonLabel": "Motiv",
+      "reasonPlaceholder": "De ce trebuie modificată această lună?…",
+      "reasonRequired": "Introduceți un motiv pentru redeschidere",
+      "reopen": "Redeschide",
+      "reopenDescription": "Angajații redeschiși rămân deschiși până când luna este închisă din nou. Managerii lor sunt notificați.",
+      "reopenScopeLabel": "Redeschide pentru",
+      "reopenSubmit": "Redeschide luna",
+      "reopenSuccess": "{count, plural, one {{month} redeschisă pentru # angajat} few {{month} redeschisă pentru # angajați} other {{month} redeschisă pentru # de angajați}}",
+      "reopenTitle": "Redeschide {month}",
+      "scope": {
+        "all": "Tot",
+        "deletedTeam": "Echipă ștearsă",
+        "employees": "Angajații selectați",
+        "organization": "Organizație"
+      },
+      "scopeLabel": "Închide pentru",
+      "teamNotFound": "Această echipă nu mai există.",
+      "title": "Luni închise",
+      "warning": {
+        "periodNotSubmitted": "perioada {startDate} – {endDate} nu a fost trimisă",
+        "periodRejected": "perioada {startDate} – {endDate} respinsă",
+        "periodRunning": "perioada {startDate} – {endDate} este încă în desfășurare, nu poate fi trimisă încă",
+        "periodSentBack": "perioada {startDate} – {endDate} trimisă înapoi după o modificare"
+      },
+      "warnings": {
+        "more": "și încă {count}",
+        "title": "Nu toate trimiterile de perioadă pentru această lună sunt aprobate. Acest lucru nu blochează închiderea:"
+      }
+    },
+    "compliance": {
+      "description": "Examinați și gestionați solicitările de derogare de la conformitate primite de la membrii echipei",
+      "title": "Conformitate ArbZG"
+    },
+    "customDomains": {
+      "description": "Configurați domeniul personalizat, brandingul și SSO pentru organizația dvs.",
+      "title": "Domeniu și branding"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Persoană de contact",
+        "email": "E-mail",
+        "name": "Numele companiei",
+        "phone": "Telefon"
+      },
+      "create": "Adaugă client",
+      "created": "Client creat",
+      "createFailed": "Crearea clientului a eșuat",
+      "deleted": "Client șters",
+      "delete": {
+        "description": "Sigur doriți să ștergeți „{name}”? Proiectele atribuite acestui client vor continua să funcționeze, dar referința către client va fi eliminată.",
+        "title": "Șterge clientul"
+      },
+      "deleteFailed": "Ștergerea clientului a eșuat",
+      "description": "Gestionați contactele clienților pentru atribuirea la proiecte",
+      "dialog": {
+        "create": "Adaugă client",
+        "createDescription": "Adăugați un client nou pentru atribuirea la proiecte",
+        "createTitle": "Adaugă client",
+        "editDescription": "Actualizați detaliile clientului",
+        "editTitle": "Editează clientul",
+        "save": "Salvează modificările"
+      },
+      "empty": {
+        "description": "Adăugați primul client pentru a-l atribui la proiecte.",
+        "title": "Niciun client încă"
+      },
+      "field": {
+        "address": "Adresă",
+        "addressPlaceholder": "Stradă, Oraș, Cod poștal",
+        "contactPerson": "Persoană de contact",
+        "contactPersonPlaceholder": "de ex., John Smith",
+        "email": "E-mail",
+        "name": "Numele companiei",
+        "namePlaceholder": "Introduceți numele companiei",
+        "phone": "Telefon",
+        "project": "Proiect",
+        "projectPlaceholder": "Selectați un proiect",
+        "vatId": "Cod de TVA",
+        "website": "Site web"
+      },
+      "list": {
+        "description": "{count} clienți în total",
+        "title": "Toți clienții"
+      },
+      "managerNoProjects": "Nu există proiecte gestionate disponibile. Creați sau gestionați un proiect înainte de a adăuga clienți.",
+      "projectRequired": "Selectați mai întâi un proiect",
+      "title": "Clienți",
+      "updated": "Client actualizat",
+      "updateFailed": "Actualizarea clientului a eșuat"
+    },
+    "customFields": {
+      "accessSummary": "Vizibil pentru: {visibility} · Editat de: {edit}",
+      "activeCount": "{count} din {max} câmpuri active",
+      "activeList": "Câmpuri personalizate active",
+      "add": "Adaugă câmp personalizat",
+      "archivedList": "Câmpuri personalizate arhivate",
+      "archivedTitle": "Arhivat",
+      "archiveField": "Arhivează {name}",
+      "capReached": "Fiecare tip de înregistrare poate avea cel mult 25 de câmpuri personalizate active. Arhivați unul pentru a adăuga altul.",
+      "description": "Câmpurile proprii pentru angajați, proiecte și clienți",
+      "editField": "Editează {name}",
+      "empty": "Niciun câmp personalizat încă.",
+      "entity": {
+        "customer": "Clienți",
+        "employee": "Angajați",
+        "project": "Proiecte"
+      },
+      "form": {
+        "boundsHelp": "Lăsați o limită necompletată pentru a nu seta o limită.",
+        "create": "Creează câmp",
+        "createTitle": "Adaugă câmp personalizat",
+        "description": "Un câmp personalizat pentru {entity}.",
+        "editLevel": "Cine poate edita valorile",
+        "editLevelHelp": "Angajații nu editează niciodată valorile câmpurilor personalizate.",
+        "editTitle": "Editează câmpul personalizat",
+        "integerOnly": "Doar numere întregi",
+        "max": "Maxim",
+        "min": "Minim",
+        "name": "Nume",
+        "nameRequired": "Introduceți un nume",
+        "options": "Opțiuni",
+        "optionsHelp": "Câte o opțiune pe linie.",
+        "required": "Obligatoriu",
+        "requiredHelp": "Formularele refuză salvarea unei înregistrări fără o valoare.",
+        "save": "Salvează modificările",
+        "tracked": "Păstrează un istoric",
+        "trackedFixed": "Păstrarea istoricului unui câmp nu mai poate fi modificată după crearea acestuia.",
+        "trackedHelp": "Fiecare valoare conține data de la care este valabilă.",
+        "type": "Tip",
+        "typeFixed": "Tipul nu poate fi modificat după crearea câmpului.",
+        "visibility": "Cine poate vedea valorile"
+      },
+      "level": {
+        "admin": "Administratori",
+        "employee": "Toată lumea, inclusiv angajatul",
+        "manager": "Manageri și administratori"
+      },
+      "options": {
+        "add": "Adaugă opțiune",
+        "archive": "Arhivează {label}",
+        "archived": "Arhivat",
+        "label": "Nume opțiune",
+        "list": "Opțiuni",
+        "moveDown": "Mută {label} în jos",
+        "moveUp": "Mută {label} în sus",
+        "new": "Opțiune nouă",
+        "restore": "Restaurează {label}",
+        "title": "Opțiuni"
+      },
+      "refusal": {
+        "booleanRequired": "Un câmp de tip da/nu nu poate fi obligatoriu.",
+        "duplicateOption": "Acest câmp are deja o opțiune activă cu acest nume.",
+        "editBroaderThanVisibility": "Toți cei care pot edita valorile trebuie să le poată și vedea.",
+        "employeesNeverEdit": "Angajații nu pot edita valorile câmpurilor personalizate.",
+        "fieldArchived": "Restaurați acest câmp personalizat înainte de a-l modifica.",
+        "invalidChange": "Această modificare nu poate fi salvată. Reîncărcați pagina și încercați din nou.",
+        "invalidLevel": "Alegeți cine poate vedea și edita valorile.",
+        "invalidName": "Introduceți un nume de cel mult 100 de caractere.",
+        "invalidOptionLabel": "Introduceți o opțiune de cel mult 100 de caractere.",
+        "lastActiveOption": "Un câmp de tip selecție are nevoie de cel puțin o opțiune activă.",
+        "nameTaken": "Un câmp personalizat activ pentru acest tip de înregistrare are deja acest nume.",
+        "notFound": "Acest câmp personalizat nu mai există. Reîncărcați pagina.",
+        "notSelect": "Doar câmpurile de tip selecție au opțiuni.",
+        "numberBounds": "Introduceți un minim și un maxim ca numere, minimul nefiind mai mare decât maximul.",
+        "optionArchived": "Restaurați mai întâi această opțiune.",
+        "selectNeedsOption": "Adăugați cel puțin o opțiune la un câmp de tip selecție.",
+        "staleOrder": "Lista s-a modificat între timp. Reîncărcați pagina și încercați din nou.",
+        "tooManyFields": "Acest tip de înregistrare are deja 25 de câmpuri personalizate active. Arhivați unul mai întâi.",
+        "trackedFixed": "Păstrarea istoricului pentru un câmp personalizat nu poate fi modificată după crearea acestuia.",
+        "typeFixed": "Tipul unui câmp personalizat nu poate fi modificat după crearea acestuia.",
+        "usedAsPayrollIdentifier": "Acest câmp este identificatorul de personal al configurației de export pentru salarizare {configurations}. Alegeți mai întâi un alt identificator acolo."
+      },
+      "reorderField": "Reordonează {name}",
+      "required": "Obligatoriu",
+      "restore": "Restaurează",
+      "restoreField": "Restaurează {name}",
+      "saveFailed": "Modificarea nu a putut fi salvată.",
+      "title": "Câmpuri personalizate",
+      "tracked": "Urmărit",
+      "type": {
+        "boolean": "Da/Nu",
+        "date": "Dată",
+        "number": "Număr",
+        "select": "Selecție",
+        "text": "Text"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Există deja o valoare care începe la acea dată.",
+        "fieldArchived": "Acest câmp este arhivat.",
+        "forField": "Câmp personalizat \"{field}\": {message}",
+        "invalidDate": "Introduceți o dată validă.",
+        "invalidNumber": "Introduceți un număr.",
+        "invalidValidFrom": "Introduceți o dată de început validă.",
+        "invalidValue": "Introduceți o valoare validă.",
+        "missingRequired": "Acest câmp este obligatoriu.",
+        "missingValue": "Introduceți o valoare pentru fiecare dată.",
+        "notEditable": "Nu puteți modifica acest câmp.",
+        "numberNotInteger": "Introduceți un număr întreg.",
+        "numberOutOfRange": "Introduceți un număr din intervalul permis.",
+        "optionArchived": "Această opțiune este arhivată. Alegeți alta.",
+        "textTooLong": "Introduceți cel mult 255 de caractere.",
+        "trackedField": "Acest câmp păstrează un istoric. Adăugați în schimb o modificare datată.",
+        "unknownField": "Acest câmp nu mai există. Reîncărcați pagina și încercați din nou.",
+        "unknownHistoryEntry": "Istoricul s-a modificat între timp. Reîncărcați pagina și încercați din nou."
+      },
+      "values": {
+        "archivedOption": "{label} (arhivat)",
+        "history": {
+          "add": "Adăugare modificare",
+          "apply": "Aplicați",
+          "correct": "Corectați valoarea valabilă de la {date}",
+          "delete": "Ștergeți valoarea valabilă de la {date}",
+          "duplicateValidFrom": "Există deja o valoare valabilă de la această dată.",
+          "empty": "Nicio valoare încă.",
+          "from": "De la {date}",
+          "label": "Istoric pentru {name}",
+          "needsValidFrom": "Alegeți data de la care valoarea este valabilă.",
+          "needsValue": "Introduceți o valoare.",
+          "today": "Astăzi",
+          "validFrom": "Valabil de la",
+          "value": "Valoare"
+        },
+        "missingRequired": "Lipsesc valori obligatorii",
+        "no": "Nu",
+        "notSet": "Nesetat",
+        "ownDescription": "Gestionate de organizația dvs. Solicitați unui administrator sau managerului dvs. să le modifice.",
+        "title": "Câmpuri personalizate",
+        "yes": "Da"
+      }
+    },
+    "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Înregistrări și categorii de absențe",
+          "label": "Absențe"
+        },
+        "audit_logs": {
+          "description": "Jurnal de audit al activității",
+          "label": "Jurnale de audit"
+        },
+        "balance_adjustments": {
+          "description": "Solduri inițiale și plăți pentru ore suplimentare, inclusiv cele anulate",
+          "label": "Ajustări ale soldului de lucru"
+        },
+        "customers": {
+          "description": "Clienți cu câmpurile lor personalizate",
+          "label": "Clienți"
+        },
+        "employees": {
+          "description": "Profiluri de angajați, relații de subordonare și câmpuri personalizate pentru angajați",
+          "label": "Angajați"
+        },
+        "holidays": {
+          "description": "Calendar de sărbători și presetări",
+          "label": "Sărbători"
+        },
+        "projects": {
+          "description": "Proiecte cu câmpurile lor personalizate de client și de proiect",
+          "label": "Proiecte"
+        },
+        "schedules": {
+          "description": "Șabloane și alocări de program de lucru",
+          "label": "Programe de lucru"
+        },
+        "shifts": {
+          "description": "Date de planificare a schimburilor",
+          "label": "Schimburi"
+        },
+        "teams": {
+          "description": "Structura echipei și permisiuni",
+          "label": "Echipe"
+        },
+        "time_entries": {
+          "description": "Înregistrări de pontaj și corecții",
+          "label": "Pontaj"
+        },
+        "vacation": {
+          "description": "Politici de concediu și alocări",
+          "label": "Politici de concediu"
+        },
+        "work_periods": {
+          "description": "Sesiuni de lucru agregate",
+          "label": "Perioade de lucru"
+        }
+      },
+      "description": "Exportați datele organizației dvs.",
+      "form": {
+        "aboutAsync": "Exporturile sunt procesate asincron",
+        "aboutDownloadFromHistory": "Descărcați exporturile finalizate din Istoric exporturi",
+        "aboutEmail": "Veți primi un e-mail când este gata",
+        "aboutFileRetention": "Fișierele exportate sunt șterse după 30 de zile",
+        "aboutOrgDataOnly": "Sunt incluse doar datele organizației dvs.",
+        "aboutTitle": "Despre exportul de date",
+        "description": "Selectați categoriile de date pe care doriți să le exportați",
+        "selectAll": "Selectează tot",
+        "selectAtLeastOne": "Vă rugăm să selectați cel puțin o categorie",
+        "startExport": "Începe exportul ({count})",
+        "startingExport": "Se pornește exportul...",
+        "submitError": "Pornirea exportului a eșuat",
+        "submitSuccess": "Exportul a început cu succes",
+        "title": "Exportă date",
+        "unexpectedError": "A apărut o eroare neașteptată"
+      },
+      "history": {
+        "columnActions": "Acțiuni",
+        "columnCategories": "Categorii",
+        "columnDate": "Dată",
+        "columnSize": "Dimensiune",
+        "columnStatus": "Stare",
+        "deleteDialogDescription": "Sigur doriți să ștergeți acest export? Această acțiune nu poate fi anulată.",
+        "deleteDialogTitle": "Șterge exportul",
+        "deleteError": "Ștergerea exportului a eșuat",
+        "deleteSuccess": "Export șters",
+        "description": "Exporturile dvs. anterioare de date",
+        "download": "Descărcare",
+        "downloadError": "Descărcarea a eșuat",
+        "downloadSuccess": "Descărcarea a început",
+        "emptyDescription": "Niciun export încă",
+        "emptyHint": "Creați primul export folosind formularul de mai sus",
+        "moreCategories": "încă +{count}",
+        "statusCompleted": "Finalizat",
+        "statusFailed": "Eșuat",
+        "statusPending": "În așteptare",
+        "statusProcessing": "În procesare",
+        "switchOrganizationAction": "Comută la {organization}",
+        "switchOrganizationBody": "Acest export aparține organizației {organization}. Comutați la acea organizație pentru a deschide istoricul exporturilor; accesul dvs. va fi verificat din nou după comutare.",
+        "switchOrganizationTitle": "Comutați organizația pentru a vedea acest export",
+        "title": "Istoric exporturi",
+        "unexpectedError": "A apărut o eroare neașteptată"
+      },
+      "storage": {
+        "accessKeyDescription": "ID-ul cheii dvs. de acces AWS",
+        "accessKeyId": "ID cheie de acces",
+        "bucketDescription": "Numele bucket-ului dvs. S3",
+        "bucketName": "Nume bucket",
+        "bucketPlaceholder": "bucket-ul-meu-de-export",
+        "connectionFailed": "Conexiune eșuată",
+        "connectionSuccess": "Conexiune reușită",
+        "deleteDialogDescription": "Sigur doriți să ștergeți această configurație de stocare?",
+        "deleteDialogTitle": "Șterge configurația",
+        "deleteError": "Ștergerea configurației a eșuat",
+        "deleteSuccess": "Configurație ștearsă",
+        "description": "Configurați propriul spațiu de stocare compatibil S3 pentru exporturi",
+        "endpoint": "Punct final personalizat (opțional)",
+        "endpointDescription": "Pentru servicii compatibile S3, cum ar fi MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Lăsați necompletat pentru a păstra datele de autentificare existente",
+        "lastVerified": "Ultima verificare: {date}",
+        "region": "Regiune",
+        "regionDescription": "Regiunea AWS în care se află bucket-ul dvs.",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Salvează configurația",
+        "saveError": "Salvarea configurației a eșuat",
+        "saveSuccess": "Configurație salvată",
+        "saveSuccessDescription": "Setările dvs. pentru stocarea S3 au fost salvate",
+        "saving": "Se salvează...",
+        "secretAccessKey": "Cheie secretă de acces",
+        "secretKeyDescription": "Cheia dvs. secretă de acces AWS",
+        "testConnection": "Testează conexiunea",
+        "testFailed": "Testul conexiunii a eșuat",
+        "testing": "Se testează...",
+        "title": "Configurare stocare S3",
+        "unexpectedError": "A apărut o eroare neașteptată",
+        "verified": "Verificat"
+      },
+      "storageNotConfigured": {
+        "description": "Configurați stocarea S3 înainte de a crea exporturi",
+        "title": "Stocarea nu este configurată"
+      },
+      "tabs": {
+        "exportHistory": "Istoric exporturi",
+        "newExport": "Export nou",
+        "storageSettings": "Setări de stocare"
+      },
+      "title": "Export de date"
+    },
+    "emailConfig": {
+      "description": "Configurați un furnizor de e-mail personalizat pentru e-mailurile organizației",
+      "title": "Configurare e-mail"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Resetare la șablonul de sistem",
+        "save": "Salvează",
+        "sendTest": "Trimite test"
+      },
+      "categories": {
+        "absences": "Absențe",
+        "auth": "Acces la cont",
+        "billing": "Facturare",
+        "exports": "Exporturi",
+        "security": "Securitate",
+        "teams": "Echipe",
+        "timecorrections": "Corecții de timp"
+      },
+      "defaultFallback": "Variantă implicită de rezervă",
+      "defaultFallbackDescription": "Dacă acest șablon utilizează valoarea implicită de sistem, Z8 trimite textul și subiectul de sistem:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Notifică un angajat că un manager a înregistrat o absență în numele său.",
+          "label": "Absență înregistrată de manager"
+        },
+        "absence-request-approved": {
+          "description": "Notifică un angajat că cererea sa de absență a fost aprobată.",
+          "label": "Cerere de absență aprobată"
+        },
+        "absence-request-pending-approval": {
+          "description": "Notifică un manager că o cerere de absență necesită aprobare.",
+          "label": "Cerere de absență în așteptarea aprobării"
+        },
+        "absence-request-rejected": {
+          "description": "Notifică un angajat că cererea sa de absență a fost respinsă.",
+          "label": "Cerere de absență respinsă"
+        },
+        "absence-request-submitted": {
+          "description": "Confirmă că un angajat a trimis o cerere de absență.",
+          "label": "Cerere de absență trimisă"
+        },
+        "email-verification": {
+          "description": "Se trimite atunci când un utilizator trebuie să își verifice adresa de e-mail.",
+          "label": "Verificare e-mail"
+        },
+        "export-failed": {
+          "description": "Notifică un utilizator că un export solicitat nu a putut fi generat.",
+          "label": "Export eșuat"
+        },
+        "export-ready": {
+          "description": "Notifică un utilizator că un export solicitat este gata pentru descărcare.",
+          "label": "Export pregătit"
+        },
+        "organization-invitation": {
+          "description": "Se trimite atunci când un utilizator este invitat să se alăture unei organizații.",
+          "label": "Invitație în organizație"
+        },
+        "password-reset": {
+          "description": "Se trimite atunci când un utilizator solicită un link de resetare a parolei.",
+          "label": "Resetare parolă"
+        },
+        "security-alert": {
+          "description": "Notifică un utilizator cu privire la un eveniment important de securitate a contului.",
+          "label": "Alertă de securitate"
+        },
+        "team-member-added": {
+          "description": "Notifică un membru că a fost adăugat într-o echipă.",
+          "label": "Membru al echipei adăugat"
+        },
+        "team-member-removed": {
+          "description": "Notifică un membru că a fost eliminat dintr-o echipă.",
+          "label": "Membru al echipei eliminat"
+        },
+        "time-correction-approved": {
+          "description": "Notifică un angajat că i-a fost aprobată corectarea timpului.",
+          "label": "Corectare a timpului aprobată"
+        },
+        "time-correction-pending-approval": {
+          "description": "Notifică un manager că o corectare a timpului necesită aprobare.",
+          "label": "Corectare a timpului în așteptarea aprobării"
+        },
+        "time-correction-rejected": {
+          "description": "Notifică un angajat că i-a fost respinsă corectarea timpului.",
+          "label": "Corectare a timpului respinsă"
+        }
+      },
+      "description": "Personalizați e-mailurile trimise de organizația dvs.",
+      "editBodyBeforeSaving": "Editați corpul e-mailului înainte de a salva un prim șablon personalizat.",
+      "editor": {
+        "bodyDescription": "Compuneți e-mailul în format HTML îmbogățit trimis pentru acest eveniment de sistem.",
+        "bodyPlaceholder": "Scrieți conținutul e-mailului operațional...",
+        "emailBody": "Corp e-mail",
+        "fallbackDescription": "Utilizat pentru validare și ca variantă de rezervă sigură dacă editorul vizual nu poate reda conținutul.",
+        "htmlFallback": "Variantă de rezervă HTML",
+        "loading": "Se încarcă editorul de e-mail…",
+        "subject": "Subiect"
+      },
+      "emailTemplates": "Șabloane de e-mail",
+      "empty": "Nu există șabloane de e-mail disponibile pentru această organizație.",
+      "eyebrow": "Comunicări operaționale",
+      "reset": "Șablonul de e-mail a fost resetat la șablonul de sistem",
+      "resetFailed": "Resetarea șablonului de e-mail a eșuat",
+      "saved": "Șablonul de e-mail a fost salvat",
+      "saveFailed": "Salvarea șablonului de e-mail a eșuat",
+      "status": {
+        "customized": "Personalizat",
+        "default": "Implicit"
+      },
+      "systemTemplates": "Șabloane de sistem",
+      "testFailed": "Trimiterea e-mailului de test a eșuat",
+      "testSent": "E-mailul de test a fost trimis către contul dvs.",
+      "title": "Șabloane de e-mail",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Tip de absență"
+        },
+        "addedByName": {
+          "label": "Adăugat de"
+        },
+        "approvalUrl": {
+          "label": "URL de aprobare"
+        },
+        "approverName": {
+          "label": "Nume aprobator"
+        },
+        "appUrl": {
+          "label": "URL aplicație"
+        },
+        "categories": {
+          "label": "Categorii"
+        },
+        "correctedClockIn": {
+          "label": "Ora de intrare corectată"
+        },
+        "correctedClockOut": {
+          "label": "Ora de ieșire corectată"
+        },
+        "date": {
+          "label": "Dată"
+        },
+        "days": {
+          "label": "Zile"
+        },
+        "downloadUrl": {
+          "label": "URL de descărcare"
+        },
+        "email": {
+          "label": "E-mail"
+        },
+        "employeeName": {
+          "label": "Nume angajat"
+        },
+        "endDate": {
+          "label": "Dată de sfârșit"
+        },
+        "errorMessage": {
+          "label": "Mesaj de eroare"
+        },
+        "eventType": {
+          "label": "Tip de eveniment"
+        },
+        "expiresAt": {
+          "label": "Expiră la"
+        },
+        "fileSize": {
+          "label": "Dimensiune fișier"
+        },
+        "invitationUrl": {
+          "label": "URL de invitație"
+        },
+        "inviterName": {
+          "label": "Nume invitant"
+        },
+        "ipAddress": {
+          "label": "Adresă IP"
+        },
+        "managerName": {
+          "label": "Nume manager"
+        },
+        "memberName": {
+          "label": "Nume membru"
+        },
+        "notes": {
+          "label": "Note"
+        },
+        "organizationName": {
+          "label": "Nume organizație"
+        },
+        "originalClockIn": {
+          "label": "Ora de intrare inițială"
+        },
+        "originalClockOut": {
+          "label": "Ora de ieșire inițială"
+        },
+        "reason": {
+          "label": "Motiv"
+        },
+        "recipientName": {
+          "label": "Nume destinatar"
+        },
+        "rejectionReason": {
+          "label": "Motiv respingere"
+        },
+        "removedByName": {
+          "label": "Eliminat de"
+        },
+        "resetUrl": {
+          "label": "URL de resetare"
+        },
+        "retryUrl": {
+          "label": "URL de reîncercare"
+        },
+        "role": {
+          "label": "Rol"
+        },
+        "securitySettingsUrl": {
+          "label": "URL setări de securitate"
+        },
+        "startDate": {
+          "label": "Data de început"
+        },
+        "teamName": {
+          "label": "Numele echipei"
+        },
+        "teamUrl": {
+          "label": "URL echipă"
+        },
+        "timestamp": {
+          "label": "Marcaj temporal"
+        },
+        "userAgent": {
+          "label": "Agent utilizator"
+        },
+        "userName": {
+          "label": "Nume de utilizator"
+        },
+        "verificationUrl": {
+          "label": "URL de verificare"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Variabile permise",
+        "description": "Inserați doar substituenți aprobați. Valorile sunt înlocuite la trimiterea e-mailului.",
+        "fallbackSafe": "Sigur pentru rezervă",
+        "insert": "Inserează {label}"
+      }
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Înapoi la Setări",
+        "tryAgain": "Încercați din nou"
+      },
+      "description": "A apărut o eroare la încărcarea paginii de setări. Aceasta ar putea fi o problemă temporară.",
+      "errorId": "ID eroare: {digest}",
+      "title": "A apărut o problemă"
+    },
+    "export": {
+      "description": "Exportați datele organizației pentru backup sau migrare",
+      "title": "Export de date"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Cererea de export pentru audit a fost înregistrată.",
+          "title": "Export de audit"
+        },
+        "payroll": {
+          "description": "Activitatea de export pentru salarizare a fost înregistrată.",
+          "title": "Export salarizare"
+        },
+        "scheduled": {
+          "description": "Execuția exportului programat a fost înregistrată.",
+          "title": "Export programat"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Cea mai recentă cerere de export pentru audit nu s-a finalizat.",
+          "title": "Exportul de audit a eșuat"
+        },
+        "blockedSchedule": {
+          "description": "{name} necesită o configurare a exportului statelor de plată înainte de a putea rula.",
+          "title": "Exportul programat al statelor de plată este blocat"
+        },
+        "description": "Probleme la export care ar putea necesita atenția administratorului.",
+        "empty": "Nicio alertă în acest moment",
+        "payrollFailed": {
+          "description": "Cel mai recent export al statelor de plată nu s-a finalizat.",
+          "title": "Exportul statelor de plată a eșuat"
+        },
+        "scheduledFailed": {
+          "description": "{name} nu s-a finalizat cu succes.",
+          "title": "Exportul programat a eșuat"
+        },
+        "title": "Alerte"
+      },
+      "description": "Monitorizați activitatea de export pentru state de plată, audit și exporturi programate pentru organizația dvs.",
+      "errors": {
+        "alerts": "Unele alerte pot fi incomplete cât timp datele de export nu sunt disponibile.",
+        "recentActivity": "Unele date despre activitate sunt temporar indisponibile.",
+        "summary": "Numărătorile se bazează pe datele de export care au putut fi încărcate.",
+        "upcomingRuns": "Datele privind exporturile programate sunt temporar indisponibile."
+      },
+      "links": {
+        "audit": "Deschide setările de export pentru audit",
+        "payroll": "Deschide setările de export pentru salarizare",
+        "scheduled": "Deschide setările de export programat"
+      },
+      "partialData": "Date parțiale",
+      "recentActivity": {
+        "description": "Cele mai recente evenimente de export pentru salarizare, audit și programate.",
+        "empty": "Nicio activitate recentă de export",
+        "export": "Export",
+        "link": "Setări",
+        "status": "Stare",
+        "title": "Activitate recentă",
+        "when": "A avut loc"
+      },
+      "severity": {
+        "error": "Eroare",
+        "warning": "Avertisment"
+      },
+      "status": {
+        "assembling": "Se asamblează pachetul",
+        "collecting": "Se colectează datele",
+        "completed": "Finalizat",
+        "failed": "Eșuat",
+        "hardening": "Se aplică securizarea",
+        "lineageExpanding": "Se extinde descendența",
+        "pending": "În așteptare",
+        "processing": "În procesare",
+        "requested": "Solicitat"
+      },
+      "summary": {
+        "activeSchedules": "Programări active",
+        "activeSchedulesDescription": "Programări de export recurente activate.",
+        "failedRuns": "Rulări eșuate (7 zile)",
+        "failedRunsDescription": "Rulări eșuate de salarizare, audit și programate din ultima săptămână.",
+        "lastAuditPack": "Ultimul pachet de audit",
+        "lastAuditPackDescription": "Cea mai recentă generare a pachetului de audit.",
+        "lastPayrollExport": "Ultimul export de salarizare",
+        "lastPayrollExportDescription": "Cea mai recentă finalizare a exportului de salarizare.",
+        "none": "Niciodată"
+      },
+      "title": "Operațiuni de export",
+      "upcomingRuns": {
+        "description": "Următoarele exporturi programate puse în coadă pentru această organizație.",
+        "empty": "Nicio rulare viitoare",
+        "link": "Setări",
+        "name": "Nume",
+        "title": "Rulări viitoare",
+        "when": "Programat pentru"
+      }
+    },
+    "group": {
+      "account": "Cont",
+      "administration": "Administrare",
+      "data": "Date",
+      "enterprise": "Enterprise",
+      "notifications": "Notificări",
+      "organization": "Organizație"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Marcați ca finalizat",
+        "markIncomplete": "Marcați ca nefinalizat"
+      },
+      "description": "Finalizați pașii de configurare înainte de a vă invita întreaga echipă, astfel încât fluxurile de lucru pentru pontaj, aprobări și state de plată să fie gata pentru utilizarea zilnică.",
+      "errors": {
+        "updateItem": "Actualizarea elementului din lista de verificare a eșuat."
+      },
+      "eyebrow": "Implementare client",
+      "progress": {
+        "ariaLabel": "Progresul listei de verificare pentru implementare",
+        "completedCount": "{completed} din {total} finalizate",
+        "label": "Progres configurare",
+        "percentComplete": "{percent}% finalizat"
+      },
+      "status": {
+        "complete": "Finalizat",
+        "manuallyComplete": "Finalizat manual",
+        "needsReview": "Necesită revizuire",
+        "notStarted": "Neînceput"
+      },
+      "title": "Listă de verificare pentru implementare"
+    },
+    "import": {
+      "description": "Importați date de la furnizori acceptați, precum Clockodo și Clockin.",
+      "review": {
+        "billability": {
+          "alreadyBilled": "Deja facturat în Clockodo. Importat ca activitate facturabilă, nu ca activitate facturată.",
+          "billable": "Facturabil",
+          "noBillableValue": "Pregătit fără o valoare facturabilă; se va înregistra ca activitate nefacturabilă.",
+          "noCustomer": "Facturabil în Clockodo, dar proiectul Z8 nu are niciun client.",
+          "nonBillable": "Nefacturabil",
+          "noProject": "Facturabil în Clockodo, dar înregistrarea nu are niciun proiect.",
+          "unmappedProject": "Facturabil în Clockodo, dar proiectul Clockodo nu este asociat unui proiect Z8."
+        },
+        "commitAccepted": "Confirmați rândurile acceptate",
+        "commitFailed": "Nu s-a putut iniția confirmarea importului",
+        "commitQueued": "S-au adăugat în coadă {count} rânduri acceptate pentru confirmare",
+        "committing": "Se confirmă...",
+        "customers": {
+          "contact": "Contact",
+          "createUnmatched": "{count, plural, one {Creează un client pentru # contact fără potrivire} few {Creează clienți pentru # contacte fără potrivire} other {Creează clienți pentru # de contacte fără potrivire}}",
+          "decision": {
+            "create": "Creează un client nou",
+            "for": "Decizie pentru {name}",
+            "label": "Decizie",
+            "link": "Asociază cu {name}",
+            "linkChosen": "Asociază cu clientul ales",
+            "linkSuggested": "Asociază cu {name} (sugerat)",
+            "placeholder": "Alege…",
+            "skip": "Omite"
+          },
+          "decisionFailed": "Decizia nu a putut fi salvată",
+          "description": "Alege pentru fiecare contact dacă dorești să creezi un client nou, să îl asociezi cu un client existent sau să îl omiți. Clienții creați și asociați primesc o legătură de contact. Nu se modifică nimic în instrumentul de contabilitate.",
+          "details": "Detalii",
+          "duplicateInTool": "Un alt contact din instrumentul de contabilitate are același nume; un singur client îl poate avea.",
+          "empty": "Fiecare contact de client din instrumentul de contabilitate este deja asociat cu un client.",
+          "hold": {
+            "billableTimeOff": "Timpul facturabil a fost dezactivat.",
+            "connectionChanged": "Conexiunea cu instrumentul de contabilitate s-a modificat. Inițiază un nou import de clienți.",
+            "contactAlreadyLinked": "Între timp, acest contact a fost asociat cu un client.",
+            "customerAlreadyLinked": "Clientul ales este deja asociat cu un alt contact.",
+            "customerNameTaken": "Există deja un client cu acest nume. Asociază-l în schimb sau omite contactul.",
+            "invalidRow": "Contactul nu are un nume utilizabil.",
+            "linkTargetMissing": "Clientul ales nu mai există."
+          },
+          "match": "Potrivire în Z8",
+          "nameTaken": "{name} are același nume și este deja asociat cu un alt contact",
+          "noMatch": "Nicio potrivire",
+          "paging": {
+            "label": "Pagini de contact"
+          },
+          "suggestion": {
+            "customerNumber": "{name} are o legătură de contact cu același număr de client",
+            "name": "{name} are același nume"
+          },
+          "title": "Contacte clienți"
+        },
+        "description": "Examinați rândurile de import în așteptare, rezolvați problemele blocante și confirmați înregistrările acceptate atunci când lotul este pregătit.",
+        "hold": {
+          "appendReviewRequired": "Istoricul orelor angajatului necesită revizuire înainte de a putea adăuga intrări noi.",
+          "attributionNotAllowed": "Proiectul nu este disponibil sau activitatea facturabilă necesită un proiect care are un client.",
+          "invalidInterval": "Orele furnizorului nu au un decalaj explicit, nu sunt în ordine sau sunt în viitor.",
+          "label": "Reținut pentru revizuire",
+          "monthClosed": "Timpul se află într-o lună închisă. Acesta poate fi importat odată ce luna este redeschisă.",
+          "occupancyConflict": "Intervalul de timp se suprapune cu activitatea deja înregistrată pentru acest angajat.",
+          "operationCollision": "Acest rând este în conflict cu importul său aplicat anterior.",
+          "providerDurationMismatch": "Durata de la furnizor diferă de orele de început și de sfârșit.",
+          "sourceCollision": "Această înregistrare a furnizorului a fost deja importată.",
+          "unlocatedBreak": "Furnizorul raportează pauze fără orele acestora, astfel că intervalul lucrat este necunoscut."
+        },
+        "issueGroups": {
+          "description": "Zonele de revizuire grupate ajută la menținerea vizibilității verificărilor de calitate înainte de confirmarea rândurilor acceptate.",
+          "importMarkers": "Rândurile importului conțin {blockingRows} marcaje de probleme blocante și {warningRows} de avertizare.",
+          "title": "Grupuri de probleme"
+        },
+        "paging": {
+          "next": "Pagina următoare",
+          "position": "Pagina {page} din {pageCount}",
+          "previous": "Pagina anterioară"
+        },
+        "rows": {
+          "billable": "Facturabil",
+          "empty": "Nu există rânduri în așteptare disponibile pentru acest lot de import.",
+          "entity": "Entitate",
+          "paging": {
+            "label": "Pagini de rânduri"
+          },
+          "rowId": "ID rând",
+          "sourceId": "ID sursă",
+          "status": "Stare",
+          "title": "Rânduri"
+        },
+        "status": {
+          "accepted": "Acceptat",
+          "blocked": "Blocat",
+          "commitFailed": "Aplicarea a eșuat",
+          "committed": "Aplicat",
+          "committing": "Se aplică",
+          "needsMapping": "Necesită mapare",
+          "rejected": "Respins",
+          "staged": "Pregătit"
+        },
+        "title": "Revizuire import"
+      },
+      "title": "Importare date"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Un alt cont folosește deja această adresă.",
+        "emailNotAllowed": "Politica de conectare a organizației dvs. nu permite această adresă.",
+        "employeeNotFound": "Acest angajat nu a fost găsit.",
+        "failed": "Ceva nu a funcționat corect. Încercați din nou.",
+        "invalidEmail": "Introduceți o adresă de e-mail validă.",
+        "invalidName": "Introduceți un prenume de până la 100 de caractere.",
+        "invalidPin": "Un cod PIN pentru chioșc are între 4 și 6 cifre.",
+        "locationNotFound": "Această locație nu a fost găsită.",
+        "noPin": "Acest angajat nu are încă un PIN pentru chioșc.",
+        "notAllowed": "Nu aveți permisiunea de a efectua această acțiune.",
+        "notKioskOnly": "Acest angajat are deja o adresă de e-mail.",
+        "pinExists": "Acest angajat are deja un PIN pentru chioșc. Resetați-l în schimb.",
+        "reservedEmail": "Această adresă nu poate fi utilizată.",
+        "signInRequired": "Conectați-vă pentru a continua.",
+        "teamNotFound": "Această echipă nu a fost găsită."
+      }
+    },
+    "kiosks": {
+      "add": "Adăugare chioșc",
+      "boardOn": "Panou de prezență activat",
+      "columns": {
+        "actions": "Acțiuni",
+        "lastSeen": "Văzut ultima dată",
+        "location": "Locație",
+        "name": "Nume",
+        "status": "Stare"
+      },
+      "create": "Creare chioșc",
+      "created": "Chioșc creat",
+      "createDescription": "Veți primi un cod de asociere pe care să îl introduceți pe dispozitivul chioșc.",
+      "createFailed": "Chioșcul nu a putut fi creat",
+      "createTitle": "Adăugare chioșc",
+      "description": "Dispozitive partajate dintr-o locație unde angajații pontează cu codul PIN pentru chioșc",
+      "edit": "Editare",
+      "editDescription": "Modificările se aplică la următoarea solicitare a chioșcului.",
+      "editTitle": "Editare chioșc",
+      "empty": "Niciun chioșc deocamdată.",
+      "errors": {
+        "adminOnly": "Doar proprietarii și administratorii organizației pot gestiona chioșcurile.",
+        "invalidName": "Introduceți un nume de până la 100 de caractere.",
+        "invalidSelection": "Verificați datele introduse și încercați din nou.",
+        "invalidTimezone": "Alegeți un fus orar.",
+        "kioskNotFound": "Acest chioșc nu a fost găsit.",
+        "kioskRevoked": "Acest chioșc este revocat.",
+        "locationNotFound": "Alegeți o locație activă a acestei organizații."
+      },
+      "fields": {
+        "board": "Panou de prezență",
+        "boardDescription": "Afișează pe chioșc cine este prezent sau în pauză, după prenume și inițiala numelui.",
+        "location": "Locație",
+        "locationDescription": "Chioșcul acceptă doar angajații alocați acestei locații.",
+        "locationPlaceholder": "Alegeți o locație",
+        "name": "Nume",
+        "namePlaceholder": "de ex. Intrare personal",
+        "timezone": "Fus orar",
+        "timezoneDescription": "Evenimentele de pontaj înregistrate la acest chioșc utilizează acest fus orar."
+      },
+      "issueCodeConfirm": "Emiteți un cod nou",
+      "listDescription": "Fiecare chioșc aparține unei singure locații. Asociați un dispozitiv deschizând pagina chioșcului pe acesta și introducând codul de asociere.",
+      "listTitle": "Chioșcuri",
+      "loadFailed": "Chioșcurile nu au putut fi încărcate.",
+      "neverSeen": "Niciodată",
+      "noLocations": "Creați mai întâi o locație: fiecare chioșc aparține unei locații.",
+      "pairAgain": "Asociați din nou",
+      "pairFailed": "Nu s-a putut emite un nou cod de asociere",
+      "pairingCodeLabel": "Cod de asociere",
+      "pairingDescription": "Pe dispozitivul chioșc, scanați codul QR sau deschideți pagina chioșcului și introduceți codul. Codul funcționează o singură dată și expiră după 10 minute.",
+      "pairingDone": "Gata",
+      "pairingTitle": "Asociați {name}",
+      "pairPairedDescription": "Tokenul dispozitivului este rotit: dispozitivul asociat încetează să funcționeze imediat și trebuie asociat din nou cu noul cod.",
+      "pairTitle": "Asociați din nou {name}?",
+      "pairUnpairedDescription": "Un nou cod de asociere îl înlocuiește pe cel anterior.",
+      "revoke": "Revocați",
+      "revokeConfirm": "Revocați chioșcul",
+      "revoked": "Chioșc revocat",
+      "revokeDescription": "Chioșcul încetează să funcționeze la următoarea solicitare și nu mai poate fi asociat din nou. Creați un nou chioșc pentru a-l înlocui.",
+      "revokeFailed": "Chioșcul nu a putut fi revocat",
+      "revokeTitle": "Revocați {name}?",
+      "rotateConfirm": "Rotiți tokenul și asociați din nou",
+      "save": "Salvați",
+      "saved": "Chioșc salvat",
+      "saveFailed": "Chioșcul nu a putut fi salvat",
+      "status": {
+        "awaitingPairing": "În așteptarea asocierii",
+        "codeExpired": "Neasociat, codul a expirat",
+        "paired": "Asociat",
+        "revoked": "Revocat"
+      },
+      "title": "Chioșcuri"
+    },
+    "licenses": {
+      "footer": "Această aplicație utilizează software cu sursă deschisă. Mulțumim tuturor administratorilor și colaboratorilor acestor pachete.",
+      "homepage": "Pagină principală",
+      "license": "Licență",
+      "licenseTypesCount": "{count} tipuri de licențe",
+      "links": "Linkuri",
+      "noPackages": "Nu s-au găsit pachete.",
+      "package": "Pachet",
+      "packagesCount": "{count} pachete",
+      "repository": "Depozit",
+      "searchPlaceholder": "Căutați pachete sau licențe...",
+      "unknown": "Necunoscut"
+    },
+    "locations": {
+      "address": "Adresă",
+      "assignEmployee": "Atribuie angajat",
+      "assignEmployeeDescription": "Atribuiți un angajat ca supervizor pentru această locație",
+      "assignEmployeeToSubarea": "Atribuie angajat la subzonă",
+      "assignEmployeeToSubareaDescription": "Atribuiți un angajat ca supervizor pentru {subareaName}",
+      "backToList": "Înapoi la locații",
+      "create": "Creează locație",
+      "created": "Locație creată",
+      "createFailed": "Crearea locației a eșuat",
+      "deleted": "Locație ștearsă",
+      "deleteDescription": "Sigur doriți să ștergeți această locație? Această acțiune va șterge, de asemenea, toate subzonele și atribuirile de angajați.",
+      "deleteFailed": "Ștergerea locației a eșuat",
+      "deleteSubareaDescription": "Sigur doriți să ștergeți această subzonă? Această acțiune va elimina, de asemenea, toate atribuirile de angajați.",
+      "deleteSubareaTitle": "Șterge subzona",
+      "deleteTitle": "Șterge locația",
+      "description": "Gestionați locațiile și subzonele organizației",
+      "details": "Detalii locație",
+      "dialog": {
+        "create": "Creează locație",
+        "createDescription": "Creați o nouă locație pentru organizația dvs.",
+        "createTitle": "Creează locație",
+        "editDescription": "Actualizați detaliile locației",
+        "editTitle": "Editează locația",
+        "save": "Salvează modificările"
+      },
+      "employee": "Angajat",
+      "employeeAssigned": "Angajat atribuit",
+      "employeeAssignFailed": "Atribuirea angajatului a eșuat",
+      "employeeRemoved": "Angajat eliminat",
+      "employeeRemoveFailed": "Eliminarea angajatului a eșuat",
+      "field": {
+        "active": "Activ",
+        "activeHelp": "Locațiile inactive nu vor apărea în listele de selecție",
+        "city": "Oraș",
+        "cityPlaceholder": "de ex., New York",
+        "cityPostal": "Oraș / Cod poștal",
+        "country": "Cod de țară",
+        "countryHelp": "Cod ISO 3166-1 alpha-2",
+        "countryPlaceholder": "de ex., US, DE",
+        "name": "Nume",
+        "namePlaceholder": "de ex., Sediul principal",
+        "postalCode": "Cod poștal",
+        "postalCodePlaceholder": "de ex., 10001",
+        "street": "Stradă",
+        "streetPlaceholder": "de ex., Str. Principală 123",
+        "subareaActiveHelp": "Subzonele inactive nu vor apărea în listele de selecție",
+        "subareaName": "Nume",
+        "subareaNamePlaceholder": "de ex., Casierie, Depozit, Bistro"
+      },
+      "name": "Nume",
+      "noAvailableEmployees": "Toți angajații sunt deja alocați acestei locații",
+      "noAvailableEmployeesSubarea": "Toți angajații sunt deja alocați acestei subzone",
+      "noLocations": "Nicio locație încă",
+      "noLocationsDescription": "Creați prima locație pentru a vă organiza spațiul de lucru.",
+      "noSubareas": "Nicio subzonă încă",
+      "noSupervisors": "Niciun supervizor alocat",
+      "notFound": "Locația nu a fost găsită",
+      "primary": "Principal",
+      "primarySupervisor": "Supervizor principal",
+      "primarySupervisorHelp": "Marcați ca supervizor principal pentru această locație",
+      "primarySupervisorSubareaHelp": "Marcați ca supervizor principal pentru această subzonă",
+      "selectEmployee": "Vă rugăm să selectați un angajat",
+      "selectEmployeePlaceholder": "Selectați un angajat",
+      "subareaCreated": "Subzonă creată",
+      "subareaCreateFailed": "Crearea subzonei a eșuat",
+      "subareaDeleted": "Subzonă ștearsă",
+      "subareaDeleteFailed": "Ștergerea subzonei a eșuat",
+      "subareaDialog": {
+        "create": "Adăugare subzonă",
+        "createDescription": "Adăugați o nouă subzonă la această locație",
+        "createTitle": "Adăugare subzonă",
+        "editDescription": "Actualizați detaliile subzonei",
+        "editTitle": "Editare subzonă",
+        "save": "Salvare modificări"
+      },
+      "subareas": "Subzone",
+      "subareasDescription": "Zone din această locație",
+      "subareaUpdated": "Subzonă actualizată",
+      "subareaUpdateFailed": "Actualizarea subzonei a eșuat",
+      "supervisors": "Supervizori",
+      "supervisorsDescription": "Angajați alocați acestei locații",
+      "title": "Locații",
+      "updated": "Locație actualizată",
+      "updateFailed": "Actualizarea locației a eșuat"
+    },
+    "notifications": {
+      "approvals": "Notificări de aprobare",
+      "approvalsDescription": "Trimiteți cereri de aprobare și actualizări ale stării aprobării.",
+      "commands": "Comenzi",
+      "commandsDescription": "Permiteți comenzi acceptate pentru spațiul de lucru din acest canal.",
+      "connectBeforeChanging": "Conectați sau configurați această integrare înainte de a modifica setările de notificare.",
+      "dailyDigest": "Rezumat zilnic",
+      "dailyDigestDescription": "Trimiteți un rezumat zilnic al absențelor, programelor și sarcinilor în așteptare.",
+      "description": "Alegeți cum și când doriți să fiți notificat",
+      "digestTime": "Ora rezumatului",
+      "discord": {
+        "description": "Configurați notificările Discord pentru organizația dumneavoastră."
+      },
+      "escalations": "Escaladări",
+      "escalationsDescription": "Escaladați cererile de aprobare fără răspuns după expirarea timpului configurat.",
+      "featureSettings": "Setări funcționalități",
+      "featureSettingsDescription": "Alegeți ce notificări și comenzi ale organizației sunt disponibile prin acest canal.",
+      "hours": "ore",
+      "manageEnabledFeatures": "Gestionați ce funcționalități de notificare sunt activate pentru această integrare.",
+      "notConnected": "{channelName} nu este conectat",
+      "saved": "Setările de notificare pentru {channelName} au fost salvate",
+      "saveFailed": "Nu s-au putut salva setările de notificare pentru {channelName}",
+      "saveSettings": "Salvează setările",
+      "slack": {
+        "description": "Configurați notificările Slack pentru organizația dvs."
+      },
+      "status": {
+        "active": "Activ",
+        "configured": "Configurat",
+        "disabled": "Dezactivat",
+        "disconnected": "Deconectat",
+        "error": "Eroare",
+        "notConfigured": "Neconfigurat",
+        "pending": "În așteptare",
+        "unknown": "Stare necunoscută"
+      },
+      "teams": {
+        "description": "Configurați notificările Microsoft Teams pentru organizația dvs."
+      },
+      "timeout": "Timp de expirare",
+      "timezone": "Fus orar",
+      "timezonePlaceholder": "Europe/Berlin…",
+      "title": "Setări notificări"
+    },
+    "organizations": {
+      "description": "Gestionați detaliile și configurarea organizației",
+      "notFound": {
+        "description": "Organizația nu a putut fi găsită sau nu aveți acces la aceasta.",
+        "title": "Organizația nu a fost găsită"
+      },
+      "title": "Organizație"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Echipă creată cu succes",
+          "description": "Creați o echipă nouă pentru a vă organiza angajații",
+          "descriptionLabel": "Descriere (opțional)",
+          "descriptionPlaceholder": "O scurtă descriere a acestei echipe",
+          "fallbackManagerHelp": "Utilizat pentru aprobări atunci când un membru al echipei nu are un manager direct.",
+          "fallbackManagerLabel": "Manager de rezervă",
+          "fallbackManagerPlaceholder": "Selectați un manager de rezervă",
+          "nameLabel": "Nume echipă",
+          "namePlaceholder": "Inginerie, Vânzări, Marketing...",
+          "noFallbackManager": "Fără manager de rezervă",
+          "submit": "Creează echipă",
+          "title": "Creează echipă"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Adaugă o cheie de acces",
+      "addedOn": "Adăugată la {date}",
+      "addError": "Nu s-a putut adăuga cheia de acces",
+      "addSuccess": "Cheie de acces adăugată cu succes",
+      "defaultName": "Cheie de acces {date}",
+      "deleteDialogDescription": "Această cheie de acces nu va mai putea fi utilizată pentru a vă accesa contul. Această acțiune este ireversibilă.",
+      "deleteDialogTitle": "Ștergeți cheia de acces?",
+      "deleteError": "Nu s-a putut șterge cheia de acces",
+      "deleteSuccess": "Cheia de acces a fost ștearsă cu succes",
+      "description": "Gestionați cheile de acces pentru autentificarea fără parolă",
+      "empty": "Nicio cheie de acces configurată",
+      "emptyDescription": "Adăugați o cheie de acces pentru a activa autentificarea fără parolă",
+      "loadError": "Nu s-au putut încărca cheile de acces",
+      "title": "Chei de acces",
+      "unnamed": "Cheie de acces fără nume"
+    },
+    "payrollAccess": {
+      "add": "Adaugă responsabil de salarizare",
+      "addTitle": "Adaugă responsabil de salarizare",
+      "allScope": "Toate echipele și toți angajații",
+      "allScopeDescription": "Include angajații actuali și viitori din această organizație.",
+      "deniedDescription": "Doar administratorii autorizați ai organizației pot gestiona responsabilii de salarizare.",
+      "deniedTitle": "Este necesar accesul la setările responsabilului de salarizare",
+      "departedEmployeesKept": "{names} a părăsit organizația. Rămâne în cadrul acestei atribuiri până când îl eliminați.",
+      "description": "Activați responsabilii de salarizare și atribuiți echipele sau angajații pe care îi pot include în fluxurile de lucru pentru salarizare.",
+      "edit": "Editează",
+      "editorDescription": "Alegeți un responsabil de salarizare și stabiliți dacă acesta poate accesa pe toată lumea sau o arie specifică.",
+      "editTitle": "Editează responsabilul de salarizare",
+      "employees": "Angajați",
+      "noGrants": "Nu a fost adăugat încă niciun responsabil de salarizare.",
+      "noScope": "Nicio arie de salarizare atribuită",
+      "noTeams": "Nicio echipă disponibilă",
+      "payrollEmployee": "Responsabil de salarizare",
+      "revoke": "Revocare",
+      "revokeConfirm": "Revocare acces",
+      "revoked": "Accesul responsabilului de salarizare a fost revocat",
+      "revokeDescription": "{name} pierde imediat accesul la spațiul de lucru pentru salarizare. Re-adăugarea ulterioară va crea o nouă atribuire.",
+      "revokeFailed": "Nu s-a putut revoca accesul responsabilului de salarizare",
+      "revokeTitle": "Revocați accesul responsabilului de salarizare?",
+      "save": "Salvează responsabilul de salarizare",
+      "saved": "Setările responsabilului de salarizare au fost salvate",
+      "saveFailed": "Nu s-au putut salva setările responsabilului de salarizare",
+      "scope": "Arie de acces",
+      "scopeSummaryEmployees": "{count} angajați",
+      "scopeSummaryTeams": "{count} echipe",
+      "scopeSummaryTeamsEmployees": "{teamCount} echipe, {employeeCount} angajați",
+      "selectEmployees": "Selectați angajații",
+      "selectPayrollEmployee": "Selectați angajatul",
+      "specificScope": "Echipe sau angajați specifici",
+      "specificScopeDescription": "Limitați accesul la salarizare la echipele și angajații individuali selectați.",
+      "teams": "Echipe",
+      "title": "Responsabili de salarizare"
+    },
+    "positionCapture": {
+      "addAssignment": "Adaugă atribuire",
+      "assignmentFailed": "Atribuirea nu a fost salvată",
+      "assignmentRemoved": "Atribuire eliminată",
+      "assignmentRemoveFailed": "Atribuirea nu a fost eliminată",
+      "assignmentSaved": "Atribuire salvată",
+      "assignmentsDescription": "Cea mai specifică atribuire are prioritate: atribuirea proprie a unui angajat prevalează asupra celei a echipei sale principale, iar cea a unei echipe prevalează asupra celei la nivel de organizație. Utilizați „dezactivat” pentru a exclude o echipă sau un angajat.",
+      "assignmentsList": "Atribuiri de captură",
+      "assignmentsTitle": "Cui i se aplică captura",
+      "captureDescription": "Înregistrați poziția unui angajat la pontările de intrare, de ieșire și în pauze, doar cu acordul acestuia. Activarea capturii nu se aplică nimănui până când nu o atribuiți mai jos.",
+      "captureOff": "Capturare dezactivată",
+      "captureOn": "Capturare activată",
+      "captureTitle": "Capturare",
+      "description": "Înregistrați pozițiile la pontările angajaților, cu acordul acestora",
+      "employee": "Angajat",
+      "enabled": "Capturare poziții",
+      "enabledDescription": "Dezactivarea acestei opțiuni oprește capturarea pentru toată lumea. Pozițiile înregistrate sunt păstrate până la data ștergerii lor.",
+      "noAssignments": "Nimeni nu este alocat. Capturarea nu se aplică nimănui până când nu o alocați.",
+      "noNotice": "Nicio notificare nu este publicată încă. Salvarea unei declarații privind scopul publică versiunea 1.",
+      "noticeDescription": "La ce își dau acordul angajații: textul standard Z8 și declarația dumneavoastră privind scopul. Editarea scopului sau păstrarea pozițiilor pentru mai mult timp publică o nouă versiune; reducerea perioadei de păstrare nu face acest lucru.",
+      "noticeTitle": "Notificare privind poziția",
+      "previousVersions": "Versiuni anterioare",
+      "publishesVersion": "Salvarea publică versiunea {version} a notificării. Fiecare acord existent expiră până când angajații își dau din nou acordul.",
+      "purpose": "Declarație privind scopul",
+      "purposeDescription": "Afișat angajaților în notificarea privind poziția. Explicați de ce organizația dumneavoastră înregistrează pozițiile.",
+      "purposeRequired": "Scrieți o declarație privind scopul înainte de a activa capturarea.",
+      "removeAssignment": "Elimină {target}",
+      "retention": "Păstrare (zile)",
+      "retentionDescription": "Fiecare poziție este ștearsă după acest număr de zile de la înregistrare. Reducerea acestei perioade devansează, de asemenea, datele de ștergere existente.",
+      "retentionRange": "Introduceți un număr întreg de zile între {min} și {max}.",
+      "save": "Salvează setările",
+      "saved": "Setările de capturare a poziției au fost salvate",
+      "savedWithNotice": "Setări salvate. Versiunea {version} a notificării este publicată; angajaților li se solicită acordul.",
+      "saveFailed": "Setările de capturare a poziției nu au fost salvate",
+      "selectEmployee": "Selectați un angajat",
+      "selectTeam": "Selectați o echipă",
+      "targetEmployee": "Un angajat",
+      "targetEmployeeLabel": "Angajat: {name}",
+      "targetOrganization": "Toată organizația",
+      "targetTeam": "O echipă",
+      "targetTeamLabel": "Echipă: {name}",
+      "targetType": "Se aplică pentru",
+      "team": "Echipă",
+      "title": "Capturare poziție",
+      "versionSummary": "{days, plural, one {Versiunea {version}, publicată la {date}, păstrată # zi} few {Versiunea {version}, publicată la {date}, păstrată # zile} other {Versiunea {version}, publicată la {date}, păstrată # de zile}}"
+    },
+    "positionStamps": {
+      "accessLogDeletedViewer": "Un utilizator șters",
+      "accessLogDescription": "De fiecare dată când altcuiva îi sunt afișate pozițiile dumneavoastră înregistrate, acest lucru apare listat aici.",
+      "accessLogEmpty": "Nimănui altcuiva nu i-au fost afișate pozițiile dumneavoastră.",
+      "accessLogExport": "Export de date",
+      "accessLogRemovedWorkPeriod": "O perioadă de lucru care nu mai există",
+      "accessLogTitle": "Cine v-a văzut pozițiile",
+      "accessLogWorkPeriod": "Perioadă de lucru în data de {date}",
+      "agree": "De acord",
+      "agreed": "Vă mulțumim. Acordul dumneavoastră a fost înregistrat.",
+      "agreeFailed": "Acordul dumneavoastră nu a putut fi salvat",
+      "captureOff": "Capturarea poziției nu este activată pentru dumneavoastră.",
+      "captureOffBadge": "Capturare dezactivată",
+      "captureOn": "Capturarea poziției este activată pentru dumneavoastră.",
+      "captureOnBadge": "Capturare activată",
+      "consentActive": "V-ați dat acordul pentru versiunea {version} la data de {date}.",
+      "consentDeclined": "Ați ales „Nu acum” pentru versiunea {version} la data de {date}.",
+      "consentLapsed": "Ați fost de acord cu versiunea {previous}. Notificarea s-a modificat, astfel că nicio poziție nu este înregistrată până când nu sunteți de acord cu versiunea {current}.",
+      "consentUndecided": "Nu ați decis încă.",
+      "consentWithdrawn": "V-ați retras consimțământul la data de {date}.",
+      "description": "Dacă poziția dvs. este înregistrată la pontări și consimțământul dvs.",
+      "noNotice": "Organizația dvs. nu a publicat o notificare privind poziția.",
+      "noticeDescription": "Acesta este acordul dvs. O nouă versiune este publicată atunci când scopul se modifică sau pozițiile sunt păstrate mai mult timp.",
+      "noticeTitle": "Notificare privind poziția",
+      "statusTitle": "Starea dvs.",
+      "title": "Marcaje de poziție",
+      "unavailable": "Marcajele de poziție sunt disponibile după ce aveți un profil de angajat în această organizație.",
+      "withdraw": "Retrage consimțământul",
+      "withdrawConfirm": "Retrage și șterge pozițiile",
+      "withdrawDescription": "Nu se mai înregistrează poziții, iar acest lucru șterge imediat toate pozițiile înregistrate la pontările dvs. Pontările dvs. rămân neschimbate. Această acțiune nu poate fi anulată.",
+      "withdrawFailed": "Consimțământul dvs. nu a putut fi retras",
+      "withdrawn": "Consimțământ retras. Pozițiile dvs. înregistrate au fost șterse.",
+      "withdrawTitle": "Vă retrageți consimțământul?"
+    },
+    "profile": {
+      "avatarRemoved": "Avatarul a fost eliminat cu succes",
+      "avatarRemoveFailed": "Nu s-a putut elimina avatarul",
+      "avatarSaveFailed": "Nu s-a putut salva avatarul",
+      "avatarUploaded": "Avatarul a fost încărcat cu succes",
+      "avatarUploadFailed": "Nu s-a putut încărca avatarul",
+      "birthday": {
+        "hint": "Data ta de naștere ne ajută să sărbătorim alături de tine",
+        "label": "Data nașterii",
+        "placeholder": "Alege data nașterii"
+      },
+      "changePicture": "Schimbă fotografia",
+      "description": "Gestionează-ți informațiile personale și preferințele",
+      "email": "E-mail",
+      "emailReadonly": "Adresa de e-mail nu poate fi modificată",
+      "firstName": "Prenume",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Feminin",
+        "label": "Gen",
+        "male": "Masculin",
+        "other": "Altul"
+      },
+      "helpImproveProduct": "Ajutați-ne să îmbunătățim această aplicație",
+      "helpImproveProductDescription": "Partajați statistici de utilizare pentru a ne ajuta să facem Z8 mai fiabilă și mai utilă.",
+      "information": "Informații profil",
+      "informationDescription": "Actualizează-ți informațiile personale și fotografia de profil",
+      "lastName": "Nume de familie",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Informații personale",
+      "pronouns": "Pronume",
+      "pronouns.custom": "Pronume personalizate",
+      "pronouns.customPlaceholder": "de ex., xe/xem…",
+      "pronouns.placeholder": "Selectează pronumele",
+      "removePicture": "Elimină fotografia",
+      "saving": "Se salvează…",
+      "title": "Setări profil",
+      "updateFailed": "Nu s-a putut actualiza profilul",
+      "updateProfile": "Actualizează profilul",
+      "updateSuccess": "Profilul a fost actualizat cu succes",
+      "uploading": "Se încarcă",
+      "uploadProfilePicture": "Încarcă fotografia de profil"
+    },
+    "projects": {
+      "column": {
+        "budget": "Buget",
+        "customer": "Client",
+        "deadline": "Termen limită",
+        "name": "Nume",
+        "status": "Stare",
+        "tasks": "Sarcini",
+        "team": "Echipă"
+      },
+      "create": "Creează proiect",
+      "created": "Proiect creat",
+      "createFailed": "Nu s-a putut crea proiectul",
+      "customerDeleted": "{name} (șters)",
+      "description": "Gestionează proiectele, bugetele, termenele limită și alocările de timp",
+      "dialog": {
+        "create": "Creează proiect",
+        "createDescription": "Creează un proiect nou pentru înregistrarea timpului",
+        "createTitle": "Creează proiect",
+        "editDescription": "Actualizează detaliile proiectului",
+        "editTitle": "Editează proiectul",
+        "save": "Salvează modificările"
+      },
+      "empty": {
+        "description": "Creează primul tău proiect pentru a începe să înregistrezi timpul alocat acestuia.",
+        "title": "Niciun proiect încă"
+      },
+      "field": {
+        "billableDefault": "Facturabil în mod implicit",
+        "billableDefaultHelp": "Activitatea nouă din acest proiect începe ca facturabilă. Activitatea existentă își păstrează caracterul facturabil.",
+        "billableDefaultNeedsCustomer": "Alege un client pentru a face ca activitatea nouă să fie facturabilă în mod implicit.",
+        "budget": "Buget (ore)",
+        "budgetHelp": "Lasă necompletat pentru buget nelimitat",
+        "budgetPlaceholder": "de ex., 100",
+        "clearColor": "Șterge culoarea",
+        "color": "Culoare",
+        "colorOption": "Selectează culoarea {color}",
+        "customer": "Client",
+        "customerDeleted": "{name} a fost șters. Alegeți un alt client sau păstrați proiectul fără niciunul.",
+        "customerPlaceholder": "Selectează un client",
+        "deadline": "Termen limită",
+        "description": "Descriere",
+        "descriptionPlaceholder": "Descriere opțională a proiectului",
+        "name": "Nume",
+        "namePlaceholder": "Introdu numele proiectului",
+        "noCustomer": "Fără client",
+        "status": "Stare"
+      },
+      "fromTemplate": {
+        "blank": "Proiect gol",
+        "budget": "Buget de {hours} h",
+        "copies": "Copiat din șablon",
+        "deadline": "{days, plural, one {Termen limită la # zi după creare} few {Termen limită la # zile după creare} other {Termen limită la # de zile după creare}}",
+        "deadlineSameDay": "Termen limită în ziua creării",
+        "memberCount": "{count, plural, one {# manager sau atribuire} few {# manageri și atribuiri} other {# de manageri și atribuiri}}",
+        "previewLabel": "Din {name}",
+        "reasonAdminOnly": "doar administratorii organizației atribuie manageri de proiect",
+        "reasonDeparted": "a părăsit organizația",
+        "reasonRemoved": "nu mai există",
+        "skipped": "Nu s-au copiat: {members}",
+        "skippedMember": "{name}: {reason}",
+        "skippedMemberReason": "{name} ({reason})",
+        "startFrom": "Începe de la",
+        "taskCount": "{count, plural, one {# sarcină} few {# sarcini} other {# de sarcini}}",
+        "willSkip": "Nu se va copia"
+      },
+      "list": {
+        "description": "{count} proiecte în total",
+        "title": "Toate proiectele"
+      },
+      "members": {
+        "addManager": "Adaugă manager de proiect",
+        "assignEmployee": "Atribuie angajat",
+        "assignTeam": "Atribuie echipă",
+        "count": "{count, plural, one {# membru} few {# membri} other {# de membri}}",
+        "employeeAssigned": "Angajat atribuit",
+        "employeeAssignFailed": "Nu s-a putut atribui angajatul",
+        "employeePicker": "Angajat de atribuit",
+        "employees": "Angajați",
+        "manage": "Gestionează membrii pentru {name}",
+        "managerAdded": "Manager de proiect adăugat",
+        "managerAddFailed": "Nu s-a putut adăuga managerul de proiect",
+        "managerPicker": "Manager de proiect de adăugat",
+        "managers": "Manageri de proiect",
+        "managersReadOnly": "Doar administratorii organizației pot modifica managerii de proiect.",
+        "noEmployees": "Niciun angajat atribuit",
+        "noManagers": "Niciun manager de proiect",
+        "noTeams": "Nicio echipă atribuită",
+        "remove": "Elimină {name}",
+        "removed": "{name} a fost eliminat",
+        "removeFailed": "Nu s-a putut elimina {name}",
+        "selectEmployee": "Selectează un angajat",
+        "selectTeam": "Selectează o echipă",
+        "teamAssigned": "Echipă atribuită",
+        "teamAssignFailed": "Nu s-a putut atribui echipa",
+        "teamPicker": "Echipă de atribuit",
+        "teams": "Echipe",
+        "title": "Membrii proiectului"
+      },
+      "saveAsTemplate": {
+        "action": "Salvează {name} ca șablon",
+        "description": "Șablonul preia pictograma, culoarea, bugetul, sarcinile deschise, managerii și atribuirile acestui proiect. Nu are un decalaj pentru termenul limită.",
+        "failed": "Nu s-a putut salva șablonul",
+        "formLabel": "Salvează {name} ca șablon",
+        "name": "Nume șablon",
+        "saved": "Șablonul {name} a fost salvat",
+        "submit": "Salvează ca șablon",
+        "title": "Salvează ca șablon"
+      },
+      "tabs": {
+        "projects": "Proiecte",
+        "templates": "Șabloane"
+      },
+      "tasks": {
+        "add": "Adaugă sarcină",
+        "added": "Sarcină adăugată",
+        "addFailed": "Nu s-a putut adăuga sarcina",
+        "addTitle": "Adaugă o sarcină",
+        "confirmDelete": "Confirmați ștergerea {name}",
+        "delete": "Șterge",
+        "deleteAction": "Ștergeți {name}",
+        "deleted": "{name} a fost șters",
+        "deleteFailed": "Nu s-a putut șterge {name}",
+        "deleteQuestion": "Ștergeți această sarcină?",
+        "edit": "Editați {name}",
+        "editAction": "Editați {name}",
+        "empty": "Încă nu există sarcini. Sarcinile permit utilizatorilor să indice pe ce anume din proiect și-au petrecut timpul.",
+        "estimate": "Estimare: {hours} h",
+        "field": {
+          "description": "Descriere",
+          "estimate": "Estimare (ore)",
+          "estimateInvalid": "Introduceți un număr pozitiv de ore",
+          "name": "Nume",
+          "namePlaceholder": "de ex., Design",
+          "nameRequired": "Introduceți un nume pentru sarcină"
+        },
+        "listLabel": "Sarcinile pentru {name}",
+        "listTitle": "Sarcini de proiect",
+        "manage": "Gestionați sarcinile pentru {name}",
+        "managedTitle": "Proiectele dvs.",
+        "managerDescription": "Gestionați sarcinile proiectelor pe care le administrați",
+        "markDone": "Marcați {name} ca finalizat",
+        "markDoneFailed": "Nu s-a putut marca sarcina ca finalizată",
+        "markedDone": "Sarcină marcată ca finalizată",
+        "open": "Sarcini",
+        "projectCount": "{count, plural, one {# proiect} other {# proiecte}}",
+        "reopen": "Redeschideți {name}",
+        "reopened": "Sarcină redeschisă",
+        "reopenFailed": "Nu s-a putut redeschide sarcina",
+        "save": "Salvați",
+        "stateDone": "Finalizat",
+        "title": "Sarcini",
+        "updated": "Sarcină actualizată",
+        "updateFailed": "Nu s-a putut actualiza sarcina"
+      },
+      "templates": {
+        "budgetHours": "{hours} h",
+        "column": {
+          "actions": "Acțiuni",
+          "budget": "Buget",
+          "deadline": "Termen limită",
+          "name": "Nume",
+          "people": "Persoane",
+          "tasks": "Sarcini"
+        },
+        "confirmDelete": "Confirmați ștergerea {name}",
+        "create": "Creați un șablon",
+        "created": "Șablon creat",
+        "createFailed": "Nu s-a putut crea șablonul",
+        "createLabel": "Creați un șablon de proiect",
+        "createTitle": "Creați un șablon",
+        "deadlineOffset": "{count, plural, one {# zi după creare} other {# zile după creare}}",
+        "deadlineSameDay": "În ziua creării",
+        "delete": "Ștergeți",
+        "deleteAction": "Ștergeți {name}",
+        "deleted": "{name} a fost șters",
+        "deleteFailed": "Nu s-a putut șterge {name}",
+        "deleteQuestion": "Ștergeți acest șablon?",
+        "description": "Planuri pentru proiecte noi: sarcini, buget, termen limită, manageri și membri.",
+        "dialogDescription": "Proiectele noi create din acest șablon îi copiază conținutul o singură dată.",
+        "editAction": "Editați {name}",
+        "editLabel": "Editați {name}",
+        "editTitle": "Editați șablonul",
+        "employees": {
+          "empty": "Niciun angajat alocat",
+          "picker": "Angajat de alocat",
+          "title": "Angajați"
+        },
+        "empty": {
+          "description": "Salvați o singură dată sarcinile, bugetul și persoanele configurate pentru fiecare proiect similar și porniți proiecte noi de la acesta.",
+          "title": "Nu există încă șabloane"
+        },
+        "field": {
+          "budget": "Buget (ore)",
+          "budgetDeadlineHelp": "Lăsați necompletat pentru un buget nelimitat sau fără termen limită.",
+          "budgetInvalid": "Introduceți un număr pozitiv de ore",
+          "color": "Culoare",
+          "deadlineOffset": "Termen limită (zile de la creare)",
+          "deadlineOffsetInvalid": "Introduceți zile întregi de la 0 la {max}",
+          "description": "Descriere",
+          "icon": "Pictogramă",
+          "name": "Nume",
+          "namePlaceholder": "de ex., Relansare site web",
+          "nameRequired": "Introduceți un nume de șablon",
+          "noIcon": "Fără pictogramă"
+        },
+        "icons": {
+          "briefcase": "Servietă",
+          "bulb": "Bec",
+          "chartBar": "Grafic cu bare",
+          "cloud": "Nor",
+          "code": "Cod",
+          "database": "Bază de date",
+          "devices": "Dispozitive",
+          "palette": "Paletă",
+          "rocket": "Rachetă",
+          "settings": "Setări",
+          "shoppingCart": "Coș de cumpărături",
+          "users": "Persoane"
+        },
+        "listCount": "{count, plural, one {# șablon} few {# șabloane} other {# de șabloane}}",
+        "listTitle": "Toate șabloanele",
+        "managers": {
+          "empty": "Niciun manager de proiect",
+          "picker": "Manager de proiect de adăugat",
+          "title": "Manageri de proiect"
+        },
+        "member": {
+          "departed": "A părăsit organizația",
+          "remove": "Eliminați {name}",
+          "removed": "Nu mai există",
+          "removedHelp": "Echipele și angajații care nu mai există sunt eliminați la salvare.",
+          "unknown": "Necunoscut"
+        },
+        "peopleCount": "{count, plural, one {# persoană sau echipă} few {# persoane și echipe} other {# de persoane și echipe}}",
+        "save": "Salvați modificările",
+        "selectEmployee": "Selectați un angajat",
+        "selectTeam": "Selectați o echipă",
+        "taskCount": "{count, plural, one {# sarcină} few {# sarcini} other {# de sarcini}}",
+        "tasks": {
+          "add": "Adaugă sarcină",
+          "description": "Descriere sarcină {position}",
+          "descriptionPlaceholder": "Descriere (opțional)",
+          "empty": "Nicio sarcină. Proiectele create din acest șablon încep cu aceste sarcini.",
+          "estimate": "Estimare sarcină {position} (ore)",
+          "estimatePlaceholder": "Ore",
+          "name": "Nume sarcină {position}",
+          "namePlaceholder": "Nume sarcină",
+          "remove": "Elimină sarcina {position}",
+          "title": "Sarcini"
+        },
+        "teams": {
+          "empty": "Nicio echipă atribuită",
+          "picker": "Echipă de atribuit",
+          "title": "Echipe"
+        },
+        "title": "Șabloane de proiect",
+        "updated": "Șablon actualizat",
+        "updateFailed": "Actualizarea șablonului a eșuat"
+      },
+      "title": "Proiecte",
+      "updated": "Proiect actualizat",
+      "updateFailed": "Nu s-a putut actualiza proiectul"
+    },
+    "reportShareLinks": {
+      "description": "Vedeți și revocați toate linkurile prin care se partajează un raport de proiect sau de client",
+      "pageDescription": "Linkuri care afișează o captură statică a unui raport de proiect sau de client către o persoană din afara Z8. Revocarea unui link îl oprește imediat și îi șterge captura.",
+      "title": "Linkuri de partajare a rapoartelor"
+    },
+    "security": {
+      "description": "Gestionează-ți parola, autentificarea cu doi factori, cheile de acces și sesiunile active",
+      "kioskPin": {
+        "descriptionChange": "Aveți un PIN pentru chioșc. Alegeți unul nou din 4 până la 6 cifre pentru a-l înlocui.",
+        "descriptionSet": "Alegeți un PIN din 4 până la 6 cifre pentru a vă ponta la chioșcurile organizației dvs.",
+        "mismatch": "Codurile PIN nu se potrivesc.",
+        "newPin": "PIN nou",
+        "repeatPin": "Repetați PIN-ul",
+        "save": "Salvați PIN-ul",
+        "saved": "PIN-ul pentru chioșc a fost salvat",
+        "title": "PIN chioșc"
+      },
+      "title": "Setări de securitate",
+      "twoFactor": {
+        "backupCodesCopied": "Codurile de rezervă au fost copiate în clipboard",
+        "backupCodesRegenerated": "Codurile de rezervă au fost regenerate",
+        "cancel": "Anulare",
+        "confirmPasswordToEnable": "Te rugăm să confirmi parola pentru a activa autentificarea cu doi factori",
+        "confirmPasswordToRegenerate": "Te rugăm să confirmi parola pentru a regenera codurile de rezervă",
+        "continue": "Continuă",
+        "copyCodes": "Copiază codurile",
+        "description": "Adaugă un nivel suplimentar de securitate contului tău",
+        "disable": "Dezactivează",
+        "disable2fa": "Dezactivează 2FA",
+        "disableDescription": "Această acțiune va elimina nivelul suplimentar de securitate din contul dvs. Vă rugăm să introduceți parola pentru a confirma.",
+        "disabledToast": "Autentificarea cu doi factori a fost dezactivată",
+        "disableFailed": "Dezactivarea 2FA a eșuat",
+        "disableTitle": "Dezactivați autentificarea cu doi factori?",
+        "enable": "Activează autentificarea cu doi factori",
+        "enabledToast": "Autentificarea cu doi factori a fost activată",
+        "enablePasswordRequiredDescription": "Vă rugăm să introduceți parola pentru a activa 2FA",
+        "enterAuthenticatorCode": "Introduceți codul din 6 cifre din aplicația de autentificare",
+        "enterPasswordTitle": "Introdu parola",
+        "enterSixDigitCode": "Vă rugăm să introduceți un cod din 6 cifre",
+        "invalidCode": "Cod nevalid",
+        "passwordLabel": "Parolă",
+        "passwordPlaceholder": "Introduceți parola...",
+        "passwordRequired": "Parola este obligatorie",
+        "regenerateBackupCodes": "Regenerează codurile de rezervă",
+        "regenerateCodes": "Regenerează codurile",
+        "regenerateFailed": "Regenerarea codurilor de rezervă a eșuat",
+        "saveBackupCodesDescription": "Păstrați aceste coduri într-un loc sigur. Le puteți utiliza pentru a vă accesa contul dacă pierdeți accesul la aplicația de autentificare. Fiecare cod poate fi utilizat o singură dată.",
+        "saveBackupCodesTitle": "Salvați codurile de rezervă",
+        "savedCodes": "Am salvat aceste coduri",
+        "scanQrCode": "Scanați codul QR cu aplicația de autentificare",
+        "setupFailed": "Configurarea 2FA a eșuat",
+        "setupTitle": "Configurare autentificare cu doi factori",
+        "status": {
+          "disabled": "Dezactivat",
+          "enabled": "Activat"
+        },
+        "title": "Autentificare cu doi factori",
+        "unexpectedError": "A apărut o eroare neașteptată",
+        "verificationFailed": "Verificarea a eșuat",
+        "verifyAndEnable": "Verifică și activează"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} pe {os}",
+      "current": "Sesiunea curentă",
+      "description": "Gestionează-ți sesiunile active pe diferite dispozitive",
+      "devices": {
+        "desktop": "Desktop",
+        "mobile": "Mobil",
+        "tablet": "Tabletă"
+      },
+      "none": "Nicio sesiune activă",
+      "othersRevoked": "Toate celelalte sesiuni au fost revocate cu succes",
+      "revoke": "Revocă",
+      "revokeAllFailed": "Nu s-au putut revoca celelalte sesiuni",
+      "revokeAllOthers": "Revocă toate celelalte sesiuni",
+      "revoked": "Sesiune revocată cu succes",
+      "revokeFailed": "Nu s-a putut revoca sesiunea",
+      "revoking": "Se revocă…",
+      "securityTip": "Dacă vedeți o sesiune pe care nu o recunoașteți, revocați-o imediat și schimbați-vă parola.",
+      "signedIn": "Autentificat",
+      "title": "Sesiuni active",
+      "unknownBrowser": "Browser necunoscut",
+      "unknownOs": "Sistem de operare necunoscut"
+    },
+    "socialAccounts": {
+      "connect": "Conectare",
+      "connected": "Conectat",
+      "connectedAs": "Conectat ca {accountId}",
+      "connectFailed": "Conectarea contului a eșuat",
+      "connecting": "Se conectează…",
+      "connectProvider": "Conectați-vă contul {provider}",
+      "description": "Asociați-vă conturile sociale pentru o autentificare mai ușoară",
+      "disconnect": "Deconectare",
+      "disconnectDescription": "Aceasta va elimina asocierea cu contul dvs. social. Îl puteți reconecta în orice moment.",
+      "disconnectFailed": "Deconectarea contului a eșuat",
+      "disconnectSuccess": "Cont deconectat cu succes",
+      "disconnectTitle": "Deconectați contul?",
+      "loadFailed": "Încărcarea conturilor conectate a eșuat",
+      "title": "Conturi sociale",
+      "unexpectedError": "A apărut o eroare neașteptată"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Sesiuni active",
+        "activeSessionsDescription": "Sesiuni curente din baza de date",
+        "approvalRequests": "Cereri de aprobare",
+        "approvedAbsences": "Absențe aprobate",
+        "employees": "Angajați",
+        "employeesDescription": "{active} activi, {inactive} inactivi",
+        "pendingAbsences": "Absențe în așteptare",
+        "pendingCount": "{count} în așteptare",
+        "rejectedAbsences": "Absențe respinse",
+        "teams": "Echipe",
+        "thisMonth": "Luna aceasta",
+        "timeEntries": "Înregistrări de timp",
+        "totalAbsences": "Total absențe",
+        "totalTimeEntries": "Total înregistrări de timp",
+        "vsLastMonth": "față de luna trecută"
+      },
+      "description": "Vizualizați statistici și indicatori despre instanța dvs.",
+      "lastUpdated": "Ultima actualizare",
+      "loadError": "Încărcarea statisticilor a eșuat",
+      "managerDescription": "Consultați statisticile doar în citire pentru echipele pe care le gestionați.",
+      "sections": {
+        "absenceBreakdown": "Defalcare absențe",
+        "activityMetrics": "Indicatori de activitate",
+        "coreCounts": "Totaluri principale",
+        "managedScope": "Sfera echipelor gestionate",
+        "systemHealth": "Starea sistemului"
+      },
+      "title": "Statistici"
+    },
+    "timeFormat": {
+      "description": "Alegeți modul în care sunt afișate orele în aplicație.",
+      "label": "Format oră",
+      "options": {
+        "12h": "12 ore (8:00 AM)",
+        "24h": "24 ore (08:00)"
+      },
+      "save": "Salvează formatul orei",
+      "title": "Format oră",
+      "updateError": "A apărut o eroare la actualizarea formatului orei",
+      "updateFailed": "Nu s-a putut actualiza formatul orei",
+      "updateSuccess": "Formatul orei a fost actualizat cu succes"
+    },
+    "timezone": {
+      "currentTimePrefix": "Ora curentă în {timezone}:",
+      "description": "Setați fusul orar pentru afișarea exactă a datei și orei în întreaga aplicație",
+      "picker": {
+        "empty": "Niciun fus orar găsit.",
+        "groups": {
+          "africa": "Africa",
+          "americas": "Americile",
+          "asia": "Asia",
+          "australiaPacific": "Australia și Pacific",
+          "europe": "Europa",
+          "utcOther": "UTC/Altele"
+        },
+        "labels": {
+          "africaCairo": "Ora Europei de Est (Cairo)",
+          "africaJohannesburg": "Ora Africii de Sud (Johannesburg)",
+          "africaLagos": "Ora Africii de Vest (Lagos)",
+          "africaNairobi": "Ora Africii de Est (Nairobi)",
+          "americaAnchorage": "Ora din Alaska (Anchorage)",
+          "americaBuenosAires": "Ora Argentinei (Buenos Aires)",
+          "americaChicago": "Ora Centrală (Chicago)",
+          "americaDenver": "Ora zonei montane (Denver)",
+          "americaLosAngeles": "Ora Pacificului (Los Angeles)",
+          "americaMexicoCity": "Ora Centrală (Ciudad de México)",
+          "americaNewYork": "Ora de Est (New York)",
+          "americaSaoPaulo": "Ora Brasiliei (São Paulo)",
+          "americaToronto": "Ora de Est (Toronto)",
+          "americaVancouver": "Ora Pacificului (Vancouver)",
+          "asiaBangkok": "Ora Indochinei (Bangkok)",
+          "asiaDubai": "Ora standard a Golfului (Dubai)",
+          "asiaHongKong": "Ora din Hong Kong (Hong Kong)",
+          "asiaKolkata": "Ora standard a Indiei (Kolkata)",
+          "asiaSeoul": "Ora standard a Coreei (Seul)",
+          "asiaShanghai": "Ora standard a Chinei (Shanghai)",
+          "asiaSingapore": "Ora din Singapore (Singapore)",
+          "asiaTokyo": "Ora standard a Japoniei (Tokyo)",
+          "australiaBrisbane": "Ora Australiei de Est (Brisbane)",
+          "australiaMelbourne": "Ora Australiei de Est (Melbourne)",
+          "australiaPerth": "Ora Australiei de Vest (Perth)",
+          "australiaSydney": "Ora Australiei de Est (Sydney)",
+          "europeAmsterdam": "Ora Europei Centrale (Amsterdam)",
+          "europeAthens": "Ora Europei de Est (Atena)",
+          "europeBerlin": "Ora Europei Centrale (Berlin)",
+          "europeBrussels": "Ora Europei Centrale (Bruxelles)",
+          "europeHelsinki": "Ora Europei de Est (Helsinki)",
+          "europeIstanbul": "Ora Turciei (Istanbul)",
+          "europeLondon": "GMT/BST (Londra)",
+          "europeMadrid": "Ora Europei Centrale (Madrid)",
+          "europeMoscow": "Ora Moscovei (Moscova)",
+          "europeParis": "Ora Europei Centrale (Paris)",
+          "europeRome": "Ora Europei Centrale (Roma)",
+          "europeStockholm": "Ora Europei Centrale (Stockholm)",
+          "europeVienna": "Ora Europei Centrale (Viena)",
+          "europeWarsaw": "Ora Europei Centrale (Varșovia)",
+          "pacificAuckland": "Ora Noii Zeelande (Auckland)",
+          "pacificHonolulu": "Ora din Hawaii (Honolulu)",
+          "utc": "Timpul Universal Coordonat (UTC)"
+        },
+        "search": "Caută fusul orar…"
+      },
+      "save": "Salvează fusul orar",
+      "title": "Fus orar",
+      "updateError": "A apărut o eroare la actualizarea fusului orar",
+      "updateFailed": "Nu s-a putut actualiza fusul orar",
+      "updateSuccess": "Fusul orar a fost actualizat cu succes"
+    },
+    "title": "Setări",
+    "travelExpenses": {
+      "allowanceOverrides": {
+        "amount": "Sumă ({currency})",
+        "authorize": "Autorizați indemnizația",
+        "basis": "Calcul",
+        "basisDescription": "De ex. 2 zile parțiale × 39.00 EUR + 1 zi întreagă × 58.00 EUR − mic dejun 11.60 EUR.",
+        "dialogDescription": "{employee}: {facts}. Suma se aplică exclusiv acestor circumstanțe; angajatul și revizorul o văd împreună cu motivul, documentul justificativ și calculul dvs.",
+        "dialogTitle": "Setați manual indemnizația",
+        "empty": "Niciun raport ciornă nu are o indemnizație care necesită un calcul manual.",
+        "errors": {
+          "amount": "Introduceți suma în moneda raportului, cu cel mult două zecimale. Kilometrajul trebuie să fie mai mare decât zero.",
+          "basis": "Arătați cum a fost calculată suma.",
+          "evidence": "Indicați documentul justificativ pe care se bazează suma, de ex. un tabel oficial de tarife sau o confirmare.",
+          "reason": "Explicați de ce este setată manual indemnizația."
+        },
+        "evidence": "Document justificativ",
+        "evidenceDescription": "Pe ce se bazează suma, de ex. tabelul oficial de tarife și ediția sau o confirmare scrisă.",
+        "intro": "Kilometrajul și diurna pe care sistemul nu le poate calcula, deoarece nu sunt acoperite de nicio politică sau deplasarea nu respectă regulile acceptate. Setați suma manual, indicând motivul, documentul justificativ și calculul. Aceasta se aplică numai circumstanțelor pentru care a fost stabilită și este afișată angajatului și revizorului.",
+        "loadFailed": "Indemnizațiile excepționale nu au putut fi încărcate.",
+        "mileage": "Kilometraj",
+        "ordinary": "Rezultat conform politicii: {amount}",
+        "ownReport": "Acesta este propriul dvs. raport: un alt administrator de cheltuieli trebuie să decidă.",
+        "perDiem": "Diurnă",
+        "reason": "Motiv",
+        "record": "Setați indemnizația manual",
+        "replace": "Înlocuiți indemnizația manuală",
+        "revoke": "Revocați",
+        "revokeFailed": "Indemnizația manuală nu a putut fi revocată. Lista a fost reîmprospătată.",
+        "saved": "Indemnizație manuală autorizată",
+        "saveFailed": "Indemnizația manuală nu a putut fi salvată. Vă rugăm să reîncercați.",
+        "self": "Nu puteți stabili o indemnizație pentru propriul dvs. raport.",
+        "stale": "Această cheltuială a fost modificată sau trimisă între timp. Lista a fost actualizată.",
+        "title": "Indemnizații excepționale"
+      },
+      "approver": {
+        "description": "Revizuiește rapoartele de cheltuieli ale angajaților care nu au alt manager sau manager de echipă în afară de ei înșiși. Doar managerii și administratorii activi pot efectua revizuiri în lista de aprobări. Nimeni nu își revizuiește propriul raport.",
+        "intro": "Rapoartele de cheltuieli trimise ajung la managerul direct al angajatului, apoi la managerul echipei, apoi la aprobatorul de cheltuieli selectat aici.",
+        "label": "Aprobator de cheltuieli",
+        "loadFailed": "Aprobatorul de cheltuieli nu a putut fi încărcat.",
+        "none": "Fără aprobator de cheltuieli",
+        "ownerSelfApproval": "Deși nimeni altcineva nu poate revizui rapoartele proprietarului organizației, acestea sunt aprobate automat la trimitere și marcate ca atare; rapoartele cu o explicație pentru chitanță lipsă sau o indemnizație stabilită manual necesită în continuare un revizor.",
+        "save": "Salvează aprobatorul",
+        "saved": "Aprobatorul de cheltuieli a fost salvat",
+        "saveFailed": "Nu s-a putut salva aprobatorul de cheltuieli",
+        "title": "Revizuire raport de cheltuieli"
+      },
+      "currency": {
+        "choose": "Alegeți o monedă cu cel mult două zecimale, de ex. EUR sau CHF.",
+        "description": "Rapoartele noi de cheltuieli sunt rambursate în această monedă; rapoartele existente își păstrează moneda inițială. Pragurile valorice de aprobare sunt comparate în EUR, astfel încât, atât timp cât există reguli de aprobare bazate pe sume, nu pot fi trimise rapoarte în altă monedă.",
+        "intro": "Chitanțele în alte monede își păstrează suma inițială și sunt convertite pe baza unei tranzacții documentate de pe card sau a unui curs valutar justificat.",
+        "label": "Monedă de rambursare",
+        "loadFailed": "Moneda de rambursare nu a putut fi încărcată.",
+        "save": "Salvează moneda",
+        "saved": "Moneda de rambursare a fost salvată",
+        "saveFailed": "Moneda de rambursare nu a putut fi salvată.",
+        "title": "Monedă de rambursare"
+      },
+      "effectiveFrom": "Valabil de la",
+      "effectiveTo": "Valabil până la",
+      "legacy": {
+        "description": "Păstrat doar ca referință. Aceste înregistrări nu au fost utilizate niciodată pentru calcularea cheltuielilor și nu mai pot fi modificate; configurați ratele de kilometraj datate mai sus.",
+        "title": "Înregistrări anterioare ale politicii"
+      },
+      "mileage": {
+        "activate": "Activează versiunea",
+        "add": "Adaugă versiune de tarif",
+        "addTitle": "Adaugă o versiune de tarif de kilometraj",
+        "adopt": "Adoptă aceste tarife",
+        "adoptDescription": "Tarifele și sursa sunt preluate din catalogul verificat: {reference} ({version}).",
+        "adoptTitle": "Adoptă tarifele legale germane",
+        "currency": "Monedă",
+        "currencyDescription": "Trebuie să corespundă cu moneda de rambursare a rapoartelor; kilometrajul nu este convertit niciodată.",
+        "defaultRate": "{vehicle}: {rate} per km",
+        "defaultSource": "{reference}. Verificat la {verifiedOn} conform {version}; poate fi adoptat începând cu {validFrom}.",
+        "description": "Tarife pe kilometru pentru călătoriile de afaceri efectuate cu vehiculele proprii ale angajaților. Un tarif se aplică de la data de început până la începerea versiunii următoare. Rapoartele trimise păstrează tariful cu care au fost calculate.",
+        "dialogDescription": "Versiunea se aplică de la data de început până la data de început a versiunii următoare. Versiunile anterioare și rapoartele trimise nu sunt modificate.",
+        "empty": "Angajații pot introduce kilometrajul, dar acesta rămâne ca ciornă până când un tarif acoperă data respectivă. Adoptați tarifele legale verificate sau introduceți propriile tarife ale organizației.",
+        "emptyTitle": "Nu este configurat niciun tarif de kilometraj",
+        "errors": {
+          "beforeDefault": "Tarifele legale au fost verificate doar de la începutul acestei ediții; alegeți o dată ulterioară sau introduceți propriile tarife pentru zilele anterioare.",
+          "currency": "Introduceți un cod valutar din trei litere, de ex. EUR.",
+          "date": "Alegeți prima zi în care se aplică tariful.",
+          "invalid": "Verificați această valoare.",
+          "rate": "Introduceți un tarif pozitiv pe kilometru cu maximum patru zecimale, de ex. 0,30.",
+          "rateRequired": "Introduceți un tarif pentru cel puțin un vehicul.",
+          "tooLong": "Acest text este prea lung."
+        },
+        "germanDefaultTitle": "Tarife forfetare legale germane",
+        "history": "Versiuni înlocuite și retrase ({count})",
+        "historyEntry": "Din {date}: {rates} · {source}",
+        "loadFailed": "Tarifele de kilometraj nu au putut fi încărcate.",
+        "notCovered": "neacoperit",
+        "note": "Notă (opțional)",
+        "openEnded": "până la o nouă notificare",
+        "rateFor": "Tarif per km: {vehicle}",
+        "replace": "Înlocuire",
+        "replaceConfirm": "Înlocuiește versiunea",
+        "replaceDescription": "O versiune activă începe deja la data de {date}. Salvarea o înlocuiește; versiunea înlocuită este păstrată în istoric.",
+        "replaceTitle": "Înlocuiește versiunea care începe în ziua respectivă",
+        "saved": "Versiunea ratei pentru kilometraj a fost activată",
+        "saveFailed": "Rata pentru kilometraj nu a putut fi salvată.",
+        "source": "Sursă",
+        "sourceReference": "Sursă",
+        "sourceReferencePlaceholder": "de ex. Politica de călătorie, acordul de muncă 3/2026",
+        "stale": "Între timp, ratele s-au schimbat. Verificați versiunile curente și încercați din nou.",
+        "title": "Rate pentru kilometraj",
+        "until": "până la {date}",
+        "validFrom": "Valabil de la",
+        "validUntil": "Valabil până la",
+        "withdraw": "Retrage",
+        "withdrawConfirm": "Retrage versiunea",
+        "withdrawDescription": "Kilometrajul datat de la {date} revine la versiunea anterioară sau rămâne necalculat dacă nu există niciuna. Rapoartele trimise păstrează rata cu care au fost calculate.",
+        "withdrawFailed": "Versiunea ratei nu a putut fi retrasă. Reîncărcați versiunile și încercați din nou.",
+        "withdrawn": "Versiunea ratei a fost retrasă",
+        "withdrawTitle": "Retrageți această versiune de rată?"
+      },
+      "mileageRate": "Kilometraj / km",
+      "navDescription": "Revizuirea rapoartelor de cheltuieli, chitanțe, valute, tarife pentru kilometraj și diurnă, precum și excepții.",
+      "officers": {
+        "add": "Adăugare responsabil cheltuieli",
+        "addTitle": "Adăugare responsabil cheltuieli",
+        "allScope": "Toți angajații",
+        "allScopeDescription": "Fiecare raport de cheltuieli aprobat al acestei organizații.",
+        "canExport": "Poate exporta",
+        "canRecordReimbursements": "Poate înregistra rambursări",
+        "capabilities": "Capabilități",
+        "capabilitiesBoth": "Citește, exportă și înregistrează rambursări",
+        "capabilitiesDescription": "Fără niciuna dintre acestea, responsabilul poate citi rapoartele din sfera sa de competență, de exemplu ca auditor. Înregistrarea rambursărilor include recuperările. Nimeni nu înregistrează bani pentru propriile cheltuieli.",
+        "capabilitiesExport": "Citește și exportă",
+        "capabilitiesRead": "Doar citire",
+        "capabilitiesReimburse": "Citește și înregistrează rambursări",
+        "departedNamed": "{names} au părăsit organizația. Rapoartele lor aprobate rămân la acest responsabil.",
+        "edit": "Editează",
+        "editorDescription": "Alegeți ale cui rapoarte de cheltuieli aprobate le gestionează responsabilul și ce poate face cu acestea. Responsabilii văd întotdeauna rapoartele din sfera lor de competență.",
+        "editTitle": "Editează responsabilul de cheltuieli",
+        "employees": "Angajați",
+        "empty": "Nu există încă responsabili de cheltuieli. Proprietarii și administratorii gestionează rapoartele de cheltuieli aprobate.",
+        "intro": "Responsabilii de cheltuieli exportă rapoartele de cheltuieli aprobate pentru contabilitate și înregistrează rambursări, pentru toți angajații sau pentru echipe și angajați specificați. Proprietarii și administratorii au întotdeauna acest acces. Aprobarea rapoartelor nu acordă niciodată acest acces.",
+        "loadFailed": "Responsabilii de cheltuieli nu au putut fi încărcați.",
+        "noTeams": "Nicio echipă disponibilă",
+        "officer": "Responsabil de cheltuieli",
+        "revoke": "Revocă",
+        "revokeConfirm": "Revocă accesul",
+        "revoked": "Responsabilul de cheltuieli a fost revocat",
+        "revokeDescription": "{name} pierde imediat accesul la rapoartele de cheltuieli aprobate. Readăugarea sa ulterioară creează o nouă permisiune.",
+        "revokeFailed": "Nu s-a putut revoca responsabilul de cheltuieli",
+        "revokeTitle": "Revocați responsabilul de cheltuieli?",
+        "save": "Salvează responsabilul de cheltuieli",
+        "saved": "Responsabilul de cheltuieli a fost salvat",
+        "saveFailed": "Nu s-a putut salva responsabilul de cheltuieli",
+        "scope": "Sfera de competență a responsabilului",
+        "scopeSummary": "{teamCount, plural, one {# echipă, {employeeCount, plural, one {# angajat} other {# angajați}}} other {# echipe, {employeeCount, plural, one {# angajat} other {# angajați}}}}",
+        "selectEmployees": "Selectează angajații",
+        "selectOfficer": "Selectează angajatul",
+        "specificScope": "Echipe sau angajați specifici",
+        "specificScopeDescription": "Rapoartele angajaților menționați și rapoartele al căror angajat aparținea uneia dintre echipe la momentul aprobării raportului. O schimbare ulterioară a echipei nu mută raportul.",
+        "teams": "Echipe",
+        "title": "Responsabili de cheltuieli"
+      },
+      "pageDescription": "Alegeți cine revizuiește rapoartele de cheltuieli, cum sunt gestionate chitanțele lipsă și valutele străine, ce tarife de kilometraj și diurnă se aplică și ce excepții sunt autorizate.",
+      "perDiem": {
+        "activate": "Activează versiunea",
+        "add": "Adaugă versiune de rată",
+        "addTitle": "Adaugă o versiune de diurnă",
+        "adopt": "Adoptă aceste sume",
+        "adoptDescription": "Sumele și sursa sunt preluate din catalogul verificat: {reference} ({version}).",
+        "adoptTitle": "Adoptă diurna legală germană",
+        "amounts": "Sume",
+        "breakfast": "Deducere pentru micul dejun asigurat",
+        "currency": "Monedă",
+        "currencyDescription": "Trebuie să corespundă monedei de rambursare a rapoartelor; diurna nu este convertită niciodată.",
+        "defaultSource": "{reference}. Verificat la {verifiedOn} în raport cu {version}; poate fi adoptat începând cu {validFrom}.",
+        "description": "Diurne pentru călătorii interne și deducerile pentru mesele asigurate de organizație. Ratele se aplică de la data de început până la începerea următoarei versiuni; rapoartele trimise păstrează ratele cu care au fost calculate.",
+        "dialogDescription": "Versiunea se aplică de la data de început până la începerea următoarei versiuni. Versiunile anterioare și rapoartele trimise nu sunt modificate.",
+        "dinner": "Deducere pentru cina asigurată",
+        "empty": "Angajații pot introduce diurna pentru călătorii, dar aceasta rămâne în stadiul de ciornă până când ratele acoperă zilele de deplasare. Adoptați sumele legale verificate sau introduceți sumele proprii ale organizației dvs.",
+        "emptyTitle": "Nu sunt configurate rate de diurnă",
+        "errors": {
+          "afterDefault": "Aceste sume legale au fost verificate doar pentru un an; alegeți o dată din acel an.",
+          "amount": "Introduceți o sumă cu maximum două zecimale, de ex. 14.00.",
+          "beforeDefault": "Sumele legale au fost verificate doar de la începutul acestei ediții; alegeți o dată ulterioară sau introduceți sumele proprii ale organizației dvs. pentru zilele anterioare.",
+          "currency": "Introduceți un cod valutar din trei litere, de ex. EUR.",
+          "date": "Alegeți prima zi în care se aplică ratele.",
+          "exceedsFullDay": "Această sumă nu poate depăși indemnizația pentru o zi întreagă.",
+          "invalid": "Verificați această valoare.",
+          "tooLong": "Acest text este prea lung."
+        },
+        "foreignTable": "Include ratele oficiale externe ({version}) pentru {countries} țări și {places} orașe, aplicate zilelor de călătorie de la {from} până la {through}. Țările și teritoriile nelistate urmează regulile oficiale de rezervă; orice altceva este marcat pentru calcul manual.",
+        "fullDay": "Zi întreagă (absență de 24 de ore)",
+        "germanDefaultTitle": "Diurnă legală germană pentru deplasări interne",
+        "germanForeignDefaultTitle": "Diurnă legală germană cu ratele externe oficiale",
+        "history": "Versiuni înlocuite și retrase ({count})",
+        "historyEntry": "De la {date}: zi întreagă {fullDay}, zi parțială {partialDay} · {source}",
+        "loadFailed": "Ratele de diurnă nu au putut fi încărcate.",
+        "lunch": "Deducere pentru prânz asigurat",
+        "notCovered": "fără rate interne",
+        "note": "Notă (opțional)",
+        "openEnded": "până la o nouă notificare",
+        "partialDay": "Zi de deplasare sau mai mult de 8 ore",
+        "replace": "Înlocuiește",
+        "replaceConfirm": "Înlocuiește versiunea",
+        "replaceDescription": "O versiune activă începe deja la data de {date}. Salvarea o înlocuiește; versiunea înlocuită este păstrată în istoric.",
+        "replaceTitle": "Înlocuiește versiunea care începe în acea zi",
+        "rules": "Eligibilitatea respectă {reference} ({version}), verificată pentru zilele de deplasare de la {from} până la {through}. Deplasările în străinătate sunt tarifate pe zi doar cu ratele externe adoptate; celelalte zile și itinerariile speciale sunt marcate pentru calcul manual.",
+        "rulesOpenEnded": "Eligibilitatea respectă {reference} ({version}), verificată pentru zilele de deplasare începând cu {from} până la modificarea legii. Călătoriile în străinătate sunt tarifate pe zi doar pe baza baremelor externe adoptate; celelalte zile și itinerariile speciale sunt marcate pentru calcul manual.",
+        "saved": "Versiunea ratei de diurnă a fost activată",
+        "saveFailed": "Ratele de diurnă nu au putut fi salvate.",
+        "source": "Sursă",
+        "sourceReference": "Sursă",
+        "sourceReferencePlaceholder": "de ex. Politica de deplasare, acordul de muncă 3/2026",
+        "stale": "Ratele s-au modificat între timp. Verificați versiunile curente și încercați din nou.",
+        "title": "Rate de diurnă",
+        "until": "până la {date}",
+        "validFrom": "Valabil de la",
+        "validUntil": "Valabil până la",
+        "withdraw": "Retrage",
+        "withdrawConfirm": "Retrage versiunea",
+        "withdrawDescription": "Zilele de deplasare începând cu {date} revin la versiunea anterioară sau rămân necalculate dacă nu există niciuna. Rapoartele trimise păstrează ratele cu care au fost calculate.",
+        "withdrawFailed": "Versiunea de rate nu a putut fi retrasă. Reîncărcați versiunile și încercați din nou.",
+        "withdrawn": "Versiunea de rate a fost retrasă",
+        "withdrawTitle": "Retrageți această versiune de rate?"
+      },
+      "perDiemRate": "Diurnă / zi",
+      "projectExceptions": {
+        "authorize": "Autorizează excepția",
+        "authorizedBy": "Autorizat de {name}",
+        "employee": "Angajat",
+        "employeePlaceholder": "Alegeți un angajat",
+        "empty": "Nu a fost autorizată nicio excepție.",
+        "errors": {
+          "afterHistoryCapture": "Excepțiile acoperă doar datele anterioare înregistrării atribuirilor la proiecte. Pentru datele ulterioare, decid atribuirile înregistrate: alocați angajatul la proiect.",
+          "date": "Introduceți o dată validă.",
+          "dateOrder": "Ultima zi nu poate fi înaintea primei zile.",
+          "employee": "Alegeți un angajat.",
+          "evidence": "Indicați dovada pe care se bazează aceasta, de ex. un plan de personal sau un contract.",
+          "future": "Excepțiile acoperă doar cheltuielile trecute. Alocați angajatul la proiect pentru activitatea curentă.",
+          "project": "Alegeți un proiect.",
+          "reason": "Explicați de ce angajatul a putut utiliza proiectul la acel moment."
+        },
+        "evidence": "Dovadă",
+        "evidenceDescription": "Ce demonstrează că angajatul a lucrat la proiect la acel moment, de ex. un plan de personal, un contract sau o confirmare scrisă din partea coordonatorului de proiect.",
+        "intro": "Angajații pot atribui cheltuieli proiectelor la care au fost alocați la data cheltuielii. Istoricul alocărilor este înregistrat de la introducerea proiectelor de cheltuieli; pentru datele anterioare sau pentru munca efectuată fără o alocare, autorizați o excepție aici, menționând motivul și dovada. Evaluatorii văd fiecare excepție.",
+        "loadFailed": "Excepțiile de atribuire a proiectelor nu au putut fi încărcate.",
+        "project": "Proiect",
+        "projectPlaceholder": "Alegeți un proiect",
+        "reason": "Motiv",
+        "saved": "Excepție autorizată",
+        "saveFailed": "Excepția nu a putut fi înregistrată.",
+        "title": "Excepții de atribuire a proiectelor",
+        "validFrom": "Data primei cheltuieli acoperite",
+        "validTo": "Data ultimei cheltuieli acoperite"
+      },
+      "rates": {
+        "dialogDescription": "{employee}: {amount} la data de {date}. Rezultatul este rotunjit în sus la jumătate la {currency} și este afișat angajatului și evaluatorului ca un curs autorizat.",
+        "dialogTitle": "Documentați un curs de conversie",
+        "direction": "Cotat ca",
+        "empty": "Niciun raport ciornă nu conține o cheltuială în altă monedă.",
+        "errors": {
+          "afterExpenseDate": "Cursul nu poate avea o dată ulterioară cheltuielii.",
+          "date": "Introduceți data cursului.",
+          "evidenceRequired": "Indicați documentul sau rândul din extras care prezintă cursul.",
+          "expenseDateMissing": "Cheltuiala nu are încă o dată. Solicitați-i angajatului să o adauge mai întâi.",
+          "pair": "Cotați cursul pentru monedele acestei cheltuieli.",
+          "rate": "Introduceți un curs pozitiv cu maximum 10 zecimale, de ex. 0.9215.",
+          "reasonRequired": "Documentați proveniența cursului.",
+          "tooEarly": "Utilizați un curs cu o dată cu cel mult {days} zile înainte de cheltuială.",
+          "tooLong": "Acest text este prea lung."
+        },
+        "evidence": "Dovada cursului",
+        "evidenceDescription": "Unde poate fi verificat cursul, de ex. extrasul de cont al cardului și rândul sau numărul de document al cursului publicat.",
+        "intro": "Angajații convertesc o chitanță în valută pe baza debitării dovedite de pe card. Dacă nu există una, documentați cursul aici împreună cu data și sursa sa. Un curs documentat este afișat evaluatorului ca un curs autorizat.",
+        "loadFailed": "Cheltuielile în valută nu au putut fi încărcate.",
+        "noPreview": "Introduceți un curs, o dată, o documentație și o dovadă valide pentru a vedea rezultatul.",
+        "outOfRange": "Cu acest curs, cheltuiala s-ar rotunji la zero sau ar depăși suma permisă.",
+        "preview": "Echivalează cu {amount}.",
+        "rate": "Curs (x)",
+        "rateDate": "Data cursului",
+        "reason": "Documentație",
+        "reasonDescription": "De unde provine cursul și de ce nu se utilizează o debitare de pe card, de ex. cursul din extrasul bancar al cardului de călătorie.",
+        "record": "Documentați cursul",
+        "remove": "Eliminați conversia",
+        "removeFailed": "Conversia nu a putut fi eliminată. Lista a fost reîmprospătată.",
+        "replace": "Înlocuiți cursul",
+        "save": "Autorizați cursul",
+        "saved": "Cursul documentat a fost salvat",
+        "saveFailed": "Cursul nu a putut fi salvat. Vă rugăm să reîncercați.",
+        "self": "Nu puteți autoriza un curs pentru propriul raport. Solicitați acest lucru unui alt administrator de cheltuieli.",
+        "stale": "Această cheltuială a fost modificată sau trimisă între timp. Lista a fost reîmprospătată.",
+        "title": "Cheltuieli în valută din ciorne",
+        "unconverted": "Nicio conversie încă"
+      },
+      "receiptExceptions": {
+        "description": "Angajații pot trimite o cheltuială care necesită chitanță fără documentul aferent doar dacă explică motivul lipsei acesteia. Evaluatorii trebuie să accepte fiecare excepție pentru a aproba raportul. Chitanțele rămân obligatorii pentru orice altceva, iar dezactivarea acestei opțiuni păstrează neschimbate rapoartele deja trimise.",
+        "intro": "Cheltuielile bazate pe chitanțe necesită o chitanță. Puteți permite o excepție justificată pentru chitanțele care au fost pierdute sau nu au fost emise niciodată.",
+        "label": "Permiteți excepții justificate pentru chitanțe lipsă",
+        "loadFailed": "Setarea pentru chitanțe lipsă nu a putut fi încărcată.",
+        "save": "Salvați setarea",
+        "saved": "Setarea pentru chitanțe lipsă a fost salvată",
+        "saveFailed": "Nu s-a putut salva setarea pentru chitanțe lipsă",
+        "title": "Chitanțe lipsă"
+      },
+      "referenceRates": {
+        "acknowledge": "Înțeleg că BCE publică aceste cursuri doar în scop informativ, pentru un set limitat de monede și doar în zilele lucrătoare, și că organizația noastră alege să facă rambursările pe baza lor.",
+        "acknowledgedEcb": "{name} a confirmat la data de {date} că BCE publică aceste cursuri doar în scop informativ, pentru un set limitat de monede și doar în zilele lucrătoare.",
+        "acknowledgeRequired": "Confirmați că înțelegeți modul în care pot fi utilizate cursurile de referință.",
+        "approve": "Aprobați cursurile de referință ale BCE",
+        "approved": "Cursuri de referință BCE aprobate",
+        "approvedBy": "Aprobat de {name} la {date}.",
+        "approveFailed": "Cursurile de referință nu au putut fi aprobate.",
+        "fetchFailing": "Ultima preluare a eșuat. Cheltuielile cu o dată ulterioară ultimei preluări reușite necesită o tranzacție pe card sau un curs documentat până când următoarea preluare reușește.",
+        "firstFetch": "Cursurile sunt preluate în fiecare oră. Până la prima preluare, pentru cheltuieli se va solicita în continuare o tranzacție pe card sau un curs documentat.",
+        "intro": "Cu aprobare, o cheltuială în valută fără o tranzacție pe card sau un curs documentat este convertită la cursul de schimb de referință euro al Băncii Centrale Europene din data cheltuielii. În weekenduri și în zilele libere TARGET se aplică cea mai recentă publicație anterioară, iar data reală a acesteia este afișată. Monedele pe care BCE nu le publică și datele fără un curs disponibil necesită în continuare o tranzacție pe card sau un curs documentat. Rapoartele trimise păstrează cursul cu care au fost trimise.",
+        "latestFetch": "Ultima preluare reușită",
+        "latestPublication": "Cea mai recentă publicație",
+        "loadFailed": "Setările cursurilor de referință nu au putut fi încărcate.",
+        "notFetched": "Nepreluat încă",
+        "revoke": "Opriți utilizarea cursurilor de referință",
+        "revokeFailed": "Cursurile de referință nu au putut fi dezactivate.",
+        "title": "Cursuri de schimb de referință"
+      },
+      "title": "Politici privind cheltuielile de deplasare"
+    },
+    "webhooks": {
+      "description": "Configurați endpoint-urile webhook pentru a primi notificări în timp real despre evenimente",
+      "title": "Webhook-uri"
+    },
+    "weekStart": {
+      "description": "Alegeți dacă calendarele și rezumatele săptămânale încep duminică sau luni.",
+      "label": "Prima zi a săptămânii",
+      "save": "Salvează începutul săptămânii",
+      "title": "Săptămâna începe în",
+      "updateError": "A apărut o eroare la actualizarea primei zile a săptămânii",
+      "updateFailed": "Nu s-a putut actualiza prima zi a săptămânii",
+      "updateSuccess": "Prima zi a săptămânii a fost actualizată cu succes"
+    },
+    "wellness": {
+      "cardDescShort": "Rămâneți hidratat în timp ce lucrați",
+      "cardTitle": "Mementouri pentru apă",
+      "dailyGoal": "Obiectiv zilnic",
+      "decreaseDailyGoal": "Scade obiectivul zilnic",
+      "description": "Configurați mementourile pentru apă și monitorizarea hidratării în timpul sesiunilor de lucru",
+      "glasses": "pahare",
+      "increaseDailyGoal": "Crește obiectivul zilnic",
+      "reminderFrequency": "Frecvența mementourilor",
+      "saved": "Setările de wellness au fost salvate",
+      "saveError": "Nu s-au putut salva setările de wellness",
+      "title": "Setări de wellness"
+    },
+    "workBalanceRecalculation": {
+      "confirm": "Confirmă recalcularea",
+      "confirmMessage": "Confirmați înainte de a adăuga această recalculare în coadă.",
+      "description": "Puneți în coadă o reconstruire completă a agregatelor lunare și anuale ale soldului orelor de lucru pentru {employeeName}. Această sarcină de întreținere rulează în fundal și nu blochează această pagină.",
+      "queued": "Recalculare adăugată în coadă",
+      "recalculate": "Recalculează soldul orelor de lucru",
+      "requestError": "Adăugarea recalculării soldului orelor de lucru în coadă a eșuat",
+      "requestSuccess": "Recalcularea soldului orelor de lucru a fost adăugată în coadă",
+      "title": "Recalculare sold ore de lucru"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Activ",
+        "activeDescription": "În curs de procesare",
+        "completed": "Finalizat",
+        "completedDescription": "Finalizate recent",
+        "delayed": "Amânat",
+        "delayedDescription": "Programat pentru mai târziu",
+        "failed": "Eșuat",
+        "failedDescription": "Eșuate recent",
+        "paused": "În pauză",
+        "queueState": "Coadă",
+        "queueStateDescription": "Dacă lucrătorii pot prelua activitățile în așteptare",
+        "running": "În execuție",
+        "unknown": "Necunoscut",
+        "waiting": "În așteptare",
+        "waitingDescription": "Sarcini în așteptare pentru a fi procesate"
+      },
+      "common": {
+        "unknown": "Necunoscut"
+      },
+      "connected": "Conectat",
+      "description": "Monitorizați procesarea sarcinilor de fundal și execuțiile activităților cron",
+      "disconnected": "Deconectat",
+      "lastUpdated": "Ultima actualizare",
+      "loadError": "Nu s-a putut încărca starea cozii",
+      "noExecutions": "Nu au fost găsite execuții recente",
+      "noScheduledJobs": "Nu au fost găsite sarcini programate",
+      "recentExecutions": {
+        "allJobs": "Toate joburile",
+        "error": "Nu s-au putut încărca execuțiile",
+        "filterLabel": "Filtrare după job",
+        "loading": "Se încarcă execuțiile…"
+      },
+      "recentExecutionsDescription": "Ultimele 50 de execuții ale sarcinilor înregistrate în baza de date.",
+      "reliability": {
+        "averageDuration": "Durată medie",
+        "avgDuration": "Durată medie",
+        "avgDurationDescription": "Execuții cu date despre durată",
+        "completed": "Finalizate",
+        "durationTrend": "Tendința duratei",
+        "durationTrendDescription": "Durata medie de rulare pentru execuțiile care au raportat date despre durată.",
+        "failed": "Eșuate",
+        "failedRuns": "Rulări eșuate",
+        "failedRunsDescription": "Ultimele 30 de zile",
+        "failing": "Cu eșecuri",
+        "healthy": "Sănătos",
+        "jobHealth": "Starea de sănătate a sarcinilor",
+        "jobHealthDescription": "Fiabilitatea per sarcină bazată pe execuțiile recente și programările repetitive.",
+        "noDurationData": "Nu sunt disponibile date despre durată pentru această perioadă.",
+        "noExecutionHistory": "Nu este disponibil niciun istoric al execuțiilor cron pentru această perioadă.",
+        "noJobs": "Nu au fost găsite date despre fiabilitate",
+        "runOutcomes": "Rezultatele rulărilor",
+        "runOutcomesDescription": "Execuții cron finalizate și eșuate în ultimele {days} zile.",
+        "stale": "Depășit",
+        "staleJobs": "Sarcini depășite",
+        "staleJobsDescription": "Peste programarea prevăzută",
+        "successRate": "Rată de succes",
+        "successRateDescription": "Execuții cron finale",
+        "title": "Fiabilitate",
+        "unknown": "Necunoscut",
+        "warning": "Avertisment"
+      },
+      "scheduleControls": {
+        "cancel": "Anulare",
+        "confirmationLabel": "Tastați confirmarea",
+        "edit": "Editare",
+        "failed": "Modificarea programării a eșuat",
+        "highRiskDescription": "Modificarea acestei activități poate afecta facturarea, curățarea, integrările, conformitatea sau automatizarea operațională.",
+        "highRiskTitle": "Programare cu risc ridicat",
+        "mismatch": "BullMQ diferă în prezent de programarea salvată; pornirea instanțelor worker o va reconcilia.",
+        "presetLabel": "Presetare programare",
+        "readOnly": "Această programare implicită nu are încă o presetare editabilă.",
+        "reset": "Resetare",
+        "resetSaved": "Programare resetată",
+        "save": "Salvare programare",
+        "saved": "Programare salvată",
+        "warningPrefix": "Salvat cu avertisment"
+      },
+      "scheduledJobsDescription": "Sarcini repetitive configurate în procesator (worker). Acestea rulează automat conform programării.",
+      "schedule": {
+        "overridden": "Suprascris"
+      },
+      "sections": {
+        "jobMetrics": "Metrici sarcini (Ultimele 30 de zile)",
+        "queueCounts": "Stare coadă",
+        "recentExecutions": "Execuții recente",
+        "scheduledJobs": "Sarcini cron programate"
+      },
+      "status": {
+        "completed": "Finalizate",
+        "failed": "Eșuate",
+        "pending": "În așteptare",
+        "running": "În execuție"
+      },
+      "table": {
+        "actions": "Acțiuni",
+        "avgDuration": "Durată medie",
+        "default": "Implicit",
+        "duration": "Durată",
+        "error": "Eroare",
+        "failed": "Eșuat",
+        "health": "Sănătate",
+        "jobName": "Nume sarcină",
+        "lastRun": "Ultima rulare",
+        "nextRun": "Următoarea rulare",
+        "schedule": "Programare",
+        "startedAt": "Început la",
+        "status": "Stare",
+        "successful": "Reușit",
+        "successRate": "Rată de succes",
+        "totalRuns": "Total rulări"
+      },
+      "title": "Coadă de lucru"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Numele categoriilor",
+        "grouped": "Grupate",
+        "hidden": "Ascunse"
+      },
+      "absenceVisibility": "Vizibilitatea absențelor",
+      "description": "Configurați accesul consiliului de întreprindere cu protecția confidențialității și exporturile pentru revizuire",
+      "exportEnabled": "Activați exporturile pentru revizuire",
+      "exportEnabledDescription": "Permiteți utilizatorilor autorizați din consiliul de întreprindere să genereze pachete de revizuire filtrate pentru confidențialitate.",
+      "formDescription": "Configurați accesul consiliului de întreprindere cu protecția confidențialității și exporturile pentru revizuire pentru această organizație.",
+      "identity": {
+        "aggregated": "Agregate",
+        "named": "Nominale",
+        "pseudonymized": "Pseudonimizate"
+      },
+      "identityVisibility": "Vizibilitatea identității",
+      "minimumThreshold": "Prag minim de agregare",
+      "minimumThresholdDescription": "Grupurile sub această dimensiune sunt excluse pentru a reduce riscul de reidentificare.",
+      "save": "Salvați setările",
+      "saved": "Setările Consiliului de întreprindere au fost salvate",
+      "saveError": "Salvarea setărilor Consiliului de întreprindere a eșuat",
+      "title": "Mod Consiliu de întreprindere",
+      "visibleLocationIds": "ID-uri de locații vizibile",
+      "visibleLocationIdsDescription": "ID-uri opționale de locații separate prin virgulă. Lăsați necompletat pentru a include toate locațiile.",
+      "visibleTeamIds": "ID-uri de echipe vizibile",
+      "visibleTeamIdsDescription": "ID-uri opționale de echipe separate prin virgulă. Lăsați necompletat pentru a include toate echipele."
+    }
+  }
+}

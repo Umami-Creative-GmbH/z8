@@ -1,0 +1,202 @@
+{
+  "payroll": {
+    "accessDenied": {
+      "description": "Nemate pristup podacima o obračunu plata za aktivnu organizaciju.",
+      "help": "Zatražite od administratora organizacije da vam dodijeli pristup obračunu plata ako vam je potreban ovaj radni prostor.",
+      "title": "Nema pristupa obračunu plata"
+    },
+    "actions": {
+      "apply": "Primijeni",
+      "downloadPdf": "Preuzmi PDF",
+      "triggerExport": "Pokreni izvoz"
+    },
+    "blockers": {
+      "clearFailed": "Nije bilo moguće ukloniti blokadu obračuna plata",
+      "clearFalsePositive": "Ukloni lažno pozitivan rezultat",
+      "clearingFalsePositive": "Uklanjanje lažno pozitivnog rezultata",
+      "dateUnavailable": "Datum nije dostupan",
+      "missingClockOut": "Nedostaje odjava",
+      "missingIdentifier": "Nedostaje identifikator",
+      "needReview": "{count} blokada obračuna plata zahtijeva pregled",
+      "offboardingClockRepair": "Odjava pri offboardingu zahtijeva popravku",
+      "openApprovals": "Otvorena odobrenja",
+      "openCalendar": "Otvori kalendar",
+      "openEmployee": "Otvori zaposlenika",
+      "openWork": "Rad bez odjave",
+      "openWorkDiagnostics": "Otvori dijagnostiku rada",
+      "pendingAbsence": "Odsustvo na čekanju",
+      "pendingTimeCorrection": "Korekcija vremena na čekanju",
+      "pendingWorkApproval": "Rad koji čeka odobrenje",
+      "refreshAfterClearFailed": "Blokada je uklonjena, ali obračun plata nije bilo moguće osvježiti",
+      "uncertainHistoricalWork": "Historijski rad zahtijeva pregled",
+      "unknownEmployee": "Nepoznat zaposlenik",
+      "unresolvedWorkMinutes": "Minute rada zahtijevaju pregled"
+    },
+    "description": "Pregledajte ukupne iznose plata, spremnost i izvoze za odabrani period.",
+    "employeeTotals": {
+      "absences": "Odsustva",
+      "blocked": "Blokirano",
+      "contract": "Ugovor",
+      "contractFixed": "Fiksno",
+      "contractHourly": "Po satu",
+      "description": "Odrađeno vrijeme, ukupna odsustva, vrsta ugovora i status obračuna plata.",
+      "employee": "Zaposlenik",
+      "hours": "Sati",
+      "noAbsences": "Nijedno",
+      "noEmployeeNumber": "Nema broja zaposlenika",
+      "noTeam": "Nema tima",
+      "readyForPayroll": "Spremno za obračun plata",
+      "status": "Status",
+      "team": "Tim",
+      "title": "Ukupno po zaposleniku"
+    },
+    "errors": {
+      "actionFailed": "Radnja u radnom prostoru obračuna plata nije uspjela",
+      "activeOrganizationEmployeeRequired": "Potreban je kontekst aktivnog zaposlenika organizacije",
+      "authenticationRequired": "Potrebna je autentifikacija",
+      "blockerNotDismissible": "Blokada obračuna plata se ne može odbaciti",
+      "dataTemporarilyUnavailable": "Podaci o obračunu plata privremeno su nedostupni",
+      "employeeIdsMustBeArray": "employeeIds mora biti niz",
+      "employeeIdsMustContainOnlyStrings": "employeeIds mora sadržavati samo tekstualne vrijednosti",
+      "endDateAfterStart": "Datum završetka mora biti na dan ili nakon datuma početka",
+      "exportBlockedByMissingIdentifier": "Izvoz je blokiran: neki zaposlenici nemaju vrijednost za prilagođeno polje koje se koristi kao identifikator obračuna plaća",
+      "exportBlockedByOffboardingClockRepair": "Izvoz blokiran: prvo ispravite odjavu pri prestanku radnog odnosa",
+      "exportBlockedByUncertainWork": "Izvoz blokiran: prvo riješite nesigurno radno vrijeme u odabranom opsegu",
+      "exportBlockedByUnresolvedWorkMinutes": "Izvoz blokiran: prvo riješite minute rada koje zahtijevaju pregled",
+      "exportFormatNotConfigured": "Format izvoza obračuna plata nije konfigurisan",
+      "exportIdentifierChanged": "Postavka identifikatora obračuna plaća promijenjena je nakon prikupljanja ovog izvoza. Pokrenite novi izvoz.",
+      "invalidBlockerId": "Nevažeći ID blokade obračuna plata",
+      "invalidBlockerType": "Nevažeća vrsta blokade obračuna plata",
+      "mustBeIsoDate": "{field} mora biti ISO datum",
+      "mustBeValidIsoDate": "{field} mora biti važeći ISO datum",
+      "noAssignedEmployees": "Nijedan zaposlenik za obračun plata nije dodijeljen vašem opsegu pristupa",
+      "noAvailableEmployees": "Nema dostupnih zaposlenika za obračun plata u vašem opsegu pristupa",
+      "periodLabelRequired": "Oznaka perioda obračuna plata je obavezna",
+      "unknownExportFormat": "Nepoznat format izvoza obračuna plata"
+    },
+    "export": {
+      "completed": "Izvoz obračuna plata je završen",
+      "formatAccessCheck": "Provjera pristupa formatu",
+      "nobodyEmployedInPeriod": "Niko u vašem pristupu obračunu plata nije bio zaposlen u ovom periodu.",
+      "noConfiguredTarget": "Nema konfigurisane destinacije za izvoz obračuna plata",
+      "queued": "Izvoz obračuna plata je stavljen u red čekanja",
+      "selectFormat": "Odaberite format",
+      "target": "Destinacija izvoza obračuna plata",
+      "unmappedOvertimePayouts": "{count, plural, one {# isplata prekovremenog rada nije izvezena} few {# isplate prekovremenog rada nisu izvezene} other {# isplata prekovremenog rada nije izvezeno}}",
+      "unmappedOvertimePayoutsDescription": "Nijedna vrsta zarade nije mapirana na Prekovremeni rad za ovaj format. Zatražite od administratora organizacije da je mapira ili isplatite ove sate na drugi način."
+    },
+    "filters": {
+      "noMatchingEmployees": "Nijedan zaposlenik ne odgovara odabranim filterima obračuna plata."
+    },
+    "formerEmployeesExport": {
+      "description": "Izvezite mjesec u kojem je bilo ko od njih još bio zaposlen: njihovi posljednji sati i konačne isplate prekovremenog rada ulaze u datoteku.",
+      "export": "Izvezi",
+      "nextMonth": "Sljedeći mjesec",
+      "previousMonth": "Prethodni mjesec",
+      "title": "Izvezi obračun plata za zaposlenike koji su otišli"
+    },
+    "onlyFormerEmployees": {
+      "description": "I dalje možete evidentirati i otkazivati njihove isplate prekovremenog rada, te ispod izvesti mjesece u kojima su bili zaposleni.",
+      "title": "U vašem pristupu obračunu plata nalaze se samo zaposlenici koji su otišli"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Nijedna vrsta zarade nije mapirana na Prekovremeni rad za ovaj format, pa ih izvoz izostavlja. Zatražite od administratora organizacije da je mapira ili isplatite ove sate na drugi način.",
+      "title": "{count, plural, one {# isplata prekovremenog rada neće biti izvezena} few {# isplate prekovremenog rada neće biti izvezene} other {# isplata prekovremenog rada neće biti izvezeno}}"
+    },
+    "period": {
+      "current": "Trenutni period",
+      "dateRange": "{start} do {end}",
+      "employeesInScope": "{count} zaposlenika u opsegu",
+      "end": "Kraj",
+      "mode": {
+        "custom": "Prilagođeno",
+        "month": "Mjesec",
+        "week": "Sedmica"
+      },
+      "next": "Sljedeći period",
+      "previous": "Prethodni period",
+      "selected": "Odabrani period",
+      "start": "Početak"
+    },
+    "run": {
+      "discard": {
+        "action": "Odbaci obračun plata",
+        "confirmed": "Ovaj obračun plaća je već potvrđen kao isplaćen za neke izvještaje, pa se više ne može odbaciti. Umjesto toga uklonite pojedinačne izvještaje iz njega.",
+        "description": "{count, plural, one {# izvještaj o troškovima koji uključuje ponovo će čekati na nadoknadu: sljedeći izvoz obračuna plata ili bankovni transfer ga može preuzeti. Odbacite ga samo ako ova datoteka nije plaćena putem obračuna plata.} other {# izvještaja o troškovima koje uključuje ponovo će čekati na nadoknadu: sljedeći izvoz obračuna plata ili bankovni transfer ih može preuzeti. Odbacite ga samo ako ova datoteka nije plaćena putem obračuna plata.}}",
+        "done": "Obračun plata je odbačen. Njegovi izvještaji o troškovima ponovo čekaju na nadoknadu.",
+        "failed": "Nije bilo moguće odbaciti obračun plata.",
+        "notFound": "Ovaj obračun plata više ne uključuje nijedan izvještaj.",
+        "outOfScope": "Ovaj obračun plata uključuje zaposlenike izvan vašeg opsega obračuna plata.",
+        "title": "Odbaciti ovaj obračun plata?"
+      }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "postavljeno ručno",
+        "exceptionalItinerary": "plan puta koji zakonska pravila ne pokrivaju",
+        "outsideVerifiedTables": "nema verificirane zakonske tabele za njegove dane"
+      },
+      "description": "Ovi troškovi čekaju refundaciju, ali ih izvoz za ovaj period i format izostavlja. Izvoz nije blokiran: isplatite ih bankovnim transferom iz reda čekanja u finansijama.",
+      "payByBankTransfer": "Plati bankovnim transferom",
+      "reason": {
+        "apiConnector": "Ovaj format je API konektor, koji nikada ne prenosi iznose troškova.",
+        "currencyNotEur": "Nije u eurima: obračuni plaća prenose samo iznose u eurima.",
+        "includedInOtherRun": "Uključeno u nepotvrđeni obračun plaća {period} ({format}).",
+        "legacyClaim": "Naslijeđena potraživanja se nikada ne isplaćuju putem obračuna plaća.",
+        "negativeDifference": "Prilagođavanje je smanjilo iznos koji su raniji obračuni plaća prenijeli za: {kinds}.",
+        "noStatutoryBaseline": "Nema zakonske osnove za: {items}.",
+        "nothingOwed": "Njegove stavke obračuna plaća ne ostavljaju ništa za prijenos u obračun plaća.",
+        "reimbursedOutsidePayroll": "Već djelimično plaćeno bankovnim transferom ili vraćeno: obračun plaća ne može preuzeti ostatak.",
+        "unmappedWageType": "Nijedna vrsta plaće nije mapirana za ovaj format za: {kinds}."
+      },
+      "title": "Izvještaji o troškovima koje ovaj obračun plaća neće prenijeti",
+      "unknownEmployee": "Zaposlenik"
+    },
+    "runs": {
+      "description": "Ovi izvozi sadrže izvještaje o troškovima koji čekaju na nadoknadu. Službenik za troškove potvrđuje svaki obračun nakon što se isplati plata; odbacite obračun čija datoteka nije plaćena.",
+      "reports": "{count, plural, one {# izvještaj o troškovima} other {# izvještaja o troškovima}}",
+      "title": "Nepotvrđeni obračuni plata"
+    },
+    "scope": {
+      "allManaged": "Svi zaposlenici i timovi kojima upravljam",
+      "apply": "Primijeni",
+      "cancel": "Otkaži",
+      "currentScope": "Trenutni obuhvat",
+      "description": "Suzite ovaj radni prostor obračuna plata po dodijeljenim zaposlenicima ili timovima.",
+      "noAssignedEmployees": "Nema dodijeljenih zaposlenika u ovom obuhvatu obračuna plata.",
+      "noAssignedTeams": "Nema dodijeljenih timova u ovom opsegu obračuna plata.",
+      "selectedEmployeesCount": "{count} zaposlenika",
+      "selectedSummary": "{summary} odabrano",
+      "selectedTeamsCount": "{count} timova",
+      "specificEmployees": "Određeni zaposlenici",
+      "specificEmployeesDescription": "Odaberite zaposlenike koje želite uključiti u ovaj obuhvat obračuna plata.",
+      "specificTeams": "Određeni timovi",
+      "specificTeamsDescription": "Odaberite timove koje želite uključiti u ovaj obuhvat obračuna plata.",
+      "title": "Opseg obračuna plata"
+    },
+    "summary": {
+      "blockers": "Prepreke",
+      "employees": "Zaposlenici",
+      "ready": "Spremno",
+      "workedHours": "Odrađeni sati"
+    },
+    "title": "Obračun plata",
+    "unavailable": {
+      "description": "Podaci o obračunu plata nisu se mogli sigurno pripremiti.",
+      "help": "Pokušajte ponovo kasnije. Ako se problem nastavi, obratite se administratoru organizacije.",
+      "title": "Obračun plata privremeno nedostupan"
+    },
+    "workBalances": {
+      "back": "Radni saldi",
+      "backToPayroll": "Obračun plata",
+      "description": "Evidentirajte i otkažite isplate prekovremenog rada za zaposlenike koje pokriva vaš pristup obračunu plata, uključujući i zaposlenike koji su otišli.",
+      "empty": "Još uvijek nema zaposlenika u vašem opsegu pristupa obračunu plata.",
+      "former": "Bivši zaposlenik",
+      "loading": "Učitavanje radnih salda",
+      "loadingEmployee": "Učitavanje radnog salda",
+      "open": "Radni saldi",
+      "title": "Radni saldi"
+    }
+  }
+}

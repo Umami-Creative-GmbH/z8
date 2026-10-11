@@ -1,0 +1,1163 @@
+{
+  "actions": {
+    "cancel": "Anulo",
+    "delete": "Fshi",
+    "refresh": "Rifresko"
+  },
+  "analytics": {
+    "export": {
+      "export": "Eksporto",
+      "exportAsCsv": "Eksporto si CSV",
+      "exportAsExcel": "Eksporto si Excel",
+      "exportedAsFormat": "U eksportua si {format}",
+      "exportingFormat": "Po eksportohet {format}…",
+      "failedAsFormat": "Dështoi eksportimi si {format}"
+    }
+  },
+  "appSearch": {
+    "commandDescription": "Kërkoni faqe, njerëz, ekipe, cilësime ose veprime",
+    "commandPlaceholder": "Kërkoni faqe, njerëz, ekipe, cilësime ose veprime…",
+    "commands": {
+      "addManualTimeEntry": {
+        "keywords": {
+          "entry": "regjistrim",
+          "hours": "orë",
+          "manual": "manual",
+          "time": "kohë"
+        },
+        "subtitle": "Regjistroni orët për një turn të kaluar ose korrigjim",
+        "title": "Shto hyrje manuale të kohës"
+      },
+      "createProject": {
+        "keywords": {
+          "create": "krijo",
+          "project": "projekt",
+          "settings": "cilësimet"
+        },
+        "subtitle": "Hap cilësimet e projektit për të përcaktuar një projekt të ri",
+        "title": "Krijo projekt"
+      },
+      "inviteTeammate": {
+        "keywords": {
+          "invite": "fto",
+          "member": "anëtar",
+          "teammate": "anëtar ekipi"
+        },
+        "subtitle": "Hap menaxhimin e organizatës për të shtuar një koleg",
+        "title": "Fto anëtarin e ekipit"
+      },
+      "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "miratime",
+          "inbox": "kutia hyrëse",
+          "review": "shqyrto"
+        },
+        "subtitle": "Shqyrto kërkesat pezull të punonjësve",
+        "title": "Hap kutinë e miratimeve"
+      },
+      "openMyRequests": {
+        "keywords": {
+          "mine": "të miat",
+          "requests": "kërkesa"
+        },
+        "subtitle": "Shqyrto mungesat dhe shpenzimet e tua të paraqitura",
+        "title": "Hap kërkesat e mia"
+      },
+      "openPayroll": {
+        "keywords": {
+          "export": "eksporto",
+          "payroll": "lista e pagave",
+          "wages": "pagat"
+        },
+        "subtitle": "Shqyrto hapësirën e punës së listëpagesave me fushëveprim",
+        "title": "Hap listëpagesën"
+      },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "eksporto",
+          "payroll": "lista e pagave",
+          "readiness": "gatishmëri"
+        },
+        "subtitle": "Kontrollo nëse të dhënat e kohës janë gati për listëpagesë",
+        "title": "Hap gatishmërinë e listëpagesës"
+      },
+      "openSettings": {
+        "keywords": {
+          "preferences": "parapëlqimet",
+          "settings": "cilësimet"
+        },
+        "subtitle": "Menaxho profilin, sigurinë dhe cilësimet e organizatës",
+        "title": "Hap cilësimet"
+      },
+      "requestAbsence": {
+        "keywords": {
+          "absence": "mungesë",
+          "timeOff": "pushim",
+          "vacation": "pushime"
+        },
+        "subtitle": "Nis një kërkesë për pushime, leje mjekësore ose pushim",
+        "title": "Kërko mungesë"
+      },
+      "submitTravelExpense": {
+        "keywords": {
+          "expense": "shpenzim",
+          "reimbursement": "rimbursim",
+          "travel": "udhëtim"
+        },
+        "subtitle": "Krijo një kërkesë rimbursimi për shpenzimet e udhëtimit",
+        "title": "Dërgo shpenzimin e udhëtimit"
+      }
+    },
+    "empty": "Nuk u gjet asnjë rezultat.",
+    "groups": {
+      "actions": "Veprimet",
+      "pages": "Faqet",
+      "people": "Njerëzit",
+      "settings": "Cilësimet",
+      "teams": "Ekipet"
+    },
+    "search": "Kërko",
+    "searchOrRunCommand": "Kërko ose ekzekuto komandë",
+    "teamAbsences": {
+      "description": "Shqyrto metrikat e mungesës së punonjësve dhe regjistro mungesat",
+      "keywords": {
+        "absence": "mungesë",
+        "manager": "menaxher",
+        "sick": "sëmundje",
+        "team": "ekip",
+        "vacation": "pushime"
+      }
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Periudha juaj provuese përfundoi ose abonimi nuk është më i vlefshëm. Përditësoni faturimin për të vazhduar përdorimin e Z8.",
+      "goToBilling": "Shko te faturimi",
+      "memberDescription": "Kjo organizatë është pezulluar. Kontaktoni një administrator të organizatës për të përditësuar faturimin.",
+      "title": "Organizata është pezulluar"
+    },
+    "trialBanner": {
+      "description": "Kanë mbetur {days} ditë. Shtoni të dhënat e pagesës tani; abonimi juaj me pagesë fillon pas periudhës provuese.",
+      "dismiss": "Hiq shiritin e versionit provë",
+      "title": "Provë 14-ditore aktive",
+      "upgrade": "Përmirëso"
+    }
+  },
+  "closedMonths": {
+    "closeThisMonth": "Mbyll këtë muaj",
+    "status": {
+      "closed": "I mbyllur",
+      "open": "I hapur",
+      "partlyClosed": "Pjesërisht i mbyllur ({closed} nga {total})"
+    },
+    "stripLabel": "Muaj të mbyllur",
+    "unclosedDescription": "Puna dhe mungesat në këta muaj mund të ndryshojnë ende pas eksportit. Mbylleni një muaj pasi paga e tij të jetë përfundimtare.",
+    "unclosedTitle": "Jo çdo muaj në këtë interval është i mbyllur"
+  },
+  "colors": {
+    "blue": "Blu",
+    "green": "E gjelbër",
+    "indigo": "Indigo",
+    "orange": "Portokalli",
+    "pink": "Rozë",
+    "purple": "Vjollcë",
+    "red": "E kuqe",
+    "teal": "Bojë deti"
+  },
+  "common": {
+    "actions": "Veprimet",
+    "active": "Aktiv",
+    "add": "Shto",
+    "adding": "Po shtohet...",
+    "all": "Të gjitha",
+    "appName": "Z8",
+    "approve": "Mirato",
+    "assign": "Cakto",
+    "back": "Kthehu",
+    "brandLogo": "Logoja e {brand}",
+    "breadcrumb": {
+      "breadcrumb": "gjurmët e navigimit",
+      "more": "Më shumë"
+    },
+    "cancel": "Anulo",
+    "carousel": {
+      "nextSlide": "Sllajdi tjetër",
+      "previousSlide": "Sllajdi i mëparshëm",
+      "roleDescription": "karusel",
+      "slideRoleDescription": "sllajd"
+    },
+    "clear": "Pastro",
+    "clearSearch": "Pastro kërkimin",
+    "clearSelection": "Pastro",
+    "close": "Mbyll",
+    "confirm": "Konfirmo",
+    "continue": "Vazhdo",
+    "copy": "Kopjo",
+    "create": "Krijo",
+    "current": "Aktual",
+    "datePicker": {
+      "clearDate": "Pastro datën",
+      "placeholder": "Zgjidhni një datë"
+    },
+    "days": {
+      "count": "{count} ditë",
+      "friday": "E premte",
+      "half": "0.5 ditë",
+      "label": "ditë",
+      "monday": "E hënë",
+      "one": "1 ditë",
+      "saturday": "E shtunë",
+      "sunday": "E diel",
+      "thursday": "E enjte",
+      "tuesday": "E martë",
+      "wednesday": "E mërkurë"
+    },
+    "delete": "Fshi",
+    "deleting": "Duke fshirë...",
+    "deployment": {
+      "skew": {
+        "description": "Ringarkoni faqen për të vazhduar. Veprimi juaj i fundit nuk u ruajt.",
+        "title": "Z8 u përditësua"
+      }
+    },
+    "description": "Përshkrimi",
+    "deselectAll": "Çpërzgjidh të gjitha",
+    "details": "Detajet",
+    "download": "Shkarko",
+    "duplicate": "Dubliko",
+    "durationMinutes": "{count} min",
+    "edit": "Ndrysho",
+    "enabled": "Aktivizuar",
+    "error": "Gabim",
+    "error-occurred": "Ndodhi një gabim",
+    "errors": {
+      "monthClosed": "{month} është i mbyllur. Ai duhet të rihapet përpara se të mund të ndryshohet puna ose mungesat e tij."
+    },
+    "fieldPresets": "Paracaktimet e {label}",
+    "focusInput": "Fokuso fushën",
+    "gender": {
+      "female": "Femër",
+      "male": "Mashkull",
+      "other": "Tjetër"
+    },
+    "goToDashboard": "Shko te paneli",
+    "inactive": "Joaktiv",
+    "label": "Etiketa",
+    "loading": "Duke u ngarkuar...",
+    "loadingLabel": "Po ngarkohet",
+    "loadingRegions": {
+      "absences": "Po ngarkohen mungesat",
+      "adminConsole": "Po ngarkohet paneli i administratorit",
+      "analyticsNavigation": "Po ngarkohet navigimi i analizave",
+      "application": "Po ngarkohet aplikacioni",
+      "auditExportSettings": "Po ngarkohen cilësimet e eksportit të auditimit",
+      "authentication": "Po ngarkohet autentikimi",
+      "changePolicySettings": "Po ngarkohen cilësimet e politikës së ndryshimit",
+      "coverageRuleSettings": "Po ngarkohen cilësimet e rregullave të mbulimit",
+      "customerSettings": "Po ngarkohen cilësimet e klientit",
+      "customRoleSettings": "Po ngarkohen cilësimet e roleve të personalizuara",
+      "dashboard": "Po ngarkohet paneli kryesor",
+      "dataExportSettings": "Po ngarkohen cilësimet e eksportit të të dhënave",
+      "demoDataSettings": "Po ngarkohen cilësimet e të dhënave demo",
+      "deploymentDiagnostics": "Po ngarkohen diagnostikimet e vendosjes",
+      "employeeReports": "Po ngarkohen raportet e punonjësve",
+      "employeeVacationAllowances": "Po ngarkohen lejet e pushimeve të punonjësve",
+      "exportOperations": "Po ngarkohen veprimet e eksportit",
+      "holidaySettings": "Po ngarkohen cilësimet e festave",
+      "importReview": "Po ngarkohet shqyrtimi i importit",
+      "importSettings": "Po ngarkohen cilësimet e importit",
+      "locationSettings": "Po ngarkohen cilësimet e vendndodhjes",
+      "onboarding": "Po ngarkohet orientimi",
+      "payrollExportSettings": "Po ngarkohen cilësimet e eksportit të listëpagesave",
+      "payrollReadiness": "Po ngarkohet gatishmëria e listëpagesave",
+      "payrollWorkspace": "Po ngarkohet hapësira e punës e listëpagesave",
+      "platformAdminOverview": "Po ngarkohet përmbledhja e administratorit të platformës",
+      "platformAnalytics": "Po ngarkohen analizat e platformës",
+      "platformBilling": "Po ngarkohet faturimi i platformës",
+      "platformSetup": "Po ngarkohet konfigurimi i platformës",
+      "projectReports": "Po ngarkohen raportet e projektit",
+      "projectSettings": "Po ngarkohen cilësimet e projektit",
+      "scheduledExports": "Po ngarkohen eksportet e planifikuara",
+      "shiftSchedule": "Po ngarkohet orari i turneve",
+      "shiftTemplateSettings": "Po ngarkohen cilësimet e shabllonit të turnit",
+      "skillSettings": "Po ngarkohen cilësimet e aftësive",
+      "surchargeSettings": "Po ngarkohen cilësimet e tarifave shtesë",
+      "team": "Po ngarkohet ekipi",
+      "todaySManagerBriefing": "Po ngarkohet përmbledhja e menaxherit për ditën e sotme",
+      "travelExpenses": "Po ngarkohen shpenzimet e udhëtimit",
+      "travelExpenseSettings": "Po ngarkohen cilësimet e shpenzimeve të udhëtimit",
+      "twoFactorVerification": "Po ngarkohet verifikimi me dy faktorë",
+      "vacationSettings": "Po ngarkohen cilësimet e pushimeve",
+      "wellnessSettings": "Po ngarkohen cilësimet e mirëqenies",
+      "workCategorySettings": "Po ngarkohen cilësimet e kategorisë së punës",
+      "workerQueue": "Po ngarkohet radha e punëtorëve",
+      "workPolicySettings": "Po ngarkohen cilësimet e politikave të punës",
+      "worksCouncilPortal": "Po ngarkohet portali i Këshillit të Punonjësve",
+      "yourRequests": "Po ngarkohen kërkesat tuaja"
+    },
+    "loadMore": "Ngarko më shumë",
+    "months": {
+      "april": "Prill",
+      "august": "Gusht",
+      "december": "Dhjetor",
+      "february": "Shkurt",
+      "january": "Janar",
+      "july": "Korrik",
+      "june": "Qershor",
+      "march": "Mars",
+      "may": "Maj",
+      "november": "Nëntor",
+      "october": "Tetor",
+      "september": "Shtator"
+    },
+    "more": "më shumë",
+    "moreActions": "Më shumë veprime",
+    "moveDown": "Lëviz poshtë",
+    "moveUp": "Lëviz lart",
+    "name": "Emri",
+    "new": "I ri",
+    "next": "Tjetra",
+    "notApplicable": "N/A",
+    "not-available": "E padisponueshme",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Njoftime} other {Njoftime (# të palexuara)}}"
+    },
+    "open": "Hap",
+    "openEnded": "Pa afat",
+    "openMenu": "Hap menynë",
+    "optional": "opsionale",
+    "or": "Ose",
+    "pagination": {
+      "goToNextPage": "Shko te faqja tjetër",
+      "goToPreviousPage": "Shko te faqja e mëparshme",
+      "morePages": "Më shumë faqe",
+      "pagination": "faqosja"
+    },
+    "pending": "Në pritje",
+    "positionCaptureErrors": {
+      "adminOnly": "Vetëm pronarët e organizatës dhe administratorët mund të menaxhojnë regjistrimin e vendndodhjes.",
+      "assignmentNotFound": "Kjo detyrë nuk ekziston më.",
+      "employeeNotFound": "Ky punonjës nuk u gjet.",
+      "employeeProfileRequired": "Kërkohet një profil punonjësi në këtë organizatë.",
+      "invalidTarget": "Zgjidhni kujt i zbatohet kjo detyrë.",
+      "noticeChanged": "Njoftimi për vendndodhjen ka ndryshuar. Rishikoni njoftimin aktual përpara se të vendosni.",
+      "positionsForbidden": "Nuk ju lejohet të shihni pozicionet e kësaj periudhe pune.",
+      "purposeRequired": "Kërkohet një deklaratë qëllimi përpara se të aktivizohet regjistrimi i vendndodhjes.",
+      "purposeTooLong": "Deklarata e qëllimit është shumë e gjatë.",
+      "retentionOutOfRange": "Ruajtja duhet të jetë një numër i plotë ditësh midis {min} dhe {max}.",
+      "signInRequired": "Hyni fillimisht në një organizatë.",
+      "teamNotFound": "Ky ekip nuk u gjet.",
+      "workPeriodNotFound": "Kjo periudhë pune nuk u gjet."
+    },
+    "positionConsent": {
+      "agree": "Pajtohem",
+      "description": "Organizata juaj kërkon të regjistrojë vendndodhjen e pajisjes suaj kur shënoni hyrjen, daljen ose bëni pushim. Regjistrimi i orës suaj është kryer gjithsesi. Nëse pranoni, pozicionet do të regjistrohen duke filluar nga shënimi juaj i radhës.",
+      "notNow": "Jo tani",
+      "title": "Dëshironi të regjistroni pozicionin tuaj gjatë shënimit të hyrjes/daljes?"
+    },
+    "positionNotice": {
+      "never": "Daljet e regjistruara për ju nga dikush tjetër, daljet automatike, importimet dhe korrigjimet nuk mbajnë kurrë një vendndodhje. Nëse pajisja juaj nuk mund të sigurojë një vendndodhje, ngjarja juaj e regjistrimit të orës regjistrohet pa të dhe asgjë nuk e regjistron arsyen.",
+      "purposeTitle": "Pse organizata juaj regjistron vendndodhjet",
+      "retention": "{days, plural, other {Çdo vendndodhje fshihet # ditë pas regjistrimit të saj. Ngjarjet tuaja të orës mbeten.} }",
+      "retentionTitle": "Për sa kohë ruhen vendndodhjet",
+      "version": "Njoftim për vendndodhjen, versioni {version}",
+      "viewers": "Mund të shihni vendndodhjet tuaja. Pronarët dhe administratorët e organizatës, si dhe personat me leje të dhënë shprehimisht, mund t'i shohin ato për një periudhë të vetme pune, dhe çdo shikim i tillë regjistrohet që ju ta shihni. Të qenit menaxheri juaj nuk jep qasje. Këshilli i punës nuk i sheh kurrë vendndodhjet individuale.",
+      "viewersTitle": "Kush mund t'i shohë vendndodhjet",
+      "what": "Kur regjistroni hyrjen, daljen, filloni ose përfundoni një pushim në aplikacionin e uebit Z8 në pajisjen tuaj, vendndodhja e pajisjes suaj regjistrohet me atë ngjarje të orës: gjerësia gjeografike, gjatësia gjeografike, sa e saktë është vendndodhja dhe kur e ka përcaktuar pajisja atë. Nuk regjistrohet asnjë adresë, lartësi ose shpejtësi dhe asgjë nuk regjistrohet midis ngjarjeve të orës.",
+      "whatTitle": "Çfarë regjistrohet",
+      "withdraw": "Vendndodhjet regjistrohen vetëm për sa kohë ju jeni dakord. Mund ta tërhiqni pëlqimin në çdo kohë te Cilësimet, Shenjat e vendndodhjes. Tërheqja ndalon regjistrimin dhe fshin menjëherë të gjitha vendndodhjet tuaja të regjistruara. Nëse jeni dakord apo jo, kjo nuk ka asnjë ndikim në ngjarjet tuaja të orës.",
+      "withdrawTitle": "Zgjedhja juaj"
+    },
+    "present": "I pranishëm",
+    "previous": "Mëparshme",
+    "recovering": "Po rikuperohet...",
+    "refresh": "Rifresko",
+    "refreshing": "Po rifreskohet...",
+    "reject": "Refuzo",
+    "rejecting": "Po refuzohet…",
+    "remove": "Hiq",
+    "removing": "Duke hequr...",
+    "reset": "Rivendos",
+    "retry": "Provo përsëri",
+    "save": "Ruaj",
+    "saveChanges": "Ruaj ndryshimet",
+    "saving": "Duke ruajtur...",
+    "selectAll": "Zgjidh të gjitha",
+    "selected": "të zgjedhura",
+    "select-language": "Zgjidh gjuhën",
+    "set": "set",
+    "sets": "sete",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Shfaq shiritin anësor celular.",
+      "sidebar": "Shiriti anësor",
+      "toggleSidebar": "Aktivizo/Çaktivizo shiritin anësor"
+    },
+    "skip": "Kapërce",
+    "start": "Fillo",
+    "status": "Statusi",
+    "submitting": "Po dërgohet…",
+    "sw": {
+      "update": {
+        "description": "Një version i ri është gati. Ringarkoni për ta përditësuar.",
+        "later": "Më vonë",
+        "reload": "Ringarko",
+        "title": "Përditësim i disponueshëm"
+      }
+    },
+    "timeInput": {
+      "openTimePicker": "Hap zgjedhësin e orës",
+      "switchPeriod": "Kalo te {period}"
+    },
+    "to": "deri",
+    "today": "Sot",
+    "unexpectedError": "Ndodhi një gabim i papritur",
+    "unknown": "I panjohur",
+    "unknownEmployee": "Punonjës i panjohur",
+    "unknownTeam": "Ekip i panjohur",
+    "unnamed": "Pa emër",
+    "update": "Përditëso",
+    "updating": "Po përditësohet...",
+    "uploading": "Po ngarkohet...",
+    "validate": "Valido",
+    "validationError": "Gabim vërtetimi",
+    "weekdays": {
+      "fr": "Pr",
+      "fri": "Pre",
+      "mo": "Hë",
+      "mon": "Hën",
+      "sa": "Sh",
+      "sat": "Sht",
+      "su": "Di",
+      "sun": "Die",
+      "th": "En",
+      "thu": "Enj",
+      "tu": "Ma",
+      "tue": "Mar",
+      "we": "Më",
+      "wed": "Mër"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Ndryshimet që ndikojnë në fuqinë punëtore të përcaktuara për këtë organizatë dhe periudhë.",
+      "changeLogEmpty": "Nuk u gjetën ndryshime për këtë periudhë.",
+      "changeReviewLog": "Regjistri i shqyrtimit të ndryshimeve",
+      "complianceFindings": "Gjetjet e përputhshmërisë",
+      "description": "Rishikimi i fuqisë punëtore i filtruar për privatësi për periudhën e zgjedhur.",
+      "disabledDescription": "Modaliteti i Këshillit të Punonjësve nuk është i aktivizuar për këtë organizatë.",
+      "exportReviewPack": "Eksporto paketën e shqyrtimit",
+      "from": "Nga",
+      "identityHidden": "Identiteti i fshehur",
+      "insufficientData": "Të dhëna të pamjaftueshme",
+      "policyChanges": "Ndryshimet e politikave",
+      "positionStamps": {
+        "accessAt": "Kur",
+        "accessEmployees": "Vendndodhjet e",
+        "accessKindDetail": "{count, plural, one {Detajet e periudhës së punës (# periudhë pune)} other {Detajet e periudhës së punës (# periudha pune)}}",
+        "accessKindExport": "Eksportimi i të dhënave",
+        "accessLog": "Ditari i qasjes në vendndodhje",
+        "accessLogDescription": "Sa herë që dikush tjetër përveç punonjësit ka parë ose eksportuar vendndodhjet, më të rejat së pari.",
+        "accessLogEmpty": "Askush nuk i ka parë vendndodhjet.",
+        "accessViewer": "Parë nga",
+        "consentActive": "Pëlqim aktiv",
+        "consentDescription": "{count, plural, one {Midis # punonjësi aktiv për të cilin regjistrimi është i aktivizuar. Të pavendosurit përfshijnë punonjësit që zgjodhën \"Jo tani\" ose pranuan vetëm një version të mëparshëm të njoftimit.} other {Midis # punonjësve aktivë për të cilët regjistrimi është i aktivizuar. Të pavendosurit përfshijnë punonjësit që zgjodhën \"Jo tani\" ose pranuan vetëm një version të mëparshëm të njoftimit.}}",
+        "consentTitle": "Pëlqimi për vendndodhjen",
+        "consentUndecided": "Të pavendosur",
+        "consentWithdrawn": "Tërhequr",
+        "currentNotice": "Njoftimi aktual",
+        "deletedViewer": "Një përdorues i fshirë",
+        "description": "Mënyra se si organizata regjistron vendndodhjet e punonjësve me ngjarjet e tyre të orës dhe kush i ka parë ato. Këshilli i punës nuk i sheh kurrë vendndodhjet individuale.",
+        "employeeAssignmentCounts": "{on} të aktivizuara, {off} të çaktivizuara individualisht",
+        "employeeAssignments": "Caktimet e punonjësve",
+        "employeeCount": "{count, plural, other {# punonjës} }",
+        "employeePseudonym": "Punonjësi {ref}",
+        "enabled": "Regjistrimi",
+        "noEmployeeAssignments": "Nuk ka caktime punonjësish.",
+        "noNotice": "Nuk është publikuar asnjë njoftim.",
+        "notAssigned": "I pacaktuar",
+        "noTeamAssignments": "Nuk ka caktime ekipesh.",
+        "noticeHistory": "Versionet e njoftimit",
+        "noticeVersion": "{days, plural, other {Versioni {version}, publikuar më {publishedAt}, vendndodhjet ruhen për # ditë} }",
+        "off": "Joaktiv",
+        "on": "Aktiv",
+        "organizationAssignment": "E gjithë organizata",
+        "retention": "Ruajtja",
+        "retentionDays": "{days, plural, other {# ditë} }",
+        "teamAssignments": "Caktimet e ekipeve",
+        "title": "Regjistrimi i vendndodhjes",
+        "viewerPseudonym": "Shikuesi {ref}"
+      },
+      "scheduleChanges": "Ndryshimet e orarit",
+      "scheduleDescription": "Hyrjet e orarit të filtruara për privatësi për periudhën e zgjedhur.",
+      "scheduleEmpty": "Nuk u gjetën hyrje në orar për këtë periudhë.",
+      "scheduleEntry": "{identity} - {start} deri më {end}",
+      "scheduleReview": "Shqyrtimi i orarit",
+      "title": "Këshilli i Punonjësve",
+      "to": "Deri më",
+      "unassignedTeam": "Ekip i pacaktuar",
+      "updateRange": "Përditëso diapazonin"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} punonjës të përzgjedhur",
+    "countWithMore": "{count} punonjës (+{more} të tjerë)",
+    "inactive": "Joaktiv",
+    "noEmployeesFound": "Nuk u gjet asnjë punonjës",
+    "removeSelected": "Hiq {name}",
+    "role": "Roli",
+    "searchPlaceholder": "Kërko sipas emrit, email-it ose pozicionit...",
+    "selected": "{count} të përzgjedhur",
+    "selectEmployee": "Zgjidh punonjësin",
+    "selectEmployees": "Zgjidh punonjësit",
+    "selectMultipleEmployees": "Zgjidhni një ose më shumë punonjës nga lista",
+    "selectOneEmployee": "Zgjidhni një punonjës nga lista",
+    "status": "Statusi",
+    "team": "Ekipi",
+    "totalEmployees": "{count} punonjës",
+    "tryDifferentSearch": "Provoni të përshtatni kërkimin ose filtrat"
+  },
+  "errors": {
+    "failedToLoad": "Ngarkimi i të dhënave dështoi",
+    "noEmployee": {
+      "contactAdmin": "Kontaktoni administratorin",
+      "createOrg": "Krijo organizatë",
+      "description": "Ju nevojitet një profil punonjësi për {feature}. Ju lutemi krijoni një organizatë ose kontaktoni administratorin tuaj.",
+      "emailBody": "Përshëndetje,nnMë nevojitet konfigurimi i një profili punonjësi për të hyrë në veçoritë e platformës. A mund të më ndihmoni me këtë?nnJu faleminderit!",
+      "emailSubject": "Kërkohet konfigurimi i profilit të punonjësit",
+      "helpText": "Nëse jeni ftuar në një organizatë, kërkojini administratorit tuaj të konfigurojë profilin tuaj të punonjësit.",
+      "title": "Kërkohet profili i punonjësit"
+    },
+    "noOrganization": {
+      "createOrg": "Krijo organizatë",
+      "description": "Ende nuk jeni pjesë e asnjë organizate. Krijoni një për të filluar ose prisni për një ftesë.",
+      "title": "Nuk u gjet asnjë organizatë",
+      "waiting": "Po prisni për një ftesë?",
+      "waitingDesc": "Administratori juaj do t'ju dërgojë një email ftese. Kontrolloni kutinë tuaj hyrëse dhe dosjen e mesazheve të padëshiruara."
+    },
+    "notFound": {
+      "description": "Faqja mund të jetë zhvendosur, lidhja mund të jetë e vjetruar ose adresa mund të jetë e pasaktë.",
+      "title": "Faqja nuk u gjet"
+    },
+    "unexpected": {
+      "description": "Nuk mundëm ta ngarkojmë këtë faqe tani. Ju lutemi provoni përsëri ose kthehuni në një faqe të sigurt në aplikacion.",
+      "digest": "Referenca: {digest}",
+      "title": "Diçka shkoi keq"
+    }
+  },
+  "generic": {
+    "done": "U krye",
+    "submit": "Dërgo"
+  },
+  "header": {
+    "clock-in": "Regjistro hyrjen",
+    "clock-out": "Regjistro daljen",
+    "timezone": {
+      "current": "Zona kohore aktuale {timezone}, {time}, {offset}",
+      "savedTimezone": "Zona kohore u ruajt",
+      "saveTimezone": "Ruaj zonën kohore",
+      "saving": "Duke ruajtur...",
+      "updated": "Zona kohore u përditësua me sukses",
+      "updateError": "Ndodhi një gabim gjatë përditësimit të zonës kohore",
+      "updateFailed": "Përditësimi i zonës kohore dështoi"
+    }
+  },
+  "info": {
+    "agb": "Termat dhe Kushtet",
+    "back-to-login": "Kthehu te kyçja",
+    "imprint": "Të dhënat ligjore",
+    "licenses": "Licencat me burim të hapur",
+    "openSourceLicenses": "Licencat me burim të hapur",
+    "trust-center": "Qendra e Besimit"
+  },
+  "loading": {
+    "application": "Duke ngarkuar aplikacionin",
+    "authentication": "Duke ngarkuar autentikimin",
+    "calendar": "Duke ngarkuar kalendarin",
+    "chart": "Po ngarkohet grafiku",
+    "licenses": "Duke ngarkuar licencat",
+    "platformAnalytics": "Duke ngarkuar analizat e platformës",
+    "settings": "Po ngarkohen cilësimet",
+    "setup": "Duke ngarkuar konfigurimin",
+    "teamAbsences": "Duke ngarkuar tabelën e mungesave të ekipit",
+    "workerQueue": "Duke ngarkuar radhën e punëtorëve"
+  },
+  "nav": {
+    "absences": "Mungesat",
+    "analytics": "Analitika",
+    "approvals": "Miratimet",
+    "calendar": "Kalendari",
+    "compliance": "Pajtueshmëria",
+    "dashboard": "Paneli kryesor",
+    "feedback": "Reagime",
+    "finance": "Financë",
+    "financeAwaiting": "{count, plural, one {# shpenzim në pritje të rimbursimit} other {# shpenzime në pritje të rimbursimit}}",
+    "get-help": "Merr ndihmë",
+    "my-documents": "Dokumentet e mia",
+    "my-requests": "Kërkesat e mia",
+    "my-schedule": "Orari im",
+    "org-explorer": "Eksploruesi i organizatës",
+    "payroll": "Listëpagesa",
+    "personnel-files": "Dosjet e personelit",
+    "platform-admin": "Administratori i platformës",
+    "reports": "Raportet",
+    "scheduling": "Planifikimi",
+    "settings": "Cilësimet",
+    "team": "Ekipi",
+    "teamAbsences": "Mungesat e ekipit",
+    "team-label": "Ekipi",
+    "teamPeriodSubmissions": "Dorëzimet e periudhës",
+    "teamPresence": "Kush është i pranishëm",
+    "time-tracking": "Gjurmimi i kohës",
+    "today": "Sot",
+    "travel-expenses": "Shpenzimet e udhëtimit",
+    "worksCouncil": "Këshilli i Punës"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Fshij të gjitha",
+      "markAllRead": "Shënoji të gjitha si të lexuara",
+      "markAsRead": "Shëno si të lexuar",
+      "markRead": "Shëno si të lexuar",
+      "settings": "Cilësimet e njoftimeve",
+      "viewAll": "Shiko të gjitha njoftimet"
+    },
+    "content": {
+      "absenceDeputyAssigned": {
+        "message": "Po zëvendësoni {name} ({dateRange}).",
+        "title": "Jeni zëvendësues gjatë mungesës"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Zëvendësimi juaj për {name} tani zgjat {dateRange}.",
+        "title": "Datat e zëvendësuesit të mungesës ndryshuan"
+      },
+      "absenceDeputyReminder": {
+        "message": "Nga nesër po zëvendësoni {name} deri më {untilDate}.",
+        "title": "Zëvendësimi i mungesës fillon nesër"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Nuk e zëvendësoni më {name} ({dateRange}).",
+        "title": "Nuk jeni më zëvendësues gjatë mungesës"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} nuk është më i disponueshëm si zëvendësues për mungesën e {employeeName} nga {startDate} deri më {endDate}.",
+        "message": "{deputyName} nuk është më i disponueshëm si zëvendësues për mungesën tuaj nga {startDate} deri më {endDate}.",
+        "title": "Zëvendësuesi nuk është më i disponueshëm"
+      },
+      "absenceRecorded": {
+        "message": "{managerName} regjistroi {absenceType} për {dateRange} në emrin tuaj.",
+        "title": "Mungesa u regjistrua"
+      },
+      "absenceRequestRejected": {
+        "title": "Kërkesa për mungesë u refuzua"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Kërkesa juaj për {categoryName} për periudhën {dateRange} është dërguar dhe është në pritje të miratimit.",
+        "title": "Kërkesa për mungesë u dërgua"
+      },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Gjatë kohës që ishit larg, {name} vendosi për # miratim.} other {Gjatë kohës që ishit larg, {name} vendosi për # miratime.}}",
+        "title": "Vendosur gjatë kohës që ishit larg"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Po mbuloni miratimet e {name}: asgjë në pritje ende.} other {Po mbuloni miratimet e {name}: # në pritje.}}",
+        "title": "Po mbuloni miratimet"
+      },
+      "automaticClockOut": {
+        "breakMessage": "U çregjistruat automatikisht në fillim të pushimit tuaj në {cutoff} ({timezone}) sepse pushimi nuk përfundoi brenda afatit kohor prej {duration} minutash të organizatës suaj.",
+        "message": "Ju u çregjistruat automatikisht nga puna pas {duration} minutash pune të pandërprerë në {cutoff} ({timezone}) sepse u arrit kufiri kohor i organizatës suaj.",
+        "title": "Dalje automatike nga puna"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Bilanci fillestar prej {amount} për {dateRange} u anulua. Arsyeja: {reason}",
+          "title": "Bilanci fillestar u anulua"
+        },
+        "openingBalanceRecorded": {
+          "message": "Një bilanc fillestar prej {amount} për {dateRange} u regjistrua në bilancin tuaj të punës.",
+          "title": "Bilanci fillestar u regjistrua"
+        },
+        "payoutCancelled": {
+          "message": "Pagesa e orëve jashtë orarit prej {amount} për {dateRange} u anulua. Arsyeja: {reason}",
+          "title": "Pagesa e orëve jashtë orarit u anulua"
+        },
+        "payoutRecorded": {
+          "message": "Një pagesë e orëve jashtë orarit prej {amount} për {dateRange} u regjistrua në bilancin tuaj të punës.",
+          "title": "Pagesa e orëve jashtë orarit u regjistrua"
+        }
+      },
+      "breakDueReminder": {
+        "message": "Pushimi juaj duhet të merret në {breakTime} ({timezone}). Merrni një pushim deri atëherë për të ndjekur rregullat e pushimit të politikës suaj të punës.",
+        "title": "Së shpejti koha për pushim"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "{employeeName}: Detyrat e miratimit kanë nevojë për një zëvendësues (largimi hyn në fuqi më {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Nevojitet shqyrtim: dalja nga puna gjatë largimit nga kompania (largimi hyn në fuqi më {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Kërkohet rregullimi i kohëmatësit (largimi hyn në fuqi më {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Kushtet e ardhshme të punësimit kanë nevojë për shqyrtim (largimi hyn në fuqi më {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Puna e ardhshme ka nevojë për shqyrtim (largimi hyn në fuqi më {cutoff}, {timezone}).",
+        "title": "Çregjistrimi i punonjësit kërkon shqyrtim"
+      },
+      "forgottenClockOutReminder": {
+        "message": "Turni juaj përfundoi në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën.",
+        "title": "Jeni ende i regjistruar në punë"
+      },
+      "missedClockInReminder": {
+        "message": "Turni juaj filloi në {startTime} ({timezone}). Regjistroni hyrjen nëse jeni duke punuar.",
+        "title": "Ende nuk e keni regjistruar hyrjen"
+      },
+      "monthCloseBlocked": {
+        "message": "{month} nuk u mbyll automatikisht. Kërkesa për mungesë të pavendosura: {absenceRequests}. Kërkesa për kohë të pavendosura: {timeRequests}. Punë ende në vazhdim: {liveWork}. Muaji nuk ka përfunduar ende: {notEnded}. Punonjës: {employees}. Do të provohet përsëri nesër.",
+        "title": "Muaji nuk mund të mbyllej"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, other {{month} u mbyll automatikisht për # punonjës. Puna dhe mungesat e tij nuk mund të ndryshojnë më, përveç nëse rihapet.} }",
+        "title": "Muaji u mbyll"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} u rihap për një nga punonjësit tuaj: {reason}} other {{month} u rihap për # nga punonjësit tuaj: {reason}}}",
+        "title": "Muaji u rihap"
+      },
+      "newAbsenceRequest": {
+        "title": "Kërkesë e re për mungesë"
+      },
+      "passwordChanged": {
+        "message": "Fjalëkalimi juaj u ndryshua me sukses. Nëse nuk e keni bërë ju këtë ndryshim, ju lutemi kontaktoni menjëherë mbështetjen.",
+        "title": "Fjalëkalimi u ndryshua"
+      },
+      "periodSubmissionApproved": {
+        "message": "Koha juaj për {startDate} – {endDate} u miratua.",
+        "title": "Koha juaj u miratua"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Koha juaj për {startDate} – {endDate} ka ndryshuar pasi u miratua. Rishikoni kohën tuaj dhe dorëzojeni përsëri.",
+        "title": "Koha juaj e miratuar nuk është më aktuale"
+      },
+      "periodSubmissionRejected": {
+        "message": "Koha juaj për {startDate} – {endDate} u refuzua: {reason}. Rishikoni kohën tuaj dhe dorëzojeni përsëri.",
+        "title": "Koha juaj u refuzua"
+      },
+      "periodSubmissionReminder": {
+        "message": "Periudha juaj {startDate} – {endDate} ka përfunduar. Rishikoni kohën tuaj dhe dorëzojeni për miratim.",
+        "title": "Dorëzoni kohën tuaj për miratim"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Periudha juaj {startDate} – {endDate} ende nuk është dorëzuar. Rishikoni kohën tuaj dhe dorëzojeni për miratim.",
+        "title": "Koha juaj ende nuk është dorëzuar"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Koha juaj për {startDate} – {endDate} ndryshoi pasi e dorëzuat, prandaj dorëzimi u tërhoq. Rishikoni kohën tuaj dhe dorëzojeni përsëri.",
+        "title": "Dorëzoni kohën tuaj përsëri"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Dokumenti \"{title}\" u nda me ju.",
+        "title": "Dokument i ri në dosjen tuaj të personelit"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# dokument i punonjësit tani duhet të fshihet. Shqyrtoni dhe konfirmoni fshirjen përfundimtare.} other {# dokumente të punonjësve tani duhet të fshihen. Shqyrtoni dhe konfirmoni fshirjen përfundimtare.}}",
+        "title": "Dokumente për fshirje"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} ngarkoi një certifikatë",
+        "other": "{name} ngarkoi një dokument",
+        "sickNote": "{name} ngarkoi një raport mjekësor për {dateRange}",
+        "sickNoteOnBehalf": "{uploader} ngarkoi një raport mjekësor për {name}, {dateRange}",
+        "title": "Dokument i ri në një dosje personeli"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Dokumenti juaj \"{title}\" skadon sot.",
+        "message": "Dokumenti \"{title}\" i {employee} skadon sot.",
+        "title": "Një dokument skadon sot"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Dokumenti juaj \"{title}\" skadon më {expiryDate}.",
+        "message": "Dokumenti \"{title}\" i {employee} skadon më {expiryDate}.",
+        "title": "Një dokument skadon së shpejti"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Fletëpagesa juaj për {payPeriod} u nda me ju.",
+        "title": "Fletëpagesë e re në dosjen tuaj të personelit"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Arritët orët e kërkuara për {day} në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Regjistrimi juaj i fundit i hyrjes sot ishte në {startTime} ({timezone}). Regjistroni hyrjen nëse jeni duke punuar."
+      },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" u pezullua sepse pronari i tij, {ownerName}, nuk është më administrator organizate. Caktoni veten ose një administrator tjetër organizate si pronar për ta rifilluar.",
+        "title": "Eksporti i planifikuar u pezullua"
+      },
+      "shiftAssigned": {
+        "message": "Ju është caktuar një turn më {shiftDate} nga {startTime} deri në {endTime} nga {assignedByName}.",
+        "title": "Turni u caktua"
+      },
+      "teamMemberAdded": {
+        "message": "Jeni shtuar në ekipin {teamName} nga {performedByName}.",
+        "title": "U shtua në ekip"
+      },
+      "teamMemberRemoved": {
+        "message": "Jeni hequr nga ekipi {teamName} nga {performedByName}.",
+        "title": "U hoqët nga ekipi"
+      },
+      "timeOffInLieuAvailable": {
+        "message": "Punonjësit tani mund të marrin leje kundrejt bilancit të tyre të punës. Kategoria e re e mungesave qëndron joaktive derisa ta aktivizoni në cilësimet e mungesave.",
+        "title": "Pushimi kompensues është i disponueshëm"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "Një rregullim i miratuar e rriti shumën e detyrimit në raportin e shpenzimeve {report} të {employee}. Në pritje të rimbursimit: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "Raporti i shpenzimeve {report} i {employee} nuk rimbursohet përmes llogaritjes së pagave. Në pritje të rimbursimit: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} nga shpenzimet tuaja të udhëtimit janë rimbursuar (referenca e pagesës {reference}). {remaining} {remainingCurrency} janë ende në pritje të rimbursimit.",
+        "title": "Shpenzimi u rimbursua pjesërisht"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} nga shpenzimet tuaja të udhëtimit janë rimbursuar me pagën e periudhës {period}. {remaining} {remainingCurrency} janë ende në pritje të rimbursimit."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Llogaritja e pagave {period} ({format}) po pret konfirmimin tuaj. Raporte në fushëveprimin tuaj: {count}.",
+        "title": "Llogaritja e pagave në pritje të konfirmimit"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "Raporti i shpenzimeve {report} për {employee} është miratuar. Në pritje të rimbursimit: {amounts}.",
+        "title": "Gati për rimbursim"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "Një rikuperim prej {amount} {currency} u regjistrua për shpenzimin tuaj të udhëtimit (referenca e pagesës {reference}).",
+        "title": "Rikuperimi i shpenzimit u regjistrua"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Shpenzimi juaj i udhëtimit është rimbursuar plotësisht: {amount} {currency}, referenca e pagesës {reference}.",
+        "title": "Shpenzimi u rimbursua"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Shpenzimet tuaja të udhëtimit janë rimbursuar plotësisht me pagën e periudhës {period}: {amount} {currency}."
+      }
+    },
+    "description": "Shqyrtoni përditësimet, miratimet dhe sinjalizimet e sistemit në një linjë kohore.",
+    "empty": {
+      "description": "Jeni të përditësuar! Njoftimet e reja do të shfaqen këtu.",
+      "inboxDescription": "Jeni të përditësuar. Përditësimet e reja do të shfaqen këtu.",
+      "noMatchesDescription": "Përshtatni kërkimin ose filtrin e leximit për të zgjeruar këtë pamje të kutisë hyrëse.",
+      "noMatchesTitle": "Nuk ka njoftime që përputhen",
+      "title": "Nuk ka njoftime",
+      "unreadDescription": "Jeni të përditësuar. Përditësimet e reja të palexuara do të shfaqen këtu.",
+      "unreadTitle": "Nuk ka njoftime të palexuara"
+    },
+    "error": {
+      "title": "Nuk mund të ngarkoheshin njoftimet"
+    },
+    "filters": {
+      "all": "Të gjitha",
+      "ariaLabel": "Filtro njoftimet sipas statusit të leximit",
+      "read": "Të lexuara",
+      "unread": "Të palexuara"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Diçka kërkon vëmendjen tuaj"
+      },
+      "body": "Hapni Z8 për të parë detajet.",
+      "document": {
+        "title": "Të reja rreth dokumenteve tuaja"
+      },
+      "project": {
+        "title": "Të reja rreth një projekti"
+      },
+      "reminder": {
+        "title": "Kujtesë nga Z8"
+      },
+      "requestUpdate": {
+        "title": "Kërkesa juaj u përditësua"
+      },
+      "review": {
+        "title": "Keni një kërkesë për ta shqyrtuar"
+      },
+      "schedule": {
+        "title": "Orari juaj ka ndryshuar"
+      },
+      "security": {
+        "title": "Njoftim sigurie për llogarinë tuaj"
+      },
+      "team": {
+        "title": "Ekipet tuaja kanë ndryshuar"
+      },
+      "travelExpense": {
+        "title": "Të reja rreth shpenzimeve tuaja të udhëtimit"
+      },
+      "workingTime": {
+        "title": "Të reja rreth orarit tuaj të punës"
+      }
+    },
+    "preferences": {
+      "categories": {
+        "personnelFile": {
+          "description": "Njoftime rreth dokumenteve të ndara me ju në dosjen tuaj të personelit",
+          "title": "Dosja e personelit"
+        },
+        "travelExpenses": {
+          "description": "Njoftime për rimbursimet dhe rikuperimet e shpenzimeve tuaja të udhëtimit",
+          "title": "Shpenzimet e udhëtimit"
+        }
+      },
+      "disabled": "Njoftimi u çaktivizua",
+      "enabled": "Njoftimi u aktivizua",
+      "mandatoryInbox": "Dërgohet gjithmonë në kutinë tuaj hyrëse",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Merrni sinjalizime për kërkesat për miratim në pritje",
+          "requestUpdates": "Njoftohuni kur kërkesat tuaja miratohen ose refuzohen",
+          "teamSecurity": "Qëndroni të informuar rreth përditësimeve të ekipit dhe të sigurisë"
+        },
+        "description": "Aktivizoni njoftimet push për të marrë përditësime të menjëhershme mbi miratimet, korrigjimet e orarit dhe ndryshimet e rëndësishme në ekip - edhe kur nuk jeni duke përdorur aplikacionin.",
+        "enable": "Aktivizo njoftimet",
+        "notNow": "Jo tani",
+        "title": "Qëndroni të përditësuar"
+      },
+      "push": {
+        "blockedDescription": "Njoftimet push janë të bllokuara nga shfletuesi juaj. Për t'i aktivizuar ato, duhet të përditësoni cilësimet e shfletuesit tuaj.",
+        "blockedHelp": "Klikoni ikonën e kyçit në shiritin e adresës së shfletuesit tuaj dhe lejoni njoftimet për këtë faqe, pastaj rifreskoni faqen.",
+        "blockedTitle": "Njoftimet push janë të bllokuara",
+        "enableButton": "Aktivizo njoftimet push",
+        "enableDescription": "Merrni njoftime menjëherë edhe kur nuk jeni duke përdorur aplikacionin",
+        "enabledIndicator": "Njoftimet push janë të aktivizuara",
+        "enabledToast": "Njoftimet push u aktivizuan",
+        "enabledToastDescription": "Tani do të merrni njoftime push në shfletues",
+        "enableFailedToast": "Nuk mund të aktivizoheshin njoftimet push",
+        "enableTitle": "Aktivizo njoftimet push",
+        "errorToast": "Gabim në njoftimin push"
+      },
+      "toggleAria": "Njoftime {channel} për {type}",
+      "types": {
+        "absence_deputy_assigned": "Caktuar si zëvendësues gjatë mungesës",
+        "absence_deputy_dates_changed": "Datat e zëvendësuesit gjatë mungesës ndryshuan",
+        "absence_deputy_reminder": "Zëvendësimi gjatë mungesës fillon nesër",
+        "absence_deputy_removed": "Nuk jeni më zëvendësues gjatë mungesës",
+        "absence_deputy_unavailable": "Zëvendësuesi nuk është më i disponueshëm",
+        "approval_cover_return_summary": "Vendosur nga zëvendësuesi juaj",
+        "approval_cover_started": "Zëvendësimi gjatë mungesës filloi",
+        "break_due_reminder": "Koha për pushim",
+        "forgotten_clock_out_reminder": "Dalje e harruar",
+        "missed_clock_in_reminder": "Hyrje e paregjistruar",
+        "period_submission_decided": "Koha e dorëzuar u miratua ose u refuzua",
+        "period_submission_reminder": "Dorëzoni kohën tuaj",
+        "period_submission_sent_back": "Koha u kthye mbrapsht pas një ndryshimi",
+        "work_balance_adjustment_cancelled": "Rregullimi i bilancit u anulua",
+        "work_balance_adjustment_recorded": "Rregullimi i bilancit u regjistrua"
+      },
+      "updateFailed": "Përditësimi i preferencës dështoi"
+    },
+    "search": {
+      "ariaLabel": "Kërko njoftime",
+      "placeholder": "Kërko njoftime..."
+    },
+    "selection": {
+      "selectAll": "Zgjidh të gjitha të dukshmet",
+      "selectAllAria": "Zgjidh të gjitha njoftimet e dukshme",
+      "selectNamedAria": "Zgjidh {title}",
+      "visibleSelected": "{count} të dukshme të zgjedhura"
+    },
+    "time": {
+      "justNow": "sapo"
+    },
+    "timeline": {
+      "earlier": "Më parë",
+      "today": "Sot",
+      "yesterday": "Dje"
+    },
+    "title": "Njoftimet",
+    "toasts": {
+      "deleted": "U fshinë {count} njoftime",
+      "deleteFailed": "Fshirja e njoftimeve dështoi",
+      "markedRead": "U shënuan {count} njoftime si të lexuara",
+      "markReadFailed": "Shënimi i njoftimeve si të lexuara dështoi"
+    },
+    "unreadBadge": "{count} të palexuara",
+    "unreadCountOverflow": "99+"
+  },
+  "offline": {
+    "banner": {
+      "archived": "Dëshmitë e arkivuara të regjistrimit të orarit ruhen në këtë pajisje",
+      "offline": "Jeni jashtë linje",
+      "offlineSaved": "Jashtë linje — {count} regjistrim(e) të ruajtura lokalisht për shqyrtim",
+      "offlineWaiting": "Jashtë linje — {count} veprim(e) regjistrimi do të dërgohen kur të ktheheni në linjë",
+      "refresh": "Rifresko statusin",
+      "refreshing": "Po kontrollohen {count} regjistrim(e) të ruajtura…",
+      "reviewRequired": "{count} regjistrim(e) të ruajtur lokalisht — kërkohet rishikim",
+      "unverified": "Dëshmia e orarit u ruajt në këtë pajisje. Lidhu për të rishikuar të gjitha regjistrimet e ruajtura.",
+      "waiting": "{count} veprim(e) regjistrimi u ruajtën në këtë pajisje, ende të padërguara"
+    },
+    "capture": {
+      "description": "Ruaje ngjarjen në këtë pajisje për rishikim. Statusi i orës në server nuk do të ndryshojë.",
+      "end": "Ruaj daljen për rishikim",
+      "queueDescription": "Jeni jashtë linje. Veprimet e regjistrimit ruhen në këtë pajisje dhe dërgohen automatikisht kur të ktheheni në linjë.",
+      "queueEnd": "Ruaj regjistrimin e daljes",
+      "queueStart": "Ruaj regjistrimin e hyrjes",
+      "start": "Ruaj hyrjen për rishikim"
+    },
+    "recovery": {
+      "archive": "Arkivo dhe ruaj provat",
+      "archived": "U arkivua — provat u ruajtën",
+      "command": {
+        "blockedPredecessor": "E pezulluar — një veprim i mëparshëm regjistrimi në këtë pajisje kërkon shqyrtim",
+        "committed": "U ruajt në server",
+        "exhausted": "Dërgimi u ndalua pas dështimeve të përsëritura — i pakonfirmuar në server",
+        "pausedAccess": "E pezulluar — identifikohuni përsëri me të drejta regjistrimi në këtë organizatë",
+        "pausedContext": "E pezulluar — identifikohuni në llogarinë dhe organizatën për të cilën u ruajt",
+        "pausedServer": "E pezulluar — serveri nuk e pranon ende këtë veprim regjistrimi",
+        "pending": "Në pritje për t'u dërguar — i pakonfirmuar në server",
+        "rejected": "Nuk u ruajt — serveri e refuzoi ({code})",
+        "review": "Kërkon shqyrtim — serveri nuk e pranoi ({code})",
+        "waitingPredecessor": "Në pritje të një veprimi më të hershëm regjistrimi në këtë pajisje"
+      },
+      "descriptionOutcomes": "Këto të dhëna janë ruajtur në këtë pajisje. Përveç nëse një regjistrim tregon se është ruajtur në server, rezultati i tij në server nuk është i konfirmuar. Kontrolloni regjistrimet ekzistuese të orëve me menaxherin tuaj përpara se të dorëzoni punë zëvendësuese. Arkivimi ruan provat dhe nuk e anulon punën në server.",
+      "empty": "Nuk ka regjistrime të qasshme. Regjistrimet më të vjetra pa prova llogarie kërkojnë rishikim në nivel organizate; regjistrimet pa prova organizate kërkojnë rikuperim të autorizuar veçmas.",
+      "evidence": "Provat origjinale dhe statusi i rikuperimit",
+      "export": "Eksporto provat e qasshme",
+      "exportError": "Regjistrimet e ruajtura nuk mund të eksportoheshin",
+      "held": "Kërkon rishikim — e pakonfirmuar në server",
+      "loadError": "Regjistrimet e ruajtura nuk mund të lexoheshin",
+      "loading": "Po lexohen regjistrimet e ruajtura…",
+      "review": "Rishiko regjistrimet e ruajtura",
+      "title": "Regjistrimet e ruajtura të orarit"
+    }
+  },
+  "presence": {
+    "activity": {
+      "lastActivity": "aktiviteti i fundit më {date}",
+      "relativeHours": "prej {hours} h",
+      "relativeHoursMinutes": "prej {hours} h {minutes} min",
+      "relativeMinutes": "prej {minutes} min"
+    },
+    "clockedIn": "U regjistrua hyrja",
+    "clockedOut": "U regjistrua dalja",
+    "onBreak": "Në pushim"
+  },
+  "rateLimit": {
+    "countdownLabel": "sekonda derisa të mund të provoni përsëri",
+    "jsonMessage": "U tejkalua kufiri i kërkesave. Ju lutemi provoni përsëri më vonë.",
+    "message": "Keni bërë shumë kërkesa. Ju lutemi prisni përpara se të provoni përsëri.",
+    "retryButton": "Provo përsëri",
+    "retryingButton": "Duke provuar përsëri...",
+    "title": "Shumë kërkesa",
+    "waitingButton": "Ju lutemi prisni..."
+  },
+  "roles": {
+    "admin": "Administratori",
+    "employee": "Punonjës",
+    "manager": "Menaxher"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Joaktiv"
+  },
+  "storeAppBanner": {
+    "description": "Merrni kujtesa dhe njoftime miratimi në aplikacion.",
+    "dismiss": "Hiq sugjerimin e aplikacionit",
+    "getApp": "Merrni aplikacionin",
+    "title": "Z8 për telefonin tuaj"
+  },
+  "table": {
+    "clearFilters": "Pastro filtrat",
+    "clearSort": "Pastro renditjen",
+    "description": "Po shfaqet numri i përgjithshëm i vizitorëve për 6 muajt e fundit. Ky është thjesht një tekst i rastësishëm për të testuar strukturën. Ai shtrihet në disa rreshta dhe duhet të ndahet në rreshta të rinj.",
+    "goToFirstPage": "Shko te faqja e parë",
+    "goToLastPage": "Shko te faqja e fundit",
+    "goToNextPage": "Shko te faqja tjetër",
+    "goToPreviousPage": "Shko te faqja e mëparshme",
+    "header": "Kreu",
+    "limit": "Kufiri",
+    "noResults": "Nuk ka rezultate.",
+    "pageOfPages": "Faqja {current} nga {total}",
+    "reviewer": "Shqyrtuesi",
+    "rowsPerPage": "Rreshta për faqe",
+    "searchPlaceholder": "Kërko...",
+    "selectedOfTotal": "{selected} nga {total} rresht(a) të zgjedhur",
+    "select-reviewer": "Zgjidhni një shqyrtues",
+    "select-status": "Zgjidhni një status",
+    "select-type": "Zgjidhni një lloj",
+    "showing-visitors": "Po shfaqen vizitorët totalë për 6 muajt e fundit",
+    "sortAscending": "Në rritje",
+    "sortDescending": "Në zbritje",
+    "status": "Statusi",
+    "status-options": {
+      "done": "Përfunduar",
+      "in-progress": "Në proces",
+      "not-started": "Nuk ka filluar"
+    },
+    "target": "Objektivi",
+    "totalRows": "{total} rresht(a)",
+    "trending-up": "Në rritje me 5.2% këtë muaj",
+    "type": "Lloji",
+    "type-options": {
+      "capabilities": "Aftësitë",
+      "cover-page": "Faqja e kopertinës",
+      "design": "Dizajni",
+      "executive-summary": "Përmbledhje ekzekutive",
+      "focus-documents": "Dokumentet e fokusit",
+      "narrative": "Narrativa",
+      "table-of-contents": "Tabela e përmbajtjes",
+      "technical-approach": "Qasja teknike"
+    }
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours}h {minutes}m",
+    "hoursOnly": "{hours}h",
+    "pm": "PM"
+  },
+  "userAvatar": {
+    "alt": "Avatari i përdoruesit"
+  },
+  "user": {
+    "font-size": "Madhësia e shkrimit",
+    "language": "Gjuha",
+    "logging-out": "Duke dalë...",
+    "log-out": "Dil",
+    "log-out-failed": "Dalja nga llogaria dështoi. Ju lutemi provoni përsëri.",
+    "profile": "Profili",
+    "security": "Siguria",
+    "theme": "Tema",
+    "theme-dark": "E errët",
+    "theme-light": "E çelët",
+    "theme-location-required": "Kërkohet leja e vendndodhjes për temën e bazuar në kohë.",
+    "theme-system": "Sistemi",
+    "theme-time": "Bazuar në kohë",
+    "theme-time-info": "Modaliteti i bazuar në kohë po përdor {currentMode}. Ndryshon në {nextMode} në orën {time}.",
+    "theme-toggle": "Ndrysho temën"
+  },
+  "validation": {
+    "first-name-required": "Emri është i detyrueshëm",
+    "invalid-email": "Adresë emaili e pavlefshme",
+    "last-name-required": "Mbiemri është i detyrueshëm",
+    "password-required": "Fjalëkalimi është i detyrueshëm",
+    "pronounsMaxLength": "Përemrat duhet të kenë 50 ose më pak karaktere"
+  },
+  "workBalance": {
+    "adjustments": {
+      "cancel": "Anulo",
+      "cancelled": "Anuluar",
+      "cancelledBy": "Anuluar nga {name} më {date}: {reason}",
+      "description": "Pagesat e orëve shtesë dhe bilancet fillestare në këtë bilanc pune. Në rast gabimi, ato anulohen dhe nuk fshihen kurrë, prandaj ato të anuluarat mbeten të listuara.",
+      "empty": "Ende nuk ka rregullime të bilancit.",
+      "kind": {
+        "openingBalance": "Bilanci fillestar",
+        "overtimePayout": "Pagesa e orëve shtesë"
+      },
+      "loadFailed": "Rregullimet e bilancit nuk mund të ngarkoheshin.",
+      "loading": "Po ngarkohen rregullimet e bilancit",
+      "notPermitted": "Mund të shihni rregullimet e bilancit tuaj dhe të punonjësve që menaxhoni.",
+      "open": "Rregullimet e bilancit",
+      "recordedBy": "Regjistruar nga {name} më {date}",
+      "title": "Rregullimet e bilancit",
+      "unknownUser": "një përdorues i fshirë"
+    },
+    "label": "Bilanci i përgjithshëm",
+    "notCalculated": "Ende i pallogaritur",
+    "pendingDescription": "Punëtori do ta llogarisë këtë bilanc së shpejti.",
+    "updatedEveryThreeHours": "Përditësohet çdo 3 orë"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Duke ngarkuar këshillin e punës"
+  }
+}

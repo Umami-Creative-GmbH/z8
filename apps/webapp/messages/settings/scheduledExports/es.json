@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Cambiar propietario",
         "delete": "Eliminar",
         "edit": "Editar",
         "runNow": "Ejecutar ahora",
@@ -123,6 +124,8 @@
         "dateRangesDesc": "Calculados automáticamente según la frecuencia de la programación (p. ej., el mes anterior para exportaciones mensuales).",
         "delivery": "Entrega:",
         "deliveryDesc": "Las exportaciones se suben a S3 y se envían notificaciones por correo electrónico con enlaces de descarga a los destinatarios configurados.",
+        "owner": "Propietario:",
+        "ownerDesc": "Cada programación se ejecuta en nombre de un administrador de la organización. Si su propietario deja de ser administrador de la organización o se marcha, la programación se pausa y se notifica a todos los administradores de la organización para que uno pueda hacerse cargo.",
         "scheduleTypes": "Tipos de programación:",
         "scheduleTypesDesc": "Diaria, semanal (lunes), mensual (día 1), trimestral (1 de ene/abr/jul/oct) o expresiones cron personalizadas."
       },
@@ -149,6 +152,18 @@
         "viewError": "Ver detalles del error"
       },
       "newSchedule": "Nueva programación",
+      "owner": {
+        "changed": "Propietario cambiado",
+        "changeFailed": "No se pudo cambiar el propietario",
+        "description": "\"{name}\" se ejecuta en nombre de su propietario, quien debe ser un administrador de la organización. Las ejecuciones automáticas se registran en el registro de auditoría a nombre del propietario.",
+        "label": "Propietario",
+        "pauseNote": "Cambiar el propietario no reanuda una programación pausada. Vuelva a activarla una vez que tenga un propietario.",
+        "placeholder": "Seleccionar un administrador de la organización…",
+        "required": "Elegir un administrador de la organización",
+        "saving": "Guardando…",
+        "submit": "Cambiar propietario",
+        "title": "Cambiar propietario"
+      },
       "report": {
         "auditReport": "Informe de auditoría",
         "auditReportDesc": "Los informes de auditoría incluyen todos los datos de registro de tiempo con firmas criptográficas y marcas de tiempo para el cumplimiento de GoBD. La exportación se almacenará con protección WORM (Write Once Read Many).",
@@ -264,6 +279,8 @@
         "never": "Nunca",
         "nextRun": "Próxima ejecución",
         "openMenu": "Abrir menú de acciones",
+        "owner": "Propietario",
+        "ownerNotAdmin": "Ya no es administrador de la organización",
         "paused": "Pausado",
         "schedule": "Programación",
         "status": "Estado",

@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} har samme navn og er allerede koblet til en annen kontakt",
           "noMatch": "Ingen treff",
           "paging": {
-            "label": "Kontaktsider",
-            "next": "Neste side",
-            "position": "Side {page} av {pageCount}",
-            "previous": "Forrige side"
+            "label": "Kontaktsider"
           },
           "suggestion": {
             "customerNumber": "{name} har en kontaktkobling med samme kundenummer",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "Leverandøren rapporterer pauser uten klokkeslett, så det arbeidede intervallet er ukjent."
         },
         "issueGroups": {
-          "currentMarkers": "Gjeldende rader inneholder {blockingRows} blokkerende markører og {warningRows} advarselsmarkører.",
           "description": "Grupperte gjennomgangsområder bidrar til å holde kvalitetskontroller synlige før godkjente rader overføres.",
+          "importMarkers": "Importens rader inneholder {blockingRows} blokkerende og {warningRows} advarselsmarkører.",
           "title": "Problemgrupper"
+        },
+        "paging": {
+          "next": "Neste side",
+          "position": "Side {page} av {pageCount}",
+          "previous": "Forrige side"
         },
         "rows": {
           "billable": "Fakturerbar",
           "empty": "Ingen klargjorte rader er tilgjengelige for denne importbunken.",
           "entity": "Entitet",
+          "paging": {
+            "label": "Radsider"
+          },
           "rowId": "Rad-ID",
           "sourceId": "Kilde-ID",
           "status": "Status",
@@ -1783,6 +1788,7 @@
       "create": "Opprett prosjekt",
       "created": "Prosjekt opprettet",
       "createFailed": "Kunne ikke opprette prosjekt",
+      "customerDeleted": "{name} (slettet)",
       "description": "Administrer prosjekter, budsjetter, frister og tidsfordelinger",
       "dialog": {
         "create": "Opprett prosjekt",
@@ -1807,6 +1813,7 @@
         "color": "Farge",
         "colorOption": "Velg farge {color}",
         "customer": "Kunde",
+        "customerDeleted": "{name} ble slettet. Velg en annen kunde, eller behold prosjektet uten en.",
         "customerPlaceholder": "Velg en kunde",
         "deadline": "Frist",
         "description": "Beskrivelse",
@@ -2031,6 +2038,11 @@
       "title": "Prosjekter",
       "updated": "Prosjekt oppdatert",
       "updateFailed": "Kunne ikke oppdatere prosjektet"
+    },
+    "reportShareLinks": {
+      "description": "Se og tilbakekall alle lenker som deler en prosjekt- eller kunderapport",
+      "pageDescription": "Lenker som viser et fryst øyeblikksbilde av en prosjekt- eller kunderapport til noen utenfor Z8. Å tilbakekalle en lenke stopper den umiddelbart og sletter øyeblikksbildet.",
+      "title": "Delingslenker for rapporter"
     },
     "security": {
       "description": "Administrer passord, totrinnsbekreftelse, passnøkler og aktive økter",

@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} has the same name and is already linked to another contact",
           "noMatch": "No match",
           "paging": {
-            "label": "Contact pages",
-            "next": "Next page",
-            "position": "Page {page} of {pageCount}",
-            "previous": "Previous page"
+            "label": "Contact pages"
           },
           "suggestion": {
             "customerNumber": "{name} has a contact link with the same customer number",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "The provider reports breaks without their times, so the worked interval is unknown."
         },
         "issueGroups": {
-          "currentMarkers": "Current rows include {blockingRows} blocking and {warningRows} warning issue markers.",
           "description": "Grouped review areas help keep quality checks visible before accepted rows are committed.",
+          "importMarkers": "The import's rows include {blockingRows} blocking and {warningRows} warning issue markers.",
           "title": "Issue groups"
+        },
+        "paging": {
+          "next": "Next page",
+          "position": "Page {page} of {pageCount}",
+          "previous": "Previous page"
         },
         "rows": {
           "billable": "Billable",
           "empty": "No staged rows are available for this import batch.",
           "entity": "Entity",
+          "paging": {
+            "label": "Row pages"
+          },
           "rowId": "Row ID",
           "sourceId": "Source ID",
           "status": "Status",
@@ -1783,6 +1788,7 @@
       "create": "Create Project",
       "created": "Project created",
       "createFailed": "Failed to create project",
+      "customerDeleted": "{name} (deleted)",
       "description": "Manage projects, budgets, deadlines, and time assignments",
       "dialog": {
         "create": "Create Project",
@@ -1807,6 +1813,7 @@
         "color": "Color",
         "colorOption": "Select color {color}",
         "customer": "Customer",
+        "customerDeleted": "{name} was deleted. Pick another customer or keep the project without one.",
         "customerPlaceholder": "Select a customer",
         "deadline": "Deadline",
         "description": "Description",
@@ -2031,6 +2038,11 @@
       "title": "Projects",
       "updated": "Project updated",
       "updateFailed": "Failed to update project"
+    },
+    "reportShareLinks": {
+      "description": "See and revoke every link that shares a project or customer report",
+      "pageDescription": "Links that show a frozen snapshot of a project or customer report to someone outside Z8. Revoking a link stops it at once and deletes its snapshot.",
+      "title": "Report Share Links"
     },
     "security": {
       "description": "Manage your password, two-factor authentication, passkeys, and active sessions",

@@ -1,0 +1,169 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Достатня кількість персоналу",
+      "byLocation": "За локацією:",
+      "gapCount": "Нестача персоналу: {count}",
+      "gaps": "прогалини",
+      "hideOverlay": "Приховати оверлей покриття",
+      "metSlots": "{count} достатньо",
+      "overSlots": "{count} надлишок",
+      "overstaffed": "Надлишок персоналу",
+      "showOverlay": "Показати оверлей цілей покриття",
+      "summary": "Підсумок покриття:",
+      "toggleLabel": "Покриття",
+      "underSlots": "{count} нестача",
+      "understaffed": "Нестача персоналу",
+      "utilization": "{percent}% завантаження"
+    },
+    "mySchedule": {
+      "loadFailed": "Не вдалося завантажити ваші зміни. Будь ласка, спробуйте пізніше.",
+      "nextWeek": "Наступний тиждень",
+      "noShifts": "Немає змін",
+      "previousWeek": "Попередній тиждень",
+      "shift": "Зміна",
+      "today": "Сьогодні"
+    },
+    "page": {
+      "employeeScheduleDescription": "Ваші опубліковані зміни щотижня",
+      "employeeTitle": "Мій розклад",
+      "managerDescription": "Керування та планування змін працівників",
+      "title": "Графік змін"
+    },
+    "publish": {
+      "acknowledgeAndPublish": "Підтвердити та опублікувати",
+      "acknowledgmentDescription": "Публікацію буде продовжено, але цей розклад містить попередження щодо відповідності вимогам, які спершу необхідно підтвердити.",
+      "button": "Опублікувати ({count})",
+      "cancel": "Скасувати",
+      "complianceAcknowledgmentRequired": "Потрібне підтвердження відповідності вимогам",
+      "complianceWarnings": "{count, plural, one {Під час перевірки відповідності виявлено # попередження; вам потрібно підтвердити його перед публікацією.} other {Під час перевірки відповідності виявлено # попереджень; вам потрібно підтвердити їх перед публікацією.}}",
+      "coverageWarning": "Деякі часові блоки не відповідають мінімальним вимогам щодо кількості персоналу.",
+      "maxHours": "Макс. годин: {count}",
+      "notifyEmployees": "{count, plural, one {Опублікувати # чернетку зміни та сповістити працівників} other {Опублікувати # чернеток змін та сповістити працівників}}",
+      "overtime": "Понаднормові: {count}",
+      "publishing": "Публікація…",
+      "restTime": "Час відпочинку: {count}",
+      "totalFindings": "{count, plural, one {# зауваження загалом} other {# зауважень загалом}}",
+      "warningsDetectedBeforePublish": "Перед публікацією виявлено попередження"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "Виявлено {count} зауважень перед публікацією.",
+        "maxHours": "Макс. годин: {count}",
+        "overtime": "Понаднормові: {count}",
+        "restTime": "Час відпочинку: {count}",
+        "title": "Попередження про відповідність у цьому діапазоні дат"
+      },
+      "focus": {
+        "anonymous": "Відображаються зміни одного працівника",
+        "employee": "Відображаються зміни для {name}",
+        "showAll": "Показати всі зміни"
+      },
+      "loading": "Завантаження графіка...",
+      "publish": {
+        "failed": "Не вдалося опублікувати зміни",
+        "published": "Опубліковано {count} змін"
+      },
+      "shiftUpdate": {
+        "failed": "Не вдалося оновити зміну",
+        "overlapDescription": "Ця зміна перетинається з {count} іншими змінами",
+        "overlapWarning": "Зміну збережено з попередженням про перетин",
+        "updated": "Зміну оновлено"
+      }
+    },
+    "shiftDetails": {
+      "close": "Закрити",
+      "date": "Дата",
+      "description": "Ваша запланована зміна",
+      "endsNextDay": "закінчується наступного дня",
+      "location": "Локація",
+      "notes": "Примітки",
+      "time": "Час",
+      "title": "Деталі зміни"
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Будь-хто може взяти",
+      "assignTo": "Призначити",
+      "confirmDelete": "Підтвердити видалення",
+      "created": "Зміну створено",
+      "createDescription": "Заповніть відомості про нову зміну",
+      "createShift": "Створити зміну",
+      "createTitle": "Створити зміну",
+      "date": "Дата",
+      "deleted": "Зміну видалено",
+      "deleteFailed": "Не вдалося видалити зміну",
+      "draft": "Чернетка",
+      "editDescription": "Оновіть відомості про зміну нижче",
+      "editTitle": "Редагувати зміну",
+      "endTime": "Час завершення",
+      "noTemplate": "Без шаблону",
+      "notes": "Примітки (необов'язково)",
+      "notesPlaceholder": "Будь-які особливі вказівки чи примітки...",
+      "openShift": "Відкрита зміна",
+      "openShiftHelp": "Залиште як «Відкрита зміна», щоб працівники могли взяти її",
+      "pickDate": "Виберіть дату",
+      "published": "Опубліковано",
+      "savedWithWarnings": "Зміну збережено з попередженнями",
+      "saveFailed": "Не вдалося зберегти зміну",
+      "selectEmployee": "Виберіть працівника",
+      "selectSubarea": "Виберіть підзону…",
+      "selectTemplate": "Виберіть шаблон",
+      "startTime": "Час початку",
+      "status": "Статус:",
+      "subarea": "Підзона",
+      "subareaHelp": "Де проходитиме ця зміна",
+      "template": "Шаблон (необов'язково)",
+      "templateHelp": "Вибір шаблону автоматично заповнить час",
+      "updated": "Зміну оновлено",
+      "updateShift": "Оновити зміну"
+    },
+    "skills": {
+      "expiredCertifications": "Прострочені сертифікати:",
+      "expiredOn": "(Термін дії минув {date})",
+      "missingPreferred": "Відсутні бажані навички:",
+      "missingPreferredCount": "Відсутні {count} бажаних",
+      "missingRequired": "Відсутні обов'язкові навички:",
+      "preferred": "Бажані",
+      "preferredSkillsMissing": "Відсутні бажані навички",
+      "requirementsNotMet": "Вимоги до навичок не виконані",
+      "unqualified": "Некваліфікований",
+      "validating": "Перевірка навичок…",
+      "validatingDescription": "Перевірка кваліфікації працівника",
+      "warningMessage": "Ви все одно можете призначити цю зміну, але це буде зафіксовано як перевизначення."
+    },
+    "staffingSuggestions": {
+      "empty": "Немає доступних працівників для цієї зміни",
+      "error": "Не вдалося завантажити пропозиції",
+      "loading": "Пошук доступних працівників…",
+      "note": {
+        "missingPreferredSkill": "Відсутня бажана навичка: {skill}"
+      },
+      "pick": "Вибрати",
+      "pickLabel": "Призначити: {name}",
+      "reason": {
+        "noContractedTarget": "Немає норми за договором",
+        "plannedHours": "Заплановано {planned} із {target} год цього тижня",
+        "requestedThisShift": "Запит на цю зміну",
+        "restPeriodOk": "Період відпочинку в нормі",
+        "skillsHeld": "Має навички: {skills}"
+      },
+      "requested": "Запит на цю зміну",
+      "showAll": "Показати всі ({count})",
+      "showFewer": "Показати менше",
+      "title": "Рекомендовані працівники",
+      "warning": {
+        "expiredRequiredSkill": "Термін дії навички «{skill}» закінчився {date}",
+        "maxHours": "Перевищення денного максимуму ({total} із {max} год)",
+        "missingRequiredSkill": "Відсутня обов'язкова навичка: {skill}",
+        "overtime": "{period, select, daily {Щоденна} weekly {Щотижнева} other {Щомісячна}} понаднормова робота ({total} із {threshold} год)",
+        "pendingAbsence": "Очікує на підтвердження відсутність: {category}",
+        "restTime": "Занадто короткий період відпочинку ({rest} із {required} год)"
+      }
+    },
+    "templates": {
+      "dragHint": "Перетягніть шаблон на календар, щоб створити зміну",
+      "empty": "Немає доступних шаблонів. Створіть шаблони в налаштуваннях, щоб швидко додавати зміни.",
+      "title": "Шаблони змін"
+    }
+  }
+}

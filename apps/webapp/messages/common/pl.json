@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Twoje ostatnie zarejestrowane wejście dzisiaj to {startTime} ({timezone}). Zarejestruj wejście, jeśli pracujesz."
       },
+      "scheduledExportPaused": {
+        "message": "Element \"{scheduleName}\" został wstrzymany, ponieważ jego właściciel, {ownerName}, nie jest już administratorem organizacji. Ustaw siebie lub innego administratora organizacji jako właściciela, aby go wznowić.",
+        "title": "Zaplanowany eksport wstrzymany"
+      },
       "shiftAssigned": {
         "message": "Przydzielono Ci zmianę w dniu {shiftDate} od {startTime} do {endTime} przez {assignedByName}.",
         "title": "Zmiana przydzielona"

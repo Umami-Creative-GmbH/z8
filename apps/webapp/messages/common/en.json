@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Your latest clock-in today was {startTime} ({timezone}). Clock in if you are working."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" was paused because its owner, {ownerName}, is no longer an org admin. Make yourself or another org admin its owner to resume it.",
+        "title": "Scheduled export paused"
+      },
       "shiftAssigned": {
         "message": "You have been assigned a shift on {shiftDate} from {startTime} to {endTime} by {assignedByName}.",
         "title": "Shift assigned"

@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Ihr letztes Einstempeln heute war um {startTime} ({timezone}). Stempeln Sie ein, wenn Sie arbeiten."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" isch pausiert worde, will de Bsitzer, {ownerName}, kein Org-Admin meh isch. Mach dich sälber oder en andere Org-Admin zum Bsitzer, zum en fortzsetze.",
+        "title": "Plaante Export pausiert"
+      },
       "shiftAssigned": {
         "message": "Du bisch für en Schicht am {shiftDate} vo {startTime} bis {endTime} vom {assignedByName} yteilt worde.",
         "title": "Schicht yteilt"

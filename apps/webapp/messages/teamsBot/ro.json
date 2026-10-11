@@ -1,0 +1,105 @@
+{
+  "approval": {
+    "absenceRequest": "Cerere de absență",
+    "actions": {
+      "approve": "Aprobă",
+      "approving": "Se aprobă...",
+      "reject": "Respinge",
+      "rejecting": "Se respinge...",
+      "viewInZ8": "Vizualizează în Z8"
+    },
+    "durationDays": "{count, plural, one {# zi} other {# zile}}",
+    "facts": {
+      "approvedBy": "Aprobat de",
+      "corrected": "Corectat",
+      "dates": "Date",
+      "duration": "Durată",
+      "email": "E-mail",
+      "from": "De la",
+      "original": "Original",
+      "reason": "Motiv",
+      "rejectedBy": "Respins de",
+      "resolved": "Rezolvat",
+      "status": "Stare",
+      "submitted": "Trimis",
+      "type": "Tip"
+    },
+    "status": {
+      "approved": "APROBAT",
+      "rejected": "RESPINS"
+    },
+    "timeCorrectionRequest": "Cerere de corectare a pontajului"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Critic",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (excepție utilizată)",
+      "lastDays": "Ultimele {days} zile",
+      "legend": "\uD83D\uDD34 Încălcare  \uD83D\uDFE0 Critic  \uD83D\uDFE1 Avertisment  \uD83D\uDCDD Cerere în așteptare",
+      "moreRequestsMarkdown": "_+{count} alte cereri_",
+      "moreViolationsMarkdown": "_+{count} alte încălcări_",
+      "pending": "În așteptare",
+      "pendingExceptions": "Cereri de excepție în așteptare",
+      "recentViolations": "Încălcări recente",
+      "reviewExceptions": "Revizuire excepții",
+      "textCriticalAlerts": "**Alerte critice:** {count}",
+      "textMore": "  +{count} în plus",
+      "textPendingExceptions": "**Excepții în așteptare:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Cereri în așteptare:**",
+      "textRecentViolations": "**Încălcări recente:**",
+      "textTitle": "**⚠️ Rezumat conformitate - Ultimele {days} zile**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Încălcări:** {count}",
+      "titleWithIcon": "⚠️ Rezumat conformitate",
+      "viewDashboard": "Vizualizare tablou de bord conformitate",
+      "violations": "Încălcări"
+    },
+    "coverage": {
+      "clockedIn": "Pontat",
+      "moreLocationsMarkdown": "_+{count} alte locații..._",
+      "scheduled": "Programat",
+      "titleWithIcon": "\uD83D\uDCCA Raport de acoperire",
+      "variance": "Variație",
+      "viewFullSchedule": "Vizualizare program complet"
+    }
+  },
+  "common": {
+    "more": "+{count} în plus",
+    "moreBullet": "• +{count} în plus"
+  },
+  "digest": {
+    "currentlyClockedIn": "Pontați în prezent",
+    "deputy": "Înlocuitor: {name}",
+    "everyoneAvailable": "Toată lumea este disponibilă astăzi",
+    "noOneClockedIn": "Nimeni nu este pontat încă",
+    "noPendingApprovals": "Nicio aprobare în așteptare",
+    "openDashboard": "Deschideți tabloul de bord Z8",
+    "openShifts": "Ture deschise",
+    "pendingApprovals": "Aprobări în așteptare",
+    "pendingExceptionRequests": "{count, plural, one {# cerere de excepție în așteptarea revizuirii} other {# cereri de excepție în așteptarea revizuirii}}",
+    "returns": "Revine pe {date}",
+    "since": "De la {time}",
+    "textClockedInEmployee": "• {name} - de la {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Conformitate:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Deficite de acoperire:**",
+    "textCurrentlyClockedIn": "**Pontați în prezent:**",
+    "textEmployeeOut": "• {name} - {category} (revine pe {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Ture deschise:**",
+    "textPendingApprovalsCount": "**Aprobări în așteptare:** {count}",
+    "textPendingApprovalsNone": "**Aprobări în așteptare:** Niciuna",
+    "textTitle": "**Rezumat zilnic - {date}**",
+    "textWhosOut": "**Cine lipsește:**",
+    "title": "Rezumat zilnic",
+    "todayTomorrow": "Astăzi: {today} | Mâine: {tomorrow}",
+    "viewApprovals": "Vizualizare aprobări",
+    "whosOutToday": "Cine lipsește astăzi"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Ore suplimentare zilnice",
+    "overtime_monthly": "Ore suplimentare lunare",
+    "overtime_weekly": "Ore suplimentare săptămânale",
+    "rest_period": "Perioadă de odihnă"
+  }
+}

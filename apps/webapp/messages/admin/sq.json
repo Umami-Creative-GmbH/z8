@@ -1,0 +1,462 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Vendet historike dhe MRR-ja janë të vlerësuara. Rindërtimi i saktë kërkon pamje të çastit në të ardhmen ose një regjistër faturimi."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Sinjalet e vendeve dhe të ardhurave të përsëritura për gjendjen e faturimit.",
+          "summary": "Përmbledhja komerciale: {seats} vende dhe {mrr} MRR e vlerësuar.",
+          "title": "Komerciale"
+        },
+        "engagement": {
+          "description": "Përdorimi i platformës përmes përdoruesve aktivë dhe seancave.",
+          "summary": "Përmbledhja e angazhimit: {activeUsers} përdorues aktivë dhe {sessions} seanca.",
+          "title": "Angazhimi"
+        },
+        "growth": {
+          "description": "Përdorues dhe organizata të reja që hyjnë në platformë.",
+          "summary": "Përmbledhja e rritjes: {signups} regjistrime dhe {organizations} organizata.",
+          "title": "Rritja"
+        },
+        "operations": {
+          "description": "Vëllimi i gjurmimit të kohës i gjeneruar nga aktiviteti i klientit.",
+          "summary": "Përmbledhja e operacioneve: {timeRecords} regjistrime të kohës.",
+          "title": "Operacionet"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Grupimi i analizave",
+          "label": "Grupimi"
+        },
+        "range": {
+          "ariaLabel": "Intervali i analizave",
+          "label": "Intervali"
+        }
+      },
+      "description": "Monitoroni rritjen e platformës, angazhimin, aktivitetin operacional dhe tendencat e faturimit.",
+      "emptyState": {
+        "noData": "Nuk ka të dhëna për këtë interval"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Përdoruesit aktivë në intervalin e zgjedhur",
+          "title": "Përdoruesit aktivë"
+        },
+        "mrr": {
+          "description": "Vlerësimi i të ardhurave të përsëritura mujore",
+          "title": "MRR e vlerësuar"
+        },
+        "organizations": {
+          "description": "Hapësirat aktive të punës në platformë",
+          "title": "Organizatat"
+        },
+        "seats": {
+          "description": "Vendet aktuale me pagesë ose në provë",
+          "title": "Vendet e licencuara"
+        },
+        "sessions": {
+          "description": "Seancat e vërtetuara",
+          "title": "Seancat"
+        },
+        "signups": {
+          "description": "Llogari të reja në platformë",
+          "title": "Regjistrimet"
+        },
+        "timeRecords": {
+          "description": "Regjistrimet operacionale të dërguara",
+          "title": "Regjistrimet e kohës"
+        }
+      },
+      "preview": {
+        "description": "Rritja dhe angazhimi i platformës përgjatë intervalit të zgjedhur.",
+        "title": "Trendet e analizave",
+        "viewFull": "Shiko analizat e plota"
+      },
+      "sectionDescription": "Përditësuar nga të dhënat aktuale të platformës për periudhën dhe grupin e zgjedhur.",
+      "sectionTitle": "Tendencat e analizave",
+      "title": "Analitika e platformës",
+      "values": {
+        "notAvailable": "E padisponueshme"
+      }
+    },
+    "billing": {
+      "description": "Monitoroni abonimet, të ardhurat dhe statusin e pagesave",
+      "failedToSyncSeats": "Dështoi sinkronizimi i vendeve",
+      "intervals": {
+        "month": "Mujore",
+        "year": "Vjetore"
+      },
+      "metrics": {
+        "activeSubscriptions": "Abonimet aktive",
+        "activeSubscriptionsDescription": "{trialingCount} në provë, {activeCount} me pagesë",
+        "conversionRate": "Shkalla e konvertimit",
+        "conversionRateDescription": "Nga provat në me pagesë",
+        "licensedSeats": "Vendet e licencuara",
+        "licensedSeatsDescription": "Në të gjitha abonimet",
+        "mrr": "MRR",
+        "mrrDescription": "Të ardhurat e përsëritura mujore",
+        "pastDue": "Afati i kaluar",
+        "pastDueDescription": "Probleme me pagesën",
+        "trialing": "Në periudhë prove",
+        "trialingDescription": "Në periudhën e provës"
+      },
+      "seatsSynced": "Vendet u sinkronizuan",
+      "sections": {
+        "recentSubscriptions": "Abonimet e fundit",
+        "revenueMetrics": "Metrikat e të ardhurave"
+      },
+      "status": {
+        "active": "Aktiv",
+        "canceled": "Anuluar",
+        "pastDue": "I vonuar",
+        "trialing": "Provë"
+      },
+      "syncSeatsFor": "Sinkronizo vendet për {organizationName}",
+      "table": {
+        "actions": "Veprimet",
+        "billing": "Faturimi",
+        "created": "Krijuar",
+        "demoUsers": "Përdoruesit demo",
+        "licensedSeats": "Vendet e licencuara",
+        "noSubscriptions": "Nuk ka ende abonime",
+        "organization": "Organizata",
+        "periodEnd": "Fundi i periudhës",
+        "status": "Statusi",
+        "usedSeats": "Vendet e përdorura"
+      },
+      "title": "Paneli i faturimit"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Rifresko diagnostikimin"
+      },
+      "clientDescription": "Konfigurimi i sigurt i platformës dhe gjendja e shërbimit në nivel aplikacioni. Rifreskuar së fundi më {date}.",
+      "description": "Konfigurim i sigurt i platformës dhe kontrolle të gjendjes së shpërndarjes vetëm për aplikacionin.",
+      "emailTest": {
+        "actions": {
+          "send": "Dërgo email testues"
+        },
+        "description": "Dërgoni një email diagnostikues përmes transportuesit të emailit të sistemit.",
+        "messageId": "ID-ja e mesazhit: {messageId}",
+        "recipient": "Emaili i marrësit",
+        "smtpOverride": {
+          "description": "Lëreni bosh për të përdorur transportuesin e konfiguruar të emailit të sistemit. Nëse plotësohet, testi përdor vetëm këto cilësime SMTP.",
+          "fromEmail": "Emaili i dërguesit",
+          "fromName": "Emri i dërguesit",
+          "host": "Host-i SMTP",
+          "ipMode": "Modaliteti IP",
+          "ipMode.auto": "Automatik",
+          "ipMode.ipv4": "Vetëm IPv4",
+          "ipMode.ipv6": "Vetëm IPv6",
+          "password": "Fjalëkalimi SMTP",
+          "port": "Porta SMTP",
+          "requireTls": "Kërko STARTTLS",
+          "secure": "Përdor TLS",
+          "title": "Anashkalim i përkohshëm i SMTP-së",
+          "username": "Emri i përdoruesit të SMTP-së"
+        },
+        "success": "Emaili testues u dërgua te {recipient}.",
+        "title": "Testi i dërgimit të emailit"
+      },
+      "keyManager": {
+        "actions": {
+          "test": "Testo enkriptimin"
+        },
+        "ciphertextPreview": "Parapamja e tekstit të shifruar",
+        "description": "Ekzekutoni një test enkriptimi/dekriptimi skaj më skaj për çelësin e platformës.",
+        "input": "Hyrja",
+        "keyStatus": "Statusi i çelësit",
+        "keyStatus.created": "U krijua çelës i ri i platformës",
+        "keyStatus.reused": "U ripërdor çelësi ekzistues i platformës",
+        "output": "Dalja",
+        "platformKeyId": "ID-ja e çelësit të platformës",
+        "result": {
+          "match": "Hyrja dhe dalja përputhen",
+          "mismatch": "Hyrja dhe dalja ndryshojnë"
+        },
+        "status": {
+          "pending": "Testi i enkriptimit po ekzekutohet."
+        },
+        "title": "Enkriptimi Scaleway Key Manager"
+      },
+      "recommendedActions": {
+        "description": "Zgjidhni këto elemente për ta rikthyer diagnostikimin në një gjendje të rregullt.",
+        "title": "Veprimet e rekomanduara"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Gjendjet e sigurta të konfigurimit të vendosjes. Vlerat sekrete nuk shfaqen kurrë.",
+          "title": "Konfigurimi i platformës"
+        },
+        "health": {
+          "description": "Kontrolle vetëm për aplikacionin për varësitë e infrastrukturës të përdorura nga aplikacioni ueb.",
+          "title": "Gjendja e shërbimit"
+        }
+      },
+      "statusAnnouncement": "Statusi i diagnostikimit {status}. Rifreskuar së fundi më {date}.",
+      "status": {
+        "disabled": "Çaktivizuar",
+        "error": "Gabim",
+        "healthy": "Në rregull",
+        "warning": "Paralajmërim"
+      },
+      "title": "Diagnostikimi i shpërndarjes"
+    },
+    "layout": {
+      "exitAdmin": "Dil nga paneli i administratorit",
+      "menuTitle": "Menuja e administratorit",
+      "nav": {
+        "analytics": "Analitika",
+        "billing": "Faturimi",
+        "diagnostics": "Diagnostikimi i shpërndarjes",
+        "organizations": "Organizatat",
+        "overview": "Përmbledhje",
+        "settings": "Cilësimet",
+        "systemEmailTemplates": "Shabllonet e email-eve të sistemit",
+        "users": "Përdoruesit",
+        "workerQueue": "Radha e punëtorëve"
+      },
+      "openMenu": "Hap menynë e administratorit",
+      "subtitle": "Menaxhimi i platformës",
+      "title": "Konsola e administratorit"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Fshi organizatën",
+        "reactivate": "Riaktivizo organizatën",
+        "suspend": "Pezullo organizatën"
+      },
+      "badges": {
+        "deleted": "Fshirë",
+        "suspended": "Pezulluar"
+      },
+      "deleteDialog": {
+        "confirmButton": "Fshij organizatën",
+        "confirmLabel": "Shkruani \"{name}\" për të konfirmuar",
+        "confirmPlaceholder": "Emri i organizatës",
+        "description": "Ky veprim do të fshijë \"{name}\" dhe të gjitha të dhënat e lidhura. Ky veprim nuk mund të zhbëhet.",
+        "immediateDelete": "Fshij menjëherë (anashkalo periudhën 5-ditore të tolerancës)",
+        "skipNotification": "Anashkalo njoftimin e fshirjes për anëtarët e organizatës",
+        "title": "Fshij organizatën"
+      },
+      "description": "Shikoni dhe menaxhoni të gjitha organizatat në platformë",
+      "filters": {
+        "all": "Të gjitha",
+        "deleted": "Të fshira",
+        "suspended": "Të pezulluara"
+      },
+      "pagination": {
+        "showing": "Duke shfaqur {from} deri në {to} nga {total} organizata"
+      },
+      "searchPlaceholder": "Kërko sipas emrit ose slug-ut…",
+      "suspendDialog": {
+        "confirmButton": "Pezullo organizatën",
+        "description": "Pezulloni \"{name}\" dhe kalojeni në modalitetin vetëm për lexim. Anëtarët do të mund të shohin të dhënat, por nuk do të mund të krijojnë apo modifikojnë asgjë.",
+        "reason": "Arsyeja",
+        "reasonPlaceholder": "Vendosni arsyen e pezullimit të kësaj organizate…",
+        "title": "Pezullo organizatën"
+      },
+      "table": {
+        "created": "Krijuar",
+        "employees": "Punonjësit",
+        "loadErrorTitle": "Nuk mund të ngarkohen organizatat",
+        "members": "Anëtarët",
+        "noOrganizationsFound": "Nuk u gjet asnjë organizatë",
+        "organization": "Organizata"
+      },
+      "title": "Menaxhimi i organizatave",
+      "toasts": {
+        "deletedGracePeriod": "Organizata \"{name}\" është planifikuar të fshihet pas 5 ditësh",
+        "deletedImmediate": "Organizata \"{name}\" është planifikuar për fshirje të menjëhershme",
+        "suspended": "Organizata \"{name}\" është pezulluar",
+        "unsuspended": "Organizata \"{name}\" është riaktivizuar"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Tendencat e analizave"
+      },
+      "description": "Metrikat e platformës dhe veprime të shpejta",
+      "metrics": {
+        "bannedUsers": "Përdoruesit e bllokuar",
+        "bannedUsersDescription": "Me qasje të kufizuar",
+        "licensedSeats": "Vendet e licencuara",
+        "licensedSeatsDescription": "Në të gjitha abonimet",
+        "mrr": "MRR",
+        "mrrDescription": "Të ardhurat mujore të përsëritura (€)",
+        "organizations": "Organizatat",
+        "organizationsDescription": "Hapësirat aktive të punës",
+        "suspended": "Të pezulluara",
+        "suspendedDescription": "Organizata vetëm për lexim",
+        "title": "Metrikat e platformës",
+        "totalUsers": "Përdoruesit gjithsej",
+        "totalUsersDescription": "Llogaritë e regjistruara në platformë"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Metrikat e të ardhurave dhe statusi i abonimit",
+          "title": "Faturimi dhe Abonimet"
+        },
+        "diagnostics": {
+          "description": "Shqyrtoni konfigurimin e sigurt dhe kontrollet e gjendjes së aplikacionit",
+          "title": "Diagnostikimi i shpërndarjes"
+        },
+        "organizations": {
+          "description": "Pezulloni, fshini ose rishikoni organizatat",
+          "title": "Menaxhimi i organizatave"
+        },
+        "systemEmailTemplates": {
+          "description": "Redaktoni tekstin e email-eve të faturimit dhe të sistemit në pronësi të platformës",
+          "title": "Shabllonet e email-eve të sistemit"
+        },
+        "title": "Veprime të shpejta",
+        "users": {
+          "description": "Bllokoni/zhbllokoni përdorues, menaxhoni seancat, shikoni aktivitetin",
+          "title": "Menaxhimi i përdoruesve"
+        }
+      },
+      "title": "Përmbledhje"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Ruaj ndryshimet"
+      },
+      "approvalMaintenance": {
+        "approvalHint": "Një kërkesë e trashëguar miratimi ose UUID kanonike e rrjedhës së punës.",
+        "approvalId": "ID-ja e miratimit",
+        "chain": "Zinxhiri i miratimit",
+        "decisionEvidence": "Dëshmia e vendimit",
+        "delete": "Detyro fshirjen",
+        "deleting": "Duke fshirë…",
+        "deliveryIntent": "Synimi i dërgimit",
+        "deliveryMessage": "Mesazhi i dërguar",
+        "deliveryWork": "Puna e dërgimit",
+        "description": "Hiq përgjithmonë një miratim dhe të dhënat e lidhura të miratimit. Të dhënat burimore dhe statuset e tyre ruhen.",
+        "errors": {
+          "ambiguous": "Kjo ID ekziston në të dyja depot e miratimit. Asnjë miratim nuk u fshi.",
+          "approvalInvalid": "Futni një UUID të vlefshme miratimi.",
+          "failed": "Fshirja nuk mund të përfundohej. Kontrolloni ID-në e miratimit përpara se të provoni përsëri.",
+          "invalidInput": "Futni një ID organizate dhe një UUID të vlefshme miratimi.",
+          "notFound": "Miratimi nuk u gjet në këtë organizatë.",
+          "organizationRequired": "Futni një ID organizate.",
+          "unauthorized": "Kërkohet qasje administratori në platformë."
+        },
+        "escalationAttention": "Vëmendje për përshkallëzim",
+        "escalationTransfer": "Transferimi i përshkallëzimit",
+        "legacy": "Kërkesë e trashëguar",
+        "organizationHint": "Organizata që zotëron miratimin.",
+        "organizationId": "ID-ja e organizatës",
+        "reviewBinding": "Lidhja e shqyrtimit",
+        "submittedRevision": "Rishikimi i dorëzuar",
+        "success": "Miratimi u fshi. Të dhënat e hequra:",
+        "title": "Detyro fshirjen e miratimit",
+        "workflow": "Rrjedha e punës"
+      },
+      "cookieConsent": {
+        "description": "Vendoset në faqet e vërtetimit për pajtueshmëri me GDPR",
+        "helperPrefix": "Lëreni bosh për ta çaktivizuar. Ngarkohet me",
+        "helperSuffix": "strategjinë.",
+        "scriptContent": "Përmbajtja e skriptit",
+        "scriptPlaceholder": "<!-- Shembull: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Ose skript i personalizuar -->\n<script>\n  // Logjika juaj e pëlqimit të kukive këtu\n</script>",
+        "title": "Skripti i pëlqimit të kukive"
+      },
+      "description": "Konfigurimi global i platformës për të gjitha organizatat",
+      "title": "Cilësimet e platformës",
+      "toasts": {
+        "cookieConsentSaved": "Skripti i pëlqimit të kukive u ruajt me sukses",
+        "saveFailed": "Ruajtja dështoi"
+      },
+      "turnstile": {
+        "deploymentNote": "Konfiguruar përmes variablave të mjedisit gjatë vendosjes. Organizatat Enterprise mund ta mbishkruajnë te Cilësimet e domenit.",
+        "description": "Mbrojtje nga bot-ët për formularët e vërtetimit",
+        "secretKey": "Çelësi sekret",
+        "siteKey": "Çelësi i faqes",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Rivendos te shablloni i sistemit",
+        "save": "Ruaj",
+        "sendTest": "Dërgo provë"
+      },
+      "defaultFallback": "Alternativa e parazgjedhur",
+      "defaultFallbackDescription": "Nëse ky shabllon përdor parazgjedhjen e sistemit, Z8 dërgon tekstin dhe subjektin e platformës:",
+      "description": "Menaxhoni email-et e faturimit dhe të sistemit në pronësi të platformës. Këta shabllone dërgohen vetëm me transportin e email-it të sistemit dhe nuk janë të kufizuar për një organizatë.",
+      "editBodyBeforeSaving": "Redaktoni trupin e email-it përpara se të ruani shabllonin e parë të personalizuar.",
+      "empty": "Nuk ka shabllone të disponueshme të email-eve të sistemit të platformës.",
+      "eyebrow": "Transporti i sistemit",
+      "reset": "Shablloni i email-it të sistemit u rivendos në parazgjedhje",
+      "resetDialog": {
+        "confirm": "Rivendos shabllonin e sistemit të platformës",
+        "description": "Kjo fshin mbishkrimin global të platformës për këtë shabllon email-i të sistemit dhe rikthen subjektin dhe trupin e integruar. Email-et e drejtpërdrejta të faturimit dhe të sistemit do të përdorin tekstin e parazgjedhur të platformës pas rivendosjes.",
+        "title": "Të rivendoset shablloni i sistemit të platformës?"
+      },
+      "resetFailed": "Rivendosja e shabllonit të email-it të sistemit dështoi",
+      "saved": "Shablloni i emailit të sistemit u ruajt",
+      "saveFailed": "Dështoi ruajtja e shabllonit të emailit të sistemit",
+      "status": {
+        "customized": "I personalizuar",
+        "default": "I paracaktuar"
+      },
+      "systemTemplates": "Shabllonet e sistemit",
+      "testFailed": "Dështoi dërgimi i emailit provë",
+      "testSent": "Emaili provë u dërgua në llogarinë tuaj",
+      "title": "Shabllonet e emailit të sistemit",
+      "transportNotice": "Përdorni këtë hapësirë për tekstin e faturimit global dhe emaileve të sistemit. Cilësimet e transmetimit të emailit të organizatës shpërfillen për këto mesazhe; testet dhe dërgimet e drejtpërdrejta përdorin transmetimin e sistemit të platformës."
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Deri më {date}",
+        "banned": "Bllokuar",
+        "user": "Përdoruesi"
+      },
+      "banDialog": {
+        "confirmButton": "Blloko përdoruesin",
+        "description": "Blloko {email} nga qasja në platformë.",
+        "expiry": "Data e skadimit (opsionale)",
+        "permanentBanHint": "Lëreni bosh për bllokim të përhershëm",
+        "reason": "Arsyeja",
+        "reasonPlaceholder": "Futni arsyen e bllokimit të këtij përdoruesi…",
+        "title": "Blloko përdoruesin"
+      },
+      "description": "Shikoni dhe menaxhoni të gjithë përdoruesit në platformë",
+      "filters": {
+        "allUsers": "Të gjithë përdoruesit",
+        "banned": "Bllokuar"
+      },
+      "pagination": {
+        "showing": "Duke shfaqur {from} deri në {to} nga {total} përdorues"
+      },
+      "searchLabel": "Kërkoni përdorues sipas emailit",
+      "searchPlaceholder": "Kërko me emër ose email…",
+      "sessionsDialog": {
+        "description": "Sesionet aktive për {email}",
+        "noSessions": "Nuk ka sesione aktive",
+        "revokeAll": "Revoko të gjitha sesionet",
+        "title": "Sesionet e përdoruesit",
+        "unknownDevice": "Pajisje e panjohur",
+        "unknownIp": "IP e panjohur"
+      },
+      "table": {
+        "created": "Krijuar",
+        "noOrganizations": "Nuk ka organizata",
+        "noUsersFound": "Nuk u gjet asnjë përdorues",
+        "organizations": "Organizatat",
+        "role": "Roli",
+        "user": "Përdoruesi"
+      },
+      "title": "Menaxhimi i përdoruesve",
+      "toasts": {
+        "banned": "Përdoruesi {email} është bllokuar",
+        "sessionRevoked": "Sesioni u revokua",
+        "sessionsRevoked": "U revokuan {count} sesione",
+        "unbanned": "Përdoruesit {email} iu hoq bllokimi"
+      }
+    }
+  }
+}

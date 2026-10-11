@@ -79,7 +79,6 @@
         "description": "Completed work only. Revenue uses the rates in effect on {date}.",
         "employee": "Employee",
         "hasUnpriced": "Has unpriced work",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Invoiced hours",
         "invoicedRevenue": "Invoiced revenue",
         "invoicedRevenueHint": "At the rates of its invoice drafts",
@@ -203,6 +202,7 @@
         "ratesResolvedAt": "Rates as of",
         "revenue": "Revenue",
         "roundingNote": "Amounts are summed exactly and rounded half up to the cent once per row; totals add up the rows.",
+        "snapshotRatesNote": "Revenue uses the rates in effect when this snapshot was taken.",
         "summaryTable": "Summary",
         "total": "Total",
         "uninvoicedHours": "Un-invoiced hours",
@@ -258,6 +258,7 @@
         "overBudget": "Over budget",
         "overBudgetDescription": "Budget exceeded"
       },
+      "hoursValue": "{hours} h",
       "page": {
         "accessDenied": "Access Denied",
         "description": "Analyze project hours, budget usage, and team contributions",
@@ -325,6 +326,89 @@
         "portfolioGenerated": "Portfolio report generated",
         "projectGenerated": "Report generated for {name}",
         "unexpectedError": "An unexpected error occurred"
+      }
+    },
+    "share": {
+      "action": "Share",
+      "created": {
+        "another": "Create another link",
+        "copied": "Copied",
+        "copy": "Copy",
+        "copyFailed": "Copy the link by selecting it",
+        "description": "Copy it now: it is shown only once. To share again later, create a new link.",
+        "title": "Your share link",
+        "urlLabel": "Share link"
+      },
+      "create": {
+        "failed": "The share link could not be created"
+      },
+      "dialog": {
+        "description": "Anyone with the link can view a read-only snapshot of this report for {period}, as it is now, until the link expires. Cost and margin are never shared.",
+        "title": "Share {name}"
+      },
+      "figures": {
+        "hours": "Hours only",
+        "revenue": "Hours + revenue"
+      },
+      "form": {
+        "create": "Create link",
+        "employees": "Employee breakdown",
+        "employeesDescription": "Shows each employee's hours under their real name.",
+        "expiry": "Expires after",
+        "expiryDays": "{days, plural, one {# day} other {# days}}",
+        "figures": "Figures",
+        "revenueUnavailable": "You don't see revenue on this report, so you can't share it."
+      },
+      "kind": {
+        "customer": "Customer report",
+        "project": "Project report"
+      },
+      "list": {
+        "createdBy": "Created by {name} on {date}",
+        "deletedReport": "Deleted",
+        "empty": "No share links yet.",
+        "expired": "Expired {date}",
+        "expires": "Expires {date}",
+        "failed": "Share links could not be loaded.",
+        "lastViewed": "last {date}",
+        "loading": "Loading share links…",
+        "revokedAutomatically": "Revoked automatically on {date}: the creator no longer sees every project in it",
+        "revokedBy": "Revoked by {name} on {date}",
+        "someone": "someone",
+        "title": "Links to this report",
+        "views": "{count, plural, one {# view} other {# views}}",
+        "withEmployees": "With employee breakdown",
+        "withoutEmployees": "Without employee breakdown"
+      },
+      "page": {
+        "expiresAt": "Link expires {date}",
+        "footer": "A read-only snapshot shared from Z8. Later changes to the work behind it are not shown.",
+        "loading": "Loading shared report",
+        "sharedBy": "Shared by {name}",
+        "takenAt": "Snapshot taken {date}",
+        "unavailableDescription": "The link may have expired or been revoked, or it may be incomplete. Ask the person who shared it with you for a new link.",
+        "unavailableTitle": "This link isn't available"
+      },
+      "revoke": {
+        "action": "Revoke",
+        "cancel": "Cancel",
+        "confirm": "Revoke link",
+        "description": "The link stops working at once and its snapshot is deleted. Its record and view log are kept.",
+        "done": "Link revoked",
+        "failed": "The link could not be revoked",
+        "title": "Revoke this link?"
+      },
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "views": {
+        "empty": "Nobody has opened this link yet.",
+        "failed": "Views could not be loaded.",
+        "loading": "Loading views…",
+        "unknownAgent": "Unknown browser",
+        "unknownIp": "Unknown IP address"
       }
     },
     "summary": {

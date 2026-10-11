@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Ihre letzte Einstempelung heute war um {startTime} ({timezone}). Stempeln Sie ein, wenn Sie arbeiten."
       },
+      "scheduledExportPaused": {
+        "message": "„{scheduleName}“ wurde pausiert, da der Eigentümer {ownerName} kein Organisations-Admin mehr ist. Machen Sie sich selbst oder einen anderen Organisations-Admin zum Eigentümer, um ihn fortzusetzen.",
+        "title": "Geplanter Export pausiert"
+      },
       "shiftAssigned": {
         "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
         "title": "Schicht zugewiesen"

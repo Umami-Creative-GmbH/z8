@@ -1,0 +1,442 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Adăugați o notă despre activitatea dvs. (opțional)",
+    "autoAdjusted": {
+      "description": "O pauză de {breakMinutes} minute a fost adăugată automat pentru a respecta {regulationName}.",
+      "indicator": "Ajustat automat pentru conformitate",
+      "originalDuration": "Inițial: {duration}",
+      "title": "Ajustat automat pentru conformitate",
+      "toast": {
+        "description": "A fost adăugată o pauză de {breakMinutes} minute pentru respectarea reglementărilor privind timpul de lucru.",
+        "title": "Pauză adăugată automat pentru conformitate"
+      }
+    },
+    "billable": {
+      "description": "Muncă facturabilă pentru clientul proiectului",
+      "label": "Facturabil",
+      "noCustomer": "Doar munca la un proiect cu client poate fi facturabilă"
+    },
+    "breakInProgress": {
+      "description": "Ești în pauză",
+      "since": "În pauză de la {time}"
+    },
+    "budget": "Buget",
+    "clockedOutSuccess": "Ați pontat ieșirea!",
+    "clockIn": "Pontează intrarea",
+    "clockingIn": "Se pontează intrarea…",
+    "clockingOut": "Se pontează ieșirea…",
+    "clockInSavedForReview": "Pontarea de intrare a fost salvată pe acest dispozitiv pentru examinare; neconfirmată pe server",
+    "clockInSavedForSending": "Pontarea de intrare a fost salvată pe acest dispozitiv. Este trimisă automat și nu este încă confirmată.",
+    "clockInSavedHeld": "Pontarea de intrare a fost salvată pe acest dispozitiv, dar nu a fost trimisă. Examinați înregistrările salvate.",
+    "clockInSuccess": "Intrare pontată cu succes",
+    "clockOut": "Pontează ieșirea",
+    "clockOutSavedForReview": "Pontarea de ieșire a fost salvată pe acest dispozitiv pentru examinare; neconfirmată pe server",
+    "clockOutSavedForSending": "Pontarea de ieșire a fost salvată pe acest dispozitiv. Este trimisă automat și nu este încă confirmată.",
+    "clockOutSavedHeld": "Pontarea de ieșire a fost salvată pe acest dispozitiv, dar nu a fost trimisă. Examinați înregistrările salvate.",
+    "clockOutSuccess": "Ieșire pontată cu succes",
+    "compliance": {
+      "violation": "Încălcare a conformității",
+      "warning": "Notificare de conformitate"
+    },
+    "correction": {
+      "clockIn": "Intrare",
+      "clockInDate": "Data pontajului de intrare",
+      "clockInTime": "Ora intrării",
+      "clockOut": "Ieșire",
+      "clockOutDate": "Data pontajului de ieșire",
+      "clockOutTime": "Ora ieșirii",
+      "editDescription": "Modificați înregistrarea de pontaj pentru astăzi.",
+      "editEntry": "Editează pontajul",
+      "editTitle": "Editare pontaj",
+      "errors": {
+        "invalidTimeRange": "Ora de ieșire trebuie să fie după ora de intrare",
+        "noChanges": "Cel puțin o valoare de corecție trebuie să se modifice",
+        "submitFailed": "Trimiterea corecției a eșuat",
+        "updateFailed": "Actualizarea pontajului a eșuat"
+      },
+      "noteLabel": "Notă (opțional)",
+      "notePlaceholder": "Adăugați o notă despre această modificare…",
+      "reasonLabel": "Motivul corecției",
+      "reasonPlaceholder": "Explicați de ce este necesară această corecție…",
+      "requestCorrection": "Solicită corectarea timpului",
+      "requestDescription": "Trimiteți o solicitare de corecție pentru această înregistrare de timp. Managerul dvs. va trebui să o aprobe.",
+      "requestTitle": "Solicită corectarea timpului",
+      "saveChanges": "Salvează modificările",
+      "saving": "Se salvează…",
+      "submitRequest": "Trimite solicitarea",
+      "submitting": "Se trimite…",
+      "success": {
+        "applied": "Corecția a fost aplicată cu succes",
+        "submitted": "Solicitarea de corecție a fost trimisă spre aprobarea managerului",
+        "updated": "Înregistrarea de timp a fost actualizată cu succes"
+      },
+      "timezoneNote": "Orele sunt afișate în fusul dvs. orar local ({timezone})"
+    },
+    "currentlyClockedIn": "Sunteți pontat în prezent",
+    "deadline": "Termen limită",
+    "errors": {
+      "alreadyClockedIn": "Sunteți deja pontat la intrare",
+      "appendReviewRequired": "Pontarea de intrare necesită o revizuire a istoricului dvs. de pontaj",
+      "appendReviewRequiredDesc": "Înregistrările dvs. anterioare de timp nu au putut fi verificate, prin urmare o nouă pontare de intrare nu a fost salvată. Vă rugăm să contactați administratorul.",
+      "billableNotAllowed": "Doar munca la un proiect care are un client poate fi facturabilă",
+      "breakAwaitingApproval": "Această perioadă de lucru este în așteptarea aprobării și nu poate fi editată. Adăugați pauza după ce este soluționată.",
+      "breakDurationInvalid": "Introduceți o durată a pauzei de cel puțin 1 minut.",
+      "breakInProgressOpen": "Ești în pauză. Reia activitatea înainte de a adăuga o altă pauză.",
+      "breakNotAllowed": "Nu puteți adăuga o pauză la această activitate.",
+      "breakOccupied": "Pauza se suprapune peste alte activități înregistrate.",
+      "breakPendingCorrection": "O solicitare de corecție a timpului este deja în așteptare pentru această perioadă de lucru. Adăugați pauza după ce este soluționată.",
+      "breakRetry": "Nu s-a putut adăuga pauza. Vă rugăm să încercați din nou.",
+      "breakTooLong": "Durata pauzei trebuie să fie mai scurtă decât sesiunea dvs. curentă.",
+      "clockAttributionNotAllowed": "Proiectul sau categoria selectată nu este disponibilă",
+      "clockCommandRejected": "Serverul nu a acceptat această acțiune de pontare",
+      "clockConnectionRequired": "Pontarea necesită o conexiune în această organizație. Reconectează-te și încearcă din nou.",
+      "clockInAppendReview": "Istoricul dvs. de pontaj necesită o revizuire înainte de a vă putea ponta la intrare. Vă rugăm să contactați administratorul.",
+      "clockInCollision": "Această pontare de intrare intră în conflict cu o solicitare anterioară. Vă rugăm să reîmprospătați și să încercați din nou.",
+      "clockInFailed": "Pontarea intrării a eșuat",
+      "clockInNotAllowed": "Nu vă puteți ponta la intrare.",
+      "clockInOccupied": "Acest interval se suprapune peste alte activități înregistrate",
+      "clockInRetry": "Pontarea la intrare a eșuat. Vă rugăm să încercați din nou.",
+      "clockMonthClosed": "Acest timp se află într-o lună închisă și nu poate fi modificat până când luna nu este redeschisă.",
+      "clockNotAllowedAtTime": "Pontarea nu este permisă în acest moment",
+      "clockOutAppendReview": "Istoricul dvs. de pontaj necesită o revizuire înainte de a vă putea ponta la ieșire. Vă rugăm să contactați administratorul.",
+      "clockOutBeforeClockIn": "Pontarea de ieșire trebuie să fie după pontarea de intrare",
+      "clockOutCollision": "Această pontare de ieșire intră în conflict cu o solicitare anterioară sau cu activitatea modificată. Vă rugăm să reîmprospătați și să încercați din nou.",
+      "clockOutFailed": "Pontarea ieșirii a eșuat",
+      "clockOutNotAllowed": "Nu puteți ponta ieșirea pentru această activitate.",
+      "clockOutRetry": "Pontarea la ieșire a eșuat. Vă rugăm să încercați din nou.",
+      "clockTargetNotActive": "Această perioadă de lucru nu mai este activă. Reîmprospătați starea pontajului.",
+      "clockTargetUnknown": "Perioada de lucru ce trebuie încheiată nu a fost găsită. Reîmprospătați starea pontajului.",
+      "employeeProfileNotFound": "Profilul angajatului nu a fost găsit",
+      "holidayBlocked": "Nu se poate ponta ieșirea de {holidayName}",
+      "holidayBlockedBreak": "Nu se poate relua activitatea după o pauză de {holidayName}",
+      "holidayBlockedClockIn": "Nu vă puteți ponta la intrare de {holidayName}",
+      "holidayBlockedDesc": "Această zi este marcată ca sărbătoare legală, iar înregistrările de timp nu sunt permise",
+      "invalidWorkLocation": "Tip nevalid de locație de lucru",
+      "notAuthenticated": "Neautentificat",
+      "notClockedIn": "În prezent nu sunteți pontat la intrare",
+      "notesSaveFailed": "Salvarea notelor a eșuat",
+      "projectNotAllowed": "Nu se poate atribui la acest proiect",
+      "restPeriodBlocked": "Perioada de odihnă nu s-a încheiat",
+      "restPeriodBlockedDesc": "Trebuie să finalizezi perioada de odihnă obligatorie înainte de pontare. Solicită o excepție dacă este necesar.",
+      "taskDone": "Această sarcină este finalizată, așa că nu se mai poate înregistra timp pentru ea",
+      "taskNotAllowed": "Nu se poate înregistra timp pentru această sarcină",
+      "taskNotFound": "Această sarcină nu mai există",
+      "taskOtherProject": "Această sarcină aparține altui proiect",
+      "taskProjectNotBookable": "Nu se mai poate înregistra timp pentru proiectul acestei sarcini",
+      "workCategoryNotAllowed": "Nu se poate atribui la această categorie de lucru"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Pontează intrarea",
+        "clockOut": "Pontează ieșirea",
+        "endDay": "Încheie ziua",
+        "resume": "Reia lucrul",
+        "startBreak": "Începe pauza"
+      },
+      "board": {
+        "empty": "Nimeni nu este pontat în acest moment.",
+        "title": "Cine este prezent"
+      },
+      "done": {
+        "button": "Gata",
+        "clockIn": "Pontat la intrare",
+        "clockOut": "Pontat la ieșire",
+        "endDay": "Zi încheiată",
+        "endDayNote": "Ziua ta de lucru s-a încheiat la începutul pauzei.",
+        "resume": "Înapoi la muncă",
+        "returning": "Înapoi la început în {seconds} s",
+        "startBreak": "Pauză începută",
+        "title": "Gata"
+      },
+      "employee": {
+        "back": "Anulare",
+        "endDayHint": "Încheierea zilei acum îți finalizează activitatea la începutul pauzei.",
+        "today": "Astăzi: {duration}"
+      },
+      "home": {
+        "empty": "Nimeni nu este asociat încă acestei locații. Contactează administratorul.",
+        "loadFailed": "Numele nu au putut fi încărcate. Verifică conexiunea la rețea.",
+        "loading": "Se încarcă numele…",
+        "noMatch": "Niciun nume nu corespunde căutării tale.",
+        "search": "Găsește-ți numele",
+        "title": "Atinge-ți numele pentru a te ponta la intrare sau la ieșire"
+      },
+      "loading": "Se pornește chioșcul…",
+      "offline": {
+        "banner": "Chioșcul este offline. Pontarea nu este posibilă până la restabilirea conexiunii.",
+        "refused": "Chioșcul este offline. Nu s-a înregistrat nimic; pontarea funcționează doar online."
+      },
+      "pairing": {
+        "codeDescription": "Codul este de unică folosință și expiră la 10 minute după emitere.",
+        "codeLabel": "Cod de asociere",
+        "description": "Un proprietar sau administrator creează chioșcul în Setări › Chioșcuri și îți oferă un cod de asociere.",
+        "invalidCode": "Acest cod este nevalid sau a expirat. Solicită administratorului un nou cod de asociere.",
+        "malformedCode": "Introdu codul de 10 caractere exact așa cum apare în setări.",
+        "rateLimited": "Prea multe încercări. Așteaptă câteva minute, apoi încearcă din nou.",
+        "submit": "Asociază acest dispozitiv",
+        "title": "Configurează acest chioșc",
+        "unreachable": "Chioșcul nu poate contacta serverul. Verifică conexiunea la rețea și încearcă din nou."
+      },
+      "pin": {
+        "back": "Nu ești tu? Înapoi",
+        "checking": "Se verifică…",
+        "delete": "Șterge ultima cifră",
+        "entered": "{count} cifre introduse",
+        "locked": "Prea multe coduri PIN incorecte. Codul tău PIN este blocat până la {time}. Încearcă din nou atunci sau roagă-ți managerul să îl deblocheze.",
+        "none": "Nu ai încă un cod PIN pentru chioșc. Solicită unul de la managerul tău.",
+        "notAssigned": "Nu te poți ponta la acest chioșc. Adresează-te managerului tău.",
+        "prompt": "Introdu codul PIN pentru chioșc",
+        "rateLimited": "Prea multe încercări de PIN la acest chioșc. Încearcă din nou în {seconds} secunde.",
+        "submit": "OK",
+        "wrong": "Codul PIN este incorect. Încearcă din nou."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Ești deja pontat la intrare.",
+        "billing": "Pontarea nu este disponibilă pentru organizația ta în acest moment. Contactează administratorul.",
+        "generic": "Nu a funcționat. Nu s-a înregistrat nimic. Încearcă din nou sau adresează-te managerului tău.",
+        "holiday": "Pontarea este blocată astăzi din cauza unei sărbători legale. Adresează-te managerului tău.",
+        "monthClosed": "Acest timp se află într-o lună închisă și nu poate fi modificat. Adresați-vă managerului dvs.",
+        "noBreak": "Nu ești în pauză.",
+        "notClockedIn": "Nu ești pontat la intrare.",
+        "onBreak": "Ești deja în pauză.",
+        "unconfirmed": "Kiosk-ul nu a putut confirma dacă datele au fost salvate. Verificați-vă starea înainte de a încerca din nou.",
+        "underReview": "Orele dvs. de astăzi sunt în curs de revizuire. Adresați-vă managerului dvs."
+      },
+      "retry": "Încercați din nou",
+      "revoked": {
+        "description": "Acest kiosk nu mai poate fi utilizat pentru pontare. Vă rugăm să contactați administratorul.",
+        "pairAgain": "Asociați cu un cod nou",
+        "title": "Kiosk revocat"
+      },
+      "state": {
+        "clockedIn": "Pontat de la {time}",
+        "clockedOut": "Nepontat",
+        "onBreak": "În pauză de la {time}"
+      },
+      "unreachableDescription": "Kiosk-ul nu poate contacta serverul. Verificați conexiunea la rețea; pontarea funcționează doar online.",
+      "unreachableTitle": "Kiosk offline"
+    },
+    "manualEntry": {
+      "addButton": "Adaugă o înregistrare manuală",
+      "clockInLabel": "Pontează intrarea",
+      "clockOutLabel": "Pontaj ieșire",
+      "context": {
+        "choicesCleared": "Un proiect sau o categorie selectată nu mai este disponibilă și a fost eliminată.",
+        "loadFailed": "Nu s-au putut încărca fusul orar și opțiunile pentru această înregistrare.",
+        "loading": "Se încarcă opțiunile înregistrării…",
+        "notAuthorized": "Nu puteți crea înregistrări de timp pentru acest angajat.",
+        "organizationFallback": "{employee} nu are un fus orar personal, așadar se utilizează fusul orar al organizației.",
+        "retry": "Încercați din nou",
+        "targetChanged": "Angajatul s-a schimbat, așadar proiectul și categoria au fost eliminate.",
+        "targetTimezone": "Orele sunt în fusul orar al lui {employee}: {timezone}",
+        "taskCleared": "O sarcină selectată nu mai este disponibilă și a fost eliminată.",
+        "thisEmployee": "acest angajat",
+        "utcFallback": "Nici {employee} și nici organizația nu au un fus orar setat, așadar se utilizează UTC."
+      },
+      "dateLabel": "Dată",
+      "description": "Creează o înregistrare de timp pentru o dată anterioară. Poate fi necesară aprobarea, în funcție de politica de modificări a organizației tale.",
+      "errors": {
+        "collision": "Această înregistrare intră în conflict cu o trimitere anterioară sau cu o activitate modificată. Verificați înregistrările existente.",
+        "createFailed": "Crearea înregistrării de timp a eșuat",
+        "futureDate": "Nu se pot crea înregistrări pentru date viitoare",
+        "futureTime": "Nu se pot crea înregistrări pentru ore din viitor",
+        "historyReview": "Acest istoric de timp necesită o revizuire înainte de a putea salva înregistrări noi. Contactați administratorul.",
+        "invalidTime": "Introduceți o oră completă și validă",
+        "invalidTimeRange": "Ora de ieșire trebuie să fie după ora de intrare",
+        "nonexistentTime": "Această oră nu există la această dată deoarece se trece la ora de vară (ora se dă înainte).",
+        "occurrenceRequired": "Această oră apare de două ori la această dată. Alegeți la care dintre ele vă referiți.",
+        "overlap": "Acest interval se suprapune peste activități deja înregistrate. Alegeți un interval care nu se suprapune peste înregistrările existente.",
+        "reconfirm": "Fusul orar sau orele s-au modificat. Examinați înregistrarea și trimiteți din nou.",
+        "refresh": "Setările pentru introducerea manuală s-au modificat. Verificați înregistrarea și trimiteți-o din nou.",
+        "tooLong": "Perioada de lucru nu poate depăși 24 de ore"
+      },
+      "occurrence": {
+        "earlier": "Prima, {offset}",
+        "later": "A doua, {offset}",
+        "legend": "{time} apare de două ori la această dată. La care vă referiți?"
+      },
+      "reasonLabel": "Motiv",
+      "reasonPlaceholder": "Descrie ce ai lucrat…",
+      "recovery": {
+        "check": "Verifică starea",
+        "checkFailed": "Această înregistrare nu a putut fi verificată acum. Încercați din nou mai târziu.",
+        "contextMismatch": "Sunteți conectat la un alt cont sau la o altă organizație. Comutați înapoi pentru a gestiona această înregistrare.",
+        "description": "Aceste înregistrări au fost trimise din această filă fără un rezultat confirmat. Nimic nu va fi retrimis decât dacă alegeți acest lucru.",
+        "discard": "Ignoră",
+        "editAsNew": "Editează ca înregistrare nouă",
+        "notCommitted": "Nu s-a găsit nicio salvare.",
+        "notCommittedToast": "Nu s-a găsit nicio salvare pentru această înregistrare. Reîncercați identic sau editați-o ca o nouă înregistrare.",
+        "retry": "Reîncearcă exact",
+        "saved": "Această înregistrare a fost salvată.",
+        "savedForApproval": "Această înregistrare a fost salvată și trimisă spre aprobare. Starea sa actuală: {status}.",
+        "status": {
+          "approved": "aprobat",
+          "pending": "în așteptare",
+          "rejected": "respins"
+        },
+        "stillUncertain": "Încă neconfirmată. Înregistrarea este păstrată; încercați din nou când sunteți din nou online.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Înregistrări neconfirmate",
+        "uncertain": "Neconfirmată. Este posibil să fi fost deja salvată.",
+        "uncertainToast": "Nu am putut confirma dacă această înregistrare a fost salvată. Este păstrată la Înregistrări neconfirmate, unde puteți reîncerca identic sau îi puteți verifica starea.",
+        "unsupported": "Starea acesteia nu poate fi verificată. Este posibil să fi fost deja salvată.",
+        "unsupportedToast": "Starea acestei înregistrări nu poate fi verificată acum. Reîncercarea trimite exact aceeași înregistrare."
+      },
+      "submit": "Creează înregistrare",
+      "submitting": "Se creează…",
+      "success": {
+        "adjusted": "Orele au fost ajustate la {clockIn} - {clockOut} pentru a evita suprapunerea",
+        "created": "Înregistrarea de timp a fost creată cu succes",
+        "pendingApproval": "Înregistrarea de timp a fost trimisă spre aprobarea managerului"
+      },
+      "title": "Adaugă înregistrare manuală de timp",
+      "titleForEmployee": "Adaugă o înregistrare manuală de timp pentru {employee}"
+    },
+    "noCategory": "Fără categorie (100%)",
+    "noProject": "Niciun proiect",
+    "notesPlaceholder": "La ce ați lucrat?",
+    "notesSaved": "Note salvate",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "O cerere de absență pentru {dates} este în așteptarea unei decizii.",
+        "liveWork": "Activitatea începută la {start} este încă în desfășurare.",
+        "manualWork": "Activitatea manuală din {start} este în așteptarea unei decizii.",
+        "timeCorrection": "O corecție de timp pentru activitatea din {start} este în așteptarea unei decizii."
+      },
+      "description": "Confirmați că orele de lucru și absențele dvs. pentru fiecare perioadă sunt complete și corecte.",
+      "opensOn": "Puteți trimite începând cu {date}.",
+      "refusal": {
+        "alreadySubmitted": "Această perioadă a fost deja trimisă.",
+        "noApprover": "Nimeni nu poate aproba această perioadă încă. Solicitați unui administrator să vă atribuie un manager.",
+        "notEnded": "Puteți trimite această perioadă începând cu ultima sa zi.",
+        "notExpected": "Această perioadă nu trebuie trimisă.",
+        "periodOpen": "Această perioadă este încă deschisă"
+      },
+      "rejectionReason": "Motiv: {reason}",
+      "status": {
+        "approved": "Aprobat",
+        "awaiting": "În așteptarea trimiterii",
+        "rejected": "Respins",
+        "sentBack": "Trimis înapoi după o modificare",
+        "submitted": "Trimis"
+      },
+      "submit": "Trimite",
+      "submitFailed": "Perioada nu a putut fi trimisă",
+      "submitted": "Perioadă trimisă spre aprobare",
+      "title": "Trimiteri de perioade",
+      "withdraw": "Retrage",
+      "withdrawFailed": "Trimiterea nu a putut fi retrasă",
+      "withdrawn": "Trimitere retrasă",
+      "withdrawRefused": "Această trimitere a fost deja decisă și nu mai poate fi retrasă."
+    },
+    "project": "Proiect",
+    "quickBreak": {
+      "addBreak": "Adăugare pauză",
+      "apply": "Aplică",
+      "applying": "Se aplică…",
+      "durationLabel": "Durata pauzei în minute",
+      "errors": {
+        "addFailed": "Nu s-a putut adăuga pauza. Vă rugăm să încercați din nou.",
+        "durationTooShort": "Introduceți o durată a pauzei de cel puțin 1 minut.",
+        "failed": "Nu s-a putut adăuga pauza. Vă rugăm să încercați din nou."
+      },
+      "helper": "Înregistrați o pauză care se încheie acum și rămâneți pontat.",
+      "success": "Pauză adăugată",
+      "successDescription": "Sunteți încă pontat.",
+      "title": "Adăugare pauză"
+    },
+    "readyToClockIn": "Sunteți gata să începeți lucrul?",
+    "restPeriodWarning": "Avertisment privind perioada de odihnă",
+    "restPeriodWarningMessage": "Nu ați efectuat perioada de odihnă obligatorie. Pontarea acum va fi înregistrată ca o încălcare.",
+    "selectCategory": "Selectează o categorie",
+    "selectProject": "Selectați un proiect",
+    "sessionReminders": {
+      "breakOpen": "{remaining} min de pauză rămase",
+      "breakRequired": "Pauză obligatorie acum",
+      "breakRequiredMessage": "Luați o pauză înainte de a continua sesiunea.",
+      "breakSoon": "Pauză în curând",
+      "dismissBreak": "Ignoră mementoul de pauză",
+      "dismissHydration": "Ignoră mementoul de hidratare",
+      "hydration": "Hidratare",
+      "hydrationProgress": "{intake}/{goal} pahare astăzi",
+      "logOneGlass": "+1 pahar",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min până la pauză",
+      "snoozeToday": "Amână astăzi",
+      "subtitle": "În timpul acestei ture",
+      "title": "Mementouri sesiune"
+    },
+    "startedAt": "Început la",
+    "summary": {
+      "baseWorked": "Ore de bază lucrate",
+      "surcharge": "Spor",
+      "thisMonth": "Luna aceasta",
+      "thisWeek": "Săptămâna aceasta",
+      "today": "Astăzi"
+    },
+    "table": {
+      "active": "Activ",
+      "approved": "Înregistrare de timp aprobată",
+      "approveEntry": "Aprobați înregistrarea",
+      "approveFailed": "Aprobarea înregistrării a eșuat",
+      "approving": "Se aprobă...",
+      "billable": "Facturabil",
+      "clockIn": "Pontare intrare",
+      "clockOut": "Pontare ieșire",
+      "corrected": "Corectat",
+      "date": "Dată",
+      "description": "Descriere",
+      "duration": "Durată",
+      "emptyState": "Nu s-au găsit înregistrări de timp pentru această săptămână.",
+      "recordedLocalTime": "Ora locală înregistrată",
+      "rowActions": "Acțiuni privind înregistrarea timpului",
+      "title": "Înregistrări de timp",
+      "viewCalendar": "Vizualizare calendar"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (finalizată)",
+      "empty": "Nicio sarcină găsită",
+      "label": "Sarcină",
+      "none": "Nicio sarcină",
+      "search": "Caută sarcini…"
+    },
+    "timeline": {
+      "dayPicker": "Selector de zi pentru cronologie",
+      "emptyDescription": "Nu există încă ture, absențe sau pontaje pentru ziua selectată.",
+      "emptyTitle": "Nicio activitate înregistrată pentru această zi.",
+      "nextDay": "Ziua următoare",
+      "previousDay": "Ziua precedentă",
+      "title": "Cronologia zilei de lucru",
+      "today": "Astăzi",
+      "unavailableDescription": "Pontajul funcționează în continuare. Încercați să reîmprospătați această vizualizare mai târziu.",
+      "unavailableTitle": "Cronologie indisponibilă"
+    },
+    "timezoneMismatch": {
+      "cancel": "Anulare",
+      "continueOnce": "Continuă o singură dată",
+      "description": "Fusul orar al dispozitivului dvs. este {browserTimezone}, dar fusul orar salvat este {savedTimezone}.",
+      "help": "Alegeți dacă doriți să utilizați fusul orar al dispozitivului doar pentru această acțiune sau să actualizați fusul orar salvat înainte de a continua.",
+      "title": "Confirmare fus orar pentru această înregistrare",
+      "updateTimezoneAndContinue": "Actualizează fusul orar și continuă"
+    },
+    "title": "Pontaj",
+    "unknownCategory": "Categorie necunoscută",
+    "unknownProject": "Proiect necunoscut",
+    "welcomeBack": "Bine ați revenit, {name}",
+    "workCategory": "Categorie de lucru",
+    "workLocation": "Locație de desfășurare a activității",
+    "workLocationHome": "Acasă",
+    "workLocationOffice": "Birou",
+    "workLocationOther": "Altul",
+    "workLocationRemote": "La distanță"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Obiectivul zilnic a fost atins! Țineți-o tot așa!",
+      "logError": "Nu s-a putut înregistra consumul de apă",
+      "logged": "Consum de apă înregistrat! {progress}% din obiectivul zilnic",
+      "snoozed": "Mementourile pentru hidratare au fost amânate pentru astăzi",
+      "snoozeError": "Amânarea mementourilor a eșuat"
+    }
+  }
+}

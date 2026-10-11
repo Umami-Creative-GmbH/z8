@@ -1,0 +1,148 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Kontrollet e aksesit përmbledhin vetëm ngjarjet e ndjeshme të regjistrit të auditimit që janë regjistruar tashmë sot.",
+        "auditEvidence": "Provat e auditimit përdorin konfigurimin e eksportit të auditimit të drejtpërdrejtë, kërkesat e paketës së auditimit dhe rezultatet e fundit të verifikimit.",
+        "workforceCompliance": "Pajtueshmëria e fuqisë punëtore përdor shkeljet e politikave të punës gjatë 7 ditëve të fundit dhe kërkesat pezull për përjashtim."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Punët e fundit të dështuara: {failedRequests}; verifikimet e fundit të pavlefshme: {invalidVerifications}",
+          "title": "U zbuluan dështime të provave të auditimit"
+        },
+        "auditPackFailure": {
+          "description": "Punët e fundit të dështuara: {failedRequests}",
+          "title": "Gjenerimi i paketës së auditimit dështoi"
+        },
+        "auditVerificationFailure": {
+          "description": "Verifikimet e fundit të pavlefshme: {invalidVerifications}",
+          "title": "Verifikimi i auditimit dështoi"
+        },
+        "sensitiveAction": {
+          "description": "{action} në {entityType}",
+          "title": "Veprim i ndjeshëm: {action}"
+        },
+        "workforceFindings": {
+          "description": "Pushim: {restPeriodViolations}, Politika të tjera: {generalPolicyViolations}, Orë jashtë orarit: {overtimeViolations}",
+          "title": "Gjetjet e fundit mbi politikat e fuqisë punëtore"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Veprimi më i fundit i ndjeshëm: {action}",
+          "latestSensitiveActionNone": "Veprimi më i fundit i ndjeshëm: asnjë",
+          "noSensitiveEvents": "Nuk është regjistruar asnjë ndryshim i ndjeshëm i kontrollit në 24 orët e fundit.",
+          "recentSensitiveEvents": "Ngjarjet e fundit të ndjeshme: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Çelësi aktiv i nënshkrimit: {fingerprint}",
+          "lastSuccessfulAuditPack": "Paketa e fundit e suksesshme e auditimit: {timestamp}",
+          "missingSigningKey": "Çelësat e nënshkrimit nuk janë konfiguruar ende.",
+          "noSuccessfulAuditPack": "Asnjë paketë e suksesshme auditimi nuk është regjistruar ende.",
+          "recentFailedJobs": "Punët e fundit të dështuara të paketës së auditimit: {count}",
+          "recentInvalidVerifications": "Përpjekjet e fundit të pavlefshme të verifikimit: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Ngjarjet e kontrollit të aksesit nuk mund të ngarkoheshin.",
+          "auditEvidence": "Të dhënat e provave të auditimit nuk mund të ngarkoheshin.",
+          "workforceCompliance": "Të dhënat e pajtueshmërisë së fuqisë punëtore nuk mund të ngarkoheshin."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Shkelje të tjera të politikave: {count}",
+          "overtimeViolations": "Shkelje të orarit shtesë: {count}",
+          "pendingExceptions": "Përjashtime në pritje: {count}",
+          "restPeriodViolations": "Shkelje të periudhës së pushimit: {count}"
+        }
+      },
+      "footer": {
+        "lastRefreshed": "Përditësuar së fundmi: {time}"
+      },
+      "links": {
+        "inspectCompliance": "Inspekto pajtueshmërinë",
+        "inspectInAuditLog": "Inspekto në regjistrin e auditimit",
+        "openAuditExport": "Hap eksportin e auditimit",
+        "openAuditLog": "Hap regjistrin e auditimit",
+        "openComplianceSettings": "Hap cilësimet e përputhshmërisë",
+        "reviewAuditExport": "Shqyrto eksportin e auditimit"
+      },
+      "overview": "Përmbledhje e pajtueshmërisë",
+      "recentEvents": {
+        "empty": "Nuk u zbulua asnjë ngjarje kritike e kohëve të fundit.",
+        "title": "Ngjarjet kritike të fundit"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Ndryshimet e ndjeshme të kontrollit kërkojnë shqyrtim",
+            "healthy": "Nuk është regjistruar asnjë ndryshim i ndjeshëm kontrolli kohët e fundit",
+            "warning": "U zbuluan ndryshime të fundit të kontrollit"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Dëshmitë e auditimit kërkojnë vëmendje",
+            "healthy": "Sinjalet e dëshmive të auditimit duken në rregull",
+            "warning": "Dëshmitë e auditimit janë vetëm pjesërisht gati"
+          }
+        },
+        "unavailable": {
+          "headline": "Sinjali është përkohësisht i padisponueshëm"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Shkeljet e politikave të fuqisë punëtore kërkojnë shqyrtim",
+            "healthy": "Nuk u zbulua asnjë problem i fundit me politikat e fuqisë punëtore",
+            "warning": "Përputhshmëria e fuqisë punëtore po devijon"
+          }
+        }
+      },
+      "status": {
+        "critical": "kritike",
+        "healthy": "në rregull",
+        "unavailable": "e padisponueshme",
+        "warning": "paralajmërim"
+      },
+      "summary": {
+        "critical": "Rreziqet kritike të përputhshmërisë kërkojnë vëmendje",
+        "healthy": "Nuk u zbulua asnjë problem aktiv në sinjalet e monitoruara",
+        "unavailable": "Disa sinjale përputhshmërie janë të padisponueshme",
+        "warning": "Sinjalet e përputhshmërisë kërkojnë shqyrtim"
+      }
+    },
+    "exception": {
+      "approved": "Përjashtimi u miratua",
+      "approvedDescription": "Përjashtimi i përputhshmërisë është miratuar.",
+      "approveFailed": "Miratimi dështoi",
+      "plannedDuration": "E planifikuar",
+      "plannedDurationHelp": "Vlerësoni sa kohë shtesë parashikoni se do t'ju nevojitet përtej kufirit.",
+      "reason": "Arsyeja e përjashtimit",
+      "reasonPlaceholder": "Shpjegoni pse ju nevojitet ky përjashtim (p.sh., afat urgjent i projektit, takim kritik me klientin)...",
+      "reasonRequired": "Kërkohet arsyeja",
+      "reasonRequiredDescription": "Ju lutemi jepni një arsye për kërkesën tuaj të përjashtimit.",
+      "rejectDescription": "Jepni një arsye për refuzimin e kësaj kërkese përjashtimi (opsionale)",
+      "rejected": "Përjashtimi u refuzua",
+      "rejectedDescription": "Përjashtimi i përputhshmërisë është refuzuar.",
+      "rejectFailed": "Refuzimi dështoi",
+      "rejectionPlaceholder": "Vendosni arsyen për refuzimin e këtij përjashtimi...",
+      "rejectionReason": "Arsyeja e refuzimit",
+      "rejectTitle": "Refuzo kërkesën për përjashtim",
+      "requestDescription": "Kërkoni miratim paraprak nga menaxheri juaj për të vazhduar pavarësisht kufizimeve të përputhshmërisë. Përjashtimet e miratuara janë të vlefshme për 24 orë.",
+      "requestedAt": "E kërkuar",
+      "requestFailed": "Kërkesa dështoi",
+      "requestSubmitted": "Kërkesa për përjashtim u dërgua",
+      "requestSubmittedDescription": "Menaxheri juaj do të njoftohet dhe mund të miratojë ose refuzojë kërkesën tuaj.",
+      "requestTitle": "Kërko përjashtim të përputhshmërisë",
+      "submit": "Dërgo kërkesën",
+      "type": "Lloji i përjashtimit"
+    },
+    "hasApprovedException": "Keni një përjashtim të miratuar. Mund të vazhdoni.",
+    "moreAlerts": "më shumë",
+    "noExceptions": "Nuk ka kërkesa pezull për përjashtim",
+    "pendingExceptions": "Kërkesat pezull për përjashtim",
+    "pendingExceptionsDescription": "Shqyrtoni kërkesat për përjashtim që kërkojnë miratimin tuaj",
+    "requestException": "Kërko përjashtim",
+    "restPeriodMessage": "Ju duhen edhe {time} pushim përpara se të mund të regjistroni hyrjen. Hyrja tjetër e lejuar: {nextTime}",
+    "restPeriodRequired": "Kërkohet periudhë pushimi"
+  }
+}

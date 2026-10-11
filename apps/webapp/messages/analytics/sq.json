@@ -1,0 +1,203 @@
+{
+  "analytics": {
+    "access": {
+      "noEmployeeFeature": "shiko analitikën",
+      "restrictedDescription": "Analitika është e disponueshme vetëm për administratorët dhe menaxherët.",
+      "restrictedTitle": "Qasje e kufizuar"
+    },
+    "common": {
+      "days": "Ditë",
+      "employee": "Punonjës",
+      "employees": "Punonjës",
+      "hours": "Orë",
+      "loadingOrganizationSettings": "Po ngarkohen cilësimet e organizatës para aktivizimit të konfigurimeve paraprake.",
+      "noDataAvailable": "Nuk ka të dhëna të disponueshme",
+      "noDataForPeriod": "Nuk ka të dhëna të disponueshme për periudhën e zgjedhur",
+      "overtime": "Orë shtesë",
+      "overtimeHours": "Orët shtesë",
+      "team": "Ekipi",
+      "totalHours": "Totali i orëve",
+      "unavailable": "I padisponueshëm",
+      "undertime": "Mungesë orësh",
+      "undertimeHours": "Orë të munguara"
+    },
+    "layout": {
+      "description": "Njohuri gjithëpërfshirëse mbi performancën e ekipit, orët e punës dhe modelet e mungesave",
+      "tabs": {
+        "overtimeBurnDown": "Konsumimi i orëve shtesë",
+        "overview": "Përmbledhje",
+        "teamPerformance": "Performanca e ekipit",
+        "vacationTrends": "Trendet e pushimeve",
+        "workHours": "Orët e punës"
+      },
+      "title": "Analitika"
+    },
+    "overtimeBurnDown": {
+      "breakdown": "Zbërthimi",
+      "breakdownDescription": "Detajet e konsumimit të orëve shtesë në nivelin {label}",
+      "breakdownEmpty": "Nuk ka ende të dhëna zbërthimi të disponueshme",
+      "byCostCenter": "Sipas qendrës së kostos",
+      "byManager": "Sipas menaxherit",
+      "byTeam": "Sipas ekipit",
+      "costCenter": "Qendra e kostos",
+      "currentOvertime": "Orët shtesë aktuale",
+      "description": "Gjurmoni uljen javore të orëve shtesë nëpër ekipe.",
+      "errors": {
+        "loadData": "Dështoi ngarkimi i të dhënave të reduktimit të orëve shtesë"
+      },
+      "filters": {
+        "allCostCenters": "Të gjitha qendrat e kostos",
+        "allManagers": "Të gjithë menaxherët",
+        "allTeams": "Të gjitha ekipet",
+        "breakdownLabel": "Dimensioni i zbërthimit",
+        "costCenterLabel": "Filtri i qendrës së kostos",
+        "managerLabel": "Filtri i menaxherit",
+        "teamLabel": "Filtri i ekipit"
+      },
+      "improvingGroups": "Grupet në përmirësim",
+      "improvingGroupsDescription": "Grupet me rënie të orëve shtesë",
+      "manager": "Menaxheri",
+      "previousOvertime": "Orët shtesë të mëparshme",
+      "previousPeriodDescription": "Krahasuar me periudhën e mëparshme",
+      "selectedRangeDescription": "Për intervalin e përzgjedhur të datave dhe filtrat",
+      "title": "Reduktimi i orëve shtesë",
+      "trendDirection": "Drejtimi i trendit",
+      "trendDirectionDescription": "Trajektorja e përgjithshme e orëve shtesë",
+      "trend": {
+        "down": "Rënie",
+        "flat": "Pa ndryshim",
+        "up": "Rritje"
+      },
+      "weeklyTrend": {
+        "description": "Trendi javor i uljes së orëve shtesë",
+        "empty": "Nuk ka ende të dhëna për trendin",
+        "title": "Trendi javor i reduktimit"
+      },
+      "weekOverWeek": "Javë pas jave"
+    },
+    "overview": {
+      "absencePatterns": {
+        "description": "Shpërndarja e mungesave sipas kategorisë",
+        "title": "Modelet e mungesave"
+      },
+      "approvalBottlenecks": {
+        "approvedRate": "{rate}% të miratuara",
+        "avgDecision": "{hours}h vendimmarrje mesatare",
+        "byManager": "Sipas menaxherit",
+        "byTeam": "Sipas ekipit",
+        "byType": "Sipas llojit",
+        "description": "Ekipet dhe llojet e kërkesave me punë në pritje ose paralajmërime SLA",
+        "empty": "Nuk u gjetën pengesa në miratim",
+        "pendingSummary": "{pendingCount} në pritje - {slaWarnings} paralajmërime SLA",
+        "title": "Pengesat e miratimit",
+        "unavailable": "Pengesat e miratimit nuk mund të ngarkoheshin"
+      },
+      "kpis": {
+        "approvalRate": {
+          "description": "E kërkesave të shqyrtuara të miratuara",
+          "title": "Shkalla e miratimit",
+          "unavailableDescription": "Analitika e miratimeve nuk mund të ngarkohej"
+        },
+        "avgWorkHours": {
+          "description": "Për punonjës në periudhën e përzgjedhur",
+          "title": "Orë mesatare pune"
+        },
+        "totalAbsenceDays": {
+          "description": "Ditë totale në periudhën e përzgjedhur",
+          "title": "Ditë totale mungese"
+        },
+        "totalEmployees": {
+          "description": "Punonjës aktivë në organizatë",
+          "title": "Punonjës gjithsej"
+        }
+      },
+      "loadingLabel": "Po ngarkohen të dhënat analitike",
+      "workHoursByTeam": {
+        "description": "Totali i orëve të punës të regjistruara për çdo ekip",
+        "title": "Orët e punës sipas ekipit"
+      }
+    },
+    "teamPerformance": {
+      "avgPerEmployee": "Mes. për punonjës",
+      "comparison": {
+        "description": "Totali i orëve të punës sipas ekipit për periudhën e zgjedhur",
+        "title": "Krahasimi i ekipeve"
+      },
+      "details": {
+        "description": "Ndarja e orëve të punës sipas ekipit dhe punonjësit",
+        "title": "Detajet e performancës së ekipit"
+      },
+      "employeeCount": "Numri i punonjësve",
+      "errors": {
+        "loadData": "Ngarkimi i të dhënave të performancës së ekipit dështoi"
+      },
+      "onTrack": "Në plan",
+      "variance": {
+        "description": "Diferenca e orëve nga orët e pritshme të punës",
+        "empty": "Nuk ka të dhëna të disponueshme për diferencën",
+        "title": "Orët shtesë dhe orët mangët"
+      }
+    },
+    "vacationTrends": {
+      "allocated": "Të alokuara",
+      "balance": {
+        "description": "Ditët e alokuara, të marra dhe të mbetura sipas punonjësit",
+        "title": "Bilanci i pushimeve"
+      },
+      "daysRemaining": "{count} ditë të mbetura",
+      "daysTaken": "{count} ditë të marra",
+      "errors": {
+        "loadData": "Ngarkimi i të dhënave të trendeve të pushimeve dështoi"
+      },
+      "monthlyUsage": {
+        "description": "Ditët e pushimit të marra për çdo muaj",
+        "empty": "Nuk ka të dhëna mujore të disponueshme për përdorimin",
+        "title": "Përdorimi mujor i pushimeve"
+      },
+      "peakMonths": {
+        "description": "Muajt me aktivitetin më të lartë të pushimeve",
+        "empty": "Nuk ka të dhëna të disponueshme për muajt me kulm",
+        "title": "Muajt me kulmin e pushimeve"
+      },
+      "remaining": "Të mbetura",
+      "taken": "Të marra",
+      "utilization": {
+        "description": "Përdorimi i përgjithshëm i ditëve të pushimit në të gjithë organizatën",
+        "overall": "Shfrytëzimi i përgjithshëm",
+        "title": "Shfrytëzimi i pushimeve"
+      },
+      "utilizationLabel": "Shfrytëzimi",
+      "utilizationPercent": "% e shfrytëzimit",
+      "vacationDays": "Ditët e pushimit"
+    },
+    "workHours": {
+      "actualHours": "Orët aktuale",
+      "avgHoursPerWeek": "Mes. orë/javë",
+      "daily": {
+        "description": "Orët aktuale kundrejt orëve të pritshme të punës në ditë",
+        "empty": "Nuk ka të dhëna të disponueshme për orët ditore",
+        "title": "Orët ditore të punës"
+      },
+      "distribution": {
+        "description": "Krahasimi i orëve të punës së punonjësve (shirit horizontal)",
+        "empty": "Nuk ka të dhëna të disponueshme për shpërndarjen",
+        "title": "Shpërndarja e orëve të punës"
+      },
+      "employeeComparison": {
+        "description": "Totali i orëve dhe diferenca nga e pritshmja sipas punonjësit",
+        "title": "Orët e punës së punonjësit"
+      },
+      "errors": {
+        "loadData": "Ngarkimi i të dhënave analitike të orëve të punës dështoi"
+      },
+      "expectedHours": "Orët e pritshme",
+      "hoursPerWeekAbbreviation": "orë/javë",
+      "variance": "Diferenca",
+      "varianceTrend": {
+        "description": "Diferenca e orëve nga orët e pritshme të punës me kalimin e kohës",
+        "empty": "Nuk ka të dhëna të disponueshme për trendin",
+        "title": "Trendi i orëve shtesë dhe orëve mangët"
+      }
+    }
+  }
+}

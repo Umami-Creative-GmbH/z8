@@ -1,0 +1,277 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Përshtatni mënyrën se si shfaqen ngjarjet e mungesave në kalendarët e jashtëm.",
+        "descriptionPlaceholder": "Mungesa e regjistruar në Z8",
+        "descriptionTemplate": "Përshkrimi i ngjarjes (opsionale)",
+        "title": "Përshtatja e ngjarjes",
+        "titleHelp": "Variablat e disponueshëm: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Shablloni i titullit të ngjarjes"
+      },
+      "description": "Konfiguroni ofruesit e kalendarit, burimet ICS dhe cilësimet e sinkronizimit për organizatën tuaj",
+      "icsFeeds": {
+        "description": "Lejoni përdoruesit të abonohen në kalendarët e mungesave përmes formatit ICS/iCal.",
+        "personal": "Burimet personale ICS",
+        "personalDesc": "Punonjësit mund të krijojnë abonime kalendari vetëm për lexim për mungesat e tyre",
+        "team": "Burimet ICS të ekipit",
+        "teamDesc": "Udhëheqësit e ekipit mund të krijojnë burime të përbashkëta që shfaqin të gjitha mungesat e ekipit",
+        "title": "Burimet ICS"
+      },
+      "integrations": {
+        "description": "Kalendarët e lidhur të punonjësve që përfshihen brenda fushëveprimit aktual të cilësimeve tuaja.",
+        "empty": "Nuk ka ende integrime kalendari të disponueshme në fushëveprimin tuaj aktual.",
+        "needsAttention": "Kërkon vëmendje",
+        "pushOff": "Push joaktiv",
+        "pushOn": "Push aktiv",
+        "title": "Integrimet përkatëse"
+      },
+      "managerDescription": "Shqyrtoni integrimet e kalendarit që ndikojnë në ekipet, fushat dhe projektet tuaja të menaxhuara.",
+      "noProvidersConfigured": "Nuk është konfiguruar asnjë ofrues kalendari. Kontaktoni administratorin e sistemit për të konfiguruar kredencialet OAuth.",
+      "notConfigured": "I pakonfiguruar",
+      "providers": {
+        "description": "Aktivizoni ose çaktivizoni sinkronizimin e kalendarit për ofrues të caktuar. Punonjësit mund të lidhin llogaritë e tyre kur është i aktivizuar.",
+        "google": "Google Calendar",
+        "googleDesc": "Sinkronizoni mungesat me Google Calendar",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Sinkronizoni mungesat me Outlook Calendar",
+        "title": "Ofruesit e kalendarit"
+      },
+      "readOnlyManagerNotice": "Menaxherët mund të shqyrtojnë mbulimin e sinkronizimit të kalendarit për ekipet, fushat dhe projektet e tyre, por vetëm administratorët e organizatës mund t'i ndryshojnë këto cilësime.",
+      "saved": "Cilësimet e kalendarit u ruajtën",
+      "saveError": "Ruajtja e cilësimeve të kalendarit dështoi",
+      "syncBehavior": {
+        "autoSync": "Sinkronizim automatik pas miratimit",
+        "autoSyncDesc": "Sinkronizo automatikisht mungesat në kalendarët e lidhur kur miratohen",
+        "conflictRequired": "Kërko kontroll për konflikte",
+        "conflictRequiredDesc": "Kërkoni nga punonjësit të kontrollojnë për konflikte në kalendar përpara se të dërgojnë mungesat",
+        "description": "Konfiguroni mënyrën se si funksionon sinkronizimi i kalendarit për organizatën tuaj.",
+        "title": "Sjellja e sinkronizimit"
+      },
+      "title": "Sinkronizimi i kalendarit",
+      "titleTemplatePlaceholder": "Jashtë zyrës - {categoryName}"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Lidh dhe shiko paraprakisht",
+        "description": "Futni një token identifikimi (bearer token) të API-së së klientit Clockin. Tokeni përdoret vetëm për këtë sesion importimi.",
+        "title": "Tokeni i API-së së Clockin",
+        "token": "Bearer Token"
+      },
+      "mapping": {
+        "description": "Përputhni punonjësit e Clockin me punonjësit ekzistues të Z8. Përputhjet automatike sipas email-it janë të parazgjedhura.",
+        "mapEmployee": "Përputh",
+        "noEmail": "Nuk ka email në Clockin",
+        "skipEmployee": "Kapërce këtë punonjës",
+        "summary": "Punonjësit e përputhur",
+        "title": "Përputh punonjësit"
+      },
+      "preview": {
+        "absences": "Mungesat",
+        "description": "Shqyrtoni cilat të dhëna të Clockin janë të disponueshme përpara se të përputhni punonjësit dhe të skanoni regjistrimet.",
+        "employees": "Punonjësit",
+        "next": "Përputh punonjësit",
+        "title": "Pamja paraprake e Clockin",
+        "workdays": "Ditët e punës"
+      },
+      "review": {
+        "noProductionRecords": "Nuk është importuar ende asnjë regjistrim prodhimi.",
+        "openReview": "Hap rishikimin",
+        "scanningDescription": "Grupi i rishikimit {reviewBatchId} po skanohet. Rishikoni dhe miratoni të dhënat para regjistrimit përfundimtar.",
+        "startedTitle": "Skanimi i rishikimit të importit filloi",
+        "starting": "Po fillon skanimi i rishikimit të importit nga Clockin…",
+        "startSuccess": "Skanimi i rishikimit të importit filloi. Kërkohet rishikim para se të dhënat të regjistrohen përfundimisht."
+      },
+      "selection": {
+        "absences": "Mungesat",
+        "description": "Zgjidhni cilat të dhëna të Clockin të skanohen për rishikim. Të dhënat duhet të rishikohen para regjistrimit përfundimtar.",
+        "endDate": "Data e përfundimit",
+        "startDate": "Data e fillimit",
+        "startReviewScan": "Fillo skanimin e rishikimit",
+        "title": "Fusha e importit",
+        "workdays": "Ditët e punës / Periudhat e punës"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Grupi i rishikimit {batchId} po skanohet.",
+        "description": "Kërkohet rishikim para se të dhënat e Clockodo të regjistrohen përfundimisht në sistem.",
+        "openReview": "Hap rishikimin",
+        "successTitle": "Skanimi i rishikimit të importit filloi"
+      },
+      "credentials": {
+        "apiKey": "Çelësi API",
+        "apiKeyHint": "Mund ta gjeni çelësin tuaj API në profilin tuaj të Clockodo:",
+        "connect": "Lidhu dhe shiko paraprakisht",
+        "description": "Vendosni email-in dhe çelësin API të Clockodo. Mund ta gjeni çelësin API në Clockodo te Profili im > Çelësi API. Kredencialet nuk ruhen.",
+        "email": "Email-i i Clockodo",
+        "title": "Kredencialet e Clockodo"
+      },
+      "entity": {
+        "absences": "Mungesat",
+        "entries": "Regjistrimet e kohës",
+        "holidayQuotas": "Kuotat e pushimeve",
+        "nonBusinessDays": "Ditët jopune",
+        "services": "Shërbimet / Kategoritë e punës",
+        "surcharges": "Shtesat",
+        "targetHours": "Orët e synuara / Politikat e punës",
+        "teams": "Ekipet",
+        "users": "Përdoruesit / Punonjësit"
+      },
+      "errors": {
+        "connectionFailed": "Lidhja me Clockodo dështoi",
+        "fetchProjectsFailed": "Marrja e të dhënave të projektit dështoi",
+        "fetchUsersFailed": "Marrja e të dhënave të përdoruesit dështoi",
+        "importFailed": "Skanimi i rishikimit të importit dështoi",
+        "saveMappingsFailed": "Ruajtja e përputhjeve të përdoruesve dështoi",
+        "saveProjectMappingsFailed": "Ruajtja e përputhjeve të projektit dështoi"
+      },
+      "importing": {
+        "description": "Ju lutemi mos e mbyllni këtë faqe. Skanimi i rishikimit po vihet në radhë dhe mund të marrë pak kohë për grupe të mëdha të dhënash.",
+        "patience": "Po merren të dhënat e Clockodo për rishikim…",
+        "title": "Po fillon skanimi i rishikimit…"
+      },
+      "mapping": {
+        "autoMatched": "Përputhur automatikisht",
+        "createNew": "Krijo të re",
+        "skip": "Kapërce"
+      },
+      "mappingStatus": {
+        "auto": "Automatik",
+        "manual": "Manual",
+        "new": "E re",
+        "skip": "Kapërce"
+      },
+      "preview": {
+        "dataType": "Lloji i të dhënave",
+        "description": "Këtu është një përmbledhje e të dhënave të gjetura në llogarinë tuaj të Clockodo. Të dhënat ekzistuese në Z8 shfaqen për krahasim.",
+        "inClockodo": "Në Clockodo",
+        "inZ8": "Tashmë në Z8",
+        "next": "Përputh përdoruesit",
+        "title": "Pamja paraprake e të dhënave"
+      },
+      "projectMapping": {
+        "clockodoCustomer": "Klient i Clockodo",
+        "clockodoProject": "Projekt i Clockodo",
+        "continue": "Vazhdo",
+        "description": "Përputhni projektet e Clockodo me projektet ekzistuese të Z8. Regjistrimet e importuara të kohës ruajnë projektin e tyre dhe vlerën e faturueshme të Clockodo. Regjistrimet në projektet e papërputhura, ose në projektet pa klient, importohen si të pafaturueshme. Nuk krijohet asnjë projekt.",
+        "mappedCount": "{mapped} nga {total} projekte të përputhura",
+        "noCustomer": "Ky projekt nuk ka klient, ndaj koha e importuar e tij është e pafaturueshme.",
+        "noZ8Projects": "Kjo organizatë nuk ka ende projekte. Krijoni fillimisht projekte për të importuar kohën e Clockodo bashkë me projektin dhe vlerën e faturueshme të saj.",
+        "title": "Përputh projektet",
+        "unmapped": "I papërputhur (pa projekt)",
+        "z8Project": "Projekt i Z8",
+        "z8ProjectFor": "Projekt i Z8 për {project}"
+      },
+      "review": {
+        "startedToast": "Skanimi i rishikimit të importit filloi. Kërkohet rishikim para se të dhënat të regjistrohen përfundimisht."
+      },
+      "selection": {
+        "dateRange": "Gama e datave për regjistrimet e kohës dhe mungesat",
+        "dateRangeDescription": "Kjo ndikon vetëm te regjistrimet e kohës dhe mungesat. Të dhënat e tjera (përdoruesit, ekipet, etj.) skanohen gjithmonë plotësisht.",
+        "dependencyWarning": "Varësitë do të skanohen automatikisht",
+        "description": "Zgjidhni cilat lloje të dhënash të skanohen. Kërkohet rishikim para se të dhënat të regjistrohen përfundimisht.",
+        "emptyUserScope": "Zgjidhni të paktën një përdorues të Clockodo para se të filloni skanimin.",
+        "incompleteCustomDateRange": "Zgjidhni datën e fillimit dhe atë të përfundimit para se të filloni skanimin.",
+        "selectDateRange": "Zgjidhni gamën e datave",
+        "startImport": "Fillo skanimin e shqyrtimit",
+        "title": "Zgjidh të dhënat për shqyrtim"
+      },
+      "step": {
+        "complete": "Shqyrtimi filloi",
+        "credentials": "Kredencialet",
+        "import": "Shqyrtimi",
+        "preview": "Parapamje",
+        "projectMapping": "Përputhja e projekteve",
+        "selection": "Përzgjedhja",
+        "userMapping": "Lidhja e përdoruesve"
+      },
+      "userMapping": {
+        "action": "Veprimi",
+        "autoMatched": "{count} të përputhur automatikisht",
+        "clockodoUser": "Përdoruesi i Clockodo",
+        "continue": "Vazhdo",
+        "description": "Lidhni përdoruesit e Clockodo me punonjësit ekzistues të Z8 ose zgjidhni të krijoni llogari të reja. Përdoruesit e përputhur me email lidhen automatikisht.",
+        "email": "Email",
+        "mappedTo": "Lidhur me",
+        "newEmployees": "{count} të rinj",
+        "onlyMapped": "Skano vetëm përdoruesit e lidhur (mos krijo llogari të reja për përdoruesit e palidhur)",
+        "skippedCount": "{count} të anashkaluar",
+        "status": "Statusi",
+        "title": "Lidh përdoruesit"
+      }
+    },
+    "discord": {
+      "description": "Konfiguroni njoftimet e Discord për organizatën tuaj",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Konfiguroni njoftimet e Slack për organizatën tuaj",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Konfiguroni njoftimet e Microsoft Teams për organizatën tuaj",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Lidhni një bot të Telegram-it për të aktivizuar njoftimet dhe komandat për organizatën tuaj.",
+        "title": "Boti i Telegram-it"
+      },
+      "botToken": "Tokeni i botit",
+      "botTokenHelp": "Krijoni një bot me @BotFather në Telegram dhe ngjisni tokenin këtu.",
+      "connect": "Lidh botin",
+      "connected": "Boti i Telegram-it u lidh me sukses",
+      "connectError": "Lidhja e botit të Telegram-it dështoi",
+      "description": "Konfiguroni integrimin e botit të Telegram-it për njoftime dhe komanda",
+      "disconnect": "Shkëput",
+      "disconnectConfirm": {
+        "description": "Kjo do të çaktivizojë të gjitha njoftimet dhe komandat e Telegram-it për organizatën tuaj. Lidhjet e llogarive të punonjësve do të ruhen.",
+        "title": "Të shkëputet boti i Telegram-it?"
+      },
+      "disconnected": "Boti i Telegram-it u shkëput",
+      "disconnectError": "Shkëputja e botit të Telegram-it dështoi",
+      "features": {
+        "approvals": "Njoftimet e miratimit",
+        "approvalsDesc": "Dërgoni kërkesa për miratim dhe lejoni miratimin/refuzimin përmes Telegram-it",
+        "commands": "Komandat e botit",
+        "commandsDesc": "Aktivizoni komandat /clockedin, /whosout, /pending dhe komanda të tjera",
+        "description": "Konfiguroni se cilat veçori janë të aktivizuara për botin e Telegram-it.",
+        "digest": "Përmbledhja ditore",
+        "digestDesc": "Dërgoni një përmbledhje ditore të mungesave dhe orareve",
+        "digestTime": "Ora",
+        "digestTimezone": "Zona kohore",
+        "escalations": "Përshkallëzimet",
+        "escalationsDesc": "Përshkallëzo miratimet pa përgjigje te menaxheri pasardhës",
+        "escalationTimeout": "Skadimi i kohës",
+        "hours": "orë",
+        "title": "Veçoritë"
+      },
+      "linked": "I lidhur",
+      "linkError": "Gjenerimi i kodit të lidhjes dështoi",
+      "linking": {
+        "botLink": "Boti: @{botUsername}",
+        "description": "Lidhni llogarinë tuaj në Telegram për të marrë njoftime personale.",
+        "generateCode": "Gjenero kodin e lidhjes",
+        "instructions": "Dërgojeni këtë komandë te boti në Telegram:",
+        "linkedStatus": "Llogaria juaj në Telegram është lidhur",
+        "title": "Llogaria në Telegram"
+      },
+      "notConfigured": "Telegrami nuk është konfiguruar për këtë organizatë. Kontaktoni administratorin tuaj.",
+      "saved": "Cilësimet e Telegramit u ruajtën",
+      "status": {
+        "active": "Aktiv"
+      },
+      "title": "Telegram",
+      "unlink": "Shkëput",
+      "unlinkConfirm": {
+        "description": "Nuk do të merrni më njoftime nga Telegrami. Mund ta rilidhni përsëri më vonë.",
+        "title": "Të shkëputet llogaria e Telegramit?"
+      },
+      "unlinked": "Llogaria e Telegramit u shkëput",
+      "unlinkError": "Dështoi shkëputja e llogarisë së Telegramit",
+      "webhookActive": "Webhook-u u regjistrua",
+      "webhookPending": "Webhook në pritje"
+    }
+  }
+}

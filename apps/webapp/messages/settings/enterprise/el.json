@@ -17,6 +17,9 @@
       "description": "Διαχείριση κλειδιών API για προγραμματιστική πρόσβαση στα δεδομένα του οργανισμού σας",
       "detail": {
         "back": "Όλα τα κλειδιά API",
+        "channel": "Κανάλι",
+        "channelApi": "API",
+        "channelMcp": "MCP",
         "createdAt": "Δημιουργήθηκε",
         "creator": "Δημιουργήθηκε από",
         "creatorDeparted": "{name} (αποχώρησε)",

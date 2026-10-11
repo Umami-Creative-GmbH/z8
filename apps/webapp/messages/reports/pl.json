@@ -79,7 +79,6 @@
         "description": "Tylko ukończona praca. Przychód uwzględnia stawki obowiązujące w dniu {date}.",
         "employee": "Pracownik",
         "hasUnpriced": "Zawiera niewycenioną pracę",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Godziny zafakturowane",
         "invoicedRevenue": "Zafakturowany przychód",
         "invoicedRevenueHint": "Według stawek ze szkiców faktur",
@@ -203,6 +202,7 @@
         "ratesResolvedAt": "Stawki na dzień",
         "revenue": "Przychód",
         "roundingNote": "Kwoty są dokładnie sumowane i zaokrąglane w górę od połowy do jednego centa raz na wiersz; sumy całkowite stanowią podsumowanie wierszy.",
+        "snapshotRatesNote": "Przychód uwzględnia stawki obowiązujące w momencie utworzenia tej migawki.",
         "summaryTable": "Podsumowanie",
         "total": "Suma",
         "uninvoicedHours": "Niezfakturowane godziny",
@@ -258,6 +258,7 @@
         "overBudget": "Ponad budżet",
         "overBudgetDescription": "Budżet przekroczony"
       },
+      "hoursValue": "{hours} godz.",
       "page": {
         "accessDenied": "Odmowa dostępu",
         "description": "Analizuj godziny projektu, wykorzystanie budżetu i wkład zespołu",
@@ -325,6 +326,89 @@
         "portfolioGenerated": "Raport portfela został wygenerowany",
         "projectGenerated": "Wygenerowano raport dla {name}",
         "unexpectedError": "Wystąpił nieoczekiwany błąd"
+      }
+    },
+    "share": {
+      "action": "Udostępnij",
+      "created": {
+        "another": "Utwórz kolejny link",
+        "copied": "Skopiowano",
+        "copy": "Kopiuj",
+        "copyFailed": "Skopiuj link, zaznaczając go",
+        "description": "Skopiuj go teraz: jest wyświetlany tylko raz. Aby udostępnić go ponownie później, utwórz nowy link.",
+        "title": "Twój link do udostępnienia",
+        "urlLabel": "Link do udostępnienia"
+      },
+      "create": {
+        "failed": "Nie udało się utworzyć linku do udostępnienia"
+      },
+      "dialog": {
+        "description": "Każdy, kto ma link, może wyświetlić migawkę tego raportu w trybie tylko do odczytu za {period}, w jej obecnym stanie, do momentu wygaśnięcia linku. Koszt i marża nigdy nie są udostępniane.",
+        "title": "Udostępnij {name}"
+      },
+      "figures": {
+        "hours": "Tylko godziny",
+        "revenue": "Godziny + przychód"
+      },
+      "form": {
+        "create": "Utwórz link",
+        "employees": "Podział według pracowników",
+        "employeesDescription": "Pokazuje godziny każdego pracownika pod jego prawdziwym imieniem i nazwiskiem.",
+        "expiry": "Wygasa po",
+        "expiryDays": "{days, plural, one {# dzień} few {# dni} many {# dni} other {# dnia}}",
+        "figures": "Dane liczbowe",
+        "revenueUnavailable": "Nie widzisz przychodów w tym raporcie, więc nie możesz go udostępnić."
+      },
+      "kind": {
+        "customer": "Raport klienta",
+        "project": "Raport projektu"
+      },
+      "list": {
+        "createdBy": "Utworzono przez: {name} w dniu {date}",
+        "deletedReport": "Usunięto",
+        "empty": "Brak linków do udostępniania.",
+        "expired": "Wygasło {date}",
+        "expires": "Wygasa {date}",
+        "failed": "Nie udało się załadować linków do udostępniania.",
+        "lastViewed": "ostatnio: {date}",
+        "loading": "Ładowanie linków do udostępniania…",
+        "revokedAutomatically": "Odwołano automatycznie w dniu {date}: twórca nie ma już wglądu we wszystkie zawarte w nim projekty",
+        "revokedBy": "Odwołano przez: {name} w dniu {date}",
+        "someone": "ktoś",
+        "title": "Linki do tego raportu",
+        "views": "{count, plural, one {# wyświetlenie} many {# wyświetleń} other {# wyświetlenia} }",
+        "withEmployees": "Z podziałem na pracowników",
+        "withoutEmployees": "Bez podziału na pracowników"
+      },
+      "page": {
+        "expiresAt": "Link wygasa {date}",
+        "footer": "Migawka tylko do odczytu udostępniona z Z8. Późniejsze zmiany w powiązanych pracach nie będą widoczne.",
+        "loading": "Ładowanie udostępnionego raportu",
+        "sharedBy": "Udostępnione przez {name}",
+        "takenAt": "Migawka utworzona {date}",
+        "unavailableDescription": "Link mógł wygasnąć, zostać unieważniony lub może być niekompletny. Poproś osobę, która go udostępniła, o nowy link.",
+        "unavailableTitle": "Ten link jest niedostępny"
+      },
+      "revoke": {
+        "action": "Unieważnij",
+        "cancel": "Anuluj",
+        "confirm": "Unieważnij link",
+        "description": "Link natychmiast przestanie działać, a jego migawka zostanie usunięta. Wpis oraz historia wyświetleń zostaną zachowane.",
+        "done": "Link unieważniony",
+        "failed": "Nie udało się unieważnić linku",
+        "title": "Unieważnić ten link?"
+      },
+      "status": {
+        "active": "Aktywny",
+        "expired": "Wygasły",
+        "revoked": "Unieważniony"
+      },
+      "views": {
+        "empty": "Nikt jeszcze nie otworzył tego linku.",
+        "failed": "Nie udało się załadować wyświetleń.",
+        "loading": "Ładowanie wyświetleń…",
+        "unknownAgent": "Nieznana przeglądarka",
+        "unknownIp": "Nieznany adres IP"
       }
     },
     "summary": {

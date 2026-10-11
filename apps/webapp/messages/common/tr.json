@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Bugünkü en son giriş kaydınız: {startTime} ({timezone}). Çalışıyorsanız giriş yapın."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\", sahibi {ownerName} artık kuruluş yöneticisi olmadığı için duraklatıldı. Sürdürmek için kendinizi veya başka bir kuruluş yöneticisini sahibi yapın.",
+        "title": "Zamanlanmış dışa aktarma duraklatıldı"
+      },
       "shiftAssigned": {
         "message": "{assignedByName} tarafından {shiftDate} tarihinde {startTime} ile {endTime} saatleri arasında bir vardiya atandı.",
         "title": "Vardiya atandı"

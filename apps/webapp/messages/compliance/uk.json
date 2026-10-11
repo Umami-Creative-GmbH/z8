@@ -1,0 +1,148 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Контроль доступу підсумовує лише чутливі події журналу аудиту, зафіксовані сьогодні.",
+        "auditEvidence": "Аудиторські докази використовують активну конфігурацію експорту аудиту, запити аудиторських пакетів і останні результати перевірок.",
+        "workforceCompliance": "Відповідність персоналу використовує порушення робочих правил і запити на винятки в очікуванні за останні 7 днів."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Останні невдалі завдання: {failedRequests}; останні недійсні перевірки: {invalidVerifications}",
+          "title": "Виявлено помилки аудиторських доказів"
+        },
+        "auditPackFailure": {
+          "description": "Останні невдалі завдання: {failedRequests}",
+          "title": "Не вдалося згенерувати аудиторський пакет"
+        },
+        "auditVerificationFailure": {
+          "description": "Останні недійсні перевірки: {invalidVerifications}",
+          "title": "Перевірка аудиту не вдалася"
+        },
+        "sensitiveAction": {
+          "description": "{action} для {entityType}",
+          "title": "Чутлива дія: {action}"
+        },
+        "workforceFindings": {
+          "description": "Відпочинок: {restPeriodViolations}, Інші правила: {generalPolicyViolations}, Надурочні: {overtimeViolations}",
+          "title": "Останні виявлені порушення політик персоналу"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Остання чутлива дія: {action}",
+          "latestSensitiveActionNone": "Остання чутлива дія: немає",
+          "noSensitiveEvents": "За останні 24 години змін чутливих елементів керування не зафіксовано.",
+          "recentSensitiveEvents": "Останні чутливі події: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Активний ключ підпису: {fingerprint}",
+          "lastSuccessfulAuditPack": "Останній успішний аудиторський пакет: {timestamp}",
+          "missingSigningKey": "Ключі підпису ще не налаштовано.",
+          "noSuccessfulAuditPack": "Успішних аудиторських пакетів ще не зафіксовано.",
+          "recentFailedJobs": "Останні невдалі завдання аудиторських пакетів: {count}",
+          "recentInvalidVerifications": "Останні недійсні спроби перевірки: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Не вдалося завантажити події контролю доступу.",
+          "auditEvidence": "Не вдалося завантажити дані аудиторських доказів.",
+          "workforceCompliance": "Не вдалося завантажити дані про відповідність персоналу."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Інші порушення політик: {count}",
+          "overtimeViolations": "Порушення щодо надурочного часу: {count}",
+          "pendingExceptions": "Винятки в очікуванні: {count}",
+          "restPeriodViolations": "Порушення періоду відпочинку: {count}"
+        }
+      },
+      "footer": {
+        "lastRefreshed": "Востаннє оновлено: {time}"
+      },
+      "links": {
+        "inspectCompliance": "Перевірити відповідність",
+        "inspectInAuditLog": "Переглянути в журналі аудиту",
+        "openAuditExport": "Відкрити експорт аудиту",
+        "openAuditLog": "Відкрити журнал аудиту",
+        "openComplianceSettings": "Відкрити налаштування відповідності",
+        "reviewAuditExport": "Переглянути експорт аудиту"
+      },
+      "overview": "Огляд відповідності вимогам",
+      "recentEvents": {
+        "empty": "Нещодавніх критичних подій не виявлено.",
+        "title": "Нещодавні критичні події"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Зміни важливих засобів контролю потребують перевірки",
+            "healthy": "Останнім часом не зафіксовано змін важливих засобів контролю",
+            "warning": "Виявлено нещодавні зміни засобів контролю"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Аудиторські докази потребують уваги",
+            "healthy": "Сигнали аудиторських доказів у нормі",
+            "warning": "Аудиторські докази готові лише частково"
+          }
+        },
+        "unavailable": {
+          "headline": "Сигнал тимчасово недоступний"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Порушення політик персоналу потребують перевірки",
+            "healthy": "Нещодавніх проблем із політиками персоналу не виявлено",
+            "warning": "Рівень відповідності персоналу відхиляється від норми"
+          }
+        }
+      },
+      "status": {
+        "critical": "критичний",
+        "healthy": "у нормі",
+        "unavailable": "недоступний",
+        "warning": "попередження"
+      },
+      "summary": {
+        "critical": "Критичні ризики відповідності потребують уваги",
+        "healthy": "У відстежуваних сигналах не виявлено активних проблем",
+        "unavailable": "Деякі сигнали відповідності недоступні",
+        "warning": "Сигнали відповідності потребують перегляду"
+      }
+    },
+    "exception": {
+      "approved": "Виняток схвалено",
+      "approvedDescription": "Виняток щодо відповідності схвалено.",
+      "approveFailed": "Не вдалося схвалити",
+      "plannedDuration": "Заплановано",
+      "plannedDurationHelp": "Оцініть, скільки додаткового часу вам знадобиться понад ліміт.",
+      "reason": "Причина винятку",
+      "reasonPlaceholder": "Поясніть, чому вам потрібен цей виняток (наприклад, терміновий дедлайн проєкту, важлива зустріч із клієнтом)...",
+      "reasonRequired": "Обов'язково вкажіть причину",
+      "reasonRequiredDescription": "Будь ласка, вкажіть причину вашого запиту на виняток.",
+      "rejectDescription": "Укажіть причину відхилення цього запиту на виняток (необов'язково)",
+      "rejected": "Виняток відхилено",
+      "rejectedDescription": "Виняток щодо відповідності відхилено.",
+      "rejectFailed": "Не вдалося відхилити",
+      "rejectionPlaceholder": "Введіть причину відхилення цього винятку...",
+      "rejectionReason": "Причина відхилення",
+      "rejectTitle": "Відхилити запит на виняток",
+      "requestDescription": "Надішліть керівнику запит на попереднє схвалення, щоб продовжити роботу попри обмеження відповідності. Схвалені винятки дійсні протягом 24 годин.",
+      "requestedAt": "Запитано",
+      "requestFailed": "Не вдалося надіслати запит",
+      "requestSubmitted": "Запит на виняток надіслано",
+      "requestSubmittedDescription": "Ваш керівник отримає сповіщення та зможе схвалити або відхилити ваш запит.",
+      "requestTitle": "Запросити виняток щодо відповідності",
+      "submit": "Надіслати запит",
+      "type": "Тип винятку"
+    },
+    "hasApprovedException": "У вас є схвалений виняток. Ви можете продовжити.",
+    "moreAlerts": "більше",
+    "noExceptions": "Немає запитів на винятки, що очікують на розгляд",
+    "pendingExceptions": "Запити на винятки, що очікують на розгляд",
+    "pendingExceptionsDescription": "Перегляньте запити на винятки, які потребують вашого схвалення",
+    "requestException": "Запросити виняток",
+    "restPeriodMessage": "Вам потрібно відпочити ще {time}, перш ніж ви зможете почати зміну. Наступний дозволений початок зміни: {nextTime}",
+    "restPeriodRequired": "Необхідний період відпочинку"
+  }
+}

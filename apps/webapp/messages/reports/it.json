@@ -79,7 +79,6 @@
         "description": "Solo lavoro completato. I ricavi utilizzano le tariffe in vigore il {date}.",
         "employee": "Dipendente",
         "hasUnpriced": "Include lavoro senza prezzo",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Ore fatturate",
         "invoicedRevenue": "Fatturato fatturato",
         "invoicedRevenueHint": "Alle tariffe delle bozze di fattura",
@@ -203,6 +202,7 @@
         "ratesResolvedAt": "Tariffe al",
         "revenue": "Ricavi",
         "roundingNote": "Gli importi vengono sommati esattamente e arrotondati matematicamente al centesimo una volta per riga; i totali sommano le righe.",
+        "snapshotRatesNote": "I ricavi utilizzano le tariffe in vigore al momento dell'acquisizione di questa istantanea.",
         "summaryTable": "Riepilogo",
         "total": "Totale",
         "uninvoicedHours": "Ore non fatturate",
@@ -258,6 +258,7 @@
         "overBudget": "Oltre il budget",
         "overBudgetDescription": "Budget superato"
       },
+      "hoursValue": "{hours} h",
       "page": {
         "accessDenied": "Accesso negato",
         "description": "Analizza le ore del progetto, l'utilizzo del budget e i contributi del team",
@@ -325,6 +326,89 @@
         "portfolioGenerated": "Report portafoglio generato",
         "projectGenerated": "Report generato per {name}",
         "unexpectedError": "Si è verificato un errore imprevisto"
+      }
+    },
+    "share": {
+      "action": "Condividi",
+      "created": {
+        "another": "Crea un altro link",
+        "copied": "Copiato",
+        "copy": "Copia",
+        "copyFailed": "Copia il link selezionandolo",
+        "description": "Copialo ora: viene mostrato solo una volta. Per condividerlo di nuovo in seguito, crea un nuovo link.",
+        "title": "Il tuo link di condivisione",
+        "urlLabel": "Link di condivisione"
+      },
+      "create": {
+        "failed": "Impossibile creare il link di condivisione"
+      },
+      "dialog": {
+        "description": "Chiunque disponga del link può visualizzare un'istantanea di sola lettura di questo report per {period}, nello stato attuale, fino alla scadenza del link. Costo e margine non vengono mai condivisi.",
+        "title": "Condividi {name}"
+      },
+      "figures": {
+        "hours": "Solo ore",
+        "revenue": "Ore + ricavi"
+      },
+      "form": {
+        "create": "Crea link",
+        "employees": "Dettaglio dipendenti",
+        "employeesDescription": "Mostra le ore di ciascun dipendente con il suo vero nome.",
+        "expiry": "Scade dopo",
+        "expiryDays": "{days, plural, one {# giorno} other {# giorni}}",
+        "figures": "Cifre",
+        "revenueUnavailable": "Non visualizzi le entrate in questo report, quindi non puoi condividerlo."
+      },
+      "kind": {
+        "customer": "Report cliente",
+        "project": "Report progetto"
+      },
+      "list": {
+        "createdBy": "Creato da {name} il {date}",
+        "deletedReport": "Eliminato",
+        "empty": "Nessun link di condivisione al momento.",
+        "expired": "Scaduto il {date}",
+        "expires": "Scade il {date}",
+        "failed": "Impossibile caricare i link di condivisione.",
+        "lastViewed": "ultimo il {date}",
+        "loading": "Caricamento dei link di condivisione…",
+        "revokedAutomatically": "Revocato automaticamente il {date}: il creatore non vede più tutti i progetti inclusi",
+        "revokedBy": "Revocato da {name} il {date}",
+        "someone": "qualcuno",
+        "title": "Link a questo report",
+        "views": "{count, plural, one {# visualizzazione} other {# visualizzazioni}}",
+        "withEmployees": "Con suddivisione per dipendente",
+        "withoutEmployees": "Senza suddivisione per dipendente"
+      },
+      "page": {
+        "expiresAt": "Il link scade il {date}",
+        "footer": "Un'istantanea di sola lettura condivisa da Z8. Le modifiche successive al lavoro sottostante non vengono mostrate.",
+        "loading": "Caricamento del report condiviso",
+        "sharedBy": "Condiviso da {name}",
+        "takenAt": "Istantanea acquisita il {date}",
+        "unavailableDescription": "Il link potrebbe essere scaduto, revocato o incompleto. Chiedi un nuovo link alla persona che lo ha condiviso con te.",
+        "unavailableTitle": "Questo link non è disponibile"
+      },
+      "revoke": {
+        "action": "Revoca",
+        "cancel": "Annulla",
+        "confirm": "Revoca link",
+        "description": "Il link smette immediatamente di funzionare e la relativa istantanea viene eliminata. Il record e il registro delle visualizzazioni vengono conservati.",
+        "done": "Link revocato",
+        "failed": "Impossibile revocare il link",
+        "title": "Revocare questo link?"
+      },
+      "status": {
+        "active": "Attivo",
+        "expired": "Scaduto",
+        "revoked": "Revocato"
+      },
+      "views": {
+        "empty": "Nessuno ha ancora aperto questo link.",
+        "failed": "Impossibile caricare le visualizzazioni.",
+        "loading": "Caricamento visualizzazioni…",
+        "unknownAgent": "Browser sconosciuto",
+        "unknownIp": "Indirizzo IP sconosciuto"
       }
     },
     "summary": {

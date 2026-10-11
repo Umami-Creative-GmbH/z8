@@ -79,7 +79,6 @@
         "description": "Nur abgeschlossene Arbeiten. Der Umsatz basiert auf den am {date} gültigen Sätzen.",
         "employee": "Mitarbeiter",
         "hasUnpriced": "Enthält nicht bepreiste Arbeit",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Abgerechnete Stunden",
         "invoicedRevenue": "Abgerechneter Umsatz",
         "invoicedRevenueHint": "Zu den Sätzen der Rechnungsentwürfe",
@@ -203,6 +202,7 @@
         "ratesResolvedAt": "Sätze mit Stand vom",
         "revenue": "Umsatz",
         "roundingNote": "Beträge werden exakt summiert und einmal pro Zeile kaufmännisch auf den Cent gerundet; Gesamtsummen addieren die Zeilen.",
+        "snapshotRatesNote": "Der Umsatz basiert auf den Sätzen, die zum Zeitpunkt dieses Snapshots gültig waren.",
         "summaryTable": "Zusammenfassung",
         "total": "Gesamt",
         "uninvoicedHours": "Nicht abgerechnete Stunden",
@@ -258,6 +258,7 @@
         "overBudget": "Über Budget",
         "overBudgetDescription": "Budget überschritten"
       },
+      "hoursValue": "{hours} Std.",
       "page": {
         "accessDenied": "Zugriff verweigert",
         "description": "Analysieren Sie Projektstunden, Budgetnutzung und Teambeiträge",
@@ -325,6 +326,89 @@
         "portfolioGenerated": "Portfoliobericht generiert",
         "projectGenerated": "Bericht generiert für {name}",
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
+      }
+    },
+    "share": {
+      "action": "Teilen",
+      "created": {
+        "another": "Weiteren Link erstellen",
+        "copied": "Kopiert",
+        "copy": "Kopieren",
+        "copyFailed": "Kopieren Sie den Link, indem Sie ihn auswählen",
+        "description": "Jetzt kopieren: Er wird nur einmal angezeigt. Um ihn später erneut zu teilen, erstellen Sie einen neuen Link.",
+        "title": "Ihr Freigabelink",
+        "urlLabel": "Freigabelink"
+      },
+      "create": {
+        "failed": "Der Freigabelink konnte nicht erstellt werden"
+      },
+      "dialog": {
+        "description": "Jeder mit dem Link kann bis zum Ablauf des Links einen schreibgeschützten Snapshot dieses Berichts für {period} im aktuellen Zustand einsehen. Kosten und Marge werden niemals geteilt.",
+        "title": "{name} teilen"
+      },
+      "figures": {
+        "hours": "Nur Stunden",
+        "revenue": "Stunden + Umsatz"
+      },
+      "form": {
+        "create": "Link erstellen",
+        "employees": "Aufschlüsselung nach Mitarbeitern",
+        "employeesDescription": "Zeigt die Stunden aller Mitarbeitenden unter ihrem echten Namen an.",
+        "expiry": "Läuft ab nach",
+        "expiryDays": "{days, plural, one {# Tag} other {# Tage}}",
+        "figures": "Zahlen",
+        "revenueUnavailable": "Sie sehen in diesem Bericht keine Umsätze und können ihn daher nicht freigeben."
+      },
+      "kind": {
+        "customer": "Kundenbericht",
+        "project": "Projektbericht"
+      },
+      "list": {
+        "createdBy": "Erstellt von {name} am {date}",
+        "deletedReport": "Gelöscht",
+        "empty": "Noch keine Freigabelinks vorhanden.",
+        "expired": "Abgelaufen am {date}",
+        "expires": "Läuft am {date} ab",
+        "failed": "Freigabelinks konnten nicht geladen werden.",
+        "lastViewed": "zuletzt {date}",
+        "loading": "Freigabelinks werden geladen…",
+        "revokedAutomatically": "Automatisch widerrufen am {date}: Die erstellende Person sieht nicht mehr alle darin enthaltenen Projekte",
+        "revokedBy": "Widerrufen von {name} am {date}",
+        "someone": "jemand",
+        "title": "Links zu diesem Bericht",
+        "views": "{count, plural, one {# Aufruf} other {# Aufrufe}}",
+        "withEmployees": "Mit Mitarbeiteraufschlüsselung",
+        "withoutEmployees": "Ohne Mitarbeiteraufschlüsselung"
+      },
+      "page": {
+        "expiresAt": "Link läuft am {date} ab",
+        "footer": "Ein schreibgeschützter Schnappschuss, der über Z8 geteilt wurde. Spätere Änderungen an den zugrunde liegenden Arbeiten werden nicht angezeigt.",
+        "loading": "Geteilter Bericht wird geladen",
+        "sharedBy": "Geteilt von {name}",
+        "takenAt": "Snapshot erstellt am {date}",
+        "unavailableDescription": "Der Link ist möglicherweise abgelaufen, wurde widerrufen oder ist unvollständig. Bitten Sie die Person, die ihn mit Ihnen geteilt hat, um einen neuen Link.",
+        "unavailableTitle": "Dieser Link ist nicht verfügbar"
+      },
+      "revoke": {
+        "action": "Widerrufen",
+        "cancel": "Abbrechen",
+        "confirm": "Link widerrufen",
+        "description": "Der Link funktioniert ab sofort nicht mehr und sein Snapshot wird gelöscht. Sein Datensatz und das Aufrufprotokoll bleiben erhalten.",
+        "done": "Link widerrufen",
+        "failed": "Der Link konnte nicht widerrufen werden",
+        "title": "Diesen Link widerrufen?"
+      },
+      "status": {
+        "active": "Aktiv",
+        "expired": "Abgelaufen",
+        "revoked": "Widerrufen"
+      },
+      "views": {
+        "empty": "Bisher hat niemand diesen Link geöffnet.",
+        "failed": "Aufrufe konnten nicht geladen werden.",
+        "loading": "Aufrufe werden geladen…",
+        "unknownAgent": "Unbekannter Browser",
+        "unknownIp": "Unbekannte IP-Adresse"
       }
     },
     "summary": {

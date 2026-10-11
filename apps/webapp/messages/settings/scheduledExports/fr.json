@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Changer de propriétaire",
         "delete": "Supprimer",
         "edit": "Modifier",
         "runNow": "Exécuter maintenant",
@@ -123,6 +124,8 @@
         "dateRangesDesc": "Calculées automatiquement en fonction de la fréquence du planning (par ex. le mois précédent pour les exports mensuels).",
         "delivery": "Livraison :",
         "deliveryDesc": "Les exports sont téléchargés sur S3 et des notifications par e-mail contenant des liens de téléchargement sont envoyées aux destinataires configurés.",
+        "owner": "Propriétaire :",
+        "ownerDesc": "Chaque planification s'exécute pour le compte d'un administrateur d'organisation. Si son propriétaire cesse d'être administrateur d'organisation ou s'en va, la planification est suspendue et chaque administrateur d'organisation est notifié afin que l'un d'eux puisse la reprendre.",
         "scheduleTypes": "Types de planning :",
         "scheduleTypesDesc": "Quotidien, hebdomadaire (lundi), mensuel (le 1er), trimestriel (le 1er janv./avr./juil./oct.) ou expressions cron personnalisées."
       },
@@ -149,6 +152,18 @@
         "viewError": "Voir les détails de l'erreur"
       },
       "newSchedule": "Nouveau planning",
+      "owner": {
+        "changed": "Propriétaire modifié",
+        "changeFailed": "Impossible de modifier le propriétaire",
+        "description": "\"{name}\" s'exécute pour le compte de son propriétaire, qui doit être administrateur d'organisation. Les exécutions automatisées sont enregistrées dans le journal d'audit sous le nom du propriétaire.",
+        "label": "Propriétaire",
+        "pauseNote": "Changer de propriétaire ne réactive pas une planification suspendue. Réactivez-la une fois qu'elle a un propriétaire.",
+        "placeholder": "Sélectionner un administrateur d'organisation…",
+        "required": "Choisir un administrateur d'organisation",
+        "saving": "Enregistrement…",
+        "submit": "Changer de propriétaire",
+        "title": "Changer de propriétaire"
+      },
       "report": {
         "auditReport": "Rapport d'audit",
         "auditReportDesc": "Les rapports d'audit incluent toutes les données de suivi du temps avec des signatures cryptographiques et des horodatages pour la conformité GoBD. L'exportation sera stockée avec une protection WORM (Write Once Read Many).",
@@ -264,6 +279,8 @@
         "never": "Jamais",
         "nextRun": "Prochaine exécution",
         "openMenu": "Ouvrir le menu d'actions",
+        "owner": "Propriétaire",
+        "ownerNotAdmin": "N'est plus administrateur d'organisation",
         "paused": "En pause",
         "schedule": "Planification",
         "status": "Statut",

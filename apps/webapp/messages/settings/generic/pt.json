@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} tem o mesmo nome e já está vinculado a outro contato",
           "noMatch": "Nenhuma correspondência",
           "paging": {
-            "label": "Páginas de contatos",
-            "next": "Próxima página",
-            "position": "Página {page} de {pageCount}",
-            "previous": "Página anterior"
+            "label": "Páginas de contatos"
           },
           "suggestion": {
             "customerNumber": "{name} tem um vínculo de contato com o mesmo número de cliente",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "O provedor informa intervalos sem seus respectivos horários, portanto o período trabalhado é desconhecido."
         },
         "issueGroups": {
-          "currentMarkers": "As linhas atuais incluem {blockingRows} marcadores de problemas de bloqueio e {warningRows} de aviso.",
           "description": "Áreas de revisão agrupadas ajudam a manter as verificações de qualidade visíveis antes que as linhas aceitas sejam confirmadas.",
+          "importMarkers": "As linhas da importação incluem {blockingRows} marcadores de problemas bloqueantes e {warningRows} de aviso.",
           "title": "Grupos de problemas"
+        },
+        "paging": {
+          "next": "Próxima página",
+          "position": "Página {page} de {pageCount}",
+          "previous": "Página anterior"
         },
         "rows": {
           "billable": "Faturável",
           "empty": "Nenhuma linha preparada está disponível para este lote de importação.",
           "entity": "Entidade",
+          "paging": {
+            "label": "Páginas de linhas"
+          },
           "rowId": "ID da linha",
           "sourceId": "ID da fonte",
           "status": "Status",
@@ -1783,6 +1788,7 @@
       "create": "Criar Projeto",
       "created": "Projeto criado",
       "createFailed": "Falha ao criar projeto",
+      "customerDeleted": "{name} (excluído)",
       "description": "Gerencie projetos, orçamentos, prazos e atribuições de tempo",
       "dialog": {
         "create": "Criar Projeto",
@@ -1807,6 +1813,7 @@
         "color": "Cor",
         "colorOption": "Selecionar cor {color}",
         "customer": "Cliente",
+        "customerDeleted": "{name} foi excluído. Escolha outro cliente ou mantenha o projeto sem nenhum.",
         "customerPlaceholder": "Selecione um cliente",
         "deadline": "Prazo",
         "description": "Descrição",
@@ -2031,6 +2038,11 @@
       "title": "Projetos",
       "updated": "Projeto atualizado",
       "updateFailed": "Falha ao atualizar o projeto"
+    },
+    "reportShareLinks": {
+      "description": "Veja e revogue todos os links que compartilham um relatório de projeto ou cliente",
+      "pageDescription": "Links que exibem um instantâneo fixo de um relatório de projeto ou cliente para alguém fora do Z8. Revogar um link o desativa imediatamente e exclui seu instantâneo.",
+      "title": "Links de Compartilhamento de Relatórios"
     },
     "security": {
       "description": "Gerencie sua senha, autenticação de dois fatores, chaves de acesso e sessões ativas",

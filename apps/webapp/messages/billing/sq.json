@@ -1,0 +1,88 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Abonimi juaj është anuluar. Riabonohuni për të rimarrë qasjen.",
+      "paymentFailed": "Pagesa juaj e fundit dështoi. Ju lutemi përditësoni mënyrën tuaj të pagesës.",
+      "required": "Kërkohet një abonim për të përdorur këtë aplikacion.",
+      "trialExpired": "Periudha juaj provuese ka skaduar. Abonohuni për të vazhduar përdorimin e aplikacionit."
+    },
+    "activeSeats": "Vende aktive",
+    "alerts": {
+      "canceledDescription": "Pagesa u anulua. Mund të provoni përsëri sa herë të jeni gati.",
+      "subscriptionRequired": "Kërkohet abonim",
+      "successDescription": "Abonimi juaj është aktivizuar. Faleminderit që u abonuat!",
+      "successTitle": "Sukses!"
+    },
+    "bestValue": "Vlera më e mirë",
+    "billedMonthly": "faturuar çdo muaj",
+    "cancelsOn": "Anulohet më {date}",
+    "checkoutCreateFailed": "Krijimi i sesionit të pagesës dështoi",
+    "checkoutStartFailed": "Nisja e pagesës dështoi",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout mbledh të dhënat e pagesës tani. Abonimi juaj me pagesë fillon vetëm pasi të skadojë periudha provuese.",
+      "trialContinuesTitle": "Periudha juaj provuese vazhdon pas përmirësimit"
+    },
+    "choosePlan": "Zgjidhni planin tuaj",
+    "choosePlanDescription": "Filloni me një provë falas 14-ditore. Nuk kërkohet kartë krediti për të filluar.",
+    "chooseUpgradePlanDescription": "Zgjidhni një cikël faturimi tani. Abonimi juaj me pagesë fillon vetëm pas periudhës së mbetur provuese.",
+    "currentPlan": "Plani aktual",
+    "days": "{count} ditë",
+    "description": "Menaxhoni abonimin tuaj dhe të dhënat e faturimit",
+    "faq": {
+      "afterTrial": {
+        "answer": "Pasi të përfundojë prova juaj 14-ditore, do të tarifoheni për planin e abonimit që keni zgjedhur. Mund ta anuloni në çdo moment para se të përfundojë prova për të shmangur tarifat.",
+        "question": "Çfarë ndodh pas periudhës provuese?"
+      },
+      "perSeat": {
+        "answer": "Faturimi bëhet në bazë të numrit të anëtarëve aktivë në organizatën tuaj. Kur shtoni ose hiqni anëtarë, abonimi juaj përshtatet automatikisht.",
+        "question": "Si funksionon faturimi për çdo vend?"
+      },
+      "switch": {
+        "answer": "Po! Mund të ndryshoni planin në çdo kohë përmes portalit të faturimit. Ndryshimet hyjnë në fuqi në ciklin tuaj të ardhshëm të faturimit.",
+        "question": "A mund të ndërroj midis faturimit mujor dhe vjetor?"
+      },
+      "title": "Pyetjet e bëra më shpesh"
+    },
+    "features": {
+      "allFeatures": "Të gjitha veçoritë përfshihen",
+      "cancelAnytime": "Anuloni në çdo kohë",
+      "yearlyDiscount": "25% zbritje krahasuar me faturimin mujor"
+    },
+    "interval": {
+      "monthlyBilling": "Faturimi mujor",
+      "yearlyBilling": "Faturimi vjetor"
+    },
+    "manageBilling": "Menaxho faturimin",
+    "monthlyCost": "Kostoja mujore",
+    "nextBilling": "Faturimi i ardhshëm",
+    "opening": "Po hapet...",
+    "perSeatMonth": "/vend/muaj",
+    "plans": {
+      "monthly": {
+        "description": "Faturim fleksibël nga muaji në muaj",
+        "title": "Mujor"
+      },
+      "yearly": {
+        "description": "Kurseni 25% me faturimin vjetor",
+        "title": "Vjetor"
+      }
+    },
+    "portalOpenFailed": "Hapja e portalit të faturimit dështoi",
+    "priceSeatMonth": "€{price}/vend/muaj",
+    "priceSeatMonthYearly": "€{price}/vend/muaj (faturuar çdo vit)",
+    "seatBilledAnnually": "€{price}/vend faturuar çdo vit",
+    "starting": "Po nis...",
+    "startTrial": "Fillo provën falas",
+    "status": {
+      "canceled": "Anuluar",
+      "pastDue": "Pagesë e vonuar",
+      "trial": "Provë"
+    },
+    "title": "Faturimi dhe abonimi",
+    "trialEnds": "Prova përfundon",
+    "upgradeMonthly": "Përmirëso mujor",
+    "upgradeYearly": "Përmirëso vjetor",
+    "vatNotice": "Çmimet e paraqitura janë neto, pa TVSH. TVSH-ja do të shtohet aty ku zbatohet.",
+    "yearTotal": "€{amount}/vit gjithsej"
+  }
+}

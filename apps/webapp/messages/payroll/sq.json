@@ -1,0 +1,202 @@
+{
+  "payroll": {
+    "accessDenied": {
+      "description": "Nuk keni qasje në të dhënat e listëpagesave për organizatën aktive.",
+      "help": "Kërkojini një administratori të organizatës t'ju caktojë qasje në listëpagesa nëse ju nevojitet kjo hapësirë pune.",
+      "title": "Nuk ka qasje në listëpagesa"
+    },
+    "actions": {
+      "apply": "Zbato",
+      "downloadPdf": "Shkarko PDF",
+      "triggerExport": "Nis eksportin"
+    },
+    "blockers": {
+      "clearFailed": "Nuk mund të hiqej pengesa e listëpagesës",
+      "clearFalsePositive": "Pastro pozitivin e rremë",
+      "clearingFalsePositive": "Duke pastruar pozitivin e rremë",
+      "dateUnavailable": "Data nuk është e disponueshme",
+      "missingClockOut": "Mungon regjistrimi i daljes",
+      "missingIdentifier": "Mungon identifikuesi",
+      "needReview": "{count} bllokues të listëpagesës kërkojnë shqyrtim",
+      "offboardingClockRepair": "Dalja e regjistruar gjatë çregjistrimit ka nevojë për rregullim",
+      "openApprovals": "Miratimet e hapura",
+      "openCalendar": "Hap kalendarin",
+      "openEmployee": "Hap punonjësin",
+      "openWork": "Punë pa regjistrim daljeje",
+      "openWorkDiagnostics": "Hap diagnostikën e punës",
+      "pendingAbsence": "Mungesë në pritje",
+      "pendingTimeCorrection": "Korrigjim i orarit në pritje",
+      "pendingWorkApproval": "Punë në pritje të miratimit",
+      "refreshAfterClearFailed": "Pengesa u hoq, por listëpagesa nuk mund të rifreskohej",
+      "uncertainHistoricalWork": "Puna historike kërkon shqyrtim",
+      "unknownEmployee": "Punonjës i panjohur",
+      "unresolvedWorkMinutes": "Minutat e punës kërkojnë shqyrtim"
+    },
+    "description": "Rishikoni totalet e listëpagesave, gatishmërinë dhe eksportet për periudhën e zgjedhur.",
+    "employeeTotals": {
+      "absences": "Mungesat",
+      "blocked": "Bllokuar",
+      "contract": "Kontrata",
+      "contractFixed": "Fikse",
+      "contractHourly": "Me orë",
+      "description": "Koha e punuar, totali i mungesave, lloji i kontratës dhe statusi i listëpagesës.",
+      "employee": "Punonjësi",
+      "hours": "Orët",
+      "noAbsences": "Asnjë",
+      "noEmployeeNumber": "Nuk ka numër punonjësi",
+      "noTeam": "Pa ekip",
+      "readyForPayroll": "Gati për listëpagesë",
+      "status": "Statusi",
+      "team": "Ekipi",
+      "title": "Totalet e punonjësve"
+    },
+    "errors": {
+      "actionFailed": "Veprimi në hapësirën e punës së listëpagesës dështoi",
+      "activeOrganizationEmployeeRequired": "Kërkohet konteksti aktiv i punonjësit të organizatës",
+      "authenticationRequired": "Kërkohet autentifikim",
+      "blockerNotDismissible": "Pengesa e listëpagesës nuk mund të hiqet",
+      "dataTemporarilyUnavailable": "Të dhënat e listëpagesave përkohësisht nuk janë të disponueshme",
+      "employeeIdsMustBeArray": "employeeIds duhet të jetë një varg",
+      "employeeIdsMustContainOnlyStrings": "employeeIds duhet të përmbajë vetëm vargje teksti",
+      "endDateAfterStart": "Data e përfundimit duhet të jetë në ose pas datës së fillimit",
+      "exportBlockedByMissingIdentifier": "Eksporti u bllokua: disa punonjës nuk kanë vlerë për fushën e personalizuar që përdoret si identifikues i listëpagesës",
+      "exportBlockedByOffboardingClockRepair": "Eksporti u bllokua: rregulloni më parë daljen e çregjistrimit",
+      "exportBlockedByUncertainWork": "Eksporti u bllokua: zgjidhni më parë punën e pasigurt në fushëveprimin e zgjedhur",
+      "exportBlockedByUnresolvedWorkMinutes": "Eksporti u bllokua: zgjidhni më parë minutat e punës që kërkojnë shqyrtim",
+      "exportFormatNotConfigured": "Formati i eksportit të listëpagesës nuk është konfiguruar",
+      "exportIdentifierChanged": "Cilësimi i identifikuesit të listëpagesës ndryshoi pasi ky eksport u mblodh. Nisni një eksport të ri.",
+      "invalidBlockerId": "ID-ja e pengesës së listëpagesës është e pavlefshme",
+      "invalidBlockerType": "Lloji i pengesës së listëpagesës është i pavlefshëm",
+      "mustBeIsoDate": "{field} duhet të jetë një datë ISO",
+      "mustBeValidIsoDate": "{field} duhet të jetë një datë e vlefshme ISO",
+      "noAssignedEmployees": "Nuk ka punonjës të listëpagesës të caktuar në fushëveprimin e qasjes suaj",
+      "noAvailableEmployees": "Nuk ka punonjës të listëpagesës të disponueshëm në fushëveprimin e qasjes suaj",
+      "periodLabelRequired": "Kërkohet etiketa e periudhës së listëpagesës",
+      "unknownExportFormat": "Format i panjohur i eksportit të listëpagesës"
+    },
+    "export": {
+      "completed": "Eksportimi i listëpagesës përfundoi",
+      "formatAccessCheck": "Kontrolli i qasjes në format",
+      "nobodyEmployedInPeriod": "Asnjë person në qasjen tuaj të listëpagesave nuk ishte i punësuar në këtë periudhë.",
+      "noConfiguredTarget": "Nuk ka destinacion të konfiguruar të eksportit të listëpagesës",
+      "queued": "Eksportimi i listëpagesës u vu në radhë",
+      "selectFormat": "Zgjidhni formatin",
+      "target": "Destinacioni i eksportit të listëpagesës",
+      "unmappedOvertimePayouts": "{count, plural, one {# pagesë e orëve shtesë nuk u eksportua} other {# pagesa të orëve shtesë nuk u eksportuan}}",
+      "unmappedOvertimePayoutsDescription": "Asnjë lloj page nuk është lidhur me Orët shtesë për këtë format. Kërkojini administratorit të organizatës të lidhë një, ose paguajini këto orë në një mënyrë tjetër."
+    },
+    "filters": {
+      "noMatchingEmployees": "Asnjë punonjës nuk përputhet me filtrat e përzgjedhur të listëpagesës."
+    },
+    "formerEmployeesExport": {
+      "description": "Eksportoni një muaj në të cilin ndonjëri prej tyre ishte ende i punësuar: orët e tyre të fundit dhe pagesat përfundimtare të orëve shtesë do të përfshihen në skedar.",
+      "export": "Eksporto",
+      "nextMonth": "Muaji tjetër",
+      "previousMonth": "Muaji i kaluar",
+      "title": "Eksporto listëpagesat për punonjësit e larguar"
+    },
+    "onlyFormerEmployees": {
+      "description": "Mund të vazhdoni të regjistroni dhe anuloni pagesat e tyre të orëve shtesë, si dhe të eksportoni më poshtë muajt gjatë të cilëve ata kanë qenë të punësuar.",
+      "title": "Vetëm punonjësit e larguar janë në qasjen tuaj të listëpagesave"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Asnjë lloj page nuk është lidhur me Orët shtesë për këtë format, kështu që eksporti i përjashton këto pagesa. Kërkojini një administratori të organizatës të lidhë një, ose paguajini këto orë në një mënyrë tjetër.",
+      "title": "{count, plural, one {# pagesë e orëve shtesë nuk do të eksportohet} other {# pagesa të orëve shtesë nuk do të eksportohen}}"
+    },
+    "period": {
+      "current": "Periudha aktuale",
+      "dateRange": "{start} deri në {end}",
+      "employeesInScope": "{count} punonjës në fushëveprim",
+      "end": "Përfundimi",
+      "mode": {
+        "custom": "E personalizuar",
+        "month": "Muaji",
+        "week": "Java"
+      },
+      "next": "Periudha tjetër",
+      "previous": "Periudha e mëparshme",
+      "selected": "Periudha e përzgjedhur",
+      "start": "Fillimi"
+    },
+    "run": {
+      "discard": {
+        "action": "Hidh poshtë ekzekutimin e listëpagesës",
+        "confirmed": "Ky proces listëpagese tashmë është konfirmuar si i paguar për disa raporte, kështu që nuk mund të anulohet më. Në vend të kësaj, hiqni raportet individuale prej tij.",
+        "description": "{count, plural, one {# raport shpenzimesh që ai përfshin do të presë sërish rimbursim: eksporti i ardhshëm i listëpagesës ose një transfertë bankare mund t'i marrë ato. Hidheni poshtë vetëm nëse ky skedar nuk paguhet me listëpagesë.} other {# raporte shpenzimesh që ai përfshin do të presin sërish rimbursim: eksporti i ardhshëm i listëpagesës ose një transfertë bankare mund t'i marrë ato. Hidheni poshtë vetëm nëse ky skedar nuk paguhet me listëpagesë.}}",
+        "done": "Ekzekutimi i listëpagesës u hodh poshtë. Raportet e shpenzimeve të tij presin sërish rimbursim.",
+        "failed": "Ekzekutimi i listëpagesës nuk mund të hidhej poshtë.",
+        "notFound": "Ky ekzekutim i listëpagesës nuk përfshin më asnjë raport.",
+        "outOfScope": "Ky ekzekutim i listëpagesës përfshin punonjës jashtë fushëveprimit të listëpagesës suaj.",
+        "title": "Të hidhet poshtë ky ekzekutim i listëpagesës?"
+      }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "caktuar me dorë",
+        "exceptionalItinerary": "itinerar që rregullat ligjore nuk e mbulojnë",
+        "outsideVerifiedTables": "nuk ka tabelë ligjore të verifikuar për ditët e tij"
+      },
+      "description": "Këto shpenzime presin rimbursim, por një eksport i kësaj periudhe dhe formati i lë jashtë. Eksporti nuk është i bllokuar: paguajini me transfertë bankare nga radha e financës.",
+      "payByBankTransfer": "Paguaj me transfertë bankare",
+      "reason": {
+        "apiConnector": "Ky format është një lidhës API, i cili nuk mbart kurrë shuma shpenzimesh.",
+        "currencyNotEur": "Jo në euro: proceset e listëpagesave mbartin vetëm shuma në euro.",
+        "includedInOtherRun": "Përfshirë në procesin e pakonfirmuar të listëpagesës {period} ({format}).",
+        "legacyClaim": "Kërkesat e vjetra nuk paguhen kurrë përmes listëpagesës.",
+        "negativeDifference": "Një rregullim uli atë që proceset e mëparshme të listëpagesës mbartnin për: {kinds}.",
+        "noStatutoryBaseline": "Nuk ka bazë ligjore për: {items}.",
+        "nothingOwed": "Rreshtat e tij të listëpagesës nuk lënë asgjë për t'u mbartur nga listëpagesa.",
+        "reimbursedOutsidePayroll": "Tashmë pjesërisht i paguar me transfertë bankare ose i rikuperuar: listëpagesa nuk mund të marrë pjesën e mbetur.",
+        "unmappedWageType": "Asnjë lloj page nuk është caktuar për këtë format për: {kinds}."
+      },
+      "title": "Raportet e shpenzimeve që ky proces listëpagese nuk do t'i mbartë",
+      "unknownEmployee": "Punonjësi"
+    },
+    "runs": {
+      "description": "Këto eksporte mbartin raporte shpenzimesh që presin rimbursim. Një zyrtar i shpenzimeve konfirmon çdo ekzekutim pasi të jetë paguar nga listëpagesa; hidhni poshtë një ekzekutim skedari i të cilit nuk është paguar.",
+      "reports": "{count, plural, one {# raport shpenzimesh} other {# raporte shpenzimesh}}",
+      "title": "Ekzekutime të pakonfirmuara të listëpagesës"
+    },
+    "scope": {
+      "allManaged": "Të gjithë punonjësit dhe ekipet që menaxhoj",
+      "apply": "Zbato",
+      "cancel": "Anulo",
+      "currentScope": "Fushëveprimi aktual",
+      "description": "Ngushtoni këtë hapësirë pune të listëpagesës sipas punonjësve ose ekipeve të caktuara.",
+      "noAssignedEmployees": "Nuk ka punonjës të caktuar në këtë fushëveprim të listëpagesës.",
+      "noAssignedTeams": "Nuk ka ekipe të caktuara në këtë fushëveprim të listëpagesës.",
+      "selectedEmployeesCount": "{count} punonjës",
+      "selectedSummary": "{summary} të përzgjedhur",
+      "selectedTeamsCount": "{count} ekipe",
+      "specificEmployees": "Punonjës specifikë",
+      "specificEmployeesDescription": "Zgjidhni punonjësit që do të përfshihen në këtë fushëveprim të listëpagesës.",
+      "specificTeams": "Ekipe specifike",
+      "specificTeamsDescription": "Zgjidhni ekipet që do të përfshihen në këtë fushëveprim të listëpagesës.",
+      "title": "Fushëveprimi i listëpagesës"
+    },
+    "summary": {
+      "blockers": "Pengesat",
+      "employees": "Punonjësit",
+      "ready": "Gati",
+      "workedHours": "Orët e punuara"
+    },
+    "title": "Listëpagesa",
+    "unavailable": {
+      "description": "Të dhënat e listëpagesave nuk mund të përgatiteshin në mënyrë të sigurt.",
+      "help": "Ju lutemi provoni përsëri më vonë. Nëse problemi vazhdon, kontaktoni një administrator të organizatës.",
+      "title": "Listëpagesat janë përkohësisht të padisponueshme"
+    },
+    "workBalances": {
+      "back": "Bilancet e punës",
+      "backToPayroll": "Listëpagesa",
+      "description": "Regjistroni dhe anuloni pagesat e orëve shtesë për punonjësit që mbulon qasja juaj e listëpagesave, përfshirë punonjësit e larguar.",
+      "empty": "Ende nuk ka punonjës në fushëveprimin e qasjes suaj të listëpagesave.",
+      "former": "Ish-punonjës",
+      "loading": "Po ngarkohen bilancet e punës",
+      "loadingEmployee": "Po ngarkohet bilanci i punës",
+      "open": "Bilancet e punës",
+      "title": "Bilancet e punës"
+    }
+  }
+}

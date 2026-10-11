@@ -1,0 +1,2757 @@
+{
+  "settings": {
+    "assignedLocations": {
+      "added": "Dodijeljena lokacija dodana",
+      "employeeDescription": "Lokacije na kojima ovaj zaposlenik radi. Kiosci prihvaćaju samo zaposlenike dodijeljene njihovoj lokaciji.",
+      "employeeEmpty": "Nema dodijeljenih lokacija",
+      "employeeLabel": "Zaposlenik",
+      "employeePlaceholder": "Odaberite zaposlenika",
+      "employeeTitle": "Dodijeljene lokacije",
+      "errors": {
+        "adminOnly": "Samo vlasnici organizacije i administratori mogu upravljati dodijeljenim lokacijama.",
+        "employeeNotFound": "Zaposlenik nije pronađen.",
+        "failed": "Dodijeljene lokacije nisu se mogle ažurirati. Pokušajte ponovno.",
+        "invalidSelection": "Odaberite s popisa.",
+        "locationNotFound": "Lokacija nije pronađena."
+      },
+      "locationDescription": "Zaposlenici koji rade na ovoj lokaciji. Njezini kiosci prihvaćaju samo njih.",
+      "locationEmpty": "Nema dodijeljenih zaposlenika",
+      "locationLabel": "Lokacija",
+      "locationPlaceholder": "Odaberite lokaciju",
+      "locationTitle": "Dodijeljeni zaposlenici",
+      "noEmployeesLeft": "Svi aktivni zaposlenici dodijeljeni su ovoj lokaciji.",
+      "noLocationsLeft": "Nema više aktivnih lokacija za dodjelu.",
+      "removed": "Dodijeljena lokacija uklonjena"
+    },
+    "avv": {
+      "contractDetails": {
+        "controller": "Klijent (voditelj obrade)",
+        "descriptionPrefix": "Ovaj ugovor uređuje obradu osobnih podataka u ime vaše organizacije i ",
+        "processor": "Izvođač (izvršitelj obrade)",
+        "title": "Pojedinosti o ugovoru"
+      },
+      "description": "Preuzmite svoj ugovor o obradi podataka u skladu s člankom 28. GDPR-a.",
+      "download": {
+        "button": "Preuzmite ugovor o obradi podataka u PDF formatu",
+        "downloaded": "Ugovor o obradi podataka preuzet",
+        "downloadFailed": "Preuzimanje nije uspjelo",
+        "errorOccurred": "Došlo je do pogreške",
+        "filename": "Datoteka: {filename}",
+        "generating": "Generiranje PDF-a…"
+      },
+      "hosting": {
+        "descriptionPrefix": "Svi se podaci nalaze na poslužiteljima ",
+        "descriptionSuffix": ". Ne koriste se dodatni podizvršitelji obrade.",
+        "title": "Hosting i podizvršitelji obrade"
+      },
+      "title": "Ugovor o obradi podataka (DPA)"
+    },
+    "billableTime": {
+      "accounting": {
+        "apiKey": "API ključ",
+        "apiKeyHelp": "Pohranjeno u spremištu tajni vaše organizacije. Z8 ga više nikada neće prikazati.",
+        "apiKeyRequired": "Unesite API ključ",
+        "chooseTool": "Odaberite računovodstveni alat",
+        "connect": "Poveži",
+        "connected": "Povezano",
+        "connectedOnBy": "{date}, {name}",
+        "connectedToast": "Računovodstveni alat je povezan",
+        "connection": {
+          "description": "Z8 stvara skice računa u vašem računovodstvenom alatu, gdje ih vaš računovođa dovršava. Z8 tamo nikada ne izdaje račune niti stvara kontakte.",
+          "title": "Računovodstvena veza"
+        },
+        "contactPerson": {
+          "help": "sevdesk navodi korisnika vašeg računa kao kontakt osobu na svakom računu. Učitajte korisnike pomoću gornjeg API ključa i odaberite jednog.",
+          "label": "Kontakt osoba",
+          "load": "Učitaj sevdesk korisnike",
+          "none": "Ovaj račun nema aktivnih sevdesk korisnika.",
+          "placeholder": "Odaberite sevdesk korisnika"
+        },
+        "contacts": {
+          "customerNumber": "Klijent br. {number}",
+          "link": "Poveži",
+          "linked": "Povezano",
+          "minLength": "Unesite najmanje {count} znakova",
+          "noResults": "Nema podudarnih kontakata. Najprije izradite kontakt u računovodstvenom alatu; Z8 ondje nikada ne stvara kontakte.",
+          "search": "Pretraži kontakte u alatu",
+          "searching": "Pretraživanje…",
+          "searchPlaceholder": "Naziv ili broj kupca",
+          "truncated": "Pronađeno je više kontakata. Suzite pretragu kako biste ih vidjeli."
+        },
+        "customer": {
+          "changeContact": "Promijeni kontakt",
+          "contactLink": "Kontakt u računovodstvenom alatu",
+          "description": "Kontakt kojem se šalju nacrti računa ovog kupca i način njihova oporezivanja.",
+          "entry": "Računovodstvo",
+          "linkContact": "Poveži kontakt",
+          "linked": "Kontakt povezan",
+          "linkedIn": "U alatu {tool}",
+          "linkedInWithNumber": "Kupac br. {number} u alatu {tool}",
+          "notConnected": "Najprije povežite računovodstveni alat u postavkama Naplativog vremena.",
+          "notLinked": "Nije povezano. Kupac mora biti povezan s kontaktom prije prvog prijenosa.",
+          "openSettings": "Otvori postavke računovodstva",
+          "overrideTax": "Postavi zasebno za kupca",
+          "taxCleared": "Ponovno se primjenjuje zadani porezni tretman veze",
+          "taxDefault": "{treatment} (zadano za vezu)",
+          "taxHelp": "Upotrebljava se za nacrte računa ovog kupca. Računovođa to provjerava na svakom nacrtu.",
+          "taxNoDefault": "Zadana vrijednost veze primjenjuje se nakon povezivanja računovodstvenog alata.",
+          "taxOverride": "{treatment} (zasebno za kupca)",
+          "taxSaved": "Porezni tretman spremljen",
+          "taxTreatment": "Porezni tretman",
+          "title": "Računovodstvo za {name}",
+          "unlink": "Ukloni vezu",
+          "unlinked": "Veza s kontaktom uklonjena",
+          "useDefault": "Upotrijebi zadano za vezu"
+        },
+        "customers": {
+          "actions": "Radnje",
+          "contact": "Kontakt",
+          "customer": "Kupac",
+          "defaultTax": "Zadano: {treatment}",
+          "description": "Povežite svakog kupca s njegovim postojećim kontaktom u računovodstvenom alatu prije prvog prijenosa i po potrebi preinačite porezni tretman.",
+          "edit": "Uredi",
+          "empty": "Još nema kupaca",
+          "inactive": "Neaktivno",
+          "notLinked": "Nije povezano",
+          "tax": "Porezni tretman",
+          "title": "Kupci"
+        },
+        "defaultTax": "Zadani porezni tretman",
+        "defaultTaxHelp": "Zadana vrijednost za nacrte računa svakog kupca. Za pojedinog kupca može se preinačiti.",
+        "defaultTaxSaved": "Zadani porezni tretman spremljen",
+        "editDefaultTax": "Promijeni zadani porezni tretman",
+        "hint": {
+          "lexwareOffice": "Zahtijeva paket Lexware Office XL i nacrte u valuti EUR. Izradite ključ na app.lexware.de pod Public API, po mogućnosti za namjenskog korisnika Lexwarea.",
+          "sevdesk": "Upotrijebite API token korisnika sevdeska. Token ima sve ovlasti tog korisnika, pa se preporučuje namjenski korisnik."
+        },
+        "import": {
+          "hint": "Pregledajte kupce iz računovodstvenog alata koji još nisu povezani, a zatim ih izradite ili povežite.",
+          "start": "Uvezi kupce"
+        },
+        "keyMissing": "API ključ nedostaje u spremištu tajni. Zamijenite vezu novim ključem.",
+        "netPrices": {
+          "label": "Ovaj sevdesk korisnički račun unosi cijene računa kao neto cijene",
+          "required": "Z8 prosljeđuje neto cijene. Potvrdite da sevdesk unosi cijene kao neto cijene."
+        },
+        "noProviders": "U ovoj instalaciji još nije moguće povezati nijedan računovodstveni alat.",
+        "providerUnavailable": "Ovaj alat nije dostupan u ovoj instalaciji. Zamijenite ili uklonite vezu.",
+        "remove": "Ukloni vezu",
+        "removeConfirm": "Ukloni vezu",
+        "removed": "Računovodstvena veza uklonjena",
+        "removeDescription": "Z8 briše API ključ i više ne može stvarati nacrte računa. Nacrti koji su već u alatu ostaju tamo. Poveznice kontakata vraćaju se ako ponovno povežete isti račun.",
+        "removeTitle": "Ukloniti računovodstvenu vezu?",
+        "replace": "Zamijeni vezu",
+        "replaced": "Računovodstvena veza zamijenjena",
+        "replaceHelp": "Nova veza zamjenjuje trenutačnu i njezin se ključ briše. Poveznice kontakata ostaju ako novi ključ pripada istom računu u istom alatu.",
+        "replaceSubmit": "Zamijeni vezu",
+        "tax": {
+          "domesticReduced": "Tuzemna, snižena stopa",
+          "domesticStandard": "Tuzemna, standardna stopa",
+          "euReverseCharge": "EU prijenos porezne obveze",
+          "invalid": "Unesite stopu veću od 0 i najviše 100 %, s najviše dvije decimale",
+          "kind": "Porezni tretman",
+          "rate": "Stopa PDV-a",
+          "thirdCountryService": "Usluga u treću zemlju",
+          "vatFree": "Bez PDV-a",
+          "withRate": "{label} ({rate} %)"
+        },
+        "tool": "Alat",
+        "toolUnavailable": "{tool} (još nije dostupno)"
+      },
+      "bulk": {
+        "again": "Promijeni još rada",
+        "alreadyBillable": "Već naplativo",
+        "alreadyNonBillable": "Već nenaplativo",
+        "apply": "Primijeni",
+        "billable": "Naplativo",
+        "dateRequired": "Odaberite datum",
+        "description": "Označite rad na projektu u rasponu datuma kao naplativ ili nenaplativ.",
+        "failed": "Nije promijenjeno: rad je izmijenjen tijekom primjene",
+        "fromDay": "Od",
+        "help": "Mijenja dovršeni rad na ovom projektu. Datumi se odnose na lokalni dan svakog zaposlenika kada je rad započeo. Rad s ispravkom ili predajom na čekanju se zadržava.",
+        "hours": "{hours} h",
+        "hoursColumn": "Sati",
+        "markedBillable": "Označeno kao naplativo",
+        "markedNonBillable": "Označeno kao nenaplativo",
+        "nonBillable": "Nenaplativo",
+        "open": "Označi rad kao naplativ",
+        "outcome": "Rad",
+        "preview": "Pretpregled",
+        "rangeOrder": "Datum završetka ne smije biti prije datuma početka",
+        "skipped": {
+          "heldBack": "Zadržano: čeka se ispravak ili podnošenje",
+          "invoiced": "Fakturirano: u nacrtu računa, nikada se ne mijenja skupno"
+        },
+        "stale": "Rad se promijenio od pretpregleda. Ništa nije promijenjeno; provjerite novi pretpregled i primijenite ponovno.",
+        "target": "Označi rad kao",
+        "title": "Označi rad na {name}",
+        "toDay": "Do",
+        "willMarkBillable": "Bit će označeno kao naplativo",
+        "willMarkNonBillable": "Bit će označeno kao nenaplativo",
+        "workPeriods": "Radna razdoblja"
+      },
+      "costRates": {
+        "actions": "Radnje",
+        "employee": "Zaposlenik",
+        "employeeDescription": "Ukupni interni trošak ovog zaposlenika po satu, koji se koristi za maržu. Odvojen je od plaće.",
+        "employeeTitle": "Stopa troška",
+        "empty": "Još nema stope troška. Marža za rad ovog zaposlenika prikazuje se kao nepoznati trošak.",
+        "history": "Povijest",
+        "hourly": "Po satu",
+        "inactive": "Neaktivno",
+        "intro": "Stopa troška je ukupni interni trošak zaposlenika po satu u valuti {currency}, koji se koristi za maržu. Odvojen je od plaće: promjena jednog nikada ne mijenja drugo.",
+        "loadError": "Stope troška nisu se mogle učitati",
+        "noEmployees": "Još nema zaposlenika",
+        "panelDescription": "Stopa troška",
+        "ratePerHour": "{rate}/h",
+        "saved": "Stopa troška spremljena",
+        "set": "Postavi stopu troška",
+        "setRateHelp": "Nova stopa troška primjenjuje se od ovog datuma do sljedeće promjene. Nikada ne mijenja plaću, obračun plaća ni zaradu po satu.",
+        "startsOn": "Započinje {date}",
+        "today": "Danas",
+        "unchanged": "Ta se stopa troška već primjenjuje",
+        "unknown": "Trošak nepoznat",
+        "useWage": "Započni od plaće od {rate}"
+      },
+      "currency": {
+        "description": "Jedinstvena valuta u kojoj su izražene vaše naplatne stope, stope troškova, prihod i marža.",
+        "help": "Sve naplatne stope, stope troškova, prihod i marža koriste ovu valutu. Ne može se promijeniti nakon što postoji naplatna stopa ili stopa troška.",
+        "label": "Naplatna valuta",
+        "locked": "Naplatne stope ili stope troškova već koriste ovu valutu, pa se više ne može promijeniti.",
+        "save": "Spremi valutu",
+        "saved": "Naplatna valuta spremljena",
+        "title": "Naplatna valuta"
+      },
+      "description": "Naplatna valuta i ono što vaša organizacija naplaćuje klijentima za rad",
+      "handOff": {
+        "blocker": {
+          "currency": "Računovodstveni alat ne može prihvatiti skice u valuti {currency}.",
+          "noContactLink": "Prvo povežite ovog klijenta s kontaktom u računovodstvenom alatu na stranici Računovodstvo.",
+          "notConnected": "Prvo povežite računovodstveni alat na stranici Računovodstvo.",
+          "nothing": "Nema nefakturiranog naplatnog rada za predaju u ovom razdoblju.",
+          "off": "Naplativo vrijeme je isključeno.",
+          "providerUnavailable": "Povezani računovodstveni alat nije dostupan u ovoj instalaciji.",
+          "taxTreatment": "Računovodstveni alat ne može prihvatiti porezni tretman ovog klijenta.",
+          "tooManyWorkLines": "Skica bi imala {lines} stavki rada; računovodstveni alat prihvaća najviše {max}. Odaberite manje projekata ili kraće razdoblje.",
+          "unpriced": "{count, plural, one {# radno razdoblje nema naplatnu stopu. Dodajte stopu prije predaje.} few {# radna razdoblja nemaju naplatnu stopu. Dodajte stopu prije predaje.} other {# radnih razdoblja nema naplatnu stopu. Dodajte stopu prije predaje.}}"
+        },
+        "changed": {
+          "billability": "Naplativost",
+          "project": "Projekt",
+          "removed": "Izbrisano",
+          "split": "Podijeli",
+          "times": "Vremena"
+        },
+        "confirmed": "Skica računa je stvorena",
+        "detail": {
+          "checking": "Provjera skice u alatu…",
+          "gone": "Računovodstveni alat više nema ovu skicu. Ako je namjerno izbrisana, oslobodite predaju kako bi se rad mogao ponovno predati.",
+          "loading": "Predaja",
+          "openInTool": "Otvori u računovodstvenom alatu",
+          "pending": "Računovodstveni alat još nije stvorio ovaj nacrt. Pokušajte ponovno kako biste dovršili prijenos.",
+          "pendingUnknown": "Računovodstveni alat nije odgovorio. Pokušajte ponovno kako biste dovršili ovaj prijenos: pronaći će već stvoreni nacrt i nikada neće stvoriti drugi.",
+          "releaseReason": "Otpušteno: {reason}",
+          "timesheet": "Evidencija radnog vremena",
+          "timesheetHelp": "Stavke rada u sklopu ovog prijenosa za slanje uz račun.",
+          "title": "Prijenos klijentu {customer}",
+          "toolStatus": "U alatu: {status}"
+        },
+        "form": {
+          "allProjects": "Svi projekti",
+          "customer": "Klijent",
+          "customerNotLinked": "{name} (nije povezano)",
+          "customerPlaceholder": "Odaberite klijenta",
+          "customerRequired": "Odaberite klijenta",
+          "english": "Engleski",
+          "from": "Od",
+          "german": "Njemački",
+          "language": "Jezik nacrta",
+          "periodInvalid": "Razdoblje ne može završiti prije nego što započne",
+          "preview": "Pretpregled",
+          "projects": "Projekti",
+          "projectsRequired": "Odaberite barem jedan projekt",
+          "timesheet": "Dodajte evidenciju radnog vremena kao tekstualne retke",
+          "timesheetHelp": "Jedan redak po razdoblju rada, unutar ograničenja redaka računovodstvenog alata. Uvijek možete preuzeti evidenciju radnog vremena.",
+          "to": "Do"
+        },
+        "hoursValue": "{hours} h",
+        "list": {
+          "actions": "Radnje",
+          "changed": "{count, plural, one {# radno razdoblje promijenjeno nakon izdavanja računa} few {# radna razdoblja promijenjena nakon izdavanja računa} other {# radnih razdoblja promijenjeno nakon izdavanja računa}}",
+          "customer": "Klijent",
+          "description": "Nacrti računa stvoreni u računovodstvenom alatu. Otvorite jedan da biste provjerili njegov status, preuzeli njegovu evidenciju radnog vremena ili ga otpustili.",
+          "empty": "Još nema prijenosa",
+          "gone": "Izbrisano u alatu",
+          "open": "Otvori",
+          "period": "Razdoblje",
+          "status": "Status",
+          "title": "Prijenosi",
+          "total": "Neto ukupno"
+        },
+        "marks": {
+          "clear": "Ukloni oznaku",
+          "clearAll": "Ukloni sve oznake",
+          "cleared": "{count, plural, one {# oznaka uklonjena} few {# oznake uklonjene} other {# oznaka uklonjeno}}",
+          "help": "Ovaj fakturirani rad ispravljen je nakon prijenosa. Ispravite račun u računovodstvenom alatu ako je potrebno (primjerice odobrenjem), a zatim uklonite oznaku.",
+          "title": "Promijenjeno nakon izdavanja računa"
+        },
+        "new": {
+          "description": "Stvorite jedan nacrt računa u računovodstvenom alatu od nefakturiranog naplativog rada klijenta. Računovođa ga tamo dovršava.",
+          "title": "Novi prijenos"
+        },
+        "pending": "Računovodstveni alat još nije potvrdio nacrt. Pokušajte ponovno s prijenosom.",
+        "period": "{from} – {to}",
+        "preview": {
+          "alreadyInvoiced": "Već fakturirano",
+          "alreadyInvoicedHint": "Ovaj se rad nalazi u drugom nacrtu računa i izostavljen je.",
+          "amount": "Iznos",
+          "confirm": "Stvori nacrt računa",
+          "heldBack": "Zadržani rad",
+          "heldBackHint": "Ispravak ili podnošenje za ovaj rad još je na čekanju. Izostavlja se dok se o tome ne donese odluka.",
+          "hours": "Sati",
+          "line": "Redak",
+          "nonBillable": "{count, plural, one {# nenaplativo radno razdoblje ({hours} h) nije preneseno.} other {# nenaplativih radnih razdoblja ({hours} h) nije preneseno.}}",
+          "rate": "Tarifa",
+          "retry": "Ponovi prijenos",
+          "retryHint": "Ponovni pokušaj je siguran: dovršava isti prijenos i nikada ne stvara drugi nacrt.",
+          "taxHint": "plus porez prema poreznom tretmanu, primijenjenom u računovodstvenom alatu",
+          "timesheetLines": "{count, plural, one {# tekstualni redak evidencije radnog vremena dodan je u nacrt.} other {# tekstualnih redaka evidencije radnog vremena dodano je u nacrt.}}",
+          "timesheetOmitted": "{count, plural, one {Računovodstveni alat prihvaća samo ograničen broj redaka: # radno razdoblje izostavljeno je iz tekstualnih redaka. Preuzimanje evidencije radnog vremena sadrži ih sve.} other {Računovodstveni alat prihvaća samo ograničen broj redaka: # radnih razdoblja izostavljeno je iz tekstualnih redaka. Preuzimanje evidencije radnog vremena sadrži ih sve.}}",
+          "title": "Pretpregled",
+          "total": "Neto ukupno",
+          "unpriced": "Rad bez određene cijene",
+          "unpricedHint": "Naplativi rad bez naplative tarife. Dodajte tarifu na stranici Naplative tarife, a zatim ponovno pregledajte.",
+          "withoutCustomer": "{count, plural, one {# naplativo radno razdoblje ({hours} h) na projektima bez klijenta ({projects}) ne može se prenijeti.} other {# naplativih radnih razdoblja ({hours} h) na projektima bez klijenta ({projects}) ne može se prenijeti.}}"
+        },
+        "release": {
+          "action": "Otpusti",
+          "confirm": "Otpusti",
+          "description": "Njegov rad ponovno postaje nefakturiran i može se ponovno prenijeti. Z8 ne mijenja nacrt u računovodstvenom alatu: sami ga tamo izbrišite ili poništite.",
+          "done": "{count, plural, one {Otpušteno. # radno razdoblje ponovno je nefakturirano.} other {Otpušteno. # radnih razdoblja ponovno je nefakturirano.}}",
+          "reason": "Razlog (neobavezno)",
+          "title": "Otpustiti ovaj prijenos?"
+        },
+        "status": {
+          "created": "Nacrt izrađen",
+          "failed": "Neuspjelo",
+          "pending": "Čeka se alat",
+          "released": "Otpušteno"
+        },
+        "timesheet": {
+          "customer": "Klijent",
+          "date": "Datum",
+          "employee": "Zaposlenik",
+          "end": "Završetak",
+          "footer": "Generirao Z8",
+          "generatedAt": "Generirano",
+          "hours": "Sati",
+          "note": "Vremena su lokalna u odnosu na mjesto gdje je rad zabilježen. Sati se zaokružuju na dvije decimale po radnom razdoblju.",
+          "period": "Razdoblje",
+          "project": "Projekt",
+          "start": "Početak",
+          "table": "Rad",
+          "title": "Evidencija radnog vremena",
+          "total": "Ukupno"
+        }
+      },
+      "nav": {
+        "accounting": "Računovodstvo",
+        "costRates": "Troškovne tarife",
+        "currency": "Valuta naplate",
+        "handOff": "Prijenos",
+        "label": "Postavke naplativog vremena",
+        "rates": "Naplative tarife"
+      },
+      "rates": {
+        "actions": "Radnje",
+        "add": "Dodaj tarifu",
+        "addDescription": "Odaberite razinu tarife i za što se tarifa primjenjuje.",
+        "chooseCustomer": "Odaberite klijenta",
+        "chooseEmployee": "Odaberite zaposlenika",
+        "chooseProject": "Odaberite projekt",
+        "closedPeriod": "{from} do {to}",
+        "customer": "Klijent",
+        "customerRate": "Naplativa tarifa",
+        "customerRateTitle": "Naplativa tarifa za {name}",
+        "dateRequired": "Odaberite prvi dan primjene",
+        "effectiveFrom": "Primjenjuje se od",
+        "employee": "Zaposlenik",
+        "employeeProjectRateFor": "Naplativa tarifa za {name} na ovom projektu",
+        "employeeProjectRateTitle": "Naplativa tarifa za {name} na projektu {project}",
+        "employeeRateDescription": "Iznos koji vaša organizacija naplaćuje klijentima po satu rada ovog zaposlenika kada se ne primjenjuje tarifa projekta, klijenta ili zaposlenika na projektu.",
+        "employeeRateTitle": "Naplativa tarifa",
+        "empty": "Tarifa još nije postavljena",
+        "emptyCustomer": "Nema tarife za klijenta. Primjenjuje se tarifa pojedinog zaposlenika.",
+        "emptyEmployee": "Nema tarife za zaposlenika. Rad bez određenije tarife nema cijenu.",
+        "emptyEmployeeProject": "Nema tarife za ovog zaposlenika na ovom projektu. Primjenjuje se tarifa projekta, klijenta ili zaposlenika.",
+        "emptyProject": "Nema tarife za projekt. Primjenjuje se tarifa klijenta ili zaposlenika.",
+        "endRate": "Završi tarifu",
+        "endRateHelp": "Od ovog datuma ova se tarifa više ne primjenjuje do sljedeće promjene tarife.",
+        "endsFrom": "Više se ne primjenjuje od",
+        "for": "Za",
+        "history": "Povijest",
+        "hourlyRate": "Satna tarifa",
+        "inEffect": "Na snazi",
+        "inEffectTodayHint": "Danas na snazi: {rate}",
+        "intro": "Tarife su izražene u {currency} po satu. Za svaki dio rada primjenjuje se najspecifičnija tarifa koja je bila na snazi na dan početka: zaposlenik na projektu, zatim projekt, zatim klijent, pa zaposlenik.",
+        "level": {
+          "customer": "Klijent",
+          "customerDescription": "Primjenjuje se na rad na projektima klijenta bez tarife projekta.",
+          "employee": "Zaposlenik",
+          "employeeDescription": "Standardna tarifa zaposlenika koja se koristi kada se ne primjenjuje određenija tarifa.",
+          "employeeProject": "Zaposlenik na projektu",
+          "employeeProjectDescription": "Ima prednost pred svim ostalim tarifama za rad ovog zaposlenika na ovom projektu.",
+          "project": "Projekt",
+          "projectDescription": "Primjenjuje se na sav rad na projektu koji nema tarifu zaposlenika na projektu."
+        },
+        "levelLabel": "Razina tarife",
+        "loadError": "Nije moguće učitati naplative tarife",
+        "noneAtLevel": "Još nema tarifa na ovoj razini",
+        "noRateToday": "Nema tarife",
+        "openPeriod": "Od {from}",
+        "perHour": "{currency}/h",
+        "project": "Projekt",
+        "projectRate": "Naplativa tarifa",
+        "projectRateTitle": "Naplativa tarifa za {name}",
+        "rateInvalid": "Unesite pozitivnu satnu tarifu s najviše dvije decimale",
+        "ratePerHour": "{rate}/h",
+        "saved": "Naplativa tarifa je spremljena",
+        "saveEnd": "Završi tarifu",
+        "saveRate": "Spremi tarifu",
+        "setRate": "Postavi tarifu",
+        "setRateHelp": "Nova se tarifa primjenjuje od ovog datuma do sljedeće promjene tarife. Raniji datumi mijenjaju cijenu rada koji još nije fakturiran.",
+        "startsOn": "Počinje {date}",
+        "today": "Danas",
+        "unchanged": "Ta se tarifa već primjenjuje"
+      },
+      "title": "Naplativo vrijeme"
+    },
+    "billing": {
+      "description": "Upravljajte svojom pretplatom, načinima plaćanja i računima",
+      "title": "Naplata i pretplata"
+    },
+    "closedMonths": {
+      "automatic": {
+        "days": "Dani nakon kraja mjeseca",
+        "daysHelp": "Ako nešto blokira zatvaranje, svi s ovlaštenjem za zatvaranje bit će obaviješteni i pokušat će se ponovno sljedeći dan.",
+        "daysInvalid": "Unesite cijeli broj dana od 1 do 60",
+        "description": "Zatvorite prethodni mjesec za cijelu organizaciju određeni broj dana nakon njegova završetka. Ponovno otvoreni mjesec više se nikada ne zatvara automatski.",
+        "enabled": "Automatski zatvori mjesece",
+        "save": "Spremi",
+        "saved": "Automatsko zatvaranje je spremljeno",
+        "title": "Automatsko zatvaranje"
+      },
+      "blockedTitle": "Mjesec se još ne može zatvoriti. Prvo riješite sljedeće:",
+      "blocker": {
+        "absenceRequest": "neriješen zahtjev za odsustvo {startDate} – {endDate}",
+        "liveWork": "prijava rada još uvijek traje od {start}",
+        "notEnded": "mjesec još nije završio u njihovoj vremenskoj zoni",
+        "periodSubmission": "neriješena prijava razdoblja {startDate} – {endDate}",
+        "timeRequest": "neriješen zahtjev za rad od {start}"
+      },
+      "close": "Zatvori",
+      "closeDescription": "Nitko ne može mijenjati rad, atribuciju ili odsustva u zatvorenom mjesecu dok se ponovno ne otvori. Mjesec za svakog zaposlenika fiksira se u njegovoj vremenskoj zoni.",
+      "closeSubmit": "Zatvori mjesec",
+      "closeSuccess": "{count, plural, other {{month} zatvoren za # zaposlenika} }",
+      "closeTitle": "Zatvori {month}",
+      "description": "Zatvorite mjesece nakon obračuna plaća kako se rad i odsustva više ne bi mogli mijenjati",
+      "employeesLabel": "Zaposlenici",
+      "employeesRequired": "Odaberite barem jednog zaposlenika",
+      "history": {
+        "automatic": "Automatski",
+        "closed": "Zatvoreno",
+        "employees": "{count, plural, one {# zaposlenik} other {# zaposlenika} }",
+        "reopened": "Ponovno otvoreno",
+        "unknownActor": "Nepoznato"
+      },
+      "historyEmpty": "Još nijedan mjesec nije zatvoren.",
+      "historyTitle": "Povijest",
+      "monthsDescription": "Zatvaranjem mjeseca zamrzavaju se rad, atribucija i odsustva za obračun plaća. Bilješke se i dalje mogu uređivati.",
+      "monthsTitle": "Mjeseci",
+      "nothingToClose": "Za sve u ovom opsegu ovaj je mjesec već zatvoren.",
+      "nothingToReopen": "Nitko u ovom odabiru nema zatvoren ovaj mjesec.",
+      "reasonLabel": "Razlog",
+      "reasonPlaceholder": "Zašto je potrebno promijeniti ovaj mjesec?…",
+      "reasonRequired": "Unesite razlog ponovnog otvaranja",
+      "reopen": "Ponovno otvori",
+      "reopenDescription": "Ponovno otvoreni zaposlenici ostaju otvoreni dok se mjesec ponovno ne zatvori. Njihovi voditelji bit će obaviješteni.",
+      "reopenScopeLabel": "Ponovno otvori za",
+      "reopenSubmit": "Ponovno otvori mjesec",
+      "reopenSuccess": "{count, plural, other {{month} ponovno otvoren za # zaposlenika} }",
+      "reopenTitle": "Ponovno otvori {month}",
+      "scope": {
+        "all": "Sve",
+        "deletedTeam": "Izbrisani tim",
+        "employees": "Odabrani zaposlenici",
+        "organization": "Organizacija"
+      },
+      "scopeLabel": "Zatvori za",
+      "teamNotFound": "Ovaj tim više ne postoji.",
+      "title": "Zatvoreni mjeseci",
+      "warning": {
+        "periodNotSubmitted": "razdoblje {startDate} – {endDate} nije predano",
+        "periodRejected": "razdoblje {startDate} – {endDate} odbijeno",
+        "periodRunning": "razdoblje {startDate} – {endDate} još traje, ne može se još predati",
+        "periodSentBack": "razdoblje {startDate} – {endDate} vraćeno nakon promjene"
+      },
+      "warnings": {
+        "more": "i još {count}",
+        "title": "Nisu sve prijave razdoblja za ovaj mjesec odobrene. To ne zaustavlja zatvaranje:"
+      }
+    },
+    "compliance": {
+      "description": "Pregledajte i upravljajte zahtjevima članova tima za izuzeće od usklađenosti",
+      "title": "Usklađenost s ArbZG-om"
+    },
+    "customDomains": {
+      "description": "Konfigurirajte prilagođenu domenu, brendiranje i SSO za svoju organizaciju",
+      "title": "Domena i brendiranje"
+    },
+    "customers": {
+      "column": {
+        "contactPerson": "Kontakt osoba",
+        "email": "E-pošta",
+        "name": "Naziv tvrtke",
+        "phone": "Telefon"
+      },
+      "create": "Dodaj klijenta",
+      "created": "Klijent je stvoren",
+      "createFailed": "Stvaranje klijenta nije uspjelo",
+      "deleted": "Klijent je izbrisan",
+      "delete": {
+        "description": "Jeste li sigurni da želite izbrisati \"{name}\"? Projekti dodijeljeni ovom klijentu nastavit će raditi, ali će referenca na klijenta biti uklonjena.",
+        "title": "Izbriši klijenta"
+      },
+      "deleteFailed": "Brisanje klijenta nije uspjelo",
+      "description": "Upravljajte kontaktima klijenata za dodjelu projektima",
+      "dialog": {
+        "create": "Dodaj klijenta",
+        "createDescription": "Dodajte novog klijenta za dodjelu projektima",
+        "createTitle": "Dodaj klijenta",
+        "editDescription": "Ažurirajte podatke o klijentu",
+        "editTitle": "Uredi klijenta",
+        "save": "Spremi promjene"
+      },
+      "empty": {
+        "description": "Dodajte svog prvog klijenta kako biste ga dodijelili projektima.",
+        "title": "Još nema klijenata"
+      },
+      "field": {
+        "address": "Adresa",
+        "addressPlaceholder": "Ulica, grad, poštanski broj",
+        "contactPerson": "Kontakt osoba",
+        "contactPersonPlaceholder": "npr. Ivan Horvat",
+        "email": "E-pošta",
+        "name": "Naziv tvrtke",
+        "namePlaceholder": "Unesite naziv tvrtke",
+        "phone": "Telefon",
+        "project": "Projekt",
+        "projectPlaceholder": "Odaberite projekt",
+        "vatId": "PDV ID",
+        "website": "Web-stranica"
+      },
+      "list": {
+        "description": "Ukupno {count} klijenata",
+        "title": "Svi klijenti"
+      },
+      "managerNoProjects": "Nema dostupnih projekata kojima upravljate. Stvorite projekt ili upravljajte njime prije dodavanja klijenata.",
+      "projectRequired": "Prvo odaberite projekt",
+      "title": "Klijenti",
+      "updated": "Klijent je ažuriran",
+      "updateFailed": "Ažuriranje klijenta nije uspjelo"
+    },
+    "customFields": {
+      "accessSummary": "Vidljivo: {visibility} · Uređuje: {edit}",
+      "activeCount": "{count} od {max} aktivnih polja",
+      "activeList": "Aktivna prilagođena polja",
+      "add": "Dodaj prilagođeno polje",
+      "archivedList": "Arhivirana prilagođena polja",
+      "archivedTitle": "Arhivirano",
+      "archiveField": "Arhiviraj {name}",
+      "capReached": "Svaka vrsta zapisa može imati najviše 25 aktivnih prilagođenih polja. Arhivirajte jedno kako biste dodali drugo.",
+      "description": "Vaša vlastita polja za zaposlenike, projekte i klijente",
+      "editField": "Uredi {name}",
+      "empty": "Još nema prilagođenih polja.",
+      "entity": {
+        "customer": "Klijenti",
+        "employee": "Zaposlenici",
+        "project": "Projekti"
+      },
+      "form": {
+        "boundsHelp": "Ostavite granicu praznom ako nema ograničenja.",
+        "create": "Stvori polje",
+        "createTitle": "Dodaj prilagođeno polje",
+        "description": "Prilagođeno polje za {entity}.",
+        "editLevel": "Tko može uređivati vrijednosti",
+        "editLevelHelp": "Zaposlenici nikada ne uređuju vrijednosti prilagođenih polja.",
+        "editTitle": "Uredi prilagođeno polje",
+        "integerOnly": "Samo cijeli brojevi",
+        "max": "Maksimum",
+        "min": "Minimum",
+        "name": "Naziv",
+        "nameRequired": "Unesite naziv",
+        "options": "Opcije",
+        "optionsHelp": "Jedna opcija po retku.",
+        "required": "Obavezno",
+        "requiredHelp": "Obrasci ne dopuštaju spremanje zapisa bez vrijednosti.",
+        "save": "Spremi promjene",
+        "tracked": "Zadrži povijest",
+        "trackedFixed": "Zadržavanje povijesti polja ne može se promijeniti nakon stvaranja.",
+        "trackedHelp": "Svaka vrijednost nosi datum od kojeg vrijedi.",
+        "type": "Vrsta",
+        "typeFixed": "Vrsta se ne može promijeniti nakon stvaranja polja.",
+        "visibility": "Tko može vidjeti vrijednosti"
+      },
+      "level": {
+        "admin": "Administratori",
+        "employee": "Svi, uključujući zaposlenika",
+        "manager": "Voditelji i administratori"
+      },
+      "options": {
+        "add": "Dodaj opciju",
+        "archive": "Arhiviraj {label}",
+        "archived": "Arhivirano",
+        "label": "Naziv opcije",
+        "list": "Opcije",
+        "moveDown": "Pomakni {label} prema dolje",
+        "moveUp": "Pomakni {label} prema gore",
+        "new": "Nova opcija",
+        "restore": "Vrati {label}",
+        "title": "Opcije"
+      },
+      "refusal": {
+        "booleanRequired": "Polje vrste Da/Ne ne može biti obavezno.",
+        "duplicateOption": "Ovo polje već ima aktivnu opciju s ovim nazivom.",
+        "editBroaderThanVisibility": "Svi koji mogu uređivati vrijednosti moraju ih moći i vidjeti.",
+        "employeesNeverEdit": "Zaposlenici ne mogu uređivati vrijednosti prilagođenih polja.",
+        "fieldArchived": "Vratite ovo prilagođeno polje prije nego što ga promijenite.",
+        "invalidChange": "Ova se promjena ne može spremiti. Ponovno učitajte stranicu i pokušajte ponovno.",
+        "invalidLevel": "Odaberite tko može vidjeti i uređivati vrijednosti.",
+        "invalidName": "Unesite naziv od najviše 100 znakova.",
+        "invalidOptionLabel": "Unesite opciju od najviše 100 znakova.",
+        "lastActiveOption": "Polje s odabirom mora imati barem jednu aktivnu opciju.",
+        "nameTaken": "Aktivno prilagođeno polje na ovoj vrsti zapisa već ima ovaj naziv.",
+        "notFound": "Ovo prilagođeno polje više ne postoji. Ponovno učitajte stranicu.",
+        "notSelect": "Samo polja s odabirom imaju opcije.",
+        "numberBounds": "Unesite minimum i maksimum kao brojeve, pri čemu minimum ne smije biti veći od maksimuma.",
+        "optionArchived": "Prvo vratite ovu opciju.",
+        "selectNeedsOption": "Dodajte barem jednu opciju polju s odabirom.",
+        "staleOrder": "Popis se u međuvremenu promijenio. Ponovno učitajte stranicu i pokušajte ponovno.",
+        "tooManyFields": "Ova vrsta zapisa već ima 25 aktivnih prilagođenih polja. Prvo arhivirajte jedno.",
+        "trackedFixed": "Zadržavanje povijesti za prilagođeno polje ne može se promijeniti nakon što je polje stvoreno.",
+        "typeFixed": "Vrsta prilagođenog polja ne može se promijeniti nakon što je polje stvoreno.",
+        "usedAsPayrollIdentifier": "Ovo polje služi kao identifikator osoblja u konfiguraciji izvoza obračuna plaća {configurations}. Tamo prvo odaberite drugi identifikator."
+      },
+      "reorderField": "Promijeni redoslijed za {name}",
+      "required": "Obavezno",
+      "restore": "Vrati",
+      "restoreField": "Vrati {name}",
+      "saveFailed": "Promjena se nije mogla spremiti.",
+      "title": "Prilagođena polja",
+      "tracked": "Praćeno",
+      "type": {
+        "boolean": "Da/Ne",
+        "date": "Datum",
+        "number": "Broj",
+        "select": "Odabir",
+        "text": "Tekst"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Već postoji vrijednost koja počinje na taj datum.",
+        "fieldArchived": "Ovo je polje arhivirano.",
+        "forField": "Prilagođeno polje \"{field}\": {message}",
+        "invalidDate": "Unesite valjani datum.",
+        "invalidNumber": "Unesite broj.",
+        "invalidValidFrom": "Unesite valjani datum početka.",
+        "invalidValue": "Unesite valjanu vrijednost.",
+        "missingRequired": "Ovo je polje obavezno.",
+        "missingValue": "Unesite vrijednost za svaki datum.",
+        "notEditable": "Ne možete promijeniti ovo polje.",
+        "numberNotInteger": "Unesite cijeli broj.",
+        "numberOutOfRange": "Unesite broj unutar dopuštenog raspona.",
+        "optionArchived": "Ova je opcija arhivirana. Odaberite drugu.",
+        "textTooLong": "Unesite najviše 255 znakova.",
+        "trackedField": "Ovo polje bilježi povijest. Umjesto toga dodajte promjenu s datumom.",
+        "unknownField": "Ovo polje više ne postoji. Ponovno učitajte stranicu i pokušajte ponovno.",
+        "unknownHistoryEntry": "Povijest se u međuvremenu promijenila. Ponovno učitajte stranicu i pokušajte ponovno."
+      },
+      "values": {
+        "archivedOption": "{label} (arhivirano)",
+        "history": {
+          "add": "Dodaj promjenu",
+          "apply": "Primijeni",
+          "correct": "Ispravite vrijednost koja vrijedi od {date}",
+          "delete": "Izbrišite vrijednost koja vrijedi od {date}",
+          "duplicateValidFrom": "Već postoji vrijednost koja vrijedi od ovog datuma.",
+          "empty": "Još nema vrijednosti.",
+          "from": "Od {date}",
+          "label": "Povijest za {name}",
+          "needsValidFrom": "Odaberite datum od kojeg vrijednost vrijedi.",
+          "needsValue": "Unesite vrijednost.",
+          "today": "Danas",
+          "validFrom": "Vrijedi od",
+          "value": "Vrijednost"
+        },
+        "missingRequired": "Nedostaju obavezne vrijednosti",
+        "no": "Ne",
+        "notSet": "Nije postavljeno",
+        "ownDescription": "Vodi vaša organizacija. Zatražite od administratora ili voditelja da ih promijeni.",
+        "title": "Prilagođena polja",
+        "yes": "Da"
+      }
+    },
+    "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Evidencija i kategorije izostanaka",
+          "label": "Izostanci"
+        },
+        "audit_logs": {
+          "description": "Revizijski trag aktivnosti",
+          "label": "Revizijski zapisi"
+        },
+        "balance_adjustments": {
+          "description": "Početna stanja i isplate prekovremenog rada, uključujući poništene",
+          "label": "Prilagodbe radnog salda"
+        },
+        "customers": {
+          "description": "Klijenti s prilagođenim poljima klijenta",
+          "label": "Klijenti"
+        },
+        "employees": {
+          "description": "Profili zaposlenika, odnosi s voditeljima i prilagođena polja zaposlenika",
+          "label": "Zaposlenici"
+        },
+        "holidays": {
+          "description": "Kalendar praznika i predlošci",
+          "label": "Praznici"
+        },
+        "projects": {
+          "description": "Projekti s prilagođenim poljima klijenta i projekta",
+          "label": "Projekti"
+        },
+        "schedules": {
+          "description": "Predlošci rasporeda rada i dodjele",
+          "label": "Rasporedi rada"
+        },
+        "shifts": {
+          "description": "Podaci o rasporedu smjena",
+          "label": "Smjene"
+        },
+        "teams": {
+          "description": "Struktura tima i dozvole",
+          "label": "Timovi"
+        },
+        "time_entries": {
+          "description": "Evidencije radnog vremena i ispravci",
+          "label": "Praćenje radnog vremena"
+        },
+        "vacation": {
+          "description": "Pravila i dani godišnjeg odmora",
+          "label": "Pravila o godišnjem odmoru"
+        },
+        "work_periods": {
+          "description": "Objedinjene radne sesije",
+          "label": "Razdoblja rada"
+        }
+      },
+      "description": "Izvezite podatke svoje organizacije",
+      "form": {
+        "aboutAsync": "Izvozi se obrađuju asinkrono",
+        "aboutDownloadFromHistory": "Preuzmite dovršene izvoze iz povijesti izvoza",
+        "aboutEmail": "Primit ćete e-poštu kada bude spremno",
+        "aboutFileRetention": "Izvezene datoteke brišu se nakon 30 dana",
+        "aboutOrgDataOnly": "Uključeni su samo podaci vaše organizacije",
+        "aboutTitle": "O izvozu podataka",
+        "description": "Odaberite kategorije podataka koje želite izvesti",
+        "selectAll": "Odaberi sve",
+        "selectAtLeastOne": "Molimo odaberite barem jednu kategoriju",
+        "startExport": "Pokreni izvoz ({count})",
+        "startingExport": "Pokretanje izvoza...",
+        "submitError": "Pokretanje izvoza nije uspjelo",
+        "submitSuccess": "Izvoz je uspješno započet",
+        "title": "Izvoz podataka",
+        "unexpectedError": "Došlo je do neočekivane pogreške"
+      },
+      "history": {
+        "columnActions": "Radnje",
+        "columnCategories": "Kategorije",
+        "columnDate": "Datum",
+        "columnSize": "Veličina",
+        "columnStatus": "Status",
+        "deleteDialogDescription": "Jeste li sigurni da želite izbrisati ovaj izvoz? Ova se radnja ne može poništiti.",
+        "deleteDialogTitle": "Izbriši izvoz",
+        "deleteError": "Brisanje izvoza nije uspjelo",
+        "deleteSuccess": "Izvoz je izbrisan",
+        "description": "Vaši prethodni izvozi podataka",
+        "download": "Preuzmi",
+        "downloadError": "Preuzimanje nije uspjelo",
+        "downloadSuccess": "Preuzimanje je započelo",
+        "emptyDescription": "Još nema izvoza",
+        "emptyHint": "Izradite svoj prvi izvoz pomoću gornjeg obrasca",
+        "moreCategories": "+{count} više",
+        "statusCompleted": "Dovršeno",
+        "statusFailed": "Neuspjelo",
+        "statusPending": "Na čekanju",
+        "statusProcessing": "Obrađuje se",
+        "switchOrganizationAction": "Prijeđi na {organization}",
+        "switchOrganizationBody": "Ovaj izvoz pripada organizaciji {organization}. Prebacite se na tu organizaciju kako biste otvorili njezinu povijest izvoza; vaš će se pristup ponovno provjeriti nakon prebacivanja.",
+        "switchOrganizationTitle": "Promijenite organizaciju kako biste vidjeli ovaj izvoz",
+        "title": "Povijest izvoza",
+        "unexpectedError": "Došlo je do neočekivane pogreške"
+      },
+      "storage": {
+        "accessKeyDescription": "Vaš AWS ID pristupnog ključa",
+        "accessKeyId": "ID pristupnog ključa",
+        "bucketDescription": "Naziv vašeg S3 spremnika",
+        "bucketName": "Naziv spremnika",
+        "bucketPlaceholder": "my-export-bucket",
+        "connectionFailed": "Povezivanje nije uspjelo",
+        "connectionSuccess": "Povezivanje uspješno",
+        "deleteDialogDescription": "Jeste li sigurni da želite izbrisati ovu konfiguraciju pohrane?",
+        "deleteDialogTitle": "Izbriši konfiguraciju",
+        "deleteError": "Brisanje konfiguracije nije uspjelo",
+        "deleteSuccess": "Konfiguracija je izbrisana",
+        "description": "Konfigurirajte vlastitu pohranu kompatibilnu s S3 za izvoze",
+        "endpoint": "Prilagođena krajnja točka (neobavezno)",
+        "endpointDescription": "Za usluge kompatibilne s S3 kao što je MinIO",
+        "endpointPlaceholder": "https://s3.example.com",
+        "keepExistingCredentials": "Ostavite prazno kako biste zadržali postojeće vjerodajnice",
+        "lastVerified": "Posljednja provjera: {date}",
+        "region": "Regija",
+        "regionDescription": "AWS regija u kojoj se nalazi vaš spremnik",
+        "regionPlaceholder": "us-east-1",
+        "saveConfiguration": "Spremi konfiguraciju",
+        "saveError": "Spremanje konfiguracije nije uspjelo",
+        "saveSuccess": "Konfiguracija je spremljena",
+        "saveSuccessDescription": "Vaše postavke S3 pohrane su spremljene",
+        "saving": "Spremanje...",
+        "secretAccessKey": "Tajni pristupni ključ",
+        "secretKeyDescription": "Vaš AWS tajni pristupni ključ",
+        "testConnection": "Testiraj vezu",
+        "testFailed": "Testiranje veze nije uspjelo",
+        "testing": "Testiranje...",
+        "title": "Konfiguracija S3 pohrane",
+        "unexpectedError": "Došlo je do neočekivane pogreške",
+        "verified": "Verificirano"
+      },
+      "storageNotConfigured": {
+        "description": "Konfigurirajte S3 pohranu prije stvaranja izvoza",
+        "title": "Pohrana nije konfigurirana"
+      },
+      "tabs": {
+        "exportHistory": "Povijest izvoza",
+        "newExport": "Novi izvoz",
+        "storageSettings": "Postavke pohrane"
+      },
+      "title": "Izvoz podataka"
+    },
+    "emailConfig": {
+      "description": "Konfigurirajte prilagođenog pružatelja usluga e-pošte za e-poruke organizacije",
+      "title": "Konfiguracija e-pošte"
+    },
+    "emailTemplates": {
+      "actions": {
+        "reset": "Vrati na sistemski predložak",
+        "save": "Spremi",
+        "sendTest": "Pošalji test"
+      },
+      "categories": {
+        "absences": "Odsutnosti",
+        "auth": "Pristup računu",
+        "billing": "Naplata",
+        "exports": "Izvozi",
+        "security": "Sigurnost",
+        "teams": "Timovi",
+        "timecorrections": "Ispravci radnog vremena"
+      },
+      "defaultFallback": "Zadana pričuva",
+      "defaultFallbackDescription": "Ako ovaj predložak koristi zadane postavke sustava, Z8 šalje sistemski tekst i predmet:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Obavještava zaposlenika da je voditelj unio odsutnost u njegovo ime.",
+          "label": "Odsutnost unio voditelj"
+        },
+        "absence-request-approved": {
+          "description": "Obavještava zaposlenika da je njegov zahtjev za odsutnost odobren.",
+          "label": "Zahtjev za odsutnost odobren"
+        },
+        "absence-request-pending-approval": {
+          "description": "Obavještava voditelja da zahtjev za odsutnost treba odobrenje.",
+          "label": "Zahtjev za odsutnost čeka odobrenje"
+        },
+        "absence-request-rejected": {
+          "description": "Obavještava zaposlenika da je njegov zahtjev za odsutnost odbijen.",
+          "label": "Zahtjev za odsutnost odbijen"
+        },
+        "absence-request-submitted": {
+          "description": "Potvrđuje da je zaposlenik podnio zahtjev za odsutnost.",
+          "label": "Zahtjev za odsutnost podnesen"
+        },
+        "email-verification": {
+          "description": "Šalje se kada korisnik treba potvrditi svoju adresu e-pošte.",
+          "label": "Potvrda adrese e-pošte"
+        },
+        "export-failed": {
+          "description": "Obavještava korisnika da se zatraženi izvoz nije mogao generirati.",
+          "label": "Izvoz nije uspio"
+        },
+        "export-ready": {
+          "description": "Obavještava korisnika da je zatraženi izvoz spreman za preuzimanje.",
+          "label": "Izvoz spreman"
+        },
+        "organization-invitation": {
+          "description": "Šalje se kada je korisnik pozvan da se pridruži organizaciji.",
+          "label": "Pozivnica za organizaciju"
+        },
+        "password-reset": {
+          "description": "Šalje se kada korisnik zatraži poveznicu za ponovno postavljanje lozinke.",
+          "label": "Ponovno postavljanje lozinke"
+        },
+        "security-alert": {
+          "description": "Obavještava korisnika o važnom sigurnosnom događaju na računu.",
+          "label": "Sigurnosno upozorenje"
+        },
+        "team-member-added": {
+          "description": "Obavještava člana da je dodan u tim.",
+          "label": "Član tima dodan"
+        },
+        "team-member-removed": {
+          "description": "Obavještava člana da je uklonjen iz tima.",
+          "label": "Član tima uklonjen"
+        },
+        "time-correction-approved": {
+          "description": "Obavještava zaposlenika da je njegova korekcija radnog vremena odobrena.",
+          "label": "Korekcija radnog vremena odobrena"
+        },
+        "time-correction-pending-approval": {
+          "description": "Obavještava voditelja da korekcija radnog vremena čeka odobrenje.",
+          "label": "Korekcija radnog vremena čeka odobrenje"
+        },
+        "time-correction-rejected": {
+          "description": "Obavještava zaposlenika da je njegova korekcija radnog vremena odbijena.",
+          "label": "Korekcija radnog vremena odbijena"
+        }
+      },
+      "description": "Prilagodite e-poruke koje šalje vaša organizacija",
+      "editBodyBeforeSaving": "Uredite tijelo e-pošte prije spremanja prvog prilagođenog predloška.",
+      "editor": {
+        "bodyDescription": "Sastavite obogaćenu HTML e-poruku koja se šalje za ovaj događaj sustava.",
+        "bodyPlaceholder": "Napišite sadržaj operativne e-poruke...",
+        "emailBody": "Tijelo e-poruke",
+        "fallbackDescription": "Koristi se za provjeru valjanosti i kao sigurna zamjenska opcija ako se vizualni uređivač ne može prikazati.",
+        "htmlFallback": "Zamjenski HTML",
+        "loading": "Učitavanje uređivača e-pošte…",
+        "subject": "Predmet"
+      },
+      "emailTemplates": "Predlošci e-pošte",
+      "empty": "Nema dostupnih predložaka e-pošte za ovu organizaciju.",
+      "eyebrow": "Operativna komunikacija",
+      "reset": "Predložak e-pošte vraćen je na sistemski predložak",
+      "resetFailed": "Vraćanje predloška e-pošte nije uspjelo",
+      "saved": "Predložak e-pošte spremljen",
+      "saveFailed": "Spremanje predloška e-pošte nije uspjelo",
+      "status": {
+        "customized": "Prilagođeno",
+        "default": "Zadano"
+      },
+      "systemTemplates": "Sistemski predlošci",
+      "testFailed": "Slanje testne e-poruke nije uspjelo",
+      "testSent": "Testna e-poruka poslana je na vaš račun",
+      "title": "Predlošci e-pošte",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Vrsta odsustva"
+        },
+        "addedByName": {
+          "label": "Dodao/la"
+        },
+        "approvalUrl": {
+          "label": "URL za odobrenje"
+        },
+        "approverName": {
+          "label": "Ime odobravatelja"
+        },
+        "appUrl": {
+          "label": "URL aplikacije"
+        },
+        "categories": {
+          "label": "Kategorije"
+        },
+        "correctedClockIn": {
+          "label": "Ispravljena prijava"
+        },
+        "correctedClockOut": {
+          "label": "Ispravljena odjava"
+        },
+        "date": {
+          "label": "Datum"
+        },
+        "days": {
+          "label": "Dani"
+        },
+        "downloadUrl": {
+          "label": "URL za preuzimanje"
+        },
+        "email": {
+          "label": "E-pošta"
+        },
+        "employeeName": {
+          "label": "Ime zaposlenika"
+        },
+        "endDate": {
+          "label": "Datum završetka"
+        },
+        "errorMessage": {
+          "label": "Poruka o pogrešci"
+        },
+        "eventType": {
+          "label": "Vrsta događaja"
+        },
+        "expiresAt": {
+          "label": "Istječe"
+        },
+        "fileSize": {
+          "label": "Veličina datoteke"
+        },
+        "invitationUrl": {
+          "label": "URL pozivnice"
+        },
+        "inviterName": {
+          "label": "Ime pozivatelja"
+        },
+        "ipAddress": {
+          "label": "IP adresa"
+        },
+        "managerName": {
+          "label": "Ime voditelja"
+        },
+        "memberName": {
+          "label": "Ime člana"
+        },
+        "notes": {
+          "label": "Bilješke"
+        },
+        "organizationName": {
+          "label": "Naziv organizacije"
+        },
+        "originalClockIn": {
+          "label": "Izvorna prijava"
+        },
+        "originalClockOut": {
+          "label": "Izvorna odjava"
+        },
+        "reason": {
+          "label": "Razlog"
+        },
+        "recipientName": {
+          "label": "Ime primatelja"
+        },
+        "rejectionReason": {
+          "label": "Razlog odbijanja"
+        },
+        "removedByName": {
+          "label": "Uklonio/la"
+        },
+        "resetUrl": {
+          "label": "URL za ponovno postavljanje"
+        },
+        "retryUrl": {
+          "label": "URL za ponovni pokušaj"
+        },
+        "role": {
+          "label": "Uloga"
+        },
+        "securitySettingsUrl": {
+          "label": "URL sigurnosnih postavki"
+        },
+        "startDate": {
+          "label": "Datum početka"
+        },
+        "teamName": {
+          "label": "Naziv tima"
+        },
+        "teamUrl": {
+          "label": "URL tima"
+        },
+        "timestamp": {
+          "label": "Vremenska oznaka"
+        },
+        "userAgent": {
+          "label": "Korisnički agent"
+        },
+        "userName": {
+          "label": "Korisničko ime"
+        },
+        "verificationUrl": {
+          "label": "URL za verifikaciju"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Dopuštene varijable",
+        "description": "Umetnite samo odobrene zamjenske oznake. Vrijednosti se zamjenjuju prilikom slanja e-pošte.",
+        "fallbackSafe": "Sigurna zamjena",
+        "insert": "Umetni {label}"
+      }
+    },
+    "error": {
+      "actions": {
+        "backToSettings": "Natrag na postavke",
+        "tryAgain": "Pokušajte ponovno"
+      },
+      "description": "Došlo je do pogreške prilikom učitavanja stranice s postavkama. To bi mogao biti privremeni problem.",
+      "errorId": "ID pogreške: {digest}",
+      "title": "Nešto je pošlo po zlu"
+    },
+    "export": {
+      "description": "Izvezite podatke organizacije radi sigurnosne kopije ili migracije",
+      "title": "Izvoz podataka"
+    },
+    "exportOperations": {
+      "activity": {
+        "audit": {
+          "description": "Zahtjev za izvoz revizije zabilježen.",
+          "title": "Izvoz revizije"
+        },
+        "payroll": {
+          "description": "Zadatak izvoza obračuna plaća zabilježen.",
+          "title": "Izvoz obračuna plaća"
+        },
+        "scheduled": {
+          "description": "Izvršavanje zakazanog izvoza zabilježeno.",
+          "title": "Zakazani izvoz"
+        }
+      },
+      "alerts": {
+        "auditFailed": {
+          "description": "Posljednji zahtjev za izvoz revizije nije dovršen.",
+          "title": "Izvoz revizije nije uspio"
+        },
+        "blockedSchedule": {
+          "description": "{name} zahtijeva konfiguraciju izvoza obračuna plaća prije pokretanja.",
+          "title": "Zakazani izvoz obračuna plaća je blokiran"
+        },
+        "description": "Problemi s izvozom koji bi mogli zahtijevati pozornost administratora.",
+        "empty": "Trenutačno nema upozorenja",
+        "payrollFailed": {
+          "description": "Posljednji izvoz obračuna plaća nije dovršen.",
+          "title": "Izvoz obračuna plaća nije uspio"
+        },
+        "scheduledFailed": {
+          "description": "{name} nije uspješno dovršen.",
+          "title": "Zakazani izvoz nije uspio"
+        },
+        "title": "Upozorenja"
+      },
+      "description": "Pratite aktivnosti obračuna plaća, revizije i zakazanih izvoza za svoju organizaciju.",
+      "errors": {
+        "alerts": "Neka upozorenja mogu biti nepotpuna dok su podaci o izvozu nedostupni.",
+        "recentActivity": "Neki podaci o aktivnostima privremeno su nedostupni.",
+        "summary": "Brojevi se temelje na podacima o izvozu koji su se mogli učitati.",
+        "upcomingRuns": "Podaci o zakazanom izvozu privremeno su nedostupni."
+      },
+      "links": {
+        "audit": "Otvori postavke izvoza revizije",
+        "payroll": "Otvori postavke izvoza obračuna plaća",
+        "scheduled": "Otvori postavke zakazanog izvoza"
+      },
+      "partialData": "Djelomični podaci",
+      "recentActivity": {
+        "description": "Najnoviji događaji izvoza obračuna plaća, revizije i zakazanog izvoza.",
+        "empty": "Nema nedavnih aktivnosti izvoza",
+        "export": "Izvoz",
+        "link": "Postavke",
+        "status": "Status",
+        "title": "Nedavna aktivnost",
+        "when": "Dogodilo se"
+      },
+      "severity": {
+        "error": "Pogreška",
+        "warning": "Upozorenje"
+      },
+      "status": {
+        "assembling": "Sastavljanje paketa",
+        "collecting": "Prikupljanje podataka",
+        "completed": "Dovršeno",
+        "failed": "Neuspjelo",
+        "hardening": "Primjena očvršćivanja",
+        "lineageExpanding": "Proširivanje sljedivosti",
+        "pending": "Na čekanju",
+        "processing": "Obrada u tijeku",
+        "requested": "Zatraženo"
+      },
+      "summary": {
+        "activeSchedules": "Aktivni rasporedi",
+        "activeSchedulesDescription": "Omogućeni rasporedi ponavljajućeg izvoza.",
+        "failedRuns": "Neuspjela pokretanja (7 dana)",
+        "failedRunsDescription": "Neuspjela pokretanja obračuna plaća, revizije i zakazanih izvoza u proteklom tjednu.",
+        "lastAuditPack": "Zadnji revizijski paket",
+        "lastAuditPackDescription": "Zadnje generiranje revizijskog paketa.",
+        "lastPayrollExport": "Zadnji izvoz obračuna plaća",
+        "lastPayrollExportDescription": "Zadnje dovršavanje izvoza obračuna plaća.",
+        "none": "Nikada"
+      },
+      "title": "Operacije izvoza",
+      "upcomingRuns": {
+        "description": "Sljedeći zakazani izvozi u redu čekanja za ovu organizaciju.",
+        "empty": "Nema nadolazećih pokretanja",
+        "link": "Postavke",
+        "name": "Naziv",
+        "title": "Nadolazeća pokretanja",
+        "when": "Zakazano za"
+      }
+    },
+    "group": {
+      "account": "Račun",
+      "administration": "Administracija",
+      "data": "Podaci",
+      "enterprise": "Enterprise",
+      "notifications": "Obavijesti",
+      "organization": "Organizacija"
+    },
+    "implementationChecklist": {
+      "actions": {
+        "markComplete": "Označi kao dovršeno",
+        "markIncomplete": "Označi kao nedovršeno"
+      },
+      "description": "Dovršite korake postavljanja prije pozivanja cijelog tima kako bi praćenje radnog vremena, odobrenja i tijekovi rada obračuna plaća bili spremni za svakodnevnu upotrebu.",
+      "errors": {
+        "updateItem": "Ažuriranje stavke kontrolnog popisa nije uspjelo."
+      },
+      "eyebrow": "Implementacija za klijenta",
+      "progress": {
+        "ariaLabel": "Napredak kontrolnog popisa implementacije",
+        "completedCount": "Dovršeno {completed} od {total}",
+        "label": "Napredak postavljanja",
+        "percentComplete": "{percent}% dovršeno"
+      },
+      "status": {
+        "complete": "Dovršeno",
+        "manuallyComplete": "Ručno dovrši",
+        "needsReview": "Potreban pregled",
+        "notStarted": "Nije započeto"
+      },
+      "title": "Kontrolni popis za implementaciju"
+    },
+    "import": {
+      "description": "Uvezite podatke od podržanih pružatelja usluga poput Clockodoa i Clockina.",
+      "review": {
+        "billability": {
+          "alreadyBilled": "Već obračunato u Clockodou. Uvezeno kao naplativi rad, a ne kao fakturirani rad.",
+          "billable": "Naplativo",
+          "noBillableValue": "Pripremljeno bez naplative vrijednosti; sprema se kao nenaplativi rad.",
+          "noCustomer": "Naplativo u Clockodou, ali projekt Z8 nema klijenta.",
+          "nonBillable": "Nenaplativo",
+          "noProject": "Naplativo u Clockodou, ali unos nema projekt.",
+          "unmappedProject": "Naplativo u Clockodou, ali Clockodo projekt nije mapiran na projekt Z8."
+        },
+        "commitAccepted": "Potvrdi prihvaćene retke",
+        "commitFailed": "Pokretanje potvrde uvoza nije uspjelo",
+        "commitQueued": "Stavljeno u red čekanja za potvrdu: {count} prihvaćenih redaka",
+        "committing": "Potvrđivanje...",
+        "customers": {
+          "contact": "Kontakt",
+          "createUnmatched": "{count, plural, one {Kreiraj klijenta za # kontakt bez podudaranja} few {Kreiraj klijente za # kontakta bez podudaranja} other {Kreiraj klijente za # kontakata bez podudaranja}}",
+          "decision": {
+            "create": "Kreiraj novog klijenta",
+            "for": "Odluka za {name}",
+            "label": "Odluka",
+            "link": "Poveži s {name}",
+            "linkChosen": "Poveži s odabranim klijentom",
+            "linkSuggested": "Poveži s {name} (predloženo)",
+            "placeholder": "Odaberi…",
+            "skip": "Preskoči"
+          },
+          "decisionFailed": "Odluka se nije mogla spremiti",
+          "description": "Za svaki kontakt odaberite želite li stvoriti novog klijenta, povezati ga s postojećim klijentom ili ga preskočiti. Stvoreni i povezani klijenti dobivaju poveznicu s kontaktom. U računovodstvenom alatu ništa se ne mijenja.",
+          "details": "Pojedinosti",
+          "duplicateInTool": "Drugi kontakt u računovodstvenom alatu ima isto ime; samo ga jedan klijent može imati.",
+          "empty": "Svaki kontakt klijenta iz računovodstvenog alata već je povezan s klijentom.",
+          "hold": {
+            "billableTimeOff": "Naplativo vrijeme je isključeno.",
+            "connectionChanged": "Računovodstvena veza se promijenila. Pokrenite novi uvoz klijenata.",
+            "contactAlreadyLinked": "Ovaj je kontakt u međuvremenu povezan s klijentom.",
+            "customerAlreadyLinked": "Odabrani klijent već je povezan s drugim kontaktom.",
+            "customerNameTaken": "Klijent s ovim nazivom već postoji. Umjesto toga ga povežite ili preskočite kontakt.",
+            "invalidRow": "Kontakt nema upotrebljivo ime.",
+            "linkTargetMissing": "Odabrani klijent više ne postoji."
+          },
+          "match": "Podudaranje u Z8",
+          "nameTaken": "{name} ima isto ime i već je povezan s drugim kontaktom",
+          "noMatch": "Nema podudaranja",
+          "paging": {
+            "label": "Stranice kontakata"
+          },
+          "suggestion": {
+            "customerNumber": "{name} ima poveznicu kontakta s istim brojem klijenta",
+            "name": "{name} ima isto ime"
+          },
+          "title": "Kontakti klijenata"
+        },
+        "description": "Pregledajte pripremljene retke za uvoz, riješite blokirajuće probleme i potvrdite prihvaćene zapise kada serija bude spremna.",
+        "hold": {
+          "appendReviewRequired": "Povijest radnog vremena zaposlenika zahtijeva pregled prije dodavanja novih unosa.",
+          "attributionNotAllowed": "Projekt nije dostupan ili je za naplativi rad potreban projekt koji ima klijenta.",
+          "invalidInterval": "Vremena pružatelja nemaju izričit pomak, nisu po redu ili su u budućnosti.",
+          "label": "Zadržano radi pregleda",
+          "monthClosed": "Vrijeme se nalazi u zatvorenom mjesecu. Može se uvesti nakon što se mjesec ponovno otvori.",
+          "occupancyConflict": "Vrijeme se preklapa s već zabilježenim radom za ovog zaposlenika.",
+          "operationCollision": "Ovaj je redak u sukobu s ranije potvrđenim uvozom.",
+          "providerDurationMismatch": "Trajanje pružatelja razlikuje se od vremena početka i završetka.",
+          "sourceCollision": "Ovaj zapis pružatelja već je uvezen.",
+          "unlocatedBreak": "Pružatelj prijavljuje pauze bez njihovog vremena, pa je odrađeni interval nepoznat."
+        },
+        "issueGroups": {
+          "description": "Grupirana područja za pregled pomažu zadržati vidljivost provjera kvalitete prije potvrde prihvaćenih redaka.",
+          "importMarkers": "Redci uvoza sadrže {blockingRows} blokirajućih oznaka i {warningRows} oznaka upozorenja.",
+          "title": "Grupe problema"
+        },
+        "paging": {
+          "next": "Sljedeća stranica",
+          "position": "Stranica {page} od {pageCount}",
+          "previous": "Prethodna stranica"
+        },
+        "rows": {
+          "billable": "Naplativo",
+          "empty": "Nema pripremljenih redaka za ovu seriju uvoza.",
+          "entity": "Entitet",
+          "paging": {
+            "label": "Stranice redaka"
+          },
+          "rowId": "ID retka",
+          "sourceId": "Izvorni ID",
+          "status": "Status",
+          "title": "Retci"
+        },
+        "status": {
+          "accepted": "Prihvaćeno",
+          "blocked": "Blokirano",
+          "commitFailed": "Potvrđivanje nije uspjelo",
+          "committed": "Potvrđeno",
+          "committing": "Potvrđivanje",
+          "needsMapping": "Zahtijeva mapiranje",
+          "rejected": "Odbijeno",
+          "staged": "Pripremljeno"
+        },
+        "title": "Pregled uvoza"
+      },
+      "title": "Uvoz podataka"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Drugi račun već upotrebljava ovu adresu.",
+        "emailNotAllowed": "Pravila za prijavu vaše organizacije ne dopuštaju ovu adresu.",
+        "employeeNotFound": "Ovaj zaposlenik nije pronađen.",
+        "failed": "Nešto je pošlo po zlu. Pokušajte ponovno.",
+        "invalidEmail": "Unesite valjanu adresu e-pošte.",
+        "invalidName": "Unesite ime duljine do 100 znakova.",
+        "invalidPin": "PIN za kiosk ima između 4 i 6 znamenki.",
+        "locationNotFound": "Ova lokacija nije pronađena.",
+        "noPin": "Ovaj zaposlenik još nema PIN za kiosk.",
+        "notAllowed": "Nemate ovlasti za ovu radnju.",
+        "notKioskOnly": "Ovaj zaposlenik već ima adresu e-pošte.",
+        "pinExists": "Ovaj zaposlenik već ima PIN za kiosk. Umjesto toga ga ponovno postavite.",
+        "reservedEmail": "Ova se adresa ne može upotrijebiti.",
+        "signInRequired": "Prijavite se za nastavak.",
+        "teamNotFound": "Ovaj tim nije pronađen."
+      }
+    },
+    "kiosks": {
+      "add": "Dodaj kiosk",
+      "boardOn": "Pregled prisutnosti uključen",
+      "columns": {
+        "actions": "Radnje",
+        "lastSeen": "Zadnja aktivnost",
+        "location": "Lokacija",
+        "name": "Naziv",
+        "status": "Status"
+      },
+      "create": "Izradi kiosk",
+      "created": "Kiosk je izrađen",
+      "createDescription": "Primit ćete kod za uparivanje koji trebate unijeti na uređaju kioska.",
+      "createFailed": "Nije uspjela izrada kioska",
+      "createTitle": "Dodaj kiosk",
+      "description": "Zajednički uređaji na lokaciji na kojima se zaposlenici prijavljuju svojim PIN-om za kiosk",
+      "edit": "Uredi",
+      "editDescription": "Promjene će se primijeniti pri sljedećem zahtjevu kioska.",
+      "editTitle": "Uredi kiosk",
+      "empty": "Još nema kioska.",
+      "errors": {
+        "adminOnly": "Samo vlasnici organizacije i administratori mogu upravljati kioscima.",
+        "invalidName": "Unesite naziv duljine do 100 znakova.",
+        "invalidSelection": "Provjerite unos i pokušajte ponovno.",
+        "invalidTimezone": "Odaberite vremensku zonu.",
+        "kioskNotFound": "Ovaj kiosk nije pronađen.",
+        "kioskRevoked": "Ovaj je kiosk opozvan.",
+        "locationNotFound": "Odaberite aktivnu lokaciju ove organizacije."
+      },
+      "fields": {
+        "board": "Pregled prisutnosti",
+        "boardDescription": "Prikazuje na kiosku tko je na poslu ili na pauzi, prema imenu i početnom slovu prezimena.",
+        "location": "Lokacija",
+        "locationDescription": "Kiosk prihvaća samo zaposlenike dodijeljene ovoj lokaciji.",
+        "locationPlaceholder": "Odaberite lokaciju",
+        "name": "Naziv",
+        "namePlaceholder": "npr. Ulaz za osoblje",
+        "timezone": "Vremenska zona",
+        "timezoneDescription": "Događaji evidencije radnog vremena zabilježeni na ovom kiosku koriste ovu zonu."
+      },
+      "issueCodeConfirm": "Izdaj novi kod",
+      "listDescription": "Svaki kiosk pripada jednoj lokaciji. Uparite uređaj tako da na njemu otvorite stranicu kioska i unesete kod za uparivanje.",
+      "listTitle": "Kiosci",
+      "loadFailed": "Nije moguće učitati kioske.",
+      "neverSeen": "Nikada",
+      "noLocations": "Prvo izradite lokaciju: svaki kiosk pripada jednoj lokaciji.",
+      "pairAgain": "Ponovno upari",
+      "pairFailed": "Nije moguće izdati novi kod za uparivanje",
+      "pairingCodeLabel": "Kod za uparivanje",
+      "pairingDescription": "Na uređaju kioska skenirajte QR kod ili otvorite stranicu kioska i unesite kod. Kod vrijedi jednokratno i istječe nakon 10 minuta.",
+      "pairingDone": "Gotovo",
+      "pairingTitle": "Upari {name}",
+      "pairPairedDescription": "Token uređaja se obnavlja: upareni uređaj odmah prestaje s radom i mora se ponovno upariti novim kodom.",
+      "pairTitle": "Ponovno upariti {name}?",
+      "pairUnpairedDescription": "Novi kod za uparivanje zamjenjuje prethodni.",
+      "revoke": "Opozovi",
+      "revokeConfirm": "Opozovi kiosk",
+      "revoked": "Kiosk je opozvan",
+      "revokeDescription": "Kiosk prestaje s radom pri sljedećem zahtjevu i ne može se ponovno upariti. Izradite novi kiosk kako biste ga zamijenili.",
+      "revokeFailed": "Nije moguće opozvati kiosk",
+      "revokeTitle": "Opozvati {name}?",
+      "rotateConfirm": "Obnovi token i ponovno upari",
+      "save": "Spremi",
+      "saved": "Kiosk je spremljen",
+      "saveFailed": "Nije moguće spremiti kiosk",
+      "status": {
+        "awaitingPairing": "Čeka se uparivanje",
+        "codeExpired": "Nije upareno, kod je istekao",
+        "paired": "Upareno",
+        "revoked": "Opozvano"
+      },
+      "title": "Kiosci"
+    },
+    "licenses": {
+      "footer": "Ova aplikacija koristi softver otvorenog koda. Hvala svim održavateljima i suradnicima ovih paketa.",
+      "homepage": "Početna stranica",
+      "license": "Licenca",
+      "licenseTypesCount": "{count} vrsta licenci",
+      "links": "Poveznice",
+      "noPackages": "Nisu pronađeni paketi.",
+      "package": "Paket",
+      "packagesCount": "{count} paketa",
+      "repository": "Repozitorij",
+      "searchPlaceholder": "Pretraži pakete ili licence...",
+      "unknown": "Nepoznato"
+    },
+    "locations": {
+      "address": "Adresa",
+      "assignEmployee": "Dodijeli zaposlenika",
+      "assignEmployeeDescription": "Dodijelite zaposlenika kao voditelja za ovu lokaciju",
+      "assignEmployeeToSubarea": "Dodijeli zaposlenika podpodručju",
+      "assignEmployeeToSubareaDescription": "Dodijelite zaposlenika kao voditelja za {subareaName}",
+      "backToList": "Natrag na lokacije",
+      "create": "Stvori lokaciju",
+      "created": "Lokacija je stvorena",
+      "createFailed": "Stvaranje lokacije nije uspjelo",
+      "deleted": "Lokacija je izbrisana",
+      "deleteDescription": "Jeste li sigurni da želite izbrisati ovu lokaciju? To će također izbrisati sva podpodručja i dodjele zaposlenika.",
+      "deleteFailed": "Brisanje lokacije nije uspjelo",
+      "deleteSubareaDescription": "Jeste li sigurni da želite izbrisati ovo podpodručje? To će također ukloniti sve dodjele zaposlenika.",
+      "deleteSubareaTitle": "Izbriši podpodručje",
+      "deleteTitle": "Izbriši lokaciju",
+      "description": "Upravljajte lokacijama i podpodručjima organizacije",
+      "details": "Pojedinosti o lokaciji",
+      "dialog": {
+        "create": "Stvori lokaciju",
+        "createDescription": "Stvorite novu lokaciju za svoju organizaciju",
+        "createTitle": "Stvori lokaciju",
+        "editDescription": "Ažurirajte pojedinosti o lokaciji",
+        "editTitle": "Uredi lokaciju",
+        "save": "Spremi promjene"
+      },
+      "employee": "Zaposlenik",
+      "employeeAssigned": "Zaposlenik je dodijeljen",
+      "employeeAssignFailed": "Dodjela zaposlenika nije uspjela",
+      "employeeRemoved": "Zaposlenik je uklonjen",
+      "employeeRemoveFailed": "Uklanjanje zaposlenika nije uspjelo",
+      "field": {
+        "active": "Aktivno",
+        "activeHelp": "Neaktivne lokacije neće se prikazivati na popisima za odabir",
+        "city": "Grad",
+        "cityPlaceholder": "npr. New York",
+        "cityPostal": "Grad / Poštanski broj",
+        "country": "Kôd države",
+        "countryHelp": "ISO 3166-1 alpha-2 kôd",
+        "countryPlaceholder": "npr. US, DE",
+        "name": "Naziv",
+        "namePlaceholder": "npr. Glavni ured",
+        "postalCode": "Poštanski broj",
+        "postalCodePlaceholder": "npr. 10001",
+        "street": "Ulica",
+        "streetPlaceholder": "npr. Glavna ulica 123",
+        "subareaActiveHelp": "Neaktivna podpodručja neće se prikazivati na popisima za odabir",
+        "subareaName": "Naziv",
+        "subareaNamePlaceholder": "npr. Blagajna, Skladište, Bistro"
+      },
+      "name": "Naziv",
+      "noAvailableEmployees": "Svi zaposlenici već su dodijeljeni ovoj lokaciji",
+      "noAvailableEmployeesSubarea": "Svi zaposlenici već su dodijeljeni ovom podpodručju",
+      "noLocations": "Još nema lokacija",
+      "noLocationsDescription": "Izradite svoju prvu lokaciju kako biste organizirali svoj radni prostor.",
+      "noSubareas": "Još nema podpodručja",
+      "noSupervisors": "Nema dodijeljenih voditelja",
+      "notFound": "Lokacija nije pronađena",
+      "primary": "Primarno",
+      "primarySupervisor": "Glavni voditelj",
+      "primarySupervisorHelp": "Označi kao glavnog voditelja za ovu lokaciju",
+      "primarySupervisorSubareaHelp": "Označi kao glavnog voditelja za ovo podpodručje",
+      "selectEmployee": "Molimo odaberite zaposlenika",
+      "selectEmployeePlaceholder": "Odaberite zaposlenika",
+      "subareaCreated": "Podpodručje je stvoreno",
+      "subareaCreateFailed": "Stvaranje podpodručja nije uspjelo",
+      "subareaDeleted": "Podpodručje je izbrisano",
+      "subareaDeleteFailed": "Brisanje podpodručja nije uspjelo",
+      "subareaDialog": {
+        "create": "Dodaj podpodručje",
+        "createDescription": "Dodajte novo podpodručje ovoj lokaciji",
+        "createTitle": "Dodaj podpodručje",
+        "editDescription": "Ažurirajte pojedinosti o podpodručju",
+        "editTitle": "Uredi podpodručje",
+        "save": "Spremi promjene"
+      },
+      "subareas": "Podpodručja",
+      "subareasDescription": "Područja unutar ove lokacije",
+      "subareaUpdated": "Podpodručje je ažurirano",
+      "subareaUpdateFailed": "Ažuriranje podpodručja nije uspjelo",
+      "supervisors": "Voditelji",
+      "supervisorsDescription": "Zaposlenici dodijeljeni ovoj lokaciji",
+      "title": "Lokacije",
+      "updated": "Lokacija je ažurirana",
+      "updateFailed": "Ažuriranje lokacije nije uspjelo"
+    },
+    "notifications": {
+      "approvals": "Obavijesti o odobrenjima",
+      "approvalsDescription": "Šaljite zahtjeve za odobrenje i ažuriranja statusa odobrenja.",
+      "commands": "Naredbe",
+      "commandsDescription": "Dopustite podržane naredbe radnog prostora s ovog kanala.",
+      "connectBeforeChanging": "Povežite ili konfigurirajte ovu integraciju prije promjene postavki obavijesti.",
+      "dailyDigest": "Dnevni sažetak",
+      "dailyDigestDescription": "Šaljite dnevni sažetak izostanaka, rasporeda i radnih zadataka na čekanju.",
+      "description": "Odaberite kako i kada želite primati obavijesti",
+      "digestTime": "Vrijeme sažetka",
+      "discord": {
+        "description": "Konfigurirajte Discord obavijesti za svoju organizaciju."
+      },
+      "escalations": "Eskalacije",
+      "escalationsDescription": "Eskalirajte neodgovorene zahtjeve za odobrenje nakon isteka konfiguriranog vremena.",
+      "featureSettings": "Postavke značajki",
+      "featureSettingsDescription": "Odaberite koje su obavijesti i naredbe organizacije dostupne putem ovog kanala.",
+      "hours": "sati",
+      "manageEnabledFeatures": "Upravljajte značajkama obavijesti koje su omogućene za ovu integraciju.",
+      "notConnected": "{channelName} nije povezan",
+      "saved": "Postavke obavijesti za {channelName} su spremljene",
+      "saveFailed": "Spremanje postavki obavijesti za {channelName} nije uspjelo",
+      "saveSettings": "Spremi postavke",
+      "slack": {
+        "description": "Konfigurirajte Slack obavijesti za svoju organizaciju."
+      },
+      "status": {
+        "active": "Aktivno",
+        "configured": "Konfigurirano",
+        "disabled": "Onemogućeno",
+        "disconnected": "Prekinuta veza",
+        "error": "Pogreška",
+        "notConfigured": "Nije konfigurirano",
+        "pending": "Na čekanju",
+        "unknown": "Nepoznat status"
+      },
+      "teams": {
+        "description": "Konfigurirajte Microsoft Teams obavijesti za svoju organizaciju."
+      },
+      "timeout": "Istek vremena",
+      "timezone": "Vremenska zona",
+      "timezonePlaceholder": "Europa/Berlin…",
+      "title": "Postavke obavijesti"
+    },
+    "organizations": {
+      "description": "Upravljajte pojedinostima i konfiguracijom organizacije",
+      "notFound": {
+        "description": "Organizacija nije pronađena ili joj nemate pristup.",
+        "title": "Organizacija nije pronađena"
+      },
+      "title": "Organizacija"
+    },
+    "organization": {
+      "teams": {
+        "createDialog": {
+          "createSuccess": "Tim je uspješno stvoren",
+          "description": "Stvorite novi tim za organiziranje svojih zaposlenika",
+          "descriptionLabel": "Opis (neobavezno)",
+          "descriptionPlaceholder": "Kratak opis ovog tima",
+          "fallbackManagerHelp": "Koristi se za odobrenja kada član tima nema izravnog voditelja.",
+          "fallbackManagerLabel": "Zamjenski voditelj",
+          "fallbackManagerPlaceholder": "Odaberite zamjenskog voditelja",
+          "nameLabel": "Naziv tima",
+          "namePlaceholder": "Inženjering, Prodaja, Marketing...",
+          "noFallbackManager": "Nema zamjenskog voditelja",
+          "submit": "Stvori tim",
+          "title": "Stvori tim"
+        }
+      }
+    },
+    "passkeys": {
+      "add": "Dodaj pristupni ključ",
+      "addedOn": "Dodano {date}",
+      "addError": "Dodavanje pristupnog ključa nije uspjelo",
+      "addSuccess": "Pristupni ključ je uspješno dodan",
+      "defaultName": "Pristupni ključ {date}",
+      "deleteDialogDescription": "Ovaj pristupni ključ više neće moći pristupati vašem računu. Ova se radnja ne može poništiti.",
+      "deleteDialogTitle": "Izbrisati pristupni ključ?",
+      "deleteError": "Brisanje pristupnog ključa nije uspjelo",
+      "deleteSuccess": "Pristupni ključ je uspješno izbrisan",
+      "description": "Upravljajte pristupnim ključevima za autentifikaciju bez lozinke",
+      "empty": "Nema konfiguriranih pristupnih ključeva",
+      "emptyDescription": "Dodajte pristupni ključ kako biste omogućili autentifikaciju bez lozinke",
+      "loadError": "Učitavanje pristupnih ključeva nije uspjelo",
+      "title": "Pristupni ključevi",
+      "unnamed": "Neimenovani pristupni ključ"
+    },
+    "payrollAccess": {
+      "add": "Dodaj referenta za obračun plaća",
+      "addTitle": "Dodaj referenta za obračun plaća",
+      "allScope": "Svi timovi i zaposlenici",
+      "allScopeDescription": "Uključuje trenutne i buduće zaposlenike u ovoj organizaciji.",
+      "deniedDescription": "Samo ovlašteni administratori organizacije mogu upravljati referentima za obračun plaća.",
+      "deniedTitle": "Potreban je pristup postavkama referenta za obračun plaća",
+      "departedEmployeesKept": "{names} više nije u organizaciji. Pristup ostaje aktivan dok ga ne uklonite.",
+      "description": "Aktivirajte referente za obračun plaća i dodijelite im timove ili zaposlenike koje mogu uključiti u tijekove rada obračuna plaća.",
+      "edit": "Uredi",
+      "editorDescription": "Odaberite referenta za obračun plaća i definirajte ima li pristup svima ili određenom opsegu.",
+      "editTitle": "Uredi referenta za obračun plaća",
+      "employees": "Zaposlenici",
+      "noGrants": "Još nije dodan nijedan referent za obračun plaća.",
+      "noScope": "Nije dodijeljen opseg za obračun plaća",
+      "noTeams": "Nema dostupnih timova",
+      "payrollEmployee": "Referent za obračun plaća",
+      "revoke": "Opozovi",
+      "revokeConfirm": "Opozovi pristup",
+      "revoked": "Pristup službeniku za obračun plaća je opozvan",
+      "revokeDescription": "{name} odmah gubi pristup radnom prostoru za obračun plaća. Ponovnim dodavanjem kasnije stvara se novo ovlaštenje.",
+      "revokeFailed": "Opoziv pristupa službeniku za obračun plaća nije uspio",
+      "revokeTitle": "Opozvati pristup službeniku za obračun plaća?",
+      "save": "Spremi referenta za obračun plaća",
+      "saved": "Postavke referenta za obračun plaća su spremljene",
+      "saveFailed": "Spremanje postavki referenta za obračun plaća nije uspjelo",
+      "scope": "Opseg pristupa",
+      "scopeSummaryEmployees": "{count} zaposlenika",
+      "scopeSummaryTeams": "{count} timova",
+      "scopeSummaryTeamsEmployees": "{teamCount} timova, {employeeCount} zaposlenika",
+      "selectEmployees": "Odaberite zaposlenike",
+      "selectPayrollEmployee": "Odaberite zaposlenika",
+      "specificScope": "Određeni timovi ili zaposlenici",
+      "specificScopeDescription": "Ograničite pristup obračunu plaća na odabrane timove i pojedinačne zaposlenike.",
+      "teams": "Timovi",
+      "title": "Referenti za obračun plaća"
+    },
+    "positionCapture": {
+      "addAssignment": "Dodaj dodjelu",
+      "assignmentFailed": "Dodjela nije spremljena",
+      "assignmentRemoved": "Dodjela je uklonjena",
+      "assignmentRemoveFailed": "Dodjela nije uklonjena",
+      "assignmentSaved": "Dodjela je spremljena",
+      "assignmentsDescription": "Primjenjuje se najspecifičnija dodjela: vlastita dodjela zaposlenika ima prednost pred dodjelom primarnog tima, a dodjela tima pred dodjelom cijele organizacije. Upotrijebite „isključeno” kako biste izuzeli tim ili zaposlenika.",
+      "assignmentsList": "Dodjele bilježenja",
+      "assignmentsTitle": "Na koga se primjenjuje bilježenje",
+      "captureDescription": "Zabilježite položaj zaposlenika prilikom njihovih prijava, odjava i pauza, isključivo uz njihov pristanak. Uključivanje bilježenja ne primjenjuje se ni na koga dok ga ne dodijelite u nastavku.",
+      "captureOff": "Bilježenje isključeno",
+      "captureOn": "Bilježenje uključeno",
+      "captureTitle": "Bilježenje",
+      "description": "Bilježite lokacije pri registraciji radnog vremena zaposlenika, uz njihov pristanak",
+      "employee": "Zaposlenik",
+      "enabled": "Bilježi lokacije",
+      "enabledDescription": "Isključivanjem ove opcije zaustavlja se bilježenje za sve. Zabilježene lokacije ostaju pohranjene do datuma njihova brisanja.",
+      "noAssignments": "Nitko nije dodijeljen. Bilježenje se ne primjenjuje ni na koga dok ga ne dodijelite.",
+      "noNotice": "Nijedna obavijest još nije objavljena. Spremanjem izjave o svrsi objavljuje se verzija 1.",
+      "noticeDescription": "Na što zaposlenici pristaju: fiksni tekst platforme Z8 i vaša izjava o svrsi. Uređivanjem svrhe ili duljim čuvanjem lokacija objavljuje se nova verzija; skraćivanje razdoblja čuvanja ne stvara novu verziju.",
+      "noticeTitle": "Obavijest o bilježenju lokacije",
+      "previousVersions": "Ranije verzije",
+      "publishesVersion": "Spremanjem se objavljuje verzija obavijesti {version}. Svaki postojeći pristanak prestaje važiti dok zaposlenici ponovno ne daju pristanak.",
+      "purpose": "Izjava o svrsi",
+      "purposeDescription": "Prikazuje se zaposlenicima u obavijesti o lokaciji. Objasnite zašto vaša organizacija bilježi lokacije.",
+      "purposeRequired": "Napišite izjavu o svrsi prije uključivanja bilježenja.",
+      "removeAssignment": "Ukloni {target}",
+      "retention": "Razdoblje čuvanja (dani)",
+      "retentionDescription": "Svaka se lokacija briše ovoliko dana nakon bilježenja. Skraćivanjem se također pomiču postojeći datumi brisanja na raniji datum.",
+      "retentionRange": "Unesite cijeli broj dana između {min} i {max}.",
+      "save": "Spremi postavke",
+      "saved": "Postavke bilježenja lokacije su spremljene",
+      "savedWithNotice": "Postavke su spremljene. Objavljena je verzija obavijesti {version}; od zaposlenika se traži pristanak.",
+      "saveFailed": "Postavke bilježenja lokacije nisu spremljene",
+      "selectEmployee": "Odaberite zaposlenika",
+      "selectTeam": "Odaberite tim",
+      "targetEmployee": "Zaposlenik",
+      "targetEmployeeLabel": "Zaposlenik: {name}",
+      "targetOrganization": "Cijela organizacija",
+      "targetTeam": "Tim",
+      "targetTeamLabel": "Tim: {name}",
+      "targetType": "Primjenjuje se na",
+      "team": "Tim",
+      "title": "Bilježenje lokacije",
+      "versionSummary": "{days, plural, one {Verzija {version}, objavljeno {date}, čuva se # dan} other {Verzija {version}, objavljeno {date}, čuva se # dana} }"
+    },
+    "positionStamps": {
+      "accessLogDeletedViewer": "Izbrisani korisnik",
+      "accessLogDescription": "Svaki put kada se nekome drugome prikažu vaše zabilježene lokacije, to se navodi ovdje.",
+      "accessLogEmpty": "Nitko drugi nije vidio vaše lokacije.",
+      "accessLogExport": "Izvoz podataka",
+      "accessLogRemovedWorkPeriod": "Radno razdoblje koje više ne postoji",
+      "accessLogTitle": "Tko je vidio vaše lokacije",
+      "accessLogWorkPeriod": "Radno razdoblje dana {date}",
+      "agree": "Pristajem",
+      "agreed": "Hvala vam. Vaš pristanak je zabilježen.",
+      "agreeFailed": "Vaš pristanak nije bilo moguće spremiti",
+      "captureOff": "Bilježenje lokacije nije uključeno za vas.",
+      "captureOffBadge": "Bilježenje isključeno",
+      "captureOn": "Bilježenje lokacije uključeno je za vas.",
+      "captureOnBadge": "Bilježenje uključeno",
+      "consentActive": "Pristali ste na verziju {version} dana {date}.",
+      "consentDeclined": "Odabrali ste „Ne sada” za verziju {version} dana {date}.",
+      "consentLapsed": "Prihvatili ste verziju {previous}. Obavijest je promijenjena, stoga se lokacije ne bilježe dok ne prihvatite verziju {current}.",
+      "consentUndecided": "Još niste donijeli odluku.",
+      "consentWithdrawn": "Povukli ste svoju privolu dana {date}.",
+      "description": "Bilježi li se vaša lokacija uz evidenciju radnog vremena i vaša privola",
+      "noNotice": "Vaša organizacija nije objavila obavijest o lokaciji.",
+      "noticeDescription": "Ovo je ono na što pristajete. Nova se verzija objavljuje kada se promijeni svrha ili se lokacije čuvaju dulje.",
+      "noticeTitle": "Obavijest o lokaciji",
+      "statusTitle": "Vaš status",
+      "title": "Oznake lokacije",
+      "unavailable": "Oznake lokacije dostupne su kada budete imali profil zaposlenika u ovoj organizaciji.",
+      "withdraw": "Povuci privolu",
+      "withdrawConfirm": "Povuci i izbriši lokacije",
+      "withdrawDescription": "Lokacije se više ne bilježe i time se odmah brišu sve lokacije zabilježene uz vaše evidencije radnog vremena. Vaše evidencije radnog vremena ostaju nepromijenjene. Ova se radnja ne može poništiti.",
+      "withdrawFailed": "Vaša se privola nije mogla povući",
+      "withdrawn": "Privola je povučena. Vaše zabilježene lokacije su izbrisane.",
+      "withdrawTitle": "Povući privolu?"
+    },
+    "profile": {
+      "avatarRemoved": "Avatar je uspješno uklonjen",
+      "avatarRemoveFailed": "Uklanjanje avatara nije uspjelo",
+      "avatarSaveFailed": "Spremanje avatara nije uspjelo",
+      "avatarUploaded": "Avatar je uspješno prenesen",
+      "avatarUploadFailed": "Prijenos avatara nije uspio",
+      "birthday": {
+        "hint": "Vaš rođendan pomaže nam slaviti s vama",
+        "label": "Datum rođenja",
+        "placeholder": "Odaberite datum rođenja"
+      },
+      "changePicture": "Promijeni sliku",
+      "description": "Upravljajte svojim osobnim podacima i postavkama",
+      "email": "E-pošta",
+      "emailReadonly": "E-pošta se ne može promijeniti",
+      "firstName": "Ime",
+      "firstNamePlaceholder": "Ada…",
+      "gender": {
+        "female": "Žensko",
+        "label": "Spol",
+        "male": "Muško",
+        "other": "Drugo"
+      },
+      "helpImproveProduct": "Pomozite nam poboljšati ovu aplikaciju",
+      "helpImproveProductDescription": "Podijelite uvide o upotrebi kako bismo Z8 učinili pouzdanijim i korisnijim.",
+      "information": "Podaci o profilu",
+      "informationDescription": "Ažurirajte svoje osobne podatke i profilnu sliku",
+      "lastName": "Prezime",
+      "lastNamePlaceholder": "Lovelace…",
+      "personalInformation": "Osobni podaci",
+      "pronouns": "Zamjenice",
+      "pronouns.custom": "Prilagođene zamjenice",
+      "pronouns.customPlaceholder": "npr. xe/xem…",
+      "pronouns.placeholder": "Odaberite zamjenice",
+      "removePicture": "Ukloni sliku",
+      "saving": "Spremanje…",
+      "title": "Postavke profila",
+      "updateFailed": "Ažuriranje profila nije uspjelo",
+      "updateProfile": "Ažuriraj profil",
+      "updateSuccess": "Profil je uspješno ažuriran",
+      "uploading": "Prijenos",
+      "uploadProfilePicture": "Prenesi profilnu sliku"
+    },
+    "projects": {
+      "column": {
+        "budget": "Proračun",
+        "customer": "Klijent",
+        "deadline": "Rok",
+        "name": "Naziv",
+        "status": "Status",
+        "tasks": "Zadaci",
+        "team": "Tim"
+      },
+      "create": "Izradi projekt",
+      "created": "Projekt je izrađen",
+      "createFailed": "Izrada projekta nije uspjela",
+      "customerDeleted": "{name} (izbrisano)",
+      "description": "Upravljajte projektima, proračunima, rokovima i dodjelama vremena",
+      "dialog": {
+        "create": "Izradi projekt",
+        "createDescription": "Izradite novi projekt za praćenje vremena",
+        "createTitle": "Stvori projekt",
+        "editDescription": "Ažuriraj pojedinosti projekta",
+        "editTitle": "Uredi projekt",
+        "save": "Spremi promjene"
+      },
+      "empty": {
+        "description": "Stvorite svoj prvi projekt kako biste počeli pratiti vrijeme utrošeno na njega.",
+        "title": "Još nema projekata"
+      },
+      "field": {
+        "billableDefault": "Zadano naplativo",
+        "billableDefaultHelp": "Novi rad na ovom projektu započinje kao naplativ. Postojeći rad zadržava svoju naplativost.",
+        "billableDefaultNeedsCustomer": "Odaberite klijenta kako bi novi rad bio zadano naplativ.",
+        "budget": "Budžet (sati)",
+        "budgetHelp": "Ostavite prazno za neograničen budžet",
+        "budgetPlaceholder": "npr. 100",
+        "clearColor": "Ukloni boju",
+        "color": "Boja",
+        "colorOption": "Odaberi boju {color}",
+        "customer": "Klijent",
+        "customerDeleted": "{name} je izbrisan. Odaberite drugog klijenta ili zadržite projekt bez njega.",
+        "customerPlaceholder": "Odaberite klijenta",
+        "deadline": "Rok",
+        "description": "Opis",
+        "descriptionPlaceholder": "Neobavezan opis projekta",
+        "name": "Naziv",
+        "namePlaceholder": "Unesite naziv projekta",
+        "noCustomer": "Nema klijenta",
+        "status": "Status"
+      },
+      "fromTemplate": {
+        "blank": "Prazan projekt",
+        "budget": "Proračun od {hours} h",
+        "copies": "Kopirano iz predloška",
+        "deadline": "{days, plural, one {Rok # dan nakon izrade} other {Rok # dana nakon izrade}}",
+        "deadlineSameDay": "Rok na dan izrade",
+        "memberCount": "{count, plural, one {# voditelj ili zaduženje} other {# voditelja i zaduženja}}",
+        "previewLabel": "Iz {name}",
+        "reasonAdminOnly": "samo administratori organizacije dodjeljuju voditelje projekata",
+        "reasonDeparted": "napustio/la organizaciju",
+        "reasonRemoved": "više ne postoji",
+        "skipped": "Nije kopirano: {members}",
+        "skippedMember": "{name}: {reason}",
+        "skippedMemberReason": "{name} ({reason})",
+        "startFrom": "Započni od",
+        "taskCount": "{count, plural, one {# zadatak} other {# zadataka}}",
+        "willSkip": "Neće se kopirati"
+      },
+      "list": {
+        "description": "Ukupno {count} projekata",
+        "title": "Svi projekti"
+      },
+      "members": {
+        "addManager": "Dodaj voditelja projekta",
+        "assignEmployee": "Dodijeli zaposlenika",
+        "assignTeam": "Dodijeli tim",
+        "count": "{count, plural, one {# član} few {# člana} other {# članova}}",
+        "employeeAssigned": "Zaposlenik je dodijeljen",
+        "employeeAssignFailed": "Dodjela zaposlenika nije uspjela",
+        "employeePicker": "Zaposlenik za dodjelu",
+        "employees": "Zaposlenici",
+        "manage": "Upravljanje članovima za {name}",
+        "managerAdded": "Voditelj projekta je dodan",
+        "managerAddFailed": "Dodavanje voditelja projekta nije uspjelo",
+        "managerPicker": "Voditelj projekta za dodavanje",
+        "managers": "Voditelji projekta",
+        "managersReadOnly": "Samo administratori organizacije mogu mijenjati voditelje projekta.",
+        "noEmployees": "Nema dodijeljenih zaposlenika",
+        "noManagers": "Nema voditelja projekta",
+        "noTeams": "Nema dodijeljenih timova",
+        "remove": "Ukloni {name}",
+        "removed": "{name} je uklonjen",
+        "removeFailed": "Uklanjanje {name} nije uspjelo",
+        "selectEmployee": "Odaberite zaposlenika",
+        "selectTeam": "Odaberite tim",
+        "teamAssigned": "Tim je dodijeljen",
+        "teamAssignFailed": "Dodjela tima nije uspjela",
+        "teamPicker": "Tim za dodjelu",
+        "teams": "Timovi",
+        "title": "Članovi projekta"
+      },
+      "saveAsTemplate": {
+        "action": "Spremi {name} kao predložak",
+        "description": "Predložak preuzima ikonu, boju, proračun, otvorene zadatke, voditelje i zaduženja ovog projekta. Nema vremenski pomak roka.",
+        "failed": "Spremanje predloška nije uspjelo",
+        "formLabel": "Spremi {name} kao predložak",
+        "name": "Naziv predloška",
+        "saved": "Predložak {name} je spremljen",
+        "submit": "Spremi kao predložak",
+        "title": "Spremi kao predložak"
+      },
+      "tabs": {
+        "projects": "Projekti",
+        "templates": "Predlošci"
+      },
+      "tasks": {
+        "add": "Dodaj zadatak",
+        "added": "Zadatak je dodan",
+        "addFailed": "Dodavanje zadatka nije uspjelo",
+        "addTitle": "Dodaj zadatak",
+        "confirmDelete": "Potvrdite brisanje {name}",
+        "delete": "Izbriši",
+        "deleteAction": "Izbriši {name}",
+        "deleted": "{name} je izbrisan",
+        "deleteFailed": "Brisanje {name} nije uspjelo",
+        "deleteQuestion": "Izbrisati ovaj zadatak?",
+        "edit": "Uredi {name}",
+        "editAction": "Uredi {name}",
+        "empty": "Još nema zadataka. Zadaci omogućuju suradnicima da navedu na što su u projektu utrošili vrijeme.",
+        "estimate": "Procjena: {hours} h",
+        "field": {
+          "description": "Opis",
+          "estimate": "Procjena (sati)",
+          "estimateInvalid": "Unesite pozitivan broj sati",
+          "name": "Naziv",
+          "namePlaceholder": "npr. Dizajn",
+          "nameRequired": "Unesite naziv zadatka"
+        },
+        "listLabel": "Zadaci za {name}",
+        "listTitle": "Projektni zadaci",
+        "manage": "Upravljajte zadacima za {name}",
+        "managedTitle": "Vaši projekti",
+        "managerDescription": "Upravljajte zadacima projekata kojima upravljate",
+        "markDone": "Označi {name} dovršenim",
+        "markDoneFailed": "Označavanje zadatka dovršenim nije uspjelo",
+        "markedDone": "Zadatak je označen dovršenim",
+        "open": "Zadaci",
+        "projectCount": "{count, plural, one {# projekt} few {# projekta} other {# projekata}}",
+        "reopen": "Ponovno otvori {name}",
+        "reopened": "Zadatak je ponovno otvoren",
+        "reopenFailed": "Ponovno otvaranje zadatka nije uspjelo",
+        "save": "Spremi",
+        "stateDone": "Dovršeno",
+        "title": "Zadaci",
+        "updated": "Zadatak je ažuriran",
+        "updateFailed": "Ažuriranje zadatka nije uspjelo"
+      },
+      "templates": {
+        "budgetHours": "{hours} h",
+        "column": {
+          "actions": "Radnje",
+          "budget": "Proračun",
+          "deadline": "Rok",
+          "name": "Naziv",
+          "people": "Ljudi",
+          "tasks": "Zadaci"
+        },
+        "confirmDelete": "Potvrdite brisanje {name}",
+        "create": "Izradi predložak",
+        "created": "Predložak je izrađen",
+        "createFailed": "Izrada predloška nije uspjela",
+        "createLabel": "Izradi predložak projekta",
+        "createTitle": "Izradi predložak",
+        "deadlineOffset": "{count, plural, one {# dan nakon izrade} other {# dana nakon izrade} }",
+        "deadlineSameDay": "Na dan izrade",
+        "delete": "Izbriši",
+        "deleteAction": "Izbriši {name}",
+        "deleted": "{name} izbrisan",
+        "deleteFailed": "Brisanje {name} nije uspjelo",
+        "deleteQuestion": "Izbrisati ovaj predložak?",
+        "description": "Nacrti za nove projekte: zadaci, proračun, rok, voditelji i članovi.",
+        "dialogDescription": "Novi projekti stvoreni iz ovog predloška jednokratno kopiraju njegov sadržaj.",
+        "editAction": "Uredi {name}",
+        "editLabel": "Uredi {name}",
+        "editTitle": "Uredi predložak",
+        "employees": {
+          "empty": "Nema dodijeljenih zaposlenika",
+          "picker": "Zaposlenik za dodjelu",
+          "title": "Zaposlenici"
+        },
+        "empty": {
+          "description": "Jednom spremite zadatke, proračun i ljude koje postavite za svaki sličan projekt i pokrećite nove projekte iz njega.",
+          "title": "Još nema predložaka"
+        },
+        "field": {
+          "budget": "Proračun (sati)",
+          "budgetDeadlineHelp": "Ostavite prazno za neograničeni proračun ili bez roka.",
+          "budgetInvalid": "Unesite pozitivan broj sati",
+          "color": "Boja",
+          "deadlineOffset": "Rok (dana nakon stvaranja)",
+          "deadlineOffsetInvalid": "Unesite cijele dane od 0 do {max}",
+          "description": "Opis",
+          "icon": "Ikona",
+          "name": "Naziv",
+          "namePlaceholder": "npr. Redizajn web-stranice",
+          "nameRequired": "Unesite naziv predloška",
+          "noIcon": "Bez ikone"
+        },
+        "icons": {
+          "briefcase": "Aktovka",
+          "bulb": "Žarulja",
+          "chartBar": "Stupčasti grafikon",
+          "cloud": "Oblak",
+          "code": "Kod",
+          "database": "Baza podataka",
+          "devices": "Uređaji",
+          "palette": "Paleta",
+          "rocket": "Raketa",
+          "settings": "Postavke",
+          "shoppingCart": "Košarica",
+          "users": "Ljudi"
+        },
+        "listCount": "{count, plural, one {# predložak} few {# predloška} other {# predložaka}}",
+        "listTitle": "Svi predlošci",
+        "managers": {
+          "empty": "Nema voditelja projekta",
+          "picker": "Voditelj projekta za dodavanje",
+          "title": "Voditelji projekata"
+        },
+        "member": {
+          "departed": "Napustio/la organizaciju",
+          "remove": "Ukloni {name}",
+          "removed": "Više ne postoji",
+          "removedHelp": "Timovi i zaposlenici koji više ne postoje uklanjaju se prilikom spremanja.",
+          "unknown": "Nepoznato"
+        },
+        "peopleCount": "{count, plural, one {# osoba ili tim} few {# osobe ili tima} other {# osoba i timova}}",
+        "save": "Spremi promjene",
+        "selectEmployee": "Odaberite zaposlenika",
+        "selectTeam": "Odaberite tim",
+        "taskCount": "{count, plural, one {# zadatak} few {# zadatka} other {# zadataka}}",
+        "tasks": {
+          "add": "Dodaj zadatak",
+          "description": "Opis zadatka {position}",
+          "descriptionPlaceholder": "Opis (neobavezno)",
+          "empty": "Nema zadataka. Projekti stvoreni iz ovog predloška započinju s ovim zadacima.",
+          "estimate": "Procjena za zadatak {position} (sati)",
+          "estimatePlaceholder": "Sati",
+          "name": "Naziv zadatka {position}",
+          "namePlaceholder": "Naziv zadatka",
+          "remove": "Ukloni zadatak {position}",
+          "title": "Zadaci"
+        },
+        "teams": {
+          "empty": "Nema dodijeljenih timova",
+          "picker": "Tim za dodjelu",
+          "title": "Timovi"
+        },
+        "title": "Predlošci projekata",
+        "updated": "Predložak je ažuriran",
+        "updateFailed": "Ažuriranje predloška nije uspjelo"
+      },
+      "title": "Projekti",
+      "updated": "Projekt je ažuriran",
+      "updateFailed": "Ažuriranje projekta nije uspjelo"
+    },
+    "reportShareLinks": {
+      "description": "Pregledajte i opozovite svaku poveznicu koja dijeli izvješće o projektu ili klijentu",
+      "pageDescription": "Poveznice koje prikazuju zamrznutu snimku stanja izvješća o projektu ili klijentu nekome izvan Z8. Opozivom poveznice ona odmah prestaje raditi i njezina se snimka briše.",
+      "title": "Poveznice za dijeljenje izvješća"
+    },
+    "security": {
+      "description": "Upravljajte svojom lozinkom, dvofaktorskom autentifikacijom, pristupnim ključevima i aktivnim sesijama",
+      "kioskPin": {
+        "descriptionChange": "Imate PIN za kiosk. Odaberite novi od 4 do 6 znamenki kako biste ga zamijenili.",
+        "descriptionSet": "Odaberite PIN od 4 do 6 znamenki za evidentiranje na kioscima vaše organizacije.",
+        "mismatch": "PIN-ovi se ne podudaraju.",
+        "newPin": "Novi PIN",
+        "repeatPin": "Ponovite PIN",
+        "save": "Spremi PIN",
+        "saved": "PIN za kiosk je spremljen",
+        "title": "PIN za kiosk"
+      },
+      "title": "Sigurnosne postavke",
+      "twoFactor": {
+        "backupCodesCopied": "Pričuvni kodovi kopirani su u međuspremnik",
+        "backupCodesRegenerated": "Pričuvni kodovi ponovno su generirani",
+        "cancel": "Odustani",
+        "confirmPasswordToEnable": "Potvrdite svoju lozinku kako biste omogućili dvofaktorsku autentifikaciju",
+        "confirmPasswordToRegenerate": "Potvrdite svoju lozinku kako biste ponovno generirali pričuvne kodove",
+        "continue": "Nastavi",
+        "copyCodes": "Kopiraj kodove",
+        "description": "Dodajte dodatni sloj sigurnosti svom računu",
+        "disable": "Onemogući",
+        "disable2fa": "Onemogući 2FA",
+        "disableDescription": "Time ćete ukloniti dodatni sloj sigurnosti sa svog računa. Unesite svoju lozinku za potvrdu.",
+        "disabledToast": "Dvofaktorska autentifikacija je onemogućena",
+        "disableFailed": "Onemogućavanje 2FA nije uspjelo",
+        "disableTitle": "Onemogućiti dvofaktorsku autentifikaciju?",
+        "enable": "Omogući dvofaktorsku autentifikaciju",
+        "enabledToast": "Dvofaktorska autentifikacija je omogućena",
+        "enablePasswordRequiredDescription": "Unesite svoju lozinku kako biste omogućili 2FA",
+        "enterAuthenticatorCode": "Unesite 6-znamenkasti kôd iz svoje aplikacije za autentifikaciju",
+        "enterPasswordTitle": "Unesite svoju lozinku",
+        "enterSixDigitCode": "Unesite 6-znamenkasti kôd",
+        "invalidCode": "Nevažeći kôd",
+        "passwordLabel": "Lozinka",
+        "passwordPlaceholder": "Unesite svoju lozinku...",
+        "passwordRequired": "Lozinka je obavezna",
+        "regenerateBackupCodes": "Ponovno generiraj pričuvne kodove",
+        "regenerateCodes": "Ponovno generiraj kodove",
+        "regenerateFailed": "Ponovno generiranje pričuvnih kodova nije uspjelo",
+        "saveBackupCodesDescription": "Čuvajte ove kodove na sigurnom mjestu. Možete ih upotrijebiti za pristup računu ako izgubite pristup aplikaciji za autentifikaciju. Svaki se kôd može iskoristiti samo jednom.",
+        "saveBackupCodesTitle": "Spremite svoje pričuvne kodove",
+        "savedCodes": "Spremio/la sam ove kodove",
+        "scanQrCode": "Skenirajte QR kôd aplikacijom za autentifikaciju",
+        "setupFailed": "Postavljanje 2FA nije uspjelo",
+        "setupTitle": "Postavljanje dvofaktorske autentifikacije",
+        "status": {
+          "disabled": "Onemogućeno",
+          "enabled": "Omogućeno"
+        },
+        "title": "Dvofaktorska autentifikacija",
+        "unexpectedError": "Došlo je do neočekivane pogreške",
+        "verificationFailed": "Provjera nije uspjela",
+        "verifyAndEnable": "Potvrdi i omogući"
+      }
+    },
+    "sessions": {
+      "browserOnOs": "{browser} na {os}",
+      "current": "Trenutačna sesija",
+      "description": "Upravljajte svojim aktivnim sesijama na različitim uređajima",
+      "devices": {
+        "desktop": "Stolno računalo",
+        "mobile": "Mobilni uređaj",
+        "tablet": "Tablet"
+      },
+      "none": "Nema aktivnih sesija",
+      "othersRevoked": "Sve ostale sesije uspješno su opozvane",
+      "revoke": "Opozovi",
+      "revokeAllFailed": "Opoziv ostalih sesija nije uspio",
+      "revokeAllOthers": "Opozovi sve ostale sesije",
+      "revoked": "Sesija je uspješno opozvana",
+      "revokeFailed": "Opoziv sesije nije uspio",
+      "revoking": "Opozivanje…",
+      "securityTip": "Ako vidite sesiju koju ne prepoznajete, odmah je opozovite i promijenite lozinku.",
+      "signedIn": "Prijavljeni",
+      "title": "Aktivne sesije",
+      "unknownBrowser": "Nepoznati preglednik",
+      "unknownOs": "Nepoznati OS"
+    },
+    "socialAccounts": {
+      "connect": "Poveži",
+      "connected": "Povezano",
+      "connectedAs": "Povezano kao {accountId}",
+      "connectFailed": "Povezivanje računa nije uspjelo",
+      "connecting": "Povezivanje…",
+      "connectProvider": "Povežite svoj {provider} račun",
+      "description": "Povežite svoje račune na društvenim mrežama radi lakše prijave",
+      "disconnect": "Prekini vezu",
+      "disconnectDescription": "Ovo će ukloniti vezu s vašim računom na društvenoj mreži. Možete je ponovno uspostaviti u bilo kojem trenutku.",
+      "disconnectFailed": "Prekidanje veze s računom nije uspjelo",
+      "disconnectSuccess": "Veza s računom uspješno je prekinuta",
+      "disconnectTitle": "Prekinuti vezu s računom?",
+      "loadFailed": "Učitavanje povezanih računa nije uspjelo",
+      "title": "Računi na društvenim mrežama",
+      "unexpectedError": "Došlo je do neočekivane pogreške"
+    },
+    "statistics": {
+      "cards": {
+        "activeSessions": "Aktivne sesije",
+        "activeSessionsDescription": "Trenutne sesije baze podataka",
+        "approvalRequests": "Zahtjevi za odobrenje",
+        "approvedAbsences": "Odobrene odsutnosti",
+        "employees": "Zaposlenici",
+        "employeesDescription": "{active} aktivno, {inactive} neaktivno",
+        "pendingAbsences": "Odsutnosti na čekanju",
+        "pendingCount": "{count} na čekanju",
+        "rejectedAbsences": "Odbijene odsutnosti",
+        "teams": "Timovi",
+        "thisMonth": "Ovaj mjesec",
+        "timeEntries": "Unosi radnog vremena",
+        "totalAbsences": "Ukupno odsutnosti",
+        "totalTimeEntries": "Ukupno unosa radnog vremena",
+        "vsLastMonth": "u odnosu na prošli mjesec"
+      },
+      "description": "Pregledajte statistiku i metriku za svoju instancu",
+      "lastUpdated": "Zadnje ažurirano",
+      "loadError": "Učitavanje statistike nije uspjelo",
+      "managerDescription": "Pregledajte analitiku samo za čitanje za timove kojima upravljate.",
+      "sections": {
+        "absenceBreakdown": "Analiza odsutnosti",
+        "activityMetrics": "Metrika aktivnosti",
+        "coreCounts": "Ključne brojke",
+        "managedScope": "Opseg upravljanih timova",
+        "systemHealth": "Stanje sustava"
+      },
+      "title": "Statistika"
+    },
+    "timeFormat": {
+      "description": "Odaberite kako se vrijeme prikazuje u aplikaciji.",
+      "label": "Format vremena",
+      "options": {
+        "12h": "12-satni (8:00 AM)",
+        "24h": "24-satni (08:00)"
+      },
+      "save": "Spremi format vremena",
+      "title": "Format vremena",
+      "updateError": "Došlo je do pogreške prilikom ažuriranja formata vremena",
+      "updateFailed": "Ažuriranje formata vremena nije uspjelo",
+      "updateSuccess": "Format vremena uspješno je ažuriran"
+    },
+    "timezone": {
+      "currentTimePrefix": "Trenutačno vrijeme u {timezone}:",
+      "description": "Postavite svoju vremensku zonu za točan prikaz datuma i vremena u cijeloj aplikaciji",
+      "picker": {
+        "empty": "Nije pronađena nijedna vremenska zona.",
+        "groups": {
+          "africa": "Afrika",
+          "americas": "Amerika",
+          "asia": "Azija",
+          "australiaPacific": "Australija i Pacifik",
+          "europe": "Europa",
+          "utcOther": "UTC/Ostalo"
+        },
+        "labels": {
+          "africaCairo": "Istočnoeuropsko vrijeme (Kairo)",
+          "africaJohannesburg": "Južnoafričko vrijeme (Johannesburg)",
+          "africaLagos": "Zapadnoafričko vrijeme (Lagos)",
+          "africaNairobi": "Istočnoafričko vrijeme (Nairobi)",
+          "americaAnchorage": "Aljaško vrijeme (Anchorage)",
+          "americaBuenosAires": "Argentinsko vrijeme (Buenos Aires)",
+          "americaChicago": "Središnje vrijeme (Chicago)",
+          "americaDenver": "Planinsko vrijeme (Denver)",
+          "americaLosAngeles": "Pacifičko vrijeme (Los Angeles)",
+          "americaMexicoCity": "Središnje vrijeme (Mexico City)",
+          "americaNewYork": "Istočno vrijeme (New York)",
+          "americaSaoPaulo": "Brazilijsko vrijeme (São Paulo)",
+          "americaToronto": "Istočno vrijeme (Toronto)",
+          "americaVancouver": "Pacifičko vrijeme (Vancouver)",
+          "asiaBangkok": "Indokinesko vrijeme (Bangkok)",
+          "asiaDubai": "Zaljevsko standardno vrijeme (Dubai)",
+          "asiaHongKong": "Hongkonško vrijeme (Hong Kong)",
+          "asiaKolkata": "Indijsko standardno vrijeme (Kolkata)",
+          "asiaSeoul": "Korejsko standardno vrijeme (Seul)",
+          "asiaShanghai": "Kinesko standardno vrijeme (Šangaj)",
+          "asiaSingapore": "Singapursko vrijeme (Singapur)",
+          "asiaTokyo": "Japansko standardno vrijeme (Tokio)",
+          "australiaBrisbane": "Australsko istočno vrijeme (Brisbane)",
+          "australiaMelbourne": "Australsko istočno vrijeme (Melbourne)",
+          "australiaPerth": "Australsko zapadno vrijeme (Perth)",
+          "australiaSydney": "Australsko istočno vrijeme (Sydney)",
+          "europeAmsterdam": "Srednjoeuropsko vrijeme (Amsterdam)",
+          "europeAthens": "Istočnoeuropsko vrijeme (Atena)",
+          "europeBerlin": "Srednjoeuropsko vrijeme (Berlin)",
+          "europeBrussels": "Srednjoeuropsko vrijeme (Bruxelles)",
+          "europeHelsinki": "Istočnoeuropsko vrijeme (Helsinki)",
+          "europeIstanbul": "Tursko vrijeme (Istanbul)",
+          "europeLondon": "GMT/BST (London)",
+          "europeMadrid": "Srednjoeuropsko vrijeme (Madrid)",
+          "europeMoscow": "Moskovsko vrijeme (Moskva)",
+          "europeParis": "Srednjoeuropsko vrijeme (Pariz)",
+          "europeRome": "Srednjoeuropsko vrijeme (Rim)",
+          "europeStockholm": "Srednjoeuropsko vrijeme (Stockholm)",
+          "europeVienna": "Srednjoeuropsko vrijeme (Beč)",
+          "europeWarsaw": "Srednjoeuropsko vrijeme (Varšava)",
+          "pacificAuckland": "Novozelandsko vrijeme (Auckland)",
+          "pacificHonolulu": "Havajsko vrijeme (Honolulu)",
+          "utc": "Koordinirano univerzalno vrijeme (UTC)"
+        },
+        "search": "Pretraži vremensku zonu…"
+      },
+      "save": "Spremi vremensku zonu",
+      "title": "Vremenska zona",
+      "updateError": "Došlo je do pogreške prilikom ažuriranja vremenske zone",
+      "updateFailed": "Ažuriranje vremenske zone nije uspjelo",
+      "updateSuccess": "Vremenska zona uspješno je ažurirana"
+    },
+    "title": "Postavke",
+    "travelExpenses": {
+      "allowanceOverrides": {
+        "amount": "Iznos ({currency})",
+        "authorize": "Odobri naknadu",
+        "basis": "Izračun",
+        "basisDescription": "Npr. 2 nepuna dana × 39,00 EUR + 1 puni dan × 58,00 EUR − doručak 11,60 EUR.",
+        "dialogDescription": "{employee}: {facts}. Iznos se odnosi isključivo na ove činjenice; zaposlenik i pregledavatelj vide ga uz vaše obrazloženje, dokaz i izračun.",
+        "dialogTitle": "Ručno postavi naknadu",
+        "empty": "Nijedan nacrt izvješća nema naknadu koja zahtijeva ručni izračun.",
+        "errors": {
+          "amount": "Unesite iznos u valuti izvješća, s najviše dvije decimale. Kilometraža mora biti veća od nule.",
+          "basis": "Prikažite kako je iznos izračunat.",
+          "evidence": "Navedite dokaz na kojem se iznos temelji, npr. službenu tablicu tarifa ili potvrdu.",
+          "reason": "Objasnite zašto se naknada postavlja ručno."
+        },
+        "evidence": "Dokaz",
+        "evidenceDescription": "Na čemu se iznos temelji, npr. službena tablica tarifa i izdanje ili pisana potvrda.",
+        "intro": "Sustav ne može izračunati kilometražu i dnevnice jer nisu obuhvaćene pravilnikom ili je putovanje izvan podržanih pravila. Ručno postavite iznos uz obrazloženje, dokaz i izračun. Primjenjuje se samo na činjenice za koje je postavljen te je vidljiv zaposleniku i pregledavatelju.",
+        "loadFailed": "Iznimne naknade nisu se mogle učitati.",
+        "mileage": "Kilometraža",
+        "ordinary": "Rezultat pravilnika: {amount}",
+        "ownReport": "Ovo je vaše vlastito izvješće: odluku mora donijeti drugi administrator troškova.",
+        "perDiem": "Dnevnica",
+        "reason": "Razlog",
+        "record": "Ručno postavi naknadu",
+        "replace": "Zamijeni ručnu naknadu",
+        "revoke": "Opozovi",
+        "revokeFailed": "Ručna naknada nije se mogla opozvati. Popis je osvježen.",
+        "saved": "Ručna naknada je odobrena",
+        "saveFailed": "Ručna naknada nije se mogla spremiti. Pokušajte ponovno.",
+        "self": "Ne možete postaviti naknadu na vlastitom izvješću.",
+        "stale": "Ovaj je trošak u međuvremenu promijenjen ili podnesen. Popis je osvježen.",
+        "title": "Iznimne naknade"
+      },
+      "approver": {
+        "description": "Pregledava izvješća o troškovima zaposlenika koji nemaju drugog voditelja ili voditelja tima osim sebe. Samo aktivni voditelji i administratori mogu pregledavati u pretincu Odobrenja. Nitko nikada ne pregledava vlastito izvješće.",
+        "intro": "Podnesena izvješća o troškovima idu izravnom voditelju zaposlenika, zatim voditelju tima te potom ovdje odabranom odobravatelju troškova.",
+        "label": "Odobravatelj troškova",
+        "loadFailed": "Nije bilo moguće učitati odobravatelja troškova.",
+        "none": "Nema odobravatelja troškova",
+        "ownerSelfApproval": "Iako nitko drugi ne može pregledati izvješća vlasnika organizacije, ona se automatski odobravaju prilikom slanja i označavaju kao takva; izvješća s obrazloženjem za račun koji nedostaje ili ručno postavljenom naknadom i dalje trebaju pregledavatelja.",
+        "save": "Spremi odobravatelja",
+        "saved": "Odobravatelj troškova je spremljen",
+        "saveFailed": "Spremanje odobravatelja troškova nije uspjelo",
+        "title": "Pregled izvješća o troškovima"
+      },
+      "currency": {
+        "choose": "Odaberite valutu s najviše dva decimalna mjesta, npr. EUR ili CHF.",
+        "description": "Nova se izvješća o troškovima nadoknađuju u ovoj valuti; postojeća izvješća zadržavaju svoju. Pragovi iznosa za odobrenje uspoređuju se u EUR-ima, pa se izvješća u drugoj valuti ne mogu podnijeti dokle god postoje pravila odobravanja temeljena na iznosu.",
+        "intro": "Računi u drugim valutama zadržavaju svoj izvorni iznos i preračunavaju se putem evidentiranog terećenja kartice ili dokumentiranog tečaja.",
+        "label": "Valuta nadoknade",
+        "loadFailed": "Nije bilo moguće učitati valutu nadoknade.",
+        "save": "Spremi valutu",
+        "saved": "Valuta nadoknade je spremljena",
+        "saveFailed": "Nije bilo moguće spremiti valutu nadoknade.",
+        "title": "Valuta nadoknade"
+      },
+      "effectiveFrom": "Vrijedi od",
+      "effectiveTo": "Vrijedi do",
+      "legacy": {
+        "description": "Zadržano samo radi evidencije. Ovi zapisi nikada nisu korišteni za izračun troškova i više se ne mogu uređivati; postavite datirane stope za kilometražu iznad.",
+        "title": "Raniji zapisi o pravilima"
+      },
+      "mileage": {
+        "activate": "Aktiviraj verziju",
+        "add": "Dodaj verziju stopa",
+        "addTitle": "Dodaj verziju stope za kilometražu",
+        "adopt": "Preuzmi ove stope",
+        "adoptDescription": "Stope i izvor preuzeti su iz verificiranog kataloga: {reference} ({version}).",
+        "adoptTitle": "Preuzmi njemačke zakonske stope",
+        "currency": "Valuta",
+        "currencyDescription": "Mora se podudarati s valutom nadoknade izvješća; kilometraža se nikada ne preračunava.",
+        "defaultRate": "{vehicle}: {rate} po km",
+        "defaultSource": "{reference}. Verificirano {verifiedOn} u odnosu na {version}; može se preuzeti od {validFrom}.",
+        "description": "Stope po kilometru za poslovna putovanja u vlastitim vozilima zaposlenika. Stopa se primjenjuje od datuma početka do početka sljedeće verzije. Podnesena izvješća zadržavaju stopu prema kojoj su izračunata.",
+        "dialogDescription": "Verzija se primjenjuje od datuma početka do početka sljedeće verzije. Ranije verzije i podnesena izvješća ne mijenjaju se.",
+        "empty": "Zaposlenici mogu unijeti kilometražu, ali ona ostaje u skici sve dok stopa ne pokrije taj datum. Preuzmite verificirane zakonske stope ili unesite vlastite stope svoje organizacije.",
+        "emptyTitle": "Nije postavljena nijedna stopa za kilometražu",
+        "errors": {
+          "beforeDefault": "Zakonske stope verificirane su samo od početka ovog izdanja; odaberite kasniji datum ili unesite vlastite stope za ranije dane.",
+          "currency": "Unesite troslovnu oznaku valute, npr. EUR.",
+          "date": "Odaberite prvi dan primjene stope.",
+          "invalid": "Provjerite ovu vrijednost.",
+          "rate": "Unesite pozitivnu stopu po kilometru s najviše četiri decimale, npr. 0,30.",
+          "rateRequired": "Unesite stopu za barem jedno vozilo.",
+          "tooLong": "Ovaj je tekst predugačak."
+        },
+        "germanDefaultTitle": "Njemačke zakonske paušalne stope",
+        "history": "Zamijenjene i povučene verzije ({count})",
+        "historyEntry": "Od {date}: {rates} · {source}",
+        "loadFailed": "Nije bilo moguće učitati stope za kilometražu.",
+        "notCovered": "nije pokriveno",
+        "note": "Napomena (neobavezno)",
+        "openEnded": "do daljnjega",
+        "rateFor": "Stopa po km: {vehicle}",
+        "replace": "Zamijeni",
+        "replaceConfirm": "Zamijeni verziju",
+        "replaceDescription": "Aktivna verzija već počinje dana {date}. Spremanjem je zamjenjujete; zamijenjena verzija čuva se u povijesti.",
+        "replaceTitle": "Zamijeni verziju koja počinje tog dana",
+        "saved": "Aktivirana je verzija stope za kilometražu",
+        "saveFailed": "Nije uspjelo spremanje stope za kilometražu.",
+        "source": "Izvor",
+        "sourceReference": "Izvor",
+        "sourceReferencePlaceholder": "npr. Pravilnik o putovanjima, sporazum s radničkim vijećem 3/2026",
+        "stale": "Stope su se u međuvremenu promijenile. Provjerite trenutačne verzije i pokušajte ponovno.",
+        "title": "Stope za kilometražu",
+        "until": "do {date}",
+        "validFrom": "Vrijedi od",
+        "validUntil": "Vrijedi do",
+        "withdraw": "Povuci",
+        "withdrawConfirm": "Povuci verziju",
+        "withdrawDescription": "Kilometraža s datumom od {date} prebacuje se na prethodnu verziju ili ostaje neobračunata ako verzija ne postoji. Podnesena izvješća zadržavaju stopu prema kojoj su obračunata.",
+        "withdrawFailed": "Nije uspjelo povlačenje verzije stope. Ponovno učitajte verzije i pokušajte ponovno.",
+        "withdrawn": "Verzija stope je povučena",
+        "withdrawTitle": "Želite li povući ovu verziju stope?"
+      },
+      "mileageRate": "Kilometraža / km",
+      "navDescription": "Pregled izvješća o troškovima, računi, valute, stope kilometraže i dnevnica te iznimke.",
+      "officers": {
+        "add": "Dodaj službenika za troškove",
+        "addTitle": "Dodaj službenika za troškove",
+        "allScope": "Svi zaposlenici",
+        "allScopeDescription": "Svaki odobreni izvještaj o troškovima ove organizacije.",
+        "canExport": "Može izvoziti",
+        "canRecordReimbursements": "Može evidentirati nadoknade",
+        "capabilities": "Ovlasti",
+        "capabilitiesBoth": "Pregledava, izvozi i evidentira nadoknade",
+        "capabilitiesDescription": "Bez ijednog od toga, službenik može pregledavati izvješća u svom djelokrugu, primjerice kao revizor. Evidentiranje nadoknada uključuje povrate. Nitko ne evidentira novac za vlastite troškove.",
+        "capabilitiesExport": "Pregledava i izvozi",
+        "capabilitiesRead": "Samo za čitanje",
+        "capabilitiesReimburse": "Pregledava i evidentira nadoknade",
+        "departedNamed": "{names} više nije u organizaciji. Odobrena izvješća ostaju kod ovog službenika.",
+        "edit": "Uredi",
+        "editorDescription": "Odaberite čijim odobrenim izvješćima o troškovima službenik upravlja i što s njima smije raditi. Službenici uvijek vide izvješća u svojem djelokrugu.",
+        "editTitle": "Uredi službenika za troškove",
+        "employees": "Zaposlenici",
+        "empty": "Još nema službenika za troškove. Vlasnici i administratori upravljaju odobrenim izvješćima o troškovima.",
+        "intro": "Službenici za troškove izvoze odobrena izvješća o troškovima za knjigovodstvo i evidentiraju nadoknade, za sve zaposlenike ili za navedene timove i zaposlenike. Vlasnici i administratori uvijek imaju taj pristup. Odobravanje izvješća nikada ga ne dodjeljuje.",
+        "loadFailed": "Nije bilo moguće učitati službenike za troškove.",
+        "noTeams": "Nema dostupnih timova",
+        "officer": "Službenik za troškove",
+        "revoke": "Opozovi",
+        "revokeConfirm": "Opozovi pristup",
+        "revoked": "Službenik za troškove je opozvan",
+        "revokeDescription": "{name} odmah gubi pristup odobrenim izvješćima o troškovima. Ponovno dodavanje kasnije stvara novo ovlaštenje.",
+        "revokeFailed": "Nije uspjelo opozivanje službenika za troškove",
+        "revokeTitle": "Opozvati službenika za troškove?",
+        "save": "Spremi službenika za troškove",
+        "saved": "Službenik za troškove je spremljen",
+        "saveFailed": "Nije uspjelo spremanje službenika za troškove",
+        "scope": "Djelokrug službenika",
+        "scopeSummary": "{teamCount, plural, one {# tim, {employeeCount, plural, one {# zaposlenik} few {# zaposlenika} other {# zaposlenika}}} few {# tima, {employeeCount, plural, one {# zaposlenik} few {# zaposlenika} other {# zaposlenika}}} other {# timova, {employeeCount, plural, one {# zaposlenik} few {# zaposlenika} other {# zaposlenika}}}}",
+        "selectEmployees": "Odaberite zaposlenike",
+        "selectOfficer": "Odaberite zaposlenika",
+        "specificScope": "Određeni timovi ili zaposlenici",
+        "specificScopeDescription": "Izvješća navedenih zaposlenika i izvješća čiji je zaposlenik pripadao jednom od timova kada je izvješće odobreno. Kasnija promjena tima ne premješta izvješće.",
+        "teams": "Timovi",
+        "title": "Službenici za troškove"
+      },
+      "pageDescription": "Odaberite tko pregledava izvješća o troškovima, kako se postupa s računima koji nedostaju i stranim valutama, koje se stope kilometraže i dnevnica primjenjuju te koje su iznimke odobrene.",
+      "perDiem": {
+        "activate": "Aktiviraj verziju",
+        "add": "Dodaj verziju stope",
+        "addTitle": "Dodaj verziju stope dnevnice",
+        "adopt": "Preuzmi ove iznose",
+        "adoptDescription": "Iznosi i izvor preuzeti su iz verificiranog kataloga: {reference} ({version}).",
+        "adoptTitle": "Preuzmi njemačke zakonske dnevnice",
+        "amounts": "Iznosi",
+        "breakfast": "Umanjenje za osigurani doručak",
+        "currency": "Valuta",
+        "currencyDescription": "Mora odgovarati valuti povrata u izvješćima; dnevnice se nikada ne preračunavaju.",
+        "defaultSource": "{reference}. Verificirano dana {verifiedOn} prema verziji {version}; može se primijeniti od {validFrom}.",
+        "description": "Dnevnice za tuzemna putovanja i umanjenja za obroke koje osigurava organizacija. Stope se primjenjuju od datuma početka do početka sljedeće verzije; podnesena izvješća zadržavaju stope prema kojima su obračunata.",
+        "dialogDescription": "Verzija se primjenjuje od datuma početka do početka sljedeće verzije. Ranije verzije i podnesena izvješća ne mijenjaju se.",
+        "dinner": "Umanjenje za osiguranu večeru",
+        "empty": "Zaposlenici mogu unositi dnevnice za putovanja, no one ostaju u skici dok stope ne pokriju dane putovanja. Preuzmite verificirane zakonske iznose ili unesite vlastite iznose svoje organizacije.",
+        "emptyTitle": "Nisu postavljene stope dnevnica",
+        "errors": {
+          "afterDefault": "Ovi zakonski iznosi verificirani su samo za jednu godinu; odaberite datum unutar te godine.",
+          "amount": "Unesite iznos s najviše dvije decimale, npr. 14.00.",
+          "beforeDefault": "Zakonski iznosi verificirani su tek od početka ovog izdanja; odaberite kasniji datum ili unesite vlastite iznose svoje organizacije za ranije dane.",
+          "currency": "Unesite troslovnu oznaku valute, npr. EUR.",
+          "date": "Odaberite prvi dan primjene stopa.",
+          "exceedsFullDay": "Ovaj iznos ne može premašiti iznos pune dnevnice.",
+          "invalid": "Provjerite ovu vrijednost.",
+          "tooLong": "Ovaj je tekst predug."
+        },
+        "foreignTable": "Uključuje službene inozemne stope ({version}) za {countries} država i {places} gradova, koje se primjenjuju na dane putovanja od {from} do {through}. Države i teritoriji koji nisu na popisu slijede službena zamjenska pravila; sve ostalo označava se za ručni obračun.",
+        "fullDay": "Cijeli dan (odsutnost od 24 sata)",
+        "germanDefaultTitle": "Njemačke zakonske tuzemne dnevnice",
+        "germanForeignDefaultTitle": "Njemačke zakonske dnevnice sa službenim inozemnim stopama",
+        "history": "Zamijenjene i povučene verzije ({count})",
+        "historyEntry": "Od {date}: cijeli dan {fullDay}, nepuni dan {partialDay} · {source}",
+        "loadFailed": "Stope dnevnica nije bilo moguće učitati.",
+        "lunch": "Odbitak za osigurani ručak",
+        "notCovered": "nema tuzemnih stopa",
+        "note": "Napomena (neobavezno)",
+        "openEnded": "do daljnjega",
+        "partialDay": "Dan putovanja ili više od 8 sati odsutnosti",
+        "replace": "Zamijeni",
+        "replaceConfirm": "Zamijeni verziju",
+        "replaceDescription": "Aktivna verzija već počinje s datumom {date}. Spremanjem je zamjenjujete; zamijenjena verzija ostaje sačuvana u povijesti.",
+        "replaceTitle": "Zamijeni verziju koja počinje tog dana",
+        "rules": "Pravo se temelji na {reference} ({version}), provjereno za dane putovanja od {from} do {through}. Putovanja u inozemstvo obračunavaju se po danu samo s usvojenim inozemnim stopama; ostali dani i posebni itinerari označeni su za ručni obračun.",
+        "rulesOpenEnded": "Pravo na naknadu slijedi {reference} ({version}), provjereno za dane putovanja od {from} do promjene zakona. Inozemna putovanja obračunavaju se po danu samo s usvojenim inozemnim stopama; ostali dani i posebni itinerari označeni su za ručni izračun.",
+        "saved": "Aktivirana je verzija stopa dnevnica",
+        "saveFailed": "Stope dnevnica nije bilo moguće spremiti.",
+        "source": "Izvor",
+        "sourceReference": "Izvor",
+        "sourceReferencePlaceholder": "npr. Pravilnik o putovanjima, sporazum s radničkim vijećem 3/2026",
+        "stale": "Stope su se u međuvremenu promijenile. Provjerite trenutne verzije i pokušajte ponovno.",
+        "title": "Stope dnevnica",
+        "until": "do {date}",
+        "validFrom": "Vrijedi od",
+        "validUntil": "Vrijedi do",
+        "withdraw": "Povuci",
+        "withdrawConfirm": "Povuci verziju",
+        "withdrawDescription": "Za dane putovanja od {date} primjenjuje se prethodna verzija ili ostaju neobračunati ako ona ne postoji. Podneseni izvještaji zadržavaju stope s kojima su obračunati.",
+        "withdrawFailed": "Verziju stopa nije bilo moguće povući. Ponovno učitajte verzije i pokušajte ponovno.",
+        "withdrawn": "Verzija stopa je povučena",
+        "withdrawTitle": "Želite li povući ovu verziju stopa?"
+      },
+      "perDiemRate": "Dnevnica / dan",
+      "projectExceptions": {
+        "authorize": "Odobri iznimku",
+        "authorizedBy": "Odobrio/la {name}",
+        "employee": "Zaposlenik",
+        "employeePlaceholder": "Odaberite zaposlenika",
+        "empty": "Nema odobrenih iznimki.",
+        "errors": {
+          "afterHistoryCapture": "Iznimke pokrivaju samo datume prije bilježenja dodjela na projekte. Za kasnije datume mjerodavne su zabilježene dodjele: dodijelite zaposlenika projektu.",
+          "date": "Unesite valjani datum.",
+          "dateOrder": "Zadnji dan ne može biti prije prvog.",
+          "employee": "Odaberite zaposlenika.",
+          "evidence": "Navedite dokaz na kojem se ovo temelji, npr. plan raspodjele osoblja ili ugovor.",
+          "future": "Iznimke pokrivaju samo prošle troškove. Za trenutni rad dodijelite zaposlenika projektu.",
+          "project": "Odaberite projekt.",
+          "reason": "Objasnite zašto je zaposlenik tada mogao koristiti projekt."
+        },
+        "evidence": "Dokaz",
+        "evidenceDescription": "Dokaz da je zaposlenik tada radio na projektu, npr. plan raspodjele osoblja, ugovor ili pisana potvrda voditelja projekta.",
+        "intro": "Zaposlenici mogu pripisati troškove projektima kojima su bili dodijeljeni na datum nastanka troška. Povijest dodjela bilježi se od uvođenja projekata troškova; za ranije datume ili rad bez dodjele ovdje odobrite iznimku uz navođenje razloga i dokaza. Pregledavatelji vide svaku iznimku.",
+        "loadFailed": "Nije bilo moguće učitati iznimke pripisivanja projektu.",
+        "project": "Projekt",
+        "projectPlaceholder": "Odaberite projekt",
+        "reason": "Razlog",
+        "saved": "Iznimka je odobrena",
+        "saveFailed": "Iznimku nije bilo moguće zabilježiti.",
+        "title": "Iznimke pripisivanja projektu",
+        "validFrom": "Prvi obuhvaćeni datum troška",
+        "validTo": "Zadnji obuhvaćeni datum troška"
+      },
+      "rates": {
+        "dialogDescription": "{employee}: {amount} dana {date}. Rezultat se zaokružuje naviše na {currency} i prikazuje se zaposleniku i pregledavatelju kao odobreni tečaj.",
+        "dialogTitle": "Dokumentirajte tečaj konverzije",
+        "direction": "Navedeno kao",
+        "empty": "Nijedno izvješće u skici nema trošak u drugoj valuti.",
+        "errors": {
+          "afterExpenseDate": "Datum tečaja ne može biti nakon datuma troška.",
+          "date": "Unesite datum tečaja.",
+          "evidenceRequired": "Navedite dokument ili stavku izvoda u kojoj je prikazan tečaj.",
+          "expenseDateMissing": "Trošak još nema datum. Zatražite od zaposlenika da ga prvo doda.",
+          "pair": "Navedite tečaj za valute ovog troška.",
+          "rate": "Unesite pozitivan tečaj s najviše 10 decimala, npr. 0.9215.",
+          "reasonRequired": "Dokumentirajte izvor tečaja.",
+          "tooEarly": "Upotrijebite tečaj koji datira najviše {days} dana prije troška.",
+          "tooLong": "Ovaj tekst je predugačak."
+        },
+        "evidence": "Dokaz o tečaju",
+        "evidenceDescription": "Gdje se tečaj može provjeriti, npr. izvod kartice i stavka ili broj dokumenta objavljenog tečaja.",
+        "intro": "Zaposlenici pretvaraju inozemni račun prema dokumentiranom terećenju kartice. Ako ga nema, ovdje dokumentirajte tečaj s njegovim datumom i izvorom. Dokumentirani tečaj prikazuje se pregledavatelju kao odobreni tečaj.",
+        "loadFailed": "Učitavanje troškova u stranoj valuti nije uspjelo.",
+        "noPreview": "Unesite važeći tečaj, datum, dokumentaciju i dokaz kako biste vidjeli rezultat.",
+        "outOfRange": "S ovim tečajem trošak bi se zaokružio na nulu ili bi premašio dopušteni iznos.",
+        "preview": "Računa se kao {amount}.",
+        "rate": "Tečaj (x)",
+        "rateDate": "Datum tečaja",
+        "reason": "Dokumentacija",
+        "reasonDescription": "Izvor tečaja i razlog zašto se ne koristi terećenje kartice, npr. tečaj s bankovnog izvoda kartice za službena putovanja.",
+        "record": "Dokumentiraj tečaj",
+        "remove": "Ukloni konverziju",
+        "removeFailed": "Konverzija se nije mogla ukloniti. Popis je osvježen.",
+        "replace": "Zamijeni tečaj",
+        "save": "Odobri tečaj",
+        "saved": "Dokumentirani tečaj je spremljen",
+        "saveFailed": "Tečaj se nije mogao spremiti. Pokušajte ponovno.",
+        "self": "Ne možete odobriti tečaj na vlastitom izvješću. Zatražite drugog administratora troškova.",
+        "stale": "Ovaj trošak je u međuvremenu promijenjen ili podnesen. Popis je osvježen.",
+        "title": "Troškovi u stranoj valuti u skicama",
+        "unconverted": "Još nema konverzije"
+      },
+      "receiptExceptions": {
+        "description": "Zaposlenici mogu podnijeti trošak bez računa samo uz obrazloženje zašto nedostaje. Pregledavatelji moraju prihvatiti svaku iznimku kako bi odobrili izvješće. Računi ostaju obvezni za sve ostalo, a isključivanjem ove postavke već podnesena izvješća ostaju nepromijenjena.",
+        "intro": "Za troškove računa potreban je račun. Možete dopustiti obrazloženu iznimku za račune koji su izgubljeni ili nikada nisu izdani.",
+        "label": "Dopusti obrazložene iznimke za nedostajuće račune",
+        "loadFailed": "Postavka za nedostajuće račune nije se mogla učitati.",
+        "save": "Spremi postavku",
+        "saved": "Postavka za nedostajuće račune je spremljena",
+        "saveFailed": "Spremanje postavke za nedostajuće račune nije uspjelo",
+        "title": "Nedostajući računi"
+      },
+      "referenceRates": {
+        "acknowledge": "Razumijem da ESB objavljuje ove tečajeve samo u informativne svrhe, za ograničen skup valuta i samo radnim danima te da ih naša organizacija odabire za povrat troškova.",
+        "acknowledgedEcb": "{name} je dana {date} potvrdio/la da ESB objavljuje ove tečajeve samo u informativne svrhe, za ograničen skup valuta i samo radnim danima.",
+        "acknowledgeRequired": "Potvrdite da razumijete kako se referentni tečajevi mogu koristiti.",
+        "approve": "Odobri referentne tečajeve ESB-a",
+        "approved": "Referentni tečajevi ESB-a odobreni",
+        "approvedBy": "Odobrio/la {name} dana {date}.",
+        "approveFailed": "Referentni tečajevi nisu se mogli odobriti.",
+        "fetchFailing": "Zadnje dohvaćanje nije uspjelo. Za troškove nastale nakon zadnjeg uspješnog dohvaćanja potrebno je terećenje kartice ili dokumentirani tečaj dok sljedeće dohvaćanje ne uspije.",
+        "firstFetch": "Tečajevi se dohvaćaju svakih sat vremena. Do prvog dohvaćanja, za troškove će se i dalje tražiti terećenje kartice ili dokumentirani tečaj.",
+        "intro": "Uz odobrenje, trošak u stranoj valuti bez terećenja kartice ili dokumentiranog tečaja preračunava se prema referentnom tečaju eura Europske središnje banke na dan troška. Vikendom i praznicima sustava TARGET primjenjuje se najnovija prethodna objava te se prikazuje njezin stvarni datum. Za valute koje ESB ne objavljuje i datume za koje tečaj nije dostupan i dalje je potrebno terećenje kartice ili dokumentirani tečaj. Podnesena izvješća zadržavaju tečaj s kojim su podnesena.",
+        "latestFetch": "Zadnje uspješno dohvaćanje",
+        "latestPublication": "Najnovija objava",
+        "loadFailed": "Postavke referentnog tečaja nisu se mogle učitati.",
+        "notFetched": "Još nije dohvaćeno",
+        "revoke": "Prekini upotrebu referentnih tečajeva",
+        "revokeFailed": "Referentni tečajevi nisu se mogli isključiti.",
+        "title": "Referentni tečajevi"
+      },
+      "title": "Pravila o putnim troškovima"
+    },
+    "webhooks": {
+      "description": "Konfigurirajte krajnje točke webhooka za primanje obavijesti o događajima u stvarnom vremenu",
+      "title": "Webhookovi"
+    },
+    "weekStart": {
+      "description": "Odaberite počinju li kalendari i tjedni sažeci u nedjelju ili u ponedjeljak.",
+      "label": "Prvi dan u tjednu",
+      "save": "Spremi početak tjedna",
+      "title": "Tjedan počinje u",
+      "updateError": "Došlo je do pogreške prilikom ažuriranja početka tjedna",
+      "updateFailed": "Ažuriranje početka tjedna nije uspjelo",
+      "updateSuccess": "Početak tjedna uspješno je ažuriran"
+    },
+    "wellness": {
+      "cardDescShort": "Ostanite hidrirani dok radite",
+      "cardTitle": "Podsjetnici za vodu",
+      "dailyGoal": "Dnevni cilj",
+      "decreaseDailyGoal": "Smanji dnevni cilj",
+      "description": "Konfigurirajte podsjetnike za vodu i praćenje hidracije tijekom rada",
+      "glasses": "čaše",
+      "increaseDailyGoal": "Povećaj dnevni cilj",
+      "reminderFrequency": "Učestalost podsjetnika",
+      "saved": "Wellness postavke su spremljene",
+      "saveError": "Spremanje wellness postavki nije uspjelo",
+      "title": "Wellness postavke"
+    },
+    "workBalanceRecalculation": {
+      "confirm": "Potvrdite ponovni izračun",
+      "confirmMessage": "Potvrdite prije stavljanja ovog ponovnog izračuna u red čekanja.",
+      "description": "Stavite u red čekanja potpunu ponovnu izgradnju mjesečnih i godišnjih agregata radnog salda za {employeeName}. Ovaj se zadatak održavanja izvodi u pozadini i ne blokira ovu stranicu.",
+      "queued": "Ponovni izračun stavljen je u red čekanja",
+      "recalculate": "Preračunaj radni saldo",
+      "requestError": "Stavljanje ponovnog izračuna radnog salda u red čekanja nije uspjelo",
+      "requestSuccess": "Ponovni izračun radnog salda stavljen je u red čekanja",
+      "title": "Ponovni izračun radnog salda"
+    },
+    "workerQueue": {
+      "cards": {
+        "active": "Aktivno",
+        "activeDescription": "Trenutačno se obrađuje",
+        "completed": "Dovršeno",
+        "completedDescription": "Nedavno dovršeno",
+        "delayed": "Odgođeno",
+        "delayedDescription": "Zakazano za kasnije",
+        "failed": "Neuspjelo",
+        "failedDescription": "Nedavno neuspjelo",
+        "paused": "Pauzirano",
+        "queueState": "Red čekanja",
+        "queueStateDescription": "Mogu li radnici preuzimati poslove na čekanju",
+        "running": "U tijeku",
+        "unknown": "Nepoznato",
+        "waiting": "Na čekanju",
+        "waitingDescription": "Zadaci koji čekaju na obradu"
+      },
+      "common": {
+        "unknown": "Nepoznato"
+      },
+      "connected": "Povezano",
+      "description": "Nadzirite obradu pozadinskih poslova i izvršavanje cron poslova",
+      "disconnected": "Odspojeno",
+      "lastUpdated": "Zadnje ažurirano",
+      "loadError": "Učitavanje statusa reda čekanja nije uspjelo",
+      "noExecutions": "Nisu pronađena nedavna izvršavanja",
+      "noScheduledJobs": "Nisu pronađeni zakazani poslovi",
+      "recentExecutions": {
+        "allJobs": "Svi poslovi",
+        "error": "Učitavanje izvršavanja nije uspjelo",
+        "filterLabel": "Filtriraj prema poslu",
+        "loading": "Učitavanje izvršavanja…"
+      },
+      "recentExecutionsDescription": "Zadnjih 50 izvršavanja poslova zabilježenih u bazi podataka.",
+      "reliability": {
+        "averageDuration": "Prosječno trajanje",
+        "avgDuration": "Prosj. trajanje",
+        "avgDurationDescription": "Izvršavanja s podacima o trajanju",
+        "completed": "Dovršeno",
+        "durationTrend": "Trend trajanja",
+        "durationTrendDescription": "Prosječno vrijeme izvođenja za izvršavanja koja su zabilježila podatke o trajanju.",
+        "failed": "Neuspjelo",
+        "failedRuns": "Neuspjela pokretanja",
+        "failedRunsDescription": "Zadnjih 30 dana",
+        "failing": "Neuspješno",
+        "healthy": "Ispravno",
+        "jobHealth": "Ispravnost posla",
+        "jobHealthDescription": "Pouzdanost pojedinog posla na temelju nedavnih izvršavanja i ponovljivih rasporeda.",
+        "noDurationData": "Nema dostupnih podataka o trajanju za ovo razdoblje.",
+        "noExecutionHistory": "Nema dostupne povijesti izvršavanja cron poslova za ovo razdoblje.",
+        "noJobs": "Nisu pronađeni podaci o pouzdanosti",
+        "runOutcomes": "Ishodi pokretanja",
+        "runOutcomesDescription": "Dovršena i neuspjela cron izvršavanja tijekom zadnjih {days} dana.",
+        "stale": "Zastarjelo",
+        "staleJobs": "Zastarjeli poslovi",
+        "staleJobsDescription": "Prekoračen očekivani raspored",
+        "successRate": "Stopa uspješnosti",
+        "successRateDescription": "Završna cron izvršavanja",
+        "title": "Pouzdanost",
+        "unknown": "Nepoznato",
+        "warning": "Upozorenje"
+      },
+      "scheduleControls": {
+        "cancel": "Odustani",
+        "confirmationLabel": "Upišite potvrdu",
+        "edit": "Uredi",
+        "failed": "Promjena rasporeda nije uspjela",
+        "highRiskDescription": "Promjena ovog zadatka može utjecati na naplatu, čišćenje, integracije, usklađenost ili operativnu automatizaciju.",
+        "highRiskTitle": "Visokorizični raspored",
+        "mismatch": "BullMQ se trenutačno razlikuje od spremljenog rasporeda; pokretanje workera će to uskladiti.",
+        "presetLabel": "Predložak rasporeda",
+        "readOnly": "Ovaj zadani raspored još nema predložak koji se može uređivati.",
+        "reset": "Poništi",
+        "resetSaved": "Raspored poništen",
+        "save": "Spremi raspored",
+        "saved": "Raspored spremljen",
+        "warningPrefix": "Spremljeno s upozorenjem"
+      },
+      "scheduledJobsDescription": "Ponovljivi poslovi konfigurirani u radnom procesu. Pokreću se automatski prema rasporedu.",
+      "schedule": {
+        "overridden": "Premošteno"
+      },
+      "sections": {
+        "jobMetrics": "Metrika poslova (zadnjih 30 dana)",
+        "queueCounts": "Status reda čekanja",
+        "recentExecutions": "Nedavna izvršavanja",
+        "scheduledJobs": "Zakazani cron poslovi"
+      },
+      "status": {
+        "completed": "Dovršeno",
+        "failed": "Neuspjelo",
+        "pending": "Na čekanju",
+        "running": "U tijeku"
+      },
+      "table": {
+        "actions": "Radnje",
+        "avgDuration": "Prosj. trajanje",
+        "default": "Zadano",
+        "duration": "Trajanje",
+        "error": "Pogreška",
+        "failed": "Neuspjelo",
+        "health": "Ispravnost",
+        "jobName": "Naziv posla",
+        "lastRun": "Zadnje pokretanje",
+        "nextRun": "Sljedeće pokretanje",
+        "schedule": "Raspored",
+        "startedAt": "Pokrenuto u",
+        "status": "Status",
+        "successful": "Uspješno",
+        "successRate": "Stopa uspješnosti",
+        "totalRuns": "Ukupno pokretanja"
+      },
+      "title": "Red čekanja radnika"
+    },
+    "worksCouncil": {
+      "absence": {
+        "category": "Nazivi kategorija",
+        "grouped": "Grupirano",
+        "hidden": "Skriveno"
+      },
+      "absenceVisibility": "Vidljivost izostanaka",
+      "description": "Konfigurirajte pristup radničkom vijeću uz zaštitu privatnosti i izvoze pregleda",
+      "exportEnabled": "Omogući izvoze pregleda",
+      "exportEnabledDescription": "Omogućite ovlaštenim korisnicima radničkog vijeća generiranje paketa za pregled filtriranih radi privatnosti.",
+      "formDescription": "Konfigurirajte pristup radničkom vijeću uz zaštitu privatnosti i izvoze pregleda za ovu organizaciju.",
+      "identity": {
+        "aggregated": "Agregirano",
+        "named": "Imenovano",
+        "pseudonymized": "Pseudonimizirano"
+      },
+      "identityVisibility": "Vidljivost identiteta",
+      "minimumThreshold": "Minimalni prag agregacije",
+      "minimumThresholdDescription": "Grupe manje od ove veličine se izostavljaju radi smanjenja rizika od ponovne identifikacije.",
+      "save": "Spremi postavke",
+      "saved": "Postavke Radničkog vijeća su spremljene",
+      "saveError": "Spremanje postavki Radničkog vijeća nije uspjelo",
+      "title": "Način rada radničkog vijeća",
+      "visibleLocationIds": "Vidljivi ID-jevi lokacija",
+      "visibleLocationIdsDescription": "Neobavezni ID-jevi lokacija odvojeni zarezom. Ostavite prazno da biste uključili sve lokacije.",
+      "visibleTeamIds": "Vidljivi ID-jevi timova",
+      "visibleTeamIdsDescription": "Neobavezni ID-jevi timova odvojeni zarezom. Ostavite prazno da biste uključili sve timove."
+    }
+  }
+}

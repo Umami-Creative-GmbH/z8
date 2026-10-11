@@ -1,0 +1,458 @@
+{
+  "absences": {
+    "addAbsence": "Shto mungesë",
+    "balance": {
+      "carryoverDays": "Keni {count} ditë të bartura",
+      "carryoverExpiry": "që do të skadojnë më",
+      "carryoverFrom": "Të bartura nga {year}",
+      "daysRemaining": "Ditë të mbetura",
+      "description": "Ditët tuaja të pushimit për vitin aktual",
+      "outOfTotalDays": "nga {totalDays} ditë gjithsej",
+      "pending": "Në pritje",
+      "title": "Bilanci i pushimeve {year}",
+      "used": "Të përdorura"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Miratuar",
+        "halfDayAm": "Gjysmë dite (AM)",
+        "halfDayPm": "Gjysmë dite (PM)",
+        "holiday": "Pushim zyrtar",
+        "pending": "Në pritje",
+        "rejected": "Refuzuar"
+      },
+      "nextYear": "Viti i ardhshëm",
+      "previousYear": "Viti i kaluar"
+    },
+    "deputy": {
+      "away": "Mungon {dates}",
+      "awayOption": "{name} · Mungon {dates}",
+      "awayWarning": "{name} mungon gjatë këtyre datave. Përsëri mund ta zgjidhni.",
+      "changeAction": "Ndrysho zëvendësuesin",
+      "changed": "Zëvendësuesi u ruajt",
+      "changeDescription": "Zëvendësuesi ju mbulon gjatë kohës që mungoni. Ndryshimi i tij nuk kërkon miratim të ri.",
+      "changeDescriptionFor": "Zëvendësuesi mbulon detyrat gjatë kohës që {name} mungon. Ndryshimi i tij nuk kërkon miratim të ri.",
+      "changeFailed": "Nuk mund të ruhej zëvendësuesi",
+      "changeTitle": "Ndrysho zëvendësuesin",
+      "contactOnly": "{name} do të shfaqet vetëm si kontakt dhe nuk mund të marrë vendime për miratime.",
+      "errors": {
+        "ended": "Zëvendësuesi nuk mund të ndryshohet më: kjo mungesë ka përfunduar.",
+        "required": "Zgjidhni një zëvendësues: ky lloj mungese kërkon një të tillë.",
+        "self": "Një punonjës nuk mund të jetë zëvendësues i vetvetes.",
+        "unavailable": "Zëvendësuesi duhet të jetë një punonjës aktiv i kësaj organizate."
+      },
+      "help": "Kolegu që ju zëvendëson gjatë kohës që mungoni. Nga ai nuk kërkohet pranim.",
+      "label": "Zëvendësuesi",
+      "labelOptional": "Zëvendësuesi (Opsionale)",
+      "labelRequired": "Zëvendësuesi *",
+      "none": "Pa zëvendësues",
+      "placeholder": "Zgjidhni një zëvendësues…",
+      "save": "Ruaj zëvendësuesin"
+    },
+    "dialog": {
+      "cancelDescription": "A jeni i sigurt që dëshironi ta anuloni këtë kërkesë për mungesë? Ky veprim nuk mund të zhbëhet.",
+      "cancelTitle": "Anulo kërkesën për mungesë",
+      "confirmCancel": "Po, anulo kërkesën"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Leja e pushimit nuk është konfiguruar",
+      "allowanceNotConfiguredMessage": "Organizata juaj nuk ka konfiguruar ende lejet e pushimit për {currentYear}.",
+      "contactAdmin": "Ju lutemi kontaktoni administratorin tuaj për të konfiguruar politikat e pushimeve."
+    },
+    "featureName": "menaxho mungesat",
+    "form": {
+      "absenceDays": "Ditët e mungesës:",
+      "absenceType": "Lloji i mungesës *",
+      "autoApproved": "(E miratuar automatikisht)",
+      "balanceAfterRequest": "Bilanci pas kërkesës:",
+      "daysRemaining": "Ditët e mbetura:",
+      "description": "Dërgoni një kërkesë për pushim. Menaxheri juaj do të njoftohet për miratim.",
+      "duration": "Kohëzgjatja e mungesës",
+      "duration.fullDay": "Ditë e plotë",
+      "duration.partialDay": "Ditë e pjesshme",
+      "endDate": "Data e përfundimit *",
+      "endDateHelper": "Lëreni bosh për një mungesë brenda së njëjtës ditë.",
+      "endTime": "Ora e përfundimit",
+      "errors": {
+        "fillRequiredFields": "Ju lutemi plotësoni të gjitha fushat e kërkuara",
+        "insufficientBalance": "Bilanc i pamjaftueshëm pushimi",
+        "insufficientBalanceForRequest": "Bilanc i pamjaftueshëm pushimi për këtë kërkesë",
+        "invalidSelection": "Ju lutemi kontrolloni përzgjedhjen tuaj dhe provoni përsëri"
+      },
+      "notesOptional": "Shënime (Opsionale)",
+      "notesPlaceholder": "Shtoni informacione shtesë...",
+      "selectAbsenceType": "Zgjidhni llojin e mungesës",
+      "sickDetail": "Detaji i sëmundjes *",
+      "sickDetailPlaceholder": "Zgjidhni detajin e sëmundjes",
+      "startDate": "Data e fillimit *",
+      "startTime": "Ora e fillimit",
+      "submitRequest": "Dërgo kërkesën",
+      "title": "Kërko mungesë"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "ndërrimi i prekur",
+      "approval": "Miratimi",
+      "balance": "Bilanci",
+      "balanceUnavailable": "Bilanci nuk është i disponueshëm",
+      "countsAgainstVacationBalance": "Zbritet nga bilanci i pushimeve",
+      "coverage": "Mbulimi",
+      "coverageStaffAfterRequest": "{after}/{minimum} staf pas kërkesës",
+      "description": "Një kontroll jo-bllokues i bilancit, festave, mbulimit dhe sinjaleve të miratimit para se të dërgoni.",
+      "doesNotReduceVacationBalance": "Nuk e zvogëlon bilancin e pushimeve",
+      "holidays": "Festat",
+      "loading": "Po kontrollohet bilanci, festat dhe mbulimi…",
+      "noApprovalWarnings": "Nuk ka paralajmërime miratimi",
+      "noCoverageRisk": "Nuk ka rrezik të publikuar të mbulimit",
+      "noCoverageRulesConfigured": "Nuk janë konfiguruar rregulla mbulimi për ndërrimet e prekura",
+      "noHolidays": "Nuk ka festa të caktuara në këtë periudhë",
+      "noWorkingDays": "Ky interval nuk përmban ditë pune.",
+      "remainingAfter": "Mbetur pas kërkesës",
+      "requested": "Kërkuar",
+      "title": "Planifikues inteligjent",
+      "unavailable": "Parashikimi i planifikimit nuk është i disponueshëm. Përsëri mund ta dërgoni kërkesën tuaj.",
+      "workBalance": "Bilanci i punës",
+      "workBalanceAfter": "Pas kërkesës",
+      "workBalanceCurrent": "Aktual",
+      "workBalanceDrawn": "Tërhequr nga kërkesa",
+      "workBalanceNegative": "Bilanci juaj i punës do të ishte negativ pas kësaj kërkese. Ju përsëri mund ta dërgoni atë."
+    },
+    "requestAbsence": "Kërko mungesë",
+    "sickNotes": {
+      "attachAction": "Bashkëngjit raport mjekësor",
+      "attach": {
+        "defaultTitle": "Raporti mjekësor {dateRange}",
+        "description": "Shtoni foto ose PDF të raportit tuaj mjekësor: skedarë PDF, JPEG, PNG ose WebP deri në 20 MB secili. Çdo skedar ruhet si raport mjekësor më vete në dosjen tuaj të personelit.",
+        "documentDate": "Data e dokumentit",
+        "failed": "Ngarkimi dështoi",
+        "fileRequired": "Zgjidhni të paktën një skedar.",
+        "officerDescription": "Shtoni foto ose PDF të raportit mjekësor: skedarë PDF, JPEG, PNG ose WebP deri në 20 MB secili. Çdo skedar ruhet si raport mjekësor më vete në dosjen personale të punonjësit.",
+        "progress": "Ecuria e ngarkimit",
+        "progressCount": "{done} nga {total} të ngarkuara",
+        "share": "Ndajeni me punonjësin",
+        "sharedNote": "Raportet tuaja mjekësore mund t'i shihni te Dokumentet e mia dhe te kjo mungesë. Miratuesi juaj sheh vetëm që është bashkëngjitur një raport mjekësor. Mund ta fshini një raport mjekësor brenda 24 orëve nga ngarkimi i tij.",
+        "shareHint": "Çaktivizuar: vetëm për BNJ, punonjësi sheh vetëm që është bashkëngjitur një raport mjekësor. Aktivizuar: punonjësi e sheh te Dokumentet e mia.",
+        "submit": "Bashkëngjit",
+        "success": "{count, plural, one {Raport mjekësor i bashkëngjitur} other {# raporte mjekësore të bashkëngjitura}}",
+        "title": "Bashkëngjit raport mjekësor",
+        "titleLabel": "Titulli"
+      },
+      "files": {
+        "chooseFiles": "Zgjidhni skedarët",
+        "defaultTitleUndated": "Raport mjekësor",
+        "incomplete": "Vendosni një titull dhe një datë dokumenti për çdo raport mjekësor.",
+        "remove": "Hiq {fileName}",
+        "takePhoto": "Bëni foto",
+        "tooMany": "Mund të shtoni deri në {max} skedarë."
+      },
+      "marker": "Raport mjekësor i bashkëngjitur ({count})",
+      "panel": {
+        "delete": "Fshij {title}",
+        "description": "Raportet mjekësore për mungesën {dateRange}.",
+        "empty": "Nuk ka raporte mjekësore që mund të hapni.",
+        "linkExisting": "Lidh raportin mjekësor",
+        "loadFailed": "Raportet mjekësore nuk mund të ngarkoheshin.",
+        "title": "Raportet mjekësore",
+        "unlink": "Shkëput {title}",
+        "unlinked": "Raporti mjekësor u shkëput",
+        "unlinkFailed": "Raporti mjekësor nuk mund të shkëputej."
+      },
+      "request": {
+        "attachFailed": "Mungesa juaj u kërkua, por {files} nuk mund të bashkëngjiteshin. Raportet mjekësore mund t'i bashkëngjitni më vonë nga mungesa.",
+        "description": "Shtoni foto ose PDF të raportit tuaj mjekësor: skedarë PDF, JPEG, PNG ose WebP deri në 20 MB secili. Çdo skedar ruhet si raport mjekësor më vete në dosjen tuaj personale. Miratuesi juaj sheh vetëm që është bashkëngjitur një raport mjekësor.",
+        "title": "Raport mjekësor (opsionale)",
+        "uploadFailed": "{fileName} nuk mund të ngarkohej. Hiqeni ose provoni përsëri."
+      }
+    },
+    "status": {
+      "approved": "Miratuar",
+      "pending": "Në pritje",
+      "rejected": "Refuzuar"
+    },
+    "subtitle": "Menaxhoni ditët tuaja të pushimit dhe lejes",
+    "table": {
+      "cancelAbsence": "Anulo mungesën",
+      "cancelAbsenceTooltip": "Anulo mungesën",
+      "end": "Përfundimi",
+      "headers": {
+        "actions": "Veprimet",
+        "dateRange": "Periudha e datave",
+        "days": "Ditë",
+        "notes": "Shënime",
+        "status": "Statusi",
+        "type": "Lloji"
+      },
+      "noRequests": "Nuk u gjet asnjë kërkesë për mungesë.",
+      "noSearchResults": "Asnjë mungesë nuk përputhet me kërkimin tuaj.",
+      "searchPlaceholder": "Kërko sipas llojit, statusit ose shënimeve...",
+      "start": "Fillimi",
+      "subtitle": "Kërkesat e fundit dhe të ardhshme për mungesë",
+      "title": "Kërkesat tuaja për mungesë"
+    },
+    "title": "Mungesat",
+    "toast": {
+      "cancelFailed": "Dështoi anulimi i kërkesës për mungesë",
+      "requestCancelled": "Kërkesa për mungesë u anulua",
+      "requestFailed": "Dështoi dërgimi i kërkesës për mungesë",
+      "requestSubmitted": "Kërkesa për mungesë u dërgua me sukses"
+    },
+    "view": {
+      "calendar": "Kalendari",
+      "table": "Tabela"
+    }
+  },
+  "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pushim – {duration}"
+      }
+    },
+    "clockOutOnBehalf": {
+      "confirm": "Regjistro daljen",
+      "description": "Kjo krijon një regjistrim të auditueshëm të daljes në orën aktuale të serverit. Nëse diçka kërkon rregullim më pas, përdorni korrigjimet.",
+      "error": "Dështoi regjistrimi i daljes së punonjësit",
+      "loading": "Duke regjistruar daljen...",
+      "success": "Dalja e punonjësit u regjistrua me sukses",
+      "title": "Të regjistrohet dalja e punonjësit?"
+    },
+    "contextMenu": {
+      "delete": "Fshi",
+      "edit": "Ndrysho",
+      "label": "Veprimet e regjistrimit të orarit"
+    },
+    "dayDetails": {
+      "blocksTimeEntry": "Regjistrimet e kohës janë të bllokuara",
+      "category": "Kategoria",
+      "deputy": "Zëvendësues",
+      "duration": "Kohëzgjatja",
+      "employee": "Punonjësi",
+      "noEvents": "Nuk ka ngjarje për këtë ditë",
+      "recurring": "Ditë pushimi e përsëritur",
+      "selectDate": "Zgjidhni një datë për të parë detajet",
+      "status": "Statusi",
+      "title": "Detajet e ditës"
+    },
+    "delete": {
+      "applied": "Fshirja e regjistrimit të orarit u zbatua",
+      "auditNote": "Regjistrimet e kohës do të shënohen si të fshira për qëllime auditimi.",
+      "confirm": "Shndërro në pushim",
+      "description": "Kjo do ta fshijë përgjithmonë këtë periudhë pune. Hapësira do të shfaqet si pushim në kalendar.",
+      "failed": "Dështoi fshirja e periudhës së punës",
+      "reasonLabel": "Arsyeja e fshirjes",
+      "reasonRequired": "Arsyeja është e detyrueshme",
+      "success": "Periudha e punës u shndërrua në pushim",
+      "title": "Të shndërrohet në pushim?"
+    },
+    "details": {
+      "automaticClockOut": "Dalje e regjistruar automatikisht",
+      "automaticCutoff": "Kufiri i regjistrimit të daljes",
+      "automaticLimit": "Kufiri i punës së pandërprerë",
+      "baseWorked": "Bazë e punuar",
+      "blocksTimeEntry": "Bllokon regjistrimin e kohës",
+      "category": "Kategoria",
+      "credited": "Kredituar",
+      "dateRange": "Periudha e datave",
+      "deputy": "Zëvendësues",
+      "duration": "Kohëzgjatja",
+      "editedBy": "Modifikuar nga",
+      "employee": "Punonjësi",
+      "notes": "Shënime",
+      "pendingApproval": "Në pritje të miratimit",
+      "pendingApprovalDescription": "Kjo periudhë pune po pret miratimin e menaxherit. Orët e regjistruara mund të ndryshojnë nëse refuzohet.",
+      "positions": {
+        "accuracy": "brenda {meters} m",
+        "clockIn": "Hyrje",
+        "clockOut": "Dalje",
+        "failed": "Pozicionet nuk mund të ngarkoheshin",
+        "hide": "Fshih pozicionet",
+        "loggedHint": "Punonjësi mund të shohë se kush i ka parë pozicionet e tij: shikimi regjistrohet në regjistër.",
+        "none": "Nuk u regjistrua asnjë pozicion për këtë periudhë pune.",
+        "openInMaps": "Hap në harta",
+        "originalClockIn": "Regjistruar me hyrjen origjinale në orën {time}. Orët u korrigjuan më vonë.",
+        "originalClockOut": "Regjistruar me daljen origjinale në orën {time}. Orët u korrigjuan më vonë.",
+        "show": "Shfaq pozicionet",
+        "title": "Pozicionet"
+      },
+      "project": "Projekti",
+      "recurring": "Përsëritet çdo vit",
+      "rejected": "Refuzuar",
+      "rejectedDescription": "Ky ndryshim i periudhës së punës u refuzua nga një menaxher. Orët origjinale janë rikthyer.",
+      "source": "Burimi",
+      "status": "Statusi",
+      "surcharge": "Shtesë",
+      "surchargeBreakdown": "Detajimi i shtesës",
+      "system": "Sistemi",
+      "task": "Detyra",
+      "taskDone": "{name} (e kryer)",
+      "time": "Koha",
+      "type": "Lloji",
+      "workLocation": "Vendndodhja e punës"
+    },
+    "edit": {
+      "billableSaveFailed": "Dështoi përditësimi i faturueshmërisë",
+      "deleteEntry": "Fshij regjistrimin",
+      "locationRequired": "Zgjidhni një vendndodhje pune.",
+      "markedBillable": "U shënua si e faturueshme",
+      "markedNonBillable": "U shënua si e pafaturueshme",
+      "noNotes": "Nuk është shtuar asnjë shënim",
+      "noProject": "Nuk është caktuar asnjë projekt",
+      "notesSaved": "Shënimet u ruajtën",
+      "notesSaveFailed": "Ruajtja e shënimeve dështoi",
+      "projectSaved": "Projekti u përditësua",
+      "projectSaveFailed": "Përditësimi i projektit dështoi",
+      "split": "Ndaj",
+      "time": {
+        "approvalHint": "Ky ndryshim do t'i dërgohet menaxherit tuaj për miratim.",
+        "beyondWindow": "Regjistrimet më të vjetra se {days} ditë mund të modifikohen vetëm nga një administrator.",
+        "clockIn": "Regjistro hyrjen",
+        "clockInDate": "Data e hyrjes",
+        "clockInTime": "Ora e hyrjes",
+        "clockOut": "Regjistro daljen",
+        "clockOutDate": "Data e daljes",
+        "clockOutTime": "Ora e daljes",
+        "directHint": "Ky ndryshim zbatohet menjëherë.",
+        "edit": "Modifiko regjistrimin",
+        "invalidRange": "Dalja duhet të jetë pas hyrjes.",
+        "noChanges": "Ndryshoni më parë datën, orën ose vendndodhjen e punës.",
+        "noteLabel": "Shënim (opsionale)",
+        "notePlaceholder": "Shtoni një shënim rreth këtij ndryshimi…",
+        "onBehalfHint": "Ky ndryshim ndjek zinxhirin e miratimit të punonjësit. Nëse jeni miratuesi i tyre, ai zbatohet menjëherë.",
+        "pendingCorrection": "Një ndryshim orari për këtë regjistrim është tashmë në pritje të miratimit.",
+        "reasonLabel": "Arsyeja",
+        "reasonPlaceholder": "Shpjegoni pse nevojitet ky korrigjim…",
+        "reasonRequired": "Ju lutemi shtoni një arsye për menaxherin tuaj.",
+        "saved": "Regjistrimi i kohës u përditësua",
+        "saveFailed": "Dështoi përditësimi i regjistrimit të kohës",
+        "submitForApproval": "Dërgo për miratim",
+        "submitOnBehalf": "Dërgo ndryshimin",
+        "submitted": "Ndryshimi u dërgua për miratim nga menaxheri",
+        "submittedOnBehalf": "Ndryshimi iu dërgua miratuesit të punonjësit",
+        "timezoneNote": "Orët janë në zonën kohore të punonjësit ({timezone})"
+      },
+      "title": "Periudha e punës"
+    },
+    "employeeSelector": {
+      "error": "Nuk mund të ngarkohen anëtarët e ekipit",
+      "label": "Shiko kalendarin",
+      "myCalendar": "Kalendari im",
+      "placeholder": "Zgjidh anëtarin e ekipit..."
+    },
+    "entryType": {
+      "clockIn": "Regjistro hyrjen",
+      "clockOut": "Regjistro daljen",
+      "correction": "Korrigjim"
+    },
+    "eventType": {
+      "absence": "Mungesë",
+      "break": "Pushim",
+      "holiday": "Pushim",
+      "timeEntry": "Regjistrim kohe",
+      "workPeriod": "Periudhë pune"
+    },
+    "filter": {
+      "absences": "Mungesat",
+      "holidays": "Pushimet",
+      "timeEntries": "Regjistrimet e kohës",
+      "workPeriods": "Periudhat e punës"
+    },
+    "filters": {
+      "title": "Filtrat"
+    },
+    "legend": {
+      "absence": "Mungesë",
+      "holiday": "Pushim",
+      "missingRequiredWork": "Mungon puna e kërkuar",
+      "requirementMetOrOver": "Kërkesa e përmbushur/tejkaluar",
+      "timeEntry": "Regjistrim kohe",
+      "title": "Legjenda",
+      "underRequirement": "Nën kërkesën",
+      "workPeriod": "Periudhë pune",
+      "workPeriodPending": "Në pritje të miratimit"
+    },
+    "loadEventsError": "Dështoi ngarkimi i ngjarjeve të kalendarit: {message}",
+    "mobileControls": {
+      "description": "Zgjidhni cilat regjistrime të kalendarit janë të dukshme.",
+      "title": "Filtrat dhe legjenda"
+    },
+    "monthSummary": {
+      "calendarWeek": "JK",
+      "closedDay": "Në një muaj të mbyllur",
+      "dayEvents": "{count, plural, other {# ngjarje: {titles}} }",
+      "dayLabel": "{date}: {actual} të regjistruara, {required} të kërkuara, {delta} {status}.",
+      "description": "Orët ditore, javore dhe mujore sipas rregullores",
+      "emptyMonth": "Nuk ka orë të përcaktuara në këtë muaj",
+      "monthTotal": "Totali i muajit",
+      "nextMonth": "Muaji tjetër",
+      "previousMonth": "Muaji i mëparshëm",
+      "recordedOnlyDayLabel": "{date}: {actual} të regjistruara.",
+      "totalDescription": "Koha e regjistruar krahasuar me orët sipas rregullores",
+      "weekSum": "Shuma"
+    },
+    "requirements": {
+      "dayLabel": "{date}: {required} të kërkuara, {actual} të regjistruara, {delta} diferencë, {status}",
+      "includesRunningWork": "Përfshin punën në vijim",
+      "status": {
+        "met": "kërkesa u plotësua",
+        "missing": "mungon koha e regjistruar",
+        "over": "mbi kërkesën",
+        "under": "nën kërkesën"
+      }
+    },
+    "split": {
+      "ambiguousTime": "Zgjidhni cilën dukuri të përdorni",
+      "chooseOccurrence": "Zgjidhni dukurinë",
+      "confirm": "Ndaj periudhën e punës",
+      "currentPeriod": "Periudha aktuale e punës",
+      "description": "Ndajeni këtë periudhë pune në dy sesione të veçanta.",
+      "earlierOccurrence": "Dukuria e mëparshme",
+      "failed": "Ndarja e periudhës së punës dështoi",
+      "firstNotes": "Shënime për periudhën e parë (opsionale)",
+      "firstPeriod": "Periudha e parë",
+      "invalidTime": "Koha e ndarjes duhet të jetë midis orës së fillimit dhe mbarimit",
+      "laterOccurrence": "Ndodhi e mëvonshme",
+      "nonexistentTime": "Koha e ndarjes nuk ekziston në këtë datë",
+      "preview": "Pamje paraprake",
+      "secondNotes": "Shënime për periudhën e dytë (opsionale)",
+      "secondPeriod": "Periudha e dytë",
+      "splitAt": "Ndaj në",
+      "splitDate": "Data e ndarjes",
+      "success": "Periudha e punës u nda me sukses",
+      "title": "Ndaj periudhën e punës"
+    },
+    "status": {
+      "approved": "Miratuar",
+      "pending": "Në pritje",
+      "rejected": "Refuzuar"
+    },
+    "view": {
+      "day": "Ditë",
+      "loading": "Po ngarkohet kalendari…",
+      "month": "Muaj",
+      "next": "Tjetër",
+      "previous": "E mëparshme",
+      "refresh": "Rifresko",
+      "today": "Sot",
+      "week": "Javë",
+      "year": "Vit"
+    },
+    "workLocation": {
+      "notRecorded": "E paregjistruar"
+    },
+    "workPeriod": {
+      "billable": "E faturueshme",
+      "editedBy": "(redaktuar nga {name} më {date})"
+    },
+    "workStatus": {
+      "overRequirement": "mbi kërkesën",
+      "requiredHoursMissing": "orët e kërkuara që mungojnë",
+      "requirementMet": "kërkesa u përmbush",
+      "underRequirement": "nën kërkesën"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}

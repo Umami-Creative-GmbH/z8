@@ -1,0 +1,277 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Prilagodite način na koji se događaji odsustva prikazuju u vanjskim kalendarima.",
+        "descriptionPlaceholder": "Odsustvo evidentirano u Z8",
+        "descriptionTemplate": "Opis događaja (opcionalno)",
+        "title": "Prilagođavanje događaja",
+        "titleHelp": "Dostupne varijable: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Šablon naslova događaja"
+      },
+      "description": "Konfigurišite pružaoce kalendara, ICS izvore i postavke sinhronizacije za svoju organizaciju",
+      "icsFeeds": {
+        "description": "Dozvolite korisnicima da se pretplate na kalendare odsustava putem ICS/iCal formata.",
+        "personal": "Lični ICS izvori",
+        "personalDesc": "Zaposlenici mogu kreirati pretplate na kalendar samo za čitanje za svoja odsustva",
+        "team": "Timski ICS izvori",
+        "teamDesc": "Vođe timova mogu kreirati dijeljene izvore koji prikazuju sva odsustva tima",
+        "title": "ICS izvori"
+      },
+      "integrations": {
+        "description": "Povezani kalendari zaposlenika koji spadaju u vaš trenutni opseg postavki.",
+        "empty": "Još uvijek nema dostupnih integracija kalendara u vašem trenutnom opsegu.",
+        "needsAttention": "Zahtijeva pažnju",
+        "pushOff": "Push isključen",
+        "pushOn": "Push uključen",
+        "title": "Relevantne integracije"
+      },
+      "managerDescription": "Pregledajte integracije kalendara koje utječu na vaše timove, oblasti i projekte kojima upravljate.",
+      "noProvidersConfigured": "Nijedan pružalac kalendara nije konfigurisan. Obratite se administratoru sistema da postavi OAuth akreditive.",
+      "notConfigured": "Nije konfigurisano",
+      "providers": {
+        "description": "Omogućite ili onemogućite sinhronizaciju kalendara za određene pružaoce. Zaposlenici mogu povezati svoje račune kada je opcija omogućena.",
+        "google": "Google kalendar",
+        "googleDesc": "Sinhronizujte odsustva s Google kalendarom",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Sinhronizujte odsustva s Outlook kalendarom",
+        "title": "Pružaoci kalendara"
+      },
+      "readOnlyManagerNotice": "Menadžeri mogu pregledati pokrivenost sinhronizacije kalendara za svoje timove, oblasti i projekte, ali samo administratori organizacije mogu mijenjati ove postavke.",
+      "saved": "Postavke kalendara su spremljene",
+      "saveError": "Spremanje postavki kalendara nije uspjelo",
+      "syncBehavior": {
+        "autoSync": "Automatska sinhronizacija nakon odobrenja",
+        "autoSyncDesc": "Automatski sinhronizujte odsustva s povezanim kalendarima nakon što budu odobrena",
+        "conflictRequired": "Obavezna provjera konflikata",
+        "conflictRequiredDesc": "Zahtijevajte od zaposlenika da provjere konflikte u kalendaru prije podnošenja odsustava",
+        "description": "Konfigurišite kako sinhronizacija kalendara funkcioniše za vašu organizaciju.",
+        "title": "Ponašanje sinhronizacije"
+      },
+      "title": "Sinhronizacija kalendara",
+      "titleTemplatePlaceholder": "Van ureda - {categoryName}"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Povezivanje i pregled",
+        "description": "Unesite Clockin korisnički API bearer token. Token se koristi samo za ovu sesiju uvoza.",
+        "title": "Clockin API token",
+        "token": "Bearer token"
+      },
+      "mapping": {
+        "description": "Povežite Clockin zaposlenike s postojećim Z8 zaposlenicima. Automatska podudaranja putem e-pošte su unaprijed odabrana.",
+        "mapEmployee": "Mapiraj",
+        "noEmail": "Nema e-pošte u usluzi Clockin",
+        "skipEmployee": "Preskoči ovog zaposlenika",
+        "summary": "Mapirani zaposlenici",
+        "title": "Mapiraj zaposlenike"
+      },
+      "preview": {
+        "absences": "Odsustva",
+        "description": "Pregledajte koji su Clockin podaci dostupni prije mapiranja zaposlenika i skeniranja zapisa.",
+        "employees": "Zaposlenici",
+        "next": "Mapiraj zaposlenike",
+        "title": "Clockin pregled",
+        "workdays": "Radni dani"
+      },
+      "review": {
+        "noProductionRecords": "Još uvijek nisu uvezeni produkcijski zapisi.",
+        "openReview": "Otvori pregled",
+        "scanningDescription": "Paket za pregled {reviewBatchId} se skenira. Pregledajte i odobrite zapise prije primjene.",
+        "startedTitle": "Skeniranje za pregled uvoza je započeto",
+        "starting": "Pokretanje skeniranja za pregled uvoza iz Clockina…",
+        "startSuccess": "Skeniranje za pregled uvoza je započeto. Potreban je pregled prije nego što se zapisi primijene."
+      },
+      "selection": {
+        "absences": "Odsustva",
+        "description": "Odaberite koje Clockin zapise želite skenirati za pregled. Zapisi se moraju pregledati prije primjene.",
+        "endDate": "Datum završetka",
+        "startDate": "Datum početka",
+        "startReviewScan": "Pokreni skeniranje za pregled",
+        "title": "Opseg uvoza",
+        "workdays": "Radni dani / Radni periodi"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Paket za pregled {batchId} se skenira.",
+        "description": "Potreban je pregled prije nego što se Clockodo zapisi primijene u produkciju.",
+        "openReview": "Otvori pregled",
+        "successTitle": "Skeniranje za pregled uvoza je započeto"
+      },
+      "credentials": {
+        "apiKey": "API ključ",
+        "apiKeyHint": "Svoj API ključ možete pronaći na svom Clockodo profilu:",
+        "connect": "Poveži se i pregledaj",
+        "description": "Unesite svoju Clockodo e-mail adresu i API ključ. Svoj API ključ možete pronaći u Clockodu pod Moj profil > API ključ. Podaci za prijavu se ne pohranjuju.",
+        "email": "Clockodo e-mail",
+        "title": "Clockodo podaci za prijavu"
+      },
+      "entity": {
+        "absences": "Odsustva",
+        "entries": "Unosi radnog vremena",
+        "holidayQuotas": "Kvote za godišnji odmor",
+        "nonBusinessDays": "Neradni dani",
+        "services": "Usluge / Kategorije rada",
+        "surcharges": "Dodaci",
+        "targetHours": "Ciljani sati / Politike rada",
+        "teams": "Timovi",
+        "users": "Korisnici / Zaposlenici"
+      },
+      "errors": {
+        "connectionFailed": "Povezivanje s Clockodom nije uspjelo",
+        "fetchProjectsFailed": "Preuzimanje podataka o projektu nije uspjelo",
+        "fetchUsersFailed": "Dohvatanje korisničkih podataka nije uspjelo",
+        "importFailed": "Skeniranje za pregled uvoza nije uspjelo",
+        "saveMappingsFailed": "Spremanje mapiranja korisnika nije uspjelo",
+        "saveProjectMappingsFailed": "Spremanje mapiranja projekata nije uspjelo"
+      },
+      "importing": {
+        "description": "Molimo vas da ne zatvarate ovu stranicu. Skeniranje za pregled se stavlja u red čekanja i može potrajati za veće skupove podataka.",
+        "patience": "Dohvatanje Clockodo podataka za pregled…",
+        "title": "Pokretanje skeniranja za pregled…"
+      },
+      "mapping": {
+        "autoMatched": "Automatski upareno",
+        "createNew": "Kreiraj novo",
+        "skip": "Preskoči"
+      },
+      "mappingStatus": {
+        "auto": "Automatski",
+        "manual": "Ručno",
+        "new": "Novo",
+        "skip": "Preskoči"
+      },
+      "preview": {
+        "dataType": "Vrsta podataka",
+        "description": "Ovdje je sažetak podataka pronađenih na vašem Clockodo računu. Postojeći Z8 podaci su prikazani radi poređenja.",
+        "inClockodo": "U Clockodu",
+        "inZ8": "Već u Z8",
+        "next": "Mapiraj korisnike",
+        "title": "Pregled podataka"
+      },
+      "projectMapping": {
+        "clockodoCustomer": "Clockodo klijent",
+        "clockodoProject": "Clockodo projekat",
+        "continue": "Nastavi",
+        "description": "Mapirajte Clockodo projekte na postojeće Z8 projekte. Uvezeni unosi vremena zadržavaju svoj projekat i Clockodo vrijednost naplativosti. Unosi na nemapiranim projektima ili projektima bez klijenta uvoze se kao nenaplativi. Nijedan projekat neće biti kreiran.",
+        "mappedCount": "Mapirano {mapped} od {total} projekata",
+        "noCustomer": "Ovaj projekat nema klijenta, pa je njegovo uvezeno vrijeme nenaplativo.",
+        "noZ8Projects": "Ova organizacija još nema projekata. Prvo kreirajte projekte da biste uvezli Clockodo vrijeme s njegovim projektom i vrijednošću naplativosti.",
+        "title": "Mapiraj projekte",
+        "unmapped": "Nije mapirano (nema projekta)",
+        "z8Project": "Z8 projekat",
+        "z8ProjectFor": "Z8 projekat za {project}"
+      },
+      "review": {
+        "startedToast": "Skeniranje za pregled uvoza je započeto. Potreban je pregled prije nego što se zapisi primijene."
+      },
+      "selection": {
+        "dateRange": "Raspon datuma za vremenske unose i odsustva",
+        "dateRangeDescription": "Ovo utječe samo na vremenske unose i odsustva. Ostali podaci (korisnici, timovi itd.) se uvijek u potpunosti skeniraju.",
+        "dependencyWarning": "Zavisnosti će biti automatski skenirane",
+        "description": "Odaberite koje vrste podataka želite skenirati. Potreban je pregled prije nego što se zapisi primijene.",
+        "emptyUserScope": "Odaberite barem jednog Clockodo korisnika prije pokretanja skeniranja.",
+        "incompleteCustomDateRange": "Odaberite i datum početka i datum završetka prije pokretanja skeniranja.",
+        "selectDateRange": "Odaberite raspon datuma",
+        "startImport": "Pokreni skeniranje za pregled",
+        "title": "Odaberite podatke za pregled"
+      },
+      "step": {
+        "complete": "Pregled započet",
+        "credentials": "Pristupni podaci",
+        "import": "Pregled",
+        "preview": "Pretpregled",
+        "projectMapping": "Mapiranje projekata",
+        "selection": "Odabir",
+        "userMapping": "Mapiranje korisnika"
+      },
+      "userMapping": {
+        "action": "Radnja",
+        "autoMatched": "{count} automatski uparenih",
+        "clockodoUser": "Clockodo korisnik",
+        "continue": "Nastavi",
+        "description": "Mapirajte Clockodo korisnike na postojeće Z8 zaposlenike ili odaberite kreiranje novih računa. Korisnici podudarni po e-pošti automatski se mapiraju.",
+        "email": "E-pošta",
+        "mappedTo": "Mapirano na",
+        "newEmployees": "{count} novih",
+        "onlyMapped": "Skeniraj samo mapirane korisnike (nemoj kreirati nove račune za nemapirane korisnike)",
+        "skippedCount": "{count} preskočeno",
+        "status": "Status",
+        "title": "Mapiraj korisnike"
+      }
+    },
+    "discord": {
+      "description": "Konfigurišite Discord obavještenja za svoju organizaciju",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Konfigurišite Slack obavještenja za svoju organizaciju",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Konfigurišite Microsoft Teams obavještenja za svoju organizaciju",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Povežite Telegram bota kako biste omogućili obavještenja i komande za svoju organizaciju.",
+        "title": "Telegram bot"
+      },
+      "botToken": "Token bota",
+      "botTokenHelp": "Kreirajte bota pomoću @BotFather na Telegramu i zalijepite token ovdje.",
+      "connect": "Poveži bota",
+      "connected": "Telegram bot je uspješno povezan",
+      "connectError": "Povezivanje Telegram bota nije uspjelo",
+      "description": "Konfigurišite integraciju Telegram bota za obavještenja i komande",
+      "disconnect": "Odspoji",
+      "disconnectConfirm": {
+        "description": "Ovo će onemogućiti sva Telegram obavještenja i komande za vašu organizaciju. Poveznice s računima zaposlenika bit će sačuvane.",
+        "title": "Odspojiti Telegram bota?"
+      },
+      "disconnected": "Telegram bot je odspojen",
+      "disconnectError": "Odspajanje Telegram bota nije uspjelo",
+      "features": {
+        "approvals": "Obavještenja o odobrenju",
+        "approvalsDesc": "Šaljite zahtjeve za odobrenje i omogućite odobravanje/odbijanje putem Telegrama",
+        "commands": "Komande bota",
+        "commandsDesc": "Omogućite /clockedin, /whosout, /pending i druge komande",
+        "description": "Konfigurišite koje su funkcije omogućene za Telegram bota.",
+        "digest": "Dnevni pregled",
+        "digestDesc": "Šaljite dnevni sažetak odsustava i rasporeda",
+        "digestTime": "Vrijeme",
+        "digestTimezone": "Vremenska zona",
+        "escalations": "Eskalacije",
+        "escalationsDesc": "Eskalirajte neodgovorena odobrenja sljedećem menadžeru",
+        "escalationTimeout": "Istek vremena",
+        "hours": "sati",
+        "title": "Mogućnosti"
+      },
+      "linked": "Povezano",
+      "linkError": "Generisanje koda za povezivanje nije uspjelo",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Povežite svoj Telegram račun da biste primali lična obavještenja.",
+        "generateCode": "Generišite kod za povezivanje",
+        "instructions": "Pošaljite ovu komandu botu na Telegramu:",
+        "linkedStatus": "Vaš Telegram račun je povezan",
+        "title": "Telegram račun"
+      },
+      "notConfigured": "Telegram nije konfigurisan za ovu organizaciju. Kontaktirajte svog administratora.",
+      "saved": "Postavke za Telegram su sačuvane",
+      "status": {
+        "active": "Aktivno"
+      },
+      "title": "Telegram",
+      "unlink": "Prekini vezu",
+      "unlinkConfirm": {
+        "description": "Više nećete primati Telegram obavještenja. Možete se ponovo povezati kasnije.",
+        "title": "Prekinuti vezu s Telegram računom?"
+      },
+      "unlinked": "Veza s Telegram računom je prekinuta",
+      "unlinkError": "Prekidanje veze s Telegram računom nije uspjelo",
+      "webhookActive": "Webhook je registrovan",
+      "webhookPending": "Webhook na čekanju"
+    }
+  }
+}

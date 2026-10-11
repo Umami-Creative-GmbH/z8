@@ -1,0 +1,458 @@
+{
+  "absences": {
+    "addAbsence": "Adăugare absență",
+    "balance": {
+      "carryoverDays": "Aveți {count} zile reportate",
+      "carryoverExpiry": "care vor expira pe",
+      "carryoverFrom": "Report din {year}",
+      "daysRemaining": "Zile rămase",
+      "description": "Zilele dumneavoastră de concediu pentru anul curent",
+      "outOfTotalDays": "din totalul de {totalDays} zile",
+      "pending": "În așteptare",
+      "title": "Sold concediu {year}",
+      "used": "Utilizate"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Aprobate",
+        "halfDayAm": "Jumătate de zi (AM)",
+        "halfDayPm": "Jumătate de zi (PM)",
+        "holiday": "Sărbătoare legală",
+        "pending": "În așteptare",
+        "rejected": "Respins"
+      },
+      "nextYear": "Anul următor",
+      "previousYear": "Anul precedent"
+    },
+    "deputy": {
+      "away": "Absent {dates}",
+      "awayOption": "{name} · Absent {dates}",
+      "awayWarning": "{name} este absent(ă) în aceste date. Îl/o puteți selecta în continuare.",
+      "changeAction": "Schimbă înlocuitorul",
+      "changed": "Înlocuitor salvat",
+      "changeDescription": "Înlocuitorul vă ține locul în timp ce lipsiți. Schimbarea acestuia nu necesită o nouă aprobare.",
+      "changeDescriptionFor": "Înlocuitorul ține locul în timp ce {name} lipsește. Schimbarea acestuia nu necesită o nouă aprobare.",
+      "changeFailed": "Nu s-a putut salva înlocuitorul",
+      "changeTitle": "Schimbă înlocuitorul",
+      "contactOnly": "{name} va fi afișat(ă) doar ca persoană de contact și nu poate decide aprobări.",
+      "errors": {
+        "ended": "Înlocuitorul nu mai poate fi schimbat: această absență s-a încheiat.",
+        "required": "Alegeți un înlocuitor: acest tip de absență necesită unul.",
+        "self": "Un angajat nu poate fi propriul său înlocuitor.",
+        "unavailable": "Înlocuitorul trebuie să fie un angajat activ al acestei organizații."
+      },
+      "help": "Colegul care vă ține locul în timp ce lipsiți. Nu i se cere acordul.",
+      "label": "Înlocuitor",
+      "labelOptional": "Înlocuitor (Opțional)",
+      "labelRequired": "Înlocuitor *",
+      "none": "Fără înlocuitor",
+      "placeholder": "Selectați un înlocuitor…",
+      "save": "Salvează înlocuitorul"
+    },
+    "dialog": {
+      "cancelDescription": "Sigur doriți să anulați această cerere de absență? Această acțiune este ireversibilă.",
+      "cancelTitle": "Anulare cerere de absență",
+      "confirmCancel": "Da, anulează cererea"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Alocarea concediului nu este configurată",
+      "allowanceNotConfiguredMessage": "Organizația dvs. nu a configurat încă alocările de concediu pentru {currentYear}.",
+      "contactAdmin": "Vă rugăm să contactați administratorul pentru a configura politicile de concediu."
+    },
+    "featureName": "gestionează absențele",
+    "form": {
+      "absenceDays": "Zile de absență:",
+      "absenceType": "Tip de absență *",
+      "autoApproved": "(Aprobat automat)",
+      "balanceAfterRequest": "Sold după cerere:",
+      "daysRemaining": "Zile rămase:",
+      "description": "Trimiteți o cerere pentru zile libere. Managerul dvs. va fi notificat pentru aprobare.",
+      "duration": "Durata absenței",
+      "duration.fullDay": "Zi întreagă",
+      "duration.partialDay": "Zi parțială",
+      "endDate": "Data de sfârșit *",
+      "endDateHelper": "Lăsați necompletat pentru o absență în aceeași zi.",
+      "endTime": "Ora de sfârșit",
+      "errors": {
+        "fillRequiredFields": "Vă rugăm să completați toate câmpurile obligatorii",
+        "insufficientBalance": "Sold de concediu insuficient",
+        "insufficientBalanceForRequest": "Sold de concediu insuficient pentru această cerere",
+        "invalidSelection": "Verificați selecția și încercați din nou"
+      },
+      "notesOptional": "Note (Opțional)",
+      "notesPlaceholder": "Adăugați informații suplimentare...",
+      "selectAbsenceType": "Selectați tipul de absență",
+      "sickDetail": "Detalii concediu medical *",
+      "sickDetailPlaceholder": "Selectați detaliile concediului medical",
+      "startDate": "Data de început *",
+      "startTime": "Ora de început",
+      "submitRequest": "Trimite cererea",
+      "title": "Solicită absență"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "tură afectată",
+      "approval": "Aprobare",
+      "balance": "Sold",
+      "balanceUnavailable": "Sold indisponibil",
+      "countsAgainstVacationBalance": "Se deduce din soldul de concediu",
+      "coverage": "Acoperire",
+      "coverageStaffAfterRequest": "{after}/{minimum} angajați după cerere",
+      "description": "O verificare fără blocare a soldului, sărbătorilor legale, acoperirii și semnalelor de aprobare înainte de a trimite.",
+      "doesNotReduceVacationBalance": "Nu reduce soldul de concediu",
+      "holidays": "Sărbători legale",
+      "loading": "Se verifică soldul, sărbătorile legale și acoperirea…",
+      "noApprovalWarnings": "Niciun avertisment de aprobare",
+      "noCoverageRisk": "Niciun risc de acoperire publicat",
+      "noCoverageRulesConfigured": "Nu există reguli de acoperire configurate pentru turele afectate",
+      "noHolidays": "Nicio sărbătoare legală alocată în interval",
+      "noWorkingDays": "Acest interval nu conține zile lucrătoare.",
+      "remainingAfter": "Rămas după cerere",
+      "requested": "Solicitat",
+      "title": "Planificator inteligent",
+      "unavailable": "Previzualizarea planificării nu este disponibilă. Puteți trimite solicitarea în continuare.",
+      "workBalance": "Sold de lucru",
+      "workBalanceAfter": "După cerere",
+      "workBalanceCurrent": "Curent",
+      "workBalanceDrawn": "Dedus prin cerere",
+      "workBalanceNegative": "Soldul dvs. de lucru ar fi negativ după această cerere. Puteți totuși să o trimiteți."
+    },
+    "requestAbsence": "Solicită absență",
+    "sickNotes": {
+      "attachAction": "Atașați certificatul medical",
+      "attach": {
+        "defaultTitle": "Certificat medical {dateRange}",
+        "description": "Adăugați fotografii sau fișiere PDF ale certificatului medical: fișiere PDF, JPEG, PNG sau WebP de maximum 20 MB fiecare. Fiecare fișier este salvat ca un certificat medical de sine stătător în dosarul dvs. de personal.",
+        "documentDate": "Data documentului",
+        "failed": "Încărcarea a eșuat",
+        "fileRequired": "Alegeți cel puțin un fișier.",
+        "officerDescription": "Adăugați fotografii sau fișiere PDF ale certificatului medical: fișiere PDF, JPEG, PNG sau WebP de maximum 20 MB fiecare. Fiecare fișier este salvat ca un certificat medical distinct în dosarul de personal al angajatului.",
+        "progress": "Progresul încărcării",
+        "progressCount": "{done} din {total} încărcate",
+        "share": "Partajează cu angajatul",
+        "sharedNote": "Puteți vedea certificatele medicale la Documentele mele și la această absență. Persoana care aprobă vede doar că un certificat medical este atașat. Puteți șterge un certificat medical în termen de 24 de ore de la încărcarea acestuia.",
+        "shareHint": "Dezactivat: doar pentru HR; angajatul vede doar că este atașat un certificat medical. Activat: angajatul îl vede la Documentele mele.",
+        "submit": "Atașați",
+        "success": "{count, plural, one {Certificat medical atașat} other {# certificate medicale atașate}}",
+        "title": "Atașați certificatul medical",
+        "titleLabel": "Titlu"
+      },
+      "files": {
+        "chooseFiles": "Selectați fișierele",
+        "defaultTitleUndated": "Certificat medical",
+        "incomplete": "Specificați un titlu și data documentului pentru fiecare certificat medical.",
+        "remove": "Elimină {fileName}",
+        "takePhoto": "Faceți o fotografie",
+        "tooMany": "Puteți adăuga până la {max} fișiere."
+      },
+      "marker": "Certificat medical atașat ({count})",
+      "panel": {
+        "delete": "Ștergeți {title}",
+        "description": "Certificate medicale pentru absența {dateRange}.",
+        "empty": "Nu există certificate medicale pe care să le puteți deschide.",
+        "linkExisting": "Asociază certificatul medical",
+        "loadFailed": "Certificatele medicale nu au putut fi încărcate.",
+        "title": "Certificate medicale",
+        "unlink": "Anulează asocierea {title}",
+        "unlinked": "Asocierea certificatului medical a fost anulată",
+        "unlinkFailed": "Asocierea certificatului medical nu a putut fi anulată."
+      },
+      "request": {
+        "attachFailed": "Absența dvs. a fost solicitată, dar {files} nu au putut fi atașate. Puteți atașa certificate medicale din cadrul absenței mai târziu.",
+        "description": "Adăugați fotografii sau fișiere PDF ale certificatului dvs. medical: fișiere PDF, JPEG, PNG sau WebP de maximum 20 MB fiecare. Fiecare fișier este salvat ca un certificat medical distinct în dosarul dvs. de personal. Aprobatorul dvs. vede doar că este atașat un certificat medical.",
+        "title": "Certificat medical (opțional)",
+        "uploadFailed": "{fileName} nu a putut fi încărcat. Eliminați-l sau încercați din nou."
+      }
+    },
+    "status": {
+      "approved": "Aprobat",
+      "pending": "În așteptare",
+      "rejected": "Respins"
+    },
+    "subtitle": "Gestionează-ți zilele libere și zilele de concediu",
+    "table": {
+      "cancelAbsence": "Anulează absența",
+      "cancelAbsenceTooltip": "Anulează absența",
+      "end": "Sfârșit",
+      "headers": {
+        "actions": "Acțiuni",
+        "dateRange": "Interval de date",
+        "days": "Zile",
+        "notes": "Note",
+        "status": "Stare",
+        "type": "Tip"
+      },
+      "noRequests": "Nu a fost găsită nicio cerere de absență.",
+      "noSearchResults": "Nicio absență nu corespunde căutării dvs.",
+      "searchPlaceholder": "Căutați după tip, stare sau note...",
+      "start": "Început",
+      "subtitle": "Cereri de absență recente și viitoare",
+      "title": "Cererile tale de absență"
+    },
+    "title": "Absențe",
+    "toast": {
+      "cancelFailed": "Anularea cererii de absență a eșuat",
+      "requestCancelled": "Cerere de absență anulată",
+      "requestFailed": "Trimiterea cererii de absență a eșuat",
+      "requestSubmitted": "Cererea de absență a fost trimisă cu succes"
+    },
+    "view": {
+      "calendar": "Calendar",
+      "table": "Tabel"
+    }
+  },
+  "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pauză – {duration}"
+      }
+    },
+    "clockOutOnBehalf": {
+      "confirm": "Pontează ieșirea",
+      "description": "Aceasta creează o înregistrare auditabilă a pontajului de ieșire la ora curentă a serverului. Dacă ulterior sunt necesare ajustări, utilizați corecțiile.",
+      "error": "Nu s-a putut ponta ieșirea angajatului",
+      "loading": "Se pontează ieșirea...",
+      "success": "Ieșirea angajatului a fost pontată cu succes",
+      "title": "Pontați ieșirea angajatului?"
+    },
+    "contextMenu": {
+      "delete": "Șterge",
+      "edit": "Editează",
+      "label": "Acțiuni pentru înregistrarea pontajului"
+    },
+    "dayDetails": {
+      "blocksTimeEntry": "Înregistrări de timp blocate",
+      "category": "Categorie",
+      "deputy": "Înlocuitor",
+      "duration": "Durată",
+      "employee": "Angajat",
+      "noEvents": "Niciun eveniment pentru această zi",
+      "recurring": "Sărbătoare recurentă",
+      "selectDate": "Selectați o dată pentru a vedea detaliile",
+      "status": "Stare",
+      "title": "Detalii zi"
+    },
+    "delete": {
+      "applied": "Ștergerea înregistrării de timp a fost aplicată",
+      "auditNote": "Înregistrările de timp vor fi marcate ca șterse în scopuri de audit.",
+      "confirm": "Convertește în pauză",
+      "description": "Această acțiune va șterge definitiv această perioadă de lucru. Intervalul va apărea ca o pauză în calendar.",
+      "failed": "Ștergerea perioadei de lucru a eșuat",
+      "reasonLabel": "Motivul ștergerii",
+      "reasonRequired": "Motivul este obligatoriu",
+      "success": "Perioada de lucru a fost convertită în pauză",
+      "title": "Convertiți în pauză?"
+    },
+    "details": {
+      "automaticClockOut": "Pontat la ieșire automat",
+      "automaticCutoff": "Limită pentru pontarea ieșirii",
+      "automaticLimit": "Limită de muncă neîntreruptă",
+      "baseWorked": "Timp de bază lucrat",
+      "blocksTimeEntry": "Blochează înregistrarea timpului",
+      "category": "Categorie",
+      "credited": "Creditat",
+      "dateRange": "Interval de date",
+      "deputy": "Înlocuitor",
+      "duration": "Durată",
+      "editedBy": "Editat de",
+      "employee": "Angajat",
+      "notes": "Note",
+      "pendingApproval": "În așteptarea aprobării",
+      "pendingApprovalDescription": "Această perioadă de lucru este în așteptarea aprobării managerului. Orele înregistrate se pot modifica în caz de respingere.",
+      "positions": {
+        "accuracy": "în raza de {meters} m",
+        "clockIn": "Pontare intrare",
+        "clockOut": "Pontare ieșire",
+        "failed": "Pozițiile nu au putut fi încărcate",
+        "hide": "Ascunde pozițiile",
+        "loggedHint": "Angajatul poate vedea cine i-a vizualizat pozițiile: vizualizarea este înregistrată.",
+        "none": "Nu au fost înregistrate poziții pentru această perioadă de lucru.",
+        "openInMaps": "Deschide în hărți",
+        "originalClockIn": "Înregistrat la pontarea inițială de intrare la {time}. Orele au fost corectate ulterior.",
+        "originalClockOut": "Înregistrat la pontarea inițială de ieșire la {time}. Orele au fost corectate ulterior.",
+        "show": "Afișează pozițiile",
+        "title": "Poziții"
+      },
+      "project": "Proiect",
+      "recurring": "Recurent anual",
+      "rejected": "Respins",
+      "rejectedDescription": "Această modificare a perioadei de lucru a fost respinsă de un manager. Orele inițiale au fost restabilite.",
+      "source": "Sursă",
+      "status": "Stare",
+      "surcharge": "Spor",
+      "surchargeBreakdown": "Detaliere sporuri",
+      "system": "Sistem",
+      "task": "Sarcină",
+      "taskDone": "{name} (finalizat)",
+      "time": "Oră",
+      "type": "Tip",
+      "workLocation": "Locație de muncă"
+    },
+    "edit": {
+      "billableSaveFailed": "Nu s-a putut actualiza starea facturabilă",
+      "deleteEntry": "Șterge înregistrarea",
+      "locationRequired": "Alegeți o locație de muncă.",
+      "markedBillable": "Marcat ca facturabil",
+      "markedNonBillable": "Marcat ca nefacturabil",
+      "noNotes": "Nicio notă adăugată",
+      "noProject": "Niciun proiect atribuit",
+      "notesSaved": "Note salvate",
+      "notesSaveFailed": "Salvarea notelor a eșuat",
+      "projectSaved": "Proiect actualizat",
+      "projectSaveFailed": "Actualizarea proiectului a eșuat",
+      "split": "Împarte",
+      "time": {
+        "approvalHint": "Această modificare va fi trimisă managerului dumneavoastră pentru aprobare.",
+        "beyondWindow": "Înregistrările mai vechi de {days} zile pot fi editate doar de un administrator.",
+        "clockIn": "Pontare intrare",
+        "clockInDate": "Data intrării",
+        "clockInTime": "Ora intrării",
+        "clockOut": "Pontare ieșire",
+        "clockOutDate": "Data ieșirii",
+        "clockOutTime": "Ora ieșirii",
+        "directHint": "Această modificare se aplică imediat.",
+        "edit": "Editare înregistrare",
+        "invalidRange": "Pontarea de ieșire trebuie să fie după pontarea de intrare.",
+        "noChanges": "Modificați mai întâi data, ora sau locația de muncă.",
+        "noteLabel": "Notă (opțional)",
+        "notePlaceholder": "Adăugați o notă despre această modificare…",
+        "onBehalfHint": "Această modificare urmează lanțul de aprobare al angajatului. Dacă sunteți aprobatorul acestuia, se aplică imediat.",
+        "pendingCorrection": "O modificare a orelor pentru această înregistrare este deja în așteptarea aprobării.",
+        "reasonLabel": "Motiv",
+        "reasonPlaceholder": "Explicați de ce este necesară această corecție…",
+        "reasonRequired": "Vă rugăm să adăugați un motiv pentru managerul dumneavoastră.",
+        "saved": "Înregistrarea de timp a fost actualizată",
+        "saveFailed": "Nu s-a putut actualiza înregistrarea de timp",
+        "submitForApproval": "Trimite spre aprobare",
+        "submitOnBehalf": "Trimite modificarea",
+        "submitted": "Modificare trimisă spre aprobarea managerului",
+        "submittedOnBehalf": "Modificare trimisă aprobatorului angajatului",
+        "timezoneNote": "Orele sunt în fusul orar al angajatului ({timezone})"
+      },
+      "title": "Perioadă de lucru"
+    },
+    "employeeSelector": {
+      "error": "Nu s-au putut încărca membrii echipei",
+      "label": "Vizualizează calendarul",
+      "myCalendar": "Calendarul meu",
+      "placeholder": "Selectați un membru al echipei..."
+    },
+    "entryType": {
+      "clockIn": "Pontare intrare",
+      "clockOut": "Pontare ieșire",
+      "correction": "Corecție"
+    },
+    "eventType": {
+      "absence": "Absență",
+      "break": "Pauză",
+      "holiday": "Sărbătoare",
+      "timeEntry": "Înregistrare timp",
+      "workPeriod": "Perioadă de lucru"
+    },
+    "filter": {
+      "absences": "Absențe",
+      "holidays": "Sărbători",
+      "timeEntries": "Înregistrări timp",
+      "workPeriods": "Perioade de lucru"
+    },
+    "filters": {
+      "title": "Filtre"
+    },
+    "legend": {
+      "absence": "Absență",
+      "holiday": "Sărbătoare",
+      "missingRequiredWork": "Timp de lucru obligatoriu lipsă",
+      "requirementMetOrOver": "Cerință îndeplinită/depășită",
+      "timeEntry": "Înregistrare timp",
+      "title": "Legendă",
+      "underRequirement": "Sub cerință",
+      "workPeriod": "Perioadă de lucru",
+      "workPeriodPending": "În așteptarea aprobării"
+    },
+    "loadEventsError": "Nu s-au putut încărca evenimentele din calendar: {message}",
+    "mobileControls": {
+      "description": "Alegeți ce intrări din calendar sunt vizibile.",
+      "title": "Filtre și legendă"
+    },
+    "monthSummary": {
+      "calendarWeek": "SC",
+      "closedDay": "Într-o lună închisă",
+      "dayEvents": "{count, plural, one {# eveniment: {titles}} other {# evenimente: {titles}}}",
+      "dayLabel": "{date}: {actual} înregistrat, {required} necesar, {delta} {status}.",
+      "description": "Ore conform politicii zilnice, săptămânale și lunare",
+      "emptyMonth": "Nicio oră prevăzută de politică în această lună",
+      "monthTotal": "Total lună",
+      "nextMonth": "Luna următoare",
+      "previousMonth": "Luna precedentă",
+      "recordedOnlyDayLabel": "{date}: {actual} înregistrat(e).",
+      "totalDescription": "Timp înregistrat comparat cu orele din politică",
+      "weekSum": "Sumă"
+    },
+    "requirements": {
+      "dayLabel": "{date}: {required} necesare, {actual} înregistrate, {delta} diferență, {status}",
+      "includesRunningWork": "Include activitatea în desfășurare",
+      "status": {
+        "met": "cerință îndeplinită",
+        "missing": "lipsă timp înregistrat",
+        "over": "peste cerință",
+        "under": "sub cerință"
+      }
+    },
+    "split": {
+      "ambiguousTime": "Alege ce apariție să folosești",
+      "chooseOccurrence": "Alege apariția",
+      "confirm": "Împarte perioada de lucru",
+      "currentPeriod": "Perioadă curentă de lucru",
+      "description": "Împarte această perioadă de lucru în două sesiuni separate.",
+      "earlierOccurrence": "Apariție anterioară",
+      "failed": "Nu s-a putut împărți perioada de lucru",
+      "firstNotes": "Note pentru prima perioadă (opțional)",
+      "firstPeriod": "Prima perioadă",
+      "invalidTime": "Ora de împărțire trebuie să fie între ora de început și ora de sfârșit",
+      "laterOccurrence": "Apariție ulterioară",
+      "nonexistentTime": "Ora de divizare nu există la această dată",
+      "preview": "Previzualizare",
+      "secondNotes": "Note pentru a doua perioadă (opțional)",
+      "secondPeriod": "A doua perioadă",
+      "splitAt": "Împarte la",
+      "splitDate": "Dată de divizare",
+      "success": "Perioada de lucru a fost împărțită cu succes",
+      "title": "Împarte perioada de lucru"
+    },
+    "status": {
+      "approved": "Aprobat",
+      "pending": "În așteptare",
+      "rejected": "Respins"
+    },
+    "view": {
+      "day": "Zi",
+      "loading": "Se încarcă calendarul…",
+      "month": "Lună",
+      "next": "Următorul",
+      "previous": "Anterior",
+      "refresh": "Reîmprospătează",
+      "today": "Astăzi",
+      "week": "Săptămână",
+      "year": "An"
+    },
+    "workLocation": {
+      "notRecorded": "Neînregistrat"
+    },
+    "workPeriod": {
+      "billable": "Facturabil",
+      "editedBy": "(editat de {name} la {date})"
+    },
+    "workStatus": {
+      "overRequirement": "peste cerință",
+      "requiredHoursMissing": "ore obligatorii lipsă",
+      "requirementMet": "cerință îndeplinită",
+      "underRequirement": "sub cerință"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}

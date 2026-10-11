@@ -1,0 +1,148 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Kontrole pristupa sažimaju samo osjetljive događaje iz revizijskog dnevnika koji su već zabilježeni danas.",
+        "auditEvidence": "Revizijski dokazi upotrebljavaju konfiguraciju izvoza revizije uživo, zahtjeve za revizijskim paketom i nedavne rezultate provjere.",
+        "workforceCompliance": "Usklađenost radne snage upotrebljava kršenja pravila rada i neriješene zahtjeve za iznimkama u posljednjih 7 dana."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Nedavni neuspjeli zadaci: {failedRequests}; nedavne nevažeće provjere: {invalidVerifications}",
+          "title": "Otkrivene su pogreške u revizijskim dokazima"
+        },
+        "auditPackFailure": {
+          "description": "Nedavni neuspjeli zadaci: {failedRequests}",
+          "title": "Generiranje revizijskog paketa nije uspjelo"
+        },
+        "auditVerificationFailure": {
+          "description": "Nedavne nevažeće verifikacije: {invalidVerifications}",
+          "title": "Provjera revizije nije uspjela"
+        },
+        "sensitiveAction": {
+          "description": "{action} na {entityType}",
+          "title": "Osjetljiva radnja: {action}"
+        },
+        "workforceFindings": {
+          "description": "Odmor: {restPeriodViolations}, Ostala pravila: {generalPolicyViolations}, Prekovremeni rad: {overtimeViolations}",
+          "title": "Nedavni nalazi pravila o radnoj snazi"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Najnovija osjetljiva radnja: {action}",
+          "latestSensitiveActionNone": "Najnovija osjetljiva radnja: nijedna",
+          "noSensitiveEvents": "U posljednja 24 sata nisu zabilježene osjetljive promjene kontrola.",
+          "recentSensitiveEvents": "Nedavni osjetljivi događaji: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Aktivni ključ za potpisivanje: {fingerprint}",
+          "lastSuccessfulAuditPack": "Zadnji uspješan revizijski paket: {timestamp}",
+          "missingSigningKey": "Ključevi za potpisivanje još nisu konfigurirani.",
+          "noSuccessfulAuditPack": "Još nije zabilježen nijedan uspješan revizijski paket.",
+          "recentFailedJobs": "Nedavni neuspjeli zadaci revizijskih paketa: {count}",
+          "recentInvalidVerifications": "Nedavni nevažeći pokušaji provjere: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Nije moguće učitati događaje kontrole pristupa.",
+          "auditEvidence": "Nije moguće učitati dokazne podatke revizije.",
+          "workforceCompliance": "Nije moguće učitati podatke o usklađenosti radne snage."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Ostala kršenja pravila: {count}",
+          "overtimeViolations": "Kršenja pravila o prekovremenom radu: {count}",
+          "pendingExceptions": "Iznimke na čekanju: {count}",
+          "restPeriodViolations": "Kršenja pravila o razdoblju odmora: {count}"
+        }
+      },
+      "footer": {
+        "lastRefreshed": "Zadnje osvježeno: {time}"
+      },
+      "links": {
+        "inspectCompliance": "Pregledaj usklađenost",
+        "inspectInAuditLog": "Pregledaj u revizijskom dnevniku",
+        "openAuditExport": "Otvori izvoz revizije",
+        "openAuditLog": "Otvori revizijski dnevnik",
+        "openComplianceSettings": "Otvori postavke usklađenosti",
+        "reviewAuditExport": "Pregledaj izvoz revizije"
+      },
+      "overview": "Pregled usklađenosti",
+      "recentEvents": {
+        "empty": "Nisu otkriveni nedavni kritični događaji.",
+        "title": "Nedavni kritični događaji"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Osjetljive promjene kontrola zahtijevaju pregled",
+            "healthy": "Nedavno nisu zabilježene osjetljive promjene kontrola",
+            "warning": "Otkrivene su nedavne promjene kontrola"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Dokazi revizije zahtijevaju pažnju",
+            "healthy": "Signali dokaza revizije izgledaju ispravno",
+            "warning": "Dokazi revizije samo su djelomično spremni"
+          }
+        },
+        "unavailable": {
+          "headline": "Signal je privremeno nedostupan"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Kršenja pravila o radnoj snazi zahtijevaju pregled",
+            "healthy": "Nisu otkriveni nedavni problemi s pravilima o radnoj snazi",
+            "warning": "Usklađenost radne snage odstupa"
+          }
+        }
+      },
+      "status": {
+        "critical": "kritično",
+        "healthy": "ispravno",
+        "unavailable": "nedostupno",
+        "warning": "upozorenje"
+      },
+      "summary": {
+        "critical": "Kritični rizici usklađenosti zahtijevaju pažnju",
+        "healthy": "Nisu otkriveni aktivni problemi u praćenim signalima",
+        "unavailable": "Neki signali usklađenosti nisu dostupni",
+        "warning": "Signali usklađenosti zahtijevaju pregled"
+      }
+    },
+    "exception": {
+      "approved": "Iznimka odobrena",
+      "approvedDescription": "Iznimka usklađenosti je odobrena.",
+      "approveFailed": "Odobravanje nije uspjelo",
+      "plannedDuration": "Planirano",
+      "plannedDurationHelp": "Procijenite koliko vam je dodatnog vremena potrebno izvan ograničenja.",
+      "reason": "Razlog za iznimku",
+      "reasonPlaceholder": "Objasnite zašto vam je potrebna ova iznimka (npr. hitan rok projekta, važan sastanak s klijentom)...",
+      "reasonRequired": "Razlog je obavezan",
+      "reasonRequiredDescription": "Navedite razlog za svoj zahtjev za iznimku.",
+      "rejectDescription": "Navedite razlog odbijanja ovog zahtjeva za iznimku (neobavezno)",
+      "rejected": "Iznimka odbijena",
+      "rejectedDescription": "Iznimka usklađenosti je odbijena.",
+      "rejectFailed": "Odbijanje nije uspjelo",
+      "rejectionPlaceholder": "Unesite razlog za odbijanje ovog izuzeća...",
+      "rejectionReason": "Razlog odbijanja",
+      "rejectTitle": "Odbij zahtjev za iznimku",
+      "requestDescription": "Zatražite prethodno odobrenje od svog voditelja za nastavak unatoč ograničenjima usklađenosti. Odobrena izuzeća vrijede 24 sata.",
+      "requestedAt": "Zatraženo",
+      "requestFailed": "Zahtjev nije uspio",
+      "requestSubmitted": "Zahtjev za izuzeće je poslan",
+      "requestSubmittedDescription": "Vaš će voditelj biti obaviješten te može odobriti ili odbiti vaš zahtjev.",
+      "requestTitle": "Zatražite izuzeće od usklađenosti",
+      "submit": "Podnesite zahtjev",
+      "type": "Vrsta izuzeća"
+    },
+    "hasApprovedException": "Imate odobreno izuzeće. Možete nastaviti.",
+    "moreAlerts": "više",
+    "noExceptions": "Nema zahtjeva za izuzeće na čekanju",
+    "pendingExceptions": "Zahtjevi za izuzeće na čekanju",
+    "pendingExceptionsDescription": "Pregledajte zahtjeve za izuzeće koji zahtijevaju vaše odobrenje",
+    "requestException": "Zatražite izuzeće",
+    "restPeriodMessage": "Potrebno vam je još {time} odmora prije nego što se možete prijaviti. Sljedeća dopuštena prijava: {nextTime}",
+    "restPeriodRequired": "Obavezno razdoblje odmora"
+  }
+}

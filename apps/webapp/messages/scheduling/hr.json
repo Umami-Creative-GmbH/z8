@@ -1,0 +1,169 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Adekvatna popunjenost",
+      "byLocation": "Po lokaciji:",
+      "gapCount": "{count} manjak osoblja",
+      "gaps": "praznine",
+      "hideOverlay": "Sakrij sloj pokrivenosti",
+      "metSlots": "{count} adekvatno",
+      "overSlots": "{count} prekapacitirano",
+      "overstaffed": "Prekapacitirano",
+      "showOverlay": "Prikaži sloj ciljeva pokrivenosti",
+      "summary": "Sažetak pokrivenosti:",
+      "toggleLabel": "Pokrivenost",
+      "underSlots": "{count} potkapacitirano",
+      "understaffed": "Potkapacitirano",
+      "utilization": "{percent}% iskorištenosti"
+    },
+    "mySchedule": {
+      "loadFailed": "Učitavanje vaših smjena nije uspjelo. Pokušajte ponovno kasnije.",
+      "nextWeek": "Sljedeći tjedan",
+      "noShifts": "Nema smjena",
+      "previousWeek": "Prethodni tjedan",
+      "shift": "Smjena",
+      "today": "Danas"
+    },
+    "page": {
+      "employeeScheduleDescription": "Vaše objavljene smjene, iz tjedna u tjedan",
+      "employeeTitle": "Moj raspored",
+      "managerDescription": "Upravljajte smjenama zaposlenika i planirajte ih",
+      "title": "Raspored smjena"
+    },
+    "publish": {
+      "acknowledgeAndPublish": "Potvrdi i objavi",
+      "acknowledgmentDescription": "Objavljivanje će se nastaviti, ali ovaj raspored sadrži upozorenja o usklađenosti koja se prvo moraju potvrditi.",
+      "button": "Objavi ({count})",
+      "cancel": "Odustani",
+      "complianceAcknowledgmentRequired": "Potrebna je potvrda usklađenosti",
+      "complianceWarnings": "{count, plural, one {Provjere usklađenosti pronašle su # upozorenje; morat ćete ga potvrditi prije objave.} other {Provjere usklađenosti pronašle su # upozorenja; morat ćete ih potvrditi prije objave.}}",
+      "coverageWarning": "Neki vremenski blokovi ne zadovoljavaju minimalne zahtjeve za osobljem.",
+      "maxHours": "Maks. sati: {count}",
+      "notifyEmployees": "{count, plural, one {Objavi # skicu smjene i obavijesti zaposlenike} few {Objavi # skice smjena i obavijesti zaposlenike} other {Objavi # skica smjena i obavijesti zaposlenike}}",
+      "overtime": "Prekovremeni rad: {count}",
+      "publishing": "Objavljivanje…",
+      "restTime": "Vrijeme odmora: {count}",
+      "totalFindings": "{count, plural, one {# ukupni nalaz} few {# ukupna nalaza} other {# ukupnih nalaza}}",
+      "warningsDetectedBeforePublish": "Upozorenja otkrivena prije objave"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "Prije objave pronađeno je {count} nalaza.",
+        "maxHours": "Maks. sati: {count}",
+        "overtime": "Prekovremeni sati: {count}",
+        "restTime": "Vrijeme odmora: {count}",
+        "title": "Upozorenja o usklađenosti u ovom rasponu datuma"
+      },
+      "focus": {
+        "anonymous": "Prikaz smjena jednog zaposlenika",
+        "employee": "Prikaz smjena za {name}",
+        "showAll": "Prikaži sve smjene"
+      },
+      "loading": "Učitavanje rasporeda...",
+      "publish": {
+        "failed": "Objavljivanje smjena nije uspjelo",
+        "published": "Objavljeno smjena: {count}"
+      },
+      "shiftUpdate": {
+        "failed": "Ažuriranje smjene nije uspjelo",
+        "overlapDescription": "Ova se smjena preklapa s još {count} smjena",
+        "overlapWarning": "Smjena je spremljena uz upozorenje o preklapanju",
+        "updated": "Smjena je ažurirana"
+      }
+    },
+    "shiftDetails": {
+      "close": "Zatvori",
+      "date": "Datum",
+      "description": "Vaša planirana smjena",
+      "endsNextDay": "završava sljedeći dan",
+      "location": "Lokacija",
+      "notes": "Bilješke",
+      "time": "Vrijeme",
+      "title": "Pojedinosti smjene"
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Svatko može preuzeti",
+      "assignTo": "Dodijeli",
+      "confirmDelete": "Potvrdi brisanje",
+      "created": "Smjena je stvorena",
+      "createDescription": "Ispunite pojedinosti za novu smjenu",
+      "createShift": "Stvori smjenu",
+      "createTitle": "Stvori smjenu",
+      "date": "Datum",
+      "deleted": "Smjena je izbrisana",
+      "deleteFailed": "Brisanje smjene nije uspjelo",
+      "draft": "Nacrt",
+      "editDescription": "U nastavku ažurirajte pojedinosti o smjeni",
+      "editTitle": "Uredi smjenu",
+      "endTime": "Vrijeme završetka",
+      "noTemplate": "Nema predloška",
+      "notes": "Napomene (neobavezno)",
+      "notesPlaceholder": "Bilo kakve posebne upute ili napomene...",
+      "openShift": "Otvorena smjena",
+      "openShiftHelp": "Ostavite kao \"Otvorena smjena\" kako bi je zaposlenici mogli preuzeti",
+      "pickDate": "Odaberite datum",
+      "published": "Objavljeno",
+      "savedWithWarnings": "Smjena je spremljena s upozorenjima",
+      "saveFailed": "Spremanje smjene nije uspjelo",
+      "selectEmployee": "Odaberite zaposlenika",
+      "selectSubarea": "Odaberite podpodručje…",
+      "selectTemplate": "Odaberite predložak",
+      "startTime": "Vrijeme početka",
+      "status": "Status:",
+      "subarea": "Podpodručje",
+      "subareaHelp": "Mjesto održavanja ove smjene",
+      "template": "Predložak (neobavezno)",
+      "templateHelp": "Odabirom predloška vremena će se automatski popuniti",
+      "updated": "Smjena je ažurirana",
+      "updateShift": "Ažuriraj smjenu"
+    },
+    "skills": {
+      "expiredCertifications": "Istekli certifikati:",
+      "expiredOn": "(Isteklo {date})",
+      "missingPreferred": "Nedostaju poželjne vještine:",
+      "missingPreferredCount": "{count} poželjnih nedostaje",
+      "missingRequired": "Nedostaju obvezne vještine:",
+      "preferred": "Poželjno",
+      "preferredSkillsMissing": "Nedostaju poželjne vještine",
+      "requirementsNotMet": "Zahtjevi za vještinama nisu ispunjeni",
+      "unqualified": "Nekvalificiran",
+      "validating": "Provjera vještina…",
+      "validatingDescription": "Provjera kvalifikacija zaposlenika",
+      "warningMessage": "I dalje možete dodijeliti ovu smjenu, ali bit će zabilježena kao premošćivanje."
+    },
+    "staffingSuggestions": {
+      "empty": "Nema dostupnih zaposlenika za ovu smjenu",
+      "error": "Prijedlozi se nisu mogli učitati",
+      "loading": "Pronalaženje dostupnih zaposlenika…",
+      "note": {
+        "missingPreferredSkill": "Nedostaje poželjna vještina: {skill}"
+      },
+      "pick": "Odaberi",
+      "pickLabel": "Dodijeli {name}",
+      "reason": {
+        "noContractedTarget": "Nema ugovorenog cilja",
+        "plannedHours": "Planirano {planned} od {target} h ovaj tjedan",
+        "requestedThisShift": "Zatražio/la ovu smjenu",
+        "restPeriodOk": "Razdoblje odmora u redu",
+        "skillsHeld": "Ima {skills}"
+      },
+      "requested": "Zatražio/la ovu smjenu",
+      "showAll": "Prikaži sve ({count})",
+      "showFewer": "Prikaži manje",
+      "title": "Predloženi zaposlenici",
+      "warning": {
+        "expiredRequiredSkill": "{skill} je istekla {date}",
+        "maxHours": "Prekoračen dnevni maksimum ({total} od {max} h)",
+        "missingRequiredSkill": "Nedostaje obavezna vještina: {skill}",
+        "overtime": "{period, select, daily {Dnevni} weekly {Tjedni} other {Mjesečni}} prekovremeni rad ({total} od {threshold} h)",
+        "pendingAbsence": "Odsutnost na čekanju: {category}",
+        "restTime": "Razdoblje odmora je prekratko ({rest} od {required} h)"
+      }
+    },
+    "templates": {
+      "dragHint": "Povucite predložak na kalendar kako biste stvorili smjenu",
+      "empty": "Nema dostupnih predložaka. Izradite predloške u Postavkama za brzo dodavanje smjena.",
+      "title": "Predlošci smjena"
+    }
+  }
+}

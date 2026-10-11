@@ -1280,10 +1280,7 @@
           "nameTaken": "{name} ma taką samą nazwę i jest już powiązany z innym kontaktem",
           "noMatch": "Brak dopasowania",
           "paging": {
-            "label": "Strony kontaktów",
-            "next": "Następna strona",
-            "position": "Strona {page} z {pageCount}",
-            "previous": "Poprzednia strona"
+            "label": "Strony kontaktów"
           },
           "suggestion": {
             "customerNumber": "{name} ma powiązanie z kontaktem o tym samym numerze klienta",
@@ -1305,14 +1302,22 @@
           "unlocatedBreak": "Dostawca zgłasza przerwy bez podania ich godzin, przez co przepracowany przedział czasu jest nieznany."
         },
         "issueGroups": {
-          "currentMarkers": "Bieżące wiersze zawierają {blockingRows} blokujących i {warningRows} ostrzegawczych znaczników problemów.",
           "description": "Pogrupowane obszary przeglądu pomagają zachować widoczność kontroli jakości przed zatwierdzeniem wierszy.",
+          "importMarkers": "Wiersze importu zawierają {blockingRows} blokujących i {warningRows} ostrzegawczych znaczników problemów.",
           "title": "Grupy problemów"
+        },
+        "paging": {
+          "next": "Następna strona",
+          "position": "Strona {page} z {pageCount}",
+          "previous": "Poprzednia strona"
         },
         "rows": {
           "billable": "Podlega rozliczeniu",
           "empty": "Brak przygotowanych wierszy dla tej partii importu.",
           "entity": "Obiekt",
+          "paging": {
+            "label": "Strony wierszy"
+          },
           "rowId": "ID wiersza",
           "sourceId": "ID źródła",
           "status": "Status",
@@ -1783,6 +1788,7 @@
       "create": "Utwórz projekt",
       "created": "Projekt utworzony",
       "createFailed": "Nie udało się utworzyć projektu",
+      "customerDeleted": "{name} (usunięto)",
       "description": "Zarządzaj projektami, budżetami, terminami i przypisaniami czasu",
       "dialog": {
         "create": "Utwórz projekt",
@@ -1807,6 +1813,7 @@
         "color": "Kolor",
         "colorOption": "Wybierz kolor {color}",
         "customer": "Klient",
+        "customerDeleted": "Klient {name} został usunięty. Wybierz innego klienta lub pozostaw projekt bez przypisanego klienta.",
         "customerPlaceholder": "Wybierz klienta",
         "deadline": "Termin",
         "description": "Opis",
@@ -2031,6 +2038,11 @@
       "title": "Projekty",
       "updated": "Projekt zaktualizowany",
       "updateFailed": "Nie udało się zaktualizować projektu"
+    },
+    "reportShareLinks": {
+      "description": "Przeglądaj i unieważniaj wszystkie linki udostępniające raport projektu lub klienta",
+      "pageDescription": "Linki pokazujące statyczną migawkę raportu projektu lub klienta osobom spoza Z8. Unieważnienie linku natychmiast go dezaktywuje i usuwa jego migawkę.",
+      "title": "Linki udostępniania raportów"
     },
     "security": {
       "description": "Zarządzaj hasłem, uwierzytelnianiem dwuskładnikowym, kluczami dostępu i aktywnymi sesjami",

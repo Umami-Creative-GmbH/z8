@@ -781,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Votre dernier pointage d'arrivée aujourd'hui a eu lieu à {startTime} ({timezone}). Pointez votre arrivée si vous travaillez."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" a été mis en pause car son propriétaire, {ownerName}, n'est plus administrateur de l'organisation. Désignez-vous ou désignez un autre administrateur de l'organisation comme propriétaire pour le réactiver.",
+        "title": "Exportation planifiée suspendue"
+      },
       "shiftAssigned": {
         "message": "Un quart de travail vous a été attribué le {shiftDate} de {startTime} à {endTime} par {assignedByName}.",
         "title": "Quart de travail attribué"
