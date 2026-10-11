@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, periodSubmission } from "@/db/schema";
@@ -6,6 +6,7 @@ import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/tempor
 import { scheduledSubmissionPeriods } from "./cadence";
 import { deriveExpectedSubmissionPeriods } from "./expected-periods";
 import { loadExpectedSubmissionFactsByEmployee } from "./organization-expected-periods";
+import { periodSubmissionOverlaps } from "./period-overlap";
 import { loadSubmissionCadenceHistory } from "./settings";
 import { type PeriodSubmissionGap, periodSubmissionGaps } from "./submission-gaps";
 import type { PeriodSubmissionClosedCause, PeriodSubmissionStatus } from "./submission-status";
@@ -79,8 +80,7 @@ export async function loadPeriodSubmissionGaps(
 					periodSubmission.employeeId,
 					employees.map((row) => row.id),
 				),
-				lte(periodSubmission.startDate, input.window.to.toString()),
-				gte(periodSubmission.endDate, input.window.from.toString()),
+				periodSubmissionOverlaps(input.window.from.toString(), input.window.to.toString()),
 			),
 		);
 	const submissionsByEmployee = Map.groupBy(submissions, (row) => row.employeeId);

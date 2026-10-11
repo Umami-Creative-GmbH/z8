@@ -4,6 +4,7 @@ import {
 	type DayRange,
 	type WorkInterval,
 } from "@/lib/time-tracking/closed-months/rules";
+import { periodDaysOverlap } from "./period-overlap";
 
 /**
  * What a writer of work, work attribution or absences changed (#1062), in the terms closed months
@@ -44,7 +45,7 @@ export function periodChangeTouches(change: PeriodChange, period: SubmittedPerio
 	) {
 		return true;
 	}
-	return (change.days ?? []).some(
-		(days) => days.startDate <= period.endDate && days.endDate >= period.startDate,
+	return (change.days ?? []).some((days) =>
+		periodDaysOverlap(period, { from: days.startDate, to: days.endDate }),
 	);
 }

@@ -1,4 +1,4 @@
-import { and, eq, gt, gte, inArray, lte, ne, or, type SQL } from "drizzle-orm";
+import { and, eq, gt, inArray, lte, ne, or, type SQL } from "drizzle-orm";
 import { employee, periodSubmission } from "@/db/schema";
 import { periodSubmissionCadenceChange } from "@/db/schema/period-submission";
 import { AuditAction } from "@/lib/audit-logger";
@@ -11,6 +11,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { type PeriodChange, periodChangeTouches } from "./period-change";
+import { periodSubmissionOverlaps } from "./period-overlap";
 import { LIVE_PERIOD_SUBMISSION_STATUSES } from "./submission-status";
 import {
 	insertPeriodSubmissionAudit,
@@ -199,13 +200,7 @@ function changeWindow(change: Required<PeriodChange>): SQL | undefined {
 			.map((range) => range.endDate)
 			.toSorted()
 			.at(-1);
-		if (first && last) {
-			const condition = and(
-				lte(periodSubmission.startDate, last),
-				gte(periodSubmission.endDate, first),
-			);
-			if (condition) conditions.push(condition);
-		}
+		if (first && last) conditions.push(periodSubmissionOverlaps(first, last));
 	}
 	return or(...conditions);
 }
