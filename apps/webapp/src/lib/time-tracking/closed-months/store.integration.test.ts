@@ -7,11 +7,14 @@
  * for the employees it names. Close and reopening are audited in their own
  * transaction.
  */
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { MonthClosedError } from "@/lib/effect/errors";
 import {
 	assertWorkOpen,
+	type CloseMonthResult,
+	closedMonthHistory,
 	closedRangesForEmployee,
 	closeMonth,
 	monthClosureStatuses,
@@ -216,6 +219,59 @@ describe("closing and reopening months on PostgreSQL", () => {
 		).toEqual([]);
 	});
 
+	it("refuses a close while a work period's own pending time workflow or legacy request is open", async () => {
+		const org = await fixture.organization("UTC");
+		const other = await fixture.organization("UTC");
+		const person = await fixture.employee({ organizationId: org.organizationId });
+		const marchWork = (day: string) =>
+			fixture.work({
+				organizationId: org.organizationId,
+				employeeId: person.employeeId,
+				userId: person.userId,
+				start: `2026-03-${day}T08:00:00Z`,
+				end: `2026-03-${day}T12:00:00Z`,
+			});
+		const withWorkflow = await marchWork("05");
+		const withRequest = await marchWork("06");
+		const requestedElsewhere = await marchWork("07");
+		await marchWork("08");
+		await fixture.pool.query(
+			`insert into approval_workflow
+			 (id, organization_id, workflow_type, source_type, source_id, requester_employee_id,
+			  status, version, policy_snapshot, context_snapshot, display_snapshot, updated_at)
+			 values ($1, $2, 'time_correction', 'time_entry', $3, $4, 'pending', 1, '{}', '{}', '{}', now())`,
+			[randomUUID(), org.organizationId, withWorkflow.workPeriodId, person.employeeId],
+		);
+		const legacyRequest = (organizationId: string, workPeriodId: string) =>
+			fixture.pool.query(
+				`insert into approval_request
+				 (id, organization_id, entity_type, entity_id, requested_by, approver_id, status, reason, updated_at)
+				 values ($1, $2, 'time_entry', $3, $4, $4, 'pending', 'Correction', now())`,
+				[randomUUID(), organizationId, workPeriodId, person.employeeId],
+			);
+		await legacyRequest(org.organizationId, withRequest.workPeriodId);
+		// Another organization's request never blocks this one's close.
+		await legacyRequest(other.organizationId, requestedElsewhere.workPeriodId);
+
+		const result = await closeMonth(fixture.db, {
+			organizationId: org.organizationId,
+			month: "2026-03",
+			scope: { kind: "organization" },
+			actor: { kind: "user", userId: org.ownerUserId },
+			now,
+		});
+
+		expect(result.kind).toBe("blocked");
+		const blockers = result.kind === "blocked" ? result.blockers : [];
+		expect(blockers.map((blocker) => blocker.kind)).toEqual(["time_request", "time_request"]);
+		expect(blockers).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ workPeriodId: withWorkflow.workPeriodId }),
+				expect.objectContaining({ workPeriodId: withRequest.workPeriodId }),
+			]),
+		);
+	});
+
 	it("refuses closing both months a pending weekly submission touches, and only those", async () => {
 		const org = await fixture.organization("UTC");
 		const person = await fixture.employee({ organizationId: org.organizationId });
@@ -396,6 +452,39 @@ describe("closing and reopening months on PostgreSQL", () => {
 			"closed_month.closed",
 			"closed_month.reopened",
 		]);
+	});
+
+	it("counts the employees each close covered in the history", async () => {
+		const org = await fixture.organization();
+		const teamA = await fixture.team(org.organizationId, "A");
+		await fixture.employee({ organizationId: org.organizationId, teamId: teamA });
+		await fixture.employee({ organizationId: org.organizationId });
+		const close = (scope: Parameters<typeof closeMonth>[1]["scope"]) =>
+			closeMonth(fixture.db, {
+				organizationId: org.organizationId,
+				month: "2026-03",
+				scope,
+				actor: { kind: "user", userId: org.ownerUserId },
+				now,
+			});
+		const teamClose = await close({ kind: "team", teamId: teamA });
+		const organizationClose = await close({ kind: "organization" });
+
+		const history = await closedMonthHistory(fixture.db, { organizationId: org.organizationId });
+
+		const closedId = (result: CloseMonthResult) =>
+			result.kind === "closed" ? result.closedMonthId : null;
+		// The organization close covers the employee outside team A and the owner.
+		expect(
+			history
+				.filter((entry) => entry.kind === "close")
+				.map((entry) => [entry.id, entry.employeeCount]),
+		).toEqual(
+			expect.arrayContaining([
+				[closedId(teamClose), 1],
+				[closedId(organizationClose), 2],
+			]),
+		);
 	});
 
 	it("stops covering employees added later once everything is reopened", async () => {

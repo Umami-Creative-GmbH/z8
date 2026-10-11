@@ -471,17 +471,19 @@ async function closeBlockers(
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 			approvalStatus: workPeriod.approvalStatus,
+			// The outer columns are qualified by hand: with no join, Drizzle renders
+			// `${workPeriod.id}` as a bare "id", which binds to the subquery's own table.
 			pendingWorkflow: sql<boolean>`exists (
 				select 1 from ${approvalWorkflow}
-				where ${approvalWorkflow.organizationId} = ${workPeriod.organizationId}
+				where ${approvalWorkflow.organizationId} = "work_period"."organization_id"
 					and ${approvalWorkflow.sourceType} = 'time_entry'
-					and ${approvalWorkflow.sourceId} = ${workPeriod.id}
+					and ${approvalWorkflow.sourceId} = "work_period"."id"
 					and ${approvalWorkflow.status} = 'pending'
 			)`,
 			pendingRequest: sql<boolean>`exists (
 				select 1 from ${approvalRequest}
-				where ${approvalRequest.organizationId} = ${workPeriod.organizationId}
-					and ${approvalRequest.entityId} = ${workPeriod.id}
+				where ${approvalRequest.organizationId} = "work_period"."organization_id"
+					and ${approvalRequest.entityId} = "work_period"."id"
 					and ${approvalRequest.status} = 'pending'
 			)`,
 		})
@@ -767,7 +769,8 @@ export async function closedMonthHistory(
 			actorKind: closedMonth.actorKind,
 			closedBy: closedMonth.closedBy,
 			closedAt: closedMonth.closedAt,
-			employeeCount: sql<number>`(select count(*)::int from ${closedMonthEmployee} where ${closedMonthEmployee.closedMonthId} = ${closedMonth.id})`,
+			// The outer column is qualified by hand, as in `closeBlockers`.
+			employeeCount: sql<number>`(select count(*)::int from ${closedMonthEmployee} where ${closedMonthEmployee.closedMonthId} = "closed_month"."id")`,
 		})
 		.from(closedMonth)
 		.where(eq(closedMonth.organizationId, input.organizationId))
