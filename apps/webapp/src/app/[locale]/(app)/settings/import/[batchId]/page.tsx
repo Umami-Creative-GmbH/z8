@@ -21,13 +21,13 @@ interface ImportReviewRouteProps {
 	searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-/** Contacts per page of a customer import's review (`?page=`, 1-based). */
-const CUSTOMER_IMPORT_PAGE_SIZE = 100;
+/** Staged rows per page of an import's review (`?page=`, 1-based). */
+const IMPORT_REVIEW_PAGE_SIZE = 100;
 
 /** The requested page, within 1…pageCount; anything unreadable is the first page. */
-function customerImportPage(requested: string | string[] | undefined, totalRows: number) {
+function importReviewPage(requested: string | string[] | undefined, totalRows: number) {
 	const rows = Number.isFinite(totalRows) ? totalRows : 0;
-	const pageCount = Math.max(1, Math.ceil(rows / CUSTOMER_IMPORT_PAGE_SIZE));
+	const pageCount = Math.max(1, Math.ceil(rows / IMPORT_REVIEW_PAGE_SIZE));
 	const value = Array.isArray(requested) ? requested[0] : requested;
 	const parsed = value && /^\d{1,6}$/.test(value) ? Number(value) : 1;
 	return { page: Math.min(Math.max(parsed, 1), pageCount), pageCount };
@@ -56,18 +56,18 @@ async function ImportReviewRouteContent({ params, searchParams }: ImportReviewRo
 	});
 
 	if (!batch) notFound();
-	// A customer import from the accounting connection (#906) shows its contacts
-	// page by page; a work import shows its first 100 rows.
+	// A customer import from the accounting connection (#906) reviews per-contact decisions.
 	const isCustomerImport = batch.provider === "accounting";
 
 	const summary = await getImportReviewSummary({ batchId: batch.id, organizationId });
-	const paging = isCustomerImport ? customerImportPage(query.page, summary.totalRows) : null;
+	// Every import is reviewed page by page (#906 contacts, #937 work rows).
+	const paging = importReviewPage(query.page, summary.totalRows);
 	const [rows, billableTime, customerAccounting] = await Promise.all([
 		listImportReviewRows({
 			batchId: batch.id,
 			organizationId,
-			limit: 100,
-			offset: paging ? (paging.page - 1) * CUSTOMER_IMPORT_PAGE_SIZE : 0,
+			limit: IMPORT_REVIEW_PAGE_SIZE,
+			offset: (paging.page - 1) * IMPORT_REVIEW_PAGE_SIZE,
 		}),
 		getBillableTimeSettings(organizationId, db),
 		isCustomerImport ? listCustomerAccounting(db, organizationId) : Promise.resolve([]),
@@ -77,9 +77,8 @@ async function ImportReviewRouteContent({ params, searchParams }: ImportReviewRo
 	const billability = showBillability
 		? await listImportRowBillability(db, organizationId, rows)
 		: rows.map(() => null);
-	const customerImport = paging
+	const customerImport = isCustomerImport
 		? {
-				paging,
 				rows: rows.map((row) => ({
 					id: row.id,
 					rowStatus: row.rowStatus,
@@ -103,6 +102,7 @@ async function ImportReviewRouteContent({ params, searchParams }: ImportReviewRo
 					organizationId={organizationId}
 					batchId={batch.id}
 					summary={summary}
+					paging={paging}
 					rows={rows.map((row, index) => ({
 						...row,
 						billability: billability[index] ?? null,

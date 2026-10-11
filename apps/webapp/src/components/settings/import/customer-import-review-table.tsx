@@ -1,10 +1,14 @@
 "use client";
 
-import { IconChevronLeft, IconChevronRight, IconLink, IconPlus } from "@tabler/icons-react";
+import { IconLink, IconPlus } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { applyImportDecisionAction } from "@/app/[locale]/(app)/settings/import/review-actions";
+import {
+	type ImportReviewPaging,
+	ImportReviewPagingNav,
+} from "@/components/settings/import/import-review-paging";
 import type {
 	ImportReviewIssueSeverity,
 	ImportReviewRowStatus,
@@ -28,7 +32,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { StagedCustomer } from "@/lib/import-review/staged-customer";
-import { Link, useRouter } from "@/navigation";
+import { useRouter } from "@/navigation";
 import { currentCustomerDecision, customerDecisionOptions } from "./customer-import-decisions";
 
 /** A staged customer row of a customer import (#906), as the review screen shows it. */
@@ -100,12 +104,6 @@ const statusLabels: Record<ImportReviewRowStatus, { key: string; fallback: strin
 	staged: { key: "settings.import.review.status.staged", fallback: "Staged" },
 };
 
-/** Which page of the import's contacts the table shows (1-based). */
-export interface CustomerImportPaging {
-	page: number;
-	pageCount: number;
-}
-
 interface CustomerImportReviewTableProps {
 	organizationId: string;
 	batchId: string;
@@ -114,7 +112,7 @@ interface CustomerImportReviewTableProps {
 	linkTargets: CustomerLinkTarget[];
 	/** The batch is waiting for review decisions. */
 	editable: boolean;
-	paging?: CustomerImportPaging;
+	paging?: ImportReviewPaging;
 }
 
 export function CustomerImportReviewTable({
@@ -371,37 +369,11 @@ export function CustomerImportReviewTable({
 						</TableBody>
 					</Table>
 				)}
-				{paging && paging.pageCount > 1 ? (
-					<nav
-						aria-label={t("settings.import.review.customers.paging.label", "Contact pages")}
-						className="mt-4 flex flex-wrap items-center justify-between gap-3"
-					>
-						<span className="text-muted-foreground text-sm tabular-nums">
-							{t("settings.import.review.customers.paging.position", "Page {page} of {pageCount}", {
-								page: paging.page,
-								pageCount: paging.pageCount,
-							})}
-						</span>
-						<div className="flex gap-2">
-							{paging.page > 1 ? (
-								<Button asChild variant="outline" size="sm">
-									<Link href={`/settings/import/${batchId}?page=${paging.page - 1}`}>
-										<IconChevronLeft aria-hidden="true" className="size-4" />
-										{t("settings.import.review.customers.paging.previous", "Previous page")}
-									</Link>
-								</Button>
-							) : null}
-							{paging.page < paging.pageCount ? (
-								<Button asChild variant="outline" size="sm">
-									<Link href={`/settings/import/${batchId}?page=${paging.page + 1}`}>
-										{t("settings.import.review.customers.paging.next", "Next page")}
-										<IconChevronRight aria-hidden="true" className="size-4" />
-									</Link>
-								</Button>
-							) : null}
-						</div>
-					</nav>
-				) : null}
+				<ImportReviewPagingNav
+					batchId={batchId}
+					paging={paging}
+					label={t("settings.import.review.customers.paging.label", "Contact pages")}
+				/>
 			</CardContent>
 		</Card>
 	);

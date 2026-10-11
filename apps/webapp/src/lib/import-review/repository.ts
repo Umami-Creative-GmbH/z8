@@ -341,6 +341,8 @@ export async function getImportReviewSummary(input: { batchId: string; organizat
 				rejectedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'rejected')::int`,
 				blockedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'blocked')::int`,
 				committedRows: sql<number>`count(*) filter (where ${importStagedRow.rowStatus} = 'committed')::int`,
+				blockingIssueRows: sql<number>`count(*) filter (where ${importStagedRow.issueSeverity} = 'blocking')::int`,
+				warningIssueRows: sql<number>`count(*) filter (where ${importStagedRow.issueSeverity} = 'warning')::int`,
 			})
 			.from(importStagedRow)
 			.where(rowBaseWhere),
@@ -354,6 +356,8 @@ export async function getImportReviewSummary(input: { batchId: string; organizat
 		blockedRows: Number(rowCounts?.blockedRows ?? 0),
 		committedRows: Number(rowCounts?.committedRows ?? 0),
 		issueCount: Number(issueCounts?.issueCount ?? 0),
+		blockingIssueRows: Number(rowCounts?.blockingIssueRows ?? 0),
+		warningIssueRows: Number(rowCounts?.warningIssueRows ?? 0),
 	};
 }
 
