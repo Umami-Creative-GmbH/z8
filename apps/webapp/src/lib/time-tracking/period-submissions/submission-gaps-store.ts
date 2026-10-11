@@ -4,14 +4,11 @@ import { user } from "@/db/auth-schema";
 import { employee, periodSubmission } from "@/db/schema";
 import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { scheduledSubmissionPeriods } from "./cadence";
-import { loadExpectedSubmissionPeriodFacts } from "./employee-expected-periods";
 import { deriveExpectedSubmissionPeriods } from "./expected-periods";
+import { loadExpectedSubmissionFactsByEmployee } from "./organization-expected-periods";
 import { loadSubmissionCadenceHistory } from "./settings";
 import { type PeriodSubmissionGap, periodSubmissionGaps } from "./submission-gaps";
 import type { PeriodSubmissionClosedCause, PeriodSubmissionStatus } from "./submission-status";
-
-/** Employees whose facts are read at once; each read runs several queries. */
-const EMPLOYEE_BATCH = 10;
 
 export interface EmployeePeriodSubmissionGap extends PeriodSubmissionGap {
 	employeeId: string;
@@ -87,39 +84,27 @@ export async function loadPeriodSubmissionGaps(
 			),
 		);
 	const submissionsByEmployee = Map.groupBy(submissions, (row) => row.employeeId);
+	const factsByEmployee = await loadExpectedSubmissionFactsByEmployee(database, {
+		organizationId: input.organizationId,
+		employeeIds: employees.map((row) => row.id),
+		window: input.window,
+	});
 
-	const gaps: EmployeePeriodSubmissionGap[] = [];
-	for (let index = 0; index < employees.length; index += EMPLOYEE_BATCH) {
-		const batch = employees.slice(index, index + EMPLOYEE_BATCH);
-		const results = await Promise.all(
-			batch.map(async (row) => {
-				const facts = await loadExpectedSubmissionPeriodFacts(database, {
-					organizationId: input.organizationId,
-					employeeId: row.id,
-					window: input.window,
-				});
-				if (!facts) return [];
-				const employeeGaps = periodSubmissionGaps({
-					periods: deriveExpectedSubmissionPeriods(facts, input.window),
-					submissions: (submissionsByEmployee.get(row.id) ?? []).map((submission) => ({
-						startDate: submission.startDate,
-						status: submission.status as PeriodSubmissionStatus,
-						closedCause: submission.closedCause as PeriodSubmissionClosedCause | null,
-						submittedAt: submission.submittedAt,
-					})),
-					today: plainDateAt(input.now, facts.timezone),
-				});
-				const employeeName = row.userName?.trim() || "—";
-				return employeeGaps.map((gap) => ({
-					...gap,
-					employeeId: row.id,
-					employeeName,
-					timezone: facts.timezone,
-				}));
-			}),
-		);
-		gaps.push(...results.flat());
-	}
+	const gaps: EmployeePeriodSubmissionGap[] = employees.flatMap((row) => {
+		const facts = factsByEmployee.get(row.id);
+		if (!facts) return [];
+		const employeeName = row.userName?.trim() || "—";
+		return periodSubmissionGaps({
+			periods: deriveExpectedSubmissionPeriods(facts, input.window),
+			submissions: (submissionsByEmployee.get(row.id) ?? []).map((submission) => ({
+				startDate: submission.startDate,
+				status: submission.status as PeriodSubmissionStatus,
+				closedCause: submission.closedCause as PeriodSubmissionClosedCause | null,
+				submittedAt: submission.submittedAt,
+			})),
+			today: plainDateAt(input.now, facts.timezone),
+		}).map((gap) => ({ ...gap, employeeId: row.id, employeeName, timezone: facts.timezone }));
+	});
 	return {
 		collected,
 		gaps: gaps.toSorted(
