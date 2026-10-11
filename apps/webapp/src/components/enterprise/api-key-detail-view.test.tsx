@@ -43,6 +43,7 @@ const detail: ApiKeyDetail = {
 	requests: [
 		{
 			id: "r1",
+			channel: "mcp",
 			method: "GET",
 			route: "/api/v1/employees",
 			status: 429,
@@ -52,6 +53,7 @@ const detail: ApiKeyDetail = {
 		},
 		{
 			id: "r2",
+			channel: "api",
 			method: "GET",
 			route: "/api/v1/employees",
 			status: 200,
@@ -78,6 +80,9 @@ describe("ApiKeyDetailView", () => {
 		expect(rows).toHaveLength(2);
 		expect(within(rows[0]).getByText("429")).toBeTruthy();
 		expect(within(rows[0]).getByText("203.0.113.7")).toBeTruthy();
+		// The channel says whether the request came through the API or the MCP server.
+		expect(within(rows[0]).getByText("MCP")).toBeTruthy();
+		expect(within(rows[1]).getByText("API")).toBeTruthy();
 		expect(within(rows[1]).getByText("12")).toBeTruthy();
 		// Times are shown in the viewer's display zone.
 		expect(within(rows[0]).getByText(/10:00/)).toBeTruthy();

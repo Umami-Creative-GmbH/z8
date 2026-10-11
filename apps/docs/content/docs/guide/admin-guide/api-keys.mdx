@@ -65,7 +65,7 @@ When a limit is used up, the API answers `429` with a `Retry-After` header in se
 
 ## Recent requests
 
-Select a key's name to open its detail page. It lists the key's recent requests: when, which endpoint, the response status, the number of rows returned and the caller's IP address. Requests are kept for 90 days.
+Select a key's name to open its detail page. It lists the key's recent requests: when, the channel (**API** for the Public API, **MCP** for a tool call through the [MCP server](/docs/api-reference/mcp)), which endpoint, the response status, the number of rows returned and the caller's IP address. Requests are kept for 90 days.
 
 Creating, editing and revoking a key are recorded in the organization's audit log (**Settings → Enterprise → Audit Log**) with the admin who did it.
 

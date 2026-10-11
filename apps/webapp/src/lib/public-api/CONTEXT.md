@@ -25,7 +25,7 @@ The admin who created an API key. Recorded for attribution only, never as the ke
 _Avoid_: key owner
 
 **Key request log**:
-The record of every request made with an API key: which key read what, when and from where, and whether it came through the Public API or the MCP server.
+The record of what an API key read: every Public API request and every MCP tool call, with which key read what, when and from where, and whether it came through the Public API or the MCP server. MCP requests that read no data, such as listing tools, are not recorded.
 _Avoid_: API audit log, access log
 
 **Health detail**:

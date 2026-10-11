@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, desc, eq, inArray, lt } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
-import { publicApiRequestLog } from "@/db/schema";
+import { type KeyRequestChannel, publicApiRequestLog } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 
 /** How long the key request log keeps a request (#763). */
@@ -14,6 +14,7 @@ export const RECENT_KEY_REQUESTS = 100;
 
 export interface KeyRequestView {
 	id: string;
+	channel: KeyRequestChannel;
 	method: string;
 	route: string;
 	status: number;
@@ -30,6 +31,7 @@ export async function listRecentKeyRequests(
 	return reader
 		.select({
 			id: publicApiRequestLog.id,
+			channel: publicApiRequestLog.channel,
 			method: publicApiRequestLog.method,
 			route: publicApiRequestLog.route,
 			status: publicApiRequestLog.status,

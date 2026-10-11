@@ -1471,6 +1471,13 @@
       "when": 1802361600000,
       "tag": "0209_period_submission_decided",
       "breakpoints": true
+    },
+    {
+      "idx": 210,
+      "version": "7",
+      "when": 1802448000000,
+      "tag": "0210_public_api_request_log_channel",
+      "breakpoints": true
     }
   ]
 }

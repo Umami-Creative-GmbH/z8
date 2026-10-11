@@ -117,13 +117,14 @@ describe("the Public API pipeline on PostgreSQL", () => {
 	async function logRows(organizationId: string = ids.organization) {
 		const { rows } = await admin.query<{
 			api_key_id: string;
+			channel: string;
 			method: string;
 			route: string;
 			status: number;
 			row_count: number | null;
 			ip_address: string | null;
 		}>(
-			`select api_key_id, method, route, status, row_count, ip_address from public_api_request_log
+			`select api_key_id, channel, method, route, status, row_count, ip_address from public_api_request_log
 			 where organization_id = $1 order by requested_at, status`,
 			[organizationId],
 		);
@@ -282,6 +283,7 @@ describe("the Public API pipeline on PostgreSQL", () => {
 		expect(await logRows()).toEqual([
 			{
 				api_key_id: created.id,
+				channel: "api",
 				method: "GET",
 				route: "/api/v1/employees",
 				status: 401,
