@@ -241,7 +241,7 @@ beforeEach(() => {
 });
 
 describe("authenticated app layout gates", () => {
-	it.each(["de", "no", "sv"])(
+	it.each(["de", "sv", "ro", "uk"])(
 		"redirects a supported saved locale %s before checking billing",
 		async (locale) => {
 			mockState.findUserSettings.mockResolvedValue({ locale });

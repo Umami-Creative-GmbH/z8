@@ -53,7 +53,26 @@ describe("readUserPreferences", () => {
 		});
 	});
 
-	it.each(["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw", "no", "sv"])(
+	it.each([
+		"en",
+		"de",
+		"fr",
+		"es",
+		"it",
+		"pt",
+		"el",
+		"pl",
+		"tr",
+		"gsw",
+		"no",
+		"sv",
+		"ro",
+		"hr",
+		"bs",
+		"sq",
+		"uk",
+		"ru",
+	])(
 		"preserves supported saved locale %s",
 		async (locale) => {
 			state.findFirst.mockResolvedValue({ locale });

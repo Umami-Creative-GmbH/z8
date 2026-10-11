@@ -28,6 +28,12 @@ describe("UI language coverage", () => {
 			"gsw",
 			"no",
 			"sv",
+			"ro",
+			"hr",
+			"bs",
+			"sq",
+			"uk",
+			"ru",
 		]);
 	});
 
