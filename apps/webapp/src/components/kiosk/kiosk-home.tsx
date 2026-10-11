@@ -61,7 +61,7 @@ export function KioskHome({
 	const [list, setList] = useState<EmployeeList>({ state: "loading" });
 	const [query, setQuery] = useState("");
 
-	const load = useEffectEvent(async () => {
+	async function load() {
 		const result = await kioskCall<KioskEmployeesResponse>(token, "/api/kiosk/employees");
 		if (result.kind === "kiosk") return onKioskRefused(result.code);
 		if (result.kind === "ok" && Array.isArray(result.body.employees)) {
@@ -69,10 +69,15 @@ export function KioskHome({
 		} else {
 			setList({ state: "failed" });
 		}
+	}
+
+	// The retry button calls load() directly; an Effect Event may only run from Effects.
+	const loadOnMount = useEffectEvent(() => {
+		void load();
 	});
 
 	useEffect(() => {
-		void load();
+		loadOnMount();
 	}, []);
 
 	const needle = searchable(query.trim());

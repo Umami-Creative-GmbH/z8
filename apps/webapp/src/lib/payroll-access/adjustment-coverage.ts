@@ -140,7 +140,7 @@ export async function listBalanceAdjustmentGrantEmployees(
 		is_active: boolean | null;
 	}>(sql`
 		with ${holderGrant(input)}
-		select hg.id as grant_id, e.id, u.name as user_name, e.first_name, e.last_name,
+		select hg.id as grant_id, e.id, u.name as user_name, u.first_name, u.last_name,
 			e.employee_number, e.is_active
 		from holder_grant hg
 		left join employee e on e.organization_id = hg.organization_id

@@ -79,20 +79,21 @@ export function AbsenceSickNotesPanel({
 
 	async function unlink(document: EmployeeDocumentView) {
 		setUnlinkingId(document.id);
-		try {
-			const result = await unlinkSickNoteAction({ documentId: document.id });
-			if (!result.success) {
-				toast.error(
-					result.error ||
-						t("absences.sickNotes.panel.unlinkFailed", "The sick note could not be unlinked."),
-				);
-				return;
-			}
-			toast.success(t("absences.sickNotes.panel.unlinked", "Sick note unlinked"));
-			refresh();
-		} finally {
-			setUnlinkingId(null);
-		}
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await unlinkSickNoteAction({ documentId: document.id })
+			.then((result) => {
+				if (!result.success) {
+					toast.error(
+						result.error ||
+							t("absences.sickNotes.panel.unlinkFailed", "The sick note could not be unlinked."),
+					);
+					return;
+				}
+				toast.success(t("absences.sickNotes.panel.unlinked", "Sick note unlinked"));
+				refresh();
+			})
+			.finally(() => setUnlinkingId(null));
 	}
 
 	const dateRange = formatAbsenceDateRange(absence.startDate, absence.endDate, locale);

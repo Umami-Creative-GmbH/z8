@@ -47,8 +47,11 @@ const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/team": ["calendar", "settings/people"],
 	// Officers attach, link and unlink sick notes with the absence dialogs (#984).
 	"/personnel-files": ["calendar"],
-	// Report review panels and per diem place names render travelExpenses copy.
-	"/approvals": ["bot", "travelExpenses"],
+	// Report review panels and per diem place names render travelExpenses copy;
+	// calendar: the sick-note marker on absence requests (#982).
+	"/approvals": ["bot", "calendar", "travelExpenses"],
+	// settings/generic: the close-month panel (#762).
+	"/payroll": ["settings/generic"],
 	"/platform-admin": ["settings/generic"],
 	"/settings/approval-policies": ["settings/people"],
 	"/settings/employees": ["organization"],

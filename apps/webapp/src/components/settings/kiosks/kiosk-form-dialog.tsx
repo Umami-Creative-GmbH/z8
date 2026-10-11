@@ -86,7 +86,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 		} satisfies KioskFormValues,
 		onSubmit: async ({ value }) => {
 			setSaving(true);
-			try {
+			const save = async () => {
 				if (props.mode === "create") {
 					const result = await createKioskAction({
 						name: value.name.trim(),
@@ -120,9 +120,10 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 				}
 				toast.success(t("settings.kiosks.saved", "Kiosk saved"));
 				props.onSaved();
-			} finally {
-				setSaving(false);
-			}
+			};
+			// Promise#finally rather than try/finally: the React Compiler cannot
+			// compile try statements without a catch clause.
+			await save().finally(() => setSaving(false));
 		},
 	});
 

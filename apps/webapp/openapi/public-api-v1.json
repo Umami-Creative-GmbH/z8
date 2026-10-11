@@ -592,6 +592,7 @@
 															"parental",
 															"bereavement",
 															"custom",
+															"time_off_in_lieu",
 															"absent"
 														],
 														"description": "The absence category's type. A sick absence read without the key scope `absences:read-health` is plain `absent`."
