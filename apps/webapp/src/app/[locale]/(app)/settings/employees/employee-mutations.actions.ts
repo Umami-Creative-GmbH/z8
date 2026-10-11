@@ -295,8 +295,8 @@ export async function updateEmployeeAction(
 
 				// A lower role or a deactivation can take projects away from the employee's share links (#806).
 				if ("role" in employeeUpdateData || "isActive" in employeeUpdateData) {
-					yield* Effect.promise(() =>
-						revokeShareLinksAfterAccessChange({
+					yield* dbService.query("reportShareLink.revokeAfterEmployeeUpdate", () =>
+						revokeShareLinksAfterAccessChange(dbService.db, {
 							organizationId: targetEmployee.organizationId,
 							creator: { employeeId },
 							actorUserId: session.user.id,

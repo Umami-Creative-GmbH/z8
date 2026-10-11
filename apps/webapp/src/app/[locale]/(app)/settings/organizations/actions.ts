@@ -898,8 +898,8 @@ export async function updateMemberRole(
 				);
 
 				// An owner or admin who becomes a member can lose projects in their share links (#806).
-				yield* Effect.promise(() =>
-					revokeShareLinksAfterAccessChange({
+				yield* dbService.query("reportShareLink.revokeAfterRoleUpdate", () =>
+					revokeShareLinksAfterAccessChange(dbService.db, {
 						organizationId,
 						creator: { userId: targetMember.userId },
 						actorUserId: session.user.id,

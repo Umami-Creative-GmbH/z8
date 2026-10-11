@@ -21,14 +21,13 @@ import {
 	createShareLink,
 	listShareLinks,
 	listShareLinkViews,
-	type RequestContext,
 	revokeShareLink,
 	type ShareLinkSummary,
 	type ShareLinkViewEntry,
 	type ShareTarget,
 } from "@/lib/projects/report-share/report-share-links";
+import { shareRequestContext } from "@/lib/projects/report-share/request-context";
 import type { ShareLinkFigures } from "@/lib/projects/report-share/shared-snapshot";
-import { getClientIp } from "@/lib/rate-limit";
 import { loadProjectReportViewer } from "@/lib/reports/project-billable-report";
 import { canViewProjectReports } from "@/lib/reports/project-report-access";
 
@@ -73,14 +72,7 @@ function shareLinkActor() {
 }
 
 function requestContext() {
-	return Effect.promise(async (): Promise<RequestContext> => {
-		const requestHeaders = await headers();
-		const ipAddress = getClientIp(new Request("http://localhost", { headers: requestHeaders }));
-		return {
-			ipAddress: ipAddress === "unknown" ? null : ipAddress,
-			userAgent: requestHeaders.get("user-agent"),
-		};
-	});
+	return Effect.promise(async () => shareRequestContext(await headers()));
 }
 
 function shareTarget(input: unknown): ShareTarget | null {

@@ -18,6 +18,7 @@ import {
 	listShareLinks,
 	listShareLinkViews,
 	openShareLink,
+	shareLinkCreatorLocale,
 	sweepShareLinks,
 } from "./report-share-links";
 import { shareLinkFixture } from "./testing/share-link.fixture";
@@ -139,6 +140,24 @@ describe("opening report share links on PostgreSQL", () => {
 			revoked_at: new Date("2026-10-02T09:00:00Z"),
 			revoked_by: null,
 		});
+	});
+
+	it("gives the creator's language only for a live link, so the page language never tells dead tokens apart", async () => {
+		const live = await create(pm(), { target: { kind: "project", projectId: ids.website } });
+		const expiring = await create(pm(), {
+			target: { kind: "project", projectId: ids.website },
+			expiresInDays: 1,
+		});
+		const revoked = await create(pm(), { target: { kind: "project", projectId: ids.website } });
+		await admin.query(
+			"update report_share_link set revoked_at = now(), revoke_reason = 'manual', snapshot = null where id = $1",
+			[revoked.id],
+		);
+
+		expect(await shareLinkCreatorLocale(db, live.token, later)).toBe("de");
+		for (const token of [expiring.token, revoked.token, "A".repeat(43)]) {
+			expect(await shareLinkCreatorLocale(db, token, later)).toBeNull();
+		}
 	});
 
 	it("stops a customer link at once when its creator loses one of its two projects", async () => {

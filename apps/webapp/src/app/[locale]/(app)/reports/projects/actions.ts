@@ -297,8 +297,8 @@ export async function getProjectDetailedReport(
 					readerUserId: authContext.user.id,
 					viewer,
 					projectId,
-					startDate,
-					endDate,
+					// Completed work by the employee-local day of its start (#794, #902).
+					range: reportDayRangeFromDates(startDate, endDate),
 				});
 
 				span.setAttribute("report.total_hours", report.summary.totalHours);

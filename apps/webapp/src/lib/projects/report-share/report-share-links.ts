@@ -16,6 +16,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
+import { organization, user } from "@/db/auth-schema";
 import {
 	customer,
 	employee,
@@ -24,7 +25,6 @@ import {
 	reportShareLink,
 	reportShareLinkView,
 } from "@/db/schema";
-import { organization, user } from "@/db/auth-schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
@@ -52,8 +52,8 @@ import {
 	shareLinkTokenMatches,
 } from "./share-link-token";
 import {
-	type ShareLinkFigures,
 	type SharedSnapshot,
+	type ShareLinkFigures,
 	takeCustomerSnapshot,
 	takeProjectSnapshot,
 } from "./shared-snapshot";
@@ -76,8 +76,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const SHARE_PERMISSION_MESSAGE = "You don't have permission to share this report";
 
-function utcMidnight(day: Temporal.PlainDate): Date {
-	return dateFromInstant(day.toZonedDateTime("UTC").toInstant());
+function isPastExpiry(link: Pick<LinkRow, "expiresAt">, now: Temporal.Instant): boolean {
+	return Temporal.Instant.compare(instantFromDate(link.expiresAt), now) <= 0;
 }
 
 // ============================================
@@ -247,10 +247,13 @@ export async function revokeShareLinksCreatorsCannotSee(
 	});
 }
 
-/** Marks every live link past its expiry as expired and deletes its snapshot. */
+/**
+ * Marks every live link past its expiry as expired and deletes its snapshot;
+ * only `link` (within its organization) when given.
+ */
 export async function expireShareLinks(
 	client: DatabaseClient,
-	input: { now: Temporal.Instant; linkId?: string },
+	input: { now: Temporal.Instant; link?: Pick<LinkRow, "id" | "organizationId"> },
 ): Promise<number> {
 	const expired = await client
 		.update(reportShareLink)
@@ -263,7 +266,12 @@ export async function expireShareLinks(
 			and(
 				isNull(reportShareLink.revokedAt),
 				lte(reportShareLink.expiresAt, dateFromInstant(input.now)),
-				...(input.linkId ? [eq(reportShareLink.id, input.linkId)] : []),
+				...(input.link
+					? [
+							eq(reportShareLink.id, input.link.id),
+							eq(reportShareLink.organizationId, input.link.organizationId),
+						]
+					: []),
 			),
 		)
 		.returning({ id: reportShareLink.id });
@@ -320,6 +328,11 @@ export async function revokeShareLink(
 	if (!link) return { ok: false, reason: "not_found" };
 	if (link.createdBy !== input.actor.userId && !input.actor.isOrganizationAdmin) {
 		return { ok: false, reason: "forbidden" };
+	}
+	// A link past its expiry already stopped: it is recorded as expired, not revoked.
+	if (isPastExpiry(link, input.now)) {
+		await expireShareLinks(client, { now: input.now, link });
+		return { ok: true };
 	}
 	await withAuditTrail((audit) =>
 		client.transaction((tx) =>
@@ -420,8 +433,7 @@ export function createShareLink(input: CreateShareLinkInput) {
 				readerUserId: input.creator.userId,
 				viewer: input.viewer,
 				projectId,
-				startDate: utcMidnight(range.fromDay),
-				endDate: utcMidnight(range.toDay),
+				range,
 			});
 			if (input.figures === "revenue" && !report.billableTime) {
 				return yield* Effect.fail(
@@ -585,7 +597,7 @@ function linkStatus(
 	now: Temporal.Instant,
 ): ShareLinkStatus {
 	if (link.revokedAt) return link.revokeReason === "expired" ? "expired" : "revoked";
-	return Temporal.Instant.compare(instantFromDate(link.expiresAt), now) <= 0 ? "expired" : "active";
+	return isPastExpiry(link, now) ? "expired" : "active";
 }
 
 /**
@@ -786,13 +798,19 @@ async function findByToken(client: Client, token: string): Promise<LinkRow | nul
 	return shareLinkTokenMatches(token, link.tokenDigest) ? link : null;
 }
 
-/** The creator's UI language of a token's link, for recipients whose browser language Z8 lacks. */
+/**
+ * The creator's UI language of a token's live link, for recipients whose
+ * browser language Z8 lacks. Null for unknown, expired and revoked tokens
+ * alike, so the page's language never tells them apart.
+ */
 export async function shareLinkCreatorLocale(
 	client: DatabaseClient,
 	token: string,
+	now: Temporal.Instant,
 ): Promise<string | null> {
 	const link = await findByToken(client, token);
-	return link?.creatorLocale ?? null;
+	if (!link || link.revokedAt || !link.snapshot || isPastExpiry(link, now)) return null;
+	return link.creatorLocale;
 }
 
 /**
@@ -806,8 +824,8 @@ export async function openShareLink(
 ): Promise<OpenedShareLink> {
 	const link = await findByToken(client, input.token);
 	if (!link || link.revokedAt || !link.snapshot) return UNAVAILABLE;
-	if (Temporal.Instant.compare(instantFromDate(link.expiresAt), input.now) <= 0) {
-		await expireShareLinks(client, { now: input.now, linkId: link.id });
+	if (isPastExpiry(link, input.now)) {
+		await expireShareLinks(client, { now: input.now, link });
 		return UNAVAILABLE;
 	}
 	if (!(await creatorSeesEveryProject(client, link))) {

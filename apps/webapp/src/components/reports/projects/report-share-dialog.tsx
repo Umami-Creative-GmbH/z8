@@ -29,7 +29,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
+import {
+	TFormControl,
+	TFormDescription,
+	TFormItem,
+	TFormLabel,
+} from "@/components/ui/tanstack-form";
 import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import type { ShareTarget } from "@/lib/projects/report-share/report-share-links";
 import {
@@ -86,12 +91,13 @@ export function ReportShareDialog({
 		"dateMedium",
 	);
 
+	const defaultValues: ShareFormValues = {
+		figures: "hours",
+		includeEmployees: false,
+		expiresInDays: String(SHARE_LINK_DEFAULT_EXPIRY_DAYS),
+	};
 	const form = useForm({
-		defaultValues: {
-			figures: "hours",
-			includeEmployees: false,
-			expiresInDays: String(SHARE_LINK_DEFAULT_EXPIRY_DAYS),
-		} as ShareFormValues,
+		defaultValues,
 		onSubmit: async ({ value }) => {
 			const result = await createReportShareLink({
 				...target,
@@ -242,24 +248,20 @@ export function ReportShareDialog({
 						{isProject && (
 							<form.Field name="includeEmployees">
 								{(field) => (
-									<div className="flex items-start justify-between gap-4 rounded-lg border p-3">
-										<div className="space-y-1">
-											<Label htmlFor="share-include-employees">
-												{t("reports.share.form.employees", "Employee breakdown")}
-											</Label>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"reports.share.form.employeesDescription",
-													"Shows each employee's hours under their real name.",
-												)}
-											</p>
-										</div>
-										<Switch
-											id="share-include-employees"
-											checked={field.state.value}
-											onCheckedChange={field.handleChange}
-										/>
-									</div>
+									<TFormItem className="grid-cols-[1fr_auto] items-start gap-x-4 rounded-lg border p-3">
+										<TFormLabel>
+											{t("reports.share.form.employees", "Employee breakdown")}
+										</TFormLabel>
+										<TFormControl className="row-span-2">
+											<Switch checked={field.state.value} onCheckedChange={field.handleChange} />
+										</TFormControl>
+										<TFormDescription className="text-xs">
+											{t(
+												"reports.share.form.employeesDescription",
+												"Shows each employee's hours under their real name.",
+											)}
+										</TFormDescription>
+									</TFormItem>
 								)}
 							</form.Field>
 						)}

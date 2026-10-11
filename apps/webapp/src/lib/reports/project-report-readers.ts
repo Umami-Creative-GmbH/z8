@@ -9,8 +9,10 @@ import "server-only";
 
 import { and, eq, inArray, isNotNull, type SQL, sql } from "drizzle-orm";
 import { Effect } from "effect";
+import type { Temporal } from "temporal-polyfill";
 import { customer, employee, project, workPeriod } from "@/db/schema";
 import type { ReportedWork } from "@/lib/billable-time/report-figures";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { listProjectTasks } from "@/lib/projects/project-tasks";
@@ -19,12 +21,11 @@ import {
 	buildCustomerBillableReport,
 	prepareBillableReportPricing,
 } from "./project-billable-report";
-import { readProjectReportCustomFields } from "./project-report-custom-fields";
 import type { ProjectReportViewer } from "./project-report-access";
+import { readProjectReportCustomFields } from "./project-report-custom-fields";
 import {
 	loadReportedProjectWork,
 	type ReportDayRange,
-	reportDayRangeFromDates,
 	reportedWorkDay,
 } from "./project-report-work";
 import { buildProjectTaskBreakdown } from "./project-task-breakdown";
@@ -102,9 +103,14 @@ export function statusConditions(statusFilter: string[] | undefined) {
 		: [];
 }
 
+/** A report day's UTC midnight, the instant the report period is serialized as. */
+function utcMidnight(day: Temporal.PlainDate): Date {
+	return dateFromInstant(day.toZonedDateTime("UTC").toInstant());
+}
+
 /**
- * One project's detailed report for the period between two UTC midnights (the
- * days the report filter chose). The caller checked `canViewProjectReport`.
+ * One project's detailed report for the report's calendar days, both
+ * inclusive. The caller checked `canViewProjectReport`.
  */
 export function readProjectDetailedReport(input: {
 	organizationId: string;
@@ -112,11 +118,13 @@ export function readProjectDetailedReport(input: {
 	readerUserId: string;
 	viewer: ProjectReportViewer;
 	projectId: string;
-	startDate: Date;
-	endDate: Date;
+	range: ReportDayRange;
 }) {
 	return Effect.gen(function* () {
-		const { organizationId, viewer, projectId, startDate, endDate } = input;
+		const { organizationId, viewer, projectId, range } = input;
+		// The period is serialized as the days' UTC midnights, as the report filter sends them.
+		const startDate = utcMidnight(range.fromDay);
+		const endDate = utcMidnight(range.toDay);
 		const dbService = yield* DatabaseService;
 
 		// Get project details
@@ -133,7 +141,6 @@ export function readProjectDetailedReport(input: {
 		}
 
 		// Completed work by the employee-local day of its start (#794, #902).
-		const range = reportDayRangeFromDates(startDate, endDate);
 		// Custom fields the reader's base role sees, as of the period's last day (#820).
 		const customFields = yield* dbService.query("getProjectReportCustomFields", () =>
 			readProjectReportCustomFields(dbService.db, {
@@ -224,7 +231,7 @@ export function readProjectDetailedReport(input: {
 		const remainingBudgetHours = budgetHours ? budgetHours - totalHours : null;
 
 		// Days in period for average calculation
-		const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+		const daysDiff = range.fromDay.until(range.toDay, { largestUnit: "days" }).days;
 		const averageHoursPerDay = daysDiff > 0 ? totalHours / daysDiff : 0;
 
 		// Time series by the employee-local day each work period started on.

@@ -879,8 +879,8 @@ export async function removeProjectManager(
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
 
 				// A share link stops once its creator no longer sees every project in it (#806).
-				yield* Effect.promise(() =>
-					revokeShareLinksAfterAccessChange({
+				yield* actor.dbService.query("reportShareLink.revokeAfterManagerRemoval", () =>
+					revokeShareLinksAfterAccessChange(actor.dbService.db, {
 						organizationId: existingProject.organizationId,
 						creator: { employeeId },
 						actorUserId: session.user.id,

@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { openShareLink } from "@/lib/projects/report-share/report-share-links";
-import { getClientIp } from "@/lib/rate-limit";
+import { shareRequestContext } from "@/lib/projects/report-share/request-context";
 import { getTranslate } from "@/tolgee/server";
 
 export const metadata: Metadata = {
@@ -48,15 +48,10 @@ function SharePageLoading() {
 async function SharePageContent({ params }: SharePageProps) {
 	const { locale, token } = await params;
 	await connection();
-	const requestHeaders = await headers();
-	const ipAddress = getClientIp(new Request("http://localhost", { headers: requestHeaders }));
 	const opened = await openShareLink(db, {
 		token,
 		now: systemClock.nowInstant(),
-		request: {
-			ipAddress: ipAddress === "unknown" ? null : ipAddress,
-			userAgent: requestHeaders.get("user-agent"),
-		},
+		request: shareRequestContext(await headers()),
 	});
 
 	if (opened.status === "unavailable") {

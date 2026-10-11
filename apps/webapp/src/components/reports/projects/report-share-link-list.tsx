@@ -121,6 +121,27 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 		"dateMedium",
 	);
 
+	function statusLine(): string {
+		if (link.status === "active") {
+			return t("reports.share.list.expires", "Expires {date}", { date: at(link.expiresAt) });
+		}
+		const date = at(link.revokedAt ?? link.expiresAt);
+		if (link.status === "expired") {
+			return t("reports.share.list.expired", "Expired {date}", { date });
+		}
+		if (link.revokeReason === "creator_lost_access") {
+			return t(
+				"reports.share.list.revokedAutomatically",
+				"Revoked automatically on {date}: the creator no longer sees every project in it",
+				{ date },
+			);
+		}
+		return t("reports.share.list.revokedBy", "Revoked by {name} on {date}", {
+			name: link.revokedByName ?? t("reports.share.list.someone", "someone"),
+			date,
+		});
+	}
+
 	async function revoke() {
 		setRevoking(true);
 		const result = await revokeReportShareLink(link.id);
@@ -168,22 +189,7 @@ function ReportShareLinkRow({ link, showReport }: { link: ShareLinkSummary; show
 					date: at(link.createdAt),
 				})}
 				{" · "}
-				{link.status === "active"
-					? t("reports.share.list.expires", "Expires {date}", { date: at(link.expiresAt) })
-					: link.status === "expired"
-						? t("reports.share.list.expired", "Expired {date}", {
-								date: at(link.revokedAt ?? link.expiresAt),
-							})
-						: link.revokeReason === "creator_lost_access"
-							? t(
-									"reports.share.list.revokedAutomatically",
-									"Revoked automatically on {date}: the creator no longer sees every project in it",
-									{ date: at(link.revokedAt ?? link.expiresAt) },
-								)
-							: t("reports.share.list.revokedBy", "Revoked by {name} on {date}", {
-									name: link.revokedByName ?? "—",
-									date: at(link.revokedAt ?? link.expiresAt),
-								})}
+				{statusLine()}
 			</p>
 			<div className="flex flex-wrap items-center gap-2">
 				<Button
