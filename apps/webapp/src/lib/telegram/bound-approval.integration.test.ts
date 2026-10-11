@@ -546,7 +546,7 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 		expect(card.text).toContain("Mitarbeiter: Avery Requester");
 		expect(card.text).toContain("Kategorie: Vacation");
 		expect(card.text).toContain("Termine: 3. Aug. 2026 – 4. Aug. 2026");
-		expect(card.text).toContain("Vertretung: Ganze Tage");
+		expect(card.text).toContain("Abdeckung: Ganze Tage");
 		expect(card.text).toMatch(/Eingereicht: .+ \(Europe\/Berlin\)/);
 		// Free text stays in authenticated review.
 		expect(card.text).not.toContain("Private note");
