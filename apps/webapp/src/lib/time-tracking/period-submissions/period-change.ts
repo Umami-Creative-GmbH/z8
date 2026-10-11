@@ -1,8 +1,8 @@
 import type { Instant } from "@/lib/datetime/temporal-core";
 import {
-	closedRangeTouchedByWork,
 	type DayRange,
 	type WorkInterval,
+	workTouchesInstantRange,
 } from "@/lib/time-tracking/closed-months/rules";
 import { periodDaysOverlap } from "./period-overlap";
 
@@ -32,17 +32,8 @@ export interface SubmittedPeriodRange {
  * not); absence days match by the period's local days.
  */
 export function periodChangeTouches(change: PeriodChange, period: SubmittedPeriodRange): boolean {
-	const work = change.work ?? [];
-	if (
-		work.length > 0 &&
-		closedRangeTouchedByWork(work, [
-			{
-				month: period.startDate.slice(0, 7),
-				start: period.rangeStart,
-				endExclusive: period.rangeEnd,
-			},
-		])
-	) {
+	const range = { start: period.rangeStart, endExclusive: period.rangeEnd };
+	if ((change.work ?? []).some((interval) => workTouchesInstantRange(interval, range))) {
 		return true;
 	}
 	return (change.days ?? []).some((days) =>

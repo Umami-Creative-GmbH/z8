@@ -1,7 +1,7 @@
 import { and, asc, eq, gt, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
 import { absenceEntry, approvalRequest, approvalWorkflow, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
-import { closedRangeTouchedByWork } from "@/lib/time-tracking/closed-months/rules";
+import { workTouchesInstantRange } from "@/lib/time-tracking/closed-months/rules";
 import type { PeriodSubmissionDatabase } from "./submission-store";
 
 /**
@@ -98,9 +98,7 @@ export async function findPeriodSubmissionBlockers(
 		.orderBy(asc(workPeriod.startTime), asc(workPeriod.id));
 
 	const blockers: PeriodSubmissionBlocker[] = [];
-	const touchRange = [
-		{ month: period.startDate, start: period.range.start, endExclusive: period.range.end },
-	];
+	const touchRange = { start: period.range.start, endExclusive: period.range.end };
 	for (const row of work) {
 		const base = {
 			workPeriodId: row.id,
@@ -113,8 +111,8 @@ export async function findPeriodSubmissionBlockers(
 			if (row.startTime.getTime() >= start.getTime()) blockers.push({ kind: "live_work", ...base });
 			continue;
 		}
-		const touched = closedRangeTouchedByWork(
-			[{ start: instantFromDate(row.startTime), end: instantFromDate(row.endTime) }],
+		const touched = workTouchesInstantRange(
+			{ start: instantFromDate(row.startTime), end: instantFromDate(row.endTime) },
 			touchRange,
 		);
 		if (!touched) continue;
