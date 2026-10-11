@@ -164,40 +164,65 @@ describe("period submission cards on PostgreSQL", () => {
 		expect(rows).toEqual([{ approval_request_id: null, assigned: true, controls: "actionable" }]);
 	});
 
+	const pressCard = (
+		bindingId: string,
+		action: "approve" | "reject",
+		invocationId: string,
+		reason?: string,
+	) =>
+		decideBoundPeriodSubmissionInvocation({
+			database: db,
+			organizationId,
+			actorEmployeeId: manager.employeeId,
+			actorUserId: manager.userId,
+			bindingId,
+			action,
+			...(reason === undefined ? {} : { reason }),
+			invocation: {
+				identity: {
+					organizationId,
+					scheme: "telegram_callback_query",
+					schemeVersion: 1,
+					receiverScope: "telegram-bot:1059",
+					invocationId,
+				},
+				deliveryId: `update-${invocationId}`,
+				providerActorId: "telegram-user-1059",
+			},
+		});
+
+	it("offers Reject only as the review link: a reject press decides nothing", async () => {
+		await deliver();
+		expect(sent.cards).toEqual([expect.objectContaining({ rejectInReview: true })]);
+		const card = sent.cards[0] as { bindingId: string };
+		await expect(
+			pressCard(card.bindingId, "reject", "callback-reject", "Rejected via Telegram"),
+		).resolves.toEqual({ status: "review_required", reason: "reason_required" });
+		const { rows } = await fixture.pool.query<{ status: string }>(
+			"select status from period_submission where organization_id = $1",
+			[organizationId],
+		);
+		expect(rows).toEqual([{ status: "pending" }]);
+		await expect(pressCard(card.bindingId, "approve", "callback-approve")).resolves.toMatchObject({
+			status: "decided",
+			replayed: false,
+		});
+	});
+
 	it("decides from the bound card, refreshes the card, and replays the same invocation", async () => {
 		await deliver();
 		const card = sent.cards[0] as { bindingId: string };
-		const press = (invocationId: string) =>
-			decideBoundPeriodSubmissionInvocation({
-				database: db,
-				organizationId,
-				actorEmployeeId: manager.employeeId,
-				actorUserId: manager.userId,
-				bindingId: card.bindingId,
-				action: "reject",
-				reason: "Rejected via Telegram",
-				invocation: {
-					identity: {
-						organizationId,
-						scheme: "telegram_callback_query",
-						schemeVersion: 1,
-						receiverScope: "telegram-bot:1059",
-						invocationId,
-					},
-					deliveryId: "update-1",
-					providerActorId: "telegram-user-1059",
-				},
-			});
+		const press = (invocationId: string) => pressCard(card.bindingId, "approve", invocationId);
 		const first = await press("callback-1");
 		expect(first).toMatchObject({ status: "decided", replayed: false });
 		await expect(press("callback-1")).resolves.toMatchObject({ status: "decided", replayed: true });
 		await expect(press("callback-2")).resolves.toMatchObject({ status: "review_required" });
 
-		const { rows } = await fixture.pool.query<{ status: string; decision_reason: string }>(
-			"select status, decision_reason from period_submission where organization_id = $1",
+		const { rows } = await fixture.pool.query<{ status: string }>(
+			"select status from period_submission where organization_id = $1",
 			[organizationId],
 		);
-		expect(rows).toEqual([{ status: "rejected", decision_reason: "Rejected via Telegram" }]);
+		expect(rows).toEqual([{ status: "approved" }]);
 
 		await deliver();
 		expect(sent.refreshes).toHaveLength(1);
