@@ -73,6 +73,29 @@ describe("close warnings about period submissions on PostgreSQL", () => {
 		]);
 	});
 
+	it("names a week still running when the month ends as running, not missing", async () => {
+		const org = await weeklyOrganization();
+		const person = await fixture.employee({ organizationId: org.organizationId });
+
+		// Closing March on Thursday 2 April: the week 30 March – 5 April has not ended.
+		const warnings = await monthCloseWarnings(fixture.db, {
+			organizationId: org.organizationId,
+			month: "2026-03",
+			scope: { kind: "organization" },
+			now: parseInstant("2026-04-02T12:00:00Z"),
+		});
+
+		const own = warnings.filter((warning) => warning.employeeId === person.employeeId);
+		expect(own.at(-1)).toMatchObject({
+			startDate: "2026-03-30",
+			endDate: "2026-04-05",
+			status: "running",
+		});
+		expect(own.slice(0, -1).every((warning) => warning.status === "awaiting_submission")).toBe(
+			true,
+		);
+	});
+
 	it("does not block the close for missing submissions", async () => {
 		const org = await weeklyOrganization();
 		const person = await fixture.employee({ organizationId: org.organizationId });

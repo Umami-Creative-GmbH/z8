@@ -265,3 +265,27 @@ export function scheduledSubmissionPeriods(
 	});
 	return periods;
 }
+
+/**
+ * Local days `[from, to]` widened so they cover the same days in every timezone: any zone's date
+ * is within a day of UTC's, so a reader that learns each employee's zone only later reads a day
+ * more on each side.
+ */
+export function widenedForEveryZone(window: { from: PlainDate; to: PlainDate }): {
+	from: PlainDate;
+	to: PlainDate;
+} {
+	return { from: window.from.subtract({ days: 1 }), to: window.to.add({ days: 1 }) };
+}
+
+/** The UTC days from `before` days before `now` to `after` days after it, widened for every zone. */
+export function daysAroundForEveryZone(
+	now: Instant,
+	around: { before: number; after: number },
+): { from: PlainDate; to: PlainDate } {
+	const utcToday = plainDateAt(now, "UTC");
+	return widenedForEveryZone({
+		from: utcToday.subtract({ days: around.before }),
+		to: utcToday.add({ days: around.after }),
+	});
+}

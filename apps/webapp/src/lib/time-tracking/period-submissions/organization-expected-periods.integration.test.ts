@@ -1,5 +1,6 @@
 /**
- * #1063: the batched expected-period reader agrees with the per-employee reader (#1057).
+ * #1063: the one expected-period reader gives each employee read together with others the same
+ * periods as reading that employee alone, so no employee's facts leak into another's.
  *
  * Local contract: pnpm --filter webapp test:integration
  */
@@ -41,7 +42,7 @@ describe("expected submission periods of several employees read from PostgreSQL"
 		await fixture?.close();
 	});
 
-	it("matches the per-employee reader for each employee, leaving out other organizations", async () => {
+	it("reads each employee among others as alone, leaving out other organizations", async () => {
 		const plain = await fixture.seedEmployee({ organizationId });
 		const away = await fixture.seedEmployee({ organizationId });
 		const categoryId = randomUUID();
@@ -99,6 +100,11 @@ describe("expected submission periods of several employees read from PostgreSQL"
 			});
 			expect(ranges(batched.get(person.employeeId))).toEqual(ranges(single));
 		}
+		expect(ranges(batched.get(plain.employeeId))).toEqual([
+			"2026-03-09..2026-03-15",
+			"2026-03-16..2026-03-22",
+			"2026-03-23..2026-03-29",
+		]);
 		expect(ranges(batched.get(away.employeeId))).toEqual([
 			"2026-03-09..2026-03-15",
 			"2026-03-23..2026-03-29",

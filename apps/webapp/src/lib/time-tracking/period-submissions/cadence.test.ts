@@ -1,7 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { submissionCadenceStatusAt } from "./cadence";
+import { daysAroundForEveryZone, submissionCadenceStatusAt } from "./cadence";
 
 const at = (value: string) => Temporal.Instant.from(value);
 
@@ -51,5 +51,16 @@ describe("submissionCadenceStatusAt", () => {
 				upcoming: { cadence: { kind: "monthly" }, fromDate: parsePlainDate("2026-06-01") },
 			},
 		);
+	});
+});
+
+describe("daysAroundForEveryZone", () => {
+	it("widens the UTC days by a day on each side, so every zone's days are covered", () => {
+		const window = daysAroundForEveryZone(Temporal.Instant.from("2026-03-10T23:30:00Z"), {
+			before: 7,
+			after: 0,
+		});
+		// It is already 11 March east of UTC and still 10 March far west of it.
+		expect([window.from.toString(), window.to.toString()]).toEqual(["2026-03-02", "2026-03-11"]);
 	});
 });

@@ -2,10 +2,12 @@ import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetim
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
 import {
 	isPeriodSubmittable,
+	latestSubmissionByPeriod,
 	type PeriodSubmissionClosedCause,
 	type PeriodSubmissionStatus,
 	type PeriodSubmissionViewStatus,
 	periodSubmissionViewStatus,
+	showsSubmittedRange,
 } from "./submission-status";
 
 /** One period of the employee's period view (#1059). Plain data; crosses to the client. */
@@ -42,13 +44,7 @@ export function buildEmployeePeriodView(input: {
 	submissions: readonly PeriodViewSubmission[];
 	today: PlainDate;
 }): EmployeePeriodViewRow[] {
-	const latest = new Map<string, PeriodViewSubmission>();
-	for (const submission of input.submissions) {
-		const current = latest.get(submission.startDate);
-		if (!current || submission.submittedAt.getTime() > current.submittedAt.getTime()) {
-			latest.set(submission.startDate, submission);
-		}
-	}
+	const latest = latestSubmissionByPeriod(input.submissions);
 	const expected = new Map(input.periods.map((period) => [period.startDate.toString(), period]));
 	const starts = new Set([...expected.keys(), ...latest.keys()]);
 	const rows: EmployeePeriodViewRow[] = [];
@@ -58,7 +54,7 @@ export function buildEmployeePeriodView(input: {
 		const submission = latest.get(startDate) ?? null;
 		const status = periodSubmissionViewStatus(submission);
 		const endDate =
-			submission && status !== "awaiting_submission" && status !== "sent_back_after_change"
+			submission && showsSubmittedRange(status)
 				? submission.endDate
 				: (period?.endDate.toString() ?? submission?.endDate ?? startDate);
 		rows.push({

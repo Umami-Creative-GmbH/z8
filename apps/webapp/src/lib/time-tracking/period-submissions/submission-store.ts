@@ -182,7 +182,7 @@ export async function loadPeriodSubmissionByWorkflow(
 
 /**
  * Every submission of one employee whose period starts in `[from, to]`, newest first within a
- * period. The first row per `startDate` is the period's latest submission.
+ * period (`latestSubmissionByPeriod` picks each period's latest).
  */
 export async function listEmployeePeriodSubmissions(
 	database: PeriodSubmissionDatabase,
@@ -204,20 +204,6 @@ export async function listEmployeePeriodSubmissions(
 			desc(periodSubmission.submittedAt),
 			desc(periodSubmission.id),
 		);
-}
-
-/** The latest submission of each period in a list (rows from `listEmployeePeriodSubmissions`). */
-export function latestSubmissionByPeriod(
-	rows: readonly PeriodSubmissionRow[],
-): Map<string, PeriodSubmissionRow> {
-	const latest = new Map<string, PeriodSubmissionRow>();
-	for (const row of rows) {
-		const current = latest.get(row.startDate);
-		if (!current || row.submittedAt.getTime() > current.submittedAt.getTime()) {
-			latest.set(row.startDate, row);
-		}
-	}
-	return latest;
 }
 
 /**
@@ -330,6 +316,7 @@ export async function outdateApprovedPeriodSubmission(
 export type PeriodSubmissionAuditAction =
 	| AuditAction.PERIOD_SUBMISSION_SUBMITTED
 	| AuditAction.PERIOD_SUBMISSION_APPROVED
+	| AuditAction.PERIOD_SUBMISSION_STAGE_APPROVED
 	| AuditAction.PERIOD_SUBMISSION_REJECTED
 	| AuditAction.PERIOD_SUBMISSION_WITHDRAWN
 	| AuditAction.PERIOD_SUBMISSION_OUTDATED;

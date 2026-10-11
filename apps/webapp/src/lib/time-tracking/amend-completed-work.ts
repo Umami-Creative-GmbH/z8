@@ -945,7 +945,12 @@ export async function amendCompletedWork(
 		];
 		await assertWorkOpen(tx, { organizationId, employeeId, intervals });
 		// The same change sends a submitted period back to the employee (#1062).
-		await sendBackChangedPeriodSubmissions(tx, { organizationId, employeeId, work: intervals });
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId,
+			employeeId,
+			causedByUserId: input.actorUserId,
+			work: intervals,
+		});
 	}
 
 	// Correction entries: exact predecessor from the append collaborator.
@@ -1328,6 +1333,16 @@ async function amendActiveAttribution(
 		)
 		.returning({ id: workPeriod.id });
 	if (updated.length !== 1) throw staleSource();
+	// Live work's attribution covers it from its start on: submitted periods it touches go
+	// back to the employee (#805).
+	if (Object.values(changes).some(Boolean)) {
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId,
+			employeeId,
+			causedByUserId: input.actorUserId,
+			work: [{ start: instantFromDate(period.startTime), end: null }],
+		});
+	}
 
 	const [clockIn] = await tx
 		.select({ utcOffsetMinutes: timeEntry.utcOffsetMinutes })

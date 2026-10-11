@@ -65,22 +65,30 @@ export function employeeMonthRange(
 }
 
 /**
+ * Whether work touches a fixed instant range `[start, endExclusive)`, even in part: the rule of
+ * closed months (Time Tracking ADR-0004), shared with submitted periods (#805). A moment equal to
+ * the range's start is inside it; its exclusive end is not. Live work reaches every later range.
+ */
+export function workTouchesInstantRange(
+	interval: WorkInterval,
+	range: { start: Instant; endExclusive: Instant },
+): boolean {
+	const startsBeforeRangeEnds = compareInstants(interval.start, range.endExclusive) < 0;
+	const reachesRange = interval.end === null || compareInstants(interval.end, range.start) >= 0;
+	return startsBeforeRangeEnds && reachesRange;
+}
+
+/**
  * The first closed range any of the intervals touches, even in part. A writer
- * passes the work before and after its change. A moment equal to a range's
- * start is inside it; its exclusive end is not.
+ * passes the work before and after its change.
  */
 export function closedRangeTouchedByWork(
 	intervals: readonly WorkInterval[],
 	ranges: readonly ClosedRange[],
 ): ClosedRange | null {
 	for (const interval of intervals) {
-		for (const range of ranges) {
-			const startsBeforeRangeEnds = compareInstants(interval.start, range.endExclusive) < 0;
-			const reachesRange = interval.end === null || compareInstants(interval.end, range.start) >= 0;
-			if (startsBeforeRangeEnds && reachesRange) {
-				return range;
-			}
-		}
+		const range = ranges.find((candidate) => workTouchesInstantRange(interval, candidate));
+		if (range) return range;
 	}
 	return null;
 }

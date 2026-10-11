@@ -1,6 +1,7 @@
 import { comparePlainDates, type PlainDate } from "@/lib/datetime/temporal-core";
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
 import {
+	latestSubmissionByPeriod,
 	type PeriodSubmissionClosedCause,
 	type PeriodSubmissionStatus,
 	type PeriodSubmissionViewStatus,
@@ -12,8 +13,11 @@ import {
  * and of payroll readiness. Pure and client-safe; never blocks anything.
  */
 
-/** Every view status but `approved`: what a gap shows. */
-export type PeriodSubmissionGapStatus = Exclude<PeriodSubmissionViewStatus, "approved">;
+/**
+ * Every view status but `approved`: what a gap shows. `running` is a period that has started but
+ * not ended (in the employee's zone) and has no submission yet: not missing, just not due.
+ */
+export type PeriodSubmissionGapStatus = Exclude<PeriodSubmissionViewStatus, "approved"> | "running";
 
 /** One expected period of one employee without an approved submission. */
 export interface PeriodSubmissionGap {
@@ -30,28 +34,28 @@ export interface PeriodSubmissionGapSubmission {
 }
 
 /**
- * The expected periods that ended before `today` (in the employee's zone) whose latest
- * submission is not approved, in order. A period still running is not due, so it is no gap.
+ * The expected periods that have started by `today` (in the employee's zone) whose latest
+ * submission is not approved, in order. A period still running without a submission is not due:
+ * it shows as `running`, never as missing. A period not started yet is no gap.
  */
 export function periodSubmissionGaps(input: {
 	periods: readonly ExpectedSubmissionPeriod[];
 	submissions: readonly PeriodSubmissionGapSubmission[];
 	today: PlainDate;
 }): PeriodSubmissionGap[] {
-	const latest = new Map<string, PeriodSubmissionGapSubmission>();
-	for (const submission of input.submissions) {
-		const current = latest.get(submission.startDate);
-		if (!current || submission.submittedAt.getTime() > current.submittedAt.getTime()) {
-			latest.set(submission.startDate, submission);
-		}
-	}
+	const latest = latestSubmissionByPeriod(input.submissions);
 	const gaps: PeriodSubmissionGap[] = [];
 	for (const period of input.periods) {
-		if (comparePlainDates(period.endDate, input.today) >= 0) continue;
+		if (comparePlainDates(period.startDate, input.today) > 0) continue;
+		const running = comparePlainDates(period.endDate, input.today) >= 0;
 		const startDate = period.startDate.toString();
 		const status = periodSubmissionViewStatus(latest.get(startDate) ?? null);
 		if (status === "approved") continue;
-		gaps.push({ startDate, endDate: period.endDate.toString(), status });
+		gaps.push({
+			startDate,
+			endDate: period.endDate.toString(),
+			status: running && status === "awaiting_submission" ? "running" : status,
+		});
 	}
 	return gaps;
 }

@@ -479,6 +479,7 @@ export async function splitCompletedWork(
 	await sendBackChangedPeriodSubmissions(tx, {
 		organizationId,
 		employeeId,
+		causedByUserId: input.actorUserId,
 		work: [{ start: sourceStart, end: sourceEnd }],
 	});
 

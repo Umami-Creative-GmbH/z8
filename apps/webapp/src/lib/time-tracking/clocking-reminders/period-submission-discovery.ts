@@ -76,6 +76,85 @@ export async function loadSubmittedPeriodEndDates(
 	return submitted;
 }
 
+/** A submitted period the approver decided (#805), with the employee to tell. */
+export interface DecidedPeriodSubmission {
+	submissionId: string;
+	employeeId: string;
+	userId: string;
+	/** The employee's own timezone, otherwise the organization's. */
+	timezone: string;
+	startDate: string;
+	endDate: string;
+	outcome: "approved" | "rejected";
+	reason: string | null;
+	decidedAt: Instant;
+}
+
+/**
+ * The organization's submissions approved or rejected in `[since, now]` whose employee still has
+ * access, oldest first, in one query. An approval a change already put out of date is left to the
+ * sent-back notice.
+ */
+export async function listDecidedPeriodSubmissions(
+	input: {
+		organization: PeriodSubmissionReminderOrganization;
+		since: Instant;
+		now: Instant;
+		limit: number;
+	},
+	database: Database,
+): Promise<DecidedPeriodSubmission[]> {
+	const rows = await database
+		.select({
+			submissionId: periodSubmission.id,
+			employeeId: periodSubmission.employeeId,
+			userId: employee.userId,
+			userTimezone: userSettings.timezone,
+			startDate: periodSubmission.startDate,
+			endDate: periodSubmission.endDate,
+			status: periodSubmission.status,
+			reason: periodSubmission.decisionReason,
+			decidedAt: periodSubmission.decidedAt,
+		})
+		.from(periodSubmission)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, periodSubmission.employeeId),
+				eq(employee.organizationId, periodSubmission.organizationId),
+			),
+		)
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
+		.where(
+			and(
+				eq(periodSubmission.organizationId, input.organization.organizationId),
+				inArray(periodSubmission.status, ["approved", "rejected"]),
+				gte(periodSubmission.decidedAt, dateFromInstant(input.since)),
+				lte(periodSubmission.decidedAt, dateFromInstant(input.now)),
+				employeeHasOrganizationAccess(input.now),
+			),
+		)
+		.orderBy(asc(periodSubmission.decidedAt), asc(periodSubmission.id))
+		.limit(input.limit);
+	return rows.flatMap((row) =>
+		row.decidedAt && (row.status === "approved" || row.status === "rejected")
+			? [
+					{
+						submissionId: row.submissionId,
+						employeeId: row.employeeId,
+						userId: row.userId,
+						timezone: resolveEffectiveTimezone(row.userTimezone, input.organization.timezone),
+						startDate: row.startDate,
+						endDate: row.endDate,
+						outcome: row.status,
+						reason: row.reason,
+						decidedAt: instantFromDate(row.decidedAt),
+					},
+				]
+			: [],
+	);
+}
+
 /** A submitted period a change sent back (#1062), with the employee to tell. */
 export interface SentBackPeriodSubmission {
 	submissionId: string;

@@ -457,6 +457,7 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 		await sendBackChangedPeriodSubmissions(tx, {
 			organizationId: input.organizationId,
 			employeeId: period.employeeId,
+			causedByUserId: input.actorUserId,
 			work: [
 				{
 					start: instantFromTimeCorrectionBoundary(input.expected.startTime),

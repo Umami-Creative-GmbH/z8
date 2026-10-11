@@ -19,7 +19,10 @@ export interface PolicyDayFacts {
 
 type PolicyDayReminderType = Exclude<
 	ClockingReminderType,
-	"break_due_reminder" | "period_submission_reminder" | "period_submission_sent_back"
+	| "break_due_reminder"
+	| "period_submission_reminder"
+	| "period_submission_sent_back"
+	| "period_submission_decided"
 >;
 
 /**

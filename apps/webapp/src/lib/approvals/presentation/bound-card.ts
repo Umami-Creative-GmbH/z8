@@ -57,6 +57,11 @@ export interface ApprovalActionableCard {
 	bindingId: string;
 	approveLabel: string;
 	rejectLabel: string;
+	/**
+	 * Reject needs a reason the card cannot collect: the provider renders Reject as a link to the
+	 * review (`reviewUrl`) instead of a bound control. Approve stays bound.
+	 */
+	rejectInReview?: true;
 }
 
 /**

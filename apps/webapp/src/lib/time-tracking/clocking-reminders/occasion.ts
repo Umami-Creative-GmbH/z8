@@ -8,6 +8,7 @@ export type ClockingReminderType = Extract<
 	| "break_due_reminder"
 	| "period_submission_reminder"
 	| "period_submission_sent_back"
+	| "period_submission_decided"
 >;
 
 /**
@@ -47,7 +48,10 @@ export type ClockingReminderOccasionSource =
 			endDate: PlainDate;
 			stage: SubmissionPeriodReminderStage;
 	  }
-	/** One period submission sent back to the employee after a change (#1062). */
+	/**
+	 * One period submission: sent back to the employee after a change (#1062), or decided (#805).
+	 * A submission is decided at most once, so its key names the decision.
+	 */
 	| { kind: "period_submission"; submissionId: string };
 
 /** The organization-unique key that dedupes one reminder occasion. */
@@ -101,6 +105,13 @@ export interface DueClockingReminder {
 		startDate: PlainDate;
 		endDate: PlainDate;
 		outcome: "withdrawn" | "outdated";
+	};
+	/** The submitted period the approver decided (#805), with the reason of a rejection. */
+	decidedPeriod?: {
+		startDate: PlainDate;
+		endDate: PlainDate;
+		outcome: "approved" | "rejected";
+		reason: string | null;
 	};
 }
 

@@ -8,10 +8,12 @@ import { type SubmissionCadenceChange, scheduledSubmissionPeriods } from "./cade
 import type { ExpectedSubmissionPeriod } from "./expected-periods";
 import {
 	isPeriodSubmittable,
+	latestSubmissionByPeriod,
 	type PeriodSubmissionClosedCause,
 	type PeriodSubmissionStatus,
 	type PeriodSubmissionViewStatus,
 	periodSubmissionViewStatus,
+	showsSubmittedRange,
 } from "./submission-status";
 
 /**
@@ -130,20 +132,6 @@ export interface OverviewEmployee {
 	submissions: readonly OverviewSubmission[];
 }
 
-function latestSubmission(
-	submissions: readonly OverviewSubmission[],
-	startDate: string,
-): OverviewSubmission | null {
-	let latest: OverviewSubmission | null = null;
-	for (const submission of submissions) {
-		if (submission.startDate !== startDate) continue;
-		if (!latest || submission.submittedAt.getTime() > latest.submittedAt.getTime()) {
-			latest = submission;
-		}
-	}
-	return latest;
-}
-
 /**
  * The overview of one selected period: every employee expected to submit it, with the status of
  * their latest submission of their expected range (as the employee's own period view shows it).
@@ -169,16 +157,16 @@ export function buildOverviewRows(input: {
 		);
 		if (!period) continue;
 		const startDate = period.startDate.toString();
-		const submission = latestSubmission(person.submissions, startDate);
+		const submission = latestSubmissionByPeriod(person.submissions).get(startDate) ?? null;
 		const status = periodSubmissionViewStatus(submission);
-		const live = status === "submitted" || status === "approved";
 		const open = comparePlainDates(plainDateAt(input.now, period.timezone), period.endDate) >= 0;
 		counts[status] += 1;
 		rows.push({
 			employeeId: person.employeeId,
 			name: person.name,
 			startDate,
-			endDate: live && submission ? submission.endDate : period.endDate.toString(),
+			endDate:
+				submission && showsSubmittedRange(status) ? submission.endDate : period.endDate.toString(),
 			status,
 			submittedAt: submission ? submission.submittedAt.toISOString() : null,
 			highlighted: open && isPeriodSubmittable(status),

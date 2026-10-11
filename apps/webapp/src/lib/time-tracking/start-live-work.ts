@@ -27,8 +27,6 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { canonicalJson } from "./canonical-json";
-import { assertWorkOpen } from "./closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -42,7 +40,9 @@ import {
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 } from "./close-active-work";
-import { receiptActorColumns, writerActor } from "./receipt-actor";
+import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
+import { humanActorUserId, receiptActorColumns, writerActor } from "./receipt-actor";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkLocationType } from "./work-location";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
@@ -319,9 +319,11 @@ export async function startLiveWorkGraph(
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!period) throw new ClockingConflictError("Failed to create work period");
 	// Work started in a submitted period (e.g. later on its last day) sends it back (#1062).
+	const actor = writerActor(input.writer, input.actorUserId);
 	await sendBackChangedPeriodSubmissions(tx, {
 		organizationId,
 		employeeId,
+		causedByUserId: humanActorUserId(actor),
 		work: [{ start: input.eventInstant, end: input.eventInstant }],
 	});
 
@@ -329,7 +331,7 @@ export async function startLiveWorkGraph(
 		version: START_LIVE_WORK_RESULT_VERSION,
 		operationId: command.operationId,
 		owner: { employeeId },
-		actor: writerActor(input.writer, input.actorUserId),
+		actor,
 		workPeriodId: period.id,
 		clockInEntryId: appended.entry.id,
 		start: {

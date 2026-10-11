@@ -31,7 +31,13 @@ export type BoundPeriodSubmissionInvocationResult =
 	| { status: "decided"; replayed: boolean; evidence: DecisionEvidenceRecord }
 	| {
 			status: "review_required";
-			reason: "binding" | "stale" | "material_change" | "evidence" | "not_admitted";
+			reason:
+				| "binding"
+				| "stale"
+				| "material_change"
+				| "evidence"
+				| "not_admitted"
+				| "reason_required";
 	  }
 	| { status: "conflict" }
 	| { status: "not_found" };
@@ -43,6 +49,9 @@ export type BoundPeriodSubmissionInvocationResult =
  * decides exactly that assignment under the invocation's own receipt, with the binding, the
  * submitted revision and the provider's admission revalidated in the deciding transaction. A
  * card never reaches organization-wide management. Infrastructure errors propagate.
+ *
+ * A card never rejects: a rejection needs the approver's own reason, which a card press cannot
+ * collect, so a reject press asks for the review in Z8 and decides nothing.
  */
 export async function decideBoundPeriodSubmissionInvocation(input: {
 	database: ApprovalDatabase;
@@ -54,18 +63,18 @@ export async function decideBoundPeriodSubmissionInvocation(input: {
 	reason?: string;
 	invocation: BoundTimeInvocation["invocation"];
 }): Promise<BoundPeriodSubmissionInvocationResult> {
+	if (input.action === "reject") return { status: "review_required", reason: "reason_required" };
 	const { database } = input;
 	const bound: BoundTimeInvocation = {
 		reviewedBindingId: input.bindingId,
 		invocation: input.invocation,
 	};
-	const reason = input.action === "reject" ? (input.reason?.trim() ?? "") : null;
 	const command = boundTimeInvocationCommand({
 		bound,
 		actorEmployeeId: input.actorEmployeeId,
 		actorUserId: input.actorUserId,
-		action: input.action,
-		reason,
+		action: "approve",
+		reason: null,
 	});
 	try {
 		const committed = await findCommittedInvocationDecision(database, {
@@ -180,15 +189,11 @@ export async function decideBoundPeriodSubmissionInvocation(input: {
 					idempotencyKey,
 					reviewedBindingId: binding.id,
 					principal: { kind: "employee", userId: input.actorUserId },
-					command:
-						input.action === "approve"
-							? { type: "approve", stageId: binding.stageId, assignmentId: binding.assignmentId }
-							: {
-									type: "reject",
-									stageId: binding.stageId,
-									assignmentId: binding.assignmentId,
-									reason: reason ?? "",
-								},
+					command: {
+						type: "approve",
+						stageId: binding.stageId,
+						assignmentId: binding.assignmentId,
+					},
 				},
 			);
 			if (execution.disposition === "replayed") {

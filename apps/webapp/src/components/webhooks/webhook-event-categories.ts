@@ -27,6 +27,7 @@ export const EVENT_CATEGORIES = {
 			"time_correction_submitted",
 			"time_correction_approved",
 			"time_correction_rejected",
+			"period_submission_decided",
 		],
 	},
 	shifts: {

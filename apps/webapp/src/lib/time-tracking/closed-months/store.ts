@@ -22,7 +22,9 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { periodSubmissionOverlaps } from "@/lib/time-tracking/period-submissions/period-overlap";
 import {
 	acquireOrganizationConfigurationGuard,
 	withOrganizationConfigurationMutation,
@@ -433,11 +435,10 @@ async function closeBlockers(
 				eq(periodSubmission.organizationId, input.organizationId),
 				inArray(periodSubmission.employeeId, ids),
 				eq(periodSubmission.status, "pending"),
-				lte(
-					periodSubmission.startDate,
-					sql`(${first}::date + interval '1 month' - interval '1 day')::date`,
+				periodSubmissionOverlaps(
+					first,
+					parsePlainDate(first).add({ months: 1 }).subtract({ days: 1 }).toString(),
 				),
-				sql`${periodSubmission.endDate} >= ${first}::date`,
 			),
 		)
 		.orderBy(asc(periodSubmission.startDate));

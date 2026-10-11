@@ -84,6 +84,13 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 		);
 	}
 
+	/** The employee's change, made by the manager unless the test says otherwise. */
+	const employeeChange = (causedByUserId: string | null = manager.userId) => ({
+		organizationId,
+		employeeId: employee.employeeId,
+		causedByUserId,
+	});
+
 	const sendBack = (change: Parameters<typeof sendBackChangedPeriodSubmissions>[1]) =>
 		db.transaction((tx) => sendBackChangedPeriodSubmissions(tx, change, { clock: at(CHANGED_AT) }));
 
@@ -137,7 +144,7 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 		const submitted = await submit();
 
 		await expect(
-			sendBack({ organizationId, employeeId: employee.employeeId, work: [insideWeek] }),
+			sendBack({ ...employeeChange(), work: [insideWeek] }),
 		).resolves.toEqual({
 			withdrawn: [{ submissionId: submitted.submissionId, workflowId: submitted.workflowId }],
 			outdated: [],
@@ -153,7 +160,12 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 		expect(withdrawn[0]).toMatchObject({
 			entity_id: submitted.submissionId,
 			performed_by: employee.userId,
-			metadata: { closedCause: "change", automatic: true, at: "2026-03-10T09:00:00Z" },
+			metadata: {
+				closedCause: "change",
+				automatic: true,
+				causedByUserId: manager.userId,
+				at: "2026-03-10T09:00:00Z",
+			},
 		});
 	});
 
@@ -162,9 +174,9 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 		await approve(submitted.workflowId);
 
 		await expect(
+			// A system change: nobody signed in made it.
 			sendBack({
-				organizationId,
-				employeeId: employee.employeeId,
+				...employeeChange(null),
 				days: [{ startDate: "2026-03-08", endDate: "2026-03-10" }],
 			}),
 		).resolves.toEqual({ withdrawn: [], outdated: [submitted.submissionId] });
@@ -181,7 +193,12 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 		expect(outdated[0]).toMatchObject({
 			entity_id: submitted.submissionId,
 			performed_by: employee.userId,
-			metadata: { closedCause: "change", automatic: true, startDate: WEEK_START },
+			metadata: {
+				closedCause: "change",
+				automatic: true,
+				causedByUserId: null,
+				startDate: WEEK_START,
+			},
 		});
 		expect(outdated[0]?.timestamp.toISOString()).toBe("2026-03-10T09:00:00.000Z");
 
@@ -198,8 +215,7 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 
 		await expect(
 			sendBack({
-				organizationId,
-				employeeId: employee.employeeId,
+				...employeeChange(),
 				work: [
 					{
 						start: parseInstant("2026-03-09T08:00:00Z"),
@@ -211,7 +227,12 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 		).resolves.toEqual({ withdrawn: [], outdated: [] });
 		// Another employee's change never touches this employee's submission.
 		await expect(
-			sendBack({ organizationId, employeeId: manager.employeeId, work: [insideWeek] }),
+			sendBack({
+				organizationId,
+				employeeId: manager.employeeId,
+				causedByUserId: manager.userId,
+				work: [insideWeek],
+			}),
 		).resolves.toEqual({ withdrawn: [], outdated: [] });
 
 		expect(await submissions()).toMatchObject([{ status: "pending" }]);
@@ -225,6 +246,7 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 			sendBack({
 				organizationId: other.organizationId,
 				employeeId: person.employeeId,
+				causedByUserId: null,
 				work: [insideWeek],
 			}),
 		).resolves.toEqual({ withdrawn: [], outdated: [] });
@@ -237,7 +259,7 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 		]);
 
 		await expect(
-			sendBack({ organizationId, employeeId: employee.employeeId, work: [insideWeek] }),
+			sendBack({ ...employeeChange(), work: [insideWeek] }),
 		).resolves.toMatchObject({ withdrawn: [{ submissionId: submitted.submissionId }] });
 		expect(await workflowStatus(submitted.workflowId)).toBe("cancelled");
 	});
@@ -248,7 +270,7 @@ describe("sending submitted periods back after a change on PostgreSQL", () => {
 			db.transaction(async (tx) => {
 				await sendBackChangedPeriodSubmissions(
 					tx,
-					{ organizationId, employeeId: employee.employeeId, work: [insideWeek] },
+					{ ...employeeChange(), work: [insideWeek] },
 					{ clock: at(CHANGED_AT) },
 				);
 				throw new Error("writer failed");

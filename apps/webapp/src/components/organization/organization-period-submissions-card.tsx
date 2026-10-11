@@ -73,7 +73,8 @@ export function OrganizationPeriodSubmissionsCard({
 	const canEdit = currentMemberRole === "owner" || currentMemberRole === "admin";
 	const invalidDelay = t(
 		"organization.periodSubmissions.invalidDelay",
-		"Enter whole days from 1 to 30.",
+		"Enter whole days from {min} to {max}.",
+		{ min: MIN_SECOND_REMINDER_DELAY_DAYS, max: MAX_SECOND_REMINDER_DELAY_DAYS },
 	);
 	const weekdayLabels: Record<SubmissionWeekday, string> = {
 		monday: t("organization.periodSubmissions.weekday.monday", "Monday"),

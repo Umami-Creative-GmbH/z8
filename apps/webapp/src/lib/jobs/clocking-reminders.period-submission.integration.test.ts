@@ -348,4 +348,94 @@ describe("period submission reminders on PostgreSQL", () => {
 			expect(await notices(overdue)).toEqual([]);
 		});
 	});
+
+	describe("decided (spec #805)", () => {
+		async function decided(
+			person: SeededEmployee,
+			organizationId: string,
+			status: "approved" | "rejected",
+			decidedAt: string,
+			reason: string | null = null,
+		) {
+			const row = await insertPendingPeriodSubmission(fixture.db, {
+				organizationId,
+				employeeId: person.employeeId,
+				cadence: "weekly",
+				weekStartDay: "monday",
+				timezone: "Europe/Berlin",
+				startDate: "2026-03-09",
+				endDate: "2026-03-15",
+				cadenceStartDate: "2026-03-09",
+				cadenceEndDate: "2026-03-15",
+				rangeStart: at("2026-03-08T23:00:00Z"),
+				rangeEnd: at(WEEK_ENDS),
+				submittedBy: person.userId,
+				submittedAt: at("2026-03-15T12:00:00Z"),
+			});
+			await fixture.pool.query(
+				"update period_submission set status = $2, decided_at = $3, decision_reason = $4 where id = $1",
+				[row.id, status, decidedAt, reason],
+			);
+			return row.id;
+		}
+
+		async function notices(person: SeededEmployee) {
+			const { rows } = await fixture.pool.query<{ metadata: string; message: string }>(
+				`select metadata, message from notification
+				 where user_id = $1 and type = 'period_submission_decided' order by created_at`,
+				[person.userId],
+			);
+			return rows.map((row) => ({
+				titleKey: JSON.parse(row.metadata).i18n.titleKey as string,
+				message: row.message,
+			}));
+		}
+
+		it("tells the employee once that their period was approved, or rejected with the reason", async () => {
+			const organizationId = await organization();
+			const approved = await fixture.seedEmployee({ organizationId });
+			const rejected = await fixture.seedEmployee({ organizationId });
+			await decided(approved, organizationId, "approved", "2026-03-16T09:00:00Z");
+			const rejectedId = await decided(
+				rejected,
+				organizationId,
+				"rejected",
+				"2026-03-16T10:00:00Z",
+				"Friday is missing",
+			);
+
+			await Promise.all([run("2026-03-16T10:05:00Z"), run("2026-03-16T10:05:00Z")]);
+			await run("2026-03-17T08:00:00Z");
+
+			expect(await notices(approved)).toEqual([
+				{
+					titleKey: "common:notifications.content.periodSubmissionApproved.title",
+					message: "Your time for Mar 9, 2026 – Mar 15, 2026 was approved.",
+				},
+			]);
+			expect(await notices(rejected)).toEqual([
+				{
+					titleKey: "common:notifications.content.periodSubmissionRejected.title",
+					message:
+						"Your time for Mar 9, 2026 – Mar 15, 2026 was rejected: Friday is missing. Review your time and submit it again.",
+				},
+			]);
+			const { rows } = await fixture.pool.query<{ occasion_key: string }>(
+				`select occasion_key from clocking_reminder_occasion
+				 where employee_id = $1 and type = 'period_submission_decided'`,
+				[rejected.employeeId],
+			);
+			expect(rows).toEqual([
+				{ occasion_key: `period_submission_decided:period_submission:${rejectedId}` },
+			]);
+		});
+
+		it("does not tell the employee once the notice is overdue", async () => {
+			const organizationId = await organization();
+			const person = await fixture.seedEmployee({ organizationId });
+			await decided(person, organizationId, "approved", "2026-03-16T09:00:00Z");
+			await run("2026-03-19T09:01:00Z");
+			expect(await notices(person)).toEqual([]);
+		});
+	});
 });

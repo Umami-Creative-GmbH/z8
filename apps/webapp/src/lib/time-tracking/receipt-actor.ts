@@ -29,6 +29,11 @@ export function writerActor(
 		: { kind: "human", userId: actorUserId };
 }
 
+/** The signed-in user who acted, or null for a kiosk or a system process. */
+export function humanActorUserId(actor: ReceiptActor): string | null {
+	return actor.kind === "human" ? actor.userId : null;
+}
+
 /** The receipt row's actor columns; `actor_user_id` names a human actor only. */
 export function receiptActorColumns(actor: ReceiptActor): {
 	actorKind: CompletedWorkActorKind;

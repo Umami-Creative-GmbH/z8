@@ -22,16 +22,32 @@ const submission = (
 ) => ({ startDate, status, closedCause, submittedAt: new Date(submittedAt) });
 
 describe("period submission gaps", () => {
-	it("lists ended periods without a submission, but not a period still running", () => {
+	it("lists ended periods without a submission, and a period still running as running", () => {
 		const gaps = periodSubmissionGaps({
-			periods: [week("2026-03-23", "2026-03-29"), week("2026-03-30", "2026-04-05")],
+			periods: [
+				week("2026-03-23", "2026-03-29"),
+				week("2026-03-30", "2026-04-05"),
+				week("2026-04-06", "2026-04-12"),
+			],
 			submissions: [],
 			today: parsePlainDate("2026-04-05"),
 		});
 
+		// The week that has not started yet is no gap at all.
 		expect(gaps).toEqual([
 			{ startDate: "2026-03-23", endDate: "2026-03-29", status: "awaiting_submission" },
+			{ startDate: "2026-03-30", endDate: "2026-04-05", status: "running" },
 		]);
+	});
+
+	it("names a running period's submission like an ended one's", () => {
+		const gaps = periodSubmissionGaps({
+			periods: [week("2026-03-30", "2026-04-05")],
+			submissions: [submission("2026-03-30", "pending", "2026-04-05T08:00:00Z")],
+			today: parsePlainDate("2026-04-05"),
+		});
+
+		expect(gaps.map((gap) => gap.status)).toEqual(["submitted"]);
 	});
 
 	it("leaves out approved periods and names the status of every other latest submission", () => {

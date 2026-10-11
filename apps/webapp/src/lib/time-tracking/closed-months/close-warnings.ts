@@ -7,8 +7,9 @@ import { type CloseMonthScope, employeesInScope } from "./store";
 
 /**
  * What the close screen warns about without refusing the close (#1065): an expected period
- * submission (#805) touching the month that is missing, rejected or sent back after a change.
- * A pending submission is a close blocker instead.
+ * submission (#805) touching the month that is missing, rejected or sent back after a change,
+ * or a period touching the month that is still running (the month can end before the week does),
+ * which cannot be submitted yet. A pending submission is a close blocker instead.
  */
 export interface CloseMonthWarning {
 	kind: "period_submission";

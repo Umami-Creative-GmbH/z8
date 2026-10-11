@@ -43,6 +43,8 @@ function getNotificationStyle(type: NotificationType): {
 		case "break_due_reminder":
 		case "period_submission_reminder":
 		case "period_submission_sent_back":
+		// Approved or rejected: the type covers both outcomes, so it keeps the neutral clock.
+		case "period_submission_decided":
 			return {
 				icon: <IconClock className="size-4" />,
 				bgColor: "bg-sky-100 dark:bg-sky-900/30",

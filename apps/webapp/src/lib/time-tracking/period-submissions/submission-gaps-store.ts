@@ -1,17 +1,15 @@
-import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, periodSubmission } from "@/db/schema";
 import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
-import { scheduledSubmissionPeriods } from "./cadence";
-import { loadExpectedSubmissionPeriodFacts } from "./employee-expected-periods";
+import { scheduledSubmissionPeriods, widenedForEveryZone } from "./cadence";
 import { deriveExpectedSubmissionPeriods } from "./expected-periods";
+import { loadExpectedSubmissionFactsByEmployee } from "./organization-expected-periods";
+import { employeeDisplayName } from "./overview-store";
+import { periodSubmissionOverlaps } from "./period-overlap";
 import { loadSubmissionCadenceHistory } from "./settings";
 import { type PeriodSubmissionGap, periodSubmissionGaps } from "./submission-gaps";
-import type { PeriodSubmissionClosedCause, PeriodSubmissionStatus } from "./submission-status";
-
-/** Employees whose facts are read at once; each read runs several queries. */
-const EMPLOYEE_BATCH = 10;
 
 export interface EmployeePeriodSubmissionGap extends PeriodSubmissionGap {
 	employeeId: string;
@@ -28,8 +26,9 @@ export interface PeriodSubmissionGapReport {
 
 /**
  * The missing or unapproved submissions (#1065) of the organization's employees (or the given
- * ones) for the expected periods overlapping `window` (local days, inclusive) that ended before
- * `now` in each employee's zone. With no cadence in effect in the window nothing is collected
+ * ones) for the expected periods overlapping `window` (local days, inclusive) that started by
+ * `now` in each employee's zone; one still running without a submission is `running`, not
+ * missing. With no cadence in effect in the window nothing is collected
  * and no employee is read. Every query is scoped to the organization.
  */
 export async function loadPeriodSubmissionGaps(
@@ -42,17 +41,13 @@ export async function loadPeriodSubmissionGaps(
 	},
 ): Promise<PeriodSubmissionGapReport> {
 	const history = await loadSubmissionCadenceHistory(database, input.organizationId);
-	// Widened by a day each side: every employee's zone is within a day of UTC.
 	const collected =
-		scheduledSubmissionPeriods(history, "UTC", {
-			from: input.window.from.subtract({ days: 1 }),
-			to: input.window.to.add({ days: 1 }),
-		}).length > 0;
+		scheduledSubmissionPeriods(history, "UTC", widenedForEveryZone(input.window)).length > 0;
 	if (!collected) return { collected, gaps: [] };
 	if (input.employeeIds?.length === 0) return { collected, gaps: [] };
 
 	const employees = await database
-		.select({ id: employee.id, userName: user.name })
+		.select({ id: employee.id, name: employeeDisplayName })
 		.from(employee)
 		.leftJoin(user, eq(user.id, employee.userId))
 		.where(
@@ -81,44 +76,26 @@ export async function loadPeriodSubmissionGaps(
 					periodSubmission.employeeId,
 					employees.map((row) => row.id),
 				),
-				lte(periodSubmission.startDate, input.window.to.toString()),
-				gte(periodSubmission.endDate, input.window.from.toString()),
+				periodSubmissionOverlaps(input.window.from.toString(), input.window.to.toString()),
 			),
 		);
 	const submissionsByEmployee = Map.groupBy(submissions, (row) => row.employeeId);
+	const factsByEmployee = await loadExpectedSubmissionFactsByEmployee(database, {
+		organizationId: input.organizationId,
+		employeeIds: employees.map((row) => row.id),
+		window: input.window,
+	});
 
-	const gaps: EmployeePeriodSubmissionGap[] = [];
-	for (let index = 0; index < employees.length; index += EMPLOYEE_BATCH) {
-		const batch = employees.slice(index, index + EMPLOYEE_BATCH);
-		const results = await Promise.all(
-			batch.map(async (row) => {
-				const facts = await loadExpectedSubmissionPeriodFacts(database, {
-					organizationId: input.organizationId,
-					employeeId: row.id,
-					window: input.window,
-				});
-				if (!facts) return [];
-				const employeeGaps = periodSubmissionGaps({
-					periods: deriveExpectedSubmissionPeriods(facts, input.window),
-					submissions: (submissionsByEmployee.get(row.id) ?? []).map((submission) => ({
-						startDate: submission.startDate,
-						status: submission.status as PeriodSubmissionStatus,
-						closedCause: submission.closedCause as PeriodSubmissionClosedCause | null,
-						submittedAt: submission.submittedAt,
-					})),
-					today: plainDateAt(input.now, facts.timezone),
-				});
-				const employeeName = row.userName?.trim() || "—";
-				return employeeGaps.map((gap) => ({
-					...gap,
-					employeeId: row.id,
-					employeeName,
-					timezone: facts.timezone,
-				}));
-			}),
-		);
-		gaps.push(...results.flat());
-	}
+	const gaps: EmployeePeriodSubmissionGap[] = employees.flatMap((row) => {
+		const facts = factsByEmployee.get(row.id);
+		if (!facts) return [];
+		const employeeName = row.name?.trim() || "—";
+		return periodSubmissionGaps({
+			periods: deriveExpectedSubmissionPeriods(facts, input.window),
+			submissions: submissionsByEmployee.get(row.id) ?? [],
+			today: plainDateAt(input.now, facts.timezone),
+		}).map((gap) => ({ ...gap, employeeId: row.id, employeeName, timezone: facts.timezone }));
+	});
 	return {
 		collected,
 		gaps: gaps.toSorted(

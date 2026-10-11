@@ -451,6 +451,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 				await sendBackChangedPeriodSubmissions(tx, {
 					organizationId: currentEmployee.organizationId,
 					employeeId: currentEmployee.id,
+					causedByUserId: createdBy,
 					days: [{ startDate: data.startDate, endDate: data.endDate }],
 				});
 				if (deputyEmployeeId) {

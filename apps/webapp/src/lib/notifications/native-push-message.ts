@@ -98,6 +98,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	work_balance_adjustment_cancelled: "working_time",
 	period_submission_reminder: "reminder",
 	period_submission_sent_back: "request_update",
+	period_submission_decided: "request_update",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

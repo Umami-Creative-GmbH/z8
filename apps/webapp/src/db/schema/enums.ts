@@ -299,6 +299,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"period_submission_reminder",
 	// A submitted period sent back to the employee after a change (#1062)
 	"period_submission_sent_back",
+	// A submitted period approved or rejected, to the employee (#805)
+	"period_submission_decided",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

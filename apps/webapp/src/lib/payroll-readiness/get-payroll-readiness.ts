@@ -392,7 +392,19 @@ export async function getPayrollReadiness(
 		})),
 	];
 	const travelExpenseCount = travelExpenseClaims.length + pendingTravelExpenseReports.length;
-	const periodSubmissionGaps = periodSubmissionLookup.gaps;
+	// A period still running in the range is not missing: it cannot be submitted yet.
+	const periodSubmissionGaps = periodSubmissionLookup.gaps.filter((gap) => gap.status !== "running");
+	const runningPeriods = periodSubmissionLookup.gaps.filter((gap) => gap.status === "running");
+	const affectedBy = (gaps: typeof periodSubmissionLookup.gaps) =>
+		uniqueAffectedEmployees(
+			gaps.map((gap) => ({
+				employeeId: gap.employeeId,
+				employee: activeEmployeesById.get(gap.employeeId) ?? {
+					id: gap.employeeId,
+					user: { name: gap.employeeName },
+				},
+			})),
+		);
 	const periodSubmissionCheck: PayrollReadinessCheck[] = periodSubmissionLookup.collected
 		? [
 				buildCheck({
@@ -411,16 +423,27 @@ export async function getPayrollReadiness(
 					severity: periodSubmissionGaps.length > 0 ? "warning" : "info",
 					required: false,
 					count: periodSubmissionGaps.length,
-					affectedEmployees: uniqueAffectedEmployees(
-						periodSubmissionGaps.map((gap) => ({
-							employeeId: gap.employeeId,
-							employee: activeEmployeesById.get(gap.employeeId) ?? {
-								id: gap.employeeId,
-								user: { name: gap.employeeName },
-							},
-						})),
-					),
+					affectedEmployees: affectedBy(periodSubmissionGaps),
 				}),
+				...(runningPeriods.length > 0
+					? [
+							buildCheck({
+								id: "period-submissions-running",
+								group: "time",
+								title: "Period submissions still running",
+								titleKey: "settings.payrollReadiness.checks.periodSubmissionsRunning.title",
+								description:
+									"Periods in this range that have not ended yet, so they cannot be submitted. Their time can still change after the export.",
+								descriptionKey:
+									"settings.payrollReadiness.checks.periodSubmissionsRunning.description",
+								status: "warning",
+								severity: "info",
+								required: false,
+								count: runningPeriods.length,
+								affectedEmployees: affectedBy(runningPeriods),
+							}),
+						]
+					: []),
 			]
 		: [];
 

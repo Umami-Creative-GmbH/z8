@@ -40,6 +40,7 @@ describe("CloseMonthWarningList (#1065)", () => {
 					warning("Ada", "2026-03-23", "2026-03-29", "awaiting_submission"),
 					warning("Ada", "2026-03-30", "2026-04-05", "rejected"),
 					warning("Bo", "2026-03-01", "2026-03-31", "sent_back_after_change"),
+					warning("Cy", "2026-03-30", "2026-04-05", "running"),
 				]}
 			/>,
 		);
@@ -49,6 +50,8 @@ describe("CloseMonthWarningList (#1065)", () => {
 		expect(text).toContain("Ada: period 2026-03-23 – 2026-03-29 not submitted");
 		expect(text).toContain("Ada: period 2026-03-30 – 2026-04-05 rejected");
 		expect(text).toContain("Bo: period 2026-03-01 – 2026-03-31 sent back after a change");
+		// The month can end before the week does: not missing, just not submittable yet.
+		expect(text).toContain("Cy: period 2026-03-30 – 2026-04-05 still running, not yet submittable");
 	});
 
 	it("shortens a long list", () => {

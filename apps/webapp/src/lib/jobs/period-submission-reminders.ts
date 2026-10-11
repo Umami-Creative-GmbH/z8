@@ -1,5 +1,5 @@
 import type { db as rootDatabase } from "@/db";
-import { type Clock, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import { type Clock, type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
 	type ClockingReminderTransport,
@@ -15,6 +15,7 @@ import {
 	type DueClockingReminder,
 } from "@/lib/time-tracking/clocking-reminders/occasion";
 import {
+	listDecidedPeriodSubmissions,
 	listPeriodSubmissionReminderOrganizations,
 	listSentBackPeriodSubmissions,
 	loadSubmittedPeriodEndDates,
@@ -24,7 +25,10 @@ import {
 	evaluatePeriodSubmissionReminders,
 	PERIOD_SUBMISSION_REMINDER_DUE_DAYS,
 } from "@/lib/time-tracking/clocking-reminders/period-submission-reminders";
-import { scheduledSubmissionPeriods } from "@/lib/time-tracking/period-submissions/cadence";
+import {
+	daysAroundForEveryZone,
+	scheduledSubmissionPeriods,
+} from "@/lib/time-tracking/period-submissions/cadence";
 import { loadExpectedSubmissionPeriodFacts } from "@/lib/time-tracking/period-submissions/employee-expected-periods";
 import { deriveExpectedSubmissionPeriods } from "@/lib/time-tracking/period-submissions/expected-periods";
 import {
@@ -35,10 +39,13 @@ import {
 const logger = createLogger("PeriodSubmissionReminders");
 const ORGANIZATION_PAGE = 100;
 const EMPLOYEE_PAGE = 200;
-/** Sent-back notices per organization and run; the rest follow on the next run. */
-const SENT_BACK_PAGE = 500;
-/** A sent-back notice is due this long after the change; kept under the 7-day occasion retention. */
-export const PERIOD_SUBMISSION_SENT_BACK_DUE_DAYS = 3;
+/** Sent-back or decided notices per organization, kind and run; the rest follow on the next run. */
+const NOTICE_PAGE = 500;
+/**
+ * A sent-back or decided notice is due this long after the change or decision; kept under the
+ * 7-day occasion retention.
+ */
+export const PERIOD_SUBMISSION_NOTICE_DUE_DAYS = 3;
 
 export interface PeriodSubmissionRemindersResult {
 	organizations: number;
@@ -85,6 +92,7 @@ export async function runPeriodSubmissionRemindersWith(
 			result.organizations++;
 			try {
 				await notifySentBackPeriods(organization, deps, result);
+				await notifyDecidedPeriods(organization, deps, result);
 				await remindOrganization(organization, deps, result);
 			} catch (error) {
 				result.failed++;
@@ -116,9 +124,9 @@ async function notifySentBackPeriods(
 	const sentBack = await listSentBackPeriodSubmissions(
 		{
 			organization,
-			since: now.subtract({ hours: PERIOD_SUBMISSION_SENT_BACK_DUE_DAYS * 24 }),
+			since: now.subtract({ hours: PERIOD_SUBMISSION_NOTICE_DUE_DAYS * 24 }),
 			now,
-			limit: SENT_BACK_PAGE,
+			limit: NOTICE_PAGE,
 		},
 		deps.database,
 	);
@@ -140,6 +148,62 @@ async function notifySentBackPeriods(
 			},
 		} satisfies DueClockingReminder,
 	}));
+	await deliverSubmissionNotices(organization, notices, now, deps, result);
+}
+
+/**
+ * Tells employees once that their submitted period was approved, or rejected with the approver's
+ * reason (#805). The decision's transaction only records it; this run delivers it like the
+ * sent-back notices, once per submission (a submission is decided at most once).
+ */
+async function notifyDecidedPeriods(
+	organization: PeriodSubmissionReminderOrganization,
+	deps: PeriodSubmissionRemindersDeps,
+	result: PeriodSubmissionRemindersResult,
+) {
+	const now = deps.clock.nowInstant();
+	const decided = await listDecidedPeriodSubmissions(
+		{
+			organization,
+			since: now.subtract({ hours: PERIOD_SUBMISSION_NOTICE_DUE_DAYS * 24 }),
+			now,
+			limit: NOTICE_PAGE,
+		},
+		deps.database,
+	);
+	const notices = decided.map((submission) => ({
+		submission,
+		reminder: {
+			type: "period_submission_decided" as const,
+			occasionKey: clockingReminderOccasionKey("period_submission_decided", {
+				kind: "period_submission",
+				submissionId: submission.submissionId,
+			}),
+			day: parsePlainDate(submission.endDate),
+			expectedAt: submission.decidedAt,
+			shift: null,
+			decidedPeriod: {
+				startDate: parsePlainDate(submission.startDate),
+				endDate: parsePlainDate(submission.endDate),
+				outcome: submission.outcome,
+				reason: submission.reason,
+			},
+		} satisfies DueClockingReminder,
+	}));
+	await deliverSubmissionNotices(organization, notices, now, deps, result);
+}
+
+/** Delivers notices about single submissions, skipping those already sent, one at a time. */
+async function deliverSubmissionNotices(
+	organization: PeriodSubmissionReminderOrganization,
+	notices: readonly {
+		submission: { submissionId: string; employeeId: string; userId: string; timezone: string };
+		reminder: DueClockingReminder;
+	}[],
+	now: Instant,
+	deps: PeriodSubmissionRemindersDeps,
+	result: PeriodSubmissionRemindersResult,
+) {
 	const recorded = await loadRecordedOccasionKeys(
 		{
 			organizationId: organization.organizationId,
@@ -174,8 +238,9 @@ async function notifySentBackPeriods(
 					err: error,
 					organizationId: organization.organizationId,
 					submissionId: submission.submissionId,
+					type: reminder.type,
 				},
-				"Period submission sent-back notice failed",
+				"Period submission notice failed",
 			);
 		}
 	}
@@ -195,13 +260,11 @@ async function remindOrganization(
 	let after: string | null = null;
 	for (;;) {
 		const now = deps.clock.nowInstant();
-		// Periods whose second reminder can still be due end at most this many days ago; a day of
-		// margin each side covers every timezone.
-		const utcToday = plainDateAt(now, "UTC");
-		const window = {
-			from: utcToday.subtract({ days: delayDays + PERIOD_SUBMISSION_REMINDER_DUE_DAYS + 2 }),
-			to: utcToday.add({ days: 1 }),
-		};
+		// Periods whose second reminder can still be due end at most this many days ago.
+		const window = daysAroundForEveryZone(now, {
+			before: delayDays + PERIOD_SUBMISSION_REMINDER_DUE_DAYS + 1,
+			after: 0,
+		});
 		const employees = await listClockingReminderEmployees(
 			{ organization, roles: null, now, after, limit: EMPLOYEE_PAGE },
 			deps.database,

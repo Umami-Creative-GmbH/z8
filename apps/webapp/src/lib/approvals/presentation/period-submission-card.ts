@@ -239,13 +239,15 @@ export async function prepareCanonicalOnlyPresentation(input: {
 				title,
 				facts,
 				text: t(
-					"bot.approval.card.boundHint",
-					"Approve or reject decides exactly the request shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8.",
+					"bot.approval.card.periodSubmissionBoundHint",
+					"Approve decides exactly the period shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8. To reject, open it in Z8 and give a reason.",
 				),
 				reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
 				reviewUrl,
 				approveLabel: t("bot.approval.card.approve", "Approve"),
-				rejectLabel: t("bot.approval.card.reject", "Reject"),
+				rejectLabel: t("bot.approval.card.rejectInZ8", "Reject in Z8"),
+				// A rejection needs the approver's reason, which a card press cannot carry.
+				rejectInReview: true,
 			};
 			if (!input.fits || input.fits(draft)) {
 				const bindingId = await issueReviewBinding(db, {

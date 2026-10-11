@@ -1,4 +1,4 @@
-import { and, eq, gt, gte, inArray, lte, ne, or, type SQL } from "drizzle-orm";
+import { and, eq, gt, inArray, lte, ne, or, type SQL } from "drizzle-orm";
 import { employee, periodSubmission } from "@/db/schema";
 import { periodSubmissionCadenceChange } from "@/db/schema/period-submission";
 import { AuditAction } from "@/lib/audit-logger";
@@ -11,6 +11,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
 import { type PeriodChange, periodChangeTouches } from "./period-change";
+import { periodSubmissionOverlaps } from "./period-overlap";
 import { LIVE_PERIOD_SUBMISSION_STATUSES } from "./submission-status";
 import {
 	insertPeriodSubmissionAudit,
@@ -59,12 +60,23 @@ const NOTHING: SendBackPeriodSubmissionsResult = { withdrawn: [], outdated: [] }
  */
 export async function sendBackChangedPeriodSubmissions(
 	client: PeriodSubmissionChangeClient,
-	input: { organizationId: string; employeeId: string } & PeriodChange,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		/**
+		 * The user who made the change (an employee, a manager, an admin, an importer), recorded on
+		 * the automatic audit entries next to the submitter they are about; null for a change nobody
+		 * signed in made (a job, a kiosk, the system).
+		 */
+		causedByUserId: string | null;
+	} & PeriodChange,
 	dependencies: { clock?: Clock } = {},
 ): Promise<SendBackPeriodSubmissionsResult> {
 	const work = input.work ?? [];
 	const days = input.days ?? [];
 	if (work.length === 0 && days.length === 0) return NOTHING;
+	// The writers' clients (a work transaction's `scope.db`, an import's commit client) hide
+	// `transaction` on purpose; at runtime each is a drizzle transaction the engine nests in.
 	const database = client as unknown as PeriodSubmissionDatabase;
 	const [collecting] = await database
 		.select({ id: periodSubmissionCadenceChange.id })
@@ -131,7 +143,7 @@ export async function sendBackChangedPeriodSubmissions(
 					organizationId: input.organizationId,
 					submissionId: row.id,
 					cause: "change",
-					actor: { kind: "system" },
+					actor: { kind: "system", causedByUserId: input.causedByUserId },
 				},
 				{ clock },
 			);
@@ -153,7 +165,7 @@ export async function sendBackChangedPeriodSubmissions(
 			actorUserId: row.submitterUserId,
 			at: now,
 			closedCause: "change",
-			metadata: { automatic: true },
+			metadata: { automatic: true, causedByUserId: input.causedByUserId },
 		});
 		result.outdated.push(row.id);
 	}
@@ -190,13 +202,7 @@ function changeWindow(change: Required<PeriodChange>): SQL | undefined {
 			.map((range) => range.endDate)
 			.toSorted()
 			.at(-1);
-		if (first && last) {
-			const condition = and(
-				lte(periodSubmission.startDate, last),
-				gte(periodSubmission.endDate, first),
-			);
-			if (condition) conditions.push(condition);
-		}
+		if (first && last) conditions.push(periodSubmissionOverlaps(first, last));
 	}
 	return or(...conditions);
 }
