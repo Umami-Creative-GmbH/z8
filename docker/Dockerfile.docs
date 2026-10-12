@@ -52,6 +52,8 @@ COPY --from=docs-deps /app/node_modules ./node_modules
 COPY --from=docs-deps /app/apps/docs/node_modules ./apps/docs/node_modules
 COPY --from=docs-pruner /app/out/full/ ./
 COPY --from=docs-pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+# The API reference renders the webapp's committed spec, which `turbo prune docs` leaves out.
+COPY apps/webapp/openapi/public-api-v1.json ./apps/webapp/openapi/
 
 FROM docs-workspace AS docs-builder
 RUN --mount=type=cache,id=next-cache-docs,target=/app/apps/docs/.next/cache \
@@ -80,6 +82,7 @@ COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/content ./apps/doc
 COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/next.config.mjs ./apps/docs/
 COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/source.config.ts ./apps/docs/
 COPY --from=docs-workspace --chown=docs:nodejs /app/apps/docs/package.json ./apps/docs/
+COPY --from=docs-workspace --chown=docs:nodejs /app/apps/webapp/openapi/public-api-v1.json ./apps/webapp/openapi/
 
 COPY --from=docs-workspace --chown=docs:nodejs /app/package.json ./
 COPY --from=docs-workspace --chown=docs:nodejs /app/pnpm-workspace.yaml ./

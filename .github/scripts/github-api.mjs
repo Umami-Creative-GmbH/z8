@@ -1,5 +1,8 @@
 // Built-in Node client: maintenance never installs dependencies or executes producer code.
-export function createGitHubApi({ repository, token, fetchImpl = fetch }) {
+class InconsistentInventory extends Error {}
+const snapshotAttempts = 4;
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+export function createGitHubApi({ repository, token, fetchImpl = fetch, sleep = wait }) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository ?? "")) throw new Error("Invalid repository");
   if (!token) throw new Error("Missing GitHub token");
   const root = `https://api.github.com/repos/${repository}/`;
@@ -12,7 +15,7 @@ export function createGitHubApi({ repository, token, fetchImpl = fetch }) {
     if (!response.ok) throw new Error(`GitHub ${method} ${path.split("?")[0]}: HTTP ${response.status}`);
     return method === "DELETE" ? true : response.json();
   }
-  async function list(path, field) {
+  async function snapshot(path, field) {
     const rows = [];
     let expected;
     for (let page = 1; page <= 100; page++) {
@@ -22,17 +25,29 @@ export function createGitHubApi({ repository, token, fetchImpl = fetch }) {
       if (field) {
         if (!Number.isInteger(data.total_count) || data.total_count < 0) throw new Error("Missing inventory count");
         expected ??= data.total_count;
-        if (expected !== data.total_count) throw new Error("Inventory changed during pagination; retry later");
+        if (expected !== data.total_count) throw new InconsistentInventory("Inventory changed during pagination; retry later");
       }
       if (batch.some(row => !Number.isSafeInteger(row?.id) || row.id < 1)) throw new Error("Missing inventory identity");
       rows.push(...batch);
       if (batch.length < 100) {
-        if (expected !== undefined && rows.length !== expected) throw new Error("Truncated GitHub inventory");
-        if (new Set(rows.map(row => row.id)).size !== rows.length) throw new Error("Duplicate inventory entries");
+        if (expected !== undefined && rows.length !== expected) throw new InconsistentInventory("Truncated GitHub inventory");
+        if (new Set(rows.map(row => row.id)).size !== rows.length) throw new InconsistentInventory("Duplicate inventory entries");
         return rows;
       }
     }
     throw new Error("Inventory exceeded pagination bound");
+  }
+  // Runs and caches change state while they are paged (a merge queues dozens of runs at once), so a
+  // count/row mismatch is retried on a fresh snapshot; a persistent mismatch still fails closed.
+  async function list(path, field) {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        return await snapshot(path, field);
+      } catch (error) {
+        if (!(error instanceof InconsistentInventory) || attempt === snapshotAttempts) throw error;
+        await sleep(attempt * 5_000);
+      }
+    }
   }
   function identity(value) {
     if (!Number.isSafeInteger(value) || value < 1) throw new Error("Invalid GitHub identity");
