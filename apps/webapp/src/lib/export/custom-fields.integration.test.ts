@@ -296,7 +296,7 @@ describe("custom fields in the data export on PostgreSQL", () => {
 			const result = await executor.execute({
 				organizationId: ids.organization,
 				reportConfig: { categories: ["employees"] },
-				createdBy: ids.admin,
+				ownerId: ids.admin,
 				emailRecipients: [],
 			} as never);
 			expect(result.success).toBe(true);

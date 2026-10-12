@@ -193,6 +193,21 @@ function utcDay(days: number): string {
 	return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 }
 
+/**
+ * A Monday-Tuesday range starting at least `days` from today. A plain `utcDay`
+ * range can fall on a weekend, which the absence request refuses as having no
+ * working days.
+ */
+function utcWorkingDays(days: number): { startDate: string; endDate: string } {
+	const monday = new Date(Date.now() + days * 86_400_000);
+	monday.setUTCDate(monday.getUTCDate() + ((8 - monday.getUTCDay()) % 7));
+	const tuesday = new Date(monday.getTime() + 86_400_000);
+	return {
+		startDate: monday.toISOString().slice(0, 10),
+		endDate: tuesday.toISOString().slice(0, 10),
+	};
+}
+
 describe("deputy decisions (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 	const admin = integrationAdminPool();
@@ -398,8 +413,7 @@ describe("deputy decisions (PostgreSQL)", () => {
 		actAs(userId);
 		const result = await requestAbsenceEffect({
 			categoryId: ids.vacation,
-			startDate: utcDay(40),
-			endDate: utcDay(41),
+			...utcWorkingDays(40),
 			startPeriod: "full_day",
 			endPeriod: "full_day",
 			durationKind: "full_day",
