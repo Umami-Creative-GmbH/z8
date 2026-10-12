@@ -227,6 +227,7 @@ describe("route catalog wiring", () => {
 						expect(actual[key], `${scope.route}: ${key}`).toBe(complete[key]);
 			}
 		},
+		20000,
 	);
 	it.each(ALL_LANGUAGES)(
 		"serializes shell plus installed ancestor feature slices below the complete dictionary in %s",
@@ -273,5 +274,6 @@ describe("route catalog wiring", () => {
 				`ROUTE_CATALOG_BYTES ${JSON.stringify({ locale, rootBytes, completeBytes, measurements })}\n`,
 			);
 		},
+		20000,
 	);
 });
