@@ -258,6 +258,28 @@
         "previous": "Zurück"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Als bezahlt bestätigen",
+          "description": "Wurde dieser {format}-Lauf über die Gehaltsabrechnung bezahlt? Die Spesenabrechnungen in Ihrem Zuständigkeitsbereich werden damit als erstattet erfasst. Ihre eigenen Abrechnungen und Abrechnungen außerhalb Ihres Zuständigkeitsbereichs verbleiben im Lauf.",
+          "descriptionCounted": "{count, plural, one {Wurde dieser {format}-Lauf über die Gehaltsabrechnung bezahlt? # Spesenabrechnung in Ihrem Zuständigkeitsbereich ({amount}) wird damit als erstattet erfasst. Ihre eigenen Abrechnungen und Abrechnungen außerhalb Ihres Zuständigkeitsbereichs verbleiben im Lauf.} other {Wurde dieser {format}-Lauf über die Gehaltsabrechnung bezahlt? # Spesenabrechnungen in Ihrem Zuständigkeitsbereich ({amount}) werden damit als erstattet erfasst. Ihre eigenen Abrechnungen und Abrechnungen außerhalb Ihres Zuständigkeitsbereichs verbleiben im Lauf.}}",
+          "failed": "Der Abrechnungslauf konnte nicht bestätigt werden. Bitte versuchen Sie es erneut; es wird nichts doppelt erfasst.",
+          "outcome": {
+            "confirmed": "{amount} erstattet",
+            "confirmedWithRemainder": "{amount} erstattet. {remaining} steht noch zur Erstattung im nächsten Lauf aus.",
+            "outOfScope": "Nicht bestätigt: Außerhalb Ihres Zuständigkeitsbereichs. Verbleibt im Lauf für eine zuständige Person.",
+            "overpaidByPayroll": "{amount} erstattet, {overpaid} mehr als noch geschuldet. Die Ausgabe ist nun überzahlt: Erfassen Sie die Rückforderung manuell.",
+            "ownExpense": "Nicht bestätigt: Ihre eigene Ausgabe. Verbleibt im Lauf, damit jemand anderes sie bestätigt."
+          },
+          "payday": "Auszahlungstag",
+          "paydayHint": "Der Auszahlungstag, an dem dieser Abrechnungslauf ausgezahlt wurde. Jede Erstattung dieses Laufs wird darauf erfasst.",
+          "results": {
+            "nothing": "In diesem Lauf gab es nichts mehr zu bestätigen. Es wird keine Erstattung erfasst.",
+            "summary": "{confirmed} von {total} bestätigt",
+            "title": "Bestätigungsergebnisse"
+          },
+          "submit": "Als bezahlt bestätigen",
+          "title": "Abrechnungslauf {period} als bezahlt bestätigen"
+        },
         "included": "In {run} enthalten. Die Auszahlung erfolgt über diese Gehaltsabrechnung und wird als erstattet erfasst, sobald der Lauf bestätigt wird.",
         "label": "Abrechnungslauf {period} ({format})",
         "notIncluded": "Diese Ausgabe ist in keinem Abrechnungslauf mehr enthalten.",
@@ -266,6 +288,11 @@
         "removeDescription": "Entfernen Sie sie nur, wenn sie nicht mit diesem Lauf über die Gehaltsabrechnung ausgezahlt wird, z. B. nach Korrektur der Abrechnungsdatei. Das Entfernen wird im Audit-Protokoll erfasst.",
         "removeFailed": "Die Ausgabe konnte nicht aus dem Abrechnungslauf entfernt werden.",
         "removeTitle": "Diese Ausgabe aus dem Abrechnungslauf entfernen?"
+      },
+      "payrollRuns": {
+        "description": "Diese Abrechnungsläufe enthalten Spesenabrechnungen, die auf Erstattung warten. Sobald die Lohnabrechnung einen Lauf ausgezahlt hat, bestätigen Sie ihn, um die Erstattungen zu erfassen.",
+        "reports": "{count, plural, one {# Spesenabrechnung von Ihnen zu bestätigen, {amount}} other {# Spesenabrechnungen von Ihnen zu bestätigen, {amount}}}",
+        "title": "Auf Bestätigung wartende Abrechnungsläufe"
       },
       "queue": {
         "description": "Öffnen Sie eine Ausgabe, um deren Abrechnung einzusehen und eine Erstattung zu erfassen.",
@@ -452,6 +479,7 @@
         "newTrip": "Neue Reise"
       },
       "approvedBy": "Genehmigt von {name} am {date}.",
+      "approvedByDeputy": "Genehmigt von {name} (Stellvertretung für {actingForName}) am {date}.",
       "awaitingReview": "Wartet auf Prüfung.",
       "awaitingReviewer": "Wartet auf Prüfung durch {name}.",
       "backToApprovals": "Zurück zu Genehmigungen",
@@ -576,7 +604,9 @@
         "description": "Jeder Schritt dieses Berichts, älteste zuerst. Zeiten werden in UTC angezeigt.",
         "detail": {
           "approvalRecorded": "Von {name}; wartet auf weitere Genehmigung.",
+          "approvalRecordedByDeputy": "Von {name} (Stellvertretung für {actingForName}); wartet auf weitere Genehmigung.",
           "by": "Von {name}",
+          "byDeputy": "Von {name} (Stellvertretung für {actingForName})",
           "inCycle": "Einreichung {number} · {detail}",
           "selfApproved": "Niemand sonst konnte diesen Bericht überprüfen."
         },
@@ -843,6 +873,7 @@
         "verifying": "Beleg wird geprüft…"
       },
       "rejectedBy": "Abgelehnt von {name}",
+      "rejectedByDeputy": "Abgelehnt von {name} (Stellvertretung für {actingForName})",
       "reopen": {
         "action": "Zur Korrektur erneut öffnen",
         "changed": "Die Abrechnung wurde zwischenzeitlich geändert und nicht erneut geöffnet. Überprüfen Sie sie nochmals.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Genehmigter, vom Mitarbeiter bezahlter Betrag",
       "entry": {
         "exportBatch": "Aus dem am {date} angeforderten Export",
+        "payrollRun": "Mit Gehaltsabrechnung {period} erstattet",
         "recordedBy": "Erfasst von {name}, {date}",
         "recovery": "{amount} zurückerhalten",
         "reimbursement": "{amount} gezahlt"

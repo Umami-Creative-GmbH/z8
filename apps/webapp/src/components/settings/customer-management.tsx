@@ -45,6 +45,7 @@ import {
 import { queryKeys } from "@/lib/query";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import { MissingRequiredValuesBadge } from "./custom-fields/custom-field-values-section";
 import { CustomerDialog } from "./customer-dialog";
 
 interface CustomerManagementProps {
@@ -389,6 +390,9 @@ function CustomerTableCard({
 							<TableRow key={cust.id}>
 								<TableCell>
 									<div className="font-medium">{cust.name}</div>
+									{cust.missingRequiredCustomFields && (
+										<MissingRequiredValuesBadge className="mt-1" />
+									)}
 									{cust.address && (
 										<div className="text-sm text-muted-foreground line-clamp-1">{cust.address}</div>
 									)}

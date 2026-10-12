@@ -62,6 +62,8 @@ export const NOTIFICATION_TYPES = [
 	"travel_expense_recovery_recorded",
 	// Reimbursement work arriving for expense officers (#756)
 	"travel_expense_ready_for_reimbursement",
+	// A payroll run awaits the officer's confirmation (#855)
+	"travel_expense_payroll_run_awaiting_confirmation",
 	// Clocking reminders to the employee about their own clocking (#827)
 	"missed_clock_in_reminder",
 	"forgotten_clock_out_reminder",
@@ -76,6 +78,33 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Deputy on an absence: named, removed, new dates, day-before reminder (#1013)
+	"absence_deputy_assigned",
+	"absence_deputy_removed",
+	"absence_deputy_dates_changed",
+	"absence_deputy_reminder",
+	// A departed or deactivated deputy was cleared from an absence (#1014)
+	"absence_deputy_unavailable",
+	// Cover summaries: to the deputy when cover starts, to the approver on return (#1018)
+	"approval_cover_started",
+	"approval_cover_return_summary",
+	// Closed months (#762): automatic close, its blockers, and reopenings
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
+	// One-time notice to owners and admins that time off in lieu is available (#1000)
+	"time_off_in_lieu_available",
+	// A balance adjustment on the employee's own work balance (#996)
+	"work_balance_adjustment_recorded",
+	"work_balance_adjustment_cancelled",
+	// Reminders to the employee to submit an ended submission period (#1064)
+	"period_submission_reminder",
+	// A submitted period sent back to the employee after a change (#1062)
+	"period_submission_sent_back",
+	// A submitted period approved or rejected, to the employee (#805)
+	"period_submission_decided",
+	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
+	"scheduled_export_paused",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -88,6 +117,13 @@ export function hasMandatoryInbox(type: NotificationType): boolean {
 /** Types delivered only to the inbox until the user turns on another channel. */
 const IN_APP_ONLY_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"travel_expense_ready_for_reimbursement",
+	"travel_expense_payroll_run_awaiting_confirmation",
+	// The approver hears in the app what their deputy decided (#1018).
+	"approval_cover_return_summary",
+	// Closed months notify in-app only (#762).
+	"month_closed_automatically",
+	"month_close_blocked",
+	"month_reopened",
 ]);
 
 /** Clocking reminders: in-app and push until the user turns on another channel. */
@@ -95,6 +131,9 @@ const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"missed_clock_in_reminder",
 	"forgotten_clock_out_reminder",
 	"break_due_reminder",
+	"period_submission_reminder",
+	"period_submission_sent_back",
+	"period_submission_decided",
 ]);
 
 /** Whether a channel is on for a type the user stored no preference for. */

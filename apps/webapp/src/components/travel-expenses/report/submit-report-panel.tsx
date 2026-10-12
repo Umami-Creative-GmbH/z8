@@ -445,7 +445,7 @@ export function SubmitReportPanel({
 				{t("travelExpenses.report.submit.review", "Review and submit")}
 			</Button>
 			<Dialog open={open && report !== null} onOpenChange={(next) => !submitting && setOpen(next)}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+				<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>
 							{t("travelExpenses.report.submit.title", "Submit expense report")}

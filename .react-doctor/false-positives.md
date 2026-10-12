@@ -130,3 +130,16 @@ Independent accounting reads now overlap. Independent purge cleanups and import
 insert chunks use bounded concurrency, with every in-flight worker joined before
 an error is returned. The concurrency helper has tests for its limit, result order,
 and failure joining.
+
+## Release PR #1096 follow-up (October 11, 2026, React Doctor 0.9.17)
+
+The compiler failures (`try` without `catch`, manual memoization, render-time
+reassignment, an Effect Event called from a click handler) were fixed in code.
+One finding is rejected:
+
+- **Asynchronous native push listener (`react-doctor/effect-needs-cleanup`):**
+  `src/components/notifications/native-push-bridge.tsx` gets its push client and
+  listener asynchronously. The effect stores the `remove` handle the listener
+  returns and calls it on unmount. A listener that attaches after unmount is
+  removed at once through the `disposed` flag. The rule does not follow handles
+  assigned inside an async setup, so the line is suppressed. **Rejected.**

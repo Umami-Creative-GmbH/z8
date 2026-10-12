@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { createContext, type ReactNode, useContext, useEffect } from "react";
 import type { Language } from "./language";
+
 const german: Record<string, string> = {
 	"Work changed on another device. Resolve the earlier saved action before clocking again.":
 		"Die Arbeit wurde auf einem anderen Gerät geändert. Klären Sie die zuvor gespeicherte Aktion, bevor Sie erneut stempeln.",
@@ -64,7 +65,7 @@ const german: Record<string, string> = {
 	"Keep current assignment": "Aktuelle Zuordnung beibehalten",
 	"No assignment": "Keine Zuordnung",
 	Task: "Aufgabe",
-	"Keep current task": "Aktuelle Aufgabe beibehalten",
+	"Keep current task:": "Aktuelle Aufgabe beibehalten:",
 	"No task": "Keine Aufgabe",
 	"The chosen task was marked done.":
 		"Die gewählte Aufgabe wurde als erledigt markiert.",

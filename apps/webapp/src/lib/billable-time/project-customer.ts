@@ -13,9 +13,14 @@ import { customer, project } from "@/db/schema";
  * these predicates, never `project.customer_id IS NOT NULL` alone.
  */
 
-/** Whether the `project` row in scope has an active customer of its organization. */
+/**
+ * Whether the `project` row in scope has an active customer of its organization.
+ * The `project` columns are qualified by hand: selected without a join, Drizzle
+ * renders `${project.organizationId}` as a bare "organization_id", which binds
+ * to the customer's own column (#1073).
+ */
 export function projectHasActiveCustomerSql(): SQL<boolean> {
-	return sql<boolean>`exists (select 1 from ${customer} where ${customer.id} = ${project.customerId} and ${customer.organizationId} = ${project.organizationId} and ${customer.isActive})`;
+	return sql<boolean>`exists (select 1 from ${customer} where ${customer.id} = "project"."customer_id" and ${customer.organizationId} = "project"."organization_id" and ${customer.isActive})`;
 }
 
 /** The `project` row's customer id while that customer is active, else null. */

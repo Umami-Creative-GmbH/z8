@@ -258,6 +258,28 @@
         "previous": "Précédent"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Confirmer comme payé",
+          "description": "La paie a réglé ce cycle {format} ? Les notes de frais dans votre périmètre sont enregistrées comme remboursées avec celui-ci. Vos propres notes et celles hors de votre périmètre restent dans le cycle.",
+          "descriptionCounted": "{count, plural, one {La paie a réglé ce cycle {format} ? # note de frais dans votre périmètre ({amount}) est enregistrée comme remboursée avec celui-ci. Vos propres notes et celles hors de votre périmètre restent dans le cycle.} other {La paie a réglé ce cycle {format} ? # notes de frais dans votre périmètre ({amount}) sont enregistrées comme remboursées avec celui-ci. Vos propres notes et celles hors de votre périmètre restent dans le cycle.}}",
+          "failed": "Le cycle de paie n'a pas pu être confirmé. Veuillez réessayer ; rien n'est enregistré deux fois.",
+          "outcome": {
+            "confirmed": "{amount} remboursé",
+            "confirmedWithRemainder": "{amount} remboursé. {remaining} reste en attente de remboursement pour le prochain cycle.",
+            "outOfScope": "Non confirmé : hors de votre périmètre. La dépense reste dans le cycle pour un responsable habilité.",
+            "overpaidByPayroll": "Montant remboursé : {amount}, soit {overpaid} de plus que le montant restant dû. La dépense présente désormais un trop-perçu : enregistrez la récupération manuellement.",
+            "ownExpense": "Non confirmé : votre propre dépense. Elle reste dans le cycle pour qu'une autre personne la confirme."
+          },
+          "payday": "Date de paie",
+          "paydayHint": "La date de paie à laquelle ce cycle a été réglé. Tous les remboursements de ce cycle y sont enregistrés.",
+          "results": {
+            "nothing": "Il ne restait rien à confirmer dans ce cycle. Aucun remboursement n'est enregistré.",
+            "summary": "{confirmed} sur {total} confirmés",
+            "title": "Résultats de la confirmation"
+          },
+          "submit": "Confirmer comme payé",
+          "title": "Confirmer le cycle de paie {period} comme payé"
+        },
         "included": "Inclus dans {run}. La dépense est réglée avec cette paie et enregistrée comme remboursée lorsque le cycle est confirmé.",
         "label": "Cycle de paie {period} ({format})",
         "notIncluded": "Plus aucun cycle de paie n'inclut cette dépense.",
@@ -266,6 +288,11 @@
         "removeDescription": "Ne la retirez que si la paie ne la règle pas avec ce cycle, par exemple après correction du fichier de paie. Ce retrait est consigné dans le journal d'audit.",
         "removeFailed": "Impossible de retirer la dépense du cycle de paie.",
         "removeTitle": "Retirer cette dépense du cycle de paie ?"
+      },
+      "payrollRuns": {
+        "description": "Ces cycles de paie contiennent des notes de frais en attente de remboursement. Une fois qu'un cycle a été payé par la paie, confirmez-le pour enregistrer les remboursements.",
+        "reports": "{count, plural, one {# note de frais que vous devez confirmer, {amount}} other {# notes de frais que vous devez confirmer, {amount}}}",
+        "title": "Cycles de paie en attente de confirmation"
       },
       "queue": {
         "description": "Ouvrez une dépense pour consulter son règlement et enregistrer un remboursement.",
@@ -452,6 +479,7 @@
         "newTrip": "Nouveau déplacement"
       },
       "approvedBy": "Approuvé par {name} le {date}.",
+      "approvedByDeputy": "Approuvé par {name} (remplaçant de {actingForName}) le {date}.",
       "awaitingReview": "En attente de révision.",
       "awaitingReviewer": "En attente de révision par {name}.",
       "backToApprovals": "Retour aux approbations",
@@ -576,7 +604,9 @@
         "description": "Toutes les étapes de ce rapport, de la plus ancienne à la plus récente. Les heures sont affichées en UTC.",
         "detail": {
           "approvalRecorded": "Par {name} ; en attente d'une approbation supplémentaire.",
+          "approvalRecordedByDeputy": "Par {name} (remplaçant de {actingForName}) ; en attente d'approbation supplémentaire.",
           "by": "Par {name}",
+          "byDeputy": "Par {name} (remplaçant de {actingForName})",
           "inCycle": "Soumission {number} · {detail}",
           "selfApproved": "Personne d'autre n'a pu examiner ce rapport."
         },
@@ -843,6 +873,7 @@
         "verifying": "Vérification du reçu…"
       },
       "rejectedBy": "Rejeté par {name}",
+      "rejectedByDeputy": "Refusé par {name} (remplaçant de {actingForName})",
       "reopen": {
         "action": "Rouvrir pour correction",
         "changed": "Le rapport a été modifié entre-temps et n'a pas été rouvert. Veuillez le vérifier à nouveau.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Montant approuvé payé par l'employé",
       "entry": {
         "exportBatch": "Issu de l'export demandé le {date}",
+        "payrollRun": "Remboursé avec la paie de {period}",
         "recordedBy": "Enregistré par {name}, {date}",
         "recovery": "{amount} récupéré",
         "reimbursement": "{amount} payé"

@@ -1,7 +1,14 @@
 import JSZip from "jszip";
 import { createLogger } from "@/lib/logger";
 import type { ExportCategory } from "./data-fetchers";
-import { CSV_COLUMNS, isCSVCategory, timeEntryCsvColumns, toCSV } from "./formatters/csv-formatter";
+import {
+	CSV_COLUMNS,
+	csvTableToCSV,
+	isCSVCategory,
+	isCsvTable,
+	timeEntryCsvColumns,
+	toCSV,
+} from "./formatters/csv-formatter";
 import { countRecords, isJSONCategory, toJSON } from "./formatters/json-formatter";
 
 const logger = createLogger("ZipBuilder");
@@ -41,6 +48,12 @@ export function buildExportFiles(
  */
 function buildCSVFiles(category: ExportCategory, data: unknown): ExportFile[] {
 	const files: ExportFile[] = [];
+
+	// Datasets with their own columns (projects, customers): one file, header always.
+	if (isCsvTable(data)) {
+		files.push({ name: `${category}.csv`, content: csvTableToCSV(data), type: "csv" });
+		return files;
+	}
 
 	// Some categories have nested data (e.g., absences has both absences and categories)
 	if (typeof data === "object" && data !== null && !Array.isArray(data)) {

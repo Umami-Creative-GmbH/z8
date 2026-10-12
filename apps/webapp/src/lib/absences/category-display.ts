@@ -8,7 +8,8 @@ export type AbsenceCategoryDisplayType =
 	| "unpaid"
 	| "parental"
 	| "bereavement"
-	| "custom";
+	| "custom"
+	| "time_off_in_lieu";
 
 type TranslateFn = (key: string, fallback: string) => string;
 
@@ -71,6 +72,12 @@ export const builtInAbsenceCategoryText: Record<
 		name: "Bereavement",
 		descriptionKey: "settings.absenceCategories.defaults.bereavement.description",
 		description: "Bereavement leave",
+	},
+	time_off_in_lieu: {
+		nameKey: "settings.absenceCategories.defaults.timeOffInLieu.name",
+		name: "Time off in lieu",
+		descriptionKey: "settings.absenceCategories.defaults.timeOffInLieu.description",
+		description: "Time off taken against the work balance",
 	},
 };
 

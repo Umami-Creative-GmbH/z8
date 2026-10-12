@@ -32,6 +32,45 @@ describe("buildStaticAppSearchResults", () => {
 		expect(settingsResult).toMatchObject({ type: "setting", title: "Profile" });
 	});
 
+	it("finds the employee's own schedule only while shifts are on (#977)", () => {
+		const input = {
+			t,
+			employeeRole: "employee" as const,
+			settingsAccessTier: "member" as const,
+			billingEnabled: true,
+			showComplianceNav: false,
+		};
+
+		expect(
+			buildStaticAppSearchResults({ ...input, featureFlags: enabledFeatures }).find(
+				(result) => result.href === "/scheduling",
+			),
+		).toMatchObject({ type: "page", id: "page:my-schedule", title: "My Schedule" });
+		expect(
+			buildStaticAppSearchResults({
+				...input,
+				featureFlags: { ...enabledFeatures, shiftsEnabled: false },
+			}).some((result) => result.href === "/scheduling"),
+		).toBe(false);
+	});
+
+	it("finds the Projects setting for an employee who manages a project (#928)", () => {
+		const input = {
+			t,
+			employeeRole: "employee" as const,
+			settingsAccessTier: "member" as const,
+			billingEnabled: true,
+			showComplianceNav: false,
+			featureFlags: enabledFeatures,
+		};
+		const settingHrefs = (managesProject: boolean) =>
+			buildStaticAppSearchResults({ ...input, managesProject })
+				.filter((result) => result.type === "setting")
+				.map((result) => result.href);
+
+		expect(settingHrefs(true)).toEqual([...settingHrefs(false), "/settings/projects"]);
+	});
+
 	it("shows manager navigation and manager settings without org-admin settings", () => {
 		const results = buildStaticAppSearchResults({
 			t: (key, defaultValue) =>

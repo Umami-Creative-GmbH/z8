@@ -19,6 +19,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
+import { toastClockCommandError } from "./clock-command-error-toast";
 import { showSavedClockToast } from "./saved-clock-toast";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 
@@ -26,6 +27,8 @@ interface ActiveWorkPeriodData {
 	id: string;
 	startTime: Date;
 	endTime: Date | null;
+	breakStartedAt?: Date | null;
+	breakStartedZone?: string | null;
 }
 
 interface ClockInOutWidgetState {
@@ -127,7 +130,12 @@ export function useClockInOutWidget(
 		employeeId: null,
 		isClockedIn: !!initialWorkPeriod,
 		activeWorkPeriod: initialWorkPeriod
-			? { id: initialWorkPeriod.id, startTime: initialWorkPeriod.startTime }
+			? {
+					id: initialWorkPeriod.id,
+					startTime: initialWorkPeriod.startTime,
+					breakStartedAt: initialWorkPeriod.breakStartedAt ?? null,
+					breakStartedZone: initialWorkPeriod.breakStartedZone ?? null,
+				}
 			: null,
 	};
 
@@ -181,7 +189,7 @@ export function useClockInOutWidget(
 			: result.error ||
 				t("timeTracking.errors.clockInFailed", "Failed to clock in");
 
-		toast.error(errorMessage, {
+		toastClockCommandError(result, errorMessage, {
 			description: holidayName
 				? t(
 						"timeTracking.errors.holidayBlockedDesc",
@@ -259,7 +267,7 @@ export function useClockInOutWidget(
 			: result.error ||
 				t("timeTracking.errors.clockOutFailed", "Failed to clock out");
 
-		toast.error(errorMessage, {
+		toastClockCommandError(result, errorMessage, {
 			description: holidayName
 				? t(
 						"timeTracking.errors.holidayBlockedDesc",

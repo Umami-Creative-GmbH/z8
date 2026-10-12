@@ -11,6 +11,8 @@ import { eq } from "drizzle-orm";
 import { dataExport, db, employee, organization } from "@/db";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import {
@@ -19,10 +21,11 @@ import {
 	formatFileSize,
 	getPendingExports,
 	processExport,
-	regeneratePresignedUrl,
 } from "@/lib/export/export-service";
-import { CATEGORY_LABELS, type ExportCategory } from "@/lib/export/types";
+import { CATEGORY_LABELS, type ExportCategory, exportHistoryPath } from "@/lib/export/types";
 import { createLogger } from "@/lib/logger";
+import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 
 const logger = createLogger("ExportProcessorJob");
 
@@ -46,6 +49,7 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 	email: string;
 	name: string;
 	organizationName: string;
+	organizationTimezone: string;
 } | null> {
 	try {
 		// Get employee who requested the export
@@ -73,6 +77,7 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 			where: eq(organization.id, exportRecord.organizationId),
 			columns: {
 				name: true,
+				timezone: true,
 			},
 		});
 
@@ -80,6 +85,7 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 			email: emp.user.email,
 			name: buildAuthUserDisplayName(emp.user) || "Admin",
 			organizationName: org?.name || "Your Organization",
+			organizationTimezone: resolveOrganizationTimezone(org?.timezone ?? undefined).timezone,
 		};
 	} catch (error) {
 		logger.error({ exportId: exportRecord.id, error }, "Failed to get requester details");
@@ -94,24 +100,31 @@ async function sendSuccessEmail(exportRecord: ExportRecord): Promise<void> {
 	const requester = await getRequesterDetails(exportRecord);
 	if (!requester) return;
 
+	if (!exportRecord.expiresAt) {
+		logger.error({ exportId: exportRecord.id }, "Completed export has no expiry");
+		return;
+	}
+
 	try {
-		// Generate presigned URL
-		const downloadUrl = await regeneratePresignedUrl(exportRecord.id, exportRecord.organizationId);
+		// A presigned URL would expire long before the email is read, so the
+		// email links to the export history, which signs a fresh URL per download.
+		// The path names the export's organization so a multi-org admin is not
+		// shown the history of whichever organization is active.
+		const locale = await resolveOrganizationNotificationLocale(exportRecord.organizationId);
+		const downloadUrl = `${getDefaultAppBaseUrl()}/${locale}${exportHistoryPath(exportRecord.organizationId)}`;
 
 		// Format categories for display
 		const categoryNames = exportRecord.categories.map(
 			(cat) => CATEGORY_LABELS[cat as ExportCategory] || cat,
 		);
 
-		// Format expiry date
-		const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
-			weekday: "long",
-			year: "numeric",
-			month: "long",
-			day: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-		});
+		// The file itself stays available until the export expires.
+		const timezone = requester.organizationTimezone;
+		const expiresAt = `${formatInstant(
+			instantFromDate(exportRecord.expiresAt),
+			{ locale: "en-US", timezone, timeFormat: "24h" },
+			"dateTimeMedium",
+		)} (${timezone})`;
 
 		const rendered = await renderOrganizationEmailTemplate({
 			organizationId: exportRecord.organizationId,

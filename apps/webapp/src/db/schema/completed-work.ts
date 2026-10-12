@@ -55,10 +55,16 @@ export const COMPLETED_WORK_WRITERS = [
 	"automatic_break_enforcement",
 	"employee_departure",
 	"automatic_clock_out",
+	"kiosk_clock",
 ] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
-export const COMPLETED_WORK_ACTOR_KINDS = ["human", "system", "unknown_historical"] as const;
+export const COMPLETED_WORK_ACTOR_KINDS = [
+	"human",
+	"system",
+	"unknown_historical",
+	"kiosk",
+] as const;
 export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number];
 
 // Committed completed-work operation receipt (#256 §5, #274, #286). Written in the same
@@ -101,6 +107,8 @@ export const completedWorkOperation = pgTable(
 		// Provider source identity of a reviewed import (#284); one committed operation
 		// per source and organization, so a re-import cannot recreate the work.
 		sourceKey: text("source_key"),
+		// The kiosk a kiosk clock command ran at (#860), by value: the kiosk is its actor.
+		kioskId: uuid("kiosk_id"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
@@ -113,13 +121,16 @@ export const completedWorkOperation = pgTable(
 		uniqueIndex("completedWorkOperation_org_source_idx")
 			.on(table.organizationId, table.sourceKey)
 			.where(sql`${table.sourceKey} IS NOT NULL`),
+		index("completedWorkOperation_org_kiosk_idx")
+			.on(table.organizationId, table.kioskId)
+			.where(sql`${table.kioskId} IS NOT NULL`),
 		check(
 			"completed_work_operation_kind_check",
 			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap', 'split_completed_work', 'apply_historical_repair_proposal', 'automatic_break_adjustment')`,
 		),
 		check(
 			"completed_work_operation_writer_check",
-			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'work_period_split', 'historical_repair_proposal', 'automatic_break_enforcement', 'employee_departure', 'automatic_clock_out')`,
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'work_period_split', 'historical_repair_proposal', 'automatic_break_enforcement', 'employee_departure', 'automatic_clock_out', 'kiosk_clock')`,
 		),
 		check(
 			"completed_work_operation_source_check",
@@ -131,7 +142,11 @@ export const completedWorkOperation = pgTable(
 		),
 		check(
 			"completed_work_operation_actor_check",
-			sql`(${table.actorKind} = 'human' AND ${table.actorUserId} IS NOT NULL) OR ${table.actorKind} IN ('system', 'unknown_historical')`,
+			sql`(${table.actorKind} = 'human' AND ${table.actorUserId} IS NOT NULL) OR ${table.actorKind} IN ('system', 'unknown_historical') OR (${table.actorKind} = 'kiosk' AND ${table.actorUserId} IS NULL)`,
+		),
+		check(
+			"completed_work_operation_kiosk_check",
+			sql`(${table.writer} = 'kiosk_clock') = (${table.actorKind} = 'kiosk') AND (${table.actorKind} = 'kiosk') = (${table.kioskId} IS NOT NULL)`,
 		),
 		check(
 			"completed_work_operation_version_check",

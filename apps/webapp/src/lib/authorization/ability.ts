@@ -96,6 +96,8 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can(["read", "export", "configure"], "WorksCouncil");
 			can(["read", "export", "settle"], "TravelExpenseFinance");
 			can("manage", "DemoData");
+			// Closed months (#762): only owners reopen by default.
+			can(["close", "reopen"], "PayrollPeriod");
 		}
 
 		// Admin has most org control, including billing
@@ -120,6 +122,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can(["read", "export", "configure"], "WorksCouncil");
 			can(["read", "export", "settle"], "TravelExpenseFinance");
 			can("manage", "DemoData");
+			can("close", "PayrollPeriod");
 		}
 
 		// Regular members can read basic org info

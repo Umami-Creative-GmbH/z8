@@ -5,6 +5,14 @@ const APP_CALLBACK_URLS: Record<SupportedApp, string> = {
 	mobile: "z8mobile://auth/callback",
 };
 
+/**
+ * The store app (#842) signs in as app type `mobile`. Unlike the desktop app, it
+ * receives a session cookie in its web view, never the session token.
+ */
+export function isStoreApp(app: SupportedApp): app is "mobile" {
+	return app === "mobile";
+}
+
 export function getAllowedAppRedirect(app: SupportedApp): string {
 	return APP_CALLBACK_URLS[app];
 }

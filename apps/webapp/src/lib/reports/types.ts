@@ -2,6 +2,10 @@
  * Report types and interfaces for employee reports feature
  */
 
+import type { CustomFieldReportValue } from "@/lib/organization/custom-fields/report-values";
+
+export type { CustomFieldReportValue };
+
 export type PeriodPreset =
 	| "last_month"
 	| "current_month"
@@ -27,6 +31,11 @@ export interface EmployeeInfo {
 	email?: string;
 	contractType?: "fixed" | "hourly";
 	currentHourlyRate?: string | null;
+	/**
+	 * The employee's active custom fields the requester sees, in their defined
+	 * order, with values as of the report period's last day (#820).
+	 */
+	customFields: CustomFieldReportValue[];
 }
 
 export interface PeriodInfo {

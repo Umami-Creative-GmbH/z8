@@ -4,12 +4,14 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
+import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
 	AbsenceData,
 	DatevLohnConfig,
 	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
+	OvertimePayoutData,
 	WageTypeMapping,
 	WorkPeriodData,
 } from "../types";
@@ -19,6 +21,12 @@ import {
 	GERMAN_EXPENSE_LINE_NOTE,
 	germanPersonnelNumber,
 } from "./expense-lines";
+import {
+	addOvertimePayoutHours,
+	GERMAN_OVERTIME_PAYOUT_NOTE,
+	overtimePayoutsForFormat,
+	widenDateRangeByPayouts,
+} from "./overtime-payouts";
 
 const logger = createLogger("DatevLohnFormatter");
 
@@ -60,12 +68,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			errors.push("Beraternummer must be 1-7 digits");
 		}
 
-		if (
-			!datevConfig.personnelNumberType ||
-			!["employeeNumber", "employeeId"].includes(datevConfig.personnelNumberType)
-		) {
-			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
-		}
+		const personnelNumberError = personnelNumberTypeError(config);
+		if (personnelNumberError) errors.push(personnelNumberError);
 
 		return {
 			valid: errors.length === 0,
@@ -79,6 +83,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
+		overtimePayouts: OvertimePayoutData[] = [],
 	): ExportResult {
 		logger.info(
 			{ workPeriodCount: workPeriods.length, absenceCount: absences.length },
@@ -90,7 +95,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();
 		const absenceCategoryMappings = new Map<string, WageTypeMapping>();
-		const specialCategoryMappings = new Map<string, WageTypeMapping>();
 
 		for (const mapping of mappings) {
 			if (mapping.workCategoryId) {
@@ -98,9 +102,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			}
 			if (mapping.absenceCategoryId) {
 				absenceCategoryMappings.set(mapping.absenceCategoryId, mapping);
-			}
-			if (mapping.specialCategory) {
-				specialCategoryMappings.set(mapping.specialCategory, mapping);
 			}
 		}
 
@@ -113,6 +114,17 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 		// Add absence data
 		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, datevConfig);
+
+		// Overtime payouts (#1001): hours on the payout's day under the "overtime" wage type.
+		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "datev");
+		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
+			personnelNumber: (payout) => this.personnelNumber(payout, datevConfig),
+			period: (payout) => payout.day,
+			add: (existing, hours) => ({
+				hours: (existing?.hours ?? 0) + hours,
+				note: existing?.note || GERMAN_OVERTIME_PAYOUT_NOTE,
+			}),
+		});
 
 		// Generate CSV content
 		const lines: string[] = [];
@@ -161,14 +173,19 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
+		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
 
-		const dateRange = this.getDateRange(workPeriods, absences);
+		const dateRange = widenDateRangeByPayouts(
+			this.getDateRange(workPeriods, absences),
+			payouts.mapped,
+		);
 		const fileName = this.generateFileName(dateRange);
 
 		logger.info(
 			{
 				lineCount: lines.length,
 				employeeCount: uniqueEmployees.size,
+				unmappedOvertimePayoutCount: payouts.unmapped.length,
 				fileName,
 			},
 			"DATEV Lohn export generated",
@@ -189,6 +206,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 					start: dateRange.start?.toISODate() || "",
 					end: dateRange.end?.toISODate() || "",
 				},
+				unmappedOvertimePayouts: payouts.unmapped,
 			},
 		};
 	}
@@ -206,7 +224,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
 
-			const personnelNumber = this.getPersonnelNumber(period, config);
+			const personnelNumber = this.personnelNumber(period, config);
 			const dateStr = period.startTime.toISODate()!;
 			const hours = period.durationMinutes / 60;
 
@@ -266,7 +284,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			const mappedCode = wageTypeCodeFor(mapping, "datev");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
-			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
+			const personnelNumber = this.personnelNumber(absence, config);
 			const wageTypeCode = mappedCode;
 			const note = mapping.datevWageTypeName || absence.absenceCategoryName || "";
 
@@ -304,35 +322,20 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	}
 
 	/**
-	 * Get personnel number from work period based on config
+	 * The row's personnel number (`germanPersonnelNumber`, shared with expense
+	 * lines); an employee number that isn't set is logged before the fallback.
 	 */
-	private getPersonnelNumber(period: WorkPeriodData, config: DatevLohnConfig): string {
-		if (config.personnelNumberType === "employeeNumber") {
-			if (period.employeeNumber) {
-				return period.employeeNumber;
-			}
+	private personnelNumber(
+		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
+		config: DatevLohnConfig,
+	): string {
+		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
 			logger.warn(
-				{ employeeId: period.employeeId, periodId: period.id },
+				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
 			);
 		}
-		return period.employeeId;
-	}
-
-	/**
-	 * Get personnel number from absence based on config
-	 */
-	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: DatevLohnConfig): string {
-		if (config.personnelNumberType === "employeeNumber") {
-			if (absence.employeeNumber) {
-				return absence.employeeNumber;
-			}
-			logger.warn(
-				{ employeeId: absence.employeeId, absenceId: absence.id },
-				"Employee number not set, falling back to employeeId for absence",
-			);
-		}
-		return absence.employeeId;
+		return germanPersonnelNumber(row, config);
 	}
 
 

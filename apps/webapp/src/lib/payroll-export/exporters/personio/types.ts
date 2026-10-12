@@ -7,8 +7,10 @@
  * Secrets (clientId, clientSecret) stored in Vault separately
  */
 export interface PersonioConfig {
-	/** Employee matching strategy */
-	employeeMatchStrategy: "employeeNumber" | "email";
+	/** Employee matching strategy; a custom field matches by Personio personnel number (#821) */
+	employeeMatchStrategy: "employeeNumber" | "email" | "customField";
+	/** The employee custom field matched by when the strategy is "customField" */
+	employeeMatchCustomFieldId?: string;
 	/** Whether to include zero-hour records */
 	includeZeroHours: boolean;
 	/** Batch size for API requests (max 200 per Personio docs) */

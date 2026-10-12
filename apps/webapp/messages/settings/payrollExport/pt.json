@@ -91,6 +91,8 @@
           "missingConfiguration": "configuração",
           "missingCredentials": "credenciais"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# pagamento de horas extraordinárias não foi exportado} other {# pagamentos de horas extraordinárias não foram exportados}}",
+        "unmappedOvertimePayoutsDescription": "Nenhum tipo de vencimento está associado a Horas extraordinárias para este formato. Associe um em Tipos de vencimento e exporte novamente, ou pague estas horas de outra forma.",
         "year": "Ano"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Tamanho",
           "status": "Status"
         },
-        "title": "Histórico de exportação"
+        "title": "Histórico de exportação",
+        "unmappedOvertimePayouts": "{count, plural, one {# pagamento de horas extraordinárias não exportado: sem tipo de vencimento para Horas extraordinárias} other {# pagamentos de horas extraordinárias não exportados: sem tipo de vencimento para Horas extraordinárias}}"
+      },
+      "identifier": {
+        "customField": "Campo personalizado: {name}",
+        "unavailableField": "Campo personalizado (indisponível)"
       },
       "lexware": {
         "configured": "Configurado",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Todos os colaboradores ativos têm histórico de trabalho confirmado para este período de folha de pagamento.",
           "descriptionWarning": "Alguns colaboradores ativos não têm histórico de trabalho confirmado para este período de folha de pagamento."
+        },
+        "periodSubmissions": {
+          "description": "Envios de período esperados neste intervalo que estão ausentes, rejeitados, devolvidos após uma alteração ou ainda aguardando decisão. Eles não bloqueiam a exportação da folha de pagamento.",
+          "title": "Envios de período"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Períodos neste intervalo que ainda não terminaram e, portanto, não podem ser enviados. Suas horas ainda podem mudar após a exportação.",
+          "title": "Envios de período ainda em andamento"
         }
       },
       "checkStatus": {

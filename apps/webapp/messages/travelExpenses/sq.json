@@ -1,0 +1,1148 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "download": "Shkarko",
+      "preview": "Parapamje",
+      "retry": "Riprovo",
+      "viewClaim": "Shiko kërkesën"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Korrigjo me një rregullim",
+        "confirm": "Krijo rregullim",
+        "explanation": "Ju merrni një kopje të shpenzimeve të miratuara për t'i korrigjuar. Dorëzimi i saj dërgon të gjithë raportin e korrigjuar për një miratim të ri; rimbursohet ose kthehet mbrapsht vetëm diferenca me shumën e miratuar.",
+        "failed": "Rregullimi nuk mund të krijohej. Ju lutemi provoni përsëri.",
+        "ineligible": "Ky raport nuk mund të rregullohet më. Rifreskoni faqen për të parë gjendjen e tij aktuale.",
+        "reason": "Arsyeja e korrigjimit",
+        "reasonRequired": "Shpjegoni çfarë duhet të korrigjohet.",
+        "reasonTooLong": "Mbajeni arsyen nën {max} karaktere.",
+        "title": "Të krijohet një rregullim i lidhur?"
+      },
+      "ineligible": {
+        "adjustment": "Një rregullim korrigjohet përmes raportit që ai rregullon."
+      },
+      "notice": {
+        "baseline": "Shuma e miratuar që korrigjon",
+        "delta": "Diferenca me shenjë",
+        "editing": "Korrigjoni shpenzimet më poshtë. Kur ta dorëzoni, diferenca me shumën e miratuar shfaqet për shqyrtim nga ana juaj dhe më pas shqyrtohet rishtas. Raporti origjinal dhe pagesat e tij mbeten të pandryshuara.",
+        "original": "Hap raportin origjinal",
+        "title": "Rregullim i një raporti të miratuar"
+      },
+      "panel": {
+        "applied": "Zbatuar",
+        "description": "Ky raport tashmë është eksportuar ose rimbursuar, kështu që mbetet i miratuar. Një korrigjim është një rregullim i lidhur: ai shqyrtohet rishtas dhe, sapo të miratohet, ndryshon shumën e miratuar me diferencën përkatëse me shenjë.",
+        "effective": "Shuma e miratuar duke përfshirë rregullimet: {amount}",
+        "open": "Hap rregullimin",
+        "title": "Rregullimet"
+      },
+      "preview": {
+        "currency": "Totali i korrigjuar nuk është në monedhën e raportit origjinal, prandaj nuk mund të dërgohet si rregullim.",
+        "delta": "Ky rregullim ndryshon shumën e miratuar prej {baseline} me {delta}.",
+        "review": "Kërkon një miratim të ri të të gjithë raportit, edhe kur shuma ulet."
+      },
+      "reviewerHint": "Punonjësi krijon rregullimin nga ky raport; ai kthehet te ju për një shqyrtim të ri me diferencën me shenjë."
+    },
+    "allowanceOverride": {
+      "amount": "Shuma",
+      "authorizedBy": "Autorizuar nga",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Llogaritja",
+      "evidence": "Dëshmi",
+      "noOrdinary": "Nuk ekziston asnjë llogaritje e zakonshme për këto të dhëna.",
+      "ordinary": "Politika do të llogariste {amount}.",
+      "reason": "Arsyeja",
+      "situation": {
+        "calculated": "Llogaritur nga politika",
+        "fallback": "Llogaritur me një normë zyrtare alternative",
+        "missingCoverage": "Nuk mbulohet nga asnjë politikë e organizatës",
+        "missingFacts": "Mungojnë të dhënat e kërkuara të udhëtimit",
+        "unsupported": "Nuk mbulohet nga rregullat e mbështetura të llogaritjes"
+      },
+      "situationLabel": "Pse nuk u llogarit",
+      "situationResolved": "Kjo dietë manuale nuk zbatohet më: arsyeja pse u autorizua ka ndryshuar (për shembull, një politikë tani i mbulon këto të dhëna). Dieta e llogaritur merret parasysh aty ku ekziston; përndryshe një administrator i shpenzimeve duhet ta shqyrtojë atë.",
+      "stale": "Kjo dietë manuale u autorizua për të dhëna të tjera dhe nuk zbatohet më. Një administrator i shpenzimeve duhet të shqyrtojë të dhënat e ndryshuara.",
+      "title": "Dietë e caktuar manualisht nga një administrator i shpenzimeve"
+    },
+    "approvals": {
+      "description": "Hapni kutinë e unifikuar të miratimeve të filtruar sipas shpenzimeve të udhëtimit.",
+      "entry": {
+        "open": "Hap kutinë hyrëse",
+        "title": "Shqyrtoni miratimet në pritje të shpenzimeve të udhëtimit"
+      }
+    },
+    "currency": {
+      "empty": "Nuk u gjet asnjë monedhë",
+      "placeholder": "Zgjidhni një monedhë",
+      "search": "Kërko monedhat"
+    },
+    "decision": {
+      "approve": "Mirato",
+      "approved": "Kërkesa u miratua me sukses",
+      "approveDescription": "Shtoni një shënim opsional për kërkuesin përpara se ta miratoni.",
+      "approveTitle": "Mirato kërkesën",
+      "errors": {
+        "approve": "Miratimi i kërkesës dështoi",
+        "missingClaim": "Kërkesa për shpenzimet e udhëtimit mungon",
+        "reject": "Refuzimi i kërkesës dështoi",
+        "rejectionReason": "Ju lutemi jepni një arsye për refuzimin"
+      },
+      "noteOptional": "Shënim (opsionale)",
+      "notePlaceholder": "Duket mirë. Faleminderit për detajet.",
+      "reasonPlaceholder": "Mungojnë detajet e faturës për shumën e dërguar",
+      "reasonRequired": "Arsyeja (e kërkuar)",
+      "reject": "Refuzo",
+      "rejectDescription": "Jepni një arsye të qartë për të ndihmuar kërkuesin të përditësojë dhe të ridërgojë.",
+      "rejected": "Kërkesa u refuzua me sukses",
+      "rejectTitle": "Refuzo kërkesën"
+    },
+    "detail": {
+      "created": "Krijuar",
+      "decisionRecorded": "Vendimi u regjistrua",
+      "destination": "Destinacioni",
+      "history": "Historiku i vendimeve",
+      "historyDescription": "Çdo hap i kësaj kërkese, më të vjetrat në fillim. Orët shfaqen në UTC.",
+      "intermediateApproval": "Miratimi u regjistrua — në pritje të miratimit të mëtejshëm",
+      "legacyReceiptIdentity": "Faturë e trashëguar: shuma e kontrollit të përmbajtjes nuk u regjistrua.",
+      "loading": "Po ngarkohet kërkesa…",
+      "noReceipts": "Nuk ka fatura të regjistruara",
+      "notRecorded": "Nuk është regjistruar",
+      "originalAmount": "Shuma origjinale",
+      "receipts": "Faturat",
+      "refreshing": "Po rifreskohet kërkesa…",
+      "submitted": "Dorëzuar",
+      "title": "Kërkesë për shpenzimet e udhëtimit",
+      "unknownDates": "Konteksti i datës së udhëtimit nuk është regjistruar (kërkesë e trashëguar)"
+    },
+    "errors": {
+      "loadDetailRetry": "Kjo kërkesë nuk mund të ngarkohej. Ju lutemi provoni përsëri."
+    },
+    "feature": "menaxhoni shpenzimet e udhëtimit",
+    "finance": {
+      "approvedOn": "Miratuar më {date}",
+      "back": "Kthehu te financat e shpenzimeve",
+      "bulk": {
+        "action": "Shëno si të rimbursuar",
+        "description": "Çdo shpenzim i përzgjedhur rimbursohet plotësisht, në monedhën e vet, me këtë datë pagese dhe referencë. Z8 nuk transferon para.",
+        "failed": "Shpenzimet nuk mund të shënoheshin si të rimbursuara. Ju lutemi provoni përsëri.",
+        "nothing": "Asgjë këtu nuk pret rimbursim të plotë. Asnjë pagesë nuk është regjistruar.",
+        "outcome": {
+          "alreadyReimbursed": "U kapërcye: tashmë e rimbursuar",
+          "balanceChanged": "U kapërcye: bilanci ka ndryshuar",
+          "failed": "Dështoi",
+          "inPayrollRun": "U kapërcye: përfshirë në një ekzekutim të listëpagesës",
+          "outOfScope": "U kapërcye: jashtë fushëveprimit",
+          "overpaidOrReview": "U kapërcye: mbipaguar ose kërkon rishikim",
+          "ownExpense": "U kapërcye: shpenzimi juaj",
+          "reimbursed": "Rimbursuar {amount}"
+        },
+        "referenceHint": "E njëjta referencë regjistrohet për çdo shpenzim të përzgjedhur, p.sh. grupi i transfertave bankare.",
+        "results": {
+          "done": "U krye",
+          "summary": "{reimbursed} nga {total} të rimbursuara",
+          "title": "Rezultatet e rimbursimit"
+        },
+        "select": "Zgjidh {name}",
+        "selectAll": "Zgjidhni të gjitha shpenzimet në pritje të rimbursimit në këtë faqe",
+        "selected": "{count} të përzgjedhura",
+        "skipped": "Nuk përfshihen ({count})",
+        "submit": "Shëno {count} si të rimbursuara",
+        "title": "Shëno si të rimbursuar"
+      },
+      "companyPaid": "Paguar nga kompania {amount}",
+      "coverageGap": {
+        "description": "Asnjë zyrtar aktiv i shpenzimeve që mund të regjistrojë rimbursime nuk i ka ato në fushëveprim. Pronarët dhe administratorët mund t'i regjistrojnë ende ato, ose të zgjerojnë fushëveprimin e një zyrtari.",
+        "empty": "Një zyrtar i shpenzimeve mbulon çdo shpenzim të miratuar në pritje të rimbursimit.",
+        "queueFilter": "Shpenzime të miratuara në pritje të rimbursimit që nuk mbulohen nga asnjë zyrtar shpenzimes.",
+        "show": "Shfaq këto shpenzime",
+        "showAll": "Shfaq të gjitha shpenzimet e miratuara",
+        "title": "{count, plural, one {# shpenzim i miratuar pret rimbursim që nuk mbulohet nga asnjë zyrtar shpenzimes} other {# shpenzime të miratuara presin rimbursim që nuk mbulohen nga asnjë zyrtar shpenzimes}}"
+      },
+      "description": "Shpenzimet e miratuara dhe shumat që ende u detyrohen punonjësve. Regjistrimi i një rimbursimi dokumenton një pagesë të kryer jashtë Z8; nuk transferohen para.",
+      "employeePaid": "Paguar nga punonjësi {amount}",
+      "empty": {
+        "allReimbursed": "Nuk mbeti asgjë për t'u regjistruar: çdo shpenzim i miratuar është rimbursuar.",
+        "any": "Ende nuk ka shpenzime të miratuara.",
+        "filtered": "Asnjë shpenzim i miratuar nuk përputhet me këta filtra."
+      },
+      "entry": {
+        "description": "Shqyrtoni shpenzimet e miratuara, balancat e papaguara dhe rimbursimet e regjistruara.",
+        "open": "Hap radhën e financës",
+        "title": "Financat e shpenzimeve"
+      },
+      "errors": {
+        "load": "Nuk mund të ngarkohet radha e financës. Ju lutemi provoni përsëri."
+      },
+      "exports": {
+        "adjustment": "Rregullim: {name}",
+        "cancel": "Anulo",
+        "cancelledByFinance": "Anuluar nga financa.",
+        "cancelledReopenedHint": "U anulua sepse një raport brenda tij u rihap për korrigjim. Çdo raport tjetër në të është gati për t'u eksportuar përsëri: krijoni një eksportim të ri për to.",
+        "counts": "{reports} raporte · {items} shpenzime · {receipts} fatura",
+        "created": "Eksportimi u fut në radhë. Do të shfaqet më poshtë kur të jetë gati.",
+        "description": "Eksportoni shpenzimet e miratuara si CSV së bashku me faturat përkatëse për kontabilitet. Çdo dorëzim i miratuar eksportohet një herë; shkarkoni përsëri një eksportim sa herë që ju nevojitet.",
+        "download": "Shkarko",
+        "empty": "Nuk ka shpenzime të miratuara në pritje për eksportim.",
+        "errors": {
+          "alreadyExported": "Disa shpenzime të zgjedhura janë tashmë pjesë e një eksportimi tjetër. Shkarkoni atë eksportim në vend të këtij.",
+          "cancel": "Eksportimi nuk mund të anulohej.",
+          "conflict": "Një përpjekje e mëparshme me një përzgjedhje tjetër tashmë është regjistruar. Kontrolloni historikun e eksportimeve.",
+          "failed": "Eksportimi nuk mund të krijohej. Ju lutemi provoni përsëri.",
+          "invalid": "Zgjidhni midis një dhe numrit maksimal të shpenzimeve.",
+          "load": "Eksportet nuk mund të ngarkohen. Ju lutemi provoni përsëri.",
+          "reimburse": "Eksportimi nuk mund të ngarkohej për rimbursim. Ju lutemi provoni përsëri.",
+          "retry": "Eksportimi nuk mund të riprovohej.",
+          "stale": "Disa shpenzime të zgjedhura nuk janë më të miratuara siç shfaqen. Lista u rifreskua; kontrolloni përzgjedhjen dhe eksportoni përsëri."
+        },
+        "failure": {
+          "enqueue": "Eksportimi nuk mund të vendosej në radhë. Ju lutemi provoni përsëri.",
+          "inconsistent": "Të dhënat e miratuara nuk mund të eksportoheshin në mënyrë të qëndrueshme. Kontaktoni mbështetjen.",
+          "receiptMismatch": "Një faturë e ruajtur nuk përputhet më me shumën kontrolluese të regjistruar të saj. Kontaktoni mbështetjen përpara se të riprovoni.",
+          "receiptUnavailable": "Një skedar fature nuk mund të lexohej. Riprovojeni sapo hapësira ruajtëse të jetë e disponueshme.",
+          "storage": "Skedari i eksportit nuk mund të ruhej. Ju lutemi provoni përsëri.",
+          "unknown": "Eksportimi dështoi. Ju lutemi provoni përsëri."
+        },
+        "form": {
+          "label": "Krijo një eksport",
+          "selectAll": "Zgjidh të gjitha",
+          "submit": "Krijo eksport ({count})"
+        },
+        "history": "Historiku i eksporteve",
+        "loading": "Po ngarkohen eksportet…",
+        "markReimbursed": "Shëno si të rimbursuar",
+        "markReimbursedDescription": "Çdo raport shpenzimesh në këtë eksport rimbursohet plotësisht, në monedhën e vet, me këtë datë pagese dhe referencë. Rregullimet llogariten për raportin që ato korrigjojnë. Z8 nuk transferon para.",
+        "notPayment": "Nuk është pagesë: eksportimi nuk shënon asgjë si të rimbursuar.",
+        "requested": "Kërkuar më {date} nga {name}",
+        "retry": "Riprovo",
+        "status": {
+          "cancelled": "Anuluar",
+          "completed": "Përfunduar",
+          "failed": "Dështuar",
+          "processing": "Po përpunohet",
+          "queued": "Në radhë"
+        },
+        "title": "Eksportet"
+      },
+      "filter": {
+        "all": "Të gjitha të miratuara",
+        "clear": "Pastro filtrat",
+        "currency": {
+          "all": "Të gjitha monedhat",
+          "label": "Monedha",
+          "none": "Nuk u gjet asnjë monedhë.",
+          "search": "Kërko monedhat…"
+        },
+        "employee": {
+          "all": "Të gjithë punonjësit",
+          "label": "Punonjësi",
+          "none": "Nuk u gjet asnjë punonjës.",
+          "search": "Kërko punonjësit…"
+        },
+        "label": "Shfaq shpenzimet",
+        "notExported": "Ende pa u eksportuar",
+        "open": "Hap",
+        "reimbursed": "Rimbursuar",
+        "team": {
+          "all": "Të gjitha ekipet",
+          "label": "Ekipi gjatë miratimit",
+          "none": "Nuk u gjet asnjë ekip.",
+          "search": "Kërko ekipet…"
+        }
+      },
+      "inPayrollRun": "Përfshirë në {run}",
+      "legacyClaim": "Kërkesë e trashëguar për {type}",
+      "loading": "Po ngarkohet radha e financave…",
+      "pagination": {
+        "label": "Faqet e radhës së financave",
+        "next": "Tjetra",
+        "page": "Faqja {page}",
+        "previous": "Përpara"
+      },
+      "payrollRun": {
+        "confirm": {
+          "action": "Konfirmo si të paguar",
+          "description": "U krye pagesa nga lista e pagave për këtë ekzekutim {format}? Raportet e shpenzimeve brenda fushëveprimit tuaj regjistrohen si të rimbursuara me të. Raportet tuaja dhe raportet jashtë fushëveprimit tuaj mbeten në ekzekutim.",
+          "descriptionCounted": "{count, plural, one {Payroll paid this {format} run? # expense report in your scope ({amount}) are recorded as reimbursed with it. Your own reports and reports outside your scope stay in the run.} other {Payroll paid this {format} run? # expense reports in your scope ({amount}) are recorded as reimbursed with it. Your own reports and reports outside your scope stay in the run.}}",
+          "failed": "Ekzekutimi i listëpagesës nuk mund të konfirmohej. Ju lutemi provoni përsëri; asgjë nuk regjistrohet dy herë.",
+          "outcome": {
+            "confirmed": "Rimbursuar {amount}",
+            "confirmedWithRemainder": "U rimbursua {amount}. {remaining} ende pret rimbursim për ekzekutimin e radhës.",
+            "outOfScope": "E pakonfirmuar: jashtë fushëveprimit tuaj. Mbetet në ekzekutim për një zyrtar që e mbulon atë.",
+            "overpaidByPayroll": "U rimbursua {amount}, {overpaid} më shumë nga sa detyrohej ende. Shpenzimi tani është mbipaguar: regjistroni rikuperimin manualisht.",
+            "ownExpense": "E pakonfirmuar: shpenzimi juaj. Mbetet në ekzekutim që ta konfirmojë dikush tjetër."
+          },
+          "payday": "Dita e pagës",
+          "paydayHint": "Dita e pagës në të cilën lista e pagave pagoi këtë ekzekutim. Çdo rimbursim i këtij ekzekutimi regjistrohet në të.",
+          "results": {
+            "nothing": "Asgjë në këtë ekzekutim nuk ka mbetur për t'u konfirmuar. Asnjë rimbursim nuk është regjistruar.",
+            "summary": "{confirmed} nga {total} të konfirmuara",
+            "title": "Rezultatet e konfirmimit"
+          },
+          "submit": "Konfirmo si të paguar",
+          "title": "Konfirmo llogaritjen e pagave {period} si të paguar"
+        },
+        "included": "Përfshirë në {run}. Paguhet me atë listëpagesë dhe regjistrohet si i rimbursuar kur konfirmohet ekzekutimi.",
+        "label": "Ekzekutimi i listëpagesës {period} ({format})",
+        "notIncluded": "Asnjë ekzekutim i listëpagesës nuk e përfshin më këtë shpenzim.",
+        "remove": "Hiq nga ekzekutimi i listëpagesës",
+        "removed": "U hoq nga ekzekutimi i listëpagesës. Shpenzimi pret sërish rimbursim.",
+        "removeDescription": "Hiqeni vetëm nëse listëpagesa nuk do ta paguajë me këtë ekzekutim, për shembull pas korrigjimit të skedarit të listëpagesës. Heqja regjistrohet në regjistrin e auditimit.",
+        "removeFailed": "Shpenzimi nuk mund të hiqej nga ekzekutimi i listëpagesës.",
+        "removeTitle": "Të hiqet ky shpenzim nga ekzekutimi i listëpagesës?"
+      },
+      "payrollRuns": {
+        "description": "Këto llogaritje pagash përmbajnë raporte shpenzimesh që presin rimbursim. Pasi të paguhet llogaritja e pagave, konfirmojeni atë për të regjistruar rimbursimet.",
+        "reports": "{count, plural, one {# raport shpenzimesh për t'u konfirmuar nga ju, {amount}} other {# raporte shpenzimesh për t'u konfirmuar nga ju, {amount}}}",
+        "title": "Llogaritjet e pagave në pritje të konfirmimit"
+      },
+      "queue": {
+        "description": "Hapni një shpenzim për të parë shlyerjen e tij dhe për të regjistruar një rimbursim.",
+        "title": "Shpenzimet e miratuara"
+      },
+      "title": "Financat e shpenzimeve"
+    },
+    "form": {
+      "currency": "Monedha",
+      "notes": "Shënime"
+    },
+    "history": {
+      "adjustment": "Rregullim",
+      "adjustmentOf": "Rregullim i “{title}”",
+      "adjustmentOfUntitled": "Rregullim i një raporti të mëparshëm",
+      "claimed": "Kërkuar",
+      "companyPaid": "Paguar nga kompania {amount}",
+      "continuedFrom": "Vazhduar nga një kërkesë e mëparshme",
+      "deleteDraft": "Fshi draftin “{title}”",
+      "description": "Draftet, raportet e dorëzuara dhe kërkesat e mëparshme, më të modifikuarat së fundi të parat.",
+      "emptyDescription": "Filloni një udhëtim për të mbledhur disa shpenzime me detaje të përbashkëta udhëtimi, ose shtoni një faturë të vetme ose një shpenzim kilometrazhi. Skicat ruhen automatikisht, kështu që mund t'i përfundoni më vonë.",
+      "emptyFilter": "Nuk ka shpenzime me këtë status.",
+      "emptyTitle": "Ende nuk ka shpenzime udhëtimi",
+      "errors": {
+        "load": "Shpenzimet tuaja të udhëtimit nuk mund të ngarkohen. Ju lutemi provoni përsëri.",
+        "refresh": "Shpenzimet tuaja nuk mund të rifreskoheshin; lista më poshtë mund të jetë e vjetëruar. Ju lutemi provoni përsëri."
+      },
+      "filter": {
+        "all": "Të gjitha",
+        "approved": "Miratuar",
+        "awaitingReimbursement": "Në pritje të rimbursimit",
+        "inReview": "Në shqyrtim",
+        "label": "Shfaq shpenzimet",
+        "needsAction": "Për t'u përfunduar",
+        "rejected": "Refuzuar"
+      },
+      "legacy": {
+        "badge": "Kërkesë e mëparshme",
+        "mileage": "Kërkesë për kilometrazh",
+        "perDiem": "Kërkesë për dietë",
+        "receipt": "Kërkesë me faturë"
+      },
+      "loading": "Po ngarkohen shpenzimet tuaja të udhëtimit…",
+      "notCounted": "{count, plural, one {# shpenzim ende pa llogaritur} other {# shpenzime ende pa llogaritur}}",
+      "refreshing": "Po rifreskohet…",
+      "reimbursable": "E rimbursueshme për ju",
+      "showAll": "Shfaq të gjitha shpenzimet",
+      "title": "Shpenzimet tuaja",
+      "untitledMileage": "Kilometrazh pa titull"
+    },
+    "legacyDraft": {
+      "continue": "Vazhdo si raport",
+      "converted": "E vazhduat këtë draft si një raport shpenzimesh. Kjo kërkesë mbetet këtu e pandryshuar për referencë.",
+      "description": "Draftet nga formulari i mëparshëm i kërkesës tani përfundohen si raporte shpenzimesh. Shuma, datat, shënimet dhe faturat tuaja janë bartur; çdo gjë që i nevojitet formularit të ri dhe që ky draft nuk e ka regjistruar kurrë, mbetet ta plotësoni ju. Vetë kjo kërkesë mbetet e pandryshuar.",
+      "failed": "Drafti nuk mund të vazhdohej. Ju lutemi provoni përsëri.",
+      "flags": {
+        "amount": "Shuma e futur {amount} nuk është një shumë e vlefshme fature. Futni shumën dhe monedhën nga fatura.",
+        "conversion": "Fatura është në një monedhë të huaj. Drafti nuk regjistroi konvertim, prandaj shtoni mënyrën se si u konvertua (pagesë me kartë ose kurs këmbimi) përpara se ta dërgoni.",
+        "destination": "Destinacioni \"{destination}\" nuk mund të përputhej me një shtet. Zgjidheni atë.",
+        "expenseDate": "Drafti mbulonte {range}. Zgjidhni ditën e këtij shpenzimi.",
+        "manualTotal": "Drafti kishte një total të shkruar prej {amount}. Ai nuk përdoret: ky shpenzim tani llogaritet nga ajo që futni më poshtë.",
+        "notes": "Shënimet tuaja shfaqen më poshtë; kopjoni ato që vlejnë ende.",
+        "project": "Projekti i draftit u ruajt. Përveç nëse caktimi juaj në datën e shpenzimit është i regjistruar, një administrator shpenzimesh duhet ta autorizojë atë përpara se të mund ta dërgoni.",
+        "projectMissing": "Projekti i draftit nuk ekziston më. Zgjidhni një projekt nëse është e zbatueshme.",
+        "tripDates": "Drafti u krijua para se të regjistroheshin datat e udhëtimit. Futni datat."
+      },
+      "loadFailed": "Nuk mund të kontrollohet ky draft. Ju lutemi provoni përsëri.",
+      "notDraft": "Kjo kërkesë tashmë është dorëzuar. Ajo ruan miratimin e saj origjinal dhe nuk mund të vazhdohet si raport.",
+      "notice": {
+        "description": "Ajo që keni futur u bart aty ku ky formular mund ta mbajë saktësisht, duke përfshirë {count} fatura. Plotësoni fushat e mbetura përpara dorëzimit.",
+        "original": "Shikoni draftin origjinal",
+        "title": "Vazhduar nga një draft i mëparshëm kërkese"
+      },
+      "openReport": "Hapni raportin",
+      "receipt": {
+        "mismatch": "skedari i ruajtur nuk përputhet më me atë që u ngarkua",
+        "unreadable": "skedari i ruajtur nuk mund të lexohet tani",
+        "unsupportedStorage": "skedari mbahet në një hapësirë ruajtëse të pambështetur",
+        "unsupportedType": "skedari i ruajtur nuk është një lloj i mbështetur fature"
+      },
+      "receiptUnavailable": "Nuk u ndryshua asgjë sepse një faturë nuk mund të bartej në mënyrë të sigurt: {receipts}. Ju lutemi provoni përsëri më vonë ose kërkojini administratorit tuaj të rikthejë skedarin.",
+      "status": "Vazhduar si raport",
+      "title": "Vazhdo këtë draft"
+    },
+    "list": {
+      "actions": "Veprimet",
+      "amount": "Shuma",
+      "dateRange": "Periudha e datave",
+      "emptyDescription": "Krijoni kërkesën tuaj të parë për të nisur procesin e miratimit.",
+      "emptyTitle": "Nuk ka ende kërkesa për shpenzime udhëtimi",
+      "status": "Statusi",
+      "type": "Lloji"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Kanberra",
+        "sydney": "Sidnej"
+      },
+      "BR": {
+        "brasilia": "Brazilia",
+        "rio-de-janeiro": "Rio de Zhaneiro",
+        "sao-paulo": "Sao Paulo"
+      },
+      "CA": {
+        "ottawa": "Otava",
+        "toronto": "Toronto",
+        "vancouver": "Vankuver"
+      },
+      "CH": {
+        "bern": "Bernë",
+        "genf": "Gjenevë"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Pekin",
+        "shanghai": "Shangai"
+      },
+      "ES": {
+        "barcelona": "Barcelonë",
+        "kanarische-inseln": "Ishujt Kanare",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Majorka"
+      },
+      "FR": {
+        "paris": "Parisi dhe departamentet 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londër"
+      },
+      "GR": {
+        "athen": "Athinë"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Çenai",
+        "kalkutta": "Kalkutë",
+        "mumbai": "Mumbai",
+        "neu-delhi": "Nju Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Romë"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Vrocllav",
+        "warschau": "Varshavë"
+      },
+      "RU": {
+        "moskau": "Moskë",
+        "st-petersburg": "Shën Petërburg"
+      },
+      "SA": {
+        "djidda": "Xheda",
+        "riad": "Riad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Çikago",
+        "houston": "Hjuston",
+        "los-angeles": "Los Anxhelos",
+        "miami": "Majami",
+        "new-york-city": "Qyteti i Nju Jorkut",
+        "san-francisco": "San Francisko",
+        "washington-dc": "Uashington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johanesburg",
+        "kapstadt": "Kejptaun"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "Kilometrazh i ri",
+        "newReceipt": "Faturë e re",
+        "newTrip": "Udhëtim i ri"
+      },
+      "approvedBy": "Miratuar nga {name} më {date}.",
+      "approvedByDeputy": "Miratuar nga {name} (zëvendësues për {actingForName}) më {date}.",
+      "awaitingReview": "Në pritje të shqyrtimit.",
+      "awaitingReviewer": "Në pritje të shqyrtimit nga {name}.",
+      "backToApprovals": "Kthehu te miratimet",
+      "backToCurrent": "Kthehu te raporti aktual",
+      "backToTravelExpenses": "Kthehu te shpenzimet e udhëtimit",
+      "categories": {
+        "accommodation": "Akomodimi",
+        "meals": "Vaktet",
+        "other": "Të tjera",
+        "parking": "Parkimi",
+        "transport": "Transporti"
+      },
+      "conversion": {
+        "attachFirst": "Bashkëngjitni më parë pasqyrën e kartës ose faturën që tregon tarifimin e mësipërm.",
+        "authorizedBy": "Autorizuar nga",
+        "basis": {
+          "cardCharge": "Tarifimi me kartë",
+          "manualRate": "Kursi i autorizuar",
+          "referenceRate": "Kursi i referencës i BQE-së"
+        },
+        "chargedAmount": "Shuma e tarifuar në {currency}",
+        "chargedAmountDescription": "Shuma në deklaratën e kartës ose të llogarisë suaj bankare, duke përfshirë çdo tarifë konvertimi të aplikuar me të.",
+        "conflict": "Ky shpenzim ka ndryshuar diku tjetër. Kontrollojeni dhe ruani përsëri tarifimin me kartë.",
+        "errors": {
+          "chargedAmount": "Vendosni shumën pozitive të tarifuar në {currency}, me më së shumti {digits} shifra dhjetore.",
+          "evidence": "Zgjidhni bashkëngjitjen e këtij shpenzimi që tregon tarifimin."
+        },
+        "evidence": "Dëshmi:",
+        "evidenceLabel": "Bashkëngjitja që tregon tarifimin",
+        "evidenceMissing": "Mungon bashkëngjitja që tregon tarifimin me kartë.",
+        "formLabel": "Tarifimi me kartë",
+        "none": "Asnjë kurs këmbimi nuk hamendësohet. Vendosni shumën e tarifuar në kartën tuaj në {currency} dhe zgjidhni bashkëngjitjen që e tregon atë, si p.sh. pasqyrën e kartës. Pa një tarifim me kartë, një administrator shpenzimesh mund të regjistrojë një kurs të dokumentuar.",
+        "notSaved": "Tarifimi me kartë nuk mund të ruhej për këtë shpenzim.",
+        "publicationDate": "Publikuar më",
+        "publicationFallback": "Nuk u publikua asnjë kurs më {expenseDate}, prandaj zbatohet publikimi më i fundit i mëparshëm.",
+        "rate": "Kursi",
+        "rateDate": "Data e kursit",
+        "rateEvidence": "Dëshmia e kursit",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Dokumentacioni",
+        "reference": {
+          "alternatives": "Raporti juaj mbetet draft derisa të vendosni tarifimin me kartë në {reimbursementCurrency} bashkë me bashkëngjitjen që e tregon atë, ose një administrator shpenzimesh të regjistrojë një kurs të dokumentuar.",
+          "currencyUnavailable": "Banka Qendrore Evropiane nuk publikon një kurs për {currency} në këtë datë.",
+          "expenseDateMissing": "Vendosni datën e shpenzimit për të kërkuar kursin e referencës.",
+          "historyUnavailable": "Nuk ka asnjë kurs reference për këtë datë.",
+          "notYetPublished": "Kursi i referencës për këtë datë nuk është publikuar ende. Zakonisht shfaqet pas orës 16:00 sipas orës së Frankfurtit në ditët e punës.",
+          "pairUnsupported": "Banka Qendrore Evropiane publikon kurse vetëm kundrejt euros, ndaj asnjë nuk zbatohet midis {currency} dhe {reimbursementCurrency}.",
+          "providerUnavailable": "Kursi i referencës për këtë datë nuk mund të merrej ende. Provoni përsëri më vonë.",
+          "rateStale": "Nuk ka asnjë kurs reference aktual të disponueshëm për këtë datë."
+        },
+        "referencePending": "Kursi i referencës kërkohet përsëri për datën e re sapo të ruhet ndryshimi juaj.",
+        "remove": "Hiq tarifimin me kartë",
+        "removeFailed": "Tarifimi me kartë nuk mund të hiqej. Ringarkoni shpenzimin dhe provoni përsëri.",
+        "replaceWithCardCharge": "Përdor në vend të kësaj tarifimin tim me kartë",
+        "result": "{original} llogaritet si {reimbursement}",
+        "rounding": "Rrumbullakimi",
+        "roundingValue": "Rrumbullakosur me gjysmën lart në {digits} shifra dhjetore",
+        "saveCardCharge": "Ruaj tarifimin me kartë",
+        "saved": "Tarifimi me kartë u ruajt",
+        "saveFailed": "Tarifimi me kartë nuk mund të ruhej. Ju lutemi provoni përsëri.",
+        "source": "Burimi",
+        "sourceEcb": "Kursi i referencës së euros nga Banka Qendrore Evropiane, miratuar nga organizata juaj",
+        "title": "Konvertimi në {currency}"
+      },
+      "correctAndResubmit": "Korrigjoni raportin dhe dorëzojeni përsëri. Dorëzimet e mëparshme mbeten në historikun e tij.",
+      "countryEmpty": "Nuk u gjet asnjë shtet",
+      "countrySearch": "Kërko shtetet",
+      "cycles": {
+        "approved": "miratuar",
+        "description": "Çdo dorëzim mbetet saktësisht ashtu siç është dërguar për shqyrtim.",
+        "entry": "Dorëzimi {number} më {date}: {outcome}",
+        "pending": "në pritje të shqyrtimit",
+        "rejected": "refuzuar",
+        "reopened": "miratuar, më pas rihapur për korrigjim",
+        "returned": "kthyer për ndryshime",
+        "title": "Dorëzimet",
+        "withdrawn": "tërhequr"
+      },
+      "decideInInbox": "Miratoni, ktheni ose refuzoni të gjithë raportin në kutinë e miratimeve.",
+      "delete": {
+        "action": "Fshi draftin",
+        "description": "Drafti, shpenzimet e tij dhe faturat e tyre fshihen. Ky veprim nuk mund të zhbëhet.",
+        "descriptionLegacy": "Drafti, shpenzimet e tij dhe faturat e tyre fshihen, së bashku me draftin e mëparshëm të kërkesës që ai vazhdon. Ky veprim nuk mund të zhbëhet.",
+        "done": "Drafti u fshi.",
+        "failed": "Drafti nuk mund të fshihej. Ju lutemi provoni përsëri.",
+        "notDeletable": "Ky raport tashmë është dorëzuar, prandaj nuk mund të fshihet më.",
+        "title": "Të fshihet ky draft?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, one {# shpenzim} other {# shpenzime}}",
+        "noDate": "Ende pa datë",
+        "noTravelDates": "Ende pa data udhëtimi",
+        "receipts": "{count, plural, one {# faturë} other {# fatura}}",
+        "untitled": "Faturë pa titull",
+        "untitledTrip": "Udhëtim pa titull"
+      },
+      "earlierSubmission": "Ky është një dorëzim i mëparshëm i raportit, i ruajtur saktësisht siç është dorëzuar.",
+      "errors": {
+        "amount": "Vendosni një shumë pozitive me më së shumti dy shifra dhjetore, p.sh. 12.50.",
+        "category": "Zgjidhni një kategori nga lista.",
+        "create": "Shpenzimi nuk mund të krijohej. Ju lutemi provoni përsëri.",
+        "currency": "Vendosni një kod monedhe me tre shkronja, p.sh. EUR.",
+        "expenseDate": "Vendosni një datë të vlefshme.",
+        "load": "Shpenzimi nuk mund të ngarkohet. Ju lutemi provoni përsëri.",
+        "loadSubmission": "Raporti i dorëzuar nuk mund të ngarkohet. Ju lutemi provoni përsëri.",
+        "paidBy": "Zgjidhni se kush ka paguar.",
+        "tooLong": "Ky tekst është shumë i gjatë."
+      },
+      "fields": {
+        "accountingReference": "Referencë kontabiliteti (opsionale)",
+        "accountingReferenceDescription": "Një referencë që departamenti i financës ju kërkoi të përdorni, si p.sh. një numër porosie.",
+        "amount": "Shuma në faturë",
+        "category": "Kategoria",
+        "categoryPlaceholder": "Zgjidhni një kategori",
+        "description": "Përshkrimi",
+        "descriptionPlaceholder": "p.sh. Biletë treni Berlin–Hamburg për seminarin me klientin",
+        "expenseDate": "Data e faturës",
+        "paidBy": "Kush pagoi?"
+      },
+      "frozenNotice": "Raporti i dorëzuar nuk mund të modifikohet më.",
+      "history": {
+        "description": "Çdo hap i këtij raporti, më të vjetrat në fillim. Orët shfaqen në UTC.",
+        "detail": {
+          "approvalRecorded": "Nga {name}; në pritje të miratimit të mëtejshëm.",
+          "approvalRecordedByDeputy": "Nga {name} (zëvendësues për {actingForName}); në pritje të miratimit të mëtejshëm.",
+          "by": "Nga {name}",
+          "byDeputy": "Nga {name} (zëvendësues për {actingForName})",
+          "inCycle": "Dorëzimi {number} · {detail}",
+          "selfApproved": "Askush tjetër nuk mund ta shqyrtonte këtë raport."
+        },
+        "inReview": "Në shqyrtim",
+        "step": {
+          "approvalRecorded": "Miratimi u regjistrua",
+          "approved": "Miratuar",
+          "rejected": "Refuzuar",
+          "reopened": "Rihapur për korrigjim",
+          "returned": "Kthyer për ndryshime",
+          "selfApproved": "Miratuar automatikisht",
+          "submitted": "Dorëzuar",
+          "withdrawn": "Tërhequr"
+        },
+        "title": "Historiku"
+      },
+      "items": {
+        "add": "Shto shpenzim fature",
+        "addFailed": "Shpenzimi nuk mund të shtohej. Ju lutemi provoni përsëri.",
+        "empty": "Shtoni çdo faturë të këtij udhëtimi si shpenzim më vete. Detajet e udhëtimit më sipër vlejnë për të gjitha.",
+        "emptyTitle": "Ende nuk ka shpenzime",
+        "numbered": "{type} {number}",
+        "remove": "Hiq",
+        "removeConfirm": "Hiq shpenzimin",
+        "removeConflict": "Ky shpenzim ndryshoi diku tjetër dhe nuk u hoq. Kontrollojeni dhe provoni përsëri.",
+        "removed": "{type} (hequr)",
+        "removeDescription": "Shpenzimi dhe faturat e bashkëngjitura të tij fshihen nga ky udhëtim. Ky veprim nuk mund të zhbëhet.",
+        "removeFailed": "Shpenzimi nuk mund të hiqej. Ju lutemi provoni përsëri.",
+        "removeItem": "Hiq {item}",
+        "removeTitle": "Të hiqet ky shpenzim?",
+        "title": "Shpenzimet"
+      },
+      "kind": {
+        "standaloneMileage": "Kilometrazh i pavarur",
+        "trip": "Raporti i udhëtimit"
+      },
+      "loading": "Po ngarkohet shpenzimi…",
+      "mileage": {
+        "add": "Shto kilometrazhin",
+        "appliedPolicy": "Tarifa e vlefshme nga {date} · {source}",
+        "calculation": "{distance} km × {rate} për km = {amount}",
+        "calculationTitle": "Kilometrazhi i llogaritur",
+        "enterFacts": "Vendosni datën, kilometrat dhe automjetin për të parë shumën.",
+        "errors": {
+          "distance": "Vendosni kilometrat e përshkuar si numër pozitiv me më së shumti dy shifra dhjetore, p.sh. 61.5.",
+          "vehicle": "Zgjidhni automjetin që keni drejtuar."
+        },
+        "fields": {
+          "date": "Data e udhëtimit me automjet",
+          "distance": "Kilometrat e përshkuar",
+          "route": "Itinerari",
+          "routePlaceholder": "p.sh. Zyra Berlin – klienti Potsdam – kthim",
+          "vehicle": "Mjeti",
+          "vehicleDescription": "Mjeti juaj personal. Makinat e kompanisë dhe transporti publik nuk llogariten si kilometrazh; në vend të kësaj, shtoni faturat e tyre."
+        },
+        "noRate": "Asnjë tarifë nuk sajohet: ky shpenzim mbetet draft derisa një administrator shpenzimesh të shtojë një tarifë kilometrazhi që mbulon datën e tij.",
+        "noRateTitle": "Nuk zbatohet asnjë tarifë kilometrazhi",
+        "otherCurrency": "Tarifa për këtë datë nuk është në {currency}; kilometrazhi nuk konvertohet kurrë.",
+        "pending": "Llogaritet me tarifën e organizatës suaj sapo të ruhen ndryshimet tuaja.",
+        "requirements": {
+          "currency": "Tarifa e kilometrazhit për këtë datë është në {policyCurrency}, por ky raport rimbursohet në {currency}. Kërkojini një administratori të shpenzimeve të shtojë një tarifë në {currency}.",
+          "date": "Vendosni datën e udhëtimit.",
+          "distance": "Vendosni kilometrat e përshkuar.",
+          "policyMissing": "Organizata juaj nuk ka asnjë tarifë kilometrazhi për {vehicle} më {date}. Kërkojini një administratori të shpenzimeve të shtojë një tarifë me datë te cilësimet e shpenzimeve të udhëtimit. Asgjë nuk llogaritet deri atëherë.",
+          "route": "Përshkruani itinerarin.",
+          "vehicle": "Zgjidhni mjetin."
+        },
+        "rounded": "(ekzaktësisht {exact}, rrumbullakosur në qindarka)",
+        "sourceOrganization": "Politika e organizatës: {reference}",
+        "sourceOrganizationUnnamed": "Politika e organizatës",
+        "sourceStatutory": "Tarifa fikse ligjore gjermane ({version})",
+        "standaloneTitle": "Kilometrazhi",
+        "vehicles": {
+          "car": "Makinë",
+          "otherMotorVehicle": "Mjet tjetër motorik (p.sh. motoçikletë)"
+        }
+      },
+      "paidBy": {
+        "company": "Paguar nga kompania (p.sh. kartë e kompanisë)",
+        "employee": "Paguar nga unë (më rimburso)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} orë larg",
+        "add": "Shto dietë",
+        "appliedPolicy": "Tarifat e vlefshme nga {date} · {source}",
+        "basis": {
+          "absence24h": "Ditë e plotë larg (24 orë)",
+          "claimedInOtherReport": "Tashmë e paguar në një raport tjetër tuajin: lejohet vetëm një dietë në ditë",
+          "over8h": "Më shumë se 8 orë larg",
+          "overnightMajority": "Pjesa më e madhe e mungesës gjatë natës",
+          "overnightMinority": "Llogaritur në ditën tjetër të mungesës gjatë natës",
+          "travelDay": "Ditë udhëtimi e një udhëtimi me fjetje",
+          "upTo8h": "8 orë ose më pak larg: pa dietë"
+        },
+        "breakdownCaption": "Dieta sipas ditës kalendarike",
+        "calculationTitle": "Dieta e llogaritur",
+        "columns": {
+          "amount": "Shuma",
+          "day": "Dita",
+          "eligibility": "Kualifikueshmëria",
+          "meals": "Vaktet e siguruara",
+          "rate": "Dieta"
+        },
+        "deductionNote": "Vaktet e siguruara e ulin dietën ditore, por kurrë nën zero; ajo që keni paguar për një vakt e zvogëlon zbritjen e tij.",
+        "departure": "Nisja",
+        "enterFacts": "Vendosni nisjen, kthimin dhe vaktet për të parë dietat ditore.",
+        "errors": {
+          "clockChange": "Kjo orë nuk ekziston në këtë ditë sepse akrepat e orës lëvizin përpara. Vendosni një orë jashtë orës së kapërcyer.",
+          "clockChangeRepeated": "Kjo orë ndodh dy herë në këtë ditë sepse akrepat e orës lëvizin prapa. Vendosni një orë jashtë orës së përsëritur.",
+          "endBeforeStart": "Kthimi juaj duhet të jetë pas nisjes suaj.",
+          "location": "Zgjidhni një vendndodhje të listuar për çdo ditë.",
+          "meals": "Kontrolloni regjistrimet e vakteve.",
+          "payment": "Vendosni atë që keni paguar si një shumë me më së shumti dy shifra dhjetore, p.sh. 2.50.",
+          "time": "Vendosni kohën në orë dhe minuta."
+        },
+        "exceptionalTitle": "Kërkon llogaritje manuale",
+        "exceptions": {
+          "destinationNotListed": "Një vendndodhje ditore nuk mbulohet nga tabela zyrtare e vendeve të huaja ose rregullat rezervë të saj.",
+          "foreignTimeZone": "Orët e udhëtimit nuk janë sipas orës lokale gjermane.",
+          "foreignWithoutOvernight": "Një aktivitet gjatë natës jashtë vendit pa qëndrim gjatë natës nuk llogaritet automatikisht.",
+          "international": "Një destinacion është jashtë Gjermanisë. Dieta ditore ndërkombëtare nuk është llogaritur ende.",
+          "majorityTie": "Mungesa gjatë natës ndahet saktësisht në mënyrë të barabartë midis të dyja ditëve.",
+          "mixedTimeZones": "Nisja dhe kthimi janë në zona të ndryshme orare.",
+          "multiDayWithoutOvernight": "Udhëtimi zgjat më shumë se dy ditë kalendarike pa qëndrim gjatë natës.",
+          "nightsAtHome": "Keni kaluar disa netë në shtëpi gjatë udhëtimit.",
+          "overlappingDays": "Një raport tjetër i juaji e paguan tashmë dietën ditore për disa nga këto ditë; lejohet vetëm një pagesë për ditë, ndaj lërini jashtë llogaritjes manuale.",
+          "prolongedWorkplace": "Aktivitet më i gjatë në të njëjtin vend pune: dieta ditore kufizohet në tre muajt e parë.",
+          "rulesNotVerified": "Asnjë rregull i verifikuar gjerman nuk i mbulon ende këto data udhëtimi.",
+          "specialLocation": "Një ditë është shënuar si situatë e veçantë (tjetër, ose një ditë e plotë në fluturim apo në det në ditën e parë ose të fundit të udhëtimit)."
+        },
+        "fields": {
+          "endDate": "Dita kur u kthyet",
+          "endTime": "Ora kur u kthyet në shtëpi ose në punë",
+          "meals": "Vaktet e siguruara nga punëdhënësi juaj",
+          "mealsDescription": "Shënoni çdo vakt që ka siguruar punëdhënësi juaj, ose një hotel apo mikpritës në emër të tij, edhe nëse e keni kapërcyer. Vendosni sa keni paguar për të, nëse keni paguar.",
+          "mealsNeedDates": "Vendosni ditët e nisjes dhe të kthimit për të shfaqur ditët e udhëtimit.",
+          "overnight": "Netët gjatë udhëtimit",
+          "payment": "Sa keni paguar për {meal} më {date}",
+          "paymentPlaceholder": "Keni paguar (opsionale)",
+          "prolongedWorkplace": "Kam punuar në këtë vend për më shumë se tre muaj",
+          "prolongedWorkplaceDescription": "Dieta ditore zbatohet vetëm për tre muajt e parë në të njëjtin vend pune; udhëtime të tilla kërkojnë një llogaritje manuale.",
+          "startDate": "Dita kur u nisët",
+          "startTime": "Ora kur u nisët nga shtëpia ose puna",
+          "timeZone": "Zona orare"
+        },
+        "foreignRates": "Tarifat e jashtme: {reference} ({version})",
+        "location": {
+          "activityToday": "Ku ishte aktiviteti juaj i fundit i punës jashtë vendit në këtë ditë?",
+          "assigned": "Shumat që njoftimi zyrtar i cakton këtij vendi",
+          "atSea": "Në bordin e një anijeje gjatë gjithë ditës (pa hipur ose zbritur)",
+          "choose": "Zgjidhni një vendndodhje",
+          "countryElsewhere": "{country} – diku tjetër",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Diku tjetër",
+          "fallbackFlight": "Rregull zyrtar: gjithë ditën në fluturim, shumat e Austrisë",
+          "fallbackLuxembourg": "Rregull rezervë zyrtar: i palistuar, shumat e Luksemburgut",
+          "fallbackMotherCountry": "Rregull rezervë zyrtar: territor, shumat e shtetit mëmë",
+          "fallbackShip": "Rregull zyrtar: gjithë ditën në det, shumat e Luksemburgut",
+          "germany": "Gjermani",
+          "inFlight": "Në fluturim gjatë gjithë ditës (midis ditës së ngritjes dhe ditës së uljes)",
+          "lastActivityTrip": "Ku ishte aktiviteti juaj i fundit i punës jashtë vendit në këtë udhëtim?",
+          "night": "Ku ndodheshit në mesnatë? (vendi i fundit ku keni mbërritur para orës 24:00 lokale; një shtet konsiderohet i arritur kur avioni juaj ulet)",
+          "noActivityAbroad": "Asnjë aktivitet pune jashtë vendit",
+          "other": "Diçka tjetër (kërkon llogaritje manuale)",
+          "place": "Vend në {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (keni paguar {payment})",
+        "meals": {
+          "breakfast": "Mëngjesi",
+          "dinner": "Darka",
+          "lunch": "Dreka"
+        },
+        "mealsCountToward": "Zbritur më {date}",
+        "noRate": "Asnjë tarifë nuk improvizohet: ky shpenzim mbetet draft derisa një administrator shpenzimesh të shtojë tarifat e dietës ditore që mbulojnë ditët e tij.",
+        "noRateTitle": "Nuk zbatohet asnjë tarifë diete ditore",
+        "otherCurrency": "Normat për këto ditë nuk janë në {currency}; dieta nuk konvertohet kurrë.",
+        "overnight": {
+          "away": "Kam fjetur jashtë shtëpisë çdo natë",
+          "mixed": "Kalova disa netë në shtëpi",
+          "none": "Punova gjatë gjithë natës pa fjetur jashtë"
+        },
+        "pending": "Llogaritet me normat me datë të organizatës suaj pasi të ruhen ndryshimet tuaja.",
+        "requirements": {
+          "currency": "Normat e dietës për këto ditë janë në {policyCurrency}, por ky raport rimbursohet në {currency}. Kërkojini një administratori shpenzimesh të shtojë norma në {currency}.",
+          "end": "Vendosni kur u kthyet në shtëpi ose në vendin tuaj të punës.",
+          "exceptional": "Ky itinerar kërkon llogaritje manuale të dietës nga një administrator shpenzimesh. Nuk llogaritet automatikisht.",
+          "locations": "Na tregoni për çdo ditë udhëtimi ku ndodheshit në mesnatë dhe ku ishte aktiviteti juaj i fundit i punës jashtë vendit.",
+          "meals": "Konfirmoni vaktet e ofruara për çdo ditë udhëtimi.",
+          "notReturned": "Ktheheni më {date} në orën {time} ({timeZone}). Mund ta dorëzoni pas kësaj.",
+          "overnight": "Na tregoni nëse keni fjetur jashtë shtëpisë.",
+          "policyMissing": "Organizata juaj nuk ka norma diete për {dates}. Kërkojini një administratori shpenzimesh të shtojë norma me datë te cilësimet e shpenzimeve të udhëtimit. Asgjë nuk llogaritet deri atëherë.",
+          "start": "Vendosni kur u larguat nga shtëpia ose vendi juaj i punës.",
+          "tripDates": "Ditët e nisjes dhe kthimit duhet të jenë dita e parë dhe e fundit e udhëtimit."
+        },
+        "return": "Kthimi",
+        "rulesApplied": "Rregullat: {reference} ({version})",
+        "title": "Dieta",
+        "total": "Dieta"
+      },
+      "project": {
+        "exceptionBadge": "Përjashtim atribuimi",
+        "exceptionDates": "Mbulon",
+        "exceptionEvidence": "Dëshmi",
+        "exceptionReason": "Arsyeja",
+        "fromTrip": "(projekti i udhëtimit)",
+        "inheritNamed": "Njësoj si udhëtimi ({name})",
+        "inheritNone": "Njësoj si udhëtimi (pa projekt)",
+        "label": "Projekti (opsionale)",
+        "loadFailed": "Projektet nuk mund të ngarkoheshin.",
+        "needsExpenseDate": "Vendosni datën e shpenzimit për të parë projektet që mund të përdorni në atë ditë.",
+        "needsTripDates": "Vendosni datat e udhëtimit për të parë projektet që mund të përdorni në këtë udhëtim.",
+        "none": "Pa projekt",
+        "noneEligible": "Nuk keni pasur asnjë caktim projekti në këtë datë. Nëse keni punuar në një projekt atëherë, një administrator shpenzimesh mund të autorizojë një përjashtim atribuimi.",
+        "notEligible": "{name} nuk mund të përdoret në këtë datë: nuk keni qenë i caktuar për të atëherë. Zgjidhni një projekt tjetër, ose kërkojini një administratori shpenzimesh një përjashtim atribuimi.",
+        "refused": {
+          "conflict": "Ky shpenzim ka ndryshuar diku tjetër. Zgjidhni konfliktin e ruajtjes më sipër, pastaj zgjidhni përsëri projektin.",
+          "dateRequired": "Vendosni datën fillimisht: projektet ofrohen për datën e shpenzimit.",
+          "failed": "Projekti nuk mund të ruhej. Ju lutemi provoni përsëri.",
+          "ineligible": "Nuk keni qenë i caktuar në këtë projekt në atë datë. Kërkojini një administratori shpenzimesh një përjashtim atribuimi nëse keni punuar në të.",
+          "notFound": "Ky projekt nuk është i disponueshëm."
+        },
+        "saving": "Po ruhet projekti…",
+        "tripDescription": "Shpenzimet përdorin projektin e udhëtimit përveç nëse zgjidhni një tjetër për to. Çdo shpenzim duhet të mbulohet nga caktimi juaj i projektit në datën përkatëse.",
+        "tripLabel": "Projekti i udhëtimit (opsionale)",
+        "unavailableOption": "{name} (nuk është i disponueshëm në këtë datë)",
+        "unavailableTripOption": "{name} (nuk është i disponueshëm në këto data)",
+        "viaException": "përjashtim i autorizuar"
+      },
+      "receiptException": {
+        "badge": "Mungon fatura — përjashtim",
+        "disabled": "Organizata juaj nuk lejon më përjashtime për faturat që mungojnë. Bashkëngjitni faturën ose hiqni shpjegimin tuaj.",
+        "notAllowed": "Organizata juaj nuk lejon përjashtime për faturat që mungojnë.",
+        "reason": "Pse mungon fatura?",
+        "reasonDescription": "Rishikuesi juaj e sheh këtë shpjegim dhe duhet ta pranojë atë për të miratuar raportin.",
+        "reasonLabel": "Pse mungon:",
+        "reasonRequired": "Shpjegoni pse mungon fatura.",
+        "receiptAttached": "Është bashkëngjitur një faturë, prandaj shpjegimi juaj për mungesën e faturës nuk dorëzohet.",
+        "request": "Nuk mund të dorëzoj faturën dhe kërkoj një përjashtim",
+        "title": "Nuk keni faturë?",
+        "unsavedAfterClose": "Shpjegimi juaj për faturën që mungon nuk mund të ruhej. Hapeni shpenzimin përsëri për ta kontrolluar.",
+        "withdraw": "Hiq shpjegimin"
+      },
+      "receipts": {
+        "chooseFile": "Zgjidh skedarin",
+        "description": "Bëni një foto ose bashkëngjitni një PDF ose imazh të faturës.",
+        "downloadNamed": "Shkarko {fileName}",
+        "errors": {
+          "locked": "Ky shpenzim nuk mund të modifikohet më.",
+          "retry": "Ju lutemi provoni përsëri.",
+          "tooLarge": "Skedari është shumë i madh. Bashkëngjitni një skedar prej më së shumti {size} MB.",
+          "unsupportedType": "Bashkëngjitni një PDF ose një imazh (JPEG, PNG, WebP, GIF, BMP ose TIFF)."
+        },
+        "none": "Nuk është bashkëngjitur ende asnjë faturë.",
+        "previewNamed": "Shiko paraprakisht {fileName}",
+        "progress": "Ecuria e ngarkimit",
+        "remove": "Hiq",
+        "removeFailed": "Fatura nuk mund të hiqej.",
+        "removeNamed": "Hiq {fileName}",
+        "takePhoto": "Bëj foto",
+        "title": "Fatura",
+        "uploadFailed": "Fatura nuk u bashkëngjit.",
+        "uploading": "Po ngarkohet fatura…",
+        "verifying": "Po kontrollohet fatura…"
+      },
+      "rejectedBy": "Refuzuar nga {name}",
+      "rejectedByDeputy": "Refuzuar nga {name} (zëvendësues për {actingForName})",
+      "reopen": {
+        "action": "Rihap për korrigjim",
+        "changed": "Raporti ndryshoi ndërkohë dhe nuk u rihap. Rishikojeni përsëri.",
+        "confirm": "Rihap raportin",
+        "description": "Punonjësi mund ta korrigjojë raportin dhe duhet ta dorëzojë përsëri për një miratim të ri. Deri atëherë ai nuk mund të paguhet apo të eksportohet. Dorëzimi i miratuar mbetet në historikun e tij.",
+        "done": "Raporti u rihap për korrigjim",
+        "exported": "Ky raport tashmë është eksportuar në kontabilitet, prandaj nuk mund të rihapet më. Korrigjimet kërkojnë një rregullim të lidhur.",
+        "failed": "Raporti nuk mund të rihapej. Mund të ketë ndryshuar ose mund të mos keni më qasje. Ringarkojeni dhe provoni përsëri.",
+        "reason": "Arsyeja për punonjësin",
+        "reasonRequired": "Tregoni punonjësit se çfarë duhet të korrigjojë.",
+        "reasonTooLong": "Mbajeni arsyen nën {max} karaktere.",
+        "reimbursed": "Një rimbursim tashmë është regjistruar për këtë raport, prandaj nuk mund të rihapet më. Korrigjimet kërkojnë një rregullim të lidhur.",
+        "reopenedBy": "Rihapur për korrigjim nga {name} më {date}",
+        "title": "Të rihapet ky raport i miratuar?"
+      },
+      "requirements": {
+        "amount": "Vendosni shumën e faturës.",
+        "category": "Zgjidhni një kategori.",
+        "complete": "Gjithçka për këtë shpenzim është futur.",
+        "conversionEvidence": "Zgjidhni bashkëngjitjen që tregon tarifimin e kartës.",
+        "conversionMissing": "Konvertoni këtë faturë në {currency}: vendosni tarifimin e kartës bashkë me bashkëngjitjen përkatëse, ose kërkoni një kurs të dokumentuar nga administratori i shpenzimeve.",
+        "conversionRateDate": "Data e kursit të autorizuar nuk përkon më me datën e shpenzimit. Vendosni tarifimin e kartës, ose kërkoni nga një administrator shpenzimesh të dokumentojë një kurs për datën e re.",
+        "conversionUnsupported": "Ky konvertim nuk mund të përdoret për {currency}. Kërkoni nga një administrator shpenzimesh ta kontrollojë atë.",
+        "description": "Përshkruani shpenzimin.",
+        "expenseDate": "Vendosni datën që figuron në faturë.",
+        "fixFields": "Korrigjoni fillimisht fushat e theksuara.",
+        "futureDate": "Kjo datë është në të ardhmen. Korrigjojeni ose dorëzojeni duke filluar nga {date}.",
+        "paidBy": "Specifikoni nëse keni paguar ju apo kompania.",
+        "receipt": "Bashkëngjitni faturën.",
+        "receiptExceptionNotAllowed": "Bashkëngjitni faturën. Organizata juaj nuk lejon përjashtime për mungesë fature.",
+        "receiptExceptionReason": "Shpjegoni pse mungon fatura.",
+        "title": "Ende e nevojshme"
+      },
+      "returnedBy": "Kthyer për ndryshime nga {name} më {date}",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
+      "save": {
+        "conflictDescription": "Është ruajtur në një dritare tjetër ose në një pajisje tjetër pasi e hapët. Ndryshimet tuaja të fundit nuk janë ruajtur ende.",
+        "conflictTitle": "Ky shpenzim ka ndryshuar diku tjetër",
+        "failedDescription": "Ndryshimet tuaja ruhen në këtë faqe. Kontrolloni lidhjen tuaj dhe provoni përsëri.",
+        "failedTitle": "Ndryshimet tuaja nuk mund të ruheshin",
+        "invalid": "Korrigjoni fushat e theksuara për t'i ruajtur ato",
+        "keepMine": "Ruaj ndryshimet e mia në vend të kësaj",
+        "pending": "Ndryshime të paruajtura",
+        "retry": "Provo përsëri",
+        "saved": "Të gjitha ndryshimet u ruajtën",
+        "saving": "Duke ruajtur…",
+        "unsavedAfterClose": "Ndryshimet tuaja të fundit në një shpenzim nuk mund të ruheshin. Hapeni përsëri për ta kontrolluar.",
+        "useTheirs": "Ngarko versionin e ruajtur"
+      },
+      "selfApprovedOn": "Miratuar automatikisht më {date}: ky është raporti i pronarit të organizatës dhe askush tjetër nuk mund ta shqyrtonte.",
+      "standaloneTitle": "Faturë e pavarur",
+      "status": {
+        "approved": "Miratuar",
+        "rejected": "Refuzuar",
+        "returned": "Kthyer për ndryshime",
+        "submitted": "Në pritje të shqyrtimit"
+      },
+      "submissionNumberAt": "Dorëzimi {number}, dorëzuar më {date}",
+      "submit": {
+        "adjustment": "Raporti që korrigjon ky rregullim nuk është më i miratuar në këtë monedhë, prandaj nuk mund të llogaritet asnjë diferencë me shenjë. Rregullimi juaj mbetet i ruajtur si draft.",
+        "adjustmentSuperseded": "Një rregullim tjetër i të njëjtit raport u miratua pasi filluat këtë, dhe ky kopjim nuk e përfshin atë korrigjim. Filloni një rregullim të ri nga raporti origjinal në mënyrë që të ruhen të dyja korrigjimet.",
+        "adjustmentTitle": "Ky rregullim nuk mund të dorëzohet",
+        "blockedIncomplete": "Plotësoni gjithçka të listuar te “Nevojiten ende” para se të dorëzoni.",
+        "blockedUnsaved": "Prisni derisa të ruhen të gjitha ndryshimet, ose korrigjoni fushat e theksuara, para se të dorëzoni.",
+        "cancel": "Vazhdo modifikimin",
+        "changed": "Raporti ka ndryshuar pasi e keni shqyrtuar. Mbylleni këtë dritare dialogu, kontrolloni të dhënat tuaja dhe shqyrtojeni përsëri.",
+        "changedTitle": "Raporti ka ndryshuar",
+        "confirm": "Dorëzo për miratim",
+        "description": "Kontrolloni raportin e ruajtur. Shqyrtuesi juaj vendos saktësisht mbi këtë version; ai nuk mund të modifikohet gjatë kohës që po shqyrtohet.",
+        "failed": "Diçka shkoi keq. Raporti juaj është ende i ruajtur si draft; ju lutemi provoni përsëri.",
+        "failedTitle": "Raporti nuk u dorëzua",
+        "incomplete": "Disa detaje të ruajtura ende mungojnë. Plotësoni gjithçka të listuar te “Nevojiten ende” dhe provoni përsëri.",
+        "incompleteTitle": "Raporti është i paplotë",
+        "itemRequirement": "{item}: {requirement}",
+        "noReviewerAsk": "Nuk keni menaxher ose menaxher ekipi përveç vetes dhe nuk është caktuar asnjë miratues shpenzimesh. Kërkojini një administratori të zgjedhë një miratues shpenzimesh te Cilësimet, Shpenzimet e udhëtimit, Shqyrtimi i raportit të shpenzimeve. Raporti juaj mbetet i ruajtur si draft.",
+        "noReviewerAssign": "Nuk keni menaxher ose menaxher ekipi përveç vetes dhe nuk është caktuar asnjë miratues shpenzimesh. Zgjidhni një miratues shpenzimesh te Shqyrtimi i raportit të shpenzimeve në cilësimet e shpenzimeve të udhëtimit. Raporti juaj mbetet i ruajtur si draft.",
+        "noReviewerTitle": "Askush nuk mund ta shqyrtojë ende këtë raport",
+        "notSaved": "Disa ndryshime nuk janë ruajtur ende. Prisni që ato të ruhen, pastaj shqyrtoni raportin përsëri.",
+        "openApproverSetting": "Hap cilësimin e miratuesit të shpenzimeve",
+        "project": "{count, plural, one {Një shpenzim i atribuohet një projekti në të cilin nuk keni qenë i caktuar në datën e shpenzimit. Zgjidhni një projekt tjetër ose kërkoni një përjashtim atribuimi nga administratori i shpenzimeve. Raporti juaj mbetet i ruajtur si draft.} other {# shpenzime i atribuohen një projekti në të cilin nuk keni qenë i caktuar në datën e shpenzimit. Zgjidhni një projekt tjetër ose kërkoni një përjashtim atribuimi nga administratori i shpenzimeve. Raporti juaj mbetet i ruajtur si draft.}}",
+        "projectTitle": "Një projekt nuk mund të përdoret",
+        "ready": "Të dhënat tuaja u ruajtën. Shqyrtoni raportin dhe dërgojeni për miratim.",
+        "requesterInactive": "Profili juaj i punonjësit nuk është aktiv në këtë organizatë, prandaj raporti nuk mund të përcillet për shqyrtim.",
+        "review": "Shqyrto dhe dorëzo",
+        "routing": "Rregullat e miratimit të organizatës suaj nuk mundën të gjenin një shqyrtues. Kërkojini një administratori t'i kontrollojë ato. Raporti juaj mbetet i ruajtur si draft.",
+        "routingTitle": "Raporti nuk mund të përcillej",
+        "selfApproval": "Rregullat e miratimit të organizatës suaj do t'ju lejonin të miratonit raportin tuaj. Kërkojini një administratori t'i rregullojë ato. Raporti juaj mbetet i ruajtur si draft.",
+        "selfApprovalBlocked": "Si pronar i organizatës, raportet tuaja miratohen automatikisht përderisa askush tjetër nuk mund t'i shqyrtojë ato. Ky raport përmban një shpjegim për faturë që mungon ose një dietë të caktuar manualisht, të cilën dikush tjetër duhet ta pranojë. Zgjidhni një miratues shpenzimesh ose ndryshoni raportin. Raporti juaj mbetet i ruajtur si draft.",
+        "selfApproved": "Raporti u miratua automatikisht: askush tjetër nuk mund ta shqyrtojë atë",
+        "success": "Raporti u dorëzua për miratim",
+        "thresholdCurrency": "Rregullat e miratimit të organizatës suaj krahasojnë shumat në EUR, por ky raport është në {currency}. Kërkojini një administratori t'i kontrollojë ato. Raporti juaj mbetet i ruajtur si draft.",
+        "title": "Dorëzo raportin e shpenzimeve",
+        "unavailable": "Organizata juaj po ndryshon mënyrën se si funksionojnë miratimet e shpenzimeve, prandaj raportet nuk mund të dorëzohen tani. Raporti juaj mbetet i ruajtur si draft.",
+        "unavailableTitle": "Dorëzimi është pezulluar"
+      },
+      "submittedAt": "Dorëzuar më {date}",
+      "summary": {
+        "itemPrefix": "{item}:",
+        "paidByCompany": "Paguar nga kompania",
+        "paidByEmployee": "Paguar nga ju"
+      },
+      "totals": {
+        "companyPaid": "Paguar nga kompania",
+        "excluded": "{count, plural, one {# shpenzim nuk llogaritet ende. Totalet përfshijnë shpenzimet në {currency} shuma dhe paguesi i të cilave janë të vendosura.} other {# shpenzime nuk llogariten ende. Totalet përfshijnë shpenzimet në {currency} shuma dhe paguesi i të cilave janë të vendosura.}}",
+        "reimbursable": "Rimbursuar për ju",
+        "title": "Totalet"
+      },
+      "trip": {
+        "dates": "Datat e udhëtimit",
+        "datesZone": "(ditë kalendarike në {timeZone})",
+        "description": "Çdo shpenzim i këtij udhëtimi ndan këto detaje.",
+        "destinations": "Destinacionet",
+        "errors": {
+          "destination": "Zgjidhni një shtet nga lista.",
+          "endBeforeStart": "Dita e fundit e udhëtimit nuk mund të jetë para të parës.",
+          "timeZone": "Zgjidhni një brez orar nga lista.",
+          "tooManyDestinations": "Vendosni më së shumti {max} destinacione."
+        },
+        "fields": {
+          "addDestination": "Shto destinacion",
+          "country": "Shteti {number}",
+          "countryPlaceholder": "Shteti",
+          "destinations": "Destinacionet",
+          "endDate": "Dita e fundit e udhëtimit",
+          "noDestinations": "Shtoni vendet ku po udhëtoni.",
+          "place": "Vendi {number}",
+          "placePlaceholder": "Qyteti ose vendi",
+          "purpose": "Qëllimi i udhëtimit",
+          "purposePlaceholder": "p.sh. Seminar me klientë në Hamburg",
+          "removeDestination": "Hiq destinacionin {number}",
+          "startDate": "Dita e parë e udhëtimit",
+          "timeZone": "Brezi orar i datave të udhëtimit",
+          "timeZoneDescription": "Datat e udhëtimit janë ditë kalendarike në {timeZone}. Rishikuesit shohin të njëjtat data, kudo që ndodhen."
+        },
+        "purpose": "Qëllimi i udhëtimit",
+        "requirements": {
+          "complete": "Gjithçka për këtë udhëtim është plotësuar.",
+          "destination": "Shtoni të paktën një destinacion.",
+          "expenseItem": "Shtoni një shpenzim.",
+          "fixFields": "Korrigjoni detajet e theksuara të udhëtimit.",
+          "itemNamed": "{item}: {description}",
+          "notEnded": "Udhëtimi përfundon më {date}. Mund ta dorëzoni duke filluar nga ajo ditë.",
+          "purpose": "Përshkruani qëllimin e udhëtimit.",
+          "title": "Nevojiten ende për këtë udhëtim",
+          "travelDates": "Vendosni ditën e parë dhe të fundit të udhëtimit."
+        },
+        "title": "Detajet e udhëtimit",
+        "unsavedAfterClose": "Ndryshimet tuaja të fundit në detajet e udhëtimit nuk mund të ruheshin. Hapni përsëri udhëtimin për t'i kontrolluar."
+      },
+      "withdraw": {
+        "action": "Tërhiq raportin",
+        "confirm": "Tërhiq",
+        "description": "Rishikimi ndalon dhe raporti bëhet përsëri një draft i redaktueshëm. Ky dërgim mbetet në historikun e raportit.",
+        "done": "Raporti u tërhoq. Mund ta redaktoni sërish.",
+        "failed": "Raporti nuk mund të tërhiqej. Ju lutemi provoni përsëri.",
+        "notPending": "Ky dërgim tashmë është vendosur ose kthyer, kështu që nuk mund të tërhiqet më.",
+        "title": "Të tërhiqet ky raport?"
+      },
+      "withdrawnNotice": "Ju e tërhoqët dërgimin {number}. Dërgojeni përsëri raportin kur të jetë gati.",
+      "withdrawnSubmission": "Ky dërgim u tërhoq para marrjes së një vendimi."
+    },
+    "settings": {
+      "catalogAdopted": "Miratuar më {date}, e vlefshme nga {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Zbato dietën ligjore gjermane me tarifat zyrtare për jashtë vendit",
+        "foreignAreas": "Tarifat për jashtë vendit: {countries} shtete dhe {places} qytete"
+      },
+      "reimbursementChannel": {
+        "bankTransfer": "Transfertë bankare",
+        "bankTransferDescription": "Zyrtarët e shpenzimeve i paguajnë rimbursimet me transfertë bankare dhe i regjistrojnë ato në Z8.",
+        "intro": "Mënyra se si organizata juaj paguan rimbursimet. Zgjedhja zbatohet për çdo punonjës.",
+        "loadFailed": "Kanali i rimbursimit nuk mund të ngarkohej.",
+        "payrollRun": "Ekzekutimi i pagave",
+        "payrollRunDescription": "Ekzekutimi i pagave mbart rimbursimet, të cilat regjistrohen sapo ekzekutimi i pagave të konfirmohet si i paguar. Raportet që ekzekutimi i pagave nuk mund t'i mbartë paguhen me transfertë bankare.",
+        "payrollRunPreview": "Në version paraprak dhe ende jo e disponueshme për organizatën tuaj.",
+        "save": "Ruaj kanalin",
+        "saved": "Kanali i rimbursimit u ruajt",
+        "saveFailed": "Kanali i rimbursimit nuk mund të ruhej.",
+        "title": "Kanali i rimbursimit",
+        "unconfirmedRuns": "{count, plural, one {# ekzekutim i listëpagesës nuk është konfirmuar ende. Mund të konfirmohet ose të hidhet poshtë ende.} other {# ekzekutime të listëpagesës nuk janë konfirmuar ende. Mund të konfirmohen ose të hidhen poshtë ende.}}"
+      },
+      "tabs": {
+        "access": "Qasja",
+        "currencies": "Monedhat",
+        "exceptions": "Përjashtimet",
+        "exceptionsPending": "{label}, {count} në pritje",
+        "rates": "Tarifat",
+        "review": "Shqyrtim"
+      }
+    },
+    "settlement": {
+      "adjustment": "Përfshirë rregullimin e miratuar",
+      "balance": {
+        "outstanding": "{amount} e papaguar",
+        "overpaid": "{amount} e mbipaguar",
+        "reimbursed": "Rimbursuar"
+      },
+      "companyPaid": "Kostot e paguara nga kompania prej {amount} nuk i detyrohen punonjësit.",
+      "entitlement": "Shuma e miratuar e paguar nga punonjësi",
+      "entry": {
+        "exportBatch": "Nga eksportimi i kërkuar më {date}",
+        "payrollRun": "Rimbursuar me pagën {period}",
+        "recordedBy": "Regjistruar nga {name}, {date}",
+        "recovery": "Rikuperuar {amount}",
+        "reimbursement": "Paguar {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Vendosni një shumë pozitive.",
+        "amountPrecision": "Kjo monedhë nuk ka kaq shumë shifra dhjetore.",
+        "amountRequired": "Vendosni shumën e paguar.",
+        "conflict": "Një përpjekje e mëparshme me vlera të tjera tashmë është regjistruar. Kontrolloni historikun para se të regjistroni përsëri.",
+        "dateFuture": "Një pagesë nuk mund të ketë datë në të ardhmen.",
+        "dateInvalid": "Vendosni një datë të vlefshme.",
+        "dateRequired": "Vendosni datën e pagesës.",
+        "exceedsOutstanding": "Shuma është më e madhe se detyrimi i papaguar.",
+        "exceedsOverpayment": "Shuma është më e madhe se sa është mbipaguar.",
+        "failed": "Pagesa nuk mund të regjistrohej. Ju lutemi provoni përsëri.",
+        "inPayrollRun": "Një ekzekutim i listëpagesës tani e përfshin këtë shpenzim, kështu që paguhet me listëpagesë. Hiqeni nga ekzekutimi para se të regjistroni një pagesë.",
+        "load": "Nuk mund të ngarkohet bilanci i rimbursimit. Ju lutemi provoni përsëri.",
+        "noOverpayment": "Nuk është mbipaguar asgjë për këtë shpenzim.",
+        "notApproved": "Ky shpenzim nuk është më i miratuar, prandaj nuk mund të regjistrohet asnjë pagesë.",
+        "nothingOutstanding": "Nuk ka asgjë të papaguar për këtë shpenzim.",
+        "ownExpense": "Nuk mund të regjistroni pagesa për shpenzimet tuaja.",
+        "referenceRequired": "Vendosni referencën e pagesës, p.sh. referencën e transferimit bankar.",
+        "refused": "Kjo pagesë nuk mund të regjistrohet për këtë shpenzim.",
+        "staleBalance": "Bilanci ndryshoi ndërsa po futnit këtë pagesë. Kontrolloni bilancin e përditësuar dhe regjistrojeni përsëri.",
+        "tooLong": "Ky tekst është shumë i gjatë."
+      },
+      "form": {
+        "amount": "Shuma e paguar ({currency})",
+        "date": "Data e pagesës",
+        "label": "Regjistroni një rimbursim",
+        "note": "Shënim (opsionale)",
+        "notice": "Regjistroni paratë e paguara tashmë punonjësit. Z8 nuk transferon para.",
+        "reference": "Referenca e pagesës",
+        "referenceHint": "Për shembull referenca e transferimit bankar ose e listëpagesës.",
+        "submit": "Regjistro rimbursimin"
+      },
+      "history": "Pagesat e regjistruara",
+      "loading": "Po ngarkohet bilanci i rimbursimit…",
+      "ownerAwaitingReimbursement": "Financa regjistron çdo pagesë këtu. Pasi të shlyhet gjithçka që ju detyrohet, kjo shpenzim shfaqet si i Rimbursuar.",
+      "ownerOverpaid": "Është paguar më shumë nga sa është miratuar tani. Departamenti i financës e regjistron këtu kur diferenca të jetë kthyer; Z8 nuk transferon para.",
+      "recorded": "Rimbursimi u regjistrua.",
+      "recordedAlready": "Kjo pagesë tashmë është regjistruar.",
+      "recovered": "Rikuperuar",
+      "recoveryForm": {
+        "amount": "Shuma e rikuperuar ({currency})",
+        "date": "Data e rikuperimit",
+        "explanation": "Punonjësi është paguar më shumë sesa është miratuar tani. Regjistroni paratë që ata tashmë kanë kthyer për të mbuluar mbipagesën; rimbursimi fillestar mbetet siç është regjistruar dhe asgjë nuk kompensohet me raporte të tjera. Z8 nuk transferon para.",
+        "label": "Regjistroni një rikuperim",
+        "submit": "Regjistro rikuperimin"
+      },
+      "recoveryRecorded": "Rikuperimi u regjistrua.",
+      "reimbursed": "Rimbursuar",
+      "state": {
+        "awaitingReimbursement": "Në pritje të rimbursimit",
+        "mixed": "Kërkon shqyrtim",
+        "overpaid": "Mbipaguar",
+        "reimbursed": "Rimbursuar"
+      },
+      "title": "Rimbursim"
+    },
+    "status": {
+      "draft": "Draft"
+    },
+    "title": "Shpenzimet e udhëtimit",
+    "workspace": {
+      "description": "Mblidhni shpenzimet e udhëtimit dhe ato individuale, dërgojini për shqyrtim dhe ndiqni rimbursimin e tyre."
+    }
+  }
+}

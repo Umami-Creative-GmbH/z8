@@ -1,6 +1,7 @@
 "use client";
 
 import { IconDeviceFloppy, IconLoader2 } from "@tabler/icons-react";
+import type { ReactNode } from "react";
 import { ContractTypeSelector } from "@/components/settings/contract-type-selector";
 import { HourlyRateInput } from "@/components/settings/hourly-rate-input";
 import { RoleSelector } from "@/components/settings/role-selector";
@@ -34,6 +35,8 @@ export function EmployeeEditFormCard({
 	isUpdating,
 	onCancel,
 	t = defaultTranslate,
+	customFields = null,
+	hasCustomFieldChanges = false,
 }: {
 	form: EmployeeDetailFormApi;
 	canEditManagerFields: boolean;
@@ -41,6 +44,10 @@ export function EmployeeEditFormCard({
 	isUpdating: boolean;
 	onCancel: () => void;
 	t?: Translate;
+	/** The "Custom fields" section (#818), saved with this form. */
+	customFields?: ReactNode;
+	/** Custom field drafts count as changes for the save button. */
+	hasCustomFieldChanges?: boolean;
 }) {
 	return (
 		<Card className="lg:col-span-2">
@@ -294,10 +301,13 @@ export function EmployeeEditFormCard({
 						}
 					</form.Subscribe>
 
+					{customFields}
+
 					{canEditManagerFields && (
 						<EmployeeEditFormActions
 							form={form}
 							isUpdating={isUpdating}
+							hasCustomFieldChanges={hasCustomFieldChanges}
 							onCancel={onCancel}
 							t={t}
 						/>
@@ -330,11 +340,13 @@ function EmployeeEditFormHeader({
 function EmployeeEditFormActions({
 	form,
 	isUpdating,
+	hasCustomFieldChanges,
 	onCancel,
 	t,
 }: {
 	form: EmployeeDetailFormApi;
 	isUpdating: boolean;
+	hasCustomFieldChanges: boolean;
 	onCancel: () => void;
 	t: Translate;
 }) {
@@ -345,7 +357,10 @@ function EmployeeEditFormActions({
 			</Button>
 			<form.Subscribe<readonly [boolean, boolean]> selector={(state) => [state.isDirty, state.isSubmitting] as const}>
 				{([isDirty, isSubmitting]: readonly [boolean, boolean]) => (
-					<Button type="submit" disabled={!isDirty || isSubmitting || isUpdating}>
+					<Button
+							type="submit"
+							disabled={(!isDirty && !hasCustomFieldChanges) || isSubmitting || isUpdating}
+						>
 						{(isSubmitting || isUpdating) && (
 							<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 						)}

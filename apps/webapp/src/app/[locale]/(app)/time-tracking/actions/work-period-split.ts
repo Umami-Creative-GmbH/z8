@@ -22,7 +22,10 @@ import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
+import { workInterval } from "@/lib/time-tracking/closed-months/store";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
 	replayCommittedSplit,
 	replaySplitCompletedWork,
@@ -79,7 +82,9 @@ function committedResponse(result: SplitCompletedWorkResult): SplitWorkPeriodRes
 }
 
 /** Operation and guard refusals as the user-facing message; null for unexpected failures. */
-function describeSplitFailure(error: unknown): { error: string; code?: string } | null {
+async function describeSplitFailure(
+	error: unknown,
+): Promise<{ error: string; code?: string } | null> {
 	if (error instanceof ConflictError) {
 		return { error: error.message, code: error.conflictType };
 	}
@@ -88,7 +93,7 @@ function describeSplitFailure(error: unknown): { error: string; code?: string } 
 	if (error instanceof WorkIntervalError) {
 		return { error: "Split time must be between work period start and end times" };
 	}
-	const failure = describeAmendmentFailure(error);
+	const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 	return failure ? { error: failure.message, code: failure.code } : null;
 }
 
@@ -272,7 +277,7 @@ export async function splitOwnWorkPeriod(
 		}
 		return committedResponse(outcome.receipt.result);
 	} catch (error) {
-		const failure = describeSplitFailure(error);
+		const failure = await describeSplitFailure(error);
 		if (failure) {
 			logger.warn({ error }, "Split work period refused");
 			return { success: false, ...failure };
@@ -406,6 +411,13 @@ async function splitLegacyWorkPeriod(
 		})
 		.returning();
 	if (!secondWorkPeriod) throw new Error("Second work period insert failed");
+	// Splitting work in a submitted period sends it back to the employee (#805).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: input.actorUserId,
+		work: [workInterval(locked.startTime, locked.endTime)],
+	});
 	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
 	await carryInvoicedWorkToSplit(tx, {
 		organizationId,

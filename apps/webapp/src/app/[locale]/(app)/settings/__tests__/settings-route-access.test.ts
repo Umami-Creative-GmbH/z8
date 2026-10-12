@@ -22,13 +22,16 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"enterprise/email/page.tsx",
 	"email-templates/page.tsx",
 	"enterprise/api-keys/page.tsx",
+	"enterprise/api-keys/[keyId]/page.tsx",
 	"enterprise/audit-log/page.tsx",
+	"report-share-links/page.tsx",
 	"telegram/page.tsx",
 	"slack/page.tsx",
 	"discord/page.tsx",
 	"teams-notifications/page.tsx",
 	"webhooks/page.tsx",
 	"export/page.tsx",
+	"export/history/[organizationId]/page.tsx",
 	"payroll-export/page.tsx",
 	"payroll-readiness/page.tsx",
 	"work-diagnostics/page.tsx",
@@ -39,6 +42,8 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"scheduled-exports/page.tsx",
 	"implementation-checklist/page.tsx",
 	"personnel-files/page.tsx",
+	"kiosks/page.tsx",
+	"custom-fields/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -115,6 +120,7 @@ describe("org-admin settings route access", () => {
 			"/settings/email-templates",
 			"/settings/enterprise/api-keys",
 			"/settings/enterprise/audit-log",
+			"/settings/report-share-links",
 			"/settings/telegram",
 			"/settings/slack",
 			"/settings/discord",
@@ -133,6 +139,8 @@ describe("org-admin settings route access", () => {
 			"/settings/billable-time",
 			"/settings/position-capture",
 			"/settings/personnel-files",
+			"/settings/kiosks",
+			"/settings/custom-fields",
 		]);
 	});
 

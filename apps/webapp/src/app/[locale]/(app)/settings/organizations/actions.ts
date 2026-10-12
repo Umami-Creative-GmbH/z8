@@ -36,6 +36,8 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
+import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
@@ -437,6 +439,25 @@ export async function resendInvitation(
 						}),
 					);
 				}
+
+				// The restriction may have been activated after this invitation was created.
+				yield* Effect.tryPromise({
+					try: async () => {
+						await assertEnterpriseIdentityInvitationAllowed({
+							organizationId,
+							email: normalizedEmail,
+						});
+					},
+					catch: (error) =>
+						new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Invitation is not allowed",
+							field: "email",
+							value: normalizedEmail,
+						}),
+				});
 
 				const invitationRole = invitation.role;
 				failurePhase = "createInvitation";
@@ -875,6 +896,23 @@ export async function updateMemberRole(
 						newRole: validatedData.role,
 					},
 					"Member role updated successfully",
+				);
+
+				// An owner or admin who becomes a member can lose projects in their share links (#806).
+				yield* dbService.query("reportShareLink.revokeAfterRoleUpdate", () =>
+					revokeShareLinksAfterAccessChange(dbService.db, {
+						organizationId,
+						creator: { userId: targetMember.userId },
+						actorUserId: session.user.id,
+					}),
+				);
+				// An owner or admin who becomes a member can no longer own scheduled exports (#988).
+				yield* dbService.query("scheduledExport.pauseAfterRoleUpdate", () =>
+					pauseSchedulesAfterOwnerAccessChange(dbService.db, {
+						organizationId,
+						owner: { userId: targetMember.userId },
+						actorUserId: session.user.id,
+					}),
 				);
 
 				span.setStatus({ code: SpanStatusCode.OK });

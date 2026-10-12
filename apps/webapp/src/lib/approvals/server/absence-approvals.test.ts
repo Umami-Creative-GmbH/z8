@@ -7,14 +7,43 @@ const {
 	onAbsenceRequestApproved,
 	onAbsenceRequestRejected,
 	isEligibleManagerForApprovalRequest,
+	getAbsenceDays,
 } = vi.hoisted(() => ({
 	addCalendarSyncJob: vi.fn().mockResolvedValue(undefined),
 	markEmployeeWorkBalanceDirty: vi.fn().mockResolvedValue(undefined),
 	onAbsenceRequestApproved: vi.fn(),
 	onAbsenceRequestRejected: vi.fn(),
 	isEligibleManagerForApprovalRequest: vi.fn(),
+	getAbsenceDays: vi.fn().mockResolvedValue(4),
 }));
 
+// The period submission seam (#1062) has its own PostgreSQL suites; here nothing is submitted.
+vi.mock("@/lib/time-tracking/period-submissions/submission-send-back", () => ({
+	sendBackChangedPeriodSubmissions: vi.fn(async () => ({ withdrawn: [], outdated: [] })),
+}));
+// The closed-month check (#762) has its own PostgreSQL suites; here it never refuses.
+vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/closed-months/store")>()),
+	assertAbsenceDaysOpen: vi.fn(async () => {}),
+	assertAbsenceOpenById: vi.fn(async () => {}),
+}));
+
+// Deputy decisions read and write the acting-for record; verified against
+// PostgreSQL in deputy-decisions.integration.test.ts (#1016).
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/deputy/deputy-decision-store")>()),
+	coversCurrentApprover: async () => false,
+	loadDeputyActingFor: async () => null,
+	recordCanonicalDeputyDecisionOf: async () => null,
+	authorizeLegacyDeputyDecision: async () => {
+		const { deputyDecisionRefusalError } = await import("@/lib/approvals/deputy/deputy-decision");
+		throw deputyDecisionRefusalError("not_covering", {
+			actorEmployeeId: "actor",
+			resource: "approval_request",
+			action: "approve",
+		});
+	},
+}));
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret",
@@ -54,8 +83,16 @@ vi.mock("@/lib/notifications/triggers", () => ({
 	onAbsenceRequestRejected,
 }));
 
+// Absence days resolve from work policies and holidays (#979), covered against PostgreSQL in
+// absences/absence-days-resolver.integration.test.ts.
+vi.mock("@/lib/absences/absence-days-resolver", () => ({ getAbsenceDays }));
+
 vi.mock("@/lib/queue", () => ({
 	addCalendarSyncJob,
+}));
+
+vi.mock("@/lib/absences/deputy-notifier", () => ({
+	notifyAbsenceDeputies: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
@@ -1301,6 +1338,10 @@ describe("absence requester decision notifications", () => {
 				categoryName: "Vacation",
 				approverName: "Morgan Manager",
 			}),
+		);
+		expect(getAbsenceDays).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1" }),
 		);
 		expect(onAbsenceRequestRejected).not.toHaveBeenCalled();
 		vi.doUnmock("@/lib/approvals/server/shared");

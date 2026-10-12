@@ -12,7 +12,13 @@ import {
 	getAsChildNativeButton,
 	getAsChildRender,
 } from "@/components/ui/base-ui-compat";
+import { touchTargetClassName } from "@/components/ui/touch-target";
 import { cn } from "@/lib/utils";
+
+// Safe-area insets of the screen edges each side touches. The header, footer and close button
+// read them, so a caller's own padding stays intact when the app is drawn edge to edge (#846).
+const SHEET_TOP_INSET = "[--sheet-inset-top:env(safe-area-inset-top)]";
+const SHEET_BOTTOM_INSET = "[--sheet-inset-bottom:env(safe-area-inset-bottom)]";
 
 type SheetSide = "top" | "right" | "bottom" | "left";
 
@@ -249,6 +255,8 @@ function SheetContent({
 						"inset-x-0 top-0 h-auto -translate-y-full border-b data-[sheet-open=true]:translate-y-0",
 					side === "bottom" &&
 						"inset-x-0 bottom-0 h-auto translate-y-full border-t data-[sheet-open=true]:translate-y-0",
+					side !== "bottom" && SHEET_TOP_INSET,
+					side !== "top" && SHEET_BOTTOM_INSET,
 					className,
 				)}
 				data-sheet-open={String(context?.visualOpen ?? false)}
@@ -258,7 +266,12 @@ function SheetContent({
 			>
 				{children}
 				{showCloseButton && (
-					<SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[open]:bg-secondary">
+					<SheetPrimitive.Close
+						className={cn(
+							touchTargetClassName,
+							"absolute top-[calc(1rem+var(--sheet-inset-top,0px))] right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[open]:bg-secondary",
+						)}
+					>
 						<IconX className="size-4" />
 						<span className="sr-only">{t("common.close", "Close")}</span>
 					</SheetPrimitive.Close>
@@ -271,7 +284,7 @@ function SheetContent({
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			className={cn("flex flex-col gap-1.5 p-4", className)}
+			className={cn("mt-[var(--sheet-inset-top,0px)] flex flex-col gap-1.5 p-4", className)}
 			data-slot="sheet-header"
 			{...props}
 		/>
@@ -281,7 +294,10 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+			className={cn(
+				"mt-auto mb-[var(--sheet-inset-bottom,0px)] flex flex-col gap-2 p-4",
+				className,
+			)}
 			data-slot="sheet-footer"
 			{...props}
 		/>

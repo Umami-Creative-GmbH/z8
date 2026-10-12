@@ -168,6 +168,16 @@
       "policyUpdated": "Política actualizada correctamente",
       "required": "Obligatorio",
       "saveFailed": "Error al guardar la política",
+      "sickNotes": {
+        "description": "Los justificantes médicos se guardan en el expediente de personal del empleado. Los aprobadores y responsables solo ven que hay uno adjunto.",
+        "disabled": "Los empleados ya no pueden adjuntar justificantes médicos",
+        "enabled": "Los empleados ahora pueden adjuntar justificantes médicos",
+        "help": "Los empleados adjuntan fotos o PDF de sus justificantes médicos a sus bajas por enfermedad. En Alemania, las empresas obtienen el justificante médico electrónico (eAU) de los seguros médicos, por lo que las fotos son relevantes principalmente para seguros privados, minijobs, Austria y Suiza, y bajas por enfermedad de hijos.",
+        "openOrganizationSettings": "Abrir la configuración de la organización",
+        "personnelFilesRequired": "Los justificantes médicos se guardan en los expedientes de personal. Primero activa los expedientes de personal en la configuración de la organización.",
+        "title": "Justificantes médicos",
+        "toggle": "Los empleados pueden adjuntar justificantes médicos"
+      },
       "since": "desde",
       "startingOn": "comenzando el",
       "tab": {

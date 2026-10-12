@@ -1,5 +1,7 @@
+import { splitRouteLocale } from "@/i18n/route-locale";
+
 export function isNavItemActive(pathname: string | null | undefined, href: string) {
-	const normalizedPathname = pathname?.replace(/^\/[a-z]{2}(\/|$)/, "/");
+	const normalizedPathname = pathname ? splitRouteLocale(pathname).pathWithoutLocale : pathname;
 
 	if (href === "/") {
 		return normalizedPathname === "/";

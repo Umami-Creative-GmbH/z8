@@ -13,6 +13,8 @@ import {
 	lockAuthority,
 	replayOrAmendCompletedWork,
 } from "./amend-completed-work";
+import { assertWorkOpen, workInterval } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
@@ -272,6 +274,7 @@ async function changeLegacyWorkPeriodProject(
 		taskId?: string | null;
 		billable?: boolean;
 		authorizedProjectId: string | null;
+		actorUserId: string;
 	},
 ): Promise<void> {
 	const [period] = await tx
@@ -282,6 +285,7 @@ async function changeLegacyWorkPeriodProject(
 			isBillable: workPeriod.isBillable,
 			canonicalRecordId: workPeriod.canonicalRecordId,
 			approvalStatus: workPeriod.approvalStatus,
+			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
 		})
 		.from(workPeriod)
@@ -310,6 +314,12 @@ async function changeLegacyWorkPeriodProject(
 	}
 	// Work under review keeps its facts, as in adopted organizations (#256).
 	await assertNoUnresolvedWorkPeriodReview(tx, input.organizationId, period);
+	// Attribution of work touching a closed month is frozen (#762).
+	await assertWorkOpen(tx, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		intervals: [workInterval(period.startTime, period.endTime)],
+	});
 	// Billability is changed after recording; live work gets it at clock-out.
 	if (input.projectId === undefined && period.endTime === null) {
 		throw new ConflictError({
@@ -355,6 +365,19 @@ async function changeLegacyWorkPeriodProject(
 				isNull(workPeriod.deletedAt),
 			),
 		);
+	// Changed attribution sends a submitted period back to the employee (#1062).
+	if (
+		projectId !== period.projectId ||
+		taskId !== period.taskId ||
+		isBillable !== period.isBillable
+	) {
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			causedByUserId: input.actorUserId,
+			work: [workInterval(period.startTime, period.endTime)],
+		});
+	}
 	if (!period.canonicalRecordId) return;
 	await tx
 		.delete(timeRecordAllocation)

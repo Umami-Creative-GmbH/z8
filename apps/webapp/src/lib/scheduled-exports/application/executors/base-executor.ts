@@ -15,13 +15,15 @@ import type {
  * Parameters for report execution
  */
 export interface ExecuteParams {
+	/** The id of the run's record (`scheduled_export_execution`) */
+	executionId: string;
 	organizationId: string;
 	reportConfig: ReportConfig;
 	dateRange: CalculatedDateRange;
 	filters?: FilterConfig;
 	payrollConfigId?: string;
-	/** User ID who created the scheduled export (for audit trail) */
-	createdBy?: string;
+	/** The schedule owner: the org admin the run acts on behalf of (#988). */
+	ownerId?: string;
 	/**
 	 * The addresses the delivered file's download link is mailed to. A data
 	 * export includes position stamps only if each one belongs to a user of the
@@ -62,4 +64,13 @@ export interface IReportExecutor {
 	 * @returns Validation result with any errors
 	 */
 	validateConfig(config: ReportConfig): { valid: boolean; errors?: string[] };
+
+	/**
+	 * Validate report configuration against what the organization has set up,
+	 * when saving a schedule. Without it, `validateConfig` alone decides.
+	 */
+	validateForOrganization?(
+		organizationId: string,
+		config: ReportConfig,
+	): Promise<{ valid: boolean; errors?: string[] }>;
 }

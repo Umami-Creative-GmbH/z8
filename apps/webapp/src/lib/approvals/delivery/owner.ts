@@ -13,7 +13,8 @@ import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { loadNotificationChannelPreferences } from "@/lib/notifications/notification-service";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
-import { readApprovalAuthoritySnapshot } from "../authority";
+import { isCanonicalOnlyApprovalKind, readApprovalAuthoritySnapshot } from "../authority";
+import { isCovering, loadEmployeeName } from "../deputy/deputy-reads";
 import type { EscalationAttentionInput } from "../escalation/attention";
 import {
 	raiseEscalationAttention,
@@ -26,15 +27,18 @@ import {
 	type ApprovalDeliveryMessageRecord,
 	type ClaimedApprovalDeliveryWork,
 	approvalDeliveryMessageReviewReference,
+	cardHolderEmployeeId,
 	claimApprovalDeliveryWork,
 	expandApprovalDeliveryIntents,
 	finishApprovalDeliveryWork,
 	isApprovalDeliveryAssignmentReplaced,
 	loadApprovalDeliveryMessage,
 	loadLegacyDeliveryState,
+	planDeputyCardRetirements,
 	recordDeliveredApprovalMessage,
 	renewApprovalDeliveryLease,
 	retireApprovalDeliveryMessage,
+	retireDeputyCardMessage,
 	scheduleApprovalMessageRefreshes,
 	type UntrackedApprovalCard,
 } from "./store";
@@ -82,9 +86,20 @@ export interface ApprovalDeliveryAdapter {
 	acceptsEscalationDelivery(organizationId: string): Promise<boolean>;
 	sendInitial(input: {
 		organizationId: string;
-		approvalRequestId: string;
+		/** The compatibility request the card names; null for a canonical-only kind. */
+		approvalRequestId: string | null;
+		/**
+		 * The exact assignment of a canonical-only kind (#1059), which has no legacy
+		 * request: the card is prepared and bound for it instead.
+		 */
+		canonicalAssignment?: { workflowId: string; stageId: string; assignmentId: string };
 		recipientEmployeeId: string;
 		recipientUserId: string;
+		/**
+		 * A deputy card (#1017): the absent approver the recipient covers for, whose
+		 * assignment or request the card is bound to. Never inferred.
+		 */
+		actingForEmployeeId?: string | null;
 		/** `replacement`: the card of an escalation's replacement assignment (#300). */
 		purpose: Exclude<ApprovalDeliveryEffect, "refresh">;
 	}): Promise<ApprovalInitialSendResult>;
@@ -396,13 +411,26 @@ async function processInitial(
 	}
 	const state = await loadWorkState(work);
 	if (!state) return finishSimply(work, "cancelled", "purged");
+	// A deputy card (#1017) belongs to the absent approver it acts for.
+	const holder = cardHolderEmployeeId(work);
 	if (
 		state.workflowStatus !== "pending" ||
 		state.assignmentStatus !== "pending" ||
 		// A legacy request moved to another approver no longer needs this card.
-		(state.approverEmployeeId !== null && state.approverEmployeeId !== work.recipientEmployeeId)
+		(state.approverEmployeeId !== null && state.approverEmployeeId !== holder)
 	) {
 		return finishSimply(work, "cancelled", "obsolete");
+	}
+	if (
+		work.actingForEmployeeId &&
+		!(await isCovering(db, {
+			organizationId: work.organizationId,
+			approverId: work.actingForEmployeeId,
+			deputyId: work.recipientEmployeeId,
+			at: now,
+		}))
+	) {
+		return finishSimply(work, "cancelled", "not_covering");
 	}
 	const [recipient] = await db
 		.select({ userId: employee.userId })
@@ -416,7 +444,16 @@ async function processInitial(
 		)
 		.limit(1);
 	if (!recipient) return finishSimply(work, "cancelled", "recipient_inactive");
-	if (!state.approvalRequestId) {
+	// A canonical-only kind (#1059) has no legacy request: its card names the assignment.
+	const canonicalAssignment =
+		!state.approvalRequestId &&
+		isCanonicalOnlyApprovalKind(work.workflowType) &&
+		work.workflowId &&
+		work.assignmentId &&
+		state.stageId
+			? { workflowId: work.workflowId, stageId: state.stageId, assignmentId: work.assignmentId }
+			: null;
+	if (!state.approvalRequestId && !canonicalAssignment) {
 		const finished = await finishWithAttention(work, {
 			status: "failed",
 			outcome: "permanent:unsupported_reference",
@@ -444,8 +481,10 @@ async function processInitial(
 	const sent = await adapter.sendInitial({
 		organizationId: work.organizationId,
 		approvalRequestId: state.approvalRequestId,
+		...(canonicalAssignment ? { canonicalAssignment } : {}),
 		recipientEmployeeId: work.recipientEmployeeId,
 		recipientUserId: recipient.userId,
+		...(work.actingForEmployeeId ? { actingForEmployeeId: work.actingForEmployeeId } : {}),
 		purpose: work.effect === "replacement" ? "replacement" : "initial",
 	});
 	if (sent.kind === "suppressed") return finishSimply(work, "suppressed", sent.reason);
@@ -459,6 +498,7 @@ async function processInitial(
 		approvalRequestId: state.approvalRequestId,
 		recipientEmployeeId: work.recipientEmployeeId,
 		recipientUserId: recipient.userId,
+		actingForEmployeeId: work.actingForEmployeeId,
 		provider: work.provider,
 		receiverScope: sent.receiverScope,
 		destinationId: sent.destinationId,
@@ -540,15 +580,26 @@ async function processRefresh(
 	}
 	const state = await loadWorkState(work);
 	if (!state) return finishSimply(work, "cancelled", "purged");
-	if (message.statusVersion >= state.workflowVersion) {
-		return finishSimply(work, "delivered", "current");
-	}
 	// A replaced assignment (escalation or reassignment) says so on its cards.
 	// A legacy transfer (#408) keeps the same request with its replacement, so
 	// the former holder's card is replaced whatever the request's status: it
 	// never shows the replacement's decision and never regains controls.
 	const replaced = await isApprovalDeliveryAssignmentReplaced(message);
 	const legacyReplaced = work.legacy !== null && replaced;
+	if (
+		message.actingForEmployeeId &&
+		message.state === "current" &&
+		state.workflowStatus === "pending" &&
+		state.assignmentStatus === "pending" &&
+		!legacyReplaced
+	) {
+		// Cover ended while the approval is still pending (#1017): no version
+		// moved, so this is the deputy card's own retirement.
+		return retireDeputyCard(work, adapter, clock, message, state);
+	}
+	if (message.statusVersion >= state.workflowVersion) {
+		return finishSimply(work, "delivered", "current");
+	}
 	if (
 		state.workflowStatus === "pending" &&
 		state.assignmentStatus === "pending" &&
@@ -617,6 +668,77 @@ async function processRefresh(
 	return finished ? "delivered" : "lease_lost";
 }
 
+/**
+ * A deputy card whose approval is still pending (#1017): retired with "No
+ * longer covering for X" once its recipient no longer covers for X, and left
+ * alone while they still do (a later pass may plan it again). It keeps the
+ * version it reflects, so a later decision still refreshes it to the outcome.
+ */
+async function retireDeputyCard(
+	work: ClaimedApprovalDeliveryWork,
+	adapter: ApprovalDeliveryAdapter,
+	clock: () => Instant,
+	message: ApprovalDeliveryMessageRecord,
+	state: WorkState,
+): Promise<ApprovalDeliveryOutcome> {
+	const actingFor = message.actingForEmployeeId;
+	if (!actingFor) return finishSimply(work, "cancelled", "obsolete");
+	if (
+		await isCovering(db, {
+			organizationId: work.organizationId,
+			approverId: actingFor,
+			deputyId: message.recipientEmployeeId,
+			at: clock(),
+		})
+	) {
+		return finishSimply(work, "cancelled", "still_covering");
+	}
+	const display = await resolveRecipientDisplayContext({
+		userId: message.recipientUserId,
+		organizationId: work.organizationId,
+	});
+	// Without the approver's name the card reads "No longer actionable" instead.
+	const approverName = await loadEmployeeName(db, {
+		organizationId: work.organizationId,
+		employeeId: actingFor,
+	});
+	const notice = await approvalStatusNotice(
+		{
+			workflowStatus: state.workflowStatus,
+			evidence: null,
+			...(approverName ? { noLongerCoveringFor: approverName } : {}),
+		},
+		display,
+		work.organizationId,
+		approvalDeliveryMessageReviewReference(message),
+	);
+	const now = clock();
+	if (!(await renewApprovalDeliveryLease({ work, now }))) return "lease_lost";
+	const refreshed = await adapter.refresh({
+		organizationId: work.organizationId,
+		message,
+		notice,
+	});
+	if (refreshed.kind === "failed") {
+		return handleFailure(work, refreshed, state.approvalRequestId, now);
+	}
+	const finished = await db.transaction(async (transaction) => {
+		await retireDeputyCardMessage(transaction, {
+			organizationId: work.organizationId,
+			messageId: message.id,
+			state: refreshed.kind === "gone" ? "gone" : "retired",
+		});
+		const done = await finishApprovalDeliveryWork(transaction, {
+			work,
+			status: "delivered",
+			outcome: refreshed.kind === "gone" ? `gone:${refreshed.reason}` : "not_covering",
+		});
+		if (done) await resolveDeliveryAttention(transaction, work, now);
+		return done;
+	});
+	return finished ? "delivered" : "lease_lost";
+}
+
 export interface ApprovalDeliveryRunSummary {
 	organizationId: string;
 	expanded: number;
@@ -678,23 +800,30 @@ export async function processApprovalDeliveries(input: {
 	now?: Instant;
 }): Promise<ApprovalDeliveryRunSummary> {
 	const limit = input.limit ?? DEFAULT_APPROVAL_DELIVERY_BATCH_LIMIT;
+	// Production reads the clock per step: work planned just now is due at once.
+	const clock = () => input.now ?? systemClock.nowInstant();
 	const expansion = await expandApprovalDeliveryIntents({
 		organizationId: input.organizationId,
 		limit,
+		now: clock(),
 		...(input.workflowId ? { workflowId: input.workflowId } : {}),
 	});
+	// Deputy cards whose cover ended (#1017); an organization-wide pass only.
+	const retirements = input.workflowId
+		? 0
+		: await planDeputyCardRetirements({ organizationId: input.organizationId, now: clock() });
 	const claimed = await claimApprovalDeliveryWork({
 		organizationId: input.organizationId,
 		owner: "delivery",
 		limit,
-		now: input.now ?? systemClock.nowInstant(),
+		now: clock(),
 		...(input.workflowId ? { workflowId: input.workflowId } : {}),
 	});
 	const outcomes = await executeApprovalDeliveryWork(claimed, input.now);
 	return {
 		organizationId: input.organizationId,
 		expanded: expansion.expanded,
-		planned: expansion.created,
+		planned: expansion.created + retirements,
 		cancelled: expansion.cancelled,
 		claimed: claimed.length,
 		outcomes,

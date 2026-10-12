@@ -3,8 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("next-intl/middleware", () => ({
 	default: vi.fn(() => () => NextResponse.next()),
 }));
+const platform = vi.hoisted(() => ({ configured: false }));
 vi.mock("@/lib/setup/config-cache", () => ({
-	isPlatformConfigured: async () => false,
+	isPlatformConfigured: async () => platform.configured,
 }));
 vi.mock("@/lib/domain/platform-domain", () => ({
 	classifyDomainHost: () => null,
@@ -51,6 +52,19 @@ describe("proxy matcher", () => {
 		},
 	);
 
+	it.each(["/en/kiosk", "/de/kiosk?code=ABCDE-FGHJK"])(
+		"opens the kiosk page without a user session: %s",
+		async (path) => {
+			platform.configured = true;
+			try {
+				const response = await proxy(new NextRequest(`https://app.example.com${path}`));
+				expect(response.headers.get("location")).toBeNull();
+			} finally {
+				platform.configured = false;
+			}
+		},
+	);
+
 	it("does not locale-prefix PostHog ingest proxy requests", () => {
 		expect(matchesProxy("/ingest/flags")).toBe(false);
 		expect(matchesProxy("/ingest/static/array.js")).toBe(false);
@@ -58,7 +72,7 @@ describe("proxy matcher", () => {
 
 	it("covers API routes", () => {
 		expect(matchesProxy("/api/time-entries")).toBe(true);
-		expect(matchesProxy("/api/mobile/home")).toBe(true);
+		expect(matchesProxy("/api/auth/app-exchange")).toBe(true);
 	});
 
 	it("passes API requests to route handlers without page middleware", async () => {

@@ -41,6 +41,7 @@ import {
 } from "./approvals";
 import { MANUAL_ENTRY_TARGET_AUTH_ERROR, resolveManualEntryTarget } from "./manual-entry-target";
 import type { ManualActor, ManualPreparationRejection } from "./manual-preparation";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
 import { prepareManualWork } from "./manual-preparation";
 import { logger } from "./shared";
 import {
@@ -269,6 +270,8 @@ const REJECTION_MESSAGES: Record<ManualCommandRejection["reason"], string> = {
 		"This time overlaps recorded work. Please choose a time range that does not overlap existing entries.",
 	append_review_required:
 		"This employee's time history needs review before new entries can be saved. Please contact your administrator.",
+	// Worded with the month's name by `monthClosedMessage` (#762).
+	month_closed: "This month is closed. It must be reopened before its work can change.",
 };
 
 /**
@@ -350,7 +353,9 @@ export async function createManualTimeEntryFromCommand(input: {
 				error:
 					rejection.reason === "project_ineligible" || rejection.reason === "category_ineligible"
 						? rejection.message
-						: REJECTION_MESSAGES[rejection.reason],
+						: rejection.reason === "month_closed"
+							? await monthClosedMessage(rejection.month)
+							: REJECTION_MESSAGES[rejection.reason],
 				code: rejection.reason,
 				rejection,
 				...(rejection.reason === "holiday_blocked" ? { holidayName: rejection.holidayName } : {}),

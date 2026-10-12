@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
 import { authClient, useSession } from "@/lib/auth-client";
+import { signOut } from "@/lib/store-app/sign-out";
 import { useRouter } from "@/navigation";
 import {
 	AcceptInvitationFormBody,
@@ -156,7 +157,7 @@ export function AcceptInvitationForm({
 	};
 
 	const handleSignOut = async () => {
-		await authClient.signOut({
+		await signOut({
 			fetchOptions: {
 				onSuccess: () => {
 					// Sign-out ends this tab's manual-entry recovery (#310).

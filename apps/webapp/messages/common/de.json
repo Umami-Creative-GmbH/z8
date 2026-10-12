@@ -143,6 +143,17 @@
       "upgrade": "Upgrade"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Diesen Monat abschließen",
+    "status": {
+      "closed": "Abgeschlossen",
+      "open": "Offen",
+      "partlyClosed": "Teilweise abgeschlossen ({closed} von {total})"
+    },
+    "stripLabel": "Abgeschlossene Monate",
+    "unclosedDescription": "Arbeitszeiten und Abwesenheiten in diesen Monaten können sich nach dem Export noch ändern. Schließen Sie einen Monat ab, sobald dessen Abrechnung endgültig ist.",
+    "unclosedTitle": "Nicht jeder Monat in diesem Zeitraum ist abgeschlossen"
+  },
   "colors": {
     "blue": "Blau",
     "green": "Grün",
@@ -219,6 +230,9 @@
     "enabled": "Aktiviert",
     "error": "Fehler",
     "error-occurred": "Ein Fehler ist aufgetreten",
+    "errors": {
+      "monthClosed": "{month} ist abgeschlossen. Er muss wieder geöffnet werden, bevor Arbeitszeiten oder Abwesenheiten geändert werden können."
+    },
     "fieldPresets": "{label}-Voreinstellungen",
     "focusInput": "Eingabefeld fokussieren",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Hilfe",
     "my-documents": "Meine Dokumente",
     "my-requests": "Meine Anfragen",
+    "my-schedule": "Mein Dienstplan",
     "org-explorer": "Organisations-Explorer",
     "payroll": "Lohnabrechnung",
     "personnel-files": "Personalakten",
@@ -588,6 +603,8 @@
     "team": "Team",
     "teamAbsences": "Team-Abwesenheiten",
     "team-label": "Team",
+    "teamPeriodSubmissions": "Zeitraum-Einreichungen",
+    "teamPresence": "Wer ist anwesend",
     "time-tracking": "Zeiterfassung",
     "today": "Heute",
     "travel-expenses": "Reisekosten",
@@ -603,6 +620,27 @@
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Du vertrittst {name} ({dateRange}).",
+        "title": "Du bist Abwesenheitsvertretung"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Deine Vertretung für {name} gilt jetzt {dateRange}.",
+        "title": "Zeitraum der Abwesenheitsvertretung geändert"
+      },
+      "absenceDeputyReminder": {
+        "message": "Ab morgen vertrittst du {name} bis {untilDate}.",
+        "title": "Vertretung beginnt morgen"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Du vertrittst {name} ({dateRange}) nicht mehr.",
+        "title": "Du bist keine Abwesenheitsvertretung mehr"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} steht als Vertretung für die Abwesenheit von {employeeName} vom {startDate} bis {endDate} nicht mehr zur Verfügung.",
+        "message": "{deputyName} steht als Vertretung für deine Abwesenheit vom {startDate} bis {endDate} nicht mehr zur Verfügung.",
+        "title": "Vertretung nicht mehr verfügbar"
+      },
       "absenceRecorded": {
         "message": "{managerName} hat in Ihrem Namen {absenceType} für {dateRange} erfasst.",
         "title": "Abwesenheit erfasst"
@@ -614,9 +652,36 @@
         "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
         "title": "Abwesenheitsanfrage eingereicht"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Während deiner Abwesenheit hat {name} über # Genehmigung entschieden.} other {Während deiner Abwesenheit hat {name} über # Genehmigungen entschieden.}}",
+        "title": "Während deiner Abwesenheit entschieden"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Du übernimmst Genehmigungen für {name}: noch nichts ausstehend.} other {Du übernimmst Genehmigungen für {name}: # ausstehend.}}",
+        "title": "Du übernimmst Genehmigungen"
+      },
       "automaticClockOut": {
+        "breakMessage": "Sie wurden zu Beginn Ihrer Pause um {cutoff} ({timezone}) automatisch ausgestempelt, da die Pause nicht innerhalb des Zeitlimits Ihrer Organisation von {duration} Minuten beendet wurde.",
         "message": "Du wurdest nach {duration} Minuten ununterbrochener Arbeit am {cutoff} ({timezone}) automatisch ausgestempelt, weil das Zeitlimit deiner Organisation erreicht wurde.",
         "title": "Automatisch ausgestempelt"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Der Anfangssaldo von {amount} für {dateRange} wurde storniert. Grund: {reason}",
+          "title": "Anfangssaldo storniert"
+        },
+        "openingBalanceRecorded": {
+          "message": "Ein Anfangssaldo von {amount} für {dateRange} wurde auf Ihrem Arbeitszeitsaldo erfasst.",
+          "title": "Anfangssaldo erfasst"
+        },
+        "payoutCancelled": {
+          "message": "Die Überstundenauszahlung von {amount} für {dateRange} wurde storniert. Grund: {reason}",
+          "title": "Überstundenauszahlung storniert"
+        },
+        "payoutRecorded": {
+          "message": "Eine Überstundenauszahlung von {amount} für {dateRange} wurde auf Ihrem Arbeitszeitsaldo erfasst.",
+          "title": "Überstundenauszahlung erfasst"
+        }
       },
       "breakDueReminder": {
         "message": "Ihre Pause ist um {breakTime} ({timezone}) fällig. Machen Sie bis dahin eine Pause, um die Pausenregeln Ihrer Arbeitsrichtlinie einzuhalten.",
@@ -638,12 +703,48 @@
         "message": "Ihre Schicht hat um {startTime} ({timezone}) begonnen. Stempeln Sie ein, wenn Sie arbeiten.",
         "title": "Sie haben sich noch nicht eingestempelt"
       },
+      "monthCloseBlocked": {
+        "message": "{month} wurde nicht automatisch abgeschlossen. Ausstehende Abwesenheitsanträge: {absenceRequests}. Ausstehende Zeitanfragen: {timeRequests}. Noch laufende Zeiterfassung: {liveWork}. Monat noch nicht beendet: {notEnded}. Mitarbeiter: {employees}. Es wird morgen erneut versucht.",
+        "title": "Monat konnte nicht abgeschlossen werden"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, other {{month} wurde automatisch für # Mitarbeiter abgeschlossen. Arbeitszeiten und Abwesenheiten können nicht mehr geändert werden, es sei denn, er wird wieder geöffnet.} }",
+        "title": "Monat abgeschlossen"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} wurde für einen Ihrer Mitarbeiter wieder geöffnet: {reason}} other {{month} wurde für # Ihrer Mitarbeiter wieder geöffnet: {reason}}}",
+        "title": "Monat wieder geöffnet"
+      },
       "newAbsenceRequest": {
         "title": "Neuer Abwesenheitsantrag"
       },
       "passwordChanged": {
         "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
         "title": "Passwort geändert"
+      },
+      "periodSubmissionApproved": {
+        "message": "Ihre Arbeitszeit für {startDate} – {endDate} wurde genehmigt.",
+        "title": "Ihre Arbeitszeit wurde genehmigt"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Ihre Arbeitszeit für {startDate} – {endDate} wurde nach der Genehmigung geändert. Überprüfen Sie Ihre Arbeitszeit und reichen Sie sie erneut ein.",
+        "title": "Ihre genehmigte Arbeitszeit ist nicht mehr aktuell"
+      },
+      "periodSubmissionRejected": {
+        "message": "Ihre Arbeitszeit für {startDate} – {endDate} wurde abgelehnt: {reason}. Überprüfen Sie Ihre Arbeitszeit und reichen Sie sie erneut ein.",
+        "title": "Ihre Zeiten wurden abgelehnt"
+      },
+      "periodSubmissionReminder": {
+        "message": "Ihr Zeitraum {startDate} – {endDate} ist abgelaufen. Überprüfen Sie Ihre Zeiten und reichen Sie sie zur Genehmigung ein.",
+        "title": "Zeiten zur Genehmigung einreichen"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Ihr Zeitraum {startDate} – {endDate} wurde noch nicht eingereicht. Überprüfen Sie Ihre Zeiten und reichen Sie sie zur Genehmigung ein.",
+        "title": "Ihre Zeiten wurden noch nicht eingereicht"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Ihre Zeiten für {startDate} – {endDate} wurden nach der Einreichung geändert, weshalb die Einreichung zurückgezogen wurde. Überprüfen Sie Ihre Zeiten und reichen Sie sie erneut ein.",
+        "title": "Zeiten erneut einreichen"
       },
       "personnelFileDocumentShared": {
         "message": "Das Dokument \"{title}\" wurde mit Ihnen geteilt.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} hat ein Zertifikat hochgeladen",
         "other": "{name} hat ein Dokument hochgeladen",
+        "sickNote": "{name} hat eine Krankschreibung für {dateRange} hochgeladen",
+        "sickNoteOnBehalf": "{uploader} hat eine Krankschreibung für {name}, {dateRange} hochgeladen",
         "title": "Neues Dokument in einer Personalakte"
       },
       "personnelFileExpiredToday": {
@@ -678,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Ihre letzte Einstempelung heute war um {startTime} ({timezone}). Stempeln Sie ein, wenn Sie arbeiten."
       },
+      "scheduledExportPaused": {
+        "message": "„{scheduleName}“ wurde pausiert, da der Eigentümer {ownerName} kein Organisations-Admin mehr ist. Machen Sie sich selbst oder einen anderen Organisations-Admin zum Eigentümer, um ihn fortzusetzen.",
+        "title": "Geplanter Export pausiert"
+      },
       "shiftAssigned": {
         "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
         "title": "Schicht zugewiesen"
@@ -690,12 +797,26 @@
         "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
         "title": "Aus dem Team entfernt"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Mitarbeitende können nun Freizeitausgleich über ihren Arbeitszeitsaldo nehmen. Die neue Abwesenheitskategorie bleibt inaktiv, bis Sie sie in den Abwesenheitseinstellungen aktivieren.",
+        "title": "Freizeitausgleich ist verfügbar"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Eine genehmigte Anpassung hat den geschuldeten Betrag für die Spesenabrechnung {report} von {employee} erhöht. Wartet auf Erstattung: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "Die Spesenabrechnung {report} von {employee} wird nicht über einen Gehaltsabrechnungslauf erstattet. Ausstehende Erstattung: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} Ihrer Reisekosten wurden erstattet (Zahlungsreferenz {reference}). {remaining} {remainingCurrency} warten noch auf Erstattung.",
         "title": "Ausgabe teilweise erstattet"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} Ihrer Reisekosten wurden mit der Gehaltsabrechnung {period} erstattet. {remaining} {remainingCurrency} stehen noch zur Erstattung aus."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Der Gehaltsabrechnungslauf {period} ({format}) wartet auf Ihre Bestätigung. Berichte in Ihrem Zuständigkeitsbereich: {count}.",
+        "title": "Gehaltsabrechnungslauf wartet auf Bestätigung"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "Die Spesenabrechnung {report} von {employee} wurde genehmigt. Wartet auf Erstattung: {amounts}.",
@@ -708,6 +829,9 @@
       "travelExpenseReimbursed": {
         "message": "Ihre Reisekosten wurden vollständig erstattet: {amount} {currency}, Zahlungsreferenz {reference}.",
         "title": "Ausgabe erstattet"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Ihre Reisekosten wurden mit der Gehaltsabrechnung {period} vollständig erstattet: {amount} {currency}."
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
@@ -728,6 +852,42 @@
       "ariaLabel": "Benachrichtigungen nach Lesestatus filtern",
       "read": "Gelesen",
       "unread": "Ungelesen"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Etwas erfordert Ihre Aufmerksamkeit"
+      },
+      "body": "Öffnen Sie Z8, um die Details anzuzeigen.",
+      "document": {
+        "title": "Neuigkeiten zu Ihren Dokumenten"
+      },
+      "project": {
+        "title": "Neuigkeiten zu einem Projekt"
+      },
+      "reminder": {
+        "title": "Erinnerung von Z8"
+      },
+      "requestUpdate": {
+        "title": "Ihre Anfrage wurde aktualisiert"
+      },
+      "review": {
+        "title": "Sie haben eine Anfrage zu prüfen"
+      },
+      "schedule": {
+        "title": "Ihr Dienstplan hat sich geändert"
+      },
+      "security": {
+        "title": "Sicherheitshinweis für Ihr Konto"
+      },
+      "team": {
+        "title": "Ihre Teams haben sich geändert"
+      },
+      "travelExpense": {
+        "title": "Neuigkeiten zu Ihren Reisekosten"
+      },
+      "workingTime": {
+        "title": "Neuigkeiten zu Ihrer Arbeitszeit"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +929,21 @@
       },
       "toggleAria": "{channel}-Benachrichtigungen für {type}",
       "types": {
+        "absence_deputy_assigned": "Als Abwesenheitsvertretung benannt",
+        "absence_deputy_dates_changed": "Zeitraum der Abwesenheitsvertretung geändert",
+        "absence_deputy_reminder": "Vertretung beginnt morgen",
+        "absence_deputy_removed": "Nicht mehr Abwesenheitsvertretung",
+        "absence_deputy_unavailable": "Vertretung nicht mehr verfügbar",
+        "approval_cover_return_summary": "Von Ihrer Vertretung entschieden",
+        "approval_cover_started": "Abwesenheitsvertretung hat begonnen",
         "break_due_reminder": "Pause fällig",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
-        "missed_clock_in_reminder": "Verpasstes Einstempeln"
+        "missed_clock_in_reminder": "Verpasstes Einstempeln",
+        "period_submission_decided": "Eingereichte Zeiten genehmigt oder abgelehnt",
+        "period_submission_reminder": "Zeiten einreichen",
+        "period_submission_sent_back": "Zeiten nach Änderung zurückgesendet",
+        "work_balance_adjustment_cancelled": "Saldoanpassung storniert",
+        "work_balance_adjustment_recorded": "Saldoanpassung erfasst"
       },
       "updateFailed": "Einstellung konnte nicht aktualisiert werden"
     },
@@ -858,7 +1030,8 @@
       "relativeMinutes": "seit {minutes} Min."
     },
     "clockedIn": "Eingestempelt",
-    "clockedOut": "Ausgestempelt"
+    "clockedOut": "Ausgestempelt",
+    "onBreak": "In der Pause"
   },
   "rateLimit": {
     "countdownLabel": "Sekunden bis zum erneuten Versuch",
@@ -877,6 +1050,12 @@
   "status": {
     "active": "Aktiv",
     "inactive": "Inaktiv"
+  },
+  "storeAppBanner": {
+    "description": "Erhalten Sie Erinnerungen und Genehmigungsbenachrichtigungen in der App.",
+    "dismiss": "App-Vorschlag verwerfen",
+    "getApp": "App herunterladen",
+    "title": "Z8 für Ihr Smartphone"
   },
   "table": {
     "clearFilters": "Filter löschen",
@@ -955,6 +1134,24 @@
     "pronounsMaxLength": "Pronomen dürfen maximal 50 Zeichen lang sein"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Abbrechen",
+      "cancelled": "Storniert",
+      "cancelledBy": "Storniert von {name} am {date}: {reason}",
+      "description": "Überstundenauszahlungen und Anfangssalden auf diesem Arbeitszeitkonto. Ein fehlerhafter Eintrag wird storniert, niemals gelöscht, sodass stornierte Einträge aufgeführt bleiben.",
+      "empty": "Noch keine Saldoanpassungen vorhanden.",
+      "kind": {
+        "openingBalance": "Anfangssaldo",
+        "overtimePayout": "Überstundenauszahlung"
+      },
+      "loadFailed": "Die Saldoanpassungen konnten nicht geladen werden.",
+      "loading": "Saldoanpassungen werden geladen",
+      "notPermitted": "Sie können die Saldoanpassungen von sich selbst und von den von Ihnen verwalteten Mitarbeitenden einsehen.",
+      "open": "Saldoanpassungen",
+      "recordedBy": "Erfasst von {name} am {date}",
+      "title": "Saldoanpassungen",
+      "unknownUser": "ein gelöschter Benutzer"
+    },
     "label": "Gesamtbilanz",
     "notCalculated": "Noch nicht berechnet",
     "pendingDescription": "Der Worker wird diese Bilanz in Kürze berechnen.",

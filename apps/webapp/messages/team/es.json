@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Aprobado",
+        "changeDeputy": "Cambiar sustituto",
+        "changeDeputyOf": "Cambiar sustituto de {name}",
+        "deputy": "Sustituto:",
+        "deputyMissing": "Falta sustituto",
         "description": "Ausencias aprobadas y pendientes para el equipo y año seleccionados.",
         "error": {
           "description": "Por favor, inténtelo de nuevo en un momento.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} pendiente",
         "title": "Calendario anual",
         "totalDays": "{count} ausente"
+      },
+      "deputyFilter": {
+        "clear": "Mostrar todas las ausencias",
+        "notice": "Mostrando solo las ausencias que este empleado cubre como suplente."
       },
       "description": "Revise los permisos y registre las ausencias aprobadas de su equipo.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Categoría",
         "categoryPlaceholder": "Seleccionar una categoría de ausencia…",
+        "deputy": "Suplente",
         "description": "Registrar una ausencia aprobada directamente para el empleado seleccionado.",
         "endDate": "Fecha de fin",
         "endDateHelper": "Dejar vacío para una ausencia en el mismo día.",
@@ -66,6 +75,11 @@
         "required": "{label} es obligatorio",
         "sickDetail": "Detalle de enfermedad",
         "sickDetailPlaceholder": "Seleccionar detalle de enfermedad…",
+        "sickNotes": {
+          "description": "Añada fotos o archivos PDF del justificante médico que le entregaron: archivos PDF, JPEG, PNG o WebP de hasta 20 MB cada uno. Cada archivo se guarda como un justificante médico independiente en el expediente de personal del empleado y el empleado podrá verlo. Después, solo quienes gestionen los justificantes médicos del empleado podrán abrirlo.",
+          "title": "Justificante médico (opcional)"
+        },
+        "sickNotesFailed": "Se registró la ausencia, pero no fue posible adjuntar {files}. Quien gestione los justificantes médicos podrá adjuntarlos más adelante.",
         "startDate": "Fecha de inicio",
         "submit": "Registrar ausencia",
         "success": "Ausencia registrada",
@@ -116,6 +130,51 @@
       "next": "Siguiente",
       "previous": "Anterior",
       "showing": "Mostrando {from} de {to} de {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Selecciona una frecuencia de envío en la configuración de la organización",
+      "columns": {
+        "calendar": "Calendario",
+        "employee": "Empleado",
+        "period": "Período",
+        "status": "Estado"
+      },
+      "descriptionAll": "Quién ha enviado el período seleccionado. Aprueba o rechaza los envíos en la bandeja de entrada de aprobaciones.",
+      "descriptionManaged": "Quién de los empleados que gestionas ha enviado el período seleccionado. Aprueba o rechaza los envíos en la bandeja de entrada de aprobaciones.",
+      "empty": "No se espera que nadie a quien puedas ver envíe este período.",
+      "loading": "Cargando envíos del período",
+      "notSubmitted": "No enviado",
+      "off": "Tu organización no recopila envíos de períodos.",
+      "openCalendar": "Calendario",
+      "openCalendarOf": "Abrir el calendario de {name}",
+      "openInbox": "Abrir la bandeja de entrada de aprobaciones",
+      "owing": "{count, plural, one {# empleado aún no ha enviado este período.} other {# empleados aún no han enviado este período.}}",
+      "period": "Período de envío",
+      "running": "Este período todavía está en curso. Los empleados pueden enviarlo a partir de su último día.",
+      "status": {
+        "approved": "Aprobado",
+        "awaiting": "Pendiente de envío",
+        "rejected": "Rechazado",
+        "sentBack": "Devuelto tras un cambio",
+        "submitted": "Enviado"
+      },
+      "summary": "Estados",
+      "title": "Envíos del período"
+    },
+    "presence": {
+      "allLocations": "Todas las ubicaciones",
+      "columns": {
+        "name": "Nombre",
+        "since": "Desde",
+        "state": "Estado"
+      },
+      "description": "Elige una ubicación para ver quién ha fichado o está en una pausa allí.",
+      "descriptionAll": "Empleados asignados a esta ubicación que han fichado o están en una pausa.",
+      "descriptionManaged": "Empleados a tu cargo asignados a esta ubicación que han fichado o están en una pausa.",
+      "empty": "Nadie que puedas ver ha fichado en esta ubicación en este momento.",
+      "locationTitle": "Quién está presente: {location}",
+      "noLocations": "Tu organización aún no tiene ubicaciones activas.",
+      "title": "Quién está presente"
     },
     "primaryManager": "Eres el gerente principal",
     "search": {

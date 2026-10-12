@@ -1,0 +1,458 @@
+{
+  "absences": {
+    "addAbsence": "Dodaj odsustvo",
+    "balance": {
+      "carryoverDays": "Imate {count} prenesenih dana",
+      "carryoverExpiry": "koji ističu",
+      "carryoverFrom": "Prijenos iz {year}.",
+      "daysRemaining": "Preostali dani",
+      "description": "Vaši dani godišnjeg odmora za tekuću godinu",
+      "outOfTotalDays": "od ukupno {totalDays} dana",
+      "pending": "Na čekanju",
+      "title": "Stanje godišnjeg odmora za {year}.",
+      "used": "Iskorišteno"
+    },
+    "calendar": {
+      "legend": {
+        "approved": "Odobreno",
+        "halfDayAm": "Pola dana (prije podne)",
+        "halfDayPm": "Pola dana (poslije podne)",
+        "holiday": "Praznik",
+        "pending": "Na čekanju",
+        "rejected": "Odbijeno"
+      },
+      "nextYear": "Sljedeća godina",
+      "previousYear": "Prethodna godina"
+    },
+    "deputy": {
+      "away": "Odsutan/na {dates}",
+      "awayOption": "{name} · Odsutan/na {dates}",
+      "awayWarning": "{name} je odsutan/na tokom ovih datuma. I dalje možete odabrati ovu osobu.",
+      "changeAction": "Promijeni zamjenika",
+      "changed": "Zamjenik je spremljen",
+      "changeDescription": "Zamjenik vas mijenja dok ste odsutni. Njegova promjena ne zahtijeva novo odobrenje.",
+      "changeDescriptionFor": "Zamjenik mijenja korisnika {name} dok je odsutan/na. Njegova promjena ne zahtijeva novo odobrenje.",
+      "changeFailed": "Spremanje zamjenika nije uspjelo",
+      "changeTitle": "Promijeni zamjenika",
+      "contactOnly": "{name} će biti prikazan/a samo kao kontakt i ne može odlučivati o odobrenjima.",
+      "errors": {
+        "ended": "Zamjenik se više ne može promijeniti: ovo odsustvo je završeno.",
+        "required": "Odaberite zamjenika: ova vrsta odsustva to zahtijeva.",
+        "self": "Zaposlenik ne može biti sam svoj zamjenik.",
+        "unavailable": "Zamjenik mora biti aktivni zaposlenik ove organizacije."
+      },
+      "help": "Kolega koji vas mijenja dok ste odsutni. Od njega se ne traži potvrda.",
+      "label": "Zamjenik",
+      "labelOptional": "Zamjenik (opcionalno)",
+      "labelRequired": "Zamjenik *",
+      "none": "Nema zamjenika",
+      "placeholder": "Odaberite zamjenika…",
+      "save": "Sačuvaj zamjenika"
+    },
+    "dialog": {
+      "cancelDescription": "Jeste li sigurni da želite otkazati ovaj zahtjev za odsustvo? Ova radnja se ne može poništiti.",
+      "cancelTitle": "Otkaži zahtjev za odsustvo",
+      "confirmCancel": "Da, otkaži zahtjev"
+    },
+    "errors": {
+      "allowanceNotConfigured": "Godišnji odmor nije konfigurisan",
+      "allowanceNotConfiguredMessage": "Vaša organizacija još uvijek nije podesila godišnje odmore za {currentYear}.",
+      "contactAdmin": "Molimo kontaktirajte svog administratora da konfiguriše pravila o godišnjem odmoru."
+    },
+    "featureName": "upravljanje odsustvima",
+    "form": {
+      "absenceDays": "Dani odsustva:",
+      "absenceType": "Vrsta odsustva *",
+      "autoApproved": "(Automatski odobreno)",
+      "balanceAfterRequest": "Stanje nakon zahtjeva:",
+      "daysRemaining": "Preostalo dana:",
+      "description": "Pošaljite zahtjev za slobodne dane. Vaš menadžer će biti obaviješten radi odobrenja.",
+      "duration": "Trajanje odsustva",
+      "duration.fullDay": "Cijeli dan",
+      "duration.partialDay": "Dio dana",
+      "endDate": "Datum završetka *",
+      "endDateHelper": "Ostavite prazno za odsustvo na isti dan.",
+      "endTime": "Vrijeme završetka",
+      "errors": {
+        "fillRequiredFields": "Molimo popunite sva obavezna polja",
+        "insufficientBalance": "Nedovoljan broj dana godišnjeg odmora",
+        "insufficientBalanceForRequest": "Nedovoljan broj dana godišnjeg odmora za ovaj zahtjev",
+        "invalidSelection": "Molimo provjerite svoj odabir i pokušajte ponovo"
+      },
+      "notesOptional": "Napomene (Opcionalno)",
+      "notesPlaceholder": "Dodajte dodatne informacije...",
+      "selectAbsenceType": "Odaberite vrstu odsustva",
+      "sickDetail": "Detalji o bolovanju *",
+      "sickDetailPlaceholder": "Odaberite detalje o bolovanju",
+      "startDate": "Datum početka *",
+      "startTime": "Vrijeme početka",
+      "submitRequest": "Pošalji zahtjev",
+      "title": "Zatraži odsustvo"
+    },
+    "period": {
+      "am": "AM",
+      "pm": "PM"
+    },
+    "planPreview": {
+      "affectedShift": "zahvaćena smjena",
+      "approval": "Odobrenje",
+      "balance": "Stanje",
+      "balanceUnavailable": "Stanje nije dostupno",
+      "countsAgainstVacationBalance": "Odbija se od stanja godišnjeg odmora",
+      "coverage": "Pokrivenost",
+      "coverageStaffAfterRequest": "{after}/{minimum} osoblja nakon zahtjeva",
+      "description": "Neblokirajuća provjera stanja, praznika, pokrivenosti i signala za odobrenje prije slanja.",
+      "doesNotReduceVacationBalance": "Ne umanjuje stanje godišnjeg odmora",
+      "holidays": "Praznici",
+      "loading": "Provjera stanja, praznika i pokrivenosti…",
+      "noApprovalWarnings": "Nema upozorenja o odobrenju",
+      "noCoverageRisk": "Nema objavljenog rizika za pokrivenost",
+      "noCoverageRulesConfigured": "Nisu konfigurisana pravila pokrivenosti za zahvaćene smjene",
+      "noHolidays": "Nema dodijeljenih praznika u rasponu",
+      "noWorkingDays": "Ovaj raspon ne sadrži radne dane.",
+      "remainingAfter": "Preostalo nakon zahtjeva",
+      "requested": "Zatraženo",
+      "title": "Pametni planer",
+      "unavailable": "Pregled planiranja nije dostupan. I dalje možete podnijeti svoj zahtjev.",
+      "workBalance": "Radni saldo",
+      "workBalanceAfter": "Nakon zahtjeva",
+      "workBalanceCurrent": "Trenutno",
+      "workBalanceDrawn": "Iskorišteno zahtjevom",
+      "workBalanceNegative": "Vaš radni saldo bi bio u minusu nakon ovog zahtjeva. Ipak ga možete podnijeti."
+    },
+    "requestAbsence": "Zatraži odsustvo",
+    "sickNotes": {
+      "attachAction": "Priloži doznaku za bolovanje",
+      "attach": {
+        "defaultTitle": "Doznaka za bolovanje {dateRange}",
+        "description": "Dodajte fotografije ili PDF-ove vaše doznake za bolovanje: PDF, JPEG, PNG ili WebP datoteke do 20 MB svaka. Svaka datoteka se sprema kao zasebna doznaka u vašem personalnom dosijeu.",
+        "documentDate": "Datum dokumenta",
+        "failed": "Prijenos nije uspio",
+        "fileRequired": "Odaberite barem jednu datoteku.",
+        "officerDescription": "Dodajte fotografije ili PDF-ove doznake: PDF, JPEG, PNG ili WebP datoteke do 20 MB svaka. Svaka datoteka se sprema kao zasebna doznaka u personalni dosije zaposlenika.",
+        "progress": "Napredak prijenosa",
+        "progressCount": "Preneseno {done} od {total}",
+        "share": "Podijeli sa zaposlenikom",
+        "sharedNote": "Svoje doznake za bolovanje možete vidjeti pod Moji dokumenti i na ovom odsustvu. Vaš odobravatelj vidi samo da je doznaka priložena. Doznaku možete izbrisati u roku od 24 sata od prijenosa.",
+        "shareHint": "Isključeno: samo za HR, zaposlenik vidi samo da je priložena doznaka. Uključeno: zaposlenik je vidi u odjeljku Moji dokumenti.",
+        "submit": "Priloži",
+        "success": "{count, plural, one {Priložena je doznaka} few {Priložene su # doznake} other {Priloženo je # doznaka}}",
+        "title": "Priloži doznaku za bolovanje",
+        "titleLabel": "Naslov"
+      },
+      "files": {
+        "chooseFiles": "Odaberite datoteke",
+        "defaultTitleUndated": "Doznaka",
+        "incomplete": "Dodijelite svakoj doznaci naziv i datum dokumenta.",
+        "remove": "Ukloni {fileName}",
+        "takePhoto": "Snimi fotografiju",
+        "tooMany": "Možete dodati najviše {max} datoteka."
+      },
+      "marker": "Doznaka priložena ({count})",
+      "panel": {
+        "delete": "Izbriši {title}",
+        "description": "Doznake za odsustvo {dateRange}.",
+        "empty": "Nema doznaka koje možete otvoriti.",
+        "linkExisting": "Poveži doznaku",
+        "loadFailed": "Učitavanje doznaka za bolovanje nije uspjelo.",
+        "title": "Doznake za bolovanje",
+        "unlink": "Prekini vezu sa {title}",
+        "unlinked": "Veza s doznakom je prekinuta",
+        "unlinkFailed": "Nije bilo moguće prekinuti vezu s doznakom."
+      },
+      "request": {
+        "attachFailed": "Vaš zahtjev za odsustvo je poslan, ali {files} nije bilo moguće priložiti. Doznake možete priložiti naknadno na pregledu odsustva.",
+        "description": "Dodajte fotografije ili PDF-ove vaše doznake: PDF, JPEG, PNG ili WebP datoteke do 20 MB svaka. Svaka datoteka se sprema kao zasebna doznaka u vaš personalni dosije. Vaš odobravatelj vidi samo da je doznaka priložena.",
+        "title": "Doznaka (opcionalno)",
+        "uploadFailed": "Učitavanje datoteke {fileName} nije uspjelo. Uklonite je ili pokušajte ponovo."
+      }
+    },
+    "status": {
+      "approved": "Odobreno",
+      "pending": "Na čekanju",
+      "rejected": "Odbijeno"
+    },
+    "subtitle": "Upravljajte svojim slobodnim danima i godišnjim odmorom",
+    "table": {
+      "cancelAbsence": "Otkaži odsustvo",
+      "cancelAbsenceTooltip": "Otkaži odsustvo",
+      "end": "Kraj",
+      "headers": {
+        "actions": "Radnje",
+        "dateRange": "Raspon datuma",
+        "days": "Dani",
+        "notes": "Napomene",
+        "status": "Status",
+        "type": "Vrsta"
+      },
+      "noRequests": "Nema pronađenih zahtjeva za odsustvo.",
+      "noSearchResults": "Nijedno odsustvo ne odgovara vašoj pretrazi.",
+      "searchPlaceholder": "Pretražite po tipu, statusu ili bilješkama...",
+      "start": "Početak",
+      "subtitle": "Nedavni i predstojeći zahtjevi za odsustvo",
+      "title": "Vaši zahtjevi za odsustvo"
+    },
+    "title": "Odsustva",
+    "toast": {
+      "cancelFailed": "Otkazivanje zahtjeva za odsustvo nije uspjelo",
+      "requestCancelled": "Zahtjev za odsustvo je otkazan",
+      "requestFailed": "Podnošenje zahtjeva za odsustvo nije uspjelo",
+      "requestSubmitted": "Zahtjev za odsustvo uspješno je podnesen"
+    },
+    "view": {
+      "calendar": "Kalendar",
+      "table": "Tabela"
+    }
+  },
+  "calendar": {
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pauza – {duration}"
+      }
+    },
+    "clockOutOnBehalf": {
+      "confirm": "Odjava",
+      "description": "Ovo kreira provjerljiv unos odjave prema trenutnom vremenu servera. Ako naknadno bude potrebno nešto prilagoditi, koristite ispravke.",
+      "error": "Neuspješna odjava zaposlenika",
+      "loading": "Odjavljivanje...",
+      "success": "Zaposlenik je uspješno odjavljen",
+      "title": "Odjaviti zaposlenika?"
+    },
+    "contextMenu": {
+      "delete": "Izbriši",
+      "edit": "Uredi",
+      "label": "Radnje za unos vremena"
+    },
+    "dayDetails": {
+      "blocksTimeEntry": "Unosi vremena su blokirani",
+      "category": "Kategorija",
+      "deputy": "Zamjenik",
+      "duration": "Trajanje",
+      "employee": "Zaposlenik",
+      "noEvents": "Nema događaja za ovaj dan",
+      "recurring": "Ponavljajući praznik",
+      "selectDate": "Odaberite datum za prikaz detalja",
+      "status": "Status",
+      "title": "Detalji dana"
+    },
+    "delete": {
+      "applied": "Brisanje unosa radnog vremena je primijenjeno",
+      "auditNote": "Unosi radnog vremena bit će označeni kao izbrisani u svrhu revizije.",
+      "confirm": "Pretvori u pauzu",
+      "description": "Ovo će trajno izbrisati ovaj radni period. Razmak će se prikazati kao pauza u kalendaru.",
+      "failed": "Brisanje radnog perioda nije uspjelo",
+      "reasonLabel": "Razlog za brisanje",
+      "reasonRequired": "Razlog je obavezan",
+      "success": "Radni period pretvoren u pauzu",
+      "title": "Pretvoriti u pauzu?"
+    },
+    "details": {
+      "automaticClockOut": "Automatski odjavljeno",
+      "automaticCutoff": "Krajnji rok za odjavu",
+      "automaticLimit": "Ograničenje neprekidnog rada",
+      "baseWorked": "Osnovni rad",
+      "blocksTimeEntry": "Blokira praćenje vremena",
+      "category": "Kategorija",
+      "credited": "Priznato",
+      "dateRange": "Raspon datuma",
+      "deputy": "Zamjenik",
+      "duration": "Trajanje",
+      "editedBy": "Uredio/la",
+      "employee": "Zaposlenik",
+      "notes": "Bilješke",
+      "pendingApproval": "Čeka odobrenje",
+      "pendingApprovalDescription": "Ovaj radni period čeka odobrenje menadžera. Zabilježeno vrijeme se može promijeniti ako bude odbijeno.",
+      "positions": {
+        "accuracy": "unutar {meters} m",
+        "clockIn": "Prijava",
+        "clockOut": "Odjava",
+        "failed": "Lokacije se nisu mogle učitati",
+        "hide": "Sakrij lokacije",
+        "loggedHint": "Uposlenik može vidjeti ko je pregledao njegove lokacije: pregled se evidentira.",
+        "none": "Nema zabilježenih lokacija za ovaj period rada.",
+        "openInMaps": "Otvori na kartama",
+        "originalClockIn": "Zabilježeno prilikom prvobitne prijave u {time}. Vremena su kasnije ispravljena.",
+        "originalClockOut": "Zabilježeno prilikom prvobitne odjave u {time}. Vremena su kasnije ispravljena.",
+        "show": "Prikaži lokacije",
+        "title": "Lokacije"
+      },
+      "project": "Projekat",
+      "recurring": "Ponavlja se godišnje",
+      "rejected": "Odbijeno",
+      "rejectedDescription": "Ovu promjenu radnog perioda je odbio menadžer. Vraćeno je prvobitno vrijeme.",
+      "source": "Izvor",
+      "status": "Status",
+      "surcharge": "Dodatak",
+      "surchargeBreakdown": "Pregled dodataka",
+      "system": "Sistem",
+      "task": "Zadatak",
+      "taskDone": "{name} (završeno)",
+      "time": "Vrijeme",
+      "type": "Vrsta",
+      "workLocation": "Lokacija rada"
+    },
+    "edit": {
+      "billableSaveFailed": "Ažuriranje naplativosti nije uspjelo",
+      "deleteEntry": "Izbriši unos",
+      "locationRequired": "Odaberite lokaciju rada.",
+      "markedBillable": "Označeno kao naplativo",
+      "markedNonBillable": "Označeno kao nenaplativo",
+      "noNotes": "Nema dodanih bilješki",
+      "noProject": "Nema dodijeljenog projekta",
+      "notesSaved": "Bilješke su spremljene",
+      "notesSaveFailed": "Spremanje bilješki nije uspjelo",
+      "projectSaved": "Projekat je ažuriran",
+      "projectSaveFailed": "Ažuriranje projekta nije uspjelo",
+      "split": "Podijeli",
+      "time": {
+        "approvalHint": "Ova promjena će biti poslana vašem menadžeru na odobrenje.",
+        "beyondWindow": "Unose starije od {days} dana može uređivati samo administrator.",
+        "clockIn": "Prijava",
+        "clockInDate": "Datum prijave",
+        "clockInTime": "Vrijeme prijave",
+        "clockOut": "Odjava",
+        "clockOutDate": "Datum odjave",
+        "clockOutTime": "Vrijeme odjave",
+        "directHint": "Ova promjena se primjenjuje odmah.",
+        "edit": "Uredi unos",
+        "invalidRange": "Odjava mora biti nakon prijave.",
+        "noChanges": "Prvo promijenite datum, vrijeme ili lokaciju rada.",
+        "noteLabel": "Bilješka (opcionalno)",
+        "notePlaceholder": "Dodajte bilješku o ovoj promjeni…",
+        "onBehalfHint": "Ova promjena prati lanac odobravanja zaposlenika. Ako ste vi njihov odobravatelj, primjenjuje se odmah.",
+        "pendingCorrection": "Promjena vremena za ovaj unos već čeka odobrenje.",
+        "reasonLabel": "Razlog",
+        "reasonPlaceholder": "Objasnite zašto je ova ispravka potrebna…",
+        "reasonRequired": "Molimo dodajte razlog za svog menadžera.",
+        "saved": "Unos vremena je ažuriran",
+        "saveFailed": "Ažuriranje unosa vremena nije uspjelo",
+        "submitForApproval": "Pošalji na odobrenje",
+        "submitOnBehalf": "Pošalji izmjenu",
+        "submitted": "Izmjena je poslana menadžeru na odobrenje",
+        "submittedOnBehalf": "Izmjena je poslana odobravatelju zaposlenika",
+        "timezoneNote": "Vremena su prikazana u vremenskoj zoni zaposlenika ({timezone})"
+      },
+      "title": "Radni period"
+    },
+    "employeeSelector": {
+      "error": "Nije moguće učitati članove tima",
+      "label": "Prikaži kalendar",
+      "myCalendar": "Moj kalendar",
+      "placeholder": "Odaberite člana tima..."
+    },
+    "entryType": {
+      "clockIn": "Prijava",
+      "clockOut": "Odjava",
+      "correction": "Korekcija"
+    },
+    "eventType": {
+      "absence": "Odsustvo",
+      "break": "Pauza",
+      "holiday": "Praznik",
+      "timeEntry": "Unos vremena",
+      "workPeriod": "Radni period"
+    },
+    "filter": {
+      "absences": "Odsustva",
+      "holidays": "Praznici",
+      "timeEntries": "Unosi vremena",
+      "workPeriods": "Radni periodi"
+    },
+    "filters": {
+      "title": "Filteri"
+    },
+    "legend": {
+      "absence": "Odsustvo",
+      "holiday": "Praznik",
+      "missingRequiredWork": "Nedostaje obavezni rad",
+      "requirementMetOrOver": "Zahtjev ispunjen/premašen",
+      "timeEntry": "Unos vremena",
+      "title": "Legenda",
+      "underRequirement": "Ispod zahtjeva",
+      "workPeriod": "Radni period",
+      "workPeriodPending": "Čeka odobrenje"
+    },
+    "loadEventsError": "Učitavanje događaja iz kalendara nije uspjelo: {message}",
+    "mobileControls": {
+      "description": "Odaberite koji su unosi u kalendaru vidljivi.",
+      "title": "Filteri i legenda"
+    },
+    "monthSummary": {
+      "calendarWeek": "Sed.",
+      "closedDay": "U zatvorenom mjesecu",
+      "dayEvents": "{count, plural, one {# događaj: {titles}} other {# događaja: {titles}}}",
+      "dayLabel": "{date}: {actual} evidentirano, {required} obavezno, {delta} {status}.",
+      "description": "Dnevni, sedmični i mjesečni sati prema pravilima",
+      "emptyMonth": "Nema sati prema pravilima u ovom mjesecu",
+      "monthTotal": "Ukupno za mjesec",
+      "nextMonth": "Sljedeći mjesec",
+      "previousMonth": "Prethodni mjesec",
+      "recordedOnlyDayLabel": "{date}: zabilježeno {actual}.",
+      "totalDescription": "Evidentirano vrijeme u poređenju sa satima prema pravilima",
+      "weekSum": "Zbir"
+    },
+    "requirements": {
+      "dayLabel": "{date}: potrebno {required}, zabilježeno {actual}, razlika {delta}, {status}",
+      "includesRunningWork": "Uključuje rad u toku",
+      "status": {
+        "met": "zahtjev ispunjen",
+        "missing": "nedostaje zabilježeno vrijeme",
+        "over": "preko zahtjeva",
+        "under": "ispod zahtjeva"
+      }
+    },
+    "split": {
+      "ambiguousTime": "Odaberite koje ponavljanje želite koristiti",
+      "chooseOccurrence": "Odaberite ponavljanje",
+      "confirm": "Podijeli radni period",
+      "currentPeriod": "Trenutni radni period",
+      "description": "Podijelite ovaj radni period na dvije odvojene sesije.",
+      "earlierOccurrence": "Ranije ponavljanje",
+      "failed": "Dijeljenje radnog perioda nije uspjelo",
+      "firstNotes": "Napomene za prvi period (opcionalno)",
+      "firstPeriod": "Prvi period",
+      "invalidTime": "Vrijeme podjele mora biti između vremena početka i završetka",
+      "laterOccurrence": "Kasnije pojavljivanje",
+      "nonexistentTime": "Vrijeme podjele ne postoji na ovaj datum",
+      "preview": "Pregled",
+      "secondNotes": "Napomene za drugi period (opcionalno)",
+      "secondPeriod": "Drugi period",
+      "splitAt": "Podijeli u",
+      "splitDate": "Datum podjele",
+      "success": "Radni period je uspješno podijeljen",
+      "title": "Podijeli radni period"
+    },
+    "status": {
+      "approved": "Odobreno",
+      "pending": "Na čekanju",
+      "rejected": "Odbijeno"
+    },
+    "view": {
+      "day": "Dan",
+      "loading": "Učitavanje kalendara…",
+      "month": "Mjesec",
+      "next": "Sljedeće",
+      "previous": "Prethodno",
+      "refresh": "Osvježi",
+      "today": "Danas",
+      "week": "Sedmica",
+      "year": "Godina"
+    },
+    "workLocation": {
+      "notRecorded": "Nije zabilježeno"
+    },
+    "workPeriod": {
+      "billable": "Naplativo",
+      "editedBy": "(uredio/la {name} dana {date})"
+    },
+    "workStatus": {
+      "overRequirement": "preko zahtjeva",
+      "requiredHoursMissing": "nedostaju obavezni sati",
+      "requirementMet": "zahtjev ispunjen",
+      "underRequirement": "ispod zahtjeva"
+    },
+    "year": {
+      "dayWithWorkStatus": "{date}, {status}"
+    }
+  }
+}

@@ -38,6 +38,40 @@ vi.mock("@/lib/auth-client", () => ({
 vi.mock("@/lib/time-tracking/timezone-capture", () => ({
 	getBrowserTimezone: mocks.getBrowserTimezone,
 }));
+// Position capture is off here; use-time-clock.position.test.tsx covers it (#826).
+vi.mock("@/app/[locale]/(app)/settings/position-stamps/actions", () => ({
+	getOwnPositionCaptureAction: async () => ({ success: false, error: "off" }),
+}));
+
+/**
+ * Offline in an adopted organization whose page cannot freeze commands (here: the
+ * capabilities name another server), so actions go to the legacy review queue.
+ * Not adopted, the same actions are refused up front (#845).
+ */
+function offlineReviewQueue(queueClockEvent: ReturnType<typeof vi.fn>) {
+	mocks.useSession.mockReturnValue({
+		data: { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } },
+		isPending: false,
+		error: null,
+	});
+	mocks.useOfflineClock.mockReturnValue({
+		isOnline: false,
+		isOffline: true,
+		pendingCount: 0,
+		isSyncing: false,
+		queueClockEvent,
+		commandCapabilities: {
+			commandVersions: [2],
+			submit: "available",
+			context: {
+				userId: "user-1",
+				organizationId: "org-1",
+				employeeId: "emp-1",
+				server: "https://other.example",
+			},
+		},
+	});
+}
 
 import { queryKeys } from "./keys";
 import { useElapsedTimer, useTimeClock } from "./use-time-clock";
@@ -393,13 +427,7 @@ describe("useTimeClock presence invalidation", () => {
 			success: true,
 			eventId: "queued-1",
 		}));
-		mocks.useOfflineClock.mockReturnValue({
-			isOnline: false,
-			isOffline: true,
-			pendingCount: 0,
-			isSyncing: false,
-			queueClockEvent,
-		});
+		offlineReviewQueue(queueClockEvent);
 
 		const { result } = renderHook(() => useTimeClock(), {
 			wrapper: wrapper(client),
@@ -420,19 +448,13 @@ describe("useTimeClock presence invalidation", () => {
 		const client = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
 		});
-		mocks.useOfflineClock.mockReturnValue({
-			isOnline: false,
-			isOffline: true,
-			pendingCount: 0,
-			isSyncing: false,
-			queueClockEvent: vi
-				.fn()
-				.mockResolvedValue({
-					success: true,
-					eventId: "local-only",
-					reviewRequired: true,
-				}),
-		});
+		offlineReviewQueue(
+			vi.fn().mockResolvedValue({
+				success: true,
+				eventId: "local-only",
+				reviewRequired: true,
+			}),
+		);
 		const { result } = renderHook(() => useTimeClock(), {
 			wrapper: wrapper(client),
 		});
@@ -457,13 +479,7 @@ describe("useTimeClock presence invalidation", () => {
 			success: true,
 			eventId: "queued-1",
 		}));
-		mocks.useOfflineClock.mockReturnValue({
-			isOnline: false,
-			isOffline: true,
-			pendingCount: 0,
-			isSyncing: false,
-			queueClockEvent,
-		});
+		offlineReviewQueue(queueClockEvent);
 
 		const { result } = renderHook(() => useTimeClock(), {
 			wrapper: wrapper(client),

@@ -274,6 +274,8 @@ const FAILURE_REPLIES: Record<
 		error: "Clock-in is not allowed on a holiday",
 	},
 	occupancy_conflict: { status: 409, error: "Clock-in overlaps recorded work" },
+	// The legacy route's error texts are English protocol strings, as above (#762).
+	month_closed: { status: 409, error: "The work touches a closed month" },
 	// Legacy closures always close the active work.
 	not_clocked_in: { status: 409, error: "No active work period found" },
 	target_unknown: { status: 409, error: "No active work period found" },

@@ -15,6 +15,13 @@
       "today": "I dag!",
       "tomorrow": "I morgen"
     },
+    "covering-for": {
+      "description": "Kolleger du er stedfortreder for mens de er borte",
+      "error": "Kunne ikke laste inn stedfortrederoppgavene dine",
+      "running": "Stedfortreder for {name} frem til {date}",
+      "title": "Stedfortreder for",
+      "upcoming": "Kommende: stedfortreder for {name} fra {start} til {end}"
+    },
     "customize": {
       "empty-description": "Bruk ikonet for tilpassing av dashbordet for å aktivere enkeltmoduler igjen, eller tilbakestill oppsettet for å vise alle moduler igjen.",
       "empty-title": "Alle dashbordmoduler er skjult",
@@ -129,6 +136,17 @@
       "teams": "Team",
       "teams-button": "Team",
       "title": "Organisasjon"
+    },
+    "upcoming-shifts": {
+      "description": "Dine neste planlagte vakter",
+      "empty": "Ingen kommende vakter",
+      "empty-description": "Dine neste publiserte vakter vises her.",
+      "ends-next-day": "slutter neste dag",
+      "error": "Kunne ikke laste inn dine kommende vakter",
+      "title": "Kommende vakter",
+      "today": "I dag",
+      "tomorrow": "I morgen",
+      "view-schedule": "Vis vaktliste"
     },
     "upcoming-time-off": {
       "absence": "fravær",

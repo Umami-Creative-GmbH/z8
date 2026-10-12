@@ -37,6 +37,8 @@ const REVIEW_CODES = new Set([
 	"invalid_interval",
 	"attribution_not_allowed",
 	"approval_routing",
+	// The work touches a closed month (#762): only a reopening lets it through.
+	"month_closed",
 ]);
 const CONTEXT_FIELDS = ["userId", "organizationId", "employeeId", "server"];
 

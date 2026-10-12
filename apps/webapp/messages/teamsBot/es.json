@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Registrado actualmente",
+    "deputy": "Suplente: {name}",
     "everyoneAvailable": "Todos están disponibles hoy",
     "noOneClockedIn": "Nadie se ha registrado todavía",
     "noPendingApprovals": "No hay aprobaciones pendientes",

@@ -47,6 +47,8 @@ const replies: ClockCommandReplies<ClockInFailure> = {
 				"Your clock-in could not be confirmed. Check your status before trying again.",
 			),
 		access_denied: (t) => t("bot.cmd.clockin.noProfile", "Employee profile not found."),
+		month_closed: (t) =>
+			t("bot.cmd.clockin.monthClosed", "This time is in a closed month and cannot be changed."),
 		billing_required: billingRequiredReply,
 		// A redelivered invocation replays; these cannot arise from a bot command
 		// without a freshness window or frozen payload, and nothing was written.

@@ -17,7 +17,10 @@ import {
 } from "@/db/schema";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import { assertAbsenceDaysOpen, workInterval } from "@/lib/time-tracking/closed-months/store";
 import type { ImportedWorkHold } from "@/lib/time-tracking/imported-work-interval";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
 	type ImportedWorkAttribution,
 	type ImportedWorkCommand,
@@ -447,6 +450,16 @@ async function commitWorkPeriod(
 			isBillable: attribution?.isBillable ?? false,
 		})
 		.returning({ id: workPeriod.id });
+	// Imported work in a submitted period sends it back to the employee (#805); live work
+	// counts at its start.
+	await sendBackChangedPeriodSubmissions(database, {
+		organizationId: job.organizationId,
+		employeeId: payload.employeeId,
+		causedByUserId: job.committedBy,
+		work: [
+			workInterval(startAt.toJSDate(), endAt?.toJSDate() ?? startAt.toJSDate()),
+		],
+	});
 
 	await markCommitted(database, row.id, job, "work_period", period.id);
 }
@@ -483,9 +496,24 @@ async function commitAbsence(
 	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
 	job: ImportCommitJobData,
-) {
+	options: BlockOptions,
+): Promise<CommitRowOutcome> {
 	const payload = row.normalizedPayload as unknown as AbsencePayload;
 	await assertEmployeeInOrganization(database, payload.employeeId, job.organizationId);
+	const startDate = parseUtcDateTime(payload.startsAt, "startsAt").toISODate()!;
+	const endDate = parseUtcDateTime(payload.endsAt, "endsAt").toISODate()!;
+	// An absence touching a closed month is blocked, never written (#762).
+	try {
+		await assertAbsenceDaysOpen(database, {
+			organizationId: job.organizationId,
+			employeeId: payload.employeeId,
+			days: [{ startDate, endDate }],
+		});
+	} catch (error) {
+		const closed = monthClosedRefusalOf(error);
+		if (!closed) throw error;
+		return blockRow(database, row.id, job, closed.message, options);
+	}
 
 	const categoryId = await ensureAbsenceCategory(
 		database,
@@ -498,14 +526,22 @@ async function commitAbsence(
 			employeeId: payload.employeeId,
 			organizationId: job.organizationId,
 			categoryId,
-			startDate: parseUtcDateTime(payload.startsAt, "startsAt").toISODate()!,
-			endDate: parseUtcDateTime(payload.endsAt, "endsAt").toISODate()!,
+			startDate,
+			endDate,
 			status: "approved",
 			notes: payload.note ?? null,
 		})
 		.returning({ id: absenceEntry.id });
+	// An imported absence in a submitted period sends it back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(database, {
+		organizationId: job.organizationId,
+		employeeId: payload.employeeId,
+		causedByUserId: job.committedBy,
+		days: [{ startDate, endDate }],
+	});
 
 	await markCommitted(database, row.id, job, "absence_entry", absence.id);
+	return { status: "committed" };
 }
 
 async function commitTeam(
@@ -785,8 +821,7 @@ export async function commitAcceptedRowsForEntity(
 
 						switch (job.entityType) {
 							case "absence":
-								await commitAbsence(tx as CommitDb, claimedRow, job);
-								return { status: "committed" };
+								return commitAbsence(tx as CommitDb, claimedRow, job, blockOptions);
 							case "team":
 								await commitTeam(tx as CommitDb, claimedRow, job);
 								return { status: "committed" };

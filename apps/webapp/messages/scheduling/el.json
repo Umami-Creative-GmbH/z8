@@ -16,8 +16,17 @@
       "understaffed": "Υποστελεχωμένο",
       "utilization": "{percent}% αξιοποίηση"
     },
+    "mySchedule": {
+      "loadFailed": "Δεν ήταν δυνατή η φόρτωση των βαρδιών σας. Παρακαλούμε δοκιμάστε ξανά αργότερα.",
+      "nextWeek": "Επόμενη εβδομάδα",
+      "noShifts": "Καμία βάρδια",
+      "previousWeek": "Προηγούμενη εβδομάδα",
+      "shift": "Βάρδια",
+      "today": "Σήμερα"
+    },
     "page": {
-      "employeeDescription": "Δείτε τις βάρδιές σας και επιλέξτε διαθέσιμες βάρδιες",
+      "employeeScheduleDescription": "Οι δημοσιευμένες βάρδιές σας, ανά εβδομάδα",
+      "employeeTitle": "Το πρόγραμμά μου",
       "managerDescription": "Διαχείριση και προγραμματισμός βαρδιών εργαζομένων",
       "title": "Πρόγραμμα βαρδιών"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Η βάρδια αποθηκεύτηκε με προειδοποίηση επικάλυψης",
         "updated": "Η βάρδια ενημερώθηκε"
       }
+    },
+    "shiftDetails": {
+      "close": "Κλείσιμο",
+      "date": "Ημερομηνία",
+      "description": "Η προγραμματισμένη βάρδιά σας",
+      "endsNextDay": "λήγει την επόμενη ημέρα",
+      "location": "Τοποθεσία",
+      "notes": "Σημειώσεις",
+      "time": "Ώρα",
+      "title": "Λεπτομέρειες βάρδιας"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Οποιοσδήποτε μπορεί να αναλάβει",
@@ -111,6 +130,35 @@
       "validating": "Επικύρωση δεξιοτήτων…",
       "validatingDescription": "Έλεγχος προσόντων υπαλλήλου",
       "warningMessage": "Μπορείτε ακόμα να αναθέσετε αυτή τη βάρδια, αλλά θα καταγραφεί ως παράκαμψη."
+    },
+    "staffingSuggestions": {
+      "empty": "Δεν υπάρχουν διαθέσιμοι εργαζόμενοι για αυτή τη βάρδια",
+      "error": "Δεν ήταν δυνατή η φόρτωση των προτάσεων",
+      "loading": "Εύρεση διαθέσιμων εργαζομένων…",
+      "note": {
+        "missingPreferredSkill": "Δεν διαθέτει την προτιμώμενη δεξιότητα: {skill}"
+      },
+      "pick": "Επιλογή",
+      "pickLabel": "Ανάθεση σε {name}",
+      "reason": {
+        "noContractedTarget": "Χωρίς συμβατικό στόχο",
+        "plannedHours": "Προγραμματίστηκαν {planned} από {target} ώρ. αυτή την εβδομάδα",
+        "requestedThisShift": "Ζήτησε αυτή τη βάρδια",
+        "restPeriodOk": "Περίοδος ανάπαυσης ΟΚ",
+        "skillsHeld": "Διαθέτει: {skills}"
+      },
+      "requested": "Ζήτησε αυτή τη βάρδια",
+      "showAll": "Εμφάνιση όλων ({count})",
+      "showFewer": "Εμφάνιση λιγότερων",
+      "title": "Προτεινόμενοι εργαζόμενοι",
+      "warning": {
+        "expiredRequiredSkill": "Η δεξιότητα {skill} έληξε στις {date}",
+        "maxHours": "Υπέρβαση του ημερήσιου ανώτατου ορίου ({total} από {max} ώρ.)",
+        "missingRequiredSkill": "Λείπει η απαιτούμενη δεξιότητα: {skill}",
+        "overtime": "{period, select, daily {Ημερήσια} weekly {Εβδομαδιαία} other {Μηνιαία}} υπερωρία ({total} από {threshold} ώ.)",
+        "pendingAbsence": "Εκκρεμής απουσία: {category}",
+        "restTime": "Πολύ σύντομη περίοδος ανάπαυσης ({rest} από {required} ώ.)"
+      }
     },
     "templates": {
       "dragHint": "Σύρετε ένα πρότυπο στο ημερολόγιο για να δημιουργήσετε μια βάρδια",

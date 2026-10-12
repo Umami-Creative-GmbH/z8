@@ -16,8 +16,17 @@
       "understaffed": "Sous-effectif",
       "utilization": "{percent}% d'utilisation"
     },
+    "mySchedule": {
+      "loadFailed": "Impossible de charger vos quarts de travail. Veuillez réessayer plus tard.",
+      "nextWeek": "Semaine suivante",
+      "noShifts": "Aucun quart de travail",
+      "previousWeek": "Semaine précédente",
+      "shift": "Quart de travail",
+      "today": "Aujourd'hui"
+    },
     "page": {
-      "employeeDescription": "Consultez vos quarts de travail et récupérez les quarts disponibles",
+      "employeeScheduleDescription": "Vos quarts de travail publiés, semaine par semaine",
+      "employeeTitle": "Mon planning",
       "managerDescription": "Gérez et planifiez les quarts de travail des employés",
       "title": "Planning des quarts"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Quart enregistré avec avertissement de chevauchement",
         "updated": "Quart mis à jour"
       }
+    },
+    "shiftDetails": {
+      "close": "Fermer",
+      "date": "Date",
+      "description": "Votre quart de travail planifié",
+      "endsNextDay": "se termine le lendemain",
+      "location": "Lieu",
+      "notes": "Notes",
+      "time": "Heure",
+      "title": "Détails du quart"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Tout le monde peut prendre le créneau",
@@ -111,6 +130,35 @@
       "validating": "Validation des compétences…",
       "validatingDescription": "Vérification des qualifications de l'employé",
       "warningMessage": "Vous pouvez toujours attribuer ce quart de travail, mais il sera enregistré comme une dérogation."
+    },
+    "staffingSuggestions": {
+      "empty": "Aucun employé disponible pour ce créneau",
+      "error": "Impossible de charger les suggestions",
+      "loading": "Recherche d'employés disponibles…",
+      "note": {
+        "missingPreferredSkill": "Compétence souhaitée manquante : {skill}"
+      },
+      "pick": "Sélectionner",
+      "pickLabel": "Assigner {name}",
+      "reason": {
+        "noContractedTarget": "Aucun objectif contractuel",
+        "plannedHours": "{planned} sur {target} h planifiées cette semaine",
+        "requestedThisShift": "A demandé ce créneau",
+        "restPeriodOk": "Temps de repos respecté",
+        "skillsHeld": "Possède {skills}"
+      },
+      "requested": "A demandé ce créneau",
+      "showAll": "Tout afficher ({count})",
+      "showFewer": "Afficher moins",
+      "title": "Employés suggérés",
+      "warning": {
+        "expiredRequiredSkill": "{skill} a expiré le {date}",
+        "maxHours": "Dépassement du maximum quotidien ({total} sur {max} h)",
+        "missingRequiredSkill": "Compétence requise manquante : {skill}",
+        "overtime": "{period, select, daily {Heures supplémentaires quotidiennes} weekly {Heures supplémentaires hebdomadaires} other {Heures supplémentaires mensuelles}} ({total} sur {threshold} h)",
+        "pendingAbsence": "Absence en attente : {category}",
+        "restTime": "Temps de repos trop court ({rest} sur {required} h)"
+      }
     },
     "templates": {
       "dragHint": "Faites glisser un modèle sur le calendrier pour créer un quart de travail",

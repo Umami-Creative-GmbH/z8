@@ -46,7 +46,7 @@ export function AuthenticatedAppShell() {
 					"Loading application",
 				)}
 			>
-				<header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b px-4 lg:px-6">
+				<header className="box-content flex h-(--header-height) shrink-0 items-center gap-2 border-b px-4 pt-[env(safe-area-inset-top)] lg:px-6">
 					<Skeleton className="size-7" />
 					<Skeleton className="h-5 w-36" />
 					<Skeleton className="ml-auto h-8 w-24" />

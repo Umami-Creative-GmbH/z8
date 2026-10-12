@@ -24,6 +24,31 @@
       "nextYear": "Próximo año",
       "previousYear": "Año anterior"
     },
+    "deputy": {
+      "away": "Ausente {dates}",
+      "awayOption": "{name} · Ausente {dates}",
+      "awayWarning": "{name} está ausente en estas fechas. Aún puedes seleccionarle.",
+      "changeAction": "Cambiar suplente",
+      "changed": "Suplente guardado",
+      "changeDescription": "El suplente te cubre mientras estés ausente. Cambiarlo no requiere una nueva aprobación.",
+      "changeDescriptionFor": "El suplente cubre a {name} mientras esté ausente. Cambiarlo no requiere una nueva aprobación.",
+      "changeFailed": "No se pudo guardar el suplente",
+      "changeTitle": "Cambiar suplente",
+      "contactOnly": "{name} se mostrará solo como contacto y no podrá resolver aprobaciones.",
+      "errors": {
+        "ended": "Ya no se puede cambiar el suplente: esta ausencia ha finalizado.",
+        "required": "Elige un suplente: este tipo de ausencia requiere uno.",
+        "self": "Un empleado no puede ser su propio suplente.",
+        "unavailable": "El suplente debe ser un empleado activo de esta organización."
+      },
+      "help": "El compañero que te cubre mientras estás ausente. No se le pide que acepte.",
+      "label": "Suplente",
+      "labelOptional": "Suplente (opcional)",
+      "labelRequired": "Suplente *",
+      "none": "Sin suplente",
+      "placeholder": "Seleccionar un suplente…",
+      "save": "Guardar suplente"
+    },
     "dialog": {
       "cancelDescription": "¿Está seguro de que desea cancelar esta solicitud de ausencia? Esta acción no se puede deshacer.",
       "cancelTitle": "Cancelar solicitud de ausencia",
@@ -36,10 +61,10 @@
     },
     "featureName": "gestionar ausencias",
     "form": {
+      "absenceDays": "Días de ausencia:",
       "absenceType": "Tipo de ausencia *",
       "autoApproved": "(Aprobado automáticamente)",
       "balanceAfterRequest": "Saldo después de la solicitud:",
-      "businessDays": "Días laborables:",
       "daysRemaining": "Días restantes:",
       "description": "Envíe una solicitud de tiempo libre. Su gerente será notificado para su aprobación.",
       "duration": "Duración de la ausencia",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Sin riesgo de cobertura publicado",
       "noCoverageRulesConfigured": "No hay reglas de cobertura configuradas para los turnos afectados",
       "noHolidays": "No hay días festivos asignados en el rango",
+      "noWorkingDays": "Este rango no contiene días laborables.",
       "remainingAfter": "Restante tras la solicitud",
       "requested": "Solicitado",
       "title": "Planificador inteligente",
-      "unavailable": "Vista previa de planificación no disponible. Aún puede enviar su solicitud."
+      "unavailable": "Vista previa de planificación no disponible. Aún puede enviar su solicitud.",
+      "workBalance": "Saldo de horas",
+      "workBalanceAfter": "Tras la solicitud",
+      "workBalanceCurrent": "Actual",
+      "workBalanceDrawn": "Consumido por la solicitud",
+      "workBalanceNegative": "Su saldo de horas quedaría en negativo tras esta solicitud. Aún puede enviarla."
     },
     "requestAbsence": "Solicitar ausencia",
+    "sickNotes": {
+      "attachAction": "Adjuntar baja médica",
+      "attach": {
+        "defaultTitle": "Baja médica {dateRange}",
+        "description": "Añade fotos o archivos PDF de tu baja médica: archivos PDF, JPEG, PNG o WebP de hasta 20 MB cada uno. Cada archivo se guardará como su propia baja médica en tu expediente de personal.",
+        "documentDate": "Fecha del documento",
+        "failed": "Error al subir",
+        "fileRequired": "Elige al menos un archivo.",
+        "officerDescription": "Añade fotos o archivos PDF del justificante médico: archivos PDF, JPEG, PNG o WebP de hasta 20 MB cada uno. Cada archivo se guarda como un justificante médico independiente en el expediente del empleado.",
+        "progress": "Progreso de subida",
+        "progressCount": "{done} de {total} subidos",
+        "share": "Compartir con el empleado",
+        "sharedNote": "Puedes ver tus bajas médicas en Mis documentos y en esta ausencia. La persona que aprueba solo verá que se ha adjuntado una baja médica. Puedes eliminar una baja médica en un plazo de 24 horas tras subirla.",
+        "shareHint": "Desactivado: solo para RR. HH., el empleado solo ve que hay un justificante médico adjunto. Activado: el empleado lo ve en Mis documentos.",
+        "submit": "Adjuntar",
+        "success": "{count, plural, one {Baja médica adjunta} other {# bajas médicas adjuntas}}",
+        "title": "Adjuntar baja médica",
+        "titleLabel": "Título"
+      },
+      "files": {
+        "chooseFiles": "Seleccionar archivos",
+        "defaultTitleUndated": "Justificante médico",
+        "incomplete": "Asigna a cada justificante médico un título y una fecha de documento.",
+        "remove": "Eliminar {fileName}",
+        "takePhoto": "Tomar foto",
+        "tooMany": "Puedes añadir hasta {max} archivos."
+      },
+      "marker": "Baja médica adjunta ({count})",
+      "panel": {
+        "delete": "Eliminar {title}",
+        "description": "Justificantes médicos para la ausencia {dateRange}.",
+        "empty": "No hay justificantes médicos que puedas abrir.",
+        "linkExisting": "Vincular justificante médico",
+        "loadFailed": "No se pudieron cargar los justificantes médicos.",
+        "title": "Justificantes médicos",
+        "unlink": "Desvincular {title}",
+        "unlinked": "Justificante médico desvinculado",
+        "unlinkFailed": "No se pudo desvincular el justificante médico."
+      },
+      "request": {
+        "attachFailed": "Se solicitó tu ausencia, pero no se pudo adjuntar {files}. Puedes adjuntar justificantes médicos desde la ausencia más adelante.",
+        "description": "Añade fotos o archivos PDF de tu justificante médico: archivos PDF, JPEG, PNG o WebP de hasta 20 MB cada uno. Cada archivo se guarda como un justificante médico independiente en tu expediente personal. La persona encargada de aprobar solo verá que hay un justificante médico adjunto.",
+        "title": "Justificante médico (opcional)",
+        "uploadFailed": "No se pudo subir {fileName}. Elimínalo o inténtalo de nuevo."
+      }
+    },
     "status": {
       "approved": "Aprobado",
       "pending": "Pendiente",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Entradas de tiempo bloqueadas",
       "category": "Categoría",
+      "deputy": "Suplente",
       "duration": "Duración",
       "employee": "Empleado",
       "noEvents": "No hay eventos para este día",
@@ -177,6 +255,7 @@
       "category": "Categoría",
       "credited": "Acreditado",
       "dateRange": "Rango de fechas",
+      "deputy": "Suplente",
       "duration": "Duración",
       "editedBy": "Editado por",
       "employee": "Empleado",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "SC",
+      "closedDay": "En un mes cerrado",
       "dayEvents": "{count, plural, one {# evento: {titles}} other {# eventos: {titles}}}",
       "dayLabel": "{date}: {actual} registrado, {required} requerido, {delta} {status}.",
       "description": "Horas de política diarias, semanales y mensuales",

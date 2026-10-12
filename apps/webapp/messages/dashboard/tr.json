@@ -15,6 +15,13 @@
       "today": "Bugün!",
       "tomorrow": "Yarın"
     },
+    "covering-for": {
+      "description": "İzinli olduklarında vekillik ettiğiniz iş arkadaşları",
+      "error": "Vekillik görevleriniz yüklenemedi",
+      "running": "{date} tarihine kadar {name} için vekillik yapılıyor",
+      "title": "Vekillik edilen",
+      "upcoming": "Yaklaşan: {start} - {end} tarihleri arasında {name} için vekillik"
+    },
     "customize": {
       "empty-description": "Bireysel araçları yeniden etkinleştirmek için kontrol paneli özelleştirme simgesini kullanın veya her aracı tekrar göstermek için düzeni sıfırlayın.",
       "empty-title": "Tüm kontrol paneli araçları gizli",
@@ -129,6 +136,17 @@
       "teams": "Ekipler",
       "teams-button": "Ekipler",
       "title": "Organizasyon"
+    },
+    "upcoming-shifts": {
+      "description": "Planlanan sonraki vardiyalarınız",
+      "empty": "Yaklaşan vardiya yok",
+      "empty-description": "Yayımlanan sonraki vardiyalarınız burada görünecektir.",
+      "ends-next-day": "ertesi gün biter",
+      "error": "Yaklaşan vardiyalarınız yüklenemedi",
+      "title": "Yaklaşan Vardiyalar",
+      "today": "Bugün",
+      "tomorrow": "Yarın",
+      "view-schedule": "Programı görüntüle"
     },
     "upcoming-time-off": {
       "absence": "devamsızlık",

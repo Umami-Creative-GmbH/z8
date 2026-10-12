@@ -15,7 +15,11 @@ import {
 	type CollectedPayrollWorkInput,
 	PAYROLL_WORK_INPUT_VERSION,
 	payrollWorkInputDigest,
+	type StoredPayrollWorkInput,
 } from "./payroll-work-collection";
+
+/** Versions a stored input may have: version 1 predates the frozen identifier (#821). */
+const READABLE_VERSIONS: readonly number[] = [1, PAYROLL_WORK_INPUT_VERSION];
 
 type Database = typeof database;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -42,12 +46,15 @@ export async function insertPayrollExportWorkInput(
 	});
 }
 
-/** The job's stored input, or `null` for a job collected without it. */
+/**
+ * The job's stored input, or `null` for a job collected without it. Version 1
+ * input stays readable and recoverable: its digest covers what it stored.
+ */
 export async function readPayrollExportWorkInput(
 	reader: Pick<Database, "select">,
 	organizationId: string,
 	jobId: string,
-): Promise<CollectedPayrollWorkInput | null> {
+): Promise<StoredPayrollWorkInput | null> {
 	const [row] = await reader
 		.select({
 			digest: payrollExportWorkInput.digest,
@@ -65,10 +72,10 @@ export async function readPayrollExportWorkInput(
 		.limit(1);
 	if (!row) return null;
 
-	const input = row.input as CollectedPayrollWorkInput;
+	const input = row.input as StoredPayrollWorkInput;
 	if (
-		row.version !== PAYROLL_WORK_INPUT_VERSION ||
-		input.version !== PAYROLL_WORK_INPUT_VERSION ||
+		!READABLE_VERSIONS.includes(row.version) ||
+		input.version !== row.version ||
 		input.organizationId !== organizationId ||
 		input.digest !== row.digest ||
 		input.work.length !== row.workCount ||

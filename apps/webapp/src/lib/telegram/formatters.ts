@@ -295,7 +295,12 @@ export function buildDailyDigestMessage(
 		);
 	} else {
 		for (const emp of data.employeesOut.slice(0, 5)) {
-			lines.push(escapeMarkdownV2(`  ${emp.name} - ${emp.category} (returns ${emp.returnDate})`));
+			const deputy = emp.deputyName
+				? ` · ${t ? t("bot.digest.deputy", "Deputy: {name}", { name: emp.deputyName }) : `Deputy: ${emp.deputyName}`}`
+				: "";
+			lines.push(
+				escapeMarkdownV2(`  ${emp.name} - ${emp.category} (returns ${emp.returnDate})${deputy}`),
+			);
 		}
 		if (data.employeesOut.length > 5) {
 			lines.push(escapeMarkdownV2(`  +${data.employeesOut.length - 5} more`));

@@ -8,8 +8,8 @@ import { and, eq } from "drizzle-orm";
 import { dataExport, db, employee } from "@/db";
 import { getExportById, processExport } from "@/lib/export/export-service";
 import { createLogger } from "@/lib/logger";
-import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 import type { DataExportReportConfig, ExecutionResult, ReportConfig } from "../../domain/types";
+import { signFileUrl } from "../../infrastructure/signed-file-url";
 import type { ExecuteParams, IReportExecutor } from "./base-executor";
 
 const logger = createLogger("DataExportExecutor");
@@ -24,7 +24,9 @@ const VALID_CATEGORIES = [
 	// Work periods carry the project and task columns (#876).
 	"work_periods",
 	"absences",
+	// Projects and customers carry their custom field columns (#820).
 	"projects",
+	"customers",
 	"holidays",
 ] as const;
 
@@ -41,7 +43,7 @@ export class DataExportExecutor implements IReportExecutor {
 	 * Execute a data export
 	 */
 	async execute(params: ExecuteParams): Promise<ExecutionResult> {
-		const { organizationId, reportConfig, createdBy, emailRecipients = [] } = params;
+		const { organizationId, reportConfig, ownerId, emailRecipients = [] } = params;
 		const config = reportConfig as DataExportReportConfig;
 
 		logger.info(
@@ -55,9 +57,9 @@ export class DataExportExecutor implements IReportExecutor {
 		try {
 			// Find employee ID from user ID for requestedBy
 			let requestedById: string | undefined;
-			if (createdBy) {
+			if (ownerId) {
 				const emp = await db.query.employee.findFirst({
-					where: and(eq(employee.userId, createdBy), eq(employee.organizationId, organizationId)),
+					where: and(eq(employee.userId, ownerId), eq(employee.organizationId, organizationId)),
 					columns: { id: true },
 				});
 				requestedById = emp?.id;
@@ -67,7 +69,7 @@ export class DataExportExecutor implements IReportExecutor {
 				return {
 					success: false,
 					error:
-						"Unable to determine requester for data export. The schedule creator may not have an employee record.",
+						"Unable to determine requester for data export. The schedule owner may not have an employee record.",
 				};
 			}
 
@@ -97,9 +99,9 @@ export class DataExportExecutor implements IReportExecutor {
 				};
 			}
 
-			// Generate presigned URL for the completed export
-			const s3Url = completedRecord.s3Key
-				? await getPresignedUrl(organizationId, completedRecord.s3Key, 604800)
+			// Generate a 7-day download link for the completed export
+			const fileUrl = completedRecord.s3Key
+				? await signFileUrl(organizationId, completedRecord.s3Key, 604800)
 				: undefined;
 
 			return {
@@ -107,7 +109,7 @@ export class DataExportExecutor implements IReportExecutor {
 				underlyingJobId: exportRecord.id,
 				underlyingJobType: "data_export",
 				s3Key: completedRecord.s3Key || undefined,
-				s3Url,
+				fileUrl,
 				fileSizeBytes: completedRecord.fileSizeBytes || undefined,
 			};
 		} catch (error) {

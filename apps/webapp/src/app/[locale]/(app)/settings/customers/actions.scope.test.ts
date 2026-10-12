@@ -36,6 +36,15 @@ vi.mock("drizzle-orm", () => ({
 	inArray: vi.fn((left: unknown, right: unknown[]) => ({ inArray: [left, right] })),
 }));
 
+vi.mock("@/lib/organization/custom-fields/values", () => ({
+	findRecordsMissingRequiredValues: vi.fn(async () => new Set<string>()),
+}));
+
+vi.mock("@/lib/organization/custom-fields/form-values", () => ({
+	keepCustomFieldRefusal: (error: unknown) => error,
+	saveFormCustomFieldValues: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/db/schema", () => ({
 	customer: {
 		id: "id",
@@ -106,9 +115,13 @@ vi.mock("@/lib/effect/services/auth.service", async () => {
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context, Effect, Layer } = await import("effect");
+	const dbModule = await import("@/db");
 	const DatabaseService = Context.Service<any>("DatabaseService");
 	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
 		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		get db() {
+			return dbModule.db;
+		},
 	});
 	return { DatabaseService, DatabaseServiceLive };
 });

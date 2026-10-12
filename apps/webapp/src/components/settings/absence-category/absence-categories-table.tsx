@@ -64,6 +64,7 @@ const getCategoryTypeLabel = (t: ReturnType<typeof useTranslate>["t"], type: str
 		sick: t("settings.absenceCategories.type.sick", "Sick Leave"),
 		unpaid: t("settings.absenceCategories.type.unpaid", "Unpaid"),
 		vacation: t("settings.absenceCategories.type.vacation", "Vacation"),
+		time_off_in_lieu: t("settings.absenceCategories.type.timeOffInLieu", "Time Off in Lieu"),
 	};
 
 	return labels[type] || type;
@@ -224,6 +225,10 @@ export function AbsenceCategoriesTable({
 				row.original.countsAgainstVacation ? (
 					<Badge variant="outline">
 						{t("settings.absenceCategories.countsAgainstVacation", "Deducts balance")}
+					</Badge>
+				) : row.original.drawsOnWorkBalance ? (
+					<Badge variant="outline">
+						{t("settings.absenceCategories.drawsOnWorkBalance", "Draws on work balance")}
 					</Badge>
 				) : (
 					<span className="text-muted-foreground text-sm">

@@ -1,23 +1,25 @@
 /**
  * ICS Feed Management API
  *
- * Manages ICS feed tokens for users and teams.
+ * Manages ICS feed tokens for users and teams. A feed URL is returned only
+ * when the feed is created or regenerated (#991); listings never carry it.
  *
  * GET /api/calendar/ics-feeds - List user's feeds
  * POST /api/calendar/ics-feeds - Create a new feed
  */
 
-import crypto from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { employee, icsFeed, team } from "@/db/schema";
-import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import { AuditAction } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { logIcsFeedAudit } from "@/lib/calendar-sync/ics-feed-audit";
+import { issueIcsFeedSecret } from "@/lib/calendar-sync/ics-feed-secret";
 
 // ============================================
 // VALIDATION
@@ -29,19 +31,6 @@ const createFeedSchema = z.object({
 	includeApproved: z.boolean().default(true),
 	includePending: z.boolean().default(true),
 });
-
-// ============================================
-// HELPERS
-// ============================================
-
-function generateFeedSecret(): string {
-	return crypto.randomBytes(32).toString("hex"); // 64-char hex string
-}
-
-function buildFeedUrl(secret: string): string {
-	const baseUrl = getDefaultAppBaseUrl();
-	return `${baseUrl}/api/calendar/ics/${secret}`;
-}
 
 // ============================================
 // GET - List feeds
@@ -83,9 +72,10 @@ export async function GET(_request: NextRequest) {
 		// Get user's personal feed
 		const userFeed = await db.query.icsFeed.findFirst({
 			where: and(
+				eq(icsFeed.organizationId, activeOrgId),
 				eq(icsFeed.employeeId, emp.id),
 				eq(icsFeed.feedType, "user"),
-				eq(icsFeed.isActive, true),
+				isNull(icsFeed.revokedAt),
 			),
 		});
 
@@ -96,7 +86,7 @@ export async function GET(_request: NextRequest) {
 					where: and(
 						eq(icsFeed.organizationId, activeOrgId),
 						eq(icsFeed.feedType, "team"),
-						eq(icsFeed.isActive, true),
+						isNull(icsFeed.revokedAt),
 					),
 					with: {
 						team: true,
@@ -111,10 +101,9 @@ export async function GET(_request: NextRequest) {
 			feeds.push({
 				id: userFeed.id,
 				feedType: userFeed.feedType,
-				url: buildFeedUrl(userFeed.secret),
 				includeApproved: userFeed.includeApproved,
 				includePending: userFeed.includePending,
-				lastAccessedAt: userFeed.lastAccessedAt,
+				lastUsedAt: userFeed.lastUsedAt,
 				createdAt: userFeed.createdAt,
 			});
 		}
@@ -127,10 +116,9 @@ export async function GET(_request: NextRequest) {
 					feedType: feed.feedType,
 					teamId: feed.teamId,
 					teamName: (feed.team as { name?: string })?.name,
-					url: buildFeedUrl(feed.secret),
 					includeApproved: feed.includeApproved,
 					includePending: feed.includePending,
-					lastAccessedAt: feed.lastAccessedAt,
+					lastUsedAt: feed.lastUsedAt,
 					createdAt: feed.createdAt,
 				});
 			}
@@ -213,9 +201,10 @@ export async function POST(request: NextRequest) {
 			// Check if feed already exists
 			const existingFeed = await db.query.icsFeed.findFirst({
 				where: and(
+					eq(icsFeed.organizationId, activeOrgId),
 					eq(icsFeed.teamId, teamId),
 					eq(icsFeed.feedType, "team"),
-					eq(icsFeed.isActive, true),
+					isNull(icsFeed.revokedAt),
 				),
 			});
 
@@ -236,9 +225,10 @@ export async function POST(request: NextRequest) {
 			// Check if feed already exists
 			const existingFeed = await db.query.icsFeed.findFirst({
 				where: and(
+					eq(icsFeed.organizationId, activeOrgId),
 					eq(icsFeed.employeeId, emp.id),
 					eq(icsFeed.feedType, "user"),
-					eq(icsFeed.isActive, true),
+					isNull(icsFeed.revokedAt),
 				),
 			});
 
@@ -250,8 +240,8 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		// Create the feed
-		const secret = generateFeedSecret();
+		// Create the feed; the URL is shown only in this response
+		const { url, secretDigest, secretHashVersion } = issueIcsFeedSecret();
 
 		const [newFeed] = await db
 			.insert(icsFeed)
@@ -260,19 +250,26 @@ export async function POST(request: NextRequest) {
 				feedType,
 				employeeId: feedType === "user" ? emp.id : null,
 				teamId: feedType === "team" ? teamId : null,
-				secret,
+				secretDigest,
+				secretHashVersion,
 				includeApproved,
 				includePending,
-				isActive: true,
 				createdBy: session.user.id,
 				updatedAt: new Date(),
 			})
 			.returning();
 
+		await logIcsFeedAudit({
+			action: AuditAction.ICS_FEED_CREATED,
+			feed: newFeed,
+			actor: session.user,
+			request,
+		});
+
 		return NextResponse.json({
 			id: newFeed.id,
 			feedType: newFeed.feedType,
-			url: buildFeedUrl(newFeed.secret),
+			url,
 			includeApproved: newFeed.includeApproved,
 			includePending: newFeed.includePending,
 			createdAt: newFeed.createdAt,

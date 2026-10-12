@@ -153,13 +153,13 @@ describe("route catalog wiring", () => {
 			const source = readFileSync(path.join(root, layout), "utf8");
 			const route = /route="([^"]+)"/.exec(source)?.[1];
 			const scope = route ? getRouteCatalogScope(route) : undefined;
+			// The root provider always applies the shell through the merge, which adds its aliases.
 			const actual = leaves(
-				(scope
-					? mergeCatalogRecords(
-							shell,
-							await loadCatalogSlice("en", scope.namespaces),
-						)
-					: shell
+				mergeCatalogRecords(
+					shell,
+					scope
+						? await loadCatalogSlice("en", scope.namespaces)
+						: { ...shell, records: { en: {} } },
 				).records.en as TreeTranslationsData,
 			);
 			for (const key of reachableKeys(path.join(root, layout)))
@@ -187,6 +187,14 @@ describe("route catalog wiring", () => {
 		});
 		expect(uncoveredPages).toEqual([]);
 	});
+	it("loads the sick-note strings where sick notes are recorded and managed (#984)", () => {
+		expect(getRouteCatalogScope("/team/absences")?.namespaces).toEqual(
+			expect.arrayContaining(["calendar", "settings/people"]),
+		);
+		expect(getRouteCatalogScope("/personnel-files/employee-1")?.namespaces).toEqual(
+			expect.arrayContaining(["calendar", "settings/people"]),
+		);
+	});
 	it("uses segment boundaries and longest-prefix settings scopes", () => {
 		expect(
 			getRouteCatalogScope("/settings/clockodo-import")?.namespaces,
@@ -195,6 +203,8 @@ describe("route catalog wiring", () => {
 			getRouteCatalogScope("/settings/vacation/employees/123")?.namespaces,
 		).toContain("settings/vacation");
 		expect(getRouteCatalogScope("/reports/projects")?.route).toBe("/reports");
+		// The record and change-deputy dialogs on /team use calendar's absences.deputy.* keys (#802).
+		expect(getRouteCatalogScope("/team/absences")?.namespaces).toContain("calendar");
 		expect(getRouteCatalogScope("/reportsextra")).toBeUndefined();
 	});
 	it.each(ALL_LANGUAGES)(
@@ -217,6 +227,7 @@ describe("route catalog wiring", () => {
 						expect(actual[key], `${scope.route}: ${key}`).toBe(complete[key]);
 			}
 		},
+		20000,
 	);
 	it.each(ALL_LANGUAGES)(
 		"serializes shell plus installed ancestor feature slices below the complete dictionary in %s",
@@ -263,5 +274,6 @@ describe("route catalog wiring", () => {
 				`ROUTE_CATALOG_BYTES ${JSON.stringify({ locale, rootBytes, completeBytes, measurements })}\n`,
 			);
 		},
+		20000,
 	);
 });

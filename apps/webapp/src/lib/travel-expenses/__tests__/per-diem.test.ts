@@ -616,6 +616,45 @@ describe("stamp", () => {
 	});
 });
 
+describe("domestic rules beyond 2026 (§ 9 Abs. 4a EStG has no annual edition, #891)", () => {
+	it("prices a domestic trip in 2027", () => {
+		const result = calculated(
+			calculatePerDiem(itinerary("2027-03-10T08:00", "2027-03-12T18:00"), context()),
+		);
+		expect(result.amount).toBe("56.00");
+		expect(result.days.map((day) => day.allowance)).toEqual([
+			"partial_day",
+			"full_day",
+			"partial_day",
+		]);
+	});
+
+	it("prices a domestic trip across the turn of the year", () => {
+		const result = calculated(
+			calculatePerDiem(itinerary("2026-12-30T08:00", "2027-01-02T18:00"), context()),
+		);
+		expect(result.amount).toBe("84.00");
+	});
+
+	it("recomputes a per diem stamped with the 2026 rules key to the same amount", () => {
+		const trip = itinerary("2026-06-30T08:00", "2026-07-01T18:00");
+		const original = calculated(calculatePerDiem(trip, context()));
+		const stamp = perDiemStampOf(original);
+		expect(stamp.rulesKey).toBe("de-domestic-per-diem-estg-9-4a-2026");
+		const again = calculated(
+			calculatePerDiem(
+				trip,
+				context({
+					resolvePolicy: perDiemStampResolver(stamp),
+					rulesKey: "de-domestic-per-diem-estg-9-4a-2026",
+				}),
+			),
+		);
+		expect(again.amount).toBe("28.00");
+		expect(again).toEqual(original);
+	});
+});
+
 describe("samePerDiemItinerary", () => {
 	it("ignores meal order and stored key order but not a changed fact", () => {
 		const trip = itinerary("2026-06-01T08:00", "2026-06-02T18:00");

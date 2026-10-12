@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	IconAlertTriangle,
 	IconCheck,
 	IconClock,
 	IconDownload,
@@ -202,6 +203,19 @@ export function ExportHistory({ organizationId, exports }: ExportHistoryProps) {
 													"settings.payrollExport.history.payrollRun",
 													"Payroll run: {count, plural, one {# expense report} other {# expense reports}}",
 													{ count: exp.payrollRunIncludedReports },
+												)}
+											</Badge>
+										)}
+										{exp.unmappedOvertimePayoutCount > 0 && (
+											<Badge
+												variant="outline"
+												className="ml-2 gap-1 border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
+											>
+												<IconAlertTriangle className="size-3" aria-hidden="true" />
+												{t(
+													"settings.payrollExport.history.unmappedOvertimePayouts",
+													"{count, plural, one {# overtime payout} other {# overtime payouts}} not exported: no wage type for Overtime",
+													{ count: exp.unmappedOvertimePayoutCount },
 												)}
 											</Badge>
 										)}

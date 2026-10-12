@@ -3,18 +3,21 @@
  *
  * GET /api/calendar/ics-feeds/[id] - Get feed details
  * PATCH /api/calendar/ics-feeds/[id] - Update feed settings
- * DELETE /api/calendar/ics-feeds/[id] - Delete/deactivate feed
+ * DELETE /api/calendar/ics-feeds/[id] - Revoke feed
+ *
+ * None of these return the feed URL; only create and regenerate do (#991).
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { employee, icsFeed } from "@/db/schema";
-import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import { AuditAction } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
+import { logIcsFeedAudit } from "@/lib/calendar-sync/ics-feed-audit";
 
 // ============================================
 // VALIDATION
@@ -29,11 +32,6 @@ const updateFeedSchema = z.object({
 // HELPERS
 // ============================================
 
-function buildFeedUrl(secret: string): string {
-	const baseUrl = getDefaultAppBaseUrl();
-	return `${baseUrl}/api/calendar/ics/${secret}`;
-}
-
 async function verifyFeedAccess(
 	feedId: string,
 	userId: string,
@@ -47,7 +45,7 @@ async function verifyFeedAccess(
 		where: and(
 			eq(icsFeed.id, feedId),
 			eq(icsFeed.organizationId, organizationId),
-			eq(icsFeed.isActive, true),
+			isNull(icsFeed.revokedAt),
 		),
 	});
 
@@ -115,10 +113,9 @@ export async function GET(
 		return NextResponse.json({
 			id: feed.id,
 			feedType: feed.feedType,
-			url: buildFeedUrl(feed.secret),
 			includeApproved: feed.includeApproved,
 			includePending: feed.includePending,
-			lastAccessedAt: feed.lastAccessedAt,
+			lastUsedAt: feed.lastUsedAt,
 			createdAt: feed.createdAt,
 		});
 	} catch (error) {
@@ -191,10 +188,9 @@ export async function PATCH(
 		return NextResponse.json({
 			id: updated.id,
 			feedType: updated.feedType,
-			url: buildFeedUrl(updated.secret),
 			includeApproved: updated.includeApproved,
 			includePending: updated.includePending,
-			lastAccessedAt: updated.lastAccessedAt,
+			lastUsedAt: updated.lastUsedAt,
 			updatedAt: updated.updatedAt,
 		});
 	} catch (error) {
@@ -207,11 +203,11 @@ export async function PATCH(
 }
 
 // ============================================
-// DELETE - Deactivate feed
+// DELETE - Revoke feed
 // ============================================
 
 export async function DELETE(
-	_request: NextRequest,
+	request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	await connection();
@@ -238,18 +234,33 @@ export async function DELETE(
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 
-		// Soft delete: set isActive to false
-		const [deleted] = await db
+		// Revoke; the row stays as a record of the credential
+		const now = new Date();
+		const [revoked] = await db
 			.update(icsFeed)
 			.set({
-				isActive: false,
-				updatedAt: new Date(),
+				revokedAt: now,
+				revokedBy: session.user.id,
+				updatedAt: now,
 			})
-			.where(and(eq(icsFeed.id, id), eq(icsFeed.organizationId, activeOrgId)))
-			.returning({ id: icsFeed.id });
-		if (!deleted) {
+			.where(
+				and(
+					eq(icsFeed.id, id),
+					eq(icsFeed.organizationId, activeOrgId),
+					isNull(icsFeed.revokedAt),
+				),
+			)
+			.returning();
+		if (!revoked) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
+
+		await logIcsFeedAudit({
+			action: AuditAction.ICS_FEED_REVOKED,
+			feed: revoked,
+			actor: session.user,
+			request,
+		});
 
 		return NextResponse.json({ success: true });
 	} catch (error) {

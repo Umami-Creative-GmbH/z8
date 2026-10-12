@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Aprovado",
+        "changeDeputy": "Alterar substituto",
+        "changeDeputyOf": "Alterar substituto de {name}",
+        "deputy": "Substituto:",
+        "deputyMissing": "Substituto ausente",
         "description": "Ausências aprovadas e pendentes para a equipe e o ano selecionados.",
         "error": {
           "description": "Por favor, tente novamente em instantes.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} pendente",
         "title": "Calendário anual",
         "totalDays": "{count} ausente"
+      },
+      "deputyFilter": {
+        "clear": "Mostrar todas as ausências",
+        "notice": "Mostrando apenas as ausências que este colaborador cobre como substituto."
       },
       "description": "Revise as permissões e registre as ausências aprovadas da sua equipe.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Categoria",
         "categoryPlaceholder": "Selecione uma categoria de ausência…",
+        "deputy": "Substituto",
         "description": "Registre uma ausência aprovada diretamente para o funcionário selecionado.",
         "endDate": "Data de término",
         "endDateHelper": "Deixe vazio para uma ausência no mesmo dia.",
@@ -66,6 +75,11 @@
         "required": "{label} é obrigatório",
         "sickDetail": "Detalhe de doença",
         "sickDetailPlaceholder": "Selecione o detalhe de doença…",
+        "sickNotes": {
+          "description": "Adicione fotos ou PDFs do atestado médico entregue a você: arquivos PDF, JPEG, PNG ou WebP de até 20 MB cada. Cada arquivo é salvo como um atestado médico próprio na ficha do funcionário, e o funcionário pode visualizá-lo. Posteriormente, apenas quem gerencia os atestados médicos do funcionário poderá abri-lo.",
+          "title": "Atestado médico (opcional)"
+        },
+        "sickNotesFailed": "A ausência foi registrada, mas não foi possível anexar {files}. Alguém que gerencie atestados médicos poderá anexá-los mais tarde.",
         "startDate": "Data de início",
         "submit": "Registrar ausência",
         "success": "Ausência registrada",
@@ -116,6 +130,51 @@
       "next": "Próximo",
       "previous": "Anterior",
       "showing": "Mostrando {from} a {to} de {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Escolha uma cadência de envio nas configurações da organização",
+      "columns": {
+        "calendar": "Calendário",
+        "employee": "Colaborador",
+        "period": "Período",
+        "status": "Status"
+      },
+      "descriptionAll": "Quem enviou o período selecionado. Aprove ou rejeite envios na caixa de entrada de aprovação.",
+      "descriptionManaged": "Quem dos colaboradores que você gerencia enviou o período selecionado. Aprove ou rejeite envios na caixa de entrada de aprovação.",
+      "empty": "Não é esperado que ninguém visível para você envie este período.",
+      "loading": "Carregando envios do período",
+      "notSubmitted": "Não enviado",
+      "off": "Sua organização não coleta envios de período.",
+      "openCalendar": "Calendário",
+      "openCalendarOf": "Abrir o calendário de {name}",
+      "openInbox": "Abrir a caixa de entrada de aprovação",
+      "owing": "{count, plural, one {# colaborador ainda não enviou este período.} other {# colaboradores ainda não enviaram este período.}}",
+      "period": "Período de envio",
+      "running": "Este período ainda está em andamento. Os colaboradores podem enviá-lo a partir do seu último dia.",
+      "status": {
+        "approved": "Aprovado",
+        "awaiting": "Aguardando envio",
+        "rejected": "Rejeitado",
+        "sentBack": "Devolvido após uma alteração",
+        "submitted": "Enviado"
+      },
+      "summary": "Status",
+      "title": "Envios do período"
+    },
+    "presence": {
+      "allLocations": "Todos os locais",
+      "columns": {
+        "name": "Nome",
+        "since": "Desde",
+        "state": "Status"
+      },
+      "description": "Escolha um local para ver quem registrou entrada ou está em pausa lá.",
+      "descriptionAll": "Funcionários atribuídos a este local que registraram entrada ou estão em pausa.",
+      "descriptionManaged": "Funcionários gerenciados por você atribuídos a este local que registraram entrada ou estão em pausa.",
+      "empty": "Ninguém visível para você registrou entrada neste local no momento.",
+      "locationTitle": "Quem está presente: {location}",
+      "noLocations": "Sua organização ainda não tem locais ativos.",
+      "title": "Quem está presente"
     },
     "primaryManager": "Você é o gerente principal",
     "search": {

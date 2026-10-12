@@ -180,6 +180,12 @@ export const approvalReviewBinding = pgTable(
 		assignmentId: uuid("assignment_id"),
 		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
 		submittedRevisionId: uuid("submitted_revision_id").notNull(),
+		/**
+		 * A deputy card's binding (#1017): the absent approver whose assignment or
+		 * request the recipient covers. It decides only while they still hold it
+		 * and the recipient still covers for them.
+		 */
+		actingForEmployeeId: uuid("acting_for_employee_id"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -260,6 +266,11 @@ export const approvalReviewBinding = pgTable(
 		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.recipientEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}),
+		foreignKey({
+			name: "approval_review_binding_acting_for_fk",
+			columns: [table.actingForEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}),
 	],

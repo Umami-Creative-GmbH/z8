@@ -10,6 +10,8 @@ import {
 } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { readWorkBalanceAdjustments } from "./adjustments/ledger";
+import type { WorkBalanceDbClient } from "./db-client";
 import {
 	computeEmployeePeriodBalance,
 	rebuildEmployeeYearBalanceFromMonths,
@@ -20,10 +22,7 @@ import type { EmployeeWorkBalancePayload } from "./types";
 
 const WORK_BALANCE_RESET_MARKER_DATE = "0001-01-01";
 
-export type WorkBalanceDbClient = Pick<
-	typeof db,
-	"delete" | "execute" | "insert" | "query" | "select"
->;
+export type { WorkBalanceDbClient } from "./db-client";
 
 function isEmployeeWorkBalanceResetMarker(row: {
 	computedFromDate: string;
@@ -58,16 +57,20 @@ export function buildWorkBalanceValues(input: {
 	organizationId: string;
 	actualMinutes: number;
 	requiredMinutes: number;
+	/** Uncancelled balance adjustments counted through `computedThroughDate` (#993). */
+	adjustmentMinutes?: number;
 	computedFromDate: string;
 	computedThroughDate: string;
 	computedAt: Date;
 }) {
+	const adjustmentMinutes = input.adjustmentMinutes ?? 0;
 	return {
 		employeeId: input.employeeId,
 		organizationId: input.organizationId,
 		actualMinutes: input.actualMinutes,
 		requiredMinutes: input.requiredMinutes,
-		balanceMinutes: input.actualMinutes - input.requiredMinutes,
+		adjustmentMinutes,
+		balanceMinutes: input.actualMinutes - input.requiredMinutes + adjustmentMinutes,
 		computedFromDate: input.computedFromDate,
 		computedThroughDate: input.computedThroughDate,
 		computedAt: input.computedAt,
@@ -118,6 +121,12 @@ function maxIsoDate(left: string, right: string) {
 	return left > right ? left : right;
 }
 
+function laterIsoDate(left: string | null, right: string | null) {
+	if (!left) return right;
+	if (!right) return left;
+	return maxIsoDate(left, right);
+}
+
 export function shouldIncludeWorkBalanceInBatch(
 	balance: { isDirty: boolean; computedThroughDate: string } | null,
 	todayDate: string,
@@ -131,8 +140,11 @@ export function shouldIncludeWorkBalanceInBatch(
  * changed: none of them is current. An organization intent (#311) covers every
  * projection, a user intent (#312) that user's employees.
  */
-async function readPendingWorkBalanceRebuilds(organizationId: string) {
-	const intents = await db.query.workBalanceRebuildIntent.findMany({
+async function readPendingWorkBalanceRebuilds(
+	organizationId: string,
+	dbClient: Pick<WorkBalanceDbClient, "query">,
+) {
+	const intents = await dbClient.query.workBalanceRebuildIntent.findMany({
 		where: eq(workBalanceRebuildIntent.organizationId, organizationId),
 		columns: { userId: true },
 	});
@@ -142,16 +154,19 @@ async function readPendingWorkBalanceRebuilds(organizationId: string) {
 	};
 }
 
-export async function getEmployeeWorkBalance(input: {
-	employeeId: string;
-	organizationId: string;
-}): Promise<EmployeeWorkBalancePayload | null> {
+export async function getEmployeeWorkBalance(
+	input: {
+		employeeId: string;
+		organizationId: string;
+	},
+	dbClient: Pick<WorkBalanceDbClient, "query"> = db,
+): Promise<EmployeeWorkBalancePayload | null> {
 	// Intent first: a rebuild deletes its intent in the transaction that resets
 	// the rows, so a row read afterwards is never an old-zone projection.
-	const pending = await readPendingWorkBalanceRebuilds(input.organizationId);
+	const pending = await readPendingWorkBalanceRebuilds(input.organizationId, dbClient);
 	if (pending.organizationWide) return null;
 	if (pending.userIds.size > 0) {
-		const scopedEmployee = await db.query.employee.findFirst({
+		const scopedEmployee = await dbClient.query.employee.findFirst({
 			where: and(
 				eq(employee.id, input.employeeId),
 				eq(employee.organizationId, input.organizationId),
@@ -160,7 +175,7 @@ export async function getEmployeeWorkBalance(input: {
 		});
 		if (!scopedEmployee || pending.userIds.has(scopedEmployee.userId)) return null;
 	}
-	const row = await db.query.employeeWorkBalance.findFirst({
+	const row = await dbClient.query.employeeWorkBalance.findFirst({
 		where: and(
 			eq(employeeWorkBalance.employeeId, input.employeeId),
 			eq(employeeWorkBalance.organizationId, input.organizationId),
@@ -191,6 +206,7 @@ function toEmployeeWorkBalancePayload(
 		organizationId: row.organizationId,
 		actualMinutes: row.actualMinutes,
 		requiredMinutes: row.requiredMinutes,
+		adjustmentMinutes: row.adjustmentMinutes,
 		balanceMinutes: row.balanceMinutes,
 		computedFromDate: row.computedFromDate,
 		computedThroughDate: row.computedThroughDate,
@@ -198,18 +214,21 @@ function toEmployeeWorkBalancePayload(
 	};
 }
 
-export async function getEmployeeWorkBalances(input: {
-	employeeIds: string[];
-	organizationId: string;
-}): Promise<Map<string, EmployeeWorkBalancePayload>> {
+export async function getEmployeeWorkBalances(
+	input: {
+		employeeIds: string[];
+		organizationId: string;
+	},
+	dbClient: Pick<WorkBalanceDbClient, "query"> = db,
+): Promise<Map<string, EmployeeWorkBalancePayload>> {
 	let employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
 	// Intent first, as in getEmployeeWorkBalance.
-	const pending = await readPendingWorkBalanceRebuilds(input.organizationId);
+	const pending = await readPendingWorkBalanceRebuilds(input.organizationId, dbClient);
 	if (pending.organizationWide) return new Map();
 	if (pending.userIds.size > 0) {
-		const scopedEmployees = await db.query.employee.findMany({
+		const scopedEmployees = await dbClient.query.employee.findMany({
 			where: and(
 				eq(employee.organizationId, input.organizationId),
 				inArray(employee.id, employeeIds),
@@ -221,7 +240,7 @@ export async function getEmployeeWorkBalances(input: {
 			.map(({ id }) => id);
 		if (employeeIds.length === 0) return new Map();
 	}
-	const rows = await db.query.employeeWorkBalance.findMany({
+	const rows = await dbClient.query.employeeWorkBalance.findMany({
 		where: and(
 			eq(employeeWorkBalance.organizationId, input.organizationId),
 			inArray(employeeWorkBalance.employeeId, employeeIds),
@@ -460,7 +479,17 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 		? await getFirstRelevantDate(input, dbClient, scopedEmployee, timezone)
 		: null;
 	const employeeStartDate = forceFullRebuild ? null : toUtcIsoDate(scopedEmployee.startDate);
-	const calculationStartDate = employeeStartDate ?? fullRebuildStartDate;
+	// Balance adjustments are read from their ledger on every computation, never
+	// kept in the stored rows, so a full rebuild counts them again (ADR-0008).
+	// An opening balance in effect replaces everything through its day: the
+	// calculation starts the day after it, in both the full and the dirty path.
+	const { countFrom, adjustmentMinutes } = await readWorkBalanceAdjustments(dbClient, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		throughDate: hotWindow.endDate,
+		openingBalanceDatedLater: "count",
+	});
+	const calculationStartDate = laterIsoDate(employeeStartDate ?? fullRebuildStartDate, countFrom);
 	if (calculationStartDate && calculationStartDate > hotWindow.endDate) {
 		await dbClient
 			.delete(employeeWorkBalancePeriod)
@@ -476,6 +505,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 				organizationId: input.organizationId,
 				actualMinutes: 0,
 				requiredMinutes: 0,
+				adjustmentMinutes,
 				computedFromDate: hotWindow.endDate,
 				computedThroughDate: hotWindow.endDate,
 				computedAt: now,
@@ -561,6 +591,7 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 			organizationId: input.organizationId,
 			actualMinutes: closedTotals.actualMinutes + hotWindowValues.actualMinutes,
 			requiredMinutes: closedTotals.requiredMinutes + hotWindowValues.requiredMinutes,
+			adjustmentMinutes,
 			computedFromDate:
 				calculationStartDate ?? closedTotals.firstPeriodStart ?? hotWindow.startDate,
 			computedThroughDate: hotWindow.endDate,
@@ -570,6 +601,83 @@ async function refreshEmployeeWorkBalanceFromPeriodsLocked(
 	);
 
 	return { updated: true };
+}
+
+/**
+ * The employee of the organization with what their work balance is computed
+ * from: their start date and their effective timezone, in which balance
+ * adjustment days and the projection's days are local dates. Null when the
+ * employee is not in the organization.
+ */
+export async function loadWorkBalanceEmployee(
+	input: { employeeId: string; organizationId: string },
+	dbClient: WorkBalanceDbClient = db,
+): Promise<{ id: string; startDate: Date | null; timezone: string } | null> {
+	const scopedEmployee = await dbClient.query.employee.findFirst({
+		where: and(
+			eq(employee.id, input.employeeId),
+			eq(employee.organizationId, input.organizationId),
+		),
+		columns: { id: true, startDate: true },
+		with: {
+			userSettings: { columns: { timezone: true } },
+			organization: { columns: { timezone: true } },
+		},
+	});
+	if (!scopedEmployee) return null;
+	return {
+		id: scopedEmployee.id,
+		startDate: scopedEmployee.startDate,
+		timezone: resolveEffectiveTimezone(
+			scopedEmployee.userSettings?.timezone,
+			scopedEmployee.organization?.timezone,
+		),
+	};
+}
+
+/**
+ * The employee's work balance at the end of `day` as computed now (#993):
+ * completed work minus required time from the start of the calculation
+ * through `day`, plus the uncancelled balance adjustments on or before it.
+ * Computed from scratch, as a full rebuild through that day would, so it does
+ * not depend on how current the stored projection is.
+ *
+ * An opening balance in effect dated on or before `day` replaces everything
+ * through its day (#997): the result is its minutes plus what is computed from
+ * the day after it. One dated after `day` is left out, so the result is the
+ * full calculation as it stood before it.
+ */
+export async function computeEmployeeWorkBalanceAtEndOfDay(
+	input: {
+		organizationId: string;
+		employee: { id: string; startDate: Date | null; timezone: string };
+		day: string;
+	},
+	dbClient: WorkBalanceDbClient = db,
+): Promise<number> {
+	const scope = { employeeId: input.employee.id, organizationId: input.organizationId };
+	const [firstRelevantDate, { countFrom, adjustmentMinutes }] = await Promise.all([
+		getFirstRelevantDate(scope, dbClient, input.employee, input.employee.timezone),
+		readWorkBalanceAdjustments(dbClient, {
+			...scope,
+			throughDate: input.day,
+			openingBalanceDatedLater: "ignore",
+		}),
+	]);
+	const calculationStartDate = laterIsoDate(firstRelevantDate, countFrom);
+	if (!calculationStartDate || calculationStartDate > input.day) return adjustmentMinutes;
+
+	const work = await computeEmployeePeriodBalance({
+		...scope,
+		dbClient,
+		periodType: "month",
+		periodStart: calculationStartDate,
+		periodEnd: input.day,
+		calculationStartDate,
+		...(input.employee.timezone === "UTC" ? {} : { timezone: input.employee.timezone }),
+		isClosed: false,
+	});
+	return work.actualMinutes - work.requiredMinutes + adjustmentMinutes;
 }
 
 export async function upsertEmployeeWorkBalance(
@@ -586,6 +694,7 @@ export async function upsertEmployeeWorkBalance(
 			set: {
 				actualMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.actualMinutes} else ${values.actualMinutes} end`,
 				requiredMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.requiredMinutes} else ${values.requiredMinutes} end`,
+				adjustmentMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.adjustmentMinutes} else ${values.adjustmentMinutes} end`,
 				balanceMinutes: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.balanceMinutes} else ${values.balanceMinutes} end`,
 				computedFromDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.computedFromDate} else ${values.computedFromDate} end`,
 				computedThroughDate: sql`case when ${employeeWorkBalance.refreshRequestedAt} is not null and ${employeeWorkBalance.refreshRequestedAt} > ${refreshStartedAt} then ${employeeWorkBalance.computedThroughDate} else ${values.computedThroughDate} end`,
@@ -681,6 +790,7 @@ export async function requestEmployeeWorkBalanceFullRebuild(
 			organizationId: input.organizationId,
 			actualMinutes: 0,
 			requiredMinutes: 0,
+			adjustmentMinutes: 0,
 			balanceMinutes: 0,
 			computedFromDate: WORK_BALANCE_RESET_MARKER_DATE,
 			computedThroughDate: WORK_BALANCE_RESET_MARKER_DATE,
@@ -709,6 +819,7 @@ export async function requestEmployeeWorkBalanceFullRebuild(
 				set: {
 					actualMinutes: markerValues.actualMinutes,
 					requiredMinutes: markerValues.requiredMinutes,
+					adjustmentMinutes: markerValues.adjustmentMinutes,
 					balanceMinutes: markerValues.balanceMinutes,
 					computedFromDate: markerValues.computedFromDate,
 					computedThroughDate: markerValues.computedThroughDate,
@@ -781,10 +892,16 @@ export async function deleteEmployeeWorkBalance(input: {
 		);
 }
 
+/**
+ * The employees the worker refreshes: active employees whose balance is
+ * missing, marked for recomputation or behind yesterday (in their zone), and
+ * employees who have left (#1002) whose existing balance is marked for
+ * recomputation or still behind the end of their employment. The latter are
+ * caught up once through their last working day, and later runs skip them; an
+ * inactive employee without a recorded employment end is left alone.
+ */
 export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new Date()) {
-	const employeeLocalCutoffDate = sql<string>`(
-		(
-			${now}::timestamptz AT TIME ZONE COALESCE(
+	const employeeLocalZone = sql<string>`COALESCE(
 				(
 					SELECT NULLIF("work_balance_user_settings"."timezone", 'UTC')
 					FROM "user_settings" AS "work_balance_user_settings"
@@ -804,9 +921,21 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 						)
 				),
 				'UTC'
-			)
-		)::date - 1
+			)`;
+	const employeeLocalCutoffDate = sql<string>`(
+		(${now}::timestamptz AT TIME ZONE ${employeeLocalZone})::date - 1
 	)`;
+	// The last local day of the employee's latest closed employment period. Periods
+	// are half-open, so a cutoff at midnight ends employment on the day before.
+	const employmentEndLocalDate = sql<string>`(
+		(
+			SELECT max("work_balance_period"."ended_at") - interval '1 microsecond'
+			FROM "employee_employment_period" AS "work_balance_period"
+			WHERE "work_balance_period"."organization_id" = ${employee.organizationId}
+				AND "work_balance_period"."employee_id" = ${employee.id}
+				AND "work_balance_period"."status" = 'closed'
+		) AT TIME ZONE ${employeeLocalZone}
+	)::date`;
 
 	return db
 		.select({
@@ -827,14 +956,27 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 		)
 		.where(
 			and(
-				eq(employee.isActive, true),
 				isNotNull(employee.organizationId),
 				// A pending rebuild resets these projections first; see rebuild-intents.ts.
 				sql`not exists (select 1 from ${workBalanceRebuildIntent} where ${workBalanceRebuildIntent.organizationId} = ${employee.organizationId} and (${workBalanceRebuildIntent.userId} is null or ${workBalanceRebuildIntent.userId} = ${employee.userId}))`,
 				or(
-					isNull(employeeWorkBalance.id),
-					eq(employeeWorkBalance.isDirty, true),
-					lt(employeeWorkBalance.computedThroughDate, employeeLocalCutoffDate),
+					and(
+						eq(employee.isActive, true),
+						or(
+							isNull(employeeWorkBalance.id),
+							eq(employeeWorkBalance.isDirty, true),
+							lt(employeeWorkBalance.computedThroughDate, employeeLocalCutoffDate),
+						),
+					),
+					and(
+						eq(employee.isActive, false),
+						isNotNull(employeeWorkBalance.id),
+						or(
+							eq(employeeWorkBalance.isDirty, true),
+							// LEAST ignores NULL, so an unknown employment end must not reach it.
+							sql`(${employmentEndLocalDate} is not null and ${employeeWorkBalance.computedThroughDate} < least(${employeeLocalCutoffDate}, ${employmentEndLocalDate}))`,
+						),
+					),
 				),
 			),
 		)

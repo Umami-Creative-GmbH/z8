@@ -162,6 +162,31 @@ describe("per diem statutory catalogs (#689)", () => {
 	});
 });
 
+describe("per diem eligibility rules (#891)", () => {
+	it("states that the domestic rules apply until the law changes", async () => {
+		mount();
+		expect(
+			await screen.findByText(/verified for travel days from Jan 1, 2026 until the law changes\./),
+		).toBeTruthy();
+	});
+
+	it("states the last day of a dated rule edition", async () => {
+		actions.getPerDiemPolicySettings.mockResolvedValue({
+			success: true,
+			data: {
+				timeline: [],
+				withdrawn: [],
+				defaults: [GERMAN_DOMESTIC_PER_DIEM_DEFAULT],
+				rules: { ...GERMAN_DOMESTIC_PER_DIEM_RULES, validThrough: "2026-12-31" },
+			},
+		});
+		mount();
+		expect(
+			await screen.findByText(/verified for travel days from Jan 1, 2026 to Dec 31, 2026\./),
+		).toBeTruthy();
+	});
+});
+
 describe("per diem version dialog (#688)", () => {
 	const exceeds = "This amount cannot exceed the full-day allowance.";
 	const amountError = "Enter an amount with at most two decimals, e.g. 14.00.";

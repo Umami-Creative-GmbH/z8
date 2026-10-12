@@ -26,6 +26,7 @@ import type {
 	ApprovalPlannedEntityReference,
 	ApprovalTransitionIdentityResolution,
 	ApprovalTransitionPlan,
+	ApprovalCoveringDeputyGrant,
 	ApprovalWorkflowAuthorization,
 	ApprovalWorkflowEventSnapshot,
 	ApprovalWorkflowSnapshot,
@@ -119,6 +120,7 @@ type _AuthorizationIncludesRequesterCancellation = Assert<
 		| "manage_approval"
 		| "system"
 		| "offboarding_reassignment"
+		| ApprovalCoveringDeputyGrant
 	>
 >;
 
@@ -230,6 +232,7 @@ interface TestSourceMap {
 	travel_expense: { kind: "travel_expense" };
 	shift_request: { kind: "shift_request" };
 	compliance_exception: { kind: "compliance_exception" };
+	period_submission: { kind: "period_submission" };
 }
 type _DefaultSourceMapIsComplete = Assert<
 	Equal<keyof ApprovalWorkflowSourceMap, keyof TestSourceMap>

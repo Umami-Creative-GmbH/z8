@@ -70,6 +70,8 @@ export interface AbsenceEvent extends CalendarEvent {
 		categoryName: string;
 		status: "pending" | "approved" | "rejected";
 		employeeName: string;
+		/** Who covers while the employee is away (#1012); null when none is named. */
+		deputy?: { id: string; name: string; canOpenProfile: boolean } | null;
 	};
 }
 

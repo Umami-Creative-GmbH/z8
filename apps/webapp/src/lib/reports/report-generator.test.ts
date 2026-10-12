@@ -24,6 +24,7 @@ const mockState = vi.hoisted(() => ({
 			where: vi.fn(async () => []),
 		})),
 	})),
+	loadWorkingDays: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -72,11 +73,19 @@ vi.mock("@/db/schema", () => ({
 	workPeriod: {},
 }));
 
+vi.mock("@/lib/absences/absence-days-resolver", () => ({
+	loadWorkingDays: mockState.loadWorkingDays,
+}));
+
 vi.mock("@/lib/effect/runtime", () => ({ runtime: { runPromise: vi.fn() } }));
 
 vi.mock("@/lib/time-tracking/calculations", () => ({
 	calculateExpectedWorkHoursForEmployee: vi.fn(),
 	calculateWorkHours: vi.fn(),
+}));
+
+vi.mock("@/lib/organization/custom-fields/report-reads", () => ({
+	readCustomFieldReportValues: vi.fn(async () => ({ columns: [], byRecord: {} })),
 }));
 
 const { aggregateHomeOfficeDays } = await import("./report-generator");
@@ -157,12 +166,16 @@ describe("report generator", () => {
 		});
 	});
 
-	it("clips absence business days to the report calendar strings", async () => {
+	it("clips absence days to the report calendar strings", async () => {
+		// Monday to Thursday: Friday 1 May is not a working day, Monday 4 May is.
+		mockState.loadWorkingDays.mockResolvedValue(
+			(day: { dayOfWeek: number }) => day.dayOfWeek <= 4,
+		);
 		mockState.absences = [
 			{
 				categoryId: "vacation",
 				startDate: "2026-04-27",
-				endDate: "2026-05-03",
+				endDate: "2026-05-04",
 				status: "approved",
 				category: { name: "Vacation", type: "vacation" },
 			},
@@ -182,5 +195,11 @@ describe("report generator", () => {
 		);
 
 		expect(result.vacation.approved).toBe(1);
+		expect(mockState.loadWorkingDays).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startDate: "2026-05-01",
+			endDate: "2026-05-31",
+		});
 	});
 });

@@ -4,6 +4,7 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { IconCheck } from "@tabler/icons-react";
 import type * as React from "react";
 
+import { touchTargetClassName } from "@/components/ui/touch-target";
 import { cn } from "@/lib/utils";
 
 type CheckboxProps = Omit<
@@ -23,6 +24,7 @@ function Checkbox({ className, checked, defaultChecked, indeterminate, ...props 
 		<CheckboxPrimitive.Root
 			checked={checked === "indeterminate" ? false : checked}
 			className={cn(
+				touchTargetClassName,
 				"peer size-4 shrink-0 rounded-[4px] border border-input shadow-xs outline-none transition-shadow focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:bg-input/30 dark:data-checked:bg-primary dark:aria-invalid:ring-destructive/40",
 				className,
 			)}

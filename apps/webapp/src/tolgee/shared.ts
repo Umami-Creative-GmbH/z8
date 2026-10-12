@@ -4,7 +4,28 @@ import { DevTools, Tolgee } from "@tolgee/web";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
-export const ALL_LANGUAGES = ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"];
+// Adding a language: extend this list, LANGUAGE_CONFIG, the calendar locale maps and the
+// Tolgee push list; `language-coverage.test.ts` names any that are missing.
+export const ALL_LANGUAGES = [
+	"en",
+	"de",
+	"fr",
+	"es",
+	"it",
+	"pt",
+	"el",
+	"pl",
+	"tr",
+	"gsw",
+	"no",
+	"sv",
+	"ro",
+	"hr",
+	"bs",
+	"sq",
+	"uk",
+	"ru",
+];
 
 export const DEFAULT_LANGUAGE = "en";
 
@@ -65,16 +86,24 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/platform-admin/worker-queue": ["common", "admin", "settings/generic"],
 	"/setup": ["common", "setup"],
 	"/init": ["common", "setup"],
+	"/kiosk": ["common", "timeTracking"],
+	// The public report share link page (#806) renders project report copy.
+	"/share": ["common", "reports"],
 	"/approvals": ["common", "approvals"],
 	"/my-requests": ["common", "myRequests"],
 	"/my-documents": ["common", "settings/people"],
 	"/personnel-files": ["common", "settings/people"],
-	"/payroll": ["common", "payroll"],
+	// travelExpenses: confirming a payroll run as paid (#853).
+	// settings/payrollExport: payroll line kind labels in payroll readiness (#854).
+	"/payroll": ["common", "payroll", "travelExpenses", "settings/payrollExport"],
+	// settings/people: the Work balance section of the employee settings page (#995).
+	"/payroll/work-balances": ["common", "payroll", "settings/people"],
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/analytics": ["common", "analytics"],
 	"/calendar": ["common", "calendar", "timeTracking"],
-	"/absences": ["common", "calendar"],
+	// settings/people: sick notes reuse the personnel file document list (#982).
+	"/absences": ["common", "calendar", "settings/people"],
 	"/time-tracking": ["common", "timeTracking", "compliance"],
 	"/travel-expenses": ["common", "travelExpenses"],
 	"/reports": ["common", "reports"],
@@ -103,6 +132,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	"/settings/personnel-files": ["common", "settings/generic", "settings/people"],
 	"/settings/payroll-readiness": ["common", "settings/generic", "settings/payrollExport"],
 	"/settings/work-diagnostics": ["common", "settings/generic", "settings/payrollExport"],
+	"/settings/report-share-links": ["common", "settings/generic", "reports"],
 	"/settings/roles": ["common", "settings/generic", "settings/people"],
 	"/settings/scheduled-exports": ["common", "settings/generic", "settings/scheduledExports"],
 	"/settings/shifts": ["common", "settings/generic", "settings/rules"],
@@ -268,15 +298,14 @@ function isTreeTranslationsData(value: unknown): value is TreeTranslationsData {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// Every namespace, including the default one, needs its `ns:` aliases: the extractor strips the
+// prefix from `t("common:user.theme-toggle")`, but Tolgee looks the key up literally (#976).
+// Aliases reuse the primary subtrees, so RSC serializes them as references.
 function addNamespaceKeyAliases(
 	target: TreeTranslationsData,
 	namespace: Namespace,
 	data: TreeTranslationsData,
 ) {
-	if (namespace === DEFAULT_NAMESPACE) {
-		return;
-	}
-
 	for (const [key, value] of Object.entries(data)) {
 		target[`${namespace}:${key}`] = value;
 	}

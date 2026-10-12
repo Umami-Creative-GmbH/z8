@@ -14,6 +14,7 @@ import {
 	employeeManagers,
 	timeRecord,
 } from "@/db/schema";
+import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import {
 	legacyDeliveryCycleId,
 	recordLegacyDeliveryIntent,
@@ -42,9 +43,16 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { onApprovedAbsenceCancelledByEmployee } from "@/lib/notifications/triggers";
+import { deleteSickNotesOfCancelledAbsence } from "@/lib/personnel-file/sick-note-store";
+import { deletePersonnelDocumentObject } from "@/lib/personnel-file/storage";
+import { runPersonnelFileCleanup } from "@/lib/personnel-file/upload-ledger";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { removeCanonicalAbsenceRecordInTransaction } from "./actions.canonical";
 import { getCurrentEmployee } from "./current-employee";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
+import { monthClosedMessage } from "@/lib/time-tracking/closed-months/refusal-message";
+import { assertAbsenceOpenById } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 export interface CancelAbsenceEmployeeContext {
 	id: string;
@@ -118,6 +126,22 @@ async function notifyManagersOfApprovedSelfCancellation(
 	}
 }
 
+/**
+ * Tries to delete the stored objects of the sick notes a cancellation removed.
+ * They are queued durably already, so a failure only defers it.
+ */
+async function cleanUpDeletedSickNotes(
+	organizationId: string,
+	documentIds: readonly string[],
+): Promise<void> {
+	for (const documentId of documentIds) {
+		await runPersonnelFileCleanup(db, {
+			deleteObject: deletePersonnelDocumentObject,
+			only: { documentId, organizationId },
+		}).catch(() => undefined);
+	}
+}
+
 async function deleteScopedAbsence(
 	transactionDb: typeof db,
 	input: {
@@ -126,8 +150,23 @@ async function deleteScopedAbsence(
 		expectedStatus: "pending" | "approved";
 		expectedApprovalWorkflowId: string | null;
 		expectedCanonicalRecordId: string;
+		/** Who cancels: recorded on the deletion of the absence's sick notes. */
+		actorUserId: string;
 	},
-): Promise<void> {
+): Promise<string[]> {
+	// Cancelling an absence that touches a closed month is refused (#762). Its
+	// days are read from the row: callers may hand over only its identity.
+	await assertAbsenceOpenById(transactionDb, {
+		organizationId: input.organizationId,
+		absenceId: input.absence.id,
+	});
+	// Cancelling deletes the absence's sick notes in the same transaction (#982,
+	// Personnel File ADR 0002), each audited; rejecting keeps them.
+	const deletedSickNoteIds = await deleteSickNotesOfCancelledAbsence(transactionDb, {
+		organizationId: input.organizationId,
+		absenceId: input.absence.id,
+		actorUserId: input.actorUserId,
+	});
 	const deleted = await transactionDb
 		.delete(absenceEntry)
 		.where(
@@ -152,6 +191,8 @@ async function deleteScopedAbsence(
 			status: absenceEntry.status,
 			approvalWorkflowId: absenceEntry.approvalWorkflowId,
 			canonicalRecordId: absenceEntry.canonicalRecordId,
+			startDate: absenceEntry.startDate,
+			endDate: absenceEntry.endDate,
 		});
 	const row = deleted[0];
 	if (
@@ -165,12 +206,20 @@ async function deleteScopedAbsence(
 	) {
 		fail("Absence changed before cancellation could complete");
 	}
+	// A cancelled absence in a submitted period sends it back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(transactionDb, {
+		organizationId: input.organizationId,
+		employeeId: row.employeeId,
+		causedByUserId: input.actorUserId,
+		days: [{ startDate: row.startDate, endDate: row.endDate }],
+	});
 	await removeCanonicalAbsenceRecordInTransaction(transactionDb, {
 		organizationId: input.organizationId,
 		canonicalRecordId: input.expectedCanonicalRecordId,
 		expectedEmployeeId: input.absence.employeeId,
 		expectedApprovalState: input.expectedStatus,
 	});
+	return deletedSickNoteIds;
 }
 
 function assertExactIds(
@@ -391,6 +440,8 @@ export async function cancelAbsenceRequestForEmployee(
 	if (!isBillingMutationAllowed(billingAccess)) {
 		return { success: false, error: "billing_required" };
 	}
+	// Sick notes deleted with the absence, for an immediate cleanup attempt after commit.
+	let deletedSickNoteIds: string[] = [];
 
 	const runtime = createProductionApprovalWorkflowRuntime({
 		db,
@@ -403,18 +454,22 @@ export async function cancelAbsenceRequestForEmployee(
 					);
 				},
 				deleteCancelledAbsence: async (input) => {
-					await deleteScopedAbsence(input.dbService.db as typeof db, {
-						absence: {
-							id: input.absenceId,
+					deletedSickNoteIds = await deleteScopedAbsence(
+						input.dbService.db as typeof db,
+						{
+							absence: {
+								id: input.absenceId,
+								organizationId: input.organizationId,
+								employeeId: input.expectedEmployeeId,
+								status: input.expectedStatus,
+							} as AbsenceForCancellation,
 							organizationId: input.organizationId,
-							employeeId: input.expectedEmployeeId,
-							status: input.expectedStatus,
-						} as AbsenceForCancellation,
-						organizationId: input.organizationId,
-						expectedStatus: input.expectedStatus,
-						expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
-						expectedCanonicalRecordId: input.expectedCanonicalRecordId,
-					});
+							expectedStatus: input.expectedStatus,
+							expectedApprovalWorkflowId: input.expectedApprovalWorkflowId,
+							expectedCanonicalRecordId: input.expectedCanonicalRecordId,
+							actorUserId: currentEmployee.userId,
+						},
+					);
 				},
 			},
 			timeCorrection: {
@@ -727,12 +782,13 @@ export async function cancelAbsenceRequestForEmployee(
 						fail("Observed absence cancellation workflow is mismatched");
 					}
 				}
-				await deleteScopedAbsence(transactionDb, {
+				deletedSickNoteIds = await deleteScopedAbsence(transactionDb, {
 					absence,
 					organizationId,
 					expectedStatus: absence.status,
 					expectedApprovalWorkflowId: absence.approvalWorkflowId,
 					expectedCanonicalRecordId: absence.canonicalRecordId,
+					actorUserId: transactionActor.userId,
 				});
 				return { absence, disposition: "executed" as const, deliveryIntent };
 			},
@@ -746,12 +802,29 @@ export async function cancelAbsenceRequestForEmployee(
 			kickApprovalDelivery({ organizationId });
 		}
 		const committedAbsence = committedCancellation.absence;
+		await cleanUpDeletedSickNotes(organizationId, deletedSickNoteIds);
 		await addCalendarSyncJob({
 			absenceId,
 			employeeId: committedAbsence.employeeId,
 			organizationId,
 			action: "delete",
 		}).catch(() => undefined);
+		await notifyAbsenceDeputies(db, {
+			organizationId,
+			events: [
+				{
+					kind: "cancelled",
+					absence: {
+						id: committedAbsence.id,
+						employeeId: committedAbsence.employeeId,
+						deputyEmployeeId: committedAbsence.deputyEmployeeId,
+						startDate: committedAbsence.startDate,
+						endDate: committedAbsence.endDate,
+						status: committedAbsence.status,
+					},
+				},
+			],
+		});
 		if (
 			committedAbsence.status === "approved" &&
 			committedAbsence.employeeId === currentEmployee.id
@@ -763,6 +836,8 @@ export async function cancelAbsenceRequestForEmployee(
 		}
 		return { success: true };
 	} catch (error) {
+		const closed = monthClosedRefusalOf(error);
+		if (closed) return { success: false, error: await monthClosedMessage(closed.month) };
 		return {
 			success: false,
 			error:

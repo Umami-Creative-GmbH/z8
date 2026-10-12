@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Clearing false positive",
       "dateUnavailable": "Date unavailable",
       "missingClockOut": "Missing clock-out",
+      "missingIdentifier": "Missing identifier",
       "needReview": "{count} payroll blockers need review",
       "offboardingClockRepair": "Offboarding clock-out needs repair",
       "openApprovals": "Open approvals",
       "openCalendar": "Open calendar",
+      "openEmployee": "Open employee",
       "openWork": "Work without clock-out",
       "openWorkDiagnostics": "Open work diagnostics",
       "pendingAbsence": "Pending absence",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds must be an array",
       "employeeIdsMustContainOnlyStrings": "employeeIds must contain only strings",
       "endDateAfterStart": "End date must be on or after start date",
+      "exportBlockedByMissingIdentifier": "Export blocked: some employees have no value for the custom field used as payroll identifier",
       "exportBlockedByOffboardingClockRepair": "Export blocked: repair the offboarding clock-out first",
       "exportBlockedByUncertainWork": "Export blocked: resolve the uncertain work in the selected scope first",
       "exportBlockedByUnresolvedWorkMinutes": "Export blocked: resolve the work minutes that need review first",
       "exportFormatNotConfigured": "Payroll export format is not configured",
+      "exportIdentifierChanged": "The payroll identifier setting changed after this export was collected. Start a new export.",
       "invalidBlockerId": "Invalid payroll blocker ID",
       "invalidBlockerType": "Invalid payroll blocker type",
       "mustBeIsoDate": "{field} must be an ISO date",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Payroll export completed",
       "formatAccessCheck": "Format access check",
+      "nobodyEmployedInPeriod": "No one in your payroll access was employed in this period.",
       "noConfiguredTarget": "No configured payroll export target",
       "queued": "Payroll export queued",
       "selectFormat": "Select format",
-      "target": "Payroll export target"
+      "target": "Payroll export target",
+      "unmappedOvertimePayouts": "{count, plural, one {# overtime payout was not exported} other {# overtime payouts were not exported}}",
+      "unmappedOvertimePayoutsDescription": "No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way."
     },
     "filters": {
       "noMatchingEmployees": "No employees match the selected payroll filters."
+    },
+    "formerEmployeesExport": {
+      "description": "Export a month in which any of them was still employed: their last hours and final overtime payouts go into the file.",
+      "export": "Export",
+      "nextMonth": "Next month",
+      "previousMonth": "Previous month",
+      "title": "Export payroll for employees who have left"
+    },
+    "onlyFormerEmployees": {
+      "description": "You can still record and cancel their overtime payouts, and export below the months in which they were employed.",
+      "title": "Only employees who have left are in your payroll access"
+    },
+    "overtimePayoutReadiness": {
+      "description": "No wage type is mapped to Overtime for this format, so the export leaves these payouts out. Ask an organization administrator to map one, or pay these hours out another way.",
+      "title": "{count, plural, one {# overtime payout will not be exported} other {# overtime payouts will not be exported}}"
     },
     "period": {
       "current": "Current period",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Discard payroll run",
+        "confirmed": "This payroll run is already confirmed as paid for some reports, so it can no longer be discarded. Remove single reports from it instead.",
         "description": "{count, plural, one {The # expense report it includes will await reimbursement again: the next payroll export or a bank transfer can take them. Discard it only if this file is not paid with payroll.} other {The # expense reports it includes will await reimbursement again: the next payroll export or a bank transfer can take them. Discard it only if this file is not paid with payroll.}}",
         "done": "Payroll run discarded. Its expense reports await reimbursement again.",
         "failed": "The payroll run could not be discarded.",
@@ -106,6 +129,29 @@
         "outOfScope": "This payroll run includes employees outside your payroll scope.",
         "title": "Discard this payroll run?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "set by hand",
+        "exceptionalItinerary": "itinerary the statutory rules do not cover",
+        "outsideVerifiedTables": "no verified statutory table for its days"
+      },
+      "description": "These expenses await reimbursement, but an export of this period and format leaves them out. The export is not blocked: pay them by bank transfer from the finance queue.",
+      "payByBankTransfer": "Pay by bank transfer",
+      "reason": {
+        "apiConnector": "This format is an API connector, which never carries expense amounts.",
+        "currencyNotEur": "Not in euros: payroll runs carry only euro amounts.",
+        "includedInOtherRun": "Included in the unconfirmed payroll run {period} ({format}).",
+        "legacyClaim": "Legacy claims are never paid through payroll.",
+        "negativeDifference": "An adjustment lowered what earlier payroll runs carried for: {kinds}.",
+        "noStatutoryBaseline": "No statutory baseline for: {items}.",
+        "nothingOwed": "Its payroll lines leave nothing left for payroll to carry.",
+        "reimbursedOutsidePayroll": "Already partly paid by bank transfer or recovered: payroll cannot take the rest.",
+        "unmappedWageType": "No wage type is mapped for this format for: {kinds}."
+      },
+      "title": "Expense reports this payroll run will not carry",
+      "unknownEmployee": "Employee"
     },
     "runs": {
       "description": "These exports carry expense reports awaiting reimbursement. An expense officer confirms each run once payroll has paid it; discard a run whose file is not paid.",
@@ -140,6 +186,17 @@
       "description": "Payroll data could not be prepared safely.",
       "help": "Please try again later. If the problem continues, contact an organization administrator.",
       "title": "Payroll temporarily unavailable"
+    },
+    "workBalances": {
+      "back": "Work balances",
+      "backToPayroll": "Payroll",
+      "description": "Record and cancel overtime payouts for the employees your payroll access covers, including employees who have left.",
+      "empty": "No employees are in your payroll access scope yet.",
+      "former": "Former employee",
+      "loading": "Loading work balances",
+      "loadingEmployee": "Loading the work balance",
+      "open": "Work balances",
+      "title": "Work balances"
     }
   }
 }

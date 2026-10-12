@@ -840,9 +840,7 @@ describe("hand-off on PostgreSQL", () => {
 		);
 
 		actAs(ids.ownerUser);
-		const report = await unwrap(
-			getProjectDetailedReport(ids.website, new Date("2026-09-01"), new Date("2026-09-30")),
-		);
+		const report = await unwrap(getProjectDetailedReport(ids.website, "2026-09-01", "2026-09-30"));
 		// Un-invoiced: the new hour and the held-back hour, at the new rate.
 		expect(report.summary.billable).toMatchObject({
 			revenue: "550.00",
@@ -863,9 +861,7 @@ describe("hand-off on PostgreSQL", () => {
 		expect(detail.netTotal).toBe("87.21");
 
 		actAs(ids.ownerUser);
-		const report = await unwrap(
-			getProjectDetailedReport(ids.app, new Date("2026-09-01"), new Date("2026-09-30")),
-		);
+		const report = await unwrap(getProjectDetailedReport(ids.app, "2026-09-01", "2026-09-30"));
 		expect(report.summary.billable).toMatchObject({
 			revenue: "87.21",
 			invoicing: { invoicedRevenue: "87.21", uninvoicedRevenue: "0.00" },

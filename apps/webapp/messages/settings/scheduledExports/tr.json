@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Sahibi Değiştir",
         "delete": "Sil",
         "edit": "Düzenle",
         "runNow": "Şimdi Çalıştır",
@@ -16,6 +17,7 @@
       },
       "dataCategories": {
         "absences": "İzinler",
+        "customers": "Müşteriler",
         "employees": "Çalışanlar",
         "projects": "Projeler",
         "timeEntries": "Zaman Kayıtları",
@@ -122,6 +124,8 @@
         "dateRangesDesc": "Zamanlama sıklığına göre otomatik olarak hesaplanır (örneğin, aylık dışa aktarmalar için bir önceki ay).",
         "delivery": "Teslimat:",
         "deliveryDesc": "Dışa aktarılan dosyalar S3'e yüklenir ve indirme bağlantılarını içeren e-posta bildirimleri yapılandırılmış alıcılara gönderilir.",
+        "owner": "Sahip:",
+        "ownerDesc": "Her zamanlama bir kuruluş yöneticisi adına çalışır. Sahibi kuruluş yöneticisi olmayı bırakırsa veya ayrılırsa, zamanlama duraklatılır ve birinin devralabilmesi için tüm kuruluş yöneticilerine bildirilir.",
         "scheduleTypes": "Zamanlama Türleri:",
         "scheduleTypesDesc": "Günlük, Haftalık (Pazartesi), Aylık (1.), Üç Aylık (Ocak/Nisan/Temmuz/Ekim'in 1'i) veya özel cron ifadeleri."
       },
@@ -148,6 +152,18 @@
         "viewError": "Hata ayrıntılarını görüntüle"
       },
       "newSchedule": "Yeni Zamanlama",
+      "owner": {
+        "changed": "Sahip değiştirildi",
+        "changeFailed": "Sahip değiştirilemedi",
+        "description": "\"{name}\", kuruluş yöneticisi olması gereken sahibi adına çalışır. Otomatik çalıştırmalar, sahibin altında denetim günlüğüne kaydedilir.",
+        "label": "Sahip",
+        "pauseNote": "Sahibi değiştirmek duraklatılmış bir zamanlamayı sürdürmez. Bir sahibi olduğunda zamanlamayı tekrar açın.",
+        "placeholder": "Bir kuruluş yöneticisi seçin…",
+        "required": "Bir kuruluş yöneticisi seçin",
+        "saving": "Kaydediliyor…",
+        "submit": "Sahibi değiştir",
+        "title": "Sahibi değiştir"
+      },
       "report": {
         "auditReport": "Denetim Raporu",
         "auditReportDesc": "Denetim raporları, GoBD uyumluluğu için kriptografik imzalar ve zaman damgaları içeren tüm zaman takibi verilerini içerir. Dışa aktarma, WORM (Bir Kez Yaz, Çok Kez Oku) korumasıyla saklanacaktır.",
@@ -263,6 +279,8 @@
         "never": "Asla",
         "nextRun": "Sonraki Çalışma",
         "openMenu": "Eylem menüsünü aç",
+        "owner": "Sahip",
+        "ownerNotAdmin": "Artık bir kuruluş yöneticisi değil",
         "paused": "Duraklatıldı",
         "schedule": "Zamanlama",
         "status": "Durum",

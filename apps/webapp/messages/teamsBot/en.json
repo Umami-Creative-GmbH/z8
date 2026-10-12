@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Currently Clocked In",
+    "deputy": "Deputy: {name}",
     "everyoneAvailable": "Everyone is available today",
     "noOneClockedIn": "No one is clocked in yet",
     "noPendingApprovals": "No pending approvals",

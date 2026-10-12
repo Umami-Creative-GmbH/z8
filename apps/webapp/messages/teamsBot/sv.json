@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "För närvarande instämplade",
+    "deputy": "Ställföreträdare: {name}",
     "everyoneAvailable": "Alla är tillgängliga idag",
     "noOneClockedIn": "Ingen har stämplat in än",
     "noPendingApprovals": "Inga väntande godkännanden",

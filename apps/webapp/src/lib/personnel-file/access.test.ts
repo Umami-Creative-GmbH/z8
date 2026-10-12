@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
+	canDeleteOwnSickNote,
 	canManageDocument,
 	canUploadOwnDocument,
 	canViewDocument,
 	isOwnDocument,
 	managedCategoriesFor,
 	ORGANIZATION_ADMIN_GRANT,
+	officerSickNoteAttachRefusal,
 	type PersonnelFileAccess,
+	sickLeaveAttachRefusal,
+	sickNoteAttachRefusal,
 } from "./access";
 
 const anna = { id: "anna", teamIds: ["berlin"] };
@@ -124,5 +129,182 @@ describe("personnel file access", () => {
 		expect(isOwnDocument(employeeAnna, "anna")).toBe(true);
 		expect(isOwnDocument(employeeAnna, "ben")).toBe(false);
 		expect(isOwnDocument(admin, "anna")).toBe(false);
+	});
+});
+
+describe("sick notes on absences (#982)", () => {
+	const sickLeave = { employeeId: "anna", categoryType: "sick", status: "pending" } as const;
+
+	it("lets an employee attach a sick note to their own pending or approved sick leave", () => {
+		for (const status of ["pending", "approved"] as const) {
+			expect(
+				sickNoteAttachRefusal(employeeAnna, {
+					employeeSickNoteUpload: true,
+					absence: { ...sickLeave, status },
+				}),
+			).toBeNull();
+		}
+	});
+
+	it("refuses while the organization does not allow employee sick notes", () => {
+		expect(
+			sickNoteAttachRefusal(employeeAnna, { employeeSickNoteUpload: false, absence: sickLeave }),
+		).toBe("setting_off");
+	});
+
+	it("refuses someone else's absence, even for an owner or admin", () => {
+		for (const actor of [employeeAnna, admin]) {
+			expect(
+				sickNoteAttachRefusal(actor, {
+					employeeSickNoteUpload: true,
+					absence: { ...sickLeave, employeeId: "ben" },
+				}),
+			).toBe("not_own");
+		}
+	});
+
+	it("refuses an absence that is no sick leave", () => {
+		expect(
+			sickNoteAttachRefusal(employeeAnna, {
+				employeeSickNoteUpload: true,
+				absence: { ...sickLeave, categoryType: "vacation" },
+			}),
+		).toBe("not_sick");
+	});
+
+	it("refuses a rejected absence", () => {
+		expect(
+			sickNoteAttachRefusal(employeeAnna, {
+				employeeSickNoteUpload: true,
+				absence: { ...sickLeave, status: "rejected" },
+			}),
+		).toBe("rejected");
+	});
+
+	describe("whether an absence can take a sick note at all (the recorder's only rule, #984)", () => {
+		it("takes pending and approved sick leave", () => {
+			for (const status of ["pending", "approved"] as const) {
+				expect(sickLeaveAttachRefusal({ ...sickLeave, status })).toBeNull();
+			}
+		});
+
+		it("refuses an absence that is no sick leave, or a rejected one", () => {
+			expect(sickLeaveAttachRefusal({ ...sickLeave, categoryType: "vacation" })).toBe("not_sick");
+			expect(sickLeaveAttachRefusal({ ...sickLeave, status: "rejected" })).toBe("rejected");
+		});
+	});
+
+	describe("officers attaching to an employee's absence (#984)", () => {
+		const berlinSickNotes = access({
+			selfEmployeeId: "otto",
+			grants: [
+				{
+					source: "officer_grant",
+					scope: { kind: "specific", employeeIds: [], teamIds: ["berlin"] },
+					categories: new Set(["sick_note"]),
+				},
+			],
+		});
+
+		it("lets an officer covering sick notes, an owner or an admin attach to pending or approved sick leave", () => {
+			for (const actor of [berlinSickNotes, admin]) {
+				for (const status of ["pending", "approved"] as const) {
+					expect(
+						officerSickNoteAttachRefusal(actor, {
+							employee: anna,
+							absence: { ...sickLeave, status },
+						}),
+					).toBeNull();
+				}
+			}
+		});
+
+		it("refuses an employee outside the grant, or a grant without sick notes", () => {
+			expect(
+				officerSickNoteAttachRefusal(berlinSickNotes, {
+					employee: ben,
+					absence: { ...sickLeave, employeeId: "ben" },
+				}),
+			).toBe("not_managed");
+			const certificatesOnly = access({
+				grants: [
+					{
+						source: "officer_grant",
+						scope: { kind: "all" },
+						categories: new Set(["certificate"]),
+					},
+				],
+			});
+			expect(
+				officerSickNoteAttachRefusal(certificatesOnly, { employee: anna, absence: sickLeave }),
+			).toBe("not_managed");
+		});
+
+		it("refuses an officer or admin acting on their own personnel file", () => {
+			const adminAnna = access({ selfEmployeeId: "anna", grants: [ORGANIZATION_ADMIN_GRANT] });
+			expect(officerSickNoteAttachRefusal(adminAnna, { employee: anna, absence: sickLeave })).toBe(
+				"not_managed",
+			);
+		});
+
+		it("refuses an absence that is no sick leave, or a rejected one", () => {
+			expect(
+				officerSickNoteAttachRefusal(admin, {
+					employee: anna,
+					absence: { ...sickLeave, categoryType: "vacation" },
+				}),
+			).toBe("not_sick");
+			expect(
+				officerSickNoteAttachRefusal(admin, {
+					employee: anna,
+					absence: { ...sickLeave, status: "rejected" },
+				}),
+			).toBe("rejected");
+		});
+
+		it("refuses when the employee is not the absence's employee", () => {
+			expect(
+				officerSickNoteAttachRefusal(admin, {
+					employee: ben,
+					absence: sickLeave,
+				}),
+			).toBe("not_managed");
+		});
+	});
+
+	describe("deleting an own sick note", () => {
+		const uploadedAt = parseInstant("2026-10-12T08:00:00Z");
+		const note = {
+			employeeId: "anna",
+			category: "sick_note",
+			visibility: "shared",
+			uploadedBy: "u",
+			createdAt: uploadedAt,
+		} as const;
+		const at = (iso: string) => parseInstant(iso);
+
+		it("lets the uploader delete it within 24 hours of uploading it", () => {
+			expect(canDeleteOwnSickNote(employeeAnna, note, at("2026-10-12T08:00:00Z"))).toBe(true);
+			expect(canDeleteOwnSickNote(employeeAnna, note, at("2026-10-13T07:59:59Z"))).toBe(true);
+		});
+
+		it("refuses after 24 hours", () => {
+			expect(canDeleteOwnSickNote(employeeAnna, note, at("2026-10-13T08:00:00Z"))).toBe(false);
+		});
+
+		it("refuses a sick note someone else uploaded or another category", () => {
+			const now = at("2026-10-12T09:00:00Z");
+			expect(canDeleteOwnSickNote(employeeAnna, { ...note, uploadedBy: "officer" }, now)).toBe(
+				false,
+			);
+			expect(canDeleteOwnSickNote(employeeAnna, { ...note, category: "certificate" }, now)).toBe(
+				false,
+			);
+			expect(canDeleteOwnSickNote(employeeAnna, { ...note, employeeId: "ben" }, now)).toBe(false);
+			// An officer made it HR-only: the employee no longer sees it.
+			expect(canDeleteOwnSickNote(employeeAnna, { ...note, visibility: "hr_only" }, now)).toBe(
+				false,
+			);
+		});
 	});
 });

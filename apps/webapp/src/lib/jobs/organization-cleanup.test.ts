@@ -35,6 +35,7 @@ function createTransaction(
 		if (table === authSchema.session) return "session";
 		if (table === schema.waterIntakeLog) return "water_intake_log";
 		if (table === schema.pushSubscription) return "push_subscription";
+		if (table === schema.pushDeviceToken) return "push_device_token";
 		return "other";
 	};
 	const deleteFrom = vi.fn((table: unknown) => ({
@@ -117,6 +118,7 @@ describe("organization cleanup topology", () => {
 			"guard",
 			"guard",
 			"delete:push_subscription",
+			"delete:push_device_token",
 			"update:session",
 			"delete:sso_provider",
 			"delete:organization",
@@ -139,6 +141,7 @@ describe("organization cleanup topology", () => {
 		// user-1 keeps a membership and user-3 an employee elsewhere; only
 		// user-4 leaves every organization and loses their push subscriptions.
 		expect(deletedUserIds(deleteWhere.get("push_subscription"))).toEqual(["user-4"]);
+		expect(deletedUserIds(deleteWhere.get("push_device_token"))).toEqual(["user-4"]);
 		// Water intake logs are personal history and outlive every organization.
 		expect(deleteFrom).not.toHaveBeenCalledWith(schema.waterIntakeLog);
 		expect(events.at(-1)).toBe("delete:organization");
@@ -153,6 +156,7 @@ describe("organization cleanup topology", () => {
 		await runOrganizationCleanup();
 
 		expect(deleteFrom).not.toHaveBeenCalledWith(schema.pushSubscription);
+		expect(deleteFrom).not.toHaveBeenCalledWith(schema.pushDeviceToken);
 		expect(events).toEqual([
 			"guard",
 			"guard",

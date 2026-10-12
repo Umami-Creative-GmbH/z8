@@ -11,6 +11,7 @@ import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
 import { calculateSLAStatus } from "../domain/sla-calculator";
 import type {
 	ApprovalQueryParams,
@@ -114,10 +115,18 @@ export function buildBaseConditions(
 						]
 					: [],
 			);
+		// Pending approvals of the approvers this viewer covers for (#1016).
+		const coveringCondition =
+			params.coveredApproverIds &&
+			params.coveredApproverIds.length > 0 &&
+			isDeputyDecisionEntityType(entityType) &&
+			(params.status || "pending") === "pending"
+				? [inArray(approvalRequest.approverId, params.coveredApproverIds)]
+				: [];
+		const widening = [...(eligibleApprovalScopeConditions ?? []), ...coveringCondition];
 		const approverCondition =
-			eligibleApprovalScopeConditions &&
-			eligibleApprovalScopeConditions.length > 0
-				? or(assignedApproverCondition, ...eligibleApprovalScopeConditions)
+			widening.length > 0
+				? or(assignedApproverCondition, ...widening)
 				: assignedApproverCondition;
 
 		conditions.push(approverCondition ?? assignedApproverCondition);
@@ -224,7 +233,7 @@ export function getApprovalCount(
 	organizationId: string,
 	visibility?: Pick<
 		ApprovalQueryParams,
-		"eligibleApprovalScopes" | "includeAllApprovers"
+		"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds"
 	>,
 ): Effect.Effect<number, AnyAppError, DatabaseService> {
 	return Effect.gen(function* () {

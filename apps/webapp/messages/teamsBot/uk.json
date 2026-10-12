@@ -1,0 +1,105 @@
+{
+  "approval": {
+    "absenceRequest": "Запит на відсутність",
+    "actions": {
+      "approve": "Схвалити",
+      "approving": "Схвалення...",
+      "reject": "Відхилити",
+      "rejecting": "Відхилення...",
+      "viewInZ8": "Переглянути в Z8"
+    },
+    "durationDays": "{count, plural, one {# день} few {# дні} other {# днів} }",
+    "facts": {
+      "approvedBy": "Ким схвалено",
+      "corrected": "Виправлено",
+      "dates": "Дати",
+      "duration": "Тривалість",
+      "email": "Електронна пошта",
+      "from": "Від",
+      "original": "Початкове значення",
+      "reason": "Причина",
+      "rejectedBy": "Ким відхилено",
+      "resolved": "Вирішено",
+      "status": "Статус",
+      "submitted": "Надіслано",
+      "type": "Тип"
+    },
+    "status": {
+      "approved": "СХВАЛЕНО",
+      "rejected": "ВІДХИЛЕНО"
+    },
+    "timeCorrectionRequest": "Запит на коригування часу"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Критично",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (використано виняток)",
+      "lastDays": "Останні {days} днів",
+      "legend": "\uD83D\uDD34 Порушення  \uD83D\uDFE0 Критично  \uD83D\uDFE1 Попередження  \uD83D\uDCDD Запит в очікуванні",
+      "moreRequestsMarkdown": "_+{count} додаткових запитів_",
+      "moreViolationsMarkdown": "_+{count} додаткових порушень_",
+      "pending": "В очікуванні",
+      "pendingExceptions": "Запити на винятки в очікуванні",
+      "recentViolations": "Останні порушення",
+      "reviewExceptions": "Переглянути винятки",
+      "textCriticalAlerts": "**Критичні сповіщення:** {count}",
+      "textMore": "  ще +{count}",
+      "textPendingExceptions": "**Винятки на розгляді:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Запити на розгляді:**",
+      "textRecentViolations": "**Нещодавні порушення:**",
+      "textTitle": "**⚠️ Звіт про відповідність — останні {days} дн.**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Порушення:** {count}",
+      "titleWithIcon": "⚠️ Звіт про відповідність",
+      "viewDashboard": "Переглянути панель відповідності",
+      "violations": "Порушення"
+    },
+    "coverage": {
+      "clockedIn": "На зміні",
+      "moreLocationsMarkdown": "_ще +{count} локацій..._",
+      "scheduled": "Заплановано",
+      "titleWithIcon": "\uD83D\uDCCA Звіт про покриття",
+      "variance": "Відхилення",
+      "viewFullSchedule": "Переглянути повний розклад"
+    }
+  },
+  "common": {
+    "more": "ще +{count}",
+    "moreBullet": "• ще +{count}"
+  },
+  "digest": {
+    "currentlyClockedIn": "Зараз на зміні",
+    "deputy": "Заступник: {name}",
+    "everyoneAvailable": "Сьогодні доступні всі",
+    "noOneClockedIn": "Ще ніхто не почав зміну",
+    "noPendingApprovals": "Немає запитів на затвердження",
+    "openDashboard": "Відкрити панель Z8",
+    "openShifts": "Відкриті зміни",
+    "pendingApprovals": "Очікують на затвердження",
+    "pendingExceptionRequests": "{count, plural, one {# запит на виняток очікує на розгляд} few {# запити на виняток очікують на розгляд} other {# запитів на виняток очікують на розгляд} }",
+    "returns": "Повертається {date}",
+    "since": "З {time}",
+    "textClockedInEmployee": "• {name} - з {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Відповідність вимогам:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Прогалини в покритті:**",
+    "textCurrentlyClockedIn": "**Зараз на зміні:**",
+    "textEmployeeOut": "• {name} - {category} (повертається {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Відкриті зміни:**",
+    "textPendingApprovalsCount": "**Очікують на затвердження:** {count}",
+    "textPendingApprovalsNone": "**Очікують на затвердження:** Немає",
+    "textTitle": "**Щоденний дайджест - {date}**",
+    "textWhosOut": "**Хто відсутній:**",
+    "title": "Щоденний дайджест",
+    "todayTomorrow": "Сьогодні: {today} | Завтра: {tomorrow}",
+    "viewApprovals": "Переглянути затвердження",
+    "whosOutToday": "Хто відсутній сьогодні"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Щоденні понаднормові",
+    "overtime_monthly": "Місячні понаднормові",
+    "overtime_weekly": "Тижневі понаднормові",
+    "rest_period": "Період відпочинку"
+  }
+}

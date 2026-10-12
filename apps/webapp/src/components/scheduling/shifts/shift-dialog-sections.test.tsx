@@ -1,23 +1,46 @@
 /* @vitest-environment jsdom */
 
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { AppLocaleProvider } from "@/components/providers/app-locale-provider";
+import type { StaffingSuggestion } from "@/lib/scheduling/staffing/types";
 import { ShiftDialogSections } from "./shift-dialog-sections";
 import { useShiftDialogForm } from "./use-shift-dialog-form";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
-function Sections({ defaultDate, isManager = true }: { defaultDate: string; isManager?: boolean }) {
+const suggestion: StaffingSuggestion = {
+	employeeId: "employee-7",
+	displayName: "Anna Berg",
+	warnings: [],
+	notes: [],
+	reasons: [{ type: "noContractedTarget" }],
+	requestedThisShift: false,
+	remainingContractedMinutes: null,
+};
+
+function Sections({
+	defaultDate,
+	isManager = true,
+	staffing = null,
+	onSubmit = vi.fn(),
+}: {
+	defaultDate: string;
+	isManager?: boolean;
+	staffing?: ComponentProps<typeof ShiftDialogSections>["staffing"];
+	onSubmit?: () => void;
+}) {
 	const { form, formValues } = useShiftDialogForm({
 		open: true,
 		shift: null,
 		templates: [],
 		defaultDate,
 		organizationTimezone: "Europe/Berlin",
-		onSubmit: vi.fn(),
+		onSubmit,
 	});
 
 	return (
@@ -33,8 +56,11 @@ function Sections({ defaultDate, isManager = true }: { defaultDate: string; isMa
 				isValidatingSkills={false}
 				isEditing={false}
 				shift={null}
+				organizationTimezone="Europe/Berlin"
+				staffing={staffing}
 			/>
 			<output data-testid="date-value">{formValues.date}</output>
+			<output data-testid="employee-value">{formValues.employeeId ?? "open"}</output>
 		</>
 	);
 }
@@ -67,5 +93,42 @@ describe("ShiftDialogSections date", () => {
 		render(<Sections defaultDate="2026-10-23" isManager={false} />);
 
 		expect(screen.getByLabelText("Date")).toHaveProperty("disabled", true);
+	});
+});
+
+describe("ShiftDialogSections staffing suggestions", () => {
+	it("fills Assign To with the picked candidate without saving", () => {
+		const onSubmit = vi.fn();
+		render(
+			<Sections
+				defaultDate="2026-10-23"
+				onSubmit={onSubmit}
+				staffing={{ suggestions: [suggestion], isLoading: false, isError: false }}
+			/>,
+		);
+
+		expect(screen.getByTestId("employee-value").textContent).toBe("open");
+		fireEvent.click(screen.getByRole("button", { name: "Assign {name}" }));
+
+		expect(screen.getByTestId("employee-value").textContent).toBe("employee-7");
+		expect(onSubmit).not.toHaveBeenCalled();
+	});
+
+	it("shows no suggestions without an open shift to staff", () => {
+		render(<Sections defaultDate="2026-10-23" />);
+
+		expect(screen.queryByText("Suggested employees")).toBeNull();
+	});
+
+	it("shows no suggestions to non-managers", () => {
+		render(
+			<Sections
+				defaultDate="2026-10-23"
+				isManager={false}
+				staffing={{ suggestions: [suggestion], isLoading: false, isError: false }}
+			/>,
+		);
+
+		expect(screen.queryByText("Suggested employees")).toBeNull();
 	});
 });

@@ -147,6 +147,8 @@ export interface DailyDigestData {
 		name: string;
 		category: string;
 		returnDate: string;
+		/** Who covers while they are away (#1012); null without a deputy. */
+		deputyName?: string | null;
 	}>;
 	employeesClockedIn: Array<{
 		name: string;

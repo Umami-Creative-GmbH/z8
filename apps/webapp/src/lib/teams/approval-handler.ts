@@ -109,7 +109,8 @@ export function teamsCardActivity(
 
 /**
  * Bound card layout: Universal Actions (`Action.Execute`) whose data carries
- * only the binding handle, plus the exact-item review link.
+ * only the binding handle, plus the exact-item review link. A card whose rejection needs a reason
+ * opens the review from Reject instead.
  */
 export function teamsActionableCard(card: ApprovalActionableCard): Record<string, unknown> {
 	return {
@@ -141,13 +142,15 @@ export function teamsActionableCard(card: ApprovalActionableCard): Record<string
 				data: teamsBoundActionData(card.bindingId),
 				style: "positive",
 			},
-			{
-				type: "Action.Execute",
-				title: card.rejectLabel,
-				verb: TEAMS_APPROVAL_VERBS.reject,
-				data: teamsBoundActionData(card.bindingId),
-				style: "destructive",
-			},
+			card.rejectInReview
+				? { type: "Action.OpenUrl", title: card.rejectLabel, url: card.reviewUrl }
+				: {
+						type: "Action.Execute",
+						title: card.rejectLabel,
+						verb: TEAMS_APPROVAL_VERBS.reject,
+						data: teamsBoundActionData(card.bindingId),
+						style: "destructive",
+					},
 			{ type: "Action.OpenUrl", title: card.reviewLabel, url: card.reviewUrl },
 		],
 	};

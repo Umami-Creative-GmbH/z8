@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Gnehmigt",
+        "changeDeputy": "Stellvertretig ändere",
+        "changeDeputyOf": "Stellvertretig vo {name} ändere",
+        "deputy": "Stellvertretig:",
+        "deputyMissing": "Stellvertretig fählt",
         "description": "Gnehmigti und usstehendi Absänze für s'gwählte Team und Jahr.",
         "error": {
           "description": "Bitte probier es gli nomal.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} usstehend",
         "title": "Jahreskaländer",
         "totalDays": "{count} abwesend"
+      },
+      "deputyFilter": {
+        "clear": "Alle Abwesenheiten anzeigen",
+        "notice": "Es werden nur die Abwesenheiten angezeigt, die dieser Mitarbeitende als Stellvertretung übernimmt."
       },
       "description": "Überprüef d'Kontingänt und erfass genehmigti Absenze für dis Team.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Kategorie",
         "categoryPlaceholder": "Wähl e Absenzkategorie us…",
+        "deputy": "Stellvertretung",
         "description": "Erfass e genehmigti Absenz direkt für de gwählti Aagstellti.",
         "endDate": "Enddatum",
         "endDateHelper": "Leer lah für e Absenz am gliiche Tag.",
@@ -66,6 +75,11 @@
         "required": "{label} isch erforderlich",
         "sickDetail": "Chrankheitsdetail",
         "sickDetailPlaceholder": "Chrankheitsdetail wähle…",
+        "sickNotes": {
+          "description": "Füge Fotos oder PDFs des erhaltenen Arztzeugnisses hinzu: PDF-, JPEG-, PNG- oder WebP-Dateien mit je bis zu 20 MB. Jede Datei wird als eigenes Arztzeugnis im Personaldossier des Mitarbeiters gespeichert und ist für diesen sichtbar. Danach können nur Personen die Datei öffnen, die die Arztzeugnisse des Mitarbeiters verwalten.",
+          "title": "Arztzeugnis (optional)"
+        },
+        "sickNotesFailed": "Die Absenz wurde erfasst, aber {files} konnten nicht angehängt werden. Jemand, der Arztzeugnisse verwaltet, kann sie später anhängen.",
         "startDate": "Startdatum",
         "submit": "Absenz erfasse",
         "success": "Absenz erfasst",
@@ -116,6 +130,51 @@
       "next": "Witer",
       "previous": "Zrugg",
       "showing": "Zeige {from} bis {to} vo {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Wähl en Iireichigs-Rhythmus i de Organisations-Iistellige",
+      "columns": {
+        "calendar": "Kaländer",
+        "employee": "Mitarbeiter",
+        "period": "Periodi",
+        "status": "Status"
+      },
+      "descriptionAll": "Wer die usgwählti Periodi iigreicht hät. Bstätig oder lehn Iigabe im Freigabe-Iigang ab.",
+      "descriptionManaged": "Wer vo de Mitarbeiter, wo du leitisch, die usgwählti Periodi iigreicht hät. Bstätig oder lehn Iigabe im Freigabe-Iigang ab.",
+      "empty": "Vo niemertem, wo du gsehsch, wird erwartet, dass er die Periodi iireicht.",
+      "loading": "Perioden-Iigabe werded glade",
+      "notSubmitted": "Nöd iigreicht",
+      "off": "Dini Organisation sammlet keini Perioden-Iigabe.",
+      "openCalendar": "Kaländer",
+      "openCalendarOf": "Kaländer vo {name} öffne",
+      "openInbox": "Freigabe-Iigang öffne",
+      "owing": "{count, plural, one {# Mitarbeiter hät die Periodi no nöd iigreicht.} other {# Mitarbeiter händ die Periodi no nöd iigreicht.}}",
+      "period": "Iigabeperiodi",
+      "running": "Die Periodi lauft no. Mitarbeiter chönd sie ab em letschte Tag iireiche.",
+      "status": {
+        "approved": "Gnämigt",
+        "awaiting": "Wartet uf Iigab",
+        "rejected": "Abglehnt",
+        "sentBack": "Nach ere Änderig zrugggschickt",
+        "submitted": "Iigreicht"
+      },
+      "summary": "Status",
+      "title": "Perioden-Iigabe"
+    },
+    "presence": {
+      "allLocations": "Alle Standorte",
+      "columns": {
+        "name": "Name",
+        "since": "Seit",
+        "state": "Status"
+      },
+      "description": "Wählen Sie einen Standort aus, um zu sehen, wer dort eingestempelt oder in der Pause ist.",
+      "descriptionAll": "Diesem Standort zugewiesene Mitarbeitende, die eingestempelt oder in der Pause sind.",
+      "descriptionManaged": "Von Ihnen verwaltete Mitarbeitende, die diesem Standort zugewiesen und eingestempelt oder in der Pause sind.",
+      "empty": "Niemand, den Sie sehen können, ist derzeit an diesem Standort eingestempelt.",
+      "locationTitle": "Wer ist anwesend: {location}",
+      "noLocations": "Ihre Organisation hat noch keine aktiven Standorte.",
+      "title": "Wer ist anwesend"
     },
     "primaryManager": "Du bisch de Haupt-Manager",
     "search": {

@@ -29,4 +29,5 @@ export const LEGACY_APPROVAL_TYPE_ALIASES = {
 	travel_expense: ["travel_expense_claim"],
 	shift_request: [],
 	compliance_exception: [],
+	period_submission: [],
 } as const satisfies Record<ApprovalWorkflowType, readonly string[]>;

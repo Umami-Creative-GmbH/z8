@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import { MissingRequiredValuesBadge } from "./custom-fields/custom-field-values-section";
 import { ProjectDialog } from "./project-dialog";
 import { ProjectMembersPanel } from "./project-members-panel";
 import { ProjectTasksPanel } from "./project-tasks-panel";
@@ -404,6 +405,9 @@ function ProjectManagementTable({
 									)}
 									<div>
 										<div className="font-medium">{project.name}</div>
+										{project.missingRequiredCustomFields && (
+											<MissingRequiredValuesBadge className="mt-1" />
+										)}
 										{project.description && (
 											<div className="text-sm text-muted-foreground line-clamp-1">
 												{project.description}
@@ -421,7 +425,17 @@ function ProjectManagementTable({
 								</Badge>
 							</TableCell>
 							<TableCell>
-								{project.customerName || <span className="text-muted-foreground">-</span>}
+								{project.customerName ||
+									(project.deletedCustomerName ? (
+										// The project is without customer for Billable Time (#938).
+										<span className="text-muted-foreground">
+											{t("settings.projects.customerDeleted", "{name} (deleted)", {
+												name: project.deletedCustomerName,
+											})}
+										</span>
+									) : (
+										<span className="text-muted-foreground">-</span>
+									))}
 							</TableCell>
 							<TableCell>
 								{budgetProgress ? (

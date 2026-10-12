@@ -258,6 +258,28 @@
         "previous": "Previous"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Confirm as paid",
+          "description": "Payroll paid this {format} run? The expense reports in your scope are recorded as reimbursed with it. Your own reports and reports outside your scope stay in the run.",
+          "descriptionCounted": "{count, plural, one {Payroll paid this {format} run? # expense report in your scope ({amount}) are recorded as reimbursed with it. Your own reports and reports outside your scope stay in the run.} other {Payroll paid this {format} run? # expense reports in your scope ({amount}) are recorded as reimbursed with it. Your own reports and reports outside your scope stay in the run.}}",
+          "failed": "The payroll run could not be confirmed. Please retry; nothing is recorded twice.",
+          "outcome": {
+            "confirmed": "Reimbursed {amount}",
+            "confirmedWithRemainder": "Reimbursed {amount}. {remaining} still awaits reimbursement for the next run.",
+            "outOfScope": "Not confirmed: outside your scope. It stays in the run for an officer who covers it.",
+            "overpaidByPayroll": "Reimbursed {amount}, {overpaid} more than was still owed. The expense is now overpaid: record the recovery by hand.",
+            "ownExpense": "Not confirmed: your own expense. It stays in the run for someone else to confirm."
+          },
+          "payday": "Payday",
+          "paydayHint": "The payday on which payroll paid this run. Every reimbursement of this run is recorded on it.",
+          "results": {
+            "nothing": "Nothing in this run was left to confirm. No reimbursement is recorded.",
+            "summary": "{confirmed} of {total} confirmed",
+            "title": "Confirmation results"
+          },
+          "submit": "Confirm as paid",
+          "title": "Confirm payroll run {period} as paid"
+        },
         "included": "Included in {run}. It is paid with that payroll and recorded as reimbursed when the run is confirmed.",
         "label": "Payroll run {period} ({format})",
         "notIncluded": "No payroll run includes this expense any more.",
@@ -266,6 +288,11 @@
         "removeDescription": "Remove it only if payroll will not pay it with this run, for example after correcting the payroll file. The removal is recorded in the audit log.",
         "removeFailed": "The expense could not be removed from the payroll run.",
         "removeTitle": "Remove this expense from the payroll run?"
+      },
+      "payrollRuns": {
+        "description": "These payroll runs carry expense reports awaiting reimbursement. Once payroll has paid a run, confirm it to record the reimbursements.",
+        "reports": "{count, plural, one {# expense report for you to confirm, {amount}} other {# expense reports for you to confirm, {amount}}}",
+        "title": "Payroll runs awaiting confirmation"
       },
       "queue": {
         "description": "Open an expense to see its settlement and record a reimbursement.",
@@ -452,6 +479,7 @@
         "newTrip": "New trip"
       },
       "approvedBy": "Approved by {name} on {date}.",
+      "approvedByDeputy": "Approved by {name} (deputy for {actingForName}) on {date}.",
       "awaitingReview": "Waiting for review.",
       "awaitingReviewer": "Waiting for review by {name}.",
       "backToApprovals": "Back to approvals",
@@ -576,7 +604,9 @@
         "description": "Every step of this report, oldest first. Times are shown in UTC.",
         "detail": {
           "approvalRecorded": "By {name}; awaiting further approval.",
+          "approvalRecordedByDeputy": "By {name} (deputy for {actingForName}); awaiting further approval.",
           "by": "By {name}",
+          "byDeputy": "By {name} (deputy for {actingForName})",
           "inCycle": "Submission {number} · {detail}",
           "selfApproved": "Nobody else could review this report."
         },
@@ -843,6 +873,7 @@
         "verifying": "Checking the receipt…"
       },
       "rejectedBy": "Rejected by {name}",
+      "rejectedByDeputy": "Rejected by {name} (deputy for {actingForName})",
       "reopen": {
         "action": "Reopen for correction",
         "changed": "The report changed meanwhile and was not reopened. Review it again.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Approved employee-paid amount",
       "entry": {
         "exportBatch": "From the export requested {date}",
+        "payrollRun": "Reimbursed with payroll {period}",
         "recordedBy": "Recorded by {name}, {date}",
         "recovery": "Recovered {amount}",
         "reimbursement": "Paid {amount}"

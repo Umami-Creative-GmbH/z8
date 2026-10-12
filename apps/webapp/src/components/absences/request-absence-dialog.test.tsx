@@ -24,6 +24,27 @@ vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	getAbsencePlanPreview: vi.fn(),
 }));
 
+vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
+	getOwnAbsenceSickNotesAction: vi.fn(async () => ({
+		success: true,
+		data: { canAttach: false, markers: {} },
+	})),
+	discardStagedSickNoteUploadsAction: vi.fn(),
+}));
+
+vi.mock("@/app/[locale]/(app)/absences/deputy-actions", () => ({
+	getDeputyCandidates: vi.fn().mockResolvedValue({
+		success: true,
+		data: [{ id: "deputy-ben", name: "Ben Example", image: null, awayPeriods: [] }],
+	}),
+	getDeputyDecisionCapability: vi.fn().mockResolvedValue({
+		success: true,
+		data: { canDecideApprovals: true },
+	}),
+}));
+
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("sonner", () => ({
 	toast: {
 		error: vi.fn(),
@@ -129,10 +150,20 @@ const categories = [
 		requiresApproval: true,
 		countsAgainstVacation: false,
 	},
+	{
+		id: "on-call",
+		name: "On-call leave",
+		type: "custom",
+		color: null,
+		requiresApproval: true,
+		countsAgainstVacation: false,
+		deputyRequired: true,
+	},
 ];
 
 const riskyPreview: AbsencePlanPreview = {
-	requestedDays: 2,
+	requestedAbsenceDays: 2,
+	refusal: null,
 	balance: {
 		year: 2026,
 		remainingDays: 10,
@@ -189,7 +220,7 @@ function fillRequiredFieldsForSickCategory() {
 describe("RequestAbsenceDialog", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		requestAbsenceMock.mockResolvedValue({ success: true });
+		requestAbsenceMock.mockResolvedValue({ success: true, data: { absenceId: "absence-1" } });
 		getAbsencePlanPreviewMock.mockResolvedValue({ success: true, data: riskyPreview });
 	});
 
@@ -387,6 +418,8 @@ describe("RequestAbsenceDialog", () => {
 		});
 		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "09:00" } });
 		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "13:00" } });
+		// Vacation waits for the plan preview's absence days.
+		await screen.findByText("Coverage may be tight for this request.");
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
@@ -410,9 +443,86 @@ describe("RequestAbsenceDialog", () => {
 
 		fillRequiredFields();
 		fireEvent.change(screen.getByLabelText("End Date"), { target: { value: "2026-05-14" } });
+		expect(await screen.findByText("Insufficient vacation balance for this request")).toBeTruthy();
 
-		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+		const submit = screen.getByRole("button", { name: "Submit Request" });
+		expect(submit.hasAttribute("disabled")).toBe(true);
+		fireEvent.click(submit);
 
 		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
+	});
+
+	it("requires a deputy for an absence type that requires one (#1011)", async () => {
+		renderDialog();
+
+		fireEvent.change(screen.getByLabelText("Absence Type *"), { target: { value: "on-call" } });
+		fireEvent.change(screen.getByLabelText("Start Date *"), { target: { value: "2026-05-11" } });
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		expect(
+			await screen.findByText("Choose a deputy: this absence type requires one."),
+		).toBeTruthy();
+		expect(requestAbsenceMock).not.toHaveBeenCalled();
+	});
+
+	it("submits the picked deputy (#1011)", async () => {
+		renderDialog();
+
+		fillRequiredFields();
+		await screen.findByRole("option", { name: "Ben Example" });
+		fireEvent.change(screen.getByLabelText("Deputy"), { target: { value: "deputy-ben" } });
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(requestAbsenceMock).toHaveBeenCalledWith(
+				expect.objectContaining({ categoryId: "vacation", deputyEmployeeId: "deputy-ben" }),
+			),
+		);
+	});
+
+	it("shows the absence days the plan preview counted", async () => {
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: { ...riskyPreview, requestedAbsenceDays: 4 },
+		});
+		renderDialog();
+
+		fillRequiredFields();
+
+		expect(await screen.findByText("Absence days:")).toBeTruthy();
+		expect(screen.getAllByText("{count} days").length).toBeGreaterThan(0);
+	});
+
+	it("blocks vacation that the plan preview refuses for having no working days", async () => {
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: { ...riskyPreview, requestedAbsenceDays: 0, refusal: "no_working_days" },
+		});
+		renderDialog();
+
+		fillRequiredFields();
+
+		expect(await screen.findByText("This range contains no working days.")).toBeTruthy();
+		const submit = screen.getByRole("button", { name: "Submit Request" });
+		expect(submit.hasAttribute("disabled")).toBe(true);
+		fireEvent.click(submit);
+		await waitFor(() => expect(requestAbsenceMock).not.toHaveBeenCalled());
+	});
+
+	it("shows the no-working-days message when the server refuses the request", async () => {
+		requestAbsenceMock.mockResolvedValue({
+			success: false,
+			error: "This range contains no working days.",
+			code: "AbsenceDaysRefusedError",
+		});
+		renderDialog();
+
+		fillRequiredFields();
+		await screen.findByText("Coverage may be tight for this request.");
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith("This range contains no working days."),
+		);
 	});
 });

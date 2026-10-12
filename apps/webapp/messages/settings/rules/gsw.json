@@ -15,9 +15,16 @@
       "createCategory": "Abwesenheitskategorie erstellen",
       "createCategoryButton": "Kategorie erstellen",
       "deactivate": "Deaktivieren",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Freiziit bezoge über de Arbeitsziitsaldo",
+          "name": "Freiziitusgliich"
+        }
+      },
       "deleteDescription": "Sind Sie sicher, dass Sie \"{name}\" löschen möchten? Kategorien, die bereits für Abwesenheiten verwendet werden, können nicht gelöscht werden und sollten stattdessen deaktiviert werden.",
       "deleteFailed": "Kategorie konnte nicht gelöscht werden",
       "deleteTitle": "Abwesenheitskategorie löschen",
+      "drawsOnWorkBalance": "Belaschtet de Arbeitsziitsaldo",
       "editCategory": "Bearbeite \"{name}\"",
       "form": {
         "active": "Aktiv",
@@ -26,11 +33,17 @@
         "colorHelp": "Kalendermarkierung",
         "countsAgainstVacation": "Wird vom Feriensaldo abgezogen",
         "countsAgainstVacationHelp": "Zieht genehmigte Tage vom Ferienguthaben des Mitarbeiters ab.",
+        "deputyRequired": "Stellvertretig erforderlich",
+        "deputyRequiredHelp": "Bi jedere Abwäseheit vo dere Art muess e Stellvertretig aagee werde, wo vertritt, während d Person wäg isch.",
+        "deputyRequiredSick": "Chrankheitsabwäseheite bruched nie e Stellvertretig.",
         "description": "Beschreibung",
         "descriptionHelp": "Optionale Hinweise für Admins und Genehmiger.",
         "descriptionPlaceholder": "z. B. für genehmigte Weiterbildungs- oder Zertifizierungstage verwenden…",
         "descriptionTranslation": "{locale} Beschreibung",
         "descriptionTranslationPlaceholder": "Lokalisierte Beschreibung",
+        "drawsOnWorkBalance": "Belaschtet de Arbeitsziitsaldo",
+        "drawsOnWorkBalanceConflict": "\"Belaschtet de Arbeitsziitsaldo\" cha nöd mit \"Zellt als Ferie\" oder \"Bruucht Arbeitsziit\" kombiniert wärde.",
+        "drawsOnWorkBalanceHelp": "Freiziitusgliich: Bewilligti Täg bhalte ihri Sollziit, sodass de Arbeitsziitsaldo vo de Mitarbeiter sinkt. Ferie wärded nöd bruucht.",
         "name": "Name",
         "nameHelp": "Verwenden Sie eine klare Bezeichnung, die Mitarbeitende und Genehmiger verstehen.",
         "nameMaxLength": "Maximal 100 Zeichen verwenden",
@@ -46,7 +59,8 @@
         "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeitende, die eine andere App-Sprache verwenden.",
         "type": "Typ",
         "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheits-Workflows.",
-        "typePlaceholder": "Kategorietyp auswählen"
+        "typePlaceholder": "Kategorietyp auswählen",
+        "typeTimeOffInLieu": "Freiziitusgliich"
       },
       "header": {
         "approval": "Genehmigung",
@@ -72,6 +86,7 @@
         "parental": "Eltereurlaub",
         "personal": "Persönlich",
         "sick": "Chrankheit",
+        "timeOffInLieu": "Freiziitusgliich",
         "unpaid": "Unbezahlt",
         "vacation": "Ferie"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Einigi aktivi Kanäl händ Eskalatione usgschaltet gha. Si liefere immer no keini Eskalationsnochrichte.",
         "inactiveSourceEnabled": "Einigi inaktivi Kanäl händ Eskalatione igschaltet gha. Si händ nöd zur Richtlinie zellt.",
         "invalidTimeout": "En Kanal hät es ungültigs Timeout gha und isch nöd fürs Antwortfänschter bruucht worde."
+      },
+      "deputyDecisions": {
+        "description": "Mitarbeitendi gänd bi ihrne Abwäseheite e Stellvertretig aa. Während e Freigabeperson in ere bewilligte Abwäseheit isch, chan ihri Stellvertretig d Freigabe gseh und entscheide, wo ihre no zuegwise sind.",
+        "disabled": "Stellvertretige chönd nümm über Freigabe entscheide. Si bliibed Kontaktpersone.",
+        "enabled": "Stellvertretige chönd jetzt über Freigabe entscheide, während d Freigabeperson wäg isch.",
+        "help": "Nur Stellvertretige, wo d Freigabe-Inbox nutze chönd, entscheidet, und das nur a de Abwäseheitstääg vo de Freigabeperson. D Freigabeperson bhaltet ihri Freigabe. Wenn das usgschaltet isch, sind Stellvertretige nur Kontaktpersone.",
+        "title": "Stellvertretige",
+        "toggle": "Stellvertretige chönd über Freigabe entscheide"
       },
       "description": "Überprüef d Eskalationsrichtlinie vo de Organisation, wie si us de Kanal-Iistellige migriert worde isch, und Bedingige, wo en Gnähmigungs-Manager bruuche.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Abwesenheit",
         "complianceException": "Compliance-Ausnahme",
         "manualTimeSubmission": "Manuelle Zeiteinreichung",
+        "periodSubmission": "Periode-Iireichig",
         "policyClockOut": "Richtlinien-Ausstempeln",
         "shiftRequest": "Schichtanfrage",
         "timeCorrection": "Zeitkorrektur",

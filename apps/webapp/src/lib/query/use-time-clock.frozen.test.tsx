@@ -173,10 +173,112 @@ describe("useTimeClock frozen commands (#279)", () => {
 	it("offers queued offline capture only while freezing is available", async () => {
 		mocks.useOfflineClock.mockReturnValue(offlineClock({ isOnline: false, isOffline: true }));
 		expect(render().result.current.captureMode).toBe("local-queue");
+		// Adopted, but this page cannot freeze for its own origin: the review queue.
 		mocks.useOfflineClock.mockReturnValue(
-			offlineClock({ isOnline: false, isOffline: true, commandCapabilities: null }),
+			offlineClock({
+				isOnline: false,
+				isOffline: true,
+				commandCapabilities: {
+					commandVersions: [2],
+					submit: "available",
+					context: { ...context, server: "https://other.example" },
+				},
+			}),
 		);
 		expect(render().result.current.captureMode).toBe("local-review");
+	});
+
+	describe("offline in an organization that is not adopted (#845)", () => {
+		const connectionRequired = {
+			success: false,
+			code: "connection_required",
+			error: "Clocking needs a connection in this organization. Reconnect and try again.",
+		};
+		const notAdopted = { commandVersions: [2], submit: "unavailable", context };
+
+		it.each([
+			["the last capabilities say fresh submission is unavailable", notAdopted],
+			["no capabilities were ever read for this context", null],
+			[
+				"the capabilities were read for another organization",
+				{
+					commandVersions: [2],
+					submit: "available",
+					context: { ...context, organizationId: "org-2" },
+				},
+			],
+		])("refuses a clock-in and stores nothing when %s", async (_name, commandCapabilities) => {
+			const clock = offlineClock({ isOnline: false, isOffline: true, commandCapabilities });
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			await expect(result.current.clockIn({ browserTimezone: "Europe/Berlin" })).resolves.toEqual(
+				connectionRequired,
+			);
+			expect(clock.submitClockCommand).not.toHaveBeenCalled();
+			expect(clock.queueClockEvent).not.toHaveBeenCalled();
+			expect(mocks.postClockIn).not.toHaveBeenCalled();
+			await waitFor(() => expect(result.current.connectionRequired).toBe(true));
+		});
+
+		it("refuses a clock-out and a break the same way", async () => {
+			const clock = offlineClock({
+				isOnline: false,
+				isOffline: true,
+				commandCapabilities: notAdopted,
+			});
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.activeWorkPeriod?.id).toBe(PERIOD_ID));
+
+			await expect(result.current.clockOut({ projectId: PROJECT_ID })).resolves.toEqual(
+				connectionRequired,
+			);
+			await expect(result.current.addBreak({ breakMinutes: 15 })).resolves.toEqual(
+				connectionRequired,
+			);
+			expect(clock.submitClockCommand).not.toHaveBeenCalled();
+			expect(clock.queueClockEvent).not.toHaveBeenCalled();
+		});
+
+		it("shows the normal controls rather than a capture that would be refused", () => {
+			mocks.useOfflineClock.mockReturnValue(
+				offlineClock({ isOnline: false, isOffline: true, commandCapabilities: notAdopted }),
+			);
+			expect(render().result.current.captureMode).toBe("server");
+		});
+
+		it("clocks online as today", async () => {
+			const clock = offlineClock({ commandCapabilities: notAdopted });
+			mocks.useOfflineClock.mockReturnValue(clock);
+			mocks.postClockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			await expect(result.current.clockIn({ browserTimezone: "Europe/Berlin" })).resolves.toEqual({
+				success: true,
+				data: { id: "entry-1" },
+			});
+			expect(result.current.connectionRequired).toBe(false);
+		});
+
+		it("still freezes and hands over the command offline in an adopted organization", async () => {
+			const clock = offlineClock({ isOnline: false, isOffline: true });
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			await expect(result.current.clockIn({ browserTimezone: "Europe/Berlin" })).resolves.toEqual({
+				success: true,
+				queued: true,
+				delivery: "pending",
+			});
+			expect(clock.submitClockCommand).toHaveBeenCalledWith(
+				expect.objectContaining({ kind: "clock_in", admission: "delayed", context }),
+			);
+			expect(result.current.connectionRequired).toBe(false);
+		});
 	});
 
 	it.each([

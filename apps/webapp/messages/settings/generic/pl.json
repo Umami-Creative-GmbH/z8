@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Dodano przypisaną lokalizację",
+      "employeeDescription": "Lokalizacje, w których pracuje ten pracownik. Kioski akceptują tylko pracowników przypisanych do danej lokalizacji.",
+      "employeeEmpty": "Brak przypisanych lokalizacji",
+      "employeeLabel": "Pracownik",
+      "employeePlaceholder": "Wybierz pracownika",
+      "employeeTitle": "Przypisane lokalizacje",
+      "errors": {
+        "adminOnly": "Tylko właściciele i administratorzy organizacji mogą zarządzać przypisanymi lokalizacjami.",
+        "employeeNotFound": "Nie znaleziono pracownika.",
+        "failed": "Nie udało się zaktualizować przypisanych lokalizacji. Spróbuj ponownie.",
+        "invalidSelection": "Wybierz z listy.",
+        "locationNotFound": "Nie znaleziono lokalizacji."
+      },
+      "locationDescription": "Pracownicy, którzy pracują w tej lokalizacji. Kioski w tej lokalizacji akceptują tylko te osoby.",
+      "locationEmpty": "Brak przypisanych pracowników",
+      "locationLabel": "Lokalizacja",
+      "locationPlaceholder": "Wybierz lokalizację",
+      "locationTitle": "Przypisani pracownicy",
+      "noEmployeesLeft": "Wszyscy aktywni pracownicy są przypisani do tej lokalizacji.",
+      "noLocationsLeft": "Nie ma więcej aktywnych lokalizacji do przypisania.",
+      "removed": "Usunięto przypisaną lokalizację"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Klient (Administrator)",
@@ -407,6 +430,75 @@
       "description": "Zarządzaj subskrypcją, metodami płatności i fakturami",
       "title": "Rozliczenia i subskrypcja"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Dni po zakończeniu miesiąca",
+        "daysHelp": "Jeśli coś zablokuje zamknięcie, wszyscy uprawnieni do zamykania zostaną powiadomieni, a kolejna próba nastąpi następnego dnia.",
+        "daysInvalid": "Wpisz liczbę całkowitą od 1 do 60 dni",
+        "description": "Zamykaj poprzedni miesiąc dla całej organizacji określoną liczbę dni po jego zakończeniu. Ponownie otwarty miesiąc nigdy nie zostanie zamknięty automatycznie.",
+        "enabled": "Zamykaj miesiące automatycznie",
+        "save": "Zapisz",
+        "saved": "Zapisano automatyczne zamykanie",
+        "title": "Automatyczne zamykanie"
+      },
+      "blockedTitle": "Nie można jeszcze zamknąć miesiąca. Najpierw rozwiąż następujące kwestie:",
+      "blocker": {
+        "absenceRequest": "nierozpatrzony wniosek o nieobecność {startDate} – {endDate}",
+        "liveWork": "nadal trwa rejestracja czasu od {start}",
+        "notEnded": "miesiąc nie zakończył się jeszcze w danej strefie czasowej",
+        "periodSubmission": "nierozstrzygnięte przesłanie okresu {startDate} – {endDate}",
+        "timeRequest": "nierozpatrzony wniosek dotyczący pracy od {start}"
+      },
+      "close": "Zamknij",
+      "closeDescription": "Nikt nie może modyfikować pracy, przypisań ani nieobecności w zamkniętym miesiącu, dopóki nie zostanie on ponownie otwarty. Miesiąc każdego pracownika jest ustalany według jego własnej strefy czasowej.",
+      "closeSubmit": "Zamknij miesiąc",
+      "closeSuccess": "{count, plural, one {{month} zamknięty dla # pracownika} other {{month} zamknięty dla # pracowników} }",
+      "closeTitle": "Zamknij {month}",
+      "description": "Zamykaj miesiące po rozliczeniu płac, aby czas pracy i nieobecności nie mogły już ulec zmianie",
+      "employeesLabel": "Pracownicy",
+      "employeesRequired": "Wybierz co najmniej jednego pracownika",
+      "history": {
+        "automatic": "Automatycznie",
+        "closed": "Zamknięty",
+        "employees": "{count, plural, one {# pracownik} few {# pracownicy} other {# pracowników} }",
+        "reopened": "Ponownie otwarty",
+        "unknownActor": "Nieznany"
+      },
+      "historyEmpty": "Żaden miesiąc nie został jeszcze zamknięty.",
+      "historyTitle": "Historia",
+      "monthsDescription": "Zamknięcie miesiąca blokuje czas pracy, przypisania i nieobecności na potrzeby listy płac. Notatki nadal można edytować.",
+      "monthsTitle": "Miesiące",
+      "nothingToClose": "Wszyscy w tym zakresie są już zamknięci dla tego miesiąca.",
+      "nothingToReopen": "Nikt z zaznaczonych nie jest zamknięty dla tego miesiąca.",
+      "reasonLabel": "Powód",
+      "reasonPlaceholder": "Dlaczego ten miesiąc wymaga zmian?…",
+      "reasonRequired": "Podaj powód ponownego otwarcia",
+      "reopen": "Otwórz ponownie",
+      "reopenDescription": "Ponownie otwarci pracownicy pozostają otwarci do momentu ponownego zamknięcia miesiąca. Ich przełożeni zostaną powiadomieni.",
+      "reopenScopeLabel": "Otwórz ponownie dla",
+      "reopenSubmit": "Otwórz ponownie miesiąc",
+      "reopenSuccess": "{count, plural, one {{month} ponownie otwarty dla # pracownika} other {{month} ponownie otwarty dla # pracowników} }",
+      "reopenTitle": "Otwórz ponownie {month}",
+      "scope": {
+        "all": "Wszystko",
+        "deletedTeam": "Usunięty zespół",
+        "employees": "Wybrani pracownicy",
+        "organization": "Organizacja"
+      },
+      "scopeLabel": "Zamknij dla",
+      "teamNotFound": "Ten zespół już nie istnieje.",
+      "title": "Zamknięte miesiące",
+      "warning": {
+        "periodNotSubmitted": "okres {startDate} – {endDate} nieprzesłany",
+        "periodRejected": "okres {startDate} – {endDate} odrzucony",
+        "periodRunning": "okres {startDate} – {endDate} nadal trwa, nie można go jeszcze przesłać",
+        "periodSentBack": "okres {startDate} – {endDate} zwrócony po wprowadzeniu zmian"
+      },
+      "warnings": {
+        "more": "i jeszcze {count}",
+        "title": "Nie wszystkie przesłania okresów w tym miesiącu zostały zatwierdzone. Nie blokuje to zamknięcia:"
+      }
+    },
     "compliance": {
       "description": "Przeglądaj i zarządzaj wnioskami o wyjątki od zgodności od członków zespołu",
       "title": "Zgodność z ArbZG"
@@ -468,14 +560,208 @@
       "updated": "Klient zaktualizowany",
       "updateFailed": "Nie udało się zaktualizować klienta"
     },
+    "customFields": {
+      "accessSummary": "Widoczne dla: {visibility} · Edytowane przez: {edit}",
+      "activeCount": "{count} z {max} aktywnych pól",
+      "activeList": "Aktywne pola niestandardowe",
+      "add": "Dodaj pole niestandardowe",
+      "archivedList": "Zarchiwizowane pola niestandardowe",
+      "archivedTitle": "Zarchiwizowane",
+      "archiveField": "Zarchiwizuj {name}",
+      "capReached": "Każdy typ rekordu może mieć maksymalnie 25 aktywnych pól niestandardowych. Zarchiwizuj jedno, aby dodać kolejne.",
+      "description": "Twoje własne pola dla pracowników, projektów i klientów",
+      "editField": "Edytuj {name}",
+      "empty": "Brak pól niestandardowych.",
+      "entity": {
+        "customer": "Klienci",
+        "employee": "Pracownicy",
+        "project": "Projekty"
+      },
+      "form": {
+        "boundsHelp": "Pozostaw granicę pustą, aby nie ustawiać limitu.",
+        "create": "Utwórz pole",
+        "createTitle": "Dodaj pole niestandardowe",
+        "description": "Pole niestandardowe dla {entity}.",
+        "editLevel": "Kto może edytować wartości",
+        "editLevelHelp": "Pracownicy nigdy nie edytują wartości pól niestandardowych.",
+        "editTitle": "Edytuj pole niestandardowe",
+        "integerOnly": "Tylko liczby całkowite",
+        "max": "Maksimum",
+        "min": "Minimum",
+        "name": "Nazwa",
+        "nameRequired": "Wprowadź nazwę",
+        "options": "Opcje",
+        "optionsHelp": "Jedna opcja w wierszu.",
+        "required": "Wymagane",
+        "requiredHelp": "Formularze uniemożliwiają zapisanie rekordu bez podania wartości.",
+        "save": "Zapisz zmiany",
+        "tracked": "Zachowaj historię",
+        "trackedFixed": "Ustawienia historii pola nie można zmienić po jego utworzeniu.",
+        "trackedHelp": "Każda wartość zawiera datę, od której obowiązuje.",
+        "type": "Typ",
+        "typeFixed": "Typu nie można zmienić po utworzeniu pola.",
+        "visibility": "Kto może widzieć wartości"
+      },
+      "level": {
+        "admin": "Administratorzy",
+        "employee": "Wszyscy, łącznie z pracownikiem",
+        "manager": "Menedżerowie i administratorzy"
+      },
+      "options": {
+        "add": "Dodaj opcję",
+        "archive": "Zarchiwizuj {label}",
+        "archived": "Zarchiwizowane",
+        "label": "Nazwa opcji",
+        "list": "Opcje",
+        "moveDown": "Przesuń {label} w dół",
+        "moveUp": "Przesuń {label} w górę",
+        "new": "Nowa opcja",
+        "restore": "Przywróć {label}",
+        "title": "Opcje"
+      },
+      "refusal": {
+        "booleanRequired": "Pole typu tak/nie nie może być wymagane.",
+        "duplicateOption": "To pole ma już aktywną opcję o tej nazwie.",
+        "editBroaderThanVisibility": "Wszyscy, którzy mogą edytować wartości, muszą mieć również możliwość ich wyświetlania.",
+        "employeesNeverEdit": "Pracownicy nie mogą edytować wartości pól niestandardowych.",
+        "fieldArchived": "Przywróć to pole niestandardowe przed wprowadzeniem zmian.",
+        "invalidChange": "Nie można zapisać tej zmiany. Odśwież stronę i spróbuj ponownie.",
+        "invalidLevel": "Wybierz, kto może wyświetlać i edytować wartości.",
+        "invalidName": "Wpisz nazwę o długości maksymalnie 100 znaków.",
+        "invalidOptionLabel": "Wpisz opcję o długości maksymalnie 100 znaków.",
+        "lastActiveOption": "Pole wyboru wymaga co najmniej jednej aktywnej opcji.",
+        "nameTaken": "Aktywne pole niestandardowe w tym typie rekordu ma już tę nazwę.",
+        "notFound": "To pole niestandardowe już nie istnieje. Odśwież stronę.",
+        "notSelect": "Tylko pola wyboru mają opcje.",
+        "numberBounds": "Wprowadź minimum i maksimum jako liczby, przy czym minimum nie może być większe niż maksimum.",
+        "optionArchived": "Najpierw przywróć tę opcję.",
+        "selectNeedsOption": "Dodaj co najmniej jedną opcję do pola wyboru.",
+        "staleOrder": "Lista zmieniła się w międzyczasie. Odśwież stronę i spróbuj ponownie.",
+        "tooManyFields": "Ten typ rekordu ma już 25 aktywnych pól niestandardowych. Najpierw zarchiwizuj jedno z nich.",
+        "trackedFixed": "Nie można zmienić ustawienia rejestrowania historii pola niestandardowego po jego utworzeniu.",
+        "typeFixed": "Nie można zmienić typu pola niestandardowego po jego utworzeniu.",
+        "usedAsPayrollIdentifier": "To pole jest identyfikatorem pracownika w konfiguracji eksportu listy płac {configurations}. Najpierw wybierz tam inny identyfikator."
+      },
+      "reorderField": "Zmień kolejność: {name}",
+      "required": "Wymagane",
+      "restore": "Przywróć",
+      "restoreField": "Przywróć {name}",
+      "saveFailed": "Nie udało się zapisać zmiany.",
+      "title": "Pola niestandardowe",
+      "tracked": "Śledzone",
+      "type": {
+        "boolean": "Tak/Nie",
+        "date": "Data",
+        "number": "Liczba",
+        "select": "Lista wyboru",
+        "text": "Tekst"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Istnieje już wartość rozpoczynająca się od tej daty.",
+        "fieldArchived": "To pole jest zarchiwizowane.",
+        "forField": "Pole niestandardowe \"{field}\": {message}",
+        "invalidDate": "Wprowadź prawidłową datę.",
+        "invalidNumber": "Wprowadź liczbę.",
+        "invalidValidFrom": "Wprowadź prawidłową datę początkową.",
+        "invalidValue": "Wprowadź prawidłową wartość.",
+        "missingRequired": "To pole jest wymagane.",
+        "missingValue": "Wprowadź wartość dla każdej daty.",
+        "notEditable": "Nie możesz zmienić tego pola.",
+        "numberNotInteger": "Wprowadź liczbę całkowitą.",
+        "numberOutOfRange": "Wprowadź liczbę z dozwolonego zakresu.",
+        "optionArchived": "Ta opcja jest zarchiwizowana. Wybierz inną.",
+        "textTooLong": "Wprowadź maksymalnie 255 znaków.",
+        "trackedField": "To pole zachowuje historię. Zamiast tego dodaj zmianę z datą.",
+        "unknownField": "To pole już nie istnieje. Odśwież stronę i spróbuj ponownie.",
+        "unknownHistoryEntry": "Historia zmieniła się w międzyczasie. Odśwież stronę i spróbuj ponownie."
+      },
+      "values": {
+        "archivedOption": "{label} (zarchiwizowano)",
+        "history": {
+          "add": "Dodaj zmianę",
+          "apply": "Zastosuj",
+          "correct": "Popraw wartość obowiązującą od {date}",
+          "delete": "Usuń wartość obowiązującą od {date}",
+          "duplicateValidFrom": "Istnieje już wartość obowiązująca od tej daty.",
+          "empty": "Brak wartości.",
+          "from": "Od {date}",
+          "label": "Historia: {name}",
+          "needsValidFrom": "Wybierz datę, od której obowiązuje wartość.",
+          "needsValue": "Wprowadź wartość.",
+          "today": "Dzisiaj",
+          "validFrom": "Obowiązuje od",
+          "value": "Wartość"
+        },
+        "missingRequired": "Brak wymaganych wartości",
+        "no": "Nie",
+        "notSet": "Nie ustawiono",
+        "ownDescription": "Zarządzane przez Twoją organizację. Poproś administratora lub przełożonego o ich zmianę.",
+        "title": "Pola niestandardowe",
+        "yes": "Tak"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Wpisy i kategorie nieobecności",
+          "label": "Nieobecności"
+        },
+        "audit_logs": {
+          "description": "Ścieżka audytu aktywności",
+          "label": "Dzienniki audytu"
+        },
+        "balance_adjustments": {
+          "description": "Bilanse otwarcia i wypłaty za nadgodziny, w tym anulowane",
+          "label": "Korekty bilansu czasu pracy"
+        },
+        "customers": {
+          "description": "Klienci wraz z polami niestandardowymi klientów",
+          "label": "Klienci"
+        },
+        "employees": {
+          "description": "Profile pracowników, relacje z przełożonymi i pola niestandardowe pracowników",
+          "label": "Pracownicy"
+        },
+        "holidays": {
+          "description": "Kalendarz świąt i ustawienia wstępne",
+          "label": "Święta"
+        },
+        "projects": {
+          "description": "Projekty wraz z polami niestandardowymi klientów i projektów",
+          "label": "Projekty"
+        },
+        "schedules": {
+          "description": "Szablony harmonogramów pracy i ich przypisania",
+          "label": "Harmonogramy pracy"
+        },
+        "shifts": {
+          "description": "Dane dotyczące planowania zmian",
+          "label": "Zmiany"
+        },
+        "teams": {
+          "description": "Struktura zespołu i uprawnienia",
+          "label": "Zespoły"
+        },
+        "time_entries": {
+          "description": "Wpisy i korekty rejestratora czasu pracy",
+          "label": "Rejestracja czasu pracy"
+        },
+        "vacation": {
+          "description": "Zasady i limity urlopowe",
+          "label": "Zasady urlopowe"
+        },
+        "work_periods": {
+          "description": "Zagregowane sesje pracy",
+          "label": "Okresy pracy"
+        }
+      },
       "description": "Eksportuj dane swojej organizacji",
       "form": {
         "aboutAsync": "Eksporty są przetwarzane asynchronicznie",
+        "aboutDownloadFromHistory": "Pobierz ukończone eksporty z historii eksportu",
         "aboutEmail": "Otrzymasz wiadomość e-mail, gdy będą gotowe",
-        "aboutLinkValidity": "Linki do pobrania są ważne przez 24 godziny",
+        "aboutFileRetention": "Pliki eksportu są usuwane po 30 dniach",
         "aboutOrgDataOnly": "Uwzględnione są tylko dane Twojej organizacji",
-        "aboutStorageDuration": "Pliki eksportu są przechowywane przez 7 dni",
         "aboutTitle": "O eksporcie danych",
         "description": "Wybierz kategorie danych, które chcesz wyeksportować",
         "selectAll": "Zaznacz wszystko",
@@ -508,6 +794,9 @@
         "statusFailed": "Niepowodzenie",
         "statusPending": "Oczekujące",
         "statusProcessing": "Przetwarzanie",
+        "switchOrganizationAction": "Przełącz na {organization}",
+        "switchOrganizationBody": "Ten eksport należy do {organization}. Przełącz się na tę organizację, aby otworzyć jej historię eksportu; Twój dostęp zostanie ponownie sprawdzony po przełączeniu.",
+        "switchOrganizationTitle": "Przełącz organizację, aby zobaczyć ten eksport",
         "title": "Historia eksportu",
         "unexpectedError": "Wystąpił nieoczekiwany błąd"
       },
@@ -991,10 +1280,7 @@
           "nameTaken": "{name} ma taką samą nazwę i jest już powiązany z innym kontaktem",
           "noMatch": "Brak dopasowania",
           "paging": {
-            "label": "Strony kontaktów",
-            "next": "Następna strona",
-            "position": "Strona {page} z {pageCount}",
-            "previous": "Poprzednia strona"
+            "label": "Strony kontaktów"
           },
           "suggestion": {
             "customerNumber": "{name} ma powiązanie z kontaktem o tym samym numerze klienta",
@@ -1008,6 +1294,7 @@
           "attributionNotAllowed": "Projekt jest niedostępny lub praca podlegająca rozliczeniu wymaga projektu powiązanego z klientem.",
           "invalidInterval": "Godziny dostawcy nie zawierają wyraźnego przesunięcia, nie są uporządkowane lub przypadają w przyszłości.",
           "label": "Wstrzymano do weryfikacji",
+          "monthClosed": "Ten czas dotyczy zamkniętego miesiąca. Będzie można go zaimportować po ponownym otwarciu miesiąca.",
           "occupancyConflict": "Czas nakłada się na pracę już zarejestrowaną dla tego pracownika.",
           "operationCollision": "Ten wiersz jest w konflikcie z jego wcześniej zatwierdzonym importem.",
           "providerDurationMismatch": "Czas trwania u dostawcy różni się od godzin rozpoczęcia i zakończenia.",
@@ -1015,14 +1302,22 @@
           "unlocatedBreak": "Dostawca zgłasza przerwy bez podania ich godzin, przez co przepracowany przedział czasu jest nieznany."
         },
         "issueGroups": {
-          "currentMarkers": "Bieżące wiersze zawierają {blockingRows} blokujących i {warningRows} ostrzegawczych znaczników problemów.",
           "description": "Pogrupowane obszary przeglądu pomagają zachować widoczność kontroli jakości przed zatwierdzeniem wierszy.",
+          "importMarkers": "Wiersze importu zawierają {blockingRows} blokujących i {warningRows} ostrzegawczych znaczników problemów.",
           "title": "Grupy problemów"
+        },
+        "paging": {
+          "next": "Następna strona",
+          "position": "Strona {page} z {pageCount}",
+          "previous": "Poprzednia strona"
         },
         "rows": {
           "billable": "Podlega rozliczeniu",
           "empty": "Brak przygotowanych wierszy dla tej partii importu.",
           "entity": "Obiekt",
+          "paging": {
+            "label": "Strony wierszy"
+          },
           "rowId": "ID wiersza",
           "sourceId": "ID źródła",
           "status": "Status",
@@ -1041,6 +1336,98 @@
         "title": "Przegląd importu"
       },
       "title": "Importuj dane"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Ten adres jest już używany przez inne konto.",
+        "emailNotAllowed": "Zasady logowania w Twojej organizacji nie zezwalają na ten adres.",
+        "employeeNotFound": "Nie znaleziono tego pracownika.",
+        "failed": "Coś poszło nie tak. Spróbuj ponownie.",
+        "invalidEmail": "Wprowadź prawidłowy adres e-mail.",
+        "invalidName": "Wprowadź imię o długości do 100 znaków.",
+        "invalidPin": "Kod PIN do kiosku składa się z 4 do 6 cyfr.",
+        "locationNotFound": "Nie znaleziono tej lokalizacji.",
+        "noPin": "Ten pracownik nie ma jeszcze kodu PIN do kiosku.",
+        "notAllowed": "Nie masz uprawnień do wykonania tej czynności.",
+        "notKioskOnly": "Ten pracownik ma już adres e-mail.",
+        "pinExists": "Ten pracownik ma już kod PIN do kiosku. Zamiast tego zresetuj go.",
+        "reservedEmail": "Tego adresu nie można użyć.",
+        "signInRequired": "Zaloguj się, aby kontynuować.",
+        "teamNotFound": "Nie znaleziono tego zespołu."
+      }
+    },
+    "kiosks": {
+      "add": "Dodaj kiosk",
+      "boardOn": "Tablica obecności włączona",
+      "columns": {
+        "actions": "Akcje",
+        "lastSeen": "Ostatnio widziano",
+        "location": "Lokalizacja",
+        "name": "Nazwa",
+        "status": "Status"
+      },
+      "create": "Utwórz kiosk",
+      "created": "Utworzono kiosk",
+      "createDescription": "Otrzymasz kod parowania, który należy wprowadzić na urządzeniu kiosku.",
+      "createFailed": "Nie udało się utworzyć kiosku",
+      "createTitle": "Dodaj kiosk",
+      "description": "Współdzielone urządzenia w lokalizacji, na których pracownicy rejestrują czas pracy za pomocą kodu PIN do kiosku",
+      "edit": "Edytuj",
+      "editDescription": "Zmiany zostaną zastosowane przy następnym żądaniu kiosku.",
+      "editTitle": "Edytuj kiosk",
+      "empty": "Nie ma jeszcze żadnych kiosków.",
+      "errors": {
+        "adminOnly": "Tylko właściciele organizacji i administratorzy mogą zarządzać kioskami.",
+        "invalidName": "Wprowadź nazwę o długości do 100 znaków.",
+        "invalidSelection": "Sprawdź wprowadzone dane i spróbuj ponownie.",
+        "invalidTimezone": "Wybierz strefę czasową.",
+        "kioskNotFound": "Nie znaleziono tego kiosku.",
+        "kioskRevoked": "Ten kiosk jest unieważniony.",
+        "locationNotFound": "Wybierz aktywną lokalizację tej organizacji."
+      },
+      "fields": {
+        "board": "Tablica obecności",
+        "boardDescription": "Pokazuje na kiosku, kto jest obecny lub na przerwie, podając imię i pierwszą literę nazwiska.",
+        "location": "Lokalizacja",
+        "locationDescription": "Kiosk akceptuje tylko pracowników przypisanych do tej lokalizacji.",
+        "locationPlaceholder": "Wybierz lokalizację",
+        "name": "Nazwa",
+        "namePlaceholder": "np. Wejście dla personelu",
+        "timezone": "Strefa czasowa",
+        "timezoneDescription": "Zdarzenia rejestracji czasu zarejestrowane na tym kiosku korzystają z tej strefy."
+      },
+      "issueCodeConfirm": "Wygeneruj nowy kod",
+      "listDescription": "Każdy kiosk należy do jednej lokalizacji. Sparuj urządzenie, otwierając na nim stronę kiosku i wprowadzając kod parowania.",
+      "listTitle": "Kioski",
+      "loadFailed": "Nie udało się załadować kiosków.",
+      "neverSeen": "Nigdy",
+      "noLocations": "Najpierw utwórz lokalizację: każdy kiosk należy do jednej lokalizacji.",
+      "pairAgain": "Sparuj ponownie",
+      "pairFailed": "Nie udało się wygenerować nowego kodu parowania",
+      "pairingCodeLabel": "Kod parowania",
+      "pairingDescription": "Na urządzeniu kiosku zeskanuj kod QR lub otwórz stronę kiosku i wprowadź kod. Kod jest jednorazowy i wygasa po 10 minutach.",
+      "pairingDone": "Gotowe",
+      "pairingTitle": "Sparuj {name}",
+      "pairPairedDescription": "Token urządzenia zostanie zmieniony: sparowane urządzenie natychmiast przestanie działać i należy je sparować ponownie za pomocą nowego kodu.",
+      "pairTitle": "Sparować {name} ponownie?",
+      "pairUnpairedDescription": "Nowy kod parowania zastępuje poprzedni.",
+      "revoke": "Unieważnij",
+      "revokeConfirm": "Unieważnij kiosk",
+      "revoked": "Kiosk został unieważniony",
+      "revokeDescription": "Kiosk przestanie działać przy następnym żądaniu i nie będzie można go ponownie sparować. Utwórz nowy kiosk, aby go zastąpić.",
+      "revokeFailed": "Nie udało się unieważnić kiosku",
+      "revokeTitle": "Unieważnić {name}?",
+      "rotateConfirm": "Wygeneruj nowy token i sparuj ponownie",
+      "save": "Zapisz",
+      "saved": "Zapisano kiosk",
+      "saveFailed": "Nie udało się zapisać kiosku",
+      "status": {
+        "awaitingPairing": "Oczekiwanie na sparowanie",
+        "codeExpired": "Nie sparowano, kod wygasł",
+        "paired": "Sparowano",
+        "revoked": "Unieważniono"
+      },
+      "title": "Kioski"
     },
     "licenses": {
       "footer": "Ta aplikacja korzysta z oprogramowania open source. Dziękujemy wszystkim opiekunom i współtwórcom tych pakietów.",
@@ -1401,6 +1788,7 @@
       "create": "Utwórz projekt",
       "created": "Projekt utworzony",
       "createFailed": "Nie udało się utworzyć projektu",
+      "customerDeleted": "{name} (usunięto)",
       "description": "Zarządzaj projektami, budżetami, terminami i przypisaniami czasu",
       "dialog": {
         "create": "Utwórz projekt",
@@ -1425,6 +1813,7 @@
         "color": "Kolor",
         "colorOption": "Wybierz kolor {color}",
         "customer": "Klient",
+        "customerDeleted": "Klient {name} został usunięty. Wybierz innego klienta lub pozostaw projekt bez przypisanego klienta.",
         "customerPlaceholder": "Wybierz klienta",
         "deadline": "Termin",
         "description": "Opis",
@@ -1650,8 +2039,23 @@
       "updated": "Projekt zaktualizowany",
       "updateFailed": "Nie udało się zaktualizować projektu"
     },
+    "reportShareLinks": {
+      "description": "Przeglądaj i unieważniaj wszystkie linki udostępniające raport projektu lub klienta",
+      "pageDescription": "Linki pokazujące statyczną migawkę raportu projektu lub klienta osobom spoza Z8. Unieważnienie linku natychmiast go dezaktywuje i usuwa jego migawkę.",
+      "title": "Linki udostępniania raportów"
+    },
     "security": {
       "description": "Zarządzaj hasłem, uwierzytelnianiem dwuskładnikowym, kluczami dostępu i aktywnymi sesjami",
+      "kioskPin": {
+        "descriptionChange": "Masz kod PIN do kiosku. Wybierz nowy składający się z 4 do 6 cyfr, aby go zastąpić.",
+        "descriptionSet": "Wybierz kod PIN składający się z 4 do 6 cyfr, aby rejestrować czas pracy w kioskach swojej organizacji.",
+        "mismatch": "Kody PIN nie są zgodne.",
+        "newPin": "Nowy PIN",
+        "repeatPin": "Powtórz PIN",
+        "save": "Zapisz PIN",
+        "saved": "PIN do kiosku został zapisany",
+        "title": "PIN do kiosku"
+      },
       "title": "Ustawienia bezpieczeństwa",
       "twoFactor": {
         "backupCodesCopied": "Kody zapasowe skopiowano do schowka",
@@ -2052,6 +2456,7 @@
         "replaceDescription": "Aktywna wersja obowiązuje już od {date}. Zapisanie spowoduje jej zastąpienie; zastąpiona wersja zostanie zachowana w historii.",
         "replaceTitle": "Zastąp wersję rozpoczynającą się tego dnia",
         "rules": "Kwalifikowalność wynika z {reference} ({version}), zweryfikowano dla dni podróży od {from} do {through}. Podróże zagraniczne są wyceniane dziennie wyłącznie na podstawie przyjętych stawek zagranicznych; pozostałe dni oraz trasy specjalne są oznaczane do ręcznego przeliczenia.",
+        "rulesOpenEnded": "Uprawnienia wynikają z {reference} ({version}), zweryfikowano dla dni podróży od {from} do czasu zmiany przepisów. Podróże zagraniczne są wyceniane wyłącznie za dzień według przyjętych stawek zagranicznych; inne dni i trasy specjalne są oznaczane do ręcznego przeliczenia.",
         "saved": "Aktywowano wersję stawek diet",
         "saveFailed": "Nie udało się zapisać stawek diet.",
         "source": "Źródło",

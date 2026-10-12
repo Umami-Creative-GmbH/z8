@@ -1,0 +1,442 @@
+{
+  "timeTracking": {
+    "addNotePrompt": "Shtoni një shënim rreth punës suaj (opsionale)",
+    "autoAdjusted": {
+      "description": "Një pushim prej {breakMinutes} minutash u shtua automatikisht për të qenë në përputhje me {regulationName}.",
+      "indicator": "U rregullua automatikisht për përputhshmëri",
+      "originalDuration": "Origjinale: {duration}",
+      "title": "U rregullua automatikisht për përputhshmëri",
+      "toast": {
+        "description": "Një pushim prej {breakMinutes} minutash u shtua për të përmbushur rregullat e orarit.",
+        "title": "Pushimi u shtua automatikisht për përputhshmëri"
+      }
+    },
+    "billable": {
+      "description": "Punë e faturueshme për klientin e projektit",
+      "label": "E faturueshme",
+      "noCustomer": "Vetëm puna në një projekt me klient mund të jetë e faturueshme"
+    },
+    "breakInProgress": {
+      "description": "Jeni në pushim",
+      "since": "Në pushim që nga {time}"
+    },
+    "budget": "Buxheti",
+    "clockedOutSuccess": "Keni regjistruar daljen!",
+    "clockIn": "Regjistro hyrjen",
+    "clockingIn": "Duke regjistruar hyrjen…",
+    "clockingOut": "Duke regjistruar daljen…",
+    "clockInSavedForReview": "Hyrja në punë u ruajt në këtë pajisje për shqyrtim; nuk është konfirmuar në server",
+    "clockInSavedForSending": "Hyrja në punë u ruajt në këtë pajisje. Ajo dërgohet automatikisht dhe nuk është konfirmuar ende.",
+    "clockInSavedHeld": "Hyrja në punë u ruajt në këtë pajisje, por nuk u dërgua. Shqyrtoni regjistrimet e ruajtura.",
+    "clockInSuccess": "Hyrja u regjistrua me sukses",
+    "clockOut": "Regjistro daljen",
+    "clockOutSavedForReview": "Dalja nga puna u ruajt në këtë pajisje për shqyrtim; nuk është konfirmuar në server",
+    "clockOutSavedForSending": "Dalja nga puna u ruajt në këtë pajisje. Ajo dërgohet automatikisht dhe nuk është konfirmuar ende.",
+    "clockOutSavedHeld": "Dalja nga puna u ruajt në këtë pajisje, por nuk u dërgua. Shqyrtoni regjistrimet e ruajtura.",
+    "clockOutSuccess": "Dalja u regjistrua me sukses",
+    "compliance": {
+      "violation": "Shkelje e përputhshmërisë",
+      "warning": "Njoftim përputhshmërie"
+    },
+    "correction": {
+      "clockIn": "Regjistro hyrjen",
+      "clockInDate": "Data e hyrjes",
+      "clockInTime": "Ora e hyrjes",
+      "clockOut": "Regjistro daljen",
+      "clockOutDate": "Data e daljes",
+      "clockOutTime": "Ora e daljes",
+      "editDescription": "Bëni ndryshime në regjistrimin e orarit për ditën e sotme.",
+      "editEntry": "Ndrysho regjistrimin e orarit",
+      "editTitle": "Ndrysho Regjistrimin e Orarit",
+      "errors": {
+        "invalidTimeRange": "Ora e daljes duhet të jetë pas orës së hyrjes",
+        "noChanges": "Të paktën një vlerë korrigjimi duhet të ndryshojë",
+        "submitFailed": "Dërgimi i korrigjimit dështoi",
+        "updateFailed": "Përditësimi i regjistrimit të orarit dështoi"
+      },
+      "noteLabel": "Shënim (opsionale)",
+      "notePlaceholder": "Shtoni një shënim rreth këtij ndryshimi…",
+      "reasonLabel": "Arsyeja e korrigjimit",
+      "reasonPlaceholder": "Shpjegoni pse nevojitet ky korrigjim…",
+      "requestCorrection": "Kërko korrigjim të orarit",
+      "requestDescription": "Dërgoni një kërkesë korrigjimi për këtë regjistrim orari. Menaxheri juaj do të duhet ta miratojë atë.",
+      "requestTitle": "Kërko Korrigjim të Orarit",
+      "saveChanges": "Ruaj Ndryshimet",
+      "saving": "Duke ruajtur…",
+      "submitRequest": "Dërgo Kërkesën",
+      "submitting": "Duke dërguar…",
+      "success": {
+        "applied": "Korrigjimi u zbatua me sukses",
+        "submitted": "Kërkesa për korrigjim u dërgua për miratim te menaxheri",
+        "updated": "Regjistrimi i orarit u përditësua me sukses"
+      },
+      "timezoneNote": "Orët janë në zonën tuaj kohore lokale ({timezone})"
+    },
+    "currentlyClockedIn": "Aktualisht keni regjistruar hyrjen",
+    "deadline": "Afati përfundimtar",
+    "errors": {
+      "alreadyClockedIn": "Keni hyrë tashmë në punë",
+      "appendReviewRequired": "Hyrja në punë kërkon një shqyrtim të historikut të kohës suaj",
+      "appendReviewRequiredDesc": "Regjistrimet tuaja të mëparshme të kohës nuk mund të verifikoheshin, prandaj një hyrje e re në punë nuk u ruajt. Ju lutemi kontaktoni administratorin tuaj.",
+      "billableNotAllowed": "Vetëm puna në një projekt që ka një klient mund të jetë e faturueshme",
+      "breakAwaitingApproval": "Kjo periudhë pune është në pritje të miratimit dhe nuk mund të modifikohet. Shtojeni pushimin pasi të jetë zgjidhur.",
+      "breakDurationInvalid": "Vendosni një kohëzgjatje pushimi prej të paktën 1 minute.",
+      "breakInProgressOpen": "Jeni në pushim. Rifillojeni atë para se të shtoni një pushim tjetër.",
+      "breakNotAllowed": "Nuk mund të shtoni një pushim në këtë punë.",
+      "breakOccupied": "Pushimi mbivendoset me punë tjetër të regjistruar.",
+      "breakPendingCorrection": "Një miratim për korrigjimin e kohës është tashmë në pritje për këtë periudhë pune. Shtojeni pushimin pasi të jetë zgjidhur.",
+      "breakRetry": "Shtimi i pushimit dështoi. Ju lutemi provoni përsëri.",
+      "breakTooLong": "Kohëzgjatja e pushimit duhet të jetë më e shkurtër se seanca juaj aktuale.",
+      "clockAttributionNotAllowed": "Projekti ose kategoria e zgjedhur nuk është e disponueshme",
+      "clockCommandRejected": "Serveri nuk e pranoi këtë veprim regjistrimi të orarit",
+      "clockConnectionRequired": "Regjistrimi i orarit kërkon lidhje në këtë organizatë. Rilidhuni dhe provoni përsëri.",
+      "clockInAppendReview": "Historiku juaj i kohës kërkon shqyrtim para se të mund të regjistroni hyrjen. Ju lutemi kontaktoni administratorin tuaj.",
+      "clockInCollision": "Kjo hyrje në punë bie në konflikt me një kërkesë të mëparshme. Ju lutemi rifreskoni dhe provoni përsëri.",
+      "clockInFailed": "Regjistrimi i hyrjes dështoi",
+      "clockInNotAllowed": "Nuk mund të regjistroni hyrjen.",
+      "clockInOccupied": "Ky orar mbivendoset me punë tjetër të regjistruar",
+      "clockInRetry": "Regjistrimi i hyrjes dështoi. Ju lutemi provoni përsëri.",
+      "clockMonthClosed": "Kjo kohë është në një muaj të mbyllur dhe nuk mund të ndryshohet derisa muaji të rihapet.",
+      "clockNotAllowedAtTime": "Regjistrimi i orarit nuk lejohet në këtë moment",
+      "clockOutAppendReview": "Historiku juaj i orëve kërkon shqyrtim përpara se të mund të regjistroni daljen. Ju lutemi kontaktoni administratorin tuaj.",
+      "clockOutBeforeClockIn": "Regjistrimi i daljes duhet të jetë pas regjistrimit të hyrjes",
+      "clockOutCollision": "Ky regjistrim daljeje bie në konflikt me një kërkesë të mëparshme ose punë të ndryshuar. Ju lutemi rifreskoni dhe provoni përsëri.",
+      "clockOutFailed": "Regjistrimi i daljes dështoi",
+      "clockOutNotAllowed": "Nuk mund të regjistroni daljen për këtë punë.",
+      "clockOutRetry": "Regjistrimi i daljes dështoi. Ju lutemi provoni përsëri.",
+      "clockTargetNotActive": "Kjo periudhë pune nuk është më aktive. Rifreskoni statusin tuaj të regjistrimit.",
+      "clockTargetUnknown": "Periudha e punës për t'u mbyllur nuk u gjet. Rifreskoni statusin tuaj të regjistrimit.",
+      "employeeProfileNotFound": "Profili i punonjësit nuk u gjet",
+      "holidayBlocked": "Nuk mund të regjistrohet dalja në {holidayName}",
+      "holidayBlockedBreak": "Nuk mund të rifilloni punën pas një pushimi në {holidayName}",
+      "holidayBlockedClockIn": "Nuk mund të regjistroni hyrjen në {holidayName}",
+      "holidayBlockedDesc": "Kjo ditë është shënuar si festë dhe regjistrimet e orarit nuk lejohen",
+      "invalidWorkLocation": "Lloj i pavlefshëm i vendndodhjes së punës",
+      "notAuthenticated": "I paautentikuar",
+      "notClockedIn": "Aktualisht nuk e keni të regjistruar hyrjen",
+      "notesSaveFailed": "Ruajtja e shënimeve dështoi",
+      "projectNotAllowed": "Nuk mund të caktohet në këtë projekt",
+      "restPeriodBlocked": "Periudha e pushimit nuk ka përfunduar",
+      "restPeriodBlockedDesc": "Duhet të përfundoni periudhën e kërkuar të pushimit përpara se të regjistroni hyrjen. Kërkoni një përjashtim nëse është e nevojshme.",
+      "taskDone": "Kjo detyrë ka përfunduar, prandaj nuk mund të regjistrohet kohë për të",
+      "taskNotAllowed": "Nuk mund të regjistrohet kohë për këtë detyrë",
+      "taskNotFound": "Kjo detyrë nuk ekziston më",
+      "taskOtherProject": "Kjo detyrë i përket një projekti tjetër",
+      "taskProjectNotBookable": "Nuk mund të regjistrohet më kohë për projektin e kësaj detyre",
+      "workCategoryNotAllowed": "Nuk mund të caktohet në këtë kategori pune"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Regjistro hyrjen",
+        "clockOut": "Regjistro daljen",
+        "endDay": "Përfundo ditën",
+        "resume": "Rifillo punën",
+        "startBreak": "Fillo pushimin"
+      },
+      "board": {
+        "empty": "Askush nuk është i regjistruar në punë tani.",
+        "title": "Kush është në punë"
+      },
+      "done": {
+        "button": "U krye",
+        "clockIn": "Hyrja u regjistrua",
+        "clockOut": "Dalja u regjistrua",
+        "endDay": "Dita përfundoi",
+        "endDayNote": "Dita juaj përfundoi në fillim të pushimit tuaj.",
+        "resume": "Kthehu në punë",
+        "returning": "Kthimi në fillim pas {seconds} s",
+        "startBreak": "Pushimi filloi",
+        "title": "U krye"
+      },
+      "employee": {
+        "back": "Anulo",
+        "endDayHint": "Përfundimi i ditës tani e përfundon punën tuaj në fillim të pushimit tuaj.",
+        "today": "Sot: {duration}"
+      },
+      "home": {
+        "empty": "Askush nuk është caktuar ende në këtë vendndodhje. Pyesni administratorin tuaj.",
+        "loadFailed": "Emrat nuk mund të ngarkoheshin. Kontrolloni lidhjen e rrjetit.",
+        "loading": "Po ngarkohen emrat…",
+        "noMatch": "Asnjë emër nuk përputhet me kërkimin tuaj.",
+        "search": "Gjeni emrin tuaj",
+        "title": "Prekni emrin tuaj për të regjistruar hyrjen ose daljen"
+      },
+      "loading": "Po niset kioska…",
+      "offline": {
+        "banner": "Kioska është jashtë linje. Regjistrimi i orarit nuk është i mundur derisa të rikthehet lidhja.",
+        "refused": "Kioska është jashtë linje. Nuk u regjistrua asgjë; regjistrimi i orarit funksionon vetëm kur jeni në linjë."
+      },
+      "pairing": {
+        "codeDescription": "Kodi funksionon vetëm një herë dhe skadon 10 minuta pas lëshimit të tij.",
+        "codeLabel": "Kodi i çiftimit",
+        "description": "Një pronar ose administrator krijon kioskun te Cilësimet › Kioskat dhe ju jep një kod çiftimi.",
+        "invalidCode": "Ky kod është i pavlefshëm ose ka skaduar. Kërkojini administratorit tuaj një kod të ri çiftimi.",
+        "malformedCode": "Vendosni kodin prej 10 karakteresh ekzaktësisht siç shfaqet te cilësimet.",
+        "rateLimited": "Shumë përpjekje. Prisni disa minuta dhe provoni përsëri.",
+        "submit": "Çifto këtë pajisje",
+        "title": "Konfiguro këtë kiosk",
+        "unreachable": "Kiosku nuk mund të lidhet me serverin. Kontrolloni lidhjen me rrjetin dhe provoni përsëri."
+      },
+      "pin": {
+        "back": "Nuk jeni ju? Kthehu",
+        "checking": "Po kontrollohet…",
+        "delete": "Fshi shifrën e fundit",
+        "entered": "{count} shifra të vendosura",
+        "locked": "Shumë PIN-e të pasakta. PIN-i juaj është i bllokuar deri në {time}. Provoni përsëri atëherë ose kërkojini menaxherit tuaj ta zhbllokojë.",
+        "none": "Nuk keni ende një PIN kiosku. Kërkojini një menaxherit tuaj.",
+        "notAssigned": "Nuk mund të regjistroni orarin në këtë kiosk. Pyesni menaxherin tuaj.",
+        "prompt": "Vendosni PIN-in tuaj të kioskut",
+        "rateLimited": "Shumë përpjekje me PIN në këtë kiosk. Provoni përsëri pas {seconds} sekondash.",
+        "submit": "OK",
+        "wrong": "Ky PIN nuk është i saktë. Provoni përsëri."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Tashmë jeni regjistruar në hyrje.",
+        "billing": "Regjistrimi i orarit nuk është i disponueshëm për organizatën tuaj për momentin. Kontaktoni administratorin tuaj.",
+        "generic": "Kjo nuk funksionoi. Asgjë nuk u regjistrua. Provoni përsëri ose pyesni menaxherin tuaj.",
+        "holiday": "Regjistrimi i orarit është i bllokuar sot për shkak të një feste zyrtare. Pyesni menaxherin tuaj.",
+        "monthClosed": "Kjo kohë është në një muaj të mbyllur dhe nuk mund të ndryshohet. Pyesni menaxherin tuaj.",
+        "noBreak": "Nuk jeni në pushim.",
+        "notClockedIn": "Nuk jeni regjistruar në hyrje.",
+        "onBreak": "Tashmë jeni në pushim.",
+        "unconfirmed": "Kiosku nuk mundi të konfirmonte nëse kjo u ruajt. Kontrolloni statusin tuaj para se të provoni përsëri.",
+        "underReview": "Orari juaj për sot është në shqyrtim. Pyesni menaxherin tuaj."
+      },
+      "retry": "Provo përsëri",
+      "revoked": {
+        "description": "Ky kiosk nuk mund të përdoret më për regjistrimin e orarit. Ju lutemi kontaktoni administratorin tuaj.",
+        "pairAgain": "Çifto me një kod të ri",
+        "title": "Kiosku u revokua"
+      },
+      "state": {
+        "clockedIn": "Regjistruar në hyrje që nga {time}",
+        "clockedOut": "Nuk jeni regjistruar në hyrje",
+        "onBreak": "Në pushim që nga {time}"
+      },
+      "unreachableDescription": "Kiosku nuk mund të lidhet me serverin. Kontrolloni lidhjen me rrjetin; regjistrimi i orarit funksionon vetëm kur jeni në linjë.",
+      "unreachableTitle": "Kiosku jashtë linje"
+    },
+    "manualEntry": {
+      "addButton": "Shto regjistrim manual",
+      "clockInLabel": "Regjistro hyrjen",
+      "clockOutLabel": "Regjistro daljen",
+      "context": {
+        "choicesCleared": "Një projekt ose kategori e përzgjedhur nuk është më e disponueshme dhe u pastrua.",
+        "loadFailed": "Nuk mund të ngarkoheshin zona kohore dhe zgjedhjet për këtë regjistrim.",
+        "loading": "Po ngarkohen opsionet e regjistrimit…",
+        "notAuthorized": "Nuk mund të krijoni regjistrime kohe për këtë punonjës.",
+        "organizationFallback": "{employee} nuk ka një zonë kohore personale, prandaj përdoret zona kohore e organizatës.",
+        "retry": "Provo përsëri",
+        "targetChanged": "Punonjësi ndryshoi, kështu që projekti dhe kategoria u pastruan.",
+        "targetTimezone": "Orët janë në zonën kohore të {employee}: {timezone}",
+        "taskCleared": "Një detyrë e përzgjedhur nuk është më e disponueshme dhe u hoq.",
+        "thisEmployee": "ky punonjës",
+        "utcFallback": "As {employee} dhe as organizata nuk kanë një zonë kohore të caktuar, prandaj përdoret UTC."
+      },
+      "dateLabel": "Data",
+      "description": "Krijoni një regjistrim kohe për një datë të kaluar. Miratimi mund të jetë i nevojshëm bazuar në politikat e ndryshimit të organizatës suaj.",
+      "errors": {
+        "collision": "Ky regjistrim bie në konflikt me një dërgim të mëparshëm ose punë të ndryshuar. Kontrolloni regjistrimet tuaja ekzistuese.",
+        "createFailed": "Krijimi i regjistrimit të kohës dështoi",
+        "futureDate": "Nuk mund të krijohen regjistrime për data në të ardhmen",
+        "futureTime": "Nuk mund të krijohen regjistrime për orare në të ardhmen",
+        "historyReview": "Ky historik orësh kërkon shqyrtim përpara se të ruhen regjistrime të reja. Kontaktoni administratorin tuaj.",
+        "invalidTime": "Vendosni një kohë të plotë dhe të vlefshme",
+        "invalidTimeRange": "Ora e daljes duhet të jetë pas orës së hyrjes",
+        "nonexistentTime": "Ky orar nuk ekziston në këtë datë sepse akrepat lëvizin përpara.",
+        "occurrenceRequired": "Ky orar ndodh dy herë në këtë datë. Zgjidhni atë që keni parasysh.",
+        "overlap": "Ky orar mbivendoset me punë të regjistruar. Zgjidhni një interval që nuk mbivendoset me regjistrimet ekzistuese.",
+        "reconfirm": "Zona kohore ose oraret ndryshuan. Rishikoni regjistrimin dhe dërgojeni përsëri.",
+        "refresh": "Cilësimet e regjistrimit manual ndryshuan. Rishikoni regjistrimin dhe dërgojeni përsëri.",
+        "tooLong": "Periudha e punës nuk mund të kalojë 24 orë"
+      },
+      "occurrence": {
+        "earlier": "E para, {offset}",
+        "later": "E dyta, {offset}",
+        "legend": "{time} ndodh dy herë në këtë datë. Cilën keni parasysh?"
+      },
+      "reasonLabel": "Arsyeja",
+      "reasonPlaceholder": "Përshkruani se për çfarë keni punuar…",
+      "recovery": {
+        "check": "Kontrollo statusin",
+        "checkFailed": "Nuk mund të kontrollohej ky regjistrim tani. Provoni përsëri më vonë.",
+        "contextMismatch": "Jeni identifikuar në një llogari ose organizatë tjetër. Kthehuni prapa për të trajtuar këtë regjistrim.",
+        "description": "Këto regjistrime u dërguan nga kjo skedë pa një rezultat të konfirmuar. Asgjë nuk dërgohet përsëri përveç nëse zgjidhni ju.",
+        "discard": "Hiq",
+        "editAsNew": "Modifiko si regjistrim të ri",
+        "notCommitted": "Nuk u gjet asnjë ruajtje.",
+        "notCommittedToast": "Nuk u gjet asnjë ruajtje për këtë regjistrim. Riprovoni saktësisht njësoj, ose modifikojeni si regjistrim të ri.",
+        "retry": "Riprovo saktësisht",
+        "saved": "Ky regjistrim u ruajt.",
+        "savedForApproval": "Ky regjistrim u ruajt dhe u dërgua për miratim. Statusi aktual: {status}.",
+        "status": {
+          "approved": "i miratuar",
+          "pending": "në pritje",
+          "rejected": "i refuzuar"
+        },
+        "stillUncertain": "Ende i pakonfirmuar. Regjistrimi ruhet; provoni përsëri kur të jeni përsëri në linjë.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Regjistrime të pakonfirmuara",
+        "uncertain": "I pakonfirmuar. Mund të jetë ruajtur tashmë.",
+        "uncertainToast": "Nuk mundëm të konfirmonim nëse ky regjistrim u ruajt. Ai mbahet te Regjistrimet e pakonfirmuara, ku mund ta riprovoni saktësisht ose të kontrolloni statusin e tij.",
+        "unsupported": "Statusi i tij nuk mund të kontrollohet. Mund të jetë ruajtur tashmë.",
+        "unsupportedToast": "Statusi i këtij regjistrimi nuk mund të kontrollohet tani. Riprovimi dërgon saktësisht të njëjtin regjistrim."
+      },
+      "submit": "Krijo regjistrimin",
+      "submitting": "Duke krijuar…",
+      "success": {
+        "adjusted": "Orët u rregulluan në {clockIn} - {clockOut} për të shmangur mbivendosjen",
+        "created": "Regjistrimi i kohës u krijua me sukses",
+        "pendingApproval": "Regjistrimi i kohës u dërgua për miratim nga menaxheri"
+      },
+      "title": "Shto regjistrim manual të kohës",
+      "titleForEmployee": "Shto regjistrim manual të orarit për {employee}"
+    },
+    "noCategory": "Pa kategori (100%)",
+    "noProject": "Pa projekt",
+    "notesPlaceholder": "Në çfarë punuat?",
+    "notesSaved": "Shënimet u ruajtën",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "Një kërkesë për mungesë për {dates} është pa vendim.",
+        "liveWork": "Puna e nisur më {start} është ende në vazhdim.",
+        "manualWork": "Puna manuale më {start} është pa vendim.",
+        "timeCorrection": "Një korrigjim kohe për punën më {start} është pa vendim."
+      },
+      "description": "Konfirmoni që puna dhe mungesat tuaja për çdo periudhë janë të plota dhe të sakta.",
+      "opensOn": "Mund të dorëzoni duke filluar nga {date}.",
+      "refusal": {
+        "alreadySubmitted": "Kjo periudhë tashmë është dorëzuar.",
+        "noApprover": "Askush nuk mund ta miratojë ende këtë periudhë. Kërkojini një administratori t'ju caktojë një menaxher.",
+        "notEnded": "Mund ta dorëzoni këtë periudhë duke filluar nga dita e fundit e saj.",
+        "notExpected": "Kjo periudhë nuk ka nevojë të dorëzohet.",
+        "periodOpen": "Kjo periudhë është ende e hapur"
+      },
+      "rejectionReason": "Arsyeja: {reason}",
+      "status": {
+        "approved": "Miratuar",
+        "awaiting": "Në pritje të dorëzimit",
+        "rejected": "Refuzuar",
+        "sentBack": "Kthyer mbrapsht pas një ndryshimi",
+        "submitted": "Dorëzuar"
+      },
+      "submit": "Dorëzo",
+      "submitFailed": "Periudha nuk mund të dorëzohej",
+      "submitted": "Periudha u dorëzua për miratim",
+      "title": "Dorëzimet e periudhës",
+      "withdraw": "Tërhiq",
+      "withdrawFailed": "Dorëzimi nuk mund të tërhiqej",
+      "withdrawn": "Dorëzimi u tërhoq",
+      "withdrawRefused": "Për këtë dorëzim tashmë është vendosur dhe nuk mund të tërhiqet më."
+    },
+    "project": "Projekt",
+    "quickBreak": {
+      "addBreak": "Shto pushim",
+      "apply": "Zbato",
+      "applying": "Duke zbatuar…",
+      "durationLabel": "Kohëzgjatja e pushimit në minuta",
+      "errors": {
+        "addFailed": "Shtimi i pushimit dështoi. Ju lutemi provoni përsëri.",
+        "durationTooShort": "Futni një kohëzgjatje pushimi prej të paktën 1 minute.",
+        "failed": "Shtimi i pushimit dështoi. Ju lutemi provoni përsëri."
+      },
+      "helper": "Regjistro një pushim që përfundon tani dhe qëndro me hyrje të regjistruar.",
+      "success": "Pushimi u shtua",
+      "successDescription": "Jeni ende me hyrje të regjistruar.",
+      "title": "Shto pushim"
+    },
+    "readyToClockIn": "Gati për të filluar punën?",
+    "restPeriodWarning": "Paralajmërim për periudhën e pushimit",
+    "restPeriodWarningMessage": "Nuk e keni përfunduar periudhën e kërkuar të pushimit. Regjistrimi i hyrjes tani do të regjistrohet si shkelje.",
+    "selectCategory": "Zgjidh një kategori",
+    "selectProject": "Zgjidhni një projekt",
+    "sessionReminders": {
+      "breakOpen": "Edhe {remaining} min pushim të mbetura",
+      "breakRequired": "Kërkohet pushim tani",
+      "breakRequiredMessage": "Bëni një pushim përpara se të vazhdoni seancën tuaj.",
+      "breakSoon": "Pushim së shpejti",
+      "dismissBreak": "Hiq kujtuesin e pushimit",
+      "dismissHydration": "Hiq kujtuesin e hidratimit",
+      "hydration": "Hidratimi",
+      "hydrationProgress": "{intake}/{goal} gota sot",
+      "logOneGlass": "+1 gotë",
+      "logTwoGlasses": "+2",
+      "minutesUntilBreak": "{minutes} min deri në pushim",
+      "snoozeToday": "Shtyje për sot",
+      "subtitle": "Gjatë këtij turni",
+      "title": "Kujtuesit e seancës"
+    },
+    "startedAt": "Filluar në",
+    "summary": {
+      "baseWorked": "Bazë e punuar",
+      "surcharge": "Shtesë",
+      "thisMonth": "Këtë muaj",
+      "thisWeek": "Këtë javë",
+      "today": "Sot"
+    },
+    "table": {
+      "active": "Aktiv",
+      "approved": "Regjistrimi i kohës u miratua",
+      "approveEntry": "Mirato regjistrimin",
+      "approveFailed": "Dështoi miratimi i regjistrimit",
+      "approving": "Duke miratuar...",
+      "billable": "E faturueshme",
+      "clockIn": "Regjistro hyrjen",
+      "clockOut": "Regjistro daljen",
+      "corrected": "E korrigjuar",
+      "date": "Data",
+      "description": "Përshkrimi",
+      "duration": "Kohëzgjatja",
+      "emptyState": "Nuk u gjet asnjë regjistrim kohe për këtë javë.",
+      "recordedLocalTime": "Ora lokale e regjistruar",
+      "rowActions": "Veprimet e regjistrimit të kohës",
+      "title": "Regjistrimet e kohës",
+      "viewCalendar": "Shiko kalendarin"
+    },
+    "taskPicker": {
+      "doneTask": "{name} (përfunduar)",
+      "empty": "Nuk u gjet asnjë detyrë",
+      "label": "Detyrë",
+      "none": "Pa detyrë",
+      "search": "Kërko detyrat…"
+    },
+    "timeline": {
+      "dayPicker": "Zgjedhësi i ditës në vijën kohore",
+      "emptyDescription": "Nuk ka ende ndërrime, mungesa ose regjistrime orari për ditën e zgjedhur.",
+      "emptyTitle": "Nuk është regjistruar asnjë aktivitet për këtë ditë.",
+      "nextDay": "Dita tjetër",
+      "previousDay": "Dita e mëparshme",
+      "title": "Vija kohore e ditës së punës",
+      "today": "Sot",
+      "unavailableDescription": "Regjistrimi i orarit funksionon ende. Provoni ta rifreskoni këtë pamje më vonë.",
+      "unavailableTitle": "Vija kohore nuk është e disponueshme"
+    },
+    "timezoneMismatch": {
+      "cancel": "Anulo",
+      "continueOnce": "Vazhdo një herë",
+      "description": "Zona kohore e pajisjes suaj është {browserTimezone}, por zona kohore e ruajtur është {savedTimezone}.",
+      "help": "Zgjidhni nëse dëshironi të përdorni zonën kohore të pajisjes vetëm për këtë veprim apo të përditësoni zonën kohore të ruajtur para se të vazhdoni.",
+      "title": "Konfirmo zonën kohore për këtë regjistrim",
+      "updateTimezoneAndContinue": "Përditëso zonën kohore dhe vazhdo"
+    },
+    "title": "Gjurmimi i kohës",
+    "unknownCategory": "Kategori e panjohur",
+    "unknownProject": "Projekt i panjohur",
+    "welcomeBack": "Mirë se u kthyet, {name}",
+    "workCategory": "Kategoria e punës",
+    "workLocation": "Vendndodhja e punës",
+    "workLocationHome": "Shtëpi",
+    "workLocationOffice": "Zyrë",
+    "workLocationOther": "Tjetër",
+    "workLocationRemote": "Nga distanca"
+  },
+  "wellness": {
+    "water": {
+      "goalMet": "Objektivi ditor u arrit! Vazhdoni punën e shkëlqyer!",
+      "logError": "Regjistrimi i konsumit të ujit dështoi",
+      "logged": "Uji u regjistrua! {progress}% e objektivit ditor",
+      "snoozed": "Kujtuesit për konsumimin e ujit u shtynë për sot",
+      "snoozeError": "Dështoi shtyrja e kujtuesve"
+    }
+  }
+}

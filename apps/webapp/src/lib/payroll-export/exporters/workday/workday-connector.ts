@@ -1,5 +1,10 @@
 import { DateTime } from "luxon";
 import { isPrivateIP, resolveAndValidateUrl } from "@/lib/webhooks/url-validation";
+import {
+	CUSTOM_FIELD_IDENTIFIER,
+	customFieldMatchError,
+	EMPLOYEE_MATCH_CUSTOM_FIELD_KEY,
+} from "../../personnel-identifier";
 import type {
 	AbsenceData,
 	ApiExportResult,
@@ -69,7 +74,12 @@ interface WorkdayConnectorDeps {
 	};
 }
 
-type MatchableRecord = Pick<WorkPeriodData, "employeeId" | "employeeNumber" | "email">;
+type MatchableRecord = Pick<
+	WorkPeriodData,
+	"employeeId" | "employeeNumber" | "email" | "personnelIdentifier"
+>;
+
+const STRATEGY_ERROR = "employeeMatchStrategy must be 'employeeNumber', 'email' or 'customField'";
 
 export class WorkdayConnector implements IPayrollExporter {
 	readonly exporterId = "workday_api";
@@ -332,12 +342,18 @@ export class WorkdayConnector implements IPayrollExporter {
 		const employeeMatchStrategy = rawConfig.employeeMatchStrategy;
 		if (employeeMatchStrategy !== undefined) {
 			if (typeof employeeMatchStrategy !== "string") {
-				errors.push("employeeMatchStrategy must be 'employeeNumber' or 'email'");
+				errors.push(STRATEGY_ERROR);
 			} else if (!this.isValidEmployeeMatchStrategy(employeeMatchStrategy)) {
-				errors.push("employeeMatchStrategy must be 'employeeNumber' or 'email'");
+				errors.push(STRATEGY_ERROR);
 			} else {
 				config.employeeMatchStrategy = employeeMatchStrategy;
 			}
+		}
+		const customFieldError = customFieldMatchError(rawConfig);
+		if (customFieldError) {
+			errors.push(customFieldError);
+		} else if (config.employeeMatchStrategy === CUSTOM_FIELD_IDENTIFIER) {
+			config.employeeMatchCustomFieldId = rawConfig[EMPLOYEE_MATCH_CUSTOM_FIELD_KEY] as string;
 		}
 
 		const includeZeroHours = rawConfig.includeZeroHours;
@@ -401,7 +417,9 @@ export class WorkdayConnector implements IPayrollExporter {
 	private isValidEmployeeMatchStrategy(
 		strategy: string,
 	): strategy is WorkdayConfig["employeeMatchStrategy"] {
-		return strategy === "employeeNumber" || strategy === "email";
+		return (
+			strategy === "employeeNumber" || strategy === "email" || strategy === CUSTOM_FIELD_IDENTIFIER
+		);
 	}
 
 	private getDateRange(
@@ -468,7 +486,9 @@ export class WorkdayConnector implements IPayrollExporter {
 				reason:
 					params.strategy === "email"
 						? "Skipped record because employee email is missing for Workday matching."
-						: "Skipped record because employee number is missing for Workday matching.",
+						: params.strategy === CUSTOM_FIELD_IDENTIFIER
+							? "Skipped record because the payroll identifier custom field has no value for Workday matching."
+							: "Skipped record because employee number is missing for Workday matching.",
 			});
 			return null;
 		}
@@ -502,6 +522,10 @@ export class WorkdayConnector implements IPayrollExporter {
 	): string | null {
 		if (strategy === "email") {
 			return record.email?.trim() || null;
+		}
+		// The frozen custom field value, matched as Workday employee number (#821); never a fallback.
+		if (strategy === CUSTOM_FIELD_IDENTIFIER) {
+			return record.personnelIdentifier?.trim() || null;
 		}
 
 		return record.employeeNumber?.trim() || null;

@@ -10,6 +10,11 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import {
+	keepCustomFieldRefusal,
+	saveFormCustomFieldValues,
+} from "@/lib/organization/custom-fields/form-values";
+import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { isProjectNameConflict, type NewProjectStatus } from "@/lib/projects/project-creation";
 import {
 	createProjectFromTemplateRows,
@@ -62,6 +67,8 @@ export interface CreateProjectFromTemplateInput {
 	customerId?: string | null;
 	/** Billable default (#900); only a project with a customer can have it on. */
 	billableDefault?: boolean;
+	/** The dialog's custom field values (#818); required fields are enforced when present. */
+	customFieldValues?: CustomFieldValuesInput;
 }
 
 function keepTypedCreationError(error: DatabaseError) {
@@ -177,8 +184,8 @@ export async function createProjectFromTemplate(
 				// booking preparation like any assignment change (#315).
 				const created = yield* actor.dbService
 					.query("project.createFromTemplate", () =>
-						withOrganizationConfigurationMutation(db, actor.organizationId, (tx) =>
-							createProjectFromTemplateRows(
+						withOrganizationConfigurationMutation(db, actor.organizationId, async (tx) => {
+							const copied = await createProjectFromTemplateRows(
 								tx,
 								{
 									organizationId: actor.organizationId,
@@ -196,10 +203,20 @@ export async function createProjectFromTemplate(
 									customerId,
 									billableDefault,
 								},
-							),
-						),
+							);
+							if (copied) {
+								await saveFormCustomFieldValues(tx, {
+									organizationId: actor.organizationId,
+									actorUserId: userId,
+									entity: "project",
+									recordId: copied.id,
+									values: input.customFieldValues,
+								});
+							}
+							return copied;
+						}),
 					)
-					.pipe(Effect.mapError(keepTypedCreationError));
+					.pipe(Effect.mapError(keepTypedCreationError), keepCustomFieldRefusal);
 				if (!created) return yield* Effect.fail(templateNotFound(input.templateId));
 
 				logAudit({

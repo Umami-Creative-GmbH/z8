@@ -24,6 +24,31 @@
       "nextYear": "L'année prochaine",
       "previousYear": "L'année précédente"
     },
+    "deputy": {
+      "away": "Absent {dates}",
+      "awayOption": "{name} · Absent {dates}",
+      "awayWarning": "{name} est absent(e) à ces dates. Vous pouvez tout de même le/la choisir.",
+      "changeAction": "Changer de remplaçant",
+      "changed": "Remplaçant enregistré",
+      "changeDescription": "Le remplaçant prend le relais pendant votre absence. Le modifier ne nécessite aucune nouvelle approbation.",
+      "changeDescriptionFor": "Le remplaçant prend le relais pendant l'absence de {name}. Le modifier ne nécessite aucune nouvelle approbation.",
+      "changeFailed": "Impossible d'enregistrer le remplaçant",
+      "changeTitle": "Changer de remplaçant",
+      "contactOnly": "{name} sera uniquement affiché(e) comme contact et ne pourra pas statuer sur les approbations.",
+      "errors": {
+        "ended": "Le remplaçant ne peut plus être modifié : cette absence est terminée.",
+        "required": "Choisissez un remplaçant : ce type d'absence en requiert un.",
+        "self": "Un employé ne peut pas être son propre remplaçant.",
+        "unavailable": "Le remplaçant doit être un employé actif de cette organisation."
+      },
+      "help": "Le collègue qui prend le relais pendant votre absence. Son accord n'est pas requis.",
+      "label": "Remplaçant",
+      "labelOptional": "Remplaçant (facultatif)",
+      "labelRequired": "Remplaçant *",
+      "none": "Aucun remplaçant",
+      "placeholder": "Sélectionner un remplaçant…",
+      "save": "Enregistrer le remplaçant"
+    },
     "dialog": {
       "cancelDescription": "Êtes-vous sûr de vouloir annuler cette demande d'absence ? Cette action est irréversible.",
       "cancelTitle": "Annuler la demande d'absence",
@@ -36,10 +61,10 @@
     },
     "featureName": "gérer les absences",
     "form": {
+      "absenceDays": "Jours d'absence :",
       "absenceType": "Type d'absence *",
       "autoApproved": "(Auto-approuvé)",
       "balanceAfterRequest": "Solde après la demande :",
-      "businessDays": "Jours ouvrables :",
       "daysRemaining": "Jours restants :",
       "description": "Soumettez une demande de congé. Votre responsable sera notifié pour approbation.",
       "duration": "Durée de l'absence",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Aucun risque de couverture publié",
       "noCoverageRulesConfigured": "Aucune règle de couverture configurée pour les postes concernés",
       "noHolidays": "Aucun jour férié assigné dans la période",
+      "noWorkingDays": "Cette période ne contient aucun jour ouvré.",
       "remainingAfter": "Restant après la demande",
       "requested": "Demandé",
       "title": "Planificateur intelligent",
-      "unavailable": "Aperçu de la planification indisponible. Vous pouvez toujours soumettre votre demande."
+      "unavailable": "Aperçu de la planification indisponible. Vous pouvez toujours soumettre votre demande.",
+      "workBalance": "Solde de travail",
+      "workBalanceAfter": "Après la demande",
+      "workBalanceCurrent": "Actuel",
+      "workBalanceDrawn": "Déduit par la demande",
+      "workBalanceNegative": "Votre solde de travail serait négatif après cette demande. Vous pouvez tout de même la soumettre."
     },
     "requestAbsence": "Demander une absence",
+    "sickNotes": {
+      "attachAction": "Joindre un arrêt maladie",
+      "attach": {
+        "defaultTitle": "Arrêt maladie {dateRange}",
+        "description": "Ajoutez des photos ou des PDF de votre arrêt maladie : fichiers PDF, JPEG, PNG ou WebP de 20 Mo maximum chacun. Chaque fichier est enregistré comme un arrêt maladie distinct dans votre dossier du personnel.",
+        "documentDate": "Date du document",
+        "failed": "Échec du téléversement",
+        "fileRequired": "Choisissez au moins un fichier.",
+        "officerDescription": "Ajoutez des photos ou des PDF de l'arrêt de travail : fichiers PDF, JPEG, PNG ou WebP de 20 Mo maximum chacun. Chaque fichier est enregistré comme un arrêt de travail distinct dans le dossier personnel de l'employé.",
+        "progress": "Progression du téléversement",
+        "progressCount": "{done} sur {total} téléversés",
+        "share": "Partager avec l'employé",
+        "sharedNote": "Vous pouvez voir vos arrêts maladie sous Mes documents et sur cette absence. La personne chargée de la validation voit uniquement qu'un arrêt maladie est joint. Vous pouvez supprimer un arrêt maladie dans les 24 heures suivant son téléversement.",
+        "shareHint": "Désactivé : RH uniquement, l'employé voit seulement qu'un arrêt de travail est joint. Activé : l'employé le voit dans Mes documents.",
+        "submit": "Joindre",
+        "success": "{count, plural, one {Arrêt maladie joint} other {# arrêts maladie joints}}",
+        "title": "Joindre un arrêt maladie",
+        "titleLabel": "Titre"
+      },
+      "files": {
+        "chooseFiles": "Choisir des fichiers",
+        "defaultTitleUndated": "Arrêt de travail",
+        "incomplete": "Donnez à chaque arrêt de travail un titre et une date de document.",
+        "remove": "Supprimer {fileName}",
+        "takePhoto": "Prendre une photo",
+        "tooMany": "Vous pouvez ajouter jusqu'à {max} fichiers."
+      },
+      "marker": "Arrêt maladie joint ({count})",
+      "panel": {
+        "delete": "Supprimer {title}",
+        "description": "Arrêts maladie pour l'absence {dateRange}.",
+        "empty": "Aucun arrêt maladie que vous pouvez ouvrir.",
+        "linkExisting": "Associer l'arrêt de travail",
+        "loadFailed": "Impossible de charger les arrêts maladie.",
+        "title": "Arrêts maladie",
+        "unlink": "Dissocier {title}",
+        "unlinked": "Arrêt de travail dissocié",
+        "unlinkFailed": "L'arrêt de travail n'a pas pu être dissocié."
+      },
+      "request": {
+        "attachFailed": "Votre absence a été demandée, mais {files} n'a pas pu être joint. Vous pourrez joindre des arrêts de travail ultérieurement depuis l'absence.",
+        "description": "Ajoutez des photos ou des PDF de votre arrêt de travail : fichiers PDF, JPEG, PNG ou WebP de 20 Mo maximum chacun. Chaque fichier est enregistré comme un arrêt de travail distinct dans votre dossier personnel. Votre approbateur voit seulement qu'un arrêt de travail est joint.",
+        "title": "Arrêt de travail (facultatif)",
+        "uploadFailed": "{fileName} n'a pas pu être importé. Supprimez-le ou réessayez."
+      }
+    },
     "status": {
       "approved": "Approuvé",
       "pending": "En attente",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Saisies de temps bloquées",
       "category": "Catégorie",
+      "deputy": "Remplaçant",
       "duration": "Durée",
       "employee": "Employé",
       "noEvents": "Aucun événement pour ce jour",
@@ -177,6 +255,7 @@
       "category": "Catégorie",
       "credited": "Crédité",
       "dateRange": "Plage de dates",
+      "deputy": "Remplaçant",
       "duration": "Durée",
       "editedBy": "Modifié par",
       "employee": "Employé",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "Semaine",
+      "closedDay": "Dans un mois clôturé",
       "dayEvents": "{count, plural, one {# événement : {titles}} other {# événements : {titles}}}",
       "dayLabel": "{date} : {actual} enregistré, {required} requis, {delta} {status}.",
       "description": "Heures de politique journalières, hebdomadaires et mensuelles",

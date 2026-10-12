@@ -258,6 +258,28 @@
         "previous": "Zrugg"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Als bezahlt bestätigen",
+          "description": "Hat die Lohnabrechnung diesen {format}-Lauf bezahlt? Die Spesenabrechnungen in Ihrem Bereich werden damit als zurückerstattet erfasst. Ihre eigenen Abrechnungen und Abrechnungen ausserhalb Ihres Bereichs verbleiben im Lauf.",
+          "descriptionCounted": "{count, plural, one {Hat die Lohnabrechnung diesen {format}-Lauf bezahlt? # Spesenabrechnung in Ihrem Bereich ({amount}) wird damit als zurückerstattet erfasst. Ihre eigenen Abrechnungen und Abrechnungen ausserhalb Ihres Bereichs verbleiben im Lauf.} other {Hat die Lohnabrechnung diesen {format}-Lauf bezahlt? # Spesenabrechnungen in Ihrem Bereich ({amount}) werden damit als zurückerstattet erfasst. Ihre eigenen Abrechnungen und Abrechnungen ausserhalb Ihres Bereichs verbleiben im Lauf.}}",
+          "failed": "Der Lohnabrechnungslauf konnte nicht bestätigt werden. Bitte versuchen Sie es erneut; nichts wird doppelt erfasst.",
+          "outcome": {
+            "confirmed": "{amount} zurückerstattet",
+            "confirmedWithRemainder": "{amount} zurückerstattet. {remaining} wartet noch auf die Rückerstattung für den nächsten Lauf.",
+            "outOfScope": "Nicht bestätigt: ausserhalb Ihres Bereichs. Es bleibt im Lauf für einen Sachbearbeiter, der dafür zuständig ist.",
+            "overpaidByPayroll": "{amount} zurückerstattet, {overpaid} mehr als noch geschuldet war. Die Ausgabe ist jetzt überzahlt: Erfassen Sie die Rückforderung von Hand.",
+            "ownExpense": "Nicht bestätigt: Ihre eigene Ausgabe. Es bleibt im Lauf, damit jemand anderes sie bestätigt."
+          },
+          "payday": "Zahltag",
+          "paydayHint": "Der Zahltag, an dem die Lohnbuchhaltung diesen Lauf bezahlt hat. Jede Rückerstattung dieses Laufs wird darauf erfasst.",
+          "results": {
+            "nothing": "In diesem Lauf war nichts mehr zu bestätigen. Es wird keine Rückerstattung erfasst.",
+            "summary": "{confirmed} von {total} bestätigt",
+            "title": "Bestätigungsergebnisse"
+          },
+          "submit": "Als bezahlt bestätigen",
+          "title": "Lohnlauf {period} als bezahlt bestätigen"
+        },
         "included": "In {run} enthalten. Sie wird mit dieser Lohnabrechnung bezahlt und als rückerstattet erfasst, sobald der Lauf bestätigt ist.",
         "label": "Lohnlauf {period} ({format})",
         "notIncluded": "Diese Ausgabe ist in keinem Lohnlauf mehr enthalten.",
@@ -266,6 +288,11 @@
         "removeDescription": "Entfernen Sie sie nur, wenn sie nicht mit diesem Lauf über die Lohnabrechnung bezahlt wird, beispielsweise nach einer Korrektur der Lohndatei. Die Entfernung wird im Audit-Log erfasst.",
         "removeFailed": "Die Ausgabe konnte nicht aus dem Lohnlauf entfernt werden.",
         "removeTitle": "Diese Ausgabe aus dem Lohnlauf entfernen?"
+      },
+      "payrollRuns": {
+        "description": "Diese Lohnläufe enthalten Spesenabrechnungen, die auf Rückerstattung warten. Sobald die Lohnbuchhaltung einen Lauf bezahlt hat, bestätigen Sie ihn, um die Rückerstattungen zu erfassen.",
+        "reports": "{count, plural, one {# Spesenabrechnung für Sie zu bestätigen, {amount}} other {# Spesenabrechnungen für Sie zu bestätigen, {amount}}}",
+        "title": "Lohnläufe, die auf Bestätigung warten"
       },
       "queue": {
         "description": "Öffne e Spese, zum d Abrechnig z gseh und e Rückerstattig z erfasse.",
@@ -452,6 +479,7 @@
         "newTrip": "Neui Reis"
       },
       "approvedBy": "Genehmigt vo {name} am {date}.",
+      "approvedByDeputy": "Genehmigt von {name} (Stellvertretung für {actingForName}) am {date}.",
       "awaitingReview": "Wartet uf Überprüefig.",
       "awaitingReviewer": "Wartet uf Überprüefig dur {name}.",
       "backToApprovals": "Zrugg zu de Genehmigunge",
@@ -576,7 +604,9 @@
         "description": "Jede Schritt vo dem Bricht, die älteschte zerscht. Ziite wärded in UTC aazeigt.",
         "detail": {
           "approvalRecorded": "Vo {name}; wartet uf wiiteri Bewilligung.",
+          "approvalRecordedByDeputy": "Von {name} (Stellvertretung für {actingForName}); wartet auf weitere Genehmigung.",
           "by": "Vo {name}",
+          "byDeputy": "Von {name} (Stellvertretung für {actingForName})",
           "inCycle": "Ireichig {number} · {detail}",
           "selfApproved": "Niemert suscht hät dä Bricht chönne überprüefe."
         },
@@ -843,6 +873,7 @@
         "verifying": "Quittig wird überprüeft…"
       },
       "rejectedBy": "Abglehnt vo {name}",
+      "rejectedByDeputy": "Abgelehnt von {name} (Stellvertretung für {actingForName})",
       "reopen": {
         "action": "Für Korrektur wider ufmache",
         "changed": "De Bricht hät sich zwüschezitlich gänderet und isch nöd wider ufgmacht worde. Überprüef en nomal.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Genehmigter vom Mitarbeiter bezahlter Betrag",
       "entry": {
         "exportBatch": "Us em Export aagforderet am {date}",
+        "payrollRun": "Mit Lohnlauf {period} zurückerstattet",
         "recordedBy": "Erfasst von {name}, {date}",
         "recovery": "{amount} zurückerhalten",
         "reimbursement": "{amount} bezahlt"

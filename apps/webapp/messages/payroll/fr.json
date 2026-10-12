@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Suppression du faux positif",
       "dateUnavailable": "Date indisponible",
       "missingClockOut": "Pointage de sortie manquant",
+      "missingIdentifier": "Identifiant manquant",
       "needReview": "{count} blocages de paie nécessitent une vérification",
       "offboardingClockRepair": "Le pointage de sortie lié au départ doit être corrigé",
       "openApprovals": "Approbations en attente",
       "openCalendar": "Ouvrir le calendrier",
+      "openEmployee": "Ouvrir l'employé",
       "openWork": "Travail sans pointage de sortie",
       "openWorkDiagnostics": "Ouvrir les diagnostics de travail",
       "pendingAbsence": "Absence en attente",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds doit être un tableau",
       "employeeIdsMustContainOnlyStrings": "employeeIds ne doit contenir que des chaînes de caractères",
       "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
+      "exportBlockedByMissingIdentifier": "Exportation bloquée : certains employés n'ont pas de valeur pour le champ personnalisé utilisé comme identifiant de paie",
       "exportBlockedByOffboardingClockRepair": "Exportation bloquée : corrigez d'abord le dépointage de départ",
       "exportBlockedByUncertainWork": "Exportation bloquée : résolvez d'abord le travail incertain dans le périmètre sélectionné",
       "exportBlockedByUnresolvedWorkMinutes": "Exportation bloquée : traitez d'abord les minutes de travail à vérifier",
       "exportFormatNotConfigured": "Le format d'exportation de la paie n'est pas configuré",
+      "exportIdentifierChanged": "Le paramètre d'identifiant de paie a été modifié après la collecte de cet export. Lancez un nouvel export.",
       "invalidBlockerId": "ID de blocage de paie invalide",
       "invalidBlockerType": "Type de blocage de paie invalide",
       "mustBeIsoDate": "{field} doit être une date ISO",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Exportation de la paie terminée",
       "formatAccessCheck": "Vérification de l'accès au format",
+      "nobodyEmployedInPeriod": "Aucune personne comprise dans votre accès à la paie n'était employée au cours de cette période.",
       "noConfiguredTarget": "Aucune cible d'exportation de paie configurée",
       "queued": "Exportation de la paie mise en file d'attente",
       "selectFormat": "Sélectionner le format",
-      "target": "Cible d'exportation de la paie"
+      "target": "Cible d'exportation de la paie",
+      "unmappedOvertimePayouts": "{count, plural, one {# paiement d'heures supplémentaires n'a pas été exporté} other {# paiements d'heures supplémentaires n'ont pas été exportés}}",
+      "unmappedOvertimePayoutsDescription": "Aucune rubrique de paie n'est associée aux heures supplémentaires pour ce format. Demandez à un administrateur de l'organisation d'en associer une, ou réglez ces heures d'une autre manière."
     },
     "filters": {
       "noMatchingEmployees": "Aucun employé ne correspond aux filtres de paie sélectionnés."
+    },
+    "formerEmployeesExport": {
+      "description": "Exportez un mois au cours duquel l'un d'entre eux était encore employé : ses dernières heures et ses paiements finaux d'heures supplémentaires seront inclus dans le fichier.",
+      "export": "Exporter",
+      "nextMonth": "Mois suivant",
+      "previousMonth": "Mois précédent",
+      "title": "Exporter la paie des employés ayant quitté l'entreprise"
+    },
+    "onlyFormerEmployees": {
+      "description": "Vous pouvez toujours enregistrer et annuler leurs paiements d'heures supplémentaires, et exporter ci-dessous les mois au cours desquels ils étaient employés.",
+      "title": "Seuls des employés ayant quitté l'entreprise figurent dans votre accès à la paie"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Aucune rubrique de paie n'est associée aux heures supplémentaires pour ce format, l'exportation exclut donc ces paiements. Demandez à un administrateur de l'organisation d'en associer une, ou réglez ces heures d'une autre manière.",
+      "title": "{count, plural, one {# paiement d'heures supplémentaires ne sera pas exporté} other {# paiements d'heures supplémentaires ne seront pas exportés}}"
     },
     "period": {
       "current": "Période actuelle",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Abandonner le cycle de paie",
+        "confirmed": "Ce cycle de paie est déjà confirmé comme payé pour certains rapports, il ne peut donc plus être supprimé. Retirez plutôt les rapports un par un.",
         "description": "{count, plural, one {La # note de frais qu'il contient sera de nouveau en attente de remboursement : le prochain export de paie ou un virement bancaire pourra la prendre en charge. Ne l'abandonnez que si ce fichier n'est pas payé avec la paie.} other {Les # notes de frais qu'il contient seront de nouveau en attente de remboursement : le prochain export de paie ou un virement bancaire pourra les prendre en charge. Ne l'abandonnez que si ce fichier n'est pas payé avec la paie.}}",
         "done": "Cycle de paie abandonné. Ses notes de frais sont de nouveau en attente de remboursement.",
         "failed": "Impossible d'abandonner le cycle de paie.",
@@ -106,6 +129,29 @@
         "outOfScope": "Ce cycle de paie inclut des employés hors de votre périmètre de paie.",
         "title": "Abandonner ce cycle de paie ?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "défini manuellement",
+        "exceptionalItinerary": "itinéraire non couvert par les règles légales",
+        "outsideVerifiedTables": "aucun barème légal vérifié pour ces jours"
+      },
+      "description": "Ces dépenses sont en attente de remboursement, mais un export pour cette période et ce format les exclut. L'export n'est pas bloqué : réglez-les par virement bancaire depuis la file d'attente financière.",
+      "payByBankTransfer": "Payer par virement bancaire",
+      "reason": {
+        "apiConnector": "Ce format est un connecteur API, qui ne transmet jamais les montants des dépenses.",
+        "currencyNotEur": "Pas en euros : les cycles de paie ne prennent en compte que les montants en euros.",
+        "includedInOtherRun": "Inclus dans le cycle de paie non confirmé {period} ({format}).",
+        "legacyClaim": "Les anciennes demandes ne sont jamais réglées par la paie.",
+        "negativeDifference": "Un ajustement a réduit ce que les cycles de paie précédents avaient pris en compte pour : {kinds}.",
+        "noStatutoryBaseline": "Aucune base légale de référence pour : {items}.",
+        "nothingOwed": "Ses lignes de paie ne laissent plus rien à prendre en compte pour la paie.",
+        "reimbursedOutsidePayroll": "Déjà payé en partie par virement bancaire ou récupéré : la paie ne peut pas prendre en charge le reste.",
+        "unmappedWageType": "Aucune rubrique de paie n'est associée pour ce format pour : {kinds}."
+      },
+      "title": "Notes de frais qui ne seront pas prises en compte par ce cycle de paie",
+      "unknownEmployee": "Employé"
     },
     "runs": {
       "description": "Ces exports contiennent des notes de frais en attente de remboursement. Un gestionnaire des notes de frais confirme chaque cycle une fois qu'il a été payé avec la paie ; abandonnez un cycle dont le fichier n'est pas payé.",
@@ -140,6 +186,17 @@
       "description": "Impossible de préparer les données de paie en toute sécurité.",
       "help": "Veuillez réessayer plus tard. Si le problème persiste, contactez un administrateur de l'organisation.",
       "title": "Paie temporairement indisponible"
+    },
+    "workBalances": {
+      "back": "Soldes d'heures",
+      "backToPayroll": "Paie",
+      "description": "Enregistrez et annulez les paiements d'heures supplémentaires pour les employés inclus dans votre périmètre d'accès à la paie, y compris ceux ayant quitté l'entreprise.",
+      "empty": "Aucun employé ne fait encore partie de votre périmètre d'accès à la paie.",
+      "former": "Ancien employé",
+      "loading": "Chargement des soldes d'heures",
+      "loadingEmployee": "Chargement du solde d'heures",
+      "open": "Soldes d'heures",
+      "title": "Soldes d'heures"
     }
   }
 }

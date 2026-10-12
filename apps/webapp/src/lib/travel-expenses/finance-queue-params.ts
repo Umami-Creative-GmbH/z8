@@ -55,6 +55,25 @@ export function parseFinanceQueueView(params: URLSearchParams): FinanceQueueView
 	};
 }
 
+/** The finance page's search param that opens one payroll run's confirm dialog (#853, #855). */
+const CONFIRM_RUN_PARAM = "confirmRun";
+
+/**
+ * Where officers confirm a payroll run: the finance page's "Payroll runs
+ * awaiting confirmation" card, with the run's confirm dialog open.
+ */
+export function payrollRunToConfirmHref(jobId: string): string {
+	return `/travel-expenses/finance?${new URLSearchParams({ [CONFIRM_RUN_PARAM]: jobId })}#payroll-runs`;
+}
+
+/** The payroll run whose confirm dialog the finance page opens; null for none or a malformed id. */
+export function parseConfirmRun(
+	params: Record<string, string | string[] | undefined>,
+): string | null {
+	const value = params[CONFIRM_RUN_PARAM];
+	return typeof value === "string" ? match(value, UUID) : null;
+}
+
 /** The search string of a view, without defaults and without the leading `?`. */
 export function financeQueueSearch(view: FinanceQueueView): string {
 	const params = new URLSearchParams();

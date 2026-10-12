@@ -755,6 +755,91 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		expect(await receipts()).toHaveLength(1);
 	});
 
+	describe("a submitted week the adjustment changes (#805)", () => {
+		async function submitWeek() {
+			await admin.query(
+				`insert into period_submission_cadence_change
+				 (id, organization_id, cadence, week_start_day, changed_at, changed_by)
+				 values ($1, $2, 'weekly', 'monday', '2026-07-01T00:00:00Z', $3)`,
+				[randomUUID(), ids.organization, ids.managerUser],
+			);
+			const { submitPeriodSubmission } = await import(
+				"@/lib/time-tracking/period-submissions/submission-service"
+			);
+			const { db } = await import("@/db");
+			const submitted = await submitPeriodSubmission(
+				{
+					organizationId: ids.organization,
+					userId: ids.requesterUser,
+					periodStartDate: "2026-07-20",
+				},
+				{ database: db, clock: { nowInstant: () => parseInstant("2026-07-26T12:00:00Z") } },
+			);
+			if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+			return submitted.submissionId;
+		}
+
+		async function sentBack(submissionId: string) {
+			const { rows } = await admin.query<{ status: string; metadata: string | null }>(
+				`select s.status, a.metadata from period_submission s
+				 left join audit_log a on a.entity_id = s.id and a.action = 'period_submission.withdrawn'
+				 where s.id = $1`,
+				[submissionId],
+			);
+			return rows.map((row) => ({
+				status: row.status,
+				metadata: row.metadata ? JSON.parse(row.metadata) : null,
+			}));
+		}
+
+		const withdrawnBySystem = [
+			{
+				status: "withdrawn",
+				metadata: expect.objectContaining({ automatic: true, causedByUserId: null }),
+			},
+		];
+
+		it("sends it back when the adjustment recovers from its intent, as a system change", async () => {
+			await workWithLostAdjustment();
+			const submissionId = await submitWeek();
+
+			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
+			expect(await sentBack(submissionId)).toEqual(withdrawnBySystem);
+		});
+
+		it("sends it back when a legacy organization's daily check adjusts the work", async () => {
+			await setAdmission("inactive");
+			actAs(ids.requesterUser);
+			await expect(
+				clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
+			).resolves.toMatchObject({ success: true });
+			// The established adjustment at clock-out is lost: its generated work cannot be written.
+			await admin.query(
+				`create function t305_fail() returns trigger language plpgsql as $$
+				 begin raise exception 't305 injected write failure'; end $$`,
+			);
+			await admin.query(
+				"create trigger t305_fail before insert on work_period for each row execute function t305_fail()",
+			);
+			await expect(
+				clockOut(undefined, undefined, {
+					submissionId: randomUUID(),
+					instant: clockOutAt,
+					browserTimezone: "UTC",
+				}),
+			).resolves.toMatchObject({ success: true });
+			await admin.query("drop function t305_fail() cascade");
+			expect(await periods()).toMatchObject([{ was_auto_adjusted: false }]);
+			const submissionId = await submitWeek();
+
+			await expect(recover(new Date("2026-07-22T12:00:00Z"))).resolves.toMatchObject({
+				adjustedCount: 1,
+				errors: [],
+			});
+			expect(await sentBack(submissionId)).toEqual(withdrawnBySystem);
+		});
+	});
+
 	it.each([
 		["time_entry", "insert"],
 		["time_entry_append_position", "update"],

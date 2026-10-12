@@ -37,6 +37,12 @@ import {
 	type RemoveFromPayrollRunResult,
 	removeReportFromPayrollRun,
 } from "@/lib/travel-expenses/payroll-run";
+import {
+	type ConfirmPayrollRunResult,
+	confirmPayrollRun,
+	listPayrollRunsToConfirm,
+	type PayrollRunToConfirm,
+} from "@/lib/travel-expenses/payroll-run-confirmation";
 import type { IncludedPayrollRun } from "@/lib/travel-expenses/payroll-run-inclusion-read";
 import {
 	parseSettlementCommand,
@@ -88,6 +94,8 @@ function ownerView(account: SettlementAccount): SettlementAccount {
 		...account,
 		// The employee sees nothing new while a payroll run includes the report (#852).
 		payrollRun: null,
+		// Their entries name a confirmed run (#853); its lines and flags are finance's.
+		confirmedPayrollRuns: [],
 		entries: account.entries.map((entry) => ({
 			...entry,
 			recordedByUserId: null,
@@ -397,6 +405,67 @@ export async function removeTravelExpenseFromPayrollRunAction(input: {
 	} catch (error) {
 		logger.error({ error }, "Failed to remove a travel expense from a payroll run");
 		return { success: false, error: "Failed to remove the report from the payroll run" };
+	}
+}
+
+/**
+ * The unconfirmed payroll runs (#853) that include a report the reader may
+ * confirm: expense officers who record reimbursements, owners and admins.
+ * Empty for anyone else; payroll access plays no part.
+ */
+export async function getPayrollRunsToConfirmAction(): Promise<
+	ServerActionResult<PayrollRunToConfirm[]>
+> {
+	try {
+		const actor = await loadFinanceActor();
+		if (!actor?.scopes.settle) return { success: true, data: [] };
+		return {
+			success: true,
+			data: await listPayrollRunsToConfirm(db, {
+				organizationId: actor.organizationId,
+				scope: actor.scopes.settle,
+				actorEmployeeId: actor.employeeId,
+			}),
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to load the payroll runs to confirm");
+		return { success: false, error: "Failed to load the payroll runs" };
+	}
+}
+
+const confirmSchema = z.object({
+	jobId: z.uuid(),
+	payday: z.string().max(10).nullable().optional(),
+});
+
+/**
+ * Confirms a payroll run as paid (#853): records a reimbursement for each
+ * report it includes in the reader's reimbursement scope, never their own,
+ * dated the payday. Every report reports its own outcome; confirming again
+ * records nothing new.
+ */
+export async function confirmPayrollRunAction(
+	input: z.input<typeof confirmSchema>,
+): Promise<ServerActionResult<Exclude<ConfirmPayrollRunResult, { status: "not_found" }>>> {
+	try {
+		const parsed = confirmSchema.safeParse(input);
+		if (!parsed.success) return { success: false, error: "Not found" };
+		const actor = await loadFinanceActor();
+		if (!actor?.scopes.settle) return { success: false, error: "Unauthorized" };
+		const result = await confirmPayrollRun(db, {
+			actor,
+			scope: actor.scopes.settle,
+			jobId: parsed.data.jobId,
+			payday: parsed.data.payday?.trim() || null,
+		});
+		if (result.status === "not_found") return { success: false, error: "Not found" };
+		if (result.status === "processed" && result.rows.some((row) => row.amount !== null)) {
+			revalidatePath("/travel-expenses");
+		}
+		return { success: true, data: result };
+	} catch (error) {
+		logger.error({ error }, "Failed to confirm a payroll run");
+		return { success: false, error: "Failed to confirm the payroll run" };
 	}
 }
 

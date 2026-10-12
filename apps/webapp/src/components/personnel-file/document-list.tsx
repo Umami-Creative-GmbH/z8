@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDownload, IconExternalLink, IconFileText } from "@tabler/icons-react";
+import { IconCalendarOff, IconDownload, IconExternalLink, IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import type { EmployeeDocumentView } from "@/app/[locale]/(app)/personnel-files/actions";
@@ -8,6 +8,7 @@ import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateOnly } from "@/components/ui/date-picker-utils";
+import { formatAbsenceDateRange } from "@/lib/personnel-file/sick-note-labels";
 import {
 	formatFileSize,
 	formatPayPeriod,
@@ -76,6 +77,18 @@ export function DocumentList({
 								: null}
 							{` · ${document.fileName} (${formatFileSize(document.sizeBytes, locale)})`}
 						</p>
+						{document.absence ? (
+							<p className="flex items-center gap-1 text-sm text-muted-foreground">
+								<IconCalendarOff aria-hidden="true" className="size-3.5" />
+								{t("settings.personnelFiles.list.absence", "For sick leave {dateRange}", {
+									dateRange: formatAbsenceDateRange(
+										document.absence.startDate,
+										document.absence.endDate,
+										locale,
+									),
+								})}
+							</p>
+						) : null}
 					</div>
 					<div className="flex items-center gap-1">
 						<Button asChild variant="ghost" size="icon">

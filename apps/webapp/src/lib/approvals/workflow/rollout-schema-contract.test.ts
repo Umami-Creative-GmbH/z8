@@ -520,6 +520,7 @@ const EXPECTED_ENUM_INVENTORY = {
 		"travel_expense",
 		"shift_request",
 		"compliance_exception",
+		"period_submission",
 	],
 	shift_request_status: ["pending", "approved", "rejected", "cancelled"],
 } as const;

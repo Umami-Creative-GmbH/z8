@@ -9,6 +9,7 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
 	type ApprovalDecisionDiagnosticStage,
 	buildApprovalDecisionFailureLog,
@@ -34,6 +35,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -153,7 +155,21 @@ export async function POST(
 					})
 				: false;
 
-		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals) {
+		// The absent approver's covering deputy (#1016); the owners judge the
+		// right again inside the decision transaction.
+		const isCoveringDeputy =
+			!isAssignedApprover &&
+			!isEligibleManager &&
+			!canManageApprovals &&
+			(await coversCurrentApprover(db, {
+				organizationId: currentEmployee.organizationId,
+				entityType: approvalReq.entityType,
+				approverEmployeeId: approvalReq.approverId,
+				actorEmployeeId: currentEmployee.id,
+				at: systemClock.nowInstant(),
+			}));
+
+		if (!isAssignedApprover && !isEligibleManager && !canManageApprovals && !isCoveringDeputy) {
 			return NextResponse.json(
 				{ error: "Approval not found" },
 				{ status: 404 },
@@ -203,6 +219,7 @@ export async function POST(
 							},
 						]
 					: [],
+			...(isCoveringDeputy ? { coveredApproverIds: [approvalReq.approverId] } : {}),
 		});
 
 		logger.info(

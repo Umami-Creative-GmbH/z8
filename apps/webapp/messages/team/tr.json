@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Onaylandı",
+        "changeDeputy": "Vekili değiştir",
+        "changeDeputyOf": "{name} için vekili değiştir",
+        "deputy": "Vekil:",
+        "deputyMissing": "Vekil eksik",
         "description": "Seçili ekip ve yıl için onaylanmış ve beklemede olan izinler.",
         "error": {
           "description": "Lütfen birazdan tekrar deneyin.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} beklemede",
         "title": "Yıllık takvim",
         "totalDays": "{count} devamsız"
+      },
+      "deputyFilter": {
+        "clear": "Tüm izinleri göster",
+        "notice": "Yalnızca bu çalışanın vekil olarak üstlendiği izinler gösteriliyor."
       },
       "description": "Ekibiniz için izin haklarını inceleyin ve onaylanmış izinleri kaydedin.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Kategori",
         "categoryPlaceholder": "Bir izin kategorisi seçin…",
+        "deputy": "Vekil",
         "description": "Seçilen çalışan için doğrudan onaylanmış bir izin kaydedin.",
         "endDate": "Bitiş tarihi",
         "endDateHelper": "Aynı gün süren izinler için boş bırakın.",
@@ -66,6 +75,11 @@
         "required": "{label} gerekli",
         "sickDetail": "Hastalık detayı",
         "sickDetailPlaceholder": "Hastalık detayı seçin…",
+        "sickNotes": {
+          "description": "Size teslim edilen hastalık raporunun fotoğraflarını veya PDF'lerini ekleyin: Her biri en fazla 20 MB boyutunda PDF, JPEG, PNG veya WebP dosyaları. Her dosya, çalışanın özlük dosyasına ayrı bir hastalık raporu olarak kaydedilir ve çalışan bunu görebilir. Daha sonra bu dosyayı yalnızca çalışanın hastalık raporlarını yöneten kişiler açabilir.",
+          "title": "Hastalık raporu (isteğe bağlı)"
+        },
+        "sickNotesFailed": "Devamsızlık kaydedildi ancak {files} eklenemedi. Hastalık raporlarını yöneten bir kişi bunları daha sonra ekleyebilir.",
         "startDate": "Başlangıç tarihi",
         "submit": "İzin kaydet",
         "success": "İzin kaydedildi",
@@ -116,6 +130,51 @@
       "next": "İleri",
       "previous": "Geri",
       "showing": "{total} sonuçtan {from} - {to} arası gösteriliyor"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Kuruluş ayarlarından bir gönderim sıklığı seçin",
+      "columns": {
+        "calendar": "Takvim",
+        "employee": "Çalışan",
+        "period": "Dönem",
+        "status": "Durum"
+      },
+      "descriptionAll": "Seçilen dönemi kimlerin gönderdiği. Gönderimleri onay gelen kutusunda onaylayın veya reddedin.",
+      "descriptionManaged": "Yönettiğiniz çalışanlardan kimlerin seçilen dönemi gönderdiği. Gönderimleri onay gelen kutusunda onaylayın veya reddedin.",
+      "empty": "Görüntüleyebildiğiniz hiç kimseden bu dönemi göndermesi beklenmiyor.",
+      "loading": "Dönem gönderimleri yükleniyor",
+      "notSubmitted": "Gönderilmedi",
+      "off": "Kuruluşunuz dönem gönderimi toplamıyor.",
+      "openCalendar": "Takvim",
+      "openCalendarOf": "{name} adlı kişinin takvimini aç",
+      "openInbox": "Onay gelen kutusunu aç",
+      "owing": "{count, plural, other {# çalışan bu dönemi henüz göndermedi.} }",
+      "period": "Gönderim dönemi",
+      "running": "Bu dönem hâlâ devam ediyor. Çalışanlar dönemi son gününden itibaren gönderebilir.",
+      "status": {
+        "approved": "Onaylandı",
+        "awaiting": "Gönderim bekleniyor",
+        "rejected": "Reddedildi",
+        "sentBack": "Bir değişiklik sonrasında geri gönderildi",
+        "submitted": "Gönderildi"
+      },
+      "summary": "Durumlar",
+      "title": "Dönem gönderimleri"
+    },
+    "presence": {
+      "allLocations": "Tüm konumlar",
+      "columns": {
+        "name": "Ad",
+        "since": "Başlangıç",
+        "state": "Durum"
+      },
+      "description": "Orada kimin giriş yaptığını veya molada olduğunu görmek için bir konum seçin.",
+      "descriptionAll": "Bu konuma atanmış, giriş yapmış veya molada olan çalışanlar.",
+      "descriptionManaged": "Yönettiğiniz, bu konuma atanmış ve giriş yapmış veya molada olan çalışanlar.",
+      "empty": "Şu anda bu konumda görebileceğiniz kimse giriş yapmamış.",
+      "locationTitle": "Kimler işte: {location}",
+      "noLocations": "Kuruluşunuzun henüz etkin bir konumu yok.",
+      "title": "Kimler işte"
     },
     "primaryManager": "Birincil yöneticisiniz",
     "search": {

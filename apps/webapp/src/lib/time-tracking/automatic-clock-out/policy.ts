@@ -1,5 +1,12 @@
 import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
-import type { AutoClockOutSettings } from "./types";
+import type { AutoClockOutDecision, AutoClockOutSettings } from "./types";
+
+/** Where a decided automatic closure ends: the cutoff, or an earlier break start (#861). */
+export function autoClockOutClosureEnd(
+	decision: Pick<AutoClockOutDecision, "cutoff" | "closesAt">,
+): Instant {
+	return decision.closesAt ?? decision.cutoff;
+}
 
 export function effectiveAutoClockOutSettings(
 	stored: AutoClockOutSettings | null,

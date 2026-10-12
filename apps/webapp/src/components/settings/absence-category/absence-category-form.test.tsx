@@ -58,6 +58,8 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
+			deputyRequired: false,
 			color: "#3b82f6",
 			isActive: true,
 		});
@@ -74,6 +76,8 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
+			deputyRequired: true,
 			color: null,
 			isActive: false,
 		};
@@ -87,6 +91,8 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
+			deputyRequired: true,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -98,6 +104,7 @@ describe("absence category form helpers", () => {
 				...defaultAbsenceCategoryFormValues,
 				name: "  Training  ",
 				description: "  Planned training time  ",
+				deputyRequired: true,
 				isActive: false,
 			}),
 		).toEqual({
@@ -109,6 +116,8 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
+			deputyRequired: true,
 			color: "#3b82f6",
 			isActive: false,
 		});
@@ -140,6 +149,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: true,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: "#ef4444",
 			isActive: true,
 		};
@@ -153,6 +163,7 @@ describe("absence category form helpers", () => {
 			requiresWorkTime: false,
 			requiresApproval: false,
 			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
 			color: "#8b5cf6",
 			isActive: false,
 		};
@@ -183,5 +194,130 @@ describe("absence category form helpers", () => {
 		);
 
 		expect((screen.getByLabelText("Name") as HTMLInputElement).value).toBe("Parental leave");
+	});
+
+	it.each([["Counts Against Vacation Balance"], ["Requires Work Time"]])(
+		"refuses to save a category that draws on the work balance and %s",
+		async (combined) => {
+			const { createAbsenceCategory } = await import(
+				"@/app/[locale]/(app)/settings/vacation/actions"
+			);
+			vi.mocked(createAbsenceCategory).mockClear();
+			render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+
+			fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Overtime off" } });
+			fireEvent.click(screen.getByRole("checkbox", { name: "Draws on Work Balance" }));
+			fireEvent.click(screen.getByRole("checkbox", { name: combined }));
+			fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+
+			expect(
+				await screen.findByText(
+					'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+				),
+			).toBeTruthy();
+			expect(createAbsenceCategory).not.toHaveBeenCalled();
+		},
+	);
+
+	it("saves a category that draws on the work balance", async () => {
+		const { createAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(createAbsenceCategory).mockReset();
+		vi.mocked(createAbsenceCategory).mockResolvedValue({
+			success: true,
+			data: {} as never,
+		});
+		render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+
+		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Overtime off" } });
+		fireEvent.click(screen.getByRole("checkbox", { name: "Draws on Work Balance" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+
+		await vi.waitFor(() =>
+			expect(createAbsenceCategory).toHaveBeenCalledWith(
+				expect.objectContaining({
+					drawsOnWorkBalance: true,
+					countsAgainstVacation: false,
+					requiresWorkTime: false,
+				}),
+			),
+		);
+	});
+
+	it("saves the Deputy required setting (#1011)", async () => {
+		const { createAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(createAbsenceCategory).mockResolvedValue({ success: false, error: "stop" });
+		render(<AbsenceCategoryForm open={true} onOpenChange={vi.fn()} organizationId="org_1" />);
+		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "On-call leave" } });
+		fireEvent.click(screen.getByRole("checkbox", { name: "Deputy required" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Category" }));
+
+		await vi.waitFor(() =>
+			expect(createAbsenceCategory).toHaveBeenCalledWith(
+				expect.objectContaining({ name: "On-call leave", deputyRequired: true }),
+			),
+		);
+	});
+
+	it("keeps Deputy required off for sick leave (#1011)", async () => {
+		const { updateAbsenceCategory } = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
+		vi.mocked(updateAbsenceCategory).mockResolvedValue({ success: false, error: "stop" });
+		const sick: AbsenceCategoryForSettings = {
+			id: "category_sick",
+			type: "sick",
+			name: "Sick leave",
+			description: null,
+			nameTranslations: null,
+			descriptionTranslations: null,
+			requiresWorkTime: false,
+			requiresApproval: false,
+			countsAgainstVacation: false,
+			drawsOnWorkBalance: false,
+			deputyRequired: true,
+			color: null,
+			isActive: true,
+		};
+		render(
+			<AbsenceCategoryForm
+				open={true}
+				onOpenChange={vi.fn()}
+				organizationId="org_1"
+				existingCategory={sick}
+			/>,
+		);
+		const checkbox = screen.getByRole("checkbox", { name: "Deputy required" });
+		expect(checkbox.getAttribute("aria-disabled")).toBe("true");
+		expect(checkbox.getAttribute("aria-checked")).toBe("false");
+		expect(screen.getByText("Sick leave never requires a deputy.")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: /save|update/i }));
+		await vi.waitFor(() =>
+			expect(updateAbsenceCategory).toHaveBeenCalledWith(
+				"category_sick",
+				expect.objectContaining({ deputyRequired: false }),
+			),
+		);
+	});
+});
+
+describe("canRequireDeputy (#1011)", () => {
+	it("allows Deputy required for every category type but sick leave", async () => {
+		const { canRequireDeputy } = await import("@/lib/absences/deputy");
+		expect(canRequireDeputy("sick")).toBe(false);
+		for (const type of [
+			"vacation",
+			"home_office",
+			"personal",
+			"parental",
+			"custom",
+			"time_off_in_lieu",
+		]) {
+			expect(canRequireDeputy(type)).toBe(true);
+		}
 	});
 });

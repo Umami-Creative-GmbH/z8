@@ -16,6 +16,10 @@
       "label": "Verrechebar",
       "noCustomer": "Nur Arbet an eme Projekt mit emne Chund cha verrechebar si"
     },
+    "breakInProgress": {
+      "description": "Sie sind in der Pause",
+      "since": "I de Pause sit {time}"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Du häsch usgstämplet!",
     "clockIn": "Iistämple",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Nur Arbet an eme Projekt, wo en Chund hät, cha verrechebar si",
       "breakAwaitingApproval": "Dä Arbetszytruum wartet no uf d Freigab und cha nid bearbeitet wärde. Füeg d Pause dezue, sobald das erledigt isch.",
       "breakDurationInvalid": "Gib e Pauseduur vo mindestens 1 Minute ii.",
+      "breakInProgressOpen": "Du bisch i de Pause. Mach zersch witer, bevor d e neui Pause afangsch.",
       "breakNotAllowed": "Du chasch zu däre Arbet keni Pause hinzuefüege.",
       "breakOccupied": "D Pause überschniidet sich mit anderne erfasste Arbetszyte.",
       "breakPendingCorrection": "E Gnähmigung für d Zitchorrektur isch für dä Arbetszytruum scho hängig. Füeg d Pause dezue, sobald das erledigt isch.",
@@ -84,12 +89,14 @@
       "breakTooLong": "D Pauseduur mues chürzer sy als dini aktuelli Sitzig.",
       "clockAttributionNotAllowed": "S usgwählte Projekt oder die Kategorie isch nid verfügbar",
       "clockCommandRejected": "De Server het die Stämpelaktion nid akzeptiert",
+      "clockConnectionRequired": "Fürs Stämpfle bruucht's e Verbindig i dere Organisation. Bitte neu verbinde und nomol probiere.",
       "clockInAppendReview": "Dini Zithistorie mues überprüft wärde, bevor du di iistämple chasch. Bitte kontaktier din Administrator.",
       "clockInCollision": "Das Iistämple kollidiert mit ere früenerige Aafraag. Bitte aktualisier d Aazeig und probier's nomal.",
       "clockInFailed": "Iistämple nöd möglich",
       "clockInNotAllowed": "Du chasch di nöd iistämpfle.",
       "clockInOccupied": "Die Ziit überschniidet sich mit andere erfasste Arbete",
       "clockInRetry": "Iistämpfle hät nöd funktioniert. Bitte probier's nomal.",
+      "clockMonthClosed": "Die Ziit isch imene gschlossene Monet und chan nöd gänderet werde, bis de Monet wider ufgmacht wird.",
       "clockNotAllowedAtTime": "Stämpfle isch zu dere Ziit nöd erlaubt",
       "clockOutAppendReview": "Dini Ziithistorie muess überprüeft werde, bevor du di uusstämpfle chasch. Bitte kontaktier din Administrator.",
       "clockOutBeforeClockIn": "Uusstämpfle muess nach em Iistämpfle sii",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Die Ufgab ghört zu me andere Projekt",
       "taskProjectNotBookable": "Uf s Projekt vo dere Ufgab cha kei Ziit meh buecht werde",
       "workCategoryNotAllowed": "Chan dere Arbetskategorie nöd zuegordnet werde"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Iistämpfle",
+        "clockOut": "Usstämpfle",
+        "endDay": "Tag beände",
+        "resume": "Witer schaffe",
+        "startBreak": "Pause starte"
+      },
+      "board": {
+        "empty": "Im Momänt isch niemert iigstämpflet.",
+        "title": "Wer isch da"
+      },
+      "done": {
+        "button": "Fertig",
+        "clockIn": "Iigstämpflet",
+        "clockOut": "Usgstämpflet",
+        "endDay": "Tag beändet",
+        "endDayNote": "Diin Tag het am Aafang vo de Pause gändet.",
+        "resume": "Zrugg zur Arbet",
+        "returning": "Zrugg zum Start in {seconds} s",
+        "startBreak": "Pause gstartet",
+        "title": "Fertig"
+      },
+      "employee": {
+        "back": "Abbräche",
+        "endDayHint": "Wenn de Tag jetzt beändisch, hört dini Arbet am Aafang vo de Pause uf.",
+        "today": "Hüt: {duration}"
+      },
+      "home": {
+        "empty": "A däm Standort isch no niemert zueteilt. Frag diin Admin.",
+        "loadFailed": "D Näme händ nöd chönne glade werde. Überprüef d Netzwerkverbindig.",
+        "loading": "Näme wärded glade…",
+        "noMatch": "Kei Name passt zu dinere Suech.",
+        "search": "Find din Name",
+        "title": "Tipp uf din Name zum Ii- oder Usstämple"
+      },
+      "loading": "Kiosk wird gstartet…",
+      "offline": {
+        "banner": "De Kiosk isch offline. Stämple isch erscht wider möglich, wenn d Verbindig zrugg isch.",
+        "refused": "De Kiosk isch offline. Es isch nüt erfasst worde; Stämple funktioniert nume online."
+      },
+      "pairing": {
+        "codeDescription": "De Code funktioniert eimol und lauft 10 Minute noch de Usgab ab.",
+        "codeLabel": "Koppligscode",
+        "description": "En Inhaber oder Admin erstellt de Kiosk unter Istellige › Kioske und git dir en Koppligscode.",
+        "invalidCode": "Dä Code isch ungültig oder abglaufe. Frag din Admin noch eme neue Koppligscode.",
+        "malformedCode": "Gib de 10-stellig Code genau so ii, wie er i de Istellige aazeigt wird.",
+        "rateLimited": "Z vill Versüech. Wart e paar Minute und probier's dänn nomol.",
+        "submit": "Das Grät kopple",
+        "title": "Dä Kiosk iirichte",
+        "unreachable": "De Kiosk cha de Server nöd erreiche. Überprüef d Netzwerkverbindig und probier's nomol."
+      },
+      "pin": {
+        "back": "Nöd du? Zrugg",
+        "checking": "Wird überprüft…",
+        "delete": "Letschti Ziffere lösche",
+        "entered": "{count} Ziffere iigee",
+        "locked": "Z vill falschi PINs. Din PIN isch bis {time} gsperrt. Probier's dänn nomol oder frag din Vorgesetzte, ihn z entsperre.",
+        "none": "Du häsch no kei Kiosk-PIN. Frag din Vorgesetzte noch eim.",
+        "notAssigned": "Du chasch a däm Kiosk nöd stämple. Frag din Vorgesetzte.",
+        "prompt": "Gib din Kiosk-PIN ii",
+        "rateLimited": "Z vill PIN-Versüech a däm Kiosk. Probier's in {seconds} Sekunde nomol.",
+        "submit": "OK",
+        "wrong": "Dieser PIN ist nicht korrekt. Versuchen Sie es erneut."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Sie sind bereits eingestempelt.",
+        "billing": "Stempeln ist für Ihre Organisation derzeit nicht verfügbar. Wenden Sie sich an Ihren Administrator.",
+        "generic": "Das hat nicht funktioniert. Es wurde nichts erfasst. Versuchen Sie es erneut oder fragen Sie Ihre Führungskraft.",
+        "holiday": "Stempeln ist heute aufgrund eines Feiertags blockiert. Fragen Sie Ihre Führungskraft.",
+        "monthClosed": "Die Ziit isch imene gschlossene Monet und chan nöd gänderet werde. Frög din Manager.",
+        "noBreak": "Sie sind nicht in einer Pause.",
+        "notClockedIn": "Sie sind nicht eingestempelt.",
+        "onBreak": "Sie sind bereits in einer Pause.",
+        "unconfirmed": "Der Kiosk konnte nicht bestätigen, ob dies gespeichert wurde. Überprüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
+        "underReview": "Ihre Arbeitszeit für heute wird überprüft. Fragen Sie Ihre Führungskraft."
+      },
+      "retry": "Erneut versuchen",
+      "revoked": {
+        "description": "Dieser Kiosk kann nicht mehr zum Stempeln verwendet werden. Bitte wenden Sie sich an Ihren Administrator.",
+        "pairAgain": "Mit neuem Code koppeln",
+        "title": "Kiosk widerrufen"
+      },
+      "state": {
+        "clockedIn": "Eingestempelt seit {time}",
+        "clockedOut": "Nicht eingestempelt",
+        "onBreak": "In Pause seit {time}"
+      },
+      "unreachableDescription": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung; Stempeln funktioniert nur online.",
+      "unreachableTitle": "Kiosk offline"
     },
     "manualEntry": {
       "addButton": "Manuelle Iitrag erfasse",
@@ -198,6 +296,39 @@
     "noProject": "Kei Projekt",
     "notesPlaceholder": "A was häsch gschaffet?",
     "notesSaved": "Notize gspicheret",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "E Abwäseheitsafrag für {dates} isch no unentschide.",
+        "liveWork": "D Arbet, wo am {start} agfange hät, lauft immer no.",
+        "manualWork": "Manuelle Arbeit am {start} ist noch nicht entschieden.",
+        "timeCorrection": "Eine Zeitkorrektur für Arbeit am {start} ist noch nicht entschieden."
+      },
+      "description": "Bestätige, dass deine Arbeit und Absenzen für jede Periode vollständig und korrekt sind.",
+      "opensOn": "Du kannst ab {date} einreichen.",
+      "refusal": {
+        "alreadySubmitted": "Diese Periode wurde bereits eingereicht.",
+        "noApprover": "Niemand kann diese Periode bisher genehmigen. Bitte einen Administrator, dir eine vorgesetzte Person zuzuweisen.",
+        "notEnded": "Du kannst diese Periode ab ihrem letzten Tag einreichen.",
+        "notExpected": "Diese Periode muss nicht eingereicht werden.",
+        "periodOpen": "Diese Periode ist noch offen"
+      },
+      "rejectionReason": "Grund: {reason}",
+      "status": {
+        "approved": "Genehmigt",
+        "awaiting": "Wartet auf Einreichung",
+        "rejected": "Abgelehnt",
+        "sentBack": "Nach einer Änderung zurückgesendet",
+        "submitted": "Eingereicht"
+      },
+      "submit": "Einreichen",
+      "submitFailed": "Die Periode konnte nicht eingereicht werden",
+      "submitted": "Periode zur Genehmigung eingereicht",
+      "title": "Periodeneinreichungen",
+      "withdraw": "Zurückziehen",
+      "withdrawFailed": "Die Einreichung konnte nicht zurückgezogen werden",
+      "withdrawn": "Einreichung zurückgezogen",
+      "withdrawRefused": "Über diese Einreichung wurde bereits entschieden und sie kann nicht mehr zurückgezogen werden."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Pause hinzuefüege",

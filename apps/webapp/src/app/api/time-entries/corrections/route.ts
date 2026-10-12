@@ -57,6 +57,7 @@ import {
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { isWorkLocationType } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 
 const UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -667,7 +668,7 @@ export async function POST(request: NextRequest) {
 		if (error instanceof ClockingAccessError) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
 		}
-		const failure = describeAmendmentFailure(error);
+		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 		if (failure) {
 			return NextResponse.json(
 				{ error: failure.message, code: failure.code },

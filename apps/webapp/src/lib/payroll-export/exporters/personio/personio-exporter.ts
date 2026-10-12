@@ -5,6 +5,12 @@
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault/secrets";
+import {
+	CUSTOM_FIELD_IDENTIFIER,
+	customFieldMatchError,
+	type PayrollIdentityRow,
+	requirePersonnelIdentifier,
+} from "../../personnel-identifier";
 import type {
 	AbsenceData,
 	ApiExportResult,
@@ -28,9 +34,17 @@ const logger = createLogger("PersonioExporter");
 const SYNC_THRESHOLD = 500; // Max records for sync export
 
 export function selectPersonioEmployeeIdentifier(
-	record: { employeeNumber: string | null; email?: string | null },
+	record: Partial<PayrollIdentityRow> & { employeeNumber: string | null; email?: string | null },
 	strategy: PersonioConfig["employeeMatchStrategy"],
 ): string | null {
+	// The frozen custom field value, matched against the Personio personnel number (#821).
+	if (strategy === CUSTOM_FIELD_IDENTIFIER) {
+		return requirePersonnelIdentifier({
+			employeeId: record.employeeId ?? "",
+			employeeNumber: record.employeeNumber,
+			personnelIdentifier: record.personnelIdentifier,
+		});
+	}
 	const identifier =
 		strategy === "email" ? record.email : record.employeeNumber;
 	return identifier || null;
@@ -64,14 +78,16 @@ export class PersonioExporter implements IPayrollExporter {
 
 		if (
 			personioConfig.employeeMatchStrategy &&
-			!["employeeNumber", "email"].includes(
+			!["employeeNumber", "email", CUSTOM_FIELD_IDENTIFIER].includes(
 				personioConfig.employeeMatchStrategy,
 			)
 		) {
 			errors.push(
-				"Employee match strategy must be 'employeeNumber' or 'email'",
+				"Employee match strategy must be 'employeeNumber', 'email' or 'customField'",
 			);
 		}
+		const customFieldError = customFieldMatchError(config);
+		if (customFieldError) errors.push(customFieldError);
 
 		if (
 			personioConfig.batchSize !== undefined &&

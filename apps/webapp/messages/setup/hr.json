@@ -1,0 +1,60 @@
+{
+  "init": {
+    "activating": "Postavljanje vašeg radnog prostora...",
+    "checking": "Provjera sesije...",
+    "clickToSelect": "Kliknite za odabir",
+    "redirecting": "Preusmjeravanje...",
+    "selectOrganization": "Odaberite organizaciju",
+    "selectOrganizationDescription": "Odaberite organizaciju s kojom želite raditi"
+  },
+  "setup": {
+    "authorization": {
+      "expiry": "Poveznica se može iskoristiti jednom unutar jednog sata. Dovršite postavljanje u roku od deset minuta od njezina otvaranja. Ako autorizacija istekne, pričekajte da istekne prvotnih sat vremena i ponovno pokrenite poslužitelj kako biste generirali novu poveznicu.",
+      "instructions": "Otvorite privremenu poveznicu za postavljanje ispisanu u konzoli poslužitelja pri pokretanju ove instance.",
+      "title": "Potrebna je autorizacija za postavljanje"
+    },
+    "button": {
+      "create": "Stvori administratorski račun",
+      "creating": "Stvaranje računa..."
+    },
+    "complete_message": "Vaš administratorski račun platforme je stvoren.",
+    "complete_title": "Postavljanje je dovršeno!",
+    "continue_to_sign_in": "Nastavite na prijavu",
+    "creating_account": "Stvaranje vašeg administratorskog računa...",
+    "description": "Postavite prvi administratorski račun za svoju platformu. Ovaj će račun imati potpuni pristup sustavu i odvojen je od računa organizacija.",
+    "error": {
+      "password_lowercase": "Lozinka mora sadržavati barem jedno malo slovo",
+      "password_max_length": "Lozinka smije imati najviše 128 znakova",
+      "password_min_length": "Lozinka mora imati najmanje 12 znakova",
+      "password_number": "Lozinka mora sadržavati barem jedan broj",
+      "password_required": "Lozinka je obavezna",
+      "passwords_mismatch": "Lozinke se ne podudaraju",
+      "password_uppercase": "Lozinka mora sadržavati barem jedno veliko slovo"
+    },
+    "field": {
+      "confirm_password": "Potvrdite lozinku",
+      "confirm_password_placeholder": "Potvrdite svoju lozinku",
+      "email": "Adresa e-pošte",
+      "email_placeholder": "admin@yourcompany.com",
+      "name": "Ime i prezime",
+      "name_placeholder": "Unesite svoje ime i prezime",
+      "password": "Lozinka",
+      "password_placeholder": "Stvorite jaku lozinku"
+    },
+    "hide_password": "Sakrij lozinku",
+    "layout": {
+      "subtitle": "Konfigurirajte svoju platformu kako biste započeli",
+      "title": "Početno postavljanje"
+    },
+    "password": {
+      "lowercase": "Malo slovo",
+      "min_length": "12+ znakova",
+      "number": "Broj",
+      "uppercase": "Veliko slovo"
+    },
+    "please_wait": "Pričekajte dok sve postavimo",
+    "show_password": "Prikaži lozinku",
+    "sign_in_with": "Sada se možete prijaviti s",
+    "title": "Stvori administratora platforme"
+  }
+}

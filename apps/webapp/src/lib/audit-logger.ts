@@ -55,6 +55,14 @@ export enum AuditAction {
 	ABSENCE_APPROVED = "absence.approved",
 	ABSENCE_REJECTED = "absence.rejected",
 	ABSENCE_CANCELLED = "absence.cancelled",
+	/** An attached sick note turned "without certificate" into "with certificate" (#982). */
+	ABSENCE_SICK_DETAIL_CHANGED = "absence.sick_detail_changed",
+	/** An absence's deputy was named, changed or removed (#1011). */
+	ABSENCE_DEPUTY_CHANGED = "absence.deputy_changed",
+
+	// Balance adjustments (#993): opening balances and overtime payouts
+	BALANCE_ADJUSTMENT_RECORDED = "balance_adjustment.recorded",
+	BALANCE_ADJUSTMENT_CANCELLED = "balance_adjustment.cancelled",
 
 	// Approval Operations
 	APPROVAL_SUBMITTED = "approval.submitted",
@@ -87,12 +95,16 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED = "travel_expense.allowance_override_authorized",
 	TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED = "travel_expense.allowance_override_revoked",
 	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_REMOVED = "travel_expense.payroll_run_report_removed",
+	// #853: a payroll run confirmed as paid recorded the report's reimbursement.
+	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_CONFIRMED = "travel_expense.payroll_run_report_confirmed",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
 	APPROVAL_ESCALATION_CONFLICTS_REVIEWED = "approval_escalation.conflicts_reviewed",
 	APPROVAL_ESCALATION_ATTENTION_DISPOSED = "approval_escalation.attention_disposed",
 	APPROVAL_ESCALATION_TRANSFERRED = "approval_escalation.transferred",
+	// "Deputies can decide approvals" turned on or off (#1015)
+	APPROVAL_SETTING_DEPUTY_DECISIONS_CHANGED = "approval_setting.deputy_decisions_changed",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
@@ -142,9 +154,41 @@ export enum AuditAction {
 	PERSONNEL_FILE_PAYSLIP_BATCH_CONFIRMED = "personnel_file.payslip_batch_confirmed",
 	PERSONNEL_FILE_DOCUMENT_PURGED = "personnel_file.document_purged",
 	PERSONNEL_FILE_RETENTION_CHANGED = "personnel_file.retention_changed",
+	// Closed months (#762), written in the close's or reopening's transaction
+	CLOSED_MONTH_CLOSED = "closed_month.closed",
+	CLOSED_MONTH_REOPENED = "closed_month.reopened",
+	CLOSED_MONTH_SETTINGS_CHANGED = "closed_month.settings_changed",
+	// Period submissions (#805), written in the transaction of the change
+	PERIOD_SUBMISSION_SUBMITTED = "period_submission.submitted",
+	PERIOD_SUBMISSION_APPROVED = "period_submission.approved",
+	/** One stage of a multi-stage chain approved; the submission stays pending. */
+	PERIOD_SUBMISSION_STAGE_APPROVED = "period_submission.stage_approved",
+	PERIOD_SUBMISSION_REJECTED = "period_submission.rejected",
+	/** By the employee (#1060) or automatically after a change (#1062): see `closedCause`. */
+	PERIOD_SUBMISSION_WITHDRAWN = "period_submission.withdrawn",
+	/** An approval that went out of date after a change (#1062). */
+	PERIOD_SUBMISSION_OUTDATED = "period_submission.outdated",
 	// Personnel file ZIP download (#871)
 	PERSONNEL_FILE_ZIP_DOWNLOADED = "personnel_file.zip_downloaded",
 	PERSONNEL_FILE_ZIP_DOWNLOAD_ABORTED = "personnel_file.zip_download_aborted",
+	// Sick notes linked to or unlinked from an absence by an officer (#984)
+	PERSONNEL_FILE_SICK_NOTE_LINKED = "personnel_file.sick_note_linked",
+	PERSONNEL_FILE_SICK_NOTE_UNLINKED = "personnel_file.sick_note_unlinked",
+
+	// ICS Feed Operations (#991)
+	ICS_FEED_CREATED = "ics_feed.created",
+	ICS_FEED_REGENERATED = "ics_feed.regenerated",
+	ICS_FEED_REVOKED = "ics_feed.revoked",
+
+	// Public API key lifecycle (#763); key usage goes to the key request log instead
+	API_KEY_CREATED = "api_key.created",
+	API_KEY_UPDATED = "api_key.updated",
+	API_KEY_REVOKED = "api_key.revoked",
+
+	// Report share links (#806); recipient views go to the share link view log instead
+	REPORT_SHARE_LINK_CREATED = "report_share_link.created",
+	REPORT_SHARE_LINK_REVOKED = "report_share_link.revoked",
+	REPORT_SHARE_LINK_AUTO_REVOKED = "report_share_link.auto_revoked",
 
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
@@ -207,6 +251,27 @@ export enum AuditAction {
 	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
 	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
 
+	// Custom field definitions (#817)
+	CUSTOM_FIELD_CREATED = "custom_field.created",
+	CUSTOM_FIELD_RENAMED = "custom_field.renamed",
+	CUSTOM_FIELD_UPDATED = "custom_field.updated",
+	CUSTOM_FIELD_REORDERED = "custom_field.reordered",
+	CUSTOM_FIELD_ARCHIVED = "custom_field.archived",
+	CUSTOM_FIELD_RESTORED = "custom_field.restored",
+	CUSTOM_FIELD_OPTION_ADDED = "custom_field.option_added",
+	CUSTOM_FIELD_OPTION_RENAMED = "custom_field.option_renamed",
+	CUSTOM_FIELD_OPTION_REORDERED = "custom_field.option_reordered",
+	CUSTOM_FIELD_OPTION_ARCHIVED = "custom_field.option_archived",
+	CUSTOM_FIELD_OPTION_RESTORED = "custom_field.option_restored",
+	// Custom field values (#818): on the employee, project or customer record.
+	CUSTOM_FIELD_VALUE_SET = "custom_field_value.set",
+	CUSTOM_FIELD_VALUE_CHANGED = "custom_field_value.changed",
+	CUSTOM_FIELD_VALUE_CLEARED = "custom_field_value.cleared",
+	// Tracked custom field history (#819): dated entries added, corrected or deleted.
+	CUSTOM_FIELD_VALUE_HISTORY_ADDED = "custom_field_value.history_added",
+	CUSTOM_FIELD_VALUE_HISTORY_CORRECTED = "custom_field_value.history_corrected",
+	CUSTOM_FIELD_VALUE_HISTORY_DELETED = "custom_field_value.history_deleted",
+
 	// Location Operations
 	LOCATION_CREATED = "location.created",
 	LOCATION_UPDATED = "location.updated",
@@ -218,6 +283,37 @@ export enum AuditAction {
 	SUBAREA_DELETED = "subarea.deleted",
 	SUBAREA_EMPLOYEE_ASSIGNED = "subarea.employee_assigned",
 	SUBAREA_EMPLOYEE_REMOVED = "subarea.employee_removed",
+	// Assigned locations (#858): where an employee works, distinct from supervisors
+	ASSIGNED_LOCATION_ADDED = "location.assigned_employee_added",
+	ASSIGNED_LOCATION_REMOVED = "location.assigned_employee_removed",
+
+	// Kiosk PINs and kiosk-only employees (#857)
+	KIOSK_PIN_ISSUED = "kiosk_pin.issued",
+	KIOSK_PIN_RESET = "kiosk_pin.reset",
+	KIOSK_PIN_UNLOCKED = "kiosk_pin.unlocked",
+	KIOSK_PIN_CHANGED = "kiosk_pin.changed",
+	KIOSK_ONLY_EMPLOYEE_CREATED = "kiosk_only_employee.created",
+	KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED = "kiosk_only_employee.email_added",
+
+	// Kiosk enrolment (#859)
+	KIOSK_CREATED = "kiosk.created",
+	KIOSK_UPDATED = "kiosk.updated",
+	KIOSK_PAIRING_CODE_ISSUED = "kiosk.pairing_code_issued",
+	KIOSK_PAIRED = "kiosk.paired",
+	KIOSK_TOKEN_ROTATED = "kiosk.token_rotated",
+	KIOSK_REVOKED = "kiosk.revoked",
+
+	// Scheduled exports (#988): the schedule lifecycle and one entry per run. Automatic
+	// actions are attributed to the schedule owner.
+	SCHEDULED_EXPORT_CREATED = "scheduled_export.created",
+	SCHEDULED_EXPORT_UPDATED = "scheduled_export.updated",
+	SCHEDULED_EXPORT_DELETED = "scheduled_export.deleted",
+	SCHEDULED_EXPORT_PAUSED = "scheduled_export.paused",
+	SCHEDULED_EXPORT_RESUMED = "scheduled_export.resumed",
+	SCHEDULED_EXPORT_RUN_REQUESTED = "scheduled_export.run_requested",
+	SCHEDULED_EXPORT_OWNER_CHANGED = "scheduled_export.owner_changed",
+	SCHEDULED_EXPORT_DELIVERED = "scheduled_export.delivered",
+	SCHEDULED_EXPORT_RUN_FAILED = "scheduled_export.run_failed",
 
 	// Audit Pack Operations
 	AUDIT_PACK_CREATED = "audit_pack.created",
@@ -264,7 +360,9 @@ export interface AuditLogEntry {
 		| "schedule"
 		| "time_entry"
 		| "absence"
+		| "balance_adjustment"
 		| "approval"
+		| "approval_setting"
 		| "vacation"
 		| "surcharge_model"
 		| "surcharge_rule"
@@ -282,17 +380,26 @@ export interface AuditLogEntry {
 		| "invoiced_work"
 		| "project_task"
 		| "project_template"
+		| "custom_field"
+		| "custom_field_option"
 		| "work_period"
 		| "location"
 		| "subarea"
 		| "location_employee"
 		| "subarea_employee"
+		| "kiosk"
+		| "employee_assigned_location"
 		| "user"
+		| "kiosk_pin"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"
 		| "travel_expense_policy_version"
-		| "travel_expense_export";
+		| "travel_expense_export"
+		| "ics_feed"
+		| "api_key"
+		| "report_share_link"
+		| "scheduled_export";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
@@ -372,6 +479,22 @@ async function sendToExternalService(entry: AuditLogEntry): Promise<void> {
 	} catch (error) {
 		// Log error but don't fail the operation
 		logger.error({ error, action: entry.action }, "Failed to send audit log to external service");
+	}
+}
+
+/**
+ * Hands an audit entry whose row is already committed to the external audit
+ * service, as `logAudit` does after persisting. Fire-and-forget; never throws.
+ * Stores that write their audit row inside their own transaction call it only
+ * after that transaction committed (`withAuditTrail`).
+ */
+export function forwardAuditToExternalService(entry: AuditLogEntry): void {
+	try {
+		sendToExternalService(entry).catch(() => {
+			// Already logged in sendToExternalService
+		});
+	} catch (error) {
+		logger.error({ error, action: entry.action }, "Failed to forward audit log");
 	}
 }
 

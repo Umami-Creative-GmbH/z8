@@ -9,6 +9,8 @@
 export interface SuccessFactorsConfig {
 	/** Employee matching strategy for mapping local employees to SAP SuccessFactors */
 	employeeMatchStrategy: SuccessFactorsEmployeeMatchStrategy;
+	/** The employee custom field matched by when the strategy is "customField" (#821). */
+	employeeMatchCustomFieldId?: string;
 	/** SAP SuccessFactors instance URL (e.g., https://apisalesdemo2.successfactors.com) */
 	instanceUrl: string;
 	/** Company ID in SAP SuccessFactors */
@@ -24,7 +26,12 @@ export interface SuccessFactorsConfig {
 /**
  * Employee matching strategies for SAP SuccessFactors
  */
-export type SuccessFactorsEmployeeMatchStrategy = "userId" | "personIdExternal" | "email";
+export type SuccessFactorsEmployeeMatchStrategy =
+	| "userId"
+	| "personIdExternal"
+	| "email"
+	/** An employee custom field's frozen value is the userId (#821). */
+	| "customField";
 
 /**
  * Default SAP SuccessFactors configuration

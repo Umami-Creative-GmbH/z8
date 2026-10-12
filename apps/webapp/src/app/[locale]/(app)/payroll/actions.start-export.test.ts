@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PAYROLL_EXPORT_FORMATS } from "@/lib/payroll-export/format-registry";
 
 const mockState = vi.hoisted(() => ({
 	getAuthContext: vi.fn(async () => ({
@@ -26,6 +27,7 @@ vi.mock("@/lib/auth-helpers", () => ({
 
 vi.mock("@/lib/payroll-access/permissions", () => ({
 	resolvePayrollAccessibleEmployeeIds: mockState.resolvePayrollAccessibleEmployeeIds,
+	hasActivePayrollAccessGrant: vi.fn(async () => true),
 	intersectPayrollScope: ({
 		allowedEmployeeIds,
 		requestedEmployeeIds,
@@ -36,6 +38,10 @@ vi.mock("@/lib/payroll-access/permissions", () => ({
 		(requestedEmployeeIds ?? allowedEmployeeIds)
 			.filter((employeeId) => allowedEmployeeIds.includes(employeeId))
 			.sort(),
+}));
+
+vi.mock("@/lib/payroll-access/adjustment-coverage", () => ({
+	listDepartedEmployeesCoveredForExport: vi.fn(async () => []),
 }));
 
 vi.mock("@/lib/payroll-export", () => ({
@@ -102,13 +108,28 @@ describe("startScopedPayrollExportAction", () => {
 
 	it("processes synchronous exports inline with the trusted organization scope", async () => {
 		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
-		mockState.processExportJob.mockResolvedValueOnce({ result: { content: "sync-content" } });
+		mockState.processExportJob.mockResolvedValueOnce({
+			result: {
+				content: "sync-content",
+				metadata: {
+					unmappedOvertimePayouts: [
+						{ id: "payout-1", employeeId: "employee-1", day: "2026-01-15", minutes: 300 },
+					],
+				},
+			},
+		});
 
 		const result = await startScopedPayrollExportAction(request);
 
 		expect(result).toEqual({
 			success: true,
-			data: { jobId: "job-sync", isAsync: false, fileContent: "sync-content" },
+			data: {
+				jobId: "job-sync",
+				isAsync: false,
+				fileContent: "sync-content",
+				// #1001: the export reports the overtime payouts it could not carry.
+				unmappedOvertimePayoutCount: 1,
+			},
 		});
 		expect(mockState.processExportJob).toHaveBeenCalledExactlyOnceWith({
 			jobId: "job-sync",
@@ -116,4 +137,38 @@ describe("startScopedPayrollExportAction", () => {
 		});
 		expect(mockState.enqueuePayrollExportJob).not.toHaveBeenCalled();
 	});
+});
+
+describe("payroll workspace export formats", () => {
+	const registered = PAYROLL_EXPORT_FORMATS as unknown as object[];
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockState.createExportJob.mockResolvedValue({ jobId: "job-1", isAsync: true });
+	});
+
+	afterEach(() => {
+		const fake = registered.findIndex((format) => "id" in format && format.id === "fake_lohn");
+		if (fake >= 0) registered.splice(fake, 1);
+	});
+
+	it("exports in a file format registered for the workspace with no further edits", async () => {
+		registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: true });
+
+		await startScopedPayrollExportAction({ ...request, formatId: "fake_lohn" });
+
+		expect(mockState.createExportJob).toHaveBeenCalledWith(
+			expect.objectContaining({ formatId: "fake_lohn" }),
+		);
+	});
+
+	it.each(["successfactors_csv", "personio", "unknown_lohn"])(
+		"refuses %s, which the workspace does not offer",
+		async (formatId) => {
+			registered.push({ id: "fake_lohn", kind: "file", payrollWorkspace: true });
+
+			await expect(startScopedPayrollExportAction({ ...request, formatId })).rejects.toBeDefined();
+			expect(mockState.createExportJob).not.toHaveBeenCalled();
+		},
+	);
 });

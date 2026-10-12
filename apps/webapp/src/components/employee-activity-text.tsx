@@ -2,17 +2,32 @@
 
 import { useTranslate } from "@tolgee/react";
 import { formatEmployeeActivity } from "./employee-activity-format";
+import { BreakInProgressNotice } from "./time-tracking/break-in-progress-notice";
 
 interface EmployeeActivityTextProps {
 	lastActivityAt: string | null;
 	lastActivityUtcOffsetMinutes: number | null;
+	/** A break in progress (#861), shown instead of the last activity. */
+	breakStartedAt?: string | null;
+	breakStartedZone?: string | null;
 }
 
 export function EmployeeActivityText({
 	lastActivityAt,
 	lastActivityUtcOffsetMinutes,
+	breakStartedAt,
+	breakStartedZone,
 }: EmployeeActivityTextProps) {
 	const { t } = useTranslate();
+	if (breakStartedAt) {
+		return (
+			<BreakInProgressNotice
+				since={breakStartedAt}
+				zone={breakStartedZone ?? null}
+				className="text-xs"
+			/>
+		);
+	}
 	const text = formatEmployeeActivity(
 		lastActivityAt,
 		lastActivityUtcOffsetMinutes,

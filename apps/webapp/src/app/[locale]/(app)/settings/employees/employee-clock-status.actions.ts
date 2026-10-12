@@ -1,13 +1,15 @@
 "use server";
 
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
-import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { employee, timeEntry } from "@/db/schema";
+import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
+import { type ClockPresence, readClockPresence } from "@/lib/time-tracking/clock-presence";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -22,6 +24,9 @@ export interface EmployeeClockPresence {
 	status: EmployeeClockStatus;
 	lastActivityAt: string | null;
 	lastActivityUtcOffsetMinutes: number | null;
+	/** Only `on-break`: where the break in progress started (#861), and its zone. */
+	breakStartedAt?: string;
+	breakStartedZone?: string | null;
 }
 export type EmployeeClockPresenceMap = Record<string, EmployeeClockPresence>;
 
@@ -78,23 +83,14 @@ export async function getEmployeeClockStatuses(
 			return {} satisfies EmployeeClockPresenceMap;
 		}
 
-		const activeRows = yield* actor.dbService.query(
-			"getEmployeeClockStatuses:activeWorkPeriods",
-			async () => {
-				return await actor.dbService.db
-					.select({ employeeId: workPeriod.employeeId })
-					.from(workPeriod)
-					.where(
-						and(
-							eq(workPeriod.organizationId, actor.organizationId),
-							inArray(workPeriod.employeeId, accessibleEmployeeIds),
-							eq(workPeriod.isActive, true),
-							isNull(workPeriod.clockOutId),
-							isNull(workPeriod.endTime),
-						),
-					);
-			},
-		);
+		// Live work, and a break in progress on it (#861).
+		const activeRows: Array<Pick<ClockPresence, "employeeId" | "breakSince" | "breakZone">> =
+			yield* actor.dbService.query("getEmployeeClockStatuses:activeWorkPeriods", () =>
+				readClockPresence(actor.dbService.db, {
+					organizationId: actor.organizationId,
+					employeeIds: accessibleEmployeeIds,
+				}),
+			);
 		const activityRows = yield* actor.dbService.query(
 			"getEmployeeClockStatuses:activity",
 			async () => {
@@ -118,9 +114,9 @@ export async function getEmployeeClockStatuses(
 		);
 
 		const accessibleEmployeeIdSet = new Set(accessibleEmployeeIds);
-		const clockedInEmployeeIds = new Set(
+		const liveWorkByEmployeeId = new Map(
 			activeRows.flatMap((row) =>
-				accessibleEmployeeIdSet.has(row.employeeId) ? [row.employeeId] : [],
+				accessibleEmployeeIdSet.has(row.employeeId) ? [[row.employeeId, row] as const] : [],
 			),
 		);
 		const latestActivityByEmployeeId = new Map<
@@ -139,16 +135,20 @@ export async function getEmployeeClockStatuses(
 		return Object.fromEntries(
 			accessibleEmployeeIds.map((employeeId) => {
 				const activity = latestActivityByEmployeeId.get(employeeId);
-				return [
-					employeeId,
-					{
-						status: clockedInEmployeeIds.has(employeeId)
-							? "clocked-in"
-							: "clocked-out",
-						lastActivityAt: activity?.timestamp.toISOString() ?? null,
-						lastActivityUtcOffsetMinutes: activity?.utcOffsetMinutes ?? null,
-					},
-				];
+				const live = liveWorkByEmployeeId.get(employeeId);
+				const breakSince = live?.breakSince ?? null;
+				const presence: EmployeeClockPresence = {
+					status: !live ? "clocked-out" : breakSince ? "on-break" : "clocked-in",
+					lastActivityAt: activity?.timestamp.toISOString() ?? null,
+					lastActivityUtcOffsetMinutes: activity?.utcOffsetMinutes ?? null,
+					...(breakSince
+						? {
+								breakStartedAt: dateFromInstant(breakSince).toISOString(),
+								breakStartedZone: live?.breakZone ?? null,
+							}
+						: {}),
+				};
+				return [employeeId, presence];
 			}),
 		) satisfies EmployeeClockPresenceMap;
 	});

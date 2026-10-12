@@ -16,6 +16,7 @@ const DEFAULT_COLORS: Record<string, string> = {
 	parental: "#ec4899", // pink
 	bereavement: "#1f2937", // dark gray
 	home_office: "#10b981", // emerald
+	time_off_in_lieu: "#14b8a6", // teal
 	custom: "#06b6d4", // cyan
 };
 

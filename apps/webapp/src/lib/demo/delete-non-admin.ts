@@ -6,11 +6,13 @@ import { member, user } from "@/db/auth-schema";
 import {
 	absenceEntry,
 	auditLog,
+	closedMonthEmployee,
 	employee,
 	employeeManagers,
 	employeeVacationAllowance,
 } from "@/db/schema";
 import { deleteEmployeeApprovalLifecycles } from "@/lib/approvals/maintenance";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import { withDemoConfigurationMutation } from "./demo-configuration";
 import { deleteDemoEmployeeHistories } from "./demo-work";
 
@@ -79,6 +81,19 @@ export async function deleteNonAdminEmployeesData(
 	result.approvalRequestsDeleted = approvals.lifecycles.reduce(
 		(total, lifecycle) => total + lifecycle.legacyRequests.length,
 		0,
+	);
+
+	// These employees are erased entirely: their closed ranges go first, so their
+	// history can be deleted before the employee rows themselves (#762).
+	await withOrganizationConfigurationMutation(db, organizationId, (transaction) =>
+		transaction
+			.delete(closedMonthEmployee)
+			.where(
+				and(
+					eq(closedMonthEmployee.organizationId, organizationId),
+					inArray(closedMonthEmployee.employeeId, employeeIds),
+				),
+			),
 	);
 
 	// Step 3: Delete absence entries

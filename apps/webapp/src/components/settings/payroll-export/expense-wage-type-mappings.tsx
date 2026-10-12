@@ -10,6 +10,7 @@ import {
 	getExpenseWageTypeSetting,
 	saveExpenseWageTypeSetting,
 } from "@/app/[locale]/(app)/settings/payroll-export/expense-wage-type-actions";
+import { payrollLineKindLabel } from "@/components/payroll/payroll-line-kind-label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,48 +35,6 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 type FormValues = Record<PayrollLineKind, Record<ExpensePayrollFormat, string>>;
 
 const queryKey = queryKeys.travelExpenses.payrollWageTypes();
-
-// Literal keys keep the Tolgee extractor able to find every label.
-function kindLabel(t: Translate, kind: PayrollLineKind): string {
-	switch (kind) {
-		case "per_diem_statutory":
-			return t(
-				"settings.payrollExport.expenseMappings.kind.perDiemStatutory",
-				"Per diem: statutory share",
-			);
-		case "per_diem_excess":
-			return t(
-				"settings.payrollExport.expenseMappings.kind.perDiemExcess",
-				"Per diem: taxable excess",
-			);
-		case "mileage_statutory":
-			return t(
-				"settings.payrollExport.expenseMappings.kind.mileageStatutory",
-				"Mileage: statutory share",
-			);
-		case "mileage_excess":
-			return t(
-				"settings.payrollExport.expenseMappings.kind.mileageExcess",
-				"Mileage: taxable excess",
-			);
-		case "receipt_transport":
-			return t(
-				"settings.payrollExport.expenseMappings.kind.receiptTransport",
-				"Receipts: transport",
-			);
-		case "receipt_accommodation":
-			return t(
-				"settings.payrollExport.expenseMappings.kind.receiptAccommodation",
-				"Receipts: accommodation",
-			);
-		case "receipt_meals":
-			return t("settings.payrollExport.expenseMappings.kind.receiptMeals", "Receipts: meals");
-		case "receipt_parking":
-			return t("settings.payrollExport.expenseMappings.kind.receiptParking", "Receipts: parking");
-		case "receipt_other":
-			return t("settings.payrollExport.expenseMappings.kind.receiptOther", "Receipts: other");
-	}
-}
 
 function formatLabel(t: Translate, format: ExpensePayrollFormat): string {
 	switch (format) {
@@ -184,7 +143,9 @@ function MappingsForm({ setting }: { setting: ExpenseWageTypeSetting }) {
 				<TableBody>
 					{setting.mappings.map(({ kind }) => (
 						<TableRow key={kind}>
-							<TableCell className="font-medium whitespace-nowrap">{kindLabel(t, kind)}</TableCell>
+							<TableCell className="font-medium whitespace-nowrap">
+								{payrollLineKindLabel(t, kind)}
+							</TableCell>
 							{EXPENSE_PAYROLL_FORMATS.map((format) => (
 								<TableCell key={format} className="min-w-28">
 									<form.Field name={`${kind}.${format}`}>
@@ -193,7 +154,7 @@ function MappingsForm({ setting }: { setting: ExpenseWageTypeSetting }) {
 												aria-label={t(
 													"settings.payrollExport.expenseMappings.codeLabel",
 													"{line}, {format} wage type",
-													{ line: kindLabel(t, kind), format: formatLabel(t, format) },
+													{ line: payrollLineKindLabel(t, kind), format: formatLabel(t, format) },
 												)}
 												className="font-mono"
 												value={field.state.value}

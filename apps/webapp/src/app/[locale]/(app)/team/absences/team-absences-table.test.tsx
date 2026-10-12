@@ -75,6 +75,11 @@ vi.mock("./actions", () => ({
 	recordAbsenceForEmployee: vi.fn(),
 }));
 
+vi.mock("@/components/absences/deputy-picker", async (original) => ({
+	...(await original<typeof import("@/components/absences/deputy-picker")>()),
+	DeputyPicker: () => <div data-testid="deputy-picker" />,
+}));
+
 describe("TeamAbsencesTable", () => {
 	beforeEach(() => {
 		routerPush.mockClear();
@@ -730,5 +735,22 @@ describe("buildRecordAbsenceForEmployeeInput", () => {
 			employeeId: "employee-1",
 			sickDetail: "with_certificate",
 		});
+	});
+
+	it("names the picked deputy, and none when left empty (#1011)", () => {
+		const values = {
+			...getDefaultRecordAbsenceFormValues(),
+			categoryId: "category-vacation",
+			startDate: "2026-05-18",
+		};
+		expect(
+			buildRecordAbsenceForEmployeeInput("employee-1", {
+				...values,
+				deputyEmployeeId: "employee-2",
+			}).deputyEmployeeId,
+		).toBe("employee-2");
+		expect(buildRecordAbsenceForEmployeeInput("employee-1", values)).not.toHaveProperty(
+			"deputyEmployeeId",
+		);
 	});
 });

@@ -13,6 +13,8 @@ import { bulkApproveApprovalInboxItems } from "@/lib/approvals/inbox/decision-se
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
+import { loadInboxCovers } from "@/lib/approvals/deputy/deputy-decision-store";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
@@ -97,6 +99,14 @@ export async function POST(request: NextRequest) {
 			organizationId: currentEmployee.organizationId,
 			includeAllApprovers: canManageApprovals || undefined,
 			eligibleApprovalScopes,
+			// Approvals of absent approvers this employee covers for (#1016).
+			coveredApproverIds: (
+				await loadInboxCovers(db, {
+					organizationId: currentEmployee.organizationId,
+					deputyEmployeeId: currentEmployee.id,
+					at: systemClock.nowInstant(),
+				})
+			).map((cover) => cover.approverId),
 		});
 
 		logger.info(

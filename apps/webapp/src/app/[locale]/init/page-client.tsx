@@ -198,7 +198,11 @@ function InitPageContent() {
 	// Show organization selection UI
 	if (status === "selecting") {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-background p-4">
+			<div
+				// The list can outgrow the screen; clear the notch and home indicator in the store app (#846).
+				className="flex min-h-screen items-center justify-center bg-background px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+				data-testid="init-organization-picker"
+			>
 				<div className="w-full max-w-md space-y-6">
 					<div className="text-center space-y-2">
 						<h1 className="text-2xl font-semibold">

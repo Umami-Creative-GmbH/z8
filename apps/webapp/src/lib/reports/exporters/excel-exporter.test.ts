@@ -10,6 +10,7 @@ const reportData: ReportData = {
 		employeeNumber: "F-001",
 		position: "Fixture Engineer",
 		email: "fixture@example.invalid",
+		customFields: [],
 	},
 	period: {
 		startDate: "2026-08-01",

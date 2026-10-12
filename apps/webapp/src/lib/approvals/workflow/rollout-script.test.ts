@@ -306,7 +306,7 @@ describe("approval workflow rollout CLI", () => {
 		expect(rendered.sql).toContain("insert into approval_workflow_rollout");
 		expect(rendered.sql).toContain("updated_at");
 		expect(rendered.sql).toContain("cross join");
-		expect(rendered.sql.match(/::approval_workflow_type/g)).toHaveLength(7);
+		expect(rendered.sql.match(/::approval_workflow_type/g)).toHaveLength(8);
 		expect(rendered.sql).toContain(
 			"on conflict (organization_id, workflow_type) do nothing",
 		);
@@ -319,6 +319,7 @@ describe("approval workflow rollout CLI", () => {
 				"travel_expense",
 				"shift_request",
 				"compliance_exception",
+				"period_submission",
 				expect.any(Date),
 			]),
 		);

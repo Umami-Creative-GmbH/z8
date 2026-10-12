@@ -1,3 +1,4 @@
+import { db } from "@/db";
 import { env } from "@/env";
 import {
 	getAuthContext,
@@ -5,10 +6,13 @@ import {
 	getUserOrganizations,
 	requireAbility,
 } from "@/lib/auth-helpers";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
+import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
+import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
@@ -47,6 +51,8 @@ export async function ServerAppSidebar({
 		canShowWorksCouncilNav,
 		activeOrganizationId,
 		showPersonnelFilesNav,
+		showPeriodSubmissionsNav,
+		managesProject,
 		authContext,
 		canCreateOrganizations,
 	} = await resolveSidebarAccess(showWorksCouncilNav);
@@ -67,11 +73,13 @@ export async function ServerAppSidebar({
 					featureFlags.personnelFilesEnabled &&
 					Boolean(activeEmployee && activeEmployee.organizationId === activeOrganizationId),
 				personnelFiles: showPersonnelFilesNav,
+				periodSubmissions: showPeriodSubmissionsNav,
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}
 			billingEnabled={env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}
+			managesProject={managesProject}
 			canCreateOrganizations={canCreateOrganizations}
 		/>
 	);
@@ -127,6 +135,20 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		showPersonnelFilesNav =
 			personnelFileAccess.status === "resolved" && managesAnyDocuments(personnelFileAccess.access);
 	}
+	// Period submissions (#1075): the Team section's overview, only while the active
+	// organization collects them. Members never see the Team section, so skip the read.
+	const showPeriodSubmissionsNav =
+		activeOrganizationId !== null &&
+		(activeEmployee?.role === "admin" || activeEmployee?.role === "manager") &&
+		(await loadCollectsPeriodSubmissions(db, activeOrganizationId, { clock: systemClock }));
+	// App search offers project managers below the manager tier their Projects view (#928).
+	const managesProject =
+		featureFlags.projectsEnabled &&
+		(await managesProjectBelowManagerTier(
+			settingsAccessTier,
+			authContext?.user.id ?? null,
+			activeOrganizationId,
+		));
 
 	return {
 		organizations,
@@ -139,6 +161,8 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		canShowWorksCouncilNav,
 		activeOrganizationId,
 		showPersonnelFilesNav,
+		showPeriodSubmissionsNav,
+		managesProject,
 		authContext,
 		canCreateOrganizations,
 	};

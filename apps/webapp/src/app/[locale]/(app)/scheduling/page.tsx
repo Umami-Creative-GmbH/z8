@@ -53,7 +53,9 @@ async function SchedulingPageContent({
 				<div className="flex items-center justify-between">
 					<div>
 						<h1 className="text-2xl font-bold tracking-tight">
-							{t("scheduling:scheduling.page.title", "Shift Schedule")}
+							{isManager
+								? t("scheduling:scheduling.page.title", "Shift Schedule")
+								: t("scheduling:scheduling.page.employeeTitle", "My Schedule")}
 						</h1>
 						<p className="text-muted-foreground">
 							{isManager
@@ -62,8 +64,8 @@ async function SchedulingPageContent({
 										"Manage and plan employee shifts",
 									)
 								: t(
-										"scheduling:scheduling.page.employeeDescription",
-										"View your shifts and pick up available shifts",
+										"scheduling:scheduling.page.employeeScheduleDescription",
+										"Your published shifts, week by week",
 									)}
 						</p>
 					</div>

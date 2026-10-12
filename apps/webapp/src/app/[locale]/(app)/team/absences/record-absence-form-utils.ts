@@ -3,6 +3,7 @@ import {
 	normalizeAbsenceDurationInput,
 	validateAbsenceDurationInput,
 } from "@/lib/absences/duration";
+import type { StagedSickNoteFile } from "@/components/absences/sick-notes/sick-note-files-field";
 import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
 import type { RecordAbsenceForEmployeeInput } from "./manager-absence-types";
 
@@ -17,6 +18,10 @@ type RecordAbsenceFormValues = {
 	endTime: string;
 	notes: string;
 	sickDetail: SickDetail | "";
+	/** Sick notes to attach once the sick leave is recorded (#984). */
+	sickNotes: StagedSickNoteFile[];
+	/** The colleague covering while the employee is away (#1011), or "". */
+	deputyEmployeeId: string;
 };
 
 const defaultValues: RecordAbsenceFormValues = {
@@ -30,6 +35,8 @@ const defaultValues: RecordAbsenceFormValues = {
 	endTime: "",
 	notes: "",
 	sickDetail: "",
+	sickNotes: [],
+	deputyEmployeeId: "",
 };
 
 function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string | null {
@@ -37,7 +44,7 @@ function validateRecordAbsenceFormDateRange(input: AbsenceDurationInput): string
 }
 
 function getDefaultRecordAbsenceFormValues(): RecordAbsenceFormValues {
-	return { ...defaultValues };
+	return { ...defaultValues, sickNotes: [] };
 }
 
 function buildRecordAbsenceForEmployeeInput(
@@ -58,6 +65,7 @@ function buildRecordAbsenceForEmployeeInput(
 		endTime: normalized.endTime,
 		notes: normalized.notes?.trim() || undefined,
 		sickDetail: value.sickDetail || undefined,
+		...(value.deputyEmployeeId ? { deputyEmployeeId: value.deputyEmployeeId } : {}),
 	};
 }
 

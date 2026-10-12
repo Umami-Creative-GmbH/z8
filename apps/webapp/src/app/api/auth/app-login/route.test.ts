@@ -296,4 +296,57 @@ describe("GET /api/auth/app-login", () => {
 		expect(location.pathname).toBe("/sign-in");
 		expect(location.searchParams.get("callbackUrl")).toBe(requestUrl);
 	});
+
+	it("opens the store app from a page so a blocked automatic launch keeps a button", async () => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { token: "session-token" },
+		});
+		mockState.createAppAuthCode.mockResolvedValue({ code: "ONE-TIME-CODE" });
+		const request = createRequest(
+			"https://app.example.com/api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback&challenge=CODE-CHALLENGE",
+		);
+		request.headers.set("accept", "text/html");
+
+		const response = await GET(request);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("cache-control")).toBe("private, no-store");
+		const html = await response.text();
+		expect(html).toContain('href="z8mobile://auth/callback?code=ONE-TIME-CODE"');
+		expect(html).toContain("We are opening the Z8 app");
+		expect(html).not.toContain("session-token");
+	});
+
+	// The system browser can keep the cookie of a session the app has since signed
+	// out. With it, the proxy would send sign-in to the dashboard and lose the way back.
+	it("clears a stale session cookie when a store app sign-in has to sign in again", async () => {
+		mockState.getSession.mockResolvedValue(null);
+		const request = createRequest(
+			"https://app.example.com/api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback&challenge=CODE-CHALLENGE",
+		);
+		request.headers.set("cookie", "__Secure-better-auth.session_token=revoked.signature");
+
+		const response = await GET(request);
+
+		expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/sign-in");
+		const cleared = response.headers
+			.getSetCookie()
+			.find((entry) => entry.startsWith("__Secure-better-auth.session_token="));
+		expect(cleared).toMatch(/Expires=Thu, 01 Jan 1970/i);
+		expect(cleared).toMatch(/;\s*Secure/i);
+	});
+
+	it("keeps the desktop sign-in redirect unchanged when a stale cookie is present", async () => {
+		mockState.getSession.mockResolvedValue(null);
+		const request = createRequest(
+			"https://app.example.com/api/auth/app-login?app=desktop&redirect=z8://auth/callback&challenge=CODE-CHALLENGE",
+		);
+		request.headers.set("cookie", "__Secure-better-auth.session_token=revoked.signature");
+
+		const response = await GET(request);
+
+		expect(new URL(response.headers.get("location") ?? "").pathname).toBe("/sign-in");
+		expect(response.headers.getSetCookie()).toEqual([]);
+	});
 });

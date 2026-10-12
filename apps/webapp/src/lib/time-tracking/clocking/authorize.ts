@@ -5,12 +5,16 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
+import { authorizedKioskSubject, isKioskCommand, type KioskAuthorizationQuery } from "./kiosk";
 import type { ClockCommand, ClockPrincipal, ClockSubject } from "./types";
 
 type Employee = typeof employee.$inferSelect;
 
-/** What authorization reads of a command: who asks, for whom, and which kind. */
-export type AuthorizationQuery = {
+/**
+ * What authorization reads of a command: who asks, for whom, and which kind. A
+ * kiosk command is also read for its channel, instant and zone (#860).
+ */
+export type AuthorizationQuery = KioskAuthorizationQuery & {
 	organizationId: string;
 	principal: ClockPrincipal;
 	subject: ClockSubject;
@@ -45,7 +49,9 @@ async function mayActOnBehalf(principal: ClockPrincipal, subject: Employee) {
  * On behalf, only a clock-out runs, for another active employee, by an owner, an
  * admin or their direct manager; never for oneself. A departure runs only its
  * clock-out of the departing employee, whose access it has just ended; the module
- * checks that it runs inside that departure's transaction.
+ * checks that it runs inside that departure's transaction. Kiosk clocking runs
+ * every kind for the kiosk's PIN-verified, assigned employee (#860), and the
+ * kiosk channel is the kiosk principal's alone.
  */
 export async function authorizedSubject(query: AuthorizationQuery): Promise<Employee | null> {
 	const { principal, subject } = query;
@@ -57,6 +63,7 @@ export async function authorizedSubject(query: AuthorizationQuery): Promise<Empl
 		)
 		.limit(1);
 	if (!row) return null;
+	if (isKioskCommand(query)) return authorizedKioskSubject(query, row);
 	if (principal.kind === "departure" || principal.kind === "automatic_clock_out") {
 		return query.kind === "clock_out" && !subject.onBehalf ? row : null;
 	}

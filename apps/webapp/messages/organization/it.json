@@ -141,6 +141,17 @@
       "description": "Invia un invito per unirti a {organizationName}",
       "emailLabel": "Indirizzo email",
       "error": "Impossibile inviare l'invito",
+      "kioskOnly": {
+        "description": "Per il personale senza un'email aziendale. Non possono accedere e timbrano solo tramite chiosco con il loro PIN. È possibile aggiungere un'email in seguito.",
+        "firstName": "Nome",
+        "label": "Solo chiosco, nessuna email",
+        "lastName": "Cognome",
+        "locations": "Sedi assegnate",
+        "locationsDescription": "I chioschi in queste sedi elencano il dipendente.",
+        "noLocations": "Nessuna sede attiva al momento. È possibile assegnare le sedi in seguito.",
+        "submit": "Crea dipendente",
+        "success": "Dipendente solo chiosco creato"
+      },
       "noTargetTeam": "Nessun team",
       "roleDescriptions": {
         "admin": "Può invitare membri e gestire le impostazioni",
@@ -242,6 +253,41 @@
       "searchLabel": "Cerca dipendenti",
       "searchPlaceholder": "Cerca dipendenti…",
       "teamBadge": "Team"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Solo gli amministratori e i proprietari dell'organizzazione possono modificare queste impostazioni.",
+      "cadence": {
+        "label": "Frequenza di invio",
+        "monthly": "Mensile",
+        "off": "Disattivato",
+        "weekly": "Settimanale"
+      },
+      "description": "Chiedi ai dipendenti di inviare ogni settimana o mese per l'approvazione, confermando che il lavoro e le assenze siano completi e corretti.",
+      "help": "I periodi seguono il fuso orario di ciascun dipendente e sono limitati al relativo periodo di impiego. L'attivazione parte dal primo periodo completo. Una modifica diventa effettiva al successivo confine di periodo condiviso dalla vecchia e dalla nuova frequenza, quindi il passaggio da settimanale a mensile può richiedere diversi mesi. I dipendenti ricevono un promemoria al termine di un periodo e un altro dopo i giorni impostati qui. I dipendenti che utilizzano esclusivamente il chiosco non inviano periodi.",
+      "invalidDelay": "Inserisci giorni interi da {min} a {max}.",
+      "save": "Salva modifiche",
+      "saved": "Impostazioni di invio del periodo salvate",
+      "saveFailed": "Impossibile aggiornare le impostazioni di invio del periodo",
+      "saving": "Salvataggio…",
+      "secondReminderDelay": "Giorni prima del secondo promemoria",
+      "title": "Invii dei periodi",
+      "upcoming": {
+        "monthly": "I periodi mensili iniziano il {date}.",
+        "off": "Non sono previsti periodi a partire dal {date}. Il periodo corrente è ancora previsto.",
+        "untilMonthly": "Fino ad allora, continuano i periodi mensili.",
+        "untilWeekly": "Fino ad allora, continuano i periodi settimanali.",
+        "weekly": "I periodi settimanali iniziano il {date}."
+      },
+      "weekday": {
+        "friday": "Venerdì",
+        "monday": "Lunedì",
+        "saturday": "Sabato",
+        "sunday": "Domenica",
+        "thursday": "Giovedì",
+        "tuesday": "Martedì",
+        "wednesday": "Mercoledì"
+      },
+      "weekStart": "Le settimane iniziano il"
     },
     "recover": {
       "button": "Ripristina organizzazione",

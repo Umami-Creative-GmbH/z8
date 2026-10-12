@@ -43,6 +43,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { queryKeys } from "@/lib/query";
 import { useBillableTimeEnabled } from "@/stores/organization-settings-store";
+import { CustomFieldDraftsSection } from "./custom-fields/custom-field-values-section";
+import { useCustomFieldDrafts } from "./custom-fields/use-custom-field-drafts";
 import { ProjectColorPicker } from "./project-color-picker";
 import {
 	ProjectTemplatePreview,
@@ -93,6 +95,15 @@ function useProjectDialogController({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!project;
 	const billableTimeEnabled = useBillableTimeEnabled();
+	// The "Custom fields" section (#818); saved with the project.
+	const customFields = useCustomFieldDrafts({
+		entity: "project",
+		recordId: project?.id ?? null,
+		enabled: open,
+		onOpenChange,
+		onSaved: onSuccess,
+	});
+	const succeed = customFields.handleSaved;
 
 	const { data: customersData } = useQuery({
 		queryKey: queryKeys.customers.selection(organizationId),
@@ -144,6 +155,7 @@ function useProjectDialogController({
 			const billableDefault = billableTimeEnabled
 				? { billableDefault: customerId ? value.billableDefault : false }
 				: {};
+			const customFieldValues = customFields.values();
 
 			if (isEditing && project) {
 				const result = await updateProject(project.id, {
@@ -155,6 +167,7 @@ function useProjectDialogController({
 					deadline: deadline ?? null,
 					customerId: customerId ?? null,
 					...billableDefault,
+					customFieldValues,
 				}).catch(() => null);
 
 				if (!result) {
@@ -167,7 +180,7 @@ function useProjectDialogController({
 
 				if (result.success) {
 					toast.success(t("settings.projects.updated", "Project updated"));
-					onSuccess();
+					succeed();
 				} else {
 					toast.error(
 						result.error ||
@@ -186,6 +199,7 @@ function useProjectDialogController({
 					status: value.status,
 					customerId: customerId ?? null,
 					...billableDefault,
+					customFieldValues,
 				}).catch(() => null);
 
 				if (result?.success) {
@@ -193,7 +207,7 @@ function useProjectDialogController({
 					if (result.data.skipped.length > 0) {
 						toast.warning(skippedMembersMessage(result.data.skipped));
 					}
-					onSuccess();
+					succeed();
 				} else {
 					toast.error(
 						result?.error ||
@@ -214,6 +228,7 @@ function useProjectDialogController({
 				deadline,
 				customerId,
 				...billableDefault,
+				customFieldValues,
 			}).catch(() => null);
 
 			if (!result) {
@@ -226,7 +241,7 @@ function useProjectDialogController({
 
 			if (result.success) {
 				toast.success(t("settings.projects.created", "Project created"));
-				onSuccess();
+				succeed();
 			} else {
 				toast.error(
 					result.error ||
@@ -251,10 +266,14 @@ function useProjectDialogController({
 	return {
 		billableTimeEnabled,
 		customers,
+		customFields,
+		// The deleted customer is never a choice; the project starts without customer (#938).
+		deletedCustomerName: project?.deletedCustomerName ?? null,
 		form,
 		isEditing,
 		isSubmitting,
-		onOpenChange,
+		// Closing the dialog drops unsaved custom field drafts.
+		onOpenChange: customFields.handleOpenChange,
 		t,
 		templateChoices,
 		templateId,
@@ -268,7 +287,7 @@ export function ProjectDialog(props: ProjectDialogProps) {
 	const controller = useProjectDialogController(props);
 
 	return (
-		<ActionPanel open={props.open} onOpenChange={props.onOpenChange}>
+		<ActionPanel open={props.open} onOpenChange={controller.onOpenChange}>
 			<ActionPanelContent>
 				<ProjectDialogHeader controller={controller} />
 				<ProjectDialogForm controller={controller} />
@@ -314,6 +333,8 @@ function ProjectDialogForm({
 	const {
 		billableTimeEnabled,
 		customers,
+		customFields,
+		deletedCustomerName,
 		form,
 		isEditing,
 		isSubmitting,
@@ -416,38 +437,59 @@ function ProjectDialogForm({
 				</form.Field>
 
 				{/* Customer */}
-				{customers.length > 0 && (
+				{(customers.length > 0 || deletedCustomerName) && (
 					<form.Field name="customerId">
 						{(field) => (
 							<div className="grid gap-2">
-								<Label htmlFor="customerId">
+								<Label htmlFor={customers.length > 0 ? "customerId" : undefined}>
 									{t("settings.projects.field.customer", "Customer")}
 								</Label>
-								<Select
-									value={field.state.value || NO_CUSTOMER_VALUE}
-									onValueChange={(value) =>
-										field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
-									}
-								>
-									<SelectTrigger id="customerId">
-										<SelectValue
-											placeholder={t(
-												"settings.projects.field.customerPlaceholder",
-												"Select a customer",
-											)}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={NO_CUSTOMER_VALUE}>
-											{t("settings.projects.field.noCustomer", "No customer")}
-										</SelectItem>
-										{customers.map((c) => (
-											<SelectItem key={c.id} value={c.id}>
-												{c.name}
+								{customers.length > 0 && (
+									<Select
+										value={field.state.value || NO_CUSTOMER_VALUE}
+										onValueChange={(value) =>
+											field.handleChange(value === NO_CUSTOMER_VALUE ? "" : value)
+										}
+									>
+										<SelectTrigger
+										id="customerId"
+										aria-describedby={
+											deletedCustomerName && !field.state.value
+												? "customerDeletedHint"
+												: undefined
+										}
+									>
+											<SelectValue
+												placeholder={t(
+													"settings.projects.field.customerPlaceholder",
+													"Select a customer",
+												)}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value={NO_CUSTOMER_VALUE}>
+												{t("settings.projects.field.noCustomer", "No customer")}
 											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+											{customers.map((c) => (
+												<SelectItem key={c.id} value={c.id}>
+													{c.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+								{deletedCustomerName && !field.state.value && (
+									<p
+										id="customerDeletedHint"
+										className="text-sm text-muted-foreground"
+									>
+										{t(
+											"settings.projects.field.customerDeleted",
+											"{name} was deleted. Pick another customer or keep the project without one.",
+											{ name: deletedCustomerName },
+										)}
+									</p>
+								)}
 							</div>
 						)}
 					</form.Field>
@@ -582,6 +624,8 @@ function ProjectDialogForm({
 						</form.Field>
 					</>
 				)}
+
+				<CustomFieldDraftsSection drafts={customFields} disabled={isSubmitting} />
 			</ActionPanelBody>
 
 			<ActionPanelFooter>

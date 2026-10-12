@@ -41,7 +41,11 @@ export function useShiftSchedulerData({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 
-	const { data: shiftsResult, isLoading: shiftsLoading } = useQuery({
+	const {
+		data: shiftsResult,
+		isLoading: shiftsLoading,
+		isError: shiftsFailed,
+	} = useQuery({
 		queryKey: queryKeys.shifts.list(organizationId, dateRange),
 		queryFn: async () => {
 			const result = await getShifts({
@@ -123,13 +127,14 @@ export function useShiftSchedulerData({
 
 	const events = filterShiftsForEmployee(shifts, employeeFilter).map((shift) =>
 		shiftToEvent(shift, organizationTimezone),
-	) as any[];
+	);
 
 	return {
 		shifts,
 		templates,
 		events,
 		shiftsLoading,
+		shiftsFailed,
 		complianceSummary,
 		draftCount,
 		complianceFindingsCount,

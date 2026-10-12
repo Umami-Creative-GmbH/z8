@@ -264,32 +264,31 @@ export function ExecutionHistoryDialog({
 											{execution.emailsSent !== null ? (
 												<span>
 													{execution.emailsSent}
-													{execution.emailsFailed &&
-														execution.emailsFailed > 0 && (
-															<TooltipProvider>
-																<Tooltip>
-																	<TooltipTrigger asChild>
-																		<span className="text-destructive ml-1">
-																			({execution.emailsFailed}{" "}
-																			{t(
-																				"settings.scheduledExports.history.failed",
-																				"failed",
-																			)}
-																			)
-																		</span>
-																	</TooltipTrigger>
-																	<TooltipContent>
-																		<p>
-																			{t(
-																				"settings.scheduledExports.history.emailsFailed",
-																				"{count} email(s) failed to send",
-																				{ count: execution.emailsFailed },
-																			)}
-																		</p>
-																	</TooltipContent>
-																</Tooltip>
-															</TooltipProvider>
-														)}
+													{(execution.emailsFailed ?? 0) > 0 && (
+														<TooltipProvider>
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<span className="text-destructive ml-1">
+																		({execution.emailsFailed}{" "}
+																		{t(
+																			"settings.scheduledExports.history.failed",
+																			"failed",
+																		)}
+																		)
+																	</span>
+																</TooltipTrigger>
+																<TooltipContent>
+																	<p>
+																		{t(
+																			"settings.scheduledExports.history.emailsFailed",
+																			"{count} email(s) failed to send",
+																			{ count: execution.emailsFailed },
+																		)}
+																	</p>
+																</TooltipContent>
+															</Tooltip>
+														</TooltipProvider>
+													)}
 												</span>
 											) : (
 												"-"

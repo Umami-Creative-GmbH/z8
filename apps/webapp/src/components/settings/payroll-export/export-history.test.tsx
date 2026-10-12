@@ -33,6 +33,7 @@ const completedExport: PayrollExportJobSummary = {
 	completedAt: new Date("2026-07-01T10:01:00.000Z"),
 	errorMessage: null,
 	payrollRunIncludedReports: 0,
+	unmappedOvertimePayoutCount: 0,
 	filters: {
 		dateRange: {
 			start: "2026-06-01T00:00:00.000Z",
@@ -70,5 +71,21 @@ describe("ExportHistory", () => {
 				"noopener,noreferrer",
 			);
 		});
+	});
+
+	it("reports the overtime payouts an export left out for want of a wage type (#1001)", () => {
+		const { rerender } = render(
+			<ExportHistory organizationId="org-1" exports={[completedExport]} />,
+		);
+		expect(screen.queryByText(/not exported/)).toBeNull();
+
+		rerender(
+			<ExportHistory
+				organizationId="org-1"
+				exports={[{ ...completedExport, unmappedOvertimePayoutCount: 2 }]}
+			/>,
+		);
+
+		expect(screen.getByText(/overtime payouts}} not exported/)).toBeTruthy();
 	});
 });

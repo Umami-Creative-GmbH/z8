@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import {
 	disposeApprovalEscalationAttention,
@@ -32,8 +33,11 @@ const approvalEscalationQueryKey = (organizationId: string) =>
 
 export function ApprovalEscalationManagement({
 	organizationId,
+	approvalSettings,
 }: {
 	organizationId: string;
+	/** Organization approval settings, loaded on the server (#1015). */
+	approvalSettings?: ReactNode;
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -195,6 +199,8 @@ export function ApprovalEscalationManagement({
 					)}
 				</p>
 			</div>
+
+			{approvalSettings}
 
 			{isLoading ? (
 				<div className="space-y-4">

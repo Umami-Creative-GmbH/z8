@@ -2,7 +2,7 @@
 
 import type { ComponentProps, Dispatch, SetStateAction } from "react";
 import type { SelectableEmployee } from "@/components/employee-select/types";
-import type { CalendarFilters } from "@/hooks/use-calendar-data";
+import type { CalendarClosedRange, CalendarFilters } from "@/hooks/use-calendar-data";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 import { CalendarControls } from "./calendar-controls";
@@ -40,6 +40,8 @@ interface CalendarMainContentProps {
 	onRangeChange: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect: (range: { start: Date; end: Date }) => void;
 	onRefresh: () => void;
+	/** The viewed employee's closed ranges (#762). */
+	closedRanges: readonly CalendarClosedRange[];
 }
 
 export function CalendarMainContent({
@@ -70,6 +72,7 @@ export function CalendarMainContent({
 	onRangeChange,
 	onTimeRangeSelect,
 	onRefresh,
+	closedRanges,
 }: CalendarMainContentProps) {
 	return (
 		<div
@@ -120,6 +123,7 @@ export function CalendarMainContent({
 						onDayClick={onDayClick}
 						onRefresh={onRefresh}
 						isSummaryLoading={isSummaryLoading}
+						closedRanges={closedRanges}
 					/>
 				) : (
 					<ScheduleXWrapper

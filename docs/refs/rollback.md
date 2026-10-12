@@ -222,8 +222,8 @@ Before rolling any binary back:
   marker survives a rollback on purpose, so expect "connect once" refusals.
 - **Extension (retired).** Every target must keep the `legacy-extension-queue`
   400 → 409 fence (#266, #282).
-- **Mobile (retired).** The legacy `/api/mobile/*` routes keep their current behaviour,
-  including the committed clock-out replay fix (#283, #400).
+- **Mobile (retired).** The legacy mobile data routes were removed in #839 and no client
+  calls them. A rollback target from before #839 serves them again, which is harmless.
 
 ### Further per-slice consequences
 

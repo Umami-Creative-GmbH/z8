@@ -1,0 +1,1148 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "download": "Descărcare",
+      "preview": "Previzualizare",
+      "retry": "Reîncearcă",
+      "viewClaim": "Vizualizează decontul"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Corectați printr-o ajustare",
+        "confirm": "Creați o ajustare",
+        "explanation": "Primiți o copie a cheltuielilor aprobate pentru a le corecta. Trimiterea acesteia transmite întregul raport corectat pentru o nouă aprobare; doar diferența față de suma aprobată este rambursată sau restituită.",
+        "failed": "Ajustarea nu a putut fi creată. Vă rugăm să reîncercați.",
+        "ineligible": "Acest raport nu mai poate fi ajustat. Reîncărcați pagina pentru a vedea starea actuală a acestuia.",
+        "reason": "Motivul corecției",
+        "reasonRequired": "Explicați ce anume trebuie corectat.",
+        "reasonTooLong": "Păstrați motivul sub {max} caractere.",
+        "title": "Creați o ajustare asociată?"
+      },
+      "ineligible": {
+        "adjustment": "O ajustare este corectată prin intermediul raportului pe care îl ajustează."
+      },
+      "notice": {
+        "baseline": "Suma aprobată pe care o corectează",
+        "delta": "Diferență cu semn",
+        "editing": "Corectați cheltuielile de mai jos. Când trimiteți, diferența față de suma aprobată este afișată pentru examinare și apoi reevaluată de la zero. Raportul inițial și plățile aferente acestuia rămân neschimbate.",
+        "original": "Deschideți raportul inițial",
+        "title": "Ajustare a unui raport aprobat"
+      },
+      "panel": {
+        "applied": "Aplicat",
+        "description": "Acest raport a fost deja exportat sau decontat, așadar rămâne așa cum a fost aprobat. O corecție este o ajustare asociată: este reevaluată de la zero și, odată aprobată, modifică suma aprobată cu diferența cu semn aferentă.",
+        "effective": "Suma aprobată incluzând ajustările: {amount}",
+        "open": "Deschideți ajustarea",
+        "title": "Ajustări"
+      },
+      "preview": {
+        "currency": "Totalul corectat nu este în moneda raportului inițial, așadar nu poate fi trimis ca ajustare.",
+        "delta": "Această ajustare modifică suma aprobată de {baseline} cu {delta}.",
+        "review": "Necesită o nouă aprobare a întregului raport, chiar și atunci când suma scade."
+      },
+      "reviewerHint": "Angajatul creează ajustarea pornind de la acest raport; aceasta revine la dumneavoastră pentru o nouă evaluare, indicând diferența cu semn."
+    },
+    "allowanceOverride": {
+      "amount": "Sumă",
+      "authorizedBy": "Autorizat de",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Calcul",
+      "evidence": "Dovadă",
+      "noOrdinary": "Nu există niciun calcul standard pentru aceste circumstanțe.",
+      "ordinary": "Politica ar calcula {amount}.",
+      "reason": "Motiv",
+      "situation": {
+        "calculated": "Calculat conform politicii",
+        "fallback": "Calculat cu o rată oficială de rezervă",
+        "missingCoverage": "Nu este acoperit de nicio politică a organizației",
+        "missingFacts": "Lipsesc date obligatorii despre călătorie",
+        "unsupported": "Nu este acoperit de regulile de calcul acceptate"
+      },
+      "situationLabel": "De ce nu s-a calculat",
+      "situationResolved": "Această indemnizație manuală nu se mai aplică: motivul pentru care a fost autorizată s-a modificat (de exemplu, o politică acoperă acum aceste circumstanțe). Se ia în considerare indemnizația calculată, dacă există una; în caz contrar, un administrator de cheltuieli trebuie să o revizuiască.",
+      "stale": "Această indemnizație manuală a fost autorizată pentru circumstanțe diferite și nu se mai aplică. Un administrator de cheltuieli trebuie să examineze circumstanțele modificate.",
+      "title": "Indemnizație stabilită manual de un administrator de cheltuieli"
+    },
+    "approvals": {
+      "description": "Deschideți căsuța unificată de aprobări filtrată pentru cheltuieli de deplasare.",
+      "entry": {
+        "open": "Deschideți caseta de primire",
+        "title": "Revizuiți aprobările în așteptare pentru cheltuieli de deplasare"
+      }
+    },
+    "currency": {
+      "empty": "Nicio monedă găsită",
+      "placeholder": "Alegeți o monedă",
+      "search": "Căutați monede"
+    },
+    "decision": {
+      "approve": "Aprobă",
+      "approved": "Cererea a fost aprobată cu succes",
+      "approveDescription": "Adăugați o notă opțională pentru solicitant înainte de a aproba.",
+      "approveTitle": "Aprobă cererea",
+      "errors": {
+        "approve": "Aprobarea cererii a eșuat",
+        "missingClaim": "Cererea de decontare a cheltuielilor de deplasare lipsește",
+        "reject": "Respingerea cererii a eșuat",
+        "rejectionReason": "Vă rugăm să introduceți un motiv de respingere"
+      },
+      "noteOptional": "Notă (opțional)",
+      "notePlaceholder": "Arată bine. Mulțumim pentru detalii.",
+      "reasonPlaceholder": "Lipsesc detaliile chitanței pentru suma trimisă",
+      "reasonRequired": "Motiv (obligatoriu)",
+      "reject": "Respinge",
+      "rejectDescription": "Oferiți un motiv clar pentru a ajuta solicitantul să actualizeze și să retrimită.",
+      "rejected": "Cerere respinsă cu succes",
+      "rejectTitle": "Respinge cererea"
+    },
+    "detail": {
+      "created": "Creat",
+      "decisionRecorded": "Decizie înregistrată",
+      "destination": "Destinație",
+      "history": "Istoric decizii",
+      "historyDescription": "Fiecare pas al acestei cereri, începând cu cele mai vechi. Orele sunt afișate în UTC.",
+      "intermediateApproval": "Aprobare înregistrată — se așteaptă o altă aprobare",
+      "legacyReceiptIdentity": "Chitanță veche: suma de control a conținutului nu a fost înregistrată.",
+      "loading": "Se încarcă decontul…",
+      "noReceipts": "Nu există chitanțe înregistrate",
+      "notRecorded": "Neînregistrat",
+      "originalAmount": "Sumă inițială",
+      "receipts": "Chitanțe",
+      "refreshing": "Se reîmprospătează decontul…",
+      "submitted": "Trimis",
+      "title": "Decont de cheltuieli de deplasare",
+      "unknownDates": "Contextul datei călătoriei nu a fost înregistrat (decont vechi)"
+    },
+    "errors": {
+      "loadDetailRetry": "Acest decont nu a putut fi încărcat. Vă rugăm să reîncercați."
+    },
+    "feature": "gestionează cheltuielile de deplasare",
+    "finance": {
+      "approvedOn": "Aprobat la {date}",
+      "back": "Înapoi la finanțe cheltuieli",
+      "bulk": {
+        "action": "Marchează ca rambursat",
+        "description": "Fiecare cheltuială selectată este rambursată integral, în propria monedă, cu această dată și referință de plată. Z8 nu transferă bani.",
+        "failed": "Cheltuielile nu au putut fi marcate ca rambursate. Vă rugăm să reîncercați.",
+        "nothing": "Nimic de aici nu așteaptă rambursarea integrală. Nu este înregistrată nicio plată.",
+        "outcome": {
+          "alreadyReimbursed": "Omis: deja rambursat",
+          "balanceChanged": "Omis: soldul s-a modificat",
+          "failed": "Eșuat",
+          "inPayrollRun": "Omis: inclus într-o rulare de salarii",
+          "outOfScope": "Omis: în afara sferei de competență",
+          "overpaidOrReview": "Omis: plătit în exces sau necesită verificare",
+          "ownExpense": "Omis: propria cheltuială",
+          "reimbursed": "Rambursat {amount}"
+        },
+        "referenceHint": "Aceeași referință este înregistrată pentru fiecare cheltuială selectată, de exemplu lotul de transfer bancar.",
+        "results": {
+          "done": "Finalizat",
+          "summary": "{reimbursed} din {total} rambursate",
+          "title": "Rezultatele rambursării"
+        },
+        "select": "Selectează {name}",
+        "selectAll": "Selectează toate cheltuielile care așteaptă rambursarea de pe această pagină",
+        "selected": "{count} selectate",
+        "skipped": "Neincluse ({count})",
+        "submit": "Marchează {count} ca rambursate",
+        "title": "Marchează ca rambursat"
+      },
+      "companyPaid": "Plătit de companie {amount}",
+      "coverageGap": {
+        "description": "Niciun responsabil de cheltuieli activ care poate înregistra rambursări nu le are în domeniul său de competență. Proprietarii și administratorii le pot înregistra în continuare sau pot extinde domeniul de competență al unui responsabil.",
+        "empty": "Un responsabil de cheltuieli acoperă fiecare cheltuială aprobată care așteaptă rambursarea.",
+        "queueFilter": "Cheltuieli aprobate care așteaptă rambursarea și nu sunt acoperite de niciun responsabil de cheltuieli.",
+        "show": "Afișează aceste cheltuieli",
+        "showAll": "Afișează toate cheltuielile aprobate",
+        "title": "{count, plural, one {# cheltuială aprobată așteaptă rambursarea și nu este acoperită de niciun responsabil de cheltuieli} few {# cheltuieli aprobate așteaptă rambursarea și nu sunt acoperite de niciun responsabil de cheltuieli} other {# de cheltuieli aprobate așteaptă rambursarea și nu sunt acoperite de niciun responsabil de cheltuieli}}"
+      },
+      "description": "Cheltuieli aprobate și sumele datorate încă angajaților. Înregistrarea unei rambursări documentează o plată efectuată în afara Z8; nu se transferă bani.",
+      "employeePaid": "Plătit de angajat {amount}",
+      "empty": {
+        "allReimbursed": "Nimic de înregistrat: fiecare cheltuială aprobată este rambursată.",
+        "any": "Nicio cheltuială aprobată încă.",
+        "filtered": "Nicio cheltuială aprobată nu corespunde acestor filtre."
+      },
+      "entry": {
+        "description": "Examinați cheltuielile aprobate, soldurile restante și rambursările înregistrate.",
+        "open": "Deschideți coada financiară",
+        "title": "Finanțe cheltuieli"
+      },
+      "errors": {
+        "load": "Nu s-a putut încărca coada financiară. Vă rugăm să reîncercați."
+      },
+      "exports": {
+        "adjustment": "Ajustare: {name}",
+        "cancel": "Anulează",
+        "cancelledByFinance": "Anulat de departamentul financiar.",
+        "cancelledReopenedHint": "Anulat deoarece un raport inclus a fost redeschis pentru corecție. Toate celelalte rapoarte incluse sunt gata de exportat din nou: creați un nou export pentru ele.",
+        "counts": "{reports} rapoarte · {items} cheltuieli · {receipts} chitanțe",
+        "created": "Export adăugat în coadă. Va apărea mai jos când este gata.",
+        "description": "Exportați cheltuielile aprobate ca fișier CSV împreună cu chitanțele aferente pentru contabilitate. Fiecare trimitere aprobată este exportată o singură dată; descărcați din nou un export oricând aveți nevoie.",
+        "download": "Descarcă",
+        "empty": "Nicio cheltuială aprobată nu așteaptă exportul.",
+        "errors": {
+          "alreadyExported": "Unele cheltuieli selectate fac deja parte dintr-un alt export. Descărcați acel export în schimb.",
+          "cancel": "Exportul nu a putut fi anulat.",
+          "conflict": "O încercare anterioară cu o altă selecție a fost deja înregistrată. Verificați istoricul exporturilor.",
+          "failed": "Exportul nu a putut fi creat. Vă rugăm să reîncercați.",
+          "invalid": "Selectați între una și numărul maxim de cheltuieli.",
+          "load": "Nu s-au putut încărca exporturile. Vă rugăm să reîncercați.",
+          "reimburse": "Exportul nu a putut fi încărcat pentru rambursare. Vă rugăm să reîncercați.",
+          "retry": "Exportul nu a putut fi reîncercat.",
+          "stale": "Unele cheltuieli selectate nu mai sunt aprobate așa cum se arată. Lista a fost actualizată; verificați selecția și exportați din nou."
+        },
+        "failure": {
+          "enqueue": "Exportul nu a putut fi adăugat în coadă. Vă rugăm să reîncercați.",
+          "inconsistent": "Datele aprobate nu au putut fi exportate în mod consecvent. Contactați asistența.",
+          "receiptMismatch": "O chitanță stocată nu se mai potrivește cu suma de control înregistrată. Contactați asistența înainte de a reîncerca.",
+          "receiptUnavailable": "Un fișier chitanță nu a putut fi citit. Reîncercați după ce spațiul de stocare este disponibil.",
+          "storage": "Fișierul de export nu a putut fi stocat. Vă rugăm să reîncercați.",
+          "unknown": "Exportul a eșuat. Vă rugăm să reîncercați."
+        },
+        "form": {
+          "label": "Creează un export",
+          "selectAll": "Selectează tot",
+          "submit": "Creează export ({count})"
+        },
+        "history": "Istoric exporturi",
+        "loading": "Se încarcă exporturile…",
+        "markReimbursed": "Marchează ca rambursat",
+        "markReimbursedDescription": "Fiecare decont de cheltuieli din acest export este rambursat integral, în propria monedă, cu această dată și referință de plată. Ajustările sunt atribuite decontului pe care îl corectează. Z8 nu transferă bani.",
+        "notPayment": "Nu reprezintă o plată: exportul nu marchează nimic ca fiind rambursat.",
+        "requested": "Solicitat la {date} de {name}",
+        "retry": "Reîncearcă",
+        "status": {
+          "cancelled": "Anulat",
+          "completed": "Finalizat",
+          "failed": "Eșuat",
+          "processing": "În procesare",
+          "queued": "În coadă"
+        },
+        "title": "Exporturi"
+      },
+      "filter": {
+        "all": "Toate aprobate",
+        "clear": "Șterge filtrele",
+        "currency": {
+          "all": "Toate monedele",
+          "label": "Monedă",
+          "none": "Nu a fost găsită nicio monedă.",
+          "search": "Caută monede…"
+        },
+        "employee": {
+          "all": "Toți angajații",
+          "label": "Angajat",
+          "none": "Nu a fost găsit niciun angajat.",
+          "search": "Caută angajați…"
+        },
+        "label": "Afișează cheltuielile",
+        "notExported": "Neexportat încă",
+        "open": "Deschide",
+        "reimbursed": "Rambursat",
+        "team": {
+          "all": "Toate echipele",
+          "label": "Echipa la momentul aprobării",
+          "none": "Nu a fost găsită nicio echipă.",
+          "search": "Caută echipe…"
+        }
+      },
+      "inPayrollRun": "Inclus în {run}",
+      "legacyClaim": "Decont {type} de tip vechi",
+      "loading": "Se încarcă coada financiară…",
+      "pagination": {
+        "label": "Paginile cozii financiare",
+        "next": "Următorul",
+        "page": "Pagina {page}",
+        "previous": "Anterior"
+      },
+      "payrollRun": {
+        "confirm": {
+          "action": "Confirmați ca plătit",
+          "description": "Salarizarea a plătit această rulare {format}? Rapoartele de cheltuieli din aria dvs. de responsabilitate sunt înregistrate ca fiind rambursate odată cu aceasta. Propriile rapoarte și rapoartele din afara ariei dvs. de responsabilitate rămân în rulare.",
+          "descriptionCounted": "{count, plural, one {Salarizarea a plătit această rulare {format}? # raport de cheltuieli din aria dvs. de responsabilitate ({amount}) este înregistrat ca fiind rambursat odată cu aceasta. Propriile rapoarte și rapoartele din afara ariei dvs. de responsabilitate rămân în rulare.} other {Salarizarea a plătit această rulare {format}? # rapoarte de cheltuieli din aria dvs. de responsabilitate ({amount}) sunt înregistrate ca fiind rambursate odată cu aceasta. Propriile rapoarte și rapoartele din afara ariei dvs. de responsabilitate rămân în rulare.}}",
+          "failed": "Rularea de salarizare nu a putut fi confirmată. Vă rugăm să reîncercați; nimic nu se înregistrează de două ori.",
+          "outcome": {
+            "confirmed": "Rambursat {amount}",
+            "confirmedWithRemainder": "Rambursat {amount}. {remaining} încă așteaptă rambursarea pentru următoarea rulare.",
+            "outOfScope": "Neconfirmat: în afara ariei dvs. de responsabilitate. Rămâne în rulare pentru un responsabil care o acoperă.",
+            "overpaidByPayroll": "Rambursat {amount}, cu {overpaid} mai mult decât suma rămasă datorată. Cheltuiala este acum supraplătită: înregistrați recuperarea manual.",
+            "ownExpense": "Neconfirmat: cheltuială proprie. Rămâne în rulare pentru a fi confirmată de altcineva."
+          },
+          "payday": "Zi de plată",
+          "paydayHint": "Ziua de plată în care salarizarea a achitat această rulare. Fiecare rambursare din această rulare este înregistrată la această dată.",
+          "results": {
+            "nothing": "Nu a mai rămas nimic de confirmat în această rulare. Nu este înregistrată nicio rambursare.",
+            "summary": "{confirmed} din {total} confirmate",
+            "title": "Rezultatele confirmării"
+          },
+          "submit": "Confirmați ca plătit",
+          "title": "Confirmați rularea de salarizare {period} ca plătită"
+        },
+        "included": "Inclus în {run}. Se plătește odată cu acele salarii și este înregistrat ca rambursat atunci când rularea este confirmată.",
+        "label": "Rulare de salarii {period} ({format})",
+        "notIncluded": "Nicio rulare de salarii nu mai include această cheltuială.",
+        "remove": "Eliminați din rularea de salarii",
+        "removed": "Eliminată din rularea de salarii. Cheltuiala așteaptă din nou rambursarea.",
+        "removeDescription": "Eliminați-o doar dacă nu va fi plătită odată cu această rulare a salariilor, de exemplu după corectarea fișierului de salarii. Eliminarea este înregistrată în jurnalul de audit.",
+        "removeFailed": "Cheltuiala nu a putut fi eliminată din rularea de salarii.",
+        "removeTitle": "Eliminați această cheltuială din rularea de salarii?"
+      },
+      "payrollRuns": {
+        "description": "Aceste rulări de salarizare conțin rapoarte de cheltuieli care așteaptă rambursarea. După ce salarizarea a achitat o rulare, confirmați-o pentru a înregistra rambursările.",
+        "reports": "{count, plural, one {# raport de cheltuieli de confirmat, {amount}} other {# rapoarte de cheltuieli de confirmat, {amount}}}",
+        "title": "Rulări de salarizare în așteptarea confirmării"
+      },
+      "queue": {
+        "description": "Deschideți o cheltuială pentru a vedea decontarea acesteia și a înregistra o rambursare.",
+        "title": "Cheltuieli aprobate"
+      },
+      "title": "Financiar cheltuieli"
+    },
+    "form": {
+      "currency": "Monedă",
+      "notes": "Note"
+    },
+    "history": {
+      "adjustment": "Ajustare",
+      "adjustmentOf": "Ajustare a „{title}”",
+      "adjustmentOfUntitled": "Ajustare a unui raport anterior",
+      "claimed": "Solicitat",
+      "companyPaid": "Plătit de companie {amount}",
+      "continuedFrom": "Continuat dintr-un decont anterior",
+      "deleteDraft": "Ștergeți ciorna “{title}”",
+      "description": "Ciorne, rapoarte trimise și cereri anterioare, cele mai recent modificate primele.",
+      "emptyDescription": "Începeți o călătorie pentru a colecta mai multe cheltuieli cu detalii de călătorie comune sau adăugați o singură chitanță sau cheltuială cu kilometrajul. Ciornele se salvează automat, astfel încât să le puteți finaliza mai târziu.",
+      "emptyFilter": "Nicio cheltuială cu acest status.",
+      "emptyTitle": "Nicio cheltuială de călătorie încă",
+      "errors": {
+        "load": "Nu s-au putut încărca cheltuielile dvs. de călătorie. Vă rugăm să reîncercați.",
+        "refresh": "Cheltuielile dvs. nu au putut fi actualizate; este posibil ca lista de mai jos să nu fie la zi. Vă rugăm să reîncercați."
+      },
+      "filter": {
+        "all": "Toate",
+        "approved": "Aprobate",
+        "awaitingReimbursement": "În așteptarea rambursării",
+        "inReview": "În examinare",
+        "label": "Afișează cheltuielile",
+        "needsAction": "De finalizat",
+        "rejected": "Respinse"
+      },
+      "legacy": {
+        "badge": "Decont anterior",
+        "mileage": "Decont pentru kilometraj",
+        "perDiem": "Decont pentru diurnă",
+        "receipt": "Decont pe bază de chitanță"
+      },
+      "loading": "Se încarcă cheltuielile dvs. de călătorie…",
+      "notCounted": "{count, plural, one {# cheltuială neluată încă în calcul} other {# cheltuieli neluate încă în calcul}}",
+      "refreshing": "Se actualizează…",
+      "reimbursable": "Rambursabil către dvs.",
+      "showAll": "Afișează toate cheltuielile",
+      "title": "Cheltuielile dvs.",
+      "untitledMileage": "Kilometraj fără titlu"
+    },
+    "legacyDraft": {
+      "continue": "Continuă ca raport",
+      "converted": "Ați continuat această ciornă ca raport de cheltuieli. Acest decont rămâne aici neschimbat pentru referință.",
+      "description": "Ciornele din formularul de decont anterior sunt acum finalizate ca rapoarte de cheltuieli. Suma, datele, notele și chitanțele dvs. sunt preluate; orice element necesar noului formular care nu a fost înregistrat în această ciornă rămâne să fie completat de dvs. Acest decont în sine rămâne neschimbat.",
+      "failed": "Ciorna nu a putut fi continuată. Vă rugăm să reîncercați.",
+      "flags": {
+        "amount": "Suma introdusă {amount} nu este o sumă validă de pe chitanță. Introduceți suma și moneda de pe chitanță.",
+        "conversion": "Chitanța este într-o monedă străină. Ciorna nu a înregistrat nicio conversie, așadar adăugați modul în care a fost convertită (plată cu cardul sau curs valutar) înainte de a trimite.",
+        "destination": "Destinația „{destination}” nu a putut fi asociată cu o țară. Selectați-o.",
+        "expenseDate": "Ciorna a acoperit {range}. Alegeți ziua acestei cheltuieli.",
+        "manualTotal": "Ciorna avea un total introdus manual de {amount}. Acesta nu este utilizat: această cheltuială este calculată acum pe baza a ceea ce introduceți mai jos.",
+        "notes": "Notele dvs. sunt afișate mai jos; copiați ceea ce este încă valabil.",
+        "project": "Proiectul ciornei a fost păstrat. Cu excepția cazului în care alocarea dvs. la data cheltuielii este înregistrată, un administrator de cheltuieli trebuie să o autorizeze înainte de a putea trimite.",
+        "projectMissing": "Proiectul ciornei nu mai există. Alegeți un proiect dacă este cazul.",
+        "tripDates": "Ciorna a fost creată înainte de înregistrarea datelor de călătorie. Introduceți datele."
+      },
+      "loadFailed": "Nu s-a putut verifica această ciornă. Vă rugăm să reîncercați.",
+      "notDraft": "Acest decont a fost deja trimis. Acesta își păstrează aprobarea inițială și nu poate fi continuat ca raport.",
+      "notice": {
+        "description": "Ceea ce ați introdus a fost preluat acolo unde acest formular o permite în mod exact, inclusiv {count} chitanțe. Completați câmpurile rămase înainte de a trimite.",
+        "original": "Vizualizați ciorna originală",
+        "title": "Continuat dintr-o ciornă anterioară de cerere"
+      },
+      "openReport": "Deschideți raportul",
+      "receipt": {
+        "mismatch": "fișierul stocat nu mai corespunde cu cel încărcat",
+        "unreadable": "fișierul stocat nu poate fi citit în acest moment",
+        "unsupportedStorage": "fișierul este păstrat într-un spațiu de stocare neacceptat",
+        "unsupportedType": "fișierul stocat nu este un tip de chitanță acceptat"
+      },
+      "receiptUnavailable": "Nu a fost modificat nimic deoarece o chitanță nu a putut fi preluată în siguranță: {receipts}. Vă rugăm să reîncercați mai târziu sau să solicitați administratorului să restaureze fișierul.",
+      "status": "Continuat ca raport",
+      "title": "Continuați această ciornă"
+    },
+    "list": {
+      "actions": "Acțiuni",
+      "amount": "Sumă",
+      "dateRange": "Interval de date",
+      "emptyDescription": "Creați prima cerere pentru a începe procesul de aprobare.",
+      "emptyTitle": "Nicio cerere de cheltuieli de deplasare încă",
+      "status": "Stare",
+      "type": "Tip"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brasília",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Berna",
+        "genf": "Geneva"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Beijing",
+        "shanghai": "Shanghai"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Insulele Canare",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Paris și departamentele 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "Londra"
+      },
+      "GR": {
+        "athen": "Atena"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kolkata",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Roma"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokyo"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Varșovia"
+      },
+      "RU": {
+        "moskau": "Moscova",
+        "st-petersburg": "Sankt Petersburg"
+      },
+      "SA": {
+        "djidda": "Jeddah",
+        "riad": "Riad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Cape Town"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "Kilometraj nou",
+        "newReceipt": "Chitanță nouă",
+        "newTrip": "Călătorie nouă"
+      },
+      "approvedBy": "Aprobat de {name} la data de {date}.",
+      "approvedByDeputy": "Aprobat de {name} (înlocuitor pentru {actingForName}) la {date}.",
+      "awaitingReview": "În așteptarea revizuirii.",
+      "awaitingReviewer": "În așteptarea revizuirii de către {name}.",
+      "backToApprovals": "Înapoi la aprobări",
+      "backToCurrent": "Înapoi la raportul curent",
+      "backToTravelExpenses": "Înapoi la cheltuieli de deplasare",
+      "categories": {
+        "accommodation": "Cazare",
+        "meals": "Mese",
+        "other": "Altele",
+        "parking": "Parcare",
+        "transport": "Transport"
+      },
+      "conversion": {
+        "attachFirst": "Atașați mai întâi extrasul de card sau chitanța care indică debitarea de mai sus.",
+        "authorizedBy": "Autorizat de",
+        "basis": {
+          "cardCharge": "Debit pe card",
+          "manualRate": "Curs autorizat",
+          "referenceRate": "Curs de referință BCE"
+        },
+        "chargedAmount": "Suma debitată în {currency}",
+        "chargedAmountDescription": "Suma din extrasul de card sau de cont bancar, inclusiv orice comision de conversie aplicat.",
+        "conflict": "Această cheltuială a fost modificată în altă parte. Verificați-o și salvați din nou debitul pe card.",
+        "errors": {
+          "chargedAmount": "Introduceți suma pozitivă debitată în {currency}, cu cel mult {digits} zecimale.",
+          "evidence": "Selectați atașamentul acestei cheltuieli care indică debitarea."
+        },
+        "evidence": "Dovadă:",
+        "evidenceLabel": "Atașament care indică debitarea",
+        "evidenceMissing": "Atașamentul care indică debitarea de pe card lipsește.",
+        "formLabel": "Debit pe card",
+        "none": "Nu se aproximează niciun curs valutar. Introduceți suma debitată de pe card în {currency} și selectați atașamentul doveditor, cum ar fi extrasul de card. Fără o debitare pe card, un administrator de cheltuieli poate înregistra un curs documentat.",
+        "notSaved": "Debitul pe card nu a putut fi salvat pentru această cheltuială.",
+        "publicationDate": "Publicat la",
+        "publicationFallback": "Nu a fost publicat niciun curs la data de {expenseDate}, prin urmare se aplică cea mai recentă publicare anterioară.",
+        "rate": "Curs",
+        "rateDate": "Data cursului",
+        "rateEvidence": "Dovada cursului",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Documentație",
+        "reference": {
+          "alternatives": "Raportul dumneavoastră rămâne o ciornă până când introduceți debitul pe card în {reimbursementCurrency} împreună cu atașamentul doveditor sau până când un administrator de cheltuieli înregistrează un curs documentat.",
+          "currencyUnavailable": "Banca Centrală Europeană nu publică un curs pentru {currency} la această dată.",
+          "expenseDateMissing": "Introduceți data cheltuielii pentru a căuta cursul de referință.",
+          "historyUnavailable": "Nu există niciun curs de referință pentru această dată.",
+          "notYetPublished": "Cursul de referință pentru această dată nu a fost încă publicat. De obicei, acesta apare după ora 16:00, ora Frankfurtului, în zilele lucrătoare.",
+          "pairUnsupported": "Banca Centrală Europeană publică cursuri doar în raport cu moneda euro, așadar niciunul nu se aplică între {currency} și {reimbursementCurrency}.",
+          "providerUnavailable": "Cursul de referință pentru această dată nu a putut fi preluat încă. Încercați din nou mai târziu.",
+          "rateStale": "Niciun curs de referință curent nu este disponibil pentru această dată."
+        },
+        "referencePending": "Cursul de referință este căutat din nou pentru noua dată odată ce modificarea este salvată.",
+        "remove": "Elimină debitarea de pe card",
+        "removeFailed": "Debitarea de pe card nu a putut fi eliminată. Reîncărcați cheltuiala și încercați din nou.",
+        "replaceWithCardCharge": "Folosește în schimb debitarea de pe cardul meu",
+        "result": "{original} contează ca {reimbursement}",
+        "rounding": "Rotunjire",
+        "roundingValue": "Rotunjit prin adaos la {digits} zecimale",
+        "saveCardCharge": "Salvează debitarea de pe card",
+        "saved": "Debitare de pe card salvată",
+        "saveFailed": "Debitarea de pe card nu a putut fi salvată. Vă rugăm să reîncercați.",
+        "source": "Sursă",
+        "sourceEcb": "Cursul de referință euro al Băncii Centrale Europene, aprobat de organizația dumneavoastră",
+        "title": "Conversie în {currency}"
+      },
+      "correctAndResubmit": "Corectați raportul și trimiteți-l din nou. Trimiterile anterioare rămân în istoricul acestuia.",
+      "countryEmpty": "Nicio țară găsită",
+      "countrySearch": "Căutați țări",
+      "cycles": {
+        "approved": "aprobat",
+        "description": "Fiecare trimitere rămâne exact așa cum a fost trimisă pentru examinare.",
+        "entry": "Trimiterea {number} din {date}: {outcome}",
+        "pending": "în așteptarea examinării",
+        "rejected": "respins",
+        "reopened": "aprobat, apoi redeschis pentru corectare",
+        "returned": "returnat pentru modificări",
+        "title": "Trimiteri",
+        "withdrawn": "retras"
+      },
+      "decideInInbox": "Aprobați, returnați sau respingeți întregul raport în caseta de aprobări.",
+      "delete": {
+        "action": "Șterge ciorna",
+        "description": "Ciorna, cheltuielile sale și chitanțele aferente sunt șterse. Această acțiune nu poate fi anulată.",
+        "descriptionLegacy": "Ciorna, cheltuielile sale și chitanțele aferente sunt șterse, împreună cu ciorna cererii anterioare pe care o continuă. Această acțiune nu poate fi anulată.",
+        "done": "Ciornă ștearsă.",
+        "failed": "Ciorna nu a putut fi ștearsă. Vă rugăm să reîncercați.",
+        "notDeletable": "Acest raport a fost deja trimis, prin urmare nu mai poate fi șters.",
+        "title": "Ștergeți această ciornă?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, one {# cheltuială} few {# cheltuieli} other {# de cheltuieli}}",
+        "noDate": "Nicio dată încă",
+        "noTravelDates": "Nicio dată de călătorie încă",
+        "receipts": "{count, plural, one {# chitanță} few {# chitanțe} other {# de chitanțe}}",
+        "untitled": "Chitanță fără titlu",
+        "untitledTrip": "Călătorie fără titlu"
+      },
+      "earlierSubmission": "Aceasta este o trimitere anterioară a raportului, păstrată exact așa cum a fost trimisă.",
+      "errors": {
+        "amount": "Introduceți o sumă pozitivă cu cel mult două zecimale, de exemplu 12.50.",
+        "category": "Alegeți o categorie din listă.",
+        "create": "Cheltuiala nu a putut fi creată. Vă rugăm să reîncercați.",
+        "currency": "Introduceți un cod valutar din trei litere, de exemplu EUR.",
+        "expenseDate": "Introduceți o dată validă.",
+        "load": "Nu s-a putut încărca această cheltuială. Vă rugăm să reîncercați.",
+        "loadSubmission": "Nu s-a putut încărca raportul trimis. Vă rugăm să reîncercați.",
+        "paidBy": "Alegeți cine a plătit.",
+        "tooLong": "Acest text este prea lung."
+      },
+      "fields": {
+        "accountingReference": "Referință contabilă (opțional)",
+        "accountingReferenceDescription": "O referință pe care departamentul financiar v-a cerut să o folosiți, cum ar fi un număr de comandă.",
+        "amount": "Suma de pe chitanță",
+        "category": "Categorie",
+        "categoryPlaceholder": "Alegeți o categorie",
+        "description": "Descriere",
+        "descriptionPlaceholder": "de ex., Bilet de tren Berlin–Hamburg pentru atelierul cu clientul",
+        "expenseDate": "Data chitanței",
+        "paidBy": "Cine a plătit?"
+      },
+      "frozenNotice": "Raportul trimis nu mai poate fi editat.",
+      "history": {
+        "description": "Fiecare pas al acestui raport, începând cu cele mai vechi. Orele sunt afișate în UTC.",
+        "detail": {
+          "approvalRecorded": "De {name}; în așteptarea aprobării suplimentare.",
+          "approvalRecordedByDeputy": "De către {name} (înlocuitor pentru {actingForName}); în așteptarea aprobării suplimentare.",
+          "by": "De {name}",
+          "byDeputy": "De către {name} (înlocuitor pentru {actingForName})",
+          "inCycle": "Trimiterea {number} · {detail}",
+          "selfApproved": "Nimeni altcineva nu a putut examina acest raport."
+        },
+        "inReview": "În curs de examinare",
+        "step": {
+          "approvalRecorded": "Aprobare înregistrată",
+          "approved": "Aprobat",
+          "rejected": "Respins",
+          "reopened": "Redeschis pentru corectare",
+          "returned": "Returnat pentru modificări",
+          "selfApproved": "Aprobat automat",
+          "submitted": "Trimis",
+          "withdrawn": "Retras"
+        },
+        "title": "Istoric"
+      },
+      "items": {
+        "add": "Adaugă cheltuială cu chitanță",
+        "addFailed": "Cheltuiala nu a putut fi adăugată. Vă rugăm să reîncercați.",
+        "empty": "Adăugați fiecare chitanță din această călătorie ca o cheltuială separată. Detaliile călătoriei de mai sus se aplică tuturor.",
+        "emptyTitle": "Nicio cheltuială încă",
+        "numbered": "{type} {number}",
+        "remove": "Elimină",
+        "removeConfirm": "Elimină cheltuiala",
+        "removeConflict": "Această cheltuială a fost modificată în altă parte și nu a fost eliminată. Verificați-o și încercați din nou.",
+        "removed": "{type} (eliminat)",
+        "removeDescription": "Cheltuiala și chitanțele atașate sunt șterse din această călătorie. Această acțiune nu poate fi anulată.",
+        "removeFailed": "Cheltuiala nu a putut fi eliminată. Vă rugăm să reîncercați.",
+        "removeItem": "Eliminați {item}",
+        "removeTitle": "Eliminați această cheltuială?",
+        "title": "Cheltuieli"
+      },
+      "kind": {
+        "standaloneMileage": "Kilometraj individual",
+        "trip": "Raport de deplasare"
+      },
+      "loading": "Se încarcă cheltuiala…",
+      "mileage": {
+        "add": "Adaugă kilometraj",
+        "appliedPolicy": "Tarif valabil de la {date} · {source}",
+        "calculation": "{distance} km × {rate} pe km = {amount}",
+        "calculationTitle": "Kilometraj calculat",
+        "enterFacts": "Introduceți data, kilometrii și vehiculul pentru a vedea suma.",
+        "errors": {
+          "distance": "Introduceți kilometrii parcurși ca un număr pozitiv cu maximum două zecimale, de ex. 61,5.",
+          "vehicle": "Alegeți vehiculul pe care l-ați condus."
+        },
+        "fields": {
+          "date": "Data deplasării",
+          "distance": "Kilometri parcurși",
+          "route": "Traseu",
+          "routePlaceholder": "de ex. Birou Berlin – client Potsdam – retur",
+          "vehicle": "Vehicul",
+          "vehicleDescription": "Vehiculul propriu. Mașinile de serviciu și transportul public nu reprezintă kilometraj; adăugați chitanțele acestora în schimb."
+        },
+        "noRate": "Niciun tarif nu este inventat: această cheltuială rămâne în stadiul de ciornă până când un administrator de cheltuieli adaugă un tarif per kilometru care acoperă această dată.",
+        "noRateTitle": "Nu se aplică niciun tarif per kilometru",
+        "otherCurrency": "Tariful pentru această dată nu este în {currency}; kilometrajul nu se convertește niciodată.",
+        "pending": "Calculat pe baza tarifului organizației dvs. după salvarea modificărilor.",
+        "requirements": {
+          "currency": "Tariful per kilometru pentru această dată este în {policyCurrency}, dar acest raport este rambursat în {currency}. Solicitați unui administrator de cheltuieli să adauge un tarif în {currency}.",
+          "date": "Introduceți data deplasării.",
+          "distance": "Introduceți kilometrii parcurși.",
+          "policyMissing": "Organizația dvs. nu are un tarif per kilometru pentru {vehicle} la data de {date}. Solicitați unui administrator de cheltuieli să adauge un tarif datat în setările pentru cheltuieli de deplasare. Până atunci nu se calculează nimic.",
+          "route": "Descrieți traseul.",
+          "vehicle": "Alegeți vehiculul."
+        },
+        "rounded": "(exact {exact}, rotunjit la cent)",
+        "sourceOrganization": "Politica organizației: {reference}",
+        "sourceOrganizationUnnamed": "Politica organizației",
+        "sourceStatutory": "Tarif forfetar legal german ({version})",
+        "standaloneTitle": "Kilometraj",
+        "vehicles": {
+          "car": "Autoturism",
+          "otherMotorVehicle": "Alt autovehicul (de ex. motocicletă)"
+        }
+      },
+      "paidBy": {
+        "company": "A plătit compania (de ex. cardul companiei)",
+        "employee": "Am plătit eu (solicit rambursare)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h în deplasare",
+        "add": "Adaugă diurnă",
+        "appliedPolicy": "Tarife valabile de la {date} · {source}",
+        "basis": {
+          "absence24h": "Zi întreagă de absență (24 de ore)",
+          "claimedInOtherReport": "Plătită deja într-un alt raport de-al dvs.: este permisă o singură diurnă pe zi",
+          "over8h": "Mai mult de 8 ore de absență",
+          "overnightMajority": "Cea mai mare parte a absenței peste noapte",
+          "overnightMinority": "Contorizată în cealaltă zi a absenței peste noapte",
+          "travelDay": "Zi de deplasare a unei călătorii cu înnoptare",
+          "upTo8h": "8 ore sau mai puțin de absență: fără diurnă"
+        },
+        "breakdownCaption": "Diurnă pe zi calendaristică",
+        "calculationTitle": "Diurnă calculată",
+        "columns": {
+          "amount": "Sumă",
+          "day": "Zi",
+          "eligibility": "Eligibilitate",
+          "meals": "Mese asigurate",
+          "rate": "Diurnă"
+        },
+        "deductionNote": "Mesele asigurate reduc diurna zilnică, dar niciodată sub zero; suma plătită de dvs. pentru o masă îi reduce deducerea.",
+        "departure": "Plecare",
+        "enterFacts": "Introduceți plecarea, întoarcerea și mesele pentru a vedea diurnele zilnice.",
+        "errors": {
+          "clockChange": "Această oră nu există în această zi, deoarece ceasul se dă înainte. Introduceți o oră din afara orei omise.",
+          "clockChangeRepeated": "Această oră apare de două ori în această zi, deoarece ceasul se dă înapoi. Introduceți o oră din afara orei repetate.",
+          "endBeforeStart": "Întoarcerea trebuie să fie după plecare.",
+          "location": "Alegeți o locație din listă pentru fiecare zi.",
+          "meals": "Verificați datele introduse pentru mese.",
+          "payment": "Introduceți suma plătită cu maximum două zecimale, de ex. 2.50.",
+          "time": "Introduceți o oră sub formă de ore și minute."
+        },
+        "exceptionalTitle": "Necesită calcul manual",
+        "exceptions": {
+          "destinationNotListed": "O locație zilnică nu este inclusă în tabelul oficial pentru străinătate sau în regulile sale de rezervă.",
+          "foreignTimeZone": "Orele de călătorie nu sunt în ora locală a Germaniei.",
+          "foreignWithoutOvernight": "O activitate peste noapte în străinătate fără înnoptare nu este calculată automat.",
+          "international": "O destinație este în afara Germaniei. Diurna internațională nu este încă calculată.",
+          "majorityTie": "Absența peste noapte este împărțită exact în mod egal între ambele zile.",
+          "mixedTimeZones": "Plecarea și întoarcerea sunt în fusuri orare diferite.",
+          "multiDayWithoutOvernight": "Călătoria se întinde pe mai mult de două zile calendaristice fără înnoptare.",
+          "nightsAtHome": "Ați petrecut câteva nopți acasă în timpul deplasării.",
+          "overlappingDays": "Un alt raport al dvs. plătește deja diurna pentru unele dintre aceste zile; este permisă o singură diurnă pe zi, așa că excludeți-le din calculul manual.",
+          "prolongedWorkplace": "Activitate mai lungă la același loc de muncă: diurna este limitată la primele trei luni.",
+          "rulesNotVerified": "Nu există încă reguli germane verificate pentru aceste date de călătorie.",
+          "specialLocation": "O zi a fost marcată ca situație specială (alta, sau o zi întreagă în zbor ori pe mare în prima sau ultima zi de călătorie)."
+        },
+        "fields": {
+          "endDate": "Ziua în care v-ați întors",
+          "endTime": "Ora la care v-ați întors acasă sau la serviciu",
+          "meals": "Mese asigurate de angajator",
+          "mealsDescription": "Bifați fiecare masă asigurată de angajator sau de un hotel ori o gazdă în numele acestuia, chiar dacă ați sărit peste ea. Introduceți suma plătită pentru aceasta, dacă este cazul.",
+          "mealsNeedDates": "Introduceți zilele de plecare și de întoarcere pentru a afișa lista zilelor de deplasare.",
+          "overnight": "Nopți în timpul deplasării",
+          "payment": "Suma plătită de dvs. pentru {meal} în data de {date}",
+          "paymentPlaceholder": "Ați plătit (opțional)",
+          "prolongedWorkplace": "Lucrez în acest loc de mai mult de trei luni",
+          "prolongedWorkplaceDescription": "Diurna se aplică doar pentru primele trei luni la același loc de muncă; astfel de deplasări necesită calcul manual.",
+          "startDate": "Ziua în care ați plecat",
+          "startTime": "Ora la care ați plecat de acasă sau de la serviciu",
+          "timeZone": "Fus orar"
+        },
+        "foreignRates": "Bareme externe: {reference} ({version})",
+        "location": {
+          "activityToday": "Unde a avut loc ultima activitate profesională în străinătate în această zi?",
+          "assigned": "Sumele alocate acestei țări conform reglementărilor oficiale",
+          "atSea": "La bordul unei nave toată ziua (fără îmbarcare sau debarcare)",
+          "choose": "Alegeți o locație",
+          "countryElsewhere": "{country} – în altă parte",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Altundeva",
+          "fallbackFlight": "Regulă oficială: întreaga zi în zbor, sumele pentru Austria",
+          "fallbackLuxembourg": "Alternativă oficială: neprevăzut în listă, sumele pentru Luxemburg",
+          "fallbackMotherCountry": "Alternativă oficială: teritoriu, sumele țării de origine",
+          "fallbackShip": "Regulă oficială: întreaga zi pe mare, sumele pentru Luxemburg",
+          "germany": "Germania",
+          "inFlight": "În zbor toată ziua (între ziua decolării și ziua aterizării)",
+          "lastActivityTrip": "Unde a avut loc ultima activitate profesională în străinătate în această deplasare?",
+          "night": "Unde vă aflați la miezul nopții? (ultimul loc atins înainte de ora locală 24:00; o țară se consideră atinsă la aterizarea avionului)",
+          "noActivityAbroad": "Fără activitate profesională în străinătate",
+          "other": "Altceva (necesită calcul manual)",
+          "place": "Locație în {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (ați plătit {payment})",
+        "meals": {
+          "breakfast": "Mic dejun",
+          "dinner": "Cină",
+          "lunch": "Prânz"
+        },
+        "mealsCountToward": "Dedus la {date}",
+        "noRate": "Nu se inventează niciun barem: această cheltuială rămâne ca ciornă până când un administrator adaugă diurne pentru zilele respective.",
+        "noRateTitle": "Nu se aplică nicio diurnă",
+        "otherCurrency": "Baremele pentru aceste zile nu sunt în {currency}; diurna nu este convertită niciodată.",
+        "overnight": {
+          "away": "Am înnoptat departe de casă în fiecare noapte",
+          "mixed": "Am petrecut câteva nopți acasă",
+          "none": "Am lucrat pe parcursul nopții fără cazare"
+        },
+        "pending": "Se calculează pe baza baremelor valabile ale organizației dvs. după salvarea modificărilor.",
+        "requirements": {
+          "currency": "Diurnele pentru aceste zile sunt în {policyCurrency}, dar acest raport este rambursat în {currency}. Solicitați unui administrator de cheltuieli să adauge bareme în {currency}.",
+          "end": "Introduceți când ați revenit acasă sau la locul de muncă.",
+          "exceptional": "Acest itinerar necesită calcularea manuală a diurnei de către un administrator de cheltuieli. Nu este calculat automat.",
+          "locations": "Indicați pentru fiecare zi de deplasare unde vă aflați la miezul nopții și unde a avut loc ultima activitate profesională în străinătate.",
+          "meals": "Confirmați mesele asigurate pentru fiecare zi de deplasare.",
+          "notReturned": "Vă întoarceți pe {date} la {time} ({timeZone}). Puteți trimite după aceea.",
+          "overnight": "Indicați dacă ați înnoptat departe de casă.",
+          "policyMissing": "Organizația dvs. nu are diurne configurate pentru {dates}. Solicitați unui administrator de cheltuieli să adauge bareme cu dată în setările cheltuielilor de deplasare. Până atunci nu se calculează nimic.",
+          "start": "Introduceți când ați plecat de acasă sau de la locul de muncă.",
+          "tripDates": "Zilele de plecare și de întoarcere trebuie să fie prima și ultima zi a deplasării."
+        },
+        "return": "Întoarcere",
+        "rulesApplied": "Reguli: {reference} ({version})",
+        "title": "Diurnă",
+        "total": "Diurnă"
+      },
+      "project": {
+        "exceptionBadge": "Excepție de atribuire",
+        "exceptionDates": "Acoperă",
+        "exceptionEvidence": "Document justificativ",
+        "exceptionReason": "Motiv",
+        "fromTrip": "(proiect deplasare)",
+        "inheritNamed": "La fel ca deplasarea ({name})",
+        "inheritNone": "La fel ca deplasarea (fără proiect)",
+        "label": "Proiect (opțional)",
+        "loadFailed": "Proiectele nu au putut fi încărcate.",
+        "needsExpenseDate": "Introduceți data cheltuielii pentru a vedea proiectele pe care le puteți folosi în acea zi.",
+        "needsTripDates": "Introduceți datele călătoriei pentru a vedea proiectele pe care le puteți utiliza pentru această deplasare.",
+        "none": "Niciun proiect",
+        "noneEligible": "Nu ați avut nicio alocare pe proiect la această dată. Dacă ați lucrat la un proiect atunci, un administrator de cheltuieli poate autoriza o excepție de atribuire.",
+        "notEligible": "{name} nu poate fi utilizat la această dată: nu ați fost alocat la acesta atunci. Alegeți un alt proiect sau solicitați o excepție de atribuire unui administrator de cheltuieli.",
+        "refused": {
+          "conflict": "Această cheltuială a fost modificată în altă parte. Rezolvați conflictul de salvare de mai sus, apoi alegeți din nou proiectul.",
+          "dateRequired": "Introduceți mai întâi data: proiectele sunt propuse în funcție de data cheltuielii.",
+          "failed": "Proiectul nu a putut fi salvat. Vă rugăm să reîncercați.",
+          "ineligible": "Nu ați fost alocat la acest proiect la data respectivă. Solicitați o excepție de atribuire unui administrator de cheltuieli dacă ați lucrat la el.",
+          "notFound": "Acest proiect nu este disponibil."
+        },
+        "saving": "Se salvează proiectul…",
+        "tripDescription": "Cheltuielile utilizează proiectul deplasării, cu excepția cazului în care alegeți altul pentru ele. Fiecare cheltuială trebuie să fie acoperită de alocarea dumneavoastră pe proiect la data respectivă.",
+        "tripLabel": "Proiectul deplasării (opțional)",
+        "unavailableOption": "{name} (indisponibil la această dată)",
+        "unavailableTripOption": "{name} (indisponibil la aceste date)",
+        "viaException": "excepție autorizată"
+      },
+      "receiptException": {
+        "badge": "Chitanță lipsă — excepție",
+        "disabled": "Organizația dumneavoastră nu mai permite excepții pentru chitanțe lipsă. Atașați chitanța sau eliminați explicația.",
+        "notAllowed": "Organizația dumneavoastră nu permite excepții pentru chitanțe lipsă.",
+        "reason": "De ce lipsește chitanța?",
+        "reasonDescription": "Examinatorul dumneavoastră vede această explicație și trebuie să o accepte pentru a aproba raportul.",
+        "reasonLabel": "Motivul pentru care lipsește:",
+        "reasonRequired": "Explicați de ce lipsește chitanța.",
+        "receiptAttached": "O chitanță este atașată, prin urmare explicația privind lipsa chitanței nu este trimisă.",
+        "request": "Nu pot furniza chitanța și solicit o excepție",
+        "title": "Nu aveți chitanță?",
+        "unsavedAfterClose": "Explicația privind lipsa chitanței nu a putut fi salvată. Deschideți din nou cheltuiala pentru a o verifica.",
+        "withdraw": "Eliminați explicația"
+      },
+      "receipts": {
+        "chooseFile": "Alegeți fișierul",
+        "description": "Faceți o fotografie sau atașați un PDF ori o imagine a chitanței.",
+        "downloadNamed": "Descărcați {fileName}",
+        "errors": {
+          "locked": "Această cheltuială nu mai poate fi modificată.",
+          "retry": "Vă rugăm să încercați din nou.",
+          "tooLarge": "Fișierul este prea mare. Atașați un fișier de cel mult {size} MB.",
+          "unsupportedType": "Atașați un PDF sau o imagine (JPEG, PNG, WebP, GIF, BMP sau TIFF)."
+        },
+        "none": "Nicio chitanță atașată încă.",
+        "previewNamed": "Previzualizați {fileName}",
+        "progress": "Progres încărcare",
+        "remove": "Eliminare",
+        "removeFailed": "Chitanța nu a putut fi eliminată.",
+        "removeNamed": "Eliminați {fileName}",
+        "takePhoto": "Faceți o fotografie",
+        "title": "Chitanță",
+        "uploadFailed": "Chitanța nu a fost atașată.",
+        "uploading": "Se încarcă chitanța…",
+        "verifying": "Se verifică chitanța…"
+      },
+      "rejectedBy": "Respins de {name}",
+      "rejectedByDeputy": "Respins de {name} (înlocuitor pentru {actingForName})",
+      "reopen": {
+        "action": "Redeschideți pentru corectare",
+        "changed": "Raportul a fost modificat între timp și nu a fost redeschis. Examinați-l din nou.",
+        "confirm": "Redeschideți raportul",
+        "description": "Angajatul poate corecta raportul și trebuie să îl trimită din nou pentru o nouă aprobare. Până atunci, acesta nu este plătibil și nici exportabil. Trimiterea aprobată rămâne în istoricul acestuia.",
+        "done": "Raport redeschis pentru corectare",
+        "exported": "Acest raport a fost deja exportat în contabilitate, astfel încât nu mai poate fi redeschis. Corecțiile necesită o ajustare asociată.",
+        "failed": "Raportul nu a putut fi redeschis. Este posibil să fi fost modificat sau să nu mai aveți acces. Reîncărcați-l și încercați din nou.",
+        "reason": "Motiv pentru angajat",
+        "reasonRequired": "Indicați-i angajatului ce trebuie să corecteze.",
+        "reasonTooLong": "Păstrați motivul sub {max} caractere.",
+        "reimbursed": "O rambursare a fost deja înregistrată pentru acest raport, prin urmare nu mai poate fi redeschis. Corecțiile necesită o ajustare asociată.",
+        "reopenedBy": "Redeschis pentru corectare de către {name} la {date}",
+        "title": "Redeschideți acest raport aprobat?"
+      },
+      "requirements": {
+        "amount": "Introduceți suma de pe chitanță.",
+        "category": "Alegeți o categorie.",
+        "complete": "Toate datele pentru această cheltuială au fost introduse.",
+        "conversionEvidence": "Selectați atașamentul care indică debitarea cardului.",
+        "conversionMissing": "Convertiți această chitanță în {currency}: introduceți debitarea cardului împreună cu atașamentul doveditor sau solicitați un curs documentat unui administrator de cheltuieli.",
+        "conversionRateDate": "Data cursului autorizat nu mai corespunde cu data cheltuielii. Introduceți debitarea cardului sau solicitați unui administrator de cheltuieli să documenteze un curs pentru noua dată.",
+        "conversionUnsupported": "Această conversie nu poate fi utilizată pentru {currency}. Solicitați unui administrator de cheltuieli să o verifice.",
+        "description": "Descrieți cheltuiala.",
+        "expenseDate": "Adăugați data de pe chitanță.",
+        "fixFields": "Corectați mai întâi câmpurile evidențiate.",
+        "futureDate": "Această dată este în viitor. Corectați-o sau trimiteți din {date}.",
+        "paidBy": "Indicați dacă plata a fost făcută de dvs. sau de companie.",
+        "receipt": "Atașați chitanța.",
+        "receiptExceptionNotAllowed": "Atașați chitanța. Organizația dvs. nu permite excepții pentru chitanțe lipsă.",
+        "receiptExceptionReason": "Explicați de ce lipsește chitanța.",
+        "title": "Încă necesare"
+      },
+      "returnedBy": "Returnat pentru modificări de către {name} la {date}",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
+      "save": {
+        "conflictDescription": "A fost salvat într-o altă fereastră sau pe un alt dispozitiv după ce l-ați deschis. Ultimele dvs. modificări nu sunt încă salvate.",
+        "conflictTitle": "Această cheltuială a fost modificată în altă parte",
+        "failedDescription": "Modificările dvs. sunt păstrate pe această pagină. Verificați conexiunea și încercați din nou.",
+        "failedTitle": "Modificările dvs. nu au putut fi salvate",
+        "invalid": "Corectați câmpurile evidențiate pentru a le salva",
+        "keepMine": "Salvează în schimb modificările mele",
+        "pending": "Modificări nesalvate",
+        "retry": "Încercați din nou",
+        "saved": "Toate modificările au fost salvate",
+        "saving": "Se salvează…",
+        "unsavedAfterClose": "Ultimele modificări aduse unei cheltuieli nu au putut fi salvate. Deschideți-o din nou pentru a o verifica.",
+        "useTheirs": "Încarcă versiunea salvată"
+      },
+      "selfApprovedOn": "Aprobat automat pe {date}: acesta este raportul proprietarului organizației și nimeni altcineva nu l-a putut revizui.",
+      "standaloneTitle": "Chitanță individuală",
+      "status": {
+        "approved": "Aprobat",
+        "rejected": "Respins",
+        "returned": "Returnat pentru modificări",
+        "submitted": "În așteptarea revizuirii"
+      },
+      "submissionNumberAt": "Trimiterea {number}, trimisă la {date}",
+      "submit": {
+        "adjustment": "Raportul pe care îl corectează această ajustare nu mai este aprobat în această monedă, astfel încât nu se poate calcula o diferență cu semn. Ajustarea dvs. rămâne salvată ca ciornă.",
+        "adjustmentSuperseded": "O altă ajustare a aceluiași raport a fost aprobată după ce ați început-o pe aceasta, iar această copie nu include acea corecție. Începeți o nouă ajustare din raportul inițial, astfel încât ambele corecții să fie păstrate.",
+        "adjustmentTitle": "Această ajustare nu poate fi trimisă",
+        "blockedIncomplete": "Completați toate elementele listate la „Încă necesare” înainte de trimitere.",
+        "blockedUnsaved": "Așteptați salvarea tuturor modificărilor sau corectați câmpurile evidențiate înainte de trimitere.",
+        "cancel": "Continuă editarea",
+        "changed": "Raportul s-a modificat după ce l-ați revizuit. Închideți această casetă de dialog, verificați datele introduse și revizuiți-l din nou.",
+        "changedTitle": "Raportul s-a modificat",
+        "confirm": "Trimite spre aprobare",
+        "description": "Verificați raportul salvat. Evaluatorul dvs. ia o decizie exact pe baza acestei versiuni; raportul nu poate fi modificat în timp ce este în curs de revizuire.",
+        "failed": "Ceva nu a funcționat. Raportul dvs. este salvat în continuare ca ciornă; vă rugăm să reîncercați.",
+        "failedTitle": "Raportul nu a fost trimis",
+        "incomplete": "Unele detalii salvate lipsesc încă. Completați tot ce este indicat la „Necesar în continuare” și încercați din nou.",
+        "incompleteTitle": "Raportul este incomplet",
+        "itemRequirement": "{item}: {requirement}",
+        "noReviewerAsk": "Nu aveți alt manager sau manager de echipă în afară de dvs. și nu este configurat niciun aprobator de cheltuieli. Solicitați unui administrator să aleagă un aprobator de cheltuieli în Setări, Cheltuieli de deplasare, Revizuire raport de cheltuieli. Raportul dvs. rămâne salvat ca ciornă.",
+        "noReviewerAssign": "Nu aveți alt manager sau manager de echipă în afară de dvs. și nu este configurat niciun aprobator de cheltuieli. Alegeți un aprobator de cheltuieli la Revizuire raport de cheltuieli din setările pentru cheltuieli de deplasare. Raportul dvs. rămâne salvat ca ciornă.",
+        "noReviewerTitle": "Nimeni nu poate examina acest raport încă",
+        "notSaved": "Unele modificări nu sunt încă salvate. Așteptați salvarea acestora, apoi revizuiți din nou raportul.",
+        "openApproverSetting": "Deschideți setarea aprobatorului de cheltuieli",
+        "project": "{count, plural, one {O cheltuială este atribuită unui proiect la care nu ați fost alocat la data cheltuielii. Alegeți alt proiect sau solicitați unui administrator de cheltuieli o excepție de atribuire. Raportul dvs. rămâne salvat ca ciornă.} other {# cheltuieli sunt atribuite unui proiect la care nu ați fost alocat la data cheltuielii. Alegeți alt proiect sau solicitați unui administrator de cheltuieli o excepție de atribuire. Raportul dvs. rămâne salvat ca ciornă.}}",
+        "projectTitle": "Un proiect nu poate fi utilizat",
+        "ready": "Înregistrările dvs. sunt salvate. Revizuiți raportul și trimiteți-l spre aprobare.",
+        "requesterInactive": "Profilul dvs. de angajat nu este activ în această organizație, astfel că raportul nu poate fi direcționat pentru examinare.",
+        "review": "Revizuiți și trimiteți",
+        "routing": "Regulile de aprobare ale organizației dvs. nu au putut identifica un evaluator. Solicitați unui administrator să le verifice. Raportul dvs. rămâne salvat ca ciornă.",
+        "routingTitle": "Raportul nu a putut fi direcționat",
+        "selfApproval": "Regulile de aprobare ale organizației dvs. v-ar permite să vă aprobați propriul raport. Solicitați unui administrator să le ajusteze. Raportul dvs. rămâne salvat ca ciornă.",
+        "selfApprovalBlocked": "În calitate de proprietar al organizației, rapoartele dvs. sunt aprobate automat atâta timp cât nimeni altcineva nu le poate revizui. Acest raport conține o explicație pentru chitanță lipsă sau o indemnizație stabilită manual, pe care altcineva trebuie să o accepte. Alegeți un aprobator de cheltuieli sau modificați raportul. Raportul dvs. rămâne salvat ca ciornă.",
+        "selfApproved": "Raport aprobat automat: nimeni altcineva nu îl poate revizui",
+        "success": "Raport trimis spre aprobare",
+        "thresholdCurrency": "Regulile de aprobare ale organizației dvs. compară sumele în EUR, dar acest raport este în {currency}. Solicitați unui administrator să le verifice. Raportul dvs. rămâne salvat ca ciornă.",
+        "title": "Trimiteți raportul de cheltuieli",
+        "unavailable": "Organizația dvs. modifică modul în care funcționează aprobarea cheltuielilor, astfel că rapoartele nu pot fi trimise în acest moment. Raportul dvs. rămâne salvat ca ciornă.",
+        "unavailableTitle": "Trimiterea este suspendată"
+      },
+      "submittedAt": "Trimis la {date}",
+      "summary": {
+        "itemPrefix": "{item}:",
+        "paidByCompany": "Plătit de companie",
+        "paidByEmployee": "Plătit de dvs."
+      },
+      "totals": {
+        "companyPaid": "Plătit de companie",
+        "excluded": "{count, plural, one {# cheltuială nu este luată încă în calcul. Totalurile includ cheltuielile în {currency} a căror sumă și al căror plătitor sunt introduse.} other {# cheltuieli nu sunt luate încă în calcul. Totalurile includ cheltuielile în {currency} a căror sumă și al căror plătitor sunt introduse.}}",
+        "reimbursable": "Rambursat către dvs.",
+        "title": "Totaluri"
+      },
+      "trip": {
+        "dates": "Datele călătoriei",
+        "datesZone": "(zile calendaristice în {timeZone})",
+        "description": "Fiecare cheltuială din această deplasare are aceste detalii în comun.",
+        "destinations": "Destinații",
+        "errors": {
+          "destination": "Alegeți o țară din listă.",
+          "endBeforeStart": "Ultima zi de călătorie nu poate fi înaintea primei zile.",
+          "timeZone": "Alegeți un fus orar din listă.",
+          "tooManyDestinations": "Introduceți cel mult {max} destinații."
+        },
+        "fields": {
+          "addDestination": "Adăugați o destinație",
+          "country": "Țara {number}",
+          "countryPlaceholder": "Țară",
+          "destinations": "Destinații",
+          "endDate": "Ultima zi de călătorie",
+          "noDestinations": "Adăugați locurile în care călătoriți.",
+          "place": "Locul {number}",
+          "placePlaceholder": "Oraș sau localitate",
+          "purpose": "Scopul călătoriei",
+          "purposePlaceholder": "de ex., Workshop cu clienții în Hamburg",
+          "removeDestination": "Eliminați destinația {number}",
+          "startDate": "Prima zi de călătorie",
+          "timeZone": "Fusul orar al datelor de călătorie",
+          "timeZoneDescription": "Datele de călătorie sunt zile calendaristice în {timeZone}. Evaluatorii văd aceleași date, indiferent unde se află."
+        },
+        "purpose": "Scopul călătoriei",
+        "requirements": {
+          "complete": "Toate datele pentru această călătorie au fost introduse.",
+          "destination": "Adăugați cel puțin o destinație.",
+          "expenseItem": "Adăugați o cheltuială.",
+          "fixFields": "Corectați detaliile evidențiate ale deplasării.",
+          "itemNamed": "{item}: {description}",
+          "notEnded": "Călătoria se încheie pe {date}. Puteți trimite începând din acea zi.",
+          "purpose": "Descrieți scopul deplasării.",
+          "title": "Încă necesar pentru această deplasare",
+          "travelDates": "Introduceți prima și ultima zi a deplasării."
+        },
+        "title": "Detalii deplasare",
+        "unsavedAfterClose": "Ultimele modificări aduse detaliilor deplasării nu au putut fi salvate. Deschideți din nou deplasarea pentru a le verifica."
+      },
+      "withdraw": {
+        "action": "Retrageți raportul",
+        "confirm": "Retrageți",
+        "description": "Procesul de revizuire se oprește, iar raportul redevine o ciornă editabilă. Această trimitere rămâne în istoricul raportului.",
+        "done": "Raport retras. Îl puteți edita din nou.",
+        "failed": "Raportul nu a putut fi retras. Vă rugăm să reîncercați.",
+        "notPending": "Această trimitere a fost deja soluționată sau returnată, prin urmare nu mai poate fi retrasă.",
+        "title": "Retrageți acest raport?"
+      },
+      "withdrawnNotice": "Ați retras trimiterea {number}. Trimiteți din nou raportul când este gata.",
+      "withdrawnSubmission": "Această trimitere a fost retrasă înainte de luarea unei decizii."
+    },
+    "settings": {
+      "catalogAdopted": "Adoptat pe {date}, valabil din {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Adoptă diurna legală germană cu ratele oficiale pentru străinătate",
+        "foreignAreas": "Rate externe: {countries} țări și {places} orașe"
+      },
+      "reimbursementChannel": {
+        "bankTransfer": "Transfer bancar",
+        "bankTransferDescription": "Responsabilii de cheltuieli plătesc rambursările prin transfer bancar și le înregistrează în Z8.",
+        "intro": "Modul în care organizația dvs. plătește rambursările. Opțiunea se aplică fiecărui angajat.",
+        "loadFailed": "Canalul de rambursare nu a putut fi încărcat.",
+        "payrollRun": "Rulare de salarii",
+        "payrollRunDescription": "Rularea de salarii include rambursările, care sunt înregistrate după ce rularea de salarii este confirmată ca plătită. Rapoartele pe care o rulare de salarii nu le poate include sunt plătite prin transfer bancar.",
+        "payrollRunPreview": "În versiune preliminară și indisponibil încă pentru organizația dvs.",
+        "save": "Salvați canalul",
+        "saved": "Canalul de rambursare a fost salvat",
+        "saveFailed": "Canalul de rambursare nu a putut fi salvat.",
+        "title": "Canal de rambursare",
+        "unconfirmedRuns": "{count, plural, one {# rulare de salarii nu este confirmată încă. Aceasta poate fi confirmată sau anulată în continuare.} other {# rulări de salarii nu sunt confirmate încă. Acestea pot fi confirmate sau anulate în continuare.}}"
+      },
+      "tabs": {
+        "access": "Acces",
+        "currencies": "Monede",
+        "exceptions": "Excepții",
+        "exceptionsPending": "{label}, {count} în așteptare",
+        "rates": "Rate",
+        "review": "Revizuire"
+      }
+    },
+    "settlement": {
+      "adjustment": "Inclusiv ajustarea aprobată",
+      "balance": {
+        "outstanding": "{amount} restant",
+        "overpaid": "{amount} plătit în plus",
+        "reimbursed": "Rambursat"
+      },
+      "companyPaid": "Costurile de {amount} plătite de companie nu sunt datorate angajatului.",
+      "entitlement": "Sumă aprobată plătită de angajat",
+      "entry": {
+        "exportBatch": "Din exportul solicitat pe {date}",
+        "payrollRun": "Rambursat odată cu salarizarea {period}",
+        "recordedBy": "Înregistrat de {name}, {date}",
+        "recovery": "Recuperat {amount}",
+        "reimbursement": "Plătit {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Introduceți o sumă pozitivă.",
+        "amountPrecision": "Această monedă nu are atât de multe zecimale.",
+        "amountRequired": "Introduceți suma plătită.",
+        "conflict": "O încercare anterioară cu alte valori a fost deja înregistrată. Verificați istoricul înainte de a înregistra din nou.",
+        "dateFuture": "O plată nu poate avea o dată din viitor.",
+        "dateInvalid": "Introduceți o dată validă.",
+        "dateRequired": "Introduceți data plății.",
+        "exceedsOutstanding": "Suma depășește soldul restant.",
+        "exceedsOverpayment": "Suma depășește ceea ce a fost plătit în plus.",
+        "failed": "Plata nu a putut fi înregistrată. Vă rugăm să reîncercați.",
+        "inPayrollRun": "O rulare de salarii include acum această cheltuială, deci este plătită odată cu salariul. Eliminați-o din rulare înainte de a înregistra o plată.",
+        "load": "Nu s-a putut încărca soldul rambursării. Vă rugăm să reîncercați.",
+        "noOverpayment": "Nu a fost plătit nimic în plus pentru această cheltuială.",
+        "notApproved": "Această cheltuială nu mai este aprobată, prin urmare nu se poate înregistra nicio plată.",
+        "nothingOutstanding": "Nu există sume restante pentru această cheltuială.",
+        "ownExpense": "Nu puteți înregistra plăți pentru propriile cheltuieli.",
+        "referenceRequired": "Introduceți referința plății, de exemplu referința transferului bancar.",
+        "refused": "Această plată nu poate fi înregistrată pentru această cheltuială.",
+        "staleBalance": "Soldul s-a modificat în timp ce introduceați această plată. Verificați soldul actualizat și înregistrați din nou.",
+        "tooLong": "Acest text este prea lung."
+      },
+      "form": {
+        "amount": "Sumă plătită ({currency})",
+        "date": "Data plății",
+        "label": "Înregistrați o rambursare",
+        "note": "Notă (opțional)",
+        "notice": "Înregistrați banii deja plătiți angajatului. Z8 nu transferă bani.",
+        "reference": "Referință plată",
+        "referenceHint": "De exemplu, referința transferului bancar sau a rulării de salarii.",
+        "submit": "Înregistrați rambursarea"
+      },
+      "history": "Plăți înregistrate",
+      "loading": "Se încarcă soldul rambursării…",
+      "ownerAwaitingReimbursement": "Departamentul financiar înregistrează fiecare plată aici. Odată ce tot ce vi se datorează este plătit, această cheltuială va apărea ca Rambursată.",
+      "ownerOverpaid": "S-a plătit mai mult decât este aprobat în prezent. Departamentul financiar înregistrează aici când a fost returnată diferența; Z8 nu transferă bani.",
+      "recorded": "Rambursare înregistrată.",
+      "recordedAlready": "Această plată a fost deja înregistrată.",
+      "recovered": "Recuperat",
+      "recoveryForm": {
+        "amount": "Sumă recuperată ({currency})",
+        "date": "Data recuperării",
+        "explanation": "Angajatului i s-a plătit mai mult decât este aprobat în prezent. Înregistrați banii pe care i-a returnat deja pentru a acoperi plata în exces; rambursarea inițială rămâne așa cum a fost înregistrată și nimic nu se compensează cu alte deconturi. Z8 nu transferă bani.",
+        "label": "Înregistrați o recuperare",
+        "submit": "Înregistrați recuperarea"
+      },
+      "recoveryRecorded": "Recuperare înregistrată.",
+      "reimbursed": "Rambursat",
+      "state": {
+        "awaitingReimbursement": "În așteptarea rambursării",
+        "mixed": "Necesită revizuire",
+        "overpaid": "Plătit în plus",
+        "reimbursed": "Rambursat"
+      },
+      "title": "Rambursare"
+    },
+    "status": {
+      "draft": "Ciornă"
+    },
+    "title": "Cheltuieli de deplasare",
+    "workspace": {
+      "description": "Colectați cheltuielile de călătorie și cheltuielile individuale, trimiteți-le spre revizuire și urmăriți rambursarea acestora."
+    }
+  }
+}

@@ -158,6 +158,30 @@
         "description": "Invite members and review pending join requests",
         "title": "Invitations"
       },
+      "kioskPin": {
+        "addEmailDescription": "They receive an invitation to choose a password and can then sign in. Their kiosk PIN and history stay as they are.",
+        "addEmailHeading": "Add an email",
+        "addEmailSubmit": "Add email and invite",
+        "confirmReset": "Replace the PIN",
+        "description": "The personal PIN this employee enters to clock at a kiosk.",
+        "done": "Done",
+        "emailAdded": "Email added. The invitation is on its way.",
+        "emailAddedNotSent": "Email added, but the invitation could not be sent. The employee can use Forgot password with this address.",
+        "emailLabel": "Email address",
+        "hasPin": "A kiosk PIN is set.",
+        "issue": "Issue PIN",
+        "kioskOnlyBadge": "Kiosk only",
+        "kioskOnlyDescription": "This employee has no email and no sign-in. They clock only at kiosks with their PIN.",
+        "kioskOnlyNoEmail": "Kiosk only, no email",
+        "lockedUntil": "Locked after too many wrong PINs until {time}.",
+        "noPin": "No kiosk PIN yet.",
+        "pinHeading": "Kiosk PIN",
+        "reset": "Reset PIN",
+        "shownOnce": "Give this PIN to the employee now. It is shown only once.",
+        "title": "Kiosk access",
+        "unlock": "Unlock",
+        "unlocked": "Kiosk PIN unlocked"
+      },
       "lifecycle": {
         "actionsLabel": "Employee actions for {name}",
         "deactivate": "Deactivate",
@@ -207,12 +231,17 @@
         "currency": "Currency",
         "currencyInvalid": "Enter a three-letter currency code.",
         "departurePanelDescription": "Access and paid-seat usage end at the cutoff shown below. Employee history is retained.",
+        "deputyCover": {
+          "absences": "Deputy on running or upcoming absences: {count}",
+          "title": "Cover to rearrange"
+        },
         "editDeparture": "Edit departure",
         "effective": "Departure effective",
         "effectiveDescription": "Access ended at {cutoff} ({timezone}).",
         "employmentGap": "Not employed {startDate} – {endDate}",
         "employmentStint": "Employment {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "This employee is deputy on running or upcoming absences. They are removed as deputy when the departure takes effect, and the people affected are notified.",
           "finalOwner": "Assign and activate another approved owner before this employee leaves.",
           "futureAbsences": "Absences after the cutoff remain recorded. Review them in absences.",
           "futureShifts": "Shifts after the cutoff remain assigned. Review them in scheduling.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Break and surcharge processing",
           "clockRepair": "Timer repair",
           "dispatchDeparture": "Departure scheduling",
+          "notifyDeputyRelease": "Deputy no longer available notification",
           "notifyReview": "Review notification",
           "sessionRevocation": "Session sign-out"
         },
         "team": "Team",
         "title": "Employment and departure",
         "unknownLegacyDate": "Date not recorded",
-        "weeklyHoursInvalid": "Enter weekly hours between 0 and 168."
+        "weeklyHoursInvalid": "Enter weekly hours between 0 and 168.",
+        "workBalance": {
+          "recordFinalPayout": "Record final overtime payout",
+          "through": "Through {date}",
+          "title": "Work balance"
+        }
       },
       "tabs": {
         "employees": "Employees",
@@ -324,7 +359,115 @@
         "inviteCodes": "Invite Codes",
         "members": "Members"
       },
-      "title": "Employees"
+      "title": "Employees",
+      "workBalance": {
+        "adjustmentCancelled": "Adjustment cancelled",
+        "cancelDescription": "{summary}. It stays in the history as cancelled and no longer counts toward the work balance.",
+        "cancellationReason": "Why is it cancelled?",
+        "cancelSubmit": "Cancel adjustment",
+        "cancelTitle": "Cancel adjustment",
+        "conflictingPayoutsDescription": "They would no longer count. Cancel them first or choose an earlier day.",
+        "conflictingPayoutsTitle": "Overtime payouts on or before this day",
+        "current": "Current work balance",
+        "day": "Day",
+        "dayDescription": "In the employee's timezone. The balance shown runs through yesterday, so a payout dated today counts from tomorrow.",
+        "dayRequired": "Choose a day.",
+        "description": "Completed work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.",
+        "direction": "Balance",
+        "errors": {
+          "adjustmentNotFound": "This adjustment no longer exists for this employee.",
+          "alreadyCancelled": "This adjustment is already cancelled.",
+          "amountNotPositive": "Enter a payout of more than zero.",
+          "beforeOpeningBalance": "The payout must be dated after the day of the opening balance in effect.",
+          "conflictingPayouts": "Overtime payouts are dated on or before this day. Cancel them first or choose an earlier day.",
+          "employeeNotFound": "Employee not found.",
+          "exceedsBalance": "The payout is more than the employee's work balance at the end of that day.",
+          "exceedsLaterBalance": "The payout would leave the work balance below zero after a later overtime payout. Cancel that payout first or record less.",
+          "failed": "The work balance could not be updated. Try again.",
+          "futureDay": "The day cannot be after today in the employee's timezone.",
+          "invalidInput": "Check the day, the hours and minutes, and the reason.",
+          "monthClosed": "The day is in a closed month.",
+          "monthClosedNamed": "{month} is closed. It must be reopened before adjustments dated in it can be recorded or cancelled.",
+          "notPermitted": "Only organization owners and admins, and payroll staff for the employees their payroll access covers, can record or cancel balance adjustments.",
+          "reasonRequired": "Enter a reason."
+        },
+        "history": "Balance adjustments",
+        "hours": "Hours",
+        "hoursInvalid": "Enter whole hours.",
+        "keepAdjustment": "Keep adjustment",
+        "loadFailed": "The work balance could not be loaded.",
+        "loading": "Loading work balance",
+        "minutes": "Minutes",
+        "minutesInvalid": "Enter minutes from 0 to 59.",
+        "negative": "Hours owed (−)",
+        "openingBalanceDay": "Balance as of the end of",
+        "openingBalanceDayDescription": "In the employee's timezone. The balance counts again from the next day.",
+        "openingBalanceReasonPlaceholder": "For example: balance carried over from the previous system…",
+        "openingBalanceSet": "Opening balance set",
+        "payoutReasonPlaceholder": "For example: paid with the October payroll…",
+        "payoutRecorded": "Overtime payout recorded",
+        "positive": "Overtime (+)",
+        "reason": "Reason",
+        "recordPayout": "Record overtime payout",
+        "recordPayoutDescription": "Record overtime paid as wages. It lowers the work balance from the end of its day and cannot be more than the balance on that day.",
+        "recordPayoutSubmit": "Record payout",
+        "recordPayoutTitle": "Record overtime payout",
+        "replacesOpeningBalance": "The opening balance in effect is cancelled, with this reason.",
+        "setOpeningBalance": "Set opening balance",
+        "setOpeningBalanceDescription": "The opening balance replaces the work balance up to and including its day. Work and required time before then stay on record but no longer count.",
+        "setOpeningBalanceSubmit": "Set opening balance",
+        "setOpeningBalanceTitle": "Set opening balance",
+        "through": "Through {date}",
+        "title": "Work balance",
+        "upload": {
+          "allReady": "{total, plural, one {# row is ready; {replacing, plural, =0 {none replaces an opening balance in effect} one {# replaces an opening balance in effect} other {# replace an opening balance in effect}}.} other {All # rows are ready; {replacing, plural, =0 {none replaces an opening balance in effect} one {# replaces an opening balance in effect} other {# replace an opening balance in effect}}.}}",
+          "checking": "Checking the file…",
+          "columns": {
+            "balance": "Balance",
+            "day": "Day",
+            "employee": "Employee",
+            "reason": "Reason",
+            "row": "Row",
+            "status": "Status"
+          },
+          "committed": "{count, plural, one {# opening balance set} other {# opening balances set}}",
+          "description": "Set the opening balance of many employees from a CSV file with the columns employee_number, day (YYYY-MM-DD or DD.MM.YYYY), balance (hours and minutes such as 12:30 or -4:15) and reason. Each opening balance replaces the employee's work balance up to and including its day, and cancels the one in effect. Nothing is saved while any row has an error.",
+          "errors": {
+            "ambiguousEmployee": "Several employees have this number. Give each a unique number first.",
+            "conflictingPayouts": "Overtime payouts are dated on or before this day:",
+            "duplicateEmployee": "This employee has more than one row. Keep one.",
+            "employeeNumberRequired": "Enter the employee number.",
+            "futureDay": "The day is after today in the employee's timezone.",
+            "invalidAmount": "Enter the balance as hours and minutes, such as 12:30 or -4:15.",
+            "invalidDay": "Enter the day as YYYY-MM-DD or DD.MM.YYYY.",
+            "monthClosed": "The day is in a closed month.",
+            "outOfScope": "This employee is outside your payroll access.",
+            "reasonRequired": "Enter a reason.",
+            "reasonTooLong": "Keep the reason to 1000 characters.",
+            "unknown": "This row cannot be saved.",
+            "unknownEmployee": "No employee has this number."
+          },
+          "file": "CSV file",
+          "fileErrors": {
+            "fileTooLarge": "The file is too large. Split it into several uploads.",
+            "missingColumns": "The file is missing these columns: {columns}.",
+            "noRows": "The file has no rows below the header.",
+            "tooManyRows": "The file has more than 2000 rows. Split it into several uploads.",
+            "unreadable": "The file could not be read. Save it as CSV (UTF-8) and try again."
+          },
+          "former": "Former employee",
+          "hasErrors": "{errors, plural, one {# of {total} rows has an error. Correct the file and upload it again.} other {# of {total} rows have errors. Correct the file and upload it again.}}",
+          "hasErrorsTitle": "Fix the rows with errors",
+          "invalidFile": "The file cannot be used",
+          "open": "Upload opening balances",
+          "ready": "Ready",
+          "refusedTitle": "Nothing was saved",
+          "replaces": "Replaces the opening balance of {balance} on {day}",
+          "submit": "{count, plural, one {Set # opening balance} other {Set # opening balances}}",
+          "template": "Download template",
+          "title": "Upload opening balances"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Add Change",
@@ -552,6 +695,7 @@
         "loadingFile": "Loading the personnel file",
         "manageOfficers": "Personnel file officers",
         "payslipBatch": "Payslip batch",
+        "sickLeave": "Sick leave",
         "title": "Personnel Files"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Visibility"
       },
       "list": {
+        "absence": "For sick leave {dateRange}",
         "delete": "Delete {title}",
         "download": "Download {title}",
         "edit": "Edit {title}",
@@ -771,6 +916,83 @@
         "description": "Choose who besides owners and admins manages employee documents.",
         "loading": "Loading personnel file settings",
         "title": "Personnel Files"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Dates",
+          "duration": "Duration",
+          "employee": "Employee",
+          "sickDetail": "Sick detail",
+          "sickNotes": "Sick notes",
+          "status": "Status"
+        },
+        "description": "Sick-leave absences of the employees whose sick notes you manage, with the sick notes attached to them. Nothing here reminds or asks employees.",
+        "empty": "No sick leave in this period matches the filters.",
+        "filters": {
+          "allEmployees": "All employees",
+          "allSickDetails": "All sick details",
+          "allStatuses": "Pending and approved",
+          "allTeams": "All teams",
+          "employee": "Employee",
+          "formerEmployee": "{name} (former)",
+          "from": "From",
+          "notes": "Sick notes",
+          "notesAll": "All",
+          "notesMissing": "With certificate, no note",
+          "notesPresent": "Has note",
+          "reset": "Reset filters",
+          "sickDetail": "Sick detail",
+          "status": "Status",
+          "team": "Team",
+          "to": "To"
+        },
+        "loading": "Loading sick leave",
+        "notes": {
+          "count": "{count, plural, one {# note} other {# notes}}",
+          "none": "No note"
+        },
+        "pagination": {
+          "next": "Next page",
+          "page": "Page {page} of {pageCount}",
+          "pageSize": "Rows per page",
+          "previous": "Previous page",
+          "summary": "{first}–{last} of {total}"
+        },
+        "sickDetail": {
+          "childSick": "Child sick",
+          "other": "Other",
+          "withCertificate": "With certificate",
+          "withoutCertificate": "Without certificate"
+        },
+        "status": {
+          "approved": "Approved",
+          "pending": "Pending"
+        },
+        "title": "Sick leave"
+      },
+      "sickNotes": {
+        "cardDescription": "Pending and approved sick leave of this employee. Attach a new sick note, or link one that is already in the personnel file.",
+        "cardTitle": "Sick leave",
+        "chooseAbsence": "Choose an absence.",
+        "chooseNote": "Choose a sick note.",
+        "link": "Link",
+        "linked": "Sick note linked",
+        "linkExistingDescription": "Choose a sick note from the personnel file for the sick leave {dateRange}.",
+        "linkExistingTitle": "Link a sick note",
+        "linkFailed": "The sick note could not be linked.",
+        "linkToAbsence": "Link {title} to sick leave",
+        "linkToAbsenceDescription": "Choose the sick leave \"{title}\" covers. A sick leave recorded without certificate then counts as with certificate.",
+        "linkToAbsenceTitle": "Link to sick leave",
+        "loadFailed": "The list could not be loaded.",
+        "manage": "Attach or link",
+        "manageFor": "Attach or link sick notes for {name}, {dateRange}",
+        "noSickLeave": "This employee has no pending or approved sick leave.",
+        "notes": "Sick notes",
+        "noUnlinkedNotes": "There are no sick notes in this personnel file that are not linked to an absence.",
+        "openNotes": "Sick notes for {dateRange}",
+        "unlinked": "Sick note unlinked",
+        "unlinkFailed": "The sick note could not be unlinked.",
+        "unlinkFromAbsence": "Unlink {title} from its sick leave"
       },
       "tabs": {
         "access": "Access",

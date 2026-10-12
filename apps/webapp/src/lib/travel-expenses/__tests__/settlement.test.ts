@@ -264,6 +264,46 @@ describe("planSettlementEntry", () => {
 		).toEqual({ ok: false, reason: "nothing_outstanding", balance: "0.00" });
 	});
 
+	it("records what a confirmed payroll run paid even beyond what is outstanding, as an overpayment (#853)", () => {
+		const expected = { currency: "EUR", amount: "300.00" };
+		const paidByPayroll = { paidByPayroll: true };
+		expect(
+			planSettlementEntry(outstanding, command("reimbursement", "330.00"), expected, paidByPayroll),
+		).toEqual({ ok: true, balanceBefore: "300.00", balanceAfter: "-30.00" });
+		const settled = computeSettlement({
+			entitlement: [approved("5.00")],
+			entries: [reimbursed("5.00")],
+		});
+		expect(
+			planSettlementEntry(
+				settled,
+				command("reimbursement", "1.00"),
+				{ currency: "EUR", amount: "0.00" },
+				paidByPayroll,
+			),
+		).toEqual({ ok: true, balanceBefore: "0.00", balanceAfter: "-1.00" });
+		// Every other refusal stays.
+		expect(
+			planSettlementEntry(
+				outstanding,
+				command("reimbursement", "330.00"),
+				{ currency: "EUR", amount: "200.00" },
+				paidByPayroll,
+			),
+		).toEqual({ ok: false, reason: "stale_balance", balance: "300.00" });
+		expect(
+			planSettlementEntry(
+				outstanding,
+				command("reimbursement", "1.00", "USD"),
+				expected,
+				paidByPayroll,
+			),
+		).toEqual({ ok: false, reason: "currency_mismatch", balance: "300.00" });
+		expect(
+			planSettlementEntry(outstanding, command("recovery", "1.00"), expected, paidByPayroll),
+		).toEqual({ ok: false, reason: "no_overpayment", balance: "300.00" });
+	});
+
 	it("records a recovery only against an overpayment and never beyond it", () => {
 		const overpaid = computeSettlement({
 			entitlement: [

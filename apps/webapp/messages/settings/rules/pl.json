@@ -15,9 +15,16 @@
       "createCategory": "Utwórz kategorię nieobecności",
       "createCategoryButton": "Utwórz kategorię",
       "deactivate": "Dezaktywuj",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Czas wolny rozliczany z bilansu czasu pracy",
+          "name": "Czas wolny za nadgodziny"
+        }
+      },
       "deleteDescription": "Czy na pewno chcesz usunąć „{name}”? Kategorie używane przez istniejące nieobecności nie mogą zostać usunięte i powinny zostać dezaktywowane.",
       "deleteFailed": "Nie udało się usunąć kategorii",
       "deleteTitle": "Usuń kategorię nieobecności",
+      "drawsOnWorkBalance": "Pomniejsza bilans czasu pracy",
       "editCategory": "Edytuj „{name}”",
       "form": {
         "active": "Aktywna",
@@ -26,11 +33,17 @@
         "colorHelp": "Znacznik w kalendarzu",
         "countsAgainstVacation": "Wlicza się do bilansu urlopowego",
         "countsAgainstVacationHelp": "Odejmij zatwierdzone dni od puli urlopowej pracownika.",
+        "deputyRequired": "Wymagany zastępca",
+        "deputyRequiredHelp": "Każda nieobecność tego typu musi wskazywać zastępcę, który pełni zastępstwo podczas nieobecności pracownika.",
+        "deputyRequiredSick": "Zwolnienie lekarskie nigdy nie wymaga zastępcy.",
         "description": "Opis",
         "descriptionHelp": "Opcjonalne wskazówki wyświetlane administratorom i osobom zatwierdzającym.",
         "descriptionPlaceholder": "np. użyj dla zatwierdzonych dni szkoleniowych lub certyfikacyjnych…",
         "descriptionTranslation": "Opis w języku {locale}",
         "descriptionTranslationPlaceholder": "Zlokalizowany opis",
+        "drawsOnWorkBalance": "Pomniejsza bilans czasu pracy",
+        "drawsOnWorkBalanceConflict": "\"Pomniejsza bilans czasu pracy\" nie można łączyć z \"Wlicza się do urlopu\" ani \"Wymaga czasu pracy\".",
+        "drawsOnWorkBalanceHelp": "Czas wolny za nadgodziny: zatwierdzone dni zachowują wymagany czas, więc bilans czasu pracy pracownika ulega pomniejszeniu o tę wartość. Urlop nie jest wykorzystywany.",
         "name": "Nazwa",
         "nameHelp": "Użyj jasnej etykiety, którą pracownicy i osoby zatwierdzające rozpoznają.",
         "nameMaxLength": "Użyj maksymalnie 100 znaków",
@@ -46,7 +59,8 @@
         "translationsHelp": "Opcjonalne zlokalizowane etykiety dla pracowników korzystających z innego języka aplikacji.",
         "type": "Typ",
         "typeHelp": "Grupuje raporty i powiązane przepływy pracy dotyczące nieobecności.",
-        "typePlaceholder": "Wybierz typ kategorii"
+        "typePlaceholder": "Wybierz typ kategorii",
+        "typeTimeOffInLieu": "Czas wolny za nadgodziny"
       },
       "header": {
         "approval": "Zatwierdzenie",
@@ -72,6 +86,7 @@
         "parental": "Urlop rodzicielski",
         "personal": "Osobiste",
         "sick": "Zwolnienie lekarskie",
+        "timeOffInLieu": "Czas wolny za nadgodziny",
         "unpaid": "Bezpłatne",
         "vacation": "Urlop wypoczynkowy"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Niektóre aktywne kanały miały wyłączone eskalacje. Nadal nie dostarczają one wiadomości o eskalacji.",
         "inactiveSourceEnabled": "Niektóre nieaktywne kanały miały włączone eskalacje. Nie zostały one uwzględnione w zasadach.",
         "invalidTimeout": "Kanał miał nieprawidłowy limit czasu i nie został użyty jako okno odpowiedzi."
+      },
+      "deputyDecisions": {
+        "description": "Pracownicy wyznaczają zastępcę na czas swoich nieobecności. Gdy osoba zatwierdzająca przebywa na zatwierdzonej nieobecności, jej zastępca może przeglądać i rozpatrywać wnioski wciąż do niej przypisane.",
+        "disabled": "Zastępcy nie mogą już rozpatrywać wniosków. Pozostają osobami do kontaktu.",
+        "enabled": "Zastępcy mogą teraz rozpatrywać wnioski podczas nieobecności osoby zatwierdzającej.",
+        "help": "Decyzje podejmują tylko zastępcy mający dostęp do skrzynki zatwierdzeń i tylko w dniach nieobecności osoby zatwierdzającej. Osoba zatwierdzająca zachowuje swoje wnioski do zatwierdzenia. Gdy ta opcja jest wyłączona, zastępcy są wyłącznie osobami do kontaktu.",
+        "title": "Zastępcy",
+        "toggle": "Zastępcy mogą rozpatrywać wnioski"
       },
       "description": "Przejrzyj zasady eskalacji w organizacji, sposób ich migracji z ustawień kanału oraz warunki wymagające menedżera zatwierdzeń.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Nieobecność",
         "complianceException": "Wyjątek dotyczący zgodności",
         "manualTimeSubmission": "Ręczne przesyłanie czasu pracy",
+        "periodSubmission": "Przesyłanie okresu",
         "policyClockOut": "Wyrejestrowanie zgodnie z zasadami",
         "shiftRequest": "Wniosek o zmianę",
         "timeCorrection": "Korekta czasu",

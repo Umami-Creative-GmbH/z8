@@ -14,6 +14,16 @@ import {
 	redactNonSickAbsenceSickDetail,
 } from "./absence-request.handler";
 
+const absenceDaysMocks = vi.hoisted(() => ({
+	getAbsenceDays: vi.fn(async () => 4),
+	getAbsenceDaysByAbsenceId: vi.fn(
+		async (_database: unknown, input: { absences: Array<{ id: string }> }) =>
+			new Map(input.absences.map((absence) => [absence.id, 4])),
+	),
+}));
+
+vi.mock("@/lib/absences/absence-days-resolver", () => absenceDaysMocks);
+
 function collectColumnNames(value: unknown): string[] {
 	if (!value || typeof value !== "object") return [];
 	const candidate = value as {
@@ -30,6 +40,7 @@ function collectColumnNames(value: unknown): string[] {
 
 const absence = {
 	id: "absence-1",
+	employeeId: "employee-1",
 	organizationId: "org-1",
 	startDate: "2026-06-01",
 	startPeriod: "full_day" as const,
@@ -118,6 +129,7 @@ describe("redactNonSickAbsenceSickDetail", () => {
 			sickDetail: "with_certificate",
 			status: "pending",
 			createdAt: new Date("2026-05-01T00:00:00.000Z"),
+			absenceDays: 1,
 			employee: {
 				id: "employee-1",
 				userId: "user-1",
@@ -168,6 +180,12 @@ describe("absence approval handler tenant scope", () => {
 		expect(
 			collectColumnNames(absenceFindMany.mock.calls[0]?.[0]?.where),
 		).toEqual(expect.arrayContaining(["id", "organization_id"]));
+		// The summary shows the absence days resolved for the requester (#979).
+		expect(absenceDaysMocks.getAbsenceDaysByAbsenceId).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			absences: [expect.objectContaining({ id: "absence-1" })],
+		});
+		expect(result[0]?.display.summary).toMatch(/^4 days off - /);
 	});
 
 	it.each(["approved", "rejected"] as const)(
@@ -323,6 +341,13 @@ describe("absence approval handler tenant scope", () => {
 		);
 
 		expect(result.approval.organizationId).toBe("org-1");
+		expect(absenceDaysMocks.getAbsenceDays).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			absence: expect.objectContaining({ id: "absence-1" }),
+		});
+		expect(result.entity.absenceDays).toBe(4);
+		expect(result.approval.display.summary).toMatch(/^4 days off - /);
 		expect(
 			collectColumnNames(absenceFindFirst.mock.calls[0]?.[0]?.where),
 		).toEqual(expect.arrayContaining(["id", "organization_id"]));

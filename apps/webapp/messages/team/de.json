@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Genehmigt",
+        "changeDeputy": "Vertretung ändern",
+        "changeDeputyOf": "Vertretung von {name} ändern",
+        "deputy": "Vertretung:",
+        "deputyMissing": "Vertretung fehlt",
         "description": "Genehmigte und ausstehende Abwesenheiten für das ausgewählte Team und Jahr.",
         "error": {
           "description": "Bitte versuchen Sie es gleich noch einmal.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} ausstehend",
         "title": "Jahreskalender",
         "totalDays": "{count} abwesend"
+      },
+      "deputyFilter": {
+        "clear": "Alle Abwesenheiten anzeigen",
+        "notice": "Es werden nur die Abwesenheiten angezeigt, die dieser Mitarbeiter als Stellvertretung übernimmt."
       },
       "description": "Überprüfen Sie die Freistellungen und erfassen Sie genehmigte Abwesenheiten für Ihr Team.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Kategorie",
         "categoryPlaceholder": "Abwesenheitskategorie auswählen…",
+        "deputy": "Stellvertretung",
         "description": "Erfassen Sie eine genehmigte Abwesenheit direkt für den ausgewählten Mitarbeiter.",
         "endDate": "Enddatum",
         "endDateHelper": "Für eine Abwesenheit am selben Tag leer lassen.",
@@ -66,6 +75,11 @@
         "required": "{label} ist erforderlich",
         "sickDetail": "Krankheitsdetails",
         "sickDetailPlaceholder": "Krankheitsdetails auswählen…",
+        "sickNotes": {
+          "description": "Fügen Sie Fotos oder PDFs der Ihnen ausgehändigten Krankschreibung hinzu: PDF-, JPEG-, PNG- oder WebP-Dateien mit jeweils bis zu 20 MB. Jede Datei wird als eigene Krankschreibung in der Personalakte des Mitarbeiters gespeichert, und der Mitarbeiter sieht sie. Danach können nur Personen, die die Krankschreibungen des Mitarbeiters verwalten, sie öffnen.",
+          "title": "Krankschreibung (optional)"
+        },
+        "sickNotesFailed": "Die Abwesenheit wurde erfasst, aber {files} konnte nicht angehängt werden. Jemand, der Krankschreibungen verwaltet, kann sie später anhängen.",
         "startDate": "Startdatum",
         "submit": "Abwesenheit erfassen",
         "success": "Abwesenheit erfasst",
@@ -116,6 +130,51 @@
       "next": "Weiter",
       "previous": "Zurück",
       "showing": "Zeige {from} bis {to} von {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Wählen Sie in den Organisationseinstellungen einen Einreichungsrhythmus",
+      "columns": {
+        "calendar": "Kalender",
+        "employee": "Mitarbeiter",
+        "period": "Zeitraum",
+        "status": "Status"
+      },
+      "descriptionAll": "Wer den ausgewählten Zeitraum eingereicht hat. Genehmigen oder lehnen Sie Einreichungen im Genehmigungspostfach ab.",
+      "descriptionManaged": "Wer der von Ihnen verwalteten Mitarbeiter den ausgewählten Zeitraum eingereicht hat. Genehmigen oder lehnen Sie Einreichungen im Genehmigungspostfach ab.",
+      "empty": "Von niemandem, den Sie sehen können, wird erwartet, diesen Zeitraum einzureichen.",
+      "loading": "Zeitraumeinreichungen werden geladen",
+      "notSubmitted": "Nicht eingereicht",
+      "off": "Ihre Organisation erfasst keine Zeitraumeinreichungen.",
+      "openCalendar": "Kalender",
+      "openCalendarOf": "Kalender von {name} öffnen",
+      "openInbox": "Genehmigungspostfach öffnen",
+      "owing": "{count, plural, one {# Mitarbeiter hat diesen Zeitraum noch nicht eingereicht.} other {# Mitarbeiter haben diesen Zeitraum noch nicht eingereicht.}}",
+      "period": "Einreichungszeitraum",
+      "running": "Dieser Zeitraum läuft noch. Mitarbeiter können ihn ab dem letzten Tag einreichen.",
+      "status": {
+        "approved": "Genehmigt",
+        "awaiting": "Wartet auf Einreichung",
+        "rejected": "Abgelehnt",
+        "sentBack": "Nach einer Änderung zurückgesendet",
+        "submitted": "Eingereicht"
+      },
+      "summary": "Status",
+      "title": "Zeitraumeinreichungen"
+    },
+    "presence": {
+      "allLocations": "Alle Standorte",
+      "columns": {
+        "name": "Name",
+        "since": "Seit",
+        "state": "Status"
+      },
+      "description": "Wählen Sie einen Standort aus, um zu sehen, wer dort eingestempelt ist oder Pause macht.",
+      "descriptionAll": "Diesem Standort zugewiesene Mitarbeitende, die eingestempelt sind oder Pause machen.",
+      "descriptionManaged": "Von Ihnen verwaltete Mitarbeitende, die diesem Standort zugewiesen und eingestempelt sind oder Pause machen.",
+      "empty": "Derzeit ist an diesem Standort niemand eingestempelt, den Sie sehen können.",
+      "locationTitle": "Wer ist anwesend: {location}",
+      "noLocations": "Ihre Organisation hat noch keine aktiven Standorte.",
+      "title": "Wer ist anwesend"
     },
     "primaryManager": "Sie sind der Hauptmanager",
     "search": {

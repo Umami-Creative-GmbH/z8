@@ -21,6 +21,10 @@ vi.mock("next/navigation", () => ({
 	useSearchParams: suspendForever,
 }));
 
+// The sign-in page reads the request's user agent (#842); requests never resolve here.
+vi.mock("next/server", () => ({ connection: () => testState.pending }));
+vi.mock("next/headers", () => ({ headers: () => testState.pending }));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (key: string, fallback: string) =>

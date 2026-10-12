@@ -34,6 +34,9 @@ import {
 } from "@/lib/datetime/temporal-core";
 import type { ImportProvider } from "@/lib/import-review/types";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { closedRangeTouchedByWork } from "./closed-months/rules";
+import { closedRangesForEmployee } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { canonicalJson } from "./canonical-json";
 import {
 	type AppendedClockEntry,
@@ -280,6 +283,12 @@ export async function recordImportedWork(
 	const occupants = await findOccupants(tx, { organizationId, employeeId }, interval.start, end);
 	if (occupants.length > 0)
 		return { kind: "held", hold: { reason: "occupancy_conflict", occupants } };
+	// Imported work touching a closed month is held for review, never written (#762).
+	const closed = closedRangeTouchedByWork(
+		[{ start: interval.start, end }],
+		await closedRangesForEmployee(tx, { organizationId, employeeId }),
+	);
+	if (closed) return { kind: "held", hold: { reason: "month_closed", month: closed.month } };
 
 	// Providers send UTC instants; the event-local offset is not established, so
 	// entries keep the legacy import capture through the shared fallback helper.
@@ -315,6 +324,13 @@ export async function recordImportedWork(
 	}
 	const [clockIn, clockOut] = appended;
 	if (!clockIn) throw new Error("Imported work has no clock-in entry");
+	// Imported work in a submitted period sends it back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: input.importerUserId,
+		work: [{ start: interval.start, end: end ?? interval.start }],
+	});
 
 	const startAt = dateFromInstant(interval.start);
 	const endAt = end ? dateFromInstant(end) : null;

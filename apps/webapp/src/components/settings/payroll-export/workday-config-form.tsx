@@ -7,11 +7,13 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	deleteWorkdayCredentialsAction,
+	type PayrollIdentifierFieldOption,
 	saveWorkdayConfigAction,
 	saveWorkdayCredentialsAction,
 	testWorkdayConnectionAction,
@@ -49,11 +51,18 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { WorkdayConfig } from "@/lib/payroll-export";
+import {
+	customFieldIdentifierItems,
+	identifierFromSelectValue,
+	identifierSelectValue,
+} from "./payroll-identifier-options";
 
 interface WorkdayConfigFormProps {
 	organizationId: string;
 	initialConfig?: WorkdayConfigResult | null;
 	onConfigSaved?: () => void;
+	/** Employee custom fields that can be the match key (#821). */
+	identifierFields?: readonly PayrollIdentifierFieldOption[];
 }
 
 const DEFAULT_CONFIG: WorkdayConfig = {
@@ -71,6 +80,7 @@ export function WorkdayConfigForm({
 	organizationId,
 	initialConfig,
 	onConfigSaved,
+	identifierFields = [],
 }: WorkdayConfigFormProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -169,6 +179,7 @@ export function WorkdayConfigForm({
 				isPending={isPending}
 				run={run}
 				onConfigSaved={onConfigSaved}
+				identifierFields={identifierFields}
 			/>
 		</div>
 	);
@@ -406,6 +417,7 @@ function WorkdaySettingsCard({
 	isPending,
 	run,
 	onConfigSaved,
+	identifierFields,
 }: {
 	t: Translate;
 	organizationId: string;
@@ -414,6 +426,7 @@ function WorkdaySettingsCard({
 	isPending: boolean;
 	run: RunTransition;
 	onConfigSaved?: () => void;
+	identifierFields: readonly PayrollIdentifierFieldOption[];
 }) {
 	const [isTesting, setIsTesting] = useState(false);
 	const form = useForm({
@@ -443,6 +456,10 @@ function WorkdaySettingsCard({
 					);
 			}),
 	});
+	const identifierFieldId = useStore(
+		form.store,
+		(state) => state.values.employeeMatchCustomFieldId,
+	);
 	const testConnection = async () => {
 		setIsTesting(true);
 		const result = await testWorkdayConnectionAction({
@@ -531,10 +548,12 @@ function WorkdaySettingsCard({
 									)}
 								</Label>
 								<Select
-									value={field.state.value}
-									onValueChange={(value) =>
-										field.handleChange(value as "employeeNumber" | "email")
-									}
+									value={identifierSelectValue(field.state.value, identifierFieldId)}
+									onValueChange={(value) => {
+										const next = identifierFromSelectValue(value);
+										form.setFieldValue("employeeMatchCustomFieldId", next.customFieldId);
+										field.handleChange(next.choice as WorkdayConfig["employeeMatchStrategy"]);
+									}}
 								>
 									<SelectTrigger id="employeeMatchStrategy">
 										<SelectValue />
@@ -552,6 +571,7 @@ function WorkdaySettingsCard({
 												"Email Address",
 											)}
 										</SelectItem>
+										{customFieldIdentifierItems(t, identifierFields, identifierFieldId)}
 									</SelectContent>
 								</Select>
 							</div>

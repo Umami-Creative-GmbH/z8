@@ -1,0 +1,105 @@
+{
+  "approval": {
+    "absenceRequest": "Zahtjev za odsustvo",
+    "actions": {
+      "approve": "Odobri",
+      "approving": "Odobravanje...",
+      "reject": "Odbij",
+      "rejecting": "Odbijanje...",
+      "viewInZ8": "Prikaži u Z8"
+    },
+    "durationDays": "{count, plural, one {# dan} other {# dana} }",
+    "facts": {
+      "approvedBy": "Odobrio/la",
+      "corrected": "Ispravljeno",
+      "dates": "Datumi",
+      "duration": "Trajanje",
+      "email": "E-pošta",
+      "from": "Od",
+      "original": "Originalno",
+      "reason": "Razlog",
+      "rejectedBy": "Odbio/la",
+      "resolved": "Riješeno",
+      "status": "Status",
+      "submitted": "Podneseno",
+      "type": "Vrsta"
+    },
+    "status": {
+      "approved": "ODOBRENO",
+      "rejected": "ODBIJENO"
+    },
+    "timeCorrectionRequest": "Zahtjev za ispravku vremena"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Kritično",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (izuzetak iskorišten)",
+      "lastDays": "Zadnjih {days} dana",
+      "legend": "\uD83D\uDD34 Kršenje  \uD83D\uDFE0 Kritično  \uD83D\uDFE1 Upozorenje  \uD83D\uDCDD Zahtjev na čekanju",
+      "moreRequestsMarkdown": "_+ još {count} zahtjeva_",
+      "moreViolationsMarkdown": "_+ još {count} kršenja_",
+      "pending": "Na čekanju",
+      "pendingExceptions": "Zahtjevi za izuzeće na čekanju",
+      "recentViolations": "Nedavna kršenja",
+      "reviewExceptions": "Pregledaj izuzetke",
+      "textCriticalAlerts": "**Kritična upozorenja:** {count}",
+      "textMore": "  +još {count}",
+      "textPendingExceptions": "**Izuzeci na čekanju:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Zahtjevi na čekanju:**",
+      "textRecentViolations": "**Nedavni prekršaji:**",
+      "textTitle": "**⚠️ Sažetak usklađenosti - Posljednjih {days} dana**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Prekršaji:** {count}",
+      "titleWithIcon": "⚠️ Sažetak usklađenosti",
+      "viewDashboard": "Prikaži kontrolnu tablu usklađenosti",
+      "violations": "Prekršaji"
+    },
+    "coverage": {
+      "clockedIn": "Prijavljeni",
+      "moreLocationsMarkdown": "_+još {count} lokacija..._",
+      "scheduled": "Raspoređeni",
+      "titleWithIcon": "\uD83D\uDCCA Izvještaj o pokrivenosti",
+      "variance": "Odstupanje",
+      "viewFullSchedule": "Prikaži cijeli raspored"
+    }
+  },
+  "common": {
+    "more": "+još {count}",
+    "moreBullet": "• +još {count}"
+  },
+  "digest": {
+    "currentlyClockedIn": "Trenutno prijavljeni",
+    "deputy": "Zamjenik: {name}",
+    "everyoneAvailable": "Svi su danas dostupni",
+    "noOneClockedIn": "Niko još nije prijavljen",
+    "noPendingApprovals": "Nema odobrenja na čekanju",
+    "openDashboard": "Otvori kontrolnu tablu Z8",
+    "openShifts": "Otvorene smjene",
+    "pendingApprovals": "Odobrenja na čekanju",
+    "pendingExceptionRequests": "{count, plural, one {# zahtjev za izuzeće na čekanju pregleda} other {# zahtjeva za izuzeće na čekanju pregleda}}",
+    "returns": "Vraća se {date}",
+    "since": "Od {time}",
+    "textClockedInEmployee": "• {name} - od {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Usklađenost:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Praznine u pokrivenosti:**",
+    "textCurrentlyClockedIn": "**Trenutno prijavljeni:**",
+    "textEmployeeOut": "• {name} - {category} (vraća se {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Otvorene smjene:**",
+    "textPendingApprovalsCount": "**Odobrenja na čekanju:** {count}",
+    "textPendingApprovalsNone": "**Odobrenja na čekanju:** Nema",
+    "textTitle": "**Dnevni pregled - {date}**",
+    "textWhosOut": "**Ko je odsutan:**",
+    "title": "Dnevni pregled",
+    "todayTomorrow": "Danas: {today} | Sutra: {tomorrow}",
+    "viewApprovals": "Prikaži odobrenja",
+    "whosOutToday": "Ko je danas odsutan"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Dnevni prekovremeni rad",
+    "overtime_monthly": "Mjesečni prekovremeni rad",
+    "overtime_weekly": "Sedmični prekovremeni rad",
+    "rest_period": "Period odmora"
+  }
+}

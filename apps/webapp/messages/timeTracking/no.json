@@ -16,6 +16,10 @@
       "label": "Fakturerbar",
       "noCustomer": "Kun arbeid på et prosjekt med en kunde kan være fakturerbart"
     },
+    "breakInProgress": {
+      "description": "Du har pause",
+      "since": "På pause siden {time}"
+    },
     "budget": "Budsjett",
     "clockedOutSuccess": "Du har stemplet ut!",
     "clockIn": "Stemple inn",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Kun arbeid på et prosjekt som har en kunde kan være fakturerbart",
       "breakAwaitingApproval": "Denne arbeidsperioden venter på godkjenning og kan ikke redigeres. Legg til pausen når den er avklart.",
       "breakDurationInvalid": "Angi en pausevarighet på minst 1 minutt.",
+      "breakInProgressOpen": "Du er på pause. Gjenoppta den før du legger til en ny pause.",
       "breakNotAllowed": "Du kan ikke legge til en pause for dette arbeidet.",
       "breakOccupied": "Pausen overlapper med annet registrert arbeid.",
       "breakPendingCorrection": "En godkjenning av tidskorrigering venter allerede for denne arbeidsperioden. Legg til pausen når den er avklart.",
@@ -84,12 +89,14 @@
       "breakTooLong": "Pausevarigheten må være kortere enn den nåværende økten din.",
       "clockAttributionNotAllowed": "Det valgte prosjektet eller den valgte kategorien er ikke tilgjengelig",
       "clockCommandRejected": "Serveren godtok ikke denne stemplingshandlingen",
+      "clockConnectionRequired": "Stempling krever tilkobling i denne organisasjonen. Koble til på nytt og prøv igjen.",
       "clockInAppendReview": "Tidshistorikken din må gjennomgås før du kan stemple inn. Kontakt administratoren din.",
       "clockInCollision": "Denne innstemplingen er i konflikt med en tidligere forespørsel. Oppdater og prøv på nytt.",
       "clockInFailed": "Kunne ikke stemple inn",
       "clockInNotAllowed": "Du kan ikke stemple inn.",
       "clockInOccupied": "Dette tidspunktet overlapper med annet registrert arbeid",
       "clockInRetry": "Kunne ikke stemple inn. Prøv igjen.",
+      "clockMonthClosed": "Denne tiden er i en lukket måned og kan ikke endres før måneden er gjenåpnet.",
       "clockNotAllowedAtTime": "Stempling er ikke tillatt på dette tidspunktet",
       "clockOutAppendReview": "Timehistorikken din må gjennomgås før du kan stemple ut. Ta kontakt med administratoren din.",
       "clockOutBeforeClockIn": "Utstempling må være etter innstempling",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Denne oppgaven tilhører et annet prosjekt",
       "taskProjectNotBookable": "Tid kan ikke lenger føres på denne oppgavens prosjekt",
       "workCategoryNotAllowed": "Kan ikke tilordne til denne arbeidskategorien"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Stemple inn",
+        "clockOut": "Stemple ut",
+        "endDay": "Avslutt dagen",
+        "resume": "Gjenoppta arbeid",
+        "startBreak": "Start pause"
+      },
+      "board": {
+        "empty": "Ingen er stemplet inn akkurat nå.",
+        "title": "Hvem er på jobb"
+      },
+      "done": {
+        "button": "Ferdig",
+        "clockIn": "Stemplet inn",
+        "clockOut": "Stemplet ut",
+        "endDay": "Dagen avsluttet",
+        "endDayNote": "Dagen din ble avsluttet ved starten av pausen.",
+        "resume": "Tilbake på jobb",
+        "returning": "Tilbake til start om {seconds} s",
+        "startBreak": "Pause startet",
+        "title": "Ferdig"
+      },
+      "employee": {
+        "back": "Avbryt",
+        "endDayHint": "Hvis du avslutter dagen nå, avsluttes arbeidet ved starten av pausen.",
+        "today": "I dag: {duration}"
+      },
+      "home": {
+        "empty": "Ingen er tildelt denne lokasjonen ennå. Spør administratoren din.",
+        "loadFailed": "Kunne ikke laste inn navnene. Sjekk nettverkstilkoblingen.",
+        "loading": "Laster inn navn…",
+        "noMatch": "Ingen navn samsvarer med søket ditt.",
+        "search": "Finn navnet ditt",
+        "title": "Trykk på navnet ditt for å stemple inn eller ut"
+      },
+      "loading": "Starter kiosk …",
+      "offline": {
+        "banner": "Kiosken er frakoblet. Stempling er ikke mulig før tilkoblingen er tilbake.",
+        "refused": "Kiosken er frakoblet. Ingenting ble registrert; stempling fungerer bare når du er tilkoblet."
+      },
+      "pairing": {
+        "codeDescription": "Koden fungerer én gang og utløper 10 minutter etter at den ble opprettet.",
+        "codeLabel": "Parkoblingskode",
+        "description": "En eier eller administrator oppretter kiosken i Innstillinger › Kiosker og gir deg en parkoblingskode.",
+        "invalidCode": "Denne koden er ugyldig eller har utløpt. Be administratoren din om en ny parkoblingskode.",
+        "malformedCode": "Angi den 10 tegn lange koden nøyaktig slik den vises i innstillingene.",
+        "rateLimited": "For mange forsøk. Vent noen minutter og prøv igjen.",
+        "submit": "Parkoble denne enheten",
+        "title": "Sett opp denne kiosken",
+        "unreachable": "Kiosken får ikke kontakt med serveren. Sjekk nettverkstilkoblingen og prøv igjen."
+      },
+      "pin": {
+        "back": "Ikke deg? Tilbake",
+        "checking": "Kontrollerer …",
+        "delete": "Slett siste siffer",
+        "entered": "{count} siffer angitt",
+        "locked": "For mange feil PIN-koder. PIN-koden din er låst til {time}. Prøv igjen da, eller be lederen din om å låse den opp.",
+        "none": "Du har ingen PIN-kode for kiosken ennå. Be lederen din om en.",
+        "notAssigned": "Du kan ikke stemple ved denne kiosken. Forhør deg med lederen din.",
+        "prompt": "Angi PIN-koden for kiosken",
+        "rateLimited": "For mange PIN-forsøk på denne kiosken. Prøv igjen om {seconds} sekunder.",
+        "submit": "OK",
+        "wrong": "PIN-koden er feil. Prøv igjen."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Du er allerede stemplet inn.",
+        "billing": "Stempling er ikke tilgjengelig for organisasjonen din akkurat nå. Kontakt administratoren din.",
+        "generic": "Det fungerte ikke. Ingenting ble registrert. Prøv igjen eller spør lederen din.",
+        "holiday": "Stempling er blokkert i dag på grunn av en helligdag. Spør lederen din.",
+        "monthClosed": "Denne tiden er i en lukket måned og kan ikke endres. Spør lederen din.",
+        "noBreak": "Du er ikke på pause.",
+        "notClockedIn": "Du er ikke stemplet inn.",
+        "onBreak": "Du er allerede på pause.",
+        "unconfirmed": "Kiosken kunne ikke bekrefte om dette ble lagret. Sjekk statusen din før du prøver igjen.",
+        "underReview": "Arbeidstiden din for i dag er til vurdering. Spør lederen din."
+      },
+      "retry": "Prøv igjen",
+      "revoked": {
+        "description": "Denne kiosken kan ikke lenger brukes til stempling. Vennligst kontakt administratoren din.",
+        "pairAgain": "Koble til med en ny kode",
+        "title": "Kiosk tilbakekalt"
+      },
+      "state": {
+        "clockedIn": "Stemplet inn siden {time}",
+        "clockedOut": "Ikke stemplet inn",
+        "onBreak": "På pause siden {time}"
+      },
+      "unreachableDescription": "Kiosken får ikke kontakt med serveren. Sjekk nettverkstilkoblingen; stempling fungerer bare på nett.",
+      "unreachableTitle": "Kiosk frakoblet"
     },
     "manualEntry": {
       "addButton": "Legg til manuell registrering",
@@ -198,6 +296,39 @@
     "noProject": "Ingen prosjekt",
     "notesPlaceholder": "Hva jobbet du med?",
     "notesSaved": "Notater lagret",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "En fraværsforespørsel for {dates} er uavklart.",
+        "liveWork": "Arbeid startet {start} pågår fortsatt.",
+        "manualWork": "Manuelt arbeid den {start} er uavklart.",
+        "timeCorrection": "En tidskorrigering for arbeid den {start} er uavklart."
+      },
+      "description": "Bekreft at arbeid og fravær for hver periode er fullstendig og korrekt.",
+      "opensOn": "Du kan sende inn fra {date}.",
+      "refusal": {
+        "alreadySubmitted": "Denne perioden er allerede sendt inn.",
+        "noApprover": "Ingen kan godkjenne denne perioden ennå. Be en administrator om å tildele deg en leder.",
+        "notEnded": "Du kan sende inn denne perioden fra og med den siste dagen.",
+        "notExpected": "Denne perioden trenger ikke å sendes inn.",
+        "periodOpen": "Denne perioden er fortsatt åpen"
+      },
+      "rejectionReason": "Årsak: {reason}",
+      "status": {
+        "approved": "Godkjent",
+        "awaiting": "Venter på innsending",
+        "rejected": "Avvist",
+        "sentBack": "Sendt tilbake etter en endring",
+        "submitted": "Sendt inn"
+      },
+      "submit": "Send inn",
+      "submitFailed": "Perioden kunne ikke sendes inn",
+      "submitted": "Periode sendt inn til godkjenning",
+      "title": "Periodeinnsendinger",
+      "withdraw": "Trekk tilbake",
+      "withdrawFailed": "Innsendingen kunne ikke trekkes tilbake",
+      "withdrawn": "Innsending trukket tilbake",
+      "withdrawRefused": "Denne innsendingen er allerede avgjort og kan ikke lenger trekkes tilbake."
+    },
     "project": "Prosjekt",
     "quickBreak": {
       "addBreak": "Legg til pause",

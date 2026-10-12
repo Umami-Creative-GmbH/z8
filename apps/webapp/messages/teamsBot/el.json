@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Ενεργή παρουσία",
+    "deputy": "Αναπληρωτής: {name}",
     "everyoneAvailable": "Όλοι είναι διαθέσιμοι σήμερα",
     "noOneClockedIn": "Κανείς δεν έχει καταγράψει παρουσία ακόμα",
     "noPendingApprovals": "Δεν υπάρχουν εκκρεμείς εγκρίσεις",

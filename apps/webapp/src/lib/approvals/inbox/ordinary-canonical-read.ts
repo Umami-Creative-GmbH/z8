@@ -18,15 +18,21 @@ import {
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "../domain-adapters/work-period-contract";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
+import {
+	type CanonicalInboxCursor,
+	type CanonicalInboxFilters,
+	canonicalInboxCursor,
+	canonicalInboxFilters,
+	canonicalInboxLimit,
+	canonicalInboxOrder,
+	canonicalInboxPriority,
+	canonicalInboxTarget,
+	canonicalInboxVisibility,
+	resultRows,
+} from "./canonical-inbox-query";
 import { getAgeDays } from "./serialization";
 import { buildInboxTriage } from "./triage";
-import type {
-	ApprovalInboxDetailResult,
-	ApprovalInboxItem,
-	ApprovalInboxPriority,
-	ApprovalInboxRiskLevel,
-	ApprovalInboxStatus,
-} from "./types";
+import type { ApprovalInboxDetailResult, ApprovalInboxItem, ApprovalInboxStatus } from "./types";
 
 type EligibleApprovalScope = {
 	requesterEmployeeId: string;
@@ -161,18 +167,14 @@ interface SelectOrdinaryCanonicalApprovalsInput {
 	approverId: string;
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: EligibleApprovalScope[];
+	/** Absent approvers the viewer covers for (#1016). */
+	coveredApproverIds?: string[];
 	search?: string;
 	teamId?: string;
 	now?: Date;
 }
 
-export interface OrdinaryCanonicalListFilters {
-	teamId?: string;
-	priority?: ApprovalInboxPriority;
-	minAgeDays?: number;
-	dateRange?: { from: Date; to: Date };
-	search?: string;
-}
+export type OrdinaryCanonicalListFilters = CanonicalInboxFilters;
 
 export type OrdinaryCanonicalApprovalBatch = OrdinaryCanonicalApproval[] & {
 	totalCount: number;
@@ -380,6 +382,7 @@ function visible(
 ) {
 	if (input.includeAllApprovers) return true;
 	if (row.assignment.approverEmployeeId === input.approverId) return true;
+	if (input.coveredApproverIds?.includes(row.assignment.approverEmployeeId)) return true;
 	return (
 		input.eligibleApprovalScopes?.some(
 			(scope) =>
@@ -548,7 +551,7 @@ function toApproval(
 		preset: "time",
 	});
 	const duration = formatDuration(period.durationMinutes ?? 0);
-	const priority = ordinaryPriority(workflow.submittedAt, now);
+	const priority = canonicalInboxPriority(workflow.submittedAt, now ?? new Date());
 	const triage = buildInboxTriage({
 		type: "time_entry",
 		priority,
@@ -643,19 +646,6 @@ function toApproval(
 	};
 }
 
-function ordinaryPriority(
-	createdAt: Date,
-	now = new Date(),
-): ApprovalInboxPriority {
-	const ageHours = instantFromDate(createdAt)
-		.until(instantFromDate(now))
-		.total("hours");
-	if (ageHours > 72) return "urgent";
-	if (ageHours > 48) return "high";
-	if (ageHours > 24) return "normal";
-	return "low";
-}
-
 export function selectOrdinaryCanonicalApprovals(
 	input: SelectOrdinaryCanonicalApprovalsInput,
 ): OrdinaryCanonicalApproval[] {
@@ -703,119 +693,7 @@ interface OrdinaryCanonicalLoadInput
 	assignmentId?: string;
 	assignmentIds?: string[];
 	limit?: number;
-	cursor?: {
-		riskLevel: ApprovalInboxRiskLevel;
-		priority: ApprovalInboxPriority;
-		createdAt: string;
-		id: string;
-	};
-}
-
-function resultRows(result: unknown): Record<string, unknown>[] {
-	return typeof result === "object" &&
-		result !== null &&
-		"rows" in result &&
-		Array.isArray(result.rows)
-		? (result.rows as Record<string, unknown>[])
-		: [];
-}
-
-function candidateVisibility(input: OrdinaryCanonicalLoadInput): SQL {
-	if (input.includeAllApprovers) return sql`true`;
-	const eligible = (input.eligibleApprovalScopes ?? []).flatMap((scope) =>
-		scope.eligibleApproverIds.includes(input.approverId) &&
-		scope.eligibleApproverIds.length > 0
-			? [
-					sql`(workflow.requester_employee_id = ${scope.requesterEmployeeId}::uuid and assignment.approver_employee_id in (${sql.join(
-						scope.eligibleApproverIds.map((id) => sql`${id}::uuid`),
-						sql`, `,
-					)}))`,
-				]
-			: [],
-	);
-	return eligible.length > 0
-		? sql`(assignment.approver_employee_id = ${input.approverId}::uuid or ${sql.join(eligible, sql` or `)})`
-		: sql`assignment.approver_employee_id = ${input.approverId}::uuid`;
-}
-
-function targetCondition(input: OrdinaryCanonicalLoadInput): SQL {
-	if (input.assignmentId) {
-		return sql`and assignment.id = ${input.assignmentId}::uuid`;
-	}
-	if (input.assignmentIds?.length) {
-		return sql`and assignment.id in (${sql.join(
-			input.assignmentIds.map((id) => sql`${id}::uuid`),
-			sql`, `,
-		)})`;
-	}
-	return sql``;
-}
-
-function cursorCondition(input: OrdinaryCanonicalLoadInput): SQL {
-	if (!input.cursor) return sql``;
-	const cursorRiskRank = { high: 0, medium: 1, low: 2 }[input.cursor.riskLevel];
-	const cursorPriorityRank = { urgent: 0, high: 1, normal: 2, low: 3 }[
-		input.cursor.priority
-	];
-	return sql`and (${riskRankSql(input)} > ${cursorRiskRank}
-		or (${riskRankSql(input)} = ${cursorRiskRank} and ${priorityRankSql(input)} > ${cursorPriorityRank})
-		or (${riskRankSql(input)} = ${cursorRiskRank} and ${priorityRankSql(input)} = ${cursorPriorityRank}
-			and workflow.submitted_at > ${new Date(input.cursor.createdAt)})
-		or (${riskRankSql(input)} = ${cursorRiskRank} and ${priorityRankSql(input)} = ${cursorPriorityRank}
-			and workflow.submitted_at = ${new Date(input.cursor.createdAt)} and assignment.id > ${input.cursor.id}::uuid))`;
-}
-
-function riskRankSql(input: OrdinaryCanonicalLoadInput): SQL {
-	return sql`case when workflow.submitted_at <= ${input.now ?? new Date()}::timestamptz - interval '3 days' then 0 else 1 end`;
-}
-
-function priorityRankSql(input: OrdinaryCanonicalLoadInput): SQL {
-	const now = input.now ?? new Date();
-	return sql`case
-		when workflow.submitted_at < ${now}::timestamptz - interval '72 hours' then 0
-		when workflow.submitted_at < ${now}::timestamptz - interval '48 hours' then 1
-		when workflow.submitted_at < ${now}::timestamptz - interval '24 hours' then 2
-		else 3 end`;
-}
-
-function candidateFilterCondition(input: OrdinaryCanonicalLoadInput): SQL {
-	const filters = input.filters;
-	if (!filters) return sql``;
-	const conditions: SQL[] = [];
-	if (filters.teamId) {
-		conditions.push(sql`requester.team_id = ${filters.teamId}::uuid`);
-	}
-	if (filters.priority) {
-		const rank = { urgent: 0, high: 1, normal: 2, low: 3 }[filters.priority];
-		conditions.push(sql`${priorityRankSql(input)} = ${rank}`);
-	}
-	if (filters.minAgeDays) {
-		conditions.push(
-			sql`workflow.submitted_at <= ${input.now ?? new Date()}::timestamptz - ${filters.minAgeDays} * interval '1 day'`,
-		);
-	}
-	if (filters.dateRange) {
-		conditions.push(
-			sql`workflow.submitted_at >= ${filters.dateRange.from}`,
-			sql`workflow.submitted_at <= ${filters.dateRange.to}`,
-		);
-	}
-	if (filters.search) {
-		conditions.push(sql`(
-			strpos(lower(requester_user.name), ${filters.search}) > 0
-			or strpos(lower(requester_user.email), ${filters.search}) > 0
-			or strpos(projection.search_text, ${filters.search}) > 0
-		)`);
-	}
-	return conditions.length > 0
-		? sql`and ${sql.join(conditions, sql` and `)}`
-		: sql``;
-}
-
-function boundedLimit(input: OrdinaryCanonicalLoadInput): number {
-	if (input.assignmentId) return 1;
-	const requested = Math.floor(input.limit ?? 51);
-	return Math.min(Math.max(requested, 1), 101);
+	cursor?: CanonicalInboxCursor;
 }
 
 const UUID_SQL_PATTERN =
@@ -1073,6 +951,7 @@ function strictCanonicalEvidenceSql(): SQL {
 }
 
 function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
+	const now = input.now ?? new Date();
 	const selection = countOnly
 		? sql`count(*)::integer as "totalCount"`
 		: sql`
@@ -1296,11 +1175,11 @@ function candidateQuery(input: OrdinaryCanonicalLoadInput, countOnly = false) {
 					else false
 				end
 			), false)
-			and ${candidateVisibility(input)}
-			${candidateFilterCondition(input)}
-			${targetCondition(input)}
-			${cursorCondition(input)}
-		${countOnly ? sql`` : sql`order by ${riskRankSql(input)}, ${priorityRankSql(input)}, workflow.submitted_at, assignment.id limit ${boundedLimit(input)}`}
+			and ${canonicalInboxVisibility(input)}
+			${canonicalInboxFilters(input.filters, now)}
+			${canonicalInboxTarget(input)}
+			${canonicalInboxCursor(input.cursor, now)}
+		${countOnly ? sql`` : sql`order by ${canonicalInboxOrder(now)} limit ${canonicalInboxLimit(input)}`}
 	`;
 }
 

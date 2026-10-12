@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Atanan konum eklendi",
+      "employeeDescription": "Bu çalışanın çalıştığı konumlar. Kiosklar yalnızca kendi konumlarına atanmış çalışanları kabul eder.",
+      "employeeEmpty": "Atanan konum yok",
+      "employeeLabel": "Çalışan",
+      "employeePlaceholder": "Bir çalışan seçin",
+      "employeeTitle": "Atanan konumlar",
+      "errors": {
+        "adminOnly": "Atanan konumları yalnızca kuruluş sahipleri ve yöneticiler yönetebilir.",
+        "employeeNotFound": "Çalışan bulunamadı.",
+        "failed": "Atanan konumlar güncellenemedi. Yeniden deneyin.",
+        "invalidSelection": "Listeden seçin.",
+        "locationNotFound": "Konum bulunamadı."
+      },
+      "locationDescription": "Bu konumda çalışanlar. Kioskları yalnızca onları kabul eder.",
+      "locationEmpty": "Atanan çalışan yok",
+      "locationLabel": "Konum",
+      "locationPlaceholder": "Bir konum seçin",
+      "locationTitle": "Atanan çalışanlar",
+      "noEmployeesLeft": "Tüm aktif çalışanlar bu konuma atandı.",
+      "noLocationsLeft": "Atanacak başka aktif konum yok.",
+      "removed": "Atanan konum kaldırıldı"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Müşteri (Denetleyici)",
@@ -407,6 +430,75 @@
       "description": "Aboneliğinizi, ödeme yöntemlerinizi ve faturalarınızı yönetin",
       "title": "Faturalandırma ve Abonelik"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Ay sonundan sonraki gün sayısı",
+        "daysHelp": "Kapanışı engelleyen bir durum olursa kapatma yetkisi olan herkese bildirilir ve ertesi gün tekrar denenir.",
+        "daysInvalid": "1 ile 60 arasında tam bir gün sayısı girin",
+        "description": "Bitişinden belirli bir gün sayısı sonra, önceki ayı tüm kuruluş için kapatın. Yeniden açılan bir ay bir daha asla otomatik olarak kapatılmaz.",
+        "enabled": "Ayları otomatik olarak kapat",
+        "save": "Kaydet",
+        "saved": "Otomatik kapatma kaydedildi",
+        "title": "Otomatik kapatma"
+      },
+      "blockedTitle": "Ay henüz kapatılamaz. Önce şunları çözün:",
+      "blocker": {
+        "absenceRequest": "karara bağlanmamış izin talebi {startDate} – {endDate}",
+        "liveWork": "{start} tarihinden beri hâlâ mesaide",
+        "notEnded": "ay kendi saat dilimlerinde henüz bitmedi",
+        "periodSubmission": "karara bağlanmamış dönem gönderimi {startDate} – {endDate}",
+        "timeRequest": "{start} tarihli çalışma hakkında karara bağlanmamış talep"
+      },
+      "close": "Kapat",
+      "closeDescription": "Kapatılan bir ay yeniden açılana kadar hiç kimse çalışmayı, ilişkilendirmeyi veya izinleri değiştiremez. Her çalışanın ayı kendi saat dilimine göre sabitlenir.",
+      "closeSubmit": "Ayı kapat",
+      "closeSuccess": "{count, plural, other {{month} # çalışan için kapatıldı} }",
+      "closeTitle": "{month} ayını kapat",
+      "description": "Çalışma ve devamsızlık kayıtlarının artık değiştirilememesi için bordrodan sonra ayları kapatın",
+      "employeesLabel": "Çalışanlar",
+      "employeesRequired": "En az bir çalışan seçin",
+      "history": {
+        "automatic": "Otomatik olarak",
+        "closed": "Kapatıldı",
+        "employees": "{count, plural, other {# çalışan} }",
+        "reopened": "Yeniden açıldı",
+        "unknownActor": "Bilinmiyor"
+      },
+      "historyEmpty": "Henüz hiçbir ay kapatılmadı.",
+      "historyTitle": "Geçmiş",
+      "monthsDescription": "Bir ayın kapatılması; bordro için çalışma, ilişkilendirme ve devamsızlıkları dondurur. Notlar düzenlenebilir kalır.",
+      "monthsTitle": "Aylar",
+      "nothingToClose": "Bu kapsamdaki herkes için bu ay zaten kapatılmış.",
+      "nothingToReopen": "Bu seçimdeki hiç kimse için bu ay kapatılmamış.",
+      "reasonLabel": "Neden",
+      "reasonPlaceholder": "Bu ayın neden değiştirilmesi gerekiyor?…",
+      "reasonRequired": "Yeniden açma için bir neden girin",
+      "reopen": "Yeniden aç",
+      "reopenDescription": "Yeniden açılan çalışanlar, ay tekrar kapatılana kadar açık kalır. Yöneticileri bilgilendirilir.",
+      "reopenScopeLabel": "Şunlar için yeniden aç",
+      "reopenSubmit": "Ayı yeniden aç",
+      "reopenSuccess": "{count, plural, other {{month} # çalışan için yeniden açıldı} }",
+      "reopenTitle": "{month} ayını yeniden aç",
+      "scope": {
+        "all": "Tümü",
+        "deletedTeam": "Silinen ekip",
+        "employees": "Seçilen çalışanlar",
+        "organization": "Kuruluş"
+      },
+      "scopeLabel": "Şunun için kapat",
+      "teamNotFound": "Bu ekip artık mevcut değil.",
+      "title": "Kapatılan aylar",
+      "warning": {
+        "periodNotSubmitted": "{startDate} – {endDate} dönemi gönderilmedi",
+        "periodRejected": "{startDate} – {endDate} dönemi reddedildi",
+        "periodRunning": "{startDate} – {endDate} dönemi hâlâ devam ediyor, henüz gönderilemez",
+        "periodSentBack": "{startDate} – {endDate} dönemi bir değişiklikten sonra geri gönderildi"
+      },
+      "warnings": {
+        "more": "ve {count} tane daha",
+        "title": "Bu ay için tüm dönem gönderimleri onaylanmadı. Bu durum kapanışı engellemez:"
+      }
+    },
     "compliance": {
       "description": "Ekip üyelerinden gelen uyumluluk istisnası taleplerini inceleyin ve yönetin",
       "title": "ArbZG Uyumluluğu"
@@ -468,14 +560,208 @@
       "updated": "Müşteri güncellendi",
       "updateFailed": "Müşteri güncellenemedi"
     },
+    "customFields": {
+      "accessSummary": "Görüntüleyen: {visibility} · Düzenleyen: {edit}",
+      "activeCount": "{count} / {max} aktif alan",
+      "activeList": "Aktif özel alanlar",
+      "add": "Özel alan ekle",
+      "archivedList": "Arşivlenmiş özel alanlar",
+      "archivedTitle": "Arşivlenmiş",
+      "archiveField": "{name} öğesini arşivle",
+      "capReached": "Her kayıt türü en fazla 25 etkin özel alana sahip olabilir. Yeni bir tane eklemek için birini arşivleyin.",
+      "description": "Çalışanlar, projeler ve müşteriler üzerindeki kendi alanlarınız",
+      "editField": "{name} öğesini düzenle",
+      "empty": "Henüz özel alan yok.",
+      "entity": {
+        "customer": "Müşteriler",
+        "employee": "Çalışanlar",
+        "project": "Projeler"
+      },
+      "form": {
+        "boundsHelp": "Sınırsız olması için bir sınırı boş bırakın.",
+        "create": "Alan oluştur",
+        "createTitle": "Özel alan ekle",
+        "description": "{entity} üzerinde özel bir alan.",
+        "editLevel": "Değerleri kimler düzenleyebilir",
+        "editLevelHelp": "Çalışanlar hiçbir zaman özel alan değerlerini düzenleyemez.",
+        "editTitle": "Özel alanı düzenle",
+        "integerOnly": "Yalnızca tam sayılar",
+        "max": "Maksimum",
+        "min": "Minimum",
+        "name": "Ad",
+        "nameRequired": "Bir ad girin",
+        "options": "Seçenekler",
+        "optionsHelp": "Her satıra bir seçenek.",
+        "required": "Zorunlu",
+        "requiredHelp": "Formlar bir değer olmadan kaydı kaydetmeyi reddeder.",
+        "save": "Değişiklikleri kaydet",
+        "tracked": "Geçmiş tut",
+        "trackedFixed": "Bir alanın geçmiş tutup tutmayacağı oluşturulduktan sonra değiştirilemez.",
+        "trackedHelp": "Her değer, geçerli olduğu başlangıç tarihini taşır.",
+        "type": "Tür",
+        "typeFixed": "Alan oluşturulduktan sonra tür değiştirilemez.",
+        "visibility": "Değerleri kimler görebilir"
+      },
+      "level": {
+        "admin": "Yöneticiler",
+        "employee": "Çalışan dahil herkes",
+        "manager": "Müdürler ve yöneticiler"
+      },
+      "options": {
+        "add": "Seçenek ekle",
+        "archive": "{label} öğesini arşivle",
+        "archived": "Arşivlendi",
+        "label": "Seçenek adı",
+        "list": "Seçenekler",
+        "moveDown": "{label} öğesini aşağı taşı",
+        "moveUp": "{label} öğesini yukarı taşı",
+        "new": "Yeni seçenek",
+        "restore": "{label} öğesini geri yükle",
+        "title": "Seçenekler"
+      },
+      "refusal": {
+        "booleanRequired": "Bir evet/hayır alanı zorunlu olamaz.",
+        "duplicateOption": "Bu alanda bu ada sahip etkin bir seçenek zaten var.",
+        "editBroaderThanVisibility": "Değerleri düzenleyebilen herkes bunları görebilmelidir de.",
+        "employeesNeverEdit": "Çalışanlar özel alan değerlerini düzenleyemez.",
+        "fieldArchived": "Değiştirmeden önce bu özel alanı geri yükleyin.",
+        "invalidChange": "Bu değişiklik kaydedilemiyor. Sayfayı yeniden yükleyip tekrar deneyin.",
+        "invalidLevel": "Değerleri kimlerin görebileceğini ve düzenleyebileceğini seçin.",
+        "invalidName": "En fazla 100 karakterden oluşan bir ad girin.",
+        "invalidOptionLabel": "En fazla 100 karakterden oluşan bir seçenek girin.",
+        "lastActiveOption": "Bir seçim alanında en az bir etkin seçenek olmalıdır.",
+        "nameTaken": "Bu kayıt türündeki etkin bir özel alan zaten bu ada sahip.",
+        "notFound": "Bu özel alan artık mevcut değil. Sayfayı yeniden yükleyin.",
+        "notSelect": "Yalnızca seçim alanlarının seçenekleri vardır.",
+        "numberBounds": "Minimum ve maksimum değerleri, minimum maksimumdan büyük olmayacak şekilde sayı olarak girin.",
+        "optionArchived": "Önce bu seçeneği geri yükleyin.",
+        "selectNeedsOption": "Seçim alanına en az bir seçenek ekleyin.",
+        "staleOrder": "Bu sırada liste değişti. Sayfayı yeniden yükleyip tekrar deneyin.",
+        "tooManyFields": "Bu kayıt türünde zaten 25 etkin özel alan var. Önce birini arşivleyin.",
+        "trackedFixed": "Bir özel alanın geçmiş tutup tutmayacağı oluşturulduktan sonra değiştirilemez.",
+        "typeFixed": "Bir özel alanın türü oluşturulduktan sonra değiştirilemez.",
+        "usedAsPayrollIdentifier": "Bu alan, {configurations} bordro dışa aktarma yapılandırmasının personel tanımlayıcısıdır. Önce orada başka bir tanımlayıcı seçin."
+      },
+      "reorderField": "{name} öğesini yeniden sırala",
+      "required": "Zorunlu",
+      "restore": "Geri yükle",
+      "restoreField": "{name} öğesini geri yükle",
+      "saveFailed": "Değişiklik kaydedilemedi.",
+      "title": "Özel alanlar",
+      "tracked": "İzlenen",
+      "type": {
+        "boolean": "Evet/Hayır",
+        "date": "Tarih",
+        "number": "Sayı",
+        "select": "Seçim",
+        "text": "Metin"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Bu tarihte başlayan bir değer zaten var.",
+        "fieldArchived": "Bu alan arşivlendi.",
+        "forField": "Özel alan \"{field}\": {message}",
+        "invalidDate": "Geçerli bir tarih girin.",
+        "invalidNumber": "Bir sayı girin.",
+        "invalidValidFrom": "Geçerli bir başlangıç tarihi girin.",
+        "invalidValue": "Geçerli bir değer girin.",
+        "missingRequired": "Bu alan zorunludur.",
+        "missingValue": "Her tarih için bir değer girin.",
+        "notEditable": "Bu alanı değiştiremezsiniz.",
+        "numberNotInteger": "Bir tam sayı girin.",
+        "numberOutOfRange": "İzin verilen aralıkta bir sayı girin.",
+        "optionArchived": "Bu seçenek arşivlendi. Başka birini seçin.",
+        "textTooLong": "En fazla 255 karakter girin.",
+        "trackedField": "Bu alan geçmiş kaydı tutar. Bunun yerine tarihli bir değişiklik ekleyin.",
+        "unknownField": "Bu alan artık mevcut değil. Sayfayı yeniden yükleyip tekrar deneyin.",
+        "unknownHistoryEntry": "Bu sırada geçmiş değişti. Sayfayı yeniden yükleyip tekrar deneyin."
+      },
+      "values": {
+        "archivedOption": "{label} (arşivlendi)",
+        "history": {
+          "add": "Değişiklik ekle",
+          "apply": "Uygula",
+          "correct": "{date} tarihinden itibaren geçerli değeri düzeltin",
+          "delete": "{date} tarihinden itibaren geçerli değeri sil",
+          "duplicateValidFrom": "Bu tarihten itibaren geçerli bir değer zaten var.",
+          "empty": "Henüz değer yok.",
+          "from": "{date} tarihinden itibaren",
+          "label": "{name} geçmişi",
+          "needsValidFrom": "Değerin geçerli olacağı başlangıç tarihini seçin.",
+          "needsValue": "Bir değer girin.",
+          "today": "Bugün",
+          "validFrom": "Geçerlilik başlangıcı",
+          "value": "Değer"
+        },
+        "missingRequired": "Gerekli değerler eksik",
+        "no": "Hayır",
+        "notSet": "Ayarlanmadı",
+        "ownDescription": "Kuruluşunuz tarafından tutulur. Bunları değiştirmek için bir yöneticiye veya amirinize başvurun.",
+        "title": "Özel alanlar",
+        "yes": "Evet"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Devamsızlık kayıtları ve kategorileri",
+          "label": "Devamsızlıklar"
+        },
+        "audit_logs": {
+          "description": "Etkinlik denetim izi",
+          "label": "Denetim Günlükleri"
+        },
+        "balance_adjustments": {
+          "description": "İptal edilenler de dahil olmak üzere açılış bakiyeleri ve fazla mesai ödemeleri",
+          "label": "Çalışma Bakiyesi Düzeltmeleri"
+        },
+        "customers": {
+          "description": "Müşteri özel alanlarıyla birlikte müşteriler",
+          "label": "Müşteriler"
+        },
+        "employees": {
+          "description": "Çalışan profilleri, yönetici ilişkileri ve çalışan özel alanları",
+          "label": "Çalışanlar"
+        },
+        "holidays": {
+          "description": "Tatil takvimi ve ön ayarları",
+          "label": "Tatiller"
+        },
+        "projects": {
+          "description": "Müşteri ve özel proje alanlarıyla birlikte projeler",
+          "label": "Projeler"
+        },
+        "schedules": {
+          "description": "Çalışma programı şablonları ve atamaları",
+          "label": "Çalışma Programları"
+        },
+        "shifts": {
+          "description": "Vardiya planlama verileri",
+          "label": "Vardiyalar"
+        },
+        "teams": {
+          "description": "Ekip yapısı ve izinler",
+          "label": "Ekipler"
+        },
+        "time_entries": {
+          "description": "Zaman saati girişleri ve düzeltmeleri",
+          "label": "Zaman Takibi"
+        },
+        "vacation": {
+          "description": "İzin politikaları ve izin hakları",
+          "label": "İzin Politikaları"
+        },
+        "work_periods": {
+          "description": "Birleştirilmiş çalışma oturumları",
+          "label": "Çalışma Dönemleri"
+        }
+      },
       "description": "Kuruluşunuzun verilerini dışa aktarın",
       "form": {
         "aboutAsync": "Dışa aktarma işlemleri eşzamansız olarak gerçekleştirilir",
+        "aboutDownloadFromHistory": "Tamamlanan dışa aktarmaları Dışa Aktarma Geçmişi'nden indirin",
         "aboutEmail": "Hazır olduğunda bir e-posta alacaksınız",
-        "aboutLinkValidity": "İndirme bağlantıları 24 saat boyunca geçerlidir",
+        "aboutFileRetention": "Dışa aktarma dosyaları 30 gün sonra silinir",
         "aboutOrgDataOnly": "Yalnızca kuruluşunuzun verileri dahil edilir",
-        "aboutStorageDuration": "Dışa aktarma dosyaları 7 gün boyunca saklanır",
         "aboutTitle": "Veri Dışa Aktarma Hakkında",
         "description": "Dışa aktarmak istediğiniz veri kategorilerini seçin",
         "selectAll": "Tümünü Seç",
@@ -508,6 +794,9 @@
         "statusFailed": "Başarısız",
         "statusPending": "Beklemede",
         "statusProcessing": "İşleniyor",
+        "switchOrganizationAction": "{organization} kuruluşuna geç",
+        "switchOrganizationBody": "Bu dışa aktarma {organization} kuruluşuna ait. Dışa aktarma geçmişini açmak için bu kuruluşa geçin; erişiminiz geçiş yapıldıktan sonra tekrar kontrol edilir.",
+        "switchOrganizationTitle": "Bu dışa aktarmayı görmek için kuruluşu değiştirin",
         "title": "Dışa Aktarma Geçmişi",
         "unexpectedError": "Beklenmedik bir hata oluştu"
       },
@@ -991,10 +1280,7 @@
           "nameTaken": "{name} aynı ada sahip ve zaten başka bir kişiyle ilişkilendirilmiş",
           "noMatch": "Eşleşme yok",
           "paging": {
-            "label": "Kişi sayfaları",
-            "next": "Sonraki sayfa",
-            "position": "Sayfa {page} / {pageCount}",
-            "previous": "Önceki sayfa"
+            "label": "Kişi sayfaları"
           },
           "suggestion": {
             "customerNumber": "{name}, aynı müşteri numarasına sahip bir kişi bağlantısına sahip",
@@ -1008,6 +1294,7 @@
           "attributionNotAllowed": "Proje kullanılamıyor veya faturalandırılabilir çalışma için müşterisi olan bir proje gerekiyor.",
           "invalidInterval": "Sağlayıcı saatlerinde açık bir zaman farkı bilgisi yok, saatler sıralı değil veya gelecekte yer alıyor.",
           "label": "İnceleme için bekletiliyor",
+          "monthClosed": "Bu süre kapatılan bir ayda yer alıyor. Ay yeniden açıldığında içe aktarılabilir.",
           "occupancyConflict": "Bu süre, söz konusu çalışan için önceden kaydedilmiş çalışmayla çakışıyor.",
           "operationCollision": "Bu satır, daha önce işlenen içe aktarımıyla çakışıyor.",
           "providerDurationMismatch": "Sağlayıcı süresi, başlangıç ve bitiş saatleriyle uyuşmuyor.",
@@ -1015,14 +1302,22 @@
           "unlocatedBreak": "Sağlayıcı, saatlerini belirtmeden molaları bildirdiği için çalışılan aralık bilinmiyor."
         },
         "issueGroups": {
-          "currentMarkers": "Mevcut satırlar {blockingRows} engelleyici ve {warningRows} uyarı işareti içeriyor.",
           "description": "Gruplandırılmış inceleme alanları, kabul edilen satırlar kaydedilmeden önce kalite kontrollerinin görünür kalmasına yardımcı olur.",
+          "importMarkers": "İçe aktarılan satırlarda {blockingRows} engelleyici ve {warningRows} uyarı sorunu işareti bulunuyor.",
           "title": "Sorun grupları"
+        },
+        "paging": {
+          "next": "Sonraki sayfa",
+          "position": "Sayfa {page} / {pageCount}",
+          "previous": "Önceki sayfa"
         },
         "rows": {
           "billable": "Faturalandırılabilir",
           "empty": "Bu içe aktarma grubu için hazırlanan satır bulunmuyor.",
           "entity": "Varlık",
+          "paging": {
+            "label": "Satır sayfaları"
+          },
           "rowId": "Satır Kimliği",
           "sourceId": "Kaynak Kimliği",
           "status": "Durum",
@@ -1041,6 +1336,98 @@
         "title": "İçe Aktarma İncelemesi"
       },
       "title": "Veri İçe Aktar"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Bu adres başka bir hesap tarafından zaten kullanılıyor.",
+        "emailNotAllowed": "Kuruluşunuzun oturum açma politikası bu adrese izin vermiyor.",
+        "employeeNotFound": "Bu çalışan bulunamadı.",
+        "failed": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+        "invalidEmail": "Geçerli bir e-posta adresi girin.",
+        "invalidName": "En fazla 100 karakterlik bir ad girin.",
+        "invalidPin": "Kiosk PIN kodu 4 ila 6 hanelidir.",
+        "locationNotFound": "Bu konum bulunamadı.",
+        "noPin": "Bu çalışanın henüz bir kiosk PIN kodu yok.",
+        "notAllowed": "Bunu yapmaya yetkiniz yok.",
+        "notKioskOnly": "Bu çalışanın zaten bir e-posta adresi var.",
+        "pinExists": "Bu çalışanın zaten bir kiosk PIN kodu var. Bunun yerine PIN kodunu sıfırlayın.",
+        "reservedEmail": "Bu adres kullanılamaz.",
+        "signInRequired": "Devam etmek için giriş yapın.",
+        "teamNotFound": "Bu ekip bulunamadı."
+      }
+    },
+    "kiosks": {
+      "add": "Kiosk ekle",
+      "boardOn": "Kimler içeride panosu açık",
+      "columns": {
+        "actions": "İşlemler",
+        "lastSeen": "Son görülme",
+        "location": "Konum",
+        "name": "Ad",
+        "status": "Durum"
+      },
+      "create": "Kiosk oluştur",
+      "created": "Kiosk oluşturuldu",
+      "createDescription": "Kiosk cihazına girmeniz için bir eşleme kodu alacaksınız.",
+      "createFailed": "Kiosk oluşturulamadı",
+      "createTitle": "Kiosk ekle",
+      "description": "Çalışanların kiosk PIN kodlarıyla giriş/çıkış yaptığı bir konumdaki paylaşılan cihazlar",
+      "edit": "Düzenle",
+      "editDescription": "Değişiklikler kioskun bir sonraki isteğinde uygulanır.",
+      "editTitle": "Kiosku düzenle",
+      "empty": "Henüz kiosk yok.",
+      "errors": {
+        "adminOnly": "Kioskları yalnızca organizasyon sahipleri ve yöneticileri yönetebilir.",
+        "invalidName": "En fazla 100 karakterden oluşan bir ad girin.",
+        "invalidSelection": "Girdiğinizi kontrol edip tekrar deneyin.",
+        "invalidTimezone": "Bir saat dilimi seçin.",
+        "kioskNotFound": "Bu kiosk bulunamadı.",
+        "kioskRevoked": "Bu kiosk iptal edildi.",
+        "locationNotFound": "Bu kuruluşun etkin bir konumunu seçin."
+      },
+      "fields": {
+        "board": "Kimler içeride panosu",
+        "boardDescription": "Kioskta kimin içeride veya molada olduğunu ad ve soyadı baş harfiyle gösterir.",
+        "location": "Konum",
+        "locationDescription": "Kiosk yalnızca bu konuma atanmış çalışanları kabul eder.",
+        "locationPlaceholder": "Bir konum seçin",
+        "name": "Ad",
+        "namePlaceholder": "ör. Personel girişi",
+        "timezone": "Saat dilimi",
+        "timezoneDescription": "Bu kioskta kaydedilen giriş-çıkış kayıtları bu saat dilimini kullanır."
+      },
+      "issueCodeConfirm": "Yeni kod oluştur",
+      "listDescription": "Her kiosk tek bir konuma aittir. Cihazda kiosk sayfasını açıp eşleştirme kodunu girerek bir cihazı eşleştirin.",
+      "listTitle": "Kiosklar",
+      "loadFailed": "Kiosklar yüklenemedi.",
+      "neverSeen": "Hiçbir zaman",
+      "noLocations": "Önce bir konum oluşturun: her kiosk tek bir konuma aittir.",
+      "pairAgain": "Yeniden eşleştir",
+      "pairFailed": "Yeni bir eşleştirme kodu oluşturulamadı",
+      "pairingCodeLabel": "Eşleştirme kodu",
+      "pairingDescription": "Kiosk cihazında QR kodunu tarayın veya kiosk sayfasını açıp kodu girin. Kod tek kullanımlıktır ve 10 dakika sonra geçerliliğini yitirir.",
+      "pairingDone": "Bitti",
+      "pairingTitle": "{name} eşleştir",
+      "pairPairedDescription": "Cihaz belirteci yenilenir: eşleştirilmiş cihaz anında çalışmayı durdurur ve yeni kod ile tekrar eşleştirilmesi gerekir.",
+      "pairTitle": "{name} yeniden eşleştirilsin mi?",
+      "pairUnpairedDescription": "Yeni bir eşleştirme kodu öncekinin yerini alır.",
+      "revoke": "İptal et",
+      "revokeConfirm": "Kiosku iptal et",
+      "revoked": "Kiosk iptal edildi",
+      "revokeDescription": "Kiosk, bir sonraki isteğinde çalışmayı durdurur ve yeniden eşleştirilemez. Yerine yenisini oluşturun.",
+      "revokeFailed": "Kiosk iptal edilemedi",
+      "revokeTitle": "{name} iptal edilsin mi?",
+      "rotateConfirm": "Belirteci yenile ve tekrar eşleştir",
+      "save": "Kaydet",
+      "saved": "Kiosk kaydedildi",
+      "saveFailed": "Kiosk kaydedilemedi",
+      "status": {
+        "awaitingPairing": "Eşleştirme bekleniyor",
+        "codeExpired": "Eşleştirilmedi, kodun süresi doldu",
+        "paired": "Eşleştirildi",
+        "revoked": "İptal edildi"
+      },
+      "title": "Kiosklar"
     },
     "licenses": {
       "footer": "Bu uygulama açık kaynaklı yazılım kullanmaktadır. Bu paketlerin tüm sürdürücülerine ve katkıda bulunanlarına teşekkür ederiz.",
@@ -1401,6 +1788,7 @@
       "create": "Proje Oluştur",
       "created": "Proje oluşturuldu",
       "createFailed": "Proje oluşturulamadı",
+      "customerDeleted": "{name} (silindi)",
       "description": "Projeleri, bütçeleri, teslim tarihlerini ve zaman atamalarını yönetin",
       "dialog": {
         "create": "Proje Oluştur",
@@ -1425,6 +1813,7 @@
         "color": "Renk",
         "colorOption": "{color} rengini seç",
         "customer": "Müşteri",
+        "customerDeleted": "{name} silindi. Başka bir müşteri seçin veya projeyi müşteri olmadan bırakın.",
         "customerPlaceholder": "Bir müşteri seçin",
         "deadline": "Teslim Tarihi",
         "description": "Açıklama",
@@ -1650,8 +2039,23 @@
       "updated": "Proje güncellendi",
       "updateFailed": "Proje güncellenemedi"
     },
+    "reportShareLinks": {
+      "description": "Bir proje veya müşteri raporu paylaşan tüm bağlantıları görün ve iptal edin",
+      "pageDescription": "Z8 dışındaki birine bir proje veya müşteri raporunun sabitlenmiş anlık görüntüsünü gösteren bağlantılar. Bir bağlantıyı iptal etmek, çalışmasını anında durdurur ve anlık görüntüsünü siler.",
+      "title": "Rapor Paylaşım Bağlantıları"
+    },
     "security": {
       "description": "Parolanızı, iki faktörlü kimlik doğrulamayı, geçiş anahtarlarını ve aktif oturumları yönetin",
+      "kioskPin": {
+        "descriptionChange": "Bir kiosk PIN kodunuz var. Değiştirmek için 4 ila 6 haneli yeni bir kod seçin.",
+        "descriptionSet": "Kuruluşunuzun kiosklarında giriş-çıkış yapmak için 4 ila 6 haneli bir PIN seçin.",
+        "mismatch": "PIN kodları eşleşmiyor.",
+        "newPin": "Yeni PIN",
+        "repeatPin": "PIN tekrarı",
+        "save": "PIN'i Kaydet",
+        "saved": "Kiosk PIN'i kaydedildi",
+        "title": "Kiosk PIN'i"
+      },
       "title": "Güvenlik Ayarları",
       "twoFactor": {
         "backupCodesCopied": "Yedek kodlar panoya kopyalandı",
@@ -2052,6 +2456,7 @@
         "replaceDescription": "{date} tarihinde başlayan etkin bir sürüm zaten mevcut. Kaydetmek onunla değiştirir; değiştirilen sürüm geçmişte tutulur.",
         "replaceTitle": "O gün başlayan sürümü değiştir",
         "rules": "Uygunluk {reference} ({version}) referansını takip eder ve {from} ile {through} arasındaki seyahat günleri için doğrulanmıştır. Yurt dışı seyahatleri günlük olarak yalnızca kabul edilen yurt dışı oranlarıyla ücretlendirilir; diğer günler ve özel seyahat planları manuel hesaplama için işaretlenir.",
+        "rulesOpenEnded": "Uygunluk, yasa değişene kadar {from} tarihinden itibaren seyahat günleri için doğrulanmış olan {reference} ({version}) hükümlerine tabidir. Yurt dışı seyahatleri yalnızca kabul edilen yurt dışı oranlarıyla günlük olarak fiyatlandırılır; diğer günler ve özel seyahat planları manuel hesaplama için işaretlenir.",
         "saved": "Harcırah oranı sürümü etkinleştirildi",
         "saveFailed": "Harcırah oranları kaydedilemedi.",
         "source": "Kaynak",

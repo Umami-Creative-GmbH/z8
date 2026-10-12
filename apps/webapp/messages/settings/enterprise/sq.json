@@ -1,0 +1,676 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Aktiv",
+      "copyKey": "Kopjo çelësin API",
+      "copyPrefix": "Kopjo prefiksin",
+      "create": "Krijo çelës",
+      "created": "Çelësi API u krijua me sukses",
+      "createdBy": "nga {name}",
+      "createDescription": "Krijoni një çelës të ri API për qasje programatike. Çelësi do të shfaqet vetëm një herë.",
+      "createdOn": "Krijuar më {date}",
+      "createTitle": "Krijo çelës API",
+      "creatorDeparted": "I larguar",
+      "deleted": "Çelësi API u fshi",
+      "deleteDescription": "A jeni i sigurt që dëshironi të fshini çelësin API \"{name}\"? Çdo aplikacion që përdor këtë çelës do të humbasë menjëherë qasjen. Ky veprim nuk mund të zhbëhet.",
+      "deleteTitle": "Fshi çelësin API",
+      "description": "Menaxhoni çelësat API për qasje programatike te të dhënat e organizatës suaj",
+      "detail": {
+        "back": "Të gjithë çelësat API",
+        "channel": "Kanali",
+        "channelApi": "API",
+        "channelMcp": "MCP",
+        "createdAt": "Krijuar",
+        "creator": "Krijuar nga",
+        "creatorDeparted": "{name} (larguar)",
+        "ip": "Adresa IP",
+        "noRateLimit": "Joaktiv",
+        "noRequests": "Nuk ka kërkesa në 90 ditët e fundit.",
+        "rateLimit": "Kufiri i kërkesave",
+        "rateLimitMilliseconds": "{max} për {window} ms",
+        "rateLimitValue": "{max} {window}",
+        "request": "Kërkesë",
+        "requests": "Kërkesat e fundit",
+        "requestsDescription": "Çdo kërkesë e bërë me këtë çelës, më të rejat së pari. Kërkesat ruhen për 90 ditë.",
+        "rows": "Rreshta",
+        "status": "Statusi",
+        "time": "Koha"
+      },
+      "disabled": "Çaktivizuar",
+      "editCreated": "Krijuar më {date}",
+      "editDescription": "Përditësoni cilësimet për këtë çelës API. Shënim: Nuk mund ta shikoni apo ta ndryshoni vetë çelësin.",
+      "editTitle": "Ndrysho çelësin API",
+      "empty": {
+        "description": "Krijoni çelësin tuaj të parë API për të mundësuar qasje programatike në organizatën tuaj.",
+        "title": "Nuk ka çelësa API"
+      },
+      "expired": "Skaduar",
+      "expires": "Skadon",
+      "expiresInDays": "Skadon pas {days}d",
+      "form": {
+        "create": "Krijo çelës",
+        "enabled": "Çelësi i aktivizuar",
+        "enabledHelp": "Çelësat e çaktivizuar do të refuzojnë të gjitha kërkesat e API-së",
+        "expiration": "Skadimi",
+        "invalid": "Rishikoni fushat e pavlefshme të formularit",
+        "name": "Emri",
+        "nameHelp": "Një emër përshkrues për të identifikuar këtë çelës",
+        "nameMax": "Emri duhet të ketë më së shumti 100 karaktere",
+        "nameMin": "Emri duhet të ketë të paktën 3 karaktere",
+        "nameMinLength": "Emri duhet të ketë të paktën 3 karaktere",
+        "namePlaceholder": "p.sh., API i Prodhimit",
+        "rateLimit": "Aktivizo kufizimin e shkallës së kërkesave",
+        "rateLimitMaxExceeded": "Kufiri i shkallës duhet të jetë më së shumti 10,000 kërkesa",
+        "rateLimitMaxInvalid": "Futni një numër të plotë nga 10 deri në 10,000",
+        "rateLimitMaxRequests": "Kërkesat maksimale",
+        "rateLimitMin": "Kufiri i normës duhet të jetë të paktën 10 kërkesa",
+        "rateLimitRequired": "Kufiri i normës është i detyrueshëm",
+        "rateLimitWholeNumber": "Kufiri i normës duhet të jetë një numër i plotë",
+        "rateLimitWindowHour": "në orë",
+        "rateLimitWindowLabel": "Dritarja kohore",
+        "rateLimitWindowMinute": "në minutë",
+        "rateLimitWindowSecond": "në sekondë",
+        "scopes": "Lejet",
+        "scopesRequired": "Zgjidhni të paktën një leje"
+      },
+      "keyCopied": "Çelësi API u kopjua në kujtesën e fragmenteve",
+      "lastUsed": "Përdorur për herë të fundit",
+      "name": "Emri",
+      "neverExpires": "Nuk skadon kurrë",
+      "noPermissions": "Pa leje",
+      "prefix": "Prefiksi i çelësit",
+      "prefixCopied": "Prefiksi i çelësit u kopjua",
+      "scopeLabel": {
+        "absencesRead": "Lexo mungesat",
+        "absencesReadHealth": "Lexo detajet shëndetësore të mungesës",
+        "customersRead": "Lexo klientët",
+        "employeesRead": "Lexo punonjësit",
+        "projectsRead": "Lexo projektet",
+        "timeEntriesRead": "Lexo regjistrimet e kohës"
+      },
+      "scopes": "Lejet",
+      "security": {
+        "description": "Çelësat API ofrojnë qasje të plotë në të dhënat e organizatës suaj brenda fushës së lejeve të tyre. Mbajini të sigurt dhe mos i ndani kurrë në depo publike ose kod të anës së klientit.",
+        "title": "Njoftim sigurie"
+      },
+      "showClose": "Mbyll",
+      "showCloseAnyway": "Mbyll gjithsesi",
+      "showConfirmWarning": "A jeni i sigurt? Nuk e keni kopjuar ende çelësin.",
+      "showCopied": "Çelësi u kopjua në kujtesën e fragmenteve",
+      "showDescription": "Çelësi juaj i ri API \"{name}\" u krijua. Kopjojeni tani - nuk do të mund ta shihni më përsëri!",
+      "showDone": "U krye",
+      "showExpires": "Skadon:",
+      "showLabel": "Çelësi juaj API",
+      "showName": "Emri:",
+      "showNever": "Kurrë",
+      "showTitle": "Çelësi API u krijua",
+      "showWarning": "Kjo është hera e vetme që do ta shihni këtë çelës. Sigurohuni ta kopjoni dhe ta ruani në mënyrë të sigurt.",
+      "showWarningTitle": "E rëndësishme:",
+      "status": "Statusi",
+      "title": "Çelësat API",
+      "unknownCreator": "një ish-administrator",
+      "updated": "Çelësi API u përditësua",
+      "usage": "{count} nga {max} çelësa të përdorur"
+    },
+    "branding": {
+      "appName": {
+        "description": "Zëvendësoni emrin e paracaktuar të aplikacionit që shfaqet në faqen e hyrjes.",
+        "title": "Emri i aplikacionit"
+      },
+      "background": {
+        "description": "Ngarkoni një imazh të personalizuar të sfondit për faqen e hyrjes.",
+        "hint": "E rekomanduar: 1920x1080px ose më e madhe, JPEG ose PNG me cilësi të lartë",
+        "preview": "Pamja paraprake e sfondit",
+        "remove": "Hiq sfondin",
+        "title": "Imazhi i sfondit",
+        "upload": "Ngarko imazhin e sfondit"
+      },
+      "backgroundUploadFailed": "Dështoi ngarkimi i imazhit të sfondit",
+      "backgroundUploadSuccess": "Imazhi i sfondit u ngarkua me sukses",
+      "colors": {
+        "accent": "Ngjyra e theksit (Opsionale)",
+        "accentHex": "Vlera hex e ngjyrës së theksit",
+        "accentHint": "Ngjyra dytësore për theksimet",
+        "description": "Përshtatni ngjyrat kryesore dhe të theksit për faqen tuaj të hyrjes.",
+        "primary": "Ngjyra kryesore",
+        "primaryHex": "Vlera hex e ngjyrës kryesore",
+        "primaryHint": "Përdoret për butonat, lidhjet dhe gjendjet e fokusit",
+        "title": "Ngjyrat e temës"
+      },
+      "logo": {
+        "description": "Ngarkoni logon e organizatës suaj për ta shfaqur në faqen e hyrjes.",
+        "hint": "E rekomanduar: 200x200px, PNG ose SVG me sfond të tejdukshëm",
+        "preview": "Pamja paraprake e logos",
+        "remove": "Hiq logon",
+        "title": "Logo",
+        "upload": "Ngarko imazhin e logos"
+      },
+      "logoUploadFailed": "Dështoi ngarkimi i logos",
+      "logoUploadSuccess": "Logoja u ngarkua me sukses",
+      "save": "Ruaj cilësimet e markës",
+      "saveFailed": "Dështoi ruajtja e cilësimeve të markës",
+      "saveSuccess": "Cilësimet e markës u ruajtën"
+    },
+    "enterprise": {
+      "addProvider": "Shto ofrues",
+      "clientId": "ID-ja e klientit",
+      "clientIdRequired": "Kërkohet ID-ja e klientit",
+      "clientSecret": "Sekreti i klientit",
+      "clientSecretRequired": "Kërkohet sekreti i klientit",
+      "configureCallbackUrl": "Konfiguroni URL-në callback:",
+      "domain": "Domeni",
+      "domains": {
+        "add": "Shto domen të personalizuar",
+        "addDescription": "Shtoni një domen të personalizuar për të aktivizuar faqet e hyrjes specifike për organizatën. Do t'ju duhet të verifikoni pronësinë përmes regjistrimeve DNS.",
+        "addDomain": "Shto domenin",
+        "added": "Domeni u shtua me sukses",
+        "addFailed": "Shtimi i domenit dështoi",
+        "adding": "Duke shtuar…",
+        "authConfigDescription": "Konfiguroni cilat metoda autentikimi janë të disponueshme për përdoruesit që identifikohen përmes {domain}",
+        "authConfigTitle": "Konfigurimi i autentikimit",
+        "authConfigUpdated": "Konfigurimi i autentikimit u përditësua",
+        "authConfigUpdateFailed": "Përditësimi i konfigurimit të autentikimit dështoi",
+        "authMethod": {
+          "emailPassword": "Email/Fjalëkalim",
+          "passkey": "Passkey",
+          "social": "Sociale ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "i konfiguruar",
+        "cookieConsentScript": "Skripti i pëlqimit për cookies",
+        "cookieConsentScriptHelp": "Vendoset vetëm në faqet e autentikimit për këtë domen të personalizuar. Lëreni bosh për ta çaktivizuar.",
+        "cookieConsentStatus": "Pëlqimi për cookies {status}",
+        "copiedToClipboard": "U kopjua në kujtesën e fragmenteve",
+        "customDomain": "Domen i personalizuar",
+        "customDomainDescription": "Konfiguroni një domen të personalizuar për të aktivizuar një faqe hyrjeje specifike për organizatën me markën tuaj.",
+        "defaultUrl": {
+          "canonical": "Kanonike"
+        },
+        "defaultUrls": "URL-të e paracaktuara",
+        "defaultUrlsDescription": "Këto URL të menaxhuara nga platforma funksionojnë automatikisht pa konfigurim të personalizuar të DNS-së.",
+        "deleteAria": "Fshij domenin e personalizuar {domain}",
+        "deleted": "Domeni u fshi",
+        "deleteDescription": "A jeni i sigurt që dëshironi të fshini \"{domain}\"? Ky veprim nuk mund të zhbëhet. Përdoruesit nuk do të mund të identifikohen më përmes këtij domeni të personalizuar.",
+        "deleteFailed": "Fshirja e domenit dështoi",
+        "deleteTitle": "Fshij domenin",
+        "description": "Konfiguroni domenin e personalizuar të hyrjes të organizatës suaj, markën dhe ofruesit e SSO-së.",
+        "dnsPropagation": "Përhapja e DNS-së",
+        "dnsPropagationDescription": "Ndryshimet në DNS mund të kërkojnë deri në 48 orë për t'u përhapur, megjithëse shpesh përfundojnë brenda pak minutash. Mund të klikoni \"Verifiko\" pasi të keni shtuar regjistrimin TXT.",
+        "domain": "Domeni",
+        "domainHelp": "Vendosni domenin ku përdoruesit do të kenë qasje në faqen e hyrjes.",
+        "domainInvalid": "Ju lutemi vendosni një domen të vlefshëm (p.sh., login.shembull.com)",
+        "domainPageSettings": "Cilësimet e faqes së domenit",
+        "domainRequired": "Domeni është i detyrueshëm",
+        "editAuthSettingsAria": "Modifiko cilësimet e autentikimit për {domain}",
+        "emailPassword": "Email dhe fjalëkalim",
+        "emailPasswordHelp": "Lejo përdoruesit të identifikohen me email dhe fjalëkalim",
+        "empty": "Nuk është konfiguruar ende asnjë domen i personalizuar.",
+        "enabledAuthMethods": "Metodat e aktivizuara të autentikimit",
+        "guidedSetup": {
+          "action": "Konfigurim i udhëhequr",
+          "description": "Konfiguroni SSO-në, SCIM-in, politikat e qasjes dhe kontrollet e aktivizimit në një rrjedhë të vetme të sigurt.",
+          "title": "Konfigurim i udhëhequr"
+        },
+        "keepExistingSecretKey": "Lëreni bosh për të mbajtur çelësin sekret ekzistues",
+        "nameHost": "Emri / Host-i",
+        "notConfigured": "i pakonfiguruar",
+        "passkey": "Passkey",
+        "passkeyHelp": "Lejo identifikimin pa fjalëkalim me passkeys",
+        "regenerateToken": "Rigjenero token-in",
+        "regenerateTokenFailed": "Rigjenerimi i token-it dështoi",
+        "regenerateTokenSuccess": "U gjenerua token-i i ri i verifikimit",
+        "regenerating": "Duke rigjeneruar…",
+        "saveConfiguration": "Ruaj konfigurimin",
+        "secretKey": "Çelësi sekret",
+        "secretKeyPlaceholder": "Futni çelësin sekret",
+        "secretKeyRequired": "Kërkohet kur caktohet një çelës faqeje",
+        "siteKey": "Çelësi i faqes",
+        "socialProviders": "Ofruesit e rrjeteve sociale",
+        "socialProvidersHelp": "Aktivizo opsionet e hyrjes sociale për këtë domen",
+        "sso": "Identifikim i vetëm (SSO)",
+        "ssoHelp": "Lejo hyrjen e ndërmarrjes të bazuar në OIDC",
+        "status": {
+          "pending": "Në pritje të verifikimit",
+          "verified": "Verifikuar"
+        },
+        "title": "Domen i personalizuar & Markimi",
+        "tokenExpired": "Token-i ka skaduar",
+        "tokenExpiredDescription": "Token-i i verifikimit ka skaduar. Ju lutemi rigjeneroni një token të ri.",
+        "tokenExpires": "Token-i skadon më: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Mbrojtje ndaj bot-eve për formularët e autentifikimit. Kërkohet për domenet e ndërmarrjeve.",
+        "turnstileSiteKeyStatus": "Çelësi i faqes së Turnstile {status}",
+        "txtRecordInstruction": "Shtoni regjistrimin TXT vijues në DNS-në tuaj:",
+        "value": "Vlera",
+        "verifiedSuccess": "Domeni u verifikua me sukses",
+        "verify": "Verifiko",
+        "verifyDomain": "Verifiko domenin",
+        "verifyFailed": "Verifikimi i domenit dështoi",
+        "verifying": "Duke verifikuar…",
+        "verifyOwnership": "Verifiko pronësinë e domenit",
+        "verifyOwnershipDescription": "Shtoni një regjistrim DNS TXT për të verifikuar pronësinë e {domain}"
+      },
+      "email": {
+        "apiKey": "Çelësi API",
+        "apiKeyHint": "Lëreni bosh për të mbajtur çelësin ekzistues. Merrni çelësin tuaj API nga resend.com",
+        "create": "Krijo konfigurimin",
+        "delete": "Fshi konfigurimin",
+        "deleteConfirm": "A jeni i sigurt që dëshironi ta fshini këtë konfigurim të email-it?",
+        "deleted": "Konfigurimi i email-it u fshi",
+        "deleteFailed": "Fshirja dështoi",
+        "description": "Konfiguroni një ofrues të personalizuar të email-it për organizatën tuaj. Të gjithë email-et e organizatës do të përdorin këtë konfigurim në vend të parazgjedhjes së sistemit.",
+        "fromEmail": "Email-i i dërguesit",
+        "fromName": "Emri i dërguesit",
+        "isActive": "Aktivizo këtë konfigurim të email-it",
+        "lastTest": "Testi i fundit",
+        "passwordHint": "Lëreni bosh për të mbajtur fjalëkalimin ekzistues",
+        "recommended": "E rekomanduar",
+        "resendConfig": "Konfigurimi i Resend",
+        "save": "Ruaj ndryshimet",
+        "saved": "Konfigurimi i email-it u ruajt",
+        "saveFailed": "Ruajtja dështoi",
+        "scalewayConnected": "Depoja e sekreteve Scaleway është gati",
+        "scalewayConnectedDesc": "Kjo organizatë ka një çelës të verifikuar Scaleway Key Manager për ruajtjen e enkriptuar të sekreteve.",
+        "scalewayKeyPending": "Çelësi Scaleway nuk është gjeneruar ende",
+        "scalewayKeyPendingDesc": "Një çelës organizate i Scaleway do të gjenerohet kur të ruani një sekret, si p.sh. një çelës API të Resend ose fjalëkalim SMTP.",
+        "scalewayUnavailable": "Depoja e sekreteve Scaleway nuk është e disponueshme",
+        "scalewayUnavailableDesc": "Çelësi i konfiguruar i organizatës në Scaleway nuk mund të verifikohej. Sekretet nuk mund të ruhen në mënyrë të sigurt derisa kjo të rregullohet.",
+        "secretSet": "Caktuar",
+        "sendTest": "Dërgo test",
+        "smtpConfig": "Konfigurimi i SMTP",
+        "smtpHost": "Host-i SMTP",
+        "smtpIpMode": "Modaliteti IP",
+        "smtpIpMode.auto": "Automatik",
+        "smtpIpModeHint": "Përdorni Automatik përveç nëse ofruesi juaj i SMTP-së kërkon një familje specifike IP-je.",
+        "smtpIpMode.ipv4": "Vetëm IPv4",
+        "smtpIpMode.ipv6": "Vetëm IPv6",
+        "smtpPassword": "Fjalëkalimi",
+        "smtpPort": "Porta",
+        "smtpRequireTls": "Kërko përmirësimin me STARTTLS",
+        "smtpSecure": "Përdor TLS (porta 465)",
+        "smtpServer": "Serveri SMTP",
+        "smtpUsername": "Emri i përdoruesit",
+        "testEmailRequired": "Ju lutemi vendosni një adresë emaili testimi",
+        "testFailed": "Dërgimi i emailit të testimit dështoi",
+        "testFailure": "Dështoi",
+        "testSection": "Dërgo email testues",
+        "testSent": "Emaili i testimit u dërgua me sukses",
+        "testSuccess": "Sukses",
+        "title": "Konfigurimi i emailit",
+        "transportType": "Ofruesi i emailit",
+        "vaultConnected": "Vault u lidh",
+        "vaultConnectedDesc": "Sekretet ruhen në mënyrë të sigurt në HashiCorp Vault.",
+        "vaultSealed": "Vault i vulosur",
+        "vaultSealedDesc": "HashiCorp Vault është i vulosur. Ju lutemi zhvulosni atë për të ruajtur sekretet.",
+        "vaultUnavailable": "Vault i padisponueshëm",
+        "vaultUnavailableDesc": "HashiCorp Vault nuk është i disponueshëm. Sekretet nuk mund të ruhen në mënyrë të sigurt."
+      },
+      "emailConfig": {
+        "yourCompanyName": "Emri i kompanisë suaj"
+      },
+      "enableProviderHelp": "Aktivizo ose çaktivizo këtë ofrues",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Ruaj politikën e qasjes"
+          },
+          "defaultRoleTemplate": "Shablloni i parazgjedhur i rolit",
+          "description": "Caktoni zbatimin e detyrueshëm të domenit, ftesave dhe SSO-së pasi testi pilot të kalojë me sukses.",
+          "noDefaultTemplate": "Asnjë shabllon i parazgjedhur",
+          "placeholder": {
+            "roleTemplate": "Zgjidhni shabllonin e rolit"
+          },
+          "requireSso": "Kërko SSO",
+          "requireSsoHelp": "Punonjësit duhet të përdorin IdP-në e ndërmarrjes.",
+          "restrictDomain": "Kufizo në domenin e verifikuar",
+          "restrictDomainHelp": "Blloko llogaritë jashtë domenit të përzgjedhur.",
+          "restrictInvites": "Kufizo ftesat",
+          "restrictInvitesHelp": "Lejo vetëm ftesat në përputhje me politikën e qasjes.",
+          "title": "Politika e qasjes"
+        },
+        "badge": {
+          "now": "Tani",
+          "queued": "Në radhë",
+          "ready": "Gati"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Kontrollo statusin e domenit"
+          },
+          "description": "Vlefësoni kufirin e qiramarrësit para se të zbatoni detyrimin e SSO-së për punonjësit.",
+          "help": "Verifikimi DNS përdor veprimet ekzistuese të verifikimit të domenit SSO. Përfundoni atë verifikim para se të aktivizoni zbatimin e detyrueshëm.",
+          "notSelected": "Nuk është përzgjedhur",
+          "selected": "Domeni i përzgjedhur",
+          "status": {
+            "pending": "Në pritje",
+            "verified": "I verifikuar"
+          },
+          "title": "Domeni"
+        },
+        "hero": {
+          "description": "Konfiguroni SSO-në, SCIM-in dhe zbatimin e detyrueshëm për organizatën {organizationId} me aktivizim të mbrojtur.",
+          "eyebrow": "Identiteti i ndërmarrjes",
+          "title": "Lista e kontrollit të komandave operacionale"
+        },
+        "provider": {
+          "action": {
+            "save": "Ruaj ofruesin"
+          },
+          "description": "Zgjidhni konfigurimin paraprak të ofruesit të identitetit, protokollin, ID-në e ofruesit dhe domenin e emailit.",
+          "error": {
+            "domainRequired": "Domeni është i detyrueshëm",
+            "providerIdRequired": "Kërkohet ID-ja e ofruesit"
+          },
+          "label": {
+            "domain": "Domeni i email-it",
+            "preset": "Paracaktimi i ofruesit",
+            "protocol": "Protokolli",
+            "providerId": "ID-ja e ofruesit"
+          },
+          "placeholder": {
+            "domain": "p.sh. example.com…",
+            "protocol": "Zgjidhni protokollin",
+            "provider": "Zgjidhni ofruesin",
+            "providerId": "p.sh. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Përdorni çdo ofrues identiteti OIDC ose SAML 2.0 në përputhje me standardet."
+            },
+            "googleWorkspace": {
+              "description": "Përdorni Google Workspace OIDC për SSO dhe sinkronizim opsional të drejtorisë."
+            },
+            "microsoftEntra": {
+              "description": "Përdorni Microsoft Entra ID për SSO për ndërmarrje dhe provizionim opsional."
+            },
+            "okta": {
+              "description": "Përdorni Okta Workforce Identity për identifikim të vetëm (SSO) përmes SAML ose OIDC."
+            }
+          },
+          "title": "Ofruesi"
+        },
+        "rail": {
+          "title": "Shiriti i gatishmërisë"
+        },
+        "review": {
+          "action": {
+            "activate": "Aktivizo identitetin e ndërmarrjes"
+          },
+          "activationSummary": "Përmbledhja e aktivizimit",
+          "description": "Rishikoni kontrollet mbrojtëse të aktivizimit përpara se të aktivizoni kontrollet e identitetit të ndërmarrjes.",
+          "lockoutWarning": "Paralajmërim për bllokimin e administratorit aktual",
+          "lockoutWarningHelp": "Konfirmoni që llogaria juaj aktuale e administratorit mund të identifikohet përmes ofruesit të konfiguruar përpara aktivizimit. Zbatimi mund të bllokojë përdorimin rezervë të fjalëkalimit për domenin e zgjedhur.",
+          "missingRequirement": "{item} kërkohet përpara aktivizimit",
+          "prerequisitesComplete": "Kushtet paraprake për ofruesin, domenin e verifikuar dhe testimin e SSO-së janë përfunduar.",
+          "requirement": {
+            "domain": "Domeni i verifikuar",
+            "provider": "Ofruesi",
+            "ssoTest": "Testi i SSO-së"
+          },
+          "title": "Rishiko dhe aktivizo"
+        },
+        "scim": {
+          "action": {
+            "create": "Krijo lidhje SCIM",
+            "creating": "Po krijohet lidhja SCIM",
+            "decommission": "Çaktivizo",
+            "reconcile": "Rifresko statusin e krijimit",
+            "refresh": "Rifresko statusin",
+            "rotate": "Ndërro kredencialin",
+            "selectRole": "Zgjidhni më parë një shabllon roli të paracaktuar"
+          },
+          "credential": {
+            "close": "Mbyll",
+            "confirmClose": "Konfirmoni që kredenciali është ruajtur përpara se ta mbyllni.",
+            "copied": "Kredenciali u kopjua në kujtesën e fragmenteve.",
+            "copy": "Kopjo kredencialin",
+            "description": "Kopjojeni dhe ruajeni këtë kredencial tani. Nuk mund të shfaqet më.",
+            "label": "Kredencial",
+            "saved": "E kam ruajtur këtë kredencial",
+            "title": "Kredencial SCIM",
+            "warning": "Ky kredencial shfaqet vetëm një herë. Ruajeni në mënyrë të sigurt tek ofruesi juaj i identitetit."
+          },
+          "credentials": {
+            "credential": "Kredencial",
+            "empty": "Nuk është lëshuar asnjë kredencial.",
+            "expires": "Skadon",
+            "lastUsedAria": "Përdorur për herë të fundit: {value} UTC",
+            "revoke": "Revoko",
+            "status": {
+              "active": "aktive",
+              "revoked": "e revokuar"
+            },
+            "title": "Kredenciale",
+            "unused": "Ende e papërdorur"
+          },
+          "description": "Verifikimi SCIM përditësohet pasi ofruesi juaj i identitetit të dërgojë një ndryshim për përdoruesin ose grupin testues.",
+          "dialog": {
+            "cancel": "Anulo",
+            "decommission": {
+              "description": "Kjo çaktivizon përgjithmonë provizionimin SCIM dhe veprimi nuk mund të zhbëhet.",
+              "title": "Çaktivizo SCIM"
+            },
+            "revoke": {
+              "description": "Kjo e ndalon menjëherë kredencialin të provizionojë përdorues.",
+              "title": "Revoko kredencialin"
+            }
+          },
+          "endpoint": "Pikë fundore",
+          "events": {
+            "empty": "Nuk është regjistruar asnjë ngjarje provizionimi.",
+            "error": "Ngjarjet nuk mund të ngarkoheshin. Rifreskoni statusin dhe provoni përsëri.",
+            "title": "Ngjarjet e fundit"
+          },
+          "expiry": "Skadimi i kredencialeve",
+          "expiry.value": "1 vit",
+          "refreshHelp": "Rifreskoni statusin për të ngarkuar meta të dhënat e sigurta të lidhjes.",
+          "status": {
+            "active-unverified": "aktive e paverifikuar",
+            "creating": "duke krijuar",
+            "creation_failed": "krijimi dështoi",
+            "decommissioned": "hequr nga shërbimi",
+            "decommissioning": "duke hequr nga shërbimi",
+            "disconnected": "shkëputur",
+            "refreshing": "duke rifreskuar",
+            "revoking": "duke revokuar",
+            "rotating": "duke ndërruar",
+            "verified": "verifikuar"
+          },
+          "title": "Provizionimi SCIM",
+          "toast": {
+            "createError": "E pamundur të krijohet lidhja SCIM.",
+            "reconcileError": "E pamundur të rakordohet krijimi i SCIM.",
+            "refreshError": "E pamundur të rifreskohet statusi i SCIM.",
+            "rotateError": "E pamundur të ndërrohen kredencialet SCIM.",
+            "updateError": "E pamundur të përditësohet lidhja SCIM."
+          },
+          "verification": "Verifikimi",
+          "verification.awaiting": "Në pritje të përdorimit nga ofruesi",
+          "verification.observed": "Vëzhguar",
+          "wizardDescription": "Konfiguroni provizionimin e menaxhuar të përdoruesve pa ndryshuar aktivizimin e ndërmarrjes."
+        },
+        "sso": {
+          "action": {
+            "register": "Regjistro ofruesin e SSO-së"
+          },
+          "description": "Regjistroni IdP-në e jashtme duke përdorur kredencialet e klientit OIDC ose meta të dhënat SAML.",
+          "error": {
+            "saveProviderFirst": "Ruani ofruesin dhe domenin përpara se të regjistroni SSO-në"
+          },
+          "label": {
+            "clientId": "ID-ja e klientit",
+            "clientSecret": "Sekreti i klientit",
+            "issuer": "Lëshuesi",
+            "metadata": "Meta të dhënat SAML"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Ngjitni XML-in e meta të dhënave të IdP-së…"
+          },
+          "saml": {
+            "acsPath": "Shtegu ACS relativ me shfletuesin: {path}",
+            "acsUrl": "Konfiguroni IdP-në tuaj me këtë URL të shërbimit të konsumatorit të pohimit (ACS): {path}"
+          },
+          "title": "Konfigurimi i SSO-së"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Regjistro dështimin",
+            "recordPass": "Regjistro suksesin"
+          },
+          "defaultFailure": "Testi i drejtpërdrejtë i SSO-së dështoi",
+          "description": "Regjistroni rezultatin e një testi të drejtpërdrejtë të jashtëm të SSO-së përpara zbatimit.",
+          "error": {
+            "saveProviderFirst": "Ruani ofruesin përpara se të regjistroni një test"
+          },
+          "help": "Kjo regjistron rezultatin e një testi të drejtpërdrejtë të jashtëm të SSO-së. Kryeni fillimisht identifikimin në IdP, pastaj regjistroni këtu suksesin ose dështimin për mbrojtjen e aktivizimit.",
+          "label": {
+            "email": "Email-i i përdoruesit testues",
+            "failureNote": "Shënimi i dështimit"
+          },
+          "status": {
+            "failed": "Dështoi",
+            "notRun": "Nuk është ekzekutuar",
+            "passed": "Kaloi"
+          },
+          "title": "Përdorues prove"
+        },
+        "status": {
+          "activated": "Aktivizuar",
+          "draft": "Draft"
+        },
+        "step": {
+          "accessPolicy": "Politika e aksesit",
+          "accessPolicy.description": "Caktoni rregullat e zbatimit",
+          "domain": "Domeni",
+          "domain.description": "Konfirmoni kufirin e njësisë (tenant)",
+          "provider": "Ofruesi",
+          "provider.description": "Zgjidhni burimin e identitetit",
+          "review": "Shqyrtoni dhe aktivizoni",
+          "review.description": "Mbrojtja e aktivizimit",
+          "scim": "Provizionimi SCIM",
+          "scim.description": "Lidhni dhe menaxhoni lidhjen tuaj të provizionimit SCIM",
+          "sso": "Konfigurimi i SSO-së",
+          "sso.description": "Regjistroni OIDC ose SAML",
+          "ssoTest": "Përdorues prove",
+          "ssoTest.description": "Regjistroni rezultatin e hyrjes në kohë reale"
+        },
+        "toast": {
+          "accessPolicyFailed": "Dështoi ruajtja e politikës së aksesit",
+          "accessPolicySaved": "Politika e aksesit u ruajt",
+          "activated": "Konfigurimi i identitetit të ndërmarrjes u aktivizua",
+          "activateFailed": "Dështoi aktivizimi i konfigurimit",
+          "domainStatusFailed": "Dështoi rifreskimi i statusit të domenit",
+          "domainStatusRefreshed": "Statusi i domenit u rifreskua",
+          "providerSaved": "Ofruesi i identitetit u ruajt",
+          "providerSaveFailed": "Dështoi ruajtja e ofruesit",
+          "ssoRegistered": "Ofruesi SSO u regjistrua",
+          "ssoRegisterFailed": "Dështoi regjistrimi i ofruesit SSO",
+          "ssoTestFailed": "Testi SSO u shënua si i dështuar",
+          "ssoTestPassed": "Testi SSO u shënua si i suksesshëm",
+          "ssoTestRecordFailed": "Dështoi regjistrimi i testit SSO"
+        }
+      },
+      "keepExistingSecretHelp": "Lëreni bosh për të mbajtur çelësin sekret ekzistues",
+      "leaveBlankKeepExisting": "Lëreni bosh për të mbajtur ekzistuesin",
+      "provider": "Ofruesi",
+      "socialOAuth": {
+        "addDescription": "Konfiguroni aplikacionin tuaj OAuth për hyrje me rrjete sociale.",
+        "addProviderError": "Dështoi shtimi i ofruesit",
+        "addTitle": "Shto ofrues OAuth për rrjete sociale",
+        "appleKeyIdHelp": "Key ID i lidhur me çelësin tuaj privat",
+        "appleKeyIdRequired": "Key ID kërkohet për Apple",
+        "appleTeamIdHelp": "Gjendet në llogarinë tuaj Apple Developer",
+        "appleTeamIdRequired": "Team ID kërkohet për Apple",
+        "authentication": "Autentifikimi",
+        "clientIdPlaceholder": "ID-ja e klientit tuaj OAuth",
+        "clientSecretPlaceholder": "Çelësi sekret i klientit tuaj OAuth",
+        "configured": "OAuth për {provider} u konfigurua me sukses",
+        "createAppAt": "Krijoni një aplikacion OAuth te",
+        "deleteError": "Dështoi fshirja e konfigurimit OAuth",
+        "description": "Konfiguroni kredencialet tuaja OAuth për hyrje me rrjete sociale. Kjo u lejon përdoruesve tuaj të hyjnë duke përdorur aplikacionet OAuth të organizatës suaj në vend të kredencialeve të përbashkëta.",
+        "developerConsole": "Konsola e zhvilluesve {provider}",
+        "editDescription": "Përditësoni kredencialet tuaja OAuth.",
+        "editTitle": "Modifiko OAuth të {provider}",
+        "empty": "Nuk është konfiguruar asnjë ofrues i personalizuar i OAuth-it social.",
+        "emptyDescription": "Shtoni kredencialet tuaja OAuth për të zëvendësuar kredencialet e përbashkëta.",
+        "howItWorks": "Si funksionon",
+        "instructions": {
+          "addProvider": "Shtoni ofruesin këtu me kredencialet tuaja",
+          "copyCredentials": "Kopjoni Client ID-në dhe Client Secret-in",
+          "createApp": "Krijoni një aplikacion OAuth në panelin e zhvilluesve të ofruesit",
+          "customDomain": "Përdoruesit që identifikohen përmes domenit tuaj të personalizuar do të përdorin aplikacionin tuaj OAuth"
+        },
+        "keyId": "ID-ja e çelësit",
+        "pasteYourP8PrivateKeyContents": "Ngjitni përmbajtjen e çelësit tuaj privat .p8",
+        "privateKey": "Çelësi privat (.p8)",
+        "removed": "OAuth i {provider} u hoq",
+        "removeDialogDescription": "A jeni i sigurt që dëshironi ta hiqni këtë konfigurim OAuth? Përdoruesit do të kalojnë te kredencialet e përbashkëta OAuth (nëse janë të disponueshme).",
+        "removeDialogTitle": "Hiq ofruesin social OAuth",
+        "teamId": "ID-ja e ekipit",
+        "title": "Ofruesit e identifikimit social",
+        "unverified": "E paverifikuar",
+        "updateConfigError": "Përditësimi i konfigurimit dështoi",
+        "updated": "OAuth i {provider} u përditësua me sukses"
+      },
+      "sso": {
+        "addDescription": "Konfiguroni një ofrues identiteti OIDC për identifikim të njëhershëm (SSO) për ndërmarrje.",
+        "addError": "Shtimi i ofruesit SSO dështoi",
+        "addSuccess": "Ofruesi SSO u shtua me sukses",
+        "addTitle": "Shto ofrues SSO",
+        "clientIdPlaceholder": "ID-ja juaj e klientit OIDC",
+        "clientSecretPlaceholder": "Sekreti juaj i klientit OIDC",
+        "deleteDialogDescription": "A jeni i sigurt që dëshironi ta fshini këtë ofrues SSO? Përdoruesit nuk do të mund të identifikohen më duke përdorur këtë ofrues identiteti.",
+        "deleteDialogTitle": "Fshi ofruesin SSO",
+        "deleteError": "Fshirja e ofruesit SSO dështoi",
+        "deleteProviderAria": "Fshi ofruesin SSO {provider}",
+        "deleteSuccess": "Ofruesi SSO u fshi",
+        "description": "Shtoni ofrues identiteti OIDC për të aktivizuar SSO-në për organizatën tuaj.",
+        "domainInvalid": "Ju lutemi vendosni një domen të vlefshëm (p.sh., example.com)",
+        "domainRequired": "Domeni është i detyrueshëm",
+        "domainVerified": "Domeni u verifikua",
+        "emailDomain": "Domeni i emailit",
+        "emailDomainHelp": "Përdoruesit me këtë domen emaili do të mund të përdorin SSO-në",
+        "empty": "Ende nuk është konfiguruar asnjë ofrues SSO.",
+        "emptyDescription": "Shtoni një ofrues OIDC për të aktivizuar identifikimin e njëhershëm (SSO) për ndërmarrje.",
+        "instructions": {
+          "copyCredentials": "Kopjoni Issuer URL-në, Client ID-në dhe Client Secret-in nga IdP-ja juaj",
+          "createApp": "Krijoni një aplikacion OIDC te ofruesi juaj i identitetit (Okta, Azure AD, etj.)",
+          "verifyDomain": "Shtoni ofruesin këtu dhe verifikoni domenin e emailit përmes regjistrimit DNS TXT"
+        },
+        "issuerUrl": "URL-ja e lëshuesit",
+        "issuerUrlHelp": "URL-ja e lëshuesit OIDC nga ofruesi juaj i identitetit",
+        "issuerUrlRequired": "URL-ja e lëshuesit është e detyrueshme",
+        "providerId": "ID-ja e ofruesit",
+        "providerIdHelp": "Një identifikues unik për këtë ofrues (me shkronja të vogla, pa hapësira)",
+        "providerIdInvalid": "ID-ja e ofruesit duhet të përmbajë vetëm shkronja të vogla, numra dhe viza lidhëse",
+        "providerIdRequired": "ID-ja e ofruesit është e detyrueshme",
+        "setupInstructions": "Udhëzimet e konfigurimit",
+        "title": "Ofruesit e identitetit",
+        "token": "Token",
+        "tokenError": "Gjenerimi i token-it të verifikimit të domenit dështoi",
+        "tokenGenerated": "Token-i i verifikimit u gjenerua",
+        "txtToken": "Tokeni TXT:",
+        "validUrlRequired": "Ju lutemi vendosni një URL të vlefshme",
+        "verified": "Verifikuar",
+        "verify": "Verifiko",
+        "verifyError": "Verifikimi i domenit dështoi. Kontrolloni regjistrimin tuaj DNS TXT dhe provoni përsëri."
+      },
+      "tab": {
+        "branding": "Identiteti vizual",
+        "domains": "Domen i personalizuar",
+        "social-oauth": "Identifikim përmes rrjeteve sociale",
+        "sso": "Ofruesit e SSO"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Udhëzoni SSO, provizionimin SCIM, kufizimet e domenit, rregullat e ftesave dhe rolet e paracaktuara për këtë organizatë.",
+      "title": "Konfigurimi i identitetit të ndërmarrjes"
+    }
+  }
+}

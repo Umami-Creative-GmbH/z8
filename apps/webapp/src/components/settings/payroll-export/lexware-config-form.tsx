@@ -2,12 +2,14 @@
 
 import { IconCheck, IconInfoCircle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
+import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import {
 	type LexwareConfigResult,
+	type PayrollIdentifierFieldOption,
 	saveLexwareConfigAction,
 } from "@/app/[locale]/(app)/settings/payroll-export/actions";
 import { Badge } from "@/components/ui/badge";
@@ -35,12 +37,20 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { PersonnelNumberType } from "@/lib/payroll-export/personnel-identifier";
 import type { LexwareLohnConfig } from "@/lib/payroll-export/types";
+import {
+	customFieldIdentifierItems,
+	identifierFromSelectValue,
+	identifierSelectValue,
+} from "./payroll-identifier-options";
 
 interface LexwareConfigFormProps {
 	organizationId: string;
 	initialConfig?: LexwareConfigResult | null;
 	onConfigSaved?: () => void;
+	/** Employee custom fields that can be the personnel number (#821). */
+	identifierFields?: readonly PayrollIdentifierFieldOption[];
 }
 
 const DEFAULT_CONFIG: LexwareLohnConfig = {
@@ -54,6 +64,7 @@ export function LexwareConfigForm({
 	organizationId,
 	initialConfig,
 	onConfigSaved,
+	identifierFields = [],
 }: LexwareConfigFormProps) {
 	const { t } = useTranslate();
 	const [isPending, startTransition] = useTransition();
@@ -90,6 +101,10 @@ export function LexwareConfigForm({
 			});
 		},
 	});
+	const identifierFieldId = useStore(
+		form.store,
+		(state) => state.values.personnelNumberCustomFieldId,
+	);
 
 	return (
 		<Card>
@@ -176,12 +191,14 @@ export function LexwareConfigForm({
 									</TooltipProvider>
 								</div>
 								<Select
-									value={field.state.value}
-									onValueChange={(v) =>
-										field.handleChange(v as "employeeNumber" | "employeeId")
-									}
+									value={identifierSelectValue(field.state.value, identifierFieldId)}
+									onValueChange={(value) => {
+										const next = identifierFromSelectValue(value);
+										form.setFieldValue("personnelNumberCustomFieldId", next.customFieldId);
+										field.handleChange(next.choice as PersonnelNumberType);
+									}}
 								>
-									<SelectTrigger>
+									<SelectTrigger id="personnelNumberType">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -197,6 +214,7 @@ export function LexwareConfigForm({
 												"Internal Employee ID",
 											)}
 										</SelectItem>
+										{customFieldIdentifierItems(t, identifierFields, identifierFieldId)}
 									</SelectContent>
 								</Select>
 							</div>

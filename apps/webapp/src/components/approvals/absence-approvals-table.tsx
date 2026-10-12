@@ -13,13 +13,20 @@ import {
 	rejectAbsence,
 } from "@/app/[locale]/(app)/approvals/actions";
 import { CategoryBadge } from "@/components/absences/category-badge";
+import {
+	SICK_NOTE_MARKER_LINK_CLASS,
+	SickNoteMarker,
+	SickNoteMarkerLabel,
+} from "@/components/absences/sick-notes/sick-note-marker";
 import { DataTable, DataTableSkeleton, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
-import { calculateBusinessDaysWithHalfDays, formatDateRange } from "@/lib/absences/date-utils";
+import { formatDateRange } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
+import { personnelFilePath } from "@/lib/personnel-file/paths";
 import { queryKeys } from "@/lib/query";
+import { Link } from "@/navigation";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 
 // Format days display (handle half days)
@@ -203,6 +210,34 @@ export function AbsenceApprovalsTable() {
 							)}
 						</span>
 					)}
+					{row.original.absence.sickNotes?.viewable ? (
+						// Only for an approver who may open them through personnel file access (#982).
+						<Link
+							href={personnelFilePath(row.original.absence.employeeId, { category: "sick_note" })}
+							className={SICK_NOTE_MARKER_LINK_CLASS}
+						>
+							<SickNoteMarkerLabel count={row.original.absence.sickNotes.count} />
+						</Link>
+					) : row.original.absence.sickNotes ? (
+						<SickNoteMarker count={row.original.absence.sickNotes.count} />
+					) : null}
+					{row.original.absence.deputy && (
+						// Who covers, so the approver can reject when the cover does not work (#1011).
+						<span className="text-xs">
+							<span className="text-muted-foreground">
+								{t("approvals:approvals.deputy.label", "Deputy")}
+							</span>{" "}
+							<span className="font-medium">{row.original.absence.deputy.name}</span>
+							{!row.original.absence.deputy.canDecideApprovals && (
+								<span className="block text-amber-600 dark:text-amber-400">
+									{t(
+										"approvals:approvals.deputy.contactOnly",
+										"Contact only: cannot decide approvals",
+									)}
+								</span>
+							)}
+						</span>
+					)}
 				</div>
 			),
 		},
@@ -210,14 +245,11 @@ export function AbsenceApprovalsTable() {
 			accessorKey: "days",
 			header: () => <div className="text-right">{t("approvals:approvals.days", "Days")}</div>,
 			cell: ({ row }) => {
-				const days = calculateBusinessDaysWithHalfDays(
-					row.original.absence.startDate,
-					row.original.absence.startPeriod,
-					row.original.absence.endDate,
-					row.original.absence.endPeriod,
-					[],
+				return (
+					<div className="text-right tabular-nums">
+						{formatDays(row.original.absence.absenceDays)}
+					</div>
 				);
-				return <div className="text-right tabular-nums">{formatDays(days)}</div>;
 			},
 		},
 		{
@@ -321,7 +353,7 @@ export function AbsenceApprovalsTable() {
 							? t("approvals:approvals.approveTitle", "Approve Absence Request")
 							: t("approvals:approvals.rejectTitle", "Reject Absence Request")
 					}
-					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingOff", "is requesting")} ${formatDays(calculateBusinessDaysWithHalfDays(selectedApproval.absence.startDate, selectedApproval.absence.startPeriod, selectedApproval.absence.endDate, selectedApproval.absence.endPeriod, []))} ${t("approvals:approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
+					description={`${selectedApproval.requester.user.name} ${t("approvals:approvals.requestingOff", "is requesting")} ${formatDays(selectedApproval.absence.absenceDays)} ${t("approvals:approvals.offFrom", "off from")} ${formatDateRange(selectedApproval.absence.startDate, selectedApproval.absence.endDate)}.`}
 					onConfirm={handleConfirm}
 				/>
 			)}

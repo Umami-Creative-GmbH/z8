@@ -16,8 +16,17 @@
       "understaffed": "Com falta de pessoal",
       "utilization": "{percent}% de utilização"
     },
+    "mySchedule": {
+      "loadFailed": "Não foi possível carregar seus turnos. Tente novamente mais tarde.",
+      "nextWeek": "Próxima semana",
+      "noShifts": "Nenhum turno",
+      "previousWeek": "Semana anterior",
+      "shift": "Turno",
+      "today": "Hoje"
+    },
     "page": {
-      "employeeDescription": "Veja seus turnos e escolha turnos disponíveis",
+      "employeeScheduleDescription": "Seus turnos publicados, semana a semana",
+      "employeeTitle": "Minha escala",
       "managerDescription": "Gerencie e planeje os turnos dos funcionários",
       "title": "Escala de Turnos"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Turno salvo com aviso de sobreposição",
         "updated": "Turno atualizado"
       }
+    },
+    "shiftDetails": {
+      "close": "Fechar",
+      "date": "Data",
+      "description": "Seu turno planejado",
+      "endsNextDay": "termina no dia seguinte",
+      "location": "Local",
+      "notes": "Observações",
+      "time": "Horário",
+      "title": "Detalhes do turno"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Qualquer pessoa pode assumir",
@@ -111,6 +130,35 @@
       "validating": "Validando habilidades…",
       "validatingDescription": "Verificando qualificações do funcionário",
       "warningMessage": "Você ainda pode atribuir este turno, mas ele será registrado como uma substituição."
+    },
+    "staffingSuggestions": {
+      "empty": "Não há funcionários disponíveis para este turno",
+      "error": "Não foi possível carregar as sugestões",
+      "loading": "A procurar funcionários disponíveis…",
+      "note": {
+        "missingPreferredSkill": "Falta a competência preferencial: {skill}"
+      },
+      "pick": "Escolher",
+      "pickLabel": "Atribuir {name}",
+      "reason": {
+        "noContractedTarget": "Sem meta contratual",
+        "plannedHours": "{planned} de {target} h planeadas esta semana",
+        "requestedThisShift": "Pediu este turno",
+        "restPeriodOk": "Período de descanso OK",
+        "skillsHeld": "Tem {skills}"
+      },
+      "requested": "Pediu este turno",
+      "showAll": "Mostrar todos ({count})",
+      "showFewer": "Mostrar menos",
+      "title": "Funcionários sugeridos",
+      "warning": {
+        "expiredRequiredSkill": "{skill} expirou a {date}",
+        "maxHours": "Acima do limite máximo diário ({total} de {max} h)",
+        "missingRequiredSkill": "Habilidade obrigatória ausente: {skill}",
+        "overtime": "Horas extras {period, select, daily {diárias} weekly {semanais} other {mensais}} ({total} de {threshold} h)",
+        "pendingAbsence": "Ausência pendente: {category}",
+        "restTime": "Período de descanso muito curto ({rest} de {required} h)"
+      }
     },
     "templates": {
       "dragHint": "Arraste um modelo para o calendário para criar um turno",

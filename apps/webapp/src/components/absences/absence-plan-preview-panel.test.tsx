@@ -15,13 +15,15 @@ vi.mock("@tolgee/react", () => ({
 }));
 
 const riskyPreview: AbsencePlanPreview = {
-	requestedDays: 6,
+	requestedAbsenceDays: 6,
+	refusal: null,
 	balance: {
 		year: 2026,
 		remainingDays: 4,
 		remainingAfterRequest: -2,
 		countsAgainstVacation: true,
 	},
+	workBalance: null,
 	holidays: [
 		{
 			id: "holiday-1",
@@ -179,5 +181,41 @@ describe("AbsencePlanPreviewPanel", () => {
 		const { container } = render(<AbsencePlanPreviewPanel />);
 
 		expect(container.firstChild).toBeNull();
+	});
+
+	it("shows a refusal for vacation that covers no working day", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{ ...nonVacationPreview, requestedAbsenceDays: 0, refusal: "no_working_days" }}
+			/>,
+		);
+
+		expect(screen.getByRole("alert").textContent).toBe("This range contains no working days.");
+	});
+});
+
+describe("AbsencePlanPreviewPanel for time off in lieu", () => {
+	it("shows the projected work balance and warns when it would be negative", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...nonVacationPreview,
+					workBalance: {
+						currentBalanceMinutes: 240,
+						drawnMinutes: 480,
+						projectedBalanceMinutes: -240,
+						wouldBeNegative: true,
+					},
+				}}
+			/>,
+		);
+
+		const section = screen.getByRole("region", { name: "Work balance" });
+		expect(section.textContent).toContain("+4:00h");
+		expect(section.textContent).toContain("-8:00h");
+		expect(section.textContent).toContain("-4:00h");
+		expect(section.textContent).toContain(
+			"Your work balance would be negative after this request.",
+		);
 	});
 });

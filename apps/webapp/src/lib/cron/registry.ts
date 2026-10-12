@@ -15,7 +15,11 @@ import type { JobsOptions } from "bullmq";
 import type { ApprovalDeliveryJobResult } from "@/lib/approvals/delivery/scheduled-job";
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
+import type { AbsenceCategoryNoticesJobResult } from "@/lib/jobs/absence-category-notices";
+import type { AbsenceDeputyRemindersJobResult } from "@/lib/jobs/absence-deputy-reminders";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
+import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
+import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
 import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/personnel-file-retention-reminders";
@@ -387,6 +391,17 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
+	"cron:report-share-link-sweep": {
+		schedule: "*/15 * * * *", // Every 15 minutes
+		description:
+			"Expire report share links and revoke those whose creator lost access, deleting their snapshots",
+		processor: async (): Promise<{ expired: number; creatorLostAccess: number }> => {
+			const { runReportShareLinkSweep } = await import("@/lib/jobs/report-share-links");
+			return runReportShareLinkSweep();
+		},
+		defaultJobOptions: { attempts: 2, priority: 8 },
+	},
+
 	"cron:position-stamp-purge": {
 		schedule: "0 1 * * *", // Daily at 1 AM
 		description:
@@ -437,6 +452,39 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},
 
+	"cron:absence-deputy-reminders": {
+		schedule: "0 * * * *", // Hourly, so each absent employee's day starts soon after their midnight
+		description:
+			"Remind deputies the day before an approved absence they cover starts (once per absence and deputy)",
+		processor: async (): Promise<AbsenceDeputyRemindersJobResult> => {
+			const { runAbsenceDeputyRemindersJob } = await import("@/lib/jobs/absence-deputy-reminders");
+			return runAbsenceDeputyRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:deputy-cover-summaries": {
+		schedule: "*/15 * * * *", // Each absent approver's day, and a late approval, are told soon
+		description:
+			"Tell covering deputies what waits when cover starts, and approvers what their deputy decided when back (once per absence and deputy)",
+		processor: async (): Promise<DeputyCoverSummariesJobResult> => {
+			const { runDeputyCoverSummariesJob } = await import("@/lib/jobs/deputy-cover-summaries");
+			return runDeputyCoverSummariesJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:closed-month-auto-close": {
+		schedule: "30 * * * *", // Hourly; each organization day is attempted once
+		description:
+			"Close the previous month for organizations with automatic close on, N days after it ended (#762)",
+		processor: async (): Promise<ClosedMonthAutoCloseJobResult> => {
+			const { runClosedMonthAutoCloseJob } = await import("@/lib/jobs/closed-month-auto-close");
+			return runClosedMonthAutoCloseJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
 	"cron:personnel-file-retention-reminders": {
 		schedule: "0 * * * *", // Hourly; at most one reminder per recipient and organization day
 		description:
@@ -446,6 +494,17 @@ export const CRON_JOBS = {
 				"@/lib/jobs/personnel-file-retention-reminders"
 			);
 			return runPersonnelFileRetentionRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
+	"cron:absence-category-notices": {
+		schedule: "0 * * * *", // Hourly; pending notices exist only after migration 0195
+		description:
+			"Tell owners and admins once that the time off in lieu absence category is available",
+		processor: async (): Promise<AbsenceCategoryNoticesJobResult> => {
+			const { runAbsenceCategoryNoticesJob } = await import("@/lib/jobs/absence-category-notices");
+			return runAbsenceCategoryNoticesJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},

@@ -24,16 +24,6 @@ export interface ReportDayRange {
 }
 
 /**
- * The calendar days of a report request. The report filters send each day as
- * its UTC midnight (`new Date("2026-03-31")`), so the day is read in UTC; a
- * later instant on the same UTC day (`23:59:59Z`) names the same day.
- */
-export function reportDayRangeFromDates(startDate: Date, endDate: Date): ReportDayRange {
-	const dayOf = (value: Date) => instantFromDate(value).toZonedDateTimeISO("UTC").toPlainDate();
-	return { fromDay: dayOf(startDate), toDay: dayOf(endDate) };
-}
-
-/**
  * The calendar days of a report request sent as ISO dates ("2026-03-31"), both
  * inclusive. Null for anything else, or when the range ends before it starts.
  */

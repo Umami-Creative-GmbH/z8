@@ -46,6 +46,8 @@ import {
 	onTimeCorrectionRejected,
 } from "@/lib/notifications/triggers";
 import type { CompletedWorkFollowUp } from "@/lib/time-tracking/close-active-work";
+import { workInterval } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import {
 	advanceCorrectionWorkRevision,
 	correctedDurationMinutes,
@@ -102,6 +104,11 @@ import {
 	assertNotReplacedByEscalation,
 	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
+import {
+	asDeputyDecider,
+	loadDeputyActingFor,
+	recordCanonicalDeputyDecisionOf,
+} from "../deputy/deputy-decision-store";
 import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
 import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
@@ -3124,6 +3131,24 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		)
 		.returning({ id: workPeriod.id });
 	requireSingleMutation(updatedPeriods, period.id);
+	// The approved correction changes the work: a submitted period it touches, before or
+	// after, goes back to the employee (#805).
+	await sendBackChangedPeriodSubmissions(input.dbService.db, {
+		organizationId: input.organizationId,
+		employeeId: period.employeeId,
+		causedByUserId: input.actorUserId,
+		work: [
+			workInterval(period.startTime, period.endTime),
+			...(correctedPeriod.isDeletion
+				? []
+				: [
+						{
+							start: correctedPeriod.clockIn.instant,
+							end: correctedPeriod.clockOut?.instant ?? null,
+						},
+					]),
+		],
+	});
 
 	if (canonical && hasEndpointCorrection) {
 		const updatedCanonical = await input.dbService.db
@@ -4611,6 +4636,15 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 		workPeriodId: request.entityId,
 		correction,
 	});
+	// A covering deputy's decision reads "Y (deputy for X)" (#1016).
+	const actor = await asDeputyDecider(
+		input.dbService.db as never,
+		input.actor,
+		await loadDeputyActingFor(input.dbService.db as never, {
+			organizationId: input.actor.organizationId,
+			approvalRequestId: request.id,
+		}),
+	);
 	if (effects.terminal.kind === "approved") {
 		if (effects.terminal.dirtyFromDate) {
 			await markEmployeeWorkBalanceDirtyIfNeeded({
@@ -4622,7 +4656,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 		notifyApprovedCorrection(
 			result.period,
 			request.entityId,
-			input.actor,
+			actor,
 			result.originalNotificationTime,
 			result.correctedNotificationTime,
 		);
@@ -4631,7 +4665,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	notifyRejectedCorrection(
 		result.period,
 		request.entityId,
-		input.actor,
+		actor,
 		input.reason ?? request.rejectionReason ?? "",
 		result.originalNotificationTime,
 		result.correctedNotificationTime,
@@ -5399,6 +5433,23 @@ export async function executeTimeCorrectionDecisionInTransaction(
 									},
 					},
 				);
+			// A covering deputy's decision: the acting-for record and audit (#1016).
+			await recordCanonicalDeputyDecisionOf(transactionDb as never, {
+				organizationId: input.organizationId,
+				command:
+					input.action === "approve"
+						? { type: "approve", stageId: target.stage.id, assignmentId: target.assignment.id }
+						: {
+								type: "reject",
+								stageId: target.stage.id,
+								assignmentId: target.assignment.id,
+								reason: input.reason ?? "",
+							},
+				result: commandResult,
+				entityType: "time_entry",
+				entityId: period.id,
+				performedByUserId: actor.userId,
+			});
 			const invocation =
 				input.bound && boundCommand
 					? await recordTimeInvocationDecision(transactionDb, {
@@ -5634,6 +5685,7 @@ export function decideTimeCorrectionWithStableTargetEffect(
 								ordinary.result,
 								currentEmployee,
 								dbService,
+								approvalRequestId,
 							),
 						);
 					} catch (dispatchError) {
@@ -5665,6 +5717,7 @@ export function decideTimeCorrectionWithStableTargetEffect(
 						execution.domainResult as WorkPeriodApprovalResult,
 						currentEmployee,
 						dbService,
+						approvalRequestId,
 					),
 				);
 			}

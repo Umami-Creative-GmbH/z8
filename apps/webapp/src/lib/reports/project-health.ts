@@ -1,51 +1,48 @@
-import { DateTime } from "luxon";
-
+import { dateFromInstant, type Instant, type PlainDate } from "@/lib/datetime/temporal-core";
+import { daysUntilProjectDeadline, projectDeadlineDay } from "@/lib/projects/project-deadline-days";
+import type { ReportDayRange } from "./project-report-work";
 import type {
 	ProjectBudgetHealthTotals,
 	ProjectHealthFields,
 	ProjectSummary,
 } from "./project-types";
 
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
 interface BuildProjectHealthFieldsParams {
 	projectName: string;
 	rangeHours: number;
 	cumulativeHours: number;
 	budgetHours: number | null;
+	/** The deadline day, stored as its UTC midnight (the project form's representation). */
 	deadline: Date | null;
-	now: Date;
-	rangeStart: Date;
-	rangeEnd: Date;
+	now: Instant;
+	/** The organization's timezone, which decides today's date. */
+	timeZone: string;
+	/** The report's calendar days, both inclusive. */
+	range: ReportDayRange;
 }
 
-export function buildProjectHealthFields({
-	projectName,
-	rangeHours,
-	cumulativeHours,
-	budgetHours,
-	deadline,
-	now,
-	rangeStart,
-	rangeEnd,
-}: BuildProjectHealthFieldsParams): ProjectHealthFields {
+/**
+ * A project's budget, deadline and forecast health. Today is the calendar date
+ * in the organization's timezone, never the server's or the viewer's.
+ */
+export function buildProjectHealthFields(
+	params: BuildProjectHealthFieldsParams,
+): ProjectHealthFields {
+	const { budgetHours, cumulativeHours, deadline, now, timeZone } = params;
 	const percentBudgetUsed =
 		budgetHours && budgetHours > 0 ? (cumulativeHours / budgetHours) * 100 : null;
-	const budgetFields = buildBudgetFields(percentBudgetUsed);
-	const deadlineFields = buildDeadlineFields(deadline, now);
-	const forecastFields = buildForecastFields({
-		projectName,
-		rangeHours,
-		cumulativeHours,
-		budgetHours,
-		deadline,
-		now,
-		rangeStart,
-		rangeEnd,
-	});
+	const deadlineDay = deadline ? projectDeadlineDay(deadline) : null;
+	const daysUntilDeadline = deadline
+		? daysUntilProjectDeadline({ deadline, now, timeZone })
+		: null;
 
 	return {
-		...budgetFields,
-		...deadlineFields,
-		...forecastFields,
+		...buildBudgetFields(percentBudgetUsed),
+		...buildDeadlineFields(daysUntilDeadline),
+		...buildForecastFields(params, deadlineDay),
+		daysUntilDeadline,
 	};
 }
 
@@ -126,16 +123,11 @@ function buildBudgetFields(
 }
 
 function buildDeadlineFields(
-	deadline: Date | null,
-	now: Date,
+	daysUntilDeadline: number | null,
 ): Pick<ProjectHealthFields, "deadlineSeverity" | "deadlineAlertType"> {
-	if (!deadline) {
+	if (daysUntilDeadline === null) {
 		return { deadlineSeverity: "none", deadlineAlertType: null };
 	}
-
-	const nowDay = DateTime.fromJSDate(now).toUTC().startOf("day");
-	const deadlineDay = DateTime.fromJSDate(deadline).toUTC().startOf("day");
-	const daysUntilDeadline = Math.floor(deadlineDay.diff(nowDay, "days").days);
 
 	if (daysUntilDeadline < 0) {
 		return { deadlineSeverity: "critical", deadlineAlertType: "deadline_overdue" };
@@ -160,46 +152,48 @@ function buildDeadlineFields(
 	return { deadlineSeverity: "none", deadlineAlertType: null };
 }
 
-function buildForecastFields({
-	projectName,
-	rangeHours,
-	cumulativeHours,
-	budgetHours,
-	deadline,
-	now,
-	rangeStart,
-	rangeEnd,
-}: BuildProjectHealthFieldsParams): Pick<
+/**
+ * When the remaining budget runs out at the range's burn rate (its hours spread
+ * over every report day), if that is before the deadline day starts in the
+ * organization's timezone.
+ */
+function buildForecastFields(
+	{
+		projectName,
+		rangeHours,
+		cumulativeHours,
+		budgetHours,
+		now,
+		timeZone,
+		range,
+	}: BuildProjectHealthFieldsParams,
+	deadlineDay: PlainDate | null,
+): Pick<
 	ProjectHealthFields,
 	"forecastSeverity" | "forecastBudgetExhaustionDate" | "forecastMessage"
 > {
-	if (!budgetHours || !deadline || rangeHours <= 0 || cumulativeHours >= budgetHours) {
+	if (!budgetHours || !deadlineDay || rangeHours <= 0 || cumulativeHours >= budgetHours) {
 		return { forecastSeverity: "none", forecastBudgetExhaustionDate: null, forecastMessage: null };
 	}
 
-	const rangeDays = Math.max(
-		1,
-		DateTime.fromJSDate(rangeEnd).diff(DateTime.fromJSDate(rangeStart), "days").days,
-	);
-	const averageDailyHours = rangeHours / rangeDays;
+	const rangeDays = range.fromDay.until(range.toDay, { largestUnit: "days" }).days + 1;
+	const averageDailyHours = rangeHours / Math.max(1, rangeDays);
 	const remainingBudgetHours = budgetHours - cumulativeHours;
 	const daysUntilExhaustion = remainingBudgetHours / averageDailyHours;
-	const forecastBudgetExhaustionDate = DateTime.fromJSDate(now)
-		.plus({ days: daysUntilExhaustion })
-		.toJSDate();
+	const exhaustion = now.add({
+		milliseconds: Math.round(daysUntilExhaustion * MILLISECONDS_PER_DAY),
+	});
+	const deadlineStart = deadlineDay.toZonedDateTime(timeZone).toInstant();
+	const deadlineBufferMilliseconds = deadlineStart.epochMilliseconds - exhaustion.epochMilliseconds;
 
-	if (forecastBudgetExhaustionDate >= deadline) {
+	if (deadlineBufferMilliseconds <= 0) {
 		return { forecastSeverity: "none", forecastBudgetExhaustionDate: null, forecastMessage: null };
 	}
 
-	const deadlineBufferDays = DateTime.fromJSDate(deadline).diff(
-		DateTime.fromJSDate(forecastBudgetExhaustionDate),
-		"days",
-	).days;
-
 	return {
-		forecastSeverity: deadlineBufferDays <= 3 ? "critical" : "warning",
-		forecastBudgetExhaustionDate,
+		forecastSeverity:
+			deadlineBufferMilliseconds <= 3 * MILLISECONDS_PER_DAY ? "critical" : "warning",
+		forecastBudgetExhaustionDate: dateFromInstant(exhaustion),
 		forecastMessage: `${projectName} budget may be exhausted before its deadline at the current burn rate.`,
 	};
 }

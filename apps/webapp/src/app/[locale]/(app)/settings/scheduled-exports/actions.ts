@@ -17,10 +17,25 @@ import type {
 	ScheduledExportFilters,
 	ScheduledExportReportConfig,
 } from "@/db/schema/scheduled-export";
+import { AuditAction } from "@/lib/audit-logger";
+import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
-import { AuthorizationError } from "@/lib/effect/errors";
+import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
+import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import { validateScheduledReportConfig } from "@/lib/scheduled-exports/application/executors/registry";
+import {
+	describeScheduleOwner,
+	describeScheduleOwners,
+	listScheduleOwnerCandidates,
+	type ScheduleOwner,
+} from "@/lib/scheduled-exports/application/schedule-owner";
+import { resolveRecipientEmails } from "@/lib/scheduled-exports/domain/recipient-emails";
+import {
+	type AuditedSchedule,
+	scheduleUpdateAudit,
+} from "@/lib/scheduled-exports/domain/schedule-audit";
 import {
 	calculateNextExecution,
 	getNextExecutions,
@@ -90,6 +105,17 @@ export interface ScheduledExportSummary {
 	lastExecutionAt: Date | null;
 	nextExecutionAt: Date | null;
 	createdAt: Date;
+	/** The schedule owner: the org admin the schedule acts on behalf of. */
+	ownerId: string;
+	ownerName: string | null;
+	/** False once the owner is no longer an org admin: the schedule can't resume or run until reassigned. */
+	ownerEligible: boolean;
+}
+
+export interface ScheduleOwnerCandidate {
+	userId: string;
+	name: string | null;
+	email: string | null;
 }
 
 type PayrollExportConfigWithFormat = typeof payrollExportConfig.$inferSelect & {
@@ -112,6 +138,159 @@ export interface ExecutionHistoryItem {
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
 
+/** Refuses a report configuration its executor rejects, e.g. an unconfigured payroll format. */
+function validateReportConfig(
+	organizationId: string,
+	reportType: string,
+	reportConfig: ScheduledExportReportConfig,
+) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const errors = yield* dbService.query("scheduledExport.validateReportConfig", () =>
+			validateScheduledReportConfig(organizationId, reportType, reportConfig),
+		);
+		if (errors.length > 0) {
+			yield* Effect.fail(
+				new ValidationError({ message: errors.join("; "), field: "reportConfig" }),
+			);
+		}
+	});
+}
+
+/** The normalised recipient emails for the schedule as it will be stored, or a validation failure. */
+function recipientEmailsFor(deliveryMethod: DeliveryMethod, emailRecipients: readonly string[]) {
+	const result = resolveRecipientEmails(deliveryMethod, emailRecipients);
+	return result.ok
+		? Effect.succeed(result.recipients)
+		: Effect.fail(new ValidationError({ message: result.message, field: "emailRecipients" }));
+}
+
+/** An unknown id and another organization's id fail the same way. */
+function scheduledExportNotFound(scheduleId: string) {
+	return Effect.fail(
+		new NotFoundError({
+			message: "Scheduled export not found",
+			entityType: "scheduled_export",
+			entityId: scheduleId,
+		}),
+	);
+}
+
+/** Every scheduled-export action needs an org admin. */
+function requireOrgAdmin(organizationId: string, resource: string, action: string) {
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
+		if (!hasPermission) {
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource,
+					action,
+				}),
+			);
+		}
+		return session;
+	});
+}
+
+type Transaction = Parameters<Parameters<DatabaseClient["transaction"]>[0]>[0];
+
+/** A write that commits together with its audit entries; they reach the external service after the commit. */
+function auditedWrite<T>(name: string, run: (tx: Transaction, audit: AuditTrail) => Promise<T>) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query(name, () =>
+			withAuditTrail((audit) => dbService.db.transaction((tx) => run(tx, audit))),
+		);
+	});
+}
+
+function findSchedule(organizationId: string, scheduleId: string, name: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const schedule = yield* dbService.query(name, () =>
+			dbService.db.query.scheduledExport.findFirst({
+				where: and(
+					eq(scheduledExport.id, scheduleId),
+					eq(scheduledExport.organizationId, organizationId),
+				),
+			}),
+		);
+		return schedule ?? (yield* scheduledExportNotFound(scheduleId));
+	});
+}
+
+function ownerOf(organizationId: string, userId: string) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		return yield* dbService.query("scheduledExport.describeOwner", () =>
+			describeScheduleOwner(dbService.db, { organizationId, userId }),
+		);
+	});
+}
+
+/** Resuming or running a schedule acts on behalf of its owner, who must still be an org admin. */
+function requireEligibleOwner(owner: ScheduleOwner, field: string) {
+	return owner.eligible
+		? Effect.void
+		: Effect.fail(
+				new ValidationError({
+					message: `The schedule owner, ${owner.name ?? owner.email ?? owner.userId}, is no longer an org admin. Make yourself or another org admin its owner first.`,
+					field,
+				}),
+			);
+}
+
+function toSummary(schedule: ScheduledExport, owner: ScheduleOwner): ScheduledExportSummary {
+	return {
+		id: schedule.id,
+		name: schedule.name,
+		description: schedule.description,
+		scheduleType: schedule.scheduleType as ScheduleType,
+		cronExpression: schedule.cronExpression,
+		timezone: schedule.timezone,
+		reportType: schedule.reportType as ReportType,
+		deliveryMethod: schedule.deliveryMethod as DeliveryMethod,
+		dateRangeStrategy: schedule.dateRangeStrategy as DateRangeStrategy,
+		isActive: schedule.isActive,
+		lastExecutionAt: schedule.lastExecutionAt,
+		nextExecutionAt: schedule.nextExecutionAt,
+		createdAt: schedule.createdAt,
+		ownerId: schedule.ownerId,
+		ownerName: owner.name,
+		ownerEligible: owner.eligible,
+	};
+}
+
+function auditedSettings(schedule: ScheduledExport): AuditedSchedule {
+	return {
+		name: schedule.name,
+		description: schedule.description ?? null,
+		scheduleType: schedule.scheduleType,
+		cronExpression: schedule.cronExpression ?? null,
+		timezone: schedule.timezone,
+		reportType: schedule.reportType,
+		reportConfig: schedule.reportConfig,
+		payrollConfigId: schedule.payrollConfigId ?? null,
+		filters: schedule.filters ?? null,
+		dateRangeStrategy: schedule.dateRangeStrategy,
+		customOffset: schedule.customOffset ?? null,
+		deliveryMethod: schedule.deliveryMethod,
+		emailRecipients: [...(schedule.emailRecipients ?? [])],
+		emailSubjectTemplate: schedule.emailSubjectTemplate ?? null,
+		isActive: schedule.isActive,
+	};
+}
+
+/** What a schedule was, for the entries that outlive it or describe it whole. */
+function scheduleSnapshot(schedule: ScheduledExport) {
+	const { isActive: _isActive, ...settings } = auditedSettings(schedule);
+	return { ...settings, ownerId: schedule.ownerId };
+}
+
 // ============================================
 // CREATE
 // ============================================
@@ -120,21 +299,7 @@ export async function createScheduledExportAction(
 	input: CreateScheduledExportInput,
 ): Promise<ServerActionResult<ScheduledExportSummary>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "scheduled_export",
-					action: "create",
-				}),
-			);
-		}
+		const session = yield* requireOrgAdmin(input.organizationId, "scheduled_export", "create");
 
 		// Validate cron expression if provided
 		if (input.scheduleType === "cron" && input.cronExpression) {
@@ -147,19 +312,12 @@ export async function createScheduledExportAction(
 			}
 		}
 
-		// Validate email recipients (only required for email-based delivery)
-		if (input.deliveryMethod === "s3_and_email" || input.deliveryMethod === "email_only") {
-			if (!input.emailRecipients || input.emailRecipients.length === 0) {
-				throw new Error("At least one email recipient is required for email delivery");
-			}
+		const emailRecipients = yield* recipientEmailsFor(
+			input.deliveryMethod,
+			input.emailRecipients ?? [],
+		);
 
-			// Validate email format
-			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-			const invalidEmails = input.emailRecipients.filter((email) => !emailRegex.test(email));
-			if (invalidEmails.length > 0) {
-				throw new Error(`Invalid email addresses: ${invalidEmails.join(", ")}`);
-			}
-		}
+		yield* validateReportConfig(input.organizationId, input.reportType, input.reportConfig);
 
 		// Calculate next execution time
 		const scheduleConfig: ScheduleConfig = {
@@ -169,9 +327,9 @@ export async function createScheduledExportAction(
 		};
 		const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
 
-		// Create schedule
-		const schedule = yield* Effect.promise(async () => {
-			const [created] = await db
+		// Create schedule; the creating admin becomes its owner.
+		const schedule = yield* auditedWrite("scheduledExport.create", async (tx, audit) => {
+			const [created] = await tx
 				.insert(scheduledExport)
 				.values({
 					organizationId: input.organizationId,
@@ -187,35 +345,35 @@ export async function createScheduledExportAction(
 					dateRangeStrategy: input.dateRangeStrategy,
 					customOffset: input.customOffset,
 					deliveryMethod: input.deliveryMethod,
-					emailRecipients: input.emailRecipients,
+					emailRecipients,
 					emailSubjectTemplate: input.emailSubjectTemplate,
 					useOrgS3Config: input.useOrgS3Config ?? true,
 					customS3Prefix: input.customS3Prefix,
 					nextExecutionAt: nextExecutionAt.toJSDate(),
+					ownerId: session.user.id,
 					createdBy: session.user.id,
 				})
 				.returning();
 
+			await audit.record(tx, {
+				organizationId: input.organizationId,
+				action: AuditAction.SCHEDULED_EXPORT_CREATED,
+				actorUserId: session.user.id,
+				targetType: "scheduled_export",
+				targetId: created.id,
+				metadata: scheduleSnapshot(created),
+			});
 			return created;
 		});
 
 		revalidatePath("/settings/scheduled-exports");
 
-		return {
-			id: schedule.id,
-			name: schedule.name,
-			description: schedule.description,
-			scheduleType: schedule.scheduleType as ScheduleType,
-			cronExpression: schedule.cronExpression,
-			timezone: schedule.timezone,
-			reportType: schedule.reportType as ReportType,
-			deliveryMethod: schedule.deliveryMethod as DeliveryMethod,
-			dateRangeStrategy: schedule.dateRangeStrategy as DateRangeStrategy,
-			isActive: schedule.isActive,
-			lastExecutionAt: schedule.lastExecutionAt,
-			nextExecutionAt: schedule.nextExecutionAt,
-			createdAt: schedule.createdAt,
-		};
+		return toSummary(schedule, {
+			userId: session.user.id,
+			name: session.user.name ?? null,
+			email: session.user.email ?? null,
+			eligible: true,
+		});
 	});
 
 	return runServerActionSafe(effect);
@@ -229,44 +387,42 @@ export async function getScheduledExportsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<ScheduledExportSummary[]>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		yield* requireOrgAdmin(organizationId, "scheduled_export", "read");
 
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "scheduled_export",
-					action: "read",
-				}),
-			);
-		}
-
-		const schedules = yield* Effect.promise(async () => {
-			return db.query.scheduledExport.findMany({
+		const dbService = yield* DatabaseService;
+		const schedules = yield* dbService.query("scheduledExport.list", () =>
+			dbService.db.query.scheduledExport.findMany({
 				where: eq(scheduledExport.organizationId, organizationId),
 				orderBy: [desc(scheduledExport.createdAt)],
-			});
-		});
+			}),
+		);
+		const owners = yield* dbService.query("scheduledExport.describeOwners", () =>
+			describeScheduleOwners(dbService.db, {
+				organizationId,
+				userIds: schedules.map((schedule) => schedule.ownerId),
+			}),
+		);
 
-		return schedules.map((s) => ({
-			id: s.id,
-			name: s.name,
-			description: s.description,
-			scheduleType: s.scheduleType as ScheduleType,
-			cronExpression: s.cronExpression,
-			timezone: s.timezone,
-			reportType: s.reportType as ReportType,
-			deliveryMethod: s.deliveryMethod as DeliveryMethod,
-			dateRangeStrategy: s.dateRangeStrategy as DateRangeStrategy,
-			isActive: s.isActive,
-			lastExecutionAt: s.lastExecutionAt,
-			nextExecutionAt: s.nextExecutionAt,
-			createdAt: s.createdAt,
-		}));
+		return schedules.map((schedule) =>
+			toSummary(schedule, owners.get(schedule.ownerId) as ScheduleOwner),
+		);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/** The org admins a schedule can be handed to. */
+export async function getScheduleOwnerCandidatesAction(
+	organizationId: string,
+): Promise<ServerActionResult<ScheduleOwnerCandidate[]>> {
+	const effect = Effect.gen(function* () {
+		yield* requireOrgAdmin(organizationId, "scheduled_export", "read");
+
+		const dbService = yield* DatabaseService;
+		const candidates = yield* dbService.query("scheduledExport.ownerCandidates", () =>
+			listScheduleOwnerCandidates(dbService.db, { organizationId }),
+		);
+		return candidates.map(({ userId, name, email }) => ({ userId, name, email }));
 	});
 
 	return runServerActionSafe(effect);
@@ -277,30 +433,17 @@ export async function getScheduledExportAction(
 	scheduleId: string,
 ): Promise<ServerActionResult<ScheduledExport | null>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		yield* requireOrgAdmin(organizationId, "scheduled_export", "read");
 
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "scheduled_export",
-					action: "read",
-				}),
-			);
-		}
-
-		const schedule = yield* Effect.promise(async () => {
-			return db.query.scheduledExport.findFirst({
+		const dbService = yield* DatabaseService;
+		const schedule = yield* dbService.query("scheduledExport.get", () =>
+			dbService.db.query.scheduledExport.findFirst({
 				where: and(
 					eq(scheduledExport.id, scheduleId),
 					eq(scheduledExport.organizationId, organizationId),
 				),
-			});
-		});
+			}),
+		);
 
 		return schedule || null;
 	});
@@ -316,21 +459,7 @@ export async function updateScheduledExportAction(
 	input: UpdateScheduledExportInput,
 ): Promise<ServerActionResult<ScheduledExportSummary>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "scheduled_export",
-					action: "update",
-				}),
-			);
-		}
+		const session = yield* requireOrgAdmin(input.organizationId, "scheduled_export", "update");
 
 		// Validate cron expression if provided
 		if (input.scheduleType === "cron" && input.cronExpression) {
@@ -343,10 +472,36 @@ export async function updateScheduledExportAction(
 			}
 		}
 
+		const existing = yield* findSchedule(
+			input.organizationId,
+			input.id,
+			"scheduledExport.getForUpdate",
+		);
+		// Taken now: the diff compares the stored schedule with the updated one.
+		const before = auditedSettings(existing);
+
+		const owner = yield* ownerOf(input.organizationId, existing.ownerId);
+		if (input.isActive === true && !existing.isActive) {
+			yield* requireEligibleOwner(owner, "isActive");
+		}
+
+		if (input.reportConfig !== undefined) {
+			yield* validateReportConfig(input.organizationId, existing.reportType, input.reportConfig);
+		}
+
 		// Build update object
 		const updates: Partial<ScheduledExport> = {
 			updatedBy: session.user.id,
 		};
+
+		// Validate the recipients the schedule will have after this update
+		if (input.deliveryMethod !== undefined || input.emailRecipients !== undefined) {
+			const emailRecipients = yield* recipientEmailsFor(
+				input.deliveryMethod ?? (existing.deliveryMethod as DeliveryMethod),
+				input.emailRecipients ?? existing.emailRecipients,
+			);
+			if (input.emailRecipients !== undefined) updates.emailRecipients = emailRecipients;
+		}
 
 		if (input.name !== undefined) updates.name = input.name;
 		if (input.description !== undefined) updates.description = input.description;
@@ -358,7 +513,6 @@ export async function updateScheduledExportAction(
 		if (input.dateRangeStrategy !== undefined) updates.dateRangeStrategy = input.dateRangeStrategy;
 		if (input.customOffset !== undefined) updates.customOffset = input.customOffset;
 		if (input.deliveryMethod !== undefined) updates.deliveryMethod = input.deliveryMethod;
-		if (input.emailRecipients !== undefined) updates.emailRecipients = input.emailRecipients;
 		if (input.emailSubjectTemplate !== undefined)
 			updates.emailSubjectTemplate = input.emailSubjectTemplate;
 		if (input.isActive !== undefined) updates.isActive = input.isActive;
@@ -369,25 +523,17 @@ export async function updateScheduledExportAction(
 			input.cronExpression !== undefined ||
 			input.timezone !== undefined
 		) {
-			const existing = yield* Effect.promise(() =>
-				db.query.scheduledExport.findFirst({
-					where: eq(scheduledExport.id, input.id),
-				}),
-			);
-
-			if (existing) {
-				const scheduleConfig: ScheduleConfig = {
-					type: input.scheduleType || (existing.scheduleType as ScheduleType),
-					cronExpression: input.cronExpression ?? existing.cronExpression ?? undefined,
-					timezone: input.timezone || existing.timezone,
-				};
-				const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
-				updates.nextExecutionAt = nextExecutionAt.toJSDate();
-			}
+			const scheduleConfig: ScheduleConfig = {
+				type: input.scheduleType || (existing.scheduleType as ScheduleType),
+				cronExpression: input.cronExpression ?? existing.cronExpression ?? undefined,
+				timezone: input.timezone || existing.timezone,
+			};
+			const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
+			updates.nextExecutionAt = nextExecutionAt.toJSDate();
 		}
 
-		const schedule = yield* Effect.promise(async () => {
-			const [updated] = await db
+		const schedule = yield* auditedWrite("scheduledExport.update", async (tx, audit) => {
+			const [updated] = await tx
 				.update(scheduledExport)
 				.set(updates)
 				.where(
@@ -397,31 +543,105 @@ export async function updateScheduledExportAction(
 					),
 				)
 				.returning();
+			if (!updated) return null;
 
+			for (const entry of scheduleUpdateAudit(before, auditedSettings(updated))) {
+				await audit.record(tx, {
+					organizationId: input.organizationId,
+					action:
+						entry.kind === "updated"
+							? AuditAction.SCHEDULED_EXPORT_UPDATED
+							: entry.kind === "paused"
+								? AuditAction.SCHEDULED_EXPORT_PAUSED
+								: AuditAction.SCHEDULED_EXPORT_RESUMED,
+					actorUserId: session.user.id,
+					targetType: "scheduled_export",
+					targetId: updated.id,
+					changes: entry.kind === "updated" ? entry.changes : null,
+					metadata:
+						entry.kind === "updated" ? null : { automatic: false, ownerId: updated.ownerId },
+				});
+			}
 			return updated;
 		});
 
 		if (!schedule) {
-			throw new Error("Scheduled export not found");
+			return yield* scheduledExportNotFound(input.id);
 		}
 
 		revalidatePath("/settings/scheduled-exports");
 
-		return {
-			id: schedule.id,
-			name: schedule.name,
-			description: schedule.description,
-			scheduleType: schedule.scheduleType as ScheduleType,
-			cronExpression: schedule.cronExpression,
-			timezone: schedule.timezone,
-			reportType: schedule.reportType as ReportType,
-			deliveryMethod: schedule.deliveryMethod as DeliveryMethod,
-			dateRangeStrategy: schedule.dateRangeStrategy as DateRangeStrategy,
-			isActive: schedule.isActive,
-			lastExecutionAt: schedule.lastExecutionAt,
-			nextExecutionAt: schedule.nextExecutionAt,
-			createdAt: schedule.createdAt,
-		};
+		return toSummary(schedule, owner);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+// ============================================
+// CHANGE OWNER
+// ============================================
+
+/**
+ * Hands a schedule to another org admin. Any org admin may take a schedule
+ * over; pausing state is unchanged, so a paused schedule is resumed separately.
+ */
+export async function changeScheduledExportOwnerAction(
+	organizationId: string,
+	scheduleId: string,
+	newOwnerId: string,
+): Promise<ServerActionResult<ScheduledExportSummary>> {
+	const effect = Effect.gen(function* () {
+		const session = yield* requireOrgAdmin(organizationId, "scheduled_export", "update");
+
+		const existing = yield* findSchedule(
+			organizationId,
+			scheduleId,
+			"scheduledExport.getForOwnerChange",
+		);
+		const newOwner = yield* ownerOf(organizationId, newOwnerId);
+		if (!newOwner.eligible) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Only an org admin can own a scheduled export",
+					field: "ownerId",
+				}),
+			);
+		}
+		const previousOwnerId = existing.ownerId;
+		if (previousOwnerId === newOwnerId) return toSummary(existing, newOwner);
+
+		const schedule = yield* auditedWrite("scheduledExport.changeOwner", async (tx, audit) => {
+			const [updated] = await tx
+				.update(scheduledExport)
+				.set({ ownerId: newOwnerId, updatedBy: session.user.id })
+				.where(
+					and(
+						eq(scheduledExport.id, scheduleId),
+						eq(scheduledExport.organizationId, organizationId),
+					),
+				)
+				.returning();
+			if (!updated) return null;
+
+			await audit.record(tx, {
+				organizationId,
+				action: AuditAction.SCHEDULED_EXPORT_OWNER_CHANGED,
+				actorUserId: session.user.id,
+				targetType: "scheduled_export",
+				targetId: scheduleId,
+				changes: { ownerId: { before: previousOwnerId, after: newOwnerId } },
+				metadata: { isActive: updated.isActive },
+			});
+			return updated;
+		});
+
+		if (!schedule) {
+			return yield* scheduledExportNotFound(scheduleId);
+		}
+
+		revalidatePath("/settings/scheduled-exports");
+
+		return toSummary(schedule, newOwner);
 	});
 
 	return runServerActionSafe(effect);
@@ -436,32 +656,34 @@ export async function deleteScheduledExportAction(
 	scheduleId: string,
 ): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* requireOrgAdmin(organizationId, "scheduled_export", "delete");
 
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
-
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "scheduled_export",
-					action: "delete",
-				}),
-			);
-		}
-
-		yield* Effect.promise(async () => {
-			await db
+		const deleted = yield* auditedWrite("scheduledExport.delete", async (tx, audit) => {
+			const [removed] = await tx
 				.delete(scheduledExport)
 				.where(
 					and(
 						eq(scheduledExport.id, scheduleId),
 						eq(scheduledExport.organizationId, organizationId),
 					),
-				);
+				)
+				.returning();
+			if (!removed) return null;
+
+			await audit.record(tx, {
+				organizationId,
+				action: AuditAction.SCHEDULED_EXPORT_DELETED,
+				actorUserId: session.user.id,
+				targetType: "scheduled_export",
+				targetId: removed.id,
+				metadata: scheduleSnapshot(removed),
+			});
+			return removed;
 		});
+
+		if (!deleted) {
+			return yield* scheduledExportNotFound(scheduleId);
+		}
 
 		revalidatePath("/settings/scheduled-exports");
 	});
@@ -584,35 +806,22 @@ export async function runScheduledExportNowAction(
 	scheduleId: string,
 ): Promise<ServerActionResult<{ executionId: string }>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* requireOrgAdmin(organizationId, "scheduled_export", "execute");
 
-		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
+		const schedule = yield* findSchedule(organizationId, scheduleId, "scheduledExport.getForRun");
+		// The run acts on behalf of the owner, who must still be an org admin.
+		yield* requireEligibleOwner(yield* ownerOf(organizationId, schedule.ownerId), "ownerId");
 
-		if (!hasPermission) {
-			yield* Effect.fail(
-				new AuthorizationError({
-					message: "Insufficient permissions - admin role required",
-					userId: session.user.id,
-					resource: "scheduled_export",
-					action: "execute",
-				}),
-			);
-		}
-
-		// Get the schedule
-		const schedule = yield* Effect.promise(async () => {
-			return db.query.scheduledExport.findFirst({
-				where: and(
-					eq(scheduledExport.id, scheduleId),
-					eq(scheduledExport.organizationId, organizationId),
-				),
-			});
-		});
-
-		if (!schedule) {
-			throw new Error("Scheduled export not found");
-		}
+		yield* auditedWrite("scheduledExport.auditRunRequest", (tx, audit) =>
+			audit.record(tx, {
+				organizationId,
+				action: AuditAction.SCHEDULED_EXPORT_RUN_REQUESTED,
+				actorUserId: session.user.id,
+				targetType: "scheduled_export",
+				targetId: schedule.id,
+				metadata: { ownerId: schedule.ownerId },
+			}),
+		);
 
 		// Import and run the orchestrator
 		const { ScheduledExportOrchestrator } = yield* Effect.promise(
@@ -620,7 +829,12 @@ export async function runScheduledExportNowAction(
 		);
 
 		const orchestrator = new ScheduledExportOrchestrator();
-		yield* Effect.promise(() => orchestrator.executeSchedule(schedule, DateTime.utc()));
+		yield* Effect.promise(() =>
+			orchestrator.executeSchedule(schedule, DateTime.utc(), {
+				trigger: "run_now",
+				requestedBy: session.user.id,
+			}),
+		);
 
 		// Return a placeholder execution ID (the orchestrator creates one internally)
 		return { executionId: "started" };

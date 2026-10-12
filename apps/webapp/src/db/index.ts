@@ -233,7 +233,6 @@ export {
 	payrollExportConfig,
 	payrollExportConfigRelations,
 	payrollExportFormat,
-	payrollExportFormatEnum,
 	payrollExportFormatRelations,
 	payrollExportJob,
 	payrollExportJobRelations,
@@ -245,6 +244,8 @@ export {
 	// Project tables
 	project,
 	projectRelations,
+	pushDeviceToken,
+	pushDeviceTokenRelations,
 	pushSubscription,
 	pushSubscriptionRelations,
 	recurrenceTypeEnum,

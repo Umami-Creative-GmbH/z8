@@ -1,3 +1,9 @@
+import {
+	CUSTOM_FIELD_IDENTIFIER,
+	type PayrollIdentityRow,
+	type PersonnelNumberType,
+	requirePersonnelIdentifier,
+} from "../personnel-identifier";
 import type { ExpenseLineData } from "../types";
 
 /**
@@ -24,13 +30,17 @@ export function expenseLinesInFileOrder(
 }
 
 /**
- * The personnel number of the German formats' configs: the employee number
- * when configured and set, else the employee id, as for hours and absences.
+ * The personnel number of the German formats' configs: the frozen custom field
+ * value when one is configured (#821, never a fallback), else the employee
+ * number when configured and set, else the employee id, as for hours and absences.
  */
 export function germanPersonnelNumber(
-	line: ExpenseLineData,
-	config: { personnelNumberType: "employeeNumber" | "employeeId" },
+	line: PayrollIdentityRow,
+	config: { personnelNumberType: PersonnelNumberType },
 ): string {
+	if (config.personnelNumberType === CUSTOM_FIELD_IDENTIFIER) {
+		return requirePersonnelIdentifier(line);
+	}
 	if (config.personnelNumberType === "employeeNumber" && line.employeeNumber) {
 		return line.employeeNumber;
 	}

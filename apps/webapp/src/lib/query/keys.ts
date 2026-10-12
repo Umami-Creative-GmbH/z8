@@ -1,3 +1,5 @@
+import type { StaffingShiftInput } from "@/lib/scheduling/staffing/types";
+
 /**
  * Query key factory for TanStack Query
  *
@@ -71,6 +73,15 @@ export const queryKeys = {
 			["absence-plan-preview", orgId, input] as const,
 	},
 
+	// Deputies on absences (#1011)
+	absenceDeputies: {
+		all: ["absence-deputies"] as const,
+		candidates: <T extends object>(orgId: string, input: T) =>
+			["absence-deputies", orgId, "candidates", input] as const,
+		capability: <T extends object>(orgId: string, input: T) =>
+			["absence-deputies", orgId, "capability", input] as const,
+	},
+
 	// Absence categories
 	absenceCategories: {
 		all: ["absence-categories"] as const,
@@ -125,8 +136,57 @@ export const queryKeys = {
 			["travel-expenses", "reports", reportId, "adjustments"] as const,
 		legacyConversion: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "legacy-conversion"] as const,
+		/** Every payroll run query: the runs and payroll run readiness. */
+		payrollRuns: () => ["travel-expenses", "payroll-runs"] as const,
 		/** The payroll access holder's unconfirmed payroll runs (#852). */
 		scopedPayrollRuns: () => ["travel-expenses", "payroll-runs", "scoped"] as const,
+		/** The unconfirmed payroll runs the reader may confirm as paid (#853). */
+		payrollRunsToConfirm: () => ["travel-expenses", "payroll-runs", "to-confirm"] as const,
+		/** What a payroll run of the period, format and employees would not carry (#854). */
+		payrollRunReadiness: (request: {
+			startDate: string;
+			endDate: string;
+			formatId: string;
+			employeeIds?: readonly string[];
+		}) =>
+			[
+				"travel-expenses",
+				"payroll-runs",
+				"readiness",
+				request.startDate,
+				request.endDate,
+				request.formatId,
+				request.employeeIds?.join(",") ?? "scope",
+			] as const,
+	},
+
+	// Payroll workspace
+	payroll: {
+		/** How many employees an export of the period would cover (#1001). */
+		exportScope: (request: { startDate: string; endDate: string }) =>
+			["payroll", "export-scope", request.startDate, request.endDate] as const,
+		/** Overtime payouts an export of the period, format and employees would leave out (#1001). */
+		overtimePayoutReadiness: (request: {
+			startDate: string;
+			endDate: string;
+			formatId: string;
+			employeeIds?: readonly string[];
+		}) =>
+			[
+				"payroll",
+				"overtime-payout-readiness",
+				request.startDate,
+				request.endDate,
+				request.formatId,
+				request.employeeIds?.join(",") ?? "scope",
+			] as const,
+	},
+
+	// Closed months
+	closedMonths: {
+		/** What a close of the month for the scope would warn about (#1065). */
+		closeWarnings: (month: string, scope: string) =>
+			["closed-months", "close-warnings", month, scope] as const,
 	},
 
 	// Employees
@@ -159,6 +219,15 @@ export const queryKeys = {
 			] as const,
 	},
 
+	// Report share links (#806)
+	reportShareLinks: {
+		all: ["report-share-links"] as const,
+		/** One report's links, or the organization's without a target. */
+		list: (target: { kind: string; id: string } | null) =>
+			["report-share-links", "list", target?.kind ?? "all", target?.id ?? "all"] as const,
+		views: (linkId: string) => ["report-share-links", "views", linkId] as const,
+	},
+
 	// Personnel file (#865)
 	personnelFile: {
 		all: ["personnel-file"] as const,
@@ -168,6 +237,15 @@ export const queryKeys = {
 		myDocuments: () => ["personnel-file", "my-documents"] as const,
 		officerGrants: () => ["personnel-file", "settings", "officer-grants"] as const,
 		payslipBatch: (batchId: string) => ["personnel-file", "payslip-batch", batchId] as const,
+		/** Sick notes on absences (#982). */
+		sickNotesAll: () => ["personnel-file", "sick-notes"] as const,
+		ownAbsenceSickNotes: (absenceIds: readonly string[]) =>
+			["personnel-file", "sick-notes", "own", ...absenceIds] as const,
+		absenceSickNotes: (absenceId: string) =>
+			["personnel-file", "sick-notes", "absence", absenceId] as const,
+		/** An employee's sick leave in the officer area (#984). */
+		employeeSickLeave: (employeeId: string) =>
+			["personnel-file", "sick-notes", "sick-leave", employeeId] as const,
 	},
 
 	// Employee clock statuses
@@ -326,6 +404,9 @@ export const queryKeys = {
 			["shifts", "incomplete", orgId, dateRange] as const,
 		open: (orgId: string, dateRange: { start: Date; end: Date }) =>
 			["shifts", "open", orgId, dateRange] as const,
+		// Under "shifts" so saving any shift refreshes them.
+		staffingSuggestions: (orgId: string, input: StaffingShiftInput) =>
+			["shifts", "staffing-suggestions", orgId, input] as const,
 	},
 
 	// Shift requests (swaps, pickups)
@@ -333,6 +414,13 @@ export const queryKeys = {
 		all: ["shift-requests"] as const,
 		pending: (approverId: string) => ["shift-requests", "pending", approverId] as const,
 		byShift: (shiftId: string) => ["shift-requests", "shift", shiftId] as const,
+	},
+
+	// Custom field values (#818): the "Custom fields" section of a record (null = being created)
+	customFields: {
+		all: ["custom-fields"] as const,
+		section: (entity: string, recordId: string | null) =>
+			["custom-fields", "section", entity, recordId ?? "new"] as const,
 	},
 
 	// Customers

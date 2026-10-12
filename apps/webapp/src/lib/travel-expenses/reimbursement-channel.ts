@@ -39,6 +39,23 @@ export async function getReimbursementChannel(
 }
 
 /**
+ * Whether the organization pays reimbursements with the payroll run while it
+ * passes the preview gate: the only case payroll exports are payroll runs,
+ * payroll readiness reports on runs, and expense officers are told per run
+ * instead of per approved report (#855).
+ */
+export async function paysThroughPayrollRuns(
+	database: Executor,
+	organizationId: string,
+): Promise<boolean> {
+	const [channel, previewOpen] = await Promise.all([
+		getReimbursementChannel(organizationId, { database }),
+		isPayrollRunPreviewOpen(organizationId, { database }),
+	]);
+	return channel === "payroll_run" && previewOpen;
+}
+
+/**
  * The organization's payroll runs that are not confirmed yet: those that
  * still include a report (#852). They can still be confirmed or discarded
  * after a switch to bank transfer.

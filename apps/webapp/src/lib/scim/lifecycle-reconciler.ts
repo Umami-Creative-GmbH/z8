@@ -16,9 +16,23 @@ function isBillable(
 	return member?.status === "approved" && employee?.isActive === true;
 }
 
+export interface SCIMLifecycleHooks {
+	/**
+	 * Runs in the SCIM transaction right after this reconciliation deactivated
+	 * the employee (#1014: the employee stops being anyone's deputy).
+	 */
+	onEmployeeDeactivated?(input: {
+		organizationId: string;
+		userId: string;
+		employeeId: string;
+		connectionId: string;
+	}): Promise<void>;
+}
+
 export async function reconcileSCIMLifecycle(
 	input: SCIMProjectedUserState,
 	context: SCIMTransactionContext,
+	hooks: SCIMLifecycleHooks = {},
 ): Promise<void> {
 	const organizationId = input.provisioningDomainId;
 	const store = createSCIMTransactionStore(context.database);
@@ -94,6 +108,14 @@ export async function reconcileSCIMLifecycle(
 				updatedEmployee ??
 				(await store.getEmployee(organizationId, input.userId)) ??
 				employee;
+			if (updatedEmployee) {
+				await hooks.onEmployeeDeactivated?.({
+					organizationId,
+					userId: input.userId,
+					employeeId: updatedEmployee.id,
+					connectionId: config.connectionId,
+				});
+			}
 		}
 		event = "deactivated";
 	}

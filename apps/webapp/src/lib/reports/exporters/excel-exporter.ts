@@ -4,6 +4,7 @@
  */
 
 import ExcelJS from "exceljs";
+import { customFieldReportText } from "@/lib/organization/custom-fields/report-values";
 import type { ReportData } from "../types";
 
 /**
@@ -73,6 +74,21 @@ async function createSummarySheet(
 	sheet.addRow(["Generated On", format(new Date(), "yyyy-MM-dd HH:mm:ss")]);
 
 	sheet.addRow([]);
+
+	// Custom fields the requester sees, as of the period's last day (#820)
+	if (reportData.employee.customFields.length > 0) {
+		const customFieldsHeaderRow = sheet.addRow(["Custom Fields", ""]);
+		customFieldsHeaderRow.font = { bold: true, size: 12 };
+		customFieldsHeaderRow.fill = {
+			type: "pattern",
+			pattern: "solid",
+			fgColor: { argb: "FFE0E0E0" },
+		};
+		for (const field of reportData.employee.customFields) {
+			sheet.addRow([field.name, customFieldReportText(field)]);
+		}
+		sheet.addRow([]);
+	}
 
 	// Work Hours Summary
 	const workHeaderRow = sheet.addRow(["Work Hours Summary", ""]);

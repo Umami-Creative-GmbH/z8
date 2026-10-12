@@ -54,6 +54,10 @@ export const absenceEventSchema = calendarEventSchema.extend({
 		categoryName: z.string(),
 		status: z.enum(["pending", "approved", "rejected"]),
 		employeeName: z.string(),
+		deputy: z
+			.object({ id: z.string(), name: z.string(), canOpenProfile: z.boolean() })
+			.nullable()
+			.optional(),
 	}),
 });
 

@@ -133,6 +133,18 @@
     "sso-not-configured": "SSO non è configurato per questo dominio",
     "step-one": "1. Usa l'email dell'invito",
     "step-two": "2. Torna qui e unisciti",
+    "storeApp": {
+      "continue": "Continua",
+      "description": "Inserisci la tua email di lavoro. Accederai quindi dalla pagina di accesso della tua organizzazione nel browser del tuo telefono.",
+      "error": {
+        "browser": "Impossibile aprire la pagina di accesso. Riprova.",
+        "expired": "L'accesso non è stato completato o è scaduto. Riprova.",
+        "rateLimited": "Troppi tentativi di accesso. Attendi qualche istante e riprova.",
+        "unavailable": "Impossibile raggiungere Z8. Verifica la tua connessione e riprova."
+      },
+      "title": "Accedi a Z8",
+      "waiting": "In attesa dell'accesso…"
+    },
     "terms": {
       "privacy": "Informativa sulla Privacy",
       "service": "Termini di Servizio"

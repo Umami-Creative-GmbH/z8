@@ -2,40 +2,29 @@
  * ICS Feed Secret Regeneration
  *
  * Regenerates the secret token for an ICS feed, invalidating the old URL.
+ * The new URL is returned only in this response (#991).
  *
  * POST /api/calendar/ics-feeds/[id]/regenerate
  */
 
-import crypto from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee, icsFeed } from "@/db/schema";
-import { getDefaultAppBaseUrl } from "@/lib/app-url";
+import { AuditAction } from "@/lib/audit-logger";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-
-// ============================================
-// HELPERS
-// ============================================
-
-function generateFeedSecret(): string {
-	return crypto.randomBytes(32).toString("hex");
-}
-
-function buildFeedUrl(secret: string): string {
-	const baseUrl = getDefaultAppBaseUrl();
-	return `${baseUrl}/api/calendar/ics/${secret}`;
-}
+import { logIcsFeedAudit } from "@/lib/calendar-sync/ics-feed-audit";
+import { issueIcsFeedSecret } from "@/lib/calendar-sync/ics-feed-secret";
 
 // ============================================
 // POST - Regenerate secret
 // ============================================
 
 export async function POST(
-	_request: NextRequest,
+	request: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	await connection();
@@ -62,7 +51,7 @@ export async function POST(
 			where: and(
 				eq(icsFeed.id, id),
 				eq(icsFeed.organizationId, activeOrgId),
-				eq(icsFeed.isActive, true),
+				isNull(icsFeed.revokedAt),
 			),
 		});
 
@@ -103,25 +92,38 @@ export async function POST(
 			}
 		}
 
-		// Generate new secret
-		const newSecret = generateFeedSecret();
+		// Replace the stored digest; the old URL stops resolving
+		const { url, secretDigest, secretHashVersion } = issueIcsFeedSecret();
 
-		// Update feed
 		const [updated] = await db
 			.update(icsFeed)
 			.set({
-				secret: newSecret,
+				secretDigest,
+				secretHashVersion,
 				updatedAt: new Date(),
 			})
-			.where(and(eq(icsFeed.id, id), eq(icsFeed.organizationId, activeOrgId)))
+			.where(
+				and(
+					eq(icsFeed.id, id),
+					eq(icsFeed.organizationId, activeOrgId),
+					isNull(icsFeed.revokedAt),
+				),
+			)
 			.returning();
 		if (!updated) {
 			return NextResponse.json({ error: "Feed not found" }, { status: 404 });
 		}
 
+		await logIcsFeedAudit({
+			action: AuditAction.ICS_FEED_REGENERATED,
+			feed: updated,
+			actor: session.user,
+			request,
+		});
+
 		return NextResponse.json({
 			id: updated.id,
-			url: buildFeedUrl(updated.secret),
+			url,
 			message:
 				"Feed URL has been regenerated. The old URL will no longer work.",
 		});

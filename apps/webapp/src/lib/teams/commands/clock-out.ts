@@ -51,6 +51,8 @@ const replies: ClockCommandReplies<ClockOutFailure> = {
 				"Your clock-out could not be confirmed. Check your status before trying again.",
 			),
 		access_denied: (t) => t("bot.cmd.clockout.noProfile", "Employee profile not found."),
+		month_closed: (t) =>
+			t("bot.cmd.clockout.monthClosed", "This work is in a closed month and cannot be changed."),
 		billing_required: billingRequiredReply,
 		// A redelivered invocation replays; these cannot arise from a bot command
 		// without a freshness window, frozen payload or named target, and nothing

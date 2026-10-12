@@ -141,6 +141,17 @@
       "description": "Enviar una invitación para unirse a {organizationName}",
       "emailLabel": "Dirección de correo electrónico",
       "error": "Error al enviar la invitación",
+      "kioskOnly": {
+        "description": "Para el personal sin correo electrónico de la empresa. No pueden iniciar sesión y solo fichan en quioscos con su PIN. Puedes añadir un correo electrónico más tarde.",
+        "firstName": "Nombre",
+        "label": "Solo quiosco, sin correo electrónico",
+        "lastName": "Apellidos",
+        "locations": "Ubicaciones asignadas",
+        "locationsDescription": "Los quioscos de estas ubicaciones muestran al empleado.",
+        "noLocations": "Todavía no hay ubicaciones activas. Puedes asignar ubicaciones más tarde.",
+        "submit": "Crear empleado",
+        "success": "Empleado de solo quiosco creado"
+      },
       "noTargetTeam": "Sin equipo",
       "roleDescriptions": {
         "admin": "Puede invitar a miembros y gestionar la configuración",
@@ -242,6 +253,41 @@
       "searchLabel": "Buscar empleados",
       "searchPlaceholder": "Buscar empleados…",
       "teamBadge": "Equipo"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Solo los administradores y propietarios de la organización pueden cambiar esta configuración.",
+      "cadence": {
+        "label": "Frecuencia de envío",
+        "monthly": "Mensual",
+        "off": "Desactivado",
+        "weekly": "Semanal"
+      },
+      "description": "Pide a los empleados que envíen cada semana o mes para su aprobación, confirmando que su trabajo y ausencias están completos y son correctos.",
+      "help": "Los periodos siguen la zona horaria de cada empleado y se ajustan a su periodo de contratación. Al activarlo, comienza con el primer periodo completo. Un cambio surte efecto en el siguiente límite de periodo compartido entre la frecuencia anterior y la nueva, por lo que un cambio entre semanal y mensual puede tardar varios meses. Se recuerda a los empleados cuando finaliza un periodo y de nuevo tras los días establecidos aquí. Los empleados que solo usan quiosco no envían periodos.",
+      "invalidDelay": "Introduce días completos de {min} a {max}.",
+      "save": "Guardar cambios",
+      "saved": "Configuración de envío de periodos guardada",
+      "saveFailed": "Error al actualizar la configuración de envío de periodos",
+      "saving": "Guardando…",
+      "secondReminderDelay": "Días hasta el segundo recordatorio",
+      "title": "Envíos de periodos",
+      "upcoming": {
+        "monthly": "Los periodos mensuales comienzan el {date}.",
+        "off": "No se esperan períodos a partir de {date}. El período actual todavía se espera.",
+        "untilMonthly": "Hasta entonces, continúan los períodos mensuales.",
+        "untilWeekly": "Hasta entonces, continúan los períodos semanales.",
+        "weekly": "Los períodos semanales comienzan el {date}."
+      },
+      "weekday": {
+        "friday": "Viernes",
+        "monday": "Lunes",
+        "saturday": "Sábado",
+        "sunday": "Domingo",
+        "thursday": "Jueves",
+        "tuesday": "Martes",
+        "wednesday": "Miércoles"
+      },
+      "weekStart": "Las semanas comienzan el"
     },
     "recover": {
       "button": "Recuperar organización",

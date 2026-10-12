@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Approved",
+        "changeDeputy": "Change deputy",
+        "changeDeputyOf": "Change deputy of {name}",
+        "deputy": "Deputy:",
+        "deputyMissing": "Deputy missing",
         "description": "Approved and pending absences for the selected team and year.",
         "error": {
           "description": "Please try again in a moment.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} pending",
         "title": "Year calendar",
         "totalDays": "{count} absent"
+      },
+      "deputyFilter": {
+        "clear": "Show all absences",
+        "notice": "Showing only the absences this employee covers as deputy."
       },
       "description": "Review allowances and record approved absences for your team.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Category",
         "categoryPlaceholder": "Select an absence category…",
+        "deputy": "Deputy",
         "description": "Record an approved absence directly for the selected employee.",
         "endDate": "End date",
         "endDateHelper": "Leave empty for a same-day absence.",
@@ -66,6 +75,11 @@
         "required": "{label} is required",
         "sickDetail": "Sick detail",
         "sickDetailPlaceholder": "Select sick detail…",
+        "sickNotes": {
+          "description": "Add photos or PDFs of the sick note you were handed: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in the employee's personnel file, and the employee sees it. Afterwards, only those who manage the employee's sick notes can open it.",
+          "title": "Sick note (optional)"
+        },
+        "sickNotesFailed": "The absence was recorded, but {files} could not be attached. Someone who manages sick notes can attach them later.",
         "startDate": "Start date",
         "submit": "Record absence",
         "success": "Absence recorded",
@@ -116,6 +130,51 @@
       "next": "Next",
       "previous": "Previous",
       "showing": "Showing {from} to {to} of {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Choose a submission cadence in the organization settings",
+      "columns": {
+        "calendar": "Calendar",
+        "employee": "Employee",
+        "period": "Period",
+        "status": "Status"
+      },
+      "descriptionAll": "Who has submitted the selected period. Approve or reject submissions in the approval inbox.",
+      "descriptionManaged": "Who of the employees you manage has submitted the selected period. Approve or reject submissions in the approval inbox.",
+      "empty": "No one you can see is expected to submit this period.",
+      "loading": "Loading period submissions",
+      "notSubmitted": "Not submitted",
+      "off": "Your organization does not collect period submissions.",
+      "openCalendar": "Calendar",
+      "openCalendarOf": "Open the calendar of {name}",
+      "openInbox": "Open the approval inbox",
+      "owing": "{count, plural, one {# employee has not submitted this period yet.} other {# employees have not submitted this period yet.}}",
+      "period": "Submission period",
+      "running": "This period is still running. Employees can submit it from its last day.",
+      "status": {
+        "approved": "Approved",
+        "awaiting": "Awaiting submission",
+        "rejected": "Rejected",
+        "sentBack": "Sent back after a change",
+        "submitted": "Submitted"
+      },
+      "summary": "Statuses",
+      "title": "Period submissions"
+    },
+    "presence": {
+      "allLocations": "All locations",
+      "columns": {
+        "name": "Name",
+        "since": "Since",
+        "state": "State"
+      },
+      "description": "Choose a location to see who is clocked in or on a break there.",
+      "descriptionAll": "Employees assigned to this location who are clocked in or on a break.",
+      "descriptionManaged": "Employees you manage who are assigned to this location and clocked in or on a break.",
+      "empty": "Nobody you can see is clocked in at this location right now.",
+      "locationTitle": "Who is in: {location}",
+      "noLocations": "Your organization has no active locations yet.",
+      "title": "Who is in"
     },
     "primaryManager": "You are the primary manager",
     "search": {

@@ -324,6 +324,17 @@ describe("unsupported or incomplete international facts are never guessed", () =
 		expect(calculation).toMatchObject({ status: "exceptional", reasons: ["rules_not_verified"] });
 	});
 
+	it("flags foreign days in 2027 while the domestic rules still apply (#891)", () => {
+		const calculation = calculatePerDiem(
+			trip("2027-03-02T08:00", "2027-03-03T18:00", [
+				{ night: at("AT") },
+				{ activityAbroad: at("AT") },
+			]),
+			context(["AT"]),
+		);
+		expect(calculation).toMatchObject({ status: "exceptional", reasons: ["rules_not_verified"] });
+	});
+
 	it("reports missing coverage when the organization adopted domestic rates only", () => {
 		const domesticOnly: PerDiemPolicyVersion = {
 			...international,

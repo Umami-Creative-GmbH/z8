@@ -16,8 +16,17 @@
       "understaffed": "Underbemannet",
       "utilization": "{percent} % utnyttelse"
     },
+    "mySchedule": {
+      "loadFailed": "Vaktene dine kunne ikke lastes inn. Prøv igjen senere.",
+      "nextWeek": "Neste uke",
+      "noShifts": "Ingen vakter",
+      "previousWeek": "Forrige uke",
+      "shift": "Vakt",
+      "today": "I dag"
+    },
     "page": {
-      "employeeDescription": "Se vaktene dine og ta ledige vakter",
+      "employeeScheduleDescription": "Dine publiserte vakter, uke for uke",
+      "employeeTitle": "Min vaktplan",
       "managerDescription": "Administrer og planlegg ansattes vakter",
       "title": "Vaktplan"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Vakt lagret med overlappsvarsel",
         "updated": "Vakt oppdatert"
       }
+    },
+    "shiftDetails": {
+      "close": "Lukk",
+      "date": "Dato",
+      "description": "Din planlagte vakt",
+      "endsNextDay": "slutter neste dag",
+      "location": "Sted",
+      "notes": "Notater",
+      "time": "Tid",
+      "title": "Vaktdetaljer"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Hvem som helst kan ta den",
@@ -111,6 +130,35 @@
       "validating": "Validerer ferdigheter…",
       "validatingDescription": "Sjekker ansattes kvalifikasjoner",
       "warningMessage": "Du kan fortsatt tildele denne vakten, men det vil bli loggført som en overstyring."
+    },
+    "staffingSuggestions": {
+      "empty": "Ingen tilgjengelige ansatte for denne vakten",
+      "error": "Kunne ikke laste inn forslag",
+      "loading": "Finner tilgjengelige ansatte …",
+      "note": {
+        "missingPreferredSkill": "Mangler foretrukket kompetanse: {skill}"
+      },
+      "pick": "Velg",
+      "pickLabel": "Tildel {name}",
+      "reason": {
+        "noContractedTarget": "Ingen avtalte mål",
+        "plannedHours": "{planned} av {target} t planlagt denne uken",
+        "requestedThisShift": "Ønsket denne vakten",
+        "restPeriodOk": "Hviletid OK",
+        "skillsHeld": "Har {skills}"
+      },
+      "requested": "Ønsket denne vakten",
+      "showAll": "Vis alle ({count})",
+      "showFewer": "Vis færre",
+      "title": "Foreslåtte ansatte",
+      "warning": {
+        "expiredRequiredSkill": "{skill} utløp {date}",
+        "maxHours": "Over daglig maksimum ({total} av {max} t)",
+        "missingRequiredSkill": "Mangler påkrevd ferdighet: {skill}",
+        "overtime": "{period, select, daily {Daglig} weekly {Ukentlig} other {Månedlig}} overtid ({total} av {threshold} t)",
+        "pendingAbsence": "Ventende fravær: {category}",
+        "restTime": "Hvileperiode for kort ({rest} av {required} t)"
+      }
     },
     "templates": {
       "dragHint": "Dra en mal til kalenderen for å opprette en vakt",

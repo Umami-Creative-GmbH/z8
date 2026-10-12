@@ -240,6 +240,23 @@ const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 		label: "Manage Payroll Exports",
 		description: "Create and manage payroll exports",
 	},
+	// Closed months (#762): closing and reopening are granted separately, so a role
+	// can close months without being able to reopen them.
+	"close:PayrollPeriod": {
+		action: "close",
+		subject: "PayrollPeriod",
+		category: "reporting",
+		label: "Close Months",
+		description:
+			"Close a month for the organization or a team, so nobody can change its work or absences",
+	},
+	"reopen:PayrollPeriod": {
+		action: "reopen",
+		subject: "PayrollPeriod",
+		category: "reporting",
+		label: "Reopen Months",
+		description: "Reopen a closed month for some or all of its employees, with a reason",
+	},
 
 	// ---- Works Council ----
 	"read:WorksCouncil": {

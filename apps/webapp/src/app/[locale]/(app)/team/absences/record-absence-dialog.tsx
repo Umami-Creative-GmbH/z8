@@ -1,10 +1,15 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+	failedSickNoteNames,
+	StagedSickNotesSection,
+	useStagedSickNotes,
+} from "@/components/absences/sick-notes/staged-sick-notes-section";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -14,6 +19,11 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import {
+	DeputyPicker,
+	deputyRefusalText,
+	deputyRequiredText,
+} from "@/components/absences/deputy-picker";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -35,7 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { sickDetailOptions } from "@/lib/absences/sick-details";
 import type { AbsenceDurationKind, SickDetail } from "@/lib/absences/types";
 import { useRouter } from "@/navigation";
-import { recordAbsenceForEmployee } from "./actions";
+import { recordAbsenceForEmployee, recordAbsenceWithSickNotes } from "./actions";
 import {
 	buildRecordAbsenceForEmployeeInput,
 	getDefaultRecordAbsenceFormValues,
@@ -49,6 +59,8 @@ type AbsenceCategoryOption = {
 	color: string | null;
 	requiresApproval: boolean;
 	countsAgainstVacation: boolean;
+	/** Absences of this type must name a deputy (#1011). */
+	deputyRequired?: boolean;
 };
 
 type RecordAbsenceDialogProps = {
@@ -56,6 +68,8 @@ type RecordAbsenceDialogProps = {
 	onOpenChange: (open: boolean) => void;
 	employee: { id: string; name: string } | null;
 	categories: AbsenceCategoryOption[];
+	/** Personnel files are on: the recorder may add the sick note (#984). */
+	sickNotesEnabled?: boolean;
 };
 
 type RecordAbsenceFormValues = ReturnType<
@@ -65,7 +79,12 @@ type RecordAbsenceFormValues = ReturnType<
 function useRecordAbsenceDialogForm({
 	employee,
 	onOpenChange,
-}: Pick<RecordAbsenceDialogProps, "employee" | "onOpenChange">) {
+	categories,
+	sickNotesEnabled,
+}: Pick<
+	RecordAbsenceDialogProps,
+	"employee" | "onOpenChange" | "categories" | "sickNotesEnabled"
+>) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const [dateRangeError, setDateRangeError] = useState<string | null>(null);
@@ -93,13 +112,41 @@ function useRecordAbsenceDialogForm({
 				return;
 			}
 
-			const result = await recordAbsenceForEmployee(
-				buildRecordAbsenceForEmployeeInput(employee.id, value),
+			// Sick notes are uploaded first and attached once the absence exists (#984).
+			const selectedCategory = categories.find(
+				(category) => category.id === value.categoryId,
 			);
+			const input = buildRecordAbsenceForEmployeeInput(employee.id, value);
+			const failureMessage = t(
+				"team.absences.recordDialog.failure",
+				"Failed to record absence",
+			);
+			const result = await sickNotes.submit({
+				files:
+					sickNotesEnabled && selectedCategory?.type === "sick"
+						? value.sickNotes
+						: [],
+				send: (uploaded) =>
+					uploaded
+						? recordAbsenceWithSickNotes(input, uploaded)
+						: recordAbsenceForEmployee(input),
+				failureMessage,
+			});
+			if (!result) return;
 			if (result.success) {
 				toast.success(
 					t("team.absences.recordDialog.success", "Absence recorded"),
 				);
+				const failedFiles = failedSickNoteNames(result);
+				if (failedFiles) {
+					toast.warning(
+						t(
+							"team.absences.recordDialog.sickNotesFailed",
+							"The absence was recorded, but {files} could not be attached. Someone who manages sick notes can attach them later.",
+							{ files: failedFiles },
+						),
+					);
+				}
 				form.reset(formDefaultValues);
 				setDateRangeError(null);
 				onOpenChange(false);
@@ -107,12 +154,25 @@ function useRecordAbsenceDialogForm({
 				return;
 			}
 
-			toast.error(
-				result.error ??
-					t("team.absences.recordDialog.failure", "Failed to record absence"),
-			);
+			const deputyError = deputyRefusalText(t, result.refusal);
+			if (deputyError) {
+				// The server refused the deputy: show it on the deputy field.
+				form.setFieldMeta("deputyEmployeeId", (meta) => ({
+					...meta,
+					errorMap: { ...meta.errorMap, onServer: deputyError },
+				}));
+				return;
+			}
+
+			toast.error(result.error ?? failureMessage);
 		},
 	});
+
+	const sickNoteDates = useStore(form.store, (state) => ({
+		startDate: state.values.startDate,
+		endDate: state.values.endDate,
+	}));
+	const sickNotes = useStagedSickNotes(sickNoteDates);
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (!nextOpen) {
@@ -122,7 +182,14 @@ function useRecordAbsenceDialogForm({
 		onOpenChange(nextOpen);
 	}
 
-	return { dateRangeError, form, handleOpenChange, requiredMessage };
+	return {
+		dateRangeError,
+		form,
+		handleOpenChange,
+		requiredMessage,
+		sickNoteDates,
+		sickNotes,
+	};
 }
 
 type RecordAbsenceFormApi = ReturnType<
@@ -134,10 +201,22 @@ export function RecordAbsenceDialog({
 	onOpenChange,
 	employee,
 	categories,
+	sickNotesEnabled = false,
 }: RecordAbsenceDialogProps) {
 	const { t } = useTranslate();
-	const { dateRangeError, form, handleOpenChange, requiredMessage } =
-		useRecordAbsenceDialogForm({ employee, onOpenChange });
+	const {
+		dateRangeError,
+		form,
+		handleOpenChange,
+		requiredMessage,
+		sickNoteDates,
+		sickNotes,
+	} = useRecordAbsenceDialogForm({
+		employee,
+		onOpenChange,
+		categories,
+		sickNotesEnabled,
+	});
 
 	const title = employee
 		? t(
@@ -208,6 +287,7 @@ export function RecordAbsenceDialog({
 											);
 											if (nextCategory?.type !== "sick") {
 												form.setFieldValue("sickDetail", "");
+												form.setFieldValue("sickNotes", []);
 											}
 										}}
 										disabled={categories.length === 0}
@@ -328,6 +408,29 @@ export function RecordAbsenceDialog({
 							options={durationOptions}
 						/>
 
+						{sickNotesEnabled ? (
+							<form.Subscribe<RecordAbsenceFormValues["categoryId"]>
+								selector={(state) => state.values.categoryId}
+							>
+								{(categoryId: RecordAbsenceFormValues["categoryId"]) =>
+									categories.find((category) => category.id === categoryId)
+										?.type === "sick" ? (
+										<RecordAbsenceSickNotes
+											dates={sickNoteDates}
+											form={form}
+											sickNotes={sickNotes}
+										/>
+									) : null
+								}
+							</form.Subscribe>
+						) : null}
+
+						<RecordAbsenceDeputyField
+							categories={categories}
+							employee={employee}
+							form={form}
+						/>
+
 						<form.Field name="notes">
 							{(field) => (
 								<TFormItem>
@@ -395,6 +498,47 @@ export function RecordAbsenceDialog({
 				</form>
 			</ActionPanelContent>
 		</ActionPanel>
+	);
+}
+
+/** Optional sick notes the recorder was handed, attached once recorded (#984). */
+function RecordAbsenceSickNotes({
+	dates,
+	form,
+	sickNotes,
+}: {
+	dates: { startDate: string; endDate: string };
+	form: RecordAbsenceFormApi;
+	sickNotes: ReturnType<typeof useStagedSickNotes>;
+}) {
+	const { t } = useTranslate();
+	return (
+		<form.Subscribe<boolean> selector={(state) => state.isSubmitting}>
+			{(isSubmitting: boolean) => (
+				<form.Field
+					name="sickNotes"
+					validators={{ onSubmit: ({ value }) => sickNotes.validate(value) }}
+				>
+					{(field) => (
+						<StagedSickNotesSection
+							id="record-absence-sick-notes"
+							title={t(
+								"team.absences.recordDialog.sickNotes.title",
+								"Sick note (optional)",
+							)}
+							description={t(
+								"team.absences.recordDialog.sickNotes.description",
+								"Add photos or PDFs of the sick note you were handed: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in the employee's personnel file, and the employee sees it. Afterwards, only those who manage the employee's sick notes can open it.",
+							)}
+							field={field}
+							dates={dates}
+							disabled={isSubmitting}
+							uploads={sickNotes.uploads}
+						/>
+					)}
+				</form.Field>
+			)}
+		</form.Subscribe>
 	);
 }
 
@@ -471,6 +615,62 @@ function RecordAbsenceDateFields({
 				)}
 			</p>
 		</div>
+	);
+}
+
+function RecordAbsenceDeputyField({
+	categories,
+	employee,
+	form,
+}: {
+	categories: AbsenceCategoryOption[];
+	employee: RecordAbsenceDialogProps["employee"];
+	form: RecordAbsenceFormApi;
+}) {
+	const { t } = useTranslate();
+	const { categoryId, startDate, endDate } = useStore(form.store, (state) => ({
+		categoryId: state.values.categoryId,
+		startDate: state.values.startDate,
+		endDate: state.values.endDate,
+	}));
+	const required = Boolean(
+		categories.find((category) => category.id === categoryId)?.deputyRequired,
+	);
+	if (!employee) return null;
+	return (
+		<form.Field
+			name="deputyEmployeeId"
+			validators={{
+				onSubmit: ({ value, fieldApi }) =>
+					!value &&
+					categories.find(
+						(category) =>
+							category.id === fieldApi.form.getFieldValue("categoryId"),
+					)?.deputyRequired
+						? deputyRequiredText(t)
+						: undefined,
+			}}
+		>
+			{(field) => (
+				<TFormItem>
+					<TFormLabel hasError={fieldHasError(field)} required={required}>
+						{t("team.absences.recordDialog.deputy", "Deputy")}
+					</TFormLabel>
+					<TFormControl hasError={fieldHasError(field)}>
+						<DeputyPicker
+							value={field.state.value}
+							onChange={field.handleChange}
+							onBlur={field.handleBlur}
+							startDate={startDate}
+							endDate={endDate || startDate}
+							employeeId={employee.id}
+							required={required}
+						/>
+					</TFormControl>
+					<TFormMessage field={field} />
+				</TFormItem>
+			)}
+		</form.Field>
 	);
 }
 

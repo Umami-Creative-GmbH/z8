@@ -1,6 +1,6 @@
 "use client";
 
-import { IconX } from "@tabler/icons-react";
+import { IconPaperclip, IconUserShare, IconX } from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -22,26 +22,42 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-	calculateBusinessDaysWithHalfDays,
-	formatDateRange,
-	formatDays,
-} from "@/lib/absences/date-utils";
+import { formatDateRange, formatDays } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
-import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
+import type { AbsenceWithCategory, AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
+import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { useRouter } from "@/navigation";
 import { CategoryBadge } from "./category-badge";
+import { ChangeDeputyDialog } from "./change-deputy-dialog";
+import { DeputyName } from "./deputy-name";
+import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
+import { AttachSickNoteDialog } from "./sick-notes/attach-sick-note-dialog";
+import { SickNoteMarker } from "./sick-notes/sick-note-marker";
+import { useOwnAbsenceSickNotes } from "./sick-notes/use-own-absence-sick-notes";
 
 interface AbsenceEntriesTableProps {
-	absences: AbsenceWithCategory[];
+	absences: AbsenceWithDays[];
 	currentDate: string;
 	onUpdate?: () => void;
 }
 
-function canShowCancelAction(absence: AbsenceWithCategory, today: string): boolean {
+function canShowCancelAction(absence: AbsenceWithDays, today: string): boolean {
 	if (absence.status === "pending") return true;
 	if (absence.status === "approved") return absence.startDate > today;
 	return false;
+}
+
+/** The deputy can change on pending and approved absences until they have ended (#1011). */
+function canChangeDeputy(absence: AbsenceWithCategory, today: string): boolean {
+	return (
+		(absence.status === "pending" || absence.status === "approved") &&
+		comparePlainDates(parsePlainDate(absence.endDate), parsePlainDate(today)) >= 0
+	);
+}
+
+/** Sick notes go on the employee's own sick leave unless it was rejected (#982). */
+function takesSickNotes(absence: AbsenceWithDays): boolean {
+	return absence.category.type === "sick" && absence.status !== "rejected";
 }
 
 export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: AbsenceEntriesTableProps) {
@@ -49,6 +65,17 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	const { refresh } = useRouter();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
+	const sickNotes = useOwnAbsenceSickNotes(absences);
+	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithDays | null>(null);
+	const [attachingTo, setAttachingTo] = useState<AbsenceWithDays | null>(null);
+	const [changingDeputyOf, setChangingDeputyOf] = useState<AbsenceWithDays | null>(null);
+
+	// Attaching can turn "without certificate" into "with certificate".
+	const handleSickNotesChanged = () => {
+		void sickNotes.refresh();
+		refresh();
+		onUpdate?.();
+	};
 
 	// Format period for display
 	const formatPeriod = (period: DayPeriod): string => {
@@ -106,7 +133,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	})();
 
 	// Column definitions
-	const columns: ColumnDef<DataTableFeatures, AbsenceWithCategory>[] = [
+	const columns: ColumnDef<DataTableFeatures, AbsenceWithDays>[] = [
 		{
 			accessorKey: "dateRange",
 			header: t("absences.table.headers.dateRange", "Date Range"),
@@ -159,6 +186,22 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 							)}
 						</span>
 					)}
+					{row.original.category.type === "sick" ? (
+						<SickNoteMarker
+							count={sickNotes.markers[row.original.id]?.count ?? 0}
+							onOpen={
+								sickNotes.markers[row.original.id]?.viewable
+									? () => setSickNotesOf(row.original)
+									: undefined
+							}
+						/>
+					) : null}
+					{row.original.deputy ? (
+						<span className="text-xs">
+							<span className="text-muted-foreground">{t("absences.deputy.label", "Deputy")}</span>{" "}
+							<DeputyName deputy={row.original.deputy} className="font-medium" />
+						</span>
+					) : null}
 				</div>
 			),
 		},
@@ -166,14 +209,9 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			accessorKey: "days",
 			header: () => <div className="text-right">{t("absences.table.headers.days", "Days")}</div>,
 			cell: ({ row }) => {
-				const days = calculateBusinessDaysWithHalfDays(
-					row.original.startDate,
-					row.original.startPeriod,
-					row.original.endDate,
-					row.original.endPeriod,
-					[],
+				return (
+					<div className="text-right tabular-nums">{formatDays(row.original.absenceDays, t)}</div>
 				);
-				return <div className="text-right tabular-nums">{formatDays(days, t)}</div>;
 			},
 		},
 		{
@@ -209,51 +247,82 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			),
 			cell: ({ row }) => {
 				const absence = row.original;
-				if (!canShowCancelAction(absence, currentDate)) return null;
+				const canAttachSickNote = sickNotes.canAttach && takesSickNotes(absence);
+				const canCancel = canShowCancelAction(absence, currentDate);
+				const canChange = canChangeDeputy(absence, currentDate);
+				if (!canCancel && !canAttachSickNote && !canChange) return null;
 				const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
 				const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
+				const attachLabel = t("absences.sickNotes.attachAction", "Attach sick note");
+				const changeDeputyLabel = t("absences.deputy.changeAction", "Change deputy");
 
 				return (
-					<div className="flex justify-end">
-						<Tooltip>
-							<AlertDialog>
-								<TooltipTrigger asChild>
-									<AlertDialogTrigger asChild>
-										<Button
-											variant="ghost"
-											size="sm"
-											disabled={cancelingId === absence.id}
-											aria-label={cancelLabel}
-										>
-											<IconX className="size-4" />
-										</Button>
-									</AlertDialogTrigger>
-								</TooltipTrigger>
-								<TooltipContent>{cancelTooltip}</TooltipContent>
-								<AlertDialogContent>
-									<AlertDialogHeader>
-										<AlertDialogTitle>
-											{t("absences.dialog.cancelTitle", "Cancel Absence")}
-										</AlertDialogTitle>
-										<AlertDialogDescription>
-											{t(
-												"absences.dialog.cancelDescription",
-												"Are you sure you want to cancel this absence? This action cannot be undone.",
-											)}
-										</AlertDialogDescription>
-									</AlertDialogHeader>
-									<AlertDialogFooter>
-										<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-										<AlertDialogAction
-											onClick={() => handleCancel(absence.id)}
-											className="bg-destructive text-white hover:bg-destructive/90"
-										>
-											{t("absences.dialog.confirmCancel", "Yes, cancel absence")}
-										</AlertDialogAction>
-									</AlertDialogFooter>
-								</AlertDialogContent>
-							</AlertDialog>
-						</Tooltip>
+					<div className="flex justify-end gap-1">
+						{canChange ? (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setChangingDeputyOf(absence)}
+								aria-label={changeDeputyLabel}
+							>
+								<IconUserShare aria-hidden="true" className="size-4" />
+								<span className="sm:sr-only">{changeDeputyLabel}</span>
+							</Button>
+						) : null}
+						{canAttachSickNote ? (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setAttachingTo(absence)}
+								aria-label={attachLabel}
+							>
+								<IconPaperclip aria-hidden="true" className="size-4" />
+								<span className="sm:sr-only">{attachLabel}</span>
+							</Button>
+						) : null}
+						{canCancel ? (
+							<Tooltip>
+								<AlertDialog>
+									<TooltipTrigger asChild>
+										<AlertDialogTrigger asChild>
+											<Button
+												variant="ghost"
+												size="sm"
+												disabled={cancelingId === absence.id}
+												aria-label={cancelLabel}
+											>
+												<IconX className="size-4" />
+												{/* Touch screens cannot show the tooltip (#846). */}
+												<span className="sm:sr-only">{cancelLabel}</span>
+											</Button>
+										</AlertDialogTrigger>
+									</TooltipTrigger>
+									<TooltipContent>{cancelTooltip}</TooltipContent>
+									<AlertDialogContent>
+										<AlertDialogHeader>
+											<AlertDialogTitle>
+												{t("absences.dialog.cancelTitle", "Cancel Absence")}
+											</AlertDialogTitle>
+											<AlertDialogDescription>
+												{t(
+													"absences.dialog.cancelDescription",
+													"Are you sure you want to cancel this absence? This action cannot be undone.",
+												)}
+											</AlertDialogDescription>
+										</AlertDialogHeader>
+										<AlertDialogFooter>
+											<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+											<AlertDialogAction
+												onClick={() => handleCancel(absence.id)}
+												className="bg-destructive text-white hover:bg-destructive/90"
+											>
+												{t("absences.dialog.confirmCancel", "Yes, cancel absence")}
+											</AlertDialogAction>
+										</AlertDialogFooter>
+									</AlertDialogContent>
+								</AlertDialog>
+							</Tooltip>
+						) : null}
 					</div>
 				);
 			},
@@ -275,12 +344,47 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 				columns={columns}
 				data={filteredAbsences}
 				className="bg-card"
+				pinLastColumn
 				emptyMessage={
 					search
 						? t("absences.table.noSearchResults", "No absences match your search.")
 						: t("absences.table.noRequests", "No absence requests found.")
 				}
 			/>
+			{sickNotesOf ? (
+				<AbsenceSickNotesPanel
+					absence={sickNotesOf}
+					open
+					onOpenChange={(open) => {
+						if (!open) setSickNotesOf(null);
+					}}
+					canAttach={sickNotes.canAttach && takesSickNotes(sickNotesOf)}
+					onChanged={handleSickNotesChanged}
+				/>
+			) : null}
+			{changingDeputyOf ? (
+				<ChangeDeputyDialog
+					absence={changingDeputyOf}
+					open
+					onOpenChange={(open) => {
+						if (!open) setChangingDeputyOf(null);
+					}}
+					onChanged={() => {
+						refresh();
+						onUpdate?.();
+					}}
+				/>
+			) : null}
+			{attachingTo ? (
+				<AttachSickNoteDialog
+					absence={attachingTo}
+					open
+					onOpenChange={(open) => {
+						if (!open) setAttachingTo(null);
+					}}
+					onAttached={handleSickNotesChanged}
+				/>
+			) : null}
 		</div>
 	);
 }

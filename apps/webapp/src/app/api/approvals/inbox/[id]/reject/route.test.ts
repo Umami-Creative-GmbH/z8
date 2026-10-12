@@ -21,10 +21,15 @@ const mockState = vi.hoisted(() => ({
 	findApprovalRequest: vi.fn(),
 	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 	rejectApprovalInboxItem: vi.fn(),
+	coversCurrentApprover: vi.fn(async () => false),
 	logger: {
 		info: vi.fn(),
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	coversCurrentApprover: mockState.coversCurrentApprover,
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {

@@ -12,6 +12,8 @@ import {
 	employeeRateHistory,
 	workPeriod,
 } from "@/db/schema";
+import { clipAbsenceDayRange, countAbsenceDays } from "@/lib/absences/absence-days";
+import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	endOfDay,
@@ -27,6 +29,8 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
+import { readCustomFieldReportValues } from "@/lib/organization/custom-fields/report-reads";
+import type { CustomFieldViewer } from "@/lib/organization/custom-fields/values";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
@@ -99,28 +103,6 @@ async function loadCompletedWorkPeriods(
 		.orderBy(workPeriod.startTime);
 }
 
-function clippedBusinessDays(
-	startDate: string,
-	endDate: string,
-	rangeStart: string,
-	rangeEnd: string,
-): number {
-	let date =
-		comparePlainDates(parsePlainDate(startDate), parsePlainDate(rangeStart)) < 0
-			? parsePlainDate(rangeStart)
-			: parsePlainDate(startDate);
-	const end =
-		comparePlainDates(parsePlainDate(endDate), parsePlainDate(rangeEnd)) > 0
-			? parsePlainDate(rangeEnd)
-			: parsePlainDate(endDate);
-	let days = 0;
-	while (comparePlainDates(date, end) <= 0) {
-		if (date.dayOfWeek < 6) days += 1;
-		date = date.add({ days: 1 });
-	}
-	return days;
-}
-
 /**
  * Generate a comprehensive employee report
  * @param employeeId - ID of the employee
@@ -135,6 +117,13 @@ export async function generateEmployeeReport(
 	startDate: Date,
 	endDate: Date,
 	calendarRange?: ReportCalendarRange,
+	options: {
+		/**
+		 * Whose base role decides which custom fields the report shows (#820);
+		 * without one the report shows none.
+		 */
+		customFieldViewer?: CustomFieldViewer;
+	} = {},
 ): Promise<ReportData> {
 	// Fetch employee info
 	const emp = await db.query.employee.findFirst({
@@ -153,7 +142,7 @@ export async function generateEmployeeReport(
 
 	// Aggregate data in parallel
 	const reportRange = getReportRange(startDate, endDate, calendarRange);
-	const [periods, absences, homeOffice, expectedHours] = await Promise.all([
+	const [periods, absences, homeOffice, expectedHours, customFields] = await Promise.all([
 		loadCompletedWorkPeriods(employeeId, organizationId, reportRange),
 		aggregateAbsences(
 			employeeId,
@@ -178,6 +167,14 @@ export async function generateEmployeeReport(
 				calendarRange?.timezone ?? "utc",
 			),
 		),
+		// Values as of the period's last day in the report's (organization) zone.
+		readCustomFieldReportValues(db, {
+			organizationId,
+			entity: "employee",
+			recordIds: [employeeId],
+			asOf: parsePlainDate(reportRange.endDate),
+			viewer: options.customFieldViewer ?? { kind: "level", level: null },
+		}),
 	]);
 	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
 
@@ -208,6 +205,7 @@ export async function generateEmployeeReport(
 			email: emp.user.email,
 			contractType: emp.contractType,
 			currentHourlyRate: emp.currentHourlyRate,
+			customFields: customFields.byRecord[employeeId] ?? [],
 		},
 		period: {
 			startDate: calendarRange?.startDate ?? format(startDate, "yyyy-MM-dd"),
@@ -366,6 +364,12 @@ export async function aggregateAbsences(
 		},
 		orderBy: (absences, { asc }) => [asc(absences.startDate)],
 	});
+	const isWorkingDay = await loadWorkingDays(db, {
+		organizationId,
+		employeeId,
+		startDate: rangeStartStr,
+		endDate: rangeEndStr,
+	});
 
 	const byCategory = new Map<string, AbsenceSummary>();
 	let totalDays = 0;
@@ -380,12 +384,11 @@ export async function aggregateAbsences(
 		const categoryName = absence.category.name;
 		const categoryType = absence.category.type;
 
-		const days = clippedBusinessDays(
-			absence.startDate,
-			absence.endDate,
-			rangeStartStr,
-			rangeEndStr,
-		);
+		const clipped = clipAbsenceDayRange(absence, {
+			startDate: rangeStartStr,
+			endDate: rangeEndStr,
+		});
+		const days = clipped ? countAbsenceDays(clipped, isWorkingDay) : 0;
 
 		// Update category totals
 		if (!byCategory.has(categoryName)) {

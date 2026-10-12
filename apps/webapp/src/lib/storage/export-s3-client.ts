@@ -30,7 +30,8 @@ export interface S3StorageConfig {
 	forcePathStyle?: boolean;
 }
 
-function getDefaultPresignedUrlTtlSeconds(): number {
+/** The lifetime `getPresignedUrl` signs with when no other is passed. */
+export function getDefaultPresignedUrlTtlSeconds(): number {
 	const parsed = Number.parseInt(env.S3_PRIVATE_PRESIGNED_URL_TTL_SECONDS, 10);
 	return Number.isFinite(parsed) && parsed > 0 ? parsed : 900;
 }

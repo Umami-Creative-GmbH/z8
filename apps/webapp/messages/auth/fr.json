@@ -133,6 +133,18 @@
     "sso-not-configured": "Le SSO n'est pas configuré pour ce domaine",
     "step-one": "1. Utilisez l'e-mail invité",
     "step-two": "2. Revenez ici et rejoignez",
+    "storeApp": {
+      "continue": "Continuer",
+      "description": "Saisissez votre e-mail professionnel. Vous vous connecterez ensuite sur la page de connexion de votre organisation dans le navigateur de votre téléphone.",
+      "error": {
+        "browser": "Impossible d'ouvrir la page de connexion. Veuillez réessayer.",
+        "expired": "La connexion n'a pas abouti ou a expiré. Veuillez réessayer.",
+        "rateLimited": "Trop de tentatives de connexion. Veuillez patienter un instant et réessayer.",
+        "unavailable": "Impossible de joindre Z8. Vérifiez votre connexion et réessayez."
+      },
+      "title": "Se connecter à Z8",
+      "waiting": "En attente de connexion…"
+    },
     "terms": {
       "privacy": "Politique de confidentialité",
       "service": "Conditions d'utilisation"

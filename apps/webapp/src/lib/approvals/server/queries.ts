@@ -8,8 +8,17 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
+import { loadAbsenceDeputyViews } from "@/lib/absences/deputy-store";
+import { getAbsenceDaysByAbsenceId } from "@/lib/absences/absence-days-resolver";
 import type { SickDetail } from "@/lib/absences/types";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
+import { logger } from "@/lib/logger";
+import { resolvePersonnelFileAccess } from "@/lib/personnel-file/access-store";
+import {
+	countSickNotesForAbsences,
+	type SickNoteMarker,
+} from "@/lib/personnel-file/sick-note-store";
 import {
 	categoryIdsFromTimeCorrectionMetadata,
 	categoryNamesForOrganization,
@@ -38,12 +47,14 @@ interface PendingRequestRecord {
 
 interface AbsenceLookupRecord {
 	id: string;
+	employeeId: string;
 	startDate: string;
 	startPeriod: "full_day" | "am" | "pm";
 	endDate: string;
 	endPeriod: "full_day" | "am" | "pm";
 	notes: string | null;
 	sickDetail: SickDetail | null;
+	deputyEmployeeId?: string | null;
 	category: {
 		name: string;
 		type: string;
@@ -167,11 +178,20 @@ export function buildPendingApprovalResult({
 	absencesById,
 	periodsById,
 	categoryNamesById = new Map<string, string>(),
+	sickNotesByAbsenceId = new Map<string, SickNoteMarker>(),
+	deputiesById = new Map<string, AbsenceDeputyView>(),
+	absenceDaysByAbsenceId = new Map<string, number>(),
 }: {
 	pendingRequests: PendingRequestRecord[];
 	absencesById: Map<string, AbsenceLookupRecord>;
 	periodsById: Map<string, WorkPeriodLookupRecord>;
 	categoryNamesById?: Map<string, string>;
+	/** "Sick note attached (n)" per sick-leave absence (#982). */
+	sickNotesByAbsenceId?: Map<string, SickNoteMarker>;
+	/** Each absence's deputy by employee id (#1011). */
+	deputiesById?: Map<string, AbsenceDeputyView>;
+	/** Each absence's absence days, resolved on the server (#979). */
+	absenceDaysByAbsenceId?: Map<string, number>;
 }): {
 	absenceApprovals: ApprovalWithAbsence[];
 	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
@@ -191,13 +211,22 @@ export function buildPendingApprovalResult({
 				entityType: "absence_entry",
 				absence: {
 					id: absence.id,
+					employeeId: absence.employeeId,
 					startDate: absence.startDate,
 					startPeriod: absence.startPeriod,
 					endDate: absence.endDate,
 					endPeriod: absence.endPeriod,
+					absenceDays: absenceDaysByAbsenceId.get(absence.id) ?? 0,
 					notes: absence.notes,
 					sickDetail:
 						absence.category.type === "sick" ? absence.sickDetail : null,
+					sickNotes:
+						absence.category.type === "sick"
+							? (sickNotesByAbsenceId.get(absence.id) ?? null)
+							: null,
+					deputy: absence.deputyEmployeeId
+						? (deputiesById.get(absence.deputyEmployeeId) ?? null)
+						: null,
 					category: {
 						name: absence.category.name,
 						type: absence.category.type,
@@ -387,12 +416,79 @@ export async function getPendingApprovals(): Promise<{
 		];
 	}
 
+	const absenceRecords = absences as AbsenceLookupRecord[];
+	const absenceDaysByAbsenceId = await getAbsenceDaysByAbsenceId(db, {
+		organizationId: currentEmployee.organizationId,
+		absences: absenceRecords,
+	});
+
 	return buildPendingApprovalResult({
 		pendingRequests,
 		absencesById,
 		periodsById,
 		categoryNamesById,
+		absenceDaysByAbsenceId,
+		sickNotesByAbsenceId: await loadSickNoteMarkers({
+			organizationId: currentEmployee.organizationId,
+			viewerUserId: currentEmployee.userId,
+			absences: absences as AbsenceLookupRecord[],
+		}),
+		deputiesById: await loadDeputyViews({
+			organizationId: currentEmployee.organizationId,
+			absences: absences as AbsenceLookupRecord[],
+		}),
 	});
+}
+
+/** Each pending absence's deputy (#1011). Best effort, like the sick note markers. */
+async function loadDeputyViews(input: {
+	organizationId: string;
+	absences: AbsenceLookupRecord[];
+}): Promise<Map<string, AbsenceDeputyView>> {
+	const deputyEmployeeIds = input.absences.flatMap((absence) =>
+		absence.deputyEmployeeId ? [absence.deputyEmployeeId] : [],
+	);
+	if (deputyEmployeeIds.length === 0) return new Map();
+	try {
+		return await loadAbsenceDeputyViews(db, {
+			organizationId: input.organizationId,
+			deputyEmployeeIds,
+		});
+	} catch (error) {
+		logger.error({ error }, "Failed to load absence deputies for approvals");
+		return new Map();
+	}
+}
+
+/**
+ * "Sick note attached (n)" for the sick-leave absences awaiting the approver
+ * (#982). Whether the approver may open the notes comes from their personnel
+ * file access, never from approving (ADR 0002). Best effort: the approvals
+ * list never fails because of it.
+ */
+async function loadSickNoteMarkers(input: {
+	organizationId: string;
+	viewerUserId: string;
+	absences: AbsenceLookupRecord[];
+}): Promise<Map<string, SickNoteMarker>> {
+	const absenceIds = input.absences
+		.filter((absence) => absence.category.type === "sick")
+		.map((absence) => absence.id);
+	if (absenceIds.length === 0) return new Map();
+	try {
+		const access = await resolvePersonnelFileAccess(db, {
+			userId: input.viewerUserId,
+			organizationId: input.organizationId,
+		});
+		return await countSickNotesForAbsences(db, {
+			organizationId: input.organizationId,
+			absenceIds,
+			access,
+		});
+	} catch (error) {
+		logger.error({ error }, "Failed to load sick note markers for approvals");
+		return new Map();
+	}
 }
 
 export async function getPendingApprovalCounts() {

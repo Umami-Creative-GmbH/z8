@@ -105,6 +105,7 @@ export function buildStaticAppSearchResults({
 	showComplianceNav,
 	showPayrollNav,
 	featureFlags,
+	managesProject,
 }: StaticAppSearchInput): AppSearchResult[] {
 	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map(
 		(destination) => ({
@@ -148,6 +149,13 @@ export function buildStaticAppSearchResults({
 				href: "/scheduling",
 			});
 		}
+	} else if (employeeRole === "employee" && featureFlags?.shiftsEnabled) {
+		pageResults.push({
+			type: "page",
+			id: "page:my-schedule",
+			title: t("nav.my-schedule", "My Schedule"),
+			href: "/scheduling",
+		});
 	}
 
 	if (showComplianceNav) {
@@ -185,6 +193,7 @@ export function buildStaticAppSearchResults({
 		accessTier: settingsAccessTier,
 		billingEnabled,
 		featureFlags,
+		managesProject,
 	});
 
 	const settingsResults: AppSearchResult[] = visibleSettings.map((setting) => ({

@@ -24,6 +24,31 @@
       "nextYear": "Następny rok",
       "previousYear": "Poprzedni rok"
     },
+    "deputy": {
+      "away": "Nieobecność: {dates}",
+      "awayOption": "{name} · Nieobecność: {dates}",
+      "awayWarning": "{name} ma zaplanowaną nieobecność w tych terminach. Nadal możesz wybrać tę osobę.",
+      "changeAction": "Zmień zastępcę",
+      "changed": "Zapisano zastępcę",
+      "changeDescription": "Zastępca przejmuje obowiązki podczas Twojej nieobecności. Zmiana zastępcy nie wymaga ponownego zatwierdzenia.",
+      "changeDescriptionFor": "Zastępca przejmuje obowiązki podczas nieobecności użytkownika {name}. Zmiana zastępcy nie wymaga ponownego zatwierdzenia.",
+      "changeFailed": "Nie udało się zapisać zastępcy",
+      "changeTitle": "Zmień zastępcę",
+      "contactOnly": "{name} będzie wyświetlać się wyłącznie jako osoba do kontaktu i nie może decydować o zatwierdzeniach.",
+      "errors": {
+        "ended": "Nie można już zmienić zastępcy: ta nieobecność dobiegła końca.",
+        "required": "Wybierz zastępcę: ten typ nieobecności go wymaga.",
+        "self": "Pracownik nie może być swoim własnym zastępcą.",
+        "unavailable": "Zastępca musi być aktywnym pracownikiem tej organizacji."
+      },
+      "help": "Współpracownik zastępujący Cię podczas Twojej nieobecności. Potwierdzenie z jego strony nie jest wymagane.",
+      "label": "Zastępca",
+      "labelOptional": "Zastępca (opcjonalnie)",
+      "labelRequired": "Zastępca *",
+      "none": "Brak zastępcy",
+      "placeholder": "Wybierz zastępcę…",
+      "save": "Zapisz zastępcę"
+    },
     "dialog": {
       "cancelDescription": "Czy na pewno chcesz anulować ten wniosek o nieobecność? Tej czynności nie można cofnąć.",
       "cancelTitle": "Anuluj wniosek o nieobecność",
@@ -36,10 +61,10 @@
     },
     "featureName": "zarządzaj nieobecnościami",
     "form": {
+      "absenceDays": "Dni nieobecności:",
       "absenceType": "Typ nieobecności *",
       "autoApproved": "(Automatycznie zatwierdzane)",
       "balanceAfterRequest": "Bilans po wniosku:",
-      "businessDays": "Dni robocze:",
       "daysRemaining": "Pozostałe dni:",
       "description": "Złóż wniosek o czas wolny. Twój przełożony otrzyma powiadomienie w celu zatwierdzenia.",
       "duration": "Czas trwania nieobecności",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Brak ryzyka w opublikowanej obsadzie",
       "noCoverageRulesConfigured": "Brak skonfigurowanych zasad obsady dla dotkniętych zmian",
       "noHolidays": "Brak przypisanych świąt w tym zakresie",
+      "noWorkingDays": "Ten zakres nie zawiera dni roboczych.",
       "remainingAfter": "Pozostało po wniosku",
       "requested": "Zawnioskowano",
       "title": "Inteligentny planista",
-      "unavailable": "Podgląd planowania niedostępny. Nadal możesz wysłać swój wniosek."
+      "unavailable": "Podgląd planowania niedostępny. Nadal możesz wysłać swój wniosek.",
+      "workBalance": "Saldo czasu pracy",
+      "workBalanceAfter": "Po wniosku",
+      "workBalanceCurrent": "Aktualne",
+      "workBalanceDrawn": "Pobrane przez wniosek",
+      "workBalanceNegative": "Twoje saldo czasu pracy po tym wniosku byłoby ujemne. Mimo to możesz go złożyć."
     },
     "requestAbsence": "Zawnioskuj o nieobecność",
+    "sickNotes": {
+      "attachAction": "Załącz zwolnienie lekarskie",
+      "attach": {
+        "defaultTitle": "Zwolnienie lekarskie {dateRange}",
+        "description": "Dodaj zdjęcia lub pliki PDF zwolnienia lekarskiego: pliki PDF, JPEG, PNG lub WebP o rozmiarze do 20 MB każdy. Każdy plik jest zapisywany jako osobne zwolnienie lekarskie w Twoich aktach osobowych.",
+        "documentDate": "Data dokumentu",
+        "failed": "Przesyłanie nie powiodło się",
+        "fileRequired": "Wybierz co najmniej jeden plik.",
+        "officerDescription": "Dodaj zdjęcia lub pliki PDF zwolnienia lekarskiego: pliki PDF, JPEG, PNG lub WebP o rozmiarze do 20 MB każdy. Każdy plik jest zapisywany jako osobne zwolnienie lekarskie w aktach osobowych pracownika.",
+        "progress": "Postęp przesyłania",
+        "progressCount": "Przesłano {done} z {total}",
+        "share": "Udostępnij pracownikowi",
+        "sharedNote": "Swoje zwolnienia lekarskie możesz zobaczyć w sekcji Moje dokumenty oraz przy tej nieobecności. Osoba zatwierdzająca widzi tylko informację o załączeniu zwolnienia. Możesz usunąć zwolnienie lekarskie w ciągu 24 godzin od jego przesłania.",
+        "shareHint": "Wyłączone: tylko dla działu HR, pracownik widzi jedynie, że załączono zwolnienie lekarskie. Włączone: pracownik widzi je w sekcji Moje dokumenty.",
+        "submit": "Załącz",
+        "success": "{count, plural, one {Załączono zwolnienie lekarskie} few {Załączono # zwolnienia lekarskie} many {Załączono # zwolnień lekarskich} other {Załączono # zwolnienia lekarskiego}}",
+        "title": "Załącz zwolnienie lekarskie",
+        "titleLabel": "Tytuł"
+      },
+      "files": {
+        "chooseFiles": "Wybierz pliki",
+        "defaultTitleUndated": "Zwolnienie lekarskie",
+        "incomplete": "Nadaj każdemu zwolnieniu lekarskiemu tytuł i datę dokumentu.",
+        "remove": "Usuń {fileName}",
+        "takePhoto": "Zrób zdjęcie",
+        "tooMany": "Możesz dodać do {max} plików."
+      },
+      "marker": "Załączono zwolnienie lekarskie ({count})",
+      "panel": {
+        "delete": "Usuń {title}",
+        "description": "Zwolnienia lekarskie dla nieobecności {dateRange}.",
+        "empty": "Brak zwolnień lekarskich, które możesz otworzyć.",
+        "linkExisting": "Powiąż zwolnienie lekarskie",
+        "loadFailed": "Nie udało się załadować zwolnień lekarskich.",
+        "title": "Zwolnienia lekarskie",
+        "unlink": "Odłącz {title}",
+        "unlinked": "Zwolnienie lekarskie zostało odłączone",
+        "unlinkFailed": "Nie udało się odłączyć zwolnienia lekarskiego."
+      },
+      "request": {
+        "attachFailed": "Złożono wniosek o nieobecność, ale nie udało się załączyć {files}. Możesz załączyć zwolnienia lekarskie z poziomu nieobecności w późniejszym terminie.",
+        "description": "Dodaj zdjęcia lub pliki PDF swojego zwolnienia lekarskiego: pliki PDF, JPEG, PNG lub WebP o rozmiarze do 20 MB każdy. Każdy plik jest zapisywany jako osobne zwolnienie lekarskie w Twoich aktach osobowych. Osoba zatwierdzająca widzi tylko, że załączono zwolnienie lekarskie.",
+        "title": "Zwolnienie lekarskie (opcjonalnie)",
+        "uploadFailed": "Nie udało się przesłać pliku {fileName}. Usuń go lub spróbuj ponownie."
+      }
+    },
     "status": {
       "approved": "Zatwierdzone",
       "pending": "Oczekujące",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Wpisy czasu zablokowane",
       "category": "Kategoria",
+      "deputy": "Zastępca",
       "duration": "Czas trwania",
       "employee": "Pracownik",
       "noEvents": "Brak wydarzeń na ten dzień",
@@ -177,6 +255,7 @@
       "category": "Kategoria",
       "credited": "Zaliczone",
       "dateRange": "Zakres dat",
+      "deputy": "Zastępca",
       "duration": "Czas trwania",
       "editedBy": "Edytowane przez",
       "employee": "Pracownik",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "KT",
+      "closedDay": "W zamkniętym miesiącu",
       "dayEvents": "{count, plural, one {# wydarzenie: {titles}} many {# wydarzeń: {titles}} other {# wydarzenia: {titles}} }",
       "dayLabel": "{date}: zarejestrowano {actual}, wymagane {required}, {delta} {status}.",
       "description": "Dzienne, tygodniowe i miesięczne godziny polityki",

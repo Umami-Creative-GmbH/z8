@@ -4,7 +4,9 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { plainDateAt } from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -52,8 +54,8 @@ const ids = {
 	project: "d7940000-0000-4000-8000-0000000000b1",
 } as const;
 const users = [ids.adminUser, ids.workerUser];
-const rangeStart = new Date("2026-03-01T00:00:00Z");
-const rangeEnd = new Date("2026-03-31T23:59:59Z");
+const rangeStart = "2026-03-01";
+const rangeEnd = "2026-03-31";
 
 describe("project reports on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -208,5 +210,40 @@ describe("project reports on PostgreSQL", () => {
 			expect.objectContaining({ employeeId: ids.worker, workPeriodCount: 1 }),
 		]);
 		expect(result.data.timeSeries).toEqual([{ date: "2026-03-10", hours: 2, cumulativeHours: 2 }]);
+	});
+
+	it("counts days until the deadline from today in the organization's timezone", async () => {
+		// The deadline is today in Kiritimati (UTC+14), stored as that day's UTC midnight.
+		const kiritimatiToday = plainDateAt(Temporal.Now.instant(), "Pacific/Kiritimati");
+		await admin.query("update project set deadline = $1 where id = $2", [
+			`${kiritimatiToday.toString()}T00:00:00Z`,
+			ids.project,
+		]);
+		const daysUntilDeadline = async (timezone: string) => {
+			await admin.query("update organization set timezone = $1 where id = $2", [
+				timezone,
+				ids.organization,
+			]);
+			const result = await getProjectsOverview(rangeStart, rangeEnd);
+			if (!result.success) throw new Error(result.error);
+			return result.data.projects[0]?.daysUntilDeadline;
+		};
+
+		expect(await daysUntilDeadline("Pacific/Kiritimati")).toBe(0);
+		// Pago Pago (UTC-11) is always at least a calendar day behind Kiritimati.
+		expect(await daysUntilDeadline("Pacific/Pago_Pago")).toBeGreaterThanOrEqual(1);
+	});
+
+	it("rejects a period that is not two ISO days in order", async () => {
+		for (const [from, to] of [
+			["2026-02-30", "2026-03-31"],
+			["2026-03-31", "2026-03-01"],
+			["2026-03-01T00:00:00Z", "2026-03-31"],
+		]) {
+			await expect(getProjectsOverview(from, to)).resolves.toMatchObject({ success: false });
+			await expect(getProjectDetailedReport(ids.project, from, to)).resolves.toMatchObject({
+				success: false,
+			});
+		}
 	});
 });

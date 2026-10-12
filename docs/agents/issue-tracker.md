@@ -32,7 +32,15 @@ be linked as a native GitHub sub-issue of the originating spec issue.
 The spec issue is the parent; each derived ticket is a child.
 
 If the spec has not been published as an issue, publish it first.
-After creating each ticket, get its numeric database ID with
+
+Publish with `node scripts/publish-tickets.mjs <manifest.json>`. It
+creates the tickets blockers-first, attaches each as a sub-issue, adds
+the native `blocked_by` edges, and reads every link back. Run it with
+`--dry-run` first; the manifest format is in the script's header. Write
+the manifest and ticket bodies in the scratchpad, not the repo.
+
+To link by hand instead, after creating each ticket get its numeric
+database ID with
 `gh api repos/Umami-Creative-GmbH/z8/issues/<ticket-number> --jq .id`,
 then attach it to the spec:
 
@@ -40,6 +48,15 @@ then attach it to the spec:
 gh api --method POST \
   repos/Umami-Creative-GmbH/z8/issues/<spec-number>/sub_issues \
   -F sub_issue_id=<ticket-db-id>
+```
+
+Add each blocking edge on the blocked ticket, using the blocker's
+database ID:
+
+```bash
+gh api --method POST \
+  repos/Umami-Creative-GmbH/z8/issues/<ticket-number>/dependencies/blocked_by \
+  -F issue_id=<blocker-db-id>
 ```
 
 Use the spec's repository for the parent endpoint and the ticket's

@@ -24,6 +24,7 @@ import type {
 	ApprovalWorkflowCommandRequest,
 	ApprovalWorkflowLifecycleMode,
 	ApprovalWorkflowPrincipal,
+	ApprovalWorkflowAuthorizationGrant,
 	ApprovalWorkflowSnapshot,
 	ResolvedStage,
 	StageActivationInput,
@@ -626,12 +627,7 @@ function engineFixture(
 		claim?: "reserved" | "mismatch" | "completed";
 		claimSequence?: Array<"reserved" | "mismatch" | "completed">;
 		completedResult?: ApprovalCommandResult;
-		authorization?:
-			| "active_assignment"
-			| "requester"
-			| "manage_approval"
-			| "system"
-			| "offboarding_reassignment";
+		authorization?: ApprovalWorkflowAuthorizationGrant;
 		authorizationError?: Error;
 		actor?:
 			| { kind: "employee"; employeeId: string; userId: string }
@@ -2158,6 +2154,37 @@ describe("approval transition engine atomic orchestration", () => {
 		expect(JSON.stringify(plan)).not.toContain(offboardingPrincipal.claimToken);
 	});
 
+	const deputyGrant = {
+		kind: "covering_deputy" as const,
+		actingFor: {
+			approverEmployeeId: "e0000000-0000-4000-8000-0000000000a1",
+			absenceId: "e0000000-0000-4000-8000-0000000000a2",
+		},
+	};
+
+	it("records whom a covering deputy's decision acted for on the assignment event (#1016)", async () => {
+		const fixture = engineFixture({ authorization: deputyGrant });
+		await fixture.engine.execute(engineRequest());
+		const plan = fixture.appliedPlans[0];
+		expect(plan?.events[0]).toMatchObject({
+			eventType: "assignment.approved",
+			metadata: {
+				stageId: engineIds.stage,
+				actingForEmployeeId: deputyGrant.actingFor.approverEmployeeId,
+				actingForAbsenceId: deputyGrant.actingFor.absenceId,
+			},
+		});
+	});
+
+	it("never admits a covering deputy grant for anything but approve or reject", async () => {
+		const fixture = engineFixture({ authorization: deputyGrant });
+		await expect(
+			fixture.engine.execute(
+				engineRequest({ command: { type: "cancel", reason: "withdrawn" } }),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
+	});
+
 	it("re-verifies handover evidence before replaying a completed receipt", async () => {
 		const denied = engineFixture({
 			claim: "completed",
@@ -2316,6 +2343,44 @@ describe("approval transition engine atomic orchestration", () => {
 			fixture.engine.execute(
 				engineRequest({
 					principal: { kind: "system", systemId },
+					command,
+				}),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
+		expect(fixture.calls).not.toContain("loadSource");
+	});
+
+	it.each([
+		{
+			label: "cancel another kind",
+			snapshot: engineSnapshot(),
+			command: { type: "cancel" as const, reason: "period_submission_withdrawn_after_change" },
+		},
+		{
+			label: "approve a period submission",
+			snapshot: engineSnapshot({
+				workflowType: "period_submission",
+				sourceType: "period_submission",
+			}),
+			command: {
+				type: "approve" as const,
+				stageId: engineIds.stage,
+				assignmentId: engineIds.assignment,
+			},
+		},
+	])("forbids the period submission change principal to $label (#1062)", async ({
+		snapshot,
+		command,
+	}) => {
+		const fixture = engineFixture({
+			authorization: "system",
+			actor: { kind: "system", employeeId: null, userId: null },
+			snapshot,
+		});
+		await expect(
+			fixture.engine.execute(
+				engineRequest({
+					principal: { kind: "system", systemId: "period-submission-change" },
 					command,
 				}),
 			),

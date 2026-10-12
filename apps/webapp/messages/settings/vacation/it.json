@@ -168,6 +168,16 @@
       "policyUpdated": "Policy aggiornata correttamente",
       "required": "Obbligatorio",
       "saveFailed": "Impossibile salvare la policy",
+      "sickNotes": {
+        "description": "I certificati medici sono conservati nel fascicolo personale del dipendente. Gli approvatori e i manager vedono solo che ne è presente uno in allegato.",
+        "disabled": "I dipendenti non possono più allegare certificati medici",
+        "enabled": "I dipendenti ora possono allegare certificati medici",
+        "help": "I dipendenti allegano foto o PDF dei loro certificati medici alla propria richiesta di congedo per malattia. In Germania, i datori di lavoro recuperano il certificato medico elettronico (eAU) dalle casse malattia, quindi le foto servono principalmente per le assicurazioni private, i mini-job, l'Austria e la Svizzera, e i certificati per malattia dei figli.",
+        "openOrganizationSettings": "Apri le impostazioni dell'organizzazione",
+        "personnelFilesRequired": "I certificati medici vengono archiviati nei fascicoli personali. Attiva prima i fascicoli personali nelle impostazioni dell'organizzazione.",
+        "title": "Certificati medici",
+        "toggle": "I dipendenti possono allegare certificati medici"
+      },
       "since": "da",
       "startingOn": "a partire dal",
       "tab": {

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { approvalRequest, employee } from "@/db/schema";
 import { readReviewBindingAuthority } from "@/lib/approvals/authority";
+import { checkDeputyCardPress } from "@/lib/approvals/deputy/deputy-card-press";
 import {
 	APPROVAL_INVOCATION_SCHEME_VERSION,
 	type ApprovalInvocationScheme,
@@ -22,9 +23,11 @@ import {
 	decideBoundAbsenceInvocation,
 	decideBoundLegacyAbsenceInvocation,
 } from "@/lib/approvals/server/absence-approvals";
+import { decideBoundPeriodSubmissionInvocation } from "@/lib/approvals/server/period-submission-bound-decision";
 import { decideBoundLegacyTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-report-bound-decision";
 import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { BotPlatform } from "./types";
@@ -159,7 +162,12 @@ export type BoundBotApprovalResult =
 	  }
 	| { status: "review_required" }
 	| { status: "conflict" }
-	| { status: "not_found" };
+	| { status: "not_found" }
+	/**
+	 * A deputy card (#1017) pressed after its recipient stopped covering for the
+	 * absent approver it acts for: nothing was decided.
+	 */
+	| { status: "not_covering"; approverName: string };
 
 const INVOCATION_SCHEMES: Partial<
 	Record<BotPlatform, ApprovalInvocationScheme>
@@ -184,6 +192,18 @@ export async function attemptBoundBotApproval(
 		// incomplete identity is refused by the decision owner's parser.
 		return { status: "review_required" };
 	}
+	// A deputy card (#1017) decides only while its recipient covers for the
+	// absent approver it acts for, and only while the approval is still theirs.
+	const deputyPress = await checkDeputyCardPress(db, {
+		organizationId: input.organizationId,
+		bindingId: input.bindingId,
+		actorEmployeeId: input.actorEmployeeId,
+		at: systemClock.nowInstant(),
+	});
+	if (deputyPress.kind === "not_covering") {
+		return { status: "not_covering", approverName: deputyPress.approverName };
+	}
+	if (deputyPress.kind === "moved") return { status: "review_required" };
 	const decision = {
 		database: db,
 		organizationId: input.organizationId,
@@ -225,9 +245,12 @@ export async function attemptBoundBotApproval(
 					? await decideBoundLegacyTimeInvocation(decision)
 					: // Claims (#296) and reports (#623) share the kind; the revision names the subject.
 						await decideBoundLegacyTravelExpenseInvocation(decision)
-			: isTimeApprovalWorkflowType(workflowType)
-				? await decideBoundTimeInvocation(decision)
-				: await decideBoundAbsenceInvocation(decision);
+			: workflowType === "period_submission"
+				? // Canonical-only (#1059): its own owner, keyed by the bound assignment.
+					await decideBoundPeriodSubmissionInvocation(decision)
+				: isTimeApprovalWorkflowType(workflowType)
+					? await decideBoundTimeInvocation(decision)
+					: await decideBoundAbsenceInvocation(decision);
 	return result.status === "review_required"
 		? { status: "review_required" }
 		: result;

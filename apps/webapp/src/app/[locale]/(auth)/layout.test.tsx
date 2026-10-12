@@ -3,6 +3,7 @@
 import { render, screen } from "@testing-library/react";
 import { isValidElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AuthBackground } from "@/components/auth-background";
 import AuthLayout, { AuthLayoutContent } from "./layout";
 import source from "./layout.tsx?raw";
 
@@ -28,12 +29,6 @@ vi.mock("@/tolgee/route-boundary", () => ({
 
 vi.mock("next/headers", () => ({
 	headers: mockState.headers,
-}));
-
-vi.mock("next/image", () => ({
-	default: ({ alt, className }: { alt: string; className?: string }) => (
-		<img alt={alt} className={className} data-testid="auth-side-image" />
-	),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -106,6 +101,27 @@ vi.mock("@/tolgee/shared", () => ({
 	ALL_LANGUAGES: ["en"],
 }));
 
+/** The page wrapper: the full-page background, then the request-dependent content's Suspense. */
+function authLayoutParts(children: React.ReactNode) {
+	const boundary = AuthLayout({
+		params: Promise.resolve({ locale: "en" }),
+		children,
+	});
+	expect(boundary.props.route).toBe("/sign-in");
+	const wrapper = boundary.props.children;
+	if (
+		!isValidElement<{ className: string; children: React.ReactNode[] }>(wrapper)
+	)
+		throw new Error("Expected AuthLayout to return a page wrapper");
+	const [background, suspense] = wrapper.props.children;
+	if (
+		!isValidElement(background) ||
+		!isValidElement<{ fallback: React.ReactNode }>(suspense)
+	)
+		throw new Error("Expected the background and a Suspense boundary");
+	return { wrapper, background, suspense };
+}
+
 describe("AuthLayout", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -123,33 +139,23 @@ describe("AuthLayout", () => {
 		mockState.env.TURNSTILE_SITE_KEY = undefined;
 	});
 
-	it("places request-dependent auth content behind Suspense", () => {
-		const boundary = AuthLayout({
-			params: Promise.resolve({ locale: "en" }),
-			children: <div>Auth content</div>,
-		});
-		expect(boundary.props.route).toBe("/sign-in");
-		const layout = boundary.props.children;
+	it("places request-dependent auth content behind Suspense, above the background", () => {
+		const { wrapper, background, suspense } = authLayoutParts(
+			<div>Auth content</div>,
+		);
 
-		expect(layout).not.toBeInstanceOf(Promise);
-		expect(isValidElement(layout)).toBe(true);
-		if (!isValidElement(layout))
-			throw new Error("Expected AuthLayout to return a React element");
-		expect(layout.type).toBe(Suspense);
+		expect(wrapper.props.className).toContain("min-h-svh");
+		expect(wrapper.props.className).toContain("bg-background");
+		expect(background.type).toBe(AuthBackground);
+		expect(suspense.type).toBe(Suspense);
 	});
 
 	it("renders neutral fallback geometry without tenant or child data", () => {
-		const boundary = AuthLayout({
-			params: Promise.resolve({ locale: "en" }),
-			children: <div>secret.acme.example tenant sign-in</div>,
-		});
-		expect(boundary.props.route).toBe("/sign-in");
-		const layout = boundary.props.children;
-		if (!isValidElement<{ fallback: React.ReactNode }>(layout)) {
-			throw new Error("Expected AuthLayout to return Suspense");
-		}
+		const { suspense } = authLayoutParts(
+			<div>secret.acme.example tenant sign-in</div>,
+		);
 
-		render(layout.props.fallback);
+		render(suspense.props.fallback);
 
 		expect(
 			screen
@@ -162,9 +168,6 @@ describe("AuthLayout", () => {
 		expect(screen.getByText("Anmeldung wird geladen")).toBeTruthy();
 		expect(screen.getByTestId("auth-layout-loading").className).toContain(
 			"min-h-svh",
-		);
-		expect(screen.getByTestId("auth-layout-loading").className).toContain(
-			"bg-background",
 		);
 		expect(screen.getByTestId("auth-controls-loading")).toBeTruthy();
 		expect(screen.getByTestId("auth-footer-loading")).toBeTruthy();
@@ -184,23 +187,18 @@ describe("AuthLayout", () => {
 		expect(source.slice(0, contentStart)).not.toContain("connection()");
 	});
 
-	it("uses a full-page background image behind the auth content", async () => {
+	// The background image itself streams from AuthBackground (layout-background.test.tsx).
+	it("stacks the auth content and readable controls above the full-page background", async () => {
 		render(
 			await AuthLayoutContent({
 				children: <div>Auth content</div>,
 			}),
 		);
 
-		const content = screen.getByText("Auth content");
-		const authSection = content.closest("section");
-		const backgroundImage = screen.getByTestId("auth-side-image");
+		const authSection = screen.getByText("Auth content").closest("section");
 
 		expect(authSection?.className).toContain("relative");
 		expect(authSection?.className).toContain("z-10");
-		expect(backgroundImage.className).toContain("absolute");
-		expect(backgroundImage.className).toContain("inset-0");
-		expect(backgroundImage.className).toContain("object-cover");
-		expect(backgroundImage.closest("aside")).toBeNull();
 		const controls = screen
 			.getByRole("button", { name: "Font size" })
 			.closest("div");
@@ -212,6 +210,14 @@ describe("AuthLayout", () => {
 		expect(controls?.className).toContain(
 			"[&_[data-slot=select-trigger]]:!bg-slate-950/85",
 		);
+	});
+
+	it("clears the notch and home indicator of the store app shell (#846)", async () => {
+		render(await AuthLayoutContent({ children: <div>Auth content</div> }));
+
+		const authSection = screen.getByText("Auth content").closest("section");
+		expect(authSection?.className).toContain("pt-[max(1rem,env(safe-area-inset-top))]");
+		expect(authSection?.className).toContain("pb-[env(safe-area-inset-bottom)]");
 	});
 
 	it("does not fall back to the platform cookie script on custom domains", async () => {

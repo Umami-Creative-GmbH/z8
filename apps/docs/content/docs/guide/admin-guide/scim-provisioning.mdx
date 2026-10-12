@@ -25,9 +25,10 @@ Choose a mandatory default role template before creating the connection. It defi
 ## Create The Connection
 
 1. Open **Enterprise Identity Setup** for the organization.
-2. In **SCIM Provisioning**, select the default role template and choose **Create SCIM connection**.
-3. Copy the displayed credential and store it securely in your identity provider. It is displayed once and cannot be recovered later.
-4. Configure the identity provider with this SCIM endpoint:
+2. Select the **Default role template** in the **Access Policy** step and choose **Save access policy**.
+3. In **SCIM Provisioning**, choose **Create SCIM connection**.
+4. Copy the displayed credential and store it securely in your identity provider. It is displayed once and cannot be recovered later.
+5. Configure the identity provider with this SCIM endpoint:
 
    ```text
    https://your-z8-domain.example/api/auth/scim/v2
@@ -61,7 +62,7 @@ SCIM provisioning supports Users and Groups. For a complete correction after a p
 Review resulting organization members and employee records in [Employee Management](/docs/guide/admin-guide/employee-management).
 
 <Callout type="info" title="Use Stable Group IDs">
-  Configure group mappings with stable provider external IDs, not display names. Display names can change; the external ID preserves the mapping.
+  Group role mappings are keyed by the provider's stable Group external ID, not its display name. Display names can change; the external ID preserves the mapping.
 </Callout>
 
 ---

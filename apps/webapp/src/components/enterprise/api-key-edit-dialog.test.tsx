@@ -33,6 +33,7 @@ const apiKey: ApiKeyResponse = {
 	prefix: "z8_org_prod",
 	organizationId: "org-1",
 	createdBy: "user-1",
+	creator: null,
 	createdAt: "2026-07-01T12:00:00.000Z",
 	updatedAt: "2026-07-01T12:00:00.000Z",
 	expiresAt: null,
@@ -51,7 +52,7 @@ const replacementApiKey: ApiKeyResponse = {
 	name: "Reporting API",
 	prefix: "z8_org_reports",
 	enabled: true,
-	scopes: ["reports:read"],
+	scopes: ["customers:read"],
 	rateLimitMax: 900,
 };
 
@@ -104,6 +105,13 @@ function renderDialog() {
 	return render(<Harness />);
 }
 
+/** Waits for the dialog's open auto-focus on Name, which otherwise can land late under load and take keystrokes meant for another field. */
+async function waitForOpenFocus() {
+	await waitFor(() =>
+		expect(document.activeElement).toBe(screen.getByRole("textbox", { name: /Name/ })),
+	);
+}
+
 async function renderPendingDialog() {
 	const user = userEvent.setup();
 	let resolveUpdate: ((result: { success: true }) => void) | undefined;
@@ -147,7 +155,7 @@ describe("ApiKeyEditDialog", () => {
 				.getByRole("checkbox", { name: "Read employees" })
 				.getAttribute("aria-checked"),
 		).toBe("true");
-		expect(screen.getByLabelText("Max requests per minute")).toHaveProperty(
+		expect(screen.getByLabelText("Max requests")).toHaveProperty(
 			"value",
 			"250",
 		);
@@ -205,9 +213,9 @@ describe("ApiKeyEditDialog", () => {
 		await user.clear(name);
 		await user.type(name, "Unsaved name");
 		await user.click(screen.getByRole("switch", { name: "Key Enabled" }));
-		await user.click(screen.getByRole("checkbox", { name: "Read reports" }));
-		await user.clear(screen.getByLabelText("Max requests per minute"));
-		await user.type(screen.getByLabelText("Max requests per minute"), "400");
+		await user.click(screen.getByRole("checkbox", { name: "Read customers" }));
+		await user.clear(screen.getByLabelText("Max requests"));
+		await user.type(screen.getByLabelText("Max requests"), "400");
 
 		rerenderWithApiKey(replacementApiKey);
 
@@ -228,10 +236,10 @@ describe("ApiKeyEditDialog", () => {
 		).toBe("false");
 		expect(
 			screen
-				.getByRole("checkbox", { name: "Read reports" })
+				.getByRole("checkbox", { name: "Read customers" })
 				.getAttribute("aria-checked"),
 		).toBe("true");
-		expect(screen.getByLabelText("Max requests per minute")).toHaveProperty(
+		expect(screen.getByLabelText("Max requests")).toHaveProperty(
 			"value",
 			"900",
 		);
@@ -355,7 +363,7 @@ describe("ApiKeyEditDialog", () => {
 		expect(name.getAttribute("aria-describedby")).toContain(error.id);
 
 		await user.type(name, "c");
-		const rateLimit = screen.getByLabelText("Max requests per minute");
+		const rateLimit = screen.getByLabelText("Max requests");
 		await user.clear(rateLimit);
 		error = screen.getByRole("alert");
 		expect(error.textContent).toBe("Anfragelimit ist erforderlich");
@@ -383,7 +391,8 @@ describe("ApiKeyEditDialog", () => {
 	])("rejects a %s rate limit", async (_case, value, message) => {
 		const user = userEvent.setup();
 		renderDialog();
-		const rateLimit = screen.getByLabelText("Max requests per minute");
+		await waitForOpenFocus();
+		const rateLimit = screen.getByLabelText("Max requests");
 
 		await user.clear(rateLimit);
 		if (value) await user.type(rateLimit, value);
@@ -400,7 +409,7 @@ describe("ApiKeyEditDialog", () => {
 	it("restores a valid rate value when disabling rate limiting", async () => {
 		const user = userEvent.setup();
 		renderDialog();
-		const rateLimit = screen.getByLabelText("Max requests per minute");
+		const rateLimit = screen.getByLabelText("Max requests");
 
 		await user.clear(rateLimit);
 		expect(screen.getByRole("button", { name: "Save" })).toHaveProperty(
@@ -419,6 +428,7 @@ describe("ApiKeyEditDialog", () => {
 				scopes: ["time-entries:read", "employees:read"],
 				rateLimitEnabled: false,
 				rateLimitMax: 250,
+				rateLimitTimeWindow: 60000,
 			}),
 		);
 	});
@@ -432,7 +442,7 @@ describe("ApiKeyEditDialog", () => {
 		await user.type(name, "  Payroll export  ");
 		await user.click(screen.getByRole("switch", { name: "Key Enabled" }));
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
-		await user.click(screen.getByRole("checkbox", { name: "Read reports" }));
+		await user.click(screen.getByRole("checkbox", { name: "Read customers" }));
 		await user.click(
 			screen.getByRole("checkbox", { name: "Enable rate limiting" }),
 		);
@@ -442,9 +452,10 @@ describe("ApiKeyEditDialog", () => {
 			expect(updateApiKey).toHaveBeenCalledWith("org-1", "key-1", {
 				name: "Payroll export",
 				enabled: true,
-				scopes: ["time-entries:read", "reports:read"],
+				scopes: ["time-entries:read", "customers:read"],
 				rateLimitEnabled: false,
 				rateLimitMax: 250,
+				rateLimitTimeWindow: 60000,
 			}),
 		);
 		expect(mocks.toastSuccess).toHaveBeenCalledWith("API key updated");

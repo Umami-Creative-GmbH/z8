@@ -158,6 +158,30 @@
         "description": "Mitglieder einladen und ausstehende Beitrittsanfragen prüfen",
         "title": "Einladungen"
       },
+      "kioskPin": {
+        "addEmailDescription": "Die Person erhält eine Einladung, ein Passwort festzulegen, und kann sich danach anmelden. Kiosk-PIN und Verlauf bleiben unverändert.",
+        "addEmailHeading": "E-Mail-Adresse hinzufügen",
+        "addEmailSubmit": "E-Mail hinzufügen und einladen",
+        "confirmReset": "PIN ersetzen",
+        "description": "Die persönliche PIN, die dieser Mitarbeiter eingibt, um sich an einem Kiosk einzustempeln.",
+        "done": "Fertig",
+        "emailAdded": "E-Mail-Adresse hinzugefügt. Die Einladung ist unterwegs.",
+        "emailAddedNotSent": "E-Mail-Adresse hinzugefügt, aber die Einladung konnte nicht gesendet werden. Der Mitarbeiter kann mit dieser Adresse die Funktion „Passwort vergessen“ nutzen.",
+        "emailLabel": "E-Mail-Adresse",
+        "hasPin": "Eine Kiosk-PIN ist eingerichtet.",
+        "issue": "PIN vergeben",
+        "kioskOnlyBadge": "Nur Kiosk",
+        "kioskOnlyDescription": "Dieser Mitarbeiter hat keine E-Mail-Adresse und kein Login. Die Zeiterfassung erfolgt nur an Kiosken mit der PIN.",
+        "kioskOnlyNoEmail": "Nur Kiosk, keine E-Mail",
+        "lockedUntil": "Nach zu vielen falschen PIN-Eingaben gesperrt bis {time}.",
+        "noPin": "Noch keine Kiosk-PIN.",
+        "pinHeading": "Kiosk-PIN",
+        "reset": "PIN zurücksetzen",
+        "shownOnce": "Geben Sie diese PIN jetzt an den Mitarbeiter weiter. Sie wird nur einmal angezeigt.",
+        "title": "Kiosk-Zugang",
+        "unlock": "Entsperren",
+        "unlocked": "Kiosk-PIN entsperrt"
+      },
       "lifecycle": {
         "actionsLabel": "Mitarbeiteraktionen für {name}",
         "deactivate": "Deaktivieren",
@@ -207,12 +231,17 @@
         "currency": "Währung",
         "currencyInvalid": "Geben Sie einen dreistelligen Währungscode ein.",
         "departurePanelDescription": "Zugriff und Nutzung des bezahlten Platzes enden zum unten angegebenen Stichtag. Der Mitarbeiterverlauf bleibt erhalten.",
+        "deputyCover": {
+          "absences": "Vertretung bei laufenden oder bevorstehenden Abwesenheiten: {count}",
+          "title": "Neu zu organisierende Vertretungen"
+        },
         "editDeparture": "Ausscheiden bearbeiten",
         "effective": "Ausscheiden wirksam",
         "effectiveDescription": "Zugriff endete um {cutoff} ({timezone}).",
         "employmentGap": "Nicht angestellt {startDate} – {endDate}",
         "employmentStint": "Anstellung {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Dieser Mitarbeiter ist als Vertretung bei laufenden oder bevorstehenden Abwesenheiten eingetragen. Mit Wirksamwerden des Austritts wird die Person als Vertretung entfernt und die betroffenen Personen werden benachrichtigt.",
           "finalOwner": "Weisen Sie einen anderen genehmigten Eigentümer zu und aktivieren Sie ihn, bevor dieser Mitarbeiter ausscheidet.",
           "futureAbsences": "Abwesenheiten nach dem Stichtag bleiben erfasst. Überprüfen Sie diese unter Abwesenheiten.",
           "futureShifts": "Schichten nach dem Stichtag bleiben zugewiesen. Überprüfen Sie diese im Dienstplan.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Pausen- und Zuschlagsverarbeitung",
           "clockRepair": "Timer-Reparatur",
           "dispatchDeparture": "Austrittsplanung",
+          "notifyDeputyRelease": "Benachrichtigung: Vertretung nicht mehr verfügbar",
           "notifyReview": "Überprüfungsbenachrichtigung",
           "sessionRevocation": "Sitzungsabmeldung"
         },
         "team": "Team",
         "title": "Beschäftigung und Austritt",
         "unknownLegacyDate": "Datum nicht erfasst",
-        "weeklyHoursInvalid": "Geben Sie Wochenstunden zwischen 0 und 168 ein."
+        "weeklyHoursInvalid": "Geben Sie Wochenstunden zwischen 0 und 168 ein.",
+        "workBalance": {
+          "recordFinalPayout": "Letzte Überstundenauszahlung erfassen",
+          "through": "Bis einschließlich {date}",
+          "title": "Arbeitszeitsaldo"
+        }
       },
       "tabs": {
         "employees": "Mitarbeiter",
@@ -324,7 +359,115 @@
         "inviteCodes": "Einladungscodes",
         "members": "Mitglieder"
       },
-      "title": "Mitarbeiter"
+      "title": "Mitarbeiter",
+      "workBalance": {
+        "adjustmentCancelled": "Anpassung storniert",
+        "cancelDescription": "{summary}. Sie bleibt im Verlauf als storniert erhalten und wird nicht mehr auf den Arbeitszeitsaldo angerechnet.",
+        "cancellationReason": "Warum wird dies storniert?",
+        "cancelSubmit": "Anpassung stornieren",
+        "cancelTitle": "Anpassung stornieren",
+        "conflictingPayoutsDescription": "Sie würden nicht mehr zählen. Stornieren Sie diese zuerst oder wählen Sie einen früheren Tag.",
+        "conflictingPayoutsTitle": "Überstundenauszahlungen an oder vor diesem Tag",
+        "current": "Aktueller Arbeitszeitsaldo",
+        "day": "Tag",
+        "dayDescription": "In der Zeitzone des Mitarbeiters. Der angezeigte Saldo reicht bis gestern, sodass eine auf heute datierte Auszahlung ab morgen zählt.",
+        "dayRequired": "Wählen Sie einen Tag aus.",
+        "description": "Geleistete Arbeit abzüglich der Sollzeit, zusammen mit dem Anfangssaldo und Auszahlungen von Überstunden. Anpassungen werden nie bearbeitet: Eine fehlerhafte Anpassung wird storniert.",
+        "direction": "Saldo",
+        "errors": {
+          "adjustmentNotFound": "Diese Anpassung existiert für diesen Mitarbeiter nicht mehr.",
+          "alreadyCancelled": "Diese Anpassung ist bereits storniert.",
+          "amountNotPositive": "Geben Sie eine Auszahlung von mehr als null ein.",
+          "beforeOpeningBalance": "Die Auszahlung muss nach dem Tag des gültigen Anfangssaldos datiert sein.",
+          "conflictingPayouts": "Überstundenauszahlungen sind auf diesen Tag oder davor datiert. Stornieren Sie diese zuerst oder wählen Sie einen früheren Tag.",
+          "employeeNotFound": "Mitarbeiter nicht gefunden.",
+          "exceedsBalance": "Die Auszahlung übersteigt den Arbeitszeitsaldo des Mitarbeiters am Ende dieses Tages.",
+          "exceedsLaterBalance": "Die Auszahlung würde den Arbeitszeitsaldo nach einer späteren Überstundenauszahlung unter null sinken lassen. Stornieren Sie diese Auszahlung zuerst oder erfassen Sie weniger.",
+          "failed": "Der Arbeitszeitsaldo konnte nicht aktualisiert werden. Versuchen Sie es erneut.",
+          "futureDay": "Der Tag darf in der Zeitzone des Mitarbeiters nicht nach dem heutigen Tag liegen.",
+          "invalidInput": "Überprüfen Sie den Tag, die Stunden und Minuten sowie den Grund.",
+          "monthClosed": "Der Tag liegt in einem abgeschlossenen Monat.",
+          "monthClosedNamed": "{month} ist abgeschlossen. Er muss wieder geöffnet werden, bevor darin datierte Anpassungen erfasst oder storniert werden können.",
+          "notPermitted": "Nur Organisationsinhaber und Administratoren sowie Lohnabrechnungsmitarbeiter für die durch ihren Zugriff abgedeckten Mitarbeiter können Saldoanpassungen erfassen oder stornieren.",
+          "reasonRequired": "Geben Sie einen Grund ein."
+        },
+        "history": "Saldoanpassungen",
+        "hours": "Stunden",
+        "hoursInvalid": "Geben Sie ganze Stunden ein.",
+        "keepAdjustment": "Anpassung behalten",
+        "loadFailed": "Der Arbeitszeitsaldo konnte nicht geladen werden.",
+        "loading": "Arbeitszeitsaldo wird geladen",
+        "minutes": "Minuten",
+        "minutesInvalid": "Geben Sie Minuten von 0 bis 59 ein.",
+        "negative": "Minusstunden (−)",
+        "openingBalanceDay": "Saldo zum Ende von",
+        "openingBalanceDayDescription": "In der Zeitzone des Mitarbeiters. Der Saldo zählt ab dem nächsten Tag wieder neu.",
+        "openingBalanceReasonPlaceholder": "Zum Beispiel: Saldoübertrag aus dem vorherigen System …",
+        "openingBalanceSet": "Eröffnungssaldo festgelegt",
+        "payoutReasonPlaceholder": "Zum Beispiel: mit der Entgeltabrechnung für Oktober ausgezahlt …",
+        "payoutRecorded": "Überstundenauszahlung erfasst",
+        "positive": "Überstunden (+)",
+        "reason": "Grund",
+        "recordPayout": "Überstundenauszahlung erfassen",
+        "recordPayoutDescription": "Erfassen Sie als Lohn ausgezahlte Überstunden. Dies verringert den Arbeitszeitsaldo ab dem Ende dieses Tages und darf den Saldo an diesem Tag nicht überschreiten.",
+        "recordPayoutSubmit": "Auszahlung erfassen",
+        "recordPayoutTitle": "Überstundenauszahlung erfassen",
+        "replacesOpeningBalance": "Der gültige Eröffnungssaldo wird mit dieser Begründung storniert.",
+        "setOpeningBalance": "Eröffnungssaldo festlegen",
+        "setOpeningBalanceDescription": "Der Eröffnungssaldo ersetzt den Arbeitszeitsaldo bis einschließlich dieses Tages. Vorherige Arbeits- und Sollzeiten bleiben erfasst, fließen jedoch nicht mehr in die Berechnung ein.",
+        "setOpeningBalanceSubmit": "Eröffnungssaldo festlegen",
+        "setOpeningBalanceTitle": "Eröffnungssaldo festlegen",
+        "through": "Bis {date}",
+        "title": "Arbeitszeitsaldo",
+        "upload": {
+          "allReady": "{total, plural, one {# Zeile ist bereit; {replacing, plural, =0 {keine ersetzt einen gültigen Eröffnungssaldo} one {# ersetzt einen gültigen Eröffnungssaldo} other {# ersetzen einen gültigen Eröffnungssaldo}}客.} other {Alle # Zeilen sind bereit; {replacing, plural, =0 {keine ersetzt einen gültigen Eröffnungssaldo} one {# ersetzt einen gültigen Eröffnungssaldo} other {# ersetzen einen gültigen Eröffnungssaldo}}.}}",
+          "checking": "Datei wird überprüft …",
+          "columns": {
+            "balance": "Saldo",
+            "day": "Tag",
+            "employee": "Mitarbeiter",
+            "reason": "Grund",
+            "row": "Zeile",
+            "status": "Status"
+          },
+          "committed": "{count, plural, one {# Anfangssaldo festgelegt} other {# Anfangssalden festgelegt}}",
+          "description": "Legen Sie den Anfangssaldo für mehrere Mitarbeiter über eine CSV-Datei mit den Spalten employee_number, day (JJJJ-MM-TT oder TT.MM.JJJJ), balance (Stunden und Minuten wie 12:30 oder -4:15) und reason fest. Jeder Anfangssaldo ersetzt den Arbeitszeitsaldo des Mitarbeiters bis einschließlich dieses Tages und hebt den zuvor gültigen auf. Es wird nichts gespeichert, solange eine Zeile fehlerhaft ist.",
+          "errors": {
+            "ambiguousEmployee": "Mehrere Mitarbeiter haben diese Nummer. Weisen Sie zunächst jedem eine eindeutige Nummer zu.",
+            "conflictingPayouts": "Überstundenauszahlungen sind auf oder vor diesen Tag datiert:",
+            "duplicateEmployee": "Für diesen Mitarbeiter gibt es mehr als eine Zeile. Behalten Sie nur eine bei.",
+            "employeeNumberRequired": "Geben Sie die Mitarbeiternummer ein.",
+            "futureDay": "Der Tag liegt in der Zeitzone des Mitarbeiters nach dem heutigen Tag.",
+            "invalidAmount": "Geben Sie den Saldo in Stunden und Minuten an, z. B. 12:30 oder -4:15.",
+            "invalidDay": "Geben Sie den Tag als JJJJ-MM-TT oder TT.MM.JJJJ ein.",
+            "monthClosed": "Der Tag liegt in einem abgeschlossenen Monat.",
+            "outOfScope": "Dieser Mitarbeiter liegt außerhalb Ihrer Abrechnungsberechtigung.",
+            "reasonRequired": "Geben Sie einen Grund an.",
+            "reasonTooLong": "Beschränken Sie den Grund auf 1000 Zeichen.",
+            "unknown": "Diese Zeile kann nicht gespeichert werden.",
+            "unknownEmployee": "Kein Mitarbeiter hat diese Nummer."
+          },
+          "file": "CSV-Datei",
+          "fileErrors": {
+            "fileTooLarge": "Die Datei ist zu groß. Teilen Sie sie in mehrere Uploads auf.",
+            "missingColumns": "In der Datei fehlen folgende Spalten: {columns}.",
+            "noRows": "Die Datei enthält keine Zeilen unterhalb der Kopfzeile.",
+            "tooManyRows": "Die Datei enthält mehr als 2000 Zeilen. Teilen Sie sie in mehrere Uploads auf.",
+            "unreadable": "Die Datei konnte nicht gelesen werden. Speichern Sie sie als CSV (UTF-8) und versuchen Sie es erneut."
+          },
+          "former": "Ehemalige/r Mitarbeiter/in",
+          "hasErrors": "{errors, plural, one {# von {total} Zeilen enthält einen Fehler. Korrigieren Sie die Datei und laden Sie sie erneut hoch.} other {# von {total} Zeilen enthalten Fehler. Korrigieren Sie die Datei und laden Sie sie erneut hoch.}}",
+          "hasErrorsTitle": "Zeilen mit Fehlern korrigieren",
+          "invalidFile": "Die Datei kann nicht verwendet werden",
+          "open": "Anfangssalden hochladen",
+          "ready": "Bereit",
+          "refusedTitle": "Es wurde nichts gespeichert",
+          "replaces": "Ersetzt den Anfangssaldo von {balance} am {day}",
+          "submit": "{count, plural, one {# Anfangssaldo festlegen} other {# Anfangssalden festlegen}}",
+          "template": "Vorlage herunterladen",
+          "title": "Anfangssalden hochladen"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Änderung hinzufügen",
@@ -552,6 +695,7 @@
         "loadingFile": "Personalakte wird geladen",
         "manageOfficers": "Personalaktenbeauftragte",
         "payslipBatch": "Gehaltsabrechnungs-Batch",
+        "sickLeave": "Krankenstand",
         "title": "Personalakten"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Sichtbarkeit"
       },
       "list": {
+        "absence": "Für Krankmeldung {dateRange}",
         "delete": "{title} löschen",
         "download": "{title} herunterladen",
         "edit": "{title} bearbeiten",
@@ -771,6 +916,83 @@
         "description": "Wählen Sie aus, wer außer Inhabern und Administratoren Mitarbeiterdokumente verwaltet.",
         "loading": "Einstellungen für Personalakten werden geladen",
         "title": "Personalakten"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Zeitraum",
+          "duration": "Dauer",
+          "employee": "Mitarbeiter",
+          "sickDetail": "Krankheitsdetail",
+          "sickNotes": "Krankmeldungen",
+          "status": "Status"
+        },
+        "description": "Krankheitsbedingte Abwesenheiten der Mitarbeiter, deren Krankmeldungen Sie verwalten, mit den angehängten Krankmeldungen. Hier werden Mitarbeiter weder erinnert noch aufgefordert.",
+        "empty": "Kein Krankenstand in diesem Zeitraum entspricht den Filtern.",
+        "filters": {
+          "allEmployees": "Alle Mitarbeiter",
+          "allSickDetails": "Alle Krankheitsdetails",
+          "allStatuses": "Ausstehend und genehmigt",
+          "allTeams": "Alle Teams",
+          "employee": "Mitarbeiter",
+          "formerEmployee": "{name} (ehemalig)",
+          "from": "Von",
+          "notes": "Krankmeldungen",
+          "notesAll": "Alle",
+          "notesMissing": "Mit Attest, ohne Notiz",
+          "notesPresent": "Hat Notiz",
+          "reset": "Filter zurücksetzen",
+          "sickDetail": "Krankheitsdetail",
+          "status": "Status",
+          "team": "Team",
+          "to": "Bis"
+        },
+        "loading": "Krankmeldungen werden geladen",
+        "notes": {
+          "count": "{count, plural, one {# Notiz} other {# Notizen}}",
+          "none": "Keine Notiz"
+        },
+        "pagination": {
+          "next": "Nächste Seite",
+          "page": "Seite {page} von {pageCount}",
+          "pageSize": "Zeilen pro Seite",
+          "previous": "Vorherige Seite",
+          "summary": "{first}–{last} von {total}"
+        },
+        "sickDetail": {
+          "childSick": "Kind krank",
+          "other": "Sonstiges",
+          "withCertificate": "Mit Bescheinigung",
+          "withoutCertificate": "Ohne Bescheinigung"
+        },
+        "status": {
+          "approved": "Genehmigt",
+          "pending": "Ausstehend"
+        },
+        "title": "Krankmeldung"
+      },
+      "sickNotes": {
+        "cardDescription": "Ausstehende und genehmigte Krankmeldungen dieses Mitarbeiters. Hängen Sie ein neues Attest an oder verknüpfen Sie eines, das sich bereits in der Personalakte befindet.",
+        "cardTitle": "Krankmeldungen",
+        "chooseAbsence": "Wählen Sie eine Abwesenheit aus.",
+        "chooseNote": "Wählen Sie ein Attest aus.",
+        "link": "Verknüpfen",
+        "linked": "Krankschreibung verknüpft",
+        "linkExistingDescription": "Wählen Sie ein Attest aus der Personalakte für die Krankmeldung {dateRange} aus.",
+        "linkExistingTitle": "Attest verknüpfen",
+        "linkFailed": "Das Attest konnte nicht verknüpft werden.",
+        "linkToAbsence": "{title} mit Krankmeldung verknüpfen",
+        "linkToAbsenceDescription": "Wählen Sie die Krankmeldung aus, die \"{title}\" abdeckt. Eine ohne Bescheinigung erfasste Krankmeldung gilt dann als mit Bescheinigung.",
+        "linkToAbsenceTitle": "Mit Krankmeldung verknüpfen",
+        "loadFailed": "Die Liste konnte nicht geladen werden.",
+        "manage": "Anhängen oder verknüpfen",
+        "manageFor": "Krankschreibungen für {name}, {dateRange} anhängen oder verknüpfen",
+        "noSickLeave": "Dieser Mitarbeiter hat keine ausstehende oder genehmigte Krankmeldung.",
+        "notes": "Krankschreibungen",
+        "noUnlinkedNotes": "In dieser Personalakte gibt es keine Krankschreibungen, die nicht mit einer Abwesenheit verknüpft sind.",
+        "openNotes": "Krankschreibungen für {dateRange}",
+        "unlinked": "Verknüpfung der Krankschreibung aufgehoben",
+        "unlinkFailed": "Die Verknüpfung der Krankschreibung konnte nicht aufgehoben werden.",
+        "unlinkFromAbsence": "Verknüpfung von {title} mit der Krankmeldung aufheben"
       },
       "tabs": {
         "access": "Zugriff",

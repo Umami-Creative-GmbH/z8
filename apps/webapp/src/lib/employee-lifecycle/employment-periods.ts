@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employee } from "@/db/schema";
 import { employeeDeparture, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
@@ -118,18 +118,17 @@ export async function resolveTermsEmploymentPeriod(
 	return period.id;
 }
 
-/**
- * Employment coverage established by lifecycle evidence only: a recorded
- * period start (rehire) and an end set by an effective departure. Legacy
- * backfilled dates never narrow existing behavior, so an employee without such
- * evidence has no coverage (null).
- */
-export async function loadEmploymentCoverage(
-	database: CoverageDatabase,
-	input: { organizationId: string; employeeId: string },
-): Promise<EmploymentInterval[] | null> {
-	const periods = await database
+type CoverageRow = {
+	startedAt: Date | null;
+	startProvenance: string;
+	endedAt: Date | null;
+	departureId: string | null;
+};
+
+function selectCoverageRows(database: CoverageDatabase) {
+	return database
 		.select({
+			employeeId: employeeEmploymentPeriod.employeeId,
 			startedAt: employeeEmploymentPeriod.startedAt,
 			startProvenance: employeeEmploymentPeriod.startProvenance,
 			endedAt: employeeEmploymentPeriod.endedAt,
@@ -143,14 +142,10 @@ export async function loadEmploymentCoverage(
 				eq(employeeDeparture.employmentPeriodId, employeeEmploymentPeriod.id),
 				eq(employeeDeparture.status, "effective"),
 			),
-		)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
-				eq(employeeEmploymentPeriod.employeeId, input.employeeId),
-			),
 		);
+}
 
+function toEmploymentCoverage(periods: readonly CoverageRow[]): EmploymentInterval[] | null {
 	const coverage = periods.map((period) => ({
 		startedAt:
 			period.startProvenance === "recorded" && period.startedAt
@@ -162,4 +157,47 @@ export async function loadEmploymentCoverage(
 		(interval) => interval.startedAt !== null || interval.endedAt !== null,
 	);
 	return hasLifecycleEvidence ? coverage : null;
+}
+
+/**
+ * Employment coverage established by lifecycle evidence only: a recorded
+ * period start (rehire) and an end set by an effective departure. Legacy
+ * backfilled dates never narrow existing behavior, so an employee without such
+ * evidence has no coverage (null).
+ */
+export async function loadEmploymentCoverage(
+	database: CoverageDatabase,
+	input: { organizationId: string; employeeId: string },
+): Promise<EmploymentInterval[] | null> {
+	const periods = await selectCoverageRows(database).where(
+		and(
+			eq(employeeEmploymentPeriod.organizationId, input.organizationId),
+			eq(employeeEmploymentPeriod.employeeId, input.employeeId),
+		),
+	);
+	return toEmploymentCoverage(periods);
+}
+
+/** `loadEmploymentCoverage` for several employees of one organization in one query. */
+export async function loadEmploymentCoverageByEmployee(
+	database: CoverageDatabase,
+	input: { organizationId: string; employeeIds: readonly string[] },
+): Promise<Map<string, EmploymentInterval[] | null>> {
+	const coverageByEmployee = new Map<string, EmploymentInterval[] | null>();
+	if (input.employeeIds.length === 0) return coverageByEmployee;
+
+	const periods = await selectCoverageRows(database).where(
+		and(
+			eq(employeeEmploymentPeriod.organizationId, input.organizationId),
+			inArray(employeeEmploymentPeriod.employeeId, [...input.employeeIds]),
+		),
+	);
+	const periodsByEmployee = Map.groupBy(periods, (period) => period.employeeId);
+	for (const employeeId of input.employeeIds) {
+		coverageByEmployee.set(
+			employeeId,
+			toEmploymentCoverage(periodsByEmployee.get(employeeId) ?? []),
+		);
+	}
+	return coverageByEmployee;
 }

@@ -3,6 +3,7 @@
  * The departure clock-out closes a real running period at the cutoff through the
  * Clocking module (#485), in both admissions, and stages its durable follow-ups.
  */
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import {
@@ -19,6 +20,9 @@ vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
 }));
 
+const { createClocking } = await import("@/lib/time-tracking/clocking/clocking");
+const { recordingFollowUps } = await import("@/lib/time-tracking/clocking/follow-ups");
+const { coordinatedTransactions } = await import("@/lib/time-tracking/clocking/transactions");
 const { createDepartureClockOut } = await import("./clock-out");
 const { runDepartureTransaction } = await import("./departure-transaction");
 const { createLifecycleDatabaseFixture } = await import("./testing/database.test.fixture");
@@ -303,6 +307,62 @@ describe("departure clock-out", () => {
 				}),
 			},
 		]);
+	});
+
+	// #861: a break in progress never counts as work, also at a departure.
+	it.each([
+		["legacy", false],
+		["append", true],
+	] as const)("ends %s work with a break in progress at the break's start and clears it", async (_admission, adopted) => {
+		const target = await fixture.seedEmployee();
+		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");
+		const started = await createClocking({
+			clock: { nowInstant: () => parseInstant("2026-09-14T21:00:00Z") },
+			transactions: coordinatedTransactions(),
+			followUps: recordingFollowUps(),
+		}).startBreak({
+			organizationId: fixture.organizationId,
+			principal: { kind: "user", userId: target.userId },
+			subject: { employeeId: target.employeeId },
+			identity: { origin: "client", id: randomUUID() },
+			channel: "web",
+			at: { kind: "now" },
+			zone: { device: "Europe/Berlin", fallback: "UTC" },
+		});
+		expect(started).toMatchObject({ outcome: "executed" });
+		const identity = await scheduleAt(target);
+		if (adopted) {
+			await fixture.pool.query(
+				"insert into time_entry_append_control (organization_id, mode) values ($1, 'active')",
+				[fixture.organizationId],
+			);
+		}
+		try {
+			await execute(identity);
+		} finally {
+			await fixture.pool.query("delete from time_entry_append_control where organization_id = $1", [
+				fixture.organizationId,
+			]);
+		}
+
+		expect(
+			await row(
+				`select end_time, duration_minutes, is_active, break_started_at, break_started_zone
+				 from work_period where id = $1`,
+				[periodId],
+			),
+		).toEqual({
+			end_time: new Date("2026-09-14T21:00:00Z"),
+			duration_minutes: 60,
+			is_active: false,
+			break_started_at: null,
+			break_started_zone: null,
+		});
+		expect(
+			await row(`select kind, subject_id from employee_departure_review where departure_id = $1`, [
+				identity.departureId,
+			]),
+		).toEqual({ kind: "clock_out", subject_id: periodId });
 	});
 
 	it("rolls back a failed closure and records a timer repair", async () => {

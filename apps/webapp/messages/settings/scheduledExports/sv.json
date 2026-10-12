@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Byt ägare",
         "delete": "Ta bort",
         "edit": "Redigera",
         "runNow": "Kör nu",
@@ -16,6 +17,7 @@
       },
       "dataCategories": {
         "absences": "Frånvaro",
+        "customers": "Kunder",
         "employees": "Anställda",
         "projects": "Projekt",
         "timeEntries": "Tidsregistreringar",
@@ -122,6 +124,8 @@
         "dateRangesDesc": "Beräknas automatiskt baserat på schemats frekvens (t.ex. föregående månad för månatliga exporter).",
         "delivery": "Leverans:",
         "deliveryDesc": "Exporter laddas upp till S3 och e-postaviseringar med nedladdningslänkar skickas till konfigurerade mottagare.",
+        "owner": "Ägare:",
+        "ownerDesc": "Varje schema körs å en organisationsadministratörs vägnar. Om dess ägare slutar vara organisationsadministratör eller lämnar organisationen pausas schemat och alla organisationsadministratörer meddelas så att någon kan ta över det.",
         "scheduleTypes": "Schematyper:",
         "scheduleTypesDesc": "Dagligen, veckovis (måndag), månadsvis (den 1:a), kvartalsvis (1 jan/apr/jul/okt) eller anpassade cron-uttryck."
       },
@@ -148,6 +152,18 @@
         "viewError": "Visa feldetaljer"
       },
       "newSchedule": "Nytt schema",
+      "owner": {
+        "changed": "Ägare har ändrats",
+        "changeFailed": "Kunde inte byta ägare",
+        "description": "\"{name}\" körs å sin ägares vägnar, som måste vara organisationsadministratör. Automatiserade körningar registreras i granskningsloggen under ägaren.",
+        "label": "Ägare",
+        "pauseNote": "Att byta ägare återupptar inte ett pausat schema. Aktivera det igen när det har en ägare.",
+        "placeholder": "Välj en organisationsadministratör…",
+        "required": "Välj en organisationsadministratör",
+        "saving": "Sparar…",
+        "submit": "Byt ägare",
+        "title": "Byt ägare"
+      },
       "report": {
         "auditReport": "Revisionsrapport",
         "auditReportDesc": "Revisionsrapporter inkluderar all tidsspårningsdata med kryptografiska signaturer och tidsstämplar för GoBD-efterlevnad. Exporten lagras med WORM-skydd (Write Once Read Many).",
@@ -263,6 +279,8 @@
         "never": "Aldrig",
         "nextRun": "Nästa körning",
         "openMenu": "Öppna åtgärdsmeny",
+        "owner": "Ägare",
+        "ownerNotAdmin": "Inte längre organisationsadministratör",
         "paused": "Pausad",
         "schedule": "Schema",
         "status": "Status",

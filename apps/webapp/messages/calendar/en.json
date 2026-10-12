@@ -24,6 +24,31 @@
       "nextYear": "Next year",
       "previousYear": "Previous year"
     },
+    "deputy": {
+      "away": "Away {dates}",
+      "awayOption": "{name} · Away {dates}",
+      "awayWarning": "{name} is away during these dates. You can still choose them.",
+      "changeAction": "Change deputy",
+      "changed": "Deputy saved",
+      "changeDescription": "The deputy covers while you are away. Changing them needs no new approval.",
+      "changeDescriptionFor": "The deputy covers while {name} is away. Changing them needs no new approval.",
+      "changeFailed": "Could not save the deputy",
+      "changeTitle": "Change deputy",
+      "contactOnly": "{name} will be shown as a contact only and cannot decide approvals.",
+      "errors": {
+        "ended": "The deputy can no longer be changed: this absence has ended.",
+        "required": "Choose a deputy: this absence type requires one.",
+        "self": "An employee cannot be their own deputy.",
+        "unavailable": "The deputy must be an active employee of this organization."
+      },
+      "help": "The colleague who covers while you are away. They are not asked to accept.",
+      "label": "Deputy",
+      "labelOptional": "Deputy (Optional)",
+      "labelRequired": "Deputy *",
+      "none": "No deputy",
+      "placeholder": "Select a deputy…",
+      "save": "Save deputy"
+    },
     "dialog": {
       "cancelDescription": "Are you sure you want to cancel this absence request? This action cannot be undone.",
       "cancelTitle": "Cancel Absence Request",
@@ -36,10 +61,10 @@
     },
     "featureName": "manage absences",
     "form": {
+      "absenceDays": "Absence days:",
       "absenceType": "Absence Type *",
       "autoApproved": "(Auto-approved)",
       "balanceAfterRequest": "Balance after request:",
-      "businessDays": "Business days:",
       "daysRemaining": "Days remaining:",
       "description": "Submit a request for time off. Your manager will be notified for approval.",
       "duration": "Absence duration",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "No published coverage risk",
       "noCoverageRulesConfigured": "No coverage rules configured for affected shifts",
       "noHolidays": "No assigned holidays in range",
+      "noWorkingDays": "This range contains no working days.",
       "remainingAfter": "Remaining after request",
       "requested": "Requested",
       "title": "Smart planner",
-      "unavailable": "Planning preview unavailable. You can still submit your request."
+      "unavailable": "Planning preview unavailable. You can still submit your request.",
+      "workBalance": "Work balance",
+      "workBalanceAfter": "After request",
+      "workBalanceCurrent": "Current",
+      "workBalanceDrawn": "Drawn by request",
+      "workBalanceNegative": "Your work balance would be negative after this request. You can still submit it."
     },
     "requestAbsence": "Request Absence",
+    "sickNotes": {
+      "attachAction": "Attach sick note",
+      "attach": {
+        "defaultTitle": "Sick note {dateRange}",
+        "description": "Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file.",
+        "documentDate": "Document date",
+        "failed": "Upload failed",
+        "fileRequired": "Choose at least one file.",
+        "officerDescription": "Add photos or PDFs of the sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in the employee's personnel file.",
+        "progress": "Upload progress",
+        "progressCount": "{done} of {total} uploaded",
+        "share": "Share with the employee",
+        "sharedNote": "You see your sick notes under My Documents and on this absence. Your approver only sees that a sick note is attached. You can delete a sick note within 24 hours of uploading it.",
+        "shareHint": "Off: HR-only, the employee only sees that a sick note is attached. On: the employee sees it under My Documents.",
+        "submit": "Attach",
+        "success": "{count, plural, one {Sick note attached} other {# sick notes attached}}",
+        "title": "Attach sick note",
+        "titleLabel": "Title"
+      },
+      "files": {
+        "chooseFiles": "Choose files",
+        "defaultTitleUndated": "Sick note",
+        "incomplete": "Give each sick note a title and a document date.",
+        "remove": "Remove {fileName}",
+        "takePhoto": "Take photo",
+        "tooMany": "You can add up to {max} files."
+      },
+      "marker": "Sick note attached ({count})",
+      "panel": {
+        "delete": "Delete {title}",
+        "description": "Sick notes for the absence {dateRange}.",
+        "empty": "No sick notes you can open.",
+        "linkExisting": "Link sick note",
+        "loadFailed": "The sick notes could not be loaded.",
+        "title": "Sick notes",
+        "unlink": "Unlink {title}",
+        "unlinked": "Sick note unlinked",
+        "unlinkFailed": "The sick note could not be unlinked."
+      },
+      "request": {
+        "attachFailed": "Your absence was requested, but {files} could not be attached. You can attach sick notes from the absence later.",
+        "description": "Add photos or PDFs of your sick note: PDF, JPEG, PNG or WebP files of up to 20 MB each. Each file is saved as its own sick note in your personnel file. Your approver only sees that a sick note is attached.",
+        "title": "Sick note (optional)",
+        "uploadFailed": "{fileName} could not be uploaded. Remove it or try again."
+      }
+    },
     "status": {
       "approved": "Approved",
       "pending": "Pending",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Time entries blocked",
       "category": "Category",
+      "deputy": "Deputy",
       "duration": "Duration",
       "employee": "Employee",
       "noEvents": "No events for this day",
@@ -177,6 +255,7 @@
       "category": "Category",
       "credited": "Credited",
       "dateRange": "Date Range",
+      "deputy": "Deputy",
       "duration": "Duration",
       "editedBy": "Edited by",
       "employee": "Employee",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "CW",
+      "closedDay": "In a closed month",
       "dayEvents": "{count, plural, one {# event: {titles}} other {# events: {titles}}}",
       "dayLabel": "{date}: {actual} recorded, {required} required, {delta} {status}.",
       "description": "Daily, weekly, and monthly policy hours",

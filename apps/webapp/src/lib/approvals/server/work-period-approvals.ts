@@ -63,6 +63,11 @@ import {
 	assertNotReplacedByEscalation,
 	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
+import {
+	asDeputyDecider,
+	loadDeputyActingFor,
+	recordCanonicalDeputyDecisionOf,
+} from "../deputy/deputy-decision-store";
 import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
 import {
 	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
@@ -133,6 +138,7 @@ import type {
 	PendingApprovalRequest,
 } from "./types";
 import type { WorkPeriodPostCommitDescriptor } from "./work-period-submission";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 
 export type OrdinaryTimeApprovalKind = OrdinaryWorkPeriodApprovalKind;
 export type {
@@ -511,6 +517,9 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 			throw error;
 		}
 		if (input.bound && isBoundTimeDecisionSignal(error)) throw error;
+		// A decision touching a closed month is refused as such (#762).
+		const closed = monthClosedRefusalOf(error);
+		if (closed) throw closed;
 		throw unresolvedWorkPeriodReviewFrom(error) ?? new Error(ORDINARY_DECISION_ERROR);
 	}
 }
@@ -1281,6 +1290,23 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		}
 		return { result, postCommit: null };
 	}
+	// A covering deputy's decision: the acting-for record and audit (#1016).
+	await recordCanonicalDeputyDecisionOf(database as never, {
+		organizationId: input.organizationId,
+		command:
+			input.decision.kind === "approve"
+				? { type: "approve", stageId: target.stage.id, assignmentId: target.assignment.id }
+				: {
+						type: "reject",
+						stageId: target.stage.id,
+						assignmentId: target.assignment.id,
+						reason: input.decision.reason,
+					},
+		result: execution.result,
+		entityType: "time_entry",
+		entityId: period.id,
+		performedByUserId: actor.userId,
+	});
 	const invocation =
 		input.bound && boundCommand
 			? await recordTimeInvocationDecision(database, {
@@ -2249,6 +2275,8 @@ export function notifyWorkPeriodApprovalAfterCommit(
 	result: WorkPeriodApprovalResult,
 	currentEmployee: CurrentApprover,
 	dbService: ApprovalDbService,
+	/** The decided legacy request: a covering deputy's decision reads "(deputy for X)" (#1016). */
+	approvalRequestId?: string,
 ) {
 	return Effect.promise(async () => {
 		const requester = await dbService.db.query.employee.findFirst({
@@ -2259,11 +2287,21 @@ export function notifyWorkPeriodApprovalAfterCommit(
 			columns: { userId: true },
 		});
 		if (!requester) return;
+		const decider = approvalRequestId
+			? await asDeputyDecider(
+					dbService.db as never,
+					currentEmployee,
+					await loadDeputyActingFor(dbService.db as never, {
+						organizationId: result.period.organizationId,
+						approvalRequestId,
+					}),
+				)
+			: currentEmployee;
 		const params = {
 			workPeriodId: result.period.id,
 			employeeUserId: requester.userId,
 			organizationId: result.period.organizationId,
-			approverName: currentEmployee.user.name,
+			approverName: decider.user.name,
 			startTime: result.period.startTime,
 			endTime: result.period.endTime,
 			...(result.reason ? { rejectionReason: result.reason } : {}),
@@ -2489,6 +2527,7 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 							execution.result,
 							currentEmployee,
 							dbService,
+							input.approvalRequestId,
 						),
 					);
 				},

@@ -1,0 +1,44 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Aprobă",
+      "approveLabel": "Aprobă {title}",
+      "description": "Cereri care așteaptă o decizie a managerului.",
+      "empty": "Nu există aprobări în așteptare.",
+      "openInbox": "Deschide inboxul",
+      "ownRequest": "Propria solicitare: un alt aprobator decide.",
+      "pendingAriaLabel": "Aprobări în așteptare",
+      "reject": "Respinge",
+      "rejectLabel": "Respinge {title}",
+      "title": "Aprobări",
+      "toast": {
+        "approved": "Cerere aprobată",
+        "approveError": "Nu s-a putut aproba cererea",
+        "rejected": "Cerere respinsă",
+        "rejectError": "Nu s-a putut respinge cererea"
+      }
+    },
+    "briefing": {
+      "badge": "Astăzi",
+      "description": "Examinați elementele care necesită acțiune astăzi, apoi treceți direct la fluxul de lucru potrivit.",
+      "needsAction": {
+        "description": "Începeți de aici pentru cele mai urgente acțiuni operaționale.",
+        "empty": "Totul este în regulă. Nu este necesară nicio acțiune a managerului în acest moment.",
+        "title": "Necesită acțiune"
+      },
+      "sections": {
+        "empty": "Nu s-au detectat probleme."
+      },
+      "severity": {
+        "critical": "Critic",
+        "high": "Ridicat",
+        "info": "Info",
+        "warning": "Avertisment"
+      },
+      "summaryAriaLabel": "Rezumatul de astăzi",
+      "supportingSectionsAriaLabel": "Secțiuni conexe",
+      "title": "Informare zilnică pentru manager",
+      "updatedAt": "{date} - Actualizat la {time}"
+    }
+  }
+}

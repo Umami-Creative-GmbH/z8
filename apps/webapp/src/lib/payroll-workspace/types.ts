@@ -61,8 +61,9 @@ export type DismissiblePayrollBlockerType =
  * `unresolved_work_minutes` marks completed work whose payroll credit cannot be allocated to the
  * period. `offboarding_clock_repair` marks a departure whose running timer could not be closed
  * safely. Under scoped payroll collection (#322), `open_work`, `pending_work_approval`,
- * `pending_work_correction` and `uncertain_historical_work` mark work an export cannot omit. All of them block exports, so they
- * cannot be cleared as false positives.
+ * `pending_work_correction` and `uncertain_historical_work` mark work an export cannot omit.
+ * `missing_identifier` marks work of an employee without a value for the configured custom field
+ * identifier (#821). All of them block exports, so they cannot be cleared as false positives.
  */
 export type PayrollBlockerType =
 	| DismissiblePayrollBlockerType
@@ -71,7 +72,8 @@ export type PayrollBlockerType =
 	| "open_work"
 	| "pending_work_approval"
 	| "pending_work_correction"
-	| "uncertain_historical_work";
+	| "uncertain_historical_work"
+	| "missing_identifier";
 
 export interface PayrollBlocker {
 	id: string;

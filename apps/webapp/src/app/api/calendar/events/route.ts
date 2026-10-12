@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getVerifiedOrgContext } from "@/lib/auth-helpers";
-import { getAbsencesForMonth } from "@/lib/calendar/absence-service";
+import { getAbsencesForMonth, linkAbsenceDeputyProfiles } from "@/lib/calendar/absence-service";
 import {
 	assignedHolidayToCalendarEvent,
 	getAssignedHolidaysForEmployee,
@@ -26,6 +26,8 @@ import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { superJsonResponse } from "@/lib/superjson";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
+import { db } from "@/db";
+import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 
 async function fetchHolidayEvents(params: {
 	organizationId: string;
@@ -400,7 +402,7 @@ export async function GET(request: NextRequest) {
 			liveWork = uniqueLiveWork([monthResult]);
 		}
 
-		const [resolvedDailyRequirements, resolvedWorkBalance] = await Promise.all([
+		const [resolvedDailyRequirements, resolvedWorkBalance, closedRanges] = await Promise.all([
 			fetchDailyRequirements({
 				organizationId,
 				employeeId: scopedEmployeeId,
@@ -409,9 +411,26 @@ export async function GET(request: NextRequest) {
 				timezone: calendarTimezone,
 			}),
 			fetchWorkBalance({ organizationId, employeeId: scopedEmployeeId }),
+			// The viewed employee's closed ranges, fixed at close, for the lock marker (#762).
+			scopedEmployeeId
+				? closedRangesForEmployee(db, { organizationId, employeeId: scopedEmployeeId }).then(
+						(ranges) =>
+							ranges.map((closed) => ({
+								month: closed.month,
+								start: closed.start.toString(),
+								endExclusive: closed.endExclusive.toString(),
+							})),
+					)
+				: Promise.resolve([]),
 		]);
 		dailyRequirements = resolvedDailyRequirements;
 		workBalance = resolvedWorkBalance;
+		if (showAbsences) {
+			events = await linkAbsenceDeputyProfiles(events, {
+				organizationId,
+				viewerUserId: orgContext.user.id,
+			});
+		}
 
 		// Use SuperJSON to preserve Date objects in the response
 		return superJsonResponse({
@@ -422,6 +441,7 @@ export async function GET(request: NextRequest) {
 			liveWork,
 			workBalance,
 			calendarTimezone,
+			closedRanges,
 		});
 	} catch (error) {
 		console.error("Error fetching calendar events:", error);

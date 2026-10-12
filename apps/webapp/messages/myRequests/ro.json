@@ -1,0 +1,99 @@
+{
+  "myRequests": {
+    "actions": {
+      "cancel": "Anulează",
+      "cancelling": "Se anulează…",
+      "cancelRequestConfirmation": "Anulați această cerere?",
+      "cancelRequestError": "Cererea nu a putut fi anulată.",
+      "fix": "Remediază",
+      "notAvailable": "Indisponibil",
+      "view": "Vizualizează"
+    },
+    "all": {
+      "description": "Examinați cererile legate de absențe, corecții de pontaj și cheltuieli.",
+      "title": "Toate cererile"
+    },
+    "card": {
+      "decision": "Decizie",
+      "submitted": "Trimis"
+    },
+    "empty": {
+      "filtered": {
+        "description": "Cererile vor apărea aici când sunt trimise sau încărcate.",
+        "title": "Nicio cerere nu corespunde filtrelor dvs."
+      },
+      "none": {
+        "description": "Cererile vor apărea aici când sunt trimise sau încărcate.",
+        "title": "Nicio cerere încă"
+      }
+    },
+    "featureName": "vizualizați cererile dvs.",
+    "filters": {
+      "allStatuses": "Toate stările",
+      "allTypes": "Toate tipurile",
+      "approvedRequests": "Cereri aprobate",
+      "cancelledRequests": "Cereri anulate",
+      "description": "Filtrați fiecare secțiune de cereri după text, stare sau tipul cererii.",
+      "pendingRequests": "Cereri în așteptare",
+      "rejectedRequests": "Cereri respinse",
+      "search": "Căutare",
+      "searchPlaceholder": "Căutare după titlu…",
+      "status": "Stare",
+      "title": "Găsiți cereri",
+      "type": "Tip"
+    },
+    "inReview": {
+      "description": "Cereri în așteptarea aprobării sau procesării.",
+      "title": "În curs de examinare"
+    },
+    "needsAttention": {
+      "description": "Cereri respinse care ar putea necesita o corecție înainte de retrimitere.",
+      "title": "Necesită atenție"
+    },
+    "reasonLabel": "Motiv",
+    "recentlyDecided": {
+      "description": "Decizii aprobate și respinse din ultimele 30 de zile.",
+      "title": "Decise recent"
+    },
+    "requests": {
+      "absence": {
+        "title": "Cerere de absență"
+      },
+      "timeCorrection": {
+        "subtitle": "Corecție pentru o înregistrare de pontaj",
+        "title": "Cerere de corectare a pontajului"
+      },
+      "travelExpense": {
+        "title": "Decont de cheltuieli de deplasare"
+      }
+    },
+    "sourceError": {
+      "absence": "Cererile de absență nu au putut fi încărcate.",
+      "timeCorrection": "Cererile de corectare a pontajului nu au putut fi încărcate.",
+      "title": "Unele cereri nu au putut fi încărcate.",
+      "travelExpense": "Cererile de decontare a cheltuielilor de deplasare nu au putut fi încărcate."
+    },
+    "sourceTypes": {
+      "absence": "Absență",
+      "timeCorrection": "Pontaj",
+      "travelExpense": "Cheltuieli"
+    },
+    "status": {
+      "approved": "Aprobat",
+      "cancelled": "Anulat",
+      "inReview": "În examinare",
+      "pending": "În așteptare",
+      "rejected": "Respins"
+    },
+    "subtitle": "Urmăriți cererile în așteptare, corecțiile necesare și deciziile recente într-un singur loc.",
+    "summary": {
+      "ariaLabel": "Rezumat cereri",
+      "pending": "În așteptare",
+      "recentDecisions": "Decizii recente",
+      "requiredFixes": "Corecții necesare",
+      "totalLoaded": "Total încărcate"
+    },
+    "title": "Cererile mele",
+    "unavailableTitle": "Cereri indisponibile"
+  }
+}

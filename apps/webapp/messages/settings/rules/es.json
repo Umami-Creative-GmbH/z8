@@ -15,9 +15,16 @@
       "createCategory": "Crear categoría de ausencia",
       "createCategoryButton": "Crear categoría",
       "deactivate": "Desactivar",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Tiempo libre descontado del saldo de trabajo",
+          "name": "Descanso compensatorio"
+        }
+      },
       "deleteDescription": "¿Está seguro de que desea eliminar \"{name}\"? Las categorías utilizadas por ausencias existentes no pueden eliminarse y deben desactivarse en su lugar.",
       "deleteFailed": "No se pudo eliminar la categoría",
       "deleteTitle": "Eliminar categoría de ausencia",
+      "drawsOnWorkBalance": "Descuenta del saldo de trabajo",
       "editCategory": "Editar \"{name}\"",
       "form": {
         "active": "Activo",
@@ -26,11 +33,17 @@
         "colorHelp": "Marcador de calendario",
         "countsAgainstVacation": "Cuenta contra el saldo de vacaciones",
         "countsAgainstVacationHelp": "Deducir los días aprobados de la asignación de vacaciones del empleado.",
+        "deputyRequired": "Se requiere sustituto",
+        "deputyRequiredHelp": "Cada ausencia de este tipo debe designar a un sustituto para cubrir al empleado mientras esté fuera.",
+        "deputyRequiredSick": "La baja por enfermedad nunca requiere sustituto.",
         "description": "Descripción",
         "descriptionHelp": "Guía opcional que se muestra a administradores y revisores.",
         "descriptionPlaceholder": "p. ej., Usar para días de formación o certificación aprobados…",
         "descriptionTranslation": "Descripción en {locale}",
         "descriptionTranslationPlaceholder": "Descripción localizada",
+        "drawsOnWorkBalance": "Descuenta del Saldo de Trabajo",
+        "drawsOnWorkBalanceConflict": "\"Descuenta del saldo de trabajo\" no se puede combinar con \"Cuenta para vacaciones\" o \"Requiere tiempo de trabajo\".",
+        "drawsOnWorkBalanceHelp": "Descanso compensatorio: los días aprobados mantienen su tiempo requerido, por lo que el saldo de trabajo del empleado se reduce en esa cantidad. No se consumen vacaciones.",
         "name": "Nombre",
         "nameHelp": "Utilice una etiqueta clara que los empleados y aprobadores reconozcan.",
         "nameMaxLength": "Utilice 100 caracteres o menos",
@@ -46,7 +59,8 @@
         "translationsHelp": "Etiquetas localizadas opcionales para empleados que utilizan otro idioma en la aplicación.",
         "type": "Tipo",
         "typeHelp": "Agrupa informes y flujos de trabajo de ausencia posteriores.",
-        "typePlaceholder": "Seleccionar tipo de categoría"
+        "typePlaceholder": "Seleccionar tipo de categoría",
+        "typeTimeOffInLieu": "Descanso Compensatorio"
       },
       "header": {
         "approval": "Aprobación",
@@ -72,6 +86,7 @@
         "parental": "Licencia parental",
         "personal": "Personal",
         "sick": "Baja por enfermedad",
+        "timeOffInLieu": "Descanso Compensatorio",
         "unpaid": "No remunerado",
         "vacation": "Vacaciones"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Algunos canales activos tenían las escalaciones desactivadas. Siguen sin entregar mensajes de escalación.",
         "inactiveSourceEnabled": "Algunos canales inactivos tenían las escalaciones activadas. No se contabilizaron para la política.",
         "invalidTimeout": "Un canal tenía un tiempo de espera no válido y no se utilizó para la ventana de respuesta."
+      },
+      "deputyDecisions": {
+        "description": "Los empleados designan a un sustituto en sus ausencias. Mientras un aprobador se encuentre en una ausencia aprobada, su sustituto puede ver y decidir sobre las aprobaciones que aún tenga asignadas.",
+        "disabled": "Los sustitutos ya no pueden decidir sobre las aprobaciones. Permanecen como contactos.",
+        "enabled": "Los sustitutos ahora pueden decidir sobre las aprobaciones mientras el aprobador esté ausente.",
+        "help": "Solo deciden los sustitutos que puedan usar la bandeja de entrada de aprobaciones, y solo durante los días de ausencia del aprobador. El aprobador conserva sus aprobaciones. Cuando esto está desactivado, los sustitutos son únicamente contactos.",
+        "title": "Sustitutos",
+        "toggle": "Los sustitutos pueden decidir sobre las aprobaciones"
       },
       "description": "Revise la política de escalamiento de la organización, cómo se migró desde la configuración de los canales y las condiciones que requieren un gestor de aprobaciones.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Ausencia",
         "complianceException": "Excepción de cumplimiento",
         "manualTimeSubmission": "Envío manual de horas",
+        "periodSubmission": "Envío de período",
         "policyClockOut": "Fichaje de salida por política",
         "shiftRequest": "Solicitud de turno",
         "timeCorrection": "Corrección de tiempo",

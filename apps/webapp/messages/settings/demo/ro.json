@@ -1,0 +1,245 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Absențe (concediu de odihnă, concediu medical)",
+        "changePolicies": "Politici de modificare",
+        "description": "Tipuri de date demonstrative pe care le puteți genera",
+        "locations": "Locații și subzone",
+        "shifts": "Șabloane de tură și ture",
+        "supported": "Acceptate în prezent:",
+        "teamsProjects": "Echipe și proiecte",
+        "timeEntries": "Înregistrări de timp și perioade de lucru",
+        "title": "Tipuri de date disponibile",
+        "workCategories": "Seturi de categorii de lucru"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} absențe șterse",
+          "button": "Șterge toate datele",
+          "changePoliciesDeleted": "{count} politici de modificare șterse",
+          "dialog": {
+            "confirm": "Șterge toate datele",
+            "description": "Această acțiune nu poate fi anulată. Toate înregistrările de timp, absențele, echipele, proiectele și datele asociate vor fi șterse definitiv.",
+            "title": "Ștergeți toate datele de timp?"
+          },
+          "items": {
+            "absences": "Toate înregistrările de absență",
+            "changePolicies": "Toate politicile de modificare",
+            "locations": "Toate locațiile și subzonele",
+            "shifts": "Toate șabloanele de tură și turele",
+            "teamsProjects": "Toate echipele și proiectele",
+            "timeEntries": "Toate înregistrările de timp și perioadele de lucru",
+            "vacationAllowances": "Toate alocările de concediu",
+            "workCategories": "Toate categoriile de lucru"
+          },
+          "locationsDeleted": "{count} locații șterse",
+          "managerAssignmentsDeleted": "{count} atribuiri de manager șterse",
+          "projectsDeleted": "{count} proiecte șterse",
+          "shiftRequestsDeleted": "{count} cereri de tură șterse",
+          "shiftsDeleted": "{count} ture șterse",
+          "shiftTemplatesDeleted": "{count} șabloane de tură șterse",
+          "subareasDeleted": "{count} subzone șterse",
+          "successTitle": "Datele au fost șterse cu succes!",
+          "teamsDeleted": "{count} echipe șterse",
+          "timeEntriesDeleted": "{count} înregistrări de timp șterse",
+          "title": "Șterge datele de timp",
+          "vacationAllowancesReset": "{count} alocări de concediu resetate",
+          "willDelete": "Această acțiune va șterge definitiv:",
+          "workCategoriesDeleted": "{count} categorii de lucru șterse",
+          "workCategorySetsDeleted": "{count} seturi de categorii de lucru șterse",
+          "workPeriodsDeleted": "{count} perioade de lucru șterse"
+        },
+        "clearing": "Se șterge...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} absențe șterse",
+          "adminPreserved": "Conturile de administrator vor fi păstrate",
+          "button": "Șterge angajații non-administrator",
+          "dialog": {
+            "confirm": "Șterge angajații non-administrator",
+            "description": "Această acțiune nu poate fi anulată. Toți angajații non-administrator și datele asociate acestora vor fi șterse definitiv.",
+            "title": "Ștergeți angajații non-administrator?"
+          },
+          "employeesDeleted": "{count} angajați șterși",
+          "items": {
+            "demoUsers": "Toate conturile de utilizator demo",
+            "employees": "Toți angajații non-administrator",
+            "managerAssignments": "Toate atribuirile de manager",
+            "timeEntries": "Înregistrările lor de timp și perioadele de lucru"
+          },
+          "membersDeleted": "{count} membri șterși",
+          "successTitle": "Angajații non-administrator au fost șterși cu succes!",
+          "timeEntriesDeleted": "{count} înregistrări de timp șterse",
+          "title": "Șterge angajații non-administrator",
+          "usersDeleted": "{count} utilizatori șterși",
+          "willDelete": "Această acțiune va șterge definitiv:"
+        },
+        "deleting": "Se șterge...",
+        "description": "Acțiuni distructive care nu pot fi anulate",
+        "title": "Zonă periculoasă",
+        "typeDelete": "Tastați ȘTERGE pentru a confirma",
+        "typeDeletePlaceholder": "ȘTERGE"
+      },
+      "description": "Generați date demonstrative pentru testare sau ștergeți datele existente legate de pontaj",
+      "errors": {
+        "generationFailed": "Generarea a eșuat. Vă rugăm să încercați din nou.",
+        "noOrganization": "Nicio organizație selectată"
+      },
+      "form": {
+        "approvalsTesting": {
+          "label": "Testare aprobări",
+          "pendingAbsences": {
+            "description": "Creați cereri de absență care așteaptă aprobarea managerului",
+            "title": "Aprobări de absență în așteptare"
+          },
+          "pendingTimeCorrections": {
+            "description": "Creați corecții de pontaj care așteaptă aprobarea managerului",
+            "title": "Aprobări de corecție de pontaj în așteptare"
+          }
+        },
+        "dataTypes": {
+          "absences": {
+            "description": "Concediu de odihnă, concediu medical și alte absențe",
+            "title": "Absențe"
+          },
+          "changePolicies": {
+            "description": "Politici de modificare a pontajelor",
+            "title": "Politici de modificare"
+          },
+          "label": "Tipuri de date",
+          "locations": {
+            "countLabel": "Număr de locații:",
+            "description": "Locații de muncă și subzone",
+            "title": "Locații"
+          },
+          "projects": {
+            "countLabel": "Număr de proiecte:",
+            "description": "Proiecte demonstrative pentru pontarea timpului",
+            "title": "Proiecte"
+          },
+          "shiftScheduling": {
+            "description": "Șabloane de tură și ture programate",
+            "requiresLocations": "Necesită activarea locațiilor",
+            "title": "Programarea turelor"
+          },
+          "teams": {
+            "countLabel": "Număr de echipe:",
+            "description": "Creați echipe și atribuiți angajați",
+            "title": "Echipe"
+          },
+          "timeEntries": {
+            "description": "Înregistrări de intrare/ieșire și perioade de lucru",
+            "title": "Pontaje"
+          },
+          "workCategories": {
+            "assignLabel": "Atribuiți și perioadelor de lucru",
+            "description": "Seturi de categorii pentru perioadele de lucru",
+            "title": "Categorii de lucru"
+          }
+        },
+        "dateRange": {
+          "hint": "Interval de timp pentru datele generate",
+          "label": "Interval de date",
+          "last30": "Ultimele 30 de zile",
+          "last60": "Ultimele 60 de zile",
+          "last90": "Ultimele 90 de zile",
+          "thisYear": "Anul acesta"
+        },
+        "employees": {
+          "all": "Toți angajații ({count})",
+          "label": "Angajați",
+          "selectSpecific": "Selectați anumiți angajați"
+        }
+      },
+      "generateData": {
+        "button": "Generează date",
+        "description": "Creați date demonstrative realiste pentru organizația dumneavoastră",
+        "title": "Generează date demonstrative"
+      },
+      "generateEmployees": {
+        "button": "Generează {count} angajați",
+        "countHint": "Maximum 50 de angajați simultan",
+        "countLabel": "Număr de angajați",
+        "description": "Creați conturi demonstrative de angajați pentru testare",
+        "employeesCreated": "{count} angajați creați",
+        "generating": "Se generează...",
+        "includeManagers": "Include atribuirile de manageri",
+        "managersCreated": "{count} atribuiri de manageri",
+        "managersHint": "Atribuiți aleatoriu manageri noilor angajați",
+        "options": "Opțiuni",
+        "successTitle": "Angajații au fost generați cu succes!",
+        "title": "Generează angajați",
+        "usersCreated": "{count} utilizatori creați"
+      },
+      "results": {
+        "success": "Datele demonstrative au fost generate cu succes!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Se creează înregistrările de absențe",
+          "label": "Absențe"
+        },
+        "assignCategories": {
+          "description": "Se alocă categoriile de lucru perioadelor",
+          "label": "Alocare categorii"
+        },
+        "changePolicies": {
+          "description": "Se creează politicile de modificare",
+          "label": "Politici de modificare"
+        },
+        "locations": {
+          "description": "Se creează locațiile și subzonele",
+          "label": "Locații"
+        },
+        "managers": {
+          "description": "Se alocă managerii angajaților",
+          "label": "Alocări de manageri"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Se creează cereri de aprobare a absenței în așteptare",
+          "label": "Aprobări de absență în așteptare"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Se creează cereri de aprobare a corecției de pontaj în așteptare",
+          "label": "Aprobări de corecție de pontaj în așteptare"
+        },
+        "projects": {
+          "description": "Se creează proiecte demonstrative",
+          "label": "Proiecte"
+        },
+        "shifts": {
+          "description": "Se creează turele și cererile",
+          "label": "Ture"
+        },
+        "shiftTemplates": {
+          "description": "Se creează șabloanele de tură",
+          "label": "Șabloane de tură"
+        },
+        "teams": {
+          "description": "Se creează echipele și se alocă angajații",
+          "label": "Echipe"
+        },
+        "timeEntries": {
+          "description": "Se creează înregistrările de timp și perioadele de lucru",
+          "label": "Înregistrări de timp"
+        },
+        "workCategories": {
+          "description": "Se creează seturile de categorii de lucru și categoriile",
+          "label": "Categorii de lucru"
+        }
+      },
+      "title": "Date demonstrative",
+      "wizard": {
+        "backToConfig": "Înapoi la configurare",
+        "complete": "Finalizat",
+        "configure": "Configurează",
+        "generate": "Generează",
+        "generateMore": "Generează mai multe date"
+      }
+    },
+    "demoData": {
+      "description": "Generați date demonstrative pentru testare sau ștergeți toate datele legate de timp",
+      "title": "Date demonstrative"
+    }
+  }
+}

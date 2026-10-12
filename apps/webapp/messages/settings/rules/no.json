@@ -15,9 +15,16 @@
       "createCategory": "Opprett fraværskategori",
       "createCategoryButton": "Opprett kategori",
       "deactivate": "Deaktiver",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Fravær som trekkes fra arbeidssaldoen",
+          "name": "Avspasering"
+        }
+      },
       "deleteDescription": "Er du sikker på at du vil slette «{name}»? Kategorier som brukes av eksisterende fravær kan ikke slettes og bør deaktiveres i stedet.",
       "deleteFailed": "Kunne ikke slette kategori",
       "deleteTitle": "Slett fraværskategori",
+      "drawsOnWorkBalance": "Trekker fra arbeidssaldo",
       "editCategory": "Rediger «{name}»",
       "form": {
         "active": "Aktiv",
@@ -26,11 +33,17 @@
         "colorHelp": "Kalendermarkør",
         "countsAgainstVacation": "Trekkes fra feriesaldo",
         "countsAgainstVacationHelp": "Trekk godkjente dager fra den ansattes feriekvote.",
+        "deputyRequired": "Stedfortreder påkrevd",
+        "deputyRequiredHelp": "Hvert fravær av denne typen må oppgi en stedfortreder som dekker mens den ansatte er borte.",
+        "deputyRequiredSick": "Sykefravær krever aldri stedfortreder.",
         "description": "Beskrivelse",
         "descriptionHelp": "Valgfri veiledning som vises til administratorer og kontrollører.",
         "descriptionPlaceholder": "f.eks. Brukes til godkjente opplærings- eller sertifiseringsdager…",
         "descriptionTranslation": "Beskrivelse for {locale}",
         "descriptionTranslationPlaceholder": "Lokalisert beskrivelse",
+        "drawsOnWorkBalance": "Trekker fra arbeidssaldo",
+        "drawsOnWorkBalanceConflict": "\"Trekker fra arbeidssaldo\" kan ikke kombineres med \"Teller mot ferie\" eller \"Krever arbeidstid\".",
+        "drawsOnWorkBalanceHelp": "Avspasering: godkjente dager beholder sin påkrevde tid, slik at den ansattes arbeidssaldo reduseres tilsvarende. Ferie brukes ikke.",
         "name": "Navn",
         "nameHelp": "Bruk en tydelig etikett som ansatte og godkjennere vil kjenne igjen.",
         "nameMaxLength": "Bruk 100 tegn eller færre",
@@ -46,7 +59,8 @@
         "translationsHelp": "Valgfrie lokaliserte etiketter for ansatte som bruker et annet appspråk.",
         "type": "Type",
         "typeHelp": "Grupperer rapporter og etterfølgende arbeidsflyter for fravær.",
-        "typePlaceholder": "Velg kategoritype"
+        "typePlaceholder": "Velg kategoritype",
+        "typeTimeOffInLieu": "Avspasering"
       },
       "header": {
         "approval": "Godkjenning",
@@ -72,6 +86,7 @@
         "parental": "Foreldrepermisjon",
         "personal": "Personlig",
         "sick": "Sykefravær",
+        "timeOffInLieu": "Avspasering",
         "unpaid": "Ubetalt",
         "vacation": "Ferie"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Noen aktive kanaler hadde eskaleringer slått av. De leverer fortsatt ikke eskaleringsmeldinger.",
         "inactiveSourceEnabled": "Noen inaktive kanaler hadde eskaleringer slått på. De ble ikke regnet med i retningslinjen.",
         "invalidTimeout": "En kanal hadde et ugyldig tidsavbrudd og ble ikke brukt for svarvinduet."
+      },
+      "deputyDecisions": {
+        "description": "Ansatte oppgir en stedfortreder ved fravær. Mens en godkjenner har et godkjent fravær, kan stedfortrederen se og avgjøre godkjenningene som fremdeles er tildelt dem.",
+        "disabled": "Stedfortredere kan ikke lenger avgjøre godkjenninger. De forblir kontaktpersoner.",
+        "enabled": "Stedfortredere kan nå avgjøre godkjenninger mens godkjenneren er borte.",
+        "help": "Bare stedfortredere som kan bruke innboksen for godkjenning kan avgjøre, og bare på godkjennerens fraværsdager. Godkjenneren beholder godkjenningene sine. Når dette er slått av, er stedfortredere kun kontaktpersoner.",
+        "title": "Stedfortredere",
+        "toggle": "Stedfortredere kan avgjøre godkjenninger"
       },
       "description": "Gå gjennom organisasjonens eskaleringspolicy, hvordan den ble migrert fra kanalinnstillinger, og betingelser som krever en godkjenningsansvarlig.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Fravær",
         "complianceException": "Samsvarsunntak",
         "manualTimeSubmission": "Manuell tidsinnsending",
+        "periodSubmission": "Periodeinnsending",
         "policyClockOut": "Utstempling iht. retningslinje",
         "shiftRequest": "Vaktforespørsel",
         "timeCorrection": "Tidskorreksjon",

@@ -7,6 +7,11 @@
       "pleaseWait": "Vänligen vänta medan vi sammanställer dina data",
       "selectPeriod": "Välj en period och klicka på \"Generera rapport\" för att komma igång"
     },
+    "customFields": {
+      "no": "Nej",
+      "title": "Anpassade fält",
+      "yes": "Ja"
+    },
     "description": "Generera omfattande rapporter över arbetstimmar och frånvaro med skatterelaterade uppgifter om hemarbete",
     "employeeSelector": {
       "error": "Det gick inte att läsa in teammedlemmar",
@@ -74,7 +79,6 @@
         "description": "Endast slutfört arbete. Intäkter baseras på de taxor som gällde {date}.",
         "employee": "Medarbetare",
         "hasUnpriced": "Har oprissatt arbete",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Fakturerade timmar",
         "invoicedRevenue": "Fakturerade intäkter",
         "invoicedRevenueHint": "Enligt priserna i dess fakturautkast",
@@ -154,6 +158,13 @@
         "withoutCustomer": "Utan kund",
         "withoutCustomerHint": "{hours} debiterbart utan kund, kan inte överlämnas"
       },
+      "details": {
+        "customer": "Kund",
+        "customerFields": "Kundfält",
+        "noCustomer": "Ingen kund",
+        "projectFields": "Projektfält",
+        "title": "Detaljer"
+      },
       "export": {
         "billableHours": "Debiterbara timmar",
         "changedAfterInvoicing": "Ändrat efter fakturering",
@@ -164,6 +175,10 @@
         "customer": "Kund",
         "customerReportTitle": "Kundrapport",
         "customersTable": "Kunder",
+        "customFieldName": "Fält",
+        "customFieldRecord": "Post",
+        "customFieldsTable": "Anpassade fält",
+        "customFieldValue": "Värde",
         "dailyHoursTable": "Timmar per dag",
         "date": "Datum",
         "employee": "Anställd",
@@ -176,6 +191,7 @@
         "invoicingNote": "Fakturerade intäkter behåller priserna från fakturautkastet; ofakturerade intäkter använder de priser som gällde när rapporten genererades.",
         "margin": "Marginal",
         "marginPercent": "Marginal %",
+        "no": "Nej",
         "nonBillableHours": "Ej debiterbara timmar",
         "pendingReview": "Väntande korrigeringar eller inlämningar",
         "period": "Period",
@@ -186,6 +202,7 @@
         "ratesResolvedAt": "Priser per",
         "revenue": "Intäkter",
         "roundingNote": "Belopp summeras exakt och avrundas med hälften uppåt till närmaste cent en gång per rad; totalsummor summerar raderna.",
+        "snapshotRatesNote": "Intäkter baseras på de priser som gällde när denna ögonblicksbild togs.",
         "summaryTable": "Sammanfattning",
         "total": "Totalt",
         "uninvoicedHours": "Ofakturerade timmar",
@@ -194,7 +211,8 @@
         "unpricedWork": "Oprissatt arbete",
         "withoutCustomer": "Utan kund",
         "withoutCustomerHours": "Fakturerbara timmar utan kund",
-        "workPeriods": "Arbetsperioder"
+        "workPeriods": "Arbetsperioder",
+        "yes": "Ja"
       },
       "filter": {
         "activeOnly": "Endast aktiva",
@@ -240,6 +258,7 @@
         "overBudget": "Över budget",
         "overBudgetDescription": "Budget överskriden"
       },
+      "hoursValue": "{hours} h",
       "page": {
         "accessDenied": "Åtkomst nekad",
         "description": "Analysera projekttimmar, budgetanvändning och teamets bidrag",
@@ -256,6 +275,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Kund",
         "daysLeft": "{days}d kvar",
         "daysOverdue": "{days}d försenad",
         "deadline": "Deadline",
@@ -306,6 +326,89 @@
         "portfolioGenerated": "Portföljrapport har skapats",
         "projectGenerated": "Rapport har skapats för {name}",
         "unexpectedError": "Ett oväntat fel uppstod"
+      }
+    },
+    "share": {
+      "action": "Dela",
+      "created": {
+        "another": "Skapa ytterligare en länk",
+        "copied": "Kopierat",
+        "copy": "Kopiera",
+        "copyFailed": "Kopiera länken genom att markera den",
+        "description": "Kopiera den nu: den visas bara en gång. Skapa en ny länk om du vill dela igen senare.",
+        "title": "Din delningslänk",
+        "urlLabel": "Delningslänk"
+      },
+      "create": {
+        "failed": "Delningslänken kunde inte skapas"
+      },
+      "dialog": {
+        "description": "Alla med länken kan visa en skrivskyddad ögonblicksbild av denna rapport för {period}, som den ser ut nu, tills länken löper ut. Kostnad och marginal delas aldrig.",
+        "title": "Dela {name}"
+      },
+      "figures": {
+        "hours": "Endast timmar",
+        "revenue": "Timmar + intäkter"
+      },
+      "form": {
+        "create": "Skapa länk",
+        "employees": "Uppdelning per medarbetare",
+        "employeesDescription": "Visar varje medarbetares timmar under deras riktiga namn.",
+        "expiry": "Löper ut efter",
+        "expiryDays": "{days, plural, one {# dag} other {# dagar}}",
+        "figures": "Siffror",
+        "revenueUnavailable": "Du ser inte intäkter i den här rapporten, så du kan inte dela den."
+      },
+      "kind": {
+        "customer": "Kundrapport",
+        "project": "Projektrapport"
+      },
+      "list": {
+        "createdBy": "Skapades av {name} den {date}",
+        "deletedReport": "Borttagen",
+        "empty": "Inga delningslänkar ännu.",
+        "expired": "Löpte ut {date}",
+        "expires": "Löper ut {date}",
+        "failed": "Delningslänkar kunde inte läsas in.",
+        "lastViewed": "senast {date}",
+        "loading": "Läser in delningslänkar…",
+        "revokedAutomatically": "Återkallades automatiskt den {date}: skaparen ser inte längre alla projekt i den",
+        "revokedBy": "Återkallades av {name} den {date}",
+        "someone": "någon",
+        "title": "Länkar till denna rapport",
+        "views": "{count, plural, one {# visning} other {# visningar}}",
+        "withEmployees": "Med uppdelning per medarbetare",
+        "withoutEmployees": "Utan uppdelning per medarbetare"
+      },
+      "page": {
+        "expiresAt": "Länken löper ut {date}",
+        "footer": "En skrivskyddad ögonblicksbild delad från Z8. Senare ändringar av arbetet bakom den visas inte.",
+        "loading": "Läser in delad rapport",
+        "sharedBy": "Delad av {name}",
+        "takenAt": "Ögonblicksbild tagen {date}",
+        "unavailableDescription": "Länken kan ha upphört att gälla eller återkallats, eller så kan den vara ofullständig. Be personen som delade den med dig om en ny länk.",
+        "unavailableTitle": "Den här länken är inte tillgänglig"
+      },
+      "revoke": {
+        "action": "Återkalla",
+        "cancel": "Avbryt",
+        "confirm": "Återkalla länk",
+        "description": "Länken slutar omedelbart att fungera och dess ögonblicksbild raderas. Dess post och visningslogg behålls.",
+        "done": "Länken har återkallats",
+        "failed": "Länken kunde inte återkallas",
+        "title": "Vill du återkalla den här länken?"
+      },
+      "status": {
+        "active": "Aktiv",
+        "expired": "Utgången",
+        "revoked": "Återkallad"
+      },
+      "views": {
+        "empty": "Ingen har öppnat den här länken än.",
+        "failed": "Visningar kunde inte läsas in.",
+        "loading": "Läser in visningar…",
+        "unknownAgent": "Okänd webbläsare",
+        "unknownIp": "Okänd IP-adress"
       }
     },
     "summary": {

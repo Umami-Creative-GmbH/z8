@@ -7,6 +7,11 @@
       "pleaseWait": "Lütfen verileriniz derlenirken bekleyin",
       "selectPeriod": "Başlamak için bir dönem seçin ve \"Rapor Oluştur\"a tıklayın"
     },
+    "customFields": {
+      "no": "Hayır",
+      "title": "Özel alanlar",
+      "yes": "Evet"
+    },
     "description": "Vergiyle ilgili evden çalışma verileriyle kapsamlı çalışma saati ve devamsızlık raporları oluşturun",
     "employeeSelector": {
       "error": "Ekip üyeleri yüklenemedi",
@@ -74,7 +79,6 @@
         "description": "Yalnızca tamamlanan çalışmalar. Gelir için {date} tarihinde geçerli olan oranlar kullanılır.",
         "employee": "Çalışan",
         "hasUnpriced": "Fiyatlandırılmamış çalışma var",
-        "hoursValue": "{hours} sa",
         "invoicedHours": "Faturalandırılan saatler",
         "invoicedRevenue": "Faturalandırılan gelir",
         "invoicedRevenueHint": "Fatura taslaklarının ücretlerine göre",
@@ -154,6 +158,13 @@
         "withoutCustomer": "Müşterisiz",
         "withoutCustomerHint": "Müşterisiz {hours} faturalandırılabilir çalışma, devredilemez"
       },
+      "details": {
+        "customer": "Müşteri",
+        "customerFields": "Müşteri alanları",
+        "noCustomer": "Müşteri yok",
+        "projectFields": "Proje alanları",
+        "title": "Detaylar"
+      },
       "export": {
         "billableHours": "Faturalandırılabilir saatler",
         "changedAfterInvoicing": "Faturalandırmadan sonra değiştirildi",
@@ -164,6 +175,10 @@
         "customer": "Müşteri",
         "customerReportTitle": "Müşteri raporu",
         "customersTable": "Müşteriler",
+        "customFieldName": "Alan",
+        "customFieldRecord": "Kayıt",
+        "customFieldsTable": "Özel alanlar",
+        "customFieldValue": "Değer",
         "dailyHoursTable": "Gün başına saat",
         "date": "Tarih",
         "employee": "Çalışan",
@@ -176,6 +191,7 @@
         "invoicingNote": "Faturalanan gelir, fatura taslağındaki ücretleri korur; faturalanmamış gelir ise rapor oluşturulduğunda geçerli olan ücretleri kullanır.",
         "margin": "Marj",
         "marginPercent": "% Marj",
+        "no": "Hayır",
         "nonBillableHours": "Faturalandırılamayan saatler",
         "pendingReview": "Bekleyen düzeltmeler veya gönderimler",
         "period": "Dönem",
@@ -186,6 +202,7 @@
         "ratesResolvedAt": "İtibarıyla ücretler",
         "revenue": "Gelir",
         "roundingNote": "Tutarlar tam olarak toplanır ve satır başına bir kez en yakın kuruşa (yukarı) yuvarlanır; toplamlar satırların toplanmasıyla elde edilir.",
+        "snapshotRatesNote": "Gelir, bu anlık görüntü alındığında geçerli olan ücretleri kullanır.",
         "summaryTable": "Özet",
         "total": "Toplam",
         "uninvoicedHours": "Faturalandırılmamış saatler",
@@ -194,7 +211,8 @@
         "unpricedWork": "Fiyatlandırılmamış iş",
         "withoutCustomer": "Müşterisiz",
         "withoutCustomerHours": "Müşterisiz faturalandırılabilir saatler",
-        "workPeriods": "Çalışma dönemleri"
+        "workPeriods": "Çalışma dönemleri",
+        "yes": "Evet"
       },
       "filter": {
         "activeOnly": "Sadece Aktif",
@@ -240,6 +258,7 @@
         "overBudget": "Bütçe aşımı",
         "overBudgetDescription": "Bütçe aşıldı"
       },
+      "hoursValue": "{hours} sa",
       "page": {
         "accessDenied": "Erişim Engellendi",
         "description": "Proje saatlerini, bütçe kullanımını ve ekip katkılarını analiz edin",
@@ -256,6 +275,7 @@
       },
       "table": {
         "budget": "Bütçe",
+        "customer": "Müşteri",
         "daysLeft": "{days} gün kaldı",
         "daysOverdue": "{days} gün gecikti",
         "deadline": "Teslim Tarihi",
@@ -306,6 +326,89 @@
         "portfolioGenerated": "Portföy raporu oluşturuldu",
         "projectGenerated": "{name} için rapor oluşturuldu",
         "unexpectedError": "Beklenmedik bir hata oluştu"
+      }
+    },
+    "share": {
+      "action": "Paylaş",
+      "created": {
+        "another": "Başka bir bağlantı oluştur",
+        "copied": "Kopyalandı",
+        "copy": "Kopyala",
+        "copyFailed": "Seçerek bağlantıyı kopyalayın",
+        "description": "Şimdi kopyalayın: Yalnızca bir kez gösterilir. Daha sonra tekrar paylaşmak için yeni bir bağlantı oluşturun.",
+        "title": "Paylaşım bağlantınız",
+        "urlLabel": "Paylaşım bağlantısı"
+      },
+      "create": {
+        "failed": "Paylaşım bağlantısı oluşturulamadı"
+      },
+      "dialog": {
+        "description": "Bağlantıya sahip olan herkes, bağlantının geçerlilik süresi dolana kadar bu raporun {period} dönemine ait salt okunur anlık görüntüsünü geçerli haliyle görüntüleyebilir. Maliyet ve kâr marjı asla paylaşılmaz.",
+        "title": "{name} Paylaş"
+      },
+      "figures": {
+        "hours": "Yalnızca saatler",
+        "revenue": "Saatler + gelir"
+      },
+      "form": {
+        "create": "Bağlantı oluştur",
+        "employees": "Çalışan dökümü",
+        "employeesDescription": "Her çalışanın saatlerini kendi gerçek adı altında gösterir.",
+        "expiry": "Geçerlilik süresi",
+        "expiryDays": "{days, plural, other {# gün} }",
+        "figures": "Rakamlar",
+        "revenueUnavailable": "Bu raporda geliri görmüyorsunuz, bu nedenle paylaşamazsınız."
+      },
+      "kind": {
+        "customer": "Müşteri raporu",
+        "project": "Proje raporu"
+      },
+      "list": {
+        "createdBy": "{date} tarihinde {name} tarafından oluşturuldu",
+        "deletedReport": "Silindi",
+        "empty": "Henüz paylaşım bağlantısı yok.",
+        "expired": "Süresi doldu: {date}",
+        "expires": "Sona erme tarihi: {date}",
+        "failed": "Paylaşım bağlantıları yüklenemedi.",
+        "lastViewed": "son {date}",
+        "loading": "Paylaşım bağlantıları yükleniyor…",
+        "revokedAutomatically": "{date} tarihinde otomatik olarak iptal edildi: oluşturan kişi artık rapordaki tüm projeleri göremiyor",
+        "revokedBy": "{date} tarihinde {name} tarafından iptal edildi",
+        "someone": "biri",
+        "title": "Bu rapora giden bağlantılar",
+        "views": "{count, plural, other {# görüntüleme} }",
+        "withEmployees": "Çalışan dökümü ile",
+        "withoutEmployees": "Çalışan dökümü olmadan"
+      },
+      "page": {
+        "expiresAt": "Bağlantının süresi {date} tarihinde doluyor",
+        "footer": "Z8'den paylaşılan salt okunur bir anlık görüntü. Arka plandaki çalışmada daha sonra yapılan değişiklikler gösterilmez.",
+        "loading": "Paylaşılan rapor yükleniyor",
+        "sharedBy": "{name} tarafından paylaşıldı",
+        "takenAt": "Anlık görüntü {date} tarihinde alındı",
+        "unavailableDescription": "Bağlantının süresi dolmuş veya bağlantı iptal edilmiş olabilir ya da bağlantı eksik olabilir. Sizinle paylaşan kişiden yeni bir bağlantı isteyin.",
+        "unavailableTitle": "Bu bağlantı kullanılamıyor"
+      },
+      "revoke": {
+        "action": "İptal et",
+        "cancel": "Vazgeç",
+        "confirm": "Bağlantıyı iptal et",
+        "description": "Bağlantı anında çalışmayı durdurur ve anlık görüntüsü silinir. Kaydı ve görüntüleme günlüğü saklanır.",
+        "done": "Bağlantı iptal edildi",
+        "failed": "Bağlantı iptal edilemedi",
+        "title": "Bu bağlantı iptal edilsin mi?"
+      },
+      "status": {
+        "active": "Aktif",
+        "expired": "Süresi doldu",
+        "revoked": "İptal edildi"
+      },
+      "views": {
+        "empty": "Henüz kimse bu bağlantıyı açmadı.",
+        "failed": "Görüntülemeler yüklenemedi.",
+        "loading": "Görüntülemeler yükleniyor…",
+        "unknownAgent": "Bilinmeyen tarayıcı",
+        "unknownIp": "Bilinmeyen IP adresi"
       }
     },
     "summary": {

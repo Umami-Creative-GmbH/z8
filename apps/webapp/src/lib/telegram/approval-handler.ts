@@ -160,7 +160,10 @@ export function fitsTelegramMessage(card: ApprovalCardDraft): boolean {
 	return telegramCardText(card).length <= TELEGRAM_TEXT_LIMIT;
 }
 
-/** Bound card layout: approve/reject carry only the binding handle. */
+/**
+ * Bound card layout: approve/reject carry only the binding handle. A card whose rejection needs a
+ * reason links Reject to the review instead.
+ */
 export function telegramActionableCard(
 	card: ApprovalActionableCard,
 ): Omit<TelegramSendMessageParams, "chat_id"> {
@@ -173,10 +176,12 @@ export function telegramActionableCard(
 						text: card.approveLabel,
 						callback_data: encodeBoundApprovalCallback("approve", card.bindingId),
 					},
-					{
-						text: card.rejectLabel,
-						callback_data: encodeBoundApprovalCallback("reject", card.bindingId),
-					},
+					card.rejectInReview
+						? { text: card.rejectLabel, url: card.reviewUrl }
+						: {
+								text: card.rejectLabel,
+								callback_data: encodeBoundApprovalCallback("reject", card.bindingId),
+							},
 				],
 				[{ text: card.reviewLabel, url: card.reviewUrl }],
 			],

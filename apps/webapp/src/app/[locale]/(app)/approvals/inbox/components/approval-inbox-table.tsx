@@ -2,6 +2,7 @@
 
 import {
 	IconAlertTriangle,
+	IconCalendarCheck,
 	IconCalendarOff,
 	IconClockEdit,
 	IconReceipt,
@@ -9,6 +10,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { getApprovalTypeLabels } from "./approval-type-labels";
 import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import { getDecidedEarlierStageNote } from "./covering-notes";
 import { getOwnRequestNote } from "./own-request-note";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -30,6 +32,7 @@ const TYPE_ICONS: Record<ApprovalInboxType, React.ComponentType<{ className?: st
 	time_entry: IconClockEdit,
 	travel_expense_claim: IconReceipt,
 	travel_expense_report: IconReceipt,
+	period_submission: IconCalendarCheck,
 };
 
 const RISK_BADGE_VARIANTS: Record<
@@ -88,6 +91,7 @@ export function ApprovalInboxTable({
 						const isSelected = selectedIds.has(item.id);
 						const isHighRisk = item.triage.riskLevel === "high";
 						const isOwnRequest = item.capabilities.ownRequest === true;
+						const decidedEarlierStage = item.capabilities.decidedEarlierStage === true;
 
 						return (
 							<div
@@ -103,7 +107,7 @@ export function ApprovalInboxTable({
 										checked={isSelected}
 										onCheckedChange={(checked) => onSelectItem(item.id, !!checked)}
 										onClick={(event) => event.stopPropagation()}
-										disabled={isOwnRequest}
+										disabled={isOwnRequest || decidedEarlierStage}
 										aria-label={ariaLabel}
 									/>
 								</div>
@@ -164,6 +168,11 @@ export function ApprovalInboxTable({
 										{isOwnRequest && (
 											<p className="font-medium text-muted-foreground text-xs leading-5">
 												{getOwnRequestNote(t)}
+											</p>
+										)}
+										{decidedEarlierStage && (
+											<p className="font-medium text-muted-foreground text-xs leading-5">
+												{getDecidedEarlierStageNote(t)}
 											</p>
 										)}
 									</div>

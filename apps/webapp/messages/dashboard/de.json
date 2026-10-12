@@ -15,6 +15,13 @@
       "today": "Heute!",
       "tomorrow": "Morgen"
     },
+    "covering-for": {
+      "description": "Kolleginnen und Kollegen, die Sie während ihrer Abwesenheit vertreten",
+      "error": "Ihre Vertretungsaufgaben konnten nicht geladen werden",
+      "running": "Vertretung für {name} bis {date}",
+      "title": "Vertretung für",
+      "upcoming": "Bevorstehend: Vertretung für {name} von {start} bis {end}"
+    },
     "customize": {
       "empty-description": "Verwenden Sie das Symbol zur Dashboard-Anpassung, um einzelne Widgets wieder zu aktivieren oder das Layout zurückzusetzen, damit alle Widgets wieder angezeigt werden.",
       "empty-title": "Alle Dashboard-Widgets sind ausgeblendet",
@@ -129,6 +136,17 @@
       "teams": "Teams",
       "teams-button": "Teams",
       "title": "Organisation"
+    },
+    "upcoming-shifts": {
+      "description": "Ihre nächsten geplanten Schichten",
+      "empty": "Keine anstehenden Schichten",
+      "empty-description": "Ihre nächsten veröffentlichten Schichten werden hier angezeigt.",
+      "ends-next-day": "endet am nächsten Tag",
+      "error": "Ihre anstehenden Schichten konnten nicht geladen werden",
+      "title": "Anstehende Schichten",
+      "today": "Heute",
+      "tomorrow": "Morgen",
+      "view-schedule": "Schichtplan anzeigen"
     },
     "upcoming-time-off": {
       "absence": "Abwesenheit",

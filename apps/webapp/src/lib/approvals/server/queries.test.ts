@@ -85,8 +85,11 @@ describe("buildPendingApprovalResult", () => {
 				],
 			]),
 			periodsById: new Map(),
+			absenceDaysByAbsenceId: new Map([["absence-1", 0.5]]),
 		});
 
+		// Absence days come resolved from the server (#979).
+		expect(result.absenceApprovals[0]?.absence.absenceDays).toBe(0.5);
 		expect(result.absenceApprovals[0]?.absence.sickDetail).toBe("child_sick");
 		expect(result.absenceApprovals[0]?.absence.startDate).toBe("2026-05-18");
 		expect(result.absenceApprovals[0]?.absence.endDate).toBe("2026-05-18");

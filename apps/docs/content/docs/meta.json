@@ -3,6 +3,7 @@
   "pages": [
     "guide",
     "desktop",
-    "tech"
+    "tech",
+    "api-reference"
   ]
 }

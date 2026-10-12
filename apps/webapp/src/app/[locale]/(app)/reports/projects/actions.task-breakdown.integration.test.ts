@@ -83,8 +83,8 @@ const ids = {
 } as const;
 const users = [ids.ownerUser, ids.otherUser];
 
-const rangeStart = new Date("2026-01-05T00:00:00Z");
-const rangeEnd = new Date("2026-01-10T23:59:59Z");
+const rangeStart = "2026-01-05";
+const rangeEnd = "2026-01-10";
 
 describe("the project report's By task section on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });

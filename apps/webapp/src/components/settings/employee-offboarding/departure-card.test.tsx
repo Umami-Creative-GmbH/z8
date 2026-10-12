@@ -40,6 +40,8 @@ function view(overrides: Partial<EmployeeOffboardingView>): EmployeeOffboardingV
 		failedTasks: [],
 		reviews: [],
 		futureWork: { shifts: 0, absences: 0, employmentTerms: 0 },
+		deputyAbsences: 0,
+		workBalance: null,
 		capabilities: none,
 		...overrides,
 	};
@@ -62,6 +64,7 @@ function renderCard(value: EmployeeOffboardingView) {
 		onOffboardNow: vi.fn(),
 		onCancelDeparture: vi.fn(),
 		onRehire: vi.fn(),
+		onRecordFinalPayout: vi.fn(),
 	};
 	render(<DepartureCard view={value} isMutating={false} followUpList={null} {...handlers} />);
 	return handlers;
@@ -126,6 +129,26 @@ describe("DepartureCard", () => {
 		expect(kept.textContent).not.toContain("Employment terms");
 	});
 
+	it("lists the absences the employee is deputy on, linked to exactly those team absences", () => {
+		renderCard(view({ state: "scheduled", departure, deputyAbsences: 3 }));
+
+		const cover = screen.getByRole("list", { name: "Cover to rearrange" });
+		expect(
+			screen
+				.getByRole("link", { name: "Deputy on running or upcoming absences: 3" })
+				.getAttribute("href"),
+		).toBe(
+			"/team/absences?year=2026&deputy=employee-1&coverAt=2026-09-30T22%3A00%3A00Z",
+		);
+		expect(cover.textContent).toContain("Deputy on running or upcoming absences: 3");
+	});
+
+	it("shows no deputy cover when the employee covers no absence", () => {
+		renderCard(view({ state: "scheduled", departure }));
+
+		expect(screen.queryByRole("list", { name: "Cover to rearrange" })).toBeNull();
+	});
+
 	it("shows no future-work list when nothing is dated after the cutoff", () => {
 		renderCard(view({ state: "offboarded", departure }));
 
@@ -174,6 +197,63 @@ describe("DepartureCard", () => {
 		renderCard(view({ state: "scheduled", departure, capabilities: none }));
 
 		expect(screen.queryAllByRole("button")).toHaveLength(0);
+	});
+
+	it("shows a departing employee's work balance and offers a final overtime payout", async () => {
+		const user = userEvent.setup();
+		const handlers = renderCard(
+			view({
+				state: "offboarded",
+				departure,
+				workBalance: {
+					balance: { balanceMinutes: 360, computedThroughDate: "2026-10-09" },
+					finalPayout: { defaultDay: "2026-10-09", defaultMinutes: 360, latestDay: "2026-10-10" },
+				},
+			}),
+		);
+
+		const balance = screen.getByRole("region", { name: "Work balance" });
+		expect(balance.textContent).toContain("+6:00h");
+		expect(balance.textContent).toContain("Through Oct 9, 2026");
+		await user.click(screen.getByRole("button", { name: "Record final overtime payout" }));
+
+		expect(handlers.onRecordFinalPayout).toHaveBeenCalledTimes(1);
+	});
+
+	it("shows the work balance without the payout action when none is offered", () => {
+		renderCard(
+			view({
+				state: "scheduled",
+				departure,
+				workBalance: {
+					balance: { balanceMinutes: -90, computedThroughDate: "2026-10-09" },
+					finalPayout: null,
+				},
+			}),
+		);
+
+		expect(screen.getByRole("region", { name: "Work balance" }).textContent).toContain("-1:30h");
+		expect(screen.queryByRole("button", { name: "Record final overtime payout" })).toBeNull();
+	});
+
+	it("says when the work balance is not calculated yet", () => {
+		renderCard(
+			view({
+				state: "legacy_inactive",
+				employmentPeriodId: null,
+				workBalance: { balance: null, finalPayout: null },
+			}),
+		);
+
+		expect(screen.getByRole("region", { name: "Work balance" }).textContent).toContain(
+			"Not calculated yet",
+		);
+	});
+
+	it("shows no work balance when the view has none", () => {
+		renderCard(view({ state: "offboarded", departure }));
+
+		expect(screen.queryByRole("region", { name: "Work balance" })).toBeNull();
 	});
 
 	it("keeps unknown legacy history without inventing a date", () => {

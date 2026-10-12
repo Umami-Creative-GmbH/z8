@@ -14,6 +14,8 @@ interface VacationManagementProps {
 	allowedAssignmentTypes: readonly ("team" | "employee")[];
 	canManageCategories: boolean;
 	children: React.ReactNode; // The existing policy content
+	/** Organization-wide absence settings, above the categories (#982). */
+	absenceSettings?: React.ReactNode;
 }
 
 export function VacationManagement({
@@ -21,6 +23,7 @@ export function VacationManagement({
 	allowedAssignmentTypes,
 	canManageCategories,
 	children,
+	absenceSettings,
 }: VacationManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -77,6 +80,7 @@ export function VacationManagement({
 				</TabsContent>
 
 				<TabsContent value="categories" className="space-y-4">
+					{absenceSettings}
 					<AbsenceCategoriesTable
 						organizationId={organizationId}
 						canManageCategories={canManageCategories}

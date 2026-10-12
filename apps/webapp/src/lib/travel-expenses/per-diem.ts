@@ -49,6 +49,7 @@ import {
 	type PerDiemRates,
 	type PerDiemRuleSet,
 	perDiemRulesOn,
+	validityCovers,
 } from "./statutory-per-diem-defaults";
 import type { TripDestination } from "./trip-destination";
 
@@ -593,10 +594,7 @@ function planDays(
 	const rules = context.rulesKey
 		? findPerDiemRuleSet(context.rulesKey)
 		: perDiemRulesOn(firstDay.toString());
-	const covered =
-		rules !== null &&
-		comparePlainDates(firstDay, parsePlainDate(rules.validFrom)) >= 0 &&
-		comparePlainDates(lastDay, parsePlainDate(rules.validThrough)) <= 0;
+	const covered = rules !== null && validityCovers(rules, firstDay.toString(), lastDay.toString());
 	if (!covered) reasons.push("rules_not_verified");
 	if (reasons.length > 0 || !rules) return { reasons };
 

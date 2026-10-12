@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Tildelt lokasjon lagt til",
+      "employeeDescription": "Lokasjonene denne ansatte jobber ved. Kiosker godtar bare ansatte som er tildelt deres lokasjon.",
+      "employeeEmpty": "Ingen tildelte lokasjoner",
+      "employeeLabel": "Ansatt",
+      "employeePlaceholder": "Velg en ansatt",
+      "employeeTitle": "Tildelte lokasjoner",
+      "errors": {
+        "adminOnly": "Bare organisasjonseiere og -administratorer kan administrere tildelte lokasjoner.",
+        "employeeNotFound": "Fant ikke ansatt.",
+        "failed": "Kunne ikke oppdatere tildelte lokasjoner. Prøv igjen.",
+        "invalidSelection": "Velg fra listen.",
+        "locationNotFound": "Fant ikke lokasjon."
+      },
+      "locationDescription": "De ansatte som jobber ved denne lokasjonen. Kioskene her godtar bare disse.",
+      "locationEmpty": "Ingen tildelte ansatte",
+      "locationLabel": "Lokasjon",
+      "locationPlaceholder": "Velg en lokasjon",
+      "locationTitle": "Tildelte ansatte",
+      "noEmployeesLeft": "Alle aktive ansatte er tildelt denne lokasjonen.",
+      "noLocationsLeft": "Det er ingen flere aktive lokasjoner å tildele.",
+      "removed": "Tildelt lokasjon fjernet"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Kunde (behandlingsansvarlig)",
@@ -407,6 +430,75 @@
       "description": "Administrer abonnement, betalingsmåter og fakturaer",
       "title": "Fakturering og abonnement"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Dager etter månedsslutt",
+        "daysHelp": "Hvis noe blokkerer lukkingen, blir alle med tillatelse til å lukke varslet, og det gjøres et nytt forsøk neste dag.",
+        "daysInvalid": "Angi et helt antall dager fra 1 til 60",
+        "description": "Lukk forrige måned for hele organisasjonen et visst antall dager etter at den er over. En måned som har blitt gjenåpnet, lukkes aldri automatisk igjen.",
+        "enabled": "Lukk måneder automatisk",
+        "save": "Lagre",
+        "saved": "Automatisk lukking lagret",
+        "title": "Automatisk lukking"
+      },
+      "blockedTitle": "Måneden kan ikke lukkes ennå. Løs disse først:",
+      "blocker": {
+        "absenceRequest": "uavklart fraværsforespørsel {startDate} – {endDate}",
+        "liveWork": "fremdeles stemplet inn siden {start}",
+        "notEnded": "måneden er ikke over i tidssonen deres",
+        "periodSubmission": "uavklart periodeinnsending {startDate} – {endDate}",
+        "timeRequest": "uavklart forespørsel om arbeid fra {start}"
+      },
+      "close": "Lukk",
+      "closeDescription": "Ingen kan endre arbeid, tilordning eller fravær i en lukket måned før den gjenåpnes. Hver ansatts måned er fastsatt i deres egen tidssone.",
+      "closeSubmit": "Lukk måned",
+      "closeSuccess": "{count, plural, one {{month} stengt for # ansatt} other {{month} stengt for # ansatte}}",
+      "closeTitle": "Steng {month}",
+      "description": "Steng måneder etter lønnskjøring slik at arbeid og fravær ikke lenger kan endres",
+      "employeesLabel": "Ansatte",
+      "employeesRequired": "Velg minst én ansatt",
+      "history": {
+        "automatic": "Automatisk",
+        "closed": "Stengt",
+        "employees": "{count, plural, one {# ansatt} other {# ansatte}}",
+        "reopened": "Gjenåpnet",
+        "unknownActor": "Ukjent"
+      },
+      "historyEmpty": "Ingen måneder har blitt stengt ennå.",
+      "historyTitle": "Historikk",
+      "monthsDescription": "Ved å stenge en måned låses arbeid, tildeling og fravær for lønnskjøring. Notater kan fortsatt redigeres.",
+      "monthsTitle": "Måneder",
+      "nothingToClose": "Alle innenfor dette omfanget er allerede stengt for denne måneden.",
+      "nothingToReopen": "Ingen i dette utvalget er stengt for denne måneden.",
+      "reasonLabel": "Årsak",
+      "reasonPlaceholder": "Hvorfor må denne måneden endres?…",
+      "reasonRequired": "Oppgi en årsak til gjenåpningen",
+      "reopen": "Gjenåpne",
+      "reopenDescription": "Gjenåpnede ansatte forblir åpne til måneden stenges igjen. Lederne deres blir varslet.",
+      "reopenScopeLabel": "Gjenåpne for",
+      "reopenSubmit": "Gjenåpne måned",
+      "reopenSuccess": "{count, plural, one {{month} gjenåpnet for # ansatt} other {{month} gjenåpnet for # ansatte}}",
+      "reopenTitle": "Gjenåpne {month}",
+      "scope": {
+        "all": "Alt",
+        "deletedTeam": "Slettet team",
+        "employees": "Valgte ansatte",
+        "organization": "Organisasjon"
+      },
+      "scopeLabel": "Lukk for",
+      "teamNotFound": "Dette teamet eksisterer ikke lenger.",
+      "title": "Lukkede måneder",
+      "warning": {
+        "periodNotSubmitted": "periode {startDate} – {endDate} ikke sendt inn",
+        "periodRejected": "periode {startDate} – {endDate} avvist",
+        "periodRunning": "periode {startDate} – {endDate} pågår fortsatt, kan ikke sendes inn ennå",
+        "periodSentBack": "periode {startDate} – {endDate} sendt tilbake etter en endring"
+      },
+      "warnings": {
+        "more": "og {count} flere",
+        "title": "Ikke alle periodeinnsendinger for denne måneden er godkjent. Dette hindrer ikke lukkingen:"
+      }
+    },
     "compliance": {
       "description": "Gjennomgå og administrer forespørsler om samsvarsunntak fra teammedlemmer",
       "title": "ArbZG-samsvar"
@@ -468,14 +560,208 @@
       "updated": "Kunde oppdatert",
       "updateFailed": "Kunne ikke oppdatere kunde"
     },
+    "customFields": {
+      "accessSummary": "Synlig for: {visibility} · Redigert av: {edit}",
+      "activeCount": "{count} av {max} aktive felt",
+      "activeList": "Aktive egendefinerte felt",
+      "add": "Legg til egendefinert felt",
+      "archivedList": "Arkiverte egendefinerte felt",
+      "archivedTitle": "Arkivert",
+      "archiveField": "Arkiver {name}",
+      "capReached": "Hver oppføringstype kan ha maksimalt 25 aktive egendefinerte felt. Arkiver ett for å legge til et nytt.",
+      "description": "Dine egne felt for ansatte, prosjekter og kunder",
+      "editField": "Rediger {name}",
+      "empty": "Ingen egendefinerte felt ennå.",
+      "entity": {
+        "customer": "Kunder",
+        "employee": "Ansatte",
+        "project": "Prosjekter"
+      },
+      "form": {
+        "boundsHelp": "La en grense stå tom hvis det ikke skal være noen grense.",
+        "create": "Opprett felt",
+        "createTitle": "Legg til egendefinert felt",
+        "description": "Et egendefinert felt for {entity}.",
+        "editLevel": "Hvem kan redigere verdier",
+        "editLevelHelp": "Ansatte redigerer aldri verdier i egendefinerte felt.",
+        "editTitle": "Rediger egendefinert felt",
+        "integerOnly": "Kun heltall",
+        "max": "Maksimum",
+        "min": "Minimum",
+        "name": "Navn",
+        "nameRequired": "Angi et navn",
+        "options": "Alternativer",
+        "optionsHelp": "Ett alternativ per linje.",
+        "required": "Obligatorisk",
+        "requiredHelp": "Skjemaer nekter å lagre en oppføring uten en verdi.",
+        "save": "Lagre endringer",
+        "tracked": "Behold historikk",
+        "trackedFixed": "Hvorvidt et felt beholder historikk, kan ikke endres etter at det er opprettet.",
+        "trackedHelp": "Hver verdi har datoen den er gyldig fra.",
+        "type": "Type",
+        "typeFixed": "Typen kan ikke endres etter at feltet er opprettet.",
+        "visibility": "Hvem som kan se verdier"
+      },
+      "level": {
+        "admin": "Administratorer",
+        "employee": "Alle, inkludert den ansatte",
+        "manager": "Ledere og administratorer"
+      },
+      "options": {
+        "add": "Legg til alternativ",
+        "archive": "Arkiver {label}",
+        "archived": "Arkivert",
+        "label": "Navn på alternativ",
+        "list": "Alternativer",
+        "moveDown": "Flytt {label} ned",
+        "moveUp": "Flytt {label} opp",
+        "new": "Nytt alternativ",
+        "restore": "Gjenopprett {label}",
+        "title": "Alternativer"
+      },
+      "refusal": {
+        "booleanRequired": "Et ja/nei-felt kan ikke være obligatorisk.",
+        "duplicateOption": "Dette feltet har allerede et aktivt alternativ med dette navnet.",
+        "editBroaderThanVisibility": "Alle som kan redigere verdier, må også kunne se dem.",
+        "employeesNeverEdit": "Ansatte kan ikke redigere egendefinerte feltverdier.",
+        "fieldArchived": "Gjenopprett dette egendefinerte feltet før du endrer det.",
+        "invalidChange": "Denne endringen kan ikke lagres. Last inn siden på nytt og prøv igjen.",
+        "invalidLevel": "Velg hvem som kan se og redigere verdier.",
+        "invalidName": "Angi et navn på maksimalt 100 tegn.",
+        "invalidOptionLabel": "Angi et alternativ på maksimalt 100 tegn.",
+        "lastActiveOption": "Et valgfelt må ha minst ett aktivt alternativ.",
+        "nameTaken": "Et aktivt egendefinert felt på denne oppføringstypen har allerede dette navnet.",
+        "notFound": "Dette egendefinerte feltet finnes ikke lenger. Last inn siden på nytt.",
+        "notSelect": "Bare valgfelt har alternativer.",
+        "numberBounds": "Angi minimum og maksimum som tall, der minimum ikke er høyere enn maksimum.",
+        "optionArchived": "Gjenopprett dette alternativet først.",
+        "selectNeedsOption": "Legg til minst ett alternativ i et valgfelt.",
+        "staleOrder": "Listen ble endret i mellomtiden. Last inn siden på nytt og prøv igjen.",
+        "tooManyFields": "Denne oppføringstypen har allerede 25 aktive egendefinerte felt. Arkiver ett først.",
+        "trackedFixed": "Hvorvidt et egendefinert felt beholder historikk, kan ikke endres etter at det er opprettet.",
+        "typeFixed": "Typen til et egendefinert felt kan ikke endres etter at det er opprettet.",
+        "usedAsPayrollIdentifier": "Dette feltet er personidentifikatoren for lønnseksportkonfigurasjonen {configurations}. Velg en annen identifikator der først."
+      },
+      "reorderField": "Endre rekkefølge på {name}",
+      "required": "Obligatorisk",
+      "restore": "Gjenopprett",
+      "restoreField": "Gjenopprett {name}",
+      "saveFailed": "Endringen kunne ikke lagres.",
+      "title": "Egendefinerte felt",
+      "tracked": "Sporet",
+      "type": {
+        "boolean": "Ja/Nei",
+        "date": "Dato",
+        "number": "Tall",
+        "select": "Velg",
+        "text": "Tekst"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Det finnes allerede en verdi som starter på den datoen.",
+        "fieldArchived": "Dette feltet er arkivert.",
+        "forField": "Egendefinert felt \"{field}\": {message}",
+        "invalidDate": "Angi en gyldig dato.",
+        "invalidNumber": "Angi et tall.",
+        "invalidValidFrom": "Angi en gyldig startdato.",
+        "invalidValue": "Angi en gyldig verdi.",
+        "missingRequired": "Dette feltet er obligatorisk.",
+        "missingValue": "Angi en verdi for hver dato.",
+        "notEditable": "Du kan ikke endre dette feltet.",
+        "numberNotInteger": "Angi et heltall.",
+        "numberOutOfRange": "Angi et tall innenfor det tillatte området.",
+        "optionArchived": "Dette alternativet er arkivert. Velg et annet.",
+        "textTooLong": "Angi maksimalt 255 tegn.",
+        "trackedField": "Dette feltet har historikk. Legg til en datert endring i stedet.",
+        "unknownField": "Dette feltet finnes ikke lenger. Last inn siden på nytt og prøv igjen.",
+        "unknownHistoryEntry": "Historikken ble endret i mellomtiden. Last inn siden på nytt og prøv igjen."
+      },
+      "values": {
+        "archivedOption": "{label} (arkivert)",
+        "history": {
+          "add": "Legg til endring",
+          "apply": "Bruk",
+          "correct": "Korriger verdien som er gyldig fra {date}",
+          "delete": "Slett verdien som er gyldig fra {date}",
+          "duplicateValidFrom": "Det finnes allerede en verdi som er gyldig fra denne datoen.",
+          "empty": "Ingen verdier ennå.",
+          "from": "Fra {date}",
+          "label": "Historikk for {name}",
+          "needsValidFrom": "Velg datoen verdien er gyldig fra.",
+          "needsValue": "Angi en verdi.",
+          "today": "I dag",
+          "validFrom": "Gyldig fra",
+          "value": "Verdi"
+        },
+        "missingRequired": "Mangler obligatoriske verdier",
+        "no": "Nei",
+        "notSet": "Ikke angitt",
+        "ownDescription": "Administreres av organisasjonen din. Be en administrator eller lederen din om å endre dem.",
+        "title": "Egendefinerte felt",
+        "yes": "Ja"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Fraværsregistreringer og -kategorier",
+          "label": "Fravær"
+        },
+        "audit_logs": {
+          "description": "Revisjonsspor for aktivitet",
+          "label": "Revisjonslogger"
+        },
+        "balance_adjustments": {
+          "description": "Åpningssaldoer og overtidsutbetalinger, inkludert kansellerte",
+          "label": "Justeringer av arbeidssaldo"
+        },
+        "customers": {
+          "description": "Kunder med sine egendefinerte kundefelt",
+          "label": "Kunder"
+        },
+        "employees": {
+          "description": "Ansattprofiler, lederrelasjoner og egendefinerte ansattfelt",
+          "label": "Ansatte"
+        },
+        "holidays": {
+          "description": "Helligdagskalender og forhåndsinnstillinger",
+          "label": "Helligdager"
+        },
+        "projects": {
+          "description": "Prosjekter med tilhørende egendefinerte kunde- og prosjektfelter",
+          "label": "Prosjekter"
+        },
+        "schedules": {
+          "description": "Maler for arbeidsplaner og tildelinger",
+          "label": "Arbeidsplaner"
+        },
+        "shifts": {
+          "description": "Skiftplanleggingsdata",
+          "label": "Skift"
+        },
+        "teams": {
+          "description": "Teamstruktur og tillatelser",
+          "label": "Team"
+        },
+        "time_entries": {
+          "description": "Stemplingsregistreringer og korrigeringer",
+          "label": "Tidsregistrering"
+        },
+        "vacation": {
+          "description": "Retningslinjer for ferie og feriekvoter",
+          "label": "Retningslinjer for ferie"
+        },
+        "work_periods": {
+          "description": "Aggregerte arbeidsøkter",
+          "label": "Arbeidsperioder"
+        }
+      },
       "description": "Eksporter organisasjonens data",
       "form": {
         "aboutAsync": "Eksporter behandles asynkront",
+        "aboutDownloadFromHistory": "Last ned fullførte eksporter fra Eksporthistorikk",
         "aboutEmail": "Du vil motta en e-post når den er klar",
-        "aboutLinkValidity": "Nedlastingslenker er gyldige i 24 timer",
+        "aboutFileRetention": "Eksportfiler slettes etter 30 dager",
         "aboutOrgDataOnly": "Bare dataene til organisasjonen din er inkludert",
-        "aboutStorageDuration": "Eksportfiler lagres i 7 dager",
         "aboutTitle": "Om dataeksport",
         "description": "Velg datakategoriene du vil eksportere",
         "selectAll": "Velg alle",
@@ -508,6 +794,9 @@
         "statusFailed": "Mislyktes",
         "statusPending": "Venter",
         "statusProcessing": "Behandler",
+        "switchOrganizationAction": "Bytt til {organization}",
+        "switchOrganizationBody": "Denne eksporten tilhører {organization}. Bytt til den organisasjonen for å åpne eksporthistorikken; tilgangen din blir kontrollert på nytt etter byttet.",
+        "switchOrganizationTitle": "Bytt organisasjon for å se denne eksporten",
         "title": "Eksporthistorikk",
         "unexpectedError": "En uventet feil oppsto"
       },
@@ -991,10 +1280,7 @@
           "nameTaken": "{name} har samme navn og er allerede koblet til en annen kontakt",
           "noMatch": "Ingen treff",
           "paging": {
-            "label": "Kontaktsider",
-            "next": "Neste side",
-            "position": "Side {page} av {pageCount}",
-            "previous": "Forrige side"
+            "label": "Kontaktsider"
           },
           "suggestion": {
             "customerNumber": "{name} har en kontaktkobling med samme kundenummer",
@@ -1008,6 +1294,7 @@
           "attributionNotAllowed": "Prosjektet er ikke tilgjengelig, eller fakturerbart arbeid krever et prosjekt som har en kunde.",
           "invalidInterval": "Tidspunktene fra leverandøren mangler en eksplisitt forskyvning, er ikke i rekkefølge eller ligger i fremtiden.",
           "label": "Holdt tilbake for gjennomgang",
+          "monthClosed": "Tiden er i en lukket måned. Den kan importeres når måneden er gjenåpnet.",
           "occupancyConflict": "Tiden overlapper med arbeid som allerede er registrert for denne ansatte.",
           "operationCollision": "Denne raden er i konflikt med den tidligere overførte importen.",
           "providerDurationMismatch": "Varigheten fra leverandøren avviker fra start- og sluttidene.",
@@ -1015,14 +1302,22 @@
           "unlocatedBreak": "Leverandøren rapporterer pauser uten klokkeslett, så det arbeidede intervallet er ukjent."
         },
         "issueGroups": {
-          "currentMarkers": "Gjeldende rader inneholder {blockingRows} blokkerende markører og {warningRows} advarselsmarkører.",
           "description": "Grupperte gjennomgangsområder bidrar til å holde kvalitetskontroller synlige før godkjente rader overføres.",
+          "importMarkers": "Importens rader inneholder {blockingRows} blokkerende og {warningRows} advarselsmarkører.",
           "title": "Problemgrupper"
+        },
+        "paging": {
+          "next": "Neste side",
+          "position": "Side {page} av {pageCount}",
+          "previous": "Forrige side"
         },
         "rows": {
           "billable": "Fakturerbar",
           "empty": "Ingen klargjorte rader er tilgjengelige for denne importbunken.",
           "entity": "Entitet",
+          "paging": {
+            "label": "Radsider"
+          },
           "rowId": "Rad-ID",
           "sourceId": "Kilde-ID",
           "status": "Status",
@@ -1041,6 +1336,98 @@
         "title": "Importgjennomgang"
       },
       "title": "Importer data"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "En annen konto bruker allerede denne adressen.",
+        "emailNotAllowed": "Organisasjonens retningslinjer for pålogging tillater ikke denne adressen.",
+        "employeeNotFound": "Denne ansatte ble ikke funnet.",
+        "failed": "Noe gikk galt. Prøv igjen.",
+        "invalidEmail": "Skriv inn en gyldig e-postadresse.",
+        "invalidName": "Skriv inn et fornavn på opptil 100 tegn.",
+        "invalidPin": "En kiosk-PIN består av 4 til 6 sifre.",
+        "locationNotFound": "Denne lokasjonen ble ikke funnet.",
+        "noPin": "Denne ansatte har ingen kiosk-PIN ennå.",
+        "notAllowed": "Du har ikke tillatelse til å gjøre dette.",
+        "notKioskOnly": "Denne ansatte har allerede en e-postadresse.",
+        "pinExists": "Denne ansatte har allerede en kiosk-PIN. Tilbakestill den i stedet.",
+        "reservedEmail": "Denne adressen kan ikke brukes.",
+        "signInRequired": "Logg inn for å fortsette.",
+        "teamNotFound": "Dette teamet ble ikke funnet."
+      }
+    },
+    "kiosks": {
+      "add": "Legg til kiosk",
+      "boardOn": "Hvem er inne-tavle på",
+      "columns": {
+        "actions": "Handlinger",
+        "lastSeen": "Sist sett",
+        "location": "Lokasjon",
+        "name": "Navn",
+        "status": "Status"
+      },
+      "create": "Opprett kiosk",
+      "created": "Kiosk opprettet",
+      "createDescription": "Du mottar en sammenkoblingskode som du taster inn på kioskenheten.",
+      "createFailed": "Kiosken kunne ikke opprettes",
+      "createTitle": "Legg til kiosk",
+      "description": "Delte enheter på en lokasjon der ansatte stempler med sin kiosk-PIN",
+      "edit": "Rediger",
+      "editDescription": "Endringer trer i kraft ved kioskens neste forespørsel.",
+      "editTitle": "Rediger kiosk",
+      "empty": "Ingen kiosker ennå.",
+      "errors": {
+        "adminOnly": "Bare organisasjonseiere og administratorer kan administrere kiosker.",
+        "invalidName": "Skriv inn et navn på opptil 100 tegn.",
+        "invalidSelection": "Kontroller det du har fylt ut, og prøv igjen.",
+        "invalidTimezone": "Velg en tidssone.",
+        "kioskNotFound": "Fant ikke denne kiosken.",
+        "kioskRevoked": "Denne kiosken er tilbakekalt.",
+        "locationNotFound": "Velg en aktiv lokasjon for denne organisasjonen."
+      },
+      "fields": {
+        "board": "Hvem er på jobb-tavle",
+        "boardDescription": "Viser på kiosken hvem som er på jobb eller har pause, med fornavn og forbokstav i etternavnet.",
+        "location": "Lokasjon",
+        "locationDescription": "Kiosken godtar bare ansatte som er tilknyttet denne lokasjonen.",
+        "locationPlaceholder": "Velg en lokasjon",
+        "name": "Navn",
+        "namePlaceholder": "f.eks. Personalinngang",
+        "timezone": "Tidssone",
+        "timezoneDescription": "Stemplinger registrert på denne kiosken bruker denne tidssonen."
+      },
+      "issueCodeConfirm": "Utsted ny kode",
+      "listDescription": "Hver kiosk tilhører én lokasjon. Parkoble en enhet ved å åpne kiosksiden på den og taste inn parkoblingskoden.",
+      "listTitle": "Kiosker",
+      "loadFailed": "Kunne ikke laste inn kiosker.",
+      "neverSeen": "Aldri",
+      "noLocations": "Opprett en lokasjon først: hver kiosk tilhører én lokasjon.",
+      "pairAgain": "Parkoble på nytt",
+      "pairFailed": "Kunne ikke utstede en ny parkoblingskode",
+      "pairingCodeLabel": "Sammenkoblingskode",
+      "pairingDescription": "Skann QR-koden på kioskenheten, eller åpne kiosksiden og skriv inn koden. Koden fungerer én gang og utløper etter 10 minutter.",
+      "pairingDone": "Ferdig",
+      "pairingTitle": "Koble sammen {name}",
+      "pairPairedDescription": "Enhetstokenet roteres: Den parkoblede enheten slutter å fungere umiddelbart og må parkobles på nytt med den nye koden.",
+      "pairTitle": "Parkoble {name} på nytt?",
+      "pairUnpairedDescription": "En ny sammenkoblingskode erstatter den forrige.",
+      "revoke": "Tilbakekall",
+      "revokeConfirm": "Tilbakekall kiosk",
+      "revoked": "Kiosk tilbakekalt",
+      "revokeDescription": "Kiosken slutter å fungere ved neste forespørsel og kan ikke kobles sammen igjen. Opprett en ny kiosk for å erstatte den.",
+      "revokeFailed": "Kiosken kunne ikke tilbakekalles",
+      "revokeTitle": "Tilbakekalle {name}?",
+      "rotateConfirm": "Roter token og koble sammen på nytt",
+      "save": "Lagre",
+      "saved": "Kiosk lagret",
+      "saveFailed": "Kiosken kunne ikke lagres",
+      "status": {
+        "awaitingPairing": "Venter på sammenkobling",
+        "codeExpired": "Ikke sammenkoblet, koden er utløpt",
+        "paired": "Sammenkoblet",
+        "revoked": "Tilbakekalt"
+      },
+      "title": "Kiosker"
     },
     "licenses": {
       "footer": "Denne applikasjonen bruker programvare med åpen kildekode. Takk til alle vedlikeholdere og bidragsytere av disse pakkene.",
@@ -1401,6 +1788,7 @@
       "create": "Opprett prosjekt",
       "created": "Prosjekt opprettet",
       "createFailed": "Kunne ikke opprette prosjekt",
+      "customerDeleted": "{name} (slettet)",
       "description": "Administrer prosjekter, budsjetter, frister og tidsfordelinger",
       "dialog": {
         "create": "Opprett prosjekt",
@@ -1425,6 +1813,7 @@
         "color": "Farge",
         "colorOption": "Velg farge {color}",
         "customer": "Kunde",
+        "customerDeleted": "{name} ble slettet. Velg en annen kunde, eller behold prosjektet uten en.",
         "customerPlaceholder": "Velg en kunde",
         "deadline": "Frist",
         "description": "Beskrivelse",
@@ -1650,8 +2039,23 @@
       "updated": "Prosjekt oppdatert",
       "updateFailed": "Kunne ikke oppdatere prosjektet"
     },
+    "reportShareLinks": {
+      "description": "Se og tilbakekall alle lenker som deler en prosjekt- eller kunderapport",
+      "pageDescription": "Lenker som viser et fryst øyeblikksbilde av en prosjekt- eller kunderapport til noen utenfor Z8. Å tilbakekalle en lenke stopper den umiddelbart og sletter øyeblikksbildet.",
+      "title": "Delingslenker for rapporter"
+    },
     "security": {
       "description": "Administrer passord, totrinnsbekreftelse, passnøkler og aktive økter",
+      "kioskPin": {
+        "descriptionChange": "Du har en kiosk-PIN. Velg en ny på 4 til 6 sifre for å erstatte den.",
+        "descriptionSet": "Velg en PIN-kode på 4 til 6 sifre for å stemple inn/ut på organisasjonens kiosker.",
+        "mismatch": "PIN-kodene stemmer ikke overens.",
+        "newPin": "Ny PIN-kode",
+        "repeatPin": "Gjenta PIN-kode",
+        "save": "Lagre PIN-kode",
+        "saved": "Kiosk-PIN lagret",
+        "title": "Kiosk-PIN"
+      },
       "title": "Sikkerhetsinnstillinger",
       "twoFactor": {
         "backupCodesCopied": "Reservekoder kopiert til utklippstavlen",
@@ -2052,6 +2456,7 @@
         "replaceDescription": "En aktiv versjon starter allerede {date}. Hvis du lagrer, erstattes den; den erstattede versjonen beholdes i historikken.",
         "replaceTitle": "Erstatt versjonen som starter den dagen",
         "rules": "Berettigelse følger {reference} ({version}), bekreftet for reisedager fra {from} til og med {through}. Utenlandsreiser prissettes kun per dag med vedtatte utenlandssatser; andre dager og spesielle reiseruter flagges for manuell beregning.",
+        "rulesOpenEnded": "Kvalifisering følger {reference} ({version}), bekreftet for reisedager fra {from} til loven endres. Utenlandsreiser prises kun per dag med vedtatte utenlandssatser; andre dager og spesielle reiseruter flagges for manuell beregning.",
         "saved": "Diettesatsversjon aktivert",
         "saveFailed": "Diettesatsene kunne ikke lagres.",
         "source": "Kilde",

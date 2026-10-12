@@ -1,9 +1,12 @@
 import { Temporal } from "temporal-polyfill";
+import type { db } from "@/db";
 import { getAssignedHolidaysForEmployee } from "@/lib/calendar/assigned-holidays";
 import type { Holiday } from "./types";
 
 /** Resolve the same organization, team, employee and recurring holidays used by calendars. */
 export async function getVacationHolidays(input: {
+	/** The caller's client; the global db by default. */
+	database?: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 	organizationId: string;
 	employeeId: string;
 	startDate: string;
@@ -16,6 +19,7 @@ export async function getVacationHolidays(input: {
 		.toInstant()
 		.subtract({ milliseconds: 1 });
 	const holidays = await getAssignedHolidaysForEmployee({
+		database: input.database,
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		startDate: new Date(start.epochMilliseconds),

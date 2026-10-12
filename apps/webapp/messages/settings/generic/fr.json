@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Lieu attribué ajouté",
+      "employeeDescription": "Les lieux où travaille cet employé. Les bornes acceptent uniquement les employés attribués à leur lieu.",
+      "employeeEmpty": "Aucun lieu attribué",
+      "employeeLabel": "Employé",
+      "employeePlaceholder": "Sélectionner un employé",
+      "employeeTitle": "Lieux attribués",
+      "errors": {
+        "adminOnly": "Seuls les propriétaires et les administrateurs de l'organisation peuvent gérer les lieux attribués.",
+        "employeeNotFound": "Employé introuvable.",
+        "failed": "Impossible de mettre à jour les lieux attribués. Réessayez.",
+        "invalidSelection": "Choisissez dans la liste.",
+        "locationNotFound": "Lieu introuvable."
+      },
+      "locationDescription": "Les employés qui travaillent dans ce lieu. Ses bornes n'acceptent qu'eux.",
+      "locationEmpty": "Aucun employé attribué",
+      "locationLabel": "Lieu",
+      "locationPlaceholder": "Sélectionner un lieu",
+      "locationTitle": "Employés attribués",
+      "noEmployeesLeft": "Tous les employés actifs sont attribués à ce lieu.",
+      "noLocationsLeft": "Il n'y a plus aucun autre lieu actif à attribuer.",
+      "removed": "Lieu attribué supprimé"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Client (Responsable du traitement)",
@@ -407,6 +430,75 @@
       "description": "Gérez votre abonnement, vos méthodes de paiement et vos factures",
       "title": "Facturation et abonnement"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Jours après la fin du mois",
+        "daysHelp": "Si un élément bloque la clôture, toutes les personnes autorisées à clôturer en sont informées et une nouvelle tentative aura lieu le lendemain.",
+        "daysInvalid": "Saisissez un nombre entier de jours compris entre 1 et 60",
+        "description": "Clôturer le mois précédent pour toute l'organisation un certain nombre de jours après sa fin. Un mois qui a été rouvert n'est plus jamais clôturé automatiquement.",
+        "enabled": "Clôturer automatiquement les mois",
+        "save": "Enregistrer",
+        "saved": "Clôture automatique enregistrée",
+        "title": "Clôture automatique"
+      },
+      "blockedTitle": "Le mois ne peut pas encore être clôturé. Réglez d'abord ces éléments :",
+      "blocker": {
+        "absenceRequest": "demande d'absence en attente de décision {startDate} – {endDate}",
+        "liveWork": "toujours pointé depuis {start}",
+        "notEnded": "le mois n'est pas terminé dans leur fuseau horaire",
+        "periodSubmission": "soumission de période en attente de décision {startDate} – {endDate}",
+        "timeRequest": "demande en attente de décision concernant le travail du {start}"
+      },
+      "close": "Fermer",
+      "closeDescription": "Personne ne peut modifier le travail, les attributions ou les absences dans un mois clôturé tant qu'il n'est pas rouvert. Le mois de chaque employé est fixé selon son propre fuseau horaire.",
+      "closeSubmit": "Clôturer le mois",
+      "closeSuccess": "{count, plural, one {{month} clôturé pour # employé} other {{month} clôturé pour # employés}}",
+      "closeTitle": "Clôturer {month}",
+      "description": "Clôturez les mois après la paie afin que le travail et les absences ne puissent plus être modifiés",
+      "employeesLabel": "Employés",
+      "employeesRequired": "Sélectionnez au moins un employé",
+      "history": {
+        "automatic": "Automatiquement",
+        "closed": "Clôturé",
+        "employees": "{count, plural, one {# employé} other {# employés}}",
+        "reopened": "Rouvert",
+        "unknownActor": "Inconnu"
+      },
+      "historyEmpty": "Aucun mois n'a encore été clôturé.",
+      "historyTitle": "Historique",
+      "monthsDescription": "Clôturer un mois fige le travail, l'attribution et les absences pour la paie. Les notes restent modifiables.",
+      "monthsTitle": "Mois",
+      "nothingToClose": "Toutes les personnes de ce périmètre sont déjà clôturées pour ce mois.",
+      "nothingToReopen": "Personne dans cette sélection n'est clôturé pour ce mois.",
+      "reasonLabel": "Motif",
+      "reasonPlaceholder": "Pourquoi ce mois doit-il être modifié ?…",
+      "reasonRequired": "Saisissez un motif pour la réouverture",
+      "reopen": "Rouvrir",
+      "reopenDescription": "Les employés rouverts restent ouverts jusqu'à ce que le mois soit à nouveau clôturé. Leurs managers en sont informés.",
+      "reopenScopeLabel": "Rouvrir pour",
+      "reopenSubmit": "Rouvrir le mois",
+      "reopenSuccess": "{count, plural, one {{month} rouvert pour # employé} other {{month} rouvert pour # employés}}",
+      "reopenTitle": "Rouvrir {month}",
+      "scope": {
+        "all": "Tout",
+        "deletedTeam": "Équipe supprimée",
+        "employees": "Employés sélectionnés",
+        "organization": "Organisation"
+      },
+      "scopeLabel": "Clôturer pour",
+      "teamNotFound": "Cette équipe n'existe plus.",
+      "title": "Mois clôturés",
+      "warning": {
+        "periodNotSubmitted": "période {startDate} – {endDate} non soumise",
+        "periodRejected": "période {startDate} – {endDate} rejetée",
+        "periodRunning": "période {startDate} – {endDate} toujours en cours, pas encore soumissible",
+        "periodSentBack": "période {startDate} – {endDate} renvoyée après modification"
+      },
+      "warnings": {
+        "more": "et {count} autres",
+        "title": "Toutes les soumissions de période pour ce mois ne sont pas approuvées. Cela ne bloque pas la clôture :"
+      }
+    },
     "compliance": {
       "description": "Examinez et gérez les demandes d'exception de conformité des membres de l'équipe",
       "title": "Conformité ArbZG"
@@ -468,14 +560,208 @@
       "updated": "Client mis à jour",
       "updateFailed": "Échec de la mise à jour du client"
     },
+    "customFields": {
+      "accessSummary": "Visible pour : {visibility} · Modifié par : {edit}",
+      "activeCount": "{count} sur {max} champs actifs",
+      "activeList": "Champs personnalisés actifs",
+      "add": "Ajouter un champ personnalisé",
+      "archivedList": "Champs personnalisés archivés",
+      "archivedTitle": "Archivé",
+      "archiveField": "Archiver {name}",
+      "capReached": "Chaque type d'enregistrement peut comporter au maximum 25 champs personnalisés actifs. Archivez-en un pour en ajouter un autre.",
+      "description": "Vos propres champs pour les employés, les projets et les clients",
+      "editField": "Modifier {name}",
+      "empty": "Aucun champ personnalisé pour le moment.",
+      "entity": {
+        "customer": "Clients",
+        "employee": "Employés",
+        "project": "Projets"
+      },
+      "form": {
+        "boundsHelp": "Laissez une borne vide pour aucune limite.",
+        "create": "Créer un champ",
+        "createTitle": "Ajouter un champ personnalisé",
+        "description": "Un champ personnalisé sur {entity}.",
+        "editLevel": "Qui peut modifier les valeurs",
+        "editLevelHelp": "Les employés ne modifient jamais les valeurs des champs personnalisés.",
+        "editTitle": "Modifier le champ personnalisé",
+        "integerOnly": "Nombres entiers uniquement",
+        "max": "Maximum",
+        "min": "Minimum",
+        "name": "Nom",
+        "nameRequired": "Entrez un nom",
+        "options": "Options",
+        "optionsHelp": "Une option par ligne.",
+        "required": "Obligatoire",
+        "requiredHelp": "Les formulaires refusent d'enregistrer un enregistrement sans valeur.",
+        "save": "Enregistrer les modifications",
+        "tracked": "Conserver un historique",
+        "trackedFixed": "La conservation de l'historique d'un champ ne peut pas être modifiée après sa création.",
+        "trackedHelp": "Chaque valeur comporte la date à partir de laquelle elle est valide.",
+        "type": "Type",
+        "typeFixed": "Le type ne peut pas être modifié après la création du champ.",
+        "visibility": "Qui peut voir les valeurs"
+      },
+      "level": {
+        "admin": "Administrateurs",
+        "employee": "Tout le monde, y compris l'employé",
+        "manager": "Managers et administrateurs"
+      },
+      "options": {
+        "add": "Ajouter une option",
+        "archive": "Archiver {label}",
+        "archived": "Archivé",
+        "label": "Nom de l'option",
+        "list": "Options",
+        "moveDown": "Déplacer {label} vers le bas",
+        "moveUp": "Déplacer {label} vers le haut",
+        "new": "Nouvelle option",
+        "restore": "Restaurer {label}",
+        "title": "Options"
+      },
+      "refusal": {
+        "booleanRequired": "Un champ oui/non ne peut pas être obligatoire.",
+        "duplicateOption": "Ce champ comporte déjà une option active portant ce nom.",
+        "editBroaderThanVisibility": "Toute personne pouvant modifier les valeurs doit également pouvoir les voir.",
+        "employeesNeverEdit": "Les employés ne peuvent pas modifier les valeurs des champs personnalisés.",
+        "fieldArchived": "Restaurez ce champ personnalisé avant de le modifier.",
+        "invalidChange": "Impossible d'enregistrer cette modification. Rechargez la page et réessayez.",
+        "invalidLevel": "Choisissez qui peut voir et modifier les valeurs.",
+        "invalidName": "Saisissez un nom de 100 caractères au maximum.",
+        "invalidOptionLabel": "Saisissez une option de 100 caractères au maximum.",
+        "lastActiveOption": "Un champ de sélection doit comporter au moins une option active.",
+        "nameTaken": "Un champ personnalisé actif sur ce type d'enregistrement porte déjà ce nom.",
+        "notFound": "Ce champ personnalisé n'existe plus. Rechargez la page.",
+        "notSelect": "Seuls les champs de sélection ont des options.",
+        "numberBounds": "Saisissez un minimum et un maximum sous forme de nombres, le minimum ne devant pas être supérieur au maximum.",
+        "optionArchived": "Restaurez d'abord cette option.",
+        "selectNeedsOption": "Ajoutez au moins une option à un champ de sélection.",
+        "staleOrder": "La liste a été modifiée entre-temps. Rechargez la page et réessayez.",
+        "tooManyFields": "Ce type d'enregistrement comporte déjà 25 champs personnalisés actifs. Archivez-en un d'abord.",
+        "trackedFixed": "La conservation de l'historique d'un champ personnalisé ne peut plus être modifiée après sa création.",
+        "typeFixed": "Le type d'un champ personnalisé ne peut plus être modifié après sa création.",
+        "usedAsPayrollIdentifier": "Ce champ est l'identifiant du personnel de la configuration d'exportation de la paie {configurations}. Choisissez d'abord un autre identifiant à cet endroit."
+      },
+      "reorderField": "Réorganiser {name}",
+      "required": "Obligatoire",
+      "restore": "Restaurer",
+      "restoreField": "Restaurer {name}",
+      "saveFailed": "La modification n'a pas pu être enregistrée.",
+      "title": "Champs personnalisés",
+      "tracked": "Suivi",
+      "type": {
+        "boolean": "Oui/Non",
+        "date": "Date",
+        "number": "Nombre",
+        "select": "Sélection",
+        "text": "Texte"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Il existe déjà une valeur à partir de cette date.",
+        "fieldArchived": "Ce champ est archivé.",
+        "forField": "Champ personnalisé \"{field}\" : {message}",
+        "invalidDate": "Saisissez une date valide.",
+        "invalidNumber": "Saisissez un nombre.",
+        "invalidValidFrom": "Saisissez une date de début valide.",
+        "invalidValue": "Saisissez une valeur valide.",
+        "missingRequired": "Ce champ est obligatoire.",
+        "missingValue": "Saisissez une valeur pour chaque date.",
+        "notEditable": "Vous ne pouvez pas modifier ce champ.",
+        "numberNotInteger": "Saisissez un nombre entier.",
+        "numberOutOfRange": "Saisissez un nombre compris dans la plage autorisée.",
+        "optionArchived": "Cette option est archivée. Choisissez-en une autre.",
+        "textTooLong": "Saisissez au maximum 255 caractères.",
+        "trackedField": "Ce champ conserve un historique. Ajoutez plutôt une modification datée.",
+        "unknownField": "Ce champ n'existe plus. Rechargez la page et réessayez.",
+        "unknownHistoryEntry": "L'historique a été modifié entre-temps. Rechargez la page et réessayez."
+      },
+      "values": {
+        "archivedOption": "{label} (archivé)",
+        "history": {
+          "add": "Ajouter une modification",
+          "apply": "Appliquer",
+          "correct": "Corrigez la valeur valide à partir du {date}",
+          "delete": "Supprimer la valeur valide à partir du {date}",
+          "duplicateValidFrom": "Il existe déjà une valeur valide à partir de cette date.",
+          "empty": "Aucune valeur pour le moment.",
+          "from": "À partir du {date}",
+          "label": "Historique de {name}",
+          "needsValidFrom": "Choisissez la date à partir de laquelle la valeur est valide.",
+          "needsValue": "Saisissez une valeur.",
+          "today": "Aujourd'hui",
+          "validFrom": "Valide à partir du",
+          "value": "Valeur"
+        },
+        "missingRequired": "Valeurs requises manquantes",
+        "no": "Non",
+        "notSet": "Non défini",
+        "ownDescription": "Géré par votre organisation. Demandez à un administrateur ou à votre responsable de le modifier.",
+        "title": "Champs personnalisés",
+        "yes": "Oui"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Enregistrements et catégories d'absences",
+          "label": "Absences"
+        },
+        "audit_logs": {
+          "description": "Piste d'audit d'activité",
+          "label": "Journaux d'audit"
+        },
+        "balance_adjustments": {
+          "description": "Soldes initiaux et paiements d'heures supplémentaires, y compris ceux annulés",
+          "label": "Ajustements du solde d'heures"
+        },
+        "customers": {
+          "description": "Clients et leurs champs personnalisés de client",
+          "label": "Clients"
+        },
+        "employees": {
+          "description": "Profils d'employés, relations hiérarchiques et champs personnalisés d'employé",
+          "label": "Employés"
+        },
+        "holidays": {
+          "description": "Calendrier des jours fériés et préréglages",
+          "label": "Jours fériés"
+        },
+        "projects": {
+          "description": "Projets avec leurs champs personnalisés client et projet",
+          "label": "Projets"
+        },
+        "schedules": {
+          "description": "Modèles d'horaires de travail et affectations",
+          "label": "Horaires de travail"
+        },
+        "shifts": {
+          "description": "Données de planification des quarts",
+          "label": "Quarts"
+        },
+        "teams": {
+          "description": "Structure et autorisations des équipes",
+          "label": "Équipes"
+        },
+        "time_entries": {
+          "description": "Entrées de pointage et corrections",
+          "label": "Suivi du temps"
+        },
+        "vacation": {
+          "description": "Politiques de congés et droits",
+          "label": "Politiques de congés"
+        },
+        "work_periods": {
+          "description": "Sessions de travail agrégées",
+          "label": "Périodes de travail"
+        }
+      },
       "description": "Exporter les données de votre organisation",
       "form": {
         "aboutAsync": "Les exportations sont traitées de manière asynchrone",
+        "aboutDownloadFromHistory": "Téléchargez les exportations terminées depuis l'historique des exportations",
         "aboutEmail": "Vous recevrez un e-mail une fois prêt",
-        "aboutLinkValidity": "Les liens de téléchargement sont valides pendant 24 heures",
+        "aboutFileRetention": "Les fichiers d'exportation sont supprimés après 30 jours",
         "aboutOrgDataOnly": "Seules les données de votre organisation sont incluses",
-        "aboutStorageDuration": "Les fichiers d'exportation sont conservés pendant 7 jours",
         "aboutTitle": "À propos de l'exportation de données",
         "description": "Sélectionnez les catégories de données que vous souhaitez exporter",
         "selectAll": "Tout sélectionner",
@@ -508,6 +794,9 @@
         "statusFailed": "Échoué",
         "statusPending": "En attente",
         "statusProcessing": "En cours de traitement",
+        "switchOrganizationAction": "Passer à {organization}",
+        "switchOrganizationBody": "Cet export appartient à {organization}. Passez à cette organisation pour ouvrir son historique des exports ; vos accès seront vérifiés à nouveau après le changement.",
+        "switchOrganizationTitle": "Changer d'organisation pour afficher cet export",
         "title": "Historique des exportations",
         "unexpectedError": "Une erreur inattendue est survenue"
       },
@@ -991,10 +1280,7 @@
           "nameTaken": "{name} a le même nom et est déjà associé à un autre contact",
           "noMatch": "Aucune correspondance",
           "paging": {
-            "label": "Pages de contacts",
-            "next": "Page suivante",
-            "position": "Page {page} sur {pageCount}",
-            "previous": "Page précédente"
+            "label": "Pages de contacts"
           },
           "suggestion": {
             "customerNumber": "{name} a un lien de contact avec le même numéro de client",
@@ -1008,6 +1294,7 @@
           "attributionNotAllowed": "Le projet n'est pas disponible, ou le travail facturable nécessite un projet associé à un client.",
           "invalidInterval": "Les heures du prestataire ne comportent pas de décalage explicite, ne sont pas dans l'ordre ou se situent dans le futur.",
           "label": "Retenu pour examen",
+          "monthClosed": "Ces heures se trouvent dans un mois clôturé. Elles pourront être importées une fois le mois rouvert.",
           "occupancyConflict": "L'horaire chevauche des heures déjà enregistrées pour cet employé.",
           "operationCollision": "Cette ligne est en conflit avec son importation précédemment validée.",
           "providerDurationMismatch": "La durée du prestataire diffère des heures de début et de fin.",
@@ -1015,14 +1302,22 @@
           "unlocatedBreak": "Le prestataire indique des pauses sans leurs horaires, l'intervalle travaillé est donc inconnu."
         },
         "issueGroups": {
-          "currentMarkers": "Les lignes actuelles incluent {blockingRows} marqueurs de problème bloquants et {warningRows} avertissements.",
           "description": "Les zones d'examen regroupées aident à garder les contrôles de qualité visibles avant que les lignes acceptées ne soient validées.",
+          "importMarkers": "Les lignes de l'importation comportent {blockingRows} marqueurs de problème bloquants et {warningRows} marqueurs d'avertissement.",
           "title": "Groupes de problèmes"
+        },
+        "paging": {
+          "next": "Page suivante",
+          "position": "Page {page} sur {pageCount}",
+          "previous": "Page précédente"
         },
         "rows": {
           "billable": "Facturable",
           "empty": "Aucune ligne mise en attente n'est disponible pour ce lot d'importation.",
           "entity": "Entité",
+          "paging": {
+            "label": "Pages de lignes"
+          },
           "rowId": "ID de ligne",
           "sourceId": "ID source",
           "status": "Statut",
@@ -1041,6 +1336,98 @@
         "title": "Examen de l'importation"
       },
       "title": "Importer des données"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Un autre compte utilise déjà cette adresse.",
+        "emailNotAllowed": "La politique de connexion de votre organisation n'autorise pas cette adresse.",
+        "employeeNotFound": "Cet employé est introuvable.",
+        "failed": "Un problème est survenu. Veuillez réessayer.",
+        "invalidEmail": "Saisissez une adresse e-mail valide.",
+        "invalidName": "Saisissez un prénom de 100 caractères maximum.",
+        "invalidPin": "Un code PIN de borne comporte 4 à 6 chiffres.",
+        "locationNotFound": "Cet emplacement est introuvable.",
+        "noPin": "Cet employé n'a pas encore de code PIN de borne.",
+        "notAllowed": "Vous n'êtes pas autorisé à effectuer cette action.",
+        "notKioskOnly": "Cet employé a déjà une adresse e-mail.",
+        "pinExists": "Cet employé a déjà un code PIN de borne. Réinitialisez-le plutôt.",
+        "reservedEmail": "Cette adresse ne peut pas être utilisée.",
+        "signInRequired": "Connectez-vous pour continuer.",
+        "teamNotFound": "Cette équipe est introuvable."
+      }
+    },
+    "kiosks": {
+      "add": "Ajouter une borne",
+      "boardOn": "Tableau des présences activé",
+      "columns": {
+        "actions": "Actions",
+        "lastSeen": "Vu pour la dernière fois",
+        "location": "Emplacement",
+        "name": "Nom",
+        "status": "Statut"
+      },
+      "create": "Créer une borne",
+      "created": "Borne créée",
+      "createDescription": "Vous recevez un code d'association à saisir sur la borne.",
+      "createFailed": "Impossible de créer la borne",
+      "createTitle": "Ajouter une borne",
+      "description": "Appareils partagés sur un site où les employés pointent à l'aide de leur code PIN de borne",
+      "edit": "Modifier",
+      "editDescription": "Les modifications s'appliqueront lors de la prochaine requête de la borne.",
+      "editTitle": "Modifier la borne",
+      "empty": "Aucune borne pour le moment.",
+      "errors": {
+        "adminOnly": "Seuls les propriétaires et administrateurs de l'organisation peuvent gérer les bornes.",
+        "invalidName": "Saisissez un nom de 100 caractères maximum.",
+        "invalidSelection": "Vérifiez votre saisie et réessayez.",
+        "invalidTimezone": "Choisissez un fuseau horaire.",
+        "kioskNotFound": "Cette borne est introuvable.",
+        "kioskRevoked": "Cette borne est révoquée.",
+        "locationNotFound": "Choisissez un emplacement actif de cette organisation."
+      },
+      "fields": {
+        "board": "Tableau des présences",
+        "boardDescription": "Affiche sur la borne qui est présent ou en pause, par son prénom et l'initiale de son nom.",
+        "location": "Emplacement",
+        "locationDescription": "La borne accepte uniquement les employés affectés à cet emplacement.",
+        "locationPlaceholder": "Choisir un emplacement",
+        "name": "Nom",
+        "namePlaceholder": "Ex. : Entrée du personnel",
+        "timezone": "Fuseau horaire",
+        "timezoneDescription": "Les pointages enregistrés sur cette borne utilisent ce fuseau horaire."
+      },
+      "issueCodeConfirm": "Générer un nouveau code",
+      "listDescription": "Chaque borne appartient à un emplacement. Associez un appareil en ouvrant la page de la borne sur celui-ci et en saisissant le code d'association.",
+      "listTitle": "Bornes",
+      "loadFailed": "Impossible de charger les bornes.",
+      "neverSeen": "Jamais",
+      "noLocations": "Créez d'abord un emplacement : chaque borne appartient à un emplacement.",
+      "pairAgain": "Associer à nouveau",
+      "pairFailed": "Impossible de générer un nouveau code d'association",
+      "pairingCodeLabel": "Code de jumelage",
+      "pairingDescription": "Sur la borne, scannez le code QR ou ouvrez la page de la borne et saisissez le code. Le code ne fonctionne qu'une seule fois et expire au bout de 10 minutes.",
+      "pairingDone": "Terminé",
+      "pairingTitle": "Jumeler {name}",
+      "pairPairedDescription": "Le jeton de l'appareil est renouvelé : l'appareil associé cesse immédiatement de fonctionner et doit être associé à nouveau avec le nouveau code.",
+      "pairTitle": "Associer à nouveau {name} ?",
+      "pairUnpairedDescription": "Un nouveau code de jumelage remplace le précédent.",
+      "revoke": "Révoquer",
+      "revokeConfirm": "Révoquer la borne",
+      "revoked": "Borne révoquée",
+      "revokeDescription": "La borne cessera de fonctionner lors de sa prochaine requête et ne pourra plus être jumelée. Créez une nouvelle borne pour la remplacer.",
+      "revokeFailed": "Impossible de révoquer la borne",
+      "revokeTitle": "Révoquer {name} ?",
+      "rotateConfirm": "Renouveler le jeton et jumeler à nouveau",
+      "save": "Enregistrer",
+      "saved": "Borne enregistrée",
+      "saveFailed": "Impossible d'enregistrer la borne",
+      "status": {
+        "awaitingPairing": "En attente de jumelage",
+        "codeExpired": "Non jumelée, code expiré",
+        "paired": "Jumelée",
+        "revoked": "Révoquée"
+      },
+      "title": "Bornes"
     },
     "licenses": {
       "footer": "Cette application utilise des logiciels open source. Merci à tous les mainteneurs et contributeurs de ces paquets.",
@@ -1401,6 +1788,7 @@
       "create": "Créer un projet",
       "created": "Projet créé",
       "createFailed": "Échec de la création du projet",
+      "customerDeleted": "{name} (supprimé)",
       "description": "Gérez les projets, les budgets, les dates limites et les affectations de temps",
       "dialog": {
         "create": "Créer un projet",
@@ -1425,6 +1813,7 @@
         "color": "Couleur",
         "colorOption": "Sélectionner la couleur {color}",
         "customer": "Client",
+        "customerDeleted": "{name} a été supprimé. Choisissez un autre client ou conservez le projet sans client.",
         "customerPlaceholder": "Sélectionner un client",
         "deadline": "Date limite",
         "description": "Description",
@@ -1650,8 +2039,23 @@
       "updated": "Projet mis à jour",
       "updateFailed": "Échec de la mise à jour du projet"
     },
+    "reportShareLinks": {
+      "description": "Consultez et révoquez chaque lien partageant un rapport de projet ou de client",
+      "pageDescription": "Liens affichant un instantané figé d'un rapport de projet ou de client à une personne externe à Z8. Révoquer un lien le désactive immédiatement et supprime son instantané.",
+      "title": "Liens de partage de rapports"
+    },
     "security": {
       "description": "Gérez votre mot de passe, l'authentification à deux facteurs, les clés d'accès et les sessions actives",
+      "kioskPin": {
+        "descriptionChange": "Vous disposez d'un code PIN de borne. Choisissez-en un nouveau de 4 à 6 chiffres pour le remplacer.",
+        "descriptionSet": "Choisissez un code PIN de 4 à 6 chiffres pour pointer sur les bornes de votre organisation.",
+        "mismatch": "Les codes PIN ne correspondent pas.",
+        "newPin": "Nouveau code PIN",
+        "repeatPin": "Répéter le code PIN",
+        "save": "Enregistrer le code PIN",
+        "saved": "Code PIN de la borne enregistré",
+        "title": "Code PIN de la borne"
+      },
       "title": "Paramètres de sécurité",
       "twoFactor": {
         "backupCodesCopied": "Codes de secours copiés dans le presse-papiers",
@@ -2052,6 +2456,7 @@
         "replaceDescription": "Une version active commence déjà le {date}. L'enregistrement la remplacera ; la version remplacée est conservée dans l'historique.",
         "replaceTitle": "Remplacer la version commençant ce jour-là",
         "rules": "L'éligibilité suit {reference} ({version}), vérifiée pour les jours de déplacement du {from} au {through}. Les voyages à l'étranger sont tarifés par jour uniquement selon les barèmes étrangers adoptés ; les autres jours et itinéraires particuliers sont signalés pour un calcul manuel.",
+        "rulesOpenEnded": "L'éligibilité suit la référence {reference} ({version}), vérifiée pour les jours de déplacement du {from} jusqu'à modification de la loi. Les voyages à l'étranger sont tarifés par jour uniquement selon les taux étrangers adoptés ; les autres jours et itinéraires particuliers sont signalés pour un calcul manuel.",
         "saved": "Version des taux d'indemnités journalières activée",
         "saveFailed": "Les taux d'indemnités journalières n'ont pas pu être enregistrés.",
         "source": "Source",

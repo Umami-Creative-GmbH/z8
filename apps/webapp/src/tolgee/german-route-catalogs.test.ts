@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { applyCatalogRecords } from "./catalog-store";
 import { loadCatalogSlice, loadShellTranslations } from "./load-translations";
 import { getRouteCatalogScope } from "./route-catalog-scopes";
-import { getNamespacesForRoute, TolgeeBase } from "./shared";
+import { getNamespacesForRoute, loadNamespaces, TolgeeBase } from "./shared";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
@@ -113,6 +113,44 @@ describe("German route catalogs", () => {
 		await tolgee.run();
 		try {
 			expect(tolgee.t(key, "English fallback")).toBe(expected);
+		} finally {
+			tolgee.stop();
+		}
+	});
+	it.each(["/sign-in", "/licenses/third-party", "/team", "/"])(
+		"resolves common:-prefixed header labels on %s",
+		async (route) => {
+			const namespaces = getRouteCatalogScope(route)?.namespaces;
+			if (!namespaces) throw new Error(`No catalog scope for ${route}`);
+			const tolgee = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
+				language: "de",
+				staticData: { de: {} },
+			});
+			applyCatalogRecords(tolgee, await loadShellTranslations("de"));
+			applyCatalogRecords(tolgee, await loadCatalogSlice("de", namespaces));
+			await tolgee.run();
+			try {
+				expect(tolgee.t("common:user.theme-toggle", "Toggle theme")).toBe(
+					"Design umschalten",
+				);
+				expect(tolgee.t("common:user.font-size", "Font size")).toBe(
+					"Schriftgröße",
+				);
+			} finally {
+				tolgee.stop();
+			}
+		},
+	);
+	it("resolves common:-prefixed keys in server catalogs", async () => {
+		const tolgee = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
+			language: "de",
+			staticData: await loadNamespaces("de", ["common"]),
+		});
+		await tolgee.run();
+		try {
+			expect(tolgee.t("common:notifications.time.justNow", "just now")).toBe(
+				"gerade eben",
+			);
 		} finally {
 			tolgee.stop();
 		}

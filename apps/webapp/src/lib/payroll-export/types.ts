@@ -2,6 +2,7 @@
  * Core types for payroll export system
  */
 import type { DateTime } from "luxon";
+import type { PersonnelNumberType } from "./personnel-identifier";
 
 // ============================================
 // CONFIGURATION TYPES
@@ -16,7 +17,9 @@ export interface DatevLohnConfig {
 	/** Consultant number (Beraternummer) - 1-7 digits */
 	beraternummer: string;
 	/** Personnel number type - which field to use as employee identifier */
-	personnelNumberType: "employeeNumber" | "employeeId";
+	personnelNumberType: PersonnelNumberType;
+	/** The employee custom field used when personnelNumberType is "customField" (#821). */
+	personnelNumberCustomFieldId?: string;
 	/** Whether to include rows with zero hours */
 	includeZeroHours: boolean;
 }
@@ -36,7 +39,9 @@ export const DEFAULT_DATEV_CONFIG: DatevLohnConfig = {
  */
 export interface LexwareLohnConfig {
 	/** Personnel number type - which field to use as employee identifier */
-	personnelNumberType: "employeeNumber" | "employeeId";
+	personnelNumberType: PersonnelNumberType;
+	/** The employee custom field used when personnelNumberType is "customField" (#821). */
+	personnelNumberCustomFieldId?: string;
 	/** Whether to include rows with zero hours */
 	includeZeroHours: boolean;
 	/** Whether to include optional Stunden (hours) column */
@@ -60,7 +65,9 @@ export const DEFAULT_LEXWARE_CONFIG: LexwareLohnConfig = {
  */
 export interface SageLohnConfig {
 	/** Personnel number type - which field to use as employee identifier */
-	personnelNumberType: "employeeNumber" | "employeeId";
+	personnelNumberType: PersonnelNumberType;
+	/** The employee custom field used when personnelNumberType is "customField" (#821). */
+	personnelNumberCustomFieldId?: string;
 	/** Whether to include rows with zero hours */
 	includeZeroHours: boolean;
 	/** Output format - DATEV-compatible or Sage-native CSV */
@@ -214,6 +221,8 @@ export interface WorkPeriodData {
 	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
 	startTime: DateTime;
 	endTime: DateTime | null;
 	durationMinutes: number | null;
@@ -234,6 +243,8 @@ export interface AbsenceData {
 	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
 	startDate: string; // ISO date string
 	endDate: string; // ISO date string
 	absenceCategoryId: string;
@@ -253,6 +264,8 @@ export interface ExpenseLineData {
 	email?: string | null;
 	firstName: string | null;
 	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
 	/** The expense wage type the organization mapped for this file format. */
 	wageTypeCode: string;
 	/** Euros at two decimals with a "." separator, e.g. "123.40". */
@@ -260,6 +273,40 @@ export interface ExpenseLineData {
 	currency: "EUR";
 	/** The payroll period's last day (ISO date): the line's date where a format needs one. */
 	date: string;
+}
+
+/**
+ * One uncancelled overtime payout (#1001, a balance adjustment of #993) whose
+ * day lies within the export's dates. The DATEV, Lexware, Sage and SAP
+ * SuccessFactors CSV files carry it as hours under the wage type mapped to the
+ * "overtime" special category (#1050).
+ */
+export interface OvertimePayoutData {
+	/** The balance adjustment's id. */
+	id: string;
+	employeeId: string;
+	employeeNumber: string | null;
+	email?: string | null;
+	firstName: string | null;
+	lastName: string | null;
+	/** The frozen custom field identifier value, when the configuration names one (#821). */
+	personnelIdentifier?: string | null;
+	/** The payout's local day (ISO date) in the employee's timezone. */
+	day: string;
+	/** The paid-out minutes, always positive. */
+	minutes: number;
+}
+
+/**
+ * An overtime payout a file could not carry because no wage type is mapped to
+ * the "overtime" special category for its format (#1001). Stored on the job.
+ */
+export interface UnmappedOvertimePayout {
+	/** The balance adjustment's id. */
+	id: string;
+	employeeId: string;
+	day: string;
+	minutes: number;
 }
 
 // ============================================
@@ -278,6 +325,8 @@ export interface ExportResult {
 		workPeriodCount: number;
 		employeeCount: number;
 		dateRange: { start: string; end: string };
+		/** Overtime payouts left out for want of an "overtime" mapping (#1001). */
+		unmappedOvertimePayouts: UnmappedOvertimePayout[];
 	};
 }
 
@@ -305,6 +354,8 @@ export interface PayrollExportJobSummary {
 	 * includes (#852); 0 when it is no unconfirmed payroll run.
 	 */
 	payrollRunIncludedReports: number;
+	/** How many overtime payouts the file left out for want of an "overtime" mapping (#1001). */
+	unmappedOvertimePayoutCount: number;
 }
 
 // ============================================
@@ -331,7 +382,8 @@ export interface IPayrollExportFormatter {
 	/**
 	 * Transform work periods, absences and expense money lines to export format.
 	 * Expense lines arrive already mapped and summed per employee and wage type
-	 * (#852); with the bank-transfer channel there are none.
+	 * (#852); with the bank-transfer channel there are none. Overtime payouts
+	 * (#1001) are mapped by the formatter; a format that carries none ignores them.
 	 */
 	transform(
 		workPeriods: WorkPeriodData[],
@@ -339,6 +391,7 @@ export interface IPayrollExportFormatter {
 		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
+		overtimePayouts?: OvertimePayoutData[],
 	): ExportResult;
 
 	/**
@@ -354,7 +407,7 @@ export interface IPayrollExportFormatter {
 /**
  * Employee matching strategy for API-based exports
  */
-export type EmployeeMatchStrategy = "employeeNumber" | "email";
+export type EmployeeMatchStrategy = "employeeNumber" | "email" | "customField";
 
 /**
  * Sync record status for individual records in API exports

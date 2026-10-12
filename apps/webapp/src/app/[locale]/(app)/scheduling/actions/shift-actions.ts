@@ -2,7 +2,7 @@
 
 import { Effect } from "effect";
 import { db } from "@/db";
-import { dateFromInstant } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { CoverageService } from "@/lib/effect/services/coverage.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -22,6 +22,12 @@ import {
 	resolveScheduleWallTime,
 } from "@/lib/scheduling/schedule-local-input";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
+import {
+	loadUpcomingShifts,
+	UPCOMING_SHIFTS_LIMIT,
+	type UpcomingShifts,
+} from "@/lib/scheduling/upcoming-shifts";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
 import { buildPublishDecision } from "../publish-decision";
 import type {
@@ -210,6 +216,31 @@ export async function getShifts(
 	});
 
 	return runSchedulingAction("getShifts", effect);
+}
+
+/** The current employee's next published shifts in the active organization. */
+export async function getMyUpcomingShifts(): Promise<
+	SchedulingActionResult<UpcomingShifts>
+> {
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const { currentEmployee } = yield* requireCurrentEmployee();
+
+		return yield* dbService.query("shift.getMyUpcoming", async () =>
+			loadUpcomingShifts(dbService.db, {
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				organizationTimezone: await loadOrganizationTimezone(
+					dbService.db,
+					currentEmployee.organizationId,
+				),
+				now: systemClock.nowInstant(),
+				limit: UPCOMING_SHIFTS_LIMIT,
+			}),
+		);
+	});
+
+	return runSchedulingAction("getMyUpcomingShifts", effect);
 }
 
 export async function publishShifts(

@@ -1,3 +1,4 @@
+import { compareInstants, type Instant } from "@/lib/datetime/temporal-core";
 import {
 	DOCUMENT_CATEGORIES,
 	type DocumentCategory,
@@ -106,6 +107,115 @@ export function canUploadOwnDocument(
 	category: DocumentCategory,
 ): boolean {
 	return isOwnDocument(access, employeeId) && EMPLOYEE_UPLOAD_CATEGORIES.includes(category);
+}
+
+/** Why a sick note may not be attached to an absence (#982, #984, ADR 0002). */
+export type SickNoteAttachRefusal =
+	| "setting_off"
+	| "not_own"
+	/** The actor does not manage the employee's sick notes (or it is their own file). */
+	| "not_managed"
+	| "not_sick"
+	| "rejected";
+
+/**
+ * On whose standing authority a sick note is attached to an absence (ADR 0002):
+ * - "employee": the employee to their own absence (#982), `sickNoteAttachRefusal`;
+ * - "officer": whoever manages the employee's sick notes (#984),
+ *   `officerSickNoteAttachRefusal`.
+ *
+ * Whoever records an absence on the employee's behalf (#984) has no standing
+ * authority: they attach only from inside that recording, with a grant bound
+ * to the absence just recorded (`RecorderSickNoteGrant` in sick-note-attach.ts).
+ */
+export type SickNoteAuthority = "employee" | "officer";
+
+type SickNoteTargetAbsence = {
+	employeeId: string;
+	/** The absence category's type; sick leave is "sick". */
+	categoryType: string;
+	status: "pending" | "approved" | "rejected";
+};
+
+/**
+ * Whether the absence can take a sick note at all, whoever attaches it: only
+ * sick leave that is pending or approved. Every authority checks this; the
+ * recorder of the absence (#984) checks nothing else, whatever the
+ * employee-upload setting says.
+ */
+export function sickLeaveAttachRefusal(
+	absence: Pick<SickNoteTargetAbsence, "categoryType" | "status">,
+): SickNoteAttachRefusal | null {
+	if (absence.categoryType !== "sick") return "not_sick";
+	if (absence.status === "rejected") return "rejected";
+	return null;
+}
+
+/**
+ * Whether the actor may attach, link or unlink sick notes on the employee's
+ * absence as whoever manages the employee's sick notes (#984): an officer
+ * covering `sick_note` for the employee, an owner or an admin, never on their
+ * own file. `employee` is the absence's employee.
+ */
+export function officerSickNoteAttachRefusal(
+	access: PersonnelFileAccess,
+	input: { employee: EmployeeRef; absence: SickNoteTargetAbsence },
+): SickNoteAttachRefusal | null {
+	if (
+		input.employee.id !== input.absence.employeeId ||
+		!canManageDocument(access, input.employee, "sick_note")
+	) {
+		return "not_managed";
+	}
+	return sickLeaveAttachRefusal(input.absence);
+}
+
+/**
+ * Whether the actor may upload a sick note to the absence as its employee: only
+ * to their own sick-leave absence that is pending or approved, and only while
+ * the organization lets employees attach sick notes. This is the one way an
+ * employee uploads a sick note; `EMPLOYEE_UPLOAD_CATEGORIES` stays the rule for
+ * My documents. Null when allowed. A former employee or a disabled personnel
+ * file has no access to begin with.
+ */
+export function sickNoteAttachRefusal(
+	access: PersonnelFileAccess,
+	input: {
+		employeeSickNoteUpload: boolean;
+		absence: SickNoteTargetAbsence;
+	},
+): SickNoteAttachRefusal | null {
+	if (!input.employeeSickNoteUpload) return "setting_off";
+	if (!isOwnDocument(access, input.absence.employeeId)) return "not_own";
+	return sickLeaveAttachRefusal(input.absence);
+}
+
+/** How long an employee may delete a sick note they uploaded themselves. */
+export const OWN_SICK_NOTE_DELETE_WINDOW_HOURS = 24;
+
+/**
+ * Whether the employee may delete their own sick note: one they uploaded
+ * themselves and still see (shared), within 24 hours of uploading it (to fix
+ * a mistake). After that, only whoever manages the employee's sick notes may.
+ */
+export function canDeleteOwnSickNote(
+	access: PersonnelFileAccess,
+	document: {
+		employeeId: string;
+		category: DocumentCategory;
+		visibility: DocumentVisibility;
+		uploadedBy: string | null;
+		createdAt: Instant;
+	},
+	now: Instant,
+): boolean {
+	return (
+		isOwnDocument(access, document.employeeId) &&
+		document.category === "sick_note" &&
+		document.visibility === "shared" &&
+		document.uploadedBy === access.userId &&
+		compareInstants(now, document.createdAt.add({ hours: OWN_SICK_NOTE_DELETE_WINDOW_HOURS })) < 0
+	);
 }
 
 export function canViewDocument(

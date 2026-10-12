@@ -14,10 +14,15 @@ const mockState = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	getEligibleApprovalScopesForManager: vi.fn(),
 	bulkApproveApprovalInboxItems: vi.fn(),
+	loadInboxCovers: vi.fn(async (): Promise<Array<{ approverId: string }>> => []),
 	logger: {
 		info: vi.fn(),
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -33,6 +38,10 @@ vi.mock("next/headers", () => ({
 	headers: mockState.headers,
 }));
 
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
+}));
+
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
@@ -41,12 +50,24 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
+}));
+
 vi.mock("@/lib/auth-helpers", () => ({
 	getAbility: mockState.getAbility,
 }));
 
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
+}));
+
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getEligibleApprovalScopesForManager: mockState.getEligibleApprovalScopesForManager,
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
 }));
 
 vi.mock("@/db", () => ({
@@ -59,6 +80,10 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
+}));
+
 vi.mock("@/db/schema", () => ({
 	employee: {
 		userId: "userId",
@@ -67,12 +92,24 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
+}));
+
 vi.mock("@/lib/approvals/inbox/decision-service", () => ({
 	bulkApproveApprovalInboxItems: mockState.bulkApproveApprovalInboxItems,
 }));
 
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
+}));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => mockState.logger,
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
+	loadInboxCovers: mockState.loadInboxCovers,
 }));
 
 const { POST } = await import("./route");
@@ -131,6 +168,7 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 		expect(response.status).toBe(200);
 		expect(eq).toHaveBeenCalledWith("isActive", true);
 		expect(mockState.bulkApproveApprovalInboxItems).toHaveBeenCalledWith({
+			coveredApproverIds: [],
 			approvalIds: ["approval-1"],
 			actorEmployeeId: "employee-1",
 			organizationId: "org-1",
@@ -155,6 +193,7 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 			organizationId: "org-1",
 		});
 		expect(mockState.bulkApproveApprovalInboxItems).toHaveBeenCalledWith({
+			coveredApproverIds: [],
 			approvalIds: ["approval-1"],
 			actorEmployeeId: "employee-1",
 			organizationId: "org-1",

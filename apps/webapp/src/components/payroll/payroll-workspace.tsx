@@ -10,17 +10,18 @@ import {
 	IconFileExport,
 	IconLoader2,
 	IconRefresh,
+	IconScale,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
-import { Temporal } from "temporal-polyfill";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type React from "react";
 import { useEffect, useReducer, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { Temporal } from "temporal-polyfill";
 import {
 	dismissPayrollBlockerAction,
 	exportPayrollPdfAction,
@@ -72,8 +73,13 @@ import {
 	type PayrollBlockerIdentity,
 	payrollBlockerIdentity,
 } from "@/lib/payroll-workspace/blocker-identity";
+import { MonthClosureStrip } from "@/components/closed-months/month-closure-strip";
+import { UnclosedMonthsNotice } from "@/components/closed-months/unclosed-months-notice";
 import type { PayrollDateRangeMode, PayrollWorkspaceSummary } from "@/lib/payroll-workspace/types";
 import { queryKeys } from "@/lib/query/keys";
+import { monthsOfDateRange } from "@/lib/time-tracking/closed-months/month-label";
+import { OvertimePayoutReadinessAlert } from "./overtime-payout-readiness-alert";
+import { PayrollRunReadinessCard } from "./payroll-run-readiness-card";
 import { PayrollRunsCard } from "./payroll-runs-card";
 
 type PayrollTranslate = ReturnType<typeof useTranslate>["t"];
@@ -415,6 +421,9 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 		label: summary.period.label,
 		employeeIds: filteredEmployeeIds,
 	};
+	// The period's months and the selection, for the closed-month status (#762).
+	const periodMonths = monthsOfDateRange(summary.period.start, summary.period.end);
+	const closureEmployeeIds = filteredEmployeeIds ?? scopedEmployees.map((employee) => employee.id);
 	const { loadSummary, refreshLatestSummary } = usePayrollSummaryLoader({
 		dispatch,
 		initialRequest: request,
@@ -593,9 +602,24 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 					? t("payroll.export.queued", "Payroll export queued")
 					: t("payroll.export.completed", "Payroll export completed"),
 			);
-			// A payroll run may now include expense reports (#852).
+			if (result.data.unmappedOvertimePayoutCount) {
+				toast.warning(
+					t(
+						"payroll.export.unmappedOvertimePayouts",
+						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
+						{ count: result.data.unmappedOvertimePayoutCount },
+					),
+					{
+						description: t(
+							"payroll.export.unmappedOvertimePayoutsDescription",
+							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
+						),
+					},
+				);
+			}
+			// A payroll run may now include expense reports (#852), which changes readiness (#854).
 			void queryClient.invalidateQueries({
-				queryKey: queryKeys.travelExpenses.scopedPayrollRuns(),
+				queryKey: queryKeys.travelExpenses.payrollRuns(),
 			});
 		});
 	}
@@ -658,6 +682,13 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				t={t}
 			/>
 
+			{filtersHaveNoMatches ? null : (
+				// Whether the period's months are closed for this selection (#762).
+				<>
+					<MonthClosureStrip months={periodMonths} employeeIds={closureEmployeeIds} />
+					<UnclosedMonthsNotice months={periodMonths} employeeIds={closureEmployeeIds} />
+				</>
+			)}
 			<PayrollBlockersAlert
 				blockers={displayedBlockers}
 				clearingBlockerKeys={clearingBlockerKeys}
@@ -667,6 +698,12 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 				onClearBlocker={clearPayrollBlocker}
 				t={t}
 			/>
+			{filtersHaveNoMatches ? null : (
+				<OvertimePayoutReadinessAlert request={{ ...request, formatId }} />
+			)}
+			{filtersHaveNoMatches ? null : (
+				<PayrollRunReadinessCard request={{ ...request, formatId }} />
+			)}
 			<PayrollRunsCard />
 			<EmployeeTotalsCard employees={displayedEmployees} t={t} />
 		</div>
@@ -675,7 +712,7 @@ export function PayrollWorkspace({ initialSummary, exportFormats }: PayrollWorks
 
 function PayrollHeader({ t }: { t: PayrollTranslate }) {
 	return (
-		<header className="space-y-1">
+		<header className="flex flex-wrap items-start justify-between gap-3">
 			<div className="space-y-1">
 				<h1 className="text-3xl font-semibold tracking-tight">{t("payroll.title", "Payroll")}</h1>
 				<p className="text-muted-foreground">
@@ -685,6 +722,12 @@ function PayrollHeader({ t }: { t: PayrollTranslate }) {
 					)}
 				</p>
 			</div>
+			<Button asChild variant="outline">
+				<Link href="/payroll/work-balances">
+					<IconScale aria-hidden="true" className="size-4" />
+					{t("payroll.workBalances.open", "Work balances")}
+				</Link>
+			</Button>
 		</header>
 	);
 }
@@ -1466,6 +1509,12 @@ function PayrollBlockersAlert({
 								"Open approvals",
 							);
 							href = "/approvals/inbox?types=absence_entry";
+							break;
+						case "missing_identifier":
+							// The configured custom field identifier has no value (#821).
+							blockerType = t("payroll.blockers.missingIdentifier", "Missing identifier");
+							actionLabel = t("payroll.blockers.openEmployee", "Open employee");
+							href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
 							break;
 					}
 

@@ -32,8 +32,19 @@ import {
 	API_KEY_SCOPES,
 	type ApiKeyResponse,
 	type ApiKeyScope,
-	SCOPE_LABELS,
+	DEFAULT_RATE_LIMIT_MAX,
+	DEFAULT_RATE_LIMIT_WINDOW,
+	RATE_LIMIT_WINDOWS,
 } from "@/lib/validations/api-key";
+import { useApiKeyScopeLabels } from "./api-key-labels";
+import { RateLimitWindowField } from "./api-key-rate-limit-window-field";
+
+/** A stored window the picker offers, else the default (older keys may hold others). */
+function windowOf(value: number | null) {
+	return RATE_LIMIT_WINDOWS.some((windowMs) => windowMs === value)
+		? (value as number)
+		: DEFAULT_RATE_LIMIT_WINDOW;
+}
 
 interface ApiKeyEditDialogProps {
 	organizationId: string;
@@ -52,6 +63,7 @@ type ApiKeyEditFormValues = {
 	scopes: ApiKeyScope[];
 	rateLimitEnabled: boolean;
 	rateLimitMax: string;
+	rateLimitTimeWindow: string;
 };
 
 type ApiKeyEditMutationVariables = {
@@ -153,7 +165,8 @@ function getApiKeyEditDefaultValues(
 		enabled: apiKey.enabled,
 		scopes: apiKey.scopes,
 		rateLimitEnabled: apiKey.rateLimitEnabled ?? true,
-		rateLimitMax: String(apiKey.rateLimitMax || 100),
+		rateLimitMax: String(apiKey.rateLimitMax || DEFAULT_RATE_LIMIT_MAX),
+		rateLimitTimeWindow: String(windowOf(apiKey.rateLimitTimeWindow)),
 	};
 }
 
@@ -186,6 +199,7 @@ function ApiKeyEditDialogForm({
 	onOpenChange,
 }: ApiKeyEditDialogFormProps) {
 	const { t } = useTranslate();
+	const scopeLabels = useApiKeyScopeLabels();
 	const queryClient = useQueryClient();
 	const formDefaultValues = getApiKeyEditDefaultValues(apiKey);
 	const validationMessages = getValidationMessages(t);
@@ -197,6 +211,7 @@ function ApiKeyEditDialogForm({
 				scopes: value.scopes,
 				rateLimitEnabled: value.rateLimitEnabled,
 				rateLimitMax: Number(value.rateLimitMax),
+				rateLimitTimeWindow: Number(value.rateLimitTimeWindow),
 			});
 			if (!result.success)
 				throw new Error(result.error || "Failed to update API key");
@@ -358,10 +373,7 @@ function ApiKeyEditDialogForm({
 														htmlFor={`edit-${scope}`}
 														className="text-sm font-normal cursor-pointer"
 													>
-														{t(
-															`settings.apiKeys.scope.${scope}`,
-															SCOPE_LABELS[scope],
-														)}
+														{scopeLabels[scope]}
 													</Label>
 												</div>
 											))}
@@ -412,40 +424,52 @@ function ApiKeyEditDialogForm({
 							>
 								{(rateLimitEnabled: boolean) =>
 									rateLimitEnabled ? (
-										<form.Field
-											name="rateLimitMax"
-											validators={{
-												onChange: ({ value }) =>
-													validateRateLimit(value, validationMessages),
-											}}
-										>
-											{(field) => (
-												<TFormItem className="ml-6">
-													<TFormLabel hasError={fieldHasError(field)}>
-														{t(
-															"settings.apiKeys.form.rateLimitMax",
-															"Max requests per minute",
-														)}
-													</TFormLabel>
-													<TFormControl hasError={fieldHasError(field)}>
-														<Input
-															name="rateLimitMax"
-															type="number"
-															step={1}
-															value={field.state.value}
-															onChange={(event) =>
-																field.handleChange(event.target.value)
-															}
-															onBlur={field.handleBlur}
-															min={10}
-															max={10000}
-															className="w-32"
-														/>
-													</TFormControl>
-													<TFormMessage field={field} className="text-xs" />
-												</TFormItem>
-											)}
-										</form.Field>
+										<div className="ml-6 flex flex-wrap items-start gap-4">
+											<form.Field
+												name="rateLimitMax"
+												validators={{
+													onChange: ({ value }) =>
+														validateRateLimit(value, validationMessages),
+												}}
+											>
+												{(field) => (
+													<TFormItem>
+														<TFormLabel hasError={fieldHasError(field)}>
+															{t(
+																"settings.apiKeys.form.rateLimitMaxRequests",
+																"Max requests",
+															)}
+														</TFormLabel>
+														<TFormControl hasError={fieldHasError(field)}>
+															<Input
+																name="rateLimitMax"
+																type="number"
+																step={1}
+																value={field.state.value}
+																onChange={(event) =>
+																	field.handleChange(event.target.value)
+																}
+																onBlur={field.handleBlur}
+																min={10}
+																max={10000}
+																className="w-32"
+															/>
+														</TFormControl>
+														<TFormMessage field={field} className="text-xs" />
+													</TFormItem>
+												)}
+											</form.Field>
+											<form.Field name="rateLimitTimeWindow">
+												{(field) => (
+													<RateLimitWindowField
+														id="edit-rateLimitTimeWindow"
+														value={field.state.value}
+														onChange={field.handleChange}
+														onBlur={field.handleBlur}
+													/>
+												)}
+											</form.Field>
+										</div>
 									) : null
 								}
 							</form.Subscribe>

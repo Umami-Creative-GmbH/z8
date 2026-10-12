@@ -309,12 +309,12 @@ describe("position stamps in the org data export on PostgreSQL", () => {
 
 	describe("scheduled data exports", () => {
 		const emailOf = (userId: string) => `${userId}@example.test`;
-		const run = (createdBy: string, emailRecipients: string[] = []) =>
+		const run = (ownerId: string, emailRecipients: string[] = []) =>
 			new DataExportExecutor().execute({
 				organizationId: ids.organization,
 				reportConfig: { categories: ["time_entries"] } as never,
 				dateRange: {} as never,
-				createdBy,
+				ownerId,
 				emailRecipients,
 			});
 

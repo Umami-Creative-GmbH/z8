@@ -32,6 +32,7 @@ export {
 	isApiBasedExport,
 	markPayrollExportJobFailed,
 	processExportJob,
+	unmappedOvertimePayoutsForExport,
 } from "./export-service";
 export type {
 	PersonioConfig,

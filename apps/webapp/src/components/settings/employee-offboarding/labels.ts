@@ -73,6 +73,11 @@ export function useOffboardingLabels() {
 				return t("settings.employees.offboarding.tasks.clockRepair", "Timer repair");
 			case "approval_handover":
 				return t("settings.employees.offboarding.tasks.approvalHandover", "Approval handover");
+			case "notify_deputy_release":
+				return t(
+					"settings.employees.offboarding.tasks.notifyDeputyRelease",
+					"Deputy no longer available notification",
+				);
 		}
 	};
 
@@ -149,6 +154,11 @@ export function useOffboardingLabels() {
 				return t(
 					"settings.employees.offboarding.exceptions.futureAbsences",
 					"Absences after the cutoff remain recorded. Review them in absences.",
+				);
+			case "deputy_absences":
+				return t(
+					"settings.employees.offboarding.exceptions.deputyAbsences",
+					"This employee is deputy on running or upcoming absences. They are removed as deputy when the departure takes effect, and the people affected are notified.",
 				);
 			case "unassigned_approval_duties":
 				return t(

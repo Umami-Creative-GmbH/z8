@@ -124,6 +124,9 @@ vi.mock("@/components/settings/rate-history-card", () => ({
 vi.mock("@/components/settings/work-balance-recalculation-card", () => ({
 	WorkBalanceRecalculationCard: () => null,
 }));
+vi.mock("@/components/settings/work-balance/employee-work-balance-section", () => ({
+	EmployeeWorkBalanceSection: () => null,
+}));
 vi.mock("@/components/personnel-file/personnel-file-panel", () => ({
 	PersonnelFilePanel: ({ capability }: { capability: { employeeId: string } }) => (
 		<section aria-label="Personnel file panel">{capability.employeeId}</section>

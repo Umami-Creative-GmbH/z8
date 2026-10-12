@@ -1,0 +1,1148 @@
+{
+  "travelExpenses": {
+    "actions": {
+      "download": "Preuzmi",
+      "preview": "Pregled",
+      "retry": "Pokušaj ponovo",
+      "viewClaim": "Pregledaj zahtjev"
+    },
+    "adjustment": {
+      "create": {
+        "action": "Ispravi usklađivanjem",
+        "confirm": "Kreiraj usklađivanje",
+        "explanation": "Dobijate kopiju odobrenih troškova za ispravku. Njenim slanjem cijeli ispravljeni izvještaj šalje se na novo odobrenje; samo se razlika u odnosu na odobreni iznos refundira ili vraća.",
+        "failed": "Usklađivanje se ne može kreirati. Pokušajte ponovo.",
+        "ineligible": "Ovaj izvještaj se više ne može usklađivati. Ponovo učitajte stranicu da vidite njegovo trenutno stanje.",
+        "reason": "Razlog za ispravku",
+        "reasonRequired": "Objasnite šta treba ispraviti.",
+        "reasonTooLong": "Neka razlog ima manje od {max} znakova.",
+        "title": "Kreirati povezano usklađivanje?"
+      },
+      "ineligible": {
+        "adjustment": "Usklađivanje se ispravlja putem izvještaja koji usklađuje."
+      },
+      "notice": {
+        "baseline": "Odobreni iznos koji ispravlja",
+        "delta": "Razlika s predznakom",
+        "editing": "Ispravite troškove u nastavku. Kada pošaljete, razlika u odnosu na odobreni iznos biće prikazana za vaš pregled, a zatim ponovo pregledana. Izvorni izvještaj i njegova plaćanja ostaju nepromijenjeni.",
+        "original": "Otvori originalni izvještaj",
+        "title": "Prilagođavanje odobrenog izvještaja"
+      },
+      "panel": {
+        "applied": "Primijenjeno",
+        "description": "Ovaj izvještaj je već izvezen ili refundiran, tako da ostaje odobren. Korekcija je povezano prilagođavanje: ponovo se pregleda i, nakon odobrenja, mijenja odobreni iznos za svoju razliku s predznakom.",
+        "effective": "Odobreni iznos uključujući prilagođavanja: {amount}",
+        "open": "Otvori prilagođavanje",
+        "title": "Prilagođavanja"
+      },
+      "preview": {
+        "currency": "Ispravljeni ukupni iznos nije u valuti originalnog izvještaja, pa se ne može poslati kao prilagođavanje.",
+        "delta": "Ovo prilagođavanje mijenja odobreni iznos od {baseline} za {delta}.",
+        "review": "Potrebno je ponovno odobrenje cijelog izvještaja, čak i kada se iznos smanji."
+      },
+      "reviewerHint": "Zaposlenik kreira prilagođavanje iz ovog izvještaja; ono se vraća vama na ponovni pregled s razlikom s predznakom."
+    },
+    "allowanceOverride": {
+      "amount": "Iznos",
+      "authorizedBy": "Autorizovao/la",
+      "authorizedByValue": "{name}, {date}",
+      "basis": "Izračun",
+      "evidence": "Dokazi",
+      "noOrdinary": "Ne postoji uobičajeni izračun za ove činjenice.",
+      "ordinary": "Pravilo bi izračunalo {amount}.",
+      "reason": "Razlog",
+      "situation": {
+        "calculated": "Izračunato prema pravilu",
+        "fallback": "Izračunato sa službenom zamjenskom stopom",
+        "missingCoverage": "Nijedno pravilo organizacije ne pokriva ovo",
+        "missingFacts": "Nedostaju obavezni podaci o putovanju",
+        "unsupported": "Nije pokriveno podržanim pravilima izračuna"
+      },
+      "situationLabel": "Zašto nije izračunato",
+      "situationResolved": "Ova ručna naknada više ne važi: razlog zbog kojeg je odobrena se promijenio (npr. pravilo sada pokriva ove činjenice). Izračunata naknada se uzima u obzir tamo gdje postoji; u suprotnom je mora pregledati administrator troškova.",
+      "stale": "Ova ručna naknada je odobrena za drugačije činjenice i više ne važi. Administrator troškova mora pregledati promijenjene činjenice.",
+      "title": "Naknada koju je ručno postavio administrator troškova"
+    },
+    "approvals": {
+      "description": "Otvorite objedinjeno sanduče za odobrenja filtrirano po putnim troškovima.",
+      "entry": {
+        "open": "Otvori prijemno sanduče",
+        "title": "Pregledajte odobrenja putnih troškova na čekanju"
+      }
+    },
+    "currency": {
+      "empty": "Valuta nije pronađena",
+      "placeholder": "Odaberite valutu",
+      "search": "Pretraži valute"
+    },
+    "decision": {
+      "approve": "Odobri",
+      "approved": "Zahtjev je uspješno odobren",
+      "approveDescription": "Dodajte neobaveznu napomenu za podnosioca zahtjeva prije odobravanja.",
+      "approveTitle": "Odobri zahtjev",
+      "errors": {
+        "approve": "Odobravanje zahtjeva nije uspjelo",
+        "missingClaim": "Nedostaje zahtjev za putne troškove",
+        "reject": "Odbijanje zahtjeva nije uspjelo",
+        "rejectionReason": "Navedite razlog odbijanja"
+      },
+      "noteOptional": "Napomena (neobavezno)",
+      "notePlaceholder": "Izgleda dobro. Hvala na detaljima.",
+      "reasonPlaceholder": "Nedostaju podaci s računa za prijavljeni iznos",
+      "reasonRequired": "Razlog (obavezno)",
+      "reject": "Odbij",
+      "rejectDescription": "Navedite jasan razlog kako bi podnosilac mogao ažurirati i ponovo poslati zahtjev.",
+      "rejected": "Zahtjev je uspješno odbijen",
+      "rejectTitle": "Odbij zahtjev"
+    },
+    "detail": {
+      "created": "Kreirano",
+      "decisionRecorded": "Odluka evidentirana",
+      "destination": "Odredište",
+      "history": "Historija odluka",
+      "historyDescription": "Svaki korak ovog zahtjeva, najstariji prvi. Vremena su prikazana u UTC-u.",
+      "intermediateApproval": "Odobrenje evidentirano — čeka se dalje odobrenje",
+      "legacyReceiptIdentity": "Naslijeđeni račun: kontrolni zbir sadržaja nije zabilježen.",
+      "loading": "Učitavanje zahtjeva…",
+      "noReceipts": "Nema zabilježenih računa",
+      "notRecorded": "Nije zabilježeno",
+      "originalAmount": "Originalni iznos",
+      "receipts": "Računi",
+      "refreshing": "Osvježavanje zahtjeva…",
+      "submitted": "Podneseno",
+      "title": "Zahtjev za putne troškove",
+      "unknownDates": "Kontekst datuma putovanja nije zabilježen (naslijeđeni zahtjev)"
+    },
+    "errors": {
+      "loadDetailRetry": "Nije moguće učitati ovaj zahtjev. Pokušajte ponovo."
+    },
+    "feature": "upravljanje putnim troškovima",
+    "finance": {
+      "approvedOn": "Odobreno {date}",
+      "back": "Nazad na finansije troškova",
+      "bulk": {
+        "action": "Označi kao refundirano",
+        "description": "Svaki odabrani trošak refundira se u cijelosti, u svojoj valuti, sa ovim datumom plaćanja i referencom. Z8 ne vrši prijenos novca.",
+        "failed": "Troškovi se nisu mogli označiti kao refundirani. Molimo pokušajte ponovo.",
+        "nothing": "Ovdje ništa ne čeka punu refundaciju. Nije evidentirana nijedna uplata.",
+        "outcome": {
+          "alreadyReimbursed": "Preskočeno: već refundirano",
+          "balanceChanged": "Preskočeno: saldo je promijenjen",
+          "failed": "Neuspjelo",
+          "inPayrollRun": "Preskočeno: uključeno u obračun plata",
+          "outOfScope": "Preskočeno: izvan djelokruga",
+          "overpaidOrReview": "Preskočeno: preplaćeno ili zahtijeva pregled",
+          "ownExpense": "Preskočeno: vaš vlastiti trošak",
+          "reimbursed": "Refundirano {amount}"
+        },
+        "referenceHint": "Ista referenca se evidentira za svaki odabrani trošak, npr. paket bankovnih transfera.",
+        "results": {
+          "done": "Završeno",
+          "summary": "{reimbursed} od {total} refundirano",
+          "title": "Rezultati refundacije"
+        },
+        "select": "Odaberite {name}",
+        "selectAll": "Odaberite sve troškove koji čekaju refundaciju na ovoj stranici",
+        "selected": "{count} odabrano",
+        "skipped": "Nije uključeno ({count})",
+        "submit": "Označi {count} kao refundirano",
+        "title": "Označi kao refundirano"
+      },
+      "companyPaid": "Plaćeno od strane kompanije {amount}",
+      "coverageGap": {
+        "description": "Nijedan aktivni službenik za troškove koji može evidentirati refundacije nema ih u svom djelokrugu. Vlasnici i administratori ih i dalje mogu evidentirati ili proširiti djelokrug službenika.",
+        "empty": "Službenik za troškove pokriva svaki odobreni trošak koji čeka refundaciju.",
+        "queueFilter": "Odobreni troškovi koji čekaju refundaciju, a koje nijedan službenik za troškove ne pokriva.",
+        "show": "Prikaži ove troškove",
+        "showAll": "Prikaži sve odobrene troškove",
+        "title": "{count, plural, one {# odobreni trošak čeka refundaciju koji nijedan službenik za troškove ne pokriva} few {# odobrena troška čekaju refundaciju koje nijedan službenik za troškove ne pokriva} other {# odobrenih troškova čeka refundaciju koje nijedan službenik za troškove ne pokriva}}"
+      },
+      "description": "Odobreni troškovi i ono što se još duguje zaposlenicima. Evidentiranjem refundacije dokumentuje se plaćanje izvršeno izvan aplikacije Z8; novac se ne prenosi.",
+      "employeePaid": "Plaćeno od strane zaposlenika {amount}",
+      "empty": {
+        "allReimbursed": "Nema više ništa za evidentiranje: svaki odobreni trošak je refundiran.",
+        "any": "Još nema odobrenih troškova.",
+        "filtered": "Nijedan odobreni trošak ne odgovara ovim filterima."
+      },
+      "entry": {
+        "description": "Pregledajte odobrene troškove, nepodmirene iznose i evidentirane refundacije.",
+        "open": "Otvori red čekanja finansija",
+        "title": "Finansije troškova"
+      },
+      "errors": {
+        "load": "Nije moguće učitati red čekanja finansija. Pokušajte ponovo."
+      },
+      "exports": {
+        "adjustment": "Prilagođavanje: {name}",
+        "cancel": "Otkaži",
+        "cancelledByFinance": "Otkazano od strane finansija.",
+        "cancelledReopenedHint": "Otkazano jer je izvještaj u njemu ponovo otvoren radi ispravke. Svi ostali izvještaji u njemu su spremni za ponovni izvoz: kreirajte novi izvoz za njih.",
+        "counts": "{reports} izvještaja · {items} troškova · {receipts} računa",
+        "created": "Izvoz je stavljen u red čekanja. Pojavit će se ispod kada bude spreman.",
+        "description": "Izvezite odobrene troškove kao CSV sa njihovim računima za računovodstvo. Svaka odobrena prijava se izvozi jednom; preuzmite izvoz ponovo kad god vam zatreba.",
+        "download": "Preuzmi",
+        "empty": "Nema odobrenih troškova koji čekaju na izvoz.",
+        "errors": {
+          "alreadyExported": "Neki odabrani troškovi su već dio drugog izvoza. Umjesto toga preuzmite taj izvoz.",
+          "cancel": "Izvoz se nije mogao otkazati.",
+          "conflict": "Raniji pokušaj s drugim odabirom je već zabilježen. Provjerite historiju izvoza.",
+          "failed": "Nije moguće kreirati izvoz. Pokušajte ponovo.",
+          "invalid": "Odaberite između jednog i maksimalnog broja troškova.",
+          "load": "Učitavanje izvoza nije uspjelo. Pokušajte ponovo.",
+          "reimburse": "Izvoz se nije mogao učitati za refundaciju. Molimo pokušajte ponovo.",
+          "retry": "Nije bilo moguće ponovo pokrenuti izvoz.",
+          "stale": "Neki odabrani troškovi više nisu odobreni kako je prikazano. Lista je osvježena; provjerite odabir i ponovo izvezite."
+        },
+        "failure": {
+          "enqueue": "Izvoz nije bilo moguće staviti u red čekanja. Pokušajte ponovo.",
+          "inconsistent": "Odobrene podatke nije bilo moguće dosljedno izvesti. Obratite se podršci.",
+          "receiptMismatch": "Pohranjeni račun više ne odgovara svojoj zabilježenoj kontrolnoj sumi. Obratite se podršci prije ponovnog pokušaja.",
+          "receiptUnavailable": "Datoteku računa nije bilo moguće pročitati. Pokušajte ponovo kada pohrana bude dostupna.",
+          "storage": "Datoteku izvoza nije bilo moguće pohraniti. Pokušajte ponovo.",
+          "unknown": "Izvoz nije uspio. Pokušajte ponovo."
+        },
+        "form": {
+          "label": "Kreiraj izvoz",
+          "selectAll": "Odaberi sve",
+          "submit": "Kreiraj izvoz ({count})"
+        },
+        "history": "Historija izvoza",
+        "loading": "Učitavanje izvoza…",
+        "markReimbursed": "Označi kao refundirano",
+        "markReimbursedDescription": "Svaki izvještaj o troškovima u ovom izvozu refundira se u cijelosti, u svojoj valuti, sa ovim datumom plaćanja i referencom. Prilagođavanja se uračunavaju u izvještaj koji ispravljaju. Z8 ne vrši prijenos novca.",
+        "notPayment": "Nije plaćanje: izvozom se ništa ne označava kao refundirano.",
+        "requested": "Zatraženo {date} od strane {name}",
+        "retry": "Pokušaj ponovo",
+        "status": {
+          "cancelled": "Otkazano",
+          "completed": "Završeno",
+          "failed": "Neuspjelo",
+          "processing": "U obradi",
+          "queued": "U redu čekanja"
+        },
+        "title": "Izvozi"
+      },
+      "filter": {
+        "all": "Sve odobreno",
+        "clear": "Očisti filtere",
+        "currency": {
+          "all": "Sve valute",
+          "label": "Valuta",
+          "none": "Nijedna valuta nije pronađena.",
+          "search": "Pretraži valute…"
+        },
+        "employee": {
+          "all": "Svi zaposlenici",
+          "label": "Zaposlenik",
+          "none": "Nijedan zaposlenik nije pronađen.",
+          "search": "Pretraži uposlenike…"
+        },
+        "label": "Prikaži troškove",
+        "notExported": "Još nije izvezeno",
+        "open": "Otvori",
+        "reimbursed": "Refundirano",
+        "team": {
+          "all": "Svi timovi",
+          "label": "Tim pri odobrenju",
+          "none": "Nijedan tim nije pronađen.",
+          "search": "Pretraži timove…"
+        }
+      },
+      "inPayrollRun": "Uključeno u {run}",
+      "legacyClaim": "Naslijeđeni {type} zahtjev",
+      "loading": "Učitavanje finansijskog reda čekanja…",
+      "pagination": {
+        "label": "Stranice finansijskog reda čekanja",
+        "next": "Sljedeće",
+        "page": "Stranica {page}",
+        "previous": "Prethodno"
+      },
+      "payrollRun": {
+        "confirm": {
+          "action": "Potvrdi kao plaćeno",
+          "description": "Obračun plaća je isplatio ovaj {format} ciklus? Izvještaji o troškovima u vašem djelokrugu se time bilježe kao refundirani. Vaši vlastiti izvještaji i izvještaji izvan vašeg djelokruga ostaju u ciklusu.",
+          "descriptionCounted": "{count, plural, one {Obračun plaća je isplatio ovaj {format} ciklus? # izvještaj o troškovima u vašem djelokrugu ({amount}) se time bilježi kao refundiran. Vaši vlastiti izvještaji i izvještaji izvan vašeg djelokruga ostaju u ciklusu.} few {Obračun plaća je isplatio ovaj {format} ciklus? # izvještaja o troškovima u vašem djelokrugu ({amount}) se time bilježe kao refundirani. Vaši vlastiti izvještaji i izvještaji izvan vašeg djelokruga ostaju u ciklusu.} other {Obračun plaća je isplatio ovaj {format} ciklus? # izvještaja o troškovima u vašem djelokrugu ({amount}) se time bilježi kao refundirano. Vaši vlastiti izvještaji i izvještaji izvan vašeg djelokruga ostaju u ciklusu.}}",
+          "failed": "Ciklus obračuna plaća nije mogao biti potvrđen. Molimo pokušajte ponovo; ništa se ne bilježi dvaput.",
+          "outcome": {
+            "confirmed": "Refundirano {amount}",
+            "confirmedWithRemainder": "Refundirano {amount}. Za sljedeći ciklus još uvijek preostaje {remaining} za refundaciju.",
+            "outOfScope": "Nije potvrđeno: izvan vašeg djelokruga. Ostaje u ciklusu za ovlaštenu osobu koja ga pokriva.",
+            "overpaidByPayroll": "Refundirano {amount}, {overpaid} više nego što je preostalo dugovano. Trošak je sada preplaćen: ručno evidentirajte povrat.",
+            "ownExpense": "Nije potvrđeno: vaš vlastiti trošak. Ostaje u ciklusu kako bi ga neko drugi potvrdio."
+          },
+          "payday": "Dan isplate",
+          "paydayHint": "Dan isplate na koji je obračun plaća isplatio ovaj ciklus. Svaka refundacija ovog ciklusa se bilježi na taj dan.",
+          "results": {
+            "nothing": "U ovom ciklusu ništa nije preostalo za potvrdu. Nijedna refundacija nije zabilježena.",
+            "summary": "{confirmed} od {total} potvrđeno",
+            "title": "Rezultati potvrde"
+          },
+          "submit": "Potvrdi kao plaćeno",
+          "title": "Potvrdi obračun plata {period} kao plaćen"
+        },
+        "included": "Uključeno u {run}. Isplaćuje se tim obračunom plata i evidentira kao nadoknađeno kada se obračun potvrdi.",
+        "label": "Obračun plata {period} ({format})",
+        "notIncluded": "Nijedan obračun plata više ne uključuje ovaj trošak.",
+        "remove": "Ukloni iz obračuna plata",
+        "removed": "Uklonjeno iz obračuna plata. Trošak ponovo čeka na nadoknadu.",
+        "removeDescription": "Uklonite ga samo ako se neće isplatiti ovim obračunom plata, na primjer nakon ispravljanja datoteke obračuna plata. Uklanjanje se evidentira u revizijskom dnevniku.",
+        "removeFailed": "Trošak nije bilo moguće ukloniti iz obračuna plata.",
+        "removeTitle": "Ukloniti ovaj trošak iz obračuna plata?"
+      },
+      "payrollRuns": {
+        "description": "Ovi obračuni plata sadrže izvještaje o troškovima koji čekaju refundaciju. Kada se obračun plata isplati, potvrdite ga kako biste evidentirali refundacije.",
+        "reports": "{count, plural, one {# izvještaj o troškovima za vašu potvrdu, {amount}} other {# izvještaja o troškovima za vašu potvrdu, {amount}}}",
+        "title": "Obračuni plata koji čekaju potvrdu"
+      },
+      "queue": {
+        "description": "Otvorite trošak da vidite njegovo poravnanje i evidentirate naknadu.",
+        "title": "Odobreni troškovi"
+      },
+      "title": "Finansije troškova"
+    },
+    "form": {
+      "currency": "Valuta",
+      "notes": "Napomene"
+    },
+    "history": {
+      "adjustment": "Korekcija",
+      "adjustmentOf": "Korekcija za “{title}”",
+      "adjustmentOfUntitled": "Korekcija ranijeg izvještaja",
+      "claimed": "Zatraženo",
+      "companyPaid": "Plaćeno od strane kompanije: {amount}",
+      "continuedFrom": "Nastavak ranijeg zahtjeva",
+      "deleteDraft": "Izbriši nacrt „{title}“",
+      "description": "Nacrti, podneseni izvještaji i raniji zahtjevi, prvo nedavno izmijenjeni.",
+      "emptyDescription": "Započnite putovanje kako biste prikupili više troškova sa zajedničkim detaljima putovanja ili dodajte pojedinačni račun ili trošak kilometraže. Skice se automatski spremaju, tako da ih možete dovršiti kasnije.",
+      "emptyFilter": "Nema troškova s ovim statusom.",
+      "emptyTitle": "Još nema putnih troškova",
+      "errors": {
+        "load": "Učitavanje vaših putnih troškova nije uspjelo. Pokušajte ponovo.",
+        "refresh": "Nije bilo moguće osvježiti vaše troškove; lista u nastavku možda nije ažurirana. Pokušajte ponovo."
+      },
+      "filter": {
+        "all": "Sve",
+        "approved": "Odobreno",
+        "awaitingReimbursement": "Čeka na refundaciju",
+        "inReview": "U pregledu",
+        "label": "Prikaži troškove",
+        "needsAction": "Za dovršetak",
+        "rejected": "Odbijeno"
+      },
+      "legacy": {
+        "badge": "Raniji zahtjev",
+        "mileage": "Zahtjev za kilometražu",
+        "perDiem": "Zahtjev za dnevnice",
+        "receipt": "Zahtjev na osnovu računa"
+      },
+      "loading": "Učitavanje vaših putnih troškova…",
+      "notCounted": "{count, plural, one {# trošak još nije uračunat} few {# troška još nisu uračunata} other {# troškova još nije uračunato}}",
+      "refreshing": "Osvježavanje…",
+      "reimbursable": "Za isplatu vama",
+      "showAll": "Prikaži sve troškove",
+      "title": "Vaši troškovi",
+      "untitledMileage": "Neimenovana kilometraža"
+    },
+    "legacyDraft": {
+      "continue": "Nastavi kao izvještaj",
+      "converted": "Nastavili ste ovu skicu kao izvještaj o troškovima. Ovaj zahtjev ostaje ovdje nepromijenjen radi evidencije.",
+      "description": "Skice iz ranijeg obrasca za zahtjeve sada se dovršavaju kao izvještaji o troškovima. Vaš iznos, datumi, bilješke i računi su preneseni; sve što novi obrazac zahtijeva, a što ova skica nije zabilježila, ostavljeno je vama da popunite. Sam ovaj zahtjev ostaje nepromijenjen.",
+      "failed": "Nastavak skice nije uspio. Pokušajte ponovo.",
+      "flags": {
+        "amount": "Uneseni iznos {amount} nije važeći iznos računa. Unesite iznos i valutu s računa.",
+        "conversion": "Račun je u stranoj valuti. U skici nije zabilježena konverzija, stoga prije podnošenja dodajte način konverzije (trošak kartice ili kurs).",
+        "destination": "Odredište \"{destination}\" nije se moglo povezati s državom. Odaberite je.",
+        "expenseDate": "Skica je obuhvatala {range}. Odaberite dan ovog troška.",
+        "manualTotal": "Skica je imala upisani ukupni iznos od {amount}. On se ne koristi: ovaj trošak se sada računa na osnovu onoga što unesete ispod.",
+        "notes": "Vaše bilješke su prikazane ispod; kopirajte ono što je još uvijek primjenjivo.",
+        "project": "Projekat iz skice je zadržan. Osim ako vaše zaduženje na datum troška nije evidentirano, administrator troškova ga mora odobriti prije nego što ga možete podnijeti.",
+        "projectMissing": "Projekat iz skice više ne postoji. Odaberite projekat ako je primjenjivo.",
+        "tripDates": "Skica je kreirana prije evidentiranja datuma putovanja. Unesite datume."
+      },
+      "loadFailed": "Nije moguće provjeriti ovu skicu. Pokušajte ponovo.",
+      "notDraft": "Ovaj zahtjev je već podnesen. Zadržava svoje prvobitno odobrenje i ne može se nastaviti kao izvještaj.",
+      "notice": {
+        "description": "Ono što ste unijeli preneseno je gdje god ovaj obrazac to može tačno podržati, uključujući {count} računa. Popunite preostala polja prije podnošenja.",
+        "original": "Pogledaj originalnu skicu",
+        "title": "Nastavljeno iz ranije skice zahtjeva"
+      },
+      "openReport": "Otvori izvještaj",
+      "receipt": {
+        "mismatch": "pohranjena datoteka više ne odgovara onome što je preneseno",
+        "unreadable": "pohranjenu datoteku trenutno nije moguće pročitati",
+        "unsupportedStorage": "datoteka se čuva u nepodržanom spremištu",
+        "unsupportedType": "pohranjena datoteka nije podržana vrsta računa"
+      },
+      "receiptUnavailable": "Ništa nije promijenjeno jer račun nije mogao biti sigurno prenesen: {receipts}. Pokušajte ponovo kasnije ili zatražite od administratora da vrati datoteku.",
+      "status": "Nastavljeno kao izvještaj",
+      "title": "Nastavi ovu skicu"
+    },
+    "list": {
+      "actions": "Radnje",
+      "amount": "Iznos",
+      "dateRange": "Raspon datuma",
+      "emptyDescription": "Kreirajte svoj prvi zahtjev kako biste započeli proces odobravanja.",
+      "emptyTitle": "Još nema zahtjeva za putne troškove",
+      "status": "Status",
+      "type": "Vrsta"
+    },
+    "perDiemPlaces": {
+      "AU": {
+        "canberra": "Canberra",
+        "sydney": "Sydney"
+      },
+      "BR": {
+        "brasilia": "Brazilija",
+        "rio-de-janeiro": "Rio de Janeiro",
+        "sao-paulo": "São Paulo"
+      },
+      "CA": {
+        "ottawa": "Ottawa",
+        "toronto": "Toronto",
+        "vancouver": "Vancouver"
+      },
+      "CH": {
+        "bern": "Bern",
+        "genf": "Ženeva"
+      },
+      "CN": {
+        "hongkong": "Hong Kong",
+        "peking": "Peking",
+        "shanghai": "Šangaj"
+      },
+      "ES": {
+        "barcelona": "Barcelona",
+        "kanarische-inseln": "Kanarska ostrva",
+        "madrid": "Madrid",
+        "palma-de-mallorca": "Palma de Mallorca"
+      },
+      "FR": {
+        "paris": "Pariz i departmani 77, 78, 91–95"
+      },
+      "GB": {
+        "london": "London"
+      },
+      "GR": {
+        "athen": "Atina"
+      },
+      "IN": {
+        "bangalore": "Bengaluru",
+        "chennai": "Chennai",
+        "kalkutta": "Kolkata",
+        "mumbai": "Mumbai",
+        "neu-delhi": "New Delhi"
+      },
+      "IT": {
+        "mailand": "Milano",
+        "rom": "Rim"
+      },
+      "JP": {
+        "osaka": "Osaka",
+        "tokio": "Tokio"
+      },
+      "PL": {
+        "breslau": "Wrocław",
+        "warschau": "Varšava"
+      },
+      "RU": {
+        "moskau": "Moskva",
+        "st-petersburg": "Sankt Peterburg"
+      },
+      "SA": {
+        "djidda": "Džeda",
+        "riad": "Rijad"
+      },
+      "TR": {
+        "ankara": "Ankara",
+        "izmir": "Izmir"
+      },
+      "US": {
+        "atlanta": "Atlanta",
+        "boston": "Boston",
+        "chicago": "Chicago",
+        "houston": "Houston",
+        "los-angeles": "Los Angeles",
+        "miami": "Miami",
+        "new-york-city": "New York City",
+        "san-francisco": "San Francisco",
+        "washington-dc": "Washington, D.C."
+      },
+      "ZA": {
+        "johannesburg": "Johannesburg",
+        "kapstadt": "Cape Town"
+      }
+    },
+    "report": {
+      "actions": {
+        "newMileage": "Nova kilometraža",
+        "newReceipt": "Novi račun",
+        "newTrip": "Novo putovanje"
+      },
+      "approvedBy": "Odobrio/la {name} dana {date}.",
+      "approvedByDeputy": "Odobrio/la {name} (zamjenik za {actingForName}) dana {date}.",
+      "awaitingReview": "Čeka se pregled.",
+      "awaitingReviewer": "Čeka pregled: {name}.",
+      "backToApprovals": "Nazad na odobrenja",
+      "backToCurrent": "Nazad na trenutni izvještaj",
+      "backToTravelExpenses": "Nazad na putne troškove",
+      "categories": {
+        "accommodation": "Smještaj",
+        "meals": "Obroci",
+        "other": "Ostalo",
+        "parking": "Parking",
+        "transport": "Prevoz"
+      },
+      "conversion": {
+        "attachFirst": "Prvo priložite izvod s kartice ili račun koji prikazuje gore navedeni trošak.",
+        "authorizedBy": "Ovlastio/la",
+        "basis": {
+          "cardCharge": "Zaduženje kartice",
+          "manualRate": "Odobreni kurs",
+          "referenceRate": "Referentni kurs ECB-a"
+        },
+        "chargedAmount": "Naplaćeni iznos u {currency}",
+        "chargedAmountDescription": "Iznos na vašem izvodu iz banke ili sa kartice, uključujući sve naplaćene naknade za konverziju.",
+        "conflict": "Ovaj trošak je promijenjen na drugom mjestu. Provjerite ga i ponovo sačuvajte zaduženje kartice.",
+        "errors": {
+          "chargedAmount": "Unesite pozitivni iznos naplaćen u {currency}, sa najviše {digits} decimala.",
+          "evidence": "Odaberite prilog ovog troška koji prikazuje zaduženje."
+        },
+        "evidence": "Dokaz:",
+        "evidenceLabel": "Prilog koji prikazuje zaduženje",
+        "evidenceMissing": "Nedostaje prilog koji prikazuje zaduženje kartice.",
+        "formLabel": "Zaduženje kartice",
+        "none": "Kurs se ne pretpostavlja. Unesite iznos koji je zadužen na vašoj kartici u {currency} i odaberite prilog koji to dokazuje, poput izvoda sa kartice. Bez zaduženja kartice, administrator troškova može unijeti dokumentovani kurs.",
+        "notSaved": "Zaduženje kartice nije se moglo sačuvati za ovaj trošak.",
+        "publicationDate": "Objavljeno dana",
+        "publicationFallback": "Nijedan kurs nije objavljen na dan {expenseDate}, stoga se primjenjuje najnovija ranija objava.",
+        "rate": "Kurs",
+        "rateDate": "Datum kursa",
+        "rateEvidence": "Dokaz o kursu",
+        "rateValue": "1 {base} = {value} {quote}",
+        "reason": "Dokumentacija",
+        "reference": {
+          "alternatives": "Vaš izvještaj ostaje u nacrtu dok ne unesete zaduženje kartice u {reimbursementCurrency} sa prilogom koji to prikazuje, ili dok administrator troškova ne evidentira dokumentovani kurs.",
+          "currencyUnavailable": "Evropska centralna banka ne objavljuje kurs za {currency} na ovaj datum.",
+          "expenseDateMissing": "Unesite datum troška da biste potražili referentni kurs.",
+          "historyUnavailable": "Nema referentnog kursa za ovaj datum.",
+          "notYetPublished": "Referentni kurs za ovaj datum još nije objavljen. Obično se pojavljuje radnim danima nakon 16:00 po frankfurtskom vremenu.",
+          "pairUnsupported": "Evropska centralna banka objavljuje kurseve samo u odnosu na euro, tako da se nijedan ne primjenjuje između {currency} i {reimbursementCurrency}.",
+          "providerUnavailable": "Referentni kurs za ovaj datum još se nije mogao dohvatiti. Pokušajte ponovo kasnije.",
+          "rateStale": "Trenutno nema dostupnog referentnog kursa za ovaj datum."
+        },
+        "referencePending": "Referentni kurs se ponovo traži za novi datum nakon što sačuvate promjenu.",
+        "remove": "Ukloni zaduženje kartice",
+        "removeFailed": "Zaduženje kartice nije se moglo ukloniti. Ponovo učitajte trošak i pokušajte ponovo.",
+        "replaceWithCardCharge": "Umjesto toga koristi moje zaduženje kartice",
+        "result": "{original} se računa kao {reimbursement}",
+        "rounding": "Zaokruživanje",
+        "roundingValue": "Zaokruženo pola naviše na {digits} decimala",
+        "saveCardCharge": "Sačuvaj zaduženje kartice",
+        "saved": "Zaduženje kartice je sačuvano",
+        "saveFailed": "Zaduženje kartice nije se moglo sačuvati. Pokušajte ponovo.",
+        "source": "Izvor",
+        "sourceEcb": "Referentni kurs eura Evropske centralne banke, odobren od strane vaše organizacije",
+        "title": "Konverzija u {currency}"
+      },
+      "correctAndResubmit": "Ispravite izvještaj i ponovo ga podnesite. Ranija podnošenja ostaju u njegovoj historiji.",
+      "countryEmpty": "Država nije pronađena",
+      "countrySearch": "Pretraži države",
+      "cycles": {
+        "approved": "odobreno",
+        "description": "Svaka podnesena prijava ostaje tačno onakva kakva je poslana na pregled.",
+        "entry": "Podnošenje {number} dana {date}: {outcome}",
+        "pending": "čeka pregled",
+        "rejected": "odbijeno",
+        "reopened": "odobreno, zatim ponovo otvoreno za ispravku",
+        "returned": "vraćeno na izmjenu",
+        "title": "Podnošenja",
+        "withdrawn": "Povučeno"
+      },
+      "decideInInbox": "Odobrite, vratite ili odbijte cijeli izvještaj u pretincu za odobrenja.",
+      "delete": {
+        "action": "Izbriši nacrt",
+        "description": "Nacrt, njegovi troškovi i njihovi računi se brišu. Ovo se ne može poništiti.",
+        "descriptionLegacy": "Nacrt, njegovi troškovi i njihovi računi se brišu, zajedno s ranijim nacrtom zahtjeva na koji se nastavlja. Ovo se ne može poništiti.",
+        "done": "Nacrt je izbrisan.",
+        "failed": "Nacrt se nije mogao izbrisati. Pokušajte ponovo.",
+        "notDeletable": "Ovaj izvještaj je već podnesen, pa se više ne može izbrisati.",
+        "title": "Izbrisati ovaj nacrt?"
+      },
+      "drafts": {
+        "expenses": "{count, plural, one {# trošak} few {# troška} other {# troškova}}",
+        "noDate": "Još nema datuma",
+        "noTravelDates": "Još nema datuma putovanja",
+        "receipts": "{count, plural, one {# račun} other {# računa} }",
+        "untitled": "Račun bez naslova",
+        "untitledTrip": "Putovanje bez naslova"
+      },
+      "earlierSubmission": "Ovo je ranije podnesena verzija izvještaja, sačuvana tačno onako kako je podnesena.",
+      "errors": {
+        "amount": "Unesite pozitivan iznos s najviše dvije decimale, npr. 12,50.",
+        "category": "Odaberite navedenu kategoriju.",
+        "create": "Kreiranje troška nije uspjelo. Pokušajte ponovo.",
+        "currency": "Unesite troslovni kôd valute, npr. EUR.",
+        "expenseDate": "Unesite važeći datum.",
+        "load": "Učitavanje ovog troška nije uspjelo. Pokušajte ponovo.",
+        "loadSubmission": "Učitavanje podnesenog izvještaja nije uspjelo. Pokušajte ponovo.",
+        "paidBy": "Odaberite ko je platio.",
+        "tooLong": "Ovaj tekst je predug."
+      },
+      "fields": {
+        "accountingReference": "Računovodstvena referenca (opcionalno)",
+        "accountingReferenceDescription": "Referenca koju je odjel finansija zatražio da koristite, poput broja narudžbenice.",
+        "amount": "Iznos na računu",
+        "category": "Kategorija",
+        "categoryPlaceholder": "Odaberite kategoriju",
+        "description": "Opis",
+        "descriptionPlaceholder": "npr. Vozna karta Berlin–Hamburg za radionicu s klijentom",
+        "expenseDate": "Datum računa",
+        "paidBy": "Ko je platio?"
+      },
+      "frozenNotice": "Podneseni izvještaj se više ne može uređivati.",
+      "history": {
+        "description": "Svaki korak ovog izvještaja, najstariji prvi. Vremena su prikazana u UTC-u.",
+        "detail": {
+          "approvalRecorded": "Korisnik: {name}; čeka se dalje odobrenje.",
+          "approvalRecordedByDeputy": "Od: {name} (zamjenik za {actingForName}); čeka se dalje odobrenje.",
+          "by": "Korisnik: {name}",
+          "byDeputy": "Od: {name} (zamjenik za {actingForName})",
+          "inCycle": "Podnošenje {number} · {detail}",
+          "selfApproved": "Niko drugi nije mogao pregledati ovaj izvještaj."
+        },
+        "inReview": "Na pregledu",
+        "step": {
+          "approvalRecorded": "Odobrenje evidentirano",
+          "approved": "Odobreno",
+          "rejected": "Odbijeno",
+          "reopened": "Ponovo otvoreno za ispravku",
+          "returned": "Vraćeno radi izmjena",
+          "selfApproved": "Automatski odobreno",
+          "submitted": "Podneseno",
+          "withdrawn": "Povučeno"
+        },
+        "title": "Historija"
+      },
+      "items": {
+        "add": "Dodaj trošak računa",
+        "addFailed": "Dodavanje troška nije uspjelo. Pokušajte ponovo.",
+        "empty": "Dodajte svaki račun s ovog putovanja kao zaseban trošak. Gore navedeni detalji putovanja odnose se na sve njih.",
+        "emptyTitle": "Još nema troškova",
+        "numbered": "{type} {number}",
+        "remove": "Ukloni",
+        "removeConfirm": "Ukloni trošak",
+        "removeConflict": "Ovaj trošak je promijenjen na drugom mjestu i nije uklonjen. Provjerite ga i pokušajte ponovo.",
+        "removed": "{type} (uklonjeno)",
+        "removeDescription": "Trošak i priloženi računi se brišu s ovog putovanja. Ova radnja se ne može poništiti.",
+        "removeFailed": "Uklanjanje troška nije uspjelo. Pokušajte ponovo.",
+        "removeItem": "Ukloni {item}",
+        "removeTitle": "Ukloniti ovaj trošak?",
+        "title": "Troškovi"
+      },
+      "kind": {
+        "standaloneMileage": "Samostalna kilometraža",
+        "trip": "Izvještaj o putovanju"
+      },
+      "loading": "Učitavanje troška…",
+      "mileage": {
+        "add": "Dodaj kilometražu",
+        "appliedPolicy": "Stopa važi od {date} · {source}",
+        "calculation": "{distance} km × {rate} po km = {amount}",
+        "calculationTitle": "Izračunata kilometraža",
+        "enterFacts": "Unesite datum, kilometre i vozilo da vidite iznos.",
+        "errors": {
+          "distance": "Unesite pređene kilometre kao pozitivan broj s najviše dvije decimale, npr. 61,5.",
+          "vehicle": "Odaberite vozilo koje ste vozili."
+        },
+        "fields": {
+          "date": "Datum vožnje",
+          "distance": "Pređeni kilometri",
+          "route": "Ruta",
+          "routePlaceholder": "npr. Ured Berlin – klijent Potsdam – nazad",
+          "vehicle": "Vozilo",
+          "vehicleDescription": "Vaše vlastito vozilo. Službeni automobili i javni prevoz ne spadaju u kilometražu; umjesto toga dodajte njihove račune."
+        },
+        "noRate": "Cijena se ne izmišlja: ovaj trošak ostaje u skicama dok administrator troškova ne doda tarifu za kilometražu koja pokriva ovaj datum.",
+        "noRateTitle": "Ne primjenjuje se nijedna tarifa za kilometražu",
+        "otherCurrency": "Tarifa za ovaj datum nije u {currency}; kilometraža se nikada ne preračunava.",
+        "pending": "Izračunava se prema tarifi vaše organizacije nakon što sačuvate promjene.",
+        "requirements": {
+          "currency": "Tarifa za kilometražu za ovaj datum je u {policyCurrency}, ali ovaj izvještaj se refundira u {currency}. Zatražite od administratora troškova da doda tarifu u {currency}.",
+          "date": "Unesite datum vožnje.",
+          "distance": "Unesite pređene kilometre.",
+          "policyMissing": "Vaša organizacija nema tarifu za kilometražu za {vehicle} na dan {date}. Zatražite od administratora troškova da doda datiranu tarifu u postavkama putnih troškova. Do tada se ništa neće izračunati.",
+          "route": "Opišite rutu.",
+          "vehicle": "Odaberite vozilo."
+        },
+        "rounded": "(tačno {exact}, zaokruženo na cent)",
+        "sourceOrganization": "Pravilnik organizacije: {reference}",
+        "sourceOrganizationUnnamed": "Pravilnik organizacije",
+        "sourceStatutory": "Njemački zakonski paušal ({version})",
+        "standaloneTitle": "Kilometraža",
+        "vehicles": {
+          "car": "Automobil",
+          "otherMotorVehicle": "Drugo motorno vozilo (npr. motocikl)"
+        }
+      },
+      "paidBy": {
+        "company": "Platila kompanija (npr. službena kartica)",
+        "employee": "Platio/la sam (refundirajte mi)"
+      },
+      "perDiem": {
+        "absenceDuration": "{hours}:{minutes} h odsustva",
+        "add": "Dodaj dnevnicu",
+        "appliedPolicy": "Tarife važeće od {date} · {source}",
+        "basis": {
+          "absence24h": "Cjelodnevno odsustvo (24 sata)",
+          "claimedInOtherReport": "Već isplaćeno u drugom vašem izvještaju: samo jedna dnevnica po danu",
+          "over8h": "Više od 8 sati odsustva",
+          "overnightMajority": "Veći dio noćnog odsustva",
+          "overnightMinority": "Uračunato u drugi dan noćnog odsustva",
+          "travelDay": "Dan putovanja na putu s noćenjem",
+          "upTo8h": "8 sati ili manje odsustva: nema dnevnice"
+        },
+        "breakdownCaption": "Dnevnica po kalendarskom danu",
+        "calculationTitle": "Izračunata dnevnica",
+        "columns": {
+          "amount": "Iznos",
+          "day": "Dan",
+          "eligibility": "Pravo na naknadu",
+          "meals": "Osigurani obroci",
+          "rate": "Dnevnica"
+        },
+        "deductionNote": "Osigurani obroci umanjuju dnevnicu, nikada ispod nule; iznos koji ste platili za obrok umanjuje to odbijanje.",
+        "departure": "Polazak",
+        "enterFacts": "Unesite polazak, povratak i obroke kako biste vidjeli dnevnice.",
+        "errors": {
+          "clockChange": "Ovo vrijeme ne postoji na ovaj dan jer se sat pomjera unaprijed. Unesite vrijeme izvan preskočenog sata.",
+          "clockChangeRepeated": "Ovo vrijeme se javlja dva puta na ovaj dan jer se sat pomjera unazad. Unesite vrijeme izvan ponovljenog sata.",
+          "endBeforeStart": "Vaš povratak mora biti nakon polaska.",
+          "location": "Odaberite navedenu lokaciju za svaki dan.",
+          "meals": "Provjerite unose obroka.",
+          "payment": "Unesite plaćeni iznos s najviše dvije decimale, npr. 2.50.",
+          "time": "Unesite vrijeme kao sate i minute."
+        },
+        "exceptionalTitle": "Zahtijeva ručni izračun",
+        "exceptions": {
+          "destinationNotListed": "Dnevna lokacija nije obuhvaćena službenom tabelom za inostranstvo ili njenim pomoćnim pravilima.",
+          "foreignTimeZone": "Vremena putovanja nisu po njemačkom lokalnom vremenu.",
+          "foreignWithoutOvernight": "Aktivnost u inostranstvu preko noći bez noćenja ne obračunava se automatski.",
+          "international": "Odredište je izvan Njemačke. Dnevnica za inostranstvo još uvijek nije obračunata.",
+          "majorityTie": "Odsustvo preko noći se dijeli tačno podjednako između oba dana.",
+          "mixedTimeZones": "Polazak i povratak su u različitim vremenskim zonama.",
+          "multiDayWithoutOvernight": "Putovanje traje duže od dva kalendarska dana bez noćenja.",
+          "nightsAtHome": "Neke noći tokom putovanja proveli ste kod kuće.",
+          "overlappingDays": "Drugi vaš izvještaj već isplaćuje dnevnice za neke od ovih dana; dozvoljena je samo jedna dnevnica po danu, stoga ih izostavite iz ručnog obračuna.",
+          "prolongedWorkplace": "Duža aktivnost na istom radnom mjestu: dnevnica je ograničena na prva tri mjeseca.",
+          "rulesNotVerified": "Nijedno provjereno njemačko pravilo još uvijek ne pokriva ove datume putovanja.",
+          "specialLocation": "Dan je označen kao posebna situacija (ostalo, ili cijeli dan u letu ili na moru prvog ili posljednjeg dana putovanja)."
+        },
+        "fields": {
+          "endDate": "Dan povratka",
+          "endTime": "Vrijeme povratka kući ili na posao",
+          "meals": "Obroci koje je osigurao vaš poslodavac",
+          "mealsDescription": "Označite svaki obrok koji je osigurao vaš poslodavac, ili hotel odnosno domaćin u njegovo ime, čak i ako ste ga preskočili. Unesite iznos koji ste platili za njega, ako jeste.",
+          "mealsNeedDates": "Unesite dane polaska i povratka kako bi se prikazali dani putovanja.",
+          "overnight": "Noćenja tokom putovanja",
+          "payment": "Iznos koji ste platili za {meal} dana {date}",
+          "paymentPlaceholder": "Platili ste (opcionalno)",
+          "prolongedWorkplace": "Radim na ovom istom mjestu duže od tri mjeseca",
+          "prolongedWorkplaceDescription": "Dnevnica se primjenjuje samo na prva tri mjeseca na istom radnom mjestu; ovakva putovanja zahtijevaju ručni obračun.",
+          "startDate": "Dan polaska",
+          "startTime": "Vrijeme odlaska od kuće ili s posla",
+          "timeZone": "Vremenska zona"
+        },
+        "foreignRates": "Inostrane stope: {reference} ({version})",
+        "location": {
+          "activityToday": "Gdje je bila vaša posljednja poslovna aktivnost u inostranstvu ovog dana?",
+          "assigned": "Iznosi koje službena obavijest dodjeljuje ovoj zemlji",
+          "atSea": "Na brodu cijeli dan (bez ukrcavanja ili iskrcavanja)",
+          "choose": "Odaberite lokaciju",
+          "countryElsewhere": "{country} – drugdje",
+          "countryPlace": "{country} – {place}",
+          "elsewhere": "Bilo gdje drugo",
+          "fallbackFlight": "Službeno pravilo: cijeli dan u letu, iznosi za Austriju",
+          "fallbackLuxembourg": "Službeno pomoćno pravilo: nije navedeno, iznosi za Luksemburg",
+          "fallbackMotherCountry": "Službeno pomoćno pravilo: teritorija, iznosi matične zemlje",
+          "fallbackShip": "Službeno pravilo: cijeli dan na moru, iznosi za Luksemburg",
+          "germany": "Njemačka",
+          "inFlight": "U letu cijeli dan (između dana polijetanja i dana slijetanja)",
+          "lastActivityTrip": "Gdje je bila vaša posljednja poslovna aktivnost u inostranstvu na ovom putovanju?",
+          "night": "Gdje ste bili u ponoć? (posljednje mjesto do kojeg ste stigli prije 24:00 po lokalnom vremenu; zemlja se smatra dosegnutom kada avion sleti)",
+          "noActivityAbroad": "Nema poslovnih aktivnosti u inostranstvu",
+          "other": "Nešto drugo (zahtijeva ručni obračun)",
+          "place": "Mjesto u: {country}"
+        },
+        "meal": "{meal}: −{deduction}",
+        "mealPaid": "{meal}: −{deduction} (platili ste {payment})",
+        "meals": {
+          "breakfast": "Doručak",
+          "dinner": "Večera",
+          "lunch": "Ručak"
+        },
+        "mealsCountToward": "Odbijeno dana {date}",
+        "noRate": "Nijedna stopa nije izmišljena: ovaj trošak ostaje u nacrtu dok administrator troškova ne doda dnevnice koje pokrivaju te dane.",
+        "noRateTitle": "Ne primjenjuje se stopa dnevnice",
+        "otherCurrency": "Stope za ove dane nisu u valuti {currency}; dnevnice se nikada ne preračunavaju.",
+        "overnight": {
+          "away": "Svaku noć sam noćio/la izvan kuće",
+          "mixed": "Neke noći sam proveo/la kod kuće",
+          "none": "Radio/la sam tokom noći bez noćenja"
+        },
+        "pending": "Obračunava se prema datiranim stopama vaše organizacije nakon što se promjene sačuvaju.",
+        "requirements": {
+          "currency": "Stope dnevnica za ove dane su u valuti {policyCurrency}, ali se ovaj izvještaj refundira u valuti {currency}. Zatražite od administratora troškova da doda stope u valuti {currency}.",
+          "end": "Unesite kada ste se vratili kući ili na radno mjesto.",
+          "exceptional": "Za ovaj plan puta je potreban ručni obračun dnevnica od strane administratora troškova. Ne obračunava se automatski.",
+          "locations": "Navedite za svaki dan putovanja gdje ste se nalazili u ponoć i gdje je bila vaša posljednja poslovna aktivnost u inostranstvu.",
+          "meals": "Potvrdite osigurane obroke za svaki dan putovanja.",
+          "notReturned": "Vraćate se {date} u {time} ({timeZone}). Možete podnijeti nakon toga.",
+          "overnight": "Navedite jeste li noćili izvan kuće.",
+          "policyMissing": "Vaša organizacija nema stope dnevnica za {dates}. Zatražite od administratora troškova da doda datirane stope u postavkama putnih troškova. Do tada se ništa neće obračunavati.",
+          "start": "Unesite kada ste otišli od kuće ili s radnog mjesta.",
+          "tripDates": "Vaš dan polaska i dan povratka moraju biti prvi i posljednji dan putovanja."
+        },
+        "return": "Povratak",
+        "rulesApplied": "Pravila: {reference} ({version})",
+        "title": "Dnevnica",
+        "total": "Dnevnica"
+      },
+      "project": {
+        "exceptionBadge": "Izuzetak za dodjelu",
+        "exceptionDates": "Pokriva",
+        "exceptionEvidence": "Dokaz",
+        "exceptionReason": "Razlog",
+        "fromTrip": "(projekat putovanja)",
+        "inheritNamed": "Isto kao i putovanje ({name})",
+        "inheritNone": "Isto kao i putovanje (bez projekta)",
+        "label": "Projekat (opcionalno)",
+        "loadFailed": "Projekti se nisu mogli učitati.",
+        "needsExpenseDate": "Unesite datum troška da vidite projekte koje možete koristiti na taj dan.",
+        "needsTripDates": "Unesite datume putovanja da biste vidjeli projekte koje možete koristiti na ovom putovanju.",
+        "none": "Nema projekta",
+        "noneEligible": "Niste imali dodijeljen projekat na ovaj datum. Ako ste tada radili na projektu, administrator troškova može odobriti izuzetak za dodjelu.",
+        "notEligible": "{name} se ne može koristiti na ovaj datum: tada niste bili dodijeljeni tom projektu. Odaberite drugi projekat ili zatražite od administratora troškova izuzetak za dodjelu.",
+        "refused": {
+          "conflict": "Ovaj trošak je izmijenjen na drugom mjestu. Riješite konflikt pri spremanju iznad, a zatim ponovo odaberite projekat.",
+          "dateRequired": "Prvo unesite datum: projekti se nude za datum nastanka troška.",
+          "failed": "Projekat se nije mogao sačuvati. Pokušajte ponovo.",
+          "ineligible": "Niste bili dodijeljeni ovom projektu na taj datum. Zatražite od administratora troškova izuzetak za dodjelu ako ste radili na njemu.",
+          "notFound": "Ovaj projekat nije dostupan."
+        },
+        "saving": "Spremanje projekta…",
+        "tripDescription": "Troškovi koriste projekat putovanja osim ako za njih ne odaberete drugi. Svaki trošak mora biti pokriven vašom dodjelom na projekat na odgovarajući datum.",
+        "tripLabel": "Projekat putovanja (opcionalno)",
+        "unavailableOption": "{name} (nije dostupno na ovaj datum)",
+        "unavailableTripOption": "{name} (nije dostupno na ove datume)",
+        "viaException": "odobreni izuzetak"
+      },
+      "receiptException": {
+        "badge": "Nedostaje račun — izuzetak",
+        "disabled": "Vaša organizacija više ne dozvoljava izuzetke za račune koji nedostaju. Priložite račun ili uklonite svoje obrazloženje.",
+        "notAllowed": "Vaša organizacija ne dozvoljava izuzetke za račune koji nedostaju.",
+        "reason": "Zašto nedostaje račun?",
+        "reasonDescription": "Vaš revizor vidi ovo obrazloženje i mora ga prihvatiti da bi odobrio izvještaj.",
+        "reasonLabel": "Razlog zašto nedostaje:",
+        "reasonRequired": "Objasnite zašto nedostaje račun.",
+        "receiptAttached": "Račun je priložen, pa vaše obrazloženje za račun koji nedostaje nije poslano.",
+        "request": "Ne mogu priložiti račun i tražim izuzeće",
+        "title": "Nemate račun?",
+        "unsavedAfterClose": "Vaše obrazloženje za račun koji nedostaje nije se moglo sačuvati. Ponovo otvorite trošak da biste ga provjerili.",
+        "withdraw": "Ukloni obrazloženje"
+      },
+      "receipts": {
+        "chooseFile": "Odaberite datoteku",
+        "description": "Snimite fotografiju ili priložite PDF ili sliku računa.",
+        "downloadNamed": "Preuzmi {fileName}",
+        "errors": {
+          "locked": "Ovaj trošak se više ne može uređivati.",
+          "retry": "Molimo pokušajte ponovo.",
+          "tooLarge": "Datoteka je prevelika. Priložite datoteku od najviše {size} MB.",
+          "unsupportedType": "Priložite PDF ili sliku (JPEG, PNG, WebP, GIF, BMP ili TIFF)."
+        },
+        "none": "Još nema priloženog računa.",
+        "previewNamed": "Pregledaj {fileName}",
+        "progress": "Napredak učitavanja",
+        "remove": "Ukloni",
+        "removeFailed": "Račun se nije mogao ukloniti.",
+        "removeNamed": "Ukloni {fileName}",
+        "takePhoto": "Snimi fotografiju",
+        "title": "Račun",
+        "uploadFailed": "Račun nije priložen.",
+        "uploading": "Učitavanje računa…",
+        "verifying": "Provjera računa…"
+      },
+      "rejectedBy": "Odbio/la {name}",
+      "rejectedByDeputy": "Odbio/la {name} (zamjenik za {actingForName})",
+      "reopen": {
+        "action": "Ponovo otvori radi ispravke",
+        "changed": "Izvještaj je u međuvremenu promijenjen i nije ponovo otvoren. Pregledajte ga ponovo.",
+        "confirm": "Ponovo otvori izvještaj",
+        "description": "Zaposlenik može ispraviti izvještaj i mora ga ponovo podnijeti na novo odobrenje. Do tada se ne može isplatiti niti izvesti. Odobreno podnošenje ostaje u njegovoj historiji.",
+        "done": "Izvještaj je ponovo otvoren radi ispravke",
+        "exported": "Ovaj izvještaj je već izvezen u računovodstvo, pa se više ne može ponovo otvoriti. Za ispravke je potrebno povezano usklađivanje.",
+        "failed": "Izvještaj se nije mogao ponovo otvoriti. Možda je promijenjen ili više nemate pristup. Učitajte ga ponovo i pokušajte opet.",
+        "reason": "Razlog za zaposlenika",
+        "reasonRequired": "Navedite zaposleniku šta treba ispraviti.",
+        "reasonTooLong": "Neka razlog ima manje od {max} znakova.",
+        "reimbursed": "Za ovaj izvještaj je već evidentirana refundacija, pa se više ne može ponovo otvoriti. Za ispravke je potrebno povezano usklađivanje.",
+        "reopenedBy": "Ponovo otvorio/la {name} dana {date} radi ispravke",
+        "title": "Ponovo otvoriti ovaj odobreni izvještaj?"
+      },
+      "requirements": {
+        "amount": "Unesite iznos računa.",
+        "category": "Odaberite kategoriju.",
+        "complete": "Sve za ovaj trošak je uneseno.",
+        "conversionEvidence": "Odaberite prilog koji prikazuje terećenje kartice.",
+        "conversionMissing": "Pretvorite ovaj račun u {currency}: unesite terećenje kartice uz prilog koji ga prikazuje ili zatražite dokumentovani kurs od administratora troškova.",
+        "conversionRateDate": "Datum ovlaštenog kursa više ne odgovara datumu troška. Unesite terećenje kartice ili zatražite od administratora troškova da dokumentuje kurs za novi datum.",
+        "conversionUnsupported": "Ova konverzija se ne može koristiti za {currency}. Zatražite od administratora troškova da je provjeri.",
+        "description": "Opišite trošak.",
+        "expenseDate": "Dodajte datum s računa.",
+        "fixFields": "Prvo ispravite označena polja.",
+        "futureDate": "Ovaj datum je u budućnosti. Ispravite ga ili podnesite od {date}.",
+        "paidBy": "Navedite jeste li platili vi ili kompanija.",
+        "receipt": "Priložite račun.",
+        "receiptExceptionNotAllowed": "Priložite račun. Vaša organizacija ne dozvoljava izuzeća za račune koji nedostaju.",
+        "receiptExceptionReason": "Objasnite zašto račun nedostaje.",
+        "title": "Još uvijek potrebno"
+      },
+      "returnedBy": "Vratio/la {name} dana {date} radi izmjena",
+      "returnedItemNamed": "{item} ({description}):",
+      "returnedRemovedItem": "{item}, {description}:",
+      "save": {
+        "conflictDescription": "Sačuvano je u drugom prozoru ili na drugom uređaju nakon što ste ga otvorili. Vaše posljednje izmjene još nisu sačuvane.",
+        "conflictTitle": "Ovaj trošak je promijenjen na drugom mjestu",
+        "failedDescription": "Vaše izmjene su sačuvane na ovoj stranici. Provjerite svoju vezu i pokušajte ponovo.",
+        "failedTitle": "Vaše izmjene nije bilo moguće sačuvati",
+        "invalid": "Ispravite označena polja da biste ih sačuvali",
+        "keepMine": "Umjesto toga sačuvaj moje izmjene",
+        "pending": "Nesačuvane izmjene",
+        "retry": "Pokušajte ponovo",
+        "saved": "Sve izmjene su sačuvane",
+        "saving": "Čuvanje…",
+        "unsavedAfterClose": "Vaše posljednje izmjene troška nije bilo moguće sačuvati. Otvorite ga ponovo da ga provjerite.",
+        "useTheirs": "Učitaj sačuvanu verziju"
+      },
+      "selfApprovedOn": "Automatski odobreno dana {date}: ovo je izvještaj vlasnika organizacije i niko drugi ga nije mogao pregledati.",
+      "standaloneTitle": "Zaseban račun",
+      "status": {
+        "approved": "Odobreno",
+        "rejected": "Odbijeno",
+        "returned": "Vraćeno radi izmjena",
+        "submitted": "Čeka na pregled"
+      },
+      "submissionNumberAt": "Podnošenje {number}, podneseno {date}",
+      "submit": {
+        "adjustment": "Izvještaj koji ovo usklađivanje ispravlja više nije odobren u ovoj valuti, pa se ne može izračunati razlika s predznakom. Vaše usklađivanje ostaje sačuvano kao nacrt.",
+        "adjustmentSuperseded": "Drugo usklađivanje istog izvještaja odobreno je nakon što ste započeli ovo, a ova kopija ne uključuje tu ispravku. Pokrenite novo usklađivanje iz originalnog izvještaja kako bi se sačuvale obje ispravke.",
+        "adjustmentTitle": "Ovo usklađivanje se ne može podnijeti",
+        "blockedIncomplete": "Popunite sve navedeno pod „Još je potrebno” prije podnošenja.",
+        "blockedUnsaved": "Sačekajte dok se sve izmjene ne sačuvaju ili ispravite označena polja prije podnošenja.",
+        "cancel": "Nastavi uređivati",
+        "changed": "Izvještaj je promijenjen nakon što ste ga pregledali. Zatvorite ovaj dijaloški okvir, provjerite svoje unose i pregledajte ga ponovo.",
+        "changedTitle": "Izvještaj je promijenjen",
+        "confirm": "Podnesi na odobrenje",
+        "description": "Provjerite sačuvani izvještaj. Vaš recenzent odlučuje upravo o ovoj verziji; ne može se uređivati dok traje pregled.",
+        "failed": "Nešto je pošlo po zlu. Vaš izvještaj je i dalje sačuvan kao nacrt; pokušajte ponovo.",
+        "failedTitle": "Izvještaj nije podnesen",
+        "incomplete": "Neki sačuvani detalji još uvijek nedostaju. Popunite sve navedeno pod „Još je potrebno” i pokušajte ponovo.",
+        "incompleteTitle": "Izvještaj je nepotpun",
+        "itemRequirement": "{item}: {requirement}",
+        "noReviewerAsk": "Nemate drugog menadžera ili timskog menadžera osim sebe, i nije postavljen odobravatelj troškova. Zatražite od administratora da odabere odobravatelja troškova u Postavke, Putni troškovi, Pregled izvještaja o troškovima. Vaš izvještaj ostaje sačuvan kao nacrt.",
+        "noReviewerAssign": "Nemate drugog menadžera ili timskog menadžera osim sebe, i nije postavljen odobravatelj troškova. Odaberite odobravatelja troškova pod Pregled izvještaja o troškovima u postavkama putnih troškova. Vaš izvještaj ostaje sačuvan kao nacrt.",
+        "noReviewerTitle": "Niko još ne može pregledati ovaj izvještaj",
+        "notSaved": "Neke izmjene još nisu sačuvane. Sačekajte da se sačuvaju, a zatim ponovo pregledajte izvještaj.",
+        "openApproverSetting": "Otvori postavku odobravatelja troškova",
+        "project": "{count, plural, one {Jedan trošak je pripisan projektu na koji niste bili raspoređeni na datum troška. Odaberite drugi projekat ili zatražite od administratora troškova izuzetak za pripisivanje. Vaš izvještaj ostaje sačuvan kao nacrt.} few {# troška su pripisana projektu na koji niste bili raspoređeni na datum troška. Odaberite drugi projekat ili zatražite od administratora troškova izuzetak za pripisivanje. Vaš izvještaj ostaje sačuvan kao nacrt.} other {# troškova je pripisano projektu na koji niste bili raspoređeni na datum troška. Odaberite drugi projekat ili zatražite od administratora troškova izuzetak za pripisivanje. Vaš izvještaj ostaje sačuvan kao nacrt.}}",
+        "projectTitle": "Projekat se ne može koristiti",
+        "ready": "Vaši unosi su sačuvani. Pregledajte izvještaj i pošaljite ga na odobrenje.",
+        "requesterInactive": "Vaš profil zaposlenika nije aktivan u ovoj organizaciji, pa se izvještaj ne može proslijediti na pregled.",
+        "review": "Pregledaj i podnesi",
+        "routing": "Pravila odobravanja vaše organizacije nisu mogla pronaći recenzenta. Zatražite od administratora da ih provjeri. Vaš izvještaj ostaje sačuvan kao nacrt.",
+        "routingTitle": "Izvještaj nije bilo moguće proslijediti",
+        "selfApproval": "Pravila odobravanja vaše organizacije omogućila bi vam da odobrite vlastiti izvještaj. Zatražite od administratora da ih prilagodi. Vaš izvještaj ostaje sačuvan kao nacrt.",
+        "selfApprovalBlocked": "Kao vlasnik organizacije, vaši izvještaji se automatski odobravaju sve dok ih niko drugi ne može pregledati. Ovaj izvještaj ima objašnjenje za račun koji nedostaje ili ručno postavljenu naknadu, što neko drugi mora prihvatiti. Odaberite odobravatelja troškova ili izmijenite izvještaj. Vaš izvještaj ostaje sačuvan kao nacrt.",
+        "selfApproved": "Izvještaj je automatski odobren: niko drugi ga ne može pregledati",
+        "success": "Izvještaj je podnesen na odobrenje",
+        "thresholdCurrency": "Pravila odobravanja vaše organizacije porede iznose u EUR, ali ovaj izvještaj je u {currency}. Zatražite od administratora da ih provjeri. Vaš izvještaj ostaje sačuvan kao nacrt.",
+        "title": "Podnesi izvještaj o troškovima",
+        "unavailable": "Vaša organizacija mijenja način na koji funkcionira odobravanje troškova, pa se izvještaji trenutno ne mogu podnositi. Vaš izvještaj ostaje sačuvan kao nacrt.",
+        "unavailableTitle": "Podnošenje je pauzirano"
+      },
+      "submittedAt": "Podneseno {date}",
+      "summary": {
+        "itemPrefix": "{item}:",
+        "paidByCompany": "Platila kompanija",
+        "paidByEmployee": "Platili ste vi"
+      },
+      "totals": {
+        "companyPaid": "Platila kompanija",
+        "excluded": "{count, plural, one {# trošak još nije uračunat. Ukupni iznosi uključuju troškove u {currency} za koje su uneseni iznos i platilac.} few {# troška još nisu uračunata. Ukupni iznosi uključuju troškove u {currency} za koje su uneseni iznos i platilac.} other {# troškova još nije uračunato. Ukupni iznosi uključuju troškove u {currency} za koje su uneseni iznos i platilac.}}",
+        "reimbursable": "Nadoknađeno vama",
+        "title": "Ukupno"
+      },
+      "trip": {
+        "dates": "Datumi putovanja",
+        "datesZone": "(kalendarski dani u {timeZone})",
+        "description": "Svaki trošak ovog putovanja dijeli ove detalje.",
+        "destinations": "Odredišta",
+        "errors": {
+          "destination": "Odaberite državu sa liste.",
+          "endBeforeStart": "Zadnji dan putovanja ne može biti prije prvog.",
+          "timeZone": "Odaberite vremensku zonu sa liste.",
+          "tooManyDestinations": "Unesite najviše {max} odredišta."
+        },
+        "fields": {
+          "addDestination": "Dodaj odredište",
+          "country": "Država {number}",
+          "countryPlaceholder": "Država",
+          "destinations": "Odredišta",
+          "endDate": "Zadnji dan putovanja",
+          "noDestinations": "Dodajte mjesta na koja putujete.",
+          "place": "Mjesto {number}",
+          "placePlaceholder": "Grad ili mjesto",
+          "purpose": "Svrha putovanja",
+          "purposePlaceholder": "npr. radionica za klijente u Hamburgu",
+          "removeDestination": "Ukloni odredište {number}",
+          "startDate": "Prvi dan putovanja",
+          "timeZone": "Vremenska zona datuma putovanja",
+          "timeZoneDescription": "Datumi putovanja su kalendarski dani u {timeZone}. Pregledaoci vide iste datume, bez obzira gdje se nalaze."
+        },
+        "purpose": "Svrha putovanja",
+        "requirements": {
+          "complete": "Sve za ovo putovanje je uneseno.",
+          "destination": "Dodajte barem jedno odredište.",
+          "expenseItem": "Dodajte trošak.",
+          "fixFields": "Ispravite označene detalje putovanja.",
+          "itemNamed": "{item}: {description}",
+          "notEnded": "Putovanje završava {date}. Izvještaj možete podnijeti od tog dana.",
+          "purpose": "Opišite svrhu putovanja.",
+          "title": "Još uvijek potrebno za ovo putovanje",
+          "travelDates": "Unesite prvi i zadnji dan putovanja."
+        },
+        "title": "Detalji putovanja",
+        "unsavedAfterClose": "Vaše najnovije izmjene detalja putovanja nisu mogle biti sačuvane. Otvorite putovanje ponovo da ih provjerite."
+      },
+      "withdraw": {
+        "action": "Povuci izvještaj",
+        "confirm": "Povuci",
+        "description": "Pregled se zaustavlja i izvještaj ponovo postaje nacrt koji se može uređivati. Ova podnesena verzija ostaje u historiji izvještaja.",
+        "done": "Izvještaj je povučen. Možete ga ponovo uređivati.",
+        "failed": "Izvještaj nije mogao biti povučen. Pokušajte ponovo.",
+        "notPending": "O ovoj prijavi je već odlučeno ili je vraćena, pa se više ne može povući.",
+        "title": "Povući ovaj izvještaj?"
+      },
+      "withdrawnNotice": "Povukli ste prijavu {number}. Ponovo podnesite izvještaj kada bude spreman.",
+      "withdrawnSubmission": "Ova prijava je povučena prije donošenja odluke."
+    },
+    "settings": {
+      "catalogAdopted": "Usvojeno {date}, važi od {effectiveFrom}",
+      "perDiem": {
+        "adoptForeignTitle": "Usvojite njemačke zakonske dnevnice sa službenim inostranim stopama",
+        "foreignAreas": "Inostrane stope: {countries} zemalja i {places} gradova"
+      },
+      "reimbursementChannel": {
+        "bankTransfer": "Bankovni transfer",
+        "bankTransferDescription": "Referenti za troškove isplaćuju naknade bankovnim transferom i evidentiraju ih u Z8.",
+        "intro": "Kako vaša organizacija isplaćuje naknade. Izbor se primjenjuje na svakog zaposlenika.",
+        "loadFailed": "Kanal za naknade se nije mogao učitati.",
+        "payrollRun": "Obračun plata",
+        "payrollRunDescription": "Obračun plata prenosi naknade koje se evidentiraju nakon što se potvrdi da je obračun plata isplaćen. Izvještaji koje obračun plata ne može prenijeti isplaćuju se bankovnim transferom.",
+        "payrollRunPreview": "U fazi pregleda i još uvijek nije dostupno za vašu organizaciju.",
+        "save": "Spremi kanal",
+        "saved": "Kanal za naknade je spremljen",
+        "saveFailed": "Kanal za naknade se nije mogao spremiti.",
+        "title": "Kanal za naknade",
+        "unconfirmedRuns": "{count, plural, one {# obračun plata još nije potvrđen. Još uvijek se može potvrditi ili odbaciti.} other {# obračuna plata još nije potvrđeno. Još uvijek se mogu potvrditi ili odbaciti.}}"
+      },
+      "tabs": {
+        "access": "Pristup",
+        "currencies": "Valute",
+        "exceptions": "Izuzeci",
+        "exceptionsPending": "{label}, {count} na čekanju",
+        "rates": "Stope",
+        "review": "Pregled"
+      }
+    },
+    "settlement": {
+      "adjustment": "Uključujući odobreno prilagođavanje",
+      "balance": {
+        "outstanding": "{amount} preostalo",
+        "overpaid": "{amount} preplaćeno",
+        "reimbursed": "Refundirano"
+      },
+      "companyPaid": "Troškovi koje je platila kompanija u iznosu od {amount} se ne duguju zaposleniku.",
+      "entitlement": "Odobreni iznos koji je platio zaposlenik",
+      "entry": {
+        "exportBatch": "Iz izvoza zatraženog {date}",
+        "payrollRun": "Refundirano uz obračun plata {period}",
+        "recordedBy": "Evidentirao/la {name}, {date}",
+        "recovery": "Vraćeno {amount}",
+        "reimbursement": "Plaćeno {amount}"
+      },
+      "errors": {
+        "amountInvalid": "Unesite pozitivan iznos.",
+        "amountPrecision": "Ova valuta nema toliko decimalnih mjesta.",
+        "amountRequired": "Unesite uplaćeni iznos.",
+        "conflict": "Raniji pokušaj s drugim vrijednostima je već evidentiran. Provjerite historiju prije ponovnog evidentiranja.",
+        "dateFuture": "Plaćanje ne može biti datirano u budućnosti.",
+        "dateInvalid": "Unesite važeći datum.",
+        "dateRequired": "Unesite datum plaćanja.",
+        "exceedsOutstanding": "Iznos je veći od preostalog dugovanja.",
+        "exceedsOverpayment": "Iznos je veći od preplaćenog iznosa.",
+        "failed": "Plaćanje se ne može evidentirati. Pokušajte ponovo.",
+        "inPayrollRun": "Obračun plata sada uključuje ovaj trošak, tako da se isplaćuje s platom. Uklonite ga iz obračuna prije evidentiranja uplate.",
+        "load": "Nije moguće učitati saldo naknade. Pokušajte ponovo.",
+        "noOverpayment": "Za ovaj trošak nema preplaćenog iznosa.",
+        "notApproved": "Ovaj trošak više nije odobren, tako da se plaćanje ne može evidentirati.",
+        "nothingOutstanding": "Nema preostalih dugovanja za ovaj trošak.",
+        "ownExpense": "Ne možete evidentirati plaćanja za vlastite troškove.",
+        "referenceRequired": "Unesite referencu plaćanja, npr. referencu bankovnog transfera.",
+        "refused": "Ovo plaćanje se ne može evidentirati za ovaj trošak.",
+        "staleBalance": "Saldo se promijenio dok ste unosili ovo plaćanje. Provjerite ažurirani saldo i evidentirajte ga ponovo.",
+        "tooLong": "Ovaj tekst je predug."
+      },
+      "form": {
+        "amount": "Plaćeni iznos ({currency})",
+        "date": "Datum plaćanja",
+        "label": "Evidentiraj naknadu",
+        "note": "Napomena (opcionalno)",
+        "notice": "Evidentirajte novac koji je već isplaćen zaposleniku. Z8 ne vrši prijenos novca.",
+        "reference": "Referenca plaćanja",
+        "referenceHint": "Na primjer, referenca bankovnog transfera ili obračuna plata.",
+        "submit": "Evidentiraj naknadu"
+      },
+      "history": "Evidentirana plaćanja",
+      "loading": "Učitavanje salda naknade…",
+      "ownerAwaitingReimbursement": "Finansije ovdje bilježe svaku uplatu. Kada se isplati sve što vam se duguje, ovaj trošak se prikazuje kao Refundirano.",
+      "ownerOverpaid": "Plaćeno je više nego što je trenutno odobreno. Finansije ovdje evidentiraju kada je razlika vraćena; Z8 ne prenosi novac.",
+      "recorded": "Naknada je evidentirana.",
+      "recordedAlready": "Ovo plaćanje je već evidentirano.",
+      "recovered": "Vraćeno",
+      "recoveryForm": {
+        "amount": "Vraćeni iznos ({currency})",
+        "date": "Datum povrata",
+        "explanation": "Uposleniku je isplaćeno više nego što je sada odobreno. Zabilježite novac koji je već vratio kako biste pokrili preplatu; prvobitna refundacija ostaje zabilježena i ništa se ne prebija u odnosu na druge izvještaje. Z8 ne vrši prijenos novca.",
+        "label": "Evidentiraj povrat",
+        "submit": "Evidentiraj povrat"
+      },
+      "recoveryRecorded": "Povrat je evidentiran.",
+      "reimbursed": "Nadoknađeno",
+      "state": {
+        "awaitingReimbursement": "Čeka na refundaciju",
+        "mixed": "Potrebna provjera",
+        "overpaid": "Preplaćeno",
+        "reimbursed": "Refundirano"
+      },
+      "title": "Naknada"
+    },
+    "status": {
+      "draft": "Nacrt"
+    },
+    "title": "Putni troškovi",
+    "workspace": {
+      "description": "Prikupite putne i pojedinačne troškove, pošaljite ih na pregled i pratite njihovu naknadu."
+    }
+  }
+}

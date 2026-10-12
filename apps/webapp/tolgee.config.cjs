@@ -12,7 +12,27 @@ module.exports = {
 	defaultNamespace: "common",
 	push: {
 		filesTemplate: "./messages/{namespace}/{languageTag}.json",
-		language: ["en", "de", "fr", "es", "it", "pt", "el", "pl", "tr", "gsw"],
+		// Must equal ALL_LANGUAGES in src/tolgee/shared.ts (guarded by language-coverage.test.ts).
+		language: [
+			"en",
+			"de",
+			"fr",
+			"es",
+			"it",
+			"pt",
+			"el",
+			"pl",
+			"tr",
+			"gsw",
+			"no",
+			"sv",
+			"ro",
+			"hr",
+			"bs",
+			"sq",
+			"uk",
+			"ru",
+		],
 	},
 	pull: {
 		path: "./messages",

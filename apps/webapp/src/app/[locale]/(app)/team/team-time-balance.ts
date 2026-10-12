@@ -8,17 +8,22 @@ import {
 	employeeTimeBalance,
 	workPeriod,
 } from "@/db/schema";
+import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { runtime } from "@/lib/effect/runtime";
+import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
+import { readWorkBalanceAdjustments } from "@/lib/work-balance/adjustments/ledger";
+import { loadWorkBalanceEmployee } from "@/lib/work-balance/service";
 import type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
 
 export type { EmployeeTimeBalancePayload } from "./team-time-balance-types";
 
 type DayPeriod = typeof absenceEntry.$inferSelect.startPeriod;
 
-export function getCurrentYearRange(now: DateTime = DateTime.utc()) {
-	const current = now.toUTC();
+/** The calendar year of `now` in `timezone` (UTC by default). */
+export function getCurrentYearRange(now: DateTime = DateTime.utc(), timezone = "utc") {
+	const current = now.setZone(timezone);
 	const start = current.startOf("year");
 	const end = current.endOf("year");
 	return { year: current.year, start, end };
@@ -74,6 +79,8 @@ export function buildEmployeeTimeBalanceValues(input: {
 	actualMinutes: number;
 	expectedMinutes: number;
 	absenceAdjustedMinutes: number;
+	/** Uncancelled balance adjustments dated in the year (#993). */
+	balanceAdjustmentMinutes?: number;
 	calculatedAt: Date;
 }) {
 	return {
@@ -83,7 +90,7 @@ export function buildEmployeeTimeBalanceValues(input: {
 		actualMinutes: input.actualMinutes,
 		expectedMinutes: input.expectedMinutes,
 		absenceAdjustedMinutes: input.absenceAdjustedMinutes,
-		balanceMinutes: calculateBalanceMinutes(input),
+		balanceMinutes: calculateBalanceMinutes(input) + (input.balanceAdjustmentMinutes ?? 0),
 		calculatedAt: input.calculatedAt,
 	};
 }
@@ -109,59 +116,63 @@ export async function refreshEmployeeTimeBalances(input: {
 	const employeeIds = employeeRows.map((row) => row.id);
 	if (employeeIds.length === 0) return balances;
 
-	const range = getCurrentYearRange(input.now);
-	const startDate = dateToDB(range.start)!;
-	const endDate = dateToDB(range.end)!;
+	const now = input.now ?? DateTime.utc();
 	const calculatedAt = new Date();
-
-	const actualRows = await db
-		.select({
-			employeeId: workPeriod.employeeId,
-			totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
-		})
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, input.organizationId),
-				inArray(workPeriod.employeeId, employeeIds),
-				eq(workPeriod.isActive, false),
-				isNotNull(workPeriod.durationMinutes),
-				gte(workPeriod.startTime, startDate),
-				lte(workPeriod.startTime, endDate),
-			),
-		)
-		.groupBy(workPeriod.employeeId);
-
-	const actualByEmployee = new Map(
-		actualRows.map((row) => [row.employeeId, Number(row.totalMinutes ?? 0)]),
-	);
 
 	const balanceRows = await Promise.all(
 		employeeIds.map(async (employeeId) => {
-			const [expected, absenceAdjustedMinutes] = await Promise.all([
-				runtime.runPromise(
-					calculateExpectedWorkHoursForEmployee(
-						employeeId,
-						input.organizationId,
-						startDate,
-						endDate,
-						"utc",
-					),
-				),
-				calculateAbsenceAdjustedMinutes({
-					employeeId,
-					organizationId: input.organizationId,
-					rangeStart: range.start,
-					rangeEnd: range.end,
-				}),
-			]);
+			const scope = { organizationId: input.organizationId, employeeId };
+			// The year and its days are the employee's, in their effective timezone.
+			const timezone = (await loadWorkBalanceEmployee(scope, db))?.timezone ?? "UTC";
+			const range = getCurrentYearRange(now, timezone);
+			const endDate = dateToDB(range.end)!;
+			const yesterday = plainDateAt(instantFromDate(now.toJSDate()), timezone).subtract({
+				days: 1,
+			});
+			// Balance adjustments as every other balance view counts them (ADR-0008):
+			// each from the end of its day, so through yesterday; an opening balance
+			// dated in the year replaces the year through its day.
+			const adjustments = await readWorkBalanceAdjustments(db, {
+				...scope,
+				fromDate: range.start.toISODate()!,
+				throughDate: yesterday.toString(),
+				openingBalanceDatedLater: "count",
+			});
+			const countFrom = adjustments.countFrom
+				? DateTime.fromISO(adjustments.countFrom, { zone: timezone }).startOf("day")
+				: range.start;
+			const countsAnyDay = countFrom <= range.end;
+			const countFromDate = dateToDB(countFrom)!;
+			const [actualMinutes, expectedMinutes, absenceAdjustedMinutes] = countsAnyDay
+				? await Promise.all([
+						sumCompletedWorkMinutes({ ...scope, startDate: countFromDate, endDate }),
+						runtime
+							.runPromise(
+								calculateExpectedWorkHoursForEmployee(
+									employeeId,
+									input.organizationId,
+									countFromDate,
+									endDate,
+									timezone,
+								),
+							)
+							.then((expected) => expected.totalMinutes),
+						calculateAbsenceAdjustedMinutes({
+							...scope,
+							rangeStart: countFrom,
+							rangeEnd: range.end,
+						}),
+					])
+				: [0, 0, 0];
 			const values = buildEmployeeTimeBalanceValues({
 				employeeId,
 				organizationId: input.organizationId,
 				year: range.year,
-				actualMinutes: actualByEmployee.get(employeeId) ?? 0,
-				expectedMinutes: expected.totalMinutes,
+				actualMinutes,
+				expectedMinutes,
 				absenceAdjustedMinutes,
+				// Overtime payouts lower this balance too; worked minutes stay as worked.
+				balanceAdjustmentMinutes: adjustments.adjustmentMinutes,
 				calculatedAt,
 			});
 
@@ -195,6 +206,28 @@ export async function refreshEmployeeTimeBalances(input: {
 	return balances;
 }
 
+async function sumCompletedWorkMinutes(input: {
+	employeeId: string;
+	organizationId: string;
+	startDate: Date;
+	endDate: Date;
+}) {
+	const [row] = await db
+		.select({ totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)` })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				eq(workPeriod.employeeId, input.employeeId),
+				eq(workPeriod.isActive, false),
+				isNotNull(workPeriod.durationMinutes),
+				gte(workPeriod.startTime, input.startDate),
+				lte(workPeriod.startTime, input.endDate),
+			),
+		);
+	return Number(row?.totalMinutes ?? 0);
+}
+
 async function calculateAbsenceAdjustedMinutes(input: {
 	employeeId: string;
 	organizationId: string;
@@ -216,7 +249,7 @@ async function calculateAbsenceAdjustedMinutes(input: {
 				eq(absenceEntry.organizationId, input.organizationId),
 				eq(absenceEntry.status, "approved"),
 				eq(absenceCategory.organizationId, input.organizationId),
-				eq(absenceCategory.requiresWorkTime, false),
+				absenceCategoryReleasesRequiredTime(),
 				lte(absenceEntry.startDate, input.rangeEnd.toISODate()!),
 				gte(absenceEntry.endDate, input.rangeStart.toISODate()!),
 			),

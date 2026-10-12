@@ -25,6 +25,11 @@ export {
 	type ApprovalWriteGateResult,
 	approvalAuthorityOf,
 	approvalWriteGateResult,
+	CANONICAL_ONLY_MODE_UNAVAILABLE,
+	initialApprovalLifecycleMode,
+	initialApprovalSideEffectMode,
+	isCanonicalOnlyApprovalKind,
 	parseApprovalLifecycleMode,
 	resolveApprovalAuthority,
+	resolveApprovalKindAuthority,
 } from "./resolution";

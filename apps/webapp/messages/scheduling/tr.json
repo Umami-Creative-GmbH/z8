@@ -16,8 +16,17 @@
       "understaffed": "Eksik personel",
       "utilization": "%{percent} kullanım"
     },
+    "mySchedule": {
+      "loadFailed": "Vardiyalarınız yüklenemedi. Lütfen daha sonra tekrar deneyin.",
+      "nextWeek": "Sonraki hafta",
+      "noShifts": "Vardiya yok",
+      "previousWeek": "Önceki hafta",
+      "shift": "Vardiya",
+      "today": "Bugün"
+    },
     "page": {
-      "employeeDescription": "Vardiyalarınızı görüntüleyin ve uygun vardiyaları alın",
+      "employeeScheduleDescription": "Yayınlanan vardiyalarınız, hafta hafta",
+      "employeeTitle": "Programım",
       "managerDescription": "Çalışan vardiyalarını yönetin ve planlayın",
       "title": "Vardiya Çizelgesi"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Vardiya, çakışma uyarısıyla kaydedildi",
         "updated": "Vardiya güncellendi"
       }
+    },
+    "shiftDetails": {
+      "close": "Kapat",
+      "date": "Tarih",
+      "description": "Planlanan vardiyanız",
+      "endsNextDay": "ertesi gün biter",
+      "location": "Konum",
+      "notes": "Notlar",
+      "time": "Saat",
+      "title": "Vardiya ayrıntıları"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Herkes alabilir",
@@ -111,6 +130,35 @@
       "validating": "Beceriler doğrulanıyor…",
       "validatingDescription": "Çalışan nitelikleri kontrol ediliyor",
       "warningMessage": "Bu vardiyayı yine de atayabilirsiniz, ancak geçersiz kılma olarak kaydedilecektir."
+    },
+    "staffingSuggestions": {
+      "empty": "Bu vardiya için uygun çalışan yok",
+      "error": "Öneriler yüklenemedi",
+      "loading": "Uygun çalışanlar aranıyor…",
+      "note": {
+        "missingPreferredSkill": "Tercih edilen yetkinlik eksik: {skill}"
+      },
+      "pick": "Seç",
+      "pickLabel": "{name} ata",
+      "reason": {
+        "noContractedTarget": "Sözleşmeli hedef yok",
+        "plannedHours": "Bu hafta {target} saatin {planned} saati planlandı",
+        "requestedThisShift": "Bu vardiyayı talep etti",
+        "restPeriodOk": "Dinlenme süresi uygun",
+        "skillsHeld": "{skills} yetkinliğine sahip"
+      },
+      "requested": "Bu vardiyayı talep etti",
+      "showAll": "Tümünü göster ({count})",
+      "showFewer": "Daha az göster",
+      "title": "Önerilen çalışanlar",
+      "warning": {
+        "expiredRequiredSkill": "{skill} yetkinliğinin süresi {date} tarihinde doldu",
+        "maxHours": "Günlük maksimum aşıldı ({max} saatin {total} saati)",
+        "missingRequiredSkill": "Gerekli beceri eksik: {skill}",
+        "overtime": "{period, select, daily {Günlük} weekly {Haftalık} other {Aylık}} fazla mesai ({total} / {threshold} sa)",
+        "pendingAbsence": "Bekleyen devamsızlık: {category}",
+        "restTime": "Dinlenme süresi çok kısa ({rest} / {required} sa)"
+      }
     },
     "templates": {
       "dragHint": "Vardiya oluşturmak için bir şablonu takvime sürükleyin",

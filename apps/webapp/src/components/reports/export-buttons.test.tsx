@@ -48,7 +48,7 @@ vi.mock("@/lib/reports/exporters/pdf-exporter", () => ({
 }));
 
 const reportData: ReportData = {
-	employee: { id: "fictional-employee", name: "Fixture User" },
+	employee: { id: "fictional-employee", name: "Fixture User", customFields: [] },
 	period: {
 		startDate: "2026-09-01",
 		endDate: "2026-09-30",

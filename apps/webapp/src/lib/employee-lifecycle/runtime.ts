@@ -11,6 +11,7 @@ import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/reposito
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import {
+	createNotification,
 	deliverNotificationToChannel,
 	insertInAppNotification,
 	loadNotificationChannelPreferences,
@@ -23,6 +24,7 @@ import { createDepartureClockOut } from "./clock-out";
 import { createClockPostprocessHandler } from "./clock-postprocess";
 import { createDepartureCommands } from "./commands";
 import type { DepartureTaskHandler } from "./delivery";
+import { createDeputyReleaseNotificationHandler } from "./deputy-release-notifications";
 import { findDueDepartures } from "./due-departures";
 import {
 	createReviewNotificationHandler,
@@ -99,6 +101,14 @@ export function createProductionDepartureTaskHandlers(options: {
 		// retry automatically against that period.
 		clock_repair: async () => {},
 		clock_postprocess: createClockPostprocessHandler(clockOutFollowUpEffects),
+		notify_deputy_release: createDeputyReleaseNotificationHandler({
+			database: db,
+			transport: {
+				// A failed send retries the task; the idempotency key keeps the inbox single.
+				send: (params) => createNotification(params, { throwOnError: true }),
+				locale: resolveRecipientNotificationLocale,
+			},
+		}),
 	};
 }
 

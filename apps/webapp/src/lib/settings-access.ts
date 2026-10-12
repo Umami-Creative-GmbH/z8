@@ -18,6 +18,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/email-templates",
 	"/settings/enterprise/api-keys",
 	"/settings/enterprise/audit-log",
+	"/settings/report-share-links",
 	"/settings/telegram",
 	"/settings/slack",
 	"/settings/discord",
@@ -36,6 +37,8 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/billable-time",
 	"/settings/position-capture",
 	"/settings/personnel-files",
+	"/settings/kiosks",
+	"/settings/custom-fields",
 ] as const;
 
 export type SettingsAccessMembershipRole = OrganizationRoleValue;

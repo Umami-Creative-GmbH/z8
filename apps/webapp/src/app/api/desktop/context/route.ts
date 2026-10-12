@@ -1,16 +1,10 @@
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { readTimeSummary } from "@/app/[locale]/(app)/time-tracking/read-queries";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import {
-	employee,
-	project,
-	projectAssignment,
-	userSettings,
-	workPeriod,
-} from "@/db/schema";
+import { employee, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
@@ -20,6 +14,7 @@ import {
 	ClockingAccessError,
 	clockingService,
 } from "@/lib/time-tracking/clocking-service";
+import { listEligibleProjects } from "@/lib/time-tracking/project-eligibility";
 import { getUserTimezone } from "@/lib/user-preferences/timezone-server";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 
@@ -66,7 +61,6 @@ export async function GET() {
 			preferences,
 			organizationSettings,
 			categories,
-			assignments,
 			liveWork,
 		] = await Promise.all([
 			getUserTimezone(session.user.id),
@@ -80,18 +74,6 @@ export async function GET() {
 				columns: { projectsEnabled: true },
 			}),
 			getAvailableCategoriesForEmployee(emp.id, organizationId),
-			db
-				.selectDistinct({ projectId: projectAssignment.projectId })
-				.from(projectAssignment)
-				.where(
-					and(
-						eq(projectAssignment.organizationId, organizationId),
-						or(
-							eq(projectAssignment.employeeId, emp.id),
-							...(emp.teamId ? [eq(projectAssignment.teamId, emp.teamId)] : []),
-						),
-					),
-				),
 			db.query.workPeriod.findFirst({
 				where: and(
 					eq(workPeriod.organizationId, organizationId),
@@ -106,6 +88,8 @@ export async function GET() {
 					workCategoryId: true,
 					workLocationType: true,
 				},
+				// The task foreign key confines it to this work's project and organization.
+				with: { task: { columns: { id: true, name: true } } },
 			}),
 		]);
 		const [summary, projects] = await Promise.all([
@@ -114,23 +98,21 @@ export async function GET() {
 				timezone,
 				weekStartDay,
 			),
-			organizationSettings?.projectsEnabled && assignments.length
-				? db.query.project.findMany({
-						where: and(
-							eq(project.organizationId, organizationId),
-							eq(project.isActive, true),
-							inArray(
-								project.id,
-								assignments.map((item) => item.projectId),
-							),
-						),
-						columns: { id: true, name: true },
-						orderBy: (table, { asc }) => [asc(table.name)],
+			organizationSettings?.projectsEnabled
+				? listEligibleProjects({
+						employeeId: emp.id,
+						teamId: emp.teamId,
+						organizationId,
 					})
 				: Promise.resolve([]),
 		]);
 		// Each listed project's open tasks (#875); older clients ignore the field.
-		const projectsWithTasks = await withOpenTasks(organizationId, projects);
+		const projectsWithTasks = await withOpenTasks(
+			organizationId,
+			projects
+				.map(({ id, name }) => ({ id, name }))
+				.sort((a, b) => a.name.localeCompare(b.name)),
+		);
 		return NextResponse.json(
 			{
 				userId: session.user.id,
@@ -143,7 +125,15 @@ export async function GET() {
 				projectsEnabled: organizationSettings?.projectsEnabled ?? false,
 				projects: projectsWithTasks,
 				categories: categories.map(({ id, name }) => ({ id, name })),
-				liveWork: liveWork ?? null,
+				liveWork: liveWork
+					? {
+							id: liveWork.id,
+							projectId: liveWork.projectId,
+							workCategoryId: liveWork.workCategoryId,
+							workLocationType: liveWork.workLocationType,
+							currentTask: liveWork.task ?? null,
+						}
+					: null,
 			},
 			{ headers: { "Cache-Control": "private, no-store" } },
 		);

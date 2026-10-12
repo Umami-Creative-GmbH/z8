@@ -6,6 +6,10 @@
       },
       "calendar": {
         "approved": "Godkjent",
+        "changeDeputy": "Endre stedfortreder",
+        "changeDeputyOf": "Endre stedfortreder for {name}",
+        "deputy": "Stedfortreder:",
+        "deputyMissing": "Stedfortreder mangler",
         "description": "Godkjent og ventende fravær for det valgte teamet og året.",
         "error": {
           "description": "Vennligst prøv igjen om et øyeblikk.",
@@ -19,6 +23,10 @@
         "pendingDays": "{count} ventende",
         "title": "Årskalender",
         "totalDays": "{count} fraværende"
+      },
+      "deputyFilter": {
+        "clear": "Vis alle fravær",
+        "notice": "Viser bare fraværene denne ansatte dekker som stedfortreder."
       },
       "description": "Se over kvoter og registrer godkjent fravær for teamet ditt.",
       "empty": {
@@ -52,6 +60,7 @@
       "recordDialog": {
         "category": "Kategori",
         "categoryPlaceholder": "Velg en fraværskategori…",
+        "deputy": "Stedfortreder",
         "description": "Registrer et godkjent fravær direkte for den valgte ansatte.",
         "endDate": "Sluttdato",
         "endDateHelper": "La stå tomt for fravær samme dag.",
@@ -66,6 +75,11 @@
         "required": "{label} er påkrevd",
         "sickDetail": "Sykdomsdetalj",
         "sickDetailPlaceholder": "Velg sykdomsdetalj…",
+        "sickNotes": {
+          "description": "Legg til bilder eller PDF-er av sykmeldingen du mottok: PDF-, JPEG-, PNG- eller WebP-filer på opptil 20 MB hver. Hver fil lagres som en egen sykmelding i den ansattes personalmappe, og den ansatte kan se den. Etterpå er det kun de som administrerer den ansattes sykmeldinger som kan åpne den.",
+          "title": "Sykmelding (valgfritt)"
+        },
+        "sickNotesFailed": "Fraværet ble registrert, men {files} kunne ikke legges ved. En som administrerer sykmeldinger kan legge dem til senere.",
         "startDate": "Startdato",
         "submit": "Registrer fravær",
         "success": "Fravær registrert",
@@ -116,6 +130,51 @@
       "next": "Neste",
       "previous": "Forrige",
       "showing": "Viser {from} til {to} av {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Velg en innsendingsfrekvens i organisasjonsinnstillingene",
+      "columns": {
+        "calendar": "Kalender",
+        "employee": "Ansatt",
+        "period": "Periode",
+        "status": "Status"
+      },
+      "descriptionAll": "Hvem som har sendt inn for den valgte perioden. Godkjenn eller avvis innsendinger i godkjenningsinnboksen.",
+      "descriptionManaged": "Hvem av de ansatte du leder som har sendt inn for den valgte perioden. Godkjenn eller avvis innsendinger i godkjenningsinnboksen.",
+      "empty": "Ingen du har tilgang til å se, forventes å sende inn for denne perioden.",
+      "loading": "Laster inn periodeinnsendinger",
+      "notSubmitted": "Ikke sendt inn",
+      "off": "Organisasjonen din samler ikke inn periodeinnsendinger.",
+      "openCalendar": "Kalender",
+      "openCalendarOf": "Åpne kalenderen til {name}",
+      "openInbox": "Åpne godkjenningsinnboksen",
+      "owing": "{count, plural, one {# ansatt har ikke sendt inn for denne perioden ennå.} other {# ansatte har ikke sendt inn for denne perioden ennå.}}",
+      "period": "Innsendingsperiode",
+      "running": "Denne perioden pågår fortsatt. Ansatte kan sende den inn fra og med den siste dagen.",
+      "status": {
+        "approved": "Godkjent",
+        "awaiting": "Venter på innsending",
+        "rejected": "Avvist",
+        "sentBack": "Sendt tilbake etter endring",
+        "submitted": "Sendt inn"
+      },
+      "summary": "Statuser",
+      "title": "Periodeinnsendinger"
+    },
+    "presence": {
+      "allLocations": "Alle lokasjoner",
+      "columns": {
+        "name": "Navn",
+        "since": "Siden",
+        "state": "Status"
+      },
+      "description": "Velg en lokasjon for å se hvem som er stemplet inn eller har pause der.",
+      "descriptionAll": "Ansatte tilknyttet denne lokasjonen som er stemplet inn eller har pause.",
+      "descriptionManaged": "Ansatte du leder som er tilknyttet denne lokasjonen og stemplet inn eller har pause.",
+      "empty": "Ingen du har tilgang til å se er stemplet inn på denne lokasjonen akkurat nå.",
+      "locationTitle": "Hvem er på jobb: {location}",
+      "noLocations": "Organisasjonen din har ingen aktive lokasjoner ennå.",
+      "title": "Hvem er på jobb"
     },
     "primaryManager": "Du er primærleder",
     "search": {

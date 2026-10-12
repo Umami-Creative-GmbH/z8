@@ -12,11 +12,13 @@ import { WorkdayConfigForm } from "@/components/settings/payroll-export/workday-
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import type { PayrollExportFormatId } from "@/lib/payroll-export/format-registry";
 import { getTranslate } from "@/tolgee/server";
 import {
 	getDatevConfigAction,
 	getExportHistoryAction,
 	getLexwareConfigAction,
+	getPayrollIdentifierFieldsAction,
 	getPersonioConfigAction,
 	getSageConfigAction,
 	getSuccessFactorsConfigAction,
@@ -43,6 +45,7 @@ async function PayrollExportContent() {
 		successFactorsConfigResult,
 		workdayConfigResult,
 		historyResult,
+		identifierFieldsResult,
 	] = await Promise.all([
 		getDatevConfigAction(organizationId),
 		getLexwareConfigAction(organizationId),
@@ -51,6 +54,7 @@ async function PayrollExportContent() {
 		getSuccessFactorsConfigAction(organizationId),
 		getWorkdayConfigAction(organizationId),
 		getExportHistoryAction(organizationId),
+		getPayrollIdentifierFieldsAction(organizationId),
 	]);
 
 	const datevConfig = datevConfigResult.success ? datevConfigResult.data : null;
@@ -68,7 +72,10 @@ async function PayrollExportContent() {
 		? workdayConfigResult.data
 		: null;
 	const exports = historyResult.success ? historyResult.data : [];
-	const exportAvailability: Record<string, ExportAvailabilityEntry> = {
+	// Employee custom fields every identifier and match setting can use (#821).
+	const identifierFields = identifierFieldsResult.success ? identifierFieldsResult.data : [];
+	// Every registered format (#823) states whether it can export.
+	const exportAvailability: Record<PayrollExportFormatId, ExportAvailabilityEntry> = {
 		datev_lohn: {
 			configured: Boolean(datevConfig),
 			reason: datevConfig ? null : "missingConfiguration",
@@ -183,6 +190,7 @@ async function PayrollExportContent() {
 					<DatevConfigForm
 						organizationId={organizationId}
 						initialConfig={datevConfig}
+						identifierFields={identifierFields}
 					/>
 				</TabsContent>
 
@@ -190,6 +198,7 @@ async function PayrollExportContent() {
 					<LexwareConfigForm
 						organizationId={organizationId}
 						initialConfig={lexwareConfig}
+						identifierFields={identifierFields}
 					/>
 				</TabsContent>
 
@@ -197,6 +206,7 @@ async function PayrollExportContent() {
 					<SageConfigForm
 						organizationId={organizationId}
 						initialConfig={sageConfig}
+						identifierFields={identifierFields}
 					/>
 				</TabsContent>
 
@@ -204,6 +214,7 @@ async function PayrollExportContent() {
 					<PersonioConfigForm
 						organizationId={organizationId}
 						initialConfig={personioConfig}
+						identifierFields={identifierFields}
 					/>
 				</TabsContent>
 
@@ -211,6 +222,7 @@ async function PayrollExportContent() {
 					<SuccessFactorsConfigForm
 						organizationId={organizationId}
 						initialConfig={successFactorsConfig}
+						identifierFields={identifierFields}
 					/>
 				</TabsContent>
 
@@ -218,6 +230,7 @@ async function PayrollExportContent() {
 					<WorkdayConfigForm
 						organizationId={organizationId}
 						initialConfig={workdayConfig}
+						identifierFields={identifierFields}
 					/>
 				</TabsContent>
 

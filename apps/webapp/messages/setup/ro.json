@@ -1,0 +1,60 @@
+{
+  "init": {
+    "activating": "Se configurează spațiul dvs. de lucru...",
+    "checking": "Se verifică sesiunea...",
+    "clickToSelect": "Faceți clic pentru a selecta",
+    "redirecting": "Redirecționare...",
+    "selectOrganization": "Selectați organizația",
+    "selectOrganizationDescription": "Alegeți organizația cu care doriți să lucrați"
+  },
+  "setup": {
+    "authorization": {
+      "expiry": "Linkul poate fi utilizat o singură dată într-un interval de o oră. Finalizați configurarea în termen de zece minute de la deschiderea acestuia. Dacă autorizarea expiră, așteptați finalul orei inițiale și reporniți serverul pentru a genera un link nou.",
+      "instructions": "Deschideți linkul temporar de configurare afișat în consola serverului la pornirea acestei instanțe.",
+      "title": "Este necesară autorizarea configurării"
+    },
+    "button": {
+      "create": "Creați un cont de administrator",
+      "creating": "Se creează contul..."
+    },
+    "complete_message": "Contul dvs. de administrator al platformei a fost creat.",
+    "complete_title": "Configurare finalizată!",
+    "continue_to_sign_in": "Continuați spre conectare",
+    "creating_account": "Se creează contul dvs. de administrator...",
+    "description": "Configurați primul cont de administrator pentru platforma dvs. Acest cont va avea acces complet la sistem și este separat de conturile de organizație.",
+    "error": {
+      "password_lowercase": "Parola trebuie să conțină cel puțin o literă mică",
+      "password_max_length": "Parola trebuie să aibă cel mult 128 de caractere",
+      "password_min_length": "Parola trebuie să aibă cel puțin 12 caractere",
+      "password_number": "Parola trebuie să conțină cel puțin o cifră",
+      "password_required": "Parola este obligatorie",
+      "passwords_mismatch": "Parolele nu se potrivesc",
+      "password_uppercase": "Parola trebuie să conțină cel puțin o literă mare"
+    },
+    "field": {
+      "confirm_password": "Confirmați parola",
+      "confirm_password_placeholder": "Confirmați-vă parola",
+      "email": "Adresă de e-mail",
+      "email_placeholder": "admin@yourcompany.com",
+      "name": "Nume complet",
+      "name_placeholder": "Introduceți numele complet",
+      "password": "Parolă",
+      "password_placeholder": "Creați o parolă puternică"
+    },
+    "hide_password": "Ascundeți parola",
+    "layout": {
+      "subtitle": "Configurați-vă platforma pentru a începe",
+      "title": "Configurare inițială"
+    },
+    "password": {
+      "lowercase": "Literă mică",
+      "min_length": "12+ caractere",
+      "number": "Număr",
+      "uppercase": "Literă mare"
+    },
+    "please_wait": "Vă rugăm să așteptați în timp ce configurăm totul",
+    "show_password": "Afișați parola",
+    "sign_in_with": "Acum vă puteți conecta cu",
+    "title": "Creați un administrator de platformă"
+  }
+}

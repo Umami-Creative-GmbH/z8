@@ -137,6 +137,30 @@ other officers that *name* the departed employee in their scope are untouched,
 so that employee's last reports can still be reimbursed and their personnel
 file stays manageable (the departed employee keeps no access to it).
 
+## Absence deputies
+
+When the departure takes effect, the employee is cleared as **deputy** on every
+pending or approved absence of the organization that has not ended at the
+cutoff (#1014), in the departure's transaction. "Not ended" is the absent
+employee's own day (user timezone, then organization, then UTC); ended absences
+keep their historical deputy. Each cleared absence is audited as
+`absence.deputy_changed` under the departure's initiator with metadata
+`{ actorKind: "system", reason: "employee_departure", departureId, employmentPeriodId }`
+and queues one `notify_deputy_release` task, which tells the absent employee
+and their eligible managers (never the departed person) that the deputy is no
+longer available. A deputy-required absence then shows *Deputy missing* on the
+team absence page until someone names a new deputy. While a departure is
+scheduled, the departure card lists *Deputy on running or upcoming absences: N*,
+counted with the same rule, so the handover can arrange new cover.
+
+Deactivations outside a departure clear the deputy the same way, in their own
+transaction, and notify after the commit: *Deactivate* (`employee_deactivated`,
+audited under the acting admin), member removal or leaving
+(`member_removed`, under the rejecting admin for pending-member rejection,
+otherwise the removed member's own user) and SCIM deprovisioning
+(`scim_deprovisioned`, under the deprovisioned user, with the connection id).
+A rehire or reactivation restores nothing.
+
 ## Rehire
 
 *Rehire employee* is offered after an effective departure. It requires approved

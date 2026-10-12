@@ -19,6 +19,7 @@ const useElapsedTimerMock = vi.fn();
 let localStorageData: Record<string, string> = {};
 let isClockedInMock = false;
 let captureMode: "local-queue" | "local-review" | "server" = "server";
+let connectionRequiredMock = false;
 let activeWorkPeriodMock: {
 	startTime: string;
 	currentTask?: { id: string; name: string; state: "open" | "done"; projectId: string } | null;
@@ -53,6 +54,7 @@ vi.mock("@/lib/query", () => ({
 		isUpdatingNotes: false,
 		isMutating: false,
 		captureMode,
+		connectionRequired: connectionRequiredMock,
 	}),
 }));
 
@@ -148,11 +150,51 @@ describe("TimeClockPopover", () => {
 		useElapsedTimerMock.mockReturnValue(0);
 		isClockedInMock = false;
 		captureMode = "server";
+		connectionRequiredMock = false;
 		activeWorkPeriodMock = null;
 		billableTimeEnabledMock = false;
 		projectsMock = defaultProjects();
 		clockInMock.mockResolvedValue({ success: true });
 		addBreakMock.mockResolvedValue({ success: true });
+	});
+
+	describe("offline in an organization that is not adopted (#845)", () => {
+		const refused = {
+			success: false,
+			code: "connection_required",
+			error: "Clocking needs a connection in this organization. Reconnect and try again.",
+		};
+
+		it("shows the needs-a-connection outcome inline, not as an error toast", async () => {
+			clockInMock.mockResolvedValue(refused);
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
+			fireEvent.click(getPopoverClockButton("Clock In"));
+			await waitFor(() => expect(clockInMock).toHaveBeenCalledOnce());
+			expect(toastMocks.error).not.toHaveBeenCalled();
+			// The popover stays open so the inline message can be read.
+			expect(getPopoverClockButton("Clock In")).toBeTruthy();
+		});
+
+		it("does not toast a refused clock-out either", async () => {
+			isClockedInMock = true;
+			activeWorkPeriodMock = { startTime: "2026-10-10T06:00:00Z" };
+			clockOutMock.mockResolvedValue(refused);
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+			fireEvent.click(getPopoverClockButton("Clock Out"));
+			await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
+			expect(toastMocks.error).not.toHaveBeenCalled();
+		});
+
+		it("renders the message inline while the last action needs a connection", () => {
+			connectionRequiredMock = true;
+			render(<TimeClockPopover />);
+			fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
+			expect(screen.getByRole("alert").textContent).toBe(
+				"Clocking needs a connection in this organization. Reconnect and try again.",
+			);
+		});
 	});
 
 	it("keeps both offline endpoints available without inventing a server period", async () => {

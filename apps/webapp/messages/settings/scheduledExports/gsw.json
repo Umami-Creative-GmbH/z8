@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Bsitzer ändere",
         "delete": "Löschen",
         "edit": "Bearbeiten",
         "runNow": "Jetzt ausführen",
@@ -16,6 +17,7 @@
       },
       "dataCategories": {
         "absences": "Absenzen",
+        "customers": "Kunden",
         "employees": "Mitarbeiter",
         "projects": "Projekte",
         "timeEntries": "Zeiteinträge",
@@ -122,6 +124,8 @@
         "dateRangesDesc": "Automatisch berechnet basierend uf de Häufigkeit vom Ziitplan (z.B. de letscht Monet für monatlichi Exports).",
         "delivery": "Zuestellig:",
         "deliveryDesc": "Exports wärded uf S3 ufeghade und E-Mail-Benachrichtigunge mit Download-Links wärded a die konfigurierte Empfänger versendet.",
+        "owner": "Bsitzer:",
+        "ownerDesc": "Jede Ziitplan lauft im Name vomene Org-Admin. Wenn de Bsitzer nüme Org-Admin isch oder gaht, wird de Ziitplan pausiert und alli Org-Admins werded benachrichtigt, damit en öpper überneh chan.",
         "scheduleTypes": "Ziitplan-Arte:",
         "scheduleTypesDesc": "Täglich, wöchentlich (Mäntig), monatlich (1.), vierteljährlich (1. Jan/Apr/Jul/Okt) oder benutzerdefinierti Cron-Usdrück."
       },
@@ -148,6 +152,18 @@
         "viewError": "Fehlerdetails aaluege"
       },
       "newSchedule": "Neue Ziitplan",
+      "owner": {
+        "changed": "Bsitzer gänderet",
+        "changeFailed": "De Bsitzer hät nöd chönne gänderet werde",
+        "description": "\"{name}\" lauft im Name vo sim Bsitzer, wo en Org-Admin si muess. Automatisieriti Durchläuf werded im Audit-Log under em Bsitzer protokolliert.",
+        "label": "Bsitzer",
+        "pauseNote": "De Bsitzer z ändere setzt en pausierte Ziitplan nöd fort. Schalt en wider ii, sobald er en Bsitzer hät.",
+        "placeholder": "Org-Admin uswähle…",
+        "required": "Wähl en Org-Admin us",
+        "saving": "Wird gspycheret…",
+        "submit": "Bsitzer ändere",
+        "title": "Bsitzer ändere"
+      },
       "report": {
         "auditReport": "Audit-Bericht",
         "auditReportDesc": "Audit-Bericht enthalte alli Ziiterfassigsdate mit kryptografische Signature und Ziitstempel für d'GoBD-Konformität. De Export wird mit WORM-Schutz (Write Once Read Many) gspicheret.",
@@ -263,6 +279,8 @@
         "never": "Nie",
         "nextRun": "Nächschte Lauf",
         "openMenu": "Achtionsmenü ufmache",
+        "owner": "Bsitzer",
+        "ownerNotAdmin": "Nüme en Org-Admin",
         "paused": "Pausiert",
         "schedule": "Zytplan",
         "status": "Status",

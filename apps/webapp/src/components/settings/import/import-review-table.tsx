@@ -1,6 +1,10 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import {
+	type ImportReviewPaging,
+	ImportReviewPagingNav,
+} from "@/components/settings/import/import-review-paging";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,7 +43,10 @@ export interface ImportReviewRow {
 }
 
 interface ImportReviewTableProps {
+	batchId: string;
+	/** The rows of the current page. */
 	rows: ImportReviewRow[];
+	paging?: ImportReviewPaging;
 	/** Shows each work row's billable value while Billable Time is on. */
 	showBillability?: boolean;
 }
@@ -87,6 +94,10 @@ const holdReasonLabels: Record<ImportedWorkHoldReason, { key: string; fallback: 
 	attribution_not_allowed: {
 		key: "settings.import.review.hold.attributionNotAllowed",
 		fallback: "The project is not available, or billable work needs a project that has a customer.",
+	},
+	month_closed: {
+		key: "settings.import.review.hold.monthClosed",
+		fallback: "The time is in a closed month. It can be imported once the month is reopened.",
 	},
 };
 
@@ -154,7 +165,12 @@ function BillabilityCell({
 	);
 }
 
-export function ImportReviewTable({ rows, showBillability = false }: ImportReviewTableProps) {
+export function ImportReviewTable({
+	batchId,
+	rows,
+	paging,
+	showBillability = false,
+}: ImportReviewTableProps) {
 	const { t } = useTranslate();
 
 	return (
@@ -226,6 +242,11 @@ export function ImportReviewTable({ rows, showBillability = false }: ImportRevie
 						</TableBody>
 					</Table>
 				)}
+				<ImportReviewPagingNav
+					batchId={batchId}
+					paging={paging}
+					label={t("settings.import.review.rows.paging.label", "Row pages")}
+				/>
 			</CardContent>
 		</Card>
 	);

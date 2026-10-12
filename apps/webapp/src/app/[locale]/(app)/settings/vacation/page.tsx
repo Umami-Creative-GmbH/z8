@@ -1,6 +1,7 @@
 import { IconCalendar } from "@tabler/icons-react";
 import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
+import { EmployeeSickNoteSetting } from "@/components/settings/vacation/employee-sick-note-setting";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation/vacation-policies-table";
 import {
@@ -10,8 +11,11 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { db } from "@/db";
+import { loadAbsenceSettings } from "@/lib/absences/absence-settings";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { isPersonnelFilesEnabled } from "@/lib/personnel-file/access-store";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getTranslate } from "@/tolgee/server";
 
@@ -34,9 +38,13 @@ async function VacationSettingsContent() {
 
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
 
-	if (canManagePolicies) {
-		await ensureDefaultAbsenceCategoriesForOrganization(organizationId);
-	}
+	const [absenceSettings, personnelFilesEnabled] = canManagePolicies
+		? await Promise.all([
+				loadAbsenceSettings(db, organizationId),
+				isPersonnelFilesEnabled(db, organizationId),
+				ensureDefaultAbsenceCategoriesForOrganization(organizationId),
+			])
+		: [null, false];
 
 	const allowedAssignmentTypes = canManagePolicies
 		? (["team", "employee"] as const)
@@ -47,6 +55,14 @@ async function VacationSettingsContent() {
 			organizationId={organizationId}
 			allowedAssignmentTypes={allowedAssignmentTypes}
 			canManageCategories={canManagePolicies}
+			absenceSettings={
+				absenceSettings ? (
+					<EmployeeSickNoteSetting
+						enabled={absenceSettings.employeeSickNoteUpload}
+						personnelFilesEnabled={personnelFilesEnabled}
+					/>
+				) : null
+			}
 		>
 			<div className="grid gap-4">
 				<Card>

@@ -6,6 +6,7 @@
  */
 
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, employee, employeeManagers } from "@/db/schema";
@@ -17,6 +18,9 @@ import { createLogger } from "@/lib/logger";
 import { getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("TeamsCommand:WhosOut");
+// The absence's deputy (#1012), only an employee of the same organization.
+const deputyEmployee = alias(employee, "deputy_employee");
+const deputyUser = alias(user, "deputy_user");
 
 export const whosOutCommand: BotCommand = {
 	name: "whosout",
@@ -67,13 +71,23 @@ export const whosOutCommand: BotCommand = {
 					endDate: absenceEntry.endDate,
 					employeeName: user.name,
 					categoryName: absenceCategory.name,
+					deputyName: deputyUser.name,
 				})
 				.from(absenceEntry)
 				.innerJoin(employee, eq(absenceEntry.employeeId, employee.id))
 				.innerJoin(user, eq(employee.userId, user.id))
 				.leftJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+				.leftJoin(
+					deputyEmployee,
+					and(
+						eq(deputyEmployee.id, absenceEntry.deputyEmployeeId),
+						eq(deputyEmployee.organizationId, ctx.organizationId),
+					),
+				)
+				.leftJoin(deputyUser, eq(deputyUser.id, deputyEmployee.userId))
 				.where(
 					and(
+						eq(absenceEntry.organizationId, ctx.organizationId),
 						eq(absenceEntry.status, "approved"),
 						lte(absenceEntry.startDate, today.toString()),
 						gte(absenceEntry.endDate, today.toString()),
@@ -100,8 +114,11 @@ export const whosOutCommand: BotCommand = {
 					"dateMedium",
 				);
 				const category = absence.categoryName || "Leave";
+				const deputy = absence.deputyName
+					? ` · ${t("bot.cmd.whosout.deputy", "Deputy: {name}", { name: absence.deputyName })}`
+					: "";
 
-				return `• **${absence.employeeName}** - ${category} (returns ${returnDate})`;
+				return `• **${absence.employeeName}** - ${category} (returns ${returnDate})${deputy}`;
 			});
 
 			const response = [

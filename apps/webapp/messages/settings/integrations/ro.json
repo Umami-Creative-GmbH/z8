@@ -1,0 +1,277 @@
+{
+  "settings": {
+    "calendar": {
+      "customization": {
+        "description": "Personalizează modul în care evenimentele de absență apar în calendarele externe.",
+        "descriptionPlaceholder": "Absență înregistrată în Z8",
+        "descriptionTemplate": "Descrierea evenimentului (opțional)",
+        "title": "Personalizarea evenimentului",
+        "titleHelp": "Variabile disponibile: {categoryName}, {employeeName}, {status}",
+        "titleTemplate": "Șablon pentru titlul evenimentului"
+      },
+      "description": "Configurează furnizorii de calendar, fluxurile ICS și setările de sincronizare pentru organizația ta",
+      "icsFeeds": {
+        "description": "Permite utilizatorilor să se aboneze la calendarele de absențe prin formatul ICS/iCal.",
+        "personal": "Fluxuri ICS personale",
+        "personalDesc": "Angajații pot crea abonamente la calendar doar pentru citire pentru absențele lor",
+        "team": "Fluxuri ICS de echipă",
+        "teamDesc": "Liderii de echipă pot crea fluxuri partajate care afișează toate absențele echipei",
+        "title": "Fluxuri ICS"
+      },
+      "integrations": {
+        "description": "Calendarele conectate ale angajaților care se încadrează în domeniul actual de setări.",
+        "empty": "Nu există încă integrări de calendar disponibile în domeniul tău curent.",
+        "needsAttention": "Necesită atenție",
+        "pushOff": "Push dezactivat",
+        "pushOn": "Push activat",
+        "title": "Integrări relevante"
+      },
+      "managerDescription": "Revizuiește integrările de calendar care afectează echipele, zonele și proiectele gestionate.",
+      "noProvidersConfigured": "Nu este configurat niciun furnizor de calendar. Contactează administratorul de sistem pentru a configura acreditările OAuth.",
+      "notConfigured": "Neconfigurat",
+      "providers": {
+        "description": "Activează sau dezactivează sincronizarea calendarului pentru anumiți furnizori. Angajații își pot conecta conturile atunci când este activată.",
+        "google": "Google Calendar",
+        "googleDesc": "Sincronizează absențele cu Google Calendar",
+        "microsoft": "Microsoft 365",
+        "microsoftDesc": "Sincronizează absențele cu Outlook Calendar",
+        "title": "Furnizori de calendar"
+      },
+      "readOnlyManagerNotice": "Managerii pot revizui acoperirea sincronizării calendarului pentru echipele, zonele și proiectele lor, dar numai administratorii organizației pot modifica aceste setări.",
+      "saved": "Setările calendarului au fost salvate",
+      "saveError": "Salvarea setărilor de calendar a eșuat",
+      "syncBehavior": {
+        "autoSync": "Sincronizare automată la aprobare",
+        "autoSyncDesc": "Sincronizează automat absențele cu calendarele conectate la aprobare",
+        "conflictRequired": "Solicită verificarea conflictelor",
+        "conflictRequiredDesc": "Solicită angajaților să verifice conflictele din calendar înainte de a trimite absențele",
+        "description": "Configurați modul în care funcționează sincronizarea calendarului pentru organizația dvs.",
+        "title": "Comportament de sincronizare"
+      },
+      "title": "Sincronizare calendar",
+      "titleTemplatePlaceholder": "În afara biroului - {categoryName}"
+    },
+    "clockinImport": {
+      "credentials": {
+        "connect": "Conectare și previzualizare",
+        "description": "Introduceți un token bearer pentru API-ul de client Clockin. Tokenul este utilizat doar pentru această sesiune de import.",
+        "title": "Token API Clockin",
+        "token": "Token Bearer"
+      },
+      "mapping": {
+        "description": "Potriviți angajații Clockin cu angajații Z8 existenți. Potrivirile automate pe baza adresei de e-mail sunt preselectate.",
+        "mapEmployee": "Asociază",
+        "noEmail": "Niciun e-mail în Clockin",
+        "skipEmployee": "Omite acest angajat",
+        "summary": "Angajați asociați",
+        "title": "Asociere angajați"
+      },
+      "preview": {
+        "absences": "Absențe",
+        "description": "Examinați ce date Clockin sunt disponibile înainte de a asocia angajații și de a scana înregistrările.",
+        "employees": "Angajați",
+        "next": "Asociere angajați",
+        "title": "Previzualizare Clockin",
+        "workdays": "Zile lucrătoare"
+      },
+      "review": {
+        "noProductionRecords": "Nu a fost importată încă nicio înregistrare de producție.",
+        "openReview": "Deschide revizuirea",
+        "scanningDescription": "Lotul de revizuire {reviewBatchId} se scanează. Revizuiți și aprobați înregistrările înainte de aplicare.",
+        "startedTitle": "Scanarea pentru revizuirea importului a început",
+        "starting": "Se pornește scanarea pentru revizuirea importului Clockin…",
+        "startSuccess": "Scanarea pentru revizuirea importului a început. Revizuirea este necesară înainte ca înregistrările să fie aplicate."
+      },
+      "selection": {
+        "absences": "Absențe",
+        "description": "Alegeți ce înregistrări Clockin să fie scanate pentru revizuire. Înregistrările trebuie revizuite înainte de aplicare.",
+        "endDate": "Data de sfârșit",
+        "startDate": "Data de început",
+        "startReviewScan": "Pornește scanarea pentru revizuire",
+        "title": "Sferă de import",
+        "workdays": "Zile lucrătoare / Perioade de lucru"
+      }
+    },
+    "clockodoImport": {
+      "complete": {
+        "batch": "Lotul de revizuire {batchId} se scanează.",
+        "description": "Revizuirea este necesară înainte ca înregistrările Clockodo să fie aplicate în producție.",
+        "openReview": "Deschide revizuirea",
+        "successTitle": "Scanarea pentru revizuirea importului a început"
+      },
+      "credentials": {
+        "apiKey": "Cheie API",
+        "apiKeyHint": "Puteți găsi cheia API în profilul dvs. Clockodo:",
+        "connect": "Conectare și previzualizare",
+        "description": "Introduceți adresa de e-mail și cheia API Clockodo. Puteți găsi cheia API în Clockodo la Profilul meu > Cheie API. Datele de autentificare nu sunt stocate.",
+        "email": "E-mail Clockodo",
+        "title": "Date de autentificare Clockodo"
+      },
+      "entity": {
+        "absences": "Absențe",
+        "entries": "Înregistrări de timp",
+        "holidayQuotas": "Cote de concediu",
+        "nonBusinessDays": "Zile nelucrătoare",
+        "services": "Servicii / Categorii de lucru",
+        "surcharges": "Sporuri",
+        "targetHours": "Ore țintă / Politici de lucru",
+        "teams": "Echipe",
+        "users": "Utilizatori / Angajați"
+      },
+      "errors": {
+        "connectionFailed": "Conectarea la Clockodo a eșuat",
+        "fetchProjectsFailed": "Nu s-au putut prelua datele proiectului",
+        "fetchUsersFailed": "Preluarea datelor utilizatorului a eșuat",
+        "importFailed": "Scanarea pentru revizuirea importului a eșuat",
+        "saveMappingsFailed": "Salvarea asocierilor de utilizatori a eșuat",
+        "saveProjectMappingsFailed": "Nu s-au putut salva asocierile proiectului"
+      },
+      "importing": {
+        "description": "Vă rugăm să nu închideți această pagină. Scanarea pentru revizuire este adăugată în coadă și poate dura ceva timp pentru seturile mari de date.",
+        "patience": "Se preiau datele Clockodo pentru revizuire…",
+        "title": "Pornire scanare pentru revizuire…"
+      },
+      "mapping": {
+        "autoMatched": "Asociat automat",
+        "createNew": "Creează nou",
+        "skip": "Omite"
+      },
+      "mappingStatus": {
+        "auto": "Automat",
+        "manual": "Manual",
+        "new": "Nou",
+        "skip": "Omite"
+      },
+      "preview": {
+        "dataType": "Tip de date",
+        "description": "Iată un rezumat al datelor găsite în contul dvs. Clockodo. Datele Z8 existente sunt afișate pentru comparație.",
+        "inClockodo": "În Clockodo",
+        "inZ8": "Deja în Z8",
+        "next": "Asociere utilizatori",
+        "title": "Previzualizare date"
+      },
+      "projectMapping": {
+        "clockodoCustomer": "Client Clockodo",
+        "clockodoProject": "Proiect Clockodo",
+        "continue": "Continuă",
+        "description": "Asociați proiectele Clockodo cu proiectele Z8 existente. Înregistrările de timp importate își păstrează proiectul și valoarea facturabilă din Clockodo. Înregistrările pentru proiectele neasociate sau pentru proiectele fără client sunt importate ca nefacturabile. Nu se creează proiecte noi.",
+        "mappedCount": "{mapped} din {total} proiecte asociate",
+        "noCustomer": "Acest proiect nu are niciun client, prin urmare timpul importat este nefacturabil.",
+        "noZ8Projects": "Această organizație nu are încă proiecte. Creați mai întâi proiecte pentru a importa timpul din Clockodo cu proiectul și valoarea sa facturabilă.",
+        "title": "Asociați proiectele",
+        "unmapped": "Neasociat (fără proiect)",
+        "z8Project": "Proiect Z8",
+        "z8ProjectFor": "Proiect Z8 pentru {project}"
+      },
+      "review": {
+        "startedToast": "Scanarea pentru revizuirea importului a început. Revizuirea este necesară înainte ca înregistrările să fie aplicate."
+      },
+      "selection": {
+        "dateRange": "Interval de date pentru pontaje și absențe",
+        "dateRangeDescription": "Acest lucru afectează doar pontajele și absențele. Alte date (utilizatori, echipe etc.) sunt întotdeauna scanate integral.",
+        "dependencyWarning": "Dependențele vor fi scanate automat",
+        "description": "Alegeți tipurile de date de scanat. Revizuirea este necesară înainte ca înregistrările să fie aplicate.",
+        "emptyUserScope": "Selectați cel puțin un utilizator Clockodo înainte de a începe scanarea.",
+        "incompleteCustomDateRange": "Selectați atât o dată de început, cât și o dată de sfârșit înainte de a începe scanarea.",
+        "selectDateRange": "Selectați intervalul de date",
+        "startImport": "Porniți scanarea pentru revizuire",
+        "title": "Selectați datele pentru revizuire"
+      },
+      "step": {
+        "complete": "Revizuire începută",
+        "credentials": "Date de autentificare",
+        "import": "Revizuire",
+        "preview": "Previzualizare",
+        "projectMapping": "Asociere proiecte",
+        "selection": "Selecție",
+        "userMapping": "Asociere utilizatori"
+      },
+      "userMapping": {
+        "action": "Acțiune",
+        "autoMatched": "{count} asociate automat",
+        "clockodoUser": "Utilizator Clockodo",
+        "continue": "Continuă",
+        "description": "Asociați utilizatorii Clockodo cu angajații Z8 existenți sau alegeți să creați conturi noi. Utilizatorii potriviți după e-mail sunt asociați automat.",
+        "email": "E-mail",
+        "mappedTo": "Asociat cu",
+        "newEmployees": "{count} noi",
+        "onlyMapped": "Scanează doar utilizatorii asociați (nu crea conturi noi pentru utilizatorii neasociați)",
+        "skippedCount": "{count} omise",
+        "status": "Stare",
+        "title": "Asociază utilizatori"
+      }
+    },
+    "discord": {
+      "description": "Configurați notificările Discord pentru organizația dvs.",
+      "title": "Discord"
+    },
+    "slack": {
+      "description": "Configurați notificările Slack pentru organizația dvs.",
+      "title": "Slack"
+    },
+    "teamsNotifications": {
+      "description": "Configurați notificările Microsoft Teams pentru organizația dvs.",
+      "title": "Microsoft Teams"
+    },
+    "telegram": {
+      "bot": {
+        "description": "Conectați un bot Telegram pentru a activa notificările și comenzile pentru organizația dvs.",
+        "title": "Bot Telegram"
+      },
+      "botToken": "Token bot",
+      "botTokenHelp": "Creați un bot cu @BotFather pe Telegram și lipiți tokenul aici.",
+      "connect": "Conectare bot",
+      "connected": "Botul Telegram a fost conectat cu succes",
+      "connectError": "Conectarea botului Telegram a eșuat",
+      "description": "Configurați integrarea botului Telegram pentru notificări și comenzi",
+      "disconnect": "Deconectare",
+      "disconnectConfirm": {
+        "description": "Această acțiune va dezactiva toate notificările și comenzile Telegram pentru organizația dvs. Asocierile conturilor angajaților vor fi păstrate.",
+        "title": "Deconectați botul Telegram?"
+      },
+      "disconnected": "Bot Telegram deconectat",
+      "disconnectError": "Deconectarea botului Telegram a eșuat",
+      "features": {
+        "approvals": "Notificări de aprobare",
+        "approvalsDesc": "Trimiteți cereri de aprobare și permiteți aprobarea/respingerea prin Telegram",
+        "commands": "Comenzi bot",
+        "commandsDesc": "Activați comenzile /clockedin, /whosout, /pending și altele",
+        "description": "Configurați ce funcționalități sunt activate pentru botul Telegram.",
+        "digest": "Rezumat zilnic",
+        "digestDesc": "Trimiteți un rezumat zilnic al absențelor și al programului",
+        "digestTime": "Oră",
+        "digestTimezone": "Fus orar",
+        "escalations": "Escaladări",
+        "escalationsDesc": "Escaladați aprobările fără răspuns către următorul manager",
+        "escalationTimeout": "Timp de expirare",
+        "hours": "ore",
+        "title": "Funcționalități"
+      },
+      "linked": "Asociat",
+      "linkError": "Generarea codului de asociere a eșuat",
+      "linking": {
+        "botLink": "Bot: @{botUsername}",
+        "description": "Asociați contul dvs. de Telegram pentru a primi notificări personale.",
+        "generateCode": "Generare cod de asociere",
+        "instructions": "Trimiteți această comandă botului pe Telegram:",
+        "linkedStatus": "Contul dvs. de Telegram este asociat",
+        "title": "Cont Telegram"
+      },
+      "notConfigured": "Telegram nu este configurat pentru această organizație. Contactați administratorul.",
+      "saved": "Setările Telegram au fost salvate",
+      "status": {
+        "active": "Activ"
+      },
+      "title": "Telegram",
+      "unlink": "Dezasociere",
+      "unlinkConfirm": {
+        "description": "Nu veți mai primi notificări pe Telegram. Vă puteți asocia din nou contul mai târziu.",
+        "title": "Dezasociați contul Telegram?"
+      },
+      "unlinked": "Cont Telegram dezasociat",
+      "unlinkError": "Dezasocierea contului Telegram a eșuat",
+      "webhookActive": "Webhook înregistrat",
+      "webhookPending": "Webhook în așteptare"
+    }
+  }
+}

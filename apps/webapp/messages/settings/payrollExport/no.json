@@ -91,6 +91,8 @@
           "missingConfiguration": "konfigurasjon",
           "missingCredentials": "påloggingsinformasjon"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# overtidsutbetaling ble ikke eksportert} other {# overtidsutbetalinger ble ikke eksportert}}",
+        "unmappedOvertimePayoutsDescription": "Ingen lønnsart er tilordnet Overtid for dette formatet. Tilordne en under Lønnsarter og eksporter på nytt, eller utbetal disse timene på en annen måte.",
         "year": "År"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Størrelse",
           "status": "Status"
         },
-        "title": "Eksporthistorikk"
+        "title": "Eksporthistorikk",
+        "unmappedOvertimePayouts": "{count, plural, one {# overtidsutbetaling ikke eksportert: ingen lønnsart for Overtid} other {# overtidsutbetalinger ikke eksportert: ingen lønnsart for Overtid}}"
+      },
+      "identifier": {
+        "customField": "Egendefinert felt: {name}",
+        "unavailableField": "Egendefinert felt (utilgjengelig)"
       },
       "lexware": {
         "configured": "Konfigurert",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Alle aktive ansatte har bekreftet ansettelseshistorikk for denne lønnsperioden.",
           "descriptionWarning": "Noen aktive ansatte har ikke bekreftet ansettelseshistorikk for denne lønnsperioden."
+        },
+        "periodSubmissions": {
+          "description": "Forventede periodeinnsendinger i dette intervallet som mangler, er avvist, sendt tilbake etter en endring eller fortsatt venter på en avgjørelse. De blokkerer ikke lønnseksport.",
+          "title": "Periodeinnsendinger"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Perioder i dette intervallet som ennå ikke er avsluttet, så de kan ikke sendes inn. Tiden kan fortsatt endres etter eksporten.",
+          "title": "Periodeinnsendinger som fortsatt pågår"
         }
       },
       "checkStatus": {

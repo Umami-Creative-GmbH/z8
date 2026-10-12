@@ -16,6 +16,10 @@
       "label": "Faturalandırılabilir",
       "noCustomer": "Yalnızca müşterisi olan bir projedeki çalışma faturalandırılabilir"
     },
+    "breakInProgress": {
+      "description": "Moladasınız",
+      "since": "{time} itibarıyla molada"
+    },
     "budget": "Bütçe",
     "clockedOutSuccess": "Mesainizi bitirdiniz!",
     "clockIn": "İşe Giriş",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Yalnızca müşterisi olan bir projedeki çalışma faturalandırılabilir",
       "breakAwaitingApproval": "Bu çalışma dönemi onay bekliyor ve düzenlenemez. Sonuçlandıktan sonra molayı ekleyin.",
       "breakDurationInvalid": "En az 1 dakikalık bir mola süresi girin.",
+      "breakInProgressOpen": "Moladasınız. Başka bir mola eklemeden önce devam edin.",
       "breakNotAllowed": "Bu çalışmaya mola ekleyemezsiniz.",
       "breakOccupied": "Mola, kaydedilen diğer çalışmalarla çakışıyor.",
       "breakPendingCorrection": "Bu çalışma dönemi için zaten bekleyen bir zaman düzeltme onayı var. Sonuçlandıktan sonra molayı ekleyin.",
@@ -84,12 +89,14 @@
       "breakTooLong": "Mola süresi geçerli oturumunuzdan daha kısa olmalıdır.",
       "clockAttributionNotAllowed": "Seçilen proje veya kategori mevcut değil",
       "clockCommandRejected": "Sunucu bu giriş/çıkış işlemini kabul etmedi",
+      "clockConnectionRequired": "Bu kuruluşta mesai kaydı için bağlantı gerekiyor. Yeniden bağlanıp tekrar deneyin.",
       "clockInAppendReview": "Giriş yapabilmeniz için önce zaman geçmişinizin incelenmesi gerekiyor. Lütfen yöneticinizle iletişime geçin.",
       "clockInCollision": "Bu giriş kaydı önceki bir istekle çakışıyor. Lütfen yenileyip tekrar deneyin.",
       "clockInFailed": "İşe giriş yapılamadı",
       "clockInNotAllowed": "Giriş yapamazsınız.",
       "clockInOccupied": "Bu saat kaydedilen diğer çalışmalarla çakışıyor",
       "clockInRetry": "Giriş yapılamadı. Lütfen tekrar deneyin.",
+      "clockMonthClosed": "Bu süre kapatılan bir ayda yer alıyor ve ay yeniden açılana kadar değiştirilemez.",
       "clockNotAllowedAtTime": "Şu anda giriş/çıkış yapılmasına izin verilmiyor",
       "clockOutAppendReview": "Çıkış yapabilmeniz için zaman geçmişinizin incelenmesi gerekiyor. Lütfen yöneticinizle iletişime geçin.",
       "clockOutBeforeClockIn": "Çıkış saati giriş saatinden sonra olmalıdır",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Bu görev başka bir projeye ait",
       "taskProjectNotBookable": "Bu görevin projesine artık süre kaydedilemez",
       "workCategoryNotAllowed": "Bu çalışma kategorisine atama yapılamaz"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Giriş yap",
+        "clockOut": "Çıkış yap",
+        "endDay": "Günü bitir",
+        "resume": "İşe devam et",
+        "startBreak": "Mola başlat"
+      },
+      "board": {
+        "empty": "Şu anda giriş yapmış kimse yok.",
+        "title": "Kimler içeride"
+      },
+      "done": {
+        "button": "Bitti",
+        "clockIn": "Giriş yapıldı",
+        "clockOut": "Çıkış yapıldı",
+        "endDay": "Gün sonlandırıldı",
+        "endDayNote": "Gününüz, molanızın başladığı saatte sonlandırıldı.",
+        "resume": "İşe dön",
+        "returning": "{seconds} sn içinde başa dön",
+        "startBreak": "Mola başladı",
+        "title": "Tamam"
+      },
+      "employee": {
+        "back": "İptal",
+        "endDayHint": "Günü şimdi sonlandırmak, çalışmanızı molanızın başladığı saatte bitirir.",
+        "today": "Bugün: {duration}"
+      },
+      "home": {
+        "empty": "Bu konuma henüz kimse atanmadı. Yöneticinize danışın.",
+        "loadFailed": "İsimler yüklenemedi. Ağ bağlantısını kontrol edin.",
+        "loading": "İsimler yükleniyor…",
+        "noMatch": "Aramanızla eşleşen ad bulunamadı.",
+        "search": "Adınızı bulun",
+        "title": "Giriş veya çıkış yapmak için adınıza dokunun"
+      },
+      "loading": "Kiosk başlatılıyor…",
+      "offline": {
+        "banner": "Kiosk çevrimdışı. Bağlantı tekrar kurulana kadar giriş/çıkış yapılamaz.",
+        "refused": "Kiosk çevrimdışı. Hiçbir şey kaydedilmedi; giriş/çıkış yalnızca çevrim içi iken çalışır."
+      },
+      "pairing": {
+        "codeDescription": "Kod tek kullanımlıktır ve oluşturulduktan 10 dakika sonra süresi dolar.",
+        "codeLabel": "Eşleştirme kodu",
+        "description": "Bir sahip veya yönetici, Ayarlar › Kiosklar bölümünden kiosku oluşturur ve size bir eşleştirme kodu verir.",
+        "invalidCode": "Bu kod geçersiz veya süresi dolmuş. Yöneticinizden yeni bir eşleştirme kodu isteyin.",
+        "malformedCode": "10 karakterli kodu ayarlarda gösterildiği gibi aynen girin.",
+        "rateLimited": "Çok fazla deneme yapıldı. Birkaç dakika bekleyin, ardından tekrar deneyin.",
+        "submit": "Bu cihazı eşleştir",
+        "title": "Bu kiosku kur",
+        "unreachable": "Kiosk sunucuya erişemiyor. Ağ bağlantısını kontrol edin ve tekrar deneyin."
+      },
+      "pin": {
+        "back": "Siz değil misiniz? Geri",
+        "checking": "Kontrol ediliyor…",
+        "delete": "Son haneyi sil",
+        "entered": "{count} hane girildi",
+        "locked": "Çok fazla yanlış PIN girildi. PIN'iniz {time} zamanına kadar kilitlendi. O zaman tekrar deneyin veya yöneticinizden kilidi açmasını isteyin.",
+        "none": "Henüz bir kiosk PIN'iniz yok. Yöneticinizden bir tane isteyin.",
+        "notAssigned": "Bu kiosktan giriş/çıkış yapamazsınız. Yöneticinize danışın.",
+        "prompt": "Kiosk PIN'inizi girin",
+        "rateLimited": "Bu kiosktan çok fazla PIN denemesi yapıldı. {seconds} saniye sonra tekrar deneyin.",
+        "submit": "Tamam",
+        "wrong": "PIN doğru değil. Tekrar deneyin."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Zaten giriş yaptınız.",
+        "billing": "Mesai kaydı şu anda kuruluşunuz için kullanılamıyor. Yöneticinizle iletişime geçin.",
+        "generic": "İşlem başarısız oldu. Hiçbir şey kaydedilmedi. Tekrar deneyin veya yöneticinize danışın.",
+        "holiday": "Tatil nedeniyle bugün mesai kaydı engellendi. Yöneticinize danışın.",
+        "monthClosed": "Bu süre kapatılan bir ayda yer alıyor ve değiştirilemez. Yöneticinize danışın.",
+        "noBreak": "Molada değilsiniz.",
+        "notClockedIn": "Giriş yapmadınız.",
+        "onBreak": "Zaten moladasınız.",
+        "unconfirmed": "Kiosk bunun kaydedilip kaydedilmediğini doğrulayamadı. Tekrar denemeden önce durumunuzu kontrol edin.",
+        "underReview": "Bugünkü çalışma süreniz inceleniyor. Yöneticinize danışın."
+      },
+      "retry": "Tekrar deneyin",
+      "revoked": {
+        "description": "Bu kiosk artık mesai kaydı için kullanılamaz. Lütfen yöneticinizle iletişime geçin.",
+        "pairAgain": "Yeni bir kodla eşleştirin",
+        "title": "Kiosk yetkisi iptal edildi"
+      },
+      "state": {
+        "clockedIn": "{time} saatinden beri mesaide",
+        "clockedOut": "Giriş yapılmadı",
+        "onBreak": "{time} saatinden beri molada"
+      },
+      "unreachableDescription": "Kiosk sunucuya erişemiyor. Ağ bağlantısını kontrol edin; mesai kaydı yalnızca çevrim içi çalışır.",
+      "unreachableTitle": "Kiosk çevrim dışı"
     },
     "manualEntry": {
       "addButton": "Manuel Giriş Ekle",
@@ -198,6 +296,39 @@
     "noProject": "Proje yok",
     "notesPlaceholder": "Neler üzerinde çalıştın?",
     "notesSaved": "Notlar kaydedildi",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "{dates} tarihli bir izin talebi henüz karara bağlanmadı.",
+        "liveWork": "{start} itibarıyla başlayan çalışma hâlâ devam ediyor.",
+        "manualWork": "{start} tarihindeki manuel çalışma henüz karara bağlanmadı.",
+        "timeCorrection": "{start} tarihindeki çalışma için yapılan zaman düzeltmesi henüz karara bağlanmadı."
+      },
+      "description": "Her dönem için çalışmalarınızın ve devamsızlıklarınızın eksiksiz ve doğru olduğunu onaylayın.",
+      "opensOn": "{date} tarihinden itibaren gönderebilirsiniz.",
+      "refusal": {
+        "alreadySubmitted": "Bu dönem zaten gönderildi.",
+        "noApprover": "Bu dönemi henüz kimse onaylayamaz. Bir sistem yöneticisinden size bir yönetici atamasını isteyin.",
+        "notEnded": "Bu dönemi son gününden itibaren gönderebilirsiniz.",
+        "notExpected": "Bu dönemin gönderilmesi gerekmiyor.",
+        "periodOpen": "Bu dönem hâlâ açık"
+      },
+      "rejectionReason": "Neden: {reason}",
+      "status": {
+        "approved": "Onaylandı",
+        "awaiting": "Gönderim bekleniyor",
+        "rejected": "Reddedildi",
+        "sentBack": "Bir değişiklikten sonra geri gönderildi",
+        "submitted": "Gönderildi"
+      },
+      "submit": "Gönder",
+      "submitFailed": "Dönem gönderilemedi",
+      "submitted": "Dönem onaya gönderildi",
+      "title": "Dönem gönderimleri",
+      "withdraw": "Geri çek",
+      "withdrawFailed": "Gönderim geri çekilemedi",
+      "withdrawn": "Gönderim geri çekildi",
+      "withdrawRefused": "Bu gönderim zaten karara bağlandı ve artık geri çekilemez."
+    },
     "project": "Proje",
     "quickBreak": {
       "addBreak": "Mola ekle",

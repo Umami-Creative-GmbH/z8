@@ -1,0 +1,44 @@
+{
+  "today": {
+    "approvals": {
+      "approve": "Odobri",
+      "approveLabel": "Odobri {title}",
+      "description": "Zahtjevi koji čekaju odluku menadžera.",
+      "empty": "Nema odobrenja na čekanju.",
+      "openInbox": "Otvori prijemno sanduče",
+      "ownRequest": "Vaš vlastiti zahtjev: o njemu odlučuje drugi odobravatelj.",
+      "pendingAriaLabel": "Odobrenja na čekanju",
+      "reject": "Odbij",
+      "rejectLabel": "Odbij {title}",
+      "title": "Odobrenja",
+      "toast": {
+        "approved": "Zahtjev odobren",
+        "approveError": "Nije moguće odobriti zahtjev",
+        "rejected": "Zahtjev je odbijen",
+        "rejectError": "Nije moguće odbiti zahtjev"
+      }
+    },
+    "briefing": {
+      "badge": "Danas",
+      "description": "Pregledajte stavke koje danas zahtijevaju radnju, a zatim pređite direktno na odgovarajući radni tok.",
+      "needsAction": {
+        "description": "Započnite ovdje za najhitnije operativne zadatke.",
+        "empty": "Sve je čisto. Trenutno nije potrebna nikakva radnja menadžera.",
+        "title": "Zahtijeva radnju"
+      },
+      "sections": {
+        "empty": "Nisu otkriveni nikakvi problemi."
+      },
+      "severity": {
+        "critical": "Kritično",
+        "high": "Visoko",
+        "info": "Informacija",
+        "warning": "Upozorenje"
+      },
+      "summaryAriaLabel": "Sažetak za danas",
+      "supportingSectionsAriaLabel": "Pomoćni odjeljci",
+      "title": "Dnevni brifing za menadžere",
+      "updatedAt": "{date} - Ažurirano u {time}"
+    }
+  }
+}

@@ -44,6 +44,8 @@ import {
 } from "@/lib/time-tracking/timezone-capture";
 import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
 import type { WorkLocationType } from "./work-location";
+import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 
 type Transaction = WorkTransactionClient;
 
@@ -390,6 +392,20 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 				roundingMode: "trunc",
 			}),
 		) !== 0;
+	// Moving work that touches a closed month, before or after, is refused (#762).
+	if (clockInChanged || clockOutChanged) {
+		await assertWorkOpen(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.expected.employeeId,
+			intervals: [
+				{
+					start: instantFromTimeCorrectionBoundary(input.expected.startTime),
+					end: instantFromTimeCorrectionBoundary(input.expected.endTime),
+				},
+				{ start: newStart, end: newEnd },
+			],
+		});
+	}
 
 	const captureFor = (timestamp: Date): TimeEntryTimezoneCapture =>
 		resolveFallbackTimezoneCapture({
@@ -437,6 +453,19 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 				conflictType: "canonical_work_missing",
 			});
 		}
+		// Moved work or a changed location sends a submitted period back (#1062).
+		await sendBackChangedPeriodSubmissions(tx, {
+			organizationId: input.organizationId,
+			employeeId: period.employeeId,
+			causedByUserId: input.actorUserId,
+			work: [
+				{
+					start: instantFromTimeCorrectionBoundary(input.expected.startTime),
+					end: instantFromTimeCorrectionBoundary(input.expected.endTime),
+				},
+				{ start: newStart, end: newEnd },
+			],
+		});
 
 		const originals = endpoints.length
 			? await tx

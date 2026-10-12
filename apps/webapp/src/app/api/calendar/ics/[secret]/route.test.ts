@@ -19,6 +19,21 @@ const mockState = vi.hoisted(() => ({
 	selectWherePredicates: [] as Predicate[],
 	mapAbsencesToICSEvents: vi.fn(() => []),
 	generateICS: vi.fn(() => "BEGIN:VCALENDAR\nEND:VCALENDAR"),
+	checkRateLimit: vi.fn(),
+}));
+
+vi.mock("@/lib/app-url", () => ({
+	getDefaultAppBaseUrl: () => "https://app.example.com",
+}));
+
+vi.mock("@/lib/rate-limit", () => ({
+	checkRateLimit: mockState.checkRateLimit,
+	getClientIp: (request: Request) => request.headers.get("x-forwarded-for") ?? "unknown",
+	createRateLimitResponse: (result: { retryAfter: number }) =>
+		new Response("rate limited", {
+			status: 429,
+			headers: { "Retry-After": String(result.retryAfter) },
+		}),
 }));
 
 vi.mock("next/server", async () => {
@@ -34,6 +49,7 @@ vi.mock("drizzle-orm", () => ({
 	eq: (left: string, right: unknown) => ({ op: "eq", left, right }),
 	gte: (left: string, right: unknown) => ({ op: "gte", left, right }),
 	inArray: (left: string, right: unknown) => ({ op: "inArray", left, right }),
+	isNull: (left: string) => ({ op: "isNull", left }),
 	lte: (left: string, right: unknown) => ({ op: "lte", left, right }),
 	or: (...args: Predicate[]) => ({ op: "or", args }),
 }));
@@ -67,9 +83,9 @@ vi.mock("@/db/schema", () => ({
 	icsFeed: {
 		id: "icsFeed.id",
 		organizationId: "icsFeed.organizationId",
-		secret: "icsFeed.secret",
-		isActive: "icsFeed.isActive",
-		lastAccessedAt: "icsFeed.lastAccessedAt",
+		secretDigest: "icsFeed.secretDigest",
+		revokedAt: "icsFeed.revokedAt",
+		lastUsedAt: "icsFeed.lastUsedAt",
 	},
 }));
 
@@ -115,6 +131,18 @@ vi.mock("@/lib/calendar-sync/domain", () => ({
 }));
 
 const { GET } = await import("./route");
+const { digestIcsFeedSecret } = await import("@/lib/calendar-sync/ics-feed-secret");
+
+const SECRET = "ab".repeat(32);
+
+function fetchFeed(secret = SECRET, ip = "203.0.113.7") {
+	return GET(
+		new Request(`https://app.example.com/api/calendar/ics/${secret}`, {
+			headers: { "x-forwarded-for": ip },
+		}) as never,
+		{ params: Promise.resolve({ secret }) },
+	);
+}
 
 function makeFeed(overrides: Record<string, unknown>) {
 	return {
@@ -168,9 +196,90 @@ describe("GET /api/calendar/ics/[secret]", () => {
 			}),
 		});
 		mockState.select.mockImplementation(buildSelectQuery);
+		mockState.checkRateLimit.mockResolvedValue({
+			allowed: true,
+			remaining: 10,
+			resetAt: 0,
+			retryAfter: 0,
+		});
 	});
 
-	it("scopes the last-accessed update to the feed organization", async () => {
+	it("finds the active feed by the secret's digest, never by the secret itself", async () => {
+		mockState.icsFeedFindFirst.mockResolvedValue(
+			makeFeed({ feedType: "user", employeeId: "employee-feed" }),
+		);
+
+		const response = await fetchFeed();
+
+		expect(response.status).toBe(200);
+		const feedWhere = mockState.icsFeedFindFirst.mock.calls[0]?.[0]?.where as Predicate;
+		expectEq(feedWhere, "icsFeed.secretDigest", digestIcsFeedSecret(SECRET));
+		expect(JSON.stringify(feedWhere)).not.toContain(SECRET);
+		expect(feedWhere.args).toContainEqual({ op: "isNull", left: "icsFeed.revokedAt" });
+	});
+
+	it("counts a known feed's fetches against that feed, not the caller's IP", async () => {
+		mockState.icsFeedFindFirst.mockResolvedValue(
+			makeFeed({ feedType: "user", employeeId: "employee-feed" }),
+		);
+
+		await fetchFeed();
+
+		expect(mockState.checkRateLimit).toHaveBeenCalledTimes(1);
+		expect(mockState.checkRateLimit).toHaveBeenCalledWith("feed-1", "icsFeed");
+	});
+
+	it("refuses a known feed over its limit without generating or recording the fetch", async () => {
+		mockState.icsFeedFindFirst.mockResolvedValue(
+			makeFeed({ feedType: "user", employeeId: "employee-feed" }),
+		);
+		mockState.checkRateLimit.mockResolvedValue({
+			allowed: false,
+			remaining: 0,
+			resetAt: 0,
+			retryAfter: 120,
+		});
+
+		const response = await fetchFeed();
+
+		expect(response.status).toBe(429);
+		expect(response.headers.get("Retry-After")).toBe("120");
+		expect(mockState.update).not.toHaveBeenCalled();
+		expect(mockState.generateICS).not.toHaveBeenCalled();
+	});
+
+	it("counts an unknown secret against the caller's IP and answers 404", async () => {
+		mockState.icsFeedFindFirst.mockResolvedValue(undefined);
+
+		const response = await fetchFeed(SECRET, "198.51.100.9");
+
+		expect(response.status).toBe(404);
+		expect(mockState.checkRateLimit).toHaveBeenCalledWith("198.51.100.9", "icsFeedMiss");
+	});
+
+	it("answers 429 to an IP over its unknown-secret limit", async () => {
+		mockState.icsFeedFindFirst.mockResolvedValue(undefined);
+		mockState.checkRateLimit.mockResolvedValue({
+			allowed: false,
+			remaining: 0,
+			resetAt: 0,
+			retryAfter: 60,
+		});
+
+		const response = await fetchFeed();
+
+		expect(response.status).toBe(429);
+	});
+
+	it("treats a malformed secret as unknown without querying feeds", async () => {
+		const response = await fetchFeed("not-a-secret");
+
+		expect(response.status).toBe(404);
+		expect(mockState.icsFeedFindFirst).not.toHaveBeenCalled();
+		expect(mockState.checkRateLimit).toHaveBeenCalledWith("203.0.113.7", "icsFeedMiss");
+	});
+
+	it("scopes the last-used update to the feed organization", async () => {
 		mockState.icsFeedFindFirst.mockResolvedValue(
 			makeFeed({
 				organizationId: "org-1",
@@ -181,12 +290,7 @@ describe("GET /api/calendar/ics/[secret]", () => {
 			}),
 		);
 
-		const response = await GET(
-			new Request("https://app.example.com/api/calendar/ics/secret") as never,
-			{
-				params: Promise.resolve({ secret: "secret" }),
-			},
-		);
+		const response = await fetchFeed();
 
 		expect(response.status).toBe(200);
 		const updateWhere = mockState.updateWherePredicates[0];
@@ -200,12 +304,7 @@ describe("GET /api/calendar/ics/[secret]", () => {
 		);
 		mockState.employeeFindFirst.mockResolvedValue({ user: { name: "Ada" } });
 
-		const response = await GET(
-			new Request("https://app.example.com/api/calendar/ics/secret") as never,
-			{
-				params: Promise.resolve({ secret: "secret" }),
-			},
-		);
+		const response = await fetchFeed();
 
 		expect(response.status).toBe(200);
 		const employeeWhere = mockState.employeeFindFirst.mock.calls[0]?.[0]?.where as Predicate;
@@ -225,12 +324,7 @@ describe("GET /api/calendar/ics/[secret]", () => {
 		mockState.teamFindFirst.mockResolvedValue({ name: "Ops" });
 		mockState.employeeFindMany.mockResolvedValue([{ id: "employee-feed" }]);
 
-		const response = await GET(
-			new Request("https://app.example.com/api/calendar/ics/secret") as never,
-			{
-				params: Promise.resolve({ secret: "secret" }),
-			},
-		);
+		const response = await fetchFeed();
 
 		expect(response.status).toBe(200);
 		const teamWhere = mockState.teamFindFirst.mock.calls[0]?.[0]?.where as Predicate;

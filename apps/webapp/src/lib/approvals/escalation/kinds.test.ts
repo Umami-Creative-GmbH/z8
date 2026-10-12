@@ -11,12 +11,13 @@ import {
 } from "./kinds";
 
 describe("admitted escalation kinds (#326)", () => {
-	it("admits absences and the three time kinds canonically, never expenses or shifts", () => {
+	it("admits absences, the three time kinds and period submissions canonically, never expenses or shifts", () => {
 		for (const kind of [
 			"absence",
 			"manual_time_submission",
 			"policy_clock_out",
 			"time_correction",
+			"period_submission",
 		]) {
 			expect(isCanonicalEscalationWorkflowType(kind)).toBe(true);
 		}
@@ -47,6 +48,7 @@ describe("admitted escalation kinds (#326)", () => {
 		expect([...ESCALATION_WORKFLOW_TYPES].sort()).toEqual([
 			"absence",
 			"manual_time_submission",
+			"period_submission",
 			"policy_clock_out",
 			"time_correction",
 			"travel_expense",
@@ -91,5 +93,13 @@ describe("admitted escalation kinds (#326)", () => {
 				pendingSiblingCount: 1,
 			}),
 		).toBe("parallel_assignments_without_replacement_inbox");
+		// A canonical-only kind's inbox lists every assignment: no mirror needed (#805).
+		expect(
+			unsupportedCanonicalReplacementRoute({
+				workflowType: "period_submission",
+				compatibilityWriting: false,
+				pendingSiblingCount: 1,
+			}),
+		).toBeNull();
 	});
 });

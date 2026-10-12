@@ -158,6 +158,30 @@
         "description": "Invita membri e rivedi le richieste di partecipazione in sospeso",
         "title": "Inviti"
       },
+      "kioskPin": {
+        "addEmailDescription": "Riceverà un invito per scegliere una password e potrà quindi accedere. Il PIN del chiosco e la cronologia resteranno invariati.",
+        "addEmailHeading": "Aggiungi un'email",
+        "addEmailSubmit": "Aggiungi email e invita",
+        "confirmReset": "Sostituisci il PIN",
+        "description": "Il PIN personale che questo dipendente inserisce per timbrare presso un chiosco.",
+        "done": "Fine",
+        "emailAdded": "Email aggiunta. L'invito è in arrivo.",
+        "emailAddedNotSent": "Email aggiunta, ma non è stato possibile inviare l'invito. Il dipendente può utilizzare \"Password dimenticata\" con questo indirizzo.",
+        "emailLabel": "Indirizzo email",
+        "hasPin": "È impostato un PIN del chiosco.",
+        "issue": "Assegna PIN",
+        "kioskOnlyBadge": "Solo chiosco",
+        "kioskOnlyDescription": "Questo dipendente non ha un'email né credenziali di accesso. Timbra solo presso i chioschi con il proprio PIN.",
+        "kioskOnlyNoEmail": "Solo chiosco, nessuna email",
+        "lockedUntil": "Bloccato per troppi PIN errati fino a {time}.",
+        "noPin": "Ancora nessun PIN del chiosco.",
+        "pinHeading": "PIN del chiosco",
+        "reset": "Reimposta PIN",
+        "shownOnce": "Comunica subito questo PIN al dipendente. Viene mostrato una sola volta.",
+        "title": "Accesso al chiosco",
+        "unlock": "Sblocca",
+        "unlocked": "PIN del chiosco sbloccato"
+      },
       "lifecycle": {
         "actionsLabel": "Azioni dipendente per {name}",
         "deactivate": "Disattiva",
@@ -207,12 +231,17 @@
         "currency": "Valuta",
         "currencyInvalid": "Inserisci un codice valuta a tre lettere.",
         "departurePanelDescription": "L'accesso e l'uso della licenza a pagamento terminano alla data limite indicata di seguito. La cronologia del dipendente viene conservata.",
+        "deputyCover": {
+          "absences": "Sostituto per assenze in corso o future: {count}",
+          "title": "Sostituzioni da riorganizzare"
+        },
         "editDeparture": "Modifica uscita",
         "effective": "Decorrenza uscita",
         "effectiveDescription": "L'accesso è terminato alle {cutoff} ({timezone}).",
         "employmentGap": "Non impiegato {startDate} – {endDate}",
         "employmentStint": "Impiego {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Questo dipendente è indicato come sostituto per assenze in corso o future. Verrà rimosso dal ruolo di sostituto all'entrata in vigore dell'uscita e le persone interessate riceveranno una notifica.",
           "finalOwner": "Assegna e attiva un altro proprietario approvato prima che questo dipendente lasci l'organizzazione.",
           "futureAbsences": "Le assenze successive alla data limite rimangono registrate. Verificale nella sezione assenze.",
           "futureShifts": "I turni successivi alla data limite rimangono assegnati. Verificali nella pianificazione.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Elaborazione di pause e maggiorazioni",
           "clockRepair": "Riparazione timer",
           "dispatchDeparture": "Pianificazione dell'uscita",
+          "notifyDeputyRelease": "Notifica di sostituto non più disponibile",
           "notifyReview": "Notifica di revisione",
           "sessionRevocation": "Disconnessione della sessione"
         },
         "team": "Team",
         "title": "Assunzione e dimissioni",
         "unknownLegacyDate": "Data non registrata",
-        "weeklyHoursInvalid": "Inserisci le ore settimanali tra 0 e 168."
+        "weeklyHoursInvalid": "Inserisci le ore settimanali tra 0 e 168.",
+        "workBalance": {
+          "recordFinalPayout": "Registra la liquidazione finale degli straordinari",
+          "through": "Fino al {date}",
+          "title": "Saldo ore lavorative"
+        }
       },
       "tabs": {
         "employees": "Dipendenti",
@@ -324,7 +359,115 @@
         "inviteCodes": "Codici invito",
         "members": "Membri"
       },
-      "title": "Dipendenti"
+      "title": "Dipendenti",
+      "workBalance": {
+        "adjustmentCancelled": "Rettifica annullata",
+        "cancelDescription": "{summary}. Rimane nella cronologia come annullata e non viene più conteggiata nel saldo ore lavorative.",
+        "cancellationReason": "Perché è annullata?",
+        "cancelSubmit": "Annulla rettifica",
+        "cancelTitle": "Annulla rettifica",
+        "conflictingPayoutsDescription": "Non verrebbero più conteggiate. Annullale prima o scegli un giorno precedente.",
+        "conflictingPayoutsTitle": "Liquidazioni degli straordinari entro questo giorno",
+        "current": "Saldo ore lavorative attuale",
+        "day": "Giorno",
+        "dayDescription": "Nel fuso orario del dipendente. Il saldo mostrato è aggiornato a ieri, quindi una liquidazione con data odierna verrà conteggiata a partire da domani.",
+        "dayRequired": "Scegli un giorno.",
+        "description": "Lavoro svolto meno il tempo previsto, insieme al saldo iniziale e alle liquidazioni degli straordinari. Le rettifiche non vengono mai modificate: quelle errate vengono annullate.",
+        "direction": "Saldo",
+        "errors": {
+          "adjustmentNotFound": "Questa rettifica non esiste più per questo dipendente.",
+          "alreadyCancelled": "Questa rettifica è già stata annullata.",
+          "amountNotPositive": "Inserisci una liquidazione superiore a zero.",
+          "beforeOpeningBalance": "La liquidazione deve avere una data successiva al giorno del saldo iniziale in vigore.",
+          "conflictingPayouts": "Ci sono liquidazioni degli straordinari con data pari o precedente a questo giorno. Annullale prima oppure scegli un giorno precedente.",
+          "employeeNotFound": "Dipendente non trovato.",
+          "exceedsBalance": "La liquidazione è superiore al saldo ore del dipendente alla fine di quel giorno.",
+          "exceedsLaterBalance": "La liquidazione porterebbe il saldo ore al di sotto dello zero dopo una successiva liquidazione degli straordinari. Annulla prima tale liquidazione o registra un valore inferiore.",
+          "failed": "Impossibile aggiornare il saldo ore. Riprova.",
+          "futureDay": "Il giorno non può essere successivo a oggi nel fuso orario del dipendente.",
+          "invalidInput": "Verifica il giorno, le ore e i minuti e il motivo.",
+          "monthClosed": "Il giorno ricade in un mese chiuso.",
+          "monthClosedNamed": "{month} è chiuso. Deve essere riaperto prima di poter registrare o annullare le rettifiche con data al suo interno.",
+          "notPermitted": "Solo i proprietari e gli amministratori dell'organizzazione, nonché il personale addetto alle buste paga per i dipendenti di propria competenza, possono registrare o annullare le rettifiche del saldo.",
+          "reasonRequired": "Inserisci un motivo."
+        },
+        "history": "Rettifiche del saldo",
+        "hours": "Ore",
+        "hoursInvalid": "Inserisci ore intere.",
+        "keepAdjustment": "Mantieni rettifica",
+        "loadFailed": "Impossibile caricare il saldo ore.",
+        "loading": "Caricamento del saldo ore",
+        "minutes": "Minuti",
+        "minutesInvalid": "Inserisci i minuti da 0 a 59.",
+        "negative": "Ore dovute (−)",
+        "openingBalanceDay": "Saldo al termine del",
+        "openingBalanceDayDescription": "Nel fuso orario del dipendente. Il calcolo del saldo riparte dal giorno successivo.",
+        "openingBalanceReasonPlaceholder": "Ad esempio: saldo riportato dal sistema precedente…",
+        "openingBalanceSet": "Saldo iniziale impostato",
+        "payoutReasonPlaceholder": "Ad esempio: pagato con la busta paga di ottobre…",
+        "payoutRecorded": "Liquidazione straordinari registrata",
+        "positive": "Straordinari (+)",
+        "reason": "Motivo",
+        "recordPayout": "Registra liquidazione straordinari",
+        "recordPayoutDescription": "Registra gli straordinari pagati come retribuzione. Riduce il saldo lavorativo a partire dalla fine di quella giornata e non può superare il saldo di quel giorno.",
+        "recordPayoutSubmit": "Registra liquidazione",
+        "recordPayoutTitle": "Registra liquidazione straordinari",
+        "replacesOpeningBalance": "Il saldo iniziale attivo viene annullato con questo motivo.",
+        "setOpeningBalance": "Imposta saldo iniziale",
+        "setOpeningBalanceDescription": "Il saldo iniziale sostituisce il saldo lavorativo fino a quel giorno compreso. Le ore lavorate e quelle previste precedenti restano registrate ma non vengono più conteggiate.",
+        "setOpeningBalanceSubmit": "Imposta saldo iniziale",
+        "setOpeningBalanceTitle": "Imposta saldo iniziale",
+        "through": "Fino al {date}",
+        "title": "Saldo lavorativo",
+        "upload": {
+          "allReady": "{total, plural, one {# riga è pronta; {replacing, plural, =0 {nessuna sostituisce un saldo iniziale attivo} one {# sostituisce un saldo iniziale attivo} other {# sostituiscono un saldo iniziale attivo}}.} other {Tutte le # righe sono pronte; {replacing, plural, =0 {nessuna sostituisce un saldo iniziale attivo} one {# sostituisce un saldo iniziale attivo} other {# sostituiscono un saldo iniziale attivo}}.}}",
+          "checking": "Controllo del file in corso…",
+          "columns": {
+            "balance": "Saldo",
+            "day": "Giorno",
+            "employee": "Dipendente",
+            "reason": "Motivo",
+            "row": "Riga",
+            "status": "Stato"
+          },
+          "committed": "{count, plural, one {# saldo iniziale impostato} other {# saldi iniziali impostati}}",
+          "description": "Imposta il saldo iniziale di più dipendenti da un file CSV contenente le colonne employee_number, day (AAAA-MM-GG o GG.MM.AAAA), balance (ore e minuti, ad esempio 12:30 o -4:15) e reason. Ciascun saldo iniziale sostituisce il saldo ore del dipendente fino al giorno indicato compreso e annulla quello attivo. Non verrà salvato nulla se una qualsiasi riga presenta un errore.",
+          "errors": {
+            "ambiguousEmployee": "Questo numero è assegnato a più dipendenti. Assegna prima a ciascuno un numero univoco.",
+            "conflictingPayouts": "Le liquidazioni degli straordinari sono datate in questa data o prima:",
+            "duplicateEmployee": "Questo dipendente ha più di una riga. Mantienine solo una.",
+            "employeeNumberRequired": "Inserisci il numero di matricola.",
+            "futureDay": "La data è successiva a oggi nel fuso orario del dipendente.",
+            "invalidAmount": "Inserisci il saldo in ore e minuti, ad esempio 12:30 o -4:15.",
+            "invalidDay": "Inserisci la data nel formato AAAA-MM-GG o GG.MM.AAAA.",
+            "monthClosed": "La data rientra in un mese chiuso.",
+            "outOfScope": "Questo dipendente non rientra nei tuoi permessi relativi alle buste paga.",
+            "reasonRequired": "Inserisci un motivo.",
+            "reasonTooLong": "Il motivo non deve superare i 1000 caratteri.",
+            "unknown": "Impossibile salvare questa riga.",
+            "unknownEmployee": "Nessun dipendente ha questo numero."
+          },
+          "file": "File CSV",
+          "fileErrors": {
+            "fileTooLarge": "Il file è troppo grande. Suddividilo in più caricamenti.",
+            "missingColumns": "Nel file mancano queste colonne: {columns}.",
+            "noRows": "Il file non contiene righe sotto l'intestazione.",
+            "tooManyRows": "Il file contiene più di 2000 righe. Suddividilo in più caricamenti.",
+            "unreadable": "Impossibile leggere il file. Salvalo come CSV (UTF-8) e riprova."
+          },
+          "former": "Ex dipendente",
+          "hasErrors": "{errors, plural, one {# riga su {total} contiene un errore. Correggi il file e caricalo di nuovo.} other {# righe su {total} contengono errori. Correggi il file e caricalo di nuovo.}}",
+          "hasErrorsTitle": "Correggi le righe con errori",
+          "invalidFile": "Il file non può essere utilizzato",
+          "open": "Carica saldi iniziali",
+          "ready": "Pronto",
+          "refusedTitle": "Non è stato salvato nulla",
+          "replaces": "Sostituisce il saldo iniziale di {balance} in data {day}",
+          "submit": "{count, plural, one {Imposta # saldo iniziale} other {Imposta # saldi iniziali}}",
+          "template": "Scarica modello",
+          "title": "Carica saldi iniziali"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Aggiungi modifica",
@@ -552,6 +695,7 @@
         "loadingFile": "Caricamento del fascicolo personale",
         "manageOfficers": "Responsabili dei fascicoli del personale",
         "payslipBatch": "Lotto di buste paga",
+        "sickLeave": "Congedo per malattia",
         "title": "Fascicoli del personale"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Visibilità"
       },
       "list": {
+        "absence": "Per il congedo per malattia {dateRange}",
         "delete": "Elimina {title}",
         "download": "Scarica {title}",
         "edit": "Modifica {title}",
@@ -771,6 +916,83 @@
         "description": "Scegli chi, oltre a titolari e amministratori, gestisce i documenti dei dipendenti.",
         "loading": "Caricamento delle impostazioni dei fascicoli del personale",
         "title": "Fascicoli del personale"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Date",
+          "duration": "Durata",
+          "employee": "Dipendente",
+          "sickDetail": "Dettagli malattia",
+          "sickNotes": "Certificati medici",
+          "status": "Stato"
+        },
+        "description": "Assenze per malattia dei dipendenti di cui gestisci i certificati medici, con i relativi certificati allegati. Da qui non vengono inviati promemoria o richieste ai dipendenti.",
+        "empty": "Nessun congedo per malattia in questo periodo corrisponde ai filtri.",
+        "filters": {
+          "allEmployees": "Tutti i dipendenti",
+          "allSickDetails": "Tutti i dettagli della malattia",
+          "allStatuses": "In attesa e approvati",
+          "allTeams": "Tutti i team",
+          "employee": "Dipendente",
+          "formerEmployee": "{name} (ex)",
+          "from": "Da",
+          "notes": "Certificati medici",
+          "notesAll": "Tutti",
+          "notesMissing": "Con certificato, senza nota",
+          "notesPresent": "Con nota",
+          "reset": "Reimposta filtri",
+          "sickDetail": "Dettagli malattia",
+          "status": "Stato",
+          "team": "Team",
+          "to": "A"
+        },
+        "loading": "Caricamento congedo per malattia",
+        "notes": {
+          "count": "{count, plural, one {# nota} other {# note}}",
+          "none": "Nessuna nota"
+        },
+        "pagination": {
+          "next": "Pagina successiva",
+          "page": "Pagina {page} di {pageCount}",
+          "pageSize": "Righe per pagina",
+          "previous": "Pagina precedente",
+          "summary": "{first}–{last} di {total}"
+        },
+        "sickDetail": {
+          "childSick": "Malattia figlio",
+          "other": "Altro",
+          "withCertificate": "Con certificato",
+          "withoutCertificate": "Senza certificato"
+        },
+        "status": {
+          "approved": "Approvato",
+          "pending": "In attesa"
+        },
+        "title": "Congedo per malattia"
+      },
+      "sickNotes": {
+        "cardDescription": "Congedi per malattia in attesa e approvati di questo dipendente. Allega un nuovo certificato di malattia o collegane uno già presente nel fascicolo personale.",
+        "cardTitle": "Congedo per malattia",
+        "chooseAbsence": "Seleziona un'assenza.",
+        "chooseNote": "Seleziona un certificato di malattia.",
+        "link": "Collega",
+        "linked": "Certificato medico collegato",
+        "linkExistingDescription": "Seleziona un certificato di malattia dal fascicolo personale per il congedo per malattia {dateRange}.",
+        "linkExistingTitle": "Collega un certificato di malattia",
+        "linkFailed": "Impossibile collegare il certificato di malattia.",
+        "linkToAbsence": "Collega {title} al congedo per malattia",
+        "linkToAbsenceDescription": "Seleziona il congedo per malattia coperto da \"{title}\". Un congedo per malattia registrato senza certificato verrà quindi considerato con certificato.",
+        "linkToAbsenceTitle": "Collega al congedo per malattia",
+        "loadFailed": "Impossibile caricare l'elenco.",
+        "manage": "Allega o collega",
+        "manageFor": "Allega o collega i certificati medici per {name}, {dateRange}",
+        "noSickLeave": "Questo dipendente non ha congedi per malattia in sospeso o approvati.",
+        "notes": "Certificati medici",
+        "noUnlinkedNotes": "In questo fascicolo personale non sono presenti certificati medici non collegati a un'assenza.",
+        "openNotes": "Certificati medici per {dateRange}",
+        "unlinked": "Certificato medico scollegato",
+        "unlinkFailed": "Impossibile scollegare il certificato medico.",
+        "unlinkFromAbsence": "Scollega {title} dal relativo congedo per malattia"
       },
       "tabs": {
         "access": "Accesso",

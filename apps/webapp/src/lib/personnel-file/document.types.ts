@@ -58,12 +58,36 @@ export const PERSONNEL_DOCUMENT_MIME_TYPES = [
 
 export const PERSONNEL_DOCUMENT_MAX_BYTES = 20 * 1024 * 1024;
 
+/**
+ * Photo types the camera input asks for. Without `image/*`, iOS hands over a
+ * JPEG instead of a HEIC photo (#983).
+ */
+export const SICK_NOTE_CAMERA_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+/** At most this many sick notes are staged with one absence (#983). */
+export const MAX_STAGED_SICK_NOTES = 10;
+
 export function isPersonnelDocumentMime(mime: string): boolean {
 	return (PERSONNEL_DOCUMENT_MIME_TYPES as readonly string[]).includes(mime.toLowerCase());
 }
 
 export function isHeicMime(mime: string): boolean {
 	return /^image\/hei[cf](-sequence)?$/i.test(mime.trim());
+}
+
+/** Why a chosen file cannot become an employee document. */
+export type PersonnelDocumentFileProblem = "heic" | "unsupported_type" | "too_large";
+
+/** Checks a chosen file before uploading it; null when it may be uploaded. */
+export function personnelDocumentFileProblem(file: {
+	type: string;
+	name: string;
+	size: number;
+}): PersonnelDocumentFileProblem | null {
+	if (isHeicMime(file.type) || /\.hei[cf]$/i.test(file.name)) return "heic";
+	if (!isPersonnelDocumentMime(file.type)) return "unsupported_type";
+	if (file.size > PERSONNEL_DOCUMENT_MAX_BYTES) return "too_large";
+	return null;
 }
 
 export const HEIC_REFUSAL_MESSAGE =

@@ -24,9 +24,11 @@ import { isSettingsNavItemActive } from "./settings-nav-utils";
 interface SettingsNavProps {
 	accessTier: SettingsAccessTier;
 	billingEnabled: boolean;
+	/** The user manages a project below the manager tier (#928). */
+	managesProject?: boolean;
 }
 
-export function SettingsNav({ accessTier, billingEnabled }: SettingsNavProps) {
+export function SettingsNav({ accessTier, billingEnabled, managesProject }: SettingsNavProps) {
 	const pathname = usePathname();
 	const { t } = useTranslate();
 	const orgSettings = useOrganizationSettings();
@@ -36,6 +38,7 @@ export function SettingsNav({ accessTier, billingEnabled }: SettingsNavProps) {
 		accessTier,
 		billingEnabled,
 		featureFlags: isHydrated ? orgSettings : undefined,
+		managesProject,
 	});
 
 	// Memoize to prevent recreation on every render

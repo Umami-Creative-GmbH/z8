@@ -112,6 +112,7 @@ import type {
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 
 /** The calendar's break; the Clocking module checks billing like every other break. */
 export async function addBreakToActiveSession(
@@ -205,8 +206,17 @@ export async function getTimeClockStatus(): Promise<{
 	hasEmployee: boolean;
 	employeeId: string | null;
 	isClockedIn: boolean;
-	/** `currentTask`: the running work's task (#874), which the clock-out keeps unless changed. */
-	activeWorkPeriod: { id: string; startTime: Date; currentTask: BookedProjectTask | null } | null;
+	/**
+	 * `currentTask`: the running work's task (#874), which the clock-out keeps unless changed.
+	 * `breakStartedAt`/`breakStartedZone`: an open break in progress (#861), shown read-only.
+	 */
+	activeWorkPeriod: {
+		id: string;
+		startTime: Date;
+		currentTask: BookedProjectTask | null;
+		breakStartedAt: Date | null;
+		breakStartedZone: string | null;
+	} | null;
 }> {
 	const session = await getRequestSession();
 	if (!session?.user) {
@@ -260,7 +270,13 @@ export async function getTimeClockStatus(): Promise<{
 		employeeId: emp.id,
 		isClockedIn: !!period,
 		activeWorkPeriod: period
-			? { id: period.id, startTime: period.startTime, currentTask: period.task ?? null }
+			? {
+					id: period.id,
+					startTime: period.startTime,
+					currentTask: period.task ?? null,
+					breakStartedAt: period.breakStartedAt,
+					breakStartedZone: period.breakStartedZone,
+				}
 			: null,
 	};
 }
@@ -968,7 +984,7 @@ export async function updateWorkPeriodProject(
 			data: { workPeriodId, projectId },
 		};
 	} catch (error) {
-		const failure = describeAmendmentFailure(error);
+		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 		if (failure) {
 			return { success: false, error: failure.message, code: failure.code };
 		}
@@ -1055,7 +1071,7 @@ export async function updateWorkPeriodBillability(
 
 		return { success: true, data: { workPeriodId, isBillable: billable } };
 	} catch (error) {
-		const failure = describeAmendmentFailure(error);
+		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 		if (failure) {
 			return { success: false, error: failure.message, code: failure.code };
 		}

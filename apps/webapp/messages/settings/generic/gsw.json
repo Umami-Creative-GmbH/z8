@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Zuegwisene Standort hinzuegfüegt",
+      "employeeDescription": "D Standört, wo de Mitarbeiter schafft. Kiosks akzeptiered nur Mitarbeiter, wo ihrem Standort zuegwise sind.",
+      "employeeEmpty": "Kei zuegwiseni Standört",
+      "employeeLabel": "Mitarbeiter",
+      "employeePlaceholder": "Wähl en Mitarbeiter us",
+      "employeeTitle": "Zuegwiseni Standört",
+      "errors": {
+        "adminOnly": "Nur Organisations-Inhaber und Admins chönd zuegwiseni Standört verwalte.",
+        "employeeNotFound": "Mitarbeiter nöd gfunde.",
+        "failed": "Zuegwiseni Standört händ nöd chönne aktualisiert werde. Probier's nomal.",
+        "invalidSelection": "Wähl us de Liste us.",
+        "locationNotFound": "Standort nöd gfunde."
+      },
+      "locationDescription": "D Mitarbeiter, wo a dem Standort schaffed. D Kiosks akzeptiered nur sie.",
+      "locationEmpty": "Kei zuegwiseni Mitarbeiter",
+      "locationLabel": "Standort",
+      "locationPlaceholder": "Wähl en Standort us",
+      "locationTitle": "Zuegwiseni Mitarbeiter",
+      "noEmployeesLeft": "Alli aktive Mitarbeiter sind dem Standort zuegwise.",
+      "noLocationsLeft": "Es git kei wiiteri aktivi Standört zum Zueordne.",
+      "removed": "Zuegwisene Standort entfernt"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Auftraggeber (Controller)",
@@ -407,6 +430,75 @@
       "description": "Verwalten Sie Ihr Abonnement, Zahlungsmethoden und Rechnungen",
       "title": "Abrechnung & Abonnement"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Tage nach Monatsende",
+        "daysHelp": "Falls etwas den Abschluss blockiert, werden alle Personen mit Abschlussberechtigung benachrichtigt und es wird am nächsten Tag erneut versucht.",
+        "daysInvalid": "Geben Sie eine ganze Anzahl Tage von 1 bis 60 ein",
+        "description": "Schliessen Sie den Vormonat für die gesamte Organisation eine bestimmte Anzahl Tage nach dessen Ende ab. Ein Monat, der wieder geöffnet wurde, wird nie wieder automatisch abgeschlossen.",
+        "enabled": "Monate automatisch abschliessen",
+        "save": "Speichern",
+        "saved": "Automatischer Abschluss gespeichert",
+        "title": "Automatischer Abschluss"
+      },
+      "blockedTitle": "Der Monat kann noch nicht abgeschlossen werden. Beheben Sie zuerst Folgendes:",
+      "blocker": {
+        "absenceRequest": "unentschiedene Absenzenanfrage {startDate} – {endDate}",
+        "liveWork": "immer noch eingestempelt seit {start}",
+        "notEnded": "der Monat ist in deren Zeitzone noch nicht beendet",
+        "periodSubmission": "Unentschiedeni Periode-Iireichig {startDate} – {endDate}",
+        "timeRequest": "unentschiedene Anfrage zu Arbeitszeiten ab {start}"
+      },
+      "close": "Schliessen",
+      "closeDescription": "Niemand kann in einem abgeschlossenen Monat Arbeitszeiten, Zuweisungen oder Absenzen ändern, bis er wieder geöffnet wird. Der Monat jedes Mitarbeitenden wird in dessen eigener Zeitzone fixiert.",
+      "closeSubmit": "Monat abschliessen",
+      "closeSuccess": "{count, plural, other {{month} für # Mitarbeiter abgschlosse} }",
+      "closeTitle": "{month} abschliesse",
+      "description": "Monet nach de Lohnabrechnig abschliesse, demit eri Arbet und Absänze nüme chönd gänderet werde",
+      "employeesLabel": "Mitarbeiter",
+      "employeesRequired": "Wähl mindischtens ein Mitarbeiter us",
+      "history": {
+        "automatic": "Automatisch",
+        "closed": "Abgschlosse",
+        "employees": "{count, plural, other {# Mitarbeiter} }",
+        "reopened": "Widereröffnet",
+        "unknownActor": "Unbekannt"
+      },
+      "historyEmpty": "Es isch no kein Monet abgschlosse worde.",
+      "historyTitle": "Verlauf",
+      "monthsDescription": "En Monet abzschliesse friert d Arbet, d Zueordnig und d Absänze für d Lohnabrechnig ii. Notize bliibed bearbeitbar.",
+      "monthsTitle": "Monet",
+      "nothingToClose": "Alli i däm Bereich sind für dä Monet scho abgschlosse.",
+      "nothingToReopen": "Niemert i dere Uswahl isch für dä Monet abgschlosse.",
+      "reasonLabel": "Grund",
+      "reasonPlaceholder": "Warum mues dä Monet gänderet wärde?…",
+      "reasonRequired": "Gib en Grund für d Widereröffnig ii",
+      "reopen": "Widereröffne",
+      "reopenDescription": "Widereröffneti Mitarbeiter bliibet offe, bis de Monet wider abgschlosse wird. Eri Vorgesetzte wärded informiert.",
+      "reopenScopeLabel": "Widereröffne für",
+      "reopenSubmit": "Monet widereröffne",
+      "reopenSuccess": "{count, plural, other {{month} für # Mitarbeiter widereröffnet} }",
+      "reopenTitle": "{month} widereröffne",
+      "scope": {
+        "all": "Alles",
+        "deletedTeam": "Glöschts Team",
+        "employees": "Uswählti Mitarbeiter",
+        "organization": "Organisation"
+      },
+      "scopeLabel": "Schlüsse für",
+      "teamNotFound": "Das Team git's nüme.",
+      "title": "Gschlosseni Mönet",
+      "warning": {
+        "periodNotSubmitted": "Periode {startDate} – {endDate} nöd iigreicht",
+        "periodRejected": "Periode {startDate} – {endDate} abglehnt",
+        "periodRunning": "Periode {startDate} – {endDate} lauft no, chan nonig iigreicht werde",
+        "periodSentBack": "Periode {startDate} – {endDate} nachere Änderig zrugggschickt"
+      },
+      "warnings": {
+        "more": "und {count} meh",
+        "title": "Nöd jedi Periode-Iireichig für de Monet isch gnähmigt. Das stoppt de Abschluss nöd:"
+      }
+    },
     "compliance": {
       "description": "Überprüfen und verwalten Sie Compliance-Ausnahmeanträge von Teammitgliedern",
       "title": "ArbZG-Compliance"
@@ -468,14 +560,208 @@
       "updated": "Chunde aktualisiert",
       "updateFailed": "Chunde-Aktualisierig isch fählgschlage"
     },
+    "customFields": {
+      "accessSummary": "Sichtbar für: {visibility} · Bearbeitet vo: {edit}",
+      "activeCount": "{count} vo {max} aktive Fälder",
+      "activeList": "Aktivi benutzerdefinierti Fälder",
+      "add": "Benutzerdefinierts Feld hinzuefüege",
+      "archivedList": "Archivierti benutzerdefinierti Fälder",
+      "archivedTitle": "Archiviert",
+      "archiveField": "{name} archiviere",
+      "capReached": "Jede Datensatztyp cha maximal 25 aktivi benutzerdefinierti Fälder ha. Archiviere eis, zum es neus hinzuefüege.",
+      "description": "Eigeti Fälder für Mitarbeiter, Projekt und Chunde",
+      "editField": "{name} bearbeite",
+      "empty": "No keini benutzerdefinierte Fälder.",
+      "entity": {
+        "customer": "Chunde",
+        "employee": "Mitarbeiter",
+        "project": "Projekt"
+      },
+      "form": {
+        "boundsHelp": "Lah e Gränze leer für kei Limite.",
+        "create": "Fäld erstelle",
+        "createTitle": "Benutzerdefinierts Fäld hinzuefüege",
+        "description": "Es benutzerdefinierts Fäld für {entity}.",
+        "editLevel": "Wer Wärt bearbeite cha",
+        "editLevelHelp": "Mitarbeiter bearbeited nie Wärt vo benutzerdefinierte Fälder.",
+        "editTitle": "Benutzerdefinierts Fäld bearbeite",
+        "integerOnly": "Nur ganzi Zahle",
+        "max": "Maximum",
+        "min": "Minimum",
+        "name": "Name",
+        "nameRequired": "En Name iigee",
+        "options": "Optione",
+        "optionsHelp": "Ei Option pro Ziile.",
+        "required": "Obligatorisch",
+        "requiredHelp": "Formulär weigered sich, en Datensatz ohni Wert z speichere.",
+        "save": "Änderige speichere",
+        "tracked": "Verlauf bhalte",
+        "trackedFixed": "Öb es Feld en Verlauf bhaltet, chan nümme gänderet werde, nachdäm s erstellt worde isch.",
+        "trackedHelp": "Jede Wert trait s Datum, ab däm er gültig isch.",
+        "type": "Typ",
+        "typeFixed": "De Typ chan nümme gänderet werde, nachdäm s Feld erstellt worde isch.",
+        "visibility": "Wer d Wert gseh chan"
+      },
+      "level": {
+        "admin": "Admins",
+        "employee": "Alli, inklusiv em Mitarbeiter",
+        "manager": "Manager und Admins"
+      },
+      "options": {
+        "add": "Option hinzuefüege",
+        "archive": "{label} archiviere",
+        "archived": "Archiviert",
+        "label": "Optionsname",
+        "list": "Optione",
+        "moveDown": "{label} nach une verschiebe",
+        "moveUp": "{label} nach obe verschiebe",
+        "new": "Neui Option",
+        "restore": "{label} wiederherstelle",
+        "title": "Optione"
+      },
+      "refusal": {
+        "booleanRequired": "Es Ja/Nei-Feld chan kes Pflichtfeld sii.",
+        "duplicateOption": "Das Feld het scho en aktivi Option mit däm Name.",
+        "editBroaderThanVisibility": "Alli, wo Wert bearbeite chönd, müend si au chönne gseh.",
+        "employeesNeverEdit": "Mitarbeiter chönd d Wert vo benutzerdefinierte Felder nöd bearbeite.",
+        "fieldArchived": "Stell das benutzerdefinierte Fäld wider her, bevor du's änderisch.",
+        "invalidChange": "Die Änderig cha nöd gsppeicheret werde. Lad d Siite neu und probier's namal.",
+        "invalidLevel": "Wähl us, wer d Wärt gseh und bearbeite dörf.",
+        "invalidName": "Gib en Name mit maximal 100 Zeiche ii.",
+        "invalidOptionLabel": "Gib e Option mit maximal 100 Zeiche ii.",
+        "lastActiveOption": "Es Uswahlfäld bruucht mindestens eini aktivi Option.",
+        "nameTaken": "Es aktivs benutzerdefinierts Fäld bi däm Datensatztyp het scho dä Name.",
+        "notFound": "Das benutzerdefinierte Fäld git's nümme. Lad d Siite neu.",
+        "notSelect": "Nur Uswahlfälder hend Optione.",
+        "numberBounds": "Gib es Minimum und es Maximum als Zahle ii, wobi s Minimum nöd über em Maximum ligge dörf.",
+        "optionArchived": "Stell zersch die Option wider her.",
+        "selectNeedsOption": "Füeg eme Uswahlfäld mindestens eini Option dezue.",
+        "staleOrder": "D Lischte het sich ir Zwüschezyt gänderet. Lad d Siite neu und probier's namal.",
+        "tooManyFields": "Dä Datensatztyp het scho 25 aktivi benutzerdefinierti Fälder. Archivier zersch eis.",
+        "trackedFixed": "Öb es benutzerdefinierts Fäld en Verlauf bhaltet, cha nach em Erstelle nümme gänderet werde.",
+        "typeFixed": "De Typ vomene benutzerdefinierte Fäld cha nach em Erstelle nümme gänderet werde.",
+        "usedAsPayrollIdentifier": "Das Fäld isch d Personal-Identifikation vo de Lohnexport-Konfiguration {configurations}. Wähl döt zersch en anderi Kennig us."
+      },
+      "reorderField": "{name} neu aordne",
+      "required": "Erforderlich",
+      "restore": "Widerherstelle",
+      "restoreField": "{name} widerherstelle",
+      "saveFailed": "D Änderig het nöd chönne gsppeicheret werde.",
+      "title": "Benutzerdefinierti Fälder",
+      "tracked": "Verfolgt",
+      "type": {
+        "boolean": "Ja/Nei",
+        "date": "Datum",
+        "number": "Zahl",
+        "select": "Uswahl",
+        "text": "Text"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Es git bereits en Wert ab däm Datum.",
+        "fieldArchived": "Das Fäld isch archiviert.",
+        "forField": "Benutzerdefinierts Fäld \"{field}\": {message}",
+        "invalidDate": "Gib es gültigs Datum ii.",
+        "invalidNumber": "Gib e Zahl ii.",
+        "invalidValidFrom": "Gib es gültigs Startdatum ii.",
+        "invalidValue": "Gib en gültige Wert ii.",
+        "missingRequired": "Das Fäld isch erforderlich.",
+        "missingValue": "Gib für jedes Datum en Wert ii.",
+        "notEditable": "Du chasch das Fäld nöd ändere.",
+        "numberNotInteger": "Gib e ganzi Zahl ii.",
+        "numberOutOfRange": "Gib e Zahl im erlaubte Beriich ii.",
+        "optionArchived": "Die Option isch archiviert. Wähl en anderi us.",
+        "textTooLong": "Gib maximal 255 Zeiche ii.",
+        "trackedField": "Das Fäld hät en Verlauf. Füeg stattdesse en datierti Änderig dezue.",
+        "unknownField": "Das Fäld git's nüme. Lad d Siite neu und probier's nomol.",
+        "unknownHistoryEntry": "De Verlauf hät sich i de Zwüscheziit gänderet. Lad d Siite neu und probier's nomol."
+      },
+      "values": {
+        "archivedOption": "{label} (archiviert)",
+        "history": {
+          "add": "Änderig hinzufüege",
+          "apply": "Aawände",
+          "correct": "Wert korrigiere, wo ab {date} gültig isch",
+          "delete": "Wert gültig ab {date} lösche",
+          "duplicateValidFrom": "Es git scho en Wert, wo ab däm Datum gültig isch.",
+          "empty": "No keini Wert.",
+          "from": "Ab {date}",
+          "label": "Verlauf vo {name}",
+          "needsValidFrom": "Wähl s Datum us, ab däm de Wert gültig isch.",
+          "needsValue": "Gib en Wert ii.",
+          "today": "Hüt",
+          "validFrom": "Gültig ab",
+          "value": "Wert"
+        },
+        "missingRequired": "Erforderlichi Wert fähled",
+        "no": "Nei",
+        "notSet": "Nöd gsetzt",
+        "ownDescription": "Wird vo dinere Organisation verwaltet. Frag en Admin oder din Manager, zum si z ändere.",
+        "title": "Benutzerdefinierti Fälder",
+        "yes": "Ja"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Absänz-Iiträg und -Kategorie",
+          "label": "Absänze"
+        },
+        "audit_logs": {
+          "description": "Aktivitätsprotokoll",
+          "label": "Audit-Logs"
+        },
+        "balance_adjustments": {
+          "description": "Eröffnungssaldi und Überstundenauszahlungen, einschliesslich stornierter",
+          "label": "Korrekturen des Arbeitszeitsaldos"
+        },
+        "customers": {
+          "description": "Chunde mit ihrne benutzerdefinierte Chundefälder",
+          "label": "Chunde"
+        },
+        "employees": {
+          "description": "Mitarbeiterprofil, Vorgesetzte-Beziehige und benutzerdefinierti Mitarbeiterfälder",
+          "label": "Mitarbeiter"
+        },
+        "holidays": {
+          "description": "Fiiertigskaländer und Vorlage",
+          "label": "Fiirtig"
+        },
+        "projects": {
+          "description": "Projekt mit ihrne Chunde- und Projekt-Benutzerfälder",
+          "label": "Projekt"
+        },
+        "schedules": {
+          "description": "Arbetsplan-Vorlage und -Zuewiisige",
+          "label": "Arbetsplän"
+        },
+        "shifts": {
+          "description": "Schichtplanigsdate",
+          "label": "Schichte"
+        },
+        "teams": {
+          "description": "Teamstruktur und -berächtigunge",
+          "label": "Teams"
+        },
+        "time_entries": {
+          "description": "Stämpfeluhr-Iiträg und -Korrekture",
+          "label": "Ziterfassig"
+        },
+        "vacation": {
+          "description": "Feriereglige und -guethabe",
+          "label": "Feriereglige"
+        },
+        "work_periods": {
+          "description": "Aggregierti Arbetsiisezt",
+          "label": "Arbetsperiode"
+        }
+      },
       "description": "Exportier d Date vo dinere Organisation",
       "form": {
         "aboutAsync": "Export wärded asynchron verarbeitet",
+        "aboutDownloadFromHistory": "Fertigi Export us em Export-Verlauf abelade",
         "aboutEmail": "Du bechunsch es E-Mail, sobald es fertig isch",
-        "aboutLinkValidity": "Download-Links sind 24 Stunde lang gültig",
+        "aboutFileRetention": "Export-Dateie werdet nach 30 Täg glöscht",
         "aboutOrgDataOnly": "Es sind nur d Date vo dinere Organisation enthalte",
-        "aboutStorageDuration": "Export-Dateie wärded für 7 Täg gspeicheret",
         "aboutTitle": "Über de Date-Export",
         "description": "Wähl d Datekategorie us, wo du exportiere wotsch",
         "selectAll": "Alli uswähle",
@@ -508,6 +794,9 @@
         "statusFailed": "Fählgschlage",
         "statusPending": "Usstehend",
         "statusProcessing": "Wird verarbeitet",
+        "switchOrganizationAction": "Zu {organization} wechsle",
+        "switchOrganizationBody": "Dä Export ghört zu {organization}. Wechsle zu dere Organisation, zum de Exportverlauf z öffne; din Zuegriff wird nach em Wechsle namal überprüft.",
+        "switchOrganizationTitle": "Organisation wechsle, zum dä Export z gseh",
         "title": "Export-Verlauf",
         "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
       },
@@ -991,10 +1280,7 @@
           "nameTaken": "{name} hät de gliich Name und isch scho mit emene andere Kontakt verchnüpft",
           "noMatch": "Kein Träffer",
           "paging": {
-            "label": "Kontakt-Siite",
-            "next": "Nöchschti Siite",
-            "position": "Siite {page} vo {pageCount}",
-            "previous": "Vorherigi Siite"
+            "label": "Kontakt-Siite"
           },
           "suggestion": {
             "customerNumber": "{name} hät e Kontaktverchnüpfig mit de gliiche Chundenummere",
@@ -1008,6 +1294,7 @@
           "attributionNotAllowed": "S Projekt isch nöd verfüegbar, oder verrechebari Arbet bruucht es Projekt, wo en Chund hät.",
           "invalidInterval": "Bi de Aagabe vom Abieter fählt en explizite Zitversatz, si sind nöd i de Reihefolg oder liged i de Zuekunft.",
           "label": "Zur Überprüefig zruggbhalte",
+          "monthClosed": "Die Ziit isch imene gschlossene Monet. Si chan importiert werde, sobald de Monet wider ufgmacht wird.",
           "occupancyConflict": "D Zit überschnidet sich mit bereits erfasster Arbet für dä Mitarbeiter.",
           "operationCollision": "Die Ziile staht im Konflikt mit irem früener übertreite Import.",
           "providerDurationMismatch": "D Duur vom Abieter wiicht vo de Start- und Endzite ab.",
@@ -1015,14 +1302,22 @@
           "unlocatedBreak": "De Abieter mäldet Pause ohni Zite, drum isch s gschaffte Intervall unbekannt."
         },
         "issueGroups": {
-          "currentMarkers": "Die aktuellen Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Überprüfungsbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übernommen werden.",
+          "importMarkers": "D'Zile vom Import enthalted {blockingRows} blockierendi und {warningRows} warnendi Problem-Markierige.",
           "title": "Problemgruppen"
+        },
+        "paging": {
+          "next": "Nöchsti Siite",
+          "position": "Siite {page} vo {pageCount}",
+          "previous": "Vorherigi Siite"
         },
         "rows": {
           "billable": "Verrechebar",
           "empty": "Für diesen Import-Stapel sind keine Zeilen vorhanden.",
           "entity": "Entität",
+          "paging": {
+            "label": "Zile-Siite"
+          },
           "rowId": "Zeilen-ID",
           "sourceId": "Quell-ID",
           "status": "Status",
@@ -1041,6 +1336,98 @@
         "title": "Import-Überprüfung"
       },
       "title": "Daten importieren"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Es anders Konto bruucht die Adrässe scho.",
+        "emailNotAllowed": "D Aamälderichtlinie vo dinere Organisation erlaubt die Adrässe nöd.",
+        "employeeNotFound": "Dä Mitarbeiter isch nöd gfunde worde.",
+        "failed": "Öppis isch schiefgloffe. Bitte probier's nomal.",
+        "invalidEmail": "Gib e gültigi E-Mail-Adrässe ii.",
+        "invalidName": "Gib en Vorname mit bis zu 100 Zeiche ii.",
+        "invalidPin": "En Kiosk-PIN hät 4 bis 6 Ziffere.",
+        "locationNotFound": "Dä Standort isch nöd gfunde worde.",
+        "noPin": "Dä Mitarbeiter hät no kein Kiosk-PIN.",
+        "notAllowed": "Du dörfsch das nöd mache.",
+        "notKioskOnly": "Dä Mitarbeiter hät scho e E-Mail-Adrässe.",
+        "pinExists": "Dä Mitarbeiter hät scho en Kiosk-PIN. Setz en stattdesse zrugg.",
+        "reservedEmail": "Die Adrässe cha nöd verwändet wärde.",
+        "signInRequired": "Meld di aa, zum wiitermache.",
+        "teamNotFound": "Das Team isch nöd gfunde worde."
+      }
+    },
+    "kiosks": {
+      "add": "Kiosk hinzuefüege",
+      "boardOn": "«Wer isch da»-Board aa",
+      "columns": {
+        "actions": "Aktione",
+        "lastSeen": "Zletscht gseh",
+        "location": "Standort",
+        "name": "Name",
+        "status": "Status"
+      },
+      "create": "Kiosk erstelle",
+      "created": "Kiosk erstellt",
+      "createDescription": "Du bechunnsch en Koppligscode, zum en uf em Kiosk-Grät yzgäh.",
+      "createFailed": "De Kiosk hät nöd chönne erstellt wärde",
+      "createTitle": "Kiosk hinzuefüege",
+      "description": "Gmeinsam gnutzti Grät amene Standort, wo sich Mitarbeiter mit ihrem Kiosk-PIN ystämple",
+      "edit": "Bearbeite",
+      "editDescription": "Änderige gälted ab de nächste Aafraag vom Kiosk.",
+      "editTitle": "Kiosk bearbeite",
+      "empty": "No kei Kiosks vorhande.",
+      "errors": {
+        "adminOnly": "Nur Organisationseigetümer und -Admins chönd Kiosks verwalte.",
+        "invalidName": "Gib en Name mit bis zu 100 Zeiche ii.",
+        "invalidSelection": "Überprüef dini Iigab und probier's nomol.",
+        "invalidTimezone": "Wähl e Ziitzone uus.",
+        "kioskNotFound": "Dä Kiosk isch nöd gfunde worde.",
+        "kioskRevoked": "Dä Kiosk isch widerruefe worde.",
+        "locationNotFound": "Wähl en aktive Standort vo dere Organisation uus."
+      },
+      "fields": {
+        "board": "«Wer isch da»-Board",
+        "boardDescription": "Zeigt uf em Kiosk mit Vorname und em erste Buechstabe vom Nachname aa, wer da isch oder Pause macht.",
+        "location": "Standort",
+        "locationDescription": "Dä Kiosk akzeptiert nume Mitarbeiter, wo däm Standort zuegordnet sind.",
+        "locationPlaceholder": "En Standort uswähle",
+        "name": "Name",
+        "namePlaceholder": "z. B. Personaliigang",
+        "timezone": "Ziitzone",
+        "timezoneDescription": "Stämpeleiträg, wo a däm Kiosk erfasst werded, bruched die Ziitzone."
+      },
+      "issueCodeConfirm": "Neue Code erstelle",
+      "listDescription": "Jede Kiosk ghört zu eim Standort. Kopple es Grät, indem d'Kiosk-Siite druf uftuesch und de Koppligscode iigibsch.",
+      "listTitle": "Kiosks",
+      "loadFailed": "Kiosks händ nöd chönne glade werde.",
+      "neverSeen": "Nie",
+      "noLocations": "Erstell zerst en Standort: Jede Kiosk ghört zu eim Standort.",
+      "pairAgain": "Nomol kopple",
+      "pairFailed": "Es hät kei neue Koppligscode chönne erstellt werde",
+      "pairingCodeLabel": "Koppligscode",
+      "pairingDescription": "Scan uf em Kiosk-Grät de QR-Code oder mach d Kiosk-Site uf und gib de Code ii. De Code funktioniert eimol und lauft nach 10 Minute ab.",
+      "pairingDone": "Fertig",
+      "pairingTitle": "{name} kopple",
+      "pairPairedDescription": "De Gräte-Token wird gwächslet: Das kopplete Grät funktioniert sofort nüme und muess mit em neue Code nomol kopplet werde.",
+      "pairTitle": "{name} nomol kopple?",
+      "pairUnpairedDescription": "En neue Koppligscode ersetzt de bisherig.",
+      "revoke": "Widerruefe",
+      "revokeConfirm": "Kiosk widerruefe",
+      "revoked": "Kiosk widerruefe",
+      "revokeDescription": "De Kiosk funktioniert bi de nächste Afrag nümme und cha nöd nomol kopplet werde. Erstell en neue Kiosk, zum en z ersetze.",
+      "revokeFailed": "De Kiosk hät nöd chönne widerruefe werde",
+      "revokeTitle": "{name} widerruefe?",
+      "rotateConfirm": "Token rotiere und nomol kopple",
+      "save": "Speichere",
+      "saved": "Kiosk gspeicheret",
+      "saveFailed": "De Kiosk hät nöd chönne gspeicheret werde",
+      "status": {
+        "awaitingPairing": "Wartet uf Kopplig",
+        "codeExpired": "Nöd kopplet, Code abgloffe",
+        "paired": "Kopplet",
+        "revoked": "Widerruefe"
+      },
+      "title": "Kiosks"
     },
     "licenses": {
       "footer": "Diese Anwendung verwendet Open-Source-Software. Vielen Dank an alle Betreuer und Mitwirkenden dieser Pakete.",
@@ -1401,6 +1788,7 @@
       "create": "Projekt erstelle",
       "created": "Projekt erstellt",
       "createFailed": "Projekt-Erstellig isch fählgschlage",
+      "customerDeleted": "{name} (glöscht)",
       "description": "Projekte, Budget, Friste und Ziiterfassige verwalte",
       "dialog": {
         "create": "Projekt erstelle",
@@ -1425,6 +1813,7 @@
         "color": "Farb",
         "colorOption": "Farbe {color} auswählen",
         "customer": "Chunde",
+        "customerDeleted": "{name} isch glöscht worde. Wähl en andere Chund us oder bhalt s Projekt ohni Chund.",
         "customerPlaceholder": "Chunde uswähle",
         "deadline": "Frist",
         "description": "Beschriibig",
@@ -1650,8 +2039,23 @@
       "updated": "Projekt aktualisiert",
       "updateFailed": "Projekt-Aktualisierig isch fählgschlage"
     },
+    "reportShareLinks": {
+      "description": "Alli Links aaluege und widerruefe, wo es Projekt- oder en Chundebricht teiled",
+      "pageDescription": "Links, wo öpperem usserhalb vo Z8 en iigfrorene Snapshot vome Projekt- oder Chundebricht zeiged. Wänn en Link widerruefe wird, funktioniert er sofort nümme und sin Snapshot wird glöscht.",
+      "title": "Bricht-Freigaabelinks"
+    },
     "security": {
       "description": "Passwort, Zwei-Faktor-Authentifizierig, Passkeys und aktivi Sitzige verwalte",
+      "kioskPin": {
+        "descriptionChange": "Du häsch en Kiosk-PIN. Wähl en neue mit 4 bis 6 Ziffere, zum en z ersetze.",
+        "descriptionSet": "Wähl en PIN mit 4 bis 6 Ziffere, zum bi de Kiosks vo dinere Organisation z stemple.",
+        "mismatch": "D PINs stimmed nöd überii.",
+        "newPin": "Neue PIN",
+        "repeatPin": "PIN widerhole",
+        "save": "PIN speichere",
+        "saved": "Kiosk-PIN gspeicheret",
+        "title": "Kiosk-PIN"
+      },
       "title": "Sicherheits-Iistellige",
       "twoFactor": {
         "backupCodesCopied": "Backup-Codes i d Zwüscheablag kopiert",
@@ -2052,6 +2456,7 @@
         "replaceDescription": "Eine aktive Version beginnt bereits am {date}. Beim Speichern wird sie ersetzt; die ersetzte Version bleibt im Verlauf erhalten.",
         "replaceTitle": "Die an diesem Tag beginnende Version ersetzen",
         "rules": "Der Anspruch richtet sich nach {reference} ({version}), überprüft für Reisetage von {from} bis {through}. Auslandsreisen werden nur mit übernommenen Auslandssätzen pro Tag berechnet; andere Tage und spezielle Reiserouten werden für eine manuelle Berechnung markiert.",
+        "rulesOpenEnded": "D Berächtigung richtet sich nach {reference} ({version}), prüeft für Reisetäg ab {from} bis zur Gsetzesänderig. Uslandsreise wärdid nume pro Tag mit übernohnige Uslandssätz berächnet; anderi Täg und spezielli Reiseplän wärdid für e manuelli Berächnig markiert.",
         "saved": "Tagespauschalen-Version aktiviert",
         "saveFailed": "Die Tagespauschalen konnten nicht gespeichert werden.",
         "source": "Quelle",

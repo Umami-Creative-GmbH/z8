@@ -1,0 +1,105 @@
+{
+  "approval": {
+    "absenceRequest": "Kërkesë për mungesë",
+    "actions": {
+      "approve": "Mirato",
+      "approving": "Duke miratuar...",
+      "reject": "Refuzo",
+      "rejecting": "Duke refuzuar...",
+      "viewInZ8": "Shiko në Z8"
+    },
+    "durationDays": "{count, plural, other {# ditë} }",
+    "facts": {
+      "approvedBy": "Miratuar nga",
+      "corrected": "Korrigjuar",
+      "dates": "Datat",
+      "duration": "Kohëzgjatja",
+      "email": "Email",
+      "from": "Nga",
+      "original": "Origjinal",
+      "reason": "Arsyeja",
+      "rejectedBy": "Refuzuar nga",
+      "resolved": "Zgjidhur",
+      "status": "Statusi",
+      "submitted": "Dorëzuar",
+      "type": "Lloji"
+    },
+    "status": {
+      "approved": "MIRATUAR",
+      "rejected": "REFUZUAR"
+    },
+    "timeCorrectionRequest": "Kërkesë për korrigjim të orarit"
+  },
+  "commands": {
+    "compliance": {
+      "critical": "Kritike",
+      "exceptionSummary": "{type} - {reason}",
+      "exceptionUsedDetails": "{details} (u përdor përjashtim)",
+      "lastDays": "{days} ditët e fundit",
+      "legend": "\uD83D\uDD34 Shkelje  \uD83D\uDFE0 Kritike  \uD83D\uDFE1 Paralajmërim  \uD83D\uDCDD Kërkesë në pritje",
+      "moreRequestsMarkdown": "_+{count} kërkesa të tjera_",
+      "moreViolationsMarkdown": "_+{count} shkelje të tjera_",
+      "pending": "Në pritje",
+      "pendingExceptions": "Kërkesa për përjashtim në pritje",
+      "recentViolations": "Shkeljet e fundit",
+      "reviewExceptions": "Rishiko përjashtimet",
+      "textCriticalAlerts": "**Sinjalizime kritike:** {count}",
+      "textMore": "  +{count} të tjera",
+      "textPendingExceptions": "**Përjashtime në pritje:** {count}",
+      "textPendingRequestItem": "\uD83D\uDCDD {employeeName} - {type}",
+      "textPendingRequests": "**Kërkesa në pritje:**",
+      "textRecentViolations": "**Shkeljet e fundit:**",
+      "textTitle": "**⚠️ Përmbledhja e përputhshmërisë - {days} ditët e fundit**",
+      "textViolationItem": "{icon} {employeeName} - {details}",
+      "textViolations": "**Shkelje:** {count}",
+      "titleWithIcon": "⚠️ Përmbledhja e përputhshmërisë",
+      "viewDashboard": "Shiko panelin e përputhshmërisë",
+      "violations": "Shkeljet"
+    },
+    "coverage": {
+      "clockedIn": "Në punë",
+      "moreLocationsMarkdown": "_+{count} lokacione të tjera..._",
+      "scheduled": "Planifikuar",
+      "titleWithIcon": "\uD83D\uDCCA Raporti i mbulimit",
+      "variance": "Diferenca",
+      "viewFullSchedule": "Shiko orarin e plotë"
+    }
+  },
+  "common": {
+    "more": "+{count} të tjera",
+    "moreBullet": "• +{count} të tjera"
+  },
+  "digest": {
+    "currentlyClockedIn": "Aktualisht në punë",
+    "deputy": "Zëvendësues: {name}",
+    "everyoneAvailable": "Të gjithë janë të disponueshëm sot",
+    "noOneClockedIn": "Askush nuk është regjistruar në punë ende",
+    "noPendingApprovals": "Nuk ka miratime në pritje",
+    "openDashboard": "Hap panelin e Z8",
+    "openShifts": "Turne të hapura",
+    "pendingApprovals": "Miratimet në pritje",
+    "pendingExceptionRequests": "{count, plural, one {# kërkesë përjashtimi në pritje të shqyrtimit} other {# kërkesa përjashtimi në pritje të shqyrtimit}}",
+    "returns": "Kthehet më {date}",
+    "since": "Që nga {time}",
+    "textClockedInEmployee": "• {name} - që nga {clockedInAt} ({duration})",
+    "textCompliance": "**⚠️ Përputhshmëria:**",
+    "textCoverageGaps": "**\uD83D\uDD34 Mangësitë në mbulim:**",
+    "textCurrentlyClockedIn": "**Aktualisht në punë:**",
+    "textEmployeeOut": "• {name} - {category} (kthehet më {returnDate})",
+    "textOpenShifts": "**\uD83D\uDCCB Turne të hapura:**",
+    "textPendingApprovalsCount": "**Miratime në pritje:** {count}",
+    "textPendingApprovalsNone": "**Miratime në pritje:** Asnjë",
+    "textTitle": "**Përmbledhja ditore - {date}**",
+    "textWhosOut": "**Kush mungon:**",
+    "title": "Përmbledhja ditore",
+    "todayTomorrow": "Sot: {today} | Nesër: {tomorrow}",
+    "viewApprovals": "Shiko miratimet",
+    "whosOutToday": "Kush mungon sot"
+  },
+  "exceptionTypes": {
+    "overtime_daily": "Orë shtesë ditore",
+    "overtime_monthly": "Orë shtesë mujore",
+    "overtime_weekly": "Orë shtesë javore",
+    "rest_period": "Periudhë pushimi"
+  }
+}

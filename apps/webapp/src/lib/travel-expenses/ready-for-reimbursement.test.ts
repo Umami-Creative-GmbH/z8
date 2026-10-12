@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ALL_OFFICER_SCOPE, coveringOfficers, type ReimbursingOfficer } from "./officer-scope";
 import {
 	buildReadyForReimbursementNotification,
+	leftOutOfPayrollRun,
 	readyForReimbursement,
 } from "./ready-for-reimbursement";
 import { computeSettlement, type EntitlementComponent } from "./settlement";
@@ -266,5 +267,53 @@ describe("buildReadyForReimbursementNotification (#756)", () => {
 			messageKey:
 				"common:notifications.content.travelExpenseAdjustmentReadyForReimbursement.message",
 		});
+	});
+});
+
+describe("leftOutOfPayrollRun (#855)", () => {
+	const run = {
+		jobId: "job-1",
+		formatId: "datev_lohn",
+		formatName: "DATEV Lohn & Gehalt",
+		periodStart: "2026-10-01",
+		periodEnd: "2026-10-31",
+		includedAt: "2026-10-31T08:00:00Z",
+		partlyConfirmed: false,
+	};
+
+	it("is due for an approved report no run carries, keyed like its approval", () => {
+		const approved = account({ payrollRun: null });
+		const due = leftOutOfPayrollRun(approved, "revision-1");
+		expect(due).toEqual({
+			kind: "left_out",
+			account: approved,
+			revisionId: "revision-1",
+			awaiting: [{ currency: "EUR", amount: "89.90" }],
+		});
+		if (!due) throw new Error("not due");
+		const notification = buildReadyForReimbursementNotification(due, { userId: "user-all" });
+		expect(notification).toMatchObject({
+			type: "travel_expense_ready_for_reimbursement",
+			title: "Ready for reimbursement",
+			message:
+				"Erin Employee's expense report Customer workshop isn't reimbursed through a payroll run. Awaiting reimbursement: 89.90 EUR.",
+			idempotencyKey: "travel-expense-ready-for-reimbursement:revision-1:user-all",
+		});
+		expect(notification.metadata?.i18n).toMatchObject({
+			messageKey: "common:notifications.content.travelExpenseLeftOutOfPayrollRun.message",
+		});
+	});
+
+	it("is not due while an unconfirmed run includes the report", () => {
+		expect(leftOutOfPayrollRun(account({ payrollRun: run }), "revision-1")).toBeNull();
+	});
+
+	it("is not due when nothing awaits reimbursement", () => {
+		expect(
+			leftOutOfPayrollRun(
+				account({ payrollRun: null, entries: [reimbursed("89.90")] }),
+				"revision-1",
+			),
+		).toBeNull();
 	});
 });

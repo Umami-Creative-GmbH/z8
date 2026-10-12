@@ -1,0 +1,245 @@
+{
+  "settings": {
+    "demo": {
+      "availableTypes": {
+        "absences": "Odsutnosti (godišnji odmor, bolovanje)",
+        "changePolicies": "Pravila o izmjenama",
+        "description": "Vrste demo podataka koje možete generirati",
+        "locations": "Lokacije i podpodručja",
+        "shifts": "Predlošci smjena i smjene",
+        "supported": "Trenutačno podržano:",
+        "teamsProjects": "Timovi i projekti",
+        "timeEntries": "Unosi radnog vremena i radna razdoblja",
+        "title": "Dostupne vrste podataka",
+        "workCategories": "Skupovi kategorija rada"
+      },
+      "dangerZone": {
+        "clearData": {
+          "absencesDeleted": "{count} izostanaka izbrisano",
+          "button": "Očisti sve podatke",
+          "changePoliciesDeleted": "{count} pravila o promjenama izbrisano",
+          "dialog": {
+            "confirm": "Očisti sve podatke",
+            "description": "Ova se radnja ne može poništiti. Svi unosi radnog vremena, izostanci, timovi, projekti i povezani podaci bit će trajno izbrisani.",
+            "title": "Očistiti sve podatke o radnom vremenu?"
+          },
+          "items": {
+            "absences": "Svi unosi izostanaka",
+            "changePolicies": "Sva pravila o promjenama",
+            "locations": "Sve lokacije i podpodručja",
+            "shifts": "Svi predlošci smjena i smjene",
+            "teamsProjects": "Svi timovi i projekti",
+            "timeEntries": "Svi unosi radnog vremena i radna razdoblja",
+            "vacationAllowances": "Sva prava na godišnji odmor",
+            "workCategories": "Sve kategorije rada"
+          },
+          "locationsDeleted": "{count} lokacija izbrisano",
+          "managerAssignmentsDeleted": "{count} dodjela voditelja izbrisano",
+          "projectsDeleted": "{count} projekata izbrisano",
+          "shiftRequestsDeleted": "{count} zahtjeva za smjenu izbrisano",
+          "shiftsDeleted": "{count} smjena izbrisano",
+          "shiftTemplatesDeleted": "{count} predložaka smjena izbrisano",
+          "subareasDeleted": "{count} podpodručja izbrisano",
+          "successTitle": "Podaci su uspješno očišćeni!",
+          "teamsDeleted": "{count} timova izbrisano",
+          "timeEntriesDeleted": "{count} unosa radnog vremena izbrisano",
+          "title": "Očisti podatke o radnom vremenu",
+          "vacationAllowancesReset": "{count} prava na godišnji odmor ponovno postavljeno",
+          "willDelete": "Ovo će trajno izbrisati:",
+          "workCategoriesDeleted": "{count} kategorija rada izbrisano",
+          "workCategorySetsDeleted": "{count} skupova kategorija rada izbrisano",
+          "workPeriodsDeleted": "{count} radnih razdoblja izbrisano"
+        },
+        "clearing": "Čišćenje...",
+        "deleteNonAdmin": {
+          "absencesDeleted": "{count} izostanaka izbrisano",
+          "adminPreserved": "Administratorski računi bit će sačuvani",
+          "button": "Izbriši zaposlenike koji nisu administratori",
+          "dialog": {
+            "confirm": "Izbriši zaposlenike koji nisu administratori",
+            "description": "Ova se radnja ne može poništiti. Svi zaposlenici koji nisu administratori i njihovi povezani podaci bit će trajno izbrisani.",
+            "title": "Izbrisati zaposlenike koji nisu administratori?"
+          },
+          "employeesDeleted": "{count} zaposlenika izbrisano",
+          "items": {
+            "demoUsers": "Svi demo korisnički računi",
+            "employees": "Svi zaposlenici koji nisu administratori",
+            "managerAssignments": "Sve dodjele voditelja",
+            "timeEntries": "Njihovi unosi radnog vremena i radna razdoblja"
+          },
+          "membersDeleted": "{count} članova izbrisano",
+          "successTitle": "Zaposlenici koji nisu administratori uspješno su izbrisani!",
+          "timeEntriesDeleted": "{count} unosa radnog vremena izbrisano",
+          "title": "Izbriši zaposlenike koji nisu administratori",
+          "usersDeleted": "{count} korisnika izbrisano",
+          "willDelete": "Ovo će trajno izbrisati:"
+        },
+        "deleting": "Brisanje...",
+        "description": "Destruktivne radnje koje se ne mogu poništiti",
+        "title": "Opasna zona",
+        "typeDelete": "Upišite OBRIŠI za potvrdu",
+        "typeDeletePlaceholder": "OBRIŠI"
+      },
+      "description": "Generirajte ogledne podatke za testiranje ili očistite postojeće podatke vezane uz radno vrijeme",
+      "errors": {
+        "generationFailed": "Generiranje nije uspjelo. Pokušajte ponovno.",
+        "noOrganization": "Nijedna organizacija nije odabrana"
+      },
+      "form": {
+        "approvalsTesting": {
+          "label": "Testiranje odobrenja",
+          "pendingAbsences": {
+            "description": "Stvorite zahtjeve za odsustvo koji čekaju odobrenje voditelja",
+            "title": "Odobrenja odsustva na čekanju"
+          },
+          "pendingTimeCorrections": {
+            "description": "Stvorite ispravke radnog vremena koji čekaju odobrenje voditelja",
+            "title": "Odobrenja ispravaka radnog vremena na čekanju"
+          }
+        },
+        "dataTypes": {
+          "absences": {
+            "description": "Godišnji odmor, bolovanje i ostale odsutnosti",
+            "title": "Odsutnosti"
+          },
+          "changePolicies": {
+            "description": "Pravila izmjene unosa radnog vremena",
+            "title": "Pravila izmjena"
+          },
+          "label": "Vrste podataka",
+          "locations": {
+            "countLabel": "Broj lokacija:",
+            "description": "Radne lokacije i podpodručja",
+            "title": "Lokacije"
+          },
+          "projects": {
+            "countLabel": "Broj projekata:",
+            "description": "Ogledni projekti za praćenje radnog vremena",
+            "title": "Projekti"
+          },
+          "shiftScheduling": {
+            "description": "Predlošci smjena i raspoređene smjene",
+            "requiresLocations": "Zahtijeva omogućene Lokacije",
+            "title": "Raspoređivanje smjena"
+          },
+          "teams": {
+            "countLabel": "Broj timova:",
+            "description": "Izradite timove i dodijelite zaposlenike",
+            "title": "Timovi"
+          },
+          "timeEntries": {
+            "description": "Zapisi prijave/odjave i radna razdoblja",
+            "title": "Unosi radnog vremena"
+          },
+          "workCategories": {
+            "assignLabel": "Također dodijeli radnim razdobljima",
+            "description": "Skupovi kategorija za radna razdoblja",
+            "title": "Kategorije rada"
+          }
+        },
+        "dateRange": {
+          "hint": "Vremenski raspon za generirane podatke",
+          "label": "Raspon datuma",
+          "last30": "Zadnjih 30 dana",
+          "last60": "Zadnjih 60 dana",
+          "last90": "Zadnjih 90 dana",
+          "thisYear": "Ova godina"
+        },
+        "employees": {
+          "all": "Svi zaposlenici ({count})",
+          "label": "Zaposlenici",
+          "selectSpecific": "Odaberite određene zaposlenike"
+        }
+      },
+      "generateData": {
+        "button": "Generirajte podatke",
+        "description": "Stvorite realistične ogledne podatke za svoju organizaciju",
+        "title": "Generirajte demo podatke"
+      },
+      "generateEmployees": {
+        "button": "Generirajte {count} zaposlenika",
+        "countHint": "Maksimalno 50 zaposlenika odjednom",
+        "countLabel": "Broj zaposlenika",
+        "description": "Stvorite demo račune zaposlenika za testiranje",
+        "employeesCreated": "Stvoreno zaposlenika: {count}",
+        "generating": "Generiranje...",
+        "includeManagers": "Uključi dodjele voditelja",
+        "managersCreated": "{count} dodjela voditelja",
+        "managersHint": "Nasumično dodijelite voditelje novim zaposlenicima",
+        "options": "Opcije",
+        "successTitle": "Zaposlenici su uspješno generirani!",
+        "title": "Generiraj zaposlenike",
+        "usersCreated": "Broj stvorenih korisnika: {count}"
+      },
+      "results": {
+        "success": "Demo podaci su uspješno generirani!"
+      },
+      "steps": {
+        "absences": {
+          "description": "Stvaranje unosa odsutnosti",
+          "label": "Odsutnosti"
+        },
+        "assignCategories": {
+          "description": "Dodjeljivanje radnih kategorija razdobljima",
+          "label": "Dodijeli kategorije"
+        },
+        "changePolicies": {
+          "description": "Stvaranje pravila promjena",
+          "label": "Pravila promjena"
+        },
+        "locations": {
+          "description": "Stvaranje lokacija i podpodručja",
+          "label": "Lokacije"
+        },
+        "managers": {
+          "description": "Dodjeljivanje voditelja zaposlenicima",
+          "label": "Dodjele voditelja"
+        },
+        "pendingAbsenceApprovals": {
+          "description": "Stvaranje zahtjeva za odobrenje odsustva na čekanju",
+          "label": "Odobrenja odsustva na čekanju"
+        },
+        "pendingTimeCorrectionApprovals": {
+          "description": "Stvaranje zahtjeva za odobrenje ispravaka radnog vremena na čekanju",
+          "label": "Odobrenja ispravaka radnog vremena na čekanju"
+        },
+        "projects": {
+          "description": "Stvaranje oglednih projekata",
+          "label": "Projekti"
+        },
+        "shifts": {
+          "description": "Stvaranje smjena i zahtjeva",
+          "label": "Smjene"
+        },
+        "shiftTemplates": {
+          "description": "Stvaranje predložaka smjena",
+          "label": "Predlošci smjena"
+        },
+        "teams": {
+          "description": "Stvaranje timova i dodjeljivanje zaposlenika",
+          "label": "Timovi"
+        },
+        "timeEntries": {
+          "description": "Stvaranje unosa radnog vremena i radnih razdoblja",
+          "label": "Unosi radnog vremena"
+        },
+        "workCategories": {
+          "description": "Stvaranje skupova radnih kategorija i kategorija",
+          "label": "Radne kategorije"
+        }
+      },
+      "title": "Demo podaci",
+      "wizard": {
+        "backToConfig": "Natrag na konfiguraciju",
+        "complete": "Dovršeno",
+        "configure": "Konfiguriraj",
+        "generate": "Generiraj",
+        "generateMore": "Generiraj više podataka"
+      }
+    },
+    "demoData": {
+      "description": "Generirajte ogledne podatke za testiranje ili očistite sve podatke o radnom vremenu",
+      "title": "Demo podaci"
+    }
+  }
+}

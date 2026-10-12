@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import type { AbsencePlanPreview, ApprovalSignal } from "@/lib/absences/absence-plan-preview";
 import { formatDays } from "@/lib/absences/date-utils";
 import { cn } from "@/lib/utils";
+import { formatSignedWorkBalance } from "@/lib/work-balance/format";
 
 interface AbsencePlanPreviewPanelProps {
 	preview?: AbsencePlanPreview;
@@ -55,9 +56,7 @@ export function AbsencePlanPreviewPanel({
 
 	if (error) {
 		return (
-			<output
-				className="rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-sm"
-			>
+			<output className="rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-sm">
 				{t(
 					"absences.planPreview.unavailable",
 					"Planning preview unavailable. You can still submit your request.",
@@ -111,7 +110,7 @@ export function AbsencePlanPreviewPanel({
 							</p>
 							<MetricRow
 								label={t("absences.planPreview.requested", "Requested")}
-								value={formatDays(preview.requestedDays, t)}
+								value={formatDays(preview.requestedAbsenceDays, t)}
 							/>
 							<MetricRow
 								label={t("absences.planPreview.remainingAfter", "Remaining after request")}
@@ -124,6 +123,36 @@ export function AbsencePlanPreviewPanel({
 						</p>
 					)}
 				</PreviewSection>
+
+				{preview.workBalance ? (
+					<PreviewSection title={t("absences.planPreview.workBalance", "Work balance")}>
+						<div className="space-y-2">
+							<MetricRow
+								label={t("absences.planPreview.workBalanceCurrent", "Current")}
+								value={formatSignedWorkBalance(preview.workBalance.currentBalanceMinutes)}
+							/>
+							<MetricRow
+								label={t("absences.planPreview.workBalanceDrawn", "Drawn by request")}
+								value={formatSignedWorkBalance(-preview.workBalance.drawnMinutes)}
+							/>
+							<MetricRow
+								label={t("absences.planPreview.workBalanceAfter", "After request")}
+								value={formatSignedWorkBalance(preview.workBalance.projectedBalanceMinutes)}
+							/>
+							{preview.workBalance.wouldBeNegative ? (
+								<p className="flex items-start gap-2 text-destructive text-sm">
+									<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+									<span>
+										{t(
+											"absences.planPreview.workBalanceNegative",
+											"Your work balance would be negative after this request. You can still submit it.",
+										)}
+									</span>
+								</p>
+							) : null}
+						</div>
+					</PreviewSection>
+				) : null}
 
 				<PreviewSection title={t("absences.planPreview.holidays", "Holidays")}>
 					{preview.holidays.length > 0 ? (
@@ -222,8 +251,14 @@ export function AbsencePlanPreviewPanel({
 								</li>
 							))}
 						</ul>
-						{preview.warnings.length > 0 ? (
+						{preview.refusal || preview.warnings.length > 0 ? (
 							<ul className="space-y-1 text-sm">
+								{preview.refusal === "no_working_days" && (
+									<li className="flex items-start gap-2 text-destructive" role="alert">
+										<IconAlertTriangle className="mt-0.5 size-4" aria-hidden="true" />
+										<span className="min-w-0 break-words">{noWorkingDaysMessage(t)}</span>
+									</li>
+								)}
 								{preview.warnings.map((warning) => (
 									<li className="flex items-start gap-2 text-destructive" key={warning}>
 										<IconAlertTriangle className="mt-0.5 size-4" aria-hidden="true" />
@@ -242,6 +277,11 @@ export function AbsencePlanPreviewPanel({
 			</CardContent>
 		</Card>
 	);
+}
+
+/** The refusal of vacation that covers no working day, in the viewer's language (#979). */
+export function noWorkingDaysMessage(t: TranslateFn) {
+	return t("absences.planPreview.noWorkingDays", "This range contains no working days.");
 }
 
 function PreviewSection({ title, children }: { title: string; children: ReactNode }) {

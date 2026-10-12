@@ -228,6 +228,7 @@ describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 				},
 				organizationHooks: createCoordinatedOrganizationHooks({
 					beforeUpdateOrganization: async () => undefined,
+					beforeCreateInvitation: async () => undefined,
 					afterAcceptInvitation: async ({ user }) => {
 						harness.provisioned.push(`accepted:${user.id}`);
 					},

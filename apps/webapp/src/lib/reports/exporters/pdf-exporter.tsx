@@ -6,6 +6,7 @@
 
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { type DisplayContext, formatInstant } from "@/lib/datetime/temporal-format";
+import { customFieldReportText } from "@/lib/organization/custom-fields/report-values";
 import type { ReportData } from "../types";
 
 export interface PDFExportContext extends DisplayContext {
@@ -190,6 +191,19 @@ export async function exportToPDF(
 					<Text style={styles.label}>Generated On:</Text>
 					<Text style={styles.value}>{generatedAtLabel}</Text>
 				</View>
+
+				{/* Custom fields the requester sees, as of the period's last day (#820) */}
+				{reportData.employee.customFields.length > 0 && (
+					<>
+						<Text style={styles.sectionHeader}>Custom Fields</Text>
+						{reportData.employee.customFields.map((field) => (
+							<View key={field.fieldId} style={styles.row}>
+								<Text style={styles.label}>{field.name}:</Text>
+								<Text style={styles.value}>{customFieldReportText(field) || "—"}</Text>
+							</View>
+						))}
+					</>
+				)}
 
 				{/* Work Hours Summary */}
 				<Text style={styles.sectionHeader}>Work Hours Summary</Text>

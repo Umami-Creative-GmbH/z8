@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Alterar Proprietário",
         "delete": "Excluir",
         "edit": "Editar",
         "runNow": "Executar Agora",
@@ -16,6 +17,7 @@
       },
       "dataCategories": {
         "absences": "Ausências",
+        "customers": "Clientes",
         "employees": "Funcionários",
         "projects": "Projetos",
         "timeEntries": "Registros de horas",
@@ -122,6 +124,8 @@
         "dateRangesDesc": "Calculado automaticamente com base na frequência do agendamento (por exemplo, mês anterior para exportações mensais).",
         "delivery": "Entrega:",
         "deliveryDesc": "As exportações são enviadas para o S3 e notificações por e-mail com links de download são enviadas aos destinatários configurados.",
+        "owner": "Proprietário:",
+        "ownerDesc": "Cada agendamento é executado em nome de um administrador da organização. Se o proprietário deixar de ser um administrador da organização ou sair, o agendamento será pausado e todos os administradores da organização serão notificados para que um deles possa assumi-lo.",
         "scheduleTypes": "Tipos de agendamento:",
         "scheduleTypesDesc": "Diário, Semanal (segunda-feira), Mensal (dia 1º), Trimestral (1º de jan/abr/jul/out) ou expressões cron personalizadas."
       },
@@ -148,6 +152,18 @@
         "viewError": "Ver detalhes do erro"
       },
       "newSchedule": "Novo agendamento",
+      "owner": {
+        "changed": "Proprietário alterado",
+        "changeFailed": "Não foi possível alterar o proprietário",
+        "description": "\"{name}\" é executado em nome de seu proprietário, que deve ser um administrador da organização. As execuções automatizadas são registradas no log de auditoria sob o proprietário.",
+        "label": "Proprietário",
+        "pauseNote": "Alterar o proprietário não retoma um agendamento pausado. Reative-o assim que tiver um proprietário.",
+        "placeholder": "Selecione um administrador da organização…",
+        "required": "Escolha um administrador da organização",
+        "saving": "Salvando…",
+        "submit": "Alterar proprietário",
+        "title": "Alterar proprietário"
+      },
       "report": {
         "auditReport": "Relatório de auditoria",
         "auditReportDesc": "Os relatórios de auditoria incluem todos os dados de controle de tempo com assinaturas criptográficas e carimbos de data/hora para conformidade com GoBD. A exportação será armazenada com proteção WORM (Write Once Read Many).",
@@ -263,6 +279,8 @@
         "never": "Nunca",
         "nextRun": "Próxima execução",
         "openMenu": "Abrir menu de ações",
+        "owner": "Proprietário",
+        "ownerNotAdmin": "Não é mais um administrador da organização",
         "paused": "Pausado",
         "schedule": "Agendamento",
         "status": "Status",

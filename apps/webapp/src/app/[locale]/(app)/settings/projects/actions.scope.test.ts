@@ -45,7 +45,17 @@ vi.mock("@/lib/reports/completed-work", () => ({
 	completedWorkPeriodCondition: vi.fn(() => ({ completedWork: true })),
 }));
 vi.mock("@/lib/billable-time/project-customer", () => ({
+	projectHasActiveCustomerSql: vi.fn(() => ({ projectHasActiveCustomer: true })),
 	readProjectActiveCustomerId: vi.fn(async () => "customer-active"),
+}));
+
+vi.mock("@/lib/organization/custom-fields/values", () => ({
+	findRecordsMissingRequiredValues: vi.fn(async () => new Set<string>()),
+}));
+
+vi.mock("@/lib/organization/custom-fields/form-values", () => ({
+	keepCustomFieldRefusal: (error: unknown) => error,
+	saveFormCustomFieldValues: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -126,9 +136,13 @@ vi.mock("@/lib/effect/services/auth.service", async () => {
 
 vi.mock("@/lib/effect/services/database.service", async () => {
 	const { Context, Effect, Layer } = await import("effect");
+	const dbModule = await import("@/db");
 	const DatabaseService = Context.Service<any>("DatabaseService");
 	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
 		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
+		get db() {
+			return dbModule.db;
+		},
 	});
 	return { DatabaseService, DatabaseServiceLive };
 });
@@ -170,9 +184,12 @@ vi.mock("@/db", () => ({
 		},
 		select: vi.fn(() => ({
 			from: vi.fn(() => ({
-				where: vi.fn(() => ({
-					groupBy: vi.fn(async () => mockState.hoursBooked),
-				})),
+				// Awaited directly: the projects with an active customer (none here).
+				where: vi.fn(() =>
+					Object.assign(Promise.resolve([]), {
+						groupBy: vi.fn(async () => mockState.hoursBooked),
+					}),
+				),
 			})),
 		})),
 		update: vi.fn(() => ({
@@ -194,6 +211,14 @@ vi.mock("@/db", () => ({
 		transaction: vi.fn(async (callback: (tx: any) => Promise<unknown>) => {
 			mockState.transactionCalls += 1;
 			const tx = {
+				update: vi.fn(() => ({
+					set: vi.fn(() => ({
+						where: vi.fn(async (whereArg: unknown) => {
+							mockState.updateWhereArgs.push(whereArg);
+							return undefined;
+						}),
+					})),
+				})),
 				insert: vi.fn((table: any) => {
 					if (table?.name === "name") {
 						return {

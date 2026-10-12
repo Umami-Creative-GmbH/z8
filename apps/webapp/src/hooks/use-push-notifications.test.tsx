@@ -6,6 +6,13 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePushNotifications } from "./use-push-notifications";
 
+const nativePush = vi.hoisted(() => ({
+	getNativePushClient: vi.fn(async (): Promise<unknown> => null),
+}));
+vi.mock("@/lib/store-app/native-push", () => ({
+	getNativePushClient: nativePush.getNativePushClient,
+}));
+
 const originalFetch = globalThis.fetch;
 const originalNotification = globalThis.Notification;
 const originalPushManager = globalThis.PushManager;
@@ -1350,5 +1357,96 @@ describe("usePushNotifications", () => {
 
 		expect(inverseResult).toBe(true);
 		expect(subscribeMock).toHaveBeenCalledOnce();
+	});
+
+	describe("in the store app shell", () => {
+		function fakeNativeClient(subscribed = false) {
+			let isSubscribed = subscribed;
+			return {
+				loadState: vi.fn(async () => ({
+					available: true,
+					permission: isSubscribed ? ("granted" as const) : ("default" as const),
+					subscribed: isSubscribed,
+				})),
+				requestPermission: vi.fn(async () => "granted" as const),
+				subscribe: vi.fn(async () => {
+					isSubscribed = true;
+					return true;
+				}),
+				unsubscribe: vi.fn(async () => {
+					isSubscribed = false;
+					return true;
+				}),
+			};
+		}
+
+		afterEach(() => {
+			nativePush.getNativePushClient.mockResolvedValue(null);
+		});
+
+		it("registers for native push instead of web push", async () => {
+			const client = fakeNativeClient();
+			nativePush.getNativePushClient.mockResolvedValue(client);
+			const onSubscribe = vi.fn();
+
+			const { result } = renderHook(() => usePushNotifications({ onSubscribe }), {
+				wrapper: createWrapper(),
+			});
+			await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+			expect(result.current).toMatchObject({
+				isSupported: true,
+				permission: "default",
+				isSubscribed: false,
+			});
+			expect(client.subscribe).not.toHaveBeenCalled();
+
+			await act(async () => {
+				expect(await result.current.subscribe()).toBe(true);
+			});
+
+			expect(client.subscribe).toHaveBeenCalledOnce();
+			expect(result.current).toMatchObject({ permission: "granted", isSubscribed: true });
+			expect(onSubscribe).toHaveBeenCalledOnce();
+			expect(registerMock).not.toHaveBeenCalled();
+			expect(fetch).not.toHaveBeenCalled();
+		});
+
+		it("turns native push off for the device", async () => {
+			const client = fakeNativeClient(true);
+			nativePush.getNativePushClient.mockResolvedValue(client);
+			const onUnsubscribe = vi.fn();
+
+			const { result } = renderHook(() => usePushNotifications({ onUnsubscribe }), {
+				wrapper: createWrapper(),
+			});
+			await waitFor(() => expect(result.current.isSubscribed).toBe(true));
+
+			await act(async () => {
+				expect(await result.current.unsubscribe()).toBe(true);
+			});
+
+			expect(client.unsubscribe).toHaveBeenCalledOnce();
+			expect(result.current.isSubscribed).toBe(false);
+			expect(onUnsubscribe).toHaveBeenCalledOnce();
+		});
+
+		it("offers no push while the server has native push off", async () => {
+			const client = fakeNativeClient();
+			client.loadState.mockResolvedValue({
+				available: false,
+				permission: "default",
+				subscribed: false,
+			});
+			nativePush.getNativePushClient.mockResolvedValue(client);
+
+			const { result } = renderHook(() => usePushNotifications(), {
+				wrapper: createWrapper(),
+			});
+			await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+			expect(result.current.isSupported).toBe(false);
+			expect(registerMock).not.toHaveBeenCalled();
+		});
 	});
 });

@@ -2,11 +2,18 @@
 import { cleanup, render as renderWithProvider, screen } from "@testing-library/react";
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { WorkPeriodEvent } from "@/lib/calendar/types";
+import type { ReactNode } from "react";
+import type { AbsenceEvent, WorkPeriodEvent } from "@/lib/calendar/types";
 import { createTestTolgee, render } from "@/test/render-with-translations";
 import deCatalog from "../../../messages/calendar/de.json";
 
 const settings = vi.hoisted(() => ({ projectsEnabled: false }));
+
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href }: { children: ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
+}));
 
 vi.mock("@/stores/organization-settings-store", () => ({
 	useProjectsEnabled: () => settings.projectsEnabled,
@@ -131,5 +138,47 @@ describe("project and task details (#874)", () => {
 
 		expect(screen.getByText("Website")).toBeTruthy();
 		expect(screen.queryByText("Task")).toBeNull();
+	});
+});
+
+describe("absence details", () => {
+	const absence: AbsenceEvent = {
+		id: "absence-1",
+		type: "absence",
+		date: new Date("2026-05-04T00:00:00Z"),
+		endDate: new Date("2026-05-06T00:00:00Z"),
+		title: "Ada - Vacation",
+		color: "#fbbf24",
+		metadata: { categoryName: "Vacation", status: "pending", employeeName: "Ada" },
+	};
+	const withDeputy = (canOpenProfile: boolean): AbsenceEvent => ({
+		...absence,
+		metadata: {
+			...absence.metadata,
+			deputy: { id: "employee-9", name: "Grace Hopper", canOpenProfile },
+		},
+	});
+
+	it("names the deputy, linked when the viewer may open their profile (#1012)", () => {
+		render(<EventDetailsPanel event={withDeputy(true)} onClose={() => {}} />);
+
+		expect(screen.getByText("Deputy")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Grace Hopper" }).getAttribute("href")).toBe(
+			"/settings/employees/employee-9",
+		);
+		expect(screen.getByText("Pending")).toBeTruthy();
+	});
+
+	it("shows the deputy's name as text when the viewer may not open their profile", () => {
+		render(<EventDetailsPanel event={withDeputy(false)} onClose={() => {}} />);
+
+		expect(screen.getByText("Grace Hopper")).toBeTruthy();
+		expect(screen.queryByRole("link", { name: "Grace Hopper" })).toBeNull();
+	});
+
+	it("shows nothing about a deputy for an absence without one", () => {
+		render(<EventDetailsPanel event={absence} onClose={() => {}} />);
+
+		expect(screen.queryByText("Deputy")).toBeNull();
 	});
 });

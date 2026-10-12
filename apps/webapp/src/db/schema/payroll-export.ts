@@ -13,6 +13,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { UnmappedOvertimePayout } from "@/lib/payroll-export/types";
 import type { PayrollLineKind } from "@/lib/travel-expenses/payroll-line-kind";
 import { currentTimestamp } from "./timestamp";
 
@@ -34,7 +35,7 @@ import { workCategory } from "./work-category";
 export const payrollExportFormat = pgTable(
 	"payroll_export_format",
 	{
-		id: text("id").primaryKey(), // "datev_lohn", "sage", etc.
+		id: text("id").primaryKey(), // An id of the payroll export format registry (#823)
 		name: text("name").notNull(), // "DATEV Lohn & Gehalt"
 		version: text("version").notNull(), // "2024.1"
 		description: text("description"),
@@ -212,6 +213,18 @@ export interface PayrollExportJobFilters {
 }
 
 /**
+ * A custom field personnel identifier frozen when a job without collected work
+ * input is created (#821): the values every run and retry of the job uses.
+ */
+export interface PayrollExportJobPersonnelIdentifier {
+	customFieldId: string;
+	/** The period's last day, the date the values were read as of. */
+	asOf: string;
+	/** Values by employee ID; an employee without a value is absent. */
+	values: Record<string, string>;
+}
+
+/**
  * Payroll export jobs
  * Tracks export requests with filters and status
  */
@@ -232,6 +245,9 @@ export const payrollExportJob = pgTable(
 		// Export filters (stored as JSON for flexibility)
 		filters: jsonb("filters").$type<PayrollExportJobFilters>().notNull(),
 
+		// The frozen custom field identifier of a job without collected input (#821)
+		personnelIdentifier: jsonb("personnel_identifier").$type<PayrollExportJobPersonnelIdentifier>(),
+
 		// Execution mode
 		isAsync: boolean("is_async").default(false).notNull(),
 
@@ -245,6 +261,11 @@ export const payrollExportJob = pgTable(
 		fileSizeBytes: integer("file_size_bytes"),
 		workPeriodCount: integer("work_period_count"), // Total periods processed
 		employeeCount: integer("employee_count"), // Total employees in export
+		// Overtime payouts the file left out for want of an "overtime" wage type (#1001)
+		unmappedOvertimePayouts: jsonb("unmapped_overtime_payouts")
+			.$type<UnmappedOvertimePayout[]>()
+			.default([])
+			.notNull(),
 
 		// API export results (for Personio and similar)
 		syncedRecordCount: integer("synced_record_count"), // Successfully synced to external system
@@ -264,6 +285,8 @@ export const payrollExportJob = pgTable(
 		index("payrollExportJob_createdAt_idx").on(table.createdAt),
 		// Composite index for finding pending async jobs
 		index("payrollExportJob_status_isAsync_idx").on(table.status, table.isAsync),
+		// The target of organization-scoped references: a reimbursement names its payroll run (#853).
+		uniqueIndex("payrollExportJob_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );
 

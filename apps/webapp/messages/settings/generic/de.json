@@ -1,5 +1,28 @@
 {
   "settings": {
+    "assignedLocations": {
+      "added": "Zugewiesener Standort hinzugefügt",
+      "employeeDescription": "Die Standorte, an denen dieser Mitarbeiter arbeitet. Kioske akzeptieren nur Mitarbeiter, die ihrem Standort zugewiesen sind.",
+      "employeeEmpty": "Keine zugewiesenen Standorte",
+      "employeeLabel": "Mitarbeiter",
+      "employeePlaceholder": "Mitarbeiter auswählen",
+      "employeeTitle": "Zugewiesene Standorte",
+      "errors": {
+        "adminOnly": "Nur Inhaber und Administratoren der Organisation können zugewiesene Standorte verwalten.",
+        "employeeNotFound": "Mitarbeiter nicht gefunden.",
+        "failed": "Zugewiesene Standorte konnten nicht aktualisiert werden. Versuchen Sie es erneut.",
+        "invalidSelection": "Aus der Liste auswählen.",
+        "locationNotFound": "Standort nicht gefunden."
+      },
+      "locationDescription": "Die Mitarbeiter, die an diesem Standort arbeiten. Dessen Kioske akzeptieren nur diese.",
+      "locationEmpty": "Keine zugewiesenen Mitarbeiter",
+      "locationLabel": "Standort",
+      "locationPlaceholder": "Standort auswählen",
+      "locationTitle": "Zugewiesene Mitarbeiter",
+      "noEmployeesLeft": "Alle aktiven Mitarbeiter sind diesem Standort zugewiesen.",
+      "noLocationsLeft": "Es sind keine weiteren aktiven Standorte zum Zuweisen vorhanden.",
+      "removed": "Zugewiesener Standort entfernt"
+    },
     "avv": {
       "contractDetails": {
         "controller": "Auftraggeber (Verantwortlicher)",
@@ -407,6 +430,75 @@
       "description": "Verwalten Sie Ihr Abonnement, Zahlungsmethoden und Rechnungen",
       "title": "Abrechnung & Abonnement"
     },
+    "closedMonths": {
+      "automatic": {
+        "days": "Tage nach Monatsende",
+        "daysHelp": "Wenn etwas den Abschluss blockiert, werden alle Abschlussberechtigten benachrichtigt und es wird am nächsten Tag erneut versucht.",
+        "daysInvalid": "Geben Sie eine ganze Zahl von 1 bis 60 Tagen ein",
+        "description": "Schließen Sie den Vormonat für die gesamte Organisation eine bestimmte Anzahl von Tagen nach seinem Ende ab. Ein wieder geöffneter Monat wird nie wieder automatisch abgeschlossen.",
+        "enabled": "Monate automatisch abschließen",
+        "save": "Speichern",
+        "saved": "Automatischer Abschluss gespeichert",
+        "title": "Automatischer Abschluss"
+      },
+      "blockedTitle": "Der Monat kann noch nicht abgeschlossen werden. Beheben Sie zuerst Folgendes:",
+      "blocker": {
+        "absenceRequest": "unentschiedener Abwesenheitsantrag {startDate} – {endDate}",
+        "liveWork": "seit {start} noch eingestempelt",
+        "notEnded": "der Monat ist in deren Zeitzone noch nicht beendet",
+        "periodSubmission": "Unentschiedene Zeitraumeinreichung {startDate} – {endDate}",
+        "timeRequest": "unentschiedener Antrag zu Arbeitszeiten vom {start}"
+      },
+      "close": "Schließen",
+      "closeDescription": "In einem abgeschlossenen Monat kann niemand Arbeitszeiten, Zuordnungen oder Abwesenheiten ändern, bis er wieder geöffnet wird. Der Monat jedes Mitarbeiters ist in seiner eigenen Zeitzone festgelegt.",
+      "closeSubmit": "Monat abschließen",
+      "closeSuccess": "{count, plural, other {{month} für # Mitarbeiter abgeschlossen} }",
+      "closeTitle": "{month} abschließen",
+      "description": "Monate nach der Lohnabrechnung abschließen, damit Arbeitszeiten und Abwesenheiten nicht mehr geändert werden können",
+      "employeesLabel": "Mitarbeiter",
+      "employeesRequired": "Mindestens einen Mitarbeiter auswählen",
+      "history": {
+        "automatic": "Automatisch",
+        "closed": "Abgeschlossen",
+        "employees": "{count, plural, other {# Mitarbeiter} }",
+        "reopened": "Wiedereröffnet",
+        "unknownActor": "Unbekannt"
+      },
+      "historyEmpty": "Es wurde noch kein Monat abgeschlossen.",
+      "historyTitle": "Verlauf",
+      "monthsDescription": "Beim Abschließen eines Monats werden Arbeitszeiten, Zuordnungen und Abwesenheiten für die Lohnabrechnung eingefroren. Notizen bleiben bearbeitbar.",
+      "monthsTitle": "Monate",
+      "nothingToClose": "Alle in diesem Bereich sind für diesen Monat bereits abgeschlossen.",
+      "nothingToReopen": "Niemand in dieser Auswahl ist für diesen Monat abgeschlossen.",
+      "reasonLabel": "Grund",
+      "reasonPlaceholder": "Warum muss dieser Monat geändert werden?…",
+      "reasonRequired": "Grund für die Wiedereröffnung eingeben",
+      "reopen": "Wiedereröffnen",
+      "reopenDescription": "Wiedereröffnete Mitarbeiter bleiben offen, bis der Monat erneut abgeschlossen wird. Ihre Führungskräfte werden benachrichtigt.",
+      "reopenScopeLabel": "Wiedereröffnen für",
+      "reopenSubmit": "Monat wiedereröffnen",
+      "reopenSuccess": "{count, plural, other {{month} für # Mitarbeiter wiedereröffnet} }",
+      "reopenTitle": "{month} wiedereröffnen",
+      "scope": {
+        "all": "Alles",
+        "deletedTeam": "Gelöschtes Team",
+        "employees": "Ausgewählte Mitarbeiter",
+        "organization": "Organisation"
+      },
+      "scopeLabel": "Schließen für",
+      "teamNotFound": "Dieses Team existiert nicht mehr.",
+      "title": "Abgeschlossene Monate",
+      "warning": {
+        "periodNotSubmitted": "Zeitraum {startDate} – {endDate} nicht eingereicht",
+        "periodRejected": "Zeitraum {startDate} – {endDate} abgelehnt",
+        "periodRunning": "Zeitraum {startDate} – {endDate} läuft noch, noch nicht einreichbar",
+        "periodSentBack": "Zeitraum {startDate} – {endDate} nach Änderung zurückgesendet"
+      },
+      "warnings": {
+        "more": "und {count} weitere",
+        "title": "Nicht jede Zeitraumeinreichung für diesen Monat ist genehmigt. Dies verhindert den Abschluss nicht:"
+      }
+    },
     "compliance": {
       "description": "Überprüfen und verwalten Sie Compliance-Ausnahmeanfragen von Teammitgliedern",
       "title": "ArbZG Compliance"
@@ -468,14 +560,208 @@
       "updated": "Kunde aktualisiert",
       "updateFailed": "Kundenaktualisierung fehlgeschlagen"
     },
+    "customFields": {
+      "accessSummary": "Sichtbar für: {visibility} · Bearbeitet von: {edit}",
+      "activeCount": "{count} von {max} aktiven Feldern",
+      "activeList": "Aktive benutzerdefinierte Felder",
+      "add": "Benutzerdefiniertes Feld hinzufügen",
+      "archivedList": "Archivierte benutzerdefinierte Felder",
+      "archivedTitle": "Archiviert",
+      "archiveField": "{name} archivieren",
+      "capReached": "Jeder Datensatztyp kann maximal 25 aktive benutzerdefinierte Felder haben. Archivieren Sie eines, um ein weiteres hinzuzufügen.",
+      "description": "Eigene Felder für Mitarbeiter, Projekte und Kunden",
+      "editField": "{name} bearbeiten",
+      "empty": "Noch keine benutzerdefinierten Felder.",
+      "entity": {
+        "customer": "Kunden",
+        "employee": "Mitarbeiter",
+        "project": "Projekte"
+      },
+      "form": {
+        "boundsHelp": "Lassen Sie einen Grenzwert leer, um keine Begrenzung festzulegen.",
+        "create": "Feld erstellen",
+        "createTitle": "Benutzerdefiniertes Feld hinzufügen",
+        "description": "Ein benutzerdefiniertes Feld für {entity}.",
+        "editLevel": "Wer Werte bearbeiten darf",
+        "editLevelHelp": "Mitarbeiter bearbeiten Werte von benutzerdefinierten Feldern nie.",
+        "editTitle": "Benutzerdefiniertes Feld bearbeiten",
+        "integerOnly": "Nur ganze Zahlen",
+        "max": "Maximum",
+        "min": "Minimum",
+        "name": "Name",
+        "nameRequired": "Namen eingeben",
+        "options": "Optionen",
+        "optionsHelp": "Eine Option pro Zeile.",
+        "required": "Erforderlich",
+        "requiredHelp": "Formulare lassen das Speichern eines Datensatzes ohne Wert nicht zu.",
+        "save": "Änderungen speichern",
+        "tracked": "Verlauf erfassen",
+        "trackedFixed": "Ob für ein Feld ein Verlauf erfasst wird, kann nach der Erstellung nicht mehr geändert werden.",
+        "trackedHelp": "Jeder Wert enthält das Datum, ab dem er gültig ist.",
+        "type": "Typ",
+        "typeFixed": "Der Typ kann nach der Erstellung des Felds nicht mehr geändert werden.",
+        "visibility": "Wer Werte sehen kann"
+      },
+      "level": {
+        "admin": "Admins",
+        "employee": "Alle, einschließlich des Mitarbeiters",
+        "manager": "Manager und Admins"
+      },
+      "options": {
+        "add": "Option hinzufügen",
+        "archive": "{label} archivieren",
+        "archived": "Archiviert",
+        "label": "Optionsname",
+        "list": "Optionen",
+        "moveDown": "{label} nach unten verschieben",
+        "moveUp": "{label} nach oben verschieben",
+        "new": "Neue Option",
+        "restore": "{label} wiederherstellen",
+        "title": "Optionen"
+      },
+      "refusal": {
+        "booleanRequired": "Ein Ja/Nein-Feld kann kein Pflichtfeld sein.",
+        "duplicateOption": "Dieses Feld hat bereits eine aktive Option mit diesem Namen.",
+        "editBroaderThanVisibility": "Alle, die Werte bearbeiten können, müssen diese auch sehen können.",
+        "employeesNeverEdit": "Mitarbeiter können benutzerdefinierte Feldwerte nicht bearbeiten.",
+        "fieldArchived": "Stellen Sie dieses benutzerdefinierte Feld wieder her, bevor Sie es ändern.",
+        "invalidChange": "Diese Änderung kann nicht gespeichert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
+        "invalidLevel": "Wählen Sie aus, wer Werte sehen und bearbeiten kann.",
+        "invalidName": "Geben Sie einen Namen mit maximal 100 Zeichen ein.",
+        "invalidOptionLabel": "Geben Sie eine Option mit maximal 100 Zeichen ein.",
+        "lastActiveOption": "Ein Auswahlfeld benötigt mindestens eine aktive Option.",
+        "nameTaken": "Ein aktives benutzerdefiniertes Feld für diesen Datensatztyp hat bereits diesen Namen.",
+        "notFound": "Dieses benutzerdefinierte Feld existiert nicht mehr. Laden Sie die Seite neu.",
+        "notSelect": "Nur Auswahlfelder haben Optionen.",
+        "numberBounds": "Geben Sie ein Minimum und ein Maximum als Zahlen ein, wobei das Minimum nicht über dem Maximum liegen darf.",
+        "optionArchived": "Stellen Sie diese Option zuerst wieder her.",
+        "selectNeedsOption": "Fügen Sie einem Auswahlfeld mindestens eine Option hinzu.",
+        "staleOrder": "Die Liste wurde in der Zwischenzeit geändert. Laden Sie die Seite neu und versuchen Sie es erneut.",
+        "tooManyFields": "Dieser Datensatztyp hat bereits 25 aktive benutzerdefinierte Felder. Archivieren Sie zuerst eines davon.",
+        "trackedFixed": "Ob ein benutzerdefiniertes Feld einen Verlauf speichert, kann nach der Erstellung nicht mehr geändert werden.",
+        "typeFixed": "Der Typ eines benutzerdefinierten Felds kann nach der Erstellung nicht mehr geändert werden.",
+        "usedAsPayrollIdentifier": "Dieses Feld ist die Personalkennung der Lohnabrechnungsexport-Konfiguration {configurations}. Wählen Sie dort zuerst eine andere Kennung aus."
+      },
+      "reorderField": "{name} neu anordnen",
+      "required": "Erforderlich",
+      "restore": "Wiederherstellen",
+      "restoreField": "{name} wiederherstellen",
+      "saveFailed": "Die Änderung konnte nicht gespeichert werden.",
+      "title": "Benutzerdefinierte Felder",
+      "tracked": "Nachverfolgt",
+      "type": {
+        "boolean": "Ja/Nein",
+        "date": "Datum",
+        "number": "Zahl",
+        "select": "Auswahl",
+        "text": "Text"
+      },
+      "valueRefusal": {
+        "duplicateValidFrom": "Es gibt bereits einen Wert ab diesem Datum.",
+        "fieldArchived": "Dieses Feld ist archiviert.",
+        "forField": "Benutzerdefiniertes Feld \"{field}\": {message}",
+        "invalidDate": "Geben Sie ein gültiges Datum ein.",
+        "invalidNumber": "Geben Sie eine Zahl ein.",
+        "invalidValidFrom": "Geben Sie ein gültiges Startdatum ein.",
+        "invalidValue": "Geben Sie einen gültigen Wert ein.",
+        "missingRequired": "Dieses Feld ist ein Pflichtfeld.",
+        "missingValue": "Geben Sie für jedes Datum einen Wert ein.",
+        "notEditable": "Sie können dieses Feld nicht ändern.",
+        "numberNotInteger": "Geben Sie eine ganze Zahl ein.",
+        "numberOutOfRange": "Geben Sie eine Zahl im zulässigen Bereich ein.",
+        "optionArchived": "Diese Option ist archiviert. Wählen Sie eine andere aus.",
+        "textTooLong": "Geben Sie maximal 255 Zeichen ein.",
+        "trackedField": "Dieses Feld führt einen Verlauf. Fügen Sie stattdessen eine datierte Änderung hinzu.",
+        "unknownField": "Dieses Feld existiert nicht mehr. Laden Sie die Seite neu und versuchen Sie es erneut.",
+        "unknownHistoryEntry": "Der Verlauf wurde in der Zwischenzeit geändert. Laden Sie die Seite neu und versuchen Sie es erneut."
+      },
+      "values": {
+        "archivedOption": "{label} (archiviert)",
+        "history": {
+          "add": "Änderung hinzufügen",
+          "apply": "Anwenden",
+          "correct": "Den ab {date} gültigen Wert korrigieren",
+          "delete": "Wert gültig ab {date} löschen",
+          "duplicateValidFrom": "Ab diesem Datum ist bereits ein Wert gültig.",
+          "empty": "Noch keine Werte vorhanden.",
+          "from": "Ab {date}",
+          "label": "Verlauf von {name}",
+          "needsValidFrom": "Wählen Sie das Datum, ab dem der Wert gültig ist.",
+          "needsValue": "Geben Sie einen Wert ein.",
+          "today": "Heute",
+          "validFrom": "Gültig ab",
+          "value": "Wert"
+        },
+        "missingRequired": "Erforderliche Werte fehlen",
+        "no": "Nein",
+        "notSet": "Nicht festgelegt",
+        "ownDescription": "Wird von Ihrer Organisation verwaltet. Bitten Sie einen Administrator oder Ihre Führungskraft, diese zu ändern.",
+        "title": "Benutzerdefinierte Felder",
+        "yes": "Ja"
+      }
+    },
     "dataExport": {
+      "categories": {
+        "absences": {
+          "description": "Abwesenheitseinträge und -kategorien",
+          "label": "Abwesenheiten"
+        },
+        "audit_logs": {
+          "description": "Aktivitäts-Audit-Trail",
+          "label": "Audit-Protokolle"
+        },
+        "balance_adjustments": {
+          "description": "Anfangssalden und Überstundenauszahlungen, einschließlich stornierter",
+          "label": "Anpassungen des Arbeitszeitsaldos"
+        },
+        "customers": {
+          "description": "Kunden mit ihren benutzerdefinierten Kundenfeldern",
+          "label": "Kunden"
+        },
+        "employees": {
+          "description": "Mitarbeiterprofile, Vorgesetztenbeziehungen und benutzerdefinierte Mitarbeiterfelder",
+          "label": "Mitarbeiter"
+        },
+        "holidays": {
+          "description": "Feiertagskalender und Voreinstellungen",
+          "label": "Feiertage"
+        },
+        "projects": {
+          "description": "Projekte mit ihren benutzerdefinierten Kunden- und Projektfeldern",
+          "label": "Projekte"
+        },
+        "schedules": {
+          "description": "Arbeitszeitplanvorlagen und -zuweisungen",
+          "label": "Arbeitszeitpläne"
+        },
+        "shifts": {
+          "description": "Schichtplanungsdaten",
+          "label": "Schichten"
+        },
+        "teams": {
+          "description": "Teamstruktur und Berechtigungen",
+          "label": "Teams"
+        },
+        "time_entries": {
+          "description": "Stempeluhr-Einträge und -Korrekturen",
+          "label": "Zeiterfassung"
+        },
+        "vacation": {
+          "description": "Urlaubsrichtlinien und -ansprüche",
+          "label": "Urlaubsrichtlinien"
+        },
+        "work_periods": {
+          "description": "Zusammengefasste Arbeitssitzungen",
+          "label": "Arbeitszeiträume"
+        }
+      },
       "description": "Daten Ihrer Organisation exportieren",
       "form": {
         "aboutAsync": "Exporte werden asynchron verarbeitet",
+        "aboutDownloadFromHistory": "Laden Sie fertige Exporte aus dem Exportverlauf herunter",
         "aboutEmail": "Sie erhalten eine E-Mail, sobald der Export bereit ist",
-        "aboutLinkValidity": "Download-Links sind 24 Stunden lang gültig",
+        "aboutFileRetention": "Exportdateien werden nach 30 Tagen gelöscht",
         "aboutOrgDataOnly": "Nur die Daten Ihrer Organisation sind enthalten",
-        "aboutStorageDuration": "Exportdateien werden 7 Tage lang gespeichert",
         "aboutTitle": "Über den Datenexport",
         "description": "Wählen Sie die Datenkategorien aus, die Sie exportieren möchten",
         "selectAll": "Alle auswählen",
@@ -508,6 +794,9 @@
         "statusFailed": "Fehlgeschlagen",
         "statusPending": "Ausstehend",
         "statusProcessing": "Wird verarbeitet",
+        "switchOrganizationAction": "Zu {organization} wechseln",
+        "switchOrganizationBody": "Dieser Export gehört zu {organization}. Wechseln Sie zu dieser Organisation, um deren Exportverlauf zu öffnen; Ihre Zugriffsberechtigung wird nach dem Wechsel erneut überprüft.",
+        "switchOrganizationTitle": "Organisation wechseln, um diesen Export anzuzeigen",
         "title": "Exportverlauf",
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
       },
@@ -991,10 +1280,7 @@
           "nameTaken": "{name} hat denselben Namen und ist bereits mit einem anderen Kontakt verknüpft",
           "noMatch": "Keine Übereinstimmung",
           "paging": {
-            "label": "Kontaktseiten",
-            "next": "Nächste Seite",
-            "position": "Seite {page} von {pageCount}",
-            "previous": "Vorherige Seite"
+            "label": "Kontaktseiten"
           },
           "suggestion": {
             "customerNumber": "{name} hat eine Kontaktverknüpfung mit derselben Kundennummer",
@@ -1008,6 +1294,7 @@
           "attributionNotAllowed": "Das Projekt ist nicht verfügbar, oder für abrechenbare Arbeit ist ein Projekt mit einem Kunden erforderlich.",
           "invalidInterval": "Die Anbieterzeiten weisen keinen expliziten Offset auf, sind nicht in der richtigen Reihenfolge oder liegen in der Zukunft.",
           "label": "Zur Überprüfung zurückgehalten",
+          "monthClosed": "Die Zeit liegt in einem abgeschlossenen Monat. Sie kann importiert werden, sobald der Monat wieder geöffnet wird.",
           "occupancyConflict": "Die Zeit überschneidet sich mit bereits erfassten Arbeitszeiten dieses Mitarbeiters.",
           "operationCollision": "Diese Zeile steht in Konflikt mit ihrem zuvor übernommenen Import.",
           "providerDurationMismatch": "Die Anbieterdauer weicht von den Start- und Endzeiten ab.",
@@ -1015,14 +1302,22 @@
           "unlocatedBreak": "Der Anbieter meldet Pausen ohne Zeitangaben, daher ist das Arbeitsintervall unbekannt."
         },
         "issueGroups": {
-          "currentMarkers": "Aktuelle Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Prüfbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übertragen werden.",
+          "importMarkers": "Die Zeilen des Imports enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "title": "Problemgruppen"
+        },
+        "paging": {
+          "next": "Nächste Seite",
+          "position": "Seite {page} von {pageCount}",
+          "previous": "Vorherige Seite"
         },
         "rows": {
           "billable": "Abrechenbar",
           "empty": "Für diesen Importstapel sind keine bereitgestellten Zeilen verfügbar.",
           "entity": "Entität",
+          "paging": {
+            "label": "Zeilenseiten"
+          },
           "rowId": "Zeilen-ID",
           "sourceId": "Quell-ID",
           "status": "Status",
@@ -1041,6 +1336,98 @@
         "title": "Importprüfung"
       },
       "title": "Daten importieren"
+    },
+    "kioskPin": {
+      "errors": {
+        "emailInUse": "Diese Adresse wird bereits von einem anderen Konto verwendet.",
+        "emailNotAllowed": "Die Anmelderichtlinie Ihrer Organisation erlaubt diese Adresse nicht.",
+        "employeeNotFound": "Dieser Mitarbeiter wurde nicht gefunden.",
+        "failed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+        "invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein.",
+        "invalidName": "Geben Sie einen Vornamen mit bis zu 100 Zeichen ein.",
+        "invalidPin": "Eine Kiosk-PIN besteht aus 4 bis 6 Ziffern.",
+        "locationNotFound": "Dieser Standort wurde nicht gefunden.",
+        "noPin": "Dieser Mitarbeiter hat noch keine Kiosk-PIN.",
+        "notAllowed": "Sie sind nicht berechtigt, dies zu tun.",
+        "notKioskOnly": "Dieser Mitarbeiter hat bereits eine E-Mail-Adresse.",
+        "pinExists": "Dieser Mitarbeiter hat bereits eine Kiosk-PIN. Setzen Sie sie stattdessen zurück.",
+        "reservedEmail": "Diese Adresse kann nicht verwendet werden.",
+        "signInRequired": "Melden Sie sich an, um fortzufahren.",
+        "teamNotFound": "Dieses Team wurde nicht gefunden."
+      }
+    },
+    "kiosks": {
+      "add": "Kiosk hinzufügen",
+      "boardOn": "Anwesenheitsübersicht an",
+      "columns": {
+        "actions": "Aktionen",
+        "lastSeen": "Zuletzt gesehen",
+        "location": "Standort",
+        "name": "Name",
+        "status": "Status"
+      },
+      "create": "Kiosk erstellen",
+      "created": "Kiosk erstellt",
+      "createDescription": "Sie erhalten einen Kopplungscode, den Sie auf dem Kiosk-Gerät eingeben.",
+      "createFailed": "Der Kiosk konnte nicht erstellt werden",
+      "createTitle": "Kiosk hinzufügen",
+      "description": "Gemeinsam genutzte Geräte an einem Standort, an denen Mitarbeiter mit ihrer Kiosk-PIN stempeln",
+      "edit": "Bearbeiten",
+      "editDescription": "Änderungen werden bei der nächsten Anfrage des Kiosks wirksam.",
+      "editTitle": "Kiosk bearbeiten",
+      "empty": "Noch keine Kioske vorhanden.",
+      "errors": {
+        "adminOnly": "Nur Organisationsinhaber und Administratoren können Kioske verwalten.",
+        "invalidName": "Geben Sie einen Namen mit bis zu 100 Zeichen ein.",
+        "invalidSelection": "Überprüfen Sie Ihre Eingabe und versuchen Sie es erneut.",
+        "invalidTimezone": "Wählen Sie eine Zeitzone aus.",
+        "kioskNotFound": "Dieser Kiosk wurde nicht gefunden.",
+        "kioskRevoked": "Dieser Kiosk wurde widerrufen.",
+        "locationNotFound": "Wählen Sie einen aktiven Standort dieser Organisation aus."
+      },
+      "fields": {
+        "board": "Anwesenheitsübersicht",
+        "boardDescription": "Zeigt am Kiosk mit Vorname und erstem Buchstaben des Nachnamens an, wer anwesend ist oder Pause macht.",
+        "location": "Standort",
+        "locationDescription": "Der Kiosk akzeptiert nur Mitarbeiter, die diesem Standort zugewiesen sind.",
+        "locationPlaceholder": "Standort auswählen",
+        "name": "Name",
+        "namePlaceholder": "z. B. Personaleingang",
+        "timezone": "Zeitzone",
+        "timezoneDescription": "An diesem Kiosk erfasste Stempelzeiten verwenden diese Zeitzone."
+      },
+      "issueCodeConfirm": "Neuen Code ausstellen",
+      "listDescription": "Jeder Kiosk gehört zu einem Standort. Koppeln Sie ein Gerät, indem Sie die Kiosk-Seite darauf öffnen und den Kopplungscode eingeben.",
+      "listTitle": "Kioske",
+      "loadFailed": "Kioske konnten nicht geladen werden.",
+      "neverSeen": "Nie",
+      "noLocations": "Erstellen Sie zuerst einen Standort: Jeder Kiosk gehört zu einem Standort.",
+      "pairAgain": "Erneut koppeln",
+      "pairFailed": "Es konnte kein neuer Kopplungscode ausgestellt werden",
+      "pairingCodeLabel": "Kopplungscode",
+      "pairingDescription": "Scannen Sie auf dem Kiosk-Gerät den QR-Code oder öffnen Sie die Kiosk-Seite und geben Sie den Code ein. Der Code ist einmalig gültig und läuft nach 10 Minuten ab.",
+      "pairingDone": "Fertig",
+      "pairingTitle": "{name} koppeln",
+      "pairPairedDescription": "Das Geräte-Token wird erneuert: Das gekoppelte Gerät funktioniert ab sofort nicht mehr und muss mit dem neuen Code erneut gekoppelt werden.",
+      "pairTitle": "{name} erneut koppeln?",
+      "pairUnpairedDescription": "Ein neuer Kopplungscode ersetzt den vorherigen.",
+      "revoke": "Widerrufen",
+      "revokeConfirm": "Kiosk widerrufen",
+      "revoked": "Kiosk widerrufen",
+      "revokeDescription": "Der Kiosk funktioniert bei seiner nächsten Anfrage nicht mehr und kann nicht erneut gekoppelt werden. Erstellen Sie einen neuen Kiosk, um ihn zu ersetzen.",
+      "revokeFailed": "Der Kiosk konnte nicht widerrufen werden",
+      "revokeTitle": "{name} widerrufen?",
+      "rotateConfirm": "Token rotieren und erneut koppeln",
+      "save": "Speichern",
+      "saved": "Kiosk gespeichert",
+      "saveFailed": "Der Kiosk konnte nicht gespeichert werden",
+      "status": {
+        "awaitingPairing": "Warten auf Kopplung",
+        "codeExpired": "Nicht gekoppelt, Code abgelaufen",
+        "paired": "Gekoppelt",
+        "revoked": "Widerrufen"
+      },
+      "title": "Kioske"
     },
     "licenses": {
       "footer": "Diese Anwendung verwendet Open-Source-Software. Vielen Dank an alle Betreuer und Mitwirkenden dieser Pakete.",
@@ -1401,6 +1788,7 @@
       "create": "Projekt erstellen",
       "created": "Projekt erstellt",
       "createFailed": "Projekt konnte nicht erstellt werden",
+      "customerDeleted": "{name} (gelöscht)",
       "description": "Verwalten Sie Projekte, Budgets, Fristen und Zeiterfassungen",
       "dialog": {
         "create": "Projekt erstellen",
@@ -1425,6 +1813,7 @@
         "color": "Farbe",
         "colorOption": "Farbe {color} auswählen",
         "customer": "Kunde",
+        "customerDeleted": "{name} wurde gelöscht. Wählen Sie einen anderen Kunden oder behalten Sie das Projekt ohne Kunden bei.",
         "customerPlaceholder": "Kunden auswählen",
         "deadline": "Frist",
         "description": "Beschreibung",
@@ -1650,8 +2039,23 @@
       "updated": "Projekt aktualisiert",
       "updateFailed": "Projekt konnte nicht aktualisiert werden"
     },
+    "reportShareLinks": {
+      "description": "Alle Links einsehen und widerrufen, über die ein Projekt- oder Kundenbericht geteilt wird",
+      "pageDescription": "Links, die Personen außerhalb von Z8 einen statischen Snapshot eines Projekt- oder Kundenberichts anzeigen. Das Widerrufen eines Links deaktiviert ihn sofort und löscht seinen Snapshot.",
+      "title": "Berichtsfreigabe-Links"
+    },
     "security": {
       "description": "Verwalten Sie Ihr Passwort, die Zwei-Faktor-Authentifizierung, Passkeys und aktive Sitzungen",
+      "kioskPin": {
+        "descriptionChange": "Sie haben eine Kiosk-PIN. Wählen Sie eine neue 4- bis 6-stellige PIN, um sie zu ersetzen.",
+        "descriptionSet": "Wählen Sie eine 4- bis 6-stellige PIN, um an den Kiosken Ihrer Organisation zu stempeln.",
+        "mismatch": "Die PINs stimmen nicht überein.",
+        "newPin": "Neue PIN",
+        "repeatPin": "PIN wiederholen",
+        "save": "PIN speichern",
+        "saved": "Kiosk-PIN gespeichert",
+        "title": "Kiosk-PIN"
+      },
       "title": "Sicherheitseinstellungen",
       "twoFactor": {
         "backupCodesCopied": "Backup-Codes in die Zwischenablage kopiert",
@@ -2052,6 +2456,7 @@
         "replaceDescription": "Eine aktive Version beginnt bereits am {date}. Beim Speichern wird sie ersetzt; die ersetzte Version bleibt im Verlauf erhalten.",
         "replaceTitle": "Die an diesem Tag beginnende Version ersetzen",
         "rules": "Die Anspruchsberechtigung richtet sich nach {reference} ({version}), geprüft für Reisetage von {from} bis {through}. Auslandsreisen werden nur mit übernommenen Auslandspauschalen pro Tag berechnet; andere Tage und besondere Reiserouten werden für eine manuelle Berechnung markiert.",
+        "rulesOpenEnded": "Die Anspruchsberechtigung richtet sich nach {reference} ({version}), geprüft für Reisetage von {from} bis zur Gesetzesänderung. Für Auslandsreisen werden nur die übernommenen Auslandssätze pro Tag berechnet; andere Tage und besondere Reiserouten werden für eine manuelle Berechnung markiert.",
         "saved": "Version der Verpflegungspauschalen aktiviert",
         "saveFailed": "Die Verpflegungspauschalen konnten nicht gespeichert werden.",
         "source": "Quelle",

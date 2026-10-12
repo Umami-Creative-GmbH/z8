@@ -26,6 +26,7 @@ import type {
 	PayslipMatchKind,
 } from "@/lib/personnel-file/payslip-batch.types";
 import { organization, user } from "../auth-schema";
+import { absenceEntry } from "./absence";
 import { employee, team } from "./organization";
 import { currentTimestamp } from "./timestamp";
 
@@ -53,6 +54,8 @@ export const employeeDocument = pgTable(
 		payPeriodMonth: integer("pay_period_month"),
 		visibility: text("visibility").$type<DocumentVisibility>().notNull(),
 		expiryDate: date("expiry_date", { mode: "string" }),
+		/** The sick-leave absence a sick note covers (#982, ADR 0002); only for sick notes. */
+		absenceEntryId: uuid("absence_entry_id"),
 		storageProvider: text("storage_provider").notNull(),
 		storageBucket: text("storage_bucket"),
 		storageKey: text("storage_key").notNull(),
@@ -105,6 +108,20 @@ export const employeeDocument = pgTable(
 			sql`${table.expiryDate} IS NULL OR ${table.category} IN ('certificate', 'other')`,
 		),
 		check("employee_document_size_check", sql`${table.sizeBytes} > 0`),
+		// Cancelling the absence deletes its sick notes explicitly, with an audit
+		// record; the cascade only backs up other ways an absence disappears.
+		foreignKey({
+			name: "employee_document_absence_entry_fk",
+			columns: [table.absenceEntryId, table.organizationId],
+			foreignColumns: [absenceEntry.id, absenceEntry.organizationId],
+		}).onDelete("cascade"),
+		index("employeeDocument_org_absenceEntry_idx")
+			.on(table.organizationId, table.absenceEntryId)
+			.where(sql`absence_entry_id IS NOT NULL`),
+		check(
+			"employee_document_absence_entry_check",
+			sql`${table.absenceEntryId} IS NULL OR ${table.category} = 'sick_note'`,
+		),
 	],
 );
 

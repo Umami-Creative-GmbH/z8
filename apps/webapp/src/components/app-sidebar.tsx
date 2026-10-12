@@ -3,7 +3,9 @@
 import {
 	IconBeach,
 	IconCalendar,
+	IconCalendarCheck,
 	IconCalendarEvent,
+	IconCalendarTime,
 	IconCash,
 	IconClipboardCheck,
 	IconClock,
@@ -21,6 +23,7 @@ import {
 	IconServerCog,
 	IconSettings,
 	IconShieldCheck,
+	IconUserCheck,
 	IconUsers,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -63,6 +66,8 @@ export interface NavigationCapabilities {
 	myDocuments?: boolean;
 	/** Owners, admins and active personnel file officers while personnel files are on (#866). */
 	personnelFiles?: boolean;
+	/** Managers and above while the organization collects period submissions (#1075). */
+	periodSubmissions?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -74,6 +79,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	settingsAccessTier?: SettingsAccessTier;
 	billingEnabled?: boolean;
 	featureFlags?: FeatureFlagState;
+	/** The user manages a project below the manager tier (#928). */
+	managesProject?: boolean;
 	canCreateOrganizations?: boolean;
 }
 
@@ -92,6 +99,7 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	worksCouncil: false,
 	myDocuments: false,
 	personnelFiles: false,
+	periodSubmissions: false,
 	platformAdmin: false,
 };
 
@@ -125,6 +133,7 @@ export function AppSidebar({
 	settingsAccessTier = "member",
 	billingEnabled = false,
 	featureFlags,
+	managesProject = false,
 	canCreateOrganizations = false,
 	...props
 }: AppSidebarProps) {
@@ -138,6 +147,7 @@ export function AppSidebar({
 		showComplianceNav: navigationCapabilities.compliance,
 		showPayrollNav: navigationCapabilities.payroll,
 		featureFlags,
+		managesProject,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);
@@ -159,6 +169,16 @@ export function AppSidebar({
 			url: "/calendar",
 			icon: IconCalendarEvent,
 		},
+		// Employees reach their own shifts here; planners keep Scheduling in the Team section.
+		...(navigationCapabilities.scheduling && employeeRole === "employee"
+			? [
+					{
+						title: t("nav.my-schedule", "My Schedule"),
+						url: "/scheduling",
+						icon: IconCalendarTime,
+					},
+				]
+			: []),
 		{
 			title: t("nav.absences", "Absences"),
 			url: "/absences",
@@ -235,6 +255,21 @@ export function AppSidebar({
 			url: "/team/absences",
 			icon: IconBeach,
 		},
+		{
+			title: t("nav.teamPresence", "Who Is In"),
+			url: "/team/presence",
+			icon: IconUserCheck,
+		},
+		// Only while the organization collects period submissions (current or scheduled cadence)
+		...(navigationCapabilities.periodSubmissions
+			? [
+					{
+						title: t("nav.teamPeriodSubmissions", "Period Submissions"),
+						url: "/team/period-submissions",
+						icon: IconCalendarCheck,
+					},
+				]
+			: []),
 		// Only show Scheduling when shifts are enabled for the organization
 		...(navigationCapabilities.scheduling
 			? [

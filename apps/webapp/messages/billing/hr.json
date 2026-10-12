@@ -1,0 +1,88 @@
+{
+  "billing": {
+    "access": {
+      "canceled": "Vaša pretplata je otkazana. Pretplatite se ponovno kako biste povratili pristup.",
+      "paymentFailed": "Vaša posljednja uplata nije uspjela. Ažurirajte svoj način plaćanja.",
+      "required": "Za korištenje ove aplikacije potrebna je pretplata.",
+      "trialExpired": "Vaše probno razdoblje je isteklo. Pretplatite se za nastavak korištenja aplikacije."
+    },
+    "activeSeats": "Aktivna mjesta",
+    "alerts": {
+      "canceledDescription": "Plaćanje je otkazano. Možete pokušati ponovno kada budete spremni.",
+      "subscriptionRequired": "Potrebna je pretplata",
+      "successDescription": "Vaša pretplata je aktivirana. Hvala vam na pretplati!",
+      "successTitle": "Uspješno!"
+    },
+    "bestValue": "Najisplativije",
+    "billedMonthly": "naplaćuje se mjesečno",
+    "cancelsOn": "Otkazuje se {date}",
+    "checkoutCreateFailed": "Stvaranje sesije plaćanja nije uspjelo",
+    "checkoutStartFailed": "Pokretanje plaćanja nije uspjelo",
+    "checkout": {
+      "trialContinuesDescription": "Stripe Checkout sada prikuplja podatke o plaćanju. Vaša plaćena pretplata započinje tek nakon isteka probnog razdoblja.",
+      "trialContinuesTitle": "Vaše probno razdoblje nastavlja se nakon nadogradnje"
+    },
+    "choosePlan": "Odaberite svoj plan",
+    "choosePlanDescription": "Započnite s besplatnim probnim razdobljem od 14 dana. Za početak nije potrebna kreditna kartica.",
+    "chooseUpgradePlanDescription": "Odaberite ciklus naplate sada. Vaša plaćena pretplata započinje tek nakon isteka preostalog probnog razdoblja.",
+    "currentPlan": "Trenutačni plan",
+    "days": "{count} dana",
+    "description": "Upravljajte svojom pretplatom i podacima o naplati",
+    "faq": {
+      "afterTrial": {
+        "answer": "Nakon završetka 14-dnevnog probnog razdoblja naplatit će vam se odabrani pretplatnički plan. Možete otkazati bilo kada prije završetka probnog razdoblja kako biste izbjegli troškove.",
+        "question": "Što se događa nakon probnog razdoblja?"
+      },
+      "perSeat": {
+        "answer": "Naplata se temelji na broju aktivnih članova u vašoj organizaciji. Kada dodate ili uklonite članove, vaša se pretplata automatski prilagođava.",
+        "question": "Kako funkcionira naplata po korisničkom mjestu?"
+      },
+      "switch": {
+        "answer": "Da! Možete promijeniti plan u bilo kojem trenutku putem portala za naplatu. Promjene stupaju na snagu u vašem sljedećem obračunskom ciklusu.",
+        "question": "Mogu li se prebacivati između mjesečne i godišnje naplate?"
+      },
+      "title": "Često postavljana pitanja"
+    },
+    "features": {
+      "allFeatures": "Sve značajke uključene",
+      "cancelAnytime": "Otkažite bilo kada",
+      "yearlyDiscount": "25% popusta u odnosu na mjesečno"
+    },
+    "interval": {
+      "monthlyBilling": "Mjesečna naplata",
+      "yearlyBilling": "Godišnja naplata"
+    },
+    "manageBilling": "Upravljanje naplatom",
+    "monthlyCost": "Mjesečni trošak",
+    "nextBilling": "Sljedeća naplata",
+    "opening": "Otvaranje...",
+    "perSeatMonth": "/mjestu/mjesečno",
+    "plans": {
+      "monthly": {
+        "description": "Fleksibilna mjesečna naplata",
+        "title": "Mjesečno"
+      },
+      "yearly": {
+        "description": "Uštedite 25% uz godišnju naplatu",
+        "title": "Godišnje"
+      }
+    },
+    "portalOpenFailed": "Otvaranje portala za naplatu nije uspjelo",
+    "priceSeatMonth": "€{price}/mjestu/mj.",
+    "priceSeatMonthYearly": "€{price}/mjestu/mj. (naplaćuje se godišnje)",
+    "seatBilledAnnually": "€{price}/mjestu naplaćuje se godišnje",
+    "starting": "Pokretanje...",
+    "startTrial": "Započnite besplatno probno razdoblje",
+    "status": {
+      "canceled": "Otkazano",
+      "pastDue": "Dospjelo",
+      "trial": "Probno razdoblje"
+    },
+    "title": "Naplata i pretplata",
+    "trialEnds": "Probno razdoblje završava",
+    "upgradeMonthly": "Nadogradi na mjesečno",
+    "upgradeYearly": "Nadogradi na godišnje",
+    "vatNotice": "Prikazane cijene su neto cijene bez PDV-a. PDV će biti dodan gdje je primjenjivo.",
+    "yearTotal": "€{amount}/godišnje ukupno"
+  }
+}

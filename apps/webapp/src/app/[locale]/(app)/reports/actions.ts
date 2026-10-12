@@ -172,6 +172,8 @@ export async function generateReport(
 							dateFromInstant(range.start),
 							dateFromInstant(range.endExclusive.subtract({ milliseconds: 1 })),
 							{ startDate, endDate, timezone: range.timezone },
+							// Custom fields follow the requester's base role (#820).
+							{ customFieldViewer: { kind: "actor", userId: session.user.id } },
 						);
 					})
 					.pipe(

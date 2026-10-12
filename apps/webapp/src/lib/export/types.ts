@@ -3,17 +3,29 @@
  * This file is safe to import from client components
  */
 
+/**
+ * Locale-free settings route that opens Data Export on the Export History tab
+ * of one organization. The organization sits in the path, not the query,
+ * because the sign-in redirect keeps only the path of the requested page.
+ */
+export function exportHistoryPath(organizationId: string): string {
+	return `/settings/export/history/${encodeURIComponent(organizationId)}`;
+}
+
 export type ExportCategory =
 	| "employees"
 	| "teams"
 	| "time_entries"
 	| "work_periods"
 	| "absences"
+	| "balance_adjustments"
 	| "holidays"
 	| "vacation"
 	| "schedules"
 	| "shifts"
-	| "audit_logs";
+	| "audit_logs"
+	| "projects"
+	| "customers";
 
 export const EXPORT_CATEGORIES: ExportCategory[] = [
 	"employees",
@@ -21,11 +33,14 @@ export const EXPORT_CATEGORIES: ExportCategory[] = [
 	"time_entries",
 	"work_periods",
 	"absences",
+	"balance_adjustments",
 	"holidays",
 	"vacation",
 	"schedules",
 	"shifts",
 	"audit_logs",
+	"projects",
+	"customers",
 ];
 
 export const CATEGORY_LABELS: Record<ExportCategory, string> = {
@@ -34,9 +49,12 @@ export const CATEGORY_LABELS: Record<ExportCategory, string> = {
 	time_entries: "Time Tracking",
 	work_periods: "Work Periods",
 	absences: "Absences",
+	balance_adjustments: "Work Balance Adjustments",
 	holidays: "Holidays",
 	vacation: "Vacation Policies",
 	schedules: "Work Schedules",
 	shifts: "Shifts",
 	audit_logs: "Audit Logs",
+	projects: "Projects",
+	customers: "Customers",
 };

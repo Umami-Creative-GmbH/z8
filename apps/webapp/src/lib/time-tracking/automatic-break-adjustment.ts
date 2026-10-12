@@ -64,7 +64,9 @@ import {
 	CompletedWorkIntegrityError,
 	earliestStartDate,
 } from "./close-active-work";
+import { workInterval } from "./closed-months/store";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { resolvePolicyClockOutBreakSnapshotInTransaction } from "./policy-clock-out-break-snapshot";
 import {
 	type PolicyClockOutSurchargeSnapshot,
@@ -719,6 +721,13 @@ export async function adjustAutomaticBreakInTransaction(
 		sourceWorkPeriodId: period.id,
 		newWorkPeriodId: generated.id,
 	});
+	// The inserted break changes the work: a submitted period goes back (#805). A system change.
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: null,
+		work: [workInterval(period.startTime, period.endTime)],
+	});
 
 	// Independent rounding can change the total: the refresh commits with the work.
 	const dirtyFromDate = earliestStartDate(sourceStart, sourceClockIn.utcOffsetMinutes);
@@ -1160,6 +1169,13 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		organizationId,
 		sourceWorkPeriodId: period.id,
 		newWorkPeriodId: inserted.id,
+	});
+	// The inserted break changes the work: a submitted period goes back (#805). A system change.
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: null,
+		work: [workInterval(period.startTime, plan.expected.endTime)],
 	});
 	return {
 		kind: "adjusted",

@@ -44,6 +44,8 @@ import type { AllocationEvidence } from "./allocation-evidence";
 import { CompletedWorkReviewRequiredError, lockAuthority } from "./amend-completed-work";
 import { calculateHash } from "./blockchain";
 import { canonicalJson } from "./canonical-json";
+import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	CompletedWorkCollisionError,
 	type CompletedWorkFollowUp,
@@ -466,6 +468,19 @@ export async function splitCompletedWork(
 		employeeId,
 		interval: { startAt: sourceStart, endAt: sourceEnd },
 		excludeWorkPeriodIds: [period.id],
+	});
+	// Splitting work that touches a closed month changes it (#762).
+	await assertWorkOpen(tx, {
+		organizationId,
+		employeeId,
+		intervals: [{ start: sourceStart, end: sourceEnd }],
+	});
+	// ... and sends a submitted period back to the employee (#1062).
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: input.actorUserId,
+		work: [{ start: sourceStart, end: sourceEnd }],
 	});
 
 	const decisions = await tx

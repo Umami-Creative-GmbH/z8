@@ -338,6 +338,29 @@ describe("clocking reminders for published shifts on PostgreSQL", () => {
 		expect(await reminders(onHoliday)).toEqual([]);
 	});
 
+	it("sends no missed clock-in reminder on an approved day of time off in lieu", async () => {
+		const org = await organization();
+		const person = await employee(org);
+		await shift(org, person);
+		const categoryId = randomUUID();
+		await fixture.pool.query(
+			`insert into absence_category
+			 (id, organization_id, type, name, requires_work_time, counts_against_vacation,
+				draws_on_work_balance, updated_at)
+			 values ($1, $2, 'time_off_in_lieu', 'Time off in lieu', false, false, true, now())`,
+			[categoryId, org.organizationId],
+		);
+		await fixture.pool.query(
+			`insert into absence_entry
+			 (employee_id, category_id, organization_id, start_date, end_date, status, updated_at)
+			 values ($1, $2, $3, $4, $4, 'approved', now())`,
+			[person.employeeId, categoryId, org.organizationId, DAY],
+		);
+
+		await run("2026-04-28T06:30:00Z");
+		expect(await reminders(person)).toEqual([]);
+	});
+
 	it("never sends for draft or open shifts", async () => {
 		const org = await organization();
 		const person = await employee(org);

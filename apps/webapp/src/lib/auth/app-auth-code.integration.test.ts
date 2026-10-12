@@ -83,6 +83,45 @@ describe("installed desktop sign-in on the checked-in migration chain", () => {
 		},
 	);
 
+	it.each(["application/json", "text/html"])(
+		"issues a store app code with Accept %s that only its verifier redeems, once",
+		async (accept) => {
+			const request = new NextRequest(
+				`https://app.example.test/api/auth/app-login?app=mobile&redirect=z8mobile://auth/callback&challenge=${challenge}`,
+			);
+			request.headers.set("accept", accept);
+			const response = await appLogin.GET(request);
+			const href =
+				accept === "text/html"
+					? /id="open-z8" href="([^"]+)"/
+							.exec(await response.text())?.[1]
+							?.replaceAll("&amp;", "&")
+					: response.headers.get("location");
+			const callback = new URL(href ?? "");
+			expect(`${callback.protocol}//${callback.host}${callback.pathname}`).toBe(
+				"z8mobile://auth/callback",
+			);
+			const code = callback.searchParams.get("code") ?? "";
+			expect(code).toMatch(/^[A-F0-9]{32}$/);
+
+			// A desktop exchange cannot redeem a store app code.
+			expect(await consumeAppAuthCode({ app: "desktop", code, verifier })).toEqual({
+				status: "invalid_code",
+			});
+			expect(
+				await consumeAppAuthCode({ app: "mobile", code, verifier: "incorrect-verifier" }),
+			).toEqual({ status: "invalid_code" });
+			expect(await consumeAppAuthCode({ app: "mobile", code, verifier })).toEqual({
+				status: "success",
+				sessionToken: "fixture-session-token",
+			});
+			// Replaying the used code is refused.
+			expect(await consumeAppAuthCode({ app: "mobile", code, verifier })).toEqual({
+				status: "invalid_code",
+			});
+		},
+	);
+
 	it("recovers an old table repeatedly without changing existing auth-code evidence", async () => {
 		const migration = await readFile(
 			new URL(

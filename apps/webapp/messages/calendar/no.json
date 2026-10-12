@@ -24,6 +24,31 @@
       "nextYear": "Neste år",
       "previousYear": "Forrige år"
     },
+    "deputy": {
+      "away": "Borte {dates}",
+      "awayOption": "{name} · Borte {dates}",
+      "awayWarning": "{name} er borte på disse datoene. Du kan likevel velge vedkommende.",
+      "changeAction": "Endre stedfortreder",
+      "changed": "Stedfortreder lagret",
+      "changeDescription": "Stedfortrederen dekker for deg mens du er borte. Å endre vedkommende krever ingen ny godkjenning.",
+      "changeDescriptionFor": "Stedfortrederen dekker for {name} mens vedkommende er borte. Å endre vedkommende krever ingen ny godkjenning.",
+      "changeFailed": "Kunne ikke lagre stedfortrederen",
+      "changeTitle": "Endre stedfortreder",
+      "contactOnly": "{name} vil kun vises som kontakt og kan ikke avgjøre godkjenninger.",
+      "errors": {
+        "ended": "Stedfortrederen kan ikke lenger endres: dette fraværet er avsluttet.",
+        "required": "Velg en stedfortreder: denne fraværstypen krever en.",
+        "self": "En ansatt kan ikke være sin egen stedfortreder.",
+        "unavailable": "Stedfortrederen må være en aktiv ansatt i denne organisasjonen."
+      },
+      "help": "Kollegaen som dekker for deg mens du er borte. Vedkommende blir ikke bedt om å godta.",
+      "label": "Stedfortreder",
+      "labelOptional": "Stedfortreder (valgfritt)",
+      "labelRequired": "Stedfortreder *",
+      "none": "Ingen stedfortreder",
+      "placeholder": "Velg en stedfortreder…",
+      "save": "Lagre stedfortreder"
+    },
     "dialog": {
       "cancelDescription": "Er du sikker på at du vil avbryte denne fraværsforespørselen? Denne handlingen kan ikke angres.",
       "cancelTitle": "Avbryt fraværsforespørsel",
@@ -36,10 +61,10 @@
     },
     "featureName": "administrer fravær",
     "form": {
+      "absenceDays": "Fraværsdager:",
       "absenceType": "Fraværstype *",
       "autoApproved": "(Automatisk godkjent)",
       "balanceAfterRequest": "Saldo etter forespørsel:",
-      "businessDays": "Arbeidsdager:",
       "daysRemaining": "Gjenværende dager:",
       "description": "Send inn en forespørsel om fri. Lederen din vil bli varslet for godkjenning.",
       "duration": "Fraværsvarighet",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Ingen publisert bemanningsrisiko",
       "noCoverageRulesConfigured": "Ingen bemanningsregler konfigurert for berørte vakter",
       "noHolidays": "Ingen tildelte helligdager i perioden",
+      "noWorkingDays": "Dette intervallet inneholder ingen arbeidsdager.",
       "remainingAfter": "Gjenværende etter forespørsel",
       "requested": "Forespurt",
       "title": "Smartplanlegger",
-      "unavailable": "Forhåndsvisning av planlegging er utilgjengelig. Du kan fortsatt sende inn forespørselen din."
+      "unavailable": "Forhåndsvisning av planlegging er utilgjengelig. Du kan fortsatt sende inn forespørselen din.",
+      "workBalance": "Arbeidssaldo",
+      "workBalanceAfter": "Etter forespørsel",
+      "workBalanceCurrent": "Gjeldende",
+      "workBalanceDrawn": "Trukket av forespørsel",
+      "workBalanceNegative": "Arbeidssaldoen din vil bli negativ etter denne forespørselen. Du kan likevel sende den inn."
     },
     "requestAbsence": "Be om fravær",
+    "sickNotes": {
+      "attachAction": "Legg ved sykmelding",
+      "attach": {
+        "defaultTitle": "Sykmelding {dateRange}",
+        "description": "Legg til bilder eller PDF-er av sykmeldingen din: PDF-, JPEG-, PNG- eller WebP-filer på opptil 20 MB hver. Hver fil lagres som en egen sykmelding i personalmappen din.",
+        "documentDate": "Dokumentdato",
+        "failed": "Opplasting mislyktes",
+        "fileRequired": "Velg minst én fil.",
+        "officerDescription": "Legg til bilder eller PDF-filer av sykmeldingen: PDF-, JPEG-, PNG- eller WebP-filer på opptil 20 MB hver. Hver fil lagres som en egen sykmelding i den ansattes personalmappe.",
+        "progress": "Opplastingsfremdrift",
+        "progressCount": "{done} av {total} lastet opp",
+        "share": "Del med den ansatte",
+        "sharedNote": "Du ser sykmeldingene dine under Mine dokumenter og på dette fraværet. Godkjenneren din ser bare at en sykmelding er lagt ved. Du kan slette en sykmelding innen 24 timer etter at den er lastet opp.",
+        "shareHint": "Av: Kun HR, den ansatte ser bare at en sykmelding er lagt ved. På: den ansatte ser den under Mine dokumenter.",
+        "submit": "Legg ved",
+        "success": "{count, plural, one {Sykmelding lagt ved} other {# sykmeldinger lagt ved}}",
+        "title": "Legg ved sykmelding",
+        "titleLabel": "Tittel"
+      },
+      "files": {
+        "chooseFiles": "Velg filer",
+        "defaultTitleUndated": "Sykmelding",
+        "incomplete": "Gi hver sykmelding en tittel og en dokumentdato.",
+        "remove": "Fjern {fileName}",
+        "takePhoto": "Ta bilde",
+        "tooMany": "Du kan legge til opptil {max} filer."
+      },
+      "marker": "Sykmelding lagt ved ({count})",
+      "panel": {
+        "delete": "Slett {title}",
+        "description": "Sykmeldinger for fraværet {dateRange}.",
+        "empty": "Ingen sykmeldinger du kan åpne.",
+        "linkExisting": "Koble sykmelding",
+        "loadFailed": "Sykmeldingene kunne ikke lastes inn.",
+        "title": "Sykmeldinger",
+        "unlink": "Koble fra {title}",
+        "unlinked": "Sykmelding koblet fra",
+        "unlinkFailed": "Sykmeldingen kunne ikke kobles fra."
+      },
+      "request": {
+        "attachFailed": "Fraværet ditt ble forespurt, men {files} kunne ikke legges ved. Du kan legge ved sykmeldinger fra fraværet senere.",
+        "description": "Legg til bilder eller PDF-filer av sykmeldingen din: PDF-, JPEG-, PNG- eller WebP-filer på opptil 20 MB hver. Hver fil lagres som en egen sykmelding i personalmappen din. Godkjenneren din ser bare at en sykmelding er lagt ved.",
+        "title": "Sykmelding (valgfritt)",
+        "uploadFailed": "{fileName} kunne ikke lastes opp. Fjern den eller prøv på nytt."
+      }
+    },
     "status": {
       "approved": "Godkjent",
       "pending": "Til behandling",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Timeføringer blokkert",
       "category": "Kategori",
+      "deputy": "Stedfortreder",
       "duration": "Varighet",
       "employee": "Ansatt",
       "noEvents": "Ingen hendelser for denne dagen",
@@ -177,6 +255,7 @@
       "category": "Kategori",
       "credited": "Godskrevet",
       "dateRange": "Datoperiode",
+      "deputy": "Stedfortreder",
       "duration": "Varighet",
       "editedBy": "Redigert av",
       "employee": "Ansatt",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "Uke",
+      "closedDay": "I en lukket måned",
       "dayEvents": "{count, plural, one {# hendelse: {titles}} other {# hendelser: {titles}}}",
       "dayLabel": "{date}: {actual} registrert, {required} påkrevd, {delta} {status}.",
       "description": "Daglige, ukentlige og månedlige policy-timer",

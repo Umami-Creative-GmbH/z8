@@ -1,0 +1,169 @@
+{
+  "scheduling": {
+    "coverage": {
+      "adequate": "Staf i mjaftueshëm",
+      "byLocation": "Sipas vendndodhjes:",
+      "gapCount": "{count} mungesë stafi",
+      "gaps": "boshllëqe",
+      "hideOverlay": "Fshih mbivendosjen e mbulimit",
+      "metSlots": "{count} të mjaftueshëm",
+      "overSlots": "{count} me staf të tepërt",
+      "overstaffed": "Me staf të tepërt",
+      "showOverlay": "Shfaq mbivendosjen e objektivave të mbulimit",
+      "summary": "Përmbledhja e mbulimit:",
+      "toggleLabel": "Mbulimi",
+      "underSlots": "{count} me mungesë stafi",
+      "understaffed": "Me mungesë stafi",
+      "utilization": "{percent}% shfrytëzim"
+    },
+    "mySchedule": {
+      "loadFailed": "Turnet tuaja nuk mund të ngarkoheshin. Ju lutemi provoni përsëri më vonë.",
+      "nextWeek": "Java tjetër",
+      "noShifts": "Nuk ka turne",
+      "previousWeek": "Java e kaluar",
+      "shift": "Turni",
+      "today": "Sot"
+    },
+    "page": {
+      "employeeScheduleDescription": "Turnet tuaja të publikuara, javë pas jave",
+      "employeeTitle": "Orari im",
+      "managerDescription": "Menaxhoni dhe planifikoni turnet e punonjësve",
+      "title": "Orari i turneve"
+    },
+    "publish": {
+      "acknowledgeAndPublish": "Konfirmo dhe publiko",
+      "acknowledgmentDescription": "Publikimi do të vazhdojë, por ky orar ka paralajmërime përputhshmërie që duhet të konfirmohen më parë.",
+      "button": "Publiko ({count})",
+      "cancel": "Anulo",
+      "complianceAcknowledgmentRequired": "Kërkohet konfirmimi i përputhshmërisë",
+      "complianceWarnings": "{count, plural, one {Kontrollet e përputhshmërisë gjetën # paralajmërim; do t'ju duhet ta konfirmoni atë përpara publikimit.} other {Kontrollet e përputhshmërisë gjetën # paralajmërime; do t'ju duhet t'i konfirmoni ato përpara publikimit.}}",
+      "coverageWarning": "Disa blloqe kohore nuk i plotësojnë kërkesat minimale të personelit.",
+      "maxHours": "Orët maksimale: {count}",
+      "notifyEmployees": "{count, plural, one {Publiko # turn draft dhe njofto punonjësit} other {Publiko # turne draft dhe njofto punonjësit}}",
+      "overtime": "Orë shtesë: {count}",
+      "publishing": "Duke publikuar…",
+      "restTime": "Koha e pushimit: {count}",
+      "totalFindings": "{count, plural, other {# gjetje gjithsej} }",
+      "warningsDetectedBeforePublish": "U zbuluan paralajmërime përpara publikimit"
+    },
+    "scheduler": {
+      "complianceBanner": {
+        "findingsDetected": "U zbulua(n) {count} gjetje para publikimit.",
+        "maxHours": "Orët maksimale: {count}",
+        "overtime": "Orë shtesë: {count}",
+        "restTime": "Koha e pushimit: {count}",
+        "title": "Paralajmërime të përputhshmërisë në këtë interval datash"
+      },
+      "focus": {
+        "anonymous": "Po shfaqen turnet e një punonjësi",
+        "employee": "Po shfaqen turnet për {name}",
+        "showAll": "Shfaq të gjitha turnet"
+      },
+      "loading": "Po ngarkohet orari...",
+      "publish": {
+        "failed": "Publikimi i turneve dështoi",
+        "published": "U publikua(n) {count} turn(e)"
+      },
+      "shiftUpdate": {
+        "failed": "Përditësimi i turnit dështoi",
+        "overlapDescription": "Ky turn mbivendoset me {count} turn(e) tjetër(tëra)",
+        "overlapWarning": "Turni u ruajt me paralajmërim mbivendosjeje",
+        "updated": "Turni u përditësua"
+      }
+    },
+    "shiftDetails": {
+      "close": "Mbyll",
+      "date": "Data",
+      "description": "Turni juaj i planifikuar",
+      "endsNextDay": "përfundon ditën tjetër",
+      "location": "Vendndodhja",
+      "notes": "Shënime",
+      "time": "Ora",
+      "title": "Detajet e turnit"
+    },
+    "shiftDialog": {
+      "anyoneCanPickUp": "Çdokush mund ta marrë",
+      "assignTo": "Caktoja",
+      "confirmDelete": "Konfirmo fshirjen",
+      "created": "Turni u krijua",
+      "createDescription": "Plotësoni të dhënat për turnin e ri",
+      "createShift": "Krijo turn",
+      "createTitle": "Krijo turn",
+      "date": "Data",
+      "deleted": "Turni u fshi",
+      "deleteFailed": "Fshirja e turnit dështoi",
+      "draft": "Draft",
+      "editDescription": "Përditësoni detajet e turnit më poshtë",
+      "editTitle": "Ndrysho turnin",
+      "endTime": "Ora e përfundimit",
+      "noTemplate": "Pa shabllon",
+      "notes": "Shënime (Opsionale)",
+      "notesPlaceholder": "Çdo udhëzim ose shënim i veçantë...",
+      "openShift": "Turn i hapur",
+      "openShiftHelp": "Lëreni si \"Turn i hapur\" për t'u lejuar punonjësve ta marrin",
+      "pickDate": "Zgjidhni një datë",
+      "published": "Publikuar",
+      "savedWithWarnings": "Turni u ruajt me paralajmërime",
+      "saveFailed": "Ruajtja e turnit dështoi",
+      "selectEmployee": "Zgjidhni një punonjës",
+      "selectSubarea": "Zgjidhni një nënzonë…",
+      "selectTemplate": "Zgjidhni një shabllon",
+      "startTime": "Koha e fillimit",
+      "status": "Statusi:",
+      "subarea": "Nënzona",
+      "subareaHelp": "Ku do të zhvillohet ky turn",
+      "template": "Shablloni (Opsionale)",
+      "templateHelp": "Përzgjedhja e një shablloni do të plotësojë automatikisht oraret",
+      "updated": "Turni u përditësua",
+      "updateShift": "Përditëso turnin"
+    },
+    "skills": {
+      "expiredCertifications": "Certifikime të skaduara:",
+      "expiredOn": "(Skaduar më {date})",
+      "missingPreferred": "Aftësi të preferuara që mungojnë:",
+      "missingPreferredCount": "{count} të preferuara mungojnë",
+      "missingRequired": "Aftësi të kërkuara që mungojnë:",
+      "preferred": "E preferuar",
+      "preferredSkillsMissing": "Mungojnë aftësitë e preferuara",
+      "requirementsNotMet": "Kërkesat e aftësive nuk plotësohen",
+      "unqualified": "I pakualifikuar",
+      "validating": "Po vërtetohen aftësitë…",
+      "validatingDescription": "Po kontrollohen kualifikimet e punonjësit",
+      "warningMessage": "Ju përsëri mund ta caktoni këtë turn, por do të regjistrohet si një tejkalim."
+    },
+    "staffingSuggestions": {
+      "empty": "Nuk ka punonjës të disponueshëm për këtë turn",
+      "error": "Sugjerimet nuk mund të ngarkoheshin",
+      "loading": "Po kërkohen punonjës të disponueshëm…",
+      "note": {
+        "missingPreferredSkill": "I mungon aftësia e preferuar: {skill}"
+      },
+      "pick": "Zgjidh",
+      "pickLabel": "Cakto {name}",
+      "reason": {
+        "noContractedTarget": "Pa objektiv të kontraktuar",
+        "plannedHours": "{planned} nga {target} h të planifikuara këtë javë",
+        "requestedThisShift": "Ka kërkuar këtë turn",
+        "restPeriodOk": "Periudha e pushimit në rregull",
+        "skillsHeld": "Ka {skills}"
+      },
+      "requested": "Ka kërkuar këtë turn",
+      "showAll": "Shfaq të gjitha ({count})",
+      "showFewer": "Shfaq më pak",
+      "title": "Punonjësit e sugjeruar",
+      "warning": {
+        "expiredRequiredSkill": "{skill} ka skaduar më {date}",
+        "maxHours": "Mbi maksimumin ditor ({total} nga {max} h)",
+        "missingRequiredSkill": "Mungon aftësia e kërkuar: {skill}",
+        "overtime": "{period, select, daily {Orë shtesë ditore} weekly {Orë shtesë javore} other {Orë shtesë mujore}} ({total} nga {threshold} h)",
+        "pendingAbsence": "Mungesë në pritje: {category}",
+        "restTime": "Periudha e pushimit shumë e shkurtër ({rest} nga {required} h)"
+      }
+    },
+    "templates": {
+      "dragHint": "Tërhiqni një shabllon mbi kalendar për të krijuar një turn",
+      "empty": "Nuk ka shabllone të disponueshme. Krijoni shabllone te Cilësimet për të shtuar shpejt turne.",
+      "title": "Shabllonet e turneve"
+    }
+  }
+}

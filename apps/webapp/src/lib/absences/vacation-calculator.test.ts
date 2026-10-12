@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AbsenceWithCategory } from "./types";
 import { calculateVacationBalance } from "./vacation-calculator";
+import { workingDaysFrom } from "./working-days";
 
 function vacationAbsence(
 	id: string,
@@ -172,15 +173,18 @@ describe("vacation balance with assigned holidays", () => {
 					carryoverExpiryMonths: null,
 				},
 				absences: [vacationAbsence("existing-request", "2026-12-28", status, "2026-12-31")],
-				holidays: [
-					{
-						id: "silvester",
-						name: "Silvester",
-						categoryId: "company-holiday",
-						startDate: new Date("2026-12-31T00:00:00Z"),
-						endDate: new Date("2026-12-31T00:00:00Z"),
-					},
-				],
+				isWorkingDay: workingDaysFrom({
+					assignments: [],
+					holidays: [
+						{
+							id: "silvester",
+							name: "Silvester",
+							categoryId: "company-holiday",
+							startDate: new Date("2026-12-31T00:00:00Z"),
+							endDate: new Date("2026-12-31T00:00:00Z"),
+						},
+					],
+				}),
 				currentDate: new Date("2026-10-05T00:00:00Z"),
 				year: 2026,
 			});
@@ -189,4 +193,37 @@ describe("vacation balance with assigned holidays", () => {
 			expect(balance.remainingDays).toBe(27);
 		},
 	);
+});
+
+describe("vacation balance on the employee's working days", () => {
+	const allowance = {
+		defaultAnnualDays: "30",
+		allowCarryover: false,
+		maxCarryoverDays: null,
+		carryoverExpiryMonths: null,
+	};
+
+	it("charges a Monday-to-Thursday employee four days for a Monday-to-Friday vacation", () => {
+		const balance = calculateVacationBalance({
+			organizationAllowance: allowance,
+			absences: [vacationAbsence("week", "2026-10-12", "approved", "2026-10-16")],
+			isWorkingDay: (day) => day.dayOfWeek <= 4,
+			currentDate: new Date("2026-10-05T00:00:00Z"),
+			year: 2026,
+		});
+		expect(balance.usedDays).toBe(4);
+		expect(balance.remainingDays).toBe(26);
+	});
+
+	it("charges a Monday-to-Saturday employee for a Saturday", () => {
+		const balance = calculateVacationBalance({
+			organizationAllowance: allowance,
+			absences: [vacationAbsence("saturday", "2026-10-17", "pending")],
+			isWorkingDay: (day) => day.dayOfWeek <= 6,
+			currentDate: new Date("2026-10-05T00:00:00Z"),
+			year: 2026,
+		});
+		expect(balance.pendingDays).toBe(1);
+		expect(balance.remainingDays).toBe(29);
+	});
 });

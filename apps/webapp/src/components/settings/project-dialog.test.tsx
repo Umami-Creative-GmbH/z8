@@ -9,6 +9,7 @@ import type {
 	ProjectTemplatePreviewData,
 	ProjectTemplateSummary,
 } from "@/lib/projects/project-template-model";
+import type { ProjectWithDetails } from "@/app/[locale]/(app)/settings/projects/actions";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { ProjectDialog } from "./project-dialog";
 
@@ -134,14 +135,41 @@ const relaunchPreview: ProjectTemplatePreviewData = {
 	managersCopied: true,
 };
 
-function renderDialog() {
+function editedProject(overrides: Partial<ProjectWithDetails> = {}): ProjectWithDetails {
+	return {
+		id: "project-1",
+		organizationId: "org-1",
+		name: "Apollo",
+		description: null,
+		status: "active",
+		icon: null,
+		color: null,
+		budgetHours: null,
+		deadline: null,
+		customerId: null,
+		customerName: null,
+		deletedCustomerName: null,
+		billableDefault: false,
+		isActive: true,
+		createdAt: new Date("2026-01-01T00:00:00Z"),
+		createdBy: "user-1",
+		updatedAt: new Date("2026-01-01T00:00:00Z"),
+		updatedBy: null,
+		managers: [],
+		assignments: [],
+		totalHoursBooked: 0,
+		...overrides,
+	};
+}
+
+function renderDialog(project: ProjectWithDetails | null = null) {
 	const onSuccess = vi.fn();
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(
 		<QueryClientProvider client={client}>
 			<ProjectDialog
 				organizationId="org-1"
-				project={null}
+				project={project}
 				open
 				onOpenChange={() => {}}
 				onSuccess={onSuccess}
@@ -322,5 +350,71 @@ describe("ProjectDialog, starting from a template", () => {
 			expect.objectContaining({ organizationId: "org-1", name: "Blank one" }),
 		);
 		expect(fromTemplateActions.createProjectFromTemplate).not.toHaveBeenCalled();
+	});
+});
+
+describe("ProjectDialog, editing a project whose customer was deleted (#938)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		customerActions.getCustomersForSelection.mockResolvedValue({
+			success: true,
+			data: [{ id: "customer-1", name: "Acme" }],
+		});
+		projectActions.updateProject.mockResolvedValue({ success: true, data: undefined });
+	});
+
+	it("shows the project without customer, says the customer was deleted, and never offers it", async () => {
+		renderDialog(editedProject({ deletedCustomerName: "Old Co" }));
+
+		const customer = await screen.findByRole("combobox", { name: "Customer" });
+		await within(customer).findByRole("option", { name: "Acme" });
+		expect((customer as HTMLSelectElement).value).toBe(
+			within(customer).getByRole<HTMLOptionElement>("option", { name: "No customer" }).value,
+		);
+		expect(within(customer).queryByRole("option", { name: /Old Co/ })).toBeNull();
+		expect(
+			screen.getByText(
+				"Old Co was deleted. Pick another customer or keep the project without one.",
+			),
+		).toBeTruthy();
+	});
+
+	it("lets the admin pick an active customer", async () => {
+		const user = userEvent.setup();
+		renderDialog(editedProject({ deletedCustomerName: "Old Co" }));
+
+		const customer = await screen.findByRole("combobox", { name: "Customer" });
+		await within(customer).findByRole("option", { name: "Acme" });
+		await user.selectOptions(customer, "customer-1");
+		await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+		expect(projectActions.updateProject).toHaveBeenCalledWith(
+			"project-1",
+			expect.objectContaining({ customerId: "customer-1" }),
+		);
+	});
+
+	it("saves the project without customer when the admin keeps none", async () => {
+		const user = userEvent.setup();
+		renderDialog(editedProject({ deletedCustomerName: "Old Co" }));
+
+		await screen.findByRole("combobox", { name: "Customer" });
+		await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+		expect(projectActions.updateProject).toHaveBeenCalledWith(
+			"project-1",
+			expect.objectContaining({ customerId: null }),
+		);
+	});
+
+	it("still says the customer was deleted when the organization has no active customers", async () => {
+		customerActions.getCustomersForSelection.mockResolvedValue({ success: true, data: [] });
+		renderDialog(editedProject({ deletedCustomerName: "Old Co" }));
+
+		expect(
+			await screen.findByText(
+				"Old Co was deleted. Pick another customer or keep the project without one.",
+			),
+		).toBeTruthy();
 	});
 });

@@ -32,8 +32,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { queryKeys } from "@/lib/query";
 import type { SettingsAccessTier } from "@/lib/settings-access";
+import { CustomFieldDraftsSection } from "./custom-fields/custom-field-values-section";
+import { useCustomFieldDrafts } from "./custom-fields/use-custom-field-drafts";
 import {
 	buildCreateCustomerInput,
 	type CustomerDialogFormValues,
@@ -64,6 +67,31 @@ function getCustomerDefaultValues(
 	};
 }
 
+/** Saves the dialog: updates `customer`, or creates one. Null when the request itself failed. */
+function saveCustomer(
+	organizationId: string,
+	customer: CustomerData | null,
+	value: CustomerDialogFormValues,
+	customFieldValues: CustomFieldValuesInput | undefined,
+) {
+	const request = customer
+		? updateCustomer(customer.id, {
+				name: value.name,
+				address: value.address || null,
+				vatId: value.vatId || null,
+				email: value.email || null,
+				contactPerson: value.contactPerson || null,
+				phone: value.phone || null,
+				website: value.website || null,
+				customFieldValues,
+			})
+		: createCustomer({ ...buildCreateCustomerInput(organizationId, value), customFieldValues });
+	return request.then(
+		(response) => response,
+		() => null,
+	);
+}
+
 export function CustomerDialog({
 	accessTier,
 	organizationId,
@@ -75,6 +103,14 @@ export function CustomerDialog({
 	const { t } = useTranslate();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const isEditing = !!customer;
+	// The "Custom fields" section (#818); saved with the customer.
+	const customFields = useCustomFieldDrafts({
+		entity: "customer",
+		recordId: customer?.id ?? null,
+		enabled: open,
+		onOpenChange,
+		onSaved: onSuccess,
+	});
 	const requiresScopedProject = requiresScopedProjectSelection(
 		accessTier,
 		isEditing,
@@ -115,54 +151,32 @@ export function CustomerDialog({
 				return;
 			}
 
-			if (isEditing && customer) {
-				const result = await updateCustomer(customer.id, {
-					name: value.name,
-					address: value.address || null,
-					vatId: value.vatId || null,
-					email: value.email || null,
-					contactPerson: value.contactPerson || null,
-					phone: value.phone || null,
-					website: value.website || null,
-				}).then(
-					(response) => response,
-					() => null,
+			const result = await saveCustomer(
+				organizationId,
+				customer,
+				value,
+				customFields.values(),
+			).finally(() => setIsSubmitting(false));
+			if (result?.success) {
+				toast.success(
+					isEditing
+						? t("settings.customers.updated", "Customer updated")
+						: t("settings.customers.created", "Customer created"),
 				);
-
-				if (result?.success) {
-					toast.success(t("settings.customers.updated", "Customer updated"));
-					onSuccess();
-				} else {
-					toast.error(
-						result?.error ||
-							t("settings.customers.updateFailed", "Failed to update customer"),
-					);
-				}
+				customFields.handleSaved();
 			} else {
-				const result = await createCustomer(
-					buildCreateCustomerInput(organizationId, value),
-				).then(
-					(response) => response,
-					() => null,
+				toast.error(
+					result?.error ||
+						(isEditing
+							? t("settings.customers.updateFailed", "Failed to update customer")
+							: t("settings.customers.createFailed", "Failed to create customer")),
 				);
-
-				if (result?.success) {
-					toast.success(t("settings.customers.created", "Customer created"));
-					onSuccess();
-				} else {
-					toast.error(
-						result?.error ||
-							t("settings.customers.createFailed", "Failed to create customer"),
-					);
-				}
 			}
-
-			setIsSubmitting(false);
 		},
 	});
 
 	return (
-		<ActionPanel open={open} onOpenChange={onOpenChange}>
+		<ActionPanel open={open} onOpenChange={customFields.handleOpenChange}>
 			<ActionPanelContent>
 				<CustomerDialogHeader isEditing={isEditing} />
 
@@ -350,12 +364,14 @@ export function CustomerDialog({
 								)}
 							</form.Field>
 						</div>
+
+						<CustomFieldDraftsSection drafts={customFields} disabled={isSubmitting} />
 					</ActionPanelBody>
 
 					<CustomerDialogFooter
 						isEditing={isEditing}
 						isSubmitting={isSubmitting}
-						onCancel={() => onOpenChange(false)}
+						onCancel={() => customFields.handleOpenChange(false)}
 					/>
 				</form>
 			</ActionPanelContent>

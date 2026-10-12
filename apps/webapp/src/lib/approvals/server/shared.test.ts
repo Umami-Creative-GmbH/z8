@@ -61,6 +61,19 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 		managerEligibilityMocks.isEligibleManagerForApprovalRequest,
 }));
 
+// Covering and the acting-for record are verified against PostgreSQL
+// (deputy-decisions.integration.test.ts); here the deputy right is a seam.
+const deputyMocks = vi.hoisted(() => ({
+	authorize: vi.fn(),
+	record: vi.fn(async () => undefined),
+}));
+
+vi.mock("@/lib/approvals/deputy/deputy-decision-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/deputy/deputy-decision-store")>()),
+	authorizeLegacyDeputyDecision: deputyMocks.authorize,
+	recordDeputyDecision: deputyMocks.record,
+}));
+
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import {
 	getApprovalStatusUpdate,
@@ -78,6 +91,128 @@ beforeEach(() => {
 	managerEligibilityMocks.isEligibleManagerForApprovalRequest.mockResolvedValue(
 		false,
 	);
+	deputyMocks.authorize.mockReset();
+	deputyMocks.authorize.mockRejectedValue(
+		new AuthorizationError({
+			message: "You are not authorized to decide this request",
+			userId: "employee-1",
+			resource: "approval_request",
+			action: "approve",
+		}),
+	);
+	deputyMocks.record.mockClear();
+});
+
+describe("covering deputy decisions (#1016)", () => {
+	const actingFor = { approverEmployeeId: "absent-approver-1", absenceId: "absence-1" };
+	function pendingFor(entityType: ApprovalEntityType) {
+		return {
+			id: "approval-1",
+			entityId: "claim-1",
+			entityType,
+			approverId: "absent-approver-1",
+			organizationId: "org-1",
+			requestedBy: "requester-1",
+			status: "pending",
+		};
+	}
+
+	it.each([
+		{ path: "inbox (eligible-manager option, not eligible)", options: { allowAnyApprover: true } },
+		{ path: "direct (no option)", options: {} },
+	])("lets the covering deputy decide through the $path, recording whom it acted for", async ({
+		options,
+	}) => {
+		deputyMocks.authorize.mockResolvedValueOnce(actingFor);
+		const afterCommit = vi.fn(() => Effect.void);
+		const { approvalFindFirst, log, run, updateEntity } = createSharedApprovalTestContext(
+			"approve",
+			{ approvalRequestId: "approval-1", transactional: true, ...options },
+			"time_entry",
+		);
+		approvalFindFirst.mockResolvedValueOnce(pendingFor("time_entry"));
+
+		await run({ updateEntity, afterCommit }, "existing");
+
+		expect(deputyMocks.authorize).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				entityType: "time_entry",
+				approverEmployeeId: "absent-approver-1",
+				actorEmployeeId: "employee-1",
+			}),
+		);
+		expect(updateEntity).toHaveBeenCalledOnce();
+		expect(deputyMocks.record).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			deputyEmployeeId: "employee-1",
+			actingFor,
+			authority: "legacy",
+			entityType: "time_entry",
+			entityId: "claim-1",
+			approvalRequestId: "approval-1",
+			decision: "approved",
+		});
+		expect(log).toHaveBeenCalledWith(
+			expect.objectContaining({
+				performedBy: "user-1",
+				metadata: {
+					deputyDecision: true,
+					actingForEmployeeId: "absent-approver-1",
+					actingForAbsenceId: "absence-1",
+				},
+			}),
+		);
+		expect(afterCommit).toHaveBeenCalledWith(
+			undefined,
+			expect.anything(),
+			"claim-1",
+			expect.objectContaining({ id: "employee-1" }),
+			{ actingFor },
+		);
+	});
+
+	it("lets an eligible manager decide as themselves, never as a deputy", async () => {
+		managerEligibilityMocks.isEligibleManagerForApprovalRequest.mockResolvedValueOnce(true);
+		const { approvalFindFirst, log, run } = createSharedApprovalTestContext(
+			"approve",
+			{ approvalRequestId: "approval-1", allowAnyApprover: true, transactional: true },
+			"time_entry",
+		);
+		approvalFindFirst.mockResolvedValueOnce(pendingFor("time_entry"));
+
+		await run(undefined, "existing");
+
+		expect(deputyMocks.authorize).not.toHaveBeenCalled();
+		expect(deputyMocks.record).not.toHaveBeenCalled();
+		expect(log).toHaveBeenCalledWith(expect.not.objectContaining({ metadata: expect.anything() }));
+	});
+
+	it("passes the four-eyes refusal on without deciding", async () => {
+		deputyMocks.authorize.mockRejectedValueOnce(
+			new AuthorizationError({
+				message:
+					"You already decided an earlier stage of this request, so you cannot decide it as a deputy",
+				userId: "employee-1",
+				resource: "time_entry",
+				action: "approve",
+			}),
+		);
+		const { approvalFindFirst, returning, run } = createSharedApprovalTestContext(
+			"approve",
+			{ approvalRequestId: "approval-1", allowAnyApprover: true, transactional: true },
+			"time_entry",
+		);
+		approvalFindFirst.mockResolvedValueOnce(pendingFor("time_entry"));
+
+		await expect(run(undefined, "existing")).rejects.toThrow(
+			"You already decided an earlier stage of this request",
+		);
+		expect(returning).not.toHaveBeenCalled();
+		expect(deputyMocks.record).not.toHaveBeenCalled();
+	});
 });
 
 function collectColumnNames(value: unknown): string[] {

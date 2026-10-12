@@ -25,8 +25,8 @@ export function ExportReady({
 					<Heading style={h1}>Your Data Export is Ready</Heading>
 					<Text style={text}>Hi {recipientName},</Text>
 					<Text style={text}>
-						Your data export for <strong>{organizationName}</strong> has been completed and is ready
-						for download.
+						Your data export for <strong>{organizationName}</strong> has been completed. You can
+						download it from the export history in Z8.
 					</Text>
 
 					<Section style={detailsBox}>
@@ -39,13 +39,13 @@ export function ExportReady({
 						<Text style={detailLabel}>File Size</Text>
 						<Text style={detailValue}>{fileSize}</Text>
 
-						<Text style={detailLabel}>Link Expires</Text>
+						<Text style={detailLabel}>Available Until</Text>
 						<Text style={detailValue}>{expiresAt}</Text>
 					</Section>
 
 					<Section style={buttonContainer}>
 						<Button style={button} href={downloadUrl}>
-							Download Export
+							Open Export History
 						</Button>
 					</Section>
 
@@ -57,12 +57,12 @@ export function ExportReady({
 					<Hr style={hr} />
 
 					<Text style={footer}>
-						This download link is valid for 24 hours. After that, you can generate a new link from
-						the Export settings page.
+						Sign in to Z8 as an organization admin to download the file. Each download starts with a
+						fresh, secure link.
 					</Text>
 
 					<Text style={footer}>
-						The export file will be stored for 30 days before being automatically deleted.
+						After the date above, the export file is deleted automatically.
 					</Text>
 				</Container>
 			</Body>

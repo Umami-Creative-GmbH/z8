@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClosingAttributionFields } from "../src/components/ClosingAttributionFields";
 import { useClosingAttribution } from "../src/hooks/useClosingAttribution";
 import { LocaleProvider } from "../src/lib/i18n";
@@ -81,6 +81,7 @@ function setup(data: DesktopContext) {
 		onClockOut,
 		project: () => screen.getByRole("combobox", { name: "Project" }),
 		task: () => screen.queryByRole("combobox", { name: "Task" }),
+		requireTask: () => screen.getByRole("combobox", { name: "Task" }),
 		clockOut: async () => {
 			await userEvent.click(screen.getByRole("button", { name: "Clock out" }));
 			return onClockOut.mock.lastCall?.[0];
@@ -139,7 +140,7 @@ describe("task picker in the closing attribution", () => {
 		expect((view.task() as HTMLSelectElement).value).toBe("");
 	});
 
-	it("offers the current project's tasks while the project is kept", async () => {
+	it("says no task when an older context omits the running task", async () => {
 		const view = setup(
 			context({
 				liveWork: {
@@ -152,7 +153,7 @@ describe("task picker in the closing attribution", () => {
 		);
 		const task = view.task();
 		expect(optionLabels(task!)).toEqual([
-			"Keep current task",
+			"No task",
 			"No task",
 			"Build",
 			"design",
@@ -170,6 +171,104 @@ describe("task picker in the closing attribution", () => {
 		});
 	});
 
+	it.each([
+		["open", BUILD, "Build"],
+		["done", REVIEW, "Shipped"],
+	])(
+		"names the running %s task only while its project is kept",
+		async (_state, id, name) => {
+			const view = setup(
+				context({
+					liveWork: {
+						id: "period-1",
+						projectId: ALPHA,
+						workCategoryId: null,
+						workLocationType: "office",
+						currentTask: { id, name },
+					},
+				}),
+			);
+			expect(optionLabels(view.requireTask())[0]).toBe(
+				`Keep current task: ${name}`,
+			);
+			expect(await view.clockOut()).toStrictEqual({
+				project: { kind: "preserve" },
+				workCategory: { kind: "preserve" },
+			});
+			await userEvent.selectOptions(view.project(), ALPHA);
+			expect(optionLabels(view.requireTask())[0]).toBe(
+				`Keep current task: ${name}`,
+			);
+			await userEvent.selectOptions(view.project(), DELTA);
+			expect(optionLabels(view.requireTask())[0]).toBe("No task");
+		},
+	);
+
+	it("names a done running task when its project has no open tasks", async () => {
+		const view = setup(
+			context({
+				projects: [{ id: ALPHA, name: "Alpha", tasks: [] }],
+				liveWork: {
+					id: "period-1",
+					projectId: ALPHA,
+					workCategoryId: null,
+					workLocationType: "office",
+					currentTask: { id: REVIEW, name: "Shipped" },
+				},
+			}),
+		);
+		expect(view.task()).not.toBeNull();
+		expect(optionLabels(view.requireTask())).toEqual([
+			"Keep current task: Shipped",
+			"No task",
+		]);
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+		});
+		await userEvent.selectOptions(view.requireTask(), "clear");
+		expect(await view.clockOut()).toStrictEqual({
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+			task: { kind: "clear" },
+		});
+	});
+	it("says no task when live work explicitly has none", () => {
+		const view = setup(
+			context({
+				liveWork: {
+					id: "period-1",
+					projectId: ALPHA,
+					workCategoryId: null,
+					workLocationType: "office",
+					currentTask: null,
+				},
+			}),
+		);
+		expect(optionLabels(view.requireTask())[0]).toBe("No task");
+	});
+
+	it("names the running task in German", () => {
+		render(
+			<LocaleProvider language="de">
+				<Closing
+					context={context({
+						liveWork: {
+							id: "period-1",
+							projectId: ALPHA,
+							workCategoryId: null,
+							workLocationType: "office",
+							currentTask: { id: BUILD, name: "Build" },
+						},
+					})}
+					onClockOut={vi.fn()}
+				/>
+			</LocaleProvider>,
+		);
+		expect(
+			optionLabels(screen.getByRole("combobox", { name: "Aufgabe" }))[0],
+		).toBe("Aktuelle Aufgabe beibehalten: Build");
+	});
 	it("never offers or sends a task when the server's context has no tasks", async () => {
 		// An older webapp: projects without `tasks`, and it refuses a `task` key.
 		const legacy = context({

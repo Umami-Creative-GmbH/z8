@@ -22,7 +22,6 @@ describe("live clocking writers", () => {
 	});
 	it("routes API, web actions, and bot commands through the canonical transactional writer", () => {
 		const api = source("../../app/api/time-entries/route.ts");
-		const mobileApi = source("../../app/api/mobile/time-clock/route.ts");
 		const web = source("../../app/[locale]/(app)/time-tracking/actions/clocking.ts");
 		const legacyWeb = source("../../app/[locale]/(app)/time-tracking/actions.ts");
 		const onBehalfRoute = source("../../app/api/time-entries/clock-out-on-behalf/route.ts");
@@ -65,10 +64,6 @@ describe("live clocking writers", () => {
 		expect(legacyClockOut).toContain("clockOutAction(");
 		expect(legacyClockOut).not.toContain("clockingService.clockOut");
 		expect(legacyClockOut).not.toContain("createTimeEntry(");
-		expect(mobileApi).toContain('time-tracking/actions/clocking"');
-		expect(mobileApi).toContain("await clockIn(");
-		expect(mobileApi).toContain("await clockOut(");
-		expect(mobileApi).not.toContain("clockingService");
 		// On-behalf is a Clocking clock-out on behalf of the period's owner (#482):
 		// the module owns authorization, both admissions and the follow-ups.
 		expect(onBehalf).toContain(".run(");

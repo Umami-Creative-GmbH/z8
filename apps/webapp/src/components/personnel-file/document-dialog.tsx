@@ -38,14 +38,14 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import { useTravelExpenseFileUpload } from "@/hooks/use-travel-expense-file-upload";
+import { useTusFileUpload } from "@/hooks/use-tus-file-upload";
 import {
 	type DocumentCategory,
 	type DocumentVisibility,
 	EXPIRY_DATE_CATEGORIES,
-	isHeicMime,
 	PERSONNEL_DOCUMENT_MAX_BYTES,
 	PERSONNEL_DOCUMENT_MIME_TYPES,
+	personnelDocumentFileProblem,
 } from "@/lib/personnel-file/document.types";
 import {
 	applyCategoryChange,
@@ -56,7 +56,7 @@ import {
 	toDocumentMetadata,
 	valuesFromDocument,
 } from "./document-form-values";
-import { usePersonnelFileLabels } from "./document-labels";
+import { usePersonnelFileLabels, usePersonnelFileProblemMessages } from "./document-labels";
 
 const MONTHS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"] as const;
 
@@ -104,6 +104,7 @@ function useDocumentDialog(props: DocumentDialogProps) {
 	const [fileError, setFileError] = useState<string | null>(null);
 	const pendingMetadata = useRef<DocumentMetadataPayload | null>(null);
 	const asEmployee = props.mode === "upload" && props.uploadAs === "employee";
+	const fileProblemMessages = usePersonnelFileProblemMessages();
 	const initialValues: DocumentFormValues =
 		props.mode === "edit"
 			? valuesFromDocument(props.document)
@@ -111,7 +112,7 @@ function useDocumentDialog(props: DocumentDialogProps) {
 				? ownUploadValues({ today })
 				: defaultUploadValues({ today, category: categories[0] ?? "other" });
 
-	const upload = useTravelExpenseFileUpload({
+	const upload = useTusFileUpload({
 		maxFileSize: PERSONNEL_DOCUMENT_MAX_BYTES,
 		allowedFileTypes: PERSONNEL_DOCUMENT_MIME_TYPES,
 		uploadMetadata: { purpose: "personnel-document" },
@@ -177,29 +178,10 @@ function useDocumentDialog(props: DocumentDialogProps) {
 			setFile(null);
 			return;
 		}
-		if (isHeicMime(selected.type) || /\.hei[cf]$/i.test(selected.name)) {
+		const problem = personnelDocumentFileProblem(selected);
+		if (problem) {
 			setFile(null);
-			setFileError(
-				t(
-					"settings.personnelFiles.upload.heic",
-					"HEIC images are not supported. Export the photo as JPEG and upload it again.",
-				),
-			);
-			return;
-		}
-		if (!(PERSONNEL_DOCUMENT_MIME_TYPES as readonly string[]).includes(selected.type)) {
-			setFile(null);
-			setFileError(
-				t(
-					"settings.personnelFiles.upload.unsupportedType",
-					"Upload a PDF, JPEG, PNG or WebP file.",
-				),
-			);
-			return;
-		}
-		if (selected.size > PERSONNEL_DOCUMENT_MAX_BYTES) {
-			setFile(null);
-			setFileError(t("settings.personnelFiles.upload.tooLarge", "The file can be at most 20 MB."));
+			setFileError(fileProblemMessages[problem]);
 			return;
 		}
 		setFile(selected);

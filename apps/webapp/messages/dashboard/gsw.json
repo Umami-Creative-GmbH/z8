@@ -15,6 +15,13 @@
       "today": "Hüt!",
       "tomorrow": "Morn"
     },
+    "covering-for": {
+      "description": "Kolleginne und Kollege, wo du d Stellvertretig machsch, während si wäg sind",
+      "error": "Dini Vertretigsufgabe händ nöd chönne glade wärde",
+      "running": "Vertretig für {name} bis {date}",
+      "title": "Vertretig für",
+      "upcoming": "Demnächst: Vertretig für {name} vom {start} bis {end}"
+    },
     "customize": {
       "empty-description": "Nutze s Dashboard-Aapassigs-Icon zum einzelni Widgets wieder z'aktiviere oder s Layout z'ruckzsetze, zum alli Widgets wieder aazzeige.",
       "empty-title": "Alli Dashboard-Widgets sind versteckt",
@@ -129,6 +136,17 @@
       "teams": "Team",
       "teams-button": "Team",
       "title": "Organisation"
+    },
+    "upcoming-shifts": {
+      "description": "Dini nächste plante Schichte",
+      "empty": "Kei bevorstehendi Schichte",
+      "empty-description": "Dini nächste veröffentlichte Schichte wärdet da aazeigt.",
+      "ends-next-day": "ändet am nächste Tag",
+      "error": "Dini bevorstehende Schichte händ nöd chönne glade wärde",
+      "title": "Bevorstehendi Schichte",
+      "today": "Hüt",
+      "tomorrow": "Morn",
+      "view-schedule": "Schichtplan aaluege"
     },
     "upcoming-time-off": {
       "absence": "Absänz",

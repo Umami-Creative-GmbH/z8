@@ -1,0 +1,462 @@
+{
+  "admin": {
+    "analytics": {
+      "billing": {
+        "estimatedNotice": "Numărul istoric de licențe și MRR sunt estimate. Reconstituirea exactă necesită instantanee viitoare sau un registru de facturare."
+      },
+      "charts": {
+        "commercial": {
+          "description": "Indicatori privind licențele și venitul recurent pentru starea facturării.",
+          "summary": "Rezumat comercial: {seats} licențe și {mrr} MRR estimat.",
+          "title": "Comercial"
+        },
+        "engagement": {
+          "description": "Utilizarea platformei prin utilizatori activi și sesiuni.",
+          "summary": "Rezumat implicare: {activeUsers} utilizatori activi și {sessions} sesiuni.",
+          "title": "Implicare"
+        },
+        "growth": {
+          "description": "Utilizatori și organizații noi care accesează platforma.",
+          "summary": "Rezumat creștere: {signups} înregistrări și {organizations} organizații.",
+          "title": "Creștere"
+        },
+        "operations": {
+          "description": "Volumul de pontaj generat de activitatea chiriașilor.",
+          "summary": "Rezumat operațiuni: {timeRecords} înregistrări de timp.",
+          "title": "Operațiuni"
+        }
+      },
+      "controls": {
+        "bucket": {
+          "ariaLabel": "Grupare analitică",
+          "label": "Grupare"
+        },
+        "range": {
+          "ariaLabel": "Interval de analiză",
+          "label": "Interval"
+        }
+      },
+      "description": "Monitorizați creșterea platformei, nivelul de implicare, activitatea operațională și tendințele de facturare.",
+      "emptyState": {
+        "noData": "Nu există date pentru acest interval"
+      },
+      "kpis": {
+        "activeUsers": {
+          "description": "Utilizatori activi în intervalul selectat",
+          "title": "Utilizatori activi"
+        },
+        "mrr": {
+          "description": "Estimare venit lunar recurent",
+          "title": "MRR estimat"
+        },
+        "organizations": {
+          "description": "Spații de lucru active pe platformă",
+          "title": "Organizații"
+        },
+        "seats": {
+          "description": "Locuri curente plătite sau de probă",
+          "title": "Locuri licențiate"
+        },
+        "sessions": {
+          "description": "Sesiuni autentificate",
+          "title": "Sesiuni"
+        },
+        "signups": {
+          "description": "Conturi noi de platformă",
+          "title": "Înregistrări"
+        },
+        "timeRecords": {
+          "description": "Înregistrări operaționale trimise",
+          "title": "Înregistrări de timp"
+        }
+      },
+      "preview": {
+        "description": "Creșterea și implicarea pe platformă în intervalul selectat.",
+        "title": "Tendințe statistice",
+        "viewFull": "Vizualizați toate datele statistice"
+      },
+      "sectionDescription": "Actualizat pe baza datelor curente ale platformei pentru intervalul și gruparea selectate.",
+      "sectionTitle": "Tendințe analitice",
+      "title": "Statistici platformă",
+      "values": {
+        "notAvailable": "Indisponibil"
+      }
+    },
+    "billing": {
+      "description": "Monitorizați abonamentele, veniturile și starea plăților",
+      "failedToSyncSeats": "Sincronizarea licențelor a eșuat",
+      "intervals": {
+        "month": "Lunar",
+        "year": "Anual"
+      },
+      "metrics": {
+        "activeSubscriptions": "Abonamente active",
+        "activeSubscriptionsDescription": "{trialingCount} în perioada de probă, {activeCount} plătite",
+        "conversionRate": "Rată de conversie",
+        "conversionRateDescription": "De la probă la plată",
+        "licensedSeats": "Locuri licențiate",
+        "licensedSeatsDescription": "În toate abonamentele",
+        "mrr": "MRR",
+        "mrrDescription": "Venit lunar recurent",
+        "pastDue": "Scadent",
+        "pastDueDescription": "Probleme de plată",
+        "trialing": "În probă",
+        "trialingDescription": "În perioada de probă"
+      },
+      "seatsSynced": "Licențe sincronizate",
+      "sections": {
+        "recentSubscriptions": "Abonamente recente",
+        "revenueMetrics": "Indicatori de venit"
+      },
+      "status": {
+        "active": "Activ",
+        "canceled": "Anulat",
+        "pastDue": "Scadent",
+        "trialing": "Probă"
+      },
+      "syncSeatsFor": "Sincronizează licențele pentru {organizationName}",
+      "table": {
+        "actions": "Acțiuni",
+        "billing": "Facturare",
+        "created": "Creat",
+        "demoUsers": "Utilizatori demo",
+        "licensedSeats": "Locuri licențiate",
+        "noSubscriptions": "Niciun abonament încă",
+        "organization": "Organizație",
+        "periodEnd": "Sfârșitul perioadei",
+        "status": "Stare",
+        "usedSeats": "Locuri utilizate"
+      },
+      "title": "Tablou de bord facturare"
+    },
+    "diagnostics": {
+      "actions": {
+        "refresh": "Reîmprospătare diagnostice"
+      },
+      "clientDescription": "Configurație securizată a platformei și starea serviciilor la nivel de aplicație. Ultima actualizare: {date}.",
+      "description": "Configurare sigură a platformei și verificări ale stării de funcționare pentru implementările exclusiv la nivel de aplicație.",
+      "emailTest": {
+        "actions": {
+          "send": "Trimite e-mail de test"
+        },
+        "description": "Trimite un e-mail de diagnostic prin serviciul de transport de e-mail al sistemului.",
+        "messageId": "ID mesaj: {messageId}",
+        "recipient": "E-mail destinatar",
+        "smtpOverride": {
+          "description": "Lăsați necompletat pentru a utiliza transportul de e-mail configurat în sistem. Dacă este completat, testul utilizează doar aceste setări SMTP.",
+          "fromEmail": "E-mail expeditor",
+          "fromName": "Nume expeditor",
+          "host": "Gazdă SMTP",
+          "ipMode": "Mod IP",
+          "ipMode.auto": "Automat",
+          "ipMode.ipv4": "Doar IPv4",
+          "ipMode.ipv6": "Doar IPv6",
+          "password": "Parolă SMTP",
+          "port": "Port SMTP",
+          "requireTls": "Solicită STARTTLS",
+          "secure": "Utilizează TLS",
+          "title": "Suprascriere temporară SMTP",
+          "username": "Nume de utilizator SMTP"
+        },
+        "success": "E-mail de test trimis către {recipient}.",
+        "title": "Test de livrare e-mail"
+      },
+      "keyManager": {
+        "actions": {
+          "test": "Testează criptarea"
+        },
+        "ciphertextPreview": "Previzualizare text criptat",
+        "description": "Rulați un test complet de criptare/decriptare pentru cheia de platformă.",
+        "input": "Intrare",
+        "keyStatus": "Stare cheie",
+        "keyStatus.created": "A fost creată o nouă cheie de platformă",
+        "keyStatus.reused": "A fost reutilizată cheia de platformă existentă",
+        "output": "Ieșire",
+        "platformKeyId": "ID cheie de platformă",
+        "result": {
+          "match": "Intrarea și ieșirea se potrivesc",
+          "mismatch": "Intrarea și ieșirea diferă"
+        },
+        "status": {
+          "pending": "Testul de criptare rulează."
+        },
+        "title": "Criptare Scaleway Key Manager"
+      },
+      "recommendedActions": {
+        "description": "Rezolvați aceste elemente pentru a readuce diagnosticele la o stare optimă.",
+        "title": "Acțiuni recomandate"
+      },
+      "sections": {
+        "configuration": {
+          "description": "Stări securizate de configurare a implementării. Valorile secrete nu sunt afișate niciodată.",
+          "title": "Configurația platformei"
+        },
+        "health": {
+          "description": "Verificări specifice aplicației pentru dependențele de infrastructură utilizate de aplicația web.",
+          "title": "Starea serviciilor"
+        }
+      },
+      "statusAnnouncement": "Stare diagnosticare {status}. Ultima actualizare {date}.",
+      "status": {
+        "disabled": "Dezactivat",
+        "error": "Eroare",
+        "healthy": "Sănătos",
+        "warning": "Avertisment"
+      },
+      "title": "Diagnosticare implementare"
+    },
+    "layout": {
+      "exitAdmin": "Ieșire din Admin",
+      "menuTitle": "Meniu administrare",
+      "nav": {
+        "analytics": "Statistici",
+        "billing": "Facturare",
+        "diagnostics": "Diagnosticare implementare",
+        "organizations": "Organizații",
+        "overview": "Prezentare generală",
+        "settings": "Setări",
+        "systemEmailTemplates": "Șabloane de e-mail de sistem",
+        "users": "Utilizatori",
+        "workerQueue": "Coadă de procesare"
+      },
+      "openMenu": "Deschide meniul de administrare",
+      "subtitle": "Administrarea platformei",
+      "title": "Consolă de administrare"
+    },
+    "organizations": {
+      "actions": {
+        "delete": "Șterge organizația",
+        "reactivate": "Reactivează organizația",
+        "suspend": "Suspendă organizația"
+      },
+      "badges": {
+        "deleted": "Șters",
+        "suspended": "Suspendat"
+      },
+      "deleteDialog": {
+        "confirmButton": "Șterge organizația",
+        "confirmLabel": "Tastați „{name}” pentru a confirma",
+        "confirmPlaceholder": "Numele organizației",
+        "description": "Această acțiune va șterge „{name}” și toate datele asociate. Această acțiune nu poate fi anulată.",
+        "immediateDelete": "Șterge imediat (omite perioada de grație de 5 zile)",
+        "skipNotification": "Omite notificarea de ștergere către membrii organizației",
+        "title": "Șterge organizația"
+      },
+      "description": "Vizualizați și gestionați toate organizațiile de pe platformă",
+      "filters": {
+        "all": "Toate",
+        "deleted": "Șterse",
+        "suspended": "Suspendate"
+      },
+      "pagination": {
+        "showing": "Se afișează de la {from} la {to} din {total} organizații"
+      },
+      "searchPlaceholder": "Căutați după nume sau slug…",
+      "suspendDialog": {
+        "confirmButton": "Suspendă organizația",
+        "description": "Suspendați „{name}” și treceți-o în modul doar citire. Membrii vor putea vizualiza datele, dar nu vor putea crea sau edita nimic.",
+        "reason": "Motiv",
+        "reasonPlaceholder": "Introduceți motivul pentru suspendarea acestei organizații…",
+        "title": "Suspendă organizația"
+      },
+      "table": {
+        "created": "Creată",
+        "employees": "Angajați",
+        "loadErrorTitle": "Nu s-au putut încărca organizațiile",
+        "members": "Membri",
+        "noOrganizationsFound": "Nu s-au găsit organizații",
+        "organization": "Organizație"
+      },
+      "title": "Gestionarea organizațiilor",
+      "toasts": {
+        "deletedGracePeriod": "Organizația „{name}” a fost programată pentru ștergere în 5 zile",
+        "deletedImmediate": "Organizația „{name}” a fost programată pentru ștergere imediată",
+        "suspended": "Organizația „{name}” a fost suspendată",
+        "unsuspended": "Organizația „{name}” a fost reactivată"
+      }
+    },
+    "overview": {
+      "analytics": {
+        "title": "Tendințe statistice"
+      },
+      "description": "Metrici ale platformei și acțiuni rapide",
+      "metrics": {
+        "bannedUsers": "Utilizatori blocați",
+        "bannedUsersDescription": "Acces restricționat",
+        "licensedSeats": "Locuri licențiate",
+        "licensedSeatsDescription": "În toate abonamentele",
+        "mrr": "MRR",
+        "mrrDescription": "Venit lunar recurent (€)",
+        "organizations": "Organizații",
+        "organizationsDescription": "Spații de lucru active",
+        "suspended": "Suspendate",
+        "suspendedDescription": "Organizații doar în citire",
+        "title": "Metrici ale platformei",
+        "totalUsers": "Total utilizatori",
+        "totalUsersDescription": "Conturi înregistrate pe platformă"
+      },
+      "quickActions": {
+        "billing": {
+          "description": "Metrici privind veniturile și starea abonamentelor",
+          "title": "Facturare și abonamente"
+        },
+        "diagnostics": {
+          "description": "Verificați configurația de siguranță și starea aplicației",
+          "title": "Diagnosticare implementare"
+        },
+        "organizations": {
+          "description": "Suspendă, șterge sau revizuiește organizații",
+          "title": "Gestionarea organizațiilor"
+        },
+        "systemEmailTemplates": {
+          "description": "Editează textele de e-mail de sistem și facturare ale platformei",
+          "title": "Șabloane de e-mail de sistem"
+        },
+        "title": "Acțiuni rapide",
+        "users": {
+          "description": "Blochează/deblochează utilizatori, gestionează sesiuni, vizualizează activitatea",
+          "title": "Gestionarea utilizatorilor"
+        }
+      },
+      "title": "Prezentare generală"
+    },
+    "settings": {
+      "actions": {
+        "saveChanges": "Salvează modificările"
+      },
+      "approvalMaintenance": {
+        "approvalHint": "O cerere de aprobare de tip legacy sau un UUID de flux de lucru canonic.",
+        "approvalId": "ID aprobare",
+        "chain": "Lanț de aprobare",
+        "decisionEvidence": "Dovadă decizie",
+        "delete": "Ștergere forțată",
+        "deleting": "Se șterge…",
+        "deliveryIntent": "Intenție de livrare",
+        "deliveryMessage": "Mesaj livrat",
+        "deliveryWork": "Activitate de livrare",
+        "description": "Eliminați definitiv o aprobare și înregistrările de aprobare asociate acesteia. Înregistrările sursă și stările acestora sunt păstrate.",
+        "errors": {
+          "ambiguous": "Acest ID există în ambele depozite de aprobări. Nicio aprobare nu a fost ștearsă.",
+          "approvalInvalid": "Introduceți un UUID de aprobare valid.",
+          "failed": "Ștergerea nu a putut fi finalizată. Verificați ID-ul aprobării înainte de a încerca din nou.",
+          "invalidInput": "Introduceți un ID de organizație și un UUID de aprobare valid.",
+          "notFound": "Aprobarea nu a fost găsită în această organizație.",
+          "organizationRequired": "Introduceți un ID de organizație.",
+          "unauthorized": "Este necesar accesul de administrator de platformă."
+        },
+        "escalationAttention": "Atenție escaladare",
+        "escalationTransfer": "Transfer escaladare",
+        "legacy": "Solicitare moștenită",
+        "organizationHint": "Organizația care deține aprobarea.",
+        "organizationId": "ID organizație",
+        "reviewBinding": "Asociere revizuire",
+        "submittedRevision": "Revizie trimisă",
+        "success": "Aprobare ștearsă. Înregistrări eliminate:",
+        "title": "Forțează ștergerea aprobării",
+        "workflow": "Flux de lucru"
+      },
+      "cookieConsent": {
+        "description": "Inserat pe paginile de autentificare pentru conformitatea cu GDPR",
+        "helperPrefix": "Lăsați necompletat pentru a dezactiva. Încărcat cu",
+        "helperSuffix": "strategie.",
+        "scriptContent": "Conținut script",
+        "scriptPlaceholder": "<!-- Exemplu: CookieBot -->\n<script id=\"Cookiebot\" src=\"https://consent.cookiebot.com/uc.js\" data-cbid=\"YOUR-ID\" type=\"text/javascript\" async></script>\n\n<!-- Sau script personalizat -->\n<script>\n  // Logica dvs. pentru cookie-uri aici\n</script>",
+        "title": "Script de consimțământ pentru cookie-uri"
+      },
+      "description": "Configurație globală a platformei pentru toate organizațiile",
+      "title": "Setări platformă",
+      "toasts": {
+        "cookieConsentSaved": "Scriptul de consimțământ pentru cookie-uri a fost salvat cu succes",
+        "saveFailed": "Salvarea a eșuat"
+      },
+      "turnstile": {
+        "deploymentNote": "Configurat prin variabile de mediu la implementare. Organizațiile Enterprise pot suprascrie în Setări domeniu.",
+        "description": "Protecție împotriva roboților pentru formularele de autentificare",
+        "secretKey": "Cheie secretă",
+        "siteKey": "Cheie site",
+        "title": "Cloudflare Turnstile"
+      }
+    },
+    "systemEmailTemplates": {
+      "actions": {
+        "reset": "Resetare la șablonul de sistem",
+        "save": "Salvează",
+        "sendTest": "Trimite test"
+      },
+      "defaultFallback": "Alternativă implicită",
+      "defaultFallbackDescription": "Dacă acest șablon utilizează valoarea implicită a sistemului, Z8 trimite textul și subiectul platformei:",
+      "description": "Gestionează e-mailurile de facturare și de sistem ale platformei. Aceste șabloane sunt trimise doar prin transportul de e-mail al sistemului și nu sunt asociate unei organizații.",
+      "editBodyBeforeSaving": "Editează corpul e-mailului înainte de a salva un prim șablon personalizat.",
+      "empty": "Nu există șabloane de e-mail de sistem ale platformei disponibile.",
+      "eyebrow": "Transport de sistem",
+      "reset": "Șablonul de e-mail de sistem a fost resetat la cel implicit",
+      "resetDialog": {
+        "confirm": "Resetează șablonul de sistem al platformei",
+        "description": "Această acțiune șterge suprascrierea globală a platformei pentru acest șablon de e-mail de sistem și restabilește subiectul și corpul integrate. E-mailurile reale de facturare și de sistem vor utiliza textul implicit al platformei după resetare.",
+        "title": "Resetați șablonul de sistem al platformei?"
+      },
+      "resetFailed": "Resetarea șablonului de e-mail de sistem a eșuat",
+      "saved": "Șablonul de e-mail de sistem a fost salvat",
+      "saveFailed": "Salvarea șablonului de e-mail de sistem a eșuat",
+      "status": {
+        "customized": "Personalizat",
+        "default": "Implicit"
+      },
+      "systemTemplates": "Șabloane de sistem",
+      "testFailed": "Trimiterea e-mailului de test a eșuat",
+      "testSent": "E-mailul de test a fost trimis către contul dvs.",
+      "title": "Șabloane de e-mail de sistem",
+      "transportNotice": "Utilizați această zonă pentru textele globale ale e-mailurilor de facturare și de sistem. Setările de transport de e-mail ale organizației sunt ignorate pentru aceste mesaje; testele și trimiterile reale utilizează transportul de sistem al platformei."
+    },
+    "users": {
+      "badges": {
+        "admin": "Admin",
+        "banExpiresUntil": "Până la {date}",
+        "banned": "Blocat",
+        "user": "Utilizator"
+      },
+      "banDialog": {
+        "confirmButton": "Blochează utilizatorul",
+        "description": "Blochează accesul {email} la platformă.",
+        "expiry": "Data expirării (opțional)",
+        "permanentBanHint": "Lasă necompletat pentru blocare permanentă",
+        "reason": "Motiv",
+        "reasonPlaceholder": "Introdu motivul pentru blocarea acestui utilizator…",
+        "title": "Blochează utilizatorul"
+      },
+      "description": "Vizualizează și gestionează toți utilizatorii de pe platformă",
+      "filters": {
+        "allUsers": "Toți utilizatorii",
+        "banned": "Blocați"
+      },
+      "pagination": {
+        "showing": "Se afișează de la {from} la {to} din {total} utilizatori"
+      },
+      "searchLabel": "Căutați utilizatori după e-mail",
+      "searchPlaceholder": "Caută după nume sau e-mail…",
+      "sessionsDialog": {
+        "description": "Sesiuni active pentru {email}",
+        "noSessions": "Nicio sesiune activă",
+        "revokeAll": "Revocă toate sesiunile",
+        "title": "Sesiuni utilizator",
+        "unknownDevice": "Dispozitiv necunoscut",
+        "unknownIp": "IP necunoscut"
+      },
+      "table": {
+        "created": "Creat",
+        "noOrganizations": "Nicio organizație",
+        "noUsersFound": "Nu s-au găsit utilizatori",
+        "organizations": "Organizații",
+        "role": "Rol",
+        "user": "Utilizator"
+      },
+      "title": "Gestionare utilizatori",
+      "toasts": {
+        "banned": "Utilizatorul {email} a fost blocat",
+        "sessionRevoked": "Sesiune revocată",
+        "sessionsRevoked": "Au fost revocate {count} sesiuni",
+        "unbanned": "Utilizatorul {email} a fost deblocat"
+      }
+    }
+  }
+}

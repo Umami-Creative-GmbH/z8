@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Fehlalarm wird gelöscht",
       "dateUnavailable": "Datum nicht verfügbar",
       "missingClockOut": "Fehlendes Ausstempeln",
+      "missingIdentifier": "Fehlende Kennung",
       "needReview": "{count} Lohnabrechnungsblocker müssen überprüft werden",
       "offboardingClockRepair": "Offboarding-Ausstempeln muss korrigiert werden",
       "openApprovals": "Offene Genehmigungen",
       "openCalendar": "Kalender öffnen",
+      "openEmployee": "Mitarbeiter öffnen",
       "openWork": "Arbeit ohne Ausstempeln",
       "openWorkDiagnostics": "Arbeitsdiagnose öffnen",
       "pendingAbsence": "Ausstehende Abwesenheit",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds muss ein Array sein",
       "employeeIdsMustContainOnlyStrings": "employeeIds darf nur Strings enthalten",
       "endDateAfterStart": "Das Enddatum muss nach oder am Startdatum liegen",
+      "exportBlockedByMissingIdentifier": "Export blockiert: Einige Mitarbeiter haben keinen Wert für das benutzerdefinierte Feld, das als Abrechnungskennung verwendet wird",
       "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigieren Sie zuerst das Offboarding-Ausstempeln",
       "exportBlockedByUncertainWork": "Export blockiert: Klären Sie zuerst die unklaren Arbeitszeiten im ausgewählten Zeitraum",
       "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Klären Sie zuerst die zu überprüfenden Arbeitsminuten",
       "exportFormatNotConfigured": "Das Lohnabrechnungs-Exportformat ist nicht konfiguriert",
+      "exportIdentifierChanged": "Die Einstellung für die Abrechnungskennung wurde geändert, nachdem dieser Export zusammengestellt wurde. Starten Sie einen neuen Export.",
       "invalidBlockerId": "Ungültige Gehaltsabrechnungs-Blocker-ID",
       "invalidBlockerType": "Ungültiger Gehaltsabrechnungs-Blockertyp",
       "mustBeIsoDate": "{field} muss ein ISO-Datum sein",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Lohnabrechnungs-Export abgeschlossen",
       "formatAccessCheck": "Format-Zugriffsprüfung",
+      "nobodyEmployedInPeriod": "Niemand in Ihrem Lohnabrechnungszugriff war in diesem Zeitraum beschäftigt.",
       "noConfiguredTarget": "Kein konfiguriertes Lohnabrechnungs-Exportziel",
       "queued": "Lohnabrechnungs-Export in die Warteschlange eingereiht",
       "selectFormat": "Format auswählen",
-      "target": "Lohnabrechnungs-Exportziel"
+      "target": "Lohnabrechnungs-Exportziel",
+      "unmappedOvertimePayouts": "{count, plural, one {# Überstundenauszahlung wurde nicht exportiert} other {# Überstundenauszahlungen wurden nicht exportiert}}",
+      "unmappedOvertimePayoutsDescription": "Für dieses Format ist Überstunden keine Lohnart zugeordnet. Bitten Sie einen Organisationsadministrator darum, eine zuzuordnen, oder zahlen Sie diese Stunden auf anderem Weg aus."
     },
     "filters": {
       "noMatchingEmployees": "Keine Mitarbeiter entsprechen den ausgewählten Lohnabrechnungsfiltern."
+    },
+    "formerEmployeesExport": {
+      "description": "Exportieren Sie einen Monat, in dem jemand von ihnen noch beschäftigt war: Die letzten Stunden und abschließenden Überstundenauszahlungen werden in die Datei übernommen.",
+      "export": "Exportieren",
+      "nextMonth": "Nächster Monat",
+      "previousMonth": "Vorheriger Monat",
+      "title": "Lohnabrechnung für ausgeschiedene Mitarbeitende exportieren"
+    },
+    "onlyFormerEmployees": {
+      "description": "Sie können weiterhin deren Überstundenauszahlungen erfassen und stornieren sowie unten die Monate exportieren, in denen sie beschäftigt waren.",
+      "title": "In Ihrem Lohnabrechnungszugriff befinden sich nur ausgeschiedene Mitarbeitende"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Für dieses Format ist Überstunden keine Lohnart zugeordnet, daher schließt der Export diese Auszahlungen aus. Bitten Sie einen Organisationsadministrator darum, eine zuzuordnen, oder zahlen Sie diese Stunden auf anderem Weg aus.",
+      "title": "{count, plural, one {# Überstundenauszahlung wird nicht exportiert} other {# Überstundenauszahlungen werden nicht exportiert}}"
     },
     "period": {
       "current": "Aktueller Zeitraum",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Abrechnungslauf verwerfen",
+        "confirmed": "Dieser Abrechnungslauf ist für einige Berichte bereits als bezahlt bestätigt und kann daher nicht mehr verworfen werden. Entfernen Sie stattdessen einzelne Berichte daraus.",
         "description": "{count, plural, one {Die darin enthaltene # Spesenabrechnung wartet dann wieder auf Erstattung: Sie kann über den nächsten Abrechnungsexport oder per Banküberweisung abgewickelt werden. Verwerfen Sie den Lauf nur, wenn diese Datei nicht über die Gehaltsabrechnung ausgezahlt wird.} other {Die darin enthaltenen # Spesenabrechnungen warten dann wieder auf Erstattung: Sie können über den nächsten Abrechnungsexport oder per Banküberweisung abgewickelt werden. Verwerfen Sie den Lauf nur, wenn diese Datei nicht über die Gehaltsabrechnung ausgezahlt wird.}}",
         "done": "Abrechnungslauf verworfen. Die zugehörigen Spesenabrechnungen warten wieder auf Erstattung.",
         "failed": "Der Abrechnungslauf konnte nicht verworfen werden.",
@@ -106,6 +129,29 @@
         "outOfScope": "Dieser Abrechnungslauf enthält Mitarbeitende außerhalb Ihres Abrechnungsbereichs.",
         "title": "Diesen Abrechnungslauf verwerfen?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "manuell festgelegt",
+        "exceptionalItinerary": "Reiseroute, die nicht durch gesetzliche Regelungen abgedeckt ist",
+        "outsideVerifiedTables": "keine geprüfte gesetzliche Tabelle für diese Tage"
+      },
+      "description": "Diese Ausgaben warten auf Rückerstattung, werden jedoch bei einem Export dieses Zeitraums und Formats ausgelassen. Der Export ist nicht blockiert: Bezahlen Sie sie per Banküberweisung aus der Finanz-Warteschlange.",
+      "payByBankTransfer": "Per Banküberweisung bezahlen",
+      "reason": {
+        "apiConnector": "Dieses Format ist ein API-Connector, der niemals Ausgabenbeträge überträgt.",
+        "currencyNotEur": "Nicht in Euro: Abrechnungsläufe enthalten nur Euro-Beträge.",
+        "includedInOtherRun": "Im unbestätigten Abrechnungslauf {period} ({format}) enthalten.",
+        "legacyClaim": "Altforderungen werden niemals über die Lohnabrechnung ausgezahlt.",
+        "negativeDifference": "Eine Anpassung hat den Betrag früherer Abrechnungsläufe reduziert für: {kinds}.",
+        "noStatutoryBaseline": "Keine gesetzliche Grundlage für: {items}.",
+        "nothingOwed": "Die Abrechnungszeilen lassen keinen Restbetrag für die Abrechnung übrig.",
+        "reimbursedOutsidePayroll": "Bereits teilweise per Banküberweisung bezahlt oder zurückgefordert: Die Abrechnung kann den Rest nicht übernehmen.",
+        "unmappedWageType": "Für dieses Format ist keine Lohnart zugeordnet für: {kinds}."
+      },
+      "title": "Ausgabenberichte, die dieser Abrechnungslauf nicht berücksichtigt",
+      "unknownEmployee": "Mitarbeiter"
     },
     "runs": {
       "description": "Diese Exporte enthalten Spesenabrechnungen, die auf Erstattung warten. Eine für Spesen zuständige Person bestätigt jeden Lauf, sobald er über die Gehaltsabrechnung ausgezahlt wurde; verwerfen Sie einen Lauf, dessen Datei nicht ausgezahlt wird.",
@@ -140,6 +186,17 @@
       "description": "Lohnabrechnungsdaten konnten nicht sicher aufbereitet werden.",
       "help": "Bitte versuchen Sie es später erneut. Wenn das Problem weiterhin besteht, wenden Sie sich an einen Organisationsadministrator.",
       "title": "Lohnabrechnung vorübergehend nicht verfügbar"
+    },
+    "workBalances": {
+      "back": "Arbeitszeitsalden",
+      "backToPayroll": "Lohnabrechnung",
+      "description": "Erfassen und stornieren Sie Überstundenauszahlungen für die Mitarbeiter, die durch Ihren Lohnabrechnungszugriff abgedeckt sind, einschließlich ehemaliger Mitarbeiter.",
+      "empty": "In Ihrem Lohnabrechnungsbereich befinden sich noch keine Mitarbeiter.",
+      "former": "Ehemaliger Mitarbeiter",
+      "loading": "Arbeitszeitsalden werden geladen",
+      "loadingEmployee": "Arbeitszeitsaldo wird geladen",
+      "open": "Arbeitszeitsalden",
+      "title": "Arbeitszeitsalden"
     }
   }
 }

@@ -158,6 +158,30 @@
         "description": "Bjud in medlemmar och granska väntande förfrågningar om att gå med",
         "title": "Inbjudningar"
       },
+      "kioskPin": {
+        "addEmailDescription": "De får en inbjudan att välja ett lösenord och kan därefter logga in. Deras PIN-kod för kiosk och historik förblir oförändrade.",
+        "addEmailHeading": "Lägg till en e-postadress",
+        "addEmailSubmit": "Lägg till e-postadress och bjud in",
+        "confirmReset": "Ersätt PIN-koden",
+        "description": "Den personliga PIN-koden som denna medarbetare anger för att stämpla vid en kiosk.",
+        "done": "Klar",
+        "emailAdded": "E-postadress tillagd. Inbjudan är på väg.",
+        "emailAddedNotSent": "E-postadress tillagd, men inbjudan kunde inte skickas. Medarbetaren kan använda Glömt lösenord med denna adress.",
+        "emailLabel": "E-postadress",
+        "hasPin": "En PIN-kod för kiosk är inställd.",
+        "issue": "Utfärda PIN-kod",
+        "kioskOnlyBadge": "Endast kiosk",
+        "kioskOnlyDescription": "Denna medarbetare har ingen e-postadress och ingen inloggning. De stämplar endast vid kiosker med sin PIN-kod.",
+        "kioskOnlyNoEmail": "Endast kiosk, ingen e-postadress",
+        "lockedUntil": "Låst efter för många felaktiga PIN-koder till {time}.",
+        "noPin": "Ingen PIN-kod för kiosk ännu.",
+        "pinHeading": "PIN-kod för kiosk",
+        "reset": "Återställ PIN-kod",
+        "shownOnce": "Ge denna PIN-kod till medarbetaren nu. Den visas endast en gång.",
+        "title": "Kiosktillgång",
+        "unlock": "Lås upp",
+        "unlocked": "Kiosk-PIN upplåst"
+      },
       "lifecycle": {
         "actionsLabel": "Medarbetaråtgärder för {name}",
         "deactivate": "Inaktivera",
@@ -207,12 +231,17 @@
         "currency": "Valuta",
         "currencyInvalid": "Ange en valutakod med tre bokstäver.",
         "departurePanelDescription": "Åtkomst och användning av betald plats upphör vid tidpunkten som visas nedan. Medarbetarhistoriken behålls.",
+        "deputyCover": {
+          "absences": "Ersättare vid pågående eller kommande frånvaro: {count}",
+          "title": "Ersättare att omfördela"
+        },
         "editDeparture": "Redigera avgång",
         "effective": "Avgång träder i kraft",
         "effectiveDescription": "Åtkomsten upphörde kl. {cutoff} ({timezone}).",
         "employmentGap": "Ej anställd {startDate} – {endDate}",
         "employmentStint": "Anställning {startDate} – {endDate}",
         "exceptions": {
+          "deputyAbsences": "Den här medarbetaren är ersättare vid pågående eller kommande frånvaro. De tas bort som ersättare när avgången träder i kraft, och de personer som berörs meddelas.",
           "finalOwner": "Tilldela och aktivera en annan godkänd ägare innan den här medarbetaren slutar.",
           "futureAbsences": "Frånvaro efter brytpunkten förblir registrerad. Granska dem under Frånvaro.",
           "futureShifts": "Pass efter brytpunkten förblir tilldelade. Granska dem under Schemaläggning.",
@@ -310,13 +339,19 @@
           "clockPostprocess": "Hantering av raster och tillägg",
           "clockRepair": "Reparation av tidtagare",
           "dispatchDeparture": "Schemaläggning av avslut",
+          "notifyDeputyRelease": "Avisering om att ersättare inte längre är tillgänglig",
           "notifyReview": "Granskningsavisering",
           "sessionRevocation": "Sessionsutloggning"
         },
         "team": "Team",
         "title": "Anställning och avslut",
         "unknownLegacyDate": "Inget datum registrerat",
-        "weeklyHoursInvalid": "Ange veckotimmar mellan 0 och 168."
+        "weeklyHoursInvalid": "Ange veckotimmar mellan 0 och 168.",
+        "workBalance": {
+          "recordFinalPayout": "Registrera slutlig utbetalning av övertid",
+          "through": "Till och med {date}",
+          "title": "Arbetssaldo"
+        }
       },
       "tabs": {
         "employees": "Medarbetare",
@@ -324,7 +359,115 @@
         "inviteCodes": "Inbjudningskoder",
         "members": "Medlemmar"
       },
-      "title": "Anställda"
+      "title": "Anställda",
+      "workBalance": {
+        "adjustmentCancelled": "Justering makulerad",
+        "cancelDescription": "{summary}. Den finns kvar i historiken som makulerad och räknas inte längre med i arbetssaldot.",
+        "cancellationReason": "Varför makuleras den?",
+        "cancelSubmit": "Makulera justering",
+        "cancelTitle": "Makulera justering",
+        "conflictingPayoutsDescription": "De skulle inte längre räknas. Makulera dem först eller välj ett tidigare datum.",
+        "conflictingPayoutsTitle": "Utbetalningar av övertid på eller före denna dag",
+        "current": "Aktuellt arbetssaldo",
+        "day": "Dag",
+        "dayDescription": "I medarbetarens tidszon. Saldot som visas sträcker sig till och med igår, så en utbetalning daterad idag räknas från och med imorgon.",
+        "dayRequired": "Välj en dag.",
+        "description": "Slutfört arbete minus obligatorisk tid, tillsammans med ingående saldo och övertidsutbetalningar. Justeringar redigeras aldrig: en felaktig makuleras.",
+        "direction": "Saldo",
+        "errors": {
+          "adjustmentNotFound": "Denna justering finns inte längre för denna medarbetare.",
+          "alreadyCancelled": "Denna justering är redan makulerad.",
+          "amountNotPositive": "Ange en utbetalning som är större än noll.",
+          "beforeOpeningBalance": "Utbetalningen måste dateras efter dagen för gällande ingående saldo.",
+          "conflictingPayouts": "Övertidsutbetalningar är daterade till eller före den här dagen. Makulera dem först eller välj en tidigare dag.",
+          "employeeNotFound": "Medarbetaren hittades inte.",
+          "exceedsBalance": "Utbetalningen är större än medarbetarens arbetssaldo vid slutet av den dagen.",
+          "exceedsLaterBalance": "Utbetalningen skulle göra att arbetssaldot hamnar under noll efter en senare övertidsutbetalning. Makulera den utbetalningen först eller registrera mindre.",
+          "failed": "Arbetssaldot kunde inte uppdateras. Försök igen.",
+          "futureDay": "Dagen kan inte vara senare än idag i medarbetarens tidszon.",
+          "invalidInput": "Kontrollera dagen, timmarna och minuterna samt anledningen.",
+          "monthClosed": "Dagen är i en stängd månad.",
+          "monthClosedNamed": "{month} är stängd. Den måste öppnas igen innan justeringar daterade i den kan registreras eller makuleras.",
+          "notPermitted": "Endast organisationsägare och administratörer, samt löneadministratörer för de medarbetare deras lönebehörighet omfattar, kan registrera eller makulera saldojusteringar.",
+          "reasonRequired": "Ange en anledning."
+        },
+        "history": "Saldojusteringar",
+        "hours": "Timmar",
+        "hoursInvalid": "Ange hela timmar.",
+        "keepAdjustment": "Behåll justering",
+        "loadFailed": "Arbetssaldot kunde inte läsas in.",
+        "loading": "Läser in arbetssaldo",
+        "minutes": "Minuter",
+        "minutesInvalid": "Ange minuter från 0 till 59.",
+        "negative": "Skyldiga timmar (−)",
+        "openingBalanceDay": "Saldo vid slutet av",
+        "openingBalanceDayDescription": "I den anställdes tidszon. Saldot räknas igen från och med nästa dag.",
+        "openingBalanceReasonPlaceholder": "Till exempel: saldo överfört från det tidigare systemet…",
+        "openingBalanceSet": "Ingående saldo angett",
+        "payoutReasonPlaceholder": "Till exempel: utbetalt med oktoberlönen…",
+        "payoutRecorded": "Övertidsutbetalning registrerad",
+        "positive": "Övertid (+)",
+        "reason": "Anledning",
+        "recordPayout": "Registrera övertidsutbetalning",
+        "recordPayoutDescription": "Registrera övertid utbetald som lön. Det minskar arbetssaldot från slutet av den dagen och kan inte överstiga saldot för den dagen.",
+        "recordPayoutSubmit": "Registrera utbetalning",
+        "recordPayoutTitle": "Registrera övertidsutbetalning",
+        "replacesOpeningBalance": "Det gällande ingående saldot annulleras med denna anledning.",
+        "setOpeningBalance": "Ange ingående saldo",
+        "setOpeningBalanceDescription": "Det ingående saldot ersätter arbetssaldot till och med den dagen. Arbetad tid och obligatorisk tid innan dess finns kvar registrerade men räknas inte längre.",
+        "setOpeningBalanceSubmit": "Ange ingående saldo",
+        "setOpeningBalanceTitle": "Ange ingående saldo",
+        "through": "Till och med {date}",
+        "title": "Arbetssaldo",
+        "upload": {
+          "allReady": "{total, plural, one {# rad är redo; {replacing, plural, =0 {ingen ersätter ett gällande ingående saldo} one {# ersätter ett gällande ingående saldo} other {# ersätter ett gällande ingående saldo}}.} other {Alla # rader är redo; {replacing, plural, =0 {ingen ersätter ett gällande ingående saldo} one {# ersätter ett gällande ingående saldo} other {# ersätter ett gällande ingående saldo}}.}}",
+          "checking": "Kontrollerar filen…",
+          "columns": {
+            "balance": "Saldo",
+            "day": "Dag",
+            "employee": "Medarbetare",
+            "reason": "Orsak",
+            "row": "Rad",
+            "status": "Status"
+          },
+          "committed": "{count, plural, one {# ingående saldo inställt} other {# ingående saldon inställda}}",
+          "description": "Ställ in ingående saldo för flera medarbetare från en CSV-fil med kolumnerna employee_number, day (ÅÅÅÅ-MM-DD eller DD.MM.ÅÅÅÅ), balance (timmar och minuter, t.ex. 12:30 eller -4:15) och reason. Varje ingående saldo ersätter medarbetarens arbetssaldo till och med detta datum, och upphäver det gällande saldot. Ingenting sparas så länge någon rad innehåller fel.",
+          "errors": {
+            "ambiguousEmployee": "Flera medarbetare har detta nummer. Ge varje medarbetare ett unikt nummer först.",
+            "conflictingPayouts": "Övertidsutbetalningar är daterade på eller före denna dag:",
+            "duplicateEmployee": "Denna medarbetare har fler än en rad. Behåll en.",
+            "employeeNumberRequired": "Ange anställningsnummer.",
+            "futureDay": "Dagen är efter dagens datum i medarbetarens tidszon.",
+            "invalidAmount": "Ange saldot som timmar och minuter, t.ex. 12:30 eller -4:15.",
+            "invalidDay": "Ange dagen som ÅÅÅÅ-MM-DD eller DD.MM.ÅÅÅÅ.",
+            "monthClosed": "Dagen infaller i en stängd månad.",
+            "outOfScope": "Denna medarbetare ligger utanför din lönebehörighet.",
+            "reasonRequired": "Ange en orsak.",
+            "reasonTooLong": "Håll orsaken under 1 000 tecken.",
+            "unknown": "Denna rad kan inte sparas.",
+            "unknownEmployee": "Ingen medarbetare har detta nummer."
+          },
+          "file": "CSV-fil",
+          "fileErrors": {
+            "fileTooLarge": "Filen är för stor. Dela upp den i flera uppladdningar.",
+            "missingColumns": "Filen saknar följande kolumner: {columns}.",
+            "noRows": "Filen har inga rader under rubriken.",
+            "tooManyRows": "Filen innehåller fler än 2 000 rader. Dela upp den i flera uppladdningar.",
+            "unreadable": "Filen kunde inte läsas. Spara den som CSV (UTF-8) och försök igen."
+          },
+          "former": "Tidigare anställd",
+          "hasErrors": "{errors, plural, other {# av {total} rader innehåller fel. Korrigera filen och ladda upp den igen.} }",
+          "hasErrorsTitle": "Åtgärda raderna med fel",
+          "invalidFile": "Filen kan inte användas",
+          "open": "Ladda upp ingående saldon",
+          "ready": "Klar",
+          "refusedTitle": "Inget sparades",
+          "replaces": "Ersätter det ingående saldot på {balance} den {day}",
+          "submit": "{count, plural, one {Ange # ingående saldo} other {Ange # ingående saldon}}",
+          "template": "Ladda ner mall",
+          "title": "Ladda upp ingående saldon"
+        }
+      }
     },
     "employmentHistory": {
       "addChange": "Lägg till ändring",
@@ -552,6 +695,7 @@
         "loadingFile": "Läser in personalakten",
         "manageOfficers": "Ansvariga för personalakter",
         "payslipBatch": "Lönespecifikationsbatch",
+        "sickLeave": "Sjukfrånvaro",
         "title": "Personalakter"
       },
       "batch": {
@@ -679,6 +823,7 @@
         "visibility": "Synlighet"
       },
       "list": {
+        "absence": "För sjukfrånvaro {dateRange}",
         "delete": "Ta bort {title}",
         "download": "Ladda ner {title}",
         "edit": "Redigera {title}",
@@ -771,6 +916,83 @@
         "description": "Välj vem som förutom ägare och administratörer hanterar medarbetardokument.",
         "loading": "Läser in inställningar för personalakter",
         "title": "Personalakter"
+      },
+      "sickLeave": {
+        "columns": {
+          "dates": "Datum",
+          "duration": "Varaktighet",
+          "employee": "Medarbetare",
+          "sickDetail": "Sjukdetalj",
+          "sickNotes": "Läkarintyg",
+          "status": "Status"
+        },
+        "description": "Sjukfrånvaro för de medarbetare vars läkarintyg du hanterar, med tillhörande läkarintyg bifogade. Inget här påminner eller frågar medarbetare.",
+        "empty": "Ingen sjukfrånvaro under denna period matchar filtren.",
+        "filters": {
+          "allEmployees": "Alla medarbetare",
+          "allSickDetails": "Alla sjukdetaljer",
+          "allStatuses": "Väntande och godkända",
+          "allTeams": "Alla team",
+          "employee": "Medarbetare",
+          "formerEmployee": "{name} (tidigare)",
+          "from": "Från",
+          "notes": "Läkarintyg",
+          "notesAll": "Alla",
+          "notesMissing": "Med intyg, ingen anteckning",
+          "notesPresent": "Har anteckning",
+          "reset": "Återställ filter",
+          "sickDetail": "Sjukdetalj",
+          "status": "Status",
+          "team": "Team",
+          "to": "Till"
+        },
+        "loading": "Läser in sjukfrånvaro",
+        "notes": {
+          "count": "{count, plural, other {# intyg} }",
+          "none": "Inget intyg"
+        },
+        "pagination": {
+          "next": "Nästa sida",
+          "page": "Sida {page} av {pageCount}",
+          "pageSize": "Rader per sida",
+          "previous": "Föregående sida",
+          "summary": "{first}–{last} av {total}"
+        },
+        "sickDetail": {
+          "childSick": "Vård av barn",
+          "other": "Annat",
+          "withCertificate": "Med intyg",
+          "withoutCertificate": "Utan intyg"
+        },
+        "status": {
+          "approved": "Godkänd",
+          "pending": "Väntar"
+        },
+        "title": "Sjukfrånvaro"
+      },
+      "sickNotes": {
+        "cardDescription": "Väntande och godkänd sjukfrånvaro för denna medarbetare. Bifoga ett nytt läkarintyg eller länka ett som redan finns i personalakten.",
+        "cardTitle": "Sjukfrånvaro",
+        "chooseAbsence": "Välj en frånvaro.",
+        "chooseNote": "Välj ett läkarintyg.",
+        "link": "Länka",
+        "linked": "Sjukintyg kopplat",
+        "linkExistingDescription": "Välj ett läkarintyg från personalakten för sjukfrånvaron {dateRange}.",
+        "linkExistingTitle": "Länka ett läkarintyg",
+        "linkFailed": "Läkarintyget kunde inte länkas.",
+        "linkToAbsence": "Länka {title} till sjukfrånvaro",
+        "linkToAbsenceDescription": "Välj den sjukfrånvaro som \"{title}\" avser. En sjukfrånvaro som registrerats utan intyg räknas då som med intyg.",
+        "linkToAbsenceTitle": "Koppla till sjukfrånvaro",
+        "loadFailed": "Listan kunde inte läsas in.",
+        "manage": "Bifoga eller koppla",
+        "manageFor": "Bifoga eller koppla sjukintyg för {name}, {dateRange}",
+        "noSickLeave": "Den här medarbetaren har ingen väntande eller godkänd sjukfrånvaro.",
+        "notes": "Sjukintyg",
+        "noUnlinkedNotes": "Det finns inga sjukintyg i den här personalakten som inte är kopplade till en frånvaro.",
+        "openNotes": "Sjukintyg för {dateRange}",
+        "unlinked": "Sjukintyg bortkopplat",
+        "unlinkFailed": "Sjukintyget kunde inte kopplas bort.",
+        "unlinkFromAbsence": "Koppla bort {title} från dess sjukfrånvaro"
       },
       "tabs": {
         "access": "Åtkomst",

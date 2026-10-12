@@ -1,0 +1,93 @@
+{
+  "webhooks": {
+    "copy-failed": "Copierea în clipboard a eșuat",
+    "create": "Adaugă webhook",
+    "create-failed": "Crearea webhook-ului a eșuat",
+    "delete-confirm": {
+      "description": "Această acțiune va șterge definitiv endpoint-ul webhook-ului și întregul istoric de livrare. Această acțiune nu poate fi anulată.",
+      "title": "Ștergeți webhook-ul?"
+    },
+    "deleted": "Webhook șters",
+    "delete-failed": "Ștergerea webhook-ului a eșuat",
+    "deliveries": "Livrări",
+    "description": "Configurați endpoint-uri webhook pentru a primi notificări în timp real când au loc evenimente în organizația dumneavoastră.",
+    "disabled": "Webhook dezactivat",
+    "empty": {
+      "description": "Creați primul webhook pentru a începe să primiți notificări despre evenimente.",
+      "title": "Niciun webhook configurat"
+    },
+    "enabled": "Webhook activat",
+    "events": "Evenimente",
+    "form": {
+      "create": "Creare webhook",
+      "create-description": "Configurați un nou endpoint de webhook pentru a primi notificări despre evenimente.",
+      "create-title": "Creează webhook",
+      "description": "Descriere",
+      "description-placeholder": "Pentru ce este utilizat acest webhook?",
+      "deselect-all": "Deselectează tot",
+      "edit-description": "Actualizați configurația endpoint-ului webhook.",
+      "edit-title": "Editare webhook",
+      "events": "Evenimente de primit",
+      "events-hint": "Evenimente selectate: {count}",
+      "events-required": "Trebuie selectat cel puțin un eveniment",
+      "name": "Nume",
+      "name-placeholder": "Webhook-ul meu",
+      "name-required": "Numele este obligatoriu",
+      "select-all": "Selectează tot",
+      "url": "URL endpoint",
+      "url-hint": "HTTPS este obligatoriu în producție. Evenimentele vor fi trimise ca solicitări POST.",
+      "url-required": "URL-ul este obligatoriu"
+    },
+    "last-delivery": "Ultima",
+    "logs": {
+      "attempt": "Încercare",
+      "description": "Încercări recente de livrare a webhook-urilor și rezultatele acestora.",
+      "duration": "Durată",
+      "empty": "Niciun jurnal de livrare încă",
+      "error": "Eroare",
+      "event": "Eveniment",
+      "failed": "Eșuat",
+      "http": "HTTP",
+      "loadError": "Nu s-au putut încărca jurnalele de livrare",
+      "payload": "Payload",
+      "pending": "În așteptare",
+      "response": "Răspuns",
+      "retrying": "Se reîncearcă",
+      "showing": "Se afișează {start}-{end} din {total}",
+      "status": "Stare",
+      "success": "Succes",
+      "time": "Oră",
+      "title": "Jurnale de livrare"
+    },
+    "regenerate-failed": "Regenerarea secretului a eșuat",
+    "regenerate-secret": "Regenerează secretul",
+    "secret-copied": "Secret copiat în clipboard",
+    "secret-dialog": {
+      "copy-secret": "Copiază secretul în clipboard",
+      "description": "Acest secret este utilizat pentru a verifica semnăturile webhook. Păstrați-l într-un loc sigur.",
+      "done": "Am salvat secretul",
+      "secret": "Secret de semnare",
+      "title": "Secret webhook",
+      "verification": "Verificare a semnăturii",
+      "verification-hint": "Verificați semnăturile webhook folosind HMAC-SHA256. Semnătura este trimisă în antetul X-Z8-Signature.",
+      "warning": "Acest secret va fi afișat o singură dată. Asigurați-vă că îl salvați acum.",
+      "warning-title": "Important"
+    },
+    "secret-regenerated": "Secret regenerat",
+    "status": {
+      "degraded": "Degradat",
+      "failing": "Eșuează",
+      "healthy": "Funcțional",
+      "inactive": "Inactiv"
+    },
+    "success-rate": "Succes",
+    "test": "Trimite test",
+    "test-failed": "Trimiterea webhook-ului de test a eșuat",
+    "test-sent": "Webhook-ul de test a fost trimis",
+    "title": "Webhook-uri",
+    "toggle-active": "Comută starea activă a webhook-ului",
+    "updated": "Webhook actualizat",
+    "update-failed": "Actualizarea webhook-ului a eșuat",
+    "view-logs": "Vizualizează jurnalele"
+  }
+}

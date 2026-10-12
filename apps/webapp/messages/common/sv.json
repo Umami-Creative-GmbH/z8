@@ -143,6 +143,17 @@
       "upgrade": "Uppgradera"
     }
   },
+  "closedMonths": {
+    "closeThisMonth": "Stäng denna månad",
+    "status": {
+      "closed": "Stängd",
+      "open": "Öppen",
+      "partlyClosed": "Delvis stängd ({closed} av {total})"
+    },
+    "stripLabel": "Stängda månader",
+    "unclosedDescription": "Arbete och frånvaro under dessa månader kan fortfarande ändras efter exporten. Stäng en månad när dess lön är fastställd.",
+    "unclosedTitle": "Alla månader i det här intervallet är inte stängda"
+  },
   "colors": {
     "blue": "Blå",
     "green": "Grön",
@@ -219,6 +230,9 @@
     "enabled": "Aktiverad",
     "error": "Fel",
     "error-occurred": "Ett fel uppstod",
+    "errors": {
+      "monthClosed": "{month} är stängd. Den måste öppnas igen innan dess arbete eller frånvaro kan ändras."
+    },
     "fieldPresets": "{label}-förinställningar",
     "focusInput": "Fokusera inmatningsfält",
     "gender": {
@@ -578,6 +592,7 @@
     "get-help": "Få hjälp",
     "my-documents": "Mina dokument",
     "my-requests": "Mina förfrågningar",
+    "my-schedule": "Mitt schema",
     "org-explorer": "Organisationsutforskare",
     "payroll": "Lön",
     "personnel-files": "Personalakter",
@@ -588,6 +603,8 @@
     "team": "Team",
     "teamAbsences": "Teamfrånvaro",
     "team-label": "Team",
+    "teamPeriodSubmissions": "Periodinlämningar",
+    "teamPresence": "Vilka är på plats",
     "time-tracking": "Tidrapportering",
     "today": "Idag",
     "travel-expenses": "Reseutlägg",
@@ -603,6 +620,27 @@
       "viewAll": "Visa alla aviseringar"
     },
     "content": {
+      "absenceDeputyAssigned": {
+        "message": "Du ersätter {name} ({dateRange}).",
+        "title": "Du är frånvaroställföreträdare"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Ditt uppdrag som ställföreträdare för {name} gäller nu {dateRange}.",
+        "title": "Datumen för frånvaroställföreträdare har ändrats"
+      },
+      "absenceDeputyReminder": {
+        "message": "Från och med imorgon ersätter du {name} fram till {untilDate}.",
+        "title": "Uppdrag som ställföreträdare börjar imorgon"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Du ersätter inte längre {name} ({dateRange}).",
+        "title": "Du är inte längre frånvaroställföreträdare"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} är inte längre tillgänglig som ställföreträdare för {employeeName}s frånvaro från {startDate} till {endDate}.",
+        "message": "{deputyName} är inte längre tillgänglig som ställföreträdare för din frånvaro från {startDate} till {endDate}.",
+        "title": "Ställföreträdare är inte längre tillgänglig"
+      },
       "absenceRecorded": {
         "message": "{managerName} har registrerat {absenceType} för {dateRange} å dina vägnar.",
         "title": "Frånvaro registrerad"
@@ -614,9 +652,36 @@
         "message": "Din begäran om {categoryName} för {dateRange} har skickats in och väntar på godkännande.",
         "title": "Frånvaroansökan har skickats in"
       },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {Medan du var borta beslutade {name} om # godkännande.} other {Medan du var borta beslutade {name} om # godkännanden.}}",
+        "title": "Beslutat medan du var borta"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Du hanterar godkännanden åt {name}: inget väntar än.} other {Du hanterar godkännanden åt {name}: # väntar.}}",
+        "title": "Du hanterar godkännanden"
+      },
       "automaticClockOut": {
+        "breakMessage": "Du stämplades automatiskt ut vid rastens början kl. {cutoff} ({timezone}) eftersom rasten inte avslutades inom din organisations tidsgräns på {duration} minuter.",
         "message": "Du stämplades automatiskt ut efter {duration} minuters oavbrutet arbete klockan {cutoff} ({timezone}) eftersom din organisations tidsgräns nåddes.",
         "title": "Automatiskt utstämplad"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Det ingående saldot på {amount} för {dateRange} annullerades. Orsak: {reason}",
+          "title": "Ingående saldo annullerat"
+        },
+        "openingBalanceRecorded": {
+          "message": "Ett ingående saldo på {amount} för {dateRange} registrerades på ditt arbetssaldo.",
+          "title": "Ingående saldo registrerat"
+        },
+        "payoutCancelled": {
+          "message": "Övertidsutbetalningen på {amount} för {dateRange} annullerades. Orsak: {reason}",
+          "title": "Övertidsutbetalning annullerad"
+        },
+        "payoutRecorded": {
+          "message": "En övertidsutbetalning på {amount} för {dateRange} registrerades på ditt arbetssaldo.",
+          "title": "Övertidsutbetalning registrerad"
+        }
       },
       "breakDueReminder": {
         "message": "Det är dags för din rast kl. {breakTime} ({timezone}). Ta en rast senast då för att följa din arbetspolicys rastregler.",
@@ -638,12 +703,48 @@
         "message": "Ditt arbetspass började kl. {startTime} ({timezone}). Stämpla in om du arbetar.",
         "title": "Du har inte stämplat in än"
       },
+      "monthCloseBlocked": {
+        "message": "{month} stängdes inte automatiskt. Obehandlade frånvaroansökningar: {absenceRequests}. Obehandlade tidsförfrågningar: {timeRequests}. Pågående arbete: {liveWork}. Månaden har inte avslutats ännu: {notEnded}. Medarbetare: {employees}. Ett nytt försök görs imorgon.",
+        "title": "Månaden kunde inte stängas"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, other {{month} stängdes automatiskt för # medarbetare. Dess arbete och frånvaro kan inte längre ändras såvida den inte öppnas igen.} }",
+        "title": "Månad stängd"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} öppnades igen för en av dina medarbetare: {reason}} other {{month} öppnades igen för # av dina medarbetare: {reason}}}",
+        "title": "Månad öppnad igen"
+      },
       "newAbsenceRequest": {
         "title": "Ny frånvaroansökan"
       },
       "passwordChanged": {
         "message": "Ditt lösenord har ändrats. Om du inte har gjort denna ändring, kontakta supporten omedelbart.",
         "title": "Lösenordet har ändrats"
+      },
+      "periodSubmissionApproved": {
+        "message": "Din tid för {startDate} – {endDate} godkändes.",
+        "title": "Din tid godkändes"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Din tid för {startDate} – {endDate} ändrades efter att den godkänts. Granska din tid och skicka in den igen.",
+        "title": "Din godkända tid är inaktuell"
+      },
+      "periodSubmissionRejected": {
+        "message": "Din tid för {startDate} – {endDate} avvisades: {reason}. Granska din tid och skicka in den igen.",
+        "title": "Din tid avvisades"
+      },
+      "periodSubmissionReminder": {
+        "message": "Din period {startDate} – {endDate} har avslutats. Granska din tid och skicka in den för godkännande.",
+        "title": "Skicka in din tid för godkännande"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Din period {startDate} – {endDate} har fortfarande inte skickats in. Granska din tid och skicka in den för godkännande.",
+        "title": "Din tid har fortfarande inte skickats in"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Din tid för {startDate} – {endDate} ändrades efter att du skickat in den, så inskickningen drogs tillbaka. Granska din tid och skicka in den igen.",
+        "title": "Skicka in din tid igen"
       },
       "personnelFileDocumentShared": {
         "message": "Dokumentet \"{title}\" delades med dig.",
@@ -656,6 +757,8 @@
       "personnelFileEmployeeUpload": {
         "certificate": "{name} laddade upp ett intyg",
         "other": "{name} laddade upp ett dokument",
+        "sickNote": "{name} laddade upp ett sjukintyg för {dateRange}",
+        "sickNoteOnBehalf": "{uploader} laddade upp ett läkarintyg för {name}, {dateRange}",
         "title": "Nytt dokument i en personalakt"
       },
       "personnelFileExpiredToday": {
@@ -678,6 +781,10 @@
       "policyMissedClockInReminder": {
         "message": "Din senaste instämpling idag var kl. {startTime} ({timezone}). Stämpla in om du arbetar."
       },
+      "scheduledExportPaused": {
+        "message": "\"{scheduleName}\" pausades eftersom dess ägare, {ownerName}, inte längre är organisationsadministratör. Gör dig själv eller en annan organisationsadministratör till dess ägare för att återuppta den.",
+        "title": "Schemalagd export pausad"
+      },
       "shiftAssigned": {
         "message": "Du har blivit tilldelad ett arbetspass den {shiftDate} från {startTime} till {endTime} av {assignedByName}.",
         "title": "Arbetspass tilldelat"
@@ -690,12 +797,26 @@
         "message": "Du har tagits bort från teamet {teamName} av {performedByName}.",
         "title": "Borttagen från team"
       },
+      "timeOffInLieuAvailable": {
+        "message": "Medarbetare kan nu ta ledigt mot sitt arbetssaldo. Den nya frånvarokategorin förblir inaktiv tills du aktiverar den i frånvaroinställningarna.",
+        "title": "Kompensationsledighet är tillgänglig"
+      },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "En godkänd justering ökade beloppet som ska betalas på {employee}s utläggsrapport {report}. Väntar på ersättning: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "{employee}s utläggsrapport {report} ersätts inte via en lönekörning. Väntar på ersättning: {amounts}."
       },
       "travelExpensePartiallyReimbursed": {
         "message": "{amount} {currency} av ditt reseutlägg har ersatts (betalningsreferens {reference}). {remaining} {remainingCurrency} väntar fortfarande på ersättning.",
         "title": "Utlägg delvis ersatt"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} av dina reseutlägg har ersatts i lönekörningen för {period}. {remaining} {remainingCurrency} väntar fortfarande på ersättning."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Lönekörning {period} ({format}) väntar på din bekräftelse. Rapporter inom ditt ansvarsområde: {count}.",
+        "title": "Lönekörning väntar på bekräftelse"
       },
       "travelExpenseReadyForReimbursement": {
         "message": "{employee}s utläggsrapport {report} har godkänts. Väntar på ersättning: {amounts}.",
@@ -708,6 +829,9 @@
       "travelExpenseReimbursed": {
         "message": "Ditt reseutlägg har ersatts i sin helhet: {amount} {currency}, betalningsreferens {reference}.",
         "title": "Utlägg ersatt"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Dina reseutlägg har ersatts till fullo i lönekörningen för {period}: {amount} {currency}."
       }
     },
     "description": "Granska uppdateringar, godkännanden och systemvarningar i en och samma tidslinje.",
@@ -728,6 +852,42 @@
       "ariaLabel": "Filtrera aviseringar efter lässtatus",
       "read": "Lästa",
       "unread": "Olästa"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Något kräver din uppmärksamhet"
+      },
+      "body": "Öppna Z8 för att se detaljerna.",
+      "document": {
+        "title": "Nyheter om dina dokument"
+      },
+      "project": {
+        "title": "Nyheter om ett projekt"
+      },
+      "reminder": {
+        "title": "Påminnelse från Z8"
+      },
+      "requestUpdate": {
+        "title": "Din förfrågan uppdaterades"
+      },
+      "review": {
+        "title": "Du har en förfrågan att granska"
+      },
+      "schedule": {
+        "title": "Ditt schema har ändrats"
+      },
+      "security": {
+        "title": "Säkerhetsmeddelande för ditt konto"
+      },
+      "team": {
+        "title": "Dina team har ändrats"
+      },
+      "travelExpense": {
+        "title": "Nyheter om dina reseutlägg"
+      },
+      "workingTime": {
+        "title": "Nyheter om din arbetstid"
+      }
     },
     "preferences": {
       "categories": {
@@ -769,9 +929,21 @@
       },
       "toggleAria": "{channel}-aviseringar för {type}",
       "types": {
+        "absence_deputy_assigned": "Utsedd till frånvaroställföreträdare",
+        "absence_deputy_dates_changed": "Datumen för frånvaroställföreträdare har ändrats",
+        "absence_deputy_reminder": "Uppdrag som ställföreträdare börjar imorgon",
+        "absence_deputy_removed": "Inte längre frånvaroställföreträdare",
+        "absence_deputy_unavailable": "Ställföreträdare är inte längre tillgänglig",
+        "approval_cover_return_summary": "Beslutat av din ersättare",
+        "approval_cover_started": "Ersättning vid frånvaro har startat",
         "break_due_reminder": "Dags för rast",
         "forgotten_clock_out_reminder": "Glömd utstämpling",
-        "missed_clock_in_reminder": "Missad instämpling"
+        "missed_clock_in_reminder": "Missad instämpling",
+        "period_submission_decided": "Inskickad tid godkänd eller avvisad",
+        "period_submission_reminder": "Skicka in din tid",
+        "period_submission_sent_back": "Tid skickades tillbaka efter en ändring",
+        "work_balance_adjustment_cancelled": "Saldojustering annullerad",
+        "work_balance_adjustment_recorded": "Saldojustering registrerad"
       },
       "updateFailed": "Det gick inte att uppdatera inställningen"
     },
@@ -858,7 +1030,8 @@
       "relativeMinutes": "sedan {minutes}min"
     },
     "clockedIn": "Instämplad",
-    "clockedOut": "Utstämplad"
+    "clockedOut": "Utstämplad",
+    "onBreak": "På rast"
   },
   "rateLimit": {
     "countdownLabel": "sekunder tills du kan försöka igen",
@@ -877,6 +1050,12 @@
   "status": {
     "active": "Aktiv",
     "inactive": "Inaktiv"
+  },
+  "storeAppBanner": {
+    "description": "Få påminnelser och aviseringar om godkännanden i appen.",
+    "dismiss": "Avvisa appförslag",
+    "getApp": "Hämta appen",
+    "title": "Z8 för din telefon"
   },
   "table": {
     "clearFilters": "Rensa filter",
@@ -955,6 +1134,24 @@
     "pronounsMaxLength": "Pronomen får innehålla högst 50 tecken"
   },
   "workBalance": {
+    "adjustments": {
+      "cancel": "Avbryt",
+      "cancelled": "Avbruten",
+      "cancelledBy": "Avbruten av {name} den {date}: {reason}",
+      "description": "Övertidsutbetalningar och ingående saldon på detta arbetssaldo. Felaktiga poster avbryts och raderas aldrig, så avbrutna poster fortsätter att visas i listan.",
+      "empty": "Inga saldojusteringar ännu.",
+      "kind": {
+        "openingBalance": "Ingående saldo",
+        "overtimePayout": "Övertidsutbetalning"
+      },
+      "loadFailed": "Det gick inte att läsa in saldojusteringarna.",
+      "loading": "Läser in saldojusteringar",
+      "notPermitted": "Du kan se saldojusteringar för dig själv och för anställda som du hanterar.",
+      "open": "Saldojusteringar",
+      "recordedBy": "Registrerad av {name} den {date}",
+      "title": "Saldojusteringar",
+      "unknownUser": "en borttagen användare"
+    },
     "label": "Totalsaldo",
     "notCalculated": "Inte beräknat ännu",
     "pendingDescription": "Processen kommer att beräkna detta saldo snart.",

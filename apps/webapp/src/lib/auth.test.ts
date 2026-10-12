@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import { refuseInvitationOutsideEnterpriseIdentity } from "@/lib/enterprise-identity/invitation-restriction";
 import * as authModule from "./auth";
 import {
 	makeEmailLookupCaseInsensitiveAdapter,
@@ -250,6 +251,8 @@ describe("organization member removal", () => {
 				beforeDeleteOrganization: expect.any(Function),
 			}),
 		);
+		// Enterprise identity "Restrict invites" holds on the raw endpoint (#1024).
+		expect(hooks?.beforeCreateInvitation).toBe(refuseInvitationOutsideEnterpriseIdentity);
 		expect(revocationSource).toContain("secondaryStorage.deleteOrThrow(token)");
 		expect(authModule.auth.options.session?.cookieCache?.enabled).toBe(false);
 	});

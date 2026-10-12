@@ -1,0 +1,148 @@
+{
+  "compliance": {
+    "commandCenter": {
+      "coverage": {
+        "accessControls": "Controalele de acces rezumă doar evenimentele sensibile din jurnalul de audit care sunt deja înregistrate astăzi.",
+        "auditEvidence": "Probele de audit utilizează configurația de export de audit în timp real, cererile de pachete de audit și rezultatele verificărilor recente.",
+        "workforceCompliance": "Conformitatea forței de muncă utilizează încălcările politicilor de lucru din ultimele 7 zile și cererile de derogare în așteptare."
+      },
+      "events": {
+        "auditEvidenceFailures": {
+          "description": "Sarcini eșuate recente: {failedRequests}; verificări nevalide recente: {invalidVerifications}",
+          "title": "S-au detectat erori ale probelor de audit"
+        },
+        "auditPackFailure": {
+          "description": "Sarcini eșuate recente: {failedRequests}",
+          "title": "Generarea pachetului de audit a eșuat"
+        },
+        "auditVerificationFailure": {
+          "description": "Verificări nevalide recente: {invalidVerifications}",
+          "title": "Verificarea auditului a eșuat"
+        },
+        "sensitiveAction": {
+          "description": "{action} pe {entityType}",
+          "title": "Acțiune sensibilă: {action}"
+        },
+        "workforceFindings": {
+          "description": "Odihnă: {restPeriodViolations}, Alte politici: {generalPolicyViolations}, Ore suplimentare: {overtimeViolations}",
+          "title": "Constatări recente privind politicile forței de muncă"
+        }
+      },
+      "facts": {
+        "access": {
+          "latestSensitiveAction": "Ultima acțiune sensibilă: {action}",
+          "latestSensitiveActionNone": "Ultima acțiune sensibilă: niciuna",
+          "noSensitiveEvents": "Nu au fost înregistrate modificări sensibile ale controalelor în ultimele 24 de ore.",
+          "recentSensitiveEvents": "Evenimente sensibile recente: {count}"
+        },
+        "audit": {
+          "activeSigningKey": "Cheie de semnare activă: {fingerprint}",
+          "lastSuccessfulAuditPack": "Ultimul pachet de audit reușit: {timestamp}",
+          "missingSigningKey": "Cheile de semnare nu sunt încă configurate.",
+          "noSuccessfulAuditPack": "Nu a fost înregistrat încă niciun pachet de audit reușit.",
+          "recentFailedJobs": "Sarcini recente eșuate de pachet de audit: {count}",
+          "recentInvalidVerifications": "Încercări recente de verificare nevalide: {count}"
+        },
+        "unavailable": {
+          "accessControls": "Evenimentele de control al accesului nu au putut fi încărcate.",
+          "auditEvidence": "Datele privind dovezile de audit nu au putut fi încărcate.",
+          "workforceCompliance": "Datele privind conformitatea forței de muncă nu au putut fi încărcate."
+        },
+        "workforce": {
+          "generalPolicyViolations": "Alte încălcări ale politicilor: {count}",
+          "overtimeViolations": "Încălcări privind orele suplimentare: {count}",
+          "pendingExceptions": "Excepții în așteptare: {count}",
+          "restPeriodViolations": "Încălcări ale perioadei de odihnă: {count}"
+        }
+      },
+      "footer": {
+        "lastRefreshed": "Ultima actualizare: {time}"
+      },
+      "links": {
+        "inspectCompliance": "Inspectează conformitatea",
+        "inspectInAuditLog": "Inspectează în jurnalul de audit",
+        "openAuditExport": "Deschide exportul de audit",
+        "openAuditLog": "Deschide jurnalul de audit",
+        "openComplianceSettings": "Deschide setările de conformitate",
+        "reviewAuditExport": "Revizuiește exportul de audit"
+      },
+      "overview": "Prezentare generală a conformității",
+      "recentEvents": {
+        "empty": "Nu au fost detectate evenimente critice recente.",
+        "title": "Evenimente critice recente"
+      },
+      "sections": {
+        "accessControls": {
+          "headline": {
+            "critical": "Modificările sensibile ale controalelor necesită revizuire",
+            "healthy": "Nu au fost înregistrate modificări sensibile ale controalelor recent",
+            "warning": "Au fost detectate modificări recente ale controalelor"
+          }
+        },
+        "auditEvidence": {
+          "headline": {
+            "critical": "Dovezile de audit necesită atenție",
+            "healthy": "Semnalele dovezilor de audit par în regulă",
+            "warning": "Dovezile de audit sunt pregătite doar parțial"
+          }
+        },
+        "unavailable": {
+          "headline": "Semnal temporar indisponibil"
+        },
+        "workforceCompliance": {
+          "headline": {
+            "critical": "Încălcările politicilor forței de muncă necesită revizuire",
+            "healthy": "Nu au fost detectate probleme recente privind politicile forței de muncă",
+            "warning": "Conformitatea forței de muncă deviază"
+          }
+        }
+      },
+      "status": {
+        "critical": "critic",
+        "healthy": "în regulă",
+        "unavailable": "indisponibil",
+        "warning": "avertisment"
+      },
+      "summary": {
+        "critical": "Riscurile critice de conformitate necesită atenție",
+        "healthy": "Nu au fost detectate probleme active în semnalele monitorizate",
+        "unavailable": "Unele semnale de conformitate sunt indisponibile",
+        "warning": "Semnalele de conformitate necesită revizuire"
+      }
+    },
+    "exception": {
+      "approved": "Excepție aprobată",
+      "approvedDescription": "Excepția de conformitate a fost aprobată.",
+      "approveFailed": "Aprobarea a eșuat",
+      "plannedDuration": "Planificat",
+      "plannedDurationHelp": "Estimați cât timp suplimentar preconizați că veți avea nevoie peste limită.",
+      "reason": "Motivul excepției",
+      "reasonPlaceholder": "Explicați de ce aveți nevoie de această excepție (de ex., termen limită urgent de proiect, întâlnire critică cu clientul)...",
+      "reasonRequired": "Motiv obligatoriu",
+      "reasonRequiredDescription": "Vă rugăm să furnizați un motiv pentru cererea de excepție.",
+      "rejectDescription": "Furnizați un motiv pentru respingerea acestei cereri de excepție (opțional)",
+      "rejected": "Excepție respinsă",
+      "rejectedDescription": "Excepția de conformitate a fost respinsă.",
+      "rejectFailed": "Respingerea a eșuat",
+      "rejectionPlaceholder": "Introduceți motivul respingerii acestei excepții...",
+      "rejectionReason": "Motivul respingerii",
+      "rejectTitle": "Respingeți cererea de excepție",
+      "requestDescription": "Solicitați aprobarea prealabilă a managerului pentru a continua în ciuda restricțiilor de conformitate. Excepțiile aprobate sunt valabile timp de 24 de ore.",
+      "requestedAt": "Solicitat",
+      "requestFailed": "Cererea a eșuat",
+      "requestSubmitted": "Cererea de excepție a fost trimisă",
+      "requestSubmittedDescription": "Managerul dvs. va fi notificat și poate aproba sau respinge cererea.",
+      "requestTitle": "Solicită excepție de conformitate",
+      "submit": "Trimite cererea",
+      "type": "Tip de excepție"
+    },
+    "hasApprovedException": "Aveți o excepție aprobată. Puteți continua.",
+    "moreAlerts": "mai mult",
+    "noExceptions": "Nicio cerere de excepție în așteptare",
+    "pendingExceptions": "Cereri de excepție în așteptare",
+    "pendingExceptionsDescription": "Examinați cererile de excepție care necesită aprobarea dvs.",
+    "requestException": "Solicită excepție",
+    "restPeriodMessage": "Mai aveți nevoie de {time} de odihnă înainte de a putea ponta. Următoarea pontare permisă: {nextTime}",
+    "restPeriodRequired": "Perioadă de odihnă obligatorie"
+  }
+}

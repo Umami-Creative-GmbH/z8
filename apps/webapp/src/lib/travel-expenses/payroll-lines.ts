@@ -7,7 +7,7 @@ import type { TravelExpenseReportSubmittedPerDiem } from "@/lib/approvals/eviden
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { calculateMileage } from "./mileage";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
-import { PAYROLL_LINE_KINDS, type PayrollLineKind } from "./payroll-line-kind";
+import { PAYROLL_CURRENCY, PAYROLL_LINE_KINDS, type PayrollLineKind } from "./payroll-line-kind";
 import { calculatePerDiem, DOMESTIC_PER_DIEM_AREA, type PerDiemPolicyResolver } from "./per-diem";
 import type { SettlementEntryKind } from "./settlement.types";
 import { GERMAN_MILEAGE_DEFAULT } from "./statutory-allowance-defaults";
@@ -32,9 +32,6 @@ import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT, type PerDiemRates } from "./statutory
  */
 
 export { PAYROLL_LINE_KINDS, type PayrollLineKind } from "./payroll-line-kind";
-
-/** Payroll runs carry euro amounts only; nothing is converted. */
-const PAYROLL_CURRENCY = "EUR";
 
 /** One amount a payroll run carries for a report, in euros at two decimals. */
 export interface PayrollLine {

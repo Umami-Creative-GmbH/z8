@@ -133,6 +133,18 @@
     "sso-not-configured": "SSO nie jest skonfigurowane dla tej domeny",
     "step-one": "1. Użyj zaproszonego adresu e-mail",
     "step-two": "2. Wróć tutaj i dołącz",
+    "storeApp": {
+      "continue": "Kontynuuj",
+      "description": "Wprowadź służbowy adres e-mail. Następnie zaloguj się na stronie logowania swojej organizacji w przeglądarce telefonu.",
+      "error": {
+        "browser": "Nie udało się otworzyć strony logowania. Spróbuj ponownie.",
+        "expired": "Logowanie nie powiodło się lub sesja wygasła. Spróbuj ponownie.",
+        "rateLimited": "Zbyt wiele prób logowania. Odczekaj chwilę i spróbuj ponownie.",
+        "unavailable": "Nie można nawiązać połączenia z Z8. Sprawdź połączenie i spróbuj ponownie."
+      },
+      "title": "Zaloguj się do Z8",
+      "waiting": "Oczekiwanie na logowanie…"
+    },
     "terms": {
       "privacy": "Polityka prywatności",
       "service": "Regulamin"

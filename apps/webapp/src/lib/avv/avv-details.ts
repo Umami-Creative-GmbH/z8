@@ -12,6 +12,13 @@ const subprocessors = [
 		pdfText:
 			"PostHog, Inc. - Produktanalyse, Fehleranalyse und Nutzungsdiagnostik, sofern Telemetrie aktiviert ist",
 	},
+	{
+		providerName: "Google Ireland Limited",
+		displayText:
+			"Google Ireland Limited (Firebase Cloud Messaging) - Zustellung von Push-Benachrichtigungen an die Z8-App, sofern Push in der App aktiviert ist",
+		pdfText:
+			"Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland (Firebase Cloud Messaging) - Zustellung von Push-Benachrichtigungen an die Z8-App für iOS und Android, sofern Push in der App aktiviert ist. Verarbeitet werden die Gerätekennung (Push-Token) und ein allgemeiner Hinweistext, ohne Inhalte der Benachrichtigung",
+	},
 ] as const;
 
 export const avvHostingDetails = {

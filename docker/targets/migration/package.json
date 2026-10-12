@@ -5,7 +5,7 @@
 	"packageManager": "pnpm@12.8.1",
 	"dependencies": {
 		"drizzle-kit": "^0.31.11",
-		"drizzle-orm": "^0.45.3",
+		"drizzle-orm": "^0.45.4",
 		"luxon": "^3.7.2",
 		"pg": "^8.23.1",
 		"temporal-polyfill": "1.0.5"

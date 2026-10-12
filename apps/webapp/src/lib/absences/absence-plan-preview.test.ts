@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { mondayToFriday } from "./absence-days";
 import {
 	type AbsencePlanPreviewInput,
 	buildAbsencePlanPreview,
 	type CoverageEvaluationInput,
 } from "./absence-plan-preview";
+import { workingDaysFrom } from "./working-days";
 
 const baseInput: AbsencePlanPreviewInput = {
 	category: {
@@ -27,17 +29,69 @@ const baseInput: AbsencePlanPreviewInput = {
 		remainingDays: 14,
 	},
 	holidays: [],
+	isWorkingDay: mondayToFriday,
 	existingAbsences: [],
 	affectedShifts: [],
 	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
 	hasManager: true,
 };
 
+function withHolidays(holidays: AbsencePlanPreviewInput["holidays"]) {
+	return { holidays, isWorkingDay: workingDaysFrom({ assignments: [], holidays }) };
+}
+describe("buildAbsencePlanPreview for time off in lieu", () => {
+	const timeOffInLieu: AbsencePlanPreviewInput = {
+		...baseInput,
+		category: {
+			id: "cat-toil",
+			name: "Time off in lieu",
+			requiresApproval: true,
+			countsAgainstVacation: false,
+			drawsOnWorkBalance: true,
+		},
+	};
+
+	it("shows the projected work balance after the request", () => {
+		const workBalance = {
+			currentBalanceMinutes: 1200,
+			drawnMinutes: 960,
+			projectedBalanceMinutes: 240,
+			wouldBeNegative: false,
+		};
+
+		const preview = buildAbsencePlanPreview({ ...timeOffInLieu, workBalance });
+
+		expect(preview.workBalance).toEqual(workBalance);
+		expect(preview.balance?.remainingAfterRequest).toBe(14);
+		expect(preview.warnings).toEqual([]);
+		expect(preview.approvalSignal).toBe("likely");
+	});
+
+	it("warns, without refusing, when the work balance would be negative", () => {
+		const preview = buildAbsencePlanPreview({
+			...timeOffInLieu,
+			workBalance: {
+				currentBalanceMinutes: 240,
+				drawnMinutes: 960,
+				projectedBalanceMinutes: -720,
+				wouldBeNegative: true,
+			},
+		});
+
+		expect(preview.warnings).toContain("Work balance would be negative after this request.");
+		expect(preview.approvalSignal).toBe("risky");
+	});
+
+	it("has no work balance projection for other categories", () => {
+		expect(buildAbsencePlanPreview(baseInput).workBalance).toBeNull();
+	});
+});
+
 describe("buildAbsencePlanPreview", () => {
 	it("calculates balance impact for vacation-counting categories", () => {
 		const preview = buildAbsencePlanPreview(baseInput);
 
-		expect(preview.requestedDays).toBe(2);
+		expect(preview.requestedAbsenceDays).toBe(2);
 		expect(preview.balance?.remainingAfterRequest).toBe(12);
 		expect(preview.approvalSignal).toBe("likely");
 		expect(preview.reasons).toContain("Request follows the normal approval path.");
@@ -66,7 +120,7 @@ describe("buildAbsencePlanPreview", () => {
 			},
 		});
 
-		expect(preview.requestedDays).toBe(0.5);
+		expect(preview.requestedAbsenceDays).toBe(0.5);
 		expect(preview.balance?.remainingAfterRequest).toBe(9.5);
 	});
 
@@ -87,7 +141,7 @@ describe("buildAbsencePlanPreview", () => {
 				...baseInput.vacationBalance!,
 				remainingDays: 10,
 			},
-			holidays: [
+			...withHolidays([
 				{
 					id: "holiday-1",
 					name: "Liberation Day",
@@ -95,10 +149,10 @@ describe("buildAbsencePlanPreview", () => {
 					endDate: new Date("2026-05-15T00:00:00.000Z"),
 					categoryId: "public",
 				},
-			],
+			]),
 		});
 
-		expect(preview.requestedDays).toBe(0);
+		expect(preview.requestedAbsenceDays).toBe(0);
 		expect(preview.balance?.remainingAfterRequest).toBe(10);
 	});
 
@@ -131,7 +185,7 @@ describe("buildAbsencePlanPreview", () => {
 	it("includes holidays inside the request range", () => {
 		const preview = buildAbsencePlanPreview({
 			...baseInput,
-			holidays: [
+			...withHolidays([
 				{
 					id: "holiday-1",
 					name: "Liberation Day",
@@ -139,7 +193,7 @@ describe("buildAbsencePlanPreview", () => {
 					endDate: new Date("2026-05-05T00:00:00.000Z"),
 					categoryId: "public",
 				},
-			],
+			]),
 		});
 
 		expect(preview.holidays).toEqual([
@@ -150,7 +204,7 @@ describe("buildAbsencePlanPreview", () => {
 				endDate: "2026-05-05",
 			},
 		]);
-		expect(preview.requestedDays).toBe(1);
+		expect(preview.requestedAbsenceDays).toBe(1);
 	});
 
 	it("marks pending or approved absence overlaps as risky", () => {
@@ -296,5 +350,40 @@ describe("buildAbsencePlanPreview", () => {
 		expect(preview.warnings).toContain(
 			"Published coverage would drop below the configured minimum.",
 		);
+	});
+
+	it("counts only the employee's working days", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			request: { ...baseInput.request, startDate: "2026-10-12", endDate: "2026-10-16" },
+			isWorkingDay: (day) => day.dayOfWeek <= 4,
+		});
+
+		expect(preview.requestedAbsenceDays).toBe(4);
+		expect(preview.balance?.remainingAfterRequest).toBe(10);
+		expect(preview.refusal).toBeNull();
+	});
+
+	it("refuses vacation that covers no working day", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			request: { ...baseInput.request, startDate: "2026-10-16", endDate: "2026-10-18" },
+			isWorkingDay: (day) => day.dayOfWeek <= 4,
+		});
+
+		expect(preview.requestedAbsenceDays).toBe(0);
+		expect(preview.refusal).toBe("no_working_days");
+		expect(preview.approvalSignal).toBe("risky");
+	});
+
+	it("accepts a category that does not count against vacation on no working day", () => {
+		const preview = buildAbsencePlanPreview({
+			...baseInput,
+			category: { ...baseInput.category, name: "Sick leave", countsAgainstVacation: false },
+			request: { ...baseInput.request, startDate: "2026-10-17", endDate: "2026-10-18" },
+		});
+
+		expect(preview.requestedAbsenceDays).toBe(0);
+		expect(preview.refusal).toBeNull();
 	});
 });

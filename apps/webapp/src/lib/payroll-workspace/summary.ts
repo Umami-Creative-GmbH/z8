@@ -8,12 +8,13 @@ import {
 	absenceEntry,
 	approvalRequest,
 	employee,
+	payrollExportConfig,
 	team,
 	timeRecord,
 	timeRecordAbsence,
 	userSettings,
 } from "@/db/schema";
-import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	findOpenDepartureClockRepairs,
 	type OpenDepartureClockRepair,
@@ -22,16 +23,24 @@ import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
 } from "@/lib/payroll-allocation/protected-minutes";
-import type {
-	CollectedPayrollWork,
-	PayrollWorkBlockerKind,
-	PayrollWorkCollection,
+import {
+	type CollectedPayrollWork,
+	missingPersonnelIdentifierBlockers,
+	type PayrollWorkBlocker,
+	type PayrollWorkBlockerKind,
+	type PayrollWorkCollection,
 } from "@/lib/payroll-collection/payroll-work-collection";
 import {
 	isPayrollWorkCollectionActive,
 	readPayrollWorkCollection,
 } from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { buildPayrollQueryEnvelope } from "@/lib/payroll-export/calendar-boundaries";
+import { payrollIdentifierCustomFieldId } from "@/lib/payroll-export/personnel-identifier";
+import { readPersonnelIdentifierValues } from "@/lib/payroll-export/personnel-identifier-store";
+import {
+	classifyPayrollRunCandidates,
+	exportIsPayrollRun,
+} from "@/lib/travel-expenses/payroll-run";
 import {
 	assertCanonicalAbsencesReady,
 	assertCanonicalCutoverReady,
@@ -196,6 +205,7 @@ const COLLECTION_BLOCKER_LABELS: Record<PayrollWorkBlockerKind, string> = {
 	unresolved_work_minutes: "Unresolved work minutes",
 	uncertain_historical_work: "Historical work needs review",
 	offboarding_clock_repair: "Offboarding clock-out needs repair",
+	missing_identifier: "Missing identifier",
 };
 
 /**
@@ -210,8 +220,9 @@ export function payrollBlockersFromCollection(
 	return collection.blockers.map((blocker) => {
 		const timezone = collection.employeeTimezones[blocker.employeeId];
 		return {
+			// A finding or identifier field names several employees: one blocker ID each.
 			id:
-				blocker.kind === "uncertain_historical_work"
+				blocker.kind === "uncertain_historical_work" || blocker.kind === "missing_identifier"
 					? createHash("sha256")
 							.update(`${blocker.sourceId}\u0000${blocker.employeeId}`)
 							.digest("hex")
@@ -373,6 +384,13 @@ export async function getPayrollWorkspaceSummary(input: {
 	}
 
 	const allowedEmployeeIds = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
+	const identifierBlockers = (employeesWithRows: Iterable<string>) =>
+		getMissingIdentifierBlockers({
+			organizationId: input.organizationId,
+			allowedEmployeeIds,
+			period: summaryInput.period,
+			employeesWithRows,
+		});
 	if (scopedCollection) {
 		const [employeeRows, collection, absenceRows, blockers] = await Promise.all([
 			getEmployeeRows(input.organizationId, allowedEmployeeIds),
@@ -398,7 +416,14 @@ export async function getPayrollWorkspaceSummary(input: {
 			workRows: [],
 			collectedWork: collection.input.work,
 			absenceRows,
-			blockers: [...blockers, ...payrollBlockersFromCollection(collection)],
+			blockers: [
+				...blockers,
+				...payrollBlockersFromCollection(collection),
+				...(await identifierBlockers([
+					...collection.input.work.map((line) => line.employeeId),
+					...absenceRows.map((row) => row.employeeId),
+				])),
+			],
 		});
 	}
 
@@ -419,13 +444,89 @@ export async function getPayrollWorkspaceSummary(input: {
 		),
 	]);
 
+	const { workedMinutesByEmployee } = calculatePayrollWorkedMinutes(workRows, summaryInput.period);
 	return buildPayrollSummaryFromRows({
 		...summaryInput,
 		employees: employeeRows,
 		workRows,
 		absenceRows,
-		blockers,
+		blockers: [
+			...blockers,
+			...(await identifierBlockers([
+				...[...workedMinutesByEmployee].flatMap(([employeeId, minutes]) =>
+					minutes > 0 ? [employeeId] : [],
+				),
+				...absenceRows.map((row) => row.employeeId),
+			])),
+		],
 	});
+}
+
+/**
+ * `missing_identifier` blockers (#821): for each employee custom field an active
+ * payroll configuration names as identifier, the employees in scope with work,
+ * absences or (for a payroll run of that format) expense lines in the period and
+ * no value as of its last day. An export of that format would be refused for
+ * them, so they can't be dismissed. Same rule as scoped collection.
+ */
+async function getMissingIdentifierBlockers(input: {
+	organizationId: string;
+	allowedEmployeeIds: readonly string[];
+	period: PayrollPeriod;
+	employeesWithRows: Iterable<string>;
+}): Promise<PayrollBlocker[]> {
+	const { db } = await import("@/db");
+	const configs = await db
+		.select({ formatId: payrollExportConfig.formatId, config: payrollExportConfig.config })
+		.from(payrollExportConfig)
+		.where(
+			and(
+				eq(payrollExportConfig.organizationId, input.organizationId),
+				eq(payrollExportConfig.isActive, true),
+			),
+		);
+	const formatsByField = new Map<string, string[]>();
+	for (const row of configs) {
+		const fieldId = payrollIdentifierCustomFieldId(row.config);
+		if (fieldId === null) continue;
+		formatsByField.set(fieldId, [...(formatsByField.get(fieldId) ?? []), row.formatId]);
+	}
+	if (formatsByField.size === 0) return [];
+
+	const allowed = new Set(input.allowedEmployeeIds);
+	const blockers: PayrollWorkBlocker[] = [];
+	for (const [customFieldId, formatIds] of [...formatsByField].toSorted(([left], [right]) =>
+		left.localeCompare(right),
+	)) {
+		const employeeIds = new Set(input.employeesWithRows);
+		for (const formatId of formatIds.toSorted()) {
+			if (!(await exportIsPayrollRun(db, { organizationId: input.organizationId, formatId }))) {
+				continue;
+			}
+			const candidates = await classifyPayrollRunCandidates(db, {
+				organizationId: input.organizationId,
+				format: formatId,
+				period: { startDate: input.period.start, endDate: input.period.end },
+				employeeIds: input.allowedEmployeeIds,
+			});
+			for (const candidate of candidates) {
+				if (candidate.classification.outcome === "include") {
+					employeeIds.add(candidate.account.employeeId);
+				}
+			}
+		}
+		const inScope = [...employeeIds].filter((employeeId) => allowed.has(employeeId));
+		const values = await readPersonnelIdentifierValues(db, {
+			organizationId: input.organizationId,
+			customFieldId,
+			employeeIds: inScope,
+			asOf: parsePlainDate(input.period.end),
+		});
+		blockers.push(
+			...missingPersonnelIdentifierBlockers({ customFieldId, values, employeeIds: inScope }),
+		);
+	}
+	return payrollBlockersFromCollection({ blockers, employeeTimezones: {} });
 }
 
 async function getEmployeeRows(

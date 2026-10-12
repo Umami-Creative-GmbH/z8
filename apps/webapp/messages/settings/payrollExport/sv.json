@@ -91,6 +91,8 @@
           "missingConfiguration": "konfiguration",
           "missingCredentials": "inloggningsuppgifter"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# utbetalning av övertid exporterades inte} other {# utbetalningar av övertid exporterades inte}}",
+        "unmappedOvertimePayoutsDescription": "Ingen löneart är kopplad till Övertid för detta format. Koppla en under Lönearter och exportera igen, eller betala ut dessa timmar på ett annat sätt.",
         "year": "År"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Storlek",
           "status": "Status"
         },
-        "title": "Exporthistorik"
+        "title": "Exporthistorik",
+        "unmappedOvertimePayouts": "{count, plural, one {# utbetalning av övertid exporterades inte: ingen löneart för Övertid} other {# utbetalningar av övertid exporterades inte: ingen löneart för Övertid}}"
+      },
+      "identifier": {
+        "customField": "Anpassat fält: {name}",
+        "unavailableField": "Anpassat fält (otillgängligt)"
       },
       "lexware": {
         "configured": "Konfigurerad",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Alla aktiva anställda har bekräftad anställningshistorik för den här löneperioden.",
           "descriptionWarning": "Vissa aktiva anställda har inte bekräftad anställningshistorik för den här löneperioden."
+        },
+        "periodSubmissions": {
+          "description": "Förväntade periodinlämningar i detta intervall som saknas, har avvisats, skickats tillbaka efter en ändring eller fortfarande väntar på beslut. De blockerar inte löneexporten.",
+          "title": "Periodinlämningar"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Perioder i detta intervall som ännu inte har avslutats, så de kan inte lämnas in. Deras tid kan fortfarande ändras efter exporten.",
+          "title": "Periodinlämningar som fortfarande pågår"
         }
       },
       "checkStatus": {

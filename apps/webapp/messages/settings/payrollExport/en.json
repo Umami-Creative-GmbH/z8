@@ -91,6 +91,8 @@
           "missingConfiguration": "config",
           "missingCredentials": "credentials"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# overtime payout was not exported} other {# overtime payouts were not exported}}",
+        "unmappedOvertimePayoutsDescription": "No wage type is mapped to Overtime for this format. Map one under Wage Types and export again, or pay these hours out another way.",
         "year": "Year"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Size",
           "status": "Status"
         },
-        "title": "Export History"
+        "title": "Export History",
+        "unmappedOvertimePayouts": "{count, plural, one {# overtime payout not exported: no wage type for Overtime} other {# overtime payouts not exported: no wage type for Overtime}}"
+      },
+      "identifier": {
+        "customField": "Custom field: {name}",
+        "unavailableField": "Custom field (unavailable)"
       },
       "lexware": {
         "configured": "Configured",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "All active employees have confirmed employment history for this payroll period.",
           "descriptionWarning": "Some active employees do not have confirmed employment history for this payroll period."
+        },
+        "periodSubmissions": {
+          "description": "Expected period submissions in this range that are missing, rejected, sent back after a change or still awaiting a decision. They do not block payroll export.",
+          "title": "Period submissions"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Periods in this range that have not ended yet, so they cannot be submitted. Their time can still change after the export.",
+          "title": "Period submissions still running"
         }
       },
       "checkStatus": {

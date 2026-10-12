@@ -91,6 +91,8 @@
           "missingConfiguration": "configuración",
           "missingCredentials": "credenciales"
         },
+        "unmappedOvertimePayouts": "{count, plural, one {# pago de horas extras no se exportó} other {# pagos de horas extras no se exportaron}}",
+        "unmappedOvertimePayoutsDescription": "No hay ningún tipo de salario asignado a Horas extras para este formato. Asigne uno en Tipos de salario y vuelva a exportar, o liquide estas horas de otra manera.",
         "year": "Año"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Tamaño",
           "status": "Estado"
         },
-        "title": "Historial de exportaciones"
+        "title": "Historial de exportaciones",
+        "unmappedOvertimePayouts": "{count, plural, one {# pago de horas extras no exportado: no hay tipo de salario para Horas extras} other {# pagos de horas extras no exportados: no hay tipo de salario para Horas extras}}"
+      },
+      "identifier": {
+        "customField": "Campo personalizado: {name}",
+        "unavailableField": "Campo personalizado (no disponible)"
       },
       "lexware": {
         "configured": "Configurado",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Todos los empleados activos tienen confirmado el historial laboral para este periodo de nómina.",
           "descriptionWarning": "Algunos empleados activos no tienen confirmado el historial laboral para este periodo de nómina."
+        },
+        "periodSubmissions": {
+          "description": "Envíos de períodos esperados en este rango que faltan, han sido rechazados, devueltos tras un cambio o aún están esperando una decisión. No bloquean la exportación de nómina.",
+          "title": "Envíos de períodos"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Períodos en este rango que aún no han finalizado, por lo que no se pueden enviar. Sus horas todavía pueden cambiar después de la exportación.",
+          "title": "Envíos de períodos aún en curso"
         }
       },
       "checkStatus": {

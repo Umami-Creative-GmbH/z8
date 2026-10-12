@@ -17,6 +17,7 @@ import {
 	type LegacyDecisionEvidenceRecord,
 	listLegacyDecisionEvidence,
 } from "@/lib/approvals/evidence/store";
+import { loadDeputyDecisionsForEntities } from "@/lib/approvals/deputy/deputy-decision-store";
 import type {
 	TravelExpenseReportReceiptManifestItem,
 	TravelExpenseReportSubmittedFacts,
@@ -238,6 +239,8 @@ export interface SubmittedReportView {
 		outcome: "approved" | "rejected";
 		decidedAt: string;
 		deciderName: string | null;
+		/** A covering deputy decided for this absent approver (#1016). */
+		actingForName?: string | null;
 		/** Rejection reason as the reviewer recorded it. */
 		reason: string | null;
 		/** Set when no reviewer decided: the owner's self-approval (#679). */
@@ -267,6 +270,8 @@ export interface SubmittedReportView {
 		label: SubmittedReportHistoryLabel;
 		at: string;
 		actorName: string | null;
+		/** A covering deputy decided for this absent approver (#1016). */
+		actingForName?: string | null;
 	}>;
 	facts: Pick<
 		TravelExpenseReportSubmittedFacts,
@@ -416,6 +421,19 @@ export async function loadSubmittedReportView(
 			: [];
 
 	const closureActorNames = await loadReopenActorNames(report.organizationId, closures);
+	// Decisions a covering deputy made, by legacy request (#1016).
+	const deputyDecisions = new Map(
+		(
+			await loadDeputyDecisionsForEntities(db, {
+				organizationId: report.organizationId,
+				entityIds: [report.id],
+			})
+		).flatMap((decision) =>
+			decision.approvalRequestId ? [[decision.approvalRequestId, decision.actingFor.name] as const] : [],
+		),
+	);
+	const actingForOf = (approvalRequestId: string | null | undefined) =>
+		approvalRequestId ? (deputyDecisions.get(approvalRequestId) ?? null) : null;
 
 	const history: SubmittedReportView["history"] = revisions.flatMap((candidate) => {
 		const submissionCycle = candidate.submissionCycle;
@@ -440,6 +458,7 @@ export async function loadSubmittedReportView(
 							: ("approval_recorded" as const),
 				at: instantToCanonicalString(decision.decidedAt),
 				actorName: decision.labels.actorName,
+				actingForName: actingForOf(decision.legacy.approvalRequestId),
 			})),
 		];
 		if (cycleClosure?.kind === "withdrawn") {
@@ -481,6 +500,7 @@ export async function loadSubmittedReportView(
 						outcome: final.requestOutcome,
 						decidedAt: instantToCanonicalString(final.decidedAt),
 						deciderName: final.labels.actorName,
+						actingForName: actingForOf(final.legacy.approvalRequestId),
 						reason:
 							final.requestOutcome === "rejected" ? (finalRequest?.rejectionReason ?? null) : null,
 						basis: isOwnerSelfApprovalDecision(final) ? OWNER_SELF_APPROVAL_REASON : null,

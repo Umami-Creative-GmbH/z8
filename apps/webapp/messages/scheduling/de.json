@@ -16,8 +16,17 @@
       "understaffed": "Unterbesetzt",
       "utilization": "{percent}% Auslastung"
     },
+    "mySchedule": {
+      "loadFailed": "Ihre Schichten konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+      "nextWeek": "Nächste Woche",
+      "noShifts": "Keine Schichten",
+      "previousWeek": "Vorherige Woche",
+      "shift": "Schicht",
+      "today": "Heute"
+    },
     "page": {
-      "employeeDescription": "Schichten ansehen und verfügbare Schichten übernehmen",
+      "employeeScheduleDescription": "Ihre veröffentlichten Schichten, Woche für Woche",
+      "employeeTitle": "Mein Schichtplan",
       "managerDescription": "Mitarbeiterschichten verwalten und planen",
       "title": "Schichtplan"
     },
@@ -61,6 +70,16 @@
         "overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
         "updated": "Schicht aktualisiert"
       }
+    },
+    "shiftDetails": {
+      "close": "Schließen",
+      "date": "Datum",
+      "description": "Ihre geplante Schicht",
+      "endsNextDay": "endet am nächsten Tag",
+      "location": "Standort",
+      "notes": "Notizen",
+      "time": "Uhrzeit",
+      "title": "Schichtdetails"
     },
     "shiftDialog": {
       "anyoneCanPickUp": "Jeder kann die Schicht übernehmen",
@@ -111,6 +130,35 @@
       "validating": "Qualifikationen werden validiert…",
       "validatingDescription": "Mitarbeiterqualifikationen werden geprüft",
       "warningMessage": "Sie können diese Schicht dennoch zuweisen, sie wird jedoch als manuelle Übersteuerung protokolliert."
+    },
+    "staffingSuggestions": {
+      "empty": "Keine verfügbaren Mitarbeiter für diese Schicht",
+      "error": "Vorschläge konnten nicht geladen werden",
+      "loading": "Verfügbare Mitarbeiter werden gesucht…",
+      "note": {
+        "missingPreferredSkill": "Bevorzugte Qualifikation fehlt: {skill}"
+      },
+      "pick": "Auswählen",
+      "pickLabel": "{name} zuweisen",
+      "reason": {
+        "noContractedTarget": "Keine vertragliche Sollzeit",
+        "plannedHours": "{planned} von {target} Std. diese Woche geplant",
+        "requestedThisShift": "Diese Schicht angefragt",
+        "restPeriodOk": "Ruhezeit OK",
+        "skillsHeld": "Verfügt über {skills}"
+      },
+      "requested": "Diese Schicht angefragt",
+      "showAll": "Alle anzeigen ({count})",
+      "showFewer": "Weniger anzeigen",
+      "title": "Vorgeschlagene Mitarbeiter",
+      "warning": {
+        "expiredRequiredSkill": "{skill} abgelaufen am {date}",
+        "maxHours": "Über dem täglichen Maximum ({total} von {max} Std.)",
+        "missingRequiredSkill": "Erforderliche Qualifikation fehlt: {skill}",
+        "overtime": "{period, select, daily {Tägliche} weekly {Wöchentliche} other {Monatliche}} Überstunden ({total} von {threshold} h)",
+        "pendingAbsence": "Ausstehende Abwesenheit: {category}",
+        "restTime": "Ruhezeit zu kurz ({rest} von {required} h)"
+      }
     },
     "templates": {
       "dragHint": "Ziehen Sie eine Vorlage auf den Kalender, um eine Schicht zu erstellen",

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import settingsGenericEn from "../../../messages/settings/generic/en.json";
 import settingsPeopleEn from "../../../messages/settings/people/en.json";
 import {
+	type FeatureFlagState,
 	filterSettingsByFeatureFlags,
 	getResolvedSettingsVisibility,
 	getVisibleGroups,
@@ -160,6 +161,50 @@ describe("settings visibility tiers", () => {
 			minimumTier: "member",
 			group: "account",
 		});
+	});
+
+	it("shows kiosks in administration to org admins only", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "kiosks")).toMatchObject({
+			href: "/settings/kiosks",
+			icon: "device-tablet",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "kiosks")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "kiosks")).toBe(false);
+	});
+
+	it("shows custom fields to org admins next to customers and projects", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "custom-fields")).toMatchObject({
+			href: "/settings/custom-fields",
+			icon: "forms",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		const administrationIds = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "administration",
+		).map((entry) => entry.id);
+		expect(administrationIds.indexOf("custom-fields")).toBe(
+			administrationIds.indexOf("projects") + 1,
+		);
+		expect(
+			filterSettingsByFeatureFlags(orgAdminEntries, { projectsEnabled: false }).some(
+				(entry) => entry.id === "custom-fields",
+			),
+		).toBe(true);
+		expect(managerEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "custom-fields")).toBe(false);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/custom-fields")).toBe(true);
+		expect(canResolvedTierAccessRoute("manager", "/settings/custom-fields")).toBe(false);
+		expect(canResolvedTierAccessRoute("member", "/settings/custom-fields")).toBe(false);
 	});
 
 	it("groups notification preferences and channel configuration together", () => {
@@ -375,6 +420,45 @@ describe("settings visibility tiers", () => {
 		});
 
 		expect(entries.some((entry) => entry.id === "demo-data")).toBe(true);
+	});
+
+	describe("Projects entry for project managers below the manager tier (#928)", () => {
+		const projectsOn: FeatureFlagState = { projectsEnabled: true };
+		const visibleIds = (
+			accessTier: "member" | "manager" | "orgAdmin",
+			managesProject: boolean,
+			featureFlags = projectsOn,
+		) =>
+			getResolvedSettingsVisibility({
+				accessTier,
+				billingEnabled: true,
+				featureFlags,
+				managesProject,
+			}).visibleSettings.map((entry) => entry.id);
+
+		it("shows a member who manages a project the Projects entry and nothing else new", () => {
+			expect(visibleIds("member", true)).toEqual([...visibleIds("member", false), "projects"]);
+			expect(
+				getResolvedSettingsVisibility({
+					accessTier: "member",
+					featureFlags: projectsOn,
+					managesProject: true,
+				}).visibleGroups.map((group) => group.id),
+			).toContain("administration");
+		});
+
+		it("shows a member who manages no project no Projects entry", () => {
+			expect(visibleIds("member", false)).not.toContain("projects");
+		});
+
+		it("keeps the Projects entry hidden while projects are off", () => {
+			expect(visibleIds("member", true, { projectsEnabled: false })).not.toContain("projects");
+		});
+
+		it("changes nothing for managers and org admins", () => {
+			expect(visibleIds("manager", true)).toEqual(visibleIds("manager", false));
+			expect(visibleIds("orgAdmin", true)).toEqual(visibleIds("orgAdmin", false));
+		});
 	});
 
 	describe("Billable Time settings area", () => {

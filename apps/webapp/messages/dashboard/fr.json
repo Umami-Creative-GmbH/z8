@@ -15,6 +15,13 @@
       "today": "Aujourd'hui !",
       "tomorrow": "Demain"
     },
+    "covering-for": {
+      "description": "Collègues que vous remplacez pendant leur absence",
+      "error": "Impossible de charger vos remplacements",
+      "running": "Remplacement de {name} jusqu'au {date}",
+      "title": "Remplacement de",
+      "upcoming": "À venir : remplacement de {name} du {start} au {end}"
+    },
     "customize": {
       "empty-description": "Utilisez l'icône de personnalisation du tableau de bord pour réactiver des widgets individuels, ou réinitialisez la mise en page pour afficher à nouveau tous les widgets.",
       "empty-title": "Tous les widgets du tableau de bord sont masqués",
@@ -129,6 +136,17 @@
       "teams": "Équipes",
       "teams-button": "Équipes",
       "title": "Organisation"
+    },
+    "upcoming-shifts": {
+      "description": "Vos prochains créneaux planifiés",
+      "empty": "Aucun créneau à venir",
+      "empty-description": "Vos prochains créneaux publiés s'afficheront ici.",
+      "ends-next-day": "se termine le lendemain",
+      "error": "Impossible de charger vos prochains créneaux",
+      "title": "Créneaux à venir",
+      "today": "Aujourd'hui",
+      "tomorrow": "Demain",
+      "view-schedule": "Voir le planning"
     },
     "upcoming-time-off": {
       "absence": "absence",

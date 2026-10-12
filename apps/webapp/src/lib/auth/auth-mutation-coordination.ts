@@ -32,7 +32,7 @@
  * existing after-commit timing.
  */
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
-import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import { createAuthMiddleware } from "better-auth/api";
 import { admin } from "better-auth/plugins/admin";
 import { type OrganizationOptions, organization } from "better-auth/plugins/organization";
 import { createOrganizationApprovalRollouts } from "@/lib/approvals/workflow/organization-rollout";
@@ -52,6 +52,7 @@ import {
 	completeRemovedMemberCleanupPostCommit,
 	revokeRemovedMemberAccessInTransaction,
 } from "./member-removal-cleanup";
+import { type BeforeHookContext, requestingSession } from "./requesting-session";
 
 type OrganizationHooks = NonNullable<OrganizationOptions["organizationHooks"]>;
 
@@ -61,6 +62,7 @@ type OrganizationHooks = NonNullable<OrganizationOptions["organizationHooks"]>;
 const organizationEndpoints = organization().endpoints;
 const adminEndpoints = admin().endpoints;
 const ORGANIZATION_LEAVE_PATH = organizationEndpoints.leaveOrganization.path;
+const MEMBER_REMOVAL_PATH = organizationEndpoints.removeMember.path;
 const GLOBAL_ACCESS_PATHS = new Set<string>([
 	adminEndpoints.setRole.path,
 	adminEndpoints.banUser.path,
@@ -104,30 +106,56 @@ function assertProtected(operation: string, userId: string) {
 	}
 }
 
+/** Who requested each coordinated member removal (the removing admin), by transaction. */
+const removalActors = new WeakMap<object, string>();
+
+/**
+ * Remembers the signed-in user who requested the member removal running in
+ * this coordinated transaction, so its side effects are audited under them
+ * (#1014 default 5). Better Auth's removal hooks only name the removed user.
+ */
+export function recordMemberRemovalActor(transaction: object, actorUserId: string) {
+	removalActors.set(transaction, actorUserId);
+}
+
 /**
  * Deactivates the removed member in the removal transaction; the rest runs
  * after commit. Refuses (rolling the removal back) unless the removal took
  * the member's guard before deleting the membership.
  */
-async function cleanUpRemovedMember(input: { organizationId: string; userId: string }) {
+async function cleanUpRemovedMember(input: {
+	organizationId: string;
+	userId: string;
+	/** Who initiated it; otherwise the removal's recorded requester, if any. */
+	actorUserId?: string;
+}) {
 	assertProtected("organization member removal", input.userId);
 	const transaction = requireAuthTransaction("organization member removal cleanup");
+	const actorUserId = input.actorUserId ?? removalActors.get(transaction);
 	const outcome = await revokeRemovedMemberAccessInTransaction(
 		transaction,
 		input.userId,
 		input.organizationId,
+		actorUserId ? { actorUserId } : {},
 	);
 	await queueAfterAuthTransactionCommit(() =>
 		completeRemovedMemberCleanupPostCommit({
 			organizationId: input.organizationId,
 			sessionTokens: outcome.sessionTokens,
+			releasedDeputies: outcome.releasedDeputies,
 		}),
 	);
 }
 
 export function createCoordinatedOrganizationHooks(
 	hooks: Required<
-		Pick<OrganizationHooks, "beforeUpdateOrganization" | "afterAcceptInvitation" | "afterAddMember">
+		Pick<
+			OrganizationHooks,
+			| "beforeUpdateOrganization"
+			| "beforeCreateInvitation"
+			| "afterAcceptInvitation"
+			| "afterAddMember"
+		>
 	>,
 ): OrganizationHooks {
 	return {
@@ -141,6 +169,7 @@ export function createCoordinatedOrganizationHooks(
 			await createOrganizationApprovalRollouts(transaction, organization.id);
 		},
 		beforeUpdateOrganization: hooks.beforeUpdateOrganization,
+		beforeCreateInvitation: hooks.beforeCreateInvitation,
 		beforeUpdateMemberRole: async ({ member, organization }) => {
 			await protectAuthMutation("organization member role update", {
 				organizationId: organization.id,
@@ -189,23 +218,8 @@ function stringField(body: unknown, field: string): string | null {
 	return typeof value === "string" && value ? value : null;
 }
 
-type BeforeHookContext = Parameters<typeof getSessionFromCtx>[0];
-
-/**
- * The requesting user, from the session cookie or a bearer session token.
- * Before-hooks see the request's original headers: the bearer plugin's
- * cookie is only merged in after every before-hook has run.
- */
 async function requestingUserId(ctx: BeforeHookContext): Promise<string | null> {
-	const session = await getSessionFromCtx(ctx);
-	if (session) return session.user.id;
-	const authorization =
-		ctx.headers?.get("authorization") ?? ctx.request?.headers.get("authorization");
-	if (authorization?.slice(0, 7).toLowerCase() !== "bearer ") return null;
-	const token = decodeURIComponent(authorization.slice(7).trim()).split(".")[0];
-	if (!token) return null;
-	const found = await ctx.context.internalAdapter.findSession(token);
-	return found && found.session.expiresAt > new Date() ? found.user.id : null;
+	return (await requestingSession(ctx))?.userId ?? null;
 }
 
 /**
@@ -232,6 +246,14 @@ export function authMutationCoordinationPlugin() {
 					}),
 				},
 				{
+					matcher: (context) => context.path === MEMBER_REMOVAL_PATH,
+					handler: createAuthMiddleware(async (ctx) => {
+						const transaction = requireAuthTransaction("organization member removal");
+						const actorUserId = await requestingUserId(ctx);
+						if (actorUserId) recordMemberRemovalActor(transaction, actorUserId);
+					}),
+				},
+				{
 					matcher: (context) => GLOBAL_ACCESS_PATHS.has(context.path ?? ""),
 					handler: createAuthMiddleware(async (ctx) => {
 						const transaction = requireAuthTransaction("global user access change");
@@ -251,7 +273,8 @@ export function authMutationCoordinationPlugin() {
 						const userId = stringField(leaveResult, "userId");
 						const organizationId = stringField(leaveResult, "organizationId");
 						if (leaveResult instanceof Error || !userId || !organizationId) return;
-						await cleanUpRemovedMember({ organizationId, userId });
+						// Leaving is the member's own act.
+						await cleanUpRemovedMember({ organizationId, userId, actorUserId: userId });
 					}),
 				},
 				{

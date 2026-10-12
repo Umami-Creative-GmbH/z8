@@ -1,6 +1,6 @@
 import { Cause, Exit } from "effect";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, ValidationError } from "./errors";
+import { ConflictError, DatabaseError, ValidationError } from "./errors";
 import { toServerActionResult } from "./result";
 
 afterEach(() => {
@@ -94,6 +94,25 @@ describe("toServerActionResult", () => {
 			success: false,
 			error: "connection reset",
 			code: "UNKNOWN_ERROR",
+		});
+	});
+
+	it("reports the database's closed-month refusal as the typed month-closed refusal", () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const refusal = Object.assign(new Error("month closed"), { code: "Z8M01", detail: "2026-03" });
+		const wrapped = new DatabaseError({
+			message: "Database query failed: absences.request",
+			operation: "absences.request",
+			cause: Object.assign(new Error("Failed query"), { cause: refusal }),
+		});
+
+		const result = toServerActionResult(Exit.fail(wrapped));
+
+		expect(result).toEqual({
+			success: false,
+			error: "March 2026 is closed. It must be reopened before its work or absences can change.",
+			code: "MonthClosedError",
+			closedMonth: "2026-03",
 		});
 	});
 });

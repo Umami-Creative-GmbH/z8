@@ -258,6 +258,28 @@
         "previous": "Önceki"
       },
       "payrollRun": {
+        "confirm": {
+          "action": "Ödendi olarak onayla",
+          "description": "Bordro bu {format} çalıştırmasını ödedi mi? Kapsamınızdaki masraf raporları bununla birlikte geri ödenmiş olarak kaydedilir. Kendi raporlarınız ve kapsamınız dışındaki raporlar çalıştırmada kalır.",
+          "descriptionCounted": "{count, plural, other {Bordro bu {format} çalıştırmasını ödedi mi? Kapsamınızdaki # masraf raporu ({amount}) bununla birlikte geri ödenmiş olarak kaydedilir. Kendi raporlarınız ve kapsamınız dışındaki raporlar çalıştırmada kalır.} }",
+          "failed": "Bordro çalıştırması onaylanamadı. Lütfen tekrar deneyin; hiçbir şey iki kez kaydedilmez.",
+          "outcome": {
+            "confirmed": "{amount} geri ödendi",
+            "confirmedWithRemainder": "{amount} geri ödendi. Sonraki çalıştırma için {remaining} tutarı hâlâ geri ödeme bekliyor.",
+            "outOfScope": "Onaylanmadı: yetki alanınızın dışında. Bunu kapsayan bir yetkili için çalıştırmada kalmaya devam eder.",
+            "overpaidByPayroll": "{amount} geri ödendi, kalan borçtan {overpaid} fazla ödendi. Masraf için fazla ödeme yapıldı: geri alımı manuel olarak kaydedin.",
+            "ownExpense": "Onaylanmadı: kendi masrafınız. Başka birinin onaylaması için çalıştırmada kalır."
+          },
+          "payday": "Maaş günü",
+          "paydayHint": "Bordronun bu çalıştırmayı ödediği maaş günü. Bu çalıştırmadaki her geri ödeme bu tarihe kaydedilir.",
+          "results": {
+            "nothing": "Bu çalıştırmada onaylanacak hiçbir şey kalmadı. Hiçbir geri ödeme kaydedilmedi.",
+            "summary": "{total} üzerinden {confirmed} onaylandı",
+            "title": "Onay sonuçları"
+          },
+          "submit": "Ödendi olarak onayla",
+          "title": "{period} bordro çalıştırmasını ödendi olarak onayla"
+        },
         "included": "{run} içine dahil edildi. Bu bordro ile ödenir ve çalıştırma onaylandığında geri ödendi olarak kaydedilir.",
         "label": "Bordro çalıştırması {period} ({format})",
         "notIncluded": "Artık hiçbir bordro çalıştırması bu masrafı içermiyor.",
@@ -266,6 +288,11 @@
         "removeDescription": "Yalnızca bordro bu çalıştırma ile ödeme yapmayacaksa (örneğin bordro dosyasını düzelttikten sonra) kaldırın. Kaldırma işlemi denetim kaydına işlenir.",
         "removeFailed": "Masraf bordro çalıştırmasından kaldırılamadı.",
         "removeTitle": "Bu masraf bordro çalıştırmasından kaldırılsın mı?"
+      },
+      "payrollRuns": {
+        "description": "Bu bordro çalıştırmaları, geri ödeme bekleyen masraf raporlarını içerir. Bordro bir çalıştırmayı ödedikten sonra, geri ödemeleri kaydetmek için bunu onaylayın.",
+        "reports": "{count, plural, other {Onaylamanız gereken # masraf raporu, {amount}} }",
+        "title": "Onay bekleyen bordro çalıştırmaları"
       },
       "queue": {
         "description": "Mutabakatını görmek ve geri ödeme kaydetmek için bir masrafı açın.",
@@ -452,6 +479,7 @@
         "newTrip": "Yeni seyahat"
       },
       "approvedBy": "{name} tarafından {date} tarihinde onaylandı.",
+      "approvedByDeputy": "{date} tarihinde {name} ({actingForName} vekili) tarafından onaylandı.",
       "awaitingReview": "İnceleme bekleniyor.",
       "awaitingReviewer": "{name} tarafından inceleme bekleniyor.",
       "backToApprovals": "Onaylara geri dön",
@@ -576,7 +604,9 @@
         "description": "Bu raporun her adımı, en eskiden başlayarak. Saatler UTC olarak gösterilmektedir.",
         "detail": {
           "approvalRecorded": "{name} tarafından; ek onay bekleniyor.",
+          "approvalRecordedByDeputy": "{name} ({actingForName} vekili) tarafından; ek onay bekleniyor.",
           "by": "{name} tarafından",
+          "byDeputy": "{name} ({actingForName} vekili) tarafından",
           "inCycle": "Gönderim {number} · {detail}",
           "selfApproved": "Bu raporu inceleyebilecek başka kimse yoktu."
         },
@@ -843,6 +873,7 @@
         "verifying": "Fiş kontrol ediliyor…"
       },
       "rejectedBy": "{name} tarafından reddedildi",
+      "rejectedByDeputy": "{name} ({actingForName} vekili) tarafından reddedildi",
       "reopen": {
         "action": "Düzeltme için yeniden aç",
         "changed": "Bu sırada rapor değişti ve yeniden açılmadı. Raporu tekrar inceleyin.",
@@ -1045,6 +1076,7 @@
       "entitlement": "Çalışan tarafından ödenen onaylı tutar",
       "entry": {
         "exportBatch": "{date} tarihinde talep edilen dışa aktarmadan",
+        "payrollRun": "{period} bordrosu ile geri ödendi",
         "recordedBy": "{name} tarafından kaydedildi, {date}",
         "recovery": "{amount} geri tahsil edildi",
         "reimbursement": "{amount} ödendi"

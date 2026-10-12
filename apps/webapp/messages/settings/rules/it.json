@@ -15,9 +15,16 @@
       "createCategory": "Crea categoria di assenza",
       "createCategoryButton": "Crea categoria",
       "deactivate": "Disattiva",
+      "defaults": {
+        "timeOffInLieu": {
+          "description": "Permesso scalato dal saldo ore",
+          "name": "Riposo compensativo"
+        }
+      },
       "deleteDescription": "Sei sicuro di voler eliminare \"{name}\"? Le categorie utilizzate da assenze esistenti non possono essere eliminate e dovrebbero invece essere disattivate.",
       "deleteFailed": "Impossibile eliminare la categoria",
       "deleteTitle": "Elimina categoria di assenza",
+      "drawsOnWorkBalance": "Scala dal saldo ore",
       "editCategory": "Modifica \"{name}\"",
       "form": {
         "active": "Attivo",
@@ -26,11 +33,17 @@
         "colorHelp": "Indicatore calendario",
         "countsAgainstVacation": "Incide sul saldo ferie",
         "countsAgainstVacationHelp": "Dedurre i giorni approvati dal monte ferie del dipendente.",
+        "deputyRequired": "Sostituto obbligatorio",
+        "deputyRequiredHelp": "Per ogni assenza di questo tipo deve essere indicato un sostituto che copra l'assenza del dipendente.",
+        "deputyRequiredSick": "La malattia non richiede mai un sostituto.",
         "description": "Descrizione",
         "descriptionHelp": "Guida facoltativa mostrata ad amministratori e revisori.",
         "descriptionPlaceholder": "es. Utilizzare per giorni di formazione o certificazione approvati…",
         "descriptionTranslation": "Descrizione {locale}",
         "descriptionTranslationPlaceholder": "Descrizione localizzata",
+        "drawsOnWorkBalance": "Scala dal Saldo Ore",
+        "drawsOnWorkBalanceConflict": "\"Scala dal saldo ore\" non può essere combinato con \"Scala dalle ferie\" o \"Richiede orario di lavoro\".",
+        "drawsOnWorkBalanceHelp": "Riposo compensativo: i giorni approvati mantengono l'orario richiesto, riducendo di conseguenza il saldo ore del dipendente. Le ferie non vengono utilizzate.",
         "name": "Nome",
         "nameHelp": "Utilizza un'etichetta chiara che dipendenti e approvatori riconosceranno.",
         "nameMaxLength": "Utilizza 100 caratteri o meno",
@@ -46,7 +59,8 @@
         "translationsHelp": "Etichette localizzate opzionali per i dipendenti che utilizzano un'altra lingua dell'app.",
         "type": "Tipo",
         "typeHelp": "Raggruppa i report e i flussi di lavoro delle assenze a valle.",
-        "typePlaceholder": "Seleziona il tipo di categoria"
+        "typePlaceholder": "Seleziona il tipo di categoria",
+        "typeTimeOffInLieu": "Riposo Compensativo"
       },
       "header": {
         "approval": "Approvazione",
@@ -72,6 +86,7 @@
         "parental": "Congedo parentale",
         "personal": "Personale",
         "sick": "Congedo per malattia",
+        "timeOffInLieu": "Riposo Compensativo",
         "unpaid": "Non retribuito",
         "vacation": "Ferie"
       },
@@ -119,6 +134,14 @@
         "disabledActiveSource": "Alcuni canali attivi avevano le escalation disattivate. Continuano a non recapitare messaggi di escalation.",
         "inactiveSourceEnabled": "Alcuni canali inattivi avevano le escalation attivate. Non sono stati conteggiati ai fini del criterio.",
         "invalidTimeout": "Un canale aveva un timeout non valido e non è stato utilizzato per la finestra di risposta."
+      },
+      "deputyDecisions": {
+        "description": "I dipendenti indicano un sostituto per le proprie assenze. Quando un approvatore è assente con regolare approvazione, il suo sostituto può visualizzare e decidere sulle approvazioni a lui assegnate.",
+        "disabled": "I sostituti non possono più decidere sulle approvazioni. Rimangono solo contatti di riferimento.",
+        "enabled": "I sostituti ora possono decidere sulle approvazioni durante l'assenza dell'approvatore.",
+        "help": "Solo i sostituti che possono accedere alla posta in arrivo delle approvazioni possono decidere, e solo nei giorni di assenza dell'approvatore. L'approvatore mantiene le proprie approvazioni. Quando questa opzione è disattivata, i sostituti fungono solo da contatti.",
+        "title": "Sostituti",
+        "toggle": "I sostituti possono decidere sulle approvazioni"
       },
       "description": "Verifica i criteri di escalation dell'organizzazione, come sono stati migrati dalle impostazioni del canale e le condizioni che richiedono un responsabile dell'approvazione.",
       "dispose": {
@@ -232,6 +255,7 @@
         "absence": "Assenza",
         "complianceException": "Eccezione di conformità",
         "manualTimeSubmission": "Invio manuale dell'orario",
+        "periodSubmission": "Invio del periodo",
         "policyClockOut": "Timbratura di uscita da policy",
         "shiftRequest": "Richiesta di turno",
         "timeCorrection": "Correzione orario",

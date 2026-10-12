@@ -1,7 +1,9 @@
 import type { Effect } from "effect";
 import type { db } from "@/db";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import type { SickDetail } from "@/lib/absences/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
+import type { SickNoteMarker } from "@/lib/personnel-file/sick-note-store";
 import type { AnyAppError } from "@/lib/effect/errors";
 import type { TimeCorrectionMetadataChanges } from "./time-correction-review-metadata";
 
@@ -25,12 +27,19 @@ export interface ApprovalWithAbsence {
 	};
 	absence: {
 		id: string;
+		employeeId: string;
 		startDate: string;
 		startPeriod: "full_day" | "am" | "pm";
 		endDate: string;
 		endPeriod: "full_day" | "am" | "pm";
+		/** The absence's absence days for the requester (Absences ADR 0001). */
+		absenceDays: number;
 		notes: string | null;
 		sickDetail: SickDetail | null;
+		/** "Sick note attached (n)" on sick leave (#982); null without notes. */
+		sickNotes: SickNoteMarker | null;
+		/** Who covers while the employee is away (#1011); null without a deputy. */
+		deputy: AbsenceDeputyView | null;
 		category: {
 			name: string;
 			type: string;

@@ -42,7 +42,32 @@ export type ClockPrincipal =
 			userId: string;
 			operationId: string;
 			workPeriodId: string;
-	  };
+	  }
+	/**
+	 * Kiosk clocking (#860): a kiosk, together with the employee's kiosk PIN
+	 * verified in this request, runs the employee's own clocking. `userId` is the
+	 * employee's user: creator provenance only, never human authority.
+	 */
+	| { kind: "kiosk"; kioskId: string; userId: string; pin: KioskPinProof };
+
+/**
+ * The human whose action a clocking is: the signed-in user, or the one who recorded a departure.
+ * A kiosk or an automatic clock-out names only creator provenance, so none.
+ */
+export function principalCausingUserId(principal: ClockPrincipal): string | null {
+	return principal.kind === "user" || principal.kind === "departure" ? principal.userId : null;
+}
+
+/**
+ * Proof that this request verified an employee's kiosk PIN at a kiosk. Only the
+ * kiosk PIN check (`proveKioskPin`) issues one; a proof built any other way is
+ * refused, and each proof expires shortly after it was issued.
+ */
+export type KioskPinProof = {
+	readonly organizationId: string;
+	readonly kioskId: string;
+	readonly employeeId: string;
+};
 
 /**
  * The employee whose live work changes: the principal's own, or, `onBehalf`,
@@ -177,6 +202,11 @@ export type BreakCommand = ClockCommandOf<BreakBody> & {
 	 * channel's source, as the operation's own entries always do.
 	 */
 	request?: TimeEntryRequestMetadata;
+	/**
+	 * The resume of the target's break in progress (#861): its start is the
+	 * recorded one, not a device observation, so the age window skips it.
+	 */
+	resumesBreakInProgress?: true;
 };
 export type ClockCommand = ClockInCommand | ClockOutCommand | BreakCommand;
 
@@ -188,6 +218,8 @@ type SharedClockFailure =
 	| "admission_window"
 	| "collision"
 	| "append_review_required"
+	/** The work touches a closed month (#762); the refusal names the month. */
+	| "month_closed"
 	/** A frozen command in an organization that has not adopted append admission. */
 	| "frozen_not_accepted"
 	/** A legacy command in an adopted organization, which it never commits. */
@@ -231,7 +263,9 @@ export type BreakFailure =
 	/** The active work has an unresolved approval or correction. */
 	| "under_review"
 	/** Other recorded work occupies the resumed interval. */
-	| "occupancy_conflict";
+	| "occupancy_conflict"
+	/** A break in progress is open on the target: only its resume ends it (#861). */
+	| "on_break";
 
 /** One failure taxonomy; each adapter words every code. */
 export type ClockCommandFailure = ClockOutFailure | ClockInFailure | BreakFailure;
@@ -241,6 +275,8 @@ type SharedClockRefusal =
 	| { code: "billing_required"; reason: string }
 	| { code: "admission_window"; reason: "too_old" | "in_future" }
 	| { code: "append_review_required"; requirement: unknown }
+	/** `YYYY-MM` of the closed month the work touches (#762). */
+	| { code: "month_closed"; month: string }
 	| { code: "collision" | "failed" | "unconfirmed"; cause?: unknown };
 
 type DetailedClockFailure =

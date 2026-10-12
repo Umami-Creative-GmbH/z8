@@ -25,6 +25,13 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { createLogger } from "@/lib/logger";
 import {
+	keepCustomFieldRefusal,
+	saveFormCustomFieldValues,
+} from "@/lib/organization/custom-fields/form-values";
+import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
+import {
 	type AssignManagers,
 	assignManagersSchema,
 	type CreateEmployee,
@@ -194,9 +201,16 @@ export async function createEmployeeAction(
 	});
 }
 
+/**
+ * Saves the employee detail form. `customFieldValues` are the form's custom
+ * field values (#818): written in the same transaction, refused above the
+ * actor's edit level, and every required field the actor may edit must have a
+ * value afterwards.
+ */
 export async function updateEmployeeAction(
 	employeeId: string,
 	data: UpdateEmployee,
+	customFieldValues?: CustomFieldValuesInput,
 ): Promise<ServerActionResult<void>> {
 	return runTracedEmployeeAction({
 		name: "updateEmployee",
@@ -250,26 +264,54 @@ export async function updateEmployeeAction(
 				};
 
 				// Role, team and active state feed creation authority and target checks.
-				yield* dbService.query("updateEmployee", () =>
-					withAuthorizationMutation(
-						{
+				yield* dbService
+					.query("updateEmployee", () =>
+						withAuthorizationMutation(
+							{
+								organizationId: targetEmployee.organizationId,
+								employeeIds: [employeeId],
+							},
+							async (tx) => {
+								await tx
+									.update(employee)
+									.set(employeeUpdateData)
+									.where(
+										and(
+											eq(employee.id, employeeId),
+											eq(employee.organizationId, targetEmployee.organizationId),
+										),
+									);
+								await saveFormCustomFieldValues(tx, {
+									organizationId: targetEmployee.organizationId,
+									actorUserId: session.user.id,
+									entity: "employee",
+									recordId: employeeId,
+									values: customFieldValues,
+								});
+							},
+							dbService.db,
+						),
+					)
+					.pipe(keepCustomFieldRefusal);
+
+				// A lower role or a deactivation can take projects away from the employee's share links (#806).
+				if ("role" in employeeUpdateData || "isActive" in employeeUpdateData) {
+					yield* dbService.query("reportShareLink.revokeAfterEmployeeUpdate", () =>
+						revokeShareLinksAfterAccessChange(dbService.db, {
 							organizationId: targetEmployee.organizationId,
-							employeeIds: [employeeId],
-						},
-						async (tx) => {
-							await tx
-								.update(employee)
-								.set(employeeUpdateData)
-								.where(
-									and(
-										eq(employee.id, employeeId),
-										eq(employee.organizationId, targetEmployee.organizationId),
-									),
-								);
-						},
-						dbService.db,
-					),
-				);
+							creator: { employeeId },
+							actorUserId: session.user.id,
+						}),
+					);
+					// A deactivated owner or admin can no longer own scheduled exports (#988).
+					yield* dbService.query("scheduledExport.pauseAfterEmployeeUpdate", () =>
+						pauseSchedulesAfterOwnerAccessChange(dbService.db, {
+							organizationId: targetEmployee.organizationId,
+							owner: { employeeId },
+							actorUserId: session.user.id,
+						}),
+					);
+				}
 
 				if (
 					actor.accessTier === "orgAdmin" &&

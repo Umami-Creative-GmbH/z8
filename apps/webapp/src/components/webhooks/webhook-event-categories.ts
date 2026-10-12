@@ -5,6 +5,10 @@ export const EVENT_CATEGORIES = {
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+			"absence_deputy_assigned",
+			"absence_deputy_removed",
+			"absence_deputy_dates_changed",
+			"absence_deputy_reminder",
 		],
 	},
 	approvals: {
@@ -13,6 +17,8 @@ export const EVENT_CATEGORIES = {
 			"approval_request_submitted",
 			"approval_request_approved",
 			"approval_request_rejected",
+			"approval_cover_started",
+			"approval_cover_return_summary",
 		],
 	},
 	timeTracking: {
@@ -21,6 +27,7 @@ export const EVENT_CATEGORIES = {
 			"time_correction_submitted",
 			"time_correction_approved",
 			"time_correction_rejected",
+			"period_submission_decided",
 		],
 	},
 	shifts: {
@@ -65,6 +72,8 @@ export const EVENT_CATEGORIES = {
 			"missed_clock_in_reminder",
 			"forgotten_clock_out_reminder",
 			"break_due_reminder",
+			"period_submission_reminder",
+			"period_submission_sent_back",
 		],
 	},
 } as const;

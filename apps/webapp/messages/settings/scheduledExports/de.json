@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Eigentümer ändern",
         "delete": "Löschen",
         "edit": "Bearbeiten",
         "runNow": "Jetzt ausführen",
@@ -16,6 +17,7 @@
       },
       "dataCategories": {
         "absences": "Abwesenheiten",
+        "customers": "Kunden",
         "employees": "Mitarbeiter",
         "projects": "Projekte",
         "timeEntries": "Zeiteinträge",
@@ -122,6 +124,8 @@
         "dateRangesDesc": "Automatisch basierend auf der Häufigkeit des Zeitplans berechnet (z. B. Vormonat bei monatlichen Exporten).",
         "delivery": "Zustellung:",
         "deliveryDesc": "Exporte werden auf S3 hochgeladen und E-Mail-Benachrichtigungen mit Download-Links werden an die konfigurierten Empfänger gesendet.",
+        "owner": "Eigentümer:",
+        "ownerDesc": "Jeder Zeitplan wird im Namen eines Organisationsadministrators ausgeführt. Wenn der Eigentümer kein Organisationsadministrator mehr ist oder die Organisation verlässt, wird der Zeitplan pausiert und alle Organisationsadministratoren werden benachrichtigt, damit ihn jemand übernehmen kann.",
         "scheduleTypes": "Zeitplantypen:",
         "scheduleTypesDesc": "Täglich, wöchentlich (Montag), monatlich (1.), vierteljährlich (1. Jan/Apr/Jul/Okt) oder benutzerdefinierte Cron-Ausdrücke."
       },
@@ -148,6 +152,18 @@
         "viewError": "Fehlerdetails anzeigen"
       },
       "newSchedule": "Neuer Zeitplan",
+      "owner": {
+        "changed": "Eigentümer geändert",
+        "changeFailed": "Eigentümer konnte nicht geändert werden",
+        "description": "\"{name}\" wird im Namen des Eigentümers ausgeführt, der ein Organisationsadministrator sein muss. Automatische Ausführungen werden im Audit-Protokoll unter dem Eigentümer erfasst.",
+        "label": "Eigentümer",
+        "pauseNote": "Das Ändern des Eigentümers setzt einen pausierten Zeitplan nicht fort. Schalten Sie ihn wieder ein, sobald er einen Eigentümer hat.",
+        "placeholder": "Organisationsadministrator auswählen…",
+        "required": "Organisationsadministrator auswählen",
+        "saving": "Wird gespeichert…",
+        "submit": "Eigentümer ändern",
+        "title": "Eigentümer ändern"
+      },
       "report": {
         "auditReport": "Audit-Bericht",
         "auditReportDesc": "Audit-Berichte enthalten alle Zeiterfassungsdaten mit kryptografischen Signaturen und Zeitstempeln für die GoBD-Konformität. Der Export wird mit WORM-Schutz (Write Once Read Many) gespeichert.",
@@ -263,6 +279,8 @@
         "never": "Nie",
         "nextRun": "Nächste Ausführung",
         "openMenu": "Aktionsmenü öffnen",
+        "owner": "Eigentümer",
+        "ownerNotAdmin": "Kein Organisationsadministrator mehr",
         "paused": "Pausiert",
         "schedule": "Zeitplan",
         "status": "Status",

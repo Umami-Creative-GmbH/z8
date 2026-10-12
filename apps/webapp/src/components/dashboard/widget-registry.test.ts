@@ -19,6 +19,11 @@ describe("dashboard widget registry", () => {
 		expect(normalizeWidgetOrder(["quick-stats", "presence-status"])).toContain("manager-today");
 	});
 
+	it("adds the deputy's covering-for card to older saved orders (#1012)", () => {
+		expect(VALID_WIDGET_IDS.has("covering-for")).toBe(true);
+		expect(normalizeWidgetOrder(["quick-stats"])).toContain("covering-for");
+	});
+
 	it("defines display metadata for every widget", () => {
 		expect(WIDGET_CONFIGS.map((widget) => widget.id)).toEqual(DEFAULT_WIDGET_ORDER);
 		expect(WIDGET_CONFIGS.every((widget) => widget.label.length > 0)).toBe(true);
@@ -28,7 +33,9 @@ describe("dashboard widget registry", () => {
 			"dashboard.pending-approvals.title",
 			"dashboard.team-overview.title",
 			"dashboard.quick-stats.title",
+			"dashboard.upcoming-shifts.title",
 			"dashboard.presence.workLocation",
+			"dashboard.covering-for.title",
 			"dashboard.whos-out.title",
 			"dashboard.upcoming-time-off.title",
 			"dashboard.recently-approved.title",

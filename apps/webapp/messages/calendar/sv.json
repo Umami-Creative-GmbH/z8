@@ -24,6 +24,31 @@
       "nextYear": "Nästa år",
       "previousYear": "Föregående år"
     },
+    "deputy": {
+      "away": "Frånvarande {dates}",
+      "awayOption": "{name} · Frånvarande {dates}",
+      "awayWarning": "{name} är frånvarande under dessa datum. Du kan fortfarande välja personen.",
+      "changeAction": "Ändra ersättare",
+      "changed": "Ersättare sparad",
+      "changeDescription": "Ersättaren täcker upp medan du är frånvarande. Att byta ersättare kräver inget nytt godkännande.",
+      "changeDescriptionFor": "Ersättaren täcker upp medan {name} är frånvarande. Att byta ersättare kräver inget nytt godkännande.",
+      "changeFailed": "Kunde inte spara ersättaren",
+      "changeTitle": "Ändra ersättare",
+      "contactOnly": "{name} kommer endast att visas som kontakt och kan inte fatta beslut om godkännanden.",
+      "errors": {
+        "ended": "Ersättaren kan inte längre ändras: denna frånvaro har avslutats.",
+        "required": "Välj en ersättare: denna frånvarotyp kräver en.",
+        "self": "En anställd kan inte vara sin egen ersättare.",
+        "unavailable": "Ersättaren måste vara en aktiv anställd i denna organisation."
+      },
+      "help": "Kollegan som täcker upp när du är frånvarande. De blir inte ombedda att acceptera.",
+      "label": "Ersättare",
+      "labelOptional": "Ersättare (valfritt)",
+      "labelRequired": "Ersättare *",
+      "none": "Ingen ställföreträdare",
+      "placeholder": "Välj en ställföreträdare…",
+      "save": "Spara ställföreträdare"
+    },
     "dialog": {
       "cancelDescription": "Är du säker på att du vill avbryta denna frånvaroansökan? Denna åtgärd kan inte ångras.",
       "cancelTitle": "Avbryt frånvaroansökan",
@@ -36,10 +61,10 @@
     },
     "featureName": "hantera frånvaro",
     "form": {
+      "absenceDays": "Frånvarodagar:",
       "absenceType": "Frånvarotyp *",
       "autoApproved": "(Automatiskt godkänd)",
       "balanceAfterRequest": "Saldo efter förfrågan:",
-      "businessDays": "Arbetsdagar:",
       "daysRemaining": "Återstående dagar:",
       "description": "Skicka in en ledighetsansökan. Din chef kommer att meddelas för godkännande.",
       "duration": "Frånvarolängd",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Ingen publicerad bemanningsrisk",
       "noCoverageRulesConfigured": "Inga bemanningsregler har konfigurerats för påverkade arbetspass",
       "noHolidays": "Inga tilldelade helgdagar inom intervallet",
+      "noWorkingDays": "Detta intervall innehåller inga arbetsdagar.",
       "remainingAfter": "Kvar efter ansökan",
       "requested": "Ansökt",
       "title": "Smart planerare",
-      "unavailable": "Förhandsgranskning av planering är inte tillgänglig. Du kan fortfarande skicka in din ansökan."
+      "unavailable": "Förhandsgranskning av planering är inte tillgänglig. Du kan fortfarande skicka in din ansökan.",
+      "workBalance": "Arbetssaldo",
+      "workBalanceAfter": "Efter förfrågan",
+      "workBalanceCurrent": "Nuvarande",
+      "workBalanceDrawn": "Dras av förfrågan",
+      "workBalanceNegative": "Ditt arbetssaldo skulle bli negativt efter denna förfrågan. Du kan fortfarande skicka in den."
     },
     "requestAbsence": "Ansök om frånvaro",
+    "sickNotes": {
+      "attachAction": "Bifoga sjukintyg",
+      "attach": {
+        "defaultTitle": "Sjukintyg {dateRange}",
+        "description": "Lägg till foton eller PDF-filer av ditt sjukintyg: PDF-, JPEG-, PNG- eller WebP-filer på upp till 20 MB vardera. Varje fil sparas som ett eget sjukintyg i din personalakt.",
+        "documentDate": "Dokumentdatum",
+        "failed": "Uppladdningen misslyckades",
+        "fileRequired": "Välj minst en fil.",
+        "officerDescription": "Lägg till foton eller PDF-filer av läkarintyget: PDF-, JPEG-, PNG- eller WebP-filer på upp till 20 MB vardera. Varje fil sparas som ett eget läkarintyg i medarbetarens personalakt.",
+        "progress": "Uppladdningsförlopp",
+        "progressCount": "{done} av {total} uppladdade",
+        "share": "Dela med medarbetaren",
+        "sharedNote": "Du ser dina sjukintyg under Mina dokument och vid denna frånvaro. Din godkännare ser bara att ett sjukintyg är bifogat. Du kan ta bort ett sjukintyg inom 24 timmar efter att du har laddat upp det.",
+        "shareHint": "Av: Endast HR, medarbetaren ser bara att ett läkarintyg har bifogats. På: Medarbetaren ser det under Mina dokument.",
+        "submit": "Bifoga",
+        "success": "{count, plural, one {Sjukintyg bifogat} other {# sjukintyg bifogade}}",
+        "title": "Bifoga sjukintyg",
+        "titleLabel": "Titel"
+      },
+      "files": {
+        "chooseFiles": "Välj filer",
+        "defaultTitleUndated": "Läkarintyg",
+        "incomplete": "Ge varje läkarintyg en titel och ett dokumentdatum.",
+        "remove": "Ta bort {fileName}",
+        "takePhoto": "Ta foto",
+        "tooMany": "Du kan lägga till upp till {max} filer."
+      },
+      "marker": "Sjukintyg bifogat ({count})",
+      "panel": {
+        "delete": "Ta bort {title}",
+        "description": "Sjukintyg för frånvaron {dateRange}.",
+        "empty": "Inga sjukintyg som du kan öppna.",
+        "linkExisting": "Koppla läkarintyg",
+        "loadFailed": "Sjukintygen kunde inte läsas in.",
+        "title": "Sjukintyg",
+        "unlink": "Koppla från {title}",
+        "unlinked": "Läkarintyget har kopplats från",
+        "unlinkFailed": "Läkarintyget kunde inte kopplas från."
+      },
+      "request": {
+        "attachFailed": "Din frånvaro begärdes, men {files} kunde inte bifogas. Du kan bifoga läkarintyg från frånvaron senare.",
+        "description": "Lägg till foton eller PDF-filer av ditt läkarintyg: PDF-, JPEG-, PNG- eller WebP-filer på upp till 20 MB vardera. Varje fil sparas som ett eget läkarintyg i din personalakt. Din godkännare ser bara att ett läkarintyg har bifogats.",
+        "title": "Läkarintyg (valfritt)",
+        "uploadFailed": "{fileName} kunde inte laddas upp. Ta bort den eller försök igen."
+      }
+    },
     "status": {
       "approved": "Godkänd",
       "pending": "Väntande",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Tidsregistreringar blockerade",
       "category": "Kategori",
+      "deputy": "Ställföreträdare",
       "duration": "Varaktighet",
       "employee": "Anställd",
       "noEvents": "Inga händelser för denna dag",
@@ -177,6 +255,7 @@
       "category": "Kategori",
       "credited": "Tillgodoräknad",
       "dateRange": "Datumintervall",
+      "deputy": "Ställföreträdare",
       "duration": "Varaktighet",
       "editedBy": "Redigerad av",
       "employee": "Anställd",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "V",
+      "closedDay": "I en stängd månad",
       "dayEvents": "{count, plural, one {# händelse: {titles}} other {# händelser: {titles}}}",
       "dayLabel": "{date}: {actual} registrerat, {required} krävs, {delta} {status}.",
       "description": "Dagliga, veckovisa och månatliga policytimmar",

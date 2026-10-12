@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
-import type { AbsenceWithCategory } from "@/lib/absences/types";
+import type { AbsenceWithDays } from "@/lib/absences/types";
 import { AbsenceEntriesTable } from "./absence-entries-table";
 
 vi.mock("@tolgee/react", () => ({
@@ -12,10 +13,41 @@ vi.mock("@tolgee/react", () => ({
 
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: vi.fn() }),
+	Link: ({ children, href }: { children: ReactNode; href: string }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 
 vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	cancelAbsenceRequest: vi.fn(),
+}));
+
+const sickNotes = vi.hoisted(() => ({
+	canAttach: false,
+	markers: {} as Record<string, { count: number; viewable: boolean }>,
+	refresh: async () => undefined,
+}));
+
+vi.mock("./sick-notes/use-own-absence-sick-notes", () => ({
+	useOwnAbsenceSickNotes: () => sickNotes,
+}));
+
+vi.mock("./sick-notes/absence-sick-notes-panel", () => ({
+	AbsenceSickNotesPanel: ({ absence }: { absence: { id: string } }) => (
+		<div>{`sick notes of ${absence.id}`}</div>
+	),
+}));
+
+vi.mock("./change-deputy-dialog", () => ({
+	ChangeDeputyDialog: ({ absence }: { absence: { id: string } }) => (
+		<div>{`changing the deputy of ${absence.id}`}</div>
+	),
+}));
+
+vi.mock("./sick-notes/attach-sick-note-dialog", () => ({
+	AttachSickNoteDialog: ({ absence }: { absence: { id: string } }) => (
+		<div>{`attaching to ${absence.id}`}</div>
+	),
 }));
 
 beforeAll(() => {
@@ -28,7 +60,7 @@ beforeAll(() => {
 	globalThis.ResizeObserver = ResizeObserverMock;
 });
 
-function buildAbsence(overrides: Partial<AbsenceWithCategory>): AbsenceWithCategory {
+function buildAbsence(overrides: Partial<AbsenceWithDays>): AbsenceWithDays {
 	return {
 		id: "absence-1",
 		employeeId: "employee-1",
@@ -50,11 +82,45 @@ function buildAbsence(overrides: Partial<AbsenceWithCategory>): AbsenceWithCateg
 		approvedAt: null,
 		rejectionReason: null,
 		createdAt: new Date("2026-05-01T00:00:00Z"),
+		absenceDays: 1,
 		...overrides,
 	};
 }
 
 describe("AbsenceEntriesTable", () => {
+	it("shows the absence days the server resolved (#979)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					// A Monday-to-Friday range the client would have counted as 5.
+					buildAbsence({ startDate: "2026-10-12", endDate: "2026-10-16", absenceDays: 1 }),
+				]}
+			/>,
+		);
+
+		expect(screen.getByText("1 day")).toBeTruthy();
+	});
+
+	it("keeps the cancel action on a phone screen with a visible label (#846)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[buildAbsence({ id: "pending", status: "pending", startDate: "2026-05-21" })]}
+			/>,
+		);
+
+		const cancel = screen.getByRole("button", { name: "Cancel absence" });
+		// The actions column stays pinned at the right edge while the other columns scroll.
+		expect(cancel.closest("td")?.className).toContain("sticky");
+		expect(cancel.closest("td")?.className).toContain("right-0");
+		// Touch screens cannot show the tooltip, so phones see the label in the button.
+		const label = Array.from(cancel.querySelectorAll("span")).find(
+			(span) => span.textContent === "Cancel absence",
+		);
+		expect(label?.className).toContain("sm:sr-only");
+	});
+
 	it("shows sick detail labels for sick absences only", () => {
 		render(
 			<AbsenceEntriesTable
@@ -187,6 +253,79 @@ describe("AbsenceEntriesTable", () => {
 		expect((await screen.findAllByText("Cancel absence")).length).toBeGreaterThan(0);
 	});
 
+	describe("sick notes (#982)", () => {
+		const sickCategory = {
+			id: "category-sick",
+			name: "Sick Leave",
+			type: "sick",
+			color: null,
+			countsAgainstVacation: false,
+		};
+
+		afterEach(() => {
+			sickNotes.canAttach = false;
+			sickNotes.markers = {};
+		});
+
+		it("offers no attach action while the organization does not allow it", () => {
+			render(
+				<AbsenceEntriesTable
+					currentDate="2026-05-20"
+					absences={[buildAbsence({ id: "sick", category: sickCategory })]}
+				/>,
+			);
+			expect(screen.queryByLabelText("Attach sick note")).toBeNull();
+		});
+
+		it("offers attaching on pending and approved sick leave only", () => {
+			sickNotes.canAttach = true;
+			render(
+				<AbsenceEntriesTable
+					currentDate="2026-05-20"
+					absences={[
+						buildAbsence({ id: "sick-pending", category: sickCategory, status: "pending" }),
+						// Approved and already started: no cancel action, but notes still go on.
+						buildAbsence({
+							id: "sick-approved",
+							category: sickCategory,
+							status: "approved",
+							startDate: "2026-05-18",
+						}),
+						buildAbsence({ id: "sick-rejected", category: sickCategory, status: "rejected" }),
+						buildAbsence({ id: "vacation", status: "pending" }),
+					]}
+				/>,
+			);
+			const attach = screen.getAllByLabelText("Attach sick note");
+			expect(attach).toHaveLength(2);
+			fireEvent.click(attach[1] as HTMLElement);
+			expect(screen.getByText("attaching to sick-approved")).toBeTruthy();
+		});
+
+		it("shows the attached count and opens the notes when they may be opened", () => {
+			sickNotes.markers = {
+				"sick-own": { count: 2, viewable: true },
+				"sick-hidden": { count: 1, viewable: false },
+			};
+			render(
+				<AbsenceEntriesTable
+					currentDate="2026-05-20"
+					absences={[
+						buildAbsence({ id: "sick-own", category: sickCategory }),
+						buildAbsence({ id: "sick-hidden", category: sickCategory }),
+					]}
+				/>,
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Sick note attached ({count})" }));
+			expect(screen.getByText("sick notes of sick-own")).toBeTruthy();
+			// A note the viewer cannot open is a marker only.
+			expect(screen.getAllByText("Sick note attached ({count})")).toHaveLength(2);
+			expect(screen.getAllByRole("button", { name: "Sick note attached ({count})" })).toHaveLength(
+				1,
+			);
+		});
+	});
+
 	it("renders the search input with the shared card surface", () => {
 		render(
 			<AbsenceEntriesTable
@@ -198,5 +337,68 @@ describe("AbsenceEntriesTable", () => {
 		expect(screen.getByPlaceholderText("Search by type, status, or notes…").className).toContain(
 			"bg-card",
 		);
+	});
+
+	it("shows the deputy and offers to change it until the absence has ended (#1011)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					buildAbsence({
+						id: "running",
+						status: "approved",
+						startDate: "2026-05-18",
+						endDate: "2026-05-22",
+						deputy: { id: "employee-2", name: "Ben Example" },
+					}),
+					buildAbsence({
+						id: "ended",
+						status: "approved",
+						startDate: "2026-05-11",
+						endDate: "2026-05-19",
+					}),
+					buildAbsence({
+						id: "rejected",
+						status: "rejected",
+						startDate: "2026-05-25",
+						endDate: "2026-05-25",
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.getByText("Ben Example")).toBeTruthy();
+		const change = screen.getAllByRole("button", { name: "Change deputy" });
+		expect(change).toHaveLength(1);
+		fireEvent.click(change[0] as HTMLElement);
+		expect(screen.getByText("changing the deputy of running")).toBeTruthy();
+	});
+
+	it("links the deputy's name only when the viewer may open their profile (#1012)", () => {
+		render(
+			<AbsenceEntriesTable
+				currentDate="2026-05-20"
+				absences={[
+					buildAbsence({
+						id: "linked",
+						startDate: "2026-05-18",
+						endDate: "2026-05-22",
+						deputy: { id: "employee-2", name: "Ben Example", canOpenProfile: true },
+					}),
+					buildAbsence({
+						id: "plain",
+						startDate: "2026-06-18",
+						endDate: "2026-06-22",
+						deputy: { id: "employee-3", name: "Cleo Example", canOpenProfile: false },
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.getByRole("link", { name: "Ben Example" }).getAttribute("href")).toBe(
+			"/settings/employees/employee-2",
+		);
+		expect(screen.queryByRole("link", { name: "Cleo Example" })).toBeNull();
+		expect(screen.getByText("Cleo Example")).toBeTruthy();
 	});
 });

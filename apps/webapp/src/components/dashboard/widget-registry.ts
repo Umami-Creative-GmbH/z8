@@ -11,6 +11,8 @@ export type WidgetId =
 	| "pending-approvals"
 	| "team-overview"
 	| "quick-stats"
+	| "upcoming-shifts"
+	| "covering-for"
 	| "whos-out-today"
 	| "upcoming-time-off"
 	| "recently-approved"
@@ -29,7 +31,9 @@ export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
 	"pending-approvals",
 	"team-overview",
 	"quick-stats",
+	"upcoming-shifts",
 	"presence-status",
+	"covering-for",
 	"whos-out-today",
 	"upcoming-time-off",
 	"recently-approved",
@@ -79,9 +83,19 @@ export const WIDGET_CONFIGS: WidgetConfig[] = [
 		labelKey: "dashboard.quick-stats.title",
 	},
 	{
+		id: "upcoming-shifts",
+		label: "Upcoming Shifts",
+		labelKey: "dashboard.upcoming-shifts.title",
+	},
+	{
 		id: "presence-status",
 		label: "Work location",
 		labelKey: "dashboard.presence.workLocation",
+	},
+	{
+		id: "covering-for",
+		label: "Covering for",
+		labelKey: "dashboard.covering-for.title",
 	},
 	{
 		id: "whos-out-today",

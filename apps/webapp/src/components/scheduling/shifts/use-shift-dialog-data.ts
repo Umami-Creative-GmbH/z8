@@ -11,6 +11,7 @@ import {
 } from "@/app/[locale]/(app)/settings/employees/actions";
 import { queryKeys } from "@/lib/query/keys";
 import { useSkillValidation } from "@/lib/query/use-skills";
+import { SHIFT_ASSIGNEE_PICKER_LIMIT } from "@/lib/scheduling/staffing/types";
 
 interface UseShiftDialogDataOptions {
 	open: boolean;
@@ -32,7 +33,7 @@ export function useShiftDialogData({
 	const { data: employeesResult } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await listEmployeesForSelect({ limit: 1000 });
+			const result = await listEmployeesForSelect({ limit: SHIFT_ASSIGNEE_PICKER_LIMIT });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

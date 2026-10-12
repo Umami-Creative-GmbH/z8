@@ -64,6 +64,7 @@ import {
 } from "./auth";
 import { getEditCapabilityForPeriod } from "./policy-helpers";
 import { logger } from "./shared";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 
 export interface WorkPeriodTimeEditContext {
 	access: WorkPeriodTimeEditAccess;
@@ -389,9 +390,8 @@ async function applyAdminEdit(
 			return { success: true, data: { status: "applied" } };
 		}
 	} catch (error) {
-		const failure = describeAmendmentFailure(error);
-		if (failure)
-			return { success: false, error: failure.message, code: failure.code };
+		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
+		if (failure) return { success: false, error: failure.message, code: failure.code };
 		logger.error({ error }, "Failed to replay admin work period time edit");
 		return {
 			success: false,
@@ -513,7 +513,7 @@ async function applyAdminEdit(
 		) {
 			return { success: false, error: error.message };
 		}
-		const failure = describeAmendmentFailure(error);
+		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 		if (failure) {
 			return { success: false, error: failure.message, code: failure.code };
 		}

@@ -11,7 +11,12 @@ import { Card, CardAction, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
-import { formatMoney, formatPlainDate, formatRecordedInstant } from "../report/format";
+import {
+	formatMoney,
+	formatPayrollPeriod,
+	formatPlainDate,
+	formatRecordedInstant,
+} from "../report/format";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { PayrollRunNotice } from "./payroll-run-notice";
 import { RecordReimbursementForm } from "./record-reimbursement-form";
@@ -269,7 +274,18 @@ function SettlementEntryRow({
 						})}
 			</span>
 			<span>{formatPlainDate(locale, entry.occurredOn)}</span>
-			<span className="break-all text-muted-foreground">{entry.reference}</span>
+			<span className="break-all text-muted-foreground">
+				{entry.payrollRun
+					? // Paid on the payslip (#853): the payroll run replaces the bank reference.
+						t("travelExpenses.settlement.entry.payrollRun", "Reimbursed with payroll {period}", {
+							period: formatPayrollPeriod(
+								locale,
+								entry.payrollRun.periodStart,
+								entry.payrollRun.periodEnd,
+							),
+						})
+					: entry.reference}
+			</span>
 			{viewer === "finance" && (
 				<span className="w-full text-xs text-muted-foreground">
 					{t("travelExpenses.settlement.entry.recordedBy", "Recorded by {name}, {date}", {

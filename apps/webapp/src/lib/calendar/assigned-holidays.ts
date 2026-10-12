@@ -346,8 +346,11 @@ export async function getAssignedHolidaysForEmployee(params: {
 	employeeId: string;
 	startDate: Date;
 	endDate: Date;
+	/** The caller's client; the global db by default. */
+	database?: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 }): Promise<AssignedHolidayRange[]> {
-	const scopedEmployee = await db.query.employee.findFirst({
+	const database = params.database ?? db;
+	const scopedEmployee = await database.query.employee.findFirst({
 		where: and(
 			eq(employee.id, params.employeeId),
 			eq(employee.organizationId, params.organizationId),
@@ -357,7 +360,7 @@ export async function getAssignedHolidaysForEmployee(params: {
 
 	if (!scopedEmployee) return [];
 
-	const customAssignments = (await db.query.holidayAssignment.findMany({
+	const customAssignments = (await database.query.holidayAssignment.findMany({
 		where: and(
 			eq(holidayAssignment.organizationId, params.organizationId),
 			eq(holidayAssignment.isActive, true),
@@ -382,7 +385,7 @@ export async function getAssignedHolidaysForEmployee(params: {
 		},
 	})) as unknown as DirectCustomHolidayAssignment[];
 
-	const categoryAssignments = (await db.query.holidayCategoryAssignment.findMany({
+	const categoryAssignments = (await database.query.holidayCategoryAssignment.findMany({
 		where: and(
 			eq(holidayCategoryAssignment.organizationId, params.organizationId),
 			eq(holidayCategoryAssignment.isActive, true),
@@ -433,7 +436,7 @@ export async function getAssignedHolidaysForEmployee(params: {
 		},
 	})) as unknown as CategoryCustomHolidayAssignment[];
 
-	const presetAssignments = (await db.query.holidayPresetAssignment.findMany({
+	const presetAssignments = (await database.query.holidayPresetAssignment.findMany({
 		columns: { effectiveFrom: true, effectiveUntil: true },
 		where: and(
 			eq(holidayPresetAssignment.organizationId, params.organizationId),

@@ -1,7 +1,8 @@
 import { and, asc, eq } from "drizzle-orm";
 import type { db } from "@/db";
 import { approvalEscalationTransfer, approvalRequest } from "@/db/schema";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { coversCurrentApprover } from "../deputy/deputy-reads";
 import { ApprovalAssignmentReassignedError } from "./decision-authority";
 import type { LegacyEscalationEntityType } from "./kinds";
 import type { LegacyJournalTransferFact } from "./transfer-evaluation";
@@ -149,7 +150,15 @@ export async function assertLegacyTransferDecisionAuthority(
 	if (
 		transferred &&
 		transferred.currentApproverEmployeeId !== input.actorEmployeeId &&
-		!(await input.canManageOrganizationApproval?.())
+		!(await input.canManageOrganizationApproval?.()) &&
+		// The current approver's covering deputy (#1016, default 9).
+		!(await coversCurrentApprover(executor, {
+			organizationId: input.organizationId,
+			entityType: input.entityType,
+			approverEmployeeId: transferred.currentApproverEmployeeId,
+			actorEmployeeId: input.actorEmployeeId,
+			at: systemClock.nowInstant(),
+		}))
 	) {
 		throw new ApprovalAssignmentReassignedError();
 	}

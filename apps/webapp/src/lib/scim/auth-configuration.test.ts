@@ -36,10 +36,20 @@ vi.mock("@/lib/auth/auth-transaction", async (importOriginal) => {
 vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	protectAuthorizationMutation: guard.protect,
 }));
+// The release itself is covered by deputy-release.integration.test.ts (#1014).
+const deputyRelease = vi.hoisted(() => ({ release: vi.fn() }));
+vi.mock("@/lib/employee-lifecycle/deputy-release", () => ({
+	releaseDeputyAssignmentsOnDeactivation: deputyRelease.release,
+}));
+vi.mock("@/lib/employee-lifecycle/deputy-release-runtime", () => ({
+	notifyReleasedDeputyAssignments: vi.fn(),
+}));
 
 beforeEach(() => {
 	guard.transaction = { marker: "scim-plugin-transaction" };
 	guard.protect.mockReset();
+	deputyRelease.release.mockReset();
+	deputyRelease.release.mockResolvedValue(null);
 });
 
 const organizationId = "org_target";
@@ -287,6 +297,19 @@ describe("createZ8SCIMPlugin", () => {
 		expect(target.rows(SCIM_MODELS.member)[0]?.status).toBe("suspended");
 		expect(target.rows(SCIM_MODELS.employee)[0]?.isActive).toBe(false);
 		expect(target.rows(SCIM_MODELS.projectionState)).toHaveLength(1);
+		// The deprovisioned employee stops being a deputy in the SCIM transaction (#1014).
+		expect(deputyRelease.release).toHaveBeenCalledExactlyOnceWith(
+			guard.transaction,
+			expect.anything(),
+			{
+				organizationId,
+				employeeId: "employee_opaque",
+				actorUserId: userId,
+				at: expect.anything(),
+				reason: "scim_deprovisioned",
+				metadata: { connectionId },
+			},
+		);
 	});
 
 	it("creates an initially inactive user before applying lifecycle and projection state", async () => {

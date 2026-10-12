@@ -206,6 +206,8 @@ export async function prepareBoundTravelExpenseReportCard(
 		display: DisplayContext;
 		t: BotTranslateFn;
 		fits?: (draft: ApprovalCardDraft) => boolean;
+		/** A deputy card (#1017): the absent approver whose request it is. */
+		actingForEmployeeId?: string;
 	},
 ): Promise<ApprovalActionableCard | null> {
 	const { organizationId } = input;
@@ -218,7 +220,7 @@ export async function prepareBoundTravelExpenseReportCard(
 				eq(approvalRequest.id, input.approvalRequestId),
 				eq(approvalRequest.organizationId, organizationId),
 				eq(approvalRequest.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
-				eq(approvalRequest.approverId, input.recipientEmployeeId),
+				eq(approvalRequest.approverId, input.actingForEmployeeId ?? input.recipientEmployeeId),
 				eq(approvalRequest.status, "pending"),
 			),
 		)
@@ -300,6 +302,7 @@ export async function prepareBoundTravelExpenseReportCard(
 		legacyApprovalRequestId: input.approvalRequestId,
 		submittedRevisionId: revision.id,
 		revision: lifecycle,
+		...(input.actingForEmployeeId ? { actingForEmployeeId: input.actingForEmployeeId } : {}),
 	});
 	return { ...draft, bindingId };
 }

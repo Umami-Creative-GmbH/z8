@@ -8,7 +8,10 @@ import {
 	IconCircleFilled,
 	IconClock,
 	IconShield,
+	IconUserMinus,
+	IconUserShare,
 	IconUsers,
+	IconUserX,
 	IconX,
 } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -38,6 +41,10 @@ function getNotificationStyle(type: NotificationType): {
 		case "missed_clock_in_reminder":
 		case "forgotten_clock_out_reminder":
 		case "break_due_reminder":
+		case "period_submission_reminder":
+		case "period_submission_sent_back":
+		// Approved or rejected: the type covers both outcomes, so it keeps the neutral clock.
+		case "period_submission_decided":
 			return {
 				icon: <IconClock className="size-4" />,
 				bgColor: "bg-sky-100 dark:bg-sky-900/30",
@@ -102,6 +109,32 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconX className="size-4" />,
 				bgColor: "bg-red-100 dark:bg-red-900/30",
 				iconColor: "text-red-600 dark:text-red-400",
+			};
+		case "absence_deputy_unavailable":
+		// A schedule's owner is no longer an org admin (#988)
+		case "scheduled_export_paused":
+			return {
+				icon: <IconUserX className="size-4" />,
+				bgColor: "bg-amber-100 dark:bg-amber-900/30",
+				iconColor: "text-amber-600 dark:text-amber-400",
+			};
+
+		// Deputy on an absence (#1013)
+		case "absence_deputy_assigned":
+		case "absence_deputy_dates_changed":
+		case "absence_deputy_reminder":
+		case "approval_cover_started":
+		case "approval_cover_return_summary":
+			return {
+				icon: <IconUserShare className="size-4" />,
+				bgColor: "bg-purple-100 dark:bg-purple-900/30",
+				iconColor: "text-purple-600 dark:text-purple-400",
+			};
+		case "absence_deputy_removed":
+			return {
+				icon: <IconUserMinus className="size-4" />,
+				bgColor: "bg-slate-100 dark:bg-slate-900/30",
+				iconColor: "text-slate-600 dark:text-slate-400",
 			};
 
 		// Team notifications
@@ -219,8 +252,9 @@ export function NotificationItem({
 				</span>
 			</button>
 
-			{/* Actions (visible on hover) */}
-			<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+			{/* Actions show on hover or focus, and always on touch screens, which cannot hover (#846).
+				Button grows each hit area to 44 px there; the gap keeps neighbouring areas apart. */}
+			<div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:gap-4 pointer-coarse:opacity-100">
 				{!notification.isRead && (
 					<Button
 						size="icon"

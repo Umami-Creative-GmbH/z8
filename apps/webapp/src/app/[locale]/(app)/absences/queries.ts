@@ -9,8 +9,19 @@ import {
 	employeeVacationAllowance,
 	vacationAllowance,
 } from "@/db/schema";
+import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { getYearRange } from "@/lib/absences/date-utils";
-import type { AbsenceWithCategory, Holiday, VacationBalance } from "@/lib/absences/types";
+import {
+	type DeputyDisplay,
+	loadDeputyDisplays,
+	loadDeputyViewer,
+} from "@/lib/absences/deputy-display-store";
+import type {
+	AbsenceWithCategory,
+	AbsenceWithDays,
+	Holiday,
+	VacationBalance,
+} from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -34,7 +45,7 @@ export async function getVacationBalance(
 	const startOfYear = yearRange.start.toISODate() ?? `${year}-01-01`;
 	const endOfYear = yearRange.end.toISODate() ?? `${year}-12-31`;
 
-	const [orgAllowance, empAllowance, absences, holidays] = await Promise.all([
+	const [orgAllowance, empAllowance, absences, isWorkingDay] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
 				eq(vacationAllowance.organizationId, emp.organizationId),
@@ -65,7 +76,7 @@ export async function getVacationBalance(
 				category: true,
 			},
 		}),
-		getVacationHolidays({
+		loadWorkingDays(db, {
 			organizationId: emp.organizationId,
 			employeeId,
 			startDate: startOfYear,
@@ -84,7 +95,7 @@ export async function getVacationBalance(
 		organizationAllowance: orgAllowance,
 		employeeAllowance: empAllowance,
 		absences: absencesWithCategory,
-		holidays,
+		isWorkingDay,
 		currentDate: currentTimestamp(),
 		year,
 		timezone,
@@ -95,21 +106,71 @@ export async function getAbsenceEntries(
 	employeeId: string,
 	startDate: string,
 	endDate: string,
-): Promise<AbsenceWithCategory[]> {
+): Promise<AbsenceWithDays[]> {
+	const emp = await db.query.employee.findFirst({
+		where: eq(employee.id, employeeId),
+		columns: { organizationId: true },
+	});
+	if (!emp) return [];
+
 	const absences = await db.query.absenceEntry.findMany({
 		where: and(
 			eq(absenceEntry.employeeId, employeeId),
+			or(isNull(absenceEntry.organizationId), eq(absenceEntry.organizationId, emp.organizationId)),
 			lte(absenceEntry.startDate, endDate),
 			gte(absenceEntry.endDate, startDate),
 		),
 		with: {
 			category: true,
+			// The deputy of the employee's own absences (#1011): an employee of the same organization.
+			deputy: { columns: { id: true }, with: { user: { columns: { name: true } } } },
 		},
 		orderBy: [desc(absenceEntry.startDate)],
 	});
 
-	const typedAbsences = absences as unknown as AbsenceWithCategory[];
-	return typedAbsences.map(mapAbsenceWithCategory);
+	const deputies = await loadOwnAbsenceDeputies(
+		employeeId,
+		absences.flatMap((absence) => (absence.deputy ? [absence.deputy.id] : [])),
+	);
+	const typedAbsences = absences.map((absence) =>
+		mapAbsenceWithCategory({
+			...(absence as unknown as AbsenceWithCategory),
+			deputy: absence.deputy
+				? {
+						id: absence.deputy.id,
+						name: absence.deputy.user.name,
+						canOpenProfile: deputies.get(absence.deputy.id)?.canOpenProfile ?? false,
+					}
+				: null,
+		}),
+	);
+	const absenceDays = await getAbsenceDaysByAbsenceId(db, {
+		organizationId: emp.organizationId,
+		absences: typedAbsences,
+	});
+	return typedAbsences.map((absence) => ({
+		...absence,
+		absenceDays: absenceDays.get(absence.id) ?? 0,
+	}));
+}
+
+/** The employee's own absences' deputies, linked when the employee may open their profile (#1012). */
+async function loadOwnAbsenceDeputies(employeeId: string, deputyEmployeeIds: string[]) {
+	if (deputyEmployeeIds.length === 0) return new Map<string, DeputyDisplay>();
+	const owner = await db.query.employee.findFirst({
+		where: eq(employee.id, employeeId),
+		columns: { userId: true, organizationId: true },
+	});
+	if (!owner) return new Map<string, DeputyDisplay>();
+	const viewer = await loadDeputyViewer(db, {
+		organizationId: owner.organizationId,
+		userId: owner.userId,
+	});
+	return loadDeputyDisplays(db, {
+		organizationId: owner.organizationId,
+		viewer,
+		deputyEmployeeIds,
+	});
 }
 
 export async function getHolidays(
@@ -138,6 +199,7 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		color: string | null;
 		requiresApproval: boolean;
 		countsAgainstVacation: boolean;
+		deputyRequired: boolean;
 	}>
 > {
 	const categories = await db.query.absenceCategory.findMany({
@@ -155,5 +217,6 @@ export async function getAbsenceCategories(organizationId: string): Promise<
 		color: c.color,
 		requiresApproval: c.requiresApproval,
 		countsAgainstVacation: c.countsAgainstVacation,
+		deputyRequired: c.deputyRequired,
 	}));
 }

@@ -133,6 +133,18 @@
     "sso-not-configured": "SSO no está configurado para este dominio",
     "step-one": "1. Utilice el correo electrónico invitado",
     "step-two": "2. Vuelva aquí y únase",
+    "storeApp": {
+      "continue": "Continuar",
+      "description": "Introduce tu correo electrónico de trabajo. A continuación, inicia sesión en la página de inicio de sesión de tu organización en el navegador de tu teléfono.",
+      "error": {
+        "browser": "No se ha podido abrir la página de inicio de sesión. Inténtalo de nuevo.",
+        "expired": "El inicio de sesión no se ha completado o ha caducado. Inténtalo de nuevo.",
+        "rateLimited": "Demasiados intentos de inicio de sesión. Espera un momento e inténtalo de nuevo.",
+        "unavailable": "No se ha podido conectar con Z8. Comprueba tu conexión e inténtalo de nuevo."
+      },
+      "title": "Iniciar sesión en Z8",
+      "waiting": "Esperando el inicio de sesión…"
+    },
     "terms": {
       "privacy": "Política de Privacidad",
       "service": "Términos de Servicio"

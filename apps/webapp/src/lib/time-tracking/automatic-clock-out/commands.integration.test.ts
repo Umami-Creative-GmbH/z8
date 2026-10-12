@@ -177,6 +177,53 @@ describe("automatic clock-out work transactions", () => {
 				);
 				expect(await commands().close(candidate)).toMatchObject({ status: "replayed" });
 			});
+			it("ends work with a forgotten break in progress at the break's start and clears it (#861)", async () => {
+				const { candidate, person } = await seed(admission);
+				const breakStart = parseInstant("2026-10-24T22:00:00Z");
+				const started = await createClocking({
+					clock: { nowInstant: () => breakStart },
+					transactions: coordinatedTransactions(),
+					followUps: recordingFollowUps(),
+				}).startBreak({
+					organizationId: candidate.organizationId,
+					principal: { kind: "user", userId: person.userId },
+					subject: { employeeId: candidate.employeeId },
+					identity: { origin: "client", id: randomUUID() },
+					channel: "web",
+					at: { kind: "now" },
+					zone: { device: "Europe/Berlin", fallback: "UTC" },
+				});
+				expect(started).toMatchObject({ outcome: "executed" });
+
+				// Due at the policy cutoff, as without the break.
+				expect(await commands(start.add({ hours: 11 })).close(candidate)).toEqual({
+					status: "skipped",
+					reason: "not_due",
+				});
+				expect(await commands().close(candidate)).toMatchObject({ status: "closed" });
+
+				const state = await snapshot(candidate.organizationId);
+				expect(state.periods).toMatchObject([
+					{
+						id: candidate.workPeriodId,
+						end_time: dateFromInstant(breakStart),
+						duration_minutes: 240,
+						is_active: false,
+						break_started_at: null,
+						break_started_zone: null,
+					},
+				]);
+				expect(state.entries[0]).toMatchObject({ timestamp: dateFromInstant(breakStart) });
+				expect(state.executions[0]).toMatchObject({
+					start_time: dateFromInstant(start),
+					cutoff_time: dateFromInstant(now),
+					closure_payload: {
+						end: "2026-10-24T22:00:00Z",
+						durationMinutes: 240,
+					},
+				});
+				expect(await commands().close(candidate)).toMatchObject({ status: "replayed" });
+			});
 			it("rechecks current settings and pins a lowered eight-hour limit after ten hours", async () => {
 				const { candidate } = await seed(admission);
 				expect(await commands(start.add({ hours: 10 })).close(candidate)).toEqual({

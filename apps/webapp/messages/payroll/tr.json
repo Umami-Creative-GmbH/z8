@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Yanlış pozitif durumu temizleniyor",
       "dateUnavailable": "Tarih kullanılamıyor",
       "missingClockOut": "Eksik çıkış saati",
+      "missingIdentifier": "Eksik tanımlayıcı",
       "needReview": "{count} bordro engelinin gözden geçirilmesi gerekiyor",
       "offboardingClockRepair": "İşten ayrılma çıkış kaydının düzeltilmesi gerekiyor",
       "openApprovals": "Açık onaylar",
       "openCalendar": "Takvimi aç",
+      "openEmployee": "Çalışanı aç",
       "openWork": "Çıkış kaydı olmayan çalışma",
       "openWorkDiagnostics": "Çalışma tanılamalarını aç",
       "pendingAbsence": "Bekleyen izin",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds bir dizi olmalıdır",
       "employeeIdsMustContainOnlyStrings": "employeeIds yalnızca dizeler içermelidir",
       "endDateAfterStart": "Bitiş tarihi, başlangıç tarihinden sonra veya aynı gün olmalıdır",
+      "exportBlockedByMissingIdentifier": "Dışa aktarma engellendi: Bazı çalışanların bordro tanımlayıcısı olarak kullanılan özel alanda bir değeri yok",
       "exportBlockedByOffboardingClockRepair": "Dışa aktarma engellendi: önce işten ayrılış çıkış kaydını düzeltin",
       "exportBlockedByUncertainWork": "Dışa aktarma engellendi: önce seçilen kapsamdaki belirsiz çalışmayı çözümleyin",
       "exportBlockedByUnresolvedWorkMinutes": "Dışa aktarma engellendi: önce incelenmesi gereken çalışma dakikalarını çözümleyin",
       "exportFormatNotConfigured": "Maaş bordrosu dışa aktarma formatı yapılandırılmamış",
+      "exportIdentifierChanged": "Bordro tanımlayıcı ayarı, bu dışa aktarma toplandıktan sonra değişti. Yeni bir dışa aktarma başlatın.",
       "invalidBlockerId": "Geçersiz bordro engel kimliği",
       "invalidBlockerType": "Geçersiz bordro engel türü",
       "mustBeIsoDate": "{field} bir ISO tarihi olmalıdır",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Maaş bordrosu dışa aktarma tamamlandı",
       "formatAccessCheck": "Format erişim kontrolü",
+      "nobodyEmployedInPeriod": "Bordro erişiminiz kapsamındaki hiç kimse bu dönemde istihdam edilmedi.",
       "noConfiguredTarget": "Yapılandırılmış maaş bordrosu dışa aktarma hedefi yok",
       "queued": "Maaş bordrosu dışa aktarma sıraya alındı",
       "selectFormat": "Format seçin",
-      "target": "Maaş bordrosu dışa aktarma hedefi"
+      "target": "Maaş bordrosu dışa aktarma hedefi",
+      "unmappedOvertimePayouts": "{count, plural, other {# fazla mesai ödemesi dışa aktarılmadı} }",
+      "unmappedOvertimePayoutsDescription": "Bu biçim için Fazla Mesai ile eşlenmiş ücret türü yok. Bir kuruluş yöneticisinden eşleme yapmasını isteyin veya bu saatlerin ödemesini başka bir yolla yapın."
     },
     "filters": {
       "noMatchingEmployees": "Seçilen maaş bordrosu filtreleriyle eşleşen çalışan bulunamadı."
+    },
+    "formerEmployeesExport": {
+      "description": "Herhangi birinin hâlâ istihdam edildiği bir ayı dışa aktarın: son çalışma saatleri ve nihai fazla mesai ödemeleri dosyaya dahil edilir.",
+      "export": "Dışa aktar",
+      "nextMonth": "Sonraki ay",
+      "previousMonth": "Önceki ay",
+      "title": "Ayrılan çalışanlar için bordroyu dışa aktar"
+    },
+    "onlyFormerEmployees": {
+      "description": "Fazla mesai ödemelerini kaydetmeye ve iptal etmeye devam edebilir, istihdam edildikleri ayları aşağıdan dışa aktarabilirsiniz.",
+      "title": "Bordro erişiminizde yalnızca işten ayrılan çalışanlar yer alıyor"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Bu biçim için Fazla Mesai ile eşlenmiş ücret türü bulunmadığından dışa aktarma işlemi bu ödemeleri hariç tutar. Bir kuruluş yöneticisinden eşleme yapmasını isteyin veya bu saatlerin ödemesini başka bir yolla yapın.",
+      "title": "{count, plural, other {# fazla mesai ödemesi dışa aktarılmayacak} }"
     },
     "period": {
       "current": "Mevcut dönem",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Bordro çalıştırmasını at",
+        "confirmed": "Bu bordro çalıştırması bazı raporlar için ödendi olarak zaten onaylandı, bu nedenle artık iptal edilemez. Bunun yerine tekil raporları buradan kaldırın.",
         "description": "{count, plural, other {İçerdiği # masraf raporu yeniden geri ödeme bekleyecek: sonraki bordro dışa aktarımı veya banka havalesi bunları alabilir. Yalnızca bu dosya bordro ile ödenmediyse atın.} }",
         "done": "Bordro çalıştırması atıldı. Masraf raporları yeniden geri ödeme bekliyor.",
         "failed": "Bordro çalıştırması atılamadı.",
@@ -106,6 +129,29 @@
         "outOfScope": "Bu bordro çalıştırması, bordro kapsamınız dışındaki çalışanları içeriyor.",
         "title": "Bu bordro çalıştırması atılsın mı?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "elle belirlendi",
+        "exceptionalItinerary": "yasal kuralların kapsamadığı güzergah",
+        "outsideVerifiedTables": "günleri için doğrulanmış yasal tablo yok"
+      },
+      "description": "Bu harcamalar geri ödeme bekliyor ancak bu döneme ve biçime ait bir dışa aktarma bunları hariç tutuyor. Dışa aktarma engellenmedi: Bunları finans kuyruğundan banka havalesiyle ödeyin.",
+      "payByBankTransfer": "Banka havalesiyle öde",
+      "reason": {
+        "apiConnector": "Bu biçim bir API bağlayıcısıdır ve hiçbir zaman harcama tutarlarını taşımaz.",
+        "currencyNotEur": "Euro cinsinden değil: Bordro çalıştırmaları yalnızca euro tutarlarını taşır.",
+        "includedInOtherRun": "Onaylanmamış {period} ({format}) bordro çalıştırmasına dahil edildi.",
+        "legacyClaim": "Eski talepler hiçbir zaman bordro aracılığıyla ödenmez.",
+        "negativeDifference": "Yapılan bir düzeltme, önceki bordro çalıştırmalarının şunlar için içerdiği tutarı düşürdü: {kinds}.",
+        "noStatutoryBaseline": "Şunlar için yasal taban yok: {items}.",
+        "nothingOwed": "Bordro satırları, bordronun taşıyabileceği hiçbir şey bırakmıyor.",
+        "reimbursedOutsidePayroll": "Banka havalesiyle kısmen ödendi veya tahsil edildi: Kalan kısım bordroya aktarılamaz.",
+        "unmappedWageType": "Şunlar için bu biçimde eşlenmiş ücret türü yok: {kinds}."
+      },
+      "title": "Bu bordro çalıştırmasının taşımayacağı harcama raporları",
+      "unknownEmployee": "Çalışan"
     },
     "runs": {
       "description": "Bu dışa aktarımlar, geri ödeme bekleyen masraf raporlarını içerir. Bir masraf yetkilisi, bordro ödendikten sonra her çalıştırmayı onaylar; dosyası ödenmemiş bir çalıştırmayı atın.",
@@ -140,6 +186,17 @@
       "description": "Bordro verileri güvenli bir şekilde hazırlanamadı.",
       "help": "Lütfen daha sonra tekrar deneyin. Sorun devam ederse bir kuruluş yöneticisiyle iletişime geçin.",
       "title": "Bordro geçici olarak kullanılamıyor"
+    },
+    "workBalances": {
+      "back": "Çalışma bakiyeleri",
+      "backToPayroll": "Bordro",
+      "description": "İşten ayrılan çalışanlar da dahil olmak üzere bordro erişiminizin kapsadığı çalışanlar için fazla mesai ödemelerini kaydedin ve iptal edin.",
+      "empty": "Henüz bordro erişim kapsamınızda hiçbir çalışan bulunmuyor.",
+      "former": "Eski çalışan",
+      "loading": "Çalışma bakiyeleri yükleniyor",
+      "loadingEmployee": "Çalışma bakiyesi yükleniyor",
+      "open": "Çalışma bakiyeleri",
+      "title": "Çalışma bakiyeleri"
     }
   }
 }

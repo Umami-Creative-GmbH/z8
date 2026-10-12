@@ -139,7 +139,7 @@ export async function getEnhancedVacationBalance(input: {
 				}
 			: null,
 		absences,
-		holidays: absencesResult.holidays,
+		isWorkingDay: absencesResult.isWorkingDay,
 		currentDate,
 		year,
 		adjustmentTotal,

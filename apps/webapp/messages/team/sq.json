@@ -1,0 +1,205 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Regjistro mungesë për {name}"
+      },
+      "calendar": {
+        "approved": "Miratuar",
+        "changeDeputy": "Ndrysho zëvendësuesin",
+        "changeDeputyOf": "Ndrysho zëvendësuesin e {name}",
+        "deputy": "Zëvendësuesi:",
+        "deputyMissing": "Mungon zëvendësuesi",
+        "description": "Mungesat e miratuara dhe në pritje për ekipin dhe vitin e zgjedhur.",
+        "error": {
+          "description": "Ju lutemi provoni përsëri pas një çasti.",
+          "title": "Nuk mund të ngarkohet kalendari"
+        },
+        "legend": {
+          "approved": "Miratuar",
+          "pending": "Në pritje"
+        },
+        "pending": "Në pritje",
+        "pendingDays": "{count} në pritje",
+        "title": "Kalendari vjetor",
+        "totalDays": "{count} në mungesë"
+      },
+      "deputyFilter": {
+        "clear": "Shfaq të gjitha mungesat",
+        "notice": "Po shfaqen vetëm mungesat që ky punonjës mbulon si zëvendësues."
+      },
+      "description": "Shqyrtoni lejet dhe regjistroni mungesat e miratuara për ekipin tuaj.",
+      "empty": {
+        "description": "Provoni të rregulloni filtrat ose kërkimin për të gjetur anëtarët e ekipit.",
+        "label": "Nuk u gjet asnjë punonjës",
+        "title": "Nuk u gjet asnjë punonjës"
+      },
+      "error": {
+        "description": "Ju lutemi provoni përsëri pas një çasti.",
+        "title": "Mungesat nuk mund të ngarkohen"
+      },
+      "feature": "menaxhoni mungesat e ekipit",
+      "filters": {
+        "allTeams": "Të gjitha ekipet",
+        "searchLabel": "Kërko punonjës",
+        "searchPlaceholder": "Kërko punonjës…",
+        "searchSubmit": "Kërko",
+        "teamLabel": "Filtro sipas ekipit",
+        "teamPlaceholder": "Ekipi",
+        "yearLabel": "Filtro sipas vitit",
+        "yearPlaceholder": "Viti"
+      },
+      "pagination": {
+        "next": "Tjetra",
+        "nextLabel": "Faqja tjetër",
+        "page": "Faqja {page} nga {pageCount}",
+        "previous": "E mëparshme",
+        "previousLabel": "Faqja e mëparshme",
+        "showing": "Duke shfaqur {firstItem} deri në {lastItem} nga {total}"
+      },
+      "recordDialog": {
+        "category": "Kategoria",
+        "categoryPlaceholder": "Zgjidhni një kategori mungese…",
+        "deputy": "Zëvendësues",
+        "description": "Regjistroni një mungesë të miratuar drejtpërdrejt për punonjësin e përzgjedhur.",
+        "endDate": "Data e përfundimit",
+        "endDateHelper": "Lëreni bosh për një mungesë brenda së njëjtës ditë.",
+        "failure": "Regjistrimi i mungesës dështoi",
+        "noCategories": "Nuk ka kategori të disponueshme",
+        "noEmployee": "Zgjidhni një punonjës përpara se të regjistroni një mungesë",
+        "notes": "Shënime",
+        "notesPlaceholder": "Shtoni kontekst të brendshëm për këtë regjistrim…",
+        "pickEndDate": "Zgjidhni datën e përfundimit…",
+        "pickStartDate": "Zgjidhni datën e fillimit…",
+        "recording": "Duke regjistruar…",
+        "required": "{label} kërkohet",
+        "sickDetail": "Detajet e lejes mjekësore",
+        "sickDetailPlaceholder": "Zgjidhni detajet e lejes mjekësore…",
+        "sickNotes": {
+          "description": "Shtoni foto ose skedarë PDF të raportit mjekësor që ju është dorëzuar: skedarë PDF, JPEG, PNG ose WebP deri në 20 MB secili. Çdo skedar ruhet si një raport mjekësor më vete në dosjen e personelit të punonjësit dhe punonjësi mund ta shohë atë. Më pas, vetëm ata që menaxhojnë raportet mjekësore të punonjësit mund ta hapin atë.",
+          "title": "Raport mjekësor (opsionale)"
+        },
+        "sickNotesFailed": "Mungesa u regjistrua, por {files} nuk mund të bashkëngjiteshin. Dikush që menaxhon raportet mjekësore mund t'i bashkëngjisë më vonë.",
+        "startDate": "Data e fillimit",
+        "submit": "Regjistro mungesën",
+        "success": "Mungesa u regjistrua",
+        "title": "Regjistro mungesën",
+        "titleForEmployee": "Regjistro mungesën për {name}"
+      },
+      "sort": {
+        "ascending": "rritëse",
+        "by": "Rendit sipas {label}",
+        "byWithDirection": "Rendit sipas {label} ({direction})",
+        "descending": "zbritëse"
+      },
+      "table": {
+        "actions": "Veprimet",
+        "allowance": "Kuota",
+        "employee": "Punonjësi",
+        "left": "Të mbetura",
+        "pending": "Në pritje",
+        "sick": "Pushim mjekësor",
+        "teamOrPosition": "Ekipi ose Pozicioni",
+        "used": "Të përdorura"
+      },
+      "title": "Mungesat e ekipit"
+    },
+    "balance": {
+      "noBalance": "Nuk ka balancë"
+    },
+    "description": "Shikoni dhe menaxhoni punonjësit që mbikëqyrni drejtpërdrejt",
+    "empty": {
+      "action": "Shko te Cilësimet e punonjësve",
+      "description": "Punonjësit e caktuar për ju si menaxher i tyre do të shfaqen këtu. Mund të menaxhoni caktimet e ekipit te cilësimet e punonjësve.",
+      "title": "Ende nuk ka anëtarë të ekipit"
+    },
+    "error": {
+      "description": "Nuk mund të ngarkohen anëtarët e ekipit tuaj.",
+      "title": "Diçka shkoi keq"
+    },
+    "feature": "shikoni ekipin tuaj",
+    "member": "anëtar",
+    "members": "anëtarë",
+    "member.you": "Ju",
+    "noResults": {
+      "action": "Pastro kërkimin",
+      "description": "Asnjë anëtar ekipi nuk përputhet me \"{query}\"",
+      "title": "Nuk u gjet asnjë rezultat"
+    },
+    "pagination": {
+      "next": "Tjetra",
+      "previous": "Mëparshme",
+      "showing": "Duke shfaqur {from} deri në {to} nga {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Zgjidhni një frekuencë dorëzimi te cilësimet e organizatës",
+      "columns": {
+        "calendar": "Kalendari",
+        "employee": "Punonjësi",
+        "period": "Periudha",
+        "status": "Statusi"
+      },
+      "descriptionAll": "Kush e ka dorëzuar periudhën e përzgjedhur. Miratoni ose refuzoni dorëzimet në kutinë hyrëse të miratimeve.",
+      "descriptionManaged": "Cilët nga punonjësit që menaxhoni e kanë dorëzuar periudhën e përzgjedhur. Miratoni ose refuzoni dorëzimet në kutinë hyrëse të miratimeve.",
+      "empty": "Askush që mund të shihni nuk pritet ta dorëzojë këtë periudhë.",
+      "loading": "Duke ngarkuar dorëzimet e periudhës",
+      "notSubmitted": "E padorëzuar",
+      "off": "Organizata juaj nuk mbledh dorëzime periudhash.",
+      "openCalendar": "Kalendari",
+      "openCalendarOf": "Hap kalendarin e {name}",
+      "openInbox": "Hap kutinë e miratimeve",
+      "owing": "{count, plural, one {# punonjës nuk e ka dorëzuar ende këtë periudhë.} other {# punonjës nuk e kanë dorëzuar ende këtë periudhë.}}",
+      "period": "Periudha e dorëzimit",
+      "running": "Kjo periudhë është ende në vazhdim. Punonjësit mund ta dorëzojnë atë duke filluar nga dita e saj e fundit.",
+      "status": {
+        "approved": "Miratuar",
+        "awaiting": "Në pritje të dorëzimit",
+        "rejected": "Refuzuar",
+        "sentBack": "Kthyer mbrapsht pas një ndryshimi",
+        "submitted": "Dorëzuar"
+      },
+      "summary": "Statuset",
+      "title": "Dorëzimet e periudhës"
+    },
+    "presence": {
+      "allLocations": "Të gjitha vendndodhjet",
+      "columns": {
+        "name": "Emri",
+        "since": "Që nga",
+        "state": "Statusi"
+      },
+      "description": "Zgjidhni një vendndodhje për të parë se kush është i regjistruar në punë ose në pushim atje.",
+      "descriptionAll": "Punonjësit e caktuar në këtë vendndodhje që janë regjistruar në punë ose në pushim.",
+      "descriptionManaged": "Punonjësit që menaxhoni të cilët janë caktuar në këtë vendndodhje dhe janë regjistruar në punë ose në pushim.",
+      "empty": "Askush që mund të shihni nuk është i regjistruar në punë në këtë vendndodhje tani.",
+      "locationTitle": "Kush është në punë: {location}",
+      "noLocations": "Organizata juaj nuk ka ende vendndodhje aktive.",
+      "title": "Kush është në punë"
+    },
+    "primaryManager": "Ju jeni menaxheri kryesor",
+    "search": {
+      "ariaLabel": "Kërkoni anëtarët e ekipit",
+      "placeholder": "Kërko sipas emrit, emailit, pozicionit ose ekipit..."
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Joaktiv"
+    },
+    "table": {
+      "employee": "Punonjës",
+      "position": "Pozicioni",
+      "role": "Roli",
+      "sort": {
+        "ascending": "në rritje",
+        "descending": "në zbritje"
+      },
+      "status": "Statusi",
+      "team": "Ekipi"
+    },
+    "title": "Ekipi juaj",
+    "view": {
+      "cards": "Pamja me karta",
+      "table": "Pamja me tabelë"
+    }
+  }
+}

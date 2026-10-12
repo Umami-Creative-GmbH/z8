@@ -135,7 +135,7 @@ describe("ApiKeyCreateDialog", () => {
 		expect(checked("Read time entries")).toBe(true);
 		expect(checked("Enable rate limiting")).toBe(true);
 		expect(
-			(screen.getByLabelText("Max requests per minute") as HTMLInputElement)
+			(screen.getByLabelText("Max requests") as HTMLInputElement)
 				.value,
 		).toBe("100");
 		expect(createButton.disabled).toBe(true);
@@ -221,7 +221,7 @@ describe("ApiKeyCreateDialog", () => {
 		renderDialog();
 		const user = userEvent.setup();
 		await user.type(screen.getByLabelText("Name *"), "Payroll integration");
-		const rateLimitInput = screen.getByLabelText("Max requests per minute");
+		const rateLimitInput = screen.getByLabelText("Max requests");
 		await user.clear(rateLimitInput);
 		if (rateLimitMax) await user.type(rateLimitInput, rateLimitMax);
 
@@ -254,7 +254,7 @@ describe("ApiKeyCreateDialog", () => {
 		renderDialog();
 		const user = userEvent.setup();
 		await user.type(screen.getByLabelText("Name *"), "Payroll integration");
-		await user.clear(screen.getByLabelText("Max requests per minute"));
+		await user.clear(screen.getByLabelText("Max requests"));
 		expect(
 			(screen.getByRole("button", { name: "Create Key" }) as HTMLButtonElement)
 				.disabled,
@@ -263,7 +263,7 @@ describe("ApiKeyCreateDialog", () => {
 		await user.click(
 			screen.getByRole("checkbox", { name: "Enable rate limiting" }),
 		);
-		expect(screen.queryByLabelText("Max requests per minute")).toBeNull();
+		expect(screen.queryByLabelText("Max requests")).toBeNull();
 		const createButton = screen.getByRole("button", {
 			name: "Create Key",
 		}) as HTMLButtonElement;
@@ -341,7 +341,7 @@ describe("ApiKeyCreateDialog", () => {
 		expect(checked("Read time entries")).toBe(true);
 		expect(checked("Enable rate limiting")).toBe(true);
 		expect(
-			(screen.getByLabelText("Max requests per minute") as HTMLInputElement)
+			(screen.getByLabelText("Max requests") as HTMLInputElement)
 				.value,
 		).toBe("100");
 	});
@@ -366,7 +366,7 @@ describe("ApiKeyCreateDialog", () => {
 			screen.getByRole("checkbox", { name: "Read time entries" }),
 		);
 		await user.click(screen.getByRole("checkbox", { name: "Read employees" }));
-		const rateLimitInput = screen.getByLabelText("Max requests per minute");
+		const rateLimitInput = screen.getByLabelText("Max requests");
 		await user.clear(rateLimitInput);
 		await user.type(rateLimitInput, "500");
 		await user.click(screen.getByRole("button", { name: "Create Key" }));
@@ -382,17 +382,17 @@ describe("ApiKeyCreateDialog", () => {
 		).toContain("30 days");
 		expect(checked("Read time entries")).toBe(true);
 		for (const permission of [
-			"Write time entries",
+			"Read absences",
+			"Read absence health detail",
 			"Read employees",
-			"Read reports",
 			"Read projects",
-			"Write projects",
+			"Read customers",
 		]) {
 			expect(checked(permission)).toBe(false);
 		}
 		expect(checked("Enable rate limiting")).toBe(true);
 		expect(
-			(screen.getByLabelText("Max requests per minute") as HTMLInputElement)
+			(screen.getByLabelText("Max requests") as HTMLInputElement)
 				.value,
 		).toBe("100");
 	});

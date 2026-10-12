@@ -141,6 +141,17 @@
       "description": "Envoyer une invitation pour rejoindre {organizationName}",
       "emailLabel": "Adresse e-mail",
       "error": "Échec de l'envoi de l'invitation",
+      "kioskOnly": {
+        "description": "Pour les employés sans adresse e-mail d'entreprise. Ils ne peuvent pas se connecter et pointent uniquement sur les bornes avec leur code PIN. Vous pourrez ajouter une adresse e-mail plus tard.",
+        "firstName": "Prénom",
+        "label": "Borne uniquement, sans e-mail",
+        "lastName": "Nom",
+        "locations": "Sites attribués",
+        "locationsDescription": "Les bornes de ces sites répertorient cet employé.",
+        "noLocations": "Aucun site actif pour le moment. Vous pourrez attribuer des sites plus tard.",
+        "submit": "Créer l'employé",
+        "success": "Employé borne uniquement créé"
+      },
       "noTargetTeam": "Aucune équipe",
       "roleDescriptions": {
         "admin": "Peut inviter des membres et gérer les paramètres",
@@ -242,6 +253,41 @@
       "searchLabel": "Rechercher des employés",
       "searchPlaceholder": "Rechercher des employés…",
       "teamBadge": "Équipe"
+    },
+    "periodSubmissions": {
+      "adminOnly": "Seuls les administrateurs et les propriétaires de l'organisation peuvent modifier ces paramètres.",
+      "cadence": {
+        "label": "Fréquence de soumission",
+        "monthly": "Mensuel",
+        "off": "Désactivé",
+        "weekly": "Hebdomadaire"
+      },
+      "description": "Demandez aux employés de soumettre chaque semaine ou chaque mois pour approbation, en confirmant que leurs heures de travail et leurs absences sont complètes et exactes.",
+      "help": "Les périodes suivent le fuseau horaire de chaque employé et sont ajustées selon leur période d'emploi. L'activation prend effet dès la première période complète. Toute modification prend effet à la prochaine limite de période commune à l'ancienne et à la nouvelle fréquence ; ainsi, passer d'un rythme hebdomadaire à mensuel peut prendre plusieurs mois. Les employés reçoivent un rappel à la fin d'une période, puis un autre après le nombre de jours défini ici. Les employés utilisant uniquement une borne ne soumettent pas de périodes.",
+      "invalidDelay": "Saisissez un nombre entier de jours compris entre {min} et {max}.",
+      "save": "Enregistrer les modifications",
+      "saved": "Paramètres de soumission des périodes enregistrés",
+      "saveFailed": "Impossible de mettre à jour les paramètres de soumission des périodes",
+      "saving": "Enregistrement…",
+      "secondReminderDelay": "Jours avant le deuxième rappel",
+      "title": "Soumissions des périodes",
+      "upcoming": {
+        "monthly": "Les périodes mensuelles commencent le {date}.",
+        "off": "Aucune période n'est attendue à partir du {date}. La période en cours est toujours attendue.",
+        "untilMonthly": "D'ici là, les périodes mensuelles continuent.",
+        "untilWeekly": "D'ici là, les périodes hebdomadaires continuent.",
+        "weekly": "Les périodes hebdomadaires commencent le {date}."
+      },
+      "weekday": {
+        "friday": "Vendredi",
+        "monday": "Lundi",
+        "saturday": "Samedi",
+        "sunday": "Dimanche",
+        "thursday": "Jeudi",
+        "tuesday": "Mardi",
+        "wednesday": "Mercredi"
+      },
+      "weekStart": "Les semaines commencent le"
     },
     "recover": {
       "button": "Récupérer l'organisation",

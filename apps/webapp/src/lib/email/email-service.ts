@@ -12,6 +12,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { organizationEmailConfig } from "@/db/schema";
 import { env } from "@/env";
+import { isReservedEmail } from "@/lib/auth/reserved-email";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import {
@@ -197,6 +198,12 @@ export async function sendEmail(
 	{ to, subject, html, from, actionUrl, organizationId }: SendEmailParams,
 	options: { durable?: boolean } = {},
 ): Promise<EmailTransportResult> {
+	// Kiosk-only employees' placeholder addresses are never delivered (ADR 0006).
+	// Durable callers read `unavailable` as "this channel cannot reach them".
+	if (isReservedEmail(to)) {
+		logger.info({ organizationId }, "Skipped email to a reserved kiosk-only address");
+		return { success: false, unavailable: true, error: "reserved_recipient" };
+	}
 	const transport = await getTransportForOrg(organizationId, { throwOnError: options.durable });
 	// Check the actual selected transport; a planning-time check can become stale.
 	if (options.durable && transport.getName().toLowerCase().startsWith("console")) {
@@ -274,6 +281,9 @@ export async function sendTestEmail(
 	toEmail: string,
 	organizationId?: string,
 ): Promise<EmailTransportResult> {
+	if (isReservedEmail(toEmail)) {
+		return { success: false, unavailable: true, error: "reserved_recipient" };
+	}
 	const transport = await getTransportForOrg(organizationId);
 	return transport.test(toEmail);
 }

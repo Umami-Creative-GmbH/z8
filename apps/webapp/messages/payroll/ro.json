@@ -1,0 +1,202 @@
+{
+  "payroll": {
+    "accessDenied": {
+      "description": "Nu aveți acces la datele de salarizare pentru organizația activă.",
+      "help": "Solicitați unui administrator al organizației să vă acorde acces la salarizare dacă aveți nevoie de acest spațiu de lucru.",
+      "title": "Fără acces la salarizare"
+    },
+    "actions": {
+      "apply": "Aplică",
+      "downloadPdf": "Descărcare PDF",
+      "triggerExport": "Declanșează exportul"
+    },
+    "blockers": {
+      "clearFailed": "Nu s-a putut elimina blocajul salarizării",
+      "clearFalsePositive": "Elimină falsul pozitiv",
+      "clearingFalsePositive": "Se elimină falsul pozitiv",
+      "dateUnavailable": "Dată indisponibilă",
+      "missingClockOut": "Pontaj de ieșire lipsă",
+      "missingIdentifier": "Identificator lipsă",
+      "needReview": "{count} blocaje de salarizare necesită revizuire",
+      "offboardingClockRepair": "Pontajul de ieșire la offboarding necesită remediere",
+      "openApprovals": "Aprobări deschise",
+      "openCalendar": "Deschide calendarul",
+      "openEmployee": "Deschide angajat",
+      "openWork": "Muncă fără pontaj de ieșire",
+      "openWorkDiagnostics": "Deschide diagnosticarea activității",
+      "pendingAbsence": "Absență în așteptare",
+      "pendingTimeCorrection": "Corecție de timp în așteptare",
+      "pendingWorkApproval": "Muncă în așteptarea aprobării",
+      "refreshAfterClearFailed": "Blocajul a fost eliminat, dar salarizarea nu a putut fi actualizată",
+      "uncertainHistoricalWork": "Munca din istoric necesită verificare",
+      "unknownEmployee": "Angajat necunoscut",
+      "unresolvedWorkMinutes": "Minutele de lucru necesită verificare"
+    },
+    "description": "Revizuiți totalurile de salarizare, starea de pregătire și exporturile pentru perioada selectată.",
+    "employeeTotals": {
+      "absences": "Absențe",
+      "blocked": "Blocat",
+      "contract": "Contract",
+      "contractFixed": "Fix",
+      "contractHourly": "Cu plată pe oră",
+      "description": "Timp lucrat, total absențe, tip contract și stare salarizare.",
+      "employee": "Angajat",
+      "hours": "Ore",
+      "noAbsences": "Niciunul",
+      "noEmployeeNumber": "Fără număr de angajat",
+      "noTeam": "Fără echipă",
+      "readyForPayroll": "Pregătit pentru salarizare",
+      "status": "Stare",
+      "team": "Echipă",
+      "title": "Totaluri angajat"
+    },
+    "errors": {
+      "actionFailed": "Acțiunea în spațiul de lucru pentru salarizare a eșuat",
+      "activeOrganizationEmployeeRequired": "Este necesar contextul de angajat activ al organizației",
+      "authenticationRequired": "Autentificare obligatorie",
+      "blockerNotDismissible": "Blocajul de salarizare nu poate fi ignorat",
+      "dataTemporarilyUnavailable": "Datele de salarizare sunt temporar indisponibile",
+      "employeeIdsMustBeArray": "employeeIds trebuie să fie o matrice",
+      "employeeIdsMustContainOnlyStrings": "employeeIds trebuie să conțină doar șiruri de caractere",
+      "endDateAfterStart": "Data de încheiere trebuie să fie la fel sau ulterioară datei de început",
+      "exportBlockedByMissingIdentifier": "Export blocat: unii angajați nu au o valoare pentru câmpul personalizat folosit ca identificator de salarizare",
+      "exportBlockedByOffboardingClockRepair": "Export blocat: remediați mai întâi pontajul de ieșire la offboarding",
+      "exportBlockedByUncertainWork": "Export blocat: rezolvați mai întâi activitatea incertă din intervalul selectat",
+      "exportBlockedByUnresolvedWorkMinutes": "Export blocat: rezolvați mai întâi minutele de lucru care necesită revizuire",
+      "exportFormatNotConfigured": "Formatul de export pentru salarizare nu este configurat",
+      "exportIdentifierChanged": "Setarea identificatorului de salarizare s-a modificat după colectarea acestui export. Inițiază un export nou.",
+      "invalidBlockerId": "ID blocant de salarizare nevalid",
+      "invalidBlockerType": "Tip blocant de salarizare nevalid",
+      "mustBeIsoDate": "{field} trebuie să fie o dată ISO",
+      "mustBeValidIsoDate": "{field} trebuie să fie o dată ISO validă",
+      "noAssignedEmployees": "Niciun angajat pentru salarizare nu este atribuit domeniului dvs. de acces",
+      "noAvailableEmployees": "Nu există angajați pentru salarizare disponibili în domeniul dvs. de acces",
+      "periodLabelRequired": "Eticheta perioadei de salarizare este obligatorie",
+      "unknownExportFormat": "Format de export pentru salarizare necunoscut"
+    },
+    "export": {
+      "completed": "Exportul de salarizare s-a finalizat",
+      "formatAccessCheck": "Verificare acces format",
+      "nobodyEmployedInPeriod": "Nicio persoană din accesul dvs. la salarizare nu a fost angajată în această perioadă.",
+      "noConfiguredTarget": "Nicio destinație de export pentru salarizare configurată",
+      "queued": "Exportul pentru salarizare a fost pus în coadă",
+      "selectFormat": "Selectează formatul",
+      "target": "Destinație export salarizare",
+      "unmappedOvertimePayouts": "{count, plural, one {# plată a orelor suplimentare nu a fost exportată} other {# plăți ale orelor suplimentare nu au fost exportate}}",
+      "unmappedOvertimePayoutsDescription": "Niciun tip de salariu nu este mapat pentru Ore suplimentare în acest format. Solicitați unui administrator al organizației să mapeze unul sau plătiți aceste ore în alt mod."
+    },
+    "filters": {
+      "noMatchingEmployees": "Niciun angajat nu corespunde filtrelor de salarizare selectate."
+    },
+    "formerEmployeesExport": {
+      "description": "Exportați o lună în care oricare dintre ei era încă angajat: ultimele lor ore și plățile finale ale orelor suplimentare vor fi incluse în fișier.",
+      "export": "Export",
+      "nextMonth": "Luna următoare",
+      "previousMonth": "Luna anterioară",
+      "title": "Exportați salarizarea pentru angajații care au plecat"
+    },
+    "onlyFormerEmployees": {
+      "description": "Puteți înregistra și anula în continuare plățile pentru orele suplimentare ale acestora și puteți exporta mai jos lunile în care au fost angajați.",
+      "title": "Doar angajații care au plecat se află în accesul dvs. la salarizare"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Niciun tip de salariu nu este asociat cu Ore suplimentare pentru acest format, astfel că exportul exclude aceste plăți. Solicitați unui administrator al organizației să asocieze unul sau plătiți aceste ore în alt mod.",
+      "title": "{count, plural, one {# plată pentru ore suplimentare nu va fi exportată} other {# plăți pentru ore suplimentare nu vor fi exportate}}"
+    },
+    "period": {
+      "current": "Perioada curentă",
+      "dateRange": "{start} până la {end}",
+      "employeesInScope": "{count} angajați incluși",
+      "end": "Sfârșit",
+      "mode": {
+        "custom": "Personalizat",
+        "month": "Lună",
+        "week": "Săptămână"
+      },
+      "next": "Perioada următoare",
+      "previous": "Perioada anterioară",
+      "selected": "Perioada selectată",
+      "start": "Început"
+    },
+    "run": {
+      "discard": {
+        "action": "Renunță la rularea de salarii",
+        "confirmed": "Această rulare de salarii este deja confirmată ca fiind plătită pentru unele rapoarte, așadar nu mai poate fi anulată. Elimină în schimb rapoarte individuale din ea.",
+        "description": "{count, plural, one {Raportul de cheltuieli inclus (#) va fi din nou în așteptarea rambursării: următorul export de salarii sau un transfer bancar îl poate prelua. Renunțați la aceasta doar dacă acest fișier nu este plătit odată cu salariile.} other {Cele # rapoarte de cheltuieli incluse vor fi din nou în așteptarea rambursării: următorul export de salarii sau un transfer bancar le poate prelua. Renunțați la aceasta doar dacă acest fișier nu este plătit odată cu salariile.}}",
+        "done": "Rularea de salarii a fost eliminată. Deconturile sale de cheltuieli așteaptă din nou rambursarea.",
+        "failed": "Rularea de salarii nu a putut fi eliminată.",
+        "notFound": "Această rulare de salarii nu mai include niciun decont.",
+        "outOfScope": "Această rulare de salarii include angajați din afara ariei dvs. de salarizare.",
+        "title": "Eliminați această rulare de salarii?"
+      }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "setat manual",
+        "exceptionalItinerary": "itinerar neacoperit de normele legale",
+        "outsideVerifiedTables": "niciun tabel legal verificat pentru zilele respective"
+      },
+      "description": "Aceste cheltuieli așteaptă rambursarea, dar un export din această perioadă și în acest format le exclude. Exportul nu este blocat: plătiți-le prin transfer bancar din coada financiară.",
+      "payByBankTransfer": "Plată prin transfer bancar",
+      "reason": {
+        "apiConnector": "Acest format este un conector API, care nu include niciodată sumele cheltuielilor.",
+        "currencyNotEur": "Nu este în euro: rulările de salarizare conțin doar sume în euro.",
+        "includedInOtherRun": "Inclus în rularea de salarizare neconfirmată {period} ({format}).",
+        "legacyClaim": "Cererile de decontare vechi nu sunt plătite niciodată prin salarizare.",
+        "negativeDifference": "O ajustare a redus ceea ce includeau rulările de salarizare anterioare pentru: {kinds}.",
+        "noStatutoryBaseline": "Nicio bază legală pentru: {items}.",
+        "nothingOwed": "Liniile sale de salarizare nu mai lasă nimic de preluat în salarizare.",
+        "reimbursedOutsidePayroll": "Deja plătit parțial prin transfer bancar sau recuperat: salarizarea nu poate prelua restul.",
+        "unmappedWageType": "Niciun tip de salariu nu este mapat pentru acest format pentru: {kinds}."
+      },
+      "title": "Rapoarte de cheltuieli pe care această rulare de salarizare nu le va include",
+      "unknownEmployee": "Angajat"
+    },
+    "runs": {
+      "description": "Aceste exporturi conțin deconturi de cheltuieli care așteaptă rambursarea. Un responsabil de cheltuieli confirmă fiecare rulare după ce a fost plătită prin salarii; eliminați o rulare al cărei fișier nu este plătit.",
+      "reports": "{count, plural, one {# decont de cheltuieli} other {# deconturi de cheltuieli}}",
+      "title": "Rulări de salarii neconfirmate"
+    },
+    "scope": {
+      "allManaged": "Toți angajații și echipele pe care le gestionez",
+      "apply": "Aplică",
+      "cancel": "Anulează",
+      "currentScope": "Domeniu curent",
+      "description": "Restrânge acest spațiu de lucru pentru salarizare după angajații sau echipele atribuite.",
+      "noAssignedEmployees": "Nu există angajați alocați în acest domeniu de salarizare.",
+      "noAssignedTeams": "Nu există echipe atribuite în această sferă de salarizare.",
+      "selectedEmployeesCount": "{count} angajați",
+      "selectedSummary": "{summary} selectat",
+      "selectedTeamsCount": "{count} echipe",
+      "specificEmployees": "Angajați specifici",
+      "specificEmployeesDescription": "Alegeți angajații de inclus în acest domeniu de salarizare.",
+      "specificTeams": "Echipe specifice",
+      "specificTeamsDescription": "Alegeți echipele de inclus în acest domeniu de salarizare.",
+      "title": "Sferă salarizare"
+    },
+    "summary": {
+      "blockers": "Blocaje",
+      "employees": "Angajați",
+      "ready": "Gata",
+      "workedHours": "Ore lucrate"
+    },
+    "title": "Salarizare",
+    "unavailable": {
+      "description": "Datele de salarizare nu au putut fi pregătite în siguranță.",
+      "help": "Vă rugăm să încercați din nou mai târziu. Dacă problema persistă, contactați un administrator al organizației.",
+      "title": "Salarizarea este temporar indisponibilă"
+    },
+    "workBalances": {
+      "back": "Solduri de lucru",
+      "backToPayroll": "Salarizare",
+      "description": "Înregistrați și anulați plățile pentru ore suplimentare pentru angajații acoperiți de accesul dvs. la salarizare, inclusiv pentru angajații care au plecat.",
+      "empty": "Niciun angajat nu este încă inclus în domeniul accesului dvs. la salarizare.",
+      "former": "Fost angajat",
+      "loading": "Se încarcă soldurile de lucru",
+      "loadingEmployee": "Se încarcă soldul de lucru",
+      "open": "Solduri de lucru",
+      "title": "Solduri de lucru"
+    }
+  }
+}

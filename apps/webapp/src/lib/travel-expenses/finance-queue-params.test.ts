@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
 	DEFAULT_FINANCE_QUEUE_VIEW,
 	financeQueueSearch,
+	parseConfirmRun,
 	parseFinanceQueueView,
+	payrollRunToConfirmHref,
 } from "./finance-queue-params";
 
 const employeeId = "e7530000-0000-4000-8000-000000000001";
@@ -50,5 +52,22 @@ describe("finance queue search params (#753)", () => {
 			),
 		).toEqual(DEFAULT_FINANCE_QUEUE_VIEW);
 		expect(parseFinanceQueueView(new URLSearchParams("page=2.5")).page).toBe(1);
+	});
+});
+
+describe("payroll run confirmation link (#855)", () => {
+	const jobId = "e8550000-0000-4000-8000-0000000000aa";
+
+	it("links to the run's confirm dialog on the finance page, which reads the run back", () => {
+		expect(payrollRunToConfirmHref(jobId)).toBe(
+			`/travel-expenses/finance?confirmRun=${jobId}#payroll-runs`,
+		);
+		expect(parseConfirmRun({ confirmRun: jobId })).toBe(jobId);
+	});
+
+	it("opens no dialog for a missing, repeated or malformed run", () => {
+		expect(parseConfirmRun({})).toBeNull();
+		expect(parseConfirmRun({ confirmRun: [jobId, jobId] })).toBeNull();
+		expect(parseConfirmRun({ confirmRun: "job-1" })).toBeNull();
 	});
 });

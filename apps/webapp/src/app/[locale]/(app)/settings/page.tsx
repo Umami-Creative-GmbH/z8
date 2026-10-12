@@ -5,6 +5,7 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
 import { getCurrentSettingsRouteContext, requireUser } from "@/lib/auth-helpers";
+import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
 
 export default async function SettingsPage() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
@@ -44,10 +45,18 @@ export default async function SettingsPage() {
 			}
 		: undefined;
 
+	// The projects page grants the tasks-only view in the session's active organization.
+	const managesProject = await managesProjectBelowManagerTier(
+		accessTier,
+		authContext.user.id,
+		authContext.session.activeOrganizationId ?? null,
+	);
+
 	const { visibleSettings, visibleGroups } = getResolvedSettingsVisibility({
 		accessTier,
 		billingEnabled,
 		featureFlags,
+		managesProject,
 	});
 
 	return (

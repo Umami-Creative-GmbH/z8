@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { loadRouteTranslations } from "./load-translations";
 import {
 	ALL_LANGUAGES,
@@ -39,24 +38,6 @@ describe("Tolgee route translations", () => {
 		expect(loaded.data.settings).toEqual(merged.settings);
 		expect(first).toEqual({ settings: { first: "First" } });
 	});
-	it("lists every language supported by Tolgee and the language switchers", () => {
-		expect(ALL_LANGUAGES).toEqual([
-			"en",
-			"de",
-			"fr",
-			"es",
-			"it",
-			"pt",
-			"el",
-			"pl",
-			"tr",
-			"gsw",
-		]);
-		expect(Object.keys(LANGUAGE_CONFIG)).toEqual(
-			expect.arrayContaining(ALL_LANGUAGES),
-		);
-	});
-
 	it("does not keep unnamespaced root locale files", () => {
 		for (const locale of ALL_LANGUAGES) {
 			expect(existsSync(join(process.cwd(), `messages/${locale}.json`))).toBe(

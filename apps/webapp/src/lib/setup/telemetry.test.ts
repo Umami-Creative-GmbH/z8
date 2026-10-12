@@ -3,7 +3,11 @@ import type {
 	SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import { describe, expect, it, vi } from "vitest";
-import { SETUP_REQUEST_PATH, SetupPrivacySpanProcessor } from "./telemetry";
+import {
+	REPORT_SHARE_REQUEST_PATH,
+	SETUP_REQUEST_PATH,
+	SetupPrivacySpanProcessor,
+} from "./telemetry";
 
 describe("setup credential telemetry privacy", () => {
 	it.each([
@@ -45,5 +49,19 @@ describe("setup credential telemetry privacy", () => {
 			expect(SETUP_REQUEST_PATH.test(path)).toBe(true);
 		}
 		expect(SETUP_REQUEST_PATH.test("/settings/setup-guide")).toBe(false);
+	});
+
+	it("never exports or logs report share link URLs, whose token is a credential (#806)", () => {
+		const delegate = { onEnd: vi.fn() } as unknown as SpanProcessor;
+		new SetupPrivacySpanProcessor(delegate).onEnd({
+			name: "GET",
+			attributes: { "http.target": "/de/share/AbCdEfGhIjKlMnOpQrStUvWxYz0123456789-_abcde" },
+		} as unknown as ReadableSpan);
+		expect(delegate.onEnd).not.toHaveBeenCalled();
+
+		for (const path of ["/share/token", "/de/share/token", "/gsw/share/token"]) {
+			expect(REPORT_SHARE_REQUEST_PATH.test(path)).toBe(true);
+		}
+		expect(REPORT_SHARE_REQUEST_PATH.test("/settings/report-share-links")).toBe(false);
 	});
 });

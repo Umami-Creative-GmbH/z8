@@ -29,9 +29,11 @@ import { ProjectFilters } from "./project-filters";
 import { ProjectHealthAlerts } from "./project-health-alerts";
 import { ProjectHoursChart } from "./project-hours-chart";
 import { ProjectPortfolioTable } from "./project-portfolio-table";
+import { ProjectReportDetails } from "./project-report-details";
 import { ProjectSummaryCards } from "./project-summary-cards";
 import { ProjectTaskBreakdown } from "./project-task-breakdown";
 import { ProjectTeamBreakdown } from "./project-team-breakdown";
+import { ReportShareDialog } from "./report-share-dialog";
 
 export function ProjectReportsContainer() {
 	const { t } = useTranslate();
@@ -51,11 +53,8 @@ export function ProjectReportsContainer() {
 		await runWithCleanup(
 			async () => {
 				try {
-					const result = await getProjectsOverview(
-						new Date(range.startDate),
-						new Date(range.endDate),
-						statusFilter,
-					);
+					// The report's calendar days, as ISO dates (`reportDayRangeFromDays`).
+					const result = await getProjectsOverview(range.startDate, range.endDate, statusFilter);
 
 					if (!result.success) {
 						setError(
@@ -105,8 +104,8 @@ export function ProjectReportsContainer() {
 				try {
 					const result = await getProjectDetailedReport(
 						projectId,
-						new Date(dateRange.startDate),
-						new Date(dateRange.endDate),
+						dateRange.startDate,
+						dateRange.endDate,
 					);
 
 					if (!result.success) {
@@ -271,7 +270,19 @@ function DetailedProjectReport({
 		<TabsContent value="project" className="space-y-6">
 			{detailedReport && (
 				<>
-					<div className="flex justify-end">
+					<div className="flex flex-wrap justify-end gap-2">
+						<ReportShareDialog
+							target={{ kind: "project", projectId: detailedReport.project.id }}
+							reportName={detailedReport.project.name}
+							period={{
+								// The report's days as UTC midnights (`readProjectDetailedReport`).
+								fromDay: detailedReport.period.startDate.slice(0, 10),
+								toDay: detailedReport.period.endDate.slice(0, 10),
+							}}
+							canShareRevenue={Boolean(
+								detailedReport.summary.billable && detailedReport.billableTime,
+							)}
+						/>
 						<ReportDocumentExportButtons
 							buildDocument={(context) => buildProjectReportDocument(detailedReport, context)}
 						/>
@@ -294,6 +305,9 @@ function DetailedProjectReport({
 						project={detailedReport.project}
 						summary={detailedReport.summary}
 					/>
+
+					{/* Customer and custom fields (#820) */}
+					<ProjectReportDetails project={detailedReport.project} />
 
 					{/* Budget Progress */}
 					{detailedReport.summary.budgetHours && (

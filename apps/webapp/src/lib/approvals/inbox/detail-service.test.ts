@@ -112,14 +112,58 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(result.item.id).toBe("approval-1");
 		expect(result.sections.map((section) => section.type)).toEqual([
 			"key_value",
+			// Who covers during the absence (#1011).
+			"key_value",
 			"timeline",
 		]);
 		expect(structuredClone(result)).toEqual(result);
 	});
 
+	it("names the covering deputy and the absent approver on a deputy decision (#1016)", async () => {
+		const decided = createDetail({ status: "approved" });
+		decided.timeline.push({
+			id: "approved",
+			type: "approved",
+			// The handler only knows the assigned approver.
+			performedBy: { name: "Xavier Approver", image: null },
+			timestamp: new Date("2026-06-01T09:00:00.000Z"),
+			message: "Request approved",
+		});
+		const loadDeputyDecision = vi.fn(async () => ({
+			approvalRequestId: "approval-1",
+			entityType: "absence_entry",
+			entityId: "absence-1",
+			decision: "approved" as const,
+			decidedAt: new Date("2026-06-01T09:00:00.000Z"),
+			absenceId: "covering-absence-1",
+			deputy: { employeeId: "deputy-1", name: "Yara Deputy" },
+			actingFor: { employeeId: "manager-1", name: "Xavier Approver" },
+		}));
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request: { ...request, status: "approved" },
+			handler: createHandler(decided),
+			loadAbsenceReviewEvidence: async () => null,
+			loadDeputyDecision,
+		});
+
+		expect(loadDeputyDecision).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			approvalRequestId: "approval-1",
+			entityId: "absence-1",
+		});
+		const timeline = result.sections.find((section) => section.type === "timeline");
+		expect(timeline).toMatchObject({
+			events: [
+				{ actorName: "Avery Employee" },
+				{ actorName: "Yara Deputy", actingForName: "Xavier Approver" },
+			],
+		});
+	});
+
 	it("states the request's status, type and summary as translatable texts (#687)", async () => {
 		const result = await getApprovalInboxDetailFromRequest({ request, handler: createHandler() });
-		const [requestSection, timeline] = result.sections;
+		const [requestSection, , timeline] = result.sections;
 		expect(requestSection).toEqual({
 			type: "key_value",
 			title: { key: "approvals:approvals.request", fallback: "Request" },
@@ -150,6 +194,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		};
 		const report = await getApprovalInboxDetailFromRequest({
 			request: { ...request, status: "rejected" },
+			loadDeputyDecision: async () => null,
 			handler: createHandler(
 				createDetail({
 					status: "rejected",
@@ -199,6 +244,7 @@ describe("getApprovalInboxDetailFromRequest", () => {
 		expect(result.sections.map((section) => section.type)).toEqual([
 			"key_value",
 			"callout",
+			"key_value",
 			"timeline",
 		]);
 		expect(result.actions).toMatchObject({
@@ -206,6 +252,87 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			canReject: false,
 			canBulkApprove: false,
 		});
+		expect(structuredClone(result)).toEqual(result);
+	});
+
+	it("names the absence's deputy after the submitted facts, noting a contact only (#1011)", async () => {
+		const entity = {
+			id: "absence-1",
+			deputy: { id: "employee-2", name: "Ben Example", canDecideApprovals: false },
+		};
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: createHandler({ ...createDetail(), entity } as never),
+			loadAbsenceReviewEvidence: vi.fn(async () => null),
+		});
+
+		expect(result.sections[1]).toEqual({
+			type: "key_value",
+			title: { key: "approvals:approvals.deputy.title", fallback: "Cover" },
+			rows: [
+				{ label: { key: "approvals:approvals.deputy.label", fallback: "Deputy" }, value: "Ben Example" },
+				{
+					label: { key: "approvals:approvals.deputy.approvals", fallback: "Approvals" },
+					value: {
+						key: "approvals:approvals.deputy.contactOnly",
+						fallback: "Contact only: cannot decide approvals",
+					},
+					tone: "warning",
+				},
+			],
+		});
+	});
+
+	it("shows the approver the projected work balance after time off in lieu and still allows approval", async () => {
+		const entity = { id: "absence-1", category: { drawsOnWorkBalance: true } };
+		const loadAbsenceWorkBalance = vi.fn(async () => ({
+			currentBalanceMinutes: 240,
+			drawnMinutes: 480,
+			projectedBalanceMinutes: -240,
+			wouldBeNegative: true,
+		}));
+
+		const result = await getApprovalInboxDetailFromRequest({
+			request,
+			handler: createHandler({ ...createDetail(), entity } as never),
+			loadAbsenceReviewEvidence: vi.fn(async () => null),
+			loadAbsenceWorkBalance,
+		});
+
+		expect(loadAbsenceWorkBalance).toHaveBeenCalledWith({ organizationId: "org-1", entity });
+		expect(result.sections).toContainEqual({
+			type: "key_value",
+			title: { key: "approvals:approvals.workBalance.title", fallback: "Work balance" },
+			rows: [
+				{
+					label: { key: "approvals:approvals.workBalance.current", fallback: "Current" },
+					value: "+4:00h",
+				},
+				{
+					label: { key: "approvals:approvals.workBalance.drawn", fallback: "Drawn by request" },
+					value: "-8:00h",
+				},
+				{
+					label: { key: "approvals:approvals.workBalance.after", fallback: "After approval" },
+					value: "-4:00h",
+					tone: "warning",
+				},
+			],
+		});
+		expect(result.sections).toContainEqual({
+			type: "callout",
+			title: {
+				key: "approvals:approvals.workBalance.negativeTitle",
+				fallback: "Work balance would be negative",
+			},
+			body: {
+				key: "approvals:approvals.workBalance.negativeBody",
+				fallback:
+					"Approving this time off in lieu leaves the employee's work balance negative. You can still approve it.",
+			},
+			tone: "warning",
+		});
+		expect(result.actions.canApprove).toBe(true);
 		expect(structuredClone(result)).toEqual(result);
 	});
 

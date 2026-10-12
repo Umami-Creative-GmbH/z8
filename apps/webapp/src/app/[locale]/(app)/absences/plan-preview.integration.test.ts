@@ -121,4 +121,50 @@ describe("absence plan preview shifts", () => {
 			});
 		},
 	);
+
+	it("shows the requester the projected work balance after time off in lieu, warning when negative", async () => {
+		const org = await fixture.organization("UTC");
+		const requester = await fixture.seedEmployee({ organizationId: org.organizationId });
+		await fixture.pool.query("update employee set contract_type = 'hourly' where id = $1", [
+			requester.employeeId,
+		]);
+		await fixture.shift(org, {
+			employeeId: requester.employeeId,
+			stored: STORED_SHIFT_DATES.UTC.day,
+		});
+		await fixture.pool.query(
+			`insert into employee_work_balance
+			 (employee_id, organization_id, actual_minutes, required_minutes, balance_minutes,
+				computed_from_date, computed_through_date, computed_at, is_dirty, updated_at)
+			 values ($1, $2, 0, 0, 240, '2026-01-01', '2026-10-08', now(), false, now())`,
+			[requester.employeeId, org.organizationId],
+		);
+		const categoryId = randomUUID();
+		await fixture.pool.query(
+			`insert into absence_category
+			 (id, organization_id, type, name, requires_approval, counts_against_vacation,
+				draws_on_work_balance, is_active, updated_at)
+			 values ($1, $2, 'time_off_in_lieu', 'Time off in lieu', true, false, true, true, now())`,
+			[categoryId, org.organizationId],
+		);
+		currentEmployee.value = { id: requester.employeeId, organizationId: org.organizationId };
+
+		const result = await getAbsencePlanPreview({
+			categoryId,
+			startDate: SHIFT_DAY,
+			startPeriod: "full_day",
+			endDate: SHIFT_DAY,
+			endPeriod: "full_day",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data.workBalance).toEqual({
+			currentBalanceMinutes: 240,
+			drawnMinutes: 480,
+			projectedBalanceMinutes: -240,
+			wouldBeNegative: true,
+		});
+		expect(result.data.warnings).toContain("Work balance would be negative after this request.");
+	});
 });

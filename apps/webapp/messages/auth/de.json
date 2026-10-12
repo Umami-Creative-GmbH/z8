@@ -133,6 +133,18 @@
     "sso-not-configured": "SSO ist für diese Domain nicht konfiguriert",
     "step-one": "1. Verwenden Sie die eingeladene E-Mail-Adresse",
     "step-two": "2. Kehren Sie hierher zurück und treten Sie bei",
+    "storeApp": {
+      "continue": "Weiter",
+      "description": "Geben Sie Ihre geschäftliche E-Mail-Adresse ein. Anschließend melden Sie sich auf der Anmeldeseite Ihrer Organisation im Browser Ihres Telefons an.",
+      "error": {
+        "browser": "Die Anmeldeseite konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
+        "expired": "Die Anmeldung wurde nicht abgeschlossen oder ist abgelaufen. Bitte versuchen Sie es erneut.",
+        "rateLimited": "Zu viele Anmeldeversuche. Bitte warten Sie einen Moment und versuchen Sie es erneut.",
+        "unavailable": "Z8 konnte nicht erreicht werden. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+      },
+      "title": "Bei Z8 anmelden",
+      "waiting": "Warten auf Anmeldung…"
+    },
     "terms": {
       "privacy": "Datenschutzrichtlinie",
       "service": "Nutzungsbedingungen"

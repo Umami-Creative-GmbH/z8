@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { PayrollIdentifierMissingError } from "../../personnel-identifier";
 import type { AbsenceData, WageTypeMapping, WorkPeriodData } from "../../types";
 import {
 	PersonioExporter,
@@ -66,6 +67,37 @@ describe("selectPersonioEmployeeIdentifier", () => {
 				"employeeNumber",
 			),
 		).toBe(employeeNumber);
+	});
+
+	it("selects the frozen custom field value for custom field matching (#821)", () => {
+		expect(
+			selectPersonioEmployeeIdentifier(
+				{ employeeId: "employee-1", employeeNumber: "E-42", personnelIdentifier: "LG-0042" },
+				"customField",
+			),
+		).toBe("LG-0042");
+	});
+
+	it("refuses custom field matching without a value instead of using the employee number", () => {
+		expect(() =>
+			selectPersonioEmployeeIdentifier(
+				{ employeeId: "employee-1", employeeNumber: "E-42", personnelIdentifier: null },
+				"customField",
+			),
+		).toThrow(PayrollIdentifierMissingError);
+	});
+
+	it("accepts the custom field strategy only with a field", async () => {
+		const exporter = new PersonioExporter();
+		await expect(
+			exporter.validateConfig({
+				employeeMatchStrategy: "customField",
+				employeeMatchCustomFieldId: "field-1",
+			}),
+		).resolves.toEqual({ valid: true });
+		await expect(
+			exporter.validateConfig({ employeeMatchStrategy: "customField" }),
+		).resolves.toMatchObject({ valid: false });
 	});
 
 	it("returns null when the selected identifier is unavailable", () => {
@@ -213,6 +245,55 @@ describe("PersonioExporter identifier wiring", () => {
 		expect(apiClientMocks.createAbsences).toHaveBeenCalledWith(
 			[expect.objectContaining({ employee_id: "OPS@BERLIN" })],
 			"employeeNumber",
+		);
+	});
+
+	it("matches attendances and absences by the frozen custom field value (#821)", async () => {
+		const period: WorkPeriodData = {
+			id: "period-field",
+			employeeId: "employee-1",
+			employeeNumber: "E-1",
+			email: "employee@example.com",
+			firstName: "Pat",
+			lastName: "Example",
+			startTime: DateTime.fromISO("2026-07-28T09:15:00+02:00", { setZone: true }),
+			endTime: DateTime.fromISO("2026-07-28T17:45:00+02:00", { setZone: true }),
+			durationMinutes: 510,
+			workCategoryId: null,
+			workCategoryName: null,
+			workCategoryFactor: null,
+			projectId: null,
+			projectName: null,
+			personnelIdentifier: "LG-0042",
+		};
+		const absence: AbsenceData = {
+			id: "absence-field",
+			employeeId: "employee-1",
+			employeeNumber: "E-1",
+			email: "employee@example.com",
+			firstName: "Pat",
+			lastName: "Example",
+			startDate: "2026-07-29",
+			endDate: "2026-07-29",
+			absenceCategoryId: "category-1",
+			absenceCategoryName: "Vacation",
+			absenceType: "vacation",
+			status: "approved",
+			personnelIdentifier: "LG-0042",
+		};
+
+		await new PersonioExporter().export("org-1", [period], [absence], [createMapping()], {
+			employeeMatchStrategy: "customField",
+			employeeMatchCustomFieldId: "field-1",
+		});
+
+		expect(apiClientMocks.createAttendances).toHaveBeenCalledWith(
+			[expect.objectContaining({ employee: "LG-0042" })],
+			"customField",
+		);
+		expect(apiClientMocks.createAbsences).toHaveBeenCalledWith(
+			[expect.objectContaining({ employee_id: "LG-0042" })],
+			"customField",
 		);
 	});
 });

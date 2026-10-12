@@ -2,8 +2,15 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { AuditTrail } from "@/lib/audit-trail";
 import { protectAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import {
+	type ReleasedDeputyAssignments,
+	releaseDeputyAssignmentsOnDeactivation,
+} from "@/lib/employee-lifecycle/deputy-release";
+import { notifyReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release-runtime";
 import { secondaryStorage } from "@/lib/redis";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
 import { normalizeInvitationEmail } from "./employee-invitation-draft";
@@ -17,6 +24,8 @@ type MemberRemovalTransaction = Parameters<
 export type RemovedMemberAccessOutcome = {
 	accessRestored: boolean;
 	sessionTokens: string[];
+	/** Absences the removed member stopped covering, to notify after commit (#1014). */
+	releasedDeputies?: ReleasedDeputyAssignments | null;
 };
 
 const memberAccessRevocationDependencies = {
@@ -32,9 +41,10 @@ export async function revokeRemovedMemberAccess(
 		db: MemberRemovalDb;
 		deleteSecondarySession: (token: string) => Promise<void>;
 	} = memberAccessRevocationDependencies,
+	options: { actorUserId?: string } = {},
 ) {
 	const outcome = await dependencies.db.transaction((tx) =>
-		revokeRemovedMemberAccessInTransaction(tx, userId, organizationId),
+		revokeRemovedMemberAccessInTransaction(tx, userId, organizationId, options),
 	);
 
 	await Promise.all(
@@ -42,6 +52,7 @@ export async function revokeRemovedMemberAccess(
 			dependencies.deleteSecondarySession(token),
 		),
 	);
+	await notifyReleasedDeputyAssignments(outcome.releasedDeputies);
 	return { accessRestored: outcome.accessRestored };
 }
 
@@ -55,6 +66,10 @@ export async function revokeRemovedMemberAccessInTransaction(
 	dbClient: MemberRemovalTransaction,
 	userId: string,
 	organizationId: string,
+	options: {
+		/** Who removed the member, when known (an admin's removal or rejection). */
+		actorUserId?: string;
+	} = {},
 ): Promise<RemovedMemberAccessOutcome> {
 	await protectAuthorizationMutation(dbClient, {
 		organizationId,
@@ -89,7 +104,7 @@ export async function revokeRemovedMemberAccessInTransaction(
 		organizationId,
 		dbClient,
 	);
-	await dbClient
+	const deactivated = await dbClient
 		.update(employee)
 		.set({ isActive: false })
 		.where(
@@ -97,9 +112,23 @@ export async function revokeRemovedMemberAccessInTransaction(
 				eq(employee.userId, userId),
 				eq(employee.organizationId, organizationId),
 			),
-		);
+		)
+		.returning({ id: employee.id });
 
-	return { accessRestored: false, sessionTokens };
+	// The removed member stops being anyone's deputy (#1014), audited under the
+	// removing admin; only without a known one, under the removed member's own
+	// user. Either way marked as a system side effect.
+	const releasedDeputies = deactivated[0]
+		? await releaseDeputyAssignmentsOnDeactivation(dbClient, new AuditTrail(), {
+				organizationId,
+				employeeId: deactivated[0].id,
+				actorUserId: options.actorUserId ?? userId,
+				at: systemClock.nowInstant(),
+				reason: "member_removed",
+			})
+		: null;
+
+	return { accessRestored: false, sessionTokens, releasedDeputies };
 }
 
 const postRemovalCleanupDependencies = {
@@ -113,6 +142,7 @@ export async function completeRemovedMemberCleanupPostCommit(
 	input: {
 		organizationId: string;
 		sessionTokens: string[];
+		releasedDeputies?: ReleasedDeputyAssignments | null;
 	},
 	dependencies: {
 		deleteSecondarySession: (token: string) => Promise<void>;
@@ -124,6 +154,7 @@ export async function completeRemovedMemberCleanupPostCommit(
 			dependencies.deleteSecondarySession(token),
 		),
 	);
+	await notifyReleasedDeputyAssignments(input.releasedDeputies);
 	await dependencies.reconcileBillingSeatsForOrganization(
 		input.organizationId,
 		{ strict: true },
@@ -134,6 +165,8 @@ export async function completeRemovedMemberCleanup(
 	input: {
 		organizationId: string;
 		userId: string;
+		/** The admin removing the member, for the audit of its side effects. */
+		actorUserId?: string;
 	},
 	dependencies: {
 		revokeRemovedMemberAccess?: typeof revokeRemovedMemberAccess;
@@ -143,10 +176,11 @@ export async function completeRemovedMemberCleanup(
 	} = postRemovalCleanupDependencies,
 ) {
 	if (dependencies.revokeRemovedMemberAccess) {
-		await dependencies.revokeRemovedMemberAccess(
-			input.userId,
-			input.organizationId,
-		);
+		await (input.actorUserId
+			? dependencies.revokeRemovedMemberAccess(input.userId, input.organizationId, undefined, {
+					actorUserId: input.actorUserId,
+				})
+			: dependencies.revokeRemovedMemberAccess(input.userId, input.organizationId));
 		await dependencies.reconcileBillingSeatsForOrganization(
 			input.organizationId,
 			{ strict: true },
@@ -158,16 +192,15 @@ export async function completeRemovedMemberCleanup(
 		throw new Error("Member cleanup dependencies are incomplete");
 	}
 	const outcome = await dependencies.db.transaction((tx) =>
-		revokeRemovedMemberAccessInTransaction(
-			tx,
-			input.userId,
-			input.organizationId,
-		),
+		revokeRemovedMemberAccessInTransaction(tx, input.userId, input.organizationId, {
+			actorUserId: input.actorUserId,
+		}),
 	);
 	await completeRemovedMemberCleanupPostCommit(
 		{
 			organizationId: input.organizationId,
 			sessionTokens: outcome.sessionTokens,
+			releasedDeputies: outcome.releasedDeputies,
 		},
 		{
 			deleteSecondarySession: dependencies.deleteSecondarySession,

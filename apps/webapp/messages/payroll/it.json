@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Rimozione falso positivo in corso",
       "dateUnavailable": "Data non disponibile",
       "missingClockOut": "Uscita mancante",
+      "missingIdentifier": "Identificatore mancante",
       "needReview": "{count} blocchi delle buste paga richiedono una revisione",
       "offboardingClockRepair": "La timbratura di uscita di offboarding richiede una correzione",
       "openApprovals": "Approvazioni aperte",
       "openCalendar": "Apri calendario",
+      "openEmployee": "Apri dipendente",
       "openWork": "Ore lavorate senza timbratura di uscita",
       "openWorkDiagnostics": "Apri diagnostica del lavoro",
       "pendingAbsence": "Assenza in sospeso",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds deve essere un array",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve contenere solo stringhe",
       "endDateAfterStart": "La data di fine deve essere uguale o successiva alla data di inizio",
+      "exportBlockedByMissingIdentifier": "Esportazione bloccata: alcuni dipendenti non hanno alcun valore per il campo personalizzato utilizzato come identificativo paghe",
       "exportBlockedByOffboardingClockRepair": "Esportazione bloccata: correggi prima la timbratura di uscita per l'offboarding",
       "exportBlockedByUncertainWork": "Esportazione bloccata: risolvi prima le ore lavorate incerte nell'ambito selezionato",
       "exportBlockedByUnresolvedWorkMinutes": "Esportazione bloccata: risolvi prima i minuti di lavoro da revisionare",
       "exportFormatNotConfigured": "Il formato di esportazione buste paga non è configurato",
+      "exportIdentifierChanged": "L'impostazione dell'identificativo paghe è stata modificata dopo la creazione di questa esportazione. Avvia una nuova esportazione.",
       "invalidBlockerId": "ID blocco buste paga non valido",
       "invalidBlockerType": "Tipo di blocco buste paga non valido",
       "mustBeIsoDate": "{field} deve essere una data ISO",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Esportazione buste paga completata",
       "formatAccessCheck": "Controllo accesso formato",
+      "nobodyEmployedInPeriod": "Nessun dipendente per cui disponi dell'accesso alle buste paga risultava assunto in questo periodo.",
       "noConfiguredTarget": "Nessuna destinazione di esportazione buste paga configurata",
       "queued": "Esportazione buste paga in coda",
       "selectFormat": "Seleziona formato",
-      "target": "Destinazione esportazione buste paga"
+      "target": "Destinazione esportazione buste paga",
+      "unmappedOvertimePayouts": "{count, plural, one {# liquidazione dello straordinario non è stata esportata} other {# liquidazioni dello straordinario non sono state esportate}}",
+      "unmappedOvertimePayoutsDescription": "Nessuna voce retributiva è mappata su Straordinario per questo formato. Chiedi a un amministratore dell'organizzazione di mapparla o liquida queste ore in un altro modo."
     },
     "filters": {
       "noMatchingEmployees": "Nessun dipendente corrisponde ai filtri buste paga selezionati."
+    },
+    "formerEmployeesExport": {
+      "description": "Esporta un mese in cui almeno uno di loro era ancora assunto: le ultime ore e le liquidazioni finali degli straordinari saranno incluse nel file.",
+      "export": "Esporta",
+      "nextMonth": "Mese successivo",
+      "previousMonth": "Mese precedente",
+      "title": "Esporta buste paga per i dipendenti che hanno lasciato l'azienda"
+    },
+    "onlyFormerEmployees": {
+      "description": "Puoi ancora registrare e annullare le loro liquidazioni degli straordinari ed esportare di seguito i mesi in cui risultavano assunti.",
+      "title": "Nel tuo accesso alle buste paga sono presenti solo dipendenti che hanno lasciato l'azienda"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Nessuna voce retributiva è mappata su Straordinario per questo formato, pertanto l'esportazione esclude queste liquidazioni. Chiedi a un amministratore dell'organizzazione di mapparla o liquida queste ore in un altro modo.",
+      "title": "{count, plural, one {# liquidazione dello straordinario non sarà esportata} other {# liquidazioni dello straordinario non saranno esportate}}"
     },
     "period": {
       "current": "Periodo corrente",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Scarta elaborazione paghe",
+        "confirmed": "Questa elaborazione paghe è già confermata come pagata per alcune note spese, pertanto non può più essere annullata. Rimuovi invece le singole note spese.",
         "description": "{count, plural, one {La # nota spese inclusa tornerà in attesa di rimborso: la prossima esportazione paghe o un bonifico bancario potrà prenderla in carico. Scartala solo se questo file non viene liquidato con le paghe.} other {Le # note spese incluse torneranno in attesa di rimborso: la prossima esportazione paghe o un bonifico bancario potrà prenderle in carico. Scartala solo se questo file non viene liquidato con le paghe.}}",
         "done": "Elaborazione paghe scartata. Le relative note spese sono di nuovo in attesa di rimborso.",
         "failed": "Impossibile scartare l'elaborazione paghe.",
@@ -106,6 +129,29 @@
         "outOfScope": "Questa elaborazione paghe include dipendenti che non rientrano nel tuo ambito paghe.",
         "title": "Scartare questa elaborazione paghe?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "impostato manualmente",
+        "exceptionalItinerary": "itinerario non coperto dalle norme di legge",
+        "outsideVerifiedTables": "nessuna tabella di legge verificata per i suoi giorni"
+      },
+      "description": "Queste spese sono in attesa di rimborso, ma un'esportazione di questo periodo e formato le esclude. L'esportazione non è bloccata: effettua il pagamento con bonifico bancario dalla coda contabilità.",
+      "payByBankTransfer": "Paga con bonifico bancario",
+      "reason": {
+        "apiConnector": "Questo formato è un connettore API, che non include mai importi di spesa.",
+        "currencyNotEur": "Non in euro: le elaborazioni paghe supportano solo importi in euro.",
+        "includedInOtherRun": "Incluso nell'elaborazione paghe non confermata {period} ({format}).",
+        "legacyClaim": "Le note spese legacy non vengono mai liquidate tramite busta paga.",
+        "negativeDifference": "Una rettifica ha ridotto l'importo trasferito dalle precedenti elaborazioni paghe per: {kinds}.",
+        "noStatutoryBaseline": "Nessuna base normativa per: {items}.",
+        "nothingOwed": "Le relative voci non lasciano alcun importo residuo da trasferire nella busta paga.",
+        "reimbursedOutsidePayroll": "Già parzialmente pagato tramite bonifico o recuperato: la busta paga non può coprire la parte restante.",
+        "unmappedWageType": "Nessuna voce retributiva mappata per questo formato per: {kinds}."
+      },
+      "title": "Note spese non incluse in questa elaborazione paghe",
+      "unknownEmployee": "Dipendente"
     },
     "runs": {
       "description": "Queste esportazioni contengono note spese in attesa di rimborso. Un responsabile delle spese conferma ciascuna elaborazione una volta liquidata con le paghe; scarta un'elaborazione il cui file non viene liquidato.",
@@ -140,6 +186,17 @@
       "description": "Impossibile preparare i dati sulle buste paga in modo sicuro.",
       "help": "Riprova più tardi. Se il problema persiste, contatta un amministratore dell'organizzazione.",
       "title": "Buste paga temporaneamente non disponibili"
+    },
+    "workBalances": {
+      "back": "Saldi orari",
+      "backToPayroll": "Buste paga",
+      "description": "Registra e annulla le liquidazioni degli straordinari per i dipendenti inclusi nel tuo ambito di accesso alle buste paga, compresi i dipendenti cessati.",
+      "empty": "Nessun dipendente rientra ancora nel tuo ambito di accesso alle buste paga.",
+      "former": "Ex dipendente",
+      "loading": "Caricamento dei saldi ore lavorative",
+      "loadingEmployee": "Caricamento del saldo ore lavorative",
+      "open": "Saldi ore lavorative",
+      "title": "Saldi ore lavorative"
     }
   }
 }

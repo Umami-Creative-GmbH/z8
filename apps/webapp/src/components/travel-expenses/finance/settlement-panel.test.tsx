@@ -91,6 +91,8 @@ function account(overrides: Partial<SettlementAccount> = {}): SettlementAccount 
 		adjustments: [],
 		adjustmentOf: null,
 		adjustmentDelta: null,
+		payrollRun: null,
+		confirmedPayrollRuns: [],
 		...overrides,
 	};
 }
@@ -108,6 +110,7 @@ const paid = (amount: string): SettlementAccount["entries"][number] => ({
 	recordedByUserId: "finance-user",
 	recordedByName: "Fin Ance",
 	exportBatch: null,
+	payrollRun: null,
 });
 
 const paidFromExport = (amount: string): SettlementAccount["entries"][number] => ({
@@ -225,6 +228,41 @@ describe("settlement panel (#612)", () => {
 		mount();
 		expect(await screen.findByText("Paid €89.90")).toBeTruthy();
 		expect(screen.queryByText(/From the export/)).toBeNull();
+	});
+
+	it("names the payroll run that paid a reimbursement instead of its reference, for the employee too (#853)", async () => {
+		const settled = {
+			state: "settled" as const,
+			currencies: [
+				{
+					currency: "EUR",
+					entitlement: "70.00",
+					reimbursed: "70.00",
+					recovered: "0.00",
+					balance: "0.00",
+					state: "settled" as const,
+				},
+			],
+		};
+		const entry = {
+			...paid("70.00"),
+			reference: "Payroll run 2026-10 (DATEV Lohn & Gehalt)",
+			payrollRun: { id: "run-1", periodStart: "2026-10-01", periodEnd: "2026-10-31" },
+		};
+		for (const viewer of ["finance", "owner"] as const) {
+			mocks.getSettlement.mockResolvedValue({
+				success: true,
+				data: {
+					viewer,
+					canSettle: viewer === "finance",
+					account: account({ entries: [entry], summary: settled }),
+				},
+			});
+			mount();
+			expect(await screen.findByText("Reimbursed with payroll October 2026")).toBeTruthy();
+			expect(screen.queryByText("Payroll run 2026-10 (DATEV Lohn & Gehalt)")).toBeNull();
+			cleanup();
+		}
 	});
 
 	it("shows an overpayment as such instead of clamping it to zero", async () => {

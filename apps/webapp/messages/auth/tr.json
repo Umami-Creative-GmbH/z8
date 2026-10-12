@@ -133,6 +133,18 @@
     "sso-not-configured": "Bu alan adı için SSO yapılandırılmamış",
     "step-one": "1. Davet edilen e-postayı kullanın",
     "step-two": "2. Buraya dönün ve katılın",
+    "storeApp": {
+      "continue": "Devam et",
+      "description": "İş e-postanızı girin. Ardından telefonunuzun tarayıcısında kuruluşunuzun oturum açma sayfasından oturum açarsınız.",
+      "error": {
+        "browser": "Oturum açma sayfası açılamadı. Lütfen tekrar deneyin.",
+        "expired": "Oturum açma işlemi tamamlanamadı veya süresi doldu. Lütfen tekrar deneyin.",
+        "rateLimited": "Çok fazla oturum açma denemesi yapıldı. Lütfen biraz bekleyip tekrar deneyin.",
+        "unavailable": "Z8'e ulaşılamadı. Bağlantınızı kontrol edin ve tekrar deneyin."
+      },
+      "title": "Z8'de oturum aç",
+      "waiting": "Oturum açılması bekleniyor…"
+    },
     "terms": {
       "privacy": "Gizlilik Politikası",
       "service": "Hizmet Şartları"

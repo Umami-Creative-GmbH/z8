@@ -139,6 +139,12 @@ const passwordResetConfig = parseRateLimitEnv(
 );
 const apiConfig = parseRateLimitEnv(env.RATE_LIMIT_API, 100, 60);
 const exportConfig = parseRateLimitEnv(env.RATE_LIMIT_EXPORT, 5, 3600);
+// ICS feeds (#991): calendar apps poll about hourly, and one team feed URL may be
+// subscribed by many people. Hits are counted per feed, not per IP, because
+// Google and Microsoft fetch every subscriber's feed from shared addresses.
+const icsFeedConfig = { requests: 120, seconds: 3600 };
+// Unknown feed secrets are counted per client IP.
+const icsFeedMissConfig = { requests: 30, seconds: 600 };
 
 const limiters = {
 	/** Auth endpoints: configurable via RATE_LIMIT_AUTH (default: 10 requests per 60 seconds) */
@@ -191,6 +197,54 @@ const limiters = {
 		prefix: "ratelimit:export",
 		analytics: false,
 	}),
+	/** Kiosk pairing-code attempts per client IP (#859): 10 per 10 minutes */
+	kioskPairing: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(10, "600 s"),
+		prefix: "ratelimit:kiosk-pairing",
+		analytics: false,
+	}),
+	/** Kiosk PIN attempts per kiosk (#860): 30 per minute, every PIN-carrying call counts */
+	kioskPinAttempts: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(30, "60 s"),
+		prefix: "ratelimit:kiosk-pin",
+		analytics: false,
+	}),
+	/** ICS feed fetches, keyed by feed id (120 per hour) */
+	icsFeed: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(
+			icsFeedConfig.requests,
+			`${icsFeedConfig.seconds} s`,
+		),
+		prefix: "ratelimit:ics-feed",
+		analytics: false,
+	}),
+	/** ICS feed fetches with an unknown secret, keyed by client IP (30 per 10 minutes) */
+	icsFeedMiss: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(
+			icsFeedMissConfig.requests,
+			`${icsFeedMissConfig.seconds} s`,
+		),
+		prefix: "ratelimit:ics-feed-miss",
+		analytics: false,
+	}),
+	/** Report share link pages (#806) per client IP, any token or none (30 per 10 minutes) */
+	reportShare: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(30, "600 s"),
+		prefix: "ratelimit:report-share",
+		analytics: false,
+	}),
+	/** Report share link pages (#806) per token digest (120 per hour) */
+	reportShareToken: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(120, "3600 s"),
+		prefix: "ratelimit:report-share-token",
+		analytics: false,
+	}),
 };
 
 export type RateLimitEndpoint = keyof typeof limiters;
@@ -198,6 +252,8 @@ export type RateLimitEndpoint = keyof typeof limiters;
 export interface RateLimitResult {
 	/** Whether the request is allowed */
 	allowed: boolean;
+	/** Requests allowed per window, when known */
+	limit?: number;
 	/** Number of remaining requests in the window */
 	remaining: number;
 	/** Timestamp when the rate limit resets (Unix epoch in milliseconds) */
@@ -222,6 +278,18 @@ export const RATE_LIMIT_CONFIGS = {
 		maxRequests: exportConfig.requests,
 		windowSeconds: exportConfig.seconds,
 	},
+	kioskPairing: { maxRequests: 10, windowSeconds: 600 },
+	kioskPinAttempts: { maxRequests: 30, windowSeconds: 60 },
+	icsFeed: {
+		maxRequests: icsFeedConfig.requests,
+		windowSeconds: icsFeedConfig.seconds,
+	},
+	icsFeedMiss: {
+		maxRequests: icsFeedMissConfig.requests,
+		windowSeconds: icsFeedMissConfig.seconds,
+	},
+	reportShare: { maxRequests: 30, windowSeconds: 600 },
+	reportShareToken: { maxRequests: 120, windowSeconds: 3600 },
 };
 
 /**
@@ -278,6 +346,7 @@ export async function checkRateLimit(
 			logger.info({ identifier, endpoint, retryAfter }, "Rate limit exceeded");
 			return {
 				allowed: false,
+				limit: result.limit,
 				remaining: result.remaining,
 				resetAt: result.reset,
 				retryAfter: Math.max(0, retryAfter),
@@ -286,6 +355,7 @@ export async function checkRateLimit(
 
 		return {
 			allowed: true,
+			limit: result.limit,
 			remaining: result.remaining,
 			resetAt: result.reset,
 			retryAfter: 0,
@@ -538,6 +608,9 @@ export function createRateLimitResponse(
 ): Response {
 	const headers: Record<string, string> = {
 		"Retry-After": result.retryAfter.toString(),
+		...(result.limit === undefined
+			? {}
+			: { "X-RateLimit-Limit": result.limit.toString() }),
 		"X-RateLimit-Remaining": result.remaining.toString(),
 		"X-RateLimit-Reset": Math.floor(result.resetAt / 1000).toString(),
 	};

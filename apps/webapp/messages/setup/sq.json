@@ -1,0 +1,60 @@
+{
+  "init": {
+    "activating": "Po konfigurohet hapësira juaj e punës...",
+    "checking": "Po kontrollohet seanca...",
+    "clickToSelect": "Kliko për të zgjedhur",
+    "redirecting": "Po ridrejtoheni...",
+    "selectOrganization": "Zgjidhni organizatën",
+    "selectOrganizationDescription": "Zgjidhni me cilën organizatë dëshironi të punoni"
+  },
+  "setup": {
+    "authorization": {
+      "expiry": "Lidhja mund të përdoret një herë brenda një ore. Përfundoni konfigurimin brenda dhjetë minutave nga hapja e saj. Nëse autorizimi skadon, prisni derisa të përfundojë ora origjinale dhe rinisni serverin për të gjeneruar një lidhje të re.",
+      "instructions": "Hapni lidhjen e përkohshme të konfigurimit të shfaqur në konsolën e serverit kur niset kjo instancë.",
+      "title": "Kërkohet autorizim për konfigurim"
+    },
+    "button": {
+      "create": "Krijo llogari administratori",
+      "creating": "Po krijohet llogaria..."
+    },
+    "complete_message": "Llogaria juaj e administratorit të platformës u krijua.",
+    "complete_title": "Konfigurimi përfundoi!",
+    "continue_to_sign_in": "Vazhdoni te hyrja",
+    "creating_account": "Po krijohet llogaria juaj e administratorit...",
+    "description": "Konfiguroni llogarinë e parë të administratorit për platformën tuaj. Kjo llogari do të ketë qasje të plotë në sistem dhe është e ndarë nga llogaritë e organizatave.",
+    "error": {
+      "password_lowercase": "Fjalëkalimi duhet të përmbajë të paktën një shkronjë të vogël",
+      "password_max_length": "Fjalëkalimi duhet të ketë më së shumti 128 karaktere",
+      "password_min_length": "Fjalëkalimi duhet të ketë të paktën 12 karaktere",
+      "password_number": "Fjalëkalimi duhet të përmbajë të paktën një numër",
+      "password_required": "Fjalëkalimi është i detyrueshëm",
+      "passwords_mismatch": "Fjalëkalimet nuk përputhen",
+      "password_uppercase": "Fjalëkalimi duhet të përmbajë të paktën një shkronjë të madhe"
+    },
+    "field": {
+      "confirm_password": "Konfirmoni fjalëkalimin",
+      "confirm_password_placeholder": "Konfirmoni fjalëkalimin tuaj",
+      "email": "Adresa e email-it",
+      "email_placeholder": "admin@yourcompany.com",
+      "name": "Emri i plotë",
+      "name_placeholder": "Vendosni emrin tuaj të plotë",
+      "password": "Fjalëkalimi",
+      "password_placeholder": "Krijoni një fjalëkalim të fortë"
+    },
+    "hide_password": "Fshih fjalëkalimin",
+    "layout": {
+      "subtitle": "Konfiguroni platformën tuaj për të filluar",
+      "title": "Konfigurimi fillestar"
+    },
+    "password": {
+      "lowercase": "Shkronjë e vogël",
+      "min_length": "12+ karaktere",
+      "number": "Numër",
+      "uppercase": "Shkronjë e madhe"
+    },
+    "please_wait": "Ju lutemi prisni ndërsa konfigurojmë gjërat",
+    "show_password": "Shfaq fjalëkalimin",
+    "sign_in_with": "Tani mund të identifikoheni me",
+    "title": "Krijo administrator të platformës"
+  }
+}

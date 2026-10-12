@@ -13,6 +13,9 @@ import { and, eq, lte } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db, scheduledExport, scheduledExportExecution } from "@/db";
 import type { ScheduledExport, ScheduledExportExecution } from "@/db/schema/scheduled-export";
+import { AuditAction } from "@/lib/audit-logger";
+import { withAuditTrail } from "@/lib/audit-trail";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { calculateDateRange } from "../domain/date-range-calculator";
 import { calculateNextExecution } from "../domain/schedule-evaluator";
@@ -27,8 +30,12 @@ import {
 } from "../domain/types";
 import { DeliveryService } from "../infrastructure/delivery-service";
 import { executorRegistry } from "./executors/registry";
+import { pauseSchedulesWithIneligibleOwners } from "./schedule-owner";
 
 const logger = createLogger("ScheduledExportOrchestrator");
+
+/** Why a run happened: its schedule came due, or an org admin asked for it. */
+export type RunTrigger = { trigger: "schedule" } | { trigger: "run_now"; requestedBy: string };
 
 /**
  * Scheduled Export Orchestrator
@@ -51,6 +58,10 @@ export class ScheduledExportOrchestrator {
 		};
 
 		try {
+			// A schedule whose owner is no longer an org admin pauses instead of running (#988).
+			// Departures take effect by date, so this tick is what notices them.
+			await pauseSchedulesWithIneligibleOwners(db, { now: instantFromDate(now.toJSDate()) });
+
 			// Find all active schedules that are due
 			const dueSchedules = await this.findDueSchedules(now);
 
@@ -105,7 +116,11 @@ export class ScheduledExportOrchestrator {
 	/**
 	 * Execute a single scheduled export
 	 */
-	async executeSchedule(schedule: ScheduledExport, triggeredAt: DateTime): Promise<void> {
+	async executeSchedule(
+		schedule: ScheduledExport,
+		triggeredAt: DateTime,
+		run: RunTrigger = { trigger: "schedule" },
+	): Promise<void> {
 		const startTime = Date.now();
 
 		logger.info({ scheduleId: schedule.id, name: schedule.name }, "Executing scheduled export");
@@ -156,12 +171,13 @@ export class ScheduledExportOrchestrator {
 
 			// Execute report
 			const exportResult = await executor.execute({
+				executionId: execution.id,
 				organizationId: schedule.organizationId,
 				reportConfig,
 				dateRange,
 				filters: filterConfig,
 				payrollConfigId: schedule.payrollConfigId || undefined,
-				createdBy: schedule.createdBy,
+				ownerId: schedule.ownerId,
 				emailRecipients: deliversByEmail(schedule.deliveryMethod) ? schedule.emailRecipients : [],
 			});
 
@@ -187,25 +203,46 @@ export class ScheduledExportOrchestrator {
 				exportResult,
 			});
 
-			// Update execution with results
+			// Update execution with results; the run's delivery entry commits with it.
 			const durationMs = Date.now() - startTime;
-			await db
-				.update(scheduledExportExecution)
-				.set({
-					status: "completed",
-					underlyingJobId: exportResult.underlyingJobId,
-					underlyingJobType: exportResult.underlyingJobType,
-					s3Key: deliveryResult.s3Key,
-					s3Url: deliveryResult.s3Url,
-					fileSizeBytes: exportResult.fileSizeBytes,
-					recordCount: exportResult.recordCount,
-					emailsSent: deliveryResult.emailsSent,
-					emailsFailed: deliveryResult.emailsFailed,
-					emailErrors: deliveryResult.emailErrors,
-					completedAt: DateTime.utc().toJSDate(),
-					durationMs,
-				})
-				.where(eq(scheduledExportExecution.id, execution.id));
+			const emailed = deliversByEmail(schedule.deliveryMethod) ? schedule.emailRecipients : [];
+			await withAuditTrail((audit) =>
+				db.transaction(async (tx) => {
+					await tx
+						.update(scheduledExportExecution)
+						.set({
+							status: "completed",
+							underlyingJobId: exportResult.underlyingJobId,
+							underlyingJobType: exportResult.underlyingJobType,
+							s3Key: deliveryResult.s3Key,
+							s3Url: deliveryResult.s3Url,
+							fileSizeBytes: exportResult.fileSizeBytes,
+							recordCount: exportResult.recordCount,
+							emailsSent: deliveryResult.emailsSent,
+							emailsFailed: deliveryResult.emailsFailed,
+							emailErrors: deliveryResult.emailErrors,
+							completedAt: DateTime.utc().toJSDate(),
+							durationMs,
+						})
+						.where(eq(scheduledExportExecution.id, execution.id));
+					await audit.record(tx, {
+						organizationId: schedule.organizationId,
+						action: AuditAction.SCHEDULED_EXPORT_DELIVERED,
+						// The run acts on behalf of the schedule owner (#988).
+						actorUserId: schedule.ownerId,
+						targetType: "scheduled_export",
+						targetId: schedule.id,
+						metadata: {
+							...this.runMetadata(execution.id, run, dateRange),
+							deliveryMethod: schedule.deliveryMethod,
+							fileStored: Boolean(deliveryResult.s3Key),
+							recipients: emailed,
+							failedRecipients: (deliveryResult.emailErrors ?? []).map((error) => error.recipient),
+							skippedRecipients: [],
+						},
+					});
+				}),
+			);
 
 			// Update schedule's next execution time
 			await this.updateNextExecution(schedule, scheduleConfig);
@@ -219,16 +256,29 @@ export class ScheduledExportOrchestrator {
 			const errorStack = error instanceof Error ? error.stack : undefined;
 			const durationMs = Date.now() - startTime;
 
-			await db
-				.update(scheduledExportExecution)
-				.set({
-					status: "failed",
-					errorMessage,
-					errorStack,
-					completedAt: DateTime.utc().toJSDate(),
-					durationMs,
-				})
-				.where(eq(scheduledExportExecution.id, execution.id));
+			await withAuditTrail((audit) =>
+				db.transaction(async (tx) => {
+					await tx
+						.update(scheduledExportExecution)
+						.set({
+							// A run whose result could not be recorded is a failed run too.
+							status: "failed",
+							errorMessage,
+							errorStack,
+							completedAt: DateTime.utc().toJSDate(),
+							durationMs,
+						})
+						.where(eq(scheduledExportExecution.id, execution.id));
+					await audit.record(tx, {
+						organizationId: schedule.organizationId,
+						action: AuditAction.SCHEDULED_EXPORT_RUN_FAILED,
+						actorUserId: schedule.ownerId,
+						targetType: "scheduled_export",
+						targetId: schedule.id,
+						metadata: { ...this.runMetadata(execution.id, run), error: errorMessage },
+					});
+				}),
+			);
 
 			// Still update next execution time so we don't get stuck
 			try {
@@ -247,6 +297,22 @@ export class ScheduledExportOrchestrator {
 
 			throw error;
 		}
+	}
+
+	/** What every run entry in the audit log says about its run. */
+	private runMetadata(
+		executionId: string,
+		run: RunTrigger,
+		dateRange?: { start: DateTime; end: DateTime },
+	): Record<string, unknown> {
+		return {
+			executionId,
+			trigger: run.trigger,
+			requestedBy: run.trigger === "run_now" ? run.requestedBy : null,
+			...(dateRange
+				? { dateRange: { start: dateRange.start.toISODate(), end: dateRange.end.toISODate() } }
+				: {}),
+		};
 	}
 
 	/**

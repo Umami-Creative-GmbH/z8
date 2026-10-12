@@ -7,6 +7,11 @@
       "pleaseWait": "Vennligst vent mens vi sammenstiller dataene dine",
       "selectPeriod": "Velg en periode og klikk på «Generer rapport» for å komme i gang"
     },
+    "customFields": {
+      "no": "Nei",
+      "title": "Egendefinerte felt",
+      "yes": "Ja"
+    },
     "description": "Generer omfattende rapporter over arbeidstimer og fravær med skatterelevante hjemmekontordata",
     "employeeSelector": {
       "error": "Kunne ikke laste inn teammedlemmer",
@@ -74,7 +79,6 @@
         "description": "Kun fullført arbeid. Inntekter bruker satsene som gjaldt {date}.",
         "employee": "Ansatt",
         "hasUnpriced": "Har upriset arbeid",
-        "hoursValue": "{hours} t",
         "invoicedHours": "Fakturerte timer",
         "invoicedRevenue": "Fakturert omsetning",
         "invoicedRevenueHint": "Til satsene i fakturautkastene",
@@ -154,6 +158,13 @@
         "withoutCustomer": "Uten kunde",
         "withoutCustomerHint": "{hours} fakturerbart uten kunde, kan ikke overleveres"
       },
+      "details": {
+        "customer": "Kunde",
+        "customerFields": "Kundefelt",
+        "noCustomer": "Ingen kunde",
+        "projectFields": "Prosjektfelt",
+        "title": "Detaljer"
+      },
       "export": {
         "billableHours": "Fakturerbare timer",
         "changedAfterInvoicing": "Endret etter fakturering",
@@ -164,6 +175,10 @@
         "customer": "Kunde",
         "customerReportTitle": "Kunderapport",
         "customersTable": "Kunder",
+        "customFieldName": "Felt",
+        "customFieldRecord": "Oppføring",
+        "customFieldsTable": "Egendefinerte felt",
+        "customFieldValue": "Verdi",
         "dailyHoursTable": "Timer per dag",
         "date": "Dato",
         "employee": "Ansatt",
@@ -176,6 +191,7 @@
         "invoicingNote": "Fakturert omsetning beholder satsene fra fakturautkastet; ufakturert omsetning bruker satsene som gjaldt da rapporten ble generert.",
         "margin": "Margin",
         "marginPercent": "Margin %",
+        "no": "Nei",
         "nonBillableHours": "Ikke-fakturerbare timer",
         "pendingReview": "Ventende korrigeringer eller innsendinger",
         "period": "Periode",
@@ -186,6 +202,7 @@
         "ratesResolvedAt": "Satser per",
         "revenue": "Omsetning",
         "roundingNote": "Beløp summeres nøyaktig og avrundes halvveis opp til nærmeste cent én gang per rad; totaler summerer radene.",
+        "snapshotRatesNote": "Omsetning bruker satsene som gjaldt da dette øyeblikksbildet ble tatt.",
         "summaryTable": "Sammendrag",
         "total": "Totalt",
         "uninvoicedHours": "Ufakturerte timer",
@@ -194,7 +211,8 @@
         "unpricedWork": "Upriset arbeid",
         "withoutCustomer": "Uten kunde",
         "withoutCustomerHours": "Fakturerbare timer uten kunde",
-        "workPeriods": "Arbeidsperioder"
+        "workPeriods": "Arbeidsperioder",
+        "yes": "Ja"
       },
       "filter": {
         "activeOnly": "Kun aktive",
@@ -240,6 +258,7 @@
         "overBudget": "Over budsjett",
         "overBudgetDescription": "Budsjett overskredet"
       },
+      "hoursValue": "{hours} t",
       "page": {
         "accessDenied": "Ingen tilgang",
         "description": "Analyser prosjekttimer, budsjettbruk og teambidrag",
@@ -256,6 +275,7 @@
       },
       "table": {
         "budget": "Budsjett",
+        "customer": "Kunde",
         "daysLeft": "{days}d igjen",
         "daysOverdue": "{days}d på overtid",
         "deadline": "Frist",
@@ -306,6 +326,89 @@
         "portfolioGenerated": "Porteføljerapport generert",
         "projectGenerated": "Rapport generert for {name}",
         "unexpectedError": "Det oppsto en uventet feil"
+      }
+    },
+    "share": {
+      "action": "Del",
+      "created": {
+        "another": "Opprett en ny lenke",
+        "copied": "Kopiert",
+        "copy": "Kopier",
+        "copyFailed": "Kopier lenken ved å velge den",
+        "description": "Kopier den nå: den vises bare én gang. For å dele igjen senere, opprett en ny lenke.",
+        "title": "Delingslenken din",
+        "urlLabel": "Delingslenke"
+      },
+      "create": {
+        "failed": "Kunne ikke opprette delingslenken"
+      },
+      "dialog": {
+        "description": "Alle med lenken kan se et skrivebeskyttet øyeblikksbilde av denne rapporten for {period}, slik den er nå, frem til lenken utløper. Kostnader og margin deles aldri.",
+        "title": "Del {name}"
+      },
+      "figures": {
+        "hours": "Kun timer",
+        "revenue": "Timer + omsetning"
+      },
+      "form": {
+        "create": "Opprett lenke",
+        "employees": "Ansattfordeling",
+        "employeesDescription": "Viser hver ansatts timer under deres virkelige navn.",
+        "expiry": "Utløper etter",
+        "expiryDays": "{days, plural, one {# dag} other {# dager}}",
+        "figures": "Tall",
+        "revenueUnavailable": "Du ser ikke inntekter i denne rapporten, så du kan ikke dele den."
+      },
+      "kind": {
+        "customer": "Kunderapport",
+        "project": "Prosjektrapport"
+      },
+      "list": {
+        "createdBy": "Opprettet av {name} den {date}",
+        "deletedReport": "Slettet",
+        "empty": "Ingen delelenker ennå.",
+        "expired": "Utløpt {date}",
+        "expires": "Utløper {date}",
+        "failed": "Kunne ikke laste inn delelenker.",
+        "lastViewed": "sist {date}",
+        "loading": "Laster inn delelenker…",
+        "revokedAutomatically": "Tilbakekalt automatisk den {date}: oppretteren ser ikke lenger alle prosjekter i den",
+        "revokedBy": "Tilbakekalt av {name} den {date}",
+        "someone": "noen",
+        "title": "Lenker til denne rapporten",
+        "views": "{count, plural, one {# visning} other {# visninger}}",
+        "withEmployees": "Med fordeling per ansatt",
+        "withoutEmployees": "Uten fordeling per ansatt"
+      },
+      "page": {
+        "expiresAt": "Lenken utløper {date}",
+        "footer": "Et skrivebeskyttet øyeblikksbilde delt fra Z8. Senere endringer i arbeidet bak vises ikke.",
+        "loading": "Laster inn delt rapport",
+        "sharedBy": "Delt av {name}",
+        "takenAt": "Øyeblikksbilde tatt {date}",
+        "unavailableDescription": "Lenken kan ha utløpt eller blitt tilbakekalt, eller den kan være ufullstendig. Be personen som delte den med deg, om en ny lenke.",
+        "unavailableTitle": "Denne lenken er ikke tilgjengelig"
+      },
+      "revoke": {
+        "action": "Tilbakekall",
+        "cancel": "Avbryt",
+        "confirm": "Tilbakekall lenke",
+        "description": "Lenken slutter å fungere umiddelbart, og øyeblikksbildet slettes. Oppføringen og visningsloggen beholdes.",
+        "done": "Lenke tilbakekalt",
+        "failed": "Kunne ikke tilbakekalle lenken",
+        "title": "Tilbakekalle denne lenken?"
+      },
+      "status": {
+        "active": "Aktiv",
+        "expired": "Utløpt",
+        "revoked": "Tilbakekalt"
+      },
+      "views": {
+        "empty": "Ingen har åpnet denne lenken ennå.",
+        "failed": "Kunne ikke laste inn visninger.",
+        "loading": "Laster inn visninger…",
+        "unknownAgent": "Ukjent nettleser",
+        "unknownIp": "Ukjent IP-adresse"
       }
     },
     "summary": {

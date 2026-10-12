@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Usuwanie fałszywego alarmu",
       "dateUnavailable": "Data niedostępna",
       "missingClockOut": "Brak godziny wyjścia",
+      "missingIdentifier": "Brak identyfikatora",
       "needReview": "{count, plural, one {# blokada płacowa wymaga sprawdzenia} few {# blokady płacowe wymagają sprawdzenia} other {# blokad płacowych wymaga sprawdzenia}}",
       "offboardingClockRepair": "Rejestracja wyjścia w procesie offboardingu wymaga naprawy",
       "openApprovals": "Otwarte zatwierdzenia",
       "openCalendar": "Otwórz kalendarz",
+      "openEmployee": "Otwórz profil pracownika",
       "openWork": "Praca bez rejestracji wyjścia",
       "openWorkDiagnostics": "Otwórz diagnostykę pracy",
       "pendingAbsence": "Oczekująca nieobecność",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds musi być tablicą",
       "employeeIdsMustContainOnlyStrings": "employeeIds musi zawierać tylko ciągi znaków",
       "endDateAfterStart": "Data końcowa musi być późniejsza lub równa dacie początkowej",
+      "exportBlockedByMissingIdentifier": "Eksport zablokowany: niektórzy pracownicy nie mają wartości w polu niestandardowym używanym jako identyfikator płacowy",
       "exportBlockedByOffboardingClockRepair": "Eksport zablokowany: najpierw napraw zakończenie pracy w ramach offboardingu",
       "exportBlockedByUncertainWork": "Eksport zablokowany: najpierw wyjaśnij niepewny czas pracy w wybranym zakresie",
       "exportBlockedByUnresolvedWorkMinutes": "Eksport zablokowany: najpierw rozpatrz minuty pracy wymagające weryfikacji",
       "exportFormatNotConfigured": "Format eksportu płac nie jest skonfigurowany",
+      "exportIdentifierChanged": "Ustawienie identyfikatora płacowego uległo zmianie po wygenerowaniu tego eksportu. Rozpocznij nowy eksport.",
       "invalidBlockerId": "Nieprawidłowy identyfikator blokady listy płac",
       "invalidBlockerType": "Nieprawidłowy typ blokady listy płac",
       "mustBeIsoDate": "{field} musi być datą w formacie ISO",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Eksport płac zakończony",
       "formatAccessCheck": "Sprawdzenie dostępu do formatu",
+      "nobodyEmployedInPeriod": "Żadna z osób w Twoim dostępie płacowym nie była zatrudniona w tym okresie.",
       "noConfiguredTarget": "Brak skonfigurowanego celu eksportu płac",
       "queued": "Eksport płac został dodany do kolejki",
       "selectFormat": "Wybierz format",
-      "target": "Cel eksportu płac"
+      "target": "Cel eksportu płac",
+      "unmappedOvertimePayouts": "{count, plural, one {# wypłata za nadgodziny nie została wyeksportowana} few {# wypłaty za nadgodziny nie zostały wyeksportowane} other {# wypłat za nadgodziny nie zostało wyeksportowanych} }",
+      "unmappedOvertimePayoutsDescription": "Żaden składnik wynagrodzenia nie jest przypisany do Nadgodzin dla tego formatu. Poproś administratora organizacji o jego przypisanie lub rozlicz te godziny w inny sposób."
     },
     "filters": {
       "noMatchingEmployees": "Brak pracowników pasujących do wybranych filtrów płacowych."
+    },
+    "formerEmployeesExport": {
+      "description": "Wyeksportuj miesiąc, w którym którakolwiek z tych osób była jeszcze zatrudniona: jej ostatnie godziny i końcowe wypłaty za nadgodziny trafią do pliku.",
+      "export": "Eksportuj",
+      "nextMonth": "Następny miesiąc",
+      "previousMonth": "Poprzedni miesiąc",
+      "title": "Wyeksportuj płace dla byłych pracowników"
+    },
+    "onlyFormerEmployees": {
+      "description": "Nadal możesz rejestrować i anulować ich wypłaty za nadgodziny oraz wyeksportować poniżej miesiące, w których byli zatrudnieni.",
+      "title": "W Twoim dostępie płacowym znajdują się wyłącznie byli pracownicy"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Żaden składnik wynagrodzenia nie jest przypisany do Nadgodzin dla tego formatu, więc eksport pomija te wypłaty. Poproś administratora organizacji o jego przypisanie lub rozlicz te godziny w inny sposób.",
+      "title": "{count, plural, one {# wypłata za nadgodziny nie zostanie wyeksportowana} few {# wypłaty za nadgodziny nie zostaną wyeksportowane} other {# wypłat za nadgodziny nie zostanie wyeksportowanych} }"
     },
     "period": {
       "current": "Bieżący okres",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Odrzuć przebieg listy płac",
+        "confirmed": "Ta lista płac została już oznaczona jako opłacona dla niektórych raportów, więc nie można jej już odrzucić. Zamiast tego usuń z niej pojedyncze raporty.",
         "description": "{count, plural, one {Zawarty w nim # raport z wydatków będzie ponownie oczekiwać na zwrot kosztów: może go objąć kolejny eksport listy płac lub przelew bankowy. Odrzuć go tylko wtedy, gdy ten plik nie zostanie opłacony z listą płac.} other {Zawarte w nim # raportów z wydatków będzie ponownie oczekiwać na zwrot kosztów: może je objąć kolejny eksport listy płac lub przelew bankowy. Odrzuć go tylko wtedy, gdy ten plik nie zostanie opłacony z listą płac.}}",
         "done": "Przebieg listy płac został odrzucony. Zawarte w nim raporty z wydatków ponownie oczekują na zwrot kosztów.",
         "failed": "Nie udało się odrzucić przebiegu listy płac.",
@@ -106,6 +129,29 @@
         "outOfScope": "Ten przebieg listy płac obejmuje pracowników spoza Twojego zakresu płacowego.",
         "title": "Odrzucić ten przebieg listy płac?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "ustawiono ręcznie",
+        "exceptionalItinerary": "trasa nieobjęta przepisami ustawowymi",
+        "outsideVerifiedTables": "brak zweryfikowanej tabeli stawek ustawowych dla tych dni"
+      },
+      "description": "Te wydatki oczekują na zwrot, ale eksport dla tego okresu i formatu je pomija. Eksport nie jest zablokowany: opłać je przelewem bankowym z kolejki finansowej.",
+      "payByBankTransfer": "Zapłać przelewem bankowym",
+      "reason": {
+        "apiConnector": "Ten format to łącznik API, który nigdy nie przesyła kwot wydatków.",
+        "currencyNotEur": "Waluta inna niż euro: listy płac obejmują wyłącznie kwoty w euro.",
+        "includedInOtherRun": "Uwzględniono w niepotwierdzonej liście płac {period} ({format}).",
+        "legacyClaim": "Archiwalne wnioski nigdy nie są wypłacane za pośrednictwem listy płac.",
+        "negativeDifference": "Korekta obniżyła kwoty uwzględnione we wcześniejszych listach płac dla: {kinds}.",
+        "noStatutoryBaseline": "Brak podstawy ustawowej dla: {items}.",
+        "nothingOwed": "W jej pozycjach płacowych nie ma już nic do uwzględnienia na liście płac.",
+        "reimbursedOutsidePayroll": "Już częściowo opłacono przelewem bankowym lub odzyskano: lista płac nie może objąć reszty.",
+        "unmappedWageType": "Dla tego formatu nie zmapowano żadnego składnika wynagrodzenia dla: {kinds}."
+      },
+      "title": "Raporty wydatków, których nie obejmie ta lista płac",
+      "unknownEmployee": "Pracownik"
     },
     "runs": {
       "description": "Te eksporty zawierają raporty z wydatków oczekujące na zwrot kosztów. Specjalista ds. wydatków potwierdza każdy przebieg po jego opłaceniu w ramach listy płac; odrzuć przebieg, którego plik nie został opłacony.",
@@ -140,6 +186,17 @@
       "description": "Nie udało się bezpiecznie przygotować danych płacowych.",
       "help": "Spróbuj ponownie później. Jeśli problem będzie się powtarzał, skontaktuj się z administratorem organizacji.",
       "title": "Płace tymczasowo niedostępne"
+    },
+    "workBalances": {
+      "back": "Salda czasu pracy",
+      "backToPayroll": "Płace",
+      "description": "Rejestruj i anuluj wypłaty za nadgodziny dla pracowników objętych Twoimi uprawnieniami płacowymi, w tym byłych pracowników.",
+      "empty": "W Twoim zakresie dostępu do płac nie ma jeszcze żadnych pracowników.",
+      "former": "Były pracownik",
+      "loading": "Wczytywanie bilansów czasu pracy",
+      "loadingEmployee": "Wczytywanie bilansu czasu pracy",
+      "open": "Bilanse czasu pracy",
+      "title": "Bilanse czasu pracy"
     }
   }
 }

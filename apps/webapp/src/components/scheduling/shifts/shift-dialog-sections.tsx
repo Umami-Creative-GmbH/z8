@@ -21,6 +21,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import type { StaffingSuggestion } from "@/lib/scheduling/staffing/types";
+import { StaffingSuggestionsPanel } from "./staffing-suggestions-panel";
 import type { ShiftDialogEmployee, ShiftDialogLocation } from "./use-shift-dialog-data";
 import type { ShiftDialogFormApi, ShiftDialogFormValues } from "./use-shift-dialog-form";
 
@@ -35,6 +37,13 @@ interface ShiftDialogSectionsProps {
 	isValidatingSkills: boolean;
 	isEditing: boolean;
 	shift: ShiftWithRelations | null;
+	organizationTimezone: string;
+	/** Staffing suggestions while the shift is open with its subarea, date and times set. */
+	staffing: {
+		suggestions: StaffingSuggestion[] | undefined;
+		isLoading: boolean;
+		isError: boolean;
+	} | null;
 }
 
 interface ShiftDialogFooterBaseProps {
@@ -104,6 +113,8 @@ export function ShiftDialogSections({
 	isValidatingSkills,
 	isEditing,
 	shift,
+	organizationTimezone,
+	staffing,
 }: ShiftDialogSectionsProps) {
 	const { t } = useTranslate();
 
@@ -320,6 +331,16 @@ export function ShiftDialogSections({
 						</div>
 					)}
 				</form.Field>
+			)}
+
+			{isManager && staffing && (
+				<StaffingSuggestionsPanel
+					suggestions={staffing.suggestions}
+					isLoading={staffing.isLoading}
+					isError={staffing.isError}
+					organizationTimezone={organizationTimezone}
+					onPick={(employeeId) => form.setFieldValue("employeeId", employeeId)}
+				/>
 			)}
 
 			{isManager && formValues.employeeId && formValues.subareaId && (

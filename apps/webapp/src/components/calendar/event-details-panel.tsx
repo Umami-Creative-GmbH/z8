@@ -2,6 +2,7 @@
 
 import { useTranslate } from "@tolgee/react";
 import { Temporal } from "temporal-polyfill";
+import { DeputyName } from "@/components/absences/deputy-name";
 import { Badge } from "@/components/ui/badge";
 import {
 	Sheet,
@@ -10,7 +11,7 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import type { CalendarEvent, WorkPeriodEvent } from "@/lib/calendar/types";
+import type { AbsenceEvent, CalendarEvent, WorkPeriodEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
 import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
@@ -119,11 +120,7 @@ function HolidayDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 }
 
 function AbsenceDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
-	const metadata = event.metadata as {
-		categoryName: string;
-		status: "pending" | "approved" | "rejected";
-		employeeName: string;
-	};
+	const metadata = event.metadata as AbsenceEvent["metadata"];
 	const statusColors = {
 		pending: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
 		approved: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
@@ -152,6 +149,16 @@ function AbsenceDetails({ event, t }: { event: CalendarEvent; t: Translate }) {
 					<Badge className={statusColors[metadata.status]}>{statusLabels[metadata.status]}</Badge>
 				</div>
 			</div>
+			{metadata.deputy ? (
+				<div>
+					<span className="text-sm text-muted-foreground">
+						{t("calendar.details.deputy", "Deputy")}
+					</span>
+					<p className="font-medium">
+						<DeputyName deputy={metadata.deputy} />
+					</p>
+				</div>
+			) : null}
 			{event.endDate && event.date.getTime() !== event.endDate.getTime() && (
 				<DetailValue
 					label={t("calendar.details.dateRange", "Date Range")}

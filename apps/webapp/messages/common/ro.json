@@ -1,0 +1,1163 @@
+{
+  "actions": {
+    "cancel": "Anulare",
+    "delete": "Ștergere",
+    "refresh": "Reîmprospătare"
+  },
+  "analytics": {
+    "export": {
+      "export": "Exportă",
+      "exportAsCsv": "Exportă ca CSV",
+      "exportAsExcel": "Exportă ca Excel",
+      "exportedAsFormat": "Exportat ca {format}",
+      "exportingFormat": "Se exportă {format}…",
+      "failedAsFormat": "Exportarea ca {format} a eșuat"
+    }
+  },
+  "appSearch": {
+    "commandDescription": "Caută pagini, persoane, echipe, setări sau acțiuni",
+    "commandPlaceholder": "Caută pagini, persoane, echipe, setări sau acțiuni…",
+    "commands": {
+      "addManualTimeEntry": {
+        "keywords": {
+          "entry": "înregistrare",
+          "hours": "ore",
+          "manual": "manual",
+          "time": "timp"
+        },
+        "subtitle": "Înregistrează ore pentru o tură anterioară sau o corecție",
+        "title": "Adaugă o înregistrare manuală a timpului"
+      },
+      "createProject": {
+        "keywords": {
+          "create": "creare",
+          "project": "proiect",
+          "settings": "setări"
+        },
+        "subtitle": "Deschide setările proiectului pentru a defini un proiect nou",
+        "title": "Creează proiect"
+      },
+      "inviteTeammate": {
+        "keywords": {
+          "invite": "invitare",
+          "member": "membru",
+          "teammate": "coleg de echipă"
+        },
+        "subtitle": "Deschide gestionarea organizației pentru a adăuga un coleg",
+        "title": "Invită un coechipier"
+      },
+      "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "aprobări",
+          "inbox": "mesaje primite",
+          "review": "revizuire"
+        },
+        "subtitle": "Revizuiește cererile în așteptare ale angajaților",
+        "title": "Deschide caseta de aprobări"
+      },
+      "openMyRequests": {
+        "keywords": {
+          "mine": "ale mele",
+          "requests": "cereri"
+        },
+        "subtitle": "Revizuiește absențele și cheltuielile trimise",
+        "title": "Deschide cererile mele"
+      },
+      "openPayroll": {
+        "keywords": {
+          "export": "export",
+          "payroll": "salarizare",
+          "wages": "salarii"
+        },
+        "subtitle": "Examinați spațiul de lucru delimitat pentru salarizare",
+        "title": "Deschide salarizarea"
+      },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "export",
+          "payroll": "salarizare",
+          "readiness": "pregătire"
+        },
+        "subtitle": "Verifică dacă datele de pontaj sunt pregătite pentru salarizare",
+        "title": "Deschide pregătirea pentru salarizare"
+      },
+      "openSettings": {
+        "keywords": {
+          "preferences": "preferințe",
+          "settings": "setări"
+        },
+        "subtitle": "Gestionează-ți profilul, securitatea și setările organizației",
+        "title": "Deschide setările"
+      },
+      "requestAbsence": {
+        "keywords": {
+          "absence": "absență",
+          "timeOff": "zile libere",
+          "vacation": "concediu"
+        },
+        "subtitle": "Inițiază o cerere de concediu de odihnă, medical sau timp liber",
+        "title": "Solicită absență"
+      },
+      "submitTravelExpense": {
+        "keywords": {
+          "expense": "cheltuială",
+          "reimbursement": "decontare",
+          "travel": "deplasare"
+        },
+        "subtitle": "Creează o cerere de decontare pentru cheltuielile de deplasare",
+        "title": "Trimite o cheltuială de deplasare"
+      }
+    },
+    "empty": "Nu s-au găsit rezultate.",
+    "groups": {
+      "actions": "Acțiuni",
+      "pages": "Pagini",
+      "people": "Persoane",
+      "settings": "Setări",
+      "teams": "Echipe"
+    },
+    "search": "Căutare",
+    "searchOrRunCommand": "Caută sau execută o comandă",
+    "teamAbsences": {
+      "description": "Revizuiește indicatorii de absență ai angajaților și înregistrează absențe",
+      "keywords": {
+        "absence": "absență",
+        "manager": "manager",
+        "sick": "medical",
+        "team": "echipă",
+        "vacation": "concediu"
+      }
+    }
+  },
+  "billing": {
+    "suspended": {
+      "adminDescription": "Perioada de probă s-a încheiat sau abonamentul nu mai este valabil. Actualizați datele de facturare pentru a continua să utilizați Z8.",
+      "goToBilling": "Mergeți la facturare",
+      "memberDescription": "Această organizație este suspendată. Contactați un administrator al organizației pentru a actualiza datele de facturare.",
+      "title": "Organizație suspendată"
+    },
+    "trialBanner": {
+      "description": "{days} zile rămase. Adăugați detaliile de plată acum; abonamentul dvs. plătit începe după perioada de probă.",
+      "dismiss": "Închide bannerul de probă",
+      "title": "Perioadă de probă de 14 zile activă",
+      "upgrade": "Faceți upgrade"
+    }
+  },
+  "closedMonths": {
+    "closeThisMonth": "Închideți această lună",
+    "status": {
+      "closed": "Închisă",
+      "open": "Deschisă",
+      "partlyClosed": "Închisă parțial ({closed} din {total})"
+    },
+    "stripLabel": "Luni închise",
+    "unclosedDescription": "Activitatea și absențele din aceste luni se pot modifica în continuare după export. Închideți o lună odată ce salarizarea acesteia este definitivă.",
+    "unclosedTitle": "Nu toate lunile din acest interval sunt închise"
+  },
+  "colors": {
+    "blue": "Albastru",
+    "green": "Verde",
+    "indigo": "Indigo",
+    "orange": "Portocaliu",
+    "pink": "Roz",
+    "purple": "Violet",
+    "red": "Roșu",
+    "teal": "Turcoaz"
+  },
+  "common": {
+    "actions": "Acțiuni",
+    "active": "Activ",
+    "add": "Adaugă",
+    "adding": "Se adaugă...",
+    "all": "Toate",
+    "appName": "Z8",
+    "approve": "Aprobă",
+    "assign": "Atribuie",
+    "back": "Înapoi",
+    "brandLogo": "Sigla {brand}",
+    "breadcrumb": {
+      "breadcrumb": "fir de navigare",
+      "more": "Mai multe"
+    },
+    "cancel": "Anulează",
+    "carousel": {
+      "nextSlide": "Diapozitivul următor",
+      "previousSlide": "Diapozitivul anterior",
+      "roleDescription": "carusel",
+      "slideRoleDescription": "diapozitiv"
+    },
+    "clear": "Șterge",
+    "clearSearch": "Șterge căutarea",
+    "clearSelection": "Golește",
+    "close": "Închide",
+    "confirm": "Confirmă",
+    "continue": "Continuați",
+    "copy": "Copiază",
+    "create": "Creează",
+    "current": "Curent",
+    "datePicker": {
+      "clearDate": "Șterge data",
+      "placeholder": "Alege o dată"
+    },
+    "days": {
+      "count": "{count} zile",
+      "friday": "Vineri",
+      "half": "0,5 zile",
+      "label": "zile",
+      "monday": "Luni",
+      "one": "1 zi",
+      "saturday": "Sâmbătă",
+      "sunday": "Duminică",
+      "thursday": "Joi",
+      "tuesday": "Marți",
+      "wednesday": "Miercuri"
+    },
+    "delete": "Șterge",
+    "deleting": "Se șterge...",
+    "deployment": {
+      "skew": {
+        "description": "Reîncărcați pagina pentru a continua. Ultima acțiune nu a fost salvată.",
+        "title": "Z8 a fost actualizat"
+      }
+    },
+    "description": "Descriere",
+    "deselectAll": "Deselectează tot",
+    "details": "Detalii",
+    "download": "Descarcă",
+    "duplicate": "Duplicare",
+    "durationMinutes": "{count} min",
+    "edit": "Editează",
+    "enabled": "Activat",
+    "error": "Eroare",
+    "error-occurred": "A apărut o eroare",
+    "errors": {
+      "monthClosed": "{month} este închisă. Trebuie redeschisă înainte ca activitatea sau absențele să poată fi modificate."
+    },
+    "fieldPresets": "Presetări {label}",
+    "focusInput": "Focalizare câmp",
+    "gender": {
+      "female": "Feminin",
+      "male": "Masculin",
+      "other": "Altul"
+    },
+    "goToDashboard": "Mergi la panoul de control",
+    "inactive": "Inactiv",
+    "label": "Etichetă",
+    "loading": "Se încarcă...",
+    "loadingLabel": "Se încarcă",
+    "loadingRegions": {
+      "absences": "Se încarcă absențele",
+      "adminConsole": "Se încarcă consola de administrare",
+      "analyticsNavigation": "Se încarcă navigarea pentru statistici",
+      "application": "Se încarcă aplicația",
+      "auditExportSettings": "Se încarcă setările de export pentru audit",
+      "authentication": "Se încarcă autentificarea",
+      "changePolicySettings": "Se încarcă setările politicii de modificare",
+      "coverageRuleSettings": "Se încarcă setările regulilor de acoperire",
+      "customerSettings": "Se încarcă setările clienților",
+      "customRoleSettings": "Se încarcă setările rolurilor personalizate",
+      "dashboard": "Se încarcă tabloul de bord",
+      "dataExportSettings": "Se încarcă setările de export al datelor",
+      "demoDataSettings": "Se încarcă setările datelor demo",
+      "deploymentDiagnostics": "Se încarcă diagnosticele de implementare",
+      "employeeReports": "Se încarcă rapoartele angajaților",
+      "employeeVacationAllowances": "Se încarcă alocările de concediu ale angajaților",
+      "exportOperations": "Se încarcă operațiunile de export",
+      "holidaySettings": "Se încarcă setările sărbătorilor legale",
+      "importReview": "Se încarcă revizuirea importului",
+      "importSettings": "Se încarcă setările de import",
+      "locationSettings": "Se încarcă setările locației",
+      "onboarding": "Se încarcă integrarea",
+      "payrollExportSettings": "Se încarcă setările de export pentru salarizare",
+      "payrollReadiness": "Se încarcă starea de pregătire a salarizării",
+      "payrollWorkspace": "Se încarcă spațiul de lucru pentru salarizare",
+      "platformAdminOverview": "Se încarcă prezentarea generală de administrare a platformei",
+      "platformAnalytics": "Se încarcă analizele platformei",
+      "platformBilling": "Se încarcă facturarea platformei",
+      "platformSetup": "Se încarcă configurarea platformei",
+      "projectReports": "Se încarcă rapoartele de proiect",
+      "projectSettings": "Se încarcă setările proiectului",
+      "scheduledExports": "Se încarcă exporturile programate",
+      "shiftSchedule": "Se încarcă programul schimburilor",
+      "shiftTemplateSettings": "Se încarcă setările șabloanelor de schimb",
+      "skillSettings": "Se încarcă setările competențelor",
+      "surchargeSettings": "Se încarcă setările sporurilor",
+      "team": "Se încarcă echipa",
+      "todaySManagerBriefing": "Se încarcă informarea de astăzi pentru manager",
+      "travelExpenses": "Se încarcă cheltuielile de deplasare",
+      "travelExpenseSettings": "Se încarcă setările cheltuielilor de deplasare",
+      "twoFactorVerification": "Se încarcă verificarea în doi pași",
+      "vacationSettings": "Se încarcă setările pentru concedii",
+      "wellnessSettings": "Se încarcă setările de wellness",
+      "workCategorySettings": "Se încarcă setările categoriilor de muncă",
+      "workerQueue": "Se încarcă coada de lucru",
+      "workPolicySettings": "Se încarcă setările politicilor de lucru",
+      "worksCouncilPortal": "Se încarcă portalul Consiliului de întreprindere",
+      "yourRequests": "Se încarcă cererile dumneavoastră"
+    },
+    "loadMore": "Încarcă mai multe",
+    "months": {
+      "april": "Aprilie",
+      "august": "August",
+      "december": "Decembrie",
+      "february": "Februarie",
+      "january": "Ianuarie",
+      "july": "Iulie",
+      "june": "Iunie",
+      "march": "Martie",
+      "may": "Mai",
+      "november": "Noiembrie",
+      "october": "Octombrie",
+      "september": "Septembrie"
+    },
+    "more": "mai multe",
+    "moreActions": "Mai multe acțiuni",
+    "moveDown": "Mută în jos",
+    "moveUp": "Mută în sus",
+    "name": "Nume",
+    "new": "Nou",
+    "next": "Următorul",
+    "notApplicable": "N/A",
+    "not-available": "Indisponibil",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Notificări} other {Notificări (# necitite)}}"
+    },
+    "open": "Deschide",
+    "openEnded": "Fără dată de final",
+    "openMenu": "Deschide meniul",
+    "optional": "opțional",
+    "or": "Sau",
+    "pagination": {
+      "goToNextPage": "Mergeți la pagina următoare",
+      "goToPreviousPage": "Mergeți la pagina anterioară",
+      "morePages": "Mai multe pagini",
+      "pagination": "paginare"
+    },
+    "pending": "În așteptare",
+    "positionCaptureErrors": {
+      "adminOnly": "Numai proprietarii și administratorii organizației pot gestiona înregistrarea poziției.",
+      "assignmentNotFound": "Această atribuire nu mai există.",
+      "employeeNotFound": "Acest angajat nu a fost găsit.",
+      "employeeProfileRequired": "Este necesar un profil de angajat în această organizație.",
+      "invalidTarget": "Alegeți cui i se aplică atribuirea.",
+      "noticeChanged": "Notificarea privind poziția s-a modificat. Consultați notificarea actuală înainte de a decide.",
+      "positionsForbidden": "Nu aveți permisiunea de a vedea pozițiile din această perioadă de lucru.",
+      "purposeRequired": "Este necesară o declarație de scop înainte de a putea activa înregistrarea poziției.",
+      "purposeTooLong": "Declarația de scop este prea lungă.",
+      "retentionOutOfRange": "Păstrarea trebuie să fie un număr întreg de zile între {min} și {max}.",
+      "signInRequired": "Conectați-vă mai întâi la o organizație.",
+      "teamNotFound": "Această echipă nu a fost găsită.",
+      "workPeriodNotFound": "Această perioadă de lucru nu a fost găsită."
+    },
+    "positionConsent": {
+      "agree": "De acord",
+      "description": "Organizația dvs. solicită înregistrarea poziției dispozitivului dvs. la pontarea la intrare, ieșire sau la luarea unei pauze. Evenimentul dvs. de pontaj a fost oricum înregistrat. Dacă sunteți de acord, pozițiile vor fi înregistrate începând cu următorul eveniment de pontaj.",
+      "notNow": "Nu acum",
+      "title": "Înregistrați poziția la evenimentele de pontaj?"
+    },
+    "positionNotice": {
+      "never": "Pontările la ieșire efectuate de altcineva în locul dvs., pontările automate la ieșire, importurile și corecțiile nu conțin niciodată o poziție. Dacă dispozitivul dvs. nu poate furniza o poziție, evenimentul de pontaj este înregistrat fără aceasta și nu se înregistrează motivul.",
+      "purposeTitle": "De ce înregistrează organizația dvs. pozițiile",
+      "retention": "{days, plural, one {Fiecare poziție este ștearsă la # zi după ce a fost înregistrată. Evenimentele dvs. de pontaj rămân.} other {Fiecare poziție este ștearsă la # zile după ce a fost înregistrată. Evenimentele dvs. de pontaj rămân.}}",
+      "retentionTitle": "Cât timp sunt păstrate pozițiile",
+      "version": "Notificare privind poziția, versiunea {version}",
+      "viewers": "Puteți vedea propriile poziții. Proprietarii și administratorii organizației, precum și persoanele cărora li s-a acordat permisiunea în mod explicit, le pot vedea pentru o singură perioadă de lucru, iar fiecare astfel de vizualizare este înregistrată în jurnal pentru a o putea vedea. Rolul de manager nu acordă acces. Comitetul de întreprindere nu vede niciodată poziții individuale.",
+      "viewersTitle": "Cine poate vedea pozițiile",
+      "what": "Când pontați la intrare, la ieșire, începeți sau încheiați o pauză în aplicația web Z8 de pe dispozitivul dvs., poziția dispozitivului este înregistrată odată cu acel eveniment de pontaj: latitudine, longitudine, cât de precisă este poziția și când a determinat-o dispozitivul. Nu se înregistrează adresa, altitudinea sau viteza și nu se înregistrează nimic între evenimentele de pontaj.",
+      "whatTitle": "Ce se înregistrează",
+      "withdraw": "Pozițiile sunt înregistrate doar atât timp cât sunteți de acord. Vă puteți retrage consimțământul în orice moment din Setări, Ștampile de poziție. Retragerea oprește înregistrarea și șterge imediat toate pozițiile înregistrate. Faptul că sunteți sau nu de acord nu are niciun efect asupra evenimentelor de pontaj.",
+      "withdrawTitle": "Alegerea dvs."
+    },
+    "present": "Prezent",
+    "previous": "Anterior",
+    "recovering": "Se recuperează...",
+    "refresh": "Reîmprospătează",
+    "refreshing": "Se reîmprospătează...",
+    "reject": "Respinge",
+    "rejecting": "Se respinge…",
+    "remove": "Elimină",
+    "removing": "Se elimină...",
+    "reset": "Resetează",
+    "retry": "Reîncearcă",
+    "save": "Salvează",
+    "saveChanges": "Salvează modificările",
+    "saving": "Se salvează...",
+    "selectAll": "Selectează tot",
+    "selected": "selectat",
+    "select-language": "Selectează limba",
+    "set": "set",
+    "sets": "seturi",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Afișează bara laterală pentru mobil.",
+      "sidebar": "Bara laterală",
+      "toggleSidebar": "Comută bara laterală"
+    },
+    "skip": "Omite",
+    "start": "Start",
+    "status": "Stare",
+    "submitting": "Se trimite…",
+    "sw": {
+      "update": {
+        "description": "O nouă versiune este gata. Reîncărcați pentru a actualiza.",
+        "later": "Mai târziu",
+        "reload": "Reîncarcă",
+        "title": "Actualizare disponibilă"
+      }
+    },
+    "timeInput": {
+      "openTimePicker": "Deschide selectorul de oră",
+      "switchPeriod": "Comută la {period}"
+    },
+    "to": "la",
+    "today": "Astăzi",
+    "unexpectedError": "A apărut o eroare neașteptată",
+    "unknown": "Necunoscut",
+    "unknownEmployee": "Angajat necunoscut",
+    "unknownTeam": "Echipă necunoscută",
+    "unnamed": "Fără nume",
+    "update": "Actualizează",
+    "updating": "Se actualizează...",
+    "uploading": "Se încarcă...",
+    "validate": "Validează",
+    "validationError": "Eroare de validare",
+    "weekdays": {
+      "fr": "Vi",
+      "fri": "Vin",
+      "mo": "Lu",
+      "mon": "Lun",
+      "sa": "Sâ",
+      "sat": "Sâm",
+      "su": "Du",
+      "sun": "Dum",
+      "th": "Jo",
+      "thu": "Joi",
+      "tu": "Ma",
+      "tue": "Mar",
+      "we": "Mi",
+      "wed": "Mie"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Modificări cu impact asupra forței de muncă limitate la această organizație și perioadă.",
+      "changeLogEmpty": "Nu s-au găsit modificări pentru această perioadă.",
+      "changeReviewLog": "Jurnal de revizuire a modificărilor",
+      "complianceFindings": "Constatări privind conformitatea",
+      "description": "Revizuire a forței de muncă filtrată pentru confidențialitate pentru perioada selectată.",
+      "disabledDescription": "Modul Consiliu de întreprindere nu este activat pentru această organizație.",
+      "exportReviewPack": "Exportă pachetul de revizuire",
+      "from": "De la",
+      "identityHidden": "Identitate ascunsă",
+      "insufficientData": "Date insuficiente",
+      "policyChanges": "Modificări de politică",
+      "positionStamps": {
+        "accessAt": "Când",
+        "accessEmployees": "Poziții pentru",
+        "accessKindDetail": "{count, plural, one {Detaliu perioadă de lucru (# perioadă de lucru)} other {Detalii perioadă de lucru (# perioade de lucru)}}",
+        "accessKindExport": "Export de date",
+        "accessLog": "Jurnal de acces la poziții",
+        "accessLogDescription": "De fiecare dată când altcineva în afară de angajat a vizualizat sau a exportat poziții, cele mai recente primele.",
+        "accessLogEmpty": "Nimeni nu a vizualizat pozițiile.",
+        "accessViewer": "Vizualizat de",
+        "consentActive": "Consimțământ activ",
+        "consentDescription": "{count, plural, one {Dintre cei # angajat activ pentru care înregistrarea este activată. Nehotărât include angajații care au ales Nu acum sau care au fost de acord doar cu o versiune anterioară a notificării.} other {Dintre cei # angajați activi pentru care înregistrarea este activată. Nehotărât include angajații care au ales Nu acum sau care au fost de acord doar cu o versiune anterioară a notificării.}}",
+        "consentTitle": "Consimțământ pentru poziție",
+        "consentUndecided": "Nehotărât",
+        "consentWithdrawn": "Retras",
+        "currentNotice": "Notificare actuală",
+        "deletedViewer": "Un utilizator șters",
+        "description": "Modul în care organizația înregistrează pozițiile angajaților odată cu pontările acestora și cine le-a vizualizat. Comitetul de întreprindere nu vede niciodată poziții individuale.",
+        "employeeAssignmentCounts": "{on} activate, {off} dezactivate individual",
+        "employeeAssignments": "Alocări de angajați",
+        "employeeCount": "{count, plural, one {# angajat} few {# angajați} other {# de angajați}}",
+        "employeePseudonym": "Angajat {ref}",
+        "enabled": "Înregistrare",
+        "noEmployeeAssignments": "Nicio alocare de angajați.",
+        "noNotice": "Nu a fost publicată nicio notificare.",
+        "notAssigned": "Nealocat",
+        "noTeamAssignments": "Nicio alocare de echipă.",
+        "noticeHistory": "Versiuni ale notificării",
+        "noticeVersion": "{days, plural, one {Versiunea {version}, publicată la {publishedAt}, pozițiile păstrate # zi} few {Versiunea {version}, publicată la {publishedAt}, pozițiile păstrate # zile} other {Versiunea {version}, publicată la {publishedAt}, pozițiile păstrate # de zile}}",
+        "off": "Dezactivat",
+        "on": "Activat",
+        "organizationAssignment": "Întreaga organizație",
+        "retention": "Păstrare",
+        "retentionDays": "{days, plural, one {# zi} few {# zile} other {# de zile}}",
+        "teamAssignments": "Alocări de echipe",
+        "title": "Înregistrarea poziției",
+        "viewerPseudonym": "Vizualizator {ref}"
+      },
+      "scheduleChanges": "Modificări de program",
+      "scheduleDescription": "Înregistrări de program filtrate pentru confidențialitate pentru perioada selectată.",
+      "scheduleEmpty": "Nu s-au găsit înregistrări de program pentru această perioadă.",
+      "scheduleEntry": "{identity} - de la {start} până la {end}",
+      "scheduleReview": "Revizuire program",
+      "title": "Consiliu de întreprindere",
+      "to": "Până la",
+      "unassignedTeam": "Echipă neatribuită",
+      "updateRange": "Actualizează intervalul"
+    }
+  },
+  "employeeSelect": {
+    "countSelected": "{count} angajați selectați",
+    "countWithMore": "{count} angajați (+încă {more})",
+    "inactive": "Inactiv",
+    "noEmployeesFound": "Niciun angajat găsit",
+    "removeSelected": "Elimină {name}",
+    "role": "Rol",
+    "searchPlaceholder": "Căutați după nume, e-mail sau funcție...",
+    "selected": "{count} selectate",
+    "selectEmployee": "Selectați angajatul",
+    "selectEmployees": "Selectați angajații",
+    "selectMultipleEmployees": "Alegeți unul sau mai mulți angajați din listă",
+    "selectOneEmployee": "Alegeți un angajat din listă",
+    "status": "Stare",
+    "team": "Echipă",
+    "totalEmployees": "{count} angajați",
+    "tryDifferentSearch": "Încercați să ajustați căutarea sau filtrele"
+  },
+  "errors": {
+    "failedToLoad": "Nu s-au putut încărca datele",
+    "noEmployee": {
+      "contactAdmin": "Contactați administratorul",
+      "createOrg": "Creează organizație",
+      "description": "Aveți nevoie de un profil de angajat pentru a {feature}. Vă rugăm să creați o organizație sau să contactați administratorul.",
+      "emailBody": "Bună,nnAm nevoie de configurarea unui profil de angajat pentru a accesa funcționalitățile platformei. Mă puteți ajuta cu acest lucru?nnVă mulțumesc!",
+      "emailSubject": "Este necesară configurarea profilului de angajat",
+      "helpText": "Dacă ați fost invitat într-o organizație, cereți-i administratorului să vă configureze profilul de angajat.",
+      "title": "Profil de angajat necesar"
+    },
+    "noOrganization": {
+      "createOrg": "Creează organizație",
+      "description": "Nu faceți parte încă din nicio organizație. Creați una pentru a începe sau așteptați o invitație.",
+      "title": "Nicio organizație găsită",
+      "waiting": "Aștepți o invitație?",
+      "waitingDesc": "Administratorul tău îți va trimite un e-mail de invitație. Verifică mesajele primite și folderul de spam."
+    },
+    "notFound": {
+      "description": "Este posibil ca pagina să fi fost mutată, linkul să fie expirat sau adresa să fie incorectă.",
+      "title": "Pagina nu a fost găsită"
+    },
+    "unexpected": {
+      "description": "Nu am putut încărca această pagină acum. Vă rugăm să încercați din nou sau să reveniți la o pagină sigură din aplicație.",
+      "digest": "Referință: {digest}",
+      "title": "Ceva nu a funcționat corect"
+    }
+  },
+  "generic": {
+    "done": "Gata",
+    "submit": "Trimite"
+  },
+  "header": {
+    "clock-in": "Pontare intrare",
+    "clock-out": "Pontare ieșire",
+    "timezone": {
+      "current": "Fus orar curent {timezone}, {time}, {offset}",
+      "savedTimezone": "Fus orar salvat",
+      "saveTimezone": "Salvează fusul orar",
+      "saving": "Se salvează...",
+      "updated": "Fusul orar a fost actualizat cu succes",
+      "updateError": "A apărut o eroare la actualizarea fusului orar",
+      "updateFailed": "Actualizarea fusului orar a eșuat"
+    }
+  },
+  "info": {
+    "agb": "Termeni și condiții",
+    "back-to-login": "Înapoi la autentificare",
+    "imprint": "Informații legale",
+    "licenses": "Licențe Open Source",
+    "openSourceLicenses": "Licențe Open Source",
+    "trust-center": "Centru de încredere"
+  },
+  "loading": {
+    "application": "Se încarcă aplicația",
+    "authentication": "Se încarcă autentificarea",
+    "calendar": "Se încarcă calendarul",
+    "chart": "Se încarcă graficul",
+    "licenses": "Se încarcă licențele",
+    "platformAnalytics": "Se încarcă statisticile platformei",
+    "settings": "Se încarcă setările",
+    "setup": "Se încarcă configurarea",
+    "teamAbsences": "Se încarcă tabelul absențelor echipei",
+    "workerQueue": "Se încarcă coada de lucru"
+  },
+  "nav": {
+    "absences": "Absențe",
+    "analytics": "Statistici",
+    "approvals": "Aprobări",
+    "calendar": "Calendar",
+    "compliance": "Conformitate",
+    "dashboard": "Panou de control",
+    "feedback": "Feedback",
+    "finance": "Finanțe",
+    "financeAwaiting": "{count, plural, one {# cheltuială în așteptarea rambursării} few {# cheltuieli în așteptarea rambursării} other {# de cheltuieli în așteptarea rambursării}}",
+    "get-help": "Obține ajutor",
+    "my-documents": "Documentele mele",
+    "my-requests": "Cererile mele",
+    "my-schedule": "Programul meu",
+    "org-explorer": "Explorator organizație",
+    "payroll": "Salarizare",
+    "personnel-files": "Dosare de personal",
+    "platform-admin": "Administrator platformă",
+    "reports": "Rapoarte",
+    "scheduling": "Planificare",
+    "settings": "Setări",
+    "team": "Echipă",
+    "teamAbsences": "Absențe echipă",
+    "team-label": "Echipă",
+    "teamPeriodSubmissions": "Trimiteri de perioade",
+    "teamPresence": "Cine este prezent",
+    "time-tracking": "Monitorizare timp",
+    "today": "Astăzi",
+    "travel-expenses": "Cheltuieli de deplasare",
+    "worksCouncil": "Consiliu de întreprindere"
+  },
+  "notifications": {
+    "actions": {
+      "deleteAll": "Șterge tot",
+      "markAllRead": "Marchează toate ca citite",
+      "markAsRead": "Marchează ca citit",
+      "markRead": "Marchează ca citit",
+      "settings": "Setări notificări",
+      "viewAll": "Afișează toate notificările"
+    },
+    "content": {
+      "absenceDeputyAssigned": {
+        "message": "Îl/o înlocuiți pe {name} ({dateRange}).",
+        "title": "Sunteți înlocuitor pe perioada absenței"
+      },
+      "absenceDeputyDatesChanged": {
+        "message": "Perioada de înlocuire pentru {name} este acum {dateRange}.",
+        "title": "Perioada de înlocuire a fost modificată"
+      },
+      "absenceDeputyReminder": {
+        "message": "De mâine îl/o înlocuiți pe {name} până la {untilDate}.",
+        "title": "Înlocuirea pe perioada absenței începe mâine"
+      },
+      "absenceDeputyRemoved": {
+        "message": "Nu îl/o mai înlocuiți pe {name} ({dateRange}).",
+        "title": "Nu mai sunteți înlocuitor pe perioada absenței"
+      },
+      "absenceDeputyUnavailable": {
+        "managerMessage": "{deputyName} nu mai este disponibil(ă) ca înlocuitor pentru absența lui {employeeName} din {startDate} până la {endDate}.",
+        "message": "{deputyName} nu mai este disponibil(ă) ca înlocuitor pentru absența dvs. din {startDate} până la {endDate}.",
+        "title": "Înlocuitorul nu mai este disponibil"
+      },
+      "absenceRecorded": {
+        "message": "{managerName} a înregistrat {absenceType} pentru {dateRange} în numele dvs.",
+        "title": "Absență înregistrată"
+      },
+      "absenceRequestRejected": {
+        "title": "Cerere de absență respinsă"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Cererea dvs. de {categoryName} pentru {dateRange} a fost trimisă și așteaptă aprobarea.",
+        "title": "Cerere de absență trimisă"
+      },
+      "approvalCoverReturnSummary": {
+        "message": "{count, plural, one {În timp ce ați lipsit, {name} a decis # aprobare.} other {În timp ce ați lipsit, {name} a decis # aprobări.}}",
+        "title": "Decise în timp ce ați lipsit"
+      },
+      "approvalCoverStarted": {
+        "message": "{count, plural, =0 {Preluați aprobările pentru {name}: nimic în așteptare deocamdată.} other {Preluați aprobările pentru {name}: # în așteptare.}}",
+        "title": "Preluați aprobările"
+      },
+      "automaticClockOut": {
+        "breakMessage": "Ați fost pontat automat ca ieșit la începutul pauzei, la {cutoff} ({timezone}), deoarece pauza nu a fost încheiată în limita de timp de {duration} minute stabilită de organizația dvs.",
+        "message": "Ați fost pontat automat la ieșire după {duration} minute de muncă neîntreruptă la {cutoff} ({timezone}), deoarece limita de timp a organizației dvs. a fost atinsă.",
+        "title": "Pontat automat la ieșire"
+      },
+      "balanceAdjustment": {
+        "openingBalanceCancelled": {
+          "message": "Soldul inițial de {amount} pentru {dateRange} a fost anulat. Motiv: {reason}",
+          "title": "Sold inițial anulat"
+        },
+        "openingBalanceRecorded": {
+          "message": "Un sold inițial de {amount} pentru {dateRange} a fost înregistrat în soldul dvs. de lucru.",
+          "title": "Sold inițial înregistrat"
+        },
+        "payoutCancelled": {
+          "message": "Plata orelor suplimentare de {amount} pentru {dateRange} a fost anulată. Motiv: {reason}",
+          "title": "Plată ore suplimentare anulată"
+        },
+        "payoutRecorded": {
+          "message": "O plată a orelor suplimentare de {amount} pentru {dateRange} a fost înregistrată în soldul dvs. de lucru.",
+          "title": "Plată ore suplimentare înregistrată"
+        }
+      },
+      "breakDueReminder": {
+        "message": "Pauza dvs. este programată la {breakTime} ({timezone}). Luați o pauză până atunci pentru a respecta regulamentul intern privind pauzele.",
+        "title": "În curând este timpul pentru o pauză"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "{employeeName}: Sarcinile de aprobare necesită un înlocuitor (plecare în vigoare la {cutoff}, {timezone}).",
+        "clock_out": "{employeeName}: Necesită revizuire: pontaj de ieșire la offboarding (plecare în vigoare la {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Este necesară remedierea cronometrului (plecare în vigoare la {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Termenii viitori de angajare necesită revizuire (plecare în vigoare la {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Activitatea viitoare necesită revizuire (plecare în vigoare la {cutoff}, {timezone}).",
+        "title": "Offboarding-ul angajatului necesită revizuire"
+      },
+      "forgottenClockOutReminder": {
+        "message": "Tura dvs. s-a încheiat la {endTime} ({timezone}). Înregistrați ieșirea dacă ați terminat programul de lucru.",
+        "title": "Sunteți încă pontat(ă)"
+      },
+      "missedClockInReminder": {
+        "message": "Tura dvs. a început la {startTime} ({timezone}). Înregistrați intrarea dacă lucrați.",
+        "title": "Nu ați înregistrat încă intrarea"
+      },
+      "monthCloseBlocked": {
+        "message": "{month} nu a fost închisă automat. Cereri de absență nesoluționate: {absenceRequests}. Cereri de pontaj nesoluționate: {timeRequests}. Activitate încă în desfășurare: {liveWork}. Lună neîncheiată încă: {notEnded}. Angajați: {employees}. Se va reîncerca mâine.",
+        "title": "Luna nu a putut fi închisă"
+      },
+      "monthClosedAutomatically": {
+        "message": "{count, plural, one {{month} a fost închisă automat pentru # angajat. Activitatea și absențele nu mai pot fi modificate decât dacă este redeschisă.} other {{month} a fost închisă automat pentru # angajați. Activitatea și absențele nu mai pot fi modificate decât dacă este redeschisă.}}",
+        "title": "Lună închisă"
+      },
+      "monthReopened": {
+        "message": "{count, plural, one {{month} a fost redeschisă pentru unul dintre angajații dvs.: {reason}} other {{month} a fost redeschisă pentru # dintre angajații dvs.: {reason}}}",
+        "title": "Lună redeschisă"
+      },
+      "newAbsenceRequest": {
+        "title": "Cerere nouă de absență"
+      },
+      "passwordChanged": {
+        "message": "Parola dvs. a fost schimbată cu succes. Dacă nu ați făcut această modificare, vă rugăm să contactați imediat asistența.",
+        "title": "Parolă schimbată"
+      },
+      "periodSubmissionApproved": {
+        "message": "Timpul dvs. pentru {startDate} – {endDate} a fost aprobat.",
+        "title": "Timpul dvs. a fost aprobat"
+      },
+      "periodSubmissionOutdated": {
+        "message": "Timpul dvs. pentru {startDate} – {endDate} a fost modificat după ce a fost aprobat. Revizuiți timpul și trimiteți-l din nou.",
+        "title": "Timpul dvs. aprobat nu mai este de actualitate"
+      },
+      "periodSubmissionRejected": {
+        "message": "Timpul dvs. pentru {startDate} – {endDate} a fost respins: {reason}. Revizuiți timpul și trimiteți-l din nou.",
+        "title": "Timpul dvs. a fost respins"
+      },
+      "periodSubmissionReminder": {
+        "message": "Perioada dvs. {startDate} – {endDate} s-a încheiat. Revizuiți timpul și trimiteți-l spre aprobare.",
+        "title": "Trimiteți timpul spre aprobare"
+      },
+      "periodSubmissionSecondReminder": {
+        "message": "Perioada dvs. {startDate} – {endDate} încă nu a fost trimisă. Revizuiți timpul și trimiteți-l spre aprobare.",
+        "title": "Timpul dvs. încă nu a fost trimis"
+      },
+      "periodSubmissionWithdrawnAfterChange": {
+        "message": "Timpul dvs. pentru {startDate} – {endDate} a fost modificat după ce l-ați trimis, așadar trimiterea a fost retrasă. Revizuiți timpul și trimiteți-l din nou.",
+        "title": "Trimiteți din nou timpul"
+      },
+      "personnelFileDocumentShared": {
+        "message": "Documentul „{title}” a fost partajat cu dvs.",
+        "title": "Document nou în dosarul dvs. de personal"
+      },
+      "personnelFileDueForDeletion": {
+        "message": "{count, plural, one {# document de angajat trebuie șters acum. Examinați și confirmați ștergerea definitivă.} few {# documente de angajați trebuie șterse acum. Examinați și confirmați ștergerea definitivă.} other {# de documente de angajați trebuie șterse acum. Examinați și confirmați ștergerea definitivă.}}",
+        "title": "Documente ce urmează a fi șterse"
+      },
+      "personnelFileEmployeeUpload": {
+        "certificate": "{name} a încărcat un certificat",
+        "other": "{name} a încărcat un document",
+        "sickNote": "{name} a încărcat un certificat medical pentru {dateRange}",
+        "sickNoteOnBehalf": "{uploader} a încărcat un certificat medical pentru {name}, {dateRange}",
+        "title": "Document nou într-un dosar de personal"
+      },
+      "personnelFileExpiredToday": {
+        "employeeMessage": "Documentul dvs. „{title}” expiră astăzi.",
+        "message": "Documentul „{title}” al lui {employee} expiră astăzi.",
+        "title": "Un document expiră astăzi"
+      },
+      "personnelFileExpiryUpcoming": {
+        "employeeMessage": "Documentul dvs. „{title}” expiră la data de {expiryDate}.",
+        "message": "Documentul „{title}” al lui {employee} expiră la data de {expiryDate}.",
+        "title": "Un document expiră în curând"
+      },
+      "personnelFilePayslipsShared": {
+        "message": "Fluturașul de salariu pentru {payPeriod} a fost partajat cu dvs.",
+        "title": "Fluturaș de salariu nou în dosarul dvs. de personal"
+      },
+      "policyForgottenClockOutReminder": {
+        "message": "Ați atins numărul necesar de ore pentru {day} la {endTime} ({timezone}). Înregistrați ieșirea dacă ați terminat programul de lucru."
+      },
+      "policyMissedClockInReminder": {
+        "message": "Cea mai recentă înregistrare a intrării de astăzi a fost la {startTime} ({timezone}). Înregistrați intrarea dacă lucrați."
+      },
+      "scheduledExportPaused": {
+        "message": "„{scheduleName}” a fost întreruptă deoarece proprietarul său, {ownerName}, nu mai este administrator al organizației. Desemnați-vă pe dvs. sau pe un alt administrator al organizației ca proprietar pentru a o relua.",
+        "title": "Export programat întrerupt"
+      },
+      "shiftAssigned": {
+        "message": "Vi s-a atribuit o tură pe {shiftDate} între {startTime} și {endTime} de către {assignedByName}.",
+        "title": "Tură atribuită"
+      },
+      "teamMemberAdded": {
+        "message": "Ați fost adăugat în echipa {teamName} de către {performedByName}.",
+        "title": "Adăugat în echipă"
+      },
+      "teamMemberRemoved": {
+        "message": "Ați fost eliminat din echipa {teamName} de către {performedByName}.",
+        "title": "Eliminat din echipă"
+      },
+      "timeOffInLieuAvailable": {
+        "message": "Angajații pot folosi acum timp liber din soldul lor de lucru. Noua categorie de absență rămâne inactivă până când o activați în setările de absențe.",
+        "title": "Timpul liber compensatoriu este disponibil"
+      },
+      "travelExpenseAdjustmentReadyForReimbursement": {
+        "message": "O ajustare aprobată a mărit suma datorată pentru raportul de cheltuieli {report} al lui {employee}. În așteptarea rambursării: {amounts}."
+      },
+      "travelExpenseLeftOutOfPayrollRun": {
+        "message": "Decontul de cheltuieli {report} al angajatului {employee} nu este rambursat printr-o rulare de salarii. În așteptarea rambursării: {amounts}."
+      },
+      "travelExpensePartiallyReimbursed": {
+        "message": "{amount} {currency} din cheltuiala dvs. de deplasare a fost rambursată (referință de plată {reference}). {remaining} {remainingCurrency} sunt încă în așteptarea rambursării.",
+        "title": "Cheltuială rambursată parțial"
+      },
+      "travelExpensePartiallyReimbursedWithPayroll": {
+        "message": "{amount} {currency} din cheltuielile tale de deplasare au fost rambursați prin rularea de salarii {period}. {remaining} {remainingCurrency} sunt încă în așteptarea rambursării."
+      },
+      "travelExpensePayrollRunAwaitingConfirmation": {
+        "message": "Rularea de salarii {period} ({format}) așteaptă confirmarea ta. Rapoarte în aria ta de competență: {count}.",
+        "title": "Rulare de salarii în așteptarea confirmării"
+      },
+      "travelExpenseReadyForReimbursement": {
+        "message": "Raportul de cheltuieli {report} al lui {employee} este aprobat. În așteptarea rambursării: {amounts}.",
+        "title": "Gata pentru rambursare"
+      },
+      "travelExpenseRecoveryRecorded": {
+        "message": "A fost înregistrată o recuperare de {amount} {currency} pentru cheltuiala dvs. de deplasare (referință de plată {reference}).",
+        "title": "Recuperare cheltuială înregistrată"
+      },
+      "travelExpenseReimbursed": {
+        "message": "Cheltuiala dvs. de deplasare a fost rambursată integral: {amount} {currency}, referință de plată {reference}.",
+        "title": "Cheltuială rambursată"
+      },
+      "travelExpenseReimbursedWithPayroll": {
+        "message": "Cheltuielile tale de deplasare au fost rambursate integral prin rularea de salarii {period}: {amount} {currency}."
+      }
+    },
+    "description": "Examinați actualizările, aprobările și alertele de sistem într-o singură cronologie.",
+    "empty": {
+      "description": "Sunteți la zi! Notificările noi vor apărea aici.",
+      "inboxDescription": "Sunteți la zi. Actualizările noi vor apărea aici.",
+      "noMatchesDescription": "Ajustați căutarea sau filtrul de citire pentru a extinde această vizualizare a inboxului.",
+      "noMatchesTitle": "Nicio notificare potrivită",
+      "title": "Nicio notificare",
+      "unreadDescription": "Sunteți la zi. Noile actualizări necitite vor apărea aici.",
+      "unreadTitle": "Nicio notificare necitită"
+    },
+    "error": {
+      "title": "Nu s-au putut încărca notificările"
+    },
+    "filters": {
+      "all": "Toate",
+      "ariaLabel": "Filtrează notificările după starea de citire",
+      "read": "Citite",
+      "unread": "Necitite"
+    },
+    "nativePush": {
+      "attention": {
+        "title": "Ceva necesită atenția ta"
+      },
+      "body": "Deschide Z8 pentru a vedea detaliile.",
+      "document": {
+        "title": "Noutăți despre documentele tale"
+      },
+      "project": {
+        "title": "Noutăți despre un proiect"
+      },
+      "reminder": {
+        "title": "Memento de la Z8"
+      },
+      "requestUpdate": {
+        "title": "Cererea ta a fost actualizată"
+      },
+      "review": {
+        "title": "Ai o cerere de examinat"
+      },
+      "schedule": {
+        "title": "Programul tău s-a modificat"
+      },
+      "security": {
+        "title": "Notificare de securitate pentru contul tău"
+      },
+      "team": {
+        "title": "Echipele tale s-au modificat"
+      },
+      "travelExpense": {
+        "title": "Noutăți despre cheltuielile tale de deplasare"
+      },
+      "workingTime": {
+        "title": "Noutăți despre timpul tău de lucru"
+      }
+    },
+    "preferences": {
+      "categories": {
+        "personnelFile": {
+          "description": "Notificări despre documentele partajate cu dvs. în dosarul de personal",
+          "title": "Dosar de personal"
+        },
+        "travelExpenses": {
+          "description": "Notificări despre rambursările și recuperările cheltuielilor dvs. de deplasare",
+          "title": "Cheltuieli de deplasare"
+        }
+      },
+      "disabled": "Notificare dezactivată",
+      "enabled": "Notificare activată",
+      "mandatoryInbox": "Livrat întotdeauna în căsuța de primire",
+      "permissionModal": {
+        "benefits": {
+          "pendingApprovals": "Primiți alerte pentru cererile de aprobare în așteptare",
+          "requestUpdates": "Primiți notificări când cererile dvs. sunt aprobate sau respinse",
+          "teamSecurity": "Rămâneți la curent cu privire la actualizările echipei și de securitate"
+        },
+        "description": "Activați notificările push pentru a primi actualizări instantanee despre aprobări, corecții de pontaj și modificări importante în echipă - chiar și atunci când nu folosiți aplicația.",
+        "enable": "Activează notificările",
+        "notNow": "Nu acum",
+        "title": "Rămâneți la curent"
+      },
+      "push": {
+        "blockedDescription": "Notificările push sunt blocate de browserul dvs. Pentru a le activa, trebuie să actualizați setările browserului.",
+        "blockedHelp": "Faceți clic pe pictograma în formă de lacăt din bara de adrese a browserului și permiteți notificările pentru acest site, apoi reîmprospătați pagina.",
+        "blockedTitle": "Notificări push blocate",
+        "enableButton": "Activează notificările push",
+        "enableDescription": "Primiți notificări instant chiar și atunci când nu folosiți aplicația",
+        "enabledIndicator": "Notificările push sunt activate",
+        "enabledToast": "Notificări push activate",
+        "enabledToastDescription": "Acum veți primi notificări push în browser",
+        "enableFailedToast": "Nu s-au putut activa notificările push",
+        "enableTitle": "Activează notificările push",
+        "errorToast": "Eroare notificare push"
+      },
+      "toggleAria": "Notificări {channel} pentru {type}",
+      "types": {
+        "absence_deputy_assigned": "Desemnat ca înlocuitor pe perioada absenței",
+        "absence_deputy_dates_changed": "Perioada de înlocuire a fost modificată",
+        "absence_deputy_reminder": "Înlocuirea pe perioada absenței începe mâine",
+        "absence_deputy_removed": "Nu mai sunteți înlocuitor pe perioada absenței",
+        "absence_deputy_unavailable": "Înlocuitorul nu mai este disponibil",
+        "approval_cover_return_summary": "Decis de înlocuitorul dvs.",
+        "approval_cover_started": "Înlocuirea pe perioada absenței a început",
+        "break_due_reminder": "Pauză scadentă",
+        "forgotten_clock_out_reminder": "Pontare de ieșire omisă",
+        "missed_clock_in_reminder": "Pontare omisă la intrare",
+        "period_submission_decided": "Timp trimis aprobat sau respins",
+        "period_submission_reminder": "Trimiteți timpul",
+        "period_submission_sent_back": "Timp returnat după o modificare",
+        "work_balance_adjustment_cancelled": "Ajustare de sold anulată",
+        "work_balance_adjustment_recorded": "Ajustare de sold înregistrată"
+      },
+      "updateFailed": "Actualizarea preferinței a eșuat"
+    },
+    "search": {
+      "ariaLabel": "Caută notificări",
+      "placeholder": "Caută notificări..."
+    },
+    "selection": {
+      "selectAll": "Selectează tot ce este vizibil",
+      "selectAllAria": "Selectează toate notificările vizibile",
+      "selectNamedAria": "Selectează {title}",
+      "visibleSelected": "{count} vizibile selectate"
+    },
+    "time": {
+      "justNow": "chiar acum"
+    },
+    "timeline": {
+      "earlier": "Mai devreme",
+      "today": "Astăzi",
+      "yesterday": "Ieri"
+    },
+    "title": "Notificări",
+    "toasts": {
+      "deleted": "S-au șters {count} notificări",
+      "deleteFailed": "Nu s-au putut șterge notificările",
+      "markedRead": "S-au marcat {count} notificări ca citite",
+      "markReadFailed": "Nu s-au putut marca notificările ca citite"
+    },
+    "unreadBadge": "{count} necitite",
+    "unreadCountOverflow": "99+"
+  },
+  "offline": {
+    "banner": {
+      "archived": "Dovada de pontare arhivată a fost păstrată pe acest dispozitiv",
+      "offline": "Sunteți offline",
+      "offlineSaved": "Offline — {count} înregistrare(i) salvată(e) local pentru examinare",
+      "offlineWaiting": "Offline — {count} acțiune(i) de pontare vor fi trimise când reveniți online",
+      "refresh": "Actualizează starea",
+      "refreshing": "Se verifică {count} înregistrare(i) salvată(e)…",
+      "reviewRequired": "{count} înregistrare(i) salvată(e) local — este necesară revizuirea",
+      "unverified": "Dovada pontării a fost salvată pe acest dispozitiv. Conectați-vă pentru a revizui toate înregistrările salvate.",
+      "waiting": "{count} acțiune(i) de pontare salvate pe acest dispozitiv, netrimise încă"
+    },
+    "capture": {
+      "description": "Salvați evenimentul pe acest dispozitiv pentru revizuire. Starea pontării pe server nu se va schimba.",
+      "end": "Salvează pontarea de ieșire pentru revizuire",
+      "queueDescription": "Sunteți offline. Acțiunile de pontare sunt salvate pe acest dispozitiv și trimise automat când reveniți online.",
+      "queueEnd": "Salvează pontarea la ieșire",
+      "queueStart": "Salvează pontarea la intrare",
+      "start": "Salvează pontarea de intrare pentru revizuire"
+    },
+    "recovery": {
+      "archive": "Arhivează și păstrează dovezile",
+      "archived": "Arhivat — dovezi păstrate",
+      "command": {
+        "blockedPredecessor": "În pauză — o acțiune de pontaj anterioară de pe acest dispozitiv necesită verificare",
+        "committed": "Salvat pe server",
+        "exhausted": "Trimiterea a fost oprită după eșecuri repetate — neconfirmat pe server",
+        "pausedAccess": "În pauză — conectați-vă din nou cu acces de pontaj în această organizație",
+        "pausedContext": "În pauză — conectați-vă la contul și organizația pentru care a fost salvată",
+        "pausedServer": "În pauză — serverul nu acceptă încă această acțiune de pontaj",
+        "pending": "În așteptarea trimiterii — neconfirmat pe server",
+        "rejected": "Nesalvat — serverul a refuzat ({code})",
+        "review": "Necesită verificare — serverul nu a acceptat ({code})",
+        "waitingPredecessor": "Se așteaptă o acțiune de pontaj anterioară de pe acest dispozitiv"
+      },
+      "descriptionOutcomes": "Aceste înregistrări sunt salvate pe acest dispozitiv. Cu excepția cazului în care o înregistrare indică faptul că a fost salvată pe server, rezultatul acesteia pe server nu este confirmat. Verificați pontajele existente cu managerul dumneavoastră înainte de a trimite ore înlocuitoare. Arhivarea păstrează dovezile și nu anulează munca de pe server.",
+      "empty": "Nicio înregistrare accesibilă. Înregistrările mai vechi fără dovezi de cont necesită revizuire la nivel de organizație; înregistrările fără dovezi de organizație necesită recuperare autorizată separat.",
+      "evidence": "Dovada inițială și starea recuperării",
+      "export": "Exportă dovezile accesibile",
+      "exportError": "Nu s-au putut exporta înregistrările salvate",
+      "held": "Necesită revizuire — neconfirmat pe server",
+      "loadError": "Nu s-au putut citi înregistrările salvate",
+      "loading": "Se citesc înregistrările salvate…",
+      "review": "Revizuiți înregistrările salvate",
+      "title": "Înregistrări de pontare salvate"
+    }
+  },
+  "presence": {
+    "activity": {
+      "lastActivity": "ultima activitate {date}",
+      "relativeHours": "de {hours}h",
+      "relativeHoursMinutes": "de {hours}h {minutes}min",
+      "relativeMinutes": "de {minutes}min"
+    },
+    "clockedIn": "Pontat la intrare",
+    "clockedOut": "Pontat la ieșire",
+    "onBreak": "În pauză"
+  },
+  "rateLimit": {
+    "countdownLabel": "secunde până când puteți reîncerca",
+    "jsonMessage": "Limita de solicitări a fost depășită. Vă rugăm să încercați din nou mai târziu.",
+    "message": "Ați efectuat prea multe solicitări. Vă rugăm să așteptați înainte de a încerca din nou.",
+    "retryButton": "Încercați din nou",
+    "retryingButton": "Se reîncearcă...",
+    "title": "Prea multe solicitări",
+    "waitingButton": "Vă rugăm să așteptați..."
+  },
+  "roles": {
+    "admin": "Administrator",
+    "employee": "Angajat",
+    "manager": "Manager"
+  },
+  "status": {
+    "active": "Activ",
+    "inactive": "Inactiv"
+  },
+  "storeAppBanner": {
+    "description": "Primește mementouri și notificări de aprobare în aplicație.",
+    "dismiss": "Ignoră sugestia de aplicație",
+    "getApp": "Obține aplicația",
+    "title": "Z8 pentru telefonul tău"
+  },
+  "table": {
+    "clearFilters": "Șterge filtrele",
+    "clearSort": "Șterge sortarea",
+    "description": "Se afișează numărul total de vizitatori din ultimele 6 luni. Acesta este doar un text aleatoriu pentru a testa aspectul. Se întinde pe mai multe linii și ar trebui să treacă pe rândul următor.",
+    "goToFirstPage": "Mergi la prima pagină",
+    "goToLastPage": "Mergi la ultima pagină",
+    "goToNextPage": "Mergi la pagina următoare",
+    "goToPreviousPage": "Mergi la pagina anterioară",
+    "header": "Antet",
+    "limit": "Limită",
+    "noResults": "Niciun rezultat.",
+    "pageOfPages": "Pagina {current} din {total}",
+    "reviewer": "Recenzent",
+    "rowsPerPage": "Rânduri pe pagină",
+    "searchPlaceholder": "Caută...",
+    "selectedOfTotal": "{selected} din {total} rând(uri) selectat(e)",
+    "select-reviewer": "Selectează un recenzent",
+    "select-status": "Selectează o stare",
+    "select-type": "Selectați un tip",
+    "showing-visitors": "Se afișează numărul total de vizitatori pentru ultimele 6 luni",
+    "sortAscending": "Crescător",
+    "sortDescending": "Descrescător",
+    "status": "Stare",
+    "status-options": {
+      "done": "Finalizat",
+      "in-progress": "În curs",
+      "not-started": "Neînceput"
+    },
+    "target": "Țintă",
+    "totalRows": "{total} rând(uri)",
+    "trending-up": "În creștere cu 5,2% în această lună",
+    "type": "Tip",
+    "type-options": {
+      "capabilities": "Capabilități",
+      "cover-page": "Pagină de gardă",
+      "design": "Design",
+      "executive-summary": "Rezumat executiv",
+      "focus-documents": "Documente de interes",
+      "narrative": "Narațiune",
+      "table-of-contents": "Cuprins",
+      "technical-approach": "Abordare tehnică"
+    }
+  },
+  "time": {
+    "am": "AM",
+    "hoursAndMinutes": "{hours}h {minutes}m",
+    "hoursOnly": "{hours}h",
+    "pm": "PM"
+  },
+  "userAvatar": {
+    "alt": "Avatar utilizator"
+  },
+  "user": {
+    "font-size": "Dimensiune font",
+    "language": "Limbă",
+    "logging-out": "Deconectare...",
+    "log-out": "Deconectare",
+    "log-out-failed": "Deconectarea nu a reușit. Te rugăm să încerci din nou.",
+    "profile": "Profil",
+    "security": "Securitate",
+    "theme": "Temă",
+    "theme-dark": "Întunecat",
+    "theme-light": "Luminos",
+    "theme-location-required": "Permisiunea de localizare este necesară pentru tema bazată pe timp.",
+    "theme-system": "Sistem",
+    "theme-time": "Bazat pe timp",
+    "theme-time-info": "Modul bazat pe timp folosește {currentMode}. Se comută la {nextMode} la {time}.",
+    "theme-toggle": "Comută tema"
+  },
+  "validation": {
+    "first-name-required": "Prenumele este obligatoriu",
+    "invalid-email": "Adresă de e-mail nevalidă",
+    "last-name-required": "Numele este obligatoriu",
+    "password-required": "Parola este obligatorie",
+    "pronounsMaxLength": "Pronumele trebuie să conțină cel mult 50 de caractere"
+  },
+  "workBalance": {
+    "adjustments": {
+      "cancel": "Anulare",
+      "cancelled": "Anulat",
+      "cancelledBy": "Anulat de {name} la {date}: {reason}",
+      "description": "Plăți de ore suplimentare și solduri inițiale pentru acest sold de lucru. O înregistrare eronată este anulată, niciodată ștearsă, astfel încât cele anulate rămân listate.",
+      "empty": "Nicio ajustare de sold încă.",
+      "kind": {
+        "openingBalance": "Sold inițial",
+        "overtimePayout": "Plată ore suplimentare"
+      },
+      "loadFailed": "Ajustările de sold nu au putut fi încărcate.",
+      "loading": "Se încarcă ajustările de sold",
+      "notPermitted": "Puteți vedea ajustările de sold proprii și pe cele ale angajaților pe care îi gestionați.",
+      "open": "Ajustări de sold",
+      "recordedBy": "Înregistrat de {name} la {date}",
+      "title": "Ajustări de sold",
+      "unknownUser": "un utilizator șters"
+    },
+    "label": "Sold total",
+    "notCalculated": "Nu a fost calculat încă",
+    "pendingDescription": "Procesul de fundal va calcula acest sold în curând.",
+    "updatedEveryThreeHours": "Actualizat la fiecare 3 ore"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Se încarcă consiliul de întreprindere"
+  }
+}

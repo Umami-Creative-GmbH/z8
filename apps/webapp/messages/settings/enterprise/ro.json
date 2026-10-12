@@ -1,0 +1,676 @@
+{
+  "settings": {
+    "apiKeys": {
+      "active": "Activ",
+      "copyKey": "Copiază cheia API",
+      "copyPrefix": "Copiază prefixul",
+      "create": "Creează cheie",
+      "created": "Cheia API a fost creată cu succes",
+      "createdBy": "de {name}",
+      "createDescription": "Creați o nouă cheie API pentru acces programatic. Cheia va fi afișată o singură dată.",
+      "createdOn": "Creată la {date}",
+      "createTitle": "Creează cheie API",
+      "creatorDeparted": "Plecat",
+      "deleted": "Cheie API ștearsă",
+      "deleteDescription": "Sigur doriți să ștergeți cheia API „{name}”? Orice aplicație care utilizează această cheie va pierde imediat accesul. Această acțiune nu poate fi anulată.",
+      "deleteTitle": "Șterge cheia API",
+      "description": "Gestionați cheile API pentru acces programatic la datele organizației dvs.",
+      "detail": {
+        "back": "Toate cheile API",
+        "channel": "Canal",
+        "channelApi": "API",
+        "channelMcp": "MCP",
+        "createdAt": "Creat",
+        "creator": "Creat de",
+        "creatorDeparted": "{name} (plecat)",
+        "ip": "Adresă IP",
+        "noRateLimit": "Dezactivat",
+        "noRequests": "Nicio cerere în ultimele 90 de zile.",
+        "rateLimit": "Limitare a ratei",
+        "rateLimitMilliseconds": "{max} per {window} ms",
+        "rateLimitValue": "{max} {window}",
+        "request": "Cerere",
+        "requests": "Cereri recente",
+        "requestsDescription": "Fiecare cerere efectuată cu această cheie, cele mai recente primele. Cererile sunt păstrate timp de 90 de zile.",
+        "rows": "Rânduri",
+        "status": "Stare",
+        "time": "Oră"
+      },
+      "disabled": "Dezactivat",
+      "editCreated": "Creată la {date}",
+      "editDescription": "Actualizați setările pentru această cheie API. Notă: Nu puteți vizualiza sau modifica cheia în sine.",
+      "editTitle": "Editează cheia API",
+      "empty": {
+        "description": "Creați prima cheie API pentru a permite accesul programatic la organizația dvs.",
+        "title": "Nicio cheie API"
+      },
+      "expired": "Expirat",
+      "expires": "Expiră",
+      "expiresInDays": "Expiră în {days}z",
+      "form": {
+        "create": "Creează cheie",
+        "enabled": "Cheie activată",
+        "enabledHelp": "Cheile dezactivate vor respinge toate solicitările API",
+        "expiration": "Expirare",
+        "invalid": "Verificați câmpurile nevalide din formular",
+        "name": "Nume",
+        "nameHelp": "Un nume descriptiv pentru identificarea acestei chei",
+        "nameMax": "Numele trebuie să aibă cel mult 100 de caractere",
+        "nameMin": "Numele trebuie să aibă cel puțin 3 caractere",
+        "nameMinLength": "Numele trebuie să aibă cel puțin 3 caractere",
+        "namePlaceholder": "de ex., API de producție",
+        "rateLimit": "Activează limitarea ratei",
+        "rateLimitMaxExceeded": "Limita de solicitări trebuie să fie de maximum 10.000 de cereri",
+        "rateLimitMaxInvalid": "Introduceți un număr întreg de la 10 la 10.000",
+        "rateLimitMaxRequests": "Număr maxim de cereri",
+        "rateLimitMin": "Limita de solicitări trebuie să fie de minimum 10 cereri",
+        "rateLimitRequired": "Limita de solicitări este obligatorie",
+        "rateLimitWholeNumber": "Limita de solicitări trebuie să fie un număr întreg",
+        "rateLimitWindowHour": "pe oră",
+        "rateLimitWindowLabel": "Fereastră de timp",
+        "rateLimitWindowMinute": "pe minut",
+        "rateLimitWindowSecond": "pe secundă",
+        "scopes": "Permisiuni",
+        "scopesRequired": "Selectați cel puțin o permisiune"
+      },
+      "keyCopied": "Cheia API a fost copiată în clipboard",
+      "lastUsed": "Ultima utilizare",
+      "name": "Nume",
+      "neverExpires": "Nu expiră niciodată",
+      "noPermissions": "Fără permisiuni",
+      "prefix": "Prefix cheie",
+      "prefixCopied": "Prefixul cheii a fost copiat",
+      "scopeLabel": {
+        "absencesRead": "Citire absențe",
+        "absencesReadHealth": "Citire detalii medicale ale absențelor",
+        "customersRead": "Citire clienți",
+        "employeesRead": "Citire angajați",
+        "projectsRead": "Citire proiecte",
+        "timeEntriesRead": "Citire înregistrări de timp"
+      },
+      "scopes": "Permisiuni",
+      "security": {
+        "description": "Cheile API oferă acces complet la datele organizației dvs. în limita permisiunilor acordate. Păstrați-le în siguranță și nu le partajați niciodată în depozite publice sau în cod de tip client.",
+        "title": "Notificare de securitate"
+      },
+      "showClose": "Închide",
+      "showCloseAnyway": "Închide oricum",
+      "showConfirmWarning": "Sunteți sigur? Încă nu ați copiat cheia.",
+      "showCopied": "Cheia a fost copiată în clipboard",
+      "showDescription": "Noua dvs. cheie API \"{name}\" a fost creată. Copiați-o acum - nu o veți mai putea vedea!",
+      "showDone": "Gata",
+      "showExpires": "Expiră:",
+      "showLabel": "Cheia dvs. API",
+      "showName": "Nume:",
+      "showNever": "Niciodată",
+      "showTitle": "Cheie API creată",
+      "showWarning": "Aceasta este singura dată când veți vedea această cheie. Asigurați-vă că o copiați și o stocați în siguranță.",
+      "showWarningTitle": "Important:",
+      "status": "Stare",
+      "title": "Chei API",
+      "unknownCreator": "un fost administrator",
+      "updated": "Cheia API a fost actualizată",
+      "usage": "{count} din {max} chei utilizate"
+    },
+    "branding": {
+      "appName": {
+        "description": "Înlocuiți numele implicit al aplicației afișat pe pagina de conectare.",
+        "title": "Nume aplicație"
+      },
+      "background": {
+        "description": "Încărcați o imagine de fundal personalizată pentru pagina de conectare.",
+        "hint": "Recomandat: 1920x1080px sau mai mare, JPEG sau PNG de înaltă calitate",
+        "preview": "Previzualizare fundal",
+        "remove": "Elimină fundalul",
+        "title": "Imagine de fundal",
+        "upload": "Încarcă imagine de fundal"
+      },
+      "backgroundUploadFailed": "Încărcarea imaginii de fundal a eșuat",
+      "backgroundUploadSuccess": "Imaginea de fundal a fost încărcată cu succes",
+      "colors": {
+        "accent": "Culoare de accent (opțional)",
+        "accentHex": "Valoare hex pentru culoarea de accent",
+        "accentHint": "Culoare secundară pentru evidențieri",
+        "description": "Personalizați culorile primară și de accent pentru pagina dvs. de conectare.",
+        "primary": "Culoare primară",
+        "primaryHex": "Valoare hex pentru culoarea primară",
+        "primaryHint": "Utilizată pentru butoane, linkuri și stări de focalizare",
+        "title": "Culori temă"
+      },
+      "logo": {
+        "description": "Încărcați logo-ul organizației dvs. pentru a fi afișat pe pagina de conectare.",
+        "hint": "Recomandat: 200x200px, PNG sau SVG cu fundal transparent",
+        "preview": "Previzualizare logo",
+        "remove": "Elimină logo-ul",
+        "title": "Logo",
+        "upload": "Încarcă imaginea logo-ului"
+      },
+      "logoUploadFailed": "Nu s-a putut încărca logo-ul",
+      "logoUploadSuccess": "Logo încărcat cu succes",
+      "save": "Salvează setările de branding",
+      "saveFailed": "Nu s-au putut salva setările de branding",
+      "saveSuccess": "Setările de branding au fost salvate"
+    },
+    "enterprise": {
+      "addProvider": "Adaugă furnizor",
+      "clientId": "ID client",
+      "clientIdRequired": "ID-ul de client este obligatoriu",
+      "clientSecret": "Secret client",
+      "clientSecretRequired": "Secretul de client este obligatoriu",
+      "configureCallbackUrl": "Configurați adresa URL de callback:",
+      "domain": "Domeniu",
+      "domains": {
+        "add": "Adaugă domeniu personalizat",
+        "addDescription": "Adăugați un domeniu personalizat pentru a activa pagini de conectare specifice organizației. Va trebui să verificați proprietatea prin înregistrări DNS.",
+        "addDomain": "Adaugă domeniu",
+        "added": "Domeniul a fost adăugat cu succes",
+        "addFailed": "Nu s-a putut adăuga domeniul",
+        "adding": "Se adaugă…",
+        "authConfigDescription": "Configurați ce metode de autentificare sunt disponibile pentru utilizatorii care se conectează prin {domain}",
+        "authConfigTitle": "Configurare autentificare",
+        "authConfigUpdated": "Configurarea autentificării a fost actualizată",
+        "authConfigUpdateFailed": "Nu s-a putut actualiza configurarea autentificării",
+        "authMethod": {
+          "emailPassword": "E-mail/Parolă",
+          "passkey": "Passkey",
+          "social": "Social ({providers})",
+          "sso": "SSO"
+        },
+        "configured": "configurat",
+        "cookieConsentScript": "Script pentru consimțământul privind cookie-urile",
+        "cookieConsentScriptHelp": "Injectat doar pe paginile de autentificare pentru acest domeniu personalizat. Lăsați gol pentru a dezactiva.",
+        "cookieConsentStatus": "Consimțământ cookie {status}",
+        "copiedToClipboard": "Copiat în clipboard",
+        "customDomain": "Domeniu personalizat",
+        "customDomainDescription": "Configurați un domeniu personalizat pentru a activa o pagină de conectare specifică organizației, cu brandingul dvs.",
+        "defaultUrl": {
+          "canonical": "Canonic"
+        },
+        "defaultUrls": "Adrese URL implicite",
+        "defaultUrlsDescription": "Aceste adrese URL gestionate de platformă funcționează automat, fără configurare DNS personalizată.",
+        "deleteAria": "Șterge domeniul personalizat {domain}",
+        "deleted": "Domeniu șters",
+        "deleteDescription": "Sigur doriți să ștergeți \"{domain}\"? Această acțiune nu poate fi anulată. Utilizatorii nu se vor mai putea conecta prin acest domeniu personalizat.",
+        "deleteFailed": "Nu s-a putut șterge domeniul",
+        "deleteTitle": "Șterge domeniul",
+        "description": "Configurați domeniul personalizat de conectare, elementele de branding și furnizorii SSO ai organizației dvs.",
+        "dnsPropagation": "Propagare DNS",
+        "dnsPropagationDescription": "Propagarea modificărilor DNS poate dura până la 48 de ore, deși de obicei se finalizează în câteva minute. Puteți face clic pe „Verifică” după ce ați adăugat înregistrarea TXT.",
+        "domain": "Domeniu",
+        "domainHelp": "Introduceți domeniul pe care utilizatorii îl vor accesa pentru pagina de conectare.",
+        "domainInvalid": "Vă rugăm să introduceți un domeniu valid (de ex., login.example.com)",
+        "domainPageSettings": "Setări pagină domeniu",
+        "domainRequired": "Domeniul este obligatoriu",
+        "editAuthSettingsAria": "Editați setările de autentificare pentru {domain}",
+        "emailPassword": "E-mail și parolă",
+        "emailPasswordHelp": "Permite utilizatorilor să se conecteze cu e-mail și parolă",
+        "empty": "Nu este configurat încă niciun domeniu personalizat.",
+        "enabledAuthMethods": "Metode de autentificare activate",
+        "guidedSetup": {
+          "action": "Configurare ghidată",
+          "description": "Configurați SSO, SCIM, politica de acces și verificările de activare într-un flux securizat unic.",
+          "title": "Configurare ghidată"
+        },
+        "keepExistingSecretKey": "Lăsați gol pentru a păstra cheia secretă existentă",
+        "nameHost": "Nume / Gazdă",
+        "notConfigured": "neconfigurat",
+        "passkey": "Cheie de acces",
+        "passkeyHelp": "Permite conectarea fără parolă cu chei de acces",
+        "regenerateToken": "Regenerare token",
+        "regenerateTokenFailed": "Regenerarea tokenului a eșuat",
+        "regenerateTokenSuccess": "Un nou token de verificare a fost generat",
+        "regenerating": "Se regenerează…",
+        "saveConfiguration": "Salvează configurația",
+        "secretKey": "Cheie secretă",
+        "secretKeyPlaceholder": "Introduceți cheia secretă",
+        "secretKeyRequired": "Obligatoriu la configurarea unei chei de site",
+        "siteKey": "Cheie site",
+        "socialProviders": "Furnizori de autentificare socială",
+        "socialProvidersHelp": "Activați opțiunile de conectare prin rețele sociale pentru acest domeniu",
+        "sso": "Autentificare unică (SSO)",
+        "ssoHelp": "Permite conectarea enterprise bazată pe OIDC",
+        "status": {
+          "pending": "În așteptarea verificării",
+          "verified": "Verificat"
+        },
+        "title": "Domeniu personalizat și branding",
+        "tokenExpired": "Token expirat",
+        "tokenExpiredDescription": "Tokenul de verificare a expirat. Vă rugăm să regenerați un token nou.",
+        "tokenExpires": "Tokenul expiră la: {date}",
+        "turnstile": "Cloudflare Turnstile",
+        "turnstileHelp": "Protecție anti-bot pentru formularele de autentificare. Necesară pentru domeniile enterprise.",
+        "turnstileSiteKeyStatus": "Cheie de site Turnstile {status}",
+        "txtRecordInstruction": "Adăugați următoarea înregistrare TXT în DNS:",
+        "value": "Valoare",
+        "verifiedSuccess": "Domeniu verificat cu succes",
+        "verify": "Verifică",
+        "verifyDomain": "Verifică domeniul",
+        "verifyFailed": "Verificarea domeniului a eșuat",
+        "verifying": "Se verifică…",
+        "verifyOwnership": "Verifică proprietatea domeniului",
+        "verifyOwnershipDescription": "Adăugați o înregistrare DNS TXT pentru a verifica proprietatea asupra {domain}"
+      },
+      "email": {
+        "apiKey": "Cheie API",
+        "apiKeyHint": "Lăsați necompletat pentru a păstra cheia existentă. Obțineți cheia API de pe resend.com",
+        "create": "Creează configurația",
+        "delete": "Șterge configurația",
+        "deleteConfirm": "Sigur doriți să ștergeți această configurație de e-mail?",
+        "deleted": "Configurația de e-mail a fost ștearsă",
+        "deleteFailed": "Ștergerea a eșuat",
+        "description": "Configurați un furnizor de e-mail personalizat pentru organizația dvs. Toate e-mailurile organizației vor utiliza această configurație în locul celei implicite a sistemului.",
+        "fromEmail": "E-mail expeditor",
+        "fromName": "Nume expeditor",
+        "isActive": "Activează această configurație de e-mail",
+        "lastTest": "Ultimul test",
+        "passwordHint": "Lăsați necompletat pentru a păstra parola existentă",
+        "recommended": "Recomandat",
+        "resendConfig": "Configurație Resend",
+        "save": "Salvează modificările",
+        "saved": "Configurația de e-mail a fost salvată",
+        "saveFailed": "Salvarea a eșuat",
+        "scalewayConnected": "Scaleway Secret Store este gata",
+        "scalewayConnectedDesc": "Această organizație are o cheie Scaleway Key Manager verificată pentru stocarea criptată a secretelor.",
+        "scalewayKeyPending": "Cheia Scaleway nu a fost încă generată",
+        "scalewayKeyPendingDesc": "O cheie de organizație Scaleway va fi generată atunci când salvezi un secret, cum ar fi o cheie API Resend sau o parolă SMTP.",
+        "scalewayUnavailable": "Scaleway Secret Store indisponibil",
+        "scalewayUnavailableDesc": "Cheia de organizație Scaleway configurată nu a putut fi verificată. Secretele nu pot fi stocate în siguranță până când această problemă nu este remediată.",
+        "secretSet": "Setat",
+        "sendTest": "Trimite test",
+        "smtpConfig": "Configurație SMTP",
+        "smtpHost": "Gazdă SMTP",
+        "smtpIpMode": "Mod IP",
+        "smtpIpMode.auto": "Automat",
+        "smtpIpModeHint": "Utilizați Automat cu excepția cazului în care furnizorul dvs. SMTP solicită o familie IP specifică.",
+        "smtpIpMode.ipv4": "Doar IPv4",
+        "smtpIpMode.ipv6": "Doar IPv6",
+        "smtpPassword": "Parolă",
+        "smtpPort": "Port",
+        "smtpRequireTls": "Solicită upgrade STARTTLS",
+        "smtpSecure": "Utilizează TLS (port 465)",
+        "smtpServer": "Server SMTP",
+        "smtpUsername": "Nume de utilizator",
+        "testEmailRequired": "Vă rugăm să introduceți o adresă de e-mail de test",
+        "testFailed": "Trimiterea e-mailului de test a eșuat",
+        "testFailure": "Eșuat",
+        "testSection": "Trimite e-mail de test",
+        "testSent": "E-mailul de test a fost trimis cu succes",
+        "testSuccess": "Succes",
+        "title": "Configurație e-mail",
+        "transportType": "Furnizor de e-mail",
+        "vaultConnected": "Vault conectat",
+        "vaultConnectedDesc": "Secretele sunt stocate în siguranță în HashiCorp Vault.",
+        "vaultSealed": "Vault sigilat",
+        "vaultSealedDesc": "HashiCorp Vault este sigilat. Vă rugăm să îl desigilați pentru a stoca secrete.",
+        "vaultUnavailable": "Vault indisponibil",
+        "vaultUnavailableDesc": "HashiCorp Vault nu este disponibil. Secretele nu pot fi stocate în siguranță."
+      },
+      "emailConfig": {
+        "yourCompanyName": "Numele companiei dvs."
+      },
+      "enableProviderHelp": "Activați sau dezactivați acest furnizor",
+      "identity": {
+        "accessPolicy": {
+          "action": {
+            "save": "Salvează politica de acces"
+          },
+          "defaultRoleTemplate": "Șablon de rol implicit",
+          "description": "Configurați impunerea domeniului, a invitațiilor și a SSO după trecerea testului pilot.",
+          "noDefaultTemplate": "Niciun șablon implicit",
+          "placeholder": {
+            "roleTemplate": "Selectează șablonul de rol"
+          },
+          "requireSso": "Solicită SSO",
+          "requireSsoHelp": "Angajații trebuie să utilizeze IdP-ul enterprise.",
+          "restrictDomain": "Restricționează la domeniul verificat",
+          "restrictDomainHelp": "Blochează conturile din afara domeniului selectat.",
+          "restrictInvites": "Restricționează invitațiile",
+          "restrictInvitesHelp": "Permite doar invitațiile aliniate cu politica de acces.",
+          "title": "Politică de acces"
+        },
+        "badge": {
+          "now": "Acum",
+          "queued": "În coadă",
+          "ready": "Gata"
+        },
+        "domain": {
+          "action": {
+            "checkStatus": "Verifică starea domeniului"
+          },
+          "description": "Validează limitele entității găzduite înainte de a impune SSO pentru angajați.",
+          "help": "Verificarea DNS utilizează acțiunile existente de verificare a domeniului SSO. Finalizează acea verificare înainte de a activa aplicarea obligatorie.",
+          "notSelected": "Neselectat",
+          "selected": "Domeniu selectat",
+          "status": {
+            "pending": "În așteptare",
+            "verified": "Verificat"
+          },
+          "title": "Domeniu"
+        },
+        "hero": {
+          "description": "Configurează SSO, SCIM și aplicarea obligatorie pentru organizația {organizationId} cu activare securizată.",
+          "eyebrow": "Identitate enterprise",
+          "title": "Listă de verificare operațională"
+        },
+        "provider": {
+          "action": {
+            "save": "Salvează furnizorul"
+          },
+          "description": "Alege presetarea furnizorului de identitate, protocolul, ID-ul furnizorului și domeniul de e-mail.",
+          "error": {
+            "domainRequired": "Domeniul este obligatoriu",
+            "providerIdRequired": "ID-ul furnizorului este obligatoriu"
+          },
+          "label": {
+            "domain": "Domeniu de e-mail",
+            "preset": "Presetare furnizor",
+            "protocol": "Protocol",
+            "providerId": "ID furnizor"
+          },
+          "placeholder": {
+            "domain": "de ex. example.com…",
+            "protocol": "Selectează protocolul",
+            "provider": "Selectează furnizorul",
+            "providerId": "de ex. acme-okta…"
+          },
+          "preset": {
+            "generic": {
+              "description": "Utilizează orice furnizor de identitate conform standardelor OIDC sau SAML 2.0."
+            },
+            "googleWorkspace": {
+              "description": "Utilizează Google Workspace OIDC pentru SSO și sincronizare opțională a directorului."
+            },
+            "microsoftEntra": {
+              "description": "Utilizează Microsoft Entra ID pentru SSO enterprise și aprovizionare opțională."
+            },
+            "okta": {
+              "description": "Utilizează Okta Workforce Identity pentru autentificare unică (SSO) SAML sau OIDC."
+            }
+          },
+          "title": "Furnizor"
+        },
+        "rail": {
+          "title": "Ghid de pregătire"
+        },
+        "review": {
+          "action": {
+            "activate": "Activează identitatea enterprise"
+          },
+          "activationSummary": "Rezumatul activării",
+          "description": "Revizuiți verificările de activare securizată înainte de a activa controalele de identitate enterprise.",
+          "lockoutWarning": "Avertisment privind blocarea administratorului curent",
+          "lockoutWarningHelp": "Confirmă că te poți conecta cu contul tău actual de administrator prin intermediul furnizorului configurat înainte de activare. Impunerea poate bloca alternativa de conectare cu parolă pentru domeniul selectat.",
+          "missingRequirement": "{item} este obligatoriu înainte de activare",
+          "prerequisitesComplete": "Cerințele preliminare privind furnizorul, domeniul verificat și testul SSO sunt finalizate.",
+          "requirement": {
+            "domain": "Domeniu verificat",
+            "provider": "Furnizor",
+            "ssoTest": "Test SSO"
+          },
+          "title": "Revizuire și activare"
+        },
+        "scim": {
+          "action": {
+            "create": "Creează conexiune SCIM",
+            "creating": "Se creează conexiunea SCIM",
+            "decommission": "Scoate din uz",
+            "reconcile": "Actualizează starea creării",
+            "refresh": "Actualizează starea",
+            "rotate": "Rotește credențialul",
+            "selectRole": "Selectați mai întâi un șablon de rol prestabilit"
+          },
+          "credential": {
+            "close": "Închide",
+            "confirmClose": "Confirmați că acreditarea este salvată înainte de a închide.",
+            "copied": "Acreditare copiată în clipboard.",
+            "copy": "Copiază acreditarea",
+            "description": "Copiați și salvați această acreditare acum. Nu va mai putea fi afișată din nou.",
+            "label": "Acreditare",
+            "saved": "Am salvat această acreditare",
+            "title": "Acreditare SCIM",
+            "warning": "Această acreditare este afișată o singură dată. Stocați-o în siguranță în furnizorul dvs. de identitate."
+          },
+          "credentials": {
+            "credential": "Acreditare",
+            "empty": "Nu a fost emisă nicio acreditare.",
+            "expires": "Expiră",
+            "lastUsedAria": "Ultima utilizare: {value} UTC",
+            "revoke": "Revocă",
+            "status": {
+              "active": "activ",
+              "revoked": "revocat"
+            },
+            "title": "Acreditări",
+            "unused": "Neutilizat încă"
+          },
+          "description": "Verificarea SCIM se actualizează după ce furnizorul dvs. de identitate trimite un utilizator de test sau o modificare de grup.",
+          "dialog": {
+            "cancel": "Anulează",
+            "decommission": {
+              "description": "Această acțiune dezafectează definitiv aprovizionarea SCIM și nu poate fi anulată.",
+              "title": "Dezafectează SCIM"
+            },
+            "revoke": {
+              "description": "Această acțiune împiedică imediat acreditarea să mai aprovizioneze utilizatori.",
+              "title": "Revocă acreditarea"
+            }
+          },
+          "endpoint": "Endpoint",
+          "events": {
+            "empty": "Nu a fost înregistrat niciun eveniment de aprovizionare.",
+            "error": "Evenimentele nu au putut fi încărcate. Reîmprospătați starea și încercați din nou.",
+            "title": "Evenimente recente"
+          },
+          "expiry": "Expirare acreditare",
+          "expiry.value": "1 an",
+          "refreshHelp": "Reîmprospătați starea pentru a încărca metadatele sigure ale conexiunii.",
+          "status": {
+            "active-unverified": "activ neverificat",
+            "creating": "se creează",
+            "creation_failed": "creare eșuată",
+            "decommissioned": "dezafectat",
+            "decommissioning": "se dezafectează",
+            "disconnected": "deconectat",
+            "refreshing": "se reîmprospătează",
+            "revoking": "se revocă",
+            "rotating": "se rotește",
+            "verified": "verificat"
+          },
+          "title": "Aprovizionare SCIM",
+          "toast": {
+            "createError": "Nu s-a putut crea conexiunea SCIM.",
+            "reconcileError": "Nu s-a putut reconcilia crearea SCIM.",
+            "refreshError": "Nu s-a putut reîmprospăta starea SCIM.",
+            "rotateError": "Nu s-a putut roti acreditarea SCIM.",
+            "updateError": "Nu s-a putut actualiza conexiunea SCIM."
+          },
+          "verification": "Verificare",
+          "verification.awaiting": "În așteptarea utilizării de către furnizor",
+          "verification.observed": "Observat",
+          "wizardDescription": "Configurați aprovizionarea utilizatorilor gestionați fără a modifica activarea pentru organizație."
+        },
+        "sso": {
+          "action": {
+            "register": "Înregistrare furnizor SSO"
+          },
+          "description": "Înregistrați IdP-ul extern utilizând acreditările de client OIDC sau metadatele SAML.",
+          "error": {
+            "saveProviderFirst": "Salvați furnizorul și domeniul înainte de a înregistra SSO"
+          },
+          "label": {
+            "clientId": "ID client",
+            "clientSecret": "Secret client",
+            "issuer": "Emitent",
+            "metadata": "Metadate SAML"
+          },
+          "placeholder": {
+            "issuer": {
+              "generic": "https://idp.example.com…",
+              "googleWorkspace": "https://accounts.google.com…",
+              "microsoftEntra": "https://login.microsoftonline.com/{tenant-id}/v2.0…",
+              "okta": "https://acme.okta.com…"
+            },
+            "metadata": "Lipiți XML-ul metadatelor IdP…"
+          },
+          "saml": {
+            "acsPath": "Cale ACS relativă la browser: {path}",
+            "acsUrl": "Configurați IdP-ul dvs. cu acest URL Assertion Consumer Service (ACS): {path}"
+          },
+          "title": "Configurare SSO"
+        },
+        "ssoTest": {
+          "action": {
+            "recordFail": "Înregistrare eșec",
+            "recordPass": "Înregistrare reușită"
+          },
+          "defaultFailure": "Testul SSO live a eșuat",
+          "description": "Înregistrați rezultatul unui test SSO extern live înainte de aplicare.",
+          "error": {
+            "saveProviderFirst": "Salvați furnizorul înainte de a înregistra un test"
+          },
+          "help": "Aceasta înregistrează rezultatul unui test SSO extern live. Efectuați mai întâi conectarea în IdP, apoi înregistrați reușita sau eșecul aici pentru verificarea activării.",
+          "label": {
+            "email": "E-mail utilizator de test",
+            "failureNote": "Notă privind eșecul"
+          },
+          "status": {
+            "failed": "Eșuat",
+            "notRun": "Neexecutat",
+            "passed": "Reușit"
+          },
+          "title": "Utilizator de test"
+        },
+        "status": {
+          "activated": "Activat",
+          "draft": "Ciornă"
+        },
+        "step": {
+          "accessPolicy": "Politică de acces",
+          "accessPolicy.description": "Setați regulile de aplicare",
+          "domain": "Domeniu",
+          "domain.description": "Confirmați limita entității găzduite",
+          "provider": "Furnizor",
+          "provider.description": "Alegeți sursa de identitate",
+          "review": "Revizuire și activare",
+          "review.description": "Protecție activare",
+          "scim": "Aprovizionare SCIM",
+          "scim.description": "Conectați și gestionați conexiunea de aprovizionare SCIM",
+          "sso": "Configurare SSO",
+          "sso.description": "Înregistrați OIDC sau SAML",
+          "ssoTest": "Utilizator de test",
+          "ssoTest.description": "Înregistrați rezultatul conectării live"
+        },
+        "toast": {
+          "accessPolicyFailed": "Salvarea politicii de acces a eșuat",
+          "accessPolicySaved": "Politica de acces a fost salvată",
+          "activated": "Configurarea identității de întreprindere a fost activată",
+          "activateFailed": "Activarea configurării a eșuat",
+          "domainStatusFailed": "Reîmprospătarea stării domeniului a eșuat",
+          "domainStatusRefreshed": "Starea domeniului a fost reîmprospătată",
+          "providerSaved": "Furnizorul de identitate a fost salvat",
+          "providerSaveFailed": "Salvarea furnizorului a eșuat",
+          "ssoRegistered": "Furnizorul SSO a fost înregistrat",
+          "ssoRegisterFailed": "Înregistrarea furnizorului SSO a eșuat",
+          "ssoTestFailed": "Testul SSO a fost marcat ca eșuat",
+          "ssoTestPassed": "Testul SSO a fost marcat ca reușit",
+          "ssoTestRecordFailed": "Înregistrarea testului SSO a eșuat"
+        }
+      },
+      "keepExistingSecretHelp": "Lăsați necompletat pentru a păstra secretul existent",
+      "leaveBlankKeepExisting": "Lăsați necompletat pentru a păstra valoarea existentă",
+      "provider": "Furnizor",
+      "socialOAuth": {
+        "addDescription": "Configurați propria aplicație OAuth pentru autentificarea prin rețele sociale.",
+        "addProviderError": "Adăugarea furnizorului a eșuat",
+        "addTitle": "Adăugare furnizor OAuth pentru rețele sociale",
+        "appleKeyIdHelp": "ID-ul de cheie asociat cu cheia dumneavoastră privată",
+        "appleKeyIdRequired": "ID-ul de cheie este obligatoriu pentru Apple",
+        "appleTeamIdHelp": "Se găsește în contul dumneavoastră Apple Developer",
+        "appleTeamIdRequired": "ID-ul de echipă este obligatoriu pentru Apple",
+        "authentication": "Autentificare",
+        "clientIdPlaceholder": "ID-ul dumneavoastră de client OAuth",
+        "clientSecretPlaceholder": "Secretul dumneavoastră de client OAuth",
+        "configured": "OAuth {provider} a fost configurat cu succes",
+        "createAppAt": "Creați o aplicație OAuth la",
+        "deleteError": "Ștergerea configurației OAuth a eșuat",
+        "description": "Configurați propriile date de autentificare OAuth pentru conectarea prin rețele sociale. Acest lucru permite utilizatorilor dumneavoastră să se conecteze folosind aplicațiile OAuth ale organizației în locul credențialelor partajate.",
+        "developerConsole": "Consola pentru dezvoltatori {provider}",
+        "editDescription": "Actualizați datele de autentificare OAuth.",
+        "editTitle": "Editare OAuth {provider}",
+        "empty": "Nu este configurat niciun furnizor OAuth personalizat pentru rețele sociale.",
+        "emptyDescription": "Adăugați propriile date de autentificare OAuth pentru a le înlocui pe cele partajate.",
+        "howItWorks": "Cum funcționează",
+        "instructions": {
+          "addProvider": "Adăugați furnizorul aici cu datele dumneavoastră de autentificare",
+          "copyCredentials": "Copiați ID-ul de client și Secretul de client",
+          "createApp": "Creați o aplicație OAuth în consola pentru dezvoltatori a furnizorului",
+          "customDomain": "Utilizatorii care se conectează prin domeniul dumneavoastră personalizat vor folosi aplicația dumneavoastră OAuth"
+        },
+        "keyId": "ID cheie",
+        "pasteYourP8PrivateKeyContents": "Lipiți conținutul cheii private .p8",
+        "privateKey": "Cheie privată (.p8)",
+        "removed": "OAuth {provider} a fost eliminat",
+        "removeDialogDescription": "Sigur doriți să eliminați această configurație OAuth? Utilizatorii vor reveni la datele de autentificare OAuth partajate (dacă sunt disponibile).",
+        "removeDialogTitle": "Eliminare furnizor OAuth pentru rețele sociale",
+        "teamId": "ID echipă",
+        "title": "Furnizori de autentificare prin rețele sociale",
+        "unverified": "Neverificat",
+        "updateConfigError": "Actualizarea configurației a eșuat",
+        "updated": "OAuth {provider} a fost actualizat cu succes"
+      },
+      "sso": {
+        "addDescription": "Configurați un furnizor de identitate OIDC pentru autentificare unică (SSO) enterprise.",
+        "addError": "Adăugarea furnizorului SSO a eșuat",
+        "addSuccess": "Furnizorul SSO a fost adăugat cu succes",
+        "addTitle": "Adăugare furnizor SSO",
+        "clientIdPlaceholder": "ID-ul dumneavoastră de client OIDC",
+        "clientSecretPlaceholder": "Secretul dumneavoastră de client OIDC",
+        "deleteDialogDescription": "Sigur doriți să ștergeți acest furnizor SSO? Utilizatorii nu se vor mai putea conecta folosind acest furnizor de identitate.",
+        "deleteDialogTitle": "Ștergere furnizor SSO",
+        "deleteError": "Nu s-a putut șterge furnizorul SSO",
+        "deleteProviderAria": "Ștergeți furnizorul SSO {provider}",
+        "deleteSuccess": "Furnizorul SSO a fost șters",
+        "description": "Adăugați furnizori de identitate OIDC pentru a activa SSO pentru organizația dvs.",
+        "domainInvalid": "Introduceți un domeniu valid (de ex., example.com)",
+        "domainRequired": "Domeniul este obligatoriu",
+        "domainVerified": "Domeniu verificat",
+        "emailDomain": "Domeniu de e-mail",
+        "emailDomainHelp": "Utilizatorii cu acest domeniu de e-mail vor putea utiliza SSO",
+        "empty": "Nu există încă furnizori SSO configurați.",
+        "emptyDescription": "Adăugați un furnizor OIDC pentru a activa autentificarea unică (SSO) de tip enterprise.",
+        "instructions": {
+          "copyCredentials": "Copiați URL-ul emitentului, Client ID-ul și Client Secret-ul din IdP-ul dvs.",
+          "createApp": "Creați o aplicație OIDC în furnizorul dvs. de identitate (Okta, Azure AD etc.)",
+          "verifyDomain": "Adăugați furnizorul aici și verificați domeniul de e-mail printr-o înregistrare DNS TXT"
+        },
+        "issuerUrl": "URL emitent",
+        "issuerUrlHelp": "URL-ul emitentului OIDC din furnizorul dvs. de identitate",
+        "issuerUrlRequired": "URL-ul emitentului este obligatoriu",
+        "providerId": "ID furnizor",
+        "providerIdHelp": "Un identificator unic pentru acest furnizor (litere mici, fără spații)",
+        "providerIdInvalid": "ID-ul furnizorului trebuie să conțină doar litere mici, cifre și cratime",
+        "providerIdRequired": "ID-ul furnizorului este obligatoriu",
+        "setupInstructions": "Instrucțiuni de configurare",
+        "title": "Furnizori de identitate",
+        "token": "Token",
+        "tokenError": "Nu s-a putut genera tokenul de verificare a domeniului",
+        "tokenGenerated": "Tokenul de verificare a fost generat",
+        "txtToken": "Token TXT:",
+        "validUrlRequired": "Introduceți o adresă URL validă",
+        "verified": "Verificat",
+        "verify": "Verifică",
+        "verifyError": "Verificarea domeniului a eșuat. Verificați înregistrarea DNS TXT și reîncercați."
+      },
+      "tab": {
+        "branding": "Branding",
+        "domains": "Domeniu personalizat",
+        "social-oauth": "Autentificare prin rețele sociale",
+        "sso": "Furnizori SSO"
+      }
+    },
+    "enterpriseIdentitySetup": {
+      "description": "Ghid pentru SSO, provizionare SCIM, restricții de domeniu, politica de invitații și roluri implicite pentru această organizație.",
+      "title": "Configurare Enterprise Identity"
+    }
+  }
+}

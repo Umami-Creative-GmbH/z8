@@ -5,6 +5,7 @@ const mockState = vi.hoisted(() => ({
 	connection: vi.fn(),
 	getVerifiedOrgContext: vi.fn(),
 	getAbsencesForMonth: vi.fn(async () => []),
+	linkAbsenceDeputyProfiles: vi.fn(async (events: unknown[]) => events),
 	getAssignedHolidaysForEmployee: vi.fn(async () => []),
 	assignedHolidayToCalendarEvent: vi.fn(),
 	getHolidaysForMonth: vi.fn(async () => []),
@@ -47,6 +48,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/calendar/absence-service", () => ({
 	getAbsencesForMonth: mockState.getAbsencesForMonth,
+	linkAbsenceDeputyProfiles: mockState.linkAbsenceDeputyProfiles,
 }));
 
 vi.mock("@/lib/calendar/holiday-service", () => ({
@@ -68,6 +70,10 @@ vi.mock("@/lib/calendar/work-period-service", () => ({
 
 vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,
+}));
+
+vi.mock("@/lib/time-tracking/closed-months/store", () => ({
+	closedRangesForEmployee: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({

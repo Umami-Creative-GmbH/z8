@@ -33,6 +33,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
+import { canRequireDeputy } from "@/lib/absences/deputy";
+import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	type AbsenceCategoryForSettings,
@@ -93,7 +96,26 @@ const absenceCategoryTypeOptions: Array<{
 		labelKey: "settings.absenceCategories.form.typeBereavement",
 		fallback: "Bereavement",
 	},
+	{
+		value: "time_off_in_lieu",
+		labelKey: "settings.absenceCategories.form.typeTimeOffInLieu",
+		fallback: "Time Off in Lieu",
+	},
 ];
+
+/** The form-side refusal of a rule combination the server refuses too (#1000). */
+function drawsOnWorkBalanceError(
+	drawsOnWorkBalance: boolean,
+	form: { getFieldValue(name: "countsAgainstVacation" | "requiresWorkTime"): boolean },
+) {
+	return (
+		findAbsenceCategoryRuleConflict({
+			drawsOnWorkBalance,
+			countsAgainstVacation: form.getFieldValue("countsAgainstVacation"),
+			requiresWorkTime: form.getFieldValue("requiresWorkTime"),
+		}) ?? undefined
+	);
+}
 
 function getFieldError(error: unknown) {
 	if (typeof error === "string") {
@@ -349,7 +371,7 @@ export function AbsenceCategoryForm({
 							</div>
 							<div className="space-y-4">
 								{ALL_LANGUAGES.map((locale) => {
-									const localeLabel = locale.toUpperCase();
+									const localeLabel = LANGUAGE_CONFIG[locale]?.name ?? locale.toUpperCase();
 
 									return (
 										<div key={locale} className="grid gap-3 md:grid-cols-2">
@@ -486,6 +508,96 @@ export function AbsenceCategoryForm({
 									</div>
 								)}
 							</form.Field>
+
+							<form.Field
+								name="drawsOnWorkBalance"
+								validators={{
+									onChangeListenTo: ["countsAgainstVacation", "requiresWorkTime"],
+									onChange: ({ value, fieldApi }) => drawsOnWorkBalanceError(value, fieldApi.form),
+									onSubmit: ({ value, fieldApi }) => drawsOnWorkBalanceError(value, fieldApi.form),
+								}}
+							>
+								{(field) => (
+									<div className="space-y-2 rounded-lg border p-4">
+										<div className="flex items-start gap-3">
+											<Checkbox
+												id="absenceCategoryDrawsOnWorkBalance"
+												checked={field.state.value}
+												onCheckedChange={(checked) => field.handleChange(checked === true)}
+												aria-invalid={field.state.meta.errors.length > 0}
+												aria-describedby="absenceCategoryDrawsOnWorkBalanceHelp"
+											/>
+											<div className="space-y-1 leading-none">
+												<Label
+													htmlFor="absenceCategoryDrawsOnWorkBalance"
+													className="cursor-pointer"
+												>
+													{t(
+														"settings.absenceCategories.form.drawsOnWorkBalance",
+														"Draws on Work Balance",
+													)}
+												</Label>
+												<p
+													id="absenceCategoryDrawsOnWorkBalanceHelp"
+													className="text-sm text-muted-foreground"
+												>
+													{t(
+														"settings.absenceCategories.form.drawsOnWorkBalanceHelp",
+														"Time off in lieu: approved days keep their required time, so the employee's work balance falls by it. Vacation is not used.",
+													)}
+												</p>
+											</div>
+										</div>
+										{field.state.meta.errors.length > 0 && (
+											<p className="text-sm text-destructive" role="alert" aria-live="polite">
+												{t(
+													"settings.absenceCategories.form.drawsOnWorkBalanceConflict",
+													'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+												)}
+											</p>
+										)}
+									</div>
+								)}
+							</form.Field>
+							<form.Subscribe selector={(state) => state.values.type}>
+								{(type) => (
+									<form.Field name="deputyRequired">
+										{(field) => {
+											// Sick leave is never planned ahead, so it never requires a deputy.
+											const allowed = canRequireDeputy(type);
+											return (
+												<div className="flex items-start gap-3 rounded-lg border p-4">
+													<Checkbox
+														id="absenceCategoryDeputyRequired"
+														checked={allowed && field.state.value}
+														disabled={!allowed}
+														onCheckedChange={(checked) => field.handleChange(checked === true)}
+													/>
+													<div className="space-y-1 leading-none">
+														<Label
+															htmlFor="absenceCategoryDeputyRequired"
+															className={allowed ? "cursor-pointer" : undefined}
+														>
+															{t("settings.absenceCategories.form.deputyRequired", "Deputy required")}
+														</Label>
+														<p className="text-sm text-muted-foreground">
+															{allowed
+																? t(
+																		"settings.absenceCategories.form.deputyRequiredHelp",
+																		"Every absence of this type must name a deputy who covers while the employee is away.",
+																	)
+																: t(
+																		"settings.absenceCategories.form.deputyRequiredSick",
+																		"Sick leave never requires a deputy.",
+																	)}
+														</p>
+													</div>
+												</div>
+											);
+										}}
+									</form.Field>
+								)}
+							</form.Subscribe>
 						</div>
 
 						<form.Field name="isActive">

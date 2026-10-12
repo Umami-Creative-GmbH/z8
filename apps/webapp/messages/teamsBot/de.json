@@ -71,6 +71,7 @@
   },
   "digest": {
     "currentlyClockedIn": "Aktuell eingestempelt",
+    "deputy": "Stellvertretung: {name}",
     "everyoneAvailable": "Alle sind heute verfügbar",
     "noOneClockedIn": "Niemand ist bisher eingestempelt",
     "noPendingApprovals": "Keine ausstehenden Genehmigungen",

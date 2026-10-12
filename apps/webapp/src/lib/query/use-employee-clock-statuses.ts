@@ -86,6 +86,18 @@ export function useEmployeeClockStatuses(
 		};
 	};
 
+	/** The employee's break in progress (#861), or null. */
+	const getBreak = (
+		employeeId: string,
+	): { breakStartedAt: string; breakStartedZone: string | null } | null => {
+		const snapshot = snapshots[employeeId.trim()];
+		if (snapshot?.status !== "on-break" || !snapshot.breakStartedAt) return null;
+		return {
+			breakStartedAt: snapshot.breakStartedAt,
+			breakStartedZone: snapshot.breakStartedZone ?? null,
+		};
+	};
+
 	return {
 		...query,
 		employeeIds: normalizedEmployeeIds,
@@ -93,5 +105,6 @@ export function useEmployeeClockStatuses(
 		statuses,
 		getStatus,
 		getActivity,
+		getBreak,
 	};
 }

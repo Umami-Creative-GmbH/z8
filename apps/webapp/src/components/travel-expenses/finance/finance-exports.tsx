@@ -32,25 +32,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
 import type { ExportBatchReimbursementAccount } from "@/lib/travel-expenses/export-reimbursement";
 import type { TravelExpenseExportBatchView } from "@/lib/travel-expenses/export-store";
-import type { SettlementTitle } from "@/lib/travel-expenses/settlement-store";
-import {
-	formatMoney,
-	formatPlainDate,
-	formatPlainDateRange,
-	formatRecordedInstant,
-} from "../report/format";
-import { reportName } from "../report-name";
+import { formatMoney, formatRecordedInstant } from "../report/format";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import {
 	BulkReimbursementDialog,
 	type BulkReimbursementItem,
 	type BulkReimbursementSkippedItem,
 } from "./bulk-reimbursement-dialog";
+import { settlementTitle } from "./settlement-title";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 function rowTitle(t: Translate, locale: string, row: ExportableRevisionRow) {
-	const base = baseRowTitle(t, locale, row);
+	const base = settlementTitle(t, locale, row.title);
 	// An adjustment (#615) stays identifiable beside the report it corrects.
 	return row.adjustmentOf
 		? {
@@ -60,23 +54,6 @@ function rowTitle(t: Translate, locale: string, row: ExportableRevisionRow) {
 				}),
 			}
 		: base;
-}
-
-function baseRowTitle(t: Translate, locale: string, row: { title: SettlementTitle }) {
-	const { title } = row;
-	if (title.kind === "trip") {
-		return {
-			name: reportName(t, { kind: "trip", itemType: null, title: title.purpose }),
-			dates: formatPlainDateRange(locale, title.startDate, title.endDate),
-		};
-	}
-	if (title.kind === "standalone") {
-		return {
-			name: reportName(t, { kind: "standalone", itemType: null, title: title.description }),
-			dates: title.expenseDate ? formatPlainDate(locale, title.expenseDate) : null,
-		};
-	}
-	return { name: title.claimType, dates: null };
 }
 
 function createOutcomeMessage(
@@ -395,7 +372,7 @@ function batchReimbursementOf(
 	const items: BulkReimbursementItem[] = [];
 	const skipped: BulkReimbursementSkippedItem[] = [];
 	for (const entry of accounts) {
-		const label = `${entry.employeeName ?? "—"} · ${baseRowTitle(t, locale, entry).name}`;
+		const label = `${entry.employeeName ?? "—"} · ${settlementTitle(t, locale, entry.title).name}`;
 		if (entry.account && entry.skip === null) items.push({ account: entry.account, label });
 		else skipped.push({ source: entry.source, label, outcome: entry.skip ?? "out_of_scope" });
 	}

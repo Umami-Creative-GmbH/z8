@@ -16,6 +16,10 @@
       "label": "Faturável",
       "noCustomer": "Apenas o trabalho em um projeto com cliente pode ser faturável"
     },
+    "breakInProgress": {
+      "description": "Você está em pausa",
+      "since": "Em pausa desde {time}"
+    },
     "budget": "Orçamento",
     "clockedOutSuccess": "Você registrou a saída!",
     "clockIn": "Registrar Entrada",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Apenas o trabalho em um projeto que possui um cliente pode ser faturável",
       "breakAwaitingApproval": "Este período de trabalho está aguardando aprovação e não pode ser editado. Adicione o intervalo assim que for resolvido.",
       "breakDurationInvalid": "Insira uma duração de intervalo de pelo menos 1 minuto.",
+      "breakInProgressOpen": "Você está em pausa. Retome o trabalho antes de adicionar outra pausa.",
       "breakNotAllowed": "Você não pode adicionar um intervalo a este trabalho.",
       "breakOccupied": "O intervalo se sobrepõe a outro trabalho registrado.",
       "breakPendingCorrection": "Uma aprovação de correção de horas já está pendente para este período de trabalho. Adicione o intervalo assim que for resolvido.",
@@ -84,12 +89,14 @@
       "breakTooLong": "A duração do intervalo deve ser menor do que a sua sessão atual.",
       "clockAttributionNotAllowed": "O projeto ou categoria selecionado não está disponível",
       "clockCommandRejected": "O servidor não aceitou esta ação de registro de ponto",
+      "clockConnectionRequired": "O registro de ponto requer conexão nesta organização. Reconecte-se e tente novamente.",
       "clockInAppendReview": "Seu histórico de horas precisa de revisão antes que você possa registrar a entrada. Entre em contato com seu administrador.",
       "clockInCollision": "Esta entrada entra em conflito com uma solicitação anterior. Atualize e tente novamente.",
       "clockInFailed": "Falha ao registrar entrada",
       "clockInNotAllowed": "Você não pode registrar o ponto de entrada.",
       "clockInOccupied": "Este horário se sobrepõe a outro trabalho registrado",
       "clockInRetry": "Falha ao registrar o ponto de entrada. Tente novamente.",
+      "clockMonthClosed": "Este registro de horas está em um mês fechado e não pode ser alterado até que o mês seja reaberto.",
       "clockNotAllowedAtTime": "O registro de ponto não é permitido neste momento",
       "clockOutAppendReview": "Seu histórico de ponto precisa de revisão antes que você possa registrar a saída. Entre em contato com o administrador.",
       "clockOutBeforeClockIn": "O registro de saída deve ser posterior ao registro de entrada",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Esta tarefa pertence a outro projeto",
       "taskProjectNotBookable": "Não é mais possível registrar horas no projeto desta tarefa",
       "workCategoryNotAllowed": "Não é possível atribuir a esta categoria de trabalho"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Registrar entrada",
+        "clockOut": "Registrar saída",
+        "endDay": "Encerrar dia",
+        "resume": "Retomar trabalho",
+        "startBreak": "Iniciar pausa"
+      },
+      "board": {
+        "empty": "Ninguém registrou entrada no momento.",
+        "title": "Quem está presente"
+      },
+      "done": {
+        "button": "Concluído",
+        "clockIn": "Entrada registrada",
+        "clockOut": "Saída registrada",
+        "endDay": "Dia encerrado",
+        "endDayNote": "Seu dia foi encerrado no início da sua pausa.",
+        "resume": "Voltar ao trabalho",
+        "returning": "Voltando ao início em {seconds} s",
+        "startBreak": "Pausa iniciada",
+        "title": "Concluído"
+      },
+      "employee": {
+        "back": "Cancelar",
+        "endDayHint": "Encerrar o dia agora encerra seu trabalho no início da sua pausa.",
+        "today": "Hoje: {duration}"
+      },
+      "home": {
+        "empty": "Ninguém foi atribuído a este local ainda. Fale com seu administrador.",
+        "loadFailed": "Não foi possível carregar os nomes. Verifique a conexão de rede.",
+        "loading": "Carregando nomes…",
+        "noMatch": "Nenhum nome corresponde à sua busca.",
+        "search": "Encontre seu nome",
+        "title": "Toque no seu nome para registrar entrada ou saída"
+      },
+      "loading": "Iniciando quiosque…",
+      "offline": {
+        "banner": "O quiosque está offline. O registro de ponto não é possível até que a conexão seja restabelecida.",
+        "refused": "O quiosque está offline. Nada foi registrado; o registro de ponto só funciona online."
+      },
+      "pairing": {
+        "codeDescription": "O código funciona apenas uma vez e expira 10 minutos após ser emitido.",
+        "codeLabel": "Código de pareamento",
+        "description": "Um proprietário ou administrador cria o quiosque em Configurações › Quiosques e fornece a você um código de pareamento.",
+        "invalidCode": "Este código é inválido ou expirou. Peça um novo código de pareamento ao seu administrador.",
+        "malformedCode": "Digite o código de 10 caracteres exatamente como exibido nas configurações.",
+        "rateLimited": "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
+        "submit": "Parear este dispositivo",
+        "title": "Configurar este quiosque",
+        "unreachable": "O quiosque não consegue se conectar ao servidor. Verifique a conexão de rede e tente novamente."
+      },
+      "pin": {
+        "back": "Não é você? Voltar",
+        "checking": "Verificando…",
+        "delete": "Apagar último dígito",
+        "entered": "{count} dígitos inseridos",
+        "locked": "Muitas tentativas de PIN incorretas. Seu PIN está bloqueado até {time}. Tente novamente nesse horário ou peça ao seu gerente para desbloqueá-lo.",
+        "none": "Você ainda não tem um PIN de quiosque. Peça um ao seu gerente.",
+        "notAssigned": "Você não pode bater ponto neste quiosque. Fale com seu gerente.",
+        "prompt": "Digite o PIN do seu quiosque",
+        "rateLimited": "Muitas tentativas de PIN neste quiosque. Tente novamente em {seconds} segundos.",
+        "submit": "OK",
+        "wrong": "Esse PIN não está correto. Tente novamente."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Você já registrou a entrada.",
+        "billing": "O registro de ponto não está disponível para a sua organização no momento. Entre em contato com o administrador.",
+        "generic": "Não deu certo. Nada foi registrado. Tente novamente ou fale com seu gestor.",
+        "holiday": "O registro de ponto está bloqueado hoje devido a um feriado. Fale com seu gestor.",
+        "monthClosed": "Este registro de horas está em um mês fechado e não pode ser alterado. Fale com seu gestor.",
+        "noBreak": "Você não está em pausa.",
+        "notClockedIn": "Você não registrou a entrada.",
+        "onBreak": "Você já está em pausa.",
+        "unconfirmed": "O quiosque não pôde confirmar se isso foi salvo. Verifique seu status antes de tentar novamente.",
+        "underReview": "Seu registro de horas de hoje está em análise. Fale com seu gestor."
+      },
+      "retry": "Tentar novamente",
+      "revoked": {
+        "description": "Este quiosque não pode mais ser usado para registrar ponto. Entre em contato com o administrador.",
+        "pairAgain": "Parear com um novo código",
+        "title": "Quiosque revogado"
+      },
+      "state": {
+        "clockedIn": "Entrada registrada desde {time}",
+        "clockedOut": "Entrada não registrada",
+        "onBreak": "Em pausa desde {time}"
+      },
+      "unreachableDescription": "O quiosque não consegue se conectar ao servidor. Verifique a conexão de rede; o registro de ponto funciona apenas online.",
+      "unreachableTitle": "Quiosque offline"
     },
     "manualEntry": {
       "addButton": "Adicionar Entrada Manual",
@@ -198,6 +296,39 @@
     "noProject": "Sem projeto",
     "notesPlaceholder": "Em que você trabalhou?",
     "notesSaved": "Notas salvas",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "Uma solicitação de ausência para {dates} está pendente.",
+        "liveWork": "O trabalho iniciado em {start} ainda está em andamento.",
+        "manualWork": "O trabalho manual em {start} está pendente de decisão.",
+        "timeCorrection": "Uma correção de horas para o trabalho em {start} está pendente de decisão."
+      },
+      "description": "Confirme se o seu trabalho e as suas ausências para cada período estão completos e corretos.",
+      "opensOn": "Você pode enviar a partir de {date}.",
+      "refusal": {
+        "alreadySubmitted": "Este período já foi enviado.",
+        "noApprover": "Ninguém pode aprovar este período ainda. Peça a um administrador para atribuir um gestor a você.",
+        "notEnded": "Você pode enviar este período a partir do último dia dele.",
+        "notExpected": "Este período não precisa ser enviado.",
+        "periodOpen": "Este período ainda está aberto"
+      },
+      "rejectionReason": "Motivo: {reason}",
+      "status": {
+        "approved": "Aprovado",
+        "awaiting": "Aguardando envio",
+        "rejected": "Rejeitado",
+        "sentBack": "Devolvido após uma alteração",
+        "submitted": "Enviado"
+      },
+      "submit": "Enviar",
+      "submitFailed": "Não foi possível enviar o período",
+      "submitted": "Período enviado para aprovação",
+      "title": "Envios de períodos",
+      "withdraw": "Retirar",
+      "withdrawFailed": "Não foi possível retirar o envio",
+      "withdrawn": "Envio retirado",
+      "withdrawRefused": "Este envio já foi decidido e não pode mais ser retirado."
+    },
     "project": "Projeto",
     "quickBreak": {
       "addBreak": "Adicionar pausa",

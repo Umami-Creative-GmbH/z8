@@ -40,6 +40,9 @@ import {
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 } from "./close-active-work";
+import { assertWorkOpen } from "./closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
+import { humanActorUserId, receiptActorColumns, writerActor } from "./receipt-actor";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkLocationType } from "./work-location";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
@@ -63,7 +66,8 @@ export type StartLiveWorkResult = {
 	version: typeof START_LIVE_WORK_RESULT_VERSION;
 	operationId: string;
 	owner: { employeeId: string };
-	actor: { kind: "human"; userId: string };
+	/** A kiosk start (#860) records its kiosk, never a human authority. */
+	actor: { kind: "human"; userId: string } | { kind: "kiosk"; kioskId: string };
 	workPeriodId: string;
 	clockInEntryId: string;
 	start: {
@@ -244,8 +248,7 @@ export async function startLiveWork(
 		commandVersion: input.command.version,
 		command: input.command,
 		appendAdmission: started.result.append.admission,
-		actorKind: "human",
-		actorUserId: input.actorUserId,
+		...receiptActorColumns(started.result.actor),
 		workPeriodId: started.result.workPeriodId,
 		resultVersion: START_LIVE_WORK_RESULT_VERSION,
 		result: started.result,
@@ -275,6 +278,12 @@ export async function startLiveWorkGraph(
 	}
 
 	const startAt = dateFromInstant(input.eventInstant);
+	// A delayed frozen clock-in may name an instant inside a closed month (#762).
+	await assertWorkOpen(tx, {
+		organizationId,
+		employeeId,
+		intervals: [{ start: input.eventInstant, end: input.eventInstant }],
+	});
 	const occupant = await findLiveWorkOccupant(tx, { organizationId, employeeId }, startAt);
 	if (occupant) throw new LiveWorkOccupiedError(occupant);
 
@@ -309,12 +318,20 @@ export async function startLiveWorkGraph(
 		})
 		.returning({ id: workPeriod.id, graphRevision: workPeriod.graphRevision });
 	if (!period) throw new ClockingConflictError("Failed to create work period");
+	// Work started in a submitted period (e.g. later on its last day) sends it back (#1062).
+	const actor = writerActor(input.writer, input.actorUserId);
+	await sendBackChangedPeriodSubmissions(tx, {
+		organizationId,
+		employeeId,
+		causedByUserId: humanActorUserId(actor),
+		work: [{ start: input.eventInstant, end: input.eventInstant }],
+	});
 
 	const result: StartLiveWorkResult = {
 		version: START_LIVE_WORK_RESULT_VERSION,
 		operationId: command.operationId,
 		owner: { employeeId },
-		actor: { kind: "human", userId: input.actorUserId },
+		actor,
 		workPeriodId: period.id,
 		clockInEntryId: appended.entry.id,
 		start: {

@@ -4,6 +4,7 @@ import type {
 	SCIMIdentityResolutionInput,
 } from "@better-auth/scim";
 import { APIError } from "better-auth/api";
+import { isReservedEmail } from "@/lib/auth/reserved-email";
 import { createSCIMReadStore } from "./transaction-store";
 
 const SCIM_IDENTITY_CONFLICT = {
@@ -12,12 +13,21 @@ const SCIM_IDENTITY_CONFLICT = {
 	detail: "The SCIM identity cannot be linked",
 } as const;
 
+/** A kiosk-only placeholder address is never an SSO or SCIM identity (ADR 0006, #857). */
+function namesReservedEmail(resource: SCIMIdentityResolutionInput["resource"]): boolean {
+	return (
+		isReservedEmail(resource.userName) ||
+		isReservedEmail(resource.primaryEmail) ||
+		(resource.emails ?? []).some((email) => isReservedEmail(email?.value))
+	);
+}
+
 export async function resolveSCIMIdentity(
 	input: SCIMIdentityResolutionInput,
 	context: SCIMIdentityResolutionContext,
 ): Promise<SCIMIdentityResolution> {
 	const externalId = input.resource.externalId;
-	if (!externalId?.trim()) {
+	if (!externalId?.trim() || namesReservedEmail(input.resource)) {
 		throw new APIError("CONFLICT", SCIM_IDENTITY_CONFLICT);
 	}
 

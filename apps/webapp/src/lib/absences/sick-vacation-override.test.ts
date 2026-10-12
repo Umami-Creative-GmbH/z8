@@ -324,6 +324,7 @@ describe("adjustVacationAbsencesForSickness", () => {
 			updatedAbsenceIds: [],
 			createdAbsenceIds: [],
 			deletedAbsenceIds: [],
+			overriddenApprovedAbsenceIds: [],
 		});
 		expect(calls.updates).toEqual([]);
 		expect(calls.inserts).toEqual([]);

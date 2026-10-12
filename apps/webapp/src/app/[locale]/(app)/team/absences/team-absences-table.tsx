@@ -51,12 +51,15 @@ type TeamAbsencesTableProps = {
 	data: ManagerAbsenceListResult;
 	categories: AbsenceCategoryOption[];
 	search: string;
+	/** Personnel files are on: recording sick leave may add sick notes (#984). */
+	sickNotesEnabled?: boolean;
 };
 
 function TeamAbsencesTableContent({
 	data,
 	categories,
 	search,
+	sickNotesEnabled = false,
 }: TeamAbsencesTableProps) {
 	const { push } = useRouter();
 	const searchParams = useSearchParams();
@@ -163,6 +166,7 @@ function TeamAbsencesTableContent({
 						: null
 				}
 				categories={categories}
+				sickNotesEnabled={sickNotesEnabled}
 			/>
 		</div>
 	);

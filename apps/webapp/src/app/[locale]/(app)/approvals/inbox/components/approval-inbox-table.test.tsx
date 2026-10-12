@@ -148,4 +148,37 @@ describe("ApprovalInboxTable", () => {
 		).toBe(true);
 		expect(screen.getByText("Your own request: another approver decides it.")).toBeTruthy();
 	});
+
+	it("does not let a deputy select a request whose earlier stage they decided (#1016)", () => {
+		const fourEyes: ApprovalInboxItem = {
+			...makeApprovalInboxItem(),
+			coveringFor: { approverId: "absent-1", approverName: "Xenia" },
+			capabilities: {
+				canApprove: false,
+				canReject: false,
+				canBulkApprove: false,
+				requiresRejectReason: true,
+				decidedEarlierStage: true,
+			},
+		};
+
+		render(
+			<ApprovalInboxTable
+				items={[fourEyes]}
+				selectedIds={new Set()}
+				onSelectItem={vi.fn()}
+				onRowClick={vi.fn()}
+				isFetching={false}
+			/>,
+		);
+
+		expect(
+			(screen.getByRole("checkbox", { name: "Select row" }) as HTMLInputElement).disabled,
+		).toBe(true);
+		expect(
+			screen.getByText(
+				"You already decided an earlier stage of this request, so another approver decides this one.",
+			),
+		).toBeTruthy();
+	});
 });

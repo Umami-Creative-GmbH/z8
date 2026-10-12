@@ -2,6 +2,7 @@
   "settings": {
     "scheduledExports": {
       "actions": {
+        "changeOwner": "Endre eier",
         "delete": "Slett",
         "edit": "Rediger",
         "runNow": "Kjør nå",
@@ -16,6 +17,7 @@
       },
       "dataCategories": {
         "absences": "Fravær",
+        "customers": "Kunder",
         "employees": "Ansatte",
         "projects": "Prosjekter",
         "timeEntries": "Timeregistreringer",
@@ -122,6 +124,8 @@
         "dateRangesDesc": "Beregnes automatisk basert på tidsplanens frekvens (f.eks. forrige måned for månedlige eksporter).",
         "delivery": "Levering:",
         "deliveryDesc": "Eksporter lastes opp til S3, og e-postvarsler med nedlastingslenker sendes til konfigurerte mottakere.",
+        "owner": "Eier:",
+        "ownerDesc": "Hver tidsplan kjører på vegne av en organisasjonsadministrator. Hvis eieren slutter å være organisasjonsadministrator eller forlater organisasjonen, settes tidsplanen på pause og alle organisasjonsadministratorer varsles slik at noen kan overta den.",
         "scheduleTypes": "Tidsplantyper:",
         "scheduleTypesDesc": "Daglig, ukentlig (mandag), månedlig (1.), kvartalsvis (1. jan/apr/jul/okt) eller egendefinerte cron-uttrykk."
       },
@@ -148,6 +152,18 @@
         "viewError": "Vis feildetaljer"
       },
       "newSchedule": "Ny tidsplan",
+      "owner": {
+        "changed": "Eier endret",
+        "changeFailed": "Kunne ikke endre eier",
+        "description": "\"{name}\" kjører på vegne av sin eier, som må være en organisasjonsadministrator. Automatiserte kjøringer registreres i revisjonsloggen under eieren.",
+        "label": "Eier",
+        "pauseNote": "Å endre eieren gjenopptar ikke en tidsplan som er satt på pause. Slå den på igjen når den har en eier.",
+        "placeholder": "Velg en organisasjonsadministrator…",
+        "required": "Velg en organisasjonsadministrator",
+        "saving": "Lagrer…",
+        "submit": "Endre eier",
+        "title": "Endre eier"
+      },
       "report": {
         "auditReport": "Revisjonsrapport",
         "auditReportDesc": "Revisjonsrapporter inkluderer alle tidsregistreringsdata med kryptografiske signaturer og tidsstempler for GoBD-samsvar. Eksporten vil bli lagret med WORM-beskyttelse (Write Once Read Many).",
@@ -263,6 +279,8 @@
         "never": "Aldri",
         "nextRun": "Neste kjøring",
         "openMenu": "Åpne handlingsmeny",
+        "owner": "Eier",
+        "ownerNotAdmin": "Ikke lenger en organisasjonsadministrator",
         "paused": "Pauset",
         "schedule": "Tidsplan",
         "status": "Status",

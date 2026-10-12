@@ -7,6 +7,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { Card, Cards } from 'fumadocs-ui/components/card';
 import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
 import { InlineTOC } from 'fumadocs-ui/components/inline-toc';
+import { OpenAPIPage } from '@/components/api-page.server';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const mdxComponents: Record<string, any> = {
@@ -33,4 +34,6 @@ export const mdxComponents: Record<string, any> = {
   ImageZoom,
   // Inline table of contents
   InlineTOC,
+  // Generated Public API reference pages (#763)
+  OpenAPIPage,
 };

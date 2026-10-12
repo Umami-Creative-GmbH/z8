@@ -16,10 +16,12 @@
       "clearingFalsePositive": "Fjerner falsk positiv",
       "dateUnavailable": "Dato utilgjengelig",
       "missingClockOut": "Manglende utstempling",
+      "missingIdentifier": "Mangler identifikator",
       "needReview": "{count} lønnsblokkeringer må gjennomgås",
       "offboardingClockRepair": "Offboarding-utstempling må korrigeres",
       "openApprovals": "Åpne godkjenninger",
       "openCalendar": "Åpne kalender",
+      "openEmployee": "Åpne ansatt",
       "openWork": "Arbeid uten utstempling",
       "openWorkDiagnostics": "Åpne arbeidsdiagnostikk",
       "pendingAbsence": "Ventende fravær",
@@ -57,10 +59,12 @@
       "employeeIdsMustBeArray": "employeeIds må være en matrise",
       "employeeIdsMustContainOnlyStrings": "employeeIds må bare inneholde strenger",
       "endDateAfterStart": "Sluttdato må være på eller etter startdato",
+      "exportBlockedByMissingIdentifier": "Eksport blokkert: enkelte ansatte mangler verdi for det egendefinerte feltet som brukes som lønnsidentifikator",
       "exportBlockedByOffboardingClockRepair": "Eksport blokkert: korriger offboarding-utstemplingen først",
       "exportBlockedByUncertainWork": "Eksport blokkert: avklar det usikre arbeidet i det valgte omfanget først",
       "exportBlockedByUnresolvedWorkMinutes": "Eksport blokkert: avklar arbeidsminuttene som må gjennomgås først",
       "exportFormatNotConfigured": "Eksportformat for lønn er ikke konfigurert",
+      "exportIdentifierChanged": "Innstillingen for lønnsidentifikator ble endret etter at denne eksporten ble samlet inn. Start en ny eksport.",
       "invalidBlockerId": "Ugyldig ID for lønnsblokkering",
       "invalidBlockerType": "Ugyldig type lønnsblokkering",
       "mustBeIsoDate": "{field} må være en ISO-dato",
@@ -73,13 +77,31 @@
     "export": {
       "completed": "Lønnseksport fullført",
       "formatAccessCheck": "Tilgangskontroll for format",
+      "nobodyEmployedInPeriod": "Ingen innenfor din lønnstilgang var ansatt i denne perioden.",
       "noConfiguredTarget": "Ingen konfigurert mål for lønnseksport",
       "queued": "Lønnseksport lagt i kø",
       "selectFormat": "Velg format",
-      "target": "Mål for lønnseksport"
+      "target": "Mål for lønnseksport",
+      "unmappedOvertimePayouts": "{count, plural, one {# overtidsutbetaling ble ikke eksportert} other {# overtidsutbetalinger ble ikke eksportert}}",
+      "unmappedOvertimePayoutsDescription": "Ingen lønnsart er koblet til overtid for dette formatet. Be en organisasjonsadministrator om å koble en, eller utbetal disse timene på en annen måte."
     },
     "filters": {
       "noMatchingEmployees": "Ingen ansatte samsvarer med de valgte lønnsfiltrene."
+    },
+    "formerEmployeesExport": {
+      "description": "Eksporter en måned hvor noen av dem fortsatt var ansatt: deres siste timer og avsluttende overtidsutbetalinger blir inkludert i filen.",
+      "export": "Eksporter",
+      "nextMonth": "Neste måned",
+      "previousMonth": "Forrige måned",
+      "title": "Eksporter lønn for ansatte som har sluttet"
+    },
+    "onlyFormerEmployees": {
+      "description": "Du kan fortsatt registrere og kansellere overtidsutbetalingene deres, og eksportere månedene de var ansatt nedenfor.",
+      "title": "Bare ansatte som har sluttet er innenfor din lønnstilgang"
+    },
+    "overtimePayoutReadiness": {
+      "description": "Ingen lønnsart er koblet til overtid for dette formatet, så eksporten utelater disse utbetalingene. Be en organisasjonsadministrator om å koble en, eller utbetal disse timene på en annen måte.",
+      "title": "{count, plural, one {# overtidsutbetaling vil ikke bli eksportert} other {# overtidsutbetalinger vil ikke bli eksportert}}"
     },
     "period": {
       "current": "Gjeldende periode",
@@ -99,6 +121,7 @@
     "run": {
       "discard": {
         "action": "Forkast lønnskjøring",
+        "confirmed": "Denne lønnskjøringen er allerede bekreftet som utbetalt for enkelte rapporter, så den kan ikke lenger forkastes. Fjern heller enkelte rapporter fra den.",
         "description": "{count, plural, one {Den # utgiftsrapporten den inneholder vil igjen avvente refusjon: neste lønnseksport eller en bankoverføring kan ta den. Forkast den bare hvis denne filen ikke utbetales via lønn.} other {De # utgiftsrapportene den inneholder vil igjen avvente refusjon: neste lønnseksport eller en bankoverføring kan ta dem. Forkast den bare hvis denne filen ikke utbetales via lønn.}}",
         "done": "Lønnskjøringen er forkastet. Utgiftsrapportene avventer refusjon igjen.",
         "failed": "Lønnskjøringen kunne ikke forkastes.",
@@ -106,6 +129,29 @@
         "outOfScope": "Denne lønnskjøringen inkluderer ansatte utenfor ditt lønnsområde.",
         "title": "Forkaste denne lønnskjøringen?"
       }
+    },
+    "runReadiness": {
+      "baselineItem": "{item} ({cause})",
+      "cause": {
+        "allowanceOverride": "angitt manuelt",
+        "exceptionalItinerary": "reiserute som de lovbestemte reglene ikke dekker",
+        "outsideVerifiedTables": "ingen verifisert lovbestemt tabell for disse dagene"
+      },
+      "description": "Disse utgiftene venter på refusjon, men en eksport for denne perioden og dette formatet utelater dem. Eksporten er ikke blokkert: betal dem via bankoverføring fra økonomikøen.",
+      "payByBankTransfer": "Betal via bankoverføring",
+      "reason": {
+        "apiConnector": "Dette formatet er en API-kobling, som aldri inneholder utgiftsbeløp.",
+        "currencyNotEur": "Ikke i euro: lønnskjøringer håndterer kun eurobeløp.",
+        "includedInOtherRun": "Inkludert i den ubekreftede lønnskjøringen {period} ({format}).",
+        "legacyClaim": "Eldre krav utbetales aldri via lønnskjøring.",
+        "negativeDifference": "En justering reduserte hva tidligere lønnskjøringer inneholdt for: {kinds}.",
+        "noStatutoryBaseline": "Ikke noe lovbestemt grunnlag for: {items}.",
+        "nothingOwed": "Lønnslinjene gjør at det ikke gjenstår noe for lønnskjøringen å ta med.",
+        "reimbursedOutsidePayroll": "Allerede delvis utbetalt via bankoverføring eller tilbakekrevd: lønnskjøringen kan ikke ta resten.",
+        "unmappedWageType": "Ingen lønnsart er tilordnet dette formatet for: {kinds}."
+      },
+      "title": "Utgiftsrapporter denne lønnskjøringen ikke tar med",
+      "unknownEmployee": "Ansatt"
     },
     "runs": {
       "description": "Disse eksporteringene inneholder utgiftsrapporter som avventer refusjon. En utgiftsansvarlig bekrefter hver kjøring når lønnen er utbetalt. Forkast en kjøring hvis filen ikke blir utbetalt.",
@@ -140,6 +186,17 @@
       "description": "Lønnsdata kunne ikke klargjøres på en trygg måte.",
       "help": "Prøv igjen senere. Hvis problemet vedvarer, kan du kontakte en organisasjonsadministrator.",
       "title": "Lønn midlertidig utilgjengelig"
+    },
+    "workBalances": {
+      "back": "Arbeidssaldoer",
+      "backToPayroll": "Lønn",
+      "description": "Registrer og kanseller overtidsutbetalinger for de ansatte lønnstilgangen din dekker, inkludert ansatte som har sluttet.",
+      "empty": "Ingen ansatte er i lønnstilgangsområdet ditt ennå.",
+      "former": "Tidligere ansatt",
+      "loading": "Laster inn arbeidssaldoer",
+      "loadingEmployee": "Laster inn arbeidssaldoen",
+      "open": "Arbeidssaldoer",
+      "title": "Arbeidssaldoer"
     }
   }
 }

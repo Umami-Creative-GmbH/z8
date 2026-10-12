@@ -17,4 +17,5 @@ A closed month must stay exactly what payroll was given for it. Payroll counts e
 
 - Closed months are organization configuration. Closing and reopening hold its guard exclusively, so they serialize with every coordinator writer that holds it shared. A writer that holds no organization guard, such as a departure's work transaction (`organization: "none"`, ADR-0003), relies on the database refusal. So do absence writers, which must also serialize with close and reopen in their own way.
 - Erasing an employee or an organization entirely, including its cascades and demo resets, is not a change to a closed month and must pass the database refusal. Deleting a single record through a correction or an absence mutation is still refused.
+- Balance adjustments (ADR-0008) are dated on a local day, so like absences they are matched to the closed month of that day. Recording or cancelling one there is refused by its writer, which holds the organization guard shared, and by the database (#804).
 - Because a close is refused while work that started in the month is still live, a clock-out never ends work that began in a closed month.

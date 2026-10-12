@@ -81,7 +81,8 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 
 	const notificationContent = (
 		<>
-			<div className="flex items-center justify-between px-4 py-3">
+			{/* Below the status bar in the top sheet; the inset is 0 in the desktop popover (#846). */}
+			<div className="mt-[var(--sheet-inset-top,0px)] flex items-center justify-between px-4 py-3">
 				<div className="flex items-center gap-2">
 					<h3 className="font-semibold">{t("common:notifications.title", "Notifications")}</h3>
 					{unreadCount > 0 && (
@@ -92,7 +93,8 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 						</span>
 					)}
 				</div>
-				<div className="flex items-center gap-1">
+				{/* Button grows each hit area to 44 px on touch screens; the gap keeps them apart (#846). */}
+				<div className="flex items-center gap-1 pointer-coarse:gap-3">
 					{unreadCount > 0 && (
 						<Button
 							size="icon"

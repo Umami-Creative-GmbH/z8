@@ -24,6 +24,31 @@
       "nextYear": "Nächstes Jahr",
       "previousYear": "Vorheriges Jahr"
     },
+    "deputy": {
+      "away": "Abwesend {dates}",
+      "awayOption": "{name} · Abwesend {dates}",
+      "awayWarning": "{name} ist in diesem Zeitraum abwesend. Sie können die Person dennoch auswählen.",
+      "changeAction": "Vertretung ändern",
+      "changed": "Vertretung gespeichert",
+      "changeDescription": "Die Vertretung übernimmt während Ihrer Abwesenheit. Eine Änderung erfordert keine neue Genehmigung.",
+      "changeDescriptionFor": "Die Vertretung übernimmt während der Abwesenheit von {name}. Eine Änderung erfordert keine neue Genehmigung.",
+      "changeFailed": "Vertretung konnte nicht gespeichert werden",
+      "changeTitle": "Vertretung ändern",
+      "contactOnly": "{name} wird nur als Kontakt angezeigt und kann nicht über Genehmigungen entscheiden.",
+      "errors": {
+        "ended": "Die Vertretung kann nicht mehr geändert werden: Diese Abwesenheit ist beendet.",
+        "required": "Wählen Sie eine Vertretung: Diese Abwesenheitsart erfordert eine Vertretung.",
+        "self": "Ein Mitarbeiter kann nicht seine eigene Vertretung sein.",
+        "unavailable": "Die Vertretung muss ein aktiver Mitarbeiter dieser Organisation sein."
+      },
+      "help": "Die Vertretung während Ihrer Abwesenheit. Eine Zustimmung durch die Person ist nicht erforderlich.",
+      "label": "Vertretung",
+      "labelOptional": "Vertretung (optional)",
+      "labelRequired": "Vertretung *",
+      "none": "Keine Vertretung",
+      "placeholder": "Vertretung auswählen…",
+      "save": "Vertretung speichern"
+    },
     "dialog": {
       "cancelDescription": "Sind Sie sicher, dass Sie diesen Abwesenheitsantrag stornieren möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
       "cancelTitle": "Abwesenheitsantrag stornieren",
@@ -36,10 +61,10 @@
     },
     "featureName": "Abwesenheiten verwalten",
     "form": {
+      "absenceDays": "Abwesenheitstage:",
       "absenceType": "Abwesenheitstyp *",
       "autoApproved": "(Automatisch genehmigt)",
       "balanceAfterRequest": "Saldo nach Antrag:",
-      "businessDays": "Arbeitstage:",
       "daysRemaining": "Verbleibende Tage:",
       "description": "Reichen Sie einen Antrag auf Freistellung ein. Ihr Manager wird zur Genehmigung benachrichtigt.",
       "duration": "Abwesenheitsdauer",
@@ -84,12 +109,64 @@
       "noCoverageRisk": "Kein veröffentlichtes Abdeckungsrisiko",
       "noCoverageRulesConfigured": "Keine Abdeckungsregeln für betroffene Schichten konfiguriert",
       "noHolidays": "Keine zugewiesenen Feiertage im Zeitraum",
+      "noWorkingDays": "Dieser Zeitraum enthält keine Arbeitstage.",
       "remainingAfter": "Verbleibend nach Anfrage",
       "requested": "Angefragt",
       "title": "Intelligenter Planer",
-      "unavailable": "Planungsvorschau nicht verfügbar. Sie können Ihre Anfrage dennoch einreichen."
+      "unavailable": "Planungsvorschau nicht verfügbar. Sie können Ihre Anfrage dennoch einreichen.",
+      "workBalance": "Arbeitszeitsaldo",
+      "workBalanceAfter": "Nach Antrag",
+      "workBalanceCurrent": "Aktuell",
+      "workBalanceDrawn": "Durch Antrag beansprucht",
+      "workBalanceNegative": "Ihr Arbeitszeitsaldo wäre nach diesem Antrag negativ. Sie können ihn trotzdem einreichen."
     },
     "requestAbsence": "Abwesenheit beantragen",
+    "sickNotes": {
+      "attachAction": "Krankmeldung anhängen",
+      "attach": {
+        "defaultTitle": "Krankschreibung {dateRange}",
+        "description": "Fügen Sie Fotos oder PDFs Ihrer Krankschreibung hinzu: PDF-, JPEG-, PNG- oder WebP-Dateien mit jeweils bis zu 20 MB. Jede Datei wird als eigene Krankschreibung in Ihrer Personalakte gespeichert.",
+        "documentDate": "Dokumentendatum",
+        "failed": "Upload fehlgeschlagen",
+        "fileRequired": "Wählen Sie mindestens eine Datei aus.",
+        "officerDescription": "Fotos oder PDFs der Krankschreibung hinzufügen: PDF-, JPEG-, PNG- oder WebP-Dateien mit jeweils bis zu 20 MB. Jede Datei wird als eigene Krankschreibung in der Personalakte des Mitarbeiters gespeichert.",
+        "progress": "Upload-Fortschritt",
+        "progressCount": "{done} von {total} hochgeladen",
+        "share": "Mit dem Mitarbeiter teilen",
+        "sharedNote": "Sie sehen Ihre Krankschreibungen unter Meine Dokumente und bei dieser Abwesenheit. Ihre genehmigende Person sieht nur, dass eine Krankschreibung angehängt ist. Sie können eine Krankschreibung innerhalb von 24 Stunden nach dem Hochladen löschen.",
+        "shareHint": "Aus: Nur HR, der Mitarbeiter sieht nur, dass eine Krankschreibung angehängt ist. Ein: Der Mitarbeiter sieht sie unter „Meine Dokumente“.",
+        "submit": "Anhängen",
+        "success": "{count, plural, one {Krankschreibung angehängt} other {# Krankschreibungen angehängt}}",
+        "title": "Krankmeldung anhängen",
+        "titleLabel": "Titel"
+      },
+      "files": {
+        "chooseFiles": "Dateien auswählen",
+        "defaultTitleUndated": "Krankschreibung",
+        "incomplete": "Geben Sie jeder Krankschreibung einen Titel und ein Dokumentendatum.",
+        "remove": "{fileName} entfernen",
+        "takePhoto": "Foto aufnehmen",
+        "tooMany": "Sie können bis zu {max} Dateien hinzufügen."
+      },
+      "marker": "Krankmeldung angehängt ({count})",
+      "panel": {
+        "delete": "{title} löschen",
+        "description": "Krankschreibungen für die Abwesenheit {dateRange}.",
+        "empty": "Keine Krankschreibungen vorhanden, die Sie öffnen können.",
+        "linkExisting": "Krankschreibung verknüpfen",
+        "loadFailed": "Die Krankschreibungen konnten nicht geladen werden.",
+        "title": "Krankschreibungen",
+        "unlink": "Verknüpfung mit {title} aufheben",
+        "unlinked": "Verknüpfung der Krankschreibung aufgehoben",
+        "unlinkFailed": "Die Verknüpfung der Krankschreibung konnte nicht aufgehoben werden."
+      },
+      "request": {
+        "attachFailed": "Ihre Abwesenheit wurde beantragt, aber {files} konnte nicht angehängt werden. Sie können Krankschreibungen später über die Abwesenheit anhängen.",
+        "description": "Fotos oder PDFs Ihrer Krankschreibung hinzufügen: PDF-, JPEG-, PNG- oder WebP-Dateien mit jeweils bis zu 20 MB. Jede Datei wird als eigene Krankschreibung in Ihrer Personalakte gespeichert. Ihr Genehmiger sieht nur, dass eine Krankschreibung angehängt ist.",
+        "title": "Krankschreibung (optional)",
+        "uploadFailed": "{fileName} konnte nicht hochgeladen werden. Entfernen Sie die Datei oder versuchen Sie es erneut."
+      }
+    },
     "status": {
       "approved": "Genehmigt",
       "pending": "Ausstehend",
@@ -149,6 +226,7 @@
     "dayDetails": {
       "blocksTimeEntry": "Zeiteinträge blockiert",
       "category": "Kategorie",
+      "deputy": "Vertretung",
       "duration": "Dauer",
       "employee": "Mitarbeiter",
       "noEvents": "Keine Ereignisse für diesen Tag",
@@ -177,6 +255,7 @@
       "category": "Kategorie",
       "credited": "Angerechnet",
       "dateRange": "Datumsbereich",
+      "deputy": "Vertretung",
       "duration": "Dauer",
       "editedBy": "Bearbeitet von",
       "employee": "Mitarbeiter",
@@ -300,6 +379,7 @@
     },
     "monthSummary": {
       "calendarWeek": "KW",
+      "closedDay": "In einem abgeschlossenen Monat",
       "dayEvents": "{count, plural, one {# Termin: {titles}} other {# Termine: {titles}}}",
       "dayLabel": "{date}: {actual} erfasst, {required} erforderlich, {delta} {status}.",
       "description": "Tägliche, wöchentliche und monatliche Richtlinienstunden",

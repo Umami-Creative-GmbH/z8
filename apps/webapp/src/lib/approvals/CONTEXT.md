@@ -7,8 +7,12 @@ Deciding approval requests and delivering their cards while each organization mo
 ### Rollout
 
 **Lifecycle mode**:
-The rollout stage of one approval kind in one organization: `legacy`, `shadow`, `ready`, `canonical` or `complete`. It only moves forward; an organization with no recorded stage is in `legacy`.
+The rollout stage of one approval kind in one organization: `legacy`, `shadow`, `ready`, `canonical` or `complete`. It only moves forward; an organization with no recorded stage is in the kind's starting stage (`legacy`, or `complete` for a **Canonical-only kind**).
 _Avoid_: rollout mode, cutover state
+
+**Canonical-only kind**:
+An approval kind decided by canonical workflows from its first day in every organization (ADR-0002, period submissions): its lifecycle mode starts and stays `complete`, it has no cutover, and no legacy request is ever written for it. Declared in `workflow/kind-start.ts`.
+_Avoid_: canonical-first, greenfield kind
 
 **Approval authority**:
 Which record decides an approval: **legacy** (legacy requests decide; lifecycle mode `legacy`, `shadow` or `ready`) or **canonical** (canonical workflows decide; `canonical` or `complete`).
@@ -30,8 +34,22 @@ _Avoid_: backfill, bootstrap
 Keeping legacy requests in step with canonical workflows once canonical authority decides, in lifecycle mode `canonical`.
 _Avoid_: reverse mirroring
 
+### Deputies
+
+**Deputy decision**:
+A decision made by an approver's deputy, during the approver's approved absence, on an approval still assigned to that approver. It records both people.
+_Avoid_: delegated decision, proxy approval, on-behalf decision (that term means acting for the requester)
+
+**Covering**:
+A deputy covers for an approver on each day, in the approver's timezone, of the approver's approved absence that names them and does not count as working time, while the organization lets deputies decide approvals and the deputy is active and can use the approval inbox. Covering never reaches back before the absence was approved or before this deputy was named, so a later approval or a replacement deputy brings no cards for approvals already waiting. Resolved only by `deputy/covering-store.ts`.
+_Avoid_: standing in, substituting, "Vertretung" (German copy says "Abwesenheitsvertretung")
+
+**Acting-for record**:
+The stored fact that a deputy decision was made: the deputy, the approver acted for, the absence that made the cover, the authority, the subject and the outcome. One row per decision in `approval_deputy_decision`, written in the decision's transaction (`deputy/deputy-decision-store.ts`), keeping the absence by value with its dates so a cancelled absence still gets its return summary; canonical decision events carry the same acting-for in their metadata. Own rights win: an approver, eligible manager or manager of approvals never makes a deputy decision.
+_Avoid_: delegation log, proxy record
+
 ### Cards
 
 **Review binding**:
-An opaque handle on a card, permanently tied to its organization, recipient, submission cycle, assignment, submitted revision and the approval authority it was issued under. It decides only under that same authority.
+An opaque handle on a card, permanently tied to its organization, recipient, submission cycle, assignment, submitted revision and the approval authority it was issued under. It decides only under that same authority. A deputy card's binding also names the absent approver its recipient acts for, and decides only while the recipient is still **Covering** for them.
 _Avoid_: card token, action handle

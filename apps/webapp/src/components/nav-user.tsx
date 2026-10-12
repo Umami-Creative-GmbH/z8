@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
-import { authClient } from "@/lib/auth-client";
+import { signOut } from "@/lib/store-app/sign-out";
 import { useRouter } from "@/navigation";
 
 export function NavUser({
@@ -60,7 +60,7 @@ export function NavUser({
 			});
 		};
 		try {
-			await authClient.signOut({
+			await signOut({
 				fetchOptions: {
 					onSuccess: () => {
 						// Sign-out ends this tab's manual-entry recovery (#310).

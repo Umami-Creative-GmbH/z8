@@ -123,7 +123,12 @@ export async function loadEmployeeRef(
 	return { id: row.id, teamIds: [...teamIds] };
 }
 
-function employeeInScope(
+/**
+ * The employees of a scope as a condition on an employee id column: the named
+ * employees plus everyone currently in the named teams (primary team or team
+ * membership) of the organization.
+ */
+export function employeeInScope(
 	organizationId: string,
 	scope: EmployeeScope,
 	employeeIdColumn: SQLWrapper = employeeDocument.employeeId,
@@ -211,6 +216,24 @@ export async function listManagedEmployees(
 		employeeNumber: row.employeeNumber,
 		isActive: row.isActive,
 	}));
+}
+
+/**
+ * The employees whose documents of the category the actor manages, as a
+ * condition on an employee id column (the sick leave overview, #985): the
+ * scopes of the grants covering the category, never the actor's own record.
+ * False when no grant covers it. The caller scopes the rows to the actor's
+ * organization.
+ */
+export function managedEmployeesCondition(
+	access: PersonnelFileAccess,
+	category: DocumentCategory,
+	employeeIdColumn: SQLWrapper,
+): SQL {
+	const scopes = access.grants
+		.filter((grant) => grant.categories.has(category))
+		.map((grant) => managedEmployeeCondition(access, grant.scope, employeeIdColumn));
+	return scopes.length > 0 ? (or(...scopes) as SQL) : sql`false`;
 }
 
 function grantConditions(access: PersonnelFileAccess): SQL[] {

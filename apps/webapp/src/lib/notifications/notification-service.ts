@@ -12,6 +12,11 @@ import { createLogger } from "@/lib/logger";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { sendEmailNotification } from "./email-notifications";
 import {
+	forwardedNotification,
+	type NotificationRecipients,
+	resolveNotificationRecipients,
+} from "./kiosk-only-recipients";
+import {
 	isPushAvailable,
 	type PushPayload,
 	sendPushToUser,
@@ -207,7 +212,10 @@ export async function deliverNotificationToChannel(
 						url: params.actionUrl,
 					},
 				},
-				options.durable ? { throwOnError: true } : undefined,
+				{
+					organizationId: params.organizationId,
+					...(options.durable ? { throwOnError: true } : {}),
+				},
 			);
 			if (options.durable && result.failed > 0) throw new Error("push_delivery_failed");
 			if (options.durable && result.sent === 0) return "unavailable";
@@ -293,12 +301,25 @@ export async function deliverNotificationToChannel(
  * 1. Check user preferences for in-app notifications
  * 2. Create the in-app notification if enabled
  * 3. Send a push notification if push is enabled for this notification type
+ *
+ * A kiosk-only employee sees no channel, so their notifications go to their
+ * managers instead (#860), each naming the employee.
  */
 export async function createNotification(
 	params: CreateNotificationParams,
 	options: { throwOnError?: boolean } = {},
 ): Promise<Notification | null> {
 	try {
+		// An unreadable recipient keeps the notification addressed as it was.
+		const recipients = await resolveNotificationRecipients(db, params).catch(
+			(error): NotificationRecipients => {
+				logger.warn({ error, userId: params.userId }, "Could not resolve notification recipients");
+				return { kind: "self" };
+			},
+		);
+		if (recipients.kind === "forwarded") {
+			return forwardNotification(params, recipients, options);
+		}
 		const channels = await loadNotificationChannelPreferences(
 			params.userId,
 			params.type,
@@ -354,7 +375,9 @@ export async function createNotification(
 			};
 
 			// Fire and forget - don't await to avoid blocking
-			void sendPushToUser(params.userId, pushPayload).catch((error) => {
+			void sendPushToUser(params.userId, pushPayload, {
+				organizationId: params.organizationId,
+			}).catch((error) => {
 				logger.error(
 					{ error, userId: params.userId, type: params.type },
 					"Failed to send push notification",
@@ -473,6 +496,30 @@ export async function createNotification(
 		if (options.throwOnError) throw error;
 		return null;
 	}
+}
+
+/** A kiosk-only employee's notification, sent to each of their managers (`forwardedNotification`). */
+async function forwardNotification(
+	params: CreateNotificationParams,
+	recipients: Extract<NotificationRecipients, { kind: "forwarded" }>,
+	options: { throwOnError?: boolean },
+): Promise<Notification | null> {
+	const { employee } = recipients;
+	if (recipients.userIds.length === 0) {
+		logger.warn(
+			{ employeeId: employee.employeeId, type: params.type },
+			"Kiosk-only employee notification has no manager to receive it",
+		);
+	}
+	let first: Notification | null = null;
+	for (const userId of recipients.userIds) {
+		const created = await createNotification(
+			forwardedNotification(params, employee, userId),
+			options,
+		);
+		first ??= created;
+	}
+	return first;
 }
 
 /**

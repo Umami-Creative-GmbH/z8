@@ -21,6 +21,7 @@ function entry(
 		recordedByUserId: "finance-user",
 		recordedByName: "Fiona Finance",
 		exportBatch: null,
+		payrollRun: null,
 		...overrides,
 	};
 }
@@ -159,6 +160,42 @@ describe("buildSettlementNotification (#752)", () => {
 			entityType: "travel_expense_claim",
 			entityId: "claim-1",
 			actionUrl: "/travel-expenses/claim-1",
+		});
+	});
+
+	it("names the payroll run instead of a payment reference when a confirmed run paid it (#853)", () => {
+		const paid = entry("reimbursement", "89.90", {
+			reference: "Payroll run 2026-10-01 – 2026-10-31",
+			payrollRun: { id: "run-1", periodStart: "2026-10-01", periodEnd: "2026-10-31" },
+		});
+		const notification = build(account([paid]), paid);
+
+		expect(notification).toMatchObject({
+			type: "travel_expense_reimbursed",
+			title: "Expense reimbursed",
+			message: "Your travel expense has been fully reimbursed with payroll 2026-10: 89.90 EUR.",
+		});
+		expect(notification.metadata?.i18n).toMatchObject({
+			messageKey: "common:notifications.content.travelExpenseReimbursedWithPayroll.message",
+			messageDefault:
+				"Your travel expense has been fully reimbursed with payroll {period}: {amount} {currency}.",
+			params: { amount: "89.90", currency: "EUR", period: "2026-10" },
+		});
+	});
+
+	it("names the payroll run's dates and what is left after a partial payroll payment (#853)", () => {
+		const paid = entry("reimbursement", "50.00", {
+			payrollRun: { id: "run-1", periodStart: "2026-10-01", periodEnd: "2026-10-15" },
+		});
+		const notification = build(account([paid]), paid);
+
+		expect(notification.type).toBe("travel_expense_partially_reimbursed");
+		expect(notification.message).toBe(
+			"50.00 EUR of your travel expense has been reimbursed with payroll 2026-10-01 – 2026-10-15. 39.90 EUR is still awaiting reimbursement.",
+		);
+		expect(notification.metadata?.i18n).toMatchObject({
+			messageKey:
+				"common:notifications.content.travelExpensePartiallyReimbursedWithPayroll.message",
 		});
 	});
 

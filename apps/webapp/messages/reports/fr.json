@@ -7,6 +7,11 @@
       "pleaseWait": "Veuillez patienter pendant que nous compilons vos données",
       "selectPeriod": "Sélectionnez une période et cliquez sur « Générer le rapport » pour commencer"
     },
+    "customFields": {
+      "no": "Non",
+      "title": "Champs personnalisés",
+      "yes": "Oui"
+    },
     "description": "Générez des rapports complets sur les heures de travail et les absences avec des données de télétravail pertinentes pour les impôts",
     "employeeSelector": {
       "error": "Impossible de charger les membres de l'équipe",
@@ -74,7 +79,6 @@
         "description": "Travail terminé uniquement. Les revenus utilisent les taux en vigueur au {date}.",
         "employee": "Employé",
         "hasUnpriced": "Comporte du travail non tarifé",
-        "hoursValue": "{hours} h",
         "invoicedHours": "Heures facturées",
         "invoicedRevenue": "Chiffre d'affaires facturé",
         "invoicedRevenueHint": "Aux tarifs de ses brouillons de facture",
@@ -154,6 +158,13 @@
         "withoutCustomer": "Sans client",
         "withoutCustomerHint": "{hours} facturables sans client, ne peuvent pas être transmis"
       },
+      "details": {
+        "customer": "Client",
+        "customerFields": "Champs client",
+        "noCustomer": "Aucun client",
+        "projectFields": "Champs projet",
+        "title": "Détails"
+      },
       "export": {
         "billableHours": "Heures facturables",
         "changedAfterInvoicing": "Modifié après facturation",
@@ -164,6 +175,10 @@
         "customer": "Client",
         "customerReportTitle": "Rapport client",
         "customersTable": "Clients",
+        "customFieldName": "Champ",
+        "customFieldRecord": "Enregistrement",
+        "customFieldsTable": "Champs personnalisés",
+        "customFieldValue": "Valeur",
         "dailyHoursTable": "Heures par jour",
         "date": "Date",
         "employee": "Employé",
@@ -176,6 +191,7 @@
         "invoicingNote": "Les revenus facturés conservent les taux de leur brouillon de facture ; les revenus non facturés utilisent les taux en vigueur au moment de la génération du rapport.",
         "margin": "Marge",
         "marginPercent": "Marge %",
+        "no": "Non",
         "nonBillableHours": "Heures non facturables",
         "pendingReview": "Corrections ou soumissions en attente",
         "period": "Période",
@@ -186,6 +202,7 @@
         "ratesResolvedAt": "Taux au",
         "revenue": "Revenus",
         "roundingNote": "Les montants sont additionnés exactement et arrondis au centime le plus proche (arrondi au demi supérieur) une fois par ligne ; les totaux additionnent les lignes.",
+        "snapshotRatesNote": "Le chiffre d'affaires utilise les taux en vigueur au moment où cet instantané a été créé.",
         "summaryTable": "Résumé",
         "total": "Total",
         "uninvoicedHours": "Heures non facturées",
@@ -194,7 +211,8 @@
         "unpricedWork": "Travail non tarifé",
         "withoutCustomer": "Sans client",
         "withoutCustomerHours": "Heures facturables sans client",
-        "workPeriods": "Périodes de travail"
+        "workPeriods": "Périodes de travail",
+        "yes": "Oui"
       },
       "filter": {
         "activeOnly": "Actifs seulement",
@@ -240,6 +258,7 @@
         "overBudget": "Budget dépassé",
         "overBudgetDescription": "Budget excédé"
       },
+      "hoursValue": "{hours} h",
       "page": {
         "accessDenied": "Accès refusé",
         "description": "Analysez les heures de projet, l'utilisation du budget et les contributions de l'équipe",
@@ -256,6 +275,7 @@
       },
       "table": {
         "budget": "Budget",
+        "customer": "Client",
         "daysLeft": "{days}j restants",
         "daysOverdue": "{days}j de retard",
         "deadline": "Date limite",
@@ -306,6 +326,89 @@
         "portfolioGenerated": "Rapport de portefeuille généré",
         "projectGenerated": "Rapport généré pour {name}",
         "unexpectedError": "Une erreur inattendue s'est produite"
+      }
+    },
+    "share": {
+      "action": "Partager",
+      "created": {
+        "another": "Créer un autre lien",
+        "copied": "Copié",
+        "copy": "Copier",
+        "copyFailed": "Copiez le lien en le sélectionnant",
+        "description": "Copiez-le maintenant : il ne s'affiche qu'une seule fois. Pour le partager à nouveau plus tard, créez un nouveau lien.",
+        "title": "Votre lien de partage",
+        "urlLabel": "Lien de partage"
+      },
+      "create": {
+        "failed": "Impossible de créer le lien de partage"
+      },
+      "dialog": {
+        "description": "Toute personne disposant du lien peut consulter un instantané en lecture seule de ce rapport pour {period}, dans son état actuel, jusqu'à ce que le lien expire. Le coût et la marge ne sont jamais partagés.",
+        "title": "Partager {name}"
+      },
+      "figures": {
+        "hours": "Heures uniquement",
+        "revenue": "Heures + chiffre d'affaires"
+      },
+      "form": {
+        "create": "Créer un lien",
+        "employees": "Répartition par employé",
+        "employeesDescription": "Affiche les heures de chaque employé sous son vrai nom.",
+        "expiry": "Expire après",
+        "expiryDays": "{days, plural, one {# jour} other {# jours}}",
+        "figures": "Chiffres",
+        "revenueUnavailable": "Vous ne voyez pas les revenus sur ce rapport, vous ne pouvez donc pas le partager."
+      },
+      "kind": {
+        "customer": "Rapport client",
+        "project": "Rapport de projet"
+      },
+      "list": {
+        "createdBy": "Créé par {name} le {date}",
+        "deletedReport": "Supprimé",
+        "empty": "Aucun lien de partage pour le moment.",
+        "expired": "Expiré le {date}",
+        "expires": "Expire le {date}",
+        "failed": "Impossible de charger les liens de partage.",
+        "lastViewed": "le {date} dernier",
+        "loading": "Chargement des liens de partage…",
+        "revokedAutomatically": "Révoqué automatiquement le {date} : le créateur ne voit plus tous les projets qu'il contient",
+        "revokedBy": "Révoqué par {name} le {date}",
+        "someone": "quelqu'un",
+        "title": "Liens vers ce rapport",
+        "views": "{count, plural, one {# vue} other {# vues}}",
+        "withEmployees": "Avec répartition par employé",
+        "withoutEmployees": "Sans répartition par employé"
+      },
+      "page": {
+        "expiresAt": "Le lien expire le {date}",
+        "footer": "Un instantané en lecture seule partagé depuis Z8. Les modifications ultérieures apportées au travail associé ne sont pas affichées.",
+        "loading": "Chargement du rapport partagé",
+        "sharedBy": "Partagé par {name}",
+        "takenAt": "Instantané pris le {date}",
+        "unavailableDescription": "Le lien a peut-être expiré ou a été révoqué, ou il est peut-être incomplet. Demandez un nouveau lien à la personne qui l'a partagé avec vous.",
+        "unavailableTitle": "Ce lien n'est pas disponible"
+      },
+      "revoke": {
+        "action": "Révoquer",
+        "cancel": "Annuler",
+        "confirm": "Révoquer le lien",
+        "description": "Le lien cesse immédiatement de fonctionner et son instantané est supprimé. Son enregistrement et son journal de consultation sont conservés.",
+        "done": "Lien révoqué",
+        "failed": "Le lien n'a pas pu être révoqué",
+        "title": "Révoquer ce lien ?"
+      },
+      "status": {
+        "active": "Actif",
+        "expired": "Expiré",
+        "revoked": "Révoqué"
+      },
+      "views": {
+        "empty": "Personne n'a encore ouvert ce lien.",
+        "failed": "Impossible de charger les vues.",
+        "loading": "Chargement des vues…",
+        "unknownAgent": "Navigateur inconnu",
+        "unknownIp": "Adresse IP inconnue"
       }
     },
     "summary": {

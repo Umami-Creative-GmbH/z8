@@ -7,6 +7,7 @@ import {
 import {
 	deleteShift as deleteShiftAction,
 	getIncompleteDays as getIncompleteDaysAction,
+	getMyUpcomingShifts as getMyUpcomingShiftsAction,
 	getOpenShifts as getOpenShiftsAction,
 	getScheduleComplianceSummary as getScheduleComplianceSummaryAction,
 	getShifts as getShiftsAction,
@@ -21,6 +22,7 @@ import {
 	requestShiftPickup as requestShiftPickupAction,
 	requestShiftSwap as requestShiftSwapAction,
 } from "./actions/shift-request-actions";
+import { suggestStaffingForShift as suggestStaffingForShiftAction } from "./actions/staffing-actions";
 import {
 	createShiftTemplate as createShiftTemplateAction,
 	deleteShiftTemplate as deleteShiftTemplateAction,
@@ -40,6 +42,10 @@ export async function deleteShift(...args: Parameters<typeof deleteShiftAction>)
 
 export async function getIncompleteDays(...args: Parameters<typeof getIncompleteDaysAction>) {
 	return getIncompleteDaysAction(...args);
+}
+
+export async function getMyUpcomingShifts() {
+	return getMyUpcomingShiftsAction();
 }
 
 export async function getOpenShifts(...args: Parameters<typeof getOpenShiftsAction>) {
@@ -62,6 +68,12 @@ export async function publishShifts(...args: Parameters<typeof publishShiftsActi
 
 export async function upsertShift(...args: Parameters<typeof upsertShiftAction>) {
 	return upsertShiftAction(...args);
+}
+
+export async function suggestStaffingForShift(
+	...args: Parameters<typeof suggestStaffingForShiftAction>
+) {
+	return suggestStaffingForShiftAction(...args);
 }
 
 export async function approveShiftRequest(...args: Parameters<typeof approveShiftRequestAction>) {

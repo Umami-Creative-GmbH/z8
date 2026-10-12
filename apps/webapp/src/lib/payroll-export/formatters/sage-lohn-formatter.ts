@@ -11,11 +11,13 @@
  */
 import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
+import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
 	AbsenceData,
 	ExpenseLineData,
 	ExportResult,
 	IPayrollExportFormatter,
+	OvertimePayoutData,
 	SageLohnConfig,
 	WageTypeMapping,
 	WorkPeriodData,
@@ -27,6 +29,12 @@ import {
 	GERMAN_EXPENSE_LINE_NOTE,
 	germanPersonnelNumber,
 } from "./expense-lines";
+import {
+	addOvertimePayoutHours,
+	GERMAN_OVERTIME_PAYOUT_NOTE,
+	overtimePayoutsForFormat,
+	widenDateRangeByPayouts,
+} from "./overtime-payouts";
 
 const logger = createLogger("SageLohnFormatter");
 
@@ -56,12 +64,8 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		const errors: string[] = [];
 		const sageConfig = config as Partial<SageLohnConfig>;
 
-		if (
-			!sageConfig.personnelNumberType ||
-			!["employeeNumber", "employeeId"].includes(sageConfig.personnelNumberType)
-		) {
-			errors.push("Personnel number type must be 'employeeNumber' or 'employeeId'");
-		}
+		const personnelNumberError = personnelNumberTypeError(config);
+		if (personnelNumberError) errors.push(personnelNumberError);
 
 		if (
 			!sageConfig.outputFormat ||
@@ -82,6 +86,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		expenseLines: ExpenseLineData[],
 		mappings: WageTypeMapping[],
 		config: Record<string, unknown>,
+		overtimePayouts: OvertimePayoutData[] = [],
 	): ExportResult {
 		logger.info(
 			{ workPeriodCount: workPeriods.length, absenceCount: absences.length },
@@ -93,7 +98,6 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();
 		const absenceCategoryMappings = new Map<string, WageTypeMapping>();
-		const specialCategoryMappings = new Map<string, WageTypeMapping>();
 
 		for (const mapping of mappings) {
 			if (mapping.workCategoryId) {
@@ -102,9 +106,6 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			if (mapping.absenceCategoryId) {
 				absenceCategoryMappings.set(mapping.absenceCategoryId, mapping);
 			}
-			if (mapping.specialCategory) {
-				specialCategoryMappings.set(mapping.specialCategory, mapping);
-			}
 		}
 
 		// Group work periods by employee and date
@@ -112,6 +113,17 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 
 		// Add absence data
 		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, sageConfig);
+
+		// Overtime payouts (#1001): hours on the payout's day under the "overtime" wage type.
+		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "sage");
+		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
+			personnelNumber: (payout) => this.personnelNumber(payout, sageConfig),
+			period: (payout) => payout.day,
+			add: (existing, hours) => ({
+				hours: (existing?.hours ?? 0) + hours,
+				note: existing?.note || GERMAN_OVERTIME_PAYOUT_NOTE,
+			}),
+		});
 
 		// Generate CSV content based on output format
 		const lines: string[] = [];
@@ -169,14 +181,19 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
 		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
+		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
 
-		const dateRange = this.getDateRange(workPeriods, absences);
+		const dateRange = widenDateRangeByPayouts(
+			this.getDateRange(workPeriods, absences),
+			payouts.mapped,
+		);
 		const fileName = this.generateFileName(dateRange);
 
 		logger.info(
 			{
 				lineCount: lines.length,
 				employeeCount: uniqueEmployees.size,
+				unmappedOvertimePayoutCount: payouts.unmapped.length,
 				fileName,
 				outputFormat: sageConfig.outputFormat,
 			},
@@ -198,6 +215,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 					start: dateRange.start?.toISODate() || "",
 					end: dateRange.end?.toISODate() || "",
 				},
+				unmappedOvertimePayouts: payouts.unmapped,
 			},
 		};
 	}
@@ -216,7 +234,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
 
-			const personnelNumber = this.getPersonnelNumber(period, config);
+			const personnelNumber = this.personnelNumber(period, config);
 			const dateStr = period.startTime.toISODate()!;
 			const hours = period.durationMinutes / 60;
 
@@ -276,7 +294,7 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 			const mappedCode = wageTypeCodeFor(mapping, "sage");
 			if (!mapping || !mappedCode) continue; // Skip if no mapping
 
-			const personnelNumber = this.getPersonnelNumberFromAbsence(absence, config);
+			const personnelNumber = this.personnelNumber(absence, config);
 			const wageTypeCode = mappedCode;
 			const note = mapping.sageWageTypeName || absence.absenceCategoryName || "";
 
@@ -312,35 +330,20 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 	}
 
 	/**
-	 * Get personnel number from work period based on config
+	 * The row's personnel number (`germanPersonnelNumber`, shared with expense
+	 * lines); an employee number that isn't set is logged before the fallback.
 	 */
-	private getPersonnelNumber(period: WorkPeriodData, config: SageLohnConfig): string {
-		if (config.personnelNumberType === "employeeNumber") {
-			if (period.employeeNumber) {
-				return period.employeeNumber;
-			}
+	private personnelNumber(
+		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
+		config: SageLohnConfig,
+	): string {
+		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
 			logger.warn(
-				{ employeeId: period.employeeId, periodId: period.id },
+				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
 			);
 		}
-		return period.employeeId;
-	}
-
-	/**
-	 * Get personnel number from absence based on config
-	 */
-	private getPersonnelNumberFromAbsence(absence: AbsenceData, config: SageLohnConfig): string {
-		if (config.personnelNumberType === "employeeNumber") {
-			if (absence.employeeNumber) {
-				return absence.employeeNumber;
-			}
-			logger.warn(
-				{ employeeId: absence.employeeId, absenceId: absence.id },
-				"Employee number not set, falling back to employeeId for absence",
-			);
-		}
-		return absence.employeeId;
+		return germanPersonnelNumber(row, config);
 	}
 
 

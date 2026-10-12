@@ -91,6 +91,8 @@
           "missingConfiguration": "yapılandırma",
           "missingCredentials": "kimlik bilgileri"
         },
+        "unmappedOvertimePayouts": "{count, plural, other {# fazla mesai ödemesi dışa aktarılmadı} }",
+        "unmappedOvertimePayoutsDescription": "Bu biçim için Fazla Mesai ile eşlenmiş ücret türü yok. Ücret Türleri altından birini eşleyip tekrar dışa aktarın veya bu saatlerin ödemesini başka bir yolla yapın.",
         "year": "Yıl"
       },
       "history": {
@@ -114,7 +116,12 @@
           "size": "Boyut",
           "status": "Durum"
         },
-        "title": "Dışa Aktarma Geçmişi"
+        "title": "Dışa Aktarma Geçmişi",
+        "unmappedOvertimePayouts": "{count, plural, other {# fazla mesai ödemesi dışa aktarılmadı: Fazla Mesai için ücret türü yok} }"
+      },
+      "identifier": {
+        "customField": "Özel alan: {name}",
+        "unavailableField": "Özel alan (kullanılamıyor)"
       },
       "lexware": {
         "configured": "Yapılandırıldı",
@@ -332,6 +339,14 @@
         "missingEmploymentHistory": {
           "descriptionPass": "Tüm aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip.",
           "descriptionWarning": "Bazı aktif çalışanlar bu bordro dönemi için onaylanmış istihdam geçmişine sahip değil."
+        },
+        "periodSubmissions": {
+          "description": "Bu aralıkta beklenen ve eksik, reddedilmiş, bir değişiklik sonrası geri gönderilmiş veya hâlâ karar bekleyen dönem gönderimleri. Bordro dışa aktarımını engellemezler.",
+          "title": "Dönem gönderimleri"
+        },
+        "periodSubmissionsRunning": {
+          "description": "Bu aralıkta henüz sona ermemiş olan ve bu nedenle gönderilemeyen dönemler. Süreleri dışa aktarımdan sonra da değişebilir.",
+          "title": "Hâlâ devam eden dönem gönderimleri"
         }
       },
       "checkStatus": {

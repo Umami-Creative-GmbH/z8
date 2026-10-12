@@ -1,0 +1,93 @@
+{
+  "webhooks": {
+    "copy-failed": "Kopiranje u međuspremnik nije uspjelo",
+    "create": "Dodaj webhook",
+    "create-failed": "Stvaranje webhooka nije uspjelo",
+    "delete-confirm": {
+      "description": "Ovo će trajno izbrisati krajnju točku webhooka i svu povijest isporuka. Ova se radnja ne može poništiti.",
+      "title": "Izbrisati webhook?"
+    },
+    "deleted": "Webhook je izbrisan",
+    "delete-failed": "Brisanje webhooka nije uspjelo",
+    "deliveries": "Isporuke",
+    "description": "Konfigurirajte krajnje točke webhooka za primanje obavijesti u stvarnom vremenu kada se dogode događaji u vašoj organizaciji.",
+    "disabled": "Webhook je onemogućen",
+    "empty": {
+      "description": "Izradite svoj prvi webhook kako biste počeli primati obavijesti o događajima.",
+      "title": "Nema konfiguriranih webhookova"
+    },
+    "enabled": "Webhook je omogućen",
+    "events": "Događaji",
+    "form": {
+      "create": "Izradi webhook",
+      "create-description": "Konfigurirajte novu krajnju točku webhooka za primanje obavijesti o događajima.",
+      "create-title": "Izradi webhook",
+      "description": "Opis",
+      "description-placeholder": "Za što se koristi ovaj webhook?",
+      "deselect-all": "Odznači sve",
+      "edit-description": "Ažurirajte konfiguraciju krajnje točke webhooka.",
+      "edit-title": "Uredi webhook",
+      "events": "Događaji za primanje",
+      "events-hint": "Odabrani događaji: {count}",
+      "events-required": "Mora biti odabran barem jedan događaj",
+      "name": "Naziv",
+      "name-placeholder": "Moj webhook",
+      "name-required": "Naziv je obavezan",
+      "select-all": "Odaberi sve",
+      "url": "URL krajnje točke",
+      "url-hint": "Za produkciju je obavezan HTTPS. Događaji će se slati kao POST zahtjevi.",
+      "url-required": "URL je obavezan"
+    },
+    "last-delivery": "Posljednji",
+    "logs": {
+      "attempt": "Pokušaj",
+      "description": "Nedavni pokušaji isporuke webhooka i njihovi rezultati.",
+      "duration": "Trajanje",
+      "empty": "Još nema zapisa o isporuci",
+      "error": "Pogreška",
+      "event": "Događaj",
+      "failed": "Neuspjelo",
+      "http": "HTTP",
+      "loadError": "Učitavanje zapisa o isporuci nije uspjelo",
+      "payload": "Korisni teret",
+      "pending": "Na čekanju",
+      "response": "Odgovor",
+      "retrying": "Ponovni pokušaj",
+      "showing": "Prikaz {start} – {end} od {total}",
+      "status": "Status",
+      "success": "Uspješno",
+      "time": "Vrijeme",
+      "title": "Zapisnici isporuke"
+    },
+    "regenerate-failed": "Ponovno generiranje tajnog ključa nije uspjelo",
+    "regenerate-secret": "Ponovno generiraj tajni ključ",
+    "secret-copied": "Tajni ključ je kopiran u međuspremnik",
+    "secret-dialog": {
+      "copy-secret": "Kopiraj tajni ključ u međuspremnik",
+      "description": "Ovaj tajni ključ upotrebljava se za provjeru potpisa webhooka. Pohranite ga na sigurno.",
+      "done": "Spremio/la sam tajni ključ",
+      "secret": "Tajni ključ za potpisivanje",
+      "title": "Tajni ključ webhooka",
+      "verification": "Provjera potpisa",
+      "verification-hint": "Provjerite potpise webhooka pomoću HMAC-SHA256. Potpis se šalje u zaglavlju X-Z8-Signature.",
+      "warning": "Ovaj tajni ključ bit će prikazan samo jednom. Obavezno ga spremite sada.",
+      "warning-title": "Važno"
+    },
+    "secret-regenerated": "Tajni ključ je ponovno generiran",
+    "status": {
+      "degraded": "Degradirano",
+      "failing": "Neuspješno",
+      "healthy": "Ispravno",
+      "inactive": "Neaktivno"
+    },
+    "success-rate": "Uspješno",
+    "test": "Pošalji test",
+    "test-failed": "Slanje testnog webhooka nije uspjelo",
+    "test-sent": "Testni webhook je poslan",
+    "title": "Webhookovi",
+    "toggle-active": "Uključi/isključi aktivnost webhooka",
+    "updated": "Webhook je ažuriran",
+    "update-failed": "Ažuriranje webhooka nije uspjelo",
+    "view-logs": "Prikaži zapisnike"
+  }
+}

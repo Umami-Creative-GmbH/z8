@@ -16,16 +16,26 @@ import {
 } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { readProjectActiveCustomerId } from "@/lib/billable-time/project-customer";
+import {
+	projectHasActiveCustomerSql,
+	readProjectActiveCustomerId,
+} from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
+import {
+	keepCustomFieldRefusal,
+	saveFormCustomFieldValues,
+} from "@/lib/organization/custom-fields/form-values";
+import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	insertProject,
 	insertProjectAssignments,
 	insertProjectManagers,
 } from "@/lib/projects/project-creation";
+import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {
 	projectBillableDefault,
@@ -58,8 +68,11 @@ export interface ProjectWithDetails {
 	color: string | null;
 	budgetHours: string | null;
 	deadline: Date | null;
+	/** The project's active customer (#768); null without customer or once the customer is deleted. */
 	customerId: string | null;
 	customerName: string | null;
+	/** The deleted customer the project still points at, for display only (#938). */
+	deletedCustomerName: string | null;
 	/** Whether new work on the project starts as billable work (#900). */
 	billableDefault: boolean;
 	isActive: boolean;
@@ -81,10 +94,12 @@ export interface ProjectWithDetails {
 		employeeName: string | null;
 	}[];
 	totalHoursBooked: number;
+	/** A required custom field the viewer sees has no value (#818). */
+	missingRequiredCustomFields?: boolean;
 }
 
 type ProjectWithCustomer = typeof project.$inferSelect & {
-	customer: Pick<typeof customer.$inferSelect, "id" | "name"> | null;
+	customer: Pick<typeof customer.$inferSelect, "id" | "name" | "organizationId"> | null;
 };
 
 type ProjectManagerWithEmployee = typeof projectManager.$inferSelect & {
@@ -156,6 +171,8 @@ export interface CreateProjectInput {
 	customerId?: string;
 	/** Billable default (#900); only a project with a customer can have it on. */
 	billableDefault?: boolean;
+	/** The dialog's custom field values (#818); required fields are enforced when present. */
+	customFieldValues?: CustomFieldValuesInput;
 }
 
 export interface UpdateProjectInput {
@@ -169,6 +186,8 @@ export interface UpdateProjectInput {
 	customerId?: string | null;
 	/** Billable default (#900); never changes existing work. */
 	billableDefault?: boolean;
+	/** The dialog's custom field values (#818); required fields are enforced when present. */
+	customFieldValues?: CustomFieldValuesInput;
 }
 
 /**
@@ -200,7 +219,7 @@ export async function getProjects(
 						orderBy: [desc(project.createdAt)],
 						with: {
 							customer: {
-								columns: { id: true, name: true },
+								columns: { id: true, name: true, organizationId: true },
 							},
 						},
 					});
@@ -266,6 +285,24 @@ export async function getProjects(
 						: [];
 				});
 
+				// Billable Time (#768): a deleted customer leaves the project without customer (#938).
+				const withActiveCustomer = yield* dbService.query("project.activeCustomers",async () => {
+					const rows =
+						projectIds.length > 0
+							? await db
+									.select({ id: project.id })
+									.from(project)
+									.where(
+										and(
+											inArray(project.id, projectIds),
+											eq(project.organizationId, organizationId),
+											projectHasActiveCustomerSql(),
+										),
+									)
+							: [];
+					return new Set(rows.map((row) => row.id));
+				});
+
 				const typedManagers = managers as unknown as ProjectManagerWithEmployee[];
 				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
 				const managersByProject = new Map<string, ProjectWithDetails["managers"]>();
@@ -306,30 +343,45 @@ export async function getProjects(
 				const hoursMap = new Map(
 					hoursBooked.map((h) => [h.projectId, Math.round((h.totalMinutes / 60) * 100) / 100]),
 				);
+				const missingRequired = yield* dbService.query("customFields.projectsMissingRequired", () =>
+					findRecordsMissingRequiredValues(dbService.db, {
+						organizationId,
+						entity: "project",
+						recordIds: projectIds,
+						viewer: { kind: "actor", userId: actor.session.user.id },
+					}),
+				);
 
 				// Map to ProjectWithDetails
-				const result: ProjectWithDetails[] = scopedProjects.map((p) => ({
-					id: p.id,
-					organizationId: p.organizationId,
-					name: p.name,
-					description: p.description,
-					status: p.status as ProjectStatus,
-					icon: p.icon,
-					color: p.color,
-					budgetHours: p.budgetHours,
-					deadline: p.deadline,
-					customerId: p.customerId,
-					customerName: p.customer?.name ?? null,
-					billableDefault: p.billableDefault,
-					isActive: p.isActive,
-					createdAt: p.createdAt,
-					createdBy: p.createdBy,
-					updatedAt: p.updatedAt,
-					updatedBy: p.updatedBy,
-					managers: managersByProject.get(p.id) ?? [],
-					assignments: assignmentsByProject.get(p.id) ?? [],
-					totalHoursBooked: hoursMap.get(p.id) || 0,
-				}));
+				const result: ProjectWithDetails[] = scopedProjects.map((p) => {
+					const hasActiveCustomer = withActiveCustomer.has(p.id);
+					// Never name another organization's customer.
+					const ownCustomer = p.customer?.organizationId === organizationId ? p.customer : null;
+					return {
+						id: p.id,
+						organizationId: p.organizationId,
+						name: p.name,
+						description: p.description,
+						status: p.status as ProjectStatus,
+						icon: p.icon,
+						color: p.color,
+						budgetHours: p.budgetHours,
+						deadline: p.deadline,
+						customerId: hasActiveCustomer ? p.customerId : null,
+						customerName: hasActiveCustomer ? (ownCustomer?.name ?? null) : null,
+						deletedCustomerName: hasActiveCustomer ? null : (ownCustomer?.name ?? null),
+						billableDefault: p.billableDefault,
+						isActive: p.isActive,
+						createdAt: p.createdAt,
+						createdBy: p.createdBy,
+						updatedAt: p.updatedAt,
+						updatedBy: p.updatedBy,
+						managers: managersByProject.get(p.id) ?? [],
+						assignments: assignmentsByProject.get(p.id) ?? [],
+						totalHoursBooked: hoursMap.get(p.id) || 0,
+						missingRequiredCustomFields: missingRequired.has(p.id),
+					};
+				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;
@@ -409,33 +461,43 @@ export async function createProject(
 					customerId: input.customerId || null,
 				});
 
-				const created = yield* dbService.query("project.create", async () => {
-					return await db.transaction(async (tx) => {
-						const newProject = await insertProject(tx, {
-							organizationId: input.organizationId,
-							name: input.name,
-							description: input.description || null,
-							status: input.status || "planned",
-							icon: input.icon || null,
-							color: input.color || null,
-							budgetHours: input.budgetHours?.toString() || null,
-							deadline: input.deadline || null,
-							customerId: input.customerId || null,
-							billableDefault,
-							createdBy: session.user.id,
-						});
-
-						if (actor.accessTier === "manager" && actor.currentEmployee) {
-							await insertProjectManagers(tx, {
-								projectId: newProject.id,
-								employeeIds: [actor.currentEmployee.id],
-								assignedBy: session.user.id,
+				const created = yield* dbService
+					.query("project.create", async () => {
+						return await db.transaction(async (tx) => {
+							const newProject = await insertProject(tx, {
+								organizationId: input.organizationId,
+								name: input.name,
+								description: input.description || null,
+								status: input.status || "planned",
+								icon: input.icon || null,
+								color: input.color || null,
+								budgetHours: input.budgetHours?.toString() || null,
+								deadline: input.deadline || null,
+								customerId: input.customerId || null,
+								billableDefault,
+								createdBy: session.user.id,
 							});
-						}
 
-						return newProject;
-					});
-				});
+							if (actor.accessTier === "manager" && actor.currentEmployee) {
+								await insertProjectManagers(tx, {
+									projectId: newProject.id,
+									employeeIds: [actor.currentEmployee.id],
+									assignedBy: session.user.id,
+								});
+							}
+
+							await saveFormCustomFieldValues(tx, {
+								organizationId: input.organizationId,
+								actorUserId: session.user.id,
+								entity: "project",
+								recordId: newProject.id,
+								values: input.customFieldValues,
+							});
+
+							return newProject;
+						});
+					})
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -470,11 +532,28 @@ export async function createProject(
 }
 
 /**
- * Update a project
+ * Saves the project dialog. Its custom field values are written in the same
+ * transaction, and every required custom field the actor may edit must have a
+ * value afterwards, also when the dialog sent none (#818, P7).
  */
 export async function updateProject(
 	projectId: string,
 	input: UpdateProjectInput,
+): Promise<ServerActionResult<void>> {
+	return saveProjectChanges(projectId, input, { form: true });
+}
+
+/**
+ * Archive a project. Not a form save: required custom fields don't hold it up.
+ */
+export async function archiveProject(projectId: string): Promise<ServerActionResult<void>> {
+	return saveProjectChanges(projectId, { status: "archived" }, { form: false });
+}
+
+async function saveProjectChanges(
+	projectId: string,
+	input: UpdateProjectInput,
+	options: { form: boolean },
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("projects");
 
@@ -591,25 +670,44 @@ export async function updateProject(
 					});
 				}
 
-				// Update the project
-				yield* dbService.query("project.update", async () => {
-					const scopedProject = and(
-						eq(project.id, projectId),
-						eq(project.organizationId, existingProject.organizationId),
-					);
-					if (input.status === undefined) {
-						await db.update(project).set(updateData).where(scopedProject);
-						return;
-					}
-					// The bookable lifecycle decides manual eligibility (#315).
-					await withOrganizationConfigurationMutation(
-						db,
-						existingProject.organizationId,
-						async (tx) => {
-							await tx.update(project).set(updateData).where(scopedProject);
-						},
-					);
-				});
+				// Update the project, with the dialog's custom field values (#818) in the same transaction.
+				const { customFieldValues, ...projectChanges } = input;
+				const saveCustomFieldValues = async (
+					tx: Parameters<typeof saveFormCustomFieldValues>[0],
+				) => {
+					if (!options.form) return;
+					await saveFormCustomFieldValues(tx, {
+						organizationId: existingProject.organizationId,
+						actorUserId: session.user.id,
+						entity: "project",
+						recordId: projectId,
+						values: customFieldValues,
+					});
+				};
+				yield* dbService
+					.query("project.update", async () => {
+						const scopedProject = and(
+							eq(project.id, projectId),
+							eq(project.organizationId, existingProject.organizationId),
+						);
+						if (input.status === undefined) {
+							await dbService.db.transaction(async (tx) => {
+								await tx.update(project).set(updateData).where(scopedProject);
+								await saveCustomFieldValues(tx);
+							});
+							return;
+						}
+						// The bookable lifecycle decides manual eligibility (#315).
+						await withOrganizationConfigurationMutation(
+							db,
+							existingProject.organizationId,
+							async (tx) => {
+								await tx.update(project).set(updateData).where(scopedProject);
+								await saveCustomFieldValues(tx);
+							},
+						);
+					})
+					.pipe(keepCustomFieldRefusal);
 
 				// Log audit (fire-and-forget)
 				logAudit({
@@ -618,7 +716,7 @@ export async function updateProject(
 					targetId: projectId,
 					targetType: "project",
 					organizationId: existingProject.organizationId,
-					changes: input as Record<string, unknown>,
+					changes: projectChanges as Record<string, unknown>,
 					metadata: { previousName: existingProject.name },
 					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
@@ -640,13 +738,6 @@ export async function updateProject(
 	);
 
 	return runServerActionSafe(effect);
-}
-
-/**
- * Archive a project
- */
-export async function archiveProject(projectId: string): Promise<ServerActionResult<void>> {
-	return updateProject(projectId, { status: "archived" });
 }
 
 /**
@@ -816,6 +907,15 @@ export async function removeProjectManager(
 					changes: { employeeId },
 					timestamp: new Date(),
 				}).catch((err) => logger.error({ err }, "Failed to log audit"));
+
+				// A share link stops once its creator no longer sees every project in it (#806).
+				yield* actor.dbService.query("reportShareLink.revokeAfterManagerRemoval", () =>
+					revokeShareLinksAfterAccessChange(actor.dbService.db, {
+						organizationId: existingProject.organizationId,
+						creator: { employeeId },
+						actorUserId: session.user.id,
+					}),
+				);
 
 				revalidatePath("/settings/projects");
 				span.setStatus({ code: SpanStatusCode.OK });

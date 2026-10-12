@@ -35,6 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import type { AbsenceDeputyNotificationType } from "@/lib/absences/deputy-notification-types";
 import {
 	hasMandatoryInbox,
 	NOTIFICATION_CHANNELS,
@@ -60,6 +61,8 @@ const NOTIFICATION_CATEGORIES = [
 			"approval_request_approved",
 			"approval_request_rejected",
 			"approval_escalation_attention",
+			"approval_cover_started",
+			"approval_cover_return_summary",
 		] as NotificationType[],
 	},
 	{
@@ -74,7 +77,13 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_submitted",
 			"time_correction_approved",
 			"time_correction_rejected",
+			"period_submission_decided",
 			"automatic_clock_out",
+			"month_closed_automatically",
+			"month_close_blocked",
+			"month_reopened",
+			"work_balance_adjustment_recorded",
+			"work_balance_adjustment_cancelled",
 		] as NotificationType[],
 	},
 	{
@@ -89,6 +98,11 @@ const NOTIFICATION_CATEGORIES = [
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+			"absence_deputy_assigned",
+			"absence_deputy_removed",
+			"absence_deputy_dates_changed",
+			"absence_deputy_reminder",
+			"absence_deputy_unavailable",
 		] as NotificationType[],
 	},
 	{
@@ -105,6 +119,7 @@ const NOTIFICATION_CATEGORIES = [
 			"travel_expense_partially_reimbursed",
 			"travel_expense_recovery_recorded",
 			"travel_expense_ready_for_reimbursement",
+			"travel_expense_payroll_run_awaiting_confirmation",
 		] as NotificationType[],
 	},
 	{
@@ -134,6 +149,7 @@ const NOTIFICATION_CATEGORIES = [
 			"team_member_added",
 			"team_member_removed",
 			"employee_offboarding_review",
+			"scheduled_export_paused",
 		] as NotificationType[],
 	},
 	{
@@ -164,6 +180,8 @@ const NOTIFICATION_CATEGORIES = [
 			"missed_clock_in_reminder",
 			"forgotten_clock_out_reminder",
 			"break_due_reminder",
+			"period_submission_reminder",
+			"period_submission_sent_back",
 		] as NotificationType[],
 	},
 	{
@@ -187,9 +205,18 @@ const NOTIFICATION_CATEGORIES = [
 	},
 ];
 
-// Human-readable labels for notification types. Clocking reminder labels are static `t()` calls in
-// `getTypeLabel`, so the Tolgee extractor registers them with their defaults.
-const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, string> = {
+/** Types whose labels are static `t()` calls in `getTypeLabel` (extractable with their defaults). */
+type StaticallyLabelledType =
+	| ClockingReminderType
+	| "work_balance_adjustment_recorded"
+	| "work_balance_adjustment_cancelled"
+	| AbsenceDeputyNotificationType
+	| "absence_deputy_unavailable"
+	| "approval_cover_started"
+	| "approval_cover_return_summary";
+
+// Human-readable labels for the other notification types, looked up by a computed key.
+const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, string> = {
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
@@ -246,6 +273,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, strin
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
 	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
+	travel_expense_payroll_run_awaiting_confirmation:
+		"Payroll run awaiting confirmation (expense officers)",
 	// An employee document became visible to the employee
 	personnel_file_document_shared: "Document shared with you",
 	// An employee uploaded a document (officers, or owners and admins)
@@ -255,6 +284,15 @@ const TYPE_LABELS: Record<Exclude<NotificationType, ClockingReminderType>, strin
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
 	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
+
+	// Closed months (#762)
+	month_closed_automatically: "Month closed automatically",
+	month_close_blocked: "Automatic month close blocked",
+	month_reopened: "Closed month reopened for your employees",
+	// One-time notice to owners and admins; not listed in any preference category
+	time_off_in_lieu_available: "Time off in lieu available",
+	// To every owner and admin when a schedule's owner is no longer an org admin (#988)
+	scheduled_export_paused: "Scheduled export paused (owners and admins)",
 };
 
 // Channel icons and labels
@@ -381,6 +419,68 @@ function useNotificationSettingsViewModel() {
 				);
 			case "break_due_reminder":
 				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+			case "period_submission_reminder":
+				return t(
+					"common:notifications.preferences.types.period_submission_reminder",
+					"Submit your time",
+				);
+			case "period_submission_sent_back":
+				return t(
+					"common:notifications.preferences.types.period_submission_sent_back",
+					"Time sent back after a change",
+				);
+			case "period_submission_decided":
+				return t(
+					"common:notifications.preferences.types.period_submission_decided",
+					"Submitted time approved or rejected",
+				);
+			case "work_balance_adjustment_recorded":
+				return t(
+					"common:notifications.preferences.types.work_balance_adjustment_recorded",
+					"Balance adjustment recorded",
+				);
+			case "work_balance_adjustment_cancelled":
+				return t(
+					"common:notifications.preferences.types.work_balance_adjustment_cancelled",
+					"Balance adjustment cancelled",
+				);
+			case "absence_deputy_assigned":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_assigned",
+					"Named as absence deputy",
+				);
+			case "absence_deputy_removed":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_removed",
+					"No longer absence deputy",
+				);
+			case "absence_deputy_dates_changed":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_dates_changed",
+					"Absence deputy dates changed",
+				);
+			case "absence_deputy_reminder":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_reminder",
+					"Absence cover starts tomorrow",
+				);
+			// A departed or deactivated deputy was cleared from an absence (#1014).
+			case "absence_deputy_unavailable":
+				return t(
+					"common:notifications.preferences.types.absence_deputy_unavailable",
+					"Deputy no longer available",
+				);
+			// Cover summaries (#1018).
+			case "approval_cover_started":
+				return t(
+					"common:notifications.preferences.types.approval_cover_started",
+					"Absence cover started",
+				);
+			case "approval_cover_return_summary":
+				return t(
+					"common:notifications.preferences.types.approval_cover_return_summary",
+					"Decided by your deputy",
+				);
 			default:
 				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
 		}

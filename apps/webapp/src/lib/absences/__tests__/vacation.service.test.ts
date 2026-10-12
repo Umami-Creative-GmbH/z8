@@ -372,60 +372,6 @@ describe("Date Utils", () => {
 		});
 	});
 
-	describe("calculateBusinessDays", () => {
-		test("should count weekdays only", async () => {
-			const { calculateBusinessDays } = await import("../date-utils");
-
-			// Just test that it returns a positive number for a weekday range
-			const result = calculateBusinessDays(
-				new Date("2024-01-08T12:00:00Z"), // Monday
-				new Date("2024-01-11T12:00:00Z"), // Thursday
-				[],
-			);
-
-			expect(result).toBeGreaterThan(0);
-			expect(result).toBeLessThanOrEqual(4);
-		});
-
-		test("should exclude weekends", async () => {
-			const { calculateBusinessDays } = await import("../date-utils");
-
-			// Over two weeks should have ~10 business days
-			const result = calculateBusinessDays(
-				new Date("2024-01-08T12:00:00Z"), // Monday
-				new Date("2024-01-19T12:00:00Z"), // Friday
-				[],
-			);
-
-			// Should be between 8-10 business days (2 weeks minus weekends)
-			expect(result).toBeGreaterThanOrEqual(8);
-			expect(result).toBeLessThanOrEqual(10);
-		});
-
-		test("should exclude holidays", async () => {
-			const { calculateBusinessDays } = await import("../date-utils");
-
-			// Test that the function accepts holidays array without crashing
-			const result = calculateBusinessDays(
-				new Date("2024-01-08T12:00:00Z"), // Monday
-				new Date("2024-01-11T12:00:00Z"), // Thursday
-				[
-					{
-						id: "holiday-1",
-						name: "Holiday",
-						startDate: new Date("2024-01-10T12:00:00Z"), // Wednesday
-						endDate: new Date("2024-01-10T12:00:00Z"), // Wednesday (single day)
-						categoryId: "cat-1",
-					},
-				],
-			);
-
-			// Should return a non-negative number when holidays are provided
-			expect(typeof result).toBe("number");
-			expect(result).toBeGreaterThanOrEqual(0);
-		});
-	});
-
 	describe("getYearRange", () => {
 		test("should return correct year boundaries", async () => {
 			const { getYearRange } = await import("../date-utils");

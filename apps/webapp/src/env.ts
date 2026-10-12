@@ -254,8 +254,18 @@ const parsedEnv = createEnv({
 		VAPID_PUBLIC_KEY: z.string().optional(),
 		VAPID_PRIVATE_KEY: z.string().optional(),
 		VAPID_SUBJECT: z.string().optional(),
+		// Native push for the store app (#843): a Firebase service account with
+		// the Cloud Messaging API. Without all three, native push is off.
+		FCM_PROJECT_ID: z.string().optional(),
+		FCM_CLIENT_EMAIL: z.string().optional(),
+		// PEM private key; "\n" escapes are accepted.
+		FCM_PRIVATE_KEY: z.string().optional(),
 		RESEND_API_KEY: z.string().optional(),
 		EMAIL_FROM: z.string().optional(),
+
+		// Store app listings for the "Get the app" banner (#847). Unset = no banner on that platform.
+		STORE_APP_IOS_URL: z.url({ protocol: /^https$/ }).optional(),
+		STORE_APP_ANDROID_URL: z.url({ protocol: /^https$/ }).optional(),
 	},
 	client: {
 		NEXT_PUBLIC_APP_URL: z.url().optional(),
@@ -448,8 +458,13 @@ const parsedEnv = createEnv({
 		VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
 		VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
 		VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+		FCM_PROJECT_ID: process.env.FCM_PROJECT_ID,
+		FCM_CLIENT_EMAIL: process.env.FCM_CLIENT_EMAIL,
+		FCM_PRIVATE_KEY: process.env.FCM_PRIVATE_KEY,
 		RESEND_API_KEY: process.env.RESEND_API_KEY,
 		EMAIL_FROM: process.env.EMAIL_FROM,
+		STORE_APP_IOS_URL: process.env.STORE_APP_IOS_URL,
+		STORE_APP_ANDROID_URL: process.env.STORE_APP_ANDROID_URL,
 	},
 	createFinalSchema: (shape) =>
 		z.object(shape).superRefine((env, ctx) => {

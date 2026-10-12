@@ -9,11 +9,18 @@ import type {
 	ApprovalTypeHandler,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
+import type { AbsenceDeputyView } from "@/lib/absences/deputy";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
+import { buildAbsenceDeputySection } from "../presentation/absence-deputy";
 import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
+import {
+	buildAbsenceWorkBalanceSections,
+	prepareAbsenceWorkBalance,
+} from "../presentation/absence-work-balance";
 import {
 	buildTimeReviewSections,
 	prepareTimeReviewEvidence,
@@ -28,13 +35,33 @@ import {
 } from "../presentation/travel-expense-report-review";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
+import type {
+	CanonicalInboxApproval,
+	CanonicalInboxApprovalBatch,
+	CanonicalInboxCountInput,
+	CanonicalInboxLoadInput,
+	CanonicalInboxRead,
+} from "./canonical-inbox-read";
+import { CANONICAL_INBOX_READS, ordinaryWorkPeriodInboxRead } from "./canonical-inbox-reads";
 import { ApprovalInboxBadRequestError } from "./current-actor";
-import {
+import type {
 	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
-	type OrdinaryCanonicalApproval,
-	type OrdinaryCanonicalListFilters,
+	OrdinaryCanonicalApproval,
+	OrdinaryCanonicalListFilters,
 } from "./ordinary-canonical-read";
+import { isDeputyDecisionEntityType } from "../deputy/deputy-decision";
+import {
+	type DeputyDecisionView,
+	loadDeputyDecidedEarlierStages,
+	loadDeputyDecisionsForEntities,
+} from "../deputy/deputy-decision-store";
+import {
+	coversByApprover,
+	markCoveringFor,
+	markDecidedEarlierStage,
+	viewerHasOwnRight,
+} from "./covering-marks";
 import { markOwnRequest } from "./own-request";
 import { getAgeDays, serializeDate } from "./serialization";
 import {
@@ -45,6 +72,8 @@ import {
 } from "./source-adapters";
 import { buildInboxTriage } from "./triage";
 import type {
+	ApprovalInboxCover,
+	ApprovalInboxCoveringSection,
 	ApprovalInboxDetailResult,
 	ApprovalInboxDetailSection,
 	ApprovalInboxItem,
@@ -59,18 +88,30 @@ import type {
 
 export interface ApprovalInboxListParams extends ApprovalQueryParams {
 	types?: ApprovalInboxType[];
+	/** Absent approvers the viewer covers for right now, with their names (#1016). */
+	covering?: ApprovalInboxCover[];
 }
 
 interface GetApprovalInboxListFromSourcesInput {
 	sources: ApprovalInboxSource[];
 	params: ApprovalInboxListParams;
 	now?: Date;
+	/** The canonical kinds' inbox reads (#1058); none unless given. */
+	canonicalReads?: readonly CanonicalInboxRead[];
+	/** Stands in for the ordinary work-period read's list. */
 	loadCanonicalOrdinaryApprovals?: (
 		input: Parameters<typeof loadOrdinaryCanonicalApprovals>[0],
 	) => Promise<OrdinaryCanonicalApproval[]>;
+	/** Stands in for the ordinary work-period read's count. */
 	countCanonicalOrdinaryApprovals?: (
 		input: Parameters<typeof countOrdinaryCanonicalApprovals>[0],
 	) => Promise<number>;
+	/** Of the covered items' requests, those whose earlier stage the deputy decided (#1016). */
+	loadDeputyDecidedEarlierStages?: (input: {
+		organizationId: string;
+		deputyEmployeeId: string;
+		approvalRequestIds: string[];
+	}) => Promise<Set<string>>;
 }
 
 interface ApprovalInboxCursor {
@@ -91,6 +132,8 @@ interface GetApprovalInboxDetailFromRequestInput {
 	};
 	handler: ApprovalTypeHandler;
 	loadAbsenceReviewEvidence?: typeof prepareAbsenceReviewEvidence;
+	/** The projected work balance after time off in lieu (#1000). */
+	loadAbsenceWorkBalance?: typeof prepareAbsenceWorkBalance;
 	loadTravelExpenseReviewEvidence?: (input: {
 		organizationId: string;
 		claimId: string;
@@ -103,6 +146,74 @@ interface GetApprovalInboxDetailFromRequestInput {
 	loadTimeReviewEvidence?: (
 		input: Parameters<typeof prepareTimeReviewEvidence>[0],
 	) => ReturnType<typeof prepareTimeReviewEvidence>;
+	/** A covering deputy's decision of this request (#1016), for the timeline. */
+	loadDeputyDecision?: (input: {
+		organizationId: string;
+		approvalRequestId: string;
+		entityId: string;
+	}) => Promise<DeputyDecisionView | null>;
+}
+
+async function loadDeputyDecisionOfRequest(input: {
+	organizationId: string;
+	approvalRequestId: string;
+	entityId: string;
+}): Promise<DeputyDecisionView | null> {
+	const decisions = await loadDeputyDecisionsForEntities(db, {
+		organizationId: input.organizationId,
+		entityIds: [input.entityId],
+	});
+	return decisions.find((decision) => decision.approvalRequestId === input.approvalRequestId) ?? null;
+}
+
+/** The decision event reads "by Y (deputy for X)" when a covering deputy decided it. */
+function withDeputyDecider(
+	detail: ApprovalDetail,
+	decision: DeputyDecisionView | null,
+): ApprovalDetail {
+	if (!decision) return detail;
+	const decidedType = decision.decision === "approved" ? "approved" : "rejected";
+	return {
+		...detail,
+		timeline: detail.timeline.map((event) =>
+			event.type === decidedType
+				? {
+						...event,
+						performedBy: { name: decision.deputy.name, image: event.performedBy?.image ?? null },
+						actingFor: { name: decision.actingFor.name },
+					}
+				: event,
+		),
+	};
+}
+
+/**
+ * A canonical read as the read service runs it. Without a count, the total is
+ * the loaded batch's `totalCount` (a stand-in list given without a count).
+ */
+interface InboxCanonicalRead {
+	type: ApprovalInboxType;
+	load: (input: CanonicalInboxLoadInput) => Promise<CanonicalInboxApprovalBatch>;
+	count?: (input: CanonicalInboxCountInput) => Promise<number>;
+}
+
+/**
+ * The canonical reads to run: the given reads, with the ordinary work-period
+ * read replaced by stand-ins when any are given.
+ */
+function canonicalReadsWithOrdinaryStandIns(
+	reads: readonly CanonicalInboxRead[],
+	standIns: {
+		load?: (input: CanonicalInboxLoadInput) => Promise<CanonicalInboxApproval[]>;
+		count?: (input: CanonicalInboxCountInput) => Promise<number>;
+	},
+): InboxCanonicalRead[] {
+	const { load, count } = standIns;
+	if (!load && !count) return [...reads];
+	return [
+		{ type: "time_entry", load: load ?? (async () => []), count },
+		...reads.filter((read) => read !== ordinaryWorkPeriodInboxRead),
+	];
 }
 
 const DEFAULT_LIMIT = 50;
@@ -124,18 +235,33 @@ export async function getApprovalInboxListFromSources({
 	sources,
 	params,
 	now,
-	loadCanonicalOrdinaryApprovals: loadCanonical = async () => [],
-	countCanonicalOrdinaryApprovals: countCanonical,
+	canonicalReads = [],
+	loadCanonicalOrdinaryApprovals,
+	countCanonicalOrdinaryApprovals,
+	loadDeputyDecidedEarlierStages: loadDecidedEarlier = async () => new Set<string>(),
 }: GetApprovalInboxListFromSourcesInput): Promise<ApprovalInboxListResult> {
+	// Covered approvals are listed in their "Covering for" sections, not here.
+	const covers = coversByApprover(params.covering, params.approverId);
 	const effectiveNow = now ?? new Date();
 	const requestedTypeSet = params.types ? new Set(params.types) : null;
 	const selectedSources = sources.filter(
 		(source) => !requestedTypeSet || requestedTypeSet.has(source.type),
 	);
+	const reads = canonicalReadsWithOrdinaryStandIns(canonicalReads, {
+		load: loadCanonicalOrdinaryApprovals,
+		count: countCanonicalOrdinaryApprovals,
+	});
+	// A read listed under a legacy source's type follows that source's selection.
+	const selectedReads = reads.filter(
+		(read) =>
+			(!requestedTypeSet || requestedTypeSet.has(read.type)) &&
+			(selectedSources.some((source) => source.type === read.type) ||
+				!sources.some((source) => source.type === read.type)),
+	);
 	const warnings: ApprovalInboxWarning[] = [];
 	const items: ApprovalInboxItem[] = [];
 	const counts = Object.fromEntries(
-		sources.map((source) => [source.type, 0]),
+		[...sources, ...reads].map((source) => [source.type, 0]),
 	) as ApprovalInboxListResult["counts"];
 
 	const approvalResults = await Promise.all(
@@ -152,9 +278,7 @@ export async function getApprovalInboxListFromSources({
 			});
 		} else {
 			items.push(
-				...approvalsExit.value.map((approval) =>
-					toInboxItem(source, approval, effectiveNow),
-				),
+				...approvalsExit.value.map((approval) => toInboxItem(source, approval, effectiveNow)),
 			);
 		}
 	}
@@ -166,6 +290,7 @@ export async function getApprovalInboxListFromSources({
 				source.handler.getCount(params.approverId, params.organizationId, {
 					eligibleApprovalScopes: params.eligibleApprovalScopes,
 					includeAllApprovers: params.includeAllApprovers,
+
 				}),
 			),
 		})),
@@ -174,42 +299,42 @@ export async function getApprovalInboxListFromSources({
 		counts[source.type] = Exit.isSuccess(countExit) ? countExit.value : 0;
 	}
 
-	const includesTimeEntries = selectedSources.some(
-		(source) => source.type === "time_entry",
-	);
+	const pending = (params.status ?? "pending") === "pending";
 	const cursor = parseCursor(params.cursor);
 	const limit = getEffectiveLimit(params.limit);
 	const canonicalFilters = normalizeCanonicalFilters(params);
-	const canonicalOrdinary =
-		(params.status ?? "pending") === "pending" && includesTimeEntries
-			? await loadCanonical({
-					approverId: params.approverId,
-					organizationId: params.organizationId,
-					eligibleApprovalScopes: params.eligibleApprovalScopes,
-					includeAllApprovers: params.includeAllApprovers,
-					filters: canonicalFilters,
-					limit: limit + 1,
-					cursor: cursor ?? undefined,
-					now: effectiveNow,
-				})
-			: [];
-	const canonicalTotal = countCanonical
-		? await countCanonical({
-				approverId: params.approverId,
-				organizationId: params.organizationId,
-				eligibleApprovalScopes: params.eligibleApprovalScopes,
-				includeAllApprovers: params.includeAllApprovers,
-				filters: canonicalFilters,
-				now: effectiveNow,
-			})
-		: ((
-				canonicalOrdinary as OrdinaryCanonicalApproval[] & {
-					totalCount?: number;
-				}
-			).totalCount ?? canonicalOrdinary.length);
-	counts.time_entry = (counts.time_entry ?? 0) + canonicalTotal;
-	if ((params.status ?? "pending") === "pending" && includesTimeEntries) {
-		items.push(...canonicalOrdinary.map((approval) => approval.item));
+	// Canonical reads hold only pending assignments; each is counted under its type.
+	const canonicalResults = await Promise.all(
+		reads.map(async (read) => {
+			const listed = pending && selectedReads.includes(read);
+			const approvals: CanonicalInboxApprovalBatch = listed
+				? await read.load({
+						approverId: params.approverId,
+						organizationId: params.organizationId,
+						eligibleApprovalScopes: params.eligibleApprovalScopes,
+						includeAllApprovers: params.includeAllApprovers,
+						filters: canonicalFilters,
+						limit: limit + 1,
+						cursor: cursor ?? undefined,
+						now: effectiveNow,
+					})
+				: [];
+			const total = read.count
+				? await read.count({
+						approverId: params.approverId,
+						organizationId: params.organizationId,
+						eligibleApprovalScopes: params.eligibleApprovalScopes,
+						includeAllApprovers: params.includeAllApprovers,
+						filters: canonicalFilters,
+						now: effectiveNow,
+					})
+				: (approvals.totalCount ?? approvals.length);
+			return { read, approvals, total };
+		}),
+	);
+	for (const { read, approvals, total } of canonicalResults) {
+		counts[read.type] = (counts[read.type] ?? 0) + total;
+		items.push(...approvals.map((approval) => approval.item));
 	}
 
 	const sortedItems = items
@@ -221,8 +346,20 @@ export async function getApprovalInboxListFromSources({
 	const pagedItems = cursorFilteredItems.slice(0, limit);
 	const hasMore = cursorFilteredItems.length > limit;
 	const lastItem = pagedItems.at(-1);
+	const covering =
+		pending && covers.size > 0
+			? await loadCoveringSections({
+					covers: [...covers.values()],
+					params,
+					sources: selectedSources,
+					canonicalReads: selectedReads,
+					loadDecidedEarlier,
+					now: effectiveNow,
+				})
+			: undefined;
 
 	return {
+		...(covering ? { covering } : {}),
 		items: pagedItems,
 		nextCursor:
 			hasMore && lastItem
@@ -236,9 +373,178 @@ export async function getApprovalInboxListFromSources({
 		hasMore,
 		total: Object.values(counts).reduce((total, count) => total + count, 0),
 		counts,
-		supportedTypes: sources.map((source) => source.type),
+		supportedTypes: [...new Set([...sources, ...reads].map((source) => source.type))],
 		warnings,
 	};
+}
+
+/** The most rows one "Covering for" section lists at once. */
+const COVERING_SECTION_LIMIT = 100;
+
+/**
+ * Each "Covering for" section's own rows (#1016): the absent approver's
+ * pending approvals of the deputy kinds, under the list's filters, except those
+ * the viewer decides in their own right (they are in the viewer's own list,
+ * default 8). Four-eyes and own-request marks apply. The count is the rows
+ * shown, or the approver's whole pending total when there are more.
+ */
+async function loadCoveringSections(input: {
+	covers: ApprovalInboxCover[];
+	params: ApprovalInboxListParams;
+	sources: ApprovalInboxSource[];
+	/** The list's selected canonical reads; only those of the deputy kinds apply. */
+	canonicalReads: readonly InboxCanonicalRead[];
+	loadDecidedEarlier: NonNullable<
+		GetApprovalInboxListFromSourcesInput["loadDeputyDecidedEarlierStages"]
+	>;
+	now: Date;
+}): Promise<ApprovalInboxCoveringSection[]> {
+	const { params } = input;
+	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
+	const deputyReads = input.canonicalReads.filter((read) => isDeputyDecisionEntityType(read.type));
+	const covers = new Map(input.covers.map((cover) => [cover.approverId, cover]));
+	return await Promise.all(
+		input.covers.map(async (cover) => {
+			const sectionParams: ApprovalInboxListParams = {
+				...params,
+				approverId: cover.approverId,
+				status: "pending",
+				limit: COVERING_SECTION_LIMIT + 1,
+				cursor: undefined,
+				covering: undefined,
+				eligibleApprovalScopes: undefined,
+				includeAllApprovers: undefined,
+				coveredApproverIds: undefined,
+			};
+			const loaded = await Promise.all(
+				deputySources.map(async (source) => {
+					const exit = await runtime.runPromiseExit(source.handler.getApprovals(sectionParams));
+					return Exit.isSuccess(exit)
+						? exit.value.map((approval) => ({
+								item: toInboxItem(source, approval, input.now),
+								approverId: approval.approverId,
+								requesterEmployeeId: approval.requester.id,
+							}))
+						: [];
+				}),
+			);
+			const canonicalBatches = await Promise.all(
+				deputyReads.map(async (read) =>
+					(
+						await read.load({
+							approverId: cover.approverId,
+							organizationId: params.organizationId,
+							filters: normalizeCanonicalFilters(params),
+							limit: COVERING_SECTION_LIMIT + 1,
+							now: input.now,
+						})
+					).map((approval) => ({
+						item: approval.item,
+						approverId: approval.decisionTarget?.approverId,
+						requesterEmployeeId: approval.decisionTarget?.requesterEmployeeId,
+					})),
+				),
+			);
+			const candidates = [...loaded.flat(), ...canonicalBatches.flat()];
+			const truncated = [...loaded, ...canonicalBatches].some(
+				(rows) => rows.length > COVERING_SECTION_LIMIT,
+			);
+			const rows = candidates.flatMap((candidate) => {
+				if (viewerHasOwnRight(params, candidate)) return [];
+				const item = markCoveringFor(candidate.item, candidate.approverId, covers);
+				return item.coveringFor ? [markOwnRequest(item, params.approverId)] : [];
+			});
+			const decidedEarlier =
+				rows.length > 0
+					? await input.loadDecidedEarlier({
+							organizationId: params.organizationId,
+							deputyEmployeeId: params.approverId,
+							approvalRequestIds: rows.map((row) => row.id),
+						})
+					: new Set<string>();
+			const sorted = rows
+				.map((row) => (decidedEarlier.has(row.id) ? markDecidedEarlierStage(row) : row))
+				.sort(compareInboxItems);
+			const shown = sorted.slice(0, COVERING_SECTION_LIMIT);
+			const hasMore = truncated || sorted.length > COVERING_SECTION_LIMIT;
+			const count = hasMore
+				? ((
+						await countCoveringSections({
+							covers: [cover],
+							organizationId: params.organizationId,
+							sources: deputySources,
+							canonicalReads: deputyReads,
+							now: input.now,
+						})
+					)[0]?.count ?? shown.length)
+				: shown.length;
+			return { ...cover, count, rows: shown, hasMore };
+		}),
+	);
+}
+
+/**
+ * Each covered approver's pending total: every pending approval of the deputy
+ * kinds assigned to them, exactly as their own inbox counts it.
+ */
+async function countCoveringSections(input: {
+	covers: ApprovalInboxCover[];
+	organizationId: string;
+	sources: ApprovalInboxSource[];
+	canonicalReads: readonly InboxCanonicalRead[];
+	now: Date;
+}): Promise<Array<ApprovalInboxCover & { count: number }>> {
+	const deputySources = input.sources.filter((source) => isDeputyDecisionEntityType(source.type));
+	const deputyReads = input.canonicalReads.filter((read) => isDeputyDecisionEntityType(read.type));
+	return await Promise.all(
+		input.covers.map(async (cover) => {
+			const counts = await Promise.all(
+				deputySources.map(async (source) => {
+					const exit = await runtime.runPromiseExit(
+						source.handler.getCount(cover.approverId, input.organizationId, {}),
+					);
+					return Exit.isSuccess(exit) ? exit.value : 0;
+				}),
+			);
+			const canonical = await Promise.all(
+				deputyReads.map((read) =>
+					read.count
+						? read.count({
+								approverId: cover.approverId,
+								organizationId: input.organizationId,
+								now: input.now,
+							})
+						: 0,
+				),
+			);
+			return {
+				approverId: cover.approverId,
+				approverName: cover.approverName,
+				count: [...counts, ...canonical].reduce((sum, value) => sum + value, 0),
+			};
+		}),
+	);
+}
+
+/**
+ * How many approvals wait for this absent approver in their covering deputy's
+ * "Covering for" section: the same count the section shows (#1016), for the
+ * cover start summary (#1018).
+ */
+export async function countCoveredApproverPending(input: {
+	organizationId: string;
+	approverId: string;
+	now: Instant;
+}): Promise<number> {
+	const [section] = await countCoveringSections({
+		covers: [{ approverId: input.approverId, approverName: "" }],
+		organizationId: input.organizationId,
+		sources: getSupportedInboxSources(),
+		canonicalReads: CANONICAL_INBOX_READS,
+		// The handlers' count boundary takes a Date.
+		now: dateFromInstant(input.now),
+	});
+	return section?.count ?? 0;
 }
 
 export function getApprovalInboxList(
@@ -247,8 +553,8 @@ export function getApprovalInboxList(
 	return getApprovalInboxListFromSources({
 		sources: getSupportedInboxSources(),
 		params,
-		loadCanonicalOrdinaryApprovals: loadOrdinaryCanonicalApprovals,
-		countCanonicalOrdinaryApprovals: countOrdinaryCanonicalApprovals,
+		canonicalReads: CANONICAL_INBOX_READS,
+		loadDeputyDecidedEarlierStages: (input) => loadDeputyDecidedEarlierStages(db, input),
 	});
 }
 
@@ -281,18 +587,33 @@ function normalizeCanonicalFilters(
 export async function getApprovalInboxCounts(
 	params: ApprovalInboxListParams,
 ): Promise<ApprovalInboxListResult["counts"]> {
-	const result = await getApprovalInboxList({ ...params, limit: 1 });
-	return result.counts;
+	return countsWithCoveringSections(await getApprovalInboxList({ ...params, limit: 1 }));
+}
+
+/**
+ * The per-type pending counts of the viewer's own list plus their "Covering
+ * for" sections' rows (#1016): the work waiting for them, as the badge shows it.
+ */
+export function countsWithCoveringSections(
+	result: Pick<ApprovalInboxListResult, "counts" | "covering">,
+): ApprovalInboxListResult["counts"] {
+	const counts = { ...result.counts };
+	for (const row of (result.covering ?? []).flatMap((section) => section.rows)) {
+		counts[row.type] = (counts[row.type] ?? 0) + 1;
+	}
+	return counts;
 }
 
 export async function getApprovalInboxDetailFromRequest({
 	request,
 	handler,
 	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
+	loadAbsenceWorkBalance = prepareAbsenceWorkBalance,
 	loadTravelExpenseReviewEvidence = prepareTravelExpenseReviewEvidence,
 	loadTravelExpenseReportReviewEvidence = (input) =>
 		prepareTravelExpenseReportReviewEvidence(input),
 	loadTimeReviewEvidence = prepareTimeReviewEvidence,
+	loadDeputyDecision = loadDeputyDecisionOfRequest,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
@@ -301,12 +622,24 @@ export async function getApprovalInboxDetailFromRequest({
 		throw new ApprovalInboxBadRequestError("Approval detail mismatch");
 	}
 
-	const detail = await runtime.runPromise(
+	const handlerDetail = await runtime.runPromise(
 		handler.getDetail(request.entityId, request.organizationId, {
 			approvalId: request.id,
 		}),
 	);
-	validateDetailMatchesRequest(detail, request);
+	validateDetailMatchesRequest(handlerDetail, request);
+	const detail =
+		(request.status === "approved" || request.status === "rejected") &&
+		isDeputyDecisionEntityType(request.entityType)
+			? withDeputyDecider(
+					handlerDetail,
+					await loadDeputyDecision({
+						organizationId: request.organizationId,
+						approvalRequestId: request.id,
+						entityId: request.entityId,
+					}),
+				)
+			: handlerDetail;
 
 	const source: ApprovalInboxSource = {
 		type: request.entityType,
@@ -343,6 +676,17 @@ export async function getApprovalInboxDetailFromRequest({
 			entity: detail.entity,
 		});
 		if (evidence) review = buildAbsenceReviewSections(evidence);
+		// Shown for the employee's own projection; never a reason to hold the decision.
+		const workBalance = await loadAbsenceWorkBalance({
+			organizationId: request.organizationId,
+			entity: detail.entity,
+		}).catch(() => null);
+		if (workBalance) {
+			const workBalanceSections = buildAbsenceWorkBalanceSections(workBalance);
+			review = review
+				? { ...review, sections: [...review.sections, ...workBalanceSections] }
+				: { sections: workBalanceSections, decisionsBlocked: false };
+		}
 	} else if (request.entityType === "travel_expense_claim") {
 		// The claim's frozen submission and decision history (#296).
 		review = buildTravelExpenseReviewSections(
@@ -363,6 +707,10 @@ export async function getApprovalInboxDetailFromRequest({
 		);
 	} else if (timeEvidence) {
 		review = buildTimeReviewSections(timeEvidence);
+	}
+	if (request.entityType === "absence_entry") {
+		// Who covers during the absence (#1011), after what was submitted.
+		sections.splice(1, 0, buildAbsenceDeputySection(absenceDeputyOf(detail.entity)));
 	}
 	if (review) {
 		sections.splice(1, 0, ...review.sections);
@@ -390,16 +738,22 @@ export async function getApprovalInboxDetail({
 	approverId,
 	includeAllApprovers,
 	eligibleApprovalScopes,
+	covering,
 	database = db,
-	loadCanonicalOrdinaryApprovals:
-		loadCanonical = loadOrdinaryCanonicalApprovals,
+	canonicalReads = CANONICAL_INBOX_READS,
+	loadCanonicalOrdinaryApprovals,
 }: {
 	approvalId: string;
 	organizationId: string;
 	approverId?: string;
 	includeAllApprovers?: boolean;
 	eligibleApprovalScopes?: ApprovalQueryParams["eligibleApprovalScopes"];
+	/** Absent approvers the viewer covers for (#1016); canonical reads only. */
+	covering?: ApprovalInboxCover[];
 	database?: Pick<typeof db, "query">;
+	/** The canonical kinds' inbox reads (#1058) an assignment id is looked up in. */
+	canonicalReads?: readonly CanonicalInboxRead[];
+	/** Stands in for the ordinary work-period read's list. */
 	loadCanonicalOrdinaryApprovals?: (
 		input: Parameters<typeof loadOrdinaryCanonicalApprovals>[0],
 	) => Promise<OrdinaryCanonicalApproval[]>;
@@ -415,18 +769,37 @@ export async function getApprovalInboxDetail({
 		if (!approverId) {
 			throw new ApprovalInboxBadRequestError("Approval not found");
 		}
-		const canonical = await loadCanonical({
-			approverId,
-			organizationId,
-			includeAllApprovers,
-			eligibleApprovalScopes,
-			assignmentId: approvalId,
-			limit: 1,
+		const covers = coversByApprover(covering, approverId);
+		const reads = canonicalReadsWithOrdinaryStandIns(canonicalReads, {
+			load: loadCanonicalOrdinaryApprovals,
 		});
-		const approval = canonical.find(
-			(candidate) => candidate.item.id === approvalId,
-		);
-		if (approval) return approval.detail;
+		// An assignment belongs to one kind: the first read that lists it opens it.
+		for (const read of reads) {
+			const canonical = await read.load({
+				approverId,
+				organizationId,
+				includeAllApprovers,
+				eligibleApprovalScopes,
+				...(covers.size > 0 ? { coveredApproverIds: [...covers.keys()] } : {}),
+				assignmentId: approvalId,
+				limit: 1,
+			});
+			const approval = canonical.find((candidate) => candidate.item.id === approvalId);
+			if (!approval) continue;
+			const item = markCoveringFor(
+				approval.detail.item,
+				approval.decisionTarget?.approverId,
+				covers,
+				viewerHasOwnRight(
+					{ approverId, includeAllApprovers, eligibleApprovalScopes },
+					{
+						approverId: approval.decisionTarget?.approverId,
+						requesterEmployeeId: approval.decisionTarget?.requesterEmployeeId,
+					},
+				),
+			);
+			return item === approval.detail.item ? approval.detail : { ...approval.detail, item };
+		}
 		throw new ApprovalInboxBadRequestError("Approval not found");
 	}
 	if (
@@ -569,6 +942,16 @@ const REQUEST_STATUS_TEXT: Record<
 	},
 };
 
+function absenceDeputyOf(entity: unknown): AbsenceDeputyView | null {
+	if (typeof entity !== "object" || entity === null) return null;
+	const deputy = (entity as { deputy?: unknown }).deputy;
+	if (typeof deputy !== "object" || deputy === null) return null;
+	const { id, name, canDecideApprovals } = deputy as Record<string, unknown>;
+	return typeof id === "string" && typeof name === "string" && typeof canDecideApprovals === "boolean"
+		? { id, name, canDecideApprovals }
+		: null;
+}
+
 function buildDetailSections(
 	detail: ApprovalDetail,
 	options: { liveCorrection: boolean },
@@ -638,6 +1021,7 @@ function buildDetailSections(
 				label: event.message,
 				at: serializeDate(event.timestamp) ?? "",
 				actorName: event.performedBy?.name ?? null,
+				...(event.actingFor ? { actingForName: event.actingFor.name } : {}),
 			})),
 		});
 	}

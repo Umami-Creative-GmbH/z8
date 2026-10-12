@@ -12,6 +12,18 @@ describe("avvHostingDetails", () => {
 		expect(avvHostingDetails.pdfSubprocessorText).not.toContain("Hetzner");
 	});
 
+	it("documents Firebase Cloud Messaging as the store app's push subprocessor (#843)", () => {
+		expect(avvHostingDetails.subprocessors).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					providerName: "Google Ireland Limited",
+					displayText: expect.stringContaining("Firebase Cloud Messaging"),
+					pdfText: expect.stringContaining("ohne Inhalte der Benachrichtigung"),
+				}),
+			]),
+		);
+	});
+
 	it("documents PostHog as a conditional telemetry subprocessor", () => {
 		expect(avvHostingDetails.subprocessors).toEqual(
 			expect.arrayContaining([

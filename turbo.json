@@ -1,5 +1,6 @@
 {
   "$schema": "https://v2-9-15.turborepo.dev/schema.json",
+  "agentGuidance": false,
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

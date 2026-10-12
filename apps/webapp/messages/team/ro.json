@@ -1,0 +1,205 @@
+{
+  "team": {
+    "absences": {
+      "actions": {
+        "recordForEmployee": "Înregistrează absența pentru {name}"
+      },
+      "calendar": {
+        "approved": "Aprobat",
+        "changeDeputy": "Schimbă înlocuitorul",
+        "changeDeputyOf": "Schimbă înlocuitorul pentru {name}",
+        "deputy": "Înlocuitor:",
+        "deputyMissing": "Lipsește înlocuitorul",
+        "description": "Absențe aprobate și în așteptare pentru echipa și anul selectate.",
+        "error": {
+          "description": "Vă rugăm să încercați din nou peste câteva momente.",
+          "title": "Nu se poate încărca calendarul"
+        },
+        "legend": {
+          "approved": "Aprobat",
+          "pending": "În așteptare"
+        },
+        "pending": "În așteptare",
+        "pendingDays": "{count} în așteptare",
+        "title": "Calendar anual",
+        "totalDays": "{count} absenți"
+      },
+      "deputyFilter": {
+        "clear": "Afișează toate absențele",
+        "notice": "Se afișează doar absențele pe care acest angajat le acoperă ca înlocuitor."
+      },
+      "description": "Examinați alocările și înregistrați absențele aprobate pentru echipa dvs.",
+      "empty": {
+        "description": "Încercați să ajustați filtrele sau căutarea pentru a găsi membri ai echipei.",
+        "label": "Nu s-au găsit angajați",
+        "title": "Nu s-au găsit angajați"
+      },
+      "error": {
+        "description": "Vă rugăm să încercați din nou peste câteva momente.",
+        "title": "Nu s-au putut încărca absențele"
+      },
+      "feature": "gestionează absențele echipei",
+      "filters": {
+        "allTeams": "Toate echipele",
+        "searchLabel": "Căutați angajați",
+        "searchPlaceholder": "Căutați angajați…",
+        "searchSubmit": "Căutare",
+        "teamLabel": "Filtrează după echipă",
+        "teamPlaceholder": "Echipă",
+        "yearLabel": "Filtrează după an",
+        "yearPlaceholder": "An"
+      },
+      "pagination": {
+        "next": "Următor",
+        "nextLabel": "Pagina următoare",
+        "page": "Pagina {page} din {pageCount}",
+        "previous": "Anterior",
+        "previousLabel": "Pagina anterioară",
+        "showing": "Se afișează de la {firstItem} la {lastItem} din {total}"
+      },
+      "recordDialog": {
+        "category": "Categorie",
+        "categoryPlaceholder": "Selectați o categorie de absență…",
+        "deputy": "Înlocuitor",
+        "description": "Înregistrați o absență aprobată direct pentru angajatul selectat.",
+        "endDate": "Data de sfârșit",
+        "endDateHelper": "Lăsați necompletat pentru o absență de o singură zi.",
+        "failure": "Nu s-a putut înregistra absența",
+        "noCategories": "Nu există categorii disponibile",
+        "noEmployee": "Selectați un angajat înainte de a înregistra o absență",
+        "notes": "Note",
+        "notesPlaceholder": "Adăugați context intern pentru această înregistrare…",
+        "pickEndDate": "Alegeți data de sfârșit…",
+        "pickStartDate": "Alegeți data de început…",
+        "recording": "Se înregistrează…",
+        "required": "{label} este obligatoriu",
+        "sickDetail": "Detalii concediu medical",
+        "sickDetailPlaceholder": "Selectați detaliile concediului medical…",
+        "sickNotes": {
+          "description": "Adăugați fotografii sau fișiere PDF ale certificatului medical primit: fișiere PDF, JPEG, PNG sau WebP de până la 20 MB fiecare. Fiecare fișier este salvat ca certificat medical individual în dosarul de personal al angajatului, iar angajatul îl poate vedea. Ulterior, doar persoanele care gestionează certificatele medicale ale angajatului îl pot deschide.",
+          "title": "Certificat medical (opțional)"
+        },
+        "sickNotesFailed": "Absența a fost înregistrată, dar {files} nu au putut fi atașate. O persoană care gestionează certificatele medicale le poate atașa mai târziu.",
+        "startDate": "Data de început",
+        "submit": "Înregistrează absența",
+        "success": "Absență înregistrată",
+        "title": "Înregistrează absența",
+        "titleForEmployee": "Înregistrează absența pentru {name}"
+      },
+      "sort": {
+        "ascending": "crescător",
+        "by": "Sortează după {label}",
+        "byWithDirection": "Sortează după {label} ({direction})",
+        "descending": "descrescător"
+      },
+      "table": {
+        "actions": "Acțiuni",
+        "allowance": "Alocare",
+        "employee": "Angajat",
+        "left": "Rămase",
+        "pending": "În așteptare",
+        "sick": "Medical",
+        "teamOrPosition": "Echipă sau funcție",
+        "used": "Utilizate"
+      },
+      "title": "Absențe echipă"
+    },
+    "balance": {
+      "noBalance": "Fără sold"
+    },
+    "description": "Vizualizați și gestionați angajații pe care îi coordonați direct",
+    "empty": {
+      "action": "Accesați setările angajaților",
+      "description": "Angajații atribuiți dumneavoastră ca manager vor apărea aici. Puteți gestiona atribuirile de echipă în setările angajaților.",
+      "title": "Niciun membru al echipei încă"
+    },
+    "error": {
+      "description": "Nu s-au putut încărca membrii echipei dumneavoastră.",
+      "title": "Ceva nu a funcționat"
+    },
+    "feature": "vizualizați echipa",
+    "member": "membru",
+    "members": "membri",
+    "member.you": "Tu",
+    "noResults": {
+      "action": "Șterge căutarea",
+      "description": "Niciun membru al echipei nu corespunde „{query}”",
+      "title": "Niciun rezultat găsit"
+    },
+    "pagination": {
+      "next": "Următorul",
+      "previous": "Anterior",
+      "showing": "Se afișează de la {from} la {to} din {total}"
+    },
+    "periodSubmissions": {
+      "chooseCadence": "Alegeți o frecvență de trimitere în setările organizației",
+      "columns": {
+        "calendar": "Calendar",
+        "employee": "Angajat",
+        "period": "Perioadă",
+        "status": "Stare"
+      },
+      "descriptionAll": "Cine a trimis perioada selectată. Aprobați sau respingeți trimiterile în inboxul de aprobare.",
+      "descriptionManaged": "Cine dintre angajații gestionați de dvs. a trimis perioada selectată. Aprobați sau respingeți trimiterile în inboxul de aprobare.",
+      "empty": "Nicio persoană pe care o puteți vedea nu trebuie să trimită această perioadă.",
+      "loading": "Se încarcă trimiterile de perioadă",
+      "notSubmitted": "Netrimis",
+      "off": "Organizația dvs. nu colectează trimiteri de perioadă.",
+      "openCalendar": "Calendar",
+      "openCalendarOf": "Deschideți calendarul utilizatorului {name}",
+      "openInbox": "Deschideți inboxul de aprobare",
+      "owing": "{count, plural, one {# angajat nu a trimis încă această perioadă.} other {# angajați nu au trimis încă această perioadă.}}",
+      "period": "Perioadă de trimitere",
+      "running": "Această perioadă este încă în desfășurare. Angajații o pot trimite începând cu ultima sa zi.",
+      "status": {
+        "approved": "Aprobat",
+        "awaiting": "În așteptarea trimiterii",
+        "rejected": "Respins",
+        "sentBack": "Trimis înapoi după o modificare",
+        "submitted": "Trimis"
+      },
+      "summary": "Stări",
+      "title": "Trimiteri de perioadă"
+    },
+    "presence": {
+      "allLocations": "Toate locațiile",
+      "columns": {
+        "name": "Nume",
+        "since": "De la",
+        "state": "Stare"
+      },
+      "description": "Alege o locație pentru a vedea cine este pontat sau în pauză acolo.",
+      "descriptionAll": "Angajații alocați acestei locații care sunt pontați sau în pauză.",
+      "descriptionManaged": "Angajații pe care îi gestionezi alocați acestei locații care sunt pontați sau în pauză.",
+      "empty": "Nicio persoană vizibilă pentru tine nu este pontată în această locație în acest moment.",
+      "locationTitle": "Cine este prezent: {location}",
+      "noLocations": "Organizația ta nu are încă locații active.",
+      "title": "Cine este prezent"
+    },
+    "primaryManager": "Sunteți managerul principal",
+    "search": {
+      "ariaLabel": "Căutați membri ai echipei",
+      "placeholder": "Căutați după nume, e-mail, funcție sau echipă..."
+    },
+    "status": {
+      "active": "Activ",
+      "inactive": "Inactiv"
+    },
+    "table": {
+      "employee": "Angajat",
+      "position": "Funcție",
+      "role": "Rol",
+      "sort": {
+        "ascending": "crescător",
+        "descending": "descrescător"
+      },
+      "status": "Stare",
+      "team": "Echipă"
+    },
+    "title": "Echipa dumneavoastră",
+    "view": {
+      "cards": "Vizualizare carduri",
+      "table": "Vizualizare tabel"
+    }
+  }
+}

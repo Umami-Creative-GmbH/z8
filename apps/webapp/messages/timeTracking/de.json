@@ -16,6 +16,10 @@
       "label": "Abrechenbar",
       "noCustomer": "Nur Arbeit an einem Projekt mit einem Kunden kann abrechenbar sein"
     },
+    "breakInProgress": {
+      "description": "Sie machen gerade Pause",
+      "since": "In Pause seit {time}"
+    },
     "budget": "Budget",
     "clockedOutSuccess": "Sie haben ausgestempelt!",
     "clockIn": "Einstempeln",
@@ -77,6 +81,7 @@
       "billableNotAllowed": "Nur Arbeit an einem Projekt, das einen Kunden hat, kann abrechenbar sein",
       "breakAwaitingApproval": "Diese Arbeitsperiode wartet auf Genehmigung und kann nicht bearbeitet werden. Fügen Sie die Pause hinzu, sobald dies geklärt ist.",
       "breakDurationInvalid": "Geben Sie eine Pausendauer von mindestens 1 Minute ein.",
+      "breakInProgressOpen": "Sie befinden sich in einer Pause. Setzen Sie diese fort, bevor Sie eine weitere Pause hinzufügen.",
       "breakNotAllowed": "Sie können dieser Arbeit keine Pause hinzufügen.",
       "breakOccupied": "Die Pause überschneidet sich mit anderen erfassten Arbeitszeiten.",
       "breakPendingCorrection": "Für diese Arbeitsperiode steht bereits eine Genehmigung zur Zeitkorrektur aus. Fügen Sie die Pause hinzu, sobald dies geklärt ist.",
@@ -84,12 +89,14 @@
       "breakTooLong": "Die Pausendauer muss kürzer sein als Ihre aktuelle Sitzung.",
       "clockAttributionNotAllowed": "Das ausgewählte Projekt oder die ausgewählte Kategorie ist nicht verfügbar",
       "clockCommandRejected": "Der Server hat diese Stempelaktion nicht akzeptiert",
+      "clockConnectionRequired": "Die Zeiterfassung erfordert in dieser Organisation eine Internetverbindung. Stellen Sie die Verbindung wieder her und versuchen Sie es erneut.",
       "clockInAppendReview": "Ihr Zeitverlauf muss überprüft werden, bevor Sie sich einstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
       "clockInCollision": "Dieses Einstempeln steht in Konflikt mit einer früheren Anfrage. Bitte aktualisieren und erneut versuchen.",
       "clockInFailed": "Fehler beim Einstempeln",
       "clockInNotAllowed": "Sie können sich nicht einstempeln.",
       "clockInOccupied": "Diese Zeit überschneidet sich mit anderen erfassten Arbeitszeiten",
       "clockInRetry": "Einstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "clockMonthClosed": "Diese Zeit liegt in einem abgeschlossenen Monat und kann erst geändert werden, wenn der Monat wieder geöffnet wird.",
       "clockNotAllowedAtTime": "Stempeln ist zu diesem Zeitpunkt nicht zulässig",
       "clockOutAppendReview": "Ihre Zeithistorie muss überprüft werden, bevor Sie sich ausstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
       "clockOutBeforeClockIn": "Das Ausstempeln muss nach dem Einstempeln liegen",
@@ -117,6 +124,97 @@
       "taskOtherProject": "Diese Aufgabe gehört zu einem anderen Projekt",
       "taskProjectNotBookable": "Auf das Projekt dieser Aufgabe kann keine Zeit mehr gebucht werden",
       "workCategoryNotAllowed": "Zuweisung zu dieser Tätigkeitskategorie nicht möglich"
+    },
+    "kiosk": {
+      "action": {
+        "clockIn": "Einstempeln",
+        "clockOut": "Ausstempeln",
+        "endDay": "Arbeitstag beenden",
+        "resume": "Arbeit fortsetzen",
+        "startBreak": "Pause starten"
+      },
+      "board": {
+        "empty": "Derzeit ist niemand eingestempelt.",
+        "title": "Wer ist anwesend"
+      },
+      "done": {
+        "button": "Fertig",
+        "clockIn": "Eingestempelt",
+        "clockOut": "Ausgestempelt",
+        "endDay": "Arbeitstag beendet",
+        "endDayNote": "Ihr Arbeitstag endete mit Beginn Ihrer Pause.",
+        "resume": "Zurück zur Arbeit",
+        "returning": "Zurück zum Start in {seconds} s",
+        "startBreak": "Pause gestartet",
+        "title": "Fertig"
+      },
+      "employee": {
+        "back": "Abbrechen",
+        "endDayHint": "Wenn Sie den Arbeitstag jetzt beenden, endet Ihre Arbeitszeit mit Beginn Ihrer Pause.",
+        "today": "Heute: {duration}"
+      },
+      "home": {
+        "empty": "Diesem Standort ist noch niemand zugewiesen. Wenden Sie sich an Ihren Administrator.",
+        "loadFailed": "Die Namen konnten nicht geladen werden. Überprüfen Sie die Netzwerkverbindung.",
+        "loading": "Namen werden geladen…",
+        "noMatch": "Kein Name entspricht Ihrer Suche.",
+        "search": "Finden Sie Ihren Namen",
+        "title": "Tippen Sie auf Ihren Namen, um sich ein- oder auszustempeln"
+      },
+      "loading": "Kiosk wird gestartet…",
+      "offline": {
+        "banner": "Der Kiosk ist offline. Stempeln ist erst wieder möglich, wenn die Verbindung wiederhergestellt ist.",
+        "refused": "Der Kiosk ist offline. Es wurde nichts erfasst; Stempeln funktioniert nur online."
+      },
+      "pairing": {
+        "codeDescription": "Der Code ist einmalig gültig und läuft 10 Minuten nach der Erstellung ab.",
+        "codeLabel": "Kopplungscode",
+        "description": "Ein Inhaber oder Admin erstellt den Kiosk unter Einstellungen › Kioske und gibt Ihnen einen Kopplungscode.",
+        "invalidCode": "Dieser Code ist ungültig oder abgelaufen. Bitten Sie Ihren Admin um einen neuen Kopplungscode.",
+        "malformedCode": "Geben Sie den 10-stelligen Code genau so ein, wie er in den Einstellungen angezeigt wird.",
+        "rateLimited": "Zu viele Versuche. Warten Sie einige Minuten und versuchen Sie es dann erneut.",
+        "submit": "Dieses Gerät koppeln",
+        "title": "Diesen Kiosk einrichten",
+        "unreachable": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung und versuchen Sie es erneut."
+      },
+      "pin": {
+        "back": "Nicht Sie? Zurück",
+        "checking": "Wird überprüft…",
+        "delete": "Letzte Ziffer löschen",
+        "entered": "{count} Ziffern eingegeben",
+        "locked": "Zu viele falsche PIN-Eingaben. Ihre PIN ist bis {time} gesperrt. Versuchen Sie es dann erneut oder bitten Sie Ihre Führungskraft, sie zu entsperren.",
+        "none": "Sie haben noch keine Kiosk-PIN. Bitten Sie Ihre Führungskraft um eine.",
+        "notAssigned": "Sie können an diesem Kiosk nicht stempeln. Wenden Sie sich an Ihre Führungskraft.",
+        "prompt": "Geben Sie Ihre Kiosk-PIN ein",
+        "rateLimited": "Zu viele PIN-Versuche an diesem Kiosk. Versuchen Sie es in {seconds} Sekunden erneut.",
+        "submit": "OK",
+        "wrong": "Diese PIN ist nicht korrekt. Versuchen Sie es erneut."
+      },
+      "refusal": {
+        "alreadyClockedIn": "Sie sind bereits eingestempelt.",
+        "billing": "Das Einstempeln ist für Ihre Organisation derzeit nicht verfügbar. Wenden Sie sich an Ihre Administration.",
+        "generic": "Das hat nicht funktioniert. Es wurde nichts erfasst. Versuchen Sie es erneut oder wenden Sie sich an Ihre Führungskraft.",
+        "holiday": "Das Einstempeln ist heute aufgrund eines Feiertags gesperrt. Wenden Sie sich an Ihre Führungskraft.",
+        "monthClosed": "Diese Zeit liegt in einem abgeschlossenen Monat und kann nicht geändert werden. Wenden Sie sich an Ihre Führungskraft.",
+        "noBreak": "Sie befinden sich nicht in einer Pause.",
+        "notClockedIn": "Sie sind nicht eingestempelt.",
+        "onBreak": "Sie befinden sich bereits in einer Pause.",
+        "unconfirmed": "Der Kiosk konnte nicht bestätigen, ob dies gespeichert wurde. Überprüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
+        "underReview": "Ihre Arbeitszeit für heute wird überprüft. Wenden Sie sich an Ihre Führungskraft."
+      },
+      "retry": "Erneut versuchen",
+      "revoked": {
+        "description": "Dieser Kiosk kann nicht mehr zum Einstempeln verwendet werden. Bitte wenden Sie sich an Ihre Administration.",
+        "pairAgain": "Mit neuem Code koppeln",
+        "title": "Kiosk widerrufen"
+      },
+      "state": {
+        "clockedIn": "Eingestempelt seit {time}",
+        "clockedOut": "Nicht eingestempelt",
+        "onBreak": "In Pause seit {time}"
+      },
+      "unreachableDescription": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung; Stempeln funktioniert nur im Online-Modus.",
+      "unreachableTitle": "Kiosk offline"
     },
     "manualEntry": {
       "addButton": "Manuellen Eintrag hinzufügen",
@@ -198,6 +296,39 @@
     "noProject": "Kein Projekt",
     "notesPlaceholder": "Woran haben Sie gearbeitet?",
     "notesSaved": "Notizen gespeichert",
+    "periodSubmissions": {
+      "blocker": {
+        "absenceRequest": "Ein Abwesenheitsantrag für {dates} ist noch nicht entschieden.",
+        "liveWork": "Die {start} begonnene Arbeit läuft noch.",
+        "manualWork": "Manuelle Arbeit am {start} ist noch nicht entschieden.",
+        "timeCorrection": "Eine Zeitkorrektur für Arbeit am {start} ist noch nicht entschieden."
+      },
+      "description": "Bestätigen Sie, dass Ihre Arbeits- und Abwesenheitszeiten für jeden Zeitraum vollständig und korrekt sind.",
+      "opensOn": "Sie können ab {date} einreichen.",
+      "refusal": {
+        "alreadySubmitted": "Dieser Zeitraum wurde bereits eingereicht.",
+        "noApprover": "Niemand kann diesen Zeitraum derzeit genehmigen. Bitten Sie einen Administrator, Ihnen eine Führungskraft zuzuweisen.",
+        "notEnded": "Sie können diesen Zeitraum ab dessen letztem Tag einreichen.",
+        "notExpected": "Dieser Zeitraum muss nicht eingereicht werden.",
+        "periodOpen": "Dieser Zeitraum ist noch offen"
+      },
+      "rejectionReason": "Grund: {reason}",
+      "status": {
+        "approved": "Genehmigt",
+        "awaiting": "Wartet auf Einreichung",
+        "rejected": "Abgelehnt",
+        "sentBack": "Nach einer Änderung zurückgesendet",
+        "submitted": "Eingereicht"
+      },
+      "submit": "Einreichen",
+      "submitFailed": "Der Zeitraum konnte nicht eingereicht werden",
+      "submitted": "Zeitraum zur Genehmigung eingereicht",
+      "title": "Zeitraumeinreichungen",
+      "withdraw": "Zurückziehen",
+      "withdrawFailed": "Die Einreichung konnte nicht zurückgezogen werden",
+      "withdrawn": "Einreichung zurückgezogen",
+      "withdrawRefused": "Diese Einreichung wurde bereits entschieden und kann nicht mehr zurückgezogen werden."
+    },
     "project": "Projekt",
     "quickBreak": {
       "addBreak": "Pause hinzufügen",

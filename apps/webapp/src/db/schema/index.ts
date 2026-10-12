@@ -4,6 +4,8 @@
 // ============================================
 
 export * from "./absence";
+// Deputy day-before reminder markers (#1013)
+export * from "./absence-deputy-reminder";
 // Conditional access policies
 export * from "./access-policy";
 export * from "./app-auth";
@@ -12,12 +14,18 @@ export * from "./approval-delivery";
 export * from "./approval-escalation";
 export * from "./approval-evidence";
 export * from "./approval-policy";
+export * from "./approval-deputy-decision";
+// Cover summary sent markers (#1018)
+export * from "./approval-deputy-cover-summary";
+export * from "./approval-setting";
 export * from "./approval-workflow";
 export * from "./audit";
 // Audit export (signed packages, WORM retention)
 export * from "./audit-export";
 export * from "./audit-pack";
 export * from "./automatic-clock-out";
+// Balance adjustments: opening balances and overtime payouts (#804)
+export * from "./balance-adjustment";
 // Billable Time module (#768): what work is charged to customers. Not the Z8 subscription.
 export * from "./billable-time";
 // Billing & subscriptions (Stripe integration)
@@ -30,6 +38,8 @@ export * from "./change-policy";
 export * from "./clocking-reminder";
 // Clockodo import (user mapping)
 export * from "./clockodo-import";
+// Closed months (#762)
+export * from "./closed-month";
 export * from "./completed-work";
 // ArbZG Compliance
 export * from "./compliance";
@@ -37,6 +47,8 @@ export * from "./cost-center";
 // Coverage targets (minimum staffing requirements)
 export * from "./coverage";
 export * from "./cron-job";
+// Custom fields on employees, projects and customers (#769)
+export * from "./custom-field";
 // Custom roles (configurable permissions)
 export * from "./custom-role";
 export * from "./customer";
@@ -76,6 +88,10 @@ export * from "./personnel-file";
 export * from "./platform-admin";
 export * from "./project";
 export * from "./project-assignment-history";
+// Public API key request log (#763)
+export * from "./public-api";
+// Report share links and their view log (#806)
+export * from "./report-share-link";
 // All relations (centralized)
 export * from "./relations";
 // Scheduled exports
@@ -113,6 +129,8 @@ export * from "./travel-expense-export";
 export * from "./travel-expense-adjustment";
 export * from "./expense-officer";
 export * from "./position-capture";
+export * from "./assigned-location";
+export * from "./kiosk";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";
@@ -122,3 +140,5 @@ export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
 export * from "./works-council";
+export * from "./kiosk-pin";
+export * from "./period-submission";
