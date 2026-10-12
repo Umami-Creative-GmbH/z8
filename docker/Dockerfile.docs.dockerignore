@@ -67,6 +67,7 @@ docs/
 # Other apps not needed for docs container
 apps/marketing
 apps/webapp
+!apps/webapp/openapi/public-api-v1.json
 apps/desktop
 
 # Deployment artifacts (not needed in image)

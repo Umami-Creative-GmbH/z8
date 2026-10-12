@@ -140,6 +140,7 @@ expect(publishManifestJob, "Missing publish-manifest job");
 
 expectPushPathFilters([
 	"apps/docs/**",
+	"apps/webapp/openapi/public-api-v1.json",
 	"docker/Dockerfile.docs",
 	"docker/Dockerfile.docs.dockerignore",
 	"packages/**",

@@ -4,7 +4,8 @@ import { createGitHubApi } from "./github-api.mjs";
 const rows = (start, count) => Array.from({ length: count }, (_, index) => ({ id: start + index }));
 function client(handle) {
   const requests = [];
-  const api = createGitHubApi({ repository: "owner/repo", token: "test-only-token", fetchImpl: async (url, options) => {
+  const delays = [];
+  const api = createGitHubApi({ repository: "owner/repo", token: "test-only-token", sleep: async ms => { delays.push(ms); }, fetchImpl: async (url, options) => {
     requests.push({ url: new URL(url), method: options.method });
     assert.equal(options.headers.Authorization, "Bearer test-only-token");
     assert.equal(options.headers["X-GitHub-Api-Version"], "2022-11-28");
@@ -12,7 +13,7 @@ function client(handle) {
     const data = await handle(new URL(url), options);
     return { ok: data.status === undefined || data.status < 400, status: data.status ?? 200, json: async () => data.body ?? data };
   } });
-  return { api, requests };
+  return { api, requests, delays };
 }
 test("paginates full cache inventories and preserves exact merge-ref scope", async () => {
   const { api, requests } = client(url => ({ total_count: 101, actions_caches: url.searchParams.get("page") === "1" ? rows(1, 100) : rows(101, 1) }));
@@ -30,6 +31,23 @@ test("rejects truncated, changed, duplicate or malformed inventories", async () 
     () => ({ total_count: 0 }),
   ];
   for (const handle of cases) await assert.rejects(client(handle).api.caches(), /inventory|Inventory/);
+});
+test("retries a snapshot whose count and rows disagree while runs change state", async () => {
+  let calls = 0;
+  const { api, delays } = client(() => (++calls === 1 ? { total_count: 3, workflow_runs: rows(1, 2) } : { total_count: 2, workflow_runs: rows(1, 2) }));
+  assert.deepEqual(await api.activeRuns(), rows(1, 2));
+  assert.equal(delays.length, 1);
+});
+test("a persistently inconsistent inventory still fails closed after bounded retries", async () => {
+  const { api, requests, delays } = client(() => ({ total_count: 2, actions_caches: rows(1, 1) }));
+  await assert.rejects(api.caches(), /Truncated/);
+  assert.equal(requests.length, 4);
+  assert.deepEqual(delays, [5_000, 10_000, 15_000]);
+});
+test("malformed inventories fail immediately without retrying", async () => {
+  const { api, requests } = client(() => ({ total_count: 1, actions_caches: [{}] }));
+  await assert.rejects(api.caches(), /identity/);
+  assert.equal(requests.length, 1);
 });
 test("enumerates all five active statuses and deduplicates state transitions", async () => {
   const statuses = [];
