@@ -5,6 +5,7 @@ import type {
 import {
 	buildWorkVehicleUse,
 	type WorkVehicleUse,
+	type WorkVehicleUseInput,
 	type WorkVehicleUseRefusalCode,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { type VehicleUseDraft, vehicleUseFromDraft } from "./vehicle-use-draft";
@@ -76,6 +77,26 @@ export function clockOutVehicleUseFromDraft(
 			...(endKm === null ? {} : { endKm }),
 			...(distanceKm === null ? {} : { distanceKm }),
 		},
+	};
+}
+
+/** The live vehicle use as a clock-out would leave it, for its plausibility warnings. */
+export function closingVehicleUse(
+	live: WorkVehicleUse | null,
+	draft: VehicleUseDraft,
+): WorkVehicleUseInput | null {
+	if (!live) {
+		const result = vehicleUseFromDraft(draft);
+		return result.ok && result.input ? result.input : null;
+	}
+	return {
+		vehicle: live.vehicle,
+		startKm: live.startKm,
+		endKm: draft.endKm.trim() === "" ? live.endKm : Number(draft.endKm),
+		distanceKm:
+			live.startKm === null && draft.distanceKm.trim() !== ""
+				? Number(draft.distanceKm)
+				: live.distanceKm,
 	};
 }
 
