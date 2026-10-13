@@ -141,6 +141,7 @@ describe("org-admin settings route access", () => {
 			"/settings/personnel-files",
 			"/settings/kiosks",
 			"/settings/custom-fields",
+			"/settings/vehicle-use",
 		]);
 	});
 

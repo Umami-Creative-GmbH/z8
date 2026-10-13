@@ -135,6 +135,7 @@ export * from "./kiosk";
 export * from "./types";
 export * from "./user-settings";
 export * from "./vacation";
+export * from "./vehicle-use";
 export * from "./webhook";
 export * from "./wellness";
 export * from "./work-category";

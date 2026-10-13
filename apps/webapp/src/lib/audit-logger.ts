@@ -134,6 +134,11 @@ export enum AuditAction {
 	POSITION_CAPTURE_ASSIGNMENT_SET = "position_capture.assignment_set",
 	POSITION_CAPTURE_ASSIGNMENT_REMOVED = "position_capture.assignment_removed",
 
+	// Vehicle Use Enablement Operations (#1119)
+	VEHICLE_USE_SETTINGS_CHANGED = "vehicle_use.settings_changed",
+	VEHICLE_USE_ASSIGNMENT_SET = "vehicle_use.assignment_set",
+	VEHICLE_USE_ASSIGNMENT_REMOVED = "vehicle_use.assignment_removed",
+
 	// Expense Officer Grant Operations
 	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",

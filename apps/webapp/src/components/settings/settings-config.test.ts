@@ -163,6 +163,21 @@ describe("settings visibility tiers", () => {
 		});
 	});
 
+	it("shows vehicle use enablement in administration to org admins only", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "vehicle-use")).toMatchObject({
+			href: "/settings/vehicle-use",
+			icon: "car",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		expect(managerEntries.some((entry) => entry.id === "vehicle-use")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "vehicle-use")).toBe(false);
+	});
+
 	it("shows kiosks in administration to org admins only", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);

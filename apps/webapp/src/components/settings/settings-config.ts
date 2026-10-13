@@ -71,7 +71,8 @@ export type SettingsIconName =
 	| "receipt"
 	| "device-tablet"
 	| "forms"
-	| "share";
+	| "share"
+	| "car";
 
 export interface SettingsEntry {
 	id: string;
@@ -343,6 +344,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		descriptionDefault: "Record positions with employees' own clock events, with their consent",
 		href: "/settings/position-capture",
 		icon: "map-pin",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
+		id: "vehicle-use",
+		titleKey: "settings.vehicleUse.title",
+		titleDefault: "Vehicle use",
+		descriptionKey: "settings.vehicleUse.description",
+		descriptionDefault: "Who is asked to record the vehicle they drove and its odometer readings",
+		href: "/settings/vehicle-use",
+		icon: "car",
 		minimumTier: "orgAdmin",
 		group: "administration",
 	},
