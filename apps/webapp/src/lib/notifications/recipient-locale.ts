@@ -89,10 +89,9 @@ export async function resolveRecipientNotificationPreferences({
 				columns: { locale: true, timeFormat: true },
 			})
 		: undefined;
-	const timeFormat =
-		settings?.timeFormat === "12h" || settings?.timeFormat === "24h"
-			? { timeFormat: settings.timeFormat }
-			: {};
+	const savedTimeFormat = settings?.timeFormat;
+	const timeFormat: Pick<RecipientNotificationPreferences, "timeFormat"> =
+		savedTimeFormat === "12h" || savedTimeFormat === "24h" ? { timeFormat: savedTimeFormat } : {};
 	if (isSupportedLanguage(settings?.locale)) {
 		return { locale: settings.locale, ...timeFormat };
 	}
