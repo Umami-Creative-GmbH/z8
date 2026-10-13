@@ -14,17 +14,19 @@ import {
 	type WorkPeriodTimeEditContext,
 } from "@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit";
 import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
-import { useVehicleUseWarnings } from "@/components/time-tracking/use-vehicle-use-warnings";
 import {
 	type VehicleUseDraft,
 	vehicleUseDraftOf,
 	vehicleUseFromDraft,
 } from "@/components/time-tracking/vehicle-use-draft";
 import {
-	VehicleUseFields,
+	CheckedVehicleUseFields,
 	VehicleUseSummary,
 } from "@/components/time-tracking/vehicle-use-fields";
-import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
+import {
+	vehicleOptionLabel,
+	vehicleUseRefusalText,
+} from "@/components/time-tracking/vehicle-use-format";
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -164,14 +166,14 @@ function vehicleLabelOf(
 	if (use.vehicle.kind !== "organization") return null;
 	const vehicleId = use.vehicle.vehicleId;
 	const vehicle = context.vehicleUse?.vehicles.find((option) => option.id === vehicleId);
-	return vehicle ? `${vehicle.name} (${vehicle.licencePlate})` : null;
+	return vehicle ? vehicleOptionLabel(vehicle) : null;
 }
 
 /**
  * The vehicle use fields with their plausibility warnings (#1121), checked on
  * the server over the times as edited. Warnings never block saving.
  */
-function CheckedVehicleUseFields({
+function EditedVehicleUseFields({
 	workPeriodId,
 	context,
 	values,
@@ -188,26 +190,22 @@ function CheckedVehicleUseFields({
 	t: TFnType;
 }) {
 	const { draft, ...times } = values;
-	const entered = vehicleUseFromDraft(draft);
-	const input = entered.ok ? entered.input : null;
-	const request = input ? JSON.stringify({ input, times }) : null;
-	const warnings = useVehicleUseWarnings(request, async () => {
-		if (!input) return [];
-		const result = await checkWorkPeriodVehicleUseWarnings({
-			workPeriodId,
-			vehicleUse: input,
-			...times,
-		});
-		return result.success ? result.data.warnings : [];
-	});
 	return (
-		<VehicleUseFields
+		<CheckedVehicleUseFields
 			value={draft}
 			onChange={onChange}
-			vehicles={context.vehicleUse.vehicles}
-			lastEndKmByVehicleId={context.vehicleUse.lastEndKmByVehicleId}
-			warnings={warnings}
-			expected={context.vehicleUse.mode === "expected"}
+			context={context.vehicleUse}
+			checkFor={(input) => ({
+				key: JSON.stringify({ input, times }),
+				run: async () => {
+					const result = await checkWorkPeriodVehicleUseWarnings({
+						workPeriodId,
+						vehicleUse: input,
+						...times,
+					});
+					return result.success ? result.data.warnings : [];
+				},
+			})}
 			t={t}
 		/>
 	);
@@ -462,7 +460,7 @@ function WorkPeriodTimeEditForm({
 					})}
 				>
 					{(values) => (
-						<CheckedVehicleUseFields
+						<EditedVehicleUseFields
 							workPeriodId={workPeriodId}
 							context={context}
 							values={values}

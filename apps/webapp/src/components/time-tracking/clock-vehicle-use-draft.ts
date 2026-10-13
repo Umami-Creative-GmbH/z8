@@ -8,7 +8,7 @@ import {
 	type WorkVehicleUseInput,
 	type WorkVehicleUseRefusalCode,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
-import { type VehicleUseDraft, vehicleUseFromDraft } from "./vehicle-use-draft";
+import { parseKm, type VehicleUseDraft, vehicleUseFromDraft } from "./vehicle-use-draft";
 
 /**
  * What the web clock sends as vehicle use (#1122), from what the employee
@@ -36,12 +36,6 @@ export function clockInVehicleUseFromDraft(
 	if (!result.ok) return result;
 	if (!result.use) return { ok: true };
 	return { ok: true, vehicleUse: { vehicle: result.use.vehicle, ...entered(result.use) } };
-}
-
-function parseKm(value: string): number | null | "invalid" {
-	const trimmed = value.trim();
-	if (trimmed === "") return null;
-	return /^\d+$/.test(trimmed) ? Number(trimmed) : "invalid";
 }
 
 /**
@@ -97,6 +91,24 @@ export function closingVehicleUse(
 			live.startKm === null && draft.distanceKm.trim() !== ""
 				? Number(draft.distanceKm)
 				: live.distanceKm,
+	};
+}
+
+/**
+ * The live vehicle use as a break with this reading would close it: the reading
+ * is the closed work's end reading. Null while nothing readable is entered.
+ */
+export function breakClosingVehicleUse(
+	live: WorkVehicleUse | null,
+	reading: string,
+): WorkVehicleUseInput | null {
+	const readingKm = parseKm(reading);
+	if (!live || readingKm === null || readingKm === "invalid") return null;
+	return {
+		vehicle: live.vehicle,
+		startKm: live.startKm,
+		endKm: readingKm,
+		distanceKm: live.distanceKm,
 	};
 }
 

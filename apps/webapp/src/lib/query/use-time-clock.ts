@@ -233,14 +233,24 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				workerCommandVersions,
 			});
 		let prepared = prepare(params?.vehicleUse);
+		let vehicleUseLeftOut = false;
 		if (!prepared.ok && prepared.reason === "vehicle_use_unsupported") {
 			// Online, the route carries vehicle use, so the request keeps it (#1122).
 			if (!isOffline) return null;
 			// Offline the event never waits: it is frozen without vehicle use, which the
-			// employee can still add to the work period later.
+			// employee can still add to the work period later; the clock says so.
 			prepared = prepare(undefined);
+			vehicleUseLeftOut = true;
 		}
-		return prepared.ok ? prepared.request : null;
+		return prepared.ok ? { request: prepared.request, vehicleUseLeftOut } : null;
+	}
+
+	/** An accepted event that could not carry the entered vehicle use says so (#1122). */
+	function withVehicleUseLeftOut<T extends { success: boolean }>(
+		result: T,
+		leftOut: boolean,
+	): T & { vehicleUseLeftOut?: true } {
+		return leftOut && result.success ? { ...result, vehicleUseLeftOut: true as const } : result;
 	}
 
 	// Query for time clock status
@@ -269,7 +279,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			if (refused) return refused;
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_in", params, event);
-			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
+			if (frozen) {
+				const submitted = await submitClockCommand(frozen.request);
+				return afterClockEvent(withVehicleUseLeftOut(submitted, frozen.vehicleUseLeftOut), event);
+			}
 
 			// When offline, queue the event for later sync
 			if (isOffline) {
@@ -351,7 +364,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			if (refused) return refused;
 			const event = await captureClockEvent(canFreeze || !isOffline);
 			const frozen = prepareFrozenCommand("clock_out", params, event);
-			if (frozen) return afterClockEvent(await submitClockCommand(frozen), event);
+			if (frozen) {
+				const submitted = await submitClockCommand(frozen.request);
+				return afterClockEvent(withVehicleUseLeftOut(submitted, frozen.vehicleUseLeftOut), event);
+			}
 
 			// When offline, queue the event for later sync
 			if (isOffline) {

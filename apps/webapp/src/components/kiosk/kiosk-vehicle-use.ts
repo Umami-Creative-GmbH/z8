@@ -14,6 +14,7 @@ import {
 	type WorkVehicleUseInput,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import {
+	breakClosingVehicleUse,
 	breakVehicleUseFromReading,
 	type ClockVehicleUseDraftResult,
 	clockInVehicleUseFromDraft,
@@ -86,16 +87,17 @@ function checkedUse(
 		const result = vehicleUseFromDraft({ ...draft, endKm: "", distanceKm: "" });
 		return result.ok ? result.input : null;
 	}
-	// The web clock warns about a clock-out's readings, not about a break's (#1122).
 	if (question === "clock_out") return closingVehicleUse(context.live, draft);
-	return null;
+	// The break reading ends the work the break closed, as at the web clock.
+	return breakClosingVehicleUse(context.live, reading);
 }
 
 /**
  * The web clock's plausibility warnings (#1121) for what the action is about to
  * record. A clock-in starts work `at` now; a clock-out ends the live work, from
  * `since`, `at` when it takes effect (a break's start when ending the day on a
- * break). Warnings never hold the action.
+ * break); a resume's break reading ends the work the break closed at its start.
+ * Warnings never hold the action.
  */
 export function kioskVehicleUseWarnings(
 	question: KioskVehicleQuestion,
@@ -109,7 +111,7 @@ export function kioskVehicleUseWarnings(
 	const built = buildWorkVehicleUse(input);
 	if (!built.ok) return [];
 	const vehicleId = organizationVehicleIdOf(built.use);
-	const closing = question === "clock_out" && work.since !== null;
+	const closing = question !== "clock_in" && work.since !== null;
 	return vehicleUsePlausibilityWarnings({
 		use: built.use,
 		start: closing && work.since ? work.since : work.at,

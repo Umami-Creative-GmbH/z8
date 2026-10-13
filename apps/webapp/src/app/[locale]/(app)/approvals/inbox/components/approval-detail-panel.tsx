@@ -92,12 +92,12 @@ function workLocationText(t: Translate, value: string) {
 	return label ? t(label[0], label[1]) : value;
 }
 
-function changeValueText(t: Translate, value: ApprovalInboxDetailChangeValue) {
+function changeValueText(t: Translate, value: ApprovalInboxDetailChangeValue, locale: string) {
 	if (value.kind === "work_location") {
 		return workLocationText(t, value.value);
 	}
 	if (value.kind === "vehicle_use") {
-		return vehicleUseText(t, value.value);
+		return vehicleUseText(t, value.value, locale);
 	}
 	if (value.value.state === "named") return value.value.name;
 	return value.value.state === "none"
@@ -160,13 +160,13 @@ function renderDetailSection(
 												<span className="sr-only">
 													{t("approvals:approvals.original", "Original")}:{" "}
 												</span>
-												{changeValueText(t, row.value.original)}
+												{changeValueText(t, row.value.original, locale)}
 											</span>
 											<span>
 												<span className="sr-only">
 													{t("approvals:approvals.requested", "Requested")}:{" "}
 												</span>
-												{changeValueText(t, row.value.requested)}
+												{changeValueText(t, row.value.requested, locale)}
 											</span>
 										</span>
 									)}

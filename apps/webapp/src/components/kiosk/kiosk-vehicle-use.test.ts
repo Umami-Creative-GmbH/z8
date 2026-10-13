@@ -125,6 +125,34 @@ describe("kiosk vehicle use warnings match the web clock's (#1121, #1123)", () =
 		).toEqual([{ code: "speed_above_limit", averageKmh: 200 }]);
 	});
 
+	it("warns on resume about the break reading as the closed work's end reading", () => {
+		const live = {
+			...context,
+			lastEndKmByVehicleId: {},
+			vehiclesOnOtherLiveWork: [],
+			live: vanUse,
+		};
+		// 12,000 → 12,400 km from 08:00 until the break at 10:00: 200 km/h.
+		expect(
+			kioskVehicleUseWarnings("break", live, empty, "12400", {
+				since: parseInstant("2026-09-21T08:00:00Z"),
+				at: now,
+			}),
+		).toEqual([{ code: "speed_above_limit", averageKmh: 200 }]);
+		expect(
+			kioskVehicleUseWarnings("break", live, empty, "12040", {
+				since: parseInstant("2026-09-21T08:00:00Z"),
+				at: now,
+			}),
+		).toEqual([]);
+		expect(
+			kioskVehicleUseWarnings("break", live, empty, "", {
+				since: parseInstant("2026-09-21T08:00:00Z"),
+				at: now,
+			}),
+		).toEqual([]);
+	});
+
 	it("warns about nothing that was not entered or cannot be sent", () => {
 		expect(
 			kioskVehicleUseWarnings("clock_out", { ...context, live: vanUse }, empty, "", {

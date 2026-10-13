@@ -75,7 +75,8 @@ export function withPickedVehicle(
 	return { ...draft, vehicle, startKm: km(next) };
 }
 
-function parseKm(value: string): number | null | "invalid" {
+/** Entered whole kilometres: null when empty, "invalid" when not a whole number. */
+export function parseKm(value: string): number | null | "invalid" {
 	const trimmed = value.trim();
 	if (trimmed === "") return null;
 	if (!/^\d+$/.test(trimmed)) return "invalid";

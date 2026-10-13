@@ -40,14 +40,15 @@ import {
 	ManualEntryTargetContextError,
 	useManualEntryTargetContext,
 } from "@/components/time-tracking/use-manual-entry-target-context";
-import { useVehicleUseWarnings } from "@/components/time-tracking/use-vehicle-use-warnings";
 import {
 	EMPTY_VEHICLE_USE_DRAFT,
 	prefilledVehicleUseDraft,
 	type VehicleUseDraft,
+	vehicleUseDraftOf,
 	vehicleUseFromDraft,
 } from "@/components/time-tracking/vehicle-use-draft";
-import { VehicleUseFields } from "@/components/time-tracking/vehicle-use-fields";
+import { CheckedVehicleUseFields } from "@/components/time-tracking/vehicle-use-fields";
+import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import { WorkCategorySelectorView } from "@/components/time-tracking/work-category-selector";
 import {
 	ActionPanel,
@@ -215,46 +216,22 @@ const MESSAGES = {
 	],
 } as const satisfies Record<string, Message>;
 
-/** Refused vehicle use (#1120); the same wording as `vehicleUseRefusalText`. */
-const VEHICLE_USE_MESSAGES = {
-	end_before_start: [
-		"timeTracking.vehicleUse.refusal.endBeforeStart",
-		"The end reading cannot be below the start reading.",
-	],
-	invalid_reading: [
-		"timeTracking.vehicleUse.refusal.invalidReading",
-		"Enter odometer readings in whole kilometres.",
-	],
-	invalid_distance: [
-		"timeTracking.vehicleUse.refusal.invalidDistance",
-		"Enter the driven distance in whole kilometres.",
-	],
-	invalid_vehicle: [
-		"timeTracking.vehicleUse.refusal.invalidVehicle",
-		"Choose an organization vehicle or your own vehicle.",
-	],
-	vehicle_use_off: [
-		"timeTracking.vehicleUse.refusal.off",
-		"Vehicle use is not recorded for this employee.",
-	],
-	vehicle_not_found: ["timeTracking.vehicleUse.refusal.notFound", "The vehicle was not found."],
-	vehicle_archived: [
-		"timeTracking.vehicleUse.refusal.archived",
-		"This vehicle is archived and can no longer be picked.",
-	],
-	// Only a split refuses this (#1126); listed so every refusal has its message.
-	split_value_out_of_range: [
-		"timeTracking.vehicleUse.refusal.splitOutOfRange",
-		"The kilometres at the split must lie within the work period's kilometres.",
-	],
-} as const satisfies Record<WorkVehicleUseChangeRefusalCode, Message>;
+/** Refused vehicle use (#1120) as a message: the key and wording of `vehicleUseRefusalText`. */
+function vehicleUseRefusalMessage(code: WorkVehicleUseChangeRefusalCode): Message {
+	let message: Message = ["", ""];
+	vehicleUseRefusalText((key, fallback) => {
+		message = [key, fallback];
+		return fallback;
+	}, code);
+	return message;
+}
 
 /** The entered vehicle use as a manual command carries it, or why it is refused. */
 function manualVehicleUse(
 	draft: VehicleUseDraft,
 ): { ok: true; vehicleUse: ManualVehicleUseCommand | null } | { ok: false; message: Message } {
 	const result = vehicleUseFromDraft(draft);
-	if (!result.ok) return { ok: false, message: VEHICLE_USE_MESSAGES[result.code] };
+	if (!result.ok) return { ok: false, message: vehicleUseRefusalMessage(result.code) };
 	if (!result.input) return { ok: true, vehicleUse: null };
 	return {
 		ok: true,
@@ -398,7 +375,7 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 	const vehicleRefusal = workVehicleUseRefusalOfResult({
 		code: result.rejection?.reason === "vehicle_use_refused" ? result.rejection.code : result.code,
 	});
-	if (vehicleRefusal) return VEHICLE_USE_MESSAGES[vehicleRefusal];
+	if (vehicleRefusal) return vehicleUseRefusalMessage(vehicleRefusal);
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;
@@ -1240,30 +1217,27 @@ function ManualVehicleUseFields({
 	t: Translate;
 }) {
 	const { draft, date, clockInTime, clockOutTime } = values;
-	const entered = vehicleUseFromDraft(draft);
-	const input = entered.ok ? entered.input : null;
 	const targetEmployeeId = context.targetEmployeeId;
-	const request =
-		input && date && clockInTime && clockOutTime
-			? JSON.stringify({ targetEmployeeId, input, date, clockInTime, clockOutTime })
-			: null;
-	const warnings = useVehicleUseWarnings(request, async () => {
-		if (!input) return [];
-		const result = await checkVehicleUseWarnings({
-			targetEmployeeId,
-			vehicleUse: input,
-			manual: { date, clockInTime, clockOutTime },
-		});
-		return result.success ? result.data.warnings : [];
-	});
 	return (
-		<VehicleUseFields
+		<CheckedVehicleUseFields
 			value={draft}
 			onChange={onChange}
-			vehicles={context.vehicleUse.vehicles}
-			lastEndKmByVehicleId={context.vehicleUse.lastEndKmByVehicleId}
-			warnings={warnings}
-			expected={context.vehicleUse.mode === "expected"}
+			context={context.vehicleUse}
+			checkFor={(input) =>
+				date && clockInTime && clockOutTime
+					? {
+							key: JSON.stringify({ targetEmployeeId, input, date, clockInTime, clockOutTime }),
+							run: async () => {
+								const result = await checkVehicleUseWarnings({
+									targetEmployeeId,
+									vehicleUse: input,
+									manual: { date, clockInTime, clockOutTime },
+								});
+								return result.success ? result.data.warnings : [];
+							},
+						}
+					: null
+			}
 			t={t}
 			disabled={disabled}
 		/>
@@ -1297,7 +1271,7 @@ function useVehicleUsePrefill({
 		if (prefilled.vehicle && !current.vehicle && vehicleUseFromDraft(current).ok) {
 			form.setFieldValue("vehicleUseDraft", prefilled);
 		}
-	});
+	}, [context, form, open]);
 }
 
 /**
@@ -1565,15 +1539,12 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue(
 			"vehicleUseDraft",
 			command.vehicleUse
-				? {
-						vehicle:
-							command.vehicleUse.vehicle.kind === "own"
-								? "own"
-								: command.vehicleUse.vehicle.vehicleId,
-						startKm: command.vehicleUse.startKm?.toString() ?? "",
-						endKm: command.vehicleUse.endKm?.toString() ?? "",
-						distanceKm: command.vehicleUse.distanceKm?.toString() ?? "",
-					}
+				? vehicleUseDraftOf({
+						vehicle: command.vehicleUse.vehicle,
+						startKm: command.vehicleUse.startKm ?? null,
+						endKm: command.vehicleUse.endKm ?? null,
+						distanceKm: command.vehicleUse.distanceKm ?? null,
+					})
 				: EMPTY_VEHICLE_USE_DRAFT,
 		);
 		recovery.discard(record);

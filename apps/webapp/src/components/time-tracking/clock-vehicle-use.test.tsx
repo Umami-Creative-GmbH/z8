@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
 	toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
+// Kilometres are formatted in the app locale.
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/clock-vehicle-use", () => ({
 	getClockVehicleUseContext: mocks.getClockVehicleUseContext,
 	changeLiveVehicleUse: mocks.changeLiveVehicleUse,
@@ -156,5 +158,58 @@ describe("vehicle use at the web clock (#1122)", () => {
 			}),
 		);
 		expect(mocks.toast.success).toHaveBeenCalled();
+	});
+
+	it("warns about a break reading as the end reading of the work the break closes (#1121)", async () => {
+		mocks.getClockVehicleUseContext.mockResolvedValue(
+			context({ live: { workPeriodId: PERIOD, vehicleUse: liveVan } }),
+		);
+		mocks.checkVehicleUseWarnings.mockImplementation(async (input) => ({
+			success: true,
+			data: {
+				warnings:
+					input.vehicleUse.endKm === 13_500 ? [{ code: "speed_above_limit", averageKmh: 750 }] : [],
+			},
+		}));
+		renderClock("out");
+
+		fireEvent.change(await screen.findByLabelText("Odometer reading at the break (km)"), {
+			target: { value: "13500" },
+		});
+
+		expect(await screen.findByText(/an average of 750 km\/h/)).toBeTruthy();
+		expect(mocks.checkVehicleUseWarnings).toHaveBeenCalledWith({
+			vehicleUse: {
+				vehicle: { kind: "organization", vehicleId: VAN },
+				startKm: 12_000,
+				endKm: 13_500,
+				distanceKm: null,
+			},
+			closingWorkPeriodId: PERIOD,
+		});
+	});
+
+	it("warns while changing the live start reading below the vehicle's last end reading (#1121)", async () => {
+		mocks.getClockVehicleUseContext.mockResolvedValue(
+			context({ live: { workPeriodId: PERIOD, vehicleUse: liveVan } }),
+		);
+		mocks.checkVehicleUseWarnings.mockImplementation(async (input) => ({
+			success: true,
+			data: {
+				warnings:
+					input.vehicleUse.startKm === 11_000
+						? [{ code: "start_below_last_end", lastRecordedEndKm: 12_000 }]
+						: [],
+			},
+		}));
+		renderClock("out");
+
+		fireEvent.click(await screen.findByRole("button", { name: "Change" }));
+		fireEvent.change(screen.getByLabelText("Start reading (km)"), { target: { value: "11000" } });
+
+		expect(await screen.findByText(/below this vehicle's last recorded end reading/)).toBeTruthy();
+		expect(mocks.checkVehicleUseWarnings).toHaveBeenCalledWith(
+			expect.objectContaining({ closingWorkPeriodId: PERIOD }),
+		);
 	});
 });

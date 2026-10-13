@@ -330,7 +330,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 			if (typeof window !== "undefined") {
 				localStorage.setItem("z8-work-location-type", uiState.workLocationType);
 			}
-			warnVehicleUseLeftOut(vehicle, t);
+			warnVehicleUseLeftOut(vehicle, t, result);
 			vehicleUse.reset();
 
 			// Saved on this device, not confirmed on the server
@@ -379,7 +379,7 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 		});
 
 		if (result.success) {
-			warnVehicleUseLeftOut(vehicle, t);
+			warnVehicleUseLeftOut(vehicle, t, result);
 			vehicleUse.reset();
 			// Saved on this device, not confirmed on the server
 			if (showSavedClockToast(result, "clock_out", t)) {

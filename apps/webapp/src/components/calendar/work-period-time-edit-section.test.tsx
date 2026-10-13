@@ -17,6 +17,8 @@ const { getContext, updateTimes, checkWarnings, toastError, toastSuccess } = vi.
 	toastSuccess: vi.fn(),
 }));
 
+// Kilometres are formatted in the app locale.
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock(
 	"@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit",
 	() => ({
