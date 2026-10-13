@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
 import type { PositionCaptureReview } from "@/lib/works-council/position-capture-review";
+import type { VehicleUseReview } from "@/lib/works-council/vehicle-use-review";
 
 const mockState = vi.hoisted(() => ({
 	resolvedHeaders: new Headers(),
@@ -11,6 +12,7 @@ const mockState = vi.hoisted(() => ({
 	loadWorksCouncilSettings: vi.fn(),
 	buildWorksCouncilPortalModel: vi.fn(),
 	loadWorksCouncilPositionCaptureReview: vi.fn(),
+	loadWorksCouncilVehicleUseReview: vi.fn(),
 	findOrganization: vi.fn(),
 	insert: vi.fn(),
 	insertValues: vi.fn(async () => undefined),
@@ -42,6 +44,10 @@ vi.mock("@/lib/works-council/review-data", () => ({
 
 vi.mock("@/lib/works-council/position-capture-review-data", () => ({
 	loadWorksCouncilPositionCaptureReview: mockState.loadWorksCouncilPositionCaptureReview,
+}));
+
+vi.mock("@/lib/works-council/vehicle-use-review-data", () => ({
+	loadWorksCouncilVehicleUseReview: mockState.loadWorksCouncilVehicleUseReview,
 }));
 
 vi.mock("@/db", () => ({
@@ -88,6 +94,15 @@ const emptyPositionCaptureReview: PositionCaptureReview = {
 	employeeAssignments: { state: "counted", switchedOn: 0, switchedOff: 0 },
 	consentCounts: { state: "insufficient_data", switchedOnEmployees: 0 },
 	accessLog: [],
+};
+
+const emptyVehicleUseReview: VehicleUseReview = {
+	enabled: false,
+	organizationAssignment: null,
+	teamAssignments: [],
+	employeeAssignments: { state: "counted", asked: 0, expected: 0, off: 0 },
+	coveredEmployees: { state: "insufficient_data", coveredEmployees: 0 },
+	vehicles: { active: 0, archived: 0 },
 };
 
 const readyModel = {
@@ -145,6 +160,7 @@ describe("POST /works-council/export", () => {
 		mockState.insert.mockReturnValue({ values: mockState.insertValues });
 		mockState.insertValues.mockResolvedValue(undefined);
 		mockState.loadWorksCouncilPositionCaptureReview.mockResolvedValue(emptyPositionCaptureReview);
+		mockState.loadWorksCouncilVehicleUseReview.mockResolvedValue(emptyVehicleUseReview);
 	});
 
 	it("appends the position capture section, loaded for the active organization", async () => {
@@ -178,6 +194,36 @@ describe("POST /works-council/export", () => {
 		expect(body).toContain(
 			'"2026-05-03T09:00:00Z","work_period_detail","Viewer A","Employee B","1"',
 		);
+	});
+
+	it("appends the vehicle use section after the position capture section, loaded for the active organization", async () => {
+		setupAuthenticatedRequest();
+		mockState.loadWorksCouncilSettings.mockResolvedValue(enabledSettings);
+		mockState.buildWorksCouncilPortalModel.mockResolvedValue(readyModel);
+		mockState.loadWorksCouncilVehicleUseReview.mockResolvedValue({
+			...emptyVehicleUseReview,
+			enabled: true,
+			teamAssignments: [{ teamName: "Field service", mode: "expected" }],
+			employeeAssignments: {
+				state: "listed",
+				rows: [{ employee: { kind: "pseudonym", ref: "A" }, mode: "asked" }],
+			},
+			vehicles: { active: 3, archived: 1 },
+		});
+
+		const response = await POST(createRequest());
+
+		expect(response.status).toBe(200);
+		expect(mockState.loadWorksCouncilVehicleUseReview).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			settings: enabledSettings,
+		});
+		const body = await response.text();
+		expect(body).toContain('"Vehicle use enabled","yes"');
+		expect(body).toContain('"Team assignment","Field service","expected"');
+		expect(body).toContain('"Employee assignment","Employee A","asked"');
+		expect(body).toContain('"Organization vehicles (active)","3"');
+		expect(body.indexOf('"Position capture"')).toBeLessThan(body.indexOf('"Vehicle use"'));
 	});
 
 	it("returns 403 before loading settings when the organization Works Council feature is disabled", async () => {

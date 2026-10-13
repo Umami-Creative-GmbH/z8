@@ -4,6 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { PositionCaptureReview } from "@/lib/works-council/position-capture-review";
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
+import type { VehicleUseReview } from "@/lib/works-council/vehicle-use-review";
 import { render as renderWithTranslations } from "@/test/render-with-translations";
 import { WorksCouncilDashboard } from "./works-council-dashboard";
 
@@ -220,6 +221,41 @@ describe("WorksCouncilDashboard", async () => {
 
 		expect(screen.getByRole("region", { name: "Position capture" })).toBeTruthy();
 		expect(screen.getByText("No one has viewed positions.")).toBeTruthy();
+	});
+
+	it("renders the read-only vehicle use section when given", async () => {
+		const model: WorksCouncilPortalModel = {
+			state: "ready",
+			dateRange: {
+				start: "2026-05-01T00:00:00.000Z",
+				end: "2026-05-31T23:59:59.999Z",
+			},
+			exportEnabled: false,
+			dashboard: {
+				overtimeMinutes: { state: "insufficient_data", count: 0, value: null },
+				breakRestRiskCount: { state: "insufficient_data", count: 0, value: null },
+				schedulePublicationCount: { state: "insufficient_data", count: 0, value: null },
+				scheduleChangeCount: { state: "insufficient_data", count: 0, value: null },
+				complianceFindingCount: { state: "insufficient_data", count: 0, value: null },
+				absenceCoveragePressureCount: { state: "insufficient_data", count: 0, value: null },
+				policyChangeCount: { state: "insufficient_data", count: 0, value: null },
+			},
+			changeLog: [],
+			scheduleReview: [],
+		};
+		const review: VehicleUseReview = {
+			enabled: false,
+			organizationAssignment: null,
+			teamAssignments: [],
+			employeeAssignments: { state: "counted", asked: 0, expected: 0, off: 0 },
+			coveredEmployees: { state: "insufficient_data", coveredEmployees: 0 },
+			vehicles: { active: 0, archived: 0 },
+		};
+
+		renderWithTranslations(await WorksCouncilDashboard({ model, vehicleUse: { review } }));
+
+		expect(screen.getByRole("region", { name: "Vehicle use" })).toBeTruthy();
+		expect(screen.queryByRole("region", { name: "Position capture" })).toBeNull();
 	});
 
 	it("renders schedule review empty state and hides export when disabled", async () => {
