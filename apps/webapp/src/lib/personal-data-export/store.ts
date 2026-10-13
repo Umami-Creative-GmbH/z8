@@ -22,6 +22,7 @@ import { AuditAction } from "@/lib/audit-logger";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { resolveEmployeeOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { isUuid } from "@/lib/validations/uuid";
 
 type Database = typeof db;
 
@@ -32,7 +33,6 @@ export const EMPLOYEE_EXPORT_INTERVAL_HOURS = 24;
 /** A build still pending or processing after this long is given up. */
 export const PERSONAL_DATA_EXPORT_STALE_AFTER_HOURS = 6;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IN_PROGRESS_INDEX = "personalDataExport_one_in_progress_idx";
 
 export interface PersonalDataExportRequestContext {
@@ -105,7 +105,7 @@ export async function requestPersonalDataExport(
 		request?: PersonalDataExportRequestContext;
 	},
 ): Promise<RequestPersonalDataExportResult> {
-	if (!UUID.test(input.employeeId)) return { ok: false, reason: "employee_not_found" };
+	if (!isUuid(input.employeeId)) return { ok: false, reason: "employee_not_found" };
 	const [subject] = await client
 		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)
@@ -235,7 +235,7 @@ export async function claimPersonalDataExport(
 	client: Database,
 	input: { organizationId: string; exportId: string; now: Instant },
 ): Promise<ClaimedPersonalDataExport | null> {
-	if (!UUID.test(input.exportId)) return null;
+	if (!isUuid(input.exportId)) return null;
 	const [claimed] = await client
 		.update(personalDataExport)
 		.set({ status: "processing", startedAt: dateFromInstant(input.now) })
@@ -331,6 +331,49 @@ export interface PersonalDataExportSummary {
 	sizeBytes: number | null;
 }
 
+/** Whether `employeeId` is the employee record of `userId` in the organization. */
+async function isOwnEmployeeRecord(
+	client: Database,
+	input: { organizationId: string; employeeId: string; userId: string },
+): Promise<boolean> {
+	const [subject] = await client
+		.select({ userId: employee.userId })
+		.from(employee)
+		.where(
+			and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		)
+		.limit(1);
+	return subject?.userId === input.userId;
+}
+
+export type ListAdminPersonalDataExportsResult =
+	| { ok: true; exports: PersonalDataExportSummary[] }
+	/** `own_record`: admins never see the admin exports of their own employee record. */
+	| { ok: false; reason: "employee_not_found" | "own_record" };
+
+/**
+ * One employee's live admin exports, newest first, for an org admin. An admin
+ * export holds withheld data, so the admin it is about never sees it, even
+ * when another admin made it.
+ */
+export async function listAdminPersonalDataExports(
+	client: Database,
+	input: { organizationId: string; employeeId: string; actorUserId: string; now: Instant },
+): Promise<ListAdminPersonalDataExportsResult> {
+	if (!isUuid(input.employeeId)) return { ok: false, reason: "employee_not_found" };
+	if (
+		await isOwnEmployeeRecord(client, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			userId: input.actorUserId,
+		})
+	) {
+		return { ok: false, reason: "own_record" };
+	}
+	const exports = await listPersonalDataExports(client, { ...input, kind: "admin" });
+	return { ok: true, exports };
+}
+
 /** One employee's live exports of one kind, newest first. */
 export async function listPersonalDataExports(
 	client: Database,
@@ -395,7 +438,7 @@ export async function authorizePersonalDataExportDownload(
 		request?: PersonalDataExportRequestContext;
 	},
 ): Promise<PersonalDataExportDownload> {
-	if (!UUID.test(input.exportId)) return { ok: false, reason: "not_found" };
+	if (!isUuid(input.exportId)) return { ok: false, reason: "not_found" };
 	const [row] = await client
 		.select()
 		.from(personalDataExport)
@@ -411,7 +454,12 @@ export async function authorizePersonalDataExportDownload(
 	const allowed =
 		row.kind === "employee"
 			? row.requestedByUserId === input.actor.userId
-			: input.actor.isOrganizationAdmin;
+			: input.actor.isOrganizationAdmin &&
+				!(await isOwnEmployeeRecord(client, {
+					organizationId: input.organizationId,
+					employeeId: row.employeeId,
+					userId: input.actor.userId,
+				}));
 	if (!allowed) return { ok: false, reason: "not_found" };
 	if (row.status !== "completed" || !row.storageKey || !row.completedAt) {
 		return { ok: false, reason: "not_ready" };

@@ -286,20 +286,24 @@ async function collectEmployeeOnlyAccountParts(
 		tablePart(
 			"sessions",
 			SESSION_COLUMNS,
-			sessions.map(({ session: row, extension }) => ({
-				created_at: instantText(row.createdAt),
-				updated_at: instantText(row.updatedAt),
-				expires_at: instantText(row.expiresAt),
-				ip_address: row.ipAddress,
-				user_agent: row.userAgent,
-				impersonated: row.impersonatedBy !== null,
-				country: extension?.country ?? null,
-				region: extension?.region ?? null,
-				city: extension?.city ?? null,
-				mfa_method: extension?.mfaMethod ?? null,
-				mfa_verified_at: instantText(extension?.mfaVerifiedAt),
-				last_activity_at: instantText(extension?.lastActivityAt),
-			})),
+			sessions.map(({ session: row, extension }) => {
+				// An impersonated session's network details are the impersonator's, not the employee's.
+				const impersonated = row.impersonatedBy !== null;
+				return {
+					created_at: instantText(row.createdAt),
+					updated_at: instantText(row.updatedAt),
+					expires_at: instantText(row.expiresAt),
+					ip_address: impersonated ? null : row.ipAddress,
+					user_agent: impersonated ? null : row.userAgent,
+					impersonated,
+					country: impersonated ? null : (extension?.country ?? null),
+					region: impersonated ? null : (extension?.region ?? null),
+					city: impersonated ? null : (extension?.city ?? null),
+					mfa_method: extension?.mfaMethod ?? null,
+					mfa_verified_at: instantText(extension?.mfaVerifiedAt),
+					last_activity_at: instantText(extension?.lastActivityAt),
+				};
+			}),
 		),
 		tablePart(
 			"sign_in_methods",

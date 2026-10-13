@@ -322,10 +322,25 @@ describe("personal data export: Time category (#1167)", () => {
 		await admin.query(
 			`insert into work_policy_violation (employee_id, organization_id, policy_id, work_period_id, violation_date,
 			   violation_type, details, acknowledged_by, acknowledged_at, acknowledged_note, created_at)
-			 values ($1, $2, $3, $4, '2026-07-01 15:30:00', 'max_daily', '{"actualMinutes":570,"limitMinutes":600}',
+			 values ($1, $2, $3, $4, '2026-07-01 15:30:00', 'max_daily', $9,
 			   $5, '2026-07-02 09:00:00', 'Travel day', '2026-07-01 15:31:00'),
 			   ($6, $7, $8, null, '2026-07-03 08:00:00', 'rest_period', null, null, null, null, now())`,
-			[ids.ada, ORG, ids.policy, ids.period, ids.owner, ids.adaOther, OTHER_ORG, ids.otherPolicy],
+			[
+				ids.ada,
+				ORG,
+				ids.policy,
+				ids.period,
+				ids.owner,
+				ids.adaOther,
+				OTHER_ORG,
+				ids.otherPolicy,
+				JSON.stringify({
+					actualMinutes: 570,
+					limitMinutes: 600,
+					warningShownAt: "2026-07-01T17:20:00.000+02:00",
+					exceptionApprovedBy: ids.owner,
+				}),
+			],
 		);
 
 		// Surcharges on the travel day.
@@ -569,7 +584,13 @@ describe("personal data export: Time category (#1167)", () => {
 				work_period_id: ids.period,
 				violation_type: "max_daily",
 				violated_at: "2026-07-01T15:30:00Z",
-				details: '{"actualMinutes":570,"limitMinutes":600}',
+				// People by name, never by id; instants in UTC like everywhere else.
+				details: JSON.stringify({
+					actualMinutes: 570,
+					limitMinutes: 600,
+					warningShownAt: "2026-07-01T15:20:00Z",
+					exceptionApprovedBy: "Olga Owner",
+				}),
 				acknowledged_by: "Olga Owner",
 				acknowledged_at: "2026-07-02T09:00:00Z",
 				acknowledged_note: "Travel day",

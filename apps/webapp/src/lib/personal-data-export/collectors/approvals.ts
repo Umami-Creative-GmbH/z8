@@ -11,8 +11,10 @@
  * opaque id for the colleague (`redaction.ts`); never the colleague's name,
  * dates, reasons or record ids. One decision is one row: a canonical
  * assignment the employee resolved (as approver or deputy), a legacy request
- * they decided (unless a canonical workflow mirrors it, or a deputy decided it
- * instead), a legacy deputy decision, a legacy chain stage without a request,
+ * they decided (the decision evidence's actor, else the assigned approver;
+ * never a rejection by the system or the requester; unless a canonical
+ * workflow mirrors it, or a deputy decided it instead), a legacy deputy
+ * decision, a legacy chain stage without a request,
  * or, for records decided without any approval request, the record itself.
  *
  * Nothing here is withheld: both exports hold the same rows.
@@ -24,6 +26,7 @@ import {
 	absenceEntry,
 	approvalChainInstance,
 	approvalChainStageInstance,
+	approvalDecisionEvidence,
 	approvalDeputyDecision,
 	approvalRequest,
 	approvalStageAssignment,
@@ -36,6 +39,8 @@ import {
 	shift,
 	shiftRequest,
 } from "@/db/schema";
+import { SICK_OVERRIDE_REJECTION_REASON } from "@/lib/absences/sick-vacation-override";
+import { isUuid } from "@/lib/validations/uuid";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -485,7 +490,9 @@ async function collectDecisionsOnOthers(
 					notByEmployee(approvalWorkflow.requesterEmployeeId),
 				),
 			),
-		// Legacy requests assigned to the employee and decided.
+		// Legacy requests the employee decided: by the decision evidence's actor when
+		// it was recorded (org-wide approvers decide without becoming the approver),
+		// else by the assigned approver.
 		database
 			.select({
 				id: approvalRequest.id,
@@ -495,14 +502,27 @@ async function collectDecisionsOnOthers(
 				approvedAt: approvalRequest.approvedAt,
 				updatedAt: approvalRequest.updatedAt,
 				metadata: approvalRequest.metadata,
+				rejectionReason: approvalRequest.rejectionReason,
+				evidenceDecidedAt: approvalDecisionEvidence.decidedAt,
 			})
 			.from(approvalRequest)
+			.leftJoin(
+				approvalDecisionEvidence,
+				and(
+					eq(approvalDecisionEvidence.organizationId, organizationId),
+					eq(approvalDecisionEvidence.authority, "legacy"),
+					eq(approvalDecisionEvidence.legacyApprovalRequestId, approvalRequest.id),
+				),
+			)
 			.where(
 				and(
 					eq(approvalRequest.organizationId, organizationId),
-					eq(approvalRequest.approverId, employeeId),
 					ne(approvalRequest.requestedBy, employeeId),
 					inArray(approvalRequest.status, DECIDED),
+					or(
+						eq(approvalDecisionEvidence.actorEmployeeId, employeeId),
+						and(isNull(approvalDecisionEvidence.id), eq(approvalRequest.approverId, employeeId)),
+					),
 				),
 			),
 		// Legacy decisions the employee made as a covering deputy.
@@ -595,7 +615,7 @@ async function collectDecisionsOnOthers(
 							eq(approvalWorkflow.organizationId, organizationId),
 							inArray(
 								approvalWorkflow.id,
-								mirroredWorkflowIds.filter((id) => UUID.test(id)),
+								mirroredWorkflowIds.filter((id) => isUuid(id)),
 							),
 						),
 					),
@@ -608,6 +628,7 @@ async function collectDecisionsOnOthers(
 	const legacy = legacyCandidates.filter(
 		(row) =>
 			!notTheEmployees.has(row.id) &&
+			!(row.evidenceDecidedAt === null && closedWithoutApprover(row)) &&
 			!(
 				typeof row.metadata?.workflowId === "string" &&
 				existingWorkflows.has(row.metadata.workflowId)
@@ -627,7 +648,7 @@ async function collectDecisionsOnOthers(
 			recordKind: row.entityType,
 			authority: "legacy",
 			action: row.status,
-			actedAt: row.approvedAt ?? row.updatedAt,
+			actedAt: row.evidenceDecidedAt ?? row.approvedAt ?? row.updatedAt,
 			asDeputy: false,
 			otherEmployeeId: row.requestedBy,
 		})),
@@ -660,7 +681,23 @@ async function collectDecisionsOnOthers(
 		.map((action) => actionOnOtherRow(people, action));
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/**
+ * A legacy request rejected by the system or withdrawn by its requester: no
+ * approver decided it. A sick absence overrode the vacation, the requester
+ * withdrew the expense report, or cancelled the time correction.
+ */
+function closedWithoutApprover(row: {
+	status: string;
+	rejectionReason: string | null;
+	metadata: Record<string, unknown> | null;
+}): boolean {
+	if (row.status !== "rejected") return false;
+	return (
+		row.rejectionReason === SICK_OVERRIDE_REJECTION_REASON ||
+		row.metadata?.travelExpenseReportWithdrawal !== undefined ||
+		row.metadata?.cancellation !== undefined
+	);
+}
 
 /**
  * Decisions recorded only on the decided record: approvals made without any

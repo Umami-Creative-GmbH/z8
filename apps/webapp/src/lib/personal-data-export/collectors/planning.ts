@@ -9,8 +9,8 @@
  * its plain date. A swap partner, or the colleague who asked the employee to
  * take a shift, did not act on the employee's records: they appear by
  * display name only, and a received request carries none of the colleague's
- * reasons or notes, nor the shift they asked to give away beyond its date and
- * times (#811 decision).
+ * reasons or notes, nor anything about their shift: its date and times appear
+ * only when the shift is the employee's own (#811 decision).
  *
  * `shift_request.organization_id` is nullable, so requests are scoped through
  * their shift's organization.
@@ -106,6 +106,7 @@ async function collectPlanning(
 				approverId: shiftRequest.approverId,
 				approvedAt: shiftRequest.approvedAt,
 				createdAt: shiftRequest.createdAt,
+				shiftEmployeeId: shift.employeeId,
 				...requestShift,
 			})
 			.from(shiftRequest)
@@ -220,19 +221,23 @@ async function collectPlanning(
 					"approved_at",
 					"created_at",
 				],
-				receivedRequests.map((row) => ({
-					id: row.id,
-					type: row.type,
-					status: row.status,
-					lifecycle_status: row.lifecycleStatus,
-					shift_date: plainDateText(row.shiftDate),
-					shift_start_time: row.shiftStartTime,
-					shift_end_time: row.shiftEndTime,
-					requested_by: byEmployee(row.requesterId),
-					approver: byEmployee(row.approverId),
-					approved_at: instantText(row.approvedAt),
-					created_at: instantText(row.createdAt),
-				})),
+				receivedRequests.map((row) => {
+					// The shift asked about is the colleague's unless it is the employee's own.
+					const ownShift = row.shiftEmployeeId === employeeId;
+					return {
+						id: row.id,
+						type: row.type,
+						status: row.status,
+						lifecycle_status: row.lifecycleStatus,
+						shift_date: ownShift ? plainDateText(row.shiftDate) : null,
+						shift_start_time: ownShift ? row.shiftStartTime : null,
+						shift_end_time: ownShift ? row.shiftEndTime : null,
+						requested_by: byEmployee(row.requesterId),
+						approver: byEmployee(row.approverId),
+						approved_at: instantText(row.approvedAt),
+						created_at: instantText(row.createdAt),
+					};
+				}),
 			),
 		],
 	};

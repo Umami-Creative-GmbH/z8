@@ -693,8 +693,9 @@ describe("personal data export: audit log and account (#1171)", () => {
 				created_at: "2026-09-22T08:00:00Z",
 				updated_at: "2026-09-22T09:00:00Z",
 				expires_at: "2026-10-21T08:00:00Z",
-				ip_address: "198.51.100.21",
-				user_agent: "Safari t1171",
+				// An impersonated session's IP and user agent are the impersonator's.
+				ip_address: null,
+				user_agent: null,
 				impersonated: true,
 				// Session details recorded by another organization stay out.
 				country: null,
@@ -840,6 +841,8 @@ describe("personal data export: audit log and account (#1171)", () => {
 
 		const text = categoryText(files, "account");
 		for (const leaked of [
+			"198.51.100.21",
+			"Safari t1171",
 			"Madrid t1171",
 			"Other org device t1171",
 			"/other-org-path-t1171",

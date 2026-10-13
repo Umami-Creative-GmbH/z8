@@ -41,6 +41,7 @@ import {
 	workPolicyViolation,
 } from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { isUuid } from "@/lib/validations/uuid";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -456,6 +457,9 @@ async function collectComplianceParts(
 			.orderBy(asc(surchargeCalculation.calculationDate), asc(surchargeCalculation.id)),
 	]);
 
+	const violationApprovers = violations.map(
+		(row) => stringField(jsonObject(row.details), "exceptionApprovedBy") ?? null,
+	);
 	const [userNames, employeeNames] = await Promise.all([
 		loadUserNames(
 			database,
@@ -464,8 +468,11 @@ async function collectComplianceParts(
 		loadEmployeeNames(database, organizationId, [
 			...exceptions.map((row) => row.approverId),
 			...violations.map((row) => row.acknowledgedBy),
+			...violationApprovers.filter((id) => isUuid(id)),
 		]),
 	]);
+	// An approver who is no employee of this organization stays unnamed.
+	const personName = (id: string) => nameOf(employeeNames, id);
 
 	return [
 		tablePart(
@@ -499,7 +506,7 @@ async function collectComplianceParts(
 				work_period_id: row.workPeriodId,
 				violation_type: row.violationType,
 				violated_at: instantText(row.violationDate),
-				details: jsonText(row.details),
+				details: violationDetails(row.details, personName),
 				acknowledged_by: nameOf(employeeNames, row.acknowledgedBy),
 				acknowledged_at: instantText(row.acknowledgedAt),
 				acknowledged_note: row.acknowledgedNote,
@@ -673,6 +680,30 @@ async function collectBalanceParts(
 			})),
 		),
 	];
+}
+
+/** Instants a violation's details may hold (`TimeRegulationViolationDetails`). */
+const VIOLATION_DETAIL_INSTANTS = ["warningShownAt", "lastClockOutTime", "attemptedClockInTime"];
+
+/**
+ * A work-policy violation's details as JSON text: the person who approved an
+ * exception by name, never by id, and instants in UTC like everywhere else.
+ */
+function violationDetails(
+	value: unknown,
+	personName: (id: string) => string | null,
+): string | null {
+	const details = jsonObject(value);
+	if (!details) return jsonText(value);
+	const exported: JsonObject = { ...details };
+	for (const key of VIOLATION_DETAIL_INSTANTS) {
+		if (key in exported) exported[key] = instantField(details, key);
+	}
+	if ("exceptionApprovedBy" in exported) {
+		const approver = stringField(details, "exceptionApprovedBy");
+		exported.exceptionApprovedBy = approver ? personName(approver) : null;
+	}
+	return JSON.stringify(exported);
 }
 
 type JsonObject = Record<string, unknown>;

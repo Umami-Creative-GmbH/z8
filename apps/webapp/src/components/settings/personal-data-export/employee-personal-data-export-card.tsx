@@ -83,6 +83,8 @@ export function EmployeePersonalDataExportCard({
 
 	const exportsQuery = useQuery({
 		queryKey,
+		// Admin exports of one's own record are never listed or downloadable (withheld data).
+		enabled: !isOwnRecord,
 		queryFn: async () => {
 			const result = await getEmployeePersonalDataExportsAction(employeeId);
 			if (!result.success) throw new Error(result.error);

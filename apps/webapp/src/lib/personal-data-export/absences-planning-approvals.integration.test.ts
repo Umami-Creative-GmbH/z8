@@ -18,6 +18,8 @@ const { streamPersonalDataArchive } = await import("./archive");
 
 const ORG = "t1168-org";
 const OTHER_ORG = "t1168-other";
+/** Legacy requests decided by someone other than the assigned approver. */
+const DECIDER_ORG = "t1168-decider";
 
 const ids = {
 	ada: "11680000-0000-4000-8000-000000000001",
@@ -74,7 +76,7 @@ function table(category: CollectedCategory, key: string): PersonalDataRow[] {
 }
 
 async function cleanup() {
-	for (const org of [ORG, OTHER_ORG]) {
+	for (const org of [ORG, OTHER_ORG, DECIDER_ORG]) {
 		await admin.query("delete from organization where id = $1", [org]);
 	}
 	await admin.query('delete from "user" where id like $1', ["t1168-%"]);
@@ -365,14 +367,24 @@ describe("personal data export: absences, planning and approvals (#1168)", () =>
 			expect.objectContaining({
 				type: "swap",
 				status: "pending",
-				shift_date: "2026-06-02",
-				shift_start_time: "06:00",
+				// Carl's shift is Carl's: only his display name goes in.
+				shift_date: null,
+				shift_start_time: null,
+				shift_end_time: null,
 				requested_by: "Carl Colleague",
 			}),
 		]);
 		// The colleague's reasons, notes and shift details stay out.
 		const text = JSON.stringify(planning);
-		for (const leaked of ["Carl childcare secret", "childcare", "Carl note", "Carl shift note"]) {
+		for (const leaked of [
+			"Carl childcare secret",
+			"childcare",
+			"Carl note",
+			"Carl shift note",
+			"2026-06-02",
+			"06:00",
+			"14:00",
+		]) {
 			expect(text, leaked).not.toContain(leaked);
 		}
 	});
@@ -543,5 +555,122 @@ describe("personal data export: absences, planning and approvals (#1168)", () =>
 				"approvals/decisions_on_others.csv",
 			]),
 		);
+	});
+});
+
+describe("personal data export: who decided a legacy request (#811 review)", () => {
+	const people = {
+		ana: "11680000-0000-4000-8000-000000000101",
+		oli: "11680000-0000-4000-8000-000000000102",
+		cid: "11680000-0000-4000-8000-000000000103",
+	} as const;
+	const requests = {
+		decidedByOli: "11680000-0000-4000-8000-000000000111",
+		sickOverride: "11680000-0000-4000-8000-000000000112",
+		withdrawn: "11680000-0000-4000-8000-000000000113",
+		cancelled: "11680000-0000-4000-8000-000000000114",
+		noEvidence: "11680000-0000-4000-8000-000000000115",
+		decidedByAna: "11680000-0000-4000-8000-000000000116",
+	} as const;
+
+	function decisionsOf(category: CollectedCategory) {
+		return table(category, "decisions_on_others").map((row) => [row.action, row.acted_at]);
+	}
+
+	async function legacyEvidence(requestId: string, actorEmployeeId: string, decidedAt: string) {
+		const { rows } = await admin.query<{ id: string }>(
+			`insert into approval_submitted_revision (organization_id, workflow_id, workflow_type, source_type, source_id,
+			   request_cycle_key, revision, subject_employee_id, requester_employee_id, submitter_actor_kind,
+			   submitter_employee_id, schema_version, material_fingerprint, facts, labels, provenance, submitted_at,
+			   authority, legacy_approval_request_id)
+			 values ($1, null, 'absence', 'absence_entry', gen_random_uuid(), 'cycle-1', 1, $2, $2, 'employee', $2, 1,
+			   'fp', '{}', '{}', 'test', '2026-04-30T08:00:00Z', 'legacy', $3) returning id`,
+			[DECIDER_ORG, people.cid, requestId],
+		);
+		await admin.query(
+			`insert into approval_decision_evidence (organization_id, authority, workflow_id, legacy_approval_request_id,
+			   submitted_revision_id, operation_kind, receipt_idempotency_key, receipt_actor_fingerprint,
+			   receipt_command_fingerprint, action, request_outcome, actor_kind, actor_employee_id, decided_at, event_ids,
+			   result, labels, schema_version)
+			 values ($1, 'legacy', null, $2, $3, 'command', $4, 'actor-fp', 'command-fp', 'approve', 'approved',
+			   'employee', $5, $6, '[]', '{}', '{}', 1)`,
+			[DECIDER_ORG, requestId, rows[0]?.id, `receipt-${requestId}`, actorEmployeeId, decidedAt],
+		);
+	}
+
+	beforeAll(async () => {
+		await admin.query(
+			`insert into organization (id, name, slug, timezone, created_at) values ($1, 'Decider GmbH', $1, 'Europe/Berlin', now())`,
+			[DECIDER_ORG],
+		);
+		await seedPerson(DECIDER_ORG, people.ana, "dec-ana", "Ana Assignee");
+		await seedPerson(DECIDER_ORG, people.oli, "dec-oli", "Oli Orgwide");
+		await seedPerson(DECIDER_ORG, people.cid, "dec-cid", "Cid Colleague");
+		await admin.query(
+			`insert into approval_request (id, organization_id, entity_type, entity_id, requested_by, approver_id,
+			   status, rejection_reason, metadata, approved_at, created_at, updated_at) values
+			   ($1, $7, 'absence_entry', gen_random_uuid(), $8, $9, 'approved', null, null,
+			    '2026-05-01 10:00:00', '2026-04-30 08:00:00', now()),
+			   ($2, $7, 'absence_entry', gen_random_uuid(), $8, $9, 'rejected', 'Overridden by sick absence', null,
+			    '2026-05-02 10:00:00', '2026-04-30 08:00:00', now()),
+			   ($3, $7, 'travel_expense_report', gen_random_uuid(), $8, $9, 'rejected', null,
+			    '{"travelExpenseReportWithdrawal":{"submissionCycle":1,"withdrawnAt":"2026-05-03T10:00:00Z"}}',
+			    null, '2026-04-30 08:00:00', '2026-05-03 10:00:00'),
+			   ($4, $7, 'time_entry', gen_random_uuid(), $8, $9, 'rejected', null,
+			    '{"cancellation":{"cancelledAt":"2026-05-04T10:00:00Z"}}',
+			    '2026-05-04 10:00:00', '2026-04-30 08:00:00', now()),
+			   ($5, $7, 'absence_entry', gen_random_uuid(), $8, $9, 'approved', null, null,
+			    '2026-05-05 10:00:00', '2026-04-30 08:00:00', now()),
+			   ($6, $7, 'absence_entry', gen_random_uuid(), $8, $10, 'approved', null, null,
+			    '2026-05-06 10:00:00', '2026-04-30 08:00:00', now())`,
+			[
+				requests.decidedByOli,
+				requests.sickOverride,
+				requests.withdrawn,
+				requests.cancelled,
+				requests.noEvidence,
+				requests.decidedByAna,
+				DECIDER_ORG,
+				people.cid,
+				people.ana,
+				people.oli,
+			],
+		);
+		await legacyEvidence(requests.decidedByOli, people.oli, "2026-05-01T10:00:00Z");
+		await legacyEvidence(requests.decidedByAna, people.ana, "2026-05-06T10:00:00Z");
+	});
+
+	afterAll(async () => {
+		await cleanup();
+	});
+
+	const scopeOf = (employeeId: string, userId: string): PersonalDataExportScope => ({
+		organizationId: DECIDER_ORG,
+		employeeId,
+		userId,
+		kind: "employee",
+	});
+
+	it("credits a decision to whoever made it, not to the assigned approver", async () => {
+		const ana = await approvalsCollector.collect(db, scopeOf(people.ana, "t1168-dec-ana"));
+		// No evidence: the assigned approver decided. Evidence: its actor decided, assigned or not.
+		expect(decisionsOf(ana)).toEqual([
+			["approved", "2026-05-05T10:00:00Z"],
+			["approved", "2026-05-06T10:00:00Z"],
+		]);
+
+		const oli = await approvalsCollector.collect(db, scopeOf(people.oli, "t1168-dec-oli"));
+		expect(decisionsOf(oli)).toEqual([["approved", "2026-05-01T10:00:00Z"]]);
+	});
+
+	it("never counts a rejection by the system or the requester as the approver's decision", async () => {
+		const ana = await approvalsCollector.collect(db, scopeOf(people.ana, "t1168-dec-ana"));
+		const at = decisionsOf(ana).map(([, actedAt]) => actedAt);
+		for (const systemDay of ["2026-05-02", "2026-05-03", "2026-05-04"]) {
+			expect(
+				at.some((actedAt) => String(actedAt).startsWith(systemDay)),
+				systemDay,
+			).toBe(false);
+		}
 	});
 });

@@ -144,7 +144,7 @@ export const planningFieldGuide: PersonalDataFieldGuide = (t) => {
 		shift_requests_received: {
 			summary: t(
 				"personalDataExport.readme.fields.planning.shiftRequestsReceived.summary",
-				"Requests colleagues made of you, such as asking you to swap or take a shift. Their reasons and notes are not included.",
+				"Requests colleagues made of you, such as asking you to swap or take a shift. Their reasons, notes and shifts are not included: the shift date and times appear only when the shift is yours.",
 			),
 			fields: {
 				id: requestId(),

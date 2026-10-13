@@ -20,7 +20,7 @@ import {
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { enqueuePersonalDataExport } from "@/lib/personal-data-export/processor";
 import {
-	listPersonalDataExports,
+	listAdminPersonalDataExports,
 	type PersonalDataExportRequestContext,
 	type PersonalDataExportSummary,
 	requestPersonalDataExport,
@@ -40,8 +40,6 @@ type AdminExportEffect<T> = Effect.Effect<T, AnyAppError, AppServices>;
 
 /** Machine-readable refusals the employee page maps to its own copy. */
 export type AdminExportRefusal = "in_progress" | "storage_unavailable";
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The signed-in org admin of the active organization, checked against the database. */
 function signedInOrganizationAdmin(action: string) {
@@ -79,21 +77,33 @@ function employeeNotFound() {
 	return new NotFoundError({ message: "Employee not found", entityType: "employee" });
 }
 
+/** Admin exports hold withheld data: never of, or for, the admin's own employee record. */
+function ownRecordRefusal(userId: string, action: string) {
+	return new AuthorizationError({
+		message: "Export your own data from My data instead",
+		userId,
+		resource: "personal_data_export",
+		action,
+	});
+}
+
 /** The employee's admin exports that are still kept, newest first. */
 export async function getEmployeePersonalDataExportsAction(
 	employeeId: string,
 ): Promise<ServerActionResult<PersonalDataExportSummary[]>> {
 	const effect: AdminExportEffect<PersonalDataExportSummary[]> = Effect.gen(function* () {
-		const { dbService, organizationId } = yield* signedInOrganizationAdmin("list");
-		const id = String(employeeId);
-		if (!UUID.test(id)) return yield* Effect.fail(employeeNotFound());
-		return yield* dbService.query("personalDataExport.listAdmin", () =>
-			listPersonalDataExports(dbService.db, {
+		const { dbService, organizationId, userId } = yield* signedInOrganizationAdmin("list");
+		const listed = yield* dbService.query("personalDataExport.listAdmin", () =>
+			listAdminPersonalDataExports(dbService.db, {
 				organizationId,
-				employeeId: id,
-				kind: "admin",
+				employeeId: String(employeeId),
+				actorUserId: userId,
 				now: systemClock.nowInstant(),
 			}),
+		);
+		if (listed.ok) return listed.exports;
+		return yield* Effect.fail(
+			listed.reason === "own_record" ? ownRecordRefusal(userId, "list") : employeeNotFound(),
 		);
 	});
 	return runServerActionSafe(effect);
@@ -141,14 +151,7 @@ export async function requestEmployeePersonalDataExportAction(
 				case "employee_not_found":
 					return yield* Effect.fail(employeeNotFound());
 				case "own_record":
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "Export your own data from My data instead",
-							userId,
-							resource: "personal_data_export",
-							action: "request",
-						}),
-					);
+					return yield* Effect.fail(ownRecordRefusal(userId, "request"));
 				case "in_progress":
 				case "daily_limit":
 					// Admin exports have no daily limit; only one export per employee builds at a time.
