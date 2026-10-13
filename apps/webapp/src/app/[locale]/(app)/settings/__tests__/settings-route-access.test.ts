@@ -44,6 +44,7 @@ const ORG_ADMIN_ROUTE_FILES = [
 	"personnel-files/page.tsx",
 	"kiosks/page.tsx",
 	"custom-fields/page.tsx",
+	"vehicles/page.tsx",
 ] as const;
 
 function stripComments(source: string): string {
@@ -141,6 +142,7 @@ describe("org-admin settings route access", () => {
 			"/settings/personnel-files",
 			"/settings/kiosks",
 			"/settings/custom-fields",
+			"/settings/vehicles",
 		]);
 	});
 

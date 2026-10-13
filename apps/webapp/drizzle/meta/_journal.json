@@ -1513,6 +1513,13 @@
       "when": 1802880000000,
       "tag": "0215_absence_setting_proration_notice",
       "breakpoints": true
+    },
+    {
+      "idx": 216,
+      "version": "7",
+      "when": 1802966400000,
+      "tag": "0216_organization_vehicles",
+      "breakpoints": true
     }
   ]
 }

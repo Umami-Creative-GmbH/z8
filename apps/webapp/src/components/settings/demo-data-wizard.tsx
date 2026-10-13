@@ -475,6 +475,7 @@ function useDemoDataWizardController({
 			locationsCreated: 0,
 			subareasCreated: 0,
 			locationSupervisorsAssigned: 0,
+			vehiclesCreated: 0,
 			// NEW: Work category results
 			workCategorySetsCreated: 0,
 			workCategoriesCreated: 0,
@@ -705,6 +706,7 @@ function useDemoDataWizardController({
 										locationsCreated: number;
 										subareasCreated: number;
 										supervisorAssignmentsCreated: number;
+										vehiclesCreated: number;
 									};
 									return {
 										result: `${d.locationsCreated} locations, ${d.subareasCreated} subareas`,
@@ -713,6 +715,7 @@ function useDemoDataWizardController({
 											subareasCreated: d.subareasCreated,
 											locationSupervisorsAssigned:
 												d.supervisorAssignmentsCreated,
+											vehiclesCreated: d.vehiclesCreated,
 										},
 									};
 								},
@@ -1348,8 +1351,8 @@ function AdvancedDataTypeOptions({ controller }: PresentationProps) {
 					</div>
 					<p className="text-xs text-muted-foreground">
 						{t(
-							"settings.demo.form.dataTypes.locations.description",
-							"Work locations and subareas",
+							"settings.demo.form.dataTypes.locations.descriptionWithVehicles",
+							"Work locations, subareas and a few vehicles",
 						)}
 					</p>
 					{includeLocations && (
@@ -2161,6 +2164,15 @@ function ClearDataSection({ controller }: PresentationProps) {
 									"settings.demo.dangerZone.clearData.subareasDeleted",
 									"{count} subareas deleted",
 									{ count: clearResult.subareasDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.vehiclesDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.vehiclesDeleted",
+									"{count, plural, one {# vehicle deleted} other {# vehicles deleted}}",
+									{ count: clearResult.vehiclesDeleted },
 								)}
 							</li>
 						)}
