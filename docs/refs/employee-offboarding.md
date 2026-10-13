@@ -161,6 +161,19 @@ otherwise the removed member's own user) and SCIM deprovisioning
 (`scim_deprovisioned`, under the deprovisioned user, with the connection id).
 A rehire or reactivation restores nothing.
 
+## Personal data reminder
+
+Personal data self-service on **My data** ends at the cutoff; afterwards only an
+admin export reaches the employee (Organization ADR 0003). Recording a departure
+with a future cutoff, or moving its cutoff, queues one
+`notify_data_export_reminder` task (#1173). The worker tells the departing
+employee, in-app and by email, to download their data on My data before the
+cutoff day, shown in the departure's organization zone. Re-saving without a new
+cutoff queues nothing; *Offboard now* has no future cutoff and sends nothing. At
+delivery the task sends only while the departure is still pending with the same
+future cutoff and no later reminder supersedes it; kiosk-only employees are
+skipped, because their notifications would go to their managers.
+
 ## Rehire
 
 *Rehire employee* is offered after an effective departure. It requires approved

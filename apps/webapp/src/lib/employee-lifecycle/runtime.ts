@@ -23,6 +23,7 @@ import { createApprovalHandoverHandler, createApprovalHandoverRuntime } from "./
 import { createDepartureClockOut } from "./clock-out";
 import { createClockPostprocessHandler } from "./clock-postprocess";
 import { createDepartureCommands } from "./commands";
+import { createDataExportReminderHandler } from "./data-export-reminder";
 import type { DepartureTaskHandler } from "./delivery";
 import { createDeputyReleaseNotificationHandler } from "./deputy-release-notifications";
 import { findDueDepartures } from "./due-departures";
@@ -103,6 +104,15 @@ export function createProductionDepartureTaskHandlers(options: {
 		clock_postprocess: createClockPostprocessHandler(clockOutFollowUpEffects),
 		notify_deputy_release: createDeputyReleaseNotificationHandler({
 			database: db,
+			transport: {
+				// A failed send retries the task; the idempotency key keeps the inbox single.
+				send: (params) => createNotification(params, { throwOnError: true }),
+				locale: resolveRecipientNotificationLocale,
+			},
+		}),
+		notify_data_export_reminder: createDataExportReminderHandler({
+			database: db,
+			clock: systemClock,
 			transport: {
 				// A failed send retries the task; the idempotency key keeps the inbox single.
 				send: (params) => createNotification(params, { throwOnError: true }),
