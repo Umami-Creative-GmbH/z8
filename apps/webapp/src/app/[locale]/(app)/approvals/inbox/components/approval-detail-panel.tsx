@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
 import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
+import { vehicleUseText } from "@/components/time-tracking/vehicle-use-format";
 import {
 	summaryField,
 	useApprovalInboxText,
@@ -94,6 +95,9 @@ function workLocationText(t: Translate, value: string) {
 function changeValueText(t: Translate, value: ApprovalInboxDetailChangeValue) {
 	if (value.kind === "work_location") {
 		return workLocationText(t, value.value);
+	}
+	if (value.kind === "vehicle_use") {
+		return vehicleUseText(t, value.value);
 	}
 	if (value.value.state === "named") return value.value.name;
 	return value.value.state === "none"

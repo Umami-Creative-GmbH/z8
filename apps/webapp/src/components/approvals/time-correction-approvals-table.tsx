@@ -28,6 +28,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import type { WorkCategoryReviewValue } from "@/lib/approvals/server/time-correction-review-metadata";
 import { queryKeys } from "@/lib/query";
 import { dispatchApprovalDecision } from "@/lib/query/use-approval-inbox";
+import { vehicleUseText } from "@/components/time-tracking/vehicle-use-format";
 import { ApprovalActionDialog } from "./approval-action-dialog";
 import {
 	formatCorrectionApprovalDate,
@@ -456,6 +457,17 @@ function buildTimeCorrectionColumns({
 								},
 							]
 						: []),
+					...(row.original.workPeriod.metadataChanges?.vehicleUse
+						? [
+								{
+									label: t("approvals:approvals.vehicleUse", "Vehicle use"),
+									value: vehicleUseText(
+										t,
+										row.original.workPeriod.metadataChanges.vehicleUse.original,
+									),
+								},
+							]
+						: []),
 				];
 				return values.length > 0 ? (
 					<dl className="grid gap-1 text-sm">
@@ -525,6 +537,17 @@ function buildTimeCorrectionColumns({
 										row.original.workPeriod.metadataChanges.workCategory
 											.requested,
 										t,
+									),
+								},
+							]
+						: []),
+					...(row.original.workPeriod.metadataChanges?.vehicleUse
+						? [
+								{
+									label: t("approvals:approvals.vehicleUse", "Vehicle use"),
+									value: vehicleUseText(
+										t,
+										row.original.workPeriod.metadataChanges.vehicleUse.requested,
 									),
 								},
 							]

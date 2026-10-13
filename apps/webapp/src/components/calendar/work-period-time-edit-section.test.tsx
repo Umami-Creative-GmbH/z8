@@ -236,6 +236,101 @@ describe("WorkPeriodTimeSection", () => {
 		expect(updateTimes).not.toHaveBeenCalled();
 	});
 
+	describe("vehicle use (#1120)", () => {
+		const vanId = "6c3a8d55-0f0e-4f7d-9b51-2b7a0ef8d9a1";
+		const vehicleUse = {
+			mode: "asked",
+			vehicles: [{ id: vanId, name: "Van", licencePlate: "B-VN 100", archived: false }],
+		};
+
+		it("refuses an end reading below the start reading with a translated message", async () => {
+			getContext.mockResolvedValue({
+				success: true,
+				data: {
+					access: { kind: "self_service" },
+					timezone: "Europe/Berlin",
+					values: {
+						...values,
+						vehicleUse: { vehicle: { kind: "own" }, startKm: 100, endKm: 150, distanceKm: 50 },
+					},
+					vehicleUse,
+				},
+			});
+			renderSection();
+			fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+			fireEvent.change(screen.getByLabelText("End reading (km)"), { target: { value: "90" } });
+			expect(
+				screen.getByRole("alert").textContent,
+			).toBe("The end reading cannot be below the start reading.");
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(toastError).toHaveBeenCalledWith(
+					"The end reading cannot be below the start reading.",
+				),
+			);
+			expect(updateTimes).not.toHaveBeenCalled();
+		});
+
+		it("submits changed readings and shows the derived distance", async () => {
+			getContext.mockResolvedValue({
+				success: true,
+				data: {
+					access: { kind: "self_service" },
+					timezone: "Europe/Berlin",
+					values: {
+						...values,
+						vehicleUse: { vehicle: { kind: "own" }, startKm: 100, endKm: 150, distanceKm: 50 },
+					},
+					vehicleUse,
+				},
+			});
+			updateTimes.mockResolvedValue({ success: true, data: { status: "applied" } });
+			const { onTimesUpdated } = renderSection();
+			fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+			fireEvent.change(screen.getByLabelText("End reading (km)"), { target: { value: "175" } });
+			expect(screen.getByText("Driven distance: 75 km")).toBeTruthy();
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() => expect(onTimesUpdated).toHaveBeenCalledOnce());
+			expect(updateTimes).toHaveBeenCalledWith(
+				expect.objectContaining({
+					vehicleUse: { vehicle: { kind: "own" }, startKm: 100, endKm: 175, distanceKm: null },
+				}),
+			);
+		});
+
+		it("keeps recorded vehicle use read-only while vehicle use is off", async () => {
+			getContext.mockResolvedValue({
+				success: true,
+				data: {
+					access: { kind: "self_service" },
+					timezone: "Europe/Berlin",
+					values: {
+						...values,
+						vehicleUse: {
+							vehicle: { kind: "organization", vehicleId: vanId },
+							startKm: 100,
+							endKm: 150,
+							distanceKm: 50,
+						},
+					},
+					vehicleUse: { ...vehicleUse, mode: "off" },
+				},
+			});
+			updateTimes.mockResolvedValue({ success: true, data: { status: "applied" } });
+			renderSection();
+			fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+
+			expect(screen.queryByLabelText("End reading (km)")).toBeNull();
+			expect(screen.getByText(/Van \(B-VN 100\)/)).toBeTruthy();
+			fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+			await waitFor(() => expect(updateTimes).toHaveBeenCalled());
+			expect(updateTimes.mock.calls[0]?.[0]).not.toHaveProperty("vehicleUse");
+		});
+	});
+
 	it("explains why entries beyond the approval window cannot be edited", async () => {
 		mockAccess({
 			kind: "blocked",

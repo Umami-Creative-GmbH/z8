@@ -78,6 +78,36 @@ describe("resolveWorkPeriodEditedBy", () => {
 			}),
 		).toBeNull();
 	});
+
+	it("names someone else's attribution-only edit, which appends no correction entry (#1120)", () => {
+		const vehicleEdit = {
+			createdBy: "user-admin",
+			createdAt: new Date("2026-09-04T09:00:00.000Z"),
+			editorName: "Grace Admin",
+		};
+		expect(
+			resolveWorkPeriodEditedBy({
+				ownerUserId: "user-owner",
+				endpoints: [
+					original,
+					{
+						type: "correction",
+						createdBy: "user-manager",
+						createdAt: new Date("2026-09-03T10:00:00.000Z"),
+						editorName: "John Doe",
+					},
+				],
+				attributionEdits: [vehicleEdit],
+			}),
+		).toEqual({ editedByName: "Grace Admin", editedAt: vehicleEdit.createdAt });
+		expect(
+			resolveWorkPeriodEditedBy({
+				ownerUserId: "user-owner",
+				endpoints: [original],
+				attributionEdits: [{ ...vehicleEdit, createdBy: "user-owner", editorName: "Ada Owner" }],
+			}),
+		).toBeNull();
+	});
 });
 
 describe("formatWorkPeriodEditedDate", () => {

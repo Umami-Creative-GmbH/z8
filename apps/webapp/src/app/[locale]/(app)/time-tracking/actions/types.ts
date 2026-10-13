@@ -3,6 +3,11 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
+import type {
+	WorkVehicleUse,
+	WorkVehicleUseFormContext,
+	WorkVehicleUseInput,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { ManualCommandRejection } from "./manual-command-submission";
 
@@ -16,6 +21,8 @@ export interface CorrectionRequest {
 	reason: string;
 	workLocationType: WorkLocationType;
 	workCategoryId: string | null;
+	/** Requested vehicle use (#1120), already validated: absent keeps it, null clears it. */
+	vehicleUse?: WorkVehicleUse | null;
 }
 
 export interface SameDayEditRequest {
@@ -29,6 +36,8 @@ export interface SameDayEditRequest {
 	reason?: string;
 	workLocationType: WorkLocationType;
 	workCategoryId: string | null;
+	/** Requested vehicle use (#1120), already validated: absent keeps it, null clears it. */
+	vehicleUse?: WorkVehicleUse | null;
 }
 
 export interface TimeEntryDeletionRequest {
@@ -108,6 +117,8 @@ export interface ManualEntryTargetContext {
 	recoveryContext: ManualEntryRecoveryContext;
 	projects: AssignedProject[];
 	categories: ManualEntryCategoryChoice[];
+	/** Whether the target is asked for vehicle use, and the vehicles to pick (#1120). */
+	vehicleUse: WorkVehicleUseFormContext;
 }
 
 export interface ManualTimeEntryInput {
@@ -126,6 +137,8 @@ export interface ManualTimeEntryInput {
 	workLocationType?: WorkLocationType;
 	/** Explicit billability (#900); absent takes the project's billable default. */
 	billable?: boolean;
+	/** Vehicle use as entered (#1120); absent records none. */
+	vehicleUse?: WorkVehicleUseInput;
 }
 
 /** What a manual submission committed, for either command representation. */

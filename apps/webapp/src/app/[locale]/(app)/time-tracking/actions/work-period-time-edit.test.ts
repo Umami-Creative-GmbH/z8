@@ -27,6 +27,11 @@ const state = vi.hoisted(() => ({
 	markDirty: vi.fn(),
 }));
 
+// Vehicle use (#1120) is off unless a test says otherwise.
+vi.mock("@/lib/time-tracking/vehicle-use/form-context", () => ({
+	loadWorkVehicleUseFormContext: async () => ({ mode: "off", vehicles: [] }),
+}));
+
 vi.mock("@/db", () => ({
 	db: {
 		select: () => ({
@@ -192,11 +197,13 @@ describe("work period time edit actions", () => {
 				timezone: "Europe/Berlin",
 				values: {
 					workLocationType: "remote",
+					vehicleUse: null,
 					clockInDate: "2026-09-01",
 					clockInTime: "09:00",
 					clockOutDate: "2026-09-01",
 					clockOutTime: "17:00",
 				},
+				vehicleUse: { mode: "off", vehicles: [] },
 			},
 		});
 	});

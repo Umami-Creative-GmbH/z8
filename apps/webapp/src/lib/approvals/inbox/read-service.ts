@@ -1185,6 +1185,27 @@ function buildTimeCorrectionDetailSections(
 		});
 	}
 
+	// Vehicle and odometer readings before and after (#1120).
+	if (correction.metadataChanges?.vehicleUse) {
+		rows.push({
+			label: {
+				key: "approvals:approvals.vehicleUse",
+				fallback: "Vehicle use",
+			},
+			value: {
+				kind: "change",
+				original: {
+					kind: "vehicle_use",
+					value: correction.metadataChanges.vehicleUse.original,
+				},
+				requested: {
+					kind: "vehicle_use",
+					value: correction.metadataChanges.vehicleUse.requested,
+				},
+			},
+		});
+	}
+
 	const sections: ApprovalInboxDetailSection[] = [
 		...(correction.timeComparison ? [correction.timeComparison] : []),
 		{

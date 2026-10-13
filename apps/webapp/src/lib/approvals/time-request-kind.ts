@@ -117,6 +117,8 @@ function timeCorrectionMarker(metadata: JsonObject | null): Parsed<{
 		"action",
 		"workLocationType",
 		"workCategoryId",
+		// Requested vehicle use (#1120), only beside the work metadata.
+		"vehicleUse",
 		"clockInCorrectionId",
 		"clockOutCorrectionId",
 	]);
@@ -127,6 +129,7 @@ function timeCorrectionMarker(metadata: JsonObject | null): Parsed<{
 		!marker ||
 		!Object.hasOwn(marker, "action") ||
 		hasWorkLocation !== hasWorkCategory ||
+		(Object.hasOwn(marker, "vehicleUse") && !hasWorkMetadata) ||
 		(marker.action !== "edit" && marker.action !== "delete") ||
 		(hasWorkMetadata &&
 			(typeof marker.workLocationType !== "string" ||

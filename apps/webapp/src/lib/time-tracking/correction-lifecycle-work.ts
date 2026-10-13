@@ -33,6 +33,7 @@ import {
 	type TimeEntryAppend,
 	TimeEntryAppendReviewRequiredError,
 } from "./time-entry-append";
+import type { WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { WorkOccupancyConflictError } from "./work-occupancy";
 import {
@@ -57,6 +58,8 @@ export type TimeCorrectionChangeMask = {
 	clockOut: boolean;
 	workLocation: boolean;
 	workCategory: boolean;
+	/** Present only when the proposal names vehicle use (#1120). */
+	vehicleUse?: boolean;
 };
 
 /** The approval lifecycle a transition belongs to, as the authority stores it. */
@@ -96,6 +99,8 @@ export type TimeCorrectionSegment = {
 		projectId: string | null;
 		workCategoryId: string | null;
 		workLocationType: string | null;
+		/** Present only when the segment records vehicle use (#1120). */
+		vehicleUse?: WorkVehicleUse;
 	};
 };
 
@@ -128,6 +133,8 @@ export type SubmitTimeCorrectionResult = {
 		clockOut: RequestedCorrectionEndpoint | null;
 		workLocationType?: string | null;
 		workCategoryId?: string | null;
+		/** Present only when the proposal names vehicle use (#1120). */
+		vehicleUse?: WorkVehicleUse | null;
 	};
 	corrections: Array<
 		TimeCorrectionEntryEvidence & { previousEntryId: string | null; previousHash: string | null }

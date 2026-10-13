@@ -32,6 +32,7 @@ import type {
 	WorkPeriodPendingChanges,
 } from "./types";
 import { workCategory } from "./work-category";
+import { workVehicleUseColumns, workVehicleUseConstraints } from "./work-vehicle-use-columns";
 
 export const employeeWorkBalancePeriodTypeEnum = pgEnum(
 	"employee_work_balance_period_type",
@@ -150,6 +151,10 @@ export const workPeriod = pgTable(
 
 		// Work location type - employee tags at clock-in (office, home, remote, other)
 		workLocationType: workLocationTypeEnum("work_location_type"),
+
+		// Vehicle use (#1120): part of the work attribution, mirrored on the
+		// canonical record's `time_record_work`.
+		...workVehicleUseColumns(),
 
 		startTime: timestamp("start_time").notNull(),
 		endTime: timestamp("end_time"),
@@ -274,6 +279,7 @@ export const workPeriod = pgTable(
 		uniqueIndex("workPeriod_org_breakStartedOperation_idx")
 			.on(table.organizationId, table.breakStartedOperationId)
 			.where(sql`${table.breakStartedOperationId} IS NOT NULL`),
+		...workVehicleUseConstraints("workPeriod", table),
 	],
 );
 

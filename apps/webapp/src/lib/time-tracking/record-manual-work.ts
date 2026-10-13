@@ -56,6 +56,7 @@ import {
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
 import { recordedTaskId } from "./task-attribution";
+import { vehicleUseColumns, type WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import type { AppendReviewReason } from "./time-entry-append";
 import { loadWorkOccupants } from "./work-occupancy";
 import type { SealedWorkTransactionScope } from "./work-transaction";
@@ -87,6 +88,8 @@ export type ManualWorkFacts = {
 	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType?: ManualTimeEntryCommand["workLocationType"];
+	/** Validated vehicle use (#1120), checked by preparation; absent records none. */
+	vehicleUse?: WorkVehicleUse;
 	daysBack: number;
 	policy: ManualPolicyEvidence | null;
 	approval: ManualApprovalIntent;
@@ -141,6 +144,8 @@ export type ManualWorkResult = {
 		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType?: ManualTimeEntryCommand["workLocationType"];
+		/** Present only when the work records vehicle use (#1120). */
+		vehicleUse?: WorkVehicleUse;
 	};
 	revisions: { workPeriod: { source: null; result: number } };
 	append: {
@@ -361,6 +366,7 @@ export async function recordManualWork(
 		})
 		.returning({ id: timeRecord.id });
 	if (!record) throw new Error("Failed to create canonical work record");
+	const vehicle = vehicleUseColumns(facts.vehicleUse ?? null);
 	await tx.insert(timeRecordWork).values({
 		recordId: record.id,
 		organizationId,
@@ -368,6 +374,11 @@ export async function recordManualWork(
 		workCategoryId: facts.workCategoryId,
 		workLocationType: facts.workLocationType ?? null,
 		computationMetadata: null,
+		vehicleKind: vehicle.vehicleKind,
+		vehicleId: vehicle.vehicleId,
+		odometerStartKm: vehicle.odometerStartKm,
+		odometerEndKm: vehicle.odometerEndKm,
+		drivenDistanceKm: vehicle.drivenDistanceKm,
 	});
 	if (facts.projectId) {
 		await tx.insert(timeRecordAllocation).values({
@@ -398,6 +409,11 @@ export async function recordManualWork(
 			taskId: facts.taskId ?? null,
 			workCategoryId: facts.workCategoryId,
 			workLocationType: facts.workLocationType ?? null,
+			vehicleKind: vehicle.vehicleKind,
+			vehicleId: vehicle.vehicleId,
+			odometerStartKm: vehicle.odometerStartKm,
+			odometerEndKm: vehicle.odometerEndKm,
+			drivenDistanceKm: vehicle.drivenDistanceKm,
 			canonicalRecordId: record.id,
 			isActive: false,
 			approvalStatus: approvalState,
@@ -513,6 +529,7 @@ export async function recordManualWork(
 			...(facts.workLocationType !== undefined
 				? { workLocationType: facts.workLocationType }
 				: {}),
+			...(facts.vehicleUse ? { vehicleUse: facts.vehicleUse } : {}),
 		},
 		revisions: { workPeriod: { source: null, result: resultRevision } },
 		append: {

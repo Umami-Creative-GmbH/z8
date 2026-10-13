@@ -4,6 +4,7 @@ import { db } from "@/db";
 import {
 	absenceEntry,
 	approvalRequest,
+	organizationVehicle,
 	timeEntry,
 	workCategory,
 	workPeriod,
@@ -20,8 +21,10 @@ import {
 	type SickNoteMarker,
 } from "@/lib/personnel-file/sick-note-store";
 import {
+	addVehicleLabelsForOrganization,
 	categoryIdsFromTimeCorrectionMetadata,
 	categoryNamesForOrganization,
+	vehicleIdsFromTimeCorrectionMetadata,
 	parseTimeCorrectionReviewMetadata,
 	timeCorrectionMetadataChanges,
 } from "./time-correction-review-metadata";
@@ -370,7 +373,8 @@ export async function getPendingApprovals(): Promise<{
 			),
 	);
 	const categoryIds = categoryIdsFromTimeCorrectionMetadata(pendingRequests);
-	const [correctionEntriesResult, categories] = await Promise.all([
+	const vehicleIds = vehicleIdsFromTimeCorrectionMetadata(pendingRequests);
+	const [correctionEntriesResult, categories, vehicles] = await Promise.all([
 		originalEntryIds.length > 0
 			? db.query.timeEntry.findMany({
 					where: and(
@@ -389,11 +393,29 @@ export async function getPendingApprovals(): Promise<{
 					columns: { id: true, organizationId: true, name: true },
 				})
 			: Promise.resolve([]),
+		vehicleIds.length > 0
+			? db
+					.select({
+						id: organizationVehicle.id,
+						organizationId: organizationVehicle.organizationId,
+						name: organizationVehicle.name,
+						licencePlate: organizationVehicle.licencePlate,
+					})
+					.from(organizationVehicle)
+					.where(
+						and(
+							eq(organizationVehicle.organizationId, currentEmployee.organizationId),
+							inArray(organizationVehicle.id, vehicleIds),
+						),
+					)
+			: Promise.resolve([]),
 	]);
 	const correctionEntries =
 		correctionEntriesResult as CorrectionEntryForReview[];
-	const categoryNamesById = categoryNamesForOrganization(
-		categories,
+	// Vehicle labels (#1120) share the review names map with the categories.
+	const categoryNamesById = addVehicleLabelsForOrganization(
+		categoryNamesForOrganization(categories, currentEmployee.organizationId),
+		vehicles,
 		currentEmployee.organizationId,
 	);
 	const correctionEntriesByReplacedId = new Map<
