@@ -1,9 +1,10 @@
 use crate::break_evidence::{BreakEvidence, BreakReview, IdleBreak, Observation, ZonedObservation};
 use crate::clock::WorkLocationType;
 use crate::frozen_command::{
-    freeze_attributed_clock_out, freeze_break, freeze_clock_in, freeze_clock_out, new_operation_id,
-    utc_instant, Admission, AttributionIntent, ClockTarget, ClosingAttribution, CommandContext,
-    CommandFrame, CommandKind,
+    freeze_attributed_clock_out, freeze_attributed_clock_out_with, freeze_break, freeze_break_with,
+    freeze_clock_in, freeze_clock_in_with, freeze_clock_out, new_operation_id, utc_instant,
+    Admission, AttributionIntent, BreakVehicleUse, ClockTarget, ClockVehicleUse,
+    ClosingAttribution, CommandContext, CommandFrame, CommandKind,
 };
 use chrono::{DateTime, TimeZone, Utc};
 
@@ -211,6 +212,183 @@ fn break_freezes_the_detected_return_and_separate_start_evidence() {
         frozen.body,
         include_str!("fixtures/desktop-v2-break.json").trim_end()
     );
+}
+
+const VEHICLE: &str = "0C1D2E3F-4A5B-4C6D-8E7F-8091A2B3C4D5";
+
+/// What the webview sends over IPC (#1124).
+fn clock_vehicle_use(json: &str) -> ClockVehicleUse {
+    serde_json::from_str(json).unwrap()
+}
+
+/// Pinned for the webapp's contract tests (#1124): version 4 carries the
+/// vehicle and start reading beside the clock-in.
+#[test]
+fn clock_in_with_vehicle_use_freezes_the_exact_v4_wire_command() {
+    let frozen = freeze_clock_in_with(
+        frame(
+            CLOCK_IN_OPERATION,
+            instant(),
+            "Europe/Berlin",
+            Admission::Delayed,
+            None,
+        ),
+        WorkLocationType::Remote,
+        Some(&clock_vehicle_use(&format!(
+            r#"{{"vehicle":{{"kind":"organization","vehicleId":"{VEHICLE}"}},"startKm":12000}}"#
+        ))),
+    );
+    assert_eq!(frozen.version, 4);
+    assert_eq!(
+        frozen.body,
+        include_str!("fixtures/desktop-v4-clock-in.json").trim_end()
+    );
+}
+
+#[test]
+fn clock_out_with_an_end_reading_freezes_the_exact_v4_wire_command() {
+    let frozen = freeze_attributed_clock_out_with(
+        frame(
+            CLOCK_OUT_OPERATION,
+            instant() + chrono::Duration::hours(8),
+            "Europe/Berlin",
+            Admission::Delayed,
+            Some(CLOCK_IN_OPERATION),
+        ),
+        ClockTarget::ClockInOperation(CLOCK_IN_OPERATION.into()),
+        &ClosingAttribution::default(),
+        Some(&clock_vehicle_use(r#"{"endKm":12085}"#)),
+    );
+    assert_eq!(frozen.version, 4);
+    assert_eq!(
+        frozen.body,
+        include_str!("fixtures/desktop-v4-clock-out.json").trim_end()
+    );
+}
+
+#[test]
+fn break_with_a_reading_freezes_the_exact_v4_wire_command() {
+    let frozen = freeze_break_with(
+        frame(
+            BREAK_OPERATION,
+            instant() + chrono::Duration::hours(3),
+            "Asia/Tokyo",
+            Admission::Delayed,
+            Some(CLOCK_IN_OPERATION),
+        ),
+        ClockTarget::ClockInOperation(CLOCK_IN_OPERATION.into()),
+        WorkLocationType::Remote,
+        &break_evidence(Some("Europe/Berlin")),
+        Some(BreakVehicleUse { reading_km: 12_040 }),
+    )
+    .unwrap();
+    assert_eq!(frozen.version, 4);
+    assert_eq!(
+        frozen.body,
+        include_str!("fixtures/desktop-v4-break.json").trim_end()
+    );
+}
+
+/// Without vehicle use the bytes stay exactly version 2, so older servers
+/// (which refuse unknown versions and keys) keep accepting them.
+#[test]
+fn without_vehicle_use_every_kind_keeps_its_v2_bytes() {
+    let clock_in = freeze_clock_in_with(
+        frame(
+            CLOCK_IN_OPERATION,
+            instant(),
+            "Europe/Berlin",
+            Admission::Delayed,
+            None,
+        ),
+        WorkLocationType::Remote,
+        None,
+    );
+    assert_eq!(clock_in.version, 2);
+    assert_eq!(
+        clock_in.body,
+        include_str!("fixtures/desktop-v2-clock-in.json").trim_end()
+    );
+    let clock_out = freeze_attributed_clock_out_with(
+        frame(
+            CLOCK_OUT_OPERATION,
+            instant() + chrono::Duration::hours(8),
+            "Europe/Berlin",
+            Admission::Delayed,
+            Some(CLOCK_IN_OPERATION),
+        ),
+        ClockTarget::ClockInOperation(CLOCK_IN_OPERATION.into()),
+        &ClosingAttribution::default(),
+        // Nothing entered is nothing to send.
+        Some(&clock_vehicle_use("{}")),
+    );
+    assert_eq!(clock_out.version, 2);
+    assert_eq!(
+        clock_out.body,
+        include_str!("fixtures/desktop-v2-clock-out.json").trim_end()
+    );
+}
+
+/// The server's version 4 shapes are strict: a clock-in names a vehicle and at
+/// most a start reading. What it cannot take is left out, never sent.
+#[test]
+fn a_clock_in_without_a_vehicle_or_with_closing_readings_sends_only_what_it_may() {
+    let freeze = |json: &str| {
+        let frozen = freeze_clock_in_with(
+            frame(
+                CLOCK_IN_OPERATION,
+                instant(),
+                "UTC",
+                Admission::Delayed,
+                None,
+            ),
+            WorkLocationType::Office,
+            Some(&clock_vehicle_use(json)),
+        );
+        let body: serde_json::Value = serde_json::from_str(&frozen.body).unwrap();
+        (frozen.version, body["vehicleUse"].clone())
+    };
+    assert_eq!(freeze(r#"{"startKm":12000}"#), (2, serde_json::Value::Null));
+    assert_eq!(
+        freeze(r#"{"vehicle":{"kind":"organization","vehicleId":"not-a-uuid"}}"#),
+        (2, serde_json::Value::Null)
+    );
+    assert_eq!(
+        freeze(r#"{"vehicle":{"kind":"own"},"startKm":5,"endKm":9,"distanceKm":4}"#),
+        (
+            4,
+            serde_json::json!({ "vehicle": { "kind": "own" }, "startKm": 5 })
+        )
+    );
+}
+
+#[test]
+fn a_clock_out_can_name_the_distance_and_the_vehicle_when_none_was_recorded() {
+    let frozen = freeze_attributed_clock_out_with(
+        frame(
+            CLOCK_OUT_OPERATION,
+            instant(),
+            "UTC",
+            Admission::Delayed,
+            None,
+        ),
+        ClockTarget::WorkPeriod("5c0b1a8e-2f4d-4e6a-9b3c-7d8e9f0a1b2c".into()),
+        &ClosingAttribution::default(),
+        Some(&clock_vehicle_use(
+            r#"{"vehicle":{"kind":"own"},"distanceKm":42,"startKm":null}"#,
+        )),
+    );
+    let body: serde_json::Value = serde_json::from_str(&frozen.body).unwrap();
+    assert_eq!(
+        body["vehicleUse"],
+        serde_json::json!({ "vehicle": { "kind": "own" }, "distanceKm": 42 })
+    );
+}
+
+#[test]
+fn the_webview_cannot_send_unknown_vehicle_use_fields() {
+    assert!(serde_json::from_str::<ClockVehicleUse>(r#"{"odometer":5}"#).is_err());
+    assert!(serde_json::from_str::<ClockVehicleUse>(r#"{"endKm":-1}"#).is_err());
 }
 
 #[test]

@@ -39,7 +39,7 @@ fn not_committed(request: &str) -> String {
 }
 
 fn clock_in() -> ClockCommand {
-    ClockCommand::ClockIn(WorkLocationType::Office)
+    ClockCommand::ClockIn(WorkLocationType::Office, None)
 }
 
 #[tokio::test]
@@ -67,7 +67,7 @@ async fn online_clock_in_is_frozen_and_saved_before_its_first_send() {
     });
 
     let outcome = device
-        .act(&url, ClockCommand::ClockIn(WorkLocationType::Home))
+        .act(&url, ClockCommand::ClockIn(WorkLocationType::Home, None))
         .await
         .unwrap();
 
@@ -193,7 +193,7 @@ async fn offline_actions_bind_the_queued_clock_in_and_are_sent_in_order_after_re
     device.negotiated(&url, "org-1", false);
 
     let started = device
-        .act(&url, ClockCommand::ClockIn(WorkLocationType::Remote))
+        .act(&url, ClockCommand::ClockIn(WorkLocationType::Remote, None))
         .await
         .unwrap();
     let closed = device.act(&url, ClockCommand::ClockOut).await.unwrap();
@@ -268,6 +268,7 @@ fn close_with_task() -> ClockCommand {
             task: Some(AttributionIntent::Replace { id: TASK.into() }),
         },
         manual_break: false,
+        vehicle_use: None,
     }
 }
 
@@ -533,6 +534,7 @@ async fn saved_commands_are_never_downgraded_when_the_server_stops_accepting_the
                     Some("Europe/Berlin"),
                 ),
                 location: WorkLocationType::Office,
+                vehicle_use: None,
             },
         )
         .await

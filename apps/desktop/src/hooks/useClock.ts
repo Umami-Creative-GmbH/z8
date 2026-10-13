@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useRef, useState } from "react";
 import { needsReview } from "../lib/saved-commands";
 import type {
+	BreakVehicleUse,
+	ClockVehicleUse,
 	ClockCommandOutcome,
 	ClockJournal,
 	ClockStatus,
@@ -10,16 +12,24 @@ import type {
 	ClosingAttribution,
 } from "../types";
 
+// Vehicle use (#1124) is omitted when nothing was entered; the native side
+// sends it only to a server that records it.
 type ClockAction =
-	| { command: "clock_in"; workLocationType: WorkLocationType }
+	| {
+			command: "clock_in";
+			workLocationType: WorkLocationType;
+			vehicleUse?: ClockVehicleUse;
+	  }
 	| {
 			command: "clock_out" | "start_manual_break";
 			attribution: ClosingAttribution;
+			vehicleUse?: ClockVehicleUse;
 	  }
 	| {
 			command: "clock_out_with_break";
 			breakId: string;
 			workLocationType: WorkLocationType;
+			vehicleUse?: BreakVehicleUse;
 	  };
 
 interface ClockScope {
@@ -237,12 +247,12 @@ export function useClock({
 		// An atomic break is saved like any other action (#281); the legacy
 		// two-request break needs the server and nothing unsent before it.
 		canRecordBreak: canClock && journal?.breaksEnabled === true,
-		clockIn: (workLocationType: WorkLocationType) =>
-			submit({ command: "clock_in", workLocationType }),
-		clockOut: (attribution: ClosingAttribution) =>
-			submit({ command: "clock_out", attribution }),
-		startBreak: (attribution: ClosingAttribution) =>
-			submit({ command: "start_manual_break", attribution }),
+		clockIn: (workLocationType: WorkLocationType, vehicleUse?: ClockVehicleUse) =>
+			submit({ command: "clock_in", workLocationType, vehicleUse }),
+		clockOut: (attribution: ClosingAttribution, vehicleUse?: ClockVehicleUse) =>
+			submit({ command: "clock_out", attribution, vehicleUse }),
+		startBreak: (attribution: ClosingAttribution, vehicleUse?: ClockVehicleUse) =>
+			submit({ command: "start_manual_break", attribution, vehicleUse }),
 		endDay: async () => {
 			await invoke("end_manual_break", {
 				expectation: { serverUrl, organizationId, sessionRevision },
@@ -252,6 +262,7 @@ export function useClock({
 		clockOutWithBreak: (args: {
 			breakId: string;
 			workLocationType: WorkLocationType;
+			vehicleUse?: BreakVehicleUse;
 		}) => submit({ command: "clock_out_with_break", ...args }),
 		retrySavedCommand: (operationId: string) =>
 			savedCommandMutation.mutate({

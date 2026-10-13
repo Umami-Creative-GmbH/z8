@@ -30,6 +30,7 @@ fn take_break(evidence: BreakEvidence) -> ClockCommand {
     ClockCommand::Break {
         evidence,
         location: WorkLocationType::Office,
+        vehicle_use: None,
     }
 }
 
@@ -118,7 +119,7 @@ async fn offline_breaks_bind_queued_work_and_the_next_clock_out_binds_the_break(
     device.negotiated_with(&url, "org-1", false, BREAK_KINDS);
 
     device
-        .act(&url, ClockCommand::ClockIn(WorkLocationType::Remote))
+        .act(&url, ClockCommand::ClockIn(WorkLocationType::Remote, None))
         .await
         .unwrap();
     // Idle after the queued clock-in started.
@@ -131,7 +132,7 @@ async fn offline_breaks_bind_queued_work_and_the_next_clock_out_binds_the_break(
     assert!(matches!(paused, ClockCommandOutcome::SavedOnDevice { .. }));
     // Still clocked in after the break: another clock-in is refused.
     let error = device
-        .act(&url, ClockCommand::ClockIn(WorkLocationType::Remote))
+        .act(&url, ClockCommand::ClockIn(WorkLocationType::Remote, None))
         .await
         .unwrap_err();
     assert!(

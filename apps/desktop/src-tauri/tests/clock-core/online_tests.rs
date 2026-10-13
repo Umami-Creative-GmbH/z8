@@ -29,7 +29,7 @@ async fn online_clock_in_works_before_organization_adoption() {
     ]);
     let outcome = execute_companion(
         &device.at(&endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-1",
     )
@@ -62,6 +62,7 @@ async fn online_clock_out_preserves_attribution_and_manual_break_survives_restar
         ClockCommand::AttributedClose {
             attribution: ClosingAttribution::default(),
             manual_break: true,
+            vehicle_use: None,
         },
         evidence(),
         "org-1",
@@ -97,7 +98,7 @@ async fn online_clocking_refuses_a_changed_organization_without_a_write() {
     ))]);
     assert!(execute_companion(
         &device.at(&endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-1"
     )
@@ -122,7 +123,7 @@ async fn online_clocking_never_queues_a_fresh_offline_action() {
         .unwrap();
     assert!(execute_companion(
         &device.at(endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-1"
     )
@@ -144,7 +145,7 @@ async fn online_lost_response_is_retained_for_review_and_never_replayed() {
     ]);
     let outcome = execute_companion(
         &device.at(&endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Office),
+        ClockCommand::ClockIn(WorkLocationType::Office, None),
         evidence(),
         "org-1",
     )
@@ -173,7 +174,7 @@ async fn definite_online_refusal_does_not_poison_recovery() {
     ]);
     let error = execute_companion(
         &device.at(&endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Office),
+        ClockCommand::ClockIn(WorkLocationType::Office, None),
         evidence(),
         "org-1",
     )
@@ -190,7 +191,7 @@ async fn adopted_organization_keeps_frozen_transport_without_atomic_break_requir
     device.negotiated(endpoint, "org-1", false);
     let outcome = execute_companion(
         &device.at(endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Office),
+        ClockCommand::ClockIn(WorkLocationType::Office, None),
         evidence(),
         "org-1",
     )
@@ -214,7 +215,7 @@ async fn online_preflight_failure_or_changed_status_records_nothing() {
         ]);
         assert!(execute_companion(
             &device.at(&endpoint, TOKEN),
-            ClockCommand::ClockIn(WorkLocationType::Home),
+            ClockCommand::ClockIn(WorkLocationType::Home, None),
             evidence(),
             "org-1"
         )
@@ -248,6 +249,7 @@ async fn online_close_sends_explicit_attribution_intent() {
                 task: None,
             },
             manual_break: false,
+            vehicle_use: None,
         },
         evidence(),
         "org-1",
@@ -286,7 +288,7 @@ async fn older_server_without_online_context_validation_receives_no_write() {
     assert!(!journal.online_clocking_enabled);
     let error = execute_companion(
         &device.at(&endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-1",
     )

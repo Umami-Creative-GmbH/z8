@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::Path;
 
-use crate::frozen_command::{CommandContext, CommandKind, FrozenCommand, CLOCK_COMMAND_VERSION};
+use crate::frozen_command::{CommandContext, CommandKind, FrozenCommand};
 
 /// `PRAGMA user_version` of the database. Version 0 is the legacy queue alone.
 pub const COMMAND_STORE_VERSION: i64 = 1;
@@ -308,7 +308,7 @@ impl CommandStore {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             params![
                 command.operation_id,
-                CLOCK_COMMAND_VERSION,
+                command.version,
                 command.kind.as_str(),
                 endpoint,
                 command.context.user_id,

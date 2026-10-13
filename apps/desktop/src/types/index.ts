@@ -180,7 +180,41 @@ export interface ProjectTask {
 	id: string;
 	name: string;
 }
+/** An organization vehicle, or the employee's own vehicle (#1124). */
+export type VehicleChoice =
+	| { kind: "own" }
+	| { kind: "organization"; vehicleId: string };
+/** Vehicle use recorded on work, in whole kilometres. */
+export interface WorkVehicleUse {
+	vehicle: VehicleChoice;
+	startKm: number | null;
+	endKm: number | null;
+	distanceKm: number | null;
+}
+/** Vehicle use sent with a clock-in or clock-out; absent fields are omitted. */
+export interface ClockVehicleUse {
+	vehicle?: VehicleChoice;
+	startKm?: number;
+	endKm?: number;
+	distanceKm?: number;
+}
+/** A break's one odometer reading. */
+export interface BreakVehicleUse {
+	readingKm: number;
+}
+/** What the desktop context says about vehicle use (#1124); older servers omit it. */
+export interface DesktopVehicleUse {
+	mode: "off" | "asked" | "expected";
+	/** The organization's active vehicles, the assigned ones first. */
+	vehicles: { id: string; name: string; licencePlate: string }[];
+	suggestedVehicleIds: string[];
+	/** Each vehicle's last recorded end reading: the start reading's pre-fill. */
+	lastEndKmByVehicleId: Record<string, number>;
+	/** The live work's vehicle use, while clocked in. */
+	live: WorkVehicleUse | null;
+}
 export interface DesktopContext {
+	vehicleUse?: DesktopVehicleUse;
 	userId: string;
 	organizationId: string;
 	employeeId: string;
