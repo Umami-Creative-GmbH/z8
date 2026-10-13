@@ -20,8 +20,10 @@ import type { LifecycleTransaction } from "@/lib/employee-lifecycle/types";
 import { adjustConfirmedTimeline, type TimelineUpdate } from "@/lib/employment-history/timeline";
 import { createLogger } from "@/lib/logger";
 import {
+	storedEmployeeWage,
 	type UpsertEmploymentHistory,
 	upsertEmploymentHistorySchema,
+	wageForContract,
 } from "@/lib/validations/employment-history";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
@@ -396,7 +398,7 @@ export async function createEmployeeEmploymentHistoryAction(
 								probationEndsOn: validatedData.probationEndsOn ?? null,
 								workModel: validatedData.workModel,
 								workPolicyId: validatedData.workPolicyId ?? null,
-								hourlyRate: validatedData.hourlyRate ?? null,
+								hourlyRate: wageForContract(validatedData.contractType, validatedData.hourlyRate),
 								currency: validatedData.currency,
 								changeReason: validatedData.changeReason ?? null,
 								reviewState: validatedData.reviewState,
@@ -439,7 +441,7 @@ export async function createEmployeeEmploymentHistoryAction(
 									.update(employee)
 									.set({
 										contractType: inserted.contractType,
-										currentHourlyRate: inserted.hourlyRate,
+										currentHourlyRate: storedEmployeeWage(inserted.hourlyRate),
 										updatedAt: now,
 									})
 									.where(
@@ -608,7 +610,7 @@ export async function confirmEmployeeEmploymentHistoryAction(
 									.update(employee)
 									.set({
 										contractType: updated.contractType,
-										currentHourlyRate: updated.hourlyRate,
+										currentHourlyRate: storedEmployeeWage(updated.hourlyRate),
 										updatedAt: now,
 									})
 									.where(

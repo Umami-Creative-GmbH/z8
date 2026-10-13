@@ -20,6 +20,7 @@ import {
 	type Instant,
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
+import { storedEmployeeWage, wageForContract } from "@/lib/validations/employment-history";
 import { departureCutoff } from "./cutoff";
 import { runDepartureTransaction } from "./departure-transaction";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
@@ -633,7 +634,7 @@ async function rehireEmployee(
 			probationEndsOn: localDateStart(input.probationEndsOn, timezone),
 			workModel: input.workModel,
 			workPolicyId: input.workPolicyId,
-			hourlyRate: input.hourlyRate ?? null,
+			hourlyRate: wageForContract(input.contractType, input.hourlyRate ?? null),
 			currency: input.currency,
 			changeReason: input.changeReason,
 			reviewState: "confirmed",
@@ -674,7 +675,9 @@ async function rehireEmployee(
 				role: input.role,
 				teamId: input.teamId,
 				contractType: input.contractType,
-				currentHourlyRate: input.hourlyRate ?? null,
+				currentHourlyRate: storedEmployeeWage(
+					wageForContract(input.contractType, input.hourlyRate ?? null),
+				),
 				endDate: null,
 				updatedAt: nowDate,
 			})

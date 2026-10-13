@@ -42,6 +42,55 @@ describe("upsertEmploymentHistorySchema", () => {
 		expect(result.success).toBe(true);
 	});
 
+	test("reads the hourly wage as a number", () => {
+		const result = upsertEmploymentHistorySchema.parse({
+			...validEmploymentHistoryInput,
+			contractType: "hourly",
+			hourlyRate: "28.50",
+		});
+
+		expect(result.hourlyRate).toBe(28.5);
+	});
+
+	test("accepts a numeric hourly wage", () => {
+		const result = upsertEmploymentHistorySchema.parse({
+			...validEmploymentHistoryInput,
+			contractType: "hourly",
+			hourlyRate: 31,
+		});
+
+		expect(result.hourlyRate).toBe(31);
+	});
+
+	test("refuses an empty-string wage", () => {
+		const result = upsertEmploymentHistorySchema.safeParse({
+			...validEmploymentHistoryInput,
+			hourlyRate: "",
+		});
+
+		expect(result.success).toBe(false);
+	});
+
+	test("refuses a wage with more than two decimal places", () => {
+		const result = upsertEmploymentHistorySchema.safeParse({
+			...validEmploymentHistoryInput,
+			contractType: "hourly",
+			hourlyRate: 10.555,
+		});
+
+		expect(result.success).toBe(false);
+	});
+
+	test("stores no wage on fixed terms, whatever the client sends", () => {
+		const result = upsertEmploymentHistorySchema.parse({
+			...validEmploymentHistoryInput,
+			contractType: "fixed",
+			hourlyRate: "25.00",
+		});
+
+		expect(result.hourlyRate).toBeNull();
+	});
+
 	test("accepts null hourly rates for fixed contracts", () => {
 		const result = upsertEmploymentHistorySchema.safeParse({
 			...validEmploymentHistoryInput,

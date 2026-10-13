@@ -36,7 +36,7 @@ export type EmploymentHistoryEntry = {
 	workModel: WorkModel;
 	workPolicyId: string | null;
 	workPolicy?: EmploymentHistoryWorkPolicyOption | null;
-	hourlyRate: string | null;
+	hourlyRate: number | null;
 	currency: string;
 	changeReason: string | null;
 	reviewState: ReviewState;
