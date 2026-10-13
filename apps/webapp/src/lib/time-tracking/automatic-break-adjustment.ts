@@ -75,6 +75,13 @@ import {
 import { recordedTaskId } from "./task-attribution";
 import { admitTimeEntryAppend } from "./time-entry-append";
 import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
+import { vehicleUseAcrossAutomaticBreak } from "./vehicle-use/split-vehicle-use";
+import {
+	sameWorkVehicleUse,
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+} from "./vehicle-use/work-vehicle-use";
 import { projectAllocationAgrees } from "./work-billability";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
 import {
@@ -174,6 +181,8 @@ export type AutomaticBreakSegment = {
 		workCategoryId: string | null;
 		workLocationType: string | null;
 		allocations: AllocationEvidence[];
+		/** The segment's own vehicle use (#1126); present only when it has one. */
+		vehicleUse?: WorkVehicleUse;
 	};
 };
 
@@ -453,6 +462,7 @@ export async function adjustAutomaticBreakInTransaction(
 		record.durationMinutes !== period.durationMinutes ||
 		detail.workCategoryId !== period.workCategoryId ||
 		detail.workLocationType !== period.workLocationType ||
+		!sameWorkVehicleUse(vehicleUseFromColumns(detail), vehicleUseFromColumns(period)) ||
 		!allocationAgrees ||
 		compareInstants(instantFromDate(sourceClockIn.timestamp), sourceStart) !== 0 ||
 		compareInstants(instantFromDate(sourceClockOut.timestamp), sourceEnd) !== 0
@@ -599,6 +609,11 @@ export async function adjustAutomaticBreakInTransaction(
 	};
 	const breakStartDate = dateFromInstant(plan.breakStartAt);
 	const breakEndDate = dateFromInstant(plan.breakEndAt);
+	// The vehicle carries over the break; nobody read the odometer at it (#1126).
+	const sourceVehicleUse = vehicleUseFromColumns(period);
+	const vehicleSplit = vehicleUseAcrossAutomaticBreak(sourceVehicleUse);
+	const retainedVehicle = vehicleUseColumns(vehicleSplit.retained);
+	const generatedVehicle = vehicleUseColumns(vehicleSplit.generated);
 	const sourceRevision = period.graphRevision + 1;
 	const updatedPeriods = await tx
 		.update(workPeriod)
@@ -606,6 +621,9 @@ export async function adjustAutomaticBreakInTransaction(
 			clockOutId: breakClockOut.id,
 			endTime: breakStartDate,
 			durationMinutes: plan.retainedMinutes,
+			odometerStartKm: retainedVehicle.odometerStartKm,
+			odometerEndKm: retainedVehicle.odometerEndKm,
+			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
 			wasAutoAdjusted: true,
 			autoAdjustmentReason: reason,
 			autoAdjustedAt: now,
@@ -651,6 +669,27 @@ export async function adjustAutomaticBreakInTransaction(
 	if (updatedRecords.length !== 1) {
 		throw new CompletedWorkIntegrityError("Canonical work record update failed");
 	}
+	// The canonical detail mirrors the retained work's kilometres (#1126).
+	if (sourceVehicleUse) {
+		const updatedDetails = await tx
+			.update(timeRecordWork)
+			.set({
+				odometerStartKm: retainedVehicle.odometerStartKm,
+				odometerEndKm: retainedVehicle.odometerEndKm,
+				drivenDistanceKm: retainedVehicle.drivenDistanceKm,
+			})
+			.where(
+				and(
+					eq(timeRecordWork.recordId, record.id),
+					eq(timeRecordWork.organizationId, organizationId),
+					eq(timeRecordWork.recordKind, "work"),
+				),
+			)
+			.returning({ recordId: timeRecordWork.recordId });
+		if (updatedDetails.length !== 1) {
+			throw new CompletedWorkIntegrityError("Canonical work detail update failed");
+		}
+	}
 
 	// The generated record keeps the originating work's origin, approval state and
 	// recording actor; no new decision is recorded for it.
@@ -676,6 +715,11 @@ export async function adjustAutomaticBreakInTransaction(
 		workCategoryId: detail.workCategoryId,
 		workLocationType: detail.workLocationType,
 		computationMetadata: detail.computationMetadata,
+		vehicleKind: generatedVehicle.vehicleKind,
+		vehicleId: generatedVehicle.vehicleId,
+		odometerStartKm: generatedVehicle.odometerStartKm,
+		odometerEndKm: generatedVehicle.odometerEndKm,
+		drivenDistanceKm: generatedVehicle.drivenDistanceKm,
 	});
 	for (const allocation of allocations) {
 		await tx.insert(timeRecordAllocation).values({
@@ -701,6 +745,11 @@ export async function adjustAutomaticBreakInTransaction(
 			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
+			vehicleKind: generatedVehicle.vehicleKind,
+			vehicleId: generatedVehicle.vehicleId,
+			odometerStartKm: generatedVehicle.odometerStartKm,
+			odometerEndKm: generatedVehicle.odometerEndKm,
+			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
 			startTime: breakEndDate,
 			endTime: period.endTime,
 			durationMinutes: plan.generatedMinutes,
@@ -760,6 +809,7 @@ export async function adjustAutomaticBreakInTransaction(
 		startAt: Instant;
 		endAt: Instant;
 		durationMinutes: number;
+		vehicleUse: WorkVehicleUse | null;
 	}): AutomaticBreakSegment => ({
 		workPeriodId: values.workPeriodId,
 		canonicalRecordId: values.canonicalRecordId,
@@ -770,7 +820,8 @@ export async function adjustAutomaticBreakInTransaction(
 		durationMinutes: values.durationMinutes,
 		startUtcOffsetMinutes: values.clockIn.utcOffsetMinutes ?? null,
 		endUtcOffsetMinutes: values.clockOut.utcOffsetMinutes ?? null,
-		attribution,
+		// Vehicle use only when there is one, keeping earlier receipts' shape (#1126).
+		attribution: values.vehicleUse ? { ...attribution, vehicleUse: values.vehicleUse } : attribution,
 	});
 	const command: AutomaticBreakAdjustmentCommand = {
 		version: AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION,
@@ -797,6 +848,7 @@ export async function adjustAutomaticBreakInTransaction(
 				startAt: sourceStart,
 				endAt: sourceEnd,
 				durationMinutes: period.durationMinutes,
+				vehicleUse: sourceVehicleUse,
 			}),
 			approvalState: period.approvalStatus,
 			recordCreatedBy: record.createdBy,
@@ -837,6 +889,7 @@ export async function adjustAutomaticBreakInTransaction(
 					startAt: sourceStart,
 					endAt: plan.breakStartAt,
 					durationMinutes: plan.retainedMinutes,
+					vehicleUse: vehicleSplit.retained,
 				}),
 			},
 			{
@@ -849,6 +902,7 @@ export async function adjustAutomaticBreakInTransaction(
 					startAt: plan.breakEndAt,
 					endAt: sourceEnd,
 					durationMinutes: plan.generatedMinutes,
+					vehicleUse: vehicleSplit.generated,
 				}),
 				origin: { workPeriodId: period.id, canonicalRecordId: record.id },
 				approval: {
@@ -1058,12 +1112,20 @@ export async function applyLegacyAutomaticBreakInTransaction(
 	};
 	const firstClockOut = await insertEntry("clock_out", plan.breakStart, head?.hash ?? null);
 	const secondClockIn = await insertEntry("clock_in", plan.breakEnd, firstClockOut.hash);
+	// The vehicle carries over the break; nobody read the odometer at it (#1126). Each
+	// representation divides its own vehicle use.
+	const periodVehicle = vehicleUseAcrossAutomaticBreak(vehicleUseFromColumns(period));
+	const retainedVehicle = vehicleUseColumns(periodVehicle.retained);
+	const generatedVehicle = vehicleUseColumns(periodVehicle.generated);
 	const updated = await tx
 		.update(workPeriod)
 		.set({
 			clockOutId: firstClockOut.id,
 			endTime: plan.breakStart,
 			durationMinutes: plan.firstDurationMinutes,
+			odometerStartKm: retainedVehicle.odometerStartKm,
+			odometerEndKm: retainedVehicle.odometerEndKm,
+			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
 			wasAutoAdjusted: true,
 			autoAdjustmentReason: plan.reason,
 			autoAdjustedAt: now,
@@ -1102,6 +1164,30 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		if (updatedRecords.length !== 1) {
 			throw new CompletedWorkIntegrityError("Canonical work record update failed");
 		}
+		const detailVehicleUse = vehicleUseFromColumns(canonical.detail);
+		const detailVehicle = vehicleUseAcrossAutomaticBreak(detailVehicleUse);
+		const retainedDetailVehicle = vehicleUseColumns(detailVehicle.retained);
+		const generatedDetailVehicle = vehicleUseColumns(detailVehicle.generated);
+		if (detailVehicleUse) {
+			const updatedDetails = await tx
+				.update(timeRecordWork)
+				.set({
+					odometerStartKm: retainedDetailVehicle.odometerStartKm,
+					odometerEndKm: retainedDetailVehicle.odometerEndKm,
+					drivenDistanceKm: retainedDetailVehicle.drivenDistanceKm,
+				})
+				.where(
+					and(
+						eq(timeRecordWork.recordId, canonical.record.id),
+						eq(timeRecordWork.organizationId, organizationId),
+						eq(timeRecordWork.recordKind, "work"),
+					),
+				)
+				.returning({ recordId: timeRecordWork.recordId });
+			if (updatedDetails.length !== 1) {
+				throw new CompletedWorkIntegrityError("Canonical work detail update failed");
+			}
+		}
 		// The generated record keeps the originating work's origin, approval state and
 		// recording actor; no new decision is recorded for it.
 		generatedRecordId = randomUUID();
@@ -1126,6 +1212,11 @@ export async function applyLegacyAutomaticBreakInTransaction(
 			workCategoryId: canonical.detail.workCategoryId,
 			workLocationType: canonical.detail.workLocationType,
 			computationMetadata: canonical.detail.computationMetadata,
+			vehicleKind: generatedDetailVehicle.vehicleKind,
+			vehicleId: generatedDetailVehicle.vehicleId,
+			odometerStartKm: generatedDetailVehicle.odometerStartKm,
+			odometerEndKm: generatedDetailVehicle.odometerEndKm,
+			drivenDistanceKm: generatedDetailVehicle.drivenDistanceKm,
 		});
 		for (const allocation of canonical.allocations) {
 			await tx.insert(timeRecordAllocation).values({
@@ -1155,6 +1246,11 @@ export async function applyLegacyAutomaticBreakInTransaction(
 			taskId: period.taskId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
+			vehicleKind: generatedVehicle.vehicleKind,
+			vehicleId: generatedVehicle.vehicleId,
+			odometerStartKm: generatedVehicle.odometerStartKm,
+			odometerEndKm: generatedVehicle.odometerEndKm,
+			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
 			canonicalRecordId: generatedRecordId,
 			isActive: false,
 			wasAutoAdjusted: true,

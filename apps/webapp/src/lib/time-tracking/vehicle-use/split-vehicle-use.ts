@@ -127,3 +127,17 @@ export function splitWorkVehicleUse(
 		{ startKm: null, endKm: null, distanceKm: null },
 	);
 }
+
+/**
+ * Vehicle use across a break an automatic writer inserts (automatic break
+ * adjustment, policy clock-out terminal break): nobody read the odometer at the
+ * cut, so it splits as a skipped value does.
+ */
+export function vehicleUseAcrossAutomaticBreak(use: WorkVehicleUse | null): {
+	retained: WorkVehicleUse | null;
+	generated: WorkVehicleUse | null;
+} {
+	const split = splitWorkVehicleUse(use, null);
+	if (!split.ok) throw new Error("Recorded vehicle use cannot be split");
+	return { retained: split.retained, generated: split.generated };
+}
