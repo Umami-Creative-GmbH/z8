@@ -30,7 +30,6 @@ export interface EmployeeInfo {
 	position?: string | null;
 	email?: string;
 	contractType?: "fixed" | "hourly";
-	currentHourlyRate?: string | null;
 	/**
 	 * The employee's active custom fields the requester sees, in their defined
 	 * order, with values as of the report period's last day (#820).
@@ -124,7 +123,7 @@ export interface ReportData {
 	workHours: WorkHoursData;
 	absences: AbsencesData;
 	complianceMetrics: ComplianceMetrics;
-	/** Earnings data (only for hourly employees) */
+	/** Earnings under confirmed hourly employment terms in force during the period, if any */
 	hourlyEarnings?: HourlyEarningsData;
 }
 
