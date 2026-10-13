@@ -174,6 +174,9 @@ export enum AuditAction {
 	// Sick notes linked to or unlinked from an absence by an officer (#984)
 	PERSONNEL_FILE_SICK_NOTE_LINKED = "personnel_file.sick_note_linked",
 	PERSONNEL_FILE_SICK_NOTE_UNLINKED = "personnel_file.sick_note_unlinked",
+	// A certificate naming (or changing) the employee skill it proves, or no longer naming one (#1144)
+	PERSONNEL_FILE_SKILL_CERTIFICATE_LINKED = "personnel_file.skill_certificate_linked",
+	PERSONNEL_FILE_SKILL_CERTIFICATE_UNLINKED = "personnel_file.skill_certificate_unlinked",
 
 	// ICS Feed Operations (#991)
 	ICS_FEED_CREATED = "ics_feed.created",

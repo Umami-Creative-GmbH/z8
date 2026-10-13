@@ -246,6 +246,9 @@ export const queryKeys = {
 		/** An employee's sick leave in the officer area (#984). */
 		employeeSickLeave: (employeeId: string) =>
 			["personnel-file", "sick-notes", "sick-leave", employeeId] as const,
+		/** The employee skills a certificate may name (#1144). */
+		certificateSkills: (employeeId: string) =>
+			["personnel-file", "certificate-skills", employeeId] as const,
 	},
 
 	// Employee clock statuses
