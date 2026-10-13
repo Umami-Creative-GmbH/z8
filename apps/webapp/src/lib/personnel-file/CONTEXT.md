@@ -30,6 +30,10 @@ _Avoid_: payroll month, billing period
 The last day a certificate or other document is valid. Officers and, for shared documents, the employee are reminded before it and on it.
 _Avoid_: valid until, due date
 
+**Skill certificate**:
+A certificate that names the one employee skill it proves. Scheduling learns only that a skill certificate is on file, never its content.
+_Avoid_: skill attachment, linked document
+
 **Payslip batch**:
 Many payslips for one pay period uploaded at once and matched to employees by personnel number, saved only after an officer confirms the matches.
 _Avoid_: bulk upload, payslip import

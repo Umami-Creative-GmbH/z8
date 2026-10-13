@@ -38,4 +38,5 @@
 - **Download link ≠ report share link**: a Scheduled Exports download link hands one run's file to an approved external recipient; a Projects report share link shows a frozen report snapshot to whoever holds the URL
 - **Organization → Time Tracking**: an employee records the organization vehicle or their own vehicle they drove during a work period; Organization owns the vehicles
 - **Time Tracking → Travel Expenses**: distance driven in an own vehicle can pre-fill a mileage item; only the mileage item is reimbursed, after its own submission and approval
+- **Personnel File → Scheduling**: a skill certificate names the employee skill it proves; Scheduling knows only that one is on file, and personnel file access decides who opens it
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them
