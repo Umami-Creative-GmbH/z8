@@ -319,13 +319,8 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 					continue;
 				}
 
-				const result = await accrueVacationDays(
-					org.id,
-					targetMonth,
-					targetYear,
-					SYSTEM_USER_ID,
-					timezone,
-				);
+				// Accrual rows are system rows without an adjusting employee (#1106).
+				const result = await accrueVacationDays(org.id, targetMonth, targetYear, timezone);
 
 				totalEmployeesProcessed += result.employeesProcessed;
 				totalDaysAccrued += result.totalDaysAccrued;

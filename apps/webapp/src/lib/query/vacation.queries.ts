@@ -12,6 +12,7 @@ import {
 	absenceEntry,
 	employee,
 	employeeVacationAllowance,
+	type VacationAdjustmentKind,
 	vacationAdjustment,
 	vacationAllowance,
 } from "@/db/schema";
@@ -680,60 +681,23 @@ export interface VacationAdjustmentRecord {
 	year: number;
 	days: string; // decimal from DB
 	reason: string;
-	adjustedBy: string;
+	kind: VacationAdjustmentKind;
+	/** The adjusting employee; null on accrual rows, which the system writes (#1106). */
+	adjustedBy: string | null;
 	createdAt: Date;
 }
 
-export interface VacationAdjustmentWithAdjuster extends VacationAdjustmentRecord {
-	adjusterName: string;
-}
-
 /**
- * Get all vacation adjustment events for an employee in a specific year
- */
-export async function getEmployeeAdjustments(
-	employeeId: string,
-	year: number,
-): Promise<VacationAdjustmentWithAdjuster[]> {
-	const results = await db
-		.select({
-			id: vacationAdjustment.id,
-			employeeId: vacationAdjustment.employeeId,
-			year: vacationAdjustment.year,
-			days: vacationAdjustment.days,
-			reason: vacationAdjustment.reason,
-			adjustedBy: vacationAdjustment.adjustedBy,
-			createdAt: vacationAdjustment.createdAt,
-			adjusterFirstName: user.firstName,
-			adjusterLastName: user.lastName,
-		})
-		.from(vacationAdjustment)
-		.innerJoin(employee, eq(vacationAdjustment.adjustedBy, employee.id))
-		.innerJoin(user, eq(employee.userId, user.id))
-		.where(and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)))
-		.orderBy(desc(vacationAdjustment.createdAt));
-
-	return results.map((r) => ({
-		id: r.id,
-		employeeId: r.employeeId,
-		year: r.year,
-		days: r.days,
-		reason: r.reason,
-		adjustedBy: r.adjustedBy,
-		createdAt: r.createdAt,
-		adjusterName: [r.adjusterFirstName, r.adjusterLastName].filter(Boolean).join(" ") || "Unknown",
-	}));
-}
-
-/**
- * Create a new vacation adjustment event
+ * Create a new vacation adjustment event. The history of manual adjustments is read with
+ * `loadManualVacationAdjustments` (`lib/absences/vacation-adjustments.ts`).
  */
 export async function createVacationAdjustment(input: {
 	employeeId: string;
 	year: number;
 	days: string;
 	reason: string;
-	adjustedBy: string;
+	kind: VacationAdjustmentKind;
+	adjustedBy: string | null;
 }): Promise<VacationAdjustmentRecord> {
 	const [created] = await db
 		.insert(vacationAdjustment)
@@ -742,78 +706,10 @@ export async function createVacationAdjustment(input: {
 			year: input.year,
 			days: input.days,
 			reason: input.reason,
+			kind: input.kind,
 			adjustedBy: input.adjustedBy,
 		})
 		.returning();
 
 	return created as VacationAdjustmentRecord;
-}
-
-/**
- * Get all vacation adjustments for an organization in a specific year
- * (for audit/reporting purposes)
- */
-export async function getOrganizationAdjustments(
-	organizationId: string,
-	year: number,
-): Promise<
-	Array<
-		VacationAdjustmentWithAdjuster & {
-			employeeName: string;
-		}
-	>
-> {
-	// Get all employees in org, then their adjustments
-	const employeesInOrg = db
-		.select({ id: employee.id })
-		.from(employee)
-		.where(eq(employee.organizationId, organizationId));
-
-	const adjusterAlias = db
-		.select({
-			id: employee.id,
-			firstName: user.firstName,
-			lastName: user.lastName,
-		})
-		.from(employee)
-		.innerJoin(user, eq(employee.userId, user.id))
-		.as("adjuster");
-
-	const results = await db
-		.select({
-			id: vacationAdjustment.id,
-			employeeId: vacationAdjustment.employeeId,
-			year: vacationAdjustment.year,
-			days: vacationAdjustment.days,
-			reason: vacationAdjustment.reason,
-			adjustedBy: vacationAdjustment.adjustedBy,
-			createdAt: vacationAdjustment.createdAt,
-			employeeFirstName: user.firstName,
-			employeeLastName: user.lastName,
-			adjusterFirstName: adjusterAlias.firstName,
-			adjusterLastName: adjusterAlias.lastName,
-		})
-		.from(vacationAdjustment)
-		.innerJoin(employee, eq(vacationAdjustment.employeeId, employee.id))
-		.innerJoin(user, eq(employee.userId, user.id))
-		.innerJoin(adjusterAlias, eq(vacationAdjustment.adjustedBy, adjusterAlias.id))
-		.where(
-			and(
-				eq(vacationAdjustment.year, year),
-				sql`${vacationAdjustment.employeeId} IN (${employeesInOrg})`,
-			),
-		)
-		.orderBy(desc(vacationAdjustment.createdAt));
-
-	return results.map((r) => ({
-		id: r.id,
-		employeeId: r.employeeId,
-		year: r.year,
-		days: r.days,
-		reason: r.reason,
-		adjustedBy: r.adjustedBy,
-		createdAt: r.createdAt,
-		employeeName: [r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
-		adjusterName: [r.adjusterFirstName, r.adjusterLastName].filter(Boolean).join(" ") || "Unknown",
-	}));
 }

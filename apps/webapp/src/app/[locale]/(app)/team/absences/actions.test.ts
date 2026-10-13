@@ -506,6 +506,7 @@ describe("manager absence metrics", () => {
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -549,6 +550,7 @@ describe("manager absence metrics", () => {
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -656,6 +658,7 @@ describe("manager absence metrics", () => {
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -763,6 +766,7 @@ describe("manager absence metrics", () => {
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -807,6 +811,7 @@ describe("manager absence metrics", () => {
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -894,6 +899,7 @@ describe("manager vacation holiday recovery", () => {
 				year: 2026,
 				allowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -972,6 +978,7 @@ describe("manager absence metrics on working days (#979)", () => {
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
