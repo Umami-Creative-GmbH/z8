@@ -297,9 +297,9 @@ describe("WorksCouncilPage", () => {
 			organizationId: "org-1",
 			settings,
 		});
-		expect(
-			mockState.auditWorksCouncilPortalViewed.mock.invocationCallOrder[0],
-		).toBeLessThan(mockState.loadWorksCouncilVehicleUseReview.mock.invocationCallOrder[0]);
+		expect(mockState.auditWorksCouncilPortalViewed.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.loadWorksCouncilVehicleUseReview.mock.invocationCallOrder[0],
+		);
 		expect(dashboard.props.vehicleUse).toEqual({ review: { enabled: false } });
 	});
 });
