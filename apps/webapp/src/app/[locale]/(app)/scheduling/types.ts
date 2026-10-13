@@ -1,6 +1,7 @@
 import type { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
+import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 
 export type Shift = typeof shift.$inferSelect;
 export type ShiftTemplate = typeof shiftTemplate.$inferSelect;
@@ -74,21 +75,8 @@ export interface ShiftRequestWithRelations extends ShiftRequest {
 	} | null;
 }
 
-export interface SkillWarningInfo {
-	isQualified: boolean;
-	missingSkills: Array<{
-		id: string;
-		name: string;
-		category: string;
-		isRequired: boolean;
-	}>;
-	expiredSkills: Array<{
-		id: string;
-		name: string;
-		/** Skill expiry date, `YYYY-MM-DD`. */
-		expiresAt: string;
-	}>;
-}
+/** The shift save warning, the same skill check scheduling shows elsewhere. */
+export type SkillWarningInfo = SkillValidationResult;
 
 export interface ShiftMetadata {
 	hasOverlap: boolean;

@@ -2,9 +2,9 @@ import { eq } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { skillReminderSetting } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import { expiryWindowEnd } from "@/lib/expiry-reminders/expiry";
+import { DEFAULT_EXPIRY_REMINDER_LEAD_DAYS, expiryWindowEnd } from "@/lib/expiry-reminders/expiry";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { DEFAULT_SKILL_EXPIRING_SOON_DAYS, skillExpiryToday } from "./skill-expiry";
+import { skillExpiryToday } from "./skill-expiry";
 
 /**
  * The skill reminder setting (#1143): the lead time in days before a skill
@@ -27,7 +27,7 @@ export async function loadSkillReminderLeadDays(
 		.from(skillReminderSetting)
 		.where(eq(skillReminderSetting.organizationId, organizationId))
 		.limit(1);
-	return row?.leadDays ?? DEFAULT_SKILL_EXPIRING_SOON_DAYS;
+	return row?.leadDays ?? DEFAULT_EXPIRY_REMINDER_LEAD_DAYS;
 }
 
 /** Stores a validated lead time (`validateExpiryReminderLeadDays`) for the actor's organization. */

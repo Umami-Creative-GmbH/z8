@@ -25,6 +25,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TFormItem } from "@/components/ui/tanstack-form";
 import type { EmployeeDocumentView } from "@/lib/personnel-file/document-store";
+import type { SkillCertificateLinkRefusal } from "@/lib/personnel-file/skill-certificate";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
@@ -36,6 +37,31 @@ import { queryKeys } from "@/lib/query/keys";
  */
 
 const NO_SKILL = "none";
+
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** The copy for a refused certificate skill (the failed result's `code`), or null for any other failure. */
+function certificateSkillRefusalText(t: Translate, code: string | undefined): string | null {
+	switch (code as SkillCertificateLinkRefusal | undefined) {
+		case "not_certificate":
+			return t(
+				"settings.personnelFiles.skillCertificates.errors.notCertificate",
+				"Only certificates can prove a skill.",
+			);
+		case "undated_requires_expiry":
+			return t(
+				"settings.personnelFiles.skillCertificates.errors.undatedRequiresExpiry",
+				"This skill requires an expiry date. Only a certificate with an expiry date can prove it.",
+			);
+		case "not_employee_skill":
+			return t(
+				"settings.personnelFiles.skillCertificates.errors.notEmployeeSkill",
+				"Choose one of this employee's skills.",
+			);
+		default:
+			return null;
+	}
+}
 
 export function CertificateSkillDialog({
 	document,
@@ -67,8 +93,9 @@ export function CertificateSkillDialog({
 				employeeSkillId: value.selection === NO_SKILL ? null : value.selection,
 			});
 			if (!result.success) {
+				// Server wording is never shown: a refusal gets its own copy, anything else the generic one.
 				toast.error(
-					result.error ||
+					certificateSkillRefusalText(t, result.code) ??
 						t(
 							"settings.personnelFiles.skillCertificates.saveFailed",
 							"The skill of the certificate could not be saved.",

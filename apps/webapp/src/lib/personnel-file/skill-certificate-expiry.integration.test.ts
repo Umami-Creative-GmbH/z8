@@ -325,7 +325,11 @@ describe("skill certificates set the skill expiry date (#1145)", () => {
 			const certificate = await seedCertificate("anna", { expiryDate: "2028-03-31" });
 			await link(certificate, ids.annaForklift);
 
-			expect(await editOnSkillSide("annaForklift", "2030-01-31")).toMatchObject(rejected);
+			// A stable refusal the skills card maps to its own copy.
+			expect(await editOnSkillSide("annaForklift", "2030-01-31")).toMatchObject({
+				_tag: "Failure",
+				failure: expect.objectContaining({ refusal: "expiry_date_set_by_certificate" }),
+			});
 			expect(await expiryOf(ids.annaForklift)).toBe("2028-03-31");
 
 			const skills = await runSkills((service) => service.getEmployeeSkills(ORG, ids.anna));

@@ -1,7 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
 import {
-	DEFAULT_SKILL_EXPIRING_SOON_DAYS,
 	isExpiredSkillOn,
 	parseSkillExpiryDate,
 	skillExpiryBadge,
@@ -33,11 +32,7 @@ describe("isExpiredSkillOn", () => {
 });
 
 describe("skillExpiryBadge", () => {
-	const window = { today: "2026-10-31", expiringSoonDays: DEFAULT_SKILL_EXPIRING_SOON_DAYS };
-
-	it("keeps a 30-day expiring soon window", () => {
-		expect(DEFAULT_SKILL_EXPIRING_SOON_DAYS).toBe(30);
-	});
+	const window = { today: "2026-10-31", expiringSoonDays: 30 };
 
 	it("shows nothing for a skill that never expires", () => {
 		expect(skillExpiryBadge({ ...window, expiresAt: null })).toBeNull();

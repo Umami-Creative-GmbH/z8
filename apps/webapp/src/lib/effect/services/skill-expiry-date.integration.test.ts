@@ -357,7 +357,7 @@ describe("skill expiry date (#1142)", () => {
 			const saved = await saveShift(holder, DAY_AFTER);
 
 			expect(saved.metadata.skillWarning?.expiredSkills).toEqual([
-				{ id: firstAid, name: "First aid", expiresAt: LAST_VALID_DAY },
+				{ id: firstAid, name: "First aid", expiresAt: LAST_VALID_DAY, certificateOnFile: false },
 			]);
 		});
 	});

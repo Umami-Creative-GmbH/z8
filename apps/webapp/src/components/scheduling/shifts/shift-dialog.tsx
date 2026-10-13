@@ -77,7 +77,8 @@ export function ShiftDialog({
 				warnings.push(`Overlaps with ${result.metadata.overlappingShifts.length} other shift(s)`);
 			}
 
-			if (result.metadata.skillWarning && !result.metadata.skillWarning.isQualified) {
+			// A warning comes with any missing or expired skill, optional ones included.
+			if (result.metadata.skillWarning) {
 				const missingCount = result.metadata.skillWarning.missingSkills?.length ?? 0;
 				const expiredCount = result.metadata.skillWarning.expiredSkills?.length ?? 0;
 				if (missingCount > 0 || expiredCount > 0) {
@@ -85,6 +86,21 @@ export function ShiftDialog({
 					if (missingCount > 0) parts.push(`${missingCount} missing skill(s)`);
 					if (expiredCount > 0) parts.push(`${expiredCount} expired certification(s)`);
 					warnings.push(`Employee has ${parts.join(" and ")}`);
+				}
+				// Only that a skill certificate is on file, never its content (#1144).
+				const withCertificate = result.metadata.skillWarning.expiredSkills
+					.filter((skill) => skill.certificateOnFile)
+					.map((skill) => skill.name);
+				if (withCertificate.length > 0) {
+					warnings.push(
+						t(
+							"scheduling:scheduling.shiftDialog.certificateOnFileFor",
+							"Certificate on file: {skills}",
+							{
+								skills: withCertificate.join(", "),
+							},
+						),
+					);
 				}
 			}
 
