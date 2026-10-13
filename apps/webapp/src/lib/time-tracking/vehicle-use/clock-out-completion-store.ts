@@ -116,7 +116,8 @@ async function writeLegacyVehicleUse(
  * expected, a newly picked vehicle must be pickable, a closed month and work
  * under review refuse, and a submitted period it touches goes back.
  *
- * Refuses with `NotFoundError` when the work is not the employee's closed work,
+ * Refuses with `NotFoundError` when the work is not the employee's work closed
+ * by `clockOutId`,
  * `ConflictError` `vehicle_use_completion_closed` after the window and
  * `vehicle_use_unchanged` when nothing is missing; vehicle use refusals as
  * `workVehicleUseRefusal`.
@@ -126,6 +127,12 @@ export async function completeClockOutVehicleUse(input: {
 	employeeId: string;
 	actorUserId: string;
 	workPeriodId: string;
+	/**
+	 * The clock-out entry the asking client's clock-out created (#807 decision 7):
+	 * only the work that clock-out closed is completed, never work closed
+	 * automatically, at departure or on someone's behalf.
+	 */
+	clockOutId: string;
 	supplied: ClockVehicleUse;
 	now: Instant;
 }): Promise<WorkVehicleUse> {
@@ -148,7 +155,12 @@ export async function completeClockOutVehicleUse(input: {
 						),
 					);
 			const plan = (period: typeof workPeriod.$inferSelect | undefined) => {
-				if (!period || period.endTime === null || period.clockOutId === null) {
+				if (
+					!period ||
+					period.endTime === null ||
+					period.clockOutId === null ||
+					period.clockOutId !== input.clockOutId
+				) {
 					throw notClosed(workPeriodId);
 				}
 				const deadline = instantFromDate(period.endTime).add({

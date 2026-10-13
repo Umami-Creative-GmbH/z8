@@ -4,11 +4,13 @@ import {
 	TEAMS_VEHICLE_USE_VERBS,
 	type TeamsVehicleUsePrompt,
 	teamsVehicleUseCard,
+	teamsVehicleUseOutcomeCard,
 } from "./vehicle-use-card";
 
 const van = "0b9f8f2e-6c1d-4d6c-9a43-7f2f3c1f5e10";
 const truck = "5c0e7d1a-2b3c-4d5e-8f90-a1b2c3d4e5f6";
 const work = "8f0c4f8e-1f1e-4c39-9f0e-2d1a3b4c5d6e";
+const clockOut = "3d2c1b0a-9f8e-4d7c-8b6a-5f4e3d2c1b0a";
 
 const t = (_key: string, fallback: string, params?: Record<string, string | number>) =>
 	fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? ""));
@@ -41,6 +43,7 @@ function invoke(
 const clockInPrompt: TeamsVehicleUsePrompt = {
 	stage: "clock_in",
 	workPeriodId: work,
+	clockOutEntryId: null,
 	vehicles: [
 		{ id: van, label: "Van (M-VW 1)" },
 		{ id: truck, label: "Truck (M-TR 2)" },
@@ -84,6 +87,7 @@ describe("Teams vehicle use card", () => {
 			{
 				stage: "clock_out",
 				workPeriodId: work,
+				clockOutEntryId: clockOut,
 				vehicles: [],
 				suggestedVehicleId: null,
 				prefillStartKm: null,
@@ -102,6 +106,7 @@ describe("Teams vehicle use card", () => {
 			{
 				stage: "clock_out",
 				workPeriodId: work,
+				clockOutEntryId: clockOut,
 				vehicles: [],
 				suggestedVehicleId: null,
 				prefillStartKm: null,
@@ -116,12 +121,39 @@ describe("Teams vehicle use card", () => {
 	});
 
 	it("asks a clock-out of work without a vehicle for vehicle and both readings", () => {
-		const card = teamsVehicleUseCard({ ...clockInPrompt, stage: "clock_out" }, t);
+		const card = teamsVehicleUseCard(
+			{ ...clockInPrompt, stage: "clock_out", clockOutEntryId: clockOut },
+			t,
+		);
 
 		expect(inputs(card).map((input) => input.id)).toEqual(["vehicle", "startKm", "endKm"]);
+		// Both actions name the clock-out entry the completion is bound to (#807 decision 7).
 		expect(action(card, TEAMS_VEHICLE_USE_VERBS.save)).toMatchObject({
-			data: { s: "clock_out", w: work, pv: van, pk: 12_000 },
+			data: { s: "clock_out", w: work, c: clockOut, pv: van, pk: 12_000 },
 		});
+		expect(action(card, TEAMS_VEHICLE_USE_VERBS.skip)).toMatchObject({
+			data: { s: "clock_out", w: work, c: clockOut },
+		});
+	});
+
+	it("shows the plausibility warnings of what was saved, never controls", () => {
+		const card = teamsVehicleUseOutcomeCard("Vehicle use saved.", {
+			title: "Please check the vehicle use:",
+			lines: ["1,600 km is more than 1,500 km in one work period."],
+		});
+
+		expect(card.body).toEqual([
+			{ type: "TextBlock", text: "Vehicle use saved.", wrap: true },
+			expect.objectContaining({ text: "Please check the vehicle use:", color: "warning" }),
+			expect.objectContaining({
+				text: "1,600 km is more than 1,500 km in one work period.",
+				color: "warning",
+			}),
+		]);
+		expect(card).not.toHaveProperty("actions");
+		expect(
+			teamsVehicleUseOutcomeCard("Vehicle use saved.", { title: "x", lines: [] }).body,
+		).toEqual([{ type: "TextBlock", text: "Vehicle use saved.", wrap: true }]);
 	});
 
 	it("names markdown in vehicle names as text", () => {
@@ -129,6 +161,7 @@ describe("Teams vehicle use card", () => {
 			{
 				stage: "clock_out",
 				workPeriodId: work,
+				clockOutEntryId: clockOut,
 				vehicles: [],
 				suggestedVehicleId: null,
 				prefillStartKm: null,
@@ -207,30 +240,57 @@ describe("Teams vehicle use card presses", () => {
 	it("reads a saved clock-out's end reading or distance", () => {
 		expect(
 			parseTeamsVehicleUseInvoke(
-				invoke(TEAMS_VEHICLE_USE_VERBS.save, { s: "clock_out", w: work, endKm: 12_085 }),
+				invoke(TEAMS_VEHICLE_USE_VERBS.save, {
+					s: "clock_out",
+					w: work,
+					c: clockOut.toUpperCase(),
+					endKm: 12_085,
+				}),
 			),
 		).toEqual({
 			kind: "save",
 			stage: "clock_out",
 			workPeriodId: work,
+			clockOutId: clockOut,
 			supplied: { endKm: 12_085 },
 		});
 		expect(
 			parseTeamsVehicleUseInvoke(
-				invoke(TEAMS_VEHICLE_USE_VERBS.save, { s: "clock_out", w: work, distanceKm: "42" }),
+				invoke(TEAMS_VEHICLE_USE_VERBS.save, {
+					s: "clock_out",
+					w: work,
+					c: clockOut,
+					distanceKm: "42",
+				}),
 			),
 		).toEqual({
 			kind: "save",
 			stage: "clock_out",
 			workPeriodId: work,
+			clockOutId: clockOut,
 			supplied: { distanceKm: 42 },
 		});
 	});
 
+	it("refuses a clock-out press that names no clock-out entry", () => {
+		expect(
+			parseTeamsVehicleUseInvoke(
+				invoke(TEAMS_VEHICLE_USE_VERBS.save, { s: "clock_out", w: work, endKm: 12_085 }),
+			),
+		).toEqual({ kind: "invalid" });
+		expect(
+			parseTeamsVehicleUseInvoke(
+				invoke(TEAMS_VEHICLE_USE_VERBS.save, { s: "clock_out", w: work, c: "x", endKm: 1 }),
+			),
+		).toEqual({ kind: "invalid" });
+	});
+
 	it("reads a skip", () => {
 		expect(
-			parseTeamsVehicleUseInvoke(invoke(TEAMS_VEHICLE_USE_VERBS.skip, { s: "clock_out", w: work })),
-		).toEqual({ kind: "skip", stage: "clock_out", workPeriodId: work });
+			parseTeamsVehicleUseInvoke(
+				invoke(TEAMS_VEHICLE_USE_VERBS.skip, { s: "clock_out", w: work, c: clockOut }),
+			),
+		).toEqual({ kind: "skip", stage: "clock_out", workPeriodId: work, clockOutId: clockOut });
 	});
 
 	it("rejects entries that cannot be read, so the card stays for a fix", () => {
@@ -245,7 +305,10 @@ describe("Teams vehicle use card presses", () => {
 			kind: "rejected",
 			code: "vehicle_required",
 		});
-		expect(save({ s: "clock_out" })).toEqual({ kind: "rejected", code: "reading_required" });
+		expect(save({ s: "clock_out", c: clockOut })).toEqual({
+			kind: "rejected",
+			code: "reading_required",
+		});
 	});
 
 	it("refuses presses outside the supported callback profile", () => {

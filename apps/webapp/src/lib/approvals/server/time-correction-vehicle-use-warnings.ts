@@ -1,10 +1,12 @@
 import "server-only";
 
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 import {
 	checkWorkVehicleUsePlausibility,
 	type VehicleUseFactsReader,
 } from "@/lib/time-tracking/vehicle-use/plausibility-check";
+import type { TimeCorrectionSubmittedRevisionRecord } from "../evidence/store";
 import {
 	requestedVehicleUseChange,
 	type TimeCorrectionMetadataChanges,
@@ -45,4 +47,28 @@ export async function withVehicleUseReviewWarnings(
 	return warnings.length > 0
 		? { ...changes, vehicleUse: { ...changes.vehicleUse, warnings } }
 		: changes;
+}
+
+/**
+ * The plausibility warnings (#1121) for the vehicle use a submitted time
+ * correction revision requests, for the bot approval card and the review
+ * evidence rows: checked over the requested interval (the corrected endpoints,
+ * or the work's own), now. Empty when the revision requests no vehicle use.
+ */
+export async function submittedVehicleUseWarnings(
+	reader: VehicleUseFactsReader,
+	revision: TimeCorrectionSubmittedRevisionRecord,
+): Promise<VehicleUseWarning[]> {
+	const { baseline, requested, changeMask, intent } = revision.facts;
+	if (intent === "delete" || !changeMask.vehicleUse || !requested.vehicleUse?.value) return [];
+	const start = changeMask.clockIn && requested.clockIn ? requested.clockIn : baseline.clockIn;
+	const end = changeMask.clockOut && requested.clockOut ? requested.clockOut : baseline.clockOut;
+	return checkWorkVehicleUsePlausibility(reader, {
+		organizationId: revision.organizationId,
+		employeeId: revision.subjectEmployeeId,
+		use: requested.vehicleUse.value,
+		start: parseInstant(start.at),
+		end: end ? parseInstant(end.at) : null,
+		excludeWorkPeriodId: revision.workPeriodId,
+	});
 }

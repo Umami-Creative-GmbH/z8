@@ -3,15 +3,17 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
+import { vehicleUseWarningBotText } from "@/lib/approvals/presentation/vehicle-use-warning-text";
 import { type BotTranslateFn, getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import type { BotCommandResponse } from "@/lib/bot-platform/types";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { completeClockOutVehicleUse } from "@/lib/time-tracking/vehicle-use/clock-out-completion-store";
 import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
 import { changeLiveWorkVehicleUse } from "@/lib/time-tracking/vehicle-use/live-vehicle-use";
+import { checkWorkVehicleUsePlausibility } from "@/lib/time-tracking/vehicle-use/plausibility-check";
 import {
 	buildWorkVehicleUse,
 	organizationVehicleIdOf,
@@ -28,20 +30,12 @@ import {
 	type TeamsVehicleUseEntryRejection,
 	type TeamsVehicleUseInvoke,
 	type TeamsVehicleUsePrompt,
-	type TeamsVehicleUseStage,
+	type TeamsVehicleUsePromptTarget,
 	teamsVehicleUseCard,
 	teamsVehicleUseOutcomeCard,
 } from "./vehicle-use-card";
 
 const logger = createLogger("TeamsVehicleUse");
-
-type PromptTarget = {
-	organizationId: string;
-	employeeId: string;
-	stage: TeamsVehicleUseStage;
-	/** The committed clock entry: the clock-in that started or the clock-out that closed the work. */
-	entryId: string;
-};
 
 /**
  * What the card asks after a committed Teams clock command (#1125), or null
@@ -49,7 +43,7 @@ type PromptTarget = {
  * already records a vehicle, or the closed work's drive already has its end.
  */
 export async function loadTeamsVehicleUsePrompt(
-	target: PromptTarget,
+	target: TeamsVehicleUsePromptTarget,
 ): Promise<TeamsVehicleUsePrompt | null> {
 	const { organizationId, employeeId } = target;
 	const [period] = await db
@@ -89,6 +83,7 @@ export async function loadTeamsVehicleUsePrompt(
 	return {
 		stage: target.stage,
 		workPeriodId: period.id,
+		clockOutEntryId: target.stage === "clock_out" ? target.entryId : null,
 		vehicles: context.vehicles
 			.filter((vehicle) => !vehicle.archived)
 			.map((vehicle) => ({ id: vehicle.id, label: label(vehicle) })),
@@ -107,33 +102,71 @@ export async function loadTeamsVehicleUsePrompt(
 
 /**
  * A committed Teams clock command's reply with the vehicle use card, when the
- * card asks anything. The command is already committed, so failing to build the
- * card only loses the card.
+ * card asks anything. The caller (`commands/vehicle-use-reply.ts`) keeps the
+ * committed reply when building the card fails.
  */
 export async function withTeamsVehicleUsePrompt(
 	reply: BotCommandResponse,
-	target: PromptTarget,
+	target: TeamsVehicleUsePromptTarget,
 	t: BotTranslateFn,
 ): Promise<BotCommandResponse> {
-	try {
-		const prompt = await loadTeamsVehicleUsePrompt(target);
-		if (!prompt) return reply;
-		return { type: "card", text: reply.text, card: teamsVehicleUseCard(prompt, t) };
-	} catch (error) {
-		logger.error({ error, stage: target.stage }, "Failed to build the vehicle use card");
-		return reply;
-	}
+	const prompt = await loadTeamsVehicleUsePrompt(target);
+	if (!prompt) return reply;
+	return { type: "card", text: reply.text, card: teamsVehicleUseCard(prompt, t) };
 }
 
-function replaceCard(text: string): TeamsInvokeResponse {
+function replaceCard(
+	text: string,
+	warnings?: Parameters<typeof teamsVehicleUseOutcomeCard>[1],
+): TeamsInvokeResponse {
 	return {
 		status: 200,
 		body: {
 			statusCode: 200,
 			type: "application/vnd.microsoft.card.adaptive",
-			value: teamsVehicleUseOutcomeCard(text),
+			value: teamsVehicleUseOutcomeCard(text, warnings),
 		},
 	};
+}
+
+/**
+ * The plausibility warnings (#1121) of the vehicle use the work records after a
+ * save, as the web shows them on entry. Reading them never undoes the save: a
+ * failure only loses the warnings.
+ */
+async function savedVehicleUseWarnings(
+	scope: { organizationId: string; employeeId: string; workPeriodId: string },
+	t: BotTranslateFn,
+	locale: string,
+): Promise<string[]> {
+	try {
+		const [period] = await db
+			.select()
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.id, scope.workPeriodId),
+					eq(workPeriod.organizationId, scope.organizationId),
+					eq(workPeriod.employeeId, scope.employeeId),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.limit(1);
+		const use = period ? vehicleUseFromColumns(period) : null;
+		if (!period || !use) return [];
+		const warnings = await checkWorkVehicleUsePlausibility(db, {
+			organizationId: scope.organizationId,
+			employeeId: scope.employeeId,
+			use,
+			start: instantFromDate(period.startTime),
+			end: period.endTime ? instantFromDate(period.endTime) : null,
+			excludeWorkPeriodId: period.id,
+		});
+		return warnings.map((warning) => vehicleUseWarningBotText(t, warning, locale));
+	} catch (error) {
+		logger.error({ error }, "Failed to check the saved vehicle use");
+		return [];
+	}
 }
 
 /** An entry to fix: Teams shows the message and keeps the card. */
@@ -185,8 +218,13 @@ export async function handleTeamsVehicleUseInvoke(
 	user: ResolvedTeamsUser,
 	tenant: ResolvedTenant,
 ): Promise<TeamsInvokeResponse> {
-	const t = await getBotTranslate(await getUserLocale(user.userId));
-	const saved = () => replaceCard(t("bot.vehicleUse.saved", "Vehicle use saved."));
+	const locale = await getUserLocale(user.userId);
+	const t = await getBotTranslate(locale);
+	const saved = (warnings: readonly string[] = []) =>
+		replaceCard(t("bot.vehicleUse.saved", "Vehicle use saved."), {
+			title: t("bot.vehicleUse.warning.title", "Please check the vehicle use:"),
+			lines: warnings,
+		});
 	const addInZ8 = t(
 		"bot.vehicleUse.addInZ8",
 		"This card has expired. Add vehicle use to this work in Z8.",
@@ -221,11 +259,12 @@ export async function handleTeamsVehicleUseInvoke(
 		} else {
 			await completeClockOutVehicleUse({
 				...scope,
+				clockOutId: invoke.clockOutId,
 				supplied: invoke.supplied,
 				now: systemClock.nowInstant(),
 			});
 		}
-		return saved();
+		return saved(await savedVehicleUseWarnings(scope, t, locale));
 	} catch (error) {
 		// A repeated press of what is already recorded.
 		if (

@@ -358,7 +358,7 @@ describe("vehicle use through the Teams bot on PostgreSQL", () => {
 		]);
 		await press(
 			TEAMS_VEHICLE_USE_VERBS.skip,
-			{ s: "clock_out", w: saveData(clockedOut.card).w },
+			{ s: "clock_out", w: saveData(clockedOut.card).w, c: saveData(clockedOut.card).c },
 			clockInAt.add({ hours: 4, minutes: 1 }),
 		);
 
@@ -390,6 +390,65 @@ describe("vehicle use through the Teams bot on PostgreSQL", () => {
 			driven_distance_km: 30,
 		};
 		expect(await periods()).toEqual([expect.objectContaining({ ...truck, record: truck })]);
+	});
+
+	it("shows the plausibility warnings of saved vehicle use, as the web does on entry", async () => {
+		reply(await message("clockin", clockInAt));
+		const clockedOut = reply(await message("clockout", clockInAt.add({ hours: 1 })));
+
+		// 300 km in one hour: saved, with a warning.
+		const saved = await press(
+			TEAMS_VEHICLE_USE_VERBS.save,
+			{ ...saveData(clockedOut.card), vehicle: ids.truck, startKm: "500", endKm: "800" },
+			clockInAt.add({ hours: 1, minutes: 2 }),
+		);
+
+		const text = outcome(saved);
+		expect(text).toContain("Vehicle use saved");
+		expect(text).toContain("Please check the vehicle use:");
+		expect(text).toContain("an average of 300 km/h over this work period, more than 150 km/h");
+		expect((await periods())[0]).toMatchObject({ driven_distance_km: 300 });
+	});
+
+	it("completes only the work this Teams clock-out closed (#807 decision 7)", async () => {
+		reply(await message("clockin", clockInAt));
+		const first = reply(await message("clockout", clockInAt.add({ hours: 4 })));
+		reply(await message("clockin", clockInAt.add({ hours: 5 })));
+		const second = reply(await message("clockout", clockInAt.add({ hours: 6 })));
+		const firstCard = saveData(first.card);
+		const secondCard = saveData(second.card);
+		expect(firstCard.c).toEqual(expect.any(String));
+		expect(firstCard.c).not.toBe(secondCard.c);
+		const entry = { vehicle: ids.truck, startKm: "500", endKm: "530" };
+		const at = clockInAt.add({ hours: 6, minutes: 1 });
+
+		// A crafted press names other work than its clock-out closed: nothing is completed.
+		const crafted = await press(
+			TEAMS_VEHICLE_USE_VERBS.save,
+			{ ...firstCard, w: secondCard.w, ...entry },
+			at,
+		);
+		expect(outcome(crafted)).toContain("Add vehicle use to this work in Z8");
+		const swapped = await press(
+			TEAMS_VEHICLE_USE_VERBS.save,
+			{ ...secondCard, c: firstCard.c, ...entry },
+			at,
+		);
+		expect(outcome(swapped)).toContain("Add vehicle use to this work in Z8");
+		// A press without its clock-out entry is not read at all.
+		const unbound = await press(
+			TEAMS_VEHICLE_USE_VERBS.save,
+			{ s: "clock_out", w: secondCard.w, ...entry },
+			at,
+		);
+		expect(unbound.body).toMatchObject({ statusCode: 400 });
+		expect((await periods()).map((period) => period.vehicle_kind)).toEqual([null, null]);
+
+		// The genuine press completes its own work only.
+		expect(
+			outcome(await press(TEAMS_VEHICLE_USE_VERBS.save, { ...secondCard, ...entry }, at)),
+		).toContain("Vehicle use saved");
+		expect((await periods()).map((period) => period.vehicle_id)).toEqual([null, ids.truck]);
 	});
 
 	it("asks nothing while vehicle use is off", async () => {

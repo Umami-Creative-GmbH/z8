@@ -25,10 +25,25 @@ export const TEAMS_VEHICLE_USE_VERBS = {
 
 export type TeamsVehicleUseStage = "clock_in" | "clock_out";
 
+/** The committed Teams clock command a card follows. */
+export type TeamsVehicleUsePromptTarget = {
+	organizationId: string;
+	employeeId: string;
+	stage: TeamsVehicleUseStage;
+	/** The committed clock entry: the clock-in that started or the clock-out that closed the work. */
+	entryId: string;
+};
+
 /** What one card asks, for the work a clock command started or closed. */
 export type TeamsVehicleUsePrompt = {
 	stage: TeamsVehicleUseStage;
 	workPeriodId: string;
+	/**
+	 * The clock-out entry this Teams clock-out created (clock-out only). The
+	 * completion is bound to it: it fills only the work this clock-out closed
+	 * (#807 decision 7), never work closed automatically, at departure or on behalf.
+	 */
+	clockOutEntryId: string | null;
 	/** Pickable vehicles, assigned ones first; unused when the work records a vehicle. */
 	vehicles: { id: string; label: string }[];
 	/** The assigned vehicle pre-selected, if any. */
@@ -161,7 +176,13 @@ export function teamsVehicleUseCard(
 	t: BotTranslateFn,
 ): Record<string, unknown> {
 	const [title, hint] = promptText(prompt, t);
-	const target = { s: prompt.stage, w: prompt.workPeriodId };
+	const target = {
+		s: prompt.stage,
+		w: prompt.workPeriodId,
+		...(prompt.stage === "clock_out" && prompt.clockOutEntryId
+			? { c: prompt.clockOutEntryId }
+			: {}),
+	};
 	const asksVehicle = prompt.stage === "clock_in" || !prompt.recorded;
 	// What was pre-filled, so a start reading kept for another vehicle is dropped.
 	const prefilled =
@@ -199,13 +220,38 @@ export function teamsVehicleUseCard(
 	};
 }
 
-/** The card that replaces a pressed vehicle use card: its outcome, no controls. */
-export function teamsVehicleUseOutcomeCard(text: string): Record<string, unknown> {
+/**
+ * The card that replaces a pressed vehicle use card: its outcome, no controls.
+ * `warnings` are the plausibility warnings (#1121) of what was saved, under a
+ * heading; they never undo the save.
+ */
+export function teamsVehicleUseOutcomeCard(
+	text: string,
+	warnings?: { title: string; lines: readonly string[] },
+): Record<string, unknown> {
+	const warningBlocks =
+		warnings && warnings.lines.length > 0
+			? [
+					{
+						type: "TextBlock",
+						text: escapeMarkdown(warnings.title),
+						weight: "bolder",
+						color: "warning",
+						wrap: true,
+					},
+					...warnings.lines.map((line) => ({
+						type: "TextBlock",
+						text: escapeMarkdown(line),
+						color: "warning",
+						wrap: true,
+					})),
+				]
+			: [];
 	return {
 		$schema: "http://adaptivecards.io/schemas/adaptive-card.json",
 		type: "AdaptiveCard",
 		version: "1.4",
-		body: [{ type: "TextBlock", text, wrap: true }],
+		body: [{ type: "TextBlock", text, wrap: true }, ...warningBlocks],
 	};
 }
 
@@ -215,17 +261,17 @@ export type TeamsVehicleUseEntryRejection =
 	| "vehicle_required"
 	| "reading_required";
 
+/** The work a card press names: a clock-out's press also names its clock-out entry. */
+export type TeamsVehicleUseInvokeTarget =
+	| { stage: "clock_in"; workPeriodId: string }
+	| { stage: "clock_out"; workPeriodId: string; clockOutId: string };
+
 export type TeamsVehicleUseInvoke =
 	| { kind: "none" }
 	| { kind: "invalid" }
 	| { kind: "rejected"; code: TeamsVehicleUseEntryRejection }
-	| { kind: "skip"; stage: TeamsVehicleUseStage; workPeriodId: string }
-	| {
-			kind: "save";
-			stage: TeamsVehicleUseStage;
-			workPeriodId: string;
-			supplied: ClockVehicleUse;
-	  };
+	| ({ kind: "skip" } & TeamsVehicleUseInvokeTarget)
+	| ({ kind: "save"; supplied: ClockVehicleUse } & TeamsVehicleUseInvokeTarget);
 
 function record(value: unknown): Record<string, unknown> | null {
 	return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -292,7 +338,19 @@ export function parseTeamsVehicleUseInvoke(activity: {
 	) {
 		return { kind: "invalid" };
 	}
-	const target = { stage, workPeriodId: workPeriodId.toLowerCase() } as const;
+	let target: TeamsVehicleUseInvokeTarget;
+	if (stage === "clock_out") {
+		// A clock-out card is bound to the clock-out entry its Teams clock-out created.
+		const clockOutId = data.c;
+		if (typeof clockOutId !== "string" || !UUID.test(clockOutId)) return { kind: "invalid" };
+		target = {
+			stage,
+			workPeriodId: workPeriodId.toLowerCase(),
+			clockOutId: clockOutId.toLowerCase(),
+		};
+	} else {
+		target = { stage, workPeriodId: workPeriodId.toLowerCase() };
+	}
 	if (verb === TEAMS_VEHICLE_USE_VERBS.skip) return { kind: "skip", ...target };
 
 	const vehicle = vehicleChoice(data.vehicle);

@@ -29,14 +29,17 @@ import type {
 	WorkPeriodRevisionComparison,
 } from "../evidence/work-period-facts";
 import type { ApprovalInboxDetailSection } from "../inbox/types";
+import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type {
 	VehicleUseReviewValue,
 	WorkCategoryReviewValue,
 } from "../server/time-correction-review-metadata";
+import { submittedVehicleUseWarnings } from "../server/time-correction-vehicle-use-warnings";
 import type { ApprovalDatabase } from "../server/types";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import { loadTimeCorrectionCategoryNames } from "./time-card";
+import { vehicleUseWarningReviewText } from "./vehicle-use-warning-text";
 
 type TimeDecisionEvidence = DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
 
@@ -62,6 +65,11 @@ export type TimeReviewEvidence =
 			decisions: TimeDecisionEvidence[];
 			/** Current names of the categories the proposal names; null = unavailable. */
 			categoryNames: Readonly<Record<string, string | null>>;
+			/**
+			 * Plausibility warnings of the requested vehicle use (#1121) while the
+			 * request is pending; absent once decided. Never a blocker.
+			 */
+			vehicleUseWarnings?: readonly VehicleUseWarning[];
 	  };
 
 type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][number];
@@ -290,7 +298,11 @@ export function buildTimeReviewSections(evidence: TimeReviewEvidence): {
 		sections.push({
 			type: "key_value",
 			title: text("approvals:approvals.evidence.requestedCorrectionTitle", "Requested correction"),
-			rows: correctionRequestRows(evidence.revision, evidence.categoryNames),
+			rows: correctionRequestRows(
+				evidence.revision,
+				evidence.categoryNames,
+				evidence.vehicleUseWarnings ?? [],
+			),
 		});
 	}
 	for (const decision of evidence.decisions) {
@@ -355,6 +367,7 @@ function categoryValue(
 function correctionRequestRows(
 	revision: TimeCorrectionSubmittedRevisionRecord,
 	categoryNames: Readonly<Record<string, string | null>>,
+	vehicleUseWarnings: readonly VehicleUseWarning[],
 ): Row[] {
 	const { baseline, requested, changeMask, intent } = revision.facts;
 	const rows: Row[] = [
@@ -432,6 +445,18 @@ function correctionRequestRows(
 				},
 			},
 		});
+		// The same plausibility warnings the employee saw on entry (#1121); never a blocker.
+		if (vehicleUseWarnings.length > 0) {
+			rows.push({
+				label: { key: "approvals:approvals.vehicleUseWarnings", fallback: "Please check" },
+				value: {
+					key: "approvals:approvals.vehicleUseWarningList",
+					fallback: "{warnings}",
+					params: { warnings: vehicleUseWarnings.map(vehicleUseWarningReviewText) },
+				},
+				tone: "warning",
+			});
+		}
 	}
 	return rows;
 }
@@ -620,10 +645,11 @@ export async function prepareTimeReviewEvidence(
 					})
 				: await loadLegacyTimeCorrectionSubmittedRevision(database, legacyScope);
 		if (!revision) return { status: "not_captured", held: false };
-		const [comparison, decisions, categoryNames] = await Promise.all([
+		const [comparison, decisions, categoryNames, vehicleUseWarnings] = await Promise.all([
 			input.requestPending ? compareTimeCorrectionWithSubmittedRevision(database, revision) : null,
 			decisionsFor(revision.id),
 			loadTimeCorrectionCategoryNames(database, input.organizationId, revision),
+			input.requestPending ? submittedVehicleUseWarnings(database, revision) : [],
 		]);
 		return {
 			status: "evidenced",
@@ -632,6 +658,7 @@ export async function prepareTimeReviewEvidence(
 			comparison,
 			decisions,
 			categoryNames,
+			...(vehicleUseWarnings.length > 0 ? { vehicleUseWarnings } : {}),
 		};
 	}
 	const revision =

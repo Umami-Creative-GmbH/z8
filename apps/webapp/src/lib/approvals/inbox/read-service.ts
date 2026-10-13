@@ -12,11 +12,7 @@ import type {
 import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
-import {
-	PLAUSIBLE_AVERAGE_SPEED_KMH,
-	PLAUSIBLE_DISTANCE_KM,
-	type VehicleUseWarning,
-} from "@/lib/time-tracking/vehicle-use/plausibility";
+import { vehicleUseWarningReviewText } from "../presentation/vehicle-use-warning-text";
 import { buildAbsenceDeputySection } from "../presentation/absence-deputy";
 import {
 	buildAbsenceReviewSections,
@@ -1249,37 +1245,6 @@ function buildTimeCorrectionDetailSections(
 	}
 
 	return sections;
-}
-
-/** A vehicle use plausibility warning (#1121) as the approver reads it. */
-function vehicleUseWarningReviewText(warning: VehicleUseWarning): ApprovalInboxLocalizedText {
-	switch (warning.code) {
-		case "start_below_last_end":
-			return {
-				key: "approvals:approvals.vehicleUseWarning.startBelowLastEnd",
-				fallback:
-					"The start reading is below this vehicle's last recorded end reading ({lastEndKm} km).",
-				params: { lastEndKm: warning.lastRecordedEndKm },
-			};
-		case "vehicle_on_other_live_work":
-			return {
-				key: "approvals:approvals.vehicleUseWarning.onOtherLiveWork",
-				fallback: "This vehicle is already recorded on another employee's running work.",
-			};
-		case "speed_above_limit":
-			return {
-				key: "approvals:approvals.vehicleUseWarning.speedAboveLimit",
-				fallback:
-					"The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
-				params: { speed: warning.averageKmh, limit: PLAUSIBLE_AVERAGE_SPEED_KMH },
-			};
-		case "distance_above_limit":
-			return {
-				key: "approvals:approvals.vehicleUseWarning.distanceAboveLimit",
-				fallback: "{distance} km is more than {limit} km in one work period.",
-				params: { distance: warning.distanceKm, limit: PLAUSIBLE_DISTANCE_KM },
-			};
-	}
 }
 
 function formatCorrectionChange(original: Date | null, requested: Date | null) {
