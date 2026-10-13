@@ -161,6 +161,8 @@ function getNotificationStyle(type: NotificationType): {
 		case "personal_data_export_ready":
 		// An org admin exported the employee's personal data (#1166)
 		case "personal_data_export_admin_exported":
+		// Download your personal data before your departure cutoff (#1173)
+		case "personal_data_export_reminder":
 			return {
 				icon: <IconDatabaseExport className="size-4" />,
 				bgColor: "bg-slate-100 dark:bg-slate-900/30",
