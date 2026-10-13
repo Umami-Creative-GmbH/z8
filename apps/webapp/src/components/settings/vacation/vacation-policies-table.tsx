@@ -55,6 +55,8 @@ interface VacationPolicy {
 	allowCarryover: boolean;
 	maxCarryoverDays: string | null;
 	carryoverExpiryMonths: number | null;
+	prorateInStartAndExitYear: boolean;
+	statutoryMinimumDays: string;
 	creator?: {
 		name: string;
 	} | null;

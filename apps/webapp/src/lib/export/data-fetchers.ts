@@ -830,6 +830,8 @@ export async function fetchVacation(organizationId: string) {
 			allowCarryover: a.allowCarryover,
 			maxCarryoverDays: a.maxCarryoverDays,
 			carryoverExpiryMonths: a.carryoverExpiryMonths,
+			prorateInStartAndExitYear: a.prorateInStartAndExitYear,
+			statutoryMinimumDays: a.statutoryMinimumDays,
 		})),
 		employeeAllowances: filteredEmployeeAllowances.map((ea) => ({
 			employeeId: ea.employeeId,

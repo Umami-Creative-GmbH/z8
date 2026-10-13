@@ -35,6 +35,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+	checkStatutoryMinimumDays,
+	defaultStatutoryMinimumDays,
+	prorationAppliesToAccrualType,
+} from "@/lib/absences/vacation-policy-settings";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { useRouter } from "@/navigation";
 import { runWithBusyState } from "../run-with-busy-state";
@@ -55,6 +60,8 @@ interface VacationPolicyFormProps {
 		allowCarryover: boolean;
 		maxCarryoverDays: string | null;
 		carryoverExpiryMonths: number | null;
+		prorateInStartAndExitYear: boolean;
+		statutoryMinimumDays: string;
 	};
 }
 
@@ -110,6 +117,8 @@ export function VacationPolicyForm({
 					maxCarryoverDays: existingPolicy.maxCarryoverDays || "",
 					carryoverExpiryMonths:
 						existingPolicy.carryoverExpiryMonths || (undefined as number | undefined),
+					prorateInStartAndExitYear: existingPolicy.prorateInStartAndExitYear,
+					statutoryMinimumDays: existingPolicy.statutoryMinimumDays,
 				}
 			: {
 					name: "",
@@ -122,6 +131,8 @@ export function VacationPolicyForm({
 					allowCarryover: false,
 					maxCarryoverDays: "",
 					carryoverExpiryMonths: undefined as number | undefined,
+					prorateInStartAndExitYear: true,
+					statutoryMinimumDays: defaultStatutoryMinimumDays("20"),
 				},
 		onSubmit: async ({ value }) => {
 			await runWithBusyState(setLoading, async () => {
@@ -138,6 +149,8 @@ export function VacationPolicyForm({
 								allowCarryover: value.allowCarryover,
 								maxCarryoverDays: value.maxCarryoverDays || undefined,
 								carryoverExpiryMonths: value.carryoverExpiryMonths,
+								prorateInStartAndExitYear: value.prorateInStartAndExitYear,
+								statutoryMinimumDays: value.statutoryMinimumDays,
 							})
 						: await createVacationPolicy({
 								organizationId,
@@ -151,6 +164,8 @@ export function VacationPolicyForm({
 								allowCarryover: value.allowCarryover,
 								maxCarryoverDays: value.maxCarryoverDays || undefined,
 								carryoverExpiryMonths: value.carryoverExpiryMonths,
+								prorateInStartAndExitYear: value.prorateInStartAndExitYear,
+								statutoryMinimumDays: value.statutoryMinimumDays,
 							});
 
 					if (result.success) {
@@ -173,6 +188,7 @@ export function VacationPolicyForm({
 
 	// Subscribe to allowCarryover for conditional fields
 	const allowCarryover = useStore(form.store, (state) => state.values.allowCarryover);
+	const accrualType = useStore(form.store, (state) => state.values.accrualType);
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -325,6 +341,16 @@ export function VacationPolicyForm({
 										t("settings.vacation.policyForm.positiveNumber", "Must be a positive number"),
 									),
 							}}
+							listeners={{
+								// A new policy's statutory minimum follows min(20, annual days) until edited.
+								onChange: ({ value }) => {
+									if (existingPolicy || form.getFieldMeta("statutoryMinimumDays")?.isDirty) return;
+									if (Number.isNaN(parseFloat(value))) return;
+									form.setFieldValue("statutoryMinimumDays", defaultStatutoryMinimumDays(value), {
+										dontUpdateMeta: true,
+									});
+								},
+							}}
 						>
 							{(field) => (
 								<div className="space-y-2">
@@ -426,6 +452,95 @@ export function VacationPolicyForm({
 											"Month when vacation accrual begins (typically January or hire date)",
 										)}
 									</p>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name="prorateInStartAndExitYear">
+							{(field) => (
+								<div className="flex flex-row items-center justify-between gap-4 rounded-lg border p-4">
+									<div className="space-y-0.5">
+										<Label htmlFor="prorateInStartAndExitYear" className="text-base">
+											{t(
+												"settings.vacation.policyForm.prorateInStartAndExitYear",
+												"Prorate in start and exit year",
+											)}
+										</Label>
+										<p className="text-sm text-muted-foreground">
+											{prorationAppliesToAccrualType(accrualType)
+												? t(
+														"settings.vacation.policyForm.prorateInStartAndExitYearDescription",
+														"In a year an employee joins or leaves, they get 1/12 of the annual days for each full employment month.",
+													)
+												: t(
+														"settings.vacation.policyForm.prorateNotApplicableToAccrual",
+														"This policy accrues monthly or biweekly, so it already accrues in part years. The switch doesn't apply to it.",
+													)}
+										</p>
+									</div>
+									<Switch
+										id="prorateInStartAndExitYear"
+										checked={field.state.value}
+										onCheckedChange={field.handleChange}
+									/>
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field
+							name="statutoryMinimumDays"
+							validators={{
+								onChangeListenTo: ["defaultAnnualDays"],
+								onChange: ({ value, fieldApi }) => {
+									const problem = checkStatutoryMinimumDays(
+										value,
+										fieldApi.form.getFieldValue("defaultAnnualDays"),
+									);
+									if (problem === "not_a_number") {
+										return t("settings.vacation.policyForm.numberRequired", "Must be a number");
+									}
+									if (problem === "negative") {
+										return t("settings.vacation.policyForm.zeroOrMore", "Must be 0 or more");
+									}
+									if (problem === "above_annual_days") {
+										return t(
+											"settings.vacation.policyForm.statutoryMinimumAboveAnnualDays",
+											"Cannot exceed the default annual days",
+										);
+									}
+									return undefined;
+								},
+							}}
+						>
+							{(field) => (
+								<div className="space-y-2">
+									<Label htmlFor="statutoryMinimumDays">
+										{t(
+											"settings.vacation.policyForm.statutoryMinimumDays",
+											"Statutory Minimum Days",
+										)}
+									</Label>
+									<Input
+										id="statutoryMinimumDays"
+										type="number"
+										min="0"
+										step="0.5"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder="20"
+									/>
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.vacation.policyForm.statutoryMinimumDaysDescription",
+											"The fewest days employees are legally owed in a full year. Once an employee completes the 6-month waiting period, proration never cuts their allowance below this.",
+										)}
+									</p>
+									{field.state.meta.errors.length > 0 && (
+										<p className="text-sm text-destructive">
+											{getFieldErrorMessage(field.state.meta.errors[0])}
+										</p>
+									)}
 								</div>
 							)}
 						</form.Field>

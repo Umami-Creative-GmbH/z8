@@ -74,6 +74,7 @@ describe("existing vacation requests and assigned company holidays", () => {
 			startDate: "2026-01-01",
 			isCompanyDefault: true,
 			defaultAnnualDays: "30",
+			statutoryMinimumDays: "20",
 			accrualType: "annual",
 			createdBy: fixture.ownerUserId,
 		});
