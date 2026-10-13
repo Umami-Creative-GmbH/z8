@@ -2,6 +2,7 @@ import type { PersonalDataCollector } from "../collector";
 import { absencesCollector } from "./absences";
 import { accountCollector } from "./account";
 import { approvalsCollector } from "./approvals";
+import { auditLogCollector } from "./audit-log";
 import { employmentCollector } from "./employment";
 import { integrationsCollector } from "./integrations";
 import { notificationsCollector } from "./notifications";
@@ -26,5 +27,6 @@ export const PERSONAL_DATA_COLLECTORS: readonly PersonalDataCollector[] = [
 	positionStampsCollector,
 	notificationsCollector,
 	integrationsCollector,
+	auditLogCollector,
 	accountCollector,
 ];
