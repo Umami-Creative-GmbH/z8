@@ -1234,29 +1234,25 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 		});
 		const dbService = yield* DatabaseService;
 
-		// Step 3: Get the policy to check permissions
-		const policy = yield* dbService
-			.query("getPolicy", async () => {
-				const p = await dbService.db.query.vacationAllowance.findFirst({
-					where: eq(vacationAllowance.id, policyId),
-				});
-
-				if (!p) {
-					throw new Error("Policy not found");
-				}
-
-				return p;
-			})
-			.pipe(
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Policy not found",
-							entityType: "vacation_policy",
-							entityId: policyId,
-						}),
+		// Step 3: Get the policy in the actor's organization to check permissions
+		const policy = yield* dbService.query("getPolicy", async () => {
+			return await dbService.db.query.vacationAllowance.findFirst({
+				where: and(
+					eq(vacationAllowance.id, policyId),
+					eq(vacationAllowance.organizationId, actor.organizationId),
 				),
+			});
+		});
+
+		if (!policy) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Policy not found",
+					entityType: "vacation_policy",
+					entityId: policyId,
+				}),
 			);
+		}
 
 		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
 			message: "Insufficient permissions",
@@ -1295,7 +1291,12 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 				await dbService.db
 					.update(vacationAllowance)
 					.set({ isActive: false })
-					.where(eq(vacationAllowance.id, policyId));
+					.where(
+						and(
+							eq(vacationAllowance.id, policyId),
+							eq(vacationAllowance.organizationId, policy.organizationId),
+						),
+					);
 			})
 			.pipe(
 				Effect.mapError(
