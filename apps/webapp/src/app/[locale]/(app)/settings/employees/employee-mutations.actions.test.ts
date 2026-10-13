@@ -77,6 +77,7 @@ vi.mock("@/lib/work-balance/service", () => ({
 import {
 	createEmployeeSchema,
 	personalInformationSchema,
+	updateEmployeeInvitationDraftSchema,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
 import {
@@ -543,12 +544,35 @@ describe("updateEmployeeAction", () => {
 			lastName: "Lovelace",
 		} as Parameters<typeof updateEmployeeAction>[1]);
 
+		// A manager's save never touches the wage or contract type (#1177).
 		expect(employeeSet).toHaveBeenCalledWith({
 			position: "Engineer",
-			currentHourlyRate: null,
 			updatedAt: expect.anything(),
 		});
 		expect(userSet).not.toHaveBeenCalled();
+	});
+
+	it("strips contract type and wage from the employee update input", () => {
+		const result = updateEmployeeSchema.safeParse({
+			position: "Engineer",
+			contractType: "hourly",
+			hourlyRate: "42.50",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toEqual({ position: "Engineer" });
+	});
+
+	it("keeps contract type and wage editable on invitation drafts", () => {
+		const result = updateEmployeeInvitationDraftSchema.safeParse({
+			contractType: "hourly",
+			hourlyRate: "42.50",
+		});
+
+		expect(result.success).toBe(true);
+		if (!result.success) return;
+		expect(result.data).toEqual({ contractType: "hourly", hourlyRate: "42.50" });
 	});
 
 	it("marks the employee work balance dirty when the start date changes", async () => {

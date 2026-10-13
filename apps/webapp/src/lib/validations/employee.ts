@@ -106,7 +106,9 @@ export const createEmployeeSchema = z.object({
 	hourlyRate: hourlyRateSchema,
 });
 
-// Employee update schema (more permissive, all fields optional)
+// Employee update schema (more permissive, all fields optional). Contract type
+// and wage are not employee fields: they change only through employment terms
+// (Organization ADR 0002), so a save never carries them.
 const updateEmployeeFieldsSchema = z.object({
 	teamId: z.uuid("Invalid team ID").optional().nullable(),
 	role: employeeRoleSchema.optional(),
@@ -126,10 +128,6 @@ const updateEmployeeFieldsSchema = z.object({
 	startDate: z.date().optional().nullable(),
 	endDate: z.date().optional().nullable(),
 	isActive: z.boolean().optional(),
-
-	// Contract type and hourly rate
-	contractType: contractTypeSchema.optional(),
-	hourlyRate: hourlyRateSchema,
 
 	// Auth user identity fields (admin-only)
 	firstName: authUserNamePartSchema,
@@ -161,10 +159,14 @@ export const updateEmployeeInvitationDraftSchema =
 		birthday: true,
 		startDate: true,
 		endDate: true,
-		contractType: true,
-		hourlyRate: true,
 		firstName: true,
 		lastName: true,
+	})
+	// An invitation draft still carries the contract type and wage that become
+	// the employee's first terms.
+	.extend({
+		contractType: contractTypeSchema.optional(),
+		hourlyRate: hourlyRateSchema,
 	});
 
 // Manager assignment schema

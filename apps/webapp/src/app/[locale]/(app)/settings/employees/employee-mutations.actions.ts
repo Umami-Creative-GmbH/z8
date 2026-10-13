@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { z } from "zod";
@@ -240,17 +240,10 @@ export async function updateEmployeeAction(
 
 				const scopedData: UpdateEmployee = validatedData;
 
-				const newHourlyRate = parseHourlyRate(
-					"hourlyRate" in scopedData
-						? (scopedData.hourlyRate as string | null | undefined)
-						: undefined,
-				);
-				const currentRate = parseHourlyRate(targetEmployee.currentHourlyRate);
-
-				const { hourlyRate: _hourlyRate, ...updateData } = scopedData;
+				// Contract type and wage change only through employment terms
+				// (Organization ADR 0002); the schema carries neither.
 				const updatePayload = {
-					...updateData,
-					currentHourlyRate: newHourlyRate?.toString() || null,
+					...scopedData,
 					updatedAt: currentTimestamp(),
 				};
 
@@ -367,50 +360,6 @@ export async function updateEmployeeAction(
 							}),
 						);
 					}
-				}
-
-				const effectiveContractType =
-					("contractType" in scopedData
-						? scopedData.contractType
-						: undefined) ?? targetEmployee.contractType;
-				if (
-					effectiveContractType === "hourly" &&
-					newHourlyRate !== null &&
-					newHourlyRate !== currentRate
-				) {
-					yield* dbService.query("closeActiveRateHistory", async () => {
-						await dbService.db
-							.update(employeeRateHistory)
-							.set({ effectiveTo: new Date() })
-							.where(
-								and(
-									eq(employeeRateHistory.employeeId, employeeId),
-									isNull(employeeRateHistory.effectiveTo),
-								),
-							);
-					});
-
-					yield* dbService.query("createRateHistoryEntry", async () => {
-						await dbService.db.insert(employeeRateHistory).values({
-							employeeId,
-							organizationId: targetEmployee.organizationId,
-							hourlyRate: newHourlyRate.toString(),
-							currency: "EUR",
-							effectiveFrom: new Date(),
-							effectiveTo: null,
-							reason: "Rate updated",
-							createdBy: session.user.id,
-						});
-					});
-
-					logger.info(
-						{
-							employeeId,
-							previousRate: currentRate,
-							newRate: newHourlyRate,
-						},
-						"Employee rate history created",
-					);
 				}
 
 				logger.info({ employeeId }, "Employee updated successfully");
