@@ -1,6 +1,11 @@
 "use client";
 
-import { IconAlertTriangle, IconLoader2, IconUserSearch } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconFileCertificate,
+	IconLoader2,
+	IconUserSearch,
+} from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -202,9 +207,19 @@ export function StaffingSuggestionsPanel({
 										{suggestion.warnings.map((warning) => {
 											const text = warningText(warning, t, locale);
 											return (
-												<li key={text} className="flex items-center gap-1">
+												<li key={text} className="flex flex-wrap items-center gap-1">
 													<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
-													{text}
+													<span>{text}</span>
+													{/* Only that one is on file: opening it takes personnel file access (#1144). */}
+													{warning.type === "expiredRequiredSkill" && warning.certificateOnFile && (
+														<Badge variant="outline" className="text-xs">
+															<IconFileCertificate className="mr-1 size-3" aria-hidden="true" />
+															{t(
+																"scheduling:scheduling.skills.certificateOnFile",
+																"Certificate on file",
+															)}
+														</Badge>
+													)}
 												</li>
 											);
 										})}

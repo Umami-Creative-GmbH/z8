@@ -22,6 +22,7 @@ import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type PlainDate } from "@/lib/datetime/temporal-core";
 import type { EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverageByEmployee } from "@/lib/employee-lifecycle/employment-periods";
+import { loadSkillCertificatesOnFile } from "@/lib/personnel-file/skill-certificate-store";
 import type {
 	ComplianceShiftSource,
 	ComplianceWorkPeriodSource,
@@ -332,6 +333,7 @@ export async function loadStaffingRankingFacts(
 			),
 		database
 			.select({
+				id: employeeSkill.id,
 				employeeId: employeeSkill.employeeId,
 				skillId: employeeSkill.skillId,
 				expiresAt: employeeSkill.expiresAt,
@@ -401,8 +403,17 @@ export async function loadStaffingRankingFacts(
 	for (const row of periods) {
 		facts.get(row.employeeId)?.workPeriods.push(row);
 	}
+	// Planners learn only that a skill certificate is on file (#1144), never its content.
+	const certificatesOnFile = await loadSkillCertificatesOnFile(database, {
+		organizationId: input.organizationId,
+		employeeSkillIds: skills.map((row) => row.id),
+	});
 	for (const row of skills) {
-		facts.get(row.employeeId)?.heldSkills.push({ skillId: row.skillId, expiresAt: row.expiresAt });
+		facts.get(row.employeeId)?.heldSkills.push({
+			skillId: row.skillId,
+			expiresAt: row.expiresAt,
+			certificateOnFile: certificatesOnFile.has(row.id),
+		});
 	}
 	// The latest confirmed terms in force on the shift date win.
 	for (const row of terms.toSorted((a, b) => a.validFrom.getTime() - b.validFrom.getTime())) {

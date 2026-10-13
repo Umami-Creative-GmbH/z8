@@ -11,7 +11,7 @@ import { employee, employeeDocument, employeeSkill, skill } from "@/db/schema";
 
 type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-type Reader = Database | Pick<Transaction, "select" | "selectDistinct">;
+type Reader = Database | Pick<Transaction, "select">;
 
 /** An employee skill as a certificate names it. */
 export interface CertificateSkill {
@@ -80,7 +80,7 @@ export async function loadSkillCertificatesOnFile(
 	const ids = [...new Set(input.employeeSkillIds)];
 	if (ids.length === 0) return new Set();
 	const rows = await database
-		.selectDistinct({ employeeSkillId: employeeDocument.employeeSkillId })
+		.select({ employeeSkillId: employeeDocument.employeeSkillId })
 		.from(employeeDocument)
 		.where(
 			and(

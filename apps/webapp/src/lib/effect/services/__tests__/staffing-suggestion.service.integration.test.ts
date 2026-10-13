@@ -178,12 +178,14 @@ describe("staffing suggestions", () => {
 		person: SeededEmployee,
 		skillId: string,
 		expiresAt: string | null,
-	) {
+	): Promise<string> {
+		const id = randomUUID();
 		await fixture.pool.query(
 			`insert into employee_skill (id, employee_id, skill_id, expires_at, assigned_by)
 			 values ($1, $2, $3, $4, $5)`,
-			[randomUUID(), person.employeeId, skillId, expiresAt, org.creator.userId],
+			[id, person.employeeId, skillId, expiresAt, org.creator.userId],
 		);
+		return id;
 	}
 
 	async function workPeriod(
@@ -358,6 +360,7 @@ describe("staffing suggestions", () => {
 				skillId: firstAid,
 				skillName: "First aid",
 				expiresAt: "2026-10-15",
+				certificateOnFile: false,
 			},
 		]);
 		expect(suggestions[2].notes).toEqual([
@@ -381,6 +384,43 @@ describe("staffing suggestions", () => {
 				skillId: firstAid,
 				skillName: "First aid",
 				expiresAt: "2026-11-30",
+				certificateOnFile: false,
+			},
+		]);
+	});
+
+	it("tells that a skill certificate is on file for an expired required skill (#1144)", async () => {
+		const org = await fixture.organization(TZ);
+		const firstAid = await skill(org, "First aid", true);
+		const person = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const employeeSkillId = await holdSkill(org, person, firstAid, "2026-10-15");
+		const documentId = randomUUID();
+		await fixture.pool.query(
+			`insert into employee_document
+			 (id, organization_id, employee_id, category, title, document_date, visibility, expiry_date,
+			  employee_skill_id, storage_provider, storage_key, file_name, mime_type, size_bytes,
+			  checksum_sha256)
+			 values ($1, $2, $3, 'certificate', 'First aid', '2024-10-15', 'hr_only', '2026-10-15', $4,
+			  's3-private', $5, 'first-aid.pdf', 'application/pdf', 1, $6)`,
+			[
+				documentId,
+				org.organizationId,
+				person.employeeId,
+				employeeSkillId,
+				`personnel-files/${org.organizationId}/${person.employeeId}/${documentId}-first-aid.pdf`,
+				"0".repeat(64),
+			],
+		);
+
+		const [suggestion] = await suggest(org, [candidate(person, "Anna")], { date: "2026-10-20" });
+
+		expect(suggestion.warnings).toEqual([
+			{
+				type: "expiredRequiredSkill",
+				skillId: firstAid,
+				skillName: "First aid",
+				expiresAt: "2026-10-15",
+				certificateOnFile: true,
 			},
 		]);
 	});
