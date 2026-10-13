@@ -17,6 +17,12 @@ import { WORK_LOCATION_TYPES } from "@/lib/time-tracking/work-location";
  * drops a malformed one: a position never refuses the clock event.
  */
 const position = z.unknown().optional();
+/**
+ * Vehicle use beside the clock event (#1122). Read by the clock action, which drops
+ * malformed vehicle use: it never refuses the clock event. Unlike a position it is
+ * accepted from bearer clients too.
+ */
+const vehicleUse = z.unknown().optional();
 
 const timeClockSchema = z.discriminatedUnion("action", [
 	z.object({
@@ -26,6 +32,7 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		workLocationType: z.enum(WORK_LOCATION_TYPES).optional(),
 		browserTimezone: z.string().nullish(),
 		position,
+		vehicleUse,
 	}),
 	z.object({
 		action: z.literal("clock_out"),
@@ -39,6 +46,7 @@ const timeClockSchema = z.discriminatedUnion("action", [
 		billable: z.boolean().optional(),
 		browserTimezone: z.string().nullish(),
 		position,
+		vehicleUse,
 	}),
 ]);
 
@@ -78,12 +86,14 @@ export async function POST(request: Request) {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
 						position,
+						vehicleUse: body.vehicleUse,
 					})
 				: await clockOut(body.projectId, body.workCategoryId, {
 						browserTimezone: body.browserTimezone,
 						submissionId: body.submissionId,
 						...namedTaskId(body.taskId),
 						position,
+						vehicleUse: body.vehicleUse,
 						...(body.billable === undefined ? {} : { billable: body.billable }),
 					});
 

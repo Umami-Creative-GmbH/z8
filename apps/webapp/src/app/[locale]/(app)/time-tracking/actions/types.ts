@@ -3,6 +3,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
+import type { ClockVehicleUse } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import type {
 	WorkVehicleUse,
 	WorkVehicleUseFormContext,
@@ -69,6 +70,11 @@ export interface ClockOutActionContext extends BrowserTimezoneContext {
 	 * project's billable default, or keeps the active work's billability.
 	 */
 	billable?: boolean;
+	/**
+	 * Vehicle use the clock-out adds to the work's (#1122): the end reading or
+	 * distance, and vehicle and start reading when none were recorded.
+	 */
+	vehicleUse?: ClockVehicleUse;
 }
 
 export interface AssignedProject {

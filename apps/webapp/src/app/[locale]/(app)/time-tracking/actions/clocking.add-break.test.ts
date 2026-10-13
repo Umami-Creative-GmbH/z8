@@ -86,6 +86,14 @@ describe("web break adapter", () => {
 		expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("position");
 	});
 
+	it("carries the break's one odometer reading, and drops a malformed one (#1122)", async () => {
+		await addBreakToActiveSession(15, { submissionId, vehicleUse: { readingKm: 12_040 } });
+		await addBreakToActiveSession(15, { submissionId, vehicleUse: { readingKm: -5 } });
+
+		expect(state.run.mock.calls[0]?.[0]).toMatchObject({ vehicleUse: { readingKm: 12_040 } });
+		expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("vehicleUse");
+	});
+
 	it("names an unkeyed request with a server identity", async () => {
 		await addBreakToActiveSession(15);
 
