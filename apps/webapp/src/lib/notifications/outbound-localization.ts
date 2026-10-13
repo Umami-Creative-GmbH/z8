@@ -136,6 +136,23 @@ export async function resolveOutboundNotificationLocale({
 	}
 }
 
+/** The chat channels' "View in Z8" link text, in the recipient language. */
+function actionLabel(t: NotificationTranslate): string {
+	return t("notifications.channels.viewInZ8", "View in Z8");
+}
+
+/**
+ * The notification's title and message in the recipient language, rendered from
+ * `metadata.i18n`. A notification without translation keys keeps its stored text.
+ * `withActionLabel` adds the "View in Z8" link text of the chat channels, from
+ * the same catalog load.
+ */
+export async function localizeOutboundNotification(
+	params: LocalizeOutboundNotificationParams & { withActionLabel: true },
+): Promise<LocalizedOutboundNotification & { actionLabel: string }>;
+export async function localizeOutboundNotification(
+	params: LocalizeOutboundNotificationParams & { withActionLabel?: boolean },
+): Promise<LocalizedOutboundNotification & { actionLabel?: string }>;
 export async function localizeOutboundNotification({
 	userId,
 	organizationId,
@@ -144,7 +161,17 @@ export async function localizeOutboundNotification({
 	title,
 	message,
 	metadata,
-}: LocalizeOutboundNotificationParams): Promise<LocalizedOutboundNotification> {
+	withActionLabel = false,
+}: LocalizeOutboundNotificationParams & { withActionLabel?: boolean }): Promise<
+	LocalizedOutboundNotification & { actionLabel?: string }
+> {
+	const fallback = (fallbackLocale: string) => ({
+		locale: fallbackLocale,
+		title,
+		message,
+		...(withActionLabel ? { actionLabel: actionLabel((_key, defaultValue) => defaultValue) } : {}),
+	});
+
 	let resolvedLocale = locale ?? FALLBACK_LOCALE;
 	try {
 		if (!locale) {
@@ -155,34 +182,36 @@ export async function localizeOutboundNotification({
 			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
 			"Failed to resolve recipient notification locale",
 		);
-		return { locale: FALLBACK_LOCALE, title, message };
+		return fallback(FALLBACK_LOCALE);
 	}
 
 	const i18n = parseMetadata(metadata).i18n;
+	const hasKeys = Boolean(i18n?.titleKey || i18n?.messageKey);
 
-	if (!i18n?.titleKey && !i18n?.messageKey) {
-		return { locale: resolvedLocale, title, message };
+	if (!hasKeys && !withActionLabel) {
+		return fallback(resolvedLocale);
 	}
 
 	try {
 		const t = await loadNotificationTranslator(resolvedLocale);
 		// Typed params become text in the recipient language first: ICU never sees a Date (#1149).
-		const params = i18n.params
+		const params = i18n?.params
 			? formatNotificationParams(i18n.params, { locale: resolvedLocale, timeFormat })
 			: undefined;
 
 		return {
 			locale: resolvedLocale,
-			title: i18n.titleKey ? t(i18n.titleKey, i18n.titleDefault ?? title, params) : title,
-			message: i18n.messageKey
+			title: i18n?.titleKey ? t(i18n.titleKey, i18n.titleDefault ?? title, params) : title,
+			message: i18n?.messageKey
 				? t(i18n.messageKey, i18n.messageDefault ?? message, params)
 				: message,
+			...(withActionLabel ? { actionLabel: actionLabel(t) } : {}),
 		};
 	} catch (error) {
 		logger.warn(
 			{ err: error, userId, organizationId, locale: resolvedLocale },
 			"Failed to localize outbound notification",
 		);
-		return { locale: resolvedLocale, title, message };
+		return fallback(resolvedLocale);
 	}
 }

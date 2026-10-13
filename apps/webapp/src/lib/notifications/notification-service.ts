@@ -214,6 +214,7 @@ export async function deliverNotificationToChannel(
 				},
 				{
 					organizationId: params.organizationId,
+					metadata: params.metadata,
 					...(options.durable ? { throwOnError: true } : {}),
 				},
 			);
@@ -374,9 +375,11 @@ export async function createNotification(
 				},
 			};
 
-			// Fire and forget - don't await to avoid blocking
+			// Fire and forget - don't await to avoid blocking. Web push renders the
+			// text from the metadata in the recipient language (#1155).
 			void sendPushToUser(params.userId, pushPayload, {
 				organizationId: params.organizationId,
+				metadata: params.metadata,
 			}).catch((error) => {
 				logger.error(
 					{ error, userId: params.userId, type: params.type },

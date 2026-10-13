@@ -316,6 +316,93 @@ describe("localizeOutboundNotification", () => {
 		);
 	});
 
+	it("translates the action link label in the recipient language (#1155)", async () => {
+		tolgeeTMock.mockImplementation(({ key, defaultValue }) =>
+			key === "notifications.channels.viewInZ8" ? "In Z8 ansehen" : defaultValue,
+		);
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await expect(
+			localizeOutboundNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				title: "Stored title",
+				message: "Stored message",
+				withActionLabel: true,
+			}),
+		).resolves.toEqual({
+			locale: "de",
+			title: "Stored title",
+			message: "Stored message",
+			actionLabel: "In Z8 ansehen",
+		});
+		expect(loadNamespacesMock).toHaveBeenCalledWith("de", ["common"]);
+	});
+
+	it("loads the catalog once for the title, message and action link label", async () => {
+		tolgeeTMock.mockImplementation(({ key, defaultValue }) =>
+			key === "notifications.channels.viewInZ8" ? "In Z8 ansehen" : defaultValue,
+		);
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		const localized = await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			title: "Added to team",
+			message: "Stored message",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.teamMemberAdded.title",
+					messageKey: "common:notifications.content.teamMemberAdded.message",
+				},
+			},
+			withActionLabel: true,
+		});
+
+		expect(localized.actionLabel).toBe("In Z8 ansehen");
+		expect(loadNamespacesMock).toHaveBeenCalledOnce();
+	});
+
+	it("keeps the English action link label when the catalog cannot be loaded", async () => {
+		loadNamespacesMock.mockRejectedValue(new Error("load failed"));
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await expect(
+			localizeOutboundNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				title: "Stored title",
+				message: "Stored message",
+				withActionLabel: true,
+			}),
+		).resolves.toEqual({
+			locale: "de",
+			title: "Stored title",
+			message: "Stored message",
+			actionLabel: "View in Z8",
+		});
+	});
+
+	it("keeps the English action link label when the recipient locale cannot be resolved", async () => {
+		resolveLocaleMock.mockRejectedValue(new Error("locale lookup failed"));
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await expect(
+			localizeOutboundNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				title: "Stored title",
+				message: "Stored message",
+				withActionLabel: true,
+			}),
+		).resolves.toEqual({
+			locale: "en",
+			title: "Stored title",
+			message: "Stored message",
+			actionLabel: "View in Z8",
+		});
+	});
+
 	it("falls back to English stored text when recipient locale resolution fails", async () => {
 		const error = new Error("locale lookup failed");
 		resolveLocaleMock.mockRejectedValue(error);
