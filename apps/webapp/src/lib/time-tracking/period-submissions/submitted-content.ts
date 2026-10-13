@@ -2,6 +2,7 @@ import { and, asc, eq, gt, gte, lt, lte } from "drizzle-orm";
 import { absenceCategory, absenceEntry, workPeriod, workPolicyViolation } from "@/db/schema";
 import type {
 	PeriodSubmissionAbsenceFact,
+	PeriodSubmissionDrivingDetailsMissingFact,
 	PeriodSubmissionDayPart,
 	PeriodSubmissionHolidayFact,
 	PeriodSubmissionSubmittedFacts,
@@ -18,6 +19,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
+import { listDrivingDetailsMissing } from "@/lib/time-tracking/vehicle-use/driving-details-missing-store";
 import { loadAssignedHolidays, loadDailyWorkRequirements } from "./organization-expected-periods";
 import type { PeriodSubmissionDatabase } from "./submission-store";
 
@@ -29,7 +31,7 @@ import type { PeriodSubmissionDatabase } from "./submission-store";
  */
 export type PeriodSubmissionContent = Pick<
 	PeriodSubmissionSubmittedFacts,
-	"work" | "absences" | "holidays" | "target" | "violations"
+	"work" | "absences" | "holidays" | "target" | "violations" | "drivingDetailsMissing"
 >;
 
 export interface PeriodSubmissionContentInput {
@@ -209,6 +211,24 @@ async function loadViolations(
 	}));
 }
 
+/**
+ * Work started in the range that lacks its vehicle or a reading while vehicle use was expected
+ * (#1127), on its event-local start date. A warning only; it never blocks the submission.
+ */
+async function loadDrivingDetailsMissing(
+	database: PeriodSubmissionDatabase,
+	input: PeriodSubmissionContentInput,
+): Promise<PeriodSubmissionDrivingDetailsMissingFact[]> {
+	const flagged = await listDrivingDetailsMissing(database, {
+		organizationId: input.organizationId,
+		employeeIds: [input.employeeId],
+		startedWithin: input.range,
+	});
+	return flagged
+		.map((work) => ({ workPeriodId: work.workPeriodId, date: work.workDay }))
+		.toSorted((a, b) => a.date.localeCompare(b.date) || a.workPeriodId.localeCompare(b.workPeriodId));
+}
+
 export async function loadPeriodSubmissionContent(
 	database: PeriodSubmissionDatabase,
 	input: PeriodSubmissionContentInput,
@@ -219,5 +239,14 @@ export async function loadPeriodSubmissionContent(
 	const holidays = await loadHolidays(database, input);
 	const target = await loadTarget(input);
 	const violations = await loadViolations(database, input);
-	return { work, absences, holidays, target, violations };
+	const drivingDetailsMissing = await loadDrivingDetailsMissing(database, input);
+	return {
+		work,
+		absences,
+		holidays,
+		target,
+		violations,
+		// Only when there is some, so facts without any keep their earlier shape and fingerprint.
+		...(drivingDetailsMissing.length > 0 ? { drivingDetailsMissing } : {}),
+	};
 }

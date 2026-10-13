@@ -288,5 +288,24 @@ export function buildPeriodSubmissionReviewSections(input: {
 			})),
 		});
 	}
+	// A warning for the approver only; it never blocked the submission (#1127).
+	const drivingDetailsMissing = facts.drivingDetailsMissing ?? [];
+	if (drivingDetailsMissing.length > 0) {
+		sections.push({
+			type: "key_value",
+			title: {
+				key: "approvals:approvals.periodSubmission.drivingDetailsMissing",
+				fallback: "Driving details missing",
+			},
+			rows: drivingDetailsMissing.map((work) => ({
+				label: dateLabel(work.date),
+				value: {
+					key: "approvals:approvals.periodSubmission.drivingDetailsMissingWork",
+					fallback: "Vehicle or odometer reading missing",
+				},
+				tone: "warning" as const,
+			})),
+		});
+	}
 	return sections;
 }
