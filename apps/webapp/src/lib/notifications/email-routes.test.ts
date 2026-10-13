@@ -5,6 +5,7 @@ describe("notification email routes", () => {
 	it("keeps the types that sent no email before #812 email-free (U1, #1137)", () => {
 		expect([...EMAIL_FREE_NOTIFICATION_TYPES].sort()).toEqual(
 			[
+				"time_correction_submitted",
 				"approval_request_approved",
 				"approval_request_rejected",
 				"birthday_reminder",

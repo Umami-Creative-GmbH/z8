@@ -34,8 +34,8 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 	absence_request_submitted: TEMPLATE,
 	absence_request_approved: TEMPLATE,
 	absence_request_rejected: TEMPLATE,
+	// The approver's absence or time-correction pending email (`metadata.approvalSubject`).
 	approval_request_submitted: TEMPLATE,
-	time_correction_submitted: TEMPLATE,
 	time_correction_approved: TEMPLATE,
 	time_correction_rejected: TEMPLATE,
 	team_member_added: TEMPLATE,
@@ -79,6 +79,9 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 	scheduled_export_paused: layout("/settings/scheduled-exports"),
 
 	// Email-free (U1).
+	// The employee's own "submitted"/"pending approval" confirmation. Its approver gets the
+	// pending email through `approval_request_submitted`; this one is never that email (O8).
+	time_correction_submitted: NONE,
 	approval_request_approved: NONE,
 	approval_request_rejected: NONE,
 	birthday_reminder: NONE,

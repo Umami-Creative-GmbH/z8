@@ -103,6 +103,27 @@ function getMetadataNumber(
 	return fallback;
 }
 
+/** An absence decision's override variables (`absence-request-approved`/`-rejected`). */
+function absenceDecisionData(metadata: Record<string, unknown>) {
+	return {
+		approverName: getMetadataString(metadata, "approverName"),
+		startDate: getMetadataString(metadata, "startDate"),
+		endDate: getMetadataString(metadata, "endDate"),
+		absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
+		days: getMetadataNumber(metadata, "days"),
+	};
+}
+
+/** A time-correction decision's override variables (`time-correction-approved`/`-rejected`). */
+function timeCorrectionDecisionData(metadata: Record<string, unknown>) {
+	return {
+		approverName: getMetadataString(metadata, "approverName"),
+		date: getMetadataString(metadata, "date"),
+		correctedClockIn: getMetadataString(metadata, "correctedClockIn", "-"),
+		correctedClockOut: getMetadataString(metadata, "correctedClockOut", "-"),
+	};
+}
+
 /**
  * Get user email by ID
  */
@@ -259,11 +280,7 @@ export async function sendEmailNotification(
 							t("emails.subjects.absenceRequestApproved", "Absence Request Approved");
 						templateData = {
 							employeeName: userName,
-							approverName: String(metadata.approverName || ""),
-							startDate: String(metadata.startDate || ""),
-							endDate: String(metadata.endDate || ""),
-							absenceType: String(metadata.absenceType || ""),
-							days: Number(metadata.days || 0),
+							...absenceDecisionData(metadata),
 							appUrl,
 						};
 					}
@@ -276,57 +293,54 @@ export async function sendEmailNotification(
 					subject = (t) => t("emails.subjects.absenceRequestRejected", "Absence Request Rejected");
 					templateData = {
 						employeeName: userName,
-						approverName: String(metadata.approverName || ""),
-						startDate: String(metadata.startDate || ""),
-						endDate: String(metadata.endDate || ""),
-						absenceType: String(metadata.absenceType || ""),
-						days: Number(metadata.days || 0),
-						rejectionReason: String(metadata.rejectionReason || "No reason provided"),
+						...absenceDecisionData(metadata),
+						rejectionReason: getMetadataString(
+							metadata,
+							"rejectionReason",
+							"No reason provided",
+						),
 						appUrl,
 					};
 				}
 				break;
 
-			case "approval_request_submitted":
-				// This is for managers - use pending approval template
-				if (metadata) {
+			case "approval_request_submitted": {
+				// The approver's "pending approval" email; which one depends on what waits.
+				const approvalUrl = `${appUrl}/approvals/inbox`;
+				if (metadata?.approvalSubject === "absence") {
 					templateKey = "absence-request-pending-approval";
 					subject = (t) =>
 						t("emails.subjects.approvalRequestSubmitted", "New Absence Request Pending Approval");
 					templateData = {
 						managerName: userName,
-						employeeName: String(metadata.employeeName || ""),
-						startDate: String(metadata.startDate || ""),
-						endDate: String(metadata.endDate || ""),
-						absenceType: String(metadata.absenceType || ""),
-						days: Number(metadata.days || 0),
-						notes: metadata.notes ? String(metadata.notes) : undefined,
-						approvalUrl: `${appUrl}/approvals/inbox`,
+						employeeName: getMetadataString(metadata, "employeeName"),
+						startDate: getMetadataString(metadata, "startDate"),
+						endDate: getMetadataString(metadata, "endDate"),
+						absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
+						days: getMetadataNumber(metadata, "days"),
+						notes: getMetadataString(metadata, "notes") || undefined,
+						approvalUrl,
 					};
-					actionUrl = `${appUrl}/approvals/inbox`;
-				}
-				break;
-
-			case "time_correction_submitted":
-				// This is for managers
-				if (metadata) {
+					actionUrl = approvalUrl;
+				} else if (metadata?.approvalSubject === "time_correction") {
 					templateKey = "time-correction-pending-approval";
 					subject = (t) =>
 						t("emails.subjects.timeCorrectionSubmitted", "New Time Correction Pending Approval");
 					templateData = {
 						managerName: userName,
-						employeeName: String(metadata.employeeName || ""),
-						date: String(metadata.date || ""),
-						originalClockIn: String(metadata.originalClockIn || ""),
-						originalClockOut: String(metadata.originalClockOut || ""),
-						correctedClockIn: String(metadata.correctedClockIn || ""),
-						correctedClockOut: String(metadata.correctedClockOut || ""),
-						reason: String(metadata.reason || ""),
-						approvalUrl: `${appUrl}/approvals/inbox`,
+						employeeName: getMetadataString(metadata, "employeeName"),
+						date: getMetadataString(metadata, "date"),
+						originalClockIn: getMetadataString(metadata, "originalClockIn", "-"),
+						originalClockOut: getMetadataString(metadata, "originalClockOut", "-"),
+						correctedClockIn: getMetadataString(metadata, "correctedClockIn", "-"),
+						correctedClockOut: getMetadataString(metadata, "correctedClockOut", "-"),
+						reason: getMetadataString(metadata, "reason"),
+						approvalUrl,
 					};
-					actionUrl = `${appUrl}/approvals/inbox`;
+					actionUrl = approvalUrl;
 				}
 				break;
+			}
 
 			case "time_correction_approved":
 				if (metadata) {
@@ -334,10 +348,7 @@ export async function sendEmailNotification(
 					subject = (t) => t("emails.subjects.timeCorrectionApproved", "Time Correction Approved");
 					templateData = {
 						employeeName: userName,
-						approverName: String(metadata.approverName || ""),
-						date: String(metadata.date || ""),
-						correctedClockIn: String(metadata.correctedClockIn || ""),
-						correctedClockOut: String(metadata.correctedClockOut || ""),
+						...timeCorrectionDecisionData(metadata),
 						appUrl,
 					};
 				}
@@ -349,11 +360,12 @@ export async function sendEmailNotification(
 					subject = (t) => t("emails.subjects.timeCorrectionRejected", "Time Correction Rejected");
 					templateData = {
 						employeeName: userName,
-						approverName: String(metadata.approverName || ""),
-						date: String(metadata.date || ""),
-						correctedClockIn: String(metadata.correctedClockIn || ""),
-						correctedClockOut: String(metadata.correctedClockOut || ""),
-						rejectionReason: String(metadata.rejectionReason || "No reason provided"),
+						...timeCorrectionDecisionData(metadata),
+						rejectionReason: getMetadataString(
+							metadata,
+							"rejectionReason",
+							"No reason provided",
+						),
 						appUrl,
 					};
 				}

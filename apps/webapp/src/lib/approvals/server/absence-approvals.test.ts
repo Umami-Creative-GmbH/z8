@@ -69,15 +69,6 @@ vi.mock("@/lib/app-url", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/lib/email/render", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/email/render")>();
-	return {
-		...actual,
-		renderAbsenceRequestApproved: vi.fn().mockResolvedValue("<p>approved</p>"),
-		renderAbsenceRequestRejected: vi.fn().mockResolvedValue("<p>rejected</p>"),
-	};
-});
-
 vi.mock("@/lib/notifications/triggers", () => ({
 	onAbsenceRequestApproved,
 	onAbsenceRequestRejected,
@@ -138,7 +129,6 @@ import {
 	decideBoundLegacyAbsenceInvocation,
 	executeAbsenceDecisionInTransaction,
 	executeAuthenticatedAbsenceDecision,
-	formatAbsenceDateForEmail,
 	translateAbsenceDecisionError,
 } from "@/lib/approvals/server/absence-approvals";
 import type {
@@ -151,10 +141,8 @@ import {
 	AuthenticationError,
 	AuthorizationError,
 	ConflictError,
-	EmailError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { EmailService } from "@/lib/effect/services/email.service";
 
 beforeEach(() => {
 	addCalendarSyncJob.mockClear();
@@ -462,13 +450,9 @@ function createAbsenceDecisionDbService(
 
 function runAbsenceDecisionEffect(
 	effect: Effect.Effect<unknown, unknown, unknown>,
-	emailService = {
-		send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
-	},
 ) {
 	return Effect.runPromise(
 		effect.pipe(
-			Effect.provideService(EmailService, emailService),
 			Effect.provideService(ApprovalAuditLogger, {
 				log: vi.fn(() => Effect.void),
 				logBatch: vi.fn(() => Effect.void),
@@ -476,14 +460,6 @@ function runAbsenceDecisionEffect(
 		),
 	);
 }
-
-describe("formatAbsenceDateForEmail", () => {
-	it("formats dates for absence emails", () => {
-		expect(
-			formatAbsenceDateForEmail(new Date("2026-03-09T00:00:00.000Z")),
-		).toBe("Mar 9, 2026");
-	});
-});
 
 describe("finalizeAbsenceTerminalInTransaction", () => {
 	function collectSqlColumnNames(value: unknown): string[] {
@@ -975,7 +951,7 @@ describe("absence requester decision notifications", () => {
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
-	it("keeps approval successful when requester email delivery fails", async () => {
+	it("sends the requester's decision email only through the notification", async () => {
 		vi.resetModules();
 		vi.doMock("@/lib/approvals/server/shared", () => ({
 			processApproval: vi.fn(),
@@ -999,16 +975,6 @@ describe("absence requester decision notifications", () => {
 			"@/lib/approvals/server/absence-approvals"
 		);
 		const dbService = createAbsenceDecisionDbService();
-		const emailService = {
-			send: vi.fn(() =>
-				Effect.fail(
-					new EmailError({
-						message: "Failed to send email",
-						recipient: "avery@example.com",
-					}),
-				),
-			),
-		};
 
 		await expect(
 			runAbsenceDecisionEffect(
@@ -1017,66 +983,11 @@ describe("absence requester decision notifications", () => {
 					absenceCurrentApprover,
 					"absence-1",
 				),
-				emailService,
 			),
 		).resolves.toBeDefined();
-		expect(emailService.send).toHaveBeenCalledWith(
-			expect.objectContaining({ to: "avery@example.com" }),
-		);
-		expect(onAbsenceRequestApproved).toHaveBeenCalled();
-		vi.doUnmock("@/lib/approvals/server/shared");
-	});
-
-	it("keeps rejection successful when requester email delivery fails", async () => {
-		vi.resetModules();
-		vi.doMock("@/lib/approvals/server/shared", () => ({
-			processApproval: vi.fn(),
-			processApprovalWithCurrentEmployee: vi.fn(
-				(
-					dbService: ApprovalDbService,
-					currentEmployee: CurrentApprover,
-					_entityType: string,
-					entityId: string,
-					_action: string,
-					_reason: string | undefined,
-					updateEntity: (
-						dbService: ApprovalDbService,
-						entityId: string,
-						currentEmployee: CurrentApprover,
-					) => Effect.Effect<unknown, unknown, unknown>,
-				) => updateEntity(dbService, entityId, currentEmployee),
-			),
-		}));
-		const { rejectAbsenceWithCurrentApproverEffect } = await import(
-			"@/lib/approvals/server/absence-approvals"
-		);
-		const dbService = createAbsenceDecisionDbService();
-		const emailService = {
-			send: vi.fn(() =>
-				Effect.fail(
-					new EmailError({
-						message: "Failed to send email",
-						recipient: "avery@example.com",
-					}),
-				),
-			),
-		};
-
-		await expect(
-			runAbsenceDecisionEffect(
-				rejectAbsenceWithCurrentApproverEffect(
-					dbService,
-					absenceCurrentApprover,
-					"absence-1",
-					"Insufficient balance",
-				),
-				emailService,
-			),
-		).resolves.toBeDefined();
-		expect(emailService.send).toHaveBeenCalledWith(
-			expect.objectContaining({ to: "avery@example.com" }),
-		);
-		expect(onAbsenceRequestRejected).toHaveBeenCalled();
+		// The requester's email goes out with this notification, through the
+		// notification email channel only (#1152).
+		expect(onAbsenceRequestApproved).toHaveBeenCalledOnce();
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
@@ -1309,12 +1220,7 @@ describe("absence requester decision notifications", () => {
 						entityId: string,
 						currentEmployee: CurrentApprover,
 					) => Effect.Effect<unknown, unknown, unknown>,
-				) =>
-					updateEntity(dbService, entityId, currentEmployee).pipe(
-						Effect.provideService(EmailService, {
-							send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
-						}),
-					),
+				) => updateEntity(dbService, entityId, currentEmployee),
 			),
 		}));
 		const { approveAbsenceWithCurrentApproverEffect } = await import(
@@ -1337,6 +1243,7 @@ describe("absence requester decision notifications", () => {
 				organizationId: "org-1",
 				categoryName: "Vacation",
 				approverName: "Morgan Manager",
+				days: 4,
 			}),
 		);
 		expect(getAbsenceDays).toHaveBeenCalledWith(
@@ -1364,12 +1271,7 @@ describe("absence requester decision notifications", () => {
 						entityId: string,
 						currentEmployee: CurrentApprover,
 					) => Effect.Effect<unknown, unknown, unknown>,
-				) =>
-					updateEntity(dbService, entityId, currentEmployee).pipe(
-						Effect.provideService(EmailService, {
-							send: vi.fn(() => Effect.succeed({ messageId: "message-1" })),
-						}),
-					),
+				) => updateEntity(dbService, entityId, currentEmployee),
 			),
 		}));
 		const { rejectAbsenceWithCurrentApproverEffect } = await import(
@@ -1394,6 +1296,7 @@ describe("absence requester decision notifications", () => {
 				categoryName: "Vacation",
 				approverName: "Morgan Manager",
 				rejectionReason: "Insufficient balance",
+				days: 4,
 			}),
 		);
 		expect(onAbsenceRequestApproved).not.toHaveBeenCalled();

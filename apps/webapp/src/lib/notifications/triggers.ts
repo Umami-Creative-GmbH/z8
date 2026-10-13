@@ -6,7 +6,11 @@
  */
 
 import { DateTime } from "luxon";
-import type { PlainDate } from "@/lib/datetime/temporal-core";
+import {
+	instantFromDate,
+	type PlainDate,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
 	fillNotificationTemplate,
@@ -99,6 +103,48 @@ interface AbsenceRequestParams {
 
 interface AbsenceApprovalParams extends AbsenceRequestParams {
 	approverName: string;
+	/** The absence's absence days, for the email and its override variables. */
+	days?: number;
+}
+
+/**
+ * The absence's calendar days as typed params (#1149), so every channel and an
+ * email override's `{{startDate}}`/`{{endDate}}` show them in the reader's language.
+ */
+function absenceDateParams(params: { startDate: string; endDate: string }) {
+	const start = parsePlainDate(params.startDate);
+	const end = parsePlainDate(params.endDate);
+	return {
+		startDate: notificationParam.plainDate(start),
+		endDate: notificationParam.plainDate(end),
+		dateRange: notificationParam.plainDateRange(start, end),
+	};
+}
+
+/** What an absence decision's email and override variables need (#1152). */
+function absenceDecisionParams(params: AbsenceApprovalParams) {
+	return {
+		approverName: params.approverName,
+		categoryName: params.categoryName,
+		...absenceDateParams(params),
+		...(params.days === undefined ? {} : { days: params.days }),
+	};
+}
+
+/** A `time_entry` time: its instant and the UTC offset stored on that entry. */
+export interface EntryTime {
+	at: Date;
+	utcOffsetMinutes: number;
+}
+
+/** The clock-in and clock-out of a work period, each at its own entry's offset. */
+export interface WorkPeriodEntryTimes {
+	clockIn: EntryTime;
+	clockOut: EntryTime | null;
+}
+
+function entryTimeParam(time: EntryTime, preset: "dateMedium" | "time") {
+	return notificationParam.entryInstant(instantFromDate(time.at), time.utcOffsetMinutes, preset);
 }
 
 interface AbsenceRejectionParams extends AbsenceApprovalParams {
@@ -108,6 +154,8 @@ interface AbsenceRejectionParams extends AbsenceApprovalParams {
 interface AbsenceSubmittedToManagerParams extends AbsenceRequestParams {
 	managerUserId: string;
 	managerName: string;
+	days?: number;
+	notes?: string | null;
 }
 
 interface AbsenceRecordedByManagerParams extends AbsenceRequestParams {
@@ -185,6 +233,19 @@ export async function onAbsenceRequestPendingApproval(
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/approvals/inbox",
+			// The manager's email and its override variables (#1152).
+			metadata: {
+				approvalSubject: "absence",
+				i18n: {
+					params: {
+						employeeName: params.employeeName,
+						categoryName: params.categoryName,
+						...absenceDateParams(params),
+						...(params.days === undefined ? {} : { days: params.days }),
+						...(params.notes ? { notes: params.notes } : {}),
+					},
+				},
+			},
 		});
 	} catch (error) {
 		logger.error(
@@ -210,6 +271,7 @@ export async function onAbsenceRequestApproved(
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
+			metadata: { i18n: { params: absenceDecisionParams(params) } },
 		});
 	} catch (error) {
 		logger.error(
@@ -298,6 +360,14 @@ export async function onAbsenceRequestRejected(
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
+			metadata: {
+				i18n: {
+					params: {
+						...absenceDecisionParams(params),
+						...(params.rejectionReason ? { rejectionReason: params.rejectionReason } : {}),
+					},
+				},
+			},
 		});
 	} catch (error) {
 		logger.error(
@@ -320,13 +390,36 @@ interface TimeCorrectionParams {
 	correctedTime: Date;
 }
 
-interface TimeCorrectionSubmittedToManagerParams extends TimeCorrectionParams {
+interface TimeCorrectionSubmittedToManagerParams {
+	workPeriodId: string;
 	managerUserId: string;
+	employeeName: string;
+	organizationId: string;
 	reason?: string;
+	/** The work period as recorded and as the employee asks to correct it. */
+	original: WorkPeriodEntryTimes;
+	corrected: WorkPeriodEntryTimes;
 }
 
 interface TimeCorrectionApprovalParams extends TimeCorrectionParams {
 	approverName: string;
+	/**
+	 * The work period as corrected (the decided correction), each time at its entry's
+	 * offset; null when its entries cannot be read.
+	 */
+	corrected: WorkPeriodEntryTimes | null;
+}
+
+/** The corrected times of a time correction decision's email (#1137). */
+function correctedTimeParams(corrected: WorkPeriodEntryTimes | null) {
+	if (!corrected) return {};
+	return {
+		date: entryTimeParam(corrected.clockIn, "dateMedium"),
+		correctedClockIn: entryTimeParam(corrected.clockIn, "time"),
+		...(corrected.clockOut
+			? { correctedClockOut: entryTimeParam(corrected.clockOut, "time") }
+			: {}),
+	};
 }
 
 interface TimeCorrectionRejectionParams extends TimeCorrectionApprovalParams {
@@ -374,6 +467,25 @@ export async function onTimeCorrectionPendingApproval(
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/approvals/inbox",
+			// The manager's email and its override variables (#1152).
+			metadata: {
+				approvalSubject: "time_correction",
+				i18n: {
+					params: {
+						employeeName: params.employeeName,
+						...(params.reason ? { reason: params.reason } : {}),
+						date: entryTimeParam(params.original.clockIn, "dateMedium"),
+						originalClockIn: entryTimeParam(params.original.clockIn, "time"),
+						...(params.original.clockOut
+							? { originalClockOut: entryTimeParam(params.original.clockOut, "time") }
+							: {}),
+						correctedClockIn: entryTimeParam(params.corrected.clockIn, "time"),
+						...(params.corrected.clockOut
+							? { correctedClockOut: entryTimeParam(params.corrected.clockOut, "time") }
+							: {}),
+					},
+				},
+			},
 		});
 	} catch (error) {
 		logger.error(
@@ -631,6 +743,15 @@ export async function onTimeCorrectionApproved(
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
+			// Without these the email channel has nothing to send (#1137).
+			metadata: {
+				i18n: {
+					params: {
+						approverName: params.approverName,
+						...correctedTimeParams(params.corrected),
+					},
+				},
+			},
 		});
 	} catch (error) {
 		logger.error(
@@ -660,6 +781,15 @@ export async function onTimeCorrectionRejected(
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
+			metadata: {
+				i18n: {
+					params: {
+						approverName: params.approverName,
+						...correctedTimeParams(params.corrected),
+						...(params.rejectionReason ? { rejectionReason: params.rejectionReason } : {}),
+					},
+				},
+			},
 		});
 	} catch (error) {
 		logger.error(
