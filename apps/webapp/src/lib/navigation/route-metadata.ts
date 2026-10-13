@@ -65,6 +65,12 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleDefault: "Project Reports",
 	},
 	{
+		id: "reports-vehicles",
+		href: "/reports/vehicles",
+		titleKey: "reports.vehicles.title",
+		titleDefault: "Distance per Vehicle",
+	},
+	{
 		id: "reports",
 		href: "/reports",
 		titleKey: "nav.reports",

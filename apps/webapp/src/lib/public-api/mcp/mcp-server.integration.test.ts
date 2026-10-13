@@ -241,6 +241,16 @@ describe("the MCP server on PostgreSQL", () => {
 		await workPeriod("2026-10-02T06:00:00Z", "2026-10-02T14:00:00Z");
 		await workPeriod("2026-10-05T06:00:00Z", "2026-10-05T14:00:00Z");
 		await workPeriod("2026-10-31T07:00:00Z", null);
+		await admin.query(
+			`with vehicle as (
+			   insert into organization_vehicle (organization_id, name, licence_plate, updated_at)
+			   values ($1, 'T795 van', 'B MC 795', now()) returning id
+			 )
+			 update work_period set vehicle_kind = 'organization', vehicle_id = (select id from vehicle),
+			   odometer_start_km = 500, odometer_end_km = 540, driven_distance_km = 40
+			 where organization_id = $1 and start_time = '2026-10-02T06:00:00'`,
+			[ids.organization],
+		);
 
 		const { rows: categories } = await admin.query<{ id: string; type: string }>(
 			`insert into absence_category (organization_id, type, name, updated_at) values
@@ -396,6 +406,31 @@ describe("the MCP server on PostgreSQL", () => {
 					start: { at: "2026-10-01T06:00:00.000Z", utcOffset: "+02:00" },
 					end: { at: "2026-10-01T14:00:00.000Z", utcOffset: "+02:00" },
 					durationMinutes: 480,
+					vehicleUse: null,
+				}),
+			],
+			nextCursor: null,
+		});
+	});
+
+	it("returns the vehicle use of a work period (#1128)", async () => {
+		const client = await connect((await key(["time-entries:read"])).key);
+		const page = await client.callTool({
+			name: "list_work_periods",
+			arguments: { from: "2026-10-02T00:00:00Z", to: "2026-10-03T00:00:00Z" },
+		});
+		expect(page.structuredContent).toEqual({
+			data: [
+				expect.objectContaining({
+					vehicleUse: {
+						kind: "organization",
+						vehicleId: expect.any(String),
+						vehicleName: "T795 van",
+						licencePlate: "B MC 795",
+						odometerStartKm: 500,
+						odometerEndKm: 540,
+						drivenDistanceKm: 40,
+					},
 				}),
 			],
 			nextCursor: null,

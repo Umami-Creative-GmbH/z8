@@ -31,8 +31,26 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type ItemRow = typeof travelExpenseReportItem.$inferSelect;
 
+/**
+ * Facts a new mileage item starts with when it is pre-filled from own-vehicle
+ * work (#1131): the work's local start date, its driven distance and the work
+ * period it came from. The route is always left to the employee.
+ */
+export interface MileageItemPrefill {
+	expenseDate: string;
+	/** Kilometres at two decimals, as `parseMileageDistance` normalizes them. */
+	distanceKm: string;
+	sourceWorkPeriodId: string;
+}
+
 /** Values of a new mileage item: always the employee's own vehicle, so employee-paid. */
-function newMileageItem(owner: ReportOwner, reportId: string, position: number, at: Date) {
+function newMileageItem(
+	owner: ReportOwner,
+	reportId: string,
+	position: number,
+	at: Date,
+	prefill?: MileageItemPrefill,
+) {
 	return {
 		organizationId: owner.organizationId,
 		reportId,
@@ -40,10 +58,49 @@ function newMileageItem(owner: ReportOwner, reportId: string, position: number, 
 		position,
 		paidBy: "employee" as const,
 		mileageVehicle: "car" as const,
+		...(prefill
+			? {
+					expenseDate: prefill.expenseDate,
+					mileageDistanceKm: prefill.distanceKm,
+					sourceWorkPeriodId: prefill.sourceWorkPeriodId,
+				}
+			: {}),
 		createdAt: at,
 		updatedAt: at,
 		updatedBy: owner.userId,
 	};
+}
+
+/** Inserts a standalone report holding one (empty or pre-filled) mileage item. */
+export async function insertStandaloneMileageReport(
+	tx: Transaction,
+	owner: ReportOwner,
+	at: Date,
+	prefill?: MileageItemPrefill,
+): Promise<{ reportId: string; itemId: string }> {
+	// The organization's reimbursement currency (#607), read at creation only.
+	const currency = await loadOrganizationReimbursementCurrency(tx, owner.organizationId);
+	const [report] = await tx
+		.insert(travelExpenseReport)
+		.values({
+			organizationId: owner.organizationId,
+			employeeId: owner.employeeId,
+			kind: "standalone",
+			status: "draft",
+			reimbursementCurrency: currency,
+			createdAt: at,
+			createdBy: owner.userId,
+			updatedAt: at,
+			updatedBy: owner.userId,
+		})
+		.returning({ id: travelExpenseReport.id });
+	if (!report) throw new Error("Failed to create travel expense report");
+	const [item] = await tx
+		.insert(travelExpenseReportItem)
+		.values(newMileageItem(owner, report.id, 0, at, prefill))
+		.returning({ id: travelExpenseReportItem.id });
+	if (!item) throw new Error("Failed to create travel expense report item");
+	return { reportId: report.id, itemId: item.id };
 }
 
 /** Creates a standalone report holding one empty mileage item. */
@@ -53,37 +110,46 @@ export async function createStandaloneMileageReport(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<{ reportId: string; itemId: string }> {
 	const at = dateFromInstant(now);
-	return database.transaction(async (tx) => {
-		// The organization's reimbursement currency (#607), read at creation only.
-		const currency = await loadOrganizationReimbursementCurrency(tx, owner.organizationId);
-		const [report] = await tx
-			.insert(travelExpenseReport)
-			.values({
-				organizationId: owner.organizationId,
-				employeeId: owner.employeeId,
-				kind: "standalone",
-				status: "draft",
-				reimbursementCurrency: currency,
-				createdAt: at,
-				createdBy: owner.userId,
-				updatedAt: at,
-				updatedBy: owner.userId,
-			})
-			.returning({ id: travelExpenseReport.id });
-		if (!report) throw new Error("Failed to create travel expense report");
-		const [item] = await tx
-			.insert(travelExpenseReportItem)
-			.values(newMileageItem(owner, report.id, 0, at))
-			.returning({ id: travelExpenseReportItem.id });
-		if (!item) throw new Error("Failed to create travel expense report item");
-		return { reportId: report.id, itemId: item.id };
-	});
+	return database.transaction((tx) => insertStandaloneMileageReport(tx, owner, at));
 }
 
 export type AddTripMileageItemResult =
 	| { kind: "added"; item: ReportItemView }
 	| { kind: "not_found" }
 	| { kind: "not_draft" };
+
+/**
+ * Appends a mileage item to the owner's draft (or returned) trip, after its
+ * last expense, under the report lock. Returns the inserted row.
+ */
+export async function insertTripMileageItem(
+	tx: Transaction,
+	owner: ReportOwner,
+	reportId: string,
+	at: Date,
+	prefill?: MileageItemPrefill,
+): Promise<{ kind: "added"; item: ItemRow } | { kind: "not_found" } | { kind: "not_draft" }> {
+	const report = await lockOwnDraftReport(tx, owner, reportId);
+	if (report.status !== "draft") return { kind: report.status };
+	if (report.kind !== "trip") return { kind: "not_found" };
+	// The report lock serializes adds, so the next position is free.
+	const [last] = await tx
+		.select({ position: sql<number | null>`max(${travelExpenseReportItem.position})` })
+		.from(travelExpenseReportItem)
+		.where(
+			and(
+				eq(travelExpenseReportItem.reportId, reportId),
+				eq(travelExpenseReportItem.organizationId, owner.organizationId),
+			),
+		);
+	const [item] = await tx
+		.insert(travelExpenseReportItem)
+		.values(newMileageItem(owner, reportId, (last?.position ?? -1) + 1, at, prefill))
+		.returning();
+	if (!item) throw new Error("Failed to create travel expense report item");
+	await touchReport(tx, owner, reportId, at);
+	return { kind: "added", item };
+}
 
 /** Appends an empty mileage item to a draft trip, after its last expense. */
 export async function addTripMileageItem(
@@ -94,27 +160,10 @@ export async function addTripMileageItem(
 ): Promise<AddTripMileageItemResult> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
-		const report = await lockOwnDraftReport(tx, owner, input.reportId);
-		if (report.status !== "draft") return { kind: report.status };
-		if (report.kind !== "trip") return { kind: "not_found" };
-		// The report lock serializes adds, so the next position is free.
-		const [last] = await tx
-			.select({ position: sql<number | null>`max(${travelExpenseReportItem.position})` })
-			.from(travelExpenseReportItem)
-			.where(
-				and(
-					eq(travelExpenseReportItem.reportId, input.reportId),
-					eq(travelExpenseReportItem.organizationId, owner.organizationId),
-				),
-			);
-		const [item] = await tx
-			.insert(travelExpenseReportItem)
-			.values(newMileageItem(owner, input.reportId, (last?.position ?? -1) + 1, at))
-			.returning();
-		if (!item) throw new Error("Failed to create travel expense report item");
-		await touchReport(tx, owner, input.reportId, at);
+		const added = await insertTripMileageItem(tx, owner, input.reportId, at);
+		if (added.kind !== "added") return added;
 		// Without a date and distance there is nothing to price yet.
-		return { kind: "added", item: toItemView(item, [], { status: "incomplete" }) };
+		return { kind: "added", item: toItemView(added.item, [], { status: "incomplete" }) };
 	});
 }
 

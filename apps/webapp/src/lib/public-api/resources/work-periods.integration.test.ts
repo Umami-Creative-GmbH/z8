@@ -19,6 +19,7 @@ describe("work periods in the Public API", () => {
 	const admin = integrationAdminPool();
 	let key: string;
 	let ana: string;
+	let vehicle: string;
 	const periods: Record<string, string> = {};
 
 	async function cleanup() {
@@ -170,6 +171,27 @@ describe("work periods in the Public API", () => {
 			start: ["2026-10-01T08:00:00Z", 0],
 			end: ["2026-10-01T09:00:00Z", 0],
 		});
+		const { rows: vehicles } = await admin.query<{ id: string }>(
+			`insert into organization_vehicle (organization_id, name, licence_plate, archived_at, updated_at)
+			 values ($1, 'T1128 van', 'B XY 1128', now(), now()) returning id`,
+			[ids.organization],
+		);
+		vehicle = vehicles[0].id;
+		await admin.query(
+			`update work_period set vehicle_kind = 'organization', vehicle_id = $2,
+			   odometer_start_km = $3, odometer_end_km = $4, driven_distance_km = $5
+			 where id = $1`,
+			[periods.travel, vehicle, 12000, 12085, 85],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = 12085
+			 where id = $1`,
+			[periods.running, vehicle],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'own', driven_distance_km = 42 where id = $1`,
+			[periods.pending],
+		);
 		key = await createTestKey(ids.organization, ids.admin, ["time-entries:read"]);
 	});
 	afterAll(cleanup);
@@ -185,6 +207,7 @@ describe("work periods in the Public API", () => {
 			end: { at: "2026-10-01T14:00:00.000Z", utcOffset: "+02:00" },
 			durationMinutes: 480,
 			approvalStatus: "approved",
+			vehicleUse: null,
 		});
 		expect(byId.get(periods.travel)).toMatchObject({
 			start: { at: "2026-10-05T06:00:00.000Z", utcOffset: "+02:00" },
@@ -206,6 +229,38 @@ describe("work periods in the Public API", () => {
 			durationMinutes: null,
 		});
 		expect(byId.get(periods.pending)).toMatchObject({ approvalStatus: "pending" });
+	});
+
+	it("returns vehicle use with the vehicle's name and plate, also once archived; an own vehicle has neither (#1128)", async () => {
+		const rows = await walkPublicApi(listWorkPeriods, key, october);
+		const byId = new Map(rows.map((row) => [row.id, row]));
+		expect(byId.get(periods.travel)?.vehicleUse).toEqual({
+			kind: "organization",
+			vehicleId: vehicle,
+			vehicleName: "T1128 van",
+			licencePlate: "B XY 1128",
+			odometerStartKm: 12000,
+			odometerEndKm: 12085,
+			drivenDistanceKm: 85,
+		});
+		expect(byId.get(periods.pending)?.vehicleUse).toEqual({
+			kind: "own",
+			vehicleId: null,
+			vehicleName: null,
+			licencePlate: null,
+			odometerStartKm: null,
+			odometerEndKm: null,
+			drivenDistanceKm: 42,
+		});
+		expect(byId.get(periods.running)?.vehicleUse).toEqual({
+			kind: "organization",
+			vehicleId: vehicle,
+			vehicleName: "T1128 van",
+			licencePlate: "B XY 1128",
+			odometerStartKm: 12085,
+			odometerEndKm: null,
+			drivenDistanceKm: null,
+		});
 	});
 
 	it("selects by start instant and leaves out rejected, deleted and other organizations' work", async () => {

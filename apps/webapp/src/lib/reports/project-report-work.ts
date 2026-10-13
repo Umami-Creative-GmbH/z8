@@ -47,7 +47,7 @@ export function reportedWorkDay(work: Pick<ReportedWork, "startedAt" | "startOff
 }
 
 /** UTC offsets span -12:00 to +14:00; a day of margin covers every local day. */
-function instantWindow(range: ReportDayRange) {
+export function instantWindow(range: ReportDayRange) {
 	const start = range.fromDay.subtract({ days: 1 }).toZonedDateTime("UTC").toInstant();
 	const end = range.toDay.add({ days: 2 }).toZonedDateTime("UTC").toInstant();
 	return { start: dateFromInstant(start), end: dateFromInstant(end) };
