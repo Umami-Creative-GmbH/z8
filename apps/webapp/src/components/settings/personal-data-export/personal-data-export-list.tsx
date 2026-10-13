@@ -4,12 +4,12 @@ import { IconDownload, IconLoader2 } from "@tabler/icons-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getPersonalDataExportDownloadUrl } from "@/app/[locale]/(app)/settings/my-data/actions";
-import { formatFileSize } from "@/components/personnel-file/document-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
+import { formatFileSize } from "@/lib/format-file-size";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 
 /** How often a list looks for a finished build while one is in progress. */
