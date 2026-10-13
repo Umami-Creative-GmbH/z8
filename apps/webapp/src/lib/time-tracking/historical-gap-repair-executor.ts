@@ -53,6 +53,7 @@ import {
 	type HistoricalWorkEvidenceReader,
 	readHistoricalWorkEvidence,
 } from "./historical-work-diagnostics-reader";
+import { vehicleUseColumns, vehicleUseFromColumns } from "./vehicle-use/work-vehicle-use";
 import { WORK_LOCATION_TYPES, type WorkLocationType } from "./work-location";
 import type { WorkTransactionClient } from "./work-transaction";
 
@@ -571,6 +572,20 @@ async function insertDetail(
 	detail: RepairedWorkDetail,
 	unit: GapRepairUnit,
 ) {
+	// Vehicle use is mirrored from the planned period as it stands, never invented
+	// (#1126); the period's revision guard proves it unchanged since planning.
+	const [period] = await tx
+		.select({
+			vehicleKind: workPeriod.vehicleKind,
+			vehicleId: workPeriod.vehicleId,
+			odometerStartKm: workPeriod.odometerStartKm,
+			odometerEndKm: workPeriod.odometerEndKm,
+			drivenDistanceKm: workPeriod.drivenDistanceKm,
+		})
+		.from(workPeriod)
+		.where(and(eq(workPeriod.id, unit.workPeriodId), eq(workPeriod.organizationId, organizationId)))
+		.limit(1);
+	const vehicle = vehicleUseColumns(period ? vehicleUseFromColumns(period) : null);
 	expectOne(
 		await tx
 			.insert(timeRecordWork)
@@ -584,6 +599,11 @@ async function insertDetail(
 						? null
 						: workLocationTypeOf(detail.workLocationType, unit),
 				computationMetadata: null,
+				vehicleKind: vehicle.vehicleKind,
+				vehicleId: vehicle.vehicleId,
+				odometerStartKm: vehicle.odometerStartKm,
+				odometerEndKm: vehicle.odometerEndKm,
+				drivenDistanceKm: vehicle.drivenDistanceKm,
 			})
 			.onConflictDoNothing()
 			.returning({ recordId: timeRecordWork.recordId }),

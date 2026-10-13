@@ -41,6 +41,14 @@ import {
 } from "@/lib/time-tracking/time-entry-writer";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import {
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import {
+	resolveWorkVehicleUseSplit,
+	workVehicleUseRefusalCodeOf,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use-eligibility";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import { assertNoUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
@@ -67,6 +75,12 @@ export type SplitWorkPeriodRequest = {
 	 * generates an identity that names the operation but cannot recognize a retry.
 	 */
 	submissionId?: string;
+	/**
+	 * The one value asked at the split of work with vehicle use (#1126): the
+	 * odometer reading at the split, or the first half's km of a directly entered
+	 * distance. Omitted when skipped.
+	 */
+	vehicleSplitKm?: number;
 };
 
 const submissionIdSchema = z.uuid();
@@ -88,7 +102,10 @@ async function describeSplitFailure(
 	if (error instanceof ConflictError) {
 		return { error: error.message, code: error.conflictType };
 	}
-	if (error instanceof ValidationError) return { error: error.message };
+	if (error instanceof ValidationError) {
+		const refusal = workVehicleUseRefusalCodeOf(error);
+		return refusal ? { error: error.message, code: refusal } : { error: error.message };
+	}
 	if (error instanceof NotFoundError) return { error: "Work period not found" };
 	if (error instanceof WorkIntervalError) {
 		return { error: "Split time must be between work period start and end times" };
@@ -126,6 +143,10 @@ export async function splitOwnWorkPeriod(
 			disambiguation: request.disambiguation ?? null,
 			beforeNotes: request.beforeNotes ?? null,
 			afterNotes: request.afterNotes ?? null,
+			// Only when given: earlier commands stay byte-identical for replay (#1126).
+			...(request.vehicleSplitKm !== undefined && request.vehicleSplitKm !== null
+				? { vehicleSplitKm: request.vehicleSplitKm }
+				: {}),
 		},
 	};
 
@@ -248,6 +269,7 @@ export async function splitOwnWorkPeriod(
 						durations: resolvedSplit,
 						beforeNotes: request.beforeNotes,
 						afterNotes: request.afterNotes,
+						vehicleSplitKm: request.vehicleSplitKm,
 						request: { ipAddress, userAgent },
 					})),
 				};
@@ -303,6 +325,7 @@ async function splitLegacyWorkPeriod(
 		durations: { firstDurationMinutes: number; secondDurationMinutes: number };
 		beforeNotes?: string;
 		afterNotes?: string;
+		vehicleSplitKm?: number;
 		request: TimeEntryRequestMetadata;
 	},
 ): Promise<{ firstPeriodId: string; secondPeriodId: string }> {
@@ -340,6 +363,15 @@ async function splitLegacyWorkPeriod(
 		});
 	}
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, locked);
+	// The vehicle carries over to both halves; the value at the split divides the km (#1126).
+	const vehicleSplit = await resolveWorkVehicleUseSplit(tx, {
+		organizationId,
+		employeeId,
+		use: vehicleUseFromColumns(locked),
+		value: input.vehicleSplitKm,
+	});
+	const retainedVehicle = vehicleUseColumns(vehicleSplit.retained);
+	const generatedVehicle = vehicleUseColumns(vehicleSplit.generated);
 
 	const firstClockOut = await createTimeEntry(
 		{
@@ -385,6 +417,9 @@ async function splitLegacyWorkPeriod(
 			clockOutId: firstClockOut.id,
 			endTime: input.splitAtDate,
 			durationMinutes: input.durations.firstDurationMinutes,
+			odometerStartKm: retainedVehicle.odometerStartKm,
+			odometerEndKm: retainedVehicle.odometerEndKm,
+			drivenDistanceKm: retainedVehicle.drivenDistanceKm,
 			updatedAt: new Date(),
 		})
 		.where(
@@ -408,6 +443,11 @@ async function splitLegacyWorkPeriod(
 			// Both halves keep the source's project and billability (#900).
 			projectId: locked.projectId,
 			isBillable: locked.isBillable,
+			vehicleKind: generatedVehicle.vehicleKind,
+			vehicleId: generatedVehicle.vehicleId,
+			odometerStartKm: generatedVehicle.odometerStartKm,
+			odometerEndKm: generatedVehicle.odometerEndKm,
+			drivenDistanceKm: generatedVehicle.drivenDistanceKm,
 		})
 		.returning();
 	if (!secondWorkPeriod) throw new Error("Second work period insert failed");

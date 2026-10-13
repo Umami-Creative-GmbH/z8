@@ -765,4 +765,97 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 			decision: { lifecycle: { authority: "canonical", workflowId: workflow.id } },
 		});
 	});
+
+	describe("vehicle use (#1126)", () => {
+		const van = "f3033000-0000-4000-8000-000000000001";
+		type Km = { start: number | null; end: number | null; distance: number | null };
+		const km = (start: number | null, end: number | null, distance: number | null) => ({
+			vehicle: van,
+			start,
+			end,
+			distance,
+		});
+
+		/** Records vehicle use the way #1120 stores it: on the period and its canonical detail. */
+		async function driveVan(periodId: string, value: Km) {
+			await admin.query(
+				`insert into organization_vehicle (id, organization_id, name, licence_plate)
+				 values ($1, $2, 'Van', 'B-VN 303') on conflict do nothing`,
+				[van, ids.organization],
+			);
+			const set = `vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = $3,
+			  odometer_end_km = $4, driven_distance_km = $5`;
+			const values = [periodId, van, value.start, value.end, value.distance];
+			await admin.query(`update work_period set ${set} where id = $1`, values);
+			await admin.query(
+				`update time_record_work set ${set}
+				 where record_id = (select canonical_record_id from work_period where id = $1)`,
+				values,
+			);
+		}
+
+		async function vehicleGraph() {
+			const { rows } = await admin.query<{ period: Km; detail: Km }>(
+				`select json_build_object('vehicle', wp.vehicle_id, 'start', wp.odometer_start_km,
+				   'end', wp.odometer_end_km, 'distance', wp.driven_distance_km) as period,
+				 json_build_object('vehicle', w.vehicle_id, 'start', w.odometer_start_km,
+				   'end', w.odometer_end_km, 'distance', w.driven_distance_km) as detail
+				 from work_period wp
+				 join time_record_work w on w.record_id = wp.canonical_record_id
+				 where wp.organization_id = $1 and wp.deleted_at is null
+				 order by wp.start_time`,
+				[ids.organization],
+			);
+			return rows;
+		}
+
+		it.each([
+			["an adopted", "active"],
+			["a legacy", "inactive"],
+		] as const)(
+			"carries the vehicle over %s organization's terminal break and leaves the cut readings missing",
+			async (_label, mode) => {
+				await setAppend(mode);
+				const { periodId } = await policyClockOut();
+				await driveVan(periodId, { start: 12_000, end: 12_085, distance: 85 });
+
+				await expect(approve(await pendingRequest(periodId))).resolves.toMatchObject({
+					status: "approved",
+				});
+
+				expect(await vehicleGraph()).toEqual([
+					{ period: km(12_000, null, null), detail: km(12_000, null, null) },
+					{ period: km(null, 12_085, null), detail: km(null, 12_085, null) },
+				]);
+				if (mode === "active") {
+					const result = only(await receipts()).result as {
+						originatingWork: { attribution: object };
+						segments: { attribution: object }[];
+					};
+					const vehicle = { kind: "organization", vehicleId: van };
+					expect(result.originatingWork.attribution).toMatchObject({
+						vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 },
+					});
+					expect(result.segments.map(({ attribution }) => attribution)).toMatchObject([
+						{ vehicleUse: { vehicle, startKm: 12_000, endKm: null, distanceKm: null } },
+						{ vehicleUse: { vehicle, startKm: null, endKm: 12_085, distanceKm: null } },
+					]);
+				}
+			},
+		);
+
+		it("keeps a directly entered distance on the retained work", async () => {
+			const { periodId } = await policyClockOut();
+			await driveVan(periodId, { start: null, end: null, distance: 120 });
+
+			await expect(approve(await pendingRequest(periodId))).resolves.toMatchObject({
+				status: "approved",
+			});
+
+			expect(await vehicleGraph()).toEqual([
+				{ period: km(null, null, 120), detail: km(null, null, 120) },
+				{ period: km(null, null, null), detail: km(null, null, null) },
+			]);
+		});
+	});
 });
