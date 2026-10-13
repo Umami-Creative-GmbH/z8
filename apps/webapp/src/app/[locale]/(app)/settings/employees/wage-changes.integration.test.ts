@@ -91,23 +91,12 @@ describe("wage changes on PostgreSQL", () => {
 		return rows;
 	}
 
-	async function employeeWageFields() {
+	async function employeeContractFields() {
 		const { rows } = await fixture.pool.query<{
 			contract_type: string;
-			current_hourly_rate: string | null;
 			position: string | null;
-		}>("select contract_type, current_hourly_rate, position from employee where id = $1", [
-			fixture.employeeId,
-		]);
+		}>("select contract_type, position from employee where id = $1", [fixture.employeeId]);
 		return rows[0];
-	}
-
-	async function rateHistoryCount() {
-		const { rows } = await fixture.pool.query<{ count: string }>(
-			"select count(*) from employee_rate_history where employee_id = $1",
-			[fixture.employeeId],
-		);
-		return Number(rows[0]?.count);
 	}
 
 	beforeAll(async () => {
@@ -128,12 +117,8 @@ describe("wage changes on PostgreSQL", () => {
 		await fixture.pool.query("delete from employee_employment_history where employee_id = $1", [
 			fixture.employeeId,
 		]);
-		await fixture.pool.query("delete from employee_rate_history where employee_id = $1", [
-			fixture.employeeId,
-		]);
 		await fixture.pool.query(
-			`update employee set contract_type = 'hourly', current_hourly_rate = 25.00, position = null
-			 where id = $1`,
+			"update employee set contract_type = 'hourly', position = null where id = $1",
 			[fixture.employeeId],
 		);
 		await fixture.pool.query(
@@ -175,7 +160,6 @@ describe("wage changes on PostgreSQL", () => {
 			["2026-01-01", "2026-07-01", "25.00", 1800, "hybrid", "CHF", null, "confirmed"],
 			["2026-07-01", null, "27.50", 1800, "hybrid", "CHF", "Annual review", "confirmed"],
 		]);
-		expect(await rateHistoryCount()).toBe(0);
 	});
 
 	it("keeps a draft wage change out of the confirmed timeline", async () => {
@@ -238,12 +222,7 @@ describe("wage changes on PostgreSQL", () => {
 		} as Parameters<typeof updateEmployeeAction>[1]);
 
 		expect(result).toMatchObject({ success: true });
-		expect(await employeeWageFields()).toEqual({
-			contract_type: "hourly",
-			current_hourly_rate: "25.00",
-			position: "Lead",
-		});
-		expect(await rateHistoryCount()).toBe(0);
+		expect(await employeeContractFields()).toEqual({ contract_type: "hourly", position: "Lead" });
 		expect(await terms()).toHaveLength(1);
 	});
 
@@ -268,11 +247,7 @@ describe("wage changes on PostgreSQL", () => {
 		} as Parameters<typeof updateEmployeeAction>[1]);
 
 		expect(result).toMatchObject({ success: true });
-		expect(await employeeWageFields()).toEqual({
-			contract_type: "hourly",
-			current_hourly_rate: "25.00",
-			position: "Lead",
-		});
-		expect(await rateHistoryCount()).toBe(0);
+		expect(await employeeContractFields()).toEqual({ contract_type: "hourly", position: "Lead" });
+		expect(await terms()).toHaveLength(1);
 	});
 });

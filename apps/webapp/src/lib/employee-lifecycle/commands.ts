@@ -16,7 +16,6 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
-import { storedEmployeeWage, wageForContract } from "@/lib/validations/employment-history";
 import { departureCutoff } from "./cutoff";
 import { runDepartureTransaction } from "./departure-transaction";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
@@ -671,9 +670,6 @@ async function rehireEmployee(
 				role: input.role,
 				teamId: input.teamId,
 				contractType: input.contractType,
-				currentHourlyRate: storedEmployeeWage(
-					wageForContract(input.contractType, input.hourlyRate ?? null),
-				),
 				endDate: null,
 				updatedAt: nowDate,
 			})

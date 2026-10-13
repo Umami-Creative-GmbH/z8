@@ -361,7 +361,6 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			position: "Principal",
 			employeeNumber: "E-OLD",
 			contractType: "hourly",
-			currentHourlyRate: "75.00",
 			isActive: false,
 		});
 
@@ -885,7 +884,7 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 		expect(source).toContain("?? null");
 	});
 
-	it("applies invitation draft fields when creating an employee", async () => {
+	it("applies invitation draft fields, but not the wage, when creating an employee", async () => {
 		const db = createInvitationDraftDbMock({
 			draft: {
 				invitationId: "invite-1",
@@ -927,8 +926,11 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				position: "Lead",
 				employeeNumber: "E-100",
 				contractType: "hourly",
-				currentHourlyRate: "42.50",
 			}),
+		);
+		// The wage lives only in the first employment terms (Organization ADR 0002).
+		expect(db.values).not.toHaveBeenCalledWith(
+			expect.objectContaining({ currentHourlyRate: expect.anything() }),
 		);
 	});
 
@@ -1005,7 +1007,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				role: "manager",
 				position: "Prepared Lead",
 				contractType: "hourly",
-				currentHourlyRate: "42.50",
 			}),
 		);
 		expect(db.delete).toHaveBeenCalledWith(employeeInvitationDraft);
@@ -1119,8 +1120,10 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				role: "manager",
 				position: "Lead",
 				contractType: "hourly",
-				currentHourlyRate: "42.50",
 			}),
+		);
+		expect(db.set).not.toHaveBeenCalledWith(
+			expect.objectContaining({ currentHourlyRate: expect.anything() }),
 		);
 	});
 
@@ -1136,7 +1139,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 				position: "Principal",
 				employeeNumber: "E-OLD",
 				contractType: "hourly",
-				currentHourlyRate: "75.00",
 			},
 			draft: {
 				invitationId: "invite-1",
@@ -1224,7 +1226,6 @@ describe("ensureEmployeeForOrganizationMember invitation drafts", () => {
 			startDate,
 			endDate,
 			contractType: "hourly",
-			currentHourlyRate: "42.50",
 		});
 	});
 

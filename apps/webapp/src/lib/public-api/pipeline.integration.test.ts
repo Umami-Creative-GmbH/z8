@@ -168,11 +168,11 @@ describe("the Public API pipeline on PostgreSQL", () => {
 		teamId = teams[0].id;
 		const { rows } = await admin.query<{ id: string; user_id: string }>(
 			`insert into employee (user_id, organization_id, first_name, last_name, role, is_active,
-			   employee_number, start_date, birthday, current_hourly_rate, team_id, updated_at) values
-			 ($1, $5, 'Ana', 'Active', 'employee', true, 'E-1', '2024-03-01', '1990-01-01', 42, $7, $6),
-			 ($2, $5, 'Ben', 'Boss', 'manager', true, 'E-2', '2023-01-15', null, null, null, $6),
-			 ($3, $5, 'Cleo', 'Left', 'employee', false, null, null, null, null, null, $6),
-			 ($4, $8, 'Otto', 'Other', 'admin', true, 'X-9', null, null, null, null, $6)
+			   employee_number, start_date, birthday, team_id, updated_at) values
+			 ($1, $5, 'Ana', 'Active', 'employee', true, 'E-1', '2024-03-01', '1990-01-01', $7, $6),
+			 ($2, $5, 'Ben', 'Boss', 'manager', true, 'E-2', '2023-01-15', null, null, $6),
+			 ($3, $5, 'Cleo', 'Left', 'employee', false, null, null, null, null, $6),
+			 ($4, $8, 'Otto', 'Other', 'admin', true, 'X-9', null, null, null, $6)
 			 returning id, user_id`,
 			[ids.ana, ids.ben, ids.cleo, ids.otherAdmin, ids.organization, timestamp, teamId, ids.other],
 		);

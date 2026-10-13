@@ -17,7 +17,6 @@ import type { LifecycleClient } from "@/lib/employee-lifecycle/types";
 import {
 	type EmploymentReviewState,
 	type EmploymentStatus,
-	storedEmployeeWage,
 	type WorkModel,
 	wageForContract,
 } from "@/lib/validations/employment-history";
@@ -170,7 +169,7 @@ async function adjustNeighbours(
 	return adjusted.next;
 }
 
-/** Bridges the terms in force today to `employee.contract_type` / `current_hourly_rate` (#1179 drops the wage). */
+/** Projects the contract type of the terms in force today onto `employee.contract_type`. */
 async function projectCurrentTerms(
 	tx: TermsWriteClient,
 	scope: TermsWriteScope & { now: Date },
@@ -179,11 +178,7 @@ async function projectCurrentTerms(
 	if (!shouldUpdateCurrentEmployeeFields(row, scope.now)) return;
 	await tx
 		.update(employee)
-		.set({
-			contractType: row.contractType,
-			currentHourlyRate: storedEmployeeWage(row.hourlyRate),
-			updatedAt: scope.now,
-		})
+		.set({ contractType: row.contractType, updatedAt: scope.now })
 		.where(
 			and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
 		);

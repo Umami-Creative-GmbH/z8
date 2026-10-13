@@ -43,10 +43,7 @@ import {
 	updateEmployeeInvitationDraftSchema,
 	updateEmployeeSchema,
 } from "@/lib/validations/employee";
-import {
-	hourlyWageSchema,
-	storedEmployeeWage,
-} from "@/lib/validations/employment-history";
+import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import {
 	markEmployeeWorkBalanceDirty,
 	requestEmployeeWorkBalanceFullRebuild,
@@ -197,7 +194,6 @@ export async function createEmployeeAction(
 										endDate: validatedData.endDate || null,
 										isActive: true,
 										contractType,
-										currentHourlyRate: storedEmployeeWage(hourlyRate),
 									})
 									.returning();
 								// The wage lives in employment terms (Organization ADR 0002):
