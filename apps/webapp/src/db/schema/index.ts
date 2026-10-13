@@ -49,6 +49,8 @@ export * from "./coverage";
 export * from "./cron-job";
 // Custom fields on employees, projects and customers (#769)
 export * from "./custom-field";
+// Organization vehicles and their assigned drivers (#1118, spec #807)
+export * from "./vehicle";
 // Custom roles (configurable permissions)
 export * from "./custom-role";
 export * from "./customer";
