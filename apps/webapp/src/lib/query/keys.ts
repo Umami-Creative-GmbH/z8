@@ -291,6 +291,12 @@ export const queryKeys = {
 		breakStatus: () => ["time-clock", "break-status"] as const,
 		/** The signed-in employee's own position capture and consent (#826). */
 		positionCapture: () => ["time-clock", "position-capture"] as const,
+		/**
+		 * The signed-in employee's vehicle use for clocking (#1122): mode, vehicles,
+		 * pre-fill and the live work's vehicle use. Under `status`, so every clock
+		 * status refresh also refreshes it.
+		 */
+		vehicleUse: () => ["time-clock", "status", "vehicle-use"] as const,
 	},
 
 	// Position stamps on a work period's detail (#831); never the positions themselves

@@ -31,6 +31,7 @@ vi.mock("@/lib/billing/guard", () => ({
 const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
+const { changeLiveWorkVehicleUse: changeLive } = await import("../vehicle-use/live-vehicle-use");
 type ClockCommand = import("./types").ClockCommand;
 type ClockVehicleUse = import("../vehicle-use/clock-vehicle-use").ClockVehicleUse;
 type BreakVehicleUse = import("../vehicle-use/clock-vehicle-use").BreakVehicleUse;
@@ -409,6 +410,103 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 
 		expect(ended.outcome).toBe("executed");
 		expect(await periods()).toEqual([{ active: false, period: van(12_000), record: van(12_000) }]);
+	});
+
+	describe("live amendment while clocked in", () => {
+		async function livePeriodId() {
+			const { rows } = await admin.query<{ id: string }>(
+				"select id from work_period where organization_id = $1 and is_active",
+				[ids.organization],
+			);
+			const [row] = rows;
+			if (!row) throw new Error("No live work");
+			return row.id;
+		}
+
+		function amend(
+			workPeriodId: string,
+			vehicleUse: Parameters<typeof changeLive>[0]["vehicleUse"],
+		) {
+			return changeLive({
+				organizationId: ids.organization,
+				employeeId: ids.employee,
+				actorUserId: ids.user,
+				workPeriodId,
+				vehicleUse,
+			});
+		}
+
+		it.each(["active", "inactive"] as const)(
+			"changes the live work's vehicle and start reading, which the clock-out then ends (admission %s)",
+			async (admission) => {
+				await setAdmission(admission);
+				const clocking = newClocking();
+				await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 }));
+
+				await amend(await livePeriodId(), {
+					vehicle: { kind: "own" },
+					startKm: 50,
+					endKm: null,
+					distanceKm: null,
+				});
+				expect((await periods())[0]?.period).toEqual({
+					...none,
+					vehicle_kind: "own",
+					odometer_start_km: 50,
+				});
+
+				now = now.add({ hours: 1 });
+				await clocking.run(clockOut({ endKm: 80 }));
+				const closed = {
+					...none,
+					vehicle_kind: "own",
+					odometer_start_km: 50,
+					odometer_end_km: 80,
+					driven_distance_km: 30,
+				};
+				expect(await periods()).toEqual([{ active: false, period: closed, record: closed }]);
+			},
+		);
+
+		it("refuses a live change while vehicle use is off, or to an archived vehicle", async () => {
+			const clocking = newClocking();
+			await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 }));
+			const workPeriodId = await livePeriodId();
+
+			await expect(
+				amend(workPeriodId, {
+					vehicle: { kind: "organization", vehicleId: ids.archived },
+					startKm: null,
+					endKm: null,
+					distanceKm: null,
+				}),
+			).rejects.toMatchObject({ refusal: "vehicle_archived" });
+			await setVehicleUse("asked", false);
+			await expect(amend(workPeriodId, null)).rejects.toMatchObject({
+				refusal: "vehicle_use_off",
+			});
+			expect((await periods())[0]?.period).toEqual(van(12_000));
+		});
+
+		it("never changes completed work or another organization's work", async () => {
+			const clocking = newClocking();
+			await clocking.run(clockIn({ vehicle: vanChoice, startKm: 12_000 }));
+			const workPeriodId = await livePeriodId();
+			now = now.add({ hours: 1 });
+			await clocking.run(clockOut());
+
+			await expect(amend(workPeriodId, null)).rejects.toThrow();
+			await expect(
+				changeLive({
+					organizationId: ids.otherOrganization,
+					employeeId: ids.employee,
+					actorUserId: ids.user,
+					workPeriodId,
+					vehicleUse: null,
+				}),
+			).rejects.toThrow();
+			expect((await periods())[0]?.period).toEqual(van(12_000));
+		});
 	});
 
 	it("records a frozen version 4 clock-in's vehicle use once and replays an identical resubmission", async () => {
