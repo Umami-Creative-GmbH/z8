@@ -1527,6 +1527,13 @@
       "when": 1803052800000,
       "tag": "0217_vehicle_use_enablement",
       "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1803139200000,
+      "tag": "0218_work_vehicle_use",
+      "breakpoints": true
     }
   ]
 }

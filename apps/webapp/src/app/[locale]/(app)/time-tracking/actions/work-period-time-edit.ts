@@ -65,24 +65,61 @@ import {
 import { getEditCapabilityForPeriod } from "./policy-helpers";
 import { logger } from "./shared";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
+import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
+import {
+	buildWorkVehicleUse,
+	organizationVehicleIdOf,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+	type WorkVehicleUseFormContext,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import {
+	workVehicleUseRefusal,
+	workVehicleUseRefusalCodeOf,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use-eligibility";
 
 export interface WorkPeriodTimeEditContext {
 	access: WorkPeriodTimeEditAccess;
 	/** Timezone the wall-clock values are shown in and interpreted in. */
 	timezone: string;
 	values: WorkPeriodTimeEditValues;
+	/** Vehicle use (#1120): whether the owner is asked, and the vehicles to pick. */
+	vehicleUse: WorkVehicleUseFormContext;
 }
 
-export interface UpdateWorkPeriodTimesInput extends WorkPeriodTimeEditValues {
+/** Vehicle use as a form submits it; the server validates it and derives the distance. */
+export interface WorkVehicleUseInput {
+	vehicle: { kind: "own" } | { kind: "organization"; vehicleId: string };
+	startKm?: number | null;
+	endKm?: number | null;
+	distanceKm?: number | null;
+}
+
+export interface UpdateWorkPeriodTimesInput
+	extends Omit<WorkPeriodTimeEditValues, "vehicleUse"> {
 	workLocationType?: WorkLocationType;
+	/** Absent keeps the recorded vehicle use, null clears it (#1120). */
+	vehicleUse?: WorkVehicleUseInput | null;
 	workPeriodId: string;
 	submissionId: string;
 	reason: string;
 }
 
+const kilometres = z.number().nullable().optional();
+const workVehicleUseInputSchema = z.object({
+	vehicle: z.discriminatedUnion("kind", [
+		z.object({ kind: z.literal("own") }),
+		z.object({ kind: z.literal("organization"), vehicleId: z.uuid() }),
+	]),
+	startKm: kilometres,
+	endKm: kilometres,
+	distanceKm: kilometres,
+});
+
 const workPeriodIdSchema = z.uuid();
 const updateWorkPeriodTimesSchema = z.object({
 	workLocationType: z.enum(WORK_LOCATION_TYPES).optional(),
+	vehicleUse: workVehicleUseInputSchema.nullable().optional(),
 	workPeriodId: z.uuid(),
 	submissionId: z.uuid(),
 	clockInDate: z.iso.date(),
@@ -299,6 +336,13 @@ async function loadTimeEditTarget(
 	const clockOut = period.endTime
 		? getInstantLocalMinuteFields(instantFromDate(period.endTime), timezone)
 		: { date: "", time: "" };
+	const recordedVehicleUse = vehicleUseFromColumns(period);
+	const recordedVehicleId = organizationVehicleIdOf(recordedVehicleUse);
+	const vehicleUse = await loadWorkVehicleUseFormContext(db, {
+		organizationId,
+		employeeId: period.employeeId,
+		recordedVehicleIds: recordedVehicleId ? [recordedVehicleId] : [],
+	});
 
 	return {
 		success: true,
@@ -310,7 +354,9 @@ async function loadTimeEditTarget(
 			context: {
 				access,
 				timezone,
+				vehicleUse,
 				values: {
+					vehicleUse: recordedVehicleUse,
 					workLocationType: isWorkLocationType(period.workLocationType)
 						? period.workLocationType
 						: period.workLocationType === "field"
@@ -362,12 +408,14 @@ async function applyAdminEdit(
 	target: LoadedTimeEditTarget,
 	input: UpdateWorkPeriodTimesInput,
 	reason: string,
+	vehicleUse: WorkVehicleUse | null | undefined,
 ): Promise<ServerActionResult<{ status: "applied" | "pending" }>> {
 	const { period, organizationId, context } = target;
 	const submitted = {
 		...(input.workLocationType !== undefined && {
 			workLocationType: input.workLocationType,
 		}),
+		...(vehicleUse !== undefined && { vehicleUse }),
 		clockInDate: input.clockInDate,
 		clockInTime: input.clockInTime,
 		clockOutDate: input.clockOutDate,
@@ -505,6 +553,10 @@ async function applyAdminEdit(
 		);
 		return { success: true, data: { status: "applied" } };
 	} catch (error) {
+		const vehicleRefusal = workVehicleUseRefusalCodeOf(error);
+		if (vehicleRefusal && error instanceof ValidationError) {
+			return { success: false, error: error.message, code: vehicleRefusal };
+		}
 		if (
 			error instanceof ValidationError ||
 			error instanceof ConflictError ||
@@ -553,9 +605,22 @@ export async function updateWorkPeriodTimes(
 	if (access.kind === "blocked") {
 		return blockedAccessError(access);
 	}
+	// Vehicle use (#1120) is validated and its distance derived before routing.
+	let vehicleUse: WorkVehicleUse | null | undefined;
+	if (input.vehicleUse !== undefined && input.vehicleUse !== null) {
+		const built = buildWorkVehicleUse(input.vehicleUse);
+		if (!built.ok) {
+			const refusal = workVehicleUseRefusal(built.code);
+			return { success: false, error: refusal.message, code: built.code };
+		}
+		vehicleUse = built.use;
+	} else {
+		vehicleUse = input.vehicleUse;
+	}
 
 	const next: WorkPeriodTimeEditValues = {
 		workLocationType: input.workLocationType,
+		vehicleUse,
 		clockInDate: input.clockInDate,
 		clockInTime: input.clockInTime,
 		clockOutDate: input.clockOutDate,
@@ -577,7 +642,7 @@ export async function updateWorkPeriodTimes(
 		};
 	}
 	if (route === "admin_direct") {
-		return applyAdminEdit(target, input, reason);
+		return applyAdminEdit(target, input, reason, vehicleUse);
 	}
 	if (route === "on_behalf_request" && !reason) {
 		return { success: false, error: "Reason is required" };
@@ -593,6 +658,7 @@ export async function updateWorkPeriodTimes(
 		workLocationType:
 			input.workLocationType ?? normalizeWorkLocationType(target.period.workLocationType),
 		workCategoryId: target.period.workCategoryId,
+		...(vehicleUse !== undefined ? { vehicleUse } : {}),
 	};
 
 	if (route === "self_service_direct") {

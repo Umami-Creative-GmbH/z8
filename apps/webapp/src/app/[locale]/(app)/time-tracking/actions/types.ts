@@ -3,6 +3,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
+import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { ManualCommandRejection } from "./manual-command-submission";
 
@@ -16,6 +17,8 @@ export interface CorrectionRequest {
 	reason: string;
 	workLocationType: WorkLocationType;
 	workCategoryId: string | null;
+	/** Requested vehicle use (#1120), already validated: absent keeps it, null clears it. */
+	vehicleUse?: WorkVehicleUse | null;
 }
 
 export interface SameDayEditRequest {
@@ -29,6 +32,8 @@ export interface SameDayEditRequest {
 	reason?: string;
 	workLocationType: WorkLocationType;
 	workCategoryId: string | null;
+	/** Requested vehicle use (#1120), already validated: absent keeps it, null clears it. */
+	vehicleUse?: WorkVehicleUse | null;
 }
 
 export interface TimeEntryDeletionRequest {
