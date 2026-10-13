@@ -128,7 +128,9 @@ function isViolationFact(value: unknown): value is PeriodSubmissionViolationFact
 function isDrivingDetailsMissingFact(
 	value: unknown,
 ): value is PeriodSubmissionDrivingDetailsMissingFact {
-	return isRecord(value) && typeof value.workPeriodId === "string" && typeof value.date === "string";
+	return (
+		isRecord(value) && typeof value.workPeriodId === "string" && typeof value.date === "string"
+	);
 }
 
 /** Whether stored facts have the shape the card reads (identity is checked by the store). */

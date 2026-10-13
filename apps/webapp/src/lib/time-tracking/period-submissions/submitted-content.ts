@@ -2,8 +2,8 @@ import { and, asc, eq, gt, gte, lt, lte } from "drizzle-orm";
 import { absenceCategory, absenceEntry, workPeriod, workPolicyViolation } from "@/db/schema";
 import type {
 	PeriodSubmissionAbsenceFact,
-	PeriodSubmissionDrivingDetailsMissingFact,
 	PeriodSubmissionDayPart,
+	PeriodSubmissionDrivingDetailsMissingFact,
 	PeriodSubmissionHolidayFact,
 	PeriodSubmissionSubmittedFacts,
 	PeriodSubmissionViolationFact,
