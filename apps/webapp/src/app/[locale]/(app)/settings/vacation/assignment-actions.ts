@@ -495,7 +495,12 @@ export async function deleteVacationPolicyAssignment(
 				await dbService.db
 					.update(vacationPolicyAssignment)
 					.set({ isActive: false })
-					.where(eq(vacationPolicyAssignment.id, assignmentId));
+					.where(
+						and(
+							eq(vacationPolicyAssignment.id, assignmentId),
+							eq(vacationPolicyAssignment.organizationId, actor.organizationId),
+						),
+					);
 			})
 			.pipe(
 				Effect.mapError(

@@ -11,7 +11,7 @@ import {
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Link, usePathname } from "@/navigation";
-import { isNavItemActive } from "./nav-active";
+import { activeNavHref } from "./nav-active";
 
 export function NavTeam({
 	items,
@@ -24,6 +24,10 @@ export function NavTeam({
 }) {
 	const { t } = useTranslate();
 	const pathname = usePathname();
+	const activeUrl = activeNavHref(
+		pathname,
+		items.map((item) => item.url),
+	);
 
 	return (
 		<SidebarGroup>
@@ -31,7 +35,7 @@ export function NavTeam({
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => {
-						const isActive = isNavItemActive(pathname, item.url);
+						const isActive = item.url === activeUrl;
 
 						return (
 							<SidebarMenuItem key={item.title}>
