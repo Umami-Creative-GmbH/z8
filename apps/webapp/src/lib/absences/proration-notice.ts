@@ -6,7 +6,7 @@
  * Pure and client-safe: a row is plain data.
  */
 
-import { FIRST_PRORATED_YEAR } from "./prorated-allowance";
+import { FIRST_PRORATED_YEAR, type ProratedAllowance } from "./prorated-allowance";
 import type { VacationBalance } from "./types";
 
 /** The year the notice lists: the first prorated year (#1104 rule 11). */
@@ -19,8 +19,10 @@ export interface ProrationNoticeRow {
 	fullAllowance: number;
 	/** The prorated allowance of the year. */
 	proratedAllowance: number;
-	/** Vacation taken or requested beyond the balance; 0 when the employee is not overdrawn. */
+	/** Approved vacation beyond the balance (`VacationBalance.overdrawnDays`); 0 when none. */
 	overdrawnDays: number;
+	/** The prorated allowance with its reason, for the row's explanation (#1111). */
+	allowance: ProratedAllowance;
 }
 
 /**
@@ -38,12 +40,12 @@ export function prorationNoticeRow(input: {
 	if (allowance.reason.kind !== "prorated" || allowance.allowance >= allowance.fullAllowance) {
 		return null;
 	}
-	const { totalDays, usedDays, pendingDays } = input.balance;
 	return {
 		employeeId: input.employeeId,
 		name: input.name,
 		fullAllowance: allowance.fullAllowance,
 		proratedAllowance: allowance.allowance,
-		overdrawnDays: Math.max(0, Math.round((usedDays + pendingDays - totalDays) * 100) / 100),
+		overdrawnDays: input.balance.overdrawnDays,
+		allowance,
 	};
 }

@@ -29,6 +29,7 @@ function balance(input: Partial<VacationBalance>): VacationBalance {
 		usedDays: 0,
 		pendingDays: 0,
 		remainingDays: 8,
+		overdrawnDays: 0,
 		allowance: joinedOctober,
 		...input,
 	};
@@ -44,25 +45,17 @@ describe("prorationNoticeRow (#1112)", () => {
 			fullAllowance: 30,
 			proratedAllowance: 8,
 			overdrawnDays: 0,
+			allowance: joinedOctober,
 		});
 	});
 
-	it("shows the vacation taken and requested beyond the balance as overdrawn days", () => {
+	it("shows the balance's overdrawn vacation: approved days beyond the balance (#1111)", () => {
 		expect(
 			prorationNoticeRow({
 				...employee,
-				balance: balance({ usedDays: 10, pendingDays: 2.5, remainingDays: 0 }),
+				balance: balance({ usedDays: 10, pendingDays: 2.5, remainingDays: 0, overdrawnDays: 2 }),
 			})?.overdrawnDays,
-		).toBe(4.5);
-	});
-
-	it("counts carryover and adjustments in the balance before calling vacation overdrawn", () => {
-		expect(
-			prorationNoticeRow({
-				...employee,
-				balance: balance({ totalDays: 12, usedDays: 10, remainingDays: 2 }),
-			})?.overdrawnDays,
-		).toBe(0);
+		).toBe(2);
 	});
 
 	it("leaves out an employee with a custom allowance", () => {
