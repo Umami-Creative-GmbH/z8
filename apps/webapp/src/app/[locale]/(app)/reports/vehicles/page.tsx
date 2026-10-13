@@ -1,0 +1,69 @@
+import { Suspense } from "react";
+import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { VehicleDistanceReportContainer } from "@/components/reports/vehicles/vehicle-distance-report-container";
+import { LoadingRegion } from "@/components/ui/loading-region";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getTranslate } from "@/tolgee/server";
+import { getCurrentEmployee } from "../actions";
+
+async function VehicleDistanceReportPageContent() {
+	// Auth is checked in layout; who sees whose driving is decided by the report action.
+	const [t, employee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
+
+	if (!employee) {
+		return (
+			<div className="@container/main flex flex-1 items-center justify-center p-6">
+				<NoEmployeeError
+					feature={t("reports.vehicles.page.feature", "view the distance per vehicle report")}
+				/>
+			</div>
+		);
+	}
+
+	return (
+		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
+			<div className="px-4 lg:px-6">
+				<h1 className="text-3xl font-bold tracking-tight">
+					{t("reports.vehicles.title", "Distance per Vehicle")}
+				</h1>
+				<p className="text-muted-foreground">
+					{t(
+						"reports.vehicles.page.description",
+						"Kilometres driven for work per vehicle and employee, by month",
+					)}
+				</p>
+			</div>
+
+			<VehicleDistanceReportContainer />
+		</div>
+	);
+}
+
+function VehicleDistanceReportPageLoading() {
+	return (
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.vehicleDistanceReport",
+				labelDefault: "Loading the distance per vehicle report",
+			}}
+			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
+			role="status"
+		>
+			<div className="space-y-3 px-4 lg:px-6">
+				<Skeleton aria-hidden="true" className="h-9 w-64" />
+				<Skeleton aria-hidden="true" className="h-5 w-full max-w-2xl" />
+			</div>
+			<div className="px-4 lg:px-6">
+				<Skeleton aria-hidden="true" className="h-96 w-full" />
+			</div>
+		</LoadingRegion>
+	);
+}
+
+export default function VehicleDistanceReportPage() {
+	return (
+		<Suspense fallback={<VehicleDistanceReportPageLoading />}>
+			<VehicleDistanceReportPageContent />
+		</Suspense>
+	);
+}

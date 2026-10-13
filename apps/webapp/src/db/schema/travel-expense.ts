@@ -30,6 +30,7 @@ import {
 } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
+import { workPeriod } from "./time-tracking";
 import { currentTimestamp } from "./timestamp";
 
 export const travelExpenseClaim = pgTable(
@@ -270,6 +271,11 @@ export const travelExpenseReportItem = pgTable(
 		mileageDistanceKm: decimal("mileage_distance_km", { precision: 8, scale: 2 }),
 		mileageVehicle: text("mileage_vehicle").$type<MileageVehicle>(),
 		mileagePolicy: jsonb("mileage_policy").$type<StampedMileagePolicy>(),
+		// Source work period (#1131, spec #807): the own-vehicle work a mileage item
+		// was pre-filled from. Set at creation only and never edited or copied, so a
+		// work period's driven distance is in at most one item; deleting the item
+		// releases it.
+		sourceWorkPeriodId: uuid("source_work_period_id"),
 		// Missing-receipt exception (#604): the employee's explanation; null when none is requested.
 		// It is never a receipt row, and has its own version so it saves independently.
 		receiptExceptionReason: text("receipt_exception_reason"),
@@ -319,6 +325,20 @@ export const travelExpenseReportItem = pgTable(
 				AND ${table.originalCurrency} IS NULL AND ${table.category} IS NULL
 				AND (${table.mileageDistanceKm} IS NULL OR ${table.mileageDistanceKm} > 0)
 				AND (${table.mileageVehicle} IS NULL OR ${table.mileageVehicle} IN ('car', 'other_motor_vehicle'))))`,
+		),
+		// migration 0219 deletes with SET NULL ("source_work_period_id") only, keeping the organization.
+		foreignKey({
+			name: "travel_expense_report_item_source_work_period_fk",
+			columns: [table.sourceWorkPeriodId, table.organizationId],
+			foreignColumns: [workPeriod.id, workPeriod.organizationId],
+		}).onDelete("set null"),
+		// One item per work period: the race-safe guard of "at most once" (#1131).
+		uniqueIndex("travelExpenseReportItem_org_sourceWorkPeriod_idx")
+			.on(table.organizationId, table.sourceWorkPeriodId)
+			.where(sql`${table.sourceWorkPeriodId} IS NOT NULL`),
+		check(
+			"travel_expense_report_item_source_work_period_check",
+			sql`${table.sourceWorkPeriodId} IS NULL OR ${table.type} = 'mileage'`,
 		),
 		check(
 			"travel_expense_report_item_category_check",

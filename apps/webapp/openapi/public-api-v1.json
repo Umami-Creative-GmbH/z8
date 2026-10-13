@@ -227,6 +227,103 @@
 															"pending"
 														],
 														"description": "`pending` while the work waits for approval."
+													},
+													"vehicleUse": {
+														"anyOf": [
+															{
+																"type": "object",
+																"properties": {
+																	"kind": {
+																		"type": "string",
+																		"enum": [
+																			"organization",
+																			"own"
+																		],
+																		"description": "`organization` for an organization vehicle; `own` for the employee's own vehicle, which identifies no vehicle."
+																	},
+																	"vehicleId": {
+																		"anyOf": [
+																			{
+																				"type": "string",
+																				"format": "uuid"
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The organization vehicle; null for an own vehicle."
+																	},
+																	"vehicleName": {
+																		"description": "The organization vehicle's name, also once archived; null for an own vehicle.",
+																		"type": [
+																			"string",
+																			"null"
+																		]
+																	},
+																	"licencePlate": {
+																		"description": "The organization vehicle's licence plate; null for an own vehicle.",
+																		"type": [
+																			"string",
+																			"null"
+																		]
+																	},
+																	"odometerStartKm": {
+																		"anyOf": [
+																			{
+																				"type": "integer",
+																				"minimum": 0,
+																				"maximum": 9007199254740991
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The odometer reading at the start, in whole kilometres; null when not recorded."
+																	},
+																	"odometerEndKm": {
+																		"anyOf": [
+																			{
+																				"type": "integer",
+																				"minimum": 0,
+																				"maximum": 9007199254740991
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The odometer reading at the end, in whole kilometres; null when not recorded."
+																	},
+																	"drivenDistanceKm": {
+																		"anyOf": [
+																			{
+																				"type": "integer",
+																				"minimum": 0,
+																				"maximum": 9007199254740991
+																			},
+																			{
+																				"type": "null"
+																			}
+																		],
+																		"description": "The driven distance in whole kilometres: end minus start reading, or entered directly when there is no start reading. Null when not known yet."
+																	}
+																},
+																"required": [
+																	"kind",
+																	"vehicleId",
+																	"vehicleName",
+																	"licencePlate",
+																	"odometerStartKm",
+																	"odometerEndKm",
+																	"drivenDistanceKm"
+																],
+																"additionalProperties": false,
+																"title": "WorkPeriodVehicleUse"
+															},
+															{
+																"type": "null"
+															}
+														],
+														"description": "The vehicle driven during the work, with its readings; null when none was recorded."
 													}
 												},
 												"required": [
@@ -236,7 +333,8 @@
 													"start",
 													"end",
 													"durationMinutes",
-													"approvalStatus"
+													"approvalStatus",
+													"vehicleUse"
 												],
 												"additionalProperties": false,
 												"title": "WorkPeriod"

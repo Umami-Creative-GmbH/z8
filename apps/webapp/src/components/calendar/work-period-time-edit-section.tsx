@@ -47,6 +47,7 @@ import {
 	type WorkPeriodTimeEditValues,
 } from "@/lib/time-tracking/work-period-time-edit-policy";
 import { formatEventTimeRange } from "./work-period-dialog-utils";
+import { WorkPeriodMileageAction } from "./work-period-mileage-action";
 
 type TimeEditFormValues = WorkPeriodTimeEditValues & {
 	reason: string;
@@ -641,6 +642,16 @@ export function WorkPeriodTimeSection({
 								use={event.metadata.vehicleUse}
 								vehicleLabel={event.metadata.vehicleLabel ?? null} t={t}
 							/>
+							{/* Own-vehicle distance can become a mileage item (#1131); the server decides. */}
+							{event.metadata.vehicleUse.vehicle.kind === "own" &&
+							(event.metadata.vehicleUse.distanceKm ?? 0) > 0 &&
+							event.metadata.isRunning !== true ? (
+								<WorkPeriodMileageAction
+									workPeriodId={event.id}
+									locale={displayContext.locale}
+									t={t}
+								/>
+							) : null}
 						</div>
 					) : null}
 					{context ? <BlockedHint access={context.access} t={t} /> : null}

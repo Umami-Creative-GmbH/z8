@@ -26,6 +26,12 @@ vi.mock(
 	}),
 );
 
+vi.mock("./work-period-mileage-action", () => ({
+	WorkPeriodMileageAction: ({ workPeriodId }: { workPeriodId: string }) => (
+		<p>{`mileage action for ${workPeriodId}`}</p>
+	),
+}));
+
 vi.mock("sonner", () => ({
 	toast: { error: toastError, success: toastSuccess },
 }));
@@ -395,6 +401,38 @@ describe("WorkPeriodTimeSection", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Save" }));
 			await waitFor(() => expect(updateTimes).toHaveBeenCalled());
 			expect(updateTimes.mock.calls[0]?.[0]).not.toHaveProperty("vehicleUse");
+		});
+	});
+
+	describe("mileage from own-vehicle work (#1131)", () => {
+		function renderWith(vehicleUse: unknown) {
+			mockAccess({ kind: "self_service" });
+			const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+			render(
+				<QueryClientProvider client={queryClient}>
+					<WorkPeriodTimeSection
+						event={{ ...event, metadata: { ...event.metadata, vehicleUse } }}
+						displayContext={{ locale: "en-US", timezone: "Europe/Berlin", timeFormat: "24h" }}
+						t={t}
+					/>
+				</QueryClientProvider>,
+			);
+		}
+
+		it("offers the expense report action on own-vehicle work with a driven distance", async () => {
+			renderWith({ vehicle: { kind: "own" }, startKm: null, endKm: null, distanceKm: 61 });
+			expect(await screen.findByText(`mileage action for ${event.id}`)).toBeTruthy();
+		});
+
+		it("does not offer it for an organization vehicle or without a distance", async () => {
+			renderWith({
+				vehicle: { kind: "organization", vehicleId: "6c3a8d55-0f0e-4f7d-9b51-2b7a0ef8d9a1" },
+				startKm: 1,
+				endKm: 2,
+				distanceKm: 1,
+			});
+			await waitFor(() => expect(getContext).toHaveBeenCalled());
+			expect(screen.queryByText(/mileage action/)).toBeNull();
 		});
 	});
 
