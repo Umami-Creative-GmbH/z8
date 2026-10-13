@@ -49,7 +49,7 @@ A personal data export an org admin requests on an employee's behalf, including 
 _Avoid_: full export, HR export
 
 **Withheld data**:
-The fixed list of personal data an employee export leaves out: HR-only documents, custom field values above employee visibility, rates, internal notes on travel expenses, and departure tasks and reviews.
+The fixed list of personal data an employee export leaves out: HR-only documents, custom field values above employee visibility, billable and cost rates, internal notes on travel expenses, and departure tasks and reviews.
 _Avoid_: hidden data, private data, restricted data
 
 ### Vehicles

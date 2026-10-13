@@ -4,7 +4,7 @@ status: accepted
 
 # Only an admin export is the complete personal data export
 
-An employee can download a personal data export of themselves, and an org admin can request one on an employee's behalf. We decided that the employee's own export deliberately leaves out a fixed list (HR-only documents, custom fields above employee visibility, rates, internal finance and officer notes on travel expenses, and departure tasks and reviews), and that only the admin export is the complete answer to an Art. 15 request. That makes the admin export the only route for former employees as well. Self-service stays instant and needs no officer review, while the organization keeps its say over records it chose to keep from the employee. The organization owes the full Art. 15 answer either way, and the employee export's README says a complete copy can be requested from the organization's admins.
+An employee can download a personal data export of themselves, and an org admin can request one on an employee's behalf. We decided that the employee's own export deliberately leaves out a fixed list (HR-only documents, custom fields above employee visibility, billable and cost rates, internal finance and officer notes on travel expenses, and departure tasks and reviews), and that only the admin export is the complete answer to an Art. 15 request. That makes the admin export the only route for former employees as well. Self-service stays instant and needs no officer review, while the organization keeps its say over records it chose to keep from the employee. The organization owes the full Art. 15 answer either way, and the employee export's README says a complete copy can be requested from the organization's admins.
 
 ## Considered Options
 
@@ -15,5 +15,6 @@ An employee can download a personal data export of themselves, and an org admin 
 ## Consequences
 
 - Whether something is withheld depends only on the fixed list. A record that has no page in the app today still goes into the employee export.
+- The employee's own hourly wage and employment terms are not withheld: they are the employee's own pay, not the organization's pricing.
 - An admin cannot run an admin export on themselves, because no one is an officer for their own personnel file. Another admin runs it for them.
 - When an admin exports an employee's data, a current employee is told about it.
