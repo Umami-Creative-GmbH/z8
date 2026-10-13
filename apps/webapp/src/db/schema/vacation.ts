@@ -129,16 +129,27 @@ export const vacationAdjustment = pgTable(
 		days: decimal("days", { precision: 5, scale: 2 }).notNull(), // +/- days adjustment
 		reason: text("reason").notNull(),
 		kind: text("kind").$type<VacationAdjustmentKind>().default("manual").notNull(),
+		// The calendar month (1-12) of `year` an accrual row covers; null on manual rows. Unique per
+		// employee and year, so the accrual job can retry and catch up without duplicates. Null
+		// only on a legacy duplicate accrual row the 0214 backfill could not give a month.
+		accrualMonth: integer("accrual_month"),
 		// The adjusting employee; null only on accrual rows, which the system writes.
 		adjustedBy: uuid("adjusted_by").references(() => employee.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(table) => [
 		index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year),
+		uniqueIndex("vacationAdjustment_accrual_period_idx")
+			.on(table.employeeId, table.year, table.accrualMonth)
+			.where(sql`${table.kind} = 'accrual'`),
 		check("vacation_adjustment_kind_check", sql`${table.kind} IN ('manual', 'accrual')`),
 		check(
 			"vacation_adjustment_manual_adjuster_check",
 			sql`${table.kind} = 'accrual' OR ${table.adjustedBy} IS NOT NULL`,
+		),
+		check(
+			"vacation_adjustment_accrual_month_check",
+			sql`${table.accrualMonth} IS NULL OR (${table.kind} = 'accrual' AND ${table.accrualMonth} BETWEEN 1 AND 12)`,
 		),
 	],
 );
