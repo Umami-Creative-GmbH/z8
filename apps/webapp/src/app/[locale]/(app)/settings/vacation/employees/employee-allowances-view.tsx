@@ -69,6 +69,8 @@ interface EmployeeAllowancesViewProps {
 	defaultDays: string;
 	employees: EmployeeWithAllowance[];
 	hasOrganizationPolicy: boolean;
+	/** The one-time proration notice above the allowances (#1112). */
+	notice?: React.ReactNode;
 	policyAssignments: EmployeePolicyAssignment[];
 	t: Translate;
 }
@@ -78,6 +80,7 @@ export function EmployeeAllowancesView({
 	defaultDays,
 	employees,
 	hasOrganizationPolicy,
+	notice,
 	policyAssignments,
 	t,
 }: EmployeeAllowancesViewProps) {
@@ -103,6 +106,8 @@ export function EmployeeAllowancesView({
 					</p>
 				</div>
 			</div>
+
+			{notice}
 
 			<EmployeeAllowancesCard
 				currentYear={currentYear}

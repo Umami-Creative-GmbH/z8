@@ -1,11 +1,13 @@
 import { eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ProrationNotice } from "@/components/settings/vacation/proration-notice";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
+import { loadProrationNoticeForPage } from "@/lib/absences/proration-notice-store";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { calendarYearAt, systemClock } from "@/lib/datetime/temporal-core";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -33,12 +35,17 @@ async function EmployeeAllowancesContent() {
 	// The current vacation allowance year must be resolved per request.
 	await connection();
 	const currentYear = calendarYearAt(systemClock.nowInstant(), timezone);
-	const [employeesResult, policyResult, policyAssignmentsResult] =
-		await Promise.all([
-			getEmployeesWithAllowances(organizationId, currentYear),
-			getCompanyDefaultVacationPolicy(organizationId),
-			getVacationPolicyAssignments(organizationId),
-		]);
+	const [
+		employeesResult,
+		policyResult,
+		policyAssignmentsResult,
+		prorationNotice,
+	] = await Promise.all([
+		getEmployeesWithAllowances(organizationId, currentYear),
+		getCompanyDefaultVacationPolicy(organizationId),
+		getVacationPolicyAssignments(organizationId),
+		loadProrationNoticeForPage(db, { organizationId }),
+	]);
 
 	const employees = employeesResult.success ? employeesResult.data : [];
 	const orgPolicy = policyResult.success ? policyResult.data : null;
@@ -53,6 +60,11 @@ async function EmployeeAllowancesContent() {
 			defaultDays={defaultDays}
 			employees={employees}
 			hasOrganizationPolicy={Boolean(orgPolicy)}
+			notice={
+				prorationNotice?.length ? (
+					<ProrationNotice rows={prorationNotice} />
+				) : null
+			}
 			policyAssignments={policyAssignments}
 			t={t}
 		/>

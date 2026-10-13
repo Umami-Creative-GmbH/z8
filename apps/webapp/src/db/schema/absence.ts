@@ -193,6 +193,14 @@ export const absenceSetting = pgTable("absence_setting", {
 		.references(() => organization.id, { onDelete: "cascade" }),
 	/** Employees may attach sick notes to their sick-leave absences (needs personnel files). */
 	employeeSickNoteUpload: boolean("employee_sick_note_upload").default(false).notNull(),
+	/**
+	 * When an owner or admin dismissed the one-time list of employees whose 2026 allowance is now
+	 * prorated (#1112). Once set, the notice never comes back for the organization.
+	 */
+	prorationNoticeDismissedAt: timestamp("proration_notice_dismissed_at", { withTimezone: true }),
+	prorationNoticeDismissedBy: text("proration_notice_dismissed_by").references(() => user.id, {
+		onDelete: "set null",
+	}),
 	updatedAt: timestamp("updated_at", { withTimezone: true })
 		.defaultNow()
 		.$onUpdate(() => currentTimestamp())
