@@ -5,6 +5,7 @@ import { organizationVehicle } from "@/db/schema";
 import { ValidationError } from "@/lib/effect/errors";
 import type { WorkTransactionClient } from "../work-transaction";
 import { resolveVehicleUseMode } from "./resolver";
+import { splitWorkVehicleUse } from "./split-vehicle-use";
 import {
 	buildWorkVehicleUse,
 	organizationVehicleIdOf,
@@ -23,6 +24,7 @@ const MESSAGES: Record<WorkVehicleUseChangeRefusalCode, string> = {
 	vehicle_use_off: "Vehicle use is not recorded for this employee",
 	vehicle_not_found: "The vehicle was not found",
 	vehicle_archived: "The vehicle is archived and can no longer be picked",
+	split_value_out_of_range: "The kilometres at the split must lie within the work's kilometres",
 };
 
 export function workVehicleUseRefusal(code: WorkVehicleUseChangeRefusalCode): ValidationError {
@@ -77,6 +79,33 @@ export async function assertWorkVehicleUseChangeAllowed(
 	const vehicleId = organizationVehicleIdOf(input.resulting);
 	if (!vehicleId || vehicleId === organizationVehicleIdOf(input.previous)) return;
 	await assertVehiclePickable(tx, input.organizationId, vehicleId);
+}
+
+/**
+ * The vehicle use of both halves of a split (#1126). The vehicle always carries
+ * over, also while vehicle use is off; a value at the split changes kilometres,
+ * so it needs vehicle use asked or expected for the employee.
+ */
+export async function resolveWorkVehicleUseSplit(
+	tx: Client,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		use: WorkVehicleUse | null;
+		value: number | null | undefined;
+	},
+): Promise<{ retained: WorkVehicleUse | null; generated: WorkVehicleUse | null }> {
+	if (input.value !== null && input.value !== undefined && input.use) {
+		const mode = await resolveVehicleUseMode(
+			tx as Parameters<typeof resolveVehicleUseMode>[0],
+			{ organizationId: input.organizationId, employeeId: input.employeeId },
+			{ lock: "share" },
+		);
+		if (mode === "off") throw workVehicleUseRefusal("vehicle_use_off");
+	}
+	const split = splitWorkVehicleUse(input.use, input.value);
+	if (!split.ok) throw workVehicleUseRefusal(split.code);
+	return { retained: split.retained, generated: split.generated };
 }
 
 /** A vehicle of the organization that is not archived, share-locked. */
