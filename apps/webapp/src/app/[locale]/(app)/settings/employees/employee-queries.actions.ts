@@ -14,7 +14,9 @@ import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseClient, DatabaseQuery } from "@/lib/effect/services/database.service";
+import { loadTermsInForceOn } from "@/lib/employment-history/load-terms-in-force";
 import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
+import { loadOrganizationDay } from "@/lib/personnel-file/organization-day";
 import type {
 	EmployeeDetailRecord,
 	EmployeeDirectoryRow,
@@ -456,10 +458,25 @@ export async function getEmployeeAction(
 			);
 		}
 
+		// The edit form shows today's contract type read-only (#1177).
+		const termsToday = yield* dbService.query("getEmployeeTermsToday", async () => {
+			const { timezone, today } = await loadOrganizationDay(dbService.db, {
+				organizationId: actor.organizationId,
+				now: systemClock.nowInstant(),
+			});
+			return loadTermsInForceOn(dbService.db, {
+				organizationId: actor.organizationId,
+				employeeId,
+				date: today,
+				timezone,
+			});
+		});
+
 		return {
 			...detail,
 			kind: "employee",
 			membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
+			contractTypeToday: termsToday?.contractType ?? null,
 		} as EmployeeWithRelations;
 	});
 

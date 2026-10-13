@@ -168,7 +168,12 @@ describe("employment terms wage command", () => {
 		await fixture.db.transaction((tx) =>
 			writeEmploymentTerms(tx, {
 				...own(),
-				terms: { ...hourlyTerms, validFrom: day("2026-05-01"), hourlyRate: 25, reviewState: "draft" },
+				terms: {
+					...hourlyTerms,
+					validFrom: day("2026-05-01"),
+					hourlyRate: 25,
+					reviewState: "draft",
+				},
 			}),
 		);
 
@@ -233,7 +238,12 @@ describe("employment terms wage command", () => {
 				 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
 				  weekly_contract_minutes, hourly_rate, currency, review_state, created_by, updated_at)
 				 values ($1, $2, $3, '2026-03-01 00:00:00', 'hourly', 2400, 22, 'EUR', 'confirmed', $4, now())`,
-				[fixture.employeeId, fixture.organizationId, fixture.employmentPeriodId, fixture.ownerUserId],
+				[
+					fixture.employeeId,
+					fixture.organizationId,
+					fixture.employmentPeriodId,
+					fixture.ownerUserId,
+				],
 			);
 			await holder.query("commit");
 			await pending;

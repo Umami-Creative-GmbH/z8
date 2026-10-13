@@ -184,7 +184,9 @@ async function projectCurrentTerms(
 			currentHourlyRate: storedEmployeeWage(row.hourlyRate),
 			updatedAt: scope.now,
 		})
-		.where(and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)));
+		.where(
+			and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
+		);
 }
 
 async function insertTerms(

@@ -60,6 +60,7 @@ vi.mock("@/lib/logger", () => ({
 
 const { changeEmployeeWageAction } = await import("./employment-history-actions");
 const { updateEmployeeAction } = await import("./employee-mutations.actions");
+const { getEmployeeAction } = await import("./employee-queries.actions");
 
 describe("wage changes on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -244,6 +245,17 @@ describe("wage changes on PostgreSQL", () => {
 		});
 		expect(await rateHistoryCount()).toBe(0);
 		expect(await terms()).toHaveLength(1);
+	});
+
+	it("reads the contract type of today's confirmed terms for the edit form", async () => {
+		actAs(managerUserId);
+		await fixture.pool.query("update employee set contract_type = 'fixed' where id = $1", [
+			fixture.employeeId,
+		]);
+
+		const result = await getEmployeeAction(fixture.employeeId);
+
+		expect(result).toMatchObject({ success: true, data: { contractTypeToday: "hourly" } });
 	});
 
 	it("leaves every wage and contract field unchanged on an org admin's save", async () => {

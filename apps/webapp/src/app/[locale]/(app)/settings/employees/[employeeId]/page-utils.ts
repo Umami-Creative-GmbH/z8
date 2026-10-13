@@ -102,6 +102,10 @@ export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: Employee
 	form.setFieldValue("employeeNumber", employee.employeeNumber || "");
 	form.setFieldValue("startDate", formatEmployeeDetailDateInputValue(employee.startDate));
 	form.setFieldValue("role", employee.role || undefined);
-	form.setFieldValue("contractType", employee.contractType || "fixed");
-	form.setFieldValue("hourlyRate", employee.currentHourlyRate || "");
+	// Only an invitation draft edits contract type and wage here; an employee's
+	// change through employment terms (Organization ADR 0002).
+	if (employee.kind === "invitationDraft") {
+		form.setFieldValue("contractType", employee.contractType || "fixed");
+		form.setFieldValue("hourlyRate", employee.currentHourlyRate || "");
+	}
 }

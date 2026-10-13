@@ -48,20 +48,6 @@ const birthdaySchema = z.date().refine((date) => {
 	);
 }, "Birthday must be in the past");
 
-// Rate history entry schema
-export const createRateHistorySchema = z.object({
-	hourlyRate: z.string().refine(
-		(val) => {
-			const num = parseFloat(val);
-			return !Number.isNaN(num) && num > 0;
-		},
-		{ message: "Hourly rate must be a positive number" },
-	),
-	currency: z.string().default("EUR"),
-	effectiveFrom: z.date(),
-	reason: z.string().max(500, "Reason is too long").optional().nullable(),
-});
-
 // Personal information schema (for self-service profile updates)
 export const personalInformationSchema = z.object({
 	firstName: z
@@ -218,4 +204,3 @@ export type UpdateEmployeeInvitationDraft = z.infer<
 >;
 export type ManagerAssignment = z.infer<typeof managerAssignmentSchema>;
 export type AssignManagers = z.infer<typeof assignManagersSchema>;
-export type CreateRateHistory = z.infer<typeof createRateHistorySchema>;

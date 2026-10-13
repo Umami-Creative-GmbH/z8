@@ -195,8 +195,6 @@ export const queryKeys = {
 		organization: (orgId: string) => ["employees", orgId] as const,
 		list: <T extends object>(orgId: string, params?: T) => ["employees", orgId, params] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
-		rateHistory: (employeeId: string) =>
-			["employees", "detail", employeeId, "rate-history"] as const,
 		employmentHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "employment-history"] as const,
 		/** Lifecycle view; under the organization key so directory changes refresh it. */
