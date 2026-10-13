@@ -71,6 +71,14 @@ export type WorkVehicleUseEntry = {
 	distanceKm?: unknown;
 };
 
+/** Vehicle use as a form submits it; the server validates it and derives the distance. */
+export interface WorkVehicleUseInput {
+	vehicle: VehicleChoice;
+	startKm?: number | null;
+	endKm?: number | null;
+	distanceKm?: number | null;
+}
+
 /** The stored columns, identical on `work_period` and `time_record_work`. */
 export type WorkVehicleUseColumns = {
 	vehicleKind: "organization" | "own" | null;

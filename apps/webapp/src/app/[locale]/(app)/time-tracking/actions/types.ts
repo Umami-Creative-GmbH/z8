@@ -3,7 +3,10 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ProjectTaskChoice } from "@/lib/projects/project-task-model";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
-import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import type {
+	WorkVehicleUse,
+	WorkVehicleUseInput,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { ManualCommandRejection } from "./manual-command-submission";
 
@@ -131,6 +134,8 @@ export interface ManualTimeEntryInput {
 	workLocationType?: WorkLocationType;
 	/** Explicit billability (#900); absent takes the project's billable default. */
 	billable?: boolean;
+	/** Vehicle use as entered (#1120); absent records none. */
+	vehicleUse?: WorkVehicleUseInput;
 }
 
 /** What a manual submission committed, for either command representation. */

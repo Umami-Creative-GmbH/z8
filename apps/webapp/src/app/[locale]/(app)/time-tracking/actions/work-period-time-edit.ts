@@ -72,6 +72,7 @@ import {
 	vehicleUseFromColumns,
 	type WorkVehicleUse,
 	type WorkVehicleUseFormContext,
+	type WorkVehicleUseInput,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import {
 	workVehicleUseRefusal,
@@ -87,13 +88,6 @@ export interface WorkPeriodTimeEditContext {
 	vehicleUse: WorkVehicleUseFormContext;
 }
 
-/** Vehicle use as a form submits it; the server validates it and derives the distance. */
-export interface WorkVehicleUseInput {
-	vehicle: { kind: "own" } | { kind: "organization"; vehicleId: string };
-	startKm?: number | null;
-	endKm?: number | null;
-	distanceKm?: number | null;
-}
 
 export interface UpdateWorkPeriodTimesInput
 	extends Omit<WorkPeriodTimeEditValues, "vehicleUse"> {

@@ -119,6 +119,7 @@ const { getApprovalInboxDetail } = await import("@/lib/approvals/inbox/read-serv
 const { submitPeriodSubmission } = await import(
 	"@/lib/time-tracking/period-submissions/submission-service"
 );
+const { createManualTimeEntry } = await import("../actions");
 
 const ORG = "t1120-org";
 const OTHER_ORG = "t1120-other-org";
@@ -602,6 +603,144 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 				values: { vehicleUse: { vehicle: { kind: "organization", vehicleId: ids.van } } },
 				vehicleUse: { vehicles: [{ id: ids.van, archived: true }] },
 			},
+		});
+	});
+
+	describe("manual entry", () => {
+		function manualCommand(vehicleUse: Record<string, unknown>) {
+			return {
+				version: 2,
+				submissionId: randomUUID(),
+				targetEmployeeId: ids.requester,
+				date: "2026-07-22",
+				clockIn: { time: "08:00", occurrence: null, displayedOffsetMinutes: 0 },
+				clockOut: { time: "12:00", occurrence: null, displayedOffsetMinutes: 0 },
+				zone: { basis: "target", timezone: "UTC" },
+				browserTimezone: "UTC",
+				reason: "Forgot to clock in",
+				projectId: null,
+				workCategoryId: null,
+				vehicleUse,
+			};
+		}
+
+		function legacyEntry(vehicleUse: VehicleUseInput) {
+			return {
+				submissionId: randomUUID(),
+				date: "2026-07-22",
+				clockInTime: "08:00",
+				clockOutTime: "12:00",
+				reason: "Forgot to clock in",
+				timezone: "UTC",
+				vehicleUse,
+			};
+		}
+
+		async function manualPeriod() {
+			const { rows } = await admin.query<{ id: string }>(
+				"select id from work_period where organization_id = $1 and employee_id = $2",
+				[ORG, ids.requester],
+			);
+			const id = rows[0]?.id;
+			if (!id) throw new Error("no manual work");
+			return id;
+		}
+
+		it("records vehicle use from a versioned manual command", async () => {
+			actAs("requester");
+			await expect(
+				createManualTimeEntry(
+					manualCommand({
+						vehicle: { kind: "organization", vehicleId: ids.van },
+						startKm: 500,
+						endKm: 540,
+						distanceKm: null,
+					}) as never,
+				),
+			).resolves.toMatchObject({ success: true });
+
+			const workPeriodId = await manualPeriod();
+			expect(await vehicleColumns(workPeriodId)).toMatchObject({
+				vehicle_id: ids.van,
+				odometer_start_km: 500,
+				odometer_end_km: 540,
+				driven_distance_km: 40,
+				detail_vehicle_id: ids.van,
+				detail_distance: 40,
+			});
+			const { rows } = await admin.query<{ result: { attribution: Record<string, unknown> } }>(
+				`select result from completed_work_operation
+				 where organization_id = $1 and kind = 'create_completed_work'`,
+				[ORG],
+			);
+			expect(rows[0]?.result.attribution.vehicleUse).toEqual({
+				vehicle: { kind: "organization", vehicleId: ids.van },
+				startKm: 500,
+				endKm: 540,
+				distanceKm: 40,
+			});
+		});
+
+		it("records vehicle use from a legacy manual entry", async () => {
+			await setAdmission("inactive");
+			actAs("requester");
+			await expect(
+				createManualTimeEntry(legacyEntry({ vehicle: { kind: "own" }, distanceKm: 12 })),
+			).resolves.toMatchObject({ success: true });
+
+			expect(await vehicleColumns(await manualPeriod())).toMatchObject({
+				vehicle_kind: "own",
+				driven_distance_km: 12,
+				detail_vehicle_kind: "own",
+				detail_distance: 12,
+			});
+		});
+
+		it("refuses an end reading below the start reading and vehicle use that is not asked", async () => {
+			actAs("requester");
+			await expect(
+				createManualTimeEntry(
+					manualCommand({
+						vehicle: { kind: "own" },
+						startKm: 500,
+						endKm: 400,
+						distanceKm: null,
+					}) as never,
+				),
+			).resolves.toMatchObject({
+				success: false,
+				rejection: { reason: "invalid_command", field: "vehicleUse.endKm" },
+			});
+			await setAdmission("inactive");
+			await expect(
+				createManualTimeEntry(
+					legacyEntry({ vehicle: { kind: "own" }, startKm: 500, endKm: 400 }),
+				),
+			).resolves.toMatchObject({ success: false, code: "end_before_start" });
+
+			await setVehicleUse("off");
+			await expect(
+				createManualTimeEntry(legacyEntry({ vehicle: { kind: "own" }, distanceKm: 3 })),
+			).resolves.toMatchObject({ success: false, code: "vehicle_use_off" });
+			await setAdmission("active");
+			await expect(
+				createManualTimeEntry(
+					manualCommand({
+						vehicle: { kind: "own" },
+						startKm: null,
+						endKm: null,
+						distanceKm: 3,
+					}) as never,
+				),
+			).resolves.toMatchObject({
+				success: false,
+				rejection: { reason: "vehicle_use_refused", code: "vehicle_use_off" },
+			});
+			const { rows } = await admin.query(
+				"select id from work_period where organization_id = $1 and employee_id = $2",
+				[ORG, ids.requester],
+			);
+			expect(rows).toHaveLength(0);
 		});
 	});
 
