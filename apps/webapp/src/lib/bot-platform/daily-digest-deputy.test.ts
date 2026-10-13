@@ -3,7 +3,14 @@ import { buildDailyDigestEmbed } from "@/lib/discord/formatters";
 import { buildDailyDigestBlocks } from "@/lib/slack/formatters";
 import { buildDailyDigestCard, buildDailyDigestText } from "@/lib/teams/cards/daily-digest-card";
 import { buildDailyDigestMessage } from "@/lib/telegram/formatters";
+import type { BotTranslateFn } from "./i18n";
 import type { DailyDigestData } from "./types";
+
+const english: BotTranslateFn = (_key, fallback, params) =>
+	Object.entries(params ?? {}).reduce(
+		(message, [name, value]) => message.replace(`{${name}}`, String(value)),
+		fallback,
+	);
 
 /** The daily digest's "Who's out" names each absence's deputy (#1012), on every platform. */
 function digest(): DailyDigestData {
@@ -29,8 +36,20 @@ function collectStrings(value: unknown): string[] {
 describe("daily digest deputies (#1012)", () => {
 	it.each([
 		["Telegram", () => buildDailyDigestMessage(digest(), "https://z8.test").replace(/\\/g, "")],
-		["Slack", () => collectStrings(buildDailyDigestBlocks(digest(), "https://z8.test")).join("\n")],
-		["Discord", () => collectStrings(buildDailyDigestEmbed(digest(), "https://z8.test")).join("\n")],
+		[
+			"Slack",
+			() =>
+				collectStrings(buildDailyDigestBlocks(digest(), "https://z8.test", "en", english)).join(
+					"\n",
+				),
+		],
+		[
+			"Discord",
+			() =>
+				collectStrings(buildDailyDigestEmbed(digest(), "https://z8.test", "en", english)).join(
+					"\n",
+				),
+		],
 		["Teams card", () => collectStrings(buildDailyDigestCard(digest(), "https://z8.test")).join("\n")],
 		["Teams text", () => buildDailyDigestText(digest())],
 	])("names the deputy of an absent employee on %s, and none where nobody covers", (_platform, render) => {

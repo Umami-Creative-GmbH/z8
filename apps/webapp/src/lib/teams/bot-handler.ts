@@ -149,9 +149,11 @@ async function handleMessage(context: TurnContext): Promise<void> {
 		await saveConversationReference(context, userResult.user.userId, tenant.organizationId);
 	}
 
-	// Get user locale
-	const locale =
-		userResult.status === "found" ? await getUserLocale(userResult.user.userId) : DEFAULT_LANGUAGE;
+	// The recipient language: the linked user's, else the organization's default
+	const locale = await getUserLocale({
+		userId: userResult.status === "found" ? userResult.user.userId : null,
+		organizationId: tenant.organizationId,
+	});
 	const t = await getBotTranslate(locale);
 
 	// Parse the message as a command
@@ -357,7 +359,12 @@ async function handleConversationUpdate(context: TurnContext): Promise<void> {
 			if (tenantResult.status === "not_found") {
 				await sendSetupInstructions(context, tenantId);
 			} else if (tenantResult.status === "configured") {
-				const t = await getBotTranslate(DEFAULT_LANGUAGE);
+				const t = await getBotTranslate(
+					await getUserLocale({
+						userId: null,
+						organizationId: tenantResult.tenant.organizationId,
+					}),
+				);
 				await context.sendActivity(
 					t("bot.static.welcomeTeams", 'Welcome to Z8! Type "help" to see available commands.'),
 				);
