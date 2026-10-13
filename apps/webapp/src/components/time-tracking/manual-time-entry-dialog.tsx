@@ -19,12 +19,6 @@ import {
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { billableChoice } from "@/components/time-tracking/billable-choice";
 import { BillableWorkSwitch } from "@/components/time-tracking/billable-work-switch";
-import {
-	EMPTY_VEHICLE_USE_DRAFT,
-	type VehicleUseDraft,
-	vehicleUseFromDraft,
-} from "@/components/time-tracking/vehicle-use-draft";
-import { VehicleUseFields } from "@/components/time-tracking/vehicle-use-fields";
 import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
 import {
 	canDiscardManualRecovery,
@@ -45,6 +39,12 @@ import {
 	ManualEntryTargetContextError,
 	useManualEntryTargetContext,
 } from "@/components/time-tracking/use-manual-entry-target-context";
+import {
+	EMPTY_VEHICLE_USE_DRAFT,
+	type VehicleUseDraft,
+	vehicleUseFromDraft,
+} from "@/components/time-tracking/vehicle-use-draft";
+import { VehicleUseFields } from "@/components/time-tracking/vehicle-use-fields";
 import { WorkCategorySelectorView } from "@/components/time-tracking/work-category-selector";
 import {
 	ActionPanel,
@@ -79,12 +79,12 @@ import {
 	type ManualWallTime,
 	type ManualZoneBasis,
 } from "@/lib/time-tracking/manual-command";
+import { formatUtcOffset, getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
+import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import {
 	type WorkVehicleUseChangeRefusalCode,
 	workVehicleUseRefusalOfResult,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
-import { formatUtcOffset, getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
-import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { useRouter } from "@/navigation";
 

@@ -21,13 +21,13 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { AttributionIntent } from "./close-active-work";
 import { attributionAfter, taskIdFollowingProject } from "./task-attribution";
 import { validateTimeCorrectionRange } from "./time-correction-temporal";
-import { deriveWorkDurationMinutes } from "./work-duration";
 import {
 	sameWorkVehicleUse,
 	type VehicleUseIntent,
 	vehicleUseAfter,
 	type WorkVehicleUse,
 } from "./vehicle-use/work-vehicle-use";
+import { deriveWorkDurationMinutes } from "./work-duration";
 import { getRecordedWorkLocationType, isWorkLocationType } from "./work-location";
 
 /**

@@ -6,10 +6,6 @@ import {
 	organizationVehicle,
 	workCategory,
 } from "@/db/schema";
-import {
-	organizationVehicleIdOf,
-	type WorkVehicleUse,
-} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
@@ -18,6 +14,10 @@ import {
 	formatInstant,
 	formatUtcOffset,
 } from "@/lib/datetime/temporal-format";
+import {
+	organizationVehicleIdOf,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { readApprovalAuthoritySnapshot } from "../authority";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import {
