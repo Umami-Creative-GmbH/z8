@@ -1,7 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { sendEmail } from "@/lib/email/email-service";
-import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
+import {
+	type RenderOrganizationEmailTemplateInput,
+	renderOrganizationEmailTemplate,
+} from "@/lib/email/template-renderer";
 import { sendEmailNotification } from "./email-notifications";
+import { EMAIL_FREE_NOTIFICATION_TYPES } from "./email-routes";
+
+/** A stand-in for the German `emails` catalog (ICU `{name}` params only). */
+const { GERMAN_EMAIL_COPY } = vi.hoisted(() => ({
+	GERMAN_EMAIL_COPY: {
+		"emails.notification.openAction": "Z8 öffnen",
+		"emails.layout.footer": "Diese E-Mail wurde von Z8 gesendet.",
+		"emails.subjects.teamMemberAdded": "Du wurdest zu {teamName} hinzugefügt",
+	} as Record<string, string>,
+}));
 
 const {
 	debugMock,
@@ -59,6 +72,26 @@ vi.mock("@/lib/logger", () => ({
 		warn: warnMock,
 	}),
 }));
+
+vi.mock("@/lib/email/email-i18n", () => ({
+	loadEmailTranslator: async (locale: string) => ({
+		locale,
+		t: (key: string, defaultValue: string, params?: Record<string, unknown>) =>
+			((locale === "de" ? GERMAN_EMAIL_COPY[key] : undefined) ?? defaultValue).replace(
+				/\{(\w+)\}/g,
+				(match, name: string) => (params && name in params ? String(params[name]) : match),
+			),
+	}),
+}));
+
+/** The renderer without an enabled override: the caller's default body is sent. */
+async function renderWithoutOverride(input: RenderOrganizationEmailTemplateInput) {
+	return {
+		subject: input.subjectOverride ?? "",
+		html: input.renderDefaultHtml ? await input.renderDefaultHtml() : "<p>Registry default</p>",
+		usedOverride: false,
+	};
+}
 
 vi.mock("./outbound-localization", () => ({
 	localizeOutboundNotification: localizeOutboundNotificationMock,
@@ -191,6 +224,7 @@ describe("sendEmailNotification", () => {
 			.mockResolvedValueOnce({ email: "alex@example.com" })
 			.mockResolvedValueOnce({ name: "Alex" });
 		getOrganizationBaseUrlMock.mockResolvedValue("https://org.example.com");
+		resolveOutboundNotificationLocaleMock.mockResolvedValue("en");
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "en",
 			title: "Original title",
@@ -234,6 +268,7 @@ describe("sendEmailNotification", () => {
 				appUrl: "https://org.example.com",
 			},
 			subjectOverride: "Absence Request Approved",
+			renderDefaultHtml: expect.any(Function),
 		});
 		expect(sendEmailMock).toHaveBeenCalledWith({
 			to: "alex@example.com",
@@ -244,24 +279,135 @@ describe("sendEmailNotification", () => {
 		expect(localizeOutboundNotificationMock).not.toHaveBeenCalled();
 	});
 
-	it("does not localize skipped notification types even with i18n title metadata", async () => {
+	it("sends no email for email-free types, even with translation keys (U1)", async () => {
+		for (const type of EMAIL_FREE_NOTIFICATION_TYPES) {
+			const result = await sendEmailNotification(
+				{
+					userId: "user_123",
+					type,
+					title: "Original title",
+					message: "Original message",
+					organizationId: "org_123",
+					metadata: {
+						i18n: {
+							titleKey: "common:notifications.content.example.title",
+							messageKey: "common:notifications.content.example.message",
+						},
+					},
+				},
+				{ throwOnError: true },
+			);
+			expect(result, type).toBe(false);
+		}
+
+		expect(localizeOutboundNotificationMock).not.toHaveBeenCalled();
+		expect(renderOrganizationEmailTemplateMock).not.toHaveBeenCalled();
+		expect(sendEmailMock).not.toHaveBeenCalled();
+	});
+
+	it("writes a de recipient's notification email in German: subject, body and button", async () => {
+		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		localizeOutboundNotificationMock.mockResolvedValue({
+			locale: "de",
+			title: "Automatisch ausgestempelt",
+			message: "Du wurdest nach 12 Stunden automatisch ausgestempelt.",
+		});
+
 		const result = await sendEmailNotification({
 			userId: "user_123",
-			type: "birthday_reminder",
-			title: "Original title",
-			message: "Original message",
 			organizationId: "org_123",
+			type: "automatic_clock_out",
+			title: "Automatically clocked out",
+			message: "You were clocked out automatically after 12 hours.",
+			actionUrl: "/calendar/employee?date=2026-10-24",
 			metadata: {
 				i18n: {
-					titleKey: "notifications.birthday.title",
+					titleKey: "common:notifications.content.automaticClockOut.title",
+					messageKey: "common:notifications.content.automaticClockOut.message",
 				},
 			},
 		});
 
-		expect(result).toBe(false);
-		expect(localizeOutboundNotificationMock).not.toHaveBeenCalled();
-		expect(renderOrganizationEmailTemplateMock).not.toHaveBeenCalled();
-		expect(sendEmailMock).not.toHaveBeenCalled();
+		expect(result).toBe(true);
+		const message = sendEmailMock.mock.calls[0]?.[0];
+		expect(message?.subject).toBe("Automatisch ausgestempelt");
+		expect(message?.html).toContain('lang="de"');
+		expect(message?.html).toContain("Du wurdest nach 12 Stunden automatisch ausgestempelt.");
+		expect(message?.html).toContain("Z8 öffnen");
+		expect(message?.html).toContain("Diese E-Mail wurde von Z8 gesendet.");
+		expect(message?.html).not.toContain("Open Z8");
+		expect(message?.html).not.toContain("clocked out automatically");
+	});
+
+	it("sends the shared layout, not the per-type template, when no override is enabled", async () => {
+		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		localizeOutboundNotificationMock.mockResolvedValue({
+			locale: "de",
+			title: "Zum Team hinzugefügt",
+			message: "Morgan hat dich zum Team Support hinzugefügt.",
+		});
+		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+
+		const result = await sendEmailNotification({
+			userId: "user_123",
+			type: "team_member_added",
+			title: "Added to team",
+			message: "Morgan added you to Support.",
+			organizationId: "org_123",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.teamMemberAdded.title",
+					messageKey: "common:notifications.content.teamMemberAdded.message",
+					params: { teamName: "Support", teamId: "team_123", performedByName: "Morgan" },
+				},
+			},
+		});
+
+		expect(result).toBe(true);
+		const message = sendEmailMock.mock.calls[0]?.[0];
+		expect(message?.subject).toBe("Zum Team hinzugefügt");
+		expect(message?.html).toContain('lang="de"');
+		expect(message?.html).toContain("Morgan hat dich zum Team Support hinzugefügt.");
+		expect(message?.html).toContain("Z8 öffnen");
+		expect(message?.html).toContain('href="https://org.example.com/settings/teams/team_123"');
+		// Not the old English team template.
+		expect(message?.html).not.toContain("Welcome to the Team");
+	});
+
+	it("translates a type's subject in the recipient language when the notification has no title key", async () => {
+		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+
+		await sendEmailNotification({
+			userId: "user_123",
+			type: "team_member_added",
+			title: "Added to team",
+			message: "Morgan added you to Support.",
+			organizationId: "org_123",
+			metadata: { teamId: "team_123", teamName: "Support", addedByName: "Morgan" },
+		});
+
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+			expect.objectContaining({ subjectOverride: "Du wurdest zu Support hinzugefügt" }),
+		);
+		expect(sendEmailMock.mock.calls[0]?.[0].subject).toBe("Du wurdest zu Support hinzugefügt");
+	});
+
+	it("keeps the dedicated security alert template as the default body", async () => {
+		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+
+		await sendEmailNotification({
+			userId: "user_123",
+			type: "password_changed",
+			title: "Password changed",
+			message: "Your password was changed.",
+			organizationId: "org_123",
+		});
+
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+			expect.objectContaining({ templateKey: "security-alert", renderDefaultHtml: undefined }),
+		);
+		expect(sendEmailMock.mock.calls[0]?.[0].html).toBe("<p>Registry default</p>");
 	});
 
 	it("preserves default subject when organization is missing even with i18n title metadata", async () => {
@@ -324,6 +470,7 @@ describe("sendEmailNotification", () => {
 			organizationId: "org_123",
 			title: "Original title",
 			message: "Original message",
+			locale: "en",
 			metadata: {
 				approverName: "Morgan",
 				startDate: "2026-05-01",
@@ -348,11 +495,8 @@ describe("sendEmailNotification", () => {
 			title: "Abwesenheitsanfrage <genehmigt>",
 			message: "Ihre Abwesenheitsanfrage wurde von Morgan & Partner genehmigt.",
 		});
-		renderOrganizationEmailTemplateMock.mockResolvedValue({
-			subject: "Abwesenheitsanfrage <genehmigt>",
-			html: "<p>Your absence request has been approved.</p>",
-			usedOverride: false,
-		});
+		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
 
 		const result = await sendEmailNotification({
 			userId: "user_123",
@@ -388,7 +532,8 @@ describe("sendEmailNotification", () => {
 		expect(sentHtml).not.toContain("Your absence request has been approved.");
 	});
 
-	it("preserves organization override email body when localized notification metadata exists", async () => {
+	it("sends an enabled override unchanged to a de recipient", async () => {
+		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "de",
 			title: "Abwesenheitsanfrage genehmigt",
@@ -459,6 +604,7 @@ describe("sendEmailNotification", () => {
 				appUrl: "https://org.example.com",
 			},
 			subjectOverride: "Absence Recorded",
+			renderDefaultHtml: expect.any(Function),
 		});
 	});
 
@@ -494,6 +640,7 @@ describe("sendEmailNotification", () => {
 				appUrl: "https://org.example.com",
 			},
 			subjectOverride: "You've been added to Support",
+			renderDefaultHtml: expect.any(Function),
 		});
 	});
 

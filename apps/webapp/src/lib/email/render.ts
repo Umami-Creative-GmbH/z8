@@ -7,6 +7,7 @@ import { AbsenceRequestSubmitted } from "./templates/absence-request-submitted";
 import { EmailVerification } from "./templates/email-verification";
 import { ExportFailed } from "./templates/export-failed";
 import { ExportReady } from "./templates/export-ready";
+import { NotificationEmail, type NotificationEmailProps } from "./templates/notification-email";
 import { OrganizationInvitation } from "./templates/organization-invitation";
 import { PasswordReset } from "./templates/password-reset";
 import { SecurityAlert } from "./templates/security-alert";
@@ -15,6 +16,11 @@ import { TeamMemberRemoved } from "./templates/team-member-removed";
 import { TimeCorrectionApproved } from "./templates/time-correction-approved";
 import { TimeCorrectionPendingApproval } from "./templates/time-correction-pending-approval";
 import { TimeCorrectionRejected } from "./templates/time-correction-rejected";
+
+/** A notification email in the shared layout, in the recipient language (#1150). */
+export async function renderNotificationEmail(props: NotificationEmailProps) {
+	return render(NotificationEmail(props));
+}
 
 export async function renderAbsenceRequestSubmitted(props: {
 	employeeName: string;

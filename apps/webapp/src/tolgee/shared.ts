@@ -66,6 +66,8 @@ export const ALL_NAMESPACES = [
 	"onboarding",
 	"bot",
 	"teamsBot",
+	// Email copy: loaded only by the mailer (lib/email/email-i18n.ts), never by a route.
+	"emails",
 ] as const;
 
 export type Namespace = (typeof ALL_NAMESPACES)[number];

@@ -125,6 +125,7 @@ vi.mock("@/lib/notifications/slack-channel", () => ({
 }));
 vi.mock("@/lib/notifications/outbound-localization", () => ({
 	localizeOutboundNotification: async (params: unknown) => params,
+	resolveOutboundNotificationLocale: async () => "en",
 }));
 vi.mock("@/lib/email/template-renderer", () => ({
 	renderOrganizationEmailTemplate: async () => ({
