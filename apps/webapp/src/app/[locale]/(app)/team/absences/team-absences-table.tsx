@@ -10,6 +10,10 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { type FormEvent, Suspense, useState, useTransition } from "react";
+import {
+	OverdrawnVacationBadge,
+	VacationAllowanceExplanation,
+} from "@/components/absences/vacation-allowance-explanation";
 import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,6 +134,7 @@ function TeamAbsencesTableContent({
 			{hasRows ? (
 				<TeamAbsencesRowsTable
 					rows={data.rows}
+					year={data.year}
 					sort={data.sort}
 					direction={data.direction}
 					isPending={isPending}
@@ -332,6 +337,7 @@ function SortableAbsenceTableHead({
 
 function TeamAbsencesRowsTable({
 	rows,
+	year,
 	sort,
 	direction,
 	isPending,
@@ -339,6 +345,8 @@ function TeamAbsencesRowsTable({
 	onRecordAbsence,
 }: {
 	rows: ManagerAbsenceEmployeeRow[];
+	/** The vacation year of the rows. */
+	year: number;
 	sort: ManagerAbsenceSortKey;
 	direction: "asc" | "desc";
 	isPending: boolean;
@@ -446,6 +454,11 @@ function TeamAbsencesRowsTable({
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{employee.vacationAllowance}
+									<VacationAllowanceExplanation
+										allowance={employee.proratedAllowance}
+										year={year}
+										className="ml-auto mt-1 max-w-56 whitespace-normal text-xs"
+									/>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{employee.usedVacationDays}
@@ -455,6 +468,13 @@ function TeamAbsencesRowsTable({
 								</TableCell>
 								<TableCell className="text-right font-medium tabular-nums">
 									{employee.remainingVacationDays}
+									{employee.overdrawnVacationDays > 0 && (
+										<div className="mt-1">
+											<OverdrawnVacationBadge
+												overdrawnDays={employee.overdrawnVacationDays}
+											/>
+										</div>
+									)}
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{employee.sickDays}

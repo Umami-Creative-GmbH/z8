@@ -136,12 +136,16 @@ export function calculateVacationBalance({
 	// 6. Calculate remaining days
 	const remainingDays = Math.max(0, totalDays - usedDays - pendingDays);
 
+	// 7. Overdrawn vacation: approved vacation beyond the balance, shown but never reclaimed (#1111)
+	const overdrawnDays = Math.max(0, Math.round((usedDays - totalDays) * 100) / 100);
+
 	return {
 		year,
 		totalDays,
 		usedDays,
 		pendingDays,
 		remainingDays,
+		overdrawnDays,
 		carryoverDays: carryoverDays > 0 ? carryoverDays : undefined,
 		carryoverExpiryDate,
 		...(allowance ? { allowance } : {}),

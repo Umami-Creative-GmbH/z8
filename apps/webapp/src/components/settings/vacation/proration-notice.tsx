@@ -5,6 +5,10 @@ import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { dismissProrationNoticeAction } from "@/app/[locale]/(app)/settings/vacation/proration-notice-actions";
+import {
+	OverdrawnVacationBadge,
+	VacationAllowanceExplanation,
+} from "@/components/absences/vacation-allowance-explanation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,7 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { ProrationNoticeRow } from "@/lib/absences/proration-notice";
+import { PRORATION_NOTICE_YEAR, type ProrationNoticeRow } from "@/lib/absences/proration-notice";
 import { Link } from "@/navigation";
 
 /**
@@ -89,6 +93,11 @@ export function ProrationNotice({ rows }: { rows: ProrationNoticeRow[] }) {
 									>
 										{row.name}
 									</Link>
+									<VacationAllowanceExplanation
+										allowance={row.allowance}
+										year={PRORATION_NOTICE_YEAR}
+										className="mt-1 text-xs"
+									/>
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{t(
@@ -110,13 +119,7 @@ export function ProrationNotice({ rows }: { rows: ProrationNoticeRow[] }) {
 								</TableCell>
 								<TableCell className="text-right tabular-nums">
 									{row.overdrawnDays > 0 ? (
-										<span className="font-medium text-destructive">
-											{t(
-												"settings.vacation.prorationNotice.days",
-												"{days, plural, one {# day} other {# days}}",
-												{ days: row.overdrawnDays },
-											)}
-										</span>
+										<OverdrawnVacationBadge overdrawnDays={row.overdrawnDays} />
 									) : (
 										<span className="text-muted-foreground">
 											{t("settings.vacation.prorationNotice.notOverdrawn", "None")}

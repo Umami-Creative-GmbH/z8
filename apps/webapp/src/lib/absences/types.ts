@@ -11,7 +11,12 @@ export interface VacationBalance {
 	totalDays: number; // Annual allowance (default + custom + carryover + adjustments)
 	usedDays: number; // Approved absences taken
 	pendingDays: number; // Pending requests
-	remainingDays: number; // Available to request
+	remainingDays: number; // Available to request; never below 0
+	/**
+	 * Approved vacation taken beyond `totalDays` (overdrawn vacation, #1111). Shown to admins and
+	 * managers for information only: it is never reclaimed or deducted.
+	 */
+	overdrawnDays: number;
 	carryoverDays?: number; // From previous year
 	carryoverExpiryDate?: Date; // When carryover expires
 	/** The vacation allowance in `totalDays` and why it is prorated or full (#1110). */

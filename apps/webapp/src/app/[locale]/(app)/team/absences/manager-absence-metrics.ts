@@ -27,7 +27,11 @@ export interface ManagerAbsenceMetrics {
 	usedVacationDays: number;
 	pendingVacationDays: number;
 	remainingVacationDays: number;
+	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
+	overdrawnVacationDays: number;
 	sickDays: number;
+	/** The vacation allowance and why it is prorated (#1111); absent without a policy. */
+	proratedAllowance?: ProratedAllowance;
 }
 
 export function calculateManagerAbsenceMetrics(input: {
@@ -58,6 +62,7 @@ export function calculateManagerAbsenceMetrics(input: {
 			usedVacationDays: 0,
 			pendingVacationDays: 0,
 			remainingVacationDays: 0,
+			overdrawnVacationDays: 0,
 			sickDays,
 		};
 	}
@@ -91,7 +96,12 @@ export function calculateManagerAbsenceMetrics(input: {
 		usedVacationDays,
 		pendingVacationDays,
 		remainingVacationDays: Math.max(0, balance.totalDays - usedVacationDays - pendingVacationDays),
+		overdrawnVacationDays: Math.max(
+			0,
+			Math.round((usedVacationDays - balance.totalDays) * 100) / 100,
+		),
 		sickDays,
+		...(input.proratedAllowance ? { proratedAllowance: input.proratedAllowance } : {}),
 	};
 }
 

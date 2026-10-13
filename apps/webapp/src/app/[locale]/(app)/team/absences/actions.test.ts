@@ -649,6 +649,7 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 2,
 			pendingVacationDays: 1,
 			remainingVacationDays: 27,
+			overdrawnVacationDays: 0,
 			sickDays: 5,
 		});
 	});
@@ -757,6 +758,7 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 2,
 			pendingVacationDays: 1,
 			remainingVacationDays: 27,
+			overdrawnVacationDays: 0,
 			sickDays: 1,
 		});
 	});
@@ -802,6 +804,7 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 0,
 			pendingVacationDays: 0,
 			remainingVacationDays: 30,
+			overdrawnVacationDays: 0,
 			sickDays: 0.5,
 		});
 	});
@@ -847,6 +850,7 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 0.5,
 			pendingVacationDays: 0,
 			remainingVacationDays: 29.5,
+			overdrawnVacationDays: 0,
 			sickDays: 0,
 		});
 	});
@@ -886,7 +890,73 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 0,
 			pendingVacationDays: 0,
 			remainingVacationDays: 0,
+			overdrawnVacationDays: 0,
 			sickDays: 1,
+		});
+	});
+
+	it("shows vacation taken beyond a prorated allowance as overdrawn, with the explanation (#1111)", () => {
+		const proratedAllowance = {
+			fullAllowance: 30,
+			allowance: 2,
+			reason: {
+				kind: "prorated" as const,
+				cappedAtFullAllowance: false,
+				employments: [
+					{
+						kind: "start" as const,
+						startDate: "2026-11-15",
+						lastWorkingDay: null,
+						employmentMonths: 1,
+						days: 2.5,
+						floorApplied: false,
+					},
+				],
+			},
+		};
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				accrualType: "annual",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			proratedAllowance,
+			absences: [
+				{
+					id: "vacation-beyond-allowance",
+					employeeId: "employee-1",
+					// Mon 30 Nov to Thu 3 Dec 2026: 4 working days.
+					startDate: "2026-11-30",
+					startPeriod: "full_day",
+					endDate: "2026-12-03",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toMatchObject({
+			vacationAllowance: 2,
+			usedVacationDays: 4,
+			remainingVacationDays: 0,
+			overdrawnVacationDays: 2,
+			proratedAllowance,
 		});
 	});
 });

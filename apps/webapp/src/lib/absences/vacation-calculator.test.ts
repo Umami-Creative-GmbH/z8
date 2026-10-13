@@ -346,3 +346,75 @@ describe("vacation balance on an accrual policy (#1106)", () => {
 		expect(balance.totalDays).toBe(24);
 	});
 });
+
+describe("overdrawn vacation (#1111)", () => {
+	const policy = {
+		defaultAnnualDays: "30",
+		accrualType: "annual",
+		allowCarryover: false,
+		maxCarryoverDays: null,
+		carryoverExpiryMonths: null,
+	};
+	const prorated = {
+		fullAllowance: 30,
+		allowance: 2,
+		reason: {
+			kind: "prorated" as const,
+			employments: [
+				{
+					kind: "exit" as const,
+					startDate: null,
+					lastWorkingDay: "2026-01-31",
+					employmentMonths: 1,
+					days: 2.5,
+					floorApplied: false,
+				},
+			],
+			cappedAtFullAllowance: false,
+		},
+	};
+
+	it("shows vacation taken beyond the prorated allowance, while the remaining days stay at 0", () => {
+		// Mon 2 to Thu 5 March 2026: 4 approved days against a prorated allowance of 2.
+		const balance = calculateVacationBalance({
+			organizationAllowance: policy,
+			allowance: prorated,
+			absences: [vacationAbsence("taken", "2026-03-02", "approved", "2026-03-05")],
+			currentDate: new Date("2026-03-10T00:00:00Z"),
+			year: 2026,
+		});
+
+		expect(balance.usedDays).toBe(4);
+		expect(balance.remainingDays).toBe(0);
+		expect(balance.overdrawnDays).toBe(2);
+	});
+
+	it("counts only vacation already taken, not pending requests", () => {
+		const balance = calculateVacationBalance({
+			organizationAllowance: policy,
+			allowance: prorated,
+			absences: [
+				vacationAbsence("taken", "2026-03-02"),
+				vacationAbsence("requested", "2026-03-03", "pending", "2026-03-05"),
+			],
+			currentDate: new Date("2026-03-10T00:00:00Z"),
+			year: 2026,
+		});
+
+		expect(balance.remainingDays).toBe(0);
+		expect(balance.overdrawnDays).toBe(0);
+	});
+
+	it("is 0 within the allowance and counts carryover and adjustments as available", () => {
+		const balance = calculateVacationBalance({
+			organizationAllowance: policy,
+			allowance: prorated,
+			absences: [vacationAbsence("taken", "2026-03-02", "approved", "2026-03-05")],
+			currentDate: new Date("2026-03-10T00:00:00Z"),
+			year: 2026,
+			adjustmentTotal: 1.5,
+		});
+
+		expect(balance.overdrawnDays).toBe(0.5);
+	});
+});
