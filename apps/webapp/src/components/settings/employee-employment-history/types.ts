@@ -3,6 +3,7 @@ import type {
 	FormValidateOrFn,
 	ReactFormExtendedApi,
 } from "@tanstack/react-form";
+import type { ReactNode } from "react";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
 
 export type ContractType = UpsertEmploymentHistory["contractType"];
@@ -54,6 +55,8 @@ export type EmployeeEmploymentHistoryCardProps = {
 	isCreating: boolean;
 	isMutating: boolean;
 	workPolicies?: EmploymentHistoryWorkPolicyOption[];
+	/** A one-time note at the top of the card, shown only to those who manage the terms. */
+	notice?: ReactNode;
 };
 
 export type FormValues = {

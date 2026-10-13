@@ -42,6 +42,7 @@ export function EmployeeEmploymentHistoryCard({
 	isCreating,
 	isMutating,
 	workPolicies = EMPTY_WORK_POLICIES,
+	notice,
 }: EmployeeEmploymentHistoryCardProps) {
 	const { t } = useTranslate();
 	const [isAdding, setIsAdding] = useState(false);
@@ -139,6 +140,7 @@ export function EmployeeEmploymentHistoryCard({
 				)}
 			</CardHeader>
 			<CardContent className="space-y-6">
+				{canManage && notice}
 				<div className="grid gap-3 md:grid-cols-2">
 					<EmploymentHistoryContext
 						label={t("settings.employmentHistory.currentConfirmed", "Current confirmed")}
