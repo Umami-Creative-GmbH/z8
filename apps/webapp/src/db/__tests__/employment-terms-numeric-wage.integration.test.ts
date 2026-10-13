@@ -1,6 +1,6 @@
 /**
- * #1174: migration 0240 turns the terms' text wage into numeric(10,2).
- * Runs the migration file against the pre-0240 column shape in a scratch schema.
+ * #1174: migration 0216 turns the terms' text wage into numeric(10,2).
+ * Runs the migration file against the pre-0216 column shape in a scratch schema.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -10,11 +10,11 @@ import { integrationAdminPool } from "@/test/integration-database";
 const SCHEMA = "t1174_migration";
 const admin = integrationAdminPool();
 const migration = readFileSync(
-	join(process.cwd(), "drizzle/0240_employment_terms_numeric_wage.sql"),
+	join(process.cwd(), "drizzle/0216_employment_terms_numeric_wage.sql"),
 	"utf8",
 );
 
-describe("0240 employment terms numeric wage migration", () => {
+describe("0216 employment terms numeric wage migration", () => {
 	afterAll(async () => {
 		await admin.query(`drop schema if exists ${SCHEMA} cascade`);
 	});
