@@ -1,5 +1,18 @@
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, or, type SQL } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	isNull,
+	lt,
+	or,
+	type SQL,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import {
 	employee,
@@ -8,15 +21,16 @@ import {
 	vehicleUseSetting,
 	workPeriod,
 } from "@/db/schema";
-import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { workDayOf } from "@/lib/datetime/temporal-format";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	type DrivingDetailsConfiguration,
 	drivingDetailsExpectedSince,
 } from "./driving-details-missing";
-import type { VehicleUseAssignmentRule, VehicleUseMode } from "./policy";
+import { vehicleUseAssignmentRule } from "./policy";
 import { vehicleUseFromColumns, type WorkVehicleUse } from "./work-vehicle-use";
+import { vehicleUseSelectColumns } from "./work-vehicle-use-sql";
 
 /**
  * Reads of "driving details missing" (#1127): the completed work of employees expected to record
@@ -68,7 +82,11 @@ export async function loadDrivingDetailsConfiguration(
 		.where(eq(vehicleUseSetting.organizationId, organizationId))
 		.limit(1);
 	if (!setting?.enabled) {
-		return { enabled: false, enabledSince: instantFromDate(new Date(0)), assignments: [] };
+		return {
+			enabled: false,
+			enabledSince: Temporal.Instant.fromEpochMilliseconds(0),
+			assignments: [],
+		};
 	}
 	const rows = await database
 		.select({
@@ -84,25 +102,18 @@ export async function loadDrivingDetailsConfiguration(
 		enabled: true,
 		enabledSince: instantFromDate(setting.updatedAt),
 		assignments: rows.map((row) => ({
-			...assignmentRule(row),
+			...vehicleUseAssignmentRule(row),
 			since: instantFromDate(row.updatedAt),
 		})),
 	};
 }
 
-function assignmentRule(row: {
-	assignmentType: "organization" | "team" | "employee";
-	teamId: string | null;
-	employeeId: string | null;
-	mode: VehicleUseMode;
-}): VehicleUseAssignmentRule {
-	if (row.assignmentType === "team" && row.teamId) {
-		return { assignmentType: "team", teamId: row.teamId, mode: row.mode };
-	}
-	if (row.assignmentType === "employee" && row.employeeId) {
-		return { assignmentType: "employee", employeeId: row.employeeId, mode: row.mode };
-	}
-	return { assignmentType: "organization", mode: row.mode };
+/**
+ * The employees whose flagged work the manager surfaces show and count (#1127): `/team/driving`
+ * lists and `/today` counts only active employees, by this one predicate.
+ */
+export function drivingDetailsListedEmployeeCondition(): SQL {
+	return eq(employee.isActive, true);
 }
 
 /**
@@ -111,7 +122,12 @@ function assignmentRule(row: {
  */
 export async function loadDrivingDetailsExpectations(
 	database: Database,
-	input: { organizationId: string; employeeIds: readonly string[] | null },
+	input: {
+		organizationId: string;
+		employeeIds: readonly string[] | null;
+		/** Only active employees (`drivingDetailsListedEmployeeCondition`). */
+		activeEmployeesOnly?: boolean;
+	},
 ): Promise<Map<string, Instant>> {
 	if (input.employeeIds?.length === 0) return new Map();
 	const configuration = await loadDrivingDetailsConfiguration(database, input.organizationId);
@@ -124,6 +140,7 @@ export async function loadDrivingDetailsExpectations(
 			and(
 				eq(employee.organizationId, input.organizationId),
 				input.employeeIds ? inArray(employee.id, [...input.employeeIds]) : undefined,
+				input.activeEmployeesOnly ? drivingDetailsListedEmployeeCondition() : undefined,
 			),
 		);
 	const expectations = new Map<string, Instant>();
@@ -137,16 +154,17 @@ export async function loadDrivingDetailsExpectations(
 const clockOutEntry = alias(timeEntry, "driving_clock_out_entry");
 
 /**
- * The flagged work of the employees in scope, newest first. Employees expected since different
- * instants are grouped by that instant, so the query stays bounded by the number of assignments.
+ * The condition of flagged work of the employees in scope, or null when nobody in scope is
+ * expected to record vehicle use. Employees expected since different instants are grouped by that
+ * instant, so the condition stays bounded by the number of assignments.
  */
-export async function listDrivingDetailsMissing(
+async function drivingDetailsMissingCondition(
 	database: Database,
-	input: DrivingDetailsMissingQuery,
-): Promise<DrivingDetailsMissingWork[]> {
-	if (input.workPeriodIds?.length === 0) return [];
+	input: DrivingDetailsMissingQuery & { activeEmployeesOnly?: boolean },
+): Promise<SQL | null> {
+	if (input.workPeriodIds?.length === 0) return null;
 	const expectations = await loadDrivingDetailsExpectations(database, input);
-	if (expectations.size === 0) return [];
+	if (expectations.size === 0) return null;
 	const groups = new Map<string, { since: Instant; employeeIds: string[] }>();
 	for (const [employeeId, since] of expectations) {
 		const key = since.toString();
@@ -162,6 +180,52 @@ export async function listDrivingDetailsMissing(
 			),
 		),
 	) as SQL;
+	return and(
+		eq(workPeriod.organizationId, input.organizationId),
+		completedWorkPeriodCondition(),
+		isNotNull(workPeriod.endTime),
+		or(isNull(workPeriod.vehicleKind), isNull(workPeriod.drivenDistanceKm)),
+		expected,
+		input.workPeriodIds ? inArray(workPeriod.id, [...input.workPeriodIds]) : undefined,
+		input.startedWithin
+			? and(
+					gte(workPeriod.startTime, dateFromInstant(input.startedWithin.start)),
+					lt(workPeriod.startTime, dateFromInstant(input.startedWithin.end)),
+				)
+			: undefined,
+		input.endedWithin
+			? and(
+					gte(workPeriod.endTime, dateFromInstant(input.endedWithin.start)),
+					lt(workPeriod.endTime, dateFromInstant(input.endedWithin.end)),
+				)
+			: undefined,
+	) as SQL;
+}
+
+/**
+ * How many work periods of the active employees in scope show "driving details missing", counted
+ * in SQL (the manager's `/today` item). It counts what `/team/driving` lists.
+ */
+export async function countDrivingDetailsMissing(
+	database: Database,
+	input: Omit<DrivingDetailsMissingQuery, "limit">,
+): Promise<number> {
+	const condition = await drivingDetailsMissingCondition(database, {
+		...input,
+		activeEmployeesOnly: true,
+	});
+	if (!condition) return 0;
+	const [row] = await database.select({ count: count() }).from(workPeriod).where(condition);
+	return Number(row?.count ?? 0);
+}
+
+/** The flagged work of the employees in scope, newest first. */
+export async function listDrivingDetailsMissing(
+	database: Database,
+	input: DrivingDetailsMissingQuery,
+): Promise<DrivingDetailsMissingWork[]> {
+	const condition = await drivingDetailsMissingCondition(database, input);
+	if (!condition) return [];
 	const query = database
 		.select({
 			workPeriodId: workPeriod.id,
@@ -170,11 +234,7 @@ export async function listDrivingDetailsMissing(
 			endTime: workPeriod.endTime,
 			startOffsetMinutes: timeEntry.utcOffsetMinutes,
 			endOffsetMinutes: clockOutEntry.utcOffsetMinutes,
-			vehicleKind: workPeriod.vehicleKind,
-			vehicleId: workPeriod.vehicleId,
-			odometerStartKm: workPeriod.odometerStartKm,
-			odometerEndKm: workPeriod.odometerEndKm,
-			drivenDistanceKm: workPeriod.drivenDistanceKm,
+			...vehicleUseSelectColumns(workPeriod),
 		})
 		.from(workPeriod)
 		.innerJoin(
@@ -191,28 +251,7 @@ export async function listDrivingDetailsMissing(
 				eq(clockOutEntry.organizationId, input.organizationId),
 			),
 		)
-		.where(
-			and(
-				eq(workPeriod.organizationId, input.organizationId),
-				completedWorkPeriodCondition(),
-				isNotNull(workPeriod.endTime),
-				or(isNull(workPeriod.vehicleKind), isNull(workPeriod.drivenDistanceKm)),
-				expected,
-				input.workPeriodIds ? inArray(workPeriod.id, [...input.workPeriodIds]) : undefined,
-				input.startedWithin
-					? and(
-							gte(workPeriod.startTime, dateFromInstant(input.startedWithin.start)),
-							lt(workPeriod.startTime, dateFromInstant(input.startedWithin.end)),
-						)
-					: undefined,
-				input.endedWithin
-					? and(
-							gte(workPeriod.endTime, dateFromInstant(input.endedWithin.start)),
-							lt(workPeriod.endTime, dateFromInstant(input.endedWithin.end)),
-						)
-					: undefined,
-			),
-		)
+		.where(condition)
 		.orderBy(desc(workPeriod.startTime), desc(workPeriod.id))
 		.$dynamic();
 	const rows = await (input.limit ? query.limit(input.limit) : query);

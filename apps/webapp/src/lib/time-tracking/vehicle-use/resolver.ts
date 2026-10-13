@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq, or } from "drizzle-orm";
 import { employee, vehicleUseAssignment } from "@/db/schema";
-import { type VehicleUseAssignmentRule, type VehicleUseMode, vehicleUseModeFor } from "./policy";
+import { type VehicleUseMode, vehicleUseAssignmentRule, vehicleUseModeFor } from "./policy";
 import { readVehicleUseSettings, type VehicleUseClient } from "./store";
 
 /**
@@ -55,21 +55,6 @@ export async function resolveVehicleUseMode(
 		);
 	return vehicleUseModeFor(
 		{ employeeId, teamId },
-		{ enabled: settings.enabled, assignments: rows.map(toAssignmentRule) },
+		{ enabled: settings.enabled, assignments: rows.map(vehicleUseAssignmentRule) },
 	);
-}
-
-function toAssignmentRule(row: {
-	assignmentType: "organization" | "team" | "employee";
-	teamId: string | null;
-	employeeId: string | null;
-	mode: VehicleUseMode;
-}): VehicleUseAssignmentRule {
-	if (row.assignmentType === "team" && row.teamId) {
-		return { assignmentType: "team", teamId: row.teamId, mode: row.mode };
-	}
-	if (row.assignmentType === "employee" && row.employeeId) {
-		return { assignmentType: "employee", employeeId: row.employeeId, mode: row.mode };
-	}
-	return { assignmentType: "organization", mode: row.mode };
 }

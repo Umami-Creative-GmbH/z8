@@ -485,6 +485,43 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		},
 	);
 
+	it("keeps a vehicle an open time correction requests from being deleted", async () => {
+		const { changeOrganizationVehicles } = await import("@/lib/organization/vehicles/vehicles");
+		const spare = "e1120000-0000-4000-8000-000000000024";
+		const workPeriodId = await recordWork("requester");
+		harness.capability = { type: "approval_required" };
+		await expect(
+			editVehicleUse("requester", workPeriodId, vanUse, "Drove the van"),
+		).resolves.toMatchObject({ success: true, data: { status: "pending" } });
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate)
+			 values ($1, $2, 'Spare', 'B-SP 1')`,
+			[spare, ORG],
+		);
+		const remove = (vehicleId: string) =>
+			changeOrganizationVehicles(db, {
+				organizationId: ORG,
+				actorUserId: userOf("admin"),
+				change: { kind: "delete", vehicleId },
+			});
+
+		// Approving would need the van: it can only be archived meanwhile.
+		await expect(remove(ids.van)).resolves.toEqual({ ok: false, reason: "vehicle_used" });
+		// A vehicle no open correction names is still deleted.
+		await expect(remove(spare)).resolves.toMatchObject({ ok: true });
+
+		const { rows } = await admin.query<{ id: string }>(
+			"select id from approval_request where organization_id = $1 and status = 'pending'",
+			[ORG],
+		);
+		await approveApprovalInboxItem({
+			approvalId: rows[0]?.id ?? "",
+			actorEmployeeId: ids.manager,
+			organizationId: ORG,
+		});
+		expect(await vehicleColumns(workPeriodId)).toMatchObject({ vehicle_id: ids.van });
+	});
+
 	it("refuses an own change outside the approval window", async () => {
 		const workPeriodId = await recordWork("requester");
 		harness.capability = { type: "forbidden", daysBack: 14 };

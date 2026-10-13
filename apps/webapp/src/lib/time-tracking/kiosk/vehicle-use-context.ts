@@ -1,12 +1,16 @@
 import "server-only";
 
-import { and, eq, inArray, isNotNull, isNull, ne } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { workPeriod } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { loadWorkVehicleUseFormContext } from "../vehicle-use/form-context";
-import type { VehicleUseFactsReader } from "../vehicle-use/plausibility-check";
+import {
+	type VehicleUseFactsReader,
+	vehiclesOnOtherLiveWork,
+} from "../vehicle-use/plausibility-check";
 import type { VehicleUseClient } from "../vehicle-use/store";
 import { organizationVehicleIdOf, vehicleUseFromColumns } from "../vehicle-use/work-vehicle-use";
+import { vehicleUseSelectColumns } from "../vehicle-use/work-vehicle-use-sql";
 import type { KioskVehicleUse } from "./protocol";
 
 /**
@@ -28,11 +32,7 @@ export async function readKioskVehicleUse(
 		.select({
 			id: workPeriod.id,
 			startTime: workPeriod.startTime,
-			vehicleKind: workPeriod.vehicleKind,
-			vehicleId: workPeriod.vehicleId,
-			odometerStartKm: workPeriod.odometerStartKm,
-			odometerEndKm: workPeriod.odometerEndKm,
-			drivenDistanceKm: workPeriod.drivenDistanceKm,
+			...vehicleUseSelectColumns(workPeriod),
 		})
 		.from(workPeriod)
 		.where(
@@ -55,32 +55,16 @@ export async function readKioskVehicleUse(
 			: {}),
 	});
 	if (context.mode === "off") return null;
-	const vehicleIds = context.vehicles.map((vehicle) => vehicle.id);
-	const onOtherLiveWork =
-		vehicleIds.length === 0
-			? []
-			: await reader
-					.select({ vehicleId: workPeriod.vehicleId })
-					.from(workPeriod)
-					.where(
-						and(
-							eq(workPeriod.organizationId, organizationId),
-							ne(workPeriod.employeeId, employeeId),
-							isNotNull(workPeriod.vehicleId),
-							inArray(workPeriod.vehicleId, vehicleIds),
-							eq(workPeriod.isActive, true),
-							isNull(workPeriod.endTime),
-							isNull(workPeriod.deletedAt),
-						),
-					);
 	return {
 		mode: context.mode,
 		vehicles: context.vehicles,
 		suggestedVehicleIds: context.suggestedVehicleIds ?? [],
 		lastEndKmByVehicleId: context.lastEndKmByVehicleId ?? {},
-		vehiclesOnOtherLiveWork: vehicleIds.filter((id) =>
-			onOtherLiveWork.some((row) => row.vehicleId === id),
-		),
+		vehiclesOnOtherLiveWork: await vehiclesOnOtherLiveWork(reader, {
+			organizationId,
+			employeeId,
+			vehicleIds: context.vehicles.map((vehicle) => vehicle.id),
+		}),
 		live: liveUse,
 	};
 }

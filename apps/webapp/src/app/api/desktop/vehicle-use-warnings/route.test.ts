@@ -2,15 +2,28 @@
  * #1124: the desktop asks for the same vehicle use plausibility warnings as the
  * web clock. The route is a thin adapter over the `checkVehicleUseWarnings`
  * server action, whose rules run on PostgreSQL in
- * `time-tracking/actions/vehicle-use-warnings.integration.test.ts`.
+ * `time-tracking/actions/vehicle-use-warnings.integration.test.ts`. Like the
+ * other desktop routes it needs a session and the organization's SSO.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ check: vi.fn() }));
+const state = vi.hoisted(() => ({
+	check: vi.fn(),
+	session: null as null | {
+		user: { id: string };
+		session: { activeOrganizationId: string | null };
+	},
+	ssoAllowed: true,
+}));
 
 vi.mock("next/server", async (importOriginal) => ({
 	...(await importOriginal<typeof import("next/server")>()),
 	connection: async () => undefined,
+}));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => state.session } } }));
+vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
+	canAccessOrganizationWithSso: async () => state.ssoAllowed,
 }));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings", () => ({
 	checkVehicleUseWarnings: state.check,
@@ -36,6 +49,8 @@ const vehicleUse = {
 describe("POST /api/desktop/vehicle-use-warnings", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		state.session = { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } };
+		state.ssoAllowed = true;
 		state.check.mockResolvedValue({
 			success: true,
 			data: { warnings: [{ code: "start_below_last_end", lastRecordedEndKm: 12_500 }] },
@@ -64,5 +79,20 @@ describe("POST /api/desktop/vehicle-use-warnings", () => {
 			body: { warnings: [] },
 		});
 		await expect(post("not json")).resolves.toEqual({ status: 400, body: { warnings: [] } });
+		await expect(post({ vehicleUse: { vehicle: "van" } })).resolves.toEqual({
+			status: 400,
+			body: { warnings: [] },
+		});
+	});
+
+	it("refuses without a session, without an organization and without the organization's SSO", async () => {
+		state.session = null;
+		await expect(post({ vehicleUse })).resolves.toMatchObject({ status: 401 });
+		state.session = { user: { id: "user-1" }, session: { activeOrganizationId: null } };
+		await expect(post({ vehicleUse })).resolves.toMatchObject({ status: 400 });
+		state.session = { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } };
+		state.ssoAllowed = false;
+		await expect(post({ vehicleUse })).resolves.toMatchObject({ status: 403 });
+		expect(state.check).not.toHaveBeenCalled();
 	});
 });

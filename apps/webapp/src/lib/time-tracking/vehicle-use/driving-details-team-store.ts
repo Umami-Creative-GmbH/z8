@@ -3,7 +3,10 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
 import { type MissingDrivingDetail, missingDrivingDetail } from "./driving-details-missing";
-import { listDrivingDetailsMissing } from "./driving-details-missing-store";
+import {
+	drivingDetailsListedEmployeeCondition,
+	listDrivingDetailsMissing,
+} from "./driving-details-missing-store";
 
 /**
  * The manager's "driving details missing" list (#1127, `/team/driving`): the flagged work of the
@@ -72,7 +75,7 @@ async function listScopedPeople(
 	};
 	const conditions = and(
 		eq(employee.organizationId, input.organizationId),
-		eq(employee.isActive, true),
+		drivingDetailsListedEmployeeCondition(),
 	);
 	if (input.scope.kind === "all") {
 		return database

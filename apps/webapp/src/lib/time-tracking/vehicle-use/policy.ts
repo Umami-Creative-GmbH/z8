@@ -18,6 +18,22 @@ export type VehicleUseAssignmentRule =
 	| { assignmentType: "team"; teamId: string; mode: VehicleUseMode }
 	| { assignmentType: "employee"; employeeId: string; mode: VehicleUseMode };
 
+/** A stored assignment row as a rule; a row missing its team or employee counts as the organization's. */
+export function vehicleUseAssignmentRule(row: {
+	assignmentType: "organization" | "team" | "employee";
+	teamId: string | null;
+	employeeId: string | null;
+	mode: VehicleUseMode;
+}): VehicleUseAssignmentRule {
+	if (row.assignmentType === "team" && row.teamId) {
+		return { assignmentType: "team", teamId: row.teamId, mode: row.mode };
+	}
+	if (row.assignmentType === "employee" && row.employeeId) {
+		return { assignmentType: "employee", employeeId: row.employeeId, mode: row.mode };
+	}
+	return { assignmentType: "organization", mode: row.mode };
+}
+
 /**
  * The vehicle use mode for an employee. With the organization switch off it is
  * off for everyone. Otherwise the most specific assignment decides, like the

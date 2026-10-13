@@ -4,6 +4,8 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
+	approvalRequest,
+	approvalWorkflow,
 	auditLog,
 	employee,
 	organizationVehicle,
@@ -11,6 +13,7 @@ import {
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import {
 	parseVehicleChange,
 	type VehicleChange,
@@ -349,12 +352,49 @@ async function setArchived(context: ChangeContext, vehicleId: string, archived: 
 }
 
 /**
+ * Whether an open time correction requests the vehicle (#1120): its requested
+ * vehicle use lives in the pending request's JSON, which no foreign key guards,
+ * so deleting the vehicle would make the approval fail with `vehicle_not_found`.
+ */
+async function requestedByOpenCorrection(context: ChangeContext, vehicleId: string) {
+	const mentioned = `%${vehicleId}%`;
+	const [legacy] = await context.tx
+		.select({ id: approvalRequest.id })
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.organizationId, context.organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.status, "pending"),
+				sql`${approvalRequest.metadata}::text like ${mentioned}`,
+			),
+		)
+		.limit(1);
+	if (legacy) return true;
+	const [canonical] = await context.tx
+		.select({ id: approvalWorkflow.id })
+		.from(approvalWorkflow)
+		.where(
+			and(
+				eq(approvalWorkflow.organizationId, context.organizationId),
+				eq(approvalWorkflow.workflowType, "time_correction"),
+				eq(approvalWorkflow.status, "pending"),
+				sql`${approvalWorkflow.contextSnapshot}::text like ${mentioned}`,
+			),
+		)
+		.limit(1);
+	return canonical !== undefined;
+}
+
+/**
  * Deletes a vehicle with its assigned drivers. A vehicle recorded on work is
  * referenced without a cascade, so PostgreSQL refuses the delete and the change
- * comes back as `vehicle_used`.
+ * comes back as `vehicle_used`; so does a vehicle an open time correction
+ * requests, which approving it would otherwise need.
  */
 async function remove(context: ChangeContext, vehicleId: string) {
 	const row = await loadVehicle(context, vehicleId);
+	if (await requestedByOpenCorrection(context, row.id)) refuse("vehicle_used");
 	const drivers = await currentDrivers(context, row.id);
 	await context.tx
 		.delete(organizationVehicle)
@@ -406,20 +446,15 @@ function databaseError(error: unknown): { code: string; constraint?: string } | 
 }
 
 function refusalOfDatabaseError(error: unknown, change: VehicleChange): VehicleRefusal | null {
-	const failure = databaseError(error);
-	if (!failure) return null;
-	if (
-		failure.code === "23505" &&
-		failure.constraint === "organization_vehicle_licence_plate_key_idx"
-	) {
+	if (isConstraintViolation(error, "23505", "organization_vehicle_licence_plate_key_idx")) {
 		return "licence_plate_taken";
 	}
-	if (failure.code === "23503") {
-		// A driver deleted meanwhile, or (for a delete) work that records the vehicle.
-		if (failure.constraint?.startsWith("organization_vehicle_driver_")) return "driver_not_found";
-		if (change.kind === "delete") return "vehicle_used";
-	}
-	return null;
+	const failure = databaseError(error);
+	if (failure?.code !== "23503") return null;
+	// A driver deleted meanwhile, or (for a delete) any table that records the vehicle:
+	// each references it without a cascade, so a new one refuses without being listed here.
+	if (failure.constraint?.startsWith("organization_vehicle_driver_")) return "driver_not_found";
+	return change.kind === "delete" ? "vehicle_used" : null;
 }
 
 /**

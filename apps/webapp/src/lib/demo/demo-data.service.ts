@@ -12,6 +12,7 @@ import {
 	isNotNull,
 	isNull,
 	notInArray,
+	sql,
 } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
@@ -76,6 +77,8 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { RECORDED_VEHICLE_FOREIGN_KEYS } from "@/lib/organization/vehicles/vehicle-rules";
+import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
@@ -3121,10 +3124,12 @@ export async function clearOrganizationTimeData(
 					await savepoint.delete(organizationVehicle).where(vehicleScope);
 					return true;
 				})
-				.catch(async () => {
+				.catch(async (error: unknown) => {
+					// Only work still recording a vehicle refuses the delete; anything else fails the reset.
+					if (!isConstraintViolation(error, "23503", RECORDED_VEHICLE_FOREIGN_KEYS)) throw error;
 					await tx
 						.update(organizationVehicle)
-						.set({ archivedAt: new Date(), updatedAt: new Date() })
+						.set({ archivedAt: sql`now()`, updatedAt: sql`now()` })
 						.where(vehicleScope);
 					return false;
 				});
