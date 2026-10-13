@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { IconBeach, IconUsers } from "@tabler/icons-react";
+import { IconBeach, IconMapPin, IconUsers } from "@tabler/icons-react";
 import { render, screen } from "@testing-library/react";
 import type * as React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -35,23 +35,45 @@ describe("NavTeam", () => {
 		pathnameMock.mockReturnValue("/");
 	});
 
-	it("marks the matching nested team route active", () => {
-		pathnameMock.mockReturnValue("/team/absences/pending");
-
+	function renderTeamNav() {
 		render(
 			<SidebarProvider>
 				<NavTeam
 					items={[
 						{ title: "Team", url: "/team", icon: IconUsers },
 						{ title: "Team Absences", url: "/team/absences", icon: IconBeach },
+						{ title: "Presence", url: "/team/presence", icon: IconMapPin },
 					]}
 				/>
 			</SidebarProvider>,
 		);
+	}
 
-		expect(screen.getByRole("link", { name: "Team Absences" }).getAttribute("data-active")).toBe(
-			"true",
-		);
-		expect(screen.getByRole("link", { name: "Team" }).getAttribute("data-active")).toBe("true");
+	function activeState(name: string) {
+		return screen.getByRole("link", { name }).getAttribute("data-active");
+	}
+
+	it.each([
+		["/team/absences/pending", "Team Absences"],
+		["/team/presence", "Presence"],
+		["/team/presence/location-1", "Presence"],
+	])("marks only the most specific item active on %s", (pathname, activeName) => {
+		pathnameMock.mockReturnValue(pathname);
+
+		renderTeamNav();
+
+		for (const name of ["Team", "Team Absences", "Presence"]) {
+			expect(activeState(name)).toBe(name === activeName ? "true" : "false");
+		}
+	});
+
+	it("keeps the team overview active on its own nested routes", () => {
+		pathnameMock.mockReturnValue("/team/members");
+
+		renderTeamNav();
+
+		expect(activeState("Team")).toBe("true");
+		expect(activeState("Team Absences")).toBe("false");
+		expect(activeState("Presence")).toBe("false");
 	});
 });
