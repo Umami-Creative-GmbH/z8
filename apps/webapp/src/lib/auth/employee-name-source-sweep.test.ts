@@ -86,7 +86,9 @@ describe("employee name source sweep", () => {
 				return [];
 			}
 
-			const source = readFileSync(filePath, "utf8");
+			// Translation keys passed to `t(...)` are text, not column access
+			// (e.g. "personalDataExport.readme.fields.employment.employee.firstName").
+			const source = readFileSync(filePath, "utf8").replace(/\bt\(\s*(["'`])[\w.-]+\1/g, 't(""');
 			const patterns = [...forbiddenPatterns, ...(targetedForbiddenPatterns[relativePath] ?? [])];
 
 			return patterns
