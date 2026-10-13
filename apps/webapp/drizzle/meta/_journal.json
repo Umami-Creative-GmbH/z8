@@ -1534,6 +1534,13 @@
       "when": 1803139200000,
       "tag": "0218_work_vehicle_use",
       "breakpoints": true
+    },
+    {
+      "idx": 219,
+      "version": "7",
+      "when": 1803225600000,
+      "tag": "0219_driving_details_missing_reminder",
+      "breakpoints": true
     }
   ]
 }

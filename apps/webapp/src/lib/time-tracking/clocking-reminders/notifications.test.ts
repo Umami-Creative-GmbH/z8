@@ -211,3 +211,41 @@ describe("period submission sent back notifications (#1062)", () => {
 		});
 	});
 });
+
+describe("driving details missing reminders (#1127)", () => {
+	it("names the day of the work lacking its vehicle or a reading, in the employee's locale", () => {
+		const reminder = {
+			type: "driving_details_missing_reminder" as const,
+			occasionKey: "driving_details_missing_reminder:work_period:work-1",
+			day: parsePlainDate("2026-09-07"),
+			expectedAt: at("2026-09-08T06:00:00Z"),
+			shift: null,
+			drivingWork: { workPeriodId: "work-1", workDay: parsePlainDate("2026-09-07") },
+		};
+		const build = (locale: string) =>
+			buildClockingReminderNotification({
+				reminder,
+				organizationId: "org-1",
+				userId: "user-1",
+				timezone: "Europe/Berlin",
+				locale,
+			});
+		expect(build("en")).toMatchObject({
+			type: "driving_details_missing_reminder",
+			title: "Add your driving details",
+			message:
+				"Your work on Sep 7, 2026 is missing its vehicle or an odometer reading. Add them to the work period.",
+			entityType: "work_period",
+			entityId: "work-1",
+			actionUrl: "/time-tracking",
+			idempotencyKey: "clocking-reminder:driving_details_missing_reminder:work_period:work-1",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.drivingDetailsMissingReminder.title",
+					messageKey: "common:notifications.content.drivingDetailsMissingReminder.message",
+				},
+			},
+		});
+		expect(build("de").metadata?.i18n).toMatchObject({ params: { date: "07.09.2026" } });
+	});
+});

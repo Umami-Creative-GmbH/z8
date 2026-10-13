@@ -105,6 +105,8 @@ export const NOTIFICATION_TYPES = [
 	"period_submission_decided",
 	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
 	"scheduled_export_paused",
+	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
+	"driving_details_missing_reminder",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -134,6 +136,7 @@ const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"period_submission_reminder",
 	"period_submission_sent_back",
 	"period_submission_decided",
+	"driving_details_missing_reminder",
 ]);
 
 /** Whether a channel is on for a type the user stored no preference for. */
