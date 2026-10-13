@@ -16,6 +16,11 @@ import { loadWorksCouncilPositionCaptureReview } from "@/lib/works-council/posit
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { buildWorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
+import {
+	type VehicleUseReview,
+	vehicleUseReviewCsvRows,
+} from "@/lib/works-council/vehicle-use-review";
+import { loadWorksCouncilVehicleUseReview } from "@/lib/works-council/vehicle-use-review-data";
 
 type ExportContext = {
 	organizationId: string;
@@ -82,6 +87,7 @@ function csvMetricValue(
 function buildCsv(
 	model: WorksCouncilPortalModel,
 	positionCapture: PositionCaptureReview,
+	vehicleUse: VehicleUseReview,
 	snapshot: VisibilitySnapshot,
 	context: ExportContext,
 ) {
@@ -124,6 +130,9 @@ function buildCsv(
 		csvRow([]),
 		// Configuration, consent counts and the access log only: never a position (#834).
 		...positionCaptureReviewCsvRows(positionCapture).map(csvRow),
+		csvRow([]),
+		// Configuration, covered employees and vehicle count only: never a reading or distance (#1130).
+		...vehicleUseReviewCsvRows(vehicleUse).map(csvRow),
 	];
 
 	return {
@@ -197,7 +206,7 @@ export async function POST(request: NextRequest) {
 			visibleLocationIds: settings.visibleLocationIds,
 		};
 
-		const [model, positionCapture] = await Promise.all([
+		const [model, positionCapture, vehicleUse] = await Promise.all([
 			buildWorksCouncilPortalModel({
 				organizationId,
 				actorUserId: session.user.id,
@@ -206,8 +215,15 @@ export async function POST(request: NextRequest) {
 				settings,
 			}),
 			loadWorksCouncilPositionCaptureReview({ organizationId, settings }),
+			loadWorksCouncilVehicleUseReview({ organizationId, settings }),
 		]);
-		const { csv, rowCount } = buildCsv(model, positionCapture, visibilitySnapshot, context);
+		const { csv, rowCount } = buildCsv(
+			model,
+			positionCapture,
+			vehicleUse,
+			visibilitySnapshot,
+			context,
+		);
 
 		await db.insert(worksCouncilReviewExport).values({
 			organizationId,

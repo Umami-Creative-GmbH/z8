@@ -20,6 +20,7 @@ const mockState = vi.hoisted(() => ({
 	auditWorksCouncilPortalViewed: vi.fn(),
 	buildWorksCouncilPortalModel: vi.fn(),
 	loadWorksCouncilPositionCaptureReview: vi.fn(),
+	loadWorksCouncilVehicleUseReview: vi.fn(),
 	getTranslate: vi.fn(),
 	translate: vi.fn((key: string, fallback: string) =>
 		key === "worksCouncil.loadingLabel"
@@ -79,6 +80,10 @@ vi.mock("@/lib/works-council/position-capture-review-data", () => ({
 	loadWorksCouncilPositionCaptureReview: mockState.loadWorksCouncilPositionCaptureReview,
 }));
 
+vi.mock("@/lib/works-council/vehicle-use-review-data", () => ({
+	loadWorksCouncilVehicleUseReview: mockState.loadWorksCouncilVehicleUseReview,
+}));
+
 vi.mock("@/components/works-council/works-council-dashboard", () => ({
 	WorksCouncilDashboard: ({ model }: { model: unknown }) => ({ model }),
 }));
@@ -135,6 +140,7 @@ describe("WorksCouncilPage", () => {
 		});
 		mockState.buildWorksCouncilPortalModel.mockResolvedValue({ entries: [] });
 		mockState.loadWorksCouncilPositionCaptureReview.mockResolvedValue({ accessLog: [] });
+		mockState.loadWorksCouncilVehicleUseReview.mockResolvedValue({ enabled: false });
 	});
 
 	it("renders the generic visual shell while translation and access remain unresolved", () => {
@@ -278,5 +284,22 @@ describe("WorksCouncilPage", () => {
 		await expect(renderWorksCouncilContent()).rejects.toThrow("redirect:/en");
 
 		expect(mockState.loadWorksCouncilPositionCaptureReview).not.toHaveBeenCalled();
+		expect(mockState.loadWorksCouncilVehicleUseReview).not.toHaveBeenCalled();
+	});
+
+	it("passes the vehicle use section, loaded for the active organization after the audit", async () => {
+		const settings = { identityVisibility: "aggregated", minimumAggregationThreshold: 5 };
+		mockState.loadWorksCouncilSettings.mockResolvedValue(settings);
+
+		const dashboard = await renderWorksCouncilContent();
+
+		expect(mockState.loadWorksCouncilVehicleUseReview).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			settings,
+		});
+		expect(
+			mockState.auditWorksCouncilPortalViewed.mock.invocationCallOrder[0],
+		).toBeLessThan(mockState.loadWorksCouncilVehicleUseReview.mock.invocationCallOrder[0]);
+		expect(dashboard.props.vehicleUse).toEqual({ review: { enabled: false } });
 	});
 });

@@ -15,6 +15,7 @@ import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { loadWorksCouncilPositionCaptureReview } from "@/lib/works-council/position-capture-review-data";
 import { buildWorksCouncilPortalModel } from "@/lib/works-council/review-data";
 import { loadWorksCouncilSettings } from "@/lib/works-council/settings";
+import { loadWorksCouncilVehicleUseReview } from "@/lib/works-council/vehicle-use-review-data";
 import { getTranslate } from "@/tolgee/server";
 
 function getRange(searchParams?: { from?: string; to?: string }) {
@@ -82,7 +83,7 @@ async function WorksCouncilPageContent({
 		settings,
 		...range,
 	});
-	const [model, positionCaptureReview, locale] = await Promise.all([
+	const [model, positionCaptureReview, vehicleUseReview, locale] = await Promise.all([
 		buildWorksCouncilPortalModel({
 			organizationId,
 			actorUserId: authContext.user.id,
@@ -90,6 +91,7 @@ async function WorksCouncilPageContent({
 			...range,
 		}),
 		loadWorksCouncilPositionCaptureReview({ organizationId, settings }),
+		loadWorksCouncilVehicleUseReview({ organizationId, settings }),
 		getLocale(),
 	]);
 
@@ -97,6 +99,7 @@ async function WorksCouncilPageContent({
 		<WorksCouncilDashboard
 			model={model}
 			positionCapture={{ review: positionCaptureReview, locale }}
+			vehicleUse={{ review: vehicleUseReview }}
 		/>
 	);
 }

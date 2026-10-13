@@ -2,8 +2,10 @@ import { DateTime } from "luxon";
 import type { PositionCaptureReview } from "@/lib/works-council/position-capture-review";
 import type { SuppressedValue } from "@/lib/works-council/privacy";
 import type { WorksCouncilPortalModel } from "@/lib/works-council/review-data";
+import type { VehicleUseReview } from "@/lib/works-council/vehicle-use-review";
 import { getTranslate } from "@/tolgee/server";
 import { PositionCaptureReviewSection } from "./position-capture-review-section";
+import { VehicleUseReviewSection } from "./vehicle-use-review-section";
 
 function formatTimestamp(timestamp: string) {
 	return DateTime.fromISO(timestamp)
@@ -74,10 +76,13 @@ function MetricCard({
 export async function WorksCouncilDashboard({
 	model,
 	positionCapture,
+	vehicleUse,
 }: {
 	model: WorksCouncilPortalModel;
 	/** The read-only position capture section (#834). */
 	positionCapture?: { review: PositionCaptureReview; locale: string };
+	/** The read-only vehicle use section (#1130). */
+	vehicleUse?: { review: VehicleUseReview };
 }) {
 	const t = await getTranslate();
 	if (model.state === "disabled") {
@@ -281,6 +286,8 @@ export async function WorksCouncilDashboard({
 					t={t}
 				/>
 			)}
+
+			{vehicleUse && <VehicleUseReviewSection review={vehicleUse.review} t={t} />}
 		</section>
 	);
 }
