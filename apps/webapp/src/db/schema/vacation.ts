@@ -56,6 +56,13 @@ export const vacationAllowance = pgTable(
 		maxCarryoverDays: decimal("max_carryover_days"), // null = unlimited
 		carryoverExpiryMonths: integer("carryover_expiry_months"), // e.g., 3 months
 
+		// Proration (#1104): prorate the allowance in a year the employee joins or leaves.
+		// Only annual policies are prorated; monthly and biweekly accrual already covers part years.
+		prorateInStartAndExitYear: boolean("prorate_in_start_and_exit_year").default(true).notNull(),
+		// Floor of the prorated allowance once the waiting period is complete. Between 0 and
+		// defaultAnnualDays; new policies get min(20, defaultAnnualDays) (defaultStatutoryMinimumDays).
+		statutoryMinimumDays: decimal("statutory_minimum_days").notNull(),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())

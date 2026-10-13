@@ -18,6 +18,10 @@ import {
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
+import {
+	checkStatutoryMinimumDays,
+	defaultStatutoryMinimumDays,
+} from "@/lib/absences/vacation-policy-settings";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
@@ -25,6 +29,7 @@ import {
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
+	ValidationError,
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -106,6 +111,27 @@ function normalizeAbsenceCategoryData(data: AbsenceCategoryWriteData) {
 			? { deputyRequired: canRequireDeputy(data.type) && data.deputyRequired === true }
 			: {}),
 	};
+}
+
+const STATUTORY_MINIMUM_DAYS_MESSAGES = {
+	not_a_number: "The statutory minimum must be a number",
+	negative: "The statutory minimum cannot be negative",
+	above_annual_days: "The statutory minimum cannot exceed the policy's annual days",
+} as const;
+
+function rejectInvalidStatutoryMinimumDays(
+	statutoryMinimumDays: string,
+	defaultAnnualDays: string,
+) {
+	const problem = checkStatutoryMinimumDays(statutoryMinimumDays, defaultAnnualDays);
+	if (!problem) return Effect.void;
+	return Effect.fail(
+		new ValidationError({
+			message: STATUTORY_MINIMUM_DAYS_MESSAGES[problem],
+			field: "statutoryMinimumDays",
+			value: statutoryMinimumDays,
+		}),
+	);
 }
 
 function rejectBlankAbsenceCategoryName() {
@@ -280,6 +306,10 @@ export async function createVacationPolicy(data: {
 	allowCarryover: boolean;
 	maxCarryoverDays?: string;
 	carryoverExpiryMonths?: number;
+	/** Prorate in start and exit year (#1109); on when omitted. */
+	prorateInStartAndExitYear?: boolean;
+	/** Floor of the prorated allowance (#1109); min(20, defaultAnnualDays) when omitted. */
+	statutoryMinimumDays?: string;
 }): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* () {
 		const actor = yield* getEmployeeSettingsActorContext({
@@ -291,6 +321,10 @@ export async function createVacationPolicy(data: {
 			resource: "vacation_policy",
 			action: "create",
 		});
+
+		const statutoryMinimumDays =
+			data.statutoryMinimumDays ?? defaultStatutoryMinimumDays(data.defaultAnnualDays);
+		yield* rejectInvalidStatutoryMinimumDays(statutoryMinimumDays, data.defaultAnnualDays);
 
 		const dbService = yield* DatabaseService;
 
@@ -342,6 +376,8 @@ export async function createVacationPolicy(data: {
 						allowCarryover: data.allowCarryover,
 						maxCarryoverDays: data.maxCarryoverDays,
 						carryoverExpiryMonths: data.carryoverExpiryMonths,
+						prorateInStartAndExitYear: data.prorateInStartAndExitYear ?? true,
+						statutoryMinimumDays,
 						createdBy: actor.session.user.id,
 					})
 					.returning();
@@ -382,6 +418,10 @@ export async function updateVacationPolicy(
 		allowCarryover: boolean;
 		maxCarryoverDays?: string;
 		carryoverExpiryMonths?: number;
+		/** Prorate in start and exit year (#1109); unchanged when omitted. */
+		prorateInStartAndExitYear?: boolean;
+		/** Floor of the prorated allowance (#1109); unchanged when omitted. */
+		statutoryMinimumDays?: string;
 	},
 ): Promise<ServerActionResult<typeof vacationAllowance.$inferSelect>> {
 	const effect = Effect.gen(function* () {
@@ -390,35 +430,37 @@ export async function updateVacationPolicy(
 		});
 		const dbService = yield* DatabaseService;
 
-		// Step 3: Get the policy to check permissions
-		const policy = yield* dbService
-			.query("getPolicy", async () => {
-				const p = await dbService.db.query.vacationAllowance.findFirst({
-					where: eq(vacationAllowance.id, policyId),
-				});
-
-				if (!p) {
-					throw new Error("Policy not found");
-				}
-
-				return p;
-			})
-			.pipe(
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Policy not found",
-							entityType: "vacation_policy",
-							entityId: policyId,
-						}),
+		// Step 3: Get the policy in the actor's organization to check permissions
+		const policy = yield* dbService.query("getPolicy", async () => {
+			return await dbService.db.query.vacationAllowance.findFirst({
+				where: and(
+					eq(vacationAllowance.id, policyId),
+					eq(vacationAllowance.organizationId, actor.organizationId),
 				),
+			});
+		});
+
+		if (!policy) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Policy not found",
+					entityType: "vacation_policy",
+					entityId: policyId,
+				}),
 			);
+		}
 
 		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
 			message: "Insufficient permissions",
 			resource: "vacation_policy",
 			action: "update",
 		});
+
+		// The stored statutory minimum must still fit when only the annual days change.
+		yield* rejectInvalidStatutoryMinimumDays(
+			data.statutoryMinimumDays ?? policy.statutoryMinimumDays,
+			data.defaultAnnualDays,
+		);
 
 		// Step 5: If setting as company default, unset previous default
 		if (data.isCompanyDefault && !policy.isCompanyDefault) {
@@ -452,8 +494,15 @@ export async function updateVacationPolicy(
 						allowCarryover: data.allowCarryover,
 						maxCarryoverDays: data.maxCarryoverDays,
 						carryoverExpiryMonths: data.carryoverExpiryMonths,
+						prorateInStartAndExitYear: data.prorateInStartAndExitYear,
+						statutoryMinimumDays: data.statutoryMinimumDays,
 					})
-					.where(eq(vacationAllowance.id, policyId))
+					.where(
+						and(
+							eq(vacationAllowance.id, policyId),
+							eq(vacationAllowance.organizationId, policy.organizationId),
+						),
+					)
 					.returning();
 			})
 			.pipe(

@@ -21,6 +21,8 @@ interface VacationPolicyButtonProps {
 		allowCarryover: boolean;
 		maxCarryoverDays: string | null;
 		carryoverExpiryMonths: number | null;
+		prorateInStartAndExitYear: boolean;
+		statutoryMinimumDays: string;
 	};
 	variant?: "default" | "outline";
 	size?: "default" | "sm" | "lg";
