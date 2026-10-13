@@ -501,6 +501,49 @@ describe("manager absence permissions", () => {
 });
 
 describe("manager absence metrics", () => {
+	it("includes vacation adjustments in the allowance and remaining days (#1105)", () => {
+		const metrics = calculateManagerAbsenceMetrics({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			adjustmentTotal: -5,
+			absences: [
+				{
+					id: "vacation-approved",
+					employeeId: "employee-1",
+					startDate: "2026-02-02",
+					startPeriod: "full_day",
+					endDate: "2026-02-03",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toMatchObject({
+			vacationAllowance: 25,
+			usedVacationDays: 2,
+			remainingVacationDays: 23,
+		});
+	});
+
 	it("clips vacation and sick metrics to absences overlapping the selected year", () => {
 		const metrics = calculateManagerAbsenceMetrics({
 			year: 2026,
