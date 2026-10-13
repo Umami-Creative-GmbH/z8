@@ -5,6 +5,7 @@ import {
 	IconBriefcase,
 	IconBuilding,
 	IconCalendarEvent,
+	IconCar,
 	IconCategory,
 	IconCheck,
 	IconCircle,
@@ -22,6 +23,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useReducer, useState } from "react";
 import {
+	assignVehicleUseToPeriodsStepAction,
 	assignWorkCategoriesToPeriodsStepAction,
 	clearTimeDataAction,
 	deleteNonAdminDataAction,
@@ -449,6 +451,20 @@ function useDemoDataWizardController({
 			});
 		}
 
+		// Vehicle use on work (depends on the demo vehicles from the locations + time entries)
+		if (includeLocations && includeTimeEntries) {
+			activeSteps.push({
+				id: "vehicle-use",
+				label: t("settings.demo.steps.vehicleUse.label", "Vehicle Use"),
+				description: t(
+					"settings.demo.steps.vehicleUse.description",
+					"Recording vehicle use on work periods",
+				),
+				icon: <IconCar className="size-4" />,
+				status: "pending",
+			});
+		}
+
 		dispatchWizard({ type: "start-generation", steps: activeSteps });
 
 		const input: StepGenerationInput = {
@@ -481,6 +497,8 @@ function useDemoDataWizardController({
 			workCategoriesCreated: 0,
 			workCategoryAssignmentsCreated: 0,
 			workCategoriesAssignedToPeriods: 0,
+			vehicleUseRecorded: 0,
+			drivingDetailsMissing: 0,
 			// NEW: Change policy results
 			changePoliciesCreated: 0,
 			changePolicyAssignmentsCreated: 0,
@@ -816,6 +834,25 @@ function useDemoDataWizardController({
 						result: `${d.workCategoriesAssigned} periods assigned`,
 						updates: {
 							workCategoriesAssignedToPeriods: d.workCategoriesAssigned,
+						},
+					};
+				},
+			);
+			if (!success) hasError = true;
+		}
+
+		// Phase 8: Vehicle use on work periods (depends on vehicles + time entries)
+		if (!hasError && activeSteps.some((s) => s.id === "vehicle-use")) {
+			const success = await executeStep(
+				"vehicle-use",
+				() => assignVehicleUseToPeriodsStepAction(input),
+				(data) => {
+					const d = data as { vehicleUseRecorded: number; drivingDetailsMissing: number };
+					return {
+						result: `${d.vehicleUseRecorded} periods, ${d.drivingDetailsMissing} with driving details missing`,
+						updates: {
+							vehicleUseRecorded: d.vehicleUseRecorded,
+							drivingDetailsMissing: d.drivingDetailsMissing,
 						},
 					};
 				},

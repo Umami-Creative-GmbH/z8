@@ -50,6 +50,10 @@ import {
 	type TimeEntryAppend,
 } from "@/lib/time-tracking/time-entry-append";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+import {
+	vehicleUseColumns,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { deriveWorkDurationMinutes } from "@/lib/time-tracking/work-duration";
 import {
 	runWorkTransaction,
@@ -546,6 +550,89 @@ export async function assignDemoWorkCategory(
 		.where(and(inScope, eq(workPeriod.graphRevision, period.graphRevision)))
 		.returning({ id: workPeriod.id });
 	if (!updated) throw new Error("Demo work period changed during category assignment");
+	return true;
+}
+
+/**
+ * Records demo vehicle use (#1132) on one completed period that has none, like
+ * `assignDemoWorkCategory`: a legacy organization gets a period-only update; an adopted one
+ * changes only settled work, writes the same columns to the canonical work detail and advances
+ * the period's graph revision. The columns are named explicitly, so the approval write-boundary
+ * scanner sees a resolved payload.
+ */
+export async function assignDemoVehicleUse(
+	scope: SealedWorkTransactionScope,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		workPeriodId: string;
+		use: WorkVehicleUse;
+	},
+): Promise<boolean> {
+	scope.assertEmployee(input.organizationId, input.employeeId);
+	const client = scope.db;
+	const columns = vehicleUseColumns(input.use);
+	const inScope = and(
+		eq(workPeriod.id, input.workPeriodId),
+		eq(workPeriod.organizationId, input.organizationId),
+		eq(workPeriod.employeeId, input.employeeId),
+		isNull(workPeriod.vehicleKind),
+	);
+	if (scope.admission !== "append") {
+		const updated = await client
+			.update(workPeriod)
+			.set({
+				vehicleKind: columns.vehicleKind,
+				vehicleId: columns.vehicleId,
+				odometerStartKm: columns.odometerStartKm,
+				odometerEndKm: columns.odometerEndKm,
+				drivenDistanceKm: columns.drivenDistanceKm,
+			})
+			.where(and(inScope, eq(workPeriod.isActive, false)))
+			.returning({ id: workPeriod.id });
+		return updated.length === 1;
+	}
+	const [period] = await client.select().from(workPeriod).where(inScope).for("update").limit(1);
+	if (
+		!period ||
+		period.isActive ||
+		period.deletedAt !== null ||
+		period.approvalStatus !== "approved" ||
+		period.pendingChanges !== null ||
+		!period.canonicalRecordId
+	) {
+		return false;
+	}
+	const detail = await client
+		.update(timeRecordWork)
+		.set({
+			vehicleKind: columns.vehicleKind,
+			vehicleId: columns.vehicleId,
+			odometerStartKm: columns.odometerStartKm,
+			odometerEndKm: columns.odometerEndKm,
+			drivenDistanceKm: columns.drivenDistanceKm,
+		})
+		.where(
+			and(
+				eq(timeRecordWork.recordId, period.canonicalRecordId),
+				eq(timeRecordWork.organizationId, input.organizationId),
+			),
+		)
+		.returning({ recordId: timeRecordWork.recordId });
+	if (detail.length !== 1) return false;
+	const [updated] = await client
+		.update(workPeriod)
+		.set({
+			vehicleKind: columns.vehicleKind,
+			vehicleId: columns.vehicleId,
+			odometerStartKm: columns.odometerStartKm,
+			odometerEndKm: columns.odometerEndKm,
+			drivenDistanceKm: columns.drivenDistanceKm,
+			graphRevision: period.graphRevision + 1,
+		})
+		.where(and(inScope, eq(workPeriod.graphRevision, period.graphRevision)))
+		.returning({ id: workPeriod.id });
+	if (!updated) throw new Error("Demo work period changed during vehicle use assignment");
 	return true;
 }
 

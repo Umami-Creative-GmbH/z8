@@ -97,6 +97,7 @@ import {
 	recordDemoWorkDay,
 	withDemoWorkTransaction,
 } from "./demo-work";
+import { assignDemoVehicleUseToPeriods } from "./demo-vehicle-use-generator";
 import { runWorkTransaction, type Transaction } from "@/lib/time-tracking/work-transaction";
 import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configuration";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
@@ -258,6 +259,9 @@ export interface DemoDataResult {
 	workCategoriesCreated: number;
 	workCategoryAssignmentsCreated: number;
 	workCategoriesAssignedToPeriods: number;
+	// Vehicle use on demo work, some with driving details missing (#1132)
+	vehicleUseRecorded: number;
+	drivingDetailsMissing: number;
 	// NEW: Change policy results
 	changePoliciesCreated: number;
 	changePolicyAssignmentsCreated: number;
@@ -2801,6 +2805,9 @@ export async function generateDemoData(
 	// Phase 7: Work category assignments (depends on categories + time entries)
 	const categoryAssignmentResult = await assignWorkCategoriesToPeriods(options);
 
+	// Phase 8: Vehicle use on work (depends on vehicles + time entries)
+	const vehicleUseResult = await assignDemoVehicleUseToPeriods(options);
+
 	return {
 		timeEntriesCreated: timeResult.timeEntriesCreated,
 		workPeriodsCreated: timeResult.workPeriodsCreated,
@@ -2820,6 +2827,8 @@ export async function generateDemoData(
 		workCategoryAssignmentsCreated: workCategoryResult.assignmentsCreated,
 		workCategoriesAssignedToPeriods:
 			categoryAssignmentResult.workCategoriesAssigned,
+		vehicleUseRecorded: vehicleUseResult.vehicleUseRecorded,
+		drivingDetailsMissing: vehicleUseResult.drivingDetailsMissing,
 		// NEW: Change policy results
 		changePoliciesCreated: changePolicyResult.policiesCreated,
 		changePolicyAssignmentsCreated: changePolicyResult.assignmentsCreated,
