@@ -38,7 +38,7 @@ vi.mock("@/tolgee/shared", () => ({
 		"ru",
 	],
 	DEFAULT_LANGUAGE: "en",
-	ALL_NAMESPACES: ["common", "admin"],
+	APP_NAMESPACES: ["common", "admin"],
 	loadNamespaces: loadNamespacesMock,
 	TolgeeBase: () => ({
 		init: () => ({
