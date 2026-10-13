@@ -10,32 +10,38 @@ import { user } from "@/db/auth-schema";
 import type { EmailTemplateKey } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { type EmailTranslate, loadEmailTranslator } from "@/lib/email/email-i18n";
+import {
+	type EmailTranslate,
+	type EmailTranslator,
+	loadEmailTranslator,
+} from "@/lib/email/email-i18n";
 import { type SendEmailParams, sendEmail } from "@/lib/email/email-service";
+import type { EmailDetailRow } from "@/lib/email/layout/email-layout";
 import { renderNotificationEmail, renderSecurityAlert } from "@/lib/email/render";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
-import type { SecurityAlertData, SecurityEventType } from "@/lib/email/templates/security-alert";
+import {
+	type SecurityAlertData,
+	type SecurityEventType,
+	securityAlertSubject,
+} from "@/lib/email/templates/security-alert";
 import { createLogger } from "@/lib/logger";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { notificationEmailRoute } from "./email-routes";
+import { notificationEmailRoute, type TemplateNotificationEmail } from "./email-routes";
 import {
 	formatNotificationParam,
 	hasTypedNotificationParams,
+	isRecord,
+	type NotificationParamFormatContext,
 	notificationParam,
 	withFormattedTypedParams,
 } from "./notification-params";
 import {
 	localizeOutboundNotification,
-	resolveOutboundNotificationLocale,
+	resolveOutboundNotificationPreferences,
 } from "./outbound-localization";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("EmailNotifications");
-
-interface LocalizedEmailContent {
-	title: string;
-	message: string;
-}
 
 interface EmailNotificationParams {
 	actionUrl?: string;
@@ -45,10 +51,6 @@ interface EmailNotificationParams {
 	message: string;
 	metadata?: Record<string, unknown>;
 	organizationId?: string; // Optional org ID to use org-specific email config
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function getI18nMetadata(
@@ -86,35 +88,117 @@ function getMetadataValue(
 	return undefined;
 }
 
+/** A metadata value as text; empty when the notification has none. */
 function getMetadataString(
 	metadata: Record<string, unknown> | undefined,
 	keys: string | string[],
-	fallback = "",
 ): string {
 	const value = getMetadataValue(metadata, keys);
 	if (typeof value === "string") return value;
 	if (typeof value === "number" || typeof value === "boolean") return String(value);
-	return fallback;
+	return "";
 }
 
-function getMetadataNumber(
-	metadata: Record<string, unknown> | undefined,
-	keys: string | string[],
-	fallback = 0,
-): number {
+function getMetadataNumber(metadata: Record<string, unknown> | undefined, keys: string): number {
 	const value = getMetadataValue(metadata, keys);
 	if (typeof value === "number" && Number.isFinite(value)) return value;
 	if (typeof value === "string") {
 		const parsed = Number(value);
 		if (Number.isFinite(parsed)) return parsed;
 	}
-	return fallback;
+	return 0;
 }
 
-/** An absence decision's override variables (`absence-request-approved`/`-rejected`). */
-function absenceDecisionData(metadata: Record<string, unknown>) {
+/**
+ * The notification's metadata with its typed params as text in the recipient
+ * language, so override `{{variables}}` and ICU never see a raw value (#1149).
+ */
+function withTypedParamsAsText(
+	metadata: Record<string, unknown> | undefined,
+	context: NotificationParamFormatContext,
+): Record<string, unknown> | undefined {
+	const i18nParams = getI18nParamsMetadata(metadata);
+	if (!metadata || !i18nParams || !hasTypedNotificationParams(i18nParams)) return metadata;
 	return {
-		approverName: getMetadataString(metadata, "approverName"),
+		...metadata,
+		i18n: { ...getI18nMetadata(metadata), params: withFormattedTypedParams(i18nParams, context) },
+	};
+}
+
+/** What a template or dedicated email builder works from. */
+interface EmailContext {
+	/** The notification's metadata, typed params already text in the recipient language. */
+	metadata: Record<string, unknown> | undefined;
+	userName: string;
+	appUrl: string;
+	/** The `emails` translator in the recipient language. */
+	translator: EmailTranslator;
+	format: NotificationParamFormatContext;
+	organizationId?: string;
+}
+
+/** An overridable email: its override key and `{{variables}}`, and its default copy. */
+interface NotificationEmailContent {
+	templateKey: EmailTemplateKey;
+	/** The override's `{{variables}}`. */
+	data: Record<string, unknown>;
+	/** The default subject in the recipient language. */
+	subject: string;
+	/** The shared layout's detail rows, in the recipient language. */
+	details?: EmailDetailRow[];
+	/** Where the shared layout's button leads; the app's start page otherwise. */
+	actionUrl?: string;
+	/** A dedicated template's default body; the shared layout otherwise. */
+	renderDefaultHtml?: () => Promise<string>;
+}
+
+type TemplateEmailBuilder = (context: EmailContext) => NotificationEmailContent | null;
+
+/** A value missing from the notification, in the recipient language. */
+const missing = {
+	manager: (t: EmailTranslate) => t("emails.variables.yourManager", "your manager"),
+	reason: (t: EmailTranslate) => t("emails.variables.noReason", "No reason provided"),
+	time: (t: EmailTranslate) => t("emails.variables.noTime", "-"),
+};
+
+/** "start – end", or the one value when both ends are the same or one is missing. */
+function rangeText(t: EmailTranslate, start: string, end: string): string {
+	if (!start || !end || start === end) return start || end;
+	return t("emails.details.range", "{start} – {end}", { start, end });
+}
+
+interface AbsenceFacts {
+	startDate: string;
+	endDate: string;
+	absenceType: string;
+	days: number;
+	notes?: string;
+	reason?: string;
+}
+
+/** An absence's detail rows: dates, days, category, then notes or reason when given. */
+function absenceDetails({ t, locale }: EmailTranslator, absence: AbsenceFacts): EmailDetailRow[] {
+	const rows: EmailDetailRow[] = [];
+	const dates = rangeText(t, absence.startDate, absence.endDate);
+	if (dates) rows.push({ label: t("emails.details.dates", "Dates"), value: dates });
+	if (absence.days > 0) {
+		rows.push({
+			label: t("emails.details.days", "Days"),
+			value: new Intl.NumberFormat(locale).format(absence.days),
+		});
+	}
+	if (absence.absenceType) {
+		rows.push({ label: t("emails.details.category", "Category"), value: absence.absenceType });
+	}
+	if (absence.notes) rows.push({ label: t("emails.details.notes", "Notes"), value: absence.notes });
+	if (absence.reason) {
+		rows.push({ label: t("emails.details.reason", "Reason"), value: absence.reason });
+	}
+	return rows;
+}
+
+function absenceFacts(metadata: Record<string, unknown>): AbsenceFacts {
+	return {
 		startDate: getMetadataString(metadata, "startDate"),
 		endDate: getMetadataString(metadata, "endDate"),
 		absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
@@ -122,15 +206,273 @@ function absenceDecisionData(metadata: Record<string, unknown>) {
 	};
 }
 
-/** A time-correction decision's override variables (`time-correction-approved`/`-rejected`). */
-function timeCorrectionDecisionData(metadata: Record<string, unknown>) {
+interface TimeCorrectionFacts {
+	date: string;
+	originalClockIn?: string;
+	originalClockOut?: string;
+	correctedClockIn: string;
+	correctedClockOut: string;
+	reason?: string;
+}
+
+/** A time correction's detail rows: date, original and corrected times, reason. */
+function timeCorrectionDetails(
+	t: EmailTranslate,
+	correction: TimeCorrectionFacts,
+): EmailDetailRow[] {
+	const times = (clockIn = "", clockOut = "") =>
+		clockIn || clockOut
+			? t("emails.details.range", "{start} – {end}", {
+					start: clockIn || missing.time(t),
+					end: clockOut || missing.time(t),
+				})
+			: "";
+	const rows: EmailDetailRow[] = [];
+	if (correction.date) {
+		rows.push({ label: t("emails.details.date", "Date"), value: correction.date });
+	}
+	const original = times(correction.originalClockIn, correction.originalClockOut);
+	if (original) {
+		rows.push({ label: t("emails.details.originalTimes", "Original times"), value: original });
+	}
+	const corrected = times(correction.correctedClockIn, correction.correctedClockOut);
+	if (corrected) {
+		rows.push({ label: t("emails.details.correctedTimes", "Corrected times"), value: corrected });
+	}
+	if (correction.reason) {
+		rows.push({ label: t("emails.details.reason", "Reason"), value: correction.reason });
+	}
+	return rows;
+}
+
+/** A time-correction decision's facts (`time-correction-approved`/`-rejected`). */
+function timeCorrectionDecisionFacts(metadata: Record<string, unknown>): TimeCorrectionFacts {
 	return {
-		approverName: getMetadataString(metadata, "approverName"),
 		date: getMetadataString(metadata, "date"),
-		correctedClockIn: getMetadataString(metadata, "correctedClockIn", "-"),
-		correctedClockOut: getMetadataString(metadata, "correctedClockOut", "-"),
+		correctedClockIn: getMetadataString(metadata, "correctedClockIn"),
+		correctedClockOut: getMetadataString(metadata, "correctedClockOut"),
 	};
 }
+
+/** A decision's override variables: its facts, with missing times named. */
+function timeCorrectionDecisionData(
+	t: EmailTranslate,
+	metadata: Record<string, unknown>,
+): Record<string, unknown> {
+	const facts = timeCorrectionDecisionFacts(metadata);
+	return {
+		approverName: getMetadataString(metadata, "approverName"),
+		date: facts.date,
+		correctedClockIn: facts.correctedClockIn || missing.time(t),
+		correctedClockOut: facts.correctedClockOut || missing.time(t),
+	};
+}
+
+/** The approver's "pending approval" email; which one depends on what waits. */
+function approvalPendingEmail({
+	metadata,
+	userName,
+	appUrl,
+	translator,
+}: EmailContext): NotificationEmailContent | null {
+	const { t } = translator;
+	const approvalUrl = `${appUrl}/approvals/inbox`;
+	if (metadata?.approvalSubject === "absence") {
+		const absence = { ...absenceFacts(metadata), notes: getMetadataString(metadata, "notes") };
+		return {
+			templateKey: "absence-request-pending-approval",
+			subject: t(
+				"emails.subjects.approvalRequestSubmitted",
+				"New Absence Request Pending Approval",
+			),
+			data: {
+				managerName: userName,
+				employeeName: getMetadataString(metadata, "employeeName"),
+				startDate: absence.startDate,
+				endDate: absence.endDate,
+				absenceType: absence.absenceType,
+				days: absence.days,
+				notes: absence.notes || undefined,
+				approvalUrl,
+			},
+			details: absenceDetails(translator, absence),
+			actionUrl: approvalUrl,
+		};
+	}
+	if (metadata?.approvalSubject === "time_correction") {
+		const correction: TimeCorrectionFacts = {
+			date: getMetadataString(metadata, "date"),
+			originalClockIn: getMetadataString(metadata, "originalClockIn"),
+			originalClockOut: getMetadataString(metadata, "originalClockOut"),
+			correctedClockIn: getMetadataString(metadata, "correctedClockIn"),
+			correctedClockOut: getMetadataString(metadata, "correctedClockOut"),
+			reason: getMetadataString(metadata, "reason"),
+		};
+		return {
+			templateKey: "time-correction-pending-approval",
+			subject: t("emails.subjects.timeCorrectionSubmitted", "New Time Correction Pending Approval"),
+			data: {
+				managerName: userName,
+				employeeName: getMetadataString(metadata, "employeeName"),
+				date: correction.date,
+				originalClockIn: correction.originalClockIn || missing.time(t),
+				originalClockOut: correction.originalClockOut || missing.time(t),
+				correctedClockIn: correction.correctedClockIn || missing.time(t),
+				correctedClockOut: correction.correctedClockOut || missing.time(t),
+				reason: correction.reason,
+				approvalUrl,
+			},
+			details: timeCorrectionDetails(t, correction),
+			actionUrl: approvalUrl,
+		};
+	}
+	return null;
+}
+
+/** Each overridable email's builder; `email-routes.ts` decides which type uses which. */
+const TEMPLATE_EMAILS: Readonly<Record<TemplateNotificationEmail, TemplateEmailBuilder>> = {
+	absenceRequestSubmitted: ({ metadata, userName, appUrl, translator }) => {
+		if (!metadata) return null;
+		const { t } = translator;
+		const dateRange = getMetadataString(metadata, "dateRange");
+		const absence = {
+			...absenceFacts(metadata),
+			startDate: getMetadataString(metadata, "startDate") || dateRange,
+			endDate: getMetadataString(metadata, "endDate") || dateRange,
+		};
+		return {
+			templateKey: "absence-request-submitted",
+			subject: t("emails.subjects.absenceRequestSubmitted", "Absence Request Submitted"),
+			data: {
+				employeeName: userName,
+				startDate: absence.startDate,
+				endDate: absence.endDate,
+				absenceType: absence.absenceType,
+				days: absence.days,
+				managerName: getMetadataString(metadata, "managerName") || missing.manager(t),
+				appUrl,
+			},
+			details: absenceDetails(translator, absence),
+		};
+	},
+
+	absenceRequestApproved: ({ metadata, userName, appUrl, translator }) => {
+		if (!metadata) return null;
+		const { t } = translator;
+		const absence = absenceFacts(metadata);
+		const details = absenceDetails(translator, absence);
+		if (metadata.managerRecorded === true) {
+			return {
+				templateKey: "absence-recorded-by-manager",
+				subject: t("emails.subjects.absenceRecordedByManager", "Absence Recorded"),
+				data: {
+					employeeName: userName,
+					managerName: getMetadataString(metadata, "managerName"),
+					...absence,
+					appUrl,
+				},
+				details,
+			};
+		}
+		return {
+			templateKey: "absence-request-approved",
+			subject: t("emails.subjects.absenceRequestApproved", "Absence Request Approved"),
+			data: {
+				employeeName: userName,
+				approverName: getMetadataString(metadata, "approverName"),
+				...absence,
+				appUrl,
+			},
+			details,
+		};
+	},
+
+	absenceRequestRejected: ({ metadata, userName, appUrl, translator }) => {
+		if (!metadata) return null;
+		const { t } = translator;
+		const absence = absenceFacts(metadata);
+		const reason = getMetadataString(metadata, "rejectionReason");
+		return {
+			templateKey: "absence-request-rejected",
+			subject: t("emails.subjects.absenceRequestRejected", "Absence Request Rejected"),
+			data: {
+				employeeName: userName,
+				approverName: getMetadataString(metadata, "approverName"),
+				...absence,
+				rejectionReason: reason || missing.reason(t),
+				appUrl,
+			},
+			details: absenceDetails(translator, { ...absence, reason }),
+		};
+	},
+
+	approvalRequestSubmitted: approvalPendingEmail,
+
+	timeCorrectionApproved: ({ metadata, userName, appUrl, translator }) => {
+		if (!metadata) return null;
+		const { t } = translator;
+		return {
+			templateKey: "time-correction-approved",
+			subject: t("emails.subjects.timeCorrectionApproved", "Time Correction Approved"),
+			data: { employeeName: userName, ...timeCorrectionDecisionData(t, metadata), appUrl },
+			details: timeCorrectionDetails(t, timeCorrectionDecisionFacts(metadata)),
+		};
+	},
+
+	timeCorrectionRejected: ({ metadata, userName, appUrl, translator }) => {
+		if (!metadata) return null;
+		const { t } = translator;
+		const reason = getMetadataString(metadata, "rejectionReason");
+		return {
+			templateKey: "time-correction-rejected",
+			subject: t("emails.subjects.timeCorrectionRejected", "Time Correction Rejected"),
+			data: {
+				employeeName: userName,
+				...timeCorrectionDecisionData(t, metadata),
+				rejectionReason: reason || missing.reason(t),
+				appUrl,
+			},
+			details: timeCorrectionDetails(t, { ...timeCorrectionDecisionFacts(metadata), reason }),
+		};
+	},
+
+	teamMemberAdded: ({ metadata, userName, appUrl, translator: { t } }) => {
+		if (!metadata) return null;
+		const teamName = getMetadataString(metadata, "teamName");
+		const teamUrl = `${appUrl}/settings/teams/${getMetadataString(metadata, "teamId")}`;
+		return {
+			templateKey: "team-member-added",
+			subject: t("emails.subjects.teamMemberAdded", "You've been added to {teamName}", {
+				teamName,
+			}),
+			data: {
+				memberName: userName,
+				teamName,
+				addedByName: getMetadataString(metadata, ["addedByName", "performedByName"]),
+				teamUrl,
+				appUrl,
+			},
+			actionUrl: teamUrl,
+		};
+	},
+
+	teamMemberRemoved: ({ metadata, userName, appUrl, translator: { t } }) => {
+		if (!metadata) return null;
+		const teamName = getMetadataString(metadata, "teamName");
+		return {
+			templateKey: "team-member-removed",
+			subject: t("emails.subjects.teamMemberRemoved", "You've been removed from {teamName}", {
+				teamName,
+			}),
+			data: {
+				memberName: userName,
+				teamName,
+				removedByName: getMetadataString(metadata, ["removedByName", "performedByName"]),
+				appUrl,
+			},
+		};
+	},
+};
 
 /**
  * Get user email by ID
@@ -165,30 +507,13 @@ async function getUserName(userId: string): Promise<string> {
 	}
 }
 
-function securityAlertSubject(t: EmailTranslate, eventType: SecurityEventType): string {
-	switch (eventType) {
-		case "password_changed":
-			return t("emails.subjects.passwordChanged", "Security Alert: Password Changed");
-		case "two_factor_enabled":
-			return t(
-				"emails.subjects.twoFactorEnabled",
-				"Security Alert: Two-Factor Authentication Enabled",
-			);
-		case "two_factor_disabled":
-			return t(
-				"emails.subjects.twoFactorDisabled",
-				"Security Alert: Two-Factor Authentication Disabled",
-			);
-	}
-}
-
 /**
  * When the security event happened (the alert goes out as it happens), in the
  * organization timezone with the zone printed; UTC without an organization.
  */
 async function securityAlertTime(
 	organizationId: string | undefined,
-	locale: string,
+	format: NotificationParamFormatContext,
 ): Promise<string> {
 	let timeZone = "UTC";
 	if (organizationId) {
@@ -200,8 +525,30 @@ async function securityAlertTime(
 	}
 	return formatNotificationParam(
 		notificationParam.zonedInstant(systemClock.nowInstant(), timeZone),
-		{ locale },
+		format,
 	);
+}
+
+/** The security alert: its dedicated template (ADR 0001), timed when it goes out. */
+async function securityAlertEmail(
+	eventType: SecurityEventType,
+	{ metadata, userName, appUrl, translator, format, organizationId }: EmailContext,
+): Promise<NotificationEmailContent> {
+	const alert: SecurityAlertData = {
+		userName,
+		eventType,
+		timestamp: await securityAlertTime(organizationId, format),
+		ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
+		userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
+		securitySettingsUrl: `${appUrl}/settings/security`,
+		appUrl,
+	};
+	return {
+		templateKey: "security-alert",
+		subject: securityAlertSubject(translator.t, eventType),
+		data: { ...alert },
+		renderDefaultHtml: () => renderSecurityAlert(alert, translator),
+	};
 }
 
 /**
@@ -212,7 +559,6 @@ export async function sendEmailNotification(
 	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
 	const { userId, type, organizationId } = params;
-	let metadata = params.metadata;
 	const sendNotificationEmail = options.throwOnError
 		? (message: SendEmailParams) => sendEmail(message, { durable: true })
 		: sendEmail;
@@ -232,17 +578,12 @@ export async function sendEmailNotification(
 
 		const userName = await getUserName(userId);
 		const appUrl = await getOrganizationBaseUrl(organizationId);
-		const i18nMetadata = getI18nMetadata(metadata);
+		const i18nMetadata = getI18nMetadata(params.metadata);
 		const hasI18nTitle = typeof i18nMetadata?.titleKey === "string";
 		const hasI18nMessage = typeof i18nMetadata?.messageKey === "string";
 		if (route.kind === "layout") {
 			// The layout chrome follows the language the title and message were written in.
-			const localized = organizationId
-				? await localizeOutboundNotification({ ...params, organizationId })
-				: {
-						...params,
-						locale: await resolveOutboundNotificationLocale({ userId, organizationId }),
-					};
+			const localized = await localizeOutboundNotification(params);
 			const { locale, t } = await loadEmailTranslator(localized.locale);
 			const target = params.actionUrl;
 			const link =
@@ -266,270 +607,68 @@ export async function sendEmailNotification(
 			return result.success;
 		}
 
-		// Override `{{variables}}` read typed params as text in the recipient language (#1149).
-		const i18nParams = getI18nParamsMetadata(metadata);
-		let recipientLocale: string | undefined;
-		if (metadata && i18nParams && hasTypedNotificationParams(i18nParams)) {
-			recipientLocale = await resolveOutboundNotificationLocale({ userId, organizationId });
-			metadata = {
-				...metadata,
-				i18n: {
-					...getI18nMetadata(metadata),
-					params: withFormattedTypedParams(i18nParams, { locale: recipientLocale }),
-				},
-			};
-		}
-
-		let templateKey: EmailTemplateKey | null = null;
-		let templateData: Record<string, unknown> | null = null;
-		// The type's default subject in the recipient language (`emails` namespace).
-		let subject: (t: EmailTranslate) => string = () => params.title;
-		// Where the shared layout's button leads.
-		let actionUrl = appUrl;
-		// The security alert's dedicated template data (ADR 0001).
-		let securityAlert: SecurityAlertData | null = null;
-
-		// Generate email content based on notification type
-		switch (type) {
-			case "absence_request_submitted":
-				if (metadata) {
-					const dateRange = getMetadataString(metadata, "dateRange");
-					templateKey = "absence-request-submitted";
-					subject = (t) =>
-						t("emails.subjects.absenceRequestSubmitted", "Absence Request Submitted");
-					templateData = {
-						employeeName: userName,
-						startDate: getMetadataString(metadata, "startDate", dateRange),
-						endDate: getMetadataString(metadata, "endDate", dateRange),
-						absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
-						days: getMetadataNumber(metadata, "days"),
-						managerName: getMetadataString(metadata, "managerName", "your manager"),
-						appUrl,
-					};
-				}
-				break;
-
-			case "absence_request_approved":
-				if (metadata) {
-					if (metadata.managerRecorded === true) {
-						templateKey = "absence-recorded-by-manager";
-						subject = (t) => t("emails.subjects.absenceRecordedByManager", "Absence Recorded");
-						templateData = {
-							employeeName: userName,
-							managerName: getMetadataString(metadata, "managerName"),
-							startDate: getMetadataString(metadata, "startDate"),
-							endDate: getMetadataString(metadata, "endDate"),
-							absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
-							days: getMetadataNumber(metadata, "days"),
-							appUrl,
-						};
-					} else {
-						templateKey = "absence-request-approved";
-						subject = (t) =>
-							t("emails.subjects.absenceRequestApproved", "Absence Request Approved");
-						templateData = {
-							employeeName: userName,
-							...absenceDecisionData(metadata),
-							appUrl,
-						};
-					}
-				}
-				break;
-
-			case "absence_request_rejected":
-				if (metadata) {
-					templateKey = "absence-request-rejected";
-					subject = (t) => t("emails.subjects.absenceRequestRejected", "Absence Request Rejected");
-					templateData = {
-						employeeName: userName,
-						...absenceDecisionData(metadata),
-						rejectionReason: getMetadataString(
-							metadata,
-							"rejectionReason",
-							"No reason provided",
-						),
-						appUrl,
-					};
-				}
-				break;
-
-			case "approval_request_submitted": {
-				// The approver's "pending approval" email; which one depends on what waits.
-				const approvalUrl = `${appUrl}/approvals/inbox`;
-				if (metadata?.approvalSubject === "absence") {
-					templateKey = "absence-request-pending-approval";
-					subject = (t) =>
-						t("emails.subjects.approvalRequestSubmitted", "New Absence Request Pending Approval");
-					templateData = {
-						managerName: userName,
-						employeeName: getMetadataString(metadata, "employeeName"),
-						startDate: getMetadataString(metadata, "startDate"),
-						endDate: getMetadataString(metadata, "endDate"),
-						absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
-						days: getMetadataNumber(metadata, "days"),
-						notes: getMetadataString(metadata, "notes") || undefined,
-						approvalUrl,
-					};
-					actionUrl = approvalUrl;
-				} else if (metadata?.approvalSubject === "time_correction") {
-					templateKey = "time-correction-pending-approval";
-					subject = (t) =>
-						t("emails.subjects.timeCorrectionSubmitted", "New Time Correction Pending Approval");
-					templateData = {
-						managerName: userName,
-						employeeName: getMetadataString(metadata, "employeeName"),
-						date: getMetadataString(metadata, "date"),
-						originalClockIn: getMetadataString(metadata, "originalClockIn", "-"),
-						originalClockOut: getMetadataString(metadata, "originalClockOut", "-"),
-						correctedClockIn: getMetadataString(metadata, "correctedClockIn", "-"),
-						correctedClockOut: getMetadataString(metadata, "correctedClockOut", "-"),
-						reason: getMetadataString(metadata, "reason"),
-						approvalUrl,
-					};
-					actionUrl = approvalUrl;
-				}
-				break;
-			}
-
-			case "time_correction_approved":
-				if (metadata) {
-					templateKey = "time-correction-approved";
-					subject = (t) => t("emails.subjects.timeCorrectionApproved", "Time Correction Approved");
-					templateData = {
-						employeeName: userName,
-						...timeCorrectionDecisionData(metadata),
-						appUrl,
-					};
-				}
-				break;
-
-			case "time_correction_rejected":
-				if (metadata) {
-					templateKey = "time-correction-rejected";
-					subject = (t) => t("emails.subjects.timeCorrectionRejected", "Time Correction Rejected");
-					templateData = {
-						employeeName: userName,
-						...timeCorrectionDecisionData(metadata),
-						rejectionReason: getMetadataString(
-							metadata,
-							"rejectionReason",
-							"No reason provided",
-						),
-						appUrl,
-					};
-				}
-				break;
-
-			case "team_member_added":
-				if (metadata) {
-					const teamName = getMetadataString(metadata, "teamName");
-					const teamUrl = `${appUrl}/settings/teams/${getMetadataString(metadata, "teamId")}`;
-					templateKey = "team-member-added";
-					subject = (t) =>
-						t("emails.subjects.teamMemberAdded", "You've been added to {teamName}", {
-							teamName,
-						});
-					templateData = {
-						memberName: userName,
-						teamName,
-						addedByName: getMetadataString(metadata, ["addedByName", "performedByName"]),
-						teamUrl,
-						appUrl,
-					};
-					actionUrl = teamUrl;
-				}
-				break;
-
-			case "team_member_removed":
-				if (metadata) {
-					const teamName = getMetadataString(metadata, "teamName");
-					templateKey = "team-member-removed";
-					subject = (t) =>
-						t("emails.subjects.teamMemberRemoved", "You've been removed from {teamName}", {
-							teamName,
-						});
-					templateData = {
-						memberName: userName,
-						teamName,
-						removedByName: getMetadataString(metadata, ["removedByName", "performedByName"]),
-						appUrl,
-					};
-				}
-				break;
-
-			case "password_changed":
-			case "two_factor_enabled":
-			case "two_factor_disabled":
-				templateKey = "security-alert";
-				subject = (t) => securityAlertSubject(t, type);
-				// The time is filled in the recipient language below.
-				securityAlert = {
-					userName,
-					eventType: type,
-					timestamp: "",
-					ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
-					userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
-					securitySettingsUrl: `${appUrl}/settings/security`,
-					appUrl,
-				};
-				templateData = { ...securityAlert };
-				break;
-
-			default:
-				// `notificationEmailRoute` sends every other type through the layout or not at all.
-				logger.warn({ type }, "No email template for notification type");
-				return false;
-		}
-
-		if (!templateKey || !templateData) {
+		// One recipient language and hour cycle for the subject, body, layout chrome and
+		// override variables; without an organization, the user's own language (#812).
+		const { locale: recipientLocale, timeFormat } = await resolveOutboundNotificationPreferences({
+			userId,
+			organizationId,
+		});
+		const format: NotificationParamFormatContext = {
+			locale: recipientLocale,
+			...(timeFormat ? { timeFormat } : {}),
+		};
+		const translator = await loadEmailTranslator(recipientLocale);
+		const { locale, t } = translator;
+		const context: EmailContext = {
+			metadata: withTypedParamsAsText(params.metadata, format),
+			userName,
+			appUrl,
+			translator,
+			format,
+			organizationId,
+		};
+		const content =
+			route.kind === "template"
+				? TEMPLATE_EMAILS[route.email](context)
+				: await securityAlertEmail(route.securityEvent, context);
+		if (!content) {
 			logger.debug({ type }, "No email content generated");
 			return false;
 		}
 
-		// One recipient language for the subject, body, layout chrome and override variables.
-		recipientLocale ??= await resolveOutboundNotificationLocale({ userId, organizationId });
-		const translator = await loadEmailTranslator(recipientLocale);
-		const { locale, t } = translator;
-		if (securityAlert) {
-			securityAlert.timestamp = await securityAlertTime(organizationId, locale);
-			templateData = { ...securityAlert };
-		}
-		let subjectOverride = subject(t);
-		let content: LocalizedEmailContent = { title: params.title, message: params.message };
-		if (organizationId && (hasI18nTitle || hasI18nMessage)) {
+		let subject = content.subject;
+		let body = { title: params.title, message: params.message };
+		if (hasI18nTitle || hasI18nMessage) {
 			const localized = await localizeOutboundNotification({
 				userId,
 				organizationId,
 				title: params.title,
 				message: params.message,
-				metadata,
-				locale: recipientLocale,
+				metadata: context.metadata,
+				...format,
 			});
-			content = { title: localized.title, message: localized.message };
-			if (hasI18nTitle) {
-				subjectOverride = localized.title;
-			}
+			body = { title: localized.title, message: localized.message };
+			if (hasI18nTitle) subject = localized.title;
 		}
 
 		// An enabled override wins and is sent as written; otherwise the shared layout
 		// (the security alert keeps its dedicated template, ADR 0001).
 		const rendered = await renderOrganizationEmailTemplate({
 			organizationId,
-			templateKey,
-			data: templateData,
-			subjectOverride,
-			renderDefaultHtml: () => {
-				const alert = securityAlert;
-				return alert
-					? renderSecurityAlert(alert, translator)
-					: renderNotificationEmail({
-							locale,
-							t,
-							title: content.title,
-							message: content.message,
-							actionUrl,
-						});
-			},
+			templateKey: content.templateKey,
+			data: content.data,
+			subjectOverride: subject,
+			renderDefaultHtml:
+				content.renderDefaultHtml ??
+				(() =>
+					renderNotificationEmail({
+						locale,
+						t,
+						title: body.title,
+						message: body.message,
+						details: content.details,
+						actionUrl: content.actionUrl ?? appUrl,
+					})),
 		});
 
 		const result = await sendNotificationEmail({

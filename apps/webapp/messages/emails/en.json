@@ -47,6 +47,17 @@
     "common": {
       "greeting": "Hi {name},"
     },
+    "details": {
+      "category": "Category",
+      "correctedTimes": "Corrected times",
+      "date": "Date",
+      "dates": "Dates",
+      "days": "Days",
+      "notes": "Notes",
+      "originalTimes": "Original times",
+      "range": "{start} – {end}",
+      "reason": "Reason"
+    },
     "export": {
       "categories": {
         "absences": "Absences",
@@ -191,6 +202,11 @@
       "twoFactorDisabled": "Security Alert: Two-Factor Authentication Disabled",
       "twoFactorEnabled": "Security Alert: Two-Factor Authentication Enabled",
       "verifyEmail": "Verify your email address"
+    },
+    "variables": {
+      "noReason": "No reason provided",
+      "noTime": "-",
+      "yourManager": "your manager"
     },
     "verification": {
       "action": "Verify email address",

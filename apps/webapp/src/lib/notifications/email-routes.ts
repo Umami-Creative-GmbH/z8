@@ -1,3 +1,4 @@
+import type { SecurityEventType } from "@/lib/email/templates/security-alert";
 import type { NotificationType } from "./types";
 
 /**
@@ -10,19 +11,40 @@ import type { NotificationType } from "./types";
  *   email override; the button links into the app only below `linkPrefixes`,
  *   otherwise to the app's start page.
  * - `template`: an overridable type. An enabled org email override for its template
- *   key wins and is sent as written; otherwise the shared notification layout. The
- *   override key and its `{{variables}}` come from the notification's metadata.
- * - `dedicated`: the security alert keeps its own (overridable) template (ADR 0001).
+ *   key wins and is sent as written; otherwise the shared notification layout. `email`
+ *   names the builder of its override key, `{{variables}}`, subject and detail rows.
+ * - `dedicated`: the security alert keeps its own (overridable) template (ADR 0001),
+ *   for the security event it names.
  */
 export type NotificationEmailRoute =
 	| { kind: "none" }
 	| { kind: "layout"; linkPrefixes: readonly string[] }
-	| { kind: "template" }
-	| { kind: "dedicated" };
+	| { kind: "template"; email: TemplateNotificationEmail }
+	| { kind: "dedicated"; securityEvent: SecurityEventType };
+
+/**
+ * The overridable notification emails. Each has one builder; a variant inside one
+ * (manager-recorded absence, absence or time-correction pending) is its builder's choice.
+ */
+export type TemplateNotificationEmail =
+	| "absenceRequestSubmitted"
+	| "absenceRequestApproved"
+	| "absenceRequestRejected"
+	| "approvalRequestSubmitted"
+	| "timeCorrectionApproved"
+	| "timeCorrectionRejected"
+	| "teamMemberAdded"
+	| "teamMemberRemoved";
 
 const NONE = { kind: "none" } as const satisfies NotificationEmailRoute;
-const TEMPLATE = { kind: "template" } as const satisfies NotificationEmailRoute;
-const DEDICATED = { kind: "dedicated" } as const satisfies NotificationEmailRoute;
+
+function template(email: TemplateNotificationEmail): NotificationEmailRoute {
+	return { kind: "template", email };
+}
+
+function dedicated(securityEvent: SecurityEventType): NotificationEmailRoute {
+	return { kind: "dedicated", securityEvent };
+}
 
 function layout(...linkPrefixes: string[]): NotificationEmailRoute {
 	return { kind: "layout", linkPrefixes };
@@ -31,19 +53,19 @@ function layout(...linkPrefixes: string[]): NotificationEmailRoute {
 /** Every notification type must be listed: a new type has to choose its email route. */
 const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: NotificationEmailRoute } = {
 	// Overridable notification emails (EMAIL_TEMPLATE_KEYS).
-	absence_request_submitted: TEMPLATE,
-	absence_request_approved: TEMPLATE,
-	absence_request_rejected: TEMPLATE,
+	absence_request_submitted: template("absenceRequestSubmitted"),
+	absence_request_approved: template("absenceRequestApproved"),
+	absence_request_rejected: template("absenceRequestRejected"),
 	// The approver's absence or time-correction pending email (`metadata.approvalSubject`).
-	approval_request_submitted: TEMPLATE,
-	time_correction_approved: TEMPLATE,
-	time_correction_rejected: TEMPLATE,
-	team_member_added: TEMPLATE,
-	team_member_removed: TEMPLATE,
+	approval_request_submitted: template("approvalRequestSubmitted"),
+	time_correction_approved: template("timeCorrectionApproved"),
+	time_correction_rejected: template("timeCorrectionRejected"),
+	team_member_added: template("teamMemberAdded"),
+	team_member_removed: template("teamMemberRemoved"),
 	// Security alert: dedicated template.
-	password_changed: DEDICATED,
-	two_factor_enabled: DEDICATED,
-	two_factor_disabled: DEDICATED,
+	password_changed: dedicated("password_changed"),
+	two_factor_enabled: dedicated("two_factor_enabled"),
+	two_factor_disabled: dedicated("two_factor_disabled"),
 
 	// Shared layout only.
 	automatic_clock_out: layout("/calendar/"),
@@ -120,7 +142,7 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 };
 
 export function notificationEmailRoute(type: NotificationType): NotificationEmailRoute {
-	return NOTIFICATION_EMAIL_ROUTES[type] ?? NONE;
+	return NOTIFICATION_EMAIL_ROUTES[type];
 }
 
 /** The notification types that never send email. */

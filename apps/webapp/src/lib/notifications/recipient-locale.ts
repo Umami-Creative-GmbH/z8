@@ -60,26 +60,47 @@ export function pageLanguageFromRequest(request: Request | null | undefined): st
  * the request, then the organization's default language, then `en`. Only
  * languages in `ALL_LANGUAGES` count.
  */
-export async function resolveRecipientNotificationLocale({
+export async function resolveRecipientNotificationLocale(
+	params: ResolveRecipientNotificationLocaleParams,
+): Promise<string> {
+	return (await resolveRecipientNotificationPreferences(params)).locale;
+}
+
+/** How an outbound message renders for its recipient. */
+export interface RecipientNotificationPreferences {
+	/** The recipient language (see `resolveRecipientNotificationLocale`). */
+	locale: string;
+	/** The recipient's own 12h/24h setting; absent means the language's own hour cycle. */
+	timeFormat?: "12h" | "24h";
+}
+
+/**
+ * The recipient language together with the recipient's hour cycle, read from
+ * the same settings lookup.
+ */
+export async function resolveRecipientNotificationPreferences({
 	userId,
 	organizationId,
 	request,
-}: ResolveRecipientNotificationLocaleParams): Promise<string> {
-	if (userId) {
-		const settings = await db.query.userSettings.findFirst({
-			where: eq(userSettings.userId, userId),
-			columns: { locale: true },
-		});
-
-		if (isSupportedLanguage(settings?.locale)) {
-			return settings.locale;
-		}
+}: ResolveRecipientNotificationLocaleParams): Promise<RecipientNotificationPreferences> {
+	const settings = userId
+		? await db.query.userSettings.findFirst({
+				where: eq(userSettings.userId, userId),
+				columns: { locale: true, timeFormat: true },
+			})
+		: undefined;
+	const timeFormat =
+		settings?.timeFormat === "12h" || settings?.timeFormat === "24h"
+			? { timeFormat: settings.timeFormat }
+			: {};
+	if (isSupportedLanguage(settings?.locale)) {
+		return { locale: settings.locale, ...timeFormat };
 	}
 	const pageLanguage = pageLanguageFromRequest(request);
-	if (pageLanguage) return pageLanguage;
-	if (!organizationId) return DEFAULT_LANGUAGE;
+	if (pageLanguage) return { locale: pageLanguage, ...timeFormat };
+	if (!organizationId) return { locale: DEFAULT_LANGUAGE, ...timeFormat };
 
-	return resolveOrganizationNotificationLocale(organizationId);
+	return { locale: await resolveOrganizationNotificationLocale(organizationId), ...timeFormat };
 }
 
 /** The organization's notification language, for messages not tied to one recipient's choice. */

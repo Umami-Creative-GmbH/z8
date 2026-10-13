@@ -132,7 +132,8 @@ export const notificationParam = {
 	},
 } as const;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+/** A plain object, as notification metadata and its params are. */
+export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 

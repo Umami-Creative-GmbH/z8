@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const resolveLocaleMock = vi.fn();
+const recipientTimeFormatMock = vi.fn((): "12h" | "24h" | undefined => undefined);
 const loadNamespacesMock = vi.fn();
 const tolgeeTMock = vi.fn();
 const tolgeeRunMock = vi.fn();
@@ -8,6 +9,11 @@ const loggerWarnMock = vi.fn();
 
 vi.mock("./recipient-locale", () => ({
 	resolveRecipientNotificationLocale: resolveLocaleMock,
+	resolveRecipientNotificationPreferences: async (input: unknown) => {
+		const locale = await resolveLocaleMock(input);
+		const timeFormat = recipientTimeFormatMock();
+		return timeFormat ? { locale, timeFormat } : { locale };
+	},
 }));
 
 vi.mock("@/tolgee/shared", () => ({
@@ -288,6 +294,35 @@ describe("localizeOutboundNotification", () => {
 		expect(tolgeeTMock).toHaveBeenCalledWith(
 			expect.objectContaining({ params: { cutoff: "07:00" } }),
 		);
+	});
+
+	it("formats typed params with the recipient's own hour cycle", async () => {
+		resolveLocaleMock.mockResolvedValue("de");
+		recipientTimeFormatMock.mockReturnValueOnce("12h");
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			title: "Title",
+			message: "Message",
+			metadata: {
+				i18n: {
+					messageKey: "common:notifications.content.automaticClockOut.message",
+					params: {
+						cutoff: {
+							kind: "entryInstant",
+							at: "2026-10-25T13:00:00Z",
+							utcOffsetMinutes: 60,
+							preset: "time",
+						},
+					},
+				},
+			},
+		});
+
+		const [{ params }] = tolgeeTMock.mock.calls.at(-1) as [{ params: { cutoff: string } }];
+		expect(params.cutoff).toMatch(/^2:00\s?PM$/i);
 	});
 
 	it("falls back to stored text when translation loading fails", async () => {

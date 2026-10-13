@@ -25,39 +25,65 @@ export interface SecurityAlertProps extends SecurityAlertData {
 	t: EmailTranslate;
 }
 
+type CopyText = { key: string; fallback: string };
+
+/** Each security event's subject, title and description: the one place they are worded. */
+const SECURITY_EVENT_COPY: Readonly<
+	Record<SecurityEventType, { subject: CopyText; title: CopyText; description: CopyText }>
+> = {
+	password_changed: {
+		subject: {
+			key: "emails.subjects.passwordChanged",
+			fallback: "Security Alert: Password Changed",
+		},
+		title: { key: "emails.securityAlert.passwordChanged.title", fallback: "Password changed" },
+		description: {
+			key: "emails.securityAlert.passwordChanged.description",
+			fallback: "The password of your Z8 account was changed.",
+		},
+	},
+	two_factor_enabled: {
+		subject: {
+			key: "emails.subjects.twoFactorEnabled",
+			fallback: "Security Alert: Two-Factor Authentication Enabled",
+		},
+		title: {
+			key: "emails.securityAlert.twoFactorEnabled.title",
+			fallback: "Two-factor authentication enabled",
+		},
+		description: {
+			key: "emails.securityAlert.twoFactorEnabled.description",
+			fallback: "Two-factor authentication was turned on for your Z8 account.",
+		},
+	},
+	two_factor_disabled: {
+		subject: {
+			key: "emails.subjects.twoFactorDisabled",
+			fallback: "Security Alert: Two-Factor Authentication Disabled",
+		},
+		title: {
+			key: "emails.securityAlert.twoFactorDisabled.title",
+			fallback: "Two-factor authentication disabled",
+		},
+		description: {
+			key: "emails.securityAlert.twoFactorDisabled.description",
+			fallback: "Two-factor authentication was turned off for your Z8 account.",
+		},
+	},
+};
+
+/** The security alert's subject in the translator's language. */
+export function securityAlertSubject(t: EmailTranslate, eventType: SecurityEventType): string {
+	const { subject } = SECURITY_EVENT_COPY[eventType];
+	return t(subject.key, subject.fallback);
+}
+
 function eventCopy(t: EmailTranslate, eventType: SecurityEventType) {
-	switch (eventType) {
-		case "password_changed":
-			return {
-				title: t("emails.securityAlert.passwordChanged.title", "Password changed"),
-				description: t(
-					"emails.securityAlert.passwordChanged.description",
-					"The password of your Z8 account was changed.",
-				),
-			};
-		case "two_factor_enabled":
-			return {
-				title: t(
-					"emails.securityAlert.twoFactorEnabled.title",
-					"Two-factor authentication enabled",
-				),
-				description: t(
-					"emails.securityAlert.twoFactorEnabled.description",
-					"Two-factor authentication was turned on for your Z8 account.",
-				),
-			};
-		case "two_factor_disabled":
-			return {
-				title: t(
-					"emails.securityAlert.twoFactorDisabled.title",
-					"Two-factor authentication disabled",
-				),
-				description: t(
-					"emails.securityAlert.twoFactorDisabled.description",
-					"Two-factor authentication was turned off for your Z8 account.",
-				),
-			};
-	}
+	const { title, description } = SECURITY_EVENT_COPY[eventType];
+	return {
+		title: t(title.key, title.fallback),
+		description: t(description.key, description.fallback),
+	};
 }
 
 // No inbox preview: the default body is also the override starter draft, whose plain text

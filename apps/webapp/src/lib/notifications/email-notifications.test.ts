@@ -15,6 +15,12 @@ const { GERMAN_EMAIL_COPY } = vi.hoisted(() => ({
 		"emails.subjects.teamMemberAdded": "Du wurdest zu {teamName} hinzugefügt",
 		"emails.subjects.passwordChanged": "Sicherheitshinweis: Passwort geändert",
 		"emails.securityAlert.passwordChanged.title": "Passwort geändert",
+		"emails.variables.yourManager": "deine Führungskraft",
+		"emails.variables.noReason": "Kein Grund angegeben",
+		"emails.variables.noTime": "k. A.",
+		"emails.details.category": "Kategorie",
+		"emails.details.dates": "Zeitraum",
+		"emails.details.range": "{start} bis {end}",
 	} as Record<string, string>,
 }));
 
@@ -26,7 +32,7 @@ const {
 	findUserMock,
 	getOrganizationBaseUrlMock,
 	localizeOutboundNotificationMock,
-	resolveOutboundNotificationLocaleMock,
+	resolveOutboundNotificationPreferencesMock,
 	loadOrganizationTimezoneMock,
 } = vi.hoisted(() => ({
 	loadOrganizationTimezoneMock: vi.fn(),
@@ -37,7 +43,7 @@ const {
 	findUserMock: vi.fn(),
 	getOrganizationBaseUrlMock: vi.fn(),
 	localizeOutboundNotificationMock: vi.fn(),
-	resolveOutboundNotificationLocaleMock: vi.fn(),
+	resolveOutboundNotificationPreferencesMock: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -103,7 +109,7 @@ async function renderWithoutOverride(input: RenderOrganizationEmailTemplateInput
 
 vi.mock("./outbound-localization", () => ({
 	localizeOutboundNotification: localizeOutboundNotificationMock,
-	resolveOutboundNotificationLocale: resolveOutboundNotificationLocaleMock,
+	resolveOutboundNotificationPreferences: resolveOutboundNotificationPreferencesMock,
 }));
 
 const sendEmailMock = vi.mocked(sendEmail);
@@ -225,14 +231,14 @@ describe("sendEmailNotification", () => {
 		findUserMock.mockReset();
 		getOrganizationBaseUrlMock.mockReset();
 		localizeOutboundNotificationMock.mockReset();
-		resolveOutboundNotificationLocaleMock.mockReset();
+		resolveOutboundNotificationPreferencesMock.mockReset();
 		sendEmailMock.mockReset();
 		renderOrganizationEmailTemplateMock.mockReset();
 		findUserMock
 			.mockResolvedValueOnce({ email: "alex@example.com" })
 			.mockResolvedValueOnce({ name: "Alex" });
 		getOrganizationBaseUrlMock.mockResolvedValue("https://org.example.com");
-		resolveOutboundNotificationLocaleMock.mockResolvedValue("en");
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "en" });
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "en",
 			title: "Original title",
@@ -314,7 +320,7 @@ describe("sendEmailNotification", () => {
 	});
 
 	it("writes a de recipient's notification email in German: subject, body and button", async () => {
-		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "de",
 			title: "Automatisch ausgestempelt",
@@ -348,7 +354,7 @@ describe("sendEmailNotification", () => {
 	});
 
 	it("sends the shared layout, not the per-type template, when no override is enabled", async () => {
-		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "de",
 			title: "Zum Team hinzugefügt",
@@ -383,7 +389,7 @@ describe("sendEmailNotification", () => {
 	});
 
 	it("translates a type's subject in the recipient language when the notification has no title key", async () => {
-		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
 
 		await sendEmailNotification({
@@ -406,7 +412,7 @@ describe("sendEmailNotification", () => {
 		vi.setSystemTime(new Date("2026-10-13T12:05:00.000Z"));
 		try {
 			renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
-			resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+			resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 			loadOrganizationTimezoneMock.mockResolvedValue("Europe/Berlin");
 
 			await sendEmailNotification({
@@ -439,7 +445,48 @@ describe("sendEmailNotification", () => {
 		expect(html).toContain('href="https://org.example.com/settings/security"');
 	});
 
-	it("preserves default subject when organization is missing even with i18n title metadata", async () => {
+	it("localizes the notification in the user's own language when there is no organization", async () => {
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
+		localizeOutboundNotificationMock.mockResolvedValue({
+			locale: "de",
+			title: "Abwesenheitsanfrage genehmigt",
+			message: "Deine Abwesenheit wurde genehmigt.",
+		});
+		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+
+		const result = await sendEmailNotification({
+			userId: "user_123",
+			type: "absence_request_approved",
+			title: "Absence request approved",
+			message: "Your absence request was approved.",
+			metadata: {
+				approverName: "Morgan",
+				startDate: "2026-05-01",
+				endDate: "2026-05-02",
+				absenceType: "Vacation",
+				days: 2,
+				i18n: {
+					titleKey: "common:notifications.content.absenceRequestApproved.title",
+					messageKey: "common:notifications.content.absenceRequestApproved.message",
+				},
+			},
+		});
+
+		expect(result).toBe(true);
+		expect(resolveOutboundNotificationPreferencesMock).toHaveBeenCalledWith({
+			userId: "user_123",
+			organizationId: undefined,
+		});
+		expect(localizeOutboundNotificationMock).toHaveBeenCalledWith(
+			expect.objectContaining({ userId: "user_123", locale: "de" }),
+		);
+		const message = sendEmailMock.mock.calls[0]?.[0];
+		expect(message?.subject).toBe("Abwesenheitsanfrage genehmigt");
+		expect(message?.html).toContain("Deine Abwesenheit wurde genehmigt.");
+		expect(message?.html).not.toContain("Your absence request was approved.");
+	});
+
+	it("keeps the type's subject without an organization or i18n title", async () => {
 		const result = await sendEmailNotification({
 			userId: "user_123",
 			type: "absence_request_approved",
@@ -451,9 +498,6 @@ describe("sendEmailNotification", () => {
 				endDate: "2026-05-02",
 				absenceType: "Vacation",
 				days: 2,
-				i18n: {
-					titleKey: "notifications.absence.requestApproved.title",
-				},
 			},
 		});
 
@@ -524,7 +568,7 @@ describe("sendEmailNotification", () => {
 			title: "Abwesenheitsanfrage <genehmigt>",
 			message: "Ihre Abwesenheitsanfrage wurde von Morgan & Partner genehmigt.",
 		});
-		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
 
 		const result = await sendEmailNotification({
@@ -562,7 +606,7 @@ describe("sendEmailNotification", () => {
 	});
 
 	it("sends an enabled override unchanged to a de recipient", async () => {
-		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 		localizeOutboundNotificationMock.mockResolvedValue({
 			locale: "de",
 			title: "Abwesenheitsanfrage genehmigt",
@@ -800,7 +844,7 @@ describe("sendEmailNotification", () => {
 		});
 
 		beforeEach(() => {
-			resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+			resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 		});
 
 		it("sends the manager's absence pending email with the override variables in the recipient language", async () => {
@@ -921,7 +965,7 @@ describe("sendEmailNotification", () => {
 						employeeName: "Avery",
 						date: "11. Mai 2026",
 						originalClockIn: "10:00",
-						originalClockOut: "-",
+						originalClockOut: "k. A.",
 						correctedClockIn: "09:15",
 						correctedClockOut: "17:00",
 						reason: "Forgot to clock in",
@@ -1003,7 +1047,7 @@ describe("sendEmailNotification", () => {
 				approverName: "Morgan",
 				date: "11. Mai 2026",
 				correctedClockIn: "09:15",
-				correctedClockOut: "-",
+				correctedClockOut: "k. A.",
 				appUrl: "https://org.example.com",
 			};
 			expect(renderOrganizationEmailTemplateMock.mock.calls.map(([input]) => input.data)).toEqual([
@@ -1011,6 +1055,128 @@ describe("sendEmailNotification", () => {
 				{ ...decided, rejectionReason: "Not plausible" },
 			]);
 			expect(sendEmailMock).toHaveBeenCalledTimes(2);
+		});
+
+		it("shows the absence's dates, duration, category and notes as detail rows (#812 §4)", async () => {
+			renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "approval_request_submitted",
+				title: "New absence request",
+				message: "Avery requested Vacation.",
+				organizationId: "org_123",
+				metadata: {
+					approvalSubject: "absence",
+					i18n: {
+						params: {
+							employeeName: "Avery",
+							categoryName: "Vacation",
+							startDate: { kind: "plainDate", date: "2026-05-11" },
+							endDate: { kind: "plainDate", date: "2026-05-12" },
+							days: 2,
+							notes: "Family trip",
+						},
+					},
+				},
+			});
+
+			const html = sendEmailMock.mock.calls[0]?.[0].html ?? "";
+			expect(html).toContain("Zeitraum");
+			expect(html).toContain("11. Mai 2026 bis 12. Mai 2026");
+			expect(html).toContain("Kategorie");
+			expect(html).toContain("Vacation");
+			expect(html).toMatch(/>Days<\/p>\s*<p[^>]*>2<\/p>/);
+			expect(html).toContain("Family trip");
+		});
+
+		it("shows the original and corrected times and the reason as detail rows", async () => {
+			renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "approval_request_submitted",
+				title: "New time correction request",
+				message: "Avery submitted a time correction request.",
+				organizationId: "org_123",
+				metadata: {
+					approvalSubject: "time_correction",
+					i18n: {
+						params: {
+							employeeName: "Avery",
+							reason: "Forgot to clock in",
+							date: entryTime("2026-05-11T08:00:00Z", "dateMedium"),
+							originalClockIn: entryTime("2026-05-11T08:00:00Z", "time"),
+							correctedClockIn: entryTime("2026-05-11T07:15:00Z", "time"),
+							correctedClockOut: entryTime("2026-05-11T15:00:00Z", "time"),
+						},
+					},
+				},
+			});
+
+			const html = sendEmailMock.mock.calls[0]?.[0].html ?? "";
+			expect(html).toContain("11. Mai 2026");
+			expect(html).toContain("10:00 bis k. A.");
+			expect(html).toContain("09:15 bis 17:00");
+			expect(html).toContain("Forgot to clock in");
+		});
+
+		it("fills missing override variables in the recipient language", async () => {
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "absence_request_submitted",
+				title: "Absence request submitted",
+				message: "Submitted",
+				organizationId: "org_123",
+				metadata: { categoryName: "Vacation", startDate: "11. Mai", endDate: "12. Mai" },
+			});
+			findUserMock
+				.mockResolvedValueOnce({ email: "alex@example.com" })
+				.mockResolvedValueOnce({ name: "Alex" });
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "time_correction_rejected",
+				title: "Time correction rejected",
+				message: "Rejected",
+				organizationId: "org_123",
+				metadata: { approverName: "Morgan", date: "11. Mai 2026" },
+			});
+
+			const [submitted, rejected] = renderOrganizationEmailTemplateMock.mock.calls.map(
+				([input]) => input.data,
+			);
+			expect(submitted).toMatchObject({ managerName: "deine Führungskraft" });
+			expect(rejected).toMatchObject({
+				correctedClockIn: "k. A.",
+				correctedClockOut: "k. A.",
+				rejectionReason: "Kein Grund angegeben",
+			});
+		});
+
+		it("formats typed override variables in the recipient's own hour cycle", async () => {
+			resolveOutboundNotificationPreferencesMock.mockResolvedValue({
+				locale: "de",
+				timeFormat: "12h",
+			});
+
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "time_correction_approved",
+				title: "Time correction approved",
+				message: "Approved",
+				organizationId: "org_123",
+				metadata: {
+					i18n: {
+						params: {
+							approverName: "Morgan",
+							correctedClockIn: entryTime("2026-05-11T13:15:00Z", "time"),
+						},
+					},
+				},
+			});
+
+			const data = renderOrganizationEmailTemplateMock.mock.calls[0]?.[0].data;
+			expect(String(data?.correctedClockIn)).toMatch(/^3:15\s?PM$/i);
 		});
 
 		it("never sends the employee's own submitted notification as the manager's pending email (O8)", async () => {
@@ -1030,7 +1196,7 @@ describe("sendEmailNotification", () => {
 	});
 
 	it("supplies typed override variables formatted in the recipient language (#1149)", async () => {
-		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		resolveOutboundNotificationPreferencesMock.mockResolvedValue({ locale: "de" });
 		const result = await sendEmailNotification({
 			userId: "user_123",
 			type: "absence_request_submitted",
@@ -1050,7 +1216,7 @@ describe("sendEmailNotification", () => {
 		});
 
 		expect(result).toBe(true);
-		expect(resolveOutboundNotificationLocaleMock).toHaveBeenCalledWith({
+		expect(resolveOutboundNotificationPreferencesMock).toHaveBeenCalledWith({
 			userId: "user_123",
 			organizationId: "org_123",
 		});

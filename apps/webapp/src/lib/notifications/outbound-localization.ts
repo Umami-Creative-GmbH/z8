@@ -1,7 +1,15 @@
 import { createLogger } from "@/lib/logger";
 import { loadNamespaces, type Namespace, TolgeeBase } from "@/tolgee/shared";
-import { type FormattedNotificationParam, formatNotificationParams } from "./notification-params";
-import { resolveRecipientNotificationLocale } from "./recipient-locale";
+import {
+	type FormattedNotificationParam,
+	formatNotificationParams,
+	isRecord,
+} from "./notification-params";
+import {
+	type RecipientNotificationPreferences,
+	resolveRecipientNotificationLocale,
+	resolveRecipientNotificationPreferences,
+} from "./recipient-locale";
 
 type TranslationParam = FormattedNotificationParam;
 
@@ -20,7 +28,8 @@ interface NotificationMetadata {
 
 interface LocalizeOutboundNotificationParams {
 	userId: string;
-	organizationId: string;
+	/** Without one, only the recipient's own language counts. */
+	organizationId?: string | null;
 	title: string;
 	message: string;
 	metadata?: Record<string, unknown> | string | null;
@@ -38,10 +47,6 @@ interface LocalizedOutboundNotification {
 const logger = createLogger("OutboundNotificationLocalization");
 const NOTIFICATION_NAMESPACES = ["common"] satisfies Namespace[];
 const FALLBACK_LOCALE = "en";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function sanitizeI18nMetadata(i18n: unknown): NotificationI18nMetadata | undefined {
 	if (!isRecord(i18n)) return undefined;
@@ -115,24 +120,25 @@ export async function recipientNotificationTranslator({
 }
 
 /**
- * The recipient's notification language, for callers that format typed params
- * themselves (email override variables). `en` when it cannot be resolved.
+ * The recipient's notification language and hour cycle, for callers that format
+ * typed params themselves (email override variables). Without an organization
+ * only the recipient's own language counts. `en` when it cannot be resolved.
  */
-export async function resolveOutboundNotificationLocale({
+export async function resolveOutboundNotificationPreferences({
 	userId,
 	organizationId,
 }: {
 	userId: string;
 	organizationId?: string | null;
-}): Promise<string> {
+}): Promise<RecipientNotificationPreferences> {
 	try {
-		return await resolveRecipientNotificationLocale({ userId, organizationId });
+		return await resolveRecipientNotificationPreferences({ userId, organizationId });
 	} catch (error) {
 		logger.warn(
 			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
 			"Failed to resolve recipient notification locale",
 		);
-		return FALLBACK_LOCALE;
+		return { locale: FALLBACK_LOCALE };
 	}
 }
 
@@ -173,9 +179,15 @@ export async function localizeOutboundNotification({
 	});
 
 	let resolvedLocale = locale ?? FALLBACK_LOCALE;
+	let resolvedTimeFormat = timeFormat;
 	try {
 		if (!locale) {
-			resolvedLocale = await resolveRecipientNotificationLocale({ userId, organizationId });
+			const preferences = await resolveRecipientNotificationPreferences({
+				userId,
+				organizationId,
+			});
+			resolvedLocale = preferences.locale;
+			resolvedTimeFormat ??= preferences.timeFormat;
 		}
 	} catch (error) {
 		logger.warn(
@@ -196,7 +208,10 @@ export async function localizeOutboundNotification({
 		const t = await loadNotificationTranslator(resolvedLocale);
 		// Typed params become text in the recipient language first: ICU never sees a Date (#1149).
 		const params = i18n?.params
-			? formatNotificationParams(i18n.params, { locale: resolvedLocale, timeFormat })
+			? formatNotificationParams(i18n.params, {
+					locale: resolvedLocale,
+					timeFormat: resolvedTimeFormat,
+				})
 			: undefined;
 
 		return {
