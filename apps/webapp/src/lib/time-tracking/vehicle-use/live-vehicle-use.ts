@@ -146,9 +146,17 @@ export async function changeLiveWorkVehicleUse(input: {
 				previous,
 				resulting: input.vehicleUse,
 			});
+			const columns = vehicleUseColumns(input.vehicleUse);
 			await tx
 				.update(workPeriod)
-				.set({ ...vehicleUseColumns(input.vehicleUse), updatedAt: new Date() })
+				.set({
+					vehicleKind: columns.vehicleKind,
+					vehicleId: columns.vehicleId,
+					odometerStartKm: columns.odometerStartKm,
+					odometerEndKm: columns.odometerEndKm,
+					drivenDistanceKm: columns.drivenDistanceKm,
+					updatedAt: new Date(),
+				})
 				.where(
 					and(
 						eq(workPeriod.id, workPeriodId),

@@ -8,7 +8,6 @@ import {
 	clockOutVehicleUse,
 } from "../vehicle-use/clock-vehicle-use";
 import { resolveVehicleUseMode } from "../vehicle-use/resolver";
-import type { VehicleUseClient } from "../vehicle-use/store";
 import {
 	organizationVehicleIdOf,
 	sameWorkVehicleUse,
@@ -20,6 +19,7 @@ import {
 	assertVehiclePickable,
 	workVehicleUseRefusalCodeOf,
 } from "../vehicle-use/work-vehicle-use-eligibility";
+import type { WorkTransactionClient } from "../work-transaction";
 import type { BreakClosure } from "./break";
 import type { ClockOutClosure } from "./clock-out";
 import type { BreakCommand, ClockInCommand, ClockOutCommand } from "./types";
@@ -40,12 +40,12 @@ import { acceptsClockVehicleUse } from "./vehicle-use-eligibility";
 
 type Scope = { organizationId: string; employeeId: string };
 
-async function vehicleUseOn(db: VehicleUseClient, scope: Scope): Promise<boolean> {
+async function vehicleUseOn(db: WorkTransactionClient, scope: Scope): Promise<boolean> {
 	return (await resolveVehicleUseMode(db, scope, { lock: "share" })) !== "off";
 }
 
 async function readPeriod(
-	db: VehicleUseClient,
+	db: WorkTransactionClient,
 	scope: Scope,
 	where: { id: string } | { clockInId: string },
 ) {
@@ -75,7 +75,7 @@ type Period = NonNullable<Awaited<ReturnType<typeof readPeriod>>>;
 
 /** A newly picked organization vehicle must be pickable; anything else is dropped. */
 async function pickable(
-	db: VehicleUseClient,
+	db: WorkTransactionClient,
 	scope: Scope,
 	current: WorkVehicleUse | null,
 	resulting: WorkVehicleUse | null,
@@ -93,7 +93,7 @@ async function pickable(
 
 /** Writes vehicle use to the period and its canonical record, when it changes. */
 async function write(
-	db: VehicleUseClient,
+	db: WorkTransactionClient,
 	scope: Scope,
 	period: Period,
 	use: WorkVehicleUse | null,
@@ -102,7 +102,14 @@ async function write(
 	const columns = vehicleUseColumns(use);
 	await db
 		.update(workPeriod)
-		.set({ ...columns, updatedAt: new Date() })
+		.set({
+			vehicleKind: columns.vehicleKind,
+			vehicleId: columns.vehicleId,
+			odometerStartKm: columns.odometerStartKm,
+			odometerEndKm: columns.odometerEndKm,
+			drivenDistanceKm: columns.drivenDistanceKm,
+			updatedAt: new Date(),
+		})
 		.where(
 			and(
 				eq(workPeriod.id, period.id),
@@ -113,7 +120,13 @@ async function write(
 	if (!period.canonicalRecordId) return;
 	await db
 		.update(timeRecordWork)
-		.set(columns)
+		.set({
+			vehicleKind: columns.vehicleKind,
+			vehicleId: columns.vehicleId,
+			odometerStartKm: columns.odometerStartKm,
+			odometerEndKm: columns.odometerEndKm,
+			drivenDistanceKm: columns.drivenDistanceKm,
+		})
 		.where(
 			and(
 				eq(timeRecordWork.recordId, period.canonicalRecordId),
@@ -128,7 +141,7 @@ function scopeOf(command: { organizationId: string; subject: { employeeId: strin
 
 /** The started work takes the clock-in's vehicle and start reading. */
 export async function recordClockInVehicleUse<Result extends { disposition: string }>(
-	db: VehicleUseClient,
+	db: WorkTransactionClient,
 	command: ClockInCommand,
 	result: Result,
 	/** The executed start's clock-in entry, which names its work period. */
@@ -149,7 +162,7 @@ export async function recordClockInVehicleUse<Result extends { disposition: stri
 
 /** The closed work takes the clock-out's readings over what it records. */
 export async function recordClockOutVehicleUse(
-	db: VehicleUseClient,
+	db: WorkTransactionClient,
 	command: ClockOutCommand,
 	closure: ClockOutClosure,
 ): Promise<ClockOutClosure> {
@@ -172,7 +185,7 @@ export async function recordClockOutVehicleUse(
  * one that named no reading or whose principal may not record one.
  */
 export async function recordBreakVehicleUse(
-	db: VehicleUseClient,
+	db: WorkTransactionClient,
 	command: BreakCommand,
 	closure: BreakClosure,
 ): Promise<BreakClosure> {

@@ -71,7 +71,6 @@ import {
 } from "./receipt-actor";
 import { recordedTaskId, taskIdFollowingProject } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import { vehicleUseColumns, vehicleUseFromColumns } from "./vehicle-use/work-vehicle-use";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { resolveWorkBillabilityInTransaction } from "./work-billability";
 import { deriveWorkDurationMinutes } from "./work-duration";
@@ -650,7 +649,11 @@ export async function closeActiveWorkGraph(
 		workLocationType: period.workLocationType ?? null,
 		computationMetadata: null,
 		// Vehicle use is attribution of the live work, mirrored into its record (#1122).
-		...vehicleUseColumns(vehicleUseFromColumns(period)),
+		vehicleKind: period.vehicleKind,
+		vehicleId: period.vehicleId,
+		odometerStartKm: period.odometerStartKm,
+		odometerEndKm: period.odometerEndKm,
+		drivenDistanceKm: period.drivenDistanceKm,
 	});
 	if (projectId) {
 		await tx.insert(timeRecordAllocation).values({
