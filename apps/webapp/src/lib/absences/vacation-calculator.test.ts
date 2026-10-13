@@ -236,6 +236,70 @@ describe("vacation balance on the employee's working days", () => {
 	});
 });
 
+describe("calculateVacationBalance with a prorated allowance", () => {
+	it("starts from the prorated allowance and reports it with the balance", () => {
+		const allowance = {
+			fullAllowance: 30,
+			allowance: 8,
+			reason: {
+				kind: "prorated" as const,
+				employments: [
+					{
+						kind: "start" as const,
+						startDate: "2026-10-01",
+						lastWorkingDay: null,
+						employmentMonths: 3,
+						days: 8,
+						floorApplied: false,
+					},
+				],
+				cappedAtFullAllowance: false,
+			},
+		};
+		const balance = calculateVacationBalance({
+			organizationAllowance: {
+				defaultAnnualDays: "30",
+				accrualType: "annual",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			allowance,
+			absences: [vacationAbsence("october", "2026-10-12")],
+			currentDate: new Date("2026-10-05T00:00:00Z"),
+			year: 2026,
+			adjustmentTotal: 1,
+		});
+
+		expect(balance.totalDays).toBe(9);
+		expect(balance.remainingDays).toBe(8);
+		expect(balance.allowance).toEqual(allowance);
+	});
+
+	it("still starts an accrual policy at 0, whose accrual adjustments carry the allowance", () => {
+		const balance = calculateVacationBalance({
+			organizationAllowance: {
+				defaultAnnualDays: "30",
+				accrualType: "monthly",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			allowance: {
+				fullAllowance: 30,
+				allowance: 30,
+				reason: { kind: "none", cause: "accrual_policy" },
+			},
+			absences: [],
+			currentDate: new Date("2026-04-01T00:00:00Z"),
+			year: 2026,
+			adjustmentTotal: 7.5,
+		});
+
+		expect(balance.totalDays).toBe(7.5);
+	});
+});
+
 describe("vacation balance on an accrual policy (#1106)", () => {
 	const policy = (accrualType: string) => ({
 		defaultAnnualDays: "24",

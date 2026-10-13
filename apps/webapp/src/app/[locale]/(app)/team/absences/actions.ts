@@ -31,6 +31,8 @@ import {
 	normalizeAbsenceDurationInput,
 	toAbsenceEntryDurationFields,
 } from "@/lib/absences/duration";
+import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
+import { loadProratedVacationAllowances } from "@/lib/absences/prorated-allowance-store";
 import {
 	adjustVacationAbsencesForSickness,
 	getBlockingOverlapMessage,
@@ -986,6 +988,14 @@ async function addMetricsToRows(
 		loadVacationAdjustmentTotals(db, { organizationId, employeeIds, year }),
 	]);
 
+	const proratedAllowances = allowance
+		? await loadProratedVacationAllowances(db, {
+				organizationId,
+				employeeIds,
+				year,
+				policy: allowance,
+			})
+		: new Map<string, ProratedAllowance>();
 	const allowancesByEmployeeId = new Map(
 		employeeAllowances.map((employeeAllowance) => [
 			employeeAllowance.employeeId,
@@ -1012,6 +1022,7 @@ async function addMetricsToRows(
 					}
 				: null,
 			employeeAllowance: allowancesByEmployeeId.get(row.id) ?? null,
+			proratedAllowance: proratedAllowances.get(row.id),
 			adjustmentTotal: adjustmentTotalsByEmployeeId.get(row.id) ?? 0,
 			absences: absencesByEmployeeId.get(row.id) ?? [],
 			isWorkingDay: workingDaysByEmployeeId.get(row.id),

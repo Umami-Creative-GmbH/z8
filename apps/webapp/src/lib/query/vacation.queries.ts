@@ -40,6 +40,8 @@ export interface VacationAllowanceRecord {
 	carryoverExpiryMonths: number | null;
 	accrualType: "annual" | "monthly" | "biweekly";
 	accrualStartMonth: number;
+	prorateInStartAndExitYear: boolean;
+	statutoryMinimumDays: string;
 	createdAt: Date;
 	updatedAt: Date;
 	createdBy: string;

@@ -1,3 +1,5 @@
+import type { ProratedAllowance } from "./prorated-allowance";
+
 // Legacy half-day compatibility period for absence forms and stored requests.
 export type DayPeriod = "full_day" | "am" | "pm";
 export type SickDetail = "child_sick" | "with_certificate" | "without_certificate" | "other";
@@ -12,6 +14,8 @@ export interface VacationBalance {
 	remainingDays: number; // Available to request
 	carryoverDays?: number; // From previous year
 	carryoverExpiryDate?: Date; // When carryover expires
+	/** The vacation allowance in `totalDays` and why it is prorated or full (#1110). */
+	allowance?: ProratedAllowance;
 }
 
 export interface AbsenceRequest {
