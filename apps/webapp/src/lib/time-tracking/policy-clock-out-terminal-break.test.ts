@@ -539,6 +539,12 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 			snapshot.workCategoryId,
 			snapshot.workLocationType,
 			"original-computation",
+			// No vehicle use: kind, vehicle, start, end and distance (#1126).
+			null,
+			null,
+			null,
+			null,
+			null,
 		]);
 		const allocationInserts = inserts.filter((query) =>
 			query.sql.includes("time_record_allocation"),

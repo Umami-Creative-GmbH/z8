@@ -50,6 +50,13 @@ import {
 	isValidIanaTimezone,
 	resolveFallbackTimezoneCapture,
 } from "./timezone-capture";
+import { vehicleUseAcrossAutomaticBreak } from "./vehicle-use/split-vehicle-use";
+import {
+	sameWorkVehicleUse,
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+} from "./vehicle-use/work-vehicle-use";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { assertNoUnrelatedWorkPeriodReview } from "./work-period-review";
 import { workTransactionScopeFor } from "./work-transaction";
@@ -142,6 +149,8 @@ export type PolicyClockOutBreakSegment = {
 		workCategoryId: string | null;
 		workLocationType: WorkLocationType;
 		allocations: AllocationEvidence<"project" | "cost_center">[];
+		/** The segment's own vehicle use (#1126); present only when it has one. */
+		vehicleUse?: WorkVehicleUse;
 	};
 };
 
@@ -240,6 +249,17 @@ interface LockedSource extends PolicyClockOutTerminalPeriodSnapshot {
 	canonicalWorkLocationType: WorkLocationType;
 	computationMetadata: string | null;
 	allocations: unknown[];
+	/** Vehicle use (#1126) in both representations, compared under the locks. */
+	vehicleKind: "organization" | "own" | null;
+	vehicleId: string | null;
+	odometerStartKm: number | null;
+	odometerEndKm: number | null;
+	drivenDistanceKm: number | null;
+	canonicalVehicleKind: "organization" | "own" | null;
+	canonicalVehicleId: string | null;
+	canonicalOdometerStartKm: number | null;
+	canonicalOdometerEndKm: number | null;
+	canonicalDrivenDistanceKm: number | null;
 }
 
 function fail(): never {
@@ -306,6 +326,16 @@ function validateAllocation(value: unknown): ValidatedAllocation {
 	return (typeof taskId === "string" ? { ...rest, taskId } : rest) as ValidatedAllocation;
 }
 
+function canonicalVehicleUseOf(source: LockedSource): WorkVehicleUse | null {
+	return vehicleUseFromColumns({
+		vehicleKind: source.canonicalVehicleKind,
+		vehicleId: source.canonicalVehicleId,
+		odometerStartKm: source.canonicalOdometerStartKm,
+		odometerEndKm: source.canonicalOdometerEndKm,
+		drivenDistanceKm: source.canonicalDrivenDistanceKm,
+	});
+}
+
 function validateLockedSource(
 	value: unknown,
 	input: EnforcePolicyClockOutTerminalBreakInput,
@@ -354,6 +384,7 @@ function validateLockedSource(
 		source.canonicalOrigin !== "clock" ||
 		source.canonicalWorkCategoryId !== period.workCategoryId ||
 		source.canonicalWorkLocationType !== period.workLocationType ||
+		!sameWorkVehicleUse(vehicleUseFromColumns(source), canonicalVehicleUseOf(source)) ||
 		!Array.isArray(source.allocations)
 	) {
 		return fail();
@@ -430,6 +461,11 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			period.task_id as "taskId",
 			period.work_category_id as "workCategoryId",
 			period.work_location_type as "workLocationType",
+			period.vehicle_kind as "vehicleKind",
+			period.vehicle_id as "vehicleId",
+			period.odometer_start_km as "odometerStartKm",
+			period.odometer_end_km as "odometerEndKm",
+			period.driven_distance_km as "drivenDistanceKm",
 			clock_in.type as "clockInType",
 			clock_in.timestamp as "clockInTimestamp",
 			clock_in.timezone as "clockInTimezone",
@@ -449,6 +485,11 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			canonical_work.work_category_id as "canonicalWorkCategoryId",
 			canonical_work.work_location_type as "canonicalWorkLocationType",
 			canonical_work.computation_metadata as "computationMetadata",
+			canonical_work.vehicle_kind as "canonicalVehicleKind",
+			canonical_work.vehicle_id as "canonicalVehicleId",
+			canonical_work.odometer_start_km as "canonicalOdometerStartKm",
+			canonical_work.odometer_end_km as "canonicalOdometerEndKm",
+			canonical_work.driven_distance_km as "canonicalDrivenDistanceKm",
 			coalesce((
 				select json_agg(json_build_object(
 					'allocationKind', allocation.allocation_kind,
@@ -817,6 +858,11 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		previousHash: syntheticClockOutHash,
 	});
 
+	// The vehicle carries over the break; nobody read the odometer at it (#1126).
+	const sourceVehicleUse = vehicleUseFromColumns(source);
+	const vehicleSplit = vehicleUseAcrossAutomaticBreak(sourceVehicleUse);
+	const retainedVehicle = vehicleUseColumns(vehicleSplit.retained);
+	const generatedVehicle = vehicleUseColumns(vehicleSplit.generated);
 	const workflowPredicate = source.approvalWorkflowId
 		? sql`approval_workflow_id = ${source.approvalWorkflowId}::uuid`
 		: sql`approval_workflow_id is null`;
@@ -825,6 +871,9 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			clock_out_id = ${syntheticClockOutId}::uuid,
 			end_time = ${breakStartDate},
 			duration_minutes = ${firstDurationMinutes},
+			odometer_start_km = ${retainedVehicle.odometerStartKm},
+			odometer_end_km = ${retainedVehicle.odometerEndKm},
+			driven_distance_km = ${retainedVehicle.drivenDistanceKm},
 			was_auto_adjusted = true,
 			auto_adjustment_reason = ${adjustmentReason},
 			auto_adjusted_at = ${adjustedAt},
@@ -872,6 +921,20 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 		returning id
 	`);
 	exactWrite(rows(updatedRecord), source.canonicalRecordId);
+	// The canonical detail mirrors the retained work's kilometres (#1126).
+	if (sourceVehicleUse) {
+		const updatedDetail = await db.execute(sql`
+			update time_record_work set
+				odometer_start_km = ${retainedVehicle.odometerStartKm},
+				odometer_end_km = ${retainedVehicle.odometerEndKm},
+				driven_distance_km = ${retainedVehicle.drivenDistanceKm}
+			where record_id = ${source.canonicalRecordId}::uuid
+				and organization_id = ${input.organizationId}
+				and record_kind = 'work'
+			returning record_id as id
+		`);
+		exactWrite(rows(updatedDetail), source.canonicalRecordId);
+	}
 
 	const insertedRecord = await db.execute(sql`
 		insert into time_record (
@@ -890,11 +953,14 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	const insertedWork = await db.execute(sql`
 		insert into time_record_work (
 			record_id, organization_id, record_kind, work_category_id,
-			work_location_type, computation_metadata
+			work_location_type, computation_metadata, vehicle_kind, vehicle_id,
+			odometer_start_km, odometer_end_km, driven_distance_km
 		) values (
 			${secondRecordId}::uuid, ${input.organizationId}, 'work',
 			${source.canonicalWorkCategoryId}::uuid, ${source.canonicalWorkLocationType},
-			${source.computationMetadata}
+			${source.computationMetadata}, ${generatedVehicle.vehicleKind}, ${generatedVehicle.vehicleId}::uuid,
+			${generatedVehicle.odometerStartKm}, ${generatedVehicle.odometerEndKm},
+			${generatedVehicle.drivenDistanceKm}
 		)
 		returning record_id as id
 	`);
@@ -927,7 +993,8 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			auto_adjustment_reason, auto_adjusted_at,
 			original_end_time, original_duration_minutes,
 			canonical_record_id, approval_workflow_id, graph_revision, created_at, updated_at,
-			is_billable
+			is_billable, vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km,
+			driven_distance_km
 		) values (
 			${secondPeriodId}::uuid, ${input.organizationId}, ${input.employeeId}::uuid,
 			${syntheticClockInId}::uuid, ${source.clockOutId}::uuid,
@@ -936,7 +1003,9 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			${secondDurationMinutes}, false, 'approved', ${null}, true,
 			${adjustmentReason}, ${adjustedAt}, ${null}, ${null},
 			${secondRecordId}::uuid, ${null}, ${adopted ? 1 : 0}, ${adjustedAt}, ${adjustedAt},
-			${source.isBillable}
+			${source.isBillable}, ${generatedVehicle.vehicleKind}, ${generatedVehicle.vehicleId}::uuid,
+			${generatedVehicle.odometerStartKm}, ${generatedVehicle.odometerEndKm},
+			${generatedVehicle.drivenDistanceKm}
 		)
 		returning id
 	`);
@@ -963,6 +1032,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			durationMinutes: number;
 			startUtcOffsetMinutes: number;
 			endUtcOffsetMinutes: number;
+			vehicleUse: WorkVehicleUse | null;
 		}): PolicyClockOutBreakSegment => ({
 			workPeriodId: values.workPeriodId,
 			canonicalRecordId: values.canonicalRecordId,
@@ -973,7 +1043,10 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 			durationMinutes: values.durationMinutes,
 			startUtcOffsetMinutes: values.startUtcOffsetMinutes,
 			endUtcOffsetMinutes: values.endUtcOffsetMinutes,
-			attribution,
+			// Vehicle use only when there is one, keeping earlier receipts' shape (#1126).
+			attribution: values.vehicleUse
+				? { ...attribution, vehicleUse: values.vehicleUse }
+				: attribution,
 		});
 		const operationId = derivePolicyClockOutBreakOperationId({
 			organizationId: input.organizationId,
@@ -1001,6 +1074,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 				durationMinutes: source.durationMinutes,
 				startUtcOffsetMinutes: source.clockInUtcOffsetMinutes,
 				endUtcOffsetMinutes: source.clockOutUtcOffsetMinutes,
+				vehicleUse: sourceVehicleUse,
 			}),
 			decision: {
 				lifecycle: input.lifecycle,
@@ -1027,6 +1101,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 						durationMinutes: firstDurationMinutes,
 						startUtcOffsetMinutes: source.clockInUtcOffsetMinutes,
 						endUtcOffsetMinutes: breakStartCapture.utcOffsetMinutes,
+						vehicleUse: vehicleSplit.retained,
 					}),
 				},
 				{
@@ -1041,6 +1116,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 						durationMinutes: secondDurationMinutes,
 						startUtcOffsetMinutes: breakEndCapture.utcOffsetMinutes,
 						endUtcOffsetMinutes: source.clockOutUtcOffsetMinutes,
+						vehicleUse: vehicleSplit.generated,
 					}),
 					origin: {
 						workPeriodId: source.id,
