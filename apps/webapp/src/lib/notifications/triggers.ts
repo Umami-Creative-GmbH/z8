@@ -9,6 +9,7 @@ import { DateTime } from "luxon";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { formatShiftDate } from "@/lib/scheduling/shift-date";
+import type { NotificationParamValue } from "./notification-params";
 import { createNotification } from "./notification-service";
 import type { CreateNotificationParams } from "./types";
 
@@ -57,7 +58,8 @@ function i18nMetadata(
 	titleDefault: string,
 	messageKey: string,
 	messageDefault: string,
-	params?: Record<string, string | number | boolean | null | undefined>,
+	// Typed params (dates, times, durations, money) are formatted per recipient (#1149).
+	params?: Record<string, NotificationParamValue>,
 ) {
 	return {
 		i18n: {
