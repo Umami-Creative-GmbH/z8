@@ -8,13 +8,14 @@
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
-	accrueVacationDays,
 	type CarryoverSummary,
 	calculateAnnualCarryover,
 	type ExpiryResult,
 	expireCarryoverDays,
 } from "@/lib/absences/vacation.service";
+import { accrueDueVacationPeriods, accrueVacationPeriods } from "@/lib/absences/vacation-accrual";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 
@@ -275,8 +276,12 @@ export async function runCarryoverExpiry(): Promise<CarryoverJobResult> {
 }
 
 /**
- * Run monthly vacation accrual for all organizations
- * Should be scheduled to run on the 1st of each month
+ * Run vacation accrual for all organizations on a monthly or biweekly policy.
+ *
+ * The scheduled run (no arguments) runs daily and accrues every month of each organization's
+ * current year up to and including the current month in its timezone. Months already accrued are
+ * skipped, so it accrues a new month on its first day and catches up any month an earlier run
+ * missed, from 2026 on (#1106). An explicit month and year accrue just that month, also only once.
  */
 export async function runMonthlyAccrual(month?: number, year?: number): Promise<AccrualJobResult> {
 	const startedAt = new Date();
@@ -302,10 +307,6 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 				const targetYear = year ?? zonedDate.year;
 				const isImplicitScheduledRun = month === undefined && year === undefined;
 
-				if (isImplicitScheduledRun && zonedDate.day !== 1) {
-					continue;
-				}
-
 				// For implicit per-organization dates, report the first organization as the job summary.
 				if (organizationsProcessed === 0 && errors.length === 0) {
 					resultMonth = targetMonth;
@@ -319,8 +320,10 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 					continue;
 				}
 
-				// Accrual rows are system rows without an adjusting employee (#1106).
-				const result = await accrueVacationDays(org.id, targetMonth, targetYear, timezone);
+				// Accrual rows are system rows without an adjusting employee, one per month (#1106).
+				const result = isImplicitScheduledRun
+					? await accrueDueVacationPeriods(org.id, { timezone, now: instantFromDate(startedAt) })
+					: await accrueVacationPeriods(org.id, { year: targetYear, months: [targetMonth] });
 
 				totalEmployeesProcessed += result.employeesProcessed;
 				totalDaysAccrued += result.totalDaysAccrued;

@@ -53,7 +53,7 @@ A vacation policy that grants its allowance in monthly or biweekly shares instea
 _Avoid_: accrual type monthly (in prose)
 
 **Adjustment**:
-A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one period's share of an accrual policy's allowance, written by the system; together they are the employee's accrual to date.
+A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one month's share of an accrual policy's allowance, written by the system on the month's first day; an employee has at most one per month, and together they are the employee's accrual to date.
 _Avoid_: correction, bonus days
 
 ### Cover
