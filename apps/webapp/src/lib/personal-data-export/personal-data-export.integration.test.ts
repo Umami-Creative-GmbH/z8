@@ -420,7 +420,13 @@ describe("personal data export pipeline (#1165)", () => {
 		expect(manifest).toMatchObject({
 			exportId,
 			kind: "employee",
-			categories: ["employment", "account"],
+			categories: expect.arrayContaining([
+				"employment",
+				"absences",
+				"planning",
+				"approvals",
+				"account",
+			]),
 		});
 		expect(files["README.txt"]).toContain("Your personal data from Acme GmbH");
 		expect(files["README.txt"]).toContain("employment.json");
