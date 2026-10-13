@@ -21,7 +21,6 @@ import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-cu
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
-import { RateHistoryCard } from "@/components/settings/rate-history-card";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
 import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -216,6 +215,11 @@ export function EmployeeDetailPageClient({
 						form={form}
 						canEditManagerFields={canManageEmployeeDetails}
 						canEditOrgAdminFields={accessTier === "orgAdmin"}
+						contract={
+							employee.kind === "invitationDraft"
+								? { kind: "draft" }
+								: { kind: "terms", contractTypeToday: employee.contractTypeToday ?? null }
+						}
 						isUpdating={isUpdating}
 						onCancel={() => push("/settings/employees")}
 						t={t}
@@ -373,6 +377,11 @@ function EmployeeRecordSections({
 				isMutating={data.isConfirmingEmploymentHistory || data.isCancelingEmploymentHistory}
 				workPolicies={workPolicies}
 				notice={isOrgAdmin ? <WageHistoryMergeNote employeeId={employeeId} /> : undefined}
+				changeWage={
+					isOrgAdmin && employee.kind === "employee" && employee.contractTypeToday === "hourly"
+						? { onSubmit: data.changeWage, isPending: data.isChangingWage }
+						: undefined
+				}
 			/>
 
 			{/* Managers see it read-only for employees they manage (#996); the server decides. */}
@@ -384,16 +393,6 @@ function EmployeeRecordSections({
 					isPending={data.isRequestingWorkBalanceRecalculation}
 					onRecalculate={handleWorkBalanceRecalculation}
 					t={t}
-				/>
-			)}
-
-			{employee.contractType === "hourly" && (
-				<RateHistoryCard
-					rateHistory={data.rateHistory}
-					isLoading={data.isLoadingRateHistory}
-					isAdmin={isOrgAdminOrManager}
-					onAddRate={data.updateRate}
-					isAddingRate={data.isUpdatingRate}
 				/>
 			)}
 

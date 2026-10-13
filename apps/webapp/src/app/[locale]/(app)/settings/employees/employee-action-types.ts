@@ -29,6 +29,11 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	membership: EmployeeMembershipSummary | null;
 	/** A required custom field the viewer sees has no value (#818); set by the directory list. */
 	missingRequiredCustomFields?: boolean;
+	/**
+	 * The contract type of the confirmed terms in force today in the
+	 * organization's timezone, or null without such terms; set by the detail read.
+	 */
+	contractTypeToday?: "fixed" | "hourly" | null;
 };
 
 export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraft.$inferSelect & {

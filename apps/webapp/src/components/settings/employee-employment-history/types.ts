@@ -4,7 +4,10 @@ import type {
 	ReactFormExtendedApi,
 } from "@tanstack/react-form";
 import type { ReactNode } from "react";
-import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
+import type {
+	ChangeHourlyWage,
+	UpsertEmploymentHistory,
+} from "@/lib/validations/employment-history";
 
 export type ContractType = UpsertEmploymentHistory["contractType"];
 export type ReviewState = UpsertEmploymentHistory["reviewState"];
@@ -57,6 +60,11 @@ export type EmployeeEmploymentHistoryCardProps = {
 	workPolicies?: EmploymentHistoryWorkPolicyOption[];
 	/** A one-time note at the top of the card, shown only to those who manage the terms. */
 	notice?: ReactNode;
+	/** "Change wage", passed only for org admins while the terms in force are hourly (#1177). */
+	changeWage?: {
+		onSubmit: (data: ChangeHourlyWage) => Promise<MutationResult>;
+		isPending: boolean;
+	};
 };
 
 export type FormValues = {

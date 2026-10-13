@@ -74,7 +74,16 @@ export const upsertEmploymentHistorySchema = z
 		hourlyRate: wageForContract(data.contractType, data.hourlyRate ?? null),
 	}));
 
+/** "Change wage": a new hourly wage from a calendar date, copying the terms in force then. */
+export const changeHourlyWageSchema = z.object({
+	effectiveOn: z.iso.date("Enter a valid date"),
+	hourlyRate: hourlyWageSchema,
+	changeReason: z.string().trim().min(1, "Reason is required").max(1000, "Reason is too long"),
+	reviewState: z.enum(["confirmed", "draft"]).default("confirmed"),
+});
+
 export type EmploymentStatus = z.infer<typeof employmentStatusSchema>;
 export type WorkModel = z.infer<typeof workModelSchema>;
 export type EmploymentReviewState = z.infer<typeof employmentReviewStateSchema>;
 export type UpsertEmploymentHistory = z.infer<typeof upsertEmploymentHistorySchema>;
+export type ChangeHourlyWage = z.input<typeof changeHourlyWageSchema>;

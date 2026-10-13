@@ -48,20 +48,6 @@ const birthdaySchema = z.date().refine((date) => {
 	);
 }, "Birthday must be in the past");
 
-// Rate history entry schema
-export const createRateHistorySchema = z.object({
-	hourlyRate: z.string().refine(
-		(val) => {
-			const num = parseFloat(val);
-			return !Number.isNaN(num) && num > 0;
-		},
-		{ message: "Hourly rate must be a positive number" },
-	),
-	currency: z.string().default("EUR"),
-	effectiveFrom: z.date(),
-	reason: z.string().max(500, "Reason is too long").optional().nullable(),
-});
-
 // Personal information schema (for self-service profile updates)
 export const personalInformationSchema = z.object({
 	firstName: z
@@ -106,7 +92,9 @@ export const createEmployeeSchema = z.object({
 	hourlyRate: hourlyRateSchema,
 });
 
-// Employee update schema (more permissive, all fields optional)
+// Employee update schema (more permissive, all fields optional). Contract type
+// and wage are not employee fields: they change only through employment terms
+// (Organization ADR 0002), so a save never carries them.
 const updateEmployeeFieldsSchema = z.object({
 	teamId: z.uuid("Invalid team ID").optional().nullable(),
 	role: employeeRoleSchema.optional(),
@@ -126,10 +114,6 @@ const updateEmployeeFieldsSchema = z.object({
 	startDate: z.date().optional().nullable(),
 	endDate: z.date().optional().nullable(),
 	isActive: z.boolean().optional(),
-
-	// Contract type and hourly rate
-	contractType: contractTypeSchema.optional(),
-	hourlyRate: hourlyRateSchema,
 
 	// Auth user identity fields (admin-only)
 	firstName: authUserNamePartSchema,
@@ -161,10 +145,14 @@ export const updateEmployeeInvitationDraftSchema =
 		birthday: true,
 		startDate: true,
 		endDate: true,
-		contractType: true,
-		hourlyRate: true,
 		firstName: true,
 		lastName: true,
+	})
+	// An invitation draft still carries the contract type and wage that become
+	// the employee's first terms.
+	.extend({
+		contractType: contractTypeSchema.optional(),
+		hourlyRate: hourlyRateSchema,
 	});
 
 // Manager assignment schema
@@ -216,4 +204,3 @@ export type UpdateEmployeeInvitationDraft = z.infer<
 >;
 export type ManagerAssignment = z.infer<typeof managerAssignmentSchema>;
 export type AssignManagers = z.infer<typeof assignManagersSchema>;
-export type CreateRateHistory = z.infer<typeof createRateHistorySchema>;

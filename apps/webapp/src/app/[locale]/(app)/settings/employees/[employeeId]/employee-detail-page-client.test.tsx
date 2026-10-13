@@ -109,8 +109,12 @@ vi.mock(
 		EmployeeCustomRolesCard: () => null,
 	}),
 );
+const employmentHistoryCardProps = vi.hoisted(() => ({ last: null as null | Record<string, unknown> }));
 vi.mock("@/components/settings/employee-employment-history-card", () => ({
-	EmployeeEmploymentHistoryCard: ({ notice }: { notice?: ReactNode }) => <>{notice}</>,
+	EmployeeEmploymentHistoryCard: (props: { notice?: ReactNode } & Record<string, unknown>) => {
+		employmentHistoryCardProps.last = props;
+		return <>{props.notice}</>;
+	},
 }));
 vi.mock("@/components/settings/employee-employment-history/wage-history-merge-note", () => ({
 	WageHistoryMergeNote: ({ employeeId }: { employeeId: string }) => <p>Merge note for {employeeId}</p>,
@@ -120,9 +124,6 @@ vi.mock("@/components/settings/employee-skills-card", () => ({
 }));
 vi.mock("@/components/settings/manager-assignment", () => ({
 	ManagerAssignment: () => null,
-}));
-vi.mock("@/components/settings/rate-history-card", () => ({
-	RateHistoryCard: () => null,
 }));
 vi.mock("@/components/settings/work-balance-recalculation-card", () => ({
 	WorkBalanceRecalculationCard: () => null,
@@ -175,16 +176,14 @@ function employeeHookResult(employee: EmployeeDetail) {
 		employee,
 		schedule: null,
 		availableManagers: [],
-		rateHistory: [],
 		employmentHistory: [],
 		workPolicies: [],
 		isLoading: false,
-		isLoadingRateHistory: false,
 		hasEmployee: true,
 		updateEmployee: vi.fn(),
 		isUpdating: false,
-		updateRate: vi.fn(),
-		isUpdatingRate: false,
+		changeWage: vi.fn(),
+		isChangingWage: false,
 		createEmploymentHistory: vi.fn(),
 		isCreatingEmploymentHistory: false,
 		confirmEmploymentHistory: vi.fn(),
@@ -286,6 +285,40 @@ describe("employee detail personnel file tab (#865)", () => {
 		});
 
 		expect(await screen.findByRole("region", { name: "Personnel file panel" })).toBeTruthy();
+	});
+});
+
+describe("employee detail Change wage (#1177)", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		employmentHistoryCardProps.last = null;
+	});
+
+	const hourlyToday = { ...realEmployee, contractTypeToday: "hourly" } as EmployeeDetail;
+
+	it("offers Change wage to an org admin while today's terms are hourly", async () => {
+		renderDetail({ employee: hourlyToday });
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+
+		expect(employmentHistoryCardProps.last?.changeWage).toEqual({
+			onSubmit: expect.any(Function),
+			isPending: false,
+		});
+	});
+
+	it("offers no Change wage to a scoped manager", async () => {
+		renderDetail({ employee: hourlyToday, accessTier: "manager", currentMemberRole: "member" });
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+
+		expect(employmentHistoryCardProps.last).not.toBeNull();
+		expect(employmentHistoryCardProps.last?.changeWage).toBeUndefined();
+	});
+
+	it("offers no Change wage while today's terms are fixed", async () => {
+		renderDetail({ employee: { ...realEmployee, contractTypeToday: "fixed" } as EmployeeDetail });
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+
+		expect(employmentHistoryCardProps.last?.changeWage).toBeUndefined();
 	});
 });
 

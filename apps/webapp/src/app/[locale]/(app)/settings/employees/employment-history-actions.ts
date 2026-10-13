@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
@@ -7,23 +6,23 @@ import {
 	employee,
 	employeeEmploymentHistory,
 	employeeEmploymentPeriod,
-	workPolicy,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import type { TimelineUpdate } from "@/lib/employment-history/timeline";
 import {
-	EmploymentPeriodError,
-	resolveTermsEmploymentPeriod,
-} from "@/lib/employee-lifecycle/employment-periods";
-import type { LifecycleTransaction } from "@/lib/employee-lifecycle/types";
-import { adjustConfirmedTimeline, type TimelineUpdate } from "@/lib/employment-history/timeline";
+	changeHourlyWage,
+	confirmEmploymentTerms,
+	writeEmploymentTerms,
+} from "@/lib/employment-history/write-terms";
 import { createLogger } from "@/lib/logger";
 import {
-	storedEmployeeWage,
+	type ChangeHourlyWage,
+	changeHourlyWageSchema,
 	type UpsertEmploymentHistory,
 	upsertEmploymentHistorySchema,
-	wageForContract,
 } from "@/lib/validations/employment-history";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
@@ -37,13 +36,6 @@ import {
 } from "./employee-action-utils";
 
 const logger = createLogger("EmploymentHistoryActions");
-
-type EmploymentHistoryEffectiveRow = Pick<
-	EmployeeEmploymentHistory,
-	"reviewState" | "validFrom" | "validUntil"
->;
-
-type EmploymentHistoryReviewRow = Pick<EmployeeEmploymentHistory, "reviewState">;
 
 type EmploymentHistoryCancelableRow = Pick<EmployeeEmploymentHistory, "reviewState" | "validFrom">;
 
@@ -67,25 +59,6 @@ type EmploymentHistoryCancellationRestorationRow = Pick<
 	| "validUntil"
 	| "reviewState"
 >;
-
-export function shouldUpdateCurrentEmployeeFields(
-	row: EmploymentHistoryEffectiveRow,
-	now = DateTime.utc().toJSDate(),
-) {
-	if (row.reviewState !== "confirmed") {
-		return false;
-	}
-
-	const current = DateTime.fromJSDate(now).toUTC();
-	const validFrom = DateTime.fromJSDate(row.validFrom).toUTC();
-	const validUntil = row.validUntil ? DateTime.fromJSDate(row.validUntil).toUTC() : null;
-
-	return validFrom <= current && (!validUntil || validUntil > current);
-}
-
-export function shouldConfirmEmploymentHistoryRow(row: EmploymentHistoryReviewRow) {
-	return row.reviewState === "draft" || row.reviewState === "pending";
-}
 
 export function canCancelEmploymentHistoryRow(
 	row: EmploymentHistoryCancelableRow,
@@ -184,27 +157,13 @@ export function buildEmploymentCancellationRestorationPlan({
 }
 
 /**
- * Terms belong to the employee's open employment period. An ended period is
- * never reopened by terms; only an explicit rehire starts a new one.
+ * The wage command throws its refusals inside the query; keep their type so
+ * users see the refusal, not "Database query failed" (D8).
  */
-async function requireTermsEmploymentPeriod(
-	tx: LifecycleTransaction,
-	input: { organizationId: string; employeeId: string; validFrom: Date },
-) {
-	try {
-		return await resolveTermsEmploymentPeriod(tx, input);
-	} catch (error) {
-		if (error instanceof EmploymentPeriodError) {
-			throw new ValidationError({
-				message:
-					error.code === "employment_period_closed"
-						? "This employee's employment has ended. Rehire them before adding employment terms."
-						: "Employment terms cannot start before the current employment period.",
-				field: "validFrom",
-			});
-		}
-		throw error;
-	}
+function keepTermsRefusal(error: DatabaseError) {
+	return error.cause instanceof ValidationError || error.cause instanceof NotFoundError
+		? error.cause
+		: error;
 }
 
 async function markContractWorkBalanceDirty(input: {
@@ -337,125 +296,18 @@ export async function createEmployeeEmploymentHistoryAction(
 					action: "create",
 				});
 
-				if (validatedData.workPolicyId) {
-					const policy = yield* dbService.query("getEmploymentHistoryWorkPolicy", async () => {
-						return await dbService.db.query.workPolicy.findFirst({
-							where: and(
-								eq(workPolicy.id, validatedData.workPolicyId!),
-								eq(workPolicy.organizationId, actor.organizationId),
-							),
-						});
-					});
-
-					if (!policy) {
-						return yield* Effect.fail(
-							new NotFoundError({
-								message: "Work policy not found",
-								entityType: "work_policy",
-								entityId: validatedData.workPolicyId,
+				const createdHistory = yield* dbService
+					.query("createEmployeeEmploymentHistory", () =>
+						dbService.db.transaction((tx) =>
+							writeEmploymentTerms(tx, {
+								organizationId: actor.organizationId,
+								employeeId,
+								actorUserId: session.user.id,
+								terms: validatedData,
 							}),
-						);
-					}
-				}
-
-				const createdHistory = yield* dbService.query(
-					"createEmployeeEmploymentHistory",
-					async () => {
-						return await dbService.db.transaction(async (tx) => {
-							await tx.execute(sql`
-								select ${employee.id}
-								from ${employee}
-								where ${employee.id} = ${employeeId}
-									and ${employee.organizationId} = ${actor.organizationId}
-								for update
-							`);
-
-							const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
-								organizationId: actor.organizationId,
-								employeeId,
-								validFrom: validatedData.validFrom,
-							});
-							// The timeline never joins terms across employment periods.
-							const existing = await tx.query.employeeEmploymentHistory.findMany({
-								where: and(
-									eq(employeeEmploymentHistory.employeeId, employeeId),
-									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-									eq(employeeEmploymentHistory.employmentPeriodId, employmentPeriodId),
-								),
-							});
-							const now = currentTimestamp();
-							const nextRow: EmployeeEmploymentHistory = {
-								id: randomUUID(),
-								employeeId,
-								organizationId: actor.organizationId,
-								employmentPeriodId,
-								validFrom: validatedData.validFrom,
-								validUntil: null,
-								status: validatedData.status,
-								contractType: validatedData.contractType,
-								weeklyContractMinutes: validatedData.weeklyContractMinutes,
-								probationStartsOn: validatedData.probationStartsOn ?? null,
-								probationEndsOn: validatedData.probationEndsOn ?? null,
-								workModel: validatedData.workModel,
-								workPolicyId: validatedData.workPolicyId ?? null,
-								hourlyRate: wageForContract(validatedData.contractType, validatedData.hourlyRate),
-								currency: validatedData.currency,
-								changeReason: validatedData.changeReason ?? null,
-								reviewState: validatedData.reviewState,
-								createdBy: session.user.id,
-								createdAt: now,
-								updatedBy: session.user.id,
-								updatedAt: now,
-							};
-							const adjusted = adjustConfirmedTimeline({ existing, next: nextRow });
-							await Promise.all(
-								adjusted.updates.map((update) =>
-									tx
-										.update(employeeEmploymentHistory)
-										.set({
-											validUntil: update.validUntil,
-											updatedBy: session.user.id,
-											updatedAt: now,
-										})
-										.where(
-											and(
-												eq(employeeEmploymentHistory.id, update.id),
-												eq(employeeEmploymentHistory.employeeId, employeeId),
-												eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-											),
-										),
-								),
-							);
-
-							const [inserted] = await tx
-								.insert(employeeEmploymentHistory)
-								.values(adjusted.next)
-								.returning();
-
-							if (!inserted) {
-								throw new Error("Employment history insert returned no row");
-							}
-
-							if (shouldUpdateCurrentEmployeeFields(inserted, now)) {
-								await tx
-									.update(employee)
-									.set({
-										contractType: inserted.contractType,
-										currentHourlyRate: storedEmployeeWage(inserted.hourlyRate),
-										updatedAt: now,
-									})
-									.where(
-										and(
-											eq(employee.id, employeeId),
-											eq(employee.organizationId, actor.organizationId),
-										),
-									);
-							}
-
-							return inserted;
-						});
-					},
-				);
+						),
+					)
+					.pipe(Effect.mapError(keepTermsRefusal));
 
 				if (createdHistory.reviewState === "confirmed") {
 					yield* Effect.promise(() =>
@@ -470,6 +322,77 @@ export async function createEmployeeEmploymentHistoryAction(
 				revalidateEmployeesCache(actor.organizationId);
 
 				return createdHistory;
+			}),
+	});
+}
+
+/**
+ * "Change wage" on the Contract & Work Model card: new terms from a date that
+ * copy the hourly terms in force then, with a new wage. Org admins only.
+ */
+export async function changeEmployeeWageAction(
+	employeeId: string,
+	data: ChangeHourlyWage,
+): Promise<ServerActionResult<EmployeeEmploymentHistory>> {
+	"use server";
+
+	return runTracedEmployeeAction({
+		name: "changeEmployeeWage",
+		attributes: {
+			"employee.id": employeeId,
+		},
+		logError: (error) => {
+			logger.error({ error, employeeId }, "Failed to change employee wage");
+		},
+		execute: () =>
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "changeEmployeeWageAction:actor" });
+				const { dbService, session } = actor;
+
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can change wages",
+					resource: "employment_history",
+					action: "change_wage",
+				});
+
+				const validatedData = yield* validateInput(changeHourlyWageSchema, data);
+				const targetEmployee = yield* getTargetEmployee(employeeId);
+
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's employment history",
+					resource: "employment_history",
+					action: "change_wage",
+				});
+
+				const written = yield* dbService
+					.query("changeEmployeeWage", () =>
+						dbService.db.transaction((tx) =>
+							changeHourlyWage(tx, {
+								organizationId: actor.organizationId,
+								employeeId,
+								actorUserId: session.user.id,
+								effectiveOn: parsePlainDate(validatedData.effectiveOn),
+								hourlyRate: validatedData.hourlyRate,
+								changeReason: validatedData.changeReason,
+								reviewState: validatedData.reviewState,
+							}),
+						),
+					)
+					.pipe(Effect.mapError(keepTermsRefusal));
+
+				if (written.reviewState === "confirmed") {
+					yield* Effect.promise(() =>
+						markContractWorkBalanceDirty({
+							employeeId,
+							organizationId: actor.organizationId,
+							fromDate: written.validFrom,
+						}),
+					);
+				}
+
+				revalidateEmployeesCache(actor.organizationId);
+
+				return written;
 			}),
 	});
 }
@@ -508,123 +431,18 @@ export async function confirmEmployeeEmploymentHistoryAction(
 					action: "confirm",
 				});
 
-				const confirmedHistory = yield* dbService.query(
-					"confirmEmployeeEmploymentHistory",
-					async () => {
-						return await dbService.db.transaction(async (tx) => {
-							await tx.execute(sql`
-								select ${employee.id}
-								from ${employee}
-								where ${employee.id} = ${employeeId}
-									and ${employee.organizationId} = ${actor.organizationId}
-								for update
-							`);
-
-							const existing = await tx.query.employeeEmploymentHistory.findMany({
-								where: and(
-									eq(employeeEmploymentHistory.employeeId, employeeId),
-									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-								),
-							});
-							const targetHistory = existing.find((row) => row.id === historyId);
-
-							if (!targetHistory) {
-								throw new NotFoundError({
-									message: "Employment history not found",
-									entityType: "employment_history",
-									entityId: historyId,
-								});
-							}
-
-							if (!shouldConfirmEmploymentHistoryRow(targetHistory)) {
-								throw new ValidationError({
-									message: "Employment history is already confirmed",
-									field: "reviewState",
-								});
-							}
-
-							const employmentPeriodId = await requireTermsEmploymentPeriod(tx, {
+				const confirmedHistory = yield* dbService
+					.query("confirmEmployeeEmploymentHistory", () =>
+						dbService.db.transaction((tx) =>
+							confirmEmploymentTerms(tx, {
 								organizationId: actor.organizationId,
 								employeeId,
-								validFrom: targetHistory.validFrom,
-							});
-							if (
-								targetHistory.employmentPeriodId &&
-								targetHistory.employmentPeriodId !== employmentPeriodId
-							) {
-								throw new ValidationError({
-									message:
-										"These terms belong to an ended employment period and can no longer be confirmed.",
-									field: "reviewState",
-								});
-							}
-
-							const now = currentTimestamp();
-							const adjusted = adjustConfirmedTimeline({
-								existing: existing.filter((row) => row.employmentPeriodId === employmentPeriodId),
-								next: { ...targetHistory, employmentPeriodId, reviewState: "confirmed" as const },
-							});
-							await Promise.all(
-								adjusted.updates.map((update) =>
-									tx
-										.update(employeeEmploymentHistory)
-										.set({
-											validUntil: update.validUntil,
-											updatedBy: session.user.id,
-											updatedAt: now,
-										})
-										.where(
-											and(
-												eq(employeeEmploymentHistory.id, update.id),
-												eq(employeeEmploymentHistory.employeeId, employeeId),
-												eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-											),
-										),
-								),
-							);
-
-							const [updated] = await tx
-								.update(employeeEmploymentHistory)
-								.set({
-									employmentPeriodId,
-									validUntil: adjusted.next.validUntil,
-									reviewState: "confirmed",
-									updatedBy: session.user.id,
-									updatedAt: now,
-								})
-								.where(
-									and(
-										eq(employeeEmploymentHistory.id, historyId),
-										eq(employeeEmploymentHistory.employeeId, employeeId),
-										eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-									),
-								)
-								.returning();
-
-							if (!updated) {
-								throw new Error("Employment history update returned no row");
-							}
-
-							if (shouldUpdateCurrentEmployeeFields(updated, now)) {
-								await tx
-									.update(employee)
-									.set({
-										contractType: updated.contractType,
-										currentHourlyRate: storedEmployeeWage(updated.hourlyRate),
-										updatedAt: now,
-									})
-									.where(
-										and(
-											eq(employee.id, employeeId),
-											eq(employee.organizationId, actor.organizationId),
-										),
-									);
-							}
-
-							return updated;
-						});
-					},
-				);
+								actorUserId: session.user.id,
+								termsId: historyId,
+							}),
+						),
+					)
+					.pipe(Effect.mapError(keepTermsRefusal));
 
 				yield* Effect.promise(() =>
 					markContractWorkBalanceDirty({
