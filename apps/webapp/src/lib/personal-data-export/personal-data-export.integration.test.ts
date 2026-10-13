@@ -76,6 +76,7 @@ const { db } = await import("@/db");
 const { getMyDataOverview, requestMyPersonalDataExport, getPersonalDataExportDownloadUrl } =
 	await import("@/app/[locale]/(app)/settings/my-data/actions");
 const { processPersonalDataExport } = await import("./processor");
+const { PERSONAL_DATA_COLLECTORS } = await import("./collectors");
 const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
 const { sendEmail } = await import("@/lib/email/email-service");
 
@@ -420,8 +421,10 @@ describe("personal data export pipeline (#1165)", () => {
 		expect(manifest).toMatchObject({
 			exportId,
 			kind: "employee",
-			categories: ["employment", "account"],
+			// Every registered category, in archive order (more arrive per slice).
+			categories: PERSONAL_DATA_COLLECTORS.map((collector) => collector.category),
 		});
+		expect(manifest.categories).toEqual(expect.arrayContaining(["employment", "account"]));
 		expect(files["README.txt"]).toContain("Your personal data from Acme GmbH");
 		expect(files["README.txt"]).toContain("employment.json");
 	});

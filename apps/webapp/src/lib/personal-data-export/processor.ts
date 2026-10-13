@@ -132,6 +132,8 @@ export async function processPersonalDataExport(
 			employeeId: claimed.employeeId,
 			userId: subject.userId,
 			kind: claimed.kind,
+			exportId: claimed.id,
+			requestedByUserId: claimed.requestedByUserId,
 		};
 		const exportedAt = deps.now().toString();
 		const categories: CollectedCategory[] = [];

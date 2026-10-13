@@ -26,7 +26,7 @@ export function plainDateText(value: Date | null | undefined): string | null {
 
 /** Display names of users, by id. Unknown ids are missing from the map. */
 export async function loadUserNames(
-	database: PersonalDataExportDatabase,
+	database: Pick<PersonalDataExportDatabase, "select">,
 	userIds: Iterable<string | null | undefined>,
 ): Promise<Map<string, string>> {
 	const ids = [...new Set([...userIds].filter((id): id is string => Boolean(id)))];
