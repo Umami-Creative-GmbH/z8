@@ -56,6 +56,11 @@ const uploads = new Map<string, Uint8Array>();
 
 async function cleanup() {
 	await admin.query("delete from organization where id = any($1::text[])", [[ORG, OTHER]]);
+	// Deleted exports leave file cleanup ledger rows; the sweep in sibling suites drains the whole ledger.
+	await admin.query(
+		"delete from personal_data_export_file_cleanup where organization_id = any($1::text[])",
+		[[ORG, OTHER]],
+	);
 	await admin.query('delete from "user" where id like $1', ["t1170-%"]);
 }
 
