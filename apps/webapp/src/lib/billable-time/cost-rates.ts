@@ -1,19 +1,21 @@
 import "server-only";
 
-import { and, asc, desc, eq, gt, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { costRate, employee, employeeRateHistory } from "@/db/schema";
+import { costRate, employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import {
-	dateFromInstant,
 	type Instant,
 	type PlainDate,
+	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { loadTermsInForceOn } from "@/lib/employment-history/load-terms-in-force";
 import type { Transaction } from "@/lib/time-tracking/work-transaction/ranks";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	type CostRate,
 	type CostRatePeriod,
@@ -31,7 +33,7 @@ import { lockBillableTimeSettings } from "./settings";
 /**
  * Cost rates per employee (#899): writer and readers. The pure resolver is
  * `cost-rate.ts`. Cost rates are separate from the wage: nothing here reads
- * them into, or writes them from, wage history, payroll or hourly earnings
+ * them into, or writes them from, employment terms, payroll or hourly earnings
  * (the wage is only read to suggest a starting value, `getSuggestedWage`).
  */
 
@@ -262,10 +264,11 @@ export async function getCostRate(
 }
 
 /**
- * The wage of an hourly employee in effect now, from the wage history the
- * employee report reads (`employee_rate_history`), when it is in the billable
- * currency. Null for any other contract type, without a wage in effect, or for
- * a wage in another currency. Read-only: a suggestion for the cost rate form.
+ * The wage in the employee's confirmed hourly employment terms in force today,
+ * in the organization's timezone, when it is in the billable currency
+ * (Organization ADR 0002). Null under fixed terms, without terms or a wage in
+ * force, or for a wage in another currency. Read-only: a suggestion for the
+ * cost rate form.
  */
 export async function getSuggestedWage(
 	reader: CostRateReader,
@@ -274,30 +277,22 @@ export async function getSuggestedWage(
 	currency: BillableCurrency,
 	at: Instant = systemClock.nowInstant(),
 ): Promise<SuggestedWage | null> {
-	const now = dateFromInstant(at);
-	const [row] = await reader
-		.select({ hourlyRate: employeeRateHistory.hourlyRate, currency: employeeRateHistory.currency })
-		.from(employeeRateHistory)
-		.innerJoin(
-			employee,
-			and(
-				eq(employee.id, employeeRateHistory.employeeId),
-				eq(employee.organizationId, employeeRateHistory.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(employeeRateHistory.organizationId, organizationId),
-				eq(employeeRateHistory.employeeId, employeeId),
-				eq(employee.contractType, "hourly"),
-				lte(employeeRateHistory.effectiveFrom, now),
-				or(isNull(employeeRateHistory.effectiveTo), gt(employeeRateHistory.effectiveTo, now)),
-			),
-		)
-		.orderBy(desc(employeeRateHistory.effectiveFrom))
-		.limit(1);
-	if (!row || row.currency !== currency) return null;
-	const parsed = parseRate(row.hourlyRate);
+	const timezone = await loadOrganizationTimezone(reader, organizationId);
+	const terms = await loadTermsInForceOn(reader, {
+		organizationId,
+		employeeId,
+		date: plainDateAt(at, timezone),
+		timezone,
+	});
+	if (
+		!terms ||
+		terms.contractType !== "hourly" ||
+		terms.hourlyRate === null ||
+		terms.currency !== currency
+	) {
+		return null;
+	}
+	const parsed = parseRate(terms.hourlyRate.toFixed(2));
 	return parsed.ok ? { hourlyRate: formatRate(parsed.units) } : null;
 }
 
