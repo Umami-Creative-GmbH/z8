@@ -20,6 +20,7 @@ import {
 	breakVehicleUseFromReading,
 	clockInVehicleUseFromDraft,
 	clockOutVehicleUseFromDraft,
+	closingVehicleUse,
 } from "./clock-vehicle-use-draft";
 import { useVehicleUseWarnings } from "./use-vehicle-use-warnings";
 import {
@@ -202,7 +203,7 @@ export function ClockOutVehicleUse({
 	const { live } = state;
 	const closingUse =
 		state.asks && state.liveWorkPeriodId && state.clockOut.ok && state.clockOut.vehicleUse
-			? merged(live, state.clockOutDraft)
+			? closingVehicleUse(live, state.clockOutDraft)
 			: null;
 	const warnings = useClockWarnings(
 		closingUse && state.liveWorkPeriodId
@@ -290,23 +291,6 @@ export function ClockOutVehicleUse({
 			) : null}
 		</div>
 	);
-}
-
-/** The live vehicle use as the clock-out would leave it, for its warnings. */
-function merged(live: WorkVehicleUse | null, draft: VehicleUseDraft) {
-	if (!live) {
-		const result = vehicleUseFromDraft(draft);
-		return result.ok && result.input ? result.input : null;
-	}
-	return {
-		vehicle: live.vehicle,
-		startKm: live.startKm,
-		endKm: draft.endKm.trim() === "" ? live.endKm : Number(draft.endKm),
-		distanceKm:
-			live.startKm === null && draft.distanceKm.trim() !== ""
-				? Number(draft.distanceKm)
-				: live.distanceKm,
-	};
 }
 
 /** Changes the live work's vehicle or start reading (a live attribution amendment). */
