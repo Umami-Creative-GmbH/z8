@@ -18,6 +18,7 @@ const tolgeeTranslations = vi.hoisted(() => new Map<string, string>());
 let mockedSearchParams = "search=old&page=2&pageSize=10&year=2026";
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en" }),
 	useTranslate: () => ({
 		t: (
 			_key: string,
@@ -156,6 +157,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 						},
 					],
@@ -274,6 +276,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 						},
 					],
@@ -356,6 +359,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 							absences: [
 								{
@@ -404,6 +408,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 						},
 					],
@@ -452,6 +457,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 						},
 					],
@@ -503,6 +509,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 						},
 					],
@@ -548,6 +555,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 						},
 					],
@@ -594,6 +602,7 @@ describe("TeamAbsencesTable", () => {
 							usedVacationDays: 4,
 							pendingVacationDays: 2,
 							remainingVacationDays: 24,
+							overdrawnVacationDays: 0,
 							sickDays: 1,
 						},
 					],
@@ -636,6 +645,80 @@ describe("TeamAbsencesTable", () => {
 		expect(routerPush).toHaveBeenLastCalledWith(
 			"/team/absences?search=old&page=1&pageSize=10&year=2025",
 		);
+	});
+
+	it("explains a prorated allowance and shows overdrawn vacation (#1111)", () => {
+		// The mocked t does no ICU plurals; use the plural-free copy of a translation.
+		tolgeeTranslations.set(
+			"common.vacationAllowance.employmentMonths",
+			"{months} full employment months",
+		);
+		tolgeeTranslations.set(
+			"common.vacationAllowance.overdrawn",
+			"{days} days overdrawn",
+		);
+
+		render(
+			<TeamAbsencesTable
+				data={{
+					rows: [
+						{
+							id: "employee-1",
+							userId: "user-1",
+							name: "Ada Lovelace",
+							email: "ada@example.com",
+							image: null,
+							employeeNumber: "E-001",
+							position: "Engineer",
+							role: "employee",
+							teamName: "Operations",
+							vacationAllowance: 8,
+							usedVacationDays: 10,
+							pendingVacationDays: 0,
+							remainingVacationDays: 0,
+							overdrawnVacationDays: 2,
+							sickDays: 0,
+							proratedAllowance: {
+								fullAllowance: 30,
+								allowance: 8,
+								reason: {
+									kind: "prorated",
+									cappedAtFullAllowance: false,
+									employments: [
+										{
+											kind: "start",
+											startDate: "2026-10-01",
+											lastWorkingDay: null,
+											employmentMonths: 3,
+											days: 8,
+											floorApplied: false,
+										},
+									],
+								},
+							},
+						},
+					],
+					teams: [],
+					total: 1,
+					page: 1,
+					pageSize: 10,
+					year: 2026,
+					teamId: null,
+					sort: "employee",
+					direction: "asc",
+					pageCount: 1,
+				}}
+				categories={[]}
+				search=""
+			/>,
+		);
+
+		expect(
+			screen.getByText(
+				"8 of 30 days, prorated: started Oct 1, 2026, 3 full employment months",
+			),
+		).toBeTruthy();
+		expect(screen.getByText("2 days overdrawn")).toBeTruthy();
 	});
 });
 

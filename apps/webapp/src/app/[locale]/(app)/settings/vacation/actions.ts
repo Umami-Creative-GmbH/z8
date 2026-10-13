@@ -18,18 +18,23 @@ import {
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
+import type { VacationBalance } from "@/lib/absences/types";
 import {
 	loadManualVacationAdjustments,
 	loadVacationAdjustmentSums,
+	loadVacationAdjustmentTotals,
 	type ManualVacationAdjustment,
 	type VacationAdjustmentSums,
 } from "@/lib/absences/vacation-adjustments";
+import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
+import { isAccrualPolicy } from "@/lib/absences/vacation-calculator";
 import {
 	checkStatutoryMinimumDays,
 	defaultStatutoryMinimumDays,
 } from "@/lib/absences/vacation-policy-settings";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
+import { calendarYearAt, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -39,6 +44,7 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,
@@ -546,7 +552,7 @@ export async function getEmployeesWithAllowances(
 		const dbService = yield* DatabaseService;
 		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
 		const employees = yield* dbService.query("getEmployeesWithAllowances", async () => {
-			return await dbService.db.query.employee.findMany({
+			const records = await dbService.db.query.employee.findMany({
 				where: eq(employee.organizationId, organizationId),
 				with: {
 					user: true,
@@ -556,13 +562,29 @@ export async function getEmployeesWithAllowances(
 					},
 				},
 			});
+			const visible = managedEmployeeIds
+				? records.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id))
+				: records;
+			// The same server-side balance as the employee's Absences page (#1111).
+			const employeeIds = visible.map((employeeRecord) => employeeRecord.id);
+			const [{ balances }, adjustmentTotals] = await Promise.all([
+				loadVacationBalances(dbService.db, {
+					organizationId,
+					employeeIds,
+					year,
+					timezone: await loadOrganizationTimezone(dbService.db, organizationId),
+				}),
+				loadVacationAdjustmentTotals(dbService.db, { organizationId, employeeIds, year }),
+			]);
+			return visible.map((employeeRecord) => ({
+				...employeeRecord,
+				vacationBalance: balances.get(employeeRecord.id) ?? null,
+				// Manual and accrual adjustments for the year (#1105, #1106).
+				vacationAdjustmentDays: adjustmentTotals.get(employeeRecord.id) ?? 0,
+			}));
 		});
 
-		if (!managedEmployeeIds) {
-			return employees;
-		}
-
-		return employees.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id));
+		return employees;
 	});
 
 	return runServerActionSafe(effect);
@@ -1412,6 +1434,57 @@ export async function getEmployeeAdjustmentSummary(
 					...adjustment,
 					createdAt: adjustment.createdAt.toISOString(),
 				})),
+			};
+		});
+	});
+
+	return runServerActionSafe(effect);
+}
+
+export type EmployeeVacationBalanceView = {
+	/** The organization's current calendar year, the year the admin page edits. */
+	year: number;
+	/** Null without a company default policy for the year. */
+	balance: VacationBalance | null;
+	/** The policy grants its allowance monthly or biweekly through accrual (#1106). */
+	accrualPolicy: boolean;
+};
+
+/**
+ * An employee's vacation balance for the organization's current year, for the admin vacation
+ * page (#1111): the same server-side balance as the employee's Absences page, with the prorated
+ * allowance's explanation and overdrawn vacation. Admins see any employee of the organization,
+ * managers only the employees they manage.
+ */
+export async function getEmployeeVacationBalance(
+	employeeId: string,
+): Promise<ServerActionResult<EmployeeVacationBalanceView>> {
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "getEmployeeVacationBalance:actor",
+		});
+		const dbService = yield* DatabaseService;
+
+		const emp = yield* getTargetEmployee(employeeId, "getEmployeeVacationBalance:getTargetEmployee");
+		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
+			message: "Insufficient permissions",
+			resource: "employee_allowance",
+			action: "read",
+		});
+
+		return yield* dbService.query("getEmployeeVacationBalance", async () => {
+			const timezone = await loadOrganizationTimezone(dbService.db, emp.organizationId);
+			const year = calendarYearAt(systemClock.nowInstant(), timezone);
+			const { policy, balances } = await loadVacationBalances(dbService.db, {
+				organizationId: emp.organizationId,
+				employeeIds: [employeeId],
+				year,
+				timezone,
+			});
+			return {
+				year,
+				balance: balances.get(employeeId) ?? null,
+				accrualPolicy: policy ? isAccrualPolicy(policy) : false,
 			};
 		});
 	});

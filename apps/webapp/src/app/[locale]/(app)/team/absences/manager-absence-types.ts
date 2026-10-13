@@ -1,4 +1,5 @@
 import type { DeputyDisplay } from "@/lib/absences/deputy-visibility";
+import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
 import type { AbsenceDurationKind, DayPeriod, SickDetail } from "@/lib/absences/types";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
@@ -57,7 +58,11 @@ export interface ManagerAbsenceEmployeeRow {
 	usedVacationDays: number;
 	pendingVacationDays: number;
 	remainingVacationDays: number;
+	/** Approved vacation beyond the allowance (overdrawn vacation, #1111); never deducted. */
+	overdrawnVacationDays: number;
 	sickDays: number;
+	/** The vacation allowance and why it is prorated (#1111). */
+	proratedAllowance?: ProratedAllowance;
 	absences?: ManagerAbsenceRowAbsence[];
 }
 

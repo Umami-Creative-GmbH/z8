@@ -6,6 +6,10 @@ import { useTranslate } from "@tolgee/react";
 import { use, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import {
+	OverdrawnVacationBadge,
+	VacationAllowanceExplanation,
+} from "@/components/absences/vacation-allowance-explanation";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,8 +40,10 @@ import { useRouter } from "@/navigation";
 import {
 	createVacationAdjustmentAction,
 	type EmployeeAdjustmentSummary,
+	type EmployeeVacationBalanceView,
 	getEmployeeAdjustmentSummary,
 	getEmployeeAllowance,
+	getEmployeeVacationBalance,
 	getVacationPolicies,
 	updateEmployeeAllowance,
 } from "../../actions";
@@ -104,12 +110,16 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const [currentAssignment, setCurrentAssignment] =
 		useState<EmployeePolicyAssignment | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
-	const [currentYear] = useState(() => new Date().getFullYear());
+	// The balance and its year come from the server, in the organization's timezone (#1111).
+	const [balanceView, setBalanceView] =
+		useState<EmployeeVacationBalanceView | null>(null);
+	const currentYear = balanceView?.year ?? null;
 	const [adjustmentSummary, setAdjustmentSummary] =
 		useState<EmployeeAdjustmentSummary>(EMPTY_ADJUSTMENT_SUMMARY);
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
+			if (currentYear === null) return;
 			setLoading(true);
 			await runWithCleanup(
 				async () => {
@@ -211,6 +221,10 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				return;
 			}
 
+			const balanceResult = await getEmployeeVacationBalance(employeeId);
+			if (cancelled || !balanceResult.success) return;
+			const { year } = balanceResult.data;
+
 			const [
 				empResult,
 				policyResult,
@@ -218,14 +232,15 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				assignmentResult,
 				adjustmentSummaryResult,
 			] = await Promise.all([
-				getEmployeeAllowance(employeeId, currentYear),
+				getEmployeeAllowance(employeeId, year),
 				getVacationPolicies(current.organizationId),
 				getAssignmentPolicies(current.organizationId),
 				getEmployeePolicyAssignment(employeeId),
-				getEmployeeAdjustmentSummary(employeeId, currentYear),
+				getEmployeeAdjustmentSummary(employeeId, year),
 			]);
 			if (cancelled) return;
 
+			setBalanceView(balanceResult.data);
 			if (empResult.success && empResult.data) {
 				setEmployee(empResult.data as EmployeeAllowanceView);
 				const allowance = empResult.data.vacationAllowances[0];
@@ -271,10 +286,11 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		return () => {
 			cancelled = true;
 		};
-	}, [employeeId, currentYear, form]);
+	}, [employeeId, form]);
 
 	return {
 		adjustmentSummary,
+		balanceView,
 		currentAssignment,
 		currentYear,
 		employee,
@@ -304,6 +320,7 @@ export function EmployeeAllowanceEditPageClient({
 	const carryoverDaysId = useId();
 	const {
 		adjustmentSummary,
+		balanceView,
 		currentAssignment,
 		currentYear,
 		employee,
@@ -327,7 +344,7 @@ export function EmployeeAllowanceEditPageClient({
 		);
 	}
 
-	if (!employee) {
+	if (!employee || currentYear === null) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
 				<div className="flex items-center justify-center p-8">
@@ -342,18 +359,31 @@ export function EmployeeAllowanceEditPageClient({
 	const customDays = allowance?.customAnnualDays
 		? parseFloat(allowance.customAnnualDays)
 		: null;
-	const annualDays = customDays !== null ? customDays : parseFloat(defaultDays);
+	// The server-side balance (#1111): the same numbers as the employee's Absences page. Without a
+	// company default policy for the year there is none, and the stored values are shown as-is.
+	const balance = balanceView?.balance ?? null;
+	const proratedAllowance = balance?.allowance;
+	const fullAnnualDays =
+		proratedAllowance?.fullAllowance ??
+		(customDays !== null ? customDays : parseFloat(defaultDays));
+	// The prorated allowance in a year the employee joins or leaves (#1110).
+	const annualDays = proratedAllowance?.allowance ?? fullAnnualDays;
 	// A monthly or biweekly policy grants its allowance only through accrual (#1106).
-	const accrualPolicy = Boolean(
-		orgPolicy?.accrualType && orgPolicy.accrualType !== "annual",
-	);
+	const accrualPolicy = balanceView
+		? balanceView.accrualPolicy
+		: Boolean(orgPolicy?.accrualType && orgPolicy.accrualType !== "annual");
 	const startingDays = accrualPolicy ? 0 : annualDays;
-	const carryover = allowance?.customCarryoverDays
-		? parseFloat(allowance.customCarryoverDays)
-		: 0;
+	const carryover = balance
+		? (balance.carryoverDays ?? 0)
+		: allowance?.customCarryoverDays
+			? parseFloat(allowance.customCarryoverDays)
+			: 0;
 	const adjustments = adjustmentSummary.manual;
 	const accrued = adjustmentSummary.accrual;
-	const total = startingDays + carryover + adjustments + accrued;
+	const total =
+		balance?.totalDays ?? startingDays + carryover + adjustments + accrued;
+	// The vacation balance: what is left after approved and pending vacation.
+	const available = balance?.remainingDays ?? total;
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
@@ -391,19 +421,32 @@ export function EmployeeAllowanceEditPageClient({
 							{t(
 								"settings.vacation.employees.detail.currentBalance",
 								"Current balance: {total} days available",
-								{ total },
+								{ total: available },
 							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<AllowanceBalanceSummary
 							annualDays={annualDays}
+							fullAnnualDays={fullAnnualDays}
 							accrualPolicy={accrualPolicy}
 							accrued={accrued}
 							carryover={carryover}
 							adjustments={adjustments}
 							total={total}
 						/>
+						{(proratedAllowance ||
+							(balance && balance.overdrawnDays > 0)) && (
+							<div className="-mt-4 mb-6 flex flex-wrap items-center gap-2">
+								<VacationAllowanceExplanation
+									allowance={proratedAllowance}
+									year={currentYear}
+								/>
+								<OverdrawnVacationBadge
+									overdrawnDays={balance?.overdrawnDays ?? 0}
+								/>
+							</div>
+						)}
 
 						<ManualAdjustmentHistory
 							adjustments={adjustmentSummary.manualAdjustments}
@@ -669,13 +712,17 @@ function EmployeeInformationCard({
 
 function AllowanceBalanceSummary({
 	annualDays,
+	fullAnnualDays,
 	accrualPolicy,
 	accrued,
 	carryover,
 	adjustments,
 	total,
 }: {
+	/** The vacation allowance of the year, prorated in a start or exit year (#1110). */
 	annualDays: number;
+	/** The custom or policy allowance for a full year. */
+	fullAnnualDays: number;
 	/** A monthly or biweekly policy: the balance starts at 0 and grows by accrual (#1106). */
 	accrualPolicy: boolean;
 	/** The accrual adjustments so far this year. */
@@ -716,7 +763,7 @@ function AllowanceBalanceSummary({
 							{t(
 								"settings.vacation.employees.detail.accruedOfAnnualDays",
 								"of {days} days per year",
-								{ days: annualDays },
+								{ days: fullAnnualDays },
 							)}
 						</div>
 					)}

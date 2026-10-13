@@ -1,4 +1,8 @@
 import { IconEdit, IconUser } from "@tabler/icons-react";
+import {
+	OverdrawnVacationBadge,
+	VacationAllowanceExplanation,
+} from "@/components/absences/vacation-allowance-explanation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +21,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
+import type { VacationBalance } from "@/lib/absences/types";
 import { Link } from "@/navigation";
 import type { getTranslate } from "@/tolgee/server";
 
@@ -25,7 +30,6 @@ type Translate = Awaited<ReturnType<typeof getTranslate>>;
 interface EmployeeAllowance {
 	customAnnualDays: string | null;
 	customCarryoverDays: string | null;
-	adjustmentDays: string | null;
 }
 
 interface EmployeeManager {
@@ -48,6 +52,10 @@ interface EmployeeWithAllowance {
 	team: { name: string } | null;
 	vacationAllowances: EmployeeAllowance[];
 	managers?: EmployeeManager[];
+	/** The server-side balance of the year (#1111); null without a company default policy. */
+	vacationBalance: VacationBalance | null;
+	/** The year's manual and accrual adjustments. */
+	vacationAdjustmentDays: number;
 }
 
 interface EmployeePolicyAssignment {
@@ -164,6 +172,7 @@ function EmployeeAllowancesCard({
 					<EmployeeAllowancesEmptyState t={t} />
 				) : (
 					<EmployeeAllowancesTable
+						currentYear={currentYear}
 						defaultDays={defaultDays}
 						employees={employees}
 						employeePolicyMap={employeePolicyMap}
@@ -193,6 +202,7 @@ function EmployeeAllowancesEmptyState({ t }: { t: Translate }) {
 }
 
 interface EmployeeAllowancesTableProps {
+	currentYear: number;
 	defaultDays: string;
 	employees: EmployeeWithAllowance[];
 	employeePolicyMap: Map<string, EmployeePolicyAssignment>;
@@ -200,6 +210,7 @@ interface EmployeeAllowancesTableProps {
 }
 
 function EmployeeAllowancesTable({
+	currentYear,
 	defaultDays,
 	employees,
 	employeePolicyMap,
@@ -218,6 +229,11 @@ function EmployeeAllowancesTable({
 		[
 			"settings.vacation.employees.table.customDays",
 			"Custom Days",
+			"text-right",
+		],
+		[
+			"settings.vacation.employees.table.allowance",
+			"Allowance",
 			"text-right",
 		],
 		["settings.vacation.employees.table.carryover", "Carryover", "text-right"],
@@ -250,6 +266,7 @@ function EmployeeAllowancesTable({
 					{employees.map((employee) => (
 						<EmployeeAllowanceRow
 							key={employee.id}
+							currentYear={currentYear}
 							defaultDays={defaultDays}
 							employee={employee}
 							policyAssignment={employeePolicyMap.get(employee.id)}
@@ -263,6 +280,7 @@ function EmployeeAllowancesTable({
 }
 
 interface EmployeeAllowanceRowProps {
+	currentYear: number;
 	defaultDays: string;
 	employee: EmployeeWithAllowance;
 	policyAssignment?: EmployeePolicyAssignment;
@@ -270,6 +288,7 @@ interface EmployeeAllowanceRowProps {
 }
 
 function EmployeeAllowanceRow({
+	currentYear,
 	defaultDays,
 	employee,
 	policyAssignment,
@@ -279,14 +298,19 @@ function EmployeeAllowanceRow({
 	const customDays = allowance?.customAnnualDays
 		? Number.parseFloat(allowance.customAnnualDays)
 		: null;
-	const annualDays = customDays ?? Number.parseFloat(defaultDays);
-	const carryover = allowance?.customCarryoverDays
-		? Number.parseFloat(allowance.customCarryoverDays)
-		: 0;
-	const adjustments = allowance?.adjustmentDays
-		? Number.parseFloat(allowance.adjustmentDays)
-		: 0;
-	const total = annualDays + carryover + adjustments;
+	// The server-side balance (#1111): the same numbers as the employee's Absences page.
+	const balance = employee.vacationBalance;
+	const annualDays =
+		balance?.allowance?.allowance ??
+		customDays ??
+		Number.parseFloat(defaultDays);
+	const carryover = balance
+		? (balance.carryoverDays ?? 0)
+		: allowance?.customCarryoverDays
+			? Number.parseFloat(allowance.customCarryoverDays)
+			: 0;
+	const adjustments = employee.vacationAdjustmentDays;
+	const total = balance?.totalDays ?? annualDays + carryover + adjustments;
 
 	return (
 		<TableRow>
@@ -335,6 +359,14 @@ function EmployeeAllowanceRow({
 				)}
 			</TableCell>
 			<TableCell className="text-right tabular-nums">
+				{annualDays}
+				<VacationAllowanceExplanation
+					allowance={balance?.allowance}
+					year={currentYear}
+					className="ml-auto mt-1 max-w-56 whitespace-normal text-xs"
+				/>
+			</TableCell>
+			<TableCell className="text-right tabular-nums">
 				{carryover > 0 ? (
 					<span className="text-green-600">+{carryover}</span>
 				) : (
@@ -353,6 +385,11 @@ function EmployeeAllowanceRow({
 			</TableCell>
 			<TableCell className="text-right font-semibold tabular-nums">
 				{total}
+				{balance && balance.overdrawnDays > 0 && (
+					<div className="mt-1 font-normal">
+						<OverdrawnVacationBadge overdrawnDays={balance.overdrawnDays} />
+					</div>
+				)}
 			</TableCell>
 			<TableCell className="text-right">
 				<Button variant="ghost" size="sm" asChild>
