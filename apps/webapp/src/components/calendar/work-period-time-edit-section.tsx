@@ -8,11 +8,13 @@ import { type ReactNode, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import {
+	checkWorkPeriodVehicleUseWarnings,
 	getWorkPeriodTimeEditContext,
 	updateWorkPeriodTimes,
 	type WorkPeriodTimeEditContext,
 } from "@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit";
 import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
+import { useVehicleUseWarnings } from "@/components/time-tracking/use-vehicle-use-warnings";
 import {
 	type VehicleUseDraft,
 	vehicleUseDraftOf,
@@ -45,6 +47,7 @@ import {
 	type WorkPeriodTimeEditValues,
 } from "@/lib/time-tracking/work-period-time-edit-policy";
 import { formatEventTimeRange } from "./work-period-dialog-utils";
+import { WorkPeriodMileageAction } from "./work-period-mileage-action";
 
 type TimeEditFormValues = WorkPeriodTimeEditValues & {
 	reason: string;
@@ -162,6 +165,52 @@ function vehicleLabelOf(
 	const vehicleId = use.vehicle.vehicleId;
 	const vehicle = context.vehicleUse?.vehicles.find((option) => option.id === vehicleId);
 	return vehicle ? `${vehicle.name} (${vehicle.licencePlate})` : null;
+}
+
+/**
+ * The vehicle use fields with their plausibility warnings (#1121), checked on
+ * the server over the times as edited. Warnings never block saving.
+ */
+function CheckedVehicleUseFields({
+	workPeriodId,
+	context,
+	values,
+	onChange,
+	t,
+}: {
+	workPeriodId: string;
+	context: WorkPeriodTimeEditContext;
+	values: Pick<
+		TimeEditFormValues,
+		"clockInDate" | "clockInTime" | "clockOutDate" | "clockOutTime"
+	> & { draft: VehicleUseDraft };
+	onChange: (draft: VehicleUseDraft) => void;
+	t: TFnType;
+}) {
+	const { draft, ...times } = values;
+	const entered = vehicleUseFromDraft(draft);
+	const input = entered.ok ? entered.input : null;
+	const request = input ? JSON.stringify({ input, times }) : null;
+	const warnings = useVehicleUseWarnings(request, async () => {
+		if (!input) return [];
+		const result = await checkWorkPeriodVehicleUseWarnings({
+			workPeriodId,
+			vehicleUse: input,
+			...times,
+		});
+		return result.success ? result.data.warnings : [];
+	});
+	return (
+		<VehicleUseFields
+			value={draft}
+			onChange={onChange}
+			vehicles={context.vehicleUse.vehicles}
+			lastEndKmByVehicleId={context.vehicleUse.lastEndKmByVehicleId}
+			warnings={warnings}
+			expected={context.vehicleUse.mode === "expected"}
+			t={t}
+		/>
+	);
 }
 
 function WorkPeriodTimeEditForm({
@@ -403,17 +452,25 @@ function WorkPeriodTimeEditForm({
 				)}
 			</form.Field>
 			{editsVehicleUse ? (
-				<form.Field name="vehicleUseDraft">
-					{(field) => (
-						<VehicleUseFields
-							value={field.state.value}
-							onChange={field.handleChange}
-							vehicles={context.vehicleUse.vehicles}
-							expected={vehicleUseMode === "expected"}
+				<form.Subscribe
+					selector={(state) => ({
+						draft: state.values.vehicleUseDraft,
+						clockInDate: state.values.clockInDate,
+						clockInTime: state.values.clockInTime,
+						clockOutDate: state.values.clockOutDate,
+						clockOutTime: state.values.clockOutTime,
+					})}
+				>
+					{(values) => (
+						<CheckedVehicleUseFields
+							workPeriodId={workPeriodId}
+							context={context}
+							values={values}
+							onChange={(draft) => form.setFieldValue("vehicleUseDraft", draft)}
 							t={t}
 						/>
 					)}
-				</form.Field>
+				</form.Subscribe>
 			) : recordedVehicleUse ? (
 				<VehicleUseSummary
 					use={recordedVehicleUse}
@@ -585,6 +642,16 @@ export function WorkPeriodTimeSection({
 								use={event.metadata.vehicleUse}
 								vehicleLabel={event.metadata.vehicleLabel ?? null} t={t}
 							/>
+							{/* Own-vehicle distance can become a mileage item (#1131); the server decides. */}
+							{event.metadata.vehicleUse.vehicle.kind === "own" &&
+							(event.metadata.vehicleUse.distanceKm ?? 0) > 0 &&
+							event.metadata.isRunning !== true ? (
+								<WorkPeriodMileageAction
+									workPeriodId={event.id}
+									locale={displayContext.locale}
+									t={t}
+								/>
+							) : null}
 						</div>
 					) : null}
 					{context ? <BlockedHint access={context.access} t={t} /> : null}

@@ -40,6 +40,7 @@ import {
 	type TimeCorrectionReviewMetadata,
 	timeCorrectionMetadataChanges,
 } from "../server/time-correction-review-metadata";
+import { withVehicleUseReviewWarnings } from "../server/time-correction-vehicle-use-warnings";
 import type { ApprovalDbService, CurrentApprover } from "../server/types";
 import {
 	classifyTimeApprovalRequest,
@@ -1085,6 +1086,26 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 					correctionEntries as CorrectionEntryForReview[],
 					categoryNamesById,
 				);
+				// The approver sees the plausibility warnings of requested vehicle use (#1121).
+				const pendingCorrection = review.pendingCorrection;
+				if (
+					pendingCorrection?.metadataChanges?.vehicleUse &&
+					pendingCorrection.action !== "delete"
+				) {
+					pendingCorrection.metadataChanges = yield* dbService.query(
+						"getTimeCorrectionVehicleUseWarnings",
+						() =>
+							withVehicleUseReviewWarnings(dbService.db, {
+								organizationId: period.employee.organizationId,
+								employeeId: period.employee.id,
+								workPeriodId: period.id,
+								metadata: parseTimeCorrectionReviewMetadata(request.metadata),
+								changes: pendingCorrection.metadataChanges,
+								start: pendingCorrection.clockIn?.requested ?? period.startTime,
+								end: pendingCorrection.clockOut?.requested ?? period.endTime,
+							}),
+					);
+				}
 				const periodWithReview = {
 					...period,
 					pendingChanges:

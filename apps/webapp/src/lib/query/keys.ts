@@ -557,6 +557,9 @@ export const queryKeys = {
 		/** Whether and how the current user may edit a work period's times */
 		workPeriodTimeEdit: (workPeriodId: string) =>
 			["calendar", "work-period-time-edit", workPeriodId] as const,
+		/** Whether the work's own-vehicle distance can be added to an expense report (#1131) */
+		workPeriodMileage: (workPeriodId: string) =>
+			["calendar", "work-period-mileage", workPeriodId] as const,
 	},
 
 	// Hydration / Water reminders

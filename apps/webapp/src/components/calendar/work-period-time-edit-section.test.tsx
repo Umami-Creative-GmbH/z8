@@ -9,22 +9,28 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 import type { WorkPeriodTimeEditAccess } from "@/lib/time-tracking/work-period-time-edit-policy";
 import { WorkPeriodTimeSection } from "./work-period-time-edit-section";
 
-const { getContext, updateTimes, toastError, toastSuccess } = vi.hoisted(
-	() => ({
-		getContext: vi.fn(),
-		updateTimes: vi.fn(),
-		toastError: vi.fn(),
-		toastSuccess: vi.fn(),
-	}),
-);
+const { getContext, updateTimes, checkWarnings, toastError, toastSuccess } = vi.hoisted(() => ({
+	getContext: vi.fn(),
+	updateTimes: vi.fn(),
+	checkWarnings: vi.fn(),
+	toastError: vi.fn(),
+	toastSuccess: vi.fn(),
+}));
 
 vi.mock(
 	"@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit",
 	() => ({
 		getWorkPeriodTimeEditContext: getContext,
 		updateWorkPeriodTimes: updateTimes,
+		checkWorkPeriodVehicleUseWarnings: checkWarnings,
 	}),
 );
+
+vi.mock("./work-period-mileage-action", () => ({
+	WorkPeriodMileageAction: ({ workPeriodId }: { workPeriodId: string }) => (
+		<p>{`mileage action for ${workPeriodId}`}</p>
+	),
+}));
 
 vi.mock("sonner", () => ({
 	toast: { error: toastError, success: toastSuccess },
@@ -300,6 +306,73 @@ describe("WorkPeriodTimeSection", () => {
 			);
 		});
 
+		it("shows plausibility warnings for the edited vehicle use and still saves (#1121)", async () => {
+			getContext.mockResolvedValue({
+				success: true,
+				data: {
+					access: { kind: "self_service" },
+					timezone: "Europe/Berlin",
+					values: {
+						...values,
+						vehicleUse: { vehicle: { kind: "own" }, startKm: 100, endKm: 150, distanceKm: 50 },
+					},
+					vehicleUse,
+				},
+			});
+			checkWarnings.mockResolvedValue({
+				success: true,
+				data: {
+					warnings: [
+						{ code: "speed_above_limit", averageKmh: 212.5 },
+						{ code: "distance_above_limit", distanceKm: 1_700 },
+					],
+				},
+			});
+			updateTimes.mockResolvedValue({ success: true, data: { status: "applied" } });
+			const { onTimesUpdated } = renderSection();
+			fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+			fireEvent.change(screen.getByLabelText("End reading (km)"), { target: { value: "1800" } });
+
+			const warnings = await screen.findByRole("status", { name: "Please check the vehicle use" });
+			// Numbers follow the runtime's locale.
+			expect(warnings.textContent).toMatch(
+				/The driven distance implies an average of 212[.,]5 km\/h over this work period, more than 150 km\/h\./,
+			);
+			expect(warnings.textContent).toMatch(
+				/1[.,  ]?700 km is more than 1[.,  ]?500 km in one work period\./,
+			);
+			expect(checkWarnings).toHaveBeenLastCalledWith({
+				workPeriodId: event.id,
+				vehicleUse: { vehicle: { kind: "own" }, startKm: 100, endKm: 1800, distanceKm: null },
+				clockInDate: "2026-09-01",
+				clockInTime: "09:00",
+				clockOutDate: "2026-09-01",
+				clockOutTime: "17:00",
+			});
+
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+			await waitFor(() => expect(onTimesUpdated).toHaveBeenCalledOnce());
+		});
+
+		it("pre-fills the start reading from a picked vehicle's last end reading (#1121)", async () => {
+			getContext.mockResolvedValue({
+				success: true,
+				data: {
+					access: { kind: "self_service" },
+					timezone: "Europe/Berlin",
+					values: { ...values, vehicleUse: null },
+					vehicleUse: { ...vehicleUse, lastEndKmByVehicleId: { [vanId]: 12_400 } },
+				},
+			});
+			renderSection();
+			fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+			fireEvent.click(screen.getByRole("combobox", { name: "Vehicle" }));
+			fireEvent.click(await screen.findByRole("option", { name: /Van \(B-VN 100\)/ }));
+			expect((screen.getByLabelText("Start reading (km)") as HTMLInputElement).value).toBe(
+				"12400",
+			);
+		});
+
 		it("keeps recorded vehicle use read-only while vehicle use is off", async () => {
 			getContext.mockResolvedValue({
 				success: true,
@@ -328,6 +401,38 @@ describe("WorkPeriodTimeSection", () => {
 			fireEvent.click(screen.getByRole("button", { name: "Save" }));
 			await waitFor(() => expect(updateTimes).toHaveBeenCalled());
 			expect(updateTimes.mock.calls[0]?.[0]).not.toHaveProperty("vehicleUse");
+		});
+	});
+
+	describe("mileage from own-vehicle work (#1131)", () => {
+		function renderWith(vehicleUse: unknown) {
+			mockAccess({ kind: "self_service" });
+			const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+			render(
+				<QueryClientProvider client={queryClient}>
+					<WorkPeriodTimeSection
+						event={{ ...event, metadata: { ...event.metadata, vehicleUse } }}
+						displayContext={{ locale: "en-US", timezone: "Europe/Berlin", timeFormat: "24h" }}
+						t={t}
+					/>
+				</QueryClientProvider>,
+			);
+		}
+
+		it("offers the expense report action on own-vehicle work with a driven distance", async () => {
+			renderWith({ vehicle: { kind: "own" }, startKm: null, endKm: null, distanceKm: 61 });
+			expect(await screen.findByText(`mileage action for ${event.id}`)).toBeTruthy();
+		});
+
+		it("does not offer it for an organization vehicle or without a distance", async () => {
+			renderWith({
+				vehicle: { kind: "organization", vehicleId: "6c3a8d55-0f0e-4f7d-9b51-2b7a0ef8d9a1" },
+				startKm: 1,
+				endKm: 2,
+				distanceKm: 1,
+			});
+			await waitFor(() => expect(getContext).toHaveBeenCalled());
+			expect(screen.queryByText(/mileage action/)).toBeNull();
 		});
 	});
 

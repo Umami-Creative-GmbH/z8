@@ -66,6 +66,8 @@ import { getEditCapabilityForPeriod } from "./policy-helpers";
 import { logger } from "./shared";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
+import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
+import { checkWorkVehicleUsePlausibility } from "@/lib/time-tracking/vehicle-use/plausibility-check";
 import {
 	buildWorkVehicleUse,
 	organizationVehicleIdOf,
@@ -336,6 +338,9 @@ async function loadTimeEditTarget(
 		organizationId,
 		employeeId: period.employeeId,
 		recordedVehicleIds: recordedVehicleId ? [recordedVehicleId] : [],
+		// A picked vehicle's start reading pre-fills from its last end reading before this work (#1121).
+		readingsBefore: instantFromDate(period.startTime),
+		excludeWorkPeriodId: period.id,
 	});
 
 	return {
@@ -378,6 +383,51 @@ export async function getWorkPeriodTimeEditContext(
 		return loaded;
 	}
 	return { success: true, data: loaded.target.context };
+}
+
+const checkWorkPeriodVehicleUseSchema = z.object({
+	workPeriodId: z.uuid(),
+	vehicleUse: workVehicleUseInputSchema,
+	clockInDate: z.iso.date(),
+	clockInTime: z.string().regex(/^\d{2}:\d{2}$/),
+	clockOutDate: z.iso.date(),
+	clockOutTime: z.string().regex(/^\d{2}:\d{2}$/),
+});
+
+/**
+ * Plausibility warnings (#1121) for vehicle use as the edit dialog shows it, over
+ * the times as edited (interpreted in the owner's timezone). Warnings never
+ * block saving; an invalid entry or times give no warnings.
+ */
+export async function checkWorkPeriodVehicleUseWarnings(
+	input: z.input<typeof checkWorkPeriodVehicleUseSchema>,
+): Promise<ServerActionResult<{ warnings: VehicleUseWarning[] }>> {
+	const parsed = checkWorkPeriodVehicleUseSchema.safeParse(input);
+	if (!parsed.success) return { success: false, error: "Invalid input" };
+	const loaded = await loadTimeEditTarget(parsed.data.workPeriodId);
+	if (!loaded.success) return loaded;
+	const { period, organizationId, context } = loaded.target;
+	const built = buildWorkVehicleUse(parsed.data.vehicleUse);
+	if (!built.ok || context.vehicleUse.mode === "off") {
+		return { success: true, data: { warnings: [] } };
+	}
+	let start: Date;
+	let end: Date;
+	try {
+		start = parseWallClock(parsed.data.clockInDate, parsed.data.clockInTime, context.timezone);
+		end = parseWallClock(parsed.data.clockOutDate, parsed.data.clockOutTime, context.timezone);
+	} catch {
+		return { success: true, data: { warnings: [] } };
+	}
+	const warnings = await checkWorkVehicleUsePlausibility(db, {
+		organizationId,
+		employeeId: period.employeeId,
+		use: built.use,
+		start: instantFromDate(start),
+		end: instantFromDate(end),
+		excludeWorkPeriodId: period.id,
+	});
+	return { success: true, data: { warnings } };
 }
 
 function parseWallClock(date: string, time: string, timezone: string): Date {

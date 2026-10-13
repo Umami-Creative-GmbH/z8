@@ -2,6 +2,12 @@ import "server-only";
 
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { organizationVehicle } from "@/db/schema";
+import type { Instant } from "@/lib/datetime/temporal-core";
+import {
+	listAssignedVehicleIds,
+	readLastRecordedEndReadings,
+	type VehicleUseFactsReader,
+} from "./plausibility-check";
 import { resolveVehicleUseMode } from "./resolver";
 import type { VehicleUseClient } from "./store";
 import type { WorkVehicleOption, WorkVehicleUseFormContext } from "./work-vehicle-use";
@@ -48,25 +54,71 @@ export async function listWorkVehicleOptions(
 	}));
 }
 
+/** The vehicles with the suggested ones first, in their suggested order. */
+function suggestedFirst(
+	vehicles: WorkVehicleOption[],
+	suggestedVehicleIds: readonly string[],
+): WorkVehicleOption[] {
+	const rank = new Map(suggestedVehicleIds.map((id, index) => [id, index]));
+	return vehicles
+		.map((vehicle, index) => ({ vehicle, index }))
+		.sort(
+			(left, right) =>
+				(rank.get(left.vehicle.id) ?? suggestedVehicleIds.length + left.index) -
+				(rank.get(right.vehicle.id) ?? suggestedVehicleIds.length + right.index),
+		)
+		.map(({ vehicle }) => vehicle);
+}
+
 /**
- * Whether one employee's work asks for vehicle use, and the vehicles to pick
- * from or to name recorded vehicle use with.
+ * Whether one employee's work asks for vehicle use, the vehicles to pick from or
+ * to name recorded vehicle use with, and what pre-fills a new entry (#1121): the
+ * employee's assigned vehicles and each vehicle's last recorded end reading.
+ *
+ * `readingsBefore` reads the last end readings of work that ended by then (the
+ * start of the work being edited); `excludeWorkPeriodId` leaves that work out.
  */
 export async function loadWorkVehicleUseFormContext(
-	reader: VehicleUseClient,
-	input: { organizationId: string; employeeId: string; recordedVehicleIds?: readonly string[] },
+	reader: VehicleUseClient & VehicleUseFactsReader,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		recordedVehicleIds?: readonly string[];
+		readingsBefore?: Instant;
+		excludeWorkPeriodId?: string;
+	},
 ): Promise<WorkVehicleUseFormContext> {
 	const mode = await resolveVehicleUseMode(reader, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 	});
 	const recorded = input.recordedVehicleIds ?? [];
+	const empty = { suggestedVehicleIds: [], lastEndKmByVehicleId: {} };
 	// With vehicle use off, only recorded vehicles need names (read-only display).
-	if (mode === "off" && recorded.length === 0) return { mode, vehicles: [] };
+	if (mode === "off") {
+		if (recorded.length === 0) return { mode, vehicles: [], ...empty };
+		const vehicles = await listWorkVehicleOptions(reader, input.organizationId, recorded);
+		return {
+			mode,
+			vehicles: vehicles.filter((vehicle) => recorded.includes(vehicle.id)),
+			...empty,
+		};
+	}
+	// Sequential: the reader may be a transaction, which runs one query at a time.
 	const vehicles = await listWorkVehicleOptions(reader, input.organizationId, recorded);
+	const suggestedVehicleIds = await listAssignedVehicleIds(reader, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+	});
+	const readings = await readLastRecordedEndReadings(reader, {
+		organizationId: input.organizationId,
+		...(input.readingsBefore ? { before: input.readingsBefore } : {}),
+		...(input.excludeWorkPeriodId ? { excludeWorkPeriodId: input.excludeWorkPeriodId } : {}),
+	});
 	return {
 		mode,
-		vehicles:
-			mode === "off" ? vehicles.filter((vehicle) => recorded.includes(vehicle.id)) : vehicles,
+		vehicles: suggestedFirst(vehicles, suggestedVehicleIds),
+		suggestedVehicleIds,
+		lastEndKmByVehicleId: Object.fromEntries(readings),
 	};
 }
