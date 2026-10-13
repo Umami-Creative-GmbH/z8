@@ -18,12 +18,9 @@ import {
 import { calculateVacationBalance } from "./vacation-calculator";
 import { loadCompanyDefaultVacationPolicy, type VacationPolicy } from "./vacation-policy-store";
 
-/** A vacation policy (`vacation_allowance` row). */
-export type VacationBalancePolicy = VacationPolicy;
-
 export interface VacationBalances {
 	/** The organization's company default policy for the year; undefined when there is none. */
-	policy: VacationBalancePolicy | undefined;
+	policy: VacationPolicy | undefined;
 	/** Each employee's balance; empty without a policy. Only employees of the organization. */
 	balances: Map<string, VacationBalance>;
 	/** Each balance's adjustments by kind (#1105, #1106); same keys as `balances`. */

@@ -154,15 +154,13 @@ describe("prorated allowance in every balance reader (#1110)", () => {
 			policy,
 		});
 
-		expect(Object.fromEntries([...allowances].map(([id, value]) => [id, value.allowance]))).toEqual(
-			{
-				[joinerId]: 8,
-				// 11 employment months: 27.5 → 28, even though the last working day is still ahead.
-				[leaverId]: 28,
-				[customJoinerId]: 25,
-				[fixture.employeeId]: 30,
-			},
-		);
+		expect(Object.fromEntries([...allowances].map(([id, value]) => [id, value.days]))).toEqual({
+			[joinerId]: 8,
+			// 11 employment months: 27.5 → 28, even though the last working day is still ahead.
+			[leaverId]: 28,
+			[customJoinerId]: 25,
+			[fixture.employeeId]: 30,
+		});
 		expect(allowances.get(joinerId)?.reason).toEqual({
 			kind: "prorated",
 			employments: [

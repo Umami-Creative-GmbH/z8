@@ -44,7 +44,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 const { getVacationBalance } = await import("@/app/[locale]/(app)/absences/queries");
-const { getEmployeesWithAllowances } = await import(
+const { getEmployeesWithAllowances, getEmployeeVacationBalance } = await import(
 	"@/app/[locale]/(app)/settings/vacation/actions"
 );
 const { getManagerAbsenceEmployees } = await import("@/app/[locale]/(app)/team/absences/actions");
@@ -149,6 +149,13 @@ describe("one vacation policy per year for every balance reader", () => {
 		expect(
 			adminList.data.find((employee) => employee.id === fixture.employeeId)?.vacationBalance,
 		).toEqual(absencesPage);
+
+		// The employee's admin page shows the organization's current year.
+		const adminPage = await getEmployeeVacationBalance(fixture.employeeId);
+		if (!adminPage.success) throw new Error(adminPage.error);
+		expect(adminPage.data.balance).toEqual(
+			await getVacationBalance(fixture.employeeId, adminPage.data.year, "UTC"),
+		);
 	});
 
 	it("prorates a joiner from the same policy on every page and in the notice", async () => {

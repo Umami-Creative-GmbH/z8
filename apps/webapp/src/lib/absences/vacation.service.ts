@@ -29,8 +29,9 @@ import {
 	type VacationAdjustmentSums,
 	vacationAdjustmentTotal,
 } from "./vacation-adjustments";
-import { loadVacationBalances, type VacationBalancePolicy } from "./vacation-balance-store";
+import { loadVacationBalances } from "./vacation-balance-store";
 import { startingAllowanceDays } from "./vacation-calculator";
+import type { VacationPolicy } from "./vacation-policy-store";
 
 const logger = createLogger("vacation-service");
 
@@ -118,7 +119,7 @@ export async function getEnhancedVacationBalance(input: {
 
 function enhanceVacationBalance(input: {
 	balance: VacationBalance;
-	policy: VacationBalancePolicy;
+	policy: VacationPolicy;
 	adjustments: VacationAdjustmentSums | undefined;
 	currentDate: Date;
 	timezone: string;
