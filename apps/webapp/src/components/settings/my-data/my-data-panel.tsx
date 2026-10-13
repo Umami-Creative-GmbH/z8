@@ -19,7 +19,8 @@ import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function formatFileSize(bytes: number, locale: string): string {
+/** A file size in B, KB, MB or GB, in `locale`. Shared with the employee page's admin exports. */
+export function formatFileSize(bytes: number, locale: string): string {
 	const units = ["B", "KB", "MB", "GB"] as const;
 	let value = bytes;
 	let unit = 0;

@@ -23,6 +23,8 @@ type NotificationMetadata = {
 	dateRangeDays?: { startDate: string; endDate: string };
 	/** The plain day the `untilDate` param stands for, in the reader's locale (#1013). */
 	untilDay?: string;
+	/** The plain day the `onDate` param stands for, in the reader's locale (#1166). */
+	onDay?: string;
 	/** A closed month (`YYYY-MM`) the `month` param stands for, in the reader's locale (#762). */
 	closedMonth?: string;
 	i18n?: {
@@ -121,6 +123,9 @@ function localizedParams(
 		}
 		if (untilDay) {
 			localized.untilDate = formatPlainDate(parsePlainDate(untilDay), locale, "dateMedium");
+		}
+		if (metadata.onDay) {
+			localized.onDate = formatPlainDate(parsePlainDate(metadata.onDay), locale, "dateMedium");
 		}
 		if (metadata.closedMonth) {
 			localized.month = formatClosedMonthLabel(metadata.closedMonth, locale);

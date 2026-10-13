@@ -417,7 +417,11 @@ describe("personal data export pipeline (#1165)", () => {
 			"hourly_rate,currency,effective_from,effective_to,reason,created_at,created_by",
 		);
 		const manifest = JSON.parse(files["_manifest.json"] as string);
-		expect(manifest).toMatchObject({ exportId, kind: "employee", categories: ["employment"] });
+		expect(manifest).toMatchObject({
+			exportId,
+			kind: "employee",
+			categories: ["employment", "account"],
+		});
 		expect(files["README.txt"]).toContain("Your personal data from Acme GmbH");
 		expect(files["README.txt"]).toContain("employment.json");
 	});

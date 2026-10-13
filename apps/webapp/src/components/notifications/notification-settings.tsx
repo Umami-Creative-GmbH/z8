@@ -165,6 +165,7 @@ const NOTIFICATION_CATEGORIES = [
 			"two_factor_enabled",
 			"two_factor_disabled",
 			"personal_data_export_ready",
+			"personal_data_export_admin_exported",
 		] as NotificationType[],
 	},
 	{
@@ -296,6 +297,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, str
 	scheduled_export_paused: "Scheduled export paused (owners and admins)",
 	// The requester's personal data export is ready on My data (#811)
 	personal_data_export_ready: "Personal data export ready",
+	// An org admin exported the employee's personal data (#1166)
+	personal_data_export_admin_exported: "Personal data exported by an administrator",
 };
 
 // Channel icons and labels

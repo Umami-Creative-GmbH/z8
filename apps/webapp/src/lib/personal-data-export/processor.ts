@@ -12,7 +12,15 @@ import type { db as appDb } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { isReservedEmail } from "@/lib/auth/reserved-email";
+import {
+	type Instant,
+	type PlainDate,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { resolveEmployeeOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
@@ -23,6 +31,7 @@ import {
 	deletePrivateObjectVersions,
 	uploadPrivateObject,
 } from "@/lib/storage/export-s3-client";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { createInMemoryZipWriter, writePersonalDataArchive } from "./archive";
 import type {
 	CollectedCategory,
@@ -142,6 +151,9 @@ export async function processPersonalDataExport(
 			employeeName: subject.employeeName,
 			exportedAt,
 			categories: categories.map((category) => category.category),
+			csvCategories: categories
+				.filter((category) => category.parts.some((part) => part.kind === "table"))
+				.map((category) => category.category),
 		});
 		const zip = await writePersonalDataArchive(createInMemoryZipWriter(), {
 			exportId: claimed.id,
@@ -184,6 +196,9 @@ export async function processPersonalDataExport(
 			"Personal data export completed",
 		);
 		await notifyRequester(deps, claimed, subject.employeeName);
+		if (claimed.kind === "admin") {
+			await notifySubjectOfAdminExport(database, deps, claimed, subject, locale);
+		}
 		return { status: "completed" };
 	} catch (error) {
 		const errorCode = error instanceof PersonalDataExportBuildError ? error.code : "unexpected";
@@ -211,6 +226,7 @@ async function loadSubject(database: Database, claimed: ClaimedPersonalDataExpor
 			lastName: user.lastName,
 			email: user.email,
 			organizationName: organization.name,
+			organizationTimezone: organization.timezone,
 		})
 		.from(employee)
 		.innerJoin(user, eq(user.id, employee.userId))
@@ -222,10 +238,14 @@ async function loadSubject(database: Database, claimed: ClaimedPersonalDataExpor
 	if (!row) throw new PersonalDataExportBuildError("employee_not_found");
 	return {
 		userId: row.userId,
+		email: row.email,
 		employeeName: buildAuthUserDisplayName(row),
 		organizationName: row.organizationName,
+		organizationTimezone: resolveOrganizationTimezone(row.organizationTimezone).timezone,
 	};
 }
+
+type ExportSubject = Awaited<ReturnType<typeof loadSubject>>;
 
 async function removeStored(
 	deps: PersonalDataExportProcessorDeps,
@@ -308,6 +328,87 @@ async function notifyRequester(
 		logger.warn(
 			{ exportId: claimed.id, error },
 			"Could not notify the personal data export requester",
+		);
+	}
+}
+
+const adminExportedCopy = {
+	titleKey: "common:notifications.content.personalDataExportAdminExported.title",
+	titleDefault: "Your personal data was exported",
+	messageKey: "common:notifications.content.personalDataExportAdminExported.message",
+	messageDefault: "An administrator exported your personal data on {onDate}.",
+} as const;
+
+/**
+ * The employee's notice that an org admin exported their personal data (in-app
+ * and email). `day` is the completion day in the organization's zone; the
+ * email shows it in `locale`, the in-app list in the reader's locale.
+ */
+export function buildPersonalDataExportAdminExportedNotification(input: {
+	exportId: string;
+	organizationId: string;
+	recipientUserId: string;
+	day: PlainDate;
+	locale: string;
+}): CreateNotificationParams {
+	const englishDate = formatPlainDate(input.day, "en", "dateMedium");
+	return {
+		userId: input.recipientUserId,
+		organizationId: input.organizationId,
+		type: "personal_data_export_admin_exported",
+		title: adminExportedCopy.titleDefault,
+		message: `An administrator exported your personal data on ${englishDate}.`,
+		entityType: "personal_data_export",
+		entityId: input.exportId,
+		// Where the employee can request their own copy; never the admin's file.
+		actionUrl: MY_DATA_PATH,
+		idempotencyKey: `personal-data-export-admin-exported:${input.exportId}`,
+		metadata: {
+			exportId: input.exportId,
+			onDay: input.day.toString(),
+			i18n: {
+				...adminExportedCopy,
+				params: { onDate: formatPlainDate(input.day, input.locale, "dateMedium") },
+			},
+		},
+	};
+}
+
+/**
+ * Tells a **current** employee that an admin export of their data completed.
+ * Former employees get nothing, and neither do kiosk-only employees: they
+ * cannot sign in, and their notices would be forwarded to their managers.
+ */
+async function notifySubjectOfAdminExport(
+	database: Database,
+	deps: PersonalDataExportProcessorDeps,
+	claimed: ClaimedPersonalDataExport,
+	subject: ExportSubject,
+	locale: string,
+): Promise<void> {
+	try {
+		if (isReservedEmail(subject.email)) return;
+		const now = deps.now();
+		const access = await resolveEmployeeOrganizationAccess(database, {
+			userId: subject.userId,
+			organizationId: claimed.organizationId,
+			now,
+		});
+		if (!access.allowed || access.employeeId !== claimed.employeeId) return;
+		await deps.notify(
+			buildPersonalDataExportAdminExportedNotification({
+				exportId: claimed.id,
+				organizationId: claimed.organizationId,
+				recipientUserId: subject.userId,
+				day: plainDateAt(now, subject.organizationTimezone),
+				locale,
+			}),
+		);
+	} catch (error) {
+		// The export is complete; a lost notice must not fail it.
+		logger.warn(
+			{ exportId: claimed.id, error },
+			"Could not tell the employee about the admin export of their data",
 		);
 	}
 }

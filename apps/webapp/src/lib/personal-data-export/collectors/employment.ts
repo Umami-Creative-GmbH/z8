@@ -12,8 +12,9 @@
  * the organization only, with names only: never another team's data.
  *
  * Withheld from the employee export: custom field values above employee
- * visibility. (Billable and cost rates and departure tasks and reviews are
- * admin-export-only parts.)
+ * visibility, filtered here by kind, and billable and cost rates and departure
+ * tasks and reviews, which are admin-export-only parts
+ * (`employment-withheld.ts`).
  */
 
 import { and, asc, eq, inArray, or, type SQL } from "drizzle-orm";
@@ -74,6 +75,7 @@ import {
 	tablePart,
 } from "../collector";
 import { instantText, loadEmployeeNames, loadUserNames, nameOf, plainDateText } from "../values";
+import { collectWithheldEmploymentParts } from "./employment-withheld";
 
 /** The subject employee's own profile columns (the `employee` row of this organization). */
 const person = employee;
@@ -622,6 +624,10 @@ async function collectEmployment(
 		updated_at: instantText(subject.updatedAt),
 	};
 
+	// Withheld data: in the admin export only.
+	const withheldParts =
+		scope.kind === "admin" ? await collectWithheldEmploymentParts(database, scope) : [];
+
 	return {
 		category: "employment",
 		parts: [
@@ -929,6 +935,7 @@ async function collectEmployment(
 					updated_by: byUser(row.updatedBy),
 				})),
 			),
+			...withheldParts,
 		],
 	};
 }

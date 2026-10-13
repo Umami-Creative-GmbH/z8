@@ -30,4 +30,19 @@ describe("renderPersonalDataExportReadme", () => {
 		expect(readme).toContain("An administrator of Acme GmbH created this export on your behalf.");
 		expect(readme).not.toContain("You requested this export yourself.");
 	});
+
+	it("describes an admin export's account data as name and email only, without a CSV folder", () => {
+		const readme = renderPersonalDataExportReadme({
+			...base,
+			kind: "admin",
+			categories: ["employment", "account"],
+			csvCategories: ["employment"],
+		});
+
+		expect(readme).toContain("account.json");
+		expect(readme).toContain("The name and email address of your user account.");
+		expect(readme).not.toContain("sessions, sign-in methods");
+		expect(readme).toContain("The folder employment/ holds the same tables as CSV files.");
+		expect(readme).not.toContain("The folder account/");
+	});
 });

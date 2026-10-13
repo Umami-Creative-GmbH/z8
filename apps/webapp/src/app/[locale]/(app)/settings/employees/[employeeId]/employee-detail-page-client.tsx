@@ -15,6 +15,7 @@ import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-lo
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
+import { EmployeePersonalDataExportCard } from "@/components/settings/personal-data-export/employee-personal-data-export-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
@@ -239,6 +240,7 @@ export function EmployeeDetailPageClient({
 					employee={employee}
 					employeeId={employeeId}
 					accessTier={accessTier}
+					currentUserId={currentUserId}
 					highlightedReviewId={highlightedReviewId}
 					data={employeeData}
 				/>
@@ -288,12 +290,14 @@ function EmployeeRecordSections({
 	employee,
 	employeeId,
 	accessTier,
+	currentUserId,
 	highlightedReviewId,
 	data,
 }: {
 	employee: EmployeeDetail;
 	employeeId: string;
 	accessTier: SettingsAccessTier;
+	currentUserId: string;
 	highlightedReviewId: string | null;
 	data: ReturnType<typeof useEmployee>;
 }) {
@@ -359,6 +363,15 @@ function EmployeeRecordSections({
 						name: buildAuthUserDisplayName(manager.user) || manager.id,
 					}))}
 					workPolicies={workPolicies.map((policy) => ({ id: policy.id, name: policy.name }))}
+				/>
+			)}
+
+			{/* Admin export (#1166): org admins only, never for their own record. */}
+			{isOrgAdmin && employee.kind === "employee" && (
+				<EmployeePersonalDataExportCard
+					organizationId={employee.organizationId}
+					employeeId={employeeId}
+					isOwnRecord={employee.userId === currentUserId}
 				/>
 			)}
 
