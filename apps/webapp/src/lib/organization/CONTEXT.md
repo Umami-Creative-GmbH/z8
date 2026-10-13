@@ -1,6 +1,6 @@
 # Organization
 
-An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. Projects themselves belong to the Projects context.
+An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. It also hands an employee their personal data on request. Projects themselves belong to the Projects context.
 
 ## Language
 
@@ -49,6 +49,24 @@ _Avoid_: contract record, employment record, employment history row
 **Hourly wage**:
 What an employee on an hourly contract is paid per hour worked. It is part of their employment terms, so the wage in force on a day is the one in the confirmed terms for that day. Changing it means confirming new terms.
 _Avoid_: hourly rate, rate, salary, pay rate
+
+### Personal data
+
+**Personal data export**:
+A file holding one employee's personal data kept by one organization, in a form they can read and reuse elsewhere. The employee requests it for themselves, or an org admin requests it on their behalf. An employee of several organizations gets a separate one from each.
+_Avoid_: GDPR export, DSAR, self-export, data export (that is the organization-wide export)
+
+**Employee export**:
+A personal data export the employee requests for themselves. It leaves out withheld data.
+_Avoid_: self-service export, own export
+
+**Admin export**:
+A personal data export an org admin requests on an employee's behalf, including withheld data. It is the complete answer to a request for access and the only route for a former employee.
+_Avoid_: full export, HR export
+
+**Withheld data**:
+The fixed list of personal data an employee export leaves out: HR-only documents, custom field values above employee visibility, billable and cost rates, internal notes on travel expenses, and departure tasks and reviews.
+_Avoid_: hidden data, private data, restricted data
 
 ### Vehicles
 
