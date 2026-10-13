@@ -14,7 +14,9 @@ export type WorkVehicleUseChangeRefusalCode =
 	/** An archived vehicle stays on recorded work but cannot be newly picked. */
 	| "vehicle_archived"
 	/** A split's reading lies outside the readings, or its first-half km above the distance (#1126). */
-	| "split_value_out_of_range";
+	| "split_value_out_of_range"
+	/** The work period's distance is on an expense item: it can't be split until the item is removed (#807 decision 6). */
+	| "work_period_distance_claimed";
 
 const CODES: readonly WorkVehicleUseChangeRefusalCode[] = [
 	"end_before_start",
@@ -25,6 +27,7 @@ const CODES: readonly WorkVehicleUseChangeRefusalCode[] = [
 	"vehicle_not_found",
 	"vehicle_archived",
 	"split_value_out_of_range",
+	"work_period_distance_claimed",
 ];
 
 export function isWorkVehicleUseRefusalCode(

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { organizationVehicle } from "@/db/schema";
+import { organizationVehicle, travelExpenseReportItem } from "@/db/schema";
 import { ValidationError } from "@/lib/effect/errors";
 import type { WorkTransactionClient } from "../work-transaction";
 import { resolveVehicleUseMode } from "./resolver";
@@ -25,6 +25,8 @@ const MESSAGES: Record<WorkVehicleUseChangeRefusalCode, string> = {
 	vehicle_not_found: "The vehicle was not found",
 	vehicle_archived: "The vehicle is archived and can no longer be picked",
 	split_value_out_of_range: "The kilometres at the split must lie within the work's kilometres",
+	work_period_distance_claimed:
+		"The work's distance is on an expense item; remove the item before splitting the work",
 };
 
 export function workVehicleUseRefusal(code: WorkVehicleUseChangeRefusalCode): ValidationError {
@@ -82,19 +84,34 @@ export async function assertWorkVehicleUseChangeAllowed(
 }
 
 /**
- * The vehicle use of both halves of a split (#1126). The vehicle always carries
- * over, also while vehicle use is off; a value at the split changes kilometres,
- * so it needs vehicle use asked or expected for the employee.
+ * The vehicle use of both halves of a user's split (#1126). The vehicle always
+ * carries over, also while vehicle use is off; a value at the split changes
+ * kilometres, so it needs vehicle use asked or expected for the employee. Work
+ * whose distance is on an expense item is refused (`work_period_distance_claimed`,
+ * #807 decision 6): a work period's distance is claimed at most once, so it can't
+ * be divided until the item is removed.
  */
 export async function resolveWorkVehicleUseSplit(
 	tx: Client,
 	input: {
 		organizationId: string;
 		employeeId: string;
+		workPeriodId: string;
 		use: WorkVehicleUse | null;
 		value: number | null | undefined;
 	},
 ): Promise<{ retained: WorkVehicleUse | null; generated: WorkVehicleUse | null }> {
+	const [claim] = await tx
+		.select({ id: travelExpenseReportItem.id })
+		.from(travelExpenseReportItem)
+		.where(
+			and(
+				eq(travelExpenseReportItem.organizationId, input.organizationId),
+				eq(travelExpenseReportItem.sourceWorkPeriodId, input.workPeriodId),
+			),
+		)
+		.limit(1);
+	if (claim) throw workVehicleUseRefusal("work_period_distance_claimed");
 	if (input.value !== null && input.value !== undefined && input.use) {
 		const mode = await resolveVehicleUseMode(
 			tx as Parameters<typeof resolveVehicleUseMode>[0],

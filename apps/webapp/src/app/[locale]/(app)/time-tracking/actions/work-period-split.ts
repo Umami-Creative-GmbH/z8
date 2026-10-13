@@ -367,6 +367,7 @@ async function splitLegacyWorkPeriod(
 	const vehicleSplit = await resolveWorkVehicleUseSplit(tx, {
 		organizationId,
 		employeeId,
+		workPeriodId: locked.id,
 		use: vehicleUseFromColumns(locked),
 		value: input.vehicleSplitKm,
 	});

@@ -66,6 +66,8 @@ vi.mock("./shared", async (importOriginal) => {
 const { clockIn, clockOut } = await import("./clocking");
 const { splitWorkPeriod: splitFromCalendarActions } = await import("../actions");
 const { splitWorkPeriod: splitFromMutations } = await import("./mutations");
+const { addWorkPeriodMileage } = await import("@/lib/travel-expenses/work-period-mileage");
+const { db } = await import("@/db");
 
 const ids = {
 	organization: "t304-split-org",
@@ -942,6 +944,64 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 			expect(generated?.period).toEqual(km(12_040, 12_085, 45));
 			// Legacy writes leave the canonical record untouched.
 			expect(retained?.detail).toEqual(km(12_000, 12_085, 85));
+		});
+
+		describe("work whose distance is claimed on an expense item (#1131)", () => {
+			/** Own-vehicle work with 120 km, added as a mileage item to a new report. */
+			async function claimOwnVehicleWork(period: {
+				id: string;
+				canonical_record_id: string | null;
+			}) {
+				for (const [table, key, id] of [
+					["work_period", "id", period.id],
+					["time_record_work", "record_id", period.canonical_record_id],
+				] as const) {
+					await admin.query(
+						`update ${table} set vehicle_kind = 'own', vehicle_id = null, odometer_start_km = null,
+						   odometer_end_km = null, driven_distance_km = 120
+						 where ${key} = $1`,
+						[id],
+					);
+				}
+				const added = await addWorkPeriodMileage(
+					db,
+					{
+						organizationId: ids.organization,
+						employeeId: ids.requester,
+						userId: ids.requesterUser,
+					},
+					{ workPeriodId: period.id, reportId: null },
+				);
+				expect(added).toMatchObject({ kind: "added" });
+				return added.kind === "added" ? added.itemId : "";
+			}
+
+			it.each([
+				["an adopted", "active"],
+				["a legacy", "inactive"],
+			] as const)(
+				"refuses splitting %s organization's claimed work until the item is removed",
+				async (_label, admission) => {
+					await setAdmission(admission);
+					await enableVehicleUse("asked");
+					const period = await recordWork();
+					const itemId = await claimOwnVehicleWork(period);
+					const before = await snapshot();
+
+					await expect(
+						split(period.id, { time: "14:00", vehicleKm: 70 }, randomUUID()),
+					).resolves.toMatchObject({ success: false, code: "work_period_distance_claimed" });
+					await expect(
+						split(period.id, { time: "14:00" }, randomUUID(), splitFromMutations),
+					).resolves.toMatchObject({ success: false, code: "work_period_distance_claimed" });
+					expect(await snapshot()).toEqual(before);
+
+					await admin.query("delete from travel_expense_report_item where id = $1", [itemId]);
+					await expect(
+						split(period.id, { time: "14:00", vehicleKm: 70 }, randomUUID()),
+					).resolves.toMatchObject({ success: true });
+				},
+			);
 		});
 	});
 });
