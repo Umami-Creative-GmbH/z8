@@ -6,7 +6,7 @@
  */
 
 import { executeCommand } from "@/lib/bot-platform/command-registry";
-import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { createFollowupMessage, createInteractionResponse } from "./api";
@@ -19,6 +19,14 @@ import { InteractionResponseType, InteractionType } from "./types";
 import { claimLinkCode, resolveDiscordUser } from "./user-resolver";
 
 const logger = createLogger("DiscordBotHandler");
+
+/**
+ * Replies go out in the recipient language: the linked user's, or the
+ * organization's default for someone not linked to a Z8 user yet.
+ */
+async function replyTranslator(bot: ResolvedDiscordBot, userId: string | null) {
+	return getBotTranslate(await getUserLocale({ userId, organizationId: bot.organizationId }));
+}
 
 /**
  * Handle an incoming Discord interaction
@@ -90,12 +98,20 @@ async function handleSlashCommand(
 	const userResult = await resolveDiscordUser(discordUserId, bot.organizationId, discordUsername);
 
 	if (userResult.status !== "found") {
+		const t = await replyTranslator(bot, null);
 		await createFollowupMessage(bot.botToken, bot.applicationId, interaction.token, {
-			content:
+			content: t(
+				"bot.static.notLinkedDiscord",
 				"Your Discord account is not linked to Z8. Go to Settings > Integrations > Discord in your Z8 dashboard to generate a link code, then use `/link` here.",
+			),
 		});
 		return;
 	}
+
+	const locale = await getUserLocale({
+		userId: userResult.user.userId,
+		organizationId: bot.organizationId,
+	});
 
 	// Save conversation for proactive messaging (if in DM)
 	if (interaction.channel_id) {
@@ -122,7 +138,7 @@ async function handleSlashCommand(
 			escalationTimeoutHours: bot.escalationTimeoutHours,
 		},
 		args: extractCommandArgs(interaction),
-		locale: "en",
+		locale,
 	};
 
 	// Execute command and send follow-up response
@@ -134,11 +150,14 @@ async function handleSlashCommand(
 			{ error, commandName, organizationId: bot.organizationId },
 			"Failed to execute command",
 		);
-		await sendFollowupBestEffort(
-			bot,
-			interaction,
-			"Something went wrong processing your command. Please try again.",
-		);
+		let notice = "Sorry, something went wrong executing that command. Please try again.";
+		try {
+			const t = await getBotTranslate(locale);
+			notice = t("bot.static.commandError", notice);
+		} catch {
+			// Keep the English notice.
+		}
+		await sendFollowupBestEffort(bot, interaction, notice);
 		return;
 	}
 
@@ -159,7 +178,7 @@ async function handleSlashCommand(
 		let notice =
 			"Your command was processed, but its reply could not be shown. Check your status before repeating it.";
 		try {
-			const t = await getBotTranslate(commandContext.locale);
+			const t = await getBotTranslate(locale);
 			notice = t("bot.static.replyUndelivered", notice);
 		} catch {
 			// Keep the English notice.
@@ -210,11 +229,15 @@ async function handleButtonClick(
 		}
 	} catch (error) {
 		logger.error({ error, customId }, "Failed to parse button data");
+		const t = await replyTranslator(bot, null);
 		await createInteractionResponse(
 			interaction.id,
 			interaction.token,
 			InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-			{ content: "Something went wrong processing this action.", flags: 64 },
+			{
+				content: t("bot.static.errorDefault", "Something went wrong. Please try again."),
+				flags: 64,
+			},
 		);
 	}
 }
@@ -233,8 +256,12 @@ async function handleLinkCommand(
 	const code = codeOption?.value;
 
 	if (!code) {
+		const t = await replyTranslator(bot, null);
 		await createFollowupMessage(bot.botToken, bot.applicationId, interaction.token, {
-			content: "Please provide your link code: `/link code:YOUR_CODE`",
+			content: t(
+				"bot.static.linkUsageDiscord",
+				"Please provide your link code: `/link code:YOUR_CODE`",
+			),
 			flags: 64,
 		});
 		return;
@@ -253,21 +280,33 @@ async function handleLinkCommand(
 		await saveConversation(interaction.channel_id, result.userId, bot.organizationId);
 	}
 
+	const t = await replyTranslator(bot, result.status === "success" ? result.userId : null);
 	let responseText: string;
 
 	switch (result.status) {
 		case "success":
-			responseText =
-				"Your Discord account has been linked to Z8! You can now use slash commands like `/clockedin` and `/pending`.";
+			responseText = t(
+				"bot.static.linkSuccessDiscord",
+				"Your Discord account has been linked to Z8! You can now use slash commands like `/clockedin` and `/pending`.",
+			);
 			break;
 		case "invalid_code":
-			responseText = "Invalid link code. Please check your code and try again.";
+			responseText = t(
+				"bot.static.linkInvalid",
+				"Invalid link code. Please check your code and try again.",
+			);
 			break;
 		case "expired":
-			responseText = "This link code has expired. Please generate a new one from your Z8 settings.";
+			responseText = t(
+				"bot.static.linkExpired",
+				"This link code has expired. Please generate a new one from your Z8 settings.",
+			);
 			break;
 		case "already_linked":
-			responseText = "This Discord account is already linked to a Z8 account in this organization.";
+			responseText = t(
+				"bot.static.linkAlreadyLinkedDiscord",
+				"This Discord account is already linked to a Z8 account in this organization.",
+			);
 			break;
 	}
 

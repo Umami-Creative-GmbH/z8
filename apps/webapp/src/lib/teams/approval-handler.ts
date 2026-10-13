@@ -21,13 +21,13 @@ import type { BoundBotApprovalResult } from "@/lib/bot-platform/approval-decisio
 import {
 	type ApprovalNotice,
 	approvalAttemptNotice,
+	approvalNoticeLocale,
 	boundDecisionNotice,
 	teamsApprovalNotice,
 } from "@/lib/bot-platform/approval-notice";
 import { type BotTranslateFn, getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import {
 	TEAMS_APPROVAL_VERBS,
 	type TeamsBoundApprovalInvoke,
@@ -201,7 +201,7 @@ type Recipient = { userId: string; organizationId: string };
 
 async function recipientTranslate(recipient: Recipient): Promise<BotTranslateFn> {
 	const display = await resolveRecipientDisplayContext(recipient);
-	return getBotTranslate(display?.locale ?? DEFAULT_LANGUAGE);
+	return getBotTranslate(await approvalNoticeLocale(display, recipient.organizationId));
 }
 
 async function reviewRequiredMessage(recipient: Recipient): Promise<TeamsInvokeResponse> {

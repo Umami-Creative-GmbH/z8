@@ -5,7 +5,7 @@ import { employee, userSettings } from "@/db/schema";
 import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import { serializeInstant } from "@/lib/datetime/temporal-wire";
-import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { resolveEffectiveTimezone } from "../timezone/effective-timezone";
 import { normalizeTimeFormat, type TimeFormat } from "../user-preferences/time-format";
 
@@ -49,14 +49,18 @@ export async function resolveBotTemporalContext(
 
 	if (!member) return null;
 
-	const [organizationData, settings] = await Promise.all([
+	const [organizationData, settings, locale] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(organization.id, input.organizationId),
 			columns: { timezone: true },
 		}),
 		db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, input.userId),
-			columns: { timezone: true, locale: true, timeFormat: true },
+			columns: { timezone: true, timeFormat: true },
+		}),
+		resolveRecipientNotificationLocale({
+			userId: input.userId,
+			organizationId: input.organizationId,
 		}),
 	]);
 
@@ -64,10 +68,6 @@ export async function resolveBotTemporalContext(
 
 	const organizationTimezone = resolveEffectiveTimezone(undefined, organizationData.timezone);
 	const effectiveTimezone = resolveEffectiveTimezone(settings?.timezone, organizationTimezone);
-	const locale =
-		settings?.locale && ALL_LANGUAGES.includes(settings.locale)
-			? settings.locale
-			: DEFAULT_LANGUAGE;
 	const clock = input.clock ?? systemClock;
 
 	return {

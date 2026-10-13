@@ -15,6 +15,7 @@ import type { BoundBotApprovalResult } from "@/lib/bot-platform/approval-decisio
 import {
 	type ApprovalNotice,
 	approvalAttemptNotice,
+	approvalNoticeLocale,
 	boundDecisionNotice,
 	discordApprovalNotice,
 	escapeDiscordMarkdown,
@@ -208,7 +209,9 @@ async function outcomeUnknownReply(recipient: {
 	organizationId: string;
 }): Promise<DiscordMessagePayload> {
 	const display = await resolveRecipientDisplayContext(recipient).catch(() => null);
-	const t = await getBotTranslate(display?.locale ?? "en");
+	// This reply reports an unknown outcome, so a failed lookup must not stop it.
+	const locale = await approvalNoticeLocale(display, recipient.organizationId).catch(() => "en");
+	const t = await getBotTranslate(locale);
 	return {
 		content: escapeDiscordMarkdown(
 			t(

@@ -1,9 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 
-vi.mock("@/lib/bot-platform/i18n", () => ({
-	getBotTranslate: async () => (_key: string, fallback: string, params?: Record<string, string>) =>
-		fallback.replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? ""),
+const getBotTranslate = vi.hoisted(() =>
+	vi.fn(
+		async (_locale: string) => (_key: string, fallback: string, params?: Record<string, string>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? ""),
+	),
+);
+
+vi.mock("@/lib/bot-platform/i18n", () => ({ getBotTranslate }));
+vi.mock("@/lib/notifications/recipient-locale", () => ({
+	resolveOrganizationNotificationLocale: async (organizationId: string) =>
+		organizationId === "org" ? "fr" : "en",
 }));
 vi.mock("@/lib/app-url", () => ({
 	getOrganizationBaseUrl: async () => "https://org.z8.test",
@@ -137,5 +145,25 @@ describe("approvalStatusNotice", () => {
 		);
 		expect(notice.title).toBe("No longer actionable");
 		expect(notice.text).not.toContain("Morgan");
+	});
+
+	it("answers a recipient who is no longer entitled in the organization's default language", async () => {
+		getBotTranslate.mockClear();
+		await approvalStatusNotice(
+			{ workflowStatus: "cancelled", evidence: null },
+			null,
+			"org",
+			reference,
+		);
+		expect(getBotTranslate).toHaveBeenCalledWith("fr");
+
+		getBotTranslate.mockClear();
+		await approvalStatusNotice(
+			{ workflowStatus: "cancelled", evidence: null },
+			display,
+			"org",
+			reference,
+		);
+		expect(getBotTranslate).toHaveBeenCalledWith("en");
 	});
 });
