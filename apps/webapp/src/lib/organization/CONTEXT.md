@@ -40,6 +40,16 @@ _Avoid_: deleted field, disabled field
 A required custom field with no value as of today on an employee, project or customer. Records created by SCIM, imports or demo data can have one; the forms refuse to save a record that still has one.
 _Avoid_: incomplete record, invalid record
 
+### Employment
+
+**Employment terms**:
+What the organization has agreed with an employee from a given date: contract type, weekly contract hours, work model, work policy and, for an hourly contract, the hourly wage. Only confirmed terms apply; draft and pending terms are proposals.
+_Avoid_: contract record, employment record, employment history row
+
+**Hourly wage**:
+What an employee on an hourly contract is paid per hour worked. It is part of their employment terms, so the wage in force on a day is the one in the confirmed terms for that day. Changing it means confirming new terms.
+_Avoid_: hourly rate, rate, salary, pay rate
+
 ### Vehicles
 
 **Organization vehicle**:
