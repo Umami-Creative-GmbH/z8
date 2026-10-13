@@ -3,14 +3,51 @@ import "server-only";
 // Approval notification senders for callers that have already authorized the
 // submission (#443): not server actions, so a client cannot trigger them.
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { employee } from "@/db/schema";
+import { employee, timeEntry, workPeriod } from "@/db/schema";
 import {
+	type EntryTime,
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 	onManualEntryApproved,
+	type WorkPeriodEntryTimes,
 } from "@/lib/notifications/triggers";
+
+/**
+ * The period's clock-in and clock-out, each at the UTC offset stored on its own time
+ * entry (timekeeping rule), for the notification text; null when they cannot be read.
+ */
+async function loadWorkPeriodEntryTimes(params: {
+	workPeriodId: string;
+	employeeId: string;
+	organizationId: string;
+}): Promise<WorkPeriodEntryTimes | null> {
+	const period = await db.query.workPeriod.findFirst({
+		where: and(
+			eq(workPeriod.id, params.workPeriodId),
+			eq(workPeriod.organizationId, params.organizationId),
+			eq(workPeriod.employeeId, params.employeeId),
+		),
+		columns: { clockInId: true, clockOutId: true },
+	});
+	if (!period) return null;
+	const ids = [period.clockInId, period.clockOutId].filter((id): id is string => Boolean(id));
+	const entries = await db.query.timeEntry.findMany({
+		where: and(
+			eq(timeEntry.organizationId, params.organizationId),
+			eq(timeEntry.employeeId, params.employeeId),
+			inArray(timeEntry.id, ids),
+		),
+		columns: { id: true, timestamp: true, utcOffsetMinutes: true },
+	});
+	const entryTime = (id: string | null): EntryTime | null => {
+		const entry = id ? entries.find((candidate) => candidate.id === id) : undefined;
+		return entry ? { at: entry.timestamp, utcOffsetMinutes: entry.utcOffsetMinutes } : null;
+	};
+	const clockIn = entryTime(period.clockInId);
+	return clockIn ? { clockIn, clockOut: entryTime(period.clockOutId) } : null;
+}
 
 async function getApprovalNotificationParticipants(
 	employeeId: string,
@@ -51,12 +88,10 @@ async function sendPendingApprovalNotifications(params: {
 	durationMinutes: number;
 	dedupeKey: string;
 }) {
-	const { employeeUserId, employeeName, managerUserId } =
-		await getApprovalNotificationParticipants(
-			params.employeeId,
-			params.managerId,
-			params.organizationId,
-		);
+	const [{ employeeUserId, employeeName, managerUserId }, times] = await Promise.all([
+		getApprovalNotificationParticipants(params.employeeId, params.managerId, params.organizationId),
+		loadWorkPeriodEntryTimes(params),
+	]);
 
 	const notifications: Promise<void>[] = [];
 	if (employeeUserId) {
@@ -66,8 +101,7 @@ async function sendPendingApprovalNotifications(params: {
 				employeeUserId,
 				employeeName,
 				organizationId: params.organizationId,
-				startTime: params.startTime,
-				endTime: params.endTime,
+				times,
 				durationMinutes: params.durationMinutes,
 				idempotencyKey: `${params.dedupeKey}:employee:pending`,
 				durable: true,
@@ -82,8 +116,7 @@ async function sendPendingApprovalNotifications(params: {
 				employeeUserId: employeeUserId || "",
 				employeeName,
 				organizationId: params.organizationId,
-				startTime: params.startTime,
-				endTime: params.endTime,
+				times,
 				durationMinutes: params.durationMinutes,
 				managerUserId,
 				idempotencyKey: `${params.dedupeKey}:manager:pending`,

@@ -5,7 +5,6 @@
  * These are fire-and-forget - they don't throw on failure.
  */
 
-import { DateTime } from "luxon";
 import {
 	instantFromDate,
 	type PlainDate,
@@ -79,13 +78,31 @@ function i18nMetadata(
 	};
 }
 
-// Helper to format YYYY-MM-DD date strings
-const formatDateStr = (dateStr: string) => {
-	const dt = DateTime.fromISO(dateStr);
-	return dt
-		.setLocale("en-US")
-		.toLocaleString({ month: "short", day: "numeric" });
-};
+/** Title and message copy of one notification variant, with static English defaults. */
+interface TriggerCopy {
+	titleKey: string;
+	titleDefault: string;
+	messageKey: string;
+	messageDefault: string;
+}
+
+/**
+ * The notification's `metadata.i18n` for `copy`, and its stored English title and
+ * message (the fallback, also used by webhooks) filled from the same params.
+ */
+function translatedContent(copy: TriggerCopy, params: Record<string, NotificationParamValue>) {
+	return {
+		title: copy.titleDefault,
+		message: fillNotificationTemplate(copy.messageDefault, params),
+		i18n: i18nMetadata(
+			copy.titleKey,
+			copy.titleDefault,
+			copy.messageKey,
+			copy.messageDefault,
+			params,
+		).i18n,
+	};
+}
 
 // =============================================================================
 // Absence Request Notifications
@@ -173,6 +190,51 @@ interface ApprovedAbsenceCancelledByEmployeeParams {
 	endDate: string;
 }
 
+const absencePendingApprovalCopy = {
+	titleKey: "common:notifications.content.newAbsenceRequest.title",
+	titleDefault: "New absence request",
+	messageKey: "common:notifications.content.newAbsenceRequest.message",
+	messageDefault: "{employeeName} requested {categoryName} for {dateRange}.",
+} as const satisfies TriggerCopy;
+
+const absenceApprovedCopy = {
+	titleKey: "common:notifications.content.absenceRequestApproved.title",
+	titleDefault: "Absence request approved",
+	messageKey: "common:notifications.content.absenceRequestApproved.message",
+	messageDefault: "Your {categoryName} request for {dateRange} was approved by {approverName}.",
+} as const satisfies TriggerCopy;
+
+const absenceRejectedCopy = {
+	withoutReason: {
+		titleKey: "common:notifications.content.absenceRequestRejected.title",
+		titleDefault: "Absence request rejected",
+		messageKey: "common:notifications.content.absenceRequestRejected.message",
+		messageDefault: "Your {categoryName} request for {dateRange} was rejected by {approverName}.",
+	},
+	withReason: {
+		titleKey: "common:notifications.content.absenceRequestRejected.title",
+		titleDefault: "Absence request rejected",
+		messageKey: "common:notifications.content.absenceRequestRejected.messageWithReason",
+		messageDefault:
+			"Your {categoryName} request for {dateRange} was rejected by {approverName}. Reason: {rejectionReason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const absenceRecordedCopy = {
+	titleKey: "common:notifications.content.absenceRecorded.title",
+	titleDefault: "Absence recorded",
+	messageKey: "common:notifications.content.absenceRecorded.message",
+	messageDefault: "{managerName} recorded {absenceType} for {dateRange} on your behalf.",
+} as const satisfies TriggerCopy;
+
+// Keeps the trigger's type until #1136 gives the cancellation its own one.
+const approvedAbsenceCancelledCopy = {
+	titleKey: "common:notifications.content.approvedAbsenceCancelled.title",
+	titleDefault: "Approved absence cancelled",
+	messageKey: "common:notifications.content.approvedAbsenceCancelled.message",
+	messageDefault: "{employeeName} cancelled approved {categoryName} for {dateRange}.",
+} as const satisfies TriggerCopy;
+
 /**
  * Notify employee that their absence request was submitted
  */
@@ -180,33 +242,27 @@ export async function onAbsenceRequestSubmitted(
 	params: AbsenceRequestParams & { managerName?: string; days?: number },
 ): Promise<void> {
 	try {
-		const dateRange = `${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}`;
-		const copy = notificationCopy.absenceRequestSubmitted;
+		// The dates live in the params only, so the email's `{{startDate}}`/`{{endDate}}`
+		// read them as calendar days in the recipient language too.
+		const content = translatedContent(notificationCopy.absenceRequestSubmitted, {
+			categoryName: params.categoryName,
+			...absenceDateParams(params),
+		});
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_submitted",
-			title: copy.titleDefault,
-			message: copy.messageDefault
-				.replace("{categoryName}", params.categoryName)
-				.replace("{dateRange}", dateRange),
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
 			metadata: {
-				startDate: params.startDate,
-				endDate: params.endDate,
 				absenceType: params.categoryName,
 				managerName: params.managerName,
 				days: params.days,
-				...i18nMetadata(
-					copy.titleKey,
-					copy.titleDefault,
-					copy.messageKey,
-					copy.messageDefault,
-					{ categoryName: params.categoryName, dateRange },
-				),
+				i18n: content.i18n,
 			},
 		});
 	} catch (error) {
@@ -224,28 +280,24 @@ export async function onAbsenceRequestPendingApproval(
 	params: AbsenceSubmittedToManagerParams,
 ): Promise<void> {
 	try {
+		const content = translatedContent(absencePendingApprovalCopy, {
+			employeeName: params.employeeName,
+			categoryName: params.categoryName,
+			...absenceDateParams(params),
+			...(params.days === undefined ? {} : { days: params.days }),
+			...(params.notes ? { notes: params.notes } : {}),
+		});
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
 			type: "approval_request_submitted",
-			title: "New absence request",
-			message: `${params.employeeName} requested ${params.categoryName} for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}.`,
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/approvals/inbox",
-			// The manager's email and its override variables (#1152).
-			metadata: {
-				approvalSubject: "absence",
-				i18n: {
-					params: {
-						employeeName: params.employeeName,
-						categoryName: params.categoryName,
-						...absenceDateParams(params),
-						...(params.days === undefined ? {} : { days: params.days }),
-						...(params.notes ? { notes: params.notes } : {}),
-					},
-				},
-			},
+			// The params also carry the manager's email and its override variables (#1152).
+			metadata: { approvalSubject: "absence", i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -262,16 +314,17 @@ export async function onAbsenceRequestApproved(
 	params: AbsenceApprovalParams,
 ): Promise<void> {
 	try {
+		const content = translatedContent(absenceApprovedCopy, absenceDecisionParams(params));
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_approved",
-			title: "Absence request approved",
-			message: `Your ${params.categoryName} request for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} was approved by ${params.approverName}.`,
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
-			metadata: { i18n: { params: absenceDecisionParams(params) } },
+			metadata: { i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -285,22 +338,28 @@ export async function onAbsenceRecordedByManager(
 	params: AbsenceRecordedByManagerParams,
 ): Promise<void> {
 	try {
+		const content = translatedContent(absenceRecordedCopy, {
+			managerName: params.managerName,
+			absenceType: params.categoryName,
+			...absenceDateParams(params),
+			days: params.days,
+		});
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_approved",
-			title: "Absence recorded",
-			message: `${params.managerName} recorded ${params.categoryName} for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} on your behalf.`,
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
 			metadata: {
+				// Picks the "recorded by manager" email.
 				managerRecorded: true,
 				managerName: params.managerName,
-				startDate: params.startDate,
-				endDate: params.endDate,
 				absenceType: params.categoryName,
 				days: params.days,
+				i18n: content.i18n,
 			},
 		});
 	} catch (error) {
@@ -315,21 +374,25 @@ export async function onApprovedAbsenceCancelledByEmployee(
 	params: ApprovedAbsenceCancelledByEmployeeParams,
 ): Promise<void> {
 	try {
+		const content = translatedContent(approvedAbsenceCancelledCopy, {
+			employeeName: params.employeeName,
+			categoryName: params.categoryName,
+			...absenceDateParams(params),
+		});
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_approved",
-			title: "Approved absence cancelled",
-			message: `${params.employeeName} cancelled approved ${params.categoryName} for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}.`,
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/team/absences",
 			metadata: {
 				approvedAbsenceCancelled: true,
 				employeeName: params.employeeName,
-				startDate: params.startDate,
-				endDate: params.endDate,
 				absenceType: params.categoryName,
+				i18n: content.i18n,
 			},
 		});
 	} catch (error) {
@@ -347,27 +410,24 @@ export async function onAbsenceRequestRejected(
 	params: AbsenceRejectionParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason
-			? ` Reason: ${params.rejectionReason}`
-			: "";
+		const content = translatedContent(
+			params.rejectionReason ? absenceRejectedCopy.withReason : absenceRejectedCopy.withoutReason,
+			{
+				...absenceDecisionParams(params),
+				...(params.rejectionReason ? { rejectionReason: params.rejectionReason } : {}),
+			},
+		);
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "absence_request_rejected",
-			title: "Absence request rejected",
-			message: `Your ${params.categoryName} request for ${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)} was rejected by ${params.approverName}.${reasonText}`,
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
-			metadata: {
-				i18n: {
-					params: {
-						...absenceDecisionParams(params),
-						...(params.rejectionReason ? { rejectionReason: params.rejectionReason } : {}),
-					},
-				},
-			},
+			metadata: { i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -426,6 +486,52 @@ interface TimeCorrectionRejectionParams extends TimeCorrectionApprovalParams {
 	rejectionReason?: string;
 }
 
+const timeCorrectionSubmittedCopy = {
+	titleKey: "common:notifications.content.timeCorrectionSubmitted.title",
+	titleDefault: "Time correction submitted",
+	messageKey: "common:notifications.content.timeCorrectionSubmitted.message",
+	messageDefault: "Your time correction request has been submitted and is pending approval.",
+} as const satisfies TriggerCopy;
+
+const timeCorrectionPendingApprovalCopy = {
+	withoutReason: {
+		titleKey: "common:notifications.content.newTimeCorrectionRequest.title",
+		titleDefault: "New time correction request",
+		messageKey: "common:notifications.content.newTimeCorrectionRequest.message",
+		messageDefault: "{employeeName} submitted a time correction request for {date}.",
+	},
+	withReason: {
+		titleKey: "common:notifications.content.newTimeCorrectionRequest.title",
+		titleDefault: "New time correction request",
+		messageKey: "common:notifications.content.newTimeCorrectionRequest.messageWithReason",
+		messageDefault:
+			"{employeeName} submitted a time correction request for {date}. Reason: {reason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const timeCorrectionApprovedCopy = {
+	titleKey: "common:notifications.content.timeCorrectionApproved.title",
+	titleDefault: "Time correction approved",
+	messageKey: "common:notifications.content.timeCorrectionApproved.message",
+	messageDefault: "Your time correction request was approved by {approverName}.",
+} as const satisfies TriggerCopy;
+
+const timeCorrectionRejectedCopy = {
+	withoutReason: {
+		titleKey: "common:notifications.content.timeCorrectionRejected.title",
+		titleDefault: "Time correction rejected",
+		messageKey: "common:notifications.content.timeCorrectionRejected.message",
+		messageDefault: "Your time correction request was rejected by {approverName}.",
+	},
+	withReason: {
+		titleKey: "common:notifications.content.timeCorrectionRejected.title",
+		titleDefault: "Time correction rejected",
+		messageKey: "common:notifications.content.timeCorrectionRejected.messageWithReason",
+		messageDefault:
+			"Your time correction request was rejected by {approverName}. Reason: {rejectionReason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
 /**
  * Notify employee that their time correction was submitted
  */
@@ -433,15 +539,17 @@ export async function onTimeCorrectionSubmitted(
 	params: TimeCorrectionParams,
 ): Promise<void> {
 	try {
+		const content = translatedContent(timeCorrectionSubmittedCopy, {});
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_submitted",
-			title: "Time correction submitted",
-			message: `Your time correction request has been submitted and is pending approval.`,
+			title: content.title,
+			message: content.message,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
+			metadata: { i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -458,34 +566,35 @@ export async function onTimeCorrectionPendingApproval(
 	params: TimeCorrectionSubmittedToManagerParams,
 ): Promise<void> {
 	try {
+		const content = translatedContent(
+			params.reason
+				? timeCorrectionPendingApprovalCopy.withReason
+				: timeCorrectionPendingApprovalCopy.withoutReason,
+			{
+				employeeName: params.employeeName,
+				...(params.reason ? { reason: params.reason } : {}),
+				date: entryTimeParam(params.original.clockIn, "dateMedium"),
+				originalClockIn: entryTimeParam(params.original.clockIn, "time"),
+				...(params.original.clockOut
+					? { originalClockOut: entryTimeParam(params.original.clockOut, "time") }
+					: {}),
+				correctedClockIn: entryTimeParam(params.corrected.clockIn, "time"),
+				...(params.corrected.clockOut
+					? { correctedClockOut: entryTimeParam(params.corrected.clockOut, "time") }
+					: {}),
+			},
+		);
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
 			type: "approval_request_submitted",
-			title: "New time correction request",
-			message: `${params.employeeName} submitted a time correction request.${params.reason ? ` Reason: ${params.reason}` : ""}`,
+			title: content.title,
+			message: content.message,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/approvals/inbox",
-			// The manager's email and its override variables (#1152).
-			metadata: {
-				approvalSubject: "time_correction",
-				i18n: {
-					params: {
-						employeeName: params.employeeName,
-						...(params.reason ? { reason: params.reason } : {}),
-						date: entryTimeParam(params.original.clockIn, "dateMedium"),
-						originalClockIn: entryTimeParam(params.original.clockIn, "time"),
-						...(params.original.clockOut
-							? { originalClockOut: entryTimeParam(params.original.clockOut, "time") }
-							: {}),
-						correctedClockIn: entryTimeParam(params.corrected.clockIn, "time"),
-						...(params.corrected.clockOut
-							? { correctedClockOut: entryTimeParam(params.corrected.clockOut, "time") }
-							: {}),
-					},
-				},
-			},
+			// The params also carry the manager's email and its override variables (#1152).
+			metadata: { approvalSubject: "time_correction", i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -504,8 +613,8 @@ interface ClockOutApprovalParams {
 	employeeUserId: string;
 	employeeName: string;
 	organizationId: string;
-	startTime: Date;
-	endTime: Date;
+	/** The submitted period's clock-in and clock-out entries; null when they cannot be read. */
+	times: WorkPeriodEntryTimes | null;
 	durationMinutes: number;
 	idempotencyKey?: string;
 	durable?: boolean;
@@ -513,6 +622,104 @@ interface ClockOutApprovalParams {
 
 interface ClockOutApprovalToManagerParams extends ClockOutApprovalParams {
 	managerUserId: string;
+}
+
+const clockOutPendingApprovalCopy = {
+	withDate: {
+		titleKey: "common:notifications.content.clockOutPendingApproval.title",
+		titleDefault: "Clock-out pending approval",
+		messageKey: "common:notifications.content.clockOutPendingApproval.message",
+		messageDefault: "Your clock-out on {date} ({duration}) is pending manager approval.",
+	},
+	withoutDate: {
+		titleKey: "common:notifications.content.clockOutPendingApproval.title",
+		titleDefault: "Clock-out pending approval",
+		messageKey: "common:notifications.content.clockOutPendingApproval.messageWithoutDate",
+		messageDefault: "Your clock-out ({duration}) is pending manager approval.",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const clockOutApprovalRequiredCopy = {
+	withTimes: {
+		titleKey: "common:notifications.content.clockOutApprovalRequired.title",
+		titleDefault: "Clock-out approval required",
+		messageKey: "common:notifications.content.clockOutApprovalRequired.message",
+		messageDefault:
+			"{employeeName} clocked out on {date} ({startTime} – {endTime}, {duration}). Approval required.",
+	},
+	withoutTimes: {
+		titleKey: "common:notifications.content.clockOutApprovalRequired.title",
+		titleDefault: "Clock-out approval required",
+		messageKey: "common:notifications.content.clockOutApprovalRequired.messageWithoutTimes",
+		messageDefault: "{employeeName} clocked out ({duration}). Approval required.",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const clockOutApprovedCopy = {
+	titleKey: "common:notifications.content.clockOutApproved.title",
+	titleDefault: "Clock-out approved",
+	messageKey: "common:notifications.content.clockOutApproved.message",
+	messageDefault: "Your clock-out was approved by {approverName}.",
+} as const satisfies TriggerCopy;
+
+const clockOutRejectedCopy = {
+	withoutReason: {
+		titleKey: "common:notifications.content.clockOutRejected.title",
+		titleDefault: "Clock-out rejected",
+		messageKey: "common:notifications.content.clockOutRejected.message",
+		messageDefault:
+			"Your clock-out approval was rejected by {approverName}. The recorded times remain unchanged and are excluded from approved payroll time.",
+	},
+	withReason: {
+		titleKey: "common:notifications.content.clockOutRejected.title",
+		titleDefault: "Clock-out rejected",
+		messageKey: "common:notifications.content.clockOutRejected.messageWithReason",
+		messageDefault:
+			"Your clock-out approval was rejected by {approverName}. The recorded times remain unchanged and are excluded from approved payroll time. Reason: {rejectionReason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const manualEntryApprovedCopy = {
+	titleKey: "common:notifications.content.manualEntryApproved.title",
+	titleDefault: "Manual time submission approved",
+	messageKey: "common:notifications.content.manualEntryApproved.message",
+	messageDefault: "Your manual time submission was approved by {approverName}.",
+} as const satisfies TriggerCopy;
+
+const manualEntryRejectedCopy = {
+	withoutReason: {
+		titleKey: "common:notifications.content.manualEntryRejected.title",
+		titleDefault: "Manual time submission rejected",
+		messageKey: "common:notifications.content.manualEntryRejected.message",
+		messageDefault: "Your manual time submission was rejected by {approverName}.",
+	},
+	withReason: {
+		titleKey: "common:notifications.content.manualEntryRejected.title",
+		titleDefault: "Manual time submission rejected",
+		messageKey: "common:notifications.content.manualEntryRejected.messageWithReason",
+		messageDefault:
+			"Your manual time submission was rejected by {approverName}. Reason: {rejectionReason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+/** A decision's params: the approver, and the reason of a rejection. */
+function clockOutDecisionParams(params: ClockOutApprovalResultParams) {
+	return {
+		approverName: params.approverName,
+		...(params.rejectionReason ? { rejectionReason: params.rejectionReason } : {}),
+	};
+}
+
+/** Creates the notification; a durable one fails its caller instead of being dropped. */
+async function createClockOutNotification(
+	notification: CreateNotificationParams,
+	durable: boolean | undefined,
+) {
+	if (durable) {
+		await createNotification(notification, { throwOnError: true });
+	} else {
+		await createNotification(notification);
+	}
 }
 
 interface ClockOutApprovalResultParams {
@@ -535,24 +742,29 @@ export async function onClockOutPendingApproval(
 	params: ClockOutApprovalParams,
 ): Promise<void> {
 	try {
-		const notification = {
-			userId: params.employeeUserId,
-			organizationId: params.organizationId,
-			type: "time_correction_submitted",
-			title: "Clock-out pending approval",
-			message: `Your clock-out for today (${formatDuration(params.durationMinutes)}) is pending manager approval.`,
-			entityType: "work_period",
-			entityId: params.workPeriodId,
-			actionUrl: "/time-tracking",
-			...(params.idempotencyKey
-				? { idempotencyKey: params.idempotencyKey }
-				: {}),
-		} satisfies CreateNotificationParams;
-		if (params.durable) {
-			await createNotification(notification, { throwOnError: true });
-		} else {
-			await createNotification(notification);
-		}
+		const duration = notificationParam.duration(params.durationMinutes);
+		// The work's day at its clock-in entry's offset (O11), never the server's zone.
+		const content = params.times
+			? translatedContent(clockOutPendingApprovalCopy.withDate, {
+					date: entryTimeParam(params.times.clockIn, "dateMedium"),
+					duration,
+				})
+			: translatedContent(clockOutPendingApprovalCopy.withoutDate, { duration });
+		await createClockOutNotification(
+			{
+				userId: params.employeeUserId,
+				organizationId: params.organizationId,
+				type: "time_correction_submitted",
+				title: content.title,
+				message: content.message,
+				entityType: "work_period",
+				entityId: params.workPeriodId,
+				actionUrl: "/time-tracking",
+				metadata: { i18n: content.i18n },
+				...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
+			},
+			params.durable,
+		);
 	} catch (error) {
 		logger.error(
 			{ error, params },
@@ -569,27 +781,36 @@ export async function onClockOutPendingApprovalToManager(
 	params: ClockOutApprovalToManagerParams,
 ): Promise<void> {
 	try {
-		const formatTime = (date: Date) =>
-			date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-
-		const notification = {
-			userId: params.managerUserId,
-			organizationId: params.organizationId,
-			type: "approval_request_submitted",
-			title: "Clock-out approval required",
-			message: `${params.employeeName} clocked out (${formatTime(params.startTime)} - ${formatTime(params.endTime)}, ${formatDuration(params.durationMinutes)}). Approval required.`,
-			entityType: "work_period",
-			entityId: params.workPeriodId,
-			actionUrl: "/approvals/inbox",
-			...(params.idempotencyKey
-				? { idempotencyKey: params.idempotencyKey }
-				: {}),
-		} satisfies CreateNotificationParams;
-		if (params.durable) {
-			await createNotification(notification, { throwOnError: true });
-		} else {
-			await createNotification(notification);
-		}
+		const duration = notificationParam.duration(params.durationMinutes);
+		const { times } = params;
+		// Each time at its own entry's offset (O11), never the server's zone.
+		const content = times?.clockOut
+			? translatedContent(clockOutApprovalRequiredCopy.withTimes, {
+					employeeName: params.employeeName,
+					date: entryTimeParam(times.clockIn, "dateMedium"),
+					startTime: entryTimeParam(times.clockIn, "time"),
+					endTime: entryTimeParam(times.clockOut, "time"),
+					duration,
+				})
+			: translatedContent(clockOutApprovalRequiredCopy.withoutTimes, {
+					employeeName: params.employeeName,
+					duration,
+				});
+		await createClockOutNotification(
+			{
+				userId: params.managerUserId,
+				organizationId: params.organizationId,
+				type: "approval_request_submitted",
+				title: content.title,
+				message: content.message,
+				entityType: "work_period",
+				entityId: params.workPeriodId,
+				actionUrl: "/approvals/inbox",
+				metadata: { i18n: content.i18n },
+				...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
+			},
+			params.durable,
+		);
 	} catch (error) {
 		logger.error(
 			{ error, params },
@@ -606,24 +827,22 @@ export async function onClockOutApproved(
 	params: ClockOutApprovalResultParams,
 ): Promise<void> {
 	try {
-		const notification = {
-			userId: params.employeeUserId,
-			organizationId: params.organizationId,
-			type: "time_correction_approved",
-			title: "Clock-out approved",
-			message: `Your clock-out was approved by ${params.approverName}.`,
-			entityType: "work_period",
-			entityId: params.workPeriodId,
-			actionUrl: "/time-tracking",
-			...(params.idempotencyKey
-				? { idempotencyKey: params.idempotencyKey }
-				: {}),
-		} satisfies CreateNotificationParams;
-		if (params.durable) {
-			await createNotification(notification, { throwOnError: true });
-		} else {
-			await createNotification(notification);
-		}
+		const content = translatedContent(clockOutApprovedCopy, clockOutDecisionParams(params));
+		await createClockOutNotification(
+			{
+				userId: params.employeeUserId,
+				organizationId: params.organizationId,
+				type: "time_correction_approved",
+				title: content.title,
+				message: content.message,
+				entityType: "work_period",
+				entityId: params.workPeriodId,
+				actionUrl: "/time-tracking",
+				metadata: { i18n: content.i18n },
+				...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
+			},
+			params.durable,
+		);
 	} catch (error) {
 		logger.error(
 			{ error, params },
@@ -640,19 +859,21 @@ export async function onClockOutRejected(
 	params: ClockOutApprovalResultParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason
-			? ` Reason: ${params.rejectionReason}`
-			: "";
+		const content = translatedContent(
+			params.rejectionReason ? clockOutRejectedCopy.withReason : clockOutRejectedCopy.withoutReason,
+			clockOutDecisionParams(params),
+		);
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_rejected",
-			title: "Clock-out rejected",
-			message: `Your clock-out approval was rejected by ${params.approverName}.${reasonText} The recorded times remain unchanged and are excluded from approved payroll time.`,
+			title: content.title,
+			message: content.message,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
+			metadata: { i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -666,24 +887,22 @@ export async function onManualEntryApproved(
 	params: ClockOutApprovalResultParams,
 ): Promise<void> {
 	try {
-		const notification = {
-			userId: params.employeeUserId,
-			organizationId: params.organizationId,
-			type: "time_correction_approved",
-			title: "Manual time submission approved",
-			message: `Your manual time submission was approved by ${params.approverName}.`,
-			entityType: "work_period",
-			entityId: params.workPeriodId,
-			actionUrl: "/time-tracking",
-			...(params.idempotencyKey
-				? { idempotencyKey: params.idempotencyKey }
-				: {}),
-		} satisfies CreateNotificationParams;
-		if (params.durable) {
-			await createNotification(notification, { throwOnError: true });
-		} else {
-			await createNotification(notification);
-		}
+		const content = translatedContent(manualEntryApprovedCopy, clockOutDecisionParams(params));
+		await createClockOutNotification(
+			{
+				userId: params.employeeUserId,
+				organizationId: params.organizationId,
+				type: "time_correction_approved",
+				title: content.title,
+				message: content.message,
+				entityType: "work_period",
+				entityId: params.workPeriodId,
+				actionUrl: "/time-tracking",
+				metadata: { i18n: content.i18n },
+				...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
+			},
+			params.durable,
+		);
 	} catch (error) {
 		logger.error(
 			{ error, params },
@@ -697,18 +916,22 @@ export async function onManualEntryRejected(
 	params: ClockOutApprovalResultParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason
-			? ` Reason: ${params.rejectionReason}`
-			: "";
+		const content = translatedContent(
+			params.rejectionReason
+				? manualEntryRejectedCopy.withReason
+				: manualEntryRejectedCopy.withoutReason,
+			clockOutDecisionParams(params),
+		);
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_rejected",
-			title: "Manual time submission rejected",
-			message: `Your manual time submission was rejected by ${params.approverName}.${reasonText}`,
+			title: content.title,
+			message: content.message,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
+			metadata: { i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -718,15 +941,6 @@ export async function onManualEntryRejected(
 	}
 }
 
-// Helper to format duration for notifications
-function formatDuration(minutes: number): string {
-	const hours = Math.floor(minutes / 60);
-	const mins = minutes % 60;
-	if (hours === 0) return `${mins}m`;
-	if (mins === 0) return `${hours}h`;
-	return `${hours}h ${mins}m`;
-}
-
 /**
  * Notify employee that their time correction was approved
  */
@@ -734,24 +948,21 @@ export async function onTimeCorrectionApproved(
 	params: TimeCorrectionApprovalParams,
 ): Promise<void> {
 	try {
+		// The corrected times are what the email channel sends (#1137).
+		const content = translatedContent(timeCorrectionApprovedCopy, {
+			approverName: params.approverName,
+			...correctedTimeParams(params.corrected),
+		});
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_approved",
-			title: "Time correction approved",
-			message: `Your time correction request was approved by ${params.approverName}.`,
+			title: content.title,
+			message: content.message,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
-			// Without these the email channel has nothing to send (#1137).
-			metadata: {
-				i18n: {
-					params: {
-						approverName: params.approverName,
-						...correctedTimeParams(params.corrected),
-					},
-				},
-			},
+			metadata: { i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -768,28 +979,27 @@ export async function onTimeCorrectionRejected(
 	params: TimeCorrectionRejectionParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason
-			? ` Reason: ${params.rejectionReason}`
-			: "";
+		const content = translatedContent(
+			params.rejectionReason
+				? timeCorrectionRejectedCopy.withReason
+				: timeCorrectionRejectedCopy.withoutReason,
+			{
+				approverName: params.approverName,
+				...correctedTimeParams(params.corrected),
+				...(params.rejectionReason ? { rejectionReason: params.rejectionReason } : {}),
+			},
+		);
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "time_correction_rejected",
-			title: "Time correction rejected",
-			message: `Your time correction request was rejected by ${params.approverName}.${reasonText}`,
+			title: content.title,
+			message: content.message,
 			entityType: "work_period",
 			entityId: params.workPeriodId,
 			actionUrl: "/time-tracking",
-			metadata: {
-				i18n: {
-					params: {
-						approverName: params.approverName,
-						...correctedTimeParams(params.corrected),
-						...(params.rejectionReason ? { rejectionReason: params.rejectionReason } : {}),
-					},
-				},
-			},
+			metadata: { i18n: content.i18n },
 		});
 	} catch (error) {
 		logger.error(
@@ -811,14 +1021,6 @@ interface TravelExpenseDecisionParams {
 
 interface TravelExpenseRejectionParams extends TravelExpenseDecisionParams {
 	rejectionReason?: string;
-}
-
-/** Title and message copy of one notification variant, with static English defaults. */
-interface TriggerCopy {
-	titleKey: string;
-	titleDefault: string;
-	messageKey: string;
-	messageDefault: string;
 }
 
 const travelExpenseApprovedCopy = {

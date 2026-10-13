@@ -127,6 +127,36 @@ describe("getLocalizedNotificationContent", () => {
 		expect(localized.timeAgo).toBe("gerade eben");
 	});
 
+	it("formats a keyed manager-recorded absence from its typed params (#1153)", () => {
+		const localized = getLocalizedNotificationContent(
+			buildNotification({
+				metadata: JSON.stringify({
+					managerRecorded: true,
+					managerName: "Mina Manager",
+					absenceType: "Urlaub",
+					i18n: {
+						titleKey: "common:notifications.content.absenceRecorded.title",
+						titleDefault: "Absence recorded",
+						messageKey: "common:notifications.content.absenceRecorded.message",
+						messageDefault: "{managerName} recorded {absenceType} for {dateRange} on your behalf.",
+						params: {
+							managerName: "Mina Manager",
+							absenceType: "Urlaub",
+							dateRange: { kind: "plainDateRange", start: "2026-05-18", end: "2026-05-19" },
+						},
+					},
+				}),
+			}),
+			t,
+			"de",
+		);
+
+		expect(localized.title).toBe("Abwesenheit erfasst");
+		expect(localized.message).toMatch(
+			/^Mina Manager hat Urlaub für 18\.\s?–\s?19\. Mai 2026 in Ihrem Namen erfasst\.$/,
+		);
+	});
+
 	it("falls back to stored notification text when metadata is not structured", () => {
 		const localized = getLocalizedNotificationContent(
 			buildNotification({

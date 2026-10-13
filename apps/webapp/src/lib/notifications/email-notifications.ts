@@ -316,11 +316,11 @@ export async function sendEmailNotification(
 						subject = (t) => t("emails.subjects.absenceRecordedByManager", "Absence Recorded");
 						templateData = {
 							employeeName: userName,
-							managerName: String(metadata.managerName || ""),
-							startDate: String(metadata.startDate || ""),
-							endDate: String(metadata.endDate || ""),
-							absenceType: String(metadata.absenceType || ""),
-							days: Number(metadata.days || 0),
+							managerName: getMetadataString(metadata, "managerName"),
+							startDate: getMetadataString(metadata, "startDate"),
+							endDate: getMetadataString(metadata, "endDate"),
+							absenceType: getMetadataString(metadata, ["absenceType", "categoryName"]),
+							days: getMetadataNumber(metadata, "days"),
 							appUrl,
 						};
 					} else {

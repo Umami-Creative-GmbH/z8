@@ -6,28 +6,8 @@ import { scanNotificationCreators } from "./notification-creator-scan";
 
 /**
  * Every place that creates a notification sets translation keys (#812, #1149), so each
- * channel can render it in the recipient language. The creators below have none yet.
- * This list may only shrink: a new creator without keys fails, and so does an entry
- * that has keys by now or no longer exists. #1153 and #1154 empty it.
+ * channel can render it in the recipient language. A new creator without keys fails.
  */
-const CREATORS_WITHOUT_KEYS = new Set<string>([
-	// #1153: absence, time-correction and clocking triggers. "dead" = no production caller yet.
-	"lib/notifications/triggers.ts::onAbsenceRecordedByManager",
-	"lib/notifications/triggers.ts::onAbsenceRequestApproved",
-	"lib/notifications/triggers.ts::onAbsenceRequestPendingApproval",
-	"lib/notifications/triggers.ts::onAbsenceRequestRejected",
-	"lib/notifications/triggers.ts::onApprovedAbsenceCancelledByEmployee",
-	"lib/notifications/triggers.ts::onClockOutApproved",
-	"lib/notifications/triggers.ts::onClockOutPendingApproval",
-	"lib/notifications/triggers.ts::onClockOutPendingApprovalToManager",
-	"lib/notifications/triggers.ts::onClockOutRejected",
-	"lib/notifications/triggers.ts::onManualEntryApproved",
-	"lib/notifications/triggers.ts::onManualEntryRejected",
-	"lib/notifications/triggers.ts::onTimeCorrectionApproved",
-	"lib/notifications/triggers.ts::onTimeCorrectionPendingApproval",
-	"lib/notifications/triggers.ts::onTimeCorrectionRejected",
-	"lib/notifications/triggers.ts::onTimeCorrectionSubmitted", // dead
-]);
 
 /** Direct writes that never get keys, with the reason. */
 const EXEMPT = new Map<string, string>([
@@ -76,21 +56,17 @@ function productionSources(): Map<string, string> {
 }
 
 describe("notification creators", () => {
-	it("all set translation keys, apart from the shrinking list", { timeout: 120_000 }, () => {
+	it("all set translation keys", { timeout: 120_000 }, () => {
 		const sites = scanNotificationCreators(productionSources());
 		const found = new Set(sites.map((site) => site.id));
 		expect(sites).toContainEqual({ id: KNOWN_CREATOR_WITH_KEYS, hasKeys: true });
-		const withoutKeys = sites
-			.filter((site) => !site.hasKeys && !EXEMPT.has(site.id))
-			.map((site) => site.id);
 
 		expect(
-			withoutKeys.filter((id) => !CREATORS_WITHOUT_KEYS.has(id)).sort(),
-			"New notification creators without translation keys (add metadata.i18n)",
-		).toEqual([]);
-		expect(
-			[...CREATORS_WITHOUT_KEYS].filter((id) => !found.has(id) || !withoutKeys.includes(id)).sort(),
-			"Listed creators that have keys by now or no longer exist (remove them from the list)",
+			sites
+				.filter((site) => !site.hasKeys && !EXEMPT.has(site.id))
+				.map((site) => site.id)
+				.sort(),
+			"Notification creators without translation keys (add metadata.i18n)",
 		).toEqual([]);
 		expect(
 			[...EXEMPT.keys()].filter((id) => !found.has(id)).sort(),

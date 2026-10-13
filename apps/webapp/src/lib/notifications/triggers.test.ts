@@ -17,6 +17,7 @@ import {
 	onAbsenceRequestSubmitted,
 	onApprovedAbsenceCancelledByEmployee,
 	onBirthdayReminder,
+	onClockOutApproved,
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 	onClockOutRejected,
@@ -33,6 +34,7 @@ import {
 	onTimeCorrectionApproved,
 	onTimeCorrectionPendingApproval,
 	onTimeCorrectionRejected,
+	onTimeCorrectionSubmitted,
 	onTravelExpenseApproved,
 	onTravelExpenseRejected,
 	onTravelExpenseReportDecided,
@@ -67,17 +69,119 @@ describe("approval notification triggers", () => {
 				userId: "user-requester",
 				organizationId: "org-1",
 				type: "absence_request_submitted",
-				metadata: expect.objectContaining({
-					startDate: "2026-12-28",
-					endDate: "2026-12-31",
+				// Intl puts thin spaces around the range dash.
+				message: expect.stringMatching(
+					/^Your Vacation request for Dec 28\s–\s31, 2026 has been submitted and is pending approval\.$/,
+				),
+				metadata: {
 					absenceType: "Vacation",
 					managerName: "Morgan Manager",
 					days: 4,
-					i18n: expect.objectContaining({
-						params: { categoryName: "Vacation", dateRange: "Dec 28 - Dec 31" },
-					}),
-				}),
+					i18n: {
+						titleKey: "common:notifications.content.absenceRequestSubmitted.title",
+						titleDefault: "Absence request submitted",
+						messageKey: "common:notifications.content.absenceRequestSubmitted.message",
+						messageDefault:
+							"Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
+						// Calendar days, formatted per recipient: no en-US text is stored as a param.
+						params: {
+							categoryName: "Vacation",
+							startDate: { kind: "plainDate", date: "2026-12-28" },
+							endDate: { kind: "plainDate", date: "2026-12-31" },
+							dateRange: { kind: "plainDateRange", start: "2026-12-28", end: "2026-12-31" },
+						},
+					},
+				},
 			}),
+		);
+	});
+
+	describe("absence copy", () => {
+		const absence = {
+			absenceId: "absence-1",
+			employeeUserId: "user-employee",
+			employeeName: "Avery Employee",
+			organizationId: "org-1",
+			categoryName: "Vacation",
+			startDate: "2026-05-11",
+			endDate: "2026-05-12",
+		};
+		const dateRange = { kind: "plainDateRange", start: "2026-05-11", end: "2026-05-12" };
+
+		it.each([
+			[
+				"pending approval",
+				() =>
+					onAbsenceRequestPendingApproval({
+						...absence,
+						managerUserId: "user-manager",
+						managerName: "Morgan Manager",
+					}),
+				"newAbsenceRequest",
+				"message",
+				"New absence request",
+				"Avery Employee requested Vacation for May 11 – 12, 2026.",
+			],
+			[
+				"approved",
+				() => onAbsenceRequestApproved({ ...absence, approverName: "Morgan Manager" }),
+				"absenceRequestApproved",
+				"message",
+				"Absence request approved",
+				"Your Vacation request for May 11 – 12, 2026 was approved by Morgan Manager.",
+			],
+			[
+				"rejected",
+				() => onAbsenceRequestRejected({ ...absence, approverName: "Morgan Manager" }),
+				"absenceRequestRejected",
+				"message",
+				"Absence request rejected",
+				"Your Vacation request for May 11 – 12, 2026 was rejected by Morgan Manager.",
+			],
+			[
+				"rejected with a reason",
+				() =>
+					onAbsenceRequestRejected({
+						...absence,
+						approverName: "Morgan Manager",
+						rejectionReason: "Team offsite",
+					}),
+				"absenceRequestRejected",
+				"messageWithReason",
+				"Absence request rejected",
+				"Your Vacation request for May 11 – 12, 2026 was rejected by Morgan Manager. Reason: Team offsite",
+			],
+			[
+				"recorded by a manager",
+				() => onAbsenceRecordedByManager({ ...absence, managerName: "Morgan Manager", days: 2 }),
+				"absenceRecorded",
+				"message",
+				"Absence recorded",
+				"Morgan Manager recorded Vacation for May 11 – 12, 2026 on your behalf.",
+			],
+			[
+				"approved absence cancelled",
+				() => onApprovedAbsenceCancelledByEmployee({ ...absence, managerUserId: "user-manager" }),
+				"approvedAbsenceCancelled",
+				"message",
+				"Approved absence cancelled",
+				"Avery Employee cancelled approved Vacation for May 11 – 12, 2026.",
+			],
+		])(
+			"translates the %s notification with its calendar dates",
+			async (_name, trigger, copy, messageVariant, title, message) => {
+				await trigger();
+
+				const notification = lastNotification();
+				expect(notification.title).toBe(title);
+				expect(notification.message.replace(/\s–\s/, " – ")).toBe(message);
+				expect(i18nOf(notification)).toMatchObject({
+					titleKey: `common:notifications.content.${copy}.title`,
+					titleDefault: title,
+					messageKey: `common:notifications.content.${copy}.${messageVariant}`,
+					params: expect.objectContaining({ dateRange }),
+				});
+			},
 		);
 	});
 	it("links manager absence approval notifications to the unified inbox", async () => {
@@ -118,25 +222,33 @@ describe("approval notification triggers", () => {
 			managerName: "Morgan Manager",
 		});
 
-		expect(createNotification).toHaveBeenCalledWith({
-			userId: "user-employee",
-			organizationId: "org-1",
-			type: "absence_request_approved",
-			title: "Absence recorded",
-			message:
-				"Morgan Manager recorded Sick Leave for May 11 - May 12 on your behalf.",
-			entityType: "absence_entry",
-			entityId: "absence-1",
-			actionUrl: "/absences",
-			metadata: {
-				managerRecorded: true,
-				managerName: "Morgan Manager",
-				startDate: "2026-05-11",
-				endDate: "2026-05-12",
-				absenceType: "Sick Leave",
-				days: 2,
-			},
-		});
+		expect(createNotification).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userId: "user-employee",
+				organizationId: "org-1",
+				type: "absence_request_approved",
+				title: "Absence recorded",
+				entityType: "absence_entry",
+				entityId: "absence-1",
+				actionUrl: "/absences",
+				metadata: expect.objectContaining({
+					managerRecorded: true,
+					managerName: "Morgan Manager",
+					absenceType: "Sick Leave",
+					days: 2,
+					i18n: expect.objectContaining({
+						params: {
+							managerName: "Morgan Manager",
+							absenceType: "Sick Leave",
+							startDate: { kind: "plainDate", date: "2026-05-11" },
+							endDate: { kind: "plainDate", date: "2026-05-12" },
+							dateRange: { kind: "plainDateRange", start: "2026-05-11", end: "2026-05-12" },
+							days: 2,
+						},
+					}),
+				}),
+			}),
+		);
 	});
 
 	it("swallows manager-recorded absence notification failures", async () => {
@@ -168,24 +280,32 @@ describe("approval notification triggers", () => {
 			endDate: "2026-05-22",
 		});
 
-		expect(createNotification).toHaveBeenCalledWith({
-			userId: "user-manager",
-			organizationId: "org-1",
-			type: "absence_request_approved",
-			title: "Approved absence cancelled",
-			message:
-				"Avery Employee cancelled approved Vacation for May 21 - May 22.",
-			entityType: "absence_entry",
-			entityId: "absence-1",
-			actionUrl: "/team/absences",
-			metadata: {
-				approvedAbsenceCancelled: true,
-				employeeName: "Avery Employee",
-				startDate: "2026-05-21",
-				endDate: "2026-05-22",
-				absenceType: "Vacation",
-			},
-		});
+		// #1136 (its own notification type) has not landed: the type stays as it is.
+		expect(createNotification).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userId: "user-manager",
+				organizationId: "org-1",
+				type: "absence_request_approved",
+				title: "Approved absence cancelled",
+				entityType: "absence_entry",
+				entityId: "absence-1",
+				actionUrl: "/team/absences",
+				metadata: expect.objectContaining({
+					approvedAbsenceCancelled: true,
+					employeeName: "Avery Employee",
+					absenceType: "Vacation",
+					i18n: expect.objectContaining({
+						params: {
+							employeeName: "Avery Employee",
+							categoryName: "Vacation",
+							startDate: { kind: "plainDate", date: "2026-05-21" },
+							endDate: { kind: "plainDate", date: "2026-05-22" },
+							dateRange: { kind: "plainDateRange", start: "2026-05-21", end: "2026-05-22" },
+						},
+					}),
+				}),
+			}),
+		);
 	});
 
 	it("swallows approved absence cancellation notification failures", async () => {
@@ -223,7 +343,7 @@ describe("approval notification triggers", () => {
 			expect.objectContaining({
 				metadata: {
 					approvalSubject: "absence",
-					i18n: {
+					i18n: expect.objectContaining({
 						params: {
 							employeeName: "Avery Requester",
 							categoryName: "Vacation",
@@ -233,7 +353,7 @@ describe("approval notification triggers", () => {
 							days: 2,
 							notes: "Family trip",
 						},
-					},
+					}),
 				},
 			}),
 		);
@@ -262,10 +382,9 @@ describe("approval notification triggers", () => {
 			dateRange: { kind: "plainDateRange", start: "2026-05-11", end: "2026-05-12" },
 			days: 2,
 		};
-		expect(createNotification.mock.calls.map(([notification]) => notification.metadata)).toEqual([
-			{ i18n: { params } },
-			{ i18n: { params: { ...params, rejectionReason: "Team offsite" } } },
-		]);
+		expect(
+			createNotification.mock.calls.map(([notification]) => notification.metadata.i18n.params),
+		).toEqual([params, { ...params, rejectionReason: "Team offsite" }]);
 	});
 
 	it("links manager time-correction approval notifications to the unified inbox, with entry-offset times (#1152)", async () => {
@@ -295,7 +414,7 @@ describe("approval notification triggers", () => {
 				actionUrl: "/approvals/inbox",
 				metadata: {
 					approvalSubject: "time_correction",
-					i18n: {
+					i18n: expect.objectContaining({
 						params: {
 							employeeName: "Avery Requester",
 							reason: "Forgot to clock in",
@@ -324,7 +443,7 @@ describe("approval notification triggers", () => {
 								preset: "time",
 							},
 						},
-					},
+					}),
 				},
 			}),
 		);
@@ -362,10 +481,235 @@ describe("approval notification triggers", () => {
 				preset: "time",
 			},
 		};
-		expect(createNotification.mock.calls.map(([notification]) => notification.metadata)).toEqual([
-			{ i18n: { params } },
-			{ i18n: { params: { ...params, rejectionReason: "Not plausible" } } },
-		]);
+		expect(
+			createNotification.mock.calls.map(([notification]) => notification.metadata.i18n.params),
+		).toEqual([params, { ...params, rejectionReason: "Not plausible" }]);
+	});
+
+	describe("time correction copy", () => {
+		const period = {
+			workPeriodId: "period-1",
+			employeeUserId: "user-requester",
+			employeeName: "Avery Requester",
+			organizationId: "org-1",
+			originalTime: new Date("2026-05-11T08:00:00.000Z"),
+			correctedTime: new Date("2026-05-11T07:15:00.000Z"),
+		};
+		const decision = {
+			...period,
+			approverName: "Morgan Manager",
+			corrected: {
+				clockIn: { at: new Date("2026-05-11T07:15:00.000Z"), utcOffsetMinutes: 120 },
+				clockOut: null,
+			},
+		};
+		const pending = {
+			workPeriodId: "period-1",
+			employeeName: "Avery Requester",
+			organizationId: "org-1",
+			managerUserId: "user-manager",
+			original: {
+				clockIn: { at: new Date("2026-05-11T08:00:00.000Z"), utcOffsetMinutes: 120 },
+				clockOut: null,
+			},
+			corrected: {
+				clockIn: { at: new Date("2026-05-11T07:15:00.000Z"), utcOffsetMinutes: 120 },
+				clockOut: null,
+			},
+		};
+
+		it.each([
+			[
+				"submitted",
+				() => onTimeCorrectionSubmitted(period),
+				"timeCorrectionSubmitted.title",
+				"timeCorrectionSubmitted.message",
+				"Time correction submitted",
+				"Your time correction request has been submitted and is pending approval.",
+			],
+			[
+				"pending approval",
+				() => onTimeCorrectionPendingApproval(pending),
+				"newTimeCorrectionRequest.title",
+				"newTimeCorrectionRequest.message",
+				"New time correction request",
+				"Avery Requester submitted a time correction request for May 11, 2026.",
+			],
+			[
+				"pending approval with a reason",
+				() => onTimeCorrectionPendingApproval({ ...pending, reason: "Forgot to clock in" }),
+				"newTimeCorrectionRequest.title",
+				"newTimeCorrectionRequest.messageWithReason",
+				"New time correction request",
+				"Avery Requester submitted a time correction request for May 11, 2026. Reason: Forgot to clock in",
+			],
+			[
+				"approved",
+				() => onTimeCorrectionApproved(decision),
+				"timeCorrectionApproved.title",
+				"timeCorrectionApproved.message",
+				"Time correction approved",
+				"Your time correction request was approved by Morgan Manager.",
+			],
+			[
+				"rejected",
+				() => onTimeCorrectionRejected(decision),
+				"timeCorrectionRejected.title",
+				"timeCorrectionRejected.message",
+				"Time correction rejected",
+				"Your time correction request was rejected by Morgan Manager.",
+			],
+			[
+				"rejected with a reason",
+				() => onTimeCorrectionRejected({ ...decision, rejectionReason: "Not plausible" }),
+				"timeCorrectionRejected.title",
+				"timeCorrectionRejected.messageWithReason",
+				"Time correction rejected",
+				"Your time correction request was rejected by Morgan Manager. Reason: Not plausible",
+			],
+		])(
+			"translates the %s notification",
+			async (_name, trigger, titleKey, messageKey, title, message) => {
+				await trigger();
+
+				const notification = lastNotification();
+				expect(notification).toMatchObject({ title, message });
+				expect(i18nOf(notification)).toMatchObject({
+					titleKey: `common:notifications.content.${titleKey}`,
+					titleDefault: title,
+					messageKey: `common:notifications.content.${messageKey}`,
+				});
+			},
+		);
+	});
+
+	describe("clocking copy", () => {
+		// Clocked in at 22:30 local (UTC+2) on May 10, out at 06:45 the next morning.
+		const times = {
+			clockIn: { at: new Date("2026-05-10T20:30:00.000Z"), utcOffsetMinutes: 120 },
+			clockOut: { at: new Date("2026-05-11T04:45:00.000Z"), utcOffsetMinutes: 120 },
+		};
+		const submission = {
+			workPeriodId: "period-1",
+			employeeUserId: "user-requester",
+			employeeName: "Avery Requester",
+			organizationId: "org-1",
+			durationMinutes: 495,
+		};
+
+		it("shows the manager the period's times at its entries' offset, whatever the server zone", async () => {
+			vi.stubEnv("TZ", "Pacific/Honolulu");
+			try {
+				await onClockOutPendingApprovalToManager({
+					...submission,
+					times,
+					managerUserId: "user-manager",
+				});
+			} finally {
+				vi.unstubAllEnvs();
+			}
+
+			const notification = lastNotification();
+			expect(notification.title).toBe("Clock-out approval required");
+			expect(notification.message.replace(/\s/g, " ")).toBe(
+				"Avery Requester clocked out on May 10, 2026 (10:30 PM – 6:45 AM, 8 hours 15 minutes). Approval required.",
+			);
+			expect(i18nOf(notification)).toMatchObject({
+				titleKey: "common:notifications.content.clockOutApprovalRequired.title",
+				messageKey: "common:notifications.content.clockOutApprovalRequired.message",
+				params: {
+					employeeName: "Avery Requester",
+					date: {
+						kind: "entryInstant",
+						at: "2026-05-10T20:30:00Z",
+						utcOffsetMinutes: 120,
+						preset: "dateMedium",
+					},
+					startTime: {
+						kind: "entryInstant",
+						at: "2026-05-10T20:30:00Z",
+						utcOffsetMinutes: 120,
+						preset: "time",
+					},
+					endTime: {
+						kind: "entryInstant",
+						at: "2026-05-11T04:45:00Z",
+						utcOffsetMinutes: 120,
+						preset: "time",
+					},
+					duration: { kind: "duration", minutes: 495 },
+				},
+			});
+		});
+
+		it.each([
+			[
+				"employee pending, with times",
+				() => onClockOutPendingApproval({ ...submission, times }),
+				"clockOutPendingApproval",
+				"message",
+				"Clock-out pending approval",
+				"Your clock-out on May 10, 2026 (8 hours 15 minutes) is pending manager approval.",
+			],
+			[
+				"employee pending, without times",
+				() => onClockOutPendingApproval({ ...submission, times: null }),
+				"clockOutPendingApproval",
+				"messageWithoutDate",
+				"Clock-out pending approval",
+				"Your clock-out (8 hours 15 minutes) is pending manager approval.",
+			],
+			[
+				"manager pending, without times",
+				() =>
+					onClockOutPendingApprovalToManager({
+						...submission,
+						times: null,
+						managerUserId: "user-manager",
+					}),
+				"clockOutApprovalRequired",
+				"messageWithoutTimes",
+				"Clock-out approval required",
+				"Avery Requester clocked out (8 hours 15 minutes). Approval required.",
+			],
+		])("translates the %s notification", async (_name, trigger, copy, variant, title, message) => {
+			await trigger();
+
+			const notification = lastNotification();
+			expect(notification).toMatchObject({ title, message });
+			expect(i18nOf(notification)).toMatchObject({
+				titleKey: `common:notifications.content.${copy}.title`,
+				messageKey: `common:notifications.content.${copy}.${variant}`,
+			});
+		});
+
+		const decision = {
+			workPeriodId: "period-1",
+			employeeUserId: "user-requester",
+			organizationId: "org-1",
+			approverName: "Morgan Manager",
+			startTime: new Date("2026-05-11T08:00:00.000Z"),
+			endTime: new Date("2026-05-11T16:00:00.000Z"),
+		};
+
+		it.each([
+			[onClockOutApproved, undefined, "clockOutApproved", "message"],
+			[onClockOutRejected, undefined, "clockOutRejected", "message"],
+			[onClockOutRejected, "Outside policy", "clockOutRejected", "messageWithReason"],
+			[onManualEntryApproved, undefined, "manualEntryApproved", "message"],
+			[onManualEntryRejected, undefined, "manualEntryRejected", "message"],
+			[onManualEntryRejected, "Overlaps", "manualEntryRejected", "messageWithReason"],
+		])("translates the decision (%#)", async (trigger, rejectionReason, copy, variant) => {
+			await trigger({ ...decision, rejectionReason });
+
+			const notification = lastNotification();
+			expect(notification.message).not.toContain("{");
+			expect(i18nOf(notification)).toMatchObject({
+				titleKey: `common:notifications.content.${copy}.title`,
+				messageKey: `common:notifications.content.${copy}.${variant}`,
+				params: expect.objectContaining({ approverName: "Morgan Manager" }),
+			});
+		});
 	});
 
 	it("links manager clock-out approval notifications to the unified inbox", async () => {
@@ -374,8 +718,7 @@ describe("approval notification triggers", () => {
 			employeeUserId: "user-requester",
 			employeeName: "Avery Requester",
 			organizationId: "org-1",
-			startTime: new Date("2026-05-11T08:00:00.000Z"),
-			endTime: new Date("2026-05-11T16:00:00.000Z"),
+			times: null,
 			durationMinutes: 480,
 			managerUserId: "user-manager",
 		});
@@ -402,8 +745,7 @@ describe("approval notification triggers", () => {
 				employeeUserId: "user-requester",
 				employeeName: "Avery Requester",
 				organizationId: "org-1",
-				startTime: new Date("2026-05-11T08:00:00.000Z"),
-				endTime: new Date("2026-05-11T16:00:00.000Z"),
+				times: null,
 				durationMinutes: 480,
 				idempotencyKey: "submission:pending:employee",
 				durable: true,
@@ -472,7 +814,7 @@ describe("approval notification triggers", () => {
 			expect.objectContaining({
 				title: "Clock-out rejected",
 				message:
-					"Your clock-out approval was rejected by Morgan Manager. Reason: Outside policy The recorded times remain unchanged and are excluded from approved payroll time.",
+					"Your clock-out approval was rejected by Morgan Manager. The recorded times remain unchanged and are excluded from approved payroll time. Reason: Outside policy",
 			}),
 		);
 	});

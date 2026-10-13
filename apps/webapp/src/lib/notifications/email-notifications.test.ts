@@ -849,6 +849,44 @@ describe("sendEmailNotification", () => {
 			);
 		});
 
+		it("fills the recorded-by-manager email's dates from the typed params (#1153)", async () => {
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "absence_request_approved",
+				title: "Absence recorded",
+				message: "Morgan recorded Sick Leave.",
+				organizationId: "org_123",
+				metadata: {
+					managerRecorded: true,
+					managerName: "Morgan",
+					absenceType: "Sick Leave",
+					days: 2,
+					i18n: {
+						params: {
+							managerName: "Morgan",
+							absenceType: "Sick Leave",
+							startDate: { kind: "plainDate", date: "2026-05-11" },
+							endDate: { kind: "plainDate", date: "2026-05-12" },
+							days: 2,
+						},
+					},
+				},
+			});
+
+			expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					templateKey: "absence-recorded-by-manager",
+					data: expect.objectContaining({
+						managerName: "Morgan",
+						startDate: "11. Mai 2026",
+						endDate: "12. Mai 2026",
+						absenceType: "Sick Leave",
+						days: 2,
+					}),
+				}),
+			);
+		});
+
 		it("sends the manager's time-correction pending email with times at the entry's offset", async () => {
 			renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
 
