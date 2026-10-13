@@ -33,11 +33,13 @@ import {
 	tablePart,
 } from "../collector";
 import { instantText, loadEmployeeNames, nameOf } from "../values";
+import { absencesFieldGuide } from "./absences-fields";
 import { PersonalDataSubjectNotFoundError } from "./employment";
 
 export const absencesCollector: PersonalDataCollector = {
 	category: "absences",
 	collect: collectAbsences,
+	fields: absencesFieldGuide,
 };
 
 /** The subject's teams: primary, memberships and every team they were in. */

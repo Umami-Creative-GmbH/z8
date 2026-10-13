@@ -51,10 +51,12 @@ import {
 	tablePart,
 } from "../collector";
 import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import { timeFieldGuide } from "./time-fields";
 
 export const timeCollector: PersonalDataCollector = {
 	category: "time",
 	collect: collectTime,
+	fields: timeFieldGuide,
 };
 
 async function collectTime(

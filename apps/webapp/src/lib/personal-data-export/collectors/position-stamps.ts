@@ -36,6 +36,7 @@ import {
 	tablePart,
 } from "../collector";
 import { instantText, loadUserNames, nameOf } from "../values";
+import { positionStampsFieldGuide } from "./position-stamps-fields";
 
 /** Reads with the global client or inside the collector's transaction. */
 type Reader = Pick<PersonalDataExportDatabase, "select">;
@@ -91,6 +92,7 @@ export const positionStampsCollector: PersonalDataCollector = {
 			}
 			return category;
 		}),
+	fields: positionStampsFieldGuide,
 };
 
 async function collectPositionStamps(

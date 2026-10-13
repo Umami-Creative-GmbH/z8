@@ -308,19 +308,22 @@ describe("personal data export README sections (#1172)", () => {
 		}
 	});
 
-	it("explains every field of every part a collector with a field guide writes", async () => {
+	// Every registered collector, also one added later: a new category or part
+	// cannot ship without its README explanation.
+	it("explains every field of every part every collector writes, in both kinds of export", async () => {
 		for (const kind of ["employee", "admin"] as const) {
 			const scope = { organizationId: ORG, employeeId: ids.ada, userId: "t1172-ada", kind };
 			const categories = await Promise.all(
 				PERSONAL_DATA_COLLECTORS.map((collector) => collector.collect(db, scope)),
 			);
 			const contents = readmeContentsOf(categories, PERSONAL_DATA_COLLECTORS);
-			expect(contents.employment?.guide, kind).toBeDefined();
-			expect(contents.account?.guide, kind).toBeDefined();
-			const guided = Object.fromEntries(
-				Object.entries(contents).filter(([, entry]) => entry?.guide !== undefined),
-			);
-			expect(findUnexplainedFields(guided), kind).toEqual([]);
+			expect(
+				PERSONAL_DATA_COLLECTORS.filter((collector) => !contents[collector.category]?.guide).map(
+					(collector) => collector.category,
+				),
+				kind,
+			).toEqual([]);
+			expect(findUnexplainedFields(contents), kind).toEqual([]);
 		}
 	});
 });

@@ -29,6 +29,7 @@ import {
 	tablePart,
 } from "../collector";
 import { instantText, loadUserNames, nameOf } from "../values";
+import { integrationsFieldGuide } from "./integrations-fields";
 
 const CALENDAR_COLUMNS = [
 	"provider",
@@ -66,6 +67,7 @@ const CHAT_ACCOUNT_COLUMNS = [
 export const integrationsCollector: PersonalDataCollector = {
 	category: "integrations",
 	collect: collectIntegrations,
+	fields: integrationsFieldGuide,
 };
 
 async function collectIntegrations(

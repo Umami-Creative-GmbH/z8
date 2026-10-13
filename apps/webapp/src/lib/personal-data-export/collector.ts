@@ -12,6 +12,7 @@
  *   async collect(database, scope) {
  *     return { category: "time", parts: [tablePart("time_entries", COLUMNS, rows)] };
  *   },
+ *   fields: timeFieldGuide, // see "Field guide" below
  * };
  * ```
  *
@@ -41,16 +42,16 @@
  *   holds and one sentence per column (table) or property (record):
  *
  *   ```ts
- *   const timeFieldGuide: PersonalDataFieldGuide = (t) => ({
+ *   // collectors/time-fields.ts (abridged)
+ *   export const timeFieldGuide: PersonalDataFieldGuide = (t) => ({
  *     time_entries: {
- *       summary: t("personalDataExport.readme.fields.time.timeEntries.summary", "Every clock-in and clock-out."),
+ *       summary: t("personalDataExport.readme.fields.time.timeEntries.summary", "Every clock-in, ..."),
  *       fields: {
  *         ...commonFieldExplanations(t, ["id", "created_at"]),
- *         utc_offset: t("personalDataExport.readme.fields.time.timeEntries.utcOffset", "..."),
+ *         notes: t("personalDataExport.readme.fields.time.timeEntries.notes", "The note written on the entry."),
  *       },
  *     },
  *   });
- *   export const timeCollector: PersonalDataCollector = { category: "time", collect, fields: timeFieldGuide };
  *   ```
  *
  *   Write one literal `t(key, englishDefault)` call per text (the Tolgee
@@ -58,12 +59,16 @@
  *   `personalDataExport.readme.fields.<category>.<partKeyCamel>.summary` and
  *   `...<partKeyCamel>.<fieldCamel>` per field (no field may be named
  *   `summary`); columns every collector shares (ids, who and when) come from
- *   `commonFieldExplanations`. `collectors/employment-fields.ts` is the
- *   worked example.
- *   The README renders only the parts that are in the archive, so describing
- *   a withheld (admin-only) part in the guide never shows it in an employee
- *   export. `findUnexplainedFields` (readme.ts) lists every column the guide
- *   misses; the README integration test requires it to be empty.
+ *   `commonFieldExplanations`. Keep the guide in its own
+ *   `collectors/<category>-fields.ts`; `collectors/employment-fields.ts` is
+ *   the worked example.
+ *   The README renders only the parts and fields that are in the archive, so
+ *   describing a withheld (admin-only) part or column in the guide never
+ *   shows it in an employee export; never name withheld values or their
+ *   markers (such as `hr_only`) in a text an employee export shows.
+ *   `findUnexplainedFields` (readme.ts) lists every part and column a guide
+ *   misses; the README integration test runs every registered collector in
+ *   both kinds of export and requires it to be empty.
  *
  * Add a new category by adding its key to `PERSONAL_DATA_CATEGORIES` and its
  * collector to `PERSONAL_DATA_COLLECTORS` (`collectors/index.ts`); the archive
@@ -165,7 +170,7 @@ export interface PersonalDataCollector {
 		scope: PersonalDataExportScope,
 	): Promise<CollectedCategory>;
 	/** Explains every part and field in the README; see "Field guide" above. */
-	fields?: PersonalDataFieldGuide;
+	fields: PersonalDataFieldGuide;
 }
 
 /** Fields many parts share, explained once. */

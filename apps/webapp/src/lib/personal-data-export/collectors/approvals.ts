@@ -51,11 +51,13 @@ import {
 	otherPeopleOf,
 } from "../redaction";
 import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import { approvalsFieldGuide } from "./approvals-fields";
 import { PersonalDataSubjectNotFoundError } from "./employment";
 
 export const approvalsCollector: PersonalDataCollector = {
 	category: "approvals",
 	collect: collectApprovals,
+	fields: approvalsFieldGuide,
 };
 
 const DECIDED = ["approved", "rejected"] as const;

@@ -51,12 +51,14 @@ import {
 } from "../collector";
 import { jsonWithoutStorageReferences } from "../storage-references";
 import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import { travelExpensesFieldGuide } from "./travel-expenses-fields";
 
 const CATEGORY = "travel_expenses";
 
 export const travelExpensesCollector: PersonalDataCollector = {
 	category: CATEGORY,
 	collect: collectTravelExpenses,
+	fields: travelExpensesFieldGuide,
 };
 
 interface StoredReceipt {

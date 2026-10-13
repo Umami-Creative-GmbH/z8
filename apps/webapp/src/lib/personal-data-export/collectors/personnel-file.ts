@@ -26,12 +26,14 @@ import {
 	tablePart,
 } from "../collector";
 import { instantText, loadUserNames, nameOf } from "../values";
+import { personnelFileFieldGuide } from "./personnel-file-fields";
 
 const CATEGORY = "personnel_file";
 
 export const personnelFileCollector: PersonalDataCollector = {
 	category: CATEGORY,
 	collect: collectPersonnelFile,
+	fields: personnelFileFieldGuide,
 };
 
 async function collectPersonnelFile(
