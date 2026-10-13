@@ -13,7 +13,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 vi.mock("@/lib/storage/export-s3-client", () => ({
-	uploadPrivateObject: async () => ({ bucket: "unused", versionId: null }),
+	uploadPrivateObjectStream: async () => ({ bucket: "unused", versionId: null }),
 	deletePrivateObject: async () => undefined,
 	deletePrivateObjectVersions: async () => undefined,
 }));
@@ -335,8 +335,8 @@ async function buildExport(
 		db,
 		{ organizationId: ORG, exportId },
 		{
-			upload: async (_organizationId, key, data) => {
-				uploads.set(key, data as Uint8Array);
+			upload: async (_organizationId, key, body) => {
+				uploads.set(key, new Uint8Array(await new Response(body).arrayBuffer()));
 				return { bucket: "t1170", versionId: null };
 			},
 			deleteObject: async () => undefined,

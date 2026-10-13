@@ -22,7 +22,7 @@ vi.mock("@/lib/email/email-service", async (original) =>
 );
 vi.mock("@/lib/storage/export-s3-client", () => ({
 	isExportS3Configured: async () => true,
-	uploadPrivateObject: async () => ({ bucket: "t1172", versionId: null }),
+	uploadPrivateObjectStream: async () => ({ bucket: "t1172", versionId: null }),
 	deletePrivateObject: async () => {},
 	deletePrivateObjectVersions: async () => {},
 }));
@@ -108,8 +108,8 @@ async function adaReadme(kind: "employee" | "admin"): Promise<string> {
 		{ organizationId: ORG, exportId },
 		{
 			now: () => NOW,
-			upload: async (_organizationId, _key, data) => {
-				zip = data as Uint8Array;
+			upload: async (_organizationId, _key, body) => {
+				zip = new Uint8Array(await new Response(body).arrayBuffer());
 				return { bucket: "t1172", versionId: null };
 			},
 			notify: async () => undefined,

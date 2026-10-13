@@ -4,6 +4,7 @@
  * the collectors are called the way the export worker calls them.
  */
 
+import JSZip from "jszip";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 import type { CollectedCategory, PersonalDataExportScope, PersonalDataRow } from "./collector";
@@ -13,7 +14,7 @@ const { absencesCollector } = await import("./collectors/absences");
 const { planningCollector } = await import("./collectors/planning");
 const { approvalsCollector } = await import("./collectors/approvals");
 const { PERSONAL_DATA_COLLECTORS } = await import("./collectors");
-const { createInMemoryZipWriter, writePersonalDataArchive } = await import("./archive");
+const { streamPersonalDataArchive } = await import("./archive");
 
 const ORG = "t1168-org";
 const OTHER_ORG = "t1168-other";
@@ -514,23 +515,21 @@ describe("personal data export: absences, planning and approvals (#1168)", () =>
 		);
 		const scope = scopeFor("employee");
 		const { absences, planning, approvals } = await collectAll(scope);
-		const paths: string[] = [];
-		await writePersonalDataArchive(
-			{
-				async add(path) {
-					paths.push(path);
-				},
-				finish: createInMemoryZipWriter().finish,
-			},
-			{
-				exportId: "t1168-export",
-				scope,
-				exportedAt: "2026-10-13T00:00:00Z",
-				locale: "en",
-				readme: "",
-				categories: [absences, planning, approvals],
-			},
+		const zip = await JSZip.loadAsync(
+			await new Response(
+				streamPersonalDataArchive({
+					exportId: "t1168-export",
+					scope,
+					exportedAt: "2026-10-13T00:00:00Z",
+					locale: "en",
+					readme: "",
+					categories: [absences, planning, approvals],
+				}),
+			).arrayBuffer(),
 		);
+		const paths = Object.values(zip.files)
+			.filter((entry) => !entry.dir)
+			.map((entry) => entry.name);
 		expect(paths).toEqual(
 			expect.arrayContaining([
 				"absences.json",
