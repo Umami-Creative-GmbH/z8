@@ -31,7 +31,15 @@ import { useIdle } from "./hooks/useIdle";
 import { useOrganizations } from "./hooks/useOrganizations";
 import { useSettings } from "./hooks/useSettings";
 import { useTheme } from "./hooks/useTheme";
+import { useVehicleUse } from "./hooks/useVehicleUse";
 import { useWorkLocation } from "./hooks/useWorkLocation";
+import {
+	BreakVehicleReading,
+	ClockInVehicleUse,
+	ClockOutVehicleUse,
+	vehicleUseRefusalText,
+} from "./components/VehicleUseFields";
+import type { VehicleUseResult } from "./lib/vehicle-use";
 import { LocaleProvider, useI18n } from "./lib/i18n";
 import { resolveLanguage } from "./lib/language";
 import type { DesktopContext } from "./types";
@@ -130,6 +138,15 @@ function Companion({
 	const [processingIdle, setProcessingIdle] = useState(false),
 		[endingDay, setEndingDay] = useState(false);
 	const attribution = useClosingAttribution(context);
+	const vehicle = useVehicleUse(context);
+	// Vehicle use that cannot be recorded is left out; the clock event still runs.
+	const vehicleSent = <Use,>(result: VehicleUseResult<Use>) => {
+		if (result.ok) return result.vehicleUse;
+		toast.warning(t("Vehicle use was not recorded"), {
+			description: vehicleUseRefusalText(t, result.code),
+		});
+		return undefined;
+	};
 	const timezone = useClockTimezone(context?.timezone);
 	const busy =
 		clock.isClockingIn ||
@@ -142,6 +159,7 @@ function Companion({
 		setEndingDay(true);
 		try {
 			await clock.endDay();
+			vehicle.reset();
 			toast.success(t("Day ended"));
 		} catch (error) {
 			toast.error(t("Clock action failed"), { description: String(error) });
@@ -153,17 +171,21 @@ function Companion({
 		if (!idleEvent || !clock.canRecordBreak || busy) return;
 		setProcessingIdle(true);
 		try {
+			const vehicleUse = vehicleSent(vehicle.takenBreak);
 			if (
 				await present(
 					() =>
 						clock.clockOutWithBreak({
 							breakId: idleEvent.id,
 							workLocationType: location.workLocationType,
+							vehicleUse,
 						}),
 					"Break recorded",
 				)
-			)
+			) {
+				vehicle.reset();
 				dismissIdle();
+			}
 		} finally {
 			setProcessingIdle(false);
 		}
@@ -226,33 +248,49 @@ function Companion({
 								disabled={busy}
 							/>
 						)}
+						{!clock.isClockedIn && (
+							<ClockInVehicleUse state={vehicle} disabled={busy} />
+						)}
 						<ClockButton
 							isClockedIn={clock.isClockedIn}
 							isOnBreak={onBreak}
 							startTime={clock.startTime}
 							onClockIn={async () => {
-								await timezone.run(() =>
-									present(
-										() => clock.clockIn(location.workLocationType),
+								await timezone.run(async () => {
+									const vehicleUse = vehicleSent(vehicle.clockIn);
+									const done = await present(
+										() => clock.clockIn(location.workLocationType, vehicleUse),
 										"Clock in",
-									),
-								);
+									);
+									if (done) vehicle.reset();
+									return done;
+								});
 							}}
 							onClockOut={async () => {
-								await timezone.run(() =>
-									present(
-										() => clock.clockOut(attribution.value(context)),
+								await timezone.run(async () => {
+									const vehicleUse = vehicleSent(vehicle.clockOut);
+									const done = await present(
+										() => clock.clockOut(attribution.value(context), vehicleUse),
 										"Clock out",
-									),
-								);
+									);
+									if (done) vehicle.reset();
+									return done;
+								});
 							}}
 							onStartBreak={async () => {
-								await timezone.run(() =>
-									present(
-										() => clock.startBreak(attribution.value(context)),
+								await timezone.run(async () => {
+									// One reading ends this work and pre-fills the resumed work.
+									const vehicleUse = vehicleSent(vehicle.clockOut);
+									const done = await present(
+										() => clock.startBreak(attribution.value(context), vehicleUse),
 										"On break",
-									),
-								);
+									);
+									if (done) {
+										vehicle.breakStarted(vehicleUse);
+										vehicle.reset({ keepCarried: true });
+									}
+									return done;
+								});
 							}}
 							onEndDay={endDay}
 							isLoading={busy}
@@ -264,6 +302,9 @@ function Companion({
 								context={context}
 								disabled={busy}
 							/>
+						)}
+						{clock.isClockedIn && (
+							<ClockOutVehicleUse state={vehicle} disabled={busy} />
 						)}
 						<ServerSetupNotice journal={clock.journal} />
 						<ClockRecoveryNotice
@@ -295,7 +336,9 @@ function Companion({
 						onResume={continueWork}
 						isLoading={processingIdle}
 						canRecord={clock.canRecordBreak}
-					/>
+					>
+						<BreakVehicleReading state={vehicle} disabled={processingIdle} />
+					</IdleDialog>
 				</div>
 			)}
 			{preferences.error && (

@@ -1195,3 +1195,10 @@ button {
 		color-scheme: dark;
 	}
 }
+
+/* Vehicle use (#1124): plausibility warnings are advice, never a refusal. */
+.vehicle-use-warnings {
+	border-left: 2px solid var(--color-primary);
+	padding-left: 8px;
+}
+
