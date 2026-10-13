@@ -425,7 +425,14 @@ describe("personal data export pipeline (#1165)", () => {
 			categories: PERSONAL_DATA_COLLECTORS.map((collector) => collector.category),
 		});
 		expect(manifest.categories).toEqual(
-			expect.arrayContaining(["employment", "time", "account"]),
+			expect.arrayContaining([
+				"employment",
+				"time",
+				"absences",
+				"planning",
+				"approvals",
+				"account",
+			]),
 		);
 		expect(files["README.txt"]).toContain("Your personal data from Acme GmbH");
 		expect(files["README.txt"]).toContain("employment.json");
