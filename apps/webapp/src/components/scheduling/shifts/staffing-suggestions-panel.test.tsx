@@ -71,6 +71,7 @@ describe("StaffingSuggestionsPanel", () => {
 						skillId: "s",
 						skillName: "First aid",
 						expiresAt: "2026-10-15",
+						certificateOnFile: false,
 					},
 					{
 						type: "compliance",
@@ -104,6 +105,26 @@ describe("StaffingSuggestionsPanel", () => {
 		expect(screen.getByText("Pending absence: Vacation")).toBeTruthy();
 		expect(screen.getByText("Lacks preferred skill: French")).toBeTruthy();
 		expect(screen.queryByText(/480/)).toBeNull();
+		expect(screen.queryByText("Certificate on file")).toBeNull();
+	});
+
+	it("tells that a skill certificate is on file for an expired required skill", () => {
+		renderPanel([
+			suggestion("Anna Berg", {
+				warnings: [
+					{
+						type: "expiredRequiredSkill",
+						skillId: "s",
+						skillName: "Forklift licence",
+						expiresAt: "2026-10-15",
+						certificateOnFile: true,
+					},
+				],
+			}),
+		]);
+
+		const warning = screen.getByText("Forklift licence expired on Oct 15, 2026").closest("li");
+		expect(warning?.textContent).toContain("Certificate on file");
 	});
 
 	it("passes the picked employee on", () => {

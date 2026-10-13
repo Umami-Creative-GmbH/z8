@@ -1,3 +1,4 @@
+import { Temporal } from "temporal-polyfill";
 import type { DocumentCategory } from "./document.types";
 
 /**
@@ -20,4 +21,19 @@ export function skillCertificateRefusal(
 	if (document.category !== "certificate") return "not_certificate";
 	if (skill.requiresExpiry && document.expiryDate === null) return "undated_requires_expiry";
 	return null;
+}
+
+/**
+ * The skill expiry date the skill certificates of one employee skill set
+ * (#1145): the latest expiry date among the dated ones (`YYYY-MM-DD`). Null
+ * when none is dated, and then the employee skill keeps the date it has.
+ */
+export function certificateSkillExpiryDate(expiryDates: readonly (string | null)[]): string | null {
+	let latest: Temporal.PlainDate | null = null;
+	for (const value of expiryDates) {
+		if (value === null) continue;
+		const day = Temporal.PlainDate.from(value);
+		if (latest === null || Temporal.PlainDate.compare(day, latest) > 0) latest = day;
+	}
+	return latest?.toString() ?? null;
 }

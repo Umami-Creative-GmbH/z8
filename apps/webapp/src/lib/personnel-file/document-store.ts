@@ -26,6 +26,7 @@ import {
 	type SickNoteAbsence,
 	type SickNoteAttachAuthority,
 } from "./sick-note-attach";
+import { recomputeCertificateSkillExpiry } from "./skill-certificate-expiry";
 import { loadCertificateSkill } from "./skill-certificate-store";
 import type { StagedPersonnelFileUpload, StoredPersonnelFileObject } from "./upload-ledger";
 
@@ -458,6 +459,13 @@ export async function updateDocumentMetadata(
 					: {}),
 			});
 		}
+		// Re-dating or unlinking a skill certificate moves the skill expiry date (#1145).
+		if (current.employeeSkillId !== null && (unlinksSkill || "expiryDate" in changes)) {
+			await recomputeCertificateSkillExpiry(tx, {
+				organizationId: access.organizationId,
+				employeeSkillIds: [current.employeeSkillId],
+			});
+		}
 		let shareEventId: string | null = null;
 		if (visibilityChanged) {
 			const auditId = await writeDocumentAudit(tx, {
@@ -535,6 +543,11 @@ export async function deleteDocument(
 				...(current.absenceEntryId ? { absenceId: current.absenceEntryId } : {}),
 				...(ownSickNote ? { source: "employee" } : {}),
 			},
+		});
+		// A deleted skill certificate no longer sets the skill expiry date (#1145).
+		await recomputeCertificateSkillExpiry(tx, {
+			organizationId: access.organizationId,
+			employeeSkillIds: [current.employeeSkillId],
 		});
 		return { kind: "deleted", documentId: current.id };
 	});

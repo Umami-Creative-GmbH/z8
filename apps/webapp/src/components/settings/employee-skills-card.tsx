@@ -239,6 +239,14 @@ export function EmployeeSkillsCard({
 															})}
 												</p>
 											)}
+											{employeeSkill.expiryDateFromCertificate && (
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"settings.skills.expiryDateFromCertificate",
+														"A skill certificate in the personnel file sets this date.",
+													)}
+												</p>
+											)}
 											{employeeSkill.notes && (
 												<p className="text-xs text-muted-foreground">{employeeSkill.notes}</p>
 											)}
@@ -247,26 +255,29 @@ export function EmployeeSkillsCard({
 									{canManageSkills && (
 										<TooltipProvider>
 											<div className="flex items-center gap-1">
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Button
-															variant="ghost"
-															size="icon"
-															className="size-8"
-															onClick={() => setEditing(employeeSkill)}
-															aria-label={t(
-																"settings.skills.editExpiryDateFor",
-																"Edit expiry date of {skillName}",
-																{ skillName: employeeSkill.skill.name },
-															)}
-														>
-															<IconPencil className="size-4" aria-hidden="true" />
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														{t("settings.skills.editExpiryDate", "Edit expiry date")}
-													</TooltipContent>
-												</Tooltip>
+												{/* Skill certificates set the date: only the certificate changes it (#1145). */}
+												{!employeeSkill.expiryDateFromCertificate && (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="size-8"
+																onClick={() => setEditing(employeeSkill)}
+																aria-label={t(
+																	"settings.skills.editExpiryDateFor",
+																	"Edit expiry date of {skillName}",
+																	{ skillName: employeeSkill.skill.name },
+																)}
+															>
+																<IconPencil className="size-4" aria-hidden="true" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent>
+															{t("settings.skills.editExpiryDate", "Edit expiry date")}
+														</TooltipContent>
+													</Tooltip>
+												)}
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<Button

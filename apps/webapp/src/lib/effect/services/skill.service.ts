@@ -19,6 +19,7 @@ import {
 } from "@/db/schema";
 import { type Instant, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { loadCertificateSkillExpiryDates } from "@/lib/personnel-file/skill-certificate-expiry";
 import { loadSkillCertificatesOnFile } from "@/lib/personnel-file/skill-certificate-store";
 import { isExpiredSkillOn, parseSkillExpiryDate } from "@/lib/scheduling/skill-expiry";
 import { loadSkillReminderWindow } from "@/lib/scheduling/skill-reminder-store";
@@ -121,6 +122,11 @@ export interface EmployeeSkillWithDetails extends EmployeeSkill {
 	 * (#1144). Only that one is on file: opening it takes personnel file access.
 	 */
 	certificateOnFile: boolean;
+	/**
+	 * Dated skill certificates set the skill expiry date (#1145), so the skill
+	 * side cannot edit it. Never while personnel files are disabled.
+	 */
+	expiryDateFromCertificate: boolean;
 }
 
 export interface SkillValidationResult {
@@ -197,7 +203,10 @@ export class SkillService extends Context.Service<
 			input: AssignSkillInput,
 		) => Effect.Effect<EmployeeSkill, ValidationError | NotFoundError | DatabaseError>;
 
-		/** Changes an assigned employee skill's expiry date in place. */
+		/**
+		 * Changes an assigned employee skill's expiry date in place. Rejected
+		 * while dated skill certificates set it (#1145).
+		 */
 		readonly updateEmployeeSkillExpiry: (
 			input: UpdateEmployeeSkillExpiryInput,
 		) => Effect.Effect<EmployeeSkill, ValidationError | NotFoundError | DatabaseError>;
@@ -467,6 +476,14 @@ export const SkillServiceLive = Layer.effect(
 					})),
 				);
 
+		/** The skill side cannot edit a date skill certificates set (#1145, Scheduling ADR 0001). */
+		const expiryDateSetByCertificate = () =>
+			new ValidationError({
+				message:
+					"A skill certificate in the personnel file sets this expiry date. Change the date on the certificate.",
+				field: "expiresAt",
+			});
+
 		/** Which of the employee skills a skill certificate names (#1144). */
 		const certificatesOnFile = (organizationId: string, employeeSkillIds: readonly string[]) =>
 			dbService.query("getSkillCertificatesOnFile", () =>
@@ -667,31 +684,57 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
-					// Upsert (update if exists, insert if not)
-					const assignment = yield* dbService.query("assignSkillToEmployee", async () => {
-						const [result] = await dbService.db
-							.insert(employeeSkill)
-							.values({
-								employeeId: input.employeeId,
-								skillId: input.skillId,
-								expiresAt,
-								notes: input.notes,
-								assignedBy: input.assignedBy,
-							})
-							.onConflictDoUpdate({
-								target: [employeeSkill.employeeId, employeeSkill.skillId],
-								set: {
+					// Upsert (update if exists, insert if not). Re-assigning cannot move a
+					// date skill certificates set (#1145).
+					const outcome = yield* dbService.query("assignSkillToEmployee", () =>
+						dbService.db.transaction(async (tx) => {
+							const [existing] = await tx
+								.select({ id: employeeSkill.id })
+								.from(employeeSkill)
+								.where(
+									and(
+										eq(employeeSkill.employeeId, input.employeeId),
+										eq(employeeSkill.skillId, input.skillId),
+									),
+								)
+								.for("update");
+							if (existing) {
+								const setByCertificate = await loadCertificateSkillExpiryDates(tx, {
+									organizationId: input.organizationId,
+									employeeSkillIds: [existing.id],
+								});
+								const certificateDate = setByCertificate.get(existing.id);
+								if (certificateDate !== undefined && certificateDate !== expiresAt) {
+									return { kind: "set_by_certificate" } as const;
+								}
+							}
+							const [result] = await tx
+								.insert(employeeSkill)
+								.values({
+									employeeId: input.employeeId,
+									skillId: input.skillId,
 									expiresAt,
 									notes: input.notes,
 									assignedBy: input.assignedBy,
-									assignedAt: new Date(),
-								},
-							})
-							.returning();
-						return result;
-					});
+								})
+								.onConflictDoUpdate({
+									target: [employeeSkill.employeeId, employeeSkill.skillId],
+									set: {
+										expiresAt,
+										notes: input.notes,
+										assignedBy: input.assignedBy,
+										assignedAt: new Date(),
+									},
+								})
+								.returning();
+							return { kind: "assigned", row: result } as const;
+						}),
+					);
 
-					return assignment;
+					if (outcome.kind === "set_by_certificate") {
+						return yield* Effect.fail(expiryDateSetByCertificate());
+					}
+					return outcome.row;
 				}),
 
 			updateEmployeeSkillExpiry: (input) =>
@@ -713,20 +756,39 @@ export const SkillServiceLive = Layer.effect(
 						);
 					}
 
-					const updated = yield* dbService.query("updateEmployeeSkillExpiry", async () => {
-						const [row] = await dbService.db
-							.update(employeeSkill)
-							.set({ expiresAt })
-							.where(
-								and(
-									eq(employeeSkill.employeeId, input.employeeId),
-									eq(employeeSkill.skillId, input.skillId),
-								),
-							)
-							.returning();
-						return row;
-					});
+					// Locks the employee skill before looking for skill certificates, so a
+					// certificate linked meanwhile either waits or is seen (#1145).
+					const outcome = yield* dbService.query("updateEmployeeSkillExpiry", () =>
+						dbService.db.transaction(async (tx) => {
+							const [existing] = await tx
+								.select({ id: employeeSkill.id })
+								.from(employeeSkill)
+								.where(
+									and(
+										eq(employeeSkill.employeeId, input.employeeId),
+										eq(employeeSkill.skillId, input.skillId),
+									),
+								)
+								.for("update");
+							if (!existing) return { kind: "not_found" } as const;
+							const setByCertificate = await loadCertificateSkillExpiryDates(tx, {
+								organizationId: input.organizationId,
+								employeeSkillIds: [existing.id],
+							});
+							if (setByCertificate.has(existing.id)) return { kind: "set_by_certificate" } as const;
+							const [row] = await tx
+								.update(employeeSkill)
+								.set({ expiresAt })
+								.where(eq(employeeSkill.id, existing.id))
+								.returning();
+							return row ? ({ kind: "updated", row } as const) : ({ kind: "not_found" } as const);
+						}),
+					);
 
+					if (outcome.kind === "set_by_certificate") {
+						return yield* Effect.fail(expiryDateSetByCertificate());
+					}
+					const updated = outcome.kind === "updated" ? outcome.row : null;
 					if (!updated) {
 						return yield* Effect.fail(
 							new NotFoundError({
@@ -800,13 +862,15 @@ export const SkillServiceLive = Layer.effect(
 					});
 
 					const scoped = withOrganizationSkills(organizationId, skills);
-					const onFile = yield* certificatesOnFile(
-						organizationId,
-						scoped.map((row) => row.id),
+					const employeeSkillIds = scoped.map((row) => row.id);
+					const onFile = yield* certificatesOnFile(organizationId, employeeSkillIds);
+					const setByCertificate = yield* dbService.query("getCertificateSkillExpiryDates", () =>
+						loadCertificateSkillExpiryDates(dbService.db, { organizationId, employeeSkillIds }),
 					);
 					return scoped.map((row) => ({
 						...row,
 						certificateOnFile: onFile.has(row.id),
+						expiryDateFromCertificate: setByCertificate.has(row.id),
 					})) as EmployeeSkillWithDetails[];
 				}),
 
@@ -1231,9 +1295,7 @@ export const SkillServiceLive = Layer.effect(
 
 						return results.map((override) => ({
 							override,
-							missingSkillIds: missingSkillIdsSchema.parse(
-								JSON.parse(override.missingSkillIds),
-							),
+							missingSkillIds: missingSkillIdsSchema.parse(JSON.parse(override.missingSkillIds)),
 						}));
 					});
 
@@ -1261,9 +1323,7 @@ export const SkillServiceLive = Layer.effect(
 
 					return overrides.map(({ override, missingSkillIds }) => ({
 						...override,
-						missingSkillNames: missingSkillIds.map(
-							(id) => skillNames.get(id) ?? "Unknown Skill",
-						),
+						missingSkillNames: missingSkillIds.map((id) => skillNames.get(id) ?? "Unknown Skill"),
 					})) as OverrideHistoryEntry[];
 				}),
 		});

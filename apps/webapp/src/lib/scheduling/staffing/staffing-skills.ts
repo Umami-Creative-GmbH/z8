@@ -13,6 +13,8 @@ export interface HeldSkill {
 	skillId: string;
 	/** Skill expiry date (`YYYY-MM-DD`, last valid day); null never expires. */
 	expiresAt: string | null;
+	/** A skill certificate in the personnel file names this employee skill (#1144); never its content. */
+	certificateOnFile?: boolean;
 }
 
 /**
@@ -66,6 +68,7 @@ export function assessStaffingSkills(input: {
 				skillId: requirement.skillId,
 				skillName: requirement.skillName,
 				expiresAt,
+				certificateOnFile: held?.certificateOnFile ?? false,
 			});
 		} else {
 			warnings.push({

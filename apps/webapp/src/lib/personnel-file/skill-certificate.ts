@@ -7,6 +7,7 @@ import { canManageDocument, type PersonnelFileAccess } from "./access";
 import { loadEmployeeRef } from "./access-store";
 import { writeDocumentAudit } from "./audit";
 import { type EmployeeDocumentView, lockDocument, toDocumentViews } from "./document-store";
+import { recomputeCertificateSkillExpiry } from "./skill-certificate-expiry";
 import {
 	type SkillCertificateRuleRefusal,
 	skillCertificateRefusal,
@@ -25,8 +26,8 @@ import {
  * skill on their own upload, and a manager without an officer grant cannot
  * either. Every change is audited with the actor and the employee skill.
  *
- * This slice only links: the skill expiry date follows the certificates in
- * #1145.
+ * The skill expiry date follows the dated skill certificates (#1145,
+ * `skill-certificate-expiry.ts`).
  */
 
 type Database = typeof appDb;
@@ -107,6 +108,12 @@ export async function setCertificateSkill(
 			actorUserId: access.userId,
 			document: row,
 			changes: { employeeSkillId: { from, to } },
+		});
+		// The skill expiry date follows the certificates (#1145), for the skill
+		// the certificate stopped naming and the one it names now.
+		await recomputeCertificateSkillExpiry(tx, {
+			organizationId: access.organizationId,
+			employeeSkillIds: [from, to],
 		});
 		const [document] = await toDocumentViews(tx, access.organizationId, [row]);
 		if (!document) return { kind: "not_found" };
