@@ -107,7 +107,10 @@ export function RehireForm(props: RehireFormProps) {
 				weeklyContractMinutes: toContractMinutes(value.weeklyHours),
 				contractType: value.contractType,
 				workModel: value.workModel,
-				hourlyRate: value.contractType === "hourly" ? value.hourlyRate.trim() || null : null,
+				hourlyRate:
+					value.contractType === "hourly" && value.hourlyRate.trim()
+						? Number(value.hourlyRate.trim())
+						: null,
 				currency: value.currency.trim().toUpperCase(),
 				probationStartsOn: value.probationStartsOn || null,
 				probationEndsOn: value.probationEndsOn || null,

@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { contractTypeSchema } from "./employee";
-import { workModelSchema } from "./employment-history";
+import { hourlyWageSchema, wageForContract, workModelSchema } from "./employment-history";
 
 /**
  * Serializable departure and rehire payloads. The server derives cutoff and
@@ -42,13 +42,7 @@ export const rehireEmployeeSchema = z
 		weeklyContractMinutes: z.number().int().min(0).max(10080),
 		contractType: contractTypeSchema,
 		workModel: workModelSchema,
-		hourlyRate: z
-			.string()
-			.trim()
-			.refine((value) => Number.isFinite(Number(value)) && Number(value) > 0, {
-				message: "Hourly rate must be a positive number",
-			})
-			.nullable(),
+		hourlyRate: hourlyWageSchema.nullable(),
 		currency: z.string().length(3),
 		probationStartsOn: z.iso.date().nullable(),
 		probationEndsOn: z.iso.date().nullable(),
@@ -64,7 +58,11 @@ export const rehireEmployeeSchema = z
 			!data.probationEndsOn ||
 			data.probationEndsOn > data.probationStartsOn,
 		{ message: "Probation end must be after probation start", path: ["probationEndsOn"] },
-	);
+	)
+	.transform((data) => ({
+		...data,
+		hourlyRate: wageForContract(data.contractType, data.hourlyRate),
+	}));
 
 export const employeeOffboardingViewSchema = z.object({ employeeId: z.uuid() });
 

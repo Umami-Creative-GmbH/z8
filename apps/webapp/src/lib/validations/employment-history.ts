@@ -5,19 +5,43 @@ export const employmentStatusSchema = z.enum(["active", "inactive", "terminated"
 export const workModelSchema = z.enum(["onsite", "hybrid", "remote", "flexible"]);
 export const employmentReviewStateSchema = z.enum(["draft", "pending", "confirmed"]);
 
-const strictHourlyRateSchema = z
-	.string()
-	.trim()
-	.refine(
-		(value) => {
-			if (value === "") return true;
-			const numericValue = Number(value);
-			return Number.isFinite(numericValue) && numericValue > 0;
-		},
-		{ message: "Hourly rate must be a positive number" },
-	)
-	.optional()
-	.nullable();
+const HOURLY_WAGE_MESSAGE = "Hourly rate must be a positive number";
+/** The largest value `numeric(10,2)` holds. */
+const MAX_HOURLY_WAGE = 99_999_999.99;
+
+/**
+ * The hourly wage in employment terms: a positive amount with at most two
+ * decimal places, stored as `numeric(10,2)`. A decimal string from a form is
+ * read as a number; an empty string is refused, not treated as "no wage".
+ */
+export const hourlyWageSchema = z
+	.union([
+		z.number(),
+		z
+			.string()
+			.trim()
+			.regex(/^\d+(\.\d+)?$/, HOURLY_WAGE_MESSAGE)
+			.transform(Number),
+	])
+	.pipe(
+		z
+			.number(HOURLY_WAGE_MESSAGE)
+			.positive(HOURLY_WAGE_MESSAGE)
+			.max(MAX_HOURLY_WAGE, HOURLY_WAGE_MESSAGE)
+			.refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 1e-6, {
+				message: "Hourly rate can have at most two decimal places",
+			}),
+	);
+
+/** A terms wage as the legacy `employee.current_hourly_rate` decimal text (dropped by #1179). */
+export function storedEmployeeWage(hourlyRate: number | null): string | null {
+	return hourlyRate === null ? null : hourlyRate.toFixed(2);
+}
+
+/** Fixed terms carry no wage, whatever the client sent. */
+export function wageForContract(contractType: "fixed" | "hourly", hourlyRate: number | null) {
+	return contractType === "hourly" ? hourlyRate : null;
+}
 
 export const upsertEmploymentHistorySchema = z
 	.object({
@@ -29,7 +53,7 @@ export const upsertEmploymentHistorySchema = z
 		probationEndsOn: z.coerce.date().optional().nullable(),
 		workModel: workModelSchema.default("onsite"),
 		workPolicyId: z.uuid("Invalid work policy ID").optional().nullable(),
-		hourlyRate: strictHourlyRateSchema,
+		hourlyRate: hourlyWageSchema.nullish(),
 		currency: z.string().min(3).max(3).default("EUR"),
 		changeReason: z.string().max(1000, "Reason is too long").optional().nullable(),
 		reviewState: employmentReviewStateSchema.default("draft"),
@@ -41,10 +65,14 @@ export const upsertEmploymentHistorySchema = z
 		},
 		{ message: "Probation end must be after probation start", path: ["probationEndsOn"] },
 	)
-	.refine((data) => data.contractType !== "hourly" || !!data.hourlyRate, {
+	.refine((data) => data.contractType !== "hourly" || data.hourlyRate != null, {
 		message: "Hourly rate is required for hourly contracts",
 		path: ["hourlyRate"],
-	});
+	})
+	.transform((data) => ({
+		...data,
+		hourlyRate: wageForContract(data.contractType, data.hourlyRate ?? null),
+	}));
 
 export type EmploymentStatus = z.infer<typeof employmentStatusSchema>;
 export type WorkModel = z.infer<typeof workModelSchema>;

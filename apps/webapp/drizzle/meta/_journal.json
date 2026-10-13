@@ -1513,6 +1513,13 @@
       "when": 1802880000000,
       "tag": "0215_absence_setting_proration_notice",
       "breakpoints": true
+    },
+    {
+      "idx": 216,
+      "version": "7",
+      "when": 1805040000000,
+      "tag": "0240_employment_terms_numeric_wage",
+      "breakpoints": true
     }
   ]
 }

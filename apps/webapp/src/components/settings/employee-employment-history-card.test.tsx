@@ -62,7 +62,7 @@ const baseHistory = [
 		probationEndsOn: null,
 		workModel: "remote",
 		workPolicyId: null,
-		hourlyRate: "28.50",
+		hourlyRate: 28.5,
 		currency: "EUR",
 		changeReason: "Scheduled change",
 		reviewState: "pending",
