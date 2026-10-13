@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, inArray, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -8,11 +8,9 @@ import {
 	absenceEntry,
 	employee,
 	employeeManagers,
-	employeeVacationAllowance,
 	team,
 	timeRecord,
 	timeRecordAbsence,
-	vacationAllowance,
 } from "@/db/schema";
 import {
 	getAbsenceDays,
@@ -36,6 +34,7 @@ import {
 	getBlockingOverlapMessage,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
+import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { AuditTrail } from "@/lib/audit-trail";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
@@ -50,6 +49,7 @@ import {
 	type StagedSickNoteInput,
 } from "@/lib/personnel-file/sick-note-upload";
 import { addCalendarSyncJob } from "@/lib/queue";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	buildCanonicalAbsenceRecordValues,
 	buildInaccessibleTeamAbsenceListResult,
@@ -946,20 +946,13 @@ async function addMetricsToRows(
 	const employeeIds = rows.map((row) => row.id);
 	const yearStart = `${year}-01-01`;
 	const yearEnd = `${year}-12-31`;
-	const [allowance, employeeAllowances, absences, workingDaysByEmployeeId] = await Promise.all([
-		db.query.vacationAllowance.findFirst({
-			where: and(
-				eq(vacationAllowance.organizationId, organizationId),
-				eq(vacationAllowance.isActive, true),
-				eq(vacationAllowance.isCompanyDefault, true),
-				isNull(vacationAllowance.validUntil),
-			),
-		}),
-		db.query.employeeVacationAllowance.findMany({
-			where: and(
-				inArray(employeeVacationAllowance.employeeId, employeeIds),
-				eq(employeeVacationAllowance.year, year),
-			),
+	const [{ balances }, absences, workingDaysByEmployeeId] = await Promise.all([
+		// The same vacation balances as every other page (#1111).
+		loadVacationBalances(db, {
+			organizationId,
+			employeeIds,
+			year,
+			timezone: await loadOrganizationTimezone(db, organizationId),
 		}),
 		db.query.absenceEntry.findMany({
 			where: and(
@@ -978,12 +971,6 @@ async function addMetricsToRows(
 		}),
 	]);
 
-	const allowancesByEmployeeId = new Map(
-		employeeAllowances.map((employeeAllowance) => [
-			employeeAllowance.employeeId,
-			employeeAllowance,
-		]),
-	);
 	const absencesByEmployeeId = new Map<string, AbsenceWithCategory[]>();
 	for (const absence of absences as AbsenceWithCategory[]) {
 		const existing = absencesByEmployeeId.get(absence.employeeId) ?? [];
@@ -994,15 +981,7 @@ async function addMetricsToRows(
 	return rows.map((row) => {
 		const metrics = calculateManagerAbsenceMetrics({
 			year,
-			allowance: allowance
-				? {
-						defaultAnnualDays: allowance.defaultAnnualDays,
-						allowCarryover: allowance.allowCarryover,
-						maxCarryoverDays: allowance.maxCarryoverDays,
-						carryoverExpiryMonths: allowance.carryoverExpiryMonths,
-					}
-				: null,
-			employeeAllowance: allowancesByEmployeeId.get(row.id) ?? null,
+			balance: balances.get(row.id),
 			absences: absencesByEmployeeId.get(row.id) ?? [],
 			isWorkingDay: workingDaysByEmployeeId.get(row.id),
 		});

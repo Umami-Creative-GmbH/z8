@@ -86,6 +86,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -108,6 +109,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -130,6 +132,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -156,6 +159,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: true,
 					maxCarryoverDays: "10",
 					carryoverExpiryMonths: 3, // Expires end of March
@@ -183,6 +187,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: true,
 					maxCarryoverDays: "10",
 					carryoverExpiryMonths: 3, // Expires end of March
@@ -206,6 +211,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -248,6 +254,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -314,35 +321,6 @@ describe("Vacation Calculator", () => {
 
 			expect(hasSufficientBalance(balance, 16)).toBe(false);
 			expect(hasSufficientBalance(balance, 20)).toBe(false);
-		});
-	});
-
-	describe("prorateAnnualDays", () => {
-		test("should return full days for employees starting before year", async () => {
-			const { prorateAnnualDays } = await import("../vacation-calculator");
-
-			const result = prorateAnnualDays(30, new Date(2023, 5, 15), 2024);
-
-			expect(result).toBe(30);
-		});
-
-		test("should prorate for mid-year start", async () => {
-			const { prorateAnnualDays } = await import("../vacation-calculator");
-
-			// Start July 1, 2024 - half year remaining
-			const result = prorateAnnualDays(30, new Date(2024, 6, 1), 2024);
-
-			// Approximately half the year remaining
-			expect(result).toBeGreaterThan(14);
-			expect(result).toBeLessThan(16);
-		});
-
-		test("should return 0 for future start date", async () => {
-			const { prorateAnnualDays } = await import("../vacation-calculator");
-
-			const result = prorateAnnualDays(30, new Date(2025, 0, 1), 2024);
-
-			expect(result).toBe(0);
 		});
 	});
 });

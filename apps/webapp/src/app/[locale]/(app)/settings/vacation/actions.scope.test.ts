@@ -411,6 +411,8 @@ const { getEmployeeSettingsActorContext, requireOrgAdminEmployeeSettingsAccess }
 );
 const {
 	getVacationPolicies,
+	createVacationPolicy,
+	updateVacationPolicy,
 	createVacationAdjustmentAction,
 	getAbsenceCategoriesForSettings,
 	createAbsenceCategory,
@@ -473,6 +475,123 @@ describe("vacation settings scope actions", () => {
 		const result = await getVacationPolicies("org-1");
 
 		expect(result).toEqual({ success: true, data: mockState.policyRows });
+	});
+
+	describe("vacation policy proration settings (#1109)", () => {
+		const policyInput = {
+			organizationId: "org-1",
+			name: "Standard",
+			startDate: "2027-01-01",
+			defaultAnnualDays: "30",
+			accrualType: "annual" as const,
+			allowCarryover: false,
+		};
+		const storedPolicy = {
+			id: "policy-1",
+			organizationId: "org-1",
+			name: "Standard",
+			isCompanyDefault: false,
+			defaultAnnualDays: "30",
+			prorateInStartAndExitYear: true,
+			statutoryMinimumDays: "20",
+		};
+
+		beforeEach(() => {
+			mockState.actor.accessTier = "orgAdmin";
+			mockState.policyRows = [storedPolicy];
+		});
+
+		it("gives a new policy the proration switch and a statutory minimum of min(20, annual days)", async () => {
+			mockState.insertQueue = [[{ id: "policy-2" }], [{ id: "policy-3" }]];
+
+			await createVacationPolicy(policyInput);
+			await createVacationPolicy({ ...policyInput, name: "Part-time", defaultAnnualDays: "15" });
+
+			expect(mockState.insertValues).toHaveBeenNthCalledWith(
+				1,
+				expect.objectContaining({ prorateInStartAndExitYear: true, statutoryMinimumDays: "20" }),
+			);
+			expect(mockState.insertValues).toHaveBeenNthCalledWith(
+				2,
+				expect.objectContaining({ prorateInStartAndExitYear: true, statutoryMinimumDays: "15" }),
+			);
+		});
+
+		it("creates a policy with the settings an admin chose", async () => {
+			mockState.insertQueue = [[{ id: "policy-2" }]];
+
+			const result = await createVacationPolicy({
+				...policyInput,
+				prorateInStartAndExitYear: false,
+				statutoryMinimumDays: "24",
+			});
+
+			expect(result).toMatchObject({ success: true });
+			expect(mockState.insertValues).toHaveBeenCalledWith(
+				expect.objectContaining({ prorateInStartAndExitYear: false, statutoryMinimumDays: "24" }),
+			);
+		});
+
+		it.each(["-1", "31"])(
+			"refuses to create a policy with a statutory minimum of %s on 30 annual days",
+			async (statutoryMinimumDays) => {
+				const result = await createVacationPolicy({ ...policyInput, statutoryMinimumDays });
+
+				expect(result).toMatchObject({ success: false, code: "ValidationError" });
+				expect(mockState.insertValues).not.toHaveBeenCalled();
+			},
+		);
+
+		it("updates both settings", async () => {
+			mockState.insertQueue = [[{ id: "policy-1" }]];
+
+			const result = await updateVacationPolicy("policy-1", {
+				...policyInput,
+				prorateInStartAndExitYear: false,
+				statutoryMinimumDays: "25",
+			});
+
+			expect(result).toMatchObject({ success: true });
+			expect(mockState.updateSet).toHaveBeenCalledWith(
+				expect.objectContaining({ prorateInStartAndExitYear: false, statutoryMinimumDays: "25" }),
+			);
+		});
+
+		it.each([
+			{ statutoryMinimumDays: "-0.5", defaultAnnualDays: "30" },
+			{ statutoryMinimumDays: "30.5", defaultAnnualDays: "30" },
+			// Lowering the annual days below the stored statutory minimum of 20.
+			{ statutoryMinimumDays: undefined, defaultAnnualDays: "18" },
+		])("refuses to update a policy to %o", async (input) => {
+			const result = await updateVacationPolicy("policy-1", { ...policyInput, ...input });
+
+			expect(result).toMatchObject({ success: false, code: "ValidationError" });
+			expect(mockState.updateSet).not.toHaveBeenCalled();
+		});
+
+		it("does not let an admin update another organization's policy", async () => {
+			mockState.policyRows = [{ ...storedPolicy, organizationId: "org-2" }];
+
+			const result = await updateVacationPolicy("policy-1", {
+				...policyInput,
+				statutoryMinimumDays: "10",
+			});
+
+			expect(result).toMatchObject({ success: false, code: "NotFoundError" });
+			expect(mockState.updateSet).not.toHaveBeenCalled();
+		});
+
+		it("keeps policy writes for org admins", async () => {
+			mockState.actor.accessTier = "manager";
+
+			const created = await createVacationPolicy(policyInput);
+			const updated = await updateVacationPolicy("policy-1", policyInput);
+
+			expect(created).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(updated).toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(mockState.insertValues).not.toHaveBeenCalled();
+			expect(mockState.updateSet).not.toHaveBeenCalled();
+		});
 	});
 
 	it("lets actors read absence categories only for their organization", async () => {

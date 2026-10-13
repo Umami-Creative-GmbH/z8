@@ -2,15 +2,8 @@ import "server-only";
 
 import { and, desc, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/db";
-import {
-	absenceCategory,
-	absenceEntry,
-	employee,
-	employeeVacationAllowance,
-	vacationAllowance,
-} from "@/db/schema";
-import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
-import { getYearRange } from "@/lib/absences/date-utils";
+import { absenceCategory, absenceEntry, employee } from "@/db/schema";
+import { getAbsenceDaysByAbsenceId } from "@/lib/absences/absence-days-resolver";
 import {
 	type DeputyDisplay,
 	loadDeputyDisplays,
@@ -22,12 +15,16 @@ import type {
 	Holiday,
 	VacationBalance,
 } from "@/lib/absences/types";
-import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
+import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { holidayCalendarDate } from "@/lib/holidays/recurrence";
 import { mapAbsenceWithCategory } from "./mappers";
 
+/**
+ * One employee's vacation balance for a calendar year, from the same computation as the admin
+ * vacation pages (`loadVacationBalances`, #1111). Null without a company default policy for the
+ * year. Callers check that the viewer may see the employee.
+ */
 export async function getVacationBalance(
 	employeeId: string,
 	year: number,
@@ -35,71 +32,20 @@ export async function getVacationBalance(
 ): Promise<VacationBalance | null> {
 	const emp = await db.query.employee.findFirst({
 		where: eq(employee.id, employeeId),
+		columns: { organizationId: true },
 	});
 
 	if (!emp) {
 		return null;
 	}
 
-	const yearRange = getYearRange(year);
-	const startOfYear = yearRange.start.toISODate() ?? `${year}-01-01`;
-	const endOfYear = yearRange.end.toISODate() ?? `${year}-12-31`;
-
-	const [orgAllowance, empAllowance, absences, isWorkingDay] = await Promise.all([
-		db.query.vacationAllowance.findFirst({
-			where: and(
-				eq(vacationAllowance.organizationId, emp.organizationId),
-				eq(vacationAllowance.isCompanyDefault, true),
-				eq(vacationAllowance.isActive, true),
-				lte(vacationAllowance.startDate, endOfYear),
-				or(isNull(vacationAllowance.validUntil), gte(vacationAllowance.validUntil, startOfYear)),
-			),
-			orderBy: desc(vacationAllowance.startDate),
-		}),
-		db.query.employeeVacationAllowance.findFirst({
-			where: and(
-				eq(employeeVacationAllowance.employeeId, employeeId),
-				eq(employeeVacationAllowance.year, year),
-			),
-		}),
-		db.query.absenceEntry.findMany({
-			where: and(
-				or(
-					isNull(absenceEntry.organizationId),
-					eq(absenceEntry.organizationId, emp.organizationId),
-				),
-				eq(absenceEntry.employeeId, employeeId),
-				lte(absenceEntry.startDate, endOfYear),
-				gte(absenceEntry.endDate, startOfYear),
-			),
-			with: {
-				category: true,
-			},
-		}),
-		loadWorkingDays(db, {
-			organizationId: emp.organizationId,
-			employeeId,
-			startDate: startOfYear,
-			endDate: endOfYear,
-		}),
-	]);
-
-	if (!orgAllowance) {
-		return null;
-	}
-
-	const typedAbsences = absences as unknown as AbsenceWithCategory[];
-	const absencesWithCategory = typedAbsences.map(mapAbsenceWithCategory);
-
-	return calculateVacationBalance({
-		organizationAllowance: orgAllowance,
-		employeeAllowance: empAllowance,
-		absences: absencesWithCategory,
-		isWorkingDay,
-		currentDate: currentTimestamp(),
+	const { balances } = await loadVacationBalances(db, {
+		organizationId: emp.organizationId,
+		employeeIds: [employeeId],
 		year,
 		timezone,
 	});
+	return balances.get(employeeId) ?? null;
 }
 
 export async function getAbsenceEntries(

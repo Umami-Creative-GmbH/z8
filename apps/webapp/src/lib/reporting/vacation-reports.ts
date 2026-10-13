@@ -9,6 +9,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { getEnhancedVacationBalance, getVacationSummary } from "@/lib/absences/vacation.service";
+import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
 import { format } from "@/lib/datetime/luxon-utils";
 import {
 	getEmployeesWithExpiringCarryover,
@@ -169,7 +170,11 @@ export async function generateAccrualProjection(
 		timezone,
 	});
 
-	const annualDays = balance?.totalDays || parseFloat(policy.defaultAnnualDays);
+	// An accrual policy's balance holds only the accrual so far (#1106), so it projects the
+	// policy allowance instead.
+	const annualDays = isAccrualPolicy(policy)
+		? parseFloat(policy.defaultAnnualDays)
+		: balance?.totalDays || parseFloat(policy.defaultAnnualDays);
 	const currentUsed = balance?.usedDays || 0;
 	const currentPending = balance?.pendingDays || 0;
 
@@ -188,9 +193,9 @@ export async function generateAccrualProjection(
 	for (let month = 1; month <= 12; month++) {
 		const monthDT = DateTime.utc(year, month, 1);
 
-		if (policy.accrualType === "annual" && month === policy.accrualStartMonth) {
+		if (!isAccrualPolicy(policy) && month === policy.accrualStartMonth) {
 			cumulativeAccrued = annualDays;
-		} else if (policy.accrualType !== "annual") {
+		} else if (isAccrualPolicy(policy)) {
 			cumulativeAccrued += monthlyAccrual;
 		}
 

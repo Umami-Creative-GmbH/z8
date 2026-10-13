@@ -1,3 +1,5 @@
+import type { ProratedAllowance } from "./prorated-allowance";
+
 // Legacy half-day compatibility period for absence forms and stored requests.
 export type DayPeriod = "full_day" | "am" | "pm";
 export type SickDetail = "child_sick" | "with_certificate" | "without_certificate" | "other";
@@ -7,11 +9,24 @@ export type AbsenceDurationKind = "full_day" | "partial_day";
 export interface VacationBalance {
 	year: number;
 	totalDays: number; // Annual allowance (default + custom + carryover + adjustments)
+	/**
+	 * The days of the vacation allowance in 	otalDays: the custom or policy allowance, prorated in
+	 * a start or exit year (#1110), or 0 on an accrual policy, whose accrual adjustments carry it
+	 * (#1106).
+	 */
+	allowanceDays: number;
 	usedDays: number; // Approved absences taken
 	pendingDays: number; // Pending requests
-	remainingDays: number; // Available to request
+	remainingDays: number; // Available to request; never below 0
+	/**
+	 * Approved vacation taken beyond `totalDays` (overdrawn vacation, #1111). Shown to admins and
+	 * managers for information only: it is never reclaimed or deducted.
+	 */
+	overdrawnDays: number;
 	carryoverDays?: number; // From previous year
 	carryoverExpiryDate?: Date; // When carryover expires
+	/** The vacation allowance in `totalDays` and why it is prorated or full (#1110). */
+	allowance?: ProratedAllowance;
 }
 
 export interface AbsenceRequest {

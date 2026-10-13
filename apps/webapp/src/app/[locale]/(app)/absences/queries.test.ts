@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { expandPresetHolidayForYear } from "./holiday-expansion";
+import balanceStoreSource from "@/lib/absences/vacation-balance-store.ts?raw";
 import source from "./queries.ts?raw";
 
 describe("expandPresetHolidayForYear", () => {
@@ -28,13 +29,16 @@ describe("expandPresetHolidayForYear", () => {
 });
 
 describe("getVacationBalance calendar ranges", () => {
-	it("derives ranges from calendar-year helpers", () => {
+	it("derives ranges from calendar-year helpers in the shared balance computation (#1111)", () => {
 		expect(source).toContain('timezone = "UTC"');
-		expect(source).toContain("getYearRange(year)");
+		expect(source).toContain("loadVacationBalances(db, {");
 		expect(source).toContain("timezone,");
-		expect(source).toContain("lte(absenceEntry.startDate, endOfYear)");
-		expect(source).toContain("gte(absenceEntry.endDate, startOfYear)");
-		expect(source).not.toContain(`const startOfYear = \`\${year}-01-01\``);
-		expect(source).not.toContain(`const endOfYear = \`\${year}-12-31\``);
+		expect(balanceStoreSource).toContain(
+			"Temporal.PlainDate.from({ year, month: 1, day: 1 })",
+		);
+		expect(balanceStoreSource).toContain("lte(absenceEntry.startDate, endOfYear)");
+		expect(balanceStoreSource).toContain("gte(absenceEntry.endDate, startOfYear)");
+		expect(balanceStoreSource).not.toContain(`const startOfYear = \`\${year}-01-01\``);
+		expect(balanceStoreSource).not.toContain(`const endOfYear = \`\${year}-12-31\``);
 	});
 });

@@ -1492,6 +1492,27 @@
       "when": 1802620800000,
       "tag": "0212_scheduled_export_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1802707200000,
+      "tag": "0213_vacation_policy_proration_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 214,
+      "version": "7",
+      "when": 1802793600000,
+      "tag": "0214_vacation_adjustment_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 215,
+      "version": "7",
+      "when": 1802880000000,
+      "tag": "0215_absence_setting_proration_notice",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const findManyOrganizationsMock = vi.fn();
 const getVacationAllowanceMock = vi.fn();
 const calculateAnnualCarryoverMock = vi.fn();
-const accrueVacationDaysMock = vi.fn();
+const accrueVacationPeriodsMock = vi.fn();
+const accrueDueVacationPeriodsMock = vi.fn();
 const expireCarryoverDaysMock = vi.fn();
 const logAuditMock = vi.fn();
 
@@ -21,8 +22,12 @@ vi.mock("@/lib/query/vacation.queries", () => ({
 	getVacationAllowance: getVacationAllowanceMock,
 }));
 
+vi.mock("@/lib/absences/vacation-accrual", () => ({
+	accrueVacationPeriods: accrueVacationPeriodsMock,
+	accrueDueVacationPeriods: accrueDueVacationPeriodsMock,
+}));
+
 vi.mock("@/lib/absences/vacation.service", () => ({
-	accrueVacationDays: accrueVacationDaysMock,
 	calculateAnnualCarryover: calculateAnnualCarryoverMock,
 	expireCarryoverDays: expireCarryoverDaysMock,
 }));
@@ -45,7 +50,8 @@ beforeEach(() => {
 	findManyOrganizationsMock.mockReset();
 	getVacationAllowanceMock.mockReset();
 	calculateAnnualCarryoverMock.mockReset();
-	accrueVacationDaysMock.mockReset();
+	accrueVacationPeriodsMock.mockReset();
+	accrueDueVacationPeriodsMock.mockReset();
 	expireCarryoverDaysMock.mockReset();
 	logAuditMock.mockReset();
 	getVacationAllowanceMock.mockResolvedValue({ allowCarryover: true, accrualType: "monthly" });
@@ -59,7 +65,18 @@ beforeEach(() => {
 		results: [],
 		errors: [],
 	});
-	accrueVacationDaysMock.mockResolvedValue({ employeesProcessed: 1, totalDaysAccrued: 2.5 });
+	accrueVacationPeriodsMock.mockResolvedValue({
+		employeesProcessed: 1,
+		totalDaysAccrued: 2.5,
+		rowsWritten: 1,
+	});
+	accrueDueVacationPeriodsMock.mockResolvedValue({
+		employeesProcessed: 1,
+		totalDaysAccrued: 2.5,
+		rowsWritten: 1,
+		year: 2026,
+		throughMonth: 1,
+	});
 	expireCarryoverDaysMock.mockResolvedValue({
 		employeesAffected: 0,
 		daysExpired: 0,
@@ -176,9 +193,9 @@ describe("runVacationAutomation calendar-year scheduling", () => {
 		);
 	});
 
-	it("runs monthly accrual for organizations whose local day is the first", async () => {
+	it("runs the accrual catch-up for every organization on every day, in its timezone", async () => {
 		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2025-12-31T23:30:00.000Z"));
+		vi.setSystemTime(new Date("2026-10-13T10:00:00.000Z"));
 		findManyOrganizationsMock.mockResolvedValue([
 			{ id: "org-1", name: "Berlin Org", timezone: "Europe/Berlin" },
 			{ id: "org-2", name: "New York Org", timezone: "America/New_York" },
@@ -187,14 +204,16 @@ describe("runVacationAutomation calendar-year scheduling", () => {
 		const { runVacationAutomation } = await import("./carryover-automation");
 		await runVacationAutomation();
 
-		expect(accrueVacationDaysMock).toHaveBeenCalledWith(
-			"org-1",
-			1,
-			2026,
-			"system-automation",
-			"Europe/Berlin",
-		);
-		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "system-automation");
+		const calls = accrueDueVacationPeriodsMock.mock.calls.map(([organizationId, input]) => [
+			organizationId,
+			input.timezone,
+			input.now.toString(),
+		]);
+		expect(calls).toEqual([
+			["org-1", "Europe/Berlin", "2026-10-13T10:00:00Z"],
+			["org-2", "America/New_York", "2026-10-13T10:00:00Z"],
+		]);
+		expect(accrueVacationPeriodsMock).not.toHaveBeenCalled();
 	});
 });
 
@@ -208,16 +227,11 @@ describe("runMonthlyAccrual calendar-year labels", () => {
 		await runMonthlyAccrual(3, 2026);
 
 		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2026);
-		expect(accrueVacationDaysMock).toHaveBeenCalledWith(
-			"org-1",
-			3,
-			2026,
-			"system-automation",
-			"UTC",
-		);
+		expect(accrueVacationPeriodsMock).toHaveBeenCalledWith("org-1", { year: 2026, months: [3] });
+		expect(accrueDueVacationPeriodsMock).not.toHaveBeenCalled();
 	});
 
-	it("derives implicit month and year from each organization's timezone on local first days", async () => {
+	it("derives implicit month and year from each organization's timezone", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2025-12-31T23:30:00.000Z"));
 		findManyOrganizationsMock.mockResolvedValue([
@@ -229,15 +243,10 @@ describe("runMonthlyAccrual calendar-year labels", () => {
 		const result = await runMonthlyAccrual();
 
 		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2026);
-		expect(accrueVacationDaysMock).toHaveBeenCalledWith(
-			"org-1",
-			1,
-			2026,
-			"system-automation",
-			"Europe/Berlin",
-		);
-		expect(getVacationAllowanceMock).not.toHaveBeenCalledWith("org-2", 2025);
-		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "system-automation");
+		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-2", 2025);
+		expect(
+			accrueDueVacationPeriodsMock.mock.calls.map(([organizationId]) => organizationId),
+		).toEqual(["org-1", "org-2"]);
 		expect(result.month).toBe(1);
 		expect(result.year).toBe(2026);
 	});

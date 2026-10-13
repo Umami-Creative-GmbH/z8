@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
 	decimal,
 	index,
@@ -21,6 +22,12 @@ import { employee, team } from "./organization";
 // ============================================
 // VACATION ALLOWANCE MANAGEMENT
 // ============================================
+
+/**
+ * How a vacation policy grants its allowance: all at once for the year (`annual`), or month by
+ * month through accrual adjustments (`monthly`, `biweekly`; #1106).
+ */
+export type VacationAccrualType = "annual" | "monthly" | "biweekly";
 
 // Organization-wide vacation policies (date-based)
 export const vacationAllowance = pgTable(
@@ -48,13 +55,20 @@ export const vacationAllowance = pgTable(
 		defaultAnnualDays: decimal("default_annual_days").notNull(),
 
 		// Accrual settings
-		accrualType: text("accrual_type").notNull(), // "annual" | "monthly" | "biweekly"
+		accrualType: text("accrual_type").$type<VacationAccrualType>().notNull(),
 		accrualStartMonth: integer("accrual_start_month").default(1), // 1-12, default Jan
 
 		// Carryover rules
 		allowCarryover: boolean("allow_carryover").default(false).notNull(),
 		maxCarryoverDays: decimal("max_carryover_days"), // null = unlimited
 		carryoverExpiryMonths: integer("carryover_expiry_months"), // e.g., 3 months
+
+		// Proration (#1104): prorate the allowance in a year the employee joins or leaves.
+		// Only annual policies are prorated; monthly and biweekly accrual already covers part years.
+		prorateInStartAndExitYear: boolean("prorate_in_start_and_exit_year").default(true).notNull(),
+		// Floor of the prorated allowance once the waiting period is complete. Between 0 and
+		// defaultAnnualDays; new policies get min(20, defaultAnnualDays) (defaultStatutoryMinimumDays).
+		statutoryMinimumDays: decimal("statutory_minimum_days").notNull(),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -103,7 +117,13 @@ export const employeeVacationAllowance = pgTable(
 	],
 );
 
-// Individual vacation adjustment events (tracks all manual adjustments with full history)
+/**
+ * `manual`: an admin's or manager's adjustment. `accrual`: one period's share written by the
+ * monthly/biweekly accrual job, the only source of an accrual policy's allowance (#1106).
+ */
+export type VacationAdjustmentKind = "manual" | "accrual";
+
+// Individual vacation adjustment events (manual adjustments and accrual shares, with full history)
 export const vacationAdjustment = pgTable(
 	"vacation_adjustment",
 	{
@@ -114,12 +134,30 @@ export const vacationAdjustment = pgTable(
 		year: integer("year").notNull(),
 		days: decimal("days", { precision: 5, scale: 2 }).notNull(), // +/- days adjustment
 		reason: text("reason").notNull(),
-		adjustedBy: uuid("adjusted_by")
-			.notNull()
-			.references(() => employee.id),
+		kind: text("kind").$type<VacationAdjustmentKind>().default("manual").notNull(),
+		// The calendar month (1-12) of `year` an accrual row covers; null on manual rows. Unique per
+		// employee and year, so the accrual job can retry and catch up without duplicates. Null
+		// only on a legacy duplicate accrual row the 0214 backfill could not give a month.
+		accrualMonth: integer("accrual_month"),
+		// The adjusting employee; null only on accrual rows, which the system writes.
+		adjustedBy: uuid("adjusted_by").references(() => employee.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(table) => [index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year)],
+	(table) => [
+		index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year),
+		uniqueIndex("vacationAdjustment_accrual_period_idx")
+			.on(table.employeeId, table.year, table.accrualMonth)
+			.where(sql`${table.kind} = 'accrual'`),
+		check("vacation_adjustment_kind_check", sql`${table.kind} IN ('manual', 'accrual')`),
+		check(
+			"vacation_adjustment_manual_adjuster_check",
+			sql`${table.kind} = 'accrual' OR ${table.adjustedBy} IS NOT NULL`,
+		),
+		check(
+			"vacation_adjustment_accrual_month_check",
+			sql`${table.accrualMonth} IS NULL OR (${table.kind} = 'accrual' AND ${table.accrualMonth} BETWEEN 1 AND 12)`,
+		),
+	],
 );
 
 // Assignment of vacation policies to organizations, teams, or employees

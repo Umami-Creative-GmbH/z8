@@ -17,10 +17,40 @@ import {
 	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
+import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
+import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { workingDaysFrom } from "@/lib/absences/working-days";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absence-permissions";
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
+
+/** The manager row metrics over the balance every reader computes (`calculateVacationBalance`). */
+function managerMetricsFor(
+	input: Omit<Parameters<typeof calculateManagerAbsenceMetrics>[0], "balance"> & {
+		allowance: Parameters<typeof calculateVacationBalance>[0]["organizationAllowance"] | null;
+		employeeAllowance: Parameters<typeof calculateVacationBalance>[0]["employeeAllowance"];
+		proratedAllowance?: ProratedAllowance;
+		adjustmentTotal?: number;
+	},
+) {
+	return calculateManagerAbsenceMetrics({
+		year: input.year,
+		absences: input.absences,
+		isWorkingDay: input.isWorkingDay,
+		balance: input.allowance
+			? calculateVacationBalance({
+					organizationAllowance: input.allowance,
+					employeeAllowance: input.employeeAllowance,
+					allowance: input.proratedAllowance,
+					absences: input.absences,
+					isWorkingDay: input.isWorkingDay,
+					currentDate: new Date("2026-06-01T00:00:00.000Z"),
+					year: input.year,
+					adjustmentTotal: input.adjustmentTotal,
+				})
+			: undefined,
+	});
+}
 
 describe("manager absence server action contracts", () => {
 	it("exports the list, calendar, and record actions", () => {
@@ -501,11 +531,56 @@ describe("manager absence permissions", () => {
 });
 
 describe("manager absence metrics", () => {
-	it("clips vacation and sick metrics to absences overlapping the selected year", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+	it("includes vacation adjustments in the allowance and remaining days (#1105)", () => {
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			adjustmentTotal: -5,
+			absences: [
+				{
+					id: "vacation-approved",
+					employeeId: "employee-1",
+					startDate: "2026-02-02",
+					startPeriod: "full_day",
+					endDate: "2026-02-03",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toMatchObject({
+			vacationAllowance: 25,
+			usedVacationDays: 2,
+			remainingVacationDays: 23,
+		});
+	});
+
+	it("clips vacation and sick metrics to absences overlapping the selected year", () => {
+		const metrics = managerMetricsFor({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -604,15 +679,17 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 2,
 			pendingVacationDays: 1,
 			remainingVacationDays: 27,
+			overdrawnVacationDays: 0,
 			sickDays: 5,
 		});
 	});
 
 	it("calculates vacation and sick metrics for the selected year", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -711,15 +788,17 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 2,
 			pendingVacationDays: 1,
 			remainingVacationDays: 27,
+			overdrawnVacationDays: 0,
 			sickDays: 1,
 		});
 	});
 
 	it("calculates half-day sick metrics", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -755,15 +834,17 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 0,
 			pendingVacationDays: 0,
 			remainingVacationDays: 30,
+			overdrawnVacationDays: 0,
 			sickDays: 0.5,
 		});
 	});
 
 	it("calculates legacy-compatible explicit overnight partial-day metrics as a half day", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,
@@ -799,12 +880,13 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 0.5,
 			pendingVacationDays: 0,
 			remainingVacationDays: 29.5,
+			overdrawnVacationDays: 0,
 			sickDays: 0,
 		});
 	});
 
 	it("returns zero vacation metrics without an allowance while retaining sick metrics", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: null,
 			employeeAllowance: null,
@@ -838,7 +920,73 @@ describe("manager absence metrics", () => {
 			usedVacationDays: 0,
 			pendingVacationDays: 0,
 			remainingVacationDays: 0,
+			overdrawnVacationDays: 0,
 			sickDays: 1,
+		});
+	});
+
+	it("shows vacation taken beyond a prorated allowance as overdrawn, with the explanation (#1111)", () => {
+		const proratedAllowance = {
+			fullAllowance: 30,
+			days: 2,
+			reason: {
+				kind: "prorated" as const,
+				cappedAtFullAllowance: false,
+				employments: [
+					{
+						kind: "start" as const,
+						startDate: "2026-11-15",
+						lastWorkingDay: null,
+						employmentMonths: 1,
+						days: 2.5,
+						floorApplied: false,
+					},
+				],
+			},
+		};
+		const metrics = managerMetricsFor({
+			year: 2026,
+			allowance: {
+				defaultAnnualDays: "30",
+				accrualType: "annual",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			employeeAllowance: null,
+			proratedAllowance,
+			absences: [
+				{
+					id: "vacation-beyond-allowance",
+					employeeId: "employee-1",
+					// Mon 30 Nov to Thu 3 Dec 2026: 4 working days.
+					startDate: "2026-11-30",
+					startPeriod: "full_day",
+					endDate: "2026-12-03",
+					endPeriod: "full_day",
+					status: "approved",
+					notes: null,
+					approvedBy: "manager-1",
+					approvedAt: new Date("2026-01-01T00:00:00.000Z"),
+					rejectionReason: null,
+					createdAt: new Date("2026-01-01T00:00:00.000Z"),
+					category: {
+						id: "category-vacation",
+						name: "Vacation",
+						type: "vacation",
+						color: null,
+						countsAgainstVacation: true,
+					},
+				},
+			],
+		});
+
+		expect(metrics).toMatchObject({
+			vacationAllowance: 2,
+			usedVacationDays: 4,
+			remainingVacationDays: 0,
+			overdrawnVacationDays: 2,
+			proratedAllowance,
 		});
 	});
 });
@@ -847,10 +995,11 @@ describe("manager vacation holiday recovery", () => {
 	it.each(["approved", "pending"] as const)(
 		"excludes Silvester from existing %s requests",
 		(status) => {
-			const metrics = calculateManagerAbsenceMetrics({
+			const metrics = managerMetricsFor({
 				year: 2026,
 				allowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -925,10 +1074,11 @@ describe("manager absence metrics on working days (#979)", () => {
 			},
 		});
 
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
+				accrualType: "annual",
 				allowCarryover: false,
 				maxCarryoverDays: null,
 				carryoverExpiryMonths: null,

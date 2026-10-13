@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { VacationBalance } from "@/lib/absences/types";
 import { instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { VacationAllowanceExplanation } from "./vacation-allowance-explanation";
 
 interface VacationBalanceCardProps {
 	balance: VacationBalance;
@@ -54,6 +55,11 @@ export function VacationBalanceCard({ balance, now, timezone }: VacationBalanceC
 									totalDays: balance.totalDays,
 								})}
 							</div>
+							<VacationAllowanceExplanation
+								allowance={balance.allowance}
+								year={balance.year}
+								className="mt-2"
+							/>
 						</div>
 					</div>
 

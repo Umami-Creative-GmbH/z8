@@ -6,6 +6,10 @@ import { useTranslate } from "@tolgee/react";
 import { use, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
+import {
+	OverdrawnVacationBadge,
+	VacationAllowanceExplanation,
+} from "@/components/absences/vacation-allowance-explanation";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,12 +32,19 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import type { VacationBalance } from "@/lib/absences/types";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import {
 	createVacationAdjustmentAction,
-	getEmployeeAdjustmentTotal,
+	type EmployeeAdjustmentSummary,
+	type EmployeeVacationBalanceView,
+	getEmployeeAdjustmentSummary,
 	getEmployeeAllowance,
+	getEmployeeVacationBalance,
 	getVacationPolicies,
 	updateEmployeeAllowance,
 } from "../../actions";
@@ -77,6 +88,12 @@ type VacationPolicyOption = {
 	isCompanyDefault?: boolean;
 };
 
+const EMPTY_ADJUSTMENT_SUMMARY: EmployeeAdjustmentSummary = {
+	manual: 0,
+	accrual: 0,
+	manualAdjustments: [],
+};
+
 type EmployeePolicyAssignment = {
 	policyId: string;
 	policy?: { name: string } | null;
@@ -92,11 +109,16 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	const [currentAssignment, setCurrentAssignment] =
 		useState<EmployeePolicyAssignment | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
-	const [currentYear] = useState(() => new Date().getFullYear());
-	const [adjustmentTotal, setAdjustmentTotal] = useState(0);
+	// The balance and its year come from the server, in the organization's timezone (#1111).
+	const [balanceView, setBalanceView] =
+		useState<EmployeeVacationBalanceView | null>(null);
+	const currentYear = balanceView?.year ?? null;
+	const [adjustmentSummary, setAdjustmentSummary] =
+		useState<EmployeeAdjustmentSummary>(EMPTY_ADJUSTMENT_SUMMARY);
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
+			if (currentYear === null) return;
 			setLoading(true);
 			await runWithCleanup(
 				async () => {
@@ -198,21 +220,26 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				return;
 			}
 
+			const balanceResult = await getEmployeeVacationBalance(employeeId);
+			if (cancelled || !balanceResult.success) return;
+			const { year } = balanceResult.data;
+
 			const [
 				empResult,
 				policyResult,
 				policiesResult,
 				assignmentResult,
-				adjustmentTotalResult,
+				adjustmentSummaryResult,
 			] = await Promise.all([
-				getEmployeeAllowance(employeeId, currentYear),
+				getEmployeeAllowance(employeeId, year),
 				getVacationPolicies(current.organizationId),
 				getAssignmentPolicies(current.organizationId),
 				getEmployeePolicyAssignment(employeeId),
-				getEmployeeAdjustmentTotal(employeeId, currentYear),
+				getEmployeeAdjustmentSummary(employeeId, year),
 			]);
 			if (cancelled) return;
 
+			setBalanceView(balanceResult.data);
 			if (empResult.success && empResult.data) {
 				setEmployee(empResult.data as EmployeeAllowanceView);
 				const allowance = empResult.data.vacationAllowances[0];
@@ -250,18 +277,19 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 					assignmentResult.data as EmployeePolicyAssignment | null,
 				);
 			}
-			if (adjustmentTotalResult.success)
-				setAdjustmentTotal(adjustmentTotalResult.data);
+			if (adjustmentSummaryResult.success)
+				setAdjustmentSummary(adjustmentSummaryResult.data);
 		}
 
 		void loadData();
 		return () => {
 			cancelled = true;
 		};
-	}, [employeeId, currentYear, form]);
+	}, [employeeId, form]);
 
 	return {
-		adjustmentTotal,
+		adjustmentSummary,
+		balanceView,
 		currentAssignment,
 		currentYear,
 		employee,
@@ -290,7 +318,8 @@ export function EmployeeAllowanceEditPageClient({
 	const customAnnualDaysId = useId();
 	const carryoverDaysId = useId();
 	const {
-		adjustmentTotal,
+		adjustmentSummary,
+		balanceView,
 		currentAssignment,
 		currentYear,
 		employee,
@@ -314,7 +343,7 @@ export function EmployeeAllowanceEditPageClient({
 		);
 	}
 
-	if (!employee) {
+	if (!employee || currentYear === null) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
 				<div className="flex items-center justify-center p-8">
@@ -324,17 +353,10 @@ export function EmployeeAllowanceEditPageClient({
 		);
 	}
 
-	const allowance = employee.vacationAllowances[0];
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
-	const customDays = allowance?.customAnnualDays
-		? parseFloat(allowance.customAnnualDays)
-		: null;
-	const annualDays = customDays !== null ? customDays : parseFloat(defaultDays);
-	const carryover = allowance?.customCarryoverDays
-		? parseFloat(allowance.customCarryoverDays)
-		: 0;
-	const adjustments = adjustmentTotal;
-	const total = annualDays + carryover + adjustments;
+	// The server-side balance (#1111): the same numbers as the employee's Absences page. Without a
+	// company default policy for the year there is none.
+	const balance = balanceView?.balance ?? null;
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
@@ -368,20 +390,49 @@ export function EmployeeAllowanceEditPageClient({
 								{ year: currentYear },
 							)}
 						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.vacation.employees.detail.currentBalance",
-								"Current balance: {total} days available",
-								{ total },
-							)}
-						</CardDescription>
+						{balance && (
+							<CardDescription>
+								{/* The vacation balance: what is left after approved and pending vacation. */}
+								{t(
+									"settings.vacation.employees.detail.currentBalance",
+									"Current balance: {total} days available",
+									{ total: balance.remainingDays },
+								)}
+							</CardDescription>
+						)}
 					</CardHeader>
 					<CardContent>
-						<AllowanceBalanceSummary
-							annualDays={annualDays}
-							carryover={carryover}
-							adjustments={adjustments}
-							total={total}
+						{balance ? (
+							<>
+								<AllowanceBalanceSummary
+									balance={balance}
+									accrualPolicy={balanceView?.accrualPolicy ?? false}
+									accrued={adjustmentSummary.accrual}
+									adjustments={adjustmentSummary.manual}
+								/>
+								<div className="-mt-4 mb-6 flex flex-wrap items-center gap-2">
+									<VacationAllowanceExplanation
+										allowance={balance.allowance}
+										year={currentYear}
+									/>
+									<OverdrawnVacationBadge
+										overdrawnDays={balance.overdrawnDays}
+									/>
+								</div>
+							</>
+						) : (
+							<p className="mb-6 text-sm text-muted-foreground">
+								{t(
+									"settings.vacation.employees.detail.noPolicyForYear",
+									"No company default vacation policy applies in {year}, so there is no balance yet.",
+									{ year: currentYear },
+								)}
+							</p>
+						)}
+
+						<ManualAdjustmentHistory
+							adjustments={adjustmentSummary.manualAdjustments}
+							year={currentYear}
 						/>
 
 						<form
@@ -642,25 +693,60 @@ function EmployeeInformationCard({
 }
 
 function AllowanceBalanceSummary({
-	annualDays,
-	carryover,
+	balance,
+	accrualPolicy,
+	accrued,
 	adjustments,
-	total,
 }: {
-	annualDays: number;
-	carryover: number;
+	/** The server-side balance of the year (#1111). */
+	balance: VacationBalance;
+	/** A monthly or biweekly policy: the balance starts at 0 and grows by accrual (#1106). */
+	accrualPolicy: boolean;
+	/** The accrual adjustments so far this year. */
+	accrued: number;
+	/** The manual adjustments of the year. */
 	adjustments: number;
-	total: number;
 }) {
 	const { t } = useTranslate();
+	// Accrual rows can remain after a policy switched to annual, so show them whenever present.
+	const showAccrued = accrualPolicy || accrued !== 0;
+	const showAllowance = !accrualPolicy;
+	const carryover = balance.carryoverDays ?? 0;
 	return (
-		<div className="mb-6 grid gap-4 rounded-lg border p-4 md:grid-cols-4">
-			<div className="space-y-1">
-				<div className="text-sm text-muted-foreground">
-					{t("settings.vacation.employees.detail.annualDays", "Annual Days")}
+		<div
+			className={`mb-6 grid gap-4 rounded-lg border p-4 ${
+				showAccrued && showAllowance ? "md:grid-cols-5" : "md:grid-cols-4"
+			}`}
+		>
+			{showAllowance && (
+				<div className="space-y-1">
+					<div className="text-sm text-muted-foreground">
+						{t("settings.vacation.employees.detail.allowance", "Allowance")}
+					</div>
+					{/* The custom or policy allowance, prorated in a start or exit year (#1110). */}
+					<div className="text-2xl font-bold">{balance.allowanceDays}</div>
 				</div>
-				<div className="text-2xl font-bold">{annualDays}</div>
-			</div>
+			)}
+			{showAccrued && (
+				<div className="space-y-1">
+					<div className="text-sm text-muted-foreground">
+						{t(
+							"settings.vacation.employees.detail.accruedToDate",
+							"Accrued to Date",
+						)}
+					</div>
+					<div className="text-2xl font-bold">{accrued}</div>
+					{accrualPolicy && balance.allowance && (
+						<div className="text-xs text-muted-foreground">
+							{t(
+								"settings.vacation.employees.detail.accruedOfAnnualDays",
+								"of {days} days per year",
+								{ days: balance.allowance.fullAllowance },
+							)}
+						</div>
+					)}
+				</div>
+			)}
 			<div className="space-y-1">
 				<div className="text-sm text-muted-foreground">
 					{t("settings.vacation.employees.detail.carryover", "Carryover")}
@@ -691,8 +777,74 @@ function AllowanceBalanceSummary({
 						"Total Available",
 					)}
 				</div>
-				<div className="text-2xl font-bold">{total}</div>
+				<div className="text-2xl font-bold">{balance.totalDays}</div>
 			</div>
+		</div>
+	);
+}
+
+/** The year's manual adjustments, newest first; accrual shares are summed above (#1106). */
+function ManualAdjustmentHistory({
+	adjustments,
+	year,
+}: {
+	adjustments: EmployeeAdjustmentSummary["manualAdjustments"];
+	year: number;
+}) {
+	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
+	return (
+		<div className="mb-6 space-y-2">
+			<h3 className="text-sm font-medium">
+				{t(
+					"settings.vacation.employees.detail.adjustmentHistory",
+					"Adjustment History",
+				)}
+			</h3>
+			{adjustments.length === 0 ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.vacation.employees.detail.adjustmentHistoryEmpty",
+						"No manual adjustments in {year}.",
+						{ year },
+					)}
+				</p>
+			) : (
+				<ul className="divide-y rounded-md border">
+					{adjustments.map((adjustment) => (
+						<li key={adjustment.id} className="space-y-1 p-3">
+							<span
+								className={`text-sm font-medium tabular-nums ${
+									adjustment.days > 0 ? "text-green-600" : "text-red-600"
+								}`}
+							>
+								{adjustment.days > 0 ? "+" : ""}
+								{adjustment.days}
+							</span>
+							<p className="break-words text-sm">{adjustment.reason}</p>
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"settings.vacation.employees.detail.adjustmentRecordedBy",
+									"By {name} on {date}",
+									{
+										name:
+											adjustment.adjustedByName ??
+											t(
+												"settings.vacation.employees.detail.adjustmentUnknownUser",
+												"a deleted user",
+											),
+										date: formatInstant(
+											parseInstant(adjustment.createdAt),
+											displayContext,
+											"dateTimeMedium",
+										),
+									},
+								)}
+							</p>
+						</li>
+					))}
+				</ul>
+			)}
 		</div>
 	);
 }
