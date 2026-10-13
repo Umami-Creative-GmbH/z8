@@ -180,6 +180,18 @@
         "zeroOrMore": "Must be 0 or more"
       },
       "policyUpdated": "Policy updated successfully",
+      "prorationNotice": {
+        "days": "{days, plural, one {# day} other {# days}}",
+        "description": "These employees join or leave during 2026, so their 2026 allowance now counts only their full employment months. Employees with a custom allowance keep it and aren't listed. Overdrawn vacation is shown, never reclaimed.",
+        "dismiss": "Dismiss for everyone",
+        "dismissed": "The notice is dismissed for every owner and admin",
+        "employee": "Employee",
+        "fullAllowance": "Full allowance",
+        "notOverdrawn": "None",
+        "overdrawn": "Overdrawn",
+        "proratedAllowance": "Prorated allowance",
+        "title": "2026 vacation allowances are now prorated"
+      },
       "required": "Required",
       "saveFailed": "Failed to save policy",
       "sickNotes": {

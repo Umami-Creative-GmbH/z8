@@ -16,6 +16,8 @@ interface VacationManagementProps {
 	children: React.ReactNode; // The existing policy content
 	/** Organization-wide absence settings, above the categories (#982). */
 	absenceSettings?: React.ReactNode;
+	/** A notice for owners and admins above the tabs, such as the proration notice (#1112). */
+	notice?: React.ReactNode;
 }
 
 export function VacationManagement({
@@ -24,6 +26,7 @@ export function VacationManagement({
 	canManageCategories,
 	children,
 	absenceSettings,
+	notice,
 }: VacationManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
@@ -61,6 +64,8 @@ export function VacationManagement({
 					)}
 				</p>
 			</div>
+
+			{notice}
 
 			<Tabs defaultValue="policies" className="space-y-4">
 				<TabsList>
