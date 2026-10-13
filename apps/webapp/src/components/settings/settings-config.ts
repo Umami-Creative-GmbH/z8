@@ -188,6 +188,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "account",
 	},
 	{
+		id: "my-data",
+		titleKey: "settings.myData.title",
+		titleDefault: "My data",
+		descriptionKey: "settings.myData.description",
+		descriptionDefault: "Download a copy of the personal data this organization keeps about you",
+		href: "/settings/my-data",
+		icon: "database-export",
+		minimumTier: "member",
+		group: "account",
+	},
+	{
 		id: "organizations",
 		titleKey: "settings.organizations.title",
 		titleDefault: "Organization",

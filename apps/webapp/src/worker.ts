@@ -266,6 +266,21 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				};
 			}
 
+			case "personal-data-export": {
+				const [{ db }, { processPersonalDataExport }] = await Promise.all([
+					import("@/db"),
+					import("@/lib/personal-data-export/processor"),
+				]);
+				const outcome = await processPersonalDataExport(db, {
+					organizationId: job.data.organizationId,
+					exportId: job.data.exportId,
+				});
+				return {
+					success: outcome.status !== "failed",
+					message: `Personal data export ${outcome.status}`,
+				};
+			}
+
 			default:
 				throw new Error(`Unknown job type: ${(job.data as JobData).type}`);
 		}

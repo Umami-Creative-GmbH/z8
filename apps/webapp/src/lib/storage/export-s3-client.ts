@@ -494,6 +494,35 @@ export async function getPresignedUrl(
 }
 
 /**
+ * A short-lived download URL for one recorded private object/version, saved
+ * under `fileName`. A recorded bucket that no longer matches the
+ * organization's storage configuration is refused.
+ */
+export async function getPrivateObjectPresignedUrl(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+	versionId: string | null;
+	fileName: string;
+	expiresInSeconds: number;
+}): Promise<string> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config) {
+		throw new Error("S3 storage is not configured for this organization");
+	}
+	if (input.bucket && input.bucket !== config.bucket) {
+		throw new Error("Recorded private object bucket is unavailable");
+	}
+	const command = new GetObjectCommand({
+		Bucket: config.bucket,
+		Key: input.key,
+		...(input.versionId ? { VersionId: input.versionId } : {}),
+		ResponseContentDisposition: `attachment; filename="${input.fileName.replace(/["\\]/g, "")}"`,
+	});
+	return getSignedUrl(createS3Client(config), command, { expiresIn: input.expiresInSeconds });
+}
+
+/**
  * Generate the S3 key for an export file
  */
 export function generateExportKey(

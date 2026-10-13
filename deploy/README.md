@@ -226,6 +226,7 @@ The worker container handles both one-off jobs and scheduled cron tasks using Bu
 | `cron:organization-cleanup` | Daily 1 AM | Delete soft-deleted organizations |
 | `cron:position-stamp-purge` | Daily 1 AM | Delete position stamps past their purge date (clock events stay) |
 | `cron:report-share-link-sweep` | Every 15 minutes | Expire report share links and revoke those whose creator lost access (snapshots deleted) |
+| `cron:personal-data-export-sweep` | Every 15 minutes | Delete personal data exports 7 days after completion, give up stuck builds, delete stored files of deleted exports |
 | `cron:break-enforcement` | Every minute | Check break compliance |
 | `cron:project-deadlines` | Hourly | Project deadline notifications |
 | `cron:telemetry` | Daily at 00:00 UTC | Telemetry collection |

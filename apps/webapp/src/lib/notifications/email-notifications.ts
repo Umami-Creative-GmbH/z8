@@ -70,6 +70,8 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	work_balance_adjustment_recorded: "/time-tracking",
 	work_balance_adjustment_cancelled: "/time-tracking",
 	scheduled_export_paused: "/settings/scheduled-exports",
+	// The page the export was started from; never a file link (#811).
+	personal_data_export_ready: ["/settings/my-data", "/settings/employees/"],
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
