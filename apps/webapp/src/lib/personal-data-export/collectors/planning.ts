@@ -34,10 +34,12 @@ import {
 } from "../collector";
 import { instantText, loadEmployeeNames, loadUserNames, nameOf, plainDateText } from "../values";
 import { PersonalDataSubjectNotFoundError } from "./employment";
+import { planningFieldGuide } from "./planning-fields";
 
 export const planningCollector: PersonalDataCollector = {
 	category: "planning",
 	collect: collectPlanning,
+	fields: planningFieldGuide,
 };
 
 const requestShift = {
