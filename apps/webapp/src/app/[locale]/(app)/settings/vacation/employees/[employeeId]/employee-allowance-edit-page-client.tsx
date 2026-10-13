@@ -28,11 +28,15 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
+import { useDisplayContext } from "@/hooks/use-display-context";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import {
 	createVacationAdjustmentAction,
-	getEmployeeAdjustmentTotal,
+	type EmployeeAdjustmentSummary,
+	getEmployeeAdjustmentSummary,
 	getEmployeeAllowance,
 	getVacationPolicies,
 	updateEmployeeAllowance,
@@ -73,8 +77,16 @@ type VacationPolicyOption = {
 	id: string;
 	name: string;
 	defaultAnnualDays: string;
+	/** "annual" | "monthly" | "biweekly" */
+	accrualType?: string;
 	isActive: boolean;
 	isCompanyDefault?: boolean;
+};
+
+const EMPTY_ADJUSTMENT_SUMMARY: EmployeeAdjustmentSummary = {
+	manual: 0,
+	accrual: 0,
+	manualAdjustments: [],
 };
 
 type EmployeePolicyAssignment = {
@@ -93,7 +105,8 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 		useState<EmployeePolicyAssignment | null>(null);
 	const [noEmployee, setNoEmployee] = useState(false);
 	const [currentYear] = useState(() => new Date().getFullYear());
-	const [adjustmentTotal, setAdjustmentTotal] = useState(0);
+	const [adjustmentSummary, setAdjustmentSummary] =
+		useState<EmployeeAdjustmentSummary>(EMPTY_ADJUSTMENT_SUMMARY);
 	const form = useForm({
 		defaultValues,
 		onSubmit: async ({ value }) => {
@@ -203,13 +216,13 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 				policyResult,
 				policiesResult,
 				assignmentResult,
-				adjustmentTotalResult,
+				adjustmentSummaryResult,
 			] = await Promise.all([
 				getEmployeeAllowance(employeeId, currentYear),
 				getVacationPolicies(current.organizationId),
 				getAssignmentPolicies(current.organizationId),
 				getEmployeePolicyAssignment(employeeId),
-				getEmployeeAdjustmentTotal(employeeId, currentYear),
+				getEmployeeAdjustmentSummary(employeeId, currentYear),
 			]);
 			if (cancelled) return;
 
@@ -250,8 +263,8 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 					assignmentResult.data as EmployeePolicyAssignment | null,
 				);
 			}
-			if (adjustmentTotalResult.success)
-				setAdjustmentTotal(adjustmentTotalResult.data);
+			if (adjustmentSummaryResult.success)
+				setAdjustmentSummary(adjustmentSummaryResult.data);
 		}
 
 		void loadData();
@@ -261,7 +274,7 @@ function useEmployeeAllowanceEditor(employeeId: string) {
 	}, [employeeId, currentYear, form]);
 
 	return {
-		adjustmentTotal,
+		adjustmentSummary,
 		currentAssignment,
 		currentYear,
 		employee,
@@ -290,7 +303,7 @@ export function EmployeeAllowanceEditPageClient({
 	const customAnnualDaysId = useId();
 	const carryoverDaysId = useId();
 	const {
-		adjustmentTotal,
+		adjustmentSummary,
 		currentAssignment,
 		currentYear,
 		employee,
@@ -330,11 +343,17 @@ export function EmployeeAllowanceEditPageClient({
 		? parseFloat(allowance.customAnnualDays)
 		: null;
 	const annualDays = customDays !== null ? customDays : parseFloat(defaultDays);
+	// A monthly or biweekly policy grants its allowance only through accrual (#1106).
+	const accrualPolicy = Boolean(
+		orgPolicy?.accrualType && orgPolicy.accrualType !== "annual",
+	);
+	const startingDays = accrualPolicy ? 0 : annualDays;
 	const carryover = allowance?.customCarryoverDays
 		? parseFloat(allowance.customCarryoverDays)
 		: 0;
-	const adjustments = adjustmentTotal;
-	const total = annualDays + carryover + adjustments;
+	const adjustments = adjustmentSummary.manual;
+	const accrued = adjustmentSummary.accrual;
+	const total = startingDays + carryover + adjustments + accrued;
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
@@ -379,9 +398,16 @@ export function EmployeeAllowanceEditPageClient({
 					<CardContent>
 						<AllowanceBalanceSummary
 							annualDays={annualDays}
+							accrualPolicy={accrualPolicy}
+							accrued={accrued}
 							carryover={carryover}
 							adjustments={adjustments}
 							total={total}
+						/>
+
+						<ManualAdjustmentHistory
+							adjustments={adjustmentSummary.manualAdjustments}
+							year={currentYear}
 						/>
 
 						<form
@@ -643,24 +669,59 @@ function EmployeeInformationCard({
 
 function AllowanceBalanceSummary({
 	annualDays,
+	accrualPolicy,
+	accrued,
 	carryover,
 	adjustments,
 	total,
 }: {
 	annualDays: number;
+	/** A monthly or biweekly policy: the balance starts at 0 and grows by accrual (#1106). */
+	accrualPolicy: boolean;
+	/** The accrual adjustments so far this year. */
+	accrued: number;
 	carryover: number;
 	adjustments: number;
 	total: number;
 }) {
 	const { t } = useTranslate();
+	// Accrual rows can remain after a policy switched to annual, so show them whenever present.
+	const showAccrued = accrualPolicy || accrued !== 0;
+	const showAnnualDays = !accrualPolicy;
 	return (
-		<div className="mb-6 grid gap-4 rounded-lg border p-4 md:grid-cols-4">
-			<div className="space-y-1">
-				<div className="text-sm text-muted-foreground">
-					{t("settings.vacation.employees.detail.annualDays", "Annual Days")}
+		<div
+			className={`mb-6 grid gap-4 rounded-lg border p-4 ${
+				showAccrued && showAnnualDays ? "md:grid-cols-5" : "md:grid-cols-4"
+			}`}
+		>
+			{showAnnualDays && (
+				<div className="space-y-1">
+					<div className="text-sm text-muted-foreground">
+						{t("settings.vacation.employees.detail.annualDays", "Annual Days")}
+					</div>
+					<div className="text-2xl font-bold">{annualDays}</div>
 				</div>
-				<div className="text-2xl font-bold">{annualDays}</div>
-			</div>
+			)}
+			{showAccrued && (
+				<div className="space-y-1">
+					<div className="text-sm text-muted-foreground">
+						{t(
+							"settings.vacation.employees.detail.accruedToDate",
+							"Accrued to Date",
+						)}
+					</div>
+					<div className="text-2xl font-bold">{accrued}</div>
+					{accrualPolicy && (
+						<div className="text-xs text-muted-foreground">
+							{t(
+								"settings.vacation.employees.detail.accruedOfAnnualDays",
+								"of {days} days per year",
+								{ days: annualDays },
+							)}
+						</div>
+					)}
+				</div>
+			)}
 			<div className="space-y-1">
 				<div className="text-sm text-muted-foreground">
 					{t("settings.vacation.employees.detail.carryover", "Carryover")}
@@ -693,6 +754,72 @@ function AllowanceBalanceSummary({
 				</div>
 				<div className="text-2xl font-bold">{total}</div>
 			</div>
+		</div>
+	);
+}
+
+/** The year's manual adjustments, newest first; accrual shares are summed above (#1106). */
+function ManualAdjustmentHistory({
+	adjustments,
+	year,
+}: {
+	adjustments: EmployeeAdjustmentSummary["manualAdjustments"];
+	year: number;
+}) {
+	const { t } = useTranslate();
+	const displayContext = useDisplayContext();
+	return (
+		<div className="mb-6 space-y-2">
+			<h3 className="text-sm font-medium">
+				{t(
+					"settings.vacation.employees.detail.adjustmentHistory",
+					"Adjustment History",
+				)}
+			</h3>
+			{adjustments.length === 0 ? (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.vacation.employees.detail.adjustmentHistoryEmpty",
+						"No manual adjustments in {year}.",
+						{ year },
+					)}
+				</p>
+			) : (
+				<ul className="divide-y rounded-md border">
+					{adjustments.map((adjustment) => (
+						<li key={adjustment.id} className="space-y-1 p-3">
+							<span
+								className={`text-sm font-medium tabular-nums ${
+									adjustment.days > 0 ? "text-green-600" : "text-red-600"
+								}`}
+							>
+								{adjustment.days > 0 ? "+" : ""}
+								{adjustment.days}
+							</span>
+							<p className="break-words text-sm">{adjustment.reason}</p>
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"settings.vacation.employees.detail.adjustmentRecordedBy",
+									"By {name} on {date}",
+									{
+										name:
+											adjustment.adjustedByName ??
+											t(
+												"settings.vacation.employees.detail.adjustmentUnknownUser",
+												"a deleted user",
+											),
+										date: formatInstant(
+											parseInstant(adjustment.createdAt),
+											displayContext,
+											"dateTimeMedium",
+										),
+									},
+								)}
+							</p>
+						</li>
+					))}
+				</ul>
+			)}
 		</div>
 	);
 }

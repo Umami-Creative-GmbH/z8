@@ -28,7 +28,11 @@ import {
 } from "./prorated-allowance-store";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
 import { loadVacationAdjustmentTotal } from "./vacation-adjustments";
-import { calculateVacationBalance } from "./vacation-calculator";
+import {
+	calculateVacationBalance,
+	isAccrualPolicy,
+	startingAllowanceDays,
+} from "./vacation-calculator";
 
 const logger = createLogger("vacation-service");
 
@@ -138,6 +142,7 @@ export async function getEnhancedVacationBalance(input: {
 	const baseBalance = calculateVacationBalance({
 		organizationAllowance: {
 			defaultAnnualDays: policy.defaultAnnualDays,
+			accrualType: policy.accrualType,
 			allowCarryover: policy.allowCarryover,
 			maxCarryoverDays: policy.maxCarryoverDays,
 			carryoverExpiryMonths: policy.carryoverExpiryMonths,
@@ -171,8 +176,9 @@ export async function getEnhancedVacationBalance(input: {
 		}
 	}
 
-	// The vacation allowance: custom, or the policy's, prorated in a start or exit year
-	const baseAllowance = allowance.allowance;
+	// The vacation allowance (custom, or prorated in a start or exit year); 0 on an accrual
+	// policy, whose accrual adjustments carry it (#1106)
+	const baseAllowance = isAccrualPolicy(policy) ? 0 : allowance.allowance;
 
 	const adjustments = adjustmentTotal;
 
@@ -240,12 +246,12 @@ export async function calculateAnnualCarryover(
 			// Get vacation taken in fromYear
 			const vacationTaken = await getVacationTakenInYear(emp.id, fromYear);
 
-			// Calculate total allowance for fromYear
-			const baseAllowance =
-				allowances.get(emp.id)?.allowance ??
-				(emp.allowance?.customAnnualDays
-					? parseFloat(emp.allowance.customAnnualDays)
-					: parseFloat(fromYearPolicy.defaultAnnualDays));
+			// Calculate total allowance for fromYear: the (prorated) allowance, or 0 on an
+			// accrual policy, whose accrual adjustments below carry it (#1106)
+			const baseAllowance = isAccrualPolicy(fromYearPolicy)
+				? 0
+				: (allowances.get(emp.id)?.allowance ??
+					startingAllowanceDays(fromYearPolicy, emp.allowance));
 
 			// Include previous carryover if still valid
 			let previousCarryover = 0;
@@ -453,13 +459,13 @@ export async function expireCarryoverDays(
 }
 
 /**
- * Accrue vacation days based on policy (monthly/biweekly)
+ * Accrue vacation days based on policy (monthly/biweekly). Each period's share is an `accrual`
+ * adjustment written by the system, so it has no adjusting employee (#1106).
  */
 export async function accrueVacationDays(
 	organizationId: string,
 	month: number,
 	year: number,
-	performedBy: string,
 	timezone = "UTC",
 ): Promise<{
 	employeesProcessed: number;
@@ -518,7 +524,8 @@ export async function accrueVacationDays(
 			year,
 			days: monthlyAccrual.toFixed(2),
 			reason: `Monthly accrual for ${DateTime.fromObject({ year, month, day: 1 }, { zone: timezone }).toFormat("MMMM yyyy")}: +${monthlyAccrual.toFixed(2)} days`,
-			adjustedBy: performedBy,
+			kind: "accrual",
+			adjustedBy: null,
 		});
 
 		totalDaysAccrued += monthlyAccrual;
@@ -579,6 +586,7 @@ export async function updateVacationAllowance(input: {
 			year: input.year,
 			days: input.adjustmentDays.toString(),
 			reason: input.adjustmentReason,
+			kind: "manual",
 			adjustedBy: input.performedBy,
 		});
 	}

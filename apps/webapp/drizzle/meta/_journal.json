@@ -1499,6 +1499,13 @@
       "when": 1802707200000,
       "tag": "0213_vacation_policy_proration_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 214,
+      "version": "7",
+      "when": 1802793600000,
+      "tag": "0214_vacation_adjustment_kind",
+      "breakpoints": true
     }
   ]
 }

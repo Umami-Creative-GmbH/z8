@@ -18,7 +18,12 @@ import {
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
-import { loadVacationAdjustmentTotal } from "@/lib/absences/vacation-adjustments";
+import {
+	loadManualVacationAdjustments,
+	loadVacationAdjustmentSums,
+	type ManualVacationAdjustment,
+	type VacationAdjustmentSums,
+} from "@/lib/absences/vacation-adjustments";
 import {
 	checkStatutoryMinimumDays,
 	defaultStatutoryMinimumDays,
@@ -741,6 +746,7 @@ export async function createVacationAdjustmentAction(
 						year,
 						days: data.days,
 						reason: data.reason,
+						kind: "manual",
 						adjustedBy: actorEmployee.id,
 					})
 					.returning();
@@ -1365,22 +1371,28 @@ export async function deleteVacationPolicy(policyId: string): Promise<ServerActi
 	return runServerActionSafe(effect);
 }
 
+export type EmployeeAdjustmentSummary = VacationAdjustmentSums & {
+	/** Manual adjustments only, newest first; accrual rows are summed in `accrual` (#1106). */
+	manualAdjustments: Array<Omit<ManualVacationAdjustment, "createdAt"> & { createdAt: string }>;
+};
+
 /**
- * Get the sum of vacation adjustments for an employee in a specific year
+ * An employee's vacation adjustments for a year: the manual and accrual sums every balance
+ * reader adds (#1105, #1106) and the history of manual adjustments.
  */
-export async function getEmployeeAdjustmentTotal(
+export async function getEmployeeAdjustmentSummary(
 	employeeId: string,
 	year: number,
-): Promise<ServerActionResult<number>> {
+): Promise<ServerActionResult<EmployeeAdjustmentSummary>> {
 	const effect = Effect.gen(function* () {
 		const actor = yield* getEmployeeSettingsActorContext({
-			queryName: "getEmployeeAdjustmentTotal:actor",
+			queryName: "getEmployeeAdjustmentSummary:actor",
 		});
 		const dbService = yield* DatabaseService;
 
 		const emp = yield* getTargetEmployee(
 			employeeId,
-			"getEmployeeAdjustmentTotal:getTargetEmployee",
+			"getEmployeeAdjustmentSummary:getTargetEmployee",
 		);
 		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, emp, {
 			message: "Insufficient permissions",
@@ -1388,14 +1400,20 @@ export async function getEmployeeAdjustmentTotal(
 			action: "read",
 		});
 
-		// The same organization-scoped sum every balance reader adds (#1105).
-		return yield* dbService.query("getAdjustmentTotal", () =>
-			loadVacationAdjustmentTotal(dbService.db, {
-				organizationId: emp.organizationId,
-				employeeId,
-				year,
-			}),
-		);
+		const scope = { organizationId: emp.organizationId, employeeId, year };
+		return yield* dbService.query("getEmployeeAdjustmentSummary", async () => {
+			const [sums, manualAdjustments] = await Promise.all([
+				loadVacationAdjustmentSums(dbService.db, { ...scope, employeeIds: [employeeId] }),
+				loadManualVacationAdjustments(dbService.db, scope),
+			]);
+			return {
+				...(sums.get(employeeId) ?? { manual: 0, accrual: 0 }),
+				manualAdjustments: manualAdjustments.map((adjustment) => ({
+					...adjustment,
+					createdAt: adjustment.createdAt.toISOString(),
+				})),
+			};
+		});
 	});
 
 	return runServerActionSafe(effect);

@@ -45,8 +45,16 @@ Vacation an employee has already taken beyond their prorated allowance. It is sh
 _Avoid_: negative balance, vacation debt
 
 **Vacation balance**:
-An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year.
+An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance.
 _Avoid_: remaining vacation, leave account
+
+**Accrual policy**:
+A vacation policy that grants its allowance in monthly or biweekly shares instead of all at once on 1 January.
+_Avoid_: accrual type monthly (in prose)
+
+**Adjustment**:
+A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one period's share of an accrual policy's allowance, written by the system; together they are the employee's accrual to date.
+_Avoid_: correction, bonus days
 
 ### Cover
 

@@ -11,6 +11,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
 interface VacationAllowanceData {
 	defaultAnnualDays: string;
+	accrualType: string;
 	allowCarryover: boolean;
 	maxCarryoverDays: string | null;
 	carryoverExpiryMonths: number | null;
