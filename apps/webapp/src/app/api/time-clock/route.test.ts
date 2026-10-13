@@ -154,6 +154,21 @@ describe("POST /api/time-clock", () => {
 		expect(mockState.clockOut.mock.calls[0]?.[2]?.position).toBeUndefined();
 	});
 
+	it("forwards vehicle use to clock-in and clock-out, also from bearer clients (#1122)", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: "entry-2" } });
+		const bearer = { authorization: "Bearer desktop-token" };
+		const started = { vehicle: { kind: "own" }, startKm: 100 };
+
+		await POST(timeClockRequest({ action: "clock_in", submissionId, vehicleUse: started }, bearer));
+		await POST(
+			timeClockRequest({ action: "clock_out", submissionId, vehicleUse: { endKm: 140 } }, bearer),
+		);
+
+		expect(mockState.clockIn.mock.calls[0]?.[1]).toMatchObject({ vehicleUse: started });
+		expect(mockState.clockOut.mock.calls[0]?.[2]).toMatchObject({ vehicleUse: { endKm: 140 } });
+	});
+
 	it("never refuses a clock event over a malformed position", async () => {
 		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
 

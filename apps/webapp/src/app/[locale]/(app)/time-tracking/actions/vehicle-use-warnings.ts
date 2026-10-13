@@ -1,9 +1,11 @@
 "use server";
 
+import { and, eq, isNull } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "@/db";
+import { workPeriod } from "@/db/schema";
 import { resolveManualWallClock } from "@/lib/datetime/temporal-boundaries";
-import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 import { checkWorkVehicleUsePlausibility } from "@/lib/time-tracking/vehicle-use/plausibility-check";
@@ -34,6 +36,11 @@ const checkVehicleUseWarningsSchema = z.object({
 	manual: z
 		.object({ date: z.iso.date(), clockInTime: wallClockTime, clockOutTime: wallClockTime })
 		.optional(),
+	/**
+	 * The signed-in employee's live work a clock-out is about to end (#1122): the
+	 * work runs from its start until now.
+	 */
+	closingWorkPeriodId: z.uuid().optional(),
 });
 
 export type CheckVehicleUseWarningsInput = z.input<typeof checkVehicleUseWarningsSchema>;
@@ -72,8 +79,29 @@ export async function checkVehicleUseWarnings(
 
 		let start: Instant;
 		let end: Instant | null = null;
-		const manual = parsed.data.manual;
-		if (manual) {
+		let excludeWorkPeriodId: string | undefined;
+		const { manual, closingWorkPeriodId } = parsed.data;
+		if (closingWorkPeriodId) {
+			// Only the signed-in employee's own live work.
+			if (targetEmployee.id !== currentEmployee.id) return none;
+			const [live] = await db
+				.select({ startTime: workPeriod.startTime })
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.id, closingWorkPeriodId),
+						eq(workPeriod.organizationId, targetEmployee.organizationId),
+						eq(workPeriod.employeeId, targetEmployee.id),
+						isNull(workPeriod.endTime),
+						isNull(workPeriod.deletedAt),
+					),
+				)
+				.limit(1);
+			if (!live) return none;
+			start = instantFromDate(live.startTime);
+			end = systemClock.nowInstant();
+			excludeWorkPeriodId = closingWorkPeriodId;
+		} else if (manual) {
 			const { timezone } = await resolveManualEntryTargetZone(targetEmployee);
 			try {
 				const at = (time: string) =>
@@ -99,6 +127,7 @@ export async function checkVehicleUseWarnings(
 			use: built.use,
 			start,
 			end,
+			...(excludeWorkPeriodId ? { excludeWorkPeriodId } : {}),
 		});
 		return { success: true, data: { warnings } };
 	} catch (error) {

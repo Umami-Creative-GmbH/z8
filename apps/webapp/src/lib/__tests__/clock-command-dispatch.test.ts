@@ -241,6 +241,64 @@ describe("browser clock command dispatch", () => {
 		);
 	});
 
+	it("freezes vehicle use as version 4, after any position, in a fixed key order (#1122)", () => {
+		const base = {
+			operationId: "op-out",
+			kind: "clock_out",
+			admission: "delayed",
+			occurredAt: "2026-09-25T17:00:00.000Z",
+			timezone: "Europe/Berlin",
+			context,
+			knownWorkPeriodId: "period-1",
+			project: { kind: "preserve" },
+			workCategory: { kind: "preserve" },
+		};
+		const position = {
+			latitude: 52.5,
+			longitude: 13.4,
+			accuracyMeters: 12,
+			fixedAt: "2026-09-25T16:59:58.000Z",
+		};
+		const target = { workPeriodId: "period-1" };
+
+		const withBoth = dispatch.buildCommand(
+			{
+				...base,
+				position,
+				// Key order as the page might send it; the frozen bytes never depend on it.
+				vehicleUse: { endKm: 12_085, vehicle: { vehicleId: "v-1", kind: "organization" } },
+			},
+			target,
+		);
+		const vehicleOnly = dispatch.buildCommand(
+			{ ...base, vehicleUse: { distanceKm: 37, ignored: true } },
+			target,
+		);
+		const clockIn = dispatch.buildCommand(
+			{
+				...base,
+				kind: "clock_in",
+				workLocationType: "office",
+				vehicleUse: { startKm: 12_000, vehicle: { kind: "own" } },
+			},
+			null,
+		);
+
+		expect(withBoth.version).toBe(4);
+		expect(Object.keys(withBoth).slice(-2)).toEqual(["position", "vehicleUse"]);
+		expect(JSON.stringify(withBoth.vehicleUse)).toBe(
+			JSON.stringify({ vehicle: { kind: "organization", vehicleId: "v-1" }, endKm: 12_085 }),
+		);
+		expect(vehicleOnly).not.toHaveProperty("position");
+		expect(JSON.stringify(vehicleOnly.vehicleUse)).toBe(JSON.stringify({ distanceKm: 37 }));
+		expect(JSON.stringify(clockIn.vehicleUse)).toBe(
+			JSON.stringify({ vehicle: { kind: "own" }, startKm: 12_000 }),
+		);
+		// Without vehicle use the earlier versions keep their exact bytes.
+		expect(dispatch.buildCommand(base, target).version).toBe(2);
+		expect(dispatch.buildCommand({ ...base, position }, target).version).toBe(3);
+	});
+
 	it("holds a stored version 3 command while the server offers only version 2", async () => {
 		const stamped = record({ operationId: "op-in" });
 		stamped.command = { ...(stamped.command as object), version: 3 };

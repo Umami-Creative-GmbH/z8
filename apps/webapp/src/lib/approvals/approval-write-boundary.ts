@@ -721,9 +721,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],

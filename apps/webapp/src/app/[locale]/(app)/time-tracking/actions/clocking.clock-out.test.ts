@@ -97,6 +97,24 @@ describe("web clock-out adapter", () => {
 		);
 	});
 
+	it("carries vehicle use beside the body for the web and for bots (#1122)", async () => {
+		await clockOut(undefined, undefined, { submissionId, vehicleUse: { endKm: 12_085 } });
+		await clockOut(undefined, undefined, { submissionId, vehicleUse: { endKm: "far" } });
+		await clockOutAs(
+			{ userId: "user-1", employee: state.employee as never, resolveTimezone: async () => "UTC" },
+			undefined,
+			undefined,
+			{ submissionId, deviceInfo: "teams-bot", vehicleUse: { distanceKm: 40 } },
+		);
+
+		expect(state.run.mock.calls[0]?.[0]).toMatchObject({ vehicleUse: { endKm: 12_085 } });
+		expect(state.run.mock.calls[1]?.[0]).not.toHaveProperty("vehicleUse");
+		expect(state.run.mock.calls[2]?.[0]).toMatchObject({
+			channel: "teams-bot",
+			vehicleUse: { distanceKm: 40 },
+		});
+	});
+
 	it("returns the committed entry and revalidates only an executed closure", async () => {
 		await expect(clockOut(undefined, undefined, { submissionId })).resolves.toEqual({
 			success: true,

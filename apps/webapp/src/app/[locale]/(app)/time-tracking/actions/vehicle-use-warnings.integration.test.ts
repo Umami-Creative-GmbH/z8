@@ -110,6 +110,7 @@ const { checkWorkPeriodVehicleUseWarnings, updateWorkPeriodTimes } = await impor
 	"./work-period-time-edit"
 );
 const { checkVehicleUseWarnings } = await import("./vehicle-use-warnings");
+const { changeLiveVehicleUse, getClockVehicleUseContext } = await import("./clock-vehicle-use");
 await import("@/lib/approvals/init");
 const { getApprovalInboxDetail } = await import("@/lib/approvals/inbox/read-service");
 
@@ -428,5 +429,114 @@ describe("vehicle use plausibility warnings on PostgreSQL (#1121)", () => {
 				},
 			},
 		});
+	});
+});
+
+describe("clocking vehicle use from the web clock on PostgreSQL (#1122)", () => {
+	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+
+	beforeEach(async () => {
+		await seed();
+	});
+
+	afterAll(async () => {
+		await cleanup();
+	});
+
+	const van = { kind: "organization" as const, vehicleId: ids.van };
+
+	it("gives the clock the mode, the vehicles with their last end reading, and the live vehicle use", async () => {
+		actAs("requester");
+		await expect(getClockVehicleUseContext()).resolves.toMatchObject({
+			success: true,
+			data: {
+				mode: "asked",
+				vehicles: [expect.objectContaining({ id: ids.van, licencePlate: "B-VN 100" })],
+				lastEndKmByVehicleId: { [ids.van]: 12_500 },
+				live: null,
+			},
+		});
+
+		await expect(
+			clockIn("office", {
+				submissionId: randomUUID(),
+				browserTimezone: "UTC",
+				vehicleUse: { vehicle: van, startKm: 12_500 },
+			}),
+		).resolves.toMatchObject({ success: true });
+
+		await expect(getClockVehicleUseContext()).resolves.toMatchObject({
+			success: true,
+			data: {
+				live: {
+					workPeriodId: expect.any(String),
+					vehicleUse: { vehicle: van, startKm: 12_500, endKm: null, distanceKm: null },
+				},
+			},
+		});
+	});
+
+	it("changes the live vehicle use while clocked in, warns before the clock-out and records its end reading", async () => {
+		actAs("requester");
+		await clockIn("office", {
+			submissionId: randomUUID(),
+			browserTimezone: "UTC",
+			vehicleUse: { vehicle: { kind: "own" } },
+		});
+		const context = await getClockVehicleUseContext();
+		const workPeriodId = context.success ? context.data.live?.workPeriodId : undefined;
+		if (!workPeriodId) throw new Error("no live work");
+
+		await expect(
+			changeLiveVehicleUse({ workPeriodId, vehicleUse: { vehicle: van, startKm: 12_000 } }),
+		).resolves.toEqual({
+			success: true,
+			data: { vehicleUse: { vehicle: van, startKm: 12_000, endKm: null, distanceKm: null } },
+		});
+		const warned = await checkVehicleUseWarnings({
+			vehicleUse: { vehicle: van, startKm: 12_000, endKm: 13_700 },
+			closingWorkPeriodId: workPeriodId,
+		});
+		expect(warned.success && warned.data.warnings.map(({ code }) => code)).toEqual(
+			expect.arrayContaining(["start_below_last_end", "distance_above_limit"]),
+		);
+		await expect(
+			clockOut(undefined, undefined, {
+				submissionId: randomUUID(),
+				browserTimezone: "UTC",
+				vehicleUse: { endKm: 12_040 },
+			}),
+		).resolves.toMatchObject({ success: true });
+
+		const { rows } = await admin.query(
+			`select vehicle_id, odometer_start_km, odometer_end_km, driven_distance_km
+			   from work_period where id = $1`,
+			[workPeriodId],
+		);
+		expect(rows).toEqual([
+			{
+				vehicle_id: ids.van,
+				odometer_start_km: 12_000,
+				odometer_end_km: 12_040,
+				driven_distance_km: 40,
+			},
+		]);
+		// Clocked out, there is no live work left to change.
+		await expect(changeLiveVehicleUse({ workPeriodId, vehicleUse: null })).resolves.toMatchObject({
+			success: false,
+			code: "not_clocked_in",
+		});
+	});
+
+	it("refuses an invalid live start reading with its refusal code", async () => {
+		actAs("requester");
+		await clockIn("office", { submissionId: randomUUID(), browserTimezone: "UTC" });
+		const context = await getClockVehicleUseContext();
+		const workPeriodId = context.success ? context.data.live?.workPeriodId : undefined;
+		if (!workPeriodId) throw new Error("no live work");
+
+		await expect(
+			changeLiveVehicleUse({ workPeriodId, vehicleUse: { vehicle: van, startKm: 1.5 } }),
+		).resolves.toMatchObject({ success: false, code: "invalid_reading" });
 	});
 });

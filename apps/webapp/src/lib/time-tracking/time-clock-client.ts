@@ -1,5 +1,6 @@
 import type { ClockCommandPosition } from "./clock-command";
 import type { ClockOutResult } from "./clocking/types";
+import type { ClockVehicleUse } from "./vehicle-use/clock-vehicle-use";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
@@ -22,6 +23,8 @@ type TimeClockRequest =
 			browserTimezone?: string | null;
 			/** The position taken at the event (#826). */
 			position?: ClockCommandPosition;
+			/** Vehicle and start reading (#1122). */
+			vehicleUse?: ClockVehicleUse;
 	  }
 	| {
 			action: "clock_out";
@@ -34,6 +37,8 @@ type TimeClockRequest =
 			billable?: boolean;
 			browserTimezone?: string | null;
 			position?: ClockCommandPosition;
+			/** End reading or distance, and the vehicle when none was recorded (#1122). */
+			vehicleUse?: ClockVehicleUse;
 	  };
 
 function isActionResult(value: unknown): value is ServerActionResult<unknown> {
@@ -69,6 +74,7 @@ export function postClockIn(input: {
 	workLocationType?: WorkLocationType;
 	browserTimezone?: string | null;
 	position?: ClockCommandPosition;
+	vehicleUse?: ClockVehicleUse;
 }): Promise<WebClockInResult> {
 	return postTimeClock({ action: "clock_in", ...input });
 }
@@ -81,6 +87,7 @@ export function postClockOut(input: {
 	billable?: boolean;
 	browserTimezone?: string | null;
 	position?: ClockCommandPosition;
+	vehicleUse?: ClockVehicleUse;
 }): Promise<WebClockOutResult> {
 	return postTimeClock({ action: "clock_out", ...input });
 }

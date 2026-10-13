@@ -87,6 +87,11 @@ import {
 	type OperationIdentity,
 } from "@/lib/time-tracking/clocking";
 import { readClockPosition } from "@/lib/time-tracking/position-capture/clock-position";
+import {
+	type ClockVehicleUse,
+	readBreakVehicleUse,
+	readClockVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
@@ -450,16 +455,27 @@ export type ClockActionContext = BrowserTimezoneContext & {
 	identityOrigin?: OperationIdentity["origin"];
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
+	/** Vehicle use beside the clock-in (#1122); the module records what it may. */
+	vehicleUse?: ClockVehicleUse;
 };
 
 /**
  * The web's own clock request: it may carry the position taken at the clock
- * event (#826). Mobile and bots reach `clockInAs`/`clockOutAs` without one.
+ * event (#826) and vehicle use (#1122). Mobile and bots reach
+ * `clockInAs`/`clockOutAs` without a position.
  */
 export type WebClockPositionContext = {
 	/** Unvalidated wire value; a malformed position is dropped, never refused. */
 	position?: unknown;
+	/** Unvalidated wire value; malformed vehicle use is dropped, never refused. */
+	vehicleUse?: unknown;
 };
+
+/** The vehicle use a web clock request carried, as a spreadable fragment. */
+function webVehicleUse(value: unknown): { vehicleUse?: ClockVehicleUse } {
+	const vehicleUse = readClockVehicleUse(value);
+	return vehicleUse ? { vehicleUse } : {};
+}
 
 export type ClockInCommandResult =
 	| { success: true; data: ClockInResult }
@@ -507,7 +523,7 @@ export async function validateWorkCategoryAssignment(
  */
 export async function clockIn(
 	workLocationType?: WorkLocationType,
-	webContext: ClockActionContext & WebClockPositionContext = {},
+	webContext: Omit<ClockActionContext, "vehicleUse"> & WebClockPositionContext = {},
 ): Promise<ServerActionResult<ClockInResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -519,11 +535,11 @@ export async function clockIn(
 		return { success: false, error: await clockInFailureMessage("employee_not_found") };
 	}
 
-	const { position, ...actionContext } = webContext;
+	const { position, vehicleUse, ...actionContext } = webContext;
 	const result = await clockInAs(
 		webClockActor(session.user.id, currentEmployee),
 		workLocationType,
-		actionContext,
+		{ ...actionContext, ...webVehicleUse(vehicleUse) },
 		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
@@ -606,6 +622,7 @@ export async function clockInAs(
 ): Promise<ClockInCommandResult> {
 	const outcome = await clocking.run({
 		...(position ? { position } : {}),
+		...(actionContext.vehicleUse ? { vehicleUse: actionContext.vehicleUse } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -646,7 +663,7 @@ export async function revalidateAfterClockOut(context: Record<string, unknown>) 
 export async function clockOut(
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
-	webContext: ClockOutActionContext & WebClockPositionContext,
+	webContext: Omit<ClockOutActionContext, "vehicleUse"> & WebClockPositionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
@@ -657,12 +674,12 @@ export async function clockOut(
 	if (!currentEmployee) {
 		return { success: false, error: await clockOutFailureMessage("employee_not_found") };
 	}
-	const { position, ...actionContext } = webContext;
+	const { position, vehicleUse, ...actionContext } = webContext;
 	const result = await clockOutAs(
 		webClockActor(session.user.id, currentEmployee),
 		projectId,
 		workCategoryId,
-		actionContext,
+		{ ...actionContext, ...webVehicleUse(vehicleUse) },
 		readClockPosition(position),
 	);
 	if (result.success) return { success: true, data: result.data };
@@ -722,6 +739,7 @@ export async function clockOutAs(
 ): Promise<ClockOutCommandResult> {
 	const outcome = await clocking.run({
 		...(position ? { position } : {}),
+		...(actionContext.vehicleUse ? { vehicleUse: actionContext.vehicleUse } : {}),
 		organizationId: actor.employee.organizationId,
 		principal: { kind: "user", userId: actor.userId },
 		subject: { employeeId: actor.employee.id },
@@ -812,8 +830,11 @@ export async function addBreakToActiveSession(
 
 	// The break's one fix is taken at its end: it stamps only the resumed work (#826 D1).
 	const position = readClockPosition(actionContext.position);
+	// One optional reading: the closed work's end and the resumed work's start (#1122).
+	const vehicleUse = readBreakVehicleUse(actionContext.vehicleUse);
 	const outcome = await clocking.run({
 		...(position ? { position } : {}),
+		...(vehicleUse ? { vehicleUse } : {}),
 		organizationId: currentEmployee.organizationId,
 		principal: { kind: "user", userId: session.user.id },
 		subject: { employeeId: currentEmployee.id },

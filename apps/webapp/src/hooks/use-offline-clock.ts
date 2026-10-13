@@ -25,6 +25,11 @@ import { useOnlineStatus } from "./use-online-status";
 
 /** Reported by a worker that stores and sends frozen v2 clock commands (#279). */
 const FROZEN_COMMAND_MODE = "frozen-v2";
+/**
+ * What a "frozen-v2" worker freezes when it names no versions: it predates #1122,
+ * so it builds version 2 and the stamped version 3, never vehicle use.
+ */
+const LEGACY_WORKER_COMMAND_VERSIONS: readonly number[] = [2, 3];
 /** Capture, then one attended send: long enough for a slow request, then "pending". */
 const DISPATCH_REPLY_TIMEOUT_MS = 45_000;
 const COMMANDS_API = "/api/time-entries/commands";
@@ -103,6 +108,10 @@ export function useOfflineClock() {
 	const contextKey = JSON.stringify([userId, organizationId]);
 	const [swReady, setSwReady] = useState(false);
 	const [commandsReady, setCommandsReady] = useState(false);
+	// The frozen command versions the controlling worker can build (#1122).
+	const [workerCommandVersions, setWorkerCommandVersions] = useState<readonly number[]>(
+		LEGACY_WORKER_COMMAND_VERSIONS,
+	);
 	// One scoped UI snapshot for the banner and every clock caller. IndexedDB
 	// remains the evidence owner; online recovery reads refresh this cache.
 	const { data: status } = useQuery({
@@ -186,6 +195,7 @@ export function useOfflineClock() {
 				const version = await sendMessageToSW<{
 					clockQueueMode?: string;
 					clockCommandMode?: string;
+					clockCommandVersions?: number[];
 				}>({
 					type: "GET_VERSION",
 				});
@@ -194,6 +204,11 @@ export function useOfflineClock() {
 				if (mounted) {
 					setSwReady(ready);
 					setCommandsReady(frozen);
+					setWorkerCommandVersions(
+						Array.isArray(version.clockCommandVersions)
+							? version.clockCommandVersions
+							: LEGACY_WORKER_COMMAND_VERSIONS,
+					);
 				}
 				if (!ready) {
 					reportWorkerFailure(
@@ -422,6 +437,7 @@ export function useOfflineClock() {
 		swReady,
 		commandsReady,
 		commandCapabilities: commandsReady ? (commandCapabilities ?? null) : null,
+		workerCommandVersions,
 		isOnline,
 		isOffline: !isOnline,
 		queueClockEvent,
