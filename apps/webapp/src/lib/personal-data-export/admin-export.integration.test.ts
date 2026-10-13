@@ -55,8 +55,12 @@ vi.mock("@/lib/queue", async (original) => ({
 }));
 vi.mock("@/lib/storage/export-s3-client", () => ({
 	isExportS3Configured: async () => true,
-	async uploadPrivateObject(_organizationId: string, key: string, data: Uint8Array) {
-		harness.objects.set(key, data);
+	async uploadPrivateObjectStream(
+		_organizationId: string,
+		key: string,
+		body: ReadableStream<Uint8Array>,
+	) {
+		harness.objects.set(key, new Uint8Array(await new Response(body).arrayBuffer()));
 		return { bucket: "t1166-private", versionId: `v-${key}` };
 	},
 	async deletePrivateObject(input: { key: string }) {

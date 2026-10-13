@@ -5,9 +5,11 @@ import { approvalsCollector } from "./approvals";
 import { employmentCollector } from "./employment";
 import { integrationsCollector } from "./integrations";
 import { notificationsCollector } from "./notifications";
+import { personnelFileCollector } from "./personnel-file";
 import { planningCollector } from "./planning";
 import { positionStampsCollector } from "./position-stamps";
 import { timeCollector } from "./time";
+import { travelExpensesCollector } from "./travel-expenses";
 
 /**
  * Every category collector of a personal data export, in archive order. A new
@@ -19,6 +21,8 @@ export const PERSONAL_DATA_COLLECTORS: readonly PersonalDataCollector[] = [
 	absencesCollector,
 	planningCollector,
 	approvalsCollector,
+	travelExpensesCollector,
+	personnelFileCollector,
 	positionStampsCollector,
 	notificationsCollector,
 	integrationsCollector,

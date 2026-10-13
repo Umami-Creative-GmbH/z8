@@ -9,40 +9,18 @@
  * - `README.txt` in the employee's language, and `_manifest.json` listing
  *   every file with its category, format, record count and size.
  *
- * The archive is written through `PersonalDataArchiveWriter`, so the in-memory
- * JSZip writer can be swapped for a streaming one (stored ZIP) once
- * categories bring large original files.
+ * The ZIP is streamed (#1169): entries are stored uncompressed through
+ * `createStoredZipStream`, and each original file is read only when the
+ * consumer reaches it, so at most one file is held in memory at a time.
  */
 
-import JSZip from "jszip";
 import { type CsvTable, csvTableToCSV } from "@/lib/export/formatters/csv-formatter";
+import { createStoredZipStream, type StoredZipEntry } from "@/lib/storage/stored-zip-stream";
 import type {
 	CollectedCategory,
 	PersonalDataExportScope,
 	PersonalDataTablePart,
 } from "./collector";
-
-/** Where the archive's entries go. `finish` returns the complete ZIP. */
-export interface PersonalDataArchiveWriter {
-	add(path: string, content: Uint8Array): Promise<void>;
-	finish(): Promise<Uint8Array>;
-}
-
-/** Builds the whole ZIP in memory (DEFLATE). Fine for JSON and CSV only archives. */
-export function createInMemoryZipWriter(): PersonalDataArchiveWriter {
-	const zip = new JSZip();
-	return {
-		async add(path, content) {
-			zip.file(path, content);
-		},
-		finish: () =>
-			zip.generateAsync({
-				type: "uint8array",
-				compression: "DEFLATE",
-				compressionOptions: { level: 6 },
-			}),
-	};
-}
 
 export const PERSONAL_DATA_ARCHIVE_README = "README.txt";
 export const PERSONAL_DATA_ARCHIVE_MANIFEST = "_manifest.json";
@@ -66,6 +44,17 @@ export interface PersonalDataManifestFile {
 	/** Rows plus records in a JSON or CSV file; null for other files. */
 	records: number | null;
 	sizeBytes: number;
+}
+
+/** An original file could not be read (missing, or no longer its recorded content). */
+export class PersonalDataArchiveFileError extends Error {
+	constructor(
+		readonly path: string,
+		options?: { cause?: unknown },
+	) {
+		super(`Original file ${path} could not be read`, options);
+		this.name = "PersonalDataArchiveFileError";
+	}
 }
 
 const encoder = new TextEncoder();
@@ -105,64 +94,89 @@ function categoryDocument(
 	return { json: JSON.stringify(document, null, 2), records };
 }
 
-/** Writes every entry of one personal data export and returns the finished ZIP. */
-export async function writePersonalDataArchive(
-	writer: PersonalDataArchiveWriter,
-	input: PersonalDataArchiveInput,
-): Promise<Uint8Array> {
+/**
+ * Every entry of one personal data export, in archive order, the manifest
+ * last. Entries are produced lazily; each records itself in the manifest when
+ * it is read, so the manifest lists exactly what the ZIP holds.
+ */
+function* archiveEntries(input: PersonalDataArchiveInput): Generator<StoredZipEntry> {
+	const date = input.exportedAt.slice(0, 10);
 	const files: PersonalDataManifestFile[] = [];
-	const add = async (
+	const entry = (
 		path: string,
-		content: Uint8Array,
-		entry: Omit<PersonalDataManifestFile, "path" | "sizeBytes">,
-	) => {
-		await writer.add(path, content);
-		files.push({ path, ...entry, sizeBytes: content.byteLength });
-	};
+		read: () => Promise<Uint8Array>,
+		meta: Omit<PersonalDataManifestFile, "path" | "sizeBytes">,
+	): StoredZipEntry => ({
+		name: path,
+		date,
+		read: async () => {
+			const content = await read();
+			files.push({ path, ...meta, sizeBytes: content.byteLength });
+			return content;
+		},
+	});
+	const text = (value: string) => async () => encoder.encode(value);
 
-	await add(PERSONAL_DATA_ARCHIVE_README, encoder.encode(input.readme), {
+	yield entry(PERSONAL_DATA_ARCHIVE_README, text(input.readme), {
 		category: null,
 		format: "text",
 		records: null,
 	});
 	for (const category of input.categories) {
 		const { json, records } = categoryDocument(input, category);
-		await add(`${category.category}.json`, encoder.encode(json), {
+		yield entry(`${category.category}.json`, text(json), {
 			category: category.category,
 			format: "json",
 			records,
 		});
 		for (const part of category.parts) {
 			if (part.kind !== "table") continue;
-			await add(`${category.category}/${part.key}.csv`, encoder.encode(csvOf(part)), {
+			yield entry(`${category.category}/${part.key}.csv`, text(csvOf(part)), {
 				category: category.category,
 				format: "csv",
 				records: part.rows.length,
 			});
 		}
 		for (const file of category.files ?? []) {
-			await add(`${category.category}/${file.path}`, await file.read(), {
-				category: category.category,
-				format: "file",
-				records: null,
-			});
+			const path = `${category.category}/${file.path}`;
+			const read = async () => {
+				try {
+					return await file.read();
+				} catch (error) {
+					throw new PersonalDataArchiveFileError(path, { cause: error });
+				}
+			};
+			yield entry(path, read, { category: category.category, format: "file", records: null });
 		}
 	}
 
-	const manifest = {
-		version: PERSONAL_DATA_ARCHIVE_VERSION,
-		exportId: input.exportId,
-		kind: input.scope.kind,
-		organizationId: input.scope.organizationId,
-		employeeId: input.scope.employeeId,
-		exportedAt: input.exportedAt,
-		locale: input.locale,
-		categories: input.categories.map((category) => category.category),
-		files,
+	yield {
+		name: PERSONAL_DATA_ARCHIVE_MANIFEST,
+		date,
+		read: async () =>
+			encoder.encode(
+				JSON.stringify(
+					{
+						version: PERSONAL_DATA_ARCHIVE_VERSION,
+						exportId: input.exportId,
+						kind: input.scope.kind,
+						organizationId: input.scope.organizationId,
+						employeeId: input.scope.employeeId,
+						exportedAt: input.exportedAt,
+						locale: input.locale,
+						categories: input.categories.map((category) => category.category),
+						files,
+					},
+					null,
+					2,
+				),
+			),
 	};
-	await writer.add(
-		PERSONAL_DATA_ARCHIVE_MANIFEST,
-		encoder.encode(JSON.stringify(manifest, null, 2)),
-	);
-	return writer.finish();
+}
+
+/** The ZIP of one personal data export as a pull-driven byte stream. */
+export function streamPersonalDataArchive(
+	input: PersonalDataArchiveInput,
+): ReadableStream<Uint8Array> {
+	return createStoredZipStream(archiveEntries(input));
 }
