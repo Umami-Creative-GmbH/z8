@@ -60,11 +60,17 @@ import {
 import {
 	ACTION_ON_OTHERS_COLUMNS,
 	type ActionOnOther,
-	actionOnOtherRow,
+	actionOnOtherRows,
 	otherPeopleOf,
 } from "../redaction";
 import { withoutStorageReferences } from "../storage-references";
-import { instantText, loadUserNames, nameOf } from "../values";
+import {
+	instantText,
+	jsonObject,
+	loadSubjectEmployee,
+	type NameLookup,
+	userNameLookup,
+} from "../values";
 import { auditLogFieldGuide } from "./audit-log-fields";
 
 const ENTRY_COLUMNS = [
@@ -231,7 +237,7 @@ function isEmployeeVisible(row: AuditRow, visibility: EmployeeVisibility): boole
 		return visibility.sharedDocumentIds.has(row.entityId);
 	}
 	if (CUSTOM_FIELD_VALUE_ACTIONS.has(row.action)) {
-		const fieldId = parseJson(row.metadata)?.fieldId;
+		const fieldId = jsonObject(row.metadata)?.fieldId;
 		return typeof fieldId === "string" && visibility.visibleFieldIds.has(fieldId);
 	}
 	return true;
@@ -248,6 +254,7 @@ async function collectAuditLog(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId, userId } = scope;
+	await loadSubjectEmployee(database, scope);
 	const rows = await database
 		.select()
 		.from(auditLog)
@@ -277,7 +284,7 @@ async function collectAuditLog(
 	const owners = await loadRecordOwners(database, organizationId, byEmployee);
 
 	const about: AuditRow[] = [];
-	const actions: Array<ActionOnOther & { at: number }> = [];
+	const actions: ActionOnOther[] = [];
 	for (const row of rows) {
 		if (row.performedBy !== userId) {
 			// Someone else's action: it matched by being about the employee.
@@ -296,7 +303,6 @@ async function collectAuditLog(
 			actedAt: row.timestamp,
 			asDeputy: false,
 			otherEmployeeId: subject.kind === "other" ? subject.employeeId : null,
-			at: row.timestamp.getTime(),
 		});
 	}
 	actions.push(...(await recordActionsOnOthers(database, scope)));
@@ -310,26 +316,22 @@ async function collectAuditLog(
 	const withheldDocument = (documentId: string) =>
 		visibility !== null && !visibility.sharedDocumentIds.has(documentId);
 
-	const names = await loadUserNames(
+	const byUser = await userNameLookup(
 		database,
 		visibleAbout.map((row) => row.performedBy),
 	);
-	const people = otherPeopleOf(scope);
 	return {
 		category: "audit_log",
 		parts: [
 			tablePart(
 				"entries",
 				ENTRY_COLUMNS,
-				visibleAbout.map((row) => entryRow(row, userId, names, withheldDocument)),
+				visibleAbout.map((row) => entryRow(row, userId, byUser, withheldDocument)),
 			),
 			tablePart(
 				"actions_on_others",
 				ACTION_ON_OTHERS_COLUMNS,
-				actions
-					.map((action, index) => ({ action, index }))
-					.sort((a, b) => a.action.at - b.action.at || a.index - b.index)
-					.map(({ action: { at: _at, ...action } }) => actionOnOtherRow(people, action)),
+				actionOnOtherRows(otherPeopleOf(scope), actions),
 			),
 		],
 	};
@@ -338,7 +340,7 @@ async function collectAuditLog(
 function entryRow(
 	row: AuditRow,
 	userId: string,
-	names: Map<string, string>,
+	byUser: NameLookup,
 	withheldDocument: (documentId: string) => boolean,
 ): PersonalDataRow {
 	const own = row.performedBy === userId;
@@ -347,7 +349,7 @@ function entryRow(
 		action: row.action,
 		entity_type: row.entityType,
 		entity_id: row.entityId,
-		performed_by: nameOf(names, row.performedBy),
+		performed_by: byUser(row.performedBy),
 		performed_by_you: own,
 		ip_address: own ? row.ipAddress : null,
 		user_agent: own ? row.userAgent : null,
@@ -383,18 +385,6 @@ function exportedJson(
 		);
 	}
 	return JSON.stringify(withoutStorageReferences(value));
-}
-
-function parseJson(text: string | null): Record<string, unknown> | null {
-	if (!text) return null;
-	try {
-		const value: unknown = JSON.parse(text);
-		return value !== null && typeof value === "object" && !Array.isArray(value)
-			? (value as Record<string, unknown>)
-			: null;
-	} catch {
-		return null;
-	}
 }
 
 /**
@@ -444,7 +434,7 @@ function subjectOf(
 	if (owner !== undefined) return person(owner);
 	if (PERSON_ENTITY_TYPES.has(row.entityType)) return person(row.entityId);
 	if (row.employeeId && !employeeIdIsActor(row)) return person(row.employeeId);
-	const named = parseJson(row.metadata)?.employeeId;
+	const named = jsonObject(row.metadata)?.employeeId;
 	if (typeof named === "string" && named !== employeeId) return person(named);
 	return { kind: "none" };
 }
@@ -576,7 +566,7 @@ async function loadRecordOwners(
 async function recordActionsOnOthers(
 	database: PersonalDataExportDatabase,
 	scope: PersonalDataExportScope,
-): Promise<Array<ActionOnOther & { at: number }>> {
+): Promise<ActionOnOther[]> {
 	const { organizationId, employeeId, userId } = scope;
 	const [entries, violations, adjustments] = await Promise.all([
 		database
@@ -622,14 +612,13 @@ async function recordActionsOnOthers(
 		recordKind: string,
 		verb: string,
 		row: { owner: string; at: Date | null },
-	): ActionOnOther & { at: number } => ({
+	): ActionOnOther => ({
 		recordKind,
 		authority: "record",
 		action: verb,
 		actedAt: row.at,
 		asDeputy: false,
 		otherEmployeeId: row.owner,
-		at: row.at?.getTime() ?? 0,
 	});
 	return [
 		...entries.map((row) => action("time_entry", "created", row)),
@@ -658,7 +647,7 @@ async function loadEmployeeVisibility(
 	const documentRows = rows.filter((row) => row.entityType === PERSONNEL_FILE_AUDIT_ENTITY_TYPE);
 	// Other rows can name a document too, e.g. the sick note linked to an absence.
 	const referencedIds = rows.flatMap((row) =>
-		[parseJson(row.metadata)?.documentId, parseJson(row.changes)?.documentId].filter(
+		[jsonObject(row.metadata)?.documentId, jsonObject(row.changes)?.documentId].filter(
 			(id): id is string => isUuid(id),
 		),
 	);
@@ -679,7 +668,7 @@ async function loadEmployeeVisibility(
 	// A document that is gone counts with the last visibility its audit rows recorded.
 	const visibilityById = new Map<string, string>();
 	for (const row of documentRows) {
-		const recorded = parseJson(row.metadata)?.document;
+		const recorded = jsonObject(row.metadata)?.document;
 		const visibility =
 			recorded !== null && typeof recorded === "object"
 				? (recorded as Record<string, unknown>).visibility

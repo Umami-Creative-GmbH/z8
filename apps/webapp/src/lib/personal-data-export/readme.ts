@@ -14,6 +14,7 @@
  * parts actually in the archive, never from the employee's withheld records.
  */
 
+import { createLogger } from "@/lib/logger";
 import { DOCUMENT_CATEGORIES, type DocumentCategory } from "@/lib/personnel-file/document.types";
 import { loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 import type {
@@ -23,6 +24,8 @@ import type {
 	PersonalDataExportKind,
 	PersonalDataFieldGuide,
 } from "./collector";
+
+const logger = createLogger("PersonalDataExportReadme");
 
 export type ReadmeTranslate = (
 	key: string,
@@ -37,7 +40,8 @@ export async function loadReadmeTranslator(locale: string): Promise<ReadmeTransl
 		const tolgee = TolgeeBase().init({ language: locale, staticData });
 		await tolgee.run();
 		return (key, defaultValue, params) => tolgee.t({ key, defaultValue, params });
-	} catch {
+	} catch (error) {
+		logger.warn({ locale, error }, "README translations unavailable; writing English defaults");
 		return fallbackReadmeTranslator;
 	}
 }

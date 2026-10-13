@@ -44,9 +44,8 @@ import {
 	recordPart,
 	tablePart,
 } from "../collector";
-import { instantText, loadUserNames, nameOf } from "../values";
+import { instantText, jsonText, PersonalDataSubjectNotFoundError, userNameLookup } from "../values";
 import { accountFieldGuide } from "./account-fields";
-import { PersonalDataSubjectNotFoundError } from "./employment";
 
 const SESSION_COLUMNS = [
 	"created_at",
@@ -278,7 +277,7 @@ async function collectEmployeeOnlyAccountParts(
 			)
 			.orderBy(asc(accessViolationLog.createdAt), asc(accessViolationLog.id)),
 	]);
-	const deviceActors = await loadUserNames(
+	const deviceActor = await userNameLookup(
 		database,
 		devices.flatMap((device) => [device.createdBy, device.revokedBy]),
 	);
@@ -343,9 +342,9 @@ async function collectEmployeeOnlyAccountParts(
 				mdm_provider: row.mdmProvider,
 				mdm_compliant: row.mdmCompliant,
 				created_at: instantText(row.createdAt),
-				created_by: nameOf(deviceActors, row.createdBy),
+				created_by: deviceActor(row.createdBy),
 				revoked_at: instantText(row.revokedAt),
-				revoked_by: nameOf(deviceActors, row.revokedBy),
+				revoked_by: deviceActor(row.revokedBy),
 				revoke_reason: row.revokeReason,
 			})),
 		),
@@ -353,10 +352,7 @@ async function collectEmployeeOnlyAccountParts(
 			"settings",
 			settings
 				? {
-						dashboard_widget_order:
-							settings.dashboardWidgetOrder === null
-								? null
-								: JSON.stringify(settings.dashboardWidgetOrder),
+						dashboard_widget_order: jsonText(settings.dashboardWidgetOrder),
 						onboarding_complete: settings.onboardingComplete,
 						onboarding_step: settings.onboardingStep,
 						onboarding_started_at: instantText(settings.onboardingStartedAt),

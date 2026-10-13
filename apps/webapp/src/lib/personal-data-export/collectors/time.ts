@@ -51,7 +51,16 @@ import {
 	type PersonalDataValue,
 	tablePart,
 } from "../collector";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import {
+	instantText,
+	jsonObject,
+	jsonText,
+	loadEmployeeNames,
+	loadSubjectEmployee,
+	loadUserNames,
+	nameOf,
+	userNameLookup,
+} from "../values";
 import { timeFieldGuide } from "./time-fields";
 
 export const timeCollector: PersonalDataCollector = {
@@ -64,6 +73,7 @@ async function collectTime(
 	database: PersonalDataExportDatabase,
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
+	await loadSubjectEmployee(database, scope);
 	const [work, compliance, balances] = await Promise.all([
 		collectWorkParts(database, scope),
 		collectComplianceParts(database, scope),
@@ -214,14 +224,13 @@ async function collectWorkParts(
 	const pendingChanges = new Map(
 		periods.map((row) => [row.id, jsonObject(row.pendingChanges)] as const),
 	);
-	const userNames = await loadUserNames(database, [
+	const byUser = await userNameLookup(database, [
 		...entries.map((row) => row.createdBy),
 		...periods.map((row) => row.deletedBy),
 		...[...pendingChanges.values()].map((changes) => stringField(changes, "requestedBy")),
 		...operations.map((row) => row.actorUserId),
 		...proposals.flatMap((row) => [row.proposedBy, row.approvedBy, row.resolvedBy]),
 	]);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
 	const entryOffsets = new Map(entries.map((row) => [row.id, row.utcOffsetMinutes]));
 	const offsetOf = (entryId: string | null) =>
 		entryId ? (entryOffsets.get(entryId) ?? null) : null;
@@ -707,27 +716,6 @@ function violationDetails(
 }
 
 type JsonObject = Record<string, unknown>;
-
-/** A JSON text column, typed as its parsed shape but read as stored text. */
-function jsonText(value: unknown): string | null {
-	if (value === null || value === undefined) return null;
-	return typeof value === "string" ? value : JSON.stringify(value);
-}
-
-/** A JSON text column (or an already parsed value) as an object, else null. */
-function jsonObject(value: unknown): JsonObject | null {
-	let parsed = value;
-	if (typeof value === "string") {
-		try {
-			parsed = JSON.parse(value);
-		} catch {
-			return null;
-		}
-	}
-	return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
-		? (parsed as JsonObject)
-		: null;
-}
 
 function objectField(source: JsonObject | null, key: string): JsonObject | null {
 	return jsonObject(source?.[key] ?? null);

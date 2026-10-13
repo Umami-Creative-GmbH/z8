@@ -18,7 +18,7 @@ import {
 	type ServerActionResult,
 } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { enqueuePersonalDataExport } from "@/lib/personal-data-export/processor";
+import { enqueuePersonalDataExportBuild } from "@/lib/personal-data-export/enqueue-effect";
 import {
 	listAdminPersonalDataExports,
 	type PersonalDataExportRequestContext,
@@ -163,18 +163,10 @@ export async function requestEmployeePersonalDataExportAction(
 					);
 			}
 		}
-		const queued = yield* dbService.query("personalDataExport.enqueue", () =>
-			enqueuePersonalDataExport(dbService.db, { organizationId, exportId: result.exportId }),
-		);
-		if (!queued) {
-			return yield* Effect.fail(
-				new ExternalServiceError({
-					message: "The export could not be started. Please try again.",
-					service: "queue",
-					operation: "personalDataExport.enqueue",
-				}),
-			);
-		}
+		yield* enqueuePersonalDataExportBuild(dbService.db, {
+			organizationId,
+			exportId: result.exportId,
+		});
 		return { exportId: result.exportId };
 	});
 	return runServerActionSafe(effect);

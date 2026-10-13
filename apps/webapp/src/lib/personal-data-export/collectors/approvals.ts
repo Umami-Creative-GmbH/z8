@@ -53,12 +53,11 @@ import {
 import {
 	ACTION_ON_OTHERS_COLUMNS,
 	type ActionOnOther,
-	actionOnOtherRow,
+	actionOnOtherRows,
 	otherPeopleOf,
 } from "../redaction";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import { employeeNameLookup, instantText, loadSubjectEmployee, userNameLookup } from "../values";
 import { approvalsFieldGuide } from "./approvals-fields";
-import { PersonalDataSubjectNotFoundError } from "./employment";
 
 export const approvalsCollector: PersonalDataCollector = {
 	category: "approvals",
@@ -73,12 +72,7 @@ async function collectApprovals(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
-	const [subject] = await database
-		.select({ id: employee.id })
-		.from(employee)
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
-		.limit(1);
-	if (!subject) throw new PersonalDataSubjectNotFoundError();
+	await loadSubjectEmployee(database, scope);
 
 	const ownWorkflow = and(
 		eq(approvalWorkflow.organizationId, organizationId),
@@ -211,8 +205,8 @@ async function collectApprovals(
 
 	const decisions = await collectDecisionsOnOthers(database, scope);
 
-	const [employeeNames, userNames] = await Promise.all([
-		loadEmployeeNames(database, organizationId, [
+	const [byEmployee, byUser] = await Promise.all([
+		employeeNameLookup(database, organizationId, [
 			...requests.map((row) => row.approverId),
 			...approvers.flatMap(({ assignment }) => [
 				assignment.approverEmployeeId,
@@ -224,13 +218,11 @@ async function collectApprovals(
 			...deputyDecisions.flatMap((row) => [row.deputyEmployeeId, row.actingForEmployeeId]),
 			...submissions.map((row) => row.decidedByEmployeeId),
 		]),
-		loadUserNames(database, [
+		userNameLookup(database, [
 			...events.map((row) => row.actorUserId),
 			...submissions.map((row) => row.submittedBy),
 		]),
 	]);
-	const byEmployee = (id: string | null | undefined) => nameOf(employeeNames, id);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
 
 	return {
 		category: "approvals",
@@ -704,14 +696,7 @@ async function collectDecisionsOnOthers(
 		...(await collectRecordDecisions(database, scope)),
 	];
 
-	const people = otherPeopleOf(scope);
-	return actions
-		.sort(
-			(a, b) =>
-				(a.actedAt?.getTime() ?? 0) - (b.actedAt?.getTime() ?? 0) ||
-				a.recordKind.localeCompare(b.recordKind),
-		)
-		.map((action) => actionOnOtherRow(people, action));
+	return actionOnOtherRows(otherPeopleOf(scope), actions);
 }
 
 /**

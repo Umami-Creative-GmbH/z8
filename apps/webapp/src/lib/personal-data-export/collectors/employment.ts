@@ -81,7 +81,13 @@ import {
 	recordPart,
 	tablePart,
 } from "../collector";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf, plainDateText } from "../values";
+import {
+	employeeNameLookup,
+	instantText,
+	PersonalDataSubjectNotFoundError,
+	plainDateText,
+	userNameLookup,
+} from "../values";
 import { employmentFieldGuide } from "./employment-fields";
 import { collectWithheldEmploymentParts } from "./employment-withheld";
 
@@ -91,13 +97,6 @@ const person = employee;
 /** Custom field visibilities included per export kind. */
 function customFieldVisibilities(kind: PersonalDataExportScope["kind"]): string[] {
 	return kind === "admin" ? ["employee", "manager", "admin"] : ["employee"];
-}
-
-export class PersonalDataSubjectNotFoundError extends Error {
-	constructor() {
-		super("The export's employee no longer exists in its organization");
-		this.name = "PersonalDataSubjectNotFoundError";
-	}
 }
 
 /** Departure events about departure reviews and tasks: admin export only, like the reviews and tasks. */
@@ -619,7 +618,7 @@ async function collectEmployment(
 		for (const row of permissionTeams) teamNames.set(row.id, row.name);
 	}
 
-	const userNames = await loadUserNames(database, [
+	const byUser = await userNameLookup(database, [
 		...departureEvents.map((row) => row.actorUserId),
 		...memberships.map((row) => row.createdBy),
 		...periods.map((row) => row.createdBy),
@@ -639,13 +638,11 @@ async function collectEmployment(
 		...policyRows.map((row) => row.createdBy),
 		...customFields.map((row) => row.updatedBy),
 	]);
-	const employeeNames = await loadEmployeeNames(database, organizationId, [
+	const byEmployee = await employeeNameLookup(database, organizationId, [
 		...managers.map((row) => row.managerId),
 		...permissions.map((row) => row.grantedBy),
 		...departures.map((row) => row.replacementEmployeeId),
 	]);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
-	const byEmployee = (id: string | null | undefined) => nameOf(employeeNames, id);
 
 	const employeeRecord: PersonalDataRow = {
 		id: subject.id,

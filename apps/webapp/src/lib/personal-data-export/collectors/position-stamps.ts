@@ -31,16 +31,13 @@ import type { PositionCaptureClient } from "@/lib/time-tracking/position-capture
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
-	type PersonalDataExportDatabase,
+	type PersonalDataExportReader,
 	type PersonalDataExportScope,
 	type PersonalDataRow,
 	tablePart,
 } from "../collector";
-import { instantText, loadUserNames, nameOf } from "../values";
+import { instantText, loadSubjectEmployee, loadUserNames, nameOf } from "../values";
 import { positionStampsFieldGuide } from "./position-stamps-fields";
-
-/** Reads with the global client or inside the collector's transaction. */
-type Reader = Pick<PersonalDataExportDatabase, "select">;
 
 const STAMP_COLUMNS = [
 	"time_entry_id",
@@ -97,10 +94,11 @@ export const positionStampsCollector: PersonalDataCollector = {
 };
 
 async function collectPositionStamps(
-	database: Reader,
+	database: PersonalDataExportReader,
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
+	await loadSubjectEmployee(database, scope);
 
 	const stamps = await database
 		.select({
@@ -234,7 +232,7 @@ async function collectPositionStamps(
  * lifetime, so it stays small per employee.
  */
 async function accessLogRows(
-	database: Reader,
+	database: PersonalDataExportReader,
 	scope: PersonalDataExportScope,
 ): Promise<PersonalDataRow[]> {
 	const { organizationId, employeeId } = scope;

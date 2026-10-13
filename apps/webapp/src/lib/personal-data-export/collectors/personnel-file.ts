@@ -13,7 +13,7 @@
  * holds exactly the documents the employee sees in their own file (shared).
  */
 
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { absenceEntry, employeeDocument } from "@/db/schema";
 import { readVerifiedDocumentObject } from "@/lib/personnel-file/document-object";
 import { personnelFileZipEntryNames } from "@/lib/personnel-file/zip-entries";
@@ -25,7 +25,7 @@ import {
 	type PersonalDataFile,
 	tablePart,
 } from "../collector";
-import { instantText, loadUserNames, nameOf } from "../values";
+import { instantText, loadSubjectEmployee, loadUserNames, nameOf } from "../values";
 import { personnelFileFieldGuide } from "./personnel-file-fields";
 
 const CATEGORY = "personnel_file";
@@ -41,6 +41,7 @@ async function collectPersonnelFile(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
+	await loadSubjectEmployee(database, scope);
 	const documents = await database
 		.select()
 		.from(employeeDocument)
@@ -58,8 +59,9 @@ async function collectPersonnelFile(
 			asc(employeeDocument.id),
 		);
 
-	// The absences sick notes cover: always the employee's own (absence_entry's
-	// organization column is nullable, so scope through the employee too).
+	// The absences sick notes cover: always the employee's own. absence_entry's
+	// organization column is nullable (legacy rows), so like the Absences
+	// category this scopes through the employee and accepts a missing organization.
 	const absenceIds = [...new Set(documents.flatMap((document) => document.absenceEntryId ?? []))];
 	const absences =
 		absenceIds.length === 0
@@ -73,7 +75,10 @@ async function collectPersonnelFile(
 					.from(absenceEntry)
 					.where(
 						and(
-							eq(absenceEntry.organizationId, organizationId),
+							or(
+								eq(absenceEntry.organizationId, organizationId),
+								isNull(absenceEntry.organizationId),
+							),
 							eq(absenceEntry.employeeId, employeeId),
 							inArray(absenceEntry.id, absenceIds),
 						),

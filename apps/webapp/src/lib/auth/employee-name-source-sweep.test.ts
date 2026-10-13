@@ -86,9 +86,13 @@ describe("employee name source sweep", () => {
 				return [];
 			}
 
-			// Translation keys passed to `t(...)` are text, not column access
-			// (e.g. "personalDataExport.readme.fields.employment.employee.firstName").
-			const source = readFileSync(filePath, "utf8").replace(/\bt\(\s*(["'`])[\w.-]+\1/g, 't(""');
+			// The personal data export's field guides name export fields in their translation
+			// keys (e.g. "personalDataExport.readme.fields.employment.employee.firstName"): text,
+			// not column access. Only there are `t(...)` keys left out of the sweep.
+			const raw = readFileSync(filePath, "utf8");
+			const source = /personal-data-export[\\/]collectors[\\/][\w-]+-fields\.ts$/.test(relativePath)
+				? raw.replace(/\bt\(\s*(["'`])[\w.-]+\1/g, 't(""')
+				: raw;
 			const patterns = [...forbiddenPatterns, ...(targetedForbiddenPatterns[relativePath] ?? [])];
 
 			return patterns

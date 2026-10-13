@@ -16,7 +16,6 @@
  * expense administrators. The settlement note stays: the employee sees it.
  */
 
-import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import {
 	payrollExportJob,
@@ -38,7 +37,7 @@ import {
 	travelExpenseReportReviewNote,
 	travelExpenseSettlementEntry,
 } from "@/db/schema";
-import { readPrivateObject } from "@/lib/storage/export-s3-client";
+import { readVerifiedPrivateObject } from "@/lib/storage/verified-private-object";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "@/lib/travel-expenses/attachment-validation";
 import { bundleReceiptFileName, bundleReceiptPath } from "@/lib/travel-expenses/export-manifest";
 import {
@@ -50,7 +49,7 @@ import {
 	tablePart,
 } from "../collector";
 import { jsonWithoutStorageReferences } from "../storage-references";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import { employeeNameLookup, instantText, loadSubjectEmployee, userNameLookup } from "../values";
 import { travelExpensesFieldGuide } from "./travel-expenses-fields";
 
 const CATEGORY = "travel_expenses";
@@ -79,28 +78,25 @@ async function readVerifiedReceipt(receipt: StoredReceipt): Promise<Uint8Array> 
 	if (receipt.storageProvider !== TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER) {
 		throw new Error("Unsupported recorded receipt storage provider");
 	}
-	const bytes = await readPrivateObject({
-		organizationId: receipt.organizationId,
-		key: receipt.storageKey,
-		bucket: receipt.storageBucket,
-		versionId: receipt.storageVersionId,
-	});
-	if (
-		(receipt.sizeBytes !== null && bytes.byteLength !== receipt.sizeBytes) ||
-		(receipt.checksumSha256 &&
-			createHash("sha256").update(bytes).digest("hex") !== receipt.checksumSha256)
-	) {
-		throw new Error("Stored receipt content does not match its recorded identity");
-	}
-	return bytes;
+	return readVerifiedPrivateObject(
+		{
+			organizationId: receipt.organizationId,
+			key: receipt.storageKey,
+			bucket: receipt.storageBucket,
+			versionId: receipt.storageVersionId,
+			sizeBytes: receipt.sizeBytes,
+			checksumSha256: receipt.checksumSha256,
+		},
+		"Stored receipt",
+	);
 }
 
 function archivePath(path: string): string {
 	return `${CATEGORY}/${path}`;
 }
 
-/** A plain JSON scalar for a numeric or text column. */
-function text(value: string | number | null | undefined): string | null {
+/** A numeric or text column as text, the way amounts are written everywhere in the export. */
+function numberText(value: string | number | null | undefined): string | null {
 	return value === null || value === undefined ? null : String(value);
 }
 
@@ -109,6 +105,7 @@ async function collectTravelExpenses(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
+	await loadSubjectEmployee(database, scope);
 	const files: PersonalDataFile[] = [];
 
 	const [claims, reports, exceptions] = await Promise.all([
@@ -381,8 +378,8 @@ async function collectTravelExpenses(
 	const projectNames = new Map(projects.map((row) => [row.id, row.name]));
 	const projectName = (id: string | null) => (id ? (projectNames.get(id) ?? null) : null);
 
-	const [userNames, employeeNames] = await Promise.all([
-		loadUserNames(database, [
+	const [userName, employeeName] = await Promise.all([
+		userNameLookup(database, [
 			...claims.flatMap((claim) => [claim.createdBy, claim.updatedBy]),
 			...reports.flatMap((report) => [report.createdBy, report.updatedBy]),
 			...items.map((item) => item.updatedBy),
@@ -394,7 +391,7 @@ async function collectTravelExpenses(
 			...inclusions.map((row) => row.inclusion.endedByUserId),
 			...exceptions.map((exception) => exception.authorizedByUserId),
 		]),
-		loadEmployeeNames(database, organizationId, [
+		employeeNameLookup(database, organizationId, [
 			...claims.map((claim) => claim.approverId),
 			...attachments.map((attachment) => attachment.uploadedBy),
 			...decisions.flatMap((decision) => [decision.actorEmployeeId, decision.approverId]),
@@ -405,8 +402,6 @@ async function collectTravelExpenses(
 			...exceptions.map((exception) => exception.authorizedByEmployeeId),
 		]),
 	]);
-	const userName = (id: string | null) => nameOf(userNames, id);
-	const employeeName = (id: string | null) => nameOf(employeeNames, id);
 
 	// Original receipt files, each read only when the archive writer reaches it.
 	const claimReceiptRows = attachments.map((attachment) => {
@@ -451,7 +446,7 @@ async function collectTravelExpenses(
 		};
 	});
 
-	const withheld = scope.kind === "admin";
+	const includeWithheld = scope.kind === "admin";
 	const parts = [
 		tablePart(
 			"claims",
@@ -847,8 +842,8 @@ async function collectTravelExpenses(
 					recorded_at: instantText(entry.recordedAt),
 					export_batch_id: entry.exportBatchId,
 					payroll_run_id: entry.payrollRunId,
-					payroll_run_period_start: text(period?.start),
-					payroll_run_period_end: text(period?.end),
+					payroll_run_period_start: numberText(period?.start),
+					payroll_run_period_end: numberText(period?.end),
 				};
 			}),
 		),
@@ -868,8 +863,8 @@ async function collectTravelExpenses(
 			inclusions.map(({ inclusion, filters }) => ({
 				report_id: inclusion.reportId,
 				payroll_run_id: inclusion.payrollExportJobId,
-				payroll_run_period_start: text(filters.dateRange?.start),
-				payroll_run_period_end: text(filters.dateRange?.end),
+				payroll_run_period_start: numberText(filters.dateRange?.start),
+				payroll_run_period_end: numberText(filters.dateRange?.end),
 				lines: jsonWithoutStorageReferences(inclusion.lines),
 				state: inclusion.state,
 				included_at: instantText(inclusion.includedAt),
@@ -884,7 +879,7 @@ async function collectTravelExpenses(
 				"valid_from",
 				"valid_to",
 				// Withheld: the expense administrators' internal notes.
-				...(withheld ? ["reason", "evidence"] : []),
+				...(includeWithheld ? ["reason", "evidence"] : []),
 				"authorized_by",
 				"authorized_at",
 			],
@@ -892,7 +887,7 @@ async function collectTravelExpenses(
 				project: projectName(exception.projectId),
 				valid_from: exception.validFrom,
 				valid_to: exception.validTo,
-				...(withheld ? { reason: exception.reason, evidence: exception.evidence } : {}),
+				...(includeWithheld ? { reason: exception.reason, evidence: exception.evidence } : {}),
 				authorized_by:
 					userName(exception.authorizedByUserId) ?? employeeName(exception.authorizedByEmployeeId),
 				authorized_at: instantText(exception.authorizedAt),

@@ -16,6 +16,7 @@ const harness = vi.hoisted(() => ({
 	organizationId: "t1165-org",
 	objects: new Map<string, Uint8Array>(),
 	jobs: [] as { organizationId: string; exportId: string }[],
+	queueDown: false,
 	signed: [] as { key: string; expiresInSeconds: number; fileName: string }[],
 }));
 
@@ -46,6 +47,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/queue", async (original) => ({
 	...(await original<typeof import("@/lib/queue")>()),
 	addJob: async (_name: string, data: { organizationId: string; exportId: string }) => {
+		if (harness.queueDown) throw new Error("Redis is down");
 		harness.jobs.push({ organizationId: data.organizationId, exportId: data.exportId });
 		return { id: "job" };
 	},
@@ -527,6 +529,23 @@ describe("personal data export pipeline (#1165)", () => {
 				metadata: { kind: "employee", employeeId: ids.ada, requestedByUserId: "t1165-ada" },
 			}),
 		]);
+	});
+
+	it("reports a queue failure as such and lets the employee try again at once", async () => {
+		signIn("ada");
+		harness.queueDown = true;
+		try {
+			expect(await requestMyPersonalDataExport()).toMatchObject({
+				success: false,
+				code: "QueueError",
+			});
+		} finally {
+			harness.queueDown = false;
+		}
+		expect((await exportRows(ids.ada)).map((row) => [row.status, row.error_code])).toEqual([
+			["failed", "enqueue_failed"],
+		]);
+		expect(await requestMyPersonalDataExport()).toMatchObject({ success: true });
 	});
 
 	it("allows one export in progress and one employee export per 24 hours", async () => {

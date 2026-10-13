@@ -52,8 +52,9 @@ export function formatPayPeriod(payPeriod: PayPeriod, locale: string): string {
 	);
 }
 
+/** A file size in B, KB, MB or GB, in `locale`. */
 export function formatFileSize(bytes: number, locale: string): string {
-	const units = ["B", "KB", "MB"] as const;
+	const units = ["B", "KB", "MB", "GB"] as const;
 	let value = bytes;
 	let unit = 0;
 	while (value >= 1024 && unit < units.length - 1) {

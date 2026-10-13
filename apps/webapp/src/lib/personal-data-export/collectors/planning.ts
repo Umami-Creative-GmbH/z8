@@ -17,14 +17,7 @@
  */
 
 import { and, asc, eq, ne } from "drizzle-orm";
-import {
-	employee,
-	location,
-	locationSubarea,
-	shift,
-	shiftRequest,
-	shiftTemplate,
-} from "@/db/schema";
+import { location, locationSubarea, shift, shiftRequest, shiftTemplate } from "@/db/schema";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -32,8 +25,13 @@ import {
 	type PersonalDataExportScope,
 	tablePart,
 } from "../collector";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf, plainDateText } from "../values";
-import { PersonalDataSubjectNotFoundError } from "./employment";
+import {
+	employeeNameLookup,
+	instantText,
+	loadSubjectEmployee,
+	plainDateText,
+	userNameLookup,
+} from "../values";
 import { planningFieldGuide } from "./planning-fields";
 
 export const planningCollector: PersonalDataCollector = {
@@ -53,12 +51,7 @@ async function collectPlanning(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
-	const [subject] = await database
-		.select({ id: employee.id })
-		.from(employee)
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
-		.limit(1);
-	if (!subject) throw new PersonalDataSubjectNotFoundError();
+	await loadSubjectEmployee(database, scope);
 
 	const shiftInOrganization = and(
 		eq(shift.id, shiftRequest.shiftId),
@@ -120,18 +113,16 @@ async function collectPlanning(
 			.orderBy(asc(shiftRequest.createdAt)),
 	]);
 
-	const [userNames, employeeNames] = await Promise.all([
-		loadUserNames(
+	const [byUser, byEmployee] = await Promise.all([
+		userNameLookup(
 			database,
 			shifts.flatMap((row) => [row.shift.publishedBy, row.shift.createdBy]),
 		),
-		loadEmployeeNames(database, organizationId, [
+		employeeNameLookup(database, organizationId, [
 			...ownRequests.flatMap((row) => [row.request.targetEmployeeId, row.request.approverId]),
 			...receivedRequests.flatMap((row) => [row.requesterId, row.approverId]),
 		]),
 	]);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
-	const byEmployee = (id: string | null | undefined) => nameOf(employeeNames, id);
 
 	return {
 		category: "planning",

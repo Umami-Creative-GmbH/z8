@@ -9,7 +9,7 @@
 import { and, asc, eq } from "drizzle-orm";
 import { notification } from "@/db/schema";
 import { type PersonalDataCollector, tablePart } from "../collector";
-import { instantText } from "../values";
+import { instantText, loadSubjectEmployee } from "../values";
 import { notificationsFieldGuide } from "./notifications-fields";
 
 const NOTIFICATION_COLUMNS = [
@@ -29,6 +29,7 @@ export const notificationsCollector: PersonalDataCollector = {
 	category: "notifications",
 	fields: notificationsFieldGuide,
 	async collect(database, scope) {
+		await loadSubjectEmployee(database, scope);
 		const rows = await database
 			.select({
 				type: notification.type,
