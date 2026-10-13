@@ -1492,6 +1492,13 @@
       "when": 1802620800000,
       "tag": "0212_scheduled_export_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 214,
+      "version": "7",
+      "when": 1802793600000,
+      "tag": "0214_vacation_adjustment_kind",
+      "breakpoints": true
     }
   ]
 }

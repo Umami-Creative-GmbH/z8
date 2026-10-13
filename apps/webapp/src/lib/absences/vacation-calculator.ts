@@ -11,6 +11,8 @@ import type { AbsenceWithCategory, VacationBalance } from "./types";
 
 interface VacationAllowanceData {
 	defaultAnnualDays: string; // decimal from DB
+	/** "annual" | "monthly" | "biweekly" (`vacation_allowance.accrual_type`). */
+	accrualType: string;
 	allowCarryover: boolean;
 	maxCarryoverDays: string | null; // decimal from DB
 	carryoverExpiryMonths: number | null;
@@ -19,6 +21,27 @@ interface VacationAllowanceData {
 interface EmployeeAllowanceData {
 	customAnnualDays: string | null; // decimal from DB
 	customCarryoverDays: string | null; // decimal from DB
+}
+
+/** A monthly or biweekly policy grants its allowance through accrual adjustments (#1106). */
+export function isAccrualPolicy(policy: { accrualType: string }): boolean {
+	return policy.accrualType !== "annual";
+}
+
+/**
+ * The days a balance starts from before carryover and adjustments: the custom or policy
+ * allowance on an annual policy, and 0 on an accrual policy, whose balance grows only
+ * through its accrual adjustments (#1106). The accrual job still accrues the custom or
+ * policy allowance, so that number remains the accrual target.
+ */
+export function startingAllowanceDays(
+	policy: Pick<VacationAllowanceData, "defaultAnnualDays" | "accrualType">,
+	employeeAllowance?: Pick<EmployeeAllowanceData, "customAnnualDays"> | null,
+): number {
+	if (isAccrualPolicy(policy)) return 0;
+	return employeeAllowance?.customAnnualDays
+		? parseFloat(employeeAllowance.customAnnualDays)
+		: parseFloat(policy.defaultAnnualDays);
 }
 
 /**
@@ -53,10 +76,8 @@ export function calculateVacationBalance({
 	// Convert currentDate to DateTime if needed
 	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
 
-	// 1. Calculate total annual days
-	let totalDays = employeeAllowance?.customAnnualDays
-		? parseFloat(employeeAllowance.customAnnualDays)
-		: parseFloat(organizationAllowance.defaultAnnualDays);
+	// 1. Calculate total annual days (0 on an accrual policy, see startingAllowanceDays)
+	let totalDays = startingAllowanceDays(organizationAllowance, employeeAllowance);
 
 	// 2. Add carryover days from previous year (if not expired)
 	let carryoverDays = 0;
@@ -87,7 +108,7 @@ export function calculateVacationBalance({
 		}
 	}
 
-	// 3. Add manual adjustments (sum of adjustment events)
+	// 3. Add adjustments (sum of manual and accrual adjustment events)
 	totalDays += adjustmentTotal;
 
 	// 4. Absence days of approved (used) and pending vacation inside the calendar year

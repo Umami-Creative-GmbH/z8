@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
 	decimal,
 	index,
@@ -103,7 +104,13 @@ export const employeeVacationAllowance = pgTable(
 	],
 );
 
-// Individual vacation adjustment events (tracks all manual adjustments with full history)
+/**
+ * `manual`: an admin's or manager's adjustment. `accrual`: one period's share written by the
+ * monthly/biweekly accrual job, the only source of an accrual policy's allowance (#1106).
+ */
+export type VacationAdjustmentKind = "manual" | "accrual";
+
+// Individual vacation adjustment events (manual adjustments and accrual shares, with full history)
 export const vacationAdjustment = pgTable(
 	"vacation_adjustment",
 	{
@@ -114,12 +121,19 @@ export const vacationAdjustment = pgTable(
 		year: integer("year").notNull(),
 		days: decimal("days", { precision: 5, scale: 2 }).notNull(), // +/- days adjustment
 		reason: text("reason").notNull(),
-		adjustedBy: uuid("adjusted_by")
-			.notNull()
-			.references(() => employee.id),
+		kind: text("kind").$type<VacationAdjustmentKind>().default("manual").notNull(),
+		// The adjusting employee; null only on accrual rows, which the system writes.
+		adjustedBy: uuid("adjusted_by").references(() => employee.id),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(table) => [index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year)],
+	(table) => [
+		index("vacationAdjustment_employee_year_idx").on(table.employeeId, table.year),
+		check("vacation_adjustment_kind_check", sql`${table.kind} IN ('manual', 'accrual')`),
+		check(
+			"vacation_adjustment_manual_adjuster_check",
+			sql`${table.kind} = 'accrual' OR ${table.adjustedBy} IS NOT NULL`,
+		),
+	],
 );
 
 // Assignment of vacation policies to organizations, teams, or employees

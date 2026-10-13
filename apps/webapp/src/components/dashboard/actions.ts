@@ -21,6 +21,7 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
+import { startingAllowanceDays } from "@/lib/absences/vacation-calculator";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { NotFoundError } from "@/lib/effect/errors";
@@ -1260,11 +1261,12 @@ export async function getVacationBalance(): Promise<
 		});
 
 		if (!balance) {
+			const startingDays = startingAllowanceDays(policy);
 			return {
-				totalDays: parseFloat(policy.defaultAnnualDays),
+				totalDays: startingDays,
 				usedDays: 0,
 				pendingDays: 0,
-				remainingDays: parseFloat(policy.defaultAnnualDays),
+				remainingDays: startingDays,
 				carryoverDays: 0,
 				carryoverExpiryDate: null,
 				carryoverExpiryDaysRemaining: null,

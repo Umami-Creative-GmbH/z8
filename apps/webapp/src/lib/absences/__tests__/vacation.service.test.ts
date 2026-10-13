@@ -86,6 +86,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -108,6 +109,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -130,6 +132,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -156,6 +159,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: true,
 					maxCarryoverDays: "10",
 					carryoverExpiryMonths: 3, // Expires end of March
@@ -183,6 +187,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: true,
 					maxCarryoverDays: "10",
 					carryoverExpiryMonths: 3, // Expires end of March
@@ -206,6 +211,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,
@@ -248,6 +254,7 @@ describe("Vacation Calculator", () => {
 			const result = calculateVacationBalance({
 				organizationAllowance: {
 					defaultAnnualDays: "30",
+					accrualType: "annual",
 					allowCarryover: false,
 					maxCarryoverDays: null,
 					carryoverExpiryMonths: null,

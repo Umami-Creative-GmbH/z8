@@ -1005,6 +1005,7 @@ async function addMetricsToRows(
 			allowance: allowance
 				? {
 						defaultAnnualDays: allowance.defaultAnnualDays,
+						accrualType: allowance.accrualType,
 						allowCarryover: allowance.allowCarryover,
 						maxCarryoverDays: allowance.maxCarryoverDays,
 						carryoverExpiryMonths: allowance.carryoverExpiryMonths,
