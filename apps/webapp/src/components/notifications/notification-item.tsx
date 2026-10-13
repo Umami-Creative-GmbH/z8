@@ -4,6 +4,7 @@ import {
 	IconBeach,
 	IconCake,
 	IconCalendarEvent,
+	IconCertificate,
 	IconCheck,
 	IconCircleFilled,
 	IconClock,
@@ -49,6 +50,15 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconClock className="size-4" />,
 				bgColor: "bg-sky-100 dark:bg-sky-900/30",
 				iconColor: "text-sky-600 dark:text-sky-400",
+			};
+
+		// Skill expiry reminders (#1143)
+		case "skill_expiry_upcoming":
+		case "skill_expired_today":
+			return {
+				icon: <IconCertificate className="size-4" />,
+				bgColor: "bg-amber-100 dark:bg-amber-900/30",
+				iconColor: "text-amber-600 dark:text-amber-400",
 			};
 
 		// Approval notifications

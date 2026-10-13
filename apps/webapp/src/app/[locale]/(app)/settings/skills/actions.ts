@@ -2,10 +2,11 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { Effect } from "effect";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import { type AnyAppError, AuthorizationError } from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type AssignSkillInput,
 	type CreateSkillInput,
@@ -17,7 +18,9 @@ import {
 	type SkillWithRelations,
 	type UpdateSkillInput,
 } from "@/lib/effect/services/skill.service";
+import { validateExpiryReminderLeadDays } from "@/lib/expiry-reminders/expiry";
 import { createLogger } from "@/lib/logger";
+import { saveSkillReminderLeadDays as saveSkillReminderLeadDaysToStore } from "@/lib/scheduling/skill-reminder-store";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeContext,
@@ -418,6 +421,48 @@ export async function getSkillExpiryWindow(): Promise<ServerActionResult<SkillEx
 		const skillService = yield* SkillService;
 
 		return yield* skillService.getSkillExpiryWindow(actor.organizationId);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * The skill reminder lead time (#1143): days before a skill expiry date at which the employee and
+ * their managers are reminded and the "Expiring soon" badge shows. Owners and admins only, for
+ * their active organization; 1–365 days, validated here, never trusting the client.
+ */
+export async function saveSkillReminderLeadDays(input: {
+	leadDays: unknown;
+}): Promise<ServerActionResult<{ leadDays: number }>> {
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "saveSkillReminderLeadDays:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only owners and admins can change the skill reminder lead time",
+			resource: "skillReminderSetting",
+			action: "update",
+		});
+		const validation = validateExpiryReminderLeadDays(input?.leadDays);
+		if (!validation.ok) {
+			return yield* Effect.fail(
+				new ValidationError({ message: validation.message, field: "leadDays" }),
+			);
+		}
+		const dbService = yield* DatabaseService;
+		yield* dbService.query("saveSkillReminderLeadDays", () =>
+			saveSkillReminderLeadDaysToStore(dbService.db, {
+				organizationId: actor.organizationId,
+				leadDays: validation.value,
+				actorUserId: actor.session.user.id,
+			}),
+		);
+		logger.info(
+			{ organizationId: actor.organizationId, leadDays: validation.value },
+			"Skill reminder lead time changed",
+		);
+		revalidatePath("/settings/skills");
+		return { leadDays: validation.value };
 	});
 
 	return runServerActionSafe(effect);

@@ -13,7 +13,10 @@ import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
  * Pure and client-safe: no database access.
  */
 
-/** Days before the skill expiry date that the "Expiring soon" badge counts from (#1143 makes it a setting). */
+/**
+ * Default skill reminder lead time: days before the skill expiry date that the "Expiring soon"
+ * badge and the reminders count from. Organizations change it (`skill-reminder-store`, #1143).
+ */
 export const DEFAULT_SKILL_EXPIRING_SOON_DAYS = 30;
 
 const toPlainDate = (day: string | PlainDate): PlainDate =>

@@ -26,6 +26,7 @@ import type { PersonnelFileRetentionRemindersJobResult } from "@/lib/jobs/person
 import type { PersonnelFileUploadCleanupJobResult } from "@/lib/jobs/personnel-file-upload-cleanup";
 import type { PositionStampPurgeResult } from "@/lib/jobs/position-stamp-purge";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
+import type { SkillExpiryRemindersJobResult } from "@/lib/jobs/skill-expiry-reminders";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
 import type { TravelExpenseReferenceRatesJobResult } from "@/lib/jobs/travel-expense-reference-rates";
 import type { CleanupJobData } from "@/lib/queue";
@@ -448,6 +449,17 @@ export const CRON_JOBS = {
 				"@/lib/jobs/personnel-file-expiry-reminders"
 			);
 			return runPersonnelFileExpiryRemindersJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
+	},
+
+	"cron:skill-expiry-reminders": {
+		schedule: "0 * * * *", // Hourly, so each organization's day starts soon after its midnight
+		description:
+			"Remind employees and their managers of employee skills expiring within the lead time or today",
+		processor: async (): Promise<SkillExpiryRemindersJobResult> => {
+			const { runSkillExpiryRemindersJob } = await import("@/lib/jobs/skill-expiry-reminders");
+			return runSkillExpiryRemindersJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 7 },
 	},

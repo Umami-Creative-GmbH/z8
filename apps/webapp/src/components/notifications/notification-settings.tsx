@@ -182,6 +182,8 @@ const NOTIFICATION_CATEGORIES = [
 			"break_due_reminder",
 			"period_submission_reminder",
 			"period_submission_sent_back",
+			"skill_expiry_upcoming",
+			"skill_expired_today",
 		] as NotificationType[],
 	},
 	{
@@ -213,7 +215,9 @@ type StaticallyLabelledType =
 	| AbsenceDeputyNotificationType
 	| "absence_deputy_unavailable"
 	| "approval_cover_started"
-	| "approval_cover_return_summary";
+	| "approval_cover_return_summary"
+	| "skill_expiry_upcoming"
+	| "skill_expired_today";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
 const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, string> = {
@@ -428,6 +432,16 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.period_submission_sent_back",
 					"Time sent back after a change",
+				);
+			case "skill_expiry_upcoming":
+				return t(
+					"common:notifications.preferences.types.skill_expiry_upcoming",
+					"Skill expires soon",
+				);
+			case "skill_expired_today":
+				return t(
+					"common:notifications.preferences.types.skill_expired_today",
+					"Skill expires today",
 				);
 			case "period_submission_decided":
 				return t(
