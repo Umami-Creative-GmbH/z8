@@ -79,8 +79,8 @@ export type ProrationReason =
 export interface ProratedAllowance {
 	/** The policy's allowance for a full year, or the custom allowance. */
 	fullAllowance: number;
-	/** The vacation allowance of the year: the prorated allowance, or the full one. */
-	allowance: number;
+	/** The days of the vacation allowance of the year: the prorated allowance, or the full one. */
+	days: number;
 	reason: ProrationReason;
 }
 
@@ -219,7 +219,7 @@ export function resolveVacationAllowance(input: {
 		return full(fullAllowance, "no_known_start");
 	}
 	if (inYear.length === 0) {
-		return { fullAllowance, allowance: 0, reason: { kind: "not_employed" } };
+		return { fullAllowance, days: 0, reason: { kind: "not_employed" } };
 	}
 
 	const statutoryMinimum = Number.parseFloat(input.policy.statutoryMinimumDays);
@@ -243,13 +243,13 @@ export function resolveVacationAllowance(input: {
 	const sum = roundDays(prorated.reduce((total, employment) => total + employment.days, 0));
 	return {
 		fullAllowance,
-		allowance: Math.min(sum, fullAllowance),
+		days: Math.min(sum, fullAllowance),
 		reason: { kind: "prorated", employments: prorated, cappedAtFullAllowance: sum > fullAllowance },
 	};
 }
 
 function full(fullAllowance: number, cause: FullAllowanceCause): ProratedAllowance {
-	return { fullAllowance, allowance: fullAllowance, reason: { kind: "none", cause } };
+	return { fullAllowance, days: fullAllowance, reason: { kind: "none", cause } };
 }
 
 /** One employment's share of the year, or null when it covers the whole year. */

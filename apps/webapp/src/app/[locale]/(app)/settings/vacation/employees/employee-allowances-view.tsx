@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import type { VacationBalance } from "@/lib/absences/types";
+import type { VacationAdjustmentSums } from "@/lib/absences/vacation-adjustments";
 import { Link } from "@/navigation";
 import type { getTranslate } from "@/tolgee/server";
 
@@ -54,8 +55,8 @@ interface EmployeeWithAllowance {
 	managers?: EmployeeManager[];
 	/** The server-side balance of the year (#1111); null without a company default policy. */
 	vacationBalance: VacationBalance | null;
-	/** The year's manual and accrual adjustments. */
-	vacationAdjustmentDays: number;
+	/** The balance's manual and accrual adjustments; null without a balance. */
+	vacationAdjustments: VacationAdjustmentSums | null;
 }
 
 interface EmployeePolicyAssignment {
@@ -247,6 +248,7 @@ function EmployeeAllowancesTable({
 			"Adjustments",
 			"text-right",
 		],
+		["settings.vacation.employees.table.accrued", "Accrued", "text-right"],
 		[
 			"settings.vacation.employees.table.totalAvailable",
 			"Total Available",
@@ -303,19 +305,10 @@ function EmployeeAllowanceRow({
 	const customDays = allowance?.customAnnualDays
 		? Number.parseFloat(allowance.customAnnualDays)
 		: null;
-	// The server-side balance (#1111): the same numbers as the employee's Absences page.
+	// The server-side balance (#1111): the same numbers as the employee's Absences page. Without a
+	// company default policy for the year there is none, and its columns stay empty.
 	const balance = employee.vacationBalance;
-	const annualDays =
-		balance?.allowance?.allowance ??
-		customDays ??
-		Number.parseFloat(defaultDays);
-	const carryover = balance
-		? (balance.carryoverDays ?? 0)
-		: allowance?.customCarryoverDays
-			? Number.parseFloat(allowance.customCarryoverDays)
-			: 0;
-	const adjustments = employee.vacationAdjustmentDays;
-	const total = balance?.totalDays ?? annualDays + carryover + adjustments;
+	const adjustments = employee.vacationAdjustments;
 
 	return (
 		<TableRow>
@@ -364,32 +357,34 @@ function EmployeeAllowanceRow({
 				)}
 			</TableCell>
 			<TableCell className="text-right tabular-nums">
-				{annualDays}
-				<VacationAllowanceExplanation
-					allowance={balance?.allowance}
-					year={currentYear}
-					className="ml-auto mt-1 max-w-56 whitespace-normal text-xs"
-				/>
-			</TableCell>
-			<TableCell className="text-right tabular-nums">
-				{carryover > 0 ? (
-					<span className="text-green-600">+{carryover}</span>
+				{balance ? (
+					<>
+						{balance.allowanceDays}
+						<VacationAllowanceExplanation
+							allowance={balance.allowance}
+							year={currentYear}
+							className="ml-auto mt-1 max-w-56 whitespace-normal text-xs"
+						/>
+					</>
 				) : (
-					<span className="text-muted-foreground">—</span>
+					<EmptyCell />
 				)}
 			</TableCell>
 			<TableCell className="text-right tabular-nums">
-				{adjustments !== 0 ? (
-					<span className={adjustments > 0 ? "text-green-600" : "text-red-600"}>
-						{adjustments > 0 ? "+" : ""}
-						{adjustments}
-					</span>
+				{balance?.carryoverDays ? (
+					<span className="text-green-600">+{balance.carryoverDays}</span>
 				) : (
-					<span className="text-muted-foreground">—</span>
+					<EmptyCell />
 				)}
+			</TableCell>
+			<TableCell className="text-right tabular-nums">
+				<SignedDays days={adjustments?.manual ?? 0} />
+			</TableCell>
+			<TableCell className="text-right tabular-nums">
+				<SignedDays days={adjustments?.accrual ?? 0} />
 			</TableCell>
 			<TableCell className="text-right font-semibold tabular-nums">
-				{total}
+				{balance ? balance.totalDays : <EmptyCell />}
 				{balance && balance.overdrawnDays > 0 && (
 					<div className="mt-1 font-normal">
 						<OverdrawnVacationBadge overdrawnDays={balance.overdrawnDays} />
@@ -405,6 +400,21 @@ function EmployeeAllowanceRow({
 				</Button>
 			</TableCell>
 		</TableRow>
+	);
+}
+
+function EmptyCell() {
+	return <span className="text-muted-foreground">—</span>;
+}
+
+/** Days added (green, with a plus) or taken away (red); a dash for none. */
+function SignedDays({ days }: { days: number }) {
+	if (days === 0) return <EmptyCell />;
+	return (
+		<span className={days > 0 ? "text-green-600" : "text-red-600"}>
+			{days > 0 ? "+" : ""}
+			{days}
+		</span>
 	);
 }
 

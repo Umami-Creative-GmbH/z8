@@ -145,7 +145,7 @@ function enhanceVacationBalance(input: {
 
 	return {
 		...balance,
-		baseAllowance: startingAllowanceDays({ policy, allowance: balance.allowance }),
+		baseAllowance: balance.allowanceDays,
 		adjustments: vacationAdjustmentTotal(input.adjustments),
 		carryoverExpiring,
 		carryoverExpiryDaysRemaining,

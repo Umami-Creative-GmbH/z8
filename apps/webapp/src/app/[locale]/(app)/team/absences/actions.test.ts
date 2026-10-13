@@ -928,7 +928,7 @@ describe("manager absence metrics", () => {
 	it("shows vacation taken beyond a prorated allowance as overdrawn, with the explanation (#1111)", () => {
 		const proratedAllowance = {
 			fullAllowance: 30,
-			allowance: 2,
+			days: 2,
 			reason: {
 				kind: "prorated" as const,
 				cappedAtFullAllowance: false,

@@ -240,7 +240,7 @@ describe("calculateVacationBalance with a prorated allowance", () => {
 	it("starts from the prorated allowance and reports it with the balance", () => {
 		const allowance = {
 			fullAllowance: 30,
-			allowance: 8,
+			days: 8,
 			reason: {
 				kind: "prorated" as const,
 				employments: [
@@ -287,7 +287,7 @@ describe("calculateVacationBalance with a prorated allowance", () => {
 			},
 			allowance: {
 				fullAllowance: 30,
-				allowance: 30,
+				days: 30,
 				reason: { kind: "none", cause: "accrual_policy" },
 			},
 			absences: [],
@@ -357,7 +357,7 @@ describe("overdrawn vacation (#1111)", () => {
 	};
 	const prorated = {
 		fullAllowance: 30,
-		allowance: 2,
+		days: 2,
 		reason: {
 			kind: "prorated" as const,
 			employments: [

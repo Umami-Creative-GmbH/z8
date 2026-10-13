@@ -9,6 +9,12 @@ export type AbsenceDurationKind = "full_day" | "partial_day";
 export interface VacationBalance {
 	year: number;
 	totalDays: number; // Annual allowance (default + custom + carryover + adjustments)
+	/**
+	 * The days of the vacation allowance in 	otalDays: the custom or policy allowance, prorated in
+	 * a start or exit year (#1110), or 0 on an accrual policy, whose accrual adjustments carry it
+	 * (#1106).
+	 */
+	allowanceDays: number;
 	usedDays: number; // Approved absences taken
 	pendingDays: number; // Pending requests
 	remainingDays: number; // Available to request; never below 0

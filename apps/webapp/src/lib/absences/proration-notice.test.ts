@@ -5,7 +5,7 @@ import type { VacationBalance } from "./types";
 
 const joinedOctober: ProratedAllowance = {
 	fullAllowance: 30,
-	allowance: 8,
+	days: 8,
 	reason: {
 		kind: "prorated",
 		employments: [
@@ -66,7 +66,7 @@ describe("prorationNoticeRow (#1112)", () => {
 					totalDays: 25,
 					allowance: {
 						fullAllowance: 25,
-						allowance: 25,
+						days: 25,
 						reason: { kind: "none", cause: "custom_allowance" },
 					},
 				}),
@@ -80,7 +80,7 @@ describe("prorationNoticeRow (#1112)", () => {
 				...employee,
 				balance: balance({
 					totalDays: 30,
-					allowance: { ...joinedOctober, allowance: 30 },
+					allowance: { ...joinedOctober, days: 30 },
 				}),
 			}),
 		).toBeNull();
@@ -89,7 +89,7 @@ describe("prorationNoticeRow (#1112)", () => {
 				...employee,
 				balance: balance({
 					totalDays: 0,
-					allowance: { fullAllowance: 30, allowance: 0, reason: { kind: "not_employed" } },
+					allowance: { fullAllowance: 30, days: 0, reason: { kind: "not_employed" } },
 				}),
 			}),
 		).toBeNull();

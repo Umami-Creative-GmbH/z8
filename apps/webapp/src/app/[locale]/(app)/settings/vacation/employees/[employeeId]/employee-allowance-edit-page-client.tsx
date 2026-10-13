@@ -33,6 +33,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/user-avatar";
 import { useDisplayContext } from "@/hooks/use-display-context";
+import type { VacationBalance } from "@/lib/absences/types";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
@@ -83,8 +84,6 @@ type VacationPolicyOption = {
 	id: string;
 	name: string;
 	defaultAnnualDays: string;
-	/** "annual" | "monthly" | "biweekly" */
-	accrualType?: string;
 	isActive: boolean;
 	isCompanyDefault?: boolean;
 };
@@ -354,36 +353,10 @@ export function EmployeeAllowanceEditPageClient({
 		);
 	}
 
-	const allowance = employee.vacationAllowances[0];
 	const defaultDays = orgPolicy?.defaultAnnualDays || "0";
-	const customDays = allowance?.customAnnualDays
-		? parseFloat(allowance.customAnnualDays)
-		: null;
 	// The server-side balance (#1111): the same numbers as the employee's Absences page. Without a
-	// company default policy for the year there is none, and the stored values are shown as-is.
+	// company default policy for the year there is none.
 	const balance = balanceView?.balance ?? null;
-	const proratedAllowance = balance?.allowance;
-	const fullAnnualDays =
-		proratedAllowance?.fullAllowance ??
-		(customDays !== null ? customDays : parseFloat(defaultDays));
-	// The prorated allowance in a year the employee joins or leaves (#1110).
-	const annualDays = proratedAllowance?.allowance ?? fullAnnualDays;
-	// A monthly or biweekly policy grants its allowance only through accrual (#1106).
-	const accrualPolicy = balanceView
-		? balanceView.accrualPolicy
-		: Boolean(orgPolicy?.accrualType && orgPolicy.accrualType !== "annual");
-	const startingDays = accrualPolicy ? 0 : annualDays;
-	const carryover = balance
-		? (balance.carryoverDays ?? 0)
-		: allowance?.customCarryoverDays
-			? parseFloat(allowance.customCarryoverDays)
-			: 0;
-	const adjustments = adjustmentSummary.manual;
-	const accrued = adjustmentSummary.accrual;
-	const total =
-		balance?.totalDays ?? startingDays + carryover + adjustments + accrued;
-	// The vacation balance: what is left after approved and pending vacation.
-	const available = balance?.remainingDays ?? total;
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
@@ -417,35 +390,44 @@ export function EmployeeAllowanceEditPageClient({
 								{ year: currentYear },
 							)}
 						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.vacation.employees.detail.currentBalance",
-								"Current balance: {total} days available",
-								{ total: available },
-							)}
-						</CardDescription>
+						{balance && (
+							<CardDescription>
+								{/* The vacation balance: what is left after approved and pending vacation. */}
+								{t(
+									"settings.vacation.employees.detail.currentBalance",
+									"Current balance: {total} days available",
+									{ total: balance.remainingDays },
+								)}
+							</CardDescription>
+						)}
 					</CardHeader>
 					<CardContent>
-						<AllowanceBalanceSummary
-							annualDays={annualDays}
-							fullAnnualDays={fullAnnualDays}
-							accrualPolicy={accrualPolicy}
-							accrued={accrued}
-							carryover={carryover}
-							adjustments={adjustments}
-							total={total}
-						/>
-						{(proratedAllowance ||
-							(balance && balance.overdrawnDays > 0)) && (
-							<div className="-mt-4 mb-6 flex flex-wrap items-center gap-2">
-								<VacationAllowanceExplanation
-									allowance={proratedAllowance}
-									year={currentYear}
+						{balance ? (
+							<>
+								<AllowanceBalanceSummary
+									balance={balance}
+									accrualPolicy={balanceView?.accrualPolicy ?? false}
+									accrued={adjustmentSummary.accrual}
+									adjustments={adjustmentSummary.manual}
 								/>
-								<OverdrawnVacationBadge
-									overdrawnDays={balance?.overdrawnDays ?? 0}
-								/>
-							</div>
+								<div className="-mt-4 mb-6 flex flex-wrap items-center gap-2">
+									<VacationAllowanceExplanation
+										allowance={balance.allowance}
+										year={currentYear}
+									/>
+									<OverdrawnVacationBadge
+										overdrawnDays={balance.overdrawnDays}
+									/>
+								</div>
+							</>
+						) : (
+							<p className="mb-6 text-sm text-muted-foreground">
+								{t(
+									"settings.vacation.employees.detail.noPolicyForYear",
+									"No company default vacation policy applies in {year}, so there is no balance yet.",
+									{ year: currentYear },
+								)}
+							</p>
 						)}
 
 						<ManualAdjustmentHistory
@@ -711,42 +693,38 @@ function EmployeeInformationCard({
 }
 
 function AllowanceBalanceSummary({
-	annualDays,
-	fullAnnualDays,
+	balance,
 	accrualPolicy,
 	accrued,
-	carryover,
 	adjustments,
-	total,
 }: {
-	/** The vacation allowance of the year, prorated in a start or exit year (#1110). */
-	annualDays: number;
-	/** The custom or policy allowance for a full year. */
-	fullAnnualDays: number;
+	/** The server-side balance of the year (#1111). */
+	balance: VacationBalance;
 	/** A monthly or biweekly policy: the balance starts at 0 and grows by accrual (#1106). */
 	accrualPolicy: boolean;
 	/** The accrual adjustments so far this year. */
 	accrued: number;
-	carryover: number;
+	/** The manual adjustments of the year. */
 	adjustments: number;
-	total: number;
 }) {
 	const { t } = useTranslate();
 	// Accrual rows can remain after a policy switched to annual, so show them whenever present.
 	const showAccrued = accrualPolicy || accrued !== 0;
-	const showAnnualDays = !accrualPolicy;
+	const showAllowance = !accrualPolicy;
+	const carryover = balance.carryoverDays ?? 0;
 	return (
 		<div
 			className={`mb-6 grid gap-4 rounded-lg border p-4 ${
-				showAccrued && showAnnualDays ? "md:grid-cols-5" : "md:grid-cols-4"
+				showAccrued && showAllowance ? "md:grid-cols-5" : "md:grid-cols-4"
 			}`}
 		>
-			{showAnnualDays && (
+			{showAllowance && (
 				<div className="space-y-1">
 					<div className="text-sm text-muted-foreground">
-						{t("settings.vacation.employees.detail.annualDays", "Annual Days")}
+						{t("settings.vacation.employees.detail.allowance", "Allowance")}
 					</div>
-					<div className="text-2xl font-bold">{annualDays}</div>
+					{/* The custom or policy allowance, prorated in a start or exit year (#1110). */}
+					<div className="text-2xl font-bold">{balance.allowanceDays}</div>
 				</div>
 			)}
 			{showAccrued && (
@@ -758,12 +736,12 @@ function AllowanceBalanceSummary({
 						)}
 					</div>
 					<div className="text-2xl font-bold">{accrued}</div>
-					{accrualPolicy && (
+					{accrualPolicy && balance.allowance && (
 						<div className="text-xs text-muted-foreground">
 							{t(
 								"settings.vacation.employees.detail.accruedOfAnnualDays",
 								"of {days} days per year",
-								{ days: fullAnnualDays },
+								{ days: balance.allowance.fullAllowance },
 							)}
 						</div>
 					)}
@@ -799,7 +777,7 @@ function AllowanceBalanceSummary({
 						"Total Available",
 					)}
 				</div>
-				<div className="text-2xl font-bold">{total}</div>
+				<div className="text-2xl font-bold">{balance.totalDays}</div>
 			</div>
 		</div>
 	);

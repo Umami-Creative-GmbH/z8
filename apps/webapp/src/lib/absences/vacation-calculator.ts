@@ -34,11 +34,11 @@ interface EmployeeAllowanceData {
  */
 export function startingAllowanceDays(input: {
 	policy: Pick<VacationAllowanceData, "defaultAnnualDays" | "accrualType">;
-	allowance?: Pick<ProratedAllowance, "allowance"> | null;
+	allowance?: Pick<ProratedAllowance, "days"> | null;
 	employeeAllowance?: Pick<EmployeeAllowanceData, "customAnnualDays"> | null;
 }): number {
 	if (isAccrualPolicy(input.policy)) return 0;
-	if (input.allowance) return input.allowance.allowance;
+	if (input.allowance) return input.allowance.days;
 	return input.employeeAllowance?.customAnnualDays
 		? parseFloat(input.employeeAllowance.customAnnualDays)
 		: parseFloat(input.policy.defaultAnnualDays);
@@ -88,11 +88,12 @@ export function calculateVacationBalance({
 	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
 
 	// 1. Calculate total annual days: the (prorated) allowance, or 0 on an accrual policy
-	let totalDays = startingAllowanceDays({
+	const allowanceDays = startingAllowanceDays({
 		policy: organizationAllowance,
 		allowance,
 		employeeAllowance,
 	});
+	let totalDays = allowanceDays;
 
 	// 2. Add carryover days from previous year (if not expired)
 	let carryoverDays = 0;
@@ -148,6 +149,7 @@ export function calculateVacationBalance({
 	return {
 		year,
 		totalDays,
+		allowanceDays,
 		usedDays,
 		pendingDays,
 		remainingDays,

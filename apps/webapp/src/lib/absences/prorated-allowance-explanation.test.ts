@@ -28,13 +28,13 @@ function employment(overrides: Partial<ProratedEmployment>): ProratedEmployment 
 }
 
 function prorated(
-	allowance: number,
+	days: number,
 	employments: ProratedEmployment[],
 	cappedAtFullAllowance = false,
 ): ProratedAllowance {
 	return {
 		fullAllowance: 30,
-		allowance,
+		days,
 		reason: { kind: "prorated", employments, cappedAtFullAllowance },
 	};
 }
@@ -103,19 +103,19 @@ describe("explainVacationAllowance", () => {
 	});
 
 	it("explains an allowance of 0 for an employee not employed in the year", () => {
-		expect(explain({ fullAllowance: 30, allowance: 0, reason: { kind: "not_employed" } })).toBe(
+		expect(explain({ fullAllowance: 30, days: 0, reason: { kind: "not_employed" } })).toBe(
 			"0 of 30 days: not employed in 2026",
 		);
 	});
 
 	it("has nothing to explain for a full allowance", () => {
 		expect(
-			explain({ fullAllowance: 30, allowance: 30, reason: { kind: "none", cause: "full_year" } }),
+			explain({ fullAllowance: 30, days: 30, reason: { kind: "none", cause: "full_year" } }),
 		).toBeNull();
 		expect(
 			explain({
 				fullAllowance: 12,
-				allowance: 12,
+				days: 12,
 				reason: { kind: "none", cause: "custom_allowance" },
 			}),
 		).toBeNull();

@@ -680,7 +680,7 @@ describe("TeamAbsencesTable", () => {
 							sickDays: 0,
 							proratedAllowance: {
 								fullAllowance: 30,
-								allowance: 8,
+								days: 8,
 								reason: {
 									kind: "prorated",
 									cappedAtFullAllowance: false,

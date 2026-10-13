@@ -167,7 +167,7 @@ describe("one vacation policy per year for every balance reader", () => {
 
 		expect(absencesPage).toMatchObject({
 			totalDays: 8,
-			allowance: { fullAllowance: 30, allowance: 8 },
+			allowance: { fullAllowance: 30, days: 8 },
 		});
 		expect(dashboard).toMatchObject({ totalDays: 8, baseAllowance: 8 });
 		expect(managerView.data.rows.find((row) => row.id === joinerId)).toMatchObject({

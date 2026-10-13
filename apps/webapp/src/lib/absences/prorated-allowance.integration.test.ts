@@ -199,7 +199,7 @@ describe("prorated allowance in every balance reader (#1110)", () => {
 			const dashboard = await getEnhancedVacationBalance({ employeeId, year: 2026 });
 
 			expect(absencesPage?.totalDays).toBe(expected);
-			expect(absencesPage?.allowance?.allowance).toBe(expected);
+			expect(absencesPage?.allowance?.days).toBe(expected);
 			expect(dashboard).toMatchObject({ totalDays: expected, baseAllowance: expected });
 			expect(managerAllowance(employeeId)).toBe(expected);
 		}
