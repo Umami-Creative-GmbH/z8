@@ -689,20 +689,6 @@ export interface VacationAdjustmentWithAdjuster extends VacationAdjustmentRecord
 }
 
 /**
- * Get sum of all vacation adjustments for an employee in a specific year
- */
-export async function getAdjustmentTotal(employeeId: string, year: number): Promise<number> {
-	const result = await db
-		.select({
-			total: sql<string>`COALESCE(SUM(${vacationAdjustment.days}), '0')`,
-		})
-		.from(vacationAdjustment)
-		.where(and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)));
-
-	return parseFloat(result[0]?.total || "0");
-}
-
-/**
  * Get all vacation adjustment events for an employee in a specific year
  */
 export async function getEmployeeAdjustments(

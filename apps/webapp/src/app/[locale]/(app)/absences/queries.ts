@@ -22,6 +22,7 @@ import type {
 	Holiday,
 	VacationBalance,
 } from "@/lib/absences/types";
+import { loadVacationAdjustmentTotal } from "@/lib/absences/vacation-adjustments";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -45,7 +46,7 @@ export async function getVacationBalance(
 	const startOfYear = yearRange.start.toISODate() ?? `${year}-01-01`;
 	const endOfYear = yearRange.end.toISODate() ?? `${year}-12-31`;
 
-	const [orgAllowance, empAllowance, absences, isWorkingDay] = await Promise.all([
+	const [orgAllowance, empAllowance, absences, isWorkingDay, adjustmentTotal] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
 				eq(vacationAllowance.organizationId, emp.organizationId),
@@ -82,6 +83,7 @@ export async function getVacationBalance(
 			startDate: startOfYear,
 			endDate: endOfYear,
 		}),
+		loadVacationAdjustmentTotal(db, { organizationId: emp.organizationId, employeeId, year }),
 	]);
 
 	if (!orgAllowance) {
@@ -98,6 +100,7 @@ export async function getVacationBalance(
 		isWorkingDay,
 		currentDate: currentTimestamp(),
 		year,
+		adjustmentTotal,
 		timezone,
 	});
 }

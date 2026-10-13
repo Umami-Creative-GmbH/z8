@@ -18,6 +18,7 @@ import {
 import type { LocaleTranslationMap } from "@/db/schema/absence";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
+import { loadVacationAdjustmentTotal } from "@/lib/absences/vacation-adjustments";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
@@ -1338,19 +1339,14 @@ export async function getEmployeeAdjustmentTotal(
 			action: "read",
 		});
 
-		// Step 5: Get adjustment total
-		const result = yield* dbService.query("getAdjustmentTotal", async () => {
-			const rows = await dbService.db
-				.select()
-				.from(vacationAdjustment)
-				.where(
-					and(eq(vacationAdjustment.employeeId, employeeId), eq(vacationAdjustment.year, year)),
-				);
-
-			return rows.reduce((sum, row) => sum + parseFloat(row.days), 0);
-		});
-
-		return result;
+		// The same organization-scoped sum every balance reader adds (#1105).
+		return yield* dbService.query("getAdjustmentTotal", () =>
+			loadVacationAdjustmentTotal(dbService.db, {
+				organizationId: emp.organizationId,
+				employeeId,
+				year,
+			}),
+		);
 	});
 
 	return runServerActionSafe(effect);

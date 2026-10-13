@@ -14,7 +14,6 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { createLogger } from "@/lib/logger";
 import {
 	createVacationAdjustment,
-	getAdjustmentTotal,
 	getCarryoverBalance,
 	getEmployeesWithVacationData,
 	getEmployeeVacationAllowance,
@@ -24,6 +23,7 @@ import {
 } from "@/lib/query/vacation.queries";
 import { calculateCarryoverExpiryDate } from "./date-utils";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
+import { loadVacationAdjustmentTotal } from "./vacation-adjustments";
 import { calculateVacationBalance } from "./vacation-calculator";
 
 const logger = createLogger("vacation-service");
@@ -96,7 +96,7 @@ export async function getEnhancedVacationBalance(input: {
 
 	const [empAllowance, adjustmentTotal, absencesResult] = await Promise.all([
 		getEmployeeVacationAllowance(employeeId, year),
-		getAdjustmentTotal(employeeId, year),
+		loadVacationAdjustmentTotal(db, { organizationId: emp.organizationId, employeeId, year }),
 		getVacationTakenInYear(employeeId, year, { includePending: true }),
 	]);
 
@@ -236,7 +236,11 @@ export async function calculateAnnualCarryover(
 				previousCarryover = carryoverBalance.balance;
 			}
 
-			const adjustments = await getAdjustmentTotal(emp.id, fromYear);
+			const adjustments = await loadVacationAdjustmentTotal(db, {
+				organizationId,
+				employeeId: emp.id,
+				year: fromYear,
+			});
 
 			const totalAllowance = baseAllowance + previousCarryover + adjustments;
 			const remaining = Math.max(0, totalAllowance - vacationTaken.totalDays);
