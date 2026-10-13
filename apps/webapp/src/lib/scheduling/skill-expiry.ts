@@ -13,12 +13,6 @@ import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
  * Pure and client-safe: no database access.
  */
 
-/**
- * Default skill reminder lead time: days before the skill expiry date that the "Expiring soon"
- * badge and the reminders count from. Organizations change it (`skill-reminder-store`, #1143).
- */
-export const DEFAULT_SKILL_EXPIRING_SOON_DAYS = 30;
-
 const toPlainDate = (day: string | PlainDate): PlainDate =>
 	typeof day === "string" ? parsePlainDate(day) : day;
 
@@ -55,6 +49,12 @@ export function skillExpiryToday(now: Instant, organizationTimezone: unknown): P
 	const zone = resolveOrganizationTimezone(organizationTimezone).timezone;
 	return now.toZonedDateTimeISO(zone).toPlainDate();
 }
+
+/**
+ * Machine-readable refusals of a skill expiry date change (`ValidationError.refusal`), which
+ * forms map to their own copy: skill certificates set the date (#1145, Scheduling ADR 0001).
+ */
+export type SkillExpiryRefusal = "expiry_date_set_by_certificate";
 
 const EXPIRY_DATE_MESSAGE = "Enter the expiry date as YYYY-MM-DD.";
 

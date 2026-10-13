@@ -72,7 +72,9 @@ const certificateActions = await import(
 );
 const { seedPersonnelFileOfficerGrant } = await import("./testing/officer-grant.test.fixture");
 const { SkillService, SkillServiceLive } = await import("@/lib/effect/services/skill.service");
+const { ShiftService, ShiftServiceLive } = await import("@/lib/effect/services/shift.service");
 const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+const { shiftStoredDate } = await import("@/lib/scheduling/shift-date");
 
 const ORG = "t1144-org";
 const OTHER_ORG = "t1144-other-org";
@@ -105,6 +107,13 @@ const runSkills = <A, E>(program: (service: SkillService["Service"]) => Effect.E
 		Effect.gen(function* () {
 			return yield* program(yield* SkillService);
 		}).pipe(Effect.provide(skillLayer)),
+	);
+const shiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
+const runShifts = <A, E>(program: (service: ShiftService["Service"]) => Effect.Effect<A, E>) =>
+	Effect.runPromise(
+		Effect.gen(function* () {
+			return yield* program(yield* ShiftService);
+		}).pipe(Effect.provide(shiftLayer)),
 	);
 
 async function cleanup() {
@@ -552,6 +561,28 @@ describe("skill certificates (#1144)", () => {
 
 			expect(result.expiredSkills).toEqual([
 				expect.objectContaining({ id: ids.forklift, certificateOnFile: true }),
+			]);
+
+			// The shift save warning says the same (spec point 11).
+			const saved = await runShifts((service) =>
+				service.upsertShift({
+					organizationId: ORG,
+					employeeId: ids.anna,
+					subareaId,
+					date: shiftStoredDate("2026-02-01", "UTC"),
+					timezone: "UTC",
+					startTime: "08:00",
+					endTime: "16:00",
+					createdBy: userOf("owner"),
+				}),
+			);
+			expect(saved.metadata.skillWarning?.expiredSkills).toEqual([
+				{
+					id: ids.forklift,
+					name: "Forklift licence",
+					expiresAt: "2026-01-31",
+					certificateOnFile: true,
+				},
 			]);
 		});
 

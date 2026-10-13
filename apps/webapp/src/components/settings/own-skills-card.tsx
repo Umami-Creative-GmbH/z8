@@ -25,7 +25,7 @@ export function OwnSkillsCard({ ownSkills }: { ownSkills: OwnSkills }) {
 				<CardDescription>
 					{t(
 						"settings.profile.skills.description",
-						"Skills and qualifications your organization assigned to you. Ask an admin or your manager to renew one that expires.",
+						"Your employee skills, as recorded by your organization. Ask an admin or your manager to renew one that expires.",
 					)}
 				</CardDescription>
 			</CardHeader>

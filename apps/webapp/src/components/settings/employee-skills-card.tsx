@@ -53,12 +53,17 @@ import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { EmployeeSkillWithDetails } from "@/lib/effect/services/skill.service";
 import { queryKeys } from "@/lib/query/keys";
 import {
+	SkillChangeRefusedError,
 	useEmployeeSkills,
 	useOrganizationSkills,
 	useSkillExpiryWindow,
 	useUpdateEmployeeSkillExpiry,
 } from "@/lib/query/use-skills";
-import { type SkillExpiryBadge, skillExpiryBadge } from "@/lib/scheduling/skill-expiry";
+import {
+	type SkillExpiryBadge,
+	type SkillExpiryRefusal,
+	skillExpiryBadge,
+} from "@/lib/scheduling/skill-expiry";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";
 
@@ -79,6 +84,21 @@ const CATEGORY_ICONS: Record<SkillCategory, typeof IconShieldCheck> = {
 
 function getCategoryIcon(category: SkillCategory) {
 	return CATEGORY_ICONS[category] ?? IconAward;
+}
+
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** The copy for a refused skill expiry date change, or null for any other failure. */
+function skillExpiryRefusalText(t: Translate, refusal: string | undefined): string | null {
+	switch (refusal as SkillExpiryRefusal | undefined) {
+		case "expiry_date_set_by_certificate":
+			return t(
+				"settings.skills.errors.expiryDateSetByCertificate",
+				"A skill certificate in the personnel file sets this date. Change the date on the certificate.",
+			);
+		default:
+			return null;
+	}
 }
 
 /** A skill expiry date (`YYYY-MM-DD`) in the app language; never shifted by the viewer's zone. */
@@ -357,8 +377,10 @@ function EditSkillExpiryDialog({ employeeId, employeeSkill, onClose }: EditSkill
 				toast.success(t("settings.skills.expiryDateUpdated", "Expiry date updated"));
 				onClose();
 			} catch (error) {
+				// Server wording is never shown: a refusal gets its own copy, anything else the generic one.
+				const refusal = error instanceof SkillChangeRefusedError ? error.refusal : undefined;
 				toast.error(
-					(error instanceof Error && error.message) ||
+					skillExpiryRefusalText(t, refusal) ??
 						t("settings.skills.expiryDateUpdateError", "Failed to update the expiry date"),
 				);
 			}

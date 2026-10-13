@@ -22,6 +22,7 @@ import type {
 	SkillValidationResult,
 	SkillWithRelations,
 } from "@/lib/effect/services/skill.service";
+import { parseSkillExpiryDate } from "@/lib/scheduling/skill-expiry";
 import { queryKeys } from "./keys";
 
 // =============================================================================
@@ -175,6 +176,21 @@ export function useAssignSkillToEmployee() {
 	});
 }
 
+/**
+ * A refused skill change. `refusal` is the server's machine-readable reason
+ * (e.g. `SkillExpiryRefusal`) for the form to word itself; the message is the
+ * server's and never shown.
+ */
+export class SkillChangeRefusedError extends Error {
+	readonly refusal: string | undefined;
+
+	constructor(message: string, refusal: string | undefined) {
+		super(message);
+		this.name = "SkillChangeRefusedError";
+		this.refusal = refusal;
+	}
+}
+
 /** Changes an assigned employee skill's expiry date in place. */
 export function useUpdateEmployeeSkillExpiry() {
 	const queryClient = useQueryClient();
@@ -187,7 +203,7 @@ export function useUpdateEmployeeSkillExpiry() {
 			expiresAt: string | null;
 		}) => {
 			const result = await updateEmployeeSkillExpiry(data);
-			if (!result.success) throw new Error(result.error);
+			if (!result.success) throw new SkillChangeRefusedError(result.error, result.refusal);
 			return result.data;
 		},
 		onSuccess: (_, variables) => {
@@ -266,7 +282,11 @@ export function useSetTemplateSkillRequirements() {
 // Skill Validation Hooks
 // =============================================================================
 
-const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** A shift date the server accepts: `YYYY-MM-DD`, never empty. */
+function isShiftDate(date: string): boolean {
+	const parsed = parseSkillExpiryDate(date);
+	return parsed.ok && parsed.value !== null;
+}
 
 interface UseSkillValidationOptions {
 	employeeId: string;
@@ -291,7 +311,7 @@ export function useSkillValidation(options: UseSkillValidationOptions) {
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
-		enabled: enabled && !!employeeId && !!subareaId && PLAIN_DATE.test(date),
+		enabled: enabled && !!employeeId && !!subareaId && isShiftDate(date),
 		staleTime: 30 * 1000, // 30 seconds - refresh frequently for real-time validation
 	});
 }
@@ -313,7 +333,7 @@ export function useQualifiedEmployees(options: UseQualifiedEmployeesOptions) {
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
-		enabled: enabled && skillIds.length > 0 && PLAIN_DATE.test(date),
+		enabled: enabled && skillIds.length > 0 && isShiftDate(date),
 		staleTime: 60 * 1000, // 1 minute
 	});
 }

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, type SQL } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { employee, employeeDocument, employeeSkill, skill } from "@/db/schema";
 
@@ -21,7 +21,15 @@ export interface CertificateSkill {
 	requiresExpiry: boolean;
 }
 
-function employeeSkillsOf(database: Reader, input: { organizationId: string; employeeId: string }) {
+/**
+ * The employee's skills in the organization. `narrowing` only narrows: it is
+ * joined into the one employee filter, so it can never replace it.
+ */
+function employeeSkillsOf(
+	database: Reader,
+	input: { organizationId: string; employeeId: string },
+	narrowing?: SQL,
+) {
 	return database
 		.select({
 			employeeSkillId: employeeSkill.id,
@@ -40,8 +48,7 @@ function employeeSkillsOf(database: Reader, input: { organizationId: string; emp
 			skill,
 			and(eq(skill.id, employeeSkill.skillId), eq(skill.organizationId, input.organizationId)),
 		)
-		.where(eq(employeeSkill.employeeId, input.employeeId))
-		.$dynamic();
+		.where(and(eq(employeeSkill.employeeId, input.employeeId), narrowing));
 }
 
 /** One employee skill of the employee in the organization, or null. */
@@ -49,14 +56,11 @@ export async function loadCertificateSkill(
 	database: Reader,
 	input: { organizationId: string; employeeId: string; employeeSkillId: string },
 ): Promise<CertificateSkill | null> {
-	const [row] = await employeeSkillsOf(database, input)
-		.where(
-			and(
-				eq(employeeSkill.employeeId, input.employeeId),
-				eq(employeeSkill.id, input.employeeSkillId),
-			),
-		)
-		.limit(1);
+	const [row] = await employeeSkillsOf(
+		database,
+		input,
+		eq(employeeSkill.id, input.employeeSkillId),
+	).limit(1);
 	return row ?? null;
 }
 

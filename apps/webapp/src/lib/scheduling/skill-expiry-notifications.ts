@@ -62,7 +62,7 @@ const TYPES: Record<ExpiryReminderKind, NotificationType> = {
 };
 
 export interface ExpiringEmployeeSkillRef {
-	/** The employee skill (assignment) id. */
+	/** The employee skill id. */
 	id: string;
 	employeeId: string;
 	employeeName: string;
