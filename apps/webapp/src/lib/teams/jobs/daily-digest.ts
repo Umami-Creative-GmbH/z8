@@ -24,7 +24,12 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { env } from "@/env";
-import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
+import {
+	fmtFullDate,
+	fmtTime,
+	fmtWeekdayShortDate,
+	getBotTranslate,
+} from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { type Instant, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
@@ -332,7 +337,12 @@ async function processTenantDigest(tenant: {
 				await sendAdaptiveCard(
 					conv.conversationReference,
 					card,
-					`Daily Digest - ${digestData.date.toLocaleDateString()}`,
+					t("bot.digest.title", "Daily Digest - {date}", {
+						date: fmtFullDate(
+							DateTime.fromJSDate(digestData.date).setZone(digestData.timezone),
+							temporal.locale,
+						),
+					}),
 				);
 
 				return true;

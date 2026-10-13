@@ -66,6 +66,39 @@ describe("resolveRecipientNotificationLocale", () => {
 		await expect(resolveOrganizationNotificationLocale("org-1")).resolves.toBe("en");
 	});
 
+	it("ignores an invalid saved language and uses the organization's default", async () => {
+		userSettingsFindFirstMock.mockResolvedValue({ locale: "xx" });
+		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "fr" });
+
+		const { resolveRecipientNotificationLocale } = await import("./recipient-locale");
+
+		await expect(
+			resolveRecipientNotificationLocale({ userId: "user-1", organizationId: "org-1" }),
+		).resolves.toBe("fr");
+	});
+
+	it("uses only the organization's default for a recipient without a Z8 user", async () => {
+		userSettingsFindFirstMock.mockResolvedValue({ locale: "de" });
+		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "fr" });
+
+		const { resolveRecipientNotificationLocale } = await import("./recipient-locale");
+
+		await expect(
+			resolveRecipientNotificationLocale({ userId: null, organizationId: "org-1" }),
+		).resolves.toBe("fr");
+		await expect(resolveRecipientNotificationLocale({ organizationId: "org-1" })).resolves.toBe(
+			"fr",
+		);
+		expect(userSettingsFindFirstMock).not.toHaveBeenCalled();
+	});
+
+	it("uses English for a recipient without a user or an organization", async () => {
+		const { resolveRecipientNotificationLocale } = await import("./recipient-locale");
+
+		await expect(resolveRecipientNotificationLocale({ userId: null })).resolves.toBe("en");
+		expect(userSettingsFindFirstMock).not.toHaveBeenCalled();
+	});
+
 	it("falls back to English for missing or invalid values", async () => {
 		userSettingsFindFirstMock.mockResolvedValue({ locale: "xx" });
 		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "yy" });

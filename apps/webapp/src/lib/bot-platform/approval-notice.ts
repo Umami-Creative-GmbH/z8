@@ -10,6 +10,7 @@ import {
 	type RecipientDisplayContext,
 	resolveRecipientDisplayContext,
 } from "@/lib/notifications/recipient-display-context";
+import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
 import type { DecisionEvidenceRecord } from "@/lib/approvals/evidence/store";
 import type { BoundBotApprovalResult } from "./approval-decision";
 import { type BotTranslateFn, getBotTranslate } from "./i18n";
@@ -18,6 +19,18 @@ export type ApprovalNotice = Pick<
 	ApprovalReviewNotice,
 	"title" | "text" | "reviewUrl" | "reviewLabel"
 >;
+
+/**
+ * The language of an approval reply. Without a display context the recipient is
+ * no longer a member: their own saved language is not read, only the
+ * organization's default counts.
+ */
+export async function approvalNoticeLocale(
+	display: RecipientDisplayContext | null,
+	organizationId: string,
+): Promise<string> {
+	return display?.locale ?? resolveOrganizationNotificationLocale(organizationId);
+}
 
 /** No source facts or render-time decision timestamps belong in legacy replies. */
 export async function approvalAttemptNotice(
@@ -220,7 +233,7 @@ export async function approvalStatusNotice(
 	organizationId: string,
 	reference: ApprovalReviewReference,
 ): Promise<ApprovalNotice> {
-	const t = await getBotTranslate(display?.locale ?? "en");
+	const t = await getBotTranslate(await approvalNoticeLocale(display, organizationId));
 	const reviewLabel = t("bot.approval.reviewInZ8", "Review in Z8");
 	const reviewUrl = await approvalReviewUrl({ organizationId, reference });
 	if (display && status.evidence) {

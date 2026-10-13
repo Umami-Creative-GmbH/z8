@@ -6,11 +6,16 @@
  */
 
 import { executeCommand, getAllCommands, parseCommand } from "@/lib/bot-platform/command-registry";
-import { getBotTranslate, getUserLocale, setUserLocale } from "@/lib/bot-platform/i18n";
+import {
+	getBotTranslate,
+	getUserLocale,
+	getUserLocaleRaw,
+	setUserLocale,
+} from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
-import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/shared";
 import { answerCallbackQuery, editMessageText, sendMessage } from "./api";
 import { handleApprovalCallback, handleBoundApprovalCallback } from "./approval-handler";
 import { parseBoundApprovalCallback } from "./bound-approval";
@@ -60,6 +65,14 @@ function telegramInvocationId(bot: ResolvedTelegramBot, updateId: number | undef
 }
 
 /**
+ * Replies go out in the recipient language: the linked user's, or the
+ * organization's default for someone not linked to a Z8 user yet.
+ */
+async function replyTranslator(bot: ResolvedTelegramBot, userId: string | null) {
+	return getBotTranslate(await getUserLocale({ userId, organizationId: bot.organizationId }));
+}
+
+/**
  * Handle incoming text message
  */
 async function handleMessage(
@@ -74,9 +87,9 @@ async function handleMessage(
 
 	if (!text || !message.from) return;
 
-	// Handle /start command (first interaction) — no auth needed, use default locale
+	// Handle /start command (first interaction) — no auth needed, organization's language
 	if (text === "/start") {
-		const t = await getBotTranslate(DEFAULT_LANGUAGE);
+		const t = await replyTranslator(bot, null);
 		await sendMessage(bot.botToken, {
 			chat_id: chatId,
 			text: escapeMarkdownV2(
@@ -90,7 +103,7 @@ async function handleMessage(
 		return;
 	}
 
-	// Handle /link command (account linking) — no auth needed, use default locale
+	// Handle /link command (account linking) — no auth needed
 	if (text.startsWith("/link")) {
 		await handleLinkCommand(text, chatId, telegramUserId, telegramUsername, message.from, bot);
 		return;
@@ -107,7 +120,7 @@ async function handleMessage(
 	);
 
 	if (userResult.status !== "found") {
-		const t = await getBotTranslate(DEFAULT_LANGUAGE);
+		const t = await replyTranslator(bot, null);
 		await sendMessage(bot.botToken, {
 			chat_id: chatId,
 			text: escapeMarkdownV2(
@@ -122,14 +135,19 @@ async function handleMessage(
 	}
 
 	// Get user locale
-	const locale = await getUserLocale(userResult.user.userId);
+	const locale = await getUserLocale({
+		userId: userResult.user.userId,
+		organizationId: bot.organizationId,
+	});
 
 	// Save conversation for proactive messaging
 	await saveConversation(chatId, message.chat.type, userResult.user.userId, bot.organizationId);
 
 	// Handle /language command
 	if (text === "/language" || text === "/lang") {
-		await handleLanguageCommand(chatId, locale, bot);
+		// The checkmark shows the user's own choice, not an inherited organization default.
+		const savedLocale = await getUserLocaleRaw(userResult.user.userId);
+		await handleLanguageCommand(chatId, locale, savedLocale, bot);
 		return;
 	}
 
@@ -250,10 +268,11 @@ async function handleCallbackQuery(
  */
 async function handleLanguageCommand(
 	chatId: string,
-	currentLocale: string,
+	replyLocale: string,
+	savedLocale: string | null,
 	bot: ResolvedTelegramBot,
 ): Promise<void> {
-	const t = await getBotTranslate(currentLocale);
+	const t = await getBotTranslate(replyLocale);
 
 	// Build 2 buttons per row
 	const rows: TelegramInlineKeyboardButton[][] = [];
@@ -261,7 +280,7 @@ async function handleLanguageCommand(
 		const row: TelegramInlineKeyboardButton[] = TELEGRAM_LANGUAGE_BUTTONS.slice(i, i + 2).map(
 			(lang) => {
 				const data: LanguageCallbackData = { a: "lang", l: lang.code };
-				const label = lang.code === currentLocale ? `${lang.label} \u2713` : lang.label;
+				const label = lang.code === savedLocale ? `${lang.label} \u2713` : lang.label;
 				return {
 					text: label,
 					callback_data: JSON.stringify(data),
@@ -411,9 +430,9 @@ async function handleLinkCommand(
 ): Promise<void> {
 	const parts = text.split(/\s+/);
 	const code = parts[1];
-	const t = await getBotTranslate(DEFAULT_LANGUAGE);
 
 	if (!code) {
+		const t = await replyTranslator(bot, null);
 		await sendMessage(bot.botToken, {
 			chat_id: chatId,
 			text: escapeMarkdownV2(
@@ -433,6 +452,7 @@ async function handleLinkCommand(
 		telegramUsername,
 		displayName,
 	);
+	const t = await replyTranslator(bot, result.status === "success" ? result.userId : null);
 
 	switch (result.status) {
 		case "success":

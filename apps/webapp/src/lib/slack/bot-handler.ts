@@ -6,6 +6,7 @@
  */
 
 import { executeCommand, parseCommand } from "@/lib/bot-platform/command-registry";
+import { type BotTranslateFn, getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { postMessage } from "./api";
@@ -20,6 +21,18 @@ import type {
 import { claimLinkCode, resolveSlackUser } from "./user-resolver";
 
 const logger = createLogger("SlackBotHandler");
+
+/**
+ * Replies go out in the recipient language: the linked user's, or the
+ * organization's default for someone not linked to a Z8 user yet.
+ */
+async function replyTranslator(
+	bot: ResolvedSlackBot,
+	userId: string | null,
+): Promise<{ locale: string; t: BotTranslateFn }> {
+	const locale = await getUserLocale({ userId, organizationId: bot.organizationId });
+	return { locale, t: await getBotTranslate(locale) };
+}
 
 // ============================================
 // SLASH COMMAND HANDLER
@@ -43,24 +56,37 @@ export async function handleSlashCommand(
 
 	// Handle /start or empty command
 	if (!text || text === "start") {
+		const { t } = await replyTranslator(bot, null);
 		return {
-			text: "Welcome to Z8! To connect your account, go to Settings > Integrations > Slack in your Z8 dashboard and generate a link code. Then use: /z8 link YOUR_CODE",
+			text: t(
+				"bot.static.welcomeSlack",
+				"Welcome to Z8! To connect your account, go to Settings > Integrations > Slack in your Z8 dashboard and generate a link code. Then use: /z8 link YOUR_CODE",
+			),
 		};
 	}
 
 	// Check if commands are enabled
 	if (!bot.enableCommands) {
-		return { text: "Commands are not enabled for this workspace." };
+		const { t } = await replyTranslator(bot, null);
+		return {
+			text: t("bot.static.commandsDisabledSlack", "Commands are not enabled for this workspace."),
+		};
 	}
 
 	// Resolve user
 	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId, payload.user_name);
 
 	if (userResult.status !== "found") {
+		const { t } = await replyTranslator(bot, null);
 		return {
-			text: "Your Slack account is not linked to Z8. Go to Settings > Integrations > Slack in your Z8 dashboard to generate a link code, then use: /z8 link YOUR_CODE",
+			text: t(
+				"bot.static.notLinkedSlack",
+				"Your Slack account is not linked to Z8. Go to Settings > Integrations > Slack in your Z8 dashboard to generate a link code, then use: /z8 link YOUR_CODE",
+			),
 		};
 	}
+
+	const { locale, t } = await replyTranslator(bot, userResult.user.userId);
 
 	// Save conversation for proactive messaging
 	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId);
@@ -69,7 +95,12 @@ export async function handleSlashCommand(
 	const parsed = parseCommand(`/${text}`);
 
 	if (!parsed?.command) {
-		return { text: "Unknown command. Use `/z8 help` to see available commands." };
+		return {
+			text: t(
+				"bot.static.unknownCommandSlack",
+				"Unknown command. Use `/z8 help` to see available commands.",
+			),
+		};
 	}
 
 	// Build shared command context
@@ -90,7 +121,7 @@ export async function handleSlashCommand(
 			escalationTimeoutHours: bot.escalationTimeoutHours,
 		},
 		args: parsed.args,
-		locale: "en",
+		locale,
 	};
 
 	// Execute command (shared with Teams and Telegram)
@@ -152,9 +183,13 @@ async function handleDirectMessage(
 	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId);
 
 	if (userResult.status !== "found") {
+		const { t } = await replyTranslator(bot, null);
 		await postMessage(bot.botAccessToken, {
 			channel: channelId,
-			text: "Your Slack account is not linked to Z8. Go to Settings > Integrations > Slack in your Z8 dashboard to generate a link code, then send: link YOUR_CODE",
+			text: t(
+				"bot.static.notLinkedSlackDm",
+				"Your Slack account is not linked to Z8. Go to Settings > Integrations > Slack in your Z8 dashboard to generate a link code, then send: link YOUR_CODE",
+			),
 		});
 		return;
 	}
@@ -162,9 +197,10 @@ async function handleDirectMessage(
 	// Save conversation for proactive messaging
 	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId);
 
+	const { t } = await replyTranslator(bot, userResult.user.userId);
 	await postMessage(bot.botAccessToken, {
 		channel: channelId,
-		text: "Use `/z8 help` to see available commands.",
+		text: t("bot.static.helpHintSlack", "Use `/z8 help` to see available commands."),
 	});
 }
 
@@ -210,7 +246,10 @@ async function handleLinkCommand(
 	const code = parts[1];
 
 	if (!code) {
-		return { text: "Please provide your link code: `/z8 link YOUR_CODE`" };
+		const { t } = await replyTranslator(bot, null);
+		return {
+			text: t("bot.static.linkUsageSlack", "Please provide your link code: `/z8 link YOUR_CODE`"),
+		};
 	}
 
 	const result = await claimLinkCode(
@@ -221,23 +260,39 @@ async function handleLinkCommand(
 		slackUsername,
 	);
 
+	const { t } = await replyTranslator(bot, result.status === "success" ? result.userId : null);
+
 	switch (result.status) {
 		case "success":
 			return {
-				text: "Your Slack account has been linked to Z8! Use `/z8 help` to see available commands.",
+				text: t(
+					"bot.static.linkSuccessSlack",
+					"Your Slack account has been linked to Z8! Use `/z8 help` to see available commands.",
+				),
 			};
 
 		case "invalid_code":
-			return { text: "Invalid link code. Please check your code and try again." };
+			return {
+				text: t(
+					"bot.static.linkInvalid",
+					"Invalid link code. Please check your code and try again.",
+				),
+			};
 
 		case "expired":
 			return {
-				text: "This link code has expired. Please generate a new one from your Z8 settings.",
+				text: t(
+					"bot.static.linkExpired",
+					"This link code has expired. Please generate a new one from your Z8 settings.",
+				),
 			};
 
 		case "already_linked":
 			return {
-				text: "This Slack account is already linked to a Z8 account in this workspace.",
+				text: t(
+					"bot.static.linkAlreadyLinkedSlack",
+					"This Slack account is already linked to a Z8 account in this workspace.",
+				),
 			};
 	}
 }
