@@ -9,8 +9,9 @@ use crate::command_store::{token_fingerprint, CommandFailure, CommandState, Comm
 use crate::command_sync::{self, Pacing};
 use crate::command_transport::{Capabilities, CapabilitiesFetch};
 use crate::frozen_command::{
-    freeze_break, freeze_clock_in, freeze_clock_out, new_operation_id, Admission, ClockTarget,
-    CommandContext, CommandFrame, CommandKind, FrozenCommand,
+    freeze_attributed_clock_out_with, freeze_break_with, freeze_clock_in_with, freeze_clock_out,
+    new_operation_id, Admission, BreakVehicleUse, ClockTarget, ClockVehicleUse, CommandContext,
+    CommandFrame, CommandKind, FrozenCommand,
 };
 use crate::offline::{ActionType, OfflineQueue};
 
@@ -18,25 +19,30 @@ use crate::offline::{ActionType, OfflineQueue};
 pub const STORAGE_PAUSED: &str = "Cannot read local clock storage. Clock actions are paused.";
 
 pub enum ClockCommand {
-    ClockIn(WorkLocationType),
+    /// The work location, and vehicle use when the employee entered some (#1124).
+    ClockIn(WorkLocationType, Option<ClockVehicleUse>),
     ClockOut,
     StartBreak,
     AttributedClose {
         attribution: crate::frozen_command::ClosingAttribution,
         manual_break: bool,
+        /// The end reading or distance (#1124); a manual break's reading ends the work.
+        vehicle_use: Option<ClockVehicleUse>,
     },
     /// A confirmed idle break: close at the idle start, resume at the detected
     /// return, where `location` is the resumed work's location (#281).
     Break {
         evidence: BreakEvidence,
         location: WorkLocationType,
+        /// The one optional odometer reading at the break (#1124).
+        vehicle_use: Option<BreakVehicleUse>,
     },
 }
 
 impl ClockCommand {
     fn kind(&self) -> CommandKind {
         match self {
-            Self::ClockIn(_) => CommandKind::ClockIn,
+            Self::ClockIn(..) => CommandKind::ClockIn,
             Self::ClockOut | Self::StartBreak | Self::AttributedClose { .. } => {
                 CommandKind::ClockOut
             }
@@ -351,7 +357,8 @@ pub async fn execute_companion(
                     "Organization changed. Refresh the selected organization before clocking.",
                 ));
             }
-            return execute_online(session, command, evidence, context).await;
+            let vehicle_use_accepted = capabilities.accepts_vehicle_use();
+            return execute_online(session, command, evidence, context, vehicle_use_accepted).await;
         }
     }
     execute_internal(
@@ -365,11 +372,28 @@ pub async fn execute_companion(
     .await
 }
 
+/// The vehicle use an online clock-in or clock-out sends, in the same shapes
+/// as the frozen version 4 command.
+fn online_vehicle_use(command: &ClockCommand, accepted: bool) -> Option<serde_json::Value> {
+    if !accepted {
+        return None;
+    }
+    match command {
+        ClockCommand::ClockIn(_, Some(vehicle_use)) => vehicle_use.clock_in_wire(),
+        ClockCommand::AttributedClose {
+            vehicle_use: Some(vehicle_use),
+            ..
+        } => vehicle_use.clock_out_wire(),
+        _ => None,
+    }
+}
+
 async fn execute_online(
     session: &ClockSession<'_>,
     command: ClockCommand,
     evidence: ActionEvidence,
     context: CommandContext,
+    vehicle_use_accepted: bool,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     if session.queue.lock().count().map_err(|_| storage_paused())? > 0
         || session
@@ -400,7 +424,7 @@ async fn execute_online(
             "Clock context changed. Refresh the selected organization.",
         ));
     }
-    let clock_in = matches!(command, ClockCommand::ClockIn(_));
+    let clock_in = matches!(command, ClockCommand::ClockIn(..));
     if clock_in == status.is_clocked_in {
         return Err(ClockCommandError::pre_send(
             "Clock status changed. Refresh status before clocking.",
@@ -412,8 +436,13 @@ async fn execute_online(
         "browserTimezone": timezone,
         "desktopContext": context,
     });
-    if let ClockCommand::ClockIn(location) = &command {
+    if let ClockCommand::ClockIn(location, _) = &command {
         body["workLocationType"] = serde_json::json!(location.as_str());
+    }
+    // Vehicle use rides beside the request only for a server that records it
+    // (#1124); its legacy route reads it leniently and never refuses for it.
+    if let Some(vehicle_use) = online_vehicle_use(&command, vehicle_use_accepted) {
+        body["vehicleUse"] = vehicle_use;
     }
     if let ClockCommand::AttributedClose { attribution, .. } = &command {
         use crate::frozen_command::AttributionIntent;
@@ -527,7 +556,7 @@ async fn execute_internal(
                 return Err(ClockCommandError::pre_send("This pilot requires atomic breaks and reliable offline clocking. Ask your administrator to finish server setup."));
             }
             if expected_organization.is_some()
-                && matches!(command, ClockCommand::ClockIn(_))
+                && matches!(command, ClockCommand::ClockIn(..))
                 && status.is_none()
                 && session
                     .store
@@ -560,7 +589,13 @@ async fn execute_internal(
                 admission: Admission::Delayed,
                 depends_on: None,
             };
-            let frozen = freeze_command(session, &command, frame, status)?;
+            let frozen = freeze_command(
+                session,
+                &command,
+                frame,
+                status,
+                capabilities.accepts_vehicle_use(),
+            )?;
             send_frozen(
                 session,
                 &capabilities,
@@ -654,6 +689,9 @@ fn freeze_command(
     command: &ClockCommand,
     mut frame: CommandFrame,
     status: Option<ClockStatus>,
+    // The server advertises version 4; otherwise vehicle use is left out and the
+    // command keeps its version 2 bytes.
+    vehicle_use_accepted: bool,
 ) -> Result<FrozenCommand, ClockCommandError> {
     let active: Vec<_> = session
         .store
@@ -704,7 +742,7 @@ fn freeze_command(
         },
     };
     match command {
-        ClockCommand::ClockIn(location) => {
+        ClockCommand::ClockIn(location, vehicle_use) => {
             let clocked_in = match last {
                 Some(saved) => saved.kind != CommandKind::ClockOut,
                 None => status.is_some_and(|status| status.is_clocked_in),
@@ -714,13 +752,28 @@ fn freeze_command(
                     "You are already clocked in. Refresh status before another action.",
                 ));
             }
-            Ok(freeze_clock_in(frame, *location))
+            Ok(freeze_clock_in_with(
+                frame,
+                *location,
+                vehicle_use.as_ref().filter(|_| vehicle_use_accepted),
+            ))
         }
-        ClockCommand::AttributedClose { attribution, .. } => Ok(
-            crate::frozen_command::freeze_attributed_clock_out(frame, target()?, attribution),
-        ),
+        ClockCommand::AttributedClose {
+            attribution,
+            vehicle_use,
+            ..
+        } => Ok(freeze_attributed_clock_out_with(
+            frame,
+            target()?,
+            attribution,
+            vehicle_use.as_ref().filter(|_| vehicle_use_accepted),
+        )),
         ClockCommand::ClockOut | ClockCommand::StartBreak => Ok(freeze_clock_out(frame, target()?)),
-        ClockCommand::Break { evidence, location } => {
+        ClockCommand::Break {
+            evidence,
+            location,
+            vehicle_use,
+        } => {
             let target = target()?;
             // The target must be the work the employee was in when they went
             // idle. Work that started later means it changed while they were away.
@@ -739,7 +792,14 @@ fn freeze_command(
                     "Your clocked work changed while you were away, so this break cannot be recorded automatically. Nothing was recorded. Enter the break as a time correction in Z8.",
                 ));
             }
-            freeze_break(frame, target, *location, evidence).map_err(break_review_error)
+            freeze_break_with(
+                frame,
+                target,
+                *location,
+                evidence,
+                vehicle_use.filter(|_| vehicle_use_accepted),
+            )
+            .map_err(break_review_error)
         }
     }
 }
@@ -908,7 +968,7 @@ async fn execute_legacy(
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     let (service, webapp_url, token) = (session.service, session.endpoint, session.token);
     let (action_type, payload, result) = match command {
-        ClockCommand::ClockIn(location) => (
+        ClockCommand::ClockIn(location, _) => (
             ActionType::ClockIn,
             Some(location.as_str().to_string()),
             service
@@ -927,7 +987,9 @@ async fn execute_legacy(
         ),
         // The legacy two-request break is unchanged: it closes at the idle start
         // and resumes at request time, and neither request is atomic (#268).
-        ClockCommand::Break { evidence, location } => {
+        ClockCommand::Break {
+            evidence, location, ..
+        } => {
             let instant = evidence.idle.last_activity.utc;
             let result = service
                 .break_with_status(webapp_url, token, instant, location)
