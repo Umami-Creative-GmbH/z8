@@ -4,9 +4,25 @@
  * Handles S3 upload and email notification delivery for scheduled exports.
  */
 import { DateTime } from "luxon";
-import type { Instant } from "@/lib/datetime/temporal-core";
+import { db } from "@/db";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { loadEmailTranslator } from "@/lib/email/email-i18n";
 import { sendEmail } from "@/lib/email/email-service";
+import {
+	renderScheduledExportDeliveryEmail,
+	scheduledExportDeliverySubject,
+} from "@/lib/email/templates/scheduled-export-delivery";
 import { createLogger } from "@/lib/logger";
+import {
+	formatNotificationParam,
+	notificationParam,
+} from "@/lib/notifications/notification-params";
+import {
+	resolveOrganizationNotificationLocale,
+	resolveRecipientNotificationLocale,
+} from "@/lib/notifications/recipient-locale";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import {
 	type CalculatedDateRange,
 	type DeliveryConfig,
@@ -15,36 +31,13 @@ import {
 	type ExecutionResult,
 	type SignedFileUrl,
 } from "../domain/types";
+import { findMemberUserIdsByEmail } from "./member-recipients";
 
 const logger = createLogger("ScheduledExportDeliveryService");
 
-const MONTHS = [
-	"January",
-	"February",
-	"March",
-	"April",
-	"May",
-	"June",
-	"July",
-	"August",
-	"September",
-	"October",
-	"November",
-	"December",
-];
-
-/** "October 10, 2026 at 2:15 PM UTC" */
-function formatExpiry(expiresAt: Instant): string {
-	const utc = expiresAt.toZonedDateTimeISO("UTC");
-	const hour = utc.hour % 12 || 12;
-	const minute = String(utc.minute).padStart(2, "0");
-	const meridiem = utc.hour < 12 ? "AM" : "PM";
-	return `${MONTHS[utc.month - 1]} ${utc.day}, ${utc.year} at ${hour}:${minute} ${meridiem} UTC`;
-}
-
-/** "15 minutes", "7 days", "1 hour 30 minutes" */
-function formatLifetime(totalSeconds: number): string {
-	const units: Array<[number, string]> = [
+/** "15 minutes", "7 days", "1 hour 30 minutes" in `locale`. */
+function formatLifetime(totalSeconds: number, locale: string): string {
+	const units: Array<[number, "day" | "hour" | "minute" | "second"]> = [
 		[Math.floor(totalSeconds / 86400), "day"],
 		[Math.floor((totalSeconds % 86400) / 3600), "hour"],
 		[Math.floor((totalSeconds % 3600) / 60), "minute"],
@@ -52,20 +45,10 @@ function formatLifetime(totalSeconds: number): string {
 	];
 	return units
 		.filter(([count]) => count > 0)
-		.map(([count, unit]) => `${count} ${unit}${count === 1 ? "" : "s"}`)
+		.map(([count, unit]) =>
+			new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" }).format(count),
+		)
 		.join(" ");
-}
-
-/**
- * HTML escape function to prevent XSS in email templates
- */
-function escapeHtml(text: string): string {
-	return text
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
 }
 
 /**
@@ -79,15 +62,9 @@ export interface DeliveryParams {
 	exportResult: ExecutionResult;
 }
 
-/**
- * Email template data
- */
-interface EmailTemplateData {
-	scheduleName: string;
-	dateRangeStart: string;
-	dateRangeEnd: string;
-	fileUrl?: SignedFileUrl;
-	recordCount?: number;
+interface RenderedDeliveryEmail {
+	subject: string;
+	html: string;
 }
 
 /**
@@ -148,7 +125,7 @@ export class DeliveryService {
 	}
 
 	/**
-	 * Send notification emails to all recipients
+	 * Send notification emails to all recipients, each in their recipient language.
 	 */
 	private async sendNotificationEmails(params: {
 		organizationId: string;
@@ -163,31 +140,29 @@ export class DeliveryService {
 		failed: number;
 		errors: Array<{ recipient: string; error: string; timestamp: string }>;
 	}> {
-		const {
-			organizationId,
-			scheduleName,
-			dateRange,
-			recipients,
-			fileUrl,
-			recordCount,
-			subjectTemplate,
-		} = params;
+		const { organizationId, scheduleName, recipients } = params;
 
-		// Generate email content
-		const subject = this.renderSubject(subjectTemplate, {
-			scheduleName,
-			dateRange: `${dateRange.start.toISODate()} - ${dateRange.end.toISODate()}`,
-		});
+		const [languages, timezone] = await Promise.all([
+			this.resolveRecipientLanguages(organizationId, recipients),
+			loadOrganizationTimezone(db, organizationId).catch((error: unknown) => {
+				logger.warn(
+					{ organizationId, error: error instanceof Error ? error.message : "Unknown error" },
+					"Failed to load the organization timezone for scheduled export emails",
+				);
+				return "UTC";
+			}),
+		]);
 
-		const templateData: EmailTemplateData = {
-			scheduleName,
-			dateRangeStart: dateRange.start.toFormat("LLLL d, yyyy"),
-			dateRangeEnd: dateRange.end.toFormat("LLLL d, yyyy"),
-			fileUrl,
-			recordCount,
+		// One rendering per language, shared by every recipient who reads it.
+		const renderings = new Map<string, Promise<RenderedDeliveryEmail>>();
+		const renderIn = (locale: string) => {
+			let rendering = renderings.get(locale);
+			if (!rendering) {
+				rendering = this.renderEmail({ ...params, locale, timezone });
+				renderings.set(locale, rendering);
+			}
+			return rendering;
 		};
-
-		const html = this.renderEmailHtml(templateData);
 
 		const failedDelivery = (recipient: string, errorMessage: string) => {
 			logger.error({ recipient, error: errorMessage, scheduleName }, "Email sending failed");
@@ -202,6 +177,7 @@ export class DeliveryService {
 		const deliveryResults = await Promise.all(
 			recipients.map(async (recipient) => {
 				try {
+					const { subject, html } = await renderIn(languages.get(recipient) ?? DEFAULT_LANGUAGE);
 					// sendEmail reports transport failures through its result instead of throwing.
 					const sendResult = await sendEmail({
 						to: recipient,
@@ -246,90 +222,107 @@ export class DeliveryService {
 	}
 
 	/**
-	 * Render email subject from template
+	 * Each recipient's language: a member of the organization (an org admin, or an
+	 * approved external recipient who is also a member) gets their own recipient
+	 * language; any other address the organization's default language. Best-effort:
+	 * a failed lookup never stops a delivery.
 	 */
-	private renderSubject(template: string | undefined, variables: Record<string, string>): string {
-		const defaultTemplate = "Scheduled Export: {scheduleName} ({dateRange})";
-		const finalTemplate = template || defaultTemplate;
-
-		return Object.entries(variables).reduce(
-			(result, [key, value]) => result.replace(`{${key}}`, value),
-			finalTemplate,
+	private async resolveRecipientLanguages(
+		organizationId: string,
+		recipients: readonly string[],
+	): Promise<Map<string, string>> {
+		const organizationLanguage = await resolveOrganizationNotificationLocale(organizationId).catch(
+			(error: unknown) => {
+				logger.warn(
+					{ organizationId, error: error instanceof Error ? error.message : "Unknown error" },
+					"Failed to load the organization language for scheduled export emails",
+				);
+				return DEFAULT_LANGUAGE;
+			},
 		);
+		const memberUserIds = await findMemberUserIdsByEmail(organizationId, recipients).catch(
+			(error: unknown) => {
+				logger.warn(
+					{ organizationId, error: error instanceof Error ? error.message : "Unknown error" },
+					"Failed to match scheduled export recipients to members",
+				);
+				return new Map<string, string>();
+			},
+		);
+
+		const entries = await Promise.all(
+			recipients.map(async (recipient): Promise<[string, string]> => {
+				const userId = memberUserIds.get(recipient.trim().toLowerCase());
+				if (!userId) return [recipient, organizationLanguage];
+				const language = await resolveRecipientNotificationLocale({
+					userId,
+					organizationId,
+				}).catch(() => organizationLanguage);
+				return [recipient, language];
+			}),
+		);
+		return new Map(entries);
 	}
 
 	/**
-	 * Render email HTML content
+	 * The email in `locale`: dates as plain calendar days, the link expiry in the
+	 * organization's timezone with the zone printed. A schedule's own subject is kept as
+	 * written; only its `{scheduleName}` and `{dateRange}` are filled in.
 	 */
-	private renderEmailHtml(data: EmailTemplateData): string {
-		const { scheduleName, dateRangeStart, dateRangeEnd, fileUrl, recordCount } = data;
+	private async renderEmail(params: {
+		scheduleName: string;
+		dateRange: CalculatedDateRange;
+		fileUrl?: SignedFileUrl;
+		recordCount?: number;
+		subjectTemplate?: string;
+		locale: string;
+		timezone: string;
+	}): Promise<RenderedDeliveryEmail> {
+		const { scheduleName, fileUrl, recordCount, subjectTemplate, timezone } = params;
+		const { locale, t } = await loadEmailTranslator(params.locale);
 
-		// Escape user-controlled data to prevent XSS
-		const safeScheduleName = escapeHtml(scheduleName);
-		const safeDateRangeStart = escapeHtml(dateRangeStart);
-		const safeDateRangeEnd = escapeHtml(dateRangeEnd);
+		// The range was calculated in the schedule's timezone: its days are calendar days.
+		const dateRange = formatNotificationParam(
+			notificationParam.plainDateRange(
+				parsePlainDate(params.dateRange.start.toISODate() ?? ""),
+				parsePlainDate(params.dateRange.end.toISODate() ?? ""),
+			),
+			{ locale },
+		);
 
-		return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-    .header h1 { margin: 0 0 8px 0; font-size: 24px; color: #1a1a1a; }
-    .info-row { margin: 12px 0; }
-    .info-label { color: #666; font-size: 14px; }
-    .info-value { font-weight: 500; color: #1a1a1a; }
-    .button { display: inline-block; background: #2563eb; color: #fff !important; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; margin: 20px 0; }
-    .button:hover { background: #1d4ed8; }
-    .expiry { color: #666; font-size: 13px; margin-top: 8px; }
-    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee; color: #666; font-size: 13px; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    ${
-			fileUrl
-				? `<h1>Scheduled Export Ready</h1>
-    <p>Your scheduled export <strong>${safeScheduleName}</strong> has completed successfully.</p>`
-				: `<h1>Scheduled Export Finished</h1>
-    <p>Your scheduled export <strong>${safeScheduleName}</strong> ran, but there is nothing to download.</p>`
-		}
-  </div>
+		const subject = subjectTemplate
+			? this.renderSubject(subjectTemplate, { scheduleName, dateRange })
+			: scheduledExportDeliverySubject(t, { scheduleName, dateRange });
 
-  <div class="info-row">
-    <div class="info-label">Date Range</div>
-    <div class="info-value">${safeDateRangeStart} to ${safeDateRangeEnd}</div>
-  </div>
+		const html = await renderScheduledExportDeliveryEmail({
+			locale,
+			t,
+			scheduleName,
+			dateRange,
+			recordCount:
+				recordCount === undefined ? undefined : new Intl.NumberFormat(locale).format(recordCount),
+			download: fileUrl
+				? {
+						url: fileUrl.url,
+						lifetime: formatLifetime(fileUrl.lifetimeSeconds, locale),
+						expiresAt: formatNotificationParam(
+							notificationParam.zonedInstant(fileUrl.expiresAt, timezone, "dateTimeMedium"),
+							{ locale },
+						),
+					}
+				: undefined,
+		});
 
-  ${
-		recordCount !== undefined
-			? `
-  <div class="info-row">
-    <div class="info-label">Records</div>
-    <div class="info-value">${recordCount.toLocaleString()}</div>
-  </div>
-  `
-			: ""
+		return { subject, html };
 	}
 
-  ${
-		fileUrl
-			? `
-  <a href="${escapeHtml(fileUrl.url)}" class="button">Download Export</a>
-  <p class="expiry">This download link is valid for ${formatLifetime(fileUrl.lifetimeSeconds)} and expires on ${formatExpiry(fileUrl.expiresAt)}.</p>
-  `
-			: `
-  <p>No file was produced for this run.</p>
-  `
-	}
-
-  <div class="footer">
-    This is an automated email from your scheduled export configuration.
-  </div>
-</body>
-</html>
-`.trim();
+	/**
+	 * Fill a schedule's own subject template.
+	 */
+	private renderSubject(template: string, variables: Record<string, string>): string {
+		return Object.entries(variables).reduce(
+			(result, [key, value]) => result.replace(`{${key}}`, value),
+			template,
+		);
 	}
 }
