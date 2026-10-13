@@ -7,7 +7,7 @@ import {
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { getEnhancedVacationBalance } from "./vacation.service";
-import { loadVacationAdjustmentTotal, loadVacationAdjustmentTotals } from "./vacation-adjustments";
+import { loadVacationAdjustmentSums } from "./vacation-adjustments";
 
 describe("vacation adjustment totals (#1105)", () => {
 	let fixture: LifecycleDatabaseFixture;
@@ -76,30 +76,25 @@ describe("vacation adjustment totals (#1105)", () => {
 	});
 
 	it("sums each employee's adjustments for the year inside the organization only", async () => {
-		const totals = await loadVacationAdjustmentTotals(fixture.db, {
+		const sums = await loadVacationAdjustmentSums(fixture.db, {
 			organizationId: fixture.organizationId,
 			employeeIds: [fixture.employeeId, unadjustedEmployeeId, foreignEmployeeId],
 			year: 2026,
 		});
 
-		expect(Object.fromEntries(totals)).toEqual({
-			[fixture.employeeId]: -3.5,
-			[unadjustedEmployeeId]: 0,
+		expect(Object.fromEntries(sums)).toEqual({
+			[fixture.employeeId]: { manual: -3.5, accrual: 0 },
+			[unadjustedEmployeeId]: { manual: 0, accrual: 0 },
 		});
 		expect(
-			await loadVacationAdjustmentTotal(fixture.db, {
-				organizationId: fixture.organizationId,
-				employeeId: foreignEmployeeId,
-				year: 2026,
-			}),
-		).toBe(0);
-		expect(
-			await loadVacationAdjustmentTotal(fixture.db, {
-				organizationId: fixture.organizationId,
-				employeeId: fixture.employeeId,
-				year: 2025,
-			}),
-		).toBe(10);
+			Object.fromEntries(
+				await loadVacationAdjustmentSums(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeIds: [fixture.employeeId],
+					year: 2025,
+				}),
+			),
+		).toEqual({ [fixture.employeeId]: { manual: 10, accrual: 0 } });
 	});
 
 	it("shows the same adjusted balance on the Absences page and the dashboard", async () => {

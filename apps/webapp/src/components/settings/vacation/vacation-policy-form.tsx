@@ -38,7 +38,7 @@ import { Switch } from "@/components/ui/switch";
 import {
 	checkStatutoryMinimumDays,
 	defaultStatutoryMinimumDays,
-	prorationAppliesToAccrualType,
+	isAccrualPolicy,
 } from "@/lib/absences/vacation-policy-settings";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { useRouter } from "@/navigation";
@@ -449,7 +449,7 @@ export function VacationPolicyForm({
 									<p className="text-sm text-muted-foreground">
 										{t(
 											"settings.vacation.policyForm.accrualStartMonthDescription",
-											"Month when vacation accrual begins (typically January or hire date)",
+											"The month the vacation accrual projection report shows an annual policy's allowance as granted. It doesn't change balances: monthly and biweekly accrual always starts in January or the hire month.",
 										)}
 									</p>
 								</div>
@@ -467,7 +467,7 @@ export function VacationPolicyForm({
 											)}
 										</Label>
 										<p className="text-sm text-muted-foreground">
-											{prorationAppliesToAccrualType(accrualType)
+											{!isAccrualPolicy({ accrualType })
 												? t(
 														"settings.vacation.policyForm.prorateInStartAndExitYearDescription",
 														"In a year an employee joins or leaves, they get 1/12 of the annual days for each full employment month.",
@@ -533,7 +533,7 @@ export function VacationPolicyForm({
 									<p className="text-sm text-muted-foreground">
 										{t(
 											"settings.vacation.policyForm.statutoryMinimumDaysDescription",
-											"The fewest days employees are legally owed in a full year. Once an employee completes the 6-month waiting period, proration never cuts their allowance below this.",
+											"The fewest days employees are legally owed in a full year. Once an employee completes the 6-month waiting period, proration never cuts their allowance below this, unless they leave by 30 June.",
 										)}
 									</p>
 									{field.state.meta.errors.length > 0 && (

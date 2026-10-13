@@ -3,16 +3,17 @@ import "server-only";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
-import { employee, vacationAdjustment } from "@/db/schema";
-import {
-	type Instant,
-	instantFromDate,
-	type PlainDate,
-	plainDateAt,
-} from "@/lib/datetime/temporal-core";
+import { employee, type VacationAccrualType, vacationAdjustment } from "@/db/schema";
+import { type Instant, type PlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { getEmployeesWithVacationData, getVacationAllowance } from "@/lib/query/vacation.queries";
-import { isAccrualPolicy } from "./vacation-calculator";
+import type { EmploymentStint } from "./prorated-allowance";
+import {
+	type EmployeeEmployments,
+	loadEmployeeEmployments,
+	loadEmployeeVacationOverrides,
+} from "./prorated-allowance-store";
+import { isAccrualPolicy } from "./vacation-policy-settings";
+import { loadCompanyDefaultVacationPolicy } from "./vacation-policy-store";
 
 const logger = createLogger("vacation-accrual");
 
@@ -57,35 +58,61 @@ const NOTHING_ACCRUED: VacationAccrualResult = {
 
 /**
  * One month's accrual share: 1/12 of the allowance on a monthly policy and 2/26 on a biweekly one
- * (about two pay periods per month). In the hire month only the days from the start date count;
- * before the hire month nothing accrues.
+ * (about two pay periods per month), for the days of the month the employee is employed. In the
+ * hire month only the days from the start count, in the exit month only the days through the last
+ * working day; a month without an employed day accrues nothing (null).
  */
 function monthlyAccrualDays(input: {
-	accrualType: string;
+	accrualType: VacationAccrualType;
 	annualDays: number;
 	year: number;
 	month: number;
-	startDate: PlainDate | null;
+	employments: readonly EmploymentStint[];
 }): number | null {
 	const monthStart = Temporal.PlainDate.from({ year: input.year, month: input.month, day: 1 });
+	const monthEnd = monthStart.with({ day: monthStart.daysInMonth });
 	const share =
 		input.accrualType === "monthly" ? input.annualDays / 12 : (input.annualDays / 26) * 2;
-	if (!input.startDate) return share;
 
-	const monthEnd = monthStart.with({ day: monthStart.daysInMonth });
-	if (Temporal.PlainDate.compare(input.startDate, monthEnd) > 0) return null;
-	if (input.startDate.year === input.year && input.startDate.month === input.month) {
-		const daysEmployed = monthStart.daysInMonth - input.startDate.day + 1;
-		return (share / monthStart.daysInMonth) * daysEmployed;
+	let daysEmployed = 0;
+	for (const employment of input.employments) {
+		const from = latest(employment.startDate ?? monthStart, monthStart);
+		const through = earliest(employment.lastWorkingDay ?? monthEnd, monthEnd);
+		if (Temporal.PlainDate.compare(from, through) <= 0) {
+			daysEmployed += from.until(through).days + 1;
+		}
 	}
-	return share;
+	if (daysEmployed === 0) return null;
+	if (daysEmployed >= monthStart.daysInMonth) return share;
+	return (share / monthStart.daysInMonth) * daysEmployed;
+}
+
+function latest(left: PlainDate, right: PlainDate): PlainDate {
+	return Temporal.PlainDate.compare(left, right) >= 0 ? left : right;
+}
+
+function earliest(left: PlainDate, right: PlainDate): PlainDate {
+	return Temporal.PlainDate.compare(left, right) <= 0 ? left : right;
 }
 
 /**
- * Accrue the given months of a year for every active employee of the organization on a monthly or
- * biweekly policy (#1106). Each employee gets at most one `accrual` row per month: months already
- * accrued are skipped, and the unique period index turns a concurrent duplicate into a no-op, so
- * the job can retry and catch up safely. Accrual rows are system rows without an adjusting employee.
+ * The employments the accrual job accrues for: every employment of an active employee, and the
+ * employments with a known last working day of one who is no longer active, so a leaver accrues
+ * the months they were still employed. An inactive employee without a recorded end accrues nothing.
+ */
+function accruingEmployments(employee: EmployeeEmployments): EmploymentStint[] {
+	return employee.isActive
+		? employee.employments
+		: employee.employments.filter((employment) => employment.lastWorkingDay !== null);
+}
+
+/**
+ * Accrue the given months of a year for every employee of the organization on a monthly or
+ * biweekly policy who is employed in them (#1106), leavers included: employments come from the
+ * employment periods and departures, as for the prorated allowance (`loadEmployeeEmployments`).
+ * Each employee gets at most one `accrual` row per month: months already accrued are skipped, and
+ * the unique period index turns a concurrent duplicate into a no-op, so the job can retry and
+ * catch up safely. Accrual rows are system rows without an adjusting employee.
  */
 export async function accrueVacationPeriods(
 	organizationId: string,
@@ -94,11 +121,21 @@ export async function accrueVacationPeriods(
 	const months = [...new Set(input.months)].filter((month) => month >= 1 && month <= 12);
 	if (months.length === 0) return NOTHING_ACCRUED;
 
-	const policy = await getVacationAllowance(organizationId, input.year);
+	const policy = await loadCompanyDefaultVacationPolicy(db, { organizationId, year: input.year });
 	if (!policy || !isAccrualPolicy(policy)) return NOTHING_ACCRUED;
 
-	const employees = await getEmployeesWithVacationData(organizationId, input.year);
+	const employees = [...(await loadEmployeeEmployments(db, { organizationId }))].flatMap(
+		([id, employee]) => {
+			const employments = accruingEmployments(employee);
+			return employments.length > 0 ? [{ id, employments }] : [];
+		},
+	);
 	if (employees.length === 0) return NOTHING_ACCRUED;
+	const overrides = await loadEmployeeVacationOverrides(db, {
+		organizationId,
+		employeeIds: employees.map((emp) => emp.id),
+		year: input.year,
+	});
 
 	const accrued = await db
 		.select({
@@ -120,11 +157,8 @@ export async function accrueVacationPeriods(
 
 	const rows: (typeof vacationAdjustment.$inferInsert)[] = [];
 	for (const emp of employees) {
-		const annualDays = emp.allowance?.customAnnualDays
-			? Number.parseFloat(emp.allowance.customAnnualDays)
-			: Number.parseFloat(policy.defaultAnnualDays);
-		// `employee.start_date` holds the calendar date as UTC midnight.
-		const startDate = emp.startDate ? plainDateAt(instantFromDate(emp.startDate), "UTC") : null;
+		const customAnnualDays = overrides.get(emp.id)?.customAnnualDays;
+		const annualDays = Number.parseFloat(customAnnualDays || policy.defaultAnnualDays);
 
 		for (const month of months) {
 			if (accruedKeys.has(`${emp.id}:${month}`)) continue;
@@ -133,7 +167,7 @@ export async function accrueVacationPeriods(
 				annualDays,
 				year: input.year,
 				month,
-				startDate,
+				employments: emp.employments,
 			});
 			if (share === null) continue;
 			const days = share.toFixed(2);

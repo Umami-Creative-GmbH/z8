@@ -134,7 +134,7 @@ describe("prorated allowance explanation and overdrawn vacation (#1111)", () => 
 
 	const joinerAllowance = {
 		fullAllowance: 30,
-		allowance: 8,
+		days: 8,
 		reason: {
 			kind: "prorated",
 			employments: [

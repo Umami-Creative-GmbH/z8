@@ -34,7 +34,7 @@ export function explainVacationAllowance(input: {
 		return t(
 			"common.vacationAllowance.notEmployed",
 			"{allowance} of {fullAllowance} days: not employed in {year}",
-			{ allowance: allowance.allowance, fullAllowance: allowance.fullAllowance, year: input.year },
+			{ allowance: allowance.days, fullAllowance: allowance.fullAllowance, year: input.year },
 		);
 	}
 
@@ -48,7 +48,7 @@ export function explainVacationAllowance(input: {
 		"common.vacationAllowance.proratedSummary",
 		"{allowance} of {fullAllowance} days, prorated: {details}",
 		{
-			allowance: allowance.allowance,
+			allowance: allowance.days,
 			fullAllowance: allowance.fullAllowance,
 			details: parts.join("; "),
 		},

@@ -37,7 +37,7 @@ The first six months of an employment. Each rehire starts a new one.
 _Avoid_: probation, probationary period
 
 **Statutory minimum**:
-The fewest vacation days a policy's employees are legally owed in a full year. The prorated allowance never cuts below it once the waiting period is complete.
+The fewest vacation days a policy's employees are legally owed in a full year. The prorated allowance never cuts below it once the waiting period is complete, unless the employee leaves by 30 June.
 _Avoid_: legal allowance, minimum vacation
 
 **Overdrawn vacation**:
@@ -45,7 +45,7 @@ Vacation an employee has already taken beyond their prorated allowance. It is sh
 _Avoid_: negative balance, vacation debt
 
 **Vacation balance**:
-An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance.
+An employee's vacation allowance plus carryover and adjustments, minus the absence days of their approved and pending vacation in that year. On an accrual policy it starts at 0 instead of the allowance, and the accrual adjustments carry the allowance. Every page reads the same balance, from the organization's company default policy for the year: of the defaults in effect during the year, the one that started last.
 _Avoid_: remaining vacation, leave account
 
 **Accrual policy**:
@@ -53,7 +53,7 @@ A vacation policy that grants its allowance in monthly or biweekly shares instea
 _Avoid_: accrual type monthly (in prose)
 
 **Adjustment**:
-A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one month's share of an accrual policy's allowance, written by the system on the month's first day; an employee has at most one per month, and together they are the employee's accrual to date.
+A signed number of vacation days added to one employee's balance for one year. A **manual adjustment** is made by an admin or manager and appears in the adjustment history. An **accrual adjustment** is one month's share of an accrual policy's allowance for the days of the month the employee is employed, leavers included, written by the system on the month's first day; an employee has at most one per month, and together they are the employee's accrual to date.
 _Avoid_: correction, bonus days
 
 ### Cover

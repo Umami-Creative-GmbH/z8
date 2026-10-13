@@ -7,6 +7,7 @@
  */
 
 import { Temporal } from "temporal-polyfill";
+import type { VacationAccrualType } from "@/db/schema/vacation";
 import {
 	comparePlainDates,
 	instantFromDate,
@@ -14,6 +15,7 @@ import {
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { isAccrualPolicy } from "./vacation-policy-settings";
 
 /** One employment of an employee: from its first day to its last working day. */
 export interface EmploymentStint {
@@ -26,7 +28,7 @@ export interface EmploymentStint {
 /** The fields of a vacation policy (`vacation_allowance`) proration reads. */
 export interface ProrationPolicy {
 	defaultAnnualDays: string;
-	accrualType: string;
+	accrualType: VacationAccrualType;
 	prorateInStartAndExitYear: boolean;
 	statutoryMinimumDays: string;
 }
@@ -77,8 +79,8 @@ export type ProrationReason =
 export interface ProratedAllowance {
 	/** The policy's allowance for a full year, or the custom allowance. */
 	fullAllowance: number;
-	/** The vacation allowance of the year: the prorated allowance, or the full one. */
-	allowance: number;
+	/** The days of the vacation allowance of the year: the prorated allowance, or the full one. */
+	days: number;
 	reason: ProrationReason;
 }
 
@@ -106,7 +108,8 @@ export interface DepartureRecord {
  * - The first (legacy) employment starts on `employee.startDate`, which tracks admin edits; the
  *   legacy period's copy does not. A recorded rehire starts on its `startedAt` in `timezone`.
  *   An unknown-start period, or a legacy one without `employee.startDate`, has no known start.
- * - An employee without any period yet has one open employment from `employee.startDate`.
+ * - An employee without any period yet has one employment from `employee.startDate` to
+ *   `employee.endDate`, open while no end date is set.
  * - The last working day comes from the newest pending or effective departure of the period, even
  *   when that day is in the future. An "offboard now" departure has none, so it is the day of the
  *   cutoff's last instant in the departure's zone. A canceled or blocked departure ends nothing.
@@ -116,6 +119,8 @@ export interface DepartureRecord {
  */
 export function employmentStintsFromRecords(input: {
 	employeeStartDate: Date | null;
+	/** `employee.endDate`: the last working day while the employee has no employment period. */
+	employeeEndDate?: Date | null;
 	periods: readonly EmploymentPeriodRecord[];
 	departures: readonly DepartureRecord[];
 	/** The organization's timezone. */
@@ -123,7 +128,8 @@ export function employmentStintsFromRecords(input: {
 }): EmploymentStint[] {
 	const employeeStart = input.employeeStartDate ? utcCalendarDate(input.employeeStartDate) : null;
 	if (input.periods.length === 0) {
-		return [{ startDate: employeeStart, lastWorkingDay: null }];
+		const employeeEnd = input.employeeEndDate ? utcCalendarDate(input.employeeEndDate) : null;
+		return [{ startDate: employeeStart, lastWorkingDay: employeeEnd }];
 	}
 
 	return input.periods.map((period) => {
@@ -198,7 +204,7 @@ export function resolveVacationAllowance(input: {
 
 	const fullAllowance = Number.parseFloat(input.policy.defaultAnnualDays);
 	if (input.year < FIRST_PRORATED_YEAR) return full(fullAllowance, "before_rollout");
-	if (input.policy.accrualType !== "annual") return full(fullAllowance, "accrual_policy");
+	if (isAccrualPolicy(input.policy)) return full(fullAllowance, "accrual_policy");
 	if (!input.policy.prorateInStartAndExitYear) return full(fullAllowance, "proration_off");
 
 	const yearStart = Temporal.PlainDate.from({ year: input.year, month: 1, day: 1 });
@@ -213,7 +219,7 @@ export function resolveVacationAllowance(input: {
 		return full(fullAllowance, "no_known_start");
 	}
 	if (inYear.length === 0) {
-		return { fullAllowance, allowance: 0, reason: { kind: "not_employed" } };
+		return { fullAllowance, days: 0, reason: { kind: "not_employed" } };
 	}
 
 	const statutoryMinimum = Number.parseFloat(input.policy.statutoryMinimumDays);
@@ -237,13 +243,13 @@ export function resolveVacationAllowance(input: {
 	const sum = roundDays(prorated.reduce((total, employment) => total + employment.days, 0));
 	return {
 		fullAllowance,
-		allowance: Math.min(sum, fullAllowance),
+		days: Math.min(sum, fullAllowance),
 		reason: { kind: "prorated", employments: prorated, cappedAtFullAllowance: sum > fullAllowance },
 	};
 }
 
 function full(fullAllowance: number, cause: FullAllowanceCause): ProratedAllowance {
-	return { fullAllowance, allowance: fullAllowance, reason: { kind: "none", cause } };
+	return { fullAllowance, days: fullAllowance, reason: { kind: "none", cause } };
 }
 
 /** One employment's share of the year, or null when it covers the whole year. */

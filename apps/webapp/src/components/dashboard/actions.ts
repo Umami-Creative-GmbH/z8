@@ -1261,7 +1261,7 @@ export async function getVacationBalance(): Promise<
 		});
 
 		if (!balance) {
-			const startingDays = startingAllowanceDays(policy);
+			const startingDays = startingAllowanceDays({ policy });
 			return {
 				totalDays: startingDays,
 				usedDays: 0,

@@ -63,7 +63,7 @@ describe("VacationBalanceCard", () => {
 					overdrawnDays: 2,
 					allowance: {
 						fullAllowance: 30,
-						allowance: 8,
+						days: 8,
 						reason: {
 							kind: "prorated",
 							cappedAtFullAllowance: false,

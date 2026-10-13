@@ -154,15 +154,13 @@ describe("prorated allowance in every balance reader (#1110)", () => {
 			policy,
 		});
 
-		expect(Object.fromEntries([...allowances].map(([id, value]) => [id, value.allowance]))).toEqual(
-			{
-				[joinerId]: 8,
-				// 11 employment months: 27.5 → 28, even though the last working day is still ahead.
-				[leaverId]: 28,
-				[customJoinerId]: 25,
-				[fixture.employeeId]: 30,
-			},
-		);
+		expect(Object.fromEntries([...allowances].map(([id, value]) => [id, value.days]))).toEqual({
+			[joinerId]: 8,
+			// 11 employment months: 27.5 → 28, even though the last working day is still ahead.
+			[leaverId]: 28,
+			[customJoinerId]: 25,
+			[fixture.employeeId]: 30,
+		});
 		expect(allowances.get(joinerId)?.reason).toEqual({
 			kind: "prorated",
 			employments: [
@@ -199,7 +197,7 @@ describe("prorated allowance in every balance reader (#1110)", () => {
 			const dashboard = await getEnhancedVacationBalance({ employeeId, year: 2026 });
 
 			expect(absencesPage?.totalDays).toBe(expected);
-			expect(absencesPage?.allowance?.allowance).toBe(expected);
+			expect(absencesPage?.allowance?.days).toBe(expected);
 			expect(dashboard).toMatchObject({ totalDays: expected, baseAllowance: expected });
 			expect(managerAllowance(employeeId)).toBe(expected);
 		}

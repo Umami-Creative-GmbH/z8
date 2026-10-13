@@ -37,14 +37,14 @@ export function prorationNoticeRow(input: {
 }): ProrationNoticeRow | null {
 	const allowance = input.balance?.allowance;
 	if (!input.balance || !allowance) return null;
-	if (allowance.reason.kind !== "prorated" || allowance.allowance >= allowance.fullAllowance) {
+	if (allowance.reason.kind !== "prorated" || allowance.days >= allowance.fullAllowance) {
 		return null;
 	}
 	return {
 		employeeId: input.employeeId,
 		name: input.name,
 		fullAllowance: allowance.fullAllowance,
-		proratedAllowance: allowance.allowance,
+		proratedAllowance: allowance.days,
 		overdrawnDays: input.balance.overdrawnDays,
 		allowance,
 	};
