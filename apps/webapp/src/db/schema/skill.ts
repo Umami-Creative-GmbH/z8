@@ -1,5 +1,6 @@
 import {
 	boolean,
+	date,
 	index,
 	pgTable,
 	text,
@@ -78,8 +79,10 @@ export const employeeSkill = pgTable(
 			.notNull()
 			.references(() => skill.id, { onDelete: "cascade" }),
 
-		// Optional expiry tracking
-		expiresAt: timestamp("expires_at", { mode: "date" }), // null = never expires
+		// Skill expiry date (#1142): the last valid day, a plain day on the organization's
+		// calendar (`YYYY-MM-DD`); null = never expires. Compare it only through
+		// `isExpiredSkillOn` in `@/lib/scheduling/skill-expiry`.
+		expiresAt: date("expires_at", { mode: "string" }),
 
 		// Optional notes (certification number, training date, etc.)
 		notes: text("notes"),

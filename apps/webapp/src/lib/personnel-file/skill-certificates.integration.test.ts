@@ -546,7 +546,8 @@ describe("skill certificates (#1144)", () => {
 			await seedDocument("anna", { employeeSkillId: ids.annaForklift });
 
 			const result = await runSkills((service) =>
-				service.validateEmployeeForSubarea(ORG, ids.anna, subareaId),
+				// A shift after the skill expiry date (#1142).
+				service.validateEmployeeForSubarea(ORG, ids.anna, subareaId, "2026-02-01"),
 			);
 
 			expect(result.expiredSkills).toEqual([

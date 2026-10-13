@@ -130,6 +130,7 @@ export function ShiftDialog({
 		employeeId: formValues.employeeId,
 		subareaId: formValues.subareaId,
 		templateId: formValues.templateId,
+		date: formValues.date,
 	});
 
 	const staffingInput = getStaffingShiftInput({ ...formValues, shiftId: shift?.id ?? null });
@@ -185,7 +186,6 @@ export function ShiftDialog({
 							isValidatingSkills={isValidatingSkills}
 							isEditing={isEditing}
 							shift={shift}
-							organizationTimezone={organizationTimezone}
 							staffing={
 								staffingInput
 									? {

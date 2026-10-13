@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { z } from "zod";
 import {
@@ -17,13 +17,21 @@ import {
 	subareaSkillRequirement,
 	type shiftTemplateSkillRequirement as TemplateSkillReqTable,
 } from "@/db/schema";
+import { type Instant, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { loadSkillCertificatesOnFile } from "@/lib/personnel-file/skill-certificate-store";
+import {
+	DEFAULT_SKILL_EXPIRING_SOON_DAYS,
+	isExpiredSkillOn,
+	parseSkillExpiryDate,
+	skillExpiryToday,
+} from "@/lib/scheduling/skill-expiry";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
 type Skill = typeof SkillTable.$inferSelect;
-type EmployeeSkill = typeof EmployeeSkillTable.$inferSelect;
+export type EmployeeSkill = typeof EmployeeSkillTable.$inferSelect;
 type SubareaSkillReq = typeof SubareaSkillReqTable.$inferSelect;
 type TemplateSkillReq = typeof TemplateSkillReqTable.$inferSelect;
 type SkillOverride = typeof OverrideTable.$inferSelect;
@@ -61,9 +69,26 @@ export interface AssignSkillInput {
 	organizationId: string;
 	employeeId: string;
 	skillId: string;
-	expiresAt?: Date;
+	/** Skill expiry date: `YYYY-MM-DD`, the last valid day. Empty never expires. */
+	expiresAt?: string | null;
 	notes?: string;
 	assignedBy: string;
+}
+
+export interface UpdateEmployeeSkillExpiryInput {
+	/** The actor's organization; the employee and the skill must both belong to it. */
+	organizationId: string;
+	employeeId: string;
+	skillId: string;
+	/** Skill expiry date: `YYYY-MM-DD`, the last valid day. Null never expires. */
+	expiresAt: string | null;
+}
+
+/** The organization's today and the "Expiring soon" window the skill badges count from. */
+export interface SkillExpiryWindow {
+	/** `YYYY-MM-DD` on the organization's calendar. */
+	today: string;
+	expiringSoonDays: number;
 }
 
 export interface SetSkillRequirementsInput {
@@ -111,10 +136,12 @@ export interface SkillValidationResult {
 		category: SkillCategory;
 		isRequired: boolean;
 	}>;
+	/** Required skills that are expired skills on the shift date. */
 	expiredSkills: Array<{
 		id: string;
 		name: string;
-		expiresAt: Date;
+		/** Skill expiry date, `YYYY-MM-DD`. */
+		expiresAt: string;
 		/** A skill certificate is on file for this employee skill (#1144); never its content. */
 		certificateOnFile: boolean;
 	}>;
@@ -175,6 +202,11 @@ export class SkillService extends Context.Service<
 			input: AssignSkillInput,
 		) => Effect.Effect<EmployeeSkill, ValidationError | NotFoundError | DatabaseError>;
 
+		/** Changes an assigned employee skill's expiry date in place. */
+		readonly updateEmployeeSkillExpiry: (
+			input: UpdateEmployeeSkillExpiryInput,
+		) => Effect.Effect<EmployeeSkill, ValidationError | NotFoundError | DatabaseError>;
+
 		readonly removeSkillFromEmployee: (
 			organizationId: string,
 			employeeId: string,
@@ -186,10 +218,18 @@ export class SkillService extends Context.Service<
 			employeeId: string,
 		) => Effect.Effect<EmployeeSkillWithDetails[], NotFoundError | DatabaseError>;
 
+		/** The organization's today and the "Expiring soon" window for skill badges. */
+		readonly getSkillExpiryWindow: (
+			organizationId: string,
+			now?: Instant,
+		) => Effect.Effect<SkillExpiryWindow, DatabaseError>;
+
+		/** Employees holding every skill, none of them an expired skill on `shiftDate` (`YYYY-MM-DD`). */
 		readonly getQualifiedEmployeesForSkills: (
 			organizationId: string,
 			skillIds: string[],
-		) => Effect.Effect<string[], DatabaseError>;
+			shiftDate: string,
+		) => Effect.Effect<string[], ValidationError | DatabaseError>;
 
 		// Subarea skill requirements
 		readonly setSubareaSkillRequirements: (
@@ -211,21 +251,25 @@ export class SkillService extends Context.Service<
 			templateId: string,
 		) => Effect.Effect<Array<TemplateSkillReq & { skill: Skill }>, NotFoundError | DatabaseError>;
 
-		// Validation
+		// Validation: an employee skill counts on the shift date (`isExpiredSkillOn`).
 		readonly validateEmployeeForShift: (
 			organizationId: string,
 			employeeId: string,
 			shiftData: {
 				subareaId: string;
 				templateId?: string | null;
+				/** The shift date, `YYYY-MM-DD` on the organization's calendar. */
+				date: string;
 			},
-		) => Effect.Effect<SkillValidationResult, NotFoundError | DatabaseError>;
+		) => Effect.Effect<SkillValidationResult, ValidationError | NotFoundError | DatabaseError>;
 
 		readonly validateEmployeeForSubarea: (
 			organizationId: string,
 			employeeId: string,
 			subareaId: string,
-		) => Effect.Effect<SkillValidationResult, NotFoundError | DatabaseError>;
+			/** The shift date, `YYYY-MM-DD` on the organization's calendar. */
+			shiftDate: string,
+		) => Effect.Effect<SkillValidationResult, ValidationError | NotFoundError | DatabaseError>;
 
 		// Override recording
 		readonly recordOverride: (
@@ -387,6 +431,46 @@ export const SkillServiceLive = Layer.effect(
 			organizationId: string,
 			rows: Row[],
 		) => rows.filter((row) => row.skill.organizationId === organizationId);
+
+		const requireExpiryDate = (value: unknown) => {
+			const parsed = parseSkillExpiryDate(value);
+			return parsed.ok
+				? Effect.succeed(parsed.value)
+				: Effect.fail(new ValidationError({ message: parsed.message, field: "expiresAt" }));
+		};
+
+		const requireShiftDate = (value: string) =>
+			Effect.try({
+				try: () => parsePlainDate(value),
+				catch: () =>
+					new ValidationError({ message: "Shift date must use YYYY-MM-DD", field: "date" }),
+			});
+
+		/** The employee's skills of the organization, split by the expired skill rule on `shiftDate`. */
+		const loadEmployeeSkillsOn = (
+			organizationId: string,
+			employeeId: string,
+			shiftDate: string,
+			queryName: string,
+		) =>
+			dbService
+				.query(queryName, async () => {
+					const rows = await dbService.db.query.employeeSkill.findMany({
+						where: eq(employeeSkill.employeeId, employeeId),
+						with: { skill: true },
+					});
+					return withOrganizationSkills(organizationId, rows);
+				})
+				.pipe(
+					Effect.map((rows) => ({
+						valid: rows.filter((row) => !isExpiredSkillOn(row.expiresAt, shiftDate)),
+						expired: rows.flatMap((row) =>
+							row.expiresAt !== null && isExpiredSkillOn(row.expiresAt, shiftDate)
+								? [{ ...row, expiresAt: row.expiresAt }]
+								: [],
+						),
+					})),
+				);
 
 		/** Which of the employee skills a skill certificate names (#1144). */
 		const certificatesOnFile = (organizationId: string, employeeSkillIds: readonly string[]) =>
@@ -576,10 +660,11 @@ export const SkillServiceLive = Layer.effect(
 					}
 
 					const activeSkill = skillRecord;
+					const expiresAt = yield* requireExpiryDate(input.expiresAt);
 
 					// Validate expiry if skill requires it
-					if (activeSkill.requiresExpiry && !input.expiresAt) {
-						yield* Effect.fail(
+					if (activeSkill.requiresExpiry && !expiresAt) {
+						return yield* Effect.fail(
 							new ValidationError({
 								message: "This skill requires an expiry date",
 								field: "expiresAt",
@@ -594,14 +679,14 @@ export const SkillServiceLive = Layer.effect(
 							.values({
 								employeeId: input.employeeId,
 								skillId: input.skillId,
-								expiresAt: input.expiresAt,
+								expiresAt,
 								notes: input.notes,
 								assignedBy: input.assignedBy,
 							})
 							.onConflictDoUpdate({
 								target: [employeeSkill.employeeId, employeeSkill.skillId],
 								set: {
-									expiresAt: input.expiresAt,
+									expiresAt,
 									notes: input.notes,
 									assignedBy: input.assignedBy,
 									assignedAt: new Date(),
@@ -613,6 +698,64 @@ export const SkillServiceLive = Layer.effect(
 
 					return assignment;
 				}),
+
+			updateEmployeeSkillExpiry: (input) =>
+				Effect.gen(function* () {
+					yield* requireOrganizationEmployee(input.organizationId, input.employeeId);
+					const skillRecord = yield* requireOrganizationSkill(
+						input.organizationId,
+						input.skillId,
+						"getSkillForExpiryUpdate",
+					);
+					const expiresAt = yield* requireExpiryDate(input.expiresAt);
+
+					if (skillRecord.requiresExpiry && !expiresAt) {
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "This skill requires an expiry date",
+								field: "expiresAt",
+							}),
+						);
+					}
+
+					const updated = yield* dbService.query("updateEmployeeSkillExpiry", async () => {
+						const [row] = await dbService.db
+							.update(employeeSkill)
+							.set({ expiresAt })
+							.where(
+								and(
+									eq(employeeSkill.employeeId, input.employeeId),
+									eq(employeeSkill.skillId, input.skillId),
+								),
+							)
+							.returning();
+						return row;
+					});
+
+					if (!updated) {
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Employee skill assignment not found",
+								entityType: "employeeSkill",
+								entityId: `${input.employeeId}:${input.skillId}`,
+							}),
+						);
+					}
+
+					return updated;
+				}),
+
+			getSkillExpiryWindow: (organizationId, now = systemClock.nowInstant()) =>
+				dbService
+					.query("getSkillExpiryWindow", () =>
+						loadOrganizationTimezone(dbService.db, organizationId),
+					)
+					.pipe(
+						Effect.map((timezone) => ({
+							today: skillExpiryToday(now, timezone).toString(),
+							expiringSoonDays: DEFAULT_SKILL_EXPIRING_SOON_DAYS,
+						})),
+					),
 
 			removeSkillFromEmployee: (organizationId, employeeId, skillId) =>
 				Effect.gen(function* () {
@@ -671,8 +814,10 @@ export const SkillServiceLive = Layer.effect(
 					})) as EmployeeSkillWithDetails[];
 				}),
 
-			getQualifiedEmployeesForSkills: (organizationId, skillIds) =>
+			getQualifiedEmployeesForSkills: (organizationId, skillIds, shiftDate) =>
 				Effect.gen(function* () {
+					yield* requireShiftDate(shiftDate);
+
 					if (skillIds.length === 0) {
 						// No skills required = all employees qualify
 						const allEmployees = yield* dbService.query("getAllEmployees", async () => {
@@ -685,15 +830,9 @@ export const SkillServiceLive = Layer.effect(
 					}
 
 					const qualifiedEmployees = yield* dbService.query("getQualifiedEmployees", async () => {
-						// Get employees who have ALL required skills and none are expired
-						const now = new Date();
-
-						// Find employees with valid (non-expired) assignments for ALL required skills
+						// Employees who hold ALL required skills, none an expired skill on the shift date
 						const employeeSkills = await dbService.db.query.employeeSkill.findMany({
-							where: and(
-								inArray(employeeSkill.skillId, skillIds),
-								or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
-							),
+							where: inArray(employeeSkill.skillId, skillIds),
 							with: {
 								employee: {
 									columns: { id: true, organizationId: true },
@@ -709,7 +848,8 @@ export const SkillServiceLive = Layer.effect(
 						for (const es of employeeSkills) {
 							if (
 								es.employee.organizationId === organizationId &&
-								es.skill.organizationId === organizationId
+								es.skill.organizationId === organizationId &&
+								!isExpiredSkillOn(es.expiresAt, shiftDate)
 							) {
 								employeeSkillCounts.set(
 									es.employee.id,
@@ -853,36 +993,15 @@ export const SkillServiceLive = Layer.effect(
 					if (shiftData.templateId) {
 						yield* requireOrganizationTemplate(organizationId, shiftData.templateId);
 					}
+					yield* requireShiftDate(shiftData.date);
 
-					const now = new Date();
-
-					// Get employee's current valid skills
-					const employeeSkills = yield* dbService.query("getEmployeeValidSkills", async () => {
-						const rows = await dbService.db.query.employeeSkill.findMany({
-							where: and(
-								eq(employeeSkill.employeeId, employeeId),
-								or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
-							),
-							with: {
-								skill: true,
-							},
-						});
-						return withOrganizationSkills(organizationId, rows);
-					});
-
-					// Get expired skills (for warning)
-					const expiredSkills = yield* dbService.query("getExpiredSkills", async () => {
-						const rows = await dbService.db.query.employeeSkill.findMany({
-							where: and(
-								eq(employeeSkill.employeeId, employeeId),
-								lte(employeeSkill.expiresAt, now),
-							),
-							with: {
-								skill: true,
-							},
-						});
-						return withOrganizationSkills(organizationId, rows);
-					});
+					// The employee's skills, valid or expired on the shift date
+					const { valid: employeeSkills, expired: expiredSkills } = yield* loadEmployeeSkillsOn(
+						organizationId,
+						employeeId,
+						shiftData.date,
+						"getEmployeeSkillsOnShiftDate",
+					);
 
 					const validSkillIds = new Set(employeeSkills.map((es) => es.skillId));
 
@@ -947,15 +1066,14 @@ export const SkillServiceLive = Layer.effect(
 						Omit<SkillValidationResult["expiredSkills"][number], "certificateOnFile">
 					> = [];
 					for (const es of expiredSkills) {
-						const expiresAt = es.expiresAt;
-						if (!allRequirements.has(es.skillId) || !(expiresAt instanceof Date)) {
+						if (!allRequirements.has(es.skillId)) {
 							continue;
 						}
 
 						expiredSkillsResult.push({
 							id: es.skillId,
 							name: es.skill.name,
-							expiresAt,
+							expiresAt: es.expiresAt,
 						});
 					}
 
@@ -972,36 +1090,20 @@ export const SkillServiceLive = Layer.effect(
 					};
 				}),
 
-			validateEmployeeForSubarea: (organizationId, employeeId, subareaId) =>
+			validateEmployeeForSubarea: (organizationId, employeeId, subareaId, shiftDate) =>
 				Effect.gen(function* () {
 					yield* requireOrganizationEmployee(organizationId, employeeId);
 					yield* requireOrganizationSubarea(organizationId, subareaId);
+					yield* requireShiftDate(shiftDate);
 
-					const now = new Date();
-
-					// Get employee's current valid skills
-					const validEmployeeSkills = yield* dbService.query("getEmployeeValidSkillsForSubarea", async () => {
-						const rows = await dbService.db.query.employeeSkill.findMany({
-							where: and(
-								eq(employeeSkill.employeeId, employeeId),
-								or(isNull(employeeSkill.expiresAt), gt(employeeSkill.expiresAt, now)),
-							),
-							with: { skill: true },
-						});
-						return withOrganizationSkills(organizationId, rows);
-					});
-
-					// Get expired skills
-					const expiredSkillsData = yield* dbService.query("getExpiredSkillsForSubarea", async () => {
-						const rows = await dbService.db.query.employeeSkill.findMany({
-							where: and(
-								eq(employeeSkill.employeeId, employeeId),
-								lte(employeeSkill.expiresAt, now),
-							),
-							with: { skill: true },
-						});
-						return withOrganizationSkills(organizationId, rows);
-					});
+					// The employee's skills, valid or expired on the shift date
+					const { valid: validEmployeeSkills, expired: expiredSkillsData } =
+						yield* loadEmployeeSkillsOn(
+							organizationId,
+							employeeId,
+							shiftDate,
+							"getEmployeeSkillsOnShiftDateForSubarea",
+						);
 
 					const validSkillIds = new Set(validEmployeeSkills.map((es) => es.skillId));
 
@@ -1033,15 +1135,14 @@ export const SkillServiceLive = Layer.effect(
 						Omit<SkillValidationResult["expiredSkills"][number], "certificateOnFile">
 					> = [];
 					for (const es of expiredSkillsData) {
-						const expiresAt = es.expiresAt;
-						if (!requiredSkillIds.has(es.skillId) || !(expiresAt instanceof Date)) {
+						if (!requiredSkillIds.has(es.skillId)) {
 							continue;
 						}
 
 						expiredSkillsResult.push({
 							id: es.skillId,
 							name: es.skill.name,
-							expiresAt,
+							expiresAt: es.expiresAt,
 						});
 					}
 

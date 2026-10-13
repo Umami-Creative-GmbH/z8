@@ -182,13 +182,7 @@ describe("staffing suggestions", () => {
 		await fixture.pool.query(
 			`insert into employee_skill (id, employee_id, skill_id, expires_at, assigned_by)
 			 values ($1, $2, $3, $4, $5)`,
-			[
-				randomUUID(),
-				person.employeeId,
-				skillId,
-				expiresAt ? new Date(expiresAt) : null,
-				org.creator.userId,
-			],
+			[randomUUID(), person.employeeId, skillId, expiresAt, org.creator.userId],
 		);
 	}
 
@@ -334,7 +328,7 @@ describe("staffing suggestions", () => {
 		await holdSkill(org, qualified, firstAid, null);
 		await holdSkill(org, qualified, french, null);
 		// Valid today (2026-10-10), expired by the shift on 2026-10-20.
-		await holdSkill(org, expiring, firstAid, "2026-10-15T00:00:00Z");
+		await holdSkill(org, expiring, firstAid, "2026-10-15");
 
 		const suggestions = await suggest(
 			org,
@@ -363,11 +357,31 @@ describe("staffing suggestions", () => {
 				type: "expiredRequiredSkill",
 				skillId: firstAid,
 				skillName: "First aid",
-				expiresAt: "2026-10-15T00:00:00Z",
+				expiresAt: "2026-10-15",
 			},
 		]);
 		expect(suggestions[2].notes).toEqual([
 			{ type: "missingPreferredSkill", skillId: french, skillName: "French" },
+		]);
+	});
+
+	it("covers a shift on the skill expiry date and not the day after (#1142)", async () => {
+		const org = await fixture.organization(TZ);
+		const firstAid = await skill(org, "First aid", true);
+		const person = await fixture.seedEmployee({ organizationId: org.organizationId });
+		await holdSkill(org, person, firstAid, "2026-11-30");
+
+		const [onLastDay] = await suggest(org, [candidate(person, "Anna")], { date: "2026-11-30" });
+		const [dayAfter] = await suggest(org, [candidate(person, "Anna")], { date: "2026-12-01" });
+
+		expect(onLastDay.warnings).toEqual([]);
+		expect(dayAfter.warnings).toEqual([
+			{
+				type: "expiredRequiredSkill",
+				skillId: firstAid,
+				skillName: "First aid",
+				expiresAt: "2026-11-30",
+			},
 		]);
 	});
 

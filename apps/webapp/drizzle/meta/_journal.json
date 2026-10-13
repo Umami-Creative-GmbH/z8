@@ -1520,6 +1520,13 @@
       "when": 1802966400000,
       "tag": "0216_skill_certificate_link",
       "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1803052800000,
+      "tag": "0217_employee_skill_expiry_date",
+      "breakpoints": true
     }
   ]
 }

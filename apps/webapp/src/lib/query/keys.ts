@@ -692,11 +692,14 @@ export const queryKeys = {
 		subarea: (subareaId: string) => ["skills", "subarea", subareaId] as const,
 		// Template skill requirements
 		template: (templateId: string) => ["skills", "template", templateId] as const,
-		// Skill validation for shift assignment
-		validation: (employeeId: string, subareaId: string, templateId?: string) =>
-			["skills", "validation", employeeId, subareaId, templateId] as const,
-		// Qualified employees for a set of skills
-		qualified: (skillIds: string[]) => ["skills", "qualified", skillIds] as const,
+		// Skill validation for shift assignment on the shift date
+		validation: (employeeId: string, subareaId: string, date: string, templateId?: string) =>
+			["skills", "validation", employeeId, subareaId, date, templateId] as const,
+		// Qualified employees for a set of skills on the shift date
+		qualified: (skillIds: string[], date: string) =>
+			["skills", "qualified", skillIds, date] as const,
+		// The organization's today and the "Expiring soon" window of skill badges
+		expiryWindow: (orgId: string) => ["skills", "expiry-window", orgId] as const,
 	},
 	// Telegram integration
 	telegram: {

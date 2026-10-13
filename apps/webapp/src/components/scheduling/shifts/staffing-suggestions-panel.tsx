@@ -3,9 +3,9 @@
 import { IconAlertTriangle, IconLoader2, IconUserSearch } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useState } from "react";
-import { Temporal } from "temporal-polyfill";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { ComplianceFinding } from "@/lib/scheduling/compliance/types";
 import type {
@@ -22,7 +22,6 @@ interface StaffingSuggestionsPanelProps {
 	suggestions: StaffingSuggestion[] | undefined;
 	isLoading: boolean;
 	isError: boolean;
-	organizationTimezone: string;
 	onPick: (employeeId: string) => void;
 }
 
@@ -95,12 +94,7 @@ function complianceText(finding: ComplianceFinding, t: Translate, locale: string
 	}
 }
 
-function warningText(
-	warning: StaffingWarning,
-	t: Translate,
-	locale: string,
-	timezone: string,
-): string {
+function warningText(warning: StaffingWarning, t: Translate, locale: string): string {
 	switch (warning.type) {
 		case "missingRequiredSkill":
 			return t(
@@ -114,11 +108,7 @@ function warningText(
 				"{skill} expired on {date}",
 				{
 					skill: warning.skillName,
-					date: formatPlainDate(
-						Temporal.Instant.from(warning.expiresAt).toZonedDateTimeISO(timezone).toPlainDate(),
-						locale,
-						"dateMedium",
-					),
+					date: formatPlainDate(parsePlainDate(warning.expiresAt), locale, "dateMedium"),
 				},
 			);
 		case "compliance":
@@ -148,7 +138,6 @@ export function StaffingSuggestionsPanel({
 	suggestions,
 	isLoading,
 	isError,
-	organizationTimezone,
 	onPick,
 }: StaffingSuggestionsPanelProps) {
 	const { t } = useTranslate();
@@ -211,7 +200,7 @@ export function StaffingSuggestionsPanel({
 								{suggestion.warnings.length > 0 && (
 									<ul className="flex flex-col gap-y-0.5 text-xs text-amber-700 dark:text-amber-400">
 										{suggestion.warnings.map((warning) => {
-											const text = warningText(warning, t, locale, organizationTimezone);
+											const text = warningText(warning, t, locale);
 											return (
 												<li key={text} className="flex items-center gap-1">
 													<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />

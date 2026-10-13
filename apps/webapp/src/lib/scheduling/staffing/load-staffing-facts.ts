@@ -28,7 +28,11 @@ import type {
 } from "@/lib/scheduling/compliance/employee-compliance-input";
 import { shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import type { AbsenceRange } from "./staffing-blockers";
-import { resolveSkillRequirements, type StaffingSkillRequirement } from "./staffing-skills";
+import {
+	type HeldSkill,
+	resolveSkillRequirements,
+	type StaffingSkillRequirement,
+} from "./staffing-skills";
 
 type StaffingDatabase = Pick<typeof rootDatabase, "select">;
 
@@ -255,7 +259,7 @@ export interface StaffingRankingFacts {
 	/** Assigned shifts in any status from `shiftsFrom` on, the open shift itself left out. */
 	shifts: ComplianceShiftSource[];
 	workPeriods: ComplianceWorkPeriodSource[];
-	heldSkills: Array<{ skillId: string; expiresAt: Date | null }>;
+	heldSkills: HeldSkill[];
 	contract: StaffingContractFacts;
 }
 

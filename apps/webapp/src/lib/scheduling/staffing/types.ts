@@ -13,7 +13,7 @@ export type StaffingWarning =
 			type: "expiredRequiredSkill";
 			skillId: string;
 			skillName: string;
-			/** ISO instant the certificate expires at, before the shift ends. */
+			/** Skill expiry date (`YYYY-MM-DD`, last valid day), before the shift date. */
 			expiresAt: string;
 	  }
 	| { type: "compliance"; findingType: ComplianceFinding["type"]; finding: ComplianceFinding }

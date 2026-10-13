@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
@@ -21,6 +21,8 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { isExpiredSkillOn } from "@/lib/scheduling/skill-expiry";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -92,10 +94,12 @@ export interface SkillWarning {
 		category: string;
 		isRequired: boolean;
 	}>;
+	/** Required skills that are expired skills on the shift date. */
 	expiredSkills: Array<{
 		id: string;
 		name: string;
-		expiresAt: Date;
+		/** Skill expiry date, `YYYY-MM-DD`. */
+		expiresAt: string;
 	}>;
 }
 
@@ -476,47 +480,37 @@ export const ShiftServiceLive = Layer.effect(
 					let skillWarning: SkillWarning | undefined;
 					if (input.employeeId) {
 						const empId = input.employeeId;
-						const now = new Date();
+						// Skills count on the shift date, not today (#1142).
+						const shiftDate = shiftCalendarDate(input.date, input.timezone);
+						const ofOrganization = <Row extends { skill: { organizationId: string } }>(
+							rows: Row[],
+						) => rows.filter((row) => row.skill.organizationId === input.organizationId);
 
-						// Get employee's current valid skills
-						const validEmployeeSkills = yield* dbService.query("getEmployeeValidSkills", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, empId),
-									or(
-										isNull(employeeSkill.expiresAt),
-										gt(employeeSkill.expiresAt, now),
-									),
-								),
-								with: { skill: true },
-							});
-						});
-
-						// Get expired skills for warning
-						const expiredEmployeeSkills = yield* dbService.query("getExpiredSkills", async () => {
-							return await dbService.db.query.employeeSkill.findMany({
-								where: and(
-									eq(employeeSkill.employeeId, empId),
-									lte(employeeSkill.expiresAt, now),
-								),
-								with: { skill: true },
-							});
-						});
+						const employeeSkills = yield* dbService.query(
+							"getEmployeeSkillsOnShiftDate",
+							async () => {
+								return ofOrganization(
+									await dbService.db.query.employeeSkill.findMany({
+										where: eq(employeeSkill.employeeId, empId),
+										with: { skill: true },
+									}),
+								);
+							},
+						);
 
 						const validSkillIds = new Set(
-							validEmployeeSkills.map((es) => es.skillId),
+							employeeSkills
+								.filter((es) => !isExpiredSkillOn(es.expiresAt, shiftDate))
+								.map((es) => es.skillId),
 						);
 
 						// Get subarea requirements
 						const subareaReqs = yield* dbService.query("getSubareaSkillRequirements", async () => {
-							return await dbService.db.query.subareaSkillRequirement.findMany(
-								{
-									where: eq(
-										subareaSkillRequirement.subareaId,
-										input.subareaId,
-									),
+							return ofOrganization(
+								await dbService.db.query.subareaSkillRequirement.findMany({
+									where: eq(subareaSkillRequirement.subareaId, input.subareaId),
 									with: { skill: true },
-								},
+								}),
 							);
 						});
 
@@ -529,14 +523,11 @@ export const ShiftServiceLive = Layer.effect(
 						if (input.templateId) {
 							const templateId = input.templateId;
 							templateReqs = yield* dbService.query("getTemplateSkillRequirements", async () => {
-								return await dbService.db.query.shiftTemplateSkillRequirement.findMany(
-									{
-										where: eq(
-											shiftTemplateSkillRequirement.templateId,
-											templateId,
-										),
+								return ofOrganization(
+									await dbService.db.query.shiftTemplateSkillRequirement.findMany({
+										where: eq(shiftTemplateSkillRequirement.templateId, templateId),
 										with: { skill: true },
-									},
+									}),
 								);
 							});
 						}
@@ -574,21 +565,20 @@ export const ShiftServiceLive = Layer.effect(
 
 						// Map expired skills (only those that are required)
 						const expiredSkills: SkillWarning["expiredSkills"] = [];
-						for (const es of expiredEmployeeSkills) {
+						for (const es of employeeSkills) {
 							const expiresAt = es.expiresAt;
 							if (
 								!allRequirements.has(es.skillId) ||
-								!(expiresAt instanceof Date)
+								expiresAt === null ||
+								!isExpiredSkillOn(expiresAt, shiftDate)
 							) {
 								continue;
 							}
 
-							const normalizedExpiresAt: Date = new Date(expiresAt.getTime());
-
 							expiredSkills.push({
 								id: es.skillId,
 								name: es.skill.name,
-								expiresAt: normalizedExpiresAt,
+								expiresAt,
 							});
 						}
 

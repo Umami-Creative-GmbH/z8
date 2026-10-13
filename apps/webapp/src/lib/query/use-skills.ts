@@ -8,14 +8,17 @@ import {
 	getEmployeeSkills,
 	getOrganizationSkills,
 	getQualifiedEmployeesForSkills,
+	getSkillExpiryWindow,
 	removeSkillFromEmployee,
 	setSubareaSkillRequirements,
 	setTemplateSkillRequirements,
+	updateEmployeeSkillExpiry,
 	updateSkill,
 	validateEmployeeForShift,
 } from "@/app/[locale]/(app)/settings/skills/actions";
 import type {
 	EmployeeSkillWithDetails,
+	SkillExpiryWindow,
 	SkillValidationResult,
 	SkillWithRelations,
 } from "@/lib/effect/services/skill.service";
@@ -133,6 +136,22 @@ export function useEmployeeSkills(options: UseEmployeeSkillsOptions) {
 	});
 }
 
+/** The organization's today and the "Expiring soon" window the skill badges count from. */
+export function useSkillExpiryWindow(options: { organizationId: string; enabled?: boolean }) {
+	const { organizationId, enabled = true } = options;
+
+	return useQuery({
+		queryKey: queryKeys.skills.expiryWindow(organizationId),
+		queryFn: async (): Promise<SkillExpiryWindow> => {
+			const result = await getSkillExpiryWindow();
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: enabled && !!organizationId,
+		staleTime: 5 * 60 * 1000, // 5 minutes
+	});
+}
+
 export function useAssignSkillToEmployee() {
 	const queryClient = useQueryClient();
 
@@ -140,10 +159,34 @@ export function useAssignSkillToEmployee() {
 		mutationFn: async (data: {
 			employeeId: string;
 			skillId: string;
-			expiresAt?: Date;
+			/** `YYYY-MM-DD`, the last valid day. */
+			expiresAt?: string | null;
 			notes?: string;
 		}) => {
 			const result = await assignSkillToEmployee(data);
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: queryKeys.skills.employee(variables.employeeId),
+			});
+		},
+	});
+}
+
+/** Changes an assigned employee skill's expiry date in place. */
+export function useUpdateEmployeeSkillExpiry() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: async (data: {
+			employeeId: string;
+			skillId: string;
+			/** `YYYY-MM-DD`, the last valid day; null never expires. */
+			expiresAt: string | null;
+		}) => {
+			const result = await updateEmployeeSkillExpiry(data);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -223,47 +266,54 @@ export function useSetTemplateSkillRequirements() {
 // Skill Validation Hooks
 // =============================================================================
 
+const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 interface UseSkillValidationOptions {
 	employeeId: string;
 	subareaId: string;
 	templateId?: string | null;
+	/** The shift date, `YYYY-MM-DD`: skills count on it, not today. */
+	date: string;
 	enabled?: boolean;
 }
 
 export function useSkillValidation(options: UseSkillValidationOptions) {
-	const { employeeId, subareaId, templateId, enabled = true } = options;
+	const { employeeId, subareaId, templateId, date, enabled = true } = options;
 
 	return useQuery({
-		queryKey: queryKeys.skills.validation(employeeId, subareaId, templateId ?? undefined),
+		queryKey: queryKeys.skills.validation(employeeId, subareaId, date, templateId ?? undefined),
 		queryFn: async (): Promise<SkillValidationResult> => {
 			const result = await validateEmployeeForShift(employeeId, {
 				subareaId,
 				templateId,
+				date,
 			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
-		enabled: enabled && !!employeeId && !!subareaId,
+		enabled: enabled && !!employeeId && !!subareaId && PLAIN_DATE.test(date),
 		staleTime: 30 * 1000, // 30 seconds - refresh frequently for real-time validation
 	});
 }
 
 interface UseQualifiedEmployeesOptions {
 	skillIds: string[];
+	/** The shift date, `YYYY-MM-DD`: skills count on it, not today. */
+	date: string;
 	enabled?: boolean;
 }
 
 export function useQualifiedEmployees(options: UseQualifiedEmployeesOptions) {
-	const { skillIds, enabled = true } = options;
+	const { skillIds, date, enabled = true } = options;
 
 	return useQuery({
-		queryKey: queryKeys.skills.qualified(skillIds),
+		queryKey: queryKeys.skills.qualified(skillIds, date),
 		queryFn: async (): Promise<string[]> => {
-			const result = await getQualifiedEmployeesForSkills(skillIds);
+			const result = await getQualifiedEmployeesForSkills(skillIds, date);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
-		enabled: enabled && skillIds.length > 0,
+		enabled: enabled && skillIds.length > 0 && PLAIN_DATE.test(date),
 		staleTime: 60 * 1000, // 1 minute
 	});
 }
