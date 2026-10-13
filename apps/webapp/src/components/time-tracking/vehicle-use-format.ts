@@ -7,7 +7,8 @@ import type { WorkVehicleUseChangeRefusalCode } from "@/lib/time-tracking/vehicl
 
 /**
  * Vehicle use as text (#1120): the work period, the edit dialogs and the
- * approval card share one wording. `t` is the caller's Tolgee translate function.
+ * approval card share one wording. `t` is the caller's Tolgee translate function;
+ * kilometres are formatted in the app's `locale`, never the browser default.
  */
 type Translate = (
 	key: string,
@@ -26,6 +27,16 @@ export type VehicleUseDisplay =
 			distanceKm: number | null;
 	  };
 
+/** Whole kilometres in the app locale, e.g. "12,000" or "12.000". */
+export function formatKm(value: number, locale: string): string {
+	return new Intl.NumberFormat(locale).format(value);
+}
+
+/** An organization vehicle as pickers and displays name it: "Name (PLATE)". */
+export function vehicleOptionLabel(vehicle: { name: string; licencePlate: string }): string {
+	return `${vehicle.name} (${vehicle.licencePlate})`;
+}
+
 export function vehicleUseVehicleText(t: Translate, display: VehicleUseDisplay): string {
 	if (display.state === "none") return t("timeTracking.vehicleUse.noVehicle", "No vehicle");
 	if (display.vehicle.kind === "own") {
@@ -38,7 +49,11 @@ export function vehicleUseVehicleText(t: Translate, display: VehicleUseDisplay):
 }
 
 /** The readings and the driven distance, e.g. "12,000 → 12,085 km · 85 km driven". */
-export function vehicleUseKilometresText(t: Translate, display: VehicleUseDisplay): string {
+export function vehicleUseKilometresText(
+	t: Translate,
+	display: VehicleUseDisplay,
+	locale: string,
+): string {
 	if (display.state === "none") return "";
 	const parts: string[] = [];
 	if (display.startKm !== null || display.endKm !== null) {
@@ -47,38 +62,42 @@ export function vehicleUseKilometresText(t: Translate, display: VehicleUseDispla
 				start:
 					display.startKm === null
 						? t("timeTracking.vehicleUse.readingMissing", "–")
-						: display.startKm.toLocaleString(),
+						: formatKm(display.startKm, locale),
 				end:
 					display.endKm === null
 						? t("timeTracking.vehicleUse.readingMissing", "–")
-						: display.endKm.toLocaleString(),
+						: formatKm(display.endKm, locale),
 			}),
 		);
 	}
 	if (display.distanceKm !== null) {
 		parts.push(
 			t("timeTracking.vehicleUse.distanceText", "{distance} km driven", {
-				distance: display.distanceKm.toLocaleString(),
+				distance: formatKm(display.distanceKm, locale),
 			}),
 		);
 	}
 	return parts.join(" · ");
 }
 
-export function vehicleUseText(t: Translate, display: VehicleUseDisplay): string {
-	const kilometres = vehicleUseKilometresText(t, display);
+export function vehicleUseText(t: Translate, display: VehicleUseDisplay, locale: string): string {
+	const kilometres = vehicleUseKilometresText(t, display, locale);
 	const vehicle = vehicleUseVehicleText(t, display);
 	return kilometres ? `${vehicle} · ${kilometres}` : vehicle;
 }
 
 /** The translated message of a plausibility warning (#1121); it never blocks saving. */
-export function vehicleUseWarningText(t: Translate, warning: VehicleUseWarning): string {
+export function vehicleUseWarningText(
+	t: Translate,
+	warning: VehicleUseWarning,
+	locale: string,
+): string {
 	switch (warning.code) {
 		case "start_below_last_end":
 			return t(
 				"timeTracking.vehicleUse.warning.startBelowLastEnd",
 				"The start reading is below this vehicle's last recorded end reading ({lastEndKm} km).",
-				{ lastEndKm: warning.lastRecordedEndKm.toLocaleString() },
+				{ lastEndKm: formatKm(warning.lastRecordedEndKm, locale) },
 			);
 		case "vehicle_on_other_live_work":
 			return t(
@@ -90,8 +109,8 @@ export function vehicleUseWarningText(t: Translate, warning: VehicleUseWarning):
 				"timeTracking.vehicleUse.warning.speedAboveLimit",
 				"The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
 				{
-					speed: warning.averageKmh.toLocaleString(),
-					limit: PLAUSIBLE_AVERAGE_SPEED_KMH.toLocaleString(),
+					speed: formatKm(warning.averageKmh, locale),
+					limit: formatKm(PLAUSIBLE_AVERAGE_SPEED_KMH, locale),
 				},
 			);
 		case "distance_above_limit":
@@ -99,8 +118,8 @@ export function vehicleUseWarningText(t: Translate, warning: VehicleUseWarning):
 				"timeTracking.vehicleUse.warning.distanceAboveLimit",
 				"{distance} km is more than {limit} km in one work period.",
 				{
-					distance: warning.distanceKm.toLocaleString(),
-					limit: PLAUSIBLE_DISTANCE_KM.toLocaleString(),
+					distance: formatKm(warning.distanceKm, locale),
+					limit: formatKm(PLAUSIBLE_DISTANCE_KM, locale),
 				},
 			);
 	}
@@ -145,6 +164,11 @@ export function vehicleUseRefusalText(t: Translate, code: WorkVehicleUseChangeRe
 			return t(
 				"timeTracking.vehicleUse.refusal.splitOutOfRange",
 				"The kilometres at the split must lie within the work period's kilometres.",
+			);
+		case "work_period_distance_claimed":
+			return t(
+				"timeTracking.vehicleUse.refusal.distanceClaimed",
+				"This work period's distance is on an expense item. Remove the item from the expense report before splitting the work period.",
 			);
 	}
 }

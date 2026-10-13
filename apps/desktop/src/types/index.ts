@@ -47,6 +47,8 @@ export type ClockCommandOutcome =
 				status: ClockStatus | null;
 				statusRefreshFailed: boolean;
 				contextChanged: boolean;
+				/** Entered vehicle use was not sent: the legacy idle break cannot carry it. */
+				vehicleUseLeftOut?: boolean;
 			};
 	  }
 	| {

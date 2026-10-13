@@ -160,6 +160,33 @@ export async function isVehicleOnOtherLiveWork(
 }
 
 /**
+ * Which of these vehicles another employee's live work records, in one query:
+ * the batched `isVehicleOnOtherLiveWork` for a client that warns locally (the
+ * kiosk, #1123). Order follows `vehicleIds`.
+ */
+export async function vehiclesOnOtherLiveWork(
+	reader: Reader,
+	input: { organizationId: string; vehicleIds: readonly string[]; employeeId: string },
+): Promise<string[]> {
+	if (input.vehicleIds.length === 0) return [];
+	const rows = await reader
+		.select({ vehicleId: workPeriod.vehicleId })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				inArray(workPeriod.vehicleId, [...input.vehicleIds]),
+				ne(workPeriod.employeeId, input.employeeId),
+				eq(workPeriod.isActive, true),
+				isNull(workPeriod.endTime),
+				isNull(workPeriod.deletedAt),
+			),
+		);
+	const used = new Set(rows.map((row) => row.vehicleId));
+	return input.vehicleIds.filter((id) => used.has(id));
+}
+
+/**
  * The plausibility warnings for one employee's vehicle use on work from `start`
  * to `end` (null while live). `excludeWorkPeriodId` is the work being edited.
  * Warnings never refuse anything.

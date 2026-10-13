@@ -3,6 +3,20 @@ import type { timeRecordWork, workPeriod } from "@/db/schema";
 import type { WorkVehicleUseColumns } from "./work-vehicle-use";
 
 /**
+ * The five vehicle use columns of `work_period` or `time_record_work`, for a select
+ * whose row `vehicleUseFromColumns` reads.
+ */
+export function vehicleUseSelectColumns(table: typeof workPeriod | typeof timeRecordWork) {
+	return {
+		vehicleKind: table.vehicleKind,
+		vehicleId: table.vehicleId,
+		odometerStartKm: table.odometerStartKm,
+		odometerEndKm: table.odometerEndKm,
+		drivenDistanceKm: table.drivenDistanceKm,
+	};
+}
+
+/**
  * Optimistic predicates (#1120): the row still records exactly this vehicle use.
  * For guarded updates of `work_period` or `time_record_work`.
  */

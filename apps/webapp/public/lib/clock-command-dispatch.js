@@ -68,7 +68,10 @@ function buildCommand(request, target) {
 	return command;
 }
 
-/** Vehicle use in its fixed key order; only the fields a clock command names (#1122). */
+/**
+ * Vehicle use in its fixed key order (#1122). The worker freezes only clock-ins and
+ * clock-outs, so only their fields are kept; a break's reading never reaches it.
+ */
 function frozenVehicleUse(value) {
 	const frozen = {};
 	if (value.vehicle) {
@@ -77,7 +80,7 @@ function frozenVehicleUse(value) {
 				? { kind: "organization", vehicleId: value.vehicle.vehicleId }
 				: { kind: value.vehicle.kind };
 	}
-	for (const field of ["startKm", "endKm", "distanceKm", "readingKm"]) {
+	for (const field of ["startKm", "endKm", "distanceKm"]) {
 		if (typeof value[field] === "number") frozen[field] = value[field];
 	}
 	return frozen;

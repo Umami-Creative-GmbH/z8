@@ -279,8 +279,9 @@ function wholeKilometres(value) {
 }
 
 /**
- * Vehicle use beside the event (#1122): absent, or the fields its kind may name.
- * A clock-in names its vehicle; a clock-out at least one field; a break its reading.
+ * Vehicle use beside the event (#1122): absent, or the fields its kind may name. The queue
+ * holds clock-ins and clock-outs only: a clock-in names its vehicle, a clock-out at least one
+ * field.
  */
 function validVehicleUse(kind, vehicleUse) {
 	if (vehicleUse === undefined) return true;

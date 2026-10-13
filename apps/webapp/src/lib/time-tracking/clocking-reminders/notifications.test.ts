@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
-import { buildClockingReminderNotification } from "./notifications";
+import {
+	buildClockingReminderNotification,
+	buildDrivingDetailsReminderNotification,
+} from "./notifications";
 
 const at = parseInstant;
 
@@ -247,5 +250,70 @@ describe("driving details missing reminders (#1127)", () => {
 			},
 		});
 		expect(build("de").metadata?.i18n).toMatchObject({ params: { date: "07.09.2026" } });
+	});
+
+	it("lists every newly due work period in one reminder per morning (#807 decision 8)", () => {
+		const due = (workPeriodId: string, workDay: string) => ({
+			type: "driving_details_missing_reminder" as const,
+			occasionKey: `driving_details_missing_reminder:work_period:${workPeriodId}`,
+			day: parsePlainDate(workDay),
+			expectedAt: at("2026-09-09T06:00:00Z"),
+			shift: null,
+			drivingWork: { workPeriodId, workDay: parsePlainDate(workDay) },
+		});
+		const build = (locale: string) =>
+			buildDrivingDetailsReminderNotification({
+				reminders: [
+					due("work-2", "2026-09-08"),
+					due("work-1", "2026-09-07"),
+					due("work-3", "2026-09-08"),
+				],
+				organizationId: "org-1",
+				userId: "user-1",
+				timezone: "Europe/Berlin",
+				locale,
+			});
+
+		const notification = build("en");
+		expect(notification).toMatchObject({
+			type: "driving_details_missing_reminder",
+			title: "Add your driving details",
+			message:
+				"3 work periods on Sep 7, 2026 and Sep 8, 2026 are missing their vehicle or an odometer reading. Add them to the work periods.",
+			actionUrl: "/time-tracking",
+			idempotencyKey: "clocking-reminder:driving_details_missing_reminder:work_period:work-1",
+			metadata: {
+				occasionKeys: [
+					"driving_details_missing_reminder:work_period:work-1",
+					"driving_details_missing_reminder:work_period:work-2",
+					"driving_details_missing_reminder:work_period:work-3",
+				],
+				workPeriodIds: ["work-1", "work-2", "work-3"],
+				i18n: {
+					titleKey: "common:notifications.content.drivingDetailsMissingReminder.title",
+					messageKey: "common:notifications.content.drivingDetailsMissingReminderMany.message",
+					params: { count: "3", dates: "Sep 7, 2026 and Sep 8, 2026" },
+				},
+			},
+		});
+		expect(notification).not.toHaveProperty("entityId");
+		expect(build("de").metadata?.i18n).toMatchObject({
+			params: { dates: "07.09.2026 und 08.09.2026" },
+		});
+
+		// One period: the single reminder, unchanged.
+		expect(
+			buildDrivingDetailsReminderNotification({
+				reminders: [due("work-1", "2026-09-07")],
+				organizationId: "org-1",
+				userId: "user-1",
+				timezone: "Europe/Berlin",
+				locale: "en",
+			}),
+		).toMatchObject({
+			message:
+				"Your work on Sep 7, 2026 is missing its vehicle or an odometer reading. Add them to the work period.",
+			entityId: "work-1",
+		});
 	});
 });

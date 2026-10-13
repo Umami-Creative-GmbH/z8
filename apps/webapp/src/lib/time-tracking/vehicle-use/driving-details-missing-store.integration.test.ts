@@ -14,7 +14,10 @@ import {
 	createClockingService,
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
-import { listDrivingDetailsMissing } from "./driving-details-missing-store";
+import {
+	countDrivingDetailsMissing,
+	listDrivingDetailsMissing,
+} from "./driving-details-missing-store";
 import { loadTeamDrivingDetails } from "./driving-details-team-store";
 
 vi.mock("next/server", async (original) =>
@@ -271,5 +274,36 @@ describe("driving details missing on PostgreSQL", () => {
 		const outside = await load({ employeeId: unmanaged.employeeId });
 		expect(outside.filters.employeeId).toBeNull();
 		expect(outside.rows).toHaveLength(2);
+	});
+
+	it("counts the flagged work of active employees in SQL, matching the list (/today)", async () => {
+		const org = await organization();
+		const active = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const inactive = await fixture.seedEmployee({ organizationId: org.organizationId });
+		await switchOn(org);
+		await assign(org, { type: "organization" }, "expected");
+		await work(org, active, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
+		await work(org, active, "2026-09-08T06:00:00Z", "2026-09-08T14:00:00Z");
+		await work(org, inactive, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
+		await fixture.pool.query("update employee set is_active = false where id = $1", [
+			inactive.employeeId,
+		]);
+		const employeeIds = [active.employeeId, inactive.employeeId];
+
+		await expect(
+			countDrivingDetailsMissing(fixture.db, { organizationId: org.organizationId, employeeIds }),
+		).resolves.toBe(2);
+		const listed = await loadTeamDrivingDetails(fixture.db, {
+			organizationId: org.organizationId,
+			scope: { kind: "all" },
+			filters: { teamId: null, employeeId: null },
+		});
+		expect(listed.rows).toHaveLength(2);
+		await expect(
+			countDrivingDetailsMissing(fixture.db, {
+				organizationId: org.organizationId,
+				employeeIds: [],
+			}),
+		).resolves.toBe(0);
 	});
 });

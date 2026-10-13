@@ -1,6 +1,7 @@
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
+import type { TeamsVehicleUsePromptTarget } from "@/lib/teams/vehicle-use-card";
 
 const logger = createLogger("BotCommand:VehicleUse");
 
@@ -14,12 +15,7 @@ const logger = createLogger("BotCommand:VehicleUse");
 export async function withVehicleUsePrompt(
 	ctx: BotCommandContext,
 	reply: BotCommandResponse,
-	target: {
-		organizationId: string;
-		employeeId: string;
-		stage: "clock_in" | "clock_out";
-		entryId: string;
-	},
+	target: TeamsVehicleUsePromptTarget,
 	t: BotTranslateFn,
 ): Promise<BotCommandResponse> {
 	if (ctx.platform !== "teams") return reply;

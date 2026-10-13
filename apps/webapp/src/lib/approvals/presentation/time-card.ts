@@ -14,6 +14,7 @@ import {
 	formatInstant,
 	formatUtcOffset,
 } from "@/lib/datetime/temporal-format";
+import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 import {
 	organizationVehicleIdOf,
 	type WorkVehicleUse,
@@ -37,6 +38,7 @@ import {
 import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
 import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
 import type { WorkPeriodEndpointFacts } from "../evidence/work-period-facts";
+import { submittedVehicleUseWarnings } from "../server/time-correction-vehicle-use-warnings";
 import type { ApprovalDatabase } from "../server/types";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import type {
@@ -47,6 +49,7 @@ import type {
 	ApprovalReviewSummary,
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
+import { vehicleUseWarningBotText } from "./vehicle-use-warning-text";
 
 /**
  * An endpoint's full local date and time in the offset captured with that
@@ -197,6 +200,8 @@ export function buildTimeCorrectionCardFacts(
 	categoryNames: Readonly<Record<string, string | null>>,
 	display: DisplayContext,
 	t: BotTranslateFn,
+	/** Plausibility warnings of the requested vehicle use (#1121); never a blocker. */
+	vehicleUseWarnings: readonly VehicleUseWarning[] = [],
 ): ApprovalCardFact[] | null {
 	const roles = roleFacts(revision, t);
 	if (!roles) return null;
@@ -275,6 +280,15 @@ export function buildTimeCorrectionCardFacts(
 				label: t("bot.approval.card.vehicleUse", "Vehicle use"),
 				value: `${vehicleUseCardText(baseline.attribution.vehicleUse ?? null, categoryNames, t)} → ${vehicleUseCardText(requested.vehicleUse.value, categoryNames, t)}`,
 			});
+			// The same plausibility warnings the employee saw on entry (#1121).
+			if (vehicleUseWarnings.length > 0) {
+				facts.push({
+					label: t("bot.approval.card.vehicleUseWarnings", "Please check"),
+					value: vehicleUseWarnings
+						.map((warning) => vehicleUseWarningBotText(t, warning, display.locale))
+						.join(" "),
+				});
+			}
 		}
 	}
 	facts.push({
@@ -493,10 +507,11 @@ async function loadCanonicalTimeCardRevision(
 		const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
 		if (comparison.kind !== "current") return { status: "material_change" };
 		const names = await loadTimeCorrectionCategoryNames(database, input.organizationId, revision);
+		const warnings = await submittedVehicleUseWarnings(database, revision);
 		return {
 			status: "current",
 			submittedRevisionId: revision.id,
-			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t),
+			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t, warnings),
 		};
 	}
 	const revision = await loadCanonicalWorkPeriodSubmittedRevision(database, scope);
@@ -530,10 +545,11 @@ async function loadLegacyTimeCardRevision(
 		const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
 		if (comparison.kind !== "current") return { status: "material_change" };
 		const names = await loadTimeCorrectionCategoryNames(database, organizationId, revision);
+		const warnings = await submittedVehicleUseWarnings(database, revision);
 		return {
 			status: "current",
 			submittedRevisionId: revision.id,
-			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t),
+			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t, warnings),
 		};
 	}
 	const { revision } = cycle;

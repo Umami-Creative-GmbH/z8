@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
 import type { CalendarEvent } from "@/lib/calendar/types";
@@ -219,6 +220,39 @@ describe("SplitWorkPeriodDialog", () => {
 				/Odometer reading at the split/,
 			);
 			expect(value).toBeUndefined();
+		});
+
+		it("explains that claimed work can't be split until its expense item is removed", async () => {
+			const split = vi.mocked(splitWorkPeriod);
+			split.mockReset();
+			split.mockResolvedValue({
+				success: false,
+				error: "The work's distance is on an expense item",
+				code: "work_period_distance_claimed",
+			});
+			const error = vi.mocked(toast.error);
+			error.mockClear();
+			render(
+				<SplitWorkPeriodDialog
+					event={drivenEvent({
+						vehicle: { kind: "own" },
+						startKm: null,
+						endKm: null,
+						distanceKm: 120,
+					})}
+					open={true}
+					onOpenChange={vi.fn()}
+					displayContext={{ locale: "en-US", timezone: "Europe/Berlin", timeFormat: "24h" }}
+				/>,
+			);
+			fireEvent.change(screen.getByLabelText("Split at"), { target: { value: "13:30" } });
+			fireEvent.click(screen.getByRole("button", { name: "Split Work Period" }));
+
+			await waitFor(() =>
+				expect(error).toHaveBeenCalledWith(
+					"This work period's distance is on an expense item. Remove the item from the expense report before splitting the work period.",
+				),
+			);
 		});
 	});
 });

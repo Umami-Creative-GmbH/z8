@@ -126,7 +126,10 @@ export async function changeLiveWorkVehicleUse(input: {
 					),
 				)
 				.for("update");
-			if (!locked?.isActive || locked.endTime !== null) throw notLive(workPeriodId);
+			// The same live-work check as before the lock: work closed meanwhile is not live.
+			if (!locked?.isActive || locked.endTime !== null || locked.clockOutId !== null) {
+				throw notLive(workPeriodId);
+			}
 			await assertNoUnresolvedWorkPeriodReview(tx, organizationId, locked);
 			await assertWorkOpen(tx, {
 				organizationId,
@@ -146,6 +149,7 @@ export async function changeLiveWorkVehicleUse(input: {
 				previous,
 				resulting: input.vehicleUse,
 			});
+			// Explicit columns: the approval write-boundary scanner reads them.
 			const columns = vehicleUseColumns(input.vehicleUse);
 			await tx
 				.update(workPeriod)

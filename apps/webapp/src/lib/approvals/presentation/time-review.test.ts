@@ -331,5 +331,50 @@ describe("buildTimeReviewSections", () => {
 		expect(rows(changed.sections, "Requested correction")[6]?.[1]).toMatchObject({
 			original: { kind: "work_category", value: { state: "unavailable", id: "cat-old" } },
 		});
+
+		// Requested vehicle use shows the employee's warnings on entry as an evidence row (#1121).
+		const withVehicle = buildTimeReviewSections({
+			status: "evidenced",
+			kind: "time_correction",
+			revision: {
+				...correction,
+				facts: {
+					...correction.facts,
+					requested: {
+						...correction.facts.requested,
+						vehicleUse: {
+							kind: "set",
+							value: { vehicle: { kind: "own" }, startKm: null, endKm: null, distanceKm: 1_600 },
+						},
+					},
+					changeMask: { ...correction.facts.changeMask, vehicleUse: true },
+				},
+			},
+			comparison: { kind: "current" },
+			decisions: [],
+			categoryNames: {},
+			vehicleUseWarnings: [{ code: "distance_above_limit", distanceKm: 1_600 }],
+		});
+		const warningRow = withVehicle.sections
+			.flatMap((section) => (section.type === "key_value" ? section.rows : []))
+			.find(
+				(row) =>
+					typeof row.label === "object" &&
+					row.label.key === "approvals:approvals.vehicleUseWarnings",
+			);
+		expect(warningRow).toMatchObject({
+			tone: "warning",
+			value: {
+				key: "approvals:approvals.vehicleUseWarningList",
+				params: {
+					warnings: [
+						{
+							key: "approvals:approvals.vehicleUseWarning.distanceAboveLimit",
+							params: { distance: 1_600, limit: 1_500 },
+						},
+					],
+				},
+			},
+		});
 	});
 });

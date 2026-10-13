@@ -298,4 +298,49 @@ describe("buildTimeCorrectionCardFacts", () => {
 		});
 		expect(buildTimeCorrectionCardFacts(missingLocation, {}, berlin24, t)).toBeNull();
 	});
+
+	it("shows the requested vehicle use with the warnings the employee saw on entry (#1121)", () => {
+		const van = "0b9f8f2e-6c1d-4d6c-9a43-7f2f3c1f5e10";
+		const vehicleChange = correctionRevision({
+			intent: "metadata_only",
+			requested: {
+				clockIn: null,
+				clockOut: null,
+				workLocationType: { kind: "unchanged" },
+				workCategoryId: { kind: "unchanged" },
+				vehicleUse: {
+					kind: "set",
+					value: {
+						vehicle: { kind: "organization", vehicleId: van },
+						startKm: 11_000,
+						endKm: 12_600,
+						distanceKm: 1_600,
+					},
+				},
+			},
+			changeMask: {
+				clockIn: false,
+				clockOut: false,
+				workLocation: false,
+				workCategory: false,
+				vehicleUse: true,
+			},
+		});
+		const facts = byLabel(
+			buildTimeCorrectionCardFacts(vehicleChange, { [van]: "Van (M-VW 1)" }, berlin24, t, [
+				{ code: "start_below_last_end", lastRecordedEndKm: 12_085 },
+				{ code: "distance_above_limit", distanceKm: 1_600 },
+			]),
+		);
+		expect(facts["Vehicle use"]).toBe(
+			"No vehicle → Van (M-VW 1) · 11000 → 12600 km · 1600 km driven",
+		);
+		expect(facts["Please check"]).toBe(
+			"The start reading is below this vehicle's last recorded end reading (12,085 km). 1,600 km is more than 1,500 km in one work period.",
+		);
+		// Without warnings the card has no such fact.
+		expect(
+			byLabel(buildTimeCorrectionCardFacts(vehicleChange, { [van]: "Van (M-VW 1)" }, berlin24, t)),
+		).not.toHaveProperty("Please check");
+	});
 });

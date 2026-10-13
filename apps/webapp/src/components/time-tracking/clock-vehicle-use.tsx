@@ -3,6 +3,7 @@
 import { IconCar, IconCheck, IconLoader2, IconPencil, IconX } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { TFnType } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -16,7 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { queryKeys } from "@/lib/query/keys";
 import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { isWorkVehicleUseRefusalCode } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import {
+	breakClosingVehicleUse,
 	breakVehicleUseFromReading,
 	clockInVehicleUseFromDraft,
 	clockOutVehicleUseFromDraft,
@@ -31,7 +34,7 @@ import {
 	vehicleUseFromDraft,
 } from "./vehicle-use-draft";
 import { VehicleUseFields, VehicleUseWarnings } from "./vehicle-use-fields";
-import { vehicleUseRefusalText, vehicleUseText } from "./vehicle-use-format";
+import { vehicleOptionLabel, vehicleUseRefusalText, vehicleUseText } from "./vehicle-use-format";
 
 /**
  * Vehicle use at the web clock (#1122, spec #807): what the popover and the
@@ -105,36 +108,53 @@ export type ClockVehicleUseState = ReturnType<typeof useClockVehicleUse>;
 
 /**
  * Tells the employee that entered vehicle use could not be sent with the clock
- * event, which went ahead without it.
+ * event, which went ahead without it: the entry was refused, or the accepted
+ * event could not carry it (`outcome.vehicleUseLeftOut`, an offline clock event
+ * under a service worker older than #1122).
  */
 export function warnVehicleUseLeftOut(
 	result: { ok: true } | { ok: false; code: Parameters<typeof vehicleUseRefusalText>[1] },
 	t: TFnType,
+	outcome?: object,
 ) {
-	if (result.ok) return;
-	toast.warning(t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded"), {
-		description: vehicleUseRefusalText(t, result.code),
-	});
+	if (!result.ok) {
+		toast.warning(t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded"), {
+			description: vehicleUseRefusalText(t, result.code),
+		});
+		return;
+	}
+	if (outcome && "vehicleUseLeftOut" in outcome && outcome.vehicleUseLeftOut === true) {
+		toast.warning(t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded"), {
+			description: t(
+				"timeTracking.vehicleUse.notSentOffline",
+				"It could not be saved with this offline clock event. Add it to the work period once you are online.",
+			),
+		});
+	}
 }
 
 function vehicleLabel(context: ClockVehicleUseContext | null, use: WorkVehicleUse) {
 	if (use.vehicle.kind === "own") return null;
 	const { vehicleId } = use.vehicle;
 	const vehicle = context?.vehicles.find((option) => option.id === vehicleId);
-	return vehicle ? `${vehicle.name} (${vehicle.licencePlate})` : null;
+	return vehicle ? vehicleOptionLabel(vehicle) : null;
 }
 
-function liveText(t: TFnType, state: ClockVehicleUseState, use: WorkVehicleUse) {
-	return vehicleUseText(t, {
-		state: "recorded",
-		vehicle:
-			use.vehicle.kind === "own"
-				? { kind: "own" }
-				: { kind: "organization", label: vehicleLabel(state.context, use) },
-		startKm: use.startKm,
-		endKm: use.endKm,
-		distanceKm: use.distanceKm,
-	});
+function liveText(t: TFnType, state: ClockVehicleUseState, use: WorkVehicleUse, locale: string) {
+	return vehicleUseText(
+		t,
+		{
+			state: "recorded",
+			vehicle:
+				use.vehicle.kind === "own"
+					? { kind: "own" }
+					: { kind: "organization", label: vehicleLabel(state.context, use) },
+			startKm: use.startKm,
+			endKm: use.endKm,
+			distanceKm: use.distanceKm,
+		},
+		locale,
+	);
 }
 
 /** Plausibility warnings (#1121) for what a clock event is about to record. */
@@ -199,6 +219,7 @@ export function ClockOutVehicleUse({
 	t: TFnType;
 }) {
 	const id = useId();
+	const locale = useLocale();
 	const [editing, setEditing] = useState(false);
 	const { live } = state;
 	const closingUse =
@@ -243,7 +264,7 @@ export function ClockOutVehicleUse({
 			<div className="flex items-center justify-between gap-2">
 				<p className="flex min-w-0 items-center gap-1.5 text-sm">
 					<IconCar className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-					<span className="truncate">{liveText(t, state, live)}</span>
+					<span className="truncate">{liveText(t, state, live, locale)}</span>
 				</p>
 				{state.asks ? (
 					<Button
@@ -314,6 +335,10 @@ function LiveVehicleUseEditor({
 	}));
 	const [saving, setSaving] = useState(false);
 	const result = vehicleUseFromDraft({ ...draft, endKm: "", distanceKm: "" });
+	// Over the live work so far: a start reading below the vehicle's last end reading warns (#1121).
+	const warnings = useClockWarnings(
+		result.ok && result.input ? { vehicleUse: result.input, closing: workPeriodId } : null,
+	);
 	const context = state.context;
 	if (!context) return null;
 
@@ -335,7 +360,7 @@ function LiveVehicleUseEditor({
 		}
 		const code = saved && !saved.success ? saved.code : undefined;
 		toast.error(
-			code && isRefusalCode(code)
+			code && isWorkVehicleUseRefusalCode(code)
 				? vehicleUseRefusalText(t, code)
 				: t("timeTracking.vehicleUse.liveChangeFailed", "The vehicle use could not be changed"),
 		);
@@ -348,6 +373,7 @@ function LiveVehicleUseEditor({
 				onChange={setDraft}
 				vehicles={context.vehicles}
 				lastEndKmByVehicleId={context.lastEndKmByVehicleId}
+				warnings={warnings}
 				expected={state.mode === "expected"}
 				readings="start"
 				disabled={saving}
@@ -371,20 +397,6 @@ function LiveVehicleUseEditor({
 	);
 }
 
-const REFUSAL_CODES = new Set([
-	"end_before_start",
-	"invalid_reading",
-	"invalid_distance",
-	"invalid_vehicle",
-	"vehicle_use_off",
-	"vehicle_not_found",
-	"vehicle_archived",
-]);
-
-function isRefusalCode(code: string): code is Parameters<typeof vehicleUseRefusalText>[1] {
-	return REFUSAL_CODES.has(code);
-}
-
 /** A break's one optional odometer reading, while the live work records a vehicle. */
 export function BreakVehicleReading({
 	state,
@@ -396,6 +408,13 @@ export function BreakVehicleReading({
 	t: TFnType;
 }) {
 	const id = useId();
+	// The reading ends the work the break closes: warned about as its end reading (#1121).
+	const closingUse = state.asks ? breakClosingVehicleUse(state.live, state.breakReading) : null;
+	const warnings = useClockWarnings(
+		closingUse && state.takenBreak.ok && state.liveWorkPeriodId
+			? { vehicleUse: closingUse, closing: state.liveWorkPeriodId }
+			: null,
+	);
 	if (!state.asks || !state.live) return null;
 	return (
 		<div className="grid gap-1.5">
@@ -421,6 +440,7 @@ export function BreakVehicleReading({
 					{vehicleUseRefusalText(t, state.takenBreak.code)}
 				</p>
 			) : null}
+			{warnings.length > 0 ? <VehicleUseWarnings warnings={warnings} t={t} /> : null}
 		</div>
 	);
 }

@@ -967,6 +967,15 @@ async fn execute_legacy(
     command: ClockCommand,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     let (service, webapp_url, token) = (session.service, session.endpoint, session.token);
+    // The legacy break requests cannot carry the break's odometer reading: it is
+    // left out, and the outcome says so instead of dropping it silently.
+    let vehicle_use_left_out = matches!(
+        command,
+        ClockCommand::Break {
+            vehicle_use: Some(_),
+            ..
+        }
+    );
     let (action_type, payload, result) = match command {
         ClockCommand::ClockIn(location, _) => (
             ActionType::ClockIn,
@@ -1015,10 +1024,11 @@ async fn execute_legacy(
     };
 
     match result {
-        Ok(write) => {
+        Ok(mut write) => {
             if let Some(status) = &write.status {
                 remember_status(session.store, session.endpoint, session.token, status);
             }
+            write.vehicle_use_left_out = vehicle_use_left_out;
             Ok(ClockCommandOutcome::Committed { write })
         }
         Err(_) => {

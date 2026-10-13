@@ -165,6 +165,47 @@ describe("driving details missing reminders on PostgreSQL", () => {
 		]);
 	});
 
+	it("sends one reminder per morning listing every newly due work period (#807 decision 8)", async () => {
+		const org = await organization();
+		const driver = await employee(org);
+		const morning = await work(org, driver, "2026-09-21T05:00:00Z", "2026-09-21T09:00:00Z");
+		const afternoon = await work(org, driver, "2026-09-21T10:00:00Z", "2026-09-21T14:00:00Z");
+
+		await run("2026-09-22T06:00:00Z");
+		const { rows: first } = await fixture.pool.query<{
+			entity_id: string | null;
+			metadata: string;
+		}>("select entity_id, metadata from notification where user_id = $1", [driver.userId]);
+		expect(first).toHaveLength(1);
+		expect(first[0]?.entity_id).toBeNull();
+		const metadata = JSON.parse(first[0]?.metadata ?? "{}") as {
+			workPeriodIds?: string[];
+			i18n?: object;
+		};
+		expect(metadata.workPeriodIds?.slice().sort()).toEqual([morning, afternoon].sort());
+		expect(metadata.i18n).toMatchObject({
+			messageKey: "common:notifications.content.drivingDetailsMissingReminderMany.message",
+			params: { count: "2" },
+		});
+		expect(pushesTo(driver)).toBe(1);
+		const [push] = channels.push.mock.calls.at(-1) as unknown as [string, { body?: string }];
+		expect(push).toBe(driver.userId);
+
+		// The next morning reminds only of work newly due then; each work period at most once.
+		const next = await work(org, driver, "2026-09-22T06:00:00Z", "2026-09-22T14:00:00Z");
+		await run("2026-09-23T06:00:00Z");
+		expect(await reminders(driver)).toEqual([
+			{ type: "driving_details_missing_reminder", entity_id: null },
+			{ type: "driving_details_missing_reminder", entity_id: next },
+		]);
+		expect(pushesTo(driver)).toBe(2);
+		const { rows: occasions } = await fixture.pool.query(
+			"select count(*)::int as count from clocking_reminder_occasion where employee_id = $1",
+			[driver.employeeId],
+		);
+		expect(occasions).toEqual([{ count: 3 }]);
+	});
+
 	it("sends nothing once the details are completed, after its due window, or with the switch off", async () => {
 		const org = await organization();
 		const off = await organization({ enabled: false });

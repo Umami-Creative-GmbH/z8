@@ -207,13 +207,12 @@ pub async fn drain(
         }
 
         // A saved version 4 command waits while the server does not list it
-        // (#1124); it is never rewritten to an older version.
-        let version = serde_json::from_str::<serde_json::Value>(&command.command)
-            .ok()
-            .and_then(|body| body["version"].as_u64());
+        // (#1124); it is never rewritten to an older version. The version
+        // stored at capture decides, so a command whose body cannot be read
+        // waits too instead of being sent as if its version were unknown.
         if !capabilities.supports(command.kind)
             || !capabilities.accepts_fresh_commands()
-            || version.is_some_and(|version| !capabilities.accepts_version(version))
+            || !capabilities.accepts_version(u64::from(command.command_version))
         {
             let failure = CommandFailure {
                 class: FailureClass::Paused,

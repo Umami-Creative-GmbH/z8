@@ -45,8 +45,18 @@ export type VehicleRefusal =
 	| "vehicle_archived"
 	| "licence_plate_taken"
 	| "driver_not_found"
-	/** The vehicle was recorded on work: it can only be archived. */
+	/** The vehicle was recorded on work, or an open time correction requests it: it can only be archived. */
 	| "vehicle_used";
+
+/**
+ * The foreign keys of work that records an organization vehicle, on the period
+ * and its canonical record (0218): they refuse deleting a recorded vehicle (the
+ * demo reset archives such a vehicle instead).
+ */
+export const RECORDED_VEHICLE_FOREIGN_KEYS = [
+	"workPeriod_vehicle_fk",
+	"timeRecordWork_vehicle_fk",
+] as const;
 
 /** A plate as stored and shown: trimmed, upper-cased, with single spaces. */
 export function normalizeLicencePlate(raw: string): string {

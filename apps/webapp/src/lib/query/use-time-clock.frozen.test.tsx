@@ -142,11 +142,35 @@ describe("useTimeClock frozen commands (#279)", () => {
 			const { result } = render();
 			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 
-			await result.current.clockIn({ browserTimezone: "Europe/Berlin", vehicleUse });
+			const outcome = await result.current.clockIn({
+				browserTimezone: "Europe/Berlin",
+				vehicleUse,
+			});
 
 			expect(clock.submitClockCommand).toHaveBeenCalledWith(
 				expect.not.objectContaining({ vehicleUse }),
 			);
+			// The clock tells the employee their vehicle use was not recorded.
+			expect(outcome).toMatchObject({ success: true, vehicleUseLeftOut: true });
+		});
+
+		it("says nothing was left out when vehicle use is frozen with the event", async () => {
+			const clock = offlineClock({
+				isOnline: false,
+				isOffline: true,
+				commandCapabilities: v4,
+				workerCommandVersions: [2, 3, 4],
+			});
+			mocks.useOfflineClock.mockReturnValue(clock);
+			const { result } = render();
+			await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
+
+			const outcome = await result.current.clockIn({
+				browserTimezone: "Europe/Berlin",
+				vehicleUse,
+			});
+
+			expect(outcome).not.toHaveProperty("vehicleUseLeftOut");
 		});
 	});
 

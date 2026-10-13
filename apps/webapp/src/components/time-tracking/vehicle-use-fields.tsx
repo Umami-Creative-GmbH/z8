@@ -2,6 +2,7 @@
 
 import { IconAlertTriangle, IconCar } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { useId } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +17,19 @@ import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibi
 import type {
 	WorkVehicleOption,
 	WorkVehicleUse,
+	WorkVehicleUseFormContext,
+	WorkVehicleUseInput,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { useVehicleUseWarnings } from "./use-vehicle-use-warnings";
 import type { VehicleUseDraft } from "./vehicle-use-draft";
 import { vehicleUseFromDraft, withPickedVehicle } from "./vehicle-use-draft";
-import { vehicleUseRefusalText, vehicleUseText, vehicleUseWarningText } from "./vehicle-use-format";
+import {
+	formatKm,
+	vehicleOptionLabel,
+	vehicleUseRefusalText,
+	vehicleUseText,
+	vehicleUseWarningText,
+} from "./vehicle-use-format";
 
 const NONE = "none";
 
@@ -58,6 +68,7 @@ export function VehicleUseFields({
 	t: TFnType;
 }) {
 	const id = useId();
+	const locale = useLocale();
 	const onlyStart = readings === "start";
 	const result = vehicleUseFromDraft(value);
 	const hasVehicle = value.vehicle !== "";
@@ -103,7 +114,7 @@ export function VehicleUseFields({
 									? (() => {
 											const vehicle = vehicles.find((option) => option.id === value.vehicle);
 											return vehicle
-												? `${vehicle.name} (${vehicle.licencePlate})`
+												? vehicleOptionLabel(vehicle)
 												: t(
 														"timeTracking.vehicleUse.unknownVehicle",
 														"Unknown vehicle (unavailable)",
@@ -121,7 +132,7 @@ export function VehicleUseFields({
 						</SelectItem>
 						{selectable.map((vehicle) => (
 							<SelectItem key={vehicle.id} value={vehicle.id}>
-								{`${vehicle.name} (${vehicle.licencePlate})`}
+								{vehicleOptionLabel(vehicle)}
 								{vehicle.archived ? ` · ${t("timeTracking.vehicleUse.archived", "archived")}` : ""}
 							</SelectItem>
 						))}
@@ -172,7 +183,7 @@ export function VehicleUseFields({
 					) : derived !== null ? (
 						<p className="col-span-2 text-xs text-muted-foreground" aria-live="polite">
 							{t("timeTracking.vehicleUse.derivedDistance", "Driven distance: {distance} km", {
-								distance: derived.toLocaleString(),
+								distance: formatKm(derived, locale),
 							})}
 						</p>
 					) : null}
@@ -190,8 +201,52 @@ export function VehicleUseFields({
 	);
 }
 
+/**
+ * Vehicle use fields with their plausibility warnings (#1121), checked on the
+ * server for what is entered: a manual entry over its entered times, an edit
+ * over the times as edited. `checkFor` names the check of entered vehicle use
+ * (its identity and how to run it), or null to check nothing yet. Warnings
+ * never block saving.
+ */
+export function CheckedVehicleUseFields({
+	value,
+	onChange,
+	context,
+	checkFor,
+	disabled = false,
+	t,
+}: {
+	value: VehicleUseDraft;
+	onChange: (value: VehicleUseDraft) => void;
+	context: Pick<WorkVehicleUseFormContext, "mode" | "vehicles" | "lastEndKmByVehicleId">;
+	checkFor: (
+		input: WorkVehicleUseInput,
+	) => { key: string; run: () => Promise<VehicleUseWarning[]> } | null;
+	disabled?: boolean;
+	t: TFnType;
+}) {
+	const entered = vehicleUseFromDraft(value);
+	const check = entered.ok && entered.input ? checkFor(entered.input) : null;
+	const warnings = useVehicleUseWarnings(check?.key ?? null, async () =>
+		check ? check.run() : [],
+	);
+	return (
+		<VehicleUseFields
+			value={value}
+			onChange={onChange}
+			vehicles={context.vehicles}
+			lastEndKmByVehicleId={context.lastEndKmByVehicleId}
+			warnings={warnings}
+			expected={context.mode === "expected"}
+			disabled={disabled}
+			t={t}
+		/>
+	);
+}
+
 /** Plausibility warnings for entered vehicle use (#1121); saving still succeeds. */
 export function VehicleUseWarnings({ warnings, t }: { warnings: VehicleUseWarning[]; t: TFnType }) {
+	const locale = useLocale();
 	return (
 		<div
 			role="status"
@@ -201,7 +256,7 @@ export function VehicleUseWarnings({ warnings, t }: { warnings: VehicleUseWarnin
 			{warnings.map((warning) => (
 				<p key={warning.code} className="flex items-start gap-1.5">
 					<IconAlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
-					<span>{vehicleUseWarningText(t, warning)}</span>
+					<span>{vehicleUseWarningText(t, warning, locale)}</span>
 				</p>
 			))}
 		</div>
@@ -218,6 +273,7 @@ export function VehicleUseSummary({
 	vehicleLabel: string | null;
 	t: TFnType;
 }) {
+	const locale = useLocale();
 	return (
 		<div className="space-y-1">
 			<p className="text-sm text-muted-foreground">
@@ -225,16 +281,20 @@ export function VehicleUseSummary({
 			</p>
 			<p className="flex items-center gap-1.5 text-sm">
 				<IconCar className="size-4 text-muted-foreground" aria-hidden="true" />
-				{vehicleUseText(t, {
-					state: "recorded",
-					vehicle:
-						use.vehicle.kind === "own"
-							? { kind: "own" }
-							: { kind: "organization", label: vehicleLabel },
-					startKm: use.startKm,
-					endKm: use.endKm,
-					distanceKm: use.distanceKm,
-				})}
+				{vehicleUseText(
+					t,
+					{
+						state: "recorded",
+						vehicle:
+							use.vehicle.kind === "own"
+								? { kind: "own" }
+								: { kind: "organization", label: vehicleLabel },
+						startKm: use.startKm,
+						endKm: use.endKm,
+						distanceKm: use.distanceKm,
+					},
+					locale,
+				)}
 			</p>
 		</div>
 	);

@@ -62,7 +62,10 @@ export function KioskConfirmation({
 				<span className="text-5xl font-semibold tabular-nums">{time}</span>
 				{note ? <span className="text-lg text-muted-foreground">{note}</span> : null}
 				{warning ? (
-					<span className="flex items-center gap-2 text-lg text-amber-900 dark:text-amber-200">
+					<span
+						role="status"
+						className="flex items-center gap-2 text-lg text-amber-900 dark:text-amber-200"
+					>
 						<IconAlertTriangle className="size-6 shrink-0" aria-hidden="true" />
 						{warning}
 					</span>

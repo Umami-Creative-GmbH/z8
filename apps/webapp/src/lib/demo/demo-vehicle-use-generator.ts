@@ -11,9 +11,10 @@ import {
 	vehicleUseSetting,
 	workPeriod,
 } from "@/db/schema";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type VehicleUseAssignmentRule,
+	vehicleUseAssignmentRule,
 	vehicleUseModeFor,
 } from "@/lib/time-tracking/vehicle-use/policy";
 import type { DemoDataOptions } from "./demo-data.service";
@@ -140,8 +141,9 @@ export async function assignDemoVehicleUseToPeriods(
 	};
 }
 
+/** Midnight UTC of the day the demo range starts, as the database boundary takes it. */
 function startOfUtcDay(date: Date): Date {
-	return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+	return dateFromInstant(instantFromDate(date).toZonedDateTimeISO("UTC").startOfDay().toInstant());
 }
 
 /**
@@ -228,15 +230,7 @@ async function enableDemoVehicleUse(input: {
 			})
 			.from(vehicleUseAssignment)
 			.where(assignmentScope);
-		return rows.map((row): VehicleUseAssignmentRule => {
-			if (row.assignmentType === "team" && row.teamId) {
-				return { assignmentType: "team", teamId: row.teamId, mode: row.mode };
-			}
-			if (row.assignmentType === "employee" && row.employeeId) {
-				return { assignmentType: "employee", employeeId: row.employeeId, mode: row.mode };
-			}
-			return { assignmentType: "organization", mode: row.mode };
-		});
+		return rows.map(vehicleUseAssignmentRule);
 	});
 }
 

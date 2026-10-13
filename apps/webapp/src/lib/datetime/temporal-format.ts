@@ -146,6 +146,14 @@ export function offsetMinutesToTimeZoneId(offsetMinutes: number): string {
 	return timezone;
 }
 
+/**
+ * The work-local day an instant falls on, at the UTC offset captured with the
+ * work (never the viewer's time zone; `docs/refs/timekeeping.md`).
+ */
+export function workDayOf(instant: Instant, offsetMinutes: number): PlainDate {
+	return instant.toZonedDateTimeISO(offsetMinutesToTimeZoneId(offsetMinutes)).toPlainDate();
+}
+
 export function formatCapturedOffsetInstant(
 	instant: Instant,
 	context: {

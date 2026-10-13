@@ -1,9 +1,12 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { db } from "@/db";
 import { clockingReminderOccasion } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import { buildClockingReminderNotification } from "./notifications";
+import {
+	buildClockingReminderNotification,
+	buildDrivingDetailsReminderNotification,
+} from "./notifications";
 import type { DueClockingReminder } from "./occasion";
 
 type Database = Pick<typeof db, "insert" | "delete">;
@@ -74,6 +77,72 @@ export async function sendClockingReminder(
 					eq(clockingReminderOccasion.id, claimed.id),
 				),
 			);
+		throw error;
+	}
+}
+
+/**
+ * Sends one driving details reminder (#1127, #807 decision 8) about every given occasion the run
+ * can still claim: each work period is reminded at most once, and an employee's newly due work
+ * periods of a morning arrive in one notification. Claims and release follow
+ * `sendClockingReminder`: all claims are released together when nothing was delivered.
+ * Returns how many occasions this run claimed and how many were claimed already.
+ */
+export async function sendDrivingDetailsReminder(
+	input: {
+		reminders: readonly DueClockingReminder[];
+		recipient: ClockingReminderRecipient;
+		now: Instant;
+	},
+	deps: { database: Database; transport: ClockingReminderTransport },
+): Promise<{ sent: number; alreadySent: number }> {
+	const { reminders, recipient } = input;
+	if (reminders.length === 0) return { sent: 0, alreadySent: 0 };
+	const claimed = await deps.database
+		.insert(clockingReminderOccasion)
+		.values(
+			reminders.map((reminder) => ({
+				organizationId: recipient.organizationId,
+				employeeId: recipient.employeeId,
+				type: reminder.type,
+				occasionKey: reminder.occasionKey,
+				expectedAt: dateFromInstant(reminder.expectedAt),
+				sentAt: dateFromInstant(input.now),
+			})),
+		)
+		.onConflictDoNothing({
+			target: [clockingReminderOccasion.organizationId, clockingReminderOccasion.occasionKey],
+		})
+		.returning({
+			id: clockingReminderOccasion.id,
+			occasionKey: clockingReminderOccasion.occasionKey,
+		});
+	const alreadySent = reminders.length - claimed.length;
+	if (claimed.length === 0) return { sent: 0, alreadySent };
+	const claimedKeys = new Set(claimed.map((claim) => claim.occasionKey));
+	try {
+		const locale = await deps.transport.locale(recipient);
+		await deps.transport.notify(
+			buildDrivingDetailsReminderNotification({
+				reminders: reminders.filter((reminder) => claimedKeys.has(reminder.occasionKey)),
+				organizationId: recipient.organizationId,
+				userId: recipient.userId,
+				timezone: recipient.timezone,
+				locale,
+			}),
+			locale,
+		);
+		return { sent: claimed.length, alreadySent };
+	} catch (error) {
+		await deps.database.delete(clockingReminderOccasion).where(
+			and(
+				eq(clockingReminderOccasion.organizationId, recipient.organizationId),
+				inArray(
+					clockingReminderOccasion.id,
+					claimed.map((claim) => claim.id),
+				),
+			),
+		);
 		throw error;
 	}
 }

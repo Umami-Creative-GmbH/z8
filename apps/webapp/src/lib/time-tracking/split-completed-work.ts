@@ -485,6 +485,7 @@ export async function splitCompletedWork(
 	const vehicleSplit = await resolveWorkVehicleUseSplit(tx, {
 		organizationId,
 		employeeId,
+		workPeriodId: period.id,
 		use: sourceVehicleUse,
 		value: command.request.vehicleSplitKm,
 	});

@@ -1,7 +1,6 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import * as z from "zod";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { resolveManualWallClock } from "@/lib/datetime/temporal-boundaries";
@@ -10,40 +9,14 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 import { checkWorkVehicleUsePlausibility } from "@/lib/time-tracking/vehicle-use/plausibility-check";
 import { resolveVehicleUseMode } from "@/lib/time-tracking/vehicle-use/resolver";
+import {
+	type CheckVehicleUseWarningsInput,
+	checkVehicleUseWarningsSchema,
+} from "@/lib/time-tracking/vehicle-use/vehicle-use-warnings-input";
 import { buildWorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
 import { resolveManualEntryTarget, resolveManualEntryTargetZone } from "./manual-entry-target";
 import { logger } from "./shared";
-
-const kilometres = z.number().nullable().optional();
-const wallClockTime = z.string().regex(/^\d{2}:\d{2}$/);
-const checkVehicleUseWarningsSchema = z.object({
-	/** Omit for the signed-in employee; otherwise someone they may enter work for. */
-	targetEmployeeId: z.uuid().nullish(),
-	vehicleUse: z.object({
-		vehicle: z.discriminatedUnion("kind", [
-			z.object({ kind: z.literal("own") }),
-			z.object({ kind: z.literal("organization"), vehicleId: z.uuid() }),
-		]),
-		startKm: kilometres,
-		endKm: kilometres,
-		distanceKm: kilometres,
-	}),
-	/**
-	 * Manual work on one date, in the target's timezone. Without it the work
-	 * starts now and is live (a clock-in).
-	 */
-	manual: z
-		.object({ date: z.iso.date(), clockInTime: wallClockTime, clockOutTime: wallClockTime })
-		.optional(),
-	/**
-	 * The signed-in employee's live work a clock-out is about to end (#1122): the
-	 * work runs from its start until now.
-	 */
-	closingWorkPeriodId: z.uuid().optional(),
-});
-
-export type CheckVehicleUseWarningsInput = z.input<typeof checkVehicleUseWarningsSchema>;
 
 /**
  * Plausibility warnings (#1121) for vehicle use being entered for new work: a

@@ -268,6 +268,7 @@ export function TimeCorrectionApprovalsTable() {
 		handleReject,
 		isMutating: approveMutation.isPending || rejectMutation.isPending,
 		t,
+		locale,
 	});
 
 	if (isLoading) {
@@ -362,11 +363,14 @@ function buildTimeCorrectionColumns({
 	handleReject,
 	isMutating,
 	t,
+	locale,
 }: {
 	handleApprove: (approval: ApprovalWithTimeCorrection) => void;
 	handleReject: (approval: ApprovalWithTimeCorrection) => void;
 	isMutating: boolean;
 	t: Translate;
+	/** The app locale, for kilometres. */
+	locale: string;
 }): ColumnDef<DataTableFeatures, ApprovalWithTimeCorrection>[] {
 	return [
 		{
@@ -465,6 +469,7 @@ function buildTimeCorrectionColumns({
 									value: vehicleUseText(
 										t,
 										row.original.workPeriod.metadataChanges.vehicleUse.original,
+										locale,
 									),
 								},
 							]
@@ -549,6 +554,7 @@ function buildTimeCorrectionColumns({
 									value: vehicleUseText(
 										t,
 										row.original.workPeriod.metadataChanges.vehicleUse.requested,
+										locale,
 									),
 								},
 							]

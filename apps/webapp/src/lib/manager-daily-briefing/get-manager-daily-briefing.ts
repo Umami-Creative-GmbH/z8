@@ -596,12 +596,13 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 			return 0;
 		}
 
-		const [{ db }, { listDrivingDetailsMissing }] = await Promise.all([
+		const [{ db }, { countDrivingDetailsMissing }] = await Promise.all([
 			import("@/db"),
 			import("@/lib/time-tracking/vehicle-use/driving-details-missing-store"),
 		]);
 
-		return (await listDrivingDetailsMissing(db, { organizationId, employeeIds })).length;
+		// Counted in SQL over the active employees `/team/driving` lists.
+		return countDrivingDetailsMissing(db, { organizationId, employeeIds });
 	},
 
 	async getPayrollIssues({ organizationId }) {

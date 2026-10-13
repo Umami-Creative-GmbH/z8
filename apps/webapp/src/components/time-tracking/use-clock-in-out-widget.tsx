@@ -171,7 +171,7 @@ export function useClockInOutWidget(
 			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 		if (result.success) {
-			warnVehicleUseLeftOut(vehicle, t);
+			warnVehicleUseLeftOut(vehicle, t, result);
 			vehicleUse.reset();
 			if (showSavedClockToast(result, "clock_in", t)) return;
 
@@ -213,7 +213,7 @@ export function useClockInOutWidget(
 			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 		if (result.success) {
-			warnVehicleUseLeftOut(vehicle, t);
+			warnVehicleUseLeftOut(vehicle, t, result);
 			vehicleUse.reset();
 			if (showSavedClockToast(result, "clock_out", t)) return;
 

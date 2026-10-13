@@ -2,6 +2,7 @@
 
 import { IconArrowLeft, IconCar, IconLoader2 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import { type ReactNode, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,12 @@ import {
 	withPickedVehicle,
 } from "../time-tracking/vehicle-use-draft";
 import { VehicleUseWarnings } from "../time-tracking/vehicle-use-fields";
-import { vehicleUseRefusalText, vehicleUseText } from "../time-tracking/vehicle-use-format";
+import {
+	formatKm,
+	vehicleOptionLabel,
+	vehicleUseRefusalText,
+	vehicleUseText,
+} from "../time-tracking/vehicle-use-format";
 import {
 	type KioskVehicleQuestion,
 	kioskVehicleUseRequest,
@@ -80,6 +86,7 @@ export function KioskVehicleUseStep({
 	onBack,
 }: KioskVehicleUseStepProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const id = useId();
 	const [draft, setDraft] = useState<VehicleUseDraft>(() =>
 		question === "clock_in" ? prefilledVehicleUseDraft(context) : EMPTY_VEHICLE_USE_DRAFT,
@@ -145,7 +152,7 @@ export function KioskVehicleUseStep({
 					disabled={pending}
 				/>
 			) : live ? (
-				<p className="text-center text-xl">{liveText(t, context, live)}</p>
+				<p className="text-center text-xl">{liveText(t, context, live, locale)}</p>
 			) : null}
 			{asksWholeUse && draft.vehicle !== NONE ? (
 				<div className="grid gap-4 sm:grid-cols-2">
@@ -235,22 +242,24 @@ function liveText(
 	t: ReturnType<typeof useTranslate>["t"],
 	context: KioskVehicleUse,
 	use: WorkVehicleUse,
+	locale: string,
 ) {
 	const vehicleId = organizationVehicleIdOf(use);
 	const vehicle = context.vehicles.find((option) => option.id === vehicleId);
-	return vehicleUseText(t, {
-		state: "recorded",
-		vehicle:
-			use.vehicle.kind === "own"
-				? { kind: "own" }
-				: {
-						kind: "organization",
-						label: vehicle ? `${vehicle.name} (${vehicle.licencePlate})` : null,
-					},
-		startKm: use.startKm,
-		endKm: use.endKm,
-		distanceKm: use.distanceKm,
-	});
+	return vehicleUseText(
+		t,
+		{
+			state: "recorded",
+			vehicle:
+				use.vehicle.kind === "own"
+					? { kind: "own" }
+					: { kind: "organization", label: vehicle ? vehicleOptionLabel(vehicle) : null },
+			startKm: use.startKm,
+			endKm: use.endKm,
+			distanceKm: use.distanceKm,
+		},
+		locale,
+	);
 }
 
 /** The vehicles as touch-sized choices: none, the organization's (assigned first), own. */
@@ -273,7 +282,7 @@ function VehicleChoice({
 			.filter((vehicle) => !vehicle.archived || vehicle.id === value)
 			.map((vehicle) => ({
 				value: vehicle.id,
-				label: `${vehicle.name} (${vehicle.licencePlate})`,
+				label: vehicleOptionLabel(vehicle),
 			})),
 		{ value: "own", label: t("timeTracking.vehicleUse.ownVehicle", "Own vehicle") },
 	];
@@ -345,13 +354,14 @@ function Reading({
 /** The distance both readings imply, shown instead of a distance input. */
 function DerivedDistance({ draft }: { draft: VehicleUseDraft }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const result = vehicleUseFromDraft(draft);
 	const distance = result.ok && result.use ? result.use.distanceKm : null;
 	if (distance === null) return null;
 	return (
 		<p className="self-end text-lg text-muted-foreground" aria-live="polite">
 			{t("timeTracking.vehicleUse.derivedDistance", "Driven distance: {distance} km", {
-				distance: distance.toLocaleString(),
+				distance: formatKm(distance, locale),
 			})}
 		</p>
 	);

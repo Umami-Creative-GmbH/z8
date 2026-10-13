@@ -7,7 +7,7 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import {
 	type ClockingReminderTransport,
-	sendClockingReminder,
+	sendDrivingDetailsReminder,
 } from "@/lib/time-tracking/clocking-reminders/delivery";
 import { loadRecordedOccasionKeys } from "@/lib/time-tracking/clocking-reminders/discovery";
 import {
@@ -31,6 +31,7 @@ const LOOKBACK_HOURS = (DRIVING_DETAILS_REMINDER_DUE_DAYS + 2) * 24;
 export interface DrivingDetailsRemindersResult {
 	organizations: number;
 	employees: number;
+	/** Work periods reminded by this run (several may share one notification). */
 	sent: number;
 	alreadySent: number;
 	failed: number;
@@ -43,9 +44,10 @@ export interface DrivingDetailsRemindersDeps {
 }
 
 /**
- * Sends the "driving details missing" reminders due now (#1127): once per flagged work period,
+ * Sends the "driving details missing" reminders due now (#1127): each flagged work period once,
  * the morning after it ended, through the clocking reminder delivery, which claims each occasion
- * once. Only organizations with vehicle use switched on are visited, so with the switch off
+ * once. An employee gets one reminder per morning listing all newly due work periods (#807
+ * decision 8). Only organizations with vehicle use switched on are visited, so with the switch off
  * nothing is sent. Read-only over time data.
  */
 export async function runDrivingDetailsRemindersWith(
@@ -152,26 +154,26 @@ async function remindOrganization(
 		},
 		deps.database,
 	);
+	// One employee at a time, bounding concurrent transport calls to one.
+	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const { recipient, reminders } of due) {
 		result.employees++;
-		// Preserve delivery order for this employee and bound concurrent transport calls to one.
-		// react-doctor-disable-next-line react-doctor/async-await-in-loop
-		for (const reminder of reminders) {
-			if (recorded.has(reminder.occasionKey)) continue;
-			try {
-				const outcome = await sendClockingReminder(
-					{ reminder, recipient, now },
-					{ database: deps.database, transport: deps.transport },
-				);
-				if (outcome === "sent") result.sent++;
-				else result.alreadySent++;
-			} catch (error) {
-				result.failed++;
-				logger.error(
-					{ err: error, organizationId, employeeId: recipient.employeeId },
-					"Driving details reminder failed",
-				);
-			}
+		const unsent = reminders.filter((reminder) => !recorded.has(reminder.occasionKey));
+		if (unsent.length === 0) continue;
+		try {
+			// One reminder per employee and morning, listing every newly due work period.
+			const outcome = await sendDrivingDetailsReminder(
+				{ reminders: unsent, recipient, now },
+				{ database: deps.database, transport: deps.transport },
+			);
+			result.sent += outcome.sent;
+			result.alreadySent += outcome.alreadySent;
+		} catch (error) {
+			result.failed++;
+			logger.error(
+				{ err: error, organizationId, employeeId: recipient.employeeId },
+				"Driving details reminder failed",
+			);
 		}
 	}
 }

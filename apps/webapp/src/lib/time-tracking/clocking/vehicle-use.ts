@@ -19,6 +19,7 @@ import {
 	assertVehiclePickable,
 	workVehicleUseRefusalCodeOf,
 } from "../vehicle-use/work-vehicle-use-eligibility";
+import { vehicleUseSelectColumns } from "../vehicle-use/work-vehicle-use-sql";
 import type { WorkTransactionClient } from "../work-transaction";
 import type { BreakClosure } from "./break";
 import type { ClockOutClosure } from "./clock-out";
@@ -53,11 +54,7 @@ async function readPeriod(
 		.select({
 			id: workPeriod.id,
 			canonicalRecordId: workPeriod.canonicalRecordId,
-			vehicleKind: workPeriod.vehicleKind,
-			vehicleId: workPeriod.vehicleId,
-			odometerStartKm: workPeriod.odometerStartKm,
-			odometerEndKm: workPeriod.odometerEndKm,
-			drivenDistanceKm: workPeriod.drivenDistanceKm,
+			...vehicleUseSelectColumns(workPeriod),
 		})
 		.from(workPeriod)
 		.where(

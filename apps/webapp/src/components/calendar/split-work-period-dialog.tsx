@@ -2,10 +2,11 @@
 
 import { IconLoader2, IconScissors, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
-import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
+import { parseKm } from "@/components/time-tracking/vehicle-use-draft";
+import { formatKm, vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -70,6 +71,8 @@ export function SplitWorkPeriodDialog({
 	const vehicleUse = metadata.vehicleUse ?? null;
 	const vehicleAsk = vehicleUseSplitAsks(vehicleUse);
 	const [vehicleSplitKm, setVehicleSplitKm] = useState("");
+	// Whole kilometres, or nothing when skipped; anything else holds the split.
+	const vehicleSplitValue = vehicleAsk ? parseKm(vehicleSplitKm) : null;
 	// One identity per split: a retry after a lost or refused response reuses it, so
 	// the server replays a committed split instead of splitting twice.
 	const submissionIdRef = useRef<string | null>(null);
@@ -90,7 +93,7 @@ export function SplitWorkPeriodDialog({
 		previewDurations !== null && previewDurations.first > 0 && previewDurations.second > 0;
 
 	const handleSplit = async () => {
-		if (!isValidSplitTime) return;
+		if (!isValidSplitTime || vehicleSplitValue === "invalid") return;
 
 		const submissionId = submissionIdRef.current ?? crypto.randomUUID();
 		submissionIdRef.current = submissionId;
@@ -103,7 +106,7 @@ export function SplitWorkPeriodDialog({
 			afterNotes.trim() || undefined,
 			disambiguation,
 			submissionId,
-			vehicleAsk && vehicleSplitKm.trim() !== "" ? Number(vehicleSplitKm) : undefined,
+			vehicleSplitValue ?? undefined,
 		).catch(() => null);
 
 		if (!result) {
@@ -219,6 +222,7 @@ export function SplitWorkPeriodDialog({
 									use={vehicleUse}
 									value={vehicleSplitKm}
 									onChange={setVehicleSplitKm}
+									locale={displayContext.locale}
 								/>
 							)}
 						</div>
@@ -230,7 +234,10 @@ export function SplitWorkPeriodDialog({
 						<IconX className="size-4 mr-1" />
 						{t("common.cancel", "Cancel")}
 					</Button>
-					<Button onClick={handleSplit} disabled={!isValidSplitTime || isSaving}>
+					<Button
+						onClick={handleSplit}
+						disabled={!isValidSplitTime || vehicleSplitValue === "invalid" || isSaving}
+					>
 						{isSaving ? (
 							<IconLoader2 className="size-4 animate-spin mr-1" />
 						) : (
@@ -368,14 +375,17 @@ function VehicleSplitField({
 	use,
 	value,
 	onChange,
+	locale,
 }: {
 	ask: VehicleUseSplitAsk;
 	use: WorkVehicleUse;
 	value: string;
 	onChange: (value: string) => void;
+	locale: string;
 }) {
 	const { t } = useTranslate();
-	const km = (value: number) => value.toLocaleString();
+	const id = useId();
+	const km = (value: number) => formatKm(value, locale);
 	const label =
 		ask === "reading"
 			? t("calendar.split.vehicleReading", "Odometer reading at the split (optional)")
@@ -397,20 +407,23 @@ function VehicleSplitField({
 				);
 	return (
 		<div className="space-y-2">
-			<Label htmlFor="vehicleSplitKm">{label}</Label>
+			<Label htmlFor={`${id}-km`}>{label}</Label>
 			<Input
-				id="vehicleSplitKm"
-				type="number"
+				id={`${id}-km`}
 				inputMode="numeric"
-				min={0}
-				step={1}
+				autoComplete="off"
 				value={value}
 				onChange={(event) => onChange(event.target.value)}
-				aria-describedby="vehicleSplitKmHint"
+				aria-describedby={`${id}-hint`}
 			/>
-			<p id="vehicleSplitKmHint" className="text-sm text-muted-foreground">
+			<p id={`${id}-hint`} className="text-sm text-muted-foreground">
 				{hint}
 			</p>
+			{parseKm(value) === "invalid" ? (
+				<p className="text-sm text-destructive" role="alert">
+					{vehicleUseRefusalText(t, ask === "reading" ? "invalid_reading" : "invalid_distance")}
+				</p>
+			) : null}
 		</div>
 	);
 }
