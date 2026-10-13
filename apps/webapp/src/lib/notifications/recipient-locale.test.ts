@@ -99,6 +99,69 @@ describe("resolveRecipientNotificationLocale", () => {
 		expect(userSettingsFindFirstMock).not.toHaveBeenCalled();
 	});
 
+	describe("with the request's page language (verification and password reset)", () => {
+		function request(headers: Record<string, string>) {
+			return new Request("https://app.example.com/api/auth/sign-up/email", { headers });
+		}
+
+		it("follows the NEXT_LOCALE cookie before Accept-Language and the org default", async () => {
+			orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "fr" });
+			const { resolveRecipientNotificationLocale } = await import("./recipient-locale");
+
+			await expect(
+				resolveRecipientNotificationLocale({
+					userId: "user-1",
+					organizationId: "org-1",
+					request: request({ cookie: "theme=dark; NEXT_LOCALE=de", "accept-language": "it" }),
+				}),
+			).resolves.toBe("de");
+		});
+
+		it("follows Accept-Language when there is no usable cookie", async () => {
+			orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "fr" });
+			const { resolveRecipientNotificationLocale } = await import("./recipient-locale");
+
+			await expect(
+				resolveRecipientNotificationLocale({
+					userId: "user-1",
+					organizationId: "org-1",
+					request: request({
+						cookie: "NEXT_LOCALE=xx",
+						"accept-language": "zz, it-CH;q=0.9, de;q=0.8",
+					}),
+				}),
+			).resolves.toBe("it");
+		});
+
+		it("falls back to the org default, then English, without a page language", async () => {
+			orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "fr" });
+			const { resolveRecipientNotificationLocale } = await import("./recipient-locale");
+
+			await expect(
+				resolveRecipientNotificationLocale({
+					userId: "user-1",
+					organizationId: "org-1",
+					request: request({ "accept-language": "zz" }),
+				}),
+			).resolves.toBe("fr");
+			await expect(
+				resolveRecipientNotificationLocale({ userId: "user-1", request: request({}) }),
+			).resolves.toBe("en");
+		});
+
+		it("keeps the saved language ahead of the page language", async () => {
+			userSettingsFindFirstMock.mockResolvedValue({ locale: "fr" });
+			const { resolveRecipientNotificationLocale } = await import("./recipient-locale");
+
+			await expect(
+				resolveRecipientNotificationLocale({
+					userId: "user-1",
+					request: request({ cookie: "NEXT_LOCALE=de", "accept-language": "de" }),
+				}),
+			).resolves.toBe("fr");
+		});
+	});
+
 	it("falls back to English for missing or invalid values", async () => {
 		userSettingsFindFirstMock.mockResolvedValue({ locale: "xx" });
 		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "yy" });

@@ -13,6 +13,8 @@ const { GERMAN_EMAIL_COPY } = vi.hoisted(() => ({
 		"emails.notification.openAction": "Z8 öffnen",
 		"emails.layout.footer": "Diese E-Mail wurde von Z8 gesendet.",
 		"emails.subjects.teamMemberAdded": "Du wurdest zu {teamName} hinzugefügt",
+		"emails.subjects.passwordChanged": "Sicherheitshinweis: Passwort geändert",
+		"emails.securityAlert.passwordChanged.title": "Passwort geändert",
 	} as Record<string, string>,
 }));
 
@@ -25,7 +27,9 @@ const {
 	getOrganizationBaseUrlMock,
 	localizeOutboundNotificationMock,
 	resolveOutboundNotificationLocaleMock,
+	loadOrganizationTimezoneMock,
 } = vi.hoisted(() => ({
+	loadOrganizationTimezoneMock: vi.fn(),
 	debugMock: vi.fn(),
 	errorMock: vi.fn(),
 	infoMock: vi.fn(),
@@ -58,6 +62,10 @@ vi.mock("@/lib/app-url", () => ({
 
 vi.mock("@/lib/email/email-service", () => ({
 	sendEmail: vi.fn(),
+}));
+
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: loadOrganizationTimezoneMock,
 }));
 
 vi.mock("@/lib/email/template-renderer", () => ({
@@ -393,21 +401,42 @@ describe("sendEmailNotification", () => {
 		expect(sendEmailMock.mock.calls[0]?.[0].subject).toBe("Du wurdest zu Support hinzugefügt");
 	});
 
-	it("keeps the dedicated security alert template as the default body", async () => {
-		renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+	it("sends the dedicated security alert in the recipient language, timed in the org timezone", async () => {
+		vi.useFakeTimers({ toFake: ["Date"] });
+		vi.setSystemTime(new Date("2026-10-13T12:05:00.000Z"));
+		try {
+			renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+			resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+			loadOrganizationTimezoneMock.mockResolvedValue("Europe/Berlin");
 
-		await sendEmailNotification({
-			userId: "user_123",
-			type: "password_changed",
-			title: "Password changed",
-			message: "Your password was changed.",
-			organizationId: "org_123",
-		});
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "password_changed",
+				title: "Password changed",
+				message: "Your password was changed.",
+				organizationId: "org_123",
+			});
+		} finally {
+			vi.useRealTimers();
+		}
 
+		expect(loadOrganizationTimezoneMock).toHaveBeenCalledWith(expect.anything(), "org_123");
 		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
-			expect.objectContaining({ templateKey: "security-alert", renderDefaultHtml: undefined }),
+			expect.objectContaining({
+				templateKey: "security-alert",
+				subjectOverride: "Sicherheitshinweis: Passwort geändert",
+				// Override `{{timestamp}}` gets the same org-timezone time.
+				data: expect.objectContaining({
+					eventType: "password_changed",
+					timestamp: "13. Okt. 2026, 14:05 (Europe/Berlin)",
+				}),
+			}),
 		);
-		expect(sendEmailMock.mock.calls[0]?.[0].html).toBe("<p>Registry default</p>");
+		const html = sendEmailMock.mock.calls[0]?.[0].html ?? "";
+		expect(html).toContain('lang="de"');
+		expect(html).toContain("Passwort geändert");
+		expect(html).toContain("13. Okt. 2026, 14:05 (Europe/Berlin)");
+		expect(html).toContain('href="https://org.example.com/settings/security"');
 	});
 
 	it("preserves default subject when organization is missing even with i18n title metadata", async () => {
