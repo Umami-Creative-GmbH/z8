@@ -337,17 +337,18 @@ export function buildEscalationEmbed(
 }
 
 /**
- * Build a simple notification embed.
+ * Build a simple notification embed. The caller passes the link text already
+ * in the recipient language.
  */
 export function buildNotificationEmbed(
 	title: string,
 	message: string,
-	actionUrl?: string,
+	action?: { url: string; label: string },
 ): DiscordEmbed[] {
 	return [
 		{
 			title,
-			description: message + (actionUrl ? `\n\n[View in Z8](${actionUrl})` : ""),
+			description: message + (action ? `\n\n[${action.label}](${action.url})` : ""),
 			color: Colors.BLUE,
 			timestamp: new Date().toISOString(),
 		},

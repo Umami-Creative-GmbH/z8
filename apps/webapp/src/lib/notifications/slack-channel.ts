@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
+import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("SlackChannel");
@@ -119,9 +120,17 @@ export async function sendSlackNotification(
 			return options.durable ? "unavailable" : undefined;
 		}
 
-		let text = `*${params.title}*\n\n${params.message}`;
+		const localized = await localizeOutboundNotification({
+			userId: params.userId,
+			organizationId: params.organizationId,
+			title: params.title,
+			message: params.message,
+			metadata: params.metadata,
+			withActionLabel: true,
+		});
+		let text = `*${localized.title}*\n\n${localized.message}`;
 		if (params.actionUrl) {
-			text += `\n\n<${params.actionUrl}|View in Z8>`;
+			text += `\n\n<${params.actionUrl}|${localized.actionLabel}>`;
 		}
 
 		const acknowledgement = await postMessage(botConfig.botAccessToken, {
