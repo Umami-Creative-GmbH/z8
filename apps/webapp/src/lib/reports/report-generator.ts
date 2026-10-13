@@ -3,15 +3,10 @@
  * Aggregates data from time tracking and absences for comprehensive employee reports
  */
 
-import { and, eq, gt, gte, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
+import { and, eq, getTableColumns, gt, gte, isNotNull, lt, lte, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
-import {
-	absenceCategory,
-	absenceEntry,
-	employee,
-	employeeRateHistory,
-	workPeriod,
-} from "@/db/schema";
+import { absenceCategory, absenceEntry, employee, timeEntry, workPeriod } from "@/db/schema";
 import { clipAbsenceDayRange, countAbsenceDays } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
@@ -29,12 +24,13 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
+import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
 import { readCustomFieldReportValues } from "@/lib/organization/custom-fields/report-reads";
 import type { CustomFieldViewer } from "@/lib/organization/custom-fields/values";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
 import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
-import { calculateHourlyEarningsFromIntervals } from "./hourly-earnings";
+import { calculateHourlyEarningsFromTerms } from "./hourly-earnings";
 import {
 	type ReportDateRange,
 	resolveReportDateRange,
@@ -57,7 +53,11 @@ interface ReportCalendarRange {
 	timezone: string;
 }
 
-type CompletedWorkPeriod = typeof workPeriod.$inferSelect;
+/** A completed work period with the offsets captured at its clock-in and clock-out. */
+type CompletedWorkPeriod = typeof workPeriod.$inferSelect & {
+	clockInOffsetMinutes: number;
+	clockOutOffsetMinutes: number | null;
+};
 
 function getReportRange(
 	startDate: Date,
@@ -87,9 +87,17 @@ async function loadCompletedWorkPeriods(
 	organizationId: string,
 	reportRange: ReportDateRange,
 ): Promise<CompletedWorkPeriod[]> {
+	const clockInEntry = alias(timeEntry, "clock_in_entry");
+	const clockOutEntry = alias(timeEntry, "clock_out_entry");
 	return db
-		.select()
+		.select({
+			...getTableColumns(workPeriod),
+			clockInOffsetMinutes: clockInEntry.utcOffsetMinutes,
+			clockOutOffsetMinutes: clockOutEntry.utcOffsetMinutes,
+		})
 		.from(workPeriod)
+		.innerJoin(clockInEntry, eq(clockInEntry.id, workPeriod.clockInId))
+		.leftJoin(clockOutEntry, eq(clockOutEntry.id, workPeriod.clockOutId))
 		.where(
 			and(
 				eq(workPeriod.employeeId, employeeId),
@@ -185,16 +193,13 @@ export async function generateEmployeeReport(
 		expectedHours,
 	);
 
-	// Calculate earnings for hourly employees
-	let hourlyEarnings: HourlyEarningsData | undefined;
-	if (emp.contractType === "hourly") {
-		hourlyEarnings = await calculateHourlyEarnings(
-			employeeId,
-			organizationId,
-			periods,
-			reportRange,
-		);
-	}
+	// Earnings follow the confirmed hourly terms in force, not the current contract type.
+	const hourlyEarnings = await calculateHourlyEarnings(
+		employeeId,
+		organizationId,
+		periods,
+		reportRange,
+	);
 
 	return {
 		employee: {
@@ -204,7 +209,6 @@ export async function generateEmployeeReport(
 			position: emp.position,
 			email: emp.user.email,
 			contractType: emp.contractType,
-			currentHourlyRate: emp.currentHourlyRate,
 			customFields: customFields.byRecord[employeeId] ?? [],
 		},
 		period: {
@@ -636,41 +640,27 @@ function calculateComplianceMetrics(
 }
 
 /**
- * Calculate earnings for hourly employees
- * Handles rate changes during the period by breaking down earnings by rate period
- * @param employeeId - ID of the employee
- * @param organizationId - ID of the organization
- * @returns Earnings data with breakdown by rate period
+ * Earnings under the confirmed employment terms in force during the report
+ * (Organization ADR 0002). Each stretch of hourly terms pays its own wage;
+ * undefined when no hourly terms are in force during the range.
  */
 async function calculateHourlyEarnings(
 	employeeId: string,
 	organizationId: string,
 	workPeriods: CompletedWorkPeriod[],
 	reportRange: ReportDateRange,
-): Promise<HourlyEarningsData> {
-	const rateHistory = await db
-		.select()
-		.from(employeeRateHistory)
-		.where(
-			and(
-				eq(employeeRateHistory.employeeId, employeeId),
-				eq(employeeRateHistory.organizationId, organizationId),
-				lt(
-					employeeRateHistory.effectiveFrom,
-					dateFromInstant(reportRange.endExclusive),
-				),
-				or(
-					isNull(employeeRateHistory.effectiveTo),
-					gt(
-						employeeRateHistory.effectiveTo,
-						dateFromInstant(reportRange.start),
-					),
-				),
-			),
-		)
-		.orderBy(employeeRateHistory.effectiveFrom);
+): Promise<HourlyEarningsData | undefined> {
+	const spans = await loadConfirmedTermsSpans(db, {
+		organizationId,
+		employeeId,
+		range: {
+			from: parsePlainDate(reportRange.startDate),
+			toExclusive: parsePlainDate(reportRange.endDate).add({ days: 1 }),
+		},
+	});
 
-	return calculateHourlyEarningsFromIntervals({
+	return calculateHourlyEarningsFromTerms({
+		spans,
 		workPeriods: workPeriods.flatMap((period) =>
 			period.endTime && period.durationMinutes !== null
 				? [
@@ -678,21 +668,12 @@ async function calculateHourlyEarnings(
 							start: instantFromDate(period.startTime),
 							end: instantFromDate(period.endTime),
 							durationMinutes: period.durationMinutes,
+							clockInOffsetMinutes: period.clockInOffsetMinutes,
+							clockOutOffsetMinutes: period.clockOutOffsetMinutes ?? period.clockInOffsetMinutes,
 						},
 					]
 				: [],
 		),
-		ratePeriods: rateHistory.map((ratePeriod) => ({
-			id: ratePeriod.id,
-			rate: Number(ratePeriod.hourlyRate),
-			currency: ratePeriod.currency,
-			effectiveFrom: instantFromDate(ratePeriod.effectiveFrom),
-			effectiveTo: ratePeriod.effectiveTo
-				? instantFromDate(ratePeriod.effectiveTo)
-				: null,
-		})),
-		rangeStart: reportRange.start,
-		rangeEndExclusive: reportRange.endExclusive,
-		timezone: reportRange.timezone,
+		range: reportRange,
 	});
 }

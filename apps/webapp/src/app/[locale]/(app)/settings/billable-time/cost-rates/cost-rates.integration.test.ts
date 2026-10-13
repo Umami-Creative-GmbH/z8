@@ -60,7 +60,9 @@ vi.mock("@/lib/logger", () => ({
 
 const { endCostRate, getCostRateHistory, setCostRate } = await import("./actions");
 const { updateBillableCurrency } = await import("../actions");
-const { getCostRate, listCostRatesForWork } = await import("@/lib/billable-time/cost-rates");
+const { getCostRate, getSuggestedWage, listCostRatesForWork } = await import(
+	"@/lib/billable-time/cost-rates"
+);
 const { db } = await import("@/db");
 
 const ids = {
@@ -118,19 +120,45 @@ describe("cost rates on PostgreSQL", () => {
 		return rows.map((row) => ({ ...row, changes: JSON.parse(row.changes) }));
 	}
 
+	/** The wage in each set of the employee's employment terms, in date order. */
 	async function wageOf(employeeId: string) {
-		const { rows: history } = await admin.query<{ hourly_rate: string }>(
-			"select hourly_rate from employee_rate_history where employee_id = $1 order by effective_from",
+		const { rows } = await admin.query<{ hourly_rate: string | null }>(
+			`select hourly_rate::text as hourly_rate from employee_employment_history
+			 where employee_id = $1 order by valid_from`,
 			[employeeId],
 		);
-		const { rows: current } = await admin.query<{ current_hourly_rate: string | null }>(
-			"select current_hourly_rate from employee where id = $1",
-			[employeeId],
+		return rows.map((row) => row.hourly_rate);
+	}
+
+	/** Terms dates are calendar dates, stored as UTC midnight as the card does. */
+	async function terms(
+		employeeId: string,
+		options: {
+			from: string;
+			until?: string;
+			contractType?: "fixed" | "hourly";
+			wage?: string | null;
+			currency?: string;
+			reviewState?: "draft" | "pending" | "confirmed";
+		},
+	) {
+		await admin.query(
+			`insert into employee_employment_history
+			 (employee_id, organization_id, valid_from, valid_until, contract_type,
+			  weekly_contract_minutes, hourly_rate, currency, review_state, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, 2400, $6, $7, $8, $9, now())`,
+			[
+				employeeId,
+				ids.organization,
+				`${options.from}T00:00:00Z`,
+				options.until ? `${options.until}T00:00:00Z` : null,
+				options.contractType ?? "hourly",
+				options.wage === undefined ? null : options.wage,
+				options.currency ?? "EUR",
+				options.reviewState ?? "confirmed",
+				ids.ownerUser,
+			],
 		);
-		return {
-			history: history.map((row) => row.hourly_rate),
-			current: current[0]?.current_hourly_rate ?? null,
-		};
 	}
 
 	beforeEach(async () => {
@@ -170,11 +198,11 @@ describe("cost rates on PostgreSQL", () => {
 			],
 		);
 		await admin.query(
-			`insert into employee (id, user_id, organization_id, first_name, last_name, role, contract_type, current_hourly_rate, updated_at) values
-			 ($1, $5, $9, 'Ada', 'Hourly', 'employee', 'hourly', 25.00, $11),
-			 ($2, $6, $9, 'Bo', 'Salaried', 'employee', 'fixed', 30.00, $11),
-			 ($3, $7, $9, 'Cy', 'Manager', 'manager', 'fixed', null, $11),
-			 ($4, $8, $10, 'Di', 'Foreign', 'employee', 'hourly', 20.00, $11)`,
+			`insert into employee (id, user_id, organization_id, first_name, last_name, role, contract_type, updated_at) values
+			 ($1, $5, $9, 'Ada', 'Hourly', 'employee', 'hourly', $11),
+			 ($2, $6, $9, 'Bo', 'Salaried', 'employee', 'fixed', $11),
+			 ($3, $7, $9, 'Cy', 'Manager', 'manager', 'fixed', $11),
+			 ($4, $8, $10, 'Di', 'Foreign', 'employee', 'hourly', $11)`,
 			[
 				ids.hourlyEmployee,
 				ids.salariedEmployee,
@@ -189,12 +217,9 @@ describe("cost rates on PostgreSQL", () => {
 				timestamp,
 			],
 		);
-		await admin.query(
-			`insert into employee_rate_history (employee_id, organization_id, hourly_rate, currency, effective_from, effective_to, created_by) values
-			 ($1, $2, 22.00, 'EUR', '2025-01-01', '2026-01-01', $3),
-			 ($1, $2, 25.00, 'EUR', '2026-01-01', null, $3)`,
-			[ids.hourlyEmployee, ids.organization, ids.ownerUser],
-		);
+		await terms(ids.hourlyEmployee, { from: "2025-01-01", until: "2026-01-01", wage: "22.00" });
+		await terms(ids.hourlyEmployee, { from: "2026-01-01", wage: "25.00" });
+		await terms(ids.salariedEmployee, { from: "2025-01-01", contractType: "fixed" });
 		await admin.query(
 			`insert into project (id, organization_id, name, created_by, updated_at) values ($1, $2, 'Website', $3, $4)`,
 			[ids.project, ids.organization, ids.ownerUser, timestamp],
@@ -366,7 +391,7 @@ describe("cost rates on PostgreSQL", () => {
 			);
 
 			await admin.query(
-				"update employee_rate_history set currency = 'CHF' where employee_id = $1",
+				"update employee_employment_history set currency = 'CHF' where employee_id = $1",
 				[ids.hourlyEmployee],
 			);
 			await expect(getCostRateHistory({ employeeId: ids.hourlyEmployee })).resolves.toMatchObject({
@@ -391,7 +416,66 @@ describe("cost rates on PostgreSQL", () => {
 			await endCostRate({ employeeId: ids.hourlyEmployee, effectiveFrom: "2026-04-01" });
 
 			expect(await wageOf(ids.hourlyEmployee)).toEqual(before);
-			expect(before).toEqual({ history: ["22.00", "25.00"], current: "25.00" });
+			expect(before).toEqual(["22.00", "25.00"]);
+		});
+
+		it("suggests the wage of today's confirmed terms in the organization's timezone", async () => {
+			// 12:00 UTC on 1 May is already 2 May on Kiritimati (UTC+14).
+			await admin.query("update organization set timezone = 'Pacific/Kiritimati' where id = $1", [
+				ids.organization,
+			]);
+			await admin.query(
+				"update employee_employment_history set valid_until = $2 where employee_id = $1 and valid_until is null",
+				[ids.hourlyEmployee, "2026-05-02T00:00:00Z"],
+			);
+			await terms(ids.hourlyEmployee, { from: "2026-05-02", wage: "31.00" });
+			await terms(ids.hourlyEmployee, { from: "2026-04-01", wage: "99.00", reviewState: "draft" });
+			await terms(ids.hourlyEmployee, {
+				from: "2026-04-15",
+				wage: "88.00",
+				reviewState: "pending",
+			});
+			const at = Temporal.Instant.from("2026-05-01T12:00:00Z");
+
+			await expect(
+				getSuggestedWage(db, ids.organization, ids.hourlyEmployee, "EUR", at),
+			).resolves.toEqual({ hourlyRate: "31.00" });
+			await expect(
+				getSuggestedWage(
+					db,
+					ids.organization,
+					ids.hourlyEmployee,
+					"EUR",
+					Temporal.Instant.from("2026-05-01T09:00:00Z"),
+				),
+			).resolves.toEqual({ hourlyRate: "25.00" });
+		});
+
+		it("suggests no wage once the employee is fixed, whatever the employee record says", async () => {
+			await admin.query(
+				"update employee_employment_history set valid_until = $2 where employee_id = $1 and valid_until is null",
+				[ids.hourlyEmployee, "2026-03-01T00:00:00Z"],
+			);
+			await terms(ids.hourlyEmployee, { from: "2026-03-01", contractType: "fixed" });
+
+			await expect(
+				getSuggestedWage(
+					db,
+					ids.organization,
+					ids.hourlyEmployee,
+					"EUR",
+					Temporal.Instant.from("2026-05-01T12:00:00Z"),
+				),
+			).resolves.toBeNull();
+			await expect(
+				getSuggestedWage(
+					db,
+					ids.organization,
+					ids.hourlyEmployee,
+					"EUR",
+					Temporal.Instant.from("2026-02-01T12:00:00Z"),
+				),
+			).resolves.toEqual({ hourlyRate: "25.00" });
 		});
 	});
 
