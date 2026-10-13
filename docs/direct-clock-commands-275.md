@@ -96,7 +96,7 @@ last, with the device position taken at the event (spec #766, Time Tracking ADR 
   a resend with a different position is a collision.
 - Only a cookie-authenticated browser request may stamp. A request with an
   `Authorization` header (the desktop, any bearer client) still runs, without its
-  position, and the receipt keeps its bytes. The desktop stays on version 2.
+  position, and the receipt keeps its bytes. The desktop never stamps a position.
 - The server keeps the position as a `position_stamp` only if, when the command
   arrives, capture is on for the employee and their consent to the current notice is
   active and was given before `occurredAt`. Otherwise it drops the position silently
@@ -127,6 +127,14 @@ fields appended in this order: `position` (as in version 3; never on a `break`) 
   byte-for-byte and never carry `vehicleUse`. Send version 4 only when it is advertised.
 - Vehicle use is accepted from every client, bearer ones (the desktop) included; the
   position still only from a cookie-authenticated browser.
+- The desktop (#1124) freezes version 4 only when the server advertises it and vehicle
+  use was entered; otherwise it keeps its version 2 bytes. A saved version 4 command waits
+  (`submit_unavailable`) while the server does not list 4 and is never rewritten. Before
+  adoption it clocks online through the legacy `POST /api/time-entries`, which reads the
+  same `vehicleUse` beside the body leniently (malformed vehicle use is dropped).
+  `GET /api/desktop/context` gives the mode, the organization's active vehicles, the
+  assigned ones and each vehicle's last end reading; `POST /api/desktop/vehicle-use-warnings`
+  gives the plausibility warnings.
 - `vehicleUse` is part of the frozen bytes: an identical resend replays, different
   readings under one `operationId` are a collision.
 - Only the employee's own commands record it. On-behalf, departure and automatic

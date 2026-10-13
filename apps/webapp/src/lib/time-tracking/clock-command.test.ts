@@ -421,6 +421,10 @@ describe("desktop frozen commands (#280)", () => {
 		"desktop-v2-clock-out.json",
 		"desktop-v2-clock-out-task.json",
 		"desktop-v2-break.json",
+		// Version 4 with vehicle use (#1124), pinned by frozen_command_tests.rs too.
+		"desktop-v4-clock-in.json",
+		"desktop-v4-clock-out.json",
+		"desktop-v4-break.json",
 	])("accepts the exact bytes the desktop sends: %s", (name) => {
 		const sent = JSON.parse(fixture(name));
 		const parsed = parseClockCommand(sent);

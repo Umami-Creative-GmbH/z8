@@ -655,6 +655,70 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		expect(await snapshot()).toEqual(before);
 	});
 
+	it("records vehicle use from the exact version 4 commands the desktop freezes (#1124)", async () => {
+		const fixture = (name: string): Command =>
+			JSON.parse(
+				readFileSync(
+					new URL(
+						`../../../../../../desktop/src-tauri/tests/clock-core/fixtures/${name}`,
+						import.meta.url,
+					),
+					"utf8",
+				),
+			);
+		const startCommand = fixture("desktop-v4-clock-in.json");
+		const vehicleId = (startCommand.vehicleUse as { vehicle: { vehicleId: string } }).vehicle
+			.vehicleId;
+		await admin.query(
+			"insert into vehicle_use_setting (organization_id, enabled) values ($1, true)",
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into vehicle_use_assignment (organization_id, assignment_type, priority, mode, created_by)
+			 values ($1, 'organization', 0, 'asked', $2)`,
+			[ids.organization, ids.requesterUser],
+		);
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate)
+			 values ($1, $2, 'Desktop van', 'M-DT 4')`,
+			[vehicleId, ids.organization],
+		);
+		const bearer = { authorization: "Bearer desktop-token" };
+		const start: Command = {
+			...startCommand,
+			operationId: randomUUID(),
+			context: context(),
+			occurredAt: now.toString({ fractionalSecondDigits: 3 }),
+		};
+		const close: Command = {
+			...fixture("desktop-v4-clock-out.json"),
+			operationId: randomUUID(),
+			context: context(),
+			occurredAt: now.add({ hours: 1 }).toString({ fractionalSecondDigits: 3 }),
+			target: { clockInOperationId: start.operationId },
+		};
+
+		expect((await submit(start, bearer)).status).toBe(201);
+		harness.now = now.add({ hours: 1 });
+		expect((await submit(close, bearer)).status).toBe(201);
+
+		expect(await receipt(close.operationId)).toMatchObject({ command_version: 4, command: close });
+		const { rows } = await admin.query(
+			`select vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km, driven_distance_km
+			   from work_period where clock_in_id = $1`,
+			[start.operationId],
+		);
+		expect(rows).toEqual([
+			{
+				vehicle_kind: "organization",
+				vehicle_id: vehicleId,
+				odometer_start_km: 12_000,
+				odometer_end_km: 12_085,
+				driven_distance_km: 85,
+			},
+		]);
+	});
+
 	it("treats a changed command under a committed identity as a collision", async () => {
 		const command = clockInCommand();
 		await submit(command);
