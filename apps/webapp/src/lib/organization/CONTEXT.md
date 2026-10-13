@@ -4,6 +4,12 @@ An organization's master data about its employees, customers and vehicles, and t
 
 ## Language
 
+### Employees
+
+**Personnel number**:
+The organization's own identifier for an employee, used by payroll exports and to match payslips. An employee may have none. No two employees of an organization share one, current or former: a former employee keeps theirs and it is never given to anyone else. Numbers that differ only in surrounding spaces or in upper and lower case are the same number; leading zeros count.
+_Avoid_: employee ID, payroll ID
+
 ### Custom fields
 
 **Custom field**:

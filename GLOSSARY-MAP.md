@@ -31,6 +31,7 @@
 - **Organization → Projects**: an organization defines project custom fields in Organization; a project holds custom field values for them, and Projects owns the project itself
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
+- **Organization → Personnel File**: a payslip batch matches files to employees by their personnel number, which Organization owns
 - **Absences → Personnel File**: a sick-leave absence can have sick notes, which are employee documents in the personnel file; the absence knows only that they exist, and personnel file access decides who sees them
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
 - **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and while an approver is away the deputy named on their absence may decide their approvals as a **deputy decision**
@@ -38,4 +39,5 @@
 - **Download link ≠ report share link**: a Scheduled Exports download link hands one run's file to an approved external recipient; a Projects report share link shows a frozen report snapshot to whoever holds the URL
 - **Organization → Time Tracking**: an employee records the organization vehicle or their own vehicle they drove during a work period; Organization owns the vehicles
 - **Time Tracking → Travel Expenses**: distance driven in an own vehicle can pre-fill a mileage item; only the mileage item is reimbursed, after its own submission and approval
+- **Personnel File → Scheduling**: a skill certificate names the employee skill it proves; Scheduling knows only that one is on file, and personnel file access decides who opens it
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them
