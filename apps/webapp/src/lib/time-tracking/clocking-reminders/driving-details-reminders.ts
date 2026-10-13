@@ -24,9 +24,10 @@ export function drivingDetailsReminderAt(endedAt: Instant, timezone: string): In
 }
 
 /**
- * The driving details reminders due now (#1127): one per flagged work period, from the morning
- * after it ended until its due window closes. The work passed in is already flagged as driving
- * details missing; the delivery's occasion claim makes each reminder at-most-once.
+ * The driving details reminder occasions due now (#1127): one per flagged work period, from the
+ * morning after it ended until its due window closes. The work passed in is already flagged as
+ * driving details missing; the delivery claims each occasion at most once and sends an
+ * employee's newly due occasions as one reminder (#807 decision 8).
  */
 export function evaluateDrivingDetailsReminders(input: {
 	now: Instant;
