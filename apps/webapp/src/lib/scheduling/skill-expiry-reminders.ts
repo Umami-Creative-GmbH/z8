@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, type SQL, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeSkill, skill, skillExpiryReminder } from "@/db/schema";
@@ -102,40 +102,11 @@ async function remindOrganization(
 			AND ${employeeSkill.expiresAt} = ${skillExpiryReminder.expiryDate}
 		)`);
 
-	// `employeeSkill` has no organization: both its employee and its skill must be the organization's.
-	const candidates = await database
-		.select({
-			id: employeeSkill.id,
-			employeeId: employeeSkill.employeeId,
-			employeeUserId: employee.userId,
-			userName: user.name,
-			userEmail: user.email,
-			employeeNumber: employee.employeeNumber,
-			skillName: skill.name,
-			expiryDate: employeeSkill.expiresAt,
-		})
-		.from(employeeSkill)
-		.innerJoin(
-			employee,
-			and(eq(employee.id, employeeSkill.employeeId), eq(employee.organizationId, organizationId)),
-		)
-		.innerJoin(
-			skill,
-			and(
-				eq(skill.id, employeeSkill.skillId),
-				eq(skill.organizationId, organizationId),
-				eq(skill.isActive, true),
-			),
-		)
-		.innerJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(
-				isNotNull(employeeSkill.expiresAt),
-				gte(employeeSkill.expiresAt, today),
-				lte(employeeSkill.expiresAt, windowEnd),
-				employeeHasOrganizationAccess(now),
-			),
-		);
+	const candidates = await selectRemindedEmployeeSkills(
+		database,
+		{ organizationId, now },
+		and(gte(employeeSkill.expiresAt, today), lte(employeeSkill.expiresAt, windowEnd)),
+	);
 
 	const due: DueReminder[] = [];
 	for (const row of candidates) {
@@ -226,8 +197,7 @@ async function buildReminderMessages(
 			employeeSkill: expiring,
 		}),
 	);
-	// A kiosk-only employee cannot read notifications; their managers (or admins) already are told.
-	if (!isReservedEmail(expiring.employeeEmail)) {
+	if (skillReminderReachesEmployee(expiring.employeeEmail)) {
 		messages.push(
 			buildSkillExpiryReminderNotification({
 				organizationId,
@@ -239,6 +209,77 @@ async function buildReminderMessages(
 		);
 	}
 	return messages;
+}
+
+/**
+ * The employee skills of an organization that get skill expiry reminders: a
+ * skill expiry date, an active skill, and an employee who has not left.
+ * `employeeSkill` has no organization: both its employee and its skill must
+ * be the organization's.
+ */
+function selectRemindedEmployeeSkills(
+	database: Database,
+	input: { organizationId: string; now: Instant },
+	where: SQL | undefined,
+) {
+	const { organizationId, now } = input;
+	return database
+		.select({
+			id: employeeSkill.id,
+			employeeId: employeeSkill.employeeId,
+			employeeUserId: employee.userId,
+			userName: user.name,
+			userEmail: user.email,
+			employeeNumber: employee.employeeNumber,
+			skillName: skill.name,
+			expiryDate: employeeSkill.expiresAt,
+		})
+		.from(employeeSkill)
+		.innerJoin(
+			employee,
+			and(eq(employee.id, employeeSkill.employeeId), eq(employee.organizationId, organizationId)),
+		)
+		.innerJoin(
+			skill,
+			and(
+				eq(skill.id, employeeSkill.skillId),
+				eq(skill.organizationId, organizationId),
+				eq(skill.isActive, true),
+			),
+		)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.where(and(isNotNull(employeeSkill.expiresAt), employeeHasOrganizationAccess(now), where));
+}
+
+/**
+ * Of the given employee skills, the skill expiry date of each one whose skill
+ * reminders reach the employee themselves (#1146): an employee skill that gets
+ * reminders at all, of an employee who can read notifications. A skill
+ * certificate with that same date leaves the employee to the skill reminder,
+ * so the employee is reminded once. Ids of other organizations are ignored.
+ */
+export async function loadEmployeeSkillReminderDates(
+	database: Database,
+	input: { organizationId: string; now: Instant; employeeSkillIds: readonly string[] },
+): Promise<Map<string, string>> {
+	if (input.employeeSkillIds.length === 0) return new Map();
+	const rows = await selectRemindedEmployeeSkills(
+		database,
+		input,
+		inArray(employeeSkill.id, [...input.employeeSkillIds]),
+	);
+	const dates = new Map<string, string>();
+	for (const row of rows) {
+		if (row.expiryDate && skillReminderReachesEmployee(row.userEmail)) {
+			dates.set(row.id, row.expiryDate);
+		}
+	}
+	return dates;
+}
+
+/** A kiosk-only employee cannot read notifications; their managers (or admins) are told instead. */
+function skillReminderReachesEmployee(employeeEmail: string): boolean {
+	return !isReservedEmail(employeeEmail);
 }
 
 /** Sends after the claim; a failed delivery is logged, never retried (at most once). */
