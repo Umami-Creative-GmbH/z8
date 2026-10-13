@@ -1,6 +1,6 @@
 # Organization
 
-An organization's master data about its employees and customers, and the custom fields it defines for itself on employees, projects and customers. Projects themselves belong to the Projects context.
+An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. Projects themselves belong to the Projects context.
 
 ## Language
 
@@ -33,3 +33,13 @@ _Avoid_: deleted field, disabled field
 **Missing required value**:
 A required custom field with no value as of today on an employee, project or customer. Records created by SCIM, imports or demo data can have one; the forms refuse to save a record that still has one.
 _Avoid_: incomplete record, invalid record
+
+### Vehicles
+
+**Organization vehicle**:
+A vehicle the organization provides for its employees to drive for work, named and identified by its licence plate. An archived vehicle can no longer be picked but stays on the work it was recorded on.
+_Avoid_: fleet car, company car, pool car
+
+**Assigned driver**:
+An employee, or every member of a team, for whom an organization vehicle is the one usually driven, so it is suggested first. Anyone may still pick any active vehicle.
+_Avoid_: vehicle owner, vehicle holder
