@@ -567,6 +567,7 @@ function correctionFromFacts(facts: TimeCorrectionSubmittedFacts): Correction {
 		...(facts.requested.workCategoryId.kind === "set"
 			? { workCategoryId: facts.requested.workCategoryId.value }
 			: {}),
+		...(facts.requested.vehicleUse ? { vehicleUse: facts.requested.vehicleUse.value } : {}),
 		...(facts.requested.clockIn
 			? { clockInCorrectionId: facts.requested.clockIn.correctionEntryId }
 			: {}),

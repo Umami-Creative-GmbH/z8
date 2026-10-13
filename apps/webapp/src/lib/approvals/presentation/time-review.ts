@@ -29,7 +29,11 @@ import type {
 	WorkPeriodRevisionComparison,
 } from "../evidence/work-period-facts";
 import type { ApprovalInboxDetailSection } from "../inbox/types";
-import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
+import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import type {
+	VehicleUseReviewValue,
+	WorkCategoryReviewValue,
+} from "../server/time-correction-review-metadata";
 import type { ApprovalDatabase } from "../server/types";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import { loadTimeCorrectionCategoryNames } from "./time-card";
@@ -412,7 +416,45 @@ function correctionRequestRows(
 			},
 		});
 	}
+	// Vehicle and odometer readings before and after (#1120); vehicles by current label.
+	if (changeMask.vehicleUse && requested.vehicleUse) {
+		rows.push({
+			label: { key: "approvals:approvals.vehicleUse", fallback: "Vehicle use" },
+			value: {
+				kind: "change",
+				original: {
+					kind: "vehicle_use",
+					value: vehicleUseValue(baseline.attribution.vehicleUse ?? null, categoryNames),
+				},
+				requested: {
+					kind: "vehicle_use",
+					value: vehicleUseValue(requested.vehicleUse.value, categoryNames),
+				},
+			},
+		});
+	}
 	return rows;
+}
+
+function vehicleUseValue(
+	use: WorkVehicleUse | null,
+	names: Readonly<Record<string, string | null>>,
+): VehicleUseReviewValue {
+	if (!use) return { state: "none" };
+	return {
+		state: "recorded",
+		vehicle:
+			use.vehicle.kind === "organization"
+				? {
+						kind: "organization",
+						id: use.vehicle.vehicleId,
+						label: names[use.vehicle.vehicleId] ?? null,
+					}
+				: { kind: "own" },
+		startKm: use.startKm,
+		endKm: use.endKm,
+		distanceKm: use.distanceKm,
+	};
 }
 
 /** The committed graph a correction's finalization left, as recorded. */
