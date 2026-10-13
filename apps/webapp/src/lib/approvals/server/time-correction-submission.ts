@@ -149,6 +149,7 @@ import {
 } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { assertWorkOpen } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import { assertWorkVehicleUseChangeAllowed } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-eligibility";
 import {
 	sameWorkVehicleUse,
@@ -974,6 +975,24 @@ export async function editSameDayTimeEntry(
 						throw new Error("Canonical work metadata update failed");
 					}
 				}
+
+				// The changed work sends a submitted period back, as the adopted
+				// amendment does (#1062); vehicle use changes count too (#1120).
+				await sendBackChangedPeriodSubmissions(tx, {
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					causedByUserId: session.user.id,
+					work: [
+						{
+							start: instantFromDate(selectedWorkPeriod.startTime),
+							end: selectedWorkPeriod.endTime ? instantFromDate(selectedWorkPeriod.endTime) : null,
+						},
+						{
+							start: instantFromDate(effectiveClockIn),
+							end: effectiveClockOut ? instantFromDate(effectiveClockOut) : null,
+						},
+					],
+				});
 
 				return {
 					kind: "legacy" as const,

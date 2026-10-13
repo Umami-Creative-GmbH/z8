@@ -1102,7 +1102,7 @@ function ManualEntryFormContent({
 									onChange={field.handleChange}
 									vehicles={context.vehicleUse.vehicles}
 									expected={context.vehicleUse.mode === "expected"}
-							t={t}
+									t={t}
 									disabled={!isContextReady || isTimezoneContinuationPending}
 								/>
 							)}

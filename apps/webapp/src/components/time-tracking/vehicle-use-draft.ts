@@ -66,7 +66,9 @@ export function vehicleUseFromDraft(draft: VehicleUseDraft): VehicleUseDraftResu
 	}
 	const input: WorkVehicleUseInput = {
 		vehicle:
-			draft.vehicle === "own" ? { kind: "own" } : { kind: "organization", vehicleId: draft.vehicle },
+			draft.vehicle === "own"
+				? { kind: "own" }
+				: { kind: "organization", vehicleId: draft.vehicle },
 		startKm,
 		endKm,
 		// Only while the start reading is missing is the distance entered directly.

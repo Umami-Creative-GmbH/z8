@@ -307,8 +307,7 @@ function vehicleUseCardText(
 	const vehicle =
 		use.vehicle.kind === "own"
 			? t("bot.approval.card.ownVehicle", "Own vehicle")
-			: (names[use.vehicle.vehicleId] ??
-				t("bot.approval.card.unknownVehicle", "Unknown vehicle"));
+			: (names[use.vehicle.vehicleId] ?? t("bot.approval.card.unknownVehicle", "Unknown vehicle"));
 	const reading = (value: number | null) => (value === null ? "–" : String(value));
 	const parts = [vehicle];
 	if (use.startKm !== null || use.endKm !== null) {

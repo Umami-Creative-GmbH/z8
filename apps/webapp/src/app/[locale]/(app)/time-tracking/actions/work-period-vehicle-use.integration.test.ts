@@ -13,7 +13,7 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -238,11 +238,15 @@ async function seed() {
 /** Real clock-in and clock-out of one person. */
 async function recordWork(person: Person, start = WORK_START, end = WORK_END) {
 	actAs(person, { isOrgAdmin: person === "admin" });
-	await expect(clockIn("office", { instant: start, browserTimezone: "UTC" })).resolves.toMatchObject(
-		{ success: true },
-	);
 	await expect(
-		clockOut(undefined, undefined, { submissionId: randomUUID(), instant: end, browserTimezone: "UTC" }),
+		clockIn("office", { instant: start, browserTimezone: "UTC" }),
+	).resolves.toMatchObject({ success: true });
+	await expect(
+		clockOut(undefined, undefined, {
+			submissionId: randomUUID(),
+			instant: end,
+			browserTimezone: "UTC",
+		}),
 	).resolves.toMatchObject({ success: true });
 	const { rows } = await admin.query<{ id: string }>(
 		`select id from work_period
@@ -405,80 +409,80 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 	it.each(["inactive", "capture"] as const)(
 		"routes an own change outside the direct window through a time correction with a before/after card (evidence %s)",
 		async (evidence) => {
-		await admin.query(
-			`insert into approval_evidence_control (organization_id, workflow_type, mode)
+			await admin.query(
+				`insert into approval_evidence_control (organization_id, workflow_type, mode)
 			 values ($1, 'time_correction', $2)`,
-			[ORG, evidence],
-		);
-		const workPeriodId = await recordWork("requester");
-		await expect(
-			editVehicleUse("requester", workPeriodId, { vehicle: { kind: "own" }, distanceKm: 30 }),
-		).resolves.toMatchObject({ success: true });
-		harness.capability = { type: "approval_required" };
+				[ORG, evidence],
+			);
+			const workPeriodId = await recordWork("requester");
+			await expect(
+				editVehicleUse("requester", workPeriodId, { vehicle: { kind: "own" }, distanceKm: 30 }),
+			).resolves.toMatchObject({ success: true });
+			harness.capability = { type: "approval_required" };
 
-		await expect(
-			editVehicleUse("requester", workPeriodId, vanUse, "Drove the van"),
-		).resolves.toMatchObject({ success: true, data: { status: "pending" } });
-		// Nothing changes before the decision.
-		expect(await vehicleColumns(workPeriodId)).toMatchObject({
-			vehicle_kind: "own",
-			driven_distance_km: 30,
-		});
+			await expect(
+				editVehicleUse("requester", workPeriodId, vanUse, "Drove the van"),
+			).resolves.toMatchObject({ success: true, data: { status: "pending" } });
+			// Nothing changes before the decision.
+			expect(await vehicleColumns(workPeriodId)).toMatchObject({
+				vehicle_kind: "own",
+				driven_distance_km: 30,
+			});
 
-		const { rows } = await admin.query<{ id: string }>(
-			`select id from approval_request
+			const { rows } = await admin.query<{ id: string }>(
+				`select id from approval_request
 			 where organization_id = $1 and entity_id = $2 and status = 'pending'`,
-			[ORG, workPeriodId],
-		);
-		const approvalId = rows[0]?.id;
-		if (!approvalId) throw new Error("no pending correction");
+				[ORG, workPeriodId],
+			);
+			const approvalId = rows[0]?.id;
+			if (!approvalId) throw new Error("no pending correction");
 
-		actAs("manager");
-		const detail = await getApprovalInboxDetail({
-			approvalId,
-			organizationId: ORG,
-			approverId: ids.manager,
-		});
-		const vehicleRow = detail.sections
-			.flatMap((section) => (section.type === "key_value" ? section.rows : []))
-			.find((row) => row.label.key === "approvals:approvals.vehicleUse");
-		expect(vehicleRow?.value).toEqual({
-			kind: "change",
-			original: {
-				kind: "vehicle_use",
-				value: {
-					state: "recorded",
-					vehicle: { kind: "own" },
-					startKm: null,
-					endKm: null,
-					distanceKm: 30,
+			actAs("manager");
+			const detail = await getApprovalInboxDetail({
+				approvalId,
+				organizationId: ORG,
+				approverId: ids.manager,
+			});
+			const vehicleRow = detail.sections
+				.flatMap((section) => (section.type === "key_value" ? section.rows : []))
+				.find((row) => row.label.key === "approvals:approvals.vehicleUse");
+			expect(vehicleRow?.value).toEqual({
+				kind: "change",
+				original: {
+					kind: "vehicle_use",
+					value: {
+						state: "recorded",
+						vehicle: { kind: "own" },
+						startKm: null,
+						endKm: null,
+						distanceKm: 30,
+					},
 				},
-			},
-			requested: {
-				kind: "vehicle_use",
-				value: {
-					state: "recorded",
-					vehicle: { kind: "organization", id: ids.van, label: "Van (B-VN 100)" },
-					startKm: 12_000,
-					endKm: 12_085,
-					distanceKm: 85,
+				requested: {
+					kind: "vehicle_use",
+					value: {
+						state: "recorded",
+						vehicle: { kind: "organization", id: ids.van, label: "Van (B-VN 100)" },
+						startKm: 12_000,
+						endKm: 12_085,
+						distanceKm: 85,
+					},
 				},
-			},
-		});
+			});
 
-		await approveApprovalInboxItem({
-			approvalId,
-			actorEmployeeId: ids.manager,
-			organizationId: ORG,
-		});
-		expect(await vehicleColumns(workPeriodId)).toMatchObject({
-			vehicle_kind: "organization",
-			vehicle_id: ids.van,
-			driven_distance_km: 85,
-			detail_vehicle_id: ids.van,
-			detail_distance: 85,
-		});
-	},
+			await approveApprovalInboxItem({
+				approvalId,
+				actorEmployeeId: ids.manager,
+				organizationId: ORG,
+			});
+			expect(await vehicleColumns(workPeriodId)).toMatchObject({
+				vehicle_kind: "organization",
+				vehicle_id: ids.van,
+				driven_distance_km: 85,
+				detail_vehicle_id: ids.van,
+				detail_distance: 85,
+			});
+		},
 	);
 
 	it("refuses an own change outside the approval window", async () => {
@@ -533,30 +537,34 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		},
 	);
 
-	it("sends a submitted period back when vehicle use changes", async () => {
-		await admin.query(
-			`insert into period_submission_cadence_change
+	it.each(["active", "inactive"] as const)(
+		"sends a submitted period back when vehicle use changes (%s admission)",
+		async (admission) => {
+			await admin.query(
+				`insert into period_submission_cadence_change
 			 (id, organization_id, cadence, week_start_day, changed_at, changed_by)
 			 values ($1, $2, 'weekly', 'monday', '2026-06-01T00:00:00Z', $3)`,
-			[randomUUID(), ORG, userOf("admin")],
-		);
-		const workPeriodId = await recordWork("requester");
-		const submitted = await submitPeriodSubmission(
-			{ organizationId: ORG, userId: userOf("requester"), periodStartDate: "2026-07-20" },
-			{ database: db, clock: { nowInstant: () => parseInstant("2026-07-26T12:00:00Z") } },
-		);
-		if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+				[randomUUID(), ORG, userOf("admin")],
+			);
+			const workPeriodId = await recordWork("requester");
+			const submitted = await submitPeriodSubmission(
+				{ organizationId: ORG, userId: userOf("requester"), periodStartDate: "2026-07-20" },
+				{ database: db, clock: { nowInstant: () => parseInstant("2026-07-26T12:00:00Z") } },
+			);
+			if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+			await setAdmission(admission);
 
-		await expect(editVehicleUse("requester", workPeriodId, vanUse)).resolves.toMatchObject({
-			success: true,
-		});
+			await expect(editVehicleUse("requester", workPeriodId, vanUse)).resolves.toMatchObject({
+				success: true,
+			});
 
-		const { rows } = await admin.query<{ status: string; closed_cause: string | null }>(
-			"select status, closed_cause from period_submission where organization_id = $1 and id = $2",
-			[ORG, submitted.submissionId],
-		);
-		expect(rows[0]).toEqual({ status: "withdrawn", closed_cause: "change" });
-	});
+			const { rows } = await admin.query<{ status: string; closed_cause: string | null }>(
+				"select status, closed_cause from period_submission where organization_id = $1 and id = $2",
+				[ORG, submitted.submissionId],
+			);
+			expect(rows[0]).toEqual({ status: "withdrawn", closed_cause: "change" });
+		},
+	);
 
 	it("keeps vehicle use organization-scoped and never newly picks an archived vehicle", async () => {
 		const workPeriodId = await recordWork("admin");
@@ -592,7 +600,9 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		await expect(
 			admin.query("delete from organization_vehicle where id = $1", [ids.van]),
 		).rejects.toMatchObject({ code: "23503" });
-		await admin.query("update organization_vehicle set archived_at = now() where id = $1", [ids.van]);
+		await admin.query("update organization_vehicle set archived_at = now() where id = $1", [
+			ids.van,
+		]);
 		await expect(
 			editVehicleUse("admin", workPeriodId, { ...vanUse, endKm: 12_090 }),
 		).resolves.toMatchObject({ success: true });
@@ -629,7 +639,12 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		).resolves.toMatchObject({ success: true, data: { status: "applied" } });
 
 		const [event] = (
-			await getWorkPeriodsForMonth(6, 2026, { organizationId: ORG, employeeId: ids.requester }, "UTC")
+			await getWorkPeriodsForMonth(
+				6,
+				2026,
+				{ organizationId: ORG, employeeId: ids.requester },
+				"UTC",
+			)
 		).filter((candidate) => candidate.id === workPeriodId);
 		expect(event?.metadata).toMatchObject({
 			vehicleUse: {
@@ -750,9 +765,7 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 			});
 			await setAdmission("inactive");
 			await expect(
-				createManualTimeEntry(
-					legacyEntry({ vehicle: { kind: "own" }, startKm: 500, endKm: 400 }),
-				),
+				createManualTimeEntry(legacyEntry({ vehicle: { kind: "own" }, startKm: 500, endKm: 400 })),
 			).resolves.toMatchObject({ success: false, code: "end_before_start" });
 
 			await setVehicleUse("off");

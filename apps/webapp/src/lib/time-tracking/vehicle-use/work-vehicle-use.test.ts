@@ -36,12 +36,12 @@ describe("vehicle use on a work period", () => {
 			ok: true,
 			use: { vehicle: { kind: "own" }, startKm: null, endKm: 500, distanceKm: 42 },
 		});
-		expect(
-			buildWorkVehicleUse({ vehicle: { kind: "own" }, startKm: 100, distanceKm: 42 }),
-		).toEqual({
-			ok: true,
-			use: { vehicle: { kind: "own" }, startKm: 100, endKm: null, distanceKm: null },
-		});
+		expect(buildWorkVehicleUse({ vehicle: { kind: "own" }, startKm: 100, distanceKm: 42 })).toEqual(
+			{
+				ok: true,
+				use: { vehicle: { kind: "own" }, startKm: 100, endKm: null, distanceKm: null },
+			},
+		);
 		expect(
 			buildWorkVehicleUse({ vehicle: { kind: "own" }, startKm: 100, endKm: 130, distanceKm: 42 }),
 		).toMatchObject({ ok: true, use: { distanceKm: 30 } });
@@ -55,9 +55,10 @@ describe("vehicle use on a work period", () => {
 	});
 
 	it("refuses an end reading below the start reading", () => {
-		expect(
-			buildWorkVehicleUse({ vehicle: { kind: "own" }, startKm: 1_000, endKm: 999 }),
-		).toEqual({ ok: false, code: "end_before_start" });
+		expect(buildWorkVehicleUse({ vehicle: { kind: "own" }, startKm: 1_000, endKm: 999 })).toEqual({
+			ok: false,
+			code: "end_before_start",
+		});
 		expect(
 			buildWorkVehicleUse({ vehicle: { kind: "own" }, startKm: 1_000, endKm: 1_000 }),
 		).toMatchObject({ ok: true, use: { distanceKm: 0 } });

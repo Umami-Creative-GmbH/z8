@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_VEHICLE_USE_DRAFT, vehicleUseDraftOf, vehicleUseFromDraft } from "./vehicle-use-draft";
+import {
+	EMPTY_VEHICLE_USE_DRAFT,
+	vehicleUseDraftOf,
+	vehicleUseFromDraft,
+} from "./vehicle-use-draft";
 
 const vehicleId = "0b9f8f2e-6c1d-4d6c-9a43-7f2f3c1f5e10";
 
 describe("vehicle use drafts", () => {
 	it("submits no vehicle use for an empty draft", () => {
-		expect(vehicleUseFromDraft(EMPTY_VEHICLE_USE_DRAFT)).toEqual({ ok: true, input: null, use: null });
+		expect(vehicleUseFromDraft(EMPTY_VEHICLE_USE_DRAFT)).toEqual({
+			ok: true,
+			input: null,
+			use: null,
+		});
 	});
 
 	it("derives the distance from both readings", () => {
@@ -41,9 +49,9 @@ describe("vehicle use drafts", () => {
 		expect(
 			vehicleUseFromDraft({ vehicle: "own", startKm: "200", endKm: "150", distanceKm: "" }),
 		).toEqual({ ok: false, code: "end_before_start" });
-		expect(
-			vehicleUseFromDraft({ vehicle: "", startKm: "200", endKm: "", distanceKm: "" }),
-		).toEqual({ ok: false, code: "invalid_vehicle" });
+		expect(vehicleUseFromDraft({ vehicle: "", startKm: "200", endKm: "", distanceKm: "" })).toEqual(
+			{ ok: false, code: "invalid_vehicle" },
+		);
 		expect(
 			vehicleUseFromDraft({ vehicle: "own", startKm: "1.5", endKm: "", distanceKm: "" }),
 		).toEqual({ ok: false, code: "invalid_reading" });

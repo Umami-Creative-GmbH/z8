@@ -66,6 +66,7 @@ export async function loadWorkVehicleUseFormContext(
 	const vehicles = await listWorkVehicleOptions(reader, input.organizationId, recorded);
 	return {
 		mode,
-		vehicles: mode === "off" ? vehicles.filter((vehicle) => recorded.includes(vehicle.id)) : vehicles,
+		vehicles:
+			mode === "off" ? vehicles.filter((vehicle) => recorded.includes(vehicle.id)) : vehicles,
 	};
 }

@@ -199,9 +199,9 @@ export function vehicleUseAfter(
  * The intent for submitted vehicle use, as a spreadable fragment: nothing when
  * not submitted (earlier intents stay byte-identical), `clear` for null.
  */
-export function workVehicleUseIntentOf(
-	submitted: WorkVehicleUse | null | undefined,
-): { vehicleUse?: VehicleUseIntent } {
+export function workVehicleUseIntentOf(submitted: WorkVehicleUse | null | undefined): {
+	vehicleUse?: VehicleUseIntent;
+} {
 	if (submitted === undefined) return {};
 	return { vehicleUse: submitted === null ? { kind: "clear" } : { kind: "set", use: submitted } };
 }
@@ -234,7 +234,10 @@ export function readWorkVehicleUse(value: unknown): WorkVehicleUse | null {
 	if (
 		typeof vehicle !== "object" ||
 		vehicle === null ||
-		!exactKeys(vehicle, (vehicle as { kind?: unknown }).kind === "own" ? ["kind"] : ["kind", "vehicleId"])
+		!exactKeys(
+			vehicle,
+			(vehicle as { kind?: unknown }).kind === "own" ? ["kind"] : ["kind", "vehicleId"],
+		)
 	) {
 		throw new Error("Invalid vehicle use");
 	}

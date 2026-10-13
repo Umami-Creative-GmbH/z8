@@ -49,7 +49,9 @@ export function VehicleUseFields({
 	const hasVehicle = value.vehicle !== "";
 	const startMissing = value.startKm.trim() === "";
 	const derived = result.ok && result.use && !startMissing ? result.use.distanceKm : null;
-	const selectable = vehicles.filter((vehicle) => !vehicle.archived || vehicle.id === value.vehicle);
+	const selectable = vehicles.filter(
+		(vehicle) => !vehicle.archived || vehicle.id === value.vehicle,
+	);
 	const set = (patch: Partial<VehicleUseDraft>) => onChange({ ...value, ...patch });
 
 	return (
@@ -88,7 +90,10 @@ export function VehicleUseFields({
 											const vehicle = vehicles.find((option) => option.id === value.vehicle);
 											return vehicle
 												? `${vehicle.name} (${vehicle.licencePlate})`
-												: t("timeTracking.vehicleUse.unknownVehicle", "Unknown vehicle (unavailable)");
+												: t(
+														"timeTracking.vehicleUse.unknownVehicle",
+														"Unknown vehicle (unavailable)",
+													);
 										})()
 									: t("timeTracking.vehicleUse.noVehicle", "No vehicle")}
 						</SelectValue>
@@ -103,9 +108,7 @@ export function VehicleUseFields({
 						{selectable.map((vehicle) => (
 							<SelectItem key={vehicle.id} value={vehicle.id}>
 								{`${vehicle.name} (${vehicle.licencePlate})`}
-								{vehicle.archived
-									? ` · ${t("timeTracking.vehicleUse.archived", "archived")}`
-									: ""}
+								{vehicle.archived ? ` · ${t("timeTracking.vehicleUse.archived", "archived")}` : ""}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -188,7 +191,9 @@ export function VehicleUseSummary({
 				{vehicleUseText(t, {
 					state: "recorded",
 					vehicle:
-						use.vehicle.kind === "own" ? { kind: "own" } : { kind: "organization", label: vehicleLabel },
+						use.vehicle.kind === "own"
+							? { kind: "own" }
+							: { kind: "organization", label: vehicleLabel },
 					startKm: use.startKm,
 					endKm: use.endKm,
 					distanceKm: use.distanceKm,

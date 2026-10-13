@@ -208,7 +208,12 @@ describe("vehicle use in time correction facts (#1120)", () => {
 		const facts = buildTimeCorrectionSubmittedFacts(
 			input({
 				period: { ...input().period, ...recorded },
-				correction: { action: "edit", workLocationType: "office", workCategoryId: null, vehicleUse: requested },
+				correction: {
+					action: "edit",
+					workLocationType: "office",
+					workCategoryId: null,
+					vehicleUse: requested,
+				},
 			}),
 		);
 		expect(facts.baseline.attribution.vehicleUse).toEqual({
@@ -225,7 +230,12 @@ describe("vehicle use in time correction facts (#1120)", () => {
 				facts,
 				input({
 					period: { ...input().period, ...recorded, drivenDistanceKm: 31 },
-					correction: { action: "edit", workLocationType: "office", workCategoryId: null, vehicleUse: requested },
+					correction: {
+						action: "edit",
+						workLocationType: "office",
+						workCategoryId: null,
+						vehicleUse: requested,
+					},
 				}),
 			),
 		).toEqual({ kind: "material_change", changedFields: ["baseline"] });
