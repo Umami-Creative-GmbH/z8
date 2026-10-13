@@ -294,7 +294,16 @@ describe("personal data export README sections (#1172)", () => {
 
 		const after = await adaReadme("employee");
 		expect(after).toBe(before);
-		for (const withheld of ["Warning letter", "hr_only", "billable", "Salary band", "Band 7"]) {
+		// The withheld billable rates by part key and guide text: the Time category's own
+		// `is_billable` work-period column is the employee's data and stays listed.
+		for (const withheld of [
+			"Warning letter",
+			"hr_only",
+			"billable_rates",
+			"bills to customers",
+			"Salary band",
+			"Band 7",
+		]) {
 			expect(after, withheld).not.toContain(withheld);
 		}
 	});
