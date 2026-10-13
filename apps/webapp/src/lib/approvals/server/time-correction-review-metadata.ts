@@ -1,3 +1,4 @@
+import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 import {
 	organizationVehicleIdOf,
 	sameWorkVehicleUse,
@@ -42,7 +43,10 @@ export interface TimeCorrectionMetadataChanges {
 	>;
 	workCategory?: CorrectionDisplayChange<WorkCategoryReviewValue>;
 	/** Present only when the request changes vehicle use (#1120). */
-	vehicleUse?: CorrectionDisplayChange<VehicleUseReviewValue>;
+	vehicleUse?: CorrectionDisplayChange<VehicleUseReviewValue> & {
+		/** Plausibility warnings for the requested vehicle use (#1121); never a blocker. */
+		warnings?: VehicleUseWarning[];
+	};
 }
 
 export type TimeCorrectionReviewMetadata =
@@ -275,4 +279,19 @@ export function timeCorrectionMetadataChanges(
 		}
 	}
 	return Object.keys(changes).length > 0 ? changes : undefined;
+}
+
+/**
+ * The vehicle use a time correction asks to record (#1121): set only when the
+ * request changes vehicle use to some vehicle, otherwise null.
+ */
+export function requestedVehicleUseChange(
+	metadata: TimeCorrectionReviewMetadata,
+): WorkVehicleUse | null {
+	if (metadata.kind !== "valid_current") return null;
+	const requested = namedVehicleUse(metadata.requested);
+	if (!requested) return null;
+	return sameWorkVehicleUse(namedVehicleUse(metadata.original) ?? null, requested)
+		? null
+		: requested;
 }

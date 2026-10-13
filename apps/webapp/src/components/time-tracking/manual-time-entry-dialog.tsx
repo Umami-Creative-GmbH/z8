@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
+import { checkVehicleUseWarnings } from "@/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings";
 import {
 	MANUAL_ENTRY_COLLISION,
 	MANUAL_ENTRY_CONTEXT_MISMATCH,
@@ -39,8 +40,10 @@ import {
 	ManualEntryTargetContextError,
 	useManualEntryTargetContext,
 } from "@/components/time-tracking/use-manual-entry-target-context";
+import { useVehicleUseWarnings } from "@/components/time-tracking/use-vehicle-use-warnings";
 import {
 	EMPTY_VEHICLE_USE_DRAFT,
+	prefilledVehicleUseDraft,
 	type VehicleUseDraft,
 	vehicleUseFromDraft,
 } from "@/components/time-tracking/vehicle-use-draft";
@@ -1095,18 +1098,24 @@ function ManualEntryFormContent({
 					</form.Field>
 
 					{context && !contextError && (context.vehicleUse?.mode ?? "off") !== "off" ? (
-						<form.Field name="vehicleUseDraft">
-							{(field) => (
-								<VehicleUseFields
-									value={field.state.value}
-									onChange={field.handleChange}
-									vehicles={context.vehicleUse.vehicles}
-									expected={context.vehicleUse.mode === "expected"}
-									t={t}
+						<form.Subscribe
+							selector={(state) => ({
+								draft: state.values.vehicleUseDraft,
+								date: state.values.date,
+								clockInTime: state.values.clockInTime,
+								clockOutTime: state.values.clockOutTime,
+							})}
+						>
+							{(values) => (
+								<ManualVehicleUseFields
+									context={context}
+									values={values}
+									onChange={(draft) => form.setFieldValue("vehicleUseDraft", draft)}
 									disabled={!isContextReady || isTimezoneContinuationPending}
+									t={t}
 								/>
 							)}
-						</form.Field>
+						</form.Subscribe>
 					) : null}
 
 					<form.Field name="projectId">
@@ -1205,6 +1214,85 @@ function ManualEntryFormContent({
 			</form>
 		</ActionPanelContent>
 	);
+}
+
+/**
+ * The vehicle use fields of a manual entry with their plausibility warnings
+ * (#1121), checked on the server over the entered times. Warnings never block
+ * creating the entry.
+ */
+function ManualVehicleUseFields({
+	context,
+	values,
+	onChange,
+	disabled,
+	t,
+}: {
+	context: ManualEntryTargetContext;
+	values: { draft: VehicleUseDraft; date: string; clockInTime: string; clockOutTime: string };
+	onChange: (draft: VehicleUseDraft) => void;
+	disabled: boolean;
+	t: Translate;
+}) {
+	const { draft, date, clockInTime, clockOutTime } = values;
+	const entered = vehicleUseFromDraft(draft);
+	const input = entered.ok ? entered.input : null;
+	const targetEmployeeId = context.targetEmployeeId;
+	const request =
+		input && date && clockInTime && clockOutTime
+			? JSON.stringify({ targetEmployeeId, input, date, clockInTime, clockOutTime })
+			: null;
+	const warnings = useVehicleUseWarnings(request, async () => {
+		if (!input) return [];
+		const result = await checkVehicleUseWarnings({
+			targetEmployeeId,
+			vehicleUse: input,
+			manual: { date, clockInTime, clockOutTime },
+		});
+		return result.success ? result.data.warnings : [];
+	});
+	return (
+		<VehicleUseFields
+			value={draft}
+			onChange={onChange}
+			vehicles={context.vehicleUse.vehicles}
+			lastEndKmByVehicleId={context.vehicleUse.lastEndKmByVehicleId}
+			warnings={warnings}
+			expected={context.vehicleUse.mode === "expected"}
+			t={t}
+			disabled={disabled}
+		/>
+	);
+}
+
+/**
+ * Pre-selects the target's assigned vehicle and pre-fills its start reading
+ * (#1121) once per opening and target, while the vehicle use is still empty.
+ */
+function useVehicleUsePrefill({
+	context,
+	form,
+	open,
+}: {
+	context: ManualEntryTargetContext | null;
+	form: ManualEntryFormApi;
+	open: boolean;
+}) {
+	const appliedForRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (!open) {
+			appliedForRef.current = null;
+			return;
+		}
+		if (!context || appliedForRef.current === context.targetEmployeeId) return;
+		appliedForRef.current = context.targetEmployeeId;
+		if (!context.vehicleUse) return;
+		const prefilled = prefilledVehicleUseDraft(context.vehicleUse);
+		const current = form.state.values.vehicleUseDraft;
+		if (prefilled.vehicle && !current.vehicle && vehicleUseFromDraft(current).ok) {
+			form.setFieldValue("vehicleUseDraft", prefilled);
+		}
+	});
 }
 
 /**
@@ -1813,6 +1901,8 @@ export function ManualTimeEntryDialog({
 		}
 		wasOpenRef.current = open;
 	});
+	// After the opening reset above, so the pre-fill lands on the fresh draft.
+	useVehicleUsePrefill({ context, form, open });
 
 	return (
 		<>

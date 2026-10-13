@@ -1,6 +1,7 @@
 import {
 	buildWorkVehicleUse,
 	type WorkVehicleUse,
+	type WorkVehicleUseFormContext,
 	type WorkVehicleUseInput,
 	type WorkVehicleUseRefusalCode,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
@@ -35,6 +36,43 @@ export function vehicleUseDraftOf(use: WorkVehicleUse | null | undefined): Vehic
 		// A derived distance is shown, not entered.
 		distanceKm: use.startKm === null ? km(use.distanceKm) : "",
 	};
+}
+
+type PrefillContext = Pick<
+	WorkVehicleUseFormContext,
+	"mode" | "suggestedVehicleIds" | "lastEndKmByVehicleId"
+>;
+
+/**
+ * The draft new work starts with (#1121): the employee's first assigned vehicle,
+ * its start reading pre-filled from the vehicle's last recorded end reading.
+ * Empty without an assigned vehicle or while vehicle use is off.
+ */
+export function prefilledVehicleUseDraft(context: PrefillContext): VehicleUseDraft {
+	const vehicleId = context.mode === "off" ? undefined : context.suggestedVehicleIds?.[0];
+	if (!vehicleId) return EMPTY_VEHICLE_USE_DRAFT;
+	return {
+		...EMPTY_VEHICLE_USE_DRAFT,
+		vehicle: vehicleId,
+		startKm: km(context.lastEndKmByVehicleId?.[vehicleId] ?? null),
+	};
+}
+
+/**
+ * The draft after picking a vehicle (#1121): a start reading that is empty or
+ * still the previous vehicle's pre-filled one becomes the picked organization
+ * vehicle's last recorded end reading; one the employee typed is kept.
+ */
+export function withPickedVehicle(
+	draft: VehicleUseDraft,
+	vehicle: string,
+	lastEndKmByVehicleId: Record<string, number> = {},
+): VehicleUseDraft {
+	const previousPrefill = km(lastEndKmByVehicleId[draft.vehicle] ?? null);
+	const untouched = draft.startKm.trim() === "" || draft.startKm === previousPrefill;
+	if (!untouched) return { ...draft, vehicle };
+	const next = vehicle === "own" ? null : (lastEndKmByVehicleId[vehicle] ?? null);
+	return { ...draft, vehicle, startKm: km(next) };
 }
 
 function parseKm(value: string): number | null | "invalid" {

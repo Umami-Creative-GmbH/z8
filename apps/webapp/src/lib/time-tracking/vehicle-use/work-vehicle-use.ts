@@ -46,8 +46,22 @@ export type WorkVehicleOption = {
  */
 export type WorkVehicleUseFormContext = {
 	mode: "off" | "asked" | "expected";
-	/** Active vehicles, plus the archived ones named in recorded vehicle use. */
+	/**
+	 * Active vehicles, plus the archived ones named in recorded vehicle use. The
+	 * employee's assigned vehicles come first (#1121).
+	 */
 	vehicles: WorkVehicleOption[];
+	/**
+	 * The active vehicles the employee is an assigned driver of (#1121): assigned
+	 * to the employee first, then to their teams. The first one is pre-selected.
+	 * Absent where a form was built without pre-fill.
+	 */
+	suggestedVehicleIds?: string[];
+	/**
+	 * Each organization vehicle's last recorded end reading (#1121), which
+	 * pre-fills the start reading when the vehicle is picked.
+	 */
+	lastEndKmByVehicleId?: Record<string, number>;
 };
 
 /** What a writer asks for: absent or `preserve` keeps it, `clear` removes it. */

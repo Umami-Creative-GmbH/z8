@@ -204,6 +204,12 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	createManualTimeEntry,
 }));
 
+const checkVehicleUseWarnings = vi.hoisted(() => vi.fn());
+
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings", () => ({
+	checkVehicleUseWarnings,
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
 	updateTimezone,
 }));
@@ -1732,5 +1738,105 @@ describe("ManualTimeEntryDialog task picker (#874)", () => {
 		).toBeTruthy();
 		expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe("project-1");
 		expect(screen.queryByLabelText("Task")).toBeNull();
+	});
+});
+describe("ManualTimeEntryDialog vehicle use pre-fill and warnings (#1121)", () => {
+	const vanId = "6c3a8d55-0f0e-4f7d-9b51-2b7a0ef8d9a1";
+	const vehicleUse = {
+		mode: "asked" as const,
+		vehicles: [
+			{ id: vanId, name: "Van", licencePlate: "B-VN 100", archived: false },
+			{ id: "7d4b9e66-1a1f-4a8e-8c62-3c8b1fa9e0b2", name: "Car", licencePlate: "B-C 1", archived: false },
+		],
+		suggestedVehicleIds: [vanId],
+		lastEndKmByVehicleId: { [vanId]: 12_400 },
+	};
+
+	beforeEach(() => {
+		createManualTimeEntry.mockReset();
+		createManualTimeEntry.mockResolvedValue({ success: true, data: {} });
+		checkVehicleUseWarnings.mockReset();
+		getBrowserTimezone.mockReset();
+		getBrowserTimezone.mockReturnValue("UTC");
+		targetContextState.getManualEntryTargetContext.mockReset();
+		targetContextState.getManualEntryTargetContext.mockImplementation(async () =>
+			targetContextState.current
+				? { success: true, data: targetContextState.current }
+				: { success: false, error: "Failed to load entry options" },
+		);
+	});
+
+	function renderWithVehicleUse(overrides: Partial<ManualEntryTargetContext> = {}) {
+		return renderDialog(
+			{
+				open: true,
+				hideTrigger: true,
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "09:00",
+				defaultClockOutTime: "12:00",
+			},
+			{ vehicleUse, ...overrides },
+		);
+	}
+
+	it("pre-selects the assigned vehicle with its last end reading as the start reading", async () => {
+		checkVehicleUseWarnings.mockResolvedValue({ success: true, data: { warnings: [] } });
+		renderWithVehicleUse();
+
+		await waitFor(() =>
+			expect((screen.getByLabelText("Start reading (km)") as HTMLInputElement).value).toBe(
+				"12400",
+			),
+		);
+		expect(screen.getByRole("combobox", { name: "Vehicle" }).textContent).toContain(
+			"Van (B-VN 100)",
+		);
+	});
+
+	it("pre-selects nothing without an assigned vehicle", () => {
+		renderWithVehicleUse({ vehicleUse: { ...vehicleUse, suggestedVehicleIds: [] } });
+		expect(screen.getByRole("combobox", { name: "Vehicle" }).textContent).toContain("No vehicle");
+		expect(screen.queryByLabelText("Start reading (km)")).toBeNull();
+	});
+
+	it("shows the warnings for the entered vehicle use and still creates the entry", async () => {
+		checkVehicleUseWarnings.mockResolvedValue({
+			success: true,
+			data: { warnings: [{ code: "start_below_last_end", lastRecordedEndKm: 12_400 }] },
+		});
+		renderWithVehicleUse();
+		await waitFor(() =>
+			expect((screen.getByLabelText("Start reading (km)") as HTMLInputElement).value).toBe(
+				"12400",
+			),
+		);
+		fireEvent.change(screen.getByLabelText("Start reading (km)"), { target: { value: "12300" } });
+
+		const warnings = await screen.findByRole("status", { name: "Please check the vehicle use" });
+		expect(warnings.textContent).toMatch(
+			/The start reading is below this vehicle's last recorded end reading \(12[.,]?400 km\)\./,
+		);
+		expect(checkVehicleUseWarnings).toHaveBeenLastCalledWith({
+			targetEmployeeId: "employee-current",
+			vehicleUse: {
+				vehicle: { kind: "organization", vehicleId: vanId },
+				startKm: 12_300,
+				endKm: null,
+				distanceKm: null,
+			},
+			manual: { date: "2026-05-12", clockInTime: "09:00", clockOutTime: "12:00" },
+		});
+
+		fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Drove to a client" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalledOnce());
+		expect(createManualTimeEntry.mock.calls[0]?.[0]).toMatchObject({
+			vehicleUse: {
+				vehicle: { kind: "organization", vehicleId: vanId },
+				startKm: 12_300,
+				endKm: null,
+				distanceKm: null,
+			},
+		});
 	});
 });
