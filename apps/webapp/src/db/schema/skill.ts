@@ -5,6 +5,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
@@ -98,6 +99,8 @@ export const employeeSkill = pgTable(
 		index("employeeSkill_skillId_idx").on(table.skillId),
 		index("employeeSkill_expiresAt_idx").on(table.expiresAt),
 		uniqueIndex("employeeSkill_unique_idx").on(table.employeeId, table.skillId),
+		// Target of employee-scoped references such as a skill certificate's link (#1144).
+		unique("employeeSkill_id_employeeId_idx").on(table.id, table.employeeId),
 	],
 );
 

@@ -277,7 +277,7 @@ describe("skill expiry date (#1142)", () => {
 
 			expect(result.isQualified).toBe(false);
 			expect(result.expiredSkills).toEqual([
-				{ id: firstAid, name: "First aid", expiresAt: LAST_VALID_DAY },
+				{ id: firstAid, name: "First aid", expiresAt: LAST_VALID_DAY, certificateOnFile: false },
 			]);
 		});
 

@@ -1,6 +1,11 @@
 "use client";
 
-import { IconAlertTriangle, IconCertificate, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconCertificate,
+	IconFileCertificate,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -124,6 +129,12 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 												date: formatPlainDate(parsePlainDate(skill.expiresAt), locale, "dateShort"),
 											})}
 										</span>
+										{skill.certificateOnFile && (
+											<Badge variant="outline" className="text-xs">
+												<IconFileCertificate className="mr-1 size-3" aria-hidden="true" />
+												{t("scheduling:scheduling.skills.certificateOnFile", "Certificate on file")}
+											</Badge>
+										)}
 									</li>
 								))}
 							</ul>
