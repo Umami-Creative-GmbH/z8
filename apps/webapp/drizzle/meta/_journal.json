@@ -1527,6 +1527,13 @@
       "when": 1805126400000,
       "tag": "0217_rate_history_merge_into_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1805212800000,
+      "tag": "0218_drop_employee_current_hourly_rate",
+      "breakpoints": true
     }
   ]
 }

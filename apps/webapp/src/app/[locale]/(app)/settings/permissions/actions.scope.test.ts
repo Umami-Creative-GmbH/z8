@@ -270,7 +270,6 @@ describe("permissions settings server scope", () => {
 				role: "employee",
 				isActive: true,
 				teamId: "team-actor",
-				currentHourlyRate: "999.00",
 				user: {
 					id: "user-actor",
 					firstName: "Ada",

@@ -19,7 +19,6 @@ type EmployeeRow = {
 	firstName: string | null;
 	lastName: string | null;
 	birthday: Date | null;
-	currentHourlyRate: string | null;
 	employeeNumber: string | null;
 };
 
@@ -88,7 +87,6 @@ const baseState = (): HarnessState => ({
 			firstName: "Riley",
 			lastName: "Requester",
 			birthday: new Date("1990-02-03T00:00:00.000Z"),
-			currentHourlyRate: "37.50",
 			employeeNumber: "SECRET-001",
 		},
 		{
@@ -101,7 +99,6 @@ const baseState = (): HarnessState => ({
 			firstName: "Taylor",
 			lastName: "Target",
 			birthday: new Date("1992-04-05T00:00:00.000Z"),
-			currentHourlyRate: "42.00",
 			employeeNumber: "SECRET-002",
 		},
 		{
@@ -114,7 +111,6 @@ const baseState = (): HarnessState => ({
 			firstName: "Morgan",
 			lastName: "Manager",
 			birthday: new Date("1985-06-07T00:00:00.000Z"),
-			currentHourlyRate: "55.00",
 			employeeNumber: "SECRET-003",
 		},
 		{
@@ -127,7 +123,6 @@ const baseState = (): HarnessState => ({
 			firstName: "Other",
 			lastName: "Manager",
 			birthday: new Date("1984-08-09T00:00:00.000Z"),
-			currentHourlyRate: "60.00",
 			employeeNumber: "SECRET-004",
 		},
 	],
@@ -617,7 +612,7 @@ describe("ShiftRequestService organization containment", () => {
 					serialized.shift.employee,
 				]),
 			).not.toMatch(
-				/birthday|currentHourlyRate|employeeNumber|userId|organizationId/,
+				/birthday|employeeNumber|userId|organizationId/,
 			);
 		}
 	});
@@ -754,7 +749,6 @@ describe("ShiftRequestService serialized mutations", () => {
 				firstName: "Second",
 				lastName: "Requester",
 				birthday: null,
-				currentHourlyRate: null,
 				employeeNumber: null,
 			});
 			state.requests.push(

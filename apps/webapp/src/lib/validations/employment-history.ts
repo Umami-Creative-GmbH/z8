@@ -33,11 +33,6 @@ export const hourlyWageSchema = z
 			}),
 	);
 
-/** A terms wage as the legacy `employee.current_hourly_rate` decimal text (dropped by #1179). */
-export function storedEmployeeWage(hourlyRate: number | null): string | null {
-	return hourlyRate === null ? null : hourlyRate.toFixed(2);
-}
-
 /** Fixed terms carry no wage, whatever the client sent. */
 export function wageForContract(contractType: "fixed" | "hourly", hourlyRate: number | null) {
 	return contractType === "hourly" ? hourlyRate : null;

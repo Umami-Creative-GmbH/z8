@@ -91,7 +91,6 @@ function draftEmployeeCreationValues(
 		startDate: draft.startDate,
 		endDate: draft.endDate,
 		contractType: draft.contractType,
-		currentHourlyRate: draft.currentHourlyRate,
 	};
 }
 
@@ -115,9 +114,6 @@ function draftEmployeeReactivationValues(
 		...(draft.startDate != null ? { startDate: draft.startDate } : {}),
 		...(draft.endDate != null ? { endDate: draft.endDate } : {}),
 		...(draft.contractType != null ? { contractType: draft.contractType } : {}),
-		...(draft.currentHourlyRate != null
-			? { currentHourlyRate: draft.currentHourlyRate }
-			: {}),
 	};
 }
 

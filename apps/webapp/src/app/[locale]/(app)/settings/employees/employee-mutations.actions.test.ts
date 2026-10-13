@@ -525,7 +525,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				user: {
 					firstName: "Old",
@@ -600,7 +599,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				user: {
 					firstName: "ExistingFirst",
@@ -676,7 +674,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 			}),
 		);
@@ -753,7 +750,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),
@@ -809,7 +805,6 @@ describe("updateEmployeeAction", () => {
 				id: "employee-1",
 				userId: validUserId,
 				organizationId: "org-1",
-				currentHourlyRate: null,
 				contractType: "fixed",
 				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),

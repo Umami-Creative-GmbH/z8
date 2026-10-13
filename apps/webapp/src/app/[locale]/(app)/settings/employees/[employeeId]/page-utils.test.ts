@@ -67,7 +67,6 @@ describe("syncEmployeeForm", () => {
 			startDate: new Date("2026-05-01T22:30:00.000Z"),
 			role: "employee",
 			contractType: "fixed",
-			currentHourlyRate: null,
 			user: {
 				firstName: "Ada",
 				lastName: "Lovelace",
@@ -87,7 +86,6 @@ describe("syncEmployeeForm", () => {
 		syncEmployeeForm(form as never, {
 			kind: "employee",
 			contractType: "hourly",
-			currentHourlyRate: "42.50",
 			user: { firstName: "Ada", lastName: "Lovelace" },
 		} as EmployeeDetail);
 

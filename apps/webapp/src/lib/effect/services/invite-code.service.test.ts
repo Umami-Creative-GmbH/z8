@@ -1974,7 +1974,6 @@ describe("InviteCodeService preserved employee reactivation", () => {
 					role: "manager",
 					employeeNumber: "E-42",
 					position: "Historian",
-					currentHourlyRate: "42.00",
 				},
 			});
 
