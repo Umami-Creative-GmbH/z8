@@ -342,7 +342,8 @@ export async function confirmEmploymentTerms(
 	return updated;
 }
 
-function utcMidnight(date: PlainDate): Date {
+/** A terms calendar date as stored: UTC midnight of that date (D1). */
+export function utcMidnight(date: PlainDate): Date {
 	return dateFromInstant(date.toZonedDateTime({ timeZone: "UTC" }).toInstant());
 }
 
