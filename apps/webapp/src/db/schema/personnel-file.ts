@@ -127,7 +127,7 @@ export const employeeDocument = pgTable(
 		),
 		// employee_skill has no organization_id: the link goes through the
 		// document's employee, whose own reference ties it to the organization.
-		// Migration 0241 deletes with SET NULL ("employee_skill_id") only, keeping
+		// Migration 0216 deletes with SET NULL ("employee_skill_id") only, keeping
 		// the employee and the document.
 		foreignKey({
 			name: "employee_document_employee_skill_fk",
