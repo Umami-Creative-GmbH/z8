@@ -164,6 +164,7 @@ const NOTIFICATION_CATEGORIES = [
 			"password_changed",
 			"two_factor_enabled",
 			"two_factor_disabled",
+			"personal_data_export_ready",
 		] as NotificationType[],
 	},
 	{
@@ -293,6 +294,8 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, str
 	time_off_in_lieu_available: "Time off in lieu available",
 	// To every owner and admin when a schedule's owner is no longer an org admin (#988)
 	scheduled_export_paused: "Scheduled export paused (owners and admins)",
+	// The requester's personal data export is ready on My data (#811)
+	personal_data_export_ready: "Personal data export ready",
 };
 
 // Channel icons and labels

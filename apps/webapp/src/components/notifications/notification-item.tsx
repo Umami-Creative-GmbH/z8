@@ -7,6 +7,7 @@ import {
 	IconCheck,
 	IconCircleFilled,
 	IconClock,
+	IconDatabaseExport,
 	IconShield,
 	IconUserMinus,
 	IconUserShare,
@@ -152,6 +153,14 @@ function getNotificationStyle(type: NotificationType): {
 		case "two_factor_disabled":
 			return {
 				icon: <IconShield className="size-4" />,
+				bgColor: "bg-slate-100 dark:bg-slate-900/30",
+				iconColor: "text-slate-600 dark:text-slate-400",
+			};
+
+		// A personal data export is ready on My data (#811)
+		case "personal_data_export_ready":
+			return {
+				icon: <IconDatabaseExport className="size-4" />,
 				bgColor: "bg-slate-100 dark:bg-slate-900/30",
 				iconColor: "text-slate-600 dark:text-slate-400",
 			};

@@ -33,6 +33,20 @@ vi.mock("@/lib/jobs/report-share-links", () => {
 	reportShareLinks.imported();
 	return { runReportShareLinkSweep: reportShareLinks.sweep };
 });
+const personalDataExports = vi.hoisted(() => ({
+	imported: vi.fn(),
+	sweep: vi.fn(async () => ({
+		expired: 2,
+		timedOut: 0,
+		filesDeleted: 2,
+		filesFailed: 0,
+		outstanding: 0,
+	})),
+}));
+vi.mock("@/lib/jobs/personal-data-export-sweep", () => {
+	personalDataExports.imported();
+	return { runPersonalDataExportSweep: personalDataExports.sweep };
+});
 const clockingReminders = vi.hoisted(() => ({
 	imported: vi.fn(),
 	run: vi.fn(async () => ({ sent: 2 })),
@@ -337,6 +351,23 @@ describe("report share link sweep cron", () => {
 			}),
 		).toEqual({ expired: 2, creatorLostAccess: 1 });
 		expect(reportShareLinks.sweep).toHaveBeenCalledOnce();
+	});
+});
+
+describe("personal data export sweep cron", () => {
+	it("loads the sweep lazily and expires exports and their files every 15 minutes", async () => {
+		expect(personalDataExports.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:personal-data-export-sweep"]).toMatchObject({
+			schedule: "*/15 * * * *",
+			defaultJobOptions: { attempts: 2, priority: 8 },
+		});
+
+		expect(
+			await CRON_JOBS["cron:personal-data-export-sweep"].processor({
+				triggeredAt: "2026-10-13T09:15:00Z",
+			}),
+		).toEqual({ expired: 2, timedOut: 0, filesDeleted: 2, filesFailed: 0, outstanding: 0 });
+		expect(personalDataExports.sweep).toHaveBeenCalledOnce();
 	});
 });
 

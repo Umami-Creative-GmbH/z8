@@ -1513,6 +1513,13 @@
       "when": 1802880000000,
       "tag": "0215_absence_setting_proration_notice",
       "breakpoints": true
+    },
+    {
+      "idx": 221,
+      "version": "7",
+      "when": 1803398400000,
+      "tag": "0221_personal_data_export",
+      "breakpoints": true
     }
   ]
 }

@@ -105,6 +105,8 @@ export const NOTIFICATION_TYPES = [
 	"period_submission_decided",
 	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
 	"scheduled_export_paused",
+	// The requester's personal data export is ready to download, with no file link (#811)
+	"personal_data_export_ready",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
