@@ -32,6 +32,7 @@
 - **Organization → Projects**: an organization defines project custom fields in Organization; a project holds custom field values for them, and Projects owns the project itself
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
+- **Organization → Personnel File**: a payslip batch matches files to employees by their personnel number, which Organization owns
 - **Absences → Personnel File**: a sick-leave absence can have sick notes, which are employee documents in the personnel file; the absence knows only that they exist, and personnel file access decides who sees them
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
 - **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and while an approver is away the deputy named on their absence may decide their approvals as a **deputy decision**
@@ -41,4 +42,5 @@
 - **Time Tracking → Travel Expenses**: distance driven in an own vehicle can pre-fill a mileage item; only the mileage item is reimbursed, after its own submission and approval
 - **Every context → Notifications**: a context decides who must hear about one of its events and supplies the text as translation keys with English defaults; Notifications picks the recipient language and delivers over each channel
 - **Scheduled Exports → Notifications**: an approved external recipient has no Z8 user, so their emails use the organization's default language
+- **Personnel File → Scheduling**: a skill certificate names the employee skill it proves; Scheduling knows only that one is on file, and personnel file access decides who opens it
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them

@@ -1,15 +1,11 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
-import { employee } from "@/db/schema";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { type AnyAppError, AuthorizationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type AssignSkillInput,
 	type CreateSkillInput,
@@ -22,6 +18,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
+	getEmployeeContext,
 	getEmployeeSettingsActorContext,
 	getTargetEmployee,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -135,7 +132,7 @@ export async function updateSkill(
 					action: "update",
 				});
 
-				const updatedSkill = yield* skillService.updateSkill(skillId, {
+				const updatedSkill = yield* skillService.updateSkill(actor.organizationId, skillId, {
 					...data,
 					updatedBy: session.user.id,
 				});
@@ -191,7 +188,7 @@ export async function deleteSkill(skillId: string): Promise<ServerActionResult<v
 					action: "delete",
 				});
 
-				yield* skillService.deleteSkill(skillId);
+				yield* skillService.deleteSkill(actor.organizationId, skillId);
 
 				logger.info({ skillId }, "Skill deleted successfully");
 
@@ -245,7 +242,7 @@ export async function getOrganizationSkills(options?: {
  * Requires admin or manager role
  */
 export async function assignSkillToEmployee(
-	data: Omit<AssignSkillInput, "assignedBy">,
+	data: Omit<AssignSkillInput, "organizationId" | "assignedBy">,
 ): Promise<ServerActionResult<EmployeeSkillWithDetails>> {
 	const tracer = trace.getTracer("skills");
 
@@ -284,11 +281,12 @@ export async function assignSkillToEmployee(
 
 				const assignment = yield* skillService.assignSkillToEmployee({
 					...data,
+					organizationId: actor.organizationId,
 					assignedBy: session.user.id,
 				});
 
 				// Get the skill details for the response
-				const skillDetails = yield* skillService.getSkillById(data.skillId);
+				const skillDetails = yield* skillService.getSkillById(actor.organizationId, data.skillId);
 
 				logger.info(
 					{
@@ -367,7 +365,7 @@ export async function removeSkillFromEmployee(
 					action: "delete",
 				});
 
-				yield* skillService.removeSkillFromEmployee(employeeId, skillId);
+				yield* skillService.removeSkillFromEmployee(actor.organizationId, employeeId, skillId);
 
 				logger.info(
 					{
@@ -418,7 +416,7 @@ export async function getEmployeeSkills(
 			action: "read",
 		});
 
-		const skills = yield* skillService.getEmployeeSkills(employeeId);
+		const skills = yield* skillService.getEmployeeSkills(actor.organizationId, employeeId);
 
 		return skills;
 	});
@@ -461,6 +459,7 @@ export async function setSubareaSkillRequirements(
 				});
 
 				yield* skillService.setSubareaSkillRequirements({
+					organizationId: actor.organizationId,
 					targetId: subareaId,
 					requirements,
 					createdBy: session.user.id,
@@ -528,6 +527,7 @@ export async function setTemplateSkillRequirements(
 				});
 
 				yield* skillService.setTemplateSkillRequirements({
+					organizationId: actor.organizationId,
 					targetId: templateId,
 					requirements,
 					createdBy: session.user.id,
@@ -580,11 +580,16 @@ export async function validateEmployeeForShift(
 	},
 ): Promise<ServerActionResult<SkillValidationResult>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		yield* authService.getSession();
+		const { currentEmployee } = yield* getEmployeeContext({
+			queryName: "validateEmployeeForShift:actor",
+		});
 		const skillService = yield* SkillService;
 
-		const result = yield* skillService.validateEmployeeForShift(employeeId, shiftData);
+		const result = yield* skillService.validateEmployeeForShift(
+			currentEmployee.organizationId,
+			employeeId,
+			shiftData,
+		);
 
 		return result;
 	});
@@ -600,30 +605,11 @@ export async function getQualifiedEmployeesForSkills(
 	skillIds: string[],
 ): Promise<ServerActionResult<string[]>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
+		// The current employee of the active organization, not any of the user's employees
+		const { currentEmployee } = yield* getEmployeeContext({
+			queryName: "getQualifiedEmployeesForSkills:actor",
+		});
 		const skillService = yield* SkillService;
-
-		// Get current employee
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
 
 		const qualifiedEmployeeIds = yield* skillService.getQualifiedEmployeesForSkills(
 			currentEmployee.organizationId,
