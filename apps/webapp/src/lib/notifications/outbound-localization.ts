@@ -1,15 +1,17 @@
 import { createLogger } from "@/lib/logger";
 import { loadNamespaces, type Namespace, TolgeeBase } from "@/tolgee/shared";
+import { type FormattedNotificationParam, formatNotificationParams } from "./notification-params";
 import { resolveRecipientNotificationLocale } from "./recipient-locale";
 
-type TranslationParam = string | number | bigint | Date;
+type TranslationParam = FormattedNotificationParam;
 
 interface NotificationI18nMetadata {
 	titleKey?: string;
 	titleDefault?: string;
 	messageKey?: string;
 	messageDefault?: string;
-	params?: Record<string, TranslationParam>;
+	/** Raw params, typed ones included; formatted once the locale is known. */
+	params?: Record<string, unknown>;
 }
 
 interface NotificationMetadata {
@@ -23,6 +25,8 @@ interface LocalizeOutboundNotificationParams {
 	message: string;
 	metadata?: Record<string, unknown> | string | null;
 	locale?: string;
+	/** The recipient's hour cycle for typed time params; the locale's own otherwise. */
+	timeFormat?: "12h" | "24h";
 }
 
 interface LocalizedOutboundNotification {
@@ -39,28 +43,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isTranslationParam(value: unknown): value is TranslationParam {
-	return (
-		typeof value === "string" ||
-		typeof value === "number" ||
-		typeof value === "bigint" ||
-		value instanceof Date
-	);
-}
-
-function sanitizeParams(params: unknown): Record<string, TranslationParam> | undefined {
-	if (!isRecord(params)) return undefined;
-
-	const sanitized: Record<string, TranslationParam> = {};
-	for (const [key, value] of Object.entries(params)) {
-		if (isTranslationParam(value)) {
-			sanitized[key] = value;
-		}
-	}
-
-	return sanitized;
-}
-
 function sanitizeI18nMetadata(i18n: unknown): NotificationI18nMetadata | undefined {
 	if (!isRecord(i18n)) return undefined;
 
@@ -70,8 +52,7 @@ function sanitizeI18nMetadata(i18n: unknown): NotificationI18nMetadata | undefin
 	if (typeof i18n.messageKey === "string") sanitized.messageKey = i18n.messageKey;
 	if (typeof i18n.messageDefault === "string") sanitized.messageDefault = i18n.messageDefault;
 
-	const params = sanitizeParams(i18n.params);
-	if (params) sanitized.params = params;
+	if (isRecord(i18n.params)) sanitized.params = i18n.params;
 
 	return sanitized;
 }
@@ -133,10 +114,33 @@ export async function recipientNotificationTranslator({
 	}
 }
 
+/**
+ * The recipient's notification language, for callers that format typed params
+ * themselves (email override variables). `en` when it cannot be resolved.
+ */
+export async function resolveOutboundNotificationLocale({
+	userId,
+	organizationId,
+}: {
+	userId: string;
+	organizationId?: string | null;
+}): Promise<string> {
+	try {
+		return await resolveRecipientNotificationLocale({ userId, organizationId });
+	} catch (error) {
+		logger.warn(
+			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
+			"Failed to resolve recipient notification locale",
+		);
+		return FALLBACK_LOCALE;
+	}
+}
+
 export async function localizeOutboundNotification({
 	userId,
 	organizationId,
 	locale,
+	timeFormat,
 	title,
 	message,
 	metadata,
@@ -157,17 +161,21 @@ export async function localizeOutboundNotification({
 	const i18n = parseMetadata(metadata).i18n;
 
 	if (!i18n?.titleKey && !i18n?.messageKey) {
-    return { locale: resolvedLocale, title, message };
+		return { locale: resolvedLocale, title, message };
 	}
 
 	try {
 		const t = await loadNotificationTranslator(resolvedLocale);
+		// Typed params become text in the recipient language first: ICU never sees a Date (#1149).
+		const params = i18n.params
+			? formatNotificationParams(i18n.params, { locale: resolvedLocale, timeFormat })
+			: undefined;
 
 		return {
 			locale: resolvedLocale,
-			title: i18n.titleKey ? t(i18n.titleKey, i18n.titleDefault ?? title, i18n.params) : title,
+			title: i18n.titleKey ? t(i18n.titleKey, i18n.titleDefault ?? title, params) : title,
 			message: i18n.messageKey
-				? t(i18n.messageKey, i18n.messageDefault ?? message, i18n.params)
+				? t(i18n.messageKey, i18n.messageDefault ?? message, params)
 				: message,
 		};
 	} catch (error) {

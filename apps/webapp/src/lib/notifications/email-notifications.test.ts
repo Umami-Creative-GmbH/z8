@@ -11,6 +11,7 @@ const {
 	findUserMock,
 	getOrganizationBaseUrlMock,
 	localizeOutboundNotificationMock,
+	resolveOutboundNotificationLocaleMock,
 } = vi.hoisted(() => ({
 	debugMock: vi.fn(),
 	errorMock: vi.fn(),
@@ -19,6 +20,7 @@ const {
 	findUserMock: vi.fn(),
 	getOrganizationBaseUrlMock: vi.fn(),
 	localizeOutboundNotificationMock: vi.fn(),
+	resolveOutboundNotificationLocaleMock: vi.fn(),
 }));
 
 vi.mock("@/db", () => ({
@@ -60,6 +62,7 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("./outbound-localization", () => ({
 	localizeOutboundNotification: localizeOutboundNotificationMock,
+	resolveOutboundNotificationLocale: resolveOutboundNotificationLocaleMock,
 }));
 
 const sendEmailMock = vi.mocked(sendEmail);
@@ -181,6 +184,7 @@ describe("sendEmailNotification", () => {
 		findUserMock.mockReset();
 		getOrganizationBaseUrlMock.mockReset();
 		localizeOutboundNotificationMock.mockReset();
+		resolveOutboundNotificationLocaleMock.mockReset();
 		sendEmailMock.mockReset();
 		renderOrganizationEmailTemplateMock.mockReset();
 		findUserMock
@@ -608,6 +612,42 @@ describe("sendEmailNotification", () => {
 					endDate: "May 1, 2026 - May 2, 2026",
 				}),
 			}),
+		);
+	});
+
+	it("supplies typed override variables formatted in the recipient language (#1149)", async () => {
+		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		const result = await sendEmailNotification({
+			userId: "user_123",
+			type: "absence_request_submitted",
+			title: "Absence request submitted",
+			message: "Original message",
+			organizationId: "org_123",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.absenceRequestSubmitted.title",
+					messageKey: "common:notifications.content.absenceRequestSubmitted.message",
+					params: {
+						categoryName: "Vacation",
+						dateRange: { kind: "plainDateRange", start: "2026-05-01", end: "2026-05-02" },
+					},
+				},
+			},
+		});
+
+		expect(result).toBe(true);
+		expect(resolveOutboundNotificationLocaleMock).toHaveBeenCalledWith({
+			userId: "user_123",
+			organizationId: "org_123",
+		});
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({ startDate: "1.–2. Mai 2026", endDate: "1.–2. Mai 2026" }),
+			}),
+		);
+		// The localized body is rendered in the same, already resolved language.
+		expect(localizeOutboundNotificationMock).toHaveBeenCalledWith(
+			expect.objectContaining({ locale: "de" }),
 		);
 	});
 });

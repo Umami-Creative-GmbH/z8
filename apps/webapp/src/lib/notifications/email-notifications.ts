@@ -12,7 +12,11 @@ import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { type SendEmailParams, sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { createLogger } from "@/lib/logger";
-import { localizeOutboundNotification } from "./outbound-localization";
+import { hasTypedNotificationParams, withFormattedTypedParams } from "./notification-params";
+import {
+	localizeOutboundNotification,
+	resolveOutboundNotificationLocale,
+} from "./outbound-localization";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("EmailNotifications");
@@ -195,7 +199,8 @@ export async function sendEmailNotification(
 	params: EmailNotificationParams,
 	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
-	const { userId, type, metadata, organizationId } = params;
+	const { userId, type, organizationId } = params;
+	let metadata = params.metadata;
 	const sendNotificationEmail = options.throwOnError
 		? (message: SendEmailParams) => sendEmail(message, { durable: true })
 		: sendEmail;
@@ -233,6 +238,20 @@ export async function sendEmailNotification(
 			if (result.unavailable) return false;
 			if (!result.success && options.throwOnError) throw new Error("email_delivery_failed");
 			return result.success;
+		}
+
+		// Override `{{variables}}` read typed params as text in the recipient language (#1149).
+		const i18nParams = getI18nParamsMetadata(metadata);
+		let recipientLocale: string | undefined;
+		if (metadata && i18nParams && hasTypedNotificationParams(i18nParams)) {
+			recipientLocale = await resolveOutboundNotificationLocale({ userId, organizationId });
+			metadata = {
+				...metadata,
+				i18n: {
+					...getI18nMetadata(metadata),
+					params: withFormattedTypedParams(i18nParams, { locale: recipientLocale }),
+				},
+			};
 		}
 
 		let templateKey: EmailTemplateKey | null = null;
@@ -473,6 +492,7 @@ export async function sendEmailNotification(
 				title: params.title,
 				message: params.message,
 				metadata,
+				locale: recipientLocale,
 			});
 			localizedEmailContent = { title: localized.title, message: localized.message };
 			if (hasI18nTitle) {

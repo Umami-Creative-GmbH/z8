@@ -218,4 +218,31 @@ describe("getLocalizedNotificationContent", () => {
 			"Ab morgen sind Sie Abwesenheitsvertretung für Sam Lee bis 14. Okt. 2026.",
 		);
 	});
+
+	it("formats typed params in the reader's locale at the time's own offset (#1149)", () => {
+		const localized = getLocalizedNotificationContent(
+			buildNotification({
+				type: "automatic_clock_out",
+				title: "Automatically clocked out",
+				message: "Stored English message",
+				metadata: JSON.stringify({
+					i18n: {
+						messageKey: "common:notifications.content.automaticClockOut.message",
+						messageDefault: "Clocked out at {cutoff} ({timezone}) after {duration}.",
+						params: {
+							cutoff: { kind: "entryInstant", at: "2026-10-25T06:00:00Z", utcOffsetMinutes: 60 },
+							duration: { kind: "duration", minutes: 720 },
+							timezone: "Europe/Berlin",
+						},
+					},
+				}),
+			}),
+			t,
+			"de",
+		);
+
+		expect(localized.message).toBe(
+			"Clocked out at 25. Okt. 2026, 07:00 (Europe/Berlin) after 12 Stunden.",
+		);
+	});
 });

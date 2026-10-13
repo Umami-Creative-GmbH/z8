@@ -227,9 +227,67 @@ describe("localizeOutboundNotification", () => {
 				performedByName: "Mina Manager",
 				count: 2,
 				largeCount: 2n,
-				createdAt,
+				// ICU would format a raw Date in the server's zone (#1149).
+				createdAt: "2026-06-01T00:00:00.000Z",
 			},
 		});
+	});
+
+	it("formats typed params in the recipient language before translating (#1149)", async () => {
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			title: "Automatically clocked out",
+			message: "Stored message",
+			metadata: JSON.stringify({
+				i18n: {
+					messageKey: "common:notifications.content.automaticClockOut.message",
+					params: {
+						duration: "720",
+						cutoff: { kind: "entryInstant", at: "2026-10-25T06:00:00Z", utcOffsetMinutes: 60 },
+						timezone: "Europe/Berlin",
+					},
+				},
+			}),
+		});
+
+		expect(tolgeeTMock).toHaveBeenCalledWith({
+			key: "common:notifications.content.automaticClockOut.message",
+			defaultValue: "Stored message",
+			params: { duration: "720", cutoff: "25. Okt. 2026, 07:00", timezone: "Europe/Berlin" },
+		});
+	});
+
+	it("formats typed params with the given hour cycle", async () => {
+		resolveLocaleMock.mockResolvedValue("en");
+		const { localizeOutboundNotification } = await import("./outbound-localization");
+
+		await localizeOutboundNotification({
+			userId: "user-1",
+			organizationId: "org-1",
+			timeFormat: "24h",
+			title: "Title",
+			message: "Message",
+			metadata: {
+				i18n: {
+					messageKey: "common:notifications.content.automaticClockOut.message",
+					params: {
+						cutoff: {
+							kind: "entryInstant",
+							at: "2026-10-25T06:00:00Z",
+							utcOffsetMinutes: 60,
+							preset: "time",
+						},
+					},
+				},
+			},
+		});
+
+		expect(tolgeeTMock).toHaveBeenCalledWith(
+			expect.objectContaining({ params: { cutoff: "07:00" } }),
+		);
 	});
 
 	it("falls back to stored text when translation loading fails", async () => {
