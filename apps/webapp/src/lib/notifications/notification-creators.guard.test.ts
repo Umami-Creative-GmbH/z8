@@ -27,35 +27,6 @@ const CREATORS_WITHOUT_KEYS = new Set<string>([
 	"lib/notifications/triggers.ts::onTimeCorrectionPendingApproval", // dead
 	"lib/notifications/triggers.ts::onTimeCorrectionRejected",
 	"lib/notifications/triggers.ts::onTimeCorrectionSubmitted", // dead
-	// #1154: every remaining creator.
-	"app/api/wellness/water-reminder/route.ts::POST", // direct push, not a notification
-	"lib/approvals/escalation/attention-store.ts::dispatchEscalationAttentionAlerts",
-	"lib/notifications/compliance-triggers.ts::onComplianceExceptionApproved",
-	"lib/notifications/compliance-triggers.ts::onComplianceExceptionExpired", // dead
-	"lib/notifications/compliance-triggers.ts::onComplianceExceptionRejected",
-	"lib/notifications/compliance-triggers.ts::onComplianceExceptionRequested",
-	"lib/notifications/compliance-triggers.ts::onOvertimeViolation", // dead
-	"lib/notifications/compliance-triggers.ts::onOvertimeWarning", // dead
-	"lib/notifications/compliance-triggers.ts::onRestPeriodViolation", // dead
-	"lib/notifications/compliance-triggers.ts::onRestPeriodWarning", // dead
-	"lib/notifications/project-notification-triggers.ts::checkProjectBudgetWarnings",
-	"lib/notifications/project-notification-triggers.ts::checkProjectDeadlineWarnings",
-	"lib/notifications/triggers.ts::onBirthdayReminder", // dead
-	"lib/notifications/triggers.ts::onOpenShiftAvailable", // dead
-	"lib/notifications/triggers.ts::onSchedulePublished", // dead
-	"lib/notifications/triggers.ts::onShiftPickupApproved", // dead
-	"lib/notifications/triggers.ts::onShiftSwapApproved", // dead
-	"lib/notifications/triggers.ts::onShiftSwapRejected", // dead
-	"lib/notifications/triggers.ts::onShiftSwapRequestedToManager", // dead
-	"lib/notifications/triggers.ts::onShiftSwapRequestedToTarget", // dead
-	"lib/notifications/triggers.ts::onTravelExpenseApproved",
-	"lib/notifications/triggers.ts::onTravelExpenseRejected",
-	"lib/notifications/triggers.ts::onTravelExpenseReportDecided",
-	"lib/notifications/triggers.ts::onTravelExpenseReportReturned",
-	"lib/notifications/triggers.ts::onTwoFactorDisabled", // dead (#1180)
-	"lib/notifications/triggers.ts::onTwoFactorEnabled", // dead (#1180)
-	"lib/notifications/triggers.ts::onVacationBalanceAlert", // dead
-	"lib/teams/shift-pickup-handler.ts::notifyPrimaryManagerAboutShiftPickup",
 ]);
 
 /** Direct writes that never get keys, with the reason. */

@@ -16,12 +16,34 @@ import {
 	OpenShiftsServiceLive,
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
+import {
+	fillNotificationTemplate,
+	notificationParam,
+} from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
-import { formatShiftDate, shiftCalendarDate } from "@/lib/scheduling/shift-date";
+import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { ResolvedTenant } from "./types";
 
 const logger = createLogger("TeamsShiftPickup");
+
+/** Translated per recipient; the shift date is a typed calendar day (#812). */
+const shiftPickupRequestedCopy = {
+	named: {
+		titleKey: "common:notifications.content.shiftPickupRequested.title",
+		titleDefault: "Shift pickup request",
+		messageKey: "common:notifications.content.shiftPickupRequested.message",
+		messageDefault:
+			"{requesterName} requested to pick up the shift on {shiftDate} ({startTime} - {endTime}).",
+	},
+	unnamedRequester: {
+		titleKey: "common:notifications.content.shiftPickupRequested.title",
+		titleDefault: "Shift pickup request",
+		messageKey: "common:notifications.content.shiftPickupRequested.messageUnnamedRequester",
+		messageDefault:
+			"An employee requested to pick up the shift on {shiftDate} ({startTime} - {endTime}).",
+	},
+} as const;
 
 interface NotifyPrimaryManagerAboutShiftPickupParams {
 	requestId: string;
@@ -77,16 +99,26 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 			return;
 		}
 
-		const requesterName =
-			[requester.firstName, requester.lastName].filter(Boolean).join(" ") || "An employee";
-		const shiftDate = formatShiftDate(shiftCalendarDate(requestedShift.date, organizationTimezone));
+		const requesterName = [requester.firstName, requester.lastName].filter(Boolean).join(" ");
+		const copy = requesterName
+			? shiftPickupRequestedCopy.named
+			: shiftPickupRequestedCopy.unnamedRequester;
+		const i18nParams = {
+			...(requesterName ? { requesterName } : {}),
+			shiftDate: notificationParam.plainDate(
+				shiftCalendarDate(requestedShift.date, organizationTimezone),
+				"weekdayMonthDay",
+			),
+			startTime: requestedShift.startTime,
+			endTime: requestedShift.endTime,
+		};
 
 		await createNotification({
 			userId: manager.userId,
 			organizationId,
 			type: "shift_pickup_requested",
-			title: "Shift pickup request",
-			message: `${requesterName} requested to pick up the shift on ${shiftDate} (${requestedShift.startTime} - ${requestedShift.endTime}).`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "shift_request",
 			entityId: requestId,
 			actionUrl: "/scheduling",
@@ -94,6 +126,7 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 				shiftId,
 				requesterId,
 				managerId: primaryManager.managerId,
+				i18n: { ...copy, params: i18nParams },
 			},
 		});
 	} catch (error) {
