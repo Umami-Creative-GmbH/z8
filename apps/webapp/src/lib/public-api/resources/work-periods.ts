@@ -1,7 +1,7 @@
 import { and, asc, eq, gte, isNull, lt, ne, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
-import { timeEntry, workPeriod } from "@/db/schema";
+import { organizationVehicle, timeEntry, workPeriod } from "@/db/schema";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { defineEndpoint } from "../endpoint";
 import { decodeCursor, invalidCursor, pageOf, pageQueryShape, pageSchema } from "../pagination";
@@ -19,6 +19,36 @@ const endpointSchema = z
 	})
 	.meta({ title: "WorkPeriodEndpoint" });
 
+const kilometresSchema = z.int().min(0).nullable();
+
+const vehicleUseSchema = z
+	.object({
+		kind: z
+			.enum(["organization", "own"])
+			.describe(
+				"`organization` for an organization vehicle; `own` for the employee's own vehicle, which identifies no vehicle.",
+			),
+		vehicleId: idSchema().nullable().describe("The organization vehicle; null for an own vehicle."),
+		vehicleName: z
+			.string()
+			.nullable()
+			.describe("The organization vehicle's name, also once archived; null for an own vehicle."),
+		licencePlate: z
+			.string()
+			.nullable()
+			.describe("The organization vehicle's licence plate; null for an own vehicle."),
+		odometerStartKm: kilometresSchema.describe(
+			"The odometer reading at the start, in whole kilometres; null when not recorded.",
+		),
+		odometerEndKm: kilometresSchema.describe(
+			"The odometer reading at the end, in whole kilometres; null when not recorded.",
+		),
+		drivenDistanceKm: kilometresSchema.describe(
+			"The driven distance in whole kilometres: end minus start reading, or entered directly when there is no start reading. Null when not known yet.",
+		),
+	})
+	.meta({ title: "WorkPeriodVehicleUse" });
+
 export const workPeriodSchema = z
 	.object({
 		id: idSchema(),
@@ -30,6 +60,11 @@ export const workPeriodSchema = z
 		approvalStatus: z
 			.enum(["approved", "pending"])
 			.describe("`pending` while the work waits for approval."),
+		vehicleUse: vehicleUseSchema
+			.nullable()
+			.describe(
+				"The vehicle driven during the work, with its readings; null when none was recorded.",
+			),
 	})
 	.meta({ title: "WorkPeriod" });
 
@@ -79,6 +114,13 @@ export const listWorkPeriods = defineEndpoint({
 				approvalStatus: workPeriod.approvalStatus,
 				startOffset: clockIn.utcOffsetMinutes,
 				endOffset: clockOut.utcOffsetMinutes,
+				vehicleKind: workPeriod.vehicleKind,
+				vehicleId: workPeriod.vehicleId,
+				vehicleName: organizationVehicle.name,
+				licencePlate: organizationVehicle.licencePlate,
+				odometerStartKm: workPeriod.odometerStartKm,
+				odometerEndKm: workPeriod.odometerEndKm,
+				drivenDistanceKm: workPeriod.drivenDistanceKm,
 			})
 			.from(workPeriod)
 			.innerJoin(
@@ -88,6 +130,14 @@ export const listWorkPeriods = defineEndpoint({
 			.leftJoin(
 				clockOut,
 				and(eq(clockOut.id, workPeriod.clockOutId), eq(clockOut.organizationId, organizationId)),
+			)
+			// Archived vehicles stay named on the work they were recorded on.
+			.leftJoin(
+				organizationVehicle,
+				and(
+					eq(organizationVehicle.id, workPeriod.vehicleId),
+					eq(organizationVehicle.organizationId, organizationId),
+				),
 			)
 			.where(
 				and(
@@ -123,6 +173,17 @@ export const listWorkPeriods = defineEndpoint({
 				durationMinutes: row.endTime ? row.durationMinutes : null,
 				approvalStatus:
 					row.approvalStatus === "pending" ? ("pending" as const) : ("approved" as const),
+				vehicleUse: row.vehicleKind
+					? {
+							kind: row.vehicleKind,
+							vehicleId: row.vehicleKind === "organization" ? row.vehicleId : null,
+							vehicleName: row.vehicleKind === "organization" ? row.vehicleName : null,
+							licencePlate: row.vehicleKind === "organization" ? row.licencePlate : null,
+							odometerStartKm: row.odometerStartKm,
+							odometerEndKm: row.odometerEndKm,
+							drivenDistanceKm: row.drivenDistanceKm,
+						}
+					: null,
 			}),
 			(row) => [row.startTime.toISOString(), row.id],
 		);
