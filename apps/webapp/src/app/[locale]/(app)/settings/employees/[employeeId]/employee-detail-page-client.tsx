@@ -14,6 +14,7 @@ import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-p
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
+import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
@@ -371,6 +372,7 @@ function EmployeeRecordSections({
 				isCreating={data.isCreatingEmploymentHistory}
 				isMutating={data.isConfirmingEmploymentHistory || data.isCancelingEmploymentHistory}
 				workPolicies={workPolicies}
+				notice={isOrgAdmin ? <WageHistoryMergeNote employeeId={employeeId} /> : undefined}
 			/>
 
 			{/* Managers see it read-only for employees they manage (#996); the server decides. */}

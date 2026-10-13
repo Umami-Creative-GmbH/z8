@@ -110,7 +110,10 @@ vi.mock(
 	}),
 );
 vi.mock("@/components/settings/employee-employment-history-card", () => ({
-	EmployeeEmploymentHistoryCard: () => null,
+	EmployeeEmploymentHistoryCard: ({ notice }: { notice?: ReactNode }) => <>{notice}</>,
+}));
+vi.mock("@/components/settings/employee-employment-history/wage-history-merge-note", () => ({
+	WageHistoryMergeNote: ({ employeeId }: { employeeId: string }) => <p>Merge note for {employeeId}</p>,
 }));
 vi.mock("@/components/settings/employee-skills-card", () => ({
 	EmployeeSkillsCard: () => null,
@@ -245,6 +248,21 @@ function renderDetail({
 		),
 	};
 }
+
+describe("employee detail wage history merge note (#1176)", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it("shows the note on the terms card to org admins", async () => {
+		renderDetail({ accessTier: "orgAdmin" });
+		expect(await screen.findByText("Merge note for employee-2")).toBeTruthy();
+	});
+
+	it("shows no note to managers", async () => {
+		renderDetail({ accessTier: "manager", currentMemberRole: "member" });
+		expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+		expect(screen.queryByText(/Merge note/)).toBeNull();
+	});
+});
 
 describe("employee detail personnel file tab (#865)", () => {
 	beforeEach(() => vi.clearAllMocks());

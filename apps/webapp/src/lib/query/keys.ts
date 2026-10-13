@@ -199,6 +199,9 @@ export const queryKeys = {
 			["employees", "detail", employeeId, "rate-history"] as const,
 		employmentHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "employment-history"] as const,
+		/** The one-time wage history merge note (#1176). */
+		wageHistoryMergeNote: (employeeId: string) =>
+			["employees", "detail", employeeId, "wage-history-merge-note"] as const,
 		/** Lifecycle view; under the organization key so directory changes refresh it. */
 		offboarding: (orgId: string, employeeId: string) =>
 			["employees", orgId, "offboarding", employeeId] as const,
