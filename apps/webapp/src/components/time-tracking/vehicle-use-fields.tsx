@@ -1,6 +1,6 @@
 "use client";
 
-import { IconCar } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCar } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
 import { useId } from "react";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 import type {
 	WorkVehicleOption,
 	WorkVehicleUse,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { VehicleUseDraft } from "./vehicle-use-draft";
-import { vehicleUseFromDraft } from "./vehicle-use-draft";
-import { vehicleUseRefusalText, vehicleUseText } from "./vehicle-use-format";
+import { vehicleUseFromDraft, withPickedVehicle } from "./vehicle-use-draft";
+import { vehicleUseRefusalText, vehicleUseText, vehicleUseWarningText } from "./vehicle-use-format";
 
 const NONE = "none";
 
@@ -32,6 +33,8 @@ export function VehicleUseFields({
 	value,
 	onChange,
 	vehicles,
+	lastEndKmByVehicleId,
+	warnings = [],
 	expected = false,
 	disabled = false,
 	t,
@@ -39,6 +42,10 @@ export function VehicleUseFields({
 	value: VehicleUseDraft;
 	onChange: (value: VehicleUseDraft) => void;
 	vehicles: WorkVehicleOption[];
+	/** Each vehicle's last recorded end reading: pre-fills the start reading on pick (#1121). */
+	lastEndKmByVehicleId?: Record<string, number>;
+	/** Plausibility warnings for the entered vehicle use (#1121); they never block saving. */
+	warnings?: VehicleUseWarning[];
 	/** Vehicle use expected: the employee is asked every time (never required). */
 	expected?: boolean;
 	disabled?: boolean;
@@ -77,7 +84,7 @@ export function VehicleUseFields({
 					onValueChange={(next: string) =>
 						next === NONE
 							? onChange({ vehicle: "", startKm: "", endKm: "", distanceKm: "" })
-							: set({ vehicle: next })
+							: onChange(withPickedVehicle(value, next, lastEndKmByVehicleId))
 					}
 					disabled={disabled}
 				>
@@ -167,7 +174,34 @@ export function VehicleUseFields({
 					{vehicleUseRefusalText(t, result.code)}
 				</p>
 			) : null}
+			{result.ok && result.use && warnings.length > 0 ? (
+				<VehicleUseWarnings warnings={warnings} t={t} />
+			) : null}
 		</fieldset>
+	);
+}
+
+/** Plausibility warnings for entered vehicle use (#1121); saving still succeeds. */
+export function VehicleUseWarnings({
+	warnings,
+	t,
+}: {
+	warnings: VehicleUseWarning[];
+	t: TFnType;
+}) {
+	return (
+		<div
+			role="status"
+			aria-label={t("timeTracking.vehicleUse.warning.title", "Please check the vehicle use")}
+			className="space-y-1 rounded-md border border-amber-500/40 bg-amber-50 px-2.5 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+		>
+			{warnings.map((warning) => (
+				<p key={warning.code} className="flex items-start gap-1.5">
+					<IconAlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+					<span>{vehicleUseWarningText(t, warning)}</span>
+				</p>
+			))}
+		</div>
 	);
 }
 

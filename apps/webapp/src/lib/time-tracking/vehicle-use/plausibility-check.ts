@@ -19,7 +19,7 @@ import { organizationVehicleIdOf, type WorkVehicleUse } from "./work-vehicle-use
  * The manual entry and edit dialogs, the approval card and the clock clients
  * (#1122) share these reads.
  */
-export type VehicleUseFactsReader = Pick<WorkTransactionClient, "select" | "selectDistinctOn">;
+export type VehicleUseFactsReader = Pick<WorkTransactionClient, "select">;
 type Reader = VehicleUseFactsReader;
 
 /**
@@ -103,9 +103,10 @@ export async function readLastRecordedEndReadings(
 ): Promise<Map<string, number>> {
 	if (input.vehicleIds && input.vehicleIds.length === 0) return new Map();
 	const rows = await reader
-		.selectDistinctOn([workPeriod.vehicleId], {
+		.select({
 			vehicleId: workPeriod.vehicleId,
-			endKm: workPeriod.odometerEndKm,
+			// The end reading of the latest-ending work per vehicle.
+			endKm: sql<number | null>`(array_agg(${workPeriod.odometerEndKm} ORDER BY ${workPeriod.endTime} DESC, ${workPeriod.odometerEndKm} DESC))[1]`,
 		})
 		.from(workPeriod)
 		.where(
@@ -120,10 +121,12 @@ export async function readLastRecordedEndReadings(
 				input.excludeWorkPeriodId ? ne(workPeriod.id, input.excludeWorkPeriodId) : undefined,
 			),
 		)
-		.orderBy(workPeriod.vehicleId, desc(workPeriod.endTime), desc(workPeriod.odometerEndKm));
+		.groupBy(workPeriod.vehicleId);
 	const readings = new Map<string, number>();
 	for (const row of rows) {
-		if (row.vehicleId !== null && row.endKm !== null) readings.set(row.vehicleId, row.endKm);
+		if (row.vehicleId !== null && row.endKm !== null) {
+			readings.set(row.vehicleId, Number(row.endKm));
+		}
 	}
 	return readings;
 }

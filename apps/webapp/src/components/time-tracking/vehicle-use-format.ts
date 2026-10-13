@@ -1,3 +1,8 @@
+import {
+	PLAUSIBLE_AVERAGE_SPEED_KMH,
+	PLAUSIBLE_DISTANCE_KM,
+	type VehicleUseWarning,
+} from "@/lib/time-tracking/vehicle-use/plausibility";
 import type { WorkVehicleUseChangeRefusalCode } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 
 /**
@@ -64,6 +69,41 @@ export function vehicleUseText(t: Translate, display: VehicleUseDisplay): string
 	const kilometres = vehicleUseKilometresText(t, display);
 	const vehicle = vehicleUseVehicleText(t, display);
 	return kilometres ? `${vehicle} · ${kilometres}` : vehicle;
+}
+
+/** The translated message of a plausibility warning (#1121); it never blocks saving. */
+export function vehicleUseWarningText(t: Translate, warning: VehicleUseWarning): string {
+	switch (warning.code) {
+		case "start_below_last_end":
+			return t(
+				"timeTracking.vehicleUse.warning.startBelowLastEnd",
+				"The start reading is below this vehicle's last recorded end reading ({lastEndKm} km).",
+				{ lastEndKm: warning.lastRecordedEndKm.toLocaleString() },
+			);
+		case "vehicle_on_other_live_work":
+			return t(
+				"timeTracking.vehicleUse.warning.onOtherLiveWork",
+				"This vehicle is already recorded on another employee's running work.",
+			);
+		case "speed_above_limit":
+			return t(
+				"timeTracking.vehicleUse.warning.speedAboveLimit",
+				"The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
+				{
+					speed: warning.averageKmh.toLocaleString(),
+					limit: PLAUSIBLE_AVERAGE_SPEED_KMH.toLocaleString(),
+				},
+			);
+		case "distance_above_limit":
+			return t(
+				"timeTracking.vehicleUse.warning.distanceAboveLimit",
+				"{distance} km is more than {limit} km in one work period.",
+				{
+					distance: warning.distanceKm.toLocaleString(),
+					limit: PLAUSIBLE_DISTANCE_KM.toLocaleString(),
+				},
+			);
+	}
 }
 
 /** The translated message of a refused vehicle use change. */
