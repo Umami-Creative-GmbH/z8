@@ -159,7 +159,8 @@ export function getLocalizedNotificationContent(
 			)
 		: notification.message;
 
-	if (metadata.managerRecorded) {
+	// Rows from before #1153 carry no message key: their dates are top-level metadata.
+	if (metadata.managerRecorded && !metadata.i18n?.messageKey) {
 		message = t(
 			"common:notifications.content.absenceRecorded.message",
 			"{managerName} recorded {absenceType} for {dateRange} on your behalf.",
