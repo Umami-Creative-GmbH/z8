@@ -22,6 +22,10 @@ import {
 	upsertEmployeeVacationAllowance,
 } from "@/lib/query/vacation.queries";
 import { calculateCarryoverExpiryDate } from "./date-utils";
+import {
+	loadProratedVacationAllowance,
+	loadProratedVacationAllowances,
+} from "./prorated-allowance-store";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
 import { loadVacationAdjustmentTotal } from "./vacation-adjustments";
 import { calculateVacationBalance } from "./vacation-calculator";
@@ -94,10 +98,16 @@ export async function getEnhancedVacationBalance(input: {
 		return null;
 	}
 
-	const [empAllowance, adjustmentTotal, absencesResult] = await Promise.all([
+	const [empAllowance, adjustmentTotal, absencesResult, allowance] = await Promise.all([
 		getEmployeeVacationAllowance(employeeId, year),
 		loadVacationAdjustmentTotal(db, { organizationId: emp.organizationId, employeeId, year }),
 		getVacationTakenInYear(employeeId, year, { includePending: true }),
+		loadProratedVacationAllowance(db, {
+			organizationId: emp.organizationId,
+			employeeId,
+			year,
+			policy,
+		}),
 	]);
 
 	// Build absences array for calculator (simplified)
@@ -138,6 +148,7 @@ export async function getEnhancedVacationBalance(input: {
 					customCarryoverDays: empAllowance.customCarryoverDays,
 				}
 			: null,
+		allowance,
 		absences,
 		isWorkingDay: absencesResult.isWorkingDay,
 		currentDate,
@@ -160,10 +171,8 @@ export async function getEnhancedVacationBalance(input: {
 		}
 	}
 
-	// Calculate base allowance and adjustments
-	const baseAllowance = empAllowance?.customAnnualDays
-		? parseFloat(empAllowance.customAnnualDays)
-		: parseFloat(policy.defaultAnnualDays);
+	// The vacation allowance: custom, or the policy's, prorated in a start or exit year
+	const baseAllowance = allowance.allowance;
 
 	const adjustments = adjustmentTotal;
 
@@ -218,6 +227,13 @@ export async function calculateAnnualCarryover(
 
 	// Get all employees with vacation data
 	const employees = await getEmployeesWithVacationData(organizationId, fromYear);
+	// The fromYear allowance of each employee, prorated in a start or exit year (#1110)
+	const allowances = await loadProratedVacationAllowances(db, {
+		organizationId,
+		employeeIds: employees.map((emp) => emp.id),
+		year: fromYear,
+		policy: fromYearPolicy,
+	});
 
 	for (const emp of employees) {
 		try {
@@ -225,9 +241,11 @@ export async function calculateAnnualCarryover(
 			const vacationTaken = await getVacationTakenInYear(emp.id, fromYear);
 
 			// Calculate total allowance for fromYear
-			const baseAllowance = emp.allowance?.customAnnualDays
-				? parseFloat(emp.allowance.customAnnualDays)
-				: parseFloat(fromYearPolicy.defaultAnnualDays);
+			const baseAllowance =
+				allowances.get(emp.id)?.allowance ??
+				(emp.allowance?.customAnnualDays
+					? parseFloat(emp.allowance.customAnnualDays)
+					: parseFloat(fromYearPolicy.defaultAnnualDays));
 
 			// Include previous carryover if still valid
 			let previousCarryover = 0;

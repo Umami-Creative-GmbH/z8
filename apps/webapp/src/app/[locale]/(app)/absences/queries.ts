@@ -22,6 +22,7 @@ import type {
 	Holiday,
 	VacationBalance,
 } from "@/lib/absences/types";
+import { loadProratedVacationAllowance } from "@/lib/absences/prorated-allowance-store";
 import { loadVacationAdjustmentTotal } from "@/lib/absences/vacation-adjustments";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
@@ -90,12 +91,20 @@ export async function getVacationBalance(
 		return null;
 	}
 
+	const allowance = await loadProratedVacationAllowance(db, {
+		organizationId: emp.organizationId,
+		employeeId,
+		year,
+		policy: orgAllowance,
+	});
+
 	const typedAbsences = absences as unknown as AbsenceWithCategory[];
 	const absencesWithCategory = typedAbsences.map(mapAbsenceWithCategory);
 
 	return calculateVacationBalance({
 		organizationAllowance: orgAllowance,
 		employeeAllowance: empAllowance,
+		allowance,
 		absences: absencesWithCategory,
 		isWorkingDay,
 		currentDate: currentTimestamp(),

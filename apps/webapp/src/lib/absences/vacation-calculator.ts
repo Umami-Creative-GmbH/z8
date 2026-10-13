@@ -7,6 +7,7 @@ import {
 	mondayToFriday,
 } from "./absence-days";
 import { calculateCarryoverExpiryDate } from "./date-utils";
+import type { ProratedAllowance } from "./prorated-allowance";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
 
 interface VacationAllowanceData {
@@ -33,6 +34,7 @@ interface EmployeeAllowanceData {
 export function calculateVacationBalance({
 	organizationAllowance,
 	employeeAllowance,
+	allowance,
 	absences,
 	isWorkingDay = mondayToFriday,
 	currentDate,
@@ -42,6 +44,11 @@ export function calculateVacationBalance({
 }: {
 	organizationAllowance: VacationAllowanceData;
 	employeeAllowance?: EmployeeAllowanceData | null;
+	/**
+	 * The employee's vacation allowance for the year, prorated in a year they join or leave
+	 * (`loadProratedVacationAllowances`). Without it, the custom or the policy's full allowance.
+	 */
+	allowance?: ProratedAllowance;
 	absences: AbsenceWithCategory[];
 	/** The employee's working days; defaults to Monday to Friday. */
 	isWorkingDay?: IsWorkingDay;
@@ -54,9 +61,11 @@ export function calculateVacationBalance({
 	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
 
 	// 1. Calculate total annual days
-	let totalDays = employeeAllowance?.customAnnualDays
-		? parseFloat(employeeAllowance.customAnnualDays)
-		: parseFloat(organizationAllowance.defaultAnnualDays);
+	let totalDays =
+		allowance?.allowance ??
+		(employeeAllowance?.customAnnualDays
+			? parseFloat(employeeAllowance.customAnnualDays)
+			: parseFloat(organizationAllowance.defaultAnnualDays));
 
 	// 2. Add carryover days from previous year (if not expired)
 	let carryoverDays = 0;
@@ -114,6 +123,7 @@ export function calculateVacationBalance({
 		remainingDays,
 		carryoverDays: carryoverDays > 0 ? carryoverDays : undefined,
 		carryoverExpiryDate,
+		...(allowance ? { allowance } : {}),
 	};
 }
 
@@ -126,41 +136,4 @@ export function calculateVacationBalance({
  */
 export function hasSufficientBalance(balance: VacationBalance, requestedDays: number): boolean {
 	return balance.remainingDays >= requestedDays;
-}
-
-/**
- * Prorate annual vacation days for mid-year employee start
- *
- * @param annualDays - Full year annual days
- * @param startDate - Employee start date
- * @param year - Current year
- * @returns Prorated days
- */
-export function prorateAnnualDays(
-	annualDays: number,
-	startDate: Date | DateTime,
-	year: number,
-): number {
-	// Convert to DateTime if needed
-	const start = startDate instanceof Date ? fromJSDate(startDate, "utc") : startDate;
-
-	const yearStart = DateTime.utc(year, 1, 1);
-	const yearEnd = DateTime.utc(year, 12, 31);
-
-	// If started before or at the beginning of the year, no proration
-	if (start <= yearStart) {
-		return annualDays;
-	}
-
-	// If started after the year, no days
-	if (start > yearEnd) {
-		return 0;
-	}
-
-	// Calculate proportion of year remaining
-	const totalDays = yearEnd.diff(yearStart, "days").days;
-	const remainingDays = yearEnd.diff(start, "days").days;
-	const proportion = remainingDays / totalDays;
-
-	return Math.floor(annualDays * proportion);
 }

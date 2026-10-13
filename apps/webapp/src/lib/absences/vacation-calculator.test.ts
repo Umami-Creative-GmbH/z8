@@ -227,3 +227,43 @@ describe("vacation balance on the employee's working days", () => {
 		expect(balance.remainingDays).toBe(29);
 	});
 });
+
+describe("calculateVacationBalance with a prorated allowance", () => {
+	it("starts from the prorated allowance and reports it with the balance", () => {
+		const allowance = {
+			fullAllowance: 30,
+			allowance: 8,
+			reason: {
+				kind: "prorated" as const,
+				employments: [
+					{
+						kind: "start" as const,
+						startDate: "2026-10-01",
+						lastWorkingDay: null,
+						employmentMonths: 3,
+						days: 8,
+						floorApplied: false,
+					},
+				],
+				cappedAtFullAllowance: false,
+			},
+		};
+		const balance = calculateVacationBalance({
+			organizationAllowance: {
+				defaultAnnualDays: "30",
+				allowCarryover: false,
+				maxCarryoverDays: null,
+				carryoverExpiryMonths: null,
+			},
+			allowance,
+			absences: [vacationAbsence("october", "2026-10-12")],
+			currentDate: new Date("2026-10-05T00:00:00Z"),
+			year: 2026,
+			adjustmentTotal: 1,
+		});
+
+		expect(balance.totalDays).toBe(9);
+		expect(balance.remainingDays).toBe(8);
+		expect(balance.allowance).toEqual(allowance);
+	});
+});

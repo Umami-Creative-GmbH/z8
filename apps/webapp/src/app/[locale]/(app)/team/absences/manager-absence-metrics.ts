@@ -4,6 +4,7 @@ import {
 	type IsWorkingDay,
 	mondayToFriday,
 } from "@/lib/absences/absence-days";
+import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -32,6 +33,8 @@ export function calculateManagerAbsenceMetrics(input: {
 	year: number;
 	allowance: VacationAllowanceData | null;
 	employeeAllowance: EmployeeAllowanceData | null;
+	/** The vacation allowance, prorated in a start or exit year (#1110); defaults to the full one. */
+	proratedAllowance?: ProratedAllowance;
 	/** Sum of the employee's vacation adjustments for the year (#1105); defaults to 0. */
 	adjustmentTotal?: number;
 	absences: AbsenceWithCategory[];
@@ -61,6 +64,7 @@ export function calculateManagerAbsenceMetrics(input: {
 	const balance = calculateVacationBalance({
 		organizationAllowance: input.allowance,
 		employeeAllowance: input.employeeAllowance,
+		allowance: input.proratedAllowance,
 		absences: [],
 		currentDate: currentTimestamp(),
 		year: input.year,
