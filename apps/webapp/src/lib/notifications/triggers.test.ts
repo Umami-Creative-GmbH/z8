@@ -544,6 +544,28 @@ describe("approval notification triggers", () => {
 				"Avery Requester submitted a time correction request for May 11, 2026. Reason: Forgot to clock in",
 			],
 			[
+				"pending approval without its times",
+				() => onTimeCorrectionPendingApproval({ ...pending, original: null, corrected: null }),
+				"newTimeCorrectionRequest.title",
+				"newTimeCorrectionRequest.messageWithoutDate",
+				"New time correction request",
+				"Avery Requester submitted a time correction request.",
+			],
+			[
+				"pending approval without its times, with a reason",
+				() =>
+					onTimeCorrectionPendingApproval({
+						...pending,
+						original: null,
+						corrected: null,
+						reason: "Forgot to clock in",
+					}),
+				"newTimeCorrectionRequest.title",
+				"newTimeCorrectionRequest.messageWithoutDateWithReason",
+				"New time correction request",
+				"Avery Requester submitted a time correction request. Reason: Forgot to clock in",
+			],
+			[
 				"approved",
 				() => onTimeCorrectionApproved(decision),
 				"timeCorrectionApproved.title",

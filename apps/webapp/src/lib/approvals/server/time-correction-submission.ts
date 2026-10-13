@@ -100,11 +100,8 @@ import {
 	DatabaseService,
 	makeDatabaseService,
 } from "@/lib/effect/services/database.service";
-import {
-	type EntryTime,
-	onTimeCorrectionPendingApproval,
-	type WorkPeriodEntryTimes,
-} from "@/lib/notifications/triggers";
+import { type WorkPeriodEntryTimes, workPeriodEntryTimesOf } from "@/lib/notifications/entry-times";
+import { onTimeCorrectionPendingApproval } from "@/lib/notifications/triggers";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,
@@ -2156,10 +2153,6 @@ async function loadSubmissionEntryTimes(input: {
 		),
 		columns: { id: true, timestamp: true, utcOffsetMinutes: true, replacesEntryId: true },
 	});
-	const entryTime = (entry: (typeof entries)[number]): EntryTime => ({
-		at: entry.timestamp,
-		utcOffsetMinutes: entry.utcOffsetMinutes,
-	});
 	const original = (id: string | null) => entries.find((entry) => entry.id === id);
 	const corrected = (id: string | null) =>
 		entries.find(
@@ -2171,17 +2164,9 @@ async function loadSubmissionEntryTimes(input: {
 	const clockIn = original(period.clockInId);
 	const correctedClockIn = corrected(period.clockInId);
 	if (!clockIn || !correctedClockIn) return null;
-	const clockOut = original(period.clockOutId);
-	const correctedClockOut = corrected(period.clockOutId);
 	return {
-		original: {
-			clockIn: entryTime(clockIn),
-			clockOut: clockOut ? entryTime(clockOut) : null,
-		},
-		corrected: {
-			clockIn: entryTime(correctedClockIn),
-			clockOut: correctedClockOut ? entryTime(correctedClockOut) : null,
-		},
+		original: workPeriodEntryTimesOf(clockIn, original(period.clockOutId)),
+		corrected: workPeriodEntryTimesOf(correctedClockIn, corrected(period.clockOutId)),
 	};
 }
 
@@ -2237,7 +2222,13 @@ async function dispatchSubmissionPostCommit(input: {
 			period: input.period,
 			correctionEntryIds: input.result.correctionEntryIds ?? [],
 		});
-		if (!times) return;
+		if (!times) {
+			// Sent exactly once all the same: the manager learns of the request without its times.
+			logger.warn(
+				{ workPeriodId: input.workPeriodId, organizationId: input.organizationId },
+				"Notifying the manager of a time correction without its times: its entries could not be read",
+			);
+		}
 		// The manager's pending email goes out with this notification, through the
 		// notification email channel (#1152).
 		await onTimeCorrectionPendingApproval({
@@ -2246,7 +2237,8 @@ async function dispatchSubmissionPostCommit(input: {
 			employeeName: requester.user.name,
 			organizationId: input.organizationId,
 			reason: input.reason,
-			...times,
+			original: times?.original ?? null,
+			corrected: times?.corrected ?? null,
 		});
 	} catch (error) {
 		logger.error(

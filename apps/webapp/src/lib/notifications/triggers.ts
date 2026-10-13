@@ -11,6 +11,7 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import type { EntryTime, WorkPeriodEntryTimes } from "./entry-times";
 import {
 	fillNotificationTemplate,
 	type NotificationParamValue,
@@ -146,18 +147,6 @@ function absenceDecisionParams(params: AbsenceApprovalParams) {
 		...absenceDateParams(params),
 		...(params.days === undefined ? {} : { days: params.days }),
 	};
-}
-
-/** A `time_entry` time: its instant and the UTC offset stored on that entry. */
-export interface EntryTime {
-	at: Date;
-	utcOffsetMinutes: number;
-}
-
-/** The clock-in and clock-out of a work period, each at its own entry's offset. */
-export interface WorkPeriodEntryTimes {
-	clockIn: EntryTime;
-	clockOut: EntryTime | null;
 }
 
 function entryTimeParam(time: EntryTime, preset: "dateMedium" | "time") {
@@ -456,9 +445,12 @@ interface TimeCorrectionSubmittedToManagerParams {
 	employeeName: string;
 	organizationId: string;
 	reason?: string;
-	/** The work period as recorded and as the employee asks to correct it. */
-	original: WorkPeriodEntryTimes;
-	corrected: WorkPeriodEntryTimes;
+	/**
+	 * The work period as recorded and as the employee asks to correct it; both null
+	 * when its entries cannot be read (the manager is still told, without times).
+	 */
+	original: WorkPeriodEntryTimes | null;
+	corrected: WorkPeriodEntryTimes | null;
 }
 
 interface TimeCorrectionApprovalParams extends TimeCorrectionParams {
@@ -507,7 +499,36 @@ const timeCorrectionPendingApprovalCopy = {
 		messageDefault:
 			"{employeeName} submitted a time correction request for {date}. Reason: {reason}",
 	},
+	withoutDate: {
+		titleKey: "common:notifications.content.newTimeCorrectionRequest.title",
+		titleDefault: "New time correction request",
+		messageKey: "common:notifications.content.newTimeCorrectionRequest.messageWithoutDate",
+		messageDefault: "{employeeName} submitted a time correction request.",
+	},
+	withoutDateWithReason: {
+		titleKey: "common:notifications.content.newTimeCorrectionRequest.title",
+		titleDefault: "New time correction request",
+		messageKey: "common:notifications.content.newTimeCorrectionRequest.messageWithoutDateWithReason",
+		messageDefault: "{employeeName} submitted a time correction request. Reason: {reason}",
+	},
 } as const satisfies Record<string, TriggerCopy>;
+
+/** The pending request's times as typed params, each at its own entry's offset. */
+function pendingCorrectionTimeParams(
+	original: WorkPeriodEntryTimes | null,
+	corrected: WorkPeriodEntryTimes | null,
+) {
+	if (!original || !corrected) return {};
+	return {
+		date: entryTimeParam(original.clockIn, "dateMedium"),
+		originalClockIn: entryTimeParam(original.clockIn, "time"),
+		...(original.clockOut ? { originalClockOut: entryTimeParam(original.clockOut, "time") } : {}),
+		correctedClockIn: entryTimeParam(corrected.clockIn, "time"),
+		...(corrected.clockOut
+			? { correctedClockOut: entryTimeParam(corrected.clockOut, "time") }
+			: {}),
+	};
+}
 
 const timeCorrectionApprovedCopy = {
 	titleKey: "common:notifications.content.timeCorrectionApproved.title",
@@ -566,24 +587,19 @@ export async function onTimeCorrectionPendingApproval(
 	params: TimeCorrectionSubmittedToManagerParams,
 ): Promise<void> {
 	try {
-		const content = translatedContent(
-			params.reason
+		const hasTimes = Boolean(params.original && params.corrected);
+		const copy = hasTimes
+			? params.reason
 				? timeCorrectionPendingApprovalCopy.withReason
-				: timeCorrectionPendingApprovalCopy.withoutReason,
-			{
-				employeeName: params.employeeName,
-				...(params.reason ? { reason: params.reason } : {}),
-				date: entryTimeParam(params.original.clockIn, "dateMedium"),
-				originalClockIn: entryTimeParam(params.original.clockIn, "time"),
-				...(params.original.clockOut
-					? { originalClockOut: entryTimeParam(params.original.clockOut, "time") }
-					: {}),
-				correctedClockIn: entryTimeParam(params.corrected.clockIn, "time"),
-				...(params.corrected.clockOut
-					? { correctedClockOut: entryTimeParam(params.corrected.clockOut, "time") }
-					: {}),
-			},
-		);
+				: timeCorrectionPendingApprovalCopy.withoutReason
+			: params.reason
+				? timeCorrectionPendingApprovalCopy.withoutDateWithReason
+				: timeCorrectionPendingApprovalCopy.withoutDate;
+		const content = translatedContent(copy, {
+			employeeName: params.employeeName,
+			...(params.reason ? { reason: params.reason } : {}),
+			...pendingCorrectionTimeParams(params.original, params.corrected),
+		});
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
