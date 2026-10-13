@@ -82,6 +82,25 @@ describe("assessStaffingSkills", () => {
 				skillId: "first-aid",
 				skillName: "First aid",
 				expiresAt: "2026-10-15",
+				certificateOnFile: false,
+			},
+		]);
+	});
+
+	it("tells that a skill certificate is on file for an expired required skill", () => {
+		const result = assessStaffingSkills({
+			requirements: [requirements[1]],
+			held: [{ skillId: "first-aid", expiresAt: "2026-10-15", certificateOnFile: true }],
+			shiftDate,
+		});
+
+		expect(result.warnings).toEqual([
+			{
+				type: "expiredRequiredSkill",
+				skillId: "first-aid",
+				skillName: "First aid",
+				expiresAt: "2026-10-15",
+				certificateOnFile: true,
 			},
 		]);
 	});
