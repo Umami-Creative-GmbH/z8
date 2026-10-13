@@ -1145,22 +1145,6 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "work_period",
 		},
 	],
-	// Clock events' vehicle use (#1122) lands on the closed work's canonical detail,
-	// after the closure wrote it, inside the same work transaction.
-	"src/lib/time-tracking/clocking/vehicle-use.ts": [
-		{
-			columns: [
-				"driven_distance_km",
-				"odometer_end_km",
-				"odometer_start_km",
-				"vehicle_id",
-				"vehicle_kind",
-			],
-			functionName: "write",
-			operation: "update",
-			table: "time_record_work",
-		},
-	],
 	"src/lib/time-tracking/time-entry-writer.ts": [
 		{
 			columns: ["is_superseded", "replaces_entry_id", "type"],

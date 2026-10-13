@@ -5386,20 +5386,6 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
-			"src/lib/time-tracking/clocking/vehicle-use.ts": [
-				{
-					columns: [
-						"driven_distance_km",
-						"odometer_end_km",
-						"odometer_start_km",
-						"vehicle_id",
-						"vehicle_kind",
-					],
-					functionName: "write",
-					operation: "update",
-					table: "time_record_work",
-				},
-			],
 			"src/lib/time-tracking/time-entry-writer.ts": [
 				{
 					columns: ["is_superseded", "replaces_entry_id", "type"],
