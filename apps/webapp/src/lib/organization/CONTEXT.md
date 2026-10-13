@@ -1,6 +1,6 @@
 # Organization
 
-An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. Projects themselves belong to the Projects context.
+An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. It also hands an employee their personal data on request. Projects themselves belong to the Projects context.
 
 ## Language
 
@@ -33,6 +33,24 @@ _Avoid_: deleted field, disabled field
 **Missing required value**:
 A required custom field with no value as of today on an employee, project or customer. Records created by SCIM, imports or demo data can have one; the forms refuse to save a record that still has one.
 _Avoid_: incomplete record, invalid record
+
+### Personal data
+
+**Personal data export**:
+A file holding one employee's personal data kept by one organization, in a form they can read and reuse elsewhere. The employee requests it for themselves, or an org admin requests it on their behalf. An employee of several organizations gets a separate one from each.
+_Avoid_: GDPR export, DSAR, self-export, data export (that is the organization-wide export)
+
+**Employee export**:
+A personal data export the employee requests for themselves. It leaves out withheld data.
+_Avoid_: self-service export, own export
+
+**Admin export**:
+A personal data export an org admin requests on an employee's behalf, including withheld data. It is the complete answer to a request for access and the only route for a former employee.
+_Avoid_: full export, HR export
+
+**Withheld data**:
+The fixed list of personal data an employee export leaves out: HR-only documents, custom field values above employee visibility, rates, internal notes on travel expenses, and departure tasks and reviews.
+_Avoid_: hidden data, private data, restricted data
 
 ### Vehicles
 
