@@ -169,10 +169,12 @@ export async function sendTelegramNotification(
 			message: params.message,
 			metadata: params.metadata,
 			locale: display.locale,
+			timeFormat: display.timeFormat,
+			withActionLabel: true,
 		});
 		let text = `*${escapeMarkdownV2(localized.title)}*\n\n${escapeMarkdownV2(localized.message)}`;
 		if (params.actionUrl) {
-			text += `\n\n[View in Z8](${escapeMarkdownV2(params.actionUrl)})`;
+			text += `\n\n[${escapeMarkdownV2(localized.actionLabel)}](${escapeMarkdownV2(params.actionUrl)})`;
 		}
 
 		const acknowledgement = await sendMessage(botConfig.botToken, {

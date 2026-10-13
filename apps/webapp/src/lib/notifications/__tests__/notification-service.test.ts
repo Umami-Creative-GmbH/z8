@@ -479,6 +479,105 @@ describe("Notification Service", () => {
 			// only way to web and native push, so neither is reached (#843).
 			expect(mockSendPushToUser).not.toHaveBeenCalled();
 		});
+
+		const translatedMetadata = {
+			i18n: {
+				titleKey: "common:notifications.content.teamMemberAdded.title",
+				messageKey: "common:notifications.content.teamMemberAdded.message",
+				params: { teamName: "Ops", performedByName: "Mina Manager" },
+			},
+		};
+
+		test("hands web push the metadata it localizes the text from (#1155)", async () => {
+			mockFindMany.mockImplementation(() => Promise.resolve([]));
+			mockIsPushAvailable.mockImplementation(() => true);
+			mockReturning.mockImplementation(() => Promise.resolve([createMockNotification()]));
+
+			const { createNotification } = await import("../notification-service");
+
+			await createNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				type: "team_member_added",
+				title: "Added to team",
+				message: "You have been added to the Ops team by Mina Manager.",
+				metadata: translatedMetadata,
+			});
+
+			expect(mockSendPushToUser).toHaveBeenCalledWith(
+				"user-1",
+				expect.objectContaining({
+					title: "Added to team",
+					body: "You have been added to the Ops team by Mina Manager.",
+				}),
+				{ organizationId: "org-1", metadata: translatedMetadata },
+			);
+		});
+
+		test("publishes the webhook payload byte-for-byte as stored, translation keys and all", async () => {
+			mockFindMany.mockImplementation(() => Promise.resolve([]));
+			mockIsPushAvailable.mockImplementation(() => true);
+			mockReturning.mockImplementation(() =>
+				Promise.resolve([createMockNotification({ id: "notification-1" })]),
+			);
+			for (const { available } of botChannels) available.mockResolvedValue(true);
+
+			const { createNotification } = await import("../notification-service");
+
+			await createNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				type: "team_member_added",
+				title: "Added to team",
+				message: "You have been added to the Ops team by Mina Manager.",
+				entityType: "team",
+				entityId: "team-1",
+				actionUrl: "/teams/ops",
+				metadata: translatedMetadata,
+			});
+
+			expect(mockPublishEventAsync).toHaveBeenCalledOnce();
+			const [type, organizationId, data] = mockPublishEventAsync.mock.calls[0];
+			expect([type, organizationId]).toEqual(["team_member_added", "org-1"]);
+			expect(JSON.stringify(data)).toBe(
+				'{"notificationId":"notification-1","userId":"user-1","title":"Added to team",' +
+					'"message":"You have been added to the Ops team by Mina Manager.","entityType":"team",' +
+					'"entityId":"team-1","actionUrl":"/teams/ops","metadata":{"i18n":{' +
+					'"titleKey":"common:notifications.content.teamMemberAdded.title",' +
+					'"messageKey":"common:notifications.content.teamMemberAdded.message",' +
+					'"params":{"teamName":"Ops","performedByName":"Mina Manager"}}}}',
+			);
+		});
+	});
+
+	test("durable web push carries the metadata it localizes the text from (#1155)", async () => {
+		const { deliverNotificationToChannel } = await import("../notification-service");
+		const metadata = {
+			i18n: { titleKey: "common:notifications.content.automaticClockOut.title" },
+		};
+		mockIsPushAvailable.mockReturnValue(true);
+		mockSendPushToUser.mockImplementation(async () => ({ sent: 1, failed: 0, expired: [] }));
+
+		await deliverNotificationToChannel(
+			"push",
+			{
+				userId: "user-1",
+				organizationId: "org-1",
+				type: "automatic_clock_out",
+				title: "Automatic",
+				message: "Ended",
+				metadata,
+			},
+			"notification-1",
+			{ durable: true },
+		);
+
+		expect(mockSendPushToUser).toHaveBeenCalledWith(
+			"user-1",
+			expect.objectContaining({ title: "Automatic", body: "Ended" }),
+			{ organizationId: "org-1", metadata, throwOnError: true },
+		);
+		mockIsPushAvailable.mockReturnValue(false);
 	});
 
 	describe.each(botChannels)("$channel outcomes", (platform) => {
