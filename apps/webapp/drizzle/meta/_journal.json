@@ -1506,6 +1506,13 @@
       "when": 1802793600000,
       "tag": "0214_vacation_adjustment_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 215,
+      "version": "7",
+      "when": 1802880000000,
+      "tag": "0215_absence_setting_proration_notice",
+      "breakpoints": true
     }
   ]
 }

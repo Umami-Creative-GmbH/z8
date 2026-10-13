@@ -2,6 +2,7 @@ import { IconCalendar } from "@tabler/icons-react";
 import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { EmployeeSickNoteSetting } from "@/components/settings/vacation/employee-sick-note-setting";
+import { ProrationNotice } from "@/components/settings/vacation/proration-notice";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation/vacation-policies-table";
 import {
@@ -14,6 +15,7 @@ import {
 import { db } from "@/db";
 import { loadAbsenceSettings } from "@/lib/absences/absence-settings";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
+import { loadProrationNoticeForPage } from "@/lib/absences/proration-notice-store";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { isPersonnelFilesEnabled } from "@/lib/personnel-file/access-store";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
@@ -38,13 +40,15 @@ async function VacationSettingsContent() {
 
 	const canManagePolicies = settingsRouteContext.accessTier === "orgAdmin";
 
-	const [absenceSettings, personnelFilesEnabled] = canManagePolicies
+	// Owners and admins only: managers can open this page too (#1112).
+	const [absenceSettings, personnelFilesEnabled, , prorationNotice] = canManagePolicies
 		? await Promise.all([
 				loadAbsenceSettings(db, organizationId),
 				isPersonnelFilesEnabled(db, organizationId),
 				ensureDefaultAbsenceCategoriesForOrganization(organizationId),
+				loadProrationNoticeForPage(db, { organizationId }),
 			])
-		: [null, false];
+		: [null, false, undefined, null];
 
 	const allowedAssignmentTypes = canManagePolicies
 		? (["team", "employee"] as const)
@@ -55,6 +59,9 @@ async function VacationSettingsContent() {
 			organizationId={organizationId}
 			allowedAssignmentTypes={allowedAssignmentTypes}
 			canManageCategories={canManagePolicies}
+			notice={
+				prorationNotice?.length ? <ProrationNotice rows={prorationNotice} /> : null
+			}
 			absenceSettings={
 				absenceSettings ? (
 					<EmployeeSickNoteSetting
