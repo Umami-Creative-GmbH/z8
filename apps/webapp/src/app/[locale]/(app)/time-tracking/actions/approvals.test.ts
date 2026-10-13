@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { sendManualEntryApprovalNotifications } from "./approvals";
 
 const mocks = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
@@ -69,7 +70,6 @@ describe("ordinary approval notifications", () => {
 				resolveManager = resolve;
 			}),
 		);
-		const { sendManualEntryApprovalNotifications } = await import("./approvals");
 		let settled = false;
 		const pending = sendManualEntryApprovalNotifications({
 			workPeriodId: "period-1",
@@ -123,7 +123,6 @@ describe("ordinary approval notifications", () => {
 				utcOffsetMinutes: 120,
 			},
 		]);
-		const { sendManualEntryApprovalNotifications } = await import("./approvals");
 
 		await sendManualEntryApprovalNotifications({
 			workPeriodId: "period-1",
