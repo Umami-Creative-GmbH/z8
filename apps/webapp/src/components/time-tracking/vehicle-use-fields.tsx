@@ -182,13 +182,7 @@ export function VehicleUseFields({
 }
 
 /** Plausibility warnings for entered vehicle use (#1121); saving still succeeds. */
-export function VehicleUseWarnings({
-	warnings,
-	t,
-}: {
-	warnings: VehicleUseWarning[];
-	t: TFnType;
-}) {
+export function VehicleUseWarnings({ warnings, t }: { warnings: VehicleUseWarning[]; t: TFnType }) {
 	return (
 		<div
 			role="status"

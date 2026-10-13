@@ -104,18 +104,17 @@ export async function loadWorkVehicleUseFormContext(
 			...empty,
 		};
 	}
-	const [vehicles, suggestedVehicleIds, readings] = await Promise.all([
-		listWorkVehicleOptions(reader, input.organizationId, recorded),
-		listAssignedVehicleIds(reader, {
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-		}),
-		readLastRecordedEndReadings(reader, {
-			organizationId: input.organizationId,
-			...(input.readingsBefore ? { before: input.readingsBefore } : {}),
-			...(input.excludeWorkPeriodId ? { excludeWorkPeriodId: input.excludeWorkPeriodId } : {}),
-		}),
-	]);
+	// Sequential: the reader may be a transaction, which runs one query at a time.
+	const vehicles = await listWorkVehicleOptions(reader, input.organizationId, recorded);
+	const suggestedVehicleIds = await listAssignedVehicleIds(reader, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+	});
+	const readings = await readLastRecordedEndReadings(reader, {
+		organizationId: input.organizationId,
+		...(input.readingsBefore ? { before: input.readingsBefore } : {}),
+		...(input.excludeWorkPeriodId ? { excludeWorkPeriodId: input.excludeWorkPeriodId } : {}),
+	});
 	return {
 		mode,
 		vehicles: suggestedFirst(vehicles, suggestedVehicleIds),

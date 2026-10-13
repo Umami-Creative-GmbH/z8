@@ -320,18 +320,20 @@ describe("vehicle use pre-fill and plausibility on PostgreSQL (#1121)", () => {
 		});
 
 		it("has nothing to suggest while vehicle use is off", async () => {
-			await pool.query("update vehicle_use_setting set enabled = false where organization_id = $1", [
-				ORG,
-			]);
+			await pool.query(
+				"update vehicle_use_setting set enabled = false where organization_id = $1",
+				[ORG],
+			);
 			try {
 				const off = await context("driver");
 				expect(off.mode).toBe("off");
 				expect(off.suggestedVehicleIds).toEqual([]);
 				expect(off.lastEndKmByVehicleId).toEqual({});
 			} finally {
-				await pool.query("update vehicle_use_setting set enabled = true where organization_id = $1", [
-					ORG,
-				]);
+				await pool.query(
+					"update vehicle_use_setting set enabled = true where organization_id = $1",
+					[ORG],
+				);
 			}
 		});
 	});

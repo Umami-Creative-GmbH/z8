@@ -9,15 +9,13 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 import type { WorkPeriodTimeEditAccess } from "@/lib/time-tracking/work-period-time-edit-policy";
 import { WorkPeriodTimeSection } from "./work-period-time-edit-section";
 
-const { getContext, updateTimes, checkWarnings, toastError, toastSuccess } = vi.hoisted(
-	() => ({
-		getContext: vi.fn(),
-		updateTimes: vi.fn(),
-		checkWarnings: vi.fn(),
-		toastError: vi.fn(),
-		toastSuccess: vi.fn(),
-	}),
-);
+const { getContext, updateTimes, checkWarnings, toastError, toastSuccess } = vi.hoisted(() => ({
+	getContext: vi.fn(),
+	updateTimes: vi.fn(),
+	checkWarnings: vi.fn(),
+	toastError: vi.fn(),
+	toastSuccess: vi.fn(),
+}));
 
 vi.mock(
 	"@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit",

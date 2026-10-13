@@ -51,7 +51,11 @@ type PrefillContext = Pick<
 export function prefilledVehicleUseDraft(context: PrefillContext): VehicleUseDraft {
 	const vehicleId = context.mode === "off" ? undefined : context.suggestedVehicleIds?.[0];
 	if (!vehicleId) return EMPTY_VEHICLE_USE_DRAFT;
-	return { ...EMPTY_VEHICLE_USE_DRAFT, vehicle: vehicleId, startKm: km(context.lastEndKmByVehicleId?.[vehicleId] ?? null) };
+	return {
+		...EMPTY_VEHICLE_USE_DRAFT,
+		vehicle: vehicleId,
+		startKm: km(context.lastEndKmByVehicleId?.[vehicleId] ?? null),
+	};
 }
 
 /**

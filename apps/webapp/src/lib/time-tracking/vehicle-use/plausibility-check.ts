@@ -49,8 +49,8 @@ export async function listAssignedVehicleIds(
 		);
 	const teamIds = [
 		...new Set(
-			[subjectRow.teamId, ...memberships.map((row) => row.teamId)].filter(
-				(id): id is string => Boolean(id),
+			[subjectRow.teamId, ...memberships.map((row) => row.teamId)].filter((id): id is string =>
+				Boolean(id),
 			),
 		),
 	];
@@ -106,7 +106,9 @@ export async function readLastRecordedEndReadings(
 		.select({
 			vehicleId: workPeriod.vehicleId,
 			// The end reading of the latest-ending work per vehicle.
-			endKm: sql<number | null>`(array_agg(${workPeriod.odometerEndKm} ORDER BY ${workPeriod.endTime} DESC, ${workPeriod.odometerEndKm} DESC))[1]`,
+			endKm: sql<
+				number | null
+			>`(array_agg(${workPeriod.odometerEndKm} ORDER BY ${workPeriod.endTime} DESC, ${workPeriod.odometerEndKm} DESC))[1]`,
 		})
 		.from(workPeriod)
 		.where(
@@ -174,26 +176,26 @@ export async function checkWorkVehicleUsePlausibility(
 	},
 ): Promise<VehicleUseWarning[]> {
 	const vehicleId = organizationVehicleIdOf(input.use);
-	const [lastRecordedEndKm, vehicleOnOtherLiveWork] = vehicleId
-		? await Promise.all([
-				input.use.startKm === null
-					? null
-					: readLastRecordedEndReadings(reader, {
-							organizationId: input.organizationId,
-							vehicleIds: [vehicleId],
-							before: input.start,
-							...(input.excludeWorkPeriodId
-								? { excludeWorkPeriodId: input.excludeWorkPeriodId }
-								: {}),
-						}).then((readings) => readings.get(vehicleId) ?? null),
-				isVehicleOnOtherLiveWork(reader, {
-					organizationId: input.organizationId,
-					vehicleId,
-					employeeId: input.employeeId,
-					until: input.end,
-				}),
-			])
-		: [null, false];
+	let lastRecordedEndKm: number | null = null;
+	let vehicleOnOtherLiveWork = false;
+	// Sequential: the reader may be a transaction, which runs one query at a time.
+	if (vehicleId) {
+		if (input.use.startKm !== null) {
+			const readings = await readLastRecordedEndReadings(reader, {
+				organizationId: input.organizationId,
+				vehicleIds: [vehicleId],
+				before: input.start,
+				...(input.excludeWorkPeriodId ? { excludeWorkPeriodId: input.excludeWorkPeriodId } : {}),
+			});
+			lastRecordedEndKm = readings.get(vehicleId) ?? null;
+		}
+		vehicleOnOtherLiveWork = await isVehicleOnOtherLiveWork(reader, {
+			organizationId: input.organizationId,
+			vehicleId,
+			employeeId: input.employeeId,
+			until: input.end,
+		});
+	}
 	return vehicleUsePlausibilityWarnings({
 		use: input.use,
 		start: input.start,
