@@ -71,7 +71,8 @@ export type SettingsIconName =
 	| "receipt"
 	| "device-tablet"
 	| "forms"
-	| "share";
+	| "share"
+	| "car";
 
 export interface SettingsEntry {
 	id: string;
@@ -299,6 +300,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		href: "/settings/locations",
 		icon: "map-pin",
 		minimumTier: "manager",
+		group: "administration",
+	},
+	{
+		id: "vehicles",
+		titleKey: "settings.vehicles.title",
+		titleDefault: "Vehicles",
+		descriptionKey: "settings.vehicles.description",
+		descriptionDefault: "Vehicles your employees drive for work, and their assigned drivers",
+		href: "/settings/vehicles",
+		icon: "car",
+		minimumTier: "orgAdmin",
 		group: "administration",
 	},
 	{

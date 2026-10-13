@@ -178,6 +178,27 @@ describe("settings visibility tiers", () => {
 		expect(memberEntries.some((entry) => entry.id === "kiosks")).toBe(false);
 	});
 
+	it("shows vehicles to org admins next to locations", () => {
+		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
+		const managerEntries = getVisibleSettings("manager", true);
+		const memberEntries = getVisibleSettings("member", true);
+
+		expect(orgAdminEntries.find((entry) => entry.id === "vehicles")).toMatchObject({
+			href: "/settings/vehicles",
+			icon: "car",
+			minimumTier: "orgAdmin",
+			group: "administration",
+		});
+		const administrationIds = SETTINGS_ENTRIES.filter(
+			(entry) => entry.group === "administration",
+		).map((entry) => entry.id);
+		expect(administrationIds.indexOf("vehicles")).toBe(administrationIds.indexOf("locations") + 1);
+		expect(managerEntries.some((entry) => entry.id === "vehicles")).toBe(false);
+		expect(memberEntries.some((entry) => entry.id === "vehicles")).toBe(false);
+		expect(canResolvedTierAccessRoute("orgAdmin", "/settings/vehicles")).toBe(true);
+		expect(canResolvedTierAccessRoute("manager", "/settings/vehicles")).toBe(false);
+	});
+
 	it("shows custom fields to org admins next to customers and projects", () => {
 		const orgAdminEntries = getVisibleSettings("orgAdmin", true);
 		const managerEntries = getVisibleSettings("manager", true);

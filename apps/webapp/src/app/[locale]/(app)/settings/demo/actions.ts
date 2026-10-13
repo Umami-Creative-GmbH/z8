@@ -20,6 +20,7 @@ import {
 	generateDemoChangePolicies,
 	generateDemoData,
 	generateDemoLocations,
+	generateDemoVehicles,
 	generateDemoManagerAssignments,
 	generateDemoPendingAbsenceApprovals,
 	generateDemoPendingTimeCorrectionApprovals,
@@ -530,6 +531,7 @@ export async function generateLocationsStepAction(input: StepGenerationInput): P
 		locationsCreated: number;
 		subareasCreated: number;
 		supervisorAssignmentsCreated: number;
+		vehiclesCreated: number;
 	}>
 > {
 	const effect = Effect.gen(function* () {
@@ -565,7 +567,9 @@ export async function generateLocationsStepAction(input: StepGenerationInput): P
 		};
 
 		const result = yield* Effect.promise(() => generateDemoLocations(options));
-		return result;
+		// Organization vehicles come with the demo locations (#1118).
+		const vehicles = yield* Effect.promise(() => generateDemoVehicles(options));
+		return { ...result, vehiclesCreated: vehicles.vehiclesCreated };
 	});
 
 	return runServerActionSafe(effect);
