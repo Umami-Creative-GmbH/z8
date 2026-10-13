@@ -604,7 +604,8 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		expect(secondPeriod?.params[16]).toBeNull();
 		expect(secondPeriod?.params[17]).toBe(secondCanonicalId);
 		expect(secondPeriod?.params[18]).toBeNull();
-		expect(secondPeriod?.params.at(-1)).toBe(true);
+		// Billable, then no vehicle use: kind, vehicle, start, end and distance (#1126).
+		expect(secondPeriod?.params.slice(-6)).toEqual([true, null, null, null, null, null]);
 		const originalPeriodUpdate = updates.find((query) =>
 			query.sql.includes("work_period"),
 		);
