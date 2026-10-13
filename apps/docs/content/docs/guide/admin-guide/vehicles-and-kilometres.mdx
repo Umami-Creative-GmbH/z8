@@ -19,13 +19,13 @@ Organization owners and admins manage vehicles in **Settings → Vehicles**.
 | Field | What it does |
 | --- | --- |
 | Name | Up to 100 characters, for example "Service van 3". |
-| Licence plate | Up to 20 characters and unique in your organization. Spaces, hyphens and upper or lower case don't make a plate different. |
+| Licence plate | Up to 20 characters and unique in your organization. Spaces, hyphens, dots and upper or lower case don't make a plate different. |
 | Assigned teams | Every member of an assigned team gets this vehicle suggested first. |
 | Assigned employees | These employees get this vehicle suggested first. |
 
 Assigned drivers only change the order of the vehicle picker. Anyone who records vehicle use can pick any active vehicle. Every employee can also pick **Own vehicle**, their private vehicle, which Z8 records without identifying it.
 
-**Archiving** hides a vehicle from the pickers. It stays on the work it was recorded on, in reports and in exports, and you can restore it. **Deleting** is possible only while the vehicle was never recorded on work, and it removes its assigned drivers. Otherwise Z8 refuses the delete and offers to archive the vehicle instead.
+**Archiving** hides a vehicle from the pickers. It stays on the work it was recorded on, in reports and in exports, and you can restore it. **Deleting** is possible only while the vehicle was never recorded on work and no open time correction asks for it, and it removes its assigned drivers. Otherwise Z8 refuses the delete and offers to archive the vehicle instead.
 
 Creating, changing, archiving, restoring and deleting a vehicle, and changing its assigned drivers, are recorded in the audit log. Vehicles belong to one organization, and no other organization can see them.
 
@@ -71,13 +71,17 @@ With vehicle use asked or expected, the clock asks for it:
 - **Clock-in** asks for the vehicle and the start reading.
 - **Clock-out** asks for the end reading, or for the driven distance when there is no start reading.
 - **A break** carries the vehicle over to the work after the break and asks for one optional reading. That reading is both the end reading of the work before the break and the start reading of the work after it. If it is skipped, both stay empty.
-- While clocked in, the employee can change the vehicle or the start reading of their running work.
+- While clocked in, the employee can change the vehicle or the start reading of their running work in the web clock, the installable web app and the mobile app. The desktop app, the kiosk and the Teams bot don't offer this; there the employee changes it in the calendar.
 
-The web clock (the clock popover, the clock widget and the quick break) asks for vehicle use. So do the installable web app, also offline, and the mobile app, which use the same clock. Offline, the vehicle list is the one last loaded, and the warnings appear only with a connection. If entered vehicle use cannot be recorded, the clock event still goes ahead, and the employee is told that the vehicle use was not recorded.
+The web clock (the clock popover, the clock widget and the quick break) asks for vehicle use. So do the installable web app, also offline, and the mobile app, which use the same clock. Offline, the vehicle list is the one last loaded, and the warnings appear only with a connection. If entered vehicle use cannot be recorded, the clock event still goes ahead, and the employee is told that the vehicle use was not recorded. The warnings also cover the reading at a break, as the end reading of the work before it.
 
-The kiosk asks after the employee has entered their PIN, and it asks for the break reading when the employee comes back from the break. The desktop app and the Teams bot ask for vehicle use too. The Teams bot asks at clock-in and clock-out only, because it has no break command.
+The kiosk asks after the employee has entered their PIN, and it asks for the break reading when the employee comes back from the break. The desktop app asks for vehicle use too.
+
+The Teams bot never makes a clock command wait for vehicle use. It records the clock-in or clock-out first, and its reply then carries a card that asks for the vehicle use, with the same pre-fill. Saving the card records it on the work the clock-in started or the clock-out closed, and the card shows the same warnings as the web. Skipping it, or ignoring it, records no vehicle use. A clock-out card only fills in what that work is still missing, never changes a recorded vehicle or reading, and works for 12 hours after the clock-out. It only completes the work closed by that same Teams clock-out. The Teams bot has no break command, so it asks at clock-in and clock-out only.
 
 Automatic clock-outs, clock-outs at an employee's departure and clock-outs on someone else's behalf leave the end reading empty. With vehicle use expected, such work then shows driving details missing until the employee adds the reading.
+
+When Z8 inserts a break by itself (an automatic break adjustment, or a required break at a policy clock-out), it doesn't divide the kilometres, because nobody read the odometer at the break. One half keeps the whole vehicle use, and the other half gets the same vehicle with 0 km. Complete readings, or a directly entered distance, stay on the earlier half. Vehicle use that still waits for its end reading stays on the half that ends at the clock-out, where the end reading belongs. The automatic break therefore never adds driving details missing.
 
 ### Corrections
 
@@ -85,7 +89,7 @@ Vehicle use can be added or changed afterwards:
 
 - in the work period dialog in the **Calendar**,
 - when entering work manually, and
-- when splitting a work period in the calendar. Both halves keep the vehicle. The split asks for one optional value: the odometer reading at the split when the work has readings, or else the kilometres driven in the first half. The rest goes to the second half. If it is skipped, the whole distance stays on the first half.
+- when splitting a work period in the calendar. Both halves keep the vehicle. The split asks for one optional value: the odometer reading at the split when the work has readings, or else the kilometres driven in the first half. The rest goes to the second half. If it is skipped, the whole distance stays on the first half. A work period whose distance is in an expense report can't be split until that mileage expense is removed.
 
 An employee's changes to their own completed work follow the same [change policy](/docs/guide/admin-guide/change-policies) as the work location: direct within the self-service window, then by approval, then refused. Admins change it directly. A closed month freezes vehicle use like every other part of the work. Changing it sends a submitted period back. When someone else changed it, the work period shows "(edited by NAME at …)", and a time-correction approval shows the vehicle and readings before and after.
 
@@ -96,7 +100,7 @@ Historical and gap repairs keep vehicle use as it is and never invent readings.
 Completed work of an employee with vehicle use expected that lacks its vehicle or a reading shows **driving details missing** until it is complete. Running work is not flagged until it ends.
 
 - **Employees** see a "Driving details missing" notice on **Time Tracking** that lists their flagged work periods, each with a link to the calendar. Each flagged period is also marked in the history table.
-- **Employees** get one reminder on the morning after the work, at 08:00 in their timezone, through the clocking reminders. It is sent at most once. They can turn it off under **Driving details missing** in their notification settings.
+- **Employees** get a reminder on the morning after the work, at 08:00 in their timezone, through the clocking reminders. There is one reminder per morning, listing every work period that became due that morning, and each work period is reminded at most once. They can turn it off under **Driving details missing** in their notification settings.
 - **Managers** see "Driving details missing" with a count in their daily briefing on **Today**. It opens a list of the flagged work of the employees they manage, which they can filter by team and employee.
 - **Approvers** of a period submission see flagged work as a warning. It never blocks the approval.
 
@@ -126,7 +130,7 @@ Z8 does not reimburse driven distance by itself. Pricing, approval and reimburse
 
 On a completed work period driven in an own vehicle, the employee can choose **Add to expense report** in the calendar's work period dialog. They pick one of their draft trip reports or a new mileage report. Z8 adds a mileage expense pre-filled with the work period's local start date, the driven distance and the vehicle kind (car by default, changeable). The employee enters the route.
 
-Each work period's distance can be claimed once. After it is added, the work period shows that it is in an expense report. If that mileage expense is deleted, the work period can be added again. Organization vehicles are not claimed this way.
+Each work period's distance can be claimed once. After it is added, the work period shows that it is in an expense report, and it can't be split. If that mileage expense is deleted, the work period can be added again. Organization vehicles are not claimed this way.
 
 ## Works council
 
