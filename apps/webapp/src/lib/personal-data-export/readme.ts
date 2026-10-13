@@ -50,7 +50,7 @@ function categoryDescription(
 		case "time":
 			return t(
 				"personalDataExport.readme.category.time",
-				"Your time entries, work periods and corrections, breaks, automatic clock-outs, compliance exceptions, surcharges, balances and balance adjustments.",
+				"Your time entries, work periods and corrections, breaks, automatic clock-outs, compliance exceptions, work-policy violations, surcharges, balances and balance adjustments.",
 			);
 		case "absences":
 			return t(
