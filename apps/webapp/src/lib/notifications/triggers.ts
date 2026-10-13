@@ -8,8 +8,11 @@
 import { DateTime } from "luxon";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { formatShiftDate } from "@/lib/scheduling/shift-date";
-import type { NotificationParamValue } from "./notification-params";
+import {
+	fillNotificationTemplate,
+	type NotificationParamValue,
+	notificationParam,
+} from "./notification-params";
 import { createNotification } from "./notification-service";
 import type { CreateNotificationParams } from "./types";
 
@@ -680,13 +683,100 @@ interface TravelExpenseRejectionParams extends TravelExpenseDecisionParams {
 	rejectionReason?: string;
 }
 
-function formatTravelExpenseSummary(
-	params: TravelExpenseDecisionParams,
-): string {
-	const amount = `${params.currency} ${params.amount}`;
-	return params.destinationCity
-		? `${params.destinationCity} (${amount})`
-		: amount;
+/** Title and message copy of one notification variant, with static English defaults. */
+interface TriggerCopy {
+	titleKey: string;
+	titleDefault: string;
+	messageKey: string;
+	messageDefault: string;
+}
+
+const travelExpenseApprovedCopy = {
+	withDestination: {
+		titleKey: "common:notifications.content.travelExpenseApproved.title",
+		titleDefault: "Travel expense approved",
+		messageKey: "common:notifications.content.travelExpenseApproved.message",
+		messageDefault:
+			"Your travel expense claim for {destination} ({amount}) was approved by {approverName}.",
+	},
+	withoutDestination: {
+		titleKey: "common:notifications.content.travelExpenseApproved.title",
+		titleDefault: "Travel expense approved",
+		messageKey: "common:notifications.content.travelExpenseApproved.messageWithoutDestination",
+		messageDefault: "Your travel expense claim for {amount} was approved by {approverName}.",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const travelExpenseRejectedCopy = {
+	withDestination: {
+		titleKey: "common:notifications.content.travelExpenseRejected.title",
+		titleDefault: "Travel expense rejected",
+		messageKey: "common:notifications.content.travelExpenseRejected.message",
+		messageDefault:
+			"Your travel expense claim for {destination} ({amount}) was rejected by {approverName}.",
+	},
+	withDestinationAndReason: {
+		titleKey: "common:notifications.content.travelExpenseRejected.title",
+		titleDefault: "Travel expense rejected",
+		messageKey: "common:notifications.content.travelExpenseRejected.messageWithReason",
+		messageDefault:
+			"Your travel expense claim for {destination} ({amount}) was rejected by {approverName}. Reason: {reason}",
+	},
+	withoutDestination: {
+		titleKey: "common:notifications.content.travelExpenseRejected.title",
+		titleDefault: "Travel expense rejected",
+		messageKey: "common:notifications.content.travelExpenseRejected.messageWithoutDestination",
+		messageDefault: "Your travel expense claim for {amount} was rejected by {approverName}.",
+	},
+	withoutDestinationWithReason: {
+		titleKey: "common:notifications.content.travelExpenseRejected.title",
+		titleDefault: "Travel expense rejected",
+		messageKey:
+			"common:notifications.content.travelExpenseRejected.messageWithoutDestinationWithReason",
+		messageDefault:
+			"Your travel expense claim for {amount} was rejected by {approverName}. Reason: {reason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const travelExpenseReportDecidedCopy = {
+	approved: {
+		titleKey: "common:notifications.content.travelExpenseReportApproved.title",
+		titleDefault: "Expense report approved",
+		messageKey: "common:notifications.content.travelExpenseReportApproved.message",
+		messageDefault: "Your expense report (reimbursable {amount}) was approved by {approverName}.",
+	},
+	rejected: {
+		titleKey: "common:notifications.content.travelExpenseReportRejected.title",
+		titleDefault: "Expense report rejected",
+		messageKey: "common:notifications.content.travelExpenseReportRejected.message",
+		messageDefault: "Your expense report (reimbursable {amount}) was rejected by {approverName}.",
+	},
+	rejectedWithReason: {
+		titleKey: "common:notifications.content.travelExpenseReportRejected.title",
+		titleDefault: "Expense report rejected",
+		messageKey: "common:notifications.content.travelExpenseReportRejected.messageWithReason",
+		messageDefault:
+			"Your expense report (reimbursable {amount}) was rejected by {approverName}. Reason: {reason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const travelExpenseReportReturnedCopy = {
+	titleKey: "common:notifications.content.travelExpenseReportReturned.title",
+	titleDefault: "Expense report returned for changes",
+	messageKey: "common:notifications.content.travelExpenseReportReturned.message",
+	messageDefault: "{reviewerName} returned your expense report for changes: {note}",
+} as const satisfies TriggerCopy;
+
+/** The claim's destination (when known), amount, approver and reason as params. */
+function travelExpenseDecisionParams(
+	params: TravelExpenseRejectionParams,
+): Record<string, NotificationParamValue> {
+	return {
+		...(params.destinationCity ? { destination: params.destinationCity } : {}),
+		amount: notificationParam.money(params.amount, params.currency),
+		approverName: params.approverName,
+		...(params.rejectionReason ? { reason: params.rejectionReason } : {}),
+	};
 }
 
 /**
@@ -696,15 +786,27 @@ export async function onTravelExpenseApproved(
 	params: TravelExpenseDecisionParams,
 ): Promise<void> {
 	try {
+		const copy = params.destinationCity
+			? travelExpenseApprovedCopy.withDestination
+			: travelExpenseApprovedCopy.withoutDestination;
+		const i18nParams = travelExpenseDecisionParams(params);
+
 		await createNotification({
 			userId: params.requesterUserId,
 			organizationId: params.organizationId,
 			type: "approval_request_approved",
-			title: "Travel expense approved",
-			message: `Your travel expense claim for ${formatTravelExpenseSummary(params)} was approved by ${params.approverName}.`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "travel_expense_claim",
 			entityId: params.claimId,
 			actionUrl: "/travel-expenses",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -721,19 +823,31 @@ export async function onTravelExpenseRejected(
 	params: TravelExpenseRejectionParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason
-			? ` Reason: ${params.rejectionReason}`
-			: "";
+		const copy = params.destinationCity
+			? params.rejectionReason
+				? travelExpenseRejectedCopy.withDestinationAndReason
+				: travelExpenseRejectedCopy.withDestination
+			: params.rejectionReason
+				? travelExpenseRejectedCopy.withoutDestinationWithReason
+				: travelExpenseRejectedCopy.withoutDestination;
+		const i18nParams = travelExpenseDecisionParams(params);
 
 		await createNotification({
 			userId: params.requesterUserId,
 			organizationId: params.organizationId,
 			type: "approval_request_rejected",
-			title: "Travel expense rejected",
-			message: `Your travel expense claim for ${formatTravelExpenseSummary(params)} was rejected by ${params.approverName}.${reasonText}`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "travel_expense_claim",
 			entityId: params.claimId,
 			actionUrl: "/travel-expenses",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -759,19 +873,33 @@ export async function onTravelExpenseReportDecided(params: {
 }): Promise<void> {
 	try {
 		const approved = params.action === "approve";
-		const reasonText =
-			!approved && params.rejectionReason ? ` Reason: ${params.rejectionReason}` : "";
+		const reason = approved ? undefined : params.rejectionReason;
+		const copy = approved
+			? travelExpenseReportDecidedCopy.approved
+			: reason
+				? travelExpenseReportDecidedCopy.rejectedWithReason
+				: travelExpenseReportDecidedCopy.rejected;
+		const i18nParams: Record<string, NotificationParamValue> = {
+			amount: notificationParam.money(params.reimbursable, params.currency),
+			approverName: params.approverName,
+			...(reason ? { reason } : {}),
+		};
 		await createNotification({
 			userId: params.requesterUserId,
 			organizationId: params.organizationId,
 			type: approved ? "approval_request_approved" : "approval_request_rejected",
-			title: approved ? "Expense report approved" : "Expense report rejected",
-			message: `Your expense report (reimbursable ${params.currency} ${params.reimbursable}) was ${
-				approved ? "approved" : "rejected"
-			} by ${params.approverName}.${reasonText}`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "travel_expense_report",
 			entityId: params.reportId,
 			actionUrl: `/travel-expenses/reports/${params.reportId}`,
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger expense report decision notification");
@@ -790,15 +918,24 @@ export async function onTravelExpenseReportReturned(params: {
 	note: string;
 }): Promise<void> {
 	try {
+		const copy = travelExpenseReportReturnedCopy;
+		const i18nParams = { reviewerName: params.reviewerName, note: params.note };
 		await createNotification({
 			userId: params.requesterUserId,
 			organizationId: params.organizationId,
 			type: "approval_request_rejected",
-			title: "Expense report returned for changes",
-			message: `${params.reviewerName} returned your expense report for changes: ${params.note}`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "travel_expense_report",
 			entityId: params.reportId,
 			actionUrl: `/travel-expenses/reports/${params.reportId}`,
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger expense report return notification");
@@ -934,6 +1071,22 @@ export async function onPasswordChanged(params: SecurityParams): Promise<void> {
 	}
 }
 
+const twoFactorEnabledCopy = {
+	titleKey: "common:notifications.content.twoFactorEnabled.title",
+	titleDefault: "Two-factor authentication enabled",
+	messageKey: "common:notifications.content.twoFactorEnabled.message",
+	messageDefault:
+		"Two-factor authentication has been enabled on your account for added security.",
+} as const satisfies TriggerCopy;
+
+const twoFactorDisabledCopy = {
+	titleKey: "common:notifications.content.twoFactorDisabled.title",
+	titleDefault: "Two-factor authentication disabled",
+	messageKey: "common:notifications.content.twoFactorDisabled.message",
+	messageDefault:
+		"Two-factor authentication has been disabled on your account. We recommend re-enabling it for security.",
+} as const satisfies TriggerCopy;
+
 /**
  * Notify user 2FA was enabled
  */
@@ -941,14 +1094,21 @@ export async function onTwoFactorEnabled(
 	params: SecurityParams,
 ): Promise<void> {
 	try {
+		const copy = twoFactorEnabledCopy;
+
 		await createNotification({
 			userId: params.userId,
 			organizationId: params.organizationId,
 			type: "two_factor_enabled",
-			title: "Two-factor authentication enabled",
-			message:
-				"Two-factor authentication has been enabled on your account for added security.",
+			title: copy.titleDefault,
+			message: copy.messageDefault,
 			actionUrl: "/settings/security",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -965,14 +1125,21 @@ export async function onTwoFactorDisabled(
 	params: SecurityParams,
 ): Promise<void> {
 	try {
+		const copy = twoFactorDisabledCopy;
+
 		await createNotification({
 			userId: params.userId,
 			organizationId: params.organizationId,
 			type: "two_factor_disabled",
-			title: "Two-factor authentication disabled",
-			message:
-				"Two-factor authentication has been disabled on your account. We recommend re-enabling it for security.",
+			title: copy.titleDefault,
+			message: copy.messageDefault,
 			actionUrl: "/settings/security",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -990,8 +1157,16 @@ interface BirthdayReminderParams {
 	userId: string;
 	organizationId: string;
 	birthdayPersonName: string;
-	birthdayDate: Date;
+	/** The birthday's calendar day this year. */
+	birthdayDate: PlainDate;
 }
+
+const birthdayReminderCopy = {
+	titleKey: "common:notifications.content.birthdayReminder.title",
+	titleDefault: "Upcoming birthday",
+	messageKey: "common:notifications.content.birthdayReminder.message",
+	messageDefault: "{name}'s birthday is on {date}.",
+} as const satisfies TriggerCopy;
 
 /**
  * Notify user about an upcoming birthday
@@ -1000,15 +1175,25 @@ export async function onBirthdayReminder(
 	params: BirthdayReminderParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+		const copy = birthdayReminderCopy;
+		const i18nParams = {
+			name: params.birthdayPersonName,
+			date: notificationParam.plainDate(params.birthdayDate, "monthDayLong"),
+		};
 
 		await createNotification({
 			userId: params.userId,
 			organizationId: params.organizationId,
 			type: "birthday_reminder",
-			title: "Upcoming birthday",
-			message: `${params.birthdayPersonName}'s birthday is on ${formatDate(params.birthdayDate)}.`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -1022,8 +1207,26 @@ interface VacationBalanceAlertParams {
 	userId: string;
 	organizationId: string;
 	remainingDays: number;
-	expiryDate?: Date;
+	/** The calendar day the remaining days expire. */
+	expiryDate?: PlainDate;
 }
+
+const vacationBalanceCopy = {
+	remaining: {
+		titleKey: "common:notifications.content.vacationBalanceAlert.title",
+		titleDefault: "Vacation balance reminder",
+		messageKey: "common:notifications.content.vacationBalanceAlert.message",
+		messageDefault:
+			"You have {remainingDays, plural, one {# vacation day} other {# vacation days}} remaining. Don't forget to take some time off!",
+	},
+	expiring: {
+		titleKey: "common:notifications.content.vacationBalanceAlert.title",
+		titleDefault: "Vacation balance reminder",
+		messageKey: "common:notifications.content.vacationBalanceAlert.expiringMessage",
+		messageDefault:
+			"You have {remainingDays, plural, one {# vacation day} other {# vacation days}} expiring on {expiryDate}. Use them before they expire!",
+	},
+} as const satisfies Record<string, TriggerCopy>;
 
 /**
  * Notify user about low vacation balance or expiring days
@@ -1032,23 +1235,36 @@ export async function onVacationBalanceAlert(
 	params: VacationBalanceAlertParams,
 ): Promise<void> {
 	try {
-		let message: string;
-
-		if (params.expiryDate) {
-			const formatDate = (date: Date) =>
-				date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-			message = `You have ${params.remainingDays} vacation day${params.remainingDays === 1 ? "" : "s"} expiring on ${formatDate(params.expiryDate)}. Use them before they expire!`;
-		} else {
-			message = `You have ${params.remainingDays} vacation day${params.remainingDays === 1 ? "" : "s"} remaining. Don't forget to take some time off!`;
-		}
+		const copy = params.expiryDate ? vacationBalanceCopy.expiring : vacationBalanceCopy.remaining;
+		const i18nParams = {
+			remainingDays: params.remainingDays,
+			...(params.expiryDate
+				? { expiryDate: notificationParam.plainDate(params.expiryDate, "monthDay") }
+				: {}),
+		};
+		// The stored English fallback; the ICU plural is rendered per recipient on delivery.
+		const days = `${params.remainingDays} vacation day${params.remainingDays === 1 ? "" : "s"}`;
+		const message = params.expiryDate
+			? fillNotificationTemplate(
+					"You have {days} expiring on {expiryDate}. Use them before they expire!",
+					{ ...i18nParams, days },
+				)
+			: `You have ${days} remaining. Don't forget to take some time off!`;
 
 		await createNotification({
 			userId: params.userId,
 			organizationId: params.organizationId,
 			type: "vacation_balance_alert",
-			title: "Vacation balance reminder",
+			title: copy.titleDefault,
 			message,
 			actionUrl: "/absences",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -1067,7 +1283,8 @@ interface SchedulePublishedParams {
 	employeeName: string;
 	organizationId: string;
 	shiftCount: number;
-	dateRange: { start: Date; end: Date };
+	/** The published schedule's first and last calendar days. */
+	dateRange: { start: PlainDate; end: PlainDate };
 }
 
 interface ShiftAssignedParams {
@@ -1132,6 +1349,82 @@ interface ShiftPickupApprovedParams {
 	approverName: string;
 }
 
+const schedulePublishedCopy = {
+	titleKey: "common:notifications.content.schedulePublished.title",
+	titleDefault: "New schedule published",
+	messageKey: "common:notifications.content.schedulePublished.message",
+	messageDefault:
+		"{shiftCount, plural, one {# shift has} other {# shifts have}} been published for {dateRange}.",
+} as const satisfies TriggerCopy;
+
+const shiftSwapRequestedToManagerCopy = {
+	withoutTarget: {
+		titleKey: "common:notifications.content.shiftSwapRequestedToManager.title",
+		titleDefault: "Shift swap request",
+		messageKey: "common:notifications.content.shiftSwapRequestedToManager.message",
+		messageDefault:
+			"{requesterName} requested a swap for the shift on {shiftDate} ({startTime} - {endTime}).",
+	},
+	withTarget: {
+		titleKey: "common:notifications.content.shiftSwapRequestedToManager.title",
+		titleDefault: "Shift swap request",
+		messageKey: "common:notifications.content.shiftSwapRequestedToManager.messageWithTarget",
+		messageDefault:
+			"{requesterName} requested to swap with {targetName} for the shift on {shiftDate} ({startTime} - {endTime}).",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const shiftSwapRequestedToTargetCopy = {
+	titleKey: "common:notifications.content.shiftSwapRequestedToTarget.title",
+	titleDefault: "Shift swap request",
+	messageKey: "common:notifications.content.shiftSwapRequestedToTarget.message",
+	messageDefault:
+		"{requesterName} wants to swap shifts with you for {shiftDate} ({startTime} - {endTime}).",
+} as const satisfies TriggerCopy;
+
+const shiftSwapApprovedCopy = {
+	titleKey: "common:notifications.content.shiftSwapApproved.title",
+	titleDefault: "Shift swap approved",
+	messageKey: "common:notifications.content.shiftSwapApproved.message",
+	messageDefault: "Your shift swap request for {shiftDate} was approved by {approverName}.",
+} as const satisfies TriggerCopy;
+
+const shiftSwapRejectedCopy = {
+	withoutReason: {
+		titleKey: "common:notifications.content.shiftSwapRejected.title",
+		titleDefault: "Shift swap rejected",
+		messageKey: "common:notifications.content.shiftSwapRejected.message",
+		messageDefault: "Your shift swap request for {shiftDate} was rejected by {approverName}.",
+	},
+	withReason: {
+		titleKey: "common:notifications.content.shiftSwapRejected.title",
+		titleDefault: "Shift swap rejected",
+		messageKey: "common:notifications.content.shiftSwapRejected.messageWithReason",
+		messageDefault:
+			"Your shift swap request for {shiftDate} was rejected by {approverName}. Reason: {reason}",
+	},
+} as const satisfies Record<string, TriggerCopy>;
+
+const openShiftAvailableCopy = {
+	titleKey: "common:notifications.content.openShiftAvailable.title",
+	titleDefault: "Open shift available",
+	messageKey: "common:notifications.content.openShiftAvailable.message",
+	messageDefault: "An open shift is available on {shiftDate} from {startTime} to {endTime}.",
+} as const satisfies TriggerCopy;
+
+const shiftPickupApprovedCopy = {
+	titleKey: "common:notifications.content.shiftPickupApproved.title",
+	titleDefault: "Shift pickup approved",
+	messageKey: "common:notifications.content.shiftPickupApproved.message",
+	messageDefault:
+		"Your request to pick up the shift on {shiftDate} was approved by {approverName}.",
+} as const satisfies TriggerCopy;
+
+/** A shift's organization-local calendar day, formatted per recipient. */
+function shiftDateParam(date: PlainDate): NotificationParamValue {
+	return notificationParam.plainDate(date, "weekdayMonthDay");
+}
+
 /**
  * Notify employee that their schedule was published (batched per employee)
  */
@@ -1139,16 +1432,31 @@ export async function onSchedulePublished(
 	params: SchedulePublishedParams,
 ): Promise<void> {
 	try {
-		const formatDate = (date: Date) =>
-			date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+		const copy = schedulePublishedCopy;
+		const i18nParams = {
+			shiftCount: params.shiftCount,
+			dateRange: notificationParam.plainDateRange(params.dateRange.start, params.dateRange.end),
+		};
+		// The stored English fallback; the ICU plural is rendered per recipient on delivery.
+		const shifts = params.shiftCount === 1 ? "1 shift has" : `${params.shiftCount} shifts have`;
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "schedule_published",
-			title: "New schedule published",
-			message: `${params.shiftCount} shift${params.shiftCount === 1 ? " has" : "s have"} been published for ${formatDate(params.dateRange.start)} - ${formatDate(params.dateRange.end)}.`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate("{shifts} been published for {dateRange}.", {
+				...i18nParams,
+				shifts,
+			}),
 			actionUrl: "/scheduling",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -1165,19 +1473,20 @@ export async function onShiftAssigned(
 	params: ShiftAssignedParams,
 ): Promise<void> {
 	try {
-		const shiftDate = formatShiftDate(params.shiftDate);
 		const copy = notificationCopy.shiftAssigned;
+		const i18nParams = {
+			shiftDate: shiftDateParam(params.shiftDate),
+			startTime: params.startTime,
+			endTime: params.endTime,
+			assignedByName: params.assignedByName,
+		};
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "shift_assigned",
 			title: copy.titleDefault,
-			message: copy.messageDefault
-				.replace("{shiftDate}", shiftDate)
-				.replace("{startTime}", params.startTime)
-				.replace("{endTime}", params.endTime)
-				.replace("{assignedByName}", params.assignedByName),
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "shift",
 			entityId: params.shiftId,
 			actionUrl: "/scheduling",
@@ -1186,12 +1495,7 @@ export async function onShiftAssigned(
 				copy.titleDefault,
 				copy.messageKey,
 				copy.messageDefault,
-				{
-					shiftDate,
-					startTime: params.startTime,
-					endTime: params.endTime,
-					assignedByName: params.assignedByName,
-				},
+				i18nParams,
 			),
 		});
 	} catch (error) {
@@ -1209,19 +1513,33 @@ export async function onShiftSwapRequestedToManager(
 	params: ShiftSwapRequestToManagerParams,
 ): Promise<void> {
 	try {
-		const targetText = params.targetEmployeeName
-			? ` to swap with ${params.targetEmployeeName}`
-			: "";
+		const copy = params.targetEmployeeName
+			? shiftSwapRequestedToManagerCopy.withTarget
+			: shiftSwapRequestedToManagerCopy.withoutTarget;
+		const i18nParams = {
+			requesterName: params.requesterName,
+			...(params.targetEmployeeName ? { targetName: params.targetEmployeeName } : {}),
+			shiftDate: shiftDateParam(params.shiftDate),
+			startTime: params.startTime,
+			endTime: params.endTime,
+		};
 
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
 			type: "shift_swap_requested",
-			title: "Shift swap request",
-			message: `${params.requesterName} requested${targetText} for the shift on ${formatShiftDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/approvals/inbox",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -1238,15 +1556,30 @@ export async function onShiftSwapRequestedToTarget(
 	params: ShiftSwapRequestToTargetParams,
 ): Promise<void> {
 	try {
+		const copy = shiftSwapRequestedToTargetCopy;
+		const i18nParams = {
+			requesterName: params.requesterName,
+			shiftDate: shiftDateParam(params.shiftDate),
+			startTime: params.startTime,
+			endTime: params.endTime,
+		};
+
 		await createNotification({
 			userId: params.targetEmployeeUserId,
 			organizationId: params.organizationId,
 			type: "shift_swap_requested",
-			title: "Shift swap request",
-			message: `${params.requesterName} wants to swap shifts with you for ${formatShiftDate(params.shiftDate)} (${params.startTime} - ${params.endTime}).`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/scheduling",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -1263,15 +1596,28 @@ export async function onShiftSwapApproved(
 	params: ShiftSwapApprovalParams,
 ): Promise<void> {
 	try {
+		const copy = shiftSwapApprovedCopy;
+		const i18nParams = {
+			shiftDate: shiftDateParam(params.shiftDate),
+			approverName: params.approverName,
+		};
+
 		await createNotification({
 			userId: params.requesterUserId,
 			organizationId: params.organizationId,
 			type: "shift_swap_approved",
-			title: "Shift swap approved",
-			message: `Your shift swap request for ${formatShiftDate(params.shiftDate)} was approved by ${params.approverName}.`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/scheduling",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -1288,19 +1634,31 @@ export async function onShiftSwapRejected(
 	params: ShiftSwapRejectionParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.rejectionReason
-			? ` Reason: ${params.rejectionReason}`
-			: "";
+		const copy = params.rejectionReason
+			? shiftSwapRejectedCopy.withReason
+			: shiftSwapRejectedCopy.withoutReason;
+		const i18nParams = {
+			shiftDate: shiftDateParam(params.shiftDate),
+			approverName: params.approverName,
+			...(params.rejectionReason ? { reason: params.rejectionReason } : {}),
+		};
 
 		await createNotification({
 			userId: params.requesterUserId,
 			organizationId: params.organizationId,
 			type: "shift_swap_rejected",
-			title: "Shift swap rejected",
-			message: `Your shift swap request for ${formatShiftDate(params.shiftDate)} was rejected by ${params.approverName}.${reasonText}`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "shift_request",
 			entityId: params.requestId,
 			actionUrl: "/scheduling",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
@@ -1317,6 +1675,12 @@ export async function onOpenShiftAvailable(
 	params: OpenShiftAvailableParams,
 ): Promise<void> {
 	try {
+		const copy = openShiftAvailableCopy;
+		const i18nParams = {
+			shiftDate: shiftDateParam(params.shiftDate),
+			startTime: params.startTime,
+			endTime: params.endTime,
+		};
 		// Create notifications for all eligible team members
 		await Promise.all(
 			params.teamMemberUserIds.map((userId) =>
@@ -1324,11 +1688,18 @@ export async function onOpenShiftAvailable(
 					userId,
 					organizationId: params.organizationId,
 					type: "shift_pickup_available",
-					title: "Open shift available",
-					message: `An open shift is available on ${formatShiftDate(params.shiftDate)} from ${params.startTime} to ${params.endTime}.`,
+					title: copy.titleDefault,
+					message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 					entityType: "shift",
 					entityId: params.shiftId,
 					actionUrl: "/scheduling",
+					metadata: i18nMetadata(
+						copy.titleKey,
+						copy.titleDefault,
+						copy.messageKey,
+						copy.messageDefault,
+						i18nParams,
+					),
 				}),
 			),
 		);
@@ -1347,15 +1718,28 @@ export async function onShiftPickupApproved(
 	params: ShiftPickupApprovedParams,
 ): Promise<void> {
 	try {
+		const copy = shiftPickupApprovedCopy;
+		const i18nParams = {
+			shiftDate: shiftDateParam(params.shiftDate),
+			approverName: params.approverName,
+		};
+
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "shift_pickup_approved",
-			title: "Shift pickup approved",
-			message: `Your request to pick up the shift on ${formatShiftDate(params.shiftDate)} was approved by ${params.approverName}.`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "shift",
 			entityId: params.shiftId,
 			actionUrl: "/scheduling",
+			metadata: i18nMetadata(
+				copy.titleKey,
+				copy.titleDefault,
+				copy.messageKey,
+				copy.messageDefault,
+				i18nParams,
+			),
 		});
 	} catch (error) {
 		logger.error(
