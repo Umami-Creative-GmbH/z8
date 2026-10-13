@@ -6,6 +6,7 @@ import {
 	type DisplayContext,
 	formatInstant,
 } from "@/lib/datetime/temporal-format";
+import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 
 export interface WorkPeriodDialogMetadata {
 	durationMinutes: number;
@@ -32,6 +33,8 @@ export interface WorkPeriodDialogMetadata {
 		surchargeMinutes: number;
 	}>;
 	approvalStatus?: "approved" | "pending" | "rejected";
+	/** Recorded vehicle use (#1120); absent without a vehicle. */
+	vehicleUse?: WorkVehicleUse;
 	editedByName?: string;
 	editedAt?: Date;
 }

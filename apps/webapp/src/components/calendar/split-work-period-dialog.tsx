@@ -14,7 +14,9 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
+import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +32,12 @@ import {
 	getWorkPeriodSplitDates,
 	resolveWorkPeriodSplit,
 } from "@/lib/time-tracking/split-work-period";
+import {
+	type VehicleUseSplitAsk,
+	vehicleUseSplitAsks,
+} from "@/lib/time-tracking/vehicle-use/split-vehicle-use";
+import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { workVehicleUseRefusalOfResult } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import { formatDuration, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 
 interface SplitWorkPeriodDialogProps {
@@ -58,6 +66,10 @@ export function SplitWorkPeriodDialog({
 	const [afterNotes, setAfterNotes] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 	const [disambiguation, setDisambiguation] = useState<"earlier" | "later" | undefined>();
+	// One optional value divides the kilometres of work with vehicle use (#1126).
+	const vehicleUse = metadata.vehicleUse ?? null;
+	const vehicleAsk = vehicleUseSplitAsks(vehicleUse);
+	const [vehicleSplitKm, setVehicleSplitKm] = useState("");
 	// One identity per split: a retry after a lost or refused response reuses it, so
 	// the server replays a committed split instead of splitting twice.
 	const submissionIdRef = useRef<string | null>(null);
@@ -91,6 +103,7 @@ export function SplitWorkPeriodDialog({
 			afterNotes.trim() || undefined,
 			disambiguation,
 			submissionId,
+			vehicleAsk && vehicleSplitKm.trim() !== "" ? Number(vehicleSplitKm) : undefined,
 		).catch(() => null);
 
 		if (!result) {
@@ -98,10 +111,16 @@ export function SplitWorkPeriodDialog({
 		} else if (result.success) {
 			toast.success(t("calendar.split.success", "Work period split successfully"));
 			submissionIdRef.current = null;
+			setVehicleSplitKm("");
 			onSplitComplete?.();
 			onOpenChange(false);
 		} else {
-			toast.error(result.error || t("calendar.split.failed", "Failed to split work period"));
+			const refusal = workVehicleUseRefusalOfResult(result);
+			toast.error(
+				refusal
+					? vehicleUseRefusalText(t, refusal)
+					: result.error || t("calendar.split.failed", "Failed to split work period"),
+			);
 		}
 
 		setIsSaving(false);
@@ -112,6 +131,7 @@ export function SplitWorkPeriodDialog({
 		setSplitDate(splitDates[0] ?? "");
 		setBeforeNotes(metadata.notes || "");
 		setAfterNotes("");
+		setVehicleSplitKm("");
 		submissionIdRef.current = null;
 		onOpenChange(false);
 	};
@@ -193,6 +213,14 @@ export function SplitWorkPeriodDialog({
 								notes={afterNotes}
 								onNotesChange={setAfterNotes}
 							/>
+							{vehicleUse && vehicleAsk && (
+								<VehicleSplitField
+									ask={vehicleAsk}
+									use={vehicleUse}
+									value={vehicleSplitKm}
+									onChange={setVehicleSplitKm}
+								/>
+							)}
 						</div>
 					)}
 				</ActionPanelBody>
@@ -331,6 +359,59 @@ function OccurrencePicker({
 				</Label>
 			</div>
 		</RadioGroup>
+	);
+}
+
+/** The one optional value of a split of work with vehicle use (#1126). */
+function VehicleSplitField({
+	ask,
+	use,
+	value,
+	onChange,
+}: {
+	ask: VehicleUseSplitAsk;
+	use: WorkVehicleUse;
+	value: string;
+	onChange: (value: string) => void;
+}) {
+	const { t } = useTranslate();
+	const km = (value: number) => value.toLocaleString();
+	const label =
+		ask === "reading"
+			? t("calendar.split.vehicleReading", "Odometer reading at the split (optional)")
+			: t("calendar.split.vehicleFirstDistance", "Kilometres in the first period (optional)");
+	const hint =
+		ask === "reading"
+			? t(
+					"calendar.split.vehicleReadingHint",
+					"It ends the first period's readings and starts the second's ({start} to {end} km). Leave it empty if you did not read it.",
+					{
+						start: use.startKm === null ? "–" : km(use.startKm),
+						end: use.endKm === null ? "–" : km(use.endKm),
+					},
+				)
+			: t(
+					"calendar.split.vehicleFirstDistanceHint",
+					"Of {distance} km driven; the rest goes to the second period. Left empty, all of it stays on the first period.",
+					{ distance: km(use.distanceKm ?? 0) },
+				);
+	return (
+		<div className="space-y-2">
+			<Label htmlFor="vehicleSplitKm">{label}</Label>
+			<Input
+				id="vehicleSplitKm"
+				type="number"
+				inputMode="numeric"
+				min={0}
+				step={1}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				aria-describedby="vehicleSplitKmHint"
+			/>
+			<p id="vehicleSplitKmHint" className="text-sm text-muted-foreground">
+				{hint}
+			</p>
+		</div>
 	);
 }
 
