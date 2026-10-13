@@ -47,21 +47,40 @@ function attribution(value) {
 }
 
 /**
- * The frozen command, built once at capture with a fixed key order: version 2,
- * or version 3 when the request carries the position taken at the event (#826).
+ * The frozen command, built once at capture with a fixed key order: version 2;
+ * version 3 when the request carries the position taken at the event (#826);
+ * version 4 when it carries vehicle use (#1122), with any position before it.
  * Its serialization is stored and every attempt sends exactly those bytes.
  */
 function buildCommand(request, target) {
 	const command = buildUnstampedCommand(request, target);
-	if (!request.position) return command;
-	command.version = 3;
-	command.position = {
-		latitude: request.position.latitude,
-		longitude: request.position.longitude,
-		accuracyMeters: request.position.accuracyMeters,
-		fixedAt: request.position.fixedAt,
-	};
+	if (!request.position && !request.vehicleUse) return command;
+	command.version = request.vehicleUse ? 4 : 3;
+	if (request.position) {
+		command.position = {
+			latitude: request.position.latitude,
+			longitude: request.position.longitude,
+			accuracyMeters: request.position.accuracyMeters,
+			fixedAt: request.position.fixedAt,
+		};
+	}
+	if (request.vehicleUse) command.vehicleUse = frozenVehicleUse(request.vehicleUse);
 	return command;
+}
+
+/** Vehicle use in its fixed key order; only the fields a clock command names (#1122). */
+function frozenVehicleUse(value) {
+	const frozen = {};
+	if (value.vehicle) {
+		frozen.vehicle =
+			value.vehicle.kind === "organization"
+				? { kind: "organization", vehicleId: value.vehicle.vehicleId }
+				: { kind: value.vehicle.kind };
+	}
+	for (const field of ["startKm", "endKm", "distanceKm", "readingKm"]) {
+		if (typeof value[field] === "number") frozen[field] = value[field];
+	}
+	return frozen;
 }
 
 function buildUnstampedCommand(request, target) {
