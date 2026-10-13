@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { organizationNotificationSettings, userSettings } from "@/db/schema";
-import { pickShareLocale } from "@/lib/projects/report-share/http";
+import { pickAcceptLanguage } from "@/i18n/accept-language";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 
 /** The cookie the app's language switcher and locale routing keep the page language in. */
@@ -51,7 +51,7 @@ export function pageLanguageFromRequest(request: Request | null | undefined): st
 	if (!request) return null;
 	const cookieLanguage = cookieValue(request.headers.get("cookie"), PAGE_LANGUAGE_COOKIE);
 	if (isSupportedLanguage(cookieLanguage)) return cookieLanguage;
-	return pickShareLocale(request.headers.get("accept-language"), ALL_LANGUAGES);
+	return pickAcceptLanguage(request.headers.get("accept-language"), ALL_LANGUAGES);
 }
 
 /**

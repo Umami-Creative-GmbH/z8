@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
+import { pickAcceptLanguage } from "@/i18n/accept-language";
 import { splitRouteLocale } from "@/i18n/route-locale";
 import { routing } from "@/i18n/routing";
 import {
@@ -13,10 +14,7 @@ import {
 	createRateLimitResponse,
 	getClientIp,
 } from "@/lib/rate-limit";
-import {
-	applyShareResponseHeaders,
-	pickShareLocale,
-} from "@/lib/projects/report-share/http";
+import { applyShareResponseHeaders } from "@/lib/projects/report-share/http";
 import { applySecurityHeaders } from "@/lib/security";
 import { applySetupResponseHeaders } from "@/lib/setup/http";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
@@ -134,7 +132,7 @@ async function handleSharePage(
 		response = NextResponse.next();
 	} else {
 		const locale =
-			pickShareLocale(
+			pickAcceptLanguage(
 				request.headers.get("accept-language"),
 				routing.locales,
 			) ??
