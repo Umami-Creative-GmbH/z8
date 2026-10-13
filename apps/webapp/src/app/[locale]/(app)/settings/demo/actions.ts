@@ -31,6 +31,10 @@ import {
 	generateDemoTimeEntries,
 	generateDemoWorkCategories,
 } from "@/lib/demo/demo-data.service";
+import {
+	assignDemoVehicleUseToPeriods,
+	type DemoVehicleUseResult,
+} from "@/lib/demo/demo-vehicle-use-generator";
 import { type GenerateEmployeesResult, generateDemoEmployees } from "@/lib/demo/employee-generator";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -801,6 +805,49 @@ export async function assignWorkCategoriesToPeriodsStepAction(
 
 		const result = yield* Effect.promise(() => assignWorkCategoriesToPeriods(options));
 		return result;
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Records vehicle use on the demo work of the demo vehicles' team drivers, some of it with
+ * driving details missing (#1132). Runs after the time entries and the locations, which bring
+ * the demo vehicles.
+ */
+export async function assignVehicleUseToPeriodsStepAction(
+	input: StepGenerationInput,
+): Promise<ServerActionResult<DemoVehicleUseResult>> {
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
+
+		if (!hasPermission) {
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
+			);
+		}
+
+		const options: DemoDataOptions = {
+			organizationId: input.organizationId,
+			dateRange: calculateDateRange(input.dateRangeType),
+			includeTimeEntries: true,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includeLocations: true,
+			employeeIds: input.employeeIds,
+			createdBy: session.user.id,
+		};
+
+		return yield* Effect.promise(() => assignDemoVehicleUseToPeriods(options));
 	});
 
 	return runServerActionSafe(effect);
