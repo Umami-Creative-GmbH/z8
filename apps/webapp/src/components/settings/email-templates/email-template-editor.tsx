@@ -106,7 +106,7 @@ export function EmailTemplateEditor({
 				<span>
 					{t(
 						"settings.emailTemplates.editor.singleLanguageNote",
-						"A custom template goes to every recipient as written, whatever their language. Without one, Z8 sends its default email in each recipient's language.",
+						"A custom template goes to every recipient as written, whatever their language. Without one, Z8 sends its translated default email.",
 					)}
 				</span>
 			</p>

@@ -109,6 +109,9 @@ describe("EmailTemplateEditor", () => {
 		expect(
 			screen.getByText(/goes to every recipient as written, whatever their language/),
 		).toBeTruthy();
+		// True for both editors: platform billing defaults follow the organization's language.
+		expect(screen.getByText(/Without one, Z8 sends its translated default email\./)).toBeTruthy();
+		expect(screen.queryByText(/each recipient's language/)).toBeNull();
 	});
 
 	it("applies theme-aware styles to the rich email editor", () => {
