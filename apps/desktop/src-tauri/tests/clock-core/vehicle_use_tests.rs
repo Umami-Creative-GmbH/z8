@@ -170,6 +170,97 @@ async fn a_saved_version_4_command_waits_while_the_server_does_not_list_it() {
     assert_eq!(json(&saved.command)["version"], 4);
 }
 
+#[tokio::test]
+async fn the_stored_version_decides_even_when_the_saved_body_cannot_be_read() {
+    let device = Device::new();
+    let endpoint = test_http::free_endpoint();
+    device.negotiated_versions(&endpoint, "org-1", false, BREAK_KINDS, WITH_VEHICLES);
+    device
+        .act(&endpoint, clock_in_with_vehicle())
+        .await
+        .unwrap();
+    assert_eq!(device.saved()[0].command_version, 4);
+    let operation_id = device.saved()[0].operation_id.clone();
+    // A damaged body no longer names its version; the stored column still does.
+    let db = rusqlite::Connection::open(device.dir.path().join("offline_queue.db")).unwrap();
+    db.execute_batch(
+        "DROP TRIGGER clock_command_frozen; UPDATE clock_command SET command = 'not json';",
+    )
+    .unwrap();
+
+    let requests = test_http::serve_on(&endpoint, 1, move |_, _| {
+        Some((
+            200,
+            serde_json::json!({ "outcome": "not_committed", "operationId": operation_id })
+                .to_string(),
+        ))
+    });
+    crate::command_sync::drain(
+        &device.service,
+        &device.store,
+        &endpoint,
+        TOKEN,
+        &crate::command_transport::Capabilities::parse(&support::capabilities_versions(
+            "org-1",
+            "available",
+            BREAK_KINDS,
+            &[2],
+        ))
+        .unwrap(),
+        crate::command_sync::Pacing::Now,
+        || Utc::now().timestamp_millis(),
+    )
+    .await
+    .unwrap();
+
+    // Fails closed: looked up, never sent as if its version were unknown.
+    let requests = requests.join().unwrap();
+    assert_eq!(requests.len(), 1);
+    assert!(requests[0].starts_with("GET /api/time-entries/commands/"));
+    let failure = device.saved()[0].failure.clone().unwrap();
+    assert_eq!(failure.class, FailureClass::Paused);
+    assert_eq!(failure.code, "submit_unavailable");
+}
+
+#[tokio::test]
+async fn a_legacy_idle_break_says_its_reading_was_left_out() {
+    const CLOSE_ENTRY: &str = r#"{"entry":{"id":"close-1","employeeId":"employee-1","type":"clock_out","timestamp":"2026-05-09T10:15:30Z"}}"#;
+    const OPEN_ENTRY: &str = r#"{"entry":{"id":"open-1","employeeId":"employee-1","type":"clock_in","timestamp":"2026-05-09T10:30:00Z"}}"#;
+    for (vehicle_use, left_out) in [
+        (Some(BreakVehicleUse { reading_km: 12_040 }), true),
+        (None, false),
+    ] {
+        let device = Device::new();
+        // A server without version 2 commands keeps the two legacy break requests.
+        let (url, server) = test_http::server(vec![
+            Some((404, "{}".to_string())),
+            Some((200, CLOSE_ENTRY.to_string())),
+            Some((200, OPEN_ENTRY.to_string())),
+            Some((503, "{}".to_string())),
+        ]);
+        let outcome = device
+            .act(
+                &url,
+                ClockCommand::Break {
+                    evidence: support::confirmed_break(
+                        "2026-05-09T10:15:30Z".parse().unwrap(),
+                        Some("Europe/Berlin"),
+                        Some("Europe/Berlin"),
+                    ),
+                    location: WorkLocationType::Office,
+                    vehicle_use,
+                },
+            )
+            .await
+            .unwrap();
+        server.join().unwrap();
+        let ClockCommandOutcome::Committed { write } = outcome else {
+            panic!("The legacy break must commit")
+        };
+        assert_eq!(write.vehicle_use_left_out, left_out);
+    }
+}
+
 fn entry(kind: &str) -> String {
     serde_json::json!({"entry":{"id":"online-entry","employeeId":support::EMPLOYEE,"type":kind,"timestamp":"2026-10-09T08:00:00Z"}}).to_string()
 }

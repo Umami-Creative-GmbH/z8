@@ -225,6 +225,8 @@ const german: Record<string, string> = {
 	"Choose an organization vehicle or your own vehicle.":
 		"Wählen Sie ein Firmenfahrzeug oder Ihr eigenes Fahrzeug.",
 	"Vehicle use was not recorded": "Die Fahrzeugnutzung wurde nicht erfasst",
+	"This server does not record the break's odometer reading. Add it to the work in Z8.":
+		"Dieser Server erfasst den Kilometerstand der Pause nicht. Tragen Sie ihn in Z8 bei der Arbeit nach.",
 };
 const LocaleContext = createContext<Language>("en");
 export function LocaleProvider({

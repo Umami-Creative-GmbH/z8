@@ -217,6 +217,7 @@ pub async fn get_desktop_context(app_handle: AppHandle) -> Result<Value, String>
         Err(error) => Err(error.into()),
     }
 }
+
 /// Plausibility warnings for the vehicle use about to be sent with a clock-in,
 /// or with the clock-out of the live work it names (#1124). Warnings are advice:
 /// offline, or from a server without the route, there are none.
@@ -232,7 +233,9 @@ pub async fn check_vehicle_use_warnings(
     }
     match request(&app_handle, "/api/desktop/vehicle-use-warnings", Some(body)).await {
         Ok(answer) if answer["warnings"].is_array() => Ok(answer),
-        Ok(_) | Err(RequestFailure::Offline) | Err(RequestFailure::Other(_)) => {
+        Ok(_) | Err(RequestFailure::Offline) => Ok(serde_json::json!({ "warnings": [] })),
+        Err(RequestFailure::Other(message)) => {
+            log::warn!("Vehicle use warnings could not be checked: {message}");
             Ok(serde_json::json!({ "warnings": [] }))
         }
     }
