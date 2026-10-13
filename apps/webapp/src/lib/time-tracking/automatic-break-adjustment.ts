@@ -821,7 +821,9 @@ export async function adjustAutomaticBreakInTransaction(
 		startUtcOffsetMinutes: values.clockIn.utcOffsetMinutes ?? null,
 		endUtcOffsetMinutes: values.clockOut.utcOffsetMinutes ?? null,
 		// Vehicle use only when there is one, keeping earlier receipts' shape (#1126).
-		attribution: values.vehicleUse ? { ...attribution, vehicleUse: values.vehicleUse } : attribution,
+		attribution: values.vehicleUse
+			? { ...attribution, vehicleUse: values.vehicleUse }
+			: attribution,
 	});
 	const command: AutomaticBreakAdjustmentCommand = {
 		version: AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION,

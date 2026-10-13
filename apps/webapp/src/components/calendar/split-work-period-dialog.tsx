@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
+import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -14,7 +15,6 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
-import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

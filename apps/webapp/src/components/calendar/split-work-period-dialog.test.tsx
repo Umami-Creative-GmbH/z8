@@ -160,7 +160,10 @@ describe("SplitWorkPeriodDialog", () => {
 	});
 
 	describe("vehicle use (#1126)", () => {
-		const van = { kind: "organization", vehicleId: "0b9f8f2e-6c1d-4d6c-9a43-7f2f3c1f5e10" } as const;
+		const van = {
+			kind: "organization",
+			vehicleId: "0b9f8f2e-6c1d-4d6c-9a43-7f2f3c1f5e10",
+		} as const;
 		const drivenEvent = (vehicleUse: object): CalendarEvent => ({
 			...event,
 			date: new Date("2026-05-04T08:00:00.000Z"),

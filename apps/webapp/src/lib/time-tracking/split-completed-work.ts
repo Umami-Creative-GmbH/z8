@@ -796,7 +796,9 @@ export async function splitCompletedWork(
 		startUtcOffsetMinutes: values.clockIn.utcOffsetMinutes ?? null,
 		endUtcOffsetMinutes: values.clockOut.utcOffsetMinutes ?? null,
 		// Vehicle use only when there is one, keeping earlier receipts' shape (#1126).
-		attribution: values.vehicleUse ? { ...attribution, vehicleUse: values.vehicleUse } : attribution,
+		attribution: values.vehicleUse
+			? { ...attribution, vehicleUse: values.vehicleUse }
+			: attribution,
 	});
 	const result: SplitCompletedWorkResult = {
 		version: SPLIT_COMPLETED_WORK_RESULT_VERSION,

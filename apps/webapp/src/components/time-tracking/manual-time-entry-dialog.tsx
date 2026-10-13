@@ -239,6 +239,11 @@ const VEHICLE_USE_MESSAGES = {
 		"timeTracking.vehicleUse.refusal.archived",
 		"This vehicle is archived and can no longer be picked.",
 	],
+	// Only a split refuses this (#1126); listed so every refusal has its message.
+	split_value_out_of_range: [
+		"timeTracking.vehicleUse.refusal.splitOutOfRange",
+		"The kilometres at the split must lie within the work period's kilometres.",
+	],
 } as const satisfies Record<WorkVehicleUseChangeRefusalCode, Message>;
 
 /** The entered vehicle use as a manual command carries it, or why it is refused. */
