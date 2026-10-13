@@ -10,7 +10,7 @@ import {
 	type RecipientDisplayContext,
 	resolveRecipientDisplayContext,
 } from "@/lib/notifications/recipient-display-context";
-import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
+import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import type { DecisionEvidenceRecord } from "@/lib/approvals/evidence/store";
 import type { BoundBotApprovalResult } from "./approval-decision";
 import { type BotTranslateFn, getBotTranslate } from "./i18n";
@@ -20,16 +20,56 @@ export type ApprovalNotice = Pick<
 	"title" | "text" | "reviewUrl" | "reviewLabel"
 >;
 
+/** Who an approval reply goes to. Without a user, only the organization's default counts. */
+export interface ApprovalNoticeRecipient {
+	userId?: string | null;
+	organizationId: string;
+}
+
 /**
- * The language of an approval reply. Without a display context the recipient is
- * no longer a member: their own saved language is not read, only the
- * organization's default counts.
+ * The language of an approval reply: the display context's language for a
+ * member, otherwise the recipient language (saved language, then the
+ * organization's default, then `en`) of someone who is no longer a member or
+ * not linked to a user.
  */
 export async function approvalNoticeLocale(
 	display: RecipientDisplayContext | null,
-	organizationId: string,
+	recipient: ApprovalNoticeRecipient,
 ): Promise<string> {
-	return display?.locale ?? resolveOrganizationNotificationLocale(organizationId);
+	return (
+		display?.locale ??
+		resolveRecipientNotificationLocale({
+			userId: recipient.userId ?? null,
+			organizationId: recipient.organizationId,
+		})
+	);
+}
+
+/**
+ * A translator for a reply to whoever pressed an approval control: a member in
+ * their display language, anyone else in their recipient language.
+ */
+export async function approvalReplyTranslate(
+	recipient: ApprovalNoticeRecipient,
+): Promise<BotTranslateFn> {
+	const display = recipient.userId
+		? await resolveRecipientDisplayContext({
+				userId: recipient.userId,
+				organizationId: recipient.organizationId,
+			})
+		: null;
+	return getBotTranslate(await approvalNoticeLocale(display, recipient));
+}
+
+/** The reply for a press whose approval this path can neither decide nor describe. */
+export async function approvalUnavailableReply(
+	recipient: ApprovalNoticeRecipient,
+): Promise<string> {
+	const t = await approvalReplyTranslate(recipient);
+	return t(
+		"bot.approval.unavailable",
+		"This approval is unavailable. Open Z8 to review your inbox.",
+	);
 }
 
 /** No source facts or render-time decision timestamps belong in legacy replies. */
@@ -230,10 +270,11 @@ export interface ApprovalStatusNoticeInput {
 export async function approvalStatusNotice(
 	status: ApprovalStatusNoticeInput,
 	display: RecipientDisplayContext | null,
-	organizationId: string,
+	recipient: ApprovalNoticeRecipient,
 	reference: ApprovalReviewReference,
 ): Promise<ApprovalNotice> {
-	const t = await getBotTranslate(await approvalNoticeLocale(display, organizationId));
+	const { organizationId } = recipient;
+	const t = await getBotTranslate(await approvalNoticeLocale(display, recipient));
 	const reviewLabel = t("bot.approval.reviewInZ8", "Review in Z8");
 	const reviewUrl = await approvalReviewUrl({ organizationId, reference });
 	if (display && status.evidence) {

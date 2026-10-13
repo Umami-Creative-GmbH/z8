@@ -21,13 +21,12 @@ import type { BoundBotApprovalResult } from "@/lib/bot-platform/approval-decisio
 import {
 	type ApprovalNotice,
 	approvalAttemptNotice,
-	approvalNoticeLocale,
+	approvalReplyTranslate,
+	approvalUnavailableReply,
 	boundDecisionNotice,
 	teamsApprovalNotice,
 } from "@/lib/bot-platform/approval-notice";
-import { type BotTranslateFn, getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
-import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import {
 	TEAMS_APPROVAL_VERBS,
 	type TeamsBoundApprovalInvoke,
@@ -59,6 +58,7 @@ export async function handleApprovalAction(
 	user: ResolvedTeamsUser,
 	tenant: ResolvedTenant,
 ): Promise<void> {
+	const recipient = { userId: user.userId, organizationId: tenant.organizationId };
 	try {
 		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		const result = await attemptBotApproval({
@@ -71,14 +71,13 @@ export async function handleApprovalAction(
 		// Send only the outcome of this authenticated invocation. Do not select
 		// another recipient's activity via an approval-only tracking lookup.
 		if (result.status !== "review_required" && result.status !== "historical") {
-			await context.sendActivity("This approval is unavailable. Open Z8 to review your inbox.");
+			await context.sendActivity(await approvalUnavailableReply(recipient));
 			return;
 		}
-		const notice = await approvalAttemptNotice(
-			result,
-			{ userId: user.userId, organizationId: tenant.organizationId },
-			{ kind: "compatibility", approvalRequestId: approvalId },
-		);
+		const notice = await approvalAttemptNotice(result, recipient, {
+			kind: "compatibility",
+			approvalRequestId: approvalId,
+		});
 		if (!notice) return;
 		await context.sendActivity(teamsNoticeActivity(notice));
 	} catch (error) {
@@ -199,13 +198,8 @@ function invokeError(code: string, message: string): TeamsInvokeResponse {
 
 type Recipient = { userId: string; organizationId: string };
 
-async function recipientTranslate(recipient: Recipient): Promise<BotTranslateFn> {
-	const display = await resolveRecipientDisplayContext(recipient);
-	return getBotTranslate(await approvalNoticeLocale(display, recipient.organizationId));
-}
-
 async function reviewRequiredMessage(recipient: Recipient): Promise<TeamsInvokeResponse> {
-	const t = await recipientTranslate(recipient);
+	const t = await approvalReplyTranslate(recipient);
 	return invokeMessage(t("bot.approval.reviewRequiredTitle", "Review required"));
 }
 
@@ -244,7 +238,7 @@ export async function handleBoundApprovalInvoke(
 			// Outcome unknown: claim nothing. A retry of this recorded activity
 			// replays the committed result if the decision did commit.
 			logger.error({ error, bindingId: invoke.bindingId }, "Failed to decide bound Teams approval");
-			const t = await recipientTranslate(recipient);
+			const t = await approvalReplyTranslate(recipient);
 			return invokeError(
 				"OutcomeUnknown",
 				t(

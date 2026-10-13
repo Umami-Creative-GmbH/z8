@@ -6,7 +6,7 @@
  */
 
 import { executeCommand, parseCommand } from "@/lib/bot-platform/command-registry";
-import { type BotTranslateFn, getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
+import { getReplyTranslate } from "@/lib/bot-platform/reply-translate";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { postMessage } from "./api";
@@ -21,18 +21,6 @@ import type {
 import { claimLinkCode, resolveSlackUser } from "./user-resolver";
 
 const logger = createLogger("SlackBotHandler");
-
-/**
- * Replies go out in the recipient language: the linked user's, or the
- * organization's default for someone not linked to a Z8 user yet.
- */
-async function replyTranslator(
-	bot: ResolvedSlackBot,
-	userId: string | null,
-): Promise<{ locale: string; t: BotTranslateFn }> {
-	const locale = await getUserLocale({ userId, organizationId: bot.organizationId });
-	return { locale, t: await getBotTranslate(locale) };
-}
 
 // ============================================
 // SLASH COMMAND HANDLER
@@ -56,7 +44,7 @@ export async function handleSlashCommand(
 
 	// Handle /start or empty command
 	if (!text || text === "start") {
-		const { t } = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		return {
 			text: t(
 				"bot.static.welcomeSlack",
@@ -67,7 +55,7 @@ export async function handleSlashCommand(
 
 	// Check if commands are enabled
 	if (!bot.enableCommands) {
-		const { t } = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		return {
 			text: t("bot.static.commandsDisabledSlack", "Commands are not enabled for this workspace."),
 		};
@@ -77,7 +65,7 @@ export async function handleSlashCommand(
 	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId, payload.user_name);
 
 	if (userResult.status !== "found") {
-		const { t } = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		return {
 			text: t(
 				"bot.static.notLinkedSlack",
@@ -86,7 +74,10 @@ export async function handleSlashCommand(
 		};
 	}
 
-	const { locale, t } = await replyTranslator(bot, userResult.user.userId);
+	const { locale, t } = await getReplyTranslate({
+		userId: userResult.user.userId,
+		organizationId: bot.organizationId,
+	});
 
 	// Save conversation for proactive messaging
 	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId);
@@ -183,7 +174,7 @@ async function handleDirectMessage(
 	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId);
 
 	if (userResult.status !== "found") {
-		const { t } = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		await postMessage(bot.botAccessToken, {
 			channel: channelId,
 			text: t(
@@ -197,7 +188,10 @@ async function handleDirectMessage(
 	// Save conversation for proactive messaging
 	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId);
 
-	const { t } = await replyTranslator(bot, userResult.user.userId);
+	const { t } = await getReplyTranslate({
+		userId: userResult.user.userId,
+		organizationId: bot.organizationId,
+	});
 	await postMessage(bot.botAccessToken, {
 		channel: channelId,
 		text: t("bot.static.helpHintSlack", "Use `/z8 help` to see available commands."),
@@ -246,7 +240,7 @@ async function handleLinkCommand(
 	const code = parts[1];
 
 	if (!code) {
-		const { t } = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		return {
 			text: t("bot.static.linkUsageSlack", "Please provide your link code: `/z8 link YOUR_CODE`"),
 		};
@@ -260,7 +254,10 @@ async function handleLinkCommand(
 		slackUsername,
 	);
 
-	const { t } = await replyTranslator(bot, result.status === "success" ? result.userId : null);
+	const { t } = await getReplyTranslate({
+		userId: result.status === "success" ? result.userId : null,
+		organizationId: bot.organizationId,
+	});
 
 	switch (result.status) {
 		case "success":
