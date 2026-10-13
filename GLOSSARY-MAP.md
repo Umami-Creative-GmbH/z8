@@ -31,6 +31,7 @@
 - **Organization → Projects**: an organization defines project custom fields in Organization; a project holds custom field values for them, and Projects owns the project itself
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
+- **Organization → Personnel File**: a payslip batch matches files to employees by their personnel number, which Organization owns
 - **Absences → Personnel File**: a sick-leave absence can have sick notes, which are employee documents in the personnel file; the absence knows only that they exist, and personnel file access decides who sees them
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
 - **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and while an approver is away the deputy named on their absence may decide their approvals as a **deputy decision**

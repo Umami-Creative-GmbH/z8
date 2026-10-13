@@ -38,10 +38,6 @@ _Avoid_: skill attachment, linked document
 Many payslips for one pay period uploaded at once and matched to employees by personnel number, saved only after an officer confirms the matches.
 _Avoid_: bulk upload, payslip import
 
-**Personnel number**:
-The organization's own identifier for an employee, also used by payroll exports. It is not guaranteed to be unique.
-_Avoid_: employee ID, payroll ID
-
 **Sick note**:
 An employee document of the sick note category: a doctor's note that an employee was unfit for work, usually linked to the sick-leave absence it covers. The approver of that absence learns only that a sick note is attached, never its content.
 _Avoid_: AU, medical certificate (a certificate is another category), attachment
