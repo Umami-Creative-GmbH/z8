@@ -72,6 +72,10 @@ export interface PersonalDataExportScope {
 	/** The subject's user (their account and the rows they wrote themselves). */
 	userId: string;
 	kind: PersonalDataExportKind;
+	/** The export being built; set by the worker. */
+	exportId?: string;
+	/** Who started the export; null once that user is deleted. Set by the worker. */
+	requestedByUserId?: string | null;
 }
 
 export type PersonalDataValue = string | number | boolean | null;
