@@ -5,6 +5,7 @@ import {
 	IconAward,
 	IconCalendarDue,
 	IconCertificate,
+	IconFileCertificate,
 	IconLanguage,
 	IconLoader2,
 	IconPlus,
@@ -201,6 +202,12 @@ export function EmployeeSkillsCard({
 													<Badge variant="secondary" className="bg-yellow-500/20 text-yellow-700">
 														<IconCalendarDue className="mr-1 size-3" aria-hidden="true" />
 														{t("settings.skills.expiringSoon", "Expiring Soon")}
+													</Badge>
+												)}
+												{employeeSkill.certificateOnFile && (
+													<Badge variant="outline">
+														<IconFileCertificate className="mr-1 size-3" aria-hidden="true" />
+														{t("settings.skills.certificateOnFile", "Certificate on file")}
 													</Badge>
 												)}
 											</div>

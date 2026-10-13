@@ -1,4 +1,13 @@
-import { boolean, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+	boolean,
+	index,
+	pgTable,
+	text,
+	timestamp,
+	unique,
+	uniqueIndex,
+	uuid,
+} from "drizzle-orm/pg-core";
 import { currentTimestamp } from "./timestamp";
 
 import { organization, user } from "../auth-schema";
@@ -87,6 +96,8 @@ export const employeeSkill = pgTable(
 		index("employeeSkill_skillId_idx").on(table.skillId),
 		index("employeeSkill_expiresAt_idx").on(table.expiresAt),
 		uniqueIndex("employeeSkill_unique_idx").on(table.employeeId, table.skillId),
+		// Target of employee-scoped references such as a skill certificate's link (#1144).
+		unique("employeeSkill_id_employeeId_idx").on(table.id, table.employeeId),
 	],
 );
 

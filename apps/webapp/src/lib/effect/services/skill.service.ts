@@ -18,6 +18,7 @@ import {
 	type shiftTemplateSkillRequirement as TemplateSkillReqTable,
 } from "@/db/schema";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { loadSkillCertificatesOnFile } from "@/lib/personnel-file/skill-certificate-store";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -95,6 +96,11 @@ export interface SkillWithRelations extends Skill {
 
 export interface EmployeeSkillWithDetails extends EmployeeSkill {
 	skill: Skill;
+	/**
+	 * A skill certificate in the personnel file names this employee skill
+	 * (#1144). Only that one is on file: opening it takes personnel file access.
+	 */
+	certificateOnFile: boolean;
 }
 
 export interface SkillValidationResult {
@@ -109,6 +115,8 @@ export interface SkillValidationResult {
 		id: string;
 		name: string;
 		expiresAt: Date;
+		/** A skill certificate is on file for this employee skill (#1144); never its content. */
+		certificateOnFile: boolean;
 	}>;
 }
 
@@ -380,6 +388,47 @@ export const SkillServiceLive = Layer.effect(
 			rows: Row[],
 		) => rows.filter((row) => row.skill.organizationId === organizationId);
 
+		/** Which of the employee skills a skill certificate names (#1144). */
+		const certificatesOnFile = (organizationId: string, employeeSkillIds: readonly string[]) =>
+			dbService.query("getSkillCertificatesOnFile", () =>
+				loadSkillCertificatesOnFile(dbService.db, { organizationId, employeeSkillIds }),
+			);
+
+		/** Marks the expired skills a skill certificate is on file for (#1144). */
+		const withCertificatesOnFile = (
+			organizationId: string,
+			employeeId: string,
+			expired: ReadonlyArray<
+				Omit<SkillValidationResult["expiredSkills"][number], "certificateOnFile">
+			>,
+		) =>
+			Effect.gen(function* () {
+				if (expired.length === 0) return [];
+				const rows = yield* dbService.query("getExpiredEmployeeSkillIds", async () => {
+					return await dbService.db.query.employeeSkill.findMany({
+						where: and(
+							eq(employeeSkill.employeeId, employeeId),
+							inArray(
+								employeeSkill.skillId,
+								expired.map((entry) => entry.id),
+							),
+						),
+						columns: { id: true, skillId: true },
+					});
+				});
+				const onFile = yield* certificatesOnFile(
+					organizationId,
+					rows.map((row) => row.id),
+				);
+				const skillsOnFile = new Set(
+					rows.filter((row) => onFile.has(row.id)).map((row) => row.skillId),
+				);
+				return expired.map((entry) => ({
+					...entry,
+					certificateOnFile: skillsOnFile.has(entry.id),
+				}));
+			});
+
 		return SkillService.of({
 			// ----------------------------------------
 			// Skill catalog operations
@@ -611,7 +660,15 @@ export const SkillServiceLive = Layer.effect(
 						});
 					});
 
-					return withOrganizationSkills(organizationId, skills) as EmployeeSkillWithDetails[];
+					const scoped = withOrganizationSkills(organizationId, skills);
+					const onFile = yield* certificatesOnFile(
+						organizationId,
+						scoped.map((row) => row.id),
+					);
+					return scoped.map((row) => ({
+						...row,
+						certificateOnFile: onFile.has(row.id),
+					})) as EmployeeSkillWithDetails[];
 				}),
 
 			getQualifiedEmployeesForSkills: (organizationId, skillIds) =>
@@ -886,7 +943,9 @@ export const SkillServiceLive = Layer.effect(
 					}
 
 					// Map expired skills
-					const expiredSkillsResult: SkillValidationResult["expiredSkills"] = [];
+					const expiredSkillsResult: Array<
+						Omit<SkillValidationResult["expiredSkills"][number], "certificateOnFile">
+					> = [];
 					for (const es of expiredSkills) {
 						const expiresAt = es.expiresAt;
 						if (!allRequirements.has(es.skillId) || !(expiresAt instanceof Date)) {
@@ -905,7 +964,11 @@ export const SkillServiceLive = Layer.effect(
 					return {
 						isQualified: !hasRequiredMissing && expiredSkillsResult.length === 0,
 						missingSkills,
-						expiredSkills: expiredSkillsResult,
+						expiredSkills: yield* withCertificatesOnFile(
+							organizationId,
+							employeeId,
+							expiredSkillsResult,
+						),
 					};
 				}),
 
@@ -966,7 +1029,9 @@ export const SkillServiceLive = Layer.effect(
 
 					// Map expired skills (only those required by subarea)
 					const requiredSkillIds = new Set(subareaReqs.map((r) => r.skillId));
-					const expiredSkillsResult: SkillValidationResult["expiredSkills"] = [];
+					const expiredSkillsResult: Array<
+						Omit<SkillValidationResult["expiredSkills"][number], "certificateOnFile">
+					> = [];
 					for (const es of expiredSkillsData) {
 						const expiresAt = es.expiresAt;
 						if (!requiredSkillIds.has(es.skillId) || !(expiresAt instanceof Date)) {
@@ -985,7 +1050,11 @@ export const SkillServiceLive = Layer.effect(
 					return {
 						isQualified: !hasRequiredMissing && expiredSkillsResult.length === 0,
 						missingSkills,
-						expiredSkills: expiredSkillsResult,
+						expiredSkills: yield* withCertificatesOnFile(
+							organizationId,
+							employeeId,
+							expiredSkillsResult,
+						),
 					};
 				}),
 
