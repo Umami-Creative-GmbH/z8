@@ -14,12 +14,14 @@ import {
 	onAbsenceRequestPendingApproval,
 	onAbsenceRequestSubmitted,
 	onApprovedAbsenceCancelledByEmployee,
+	onBirthdayReminder,
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 	onClockOutRejected,
 	onManualEntryApproved,
 	onManualEntryRejected,
 	onOpenShiftAvailable,
+	onSchedulePublished,
 	onShiftAssigned,
 	onShiftPickupApproved,
 	onShiftSwapApproved,
@@ -29,6 +31,11 @@ import {
 	onTimeCorrectionPendingApproval,
 	onTravelExpenseApproved,
 	onTravelExpenseRejected,
+	onTravelExpenseReportDecided,
+	onTravelExpenseReportReturned,
+	onTwoFactorDisabled,
+	onTwoFactorEnabled,
+	onVacationBalanceAlert,
 } from "./triggers";
 
 describe("approval notification triggers", () => {
@@ -400,28 +407,44 @@ describe("approval notification triggers", () => {
 		])("announces the %s notification on the shift's calendar date", async (_name, trigger) => {
 			await trigger();
 
-			expect(createNotification).toHaveBeenCalledWith(
-				expect.objectContaining({ message: expect.stringContaining("Fri, Oct 9") }),
-			);
+			const notification = lastNotification();
+			expect(notification.message).toContain("Fri, Oct 9");
+			expect(notification.message).not.toContain("{");
+			// Each channel formats the calendar date in the recipient's language.
+			expect(i18nOf(notification)).toMatchObject({
+				titleKey: expect.stringMatching(/^common:notifications\.content\.\w+\.title$/),
+				messageKey: expect.stringMatching(/^common:notifications\.content\.\w+\.message\w*$/),
+				params: expect.objectContaining({
+					shiftDate: { kind: "plainDate", date: "2026-10-09", preset: "weekdayMonthDay" },
+				}),
+			});
 		});
 
-		it("passes the calendar date to the shift-assigned translation", async () => {
-			await onShiftAssigned({
-				...shift,
-				employeeUserId: "user-1",
+		it.each([
+			[undefined, "shiftSwapRequestedToManager.message"],
+			["Taylor Target", "shiftSwapRequestedToManager.messageWithTarget"],
+		])("picks the manager swap copy for target %s", async (targetEmployeeName, key) => {
+			await onShiftSwapRequestedToManager({
+				...swap,
+				managerUserId: "user-manager",
 				shiftDate,
-				assignedByName: "Morgan",
+				targetEmployeeName,
 			});
 
-			expect(createNotification).toHaveBeenCalledWith(
-				expect.objectContaining({
-					metadata: expect.objectContaining({
-						i18n: expect.objectContaining({
-							params: expect.objectContaining({ shiftDate: "Fri, Oct 9" }),
-						}),
-					}),
-				}),
+			expect(i18nOf(lastNotification()).messageKey).toBe(`common:notifications.content.${key}`);
+		});
+
+		it("adds the rejection reason to a rejected swap", async () => {
+			await onShiftSwapRejected({ ...decision, shiftDate, rejectionReason: "Understaffed" });
+
+			const notification = lastNotification();
+			expect(notification.message).toBe(
+				"Your shift swap request for Fri, Oct 9 was rejected by Morgan Manager. Reason: Understaffed",
 			);
+			expect(i18nOf(notification)).toMatchObject({
+				messageKey: "common:notifications.content.shiftSwapRejected.messageWithReason",
+				params: expect.objectContaining({ reason: "Understaffed" }),
+			});
 		});
 	});
 
@@ -441,11 +464,24 @@ describe("approval notification triggers", () => {
 			organizationId: "org-1",
 			type: "approval_request_approved",
 			title: "Travel expense approved",
-			message:
-				"Your travel expense claim for Berlin (EUR 120.50) was approved by Morgan Manager.",
+			message: "Your travel expense claim for Berlin (€120.50) was approved by Morgan Manager.",
 			entityType: "travel_expense_claim",
 			entityId: "claim-1",
 			actionUrl: "/travel-expenses",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.travelExpenseApproved.title",
+					titleDefault: "Travel expense approved",
+					messageKey: "common:notifications.content.travelExpenseApproved.message",
+					messageDefault:
+						"Your travel expense claim for {destination} ({amount}) was approved by {approverName}.",
+					params: {
+						destination: "Berlin",
+						amount: { kind: "money", amount: "120.50", currency: "EUR" },
+						approverName: "Morgan Manager",
+					},
+				},
+			},
 		});
 	});
 
@@ -467,10 +503,246 @@ describe("approval notification triggers", () => {
 			type: "approval_request_rejected",
 			title: "Travel expense rejected",
 			message:
-				"Your travel expense claim for EUR 120.50 was rejected by Morgan Manager. Reason: Missing receipt",
+				"Your travel expense claim for €120.50 was rejected by Morgan Manager. Reason: Missing receipt",
 			entityType: "travel_expense_claim",
 			entityId: "claim-1",
 			actionUrl: "/travel-expenses",
+			metadata: {
+				i18n: expect.objectContaining({
+					titleKey: "common:notifications.content.travelExpenseRejected.title",
+					messageKey:
+						"common:notifications.content.travelExpenseRejected.messageWithoutDestinationWithReason",
+					params: {
+						amount: { kind: "money", amount: "120.50", currency: "EUR" },
+						approverName: "Morgan Manager",
+						reason: "Missing receipt",
+					},
+				}),
+			},
+		});
+	});
+
+	it.each([
+		[undefined, "Berlin", "travelExpenseRejected.message"],
+		["Missing receipt", "Berlin", "travelExpenseRejected.messageWithReason"],
+		[undefined, null, "travelExpenseRejected.messageWithoutDestination"],
+	])("picks the rejection copy for reason %s and destination %s", async (reason, city, key) => {
+		await onTravelExpenseRejected({
+			claimId: "claim-1",
+			requesterUserId: "user-requester",
+			organizationId: "org-1",
+			approverName: "Morgan Manager",
+			destinationCity: city,
+			amount: "120.50",
+			currency: "EUR",
+			rejectionReason: reason,
+		});
+
+		expect(i18nOf(lastNotification()).messageKey).toBe(`common:notifications.content.${key}`);
+		expect(lastNotification().message).not.toContain("{");
+	});
+
+	it.each([
+		[
+			"approve" as const,
+			undefined,
+			"approval_request_approved",
+			"Expense report approved",
+			"travelExpenseReportApproved.message",
+			"Your expense report (reimbursable €80.00) was approved by Morgan Manager.",
+		],
+		[
+			"reject" as const,
+			undefined,
+			"approval_request_rejected",
+			"Expense report rejected",
+			"travelExpenseReportRejected.message",
+			"Your expense report (reimbursable €80.00) was rejected by Morgan Manager.",
+		],
+		[
+			"reject" as const,
+			"Duplicate hotel",
+			"approval_request_rejected",
+			"Expense report rejected",
+			"travelExpenseReportRejected.messageWithReason",
+			"Your expense report (reimbursable €80.00) was rejected by Morgan Manager. Reason: Duplicate hotel",
+		],
+	])(
+		"translates the %s expense report decision (reason %s)",
+		async (action, reason, type, title, key, message) => {
+			await onTravelExpenseReportDecided({
+				reportId: "report-1",
+				requesterUserId: "user-requester",
+				organizationId: "org-1",
+				approverName: "Morgan Manager",
+				action,
+				reimbursable: "80.00",
+				currency: "EUR",
+				rejectionReason: reason,
+			});
+
+			const notification = lastNotification();
+			expect(notification).toMatchObject({ type, title, message });
+			expect(i18nOf(notification)).toMatchObject({
+				messageKey: `common:notifications.content.${key}`,
+				params: expect.objectContaining({
+					amount: { kind: "money", amount: "80.00", currency: "EUR" },
+				}),
+			});
+		},
+	);
+
+	it("translates a returned expense report", async () => {
+		await onTravelExpenseReportReturned({
+			reportId: "report-1",
+			requesterUserId: "user-requester",
+			organizationId: "org-1",
+			reviewerName: "Morgan Manager",
+			note: "Add the taxi receipt",
+		});
+
+		const notification = lastNotification();
+		expect(notification).toMatchObject({
+			title: "Expense report returned for changes",
+			message: "Morgan Manager returned your expense report for changes: Add the taxi receipt",
+		});
+		expect(i18nOf(notification)).toMatchObject({
+			titleKey: "common:notifications.content.travelExpenseReportReturned.title",
+			messageKey: "common:notifications.content.travelExpenseReportReturned.message",
+			params: { reviewerName: "Morgan Manager", note: "Add the taxi receipt" },
 		});
 	});
 });
+
+describe("security notification triggers", () => {
+	beforeEach(() => {
+		createNotification.mockReset();
+		createNotification.mockResolvedValue({ id: "notification-1" });
+	});
+
+	it.each([
+		[
+			onTwoFactorEnabled,
+			"twoFactorEnabled",
+			"Two-factor authentication enabled",
+			"Two-factor authentication has been enabled on your account for added security.",
+		],
+		[
+			onTwoFactorDisabled,
+			"twoFactorDisabled",
+			"Two-factor authentication disabled",
+			"Two-factor authentication has been disabled on your account. We recommend re-enabling it for security.",
+		],
+	])("translates the two-factor notice (%#)", async (trigger, key, title, message) => {
+		await trigger({ userId: "user-1", organizationId: "org-1" });
+
+		const notification = lastNotification();
+		expect(notification).toMatchObject({ title, message });
+		expect(i18nOf(notification)).toMatchObject({
+			titleKey: `common:notifications.content.${key}.title`,
+			titleDefault: title,
+			messageKey: `common:notifications.content.${key}.message`,
+			messageDefault: message,
+		});
+	});
+});
+
+describe("reminder notification triggers", () => {
+	beforeEach(() => {
+		createNotification.mockReset();
+		createNotification.mockResolvedValue({ id: "notification-1" });
+	});
+
+	it("names the birthday as a calendar day, whatever the server zone", async () => {
+		vi.stubEnv("TZ", "Pacific/Honolulu");
+		try {
+			await onBirthdayReminder({
+				userId: "user-1",
+				organizationId: "org-1",
+				birthdayPersonName: "Ada",
+				birthdayDate: parsePlainDate("2026-10-09"),
+			});
+		} finally {
+			vi.unstubAllEnvs();
+		}
+
+		const notification = lastNotification();
+		expect(notification.message).toBe("Ada's birthday is on October 9.");
+		expect(i18nOf(notification)).toMatchObject({
+			titleKey: "common:notifications.content.birthdayReminder.title",
+			messageKey: "common:notifications.content.birthdayReminder.message",
+			params: {
+				name: "Ada",
+				date: { kind: "plainDate", date: "2026-10-09", preset: "monthDayLong" },
+			},
+		});
+	});
+
+	it.each([
+		[1, undefined, "vacationBalanceAlert.message", "You have 1 vacation day remaining."],
+		[
+			3,
+			"2026-12-31",
+			"vacationBalanceAlert.expiringMessage",
+			"You have 3 vacation days expiring on Dec 31. Use them before they expire!",
+		],
+	])(
+		"translates the vacation balance alert for %s days (expiry %s)",
+		async (remainingDays, expiry, key, messageStart) => {
+			await onVacationBalanceAlert({
+				userId: "user-1",
+				organizationId: "org-1",
+				remainingDays,
+				expiryDate: expiry ? parsePlainDate(expiry) : undefined,
+			});
+
+			const notification = lastNotification();
+			expect(notification.message.startsWith(messageStart)).toBe(true);
+			const i18n = i18nOf(notification);
+			expect(i18n.messageKey).toBe(`common:notifications.content.${key}`);
+			expect(i18n.messageDefault).toContain("{remainingDays, plural,");
+			expect(i18n.params).toMatchObject({ remainingDays });
+			if (expiry) {
+				expect(i18n.params).toMatchObject({
+					expiryDate: { kind: "plainDate", date: expiry, preset: "monthDay" },
+				});
+			}
+		},
+	);
+
+	it("translates a published schedule with its plain date range", async () => {
+		await onSchedulePublished({
+			employeeUserId: "user-1",
+			employeeName: "Ada",
+			organizationId: "org-1",
+			shiftCount: 2,
+			dateRange: { start: parsePlainDate("2026-10-12"), end: parsePlainDate("2026-10-18") },
+		});
+
+		const notification = lastNotification();
+		// Intl puts thin spaces around the range dash.
+		expect(notification.message).toMatch(/^2 shifts have been published for Oct 12\s–\s18, 2026\.$/);
+		expect(i18nOf(notification)).toMatchObject({
+			titleKey: "common:notifications.content.schedulePublished.title",
+			messageKey: "common:notifications.content.schedulePublished.message",
+			params: {
+				shiftCount: 2,
+				dateRange: { kind: "plainDateRange", start: "2026-10-12", end: "2026-10-18" },
+			},
+		});
+	});
+});
+
+function lastNotification(): {
+	title: string;
+	message: string;
+	metadata: { i18n: Record<string, unknown> & { params?: Record<string, unknown> } };
+} {
+	const call = createNotification.mock.calls.at(-1);
+	if (!call) throw new Error("No notification was created");
+	return call[0];
+}
+
+function i18nOf(notification: ReturnType<typeof lastNotification>) {
+	return notification.metadata.i18n;
+}
