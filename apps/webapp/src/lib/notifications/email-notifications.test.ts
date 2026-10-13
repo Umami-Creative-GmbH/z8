@@ -791,6 +791,206 @@ describe("sendEmailNotification", () => {
 		);
 	});
 
+	describe("absence and time-correction emails (#1152, #1137)", () => {
+		const entryTime = (at: string, preset: "dateMedium" | "time") => ({
+			kind: "entryInstant",
+			at,
+			utcOffsetMinutes: 120,
+			preset,
+		});
+
+		beforeEach(() => {
+			resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
+		});
+
+		it("sends the manager's absence pending email with the override variables in the recipient language", async () => {
+			const result = await sendEmailNotification({
+				userId: "user_123",
+				type: "approval_request_submitted",
+				title: "New absence request",
+				message: "Avery requested Vacation.",
+				organizationId: "org_123",
+				actionUrl: "/approvals/inbox",
+				metadata: {
+					approvalSubject: "absence",
+					i18n: {
+						params: {
+							employeeName: "Avery",
+							categoryName: "Vacation",
+							startDate: { kind: "plainDate", date: "2026-05-11" },
+							endDate: { kind: "plainDate", date: "2026-05-12" },
+							days: 2,
+							notes: "Family trip",
+						},
+					},
+				},
+			});
+
+			expect(result).toBe(true);
+			expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					organizationId: "org_123",
+					templateKey: "absence-request-pending-approval",
+					data: {
+						managerName: "Alex",
+						employeeName: "Avery",
+						startDate: "11. Mai 2026",
+						endDate: "12. Mai 2026",
+						absenceType: "Vacation",
+						days: 2,
+						notes: "Family trip",
+						approvalUrl: "https://org.example.com/approvals/inbox",
+					},
+				}),
+			);
+			expect(sendEmailMock).toHaveBeenCalledOnce();
+			expect(sendEmailMock).toHaveBeenCalledWith(
+				expect.objectContaining({ to: "alex@example.com", organizationId: "org_123" }),
+			);
+		});
+
+		it("sends the manager's time-correction pending email with times at the entry's offset", async () => {
+			renderOrganizationEmailTemplateMock.mockImplementation(renderWithoutOverride);
+
+			const result = await sendEmailNotification({
+				userId: "user_123",
+				type: "approval_request_submitted",
+				title: "New time correction request",
+				message: "Avery submitted a time correction request.",
+				organizationId: "org_123",
+				actionUrl: "/approvals/inbox",
+				metadata: {
+					approvalSubject: "time_correction",
+					i18n: {
+						params: {
+							employeeName: "Avery",
+							reason: "Forgot to clock in",
+							date: entryTime("2026-05-11T08:00:00Z", "dateMedium"),
+							originalClockIn: entryTime("2026-05-11T08:00:00Z", "time"),
+							correctedClockIn: entryTime("2026-05-11T07:15:00Z", "time"),
+							correctedClockOut: entryTime("2026-05-11T15:00:00Z", "time"),
+						},
+					},
+				},
+			});
+
+			expect(result).toBe(true);
+			expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					templateKey: "time-correction-pending-approval",
+					data: {
+						managerName: "Alex",
+						employeeName: "Avery",
+						date: "11. Mai 2026",
+						originalClockIn: "10:00",
+						originalClockOut: "-",
+						correctedClockIn: "09:15",
+						correctedClockOut: "17:00",
+						reason: "Forgot to clock in",
+						approvalUrl: "https://org.example.com/approvals/inbox",
+					},
+				}),
+			);
+			expect(sendEmailMock.mock.calls[0]?.[0].html).toContain(
+				'href="https://org.example.com/approvals/inbox"',
+			);
+		});
+
+		it("sends the employee's absence rejection email with the reason and calendar dates", async () => {
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "absence_request_rejected",
+				title: "Absence request rejected",
+				message: "Your Vacation request was rejected.",
+				organizationId: "org_123",
+				metadata: {
+					i18n: {
+						params: {
+							approverName: "Morgan",
+							categoryName: "Vacation",
+							startDate: { kind: "plainDate", date: "2026-05-11" },
+							endDate: { kind: "plainDate", date: "2026-05-12" },
+							days: 2,
+							rejectionReason: "Team offsite",
+						},
+					},
+				},
+			});
+
+			expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					templateKey: "absence-request-rejected",
+					data: {
+						employeeName: "Alex",
+						approverName: "Morgan",
+						startDate: "11. Mai 2026",
+						endDate: "12. Mai 2026",
+						absenceType: "Vacation",
+						days: 2,
+						rejectionReason: "Team offsite",
+						appUrl: "https://org.example.com",
+					},
+				}),
+			);
+		});
+
+		it("sends the employee's time-correction decision emails (#1137)", async () => {
+			const params = {
+				approverName: "Morgan",
+				date: entryTime("2026-05-11T07:15:00Z", "dateMedium"),
+				correctedClockIn: entryTime("2026-05-11T07:15:00Z", "time"),
+			};
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "time_correction_approved",
+				title: "Time correction approved",
+				message: "Your time correction request was approved by Morgan.",
+				organizationId: "org_123",
+				metadata: { i18n: { params } },
+			});
+			findUserMock
+				.mockResolvedValueOnce({ email: "alex@example.com" })
+				.mockResolvedValueOnce({ name: "Alex" });
+			await sendEmailNotification({
+				userId: "user_123",
+				type: "time_correction_rejected",
+				title: "Time correction rejected",
+				message: "Your time correction request was rejected by Morgan.",
+				organizationId: "org_123",
+				metadata: { i18n: { params: { ...params, rejectionReason: "Not plausible" } } },
+			});
+
+			const decided = {
+				employeeName: "Alex",
+				approverName: "Morgan",
+				date: "11. Mai 2026",
+				correctedClockIn: "09:15",
+				correctedClockOut: "-",
+				appUrl: "https://org.example.com",
+			};
+			expect(renderOrganizationEmailTemplateMock.mock.calls.map(([input]) => input.data)).toEqual([
+				decided,
+				{ ...decided, rejectionReason: "Not plausible" },
+			]);
+			expect(sendEmailMock).toHaveBeenCalledTimes(2);
+		});
+
+		it("never sends the employee's own submitted notification as the manager's pending email (O8)", async () => {
+			const result = await sendEmailNotification({
+				userId: "user_123",
+				type: "time_correction_submitted",
+				title: "Time correction submitted",
+				message: "Your time correction request is pending approval.",
+				organizationId: "org_123",
+				metadata: { employeeName: "Alex" },
+			});
+
+			expect(result).toBe(false);
+			expect(renderOrganizationEmailTemplateMock).not.toHaveBeenCalled();
+			expect(sendEmailMock).not.toHaveBeenCalled();
+		});
+	});
+
 	it("supplies typed override variables formatted in the recipient language (#1149)", async () => {
 		resolveOutboundNotificationLocaleMock.mockResolvedValue("de");
 		const result = await sendEmailNotification({

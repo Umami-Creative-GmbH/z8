@@ -11,7 +11,8 @@ import { withNativeProgram } from "@/lib/typescript/native-source-analysis";
  * - `sendPushToUser(...)` outside `lib/notifications/` pushes without a notification.
  * - `.insert(notification)` outside the notification service writes one directly.
  *
- * A creator has keys when its literal mentions `i18n` / `i18nMetadata`; a direct push
+ * A creator has keys when its literal mentions `i18n` / `i18nMetadata` (an `i18n`
+ * object with only `params` does not count); a direct push
  * or insert when its function uses a `common:notifications.` key.
  */
 export interface NotificationCreatorSite {
@@ -31,6 +32,30 @@ function propertyName(property: ts.Node): string | undefined {
 		return ts.isIdentifier(property.name) ? property.name.text : undefined;
 	}
 	return undefined;
+}
+
+/**
+ * The literal mentions `i18n` / `i18nMetadata`, and not only as `i18n: { params }`: params
+ * alone are data for the channels (an email's override variables), not keys (#1152).
+ */
+function setsKeys(node: ts.ObjectLiteralExpression, sourceFile: ts.SourceFile): boolean {
+	if (!CREATOR_KEYS_PATTERN.test(node.getText(sourceFile))) return false;
+	let i18nObjects = 0;
+	let paramsOnly = 0;
+	const visit = (child: ts.Node): void => {
+		if (ts.isPropertyAssignment(child) && propertyName(child) === "i18n") {
+			i18nObjects += 1;
+			if (
+				ts.isObjectLiteralExpression(child.initializer) &&
+				child.initializer.properties.every((property) => propertyName(property) === "params")
+			) {
+				paramsOnly += 1;
+			}
+		}
+		child.forEachChild(visit);
+	};
+	node.forEachChild(visit);
+	return i18nObjects === 0 || paramsOnly < i18nObjects;
 }
 
 function isCreatorLiteral(node: ts.ObjectLiteralExpression): boolean {
@@ -121,7 +146,7 @@ export function scanNotificationCreators(
 			};
 			const visit = (node: ts.Node): void => {
 				if (ts.isObjectLiteralExpression(node) && isCreatorLiteral(node)) {
-					record(siteId(node).id, CREATOR_KEYS_PATTERN.test(node.getText(sourceFile)));
+					record(siteId(node).id, setsKeys(node, sourceFile));
 				} else if (ts.isCallExpression(node)) {
 					const direct =
 						(calleeName(node) === "sendPushToUser" && !fileName.startsWith(NOTIFICATION_MODULE)) ||

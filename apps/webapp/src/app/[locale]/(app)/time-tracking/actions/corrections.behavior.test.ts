@@ -46,6 +46,7 @@ const state = vi.hoisted(() => ({
 	directCanonicalFailure: false,
 	nowInstant: vi.fn(),
 	sendEmail: vi.fn(),
+	onTimeCorrectionPendingApproval: vi.fn(),
 	maintenance: vi.fn(),
 	validateRange: vi.fn(),
 	eligibleManagerIds: vi.fn(),
@@ -171,9 +172,9 @@ vi.mock("@/lib/app-url", () => ({
 	getOrganizationBaseUrl: vi.fn().mockResolvedValue("https://example.com"),
 }));
 
-vi.mock("@/lib/email/render", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/email/render")>()),
-	renderTimeCorrectionPendingApproval: vi.fn().mockResolvedValue("email"),
+vi.mock("@/lib/notifications/triggers", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/notifications/triggers")>()),
+	onTimeCorrectionPendingApproval: state.onTimeCorrectionPendingApproval,
 }));
 
 vi.mock("@/lib/email/email-service", () => ({
@@ -1489,7 +1490,7 @@ describe("time correction submission actions", () => {
 		expect(state.events).toEqual(["transaction", "boundary", "maintenance"]);
 	});
 
-	it("sends legacy manager email after commit and preserves success on delivery failure", async () => {
+	it("notifies the legacy manager after commit, with times at the entries' offsets, and preserves success on failure", async () => {
 		configure({
 			kind: "default_created",
 			authority: "legacy",
@@ -1501,13 +1502,17 @@ describe("time correction submission actions", () => {
 			.mockResolvedValueOnce({
 				...employee,
 				id: ids.manager,
+				userId: "user-manager",
 				user: { name: "Manager", email: "manager@example.com" },
 			})
 			.mockResolvedValueOnce({
 				...employee,
 				user: { name: "Employee", email: "employee@example.com" },
 			});
-		state.sendEmail.mockRejectedValue(new Error("email unavailable"));
+		state.onTimeCorrectionPendingApproval.mockImplementationOnce(async () => {
+			state.events.push("notification");
+			throw new Error("notification unavailable");
+		});
 
 		const result = await modular.requestTimeCorrectionEffect({
 			workPeriodId: ids.period,
@@ -1518,9 +1523,21 @@ describe("time correction submission actions", () => {
 		});
 
 		expect(result.success).toBe(true);
-		expect(state.events.slice(0, 2)).toEqual(["transaction", "boundary"]);
-		expect(state.events.slice(2).every((event) => event === "email")).toBe(
-			true,
+		expect(state.events).toEqual(["transaction", "boundary", "notification"]);
+		// The manager's email goes out with this notification only (#1152).
+		expect(state.sendEmail).not.toHaveBeenCalled();
+		expect(state.onTimeCorrectionPendingApproval).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: ids.period,
+				managerUserId: "user-manager",
+				employeeName: "Employee",
+				organizationId: "org-1",
+				reason: "Missed punch",
+				original: {
+					clockIn: { at: originals[0]?.timestamp, utcOffsetMinutes: 120 },
+					clockOut: { at: originals[1]?.timestamp, utcOffsetMinutes: -240 },
+				},
+			}),
 		);
 	});
 

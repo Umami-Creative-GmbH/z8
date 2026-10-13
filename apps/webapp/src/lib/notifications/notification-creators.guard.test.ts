@@ -24,7 +24,7 @@ const CREATORS_WITHOUT_KEYS = new Set<string>([
 	"lib/notifications/triggers.ts::onManualEntryApproved",
 	"lib/notifications/triggers.ts::onManualEntryRejected",
 	"lib/notifications/triggers.ts::onTimeCorrectionApproved",
-	"lib/notifications/triggers.ts::onTimeCorrectionPendingApproval", // dead
+	"lib/notifications/triggers.ts::onTimeCorrectionPendingApproval",
 	"lib/notifications/triggers.ts::onTimeCorrectionRejected",
 	"lib/notifications/triggers.ts::onTimeCorrectionSubmitted", // dead
 ]);

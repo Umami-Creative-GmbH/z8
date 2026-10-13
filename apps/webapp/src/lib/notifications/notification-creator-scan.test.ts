@@ -52,6 +52,30 @@ function forward(notification: { title: string }, userId: string) {
 		]);
 	});
 
+	it("does not count params without title or message keys as translation keys (#1152)", () => {
+		const sites = scanNotificationCreators(
+			new Map([
+				[
+					"lib/example/notify.ts",
+					`
+export async function onParamsOnly(userId: string) {
+	await createNotification({
+		userId,
+		organizationId: "org",
+		type: "params_only",
+		title: "Params only",
+		message: "Only data for the email.",
+		metadata: { approvalSubject: "absence", i18n: { params: { days: 2 } } },
+	});
+}
+`,
+				],
+			]),
+		);
+
+		expect(sites).toEqual([{ id: "lib/example/notify.ts::onParamsOnly", hasKeys: false }]);
+	});
+
 	it("finds direct pushes outside the notification module and direct notification inserts", () => {
 		const sites = scanNotificationCreators(
 			new Map([

@@ -11,7 +11,9 @@ vi.mock("./notification-service", () => ({
 
 import {
 	onAbsenceRecordedByManager,
+	onAbsenceRequestApproved,
 	onAbsenceRequestPendingApproval,
+	onAbsenceRequestRejected,
 	onAbsenceRequestSubmitted,
 	onApprovedAbsenceCancelledByEmployee,
 	onBirthdayReminder,
@@ -28,7 +30,9 @@ import {
 	onShiftSwapRejected,
 	onShiftSwapRequestedToManager,
 	onShiftSwapRequestedToTarget,
+	onTimeCorrectionApproved,
 	onTimeCorrectionPendingApproval,
+	onTimeCorrectionRejected,
 	onTravelExpenseApproved,
 	onTravelExpenseRejected,
 	onTravelExpenseReportDecided,
@@ -200,16 +204,85 @@ describe("approval notification triggers", () => {
 		).resolves.toBeUndefined();
 	});
 
-	it("links manager time-correction approval notifications to the unified inbox", async () => {
-		await onTimeCorrectionPendingApproval({
-			workPeriodId: "period-1",
+	it("carries the absence details the manager's pending email needs, as calendar dates (#1152)", async () => {
+		await onAbsenceRequestPendingApproval({
+			absenceId: "absence-1",
 			employeeUserId: "user-requester",
 			employeeName: "Avery Requester",
 			organizationId: "org-1",
-			originalTime: new Date("2026-05-11T08:00:00.000Z"),
-			correctedTime: new Date("2026-05-11T08:15:00.000Z"),
+			categoryName: "Vacation",
+			startDate: "2026-05-11",
+			endDate: "2026-05-12",
+			managerUserId: "user-manager",
+			managerName: "Morgan Manager",
+			days: 2,
+			notes: "Family trip",
+		});
+
+		expect(createNotification).toHaveBeenCalledWith(
+			expect.objectContaining({
+				metadata: {
+					approvalSubject: "absence",
+					i18n: {
+						params: {
+							employeeName: "Avery Requester",
+							categoryName: "Vacation",
+							startDate: { kind: "plainDate", date: "2026-05-11" },
+							endDate: { kind: "plainDate", date: "2026-05-12" },
+							dateRange: { kind: "plainDateRange", start: "2026-05-11", end: "2026-05-12" },
+							days: 2,
+							notes: "Family trip",
+						},
+					},
+				},
+			}),
+		);
+	});
+
+	it("carries the approver and calendar dates of an absence decision (#1152)", async () => {
+		const decision = {
+			absenceId: "absence-1",
+			employeeUserId: "user-requester",
+			employeeName: "Avery Requester",
+			organizationId: "org-1",
+			categoryName: "Vacation",
+			startDate: "2026-05-11",
+			endDate: "2026-05-12",
+			approverName: "Morgan Manager",
+			days: 2,
+		};
+		await onAbsenceRequestApproved(decision);
+		await onAbsenceRequestRejected({ ...decision, rejectionReason: "Team offsite" });
+
+		const params = {
+			approverName: "Morgan Manager",
+			categoryName: "Vacation",
+			startDate: { kind: "plainDate", date: "2026-05-11" },
+			endDate: { kind: "plainDate", date: "2026-05-12" },
+			dateRange: { kind: "plainDateRange", start: "2026-05-11", end: "2026-05-12" },
+			days: 2,
+		};
+		expect(createNotification.mock.calls.map(([notification]) => notification.metadata)).toEqual([
+			{ i18n: { params } },
+			{ i18n: { params: { ...params, rejectionReason: "Team offsite" } } },
+		]);
+	});
+
+	it("links manager time-correction approval notifications to the unified inbox, with entry-offset times (#1152)", async () => {
+		await onTimeCorrectionPendingApproval({
+			workPeriodId: "period-1",
+			employeeName: "Avery Requester",
+			organizationId: "org-1",
 			managerUserId: "user-manager",
 			reason: "Forgot to clock in",
+			original: {
+				clockIn: { at: new Date("2026-05-11T08:00:00.000Z"), utcOffsetMinutes: 120 },
+				clockOut: null,
+			},
+			corrected: {
+				clockIn: { at: new Date("2026-05-11T07:15:00.000Z"), utcOffsetMinutes: 120 },
+				clockOut: { at: new Date("2026-05-11T15:00:00.000Z"), utcOffsetMinutes: -240 },
+			},
 		});
 
 		expect(createNotification).toHaveBeenCalledWith(
@@ -220,8 +293,79 @@ describe("approval notification triggers", () => {
 				entityType: "work_period",
 				entityId: "period-1",
 				actionUrl: "/approvals/inbox",
+				metadata: {
+					approvalSubject: "time_correction",
+					i18n: {
+						params: {
+							employeeName: "Avery Requester",
+							reason: "Forgot to clock in",
+							date: {
+								kind: "entryInstant",
+								at: "2026-05-11T08:00:00Z",
+								utcOffsetMinutes: 120,
+								preset: "dateMedium",
+							},
+							originalClockIn: {
+								kind: "entryInstant",
+								at: "2026-05-11T08:00:00Z",
+								utcOffsetMinutes: 120,
+								preset: "time",
+							},
+							correctedClockIn: {
+								kind: "entryInstant",
+								at: "2026-05-11T07:15:00Z",
+								utcOffsetMinutes: 120,
+								preset: "time",
+							},
+							correctedClockOut: {
+								kind: "entryInstant",
+								at: "2026-05-11T15:00:00Z",
+								utcOffsetMinutes: -240,
+								preset: "time",
+							},
+						},
+					},
+				},
 			}),
 		);
+	});
+
+	it("carries the corrected times of a time-correction decision at their entries' offsets (#1137)", async () => {
+		const decision = {
+			workPeriodId: "period-1",
+			employeeUserId: "user-requester",
+			employeeName: "Avery Requester",
+			organizationId: "org-1",
+			originalTime: new Date("2026-05-11T08:00:00.000Z"),
+			correctedTime: new Date("2026-05-11T07:15:00.000Z"),
+			approverName: "Morgan Manager",
+			corrected: {
+				clockIn: { at: new Date("2026-05-11T07:15:00.000Z"), utcOffsetMinutes: 120 },
+				clockOut: null,
+			},
+		};
+		await onTimeCorrectionApproved(decision);
+		await onTimeCorrectionRejected({ ...decision, rejectionReason: "Not plausible" });
+
+		const params = {
+			approverName: "Morgan Manager",
+			date: {
+				kind: "entryInstant",
+				at: "2026-05-11T07:15:00Z",
+				utcOffsetMinutes: 120,
+				preset: "dateMedium",
+			},
+			correctedClockIn: {
+				kind: "entryInstant",
+				at: "2026-05-11T07:15:00Z",
+				utcOffsetMinutes: 120,
+				preset: "time",
+			},
+		};
+		expect(createNotification.mock.calls.map(([notification]) => notification.metadata)).toEqual([
+			{ i18n: { params } },
+			{ i18n: { params: { ...params, rejectionReason: "Not plausible" } } },
+		]);
 	});
 
 	it("links manager clock-out approval notifications to the unified inbox", async () => {

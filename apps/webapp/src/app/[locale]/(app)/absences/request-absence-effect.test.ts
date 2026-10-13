@@ -28,7 +28,6 @@ const callerMocks = vi.hoisted(() => ({
 	getPrimaryEligibleManagerIdForRequester: vi.fn(),
 	onAbsenceRequestPendingApproval: vi.fn(),
 	onAbsenceRequestSubmitted: vi.fn(),
-	renderAbsenceRequestPendingApproval: vi.fn(),
 	runAutoCompletedAbsenceMaintenance: vi.fn(),
 	sendEmail: vi.fn(),
 	syncCanonicalAbsenceApprovalState: vi.fn(),
@@ -94,11 +93,6 @@ vi.mock("@/lib/app-url", () => ({
 
 vi.mock("@/lib/email/email-service", () => ({
 	sendEmail: callerMocks.sendEmail,
-}));
-
-vi.mock("@/lib/email/render", () => ({
-	renderAbsenceRequestPendingApproval:
-		callerMocks.renderAbsenceRequestPendingApproval,
 }));
 
 vi.mock("@/lib/notifications/triggers", () => ({
@@ -284,9 +278,6 @@ beforeEach(() => {
 		success: true,
 		messageId: "message-1",
 	});
-	callerMocks.renderAbsenceRequestPendingApproval.mockResolvedValue(
-		"manager email",
-	);
 	callerMocks.runAutoCompletedAbsenceMaintenance.mockResolvedValue(undefined);
 	callerMocks.syncCanonicalAbsenceApprovalState.mockResolvedValue(undefined);
 	callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
@@ -381,7 +372,7 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 	});
 
 	it.each([true, false])(
-		"sends one employee confirmation only when email is enabled (%s)",
+		"emails the employee and the manager through the notification channel only when email is enabled (%s)",
 		async (emailEnabled) => {
 			const approvalLifecycle = configureAbsenceCallerTransaction();
 			callerMocks.notificationPreferenceFindMany.mockResolvedValue([
@@ -392,6 +383,9 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 			>("@/lib/notifications/triggers");
 			callerMocks.onAbsenceRequestSubmitted.mockImplementationOnce(
 				triggers.onAbsenceRequestSubmitted,
+			);
+			callerMocks.onAbsenceRequestPendingApproval.mockImplementationOnce(
+				triggers.onAbsenceRequestPendingApproval,
 			);
 			callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
 				Effect.succeed({
@@ -424,25 +418,25 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 				success: true,
 				data: { absenceId: "absence-1" },
 			});
+			// One notification each for the employee and the manager; each email
+			// honors the recipient's preference and uses the organization's transport.
+			expect(callerMocks.notificationInsert).toHaveBeenCalledTimes(2);
 			await vi.waitFor(() => {
-				expect(
-					callerMocks.sendEmail.mock.calls.filter(
-						([params]) => params.to === "avery@example.com",
-					),
-				).toHaveLength(emailEnabled ? 1 : 0);
+				expect(callerMocks.sendEmail).toHaveBeenCalledTimes(emailEnabled ? 2 : 0);
 			});
-			expect(
-				callerMocks.sendEmail.mock.calls.filter(
-					([params]) => params.to === "manager@example.com",
-				),
-			).toHaveLength(1);
-			expect(callerMocks.notificationInsert).toHaveBeenCalledOnce();
+			for (const [message] of callerMocks.sendEmail.mock.calls) {
+				expect(message).toEqual(expect.objectContaining({ organizationId: "org-1" }));
+			}
 			expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledWith(
 				expect.objectContaining({ managerName: "Morgan Manager", days: 2 }),
 			);
-			expect(
-				callerMocks.onAbsenceRequestPendingApproval,
-			).toHaveBeenCalledOnce();
+			expect(callerMocks.onAbsenceRequestPendingApproval).toHaveBeenCalledWith(
+				expect.objectContaining({
+					managerUserId: "manager-user-1",
+					days: 2,
+					notes: "Vacation",
+				}),
+			);
 			expect(
 				callerMocks.runAutoCompletedAbsenceMaintenance,
 			).not.toHaveBeenCalled();
@@ -1585,9 +1579,8 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		);
 
 		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
-		expect(callerMocks.sendEmail).toHaveBeenCalledTimes(
-			expectsLegacyDelivery ? 1 : 0,
-		);
+		// Both emails go out with these notifications, never directly (#1152).
+		expect(callerMocks.sendEmail).not.toHaveBeenCalled();
 		expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledTimes(
 			expectsLegacyDelivery ? 1 : 0,
 		);
@@ -1600,10 +1593,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 	});
 
 	it.each([
-		"render",
-		"email",
-		"notification",
-	] as const)("keeps committed legacy submission successful when post-commit %s delivery fails", async (failure) => {
+		"employee",
+		"manager",
+	] as const)("keeps committed legacy submission successful when the post-commit %s notification fails", async (failure) => {
 		const harness = createModeRoutingHarness("legacy");
 		callerMocks.employeeFindFirst
 			.mockResolvedValueOnce({
@@ -1618,17 +1610,13 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 				organizationId: "org-1",
 				user: { name: "Avery Employee", email: "avery@example.com" },
 			});
-		if (failure === "render") {
-			callerMocks.renderAbsenceRequestPendingApproval.mockRejectedValueOnce(
-				new Error("render failed"),
-			);
-		} else if (failure === "email") {
-			callerMocks.sendEmail.mockRejectedValue(new Error("email failed"));
-		} else {
-			callerMocks.onAbsenceRequestSubmitted.mockImplementationOnce(() => {
-				throw new Error("notification failed");
-			});
-		}
+		const failingTrigger =
+			failure === "employee"
+				? callerMocks.onAbsenceRequestSubmitted
+				: callerMocks.onAbsenceRequestPendingApproval;
+		failingTrigger.mockImplementationOnce(() => {
+			throw new Error("notification failed");
+		});
 
 		const result = await requestAbsenceForEmployeeEffect(
 			absenceRequest,
@@ -1646,7 +1634,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		expect(committed.timeRecords).toHaveLength(1);
 		expect(committed.absenceDetails).toHaveLength(1);
 		expect(harness.calls.filter((call) => call === "source")).toHaveLength(1);
-		if (failure !== "notification") {
+		if (failure === "manager") {
 			expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledOnce();
 		}
 		expect(loggerErrorMock).toHaveBeenCalledWith(
