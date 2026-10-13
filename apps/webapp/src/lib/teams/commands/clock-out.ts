@@ -26,6 +26,7 @@ import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import type { ClockOutFailure } from "@/lib/time-tracking/clocking/types";
 import { getCommandTemporalContext } from "./command-temporal";
+import { withVehicleUsePrompt } from "./vehicle-use-reply";
 
 const logger = createLogger("BotCommand:ClockOut");
 
@@ -110,7 +111,7 @@ export const clockOutCommand: BotCommand = {
 			);
 			if (!result.success) return clockFailureReply(result.failure, replies, t);
 
-			return committedReply(
+			const reply = committedReply(
 				() => {
 					const time = formatInstant(instantFromDate(result.data.timestamp), temporal, "time");
 					if (result.durationMinutes === null) {
@@ -129,6 +130,17 @@ export const clockOutCommand: BotCommand = {
 				replies,
 				t,
 				(error) => logger.error({ error }, "Failed to format committed clock-out reply"),
+			);
+			return withVehicleUsePrompt(
+				ctx,
+				reply,
+				{
+					organizationId: actor.employee.organizationId,
+					employeeId: actor.employee.id,
+					stage: "clock_out",
+					entryId: result.data.id,
+				},
+				t,
 			);
 		} catch (error) {
 			logger.error({ error, ctx }, "Failed to clock out");
