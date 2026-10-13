@@ -1,7 +1,11 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
-import { createInMemoryZipWriter, writePersonalDataArchive } from "./archive";
+import { PersonalDataArchiveFileError, streamPersonalDataArchive } from "./archive";
 import { recordPart, tablePart } from "./collector";
+
+async function bytesOf(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
+	return new Uint8Array(await new Response(stream).arrayBuffer());
+}
 
 const scope = {
 	organizationId: "org-1",
@@ -19,35 +23,37 @@ async function readZip(bytes: Uint8Array) {
 	return files;
 }
 
-describe("writePersonalDataArchive", () => {
+describe("streamPersonalDataArchive", () => {
 	it("writes one JSON file per category, a CSV per table part, the manifest and the README", async () => {
-		const bytes = await writePersonalDataArchive(createInMemoryZipWriter(), {
-			exportId: "export-1",
-			scope,
-			exportedAt: "2026-10-13T08:00:00Z",
-			locale: "de",
-			readme: "Ihre Daten\n",
-			categories: [
-				{
-					category: "employment",
-					parts: [
-						recordPart("employee", { first_name: "Ada", birthday: "1990-02-28" }),
-						tablePart(
-							"employment_terms",
-							["valid_from", "hourly_rate", "change_reason"],
-							[
-								{ valid_from: "2026-01-01T00:00:00Z", hourly_rate: "21.50", change_reason: null },
-								{
-									valid_from: "2026-07-01T00:00:00Z",
-									hourly_rate: "23.00",
-									change_reason: 'Raise, "annual"',
-								},
-							],
-						),
-					],
-				},
-			],
-		});
+		const bytes = await bytesOf(
+			streamPersonalDataArchive({
+				exportId: "export-1",
+				scope,
+				exportedAt: "2026-10-13T08:00:00Z",
+				locale: "de",
+				readme: "Ihre Daten\n",
+				categories: [
+					{
+						category: "employment",
+						parts: [
+							recordPart("employee", { first_name: "Ada", birthday: "1990-02-28" }),
+							tablePart(
+								"employment_terms",
+								["valid_from", "hourly_rate", "change_reason"],
+								[
+									{ valid_from: "2026-01-01T00:00:00Z", hourly_rate: "21.50", change_reason: null },
+									{
+										valid_from: "2026-07-01T00:00:00Z",
+										hourly_rate: "23.00",
+										change_reason: 'Raise, "annual"',
+									},
+								],
+							),
+						],
+					},
+				],
+			}),
+		);
 
 		const files = await readZip(bytes);
 		expect(Object.keys(files).sort()).toEqual([
@@ -115,26 +121,89 @@ describe("writePersonalDataArchive", () => {
 	});
 
 	it("writes a header-only CSV for an empty table and copies original files", async () => {
-		const bytes = await writePersonalDataArchive(createInMemoryZipWriter(), {
-			exportId: "export-2",
+		const bytes = await bytesOf(
+			streamPersonalDataArchive({
+				exportId: "export-2",
+				scope,
+				exportedAt: "2026-10-13T08:00:00Z",
+				locale: "en",
+				readme: "Your data\n",
+				categories: [
+					{
+						category: "employment",
+						parts: [tablePart("skills", ["skill", "expires_on"], [])],
+						files: [
+							{ path: "certificates/forklift.pdf", read: async () => new Uint8Array([37, 80]) },
+						],
+					},
+				],
+			}),
+		);
+
+		const files = await readZip(bytes);
+		expect(files["employment/skills.csv"]).toBe("skill,expires_on");
+		expect(files["employment/certificates/forklift.pdf"]).toBe("%P");
+		expect(JSON.parse(files["employment.json"] as string).skills).toEqual([]);
+		expect(JSON.parse(files["_manifest.json"] as string).files).toContainEqual({
+			path: "employment/certificates/forklift.pdf",
+			category: "employment",
+			format: "file",
+			records: null,
+			sizeBytes: 2,
+		});
+	});
+
+	it("reads each original file only when the archive consumer reaches it", async () => {
+		const reads: number[] = [];
+		const stream = streamPersonalDataArchive({
+			exportId: "export-3",
 			scope,
 			exportedAt: "2026-10-13T08:00:00Z",
 			locale: "en",
 			readme: "Your data\n",
 			categories: [
 				{
-					category: "employment",
-					parts: [tablePart("skills", ["skill", "expires_on"], [])],
+					category: "personnel_file",
+					parts: [],
+					files: Array.from({ length: 20 }, (_, index) => ({
+						path: `contract/${index}.pdf`,
+						read: async () => {
+							reads.push(index);
+							return new Uint8Array(1024).fill(index);
+						},
+					})),
+				},
+			],
+		});
+		const reader = stream.getReader();
+		// README header + body, the category JSON header + body, then the first file.
+		for (let chunk = 0; chunk < 6; chunk += 1) await reader.read();
+		expect(reads).toEqual([0]);
+		await reader.cancel();
+	});
+
+	it("fails the stream with a file error when an original file cannot be read", async () => {
+		const stream = streamPersonalDataArchive({
+			exportId: "export-4",
+			scope,
+			exportedAt: "2026-10-13T08:00:00Z",
+			locale: "en",
+			readme: "Your data\n",
+			categories: [
+				{
+					category: "travel_expenses",
+					parts: [],
 					files: [
-						{ path: "certificates/forklift.pdf", read: async () => new Uint8Array([37, 80]) },
+						{
+							path: "receipts/taxi.pdf",
+							read: async () => {
+								throw new Error("checksum mismatch");
+							},
+						},
 					],
 				},
 			],
 		});
-
-		const files = await readZip(bytes);
-		expect(files["employment/skills.csv"]).toBe("skill,expires_on");
-		expect(files["employment/certificates/forklift.pdf"]).toBe("%P");
-		expect(JSON.parse(files["employment.json"] as string).skills).toEqual([]);
+		await expect(bytesOf(stream)).rejects.toBeInstanceOf(PersonalDataArchiveFileError);
 	});
 });

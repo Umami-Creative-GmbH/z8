@@ -29,10 +29,10 @@ import { addJob } from "@/lib/queue";
 import {
 	deletePrivateObject,
 	deletePrivateObjectVersions,
-	uploadPrivateObject,
+	uploadPrivateObjectStream,
 } from "@/lib/storage/export-s3-client";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
-import { createInMemoryZipWriter, writePersonalDataArchive } from "./archive";
+import { PersonalDataArchiveFileError, streamPersonalDataArchive } from "./archive";
 import type {
 	CollectedCategory,
 	PersonalDataCollector,
@@ -72,7 +72,8 @@ export type PersonalDataExportRunResult =
 export interface PersonalDataExportProcessorDeps {
 	now: () => Instant;
 	collectors: readonly PersonalDataCollector[];
-	upload: typeof uploadPrivateObject;
+	/** Stores the streamed ZIP; a failing stream must reject with the stream's error. */
+	upload: typeof uploadPrivateObjectStream;
 	deleteObject: DeletePersonalDataExportObject;
 	notify: (params: CreateNotificationParams) => Promise<unknown>;
 }
@@ -80,7 +81,7 @@ export interface PersonalDataExportProcessorDeps {
 const defaultDeps: PersonalDataExportProcessorDeps = {
 	now: () => systemClock.nowInstant(),
 	collectors: PERSONAL_DATA_COLLECTORS,
-	upload: uploadPrivateObject,
+	upload: uploadPrivateObjectStream,
 	deleteObject: deletePersonalDataExportObject,
 	notify: (params) => createNotification(params),
 };
@@ -90,6 +91,26 @@ class PersonalDataExportBuildError extends Error {
 		super(code);
 		this.name = "PersonalDataExportBuildError";
 	}
+}
+
+/** Passes a byte stream through while counting its size and hashing it (SHA-256). */
+function measured(source: ReadableStream<Uint8Array>) {
+	const hash = createHash("sha256");
+	let sizeBytes = 0;
+	const stream = source.pipeThrough(
+		new TransformStream<Uint8Array, Uint8Array>({
+			transform(chunk, controller) {
+				hash.update(chunk);
+				sizeBytes += chunk.byteLength;
+				controller.enqueue(chunk);
+			},
+		}),
+	);
+	return {
+		stream,
+		/** Call once the stream was consumed completely. */
+		result: () => ({ sizeBytes, checksumSha256: hash.digest("hex") }),
+	};
 }
 
 /** The private storage key of one export; a secret that never leaves the server. */
@@ -155,14 +176,17 @@ export async function processPersonalDataExport(
 				.filter((category) => category.parts.some((part) => part.kind === "table"))
 				.map((category) => category.category),
 		});
-		const zip = await writePersonalDataArchive(createInMemoryZipWriter(), {
-			exportId: claimed.id,
-			scope,
-			exportedAt,
-			locale,
-			readme,
-			categories,
-		});
+		// Streamed into storage: original files are read one at a time while it uploads.
+		const zip = measured(
+			streamPersonalDataArchive({
+				exportId: claimed.id,
+				scope,
+				exportedAt,
+				locale,
+				readme,
+				categories,
+			}),
+		);
 
 		const key = personalDataExportStorageKey({
 			organizationId: claimed.organizationId,
@@ -171,20 +195,20 @@ export async function processPersonalDataExport(
 		});
 		let upload: { bucket: string; versionId: string | null };
 		try {
-			upload = await deps.upload(claimed.organizationId, key, zip, "application/zip");
-		} catch {
+			upload = await deps.upload(claimed.organizationId, key, zip.stream, "application/zip");
+		} catch (error) {
+			if (error instanceof PersonalDataArchiveFileError) {
+				throw new PersonalDataExportBuildError("file_unavailable");
+			}
 			throw new PersonalDataExportBuildError("storage_failed");
 		}
 		stored = { key, ...upload };
+		const { sizeBytes, checksumSha256 } = zip.result();
 
 		const completed = await completePersonalDataExport(database, {
 			organizationId: claimed.organizationId,
 			exportId: claimed.id,
-			file: {
-				...stored,
-				sizeBytes: zip.byteLength,
-				checksumSha256: createHash("sha256").update(zip).digest("hex"),
-			},
+			file: { ...stored, sizeBytes, checksumSha256 },
 			now: deps.now(),
 		});
 		if (!completed) {
@@ -192,7 +216,7 @@ export async function processPersonalDataExport(
 			return { status: "discarded" };
 		}
 		logger.info(
-			{ exportId: claimed.id, organizationId: claimed.organizationId, sizeBytes: zip.byteLength },
+			{ exportId: claimed.id, organizationId: claimed.organizationId, sizeBytes },
 			"Personal data export completed",
 		);
 		await notifyRequester(deps, claimed, subject.employeeName);

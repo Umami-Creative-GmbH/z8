@@ -1,6 +1,8 @@
 import type { PersonalDataCollector } from "../collector";
 import { accountCollector } from "./account";
 import { employmentCollector } from "./employment";
+import { personnelFileCollector } from "./personnel-file";
+import { travelExpensesCollector } from "./travel-expenses";
 
 /**
  * Every category collector of a personal data export, in archive order. A new
@@ -8,5 +10,7 @@ import { employmentCollector } from "./employment";
  */
 export const PERSONAL_DATA_COLLECTORS: readonly PersonalDataCollector[] = [
 	employmentCollector,
+	travelExpensesCollector,
+	personnelFileCollector,
 	accountCollector,
 ];
