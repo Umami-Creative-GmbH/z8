@@ -12,7 +12,8 @@
 -- - Spans under confirmed fixed terms: ignored and reported.
 -- - Spans with no confirmed terms: new confirmed hourly terms with the row's wage and currency,
 --   the terms form's defaults and no work policy, linked to the employment period that covers
---   them. A span with no period is skipped and reported.
+--   them. A span with no period is skipped and reported. An employee without any period first
+--   gets their legacy period (0071 backfill), as every period reader does.
 -- - The open-ended rate row of an employee who is fixed today and has no terms is skipped and
 --   reported: nothing says when it ended.
 -- Every conflict and skipped or ignored row goes to employee_rate_history_merge_report
@@ -174,6 +175,10 @@ BEGIN
 	IF NOT FOUND THEN
 		RETURN 0;
 	END IF;
+
+	-- An employee without any period gets their legacy period first, as every period reader
+	-- does (resolveCurrentEmploymentPeriod); a no-op otherwise.
+	PERFORM "employee_employment_period_backfill_legacy"(p_organization_id, p_employee_id);
 
 	SELECT EXISTS (
 		SELECT 1 FROM public."employee_employment_history" AS h

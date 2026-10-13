@@ -465,6 +465,28 @@ describe("rate history merge into employment terms", () => {
 		]);
 	});
 
+	it("gives an employee without any period their legacy period first, like every period reader", async () => {
+		const at = await scenario({ period: null });
+		await seedRate(at, {
+			rate: "23.00",
+			from: "2026-02-01 00:00:00",
+			createdAt: "2026-02-01 09:00:00",
+		});
+
+		expect(await mergeTwice(at.organizationId)).toBe(1);
+
+		const { rows: periods } = await fixture.pool.query<{ id: string; provenance: string }>(
+			`select id, start_provenance as provenance from employee_employment_period
+			 where organization_id = $1 and employee_id = $2`,
+			[at.organizationId, at.employeeId],
+		);
+		expect(periods.map((period) => period.provenance)).toEqual(["legacy"]);
+		expect(
+			(await termsOf(at.employeeId)).map((terms) => [terms.from, terms.rate, terms.periodId]),
+		).toEqual([["2026-02-01 00:00:00", 23, periods[0]?.id]]);
+		expect(await reportOf(at.organizationId)).toEqual([]);
+	});
+
 	it("ends new terms with the employment period that covers them", async () => {
 		const at = await scenario({
 			period: { startedAt: "2026-01-01T00:00:00Z", endedAt: "2026-04-01T00:00:00Z" },
