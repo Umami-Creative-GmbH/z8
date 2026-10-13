@@ -20,13 +20,8 @@ import {
 import { type Instant, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { loadSkillCertificatesOnFile } from "@/lib/personnel-file/skill-certificate-store";
-import {
-	DEFAULT_SKILL_EXPIRING_SOON_DAYS,
-	isExpiredSkillOn,
-	parseSkillExpiryDate,
-	skillExpiryToday,
-} from "@/lib/scheduling/skill-expiry";
-import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { isExpiredSkillOn, parseSkillExpiryDate } from "@/lib/scheduling/skill-expiry";
+import { loadSkillReminderWindow } from "@/lib/scheduling/skill-reminder-store";
 import { DatabaseService } from "./database.service";
 
 // Type definitions
@@ -745,15 +740,16 @@ export const SkillServiceLive = Layer.effect(
 					return updated;
 				}),
 
+			// The badge counts from the organization's skill reminder lead time, like the reminders (#1143).
 			getSkillExpiryWindow: (organizationId, now = systemClock.nowInstant()) =>
 				dbService
 					.query("getSkillExpiryWindow", () =>
-						loadOrganizationTimezone(dbService.db, organizationId),
+						loadSkillReminderWindow(dbService.db, { organizationId, now }),
 					)
 					.pipe(
-						Effect.map((timezone) => ({
-							today: skillExpiryToday(now, timezone).toString(),
-							expiringSoonDays: DEFAULT_SKILL_EXPIRING_SOON_DAYS,
+						Effect.map(({ today, leadDays }) => ({
+							today,
+							expiringSoonDays: leadDays,
 						})),
 					),
 

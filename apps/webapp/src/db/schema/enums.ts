@@ -303,6 +303,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"period_submission_decided",
 	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
 	"scheduled_export_paused",
+	// Skill expiry reminders to the employee and their managers (#1143)
+	"skill_expiry_upcoming",
+	"skill_expired_today",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

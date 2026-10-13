@@ -1,6 +1,6 @@
+import type { ExpiryReminderKind } from "@/lib/expiry-reminders/expiry";
 import type { CreateNotificationParams, NotificationType } from "@/lib/notifications/types";
 import type { DocumentCategory } from "./document.types";
-import type { ExpiryReminderKind } from "./expiry";
 import { MY_DOCUMENTS_PATH } from "./notifications";
 
 /**

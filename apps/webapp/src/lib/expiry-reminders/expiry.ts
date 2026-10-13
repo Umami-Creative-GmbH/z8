@@ -4,11 +4,12 @@ import type { ExpiryReminderKind } from "./expiry.types";
 export { EXPIRY_REMINDER_KINDS, type ExpiryReminderKind } from "./expiry.types";
 
 /**
- * Expiry reminders (#869): officers and, for shared documents, the employee
- * are reminded when a certificate or other document comes within the
- * organization's lead time of its expiry date, and again on the expiry date
- * (CONTEXT.md "Expiry date"). All days are plain calendar days; "today" is
- * the organization's calendar day (`todayInOrganization`).
+ * Expiry reminder rules shared by personnel file documents (#869) and
+ * employee skills (#1143): a reminder when an expiry date comes within the
+ * organization's lead time, and another on the expiry date (the last valid
+ * day). All days are plain calendar days; "today" is the organization's
+ * calendar day. Pure: each context keeps its own lead time setting, markers
+ * and recipients.
  */
 
 export const DEFAULT_EXPIRY_REMINDER_LEAD_DAYS = 30;

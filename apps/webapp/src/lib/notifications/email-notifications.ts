@@ -70,6 +70,9 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	work_balance_adjustment_recorded: "/time-tracking",
 	work_balance_adjustment_cancelled: "/time-tracking",
 	scheduled_export_paused: "/settings/scheduled-exports",
+	// Managers, owners and admins get the employee's skills, the employee their profile (#1143).
+	skill_expiry_upcoming: ["/settings/employees/", "/settings/profile"],
+	skill_expired_today: ["/settings/employees/", "/settings/profile"],
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

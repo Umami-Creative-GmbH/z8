@@ -100,6 +100,8 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	period_submission_sent_back: "request_update",
 	period_submission_decided: "request_update",
 	scheduled_export_paused: "attention",
+	skill_expiry_upcoming: "reminder",
+	skill_expired_today: "reminder",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

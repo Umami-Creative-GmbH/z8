@@ -13,13 +13,13 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { ExpiryReminderKind } from "@/lib/expiry-reminders/expiry.types";
 import type {
 	DocumentCategory,
 	DocumentVisibility,
 	PersonnelFileCleanupReason,
 	PersonnelFileUploadStatus,
 } from "@/lib/personnel-file/document.types";
-import type { ExpiryReminderKind } from "@/lib/personnel-file/expiry.types";
 import type {
 	PayslipBatchStatus,
 	PayslipFileFailure,

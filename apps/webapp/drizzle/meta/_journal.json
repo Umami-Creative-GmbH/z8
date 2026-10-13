@@ -1527,6 +1527,13 @@
       "when": 1803052800000,
       "tag": "0217_employee_skill_expiry_date",
       "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1803139200000,
+      "tag": "0218_skill_expiry_reminders",
+      "breakpoints": true
     }
   ]
 }

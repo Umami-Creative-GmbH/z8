@@ -1,7 +1,11 @@
+import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
+	foreignKey,
 	index,
+	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -9,12 +13,12 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "./timestamp";
-
+import type { ExpiryReminderKind } from "@/lib/expiry-reminders/expiry.types";
 import { organization, user } from "../auth-schema";
 import { skillCategoryEnum } from "./enums";
 import { employee, locationSubarea } from "./organization";
 import { shift, shiftTemplate } from "./shift";
+import { currentTimestamp } from "./timestamp";
 
 // ============================================
 // SKILL CATALOG & QUALIFICATIONS
@@ -101,6 +105,70 @@ export const employeeSkill = pgTable(
 		uniqueIndex("employeeSkill_unique_idx").on(table.employeeId, table.skillId),
 		// Target of employee-scoped references such as a skill certificate's link (#1144).
 		unique("employeeSkill_id_employeeId_idx").on(table.id, table.employeeId),
+	],
+);
+
+/**
+ * Skill reminder settings of an organization (#1143). No row means the
+ * default 30-day lead time. Separate from the personnel file reminder setting:
+ * skills exist without personnel files. Only owners and admins change it.
+ */
+export const skillReminderSetting = pgTable(
+	"skill_reminder_setting",
+	{
+		organizationId: text("organization_id")
+			.primaryKey()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		expiryLeadDays: integer("expiry_lead_days").default(30).notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		check("skill_reminder_setting_lead_days_check", sql`${table.expiryLeadDays} BETWEEN 1 AND 365`),
+	],
+);
+
+/**
+ * Sent marker of the skill expiry reminder job (#1143): one row per employee
+ * skill, kind and skill expiry date, claimed before notifying, so each reminder
+ * is sent at most once. Keying on the date re-arms both reminders when it
+ * moves; the job also drops markers of a date the employee skill no longer
+ * has. Scoped to the organization through the employee.
+ */
+export const skillExpiryReminder = pgTable(
+	"skill_expiry_reminder",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		employeeSkillId: uuid("employee_skill_id").notNull(),
+		kind: text("kind").$type<ExpiryReminderKind>().notNull(),
+		expiryDate: date("expiry_date", { mode: "string" }).notNull(),
+		sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("skillExpiryReminder_employeeSkill_kind_expiry_idx").on(
+			table.employeeSkillId,
+			table.kind,
+			table.expiryDate,
+		),
+		index("skillExpiryReminder_organizationId_idx").on(table.organizationId),
+		check("skill_expiry_reminder_kind_check", sql`${table.kind} IN ('upcoming', 'expired_today')`),
+		foreignKey({
+			name: "skill_expiry_reminder_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "skill_expiry_reminder_employee_skill_fk",
+			columns: [table.employeeSkillId, table.employeeId],
+			foreignColumns: [employeeSkill.id, employeeSkill.employeeId],
+		}).onDelete("cascade"),
 	],
 );
 
