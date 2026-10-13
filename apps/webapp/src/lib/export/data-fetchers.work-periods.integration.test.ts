@@ -37,6 +37,7 @@ const ids = {
 	projectPeriod: "e8761000-0000-4000-8000-000000000041",
 	plainPeriod: "e8761000-0000-4000-8000-000000000042",
 	otherPeriod: "e8761000-0000-4000-8000-000000000043",
+	vehicle: "e8761000-0000-4000-8000-000000000050",
 } as const;
 
 describe("the work period export rows on PostgreSQL", () => {
@@ -176,5 +177,49 @@ describe("the work period export rows on PostgreSQL", () => {
 		expect(byId.get(ids.taskPeriod)).toEqual([ids.project, "T876 website", ids.task, "Design"]);
 		expect(byId.get(ids.projectPeriod)).toEqual([ids.project, "T876 website", null, null]);
 		expect(byId.get(ids.plainPeriod)).toEqual([null, null, null, null]);
+	});
+
+	it("carries each period's vehicle use, naming an archived vehicle, empty when there is none (#1128)", async () => {
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate, archived_at, updated_at)
+			 values ($1, $2, 'T1128 van', 'M AB 2024', now(), now())`,
+			[ids.vehicle, ids.organization],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'organization', vehicle_id = $2,
+			   odometer_start_km = 12000, odometer_end_km = 12085, driven_distance_km = 85
+			 where id = $1`,
+			[ids.taskPeriod, ids.vehicle],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'own', driven_distance_km = 42 where id = $1`,
+			[ids.projectPeriod],
+		);
+
+		const rows = await fetchWorkPeriods(ids.organization);
+
+		const byId = new Map(
+			rows.map((row) => [
+				row.id,
+				[
+					row.vehicleKind,
+					row.vehicleName,
+					row.licenceNumber,
+					row.odometerStartKm,
+					row.odometerEndKm,
+					row.drivenDistanceKm,
+				] as const,
+			]),
+		);
+		expect(byId.get(ids.taskPeriod)).toEqual([
+			"organization",
+			"T1128 van",
+			"M AB 2024",
+			12000,
+			12085,
+			85,
+		]);
+		expect(byId.get(ids.projectPeriod)).toEqual(["own", null, null, null, null, 42]);
+		expect(byId.get(ids.plainPeriod)).toEqual([null, null, null, null, null, null]);
 	});
 });
