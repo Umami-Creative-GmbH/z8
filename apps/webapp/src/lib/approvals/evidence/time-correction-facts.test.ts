@@ -181,3 +181,53 @@ describe("time correction revision comparison", () => {
 		).toEqual({ kind: "material_change", changedFields: ["unverifiable:work_period"] });
 	});
 });
+
+describe("vehicle use in time correction facts (#1120)", () => {
+	const recorded = {
+		vehicleKind: "own" as const,
+		vehicleId: null,
+		odometerStartKm: null,
+		odometerEndKm: null,
+		drivenDistanceKm: 30,
+	};
+	const requested = {
+		vehicle: { kind: "own" as const },
+		startKm: 100,
+		endKm: 140,
+		distanceKm: 40,
+	};
+
+	it("keeps facts of work without vehicle use free of vehicle keys", () => {
+		const facts = buildTimeCorrectionSubmittedFacts(input());
+		expect(Object.hasOwn(facts.baseline.attribution, "vehicleUse")).toBe(false);
+		expect(Object.hasOwn(facts.requested, "vehicleUse")).toBe(false);
+		expect(Object.hasOwn(facts.changeMask, "vehicleUse")).toBe(false);
+	});
+
+	it("captures the recorded and requested vehicle use with its change", () => {
+		const facts = buildTimeCorrectionSubmittedFacts(
+			input({
+				period: { ...input().period, ...recorded },
+				correction: { action: "edit", workLocationType: "office", workCategoryId: null, vehicleUse: requested },
+			}),
+		);
+		expect(facts.baseline.attribution.vehicleUse).toEqual({
+			vehicle: { kind: "own" },
+			startKm: null,
+			endKm: null,
+			distanceKm: 30,
+		});
+		expect(facts.requested.vehicleUse).toEqual({ kind: "set", value: requested });
+		expect(facts.changeMask.vehicleUse).toBe(true);
+		// A later change of the recorded vehicle use holds the decision.
+		expect(
+			compareLiveTimeCorrectionWithRevision(
+				facts,
+				input({
+					period: { ...input().period, ...recorded, drivenDistanceKm: 31 },
+					correction: { action: "edit", workLocationType: "office", workCategoryId: null, vehicleUse: requested },
+				}),
+			),
+		).toEqual({ kind: "material_change", changedFields: ["baseline"] });
+	});
+});

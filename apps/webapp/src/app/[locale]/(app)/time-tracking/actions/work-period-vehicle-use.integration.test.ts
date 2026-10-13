@@ -588,6 +588,10 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		await expect(editVehicleUse("admin", workPeriodId, vanUse)).resolves.toMatchObject({
 			success: true,
 		});
+		// A vehicle recorded on work can no longer be deleted (#1118 refuses it as `vehicle_used`).
+		await expect(
+			admin.query("delete from organization_vehicle where id = $1", [ids.van]),
+		).rejects.toMatchObject({ code: "23503" });
 		await admin.query("update organization_vehicle set archived_at = now() where id = $1", [ids.van]);
 		await expect(
 			editVehicleUse("admin", workPeriodId, { ...vanUse, endKm: 12_090 }),

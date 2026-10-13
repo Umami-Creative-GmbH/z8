@@ -87,6 +87,38 @@ describe("parseManualTimeEntryCommand", () => {
 		});
 	});
 
+	describe("vehicle use (#1120)", () => {
+		const vehicleUse = {
+			vehicle: { kind: "organization", vehicleId: "e0000000-0000-4000-8000-000000000001" },
+			startKm: 100,
+			endKm: 140,
+			distanceKm: null,
+		};
+
+		it("preserves entered vehicle use as submitted", () => {
+			const submitted = { ...command, vehicleUse };
+			expect(parseManualTimeEntryCommand(submitted)).toEqual({ ok: true, command: submitted });
+			const own = {
+				...command,
+				vehicleUse: { vehicle: { kind: "own" }, startKm: null, endKm: null, distanceKm: 12 },
+			};
+			expect(parseManualTimeEntryCommand(own)).toEqual({ ok: true, command: own });
+		});
+
+		it.each([
+			["an end reading below the start reading", { ...vehicleUse, endKm: 99 }, "vehicleUse.endKm"],
+			["a missing key", { vehicle: { kind: "own" }, startKm: 1, endKm: 2 }, "vehicleUse"],
+			["an unknown vehicle kind", { ...vehicleUse, vehicle: { kind: "rental" } }, "vehicleUse.vehicle"],
+			["fractional kilometres", { ...vehicleUse, startKm: 1.5 }, "vehicleUse"],
+			["a null value", null, "vehicleUse"],
+		])("rejects %s", (_case, value, field) => {
+			expect(parseManualTimeEntryCommand({ ...command, vehicleUse: value })).toEqual({
+				ok: false,
+				rejection: { reason: "invalid_command", field },
+			});
+		});
+	});
+
 	it("accepts a complete version-2 command unchanged", () => {
 		expect(parseManualTimeEntryCommand(structuredClone(command))).toEqual({
 			ok: true,

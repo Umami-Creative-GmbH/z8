@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	haveWorkPeriodDatesChanged,
+	haveWorkPeriodEditValuesChanged,
 	haveWorkPeriodTimesChanged,
 	resolveWorkPeriodTimeEditAccess,
 	resolveWorkPeriodTimeEditRoute,
@@ -200,5 +201,30 @@ describe("work period value comparison", () => {
 		expect(haveWorkPeriodTimesChanged(original, timeOnly)).toBe(true);
 		expect(haveWorkPeriodDatesChanged(original, dateMove)).toBe(true);
 		expect(haveWorkPeriodTimesChanged(original, original)).toBe(false);
+	});
+});
+
+describe("haveWorkPeriodEditValuesChanged with vehicle use (#1120)", () => {
+	const values = {
+		workLocationType: "office" as const,
+		vehicleUse: { vehicle: { kind: "own" as const }, startKm: 1, endKm: 5, distanceKm: 4 },
+		clockInDate: "2026-09-01",
+		clockInTime: "09:00",
+		clockOutDate: "2026-09-01",
+		clockOutTime: "17:00",
+	};
+
+	it("counts a vehicle use change and ignores vehicle use that was not offered", () => {
+		expect(
+			haveWorkPeriodEditValuesChanged(values, {
+				...values,
+				vehicleUse: { ...values.vehicleUse, endKm: 6, distanceKm: 5 },
+			}),
+		).toBe(true);
+		expect(haveWorkPeriodEditValuesChanged(values, { ...values, vehicleUse: null })).toBe(true);
+		expect(
+			haveWorkPeriodEditValuesChanged(values, { ...values, vehicleUse: { ...values.vehicleUse } }),
+		).toBe(false);
+		expect(haveWorkPeriodEditValuesChanged(values, { ...values, vehicleUse: undefined })).toBe(false);
 	});
 });
