@@ -721,9 +721,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -1138,6 +1143,22 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			functionName: "takeLegacyBreak",
 			operation: "insert",
 			table: "work_period",
+		},
+	],
+	// Clock events' vehicle use (#1122) lands on the closed work's canonical detail,
+	// after the closure wrote it, inside the same work transaction.
+	"src/lib/time-tracking/clocking/vehicle-use.ts": [
+		{
+			columns: [
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
+				"vehicle_id",
+				"vehicle_kind",
+			],
+			functionName: "write",
+			operation: "update",
+			table: "time_record_work",
 		},
 	],
 	"src/lib/time-tracking/time-entry-writer.ts": [
