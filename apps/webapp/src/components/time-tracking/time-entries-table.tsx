@@ -44,6 +44,8 @@ const ManualTimeEntryDialog = dynamic(
 
 interface Props {
 	workPeriods: WorkPeriodData[];
+	/** The listed work periods showing driving details missing (#1127). */
+	drivingDetailsMissingIds?: string[];
 	hasManager: boolean;
 	canApproveTimeEntries: boolean;
 	employeeTimezone: string;
@@ -53,6 +55,7 @@ interface Props {
 
 export function TimeEntriesTable({
 	workPeriods,
+	drivingDetailsMissingIds = [],
 	hasManager,
 	canApproveTimeEntries,
 	employeeTimezone,
@@ -95,6 +98,7 @@ export function TimeEntriesTable({
 		timeFormat,
 		hasManager,
 		showBillable: billableTimeEnabled,
+		isDrivingDetailsMissing: (workPeriodId) => drivingDetailsMissingIds.includes(workPeriodId),
 		renderAdminAction: canApproveTimeEntries
 			? (period) => (
 					<TimeEntryAdminMenu

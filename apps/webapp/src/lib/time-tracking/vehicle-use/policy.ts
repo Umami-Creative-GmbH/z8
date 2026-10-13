@@ -30,14 +30,23 @@ export function vehicleUseModeFor(
 	configuration: { enabled: boolean; assignments: readonly VehicleUseAssignmentRule[] },
 ): VehicleUseMode {
 	if (!configuration.enabled) return "off";
-	const { assignments } = configuration;
+	return decidingVehicleUseAssignment(subject, configuration.assignments)?.mode ?? "off";
+}
+
+/**
+ * The assignment that decides an employee's vehicle use mode while the switch is on: their own
+ * over their primary team's over the organization's; undefined without any matching one.
+ */
+export function decidingVehicleUseAssignment<Rule extends VehicleUseAssignmentRule>(
+	subject: { employeeId: string; teamId: string | null },
+	assignments: readonly Rule[],
+): Rule | undefined {
 	const own = assignments.find(
 		(rule) => rule.assignmentType === "employee" && rule.employeeId === subject.employeeId,
 	);
-	if (own) return own.mode;
+	if (own) return own;
 	const team = subject.teamId
 		? assignments.find((rule) => rule.assignmentType === "team" && rule.teamId === subject.teamId)
 		: undefined;
-	if (team) return team.mode;
-	return assignments.find((rule) => rule.assignmentType === "organization")?.mode ?? "off";
+	return team ?? assignments.find((rule) => rule.assignmentType === "organization");
 }

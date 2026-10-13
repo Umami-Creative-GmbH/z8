@@ -4462,9 +4462,14 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
 						"organization_id",
 						"record_id",
 						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
 						"work_category_id",
 						"work_location_type",
 					],
@@ -4662,6 +4667,12 @@ db.delete(approvalOutbox);`,
 					table: "time_record",
 				},
 				{
+					columns: ["driven_distance_km", "odometer_end_km", "odometer_start_km"],
+					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+					operation: "update",
+					table: "time_record_work",
+				},
+				{
 					columns: [
 						"approval_state",
 						"duration_minutes",
@@ -4678,9 +4689,14 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
 						"organization_id",
 						"record_id",
 						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
 						"work_category_id",
 						"work_location_type",
 					],
@@ -4898,9 +4914,14 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
 						"organization_id",
 						"record_id",
 						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
 						"work_category_id",
 						"work_location_type",
 					],
@@ -5065,9 +5086,14 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
 						"organization_id",
 						"record_id",
 						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
 						"work_category_id",
 						"work_location_type",
 					],
@@ -5165,9 +5191,14 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
 						"organization_id",
 						"record_id",
 						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
 						"work_category_id",
 						"work_location_type",
 					],
@@ -5246,9 +5277,14 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
 						"organization_id",
 						"record_id",
 						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
 						"work_category_id",
 						"work_location_type",
 					],
@@ -5534,9 +5570,14 @@ db.delete(approvalOutbox);`,
 				{
 					columns: [
 						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
 						"organization_id",
 						"record_id",
 						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
 						"work_category_id",
 						"work_location_type",
 					],
@@ -5741,7 +5782,7 @@ export function renamedFinalizer() {
 				[splitPath]: `import { db, timeRecord, timeRecordWork, timeRecordAllocation } from "@/db";
 export function applyPolicyClockOutTerminalBreakInTransaction(dynamic: object) {
   db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
-  db.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata });
+  db.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata, vehicleKind, vehicleId, odometerStartKm, odometerEndKm, drivenDistanceKm });
   db.insert(timeRecordAllocation).values({ id, organizationId, recordId, allocationKind, projectId, taskId, costCenterId, weightPercent, isBillable, createdAt });
   db.insert(timeRecordAllocation).values(dynamic);
 }

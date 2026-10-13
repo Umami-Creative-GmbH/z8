@@ -1,5 +1,6 @@
 import type { db as rootDatabase } from "@/db";
 import { type Clock, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { runDrivingDetailsRemindersWith } from "@/lib/jobs/driving-details-reminders";
 import { runPeriodSubmissionRemindersWith } from "@/lib/jobs/period-submission-reminders";
 import { createLogger } from "@/lib/logger";
 import type { BreakDueRegulation } from "@/lib/time-tracking/break-due";
@@ -104,8 +105,10 @@ export async function runClockingRemindersWith(
 	// Period submission reminders (#1064) visit the organizations collecting period submissions,
 	// whatever their clocking reminder settings.
 	const periods = await runPeriodSubmissionRemindersWith(deps);
+	// Driving details reminders (#1127) visit the organizations with vehicle use switched on.
+	const driving = await runDrivingDetailsRemindersWith(deps);
 	for (const key of Object.keys(result) as (keyof ClockingRemindersResult)[]) {
-		result[key] += periods[key];
+		result[key] += periods[key] + driving[key];
 	}
 	logger.info(result, "Clocking reminders completed");
 	return result;

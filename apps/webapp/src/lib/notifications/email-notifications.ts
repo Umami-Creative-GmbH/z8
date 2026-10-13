@@ -51,6 +51,7 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	period_submission_reminder: "/time-tracking",
 	period_submission_sent_back: "/time-tracking",
 	period_submission_decided: "/time-tracking",
+	driving_details_missing_reminder: "/time-tracking",
 	personnel_file_document_shared: "/my-documents",
 	personnel_file_employee_upload: "/personnel-files/",
 	// Officers get the employee's personnel file, the employee My documents (#869).

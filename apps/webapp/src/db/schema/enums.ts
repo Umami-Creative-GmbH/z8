@@ -303,6 +303,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"period_submission_decided",
 	// A scheduled export paused because its owner is no longer an org admin, to every org admin (#988)
 	"scheduled_export_paused",
+	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
+	"driving_details_missing_reminder",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

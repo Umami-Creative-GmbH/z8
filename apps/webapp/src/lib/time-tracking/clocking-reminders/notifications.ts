@@ -53,6 +53,14 @@ const reminderCopy = {
 		messageKey: "common:notifications.content.periodSubmissionApproved.message",
 		messageDefault: "Your time for {startDate} – {endDate} was approved.",
 	},
+	// The morning after work lacking its vehicle or a reading, while vehicle use is expected (#1127).
+	driving_details_missing_reminder: {
+		titleKey: "common:notifications.content.drivingDetailsMissingReminder.title",
+		titleDefault: "Add your driving details",
+		messageKey: "common:notifications.content.drivingDetailsMissingReminder.message",
+		messageDefault:
+			"Your work on {date} is missing its vehicle or an odometer reading. Add them to the work period.",
+	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
 
 /** A rejected period, with the approver's reason (#805). */
@@ -120,7 +128,9 @@ export function buildClockingReminderNotification(input: {
 	const params: Record<string, string> = { timezone };
 	let copy: ReminderCopy = reminderCopy[reminder.type];
 	const formatDate = (date: PlainDate) => date.toLocaleString(locale, { dateStyle: "medium" });
-	if (reminder.type === "period_submission_decided") {
+	if (reminder.type === "driving_details_missing_reminder") {
+		params.date = formatDate(reminder.drivingWork?.workDay ?? reminder.day);
+	} else if (reminder.type === "period_submission_decided") {
 		const period = reminder.decidedPeriod;
 		if (period?.outcome === "rejected") {
 			copy = periodSubmissionRejectedCopy;
@@ -168,6 +178,9 @@ export function buildClockingReminderNotification(input: {
 		title: copy.titleDefault,
 		message: render(copy.messageDefault),
 		...(reminder.shift ? { entityType: "shift", entityId: reminder.shift.id } : {}),
+		...(reminder.drivingWork
+			? { entityType: "work_period", entityId: reminder.drivingWork.workPeriodId }
+			: {}),
 		actionUrl: "/time-tracking",
 		idempotencyKey: `clocking-reminder:${reminder.occasionKey}`,
 		metadata: {

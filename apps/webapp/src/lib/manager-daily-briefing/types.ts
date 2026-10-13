@@ -6,7 +6,9 @@ export type BriefingActionCategory =
 	| "absence"
 	| "coverage"
 	| "overtime"
-	| "payroll";
+	| "payroll"
+	/** Work lacking its vehicle or an odometer reading (#1127). */
+	| "driving";
 
 export interface BriefingActionItem {
 	id: string;

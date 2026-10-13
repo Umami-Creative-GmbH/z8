@@ -33,6 +33,15 @@ export interface PeriodSubmissionViolationFact {
 	type: string;
 }
 
+/**
+ * A submitted work period lacking its vehicle or a reading while vehicle use was expected (#1127),
+ * on the event-local date it started. A warning for the approver, never a blocker.
+ */
+export interface PeriodSubmissionDrivingDetailsMissingFact {
+	workPeriodId: string;
+	date: string;
+}
+
 export interface PeriodSubmissionSubmittedFacts {
 	schemaVersion: typeof PERIOD_SUBMISSION_EVIDENCE_SCHEMA_VERSION;
 	kind: "period_submission";
@@ -71,6 +80,11 @@ export interface PeriodSubmissionSubmittedFacts {
 	} | null;
 	/** Compliance violations recorded in the range (#1061), in date order. Read-only. */
 	violations: PeriodSubmissionViolationFact[];
+	/**
+	 * Work lacking driving details (#1127), in date order. Present only when there is some, so facts
+	 * without any keep the shape (and fingerprint) of version 1 facts captured before #1127.
+	 */
+	drivingDetailsMissing?: PeriodSubmissionDrivingDetailsMissingFact[];
 }
 
 export interface PeriodSubmissionSubmittedLabels {
@@ -111,6 +125,14 @@ function isViolationFact(value: unknown): value is PeriodSubmissionViolationFact
 	return isRecord(value) && typeof value.date === "string" && typeof value.type === "string";
 }
 
+function isDrivingDetailsMissingFact(
+	value: unknown,
+): value is PeriodSubmissionDrivingDetailsMissingFact {
+	return (
+		isRecord(value) && typeof value.workPeriodId === "string" && typeof value.date === "string"
+	);
+}
+
 /** Whether stored facts have the shape the card reads (identity is checked by the store). */
 export function isPeriodSubmissionSubmittedFacts(
 	value: unknown,
@@ -139,7 +161,10 @@ export function isPeriodSubmissionSubmittedFacts(
 				Number.isInteger(target.totalMinutes) &&
 				isMinutesRecord(target.dayTargets))) &&
 		Array.isArray(value.violations) &&
-		value.violations.every(isViolationFact)
+		value.violations.every(isViolationFact) &&
+		(value.drivingDetailsMissing === undefined ||
+			(Array.isArray(value.drivingDetailsMissing) &&
+				value.drivingDetailsMissing.every(isDrivingDetailsMissingFact)))
 	);
 }
 
