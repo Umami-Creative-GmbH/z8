@@ -120,6 +120,7 @@ const { submitPeriodSubmission } = await import(
 	"@/lib/time-tracking/period-submissions/submission-service"
 );
 const { createManualTimeEntry } = await import("../actions");
+const { getWorkPeriodsForMonth } = await import("@/lib/calendar/work-period-service");
 
 const ORG = "t1120-org";
 const OTHER_ORG = "t1120-other-org";
@@ -603,6 +604,38 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 				values: { vehicleUse: { vehicle: { kind: "organization", vehicleId: ids.van } } },
 				vehicleUse: { vehicles: [{ id: ids.van, archived: true }] },
 			},
+		});
+	});
+
+	it("shows vehicle use on the work period and names a manager who changed it on the employee's behalf", async () => {
+		const workPeriodId = await recordWork("requester");
+
+		actAs("manager");
+		await expect(
+			updateWorkPeriodTimes({
+				workPeriodId,
+				submissionId: randomUUID(),
+				clockInDate: "2026-07-22",
+				clockInTime: "08:00",
+				clockOutDate: "2026-07-22",
+				clockOutTime: "12:00",
+				vehicleUse: vanUse,
+				reason: "Drove the van",
+			}),
+		).resolves.toMatchObject({ success: true, data: { status: "applied" } });
+
+		const [event] = (
+			await getWorkPeriodsForMonth(6, 2026, { organizationId: ORG, employeeId: ids.requester }, "UTC")
+		).filter((candidate) => candidate.id === workPeriodId);
+		expect(event?.metadata).toMatchObject({
+			vehicleUse: {
+				vehicle: { kind: "organization", vehicleId: ids.van },
+				startKm: 12_000,
+				endKm: 12_085,
+				distanceKm: 85,
+			},
+			vehicleLabel: "Van (B-VN 100)",
+			editedByName: userOf("manager"),
 		});
 	});
 
