@@ -47,6 +47,7 @@ vi.mock("@/lib/billing/guard", async () =>
 const { clearTimeDataAction, generateLocationsStepAction } = await import(
 	"@/app/[locale]/(app)/settings/demo/actions"
 );
+const { generateDemoVehicles } = await import("@/lib/demo/demo-data.service");
 
 const ids = {
 	organization: "t1118-demo-org",
@@ -154,13 +155,19 @@ describe("demo vehicles on PostgreSQL", () => {
 		expect(created.flatMap((v) => v.team_ids)).toEqual([ids.team]);
 		expect(await vehicles(ids.otherOrganization)).toEqual([]);
 
-		const again = await generateLocationsStepAction({
+		// Straight to the vehicle step: a second location step may draw a location
+		// name that already exists and trip the location's unique name.
+		const again = await generateDemoVehicles({
 			organizationId: ids.organization,
-			dateRangeType: "last30",
-			locationCount: 1,
-			subareasPerLocation: 1,
+			dateRange: { start: new Date(), end: new Date() },
+			includeTimeEntries: false,
+			includeAbsences: false,
+			includeTeams: false,
+			includeProjects: false,
+			includeLocations: true,
+			createdBy: ids.adminUser,
 		});
-		expect(again).toMatchObject({ success: true, data: { vehiclesCreated: 0 } });
+		expect(again).toEqual({ vehiclesCreated: 0 });
 		expect(await vehicles()).toHaveLength(3);
 	});
 
