@@ -126,7 +126,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"organization.switchTo",
 		"organization.switching",
 	]),
-	...keys("reports", ["reports.projects.title"]),
+	...keys("reports", ["reports.projects.title", "reports.vehicles.title"]),
 	...keys("settings/enterprise", [
 		"settings.apiKeys.description",
 		"settings.apiKeys.title",
