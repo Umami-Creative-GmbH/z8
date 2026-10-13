@@ -132,7 +132,7 @@ describe("prorated allowance in every balance reader (#1110)", () => {
 		await fixture.db.insert(vacationAllowance).values({
 			organizationId: fixture.organizationId,
 			name: "Default",
-			startDate: "2026-01-01",
+			startDate: "2025-01-01",
 			isCompanyDefault: true,
 			defaultAnnualDays: "30",
 			allowCarryover: true,
