@@ -132,7 +132,8 @@ export async function requestMyPersonalDataExport(): Promise<
 			}),
 		);
 		if (!result.ok) {
-			if (result.reason === "employee_not_found") {
+			// `own_record` concerns admin exports only; an employee export is always one's own.
+			if (result.reason === "employee_not_found" || result.reason === "own_record") {
 				return yield* Effect.fail(
 					new NotFoundError({ message: "Employee not found", entityType: "employee" }),
 				);

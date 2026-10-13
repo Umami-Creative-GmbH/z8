@@ -36,7 +36,11 @@ export const fallbackReadmeTranslator: ReadmeTranslate = (_key, defaultValue, pa
 	);
 
 /** One static `t()` per category, so the extractor reads every default. */
-function categoryDescription(category: PersonalDataCategoryKey, t: ReadmeTranslate): string {
+function categoryDescription(
+	category: PersonalDataCategoryKey,
+	kind: PersonalDataExportKind,
+	t: ReadmeTranslate,
+): string {
 	switch (category) {
 		case "employment":
 			return t(
@@ -88,6 +92,13 @@ function categoryDescription(category: PersonalDataCategoryKey, t: ReadmeTransla
 				"Audit log entries about you and entries you performed.",
 			);
 		case "account":
+			// The admin export holds only the name and email of the account (#1166).
+			if (kind === "admin") {
+				return t(
+					"personalDataExport.readme.category.accountAdmin",
+					"The name and email address of your user account.",
+				);
+			}
 			return t(
 				"personalDataExport.readme.category.account",
 				"Your user account: sessions, sign-in methods, security settings, preferences and devices.",
@@ -103,6 +114,8 @@ export interface PersonalDataReadmeInput {
 	/** UTC ISO instant the data was read. */
 	exportedAt: string;
 	categories: readonly PersonalDataCategoryKey[];
+	/** Categories with CSV files next to their JSON; all of them when omitted. */
+	csvCategories?: readonly PersonalDataCategoryKey[];
 }
 
 /** The README's plain text. */
@@ -140,7 +153,8 @@ export function renderPersonalDataExportReadme(input: PersonalDataReadmeInput): 
 
 	heading(t("personalDataExport.readme.filesTitle", "Files"));
 	for (const category of input.categories) {
-		lines.push(`${category}.json`, `  ${categoryDescription(category, t)}`);
+		lines.push(`${category}.json`, `  ${categoryDescription(category, input.kind, t)}`);
+		if (input.csvCategories && !input.csvCategories.includes(category)) continue;
 		lines.push(
 			`  ${t(
 				"personalDataExport.readme.csvFolder",

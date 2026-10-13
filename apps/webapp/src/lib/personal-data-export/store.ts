@@ -82,11 +82,17 @@ export async function resolveMyDataAccess(
 
 export type RequestPersonalDataExportResult =
 	| { ok: true; exportId: string }
-	| { ok: false; reason: "employee_not_found" | "in_progress" | "daily_limit" };
+	| {
+			ok: false;
+			/** `own_record`: an admin export of the requester's own employee record. */
+			reason: "employee_not_found" | "own_record" | "in_progress" | "daily_limit";
+	  };
 
 /**
  * Records a new export as pending, with its audit entry, in one transaction.
- * The caller enqueues the build after the commit.
+ * The caller enqueues the build after the commit. An admin export of the
+ * requester's own employee record is refused: admins export their own data
+ * from My data, like every employee.
  */
 export async function requestPersonalDataExport(
 	client: Database,
@@ -101,13 +107,16 @@ export async function requestPersonalDataExport(
 ): Promise<RequestPersonalDataExportResult> {
 	if (!UUID.test(input.employeeId)) return { ok: false, reason: "employee_not_found" };
 	const [subject] = await client
-		.select({ id: employee.id })
+		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)
 		.where(
 			and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
 		)
 		.limit(1);
 	if (!subject) return { ok: false, reason: "employee_not_found" };
+	if (input.kind === "admin" && subject.userId === input.requestedByUserId) {
+		return { ok: false, reason: "own_record" };
+	}
 
 	if (input.kind === "employee") {
 		const since = dateFromInstant(input.now.subtract({ hours: EMPLOYEE_EXPORT_INTERVAL_HOURS }));

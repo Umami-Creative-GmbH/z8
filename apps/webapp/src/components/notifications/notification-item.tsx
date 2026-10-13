@@ -159,6 +159,8 @@ function getNotificationStyle(type: NotificationType): {
 
 		// A personal data export is ready on My data (#811)
 		case "personal_data_export_ready":
+		// An org admin exported the employee's personal data (#1166)
+		case "personal_data_export_admin_exported":
 			return {
 				icon: <IconDatabaseExport className="size-4" />,
 				bgColor: "bg-slate-100 dark:bg-slate-900/30",

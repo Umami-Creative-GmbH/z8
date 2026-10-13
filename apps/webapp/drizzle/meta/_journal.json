@@ -1520,6 +1520,13 @@
       "when": 1803398400000,
       "tag": "0221_personal_data_export",
       "breakpoints": true
+    },
+    {
+      "idx": 222,
+      "version": "7",
+      "when": 1803484800000,
+      "tag": "0222_personal_data_export_admin_notice",
+      "breakpoints": true
     }
   ]
 }

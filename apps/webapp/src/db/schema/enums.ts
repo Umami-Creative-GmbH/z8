@@ -305,6 +305,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"scheduled_export_paused",
 	// The requester's personal data export is ready to download, with no file link (#811)
 	"personal_data_export_ready",
+	// To a current employee when an org admin's export of their personal data completes (#1166)
+	"personal_data_export_admin_exported",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
