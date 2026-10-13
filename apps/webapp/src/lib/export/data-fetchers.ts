@@ -37,7 +37,7 @@ import {
 	workPolicySchedule,
 	workPolicyScheduleDay,
 } from "@/db";
-import { balanceAdjustment, customer, projectTask } from "@/db/schema";
+import { balanceAdjustment, customer, organizationVehicle, projectTask } from "@/db/schema";
 import { env } from "@/env";
 import {
 	type AuthUserDisplayNameInput,
@@ -461,9 +461,10 @@ export async function fetchWorkPeriods(organizationId: string) {
 	logger.info({ organizationId }, "Fetching work periods for export");
 
 	// Fetch work periods directly by organizationId, with the organization's
-	// project and task names for the project and task columns. Work deleted by an
+	// project and task names for the project and task columns, and its vehicles
+	// (archived ones too) for the vehicle use columns (#1128). Work deleted by an
 	// approved correction is no longer work (#794); running periods stay, flagged by isActive.
-	const [filteredPeriods, projectNames, taskNames] = await Promise.all([
+	const [filteredPeriods, projectNames, taskNames, vehicles] = await Promise.all([
 		db.query.workPeriod.findMany({
 			where: and(eq(workPeriod.organizationId, organizationId), isNull(workPeriod.deletedAt)),
 			with: {
@@ -486,27 +487,46 @@ export async function fetchWorkPeriods(organizationId: string) {
 			.from(projectTask)
 			.where(eq(projectTask.organizationId, organizationId))
 			.then((rows) => new Map(rows.map((row) => [row.id, row.name]))),
+		db
+			.select({
+				id: organizationVehicle.id,
+				name: organizationVehicle.name,
+				licencePlate: organizationVehicle.licencePlate,
+			})
+			.from(organizationVehicle)
+			.where(eq(organizationVehicle.organizationId, organizationId))
+			.then((rows) => new Map(rows.map((row) => [row.id, row]))),
 	]);
 
 	logger.info({ count: filteredPeriods.length }, "Fetched work periods");
 
-	return filteredPeriods.map((period) => ({
-		id: period.id,
-		employeeId: period.employeeId,
-		employeeName: period.employee?.user ? buildAuthUserDisplayName(period.employee.user) : "",
-		employeeNumber: period.employee?.employeeNumber,
-		startTime: period.startTime,
-		endTime: period.endTime,
-		durationMinutes: period.durationMinutes,
-		isActive: period.isActive,
-		clockInId: period.clockInId,
-		clockOutId: period.clockOutId,
-		createdAt: period.createdAt,
-		projectId: period.projectId,
-		projectName: period.projectId ? (projectNames.get(period.projectId) ?? null) : null,
-		taskId: period.taskId,
-		taskName: period.taskId ? (taskNames.get(period.taskId) ?? null) : null,
-	}));
+	return filteredPeriods.map((period) => {
+		const vehicle = period.vehicleId ? vehicles.get(period.vehicleId) : undefined;
+		return {
+			id: period.id,
+			employeeId: period.employeeId,
+			employeeName: period.employee?.user ? buildAuthUserDisplayName(period.employee.user) : "",
+			employeeNumber: period.employee?.employeeNumber,
+			startTime: period.startTime,
+			endTime: period.endTime,
+			durationMinutes: period.durationMinutes,
+			isActive: period.isActive,
+			clockInId: period.clockInId,
+			clockOutId: period.clockOutId,
+			createdAt: period.createdAt,
+			projectId: period.projectId,
+			projectName: period.projectId ? (projectNames.get(period.projectId) ?? null) : null,
+			taskId: period.taskId,
+			taskName: period.taskId ? (taskNames.get(period.taskId) ?? null) : null,
+			// An own vehicle identifies no vehicle, so it has no name or plate.
+			vehicleKind: period.vehicleKind,
+			vehicleName: vehicle?.name ?? null,
+			licenceNumber: vehicle?.licencePlate ?? null,
+			odometerStartKm: period.odometerStartKm,
+			odometerEndKm: period.odometerEndKm,
+			drivenDistanceKm: period.drivenDistanceKm,
+		};
+	});
 }
 
 /**

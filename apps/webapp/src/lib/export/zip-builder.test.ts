@@ -52,10 +52,51 @@ describe("the work periods CSV", () => {
 
 		expect(file?.name).toBe("work_periods.csv");
 		expect(file?.content.split("\n")).toEqual([
-			"id,employeeId,employeeName,employeeNumber,startTime,endTime,durationMinutes,isActive,clockInId,clockOutId,createdAt,projectId,projectName,taskId,taskName",
-			'period-1,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,project-1,Website,task-1,"Design, phase 1"',
-			"period-2,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,project-1,Website,,",
-			"period-3,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,,,,",
+			"id,employeeId,employeeName,employeeNumber,startTime,endTime,durationMinutes,isActive,clockInId,clockOutId,createdAt,projectId,projectName,taskId,taskName,vehicleKind,vehicleName,licenceNumber,odometerStartKm,odometerEndKm,drivenDistanceKm",
+			'period-1,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,project-1,Website,task-1,"Design, phase 1",,,,,,',
+			"period-2,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,project-1,Website,,,,,,,,",
+			"period-3,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,,,,,,,,,,",
+		]);
+	});
+
+	it("appends the vehicle use columns after the task, writing plates and readings as they are", () => {
+		const [file] = buildExportFiles("org-1", {
+			work_periods: [
+				{
+					...period,
+					projectId: null,
+					projectName: null,
+					taskId: null,
+					taskName: null,
+					vehicleKind: "organization",
+					vehicleName: "Van, blue",
+					// A plate a lenient date parser would read as a date.
+					licenceNumber: "M 2024",
+					odometerStartKm: 0,
+					odometerEndKm: 85,
+					drivenDistanceKm: 85,
+				},
+				{
+					...period,
+					id: "period-2",
+					projectId: null,
+					projectName: null,
+					taskId: null,
+					taskName: null,
+					vehicleKind: "own",
+					vehicleName: null,
+					licenceNumber: null,
+					odometerStartKm: null,
+					odometerEndKm: null,
+					drivenDistanceKm: 42,
+				},
+			],
+		});
+
+		expect(file?.content.split("\n")).toEqual([
+			"id,employeeId,employeeName,employeeNumber,startTime,endTime,durationMinutes,isActive,clockInId,clockOutId,createdAt,projectId,projectName,taskId,taskName,vehicleKind,vehicleName,licenceNumber,odometerStartKm,odometerEndKm,drivenDistanceKm",
+			'period-1,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,,,,,organization,"Van, blue",M 2024,0,85,85',
+			"period-2,employee-1,Ada Lovelace,E-1,2026-01-05T08:00:00.000Z,2026-01-05T09:30:00.000Z,90,false,in-1,out-1,2026-01-05T09:30:00.000Z,,,,,own,,,,,42",
 		]);
 	});
 });

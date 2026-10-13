@@ -182,6 +182,15 @@ export const CSV_COLUMNS = {
 		"projectName",
 		"taskId",
 		"taskName",
+		// Vehicle use (#1128), appended last for the same reason. `vehicleKind` is
+		// "organization" or "own" (an own vehicle has no name or plate); the plate
+		// column is `licenceNumber` because "licencePlate" contains "at".
+		"vehicleKind",
+		"vehicleName",
+		"licenceNumber",
+		"odometerStartKm",
+		"odometerEndKm",
+		"drivenDistanceKm",
 	],
 	absences: [
 		"id",
