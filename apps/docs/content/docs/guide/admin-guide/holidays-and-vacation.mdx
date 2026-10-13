@@ -115,7 +115,7 @@ This means an employee with a personal override will use that policy, regardless
    - **Set as Company Default**: Check to make this the default for all employees
    - **Default Annual Days**: Vacation allowance for a full year
    - **Accrual Type**: Annual (all at once), Monthly, or Biweekly. See [Accrual Policies](#accrual-policies)
-   - **Accrual Start Month**: Monthly and biweekly accrual doesn't use this month. It always starts in January, or in the month an employee starts
+   - **Accrual Start Month**: Used only by the vacation accrual projection report, as the month an annual policy's allowance is granted. It doesn't change any balance: monthly and biweekly accrual always starts in January, or in the month an employee starts
    - **Prorate in start and exit year**: On by default. See [Prorated Allowances](#prorated-allowances)
    - **Statutory Minimum Days**: The fewest days employees are legally owed in a full year. It starts at 20, or at Default Annual Days if that's lower, and can't be higher than Default Annual Days
    - **Allow Carryover**: Enable to allow unused days to roll over
@@ -146,6 +146,8 @@ You can schedule future policy changes by setting effective dates:
 The **Assignments** tab shows:
 - **Current**: The active company default with its start date
 - **Next**: The upcoming default (if scheduled) with when it takes effect
+
+Vacation balances use one company default per calendar year: of the defaults in effect during the year, the one that started last. A new default that takes effect mid-year therefore applies to that whole year's balances, on every page.
 
 ### Policy Statuses
 
@@ -197,16 +199,18 @@ To customize vacation allowance for an individual employee:
 
 Total allowance is calculated as:
 ```
-Total = Annual Days + Carryover + Adjustments
+Total = Allowance + Carryover + Adjustments + Accrued
 ```
 
 **Example:**
-- Annual Days: 20 (from policy)
+- Allowance: 20 (from policy)
 - Carryover: 5 (from last year)
 - Adjustments: +2 (bonus days)
 - **Total Available: 27 days**
 
-Annual Days is the prorated allowance in a year the employee joins or leaves. On a monthly or biweekly policy, the total starts at 0 instead of Annual Days and grows through accrual. Carryover counts only until it expires. Approved and pending vacation in the year is subtracted from the total to give the days still available.
+Allowance is the prorated allowance in a year the employee joins or leaves. On a monthly or biweekly policy, the allowance is 0 and the total grows through accrual instead. Carryover counts only until it expires. Adjustments are the manual adjustments; accrual is counted separately. Approved and pending vacation in the year is subtracted from the total to give the days still available.
+
+The **"Employees"** tab shows the same parts for every employee: **Allowance**, **Carryover**, **Adjustments** (manual adjustments only), **Accrued** and **Total Available**. Without a company default policy for the year, these columns stay empty.
 
 ### Prorated Allowances
 
@@ -274,9 +278,9 @@ On a monthly or biweekly policy, the vacation balance starts each year at 0 and 
 - **Biweekly**: 2/26 of the annual days per month, the share of two biweekly periods
 - **Annual days**: The policy's Default Annual Days, or the employee's Custom Annual Days for the year
 
-Z8 adds each month's share on the first day of that month, in your organization's timezone, so the current month counts as soon as it starts. In the month an employee starts, they get the share for the days from their start date, and nothing accrues before that month. Only active employees accrue. Each employee gets at most one accrual per month, and from 2026 on Z8 catches up any month of the current year it missed.
+Z8 adds each month's share on the first day of that month, in your organization's timezone, so the current month counts as soon as it starts. In the month an employee starts, they get the share for the days from their start date, and nothing accrues before that month. An employee who leaves accrues every month they were still employed: in the month of their last working day, the share for the days through that day, and nothing after. This also holds once they're no longer active, as long as their departure or end date is recorded. Each employee gets at most one accrual per month, and from 2026 on Z8 catches up any month of the current year it missed.
 
-On the employee's allowance page, **Accrued to Date** shows the accrual so far, out of the days per year. It's listed apart from **Adjustments**, and the **Adjustment History** lists manual adjustments only. Proration doesn't apply to accrual policies, because accrual already covers part years.
+On the employee's allowance page, **Accrued to Date** shows the accrual so far, out of the days per year, and the **"Employees"** tab shows it in the **Accrued** column. It's listed apart from **Adjustments**, and the **Adjustment History** lists manual adjustments only. Proration doesn't apply to accrual policies, because accrual already covers part years.
 
 ### Common Vacation Scenarios
 
