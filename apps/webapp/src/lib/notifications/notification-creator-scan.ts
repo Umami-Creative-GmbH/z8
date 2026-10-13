@@ -12,8 +12,8 @@ import { withNativeProgram } from "@/lib/typescript/native-source-analysis";
  * - `.insert(notification)` outside the notification service writes one directly.
  *
  * A creator has keys when its literal mentions `i18n` / `i18nMetadata` (an `i18n`
- * object with only `params` does not count); a direct push
- * or insert when its function uses a `common:notifications.` key.
+ * object with only `params` does not count); a direct push or insert when its function
+ * uses a `common:notifications.` key, or an insert whose row literal sets keys that way.
  */
 export interface NotificationCreatorSite {
 	/** `<path below src>::<enclosing function>`, stable across line changes. */
@@ -123,6 +123,16 @@ function isDirectInsert(node: ts.CallExpression): boolean {
 	);
 }
 
+/** The row literal of `.insert(notification).values({ ... })`, when it is one. */
+function insertedRow(node: ts.CallExpression): ts.ObjectLiteralExpression | undefined {
+	const values = node.parent;
+	if (!ts.isPropertyAccessExpression(values) || values.name.text !== "values") return undefined;
+	const call = values.parent;
+	if (!ts.isCallExpression(call) || call.expression !== values) return undefined;
+	const [row] = call.arguments;
+	return row && ts.isObjectLiteralExpression(row) ? row : undefined;
+}
+
 /** Sites per file and function, in source order. Keys are paths below `src/`. */
 export function scanNotificationCreators(
 	sources: ReadonlyMap<string, string>,
@@ -153,7 +163,12 @@ export function scanNotificationCreators(
 						(isDirectInsert(node) && fileName !== NOTIFICATION_SERVICE);
 					if (direct) {
 						const site = siteId(node);
-						record(site.id, NOTIFICATION_KEY_PATTERN.test(site.text));
+						const row = isDirectInsert(node) ? insertedRow(node) : undefined;
+						record(
+							site.id,
+							NOTIFICATION_KEY_PATTERN.test(site.text) ||
+								(row !== undefined && setsKeys(row, sourceFile)),
+						);
 					}
 				}
 				node.forEachChild(visit);

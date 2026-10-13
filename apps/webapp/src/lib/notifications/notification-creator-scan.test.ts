@@ -120,4 +120,42 @@ export async function deliver() {
 			{ id: "lib/demo/seed.ts::seedInbox", hasKeys: false },
 		]);
 	});
+
+	it("counts a direct insert whose inserted row sets translation keys", () => {
+		const sites = scanNotificationCreators(
+			new Map([
+				[
+					"lib/demo/seed.ts",
+					`
+export async function seedKeyed(db: Database, userId: string) {
+	const content = pendingContent();
+	await db.insert(notification).values({
+		userId,
+		organizationId: "org",
+		type: "approval_request_submitted",
+		title: content.title,
+		message: content.message,
+		metadata: { i18n: content.i18n },
+	});
+}
+export async function seedParamsOnly(db: Database, userId: string) {
+	await db.insert(notification).values({
+		userId,
+		organizationId: "org",
+		type: "approval_request_submitted",
+		title: "Pending",
+		message: "Pending.",
+		metadata: { i18n: { params: { days: 2 } } },
+	});
+}
+`,
+				],
+			]),
+		);
+
+		expect(sites).toEqual([
+			{ id: "lib/demo/seed.ts::seedKeyed", hasKeys: true },
+			{ id: "lib/demo/seed.ts::seedParamsOnly", hasKeys: false },
+		]);
+	});
 });

@@ -263,19 +263,32 @@ export async function onAbsenceRequestSubmitted(
 }
 
 /**
+ * The approver's absence pending-approval title, message and `metadata.i18n`: for its
+ * trigger and for rows the demo seed writes directly.
+ */
+export function absencePendingApprovalContent(
+	params: Pick<
+		AbsenceSubmittedToManagerParams,
+		"employeeName" | "categoryName" | "startDate" | "endDate" | "days" | "notes"
+	>,
+) {
+	return translatedContent(absencePendingApprovalCopy, {
+		employeeName: params.employeeName,
+		categoryName: params.categoryName,
+		...absenceDateParams(params),
+		...(params.days === undefined ? {} : { days: params.days }),
+		...(params.notes ? { notes: params.notes } : {}),
+	});
+}
+
+/**
  * Notify manager that an absence request needs approval
  */
 export async function onAbsenceRequestPendingApproval(
 	params: AbsenceSubmittedToManagerParams,
 ): Promise<void> {
 	try {
-		const content = translatedContent(absencePendingApprovalCopy, {
-			employeeName: params.employeeName,
-			categoryName: params.categoryName,
-			...absenceDateParams(params),
-			...(params.days === undefined ? {} : { days: params.days }),
-			...(params.notes ? { notes: params.notes } : {}),
-		});
+		const content = absencePendingApprovalContent(params);
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
@@ -581,25 +594,39 @@ export async function onTimeCorrectionSubmitted(
 }
 
 /**
+ * The approver's time-correction pending-approval title, message and `metadata.i18n`
+ * (without times when they are unknown): for its trigger and for rows the demo seed
+ * writes directly.
+ */
+export function timeCorrectionPendingApprovalContent(
+	params: Pick<
+		TimeCorrectionSubmittedToManagerParams,
+		"employeeName" | "reason" | "original" | "corrected"
+	>,
+) {
+	const hasTimes = Boolean(params.original && params.corrected);
+	const copy = hasTimes
+		? params.reason
+			? timeCorrectionPendingApprovalCopy.withReason
+			: timeCorrectionPendingApprovalCopy.withoutReason
+		: params.reason
+			? timeCorrectionPendingApprovalCopy.withoutDateWithReason
+			: timeCorrectionPendingApprovalCopy.withoutDate;
+	return translatedContent(copy, {
+		employeeName: params.employeeName,
+		...(params.reason ? { reason: params.reason } : {}),
+		...pendingCorrectionTimeParams(params.original, params.corrected),
+	});
+}
+
+/**
  * Notify manager that a time correction needs approval
  */
 export async function onTimeCorrectionPendingApproval(
 	params: TimeCorrectionSubmittedToManagerParams,
 ): Promise<void> {
 	try {
-		const hasTimes = Boolean(params.original && params.corrected);
-		const copy = hasTimes
-			? params.reason
-				? timeCorrectionPendingApprovalCopy.withReason
-				: timeCorrectionPendingApprovalCopy.withoutReason
-			: params.reason
-				? timeCorrectionPendingApprovalCopy.withoutDateWithReason
-				: timeCorrectionPendingApprovalCopy.withoutDate;
-		const content = translatedContent(copy, {
-			employeeName: params.employeeName,
-			...(params.reason ? { reason: params.reason } : {}),
-			...pendingCorrectionTimeParams(params.original, params.corrected),
-		});
+		const content = timeCorrectionPendingApprovalContent(params);
 		await createNotification({
 			userId: params.managerUserId,
 			organizationId: params.organizationId,
