@@ -82,6 +82,8 @@ const { getMyDataOverview, requestMyPersonalDataExport, getPersonalDataExportDow
 const { processPersonalDataExport } = await import("./processor");
 const { PERSONAL_DATA_COLLECTORS } = await import("./collectors");
 const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
+const { drainPersonalDataExportFileCleanup } = await import("./store");
+const { systemClock } = await import("@/lib/datetime/temporal-core");
 const { sendEmail } = await import("@/lib/email/email-service");
 
 const ORG = "t1165-org";
@@ -649,5 +651,34 @@ describe("personal data export pipeline (#1165)", () => {
 		await runPersonalDataExportSweep();
 		expect(harness.objects.has(bobKey)).toBe(false);
 		await seedEmployee(ORG, ids.bob, "bob");
+	});
+
+	it("gives up a deleted organization's file it cannot delete, but retries a live one's", async () => {
+		const gone = "t1165-gone-org";
+		await admin.query(
+			`insert into personal_data_export_file_cleanup (id, organization_id, storage_key, storage_bucket)
+			 values (gen_random_uuid(), $1, 'gone/file.zip', 'gone-bucket'), (gen_random_uuid(), $2, 'live/file.zip', 'live-bucket')`,
+			[gone, ORG],
+		);
+		try {
+			const result = await drainPersonalDataExportFileCleanup(db, {
+				now: systemClock.nowInstant(),
+				deleteObject: async () => {
+					throw new Error("Private storage bucket changed; object cleanup needs review");
+				},
+			});
+			expect(result).toEqual({ deleted: 0, failed: 1, dropped: 1 });
+			const { rows } = await admin.query<{ organization_id: string; attempts: number }>(
+				"select organization_id, attempts from personal_data_export_file_cleanup where organization_id in ($1, $2)",
+				[gone, ORG],
+			);
+			// The organization and its storage are gone: retrying could never succeed.
+			expect(rows).toEqual([{ organization_id: ORG, attempts: 1 }]);
+		} finally {
+			await admin.query(
+				"delete from personal_data_export_file_cleanup where organization_id in ($1, $2)",
+				[gone, ORG],
+			);
+		}
 	});
 });

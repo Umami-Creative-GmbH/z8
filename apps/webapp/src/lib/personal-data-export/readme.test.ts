@@ -76,7 +76,11 @@ describe("renderPersonalDataExportReadme", () => {
 					{ name: "Tina Teamlead", via: "team" },
 				],
 				personnelFileOfficers: [{ name: "Petra Personnel", categories: ["contract", "payslip"] }],
-				payrollOfficers: [{ name: "Paul Payroll" }],
+				payrollOfficers: [
+					{ name: "Paul Payroll", covers: ["employee"] },
+					{ name: "Pia Paydesk", covers: ["all"] },
+					{ name: "Pete Payteam", covers: ["employee", "team"] },
+				],
 				expenseOfficers: [
 					{ name: "Erik Expense", canExport: true, canRecordReimbursements: false },
 					{ name: "Rita Refund", canExport: false, canRecordReimbursements: true },
@@ -90,7 +94,9 @@ describe("renderPersonalDataExportReadme", () => {
 		expect(section).toContain("Max Manager (your manager)");
 		expect(section).toContain("Tina Teamlead (team permissions for your team)");
 		expect(section).toContain("Petra Personnel: Contracts, Payslips");
-		expect(section).toContain("Paul Payroll");
+		expect(section).toContain("Paul Payroll (you by name)");
+		expect(section).toContain("Pia Paydesk (all employees)");
+		expect(section).toContain("Pete Payteam (you by name, your team)");
 		expect(section).toContain("Erik Expense: read approved reports, export them");
 		expect(section).toContain("Rita Refund: read approved reports, record reimbursements");
 	});

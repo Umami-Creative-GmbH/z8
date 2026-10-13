@@ -148,6 +148,8 @@ export interface PersonalDataReadmeInput {
 	retention: PersonalDataReadmeRetention;
 }
 
+export type PayrollCoverage = "all" | "employee" | "team";
+
 /** The people of the organization who can access the employee's data, besides the employee. */
 export interface PersonalDataReadmeAccess {
 	ownersAndAdmins: readonly { name: string; role: "owner" | "admin" }[];
@@ -155,7 +157,8 @@ export interface PersonalDataReadmeAccess {
 	managers: readonly { name: string; via: "direct" | "team" }[];
 	/** With the document categories of the employee's file they manage. */
 	personnelFileOfficers: readonly { name: string; categories: readonly DocumentCategory[] }[];
-	payrollOfficers: readonly { name: string }[];
+	/** With what their grant covers: every employee, the employee by name, or one of their teams. */
+	payrollOfficers: readonly { name: string; covers: readonly PayrollCoverage[] }[];
 	expenseOfficers: readonly {
 		name: string;
 		canExport: boolean;
@@ -355,7 +358,16 @@ function renderAccess(
 			"personalDataExport.readme.accessPayrollOfficers",
 			"Payroll access (your working time and absences, exported for payroll):",
 		),
-		access.payrollOfficers.map((person) => person.name),
+		access.payrollOfficers.map((person) => {
+			const covers = person.covers.map((coverage) =>
+				coverage === "all"
+					? t("personalDataExport.readme.accessPayrollAll", "all employees")
+					: coverage === "employee"
+						? t("personalDataExport.readme.accessPayrollEmployee", "you by name")
+						: t("personalDataExport.readme.accessPayrollTeam", "your team"),
+			);
+			return `${person.name} (${covers.join(", ")})`;
+		}),
 	);
 	group(
 		t(

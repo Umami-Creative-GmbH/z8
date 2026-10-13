@@ -572,6 +572,10 @@ describe("personal data export: who decided a legacy request (#811 review)", () 
 		noEvidence: "11680000-0000-4000-8000-000000000115",
 		decidedByAna: "11680000-0000-4000-8000-000000000116",
 	} as const;
+	const workflow = {
+		id: "11680000-0000-4000-8000-000000000121",
+		stage: "11680000-0000-4000-8000-000000000122",
+	} as const;
 
 	function decisionsOf(category: CollectedCategory) {
 		return table(category, "decisions_on_others").map((row) => [row.action, row.acted_at]);
@@ -638,6 +642,28 @@ describe("personal data export: who decided a legacy request (#811 review)", () 
 		);
 		await legacyEvidence(requests.decidedByOli, people.oli, "2026-05-01T10:00:00Z");
 		await legacyEvidence(requests.decidedByAna, people.ana, "2026-05-06T10:00:00Z");
+
+		// A canonical workflow of Cid's that Ana handed on to Oli.
+		await admin.query(
+			`insert into approval_workflow (id, organization_id, workflow_type, source_type, source_id,
+			   requester_employee_id, status, policy_snapshot, context_snapshot, display_snapshot, submitted_at,
+			   updated_at) values
+			   ($1, $2, 'absence', 'absence_entry', gen_random_uuid(), $3, 'pending', '{}', '{}', '{}',
+			    '2026-05-07 08:00:00+00', now())`,
+			[workflow.id, DECIDER_ORG, people.cid],
+		);
+		await admin.query(
+			`insert into approval_workflow_stage (id, organization_id, workflow_id, stage_order, label,
+			   resolver_snapshot, activation_mode, status, activated_at, updated_at) values
+			   ($1, $2, $3, 1, 'Manager', '{}', 'sequential', 'pending', '2026-05-07 08:00:00+00', now())`,
+			[workflow.stage, DECIDER_ORG, workflow.id],
+		);
+		await admin.query(
+			`insert into approval_stage_assignment (organization_id, workflow_id, stage_id, assignment_sequence,
+			   approver_employee_id, status, assigned_at, reassigned_by_employee_id, updated_at) values
+			   ($1, $2, $3, 1, $4, 'pending', '2026-05-07 10:00:00+00', $5, now())`,
+			[DECIDER_ORG, workflow.id, workflow.stage, people.oli, people.ana],
+		);
 	});
 
 	afterAll(async () => {
@@ -654,9 +680,11 @@ describe("personal data export: who decided a legacy request (#811 review)", () 
 	it("credits a decision to whoever made it, not to the assigned approver", async () => {
 		const ana = await approvalsCollector.collect(db, scopeOf(people.ana, "t1168-dec-ana"));
 		// No evidence: the assigned approver decided. Evidence: its actor decided, assigned or not.
+		// Handing a colleague's workflow on to another approver is a decision on it too.
 		expect(decisionsOf(ana)).toEqual([
 			["approved", "2026-05-05T10:00:00Z"],
 			["approved", "2026-05-06T10:00:00Z"],
+			["reassigned", "2026-05-07T10:00:00Z"],
 		]);
 
 		const oli = await approvalsCollector.collect(db, scopeOf(people.oli, "t1168-dec-oli"));

@@ -12,6 +12,7 @@
 
 import { and, asc, desc, eq, gt, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import {
 	employee,
 	type PersonalDataExportKind,
@@ -22,9 +23,12 @@ import { AuditAction } from "@/lib/audit-logger";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { resolveEmployeeOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { createLogger } from "@/lib/logger";
 import { isUuid } from "@/lib/validations/uuid";
 
 type Database = typeof db;
+
+const logger = createLogger("PersonalDataExportStore");
 
 /** Rows and files are deleted this long after completion (or after the request, when none). */
 export const PERSONAL_DATA_EXPORT_LIFETIME_HOURS = 7 * 24;
@@ -542,11 +546,16 @@ export type DeletePersonalDataExportObject = (input: {
 const CLEANUP_RETRY_BASE_MINUTES = 15;
 const CLEANUP_RETRY_MAX_MINUTES = 24 * 60;
 
-/** Deletes the stored files of deleted exports; failures back off and stay recorded. */
+/**
+ * Deletes the stored files of deleted exports; failures back off and stay
+ * recorded. A failure for an organization that no longer exists is given up
+ * with a warning: its storage configuration went with it (deletion already
+ * fell back to the default private storage), so no retry can succeed.
+ */
 export async function drainPersonalDataExportFileCleanup(
 	client: Database,
 	input: { now: Instant; deleteObject: DeletePersonalDataExportObject; limit?: number },
-): Promise<{ deleted: number; failed: number }> {
+): Promise<{ deleted: number; failed: number; dropped: number }> {
 	const due = await client
 		.select()
 		.from(personalDataExportFileCleanup)
@@ -559,7 +568,7 @@ export async function drainPersonalDataExportFileCleanup(
 		)
 		.orderBy(asc(personalDataExportFileCleanup.createdAt))
 		.limit(input.limit ?? 100);
-	const result = { deleted: 0, failed: 0 };
+	const result = { deleted: 0, failed: 0, dropped: 0 };
 	for (const row of due) {
 		try {
 			await input.deleteObject({
@@ -572,7 +581,32 @@ export async function drainPersonalDataExportFileCleanup(
 				.delete(personalDataExportFileCleanup)
 				.where(eq(personalDataExportFileCleanup.id, row.id));
 			result.deleted += 1;
-		} catch {
+		} catch (error) {
+			const [stillThere] = await client
+				.select({ id: organization.id })
+				.from(organization)
+				.where(eq(organization.id, row.organizationId))
+				.limit(1);
+			if (!stillThere) {
+				logger.warn(
+					{ cleanupId: row.id, organizationId: row.organizationId, error },
+					"Gave up deleting a personal data export file of a deleted organization",
+				);
+				await client
+					.delete(personalDataExportFileCleanup)
+					.where(eq(personalDataExportFileCleanup.id, row.id));
+				result.dropped += 1;
+				continue;
+			}
+			logger.warn(
+				{
+					cleanupId: row.id,
+					organizationId: row.organizationId,
+					attempts: row.attempts + 1,
+					error,
+				},
+				"Could not delete a personal data export file; retrying later",
+			);
 			const attempts = row.attempts + 1;
 			const delayMinutes = Math.min(
 				CLEANUP_RETRY_BASE_MINUTES * 2 ** (attempts - 1),

@@ -10,7 +10,8 @@
  * employee approved or rejected for a colleague, as kind, action, time and an
  * opaque id for the colleague (`redaction.ts`); never the colleague's name,
  * dates, reasons or record ids. One decision is one row: a canonical
- * assignment the employee resolved (as approver or deputy), a legacy request
+ * assignment the employee resolved (as approver or deputy) or handed on to
+ * another approver (`reassigned`), a legacy request
  * they decided (the decision evidence's actor, else the assigned approver;
  * never a rejection by the system or the requester; unless a canonical
  * workflow mirrors it, or a deputy decided it instead), a legacy deputy
@@ -455,126 +456,150 @@ async function collectDecisionsOnOthers(
 	const notByEmployee = (column: typeof approvalWorkflow.requesterEmployeeId) =>
 		or(isNull(column), ne(column, employeeId));
 
-	const [canonical, legacyCandidates, legacyDeputy, chainStages] = await Promise.all([
-		// Canonical assignments the employee resolved, as approver or as a covering deputy.
-		database
-			.select({
-				workflowType: approvalWorkflow.workflowType,
-				requesterId: approvalWorkflow.requesterEmployeeId,
-				status: approvalStageAssignment.status,
-				resolvedAt: approvalStageAssignment.resolvedAt,
-				deputyDecisionId: approvalDeputyDecision.id,
-			})
-			.from(approvalStageAssignment)
-			.innerJoin(
-				approvalWorkflow,
-				and(
-					eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
-					eq(approvalWorkflow.organizationId, organizationId),
-				),
-			)
-			.leftJoin(
-				approvalDeputyDecision,
-				and(
-					eq(approvalDeputyDecision.assignmentId, approvalStageAssignment.id),
-					eq(approvalDeputyDecision.organizationId, organizationId),
-					eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
-				),
-			)
-			.where(
-				and(
-					eq(approvalStageAssignment.organizationId, organizationId),
-					eq(approvalStageAssignment.resolvedByActorKind, "employee"),
-					eq(approvalStageAssignment.resolvedByActorId, employeeId),
-					inArray(approvalStageAssignment.status, DECIDED),
-					notByEmployee(approvalWorkflow.requesterEmployeeId),
-				),
-			),
-		// Legacy requests the employee decided: by the decision evidence's actor when
-		// it was recorded (org-wide approvers decide without becoming the approver),
-		// else by the assigned approver.
-		database
-			.select({
-				id: approvalRequest.id,
-				entityType: approvalRequest.entityType,
-				requestedBy: approvalRequest.requestedBy,
-				status: approvalRequest.status,
-				approvedAt: approvalRequest.approvedAt,
-				updatedAt: approvalRequest.updatedAt,
-				metadata: approvalRequest.metadata,
-				rejectionReason: approvalRequest.rejectionReason,
-				evidenceDecidedAt: approvalDecisionEvidence.decidedAt,
-			})
-			.from(approvalRequest)
-			.leftJoin(
-				approvalDecisionEvidence,
-				and(
-					eq(approvalDecisionEvidence.organizationId, organizationId),
-					eq(approvalDecisionEvidence.authority, "legacy"),
-					eq(approvalDecisionEvidence.legacyApprovalRequestId, approvalRequest.id),
-				),
-			)
-			.where(
-				and(
-					eq(approvalRequest.organizationId, organizationId),
-					ne(approvalRequest.requestedBy, employeeId),
-					inArray(approvalRequest.status, DECIDED),
-					or(
-						eq(approvalDecisionEvidence.actorEmployeeId, employeeId),
-						and(isNull(approvalDecisionEvidence.id), eq(approvalRequest.approverId, employeeId)),
+	const [canonical, reassignments, legacyCandidates, legacyDeputy, chainStages] = await Promise.all(
+		[
+			// Canonical assignments the employee resolved, as approver or as a covering deputy.
+			database
+				.select({
+					workflowType: approvalWorkflow.workflowType,
+					requesterId: approvalWorkflow.requesterEmployeeId,
+					status: approvalStageAssignment.status,
+					resolvedAt: approvalStageAssignment.resolvedAt,
+					deputyDecisionId: approvalDeputyDecision.id,
+				})
+				.from(approvalStageAssignment)
+				.innerJoin(
+					approvalWorkflow,
+					and(
+						eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+						eq(approvalWorkflow.organizationId, organizationId),
+					),
+				)
+				.leftJoin(
+					approvalDeputyDecision,
+					and(
+						eq(approvalDeputyDecision.assignmentId, approvalStageAssignment.id),
+						eq(approvalDeputyDecision.organizationId, organizationId),
+						eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalStageAssignment.organizationId, organizationId),
+						eq(approvalStageAssignment.resolvedByActorKind, "employee"),
+						eq(approvalStageAssignment.resolvedByActorId, employeeId),
+						inArray(approvalStageAssignment.status, DECIDED),
+						notByEmployee(approvalWorkflow.requesterEmployeeId),
 					),
 				),
-			),
-		// Legacy decisions the employee made as a covering deputy.
-		database
-			.select({
-				entityType: approvalDeputyDecision.entityType,
-				decision: approvalDeputyDecision.decision,
-				decidedAt: approvalDeputyDecision.decidedAt,
-				requestedBy: approvalRequest.requestedBy,
-			})
-			.from(approvalDeputyDecision)
-			.innerJoin(
-				approvalRequest,
-				and(
-					eq(approvalRequest.id, approvalDeputyDecision.approvalRequestId),
-					eq(approvalRequest.organizationId, organizationId),
+			// Canonical assignments the employee handed on to another approver.
+			database
+				.select({
+					workflowType: approvalWorkflow.workflowType,
+					requesterId: approvalWorkflow.requesterEmployeeId,
+					assignedAt: approvalStageAssignment.assignedAt,
+				})
+				.from(approvalStageAssignment)
+				.innerJoin(
+					approvalWorkflow,
+					and(
+						eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+						eq(approvalWorkflow.organizationId, organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalStageAssignment.organizationId, organizationId),
+						eq(approvalStageAssignment.reassignedByEmployeeId, employeeId),
+						notByEmployee(approvalWorkflow.requesterEmployeeId),
+					),
 				),
-			)
-			.where(
-				and(
-					eq(approvalDeputyDecision.organizationId, organizationId),
-					eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
-					eq(approvalDeputyDecision.authority, "legacy"),
-					ne(approvalRequest.requestedBy, employeeId),
+			// Legacy requests the employee decided: by the decision evidence's actor when
+			// it was recorded (org-wide approvers decide without becoming the approver),
+			// else by the assigned approver.
+			database
+				.select({
+					id: approvalRequest.id,
+					entityType: approvalRequest.entityType,
+					requestedBy: approvalRequest.requestedBy,
+					status: approvalRequest.status,
+					approvedAt: approvalRequest.approvedAt,
+					updatedAt: approvalRequest.updatedAt,
+					metadata: approvalRequest.metadata,
+					rejectionReason: approvalRequest.rejectionReason,
+					evidenceDecidedAt: approvalDecisionEvidence.decidedAt,
+				})
+				.from(approvalRequest)
+				.leftJoin(
+					approvalDecisionEvidence,
+					and(
+						eq(approvalDecisionEvidence.organizationId, organizationId),
+						eq(approvalDecisionEvidence.authority, "legacy"),
+						eq(approvalDecisionEvidence.legacyApprovalRequestId, approvalRequest.id),
+					),
+				)
+				.where(
+					and(
+						eq(approvalRequest.organizationId, organizationId),
+						ne(approvalRequest.requestedBy, employeeId),
+						inArray(approvalRequest.status, DECIDED),
+						or(
+							eq(approvalDecisionEvidence.actorEmployeeId, employeeId),
+							and(isNull(approvalDecisionEvidence.id), eq(approvalRequest.approverId, employeeId)),
+						),
+					),
 				),
-			),
-		// Legacy chain stages without a request row of their own.
-		database
-			.select({
-				entityType: approvalChainInstance.entityType,
-				requesterId: approvalChainInstance.requesterEmployeeId,
-				status: approvalChainStageInstance.status,
-				decidedAt: approvalChainStageInstance.decidedAt,
-			})
-			.from(approvalChainStageInstance)
-			.innerJoin(
-				approvalChainInstance,
-				and(
-					eq(approvalChainInstance.id, approvalChainStageInstance.chainInstanceId),
-					eq(approvalChainInstance.organizationId, organizationId),
+			// Legacy decisions the employee made as a covering deputy.
+			database
+				.select({
+					entityType: approvalDeputyDecision.entityType,
+					decision: approvalDeputyDecision.decision,
+					decidedAt: approvalDeputyDecision.decidedAt,
+					requestedBy: approvalRequest.requestedBy,
+				})
+				.from(approvalDeputyDecision)
+				.innerJoin(
+					approvalRequest,
+					and(
+						eq(approvalRequest.id, approvalDeputyDecision.approvalRequestId),
+						eq(approvalRequest.organizationId, organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalDeputyDecision.organizationId, organizationId),
+						eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
+						eq(approvalDeputyDecision.authority, "legacy"),
+						ne(approvalRequest.requestedBy, employeeId),
+					),
 				),
-			)
-			.where(
-				and(
-					eq(approvalChainStageInstance.organizationId, organizationId),
-					eq(approvalChainStageInstance.decidedBy, employeeId),
-					isNull(approvalChainStageInstance.approvalRequestId),
-					inArray(approvalChainStageInstance.status, DECIDED),
-					ne(approvalChainInstance.requesterEmployeeId, employeeId),
+			// Legacy chain stages without a request row of their own.
+			database
+				.select({
+					entityType: approvalChainInstance.entityType,
+					requesterId: approvalChainInstance.requesterEmployeeId,
+					status: approvalChainStageInstance.status,
+					decidedAt: approvalChainStageInstance.decidedAt,
+				})
+				.from(approvalChainStageInstance)
+				.innerJoin(
+					approvalChainInstance,
+					and(
+						eq(approvalChainInstance.id, approvalChainStageInstance.chainInstanceId),
+						eq(approvalChainInstance.organizationId, organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalChainStageInstance.organizationId, organizationId),
+						eq(approvalChainStageInstance.decidedBy, employeeId),
+						isNull(approvalChainStageInstance.approvalRequestId),
+						inArray(approvalChainStageInstance.status, DECIDED),
+						ne(approvalChainInstance.requesterEmployeeId, employeeId),
+					),
 				),
-			),
-	]);
+		],
+	);
 
 	// A legacy request is not the employee's decision when a canonical workflow
 	// mirrors it (the assignment says who decided) or a deputy decided it.
@@ -642,6 +667,14 @@ async function collectDecisionsOnOthers(
 			action: row.status,
 			actedAt: row.resolvedAt,
 			asDeputy: row.deputyDecisionId !== null,
+			otherEmployeeId: row.requesterId,
+		})),
+		...reassignments.map((row) => ({
+			recordKind: row.workflowType,
+			authority: "canonical",
+			action: "reassigned",
+			actedAt: row.assignedAt,
+			asDeputy: false,
 			otherEmployeeId: row.requesterId,
 		})),
 		...legacy.map((row) => ({

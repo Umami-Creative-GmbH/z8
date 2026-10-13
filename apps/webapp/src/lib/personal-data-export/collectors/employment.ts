@@ -1,20 +1,22 @@
 /**
  * Employment category of a personal data export (#811, #1165).
  *
- * The employee record and profile, employment periods and departures,
- * employment terms with the hourly wage (the employee's own pay, never
- * withheld) and the legacy wage history, teams, managers, locations, skills,
- * project assignments, custom roles, groups, cost centres, every policy
- * assignment that reaches the employee, and custom field values.
+ * The employee record and profile, employment periods, departures and their
+ * history, employment terms with the hourly wage (the employee's own pay,
+ * never withheld) and the legacy wage history, teams, managers, team
+ * permissions, locations, skills, project assignments, custom roles, groups,
+ * cost centres, every policy assignment that reaches the employee (holiday
+ * presets, single holidays and holiday categories included), and custom field
+ * values.
  *
  * Assignments that reach the employee through a team or the organization
  * default are exported for the employee's own teams (current and past) and
  * the organization only, with names only: never another team's data.
  *
  * Withheld from the employee export: custom field values above employee
- * visibility, filtered here by kind, and billable and cost rates and departure
- * tasks and reviews, which are admin-export-only parts
- * (`employment-withheld.ts`).
+ * visibility, filtered here by kind, departure events about reviews and
+ * tasks, also filtered here, and billable and cost rates and departure tasks
+ * and reviews, which are admin-export-only parts (`employment-withheld.ts`).
  */
 
 import { and, asc, eq, inArray, or, type SQL } from "drizzle-orm";
@@ -33,6 +35,7 @@ import {
 	employeeCostCenterAssignment,
 	employeeCustomRole,
 	employeeDeparture,
+	employeeDepartureEvent,
 	employeeEmploymentHistory,
 	employeeEmploymentPeriod,
 	employeeGroup,
@@ -41,6 +44,10 @@ import {
 	employeeRateHistory,
 	employeeSkill,
 	employeeTeamHistory,
+	holiday,
+	holidayAssignment,
+	holidayCategory,
+	holidayCategoryAssignment,
 	holidayPreset,
 	holidayPresetAssignment,
 	location,
@@ -92,6 +99,12 @@ export class PersonalDataSubjectNotFoundError extends Error {
 		this.name = "PersonalDataSubjectNotFoundError";
 	}
 }
+
+/** Departure events about departure reviews and tasks: admin export only, like the reviews and tasks. */
+const WITHHELD_DEPARTURE_EVENT_KINDS: ReadonlySet<string> = new Set([
+	"review_resolved",
+	"task_failed",
+]);
 
 const POLICY_COLUMNS = [
 	"policy_kind",
@@ -573,7 +586,41 @@ async function collectEmployment(
 			.orderBy(asc(customFieldDefinition.position), asc(customFieldValue.validFrom)),
 	]);
 
+	// The departure history, without its technical metadata. Review and task
+	// events belong to departure reviews and tasks, which the employee export withholds.
+	const departureEvents = (
+		await database
+			.select({
+				departureId: employeeDepartureEvent.departureId,
+				kind: employeeDepartureEvent.kind,
+				revision: employeeDepartureEvent.revision,
+				occurredAt: employeeDepartureEvent.occurredAt,
+				actorUserId: employeeDepartureEvent.actorUserId,
+			})
+			.from(employeeDepartureEvent)
+			.where(
+				and(
+					eq(employeeDepartureEvent.organizationId, organizationId),
+					eq(employeeDepartureEvent.employeeId, employeeId),
+				),
+			)
+			.orderBy(asc(employeeDepartureEvent.occurredAt), asc(employeeDepartureEvent.eventIndex))
+	).filter((row) => scope.kind === "admin" || !WITHHELD_DEPARTURE_EVENT_KINDS.has(row.kind));
+
+	// Team permissions may name any team of the organization, not only the employee's own.
+	const permissionTeamIds = permissions
+		.map((row) => row.teamId)
+		.filter((id): id is string => id !== null && !teamNames.has(id));
+	if (permissionTeamIds.length > 0) {
+		const permissionTeams = await database
+			.select({ id: team.id, name: team.name })
+			.from(team)
+			.where(and(eq(team.organizationId, organizationId), inArray(team.id, permissionTeamIds)));
+		for (const row of permissionTeams) teamNames.set(row.id, row.name);
+	}
+
 	const userNames = await loadUserNames(database, [
+		...departureEvents.map((row) => row.actorUserId),
 		...memberships.map((row) => row.createdBy),
 		...periods.map((row) => row.createdBy),
 		...departures.map((row) => row.createdBy),
@@ -675,6 +722,17 @@ async function collectEmployment(
 					blocked_reason: row.blockedReason,
 					created_at: instantText(row.createdAt),
 					created_by: byUser(row.createdBy),
+				})),
+			),
+			tablePart(
+				"departure_events",
+				["departure_id", "kind", "revision", "occurred_at", "actor"],
+				departureEvents.map((row) => ({
+					departure_id: row.departureId,
+					kind: row.kind,
+					revision: row.revision,
+					occurred_at: instantText(row.occurredAt),
+					actor: byUser(row.actorUserId),
 				})),
 			),
 			tablePart(
@@ -782,7 +840,7 @@ async function collectEmployment(
 					"granted_by",
 				],
 				permissions.map((row) => ({
-					team: row.teamId ? teamOrId(teamNames, row.teamId) : null,
+					team: teamName(row.teamId),
 					can_create_teams: row.canCreateTeams,
 					can_manage_team_members: row.canManageTeamMembers,
 					can_manage_team_settings: row.canManageTeamSettings,
@@ -953,11 +1011,6 @@ function teamsOf(
 	return [{ teamId: primaryTeamId, createdAt: null, createdBy: null }, ...memberships];
 }
 
-/** A team permission may name any team of the organization: its name, or the id when it is gone. */
-function teamOrId(names: Map<string, string>, teamId: string): string {
-	return names.get(teamId) ?? teamId;
-}
-
 /** The target columns every policy assignment table shares. */
 interface AssignmentTargetColumns {
 	organizationId: AnyPgColumn;
@@ -986,7 +1039,17 @@ async function collectPolicyAssignments(
 	organizationId: string,
 	reachesEmployee: (columns: AssignmentTargetColumns) => SQL | undefined,
 ): Promise<PolicyAssignmentRow[]> {
-	const [work, vacation, holiday, change, surcharge, workCategory, position] = await Promise.all([
+	const [
+		work,
+		vacation,
+		holidayPresets,
+		change,
+		surcharge,
+		workCategory,
+		position,
+		holidays,
+		holidayCategories,
+	] = await Promise.all([
 		database
 			.select({
 				policy: workPolicy.name,
@@ -1124,14 +1187,62 @@ async function collectPolicyAssignments(
 			})
 			.from(positionCaptureAssignment)
 			.where(reachesEmployee(positionCaptureAssignment)),
+		// Single holidays and holiday categories assigned outside a preset.
+		database
+			.select({
+				policy: holiday.name,
+				assignmentType: holidayAssignment.assignmentType,
+				teamId: holidayAssignment.teamId,
+				isActive: holidayAssignment.isActive,
+				createdAt: holidayAssignment.createdAt,
+				createdBy: holidayAssignment.createdBy,
+			})
+			.from(holidayAssignment)
+			.innerJoin(
+				holiday,
+				and(
+					eq(holiday.id, holidayAssignment.holidayId),
+					eq(holiday.organizationId, organizationId),
+				),
+			)
+			.where(reachesEmployee(holidayAssignment)),
+		database
+			.select({
+				policy: holidayCategory.name,
+				assignmentType: holidayCategoryAssignment.assignmentType,
+				teamId: holidayCategoryAssignment.teamId,
+				isActive: holidayCategoryAssignment.isActive,
+				createdAt: holidayCategoryAssignment.createdAt,
+				createdBy: holidayCategoryAssignment.createdBy,
+			})
+			.from(holidayCategoryAssignment)
+			.innerJoin(
+				holidayCategory,
+				and(
+					eq(holidayCategory.id, holidayCategoryAssignment.categoryId),
+					eq(holidayCategory.organizationId, organizationId),
+				),
+			)
+			.where(reachesEmployee(holidayCategoryAssignment)),
 	]);
 
 	const timed = (policyKind: string, rows: (typeof work)[number][]): PolicyAssignmentRow[] =>
 		rows.map((row) => ({ ...row, policyKind, captureEnabled: null }));
+	const untimed = (policyKind: string, rows: (typeof holidays)[number][]): PolicyAssignmentRow[] =>
+		rows.map((row) => ({
+			...row,
+			policyKind,
+			priority: 0,
+			effectiveFrom: null,
+			effectiveUntil: null,
+			captureEnabled: null,
+		}));
 	return [
 		...timed("work", work),
 		...timed("vacation", vacation),
-		...timed("holiday", holiday),
+		...timed("holiday", holidayPresets),
+		...untimed("holiday_assignment", holidays),
+		...untimed("holiday_category", holidayCategories),
 		...timed("change", change),
 		...timed("surcharge", surcharge),
 		...timed("work_category_set", workCategory),
@@ -1147,6 +1258,7 @@ async function collectPolicyAssignments(
 		(left, right) =>
 			left.policyKind.localeCompare(right.policyKind) ||
 			left.priority - right.priority ||
-			left.createdAt.getTime() - right.createdAt.getTime(),
+			left.createdAt.getTime() - right.createdAt.getTime() ||
+			(left.policy ?? "").localeCompare(right.policy ?? ""),
 	);
 }

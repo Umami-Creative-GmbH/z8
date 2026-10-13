@@ -10,7 +10,8 @@
  *
  * An admin export that contains stamps is itself an access (#831 D4): it
  * writes one `data_export` access-log entry naming the requesting admin, in
- * the same transaction as the read. The employee's own export writes none.
+ * the same transaction as the read, once per export (a retried build writes
+ * none). The employee's own export writes none.
  */
 
 import { and, asc, eq, exists, inArray } from "drizzle-orm";
@@ -326,9 +327,13 @@ async function accessLogRows(
 	});
 }
 
-/** Logs the requesting admin as shown the employee's stamps (#831 D4). */
+/**
+ * Logs the requesting admin as shown the employee's stamps (#831 D4), once
+ * per export: a retried build of the same export finds its entry and writes
+ * no second one.
+ */
 async function logAdminExportAccess(
-	database: Pick<PositionCaptureClient, "insert">,
+	database: Pick<PositionCaptureClient, "insert" | "select">,
 	scope: PersonalDataExportScope,
 ): Promise<void> {
 	if (scope.kind !== "admin") return;
@@ -337,6 +342,18 @@ async function logAdminExportAccess(
 	}
 	// The requester's account is gone: nobody is left to name as the viewer.
 	if (!scope.requestedByUserId || scope.requestedByUserId === scope.userId) return;
+	const [logged] = await database
+		.select({ id: positionStampAccessLog.id })
+		.from(positionStampAccessLog)
+		.where(
+			and(
+				eq(positionStampAccessLog.organizationId, scope.organizationId),
+				eq(positionStampAccessLog.kind, "data_export"),
+				eq(positionStampAccessLog.exportId, scope.exportId),
+			),
+		)
+		.limit(1);
+	if (logged) return;
 	await recordPositionStampAccess(database, {
 		organizationId: scope.organizationId,
 		viewerUserId: scope.requestedByUserId,

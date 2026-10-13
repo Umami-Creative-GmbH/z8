@@ -178,6 +178,34 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 				),
 			},
 		},
+		departure_events: {
+			summary: t(
+				"personalDataExport.readme.fields.employment.departureEvents.summary",
+				"The history of your departures: when each was scheduled, changed, canceled or took effect, and who did it.",
+			),
+			fields: {
+				departure_id: t(
+					"personalDataExport.readme.fields.employment.departureEvents.departureId",
+					"The departure this event belongs to (its id in departures).",
+				),
+				kind: t(
+					"personalDataExport.readme.fields.employment.departureEvents.kind",
+					"What happened, for example departure_scheduled or departure_effective.",
+				),
+				revision: t(
+					"personalDataExport.readme.fields.employment.departureEvents.revision",
+					"The version of the departure after this event.",
+				),
+				occurred_at: t(
+					"personalDataExport.readme.fields.employment.departureEvents.occurredAt",
+					"When it happened.",
+				),
+				actor: t(
+					"personalDataExport.readme.fields.employment.departureEvents.actor",
+					"Who did it; empty when the system did.",
+				),
+			},
+		},
 		employment_terms: {
 			summary: t(
 				"personalDataExport.readme.fields.employment.employmentTerms.summary",
@@ -492,7 +520,7 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 			fields: {
 				policy_kind: t(
 					"personalDataExport.readme.fields.employment.policyAssignments.policyKind",
-					"The kind of policy: work, vacation, holiday, change, surcharge, work category set or position capture.",
+					"The kind of policy: work, vacation, holiday (a holiday preset), holiday assignment (a single holiday), holiday category, change, surcharge, work category set or position capture.",
 				),
 				policy: t(
 					"personalDataExport.readme.fields.employment.policyAssignments.policy",

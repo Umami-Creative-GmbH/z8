@@ -220,7 +220,8 @@ describe("personal data export README sections (#1172)", () => {
 			"Max Manager (your manager)",
 			"Tina Teamlead (team permissions for your team)",
 			"Petra Personnel: Contracts, Payslips",
-			"Paul Payroll",
+			// What the grant covers: Ada by name.
+			"Paul Payroll (you by name)",
 			"Erik Expense: read approved reports, export them",
 		]) {
 			expect(readme, listed).toContain(listed);
