@@ -459,6 +459,36 @@ describe("admin export (#1166)", () => {
 		expect(harness.jobs).toEqual([]);
 	});
 
+	it("never lists or hands an admin the admin export of their own employee record", async () => {
+		// Another admin exported Andy's data: Andy must not reach the withheld copy of himself.
+		const exportId = await adminExport("owner", ids.andy);
+		harness.signed.length = 0;
+
+		signIn("andy");
+		expect(await getEmployeePersonalDataExportsAction(ids.andy)).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+		expect(await getPersonalDataExportDownloadUrl(exportId)).toMatchObject({
+			success: false,
+			code: "NotFoundError",
+		});
+		expect(harness.signed).toEqual([]);
+		const { rows: downloads } = await admin.query(
+			"select id from audit_log where organization_id = $1 and entity_id = $2 and action = 'personal_data_export.downloaded'",
+			[ORG, exportId],
+		);
+		expect(downloads).toEqual([]);
+
+		// The other admins still can.
+		signIn("owner");
+		expect(await getEmployeePersonalDataExportsAction(ids.andy)).toMatchObject({
+			success: true,
+			data: [{ id: exportId }],
+		});
+		expect(await getPersonalDataExportDownloadUrl(exportId)).toMatchObject({ success: true });
+	});
+
 	it("shares the one-in-progress rule with employee exports and has no 24-hour cap", async () => {
 		signIn("ada");
 		const own = await requestMyPersonalDataExport();

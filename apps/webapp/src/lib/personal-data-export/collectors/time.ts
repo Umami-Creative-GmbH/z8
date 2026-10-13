@@ -41,6 +41,7 @@ import {
 	workPolicyViolation,
 } from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { isUuid } from "@/lib/validations/uuid";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -50,7 +51,16 @@ import {
 	type PersonalDataValue,
 	tablePart,
 } from "../collector";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import {
+	instantText,
+	jsonObject,
+	jsonText,
+	loadEmployeeNames,
+	loadSubjectEmployee,
+	loadUserNames,
+	nameOf,
+	userNameLookup,
+} from "../values";
 import { timeFieldGuide } from "./time-fields";
 
 export const timeCollector: PersonalDataCollector = {
@@ -63,6 +73,7 @@ async function collectTime(
 	database: PersonalDataExportDatabase,
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
+	await loadSubjectEmployee(database, scope);
 	const [work, compliance, balances] = await Promise.all([
 		collectWorkParts(database, scope),
 		collectComplianceParts(database, scope),
@@ -213,14 +224,13 @@ async function collectWorkParts(
 	const pendingChanges = new Map(
 		periods.map((row) => [row.id, jsonObject(row.pendingChanges)] as const),
 	);
-	const userNames = await loadUserNames(database, [
+	const byUser = await userNameLookup(database, [
 		...entries.map((row) => row.createdBy),
 		...periods.map((row) => row.deletedBy),
 		...[...pendingChanges.values()].map((changes) => stringField(changes, "requestedBy")),
 		...operations.map((row) => row.actorUserId),
 		...proposals.flatMap((row) => [row.proposedBy, row.approvedBy, row.resolvedBy]),
 	]);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
 	const entryOffsets = new Map(entries.map((row) => [row.id, row.utcOffsetMinutes]));
 	const offsetOf = (entryId: string | null) =>
 		entryId ? (entryOffsets.get(entryId) ?? null) : null;
@@ -456,6 +466,9 @@ async function collectComplianceParts(
 			.orderBy(asc(surchargeCalculation.calculationDate), asc(surchargeCalculation.id)),
 	]);
 
+	const violationApprovers = violations.map(
+		(row) => stringField(jsonObject(row.details), "exceptionApprovedBy") ?? null,
+	);
 	const [userNames, employeeNames] = await Promise.all([
 		loadUserNames(
 			database,
@@ -464,8 +477,11 @@ async function collectComplianceParts(
 		loadEmployeeNames(database, organizationId, [
 			...exceptions.map((row) => row.approverId),
 			...violations.map((row) => row.acknowledgedBy),
+			...violationApprovers.filter((id) => isUuid(id)),
 		]),
 	]);
+	// An approver who is no employee of this organization stays unnamed.
+	const personName = (id: string) => nameOf(employeeNames, id);
 
 	return [
 		tablePart(
@@ -499,7 +515,7 @@ async function collectComplianceParts(
 				work_period_id: row.workPeriodId,
 				violation_type: row.violationType,
 				violated_at: instantText(row.violationDate),
-				details: jsonText(row.details),
+				details: violationDetails(row.details, personName),
 				acknowledged_by: nameOf(employeeNames, row.acknowledgedBy),
 				acknowledged_at: instantText(row.acknowledgedAt),
 				acknowledged_note: row.acknowledgedNote,
@@ -675,28 +691,31 @@ async function collectBalanceParts(
 	];
 }
 
-type JsonObject = Record<string, unknown>;
+/** Instants a violation's details may hold (`TimeRegulationViolationDetails`). */
+const VIOLATION_DETAIL_INSTANTS = ["warningShownAt", "lastClockOutTime", "attemptedClockInTime"];
 
-/** A JSON text column, typed as its parsed shape but read as stored text. */
-function jsonText(value: unknown): string | null {
-	if (value === null || value === undefined) return null;
-	return typeof value === "string" ? value : JSON.stringify(value);
-}
-
-/** A JSON text column (or an already parsed value) as an object, else null. */
-function jsonObject(value: unknown): JsonObject | null {
-	let parsed = value;
-	if (typeof value === "string") {
-		try {
-			parsed = JSON.parse(value);
-		} catch {
-			return null;
-		}
+/**
+ * A work-policy violation's details as JSON text: the person who approved an
+ * exception by name, never by id, and instants in UTC like everywhere else.
+ */
+function violationDetails(
+	value: unknown,
+	personName: (id: string) => string | null,
+): string | null {
+	const details = jsonObject(value);
+	if (!details) return jsonText(value);
+	const exported: JsonObject = { ...details };
+	for (const key of VIOLATION_DETAIL_INSTANTS) {
+		if (key in exported) exported[key] = instantField(details, key);
 	}
-	return parsed !== null && typeof parsed === "object" && !Array.isArray(parsed)
-		? (parsed as JsonObject)
-		: null;
+	if ("exceptionApprovedBy" in exported) {
+		const approver = stringField(details, "exceptionApprovedBy");
+		exported.exceptionApprovedBy = approver ? personName(approver) : null;
+	}
+	return JSON.stringify(exported);
 }
+
+type JsonObject = Record<string, unknown>;
 
 function objectField(source: JsonObject | null, key: string): JsonObject | null {
 	return jsonObject(source?.[key] ?? null);

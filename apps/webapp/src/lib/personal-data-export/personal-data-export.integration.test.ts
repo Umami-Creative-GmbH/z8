@@ -16,6 +16,7 @@ const harness = vi.hoisted(() => ({
 	organizationId: "t1165-org",
 	objects: new Map<string, Uint8Array>(),
 	jobs: [] as { organizationId: string; exportId: string }[],
+	queueDown: false,
 	signed: [] as { key: string; expiresInSeconds: number; fileName: string }[],
 }));
 
@@ -46,6 +47,7 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/lib/queue", async (original) => ({
 	...(await original<typeof import("@/lib/queue")>()),
 	addJob: async (_name: string, data: { organizationId: string; exportId: string }) => {
+		if (harness.queueDown) throw new Error("Redis is down");
 		harness.jobs.push({ organizationId: data.organizationId, exportId: data.exportId });
 		return { id: "job" };
 	},
@@ -82,6 +84,8 @@ const { getMyDataOverview, requestMyPersonalDataExport, getPersonalDataExportDow
 const { processPersonalDataExport } = await import("./processor");
 const { PERSONAL_DATA_COLLECTORS } = await import("./collectors");
 const { runPersonalDataExportSweep } = await import("@/lib/jobs/personal-data-export-sweep");
+const { drainPersonalDataExportFileCleanup } = await import("./store");
+const { systemClock } = await import("@/lib/datetime/temporal-core");
 const { sendEmail } = await import("@/lib/email/email-service");
 
 const ORG = "t1165-org";
@@ -527,6 +531,23 @@ describe("personal data export pipeline (#1165)", () => {
 		]);
 	});
 
+	it("reports a queue failure as such and lets the employee try again at once", async () => {
+		signIn("ada");
+		harness.queueDown = true;
+		try {
+			expect(await requestMyPersonalDataExport()).toMatchObject({
+				success: false,
+				code: "QueueError",
+			});
+		} finally {
+			harness.queueDown = false;
+		}
+		expect((await exportRows(ids.ada)).map((row) => [row.status, row.error_code])).toEqual([
+			["failed", "enqueue_failed"],
+		]);
+		expect(await requestMyPersonalDataExport()).toMatchObject({ success: true });
+	});
+
 	it("allows one export in progress and one employee export per 24 hours", async () => {
 		signIn("ada");
 		const first = await requestMyPersonalDataExport();
@@ -649,5 +670,34 @@ describe("personal data export pipeline (#1165)", () => {
 		await runPersonalDataExportSweep();
 		expect(harness.objects.has(bobKey)).toBe(false);
 		await seedEmployee(ORG, ids.bob, "bob");
+	});
+
+	it("gives up a deleted organization's file it cannot delete, but retries a live one's", async () => {
+		const gone = "t1165-gone-org";
+		await admin.query(
+			`insert into personal_data_export_file_cleanup (id, organization_id, storage_key, storage_bucket)
+			 values (gen_random_uuid(), $1, 'gone/file.zip', 'gone-bucket'), (gen_random_uuid(), $2, 'live/file.zip', 'live-bucket')`,
+			[gone, ORG],
+		);
+		try {
+			const result = await drainPersonalDataExportFileCleanup(db, {
+				now: systemClock.nowInstant(),
+				deleteObject: async () => {
+					throw new Error("Private storage bucket changed; object cleanup needs review");
+				},
+			});
+			expect(result).toEqual({ deleted: 0, failed: 1, dropped: 1 });
+			const { rows } = await admin.query<{ organization_id: string; attempts: number }>(
+				"select organization_id, attempts from personal_data_export_file_cleanup where organization_id in ($1, $2)",
+				[gone, ORG],
+			);
+			// The organization and its storage are gone: retrying could never succeed.
+			expect(rows).toEqual([{ organization_id: ORG, attempts: 1 }]);
+		} finally {
+			await admin.query(
+				"delete from personal_data_export_file_cleanup where organization_id in ($1, $2)",
+				[gone, ORG],
+			);
+		}
 	});
 });

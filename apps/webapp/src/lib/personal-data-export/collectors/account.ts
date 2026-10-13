@@ -44,9 +44,8 @@ import {
 	recordPart,
 	tablePart,
 } from "../collector";
-import { instantText, loadUserNames, nameOf } from "../values";
+import { instantText, jsonText, PersonalDataSubjectNotFoundError, userNameLookup } from "../values";
 import { accountFieldGuide } from "./account-fields";
-import { PersonalDataSubjectNotFoundError } from "./employment";
 
 const SESSION_COLUMNS = [
 	"created_at",
@@ -278,7 +277,7 @@ async function collectEmployeeOnlyAccountParts(
 			)
 			.orderBy(asc(accessViolationLog.createdAt), asc(accessViolationLog.id)),
 	]);
-	const deviceActors = await loadUserNames(
+	const deviceActor = await userNameLookup(
 		database,
 		devices.flatMap((device) => [device.createdBy, device.revokedBy]),
 	);
@@ -286,20 +285,24 @@ async function collectEmployeeOnlyAccountParts(
 		tablePart(
 			"sessions",
 			SESSION_COLUMNS,
-			sessions.map(({ session: row, extension }) => ({
-				created_at: instantText(row.createdAt),
-				updated_at: instantText(row.updatedAt),
-				expires_at: instantText(row.expiresAt),
-				ip_address: row.ipAddress,
-				user_agent: row.userAgent,
-				impersonated: row.impersonatedBy !== null,
-				country: extension?.country ?? null,
-				region: extension?.region ?? null,
-				city: extension?.city ?? null,
-				mfa_method: extension?.mfaMethod ?? null,
-				mfa_verified_at: instantText(extension?.mfaVerifiedAt),
-				last_activity_at: instantText(extension?.lastActivityAt),
-			})),
+			sessions.map(({ session: row, extension }) => {
+				// An impersonated session's network details are the impersonator's, not the employee's.
+				const impersonated = row.impersonatedBy !== null;
+				return {
+					created_at: instantText(row.createdAt),
+					updated_at: instantText(row.updatedAt),
+					expires_at: instantText(row.expiresAt),
+					ip_address: impersonated ? null : row.ipAddress,
+					user_agent: impersonated ? null : row.userAgent,
+					impersonated,
+					country: impersonated ? null : (extension?.country ?? null),
+					region: impersonated ? null : (extension?.region ?? null),
+					city: impersonated ? null : (extension?.city ?? null),
+					mfa_method: extension?.mfaMethod ?? null,
+					mfa_verified_at: instantText(extension?.mfaVerifiedAt),
+					last_activity_at: instantText(extension?.lastActivityAt),
+				};
+			}),
 		),
 		tablePart(
 			"sign_in_methods",
@@ -339,9 +342,9 @@ async function collectEmployeeOnlyAccountParts(
 				mdm_provider: row.mdmProvider,
 				mdm_compliant: row.mdmCompliant,
 				created_at: instantText(row.createdAt),
-				created_by: nameOf(deviceActors, row.createdBy),
+				created_by: deviceActor(row.createdBy),
 				revoked_at: instantText(row.revokedAt),
-				revoked_by: nameOf(deviceActors, row.revokedBy),
+				revoked_by: deviceActor(row.revokedBy),
 				revoke_reason: row.revokeReason,
 			})),
 		),
@@ -349,10 +352,7 @@ async function collectEmployeeOnlyAccountParts(
 			"settings",
 			settings
 				? {
-						dashboard_widget_order:
-							settings.dashboardWidgetOrder === null
-								? null
-								: JSON.stringify(settings.dashboardWidgetOrder),
+						dashboard_widget_order: jsonText(settings.dashboardWidgetOrder),
 						onboarding_complete: settings.onboardingComplete,
 						onboarding_step: settings.onboardingStep,
 						onboarding_started_at: instantText(settings.onboardingStartedAt),

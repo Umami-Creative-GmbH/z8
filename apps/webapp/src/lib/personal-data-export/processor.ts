@@ -40,6 +40,7 @@ import type {
 	PersonalDataExportScope,
 } from "./collector";
 import { PERSONAL_DATA_COLLECTORS } from "./collectors";
+import { employeePagePath, MY_DATA_PATH } from "./paths";
 import { loadReadmeTranslator, readmeContentsOf, renderPersonalDataExportReadme } from "./readme";
 import { loadPersonalDataReadmeFacts } from "./readme-facts";
 import {
@@ -54,8 +55,6 @@ import {
 const logger = createLogger("PersonalDataExport");
 
 type Database = typeof appDb;
-
-export const MY_DATA_PATH = "/settings/my-data";
 
 export interface PersonalDataExportJobInput {
 	organizationId: string;
@@ -330,7 +329,7 @@ export function buildPersonalDataExportReadyNotification(input: {
 			: readyCopy.messageDefault,
 		entityType: "personal_data_export",
 		entityId: input.exportId,
-		actionUrl: admin ? `/settings/employees/${input.employeeId}` : MY_DATA_PATH,
+		actionUrl: admin ? employeePagePath(input.employeeId) : MY_DATA_PATH,
 		idempotencyKey: `personal-data-export-ready:${input.exportId}:${input.recipientUserId}`,
 		metadata: {
 			exportId: input.exportId,

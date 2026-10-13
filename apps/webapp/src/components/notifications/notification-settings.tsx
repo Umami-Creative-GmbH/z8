@@ -217,7 +217,9 @@ type StaticallyLabelledType =
 	| "absence_deputy_unavailable"
 	| "approval_cover_started"
 	| "approval_cover_return_summary"
-	| "personal_data_export_reminder";
+	| "personal_data_export_reminder"
+	| "personal_data_export_ready"
+	| "personal_data_export_admin_exported";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
 const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, string> = {
@@ -297,10 +299,6 @@ const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, str
 	time_off_in_lieu_available: "Time off in lieu available",
 	// To every owner and admin when a schedule's owner is no longer an org admin (#988)
 	scheduled_export_paused: "Scheduled export paused (owners and admins)",
-	// The requester's personal data export is ready on My data (#811)
-	personal_data_export_ready: "Personal data export ready",
-	// An org admin exported the employee's personal data (#1166)
-	personal_data_export_admin_exported: "Personal data exported by an administrator",
 };
 
 // Channel icons and labels
@@ -494,6 +492,18 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.personal_data_export_reminder",
 					"Download your data before you leave",
+				);
+			// The requester's personal data export is ready on My data (#811).
+			case "personal_data_export_ready":
+				return t(
+					"common:notifications.preferences.types.personal_data_export_ready",
+					"Personal data export ready",
+				);
+			// An org admin exported the employee's personal data (#1166).
+			case "personal_data_export_admin_exported":
+				return t(
+					"common:notifications.preferences.types.personal_data_export_admin_exported",
+					"Personal data exported by an administrator",
 				);
 			default:
 				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);

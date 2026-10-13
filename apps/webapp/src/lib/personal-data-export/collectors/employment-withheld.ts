@@ -22,7 +22,7 @@ import {
 	type PersonalDataPart,
 	tablePart,
 } from "../collector";
-import { instantText, loadUserNames, nameOf } from "../values";
+import { instantText, userNameLookup } from "../values";
 
 export async function collectWithheldEmploymentParts(
 	database: PersonalDataExportDatabase,
@@ -100,12 +100,11 @@ export async function collectWithheldEmploymentParts(
 			.orderBy(asc(employeeDepartureReview.createdAt)),
 	]);
 
-	const userNames = await loadUserNames(database, [
+	const byUser = await userNameLookup(database, [
 		...billableRates.flatMap((row) => [row.createdBy, row.updatedBy]),
 		...costRates.flatMap((row) => [row.createdBy, row.updatedBy]),
 		...reviews.map((row) => row.resolvedBy),
 	]);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
 	const rateColumns = ["hourly_rate", "effective_from", "effective_to", "created_at", "created_by"];
 
 	return [

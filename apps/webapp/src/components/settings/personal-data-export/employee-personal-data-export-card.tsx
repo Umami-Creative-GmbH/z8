@@ -1,29 +1,25 @@
 "use client";
 
-import { IconDatabaseExport, IconDownload, IconLoader2 } from "@tabler/icons-react";
+import { IconDatabaseExport, IconLoader2 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useState } from "react";
 import { toast } from "sonner";
 import {
 	getEmployeePersonalDataExportsAction,
 	requestEmployeePersonalDataExportAction,
 } from "@/app/[locale]/(app)/settings/employees/personal-data-export.actions";
-import { getPersonalDataExportDownloadUrl } from "@/app/[locale]/(app)/settings/my-data/actions";
-import { formatFileSize } from "@/components/settings/my-data/my-data-panel";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDisplayContext } from "@/hooks/use-display-context";
-import { parseInstant } from "@/lib/datetime/temporal-core";
-import { formatInstant } from "@/lib/datetime/temporal-format";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 import { queryKeys } from "@/lib/query";
+import {
+	isBuilding,
+	PersonalDataExportList,
+	type PersonalDataExportListLabels,
+	REFRESH_WHILE_BUILDING_MS,
+} from "./personal-data-export-list";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-
-/** How often the list looks for a finished build while one is in progress. */
-const REFRESH_WHILE_BUILDING_MS = 15_000;
 
 function statusLabel(t: Translate, status: PersonalDataExportSummary["status"]): string {
 	switch (status) {
@@ -35,6 +31,24 @@ function statusLabel(t: Translate, status: PersonalDataExportSummary["status"]):
 		case "failed":
 			return t("settings.employees.personalDataExport.statusFailed", "Failed");
 	}
+}
+
+function listLabels(t: Translate): PersonalDataExportListLabels {
+	return {
+		list: t("settings.employees.personalDataExport.listLabel", "Past admin exports"),
+		requestedAt: (date) =>
+			t("settings.employees.personalDataExport.requestedAt", "Requested {date}", { date }),
+		availableUntil: (date) =>
+			t("settings.employees.personalDataExport.availableUntil", "Available until {date}", {
+				date,
+			}),
+		status: (status) => statusLabel(t, status),
+		download: t("settings.employees.personalDataExport.download", "Download"),
+		downloadFailed: t(
+			"settings.employees.personalDataExport.downloadFailed",
+			"The download could not be started. Please try again.",
+		),
+	};
 }
 
 function refusalMessage(t: Translate, refusal: string | undefined): string {
@@ -67,7 +81,8 @@ interface EmployeePersonalDataExportCardProps {
 /**
  * The admin export on the employee page (#811, #1166): an org admin requests
  * a personal data export of this employee, withheld data included, and
- * downloads past admin exports while signed in.
+ * downloads past admin exports while signed in. On the admin's own record
+ * nothing is loaded or offered: they export their data from My data.
  */
 export function EmployeePersonalDataExportCard({
 	organizationId,
@@ -76,27 +91,22 @@ export function EmployeePersonalDataExportCard({
 }: EmployeePersonalDataExportCardProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const display = useDisplayContext();
-	const [downloading, setDownloading] = useState<string | null>(null);
 	const queryKey = queryKeys.employees.personalDataExports(organizationId, employeeId);
-	const at = (iso: string) => formatInstant(parseInstant(iso), display, "dateTimeMedium");
 
 	const exportsQuery = useQuery({
 		queryKey,
+		// Admin exports of one's own record are never listed or downloadable (withheld data).
+		enabled: !isOwnRecord,
 		queryFn: async () => {
 			const result = await getEmployeePersonalDataExportsAction(employeeId);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
 		refetchInterval: (query) =>
-			query.state.data?.some((entry) => entry.status === "pending" || entry.status === "processing")
-				? REFRESH_WHILE_BUILDING_MS
-				: false,
+			isBuilding(query.state.data ?? []) ? REFRESH_WHILE_BUILDING_MS : false,
 	});
 	const exports = exportsQuery.data ?? [];
-	const building = exports.some(
-		(entry) => entry.status === "pending" || entry.status === "processing",
-	);
+	const building = isBuilding(exports);
 
 	const requestExport = useMutation({
 		mutationFn: () => requestEmployeePersonalDataExportAction(employeeId),
@@ -117,25 +127,6 @@ export function EmployeePersonalDataExportCard({
 			toast.error(refusalMessage(t, undefined));
 		},
 	});
-
-	const download = async (exportId: string) => {
-		setDownloading(exportId);
-		await (async () => {
-			const result = await getPersonalDataExportDownloadUrl(exportId);
-			if (result.success) {
-				window.location.assign(result.data.url);
-			} else {
-				toast.error(
-					t(
-						"settings.employees.personalDataExport.downloadFailed",
-						"The download could not be started. Please try again.",
-					),
-				);
-			}
-		})().finally(() => {
-			setDownloading(null);
-		});
-	};
 
 	return (
 		<Card>
@@ -183,56 +174,7 @@ export function EmployeePersonalDataExportCard({
 					</p>
 				) : null}
 
-				{exports.length > 0 ? (
-					<ul
-						className="divide-y rounded-md border"
-						aria-label={t("settings.employees.personalDataExport.listLabel", "Past admin exports")}
-					>
-						{exports.map((entry) => (
-							<li key={entry.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-								<div className="min-w-0 space-y-1">
-									<p className="text-sm font-medium">
-										{t("settings.employees.personalDataExport.requestedAt", "Requested {date}", {
-											date: at(entry.createdAt),
-										})}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{entry.status === "completed"
-											? t(
-													"settings.employees.personalDataExport.availableUntil",
-													"Available until {date}",
-													{ date: at(entry.expiresAt) },
-												)
-											: null}
-										{entry.status === "completed" && entry.sizeBytes !== null
-											? ` · ${formatFileSize(entry.sizeBytes, display.locale)}`
-											: null}
-									</p>
-								</div>
-								<div className="flex items-center gap-2">
-									<Badge variant={entry.status === "failed" ? "destructive" : "secondary"}>
-										{statusLabel(t, entry.status)}
-									</Badge>
-									{entry.status === "completed" ? (
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => download(entry.id)}
-											disabled={downloading === entry.id}
-										>
-											{downloading === entry.id ? (
-												<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
-											) : (
-												<IconDownload className="size-4" aria-hidden="true" />
-											)}
-											{t("settings.employees.personalDataExport.download", "Download")}
-										</Button>
-									) : null}
-								</div>
-							</li>
-						))}
-					</ul>
-				) : null}
+				<PersonalDataExportList exports={exports} labels={listLabels(t)} />
 			</CardContent>
 		</Card>
 	);

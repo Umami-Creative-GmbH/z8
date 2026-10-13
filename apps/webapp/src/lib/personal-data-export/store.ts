@@ -12,6 +12,7 @@
 
 import { and, asc, desc, eq, gt, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { db } from "@/db";
+import { organization } from "@/db/auth-schema";
 import {
 	employee,
 	type PersonalDataExportKind,
@@ -22,8 +23,12 @@ import { AuditAction } from "@/lib/audit-logger";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { resolveEmployeeOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { createLogger } from "@/lib/logger";
+import { isUuid } from "@/lib/validations/uuid";
 
 type Database = typeof db;
+
+const logger = createLogger("PersonalDataExportStore");
 
 /** Rows and files are deleted this long after completion (or after the request, when none). */
 export const PERSONAL_DATA_EXPORT_LIFETIME_HOURS = 7 * 24;
@@ -32,7 +37,6 @@ export const EMPLOYEE_EXPORT_INTERVAL_HOURS = 24;
 /** A build still pending or processing after this long is given up. */
 export const PERSONAL_DATA_EXPORT_STALE_AFTER_HOURS = 6;
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IN_PROGRESS_INDEX = "personalDataExport_one_in_progress_idx";
 
 export interface PersonalDataExportRequestContext {
@@ -105,7 +109,7 @@ export async function requestPersonalDataExport(
 		request?: PersonalDataExportRequestContext;
 	},
 ): Promise<RequestPersonalDataExportResult> {
-	if (!UUID.test(input.employeeId)) return { ok: false, reason: "employee_not_found" };
+	if (!isUuid(input.employeeId)) return { ok: false, reason: "employee_not_found" };
 	const [subject] = await client
 		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)
@@ -235,7 +239,7 @@ export async function claimPersonalDataExport(
 	client: Database,
 	input: { organizationId: string; exportId: string; now: Instant },
 ): Promise<ClaimedPersonalDataExport | null> {
-	if (!UUID.test(input.exportId)) return null;
+	if (!isUuid(input.exportId)) return null;
 	const [claimed] = await client
 		.update(personalDataExport)
 		.set({ status: "processing", startedAt: dateFromInstant(input.now) })
@@ -331,6 +335,49 @@ export interface PersonalDataExportSummary {
 	sizeBytes: number | null;
 }
 
+/** Whether `employeeId` is the employee record of `userId` in the organization. */
+async function isOwnEmployeeRecord(
+	client: Database,
+	input: { organizationId: string; employeeId: string; userId: string },
+): Promise<boolean> {
+	const [subject] = await client
+		.select({ userId: employee.userId })
+		.from(employee)
+		.where(
+			and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		)
+		.limit(1);
+	return subject?.userId === input.userId;
+}
+
+export type ListAdminPersonalDataExportsResult =
+	| { ok: true; exports: PersonalDataExportSummary[] }
+	/** `own_record`: admins never see the admin exports of their own employee record. */
+	| { ok: false; reason: "employee_not_found" | "own_record" };
+
+/**
+ * One employee's live admin exports, newest first, for an org admin. An admin
+ * export holds withheld data, so the admin it is about never sees it, even
+ * when another admin made it.
+ */
+export async function listAdminPersonalDataExports(
+	client: Database,
+	input: { organizationId: string; employeeId: string; actorUserId: string; now: Instant },
+): Promise<ListAdminPersonalDataExportsResult> {
+	if (!isUuid(input.employeeId)) return { ok: false, reason: "employee_not_found" };
+	if (
+		await isOwnEmployeeRecord(client, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			userId: input.actorUserId,
+		})
+	) {
+		return { ok: false, reason: "own_record" };
+	}
+	const exports = await listPersonalDataExports(client, { ...input, kind: "admin" });
+	return { ok: true, exports };
+}
+
 /** One employee's live exports of one kind, newest first. */
 export async function listPersonalDataExports(
 	client: Database,
@@ -395,7 +442,7 @@ export async function authorizePersonalDataExportDownload(
 		request?: PersonalDataExportRequestContext;
 	},
 ): Promise<PersonalDataExportDownload> {
-	if (!UUID.test(input.exportId)) return { ok: false, reason: "not_found" };
+	if (!isUuid(input.exportId)) return { ok: false, reason: "not_found" };
 	const [row] = await client
 		.select()
 		.from(personalDataExport)
@@ -411,7 +458,12 @@ export async function authorizePersonalDataExportDownload(
 	const allowed =
 		row.kind === "employee"
 			? row.requestedByUserId === input.actor.userId
-			: input.actor.isOrganizationAdmin;
+			: input.actor.isOrganizationAdmin &&
+				!(await isOwnEmployeeRecord(client, {
+					organizationId: input.organizationId,
+					employeeId: row.employeeId,
+					userId: input.actor.userId,
+				}));
 	if (!allowed) return { ok: false, reason: "not_found" };
 	if (row.status !== "completed" || !row.storageKey || !row.completedAt) {
 		return { ok: false, reason: "not_ready" };
@@ -494,11 +546,16 @@ export type DeletePersonalDataExportObject = (input: {
 const CLEANUP_RETRY_BASE_MINUTES = 15;
 const CLEANUP_RETRY_MAX_MINUTES = 24 * 60;
 
-/** Deletes the stored files of deleted exports; failures back off and stay recorded. */
+/**
+ * Deletes the stored files of deleted exports; failures back off and stay
+ * recorded. A failure for an organization that no longer exists is given up
+ * with a warning: its storage configuration went with it (deletion already
+ * fell back to the default private storage), so no retry can succeed.
+ */
 export async function drainPersonalDataExportFileCleanup(
 	client: Database,
 	input: { now: Instant; deleteObject: DeletePersonalDataExportObject; limit?: number },
-): Promise<{ deleted: number; failed: number }> {
+): Promise<{ deleted: number; failed: number; dropped: number }> {
 	const due = await client
 		.select()
 		.from(personalDataExportFileCleanup)
@@ -511,7 +568,7 @@ export async function drainPersonalDataExportFileCleanup(
 		)
 		.orderBy(asc(personalDataExportFileCleanup.createdAt))
 		.limit(input.limit ?? 100);
-	const result = { deleted: 0, failed: 0 };
+	const result = { deleted: 0, failed: 0, dropped: 0 };
 	for (const row of due) {
 		try {
 			await input.deleteObject({
@@ -524,7 +581,32 @@ export async function drainPersonalDataExportFileCleanup(
 				.delete(personalDataExportFileCleanup)
 				.where(eq(personalDataExportFileCleanup.id, row.id));
 			result.deleted += 1;
-		} catch {
+		} catch (error) {
+			const [stillThere] = await client
+				.select({ id: organization.id })
+				.from(organization)
+				.where(eq(organization.id, row.organizationId))
+				.limit(1);
+			if (!stillThere) {
+				logger.warn(
+					{ cleanupId: row.id, organizationId: row.organizationId, error },
+					"Gave up deleting a personal data export file of a deleted organization",
+				);
+				await client
+					.delete(personalDataExportFileCleanup)
+					.where(eq(personalDataExportFileCleanup.id, row.id));
+				result.dropped += 1;
+				continue;
+			}
+			logger.warn(
+				{
+					cleanupId: row.id,
+					organizationId: row.organizationId,
+					attempts: row.attempts + 1,
+					error,
+				},
+				"Could not delete a personal data export file; retrying later",
+			);
 			const attempts = row.attempts + 1;
 			const delayMinutes = Math.min(
 				CLEANUP_RETRY_BASE_MINUTES * 2 ** (attempts - 1),

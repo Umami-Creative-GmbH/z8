@@ -11,6 +11,9 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { dateRangesOverlap } from "./date-utils";
 import type { DayPeriod } from "./types";
 
+/** The rejection reason of a vacation request a sick absence overrode: the system's, not an approver's. */
+export const SICK_OVERRIDE_REJECTION_REASON = "Overridden by sick absence";
+
 export type VacationSegment = { startDate: string; endDate: string };
 export type AbsenceStatus = "pending" | "approved" | "rejected";
 export type VacationOverrideSummary = {
@@ -313,7 +316,7 @@ export async function adjustVacationAbsencesForSickness(input: {
 							.set({
 								status: "rejected",
 								approvedAt: currentTimestamp(),
-								rejectionReason: "Overridden by sick absence",
+								rejectionReason: SICK_OVERRIDE_REJECTION_REASON,
 							})
 							.where(
 								and(
@@ -328,7 +331,7 @@ export async function adjustVacationAbsencesForSickness(input: {
 						.update(absenceEntry)
 						.set({
 							status: "rejected",
-							rejectionReason: "Overridden by sick absence",
+							rejectionReason: SICK_OVERRIDE_REJECTION_REASON,
 						})
 						.where(
 							and(

@@ -7,6 +7,10 @@
  * so no incomplete upload is left behind, and the error is rethrown unchanged.
  */
 
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("MultipartUpload");
+
 /** S3 needs at least 5 MiB for every part but the last; 8 MiB keeps requests few. */
 export const DEFAULT_MULTIPART_PART_SIZE_BYTES = 8 * 1024 * 1024;
 
@@ -77,7 +81,14 @@ export async function uploadStreamInParts(
 	} catch (error) {
 		await reader.cancel(error).catch(() => undefined);
 		if (uploadId !== null) {
-			await port.abort(uploadId).catch(() => undefined);
+			const abandoned = uploadId;
+			await port.abort(abandoned).catch((abortError: unknown) => {
+				// The upload failed already; a lingering part is left to the bucket's lifecycle rule.
+				logger.warn(
+					{ uploadId: abandoned, error: abortError },
+					"Could not abort an incomplete multipart upload",
+				);
+			});
 		}
 		throw error;
 	}

@@ -40,6 +40,7 @@ const personalDataExports = vi.hoisted(() => ({
 		timedOut: 0,
 		filesDeleted: 2,
 		filesFailed: 0,
+		filesDropped: 0,
 		outstanding: 0,
 	})),
 }));
@@ -366,7 +367,7 @@ describe("personal data export sweep cron", () => {
 			await CRON_JOBS["cron:personal-data-export-sweep"].processor({
 				triggeredAt: "2026-10-13T09:15:00Z",
 			}),
-		).toEqual({ expired: 2, timedOut: 0, filesDeleted: 2, filesFailed: 0, outstanding: 0 });
+		).toEqual({ expired: 2, timedOut: 0, filesDeleted: 2, filesFailed: 0, filesDropped: 0, outstanding: 0 });
 		expect(personalDataExports.sweep).toHaveBeenCalledOnce();
 	});
 });

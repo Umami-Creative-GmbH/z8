@@ -12,6 +12,7 @@ import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { type SendEmailParams, sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { createLogger } from "@/lib/logger";
+import { EMPLOYEE_PAGES_PATH, MY_DATA_PATH } from "@/lib/personal-data-export/paths";
 import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
 
@@ -71,11 +72,11 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	work_balance_adjustment_cancelled: "/time-tracking",
 	scheduled_export_paused: "/settings/scheduled-exports",
 	// The page the export was started from; never a file link (#811).
-	personal_data_export_ready: ["/settings/my-data", "/settings/employees/"],
+	personal_data_export_ready: [MY_DATA_PATH, EMPLOYEE_PAGES_PATH],
 	// Where the employee can request their own copy (#1166).
-	personal_data_export_admin_exported: "/settings/my-data",
+	personal_data_export_admin_exported: MY_DATA_PATH,
 	// Download your personal data before your departure cutoff (#1173).
-	personal_data_export_reminder: "/settings/my-data",
+	personal_data_export_reminder: MY_DATA_PATH,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

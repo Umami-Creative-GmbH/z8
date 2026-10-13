@@ -10,9 +10,12 @@
  * employee approved or rejected for a colleague, as kind, action, time and an
  * opaque id for the colleague (`redaction.ts`); never the colleague's name,
  * dates, reasons or record ids. One decision is one row: a canonical
- * assignment the employee resolved (as approver or deputy), a legacy request
- * they decided (unless a canonical workflow mirrors it, or a deputy decided it
- * instead), a legacy deputy decision, a legacy chain stage without a request,
+ * assignment the employee resolved (as approver or deputy) or handed on to
+ * another approver (`reassigned`), a legacy request
+ * they decided (the decision evidence's actor, else the assigned approver;
+ * never a rejection by the system or the requester; unless a canonical
+ * workflow mirrors it, or a deputy decided it instead), a legacy deputy
+ * decision, a legacy chain stage without a request,
  * or, for records decided without any approval request, the record itself.
  *
  * Nothing here is withheld: both exports hold the same rows.
@@ -24,6 +27,7 @@ import {
 	absenceEntry,
 	approvalChainInstance,
 	approvalChainStageInstance,
+	approvalDecisionEvidence,
 	approvalDeputyDecision,
 	approvalRequest,
 	approvalStageAssignment,
@@ -36,6 +40,8 @@ import {
 	shift,
 	shiftRequest,
 } from "@/db/schema";
+import { SICK_OVERRIDE_REJECTION_REASON } from "@/lib/absences/sick-vacation-override";
+import { isUuid } from "@/lib/validations/uuid";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -47,12 +53,11 @@ import {
 import {
 	ACTION_ON_OTHERS_COLUMNS,
 	type ActionOnOther,
-	actionOnOtherRow,
+	actionOnOtherRows,
 	otherPeopleOf,
 } from "../redaction";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf } from "../values";
+import { employeeNameLookup, instantText, loadSubjectEmployee, userNameLookup } from "../values";
 import { approvalsFieldGuide } from "./approvals-fields";
-import { PersonalDataSubjectNotFoundError } from "./employment";
 
 export const approvalsCollector: PersonalDataCollector = {
 	category: "approvals",
@@ -67,12 +72,7 @@ async function collectApprovals(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
-	const [subject] = await database
-		.select({ id: employee.id })
-		.from(employee)
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
-		.limit(1);
-	if (!subject) throw new PersonalDataSubjectNotFoundError();
+	await loadSubjectEmployee(database, scope);
 
 	const ownWorkflow = and(
 		eq(approvalWorkflow.organizationId, organizationId),
@@ -205,8 +205,8 @@ async function collectApprovals(
 
 	const decisions = await collectDecisionsOnOthers(database, scope);
 
-	const [employeeNames, userNames] = await Promise.all([
-		loadEmployeeNames(database, organizationId, [
+	const [byEmployee, byUser] = await Promise.all([
+		employeeNameLookup(database, organizationId, [
 			...requests.map((row) => row.approverId),
 			...approvers.flatMap(({ assignment }) => [
 				assignment.approverEmployeeId,
@@ -218,13 +218,11 @@ async function collectApprovals(
 			...deputyDecisions.flatMap((row) => [row.deputyEmployeeId, row.actingForEmployeeId]),
 			...submissions.map((row) => row.decidedByEmployeeId),
 		]),
-		loadUserNames(database, [
+		userNameLookup(database, [
 			...events.map((row) => row.actorUserId),
 			...submissions.map((row) => row.submittedBy),
 		]),
 	]);
-	const byEmployee = (id: string | null | undefined) => nameOf(employeeNames, id);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
 
 	return {
 		category: "approvals",
@@ -450,111 +448,150 @@ async function collectDecisionsOnOthers(
 	const notByEmployee = (column: typeof approvalWorkflow.requesterEmployeeId) =>
 		or(isNull(column), ne(column, employeeId));
 
-	const [canonical, legacyCandidates, legacyDeputy, chainStages] = await Promise.all([
-		// Canonical assignments the employee resolved, as approver or as a covering deputy.
-		database
-			.select({
-				workflowType: approvalWorkflow.workflowType,
-				requesterId: approvalWorkflow.requesterEmployeeId,
-				status: approvalStageAssignment.status,
-				resolvedAt: approvalStageAssignment.resolvedAt,
-				deputyDecisionId: approvalDeputyDecision.id,
-			})
-			.from(approvalStageAssignment)
-			.innerJoin(
-				approvalWorkflow,
-				and(
-					eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
-					eq(approvalWorkflow.organizationId, organizationId),
+	const [canonical, reassignments, legacyCandidates, legacyDeputy, chainStages] = await Promise.all(
+		[
+			// Canonical assignments the employee resolved, as approver or as a covering deputy.
+			database
+				.select({
+					workflowType: approvalWorkflow.workflowType,
+					requesterId: approvalWorkflow.requesterEmployeeId,
+					status: approvalStageAssignment.status,
+					resolvedAt: approvalStageAssignment.resolvedAt,
+					deputyDecisionId: approvalDeputyDecision.id,
+				})
+				.from(approvalStageAssignment)
+				.innerJoin(
+					approvalWorkflow,
+					and(
+						eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+						eq(approvalWorkflow.organizationId, organizationId),
+					),
+				)
+				.leftJoin(
+					approvalDeputyDecision,
+					and(
+						eq(approvalDeputyDecision.assignmentId, approvalStageAssignment.id),
+						eq(approvalDeputyDecision.organizationId, organizationId),
+						eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalStageAssignment.organizationId, organizationId),
+						eq(approvalStageAssignment.resolvedByActorKind, "employee"),
+						eq(approvalStageAssignment.resolvedByActorId, employeeId),
+						inArray(approvalStageAssignment.status, DECIDED),
+						notByEmployee(approvalWorkflow.requesterEmployeeId),
+					),
 				),
-			)
-			.leftJoin(
-				approvalDeputyDecision,
-				and(
-					eq(approvalDeputyDecision.assignmentId, approvalStageAssignment.id),
-					eq(approvalDeputyDecision.organizationId, organizationId),
-					eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
+			// Canonical assignments the employee handed on to another approver.
+			database
+				.select({
+					workflowType: approvalWorkflow.workflowType,
+					requesterId: approvalWorkflow.requesterEmployeeId,
+					assignedAt: approvalStageAssignment.assignedAt,
+				})
+				.from(approvalStageAssignment)
+				.innerJoin(
+					approvalWorkflow,
+					and(
+						eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+						eq(approvalWorkflow.organizationId, organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalStageAssignment.organizationId, organizationId),
+						eq(approvalStageAssignment.reassignedByEmployeeId, employeeId),
+						notByEmployee(approvalWorkflow.requesterEmployeeId),
+					),
 				),
-			)
-			.where(
-				and(
-					eq(approvalStageAssignment.organizationId, organizationId),
-					eq(approvalStageAssignment.resolvedByActorKind, "employee"),
-					eq(approvalStageAssignment.resolvedByActorId, employeeId),
-					inArray(approvalStageAssignment.status, DECIDED),
-					notByEmployee(approvalWorkflow.requesterEmployeeId),
+			// Legacy requests the employee decided: by the decision evidence's actor when
+			// it was recorded (org-wide approvers decide without becoming the approver),
+			// else by the assigned approver.
+			database
+				.select({
+					id: approvalRequest.id,
+					entityType: approvalRequest.entityType,
+					requestedBy: approvalRequest.requestedBy,
+					status: approvalRequest.status,
+					approvedAt: approvalRequest.approvedAt,
+					updatedAt: approvalRequest.updatedAt,
+					metadata: approvalRequest.metadata,
+					rejectionReason: approvalRequest.rejectionReason,
+					evidenceDecidedAt: approvalDecisionEvidence.decidedAt,
+				})
+				.from(approvalRequest)
+				.leftJoin(
+					approvalDecisionEvidence,
+					and(
+						eq(approvalDecisionEvidence.organizationId, organizationId),
+						eq(approvalDecisionEvidence.authority, "legacy"),
+						eq(approvalDecisionEvidence.legacyApprovalRequestId, approvalRequest.id),
+					),
+				)
+				.where(
+					and(
+						eq(approvalRequest.organizationId, organizationId),
+						ne(approvalRequest.requestedBy, employeeId),
+						inArray(approvalRequest.status, DECIDED),
+						or(
+							eq(approvalDecisionEvidence.actorEmployeeId, employeeId),
+							and(isNull(approvalDecisionEvidence.id), eq(approvalRequest.approverId, employeeId)),
+						),
+					),
 				),
-			),
-		// Legacy requests assigned to the employee and decided.
-		database
-			.select({
-				id: approvalRequest.id,
-				entityType: approvalRequest.entityType,
-				requestedBy: approvalRequest.requestedBy,
-				status: approvalRequest.status,
-				approvedAt: approvalRequest.approvedAt,
-				updatedAt: approvalRequest.updatedAt,
-				metadata: approvalRequest.metadata,
-			})
-			.from(approvalRequest)
-			.where(
-				and(
-					eq(approvalRequest.organizationId, organizationId),
-					eq(approvalRequest.approverId, employeeId),
-					ne(approvalRequest.requestedBy, employeeId),
-					inArray(approvalRequest.status, DECIDED),
+			// Legacy decisions the employee made as a covering deputy.
+			database
+				.select({
+					entityType: approvalDeputyDecision.entityType,
+					decision: approvalDeputyDecision.decision,
+					decidedAt: approvalDeputyDecision.decidedAt,
+					requestedBy: approvalRequest.requestedBy,
+				})
+				.from(approvalDeputyDecision)
+				.innerJoin(
+					approvalRequest,
+					and(
+						eq(approvalRequest.id, approvalDeputyDecision.approvalRequestId),
+						eq(approvalRequest.organizationId, organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalDeputyDecision.organizationId, organizationId),
+						eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
+						eq(approvalDeputyDecision.authority, "legacy"),
+						ne(approvalRequest.requestedBy, employeeId),
+					),
 				),
-			),
-		// Legacy decisions the employee made as a covering deputy.
-		database
-			.select({
-				entityType: approvalDeputyDecision.entityType,
-				decision: approvalDeputyDecision.decision,
-				decidedAt: approvalDeputyDecision.decidedAt,
-				requestedBy: approvalRequest.requestedBy,
-			})
-			.from(approvalDeputyDecision)
-			.innerJoin(
-				approvalRequest,
-				and(
-					eq(approvalRequest.id, approvalDeputyDecision.approvalRequestId),
-					eq(approvalRequest.organizationId, organizationId),
+			// Legacy chain stages without a request row of their own.
+			database
+				.select({
+					entityType: approvalChainInstance.entityType,
+					requesterId: approvalChainInstance.requesterEmployeeId,
+					status: approvalChainStageInstance.status,
+					decidedAt: approvalChainStageInstance.decidedAt,
+				})
+				.from(approvalChainStageInstance)
+				.innerJoin(
+					approvalChainInstance,
+					and(
+						eq(approvalChainInstance.id, approvalChainStageInstance.chainInstanceId),
+						eq(approvalChainInstance.organizationId, organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalChainStageInstance.organizationId, organizationId),
+						eq(approvalChainStageInstance.decidedBy, employeeId),
+						isNull(approvalChainStageInstance.approvalRequestId),
+						inArray(approvalChainStageInstance.status, DECIDED),
+						ne(approvalChainInstance.requesterEmployeeId, employeeId),
+					),
 				),
-			)
-			.where(
-				and(
-					eq(approvalDeputyDecision.organizationId, organizationId),
-					eq(approvalDeputyDecision.deputyEmployeeId, employeeId),
-					eq(approvalDeputyDecision.authority, "legacy"),
-					ne(approvalRequest.requestedBy, employeeId),
-				),
-			),
-		// Legacy chain stages without a request row of their own.
-		database
-			.select({
-				entityType: approvalChainInstance.entityType,
-				requesterId: approvalChainInstance.requesterEmployeeId,
-				status: approvalChainStageInstance.status,
-				decidedAt: approvalChainStageInstance.decidedAt,
-			})
-			.from(approvalChainStageInstance)
-			.innerJoin(
-				approvalChainInstance,
-				and(
-					eq(approvalChainInstance.id, approvalChainStageInstance.chainInstanceId),
-					eq(approvalChainInstance.organizationId, organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(approvalChainStageInstance.organizationId, organizationId),
-					eq(approvalChainStageInstance.decidedBy, employeeId),
-					isNull(approvalChainStageInstance.approvalRequestId),
-					inArray(approvalChainStageInstance.status, DECIDED),
-					ne(approvalChainInstance.requesterEmployeeId, employeeId),
-				),
-			),
-	]);
+		],
+	);
 
 	// A legacy request is not the employee's decision when a canonical workflow
 	// mirrors it (the assignment says who decided) or a deputy decided it.
@@ -595,7 +632,7 @@ async function collectDecisionsOnOthers(
 							eq(approvalWorkflow.organizationId, organizationId),
 							inArray(
 								approvalWorkflow.id,
-								mirroredWorkflowIds.filter((id) => UUID.test(id)),
+								mirroredWorkflowIds.filter((id) => isUuid(id)),
 							),
 						),
 					),
@@ -608,6 +645,7 @@ async function collectDecisionsOnOthers(
 	const legacy = legacyCandidates.filter(
 		(row) =>
 			!notTheEmployees.has(row.id) &&
+			!(row.evidenceDecidedAt === null && closedWithoutApprover(row)) &&
 			!(
 				typeof row.metadata?.workflowId === "string" &&
 				existingWorkflows.has(row.metadata.workflowId)
@@ -623,11 +661,19 @@ async function collectDecisionsOnOthers(
 			asDeputy: row.deputyDecisionId !== null,
 			otherEmployeeId: row.requesterId,
 		})),
+		...reassignments.map((row) => ({
+			recordKind: row.workflowType,
+			authority: "canonical",
+			action: "reassigned",
+			actedAt: row.assignedAt,
+			asDeputy: false,
+			otherEmployeeId: row.requesterId,
+		})),
 		...legacy.map((row) => ({
 			recordKind: row.entityType,
 			authority: "legacy",
 			action: row.status,
-			actedAt: row.approvedAt ?? row.updatedAt,
+			actedAt: row.evidenceDecidedAt ?? row.approvedAt ?? row.updatedAt,
 			asDeputy: false,
 			otherEmployeeId: row.requestedBy,
 		})),
@@ -650,17 +696,26 @@ async function collectDecisionsOnOthers(
 		...(await collectRecordDecisions(database, scope)),
 	];
 
-	const people = otherPeopleOf(scope);
-	return actions
-		.sort(
-			(a, b) =>
-				(a.actedAt?.getTime() ?? 0) - (b.actedAt?.getTime() ?? 0) ||
-				a.recordKind.localeCompare(b.recordKind),
-		)
-		.map((action) => actionOnOtherRow(people, action));
+	return actionOnOtherRows(otherPeopleOf(scope), actions);
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/**
+ * A legacy request rejected by the system or withdrawn by its requester: no
+ * approver decided it. A sick absence overrode the vacation, the requester
+ * withdrew the expense report, or cancelled the time correction.
+ */
+function closedWithoutApprover(row: {
+	status: string;
+	rejectionReason: string | null;
+	metadata: Record<string, unknown> | null;
+}): boolean {
+	if (row.status !== "rejected") return false;
+	return (
+		row.rejectionReason === SICK_OVERRIDE_REJECTION_REASON ||
+		row.metadata?.travelExpenseReportWithdrawal !== undefined ||
+		row.metadata?.cancellation !== undefined
+	);
+}
 
 /**
  * Decisions recorded only on the decided record: approvals made without any

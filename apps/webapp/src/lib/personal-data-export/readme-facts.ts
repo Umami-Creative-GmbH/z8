@@ -17,11 +17,15 @@
  *   the categories they manage in this employee's file; none while personnel
  *   files are turned off.
  * - Payroll access: grants covering the employee by scope, named employee or
- *   current team. Unlike the payroll resolver, a former employee stays
- *   covered (#811 decision), so their README still lists who has access.
+ *   current team, with what each covers. Unlike the payroll resolver, a
+ *   former employee stays covered (#811 decision), so their README still
+ *   lists who has access.
  * - Expense officers: grants covering the employee by scope, named employee,
  *   current team or a team recorded at the approval of one of their reports
  *   or legacy claims.
+ *
+ * An officer holds at most one active payroll grant and one active expense
+ * grant (partial unique indexes), so each is listed once.
  */
 
 import { and, eq, inArray, isNull, or } from "drizzle-orm";
@@ -50,7 +54,11 @@ import { DOCUMENT_CATEGORIES } from "@/lib/personnel-file/document.types";
 import { listActivePersonnelFileOfficers } from "@/lib/personnel-file/officer-grant-store";
 import { loadRetentionPeriods } from "@/lib/personnel-file/retention-store";
 import type { PersonalDataExportDatabase } from "./collector";
-import type { PersonalDataReadmeAccess, PersonalDataReadmeRetention } from "./readme";
+import type {
+	PayrollCoverage,
+	PersonalDataReadmeAccess,
+	PersonalDataReadmeRetention,
+} from "./readme";
 import { loadEmployeeNames } from "./values";
 
 export interface PersonalDataReadmeFacts {
@@ -291,12 +299,27 @@ async function loadPayrollOfficers(
 						),
 					),
 	]);
-	const coveringGrantIds = new Set([...named, ...teams].map((row) => row.grantId));
-	const officerIds = grants
-		.filter((grant) => grant.scope === "all" || coveringGrantIds.has(grant.id))
-		.map((grant) => grant.officerId);
-	const found = await input.people(officerIds);
-	return byName([...found.values()].map((person) => ({ name: person.name })));
+	const namedGrantIds = new Set(named.map((row) => row.grantId));
+	const teamGrantIds = new Set(teams.map((row) => row.grantId));
+	// What each covering grant covers, in a fixed order (one active grant per officer).
+	const coverage = new Map<string, PayrollCoverage[]>();
+	for (const grant of grants) {
+		const covers: PayrollCoverage[] = [
+			...(grant.scope === "all" ? (["all"] as const) : []),
+			...(namedGrantIds.has(grant.id) ? (["employee"] as const) : []),
+			...(teamGrantIds.has(grant.id) ? (["team"] as const) : []),
+		];
+		if (covers.length === 0) continue;
+		const known = coverage.get(grant.officerId) ?? [];
+		coverage.set(grant.officerId, [...new Set([...known, ...covers])]);
+	}
+	const found = await input.people(coverage.keys());
+	return byName(
+		[...found.values()].map((person) => ({
+			name: person.name,
+			covers: coverage.get(person.employeeId ?? "") ?? [],
+		})),
+	);
 }
 
 async function loadExpenseOfficers(

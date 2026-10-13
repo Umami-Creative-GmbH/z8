@@ -20,6 +20,7 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 
 const { db } = await import("@/db");
 const { processPersonalDataExport } = await import("./processor");
+const { positionStampsCollector } = await import("./collectors/position-stamps");
 
 const ORG = "t1170-org";
 const OTHER = "t1170-other";
@@ -497,6 +498,17 @@ describe("personal data export: position stamps, notifications and integrations 
 		expect(categoryOf(next.files, "position_stamps").access_log).toContainEqual(
 			expect.objectContaining({ kind: "data_export", viewer: "Olga Owner", export_id: exportId }),
 		);
+
+		// A retried build of the same export logs the access once.
+		await positionStampsCollector.collect(db, {
+			organizationId: ORG,
+			employeeId: ids.ada,
+			userId: "t1170-ada",
+			kind: "admin",
+			exportId,
+			requestedByUserId: "t1170-owner",
+		});
+		expect(await accessLogRowsOf(exportId)).toHaveLength(1);
 
 		// An admin export holding no stamps writes no access-log row.
 		const mia = await buildExport(ids.mia, "admin", "t1170-owner");

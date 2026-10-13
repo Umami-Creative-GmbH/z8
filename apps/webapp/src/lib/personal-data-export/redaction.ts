@@ -98,6 +98,23 @@ export interface ActionOnOther {
 	otherUserId?: string | null;
 }
 
+/**
+ * Actions on other people as export rows, oldest first (undated ones first);
+ * actions at the same time by record kind, then in the given order.
+ */
+export function actionOnOtherRows(
+	people: OtherPeople,
+	actions: readonly ActionOnOther[],
+): PersonalDataRow[] {
+	return actions
+		.toSorted(
+			(left, right) =>
+				(left.actedAt?.getTime() ?? 0) - (right.actedAt?.getTime() ?? 0) ||
+				left.recordKind.localeCompare(right.recordKind),
+		)
+		.map((action) => actionOnOtherRow(people, action));
+}
+
 /** One action on another person as an export row: nothing about them but an opaque id. */
 export function actionOnOtherRow(people: OtherPeople, action: ActionOnOther): PersonalDataRow {
 	return {

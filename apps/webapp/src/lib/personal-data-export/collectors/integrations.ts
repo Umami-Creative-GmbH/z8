@@ -28,7 +28,7 @@ import {
 	recordPart,
 	tablePart,
 } from "../collector";
-import { instantText, loadUserNames, nameOf } from "../values";
+import { instantText, loadSubjectEmployee, loadUserNames, nameOf } from "../values";
 import { integrationsFieldGuide } from "./integrations-fields";
 
 const CALENDAR_COLUMNS = [
@@ -75,6 +75,7 @@ async function collectIntegrations(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
+	await loadSubjectEmployee(database, scope);
 
 	const calendars = await database
 		.select({

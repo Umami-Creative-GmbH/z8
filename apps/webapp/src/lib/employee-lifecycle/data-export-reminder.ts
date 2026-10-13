@@ -22,13 +22,12 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
+import { MY_DATA_PATH } from "@/lib/personal-data-export/paths";
 import { departureCutoffDate } from "./cutoff-display";
 import { type DepartureTaskHandler, DepartureTaskNeedsResolutionError } from "./delivery";
 import type { LifecycleClient } from "./types";
 
 export const DATA_EXPORT_REMINDER_NOTIFICATION_TYPE = "personal_data_export_reminder" as const;
-
-const MY_DATA_PATH = "/settings/my-data";
 
 // Full ICU defaults spelled out so the Tolgee extractor pushes the whole message.
 const COPY = {

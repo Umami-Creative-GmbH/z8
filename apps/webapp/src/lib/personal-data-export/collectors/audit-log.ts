@@ -2,8 +2,10 @@
  * Audit log category of a personal data export (#811, #1171): the audit
  * entries of this organization about the employee, and what the employee did.
  *
- * - **`entries`**: rows about the employee (`employee_id` is them, or the
- *   audited entity is their employee record), with who acted, the change and
+ * - **`entries`**: rows about the employee (`employee_id` is them, the
+ *   audited entity is their employee record, or it is one of their own
+ *   records: time entries, work periods, absences, requests, period
+ *   submissions, expense reports and claims), with who acted, the change and
  *   its context. Another actor's IP address, user agent and email never go in;
  *   stored-object references inside the JSON are removed.
  * - **`actions_on_others`**: everything the employee did that is not about
@@ -20,13 +22,15 @@
  * employee visibility, departure tasks and reviews, travel-expense project
  * exception reasons). The admin export holds every entry about the employee.
  *
- * `employee_id` is not always the subject: approval chain events and
- * escalation transfers store the actor's employee id there. A row the
+ * `employee_id` is not always the subject: approval chain events, escalation
+ * transfers, expense report returns and reopens, and organization settings
+ * store the actor's employee id there (`ACTOR_IN_EMPLOYEE_ID_ACTIONS`). A row the
  * employee performed is therefore attributed to the owner of the audited
  * record (where it has one) before it counts as being about them.
  */
 
-import { and, asc, eq, inArray, isNotNull, ne, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, ne, or, type SQLWrapper } from "drizzle-orm";
+import type { AnyPgColumn, PgTable } from "drizzle-orm/pg-core";
 import {
 	absenceEntry,
 	approvalRequest,
@@ -44,6 +48,7 @@ import {
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { PERSONNEL_FILE_AUDIT_ENTITY_TYPE } from "@/lib/personnel-file/audit";
+import { isUuid } from "@/lib/validations/uuid";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -55,11 +60,17 @@ import {
 import {
 	ACTION_ON_OTHERS_COLUMNS,
 	type ActionOnOther,
-	actionOnOtherRow,
+	actionOnOtherRows,
 	otherPeopleOf,
 } from "../redaction";
 import { withoutStorageReferences } from "../storage-references";
-import { instantText, loadUserNames, nameOf } from "../values";
+import {
+	instantText,
+	jsonObject,
+	loadSubjectEmployee,
+	type NameLookup,
+	userNameLookup,
+} from "../values";
 import { auditLogFieldGuide } from "./audit-log-fields";
 
 const ENTRY_COLUMNS = [
@@ -226,7 +237,7 @@ function isEmployeeVisible(row: AuditRow, visibility: EmployeeVisibility): boole
 		return visibility.sharedDocumentIds.has(row.entityId);
 	}
 	if (CUSTOM_FIELD_VALUE_ACTIONS.has(row.action)) {
-		const fieldId = parseJson(row.metadata)?.fieldId;
+		const fieldId = jsonObject(row.metadata)?.fieldId;
 		return typeof fieldId === "string" && visibility.visibleFieldIds.has(fieldId);
 	}
 	return true;
@@ -243,6 +254,7 @@ async function collectAuditLog(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId, userId } = scope;
+	await loadSubjectEmployee(database, scope);
 	const rows = await database
 		.select()
 		.from(auditLog)
@@ -256,6 +268,13 @@ async function collectAuditLog(
 						inArray(auditLog.entityType, [...PERSON_ENTITY_TYPES]),
 						eq(auditLog.entityId, employeeId),
 					),
+					// Rows on the employee's own records that do not name them in employee_id.
+					...ownedRecordSources(database, organizationId).map(({ types, ownedBy }) =>
+						and(
+							inArray(auditLog.entityType, types),
+							inArray(auditLog.entityId, ownedBy(employeeId)),
+						),
+					),
 				),
 			),
 		)
@@ -265,7 +284,7 @@ async function collectAuditLog(
 	const owners = await loadRecordOwners(database, organizationId, byEmployee);
 
 	const about: AuditRow[] = [];
-	const actions: Array<ActionOnOther & { at: number }> = [];
+	const actions: ActionOnOther[] = [];
 	for (const row of rows) {
 		if (row.performedBy !== userId) {
 			// Someone else's action: it matched by being about the employee.
@@ -284,65 +303,71 @@ async function collectAuditLog(
 			actedAt: row.timestamp,
 			asDeputy: false,
 			otherEmployeeId: subject.kind === "other" ? subject.employeeId : null,
-			at: row.timestamp.getTime(),
 		});
 	}
 	actions.push(...(await recordActionsOnOthers(database, scope)));
 
-	const visibleAbout =
-		scope.kind === "admin"
-			? about
-			: await (async () => {
-					const visibility = await loadEmployeeVisibility(database, scope, about);
-					return about.filter((row) => isEmployeeVisible(row, visibility));
-				})();
+	const visibility =
+		scope.kind === "admin" ? null : await loadEmployeeVisibility(database, scope, about);
+	const visibleAbout = visibility
+		? about.filter((row) => isEmployeeVisible(row, visibility))
+		: about;
+	// The employee export never shows that a document they cannot see exists.
+	const withheldDocument = (documentId: string) =>
+		visibility !== null && !visibility.sharedDocumentIds.has(documentId);
 
-	const names = await loadUserNames(
+	const byUser = await userNameLookup(
 		database,
 		visibleAbout.map((row) => row.performedBy),
 	);
-	const people = otherPeopleOf(scope);
 	return {
 		category: "audit_log",
 		parts: [
 			tablePart(
 				"entries",
 				ENTRY_COLUMNS,
-				visibleAbout.map((row) => entryRow(row, userId, names)),
+				visibleAbout.map((row) => entryRow(row, userId, byUser, withheldDocument)),
 			),
 			tablePart(
 				"actions_on_others",
 				ACTION_ON_OTHERS_COLUMNS,
-				actions
-					.map((action, index) => ({ action, index }))
-					.sort((a, b) => a.action.at - b.action.at || a.index - b.index)
-					.map(({ action: { at: _at, ...action } }) => actionOnOtherRow(people, action)),
+				actionOnOtherRows(otherPeopleOf(scope), actions),
 			),
 		],
 	};
 }
 
-function entryRow(row: AuditRow, userId: string, names: Map<string, string>): PersonalDataRow {
+function entryRow(
+	row: AuditRow,
+	userId: string,
+	byUser: NameLookup,
+	withheldDocument: (documentId: string) => boolean,
+): PersonalDataRow {
 	const own = row.performedBy === userId;
 	return {
 		timestamp: instantText(row.timestamp),
 		action: row.action,
 		entity_type: row.entityType,
 		entity_id: row.entityId,
-		performed_by: nameOf(names, row.performedBy),
+		performed_by: byUser(row.performedBy),
 		performed_by_you: own,
 		ip_address: own ? row.ipAddress : null,
 		user_agent: own ? row.userAgent : null,
-		changes: exportedJson(row.changes, own),
-		metadata: exportedJson(row.metadata, own),
+		changes: exportedJson(row.changes, own, withheldDocument),
+		metadata: exportedJson(row.metadata, own, withheldDocument),
 	};
 }
 
 /**
- * A JSON text column as exported: stored-object references removed and, on
- * another actor's row, their email (`actorEmail`, written by `logAudit`).
+ * A JSON text column as exported: stored-object references removed; on
+ * another actor's row, their email (`actorEmail`, written by `logAudit`); and
+ * a `documentId` naming a document the export withholds (an HR-only sick note).
  */
-function exportedJson(text: string | null, own: boolean): string | null {
+function exportedJson(
+	text: string | null,
+	own: boolean,
+	withheldDocument: (documentId: string) => boolean,
+): string | null {
 	if (text === null) return null;
 	let value: unknown;
 	try {
@@ -350,29 +375,41 @@ function exportedJson(text: string | null, own: boolean): string | null {
 	} catch {
 		return text;
 	}
-	if (!own && value !== null && typeof value === "object" && !Array.isArray(value)) {
-		const { actorEmail: _actorEmail, ...rest } = value as Record<string, unknown>;
-		value = rest;
+	if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+		value = Object.fromEntries(
+			Object.entries(value).filter(
+				([key, field]) =>
+					!(key === "actorEmail" && !own) &&
+					!(key === "documentId" && typeof field === "string" && withheldDocument(field)),
+			),
+		);
 	}
 	return JSON.stringify(withoutStorageReferences(value));
 }
 
-function parseJson(text: string | null): Record<string, unknown> | null {
-	if (!text) return null;
-	try {
-		const value: unknown = JSON.parse(text);
-		return value !== null && typeof value === "object" && !Array.isArray(value)
-			? (value as Record<string, unknown>)
-			: null;
-	} catch {
-		return null;
-	}
-}
+/**
+ * Actions whose writers store the acting employee, not the subject, in
+ * `employee_id`: reviewers acting on a colleague's expense report, and admins
+ * changing organization-wide settings or sharing reports.
+ */
+const ACTOR_IN_EMPLOYEE_ID_ACTIONS: ReadonlySet<string> = new Set<string>([
+	AuditAction.APPROVAL_ESCALATION_TRANSFERRED,
+	AuditAction.TRAVEL_EXPENSE_RETURNED,
+	AuditAction.TRAVEL_EXPENSE_REOPENED,
+	AuditAction.TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_AUTHORIZED,
+	AuditAction.TRAVEL_EXPENSE_ALLOWANCE_OVERRIDE_REVOKED,
+	AuditAction.TRAVEL_EXPENSE_REIMBURSEMENT_CURRENCY_UPDATED,
+	AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED,
+	AuditAction.TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN,
+	AuditAction.TRAVEL_EXPENSE_REFERENCE_RATE_APPROVED,
+	AuditAction.TRAVEL_EXPENSE_REFERENCE_RATE_REVOKED,
+	AuditAction.REPORT_SHARE_LINK_CREATED,
+]);
 
 /** Writers that store the acting employee, not the subject, in `employee_id`. */
 function employeeIdIsActor(row: AuditRow): boolean {
 	return (
-		row.action === AuditAction.APPROVAL_ESCALATION_TRANSFERRED ||
+		ACTOR_IN_EMPLOYEE_ID_ACTIONS.has(row.action) ||
 		row.action.startsWith("approval_chain.") ||
 		row.action.startsWith("approval_policy.")
 	);
@@ -397,7 +434,7 @@ function subjectOf(
 	if (owner !== undefined) return person(owner);
 	if (PERSON_ENTITY_TYPES.has(row.entityType)) return person(row.entityId);
 	if (row.employeeId && !employeeIdIsActor(row)) return person(row.employeeId);
-	const named = parseJson(row.metadata)?.employeeId;
+	const named = jsonObject(row.metadata)?.employeeId;
 	if (typeof named === "string" && named !== employeeId) return person(named);
 	return { kind: "none" };
 }
@@ -406,120 +443,117 @@ function recordKey(entityType: string, entityId: string): string {
 	return `${entityType}:${entityId}`;
 }
 
+interface OwnedRecordSource {
+	/** Audit entity types whose `entity_id` is a record of this table. */
+	types: readonly string[];
+	/** The ids of the employee's own records, as a subquery. */
+	ownedBy(employeeId: string): SQLWrapper;
+	/** The owner employee of each of the given records. */
+	owners(ids: string[]): Promise<Array<{ id: string; owner: string | null }>>;
+}
+
+/**
+ * The records an audit row can name, with their owner employee. Every table
+ * is read within the organization; `absence_entry.organization_id` is
+ * nullable, so absences are scoped through their employee.
+ */
+function ownedRecordSources(
+	database: PersonalDataExportDatabase,
+	organizationId: string,
+): OwnedRecordSource[] {
+	const inOrganization = (
+		types: readonly string[],
+		table: PgTable,
+		columns: { id: AnyPgColumn; owner: AnyPgColumn; organizationId: AnyPgColumn },
+	): OwnedRecordSource => ({
+		types,
+		ownedBy: (employeeId) =>
+			database
+				.select({ id: columns.id })
+				.from(table)
+				.where(and(eq(columns.organizationId, organizationId), eq(columns.owner, employeeId))),
+		owners: async (ids) =>
+			(await database
+				.select({ id: columns.id, owner: columns.owner })
+				.from(table)
+				.where(
+					and(eq(columns.organizationId, organizationId), inArray(columns.id, ids)),
+				)) as Array<{
+				id: string;
+				owner: string | null;
+			}>,
+	});
+	const absenceInOrganization = and(
+		eq(employee.id, absenceEntry.employeeId),
+		eq(employee.organizationId, organizationId),
+	);
+	return [
+		{
+			types: ["absence_entry", "absence"],
+			ownedBy: (employeeId) =>
+				database
+					.select({ id: absenceEntry.id })
+					.from(absenceEntry)
+					.innerJoin(employee, absenceInOrganization)
+					.where(eq(absenceEntry.employeeId, employeeId)),
+			owners: (ids) =>
+				database
+					.select({ id: absenceEntry.id, owner: absenceEntry.employeeId })
+					.from(absenceEntry)
+					.innerJoin(employee, absenceInOrganization)
+					.where(inArray(absenceEntry.id, ids)),
+		},
+		inOrganization(["time_entry"], timeEntry, {
+			id: timeEntry.id,
+			owner: timeEntry.employeeId,
+			organizationId: timeEntry.organizationId,
+		}),
+		inOrganization(["work_period"], workPeriod, {
+			id: workPeriod.id,
+			owner: workPeriod.employeeId,
+			organizationId: workPeriod.organizationId,
+		}),
+		inOrganization(["approval_request"], approvalRequest, {
+			id: approvalRequest.id,
+			owner: approvalRequest.requestedBy,
+			organizationId: approvalRequest.organizationId,
+		}),
+		inOrganization(["period_submission"], periodSubmission, {
+			id: periodSubmission.id,
+			owner: periodSubmission.employeeId,
+			organizationId: periodSubmission.organizationId,
+		}),
+		// Expense writers audit reports and claims as entity type "approval".
+		inOrganization(["travel_expense_report", "approval"], travelExpenseReport, {
+			id: travelExpenseReport.id,
+			owner: travelExpenseReport.employeeId,
+			organizationId: travelExpenseReport.organizationId,
+		}),
+		inOrganization(["travel_expense_claim", "approval"], travelExpenseClaim, {
+			id: travelExpenseClaim.id,
+			owner: travelExpenseClaim.employeeId,
+			organizationId: travelExpenseClaim.organizationId,
+		}),
+	];
+}
+
 /** Owner employee ids of the records the employee's audit rows name, by `entity_type:entity_id`. */
 async function loadRecordOwners(
 	database: PersonalDataExportDatabase,
 	organizationId: string,
 	rows: readonly AuditRow[],
 ): Promise<Map<string, string>> {
-	const idsOf = (...types: string[]) => [
-		...new Set(rows.filter((row) => types.includes(row.entityType)).map((row) => row.entityId)),
-	];
 	const owners = new Map<string, string>();
-	const add = (types: string[], found: Array<{ id: string; owner: string | null }>) => {
-		for (const { id, owner } of found) {
-			if (owner) for (const type of types) owners.set(recordKey(type, id), owner);
+	for (const source of ownedRecordSources(database, organizationId)) {
+		const ids = [
+			...new Set(
+				rows.filter((row) => source.types.includes(row.entityType)).map((row) => row.entityId),
+			),
+		];
+		if (ids.length === 0) continue;
+		for (const { id, owner } of await source.owners(ids)) {
+			if (owner) for (const type of source.types) owners.set(recordKey(type, id), owner);
 		}
-	};
-
-	const absenceIds = idsOf("absence_entry", "absence");
-	if (absenceIds.length > 0) {
-		add(
-			["absence_entry", "absence"],
-			await database
-				.select({ id: absenceEntry.id, owner: absenceEntry.employeeId })
-				.from(absenceEntry)
-				.innerJoin(
-					employee,
-					and(
-						eq(employee.id, absenceEntry.employeeId),
-						eq(employee.organizationId, organizationId),
-					),
-				)
-				.where(inArray(absenceEntry.id, absenceIds)),
-		);
-	}
-	const entryIds = idsOf("time_entry");
-	if (entryIds.length > 0) {
-		add(
-			["time_entry"],
-			await database
-				.select({ id: timeEntry.id, owner: timeEntry.employeeId })
-				.from(timeEntry)
-				.where(and(eq(timeEntry.organizationId, organizationId), inArray(timeEntry.id, entryIds))),
-		);
-	}
-	const periodIds = idsOf("work_period");
-	if (periodIds.length > 0) {
-		add(
-			["work_period"],
-			await database
-				.select({ id: workPeriod.id, owner: workPeriod.employeeId })
-				.from(workPeriod)
-				.where(
-					and(eq(workPeriod.organizationId, organizationId), inArray(workPeriod.id, periodIds)),
-				),
-		);
-	}
-	const requestIds = idsOf("approval_request");
-	if (requestIds.length > 0) {
-		add(
-			["approval_request"],
-			await database
-				.select({ id: approvalRequest.id, owner: approvalRequest.requestedBy })
-				.from(approvalRequest)
-				.where(
-					and(
-						eq(approvalRequest.organizationId, organizationId),
-						inArray(approvalRequest.id, requestIds),
-					),
-				),
-		);
-	}
-	const submissionIds = idsOf("period_submission");
-	if (submissionIds.length > 0) {
-		add(
-			["period_submission"],
-			await database
-				.select({ id: periodSubmission.id, owner: periodSubmission.employeeId })
-				.from(periodSubmission)
-				.where(
-					and(
-						eq(periodSubmission.organizationId, organizationId),
-						inArray(periodSubmission.id, submissionIds),
-					),
-				),
-		);
-	}
-	const reportIds = idsOf("travel_expense_report");
-	if (reportIds.length > 0) {
-		add(
-			["travel_expense_report"],
-			await database
-				.select({ id: travelExpenseReport.id, owner: travelExpenseReport.employeeId })
-				.from(travelExpenseReport)
-				.where(
-					and(
-						eq(travelExpenseReport.organizationId, organizationId),
-						inArray(travelExpenseReport.id, reportIds),
-					),
-				),
-		);
-	}
-	const claimIds = idsOf("travel_expense_claim");
-	if (claimIds.length > 0) {
-		add(
-			["travel_expense_claim"],
-			await database
-				.select({ id: travelExpenseClaim.id, owner: travelExpenseClaim.employeeId })
-				.from(travelExpenseClaim)
-				.where(
-					and(
-						eq(travelExpenseClaim.organizationId, organizationId),
-						inArray(travelExpenseClaim.id, claimIds),
-					),
-				),
-		);
 	}
 	return owners;
 }
@@ -532,7 +566,7 @@ async function loadRecordOwners(
 async function recordActionsOnOthers(
 	database: PersonalDataExportDatabase,
 	scope: PersonalDataExportScope,
-): Promise<Array<ActionOnOther & { at: number }>> {
+): Promise<ActionOnOther[]> {
 	const { organizationId, employeeId, userId } = scope;
 	const [entries, violations, adjustments] = await Promise.all([
 		database
@@ -578,14 +612,13 @@ async function recordActionsOnOthers(
 		recordKind: string,
 		verb: string,
 		row: { owner: string; at: Date | null },
-	): ActionOnOther & { at: number } => ({
+	): ActionOnOther => ({
 		recordKind,
 		authority: "record",
 		action: verb,
 		actedAt: row.at,
 		asDeputy: false,
 		otherEmployeeId: row.owner,
-		at: row.at?.getTime() ?? 0,
 	});
 	return [
 		...entries.map((row) => action("time_entry", "created", row)),
@@ -612,7 +645,13 @@ async function loadEmployeeVisibility(
 		);
 
 	const documentRows = rows.filter((row) => row.entityType === PERSONNEL_FILE_AUDIT_ENTITY_TYPE);
-	const documentIds = [...new Set(documentRows.map((row) => row.entityId))];
+	// Other rows can name a document too, e.g. the sick note linked to an absence.
+	const referencedIds = rows.flatMap((row) =>
+		[jsonObject(row.metadata)?.documentId, jsonObject(row.changes)?.documentId].filter(
+			(id): id is string => isUuid(id),
+		),
+	);
+	const documentIds = [...new Set([...documentRows.map((row) => row.entityId), ...referencedIds])];
 	const current =
 		documentIds.length === 0
 			? []
@@ -629,7 +668,7 @@ async function loadEmployeeVisibility(
 	// A document that is gone counts with the last visibility its audit rows recorded.
 	const visibilityById = new Map<string, string>();
 	for (const row of documentRows) {
-		const recorded = parseJson(row.metadata)?.document;
+		const recorded = jsonObject(row.metadata)?.document;
 		const visibility =
 			recorded !== null && typeof recorded === "object"
 				? (recorded as Record<string, unknown>).visibility

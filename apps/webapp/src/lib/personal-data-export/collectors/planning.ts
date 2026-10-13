@@ -9,22 +9,15 @@
  * its plain date. A swap partner, or the colleague who asked the employee to
  * take a shift, did not act on the employee's records: they appear by
  * display name only, and a received request carries none of the colleague's
- * reasons or notes, nor the shift they asked to give away beyond its date and
- * times (#811 decision).
+ * reasons or notes, nor anything about their shift: its date and times appear
+ * only when the shift is the employee's own (#811 decision).
  *
  * `shift_request.organization_id` is nullable, so requests are scoped through
  * their shift's organization.
  */
 
 import { and, asc, eq, ne } from "drizzle-orm";
-import {
-	employee,
-	location,
-	locationSubarea,
-	shift,
-	shiftRequest,
-	shiftTemplate,
-} from "@/db/schema";
+import { location, locationSubarea, shift, shiftRequest, shiftTemplate } from "@/db/schema";
 import {
 	type CollectedCategory,
 	type PersonalDataCollector,
@@ -32,8 +25,13 @@ import {
 	type PersonalDataExportScope,
 	tablePart,
 } from "../collector";
-import { instantText, loadEmployeeNames, loadUserNames, nameOf, plainDateText } from "../values";
-import { PersonalDataSubjectNotFoundError } from "./employment";
+import {
+	employeeNameLookup,
+	instantText,
+	loadSubjectEmployee,
+	plainDateText,
+	userNameLookup,
+} from "../values";
 import { planningFieldGuide } from "./planning-fields";
 
 export const planningCollector: PersonalDataCollector = {
@@ -53,12 +51,7 @@ async function collectPlanning(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
-	const [subject] = await database
-		.select({ id: employee.id })
-		.from(employee)
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
-		.limit(1);
-	if (!subject) throw new PersonalDataSubjectNotFoundError();
+	await loadSubjectEmployee(database, scope);
 
 	const shiftInOrganization = and(
 		eq(shift.id, shiftRequest.shiftId),
@@ -106,6 +99,7 @@ async function collectPlanning(
 				approverId: shiftRequest.approverId,
 				approvedAt: shiftRequest.approvedAt,
 				createdAt: shiftRequest.createdAt,
+				shiftEmployeeId: shift.employeeId,
 				...requestShift,
 			})
 			.from(shiftRequest)
@@ -119,18 +113,16 @@ async function collectPlanning(
 			.orderBy(asc(shiftRequest.createdAt)),
 	]);
 
-	const [userNames, employeeNames] = await Promise.all([
-		loadUserNames(
+	const [byUser, byEmployee] = await Promise.all([
+		userNameLookup(
 			database,
 			shifts.flatMap((row) => [row.shift.publishedBy, row.shift.createdBy]),
 		),
-		loadEmployeeNames(database, organizationId, [
+		employeeNameLookup(database, organizationId, [
 			...ownRequests.flatMap((row) => [row.request.targetEmployeeId, row.request.approverId]),
 			...receivedRequests.flatMap((row) => [row.requesterId, row.approverId]),
 		]),
 	]);
-	const byUser = (id: string | null | undefined) => nameOf(userNames, id);
-	const byEmployee = (id: string | null | undefined) => nameOf(employeeNames, id);
 
 	return {
 		category: "planning",
@@ -220,19 +212,23 @@ async function collectPlanning(
 					"approved_at",
 					"created_at",
 				],
-				receivedRequests.map((row) => ({
-					id: row.id,
-					type: row.type,
-					status: row.status,
-					lifecycle_status: row.lifecycleStatus,
-					shift_date: plainDateText(row.shiftDate),
-					shift_start_time: row.shiftStartTime,
-					shift_end_time: row.shiftEndTime,
-					requested_by: byEmployee(row.requesterId),
-					approver: byEmployee(row.approverId),
-					approved_at: instantText(row.approvedAt),
-					created_at: instantText(row.createdAt),
-				})),
+				receivedRequests.map((row) => {
+					// The shift asked about is the colleague's unless it is the employee's own.
+					const ownShift = row.shiftEmployeeId === employeeId;
+					return {
+						id: row.id,
+						type: row.type,
+						status: row.status,
+						lifecycle_status: row.lifecycleStatus,
+						shift_date: ownShift ? plainDateText(row.shiftDate) : null,
+						shift_start_time: ownShift ? row.shiftStartTime : null,
+						shift_end_time: ownShift ? row.shiftEndTime : null,
+						requested_by: byEmployee(row.requesterId),
+						approver: byEmployee(row.approverId),
+						approved_at: instantText(row.approvedAt),
+						created_at: instantText(row.createdAt),
+					};
+				}),
 			),
 		],
 	};

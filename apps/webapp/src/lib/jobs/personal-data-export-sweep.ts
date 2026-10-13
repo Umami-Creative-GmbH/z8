@@ -17,6 +17,8 @@ export interface PersonalDataExportSweepResult {
 	filesDeleted: number;
 	/** Stored files whose deletion failed in this run (retried later). */
 	filesFailed: number;
+	/** Stored files of deleted organizations given up after a failed deletion. */
+	filesDropped: number;
 	/** Stored files still waiting for deletion. */
 	outstanding: number;
 }
@@ -44,6 +46,7 @@ export async function runPersonalDataExportSweep(): Promise<PersonalDataExportSw
 		timedOut,
 		filesDeleted: files.deleted,
 		filesFailed: files.failed,
+		filesDropped: files.dropped,
 		outstanding,
 	};
 }

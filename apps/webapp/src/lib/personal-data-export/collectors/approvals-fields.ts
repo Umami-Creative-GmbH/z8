@@ -371,7 +371,7 @@ export const approvalsFieldGuide: PersonalDataFieldGuide = (t) => {
 				),
 				action: t(
 					"personalDataExport.readme.fields.approvals.decisionsOnOthers.action",
-					"What you decided: approved or rejected.",
+					"What you decided: approved or rejected, or reassigned when you handed the request on to another approver.",
 				),
 				acted_at: t(
 					"personalDataExport.readme.fields.approvals.decisionsOnOthers.actedAt",

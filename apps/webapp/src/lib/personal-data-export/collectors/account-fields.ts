@@ -105,7 +105,7 @@ export const accountFieldGuide: PersonalDataFieldGuide = (t) => {
 				user_agent: userAgent(),
 				impersonated: t(
 					"personalDataExport.readme.fields.account.sessions.impersonated",
-					"Whether platform support opened this session as you.",
+					"Whether platform support opened this session as you. Its IP address, browser and location are then left out: they are support's, not yours.",
 				),
 				country: country(),
 				region: t(

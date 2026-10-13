@@ -17,7 +17,6 @@ import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import {
 	absenceCategory,
 	absenceEntry,
-	employee,
 	employeeTeamHistory,
 	employeeVacationAllowance,
 	teamMembership,
@@ -32,9 +31,8 @@ import {
 	type PersonalDataExportScope,
 	tablePart,
 } from "../collector";
-import { instantText, loadEmployeeNames, nameOf } from "../values";
+import { employeeNameLookup, instantText, loadSubjectEmployee } from "../values";
 import { absencesFieldGuide } from "./absences-fields";
-import { PersonalDataSubjectNotFoundError } from "./employment";
 
 export const absencesCollector: PersonalDataCollector = {
 	category: "absences",
@@ -84,12 +82,7 @@ async function collectAbsences(
 	scope: PersonalDataExportScope,
 ): Promise<CollectedCategory> {
 	const { organizationId, employeeId } = scope;
-	const [subject] = await database
-		.select({ id: employee.id, teamId: employee.teamId })
-		.from(employee)
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)))
-		.limit(1);
-	if (!subject) throw new PersonalDataSubjectNotFoundError();
+	const subject = await loadSubjectEmployee(database, scope);
 	const teamIds = await loadSubjectTeamIds(database, scope, subject.teamId);
 
 	const [absences, allowances, policies, adjustments] = await Promise.all([
@@ -175,11 +168,10 @@ async function collectAbsences(
 			.orderBy(asc(vacationAdjustment.year), asc(vacationAdjustment.createdAt)),
 	]);
 
-	const names = await loadEmployeeNames(database, organizationId, [
+	const byEmployee = await employeeNameLookup(database, organizationId, [
 		...absences.flatMap((row) => [row.deputyEmployeeId, row.approvedBy]),
 		...adjustments.map((row) => row.adjustedBy),
 	]);
-	const byEmployee = (id: string | null | undefined) => nameOf(names, id);
 
 	return {
 		category: "absences",

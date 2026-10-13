@@ -18,9 +18,14 @@
  *
  * Rules every collector follows:
  * - **Scope.** Load the subject employee by `employeeId` AND `organizationId`
- *   and filter every query by the organization (join through an org-scoped
- *   table when the table itself has no `organization_id`). Data of another
- *   organization the person belongs to never appears.
+ *   with `loadSubjectEmployee` (values.ts; it throws
+ *   `PersonalDataSubjectNotFoundError` when the employee is gone) and filter
+ *   every query by the organization (join through an org-scoped table when
+ *   the table itself has no `organization_id`). Data of another organization
+ *   the person belongs to never appears.
+ * - **Read only.** Collectors only read, with one exception: the position
+ *   stamps collector writes one `data_export` access-log entry when an admin
+ *   export holds stamps (#831 D4), in its own transaction, once per export.
  * - **Kind.** `scope.kind` is `employee` (started by the employee) or `admin`
  *   (started by an org admin). Withheld data (Organization glossary) goes only
  *   into the admin export; everything else goes into both.
@@ -72,7 +77,9 @@
  *
  * Add a new category by adding its key to `PERSONAL_DATA_CATEGORIES` and its
  * collector to `PERSONAL_DATA_COLLECTORS` (`collectors/index.ts`); the archive
- * writer, manifest and README pick it up from there.
+ * writer and manifest pick it up from there. The README's category list also
+ * needs a case for it in `categoryDescription` (readme.ts); the type checker
+ * asks for it.
  */
 
 import type { db } from "@/db";
@@ -83,6 +90,9 @@ export type { PersonalDataExportKind } from "@/db/schema";
 
 /** The database client a collector reads with (the global one, or a transaction). */
 export type PersonalDataExportDatabase = typeof db;
+
+/** Read access only: the global client or a collector's own transaction. */
+export type PersonalDataExportReader = Pick<PersonalDataExportDatabase, "select">;
 
 /** The categories of a personal data export, in README and archive order. */
 export const PERSONAL_DATA_CATEGORIES = [
