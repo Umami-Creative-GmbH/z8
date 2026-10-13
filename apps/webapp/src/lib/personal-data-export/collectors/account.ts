@@ -17,14 +17,41 @@ import {
 	type PersonalDataCollector,
 	type PersonalDataExportDatabase,
 	type PersonalDataExportScope,
+	type PersonalDataFieldGuide,
 	type PersonalDataPart,
 	recordPart,
 } from "../collector";
 import { PersonalDataSubjectNotFoundError } from "./employment";
 
+/** The README's explanation of the account parts (see "Field guide" in `../collector.ts`). */
+export const accountFieldGuide: PersonalDataFieldGuide = (t) => ({
+	user: {
+		summary: t(
+			"personalDataExport.readme.fields.account.user.summary",
+			"Your user account: the login you use for this organization.",
+		),
+		fields: {
+			name: t("personalDataExport.readme.fields.account.user.name", "Your account's display name."),
+			first_name: t(
+				"personalDataExport.readme.fields.account.user.firstName",
+				"Your account's first name.",
+			),
+			last_name: t(
+				"personalDataExport.readme.fields.account.user.lastName",
+				"Your account's last name.",
+			),
+			email: t(
+				"personalDataExport.readme.fields.account.user.email",
+				"The email address you sign in with.",
+			),
+		},
+	},
+});
+
 export const accountCollector: PersonalDataCollector = {
 	category: "account",
 	collect: collectAccount,
+	fields: accountFieldGuide,
 };
 
 async function collectAccount(
