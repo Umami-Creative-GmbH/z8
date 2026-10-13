@@ -1,11 +1,71 @@
 {
   "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Open billing",
+        "amountLabel": "Amount due",
+        "body": "Invoice {invoiceNumber} for {organizationName} is ready.",
+        "dueDateLabel": "Due date",
+        "subject": "Your Z8 invoice {invoiceNumber} is ready",
+        "title": "Your invoice is ready"
+      },
+      "paymentFailed": {
+        "action": "Update payment method",
+        "body": "We could not collect {invoiceAmount} for {organizationName}.",
+        "retry": "Please update your payment method before the next retry on {paymentRetryDate} to avoid service interruption.",
+        "subject": "Action needed: Z8 payment failed",
+        "title": "Your payment failed"
+      },
+      "subscriptionPaused": {
+        "action": "Manage billing",
+        "body": "The {planName} subscription for {organizationName} is paused.",
+        "limits": "Time tracking data remains available, but paid plan features may be limited until billing is resumed.",
+        "subject": "Your Z8 subscription is paused",
+        "title": "Your subscription is paused"
+      },
+      "subscriptionResumed": {
+        "action": "View billing details",
+        "active": "Your paid Z8 features are active again.",
+        "body": "The {planName} subscription for {organizationName} resumed on {resumeDate}.",
+        "subject": "Your Z8 subscription has resumed",
+        "title": "Your subscription has resumed"
+      },
+      "trialEnding": {
+        "action": "Review billing settings",
+        "body": "Your {planName} trial for {organizationName} ends on {trialEndsAt}.",
+        "paymentMethod": "To keep Z8 running without interruption, add a payment method in billing settings.",
+        "subject": "Your Z8 trial ends in {daysRemaining, plural, one {# day} other {# days}}",
+        "subjectSoon": "Your Z8 trial ends soon",
+        "title": "Your trial is ending"
+      },
+      "values": {
+        "noDueDate": "not set",
+        "retrySoon": "soon",
+        "yourOrganization": "your organization"
+      }
+    },
     "layout": {
       "actionFallback": "If the button does not work, open this link:",
       "footer": "This email was sent by Z8."
     },
     "notification": {
       "openAction": "Open Z8"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Date range",
+      "empty": {
+        "body": "Your scheduled export {scheduleName} ran, but there is nothing to download.",
+        "noFile": "No file was produced for this run.",
+        "title": "Scheduled export finished"
+      },
+      "ready": {
+        "action": "Download export",
+        "body": "Your scheduled export {scheduleName} has completed successfully.",
+        "linkExpiry": "This download link is valid for {lifetime} and expires on {expiresAt}.",
+        "title": "Scheduled export ready"
+      },
+      "recordsLabel": "Records",
+      "subject": "Scheduled Export: {scheduleName} ({dateRange})"
     },
     "subjects": {
       "absenceRecordedByManager": "Absence Recorded",
