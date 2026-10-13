@@ -9,9 +9,12 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { EmailTemplateKey } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
+import { type EmailTranslate, loadEmailTranslator } from "@/lib/email/email-i18n";
 import { type SendEmailParams, sendEmail } from "@/lib/email/email-service";
+import { renderNotificationEmail } from "@/lib/email/render";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { createLogger } from "@/lib/logger";
+import { notificationEmailRoute } from "./email-routes";
 import { hasTypedNotificationParams, withFormattedTypedParams } from "./notification-params";
 import {
 	localizeOutboundNotification,
@@ -35,46 +38,6 @@ interface EmailNotificationParams {
 	metadata?: Record<string, unknown>;
 	organizationId?: string; // Optional org ID to use org-specific email config
 }
-
-/**
- * Types sent as a plain email in the recipient's language, linking into the
- * app only below their prefix; anything else links to the app's start page.
- */
-const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
-	Record<NotificationType, string | readonly string[]>
-> = {
-	automatic_clock_out: "/calendar/",
-	travel_expense_reimbursed: "/travel-expenses/",
-	travel_expense_partially_reimbursed: "/travel-expenses/",
-	travel_expense_recovery_recorded: "/travel-expenses/",
-	travel_expense_ready_for_reimbursement: "/travel-expenses/",
-	travel_expense_payroll_run_awaiting_confirmation: "/travel-expenses/",
-	missed_clock_in_reminder: "/time-tracking",
-	forgotten_clock_out_reminder: "/time-tracking",
-	break_due_reminder: "/time-tracking",
-	period_submission_reminder: "/time-tracking",
-	period_submission_sent_back: "/time-tracking",
-	period_submission_decided: "/time-tracking",
-	personnel_file_document_shared: "/my-documents",
-	personnel_file_employee_upload: "/personnel-files/",
-	// Officers get the employee's personnel file, the employee My documents (#869).
-	personnel_file_expiry_upcoming: ["/personnel-files/", "/my-documents"],
-	personnel_file_expired_today: ["/personnel-files/", "/my-documents"],
-	personnel_file_due_for_deletion: "/personnel-files/",
-	// The deputy's dashboard, which shows whom they cover (#1013).
-	absence_deputy_assigned: "/",
-	absence_deputy_removed: "/",
-	absence_deputy_dates_changed: "/",
-	absence_deputy_reminder: "/",
-	// The absent employee gets their absences, managers the team absences (#1014).
-	absence_deputy_unavailable: ["/absences", "/team/absences"],
-	// The covering deputy's inbox section, the approver's deputy decisions (#1018).
-	approval_cover_started: "/approvals/inbox",
-	approval_cover_return_summary: "/approvals/deputy-decisions/",
-	work_balance_adjustment_recorded: "/time-tracking",
-	work_balance_adjustment_cancelled: "/time-tracking",
-	scheduled_export_paused: "/settings/scheduled-exports",
-};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -140,25 +103,6 @@ function getMetadataNumber(
 	return fallback;
 }
 
-function escapeHtml(value: string): string {
-	return value
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#39;");
-}
-
-function renderLocalizedDefaultEmailHtml(content: LocalizedEmailContent, appUrl: string): string {
-	const escapedTitle = escapeHtml(content.title);
-	const escapedMessage = escapeHtml(content.message).replace(/\n/g, "<br />");
-	const actionLink = appUrl
-		? `<p style="margin: 24px 0 0;"><a href="${escapeHtml(appUrl)}">Open Z8</a></p>`
-		: "";
-
-	return `<div><h1>${escapedTitle}</h1><p>${escapedMessage}</p>${actionLink}</div>`;
-}
-
 /**
  * Get user email by ID
  */
@@ -205,6 +149,12 @@ export async function sendEmailNotification(
 		? (message: SendEmailParams) => sendEmail(message, { durable: true })
 		: sendEmail;
 
+	const route = notificationEmailRoute(type);
+	if (route.kind === "none") {
+		logger.debug({ type }, "Notification type is email-free");
+		return false;
+	}
+
 	try {
 		const email = await getUserEmail(userId, options.throwOnError);
 		if (!email) {
@@ -217,22 +167,30 @@ export async function sendEmailNotification(
 		const i18nMetadata = getI18nMetadata(metadata);
 		const hasI18nTitle = typeof i18nMetadata?.titleKey === "string";
 		const hasI18nMessage = typeof i18nMetadata?.messageKey === "string";
-		const linkPrefix = LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES[type];
-		if (linkPrefix) {
+		if (route.kind === "layout") {
+			// The layout chrome follows the language the title and message were written in.
 			const localized = organizationId
 				? await localizeOutboundNotification({ ...params, organizationId })
-				: params;
-			const linkPrefixes: readonly string[] =
-				typeof linkPrefix === "string" ? [linkPrefix] : linkPrefix;
+				: {
+						...params,
+						locale: await resolveOutboundNotificationLocale({ userId, organizationId }),
+					};
+			const { locale, t } = await loadEmailTranslator(localized.locale);
 			const target = params.actionUrl;
-			const actionUrl =
-				target && linkPrefixes.some((prefix) => target.startsWith(prefix))
+			const link =
+				target && route.linkPrefixes.some((prefix) => target.startsWith(prefix))
 					? new URL(target, appUrl).toString()
 					: appUrl;
 			const result = await sendNotificationEmail({
 				to: email,
 				subject: localized.title,
-				html: renderLocalizedDefaultEmailHtml(localized, actionUrl),
+				html: await renderNotificationEmail({
+					locale,
+					t,
+					title: localized.title,
+					message: localized.message,
+					actionUrl: link,
+				}),
 				organizationId,
 			});
 			if (result.unavailable) return false;
@@ -256,7 +214,10 @@ export async function sendEmailNotification(
 
 		let templateKey: EmailTemplateKey | null = null;
 		let templateData: Record<string, unknown> | null = null;
-		let subjectOverride = params.title;
+		// The type's default subject in the recipient language (`emails` namespace).
+		let subject: (t: EmailTranslate) => string = () => params.title;
+		// Where the shared layout's button leads.
+		let actionUrl = appUrl;
 
 		// Generate email content based on notification type
 		switch (type) {
@@ -264,7 +225,8 @@ export async function sendEmailNotification(
 				if (metadata) {
 					const dateRange = getMetadataString(metadata, "dateRange");
 					templateKey = "absence-request-submitted";
-					subjectOverride = "Absence Request Submitted";
+					subject = (t) =>
+						t("emails.subjects.absenceRequestSubmitted", "Absence Request Submitted");
 					templateData = {
 						employeeName: userName,
 						startDate: getMetadataString(metadata, "startDate", dateRange),
@@ -281,7 +243,7 @@ export async function sendEmailNotification(
 				if (metadata) {
 					if (metadata.managerRecorded === true) {
 						templateKey = "absence-recorded-by-manager";
-						subjectOverride = "Absence Recorded";
+						subject = (t) => t("emails.subjects.absenceRecordedByManager", "Absence Recorded");
 						templateData = {
 							employeeName: userName,
 							managerName: String(metadata.managerName || ""),
@@ -293,7 +255,8 @@ export async function sendEmailNotification(
 						};
 					} else {
 						templateKey = "absence-request-approved";
-						subjectOverride = "Absence Request Approved";
+						subject = (t) =>
+							t("emails.subjects.absenceRequestApproved", "Absence Request Approved");
 						templateData = {
 							employeeName: userName,
 							approverName: String(metadata.approverName || ""),
@@ -310,7 +273,7 @@ export async function sendEmailNotification(
 			case "absence_request_rejected":
 				if (metadata) {
 					templateKey = "absence-request-rejected";
-					subjectOverride = "Absence Request Rejected";
+					subject = (t) => t("emails.subjects.absenceRequestRejected", "Absence Request Rejected");
 					templateData = {
 						employeeName: userName,
 						approverName: String(metadata.approverName || ""),
@@ -328,7 +291,8 @@ export async function sendEmailNotification(
 				// This is for managers - use pending approval template
 				if (metadata) {
 					templateKey = "absence-request-pending-approval";
-					subjectOverride = "New Absence Request Pending Approval";
+					subject = (t) =>
+						t("emails.subjects.approvalRequestSubmitted", "New Absence Request Pending Approval");
 					templateData = {
 						managerName: userName,
 						employeeName: String(metadata.employeeName || ""),
@@ -339,6 +303,7 @@ export async function sendEmailNotification(
 						notes: metadata.notes ? String(metadata.notes) : undefined,
 						approvalUrl: `${appUrl}/approvals/inbox`,
 					};
+					actionUrl = `${appUrl}/approvals/inbox`;
 				}
 				break;
 
@@ -346,7 +311,8 @@ export async function sendEmailNotification(
 				// This is for managers
 				if (metadata) {
 					templateKey = "time-correction-pending-approval";
-					subjectOverride = "New Time Correction Pending Approval";
+					subject = (t) =>
+						t("emails.subjects.timeCorrectionSubmitted", "New Time Correction Pending Approval");
 					templateData = {
 						managerName: userName,
 						employeeName: String(metadata.employeeName || ""),
@@ -358,13 +324,14 @@ export async function sendEmailNotification(
 						reason: String(metadata.reason || ""),
 						approvalUrl: `${appUrl}/approvals/inbox`,
 					};
+					actionUrl = `${appUrl}/approvals/inbox`;
 				}
 				break;
 
 			case "time_correction_approved":
 				if (metadata) {
 					templateKey = "time-correction-approved";
-					subjectOverride = "Time Correction Approved";
+					subject = (t) => t("emails.subjects.timeCorrectionApproved", "Time Correction Approved");
 					templateData = {
 						employeeName: userName,
 						approverName: String(metadata.approverName || ""),
@@ -379,7 +346,7 @@ export async function sendEmailNotification(
 			case "time_correction_rejected":
 				if (metadata) {
 					templateKey = "time-correction-rejected";
-					subjectOverride = "Time Correction Rejected";
+					subject = (t) => t("emails.subjects.timeCorrectionRejected", "Time Correction Rejected");
 					templateData = {
 						employeeName: userName,
 						approverName: String(metadata.approverName || ""),
@@ -395,15 +362,20 @@ export async function sendEmailNotification(
 			case "team_member_added":
 				if (metadata) {
 					const teamName = getMetadataString(metadata, "teamName");
+					const teamUrl = `${appUrl}/settings/teams/${getMetadataString(metadata, "teamId")}`;
 					templateKey = "team-member-added";
-					subjectOverride = `You've been added to ${teamName}`;
+					subject = (t) =>
+						t("emails.subjects.teamMemberAdded", "You've been added to {teamName}", {
+							teamName,
+						});
 					templateData = {
 						memberName: userName,
 						teamName,
 						addedByName: getMetadataString(metadata, ["addedByName", "performedByName"]),
-						teamUrl: `${appUrl}/settings/teams/${getMetadataString(metadata, "teamId")}`,
+						teamUrl,
 						appUrl,
 					};
+					actionUrl = teamUrl;
 				}
 				break;
 
@@ -411,7 +383,10 @@ export async function sendEmailNotification(
 				if (metadata) {
 					const teamName = getMetadataString(metadata, "teamName");
 					templateKey = "team-member-removed";
-					subjectOverride = `You've been removed from ${teamName}`;
+					subject = (t) =>
+						t("emails.subjects.teamMemberRemoved", "You've been removed from {teamName}", {
+							teamName,
+						});
 					templateData = {
 						memberName: userName,
 						teamName,
@@ -423,7 +398,7 @@ export async function sendEmailNotification(
 
 			case "password_changed":
 				templateKey = "security-alert";
-				subjectOverride = "Security Alert: Password Changed";
+				subject = (t) => t("emails.subjects.passwordChanged", "Security Alert: Password Changed");
 				templateData = {
 					userName,
 					eventType: "password_changed",
@@ -437,7 +412,11 @@ export async function sendEmailNotification(
 
 			case "two_factor_enabled":
 				templateKey = "security-alert";
-				subjectOverride = "Security Alert: Two-Factor Authentication Enabled";
+				subject = (t) =>
+					t(
+						"emails.subjects.twoFactorEnabled",
+						"Security Alert: Two-Factor Authentication Enabled",
+					);
 				templateData = {
 					userName,
 					eventType: "two_factor_enabled",
@@ -451,7 +430,11 @@ export async function sendEmailNotification(
 
 			case "two_factor_disabled":
 				templateKey = "security-alert";
-				subjectOverride = "Security Alert: Two-Factor Authentication Disabled";
+				subject = (t) =>
+					t(
+						"emails.subjects.twoFactorDisabled",
+						"Security Alert: Two-Factor Authentication Disabled",
+					);
 				templateData = {
 					userName,
 					eventType: "two_factor_disabled",
@@ -463,18 +446,9 @@ export async function sendEmailNotification(
 				};
 				break;
 
-			// These don't have specific email templates - use generic approach
-			case "approval_request_approved":
-			case "approval_request_rejected":
-			case "birthday_reminder":
-			case "vacation_balance_alert":
-				// Skip email for these - they use in-app/push only
-				// or could use a generic template in the future
-				logger.debug({ type }, "No email template for notification type");
-				return false;
-
 			default:
-				logger.warn({ type }, "Unknown notification type for email");
+				// `notificationEmailRoute` sends every other type through the layout or not at all.
+				logger.warn({ type }, "No email template for notification type");
 				return false;
 		}
 
@@ -483,8 +457,11 @@ export async function sendEmailNotification(
 			return false;
 		}
 
-		let localizedEmailContent: LocalizedEmailContent | null = null;
-
+		// One recipient language for the subject, body, layout chrome and override variables.
+		recipientLocale ??= await resolveOutboundNotificationLocale({ userId, organizationId });
+		const { locale, t } = await loadEmailTranslator(recipientLocale);
+		let subjectOverride = subject(t);
+		let content: LocalizedEmailContent = { title: params.title, message: params.message };
 		if (organizationId && (hasI18nTitle || hasI18nMessage)) {
 			const localized = await localizeOutboundNotification({
 				userId,
@@ -494,28 +471,36 @@ export async function sendEmailNotification(
 				metadata,
 				locale: recipientLocale,
 			});
-			localizedEmailContent = { title: localized.title, message: localized.message };
+			content = { title: localized.title, message: localized.message };
 			if (hasI18nTitle) {
 				subjectOverride = localized.title;
 			}
 		}
 
+		// An enabled override wins and is sent as written; otherwise the shared layout
+		// (the security alert keeps its dedicated template, ADR 0001).
 		const rendered = await renderOrganizationEmailTemplate({
 			organizationId,
 			templateKey,
 			data: templateData,
 			subjectOverride,
+			renderDefaultHtml:
+				route.kind === "template"
+					? () =>
+							renderNotificationEmail({
+								locale,
+								t,
+								title: content.title,
+								message: content.message,
+								actionUrl,
+							})
+					: undefined,
 		});
-
-		const html =
-			!rendered.usedOverride && localizedEmailContent
-				? renderLocalizedDefaultEmailHtml(localizedEmailContent, appUrl)
-				: rendered.html;
 
 		const result = await sendNotificationEmail({
 			to: email,
 			subject: rendered.subject,
-			html,
+			html: rendered.html,
 			organizationId, // Use org-specific email config if available
 		});
 

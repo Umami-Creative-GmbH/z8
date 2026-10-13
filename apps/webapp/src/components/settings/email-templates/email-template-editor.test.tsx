@@ -1,9 +1,10 @@
 /* @vitest-environment jsdom */
 
-import { screen } from "@testing-library/react";
+import { render as renderWithTestingLibrary, screen } from "@testing-library/react";
+import { TolgeeProvider } from "@tolgee/react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
-import { render } from "@/test/render-with-translations";
+import { createTestTolgee, render } from "@/test/render-with-translations";
 import { EmailTemplateEditor } from "./email-template-editor";
 
 vi.mock("next/dynamic", () => ({
@@ -66,6 +67,50 @@ function renderEditor() {
 }
 
 describe("EmailTemplateEditor", () => {
+	it("says that an override goes to every recipient whatever their language, translated", () => {
+		const tolgee = createTestTolgee("de", {
+			settings: {
+				emailTemplates: {
+					editor: {
+						singleLanguageNote:
+							"Eine Vorlage wird an alle Empfänger gesendet, unabhängig von ihrer Sprache.",
+					},
+				},
+			},
+		});
+		renderWithTestingLibrary(
+			<TolgeeProvider tolgee={tolgee}>
+				<EmailTemplateEditor
+					definition={definition}
+					subject=""
+					html=""
+					plainText=""
+					editorDocument={{ type: "doc" }}
+					variables={[]}
+					onSubjectChange={vi.fn()}
+					onHtmlChange={vi.fn()}
+					onPlainTextChange={vi.fn()}
+					onEditorDocumentChange={vi.fn()}
+					onInsertVariable={vi.fn()}
+				/>
+			</TolgeeProvider>,
+		);
+
+		expect(
+			screen.getByText(
+				"Eine Vorlage wird an alle Empfänger gesendet, unabhängig von ihrer Sprache.",
+			),
+		).toBeTruthy();
+	});
+
+	it("shows the single-language note in English by default", () => {
+		renderEditor();
+
+		expect(
+			screen.getByText(/goes to every recipient as written, whatever their language/),
+		).toBeTruthy();
+	});
+
 	it("applies theme-aware styles to the rich email editor", () => {
 		renderEditor();
 

@@ -1,0 +1,26 @@
+{
+  "emails": {
+    "layout": {
+      "actionFallback": "If the button does not work, open this link:",
+      "footer": "This email was sent by Z8."
+    },
+    "notification": {
+      "openAction": "Open Z8"
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Absence Recorded",
+      "absenceRequestApproved": "Absence Request Approved",
+      "absenceRequestRejected": "Absence Request Rejected",
+      "absenceRequestSubmitted": "Absence Request Submitted",
+      "approvalRequestSubmitted": "New Absence Request Pending Approval",
+      "passwordChanged": "Security Alert: Password Changed",
+      "teamMemberAdded": "You've been added to {teamName}",
+      "teamMemberRemoved": "You've been removed from {teamName}",
+      "timeCorrectionApproved": "Time Correction Approved",
+      "timeCorrectionRejected": "Time Correction Rejected",
+      "timeCorrectionSubmitted": "New Time Correction Pending Approval",
+      "twoFactorDisabled": "Security Alert: Two-Factor Authentication Disabled",
+      "twoFactorEnabled": "Security Alert: Two-Factor Authentication Enabled"
+    }
+  }
+}

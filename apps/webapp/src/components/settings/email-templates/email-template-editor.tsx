@@ -4,6 +4,7 @@ import { useTranslate } from "@tolgee/react";
 
 import "@react-email/editor/themes/default.css";
 import type { EmailEditorRef } from "@react-email/editor";
+import { IconLanguage } from "@tabler/icons-react";
 import dynamic from "next/dynamic";
 import { type Ref, useImperativeHandle, useRef } from "react";
 import { Input } from "@/components/ui/input";
@@ -100,6 +101,16 @@ export function EmailTemplateEditor({
 
 	return (
 		<div className="space-y-5">
+			<p className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3 text-muted-foreground text-xs">
+				<IconLanguage aria-hidden="true" className="mt-px size-4 shrink-0" />
+				<span>
+					{t(
+						"settings.emailTemplates.editor.singleLanguageNote",
+						"A custom template goes to every recipient as written, whatever their language. Without one, Z8 sends its default email in each recipient's language.",
+					)}
+				</span>
+			</p>
+
 			<div className="grid gap-2">
 				<Label htmlFor="email-template-subject">
 					{t("settings.emailTemplates.editor.subject", "Subject")}
