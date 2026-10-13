@@ -359,6 +359,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "administration",
 	},
 	{
+		id: "vehicle-use",
+		titleKey: "settings.vehicleUse.title",
+		titleDefault: "Vehicle use",
+		descriptionKey: "settings.vehicleUse.description",
+		descriptionDefault: "Who is asked to record the vehicle they drove and its odometer readings",
+		href: "/settings/vehicle-use",
+		icon: "car",
+		minimumTier: "orgAdmin",
+		group: "administration",
+	},
+	{
 		id: "kiosks",
 		titleKey: "settings.kiosks.title",
 		titleDefault: "Kiosks",

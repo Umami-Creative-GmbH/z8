@@ -143,6 +143,7 @@ describe("org-admin settings route access", () => {
 			"/settings/kiosks",
 			"/settings/custom-fields",
 			"/settings/vehicles",
+			"/settings/vehicle-use",
 		]);
 	});
 
