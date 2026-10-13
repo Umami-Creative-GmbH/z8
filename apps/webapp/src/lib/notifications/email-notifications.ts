@@ -9,13 +9,21 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { EmailTemplateKey } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { type EmailTranslate, loadEmailTranslator } from "@/lib/email/email-i18n";
 import { type SendEmailParams, sendEmail } from "@/lib/email/email-service";
-import { renderNotificationEmail } from "@/lib/email/render";
+import { renderNotificationEmail, renderSecurityAlert } from "@/lib/email/render";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
+import type { SecurityAlertData, SecurityEventType } from "@/lib/email/templates/security-alert";
 import { createLogger } from "@/lib/logger";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { notificationEmailRoute } from "./email-routes";
-import { hasTypedNotificationParams, withFormattedTypedParams } from "./notification-params";
+import {
+	formatNotificationParam,
+	hasTypedNotificationParams,
+	notificationParam,
+	withFormattedTypedParams,
+} from "./notification-params";
 import {
 	localizeOutboundNotification,
 	resolveOutboundNotificationLocale,
@@ -157,6 +165,45 @@ async function getUserName(userId: string): Promise<string> {
 	}
 }
 
+function securityAlertSubject(t: EmailTranslate, eventType: SecurityEventType): string {
+	switch (eventType) {
+		case "password_changed":
+			return t("emails.subjects.passwordChanged", "Security Alert: Password Changed");
+		case "two_factor_enabled":
+			return t(
+				"emails.subjects.twoFactorEnabled",
+				"Security Alert: Two-Factor Authentication Enabled",
+			);
+		case "two_factor_disabled":
+			return t(
+				"emails.subjects.twoFactorDisabled",
+				"Security Alert: Two-Factor Authentication Disabled",
+			);
+	}
+}
+
+/**
+ * When the security event happened (the alert goes out as it happens), in the
+ * organization timezone with the zone printed; UTC without an organization.
+ */
+async function securityAlertTime(
+	organizationId: string | undefined,
+	locale: string,
+): Promise<string> {
+	let timeZone = "UTC";
+	if (organizationId) {
+		try {
+			timeZone = await loadOrganizationTimezone(db, organizationId);
+		} catch (error) {
+			logger.warn({ error, organizationId }, "Failed to load organization timezone");
+		}
+	}
+	return formatNotificationParam(
+		notificationParam.zonedInstant(systemClock.nowInstant(), timeZone),
+		{ locale },
+	);
+}
+
 /**
  * Send email notification based on notification type
  */
@@ -239,6 +286,8 @@ export async function sendEmailNotification(
 		let subject: (t: EmailTranslate) => string = () => params.title;
 		// Where the shared layout's button leads.
 		let actionUrl = appUrl;
+		// The security alert's dedicated template data (ADR 0001).
+		let securityAlert: SecurityAlertData | null = null;
 
 		// Generate email content based on notification type
 		switch (type) {
@@ -409,53 +458,21 @@ export async function sendEmailNotification(
 				break;
 
 			case "password_changed":
-				templateKey = "security-alert";
-				subject = (t) => t("emails.subjects.passwordChanged", "Security Alert: Password Changed");
-				templateData = {
-					userName,
-					eventType: "password_changed",
-					timestamp: new Date().toLocaleString(),
-					ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
-					userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
-					securitySettingsUrl: `${appUrl}/settings/security`,
-					appUrl,
-				};
-				break;
-
 			case "two_factor_enabled":
-				templateKey = "security-alert";
-				subject = (t) =>
-					t(
-						"emails.subjects.twoFactorEnabled",
-						"Security Alert: Two-Factor Authentication Enabled",
-					);
-				templateData = {
-					userName,
-					eventType: "two_factor_enabled",
-					timestamp: new Date().toLocaleString(),
-					ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
-					userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
-					securitySettingsUrl: `${appUrl}/settings/security`,
-					appUrl,
-				};
-				break;
-
 			case "two_factor_disabled":
 				templateKey = "security-alert";
-				subject = (t) =>
-					t(
-						"emails.subjects.twoFactorDisabled",
-						"Security Alert: Two-Factor Authentication Disabled",
-					);
-				templateData = {
+				subject = (t) => securityAlertSubject(t, type);
+				// The time is filled in the recipient language below.
+				securityAlert = {
 					userName,
-					eventType: "two_factor_disabled",
-					timestamp: new Date().toLocaleString(),
+					eventType: type,
+					timestamp: "",
 					ipAddress: metadata?.ipAddress ? String(metadata.ipAddress) : undefined,
 					userAgent: metadata?.userAgent ? String(metadata.userAgent) : undefined,
 					securitySettingsUrl: `${appUrl}/settings/security`,
 					appUrl,
 				};
+				templateData = { ...securityAlert };
 				break;
 
 			default:
@@ -471,7 +488,12 @@ export async function sendEmailNotification(
 
 		// One recipient language for the subject, body, layout chrome and override variables.
 		recipientLocale ??= await resolveOutboundNotificationLocale({ userId, organizationId });
-		const { locale, t } = await loadEmailTranslator(recipientLocale);
+		const translator = await loadEmailTranslator(recipientLocale);
+		const { locale, t } = translator;
+		if (securityAlert) {
+			securityAlert.timestamp = await securityAlertTime(organizationId, locale);
+			templateData = { ...securityAlert };
+		}
 		let subjectOverride = subject(t);
 		let content: LocalizedEmailContent = { title: params.title, message: params.message };
 		if (organizationId && (hasI18nTitle || hasI18nMessage)) {
@@ -496,17 +518,18 @@ export async function sendEmailNotification(
 			templateKey,
 			data: templateData,
 			subjectOverride,
-			renderDefaultHtml:
-				route.kind === "template"
-					? () =>
-							renderNotificationEmail({
-								locale,
-								t,
-								title: content.title,
-								message: content.message,
-								actionUrl,
-							})
-					: undefined,
+			renderDefaultHtml: () => {
+				const alert = securityAlert;
+				return alert
+					? renderSecurityAlert(alert, translator)
+					: renderNotificationEmail({
+							locale,
+							t,
+							title: content.title,
+							message: content.message,
+							actionUrl,
+						});
+			},
 		});
 
 		const result = await sendNotificationEmail({

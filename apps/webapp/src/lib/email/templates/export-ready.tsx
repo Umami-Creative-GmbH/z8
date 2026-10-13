@@ -1,15 +1,33 @@
-import { Body, Button, Container, Head, Heading, Hr, Html, Section, Text } from "react-email";
+// Mailer only: the email copy and its catalog never reach a route or the client.
+import "server-only";
 
-interface ExportReadyProps {
+import type { EmailTranslate } from "../email-i18n";
+import { EmailLayout, EmailText } from "../layout/email-layout";
+
+/** The export-ready email's data; also the `{{variables}}` of its override. */
+export type ExportReadyData = {
 	recipientName: string;
 	organizationName: string;
+	/** The exported data categories, already in the recipient language. */
 	categories: string[];
 	fileSize: string;
 	downloadUrl: string;
+	/** When the file is deleted, already formatted in the organization timezone. */
 	expiresAt: string;
+};
+
+export interface ExportReadyProps extends ExportReadyData {
+	/** The recipient language. */
+	locale: string;
+	/** The `emails` namespace translator in `locale`. */
+	t: EmailTranslate;
 }
 
+// No inbox preview: the default body is also the override starter draft, whose plain text
+// would pick up the preview's hidden padding.
 export function ExportReady({
+	locale,
+	t,
 	recipientName,
 	organizationName,
 	categories,
@@ -18,147 +36,35 @@ export function ExportReady({
 	expiresAt,
 }: ExportReadyProps) {
 	return (
-		<Html>
-			<Head />
-			<Body style={main}>
-				<Container style={container}>
-					<Heading style={h1}>Your Data Export is Ready</Heading>
-					<Text style={text}>Hi {recipientName},</Text>
-					<Text style={text}>
-						Your data export for <strong>{organizationName}</strong> has been completed. You can
-						download it from the export history in Z8.
-					</Text>
-
-					<Section style={detailsBox}>
-						<Text style={detailLabel}>Organization</Text>
-						<Text style={detailValue}>{organizationName}</Text>
-
-						<Text style={detailLabel}>Data Included</Text>
-						<Text style={detailValue}>{categories.join(", ")}</Text>
-
-						<Text style={detailLabel}>File Size</Text>
-						<Text style={detailValue}>{fileSize}</Text>
-
-						<Text style={detailLabel}>Available Until</Text>
-						<Text style={detailValue}>{expiresAt}</Text>
-					</Section>
-
-					<Section style={buttonContainer}>
-						<Button style={button} href={downloadUrl}>
-							Open Export History
-						</Button>
-					</Section>
-
-					<Text style={text}>
-						If the button doesn't work, you can also copy and paste this link into your browser:
-					</Text>
-					<Text style={linkText}>{downloadUrl}</Text>
-
-					<Hr style={hr} />
-
-					<Text style={footer}>
-						Sign in to Z8 as an organization admin to download the file. Each download starts with a
-						fresh, secure link.
-					</Text>
-
-					<Text style={footer}>
-						After the date above, the export file is deleted automatically.
-					</Text>
-				</Container>
-			</Body>
-		</Html>
+		<EmailLayout
+			locale={locale}
+			t={t}
+			title={t("emails.exportReady.title", "Your data export is ready")}
+			details={[
+				{ label: t("emails.export.organization", "Organization"), value: organizationName },
+				{
+					label: t("emails.exportReady.categories", "Data included"),
+					value: categories.join(", "),
+				},
+				{ label: t("emails.exportReady.fileSize", "File size"), value: fileSize },
+				{ label: t("emails.exportReady.expiresAt", "Available until"), value: expiresAt },
+			]}
+			action={{ label: t("emails.exportReady.action", "Open export history"), href: downloadUrl }}
+			note={t(
+				"emails.exportReady.note",
+				"Sign in to Z8 as an organization admin to download the file. Each download starts with a fresh, secure link. After the date above, the export file is deleted automatically.",
+			)}
+		>
+			<EmailText>{t("emails.common.greeting", "Hi {name},", { name: recipientName })}</EmailText>
+			<EmailText>
+				{t(
+					"emails.exportReady.body",
+					"Your data export for {organizationName} is complete. You can download it from the export history in Z8.",
+					{ organizationName },
+				)}
+			</EmailText>
+		</EmailLayout>
 	);
 }
 
 export default ExportReady;
-
-// Styles
-const main = {
-	backgroundColor: "#f6f9fc",
-	fontFamily:
-		'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-	backgroundColor: "#ffffff",
-	margin: "0 auto",
-	padding: "20px 0 48px",
-	marginBottom: "64px",
-	maxWidth: "600px",
-};
-
-const h1 = {
-	color: "#333",
-	fontSize: "24px",
-	fontWeight: "bold",
-	padding: "0 40px",
-	margin: "30px 0",
-	textAlign: "center" as const,
-};
-
-const text = {
-	color: "#333",
-	fontSize: "16px",
-	lineHeight: "26px",
-	padding: "0 40px",
-};
-
-const detailsBox = {
-	backgroundColor: "#f6f9fc",
-	borderRadius: "8px",
-	margin: "24px 40px",
-	padding: "24px",
-};
-
-const detailLabel = {
-	color: "#666",
-	fontSize: "12px",
-	fontWeight: "600",
-	textTransform: "uppercase" as const,
-	letterSpacing: "0.5px",
-	margin: "16px 0 4px 0",
-};
-
-const detailValue = {
-	color: "#333",
-	fontSize: "16px",
-	margin: "0 0 8px 0",
-};
-
-const buttonContainer = {
-	padding: "27px 40px",
-	textAlign: "center" as const,
-};
-
-const button = {
-	backgroundColor: "#16a34a",
-	borderRadius: "6px",
-	color: "#fff",
-	fontSize: "16px",
-	fontWeight: "600",
-	textDecoration: "none",
-	textAlign: "center" as const,
-	display: "inline-block",
-	padding: "12px 32px",
-};
-
-const linkText = {
-	color: "#16a34a",
-	fontSize: "14px",
-	lineHeight: "24px",
-	padding: "0 40px",
-	wordBreak: "break-all" as const,
-};
-
-const hr = {
-	borderColor: "#e6ebf1",
-	margin: "20px 40px",
-};
-
-const footer = {
-	color: "#8898aa",
-	fontSize: "14px",
-	lineHeight: "24px",
-	padding: "0 40px",
-	textAlign: "center" as const,
-};
