@@ -6,12 +6,11 @@ import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
+import { type WorkPeriodEntryTimes, workPeriodEntryTimesOf } from "@/lib/notifications/entry-times";
 import {
-	type EntryTime,
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 	onManualEntryApproved,
-	type WorkPeriodEntryTimes,
 } from "@/lib/notifications/triggers";
 
 /**
@@ -41,12 +40,10 @@ async function loadWorkPeriodEntryTimes(params: {
 		),
 		columns: { id: true, timestamp: true, utcOffsetMinutes: true },
 	});
-	const entryTime = (id: string | null): EntryTime | null => {
-		const entry = id ? entries.find((candidate) => candidate.id === id) : undefined;
-		return entry ? { at: entry.timestamp, utcOffsetMinutes: entry.utcOffsetMinutes } : null;
-	};
-	const clockIn = entryTime(period.clockInId);
-	return clockIn ? { clockIn, clockOut: entryTime(period.clockOutId) } : null;
+	const entryFor = (id: string | null) =>
+		id ? entries.find((candidate) => candidate.id === id) : undefined;
+	const clockIn = entryFor(period.clockInId);
+	return clockIn ? workPeriodEntryTimesOf(clockIn, entryFor(period.clockOutId)) : null;
 }
 
 async function getApprovalNotificationParticipants(

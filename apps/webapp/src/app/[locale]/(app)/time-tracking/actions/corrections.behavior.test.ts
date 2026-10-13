@@ -1541,6 +1541,53 @@ describe("time correction submission actions", () => {
 		);
 	});
 
+	it("still notifies the legacy manager exactly once, without times, when the entries cannot be read", async () => {
+		configure({
+			kind: "default_created",
+			authority: "legacy",
+			submittedToEmployeeId: ids.manager,
+		});
+		state.employeeFindFirst
+			.mockReset()
+			.mockResolvedValueOnce(employee)
+			.mockResolvedValueOnce({
+				...employee,
+				id: ids.manager,
+				userId: "user-manager",
+				user: { name: "Manager", email: "manager@example.com" },
+			})
+			.mockResolvedValueOnce({
+				...employee,
+				user: { name: "Employee", email: "employee@example.com" },
+			});
+		state.timeEntryFindMany.mockResolvedValue([]);
+		const { logger } = await import("./shared");
+
+		const result = await modular.requestTimeCorrectionEffect({
+			workPeriodId: ids.period,
+			submissionId,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "09:00",
+			reason: "Missed punch",
+		});
+
+		expect(result.success).toBe(true);
+		expect(state.onTimeCorrectionPendingApproval).toHaveBeenCalledOnce();
+		expect(state.onTimeCorrectionPendingApproval).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: ids.period,
+				managerUserId: "user-manager",
+				reason: "Missed punch",
+				original: null,
+				corrected: null,
+			}),
+		);
+		expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+			expect.objectContaining({ workPeriodId: ids.period }),
+			expect.stringContaining("without its times"),
+		);
+	});
+
 	it("does not dispatch side effects when the repository transaction rolls back", async () => {
 		configure({ kind: "auto_completed", authority: "legacy" });
 		state.withTransaction.mockRejectedValue(new Error("rollback"));

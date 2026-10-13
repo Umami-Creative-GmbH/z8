@@ -162,6 +162,30 @@ describe("resolveRecipientNotificationLocale", () => {
 		});
 	});
 
+	it("reads the recipient's hour cycle with their language in one lookup", async () => {
+		userSettingsFindFirstMock.mockResolvedValue({ locale: "de", timeFormat: "12h" });
+
+		const { resolveRecipientNotificationPreferences } = await import("./recipient-locale");
+
+		await expect(
+			resolveRecipientNotificationPreferences({ userId: "user-1", organizationId: "org-1" }),
+		).resolves.toEqual({ locale: "de", timeFormat: "12h" });
+		expect(userSettingsFindFirstMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("leaves the hour cycle to the language without a recipient's own setting", async () => {
+		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "fr" });
+
+		const { resolveRecipientNotificationPreferences } = await import("./recipient-locale");
+
+		await expect(
+			resolveRecipientNotificationPreferences({ userId: null, organizationId: "org-1" }),
+		).resolves.toEqual({ locale: "fr" });
+		await expect(
+			resolveRecipientNotificationPreferences({ userId: "user-1", organizationId: "org-1" }),
+		).resolves.toEqual({ locale: "fr" });
+	});
+
 	it("falls back to English for missing or invalid values", async () => {
 		userSettingsFindFirstMock.mockResolvedValue({ locale: "xx" });
 		orgSettingsFindFirstMock.mockResolvedValue({ defaultLanguage: "yy" });

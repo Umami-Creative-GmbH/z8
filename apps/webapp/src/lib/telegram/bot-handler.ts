@@ -12,6 +12,7 @@ import {
 	getUserLocaleRaw,
 	setUserLocale,
 } from "@/lib/bot-platform/i18n";
+import { getReplyTranslate } from "@/lib/bot-platform/reply-translate";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -65,14 +66,6 @@ function telegramInvocationId(bot: ResolvedTelegramBot, updateId: number | undef
 }
 
 /**
- * Replies go out in the recipient language: the linked user's, or the
- * organization's default for someone not linked to a Z8 user yet.
- */
-async function replyTranslator(bot: ResolvedTelegramBot, userId: string | null) {
-	return getBotTranslate(await getUserLocale({ userId, organizationId: bot.organizationId }));
-}
-
-/**
  * Handle incoming text message
  */
 async function handleMessage(
@@ -89,7 +82,7 @@ async function handleMessage(
 
 	// Handle /start command (first interaction) — no auth needed, organization's language
 	if (text === "/start") {
-		const t = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		await sendMessage(bot.botToken, {
 			chat_id: chatId,
 			text: escapeMarkdownV2(
@@ -120,7 +113,7 @@ async function handleMessage(
 	);
 
 	if (userResult.status !== "found") {
-		const t = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		await sendMessage(bot.botToken, {
 			chat_id: chatId,
 			text: escapeMarkdownV2(
@@ -432,7 +425,7 @@ async function handleLinkCommand(
 	const code = parts[1];
 
 	if (!code) {
-		const t = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		await sendMessage(bot.botToken, {
 			chat_id: chatId,
 			text: escapeMarkdownV2(
@@ -452,7 +445,10 @@ async function handleLinkCommand(
 		telegramUsername,
 		displayName,
 	);
-	const t = await replyTranslator(bot, result.status === "success" ? result.userId : null);
+	const { t } = await getReplyTranslate({
+		userId: result.status === "success" ? result.userId : null,
+		organizationId: bot.organizationId,
+	});
 
 	switch (result.status) {
 		case "success":

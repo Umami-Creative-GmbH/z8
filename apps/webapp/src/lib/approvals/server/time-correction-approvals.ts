@@ -41,10 +41,10 @@ import {
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { type WorkPeriodEntryTimes, workPeriodEntryTimesOf } from "@/lib/notifications/entry-times";
 import {
 	onTimeCorrectionApproved,
 	onTimeCorrectionRejected,
-	type WorkPeriodEntryTimes,
 } from "@/lib/notifications/triggers";
 import type { CompletedWorkFollowUp } from "@/lib/time-tracking/close-active-work";
 import { workInterval } from "@/lib/time-tracking/closed-months/store";
@@ -279,21 +279,6 @@ interface TimeCorrectionNotificationTimes {
 	correctedNotificationTime: Date;
 	/** The period as corrected, each endpoint at its own entry's offset (#1137). */
 	correctedNotificationTimes: WorkPeriodEntryTimes | null;
-}
-
-/** The corrected period's endpoints: the correction entry when there is one, else the original. */
-function correctedEntryTimes(endpoints: {
-	clockIn: LockedTimeCorrectionEntry;
-	clockOut: LockedTimeCorrectionEntry | null | undefined;
-}): WorkPeriodEntryTimes {
-	const entryTime = (entry: LockedTimeCorrectionEntry) => ({
-		at: entry.timestamp,
-		utcOffsetMinutes: entry.utcOffsetMinutes,
-	});
-	return {
-		clockIn: entryTime(endpoints.clockIn),
-		clockOut: endpoints.clockOut ? entryTime(endpoints.clockOut) : null,
-	};
 }
 
 export type TimeCorrectionApprovalWorkflowResult =
@@ -2830,10 +2815,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		clockInCorrection?.timestamp ??
 		clockOutCorrection?.timestamp ??
 		originalNotificationTime;
-	const correctedNotificationTimes = correctedEntryTimes({
-		clockIn: clockInCorrection ?? originalClockIn,
-		clockOut: clockOutCorrection ?? originalClockOut,
-	});
+	// The corrected period's endpoints: the correction entry when there is one, else the original.
+	const correctedNotificationTimes = workPeriodEntryTimesOf(
+		clockInCorrection ?? originalClockIn,
+		clockOutCorrection ?? originalClockOut,
+	);
 	const hasEndpointCorrection = correctionEntries.length > 0;
 	const adopted = adoptedScope
 		? {
@@ -3950,21 +3936,19 @@ async function loadReplayCorrectedTimes(
 	const endpoints =
 		missingIds.length === 0
 			? []
-			: ((await input.dbService.db.query.timeEntry.findMany({
+			: await input.dbService.db.query.timeEntry.findMany({
 					where: and(
 						eq(timeEntry.organizationId, input.organizationId),
 						eq(timeEntry.employeeId, input.requesterEmployeeId),
 						inArray(timeEntry.id, missingIds),
 					),
-				})) as LockedTimeCorrectionEntry[]);
+					columns: { id: true, timestamp: true, utcOffsetMinutes: true },
+				});
 	const periodEntry = (id: string | null) =>
 		id ? endpoints.find((entry) => entry.id === id) : undefined;
 	const clockIn = corrections.clockIn ?? periodEntry(period.clockInId);
 	if (!clockIn) return null;
-	return correctedEntryTimes({
-		clockIn,
-		clockOut: corrections.clockOut ?? periodEntry(period.clockOutId),
-	});
+	return workPeriodEntryTimesOf(clockIn, corrections.clockOut ?? periodEntry(period.clockOutId));
 }
 
 export async function executeTimeCorrectionSubmissionInTransaction(

@@ -106,4 +106,26 @@ describe("Teams bot replies", () => {
 
 		expect(sent()).toEqual(["fr:bot.static.welcomeTeams"]);
 	});
+
+	it("reports an unexpected failure in the linked user's language once the organization is known", async () => {
+		state.executeCommand.mockRejectedValue(new Error("boom"));
+		const { context, sent } = turn(messageActivity("clockin"));
+
+		await handleBotActivity(context);
+
+		expect(sent()).toEqual(["de:bot.static.genericError"]);
+	});
+
+	it("reports a Teams error in the organization's default language for an unlinked presser", async () => {
+		state.resolveTeamsUser.mockResolvedValue({ status: "not_linked" });
+		const { TeamsError } = await import("./types");
+		state.getUserLocale.mockImplementationOnce(async () => {
+			throw new TeamsError("lookup failed", "USER_NOT_LINKED");
+		});
+		const { context, sent } = turn(messageActivity("clockin"));
+
+		await handleBotActivity(context);
+
+		expect(sent()).toEqual(["fr:bot.static.errorUserNotLinked"]);
+	});
 });

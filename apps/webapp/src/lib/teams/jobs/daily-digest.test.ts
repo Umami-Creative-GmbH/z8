@@ -40,6 +40,18 @@ vi.mock("../cards/daily-digest-card", () => ({ buildDailyDigestCard: vi.fn() }))
 vi.mock("../conversation-manager", () => ({ getOrganizationPersonalConversations: vi.fn() }));
 vi.mock("../tenant-resolver", () => ({ getAllActiveTenants: vi.fn() }));
 
+describe("digestTitleDate", () => {
+	it("writes out the digest's calendar day in the recipient's zone and language", async () => {
+		const { digestTitleDate } = await import("./daily-digest");
+		const lateEvening = new Date("2026-10-13T23:30:00Z");
+
+		expect(digestTitleDate(lateEvening, "Europe/Berlin", "de")).toBe("Mittwoch, 14. Oktober 2026");
+		expect(digestTitleDate(lateEvening, "America/New_York", "en")).toBe(
+			"Tuesday, October 13, 2026",
+		);
+	});
+});
+
 describe("shouldSkipDigestForManager", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();

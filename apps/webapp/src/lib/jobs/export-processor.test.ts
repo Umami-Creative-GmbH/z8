@@ -64,6 +64,7 @@ const { GERMAN } = vi.hoisted(() => ({
 		"emails.subjects.exportFailed": "Datenexport fehlgeschlagen - {organizationName}",
 		"emails.export.categories.absences": "Abwesenheiten",
 		"emails.exportReady.title": "Dein Datenexport ist fertig",
+		"emails.export.values.yourOrganization": "Deine Organisation",
 	} as Record<string, string>,
 }));
 
@@ -267,6 +268,51 @@ describe("runExportProcessor", () => {
 					downloadUrl: "https://app.example.com/en/settings/export/history/org_790",
 					expiresAt: "May 30, 2026, 8:05 AM (UTC)",
 				}),
+			}),
+		);
+	});
+
+	it("names a nameless organization in the recipient language", async () => {
+		const failedRecord = {
+			id: "export_791",
+			organizationId: "org_791",
+			requestedById: "employee_791",
+			categories: ["absences", "legacy_category"],
+			status: "failed" as const,
+			errorMessage: "Source timeout",
+			s3Key: null,
+			fileSizeBytes: null,
+			createdAt: new Date("2026-04-30T08:00:00.000Z"),
+			completedAt: null,
+			expiresAt: null,
+		};
+
+		getPendingExportsMock.mockResolvedValue([{ ...failedRecord, status: "pending" as const }]);
+		processExportMock.mockRejectedValue(new Error("Processing failed"));
+		findDataExportMock.mockResolvedValue(failedRecord);
+		findEmployeeMock.mockResolvedValue({
+			user: { id: "user_alex", email: "alex@example.com", name: "" },
+		});
+		findOrganizationMock.mockResolvedValue({ name: "", timezone: null });
+		resolveRecipientLocaleMock.mockResolvedValue("de");
+		renderOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Export failed",
+			html: "<p>Failed</p>",
+			usedOverride: false,
+		});
+
+		await runExportProcessor();
+
+		expect(renderOrganizationEmailTemplateMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				data: expect.objectContaining({
+					// The name falls back to the requester's email address.
+					recipientName: "alex@example.com",
+					organizationName: "Deine Organisation",
+					// A category the export no longer offers keeps its stored name.
+					categories: ["Abwesenheiten", "legacy_category"],
+				}),
+				subjectOverride: "Datenexport fehlgeschlagen - Deine Organisation",
 			}),
 		);
 	});

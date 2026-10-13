@@ -60,7 +60,6 @@ export async function sendClockingReminder(
 				organizationId: recipient.organizationId,
 				userId: recipient.userId,
 				timezone: recipient.timezone,
-				locale,
 			}),
 			locale,
 		);

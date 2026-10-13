@@ -46,9 +46,22 @@ describe("notification email routes", () => {
 	});
 
 	it("sends notification emails with an override template through the template route", () => {
-		expect(notificationEmailRoute("absence_request_approved")).toEqual({ kind: "template" });
-		expect(notificationEmailRoute("team_member_added")).toEqual({ kind: "template" });
-		expect(notificationEmailRoute("password_changed")).toEqual({ kind: "dedicated" });
+		expect(notificationEmailRoute("absence_request_approved")).toEqual({
+			kind: "template",
+			email: "absenceRequestApproved",
+		});
+		expect(notificationEmailRoute("approval_request_submitted")).toEqual({
+			kind: "template",
+			email: "approvalRequestSubmitted",
+		});
+		expect(notificationEmailRoute("team_member_added")).toEqual({
+			kind: "template",
+			email: "teamMemberAdded",
+		});
+		expect(notificationEmailRoute("password_changed")).toEqual({
+			kind: "dedicated",
+			securityEvent: "password_changed",
+		});
 	});
 
 	it("links layout-only emails into the app only below their prefixes", () => {

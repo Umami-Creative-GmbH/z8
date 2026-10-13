@@ -7,6 +7,7 @@
 
 import { executeCommand } from "@/lib/bot-platform/command-registry";
 import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
+import { getReplyTranslate } from "@/lib/bot-platform/reply-translate";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { createFollowupMessage, createInteractionResponse } from "./api";
@@ -20,13 +21,10 @@ import { claimLinkCode, resolveDiscordUser } from "./user-resolver";
 
 const logger = createLogger("DiscordBotHandler");
 
-/**
- * Replies go out in the recipient language: the linked user's, or the
- * organization's default for someone not linked to a Z8 user yet.
- */
-async function replyTranslator(bot: ResolvedDiscordBot, userId: string | null) {
-	return getBotTranslate(await getUserLocale({ userId, organizationId: bot.organizationId }));
-}
+const COMMAND_ERROR_NOTICE =
+	"Sorry, something went wrong executing that command. Please try again.";
+const REPLY_UNDELIVERED_NOTICE =
+	"Your command was processed, but its reply could not be shown. Check your status before repeating it.";
 
 /**
  * Handle an incoming Discord interaction
@@ -98,7 +96,7 @@ async function handleSlashCommand(
 	const userResult = await resolveDiscordUser(discordUserId, bot.organizationId, discordUsername);
 
 	if (userResult.status !== "found") {
-		const t = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		await createFollowupMessage(bot.botToken, bot.applicationId, interaction.token, {
 			content: t(
 				"bot.static.notLinkedDiscord",
@@ -150,13 +148,11 @@ async function handleSlashCommand(
 			{ error, commandName, organizationId: bot.organizationId },
 			"Failed to execute command",
 		);
-		let notice = "Sorry, something went wrong executing that command. Please try again.";
-		try {
-			const t = await getBotTranslate(locale);
-			notice = t("bot.static.commandError", notice);
-		} catch {
+		const notice = await getBotTranslate(locale).then(
+			(t) => t("bot.static.commandError", COMMAND_ERROR_NOTICE),
 			// Keep the English notice.
-		}
+			() => COMMAND_ERROR_NOTICE,
+		);
 		await sendFollowupBestEffort(bot, interaction, notice);
 		return;
 	}
@@ -175,14 +171,11 @@ async function handleSlashCommand(
 		);
 		// The command already ran (a clock command may have committed), so a failed
 		// reply must not invite a blind retry.
-		let notice =
-			"Your command was processed, but its reply could not be shown. Check your status before repeating it.";
-		try {
-			const t = await getBotTranslate(locale);
-			notice = t("bot.static.replyUndelivered", notice);
-		} catch {
+		const notice = await getBotTranslate(locale).then(
+			(t) => t("bot.static.replyUndelivered", REPLY_UNDELIVERED_NOTICE),
 			// Keep the English notice.
-		}
+			() => REPLY_UNDELIVERED_NOTICE,
+		);
 		await sendFollowupBestEffort(bot, interaction, notice);
 	}
 }
@@ -229,7 +222,7 @@ async function handleButtonClick(
 		}
 	} catch (error) {
 		logger.error({ error, customId }, "Failed to parse button data");
-		const t = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		await createInteractionResponse(
 			interaction.id,
 			interaction.token,
@@ -256,7 +249,7 @@ async function handleLinkCommand(
 	const code = codeOption?.value;
 
 	if (!code) {
-		const t = await replyTranslator(bot, null);
+		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
 		await createFollowupMessage(bot.botToken, bot.applicationId, interaction.token, {
 			content: t(
 				"bot.static.linkUsageDiscord",
@@ -280,7 +273,10 @@ async function handleLinkCommand(
 		await saveConversation(interaction.channel_id, result.userId, bot.organizationId);
 	}
 
-	const t = await replyTranslator(bot, result.status === "success" ? result.userId : null);
+	const { t } = await getReplyTranslate({
+		userId: result.status === "success" ? result.userId : null,
+		organizationId: bot.organizationId,
+	});
 	let responseText: string;
 
 	switch (result.status) {

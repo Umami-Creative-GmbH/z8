@@ -18,19 +18,12 @@ import {
 import { createLogger } from "@/lib/logger";
 import { daysUntilProjectDeadline } from "@/lib/projects/project-deadline-days";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { fillNotificationTemplate, notificationParam } from "./notification-params";
+import { type NotificationCopy, translatedContent } from "./notification-copy";
+import { notificationParam } from "./notification-params";
 import { createNotification } from "./notification-service";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("ProjectNotificationTriggers");
-
-/** Title and message copy with static English defaults, translated per recipient (#812). */
-interface NotificationCopy {
-	titleKey: string;
-	titleDefault: string;
-	messageKey: string;
-	messageDefault: string;
-}
 
 // =============================================================================
 // Budget Warning Notifications
@@ -120,7 +113,7 @@ export async function checkProjectBudgetWarnings(
 		await Promise.all(
 			newThresholds.map(async (threshold) => {
 				const notificationType = BUDGET_NOTIFICATION_TYPES[threshold];
-				const copy = BUDGET_WARNING_COPY[threshold];
+				const content = translatedContent(BUDGET_WARNING_COPY[threshold], i18nParams);
 
 				await Promise.all(
 					managers.map((manager) =>
@@ -129,8 +122,8 @@ export async function checkProjectBudgetWarnings(
 								userId: manager.userId,
 								organizationId: params.organizationId,
 								type: notificationType,
-								title: copy.titleDefault,
-								message: fillNotificationTemplate(copy.messageDefault, i18nParams),
+								title: content.title,
+								message: content.message,
 								entityType: "project",
 								entityId: params.projectId,
 								actionUrl: "/settings/projects",
@@ -140,7 +133,7 @@ export async function checkProjectBudgetWarnings(
 									usedHours: params.usedHours,
 									budgetHours: params.budgetHours,
 									percentUsed: Math.round(percentUsed),
-									i18n: { ...copy, params: i18nParams },
+									i18n: content.i18n,
 								},
 							},
 							options,
@@ -280,15 +273,14 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 
 		// Send notifications
 		const notificationType = DEADLINE_NOTIFICATION_TYPES[matchedThreshold];
-		const copy = DEADLINE_WARNING_COPY[matchedThreshold];
-		const i18nParams = {
+		const content = translatedContent(DEADLINE_WARNING_COPY[matchedThreshold], {
 			projectName: params.projectName,
 			// The deadline day is stored as its UTC midnight.
 			deadline: notificationParam.plainDate(
 				plainDateAt(instantFromDate(params.deadline), "UTC"),
 				"dateMedium",
 			),
-		};
+		});
 
 		await Promise.all(
 			managers.map((manager) =>
@@ -296,8 +288,8 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 					userId: manager.userId,
 					organizationId: params.organizationId,
 					type: notificationType,
-					title: copy.titleDefault,
-					message: fillNotificationTemplate(copy.messageDefault, i18nParams),
+					title: content.title,
+					message: content.message,
 					entityType: "project",
 					entityId: params.projectId,
 					actionUrl: "/settings/projects",
@@ -306,7 +298,7 @@ export async function checkProjectDeadlineWarnings(params: DeadlineWarningParams
 						deadline: params.deadline.toISOString(),
 						daysUntilDeadline: params.daysUntilDeadline,
 						threshold: matchedThreshold,
-						i18n: { ...copy, params: i18nParams },
+						i18n: content.i18n,
 					},
 				}),
 			),

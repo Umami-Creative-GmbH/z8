@@ -9,18 +9,6 @@ import { scanNotificationCreators } from "./notification-creator-scan";
  * channel can render it in the recipient language. A new creator without keys fails.
  */
 
-/** Direct writes that never get keys, with the reason. */
-const EXEMPT = new Map<string, string>([
-	[
-		"lib/demo/demo-data.service.ts::generateDemoPendingAbsenceApprovals",
-		"demo seed rows inserted as fixed English sample data",
-	],
-	[
-		"lib/demo/demo-data.service.ts::generateDemoPendingTimeCorrectionApprovals",
-		"demo seed rows inserted as fixed English sample data",
-	],
-]);
-
 /** A creator known to have keys, so a scan that finds nothing cannot pass. */
 const KNOWN_CREATOR_WITH_KEYS =
 	"lib/time-tracking/automatic-clock-out/notifications.ts::buildAutoClockOutNotification";
@@ -58,19 +46,14 @@ function productionSources(): Map<string, string> {
 describe("notification creators", () => {
 	it("all set translation keys", { timeout: 120_000 }, () => {
 		const sites = scanNotificationCreators(productionSources());
-		const found = new Set(sites.map((site) => site.id));
 		expect(sites).toContainEqual({ id: KNOWN_CREATOR_WITH_KEYS, hasKeys: true });
 
 		expect(
 			sites
-				.filter((site) => !site.hasKeys && !EXEMPT.has(site.id))
+				.filter((site) => !site.hasKeys)
 				.map((site) => site.id)
 				.sort(),
 			"Notification creators without translation keys (add metadata.i18n)",
-		).toEqual([]);
-		expect(
-			[...EXEMPT.keys()].filter((id) => !found.has(id)).sort(),
-			"Exempt writes that no longer exist",
 		).toEqual([]);
 	});
 });

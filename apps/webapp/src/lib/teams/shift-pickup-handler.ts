@@ -16,10 +16,8 @@ import {
 	OpenShiftsServiceLive,
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
-import {
-	fillNotificationTemplate,
-	notificationParam,
-} from "@/lib/notifications/notification-params";
+import { type NotificationCopy, translatedContent } from "@/lib/notifications/notification-copy";
+import { notificationParam } from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
@@ -43,7 +41,7 @@ const shiftPickupRequestedCopy = {
 		messageDefault:
 			"An employee requested to pick up the shift on {shiftDate} ({startTime} - {endTime}).",
 	},
-} as const;
+} as const satisfies Record<string, NotificationCopy>;
 
 interface NotifyPrimaryManagerAboutShiftPickupParams {
 	requestId: string;
@@ -112,13 +110,14 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 			startTime: requestedShift.startTime,
 			endTime: requestedShift.endTime,
 		};
+		const content = translatedContent(copy, i18nParams);
 
 		await createNotification({
 			userId: manager.userId,
 			organizationId,
 			type: "shift_pickup_requested",
-			title: copy.titleDefault,
-			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
+			title: content.title,
+			message: content.message,
 			entityType: "shift_request",
 			entityId: requestId,
 			actionUrl: "/scheduling",
@@ -126,7 +125,7 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 				shiftId,
 				requesterId,
 				managerId: primaryManager.managerId,
-				i18n: { ...copy, params: i18nParams },
+				i18n: content.i18n,
 			},
 		});
 	} catch (error) {

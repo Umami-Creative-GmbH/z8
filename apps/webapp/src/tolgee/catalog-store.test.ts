@@ -11,7 +11,7 @@ import {
 import { loadCatalogSlice, loadShellTranslations } from "./load-translations";
 import {
 	ALL_LANGUAGES,
-	ALL_NAMESPACES,
+	APP_NAMESPACES,
 	type Namespace,
 	TolgeeBase,
 	type TreeTranslationsData,
@@ -114,12 +114,12 @@ describe("cumulative catalogs", () => {
 				}
 			}
 			let accumulated = empty(locale);
-			for (const namespace of [...ALL_NAMESPACES].reverse())
+			for (const namespace of [...APP_NAMESPACES].reverse())
 				accumulated = mergeCatalogRecords(
 					accumulated,
 					await loadCatalogSlice(locale, [namespace]),
 				);
-			const expected = predecessor(fresh(locale, ALL_NAMESPACES));
+			const expected = predecessor(fresh(locale, APP_NAMESPACES));
 			expect(accumulated.records).toEqual({ [locale]: expected });
 			const instance = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
 				language: locale,
@@ -188,7 +188,7 @@ describe("cumulative catalogs", () => {
 				}
 				return out;
 			}
-			const sources = fresh(locale, ALL_NAMESPACES).map(
+			const sources = fresh(locale, APP_NAMESPACES).map(
 				({ namespace, data }) => ({
 					namespace,
 					data: feature.namespaces.includes(namespace)

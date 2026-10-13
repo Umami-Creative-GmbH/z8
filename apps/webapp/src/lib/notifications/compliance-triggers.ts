@@ -13,6 +13,7 @@ import { db } from "@/db";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { type NotificationCopy, translatedContent } from "./notification-copy";
 import {
 	fillNotificationTemplate,
 	type NotificationParamValue,
@@ -61,7 +62,7 @@ const exceptionRequestedCopy = {
 	messageKey: "common:notifications.content.complianceExceptionRequested.message",
 	messageDefault:
 		'{employeeName} requested a {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception: "{reason}"',
-} as const;
+} as const satisfies NotificationCopy;
 
 const exceptionApprovedCopy = {
 	titleKey: "common:notifications.content.complianceExceptionApproved.title",
@@ -69,7 +70,7 @@ const exceptionApprovedCopy = {
 	messageKey: "common:notifications.content.complianceExceptionApproved.message",
 	messageDefault:
 		"Your {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception was approved by {approverName}. Valid until {validUntil}.",
-} as const;
+} as const satisfies NotificationCopy;
 
 const exceptionRejectedCopy = {
 	withoutReason: {
@@ -86,7 +87,7 @@ const exceptionRejectedCopy = {
 		messageDefault:
 			'Your {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception was rejected by {approverName}. Reason: "{reason}"',
 	},
-} as const;
+} as const satisfies Record<string, NotificationCopy>;
 
 const exceptionExpiredCopy = {
 	titleKey: "common:notifications.content.complianceExceptionExpired.title",
@@ -94,7 +95,7 @@ const exceptionExpiredCopy = {
 	messageKey: "common:notifications.content.complianceExceptionExpired.message",
 	messageDefault:
 		"Your {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} pre-approval has expired (24 hours passed without use).",
-} as const;
+} as const satisfies NotificationCopy;
 
 const restPeriodWarningCopy = {
 	titleKey: "common:notifications.content.restPeriodWarning.title",
@@ -102,7 +103,7 @@ const restPeriodWarningCopy = {
 	messageKey: "common:notifications.content.restPeriodWarning.message",
 	messageDefault:
 		"You have {remaining} of required rest remaining. Next allowed clock-in: {nextAllowedClockIn}.",
-} as const;
+} as const satisfies NotificationCopy;
 
 const overtimeWarningCopy = {
 	titleKey: "common:notifications.content.overtimeWarning.title",
@@ -110,21 +111,21 @@ const overtimeWarningCopy = {
 	messageKey: "common:notifications.content.overtimeWarning.message",
 	messageDefault:
 		"You've worked {worked} {period, select, daily {today} weekly {this week} other {this month}} ({percent}% of the {limit} limit).",
-} as const;
+} as const satisfies NotificationCopy;
 
 const restPeriodViolationCopy = {
 	titleKey: "common:notifications.content.restPeriodViolation.title",
 	titleDefault: "Rest period violation logged",
 	messageKey: "common:notifications.content.restPeriodViolation.message",
 	messageDefault: "{description}",
-} as const;
+} as const satisfies NotificationCopy;
 
 const overtimeViolationCopy = {
 	titleKey: "common:notifications.content.overtimeViolation.title",
 	titleDefault: "Overtime violation logged",
 	messageKey: "common:notifications.content.overtimeViolation.message",
 	messageDefault: "{description}",
-} as const;
+} as const satisfies NotificationCopy;
 
 // =============================================================================
 // Exception Request Notifications
@@ -197,7 +198,7 @@ export async function onComplianceExceptionRequested(
 				entityType: "compliance_exception",
 				entityId: params.exceptionId,
 				actionUrl: "/settings/compliance",
-				metadata: { i18n: { ...copy, params: i18nParams } },
+				metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 			});
 		}
 	} catch (error) {
@@ -233,7 +234,7 @@ export async function onComplianceExceptionApproved(
 			entityType: "compliance_exception",
 			entityId: params.exceptionId,
 			actionUrl: "/time-tracking",
-			metadata: { i18n: { ...copy, params: i18nParams } },
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger compliance exception approved notification");
@@ -269,7 +270,7 @@ export async function onComplianceExceptionRejected(
 			entityType: "compliance_exception",
 			entityId: params.exceptionId,
 			actionUrl: "/time-tracking",
-			metadata: { i18n: { ...copy, params: i18nParams } },
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger compliance exception rejected notification");
@@ -297,7 +298,7 @@ export async function onComplianceExceptionExpired(params: ExceptionExpiredParam
 			entityType: "compliance_exception",
 			entityId: params.exceptionId,
 			actionUrl: "/time-tracking",
-			metadata: { i18n: { ...copy, params: i18nParams } },
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger compliance exception expired notification");
@@ -354,7 +355,7 @@ export async function onRestPeriodWarning(params: RestPeriodWarningParams): Prom
 			entityType: "compliance",
 			entityId: "rest_period",
 			actionUrl: "/time-tracking",
-			metadata: { i18n: { ...copy, params: i18nParams } },
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger rest period warning notification");
@@ -389,7 +390,7 @@ export async function onOvertimeWarning(params: OvertimeWarningParams): Promise<
 			entityType: "compliance",
 			entityId: `overtime_${params.overtimeType}`,
 			actionUrl: "/time-tracking",
-			metadata: { i18n: { ...copy, params: i18nParams } },
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger overtime warning notification");
@@ -412,7 +413,7 @@ export async function onRestPeriodViolation(params: ViolationParams): Promise<vo
 			entityType: "work_period",
 			entityId: params.workPeriodId || "violation",
 			actionUrl: "/time-tracking",
-			metadata: { i18n: { ...copy, params: { description: params.description } } },
+			metadata: { i18n: translatedContent(copy, { description: params.description }).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger rest period violation notification");
@@ -435,7 +436,7 @@ export async function onOvertimeViolation(params: ViolationParams): Promise<void
 			entityType: "work_period",
 			entityId: params.workPeriodId || "violation",
 			actionUrl: "/time-tracking",
-			metadata: { i18n: { ...copy, params: { description: params.description } } },
+			metadata: { i18n: translatedContent(copy, { description: params.description }).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger overtime violation notification");

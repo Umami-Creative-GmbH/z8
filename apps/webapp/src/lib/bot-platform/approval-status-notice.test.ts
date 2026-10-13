@@ -10,8 +10,11 @@ const getBotTranslate = vi.hoisted(() =>
 
 vi.mock("@/lib/bot-platform/i18n", () => ({ getBotTranslate }));
 vi.mock("@/lib/notifications/recipient-locale", () => ({
-	resolveOrganizationNotificationLocale: async (organizationId: string) =>
-		organizationId === "org" ? "fr" : "en",
+	// Saved language, then the organization's default, then en.
+	resolveRecipientNotificationLocale: async (input: {
+		userId?: string | null;
+		organizationId?: string | null;
+	}) => (input.userId === "german-user" ? "de" : input.organizationId === "org" ? "fr" : "en"),
 }));
 vi.mock("@/lib/app-url", () => ({
 	getOrganizationBaseUrl: async () => "https://org.z8.test",
@@ -39,7 +42,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "approved", evidence: evidence("approved", "approved") },
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice).toEqual({
@@ -54,7 +57,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "rejected", evidence: evidence("approved", "pending") },
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("Approval recorded");
@@ -67,7 +70,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "cancelled", evidence: null },
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("Request withdrawn");
@@ -77,7 +80,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "approved", evidence: null },
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("No longer actionable");
@@ -88,7 +91,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "approved", evidence: null, reassigned: true },
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("Reassigned");
@@ -102,7 +105,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "pending", evidence: null, noLongerCoveringFor: "Morgan Manager" },
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("No longer covering for Morgan Manager");
@@ -120,7 +123,7 @@ describe("approvalStatusNotice", () => {
 				noLongerCoveringFor: "Morgan Manager",
 			},
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("Request approved");
@@ -130,7 +133,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "pending", evidence: null, reassigned: true },
 			null,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("No longer actionable");
@@ -140,7 +143,7 @@ describe("approvalStatusNotice", () => {
 		const notice = await approvalStatusNotice(
 			{ workflowStatus: "approved", evidence: evidence("approved", "approved") },
 			null,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(notice.title).toBe("No longer actionable");
@@ -152,7 +155,7 @@ describe("approvalStatusNotice", () => {
 		await approvalStatusNotice(
 			{ workflowStatus: "cancelled", evidence: null },
 			null,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(getBotTranslate).toHaveBeenCalledWith("fr");
@@ -161,9 +164,20 @@ describe("approvalStatusNotice", () => {
 		await approvalStatusNotice(
 			{ workflowStatus: "cancelled", evidence: null },
 			display,
-			"org",
+			{ organizationId: "org" },
 			reference,
 		);
 		expect(getBotTranslate).toHaveBeenCalledWith("en");
+	});
+
+	it("answers a former member in their own saved language before the organization's default", async () => {
+		getBotTranslate.mockClear();
+		await approvalStatusNotice(
+			{ workflowStatus: "cancelled", evidence: null },
+			null,
+			{ userId: "german-user", organizationId: "org" },
+			reference,
+		);
+		expect(getBotTranslate).toHaveBeenCalledWith("de");
 	});
 });

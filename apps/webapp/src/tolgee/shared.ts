@@ -29,8 +29,11 @@ export const ALL_LANGUAGES = [
 
 export const DEFAULT_LANGUAGE = "en";
 
-// All available namespaces - must match the namespace directory structure
-export const ALL_NAMESPACES = [
+/**
+ * The app's namespaces: what a route, the shell, the client and the complete server
+ * catalog can load. Each must have a directory under `messages/`.
+ */
+export const APP_NAMESPACES = [
 	"common",
 	"admin",
 	"approvals",
@@ -66,17 +69,32 @@ export const ALL_NAMESPACES = [
 	"onboarding",
 	"bot",
 	"teamsBot",
-	// Email copy: loaded only by the mailer (lib/email/email-i18n.ts), never by a route.
-	"emails",
 ] as const;
 
-export type Namespace = (typeof ALL_NAMESPACES)[number];
+/**
+ * Namespaces only the mailer loads (`lib/email/email-i18n.ts`): never a route, the
+ * shell, the client or the complete server catalog. The extractor, the Tolgee push
+ * and the catalog metadata still know them through `CATALOG_NAMESPACES`.
+ */
+export const MAILER_NAMESPACES = ["emails"] as const;
+
+/** Every catalog under `messages/`: the app's namespaces and the mailer's. */
+export const CATALOG_NAMESPACES = [...APP_NAMESPACES, ...MAILER_NAMESPACES] as const;
+
+export type Namespace = (typeof CATALOG_NAMESPACES)[number];
+
+/** A namespace a route may load. */
+export type AppNamespace = (typeof APP_NAMESPACES)[number];
+
+export function isAppNamespace(namespace: string): namespace is AppNamespace {
+	return (APP_NAMESPACES as readonly string[]).includes(namespace);
+}
 
 // Default namespace - loaded on all pages
-export const DEFAULT_NAMESPACE: Namespace = "common";
+export const DEFAULT_NAMESPACE: AppNamespace = "common";
 
 // Namespace mapping for route prefixes
-export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
+export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	// Auth pages
 	"/sign-in": ["common", "auth"],
 	"/sign-up": ["common", "auth"],
@@ -155,7 +173,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 /**
  * Get namespaces needed for a specific route path
  */
-export function getNamespacesForRoute(pathname: string): Namespace[] {
+export function getNamespacesForRoute(pathname: string): AppNamespace[] {
 	// Check exact match first
 	if (ROUTE_NAMESPACES[pathname]) {
 		return ROUTE_NAMESPACES[pathname];
@@ -185,7 +203,7 @@ const namespaceImports: Record<
 	Namespace,
 	Record<string, () => Promise<unknown>>
 > = Object.fromEntries(
-	ALL_NAMESPACES.map((namespace) => {
+	CATALOG_NAMESPACES.map((namespace) => {
 		const settingsNamespace = namespace.startsWith("settings/")
 			? namespace.slice("settings/".length)
 			: null;
@@ -314,12 +332,12 @@ function addNamespaceKeyAliases(
 }
 
 /**
- * Load and merge all namespaces for a language
+ * Load and merge the app's namespaces for a language (never the mailer's)
  */
 async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslationsData> {
 	const loaded = (
 		await Promise.all(
-			ALL_NAMESPACES.map(async (ns) => {
+			APP_NAMESPACES.map(async (ns) => {
 				const importFn = namespaceImports[ns]?.[lang];
 				if (!importFn) {
 					return null;
@@ -336,7 +354,7 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 				}
 			}),
 		)
-	).filter((namespace): namespace is { ns: Namespace; data: TreeTranslationsData } =>
+	).filter((namespace): namespace is { ns: AppNamespace; data: TreeTranslationsData } =>
 		Boolean(namespace),
 	);
 	const merged = mergeTreeTranslations(loaded.map(({ data }) => data));

@@ -36,7 +36,14 @@ export type TypedNotificationParam =
 	| { kind: "plainDate"; date: string; preset?: PlainDateFormatPreset }
 	| { kind: "plainDateRange"; start: string; end: string; preset?: PlainDateFormatPreset }
 	| { kind: "entryInstant"; at: string; utcOffsetMinutes: number; preset?: DateTimeFormatPreset }
-	| { kind: "zonedInstant"; at: string; timeZone: string; preset?: DateTimeFormatPreset }
+	| {
+			kind: "zonedInstant";
+			at: string;
+			timeZone: string;
+			preset?: DateTimeFormatPreset;
+			/** False when the message names the zone itself (a `{timezone}` param). */
+			printZone?: false;
+	  }
 	| { kind: "duration"; minutes: number }
 	| { kind: "money"; amount: string; currency: string };
 
@@ -75,6 +82,7 @@ const PLAIN_DATE_PRESETS: ReadonlySet<string> = new Set<PlainDateFormatPreset>([
 	"monthYear",
 	"weekdayShort",
 	"weekdayMonthDay",
+	"weekdayMonthDayLong",
 	"weekdayDateLong",
 ]);
 
@@ -109,17 +117,22 @@ export const notificationParam = {
 			...(preset ? { preset } : {}),
 		};
 	},
-	/** Any other instant, in `timeZone` (normally the organization's), zone printed. */
+	/**
+	 * Any other instant, in `timeZone` (normally the organization's), zone printed
+	 * unless the message names the zone itself (`printZone: false`).
+	 */
 	zonedInstant(
 		at: Instant,
 		timeZone: string,
 		preset?: DateTimeFormatPreset,
+		options: { printZone?: boolean } = {},
 	): TypedNotificationParam {
 		return {
 			kind: "zonedInstant",
 			at: instantToCanonicalString(at),
 			timeZone,
 			...(preset ? { preset } : {}),
+			...(options.printZone === false ? { printZone: false as const } : {}),
 		};
 	},
 	duration(minutes: number): TypedNotificationParam {
@@ -132,7 +145,8 @@ export const notificationParam = {
 	},
 } as const;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+/** A plain object, as notification metadata and its params are. */
+export function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -161,7 +175,8 @@ export function isTypedNotificationParam(value: unknown): value is TypedNotifica
 			return (
 				typeof value.at === "string" &&
 				typeof value.timeZone === "string" &&
-				optionalPreset(value.preset, DATE_TIME_PRESETS)
+				optionalPreset(value.preset, DATE_TIME_PRESETS) &&
+				(value.printZone === undefined || value.printZone === false)
 			);
 		case "duration":
 			return typeof value.minutes === "number";
@@ -228,12 +243,14 @@ export function formatNotificationParam(
 					{ locale, timeFormat, timezone: offsetMinutesToTimeZoneId(param.utcOffsetMinutes) },
 					param.preset ?? "dateTimeMedium",
 				);
-			case "zonedInstant":
-				return `${formatInstant(
+			case "zonedInstant": {
+				const text = formatInstant(
 					parseInstant(param.at),
 					{ locale, timeFormat, timezone: param.timeZone },
 					param.preset ?? "dateTimeMedium",
-				)} (${param.timeZone})`;
+				);
+				return param.printZone === false ? text : `${text} (${param.timeZone})`;
+			}
 			case "duration":
 				return formatDuration(param.minutes, locale);
 			case "money":
