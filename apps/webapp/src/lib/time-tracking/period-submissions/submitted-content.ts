@@ -226,7 +226,9 @@ async function loadDrivingDetailsMissing(
 	});
 	return flagged
 		.map((work) => ({ workPeriodId: work.workPeriodId, date: work.workDay }))
-		.toSorted((a, b) => a.date.localeCompare(b.date) || a.workPeriodId.localeCompare(b.workPeriodId));
+		.toSorted(
+			(a, b) => a.date.localeCompare(b.date) || a.workPeriodId.localeCompare(b.workPeriodId),
+		);
 }
 
 export async function loadPeriodSubmissionContent(

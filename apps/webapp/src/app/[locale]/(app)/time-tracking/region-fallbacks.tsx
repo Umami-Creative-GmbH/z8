@@ -30,6 +30,10 @@ export function HistoryLoading() {
 export function PeriodsLoading() {
 	return <RegionLoading height="h-32" />;
 }
+/** The driving details notice (#1127) is usually absent, so it reserves no space while loading. */
+export function DrivingLoading() {
+	return null;
+}
 
 export function SummaryLoading() {
 	const { t } = useTranslate();

@@ -23,9 +23,9 @@ describe("drivingDetailsReminderAt", () => {
 		expect(drivingDetailsReminderAt(at("2026-09-07T22:30:00Z"), "Europe/Berlin").toString()).toBe(
 			"2026-09-09T06:00:00Z",
 		);
-		expect(drivingDetailsReminderAt(at("2026-09-07T22:30:00Z"), "America/New_York").toString()).toBe(
-			"2026-09-08T12:00:00Z",
-		);
+		expect(
+			drivingDetailsReminderAt(at("2026-09-07T22:30:00Z"), "America/New_York").toString(),
+		).toBe("2026-09-08T12:00:00Z");
 	});
 });
 

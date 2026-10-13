@@ -13,6 +13,7 @@ import {
 	IconSearch,
 	IconSettings,
 	IconShieldCheck,
+	IconSteeringWheel,
 	IconUsers,
 } from "@tabler/icons-react";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
@@ -69,6 +70,7 @@ const RESULT_ICON_BY_HREF: Record<string, SearchIcon> = {
 	"/settings/teams": IconUsers,
 	"/team": IconUsers,
 	"/team/absences": IconBeach,
+	"/team/driving": IconSteeringWheel,
 	"/time-tracking": IconClock,
 	"/travel-expenses": IconReceipt,
 };

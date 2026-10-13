@@ -11,7 +11,10 @@ import {
 import { workDayOf } from "@/lib/billable-time/applicable-rate";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
-import { type DrivingDetailsConfiguration, drivingDetailsExpectedSince } from "./driving-details-missing";
+import {
+	type DrivingDetailsConfiguration,
+	drivingDetailsExpectedSince,
+} from "./driving-details-missing";
 import type { VehicleUseAssignmentRule, VehicleUseMode } from "./policy";
 import { vehicleUseFromColumns, type WorkVehicleUse } from "./work-vehicle-use";
 

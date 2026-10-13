@@ -125,7 +125,9 @@ function isViolationFact(value: unknown): value is PeriodSubmissionViolationFact
 	return isRecord(value) && typeof value.date === "string" && typeof value.type === "string";
 }
 
-function isDrivingDetailsMissingFact(value: unknown): value is PeriodSubmissionDrivingDetailsMissingFact {
+function isDrivingDetailsMissingFact(
+	value: unknown,
+): value is PeriodSubmissionDrivingDetailsMissingFact {
 	return isRecord(value) && typeof value.workPeriodId === "string" && typeof value.date === "string";
 }
 

@@ -43,7 +43,10 @@ describe("isPeriodSubmissionSubmittedFacts with driving details missing (#1127)"
 	it("refuses malformed driving details facts", () => {
 		expect(isPeriodSubmissionSubmittedFacts({ ...facts, drivingDetailsMissing: {} })).toBe(false);
 		expect(
-			isPeriodSubmissionSubmittedFacts({ ...facts, drivingDetailsMissing: [{ date: "2026-03-02" }] }),
+			isPeriodSubmissionSubmittedFacts({
+				...facts,
+				drivingDetailsMissing: [{ date: "2026-03-02" }],
+			}),
 		).toBe(false);
 	});
 });

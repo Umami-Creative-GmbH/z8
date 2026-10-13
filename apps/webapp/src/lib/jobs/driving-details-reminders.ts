@@ -14,11 +14,11 @@ import {
 	DRIVING_DETAILS_REMINDER_DUE_DAYS,
 	evaluateDrivingDetailsReminders,
 } from "@/lib/time-tracking/clocking-reminders/driving-details-reminders";
-import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	type DrivingDetailsMissingWork,
 	listDrivingDetailsMissing,
 } from "@/lib/time-tracking/vehicle-use/driving-details-missing-store";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 
 const logger = createLogger("DrivingDetailsReminders");
 const ORGANIZATION_PAGE = 100;

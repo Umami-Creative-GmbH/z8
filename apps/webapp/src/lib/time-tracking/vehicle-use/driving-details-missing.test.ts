@@ -5,6 +5,7 @@ import {
 	drivingDetailsExpectedSince,
 	isDrivingDetailsMissing,
 	lacksDrivingDetails,
+	missingDrivingDetail,
 } from "./driving-details-missing";
 import type { WorkVehicleUse } from "./work-vehicle-use";
 
@@ -27,7 +28,12 @@ describe("lacksDrivingDetails", () => {
 			lacksDrivingDetails({ vehicle: van, startKm: 1200, endKm: null, distanceKm: null }),
 		).toBe(true);
 		expect(
-			lacksDrivingDetails({ vehicle: { kind: "own" }, startKm: null, endKm: null, distanceKm: null }),
+			lacksDrivingDetails({
+				vehicle: { kind: "own" },
+				startKm: null,
+				endKm: null,
+				distanceKm: null,
+			}),
 		).toBe(true);
 	});
 
@@ -70,8 +76,17 @@ describe("drivingDetailsExpectedSince", () => {
 
 	it("is null for an employee who is only asked, or excluded", () => {
 		const assignments = [
-			{ assignmentType: "organization" as const, mode: "expected" as const, since: at("2026-09-02T00:00:00Z") },
-			{ assignmentType: "team" as const, teamId: field.teamId, mode: "asked" as const, since: at("2026-09-03T00:00:00Z") },
+			{
+				assignmentType: "organization" as const,
+				mode: "expected" as const,
+				since: at("2026-09-02T00:00:00Z"),
+			},
+			{
+				assignmentType: "team" as const,
+				teamId: field.teamId,
+				mode: "asked" as const,
+				since: at("2026-09-03T00:00:00Z"),
+			},
 			{
 				assignmentType: "employee" as const,
 				employeeId: office.employeeId,
@@ -85,7 +100,11 @@ describe("drivingDetailsExpectedSince", () => {
 
 	it("starts when the deciding assignment last became expected, or when the switch was turned on, whichever is later", () => {
 		const assignments = [
-			{ assignmentType: "organization" as const, mode: "asked" as const, since: at("2026-08-01T00:00:00Z") },
+			{
+				assignmentType: "organization" as const,
+				mode: "asked" as const,
+				since: at("2026-08-01T00:00:00Z"),
+			},
 			{
 				assignmentType: "team" as const,
 				teamId: field.teamId,
@@ -148,5 +167,23 @@ describe("isDrivingDetailsMissing", () => {
 				since,
 			),
 		).toBe(false);
+	});
+});
+
+describe("missingDrivingDetail", () => {
+	it("names what the work still lacks", () => {
+		expect(missingDrivingDetail(null)).toBe("vehicle");
+		expect(
+			missingDrivingDetail({ vehicle: van, startKm: null, endKm: null, distanceKm: null }),
+		).toBe("readings");
+		expect(missingDrivingDetail({ vehicle: van, startKm: 10, endKm: null, distanceKm: null })).toBe(
+			"end_reading",
+		);
+		expect(missingDrivingDetail({ vehicle: van, startKm: null, endKm: 90, distanceKm: null })).toBe(
+			"start_reading",
+		);
+		expect(
+			missingDrivingDetail({ vehicle: van, startKm: 10, endKm: 90, distanceKm: 80 }),
+		).toBeNull();
 	});
 });

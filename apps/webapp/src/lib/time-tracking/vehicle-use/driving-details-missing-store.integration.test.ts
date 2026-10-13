@@ -15,6 +15,7 @@ import {
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
 import { listDrivingDetailsMissing } from "./driving-details-missing-store";
+import { loadTeamDrivingDetails } from "./driving-details-team-store";
 
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
@@ -127,7 +128,12 @@ describe("driving details missing on PostgreSQL", () => {
 	}
 
 	const flagged = async (org: Org, employeeIds: string[] | null = null) =>
-		(await listDrivingDetailsMissing(fixture.db, { organizationId: org.organizationId, employeeIds }))
+		(
+			await listDrivingDetailsMissing(fixture.db, {
+				organizationId: org.organizationId,
+				employeeIds,
+			})
+		)
 			.map((row) => row.workPeriodId)
 			.toSorted();
 
@@ -174,7 +180,12 @@ describe("driving details missing on PostgreSQL", () => {
 		const org = await organization();
 		const driver = await fixture.seedEmployee({ organizationId: org.organizationId });
 		await switchOn(org, true, "2026-09-01T00:00:00Z");
-		await assign(org, { type: "employee", employeeId: driver.employeeId }, "expected", "2026-09-08T00:00:00Z");
+		await assign(
+			org,
+			{ type: "employee", employeeId: driver.employeeId },
+			"expected",
+			"2026-09-08T00:00:00Z",
+		);
 		await work(org, driver, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
 		const since = await work(org, driver, "2026-09-08T06:00:00Z", "2026-09-08T14:00:00Z");
 
@@ -200,5 +211,65 @@ describe("driving details missing on PostgreSQL", () => {
 
 		expect(await flagged(org, [managed.employeeId, foreign.employeeId])).toEqual([mine]);
 		expect(await flagged(org, [])).toEqual([]);
+	});
+	it("lists a manager only their employees' flagged work, filtered by team and employee", async () => {
+		const org = await organization();
+		const manager = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const north = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const south = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const unmanaged = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const [northTeam, southTeam] = [randomUUID(), randomUUID()];
+		await fixture.pool.query(
+			`insert into team (id, organization_id, name, updated_at) values ($1, $3, 'North', now()), ($2, $3, 'South', now())`,
+			[northTeam, southTeam, org.organizationId],
+		);
+		await fixture.pool.query("update employee set team_id = $2 where id = $1", [
+			north.employeeId,
+			northTeam,
+		]);
+		await fixture.pool.query("update employee set team_id = $2 where id = $1", [
+			south.employeeId,
+			southTeam,
+		]);
+		for (const person of [north, south]) {
+			await fixture.pool.query(
+				`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by)
+				 values ($1, $2, $3, true, $4)`,
+				[randomUUID(), person.employeeId, manager.employeeId, org.creatorUserId],
+			);
+		}
+		await switchOn(org);
+		await assign(org, { type: "organization" }, "expected");
+		const northWork = await work(org, north, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
+		const southWork = await work(org, south, "2026-09-08T06:00:00Z", "2026-09-08T14:00:00Z");
+		await work(org, unmanaged, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
+		await recordVehicleUse(southWork, { startKm: 500, endKm: null, distanceKm: null });
+
+		const load = (filters: { teamId?: string; employeeId?: string } = {}) =>
+			loadTeamDrivingDetails(fixture.db, {
+				organizationId: org.organizationId,
+				scope: { kind: "managed", managerEmployeeId: manager.employeeId },
+				filters: { teamId: filters.teamId ?? null, employeeId: filters.employeeId ?? null },
+			});
+
+		const all = await load();
+		expect(all.rows.map((row) => [row.workPeriodId, row.missing, row.teamName])).toEqual([
+			[southWork, "end_reading", "South"],
+			[northWork, "vehicle", "North"],
+		]);
+		expect(all.teams.map((team) => team.name)).toEqual(["North", "South"]);
+		expect(all.employees.map((person) => person.id).toSorted()).toEqual(
+			[north.employeeId, south.employeeId].toSorted(),
+		);
+		expect((await load({ teamId: northTeam })).rows.map((row) => row.workPeriodId)).toEqual([
+			northWork,
+		]);
+		expect(
+			(await load({ employeeId: south.employeeId })).rows.map((row) => row.workPeriodId),
+		).toEqual([southWork]);
+		// An employee outside the manager's scope is not a filter they can apply.
+		const outside = await load({ employeeId: unmanaged.employeeId });
+		expect(outside.filters.employeeId).toBeNull();
+		expect(outside.rows).toHaveLength(2);
 	});
 });

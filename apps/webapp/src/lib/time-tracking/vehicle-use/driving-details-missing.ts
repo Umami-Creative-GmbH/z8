@@ -19,6 +19,16 @@ export function lacksDrivingDetails(use: WorkVehicleUse | null): boolean {
 	return use === null || use.distanceKm === null;
 }
 
+/** What flagged work still lacks, for display; null when nothing is missing. */
+export type MissingDrivingDetail = "vehicle" | "readings" | "start_reading" | "end_reading";
+
+export function missingDrivingDetail(use: WorkVehicleUse | null): MissingDrivingDetail | null {
+	if (use === null) return "vehicle";
+	if (use.distanceKm !== null) return null;
+	if (use.startKm === null && use.endKm === null) return "readings";
+	return use.startKm === null ? "start_reading" : "end_reading";
+}
+
 /**
  * The organization's vehicle use configuration with the instant each part last changed: when the
  * switch was turned on, and when each assignment was given its current mode.
