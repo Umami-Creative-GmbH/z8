@@ -49,6 +49,7 @@ describe("vacation accrual on a monthly policy (#1106)", () => {
 				startDate: "2026-01-01",
 				isCompanyDefault: true,
 				defaultAnnualDays: "24",
+				statutoryMinimumDays: "20",
 				accrualType: "monthly",
 				createdBy: fixture.ownerUserId,
 			},
@@ -86,7 +87,10 @@ describe("vacation accrual on a monthly policy (#1106)", () => {
 			})
 			.from(vacationAdjustment)
 			.where(
-				and(eq(vacationAdjustment.employeeId, fixture.employeeId), eq(vacationAdjustment.year, 2026)),
+				and(
+					eq(vacationAdjustment.employeeId, fixture.employeeId),
+					eq(vacationAdjustment.year, 2026),
+				),
 			);
 
 		expect(rows).toEqual(

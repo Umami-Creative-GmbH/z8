@@ -187,14 +187,8 @@ describe("runVacationAutomation calendar-year scheduling", () => {
 		const { runVacationAutomation } = await import("./carryover-automation");
 		await runVacationAutomation();
 
-		expect(accrueVacationDaysMock).toHaveBeenCalledWith(
-			"org-1",
-			1,
-			2026,
-			"system-automation",
-			"Europe/Berlin",
-		);
-		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "system-automation");
+		expect(accrueVacationDaysMock).toHaveBeenCalledWith("org-1", 1, 2026, "Europe/Berlin");
+		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "America/New_York");
 	});
 });
 
@@ -208,13 +202,7 @@ describe("runMonthlyAccrual calendar-year labels", () => {
 		await runMonthlyAccrual(3, 2026);
 
 		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2026);
-		expect(accrueVacationDaysMock).toHaveBeenCalledWith(
-			"org-1",
-			3,
-			2026,
-			"system-automation",
-			"UTC",
-		);
+		expect(accrueVacationDaysMock).toHaveBeenCalledWith("org-1", 3, 2026, "UTC");
 	});
 
 	it("derives implicit month and year from each organization's timezone on local first days", async () => {
@@ -229,15 +217,9 @@ describe("runMonthlyAccrual calendar-year labels", () => {
 		const result = await runMonthlyAccrual();
 
 		expect(getVacationAllowanceMock).toHaveBeenCalledWith("org-1", 2026);
-		expect(accrueVacationDaysMock).toHaveBeenCalledWith(
-			"org-1",
-			1,
-			2026,
-			"system-automation",
-			"Europe/Berlin",
-		);
+		expect(accrueVacationDaysMock).toHaveBeenCalledWith("org-1", 1, 2026, "Europe/Berlin");
 		expect(getVacationAllowanceMock).not.toHaveBeenCalledWith("org-2", 2025);
-		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "system-automation");
+		expect(accrueVacationDaysMock).not.toHaveBeenCalledWith("org-2", 12, 2025, "America/New_York");
 		expect(result.month).toBe(1);
 		expect(result.year).toBe(2026);
 	});

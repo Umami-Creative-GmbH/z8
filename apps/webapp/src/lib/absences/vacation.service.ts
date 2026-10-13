@@ -433,13 +433,13 @@ export async function expireCarryoverDays(
 }
 
 /**
- * Accrue vacation days based on policy (monthly/biweekly)
+ * Accrue vacation days based on policy (monthly/biweekly). Each period's share is an `accrual`
+ * adjustment written by the system, so it has no adjusting employee (#1106).
  */
 export async function accrueVacationDays(
 	organizationId: string,
 	month: number,
 	year: number,
-	performedBy: string,
 	timezone = "UTC",
 ): Promise<{
 	employeesProcessed: number;
@@ -498,7 +498,8 @@ export async function accrueVacationDays(
 			year,
 			days: monthlyAccrual.toFixed(2),
 			reason: `Monthly accrual for ${DateTime.fromObject({ year, month, day: 1 }, { zone: timezone }).toFormat("MMMM yyyy")}: +${monthlyAccrual.toFixed(2)} days`,
-			adjustedBy: performedBy,
+			kind: "accrual",
+			adjustedBy: null,
 		});
 
 		totalDaysAccrued += monthlyAccrual;
@@ -559,6 +560,7 @@ export async function updateVacationAllowance(input: {
 			year: input.year,
 			days: input.adjustmentDays.toString(),
 			reason: input.adjustmentReason,
+			kind: "manual",
 			adjustedBy: input.performedBy,
 		});
 	}
