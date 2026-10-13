@@ -14,11 +14,9 @@ import {
 import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import type { OrganizationDeletionNotificationJobData } from "@/lib/queue";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { ORGANIZATION_RECOVERY_WINDOW_HOURS } from "./organization-recovery-window";
 
 const logger = createLogger("OrganizationDeletionNotificationJob");
-
-/** The recovery window; organization-cleanup deletes for good after the same 5 days. */
-const RECOVERY_WINDOW_HOURS = 5 * 24;
 
 export type OrganizationDeletionNotice = Omit<OrganizationDeletionNotificationJobData, "type">;
 
@@ -32,7 +30,7 @@ export async function sendOrganizationDeletionNotifications(
 ): Promise<void> {
 	const { organizationId, organizationName, deletedByName } = notice;
 	const deletedAt = parseInstant(notice.deletionDate);
-	const permanentlyDeletedAt = deletedAt.add({ hours: RECOVERY_WINDOW_HOURS });
+	const permanentlyDeletedAt = deletedAt.add({ hours: ORGANIZATION_RECOVERY_WINDOW_HOURS });
 
 	const [recipients, timeZone, appUrl] = await Promise.all([
 		db.query.member.findMany({

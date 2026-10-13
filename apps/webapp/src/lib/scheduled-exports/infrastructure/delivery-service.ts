@@ -5,7 +5,7 @@
  */
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { loadEmailTranslator } from "@/lib/email/email-i18n";
 import { sendEmail } from "@/lib/email/email-service";
 import {
@@ -49,6 +49,20 @@ function formatLifetime(totalSeconds: number, locale: string): string {
 			new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" }).format(count),
 		)
 		.join(" ");
+}
+
+/**
+ * A day of the schedule's date range (a Luxon value from the legacy range calculation)
+ * as a calendar day. An invalid one fails the email with a message that names it.
+ */
+function rangeDay(day: CalculatedDateRange["start"], which: "start" | "end"): PlainDate {
+	const isoDate = day.toISODate();
+	if (!isoDate) {
+		throw new Error(
+			`Scheduled export date range ${which} is invalid: ${day.invalidReason ?? "unknown reason"}`,
+		);
+	}
+	return parsePlainDate(isoDate);
 }
 
 /**
@@ -284,8 +298,8 @@ export class DeliveryService {
 		// The range was calculated in the schedule's timezone: its days are calendar days.
 		const dateRange = formatNotificationParam(
 			notificationParam.plainDateRange(
-				parsePlainDate(params.dateRange.start.toISODate() ?? ""),
-				parsePlainDate(params.dateRange.end.toISODate() ?? ""),
+				rangeDay(params.dateRange.start, "start"),
+				rangeDay(params.dateRange.end, "end"),
 			),
 			{ locale },
 		);

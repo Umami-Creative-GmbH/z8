@@ -269,6 +269,33 @@ describe("DeliveryService email delivery", () => {
 		]);
 	});
 
+	it("records an invalid date range as a named failure, without sending", async () => {
+		const result = await new DeliveryService().deliver({
+			organizationId: "org-1",
+			scheduleName: "Monthly payroll",
+			dateRange: {
+				start: DateTime.invalid("unparsable schedule start"),
+				end: DateTime.fromISO("2026-09-30T23:59:59", { zone: "Europe/Berlin" }),
+			},
+			deliveryConfig: {
+				method: "email_only",
+				emailRecipients: ["a@example.com"],
+				useOrgS3Config: true,
+			},
+			exportResult: { success: true },
+		});
+
+		expect(sendEmail).not.toHaveBeenCalled();
+		expect(result.emailsFailed).toBe(1);
+		expect(result.emailErrors).toEqual([
+			{
+				recipient: "a@example.com",
+				error: "Scheduled export date range start is invalid: unparsable schedule start",
+				timestamp: expect.any(String),
+			},
+		]);
+	});
+
 	it("reports no failures when every send succeeds", async () => {
 		const result = await deliverTo(["a@example.com", "b@example.com"]);
 
