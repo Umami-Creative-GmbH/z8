@@ -37,6 +37,7 @@ export function VehicleUseFields({
 	warnings = [],
 	expected = false,
 	disabled = false,
+	readings = "all",
 	t,
 }: {
 	value: VehicleUseDraft;
@@ -49,9 +50,15 @@ export function VehicleUseFields({
 	/** Vehicle use expected: the employee is asked every time (never required). */
 	expected?: boolean;
 	disabled?: boolean;
+	/**
+	 * Which readings to ask: all of them, or only the start reading, as a
+	 * clock-in and a change of live work do (#1122).
+	 */
+	readings?: "all" | "start";
 	t: TFnType;
 }) {
 	const id = useId();
+	const onlyStart = readings === "start";
 	const result = vehicleUseFromDraft(value);
 	const hasVehicle = value.vehicle !== "";
 	const startMissing = value.startKm.trim() === "";
@@ -135,19 +142,21 @@ export function VehicleUseFields({
 							onChange={(event) => set({ startKm: event.target.value })}
 						/>
 					</div>
-					<div className="grid gap-1.5">
-						<Label htmlFor={`${id}-end`} className="text-xs text-muted-foreground">
-							{t("timeTracking.vehicleUse.endKm", "End reading (km)")}
-						</Label>
-						<Input
-							id={`${id}-end`}
-							inputMode="numeric"
-							autoComplete="off"
-							value={value.endKm}
-							onChange={(event) => set({ endKm: event.target.value })}
-						/>
-					</div>
-					{startMissing ? (
+					{onlyStart ? null : (
+						<div className="grid gap-1.5">
+							<Label htmlFor={`${id}-end`} className="text-xs text-muted-foreground">
+								{t("timeTracking.vehicleUse.endKm", "End reading (km)")}
+							</Label>
+							<Input
+								id={`${id}-end`}
+								inputMode="numeric"
+								autoComplete="off"
+								value={value.endKm}
+								onChange={(event) => set({ endKm: event.target.value })}
+							/>
+						</div>
+					)}
+					{onlyStart ? null : startMissing ? (
 						<div className="col-span-2 grid gap-1.5">
 							<Label htmlFor={`${id}-distance`} className="text-xs text-muted-foreground">
 								{t("timeTracking.vehicleUse.distanceKm", "Driven distance (km)")}

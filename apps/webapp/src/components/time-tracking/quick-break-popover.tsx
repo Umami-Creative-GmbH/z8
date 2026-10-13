@@ -2,7 +2,7 @@
 
 import { IconCoffee, IconLoader2 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
-import { useId, useRef, useState } from "react";
+import { type ReactNode, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,6 +16,8 @@ interface QuickBreakPopoverProps {
 	t: TFnType;
 	buttonClassName?: string;
 	iconOnly?: boolean;
+	/** Further break inputs, such as the break's odometer reading (#1122). */
+	children?: ReactNode;
 }
 
 export function QuickBreakPopover({
@@ -25,6 +27,7 @@ export function QuickBreakPopover({
 	t,
 	buttonClassName,
 	iconOnly = false,
+	children,
 }: QuickBreakPopoverProps) {
 	const [open, setOpen] = useState(false);
 	const [minutes, setMinutes] = useState("30");
@@ -144,6 +147,8 @@ export function QuickBreakPopover({
 							</p>
 						)}
 					</div>
+
+					{children}
 
 					<Button
 						type="button"
