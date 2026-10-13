@@ -159,6 +159,8 @@ function getNotificationStyle(type: NotificationType): {
 
 		// A personal data export is ready on My data (#811)
 		case "personal_data_export_ready":
+		// Download your personal data before your departure cutoff (#1173)
+		case "personal_data_export_reminder":
 			return {
 				icon: <IconDatabaseExport className="size-4" />,
 				bgColor: "bg-slate-100 dark:bg-slate-900/30",

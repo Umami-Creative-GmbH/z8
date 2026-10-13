@@ -101,6 +101,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	period_submission_decided: "request_update",
 	scheduled_export_paused: "attention",
 	personal_data_export_ready: "attention",
+	personal_data_export_reminder: "attention",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */
