@@ -8,6 +8,7 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { getPrincipalContext } from "@/lib/auth-helpers";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { getAvailableCategoriesForEmployee } from "@/lib/query/work-category.queries";
+import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
 import { readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
 import { getAssignedProjectsWithHours } from "./entry-helpers";
@@ -193,7 +194,7 @@ export async function getManualEntryTargetContextForEmployee(params: {
 	}
 
 	const { targetEmployee, isOwnEntry } = target;
-	const [zone, projects, categories, targetUser, admission] = await Promise.all([
+	const [zone, projects, categories, targetUser, admission, vehicleUse] = await Promise.all([
 		resolveManualEntryTargetZone(targetEmployee),
 		listManualEntryProjectChoices(targetEmployee),
 		listManualEntryCategoryChoices(targetEmployee),
@@ -202,6 +203,10 @@ export async function getManualEntryTargetContextForEmployee(params: {
 			columns: { firstName: true, lastName: true, name: true, email: true },
 		}),
 		readAppendAdmission(db, targetEmployee.organizationId),
+		loadWorkVehicleUseFormContext(db, {
+			organizationId: targetEmployee.organizationId,
+			employeeId: targetEmployee.id,
+		}),
 	]);
 
 	return {
@@ -219,6 +224,7 @@ export async function getManualEntryTargetContextForEmployee(params: {
 			},
 			projects,
 			categories,
+			vehicleUse,
 		},
 	};
 }

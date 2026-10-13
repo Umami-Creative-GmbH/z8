@@ -19,6 +19,12 @@ import {
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { billableChoice } from "@/components/time-tracking/billable-choice";
 import { BillableWorkSwitch } from "@/components/time-tracking/billable-work-switch";
+import {
+	EMPTY_VEHICLE_USE_DRAFT,
+	type VehicleUseDraft,
+	vehicleUseFromDraft,
+} from "@/components/time-tracking/vehicle-use-draft";
+import { VehicleUseFields } from "@/components/time-tracking/vehicle-use-fields";
 import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
 import {
 	canDiscardManualRecovery,
@@ -69,9 +75,14 @@ import {
 	type ManualEndpointCommand,
 	type ManualEndpointOccurrence,
 	type ManualTimeEntryCommand,
+	type ManualVehicleUseCommand,
 	type ManualWallTime,
 	type ManualZoneBasis,
 } from "@/lib/time-tracking/manual-command";
+import {
+	type WorkVehicleUseChangeRefusalCode,
+	workVehicleUseRefusalOfResult,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import { formatUtcOffset, getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -107,6 +118,8 @@ interface FormValues {
 	/** Version-2 commands: the chosen occurrence of a repeated wall-clock time. */
 	clockInOccurrence: ManualEndpointOccurrence | undefined;
 	clockOutOccurrence: ManualEndpointOccurrence | undefined;
+	/** Vehicle use (#1120), asked while the target's vehicle use is asked or expected. */
+	vehicleUseDraft: VehicleUseDraft;
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -199,6 +212,53 @@ const MESSAGES = {
 	],
 } as const satisfies Record<string, Message>;
 
+/** Refused vehicle use (#1120); the same wording as `vehicleUseRefusalText`. */
+const VEHICLE_USE_MESSAGES = {
+	end_before_start: [
+		"timeTracking.vehicleUse.refusal.endBeforeStart",
+		"The end reading cannot be below the start reading.",
+	],
+	invalid_reading: [
+		"timeTracking.vehicleUse.refusal.invalidReading",
+		"Enter odometer readings in whole kilometres.",
+	],
+	invalid_distance: [
+		"timeTracking.vehicleUse.refusal.invalidDistance",
+		"Enter the driven distance in whole kilometres.",
+	],
+	invalid_vehicle: [
+		"timeTracking.vehicleUse.refusal.invalidVehicle",
+		"Choose an organization vehicle or your own vehicle.",
+	],
+	vehicle_use_off: [
+		"timeTracking.vehicleUse.refusal.off",
+		"Vehicle use is not recorded for this employee.",
+	],
+	vehicle_not_found: ["timeTracking.vehicleUse.refusal.notFound", "The vehicle was not found."],
+	vehicle_archived: [
+		"timeTracking.vehicleUse.refusal.archived",
+		"This vehicle is archived and can no longer be picked.",
+	],
+} as const satisfies Record<WorkVehicleUseChangeRefusalCode, Message>;
+
+/** The entered vehicle use as a manual command carries it, or why it is refused. */
+function manualVehicleUse(
+	draft: VehicleUseDraft,
+): { ok: true; vehicleUse: ManualVehicleUseCommand | null } | { ok: false; message: Message } {
+	const result = vehicleUseFromDraft(draft);
+	if (!result.ok) return { ok: false, message: VEHICLE_USE_MESSAGES[result.code] };
+	if (!result.input) return { ok: true, vehicleUse: null };
+	return {
+		ok: true,
+		vehicleUse: {
+			vehicle: result.input.vehicle,
+			startKm: result.input.startKm ?? null,
+			endKm: result.input.endKm ?? null,
+			distanceKm: result.input.distanceKm ?? null,
+		},
+	};
+}
+
 const APPROVAL_STATUS_MESSAGES = {
 	pending: ["timeTracking.manualEntry.recovery.status.pending", "pending"],
 	approved: ["timeTracking.manualEntry.recovery.status.approved", "approved"],
@@ -274,6 +334,8 @@ function buildManualCommand(input: {
 	submissionId: string;
 }): { ok: true; command: ManualTimeEntryCommand } | { ok: false; message: Message } {
 	const { value, timezone } = input;
+	const vehicle = manualVehicleUse(value.vehicleUseDraft);
+	if (!vehicle.ok) return vehicle;
 	const clockIn = endpointCommand(value.date, value.clockInTime, value.clockInOccurrence, timezone);
 	if (!clockIn.ok) return clockIn;
 	const clockOut = endpointCommand(
@@ -299,6 +361,8 @@ function buildManualCommand(input: {
 		workCategoryId: value.workCategoryId ?? null,
 		workLocationType: value.workLocationType,
 		...(value.billable === undefined ? {} : { billable: value.billable }),
+		// Optional key: absent unless vehicle use is entered (#1120).
+		...(vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 	};
 	const interval = interpretManualInterval({
 		command,
@@ -323,6 +387,10 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 	if (result.code === MANUAL_ENTRY_COLLISION) return MESSAGES.collision;
 	const taskRefusal = projectTaskRefusalMessage(result.code);
 	if (taskRefusal) return taskRefusal;
+	const vehicleRefusal = workVehicleUseRefusalOfResult({
+		code: result.rejection?.reason === "vehicle_use_refused" ? result.rejection.code : result.code,
+	});
+	if (vehicleRefusal) return VEHICLE_USE_MESSAGES[vehicleRefusal];
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;
@@ -371,6 +439,7 @@ function getDefaultValues(
 		workLocationType: "office",
 		clockInOccurrence: undefined,
 		clockOutOccurrence: undefined,
+		vehicleUseDraft: EMPTY_VEHICLE_USE_DRAFT,
 	};
 }
 
@@ -1025,6 +1094,21 @@ function ManualEntryFormContent({
 						)}
 					</form.Field>
 
+					{context && !contextError && (context.vehicleUse?.mode ?? "off") !== "off" ? (
+						<form.Field name="vehicleUseDraft">
+							{(field) => (
+								<VehicleUseFields
+									value={field.state.value}
+									onChange={field.handleChange}
+									vehicles={context.vehicleUse.vehicles}
+									expected={context.vehicleUse.mode === "expected"}
+							t={t}
+									disabled={!isContextReady || isTimezoneContinuationPending}
+								/>
+							)}
+						</form.Field>
+					) : null}
+
 					<form.Field name="projectId">
 						{(field) => (
 							<ProjectSelectorView
@@ -1157,6 +1241,8 @@ function useTargetDraftRevalidation({
 		form.setFieldValue("billable", undefined);
 		form.setFieldValue("taskId", undefined);
 		form.setFieldValue("workCategoryId", undefined);
+		// Another employee may drive other vehicles (#1120).
+		form.setFieldValue("vehicleUseDraft", EMPTY_VEHICLE_USE_DRAFT);
 		setPendingMismatch(null);
 		setMessage(
 			open && (projectId || workCategoryId)
@@ -1383,6 +1469,20 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue("taskId", command.taskId ?? undefined);
 		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
 		form.setFieldValue("workLocationType", command.workLocationType ?? "office");
+		form.setFieldValue(
+			"vehicleUseDraft",
+			command.vehicleUse
+				? {
+						vehicle:
+							command.vehicleUse.vehicle.kind === "own"
+								? "own"
+								: command.vehicleUse.vehicle.vehicleId,
+						startKm: command.vehicleUse.startKm?.toString() ?? "",
+						endKm: command.vehicleUse.endKm?.toString() ?? "",
+						distanceKm: command.vehicleUse.distanceKm?.toString() ?? "",
+					}
+				: EMPTY_VEHICLE_USE_DRAFT,
+		);
 		recovery.discard(record);
 	}
 
@@ -1589,8 +1689,14 @@ export function ManualTimeEntryDialog({
 			}
 			result = attempt.result;
 		} else {
+			const vehicle = manualVehicleUse(value.vehicleUseDraft);
+			if (!vehicle.ok) {
+				toast.error(t(vehicle.message[0], vehicle.message[1]));
+				return false;
+			}
 			result = await createManualTimeEntry({
 				submissionId,
+				...(vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 				...(targetEmployeeId ? { employeeId: targetEmployeeId } : {}),
 				date: value.date,
 				clockInTime: value.clockInTime,

@@ -13,6 +13,16 @@ import {
 	type WorkPeriodTimeEditContext,
 } from "@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit";
 import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
+import {
+	type VehicleUseDraft,
+	vehicleUseDraftOf,
+	vehicleUseFromDraft,
+} from "@/components/time-tracking/vehicle-use-draft";
+import {
+	VehicleUseFields,
+	VehicleUseSummary,
+} from "@/components/time-tracking/vehicle-use-fields";
+import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +33,8 @@ import type { CalendarEvent } from "@/lib/calendar/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query/keys";
 import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import { sameWorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { workVehicleUseRefusalOfResult } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import {
 	haveWorkPeriodDatesChanged,
 	haveWorkPeriodEditValuesChanged,
@@ -34,7 +46,11 @@ import {
 } from "@/lib/time-tracking/work-period-time-edit-policy";
 import { formatEventTimeRange } from "./work-period-dialog-utils";
 
-type TimeEditFormValues = WorkPeriodTimeEditValues & { reason: string };
+type TimeEditFormValues = WorkPeriodTimeEditValues & {
+	reason: string;
+	/** Vehicle use as edited (#1120); submitted only when it differs from the recorded one. */
+	vehicleUseDraft: VehicleUseDraft;
+};
 
 /** Routes that submit a time correction, which always carries a reason. */
 function routeNeedsReason(route: WorkPeriodTimeEditRoute | null): boolean {
@@ -138,6 +154,16 @@ function EndpointFields({
 	);
 }
 
+function vehicleLabelOf(
+	context: WorkPeriodTimeEditContext,
+	use: NonNullable<WorkPeriodTimeEditValues["vehicleUse"]>,
+): string | null {
+	if (use.vehicle.kind !== "organization") return null;
+	const vehicleId = use.vehicle.vehicleId;
+	const vehicle = context.vehicleUse?.vehicles.find((option) => option.id === vehicleId);
+	return vehicle ? `${vehicle.name} (${vehicle.licencePlate})` : null;
+}
+
 function WorkPeriodTimeEditForm({
 	workPeriodId,
 	context,
@@ -158,18 +184,37 @@ function WorkPeriodTimeEditForm({
 			datesChanged: haveWorkPeriodDatesChanged(context.values, values),
 		});
 
+	// Vehicle use (#1120) is edited while it is asked or expected; otherwise read-only.
+	const vehicleUseMode = context.vehicleUse?.mode ?? "off";
+	const editsVehicleUse = vehicleUseMode !== "off";
+	const recordedVehicleUse = context.values.vehicleUse ?? null;
 	const form = useForm({
-		defaultValues: { ...context.values, reason: "" } as TimeEditFormValues,
-		onSubmit: async ({ value }) => {
-			if (!value.workLocationType) {
+		defaultValues: {
+			...context.values,
+			reason: "",
+			vehicleUseDraft: vehicleUseDraftOf(recordedVehicleUse),
+		} as TimeEditFormValues,
+		onSubmit: async ({ value: submitted }) => {
+			if (!submitted.workLocationType) {
 				toast.error(t("calendar.edit.locationRequired", "Choose a work location."));
 				return;
 			}
+			const vehicle = editsVehicleUse ? vehicleUseFromDraft(submitted.vehicleUseDraft) : null;
+			if (vehicle && !vehicle.ok) {
+				toast.error(vehicleUseRefusalText(t, vehicle.code));
+				return;
+			}
+			const vehicleUseChanged =
+				vehicle?.ok === true && !sameWorkVehicleUse(vehicle.use, recordedVehicleUse);
+			const value: TimeEditFormValues = {
+				...submitted,
+				vehicleUse: vehicleUseChanged ? vehicle.use : undefined,
+			};
 			if (!haveWorkPeriodEditValuesChanged(context.values, value)) {
 				toast.error(
 					t(
-						"calendar.edit.time.noChanges",
-						"Change the date, time, or work location first.",
+						"calendar.edit.time.noChangesWithVehicle",
+						"Change the date, time, work location or vehicle use first.",
 					),
 				);
 				return;
@@ -203,14 +248,22 @@ function WorkPeriodTimeEditForm({
 			const result = await updateWorkPeriodTimes({
 				workPeriodId,
 				submissionId,
-				...value,
+				clockInDate: value.clockInDate,
+				clockInTime: value.clockInTime,
+				clockOutDate: value.clockOutDate,
+				clockOutTime: value.clockOutTime,
+				reason: value.reason,
 				workLocationType: value.workLocationType ?? undefined,
+				...(vehicleUseChanged ? { vehicleUse: vehicle.input } : {}),
 			}).catch(() => null);
 
 			if (!result?.success) {
+				const vehicleRefusal = result ? workVehicleUseRefusalOfResult(result) : null;
 				toast.error(
-					result?.error ||
-						t("calendar.edit.time.saveFailed", "Failed to update time entry"),
+					vehicleRefusal
+						? vehicleUseRefusalText(t, vehicleRefusal)
+						: result?.error ||
+								t("calendar.edit.time.saveFailed", "Failed to update time entry"),
 				);
 				return;
 			}
@@ -349,6 +402,24 @@ function WorkPeriodTimeEditForm({
 					</fieldset>
 				)}
 			</form.Field>
+			{editsVehicleUse ? (
+				<form.Field name="vehicleUseDraft">
+					{(field) => (
+						<VehicleUseFields
+							value={field.state.value}
+							onChange={field.handleChange}
+							vehicles={context.vehicleUse.vehicles}
+							expected={vehicleUseMode === "expected"}
+							t={t}
+						/>
+					)}
+				</form.Field>
+			) : recordedVehicleUse ? (
+				<VehicleUseSummary
+					use={recordedVehicleUse}
+					vehicleLabel={vehicleLabelOf(context, recordedVehicleUse)} t={t}
+				/>
+			) : null}
 			<form.Subscribe
 				selector={(state) => ({
 					route: routeFor(state.values),
@@ -508,6 +579,14 @@ export function WorkPeriodTimeSection({
 							missingLabel={t("calendar.workLocation.notRecorded", "Not recorded")}
 						/>
 					</div>
+					{event.metadata.vehicleUse ? (
+						<div className="mt-2">
+							<VehicleUseSummary
+								use={event.metadata.vehicleUse}
+								vehicleLabel={event.metadata.vehicleLabel ?? null} t={t}
+							/>
+						</div>
+					) : null}
 					{context ? <BlockedHint access={context.access} t={t} /> : null}
 				</>
 			)}

@@ -931,11 +931,15 @@ export async function editSameDayTimeEntry(
 					const metadata = {
 						workLocationType: proposedMetadata.workLocationType,
 						workCategoryId: proposedMetadata.workCategoryId,
-						vehicleKind: vehicle.vehicleKind,
-						vehicleId: vehicle.vehicleId,
-						odometerStartKm: vehicle.odometerStartKm,
-						odometerEndKm: vehicle.odometerEndKm,
-						drivenDistanceKm: vehicle.drivenDistanceKm,
+						...(vehicleUseChanged
+							? {
+									vehicleKind: vehicle.vehicleKind,
+									vehicleId: vehicle.vehicleId,
+									odometerStartKm: vehicle.odometerStartKm,
+									odometerEndKm: vehicle.odometerEndKm,
+									drivenDistanceKm: vehicle.drivenDistanceKm,
+								}
+							: {}),
 					};
 					const updatedPeriods = await tx
 						.update(workPeriod)

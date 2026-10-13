@@ -5,6 +5,7 @@ import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
 import type {
 	WorkVehicleUse,
+	WorkVehicleUseFormContext,
 	WorkVehicleUseInput,
 } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -116,6 +117,8 @@ export interface ManualEntryTargetContext {
 	recoveryContext: ManualEntryRecoveryContext;
 	projects: AssignedProject[];
 	categories: ManualEntryCategoryChoice[];
+	/** Whether the target is asked for vehicle use, and the vehicles to pick (#1120). */
+	vehicleUse: WorkVehicleUseFormContext;
 }
 
 export interface ManualTimeEntryInput {
