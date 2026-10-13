@@ -804,6 +804,59 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		expect(await periodRow(periodId)).toMatchObject({ project_id: ids.project, task_id: null });
 	});
 
+	it("keeps vehicle use unchanged in both representations when a repair is applied (#1126)", async () => {
+		await authorizeRepair();
+		const { periodId, recordId } = await conflictingWork("2026-07-14", 200);
+		const van = "e3230000-0000-4000-8000-0000000000a1";
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate)
+			 values ($1, $2, 'Van', 'B-VN 323')`,
+			[van, ids.organization],
+		);
+		for (const [table, key, id] of [
+			["work_period", "id", periodId],
+			["time_record_work", "record_id", recordId],
+		] as const) {
+			await admin.query(
+				`update ${table} set vehicle_kind = 'organization', vehicle_id = $2,
+				   odometer_start_km = 12000, odometer_end_km = 12085, driven_distance_km = 85
+				 where ${key} = $1`,
+				[id, van],
+			);
+		}
+		const proposal = (
+			await proposeRepair(periodId, [
+				{ target: "time_record", field: "duration_minutes", after: 240 },
+				{ target: "work_period", field: "project_id", after: ids.project },
+			])
+		).body.proposal;
+		await approve(proposal);
+
+		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "applied" });
+
+		const { rows } = await admin.query(
+			`select wp.vehicle_id, wp.odometer_start_km, wp.odometer_end_km, wp.driven_distance_km,
+			   w.vehicle_id as detail_vehicle_id, w.odometer_start_km as detail_start,
+			   w.odometer_end_km as detail_end, w.driven_distance_km as detail_distance
+			 from work_period wp join time_record_work w on w.record_id = wp.canonical_record_id
+			 where wp.id = $1`,
+			[periodId],
+		);
+		expect(rows).toEqual([
+			{
+				vehicle_id: van,
+				odometer_start_km: 12_000,
+				odometer_end_km: 12_085,
+				driven_distance_km: 85,
+				detail_vehicle_id: van,
+				detail_start: 12_000,
+				detail_end: 12_085,
+				detail_distance: 85,
+			},
+		]);
+		expect(await periodRow(periodId)).toMatchObject({ project_id: ids.project });
+	});
+
 	it("refuses non-waivable proposals and unauthorized or foreign callers", async () => {
 		const { periodId, recordId } = await conflictingWork("2026-07-13", 200);
 		const minutes = [{ target: "time_record", field: "duration_minutes", after: 240 }];
