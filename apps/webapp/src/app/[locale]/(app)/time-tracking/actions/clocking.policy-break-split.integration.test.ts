@@ -21,6 +21,8 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { lacksDrivingDetails } from "@/lib/time-tracking/vehicle-use/driving-details-missing";
+import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -809,11 +811,26 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 			return rows;
 		}
 
+		/** Whether each half shows "driving details missing" (vehicle use expected). */
+		async function drivingDetailsFlags() {
+			return (await vehicleGraph()).map(({ period }) =>
+				lacksDrivingDetails(
+					vehicleUseFromColumns({
+						vehicleKind: "organization",
+						vehicleId: van,
+						odometerStartKm: period.start,
+						odometerEndKm: period.end,
+						drivenDistanceKm: period.distance,
+					}),
+				),
+			);
+		}
+
 		it.each([
 			["an adopted", "active"],
 			["a legacy", "inactive"],
 		] as const)(
-			"carries the vehicle over %s organization's terminal break and leaves the cut readings missing",
+			"keeps complete readings on the retained work over %s organization's terminal break",
 			async (_label, mode) => {
 				await setAppend(mode);
 				const { periodId } = await policyClockOut();
@@ -824,9 +841,10 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 				});
 
 				expect(await vehicleGraph()).toEqual([
-					{ period: km(12_000, null, null), detail: km(12_000, null, null) },
-					{ period: km(null, 12_085, null), detail: km(null, 12_085, null) },
+					{ period: km(12_000, 12_085, 85), detail: km(12_000, 12_085, 85) },
+					{ period: km(null, null, 0), detail: km(null, null, 0) },
 				]);
+				expect(await drivingDetailsFlags()).toEqual([false, false]);
 				if (mode === "active") {
 					const result = only(await receipts()).result as {
 						originatingWork: { attribution: object };
@@ -837,8 +855,8 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 						vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 },
 					});
 					expect(result.segments.map(({ attribution }) => attribution)).toMatchObject([
-						{ vehicleUse: { vehicle, startKm: 12_000, endKm: null, distanceKm: null } },
-						{ vehicleUse: { vehicle, startKm: null, endKm: 12_085, distanceKm: null } },
+						{ vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 } },
+						{ vehicleUse: { vehicle, startKm: null, endKm: null, distanceKm: 0 } },
 					]);
 				}
 			},
@@ -854,8 +872,24 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 
 			expect(await vehicleGraph()).toEqual([
 				{ period: km(null, null, 120), detail: km(null, null, 120) },
-				{ period: km(null, null, null), detail: km(null, null, null) },
+				{ period: km(null, null, 0), detail: km(null, null, 0) },
 			]);
+			expect(await drivingDetailsFlags()).toEqual([false, false]);
+		});
+
+		it("leaves vehicle use awaiting its end reading on the work that ends at the clock-out", async () => {
+			const { periodId } = await policyClockOut();
+			await driveVan(periodId, { start: 12_000, end: null, distance: null });
+
+			await expect(approve(await pendingRequest(periodId))).resolves.toMatchObject({
+				status: "approved",
+			});
+
+			expect(await vehicleGraph()).toEqual([
+				{ period: km(null, null, 0), detail: km(null, null, 0) },
+				{ period: km(12_000, null, null), detail: km(12_000, null, null) },
+			]);
+			expect(await drivingDetailsFlags()).toEqual([false, true]);
 		});
 	});
 });

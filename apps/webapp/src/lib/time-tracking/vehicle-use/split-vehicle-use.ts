@@ -10,8 +10,9 @@
  *   kilometres; the remainder goes to the second half. Without it the whole
  *   distance stays on the first half, which keeps the work period's id.
  *
- * Automatic writers (break adjustments) have no value and split with none. No
- * I/O and no server-only imports: the split dialog asks with the same rule.
+ * Automatic writers (break adjustments) have no value and do not divide the
+ * kilometres (`vehicleUseAcrossAutomaticBreak`). No I/O and no server-only
+ * imports: the split dialog asks with the same rule.
  */
 import {
 	buildWorkVehicleUse,
@@ -130,14 +131,31 @@ export function splitWorkVehicleUse(
 
 /**
  * Vehicle use across a break an automatic writer inserts (automatic break
- * adjustment, policy clock-out terminal break): nobody read the odometer at the
- * cut, so it splits as a skipped value does.
+ * adjustment, policy clock-out terminal break; user decision 5 of #807). Nobody
+ * read the odometer at the cut, so the kilometres are not divided: one half keeps
+ * the whole vehicle use and the other gets the same vehicle with 0 km entered
+ * directly. Neither half is flagged for missing driving details that the work
+ * did not already lack, and totals stay right.
+ *
+ * - Complete vehicle use, or one that has its end reading, stays on the retained
+ *   (first, id-keeping) half: both readings or the whole entered distance.
+ * - Vehicle use still awaiting its end (no end reading and no distance) stays on
+ *   the generated half, which ends at the clock-out: that is where the end
+ *   reading or a clock-out completion (#1125) arrives.
  */
 export function vehicleUseAcrossAutomaticBreak(use: WorkVehicleUse | null): {
 	retained: WorkVehicleUse | null;
 	generated: WorkVehicleUse | null;
 } {
-	const split = splitWorkVehicleUse(use, null);
-	if (!split.ok) throw new Error("Recorded vehicle use cannot be split");
-	return { retained: split.retained, generated: split.generated };
+	if (!use) return { retained: null, generated: null };
+	const nothingDriven: WorkVehicleUse = {
+		vehicle: use.vehicle,
+		startKm: null,
+		endKm: null,
+		distanceKm: 0,
+	};
+	const awaitsEnd = use.endKm === null && use.distanceKm === null;
+	return awaitsEnd
+		? { retained: nothingDriven, generated: use }
+		: { retained: use, generated: nothingDriven };
 }
