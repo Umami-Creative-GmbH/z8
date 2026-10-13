@@ -63,7 +63,10 @@
         "vacation": "Vacation Policies",
         "workPeriods": "Work Periods"
       },
-      "organization": "Organization"
+      "organization": "Organization",
+      "values": {
+        "yourOrganization": "Your Organization"
+      }
     },
     "exportFailed": {
       "action": "Try again",

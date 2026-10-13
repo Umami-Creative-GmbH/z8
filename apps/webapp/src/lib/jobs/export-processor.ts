@@ -27,7 +27,7 @@ import {
 	getPendingExports,
 	processExport,
 } from "@/lib/export/export-service";
-import { type ExportCategory, exportHistoryPath } from "@/lib/export/types";
+import { CATEGORY_LABELS, exportHistoryPath, isExportCategory } from "@/lib/export/types";
 import { createLogger } from "@/lib/logger";
 import {
 	formatNotificationParam,
@@ -58,7 +58,8 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 	userId: string;
 	email: string;
 	name: string;
-	organizationName: string;
+	/** Null when the organization has no name; the email names it in the recipient language. */
+	organizationName: string | null;
 	organizationTimezone: string;
 } | null> {
 	try {
@@ -98,8 +99,9 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 		return {
 			userId: emp.user.id,
 			email: emp.user.email,
-			name: buildAuthUserDisplayName(emp.user) || "Admin",
-			organizationName: org?.name || "Your Organization",
+			// The display name falls back to the email address, which is always there.
+			name: buildAuthUserDisplayName(emp.user) || emp.user.email,
+			organizationName: org?.name || null,
 			organizationTimezone: resolveOrganizationTimezone(org?.timezone ?? undefined).timezone,
 		};
 	} catch (error) {
@@ -121,40 +123,21 @@ async function requesterTranslator(
 	);
 }
 
-/** The exported data categories in the recipient language. */
+/**
+ * The exported data categories in the recipient language. A category the export
+ * no longer offers keeps its stored name.
+ */
 function exportCategoryLabels(t: EmailTranslate, categories: readonly string[]): string[] {
 	return categories.map((category) => {
-		switch (category as ExportCategory) {
-			case "employees":
-				return t("emails.export.categories.employees", "Employees");
-			case "teams":
-				return t("emails.export.categories.teams", "Teams");
-			case "time_entries":
-				return t("emails.export.categories.timeEntries", "Time Tracking");
-			case "work_periods":
-				return t("emails.export.categories.workPeriods", "Work Periods");
-			case "absences":
-				return t("emails.export.categories.absences", "Absences");
-			case "balance_adjustments":
-				return t("emails.export.categories.balanceAdjustments", "Work Balance Adjustments");
-			case "holidays":
-				return t("emails.export.categories.holidays", "Holidays");
-			case "vacation":
-				return t("emails.export.categories.vacation", "Vacation Policies");
-			case "schedules":
-				return t("emails.export.categories.schedules", "Work Schedules");
-			case "shifts":
-				return t("emails.export.categories.shifts", "Shifts");
-			case "audit_logs":
-				return t("emails.export.categories.auditLogs", "Audit Logs");
-			case "projects":
-				return t("emails.export.categories.projects", "Projects");
-			case "customers":
-				return t("emails.export.categories.customers", "Customers");
-			default:
-				return category;
-		}
+		if (!isExportCategory(category)) return category;
+		const { labelKey, label } = CATEGORY_LABELS[category];
+		return t(labelKey, label);
 	});
+}
+
+/** The export's organization name, or a stand-in in the recipient language. */
+function organizationNameOrFallback(t: EmailTranslate, organizationName: string | null): string {
+	return organizationName || t("emails.export.values.yourOrganization", "Your Organization");
 }
 
 /**
@@ -188,9 +171,10 @@ async function sendSuccessEmail(exportRecord: ExportRecord): Promise<void> {
 			{ locale },
 		);
 
+		const organizationName = organizationNameOrFallback(t, requester.organizationName);
 		const data = {
 			recipientName: requester.name,
-			organizationName: requester.organizationName,
+			organizationName,
 			categories: exportCategoryLabels(t, exportRecord.categories),
 			fileSize: formatFileSize(exportRecord.fileSizeBytes),
 			downloadUrl,
@@ -203,7 +187,7 @@ async function sendSuccessEmail(exportRecord: ExportRecord): Promise<void> {
 			subjectOverride: t(
 				"emails.subjects.exportReady",
 				"Your data export is ready - {organizationName}",
-				{ organizationName: requester.organizationName },
+				{ organizationName },
 			),
 			renderDefaultHtml: () => renderExportReady(data, translator),
 		});
@@ -235,9 +219,10 @@ async function sendFailureEmail(exportRecord: ExportRecord): Promise<void> {
 		const translator = await requesterTranslator(exportRecord, requester.userId);
 		const { t } = translator;
 
+		const organizationName = organizationNameOrFallback(t, requester.organizationName);
 		const data = {
 			recipientName: requester.name,
-			organizationName: requester.organizationName,
+			organizationName,
 			categories: exportCategoryLabels(t, exportRecord.categories),
 			errorMessage:
 				exportRecord.errorMessage || t("emails.exportFailed.unknownError", "Unknown error"),
@@ -251,9 +236,7 @@ async function sendFailureEmail(exportRecord: ExportRecord): Promise<void> {
 			subjectOverride: t(
 				"emails.subjects.exportFailed",
 				"Data export failed - {organizationName}",
-				{
-					organizationName: requester.organizationName,
-				},
+				{ organizationName },
 			),
 			renderDefaultHtml: () => renderExportFailed(data, translator),
 		});
