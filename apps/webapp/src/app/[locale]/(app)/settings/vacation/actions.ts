@@ -22,15 +22,14 @@ import type { VacationBalance } from "@/lib/absences/types";
 import {
 	loadManualVacationAdjustments,
 	loadVacationAdjustmentSums,
-	loadVacationAdjustmentTotals,
 	type ManualVacationAdjustment,
 	type VacationAdjustmentSums,
 } from "@/lib/absences/vacation-adjustments";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
-import { isAccrualPolicy } from "@/lib/absences/vacation-calculator";
 import {
 	checkStatutoryMinimumDays,
 	defaultStatutoryMinimumDays,
+	isAccrualPolicy,
 } from "@/lib/absences/vacation-policy-settings";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { CACHE_TAGS } from "@/lib/cache/tags";
@@ -566,21 +565,17 @@ export async function getEmployeesWithAllowances(
 				? records.filter((employeeRecord) => managedEmployeeIds.has(employeeRecord.id))
 				: records;
 			// The same server-side balance as the employee's Absences page (#1111).
-			const employeeIds = visible.map((employeeRecord) => employeeRecord.id);
-			const [{ balances }, adjustmentTotals] = await Promise.all([
-				loadVacationBalances(dbService.db, {
-					organizationId,
-					employeeIds,
-					year,
-					timezone: await loadOrganizationTimezone(dbService.db, organizationId),
-				}),
-				loadVacationAdjustmentTotals(dbService.db, { organizationId, employeeIds, year }),
-			]);
+			const { balances, adjustments } = await loadVacationBalances(dbService.db, {
+				organizationId,
+				employeeIds: visible.map((employeeRecord) => employeeRecord.id),
+				year,
+				timezone: await loadOrganizationTimezone(dbService.db, organizationId),
+			});
 			return visible.map((employeeRecord) => ({
 				...employeeRecord,
 				vacationBalance: balances.get(employeeRecord.id) ?? null,
-				// Manual and accrual adjustments for the year (#1105, #1106).
-				vacationAdjustmentDays: adjustmentTotals.get(employeeRecord.id) ?? 0,
+				// The balance's manual and accrual adjustments for the year (#1105, #1106).
+				vacationAdjustments: adjustments.get(employeeRecord.id) ?? null,
 			}));
 		});
 

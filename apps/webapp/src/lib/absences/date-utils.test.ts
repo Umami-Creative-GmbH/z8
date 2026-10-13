@@ -47,7 +47,7 @@ describe("absence date utilities", () => {
 	it("passes organization timezone through enhanced vacation balance calculation", () => {
 		expect(vacationServiceSource).toContain("timezone?: string");
 		expect(vacationServiceSource).toContain('timezone = "UTC"');
-		expect(vacationServiceSource).toContain("calculateVacationBalance({");
+		expect(vacationServiceSource).toContain("loadVacationBalances(db, {");
 		expect(vacationServiceSource).toContain("timezone,");
 		expect(vacationServiceSource).toContain("calculateCarryoverExpiryDate(");
 	});
@@ -55,7 +55,7 @@ describe("absence date utilities", () => {
 	it("passes organization timezone through vacation summary and reporting balances", () => {
 		expect(vacationServiceSource).toContain("columns: { timezone: true }");
 		expect(vacationServiceSource).toContain('const timezone = org?.timezone || "UTC"');
-		expect(vacationServiceSource).toContain("getEnhancedVacationBalance({");
+		expect(vacationServiceSource).toContain("loadVacationBalances(db, {");
 		expect(vacationServiceSource).toContain("timezone,");
 		expect(vacationReportsSource).toContain("columns: { timezone: true }");
 		expect(vacationReportsSource).toContain('const timezone = org?.timezone || "UTC"');

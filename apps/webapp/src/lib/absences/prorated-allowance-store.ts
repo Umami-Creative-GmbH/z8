@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, type SQL } from "drizzle-orm";
 import {
 	employee,
 	employeeDeparture,
@@ -12,38 +12,86 @@ import type { AbsenceDaysDatabase } from "./absence-days-resolver";
 import {
 	type DepartureRecord,
 	type EmploymentPeriodRecord,
+	type EmploymentStint,
 	employmentStintsFromRecords,
 	type ProratedAllowance,
 	type ProrationPolicy,
 	resolveVacationAllowance,
 } from "./prorated-allowance";
 
+/** An employee's `employee_vacation_allowance` overrides for a year. */
+export interface EmployeeVacationOverride {
+	customAnnualDays: string | null;
+	customCarryoverDays: string | null;
+}
+
 /**
- * The vacation allowance of each employee for a year (#1110): their custom allowance, or the
- * policy's allowance prorated in a year they join or leave. Every balance reader takes the
- * allowance from here, so an employee shows the same allowance everywhere.
- *
- * The policy is whichever one the reader resolves. Read-only: it never backfills employment
- * periods. Only employees of the organization get an entry.
+ * Each employee's vacation overrides for a year: the newest `employee_vacation_allowance` row.
+ * Only employees of the organization get an entry.
  */
-export async function loadProratedVacationAllowances(
+export async function loadEmployeeVacationOverrides(
 	database: AbsenceDaysDatabase,
-	input: {
-		organizationId: string;
-		employeeIds: readonly string[];
-		year: number;
-		policy: ProrationPolicy;
-	},
-): Promise<Map<string, ProratedAllowance>> {
+	input: { organizationId: string; employeeIds: readonly string[]; year: number },
+): Promise<Map<string, EmployeeVacationOverride>> {
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
-	const { organizationId } = input;
 
-	const [employees, periods, departures, customAllowances, timezone] = await Promise.all([
+	// `employee_vacation_allowance` has no organization column: scope through the employee.
+	const rows = await database
+		.select({
+			employeeId: employeeVacationAllowance.employeeId,
+			customAnnualDays: employeeVacationAllowance.customAnnualDays,
+			customCarryoverDays: employeeVacationAllowance.customCarryoverDays,
+		})
+		.from(employeeVacationAllowance)
+		.innerJoin(employee, eq(employee.id, employeeVacationAllowance.employeeId))
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				inArray(employeeVacationAllowance.employeeId, employeeIds),
+				eq(employeeVacationAllowance.year, input.year),
+			),
+		)
+		.orderBy(desc(employeeVacationAllowance.updatedAt));
+
+	const overrides = new Map<string, EmployeeVacationOverride>();
+	for (const { employeeId, ...override } of rows) {
+		if (!overrides.has(employeeId)) overrides.set(employeeId, override);
+	}
+	return overrides;
+}
+
+/** An employee's employments (`employmentStintsFromRecords`). */
+export interface EmployeeEmployments {
+	isActive: boolean;
+	employments: EmploymentStint[];
+}
+
+/**
+ * The employments of the organization's employees, from their employment periods and pending or
+ * effective departures. Without `employeeIds`, of every employee of the organization, active or
+ * not. Read-only: it never backfills employment periods.
+ */
+export async function loadEmployeeEmployments(
+	database: AbsenceDaysDatabase,
+	input: { organizationId: string; employeeIds?: readonly string[] },
+): Promise<Map<string, EmployeeEmployments>> {
+	const { organizationId } = input;
+	const employeeIds = input.employeeIds ? [...new Set(input.employeeIds)] : null;
+	if (employeeIds?.length === 0) return new Map();
+	const onlyThese = (column: Parameters<typeof inArray>[0]): SQL | undefined =>
+		employeeIds ? inArray(column, employeeIds) : undefined;
+
+	const [employees, periods, departures, timezone] = await Promise.all([
 		database
-			.select({ id: employee.id, startDate: employee.startDate })
+			.select({
+				id: employee.id,
+				isActive: employee.isActive,
+				startDate: employee.startDate,
+				endDate: employee.endDate,
+			})
 			.from(employee)
-			.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, employeeIds))),
+			.where(and(eq(employee.organizationId, organizationId), onlyThese(employee.id))),
 		database
 			.select({
 				employeeId: employeeEmploymentPeriod.employeeId,
@@ -56,7 +104,7 @@ export async function loadProratedVacationAllowances(
 			.where(
 				and(
 					eq(employeeEmploymentPeriod.organizationId, organizationId),
-					inArray(employeeEmploymentPeriod.employeeId, employeeIds),
+					onlyThese(employeeEmploymentPeriod.employeeId),
 				),
 			),
 		database
@@ -73,77 +121,70 @@ export async function loadProratedVacationAllowances(
 			.where(
 				and(
 					eq(employeeDeparture.organizationId, organizationId),
-					inArray(employeeDeparture.employeeId, employeeIds),
+					onlyThese(employeeDeparture.employeeId),
 					inArray(employeeDeparture.status, ["pending", "effective"]),
 				),
 			),
-		// `employee_vacation_allowance` has no organization column: scope through the employee.
-		database
-			.select({
-				employeeId: employeeVacationAllowance.employeeId,
-				customAnnualDays: employeeVacationAllowance.customAnnualDays,
-			})
-			.from(employeeVacationAllowance)
-			.innerJoin(employee, eq(employee.id, employeeVacationAllowance.employeeId))
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					inArray(employeeVacationAllowance.employeeId, employeeIds),
-					eq(employeeVacationAllowance.year, input.year),
-					isNotNull(employeeVacationAllowance.customAnnualDays),
-				),
-			)
-			.orderBy(desc(employeeVacationAllowance.updatedAt)),
 		loadOrganizationTimezone(database, organizationId),
 	]);
 
 	const periodsByEmployee = Map.groupBy(periods, (period) => period.employeeId);
 	const departuresByEmployee = Map.groupBy(departures, (departure) => departure.employeeId);
-	const customByEmployee = new Map<string, string>();
-	for (const row of customAllowances) {
-		if (row.customAnnualDays && !customByEmployee.has(row.employeeId)) {
-			customByEmployee.set(row.employeeId, row.customAnnualDays);
-		}
-	}
-
 	return new Map(
 		employees.map((row) => [
 			row.id,
-			resolveVacationAllowance({
-				policy: input.policy,
-				customAnnualDays: customByEmployee.get(row.id) ?? null,
+			{
+				isActive: row.isActive,
 				employments: employmentStintsFromRecords({
 					employeeStartDate: row.startDate,
+					employeeEndDate: row.endDate,
 					periods: (periodsByEmployee.get(row.id) ?? []) satisfies EmploymentPeriodRecord[],
 					departures: (departuresByEmployee.get(row.id) ?? []) satisfies DepartureRecord[],
 					timezone,
 				}),
-				year: input.year,
-			}),
+			},
 		]),
 	);
 }
 
 /**
- * One employee's vacation allowance for a year. An employee outside the organization gets the
- * policy's full allowance, as the readers did before proration.
+ * The vacation allowance of each employee for a year (#1110): their custom allowance, or the
+ * policy's allowance prorated in a year they join or leave. Every balance reader takes the
+ * allowance from here, so an employee shows the same allowance everywhere.
+ *
+ * The policy is the year's company default (`loadCompanyDefaultVacationPolicy`). `overrides`
+ * saves the lookup when the caller already loaded them. Only employees of the organization get
+ * an entry.
  */
-export async function loadProratedVacationAllowance(
+export async function loadProratedVacationAllowances(
 	database: AbsenceDaysDatabase,
-	input: { organizationId: string; employeeId: string; year: number; policy: ProrationPolicy },
-): Promise<ProratedAllowance> {
-	const allowances = await loadProratedVacationAllowances(database, {
-		organizationId: input.organizationId,
-		employeeIds: [input.employeeId],
-		year: input.year,
-		policy: input.policy,
-	});
-	const fullAllowance = Number.parseFloat(input.policy.defaultAnnualDays);
-	return (
-		allowances.get(input.employeeId) ?? {
-			fullAllowance,
-			allowance: fullAllowance,
-			reason: { kind: "none", cause: "no_known_start" },
-		}
+	input: {
+		organizationId: string;
+		employeeIds: readonly string[];
+		year: number;
+		policy: ProrationPolicy;
+		overrides?: Map<string, EmployeeVacationOverride>;
+	},
+): Promise<Map<string, ProratedAllowance>> {
+	const employeeIds = [...new Set(input.employeeIds)];
+	if (employeeIds.length === 0) return new Map();
+	const { organizationId, year } = input;
+
+	const [employments, overrides] = await Promise.all([
+		loadEmployeeEmployments(database, { organizationId, employeeIds }),
+		input.overrides ??
+			loadEmployeeVacationOverrides(database, { organizationId, employeeIds, year }),
+	]);
+
+	return new Map(
+		[...employments].map(([employeeId, employee]) => [
+			employeeId,
+			resolveVacationAllowance({
+				policy: input.policy,
+				customAnnualDays: overrides.get(employeeId)?.customAnnualDays ?? null,
+				employments: employee.employments,
+				year,
+			}),
+		]),
 	);
 }

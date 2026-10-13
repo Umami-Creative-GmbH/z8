@@ -1,6 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { and, eq, inArray } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getVacationBalance } from "@/app/[locale]/(app)/absences/queries";
 import { getManagerAbsenceEmployees } from "@/app/[locale]/(app)/team/absences/actions";
@@ -12,11 +14,7 @@ import {
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { getEnhancedVacationBalance } from "./vacation.service";
 import { accrueDueVacationPeriods, accrueVacationPeriods } from "./vacation-accrual";
-import {
-	loadManualVacationAdjustments,
-	loadVacationAdjustmentSums,
-	loadVacationAdjustmentTotal,
-} from "./vacation-adjustments";
+import { loadManualVacationAdjustments, loadVacationAdjustmentSums } from "./vacation-adjustments";
 
 const session = vi.hoisted(() => ({
 	current: null as null | { user: { id: string }; session: { activeOrganizationId: string } },
@@ -125,12 +123,14 @@ describe("vacation accrual on a monthly policy (#1106)", () => {
 		expect(retry.rowsWritten).toBe(0);
 		expect(parallel.map((run) => run.rowsWritten)).toEqual([0, 0]);
 		expect(
-			await loadVacationAdjustmentTotal(fixture.db, {
-				organizationId: fixture.organizationId,
-				employeeId: fixture.employeeId,
-				year: 2026,
-			}),
-		).toBe(6);
+			(
+				await loadVacationAdjustmentSums(fixture.db, {
+					organizationId: fixture.organizationId,
+					employeeIds: [fixture.employeeId],
+					year: 2026,
+				})
+			).get(fixture.employeeId),
+		).toEqual({ manual: 0, accrual: 6 });
 		await expect(
 			fixture.db.insert(vacationAdjustment).values({
 				employeeId: fixture.employeeId,
@@ -181,13 +181,6 @@ describe("vacation accrual on a monthly policy (#1106)", () => {
 		expect(Object.fromEntries(sums)).toEqual({
 			[fixture.employeeId]: { manual: -1.5, accrual: 6 },
 		});
-		expect(
-			await loadVacationAdjustmentTotal(fixture.db, {
-				organizationId: fixture.organizationId,
-				employeeId: fixture.employeeId,
-				year: 2026,
-			}),
-		).toBe(4.5);
 
 		const history = await loadManualVacationAdjustments(fixture.db, {
 			organizationId: fixture.organizationId,
@@ -305,8 +298,54 @@ describe("vacation accrual catch-up (#1106)", () => {
 	let marchHireId: string;
 	let inactiveId: string;
 	let novemberHireId: string;
+	let mayLeaverId: string;
+	let augustLeaverId: string;
+	let februaryEndDateLeaverId: string;
 	let berlinOrganizationId: string;
 	let berlinEmployeeId: string;
+
+	async function seedLegacyEmployment(input: {
+		employeeId: string;
+		lastWorkingDay?: string;
+		status?: "pending" | "effective";
+	}) {
+		const periodId = randomUUID();
+		const cutoffAt = input.lastWorkingDay
+			? new Date(`${Temporal.PlainDate.from(input.lastWorkingDay).add({ days: 1 })}T00:00:00Z`)
+			: null;
+		const ended = input.status === "effective";
+		await fixture.pool.query(
+			`insert into employee_employment_period
+			 (id, organization_id, employee_id, status, started_at, ended_at, start_provenance)
+			 values ($1, $2, $3, $4, $5, $6, 'legacy')`,
+			[
+				periodId,
+				fixture.organizationId,
+				input.employeeId,
+				ended ? "closed" : "open",
+				new Date("2020-01-01T00:00:00Z"),
+				ended ? cutoffAt : null,
+			],
+		);
+		if (!input.lastWorkingDay || !input.status) return;
+		await fixture.pool.query(
+			`insert into employee_departure
+			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+			  cutoff_at, effective_at, revision, status, created_by, request_id, request_fingerprint)
+			 values ($1, $2, $3, 'scheduled', $4, 'UTC', $5, $6, 1, $7, $8, $9, 'fp')`,
+			[
+				fixture.organizationId,
+				input.employeeId,
+				periodId,
+				input.lastWorkingDay,
+				cutoffAt,
+				ended ? cutoffAt : null,
+				input.status,
+				fixture.ownerUserId,
+				randomUUID(),
+			],
+		);
+	}
 
 	async function accrualRows(employeeId: string) {
 		return fixture.db
@@ -320,11 +359,55 @@ describe("vacation accrual catch-up (#1106)", () => {
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
-		marchHireId = (await fixture.seedEmployee({ startDate: new Date("2026-03-16T00:00:00Z") }))
-			.employeeId;
+		// Employments without a recorded period start on the employee's start date.
+		marchHireId = (
+			await fixture.seedEmployee({
+				startDate: new Date("2026-03-16T00:00:00Z"),
+				withPeriod: false,
+			})
+		).employeeId;
+		// Inactive without a departure or end date: no known end, so nothing accrues.
 		inactiveId = (await fixture.seedEmployee({ isActive: false })).employeeId;
-		novemberHireId = (await fixture.seedEmployee({ startDate: new Date("2026-11-02T00:00:00Z") }))
-			.employeeId;
+		novemberHireId = (
+			await fixture.seedEmployee({
+				startDate: new Date("2026-11-02T00:00:00Z"),
+				withPeriod: false,
+			})
+		).employeeId;
+		// Left on 15 May and is no longer active.
+		mayLeaverId = (
+			await fixture.seedEmployee({
+				startDate: new Date("2020-01-01T00:00:00Z"),
+				withPeriod: false,
+				isActive: false,
+			})
+		).employeeId;
+		await seedLegacyEmployment({
+			employeeId: mayLeaverId,
+			lastWorkingDay: "2026-05-15",
+			status: "effective",
+		});
+		// Still active, leaving on 31 August.
+		augustLeaverId = (
+			await fixture.seedEmployee({
+				startDate: new Date("2020-01-01T00:00:00Z"),
+				withPeriod: false,
+			})
+		).employeeId;
+		await seedLegacyEmployment({
+			employeeId: augustLeaverId,
+			lastWorkingDay: "2026-08-31",
+			status: "pending",
+		});
+		// No employment period, but an end date of 28 February.
+		februaryEndDateLeaverId = (
+			await fixture.seedEmployee({
+				startDate: new Date("2020-01-01T00:00:00Z"),
+				endDate: new Date("2026-02-28T00:00:00Z"),
+				withPeriod: false,
+				isActive: false,
+			})
+		).employeeId;
 		berlinOrganizationId = await fixture.createOrganization();
 		const berlinOwner = await fixture.seedEmployee({
 			organizationId: berlinOrganizationId,
@@ -383,6 +466,32 @@ describe("vacation accrual catch-up (#1106)", () => {
 		expect(first.rowsWritten).toBeGreaterThan(0);
 		expect(second.rowsWritten).toBe(0);
 		expect(await getVacationBalance(fixture.employeeId, 2026)).toMatchObject({ totalDays: 20 });
+	});
+
+	it("accrues the months an employee who left was still employed, through the last working day", async () => {
+		// The accruals above already ran up to October.
+		const rerun = await accrueDueVacationPeriods(fixture.organizationId, {
+			timezone: "UTC",
+			now: parseInstant("2026-10-13T08:00:00Z"),
+		});
+
+		// Employed 15 of 31 days of May.
+		expect(await accrualRows(mayLeaverId)).toEqual([
+			...[1, 2, 3, 4].map((accrualMonth) => ({ days: "2.00", accrualMonth })),
+			{ days: "0.97", accrualMonth: 5 },
+		]);
+		expect(await accrualRows(augustLeaverId)).toEqual(
+			[1, 2, 3, 4, 5, 6, 7, 8].map((accrualMonth) => ({ days: "2.00", accrualMonth })),
+		);
+		expect(await accrualRows(februaryEndDateLeaverId)).toEqual(
+			[1, 2].map((accrualMonth) => ({ days: "2.00", accrualMonth })),
+		);
+		expect(rerun.rowsWritten).toBe(0);
+		// The leaver's balance is what they accrued, so nothing shows as overdrawn without vacation.
+		expect(await getVacationBalance(mayLeaverId, 2026)).toMatchObject({
+			totalDays: 8.97,
+			overdrawnDays: 0,
+		});
 	});
 
 	it("takes the year and month from the organization's timezone", async () => {

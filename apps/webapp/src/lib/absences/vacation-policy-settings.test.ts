@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	checkStatutoryMinimumDays,
 	defaultStatutoryMinimumDays,
-	prorationAppliesToAccrualType,
+	isAccrualPolicy,
 } from "./vacation-policy-settings";
 
 describe("defaultStatutoryMinimumDays", () => {
@@ -40,10 +40,10 @@ describe("checkStatutoryMinimumDays", () => {
 	});
 });
 
-describe("prorationAppliesToAccrualType", () => {
-	it("applies only to policies that grant the allowance all at once", () => {
-		expect(prorationAppliesToAccrualType("annual")).toBe(true);
-		expect(prorationAppliesToAccrualType("monthly")).toBe(false);
-		expect(prorationAppliesToAccrualType("biweekly")).toBe(false);
+describe("isAccrualPolicy", () => {
+	it("is true only for policies that grant the allowance month by month", () => {
+		expect(isAccrualPolicy({ accrualType: "annual" })).toBe(false);
+		expect(isAccrualPolicy({ accrualType: "monthly" })).toBe(true);
+		expect(isAccrualPolicy({ accrualType: "biweekly" })).toBe(true);
 	});
 });

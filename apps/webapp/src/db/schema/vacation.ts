@@ -23,6 +23,12 @@ import { employee, team } from "./organization";
 // VACATION ALLOWANCE MANAGEMENT
 // ============================================
 
+/**
+ * How a vacation policy grants its allowance: all at once for the year (`annual`), or month by
+ * month through accrual adjustments (`monthly`, `biweekly`; #1106).
+ */
+export type VacationAccrualType = "annual" | "monthly" | "biweekly";
+
 // Organization-wide vacation policies (date-based)
 export const vacationAllowance = pgTable(
 	"vacation_allowance",
@@ -49,7 +55,7 @@ export const vacationAllowance = pgTable(
 		defaultAnnualDays: decimal("default_annual_days").notNull(),
 
 		// Accrual settings
-		accrualType: text("accrual_type").notNull(), // "annual" | "monthly" | "biweekly"
+		accrualType: text("accrual_type").$type<VacationAccrualType>().notNull(),
 		accrualStartMonth: integer("accrual_start_month").default(1), // 1-12, default Jan
 
 		// Carryover rules

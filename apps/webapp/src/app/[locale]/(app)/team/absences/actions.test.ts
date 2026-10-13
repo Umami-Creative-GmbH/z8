@@ -17,10 +17,40 @@ import {
 	validateManagerAbsenceSickDetail,
 	validateRecordAbsenceDateRange,
 } from "./manager-absence-action-helpers";
+import type { ProratedAllowance } from "@/lib/absences/prorated-allowance";
+import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { workingDaysFrom } from "@/lib/absences/working-days";
 import { calculateManagerAbsenceMetrics } from "./manager-absence-metrics";
 import { canActorManageTarget, canUseManagerAbsencePage } from "./manager-absence-permissions";
 import type { ManagerAbsenceListParams } from "./manager-absence-types";
+
+/** The manager row metrics over the balance every reader computes (`calculateVacationBalance`). */
+function managerMetricsFor(
+	input: Omit<Parameters<typeof calculateManagerAbsenceMetrics>[0], "balance"> & {
+		allowance: Parameters<typeof calculateVacationBalance>[0]["organizationAllowance"] | null;
+		employeeAllowance: Parameters<typeof calculateVacationBalance>[0]["employeeAllowance"];
+		proratedAllowance?: ProratedAllowance;
+		adjustmentTotal?: number;
+	},
+) {
+	return calculateManagerAbsenceMetrics({
+		year: input.year,
+		absences: input.absences,
+		isWorkingDay: input.isWorkingDay,
+		balance: input.allowance
+			? calculateVacationBalance({
+					organizationAllowance: input.allowance,
+					employeeAllowance: input.employeeAllowance,
+					allowance: input.proratedAllowance,
+					absences: input.absences,
+					isWorkingDay: input.isWorkingDay,
+					currentDate: new Date("2026-06-01T00:00:00.000Z"),
+					year: input.year,
+					adjustmentTotal: input.adjustmentTotal,
+				})
+			: undefined,
+	});
+}
 
 describe("manager absence server action contracts", () => {
 	it("exports the list, calendar, and record actions", () => {
@@ -502,7 +532,7 @@ describe("manager absence permissions", () => {
 
 describe("manager absence metrics", () => {
 	it("includes vacation adjustments in the allowance and remaining days (#1105)", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
@@ -546,7 +576,7 @@ describe("manager absence metrics", () => {
 	});
 
 	it("clips vacation and sick metrics to absences overlapping the selected year", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
@@ -655,7 +685,7 @@ describe("manager absence metrics", () => {
 	});
 
 	it("calculates vacation and sick metrics for the selected year", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
@@ -764,7 +794,7 @@ describe("manager absence metrics", () => {
 	});
 
 	it("calculates half-day sick metrics", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
@@ -810,7 +840,7 @@ describe("manager absence metrics", () => {
 	});
 
 	it("calculates legacy-compatible explicit overnight partial-day metrics as a half day", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
@@ -856,7 +886,7 @@ describe("manager absence metrics", () => {
 	});
 
 	it("returns zero vacation metrics without an allowance while retaining sick metrics", () => {
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: null,
 			employeeAllowance: null,
@@ -914,7 +944,7 @@ describe("manager absence metrics", () => {
 				],
 			},
 		};
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",
@@ -965,7 +995,7 @@ describe("manager vacation holiday recovery", () => {
 	it.each(["approved", "pending"] as const)(
 		"excludes Silvester from existing %s requests",
 		(status) => {
-			const metrics = calculateManagerAbsenceMetrics({
+			const metrics = managerMetricsFor({
 				year: 2026,
 				allowance: {
 					defaultAnnualDays: "30",
@@ -1044,7 +1074,7 @@ describe("manager absence metrics on working days (#979)", () => {
 			},
 		});
 
-		const metrics = calculateManagerAbsenceMetrics({
+		const metrics = managerMetricsFor({
 			year: 2026,
 			allowance: {
 				defaultAnnualDays: "30",

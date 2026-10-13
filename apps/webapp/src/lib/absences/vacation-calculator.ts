@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import type { VacationAccrualType } from "@/db/schema/vacation";
 import { fromJSDate } from "@/lib/datetime/luxon-utils";
 import {
 	clipAbsenceDayRange,
@@ -9,11 +10,12 @@ import {
 import { calculateCarryoverExpiryDate } from "./date-utils";
 import type { ProratedAllowance } from "./prorated-allowance";
 import type { AbsenceWithCategory, VacationBalance } from "./types";
+import { isAccrualPolicy } from "./vacation-policy-settings";
 
-interface VacationAllowanceData {
+/** The fields of a vacation policy (`vacation_allowance`) a balance reads. */
+export interface VacationAllowanceData {
 	defaultAnnualDays: string; // decimal from DB
-	/** "annual" | "monthly" | "biweekly" (`vacation_allowance.accrual_type`). */
-	accrualType: string;
+	accrualType: VacationAccrualType;
 	allowCarryover: boolean;
 	maxCarryoverDays: string | null; // decimal from DB
 	carryoverExpiryMonths: number | null;
@@ -24,25 +26,27 @@ interface EmployeeAllowanceData {
 	customCarryoverDays: string | null; // decimal from DB
 }
 
-/** A monthly or biweekly policy grants its allowance through accrual adjustments (#1106). */
-export function isAccrualPolicy(policy: { accrualType: string }): boolean {
-	return policy.accrualType !== "annual";
+/**
+ * The days a balance starts from before carryover and adjustments: on an annual policy the
+ * vacation allowance (prorated in a start or exit year, `loadProratedVacationAllowances`), or
+ * without one the custom or policy allowance; on an accrual policy 0, whose balance grows only
+ * through its accrual adjustments (#1106).
+ */
+export function startingAllowanceDays(input: {
+	policy: Pick<VacationAllowanceData, "defaultAnnualDays" | "accrualType">;
+	allowance?: Pick<ProratedAllowance, "allowance"> | null;
+	employeeAllowance?: Pick<EmployeeAllowanceData, "customAnnualDays"> | null;
+}): number {
+	if (isAccrualPolicy(input.policy)) return 0;
+	if (input.allowance) return input.allowance.allowance;
+	return input.employeeAllowance?.customAnnualDays
+		? parseFloat(input.employeeAllowance.customAnnualDays)
+		: parseFloat(input.policy.defaultAnnualDays);
 }
 
-/**
- * The days a balance starts from before carryover and adjustments: the custom or policy
- * allowance on an annual policy, and 0 on an accrual policy, whose balance grows only
- * through its accrual adjustments (#1106). The accrual job still accrues the custom or
- * policy allowance, so that number remains the accrual target.
- */
-export function startingAllowanceDays(
-	policy: Pick<VacationAllowanceData, "defaultAnnualDays" | "accrualType">,
-	employeeAllowance?: Pick<EmployeeAllowanceData, "customAnnualDays"> | null,
-): number {
-	if (isAccrualPolicy(policy)) return 0;
-	return employeeAllowance?.customAnnualDays
-		? parseFloat(employeeAllowance.customAnnualDays)
-		: parseFloat(policy.defaultAnnualDays);
+/** Approved vacation taken beyond the balance's days, to the hundredth; 0 when none (#1111). */
+export function overdrawnVacationDays(usedDays: number, totalDays: number): number {
+	return Math.max(0, Math.round((usedDays - totalDays) * 100) / 100);
 }
 
 /**
@@ -84,9 +88,11 @@ export function calculateVacationBalance({
 	const current = currentDate instanceof Date ? fromJSDate(currentDate, "utc") : currentDate;
 
 	// 1. Calculate total annual days: the (prorated) allowance, or 0 on an accrual policy
-	let totalDays = isAccrualPolicy(organizationAllowance)
-		? 0
-		: (allowance?.allowance ?? startingAllowanceDays(organizationAllowance, employeeAllowance));
+	let totalDays = startingAllowanceDays({
+		policy: organizationAllowance,
+		allowance,
+		employeeAllowance,
+	});
 
 	// 2. Add carryover days from previous year (if not expired)
 	let carryoverDays = 0;
@@ -137,7 +143,7 @@ export function calculateVacationBalance({
 	const remainingDays = Math.max(0, totalDays - usedDays - pendingDays);
 
 	// 7. Overdrawn vacation: approved vacation beyond the balance, shown but never reclaimed (#1111)
-	const overdrawnDays = Math.max(0, Math.round((usedDays - totalDays) * 100) / 100);
+	const overdrawnDays = overdrawnVacationDays(usedDays, totalDays);
 
 	return {
 		year,

@@ -14,9 +14,15 @@ export type VacationAdjustmentSums = {
 	accrual: number;
 };
 
+/** All of an employee's adjustments for the year, manual and accrual alike; 0 without any. */
+export function vacationAdjustmentTotal(sums: VacationAdjustmentSums | undefined): number {
+	return (sums?.manual ?? 0) + (sums?.accrual ?? 0);
+}
+
 /**
  * The sums of each employee's vacation adjustments (`vacation_adjustment.days`) for a year, by
- * kind. Only employees of the organization get an entry; one without adjustments gets zeros.
+ * kind: every vacation balance adds both to the allowance (#1105). Only employees of the
+ * organization get an entry; one without adjustments gets zeros.
  */
 export async function loadVacationAdjustmentSums(
 	database: AbsenceDaysDatabase,
@@ -47,34 +53,6 @@ export async function loadVacationAdjustmentSums(
 			{ manual: Number.parseFloat(row.manual), accrual: Number.parseFloat(row.accrual) },
 		]),
 	);
-}
-
-/**
- * The sum of each employee's vacation adjustments for a year, manual and accrual alike: the one
- * lookup every vacation balance reader adds to the allowance (#1105). Only employees of the
- * organization get an entry; one without adjustments gets 0.
- */
-export async function loadVacationAdjustmentTotals(
-	database: AbsenceDaysDatabase,
-	input: { organizationId: string; employeeIds: readonly string[]; year: number },
-): Promise<Map<string, number>> {
-	const sums = await loadVacationAdjustmentSums(database, input);
-	return new Map(
-		[...sums].map(([employeeId, { manual, accrual }]) => [employeeId, manual + accrual]),
-	);
-}
-
-/** One employee's adjustment total for a year; 0 for an employee outside the organization. */
-export async function loadVacationAdjustmentTotal(
-	database: AbsenceDaysDatabase,
-	input: { organizationId: string; employeeId: string; year: number },
-): Promise<number> {
-	const totals = await loadVacationAdjustmentTotals(database, {
-		organizationId: input.organizationId,
-		employeeIds: [input.employeeId],
-		year: input.year,
-	});
-	return totals.get(input.employeeId) ?? 0;
 }
 
 export type ManualVacationAdjustment = {

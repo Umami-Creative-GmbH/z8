@@ -14,6 +14,7 @@ import {
 	expireCarryoverDays,
 } from "@/lib/absences/vacation.service";
 import { accrueDueVacationPeriods, accrueVacationPeriods } from "@/lib/absences/vacation-accrual";
+import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
@@ -316,7 +317,7 @@ export async function runMonthlyAccrual(month?: number, year?: number): Promise<
 				// Check if organization uses monthly/biweekly accrual
 				const policy = await getVacationAllowance(org.id, targetYear);
 
-				if (!policy || policy.accrualType === "annual") {
+				if (!policy || !isAccrualPolicy(policy)) {
 					continue;
 				}
 

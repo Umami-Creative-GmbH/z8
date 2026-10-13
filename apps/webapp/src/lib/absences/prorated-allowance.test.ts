@@ -55,6 +55,20 @@ describe("employmentStintsFromRecords", () => {
 		).toEqual([{ startDate: "2026-10-01", lastWorkingDay: null }]);
 	});
 
+	it("ends the employment on the employee end date when no employment period exists yet", () => {
+		expect(
+			plain(
+				employmentStintsFromRecords({
+					employeeStartDate: utcMidnight("2020-01-01"),
+					employeeEndDate: utcMidnight("2026-04-30"),
+					periods: [],
+					departures: [],
+					timezone: "America/Los_Angeles",
+				}),
+			),
+		).toEqual([{ startDate: "2020-01-01", lastWorkingDay: "2026-04-30" }]);
+	});
+
 	it("starts the legacy employment on the employee start date, which tracks admin edits", () => {
 		expect(
 			plain(

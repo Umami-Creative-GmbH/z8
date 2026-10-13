@@ -25,6 +25,7 @@ import {
 import { getAbsenceDaysByAbsenceId, loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { calculateCarryoverExpiryDate } from "@/lib/absences/date-utils";
 import type { DayPeriod } from "@/lib/absences/types";
+import { loadCompanyDefaultVacationPolicy } from "@/lib/absences/vacation-policy-store";
 
 export interface VacationAllowanceRecord {
 	id: string;
@@ -213,14 +214,16 @@ export async function getVacationPolicyById(
 }
 
 /**
- * @deprecated Use getCompanyDefaultPolicy or getActivePolicyForDate instead
- * Get vacation allowance policy for an organization and year (legacy)
+ * The organization's vacation policy for a calendar year, as every vacation balance reader
+ * resolves it (`loadCompanyDefaultVacationPolicy`): the company default in effect during the
+ * year with the newest start.
  */
 export async function getVacationAllowance(
 	organizationId: string,
 	year: number,
 ): Promise<VacationAllowanceRecord | null> {
-	return getActivePolicyForDate(organizationId, `${year}-01-01`);
+	const policy = await loadCompanyDefaultVacationPolicy(db, { organizationId, year });
+	return (policy as VacationAllowanceRecord | undefined) ?? null;
 }
 
 /**

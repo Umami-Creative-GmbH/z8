@@ -4,25 +4,20 @@ import { eq, sql } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import { absenceSetting, employee } from "@/db/schema";
 import { logger } from "@/lib/logger";
-import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { AbsenceDaysDatabase } from "./absence-days-resolver";
-import { loadProratedVacationAllowances } from "./prorated-allowance-store";
 import {
 	PRORATION_NOTICE_YEAR,
 	type ProrationNoticeRow,
 	prorationNoticeRow,
 } from "./proration-notice";
-import { getEnhancedVacationBalance } from "./vacation.service";
-
-/** Balances are read a few at a time so a large organization does not exhaust the pool. */
-const BALANCE_CONCURRENCY = 8;
+import { loadVacationBalances } from "./vacation-balance-store";
 
 /**
  * The one-time proration notice of an organization (#1112): every employee, departed ones
  * included, whose 2026 allowance is now prorated below the full allowance, with their overdrawn
- * days. Worked out at read time from the shared allowance and balance; null once an owner or
- * admin dismissed it.
+ * days. Worked out at read time from the shared vacation balances (`loadVacationBalances`), all
+ * read through `database`; null once an owner or admin dismissed it.
  */
 export async function loadProrationNotice(
 	database: AbsenceDaysDatabase,
@@ -36,49 +31,35 @@ export async function loadProrationNotice(
 		.limit(1);
 	if (setting?.dismissedAt) return null;
 
-	const year = PRORATION_NOTICE_YEAR;
-	const policy = await getVacationAllowance(organizationId, year);
-	if (!policy) return [];
-
-	const employees = await database
-		.select({
-			id: employee.id,
-			name: sql<string>`COALESCE(NULLIF(concat_ws(' ', ${user.firstName}, ${user.lastName}), ''), ${user.name}, ${user.email})`,
-		})
-		.from(employee)
-		.innerJoin(user, eq(employee.userId, user.id))
-		.where(eq(employee.organizationId, organizationId));
-	const allowances = await loadProratedVacationAllowances(database, {
+	const [employees, timezone] = await Promise.all([
+		database
+			.select({
+				id: employee.id,
+				name: sql<string>`COALESCE(NULLIF(concat_ws(' ', ${user.firstName}, ${user.lastName}), ''), ${user.name}, ${user.email})`,
+			})
+			.from(employee)
+			.innerJoin(user, eq(employee.userId, user.id))
+			.where(eq(employee.organizationId, organizationId)),
+		loadOrganizationTimezone(database, organizationId),
+	]);
+	// The same balances every other reader shows.
+	const { balances } = await loadVacationBalances(database, {
 		organizationId,
 		employeeIds: employees.map((row) => row.id),
-		year,
-		policy,
+		year: PRORATION_NOTICE_YEAR,
+		timezone,
 	});
-	// Only a prorated allowance can have dropped; the balance then confirms it with the same
-	// numbers every balance reader shows.
-	const candidates = employees.filter((row) => {
-		const allowance = allowances.get(row.id);
-		return allowance?.reason.kind === "prorated" && allowance.allowance < allowance.fullAllowance;
-	});
-	if (candidates.length === 0) return [];
 
-	const timezone = await loadOrganizationTimezone(database, organizationId);
-	const rows: ProrationNoticeRow[] = [];
-	for (let index = 0; index < candidates.length; index += BALANCE_CONCURRENCY) {
-		const batch = candidates.slice(index, index + BALANCE_CONCURRENCY);
-		const balances = await Promise.all(
-			batch.map((row) => getEnhancedVacationBalance({ employeeId: row.id, year, timezone })),
-		);
-		batch.forEach((row, position) => {
+	return employees
+		.flatMap((row) => {
 			const noticeRow = prorationNoticeRow({
 				employeeId: row.id,
 				name: row.name,
-				balance: balances[position] ?? null,
+				balance: balances.get(row.id) ?? null,
 			});
-			if (noticeRow) rows.push(noticeRow);
-		});
-	}
-	return rows.toSorted((left, right) => left.name.localeCompare(right.name));
+			return noticeRow ? [noticeRow] : [];
+		})
+		.toSorted((left, right) => left.name.localeCompare(right.name));
 }
 
 /**

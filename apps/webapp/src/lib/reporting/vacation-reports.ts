@@ -9,7 +9,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { getEnhancedVacationBalance, getVacationSummary } from "@/lib/absences/vacation.service";
-import { isAccrualPolicy } from "@/lib/absences/vacation-calculator";
+import { isAccrualPolicy } from "@/lib/absences/vacation-policy-settings";
 import { format } from "@/lib/datetime/luxon-utils";
 import {
 	getEmployeesWithExpiringCarryover,
@@ -193,9 +193,9 @@ export async function generateAccrualProjection(
 	for (let month = 1; month <= 12; month++) {
 		const monthDT = DateTime.utc(year, month, 1);
 
-		if (policy.accrualType === "annual" && month === policy.accrualStartMonth) {
+		if (!isAccrualPolicy(policy) && month === policy.accrualStartMonth) {
 			cumulativeAccrued = annualDays;
-		} else if (policy.accrualType !== "annual") {
+		} else if (isAccrualPolicy(policy)) {
 			cumulativeAccrued += monthlyAccrual;
 		}
 

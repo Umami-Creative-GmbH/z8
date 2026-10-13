@@ -4,6 +4,8 @@
  * Client-safe: the policy form and the server actions share these rules.
  */
 
+import type { VacationAccrualType } from "@/db/schema/vacation";
+
 /** The statutory minimum a policy gets unless an admin sets another one. */
 const DEFAULT_STATUTORY_MINIMUM_DAYS = 20;
 
@@ -28,9 +30,10 @@ export function checkStatutoryMinimumDays(
 }
 
 /**
- * Policies that accrue monthly or biweekly already accrue in part years, so the
- * "Prorate in start and exit year" switch does not apply to them (#1104 rule 1).
+ * A monthly or biweekly policy grants its allowance only through accrual adjustments (#1106).
+ * Such a policy already accrues in part years, so it is never prorated and the "Prorate in start
+ * and exit year" switch does not apply to it (#1104 rule 1).
  */
-export function prorationAppliesToAccrualType(accrualType: string): boolean {
-	return accrualType === "annual";
+export function isAccrualPolicy(policy: { accrualType: VacationAccrualType }): boolean {
+	return policy.accrualType !== "annual";
 }
