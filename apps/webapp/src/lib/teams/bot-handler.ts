@@ -19,6 +19,7 @@ import { handleShiftPickupAction } from "./shift-pickup-handler";
 import { resolveTenant, updateTenantServiceUrl } from "./tenant-resolver";
 import { TeamsError } from "./types";
 import { resolveTeamsUser } from "./user-resolver";
+import { parseTeamsVehicleUseInvoke } from "./vehicle-use-card";
 
 const logger = createLogger("TeamsBotHandler");
 
@@ -311,6 +312,15 @@ async function handleInvoke(context: TurnContext): Promise<void> {
 	const bound = parseTeamsBoundApprovalInvoke(activity);
 	if (bound.kind !== "none") {
 		const response = await handleBoundApprovalInvoke(context, bound, userResult.user, tenant);
+		await context.sendActivity({ type: "invokeResponse", value: response });
+		return;
+	}
+
+	// Vehicle use cards (#1125) after a committed clock command.
+	const vehicleUse = parseTeamsVehicleUseInvoke(activity);
+	if (vehicleUse.kind !== "none") {
+		const { handleTeamsVehicleUseInvoke } = await import("./vehicle-use-prompt");
+		const response = await handleTeamsVehicleUseInvoke(vehicleUse, userResult.user, tenant);
 		await context.sendActivity({ type: "invokeResponse", value: response });
 		return;
 	}

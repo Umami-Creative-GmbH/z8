@@ -11,6 +11,13 @@ const state = vi.hoisted(() => ({
 	clockOutAs: vi.fn(),
 	authorized: vi.fn(),
 	employee: vi.fn(),
+	vehicleUsePrompt: vi.fn(),
+}));
+
+// The Teams vehicle use card is proven on PostgreSQL in
+// lib/teams/vehicle-use.integration.test.ts; here only its place in the reply.
+vi.mock("@/lib/teams/vehicle-use-prompt", () => ({
+	withTeamsVehicleUsePrompt: state.vehicleUsePrompt,
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/clocking", () => ({
@@ -227,6 +234,87 @@ describe("bot clock-in command", () => {
 			type: "text",
 			text: "Your clock-in could not be confirmed. Check your status before trying again.",
 		});
+	});
+});
+
+describe("vehicle use after a bot clock command", () => {
+	const committedClockIn = {
+		success: true,
+		data: { id: "entry-0", type: "clock_in", timestamp: new Date("2026-07-22T08:00:00Z") },
+	};
+	const card = { type: "AdaptiveCard" };
+
+	beforeEach(() => {
+		state.clockInAs.mockResolvedValue(committedClockIn);
+		state.vehicleUsePrompt.mockImplementation(async (reply: { text: string }) => ({
+			type: "card",
+			text: reply.text,
+			card,
+		}));
+	});
+
+	it("adds the Teams vehicle use card to the committed clock-in, never to the command", async () => {
+		await expect(clockInCommand.handler(context({ platform: "teams" }))).resolves.toEqual({
+			type: "card",
+			text: "Clocked in at 10:00.",
+			card,
+		});
+		// The clock command carries no vehicle use: it never waits for it.
+		expect(state.clockInAs.mock.calls[0]?.[2]).not.toHaveProperty("vehicleUse");
+		expect(state.vehicleUsePrompt).toHaveBeenCalledWith(
+			{ type: "text", text: "Clocked in at 10:00." },
+			{ organizationId: "org-1", employeeId: "employee-1", stage: "clock_in", entryId: "entry-0" },
+			expect.any(Function),
+		);
+	});
+
+	it("adds the Teams vehicle use card to the committed clock-out", async () => {
+		await expect(clockOutCommand.handler(context({ platform: "teams" }))).resolves.toEqual({
+			type: "card",
+			text: "Clocked out at 11:00. Duration: 1h 1m.",
+			card,
+		});
+		expect(state.vehicleUsePrompt.mock.calls[0]?.[1]).toEqual({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			stage: "clock_out",
+			entryId: "entry-1",
+		});
+	});
+
+	it("keeps the other platforms' replies text-only", async () => {
+		for (const platform of ["slack", "telegram", "discord"] as const) {
+			await expect(clockInCommand.handler(context({ platform }))).resolves.toMatchObject({
+				type: "text",
+			});
+			await expect(clockOutCommand.handler(context({ platform }))).resolves.toMatchObject({
+				type: "text",
+			});
+		}
+		expect(state.vehicleUsePrompt).not.toHaveBeenCalled();
+	});
+
+	it("keeps the committed reply when the card cannot be built", async () => {
+		state.vehicleUsePrompt.mockRejectedValue(new Error("vehicles unavailable"));
+
+		await expect(clockInCommand.handler(context({ platform: "teams" }))).resolves.toEqual({
+			type: "text",
+			text: "Clocked in at 10:00.",
+		});
+	});
+
+	it("asks nothing after a refused clock command", async () => {
+		state.clockInAs.mockResolvedValue({
+			success: false,
+			failure: "failed",
+			refusal: { code: "failed" },
+		});
+
+		await expect(clockInCommand.handler(context({ platform: "teams" }))).resolves.toEqual({
+			type: "text",
+			text: "Could not clock in. Please try again.",
+		});
+		expect(state.vehicleUsePrompt).not.toHaveBeenCalled();
 	});
 });
 

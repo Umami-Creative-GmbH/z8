@@ -23,6 +23,7 @@ import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import type { ClockInFailure } from "@/lib/time-tracking/clocking/types";
 import { elapsedHoursAndMinutes, getCommandTemporalContext } from "./command-temporal";
+import { withVehicleUsePrompt } from "./vehicle-use-reply";
 
 const logger = createLogger("BotCommand:ClockIn");
 
@@ -89,7 +90,7 @@ export const clockInCommand: BotCommand = {
 				deviceInfo: `${ctx.platform}-bot`,
 			});
 			if (result.success) {
-				return committedReply(
+				const reply = committedReply(
 					() =>
 						t("bot.cmd.clockin.success", "Clocked in at {time}.", {
 							time: formatInstant(instantFromDate(result.data.timestamp), temporal, "time"),
@@ -97,6 +98,17 @@ export const clockInCommand: BotCommand = {
 					replies,
 					t,
 					(error) => logger.error({ error }, "Failed to format committed clock-in reply"),
+				);
+				return withVehicleUsePrompt(
+					ctx,
+					reply,
+					{
+						organizationId: actor.employee.organizationId,
+						employeeId: actor.employee.id,
+						stage: "clock_in",
+						entryId: result.data.id,
+					},
+					t,
 				);
 			}
 			if (result.refusal.code === "already_clocked_in") {
