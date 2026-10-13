@@ -75,6 +75,7 @@ import {
 	tablePart,
 } from "../collector";
 import { instantText, loadEmployeeNames, loadUserNames, nameOf, plainDateText } from "../values";
+import { employmentFieldGuide } from "./employment-fields";
 import { collectWithheldEmploymentParts } from "./employment-withheld";
 
 /** The subject employee's own profile columns (the `employee` row of this organization). */
@@ -109,6 +110,7 @@ const POLICY_COLUMNS = [
 export const employmentCollector: PersonalDataCollector = {
 	category: "employment",
 	collect: collectEmployment,
+	fields: employmentFieldGuide,
 };
 
 async function collectEmployment(

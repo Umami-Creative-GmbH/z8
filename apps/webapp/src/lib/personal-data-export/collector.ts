@@ -34,6 +34,37 @@
  *   CSV `<category>/<key>.csv` next to it; a `record` part is one JSON object
  *   with no CSV. Original files (documents, receipts) go in `files`.
  *
+ * - **Field guide.** The README explains every part and every field of the
+ *   archive (Art. 15), in the employee's language. Each collector declares
+ *   that explanation next to its parts, as `fields`: a function of the README
+ *   translator returning, per part key, a one-line `summary` of what the part
+ *   holds and one sentence per column (table) or property (record):
+ *
+ *   ```ts
+ *   const timeFieldGuide: PersonalDataFieldGuide = (t) => ({
+ *     time_entries: {
+ *       summary: t("personalDataExport.readme.fields.time.timeEntries.summary", "Every clock-in and clock-out."),
+ *       fields: {
+ *         ...commonFieldExplanations(t, ["id", "created_at"]),
+ *         utc_offset: t("personalDataExport.readme.fields.time.timeEntries.utcOffset", "..."),
+ *       },
+ *     },
+ *   });
+ *   export const timeCollector: PersonalDataCollector = { category: "time", collect, fields: timeFieldGuide };
+ *   ```
+ *
+ *   Write one literal `t(key, englishDefault)` call per text (the Tolgee
+ *   extractor reads only those; the parameter must be named `t`). Keys are
+ *   `personalDataExport.readme.fields.<category>.<partKeyCamel>.summary` and
+ *   `...<partKeyCamel>.<fieldCamel>` per field (no field may be named
+ *   `summary`); columns every collector shares (ids, who and when) come from
+ *   `commonFieldExplanations`. `collectors/employment-fields.ts` is the
+ *   worked example.
+ *   The README renders only the parts that are in the archive, so describing
+ *   a withheld (admin-only) part in the guide never shows it in an employee
+ *   export. `findUnexplainedFields` (readme.ts) lists every column the guide
+ *   misses; the README integration test requires it to be empty.
+ *
  * Add a new category by adding its key to `PERSONAL_DATA_CATEGORIES` and its
  * collector to `PERSONAL_DATA_COLLECTORS` (`collectors/index.ts`); the archive
  * writer, manifest and README pick it up from there.
@@ -41,6 +72,7 @@
 
 import type { db } from "@/db";
 import type { PersonalDataExportKind } from "@/db/schema";
+import type { ReadmeTranslate } from "./readme";
 
 export type { PersonalDataExportKind } from "@/db/schema";
 
@@ -112,12 +144,76 @@ export interface CollectedCategory {
 	files?: PersonalDataFile[];
 }
 
+/** The README's explanation of one part: what it holds, and each field. */
+export interface PersonalDataPartGuide {
+	summary: string;
+	/** One sentence per column (table part) or property (record part), by field name. */
+	fields: Readonly<Record<string, string>>;
+}
+
+/**
+ * The README's explanation of a category's parts, by part key, in the
+ * translator's language. Describe every part the collector can return,
+ * withheld ones included (see the header).
+ */
+export type PersonalDataFieldGuide = (t: ReadmeTranslate) => Record<string, PersonalDataPartGuide>;
+
 export interface PersonalDataCollector {
 	category: PersonalDataCategoryKey;
 	collect(
 		database: PersonalDataExportDatabase,
 		scope: PersonalDataExportScope,
 	): Promise<CollectedCategory>;
+	/** Explains every part and field in the README; see "Field guide" above. */
+	fields?: PersonalDataFieldGuide;
+}
+
+/** Fields many parts share, explained once. */
+export const COMMON_FIELDS = [
+	"id",
+	"created_at",
+	"created_by",
+	"updated_at",
+	"updated_by",
+	"assigned_at",
+	"assigned_by",
+	"effective_from",
+	"effective_to",
+] as const;
+export type CommonField = (typeof COMMON_FIELDS)[number];
+
+/** The explanations of the named shared fields, for a part's `fields`. */
+export function commonFieldExplanations(
+	t: ReadmeTranslate,
+	names: readonly CommonField[],
+): Record<string, string> {
+	const all: Record<CommonField, () => string> = {
+		id: () =>
+			t(
+				"personalDataExport.readme.fields.common.id",
+				"The record's ID in the app, so other files can refer to it.",
+			),
+		created_at: () =>
+			t("personalDataExport.readme.fields.common.createdAt", "When the record was created."),
+		created_by: () =>
+			t("personalDataExport.readme.fields.common.createdBy", "Who created the record."),
+		updated_at: () =>
+			t("personalDataExport.readme.fields.common.updatedAt", "When the record was last changed."),
+		updated_by: () =>
+			t("personalDataExport.readme.fields.common.updatedBy", "Who last changed the record."),
+		assigned_at: () =>
+			t("personalDataExport.readme.fields.common.assignedAt", "When it was assigned to you."),
+		assigned_by: () =>
+			t("personalDataExport.readme.fields.common.assignedBy", "Who assigned it to you."),
+		effective_from: () =>
+			t("personalDataExport.readme.fields.common.effectiveFrom", "When it took effect."),
+		effective_to: () =>
+			t(
+				"personalDataExport.readme.fields.common.effectiveTo",
+				"When it stopped applying; empty while it still applies.",
+			),
+	};
+	return Object.fromEntries(names.map((name) => [name, all[name]()]));
 }
 
 export function tablePart(

@@ -40,7 +40,8 @@ import type {
 	PersonalDataExportScope,
 } from "./collector";
 import { PERSONAL_DATA_COLLECTORS } from "./collectors";
-import { loadReadmeTranslator, renderPersonalDataExportReadme } from "./readme";
+import { loadReadmeTranslator, readmeContentsOf, renderPersonalDataExportReadme } from "./readme";
+import { loadPersonalDataReadmeFacts } from "./readme-facts";
 import {
 	type ClaimedPersonalDataExport,
 	claimPersonalDataExport,
@@ -146,7 +147,14 @@ export async function processPersonalDataExport(
 			userId: subject.userId,
 			organizationId: claimed.organizationId,
 		});
+		const facts = await loadPersonalDataReadmeFacts(database, {
+			organizationId: claimed.organizationId,
+			employeeId: claimed.employeeId,
+			now: deps.now(),
+		});
 		const readme = renderPersonalDataExportReadme({
+			...facts,
+			contents: readmeContentsOf(categories, deps.collectors),
 			t: await loadReadmeTranslator(locale),
 			kind: claimed.kind,
 			organizationName: subject.organizationName,
