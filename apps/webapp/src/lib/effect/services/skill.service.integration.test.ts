@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { NotFoundError } from "@/lib/effect/errors";
 import {
 	createShiftDatabaseFixture,
+	SHIFT_DAY,
 	type ShiftDatabaseFixture,
 	type ShiftTestOrganization,
 } from "@/lib/scheduling/testing/shift-database.test.fixture";
@@ -233,7 +234,7 @@ describe("skill service organization scoping", () => {
 				service.getEmployeeSkills(a.organizationId, a.employeeId),
 			);
 			const qualified = await run((service) =>
-				service.getQualifiedEmployeesForSkills(a.organizationId, [b.skillId]),
+				service.getQualifiedEmployeesForSkills(a.organizationId, [b.skillId], SHIFT_DAY),
 			);
 
 			expect(skills.map((row) => row.skillId)).toEqual([a.skillId]);
@@ -327,6 +328,7 @@ describe("skill service organization scoping", () => {
 					service.validateEmployeeForShift(a.organizationId, b.employeeId, {
 						subareaId: b.subareaId,
 						templateId: b.templateId,
+						date: SHIFT_DAY,
 					}),
 				),
 			).toMatchObject(notFound("employee", b.employeeId));
@@ -334,6 +336,7 @@ describe("skill service organization scoping", () => {
 				await runResult((service) =>
 					service.validateEmployeeForShift(a.organizationId, a.employeeId, {
 						subareaId: b.subareaId,
+						date: SHIFT_DAY,
 					}),
 				),
 			).toMatchObject(notFound("locationSubarea", b.subareaId));
@@ -342,12 +345,18 @@ describe("skill service organization scoping", () => {
 					service.validateEmployeeForShift(a.organizationId, a.employeeId, {
 						subareaId: a.subareaId,
 						templateId: b.templateId,
+						date: SHIFT_DAY,
 					}),
 				),
 			).toMatchObject(notFound("shiftTemplate", b.templateId));
 			expect(
 				await runResult((service) =>
-					service.validateEmployeeForSubarea(a.organizationId, a.employeeId, b.subareaId),
+					service.validateEmployeeForSubarea(
+						a.organizationId,
+						a.employeeId,
+						b.subareaId,
+						SHIFT_DAY,
+					),
 				),
 			).toMatchObject(notFound("locationSubarea", b.subareaId));
 		});
@@ -357,6 +366,7 @@ describe("skill service organization scoping", () => {
 				service.validateEmployeeForShift(b.organizationId, b.employeeId, {
 					subareaId: b.subareaId,
 					templateId: b.templateId,
+					date: SHIFT_DAY,
 				}),
 			);
 

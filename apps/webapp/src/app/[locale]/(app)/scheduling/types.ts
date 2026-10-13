@@ -85,7 +85,8 @@ export interface SkillWarningInfo {
 	expiredSkills: Array<{
 		id: string;
 		name: string;
-		expiresAt: Date;
+		/** Skill expiry date, `YYYY-MM-DD`. */
+		expiresAt: string;
 	}>;
 }
 

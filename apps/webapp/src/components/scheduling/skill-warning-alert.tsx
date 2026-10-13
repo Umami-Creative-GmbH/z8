@@ -1,11 +1,12 @@
 "use client";
 
 import { IconAlertTriangle, IconCertificate, IconLoader2 } from "@tabler/icons-react";
-import { useTranslate } from "@tolgee/react";
-import { DateTime } from "luxon";
+import { useTolgee, useTranslate } from "@tolgee/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import type { SkillValidationResult } from "@/lib/effect/services/skill.service";
 
 interface SkillWarningAlertProps {
@@ -15,6 +16,7 @@ interface SkillWarningAlertProps {
 
 export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertProps) {
 	const { t } = useTranslate();
+	const locale = useTolgee().getLanguage() || "en";
 
 	if (isLoading) {
 		return (
@@ -119,9 +121,7 @@ export function SkillWarningAlert({ validation, isLoading }: SkillWarningAlertPr
 										{skill.name}
 										<span className="text-xs text-muted-foreground">
 											{t("scheduling:scheduling.skills.expiredOn", "(Expired {date})", {
-												date: DateTime.fromJSDate(skill.expiresAt).toLocaleString(
-													DateTime.DATE_SHORT,
-												),
+												date: formatPlainDate(parsePlainDate(skill.expiresAt), locale, "dateShort"),
 											})}
 										</span>
 									</li>

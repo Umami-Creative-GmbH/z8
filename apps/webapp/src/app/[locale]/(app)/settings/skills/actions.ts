@@ -9,7 +9,9 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import {
 	type AssignSkillInput,
 	type CreateSkillInput,
+	type EmployeeSkill,
 	type EmployeeSkillWithDetails,
+	type SkillExpiryWindow,
 	SkillService,
 	type SkillValidationResult,
 	type SkillWithRelations,
@@ -324,6 +326,104 @@ export async function assignSkillToEmployee(
 }
 
 /**
+ * Change an assigned employee skill's expiry date in place
+ * Requires admin or manager role with access to the employee
+ */
+export async function updateEmployeeSkillExpiry(data: {
+	employeeId: string;
+	skillId: string;
+	/** `YYYY-MM-DD`, the last valid day; null never expires. */
+	expiresAt: string | null;
+}): Promise<ServerActionResult<EmployeeSkill>> {
+	const tracer = trace.getTracer("skills");
+
+	const effect = tracer.startActiveSpan(
+		"updateEmployeeSkillExpiry",
+		{
+			attributes: {
+				"employee.id": data.employeeId,
+				"skill.id": data.skillId,
+			},
+		},
+		(span) => {
+			return Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext({
+					queryName: "updateEmployeeSkillExpiry:actor",
+				});
+				const skillService = yield* SkillService;
+
+				if (actor.accessTier !== "orgAdmin" && actor.accessTier !== "manager") {
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "Only admins and managers can change skill expiry dates",
+							userId: actor.session.user.id,
+							resource: "employeeSkill",
+							action: "update",
+						}),
+					);
+				}
+
+				const targetEmployee = yield* getTargetEmployee(data.employeeId);
+
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's skills",
+					resource: "employeeSkill",
+					action: "update",
+				});
+
+				const updated = yield* skillService.updateEmployeeSkillExpiry({
+					organizationId: actor.organizationId,
+					employeeId: data.employeeId,
+					skillId: data.skillId,
+					expiresAt: data.expiresAt,
+				});
+
+				logger.info(
+					{ employeeId: data.employeeId, skillId: data.skillId },
+					"Employee skill expiry date changed",
+				);
+
+				revalidateTag(CACHE_TAGS.EMPLOYEE_SKILLS(data.employeeId), "max");
+
+				span.setStatus({ code: SpanStatusCode.OK });
+				return updated;
+			}).pipe(
+				Effect.catch((error) =>
+					Effect.gen(function* () {
+						span.recordException(error as Error);
+						span.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(error),
+						});
+						logger.error({ error }, "Failed to change employee skill expiry date");
+						return yield* Effect.fail(error as AnyAppError);
+					}),
+				),
+				Effect.onExit(() => Effect.sync(() => span.end())),
+			);
+		},
+	);
+
+	return runServerActionSafe(effect);
+}
+
+/**
+ * The organization's today and the "Expiring soon" window the skill badges count from
+ */
+export async function getSkillExpiryWindow(): Promise<ServerActionResult<SkillExpiryWindow>> {
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "getSkillExpiryWindow:actor",
+		});
+		const skillService = yield* SkillService;
+
+		return yield* skillService.getSkillExpiryWindow(actor.organizationId);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/**
  * Remove a skill from an employee
  * Requires admin or manager role
  */
@@ -577,6 +677,8 @@ export async function validateEmployeeForShift(
 	shiftData: {
 		subareaId: string;
 		templateId?: string | null;
+		/** The shift date, `YYYY-MM-DD` on the organization's calendar. */
+		date: string;
 	},
 ): Promise<ServerActionResult<SkillValidationResult>> {
 	const effect = Effect.gen(function* () {
@@ -599,10 +701,12 @@ export async function validateEmployeeForShift(
 
 /**
  * Get qualified employees for a set of required skills
- * Returns employee IDs that have all required skills
+ * Returns employee IDs that have all required skills, none expired on the shift date
  */
 export async function getQualifiedEmployeesForSkills(
 	skillIds: string[],
+	/** The shift date, `YYYY-MM-DD` on the organization's calendar. */
+	shiftDate: string,
 ): Promise<ServerActionResult<string[]>> {
 	const effect = Effect.gen(function* () {
 		// The current employee of the active organization, not any of the user's employees
@@ -614,6 +718,7 @@ export async function getQualifiedEmployeesForSkills(
 		const qualifiedEmployeeIds = yield* skillService.getQualifiedEmployeesForSkills(
 			currentEmployee.organizationId,
 			skillIds,
+			shiftDate,
 		);
 
 		return qualifiedEmployeeIds;

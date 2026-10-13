@@ -35,7 +35,6 @@ function renderPanel(suggestions: StaffingSuggestion[] | undefined, onPick = vi.
 			suggestions={suggestions}
 			isLoading={false}
 			isError={false}
-			organizationTimezone="Europe/Berlin"
 			onPick={onPick}
 		/>,
 	);
@@ -71,7 +70,7 @@ describe("StaffingSuggestionsPanel", () => {
 						type: "expiredRequiredSkill",
 						skillId: "s",
 						skillName: "First aid",
-						expiresAt: "2026-10-15T00:00:00Z",
+						expiresAt: "2026-10-15",
 					},
 					{
 						type: "compliance",
