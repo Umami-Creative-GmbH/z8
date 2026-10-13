@@ -74,6 +74,8 @@ const LOCALIZED_DEFAULT_EMAIL_LINK_PREFIXES: Partial<
 	personal_data_export_ready: ["/settings/my-data", "/settings/employees/"],
 	// Where the employee can request their own copy (#1166).
 	personal_data_export_admin_exported: "/settings/my-data",
+	// Download your personal data before your departure cutoff (#1173).
+	personal_data_export_reminder: "/settings/my-data",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
