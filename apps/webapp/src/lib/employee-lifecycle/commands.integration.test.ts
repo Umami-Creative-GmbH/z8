@@ -96,10 +96,14 @@ describe("departure commands", () => {
 			is_active: true,
 		});
 		const tasks = await fixture.pool.query<{ kind: string }>(
-			`select kind from employee_departure_task where departure_id = $1`,
+			`select kind from employee_departure_task where departure_id = $1 order by kind`,
 			[scheduled.departureId],
 		);
-		expect(tasks.rows).toEqual([{ kind: "dispatch_departure" }]);
+		expect(tasks.rows).toEqual([
+			{ kind: "dispatch_departure" },
+			// The departing employee is reminded to download their personal data (#1173).
+			{ kind: "notify_data_export_reminder" },
+		]);
 		expect(
 			await row(`select kind, event_index from employee_departure_event where departure_id = $1`, [
 				scheduled.departureId,
