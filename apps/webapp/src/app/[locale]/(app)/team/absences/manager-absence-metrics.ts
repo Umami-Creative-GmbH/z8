@@ -32,6 +32,8 @@ export function calculateManagerAbsenceMetrics(input: {
 	year: number;
 	allowance: VacationAllowanceData | null;
 	employeeAllowance: EmployeeAllowanceData | null;
+	/** Sum of the employee's vacation adjustments for the year (#1105); defaults to 0. */
+	adjustmentTotal?: number;
 	absences: AbsenceWithCategory[];
 	/** The employee's working days in the year; defaults to Monday to Friday. */
 	isWorkingDay?: IsWorkingDay;
@@ -62,6 +64,7 @@ export function calculateManagerAbsenceMetrics(input: {
 		absences: [],
 		currentDate: currentTimestamp(),
 		year: input.year,
+		adjustmentTotal: input.adjustmentTotal,
 	});
 	const usedVacationDays = input.absences.reduce((total, absence) => {
 		if (absence.status !== "approved" || !absence.category.countsAgainstVacation) {

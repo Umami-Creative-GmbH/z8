@@ -36,6 +36,7 @@ import {
 	getBlockingOverlapMessage,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
+import { loadVacationAdjustmentTotals } from "@/lib/absences/vacation-adjustments";
 import { AuditTrail } from "@/lib/audit-trail";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
@@ -946,7 +947,13 @@ async function addMetricsToRows(
 	const employeeIds = rows.map((row) => row.id);
 	const yearStart = `${year}-01-01`;
 	const yearEnd = `${year}-12-31`;
-	const [allowance, employeeAllowances, absences, workingDaysByEmployeeId] = await Promise.all([
+	const [
+		allowance,
+		employeeAllowances,
+		absences,
+		workingDaysByEmployeeId,
+		adjustmentTotalsByEmployeeId,
+	] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
 				eq(vacationAllowance.organizationId, organizationId),
@@ -976,6 +983,7 @@ async function addMetricsToRows(
 			startDate: yearStart,
 			endDate: yearEnd,
 		}),
+		loadVacationAdjustmentTotals(db, { organizationId, employeeIds, year }),
 	]);
 
 	const allowancesByEmployeeId = new Map(
@@ -1003,6 +1011,7 @@ async function addMetricsToRows(
 					}
 				: null,
 			employeeAllowance: allowancesByEmployeeId.get(row.id) ?? null,
+			adjustmentTotal: adjustmentTotalsByEmployeeId.get(row.id) ?? 0,
 			absences: absencesByEmployeeId.get(row.id) ?? [],
 			isWorkingDay: workingDaysByEmployeeId.get(row.id),
 		});
