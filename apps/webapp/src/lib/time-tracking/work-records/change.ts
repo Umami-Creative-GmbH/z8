@@ -6,7 +6,7 @@
  * Callers state policy (where to divide, the notes, an odometer reading, an
  * attribution override); work records works out what each half carries. New
  * operations join `WorkRecordChange` and `WorkRecordRefusal` as their slices
- * land: create (#1222), amend (#1225), delete (#1227), owed-break division
+ * land: create (#1222), create new (#1223), amend (#1225), delete (#1227), owed-break division
  * (#1220/#1221, with its `takenBefore`).
  */
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
@@ -16,6 +16,7 @@ import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkVehicleUseChangeRefusalCode } from "../vehicle-use/work-vehicle-use-refusals";
 import type { WorkOccupant } from "../work-occupancy";
 import type { AmendWorkRecord } from "./amend-change";
+import type { CreateNewWork } from "./create-new-plan";
 import type { CreateWorkRecord } from "./create-plan";
 import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
@@ -100,7 +101,8 @@ export type WorkRecordChange =
 	| DivideWorkRecord
 	| DivideByOwedBreak
 	| AmendWorkRecord
-	| CreateWorkRecord;
+	| CreateWorkRecord
+	| CreateNewWork;
 
 /** Why a change was not made. Nothing is written for any of them. */
 export type WorkRecordRefusal =
@@ -130,7 +132,7 @@ export type WorkRecordRefusal =
 	| { kind: "append_review_required"; requirement: AppendReviewRequirement }
 	/** Amend (#1225): the change names nothing that differs from the stored work. */
 	| { kind: "unchanged" }
-	/** Amend (#1225): the new times do not end after they start. */
+	/** Amend (#1225), create new (#1223): the times do not end after they start. */
 	| { kind: "interval_invalid" };
 
 export type WorkRecordRefusalKind = WorkRecordRefusal["kind"];

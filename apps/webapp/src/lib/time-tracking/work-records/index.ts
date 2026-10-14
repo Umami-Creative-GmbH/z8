@@ -7,11 +7,14 @@ import "server-only";
  * - `readWorkRecord`: a completed work period with its entries and canonical
  *   work record, its expected state and its record agreement, optionally
  *   locked so a caller can check its own preconditions first.
- * - `applyWorkRecordChange`: one change (divide, amend, create) against a named
+ * - `applyWorkRecordChange`: one change (divide, amend, create, create new) against a named
  *   expected state. It returns the applied result or a refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
- * Both run only on a sealed work-transaction scope; the Approvals finalizer's
+ * Besides them, `eraseEmployeeWorkHistory` removes an employee's whole work
+ * history (demo cleanup, #1223).
+ *
+ * All run only on a sealed work-transaction scope; the Approvals finalizer's
  * database handle becomes one through `workRecordScopeForFinalizer`. Work
  * records never opens a transaction and never takes guards (ADR 0001); it
  * takes row locks only, in
@@ -22,6 +25,8 @@ import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./ch
 import type { AmendWorkRecord } from "./amend-change";
 import { amendWorkRecord, type WorkAmendment } from "./amend";
 import { createWorkRecord, type WorkCreation } from "./create";
+import { createNewWorkRecord, type NewWorkCreation } from "./create-new";
+import type { CreateNewWork } from "./create-new-plan";
 import type { CreateWorkRecord } from "./create-plan";
 import { divideWorkRecord, type WorkDivision } from "./divide";
 import { divideByOwedBreak, type OwedBreakDivision } from "./divide-owed-break";
@@ -47,9 +52,20 @@ export type {
 	WorkRecordRefusalKind,
 } from "./change";
 export type { WorkCreation } from "./create";
+export type { NewWorkCreation } from "./create-new";
+export type {
+	CreateNewWork,
+	NewWorkApproval,
+	NewWorkEndpoint,
+	NewWorkOrigin,
+} from "./create-new-plan";
 export type { CompletingLiveWork, CreateWorkRecord } from "./create-plan";
 export type { AppendedEntryEvidence, DividedHalf, WorkDivision } from "./divide";
 export type { OwedBreakDivision } from "./divide-owed-break";
+export {
+	type EmployeeWorkHistoryErasure,
+	eraseEmployeeWorkHistory,
+} from "./erase-history";
 export { workRecordScopeForFinalizer } from "./finalizer-scope";
 export type {
 	DivideByOwedBreak,
@@ -67,6 +83,7 @@ export {
 } from "./refusals";
 export { WORK_RECORD_LOCK_ORDER, type WorkRecordKey } from "./rows";
 export type { WorkSegment } from "./segment";
+export type { WorkAttributionPatch } from "./work-attribution";
 
 /** The applied result of each change. */
 export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkRecord
@@ -92,5 +109,7 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 			return (await amendWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 		case "create":
 			return (await createWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "create_new":
+			return (await createNewWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }

@@ -484,6 +484,12 @@ describe("historical work diagnostics on PostgreSQL", () => {
 			clockInTime: "08:00",
 			clockOutTime: "12:00",
 		});
+		// Created before the June work loses its end: open-ended work occupies everything after it.
+		const requestLinked = await legacyManual({
+			date: "2026-07-15",
+			clockInTime: "08:00",
+			clockOutTime: "12:00",
+		});
 		const {
 			rows: [{ canonical_record_id: removedRecord }],
 		} = await admin.query("select canonical_record_id from work_period where id = $1", [
@@ -506,11 +512,6 @@ describe("historical work diagnostics on PostgreSQL", () => {
 			[juneOpenEnd],
 		);
 		// Older pending work linked only through its legacy approval request.
-		const requestLinked = await legacyManual({
-			date: "2026-07-15",
-			clockInTime: "08:00",
-			clockOutTime: "12:00",
-		});
 		await admin.query("update work_period set approval_status = 'pending' where id = $1", [
 			requestLinked,
 		]);

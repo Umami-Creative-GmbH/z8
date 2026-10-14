@@ -63,6 +63,9 @@ const {
 	generateTimeEntriesStepAction,
 } = await import("@/app/[locale]/(app)/settings/demo/actions");
 const { clockIn } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 
 const ids = {
 	organization: "t285-demo-org",
@@ -305,7 +308,7 @@ describe("runtime demo work on PostgreSQL", () => {
 	});
 
 	describe("generation", () => {
-		it("keeps legacy chaining, now atomic per day and without creation-time ties", async () => {
+		it("creates legacy work through work records, chained without creation-time ties", async () => {
 			const result = await generate([ids.requester]);
 
 			expect(result).toEqual({
@@ -333,9 +336,11 @@ describe("runtime demo work on PostgreSQL", () => {
 				   (select count(*)::int from time_entry where employee_id = $1) as entries`,
 				[ids.requester],
 			);
+			// Every session is a work period with its agreeing canonical work record (#1223).
+			await expectRecordAgreement({ organizationId: ids.organization });
 			expect(only(rows)).toEqual({
-				periods_with_record: 0,
-				max_revision: 0,
+				periods_with_record: weekdays * sessionsPerDay,
+				max_revision: 1,
 				receipts: 0,
 				positions: 0,
 				distinct_created: weekdays * sessionsPerDay * 2,
@@ -527,7 +532,7 @@ describe("runtime demo work on PostgreSQL", () => {
 					timezone: "UTC",
 					timezoneSource: "backfill",
 				},
-				revisions: { workPeriod: { source: null, result: 0 } },
+				revisions: { workPeriod: { source: null, result: 1 } },
 				append: {
 					admission: "append",
 					clockIn: { previousEntryId: e(4), previousHash: e4Hash },
@@ -913,10 +918,11 @@ describe("runtime demo work on PostgreSQL", () => {
 				   (select count(*)::int from work_period where employee_id = $1 and work_category_id = $2) as assigned,
 				   (select count(*)::int from work_period wp join time_record_work w on w.record_id = wp.canonical_record_id
 				      where wp.employee_id = $1 and w.work_category_id is not distinct from wp.work_category_id) as agreeing,
-				   (select count(*)::int from work_period where employee_id = $1 and work_category_id = $2 and graph_revision = 1) as revised,
-				   (select count(*)::int from work_period where employee_id = $1 and work_category_id is null and graph_revision = 0) as unassigned_untouched`,
+				   (select count(*)::int from work_period where employee_id = $1 and work_category_id = $2 and graph_revision = 2) as revised,
+				   (select count(*)::int from work_period where employee_id = $1 and work_category_id is null and graph_revision = 1) as unassigned_untouched`,
 				[ids.requester, ids.category],
 			);
+			await expectRecordAgreement({ organizationId: ids.organization });
 			expect(only(rows)).toEqual({
 				assigned: expected,
 				agreeing: weekdays * sessionsPerDay,
