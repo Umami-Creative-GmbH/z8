@@ -15,6 +15,11 @@ _openapi:
           rates and members are never returned.
 
 
+          Each project carries its custom field values as of `asOf` in
+          `customFields`, keyed by field id; `GET
+          /api/v1/projects/custom-fields` describes the fields.
+
+
           Requires the key scope `projects:read`.
 ---
 

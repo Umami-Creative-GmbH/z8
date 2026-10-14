@@ -66,6 +66,7 @@ describe("projects and customers in the Public API", () => {
 			name: "Website",
 			status: "active",
 			customerId: customers.Acme,
+			customFields: {},
 		});
 		expect(JSON.stringify(rows)).not.toContain("Foreign");
 		expect(JSON.stringify(rows)).not.toMatch(/budget|rate|member/i);
@@ -90,8 +91,8 @@ describe("projects and customers in the Public API", () => {
 	it("returns the organization's customers with exactly the agreed fields", async () => {
 		const rows = await walkPublicApi(listCustomers, key, "", 1);
 		expect(rows.sort((a, b) => String(a.name).localeCompare(String(b.name)))).toEqual([
-			{ id: customers.Acme, name: "Acme", status: "active" },
-			{ id: customers["Gone GmbH"], name: "Gone GmbH", status: "inactive" },
+			{ id: customers.Acme, name: "Acme", status: "active", customFields: {} },
+			{ id: customers["Gone GmbH"], name: "Gone GmbH", status: "inactive", customFields: {} },
 		]);
 		expect(
 			(await walkPublicApi(listCustomers, key, "?status=inactive")).map((row) => row.name),

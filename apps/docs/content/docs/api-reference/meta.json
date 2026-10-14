@@ -9,7 +9,10 @@
     "listWorkPeriods",
     "listAbsences",
     "listEmployees",
+    "listEmployeeCustomFields",
     "listProjects",
-    "listCustomers"
+    "listProjectCustomFields",
+    "listCustomers",
+    "listCustomerCustomFields"
   ]
 }

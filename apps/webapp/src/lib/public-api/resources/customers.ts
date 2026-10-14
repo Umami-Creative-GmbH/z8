@@ -4,6 +4,12 @@ import { customer } from "@/db/schema";
 import { defineEndpoint } from "../endpoint";
 import { decodeCursor, invalidCursor, pageOf, pageQueryShape, pageSchema } from "../pagination";
 import { idSchema } from "../schemas";
+import {
+	asOfQueryShape,
+	asOfResponseShape,
+	customFieldsSchema,
+	readPageCustomFields,
+} from "./custom-fields";
 
 const customerStatus = z
 	.enum(["active", "inactive"])
@@ -14,6 +20,7 @@ export const customerSchema = z
 		id: idSchema(),
 		name: z.string(),
 		status: customerStatus,
+		customFields: customFieldsSchema,
 	})
 	.meta({ title: "Customer" });
 
@@ -23,14 +30,18 @@ export const listCustomers = defineEndpoint({
 	operationId: "listCustomers",
 	tag: "Customers",
 	summary: "List customers",
-	description:
+	description: [
 		"The organization's customers, active and inactive. Contact details and tax data are never returned.",
+		"",
+		"Each customer carries its custom field values as of `asOf` in `customFields`, keyed by field id; `GET /api/v1/customers/custom-fields` describes the fields.",
+	].join("\n"),
 	scope: "customers:read",
 	query: z.object({
 		...pageQueryShape,
 		status: customerStatus.optional().describe("Only customers with this status. Both by default."),
+		...asOfQueryShape,
 	}),
-	response: pageSchema(customerSchema),
+	response: pageSchema(customerSchema).extend(asOfResponseShape),
 	async run({ principal, query, database }) {
 		const after = query.cursor ? decodeCursor(query.cursor, ["uuid"]) : null;
 		if (query.cursor && !after) return invalidCursor();
@@ -46,6 +57,12 @@ export const listCustomers = defineEndpoint({
 			)
 			.orderBy(asc(customer.id))
 			.limit(query.limit + 1);
+		const customFields = await readPageCustomFields(database, {
+			principal,
+			entity: "customer",
+			recordIds: rows.slice(0, query.limit).map((row) => row.id),
+			asOf: query.asOf,
+		});
 		const page = pageOf(
 			rows,
 			query.limit,
@@ -53,9 +70,14 @@ export const listCustomers = defineEndpoint({
 				id: row.id,
 				name: row.name,
 				status: row.isActive ? ("active" as const) : ("inactive" as const),
+				customFields: customFields.of(row.id),
 			}),
 			(row) => [row.id],
 		);
-		return { ok: true, body: page, rowCount: page.data.length };
+		return {
+			ok: true,
+			body: { ...page, asOf: customFields.asOf },
+			rowCount: page.data.length,
+		};
 	},
 });

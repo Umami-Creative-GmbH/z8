@@ -4,6 +4,12 @@ import { project, projectStatusEnum } from "@/db/schema";
 import { defineEndpoint } from "../endpoint";
 import { decodeCursor, invalidCursor, pageOf, pageQueryShape, pageSchema } from "../pagination";
 import { idSchema } from "../schemas";
+import {
+	asOfQueryShape,
+	asOfResponseShape,
+	customFieldsSchema,
+	readPageCustomFields,
+} from "./custom-fields";
 
 export const projectSchema = z
 	.object({
@@ -11,6 +17,7 @@ export const projectSchema = z
 		name: z.string(),
 		status: z.enum(projectStatusEnum.enumValues),
 		customerId: idSchema().nullable(),
+		customFields: customFieldsSchema,
 	})
 	.meta({ title: "Project" });
 
@@ -20,8 +27,11 @@ export const listProjects = defineEndpoint({
 	operationId: "listProjects",
 	tag: "Projects",
 	summary: "List projects",
-	description:
+	description: [
 		"The organization's projects with their status and customer. Budgets, rates and members are never returned.",
+		"",
+		"Each project carries its custom field values as of `asOf` in `customFields`, keyed by field id; `GET /api/v1/projects/custom-fields` describes the fields.",
+	].join("\n"),
 	scope: "projects:read",
 	query: z.object({
 		...pageQueryShape,
@@ -30,8 +40,9 @@ export const listProjects = defineEndpoint({
 			.optional()
 			.describe("Only projects with this status. All by default."),
 		customerId: z.uuid().optional().describe("Only the projects of this customer."),
+		...asOfQueryShape,
 	}),
-	response: pageSchema(projectSchema),
+	response: pageSchema(projectSchema).extend(asOfResponseShape),
 	async run({ principal, query, database }) {
 		const after = query.cursor ? decodeCursor(query.cursor, ["uuid"]) : null;
 		if (query.cursor && !after) return invalidCursor();
@@ -53,12 +64,22 @@ export const listProjects = defineEndpoint({
 			)
 			.orderBy(asc(project.id))
 			.limit(query.limit + 1);
+		const customFields = await readPageCustomFields(database, {
+			principal,
+			entity: "project",
+			recordIds: rows.slice(0, query.limit).map((row) => row.id),
+			asOf: query.asOf,
+		});
 		const page = pageOf(
 			rows,
 			query.limit,
-			(row) => row,
+			(row) => ({ ...row, customFields: customFields.of(row.id) }),
 			(row) => [row.id],
 		);
-		return { ok: true, body: page, rowCount: page.data.length };
+		return {
+			ok: true,
+			body: { ...page, asOf: customFields.asOf },
+			rowCount: page.data.length,
+		};
 	},
 });

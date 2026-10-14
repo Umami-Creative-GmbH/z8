@@ -5,6 +5,9 @@
  *
  * A key stores its scopes as Better Auth key permissions (`{ resource: [action] }`),
  * which only server code can set.
+ *
+ * `absences:read-health` and `custom-fields:read-restricted` widen what other
+ * scopes return and grant no endpoint on their own.
  */
 export const API_KEY_SCOPES = [
 	"time-entries:read",
@@ -13,6 +16,7 @@ export const API_KEY_SCOPES = [
 	"employees:read",
 	"projects:read",
 	"customers:read",
+	"custom-fields:read-restricted",
 ] as const;
 
 export type ApiKeyScope = (typeof API_KEY_SCOPES)[number];

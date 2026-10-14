@@ -7,7 +7,10 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { PUBLIC_API_ENDPOINTS } from "../endpoints";
 import { listAbsences } from "../resources/absences";
+import { listEmployeeCustomFields } from "../resources/custom-fields";
+import { listCustomers } from "../resources/customers";
 import { listEmployees } from "../resources/employees";
+import { listProjects } from "../resources/projects";
 import { listWorkPeriods } from "../resources/work-periods";
 import { mcpToolOf, mcpToolsFor, PUBLIC_API_TOOLS } from "./tools";
 
@@ -17,19 +20,39 @@ describe("Public API MCP tools", () => {
 			["list_work_periods", "time-entries:read"],
 			["list_absences", "absences:read"],
 			["list_employees", "employees:read"],
+			["list_employee_custom_fields", "employees:read"],
 			["list_projects", "projects:read"],
+			["list_project_custom_fields", "projects:read"],
 			["list_customers", "customers:read"],
+			["list_customer_custom_fields", "customers:read"],
 		]);
 		expect(PUBLIC_API_TOOLS.map((tool) => tool.endpoint)).toEqual(PUBLIC_API_ENDPOINTS);
 	});
 
 	it("lists only the tools a key's scopes allow", () => {
-		expect(mcpToolsFor(["employees:read"]).map((tool) => tool.name)).toEqual(["list_employees"]);
+		expect(mcpToolsFor(["employees:read"]).map((tool) => tool.name)).toEqual([
+			"list_employees",
+			"list_employee_custom_fields",
+		]);
 		expect(mcpToolsFor(["absences:read-health"])).toEqual([]);
+		expect(mcpToolsFor(["custom-fields:read-restricted"])).toEqual([]);
 		expect(mcpToolsFor(["customers:read", "time-entries:read"]).map((tool) => tool.name)).toEqual([
 			"list_work_periods",
 			"list_customers",
+			"list_customer_custom_fields",
 		]);
+	});
+
+	it("states the custom field rules an agent needs", () => {
+		for (const endpoint of [listEmployees, listProjects, listCustomers]) {
+			const { description } = mcpToolOf(endpoint).definition;
+			expect(description, endpoint.operationId).toMatch(/keyed by field id/);
+			expect(description, endpoint.operationId).toMatch(/`asOf`/);
+			expect(description, endpoint.operationId).toMatch(/_custom_fields/);
+		}
+		const definitions = mcpToolOf(listEmployeeCustomFields).definition.description;
+		expect(definitions).toMatch(/custom-fields:read-restricted/);
+		expect(definitions).toMatch(/list_employees/);
 	});
 
 	it("describes a tool by the endpoint's arguments and page as JSON Schema", () => {
@@ -47,7 +70,7 @@ describe("Public API MCP tools", () => {
 		expect(definition.outputSchema).toMatchObject({
 			type: "object",
 			properties: { data: { type: "array" }, nextCursor: {} },
-			required: ["data", "nextCursor"],
+			required: ["data", "nextCursor", "asOf"],
 		});
 	});
 

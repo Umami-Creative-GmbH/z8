@@ -42,6 +42,7 @@ const INSTRUCTIONS = [
 	"Read-only access to one organization's Z8 data, limited to the API key's scopes.",
 	"Work periods are UTC instants, each with the UTC offset where it was recorded: show them in that offset, never in another timezone.",
 	"Absences are local calendar dates. Lists are paged: pass `nextCursor` back as `cursor`.",
+	"Employees, projects and customers carry `customFields` keyed by field id, read as of `asOf` (today in the organization's timezone by default); the `list_*_custom_fields` tools name each field, and select values carry their label inline.",
 ].join(" ");
 
 /** Bodies larger than this are not read to find a refused tool call. */

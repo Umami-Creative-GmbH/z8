@@ -1,5 +1,10 @@
 import type { PublicApiEndpoint } from "./endpoint";
 import { listAbsences } from "./resources/absences";
+import {
+	listCustomerCustomFields,
+	listEmployeeCustomFields,
+	listProjectCustomFields,
+} from "./resources/custom-fields";
 import { listCustomers } from "./resources/customers";
 import { listEmployees } from "./resources/employees";
 import { listProjects } from "./resources/projects";
@@ -10,6 +15,9 @@ export const PUBLIC_API_ENDPOINTS: readonly PublicApiEndpoint[] = [
 	listWorkPeriods,
 	listAbsences,
 	listEmployees,
+	listEmployeeCustomFields,
 	listProjects,
+	listProjectCustomFields,
 	listCustomers,
+	listCustomerCustomFields,
 ];

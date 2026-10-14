@@ -36,8 +36,9 @@ import {
 	DEFAULT_RATE_LIMIT_WINDOW,
 	RATE_LIMIT_WINDOWS,
 } from "@/lib/validations/api-key";
-import { useApiKeyScopeLabels } from "./api-key-labels";
+import { useApiKeyScopeLabels, useApiKeyScopeWarnings } from "./api-key-labels";
 import { RateLimitWindowField } from "./api-key-rate-limit-window-field";
+import { ApiKeyScopeOption } from "./api-key-scope-option";
 
 /** A stored window the picker offers, else the default (older keys may hold others). */
 function windowOf(value: number | null) {
@@ -200,6 +201,7 @@ function ApiKeyEditDialogForm({
 }: ApiKeyEditDialogFormProps) {
 	const { t } = useTranslate();
 	const scopeLabels = useApiKeyScopeLabels();
+	const scopeWarnings = useApiKeyScopeWarnings();
 	const queryClient = useQueryClient();
 	const formDefaultValues = getApiKeyEditDefaultValues(apiKey);
 	const validationMessages = getValidationMessages(t);
@@ -354,28 +356,23 @@ function ApiKeyEditDialogForm({
 										</legend>
 										<div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-muted/30">
 											{API_KEY_SCOPES.map((scope) => (
-												<div key={scope} className="flex items-center gap-x-2">
-													<Checkbox
-														id={`edit-${scope}`}
-														checked={field.state.value.includes(scope)}
-														onCheckedChange={() =>
-															field.handleChange(
-																field.state.value.includes(scope)
-																	? field.state.value.filter(
-																			(selectedScope) =>
-																				selectedScope !== scope,
-																		)
-																	: [...field.state.value, scope],
-															)
-														}
-													/>
-													<Label
-														htmlFor={`edit-${scope}`}
-														className="text-sm font-normal cursor-pointer"
-													>
-														{scopeLabels[scope]}
-													</Label>
-												</div>
+												<ApiKeyScopeOption
+													key={scope}
+													id={`edit-${scope}`}
+													label={scopeLabels[scope]}
+													warning={scopeWarnings[scope]}
+													checked={field.state.value.includes(scope)}
+													onCheckedChange={() =>
+														field.handleChange(
+															field.state.value.includes(scope)
+																? field.state.value.filter(
+																		(selectedScope) =>
+																			selectedScope !== scope,
+																	)
+																: [...field.state.value, scope],
+														)
+													}
+												/>
 											))}
 										</div>
 									</fieldset>

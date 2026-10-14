@@ -207,6 +207,7 @@ describe("the Public API pipeline on PostgreSQL", () => {
 			status: "active",
 			startDate: "2024-03-01",
 			departureDate: null,
+			customFields: {},
 		});
 		expect(byName.get("Cleo")).toMatchObject({ status: "departed", managerId: null, teamIds: [] });
 		expect(JSON.stringify(body)).not.toMatch(/1990-01-01|birthday|hourly|contract/i);

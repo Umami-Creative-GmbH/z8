@@ -19,6 +19,7 @@ const { createPublicApiDependencies } = await import("../dependencies");
 const { handlePublicApiRequest } = await import("../pipeline");
 const { PUBLIC_API_ENDPOINTS } = await import("../endpoints");
 const { createMcpEndpoint } = await import("./server");
+const { changeCustomFields } = await import("@/lib/organization/custom-fields/definitions");
 
 const ids = {
 	organization: "t795-org",
@@ -135,6 +136,7 @@ function problemOf(result: Awaited<ReturnType<Client["callTool"]>>) {
 describe("the MCP server on PostgreSQL", () => {
 	const admin = integrationAdminPool();
 	const employees: Record<string, string> = {};
+	const customFields: Record<string, string> = {};
 	let sickAbsence: string;
 
 	async function cleanup() {
@@ -274,10 +276,56 @@ describe("the MCP server on PostgreSQL", () => {
 			 values ($1, 'Acme', true, $2, now()) returning id`,
 			[ids.organization, ids.admin],
 		);
-		await admin.query(
+		const { rows: projects } = await admin.query<{ id: string }>(
 			`insert into project (organization_id, name, status, customer_id, created_by, updated_at)
-			 values ($1, 'Website', 'active', $2, $3, now())`,
+			 values ($1, 'Website', 'active', $2, $3, now()) returning id`,
 			[ids.organization, customers[0].id, ids.admin],
+		);
+
+		const define = async (entity: string, name: string, visibility: string, type = "text") => {
+			const outcome = await changeCustomFields(db, {
+				organizationId: ids.organization,
+				actorUserId: ids.admin,
+				change: {
+					kind: "create",
+					entity,
+					name,
+					type,
+					required: false,
+					tracked: false,
+					visibility,
+					editLevel: "admin",
+					options: type === "select" ? ["Blue", "Green"] : undefined,
+				},
+			});
+			if (!outcome.ok) throw new Error(outcome.reason);
+			const field = outcome.fields.find((candidate) => candidate.name === name);
+			if (!field) throw new Error(name);
+			customFields[name] = field.id;
+			return field;
+		};
+		const team = await define("employee", "Team colour", "employee", "select");
+		await define("employee", "Salary band", "admin");
+		await define("project", "Billing code", "employee");
+		await define("customer", "Segment", "employee");
+		await admin.query(
+			`insert into custom_field_value (organization_id, definition_id, employee_id, project_id, customer_id,
+			   text_value, select_option_id) values
+			 ($1, $2, $6, null, null, null, $9),
+			 ($1, $3, $6, null, null, 'B2', null),
+			 ($1, $4, null, $7, null, 'WEB-1', null),
+			 ($1, $5, null, null, $8, 'SMB', null)`,
+			[
+				ids.organization,
+				customFields["Team colour"],
+				customFields["Salary band"],
+				customFields["Billing code"],
+				customFields.Segment,
+				employees.ana,
+				projects[0].id,
+				customers[0].id,
+				team.options[0].id,
+			],
 		);
 	});
 	beforeEach(async () => {
@@ -308,8 +356,11 @@ describe("the MCP server on PostgreSQL", () => {
 			const { tools } = await client.listTools();
 			expect(tools.map((tool) => tool.name).sort(), mode).toEqual([
 				"list_absences",
+				"list_customer_custom_fields",
 				"list_customers",
+				"list_employee_custom_fields",
 				"list_employees",
+				"list_project_custom_fields",
 				"list_projects",
 				"list_work_periods",
 			]);
@@ -322,7 +373,10 @@ describe("the MCP server on PostgreSQL", () => {
 	it("lists only the tools the key's scopes allow and refuses the others as scope_missing", async () => {
 		const { key: presented } = await key(["employees:read"]);
 		const client = await connect(presented);
-		expect((await client.listTools()).tools.map((tool) => tool.name)).toEqual(["list_employees"]);
+		expect((await client.listTools()).tools.map((tool) => tool.name)).toEqual([
+			"list_employees",
+			"list_employee_custom_fields",
+		]);
 
 		const refused = await client.callTool({ name: "list_projects", arguments: {} });
 		expect(problemOf(refused)).toMatchObject({
@@ -335,7 +389,11 @@ describe("the MCP server on PostgreSQL", () => {
 	});
 
 	it("returns the same rows and fields as /api/v1 for every tool", async () => {
-		const { key: presented } = await key([...ALL_SCOPES, "absences:read-health"]);
+		const { key: presented } = await key([
+			...ALL_SCOPES,
+			"absences:read-health",
+			"custom-fields:read-restricted",
+		]);
 		const client = await connect(presented);
 		const cases = [
 			["list_work_periods", "/api/v1/work-periods", octoberInstants],
@@ -343,6 +401,9 @@ describe("the MCP server on PostgreSQL", () => {
 			["list_employees", "/api/v1/employees", {}],
 			["list_projects", "/api/v1/projects", {}],
 			["list_customers", "/api/v1/customers", {}],
+			["list_employee_custom_fields", "/api/v1/employees/custom-fields", {}],
+			["list_project_custom_fields", "/api/v1/projects/custom-fields", {}],
+			["list_customer_custom_fields", "/api/v1/customers/custom-fields", {}],
 		] as const;
 		for (const [tool, path, args] of cases) {
 			const viaMcp = await client.callTool({ name: tool, arguments: args });
@@ -370,7 +431,13 @@ describe("the MCP server on PostgreSQL", () => {
 			["list_customers", {}],
 		] as const) {
 			const page = await client.callTool({ name, arguments: args });
-			expect(page.structuredContent, name).toEqual({ data: [], nextCursor: null });
+			expect(page.structuredContent, name).toEqual({
+				data: [],
+				nextCursor: null,
+				...(name === "list_projects" || name === "list_customers"
+					? { asOf: expect.any(String) }
+					: {}),
+			});
 		}
 	});
 
@@ -391,6 +458,58 @@ describe("the MCP server on PostgreSQL", () => {
 			type: "sick",
 			category: { name: "Sick leave" },
 			sickDetail: "with_certificate",
+		});
+	});
+
+	it("returns the same customFields as /api/v1, restricted fields only with the restricted scope (#822)", async () => {
+		const anaOf = (body: unknown) =>
+			(body as { data: { id: string; customFields: Record<string, unknown> }[] }).data.find(
+				(row) => row.id === employees.ana,
+			)?.customFields;
+		for (const scopes of [
+			["employees:read"],
+			["employees:read", "custom-fields:read-restricted"],
+		]) {
+			const { key: presented } = await key(scopes);
+			const client = await connect(presented);
+			const viaMcp = await client.callTool({
+				name: "list_employees",
+				arguments: { asOf: "2026-10-01" },
+			});
+			const viaApi = await callV1("/api/v1/employees", presented, "?asOf=2026-10-01");
+			expect(viaMcp.structuredContent, scopes.join()).toEqual(viaApi.body);
+			expect(anaOf(viaMcp.structuredContent), scopes.join()).toEqual({
+				[customFields["Team colour"]]: { id: expect.any(String), label: "Blue" },
+				...(scopes.length > 1 ? { [customFields["Salary band"]]: "B2" } : {}),
+			});
+			expect(viaMcp.structuredContent).toMatchObject({ asOf: "2026-10-01" });
+		}
+	});
+
+	it("offers the custom field definition tools only with the entity scope (#822)", async () => {
+		const restrictedOnly = await connect((await key(["custom-fields:read-restricted"])).key);
+		expect((await restrictedOnly.listTools()).tools).toEqual([]);
+		const refused = await restrictedOnly.callTool({
+			name: "list_employee_custom_fields",
+			arguments: {},
+		});
+		expect(problemOf(refused)).toMatchObject({
+			type: "scope_missing",
+			requiredScope: "employees:read",
+		});
+
+		const projectsKey = await connect((await key(["projects:read"])).key);
+		expect((await projectsKey.listTools()).tools.map((tool) => tool.name)).toEqual([
+			"list_projects",
+			"list_project_custom_fields",
+		]);
+		const definitions = await projectsKey.callTool({
+			name: "list_project_custom_fields",
+			arguments: {},
+		});
+		expect(definitions.structuredContent).toEqual({
+			data: [expect.objectContaining({ id: customFields["Billing code"], name: "Billing code" })],
+			nextCursor: null,
 		});
 	});
 

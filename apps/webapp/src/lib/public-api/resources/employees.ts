@@ -6,6 +6,12 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { defineEndpoint } from "../endpoint";
 import { decodeCursor, invalidCursor, pageOf, pageQueryShape, pageSchema } from "../pagination";
 import { idSchema, localDateSchema } from "../schemas";
+import {
+	asOfQueryShape,
+	asOfResponseShape,
+	customFieldsSchema,
+	readPageCustomFields,
+} from "./custom-fields";
 
 const localDate = localDateSchema();
 
@@ -25,6 +31,7 @@ export const employeeSchema = z
 		departureDate: localDate
 			.nullable()
 			.describe("The last working day of a scheduled or completed departure."),
+		customFields: customFieldsSchema,
 	})
 	.meta({ title: "Employee" });
 
@@ -52,8 +59,11 @@ export const listEmployees = defineEndpoint({
 	operationId: "listEmployees",
 	tag: "Employees",
 	summary: "List employees",
-	description:
+	description: [
 		"The organization's employees, including departed ones. Contract, salary, address and birthday are never returned.",
+		"",
+		"Each employee carries its custom field values as of `asOf` in `customFields`, keyed by field id; `GET /api/v1/employees/custom-fields` describes the fields.",
+	].join("\n"),
 	scope: "employees:read",
 	query: z.object({
 		...pageQueryShape,
@@ -61,8 +71,9 @@ export const listEmployees = defineEndpoint({
 			.enum(["active", "departed"])
 			.optional()
 			.describe("Only employees with this status. Both by default."),
+		...asOfQueryShape,
 	}),
-	response: pageSchema(employeeSchema),
+	response: pageSchema(employeeSchema).extend(asOfResponseShape),
 	async run({ principal, query, database }) {
 		const after = query.cursor ? decodeCursor(query.cursor, ["uuid"]) : null;
 		if (query.cursor && !after) return invalidCursor();
@@ -132,6 +143,12 @@ export const listEmployees = defineEndpoint({
 			teamsOf.set(row.employeeId, teams);
 		}
 		const managerOf = new Map(managers.map((row) => [row.employeeId, row.managerId]));
+		const customFields = await readPageCustomFields(database, {
+			principal,
+			entity: "employee",
+			recordIds: rows.slice(0, query.limit).map((row) => row.id),
+			asOf: query.asOf,
+		});
 
 		const page = pageOf(
 			rows,
@@ -147,9 +164,14 @@ export const listEmployees = defineEndpoint({
 				status: row.active ? "active" : "departed",
 				startDate: row.startDate,
 				departureDate: row.departureDate,
+				customFields: customFields.of(row.id),
 			}),
 			(row) => [row.id],
 		);
-		return { ok: true, body: page, rowCount: page.data.length };
+		return {
+			ok: true,
+			body: { ...page, asOf: customFields.asOf },
+			rowCount: page.data.length,
+		};
 	},
 });

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { API_KEY_SCOPES, permissionsOfScopes, scopesOfPermissions } from "./scopes";
 
 describe("key scopes", () => {
-	it("offers exactly the six v1 scopes", () => {
+	it("offers exactly the seven v1 scopes", () => {
 		expect(API_KEY_SCOPES).toEqual([
 			"time-entries:read",
 			"absences:read",
@@ -10,6 +10,7 @@ describe("key scopes", () => {
 			"employees:read",
 			"projects:read",
 			"customers:read",
+			"custom-fields:read-restricted",
 		]);
 	});
 
@@ -27,6 +28,18 @@ describe("key scopes", () => {
 			"absences:read",
 			"absences:read-health",
 			"employees:read",
+		]);
+	});
+
+	it("stores the restricted custom field scope as its own resource", () => {
+		const permissions = permissionsOfScopes(["employees:read", "custom-fields:read-restricted"]);
+		expect(permissions).toEqual({
+			employees: ["read"],
+			"custom-fields": ["read-restricted"],
+		});
+		expect(scopesOfPermissions(permissions)).toEqual([
+			"employees:read",
+			"custom-fields:read-restricted",
 		]);
 	});
 

@@ -39,8 +39,15 @@ An organization can have at most 10 API keys.
 | `employees:read` | Employees (no contract, salary, address or birthday) |
 | `projects:read` | Projects |
 | `customers:read` | Customers |
+| `custom-fields:read-restricted` | Restricted custom fields: the employee, project and customer custom fields only managers or admins see |
 
 Without `absences:read-health`, a sick absence is returned as plain `absent`, with no category and no sick detail. Grant the health scope only to integrations that need it.
+
+`employees:read`, `projects:read` and `customers:read` also read that record kind's [custom fields](/docs/guide/admin-guide/custom-fields), but only those every member can see (visibility **Employee**). Keys created before custom fields reached the API read them too.
+
+<Callout type="warn" title="Restricted custom fields">
+  `custom-fields:read-restricted` adds the custom fields with visibility **Manager** or **Admin**, such as salary bands, to every employee, project and customer the key can read, together with their names in the field lists. Grant it only to integrations that need those fields. On its own it grants nothing: the key still needs the matching read scope.
+</Callout>
 
 ## Call the API
 
@@ -52,6 +59,16 @@ curl https://ui.z8-time.app/api/v1/employees \
 ```
 
 Use the address you sign in to Z8 at. Every endpoint, its parameters and its responses are in the [API reference](/docs/api-reference). The OpenAPI document is at `/api/v1/openapi.json`.
+
+Employees, projects and customers carry their custom field values in `customFields`, keyed by field id. The values are read as of `asOf`, today in your organization's timezone unless you pass a date. To list the fields themselves, call the record kind's `custom-fields` endpoint:
+
+```bash
+curl "https://ui.z8-time.app/api/v1/employees?asOf=2026-07-01" \
+  -H "Authorization: Bearer z8_org…"
+
+curl https://ui.z8-time.app/api/v1/employees/custom-fields \
+  -H "Authorization: Bearer z8_org…"
+```
 
 ## Rate limits
 

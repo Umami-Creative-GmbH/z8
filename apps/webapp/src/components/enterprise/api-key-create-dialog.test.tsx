@@ -387,6 +387,7 @@ describe("ApiKeyCreateDialog", () => {
 			"Read employees",
 			"Read projects",
 			"Read customers",
+			"Read restricted custom fields",
 		]) {
 			expect(checked(permission)).toBe(false);
 		}
@@ -395,6 +396,21 @@ describe("ApiKeyCreateDialog", () => {
 			(screen.getByLabelText("Max requests") as HTMLInputElement)
 				.value,
 		).toBe("100");
+	});
+
+	it("warns what the health and restricted custom field scopes expose (#822)", () => {
+		renderDialog();
+		const descriptionOf = (label: string) => {
+			const id = screen
+				.getByRole("checkbox", { name: label })
+				.getAttribute("aria-describedby");
+			return id ? document.getElementById(id)?.textContent : null;
+		};
+		expect(descriptionOf("Read restricted custom fields")).toMatch(
+			/only managers or admins see/,
+		);
+		expect(descriptionOf("Read absence health detail")).toMatch(/sick/);
+		expect(descriptionOf("Read employees")).toBeNull();
 	});
 
 	it("disables submission while pending and shows resolved errors", async () => {
