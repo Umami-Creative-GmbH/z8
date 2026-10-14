@@ -1,6 +1,12 @@
 "use client";
 
-import { IconPaperclip, IconUserShare, IconX } from "@tabler/icons-react";
+import {
+	IconCalendarCancel,
+	IconEdit,
+	IconPaperclip,
+	IconUserShare,
+	IconX,
+} from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -263,34 +269,54 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 				const canCancel = canShowCancelAction(absence);
 				const canRequestChange = absence.status === "approved";
 				const pendingChange = changes.data?.some(
-					(request) => request.absenceId === absence.id && request.status === "pending",);
+					(request) => request.absenceId === absence.id && request.status === "pending",
+				);
 				const canChange = canChangeDeputy(absence, currentDate);
 				if (!canCancel && !canAttachSickNote && !canChange && !canRequestChange) return null;
 				const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
 				const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
 				const attachLabel = t("absences.sickNotes.attachAction", "Attach sick note");
 				const changeDeputyLabel = t("absences.deputy.changeAction", "Change deputy");
+				const requestChangeLabel = t("absences.change.request", "Request change");
+				const requestCancellationLabel = t(
+					"absences.change.requestCancellation",
+					"Request cancellation",
+				);
 
 				return (
 					<div className="flex justify-end gap-1">
 						{canRequestChange ? (
 							<>
-								<Button
-									variant="ghost"
-									size="sm"
-									disabled={!changes.isSuccess || pendingChange}
-									onClick={() => setChangeOf({ absence, kind: "change" })}
-								>
-									{t("absences.change.request", "Request change")}
-								</Button>
-								<Button
-									variant="ghost"
-									size="sm"
-									disabled={!changes.isSuccess || pendingChange}
-									onClick={() => setChangeOf({ absence, kind: "cancel" })}
-								>
-									{t("absences.change.requestCancellation", "Request cancellation")}
-								</Button>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={!changes.isSuccess || pendingChange}
+											onClick={() => setChangeOf({ absence, kind: "change" })}
+											aria-label={requestChangeLabel}
+										>
+											<IconEdit aria-hidden="true" className="size-4" />
+											<span className="sm:sr-only">{requestChangeLabel}</span>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>{requestChangeLabel}</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="sm"
+											disabled={!changes.isSuccess || pendingChange}
+											onClick={() => setChangeOf({ absence, kind: "cancel" })}
+											aria-label={requestCancellationLabel}
+										>
+											<IconCalendarCancel aria-hidden="true" className="size-4" />
+											<span className="sm:sr-only">{requestCancellationLabel}</span>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>{requestCancellationLabel}</TooltipContent>
+								</Tooltip>
 							</>
 						) : null}
 						{canChange ? (
@@ -366,7 +392,8 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 
 	return (
 		<div className="space-y-4">
-			{changes.isError ? (<p role="alert" className="text-sm text-destructive">
+			{changes.isError ? (
+				<p role="alert" className="text-sm text-destructive">
 					{t("absences.change.historyFailed", "Could not load change requests.")}{" "}
 					<Button variant="link" onClick={() => void changes.refetch()}>
 						{t("common.retry", "Retry")}
