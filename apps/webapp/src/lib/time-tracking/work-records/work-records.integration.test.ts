@@ -1,6 +1,7 @@
 /**
- * #1218 contract of work records on PostgreSQL: dividing completed work in append
- * admission through `applyWorkRecordChange`, inside the real work transaction.
+ * #1218 / #1219 contract of work records on PostgreSQL: dividing completed work
+ * in both admissions through `applyWorkRecordChange`, inside the real work
+ * transaction.
  *
  * Local contract: pnpm --filter webapp test:integration
  *
@@ -111,7 +112,7 @@ async function cleanup() {
 	await admin.query('delete from "user" where id like $1', ["t1218-%"]);
 }
 
-async function seed() {
+async function seed(appendControl: "active" | "inactive") {
 	await cleanup();
 	await admin.query(
 		`insert into organization (id, name, slug, timezone, created_at) values ($1, $1, $1, 'Europe/Berlin', $2)`,
@@ -167,12 +168,12 @@ async function seed() {
 		[ids.costCenter, ORG, SEEDED_AT],
 	);
 	await admin.query(
-		`insert into time_entry_append_control (organization_id, mode) values ($1, 'active')`,
-		[ORG],
+		`insert into time_entry_append_control (organization_id, mode) values ($1, $2)`,
+		[ORG, appendControl],
 	);
 }
 
-/** Real adopted clock-in and clock-out of the requester, in the given zone. */
+/** Real clock-in and clock-out of the requester, in the given zone. */
 async function recordWork(
 	start: Instant = WORK_START,
 	end: Instant = WORK_END,
@@ -298,11 +299,45 @@ async function segments() {
 	return rows;
 }
 
-describe("work records: divide in append admission on PostgreSQL (#1218)", () => {
+/**
+ * The one contract in both admissions. Only the admission's writer differs:
+ * append admission rounds each half half up and advances the append position;
+ * legacy admission floors each half, chains after the latest entry and
+ * supersedes the source clock-out when the new clock-out carries notes.
+ */
+const ADMISSIONS = [
+	{
+		admission: "append",
+		appendControl: "active",
+		// 08:00:40-12:00 is 3h59m20s, 12:00-17:00:31 is 5h0m31s.
+		divided: [239, 301],
+		// 08:00:40-10:00, 10:00-12:00, 12:00-15:00, 15:00-17:00:31.
+		chained: [119, 120, 180, 121],
+	},
+	{
+		admission: "legacy",
+		appendControl: "inactive",
+		divided: [239, 300],
+		chained: [119, 120, 180, 120],
+	},
+] as const;
+
+describe.each(ADMISSIONS)(
+	"work records: divide in $admission admission on PostgreSQL (#1218, #1219)",
+	divideContract,
+);
+
+/** The divide contract, run once per admission above. */
+function divideContract({
+	admission,
+	appendControl,
+	divided,
+	chained,
+}: (typeof ADMISSIONS)[number]) {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 	beforeEach(async () => {
-		await seed();
+		await seed(appendControl);
 	});
 
 	afterAll(async () => {
@@ -316,10 +351,6 @@ describe("work records: divide in append admission on PostgreSQL (#1218)", () =>
 			 values ($1, $2, 'cost_center', $3, 100)`,
 			[ORG, source.canonical_record_id, ids.costCenter],
 		);
-		const { rows: tipBefore } = await admin.query<{ tip_entry_id: string }>(
-			"select tip_entry_id from time_entry_append_position where employee_id = $1",
-			[ids.requester],
-		);
 		const expected = await expectedOf(source.id);
 
 		const result = await apply(
@@ -331,12 +362,12 @@ describe("work records: divide in append admission on PostgreSQL (#1218)", () =>
 		await expectRecordAgreement({ organizationId: ORG });
 		if (result.kind !== "divided") throw new Error(`refused: ${result.kind}`);
 		const [retained, generated] = await segments();
-		// Each half rounds its own exact elapsed time.
+		// Each half rounds its own exact elapsed time, in the admission's arithmetic.
 		expect(retained).toMatchObject({
 			id: source.id,
 			clock_in_id: source.clock_in_id,
 			end_time: new Date("2026-07-22T12:00:00Z"),
-			duration_minutes: 239,
+			duration_minutes: divided[0],
 			graph_revision: source.graph_revision + 1,
 			canonical_record_id: source.canonical_record_id,
 			record_updated_by: userOf("requester"),
@@ -347,7 +378,7 @@ describe("work records: divide in append admission on PostgreSQL (#1218)", () =>
 			clock_out_id: source.clock_out_id,
 			start_time: new Date("2026-07-22T12:00:00Z"),
 			end_time: new Date("2026-07-22T17:00:31Z"),
-			duration_minutes: 301,
+			duration_minutes: divided[1],
 			graph_revision: 1,
 			record_created_by: userOf("requester"),
 			allocations: [`cost_center:${ids.costCenter}`, `project:${ids.project}`],
@@ -360,26 +391,38 @@ describe("work records: divide in append admission on PostgreSQL (#1218)", () =>
 				clockOutNotes: null,
 			},
 			retained: {
-				segment: { workPeriodId: source.id, durationMinutes: 239, endAt: "2026-07-22T12:00:00Z" },
+				segment: {
+					workPeriodId: source.id,
+					durationMinutes: divided[0],
+					endAt: "2026-07-22T12:00:00Z",
+				},
 				after: { workPeriodId: source.id, revision: source.graph_revision + 1 },
 			},
 			generated: {
 				segment: {
 					workPeriodId: generated?.id,
 					clockOutEntryId: source.clock_out_id,
-					durationMinutes: 301,
+					durationMinutes: divided[1],
 				},
 				after: { workPeriodId: generated?.id, revision: 1 },
 			},
 			appended: {
-				admission: "append",
-				clockOut: {
-					entryId: retained?.clock_out_id,
-					previousEntryId: only(tipBefore).tip_entry_id,
-				},
+				admission,
+				// The clock-out was the employee's latest entry, in either admission's chain.
+				clockOut: { entryId: retained?.clock_out_id, previousEntryId: source.clock_out_id },
 				clockIn: { entryId: generated?.clock_in_id, previousEntryId: retained?.clock_out_id },
 			},
 		});
+		// Only legacy admission supersedes the source clock-out by a new clock-out with notes.
+		const { rows: sourceClockOut } = await admin.query(
+			"select is_superseded, superseded_by_id from time_entry where id = $1",
+			[source.clock_out_id],
+		);
+		expect(only(sourceClockOut)).toEqual(
+			admission === "legacy"
+				? { is_superseded: true, superseded_by_id: retained?.clock_out_id }
+				: { is_superseded: false, superseded_by_id: null },
+		);
 		const { rows: entries } = await admin.query(
 			`select type, utc_offset_minutes, timezone, timezone_source, ip_address, created_by
 			 from time_entry where id = any($1::uuid[]) order by type desc`,
@@ -407,9 +450,7 @@ describe("work records: divide in append admission on PostgreSQL (#1218)", () =>
 		const third = await apply(divide(first.retained.after, parseInstant("2026-07-22T10:00:00Z")));
 
 		expect([second.kind, third.kind]).toEqual(["divided", "divided"]);
-		expect((await segments()).map(({ duration_minutes }) => duration_minutes)).toEqual([
-			119, 120, 180, 121,
-		]);
+		expect((await segments()).map(({ duration_minutes }) => duration_minutes)).toEqual(chained);
 		await expectRecordAgreement({ organizationId: ORG });
 		const before = await snapshot();
 		await expect(apply(divide(expected, parseInstant("2026-07-22T09:00:00Z")))).resolves.toEqual({
@@ -447,6 +488,24 @@ describe("work records: divide in append admission on PostgreSQL (#1218)", () =>
 			kind: "canonical_divergence",
 			found: "locked_pair",
 			disagreements: ["work_location"],
+		});
+		expect(await snapshot()).toEqual(before);
+	});
+
+	// #1205: the legacy split's own agreement check skipped the project allocation.
+	it("refuses a pair that disagrees on the project allocation without writing", async () => {
+		const source = await recordWork();
+		await admin.query(
+			"update time_record_allocation set weight_percent = 50 where record_id = $1 and allocation_kind = 'project'",
+			[source.canonical_record_id],
+		);
+		const expected = await expectedOf(source.id);
+		const before = await snapshot();
+
+		await expect(apply(divide(expected, parseInstant("2026-07-22T12:00:00Z")))).resolves.toEqual({
+			kind: "canonical_divergence",
+			found: "locked_pair",
+			disagreements: ["allocation_weight"],
 		});
 		expect(await snapshot()).toEqual(before);
 	});
@@ -680,4 +739,4 @@ describe("work records: divide in append admission on PostgreSQL (#1218)", () =>
 			expect(await snapshot()).toEqual(before);
 		});
 	});
-});
+}

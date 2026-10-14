@@ -105,7 +105,12 @@ export async function divideWorkRecord(
 	if (!clockIn || !clockOut) return { kind: "endpoint_entry_missing" };
 	if (clockIn.isSuperseded || clockOut.isSuperseded) return { kind: "endpoint_superseded" };
 
-	const plan = planChange(pairOf(locked), change);
+	const writer = entryWriterFor(scope, {
+		organizationId,
+		employeeId,
+		operation: change.appendOperation,
+	});
+	const plan = planChange(pairOf(locked), change, writer.durationArithmetic);
 	if (plan.kind !== "divide") return plan;
 	if (!canonical) return { kind: "canonical_record_missing" };
 
@@ -135,11 +140,7 @@ export async function divideWorkRecord(
 		await closedRangesForEmployee(tx, { organizationId, employeeId }),
 	);
 	if (closed) return { kind: "month_closed", month: closed.month };
-	const admission = await entryWriterFor(scope, {
-		organizationId,
-		employeeId,
-		operation: change.appendOperation,
-	}).admit();
+	const admission = await writer.admit();
 	if (admission.kind === "review_required") {
 		return { kind: "append_review_required", requirement: admission.requirement };
 	}
@@ -155,16 +156,22 @@ export async function divideWorkRecord(
 			end: half.endAt,
 		})),
 	});
-	const [newClockOut, newClockIn] = await admission.entries.append([
-		{ type: "clock_out", at: change.at, notes: change.notes.before, provenance: change.entries },
-		{ type: "clock_in", at: change.at, notes: change.notes.after, provenance: change.entries },
-	]);
-	if (!newClockOut || !newClockIn) throw new Error("Work records entries were not appended");
 	// The generated half keeps the source clock-out, whose notes its period shows;
 	// notes are not part of the entry hash.
 	if (change.notes.after !== null) {
 		await replaceClockOutNotes(tx, clockOut, change.notes.after);
 	}
+	const [newClockOut, newClockIn] = await admission.entries.append([
+		{
+			type: "clock_out",
+			at: change.at,
+			notes: change.notes.before,
+			provenance: change.entries,
+			takesOverFrom: clockOut,
+		},
+		{ type: "clock_in", at: change.at, notes: change.notes.after, provenance: change.entries },
+	]);
+	if (!newClockOut || !newClockIn) throw new Error("Work records entries were not appended");
 	const updatedAt = new Date();
 	const retained = await writeRetainedHalf(tx, {
 		period,
@@ -229,7 +236,7 @@ export async function divideWorkRecord(
 		retained: dividedHalf(retained, plan.retained, { clockIn, clockOut: newClockOut }),
 		generated: dividedHalf(generated, plan.generated, { clockIn: newClockIn, clockOut }),
 		appended: {
-			admission: scope.admission === "append" ? "append" : "legacy",
+			admission: writer.admission,
 			clockOut: appendedEvidence(newClockOut),
 			clockIn: appendedEvidence(newClockIn),
 		},

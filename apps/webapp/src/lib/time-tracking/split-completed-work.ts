@@ -12,7 +12,9 @@ import "server-only";
  * divide, the notes and the odometer value at the split.
  *
  * Exact replay of a committed receipt writes nothing, and a receipt whose work
- * has since changed or been deleted is a collision.
+ * has since changed or been deleted is a collision. In legacy admission the
+ * split runs the same policy and division without a receipt
+ * (`splitLegacyCompletedWork`, #1219).
  */
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
@@ -269,9 +271,58 @@ export async function splitCompletedWork(
 		.limit(1);
 	if (existing) throw new CompletedWorkCollisionError();
 
+	const division = await divideForSplit(scope, input);
+	const result = splitResult(input, division);
+	await tx.insert(completedWorkOperation).values({
+		id: command.operationId,
+		organizationId,
+		employeeId,
+		kind: "split_completed_work",
+		writer: "work_period_split",
+		writerVersion: WORK_PERIOD_SPLIT_WRITER_VERSION,
+		commandVersion: command.version,
+		command,
+		appendAdmission: "append",
+		actorKind: "human",
+		actorUserId: input.actorUserId,
+		// The split source; the generated period is in the result.
+		workPeriodId: division.source.segment.workPeriodId,
+		resultVersion: SPLIT_COMPLETED_WORK_RESULT_VERSION,
+		result,
+	});
+	return { disposition: "executed", result };
+}
+
+/**
+ * The split of an organization in legacy admission (#1219): the same caller
+ * policy and the same division through work records, whose legacy writer
+ * appends the entries. Legacy admission commits no receipt, so a retry is not
+ * recognized; the split action chooses by admission until admission is hidden.
+ */
+export async function splitLegacyCompletedWork(
+	scope: SealedWorkTransactionScope,
+	input: SplitCompletedWorkInput,
+): Promise<WorkDivision> {
+	scope.assertEmployee(input.organizationId, input.employeeId);
+	if (scope.admission !== "legacy") {
+		throw new Error("Legacy completed-work split requires the legacy work transaction");
+	}
+	return divideForSplit(scope, input);
+}
+
+/**
+ * The split's caller policy, then the division: current owner authority, the
+ * unresolved-review guard and refusing work awaiting approval, on exactly the
+ * rows work records will change, locked.
+ */
+async function divideForSplit(
+	scope: SealedWorkTransactionScope,
+	input: SplitCompletedWorkInput,
+): Promise<WorkDivision> {
+	const { organizationId, employeeId, command } = input;
+	const tx = scope.db;
 	await lockAuthority(tx, { ...input, authority: "owner" });
 
-	// Caller policy on exactly the rows work records will change, locked.
 	const current = await readWorkRecord(
 		scope,
 		{ organizationId, employeeId, workPeriodId: command.request.workPeriodId },
@@ -298,7 +349,7 @@ export async function splitCompletedWork(
 	}
 
 	const { beforeNotes, afterNotes } = command.request;
-	const division = orRefuse(
+	return orRefuse(
 		await applyWorkRecordChange(scope, {
 			kind: "divide",
 			organizationId,
@@ -317,26 +368,6 @@ export async function splitCompletedWork(
 			appendOperation: "completed_work_split",
 		}),
 	);
-
-	const result = splitResult(input, division);
-	await tx.insert(completedWorkOperation).values({
-		id: command.operationId,
-		organizationId,
-		employeeId,
-		kind: "split_completed_work",
-		writer: "work_period_split",
-		writerVersion: WORK_PERIOD_SPLIT_WRITER_VERSION,
-		commandVersion: command.version,
-		command,
-		appendAdmission: "append",
-		actorKind: "human",
-		actorUserId: input.actorUserId,
-		// The split source; the generated period is in the result.
-		workPeriodId: division.source.segment.workPeriodId,
-		resultVersion: SPLIT_COMPLETED_WORK_RESULT_VERSION,
-		result,
-	});
-	return { disposition: "executed", result };
 }
 
 /** The split's receipt, built from work records' division. */

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
-import { planChange, type WorkRecordPair } from "./plan";
+import { type PlannableChange, planChange as planIn, type WorkRecordPair } from "./plan";
 import { recordAgreement } from "./record-agreement";
+
+/** Append admission's arithmetic unless a test names legacy admission's. */
+const planChange = (pair: WorkRecordPair, change: PlannableChange) =>
+	planIn(pair, change, "half_up");
 
 const PROJECT = "00000000-0000-4000-8000-000000000001";
 const TASK = "00000000-0000-4000-8000-000000000002";
@@ -109,6 +113,36 @@ describe("planChange: divide at an instant", () => {
 				costCentre,
 				expect.objectContaining({ allocationKind: "project", projectId: PROJECT, taskId: TASK }),
 			]);
+		}
+	});
+
+	it("keeps a positive half that rounds to zero minutes", () => {
+		// 07:00:20 to 07:00:40 is 20 seconds.
+		const plan = planChange(agreeingPair(), divide(parseInstant("2026-03-02T07:00:40Z")));
+
+		if (plan.kind !== "divide") throw new Error(`not planned: ${plan.kind}`);
+		expect([plan.retained.durationMinutes, plan.generated.durationMinutes]).toEqual([0, 509]);
+	});
+
+	it("floors each half's own minutes with legacy admission's arithmetic", () => {
+		// 07:00:20 to 11:00:00 is 3h59m40s; 11:00:00 to 15:29:50 is 4h29m50s.
+		const pair = agreeingPair();
+		const endTime = new Date("2026-03-02T15:29:50.000Z");
+		const shortened: WorkRecordPair = {
+			period: { ...pair.period, endTime },
+			canonical: pair.canonical && {
+				...pair.canonical,
+				record: { ...pair.canonical.record, endAt: endTime },
+			},
+		};
+
+		const plan = planIn(shortened, divide(parseInstant("2026-03-02T11:00:00Z")), "floor");
+
+		if (plan.kind !== "divide") throw new Error(`not planned: ${plan.kind}`);
+		expect([plan.retained.durationMinutes, plan.generated.durationMinutes]).toEqual([239, 269]);
+		for (const half of [plan.retained, plan.generated]) {
+			expect(half.canonical.record.durationMinutes).toBe(half.period.durationMinutes);
+			expect(recordAgreement(half.period, half.canonical).agrees).toBe(true);
 		}
 	});
 

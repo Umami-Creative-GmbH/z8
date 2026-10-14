@@ -673,8 +673,9 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
 	}
 
-	// #327: the real split writer races an approved field repair in both arrival orders.
-	it("goes stale when a real split commits first while the application waits", async () => {
+	// A split divides through work records in either admission (#1219), which refuses
+	// work whose pair disagrees: the split writes nothing and the approved repair applies.
+	it("refuses a real split of diverging work; the repair still applies", async () => {
 		await authorizeRepair();
 		const { periodId, recordId } = await conflictingWork("2026-07-10", 200);
 		const proposal = (
@@ -684,24 +685,20 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		).body.proposal;
 		await approve(proposal);
 
-		const park = await parkNextInsert("time_entry");
 		actAs(ids.workerUser);
-		const split = splitWorkPeriod(periodId, "2026-07-10", "09:00");
-		await waitForLockWaiters(1);
-		const pending = applyProposal(proposal.id);
-		await waitForLockWaiters(2);
-		await park.release();
+		await expect(splitWorkPeriod(periodId, "2026-07-10", "09:00")).resolves.toMatchObject({
+			success: false,
+			code: "completed_work_review_required",
+		});
 
-		await expect(split).resolves.toMatchObject({ success: true });
-		expect((await pending).body).toMatchObject({ status: "stale" });
-		const { rows } = await admin.query("select id from completed_work_operation where id = $1", [
-			proposal.id,
-		]);
-		expect(rows).toEqual([]);
-		expect((await recordRow(recordId)).duration_minutes).not.toBe(240);
+		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "applied" });
+		expect((await recordRow(recordId)).duration_minutes).toBe(240);
 	});
 
-	it("lets a real split proceed on the repaired graph when the application commits first", async () => {
+	// #327: the real split writer waits for an approved field repair under the shared key.
+	// The repair advances the work's revision, so the waiting split, decided on the work as
+	// read before, is stale (#1219); a fresh split proceeds on the repaired graph.
+	it("refuses a waiting split as stale once the application commits", async () => {
 		await authorizeRepair();
 		const { periodId } = await conflictingWork("2026-07-11", 200);
 		const proposal = (
@@ -720,7 +717,13 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 		await park.release();
 
 		expect((await pending).body).toMatchObject({ status: "applied" });
-		await expect(split).resolves.toMatchObject({ success: true });
+		await expect(split).resolves.toMatchObject({
+			success: false,
+			code: "time_correction_work_period_stale",
+		});
+		await expect(splitWorkPeriod(periodId, "2026-07-11", "09:00")).resolves.toMatchObject({
+			success: true,
+		});
 		const { rows } = await admin.query("select id from completed_work_operation where id = $1", [
 			proposal.id,
 		]);

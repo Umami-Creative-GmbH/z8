@@ -5,7 +5,6 @@ import { organizationVehicle, travelExpenseReportItem } from "@/db/schema";
 import { ValidationError } from "@/lib/effect/errors";
 import type { WorkTransactionClient } from "../work-transaction";
 import { resolveVehicleUseMode } from "./resolver";
-import { splitWorkVehicleUse } from "./split-vehicle-use";
 import {
 	buildWorkVehicleUse,
 	organizationVehicleIdOf,
@@ -84,35 +83,14 @@ export async function assertWorkVehicleUseChangeAllowed(
 }
 
 /**
- * The vehicle use of both halves of a user's split (#1126). The vehicle always
- * carries over, also while vehicle use is off; a value at the split changes
- * kilometres, so it needs vehicle use asked or expected for the employee. Work
- * whose distance is on an expense item is refused (`work_period_distance_claimed`,
- * #807 decision 6): a work period's distance is claimed at most once, so it can't
- * be divided until the item is removed.
- */
-export async function resolveWorkVehicleUseSplit(
-	tx: Client,
-	input: {
-		organizationId: string;
-		employeeId: string;
-		workPeriodId: string;
-		use: WorkVehicleUse | null;
-		value: number | null | undefined;
-	},
-): Promise<{ retained: WorkVehicleUse | null; generated: WorkVehicleUse | null }> {
-	const refusal = await workVehicleUseSplitRefusal(tx, input);
-	if (refusal) throw workVehicleUseRefusal(refusal);
-	const split = splitWorkVehicleUse(input.use, input.value);
-	if (!split.ok) throw workVehicleUseRefusal(split.code);
-	return { retained: split.retained, generated: split.generated };
-}
-
-/**
- * What the database says against dividing work's vehicle use (#1126, #1131):
- * its distance claimed on an expense item, or a value at the split while
- * vehicle use is off for the employee. Null when nothing does; the kilometres
- * themselves are divided by the pure `splitWorkVehicleUse`.
+ * What the database says against dividing work's vehicle use (#1126, #1131).
+ * The vehicle always carries over, also while vehicle use is off; a value at
+ * the split changes kilometres, so it needs vehicle use asked or expected for
+ * the employee. Work whose distance is on an expense item is refused
+ * (`work_period_distance_claimed`, #807 decision 6): a work period's distance is
+ * claimed at most once, so it can't be divided until the item is removed. Null
+ * when nothing refuses; the kilometres themselves are divided by the pure
+ * `splitWorkVehicleUse`.
  */
 export async function workVehicleUseSplitRefusal(
 	tx: Client,

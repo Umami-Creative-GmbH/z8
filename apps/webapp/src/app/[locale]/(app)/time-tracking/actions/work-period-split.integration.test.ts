@@ -11,9 +11,10 @@
  * cache are replaced. Adoption is enabled per test organization by inserting its
  * append control row directly: production has no activation setter.
  *
- * In append admission this suite covers the split's caller policy: its
- * preconditions, receipts and replay, and how refusals reach the user. What the
- * divided work carries is work records' contract (#1218,
+ * In both admissions this suite covers the split's caller policy: its
+ * preconditions, receipts and replay (append admission only), and how refusals
+ * reach the user. What the divided work carries is work records' contract in
+ * both admissions (#1218, #1219,
  * `lib/time-tracking/work-records/work-records.integration.test.ts`).
  */
 
@@ -565,36 +566,51 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 		expect(await snapshot()).toEqual(before);
 	});
 
-	it("refuses a split while any canonical review of the period is pending", async () => {
-		const period = await recordWork();
-		// An ordinary workflow still pending although the period status says approved.
-		await admin.query(`update time_record set approval_state = 'pending' where id = $1`, [
-			period.canonical_record_id,
-		]);
-		const before = await snapshot();
+	it.each([
+		["adopted", "active"],
+		["legacy", "inactive"],
+	] as const)(
+		"refuses a %s split while any canonical review of the period is pending",
+		async (_name, mode) => {
+			await setAdmission(mode);
+			const period = await recordWork();
+			// An ordinary workflow still pending although the period status says approved.
+			await admin.query(`update time_record set approval_state = 'pending' where id = $1`, [
+				period.canonical_record_id,
+			]);
+			const before = await snapshot();
 
-		await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toEqual({
-			success: false,
-			error: "This work period is awaiting approval and cannot be edited",
-			code: "work_period_pending_approval",
-		});
-		expect(await snapshot()).toEqual(before);
-	});
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toEqual({
+				success: false,
+				error: "This work period is awaiting approval and cannot be edited",
+				code: "work_period_pending_approval",
+			});
+			expect(await snapshot()).toEqual(before);
+		},
+	);
 
-	it("holds a split for review when the canonical record diverges", async () => {
-		const period = await recordWork();
-		await admin.query("delete from time_record_allocation where record_id = $1", [
-			period.canonical_record_id,
-		]);
-		const before = await snapshot();
+	// #1205: the legacy split once skipped the project allocation in its agreement check.
+	it.each([
+		["adopted", "active"],
+		["legacy", "inactive"],
+	] as const)(
+		"holds a %s split for review when the canonical record diverges",
+		async (_name, mode) => {
+			await setAdmission(mode);
+			const period = await recordWork();
+			await admin.query("delete from time_record_allocation where record_id = $1", [
+				period.canonical_record_id,
+			]);
+			const before = await snapshot();
 
-		await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toEqual({
-			success: false,
-			error: "This work needs review before it can be changed",
-			code: "completed_work_review_required",
-		});
-		expect(await snapshot()).toEqual(before);
-	});
+			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toEqual({
+				success: false,
+				error: "This work needs review before it can be changed",
+				code: "completed_work_review_required",
+			});
+			expect(await snapshot()).toEqual(before);
+		},
+	);
 
 	// Work records' own writes are its contract; the split's receipt commits with them.
 	it.each([
@@ -718,59 +734,35 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 			]);
 		},
 	);
-	it.each([
-		["time_record", "update"],
-		["time_record", "insert"],
-		["time_record_work", "insert"],
-		["time_record_allocation", "insert"],
-	] as const)("rolls back a legacy split when %s %s fails", async (table, event) => {
-		await setAdmission("inactive");
-		const period = await recordWork();
-		const before = await snapshot();
-		await admin.query(
-			`create function t304_split_fail() returns trigger language plpgsql as $$ begin raise exception 'split canonical write failure'; end $$`,
-		);
-		await admin.query(
-			`create trigger t304_split_fail before ${event} on ${table} for each row execute function t304_split_fail()`,
-		);
-		try {
-			await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
-				success: false,
-				error: failed,
-			});
-		} finally {
-			await admin.query("drop function t304_split_fail() cascade");
-		}
-		expect(await snapshot()).toEqual(before);
-	});
-	it("divides the canonical record and preserves attribution in a legacy organization", async () => {
+	// Legacy admission divides through work records too (#1219); what the halves carry
+	// in legacy admission is work records' contract. The split commits no receipt there.
+	it("splits legacy work through work records without a receipt", async () => {
 		await setAdmission("inactive");
 		const period = await recordWork();
 
-		await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toMatchObject({
-			success: true,
-		});
+		const result = await split(
+			period.id,
+			{ time: "14:00", before: "Morning", after: "Afternoon" },
+			randomUUID(),
+		);
 
 		const [retained, generated] = await segments();
+		expect(result).toEqual({
+			success: true,
+			data: { firstPeriodId: period.id, secondPeriodId: generated?.id },
+		});
+		await expectRecordAgreement({ organizationId: ids.organization });
 		expect(retained).toMatchObject({
+			id: period.id,
 			end_time: new Date("2026-07-22T12:00:00Z"),
-			// The legacy resolver floors each segment.
-			duration_minutes: 239,
-			graph_revision: period.graph_revision,
-			// The canonical record follows the retained segment.
-			record_end: new Date("2026-07-22T12:00:00Z"),
-			record_duration: 239,
+			graph_revision: period.graph_revision + 1,
+			clock_out_notes: "Morning",
 		});
 		expect(generated).toMatchObject({
-			duration_minutes: 300,
-			record_duration: 300,
-			record_start: new Date("2026-07-22T12:00:00Z"),
-			record_end: new Date("2026-07-22T17:00:31Z"),
-			detail_location: "office",
-			allocations: [`project:${ids.project}`],
+			clock_out_id: period.clock_out_id,
+			start_time: new Date("2026-07-22T12:00:00Z"),
+			clock_out_notes: "Afternoon",
 		});
-		expect(generated?.canonical_record_id).toBeTruthy();
-		expect(generated?.canonical_record_id).not.toBe(period.canonical_record_id);
 		const { rows } = await admin.query(
 			"select count(*)::int as receipts from completed_work_operation where organization_id = $1 and kind = 'split_completed_work'",
 			[ids.organization],
@@ -955,24 +947,6 @@ describe("calendar splits through the completed-work operation on PostgreSQL", (
 				code: "completed_work_review_required",
 			});
 			expect(await snapshot()).toEqual(before);
-		});
-
-		it("divides the vehicle in both legacy work representations", async () => {
-			await setAdmission("inactive");
-			await enableVehicleUse("asked");
-			const period = await recordWork();
-			await driveVan(period, { start: 12_000, end: 12_085, distance: 85 });
-
-			await expect(
-				split(period.id, { time: "14:00", vehicleKm: 12_040 }, randomUUID()),
-			).resolves.toMatchObject({ success: true });
-
-			const [retained, generated] = await vehicleSegments();
-			expect(retained?.period).toEqual(km(12_000, 12_040, 40));
-			expect(generated?.period).toEqual(km(12_040, 12_085, 45));
-			// The canonical record follows the retained segment.
-			expect(retained?.detail).toEqual(km(12_000, 12_040, 40));
-			expect(generated?.detail).toEqual(km(12_040, 12_085, 45));
 		});
 
 		describe("work whose distance is claimed on an expense item (#1131)", () => {
