@@ -48,6 +48,8 @@ export const departureTaskKinds = [
 	"approval_handover",
 	// One cleared deputy assignment to notify about (#1014).
 	"notify_deputy_release",
+	// Download your personal data before the cutoff, once per cutoff (#1173).
+	"notify_data_export_reminder",
 ] as const;
 export const departureTaskStatuses = ["pending", "processing", "completed", "failed"] as const;
 export const departureReviewKinds = [

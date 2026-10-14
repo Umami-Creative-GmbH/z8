@@ -25,7 +25,8 @@ export type OffboardingFollowUpTaskKind =
 	| "notify_review"
 	| "clock_repair"
 	| "approval_handover"
-	| "notify_deputy_release";
+	| "notify_deputy_release"
+	| "notify_data_export_reminder";
 
 export interface EmployeeOffboardingView {
 	employeeId: string;
