@@ -90,3 +90,20 @@ test("sequencing a failed unit shard cannot turn skipped PostgreSQL into success
   needs["integration-tests"].result = "skipped";
   assert.throws(() => checkTestResults(needs), /unit-tests/);
 });
+test("temporarily disabled PostgreSQL is skipped without weakening unit checks", () => {
+  const needs = results();
+  needs["integration-tests"].result = "skipped";
+  assert.equal(checkTestResults(needs, { integrationEnabled: false }).length, 3);
+  for (const result of ["failure", "cancelled", "skipped", undefined]) {
+    needs["unit-tests"].result = result;
+    assert.throws(() => checkTestResults(needs, { integrationEnabled: false }), /unit-tests/);
+  }
+});
+
+test("re-enabling PostgreSQL requires integration success again", () => {
+  const needs = results();
+  needs["integration-tests"].result = "skipped";
+  assert.throws(() => checkTestResults(needs, { integrationEnabled: true }), /integration-tests/);
+  needs["integration-tests"].result = "success";
+  assert.equal(checkTestResults(needs, { integrationEnabled: true }).length, 3);
+});
