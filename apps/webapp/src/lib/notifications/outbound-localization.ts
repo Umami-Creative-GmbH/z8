@@ -1,15 +1,25 @@
 import { createLogger } from "@/lib/logger";
 import { loadNamespaces, type Namespace, TolgeeBase } from "@/tolgee/shared";
-import { resolveRecipientNotificationLocale } from "./recipient-locale";
+import {
+	type FormattedNotificationParam,
+	formatNotificationParams,
+	isRecord,
+} from "./notification-params";
+import {
+	type RecipientNotificationPreferences,
+	resolveRecipientNotificationLocale,
+	resolveRecipientNotificationPreferences,
+} from "./recipient-locale";
 
-type TranslationParam = string | number | bigint | Date;
+type TranslationParam = FormattedNotificationParam;
 
 interface NotificationI18nMetadata {
 	titleKey?: string;
 	titleDefault?: string;
 	messageKey?: string;
 	messageDefault?: string;
-	params?: Record<string, TranslationParam>;
+	/** Raw params, typed ones included; formatted once the locale is known. */
+	params?: Record<string, unknown>;
 }
 
 interface NotificationMetadata {
@@ -18,11 +28,14 @@ interface NotificationMetadata {
 
 interface LocalizeOutboundNotificationParams {
 	userId: string;
-	organizationId: string;
+	/** Without one, only the recipient's own language counts. */
+	organizationId?: string | null;
 	title: string;
 	message: string;
 	metadata?: Record<string, unknown> | string | null;
 	locale?: string;
+	/** The recipient's hour cycle for typed time params; the locale's own otherwise. */
+	timeFormat?: "12h" | "24h";
 }
 
 interface LocalizedOutboundNotification {
@@ -35,32 +48,6 @@ const logger = createLogger("OutboundNotificationLocalization");
 const NOTIFICATION_NAMESPACES = ["common"] satisfies Namespace[];
 const FALLBACK_LOCALE = "en";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isTranslationParam(value: unknown): value is TranslationParam {
-	return (
-		typeof value === "string" ||
-		typeof value === "number" ||
-		typeof value === "bigint" ||
-		value instanceof Date
-	);
-}
-
-function sanitizeParams(params: unknown): Record<string, TranslationParam> | undefined {
-	if (!isRecord(params)) return undefined;
-
-	const sanitized: Record<string, TranslationParam> = {};
-	for (const [key, value] of Object.entries(params)) {
-		if (isTranslationParam(value)) {
-			sanitized[key] = value;
-		}
-	}
-
-	return sanitized;
-}
-
 function sanitizeI18nMetadata(i18n: unknown): NotificationI18nMetadata | undefined {
 	if (!isRecord(i18n)) return undefined;
 
@@ -70,8 +57,7 @@ function sanitizeI18nMetadata(i18n: unknown): NotificationI18nMetadata | undefin
 	if (typeof i18n.messageKey === "string") sanitized.messageKey = i18n.messageKey;
 	if (typeof i18n.messageDefault === "string") sanitized.messageDefault = i18n.messageDefault;
 
-	const params = sanitizeParams(i18n.params);
-	if (params) sanitized.params = params;
+	if (isRecord(i18n.params)) sanitized.params = i18n.params;
 
 	return sanitized;
 }
@@ -133,48 +119,114 @@ export async function recipientNotificationTranslator({
 	}
 }
 
+/**
+ * The recipient's notification language and hour cycle, for callers that format
+ * typed params themselves (email override variables). Without an organization
+ * only the recipient's own language counts. `en` when it cannot be resolved.
+ */
+export async function resolveOutboundNotificationPreferences({
+	userId,
+	organizationId,
+}: {
+	userId: string;
+	organizationId?: string | null;
+}): Promise<RecipientNotificationPreferences> {
+	try {
+		return await resolveRecipientNotificationPreferences({ userId, organizationId });
+	} catch (error) {
+		logger.warn(
+			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
+			"Failed to resolve recipient notification locale",
+		);
+		return { locale: FALLBACK_LOCALE };
+	}
+}
+
+/** The chat channels' "View in Z8" link text, in the recipient language. */
+function actionLabel(t: NotificationTranslate): string {
+	return t("notifications.channels.viewInZ8", "View in Z8");
+}
+
+/**
+ * The notification's title and message in the recipient language, rendered from
+ * `metadata.i18n`. A notification without translation keys keeps its stored text.
+ * `withActionLabel` adds the "View in Z8" link text of the chat channels, from
+ * the same catalog load.
+ */
+export async function localizeOutboundNotification(
+	params: LocalizeOutboundNotificationParams & { withActionLabel: true },
+): Promise<LocalizedOutboundNotification & { actionLabel: string }>;
+export async function localizeOutboundNotification(
+	params: LocalizeOutboundNotificationParams & { withActionLabel?: boolean },
+): Promise<LocalizedOutboundNotification & { actionLabel?: string }>;
 export async function localizeOutboundNotification({
 	userId,
 	organizationId,
 	locale,
+	timeFormat,
 	title,
 	message,
 	metadata,
-}: LocalizeOutboundNotificationParams): Promise<LocalizedOutboundNotification> {
+	withActionLabel = false,
+}: LocalizeOutboundNotificationParams & { withActionLabel?: boolean }): Promise<
+	LocalizedOutboundNotification & { actionLabel?: string }
+> {
+	const fallback = (fallbackLocale: string) => ({
+		locale: fallbackLocale,
+		title,
+		message,
+		...(withActionLabel ? { actionLabel: actionLabel((_key, defaultValue) => defaultValue) } : {}),
+	});
+
 	let resolvedLocale = locale ?? FALLBACK_LOCALE;
+	let resolvedTimeFormat = timeFormat;
 	try {
 		if (!locale) {
-			resolvedLocale = await resolveRecipientNotificationLocale({ userId, organizationId });
+			const preferences = await resolveRecipientNotificationPreferences({
+				userId,
+				organizationId,
+			});
+			resolvedLocale = preferences.locale;
+			resolvedTimeFormat ??= preferences.timeFormat;
 		}
 	} catch (error) {
 		logger.warn(
 			{ err: error, userId, organizationId, locale: FALLBACK_LOCALE },
 			"Failed to resolve recipient notification locale",
 		);
-		return { locale: FALLBACK_LOCALE, title, message };
+		return fallback(FALLBACK_LOCALE);
 	}
 
 	const i18n = parseMetadata(metadata).i18n;
+	const hasKeys = Boolean(i18n?.titleKey || i18n?.messageKey);
 
-	if (!i18n?.titleKey && !i18n?.messageKey) {
-    return { locale: resolvedLocale, title, message };
+	if (!hasKeys && !withActionLabel) {
+		return fallback(resolvedLocale);
 	}
 
 	try {
 		const t = await loadNotificationTranslator(resolvedLocale);
+		// Typed params become text in the recipient language first: ICU never sees a Date (#1149).
+		const params = i18n?.params
+			? formatNotificationParams(i18n.params, {
+					locale: resolvedLocale,
+					timeFormat: resolvedTimeFormat,
+				})
+			: undefined;
 
 		return {
 			locale: resolvedLocale,
-			title: i18n.titleKey ? t(i18n.titleKey, i18n.titleDefault ?? title, i18n.params) : title,
-			message: i18n.messageKey
-				? t(i18n.messageKey, i18n.messageDefault ?? message, i18n.params)
+			title: i18n?.titleKey ? t(i18n.titleKey, i18n.titleDefault ?? title, params) : title,
+			message: i18n?.messageKey
+				? t(i18n.messageKey, i18n.messageDefault ?? message, params)
 				: message,
+			...(withActionLabel ? { actionLabel: actionLabel(t) } : {}),
 		};
 	} catch (error) {
 		logger.warn(
 			{ err: error, userId, organizationId, locale: resolvedLocale },
 			"Failed to localize outbound notification",
 		);
-		return { locale: resolvedLocale, title, message };
+		return fallback(resolvedLocale);
 	}
 }

@@ -39,6 +39,49 @@ describe("renderOrganizationEmailTemplate", () => {
 		expect(getEnabledOrganizationEmailTemplateMock).not.toHaveBeenCalled();
 	});
 
+	it("renders a caller's default body (the shared notification layout) when no override is enabled", async () => {
+		getEnabledOrganizationEmailTemplateMock.mockResolvedValue(null);
+
+		const result = await renderOrganizationEmailTemplate({
+			organizationId: "org_123",
+			templateKey: "team-member-added",
+			data: { memberName: "Alex", teamName: "Support" },
+			subjectOverride: "Du wurdest zu Support hinzugefügt",
+			renderDefaultHtml: async () => '<html lang="de"><p>Gemeinsames Layout</p></html>',
+		});
+
+		expect(result).toEqual({
+			subject: "Du wurdest zu Support hinzugefügt",
+			html: '<html lang="de"><p>Gemeinsames Layout</p></html>',
+			usedOverride: false,
+		});
+	});
+
+	it("sends an enabled override as written instead of a caller's default body", async () => {
+		getEnabledOrganizationEmailTemplateMock.mockResolvedValue({
+			subject: "Welcome to {{teamName}}",
+			html: "<p>Hi {{memberName}}</p>",
+			plainText: null,
+		});
+		const renderDefaultHtml = vi.fn(async () => "<p>Gemeinsames Layout</p>");
+
+		const result = await renderOrganizationEmailTemplate({
+			organizationId: "org_123",
+			templateKey: "team-member-added",
+			data: { memberName: "Alex", teamName: "Support" },
+			subjectOverride: "Du wurdest zu Support hinzugefügt",
+			renderDefaultHtml,
+		});
+
+		expect(result).toEqual({
+			subject: "Welcome to Support",
+			html: "<p>Hi Alex</p>",
+			plainText: undefined,
+			usedOverride: true,
+		});
+		expect(renderDefaultHtml).not.toHaveBeenCalled();
+	});
+
 	it("renders an enabled organization password reset override with interpolated subject and html", async () => {
 		getEnabledOrganizationEmailTemplateMock.mockResolvedValue({
 			subject: "Reset password for {{userName}}",

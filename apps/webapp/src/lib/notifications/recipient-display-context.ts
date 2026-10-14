@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employee, userSettings } from "@/db/schema";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { resolveRecipientNotificationLocale } from "./recipient-locale";
 
 export interface RecipientDisplayContext {
 	timezone: string;
@@ -33,12 +33,15 @@ export async function resolveRecipientDisplayContext(input: {
 	});
 	if (!recipient) return null;
 
-	const settings = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, input.userId),
-		columns: { locale: true, timeFormat: true, timezone: true },
-	});
+	const [settings, locale] = await Promise.all([
+		db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, input.userId),
+			columns: { timeFormat: true, timezone: true },
+		}),
+		resolveRecipientNotificationLocale(input),
+	]);
 	return {
-		locale: settings?.locale ?? DEFAULT_LANGUAGE,
+		locale,
 		timeFormat: settings?.timeFormat === "12h" ? "12h" : "24h",
 		timezone: settings && isValidTimezone(settings.timezone) ? settings.timezone : "UTC",
 	};

@@ -6,6 +6,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { formatNotificationParams } from "@/lib/notifications/notification-params";
 import {
 	createClockingService,
 	createDatabaseClockingStore,
@@ -263,8 +264,12 @@ describe("clocking reminders for published shifts on PostgreSQL", () => {
 		expect(metadata.i18n).toMatchObject({
 			titleKey: "common:notifications.content.missedClockInReminder.title",
 			messageKey: "common:notifications.content.missedClockInReminder.message",
-			params: { startTime: "08:00", timezone: "Europe/Berlin" },
+			params: { timezone: "Europe/Berlin" },
 		});
+		// A typed time, formatted in the reader's language when delivered (#1149).
+		expect(formatNotificationParams(metadata.i18n.params, { locale: "de" }).startTime).toMatch(
+			/^0?8:00$/,
+		);
 		expect(channels.event).toHaveBeenCalledWith(
 			"missed_clock_in_reminder",
 			org.organizationId,

@@ -3,7 +3,6 @@ import "server-only";
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, isNull, or } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -33,7 +32,6 @@ import {
 	type VacationOverrideSummary,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import {
 	createLegacyApprovalWriteCoordinator,
@@ -83,8 +81,6 @@ import {
 } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService, makeDatabaseService } from "@/lib/effect/services/database.service";
-import { EmailService } from "@/lib/effect/services/email.service";
-import { renderAbsenceRequestPendingApproval } from "@/lib/email/render";
 import {
 	legacyDeliveryCycleId,
 	recordLegacyDeliveryIntent,
@@ -942,41 +938,8 @@ function getManagerAndEmployeeDetails(
 	]);
 }
 
-function formatDisplayDate(dateStr: string) {
-	const dt = DateTime.fromISO(dateStr);
-	return dt.toLocaleString({ month: "short", day: "numeric", year: "numeric" });
-}
-
-function renderManagerApprovalEmail(params: {
-	organizationId: string;
-	manager: { user: { name: string } };
-	employeeRecord: { user: { name: string } };
-	data: AbsenceRequest;
-	categoryName: string;
-	absenceDays: number;
-}) {
-	return Effect.gen(function* () {
-		const appUrl = yield* Effect.promise(() =>
-			getOrganizationBaseUrl(params.organizationId),
-		);
-		return yield* Effect.promise(() =>
-			renderAbsenceRequestPendingApproval({
-				managerName: params.manager.user.name,
-				employeeName: params.employeeRecord.user.name,
-				startDate: formatDisplayDate(params.data.startDate),
-				endDate: formatDisplayDate(params.data.endDate),
-				absenceType: params.categoryName,
-				days: params.absenceDays,
-				notes: params.data.notes || undefined,
-				approvalUrl: `${appUrl}/approvals/inbox`,
-			}),
-		);
-	});
-}
-
 async function deliverPendingAbsenceSubmissionBestEffort(params: {
 	dbService: typeof DatabaseService.Service;
-	emailService: typeof EmailService.Service;
 	currentEmployee: RequestAbsenceEmployeeContext;
 	defaultApproverId: string;
 	absenceId: string;
@@ -993,8 +956,8 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 				params.currentEmployee.organizationId,
 			),
 		);
-		// Notification fan-out owns the employee email and honors their preferences.
-		// Create it before manager delivery so a manager email failure cannot suppress it.
+		// Notification fan-out owns both emails and honors each recipient's preferences,
+		// language and the organization's mail transport (#1152).
 		await onAbsenceRequestSubmitted({
 			absenceId: params.absenceId,
 			employeeUserId: employeeRecord.userId,
@@ -1006,23 +969,6 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 			managerName: manager.user.name,
 			days: params.absenceDays,
 		});
-		const managerHtml = await Effect.runPromise(
-			renderManagerApprovalEmail({
-				organizationId: params.currentEmployee.organizationId,
-				manager,
-				employeeRecord,
-				data: params.data,
-				categoryName: params.categoryName,
-				absenceDays: params.absenceDays,
-			}),
-		);
-		await Effect.runPromise(
-			params.emailService.send({
-				to: manager.user.email,
-				subject: `Absence Request from ${employeeRecord.user.name}`,
-				html: managerHtml,
-			}),
-		);
 		await onAbsenceRequestPendingApproval({
 			absenceId: params.absenceId,
 			employeeUserId: employeeRecord.userId,
@@ -1033,6 +979,8 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 			endDate: params.data.endDate,
 			managerUserId: manager.userId,
 			managerName: manager.user.name,
+			days: params.absenceDays,
+			notes: params.data.notes,
 		});
 		logger.info(
 			{
@@ -1264,11 +1212,9 @@ function requestAbsenceWithResolverEffect(
 					) {
 						span.setAttribute("absence.has_approval_request", true);
 						span.setAttribute("absence.approver_id", defaultApproverId);
-						const emailService = yield* EmailService;
 						yield* Effect.promise(() =>
 							deliverPendingAbsenceSubmissionBestEffort({
 								dbService,
-								emailService,
 								currentEmployee,
 								defaultApproverId,
 								absenceId: newAbsence.id,

@@ -6,7 +6,7 @@ import {
 	canonicalizeNamespaces,
 } from "./catalog-slices";
 import {
-	ALL_NAMESPACES,
+	APP_NAMESPACES,
 	mergeTreeTranslations,
 	type Namespace,
 	type TolgeeBase,
@@ -27,6 +27,11 @@ const catalogs = new WeakMap<
 	TolgeeInstance["addStaticData"],
 	InstanceCatalog
 >();
+
+/** A namespace's merge priority: its position among the app's namespaces. */
+function namespacePriority(namespace: Namespace): number {
+	return (APP_NAMESPACES as readonly Namespace[]).indexOf(namespace);
+}
 
 function mergePrimary(
 	target: TreeTranslationsData,
@@ -53,7 +58,7 @@ function mergePrimary(
 			if (
 				before &&
 				after &&
-				ALL_NAMESPACES.indexOf(before) > ALL_NAMESPACES.indexOf(after)
+				namespacePriority(before) > namespacePriority(after)
 			)
 				continue;
 			target[key] = value;
@@ -125,7 +130,7 @@ export function mergeCatalogRecords(
 	// Recover intrinsic contributions, not the already-unioned alias trees. The
 	// masks recurse at shared object paths and stop at source-exclusive subtrees.
 	// Partial shell leaves participate here without declaring a namespace loaded.
-	const sources = ALL_NAMESPACES.map((namespace) => ({
+	const sources = APP_NAMESPACES.map((namespace) => ({
 		namespace,
 		data: intrinsicSource(tree, metadata.sources[namespace], namespace, owners),
 	}));

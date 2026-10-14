@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 	findEmployee: vi.fn(),
 	findOrganization: vi.fn(),
 	findUserSettings: vi.fn(),
+	findOrganizationSettings: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", () => ({ and: vi.fn(), eq: vi.fn() }));
@@ -17,6 +18,7 @@ vi.mock("@/db", () => ({
 			employee: { findFirst: mocks.findEmployee },
 			organization: { findFirst: mocks.findOrganization },
 			userSettings: { findFirst: mocks.findUserSettings },
+			organizationNotificationSettings: { findFirst: mocks.findOrganizationSettings },
 		},
 	},
 }));
@@ -29,6 +31,9 @@ vi.mock("@/db/schema", () => ({
 		organizationId: "employee.organizationId",
 	},
 	userSettings: { userId: "userSettings.userId" },
+	organizationNotificationSettings: {
+		organizationId: "organizationNotificationSettings.organizationId",
+	},
 }));
 
 import { resolveBotTemporalContext, serializeBotTemporalContext } from "./temporal-context";
@@ -38,6 +43,8 @@ describe("resolveBotTemporalContext", () => {
 		mocks.findEmployee.mockReset();
 		mocks.findOrganization.mockReset();
 		mocks.findUserSettings.mockReset();
+		mocks.findOrganizationSettings.mockReset();
+		mocks.findOrganizationSettings.mockResolvedValue(null);
 		vi.unstubAllEnvs();
 	});
 
@@ -85,6 +92,22 @@ describe("resolveBotTemporalContext", () => {
 			locale: "en",
 			timeFormat: "24h",
 		});
+	});
+
+	it("uses the organization's default language when the member saved none or an invalid one", async () => {
+		mocks.findEmployee.mockResolvedValue({ id: "employee-1" });
+		mocks.findOrganization.mockResolvedValue({ timezone: "Europe/Paris" });
+		mocks.findOrganizationSettings.mockResolvedValue({ defaultLanguage: "fr" });
+		const input = { userId: "user-1", employeeId: "employee-1", organizationId: "organization-1" };
+
+		mocks.findUserSettings.mockResolvedValue({ timezone: null, locale: null, timeFormat: null });
+		await expect(resolveBotTemporalContext(input)).resolves.toMatchObject({ locale: "fr" });
+
+		mocks.findUserSettings.mockResolvedValue({ timezone: null, locale: "xx", timeFormat: null });
+		await expect(resolveBotTemporalContext(input)).resolves.toMatchObject({ locale: "fr" });
+
+		mocks.findUserSettings.mockResolvedValue({ timezone: null, locale: "de", timeFormat: null });
+		await expect(resolveBotTemporalContext(input)).resolves.toMatchObject({ locale: "de" });
 	});
 
 	it("rejects a user without an employee membership in the active organization", async () => {

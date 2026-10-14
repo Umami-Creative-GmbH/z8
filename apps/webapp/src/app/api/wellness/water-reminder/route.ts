@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { recipientNotificationTranslator } from "@/lib/notifications/outbound-localization";
 import { sendPushToUser } from "@/lib/notifications/push-service";
 
 /**
@@ -18,10 +19,20 @@ export async function POST() {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
+		// A direct push, not a stored notification: its text is translated here, in the
+		// user's notification language (#812).
+		const t = await recipientNotificationTranslator({
+			userId: session.user.id,
+			organizationId: session.session.activeOrganizationId,
+		});
+
 		// Send push notification with water reminder actions
 		const result = await sendPushToUser(session.user.id, {
-			title: "Time to hydrate!",
-			body: "Stay healthy - drink some water",
+			title: t("common:notifications.content.waterReminder.title", "Time to hydrate!"),
+			body: t(
+				"common:notifications.content.waterReminder.message",
+				"Stay healthy - drink some water",
+			),
 			icon: "/android-chrome-192x192.png",
 			badge: "/favicon-32x32.png",
 			tag: "water-reminder",
@@ -31,11 +42,11 @@ export async function POST() {
 				actions: [
 					{
 						action: "log_water",
-						title: "Done it!",
+						title: t("common:notifications.content.waterReminder.done", "Done it!"),
 					},
 					{
 						action: "snooze_water",
-						title: "Snooze today",
+						title: t("common:notifications.content.waterReminder.snooze", "Snooze today"),
 					},
 				],
 				requireInteraction: true,

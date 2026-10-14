@@ -63,6 +63,6 @@ describe("Tolgee server instance", () => {
 
 		expect(source).toContain('import { loadRouteTranslations } from "./load-translations";');
 		expect(source).not.toContain("loadNamespaces");
-		expect(source).not.toContain("ALL_NAMESPACES");
+		expect(source).not.toContain("APP_NAMESPACES");
 	});
 });

@@ -1,71 +1,92 @@
-import { and, eq } from "drizzle-orm";
-import { render } from "react-email";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { loadEmailTranslator } from "@/lib/email/email-i18n";
 import { sendEmail } from "@/lib/email/email-service";
-import { OrganizationDeletion } from "@/lib/email/templates/organization-deletion";
+import { renderOrganizationDeletion } from "@/lib/email/render";
 import { createLogger } from "@/lib/logger";
+import {
+	formatNotificationParam,
+	notificationParam,
+} from "@/lib/notifications/notification-params";
+import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import type { OrganizationDeletionNotificationJobData } from "@/lib/queue";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { ORGANIZATION_RECOVERY_WINDOW_HOURS } from "./organization-recovery-window";
 
 const logger = createLogger("OrganizationDeletionNotificationJob");
 
-type MemberWithUser = {
-	role: string;
-	user?: {
-		email?: string | null;
-		name?: string | null;
-	} | null;
-};
+export type OrganizationDeletionNotice = Omit<OrganizationDeletionNotificationJobData, "type">;
 
+/**
+ * Tells the organization's owners and admins that it is scheduled for deletion,
+ * each in their recipient language, with both dates in the organization timezone.
+ * The one sender for a deletion by an organization admin and by a platform admin.
+ */
 export async function sendOrganizationDeletionNotifications(
-	data: OrganizationDeletionNotificationJobData,
+	notice: OrganizationDeletionNotice,
 ): Promise<void> {
-	const deletionDate = new Date(data.deletionDate);
-	const permanentDeletionDate = new Date(deletionDate);
-	permanentDeletionDate.setDate(permanentDeletionDate.getDate() + 5);
+	const { organizationId, organizationName, deletedByName } = notice;
+	const deletedAt = parseInstant(notice.deletionDate);
+	const permanentlyDeletedAt = deletedAt.add({ hours: ORGANIZATION_RECOVERY_WINDOW_HOURS });
 
-	const adminMembers = (await db.query.member.findMany({
-		where: and(eq(member.organizationId, data.organizationId)),
-		with: {
-			user: true,
-		},
-	})) as MemberWithUser[];
-
-	const appUrl = await getOrganizationBaseUrl(data.organizationId);
+	const [recipients, timeZone, appUrl] = await Promise.all([
+		db.query.member.findMany({
+			where: and(
+				eq(member.organizationId, organizationId),
+				inArray(member.role, ["owner", "admin"]),
+			),
+			columns: { role: true },
+			with: { user: { columns: { id: true, email: true, name: true } } },
+		}),
+		loadOrganizationTimezone(db, organizationId),
+		getOrganizationBaseUrl(organizationId),
+	]);
 	const recoveryUrl = `${appUrl}/settings/organizations`;
-	const recipients = adminMembers.filter((m) => m.role === "admin" || m.role === "owner");
 
 	await Promise.all(
-		recipients.map(async (recipient) => {
-			const userEmail = recipient.user?.email;
-			if (!userEmail) return;
+		recipients.map(async ({ user }) => {
+			if (!user?.email) return;
 
 			try {
-				const html = await render(
-					OrganizationDeletion({
-						userName: recipient.user?.name || userEmail,
-						organizationName: data.organizationName,
-						deletedByName: data.deletedByName,
-						deletionDate: deletionDate.toLocaleString(),
-						permanentDeletionDate: permanentDeletionDate.toLocaleString(),
+				const translator = await loadEmailTranslator(
+					await resolveRecipientNotificationLocale({ userId: user.id, organizationId }),
+				);
+				const { locale, t } = translator;
+				const permanentDeletionDate = formatNotificationParam(
+					notificationParam.zonedInstant(permanentlyDeletedAt, timeZone),
+					{ locale },
+				);
+				const html = await renderOrganizationDeletion(
+					{
+						userName: user.name || user.email,
+						organizationName,
+						deletedByName,
+						deletionDate: formatNotificationParam(
+							notificationParam.zonedInstant(deletedAt, timeZone),
+							{ locale },
+						),
+						permanentDeletionDate,
 						recoveryUrl,
-						appUrl,
-					}),
+					},
+					translator,
 				);
 
 				await sendEmail({
-					to: userEmail,
-					subject: `Organization "${data.organizationName}" scheduled for deletion`,
+					to: user.email,
+					subject: t(
+						"emails.subjects.organizationDeletion",
+						"Organization {organizationName} scheduled for deletion",
+						{ organizationName },
+					),
 					html,
 					actionUrl: recoveryUrl,
-					organizationId: data.organizationId,
+					organizationId,
 				});
 			} catch (error) {
-				logger.warn(
-					{ error, organizationId: data.organizationId },
-					"Failed to send deletion notification to user",
-				);
+				logger.warn({ error, organizationId }, "Failed to send deletion notification to user");
 			}
 		}),
 	);

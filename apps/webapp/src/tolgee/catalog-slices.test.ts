@@ -13,7 +13,8 @@ import {
 } from "./load-translations";
 import {
 	ALL_LANGUAGES,
-	ALL_NAMESPACES,
+	APP_NAMESPACES,
+	CATALOG_NAMESPACES,
 	loadNamespaces,
 	type Namespace,
 } from "./shared";
@@ -61,7 +62,7 @@ describe("public catalog slices", () => {
 		"checks generated source membership and collisions against fresh %s catalogs",
 		(locale) => {
 			const raw = Object.fromEntries(
-				ALL_NAMESPACES.map((namespace) => [
+				CATALOG_NAMESPACES.map((namespace) => [
 					namespace,
 					JSON.parse(
 						readFileSync(
@@ -88,7 +89,7 @@ describe("public catalog slices", () => {
 				return Object.fromEntries(
 					Object.entries(value).map(([key, child]) => {
 						const next = [...path, key];
-						const shared = ALL_NAMESPACES.some(
+						const shared = CATALOG_NAMESPACES.some(
 							(other) =>
 								other !== namespace && at(raw[other], next) !== undefined,
 						);
@@ -102,7 +103,7 @@ describe("public catalog slices", () => {
 				);
 			}
 			const contributors = new Map<string, Namespace[]>();
-			for (const namespace of ALL_NAMESPACES)
+			for (const namespace of CATALOG_NAMESPACES)
 				for (const [path] of leaves(raw[namespace]))
 					contributors.set(path, [
 						...(contributors.get(path) ?? []),
@@ -110,7 +111,7 @@ describe("public catalog slices", () => {
 					]);
 			expect(CATALOG_SOURCE_METADATA[locale]).toEqual({
 				sources: Object.fromEntries(
-					ALL_NAMESPACES.map((namespace) => [
+					CATALOG_NAMESPACES.map((namespace) => [
 						namespace,
 						shape(namespace, raw[namespace]),
 					]),
@@ -145,7 +146,7 @@ describe("public catalog slices", () => {
 		"preserves selective trees, aliases, global collision ownership and complete coverage in %s",
 		async (locale) => {
 			const sources = await Promise.all(
-				ALL_NAMESPACES.map(async (namespace) => ({
+				APP_NAMESPACES.map(async (namespace) => ({
 					namespace,
 					records: await loadNamespaces(locale, [namespace], { strict: true }),
 				})),
@@ -195,10 +196,10 @@ describe("public catalog slices", () => {
 			expect(slice.keyOwners).toEqual(expectedOwners);
 			const complete = await loadCompleteServerTranslations(locale);
 			expect(complete).toEqual(
-				await loadNamespaces(locale, ALL_NAMESPACES, { strict: true }),
+				await loadNamespaces(locale, APP_NAMESPACES, { strict: true }),
 			);
-			expect(complete).toEqual(predecessor(locale, ALL_NAMESPACES));
-			expect(await loadCatalogSlice(locale, ALL_NAMESPACES)).toMatchObject({
+			expect(complete).toEqual(predecessor(locale, APP_NAMESPACES));
+			expect(await loadCatalogSlice(locale, APP_NAMESPACES)).toMatchObject({
 				records: complete,
 			});
 			// Complete loading must not contaminate later selective imports with unrelated settings.

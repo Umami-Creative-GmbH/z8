@@ -6,8 +6,7 @@ import { organization, user } from "@/db/auth-schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { auth } from "@/lib/auth";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { sendEmail } from "@/lib/email/email-service";
-import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
+import { sendOrganizationInvitationEmail } from "@/lib/email/auth-emails";
 import type { KioskOnlyEmailUpgradeDeps } from "./kiosk-only-employee";
 import { createPasswordSetupToken } from "./password-setup-token";
 
@@ -41,25 +40,13 @@ export const kioskOnlyEmailUpgradeDeps: KioskOnlyEmailUpgradeDeps = {
 				.where(eq(user.id, inviterUserId))
 				.limit(1),
 		]);
-		const organizationName = org?.name ?? "";
-		const rendered = await renderOrganizationEmailTemplate({
+		const result = await sendOrganizationInvitationEmail({
 			organizationId,
-			templateKey: "organization-invitation",
-			data: {
-				email,
-				organizationName,
-				inviterName: inviter ? buildAuthUserDisplayName(inviter) : "",
-				role: "member",
-				invitationUrl,
-			},
-			subjectOverride: `You've been invited to join ${organizationName}`,
-		});
-		const result = await sendEmail({
-			to: email,
-			subject: rendered.subject,
-			html: rendered.html,
-			actionUrl: invitationUrl,
-			organizationId,
+			organizationName: org?.name ?? "",
+			email,
+			inviterName: inviter ? buildAuthUserDisplayName(inviter) : "",
+			role: "member",
+			invitationUrl,
 		});
 		if (!result.success) {
 			throw new Error(result.error ?? "The invitation email could not be sent");

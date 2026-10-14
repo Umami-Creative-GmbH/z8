@@ -9,7 +9,7 @@ import type {
 } from "../src/tolgee/catalog-slices";
 import {
 	ALL_LANGUAGES,
-	ALL_NAMESPACES,
+	CATALOG_NAMESPACES,
 	type Namespace,
 } from "../src/tolgee/shared";
 
@@ -26,7 +26,7 @@ function at(tree: Tree, path: string[]): Tree | string | undefined {
 
 function metadata(locale: string): CatalogSourceMetadata {
 	const raw = Object.fromEntries(
-		ALL_NAMESPACES.map((namespace) => [
+		CATALOG_NAMESPACES.map((namespace) => [
 			namespace,
 			JSON.parse(
 				readFileSync(
@@ -45,7 +45,7 @@ function metadata(locale: string): CatalogSourceMetadata {
 		return Object.fromEntries(
 			Object.entries(tree).map(([key, child]) => {
 				const next = [...path, key];
-				const shared = ALL_NAMESPACES.some(
+				const shared = CATALOG_NAMESPACES.some(
 					(other) => other !== namespace && at(raw[other], next) !== undefined,
 				);
 				return [
@@ -72,11 +72,11 @@ function metadata(locale: string): CatalogSourceMetadata {
 		for (const [key, child] of Object.entries(tree))
 			collect(namespace, child, [...path, key]);
 	}
-	for (const namespace of ALL_NAMESPACES) collect(namespace, raw[namespace]);
+	for (const namespace of CATALOG_NAMESPACES) collect(namespace, raw[namespace]);
 
 	return {
 		sources: Object.fromEntries(
-			ALL_NAMESPACES.map((namespace) => [
+			CATALOG_NAMESPACES.map((namespace) => [
 				namespace,
 				shape(namespace, raw[namespace]),
 			]),

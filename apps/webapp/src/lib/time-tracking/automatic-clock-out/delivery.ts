@@ -71,7 +71,6 @@ const closureSchema = z.object({
 
 export type AutoClockOutNotificationTransport = {
 	preferences(userId: string): Promise<Record<NotificationChannel, boolean>>;
-	locale(input: { userId: string; organizationId: string }): Promise<string>;
 	insertInApp(params: CreateNotificationParams): Promise<unknown>;
 	deliver(
 		channel: Exclude<NotificationChannel, "in_app">,
@@ -167,7 +166,13 @@ async function loadFacts(database: typeof db, claim: AutoClockOutTaskClaim) {
 			revision: execution.settingsRevision,
 		},
 	};
-	return { closure, decision, recipientUserId: execution.recipientUserId };
+	return {
+		closure,
+		decision,
+		// The auto clock-out entry's stored offset, which the notice shows the cutoff at (#1149).
+		endUtcOffsetMinutes: execution.utcOffsetMinutes,
+		recipientUserId: execution.recipientUserId,
+	};
 }
 
 /** Composition seam for the existing effect/transport owners, also exercised against PostgreSQL. */
@@ -266,14 +271,11 @@ export function createAutoClockOutDelivery(deps: {
 							if (preferences && !preferences[channel])
 								await recordProgress({ outcome: "suppressed" });
 							else {
-								const locale = await deps.transport.locale({
-									userId: recipientUserId,
-									organizationId: claim.organizationId,
-								});
+								// Stored in English; each channel renders it in the recipient language (#1149).
 								const own = buildAutoClockOutNotification({
 									decision: facts.decision,
 									recipientUserId: facts.recipientUserId,
-									locale,
+									endUtcOffsetMinutes: facts.endUtcOffsetMinutes,
 								});
 								const notification =
 									recipients.kind === "self"
@@ -323,12 +325,10 @@ export async function runAutoClockOutDelivery(deps: {
 		{ clockOutFollowUpEffects },
 		{ checkComplianceAfterClockOut, checkProjectBudgetAfterClockOut },
 		service,
-		{ resolveRecipientNotificationLocale },
 	] = await Promise.all([
 		import("../clocking"),
 		import("../clock-out-effects"),
 		import("@/lib/notifications/notification-service"),
-		import("@/lib/notifications/recipient-locale"),
 	]);
 	return createAutoClockOutDelivery({
 		...deps,
@@ -341,7 +341,6 @@ export async function runAutoClockOutDelivery(deps: {
 		transport: {
 			preferences: (userId) =>
 				service.loadNotificationChannelPreferences(userId, "automatic_clock_out"),
-			locale: resolveRecipientNotificationLocale,
 			insertInApp: service.insertInAppNotification,
 			deliver: (channel, params) =>
 				service.deliverNotificationToChannel(channel, params, null, { durable: true }),

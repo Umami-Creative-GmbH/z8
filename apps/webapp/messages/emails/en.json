@@ -1,0 +1,218 @@
+{
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Open billing",
+        "amountLabel": "Amount due",
+        "body": "Invoice {invoiceNumber} for {organizationName} is ready.",
+        "dueDateLabel": "Due date",
+        "subject": "Your Z8 invoice {invoiceNumber} is ready",
+        "title": "Your invoice is ready"
+      },
+      "paymentFailed": {
+        "action": "Update payment method",
+        "body": "We could not collect {invoiceAmount} for {organizationName}.",
+        "retry": "Please update your payment method before the next retry on {paymentRetryDate} to avoid service interruption.",
+        "subject": "Action needed: Z8 payment failed",
+        "title": "Your payment failed"
+      },
+      "subscriptionPaused": {
+        "action": "Manage billing",
+        "body": "The {planName} subscription for {organizationName} is paused.",
+        "limits": "Time tracking data remains available, but paid plan features may be limited until billing is resumed.",
+        "subject": "Your Z8 subscription is paused",
+        "title": "Your subscription is paused"
+      },
+      "subscriptionResumed": {
+        "action": "View billing details",
+        "active": "Your paid Z8 features are active again.",
+        "body": "The {planName} subscription for {organizationName} resumed on {resumeDate}.",
+        "subject": "Your Z8 subscription has resumed",
+        "title": "Your subscription has resumed"
+      },
+      "trialEnding": {
+        "action": "Review billing settings",
+        "body": "Your {planName} trial for {organizationName} ends on {trialEndsAt}.",
+        "paymentMethod": "To keep Z8 running without interruption, add a payment method in billing settings.",
+        "subject": "Your Z8 trial ends in {daysRemaining, plural, one {# day} other {# days}}",
+        "subjectSoon": "Your Z8 trial ends soon",
+        "title": "Your trial is ending"
+      },
+      "values": {
+        "noDueDate": "not set",
+        "retrySoon": "soon",
+        "yourOrganization": "your organization"
+      }
+    },
+    "common": {
+      "greeting": "Hi {name},"
+    },
+    "details": {
+      "category": "Category",
+      "correctedTimes": "Corrected times",
+      "date": "Date",
+      "dates": "Dates",
+      "days": "Days",
+      "notes": "Notes",
+      "originalTimes": "Original times",
+      "range": "{start} – {end}",
+      "reason": "Reason"
+    },
+    "export": {
+      "categories": {
+        "absences": "Absences",
+        "auditLogs": "Audit Logs",
+        "balanceAdjustments": "Work Balance Adjustments",
+        "customers": "Customers",
+        "employees": "Employees",
+        "holidays": "Holidays",
+        "projects": "Projects",
+        "schedules": "Work Schedules",
+        "shifts": "Shifts",
+        "teams": "Teams",
+        "timeEntries": "Time Tracking",
+        "vacation": "Vacation Policies",
+        "workPeriods": "Work Periods"
+      },
+      "organization": "Organization",
+      "values": {
+        "yourOrganization": "Your Organization"
+      }
+    },
+    "exportFailed": {
+      "action": "Try again",
+      "body": "Unfortunately, your data export for {organizationName} could not be completed.",
+      "categories": "Requested data",
+      "error": "Error",
+      "note": "If this error persists, contact support with the error message above. Exporting fewer data categories at once can also help.",
+      "title": "Data export failed",
+      "unknownError": "Unknown error"
+    },
+    "exportReady": {
+      "action": "Open export history",
+      "body": "Your data export for {organizationName} is complete. You can download it from the export history in Z8.",
+      "categories": "Data included",
+      "expiresAt": "Available until",
+      "fileSize": "File size",
+      "note": "Sign in to Z8 as an organization admin to download the file. Each download starts with a fresh, secure link. After the date above, the export file is deleted automatically.",
+      "title": "Your data export is ready"
+    },
+    "invitation": {
+      "action": "Accept invitation",
+      "body": "{inviterName} has invited you to join {organizationName} as {role}.",
+      "email": "Your email",
+      "greeting": "Hello,",
+      "invitedBy": "Invited by",
+      "note": "If you did not expect this invitation, you can ignore this email.",
+      "organization": "Organization",
+      "role": "Role",
+      "roles": {
+        "admin": "Admin",
+        "member": "Member",
+        "owner": "Owner"
+      },
+      "title": "You have been invited to {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "If the button does not work, open this link:",
+      "footer": "This email was sent by Z8."
+    },
+    "notification": {
+      "openAction": "Open Z8"
+    },
+    "organizationDeletion": {
+      "action": "Recover organization",
+      "body": "{deletedByName} scheduled the organization {organizationName} for deletion. You can recover it until {permanentDeletionDate}.",
+      "initiatedBy": "Initiated by",
+      "items": {
+        "absences": "All absences and vacation allowances",
+        "employees": "All employees, teams and manager assignments",
+        "members": "All members and pending invitations",
+        "projects": "All projects and their time assignments",
+        "settings": "All settings, schedules and configurations",
+        "timeEntries": "All time entries and work periods"
+      },
+      "itemsTitle": "What will be permanently deleted:",
+      "note": "If you meant to delete the organization, no action is needed. If you did not, recover it now and review your account security.",
+      "organization": "Organization",
+      "permanentAt": "Permanent deletion",
+      "preview": "{organizationName} will be deleted permanently on {permanentDeletionDate}.",
+      "requestedAt": "Deletion requested",
+      "title": "Organization scheduled for deletion"
+    },
+    "passwordReset": {
+      "action": "Reset password",
+      "body": "We received a request to reset your password. Use the button below to choose a new one.",
+      "note": "If you did not ask to reset your password, you can ignore this email; your password stays the same. The link expires in 1 hour.",
+      "title": "Reset your password"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Date range",
+      "empty": {
+        "body": "Your scheduled export {scheduleName} ran, but there is nothing to download.",
+        "noFile": "No file was produced for this run.",
+        "title": "Scheduled export finished"
+      },
+      "ready": {
+        "action": "Download export",
+        "body": "Your scheduled export {scheduleName} has completed successfully.",
+        "linkExpiry": "This download link is valid for {lifetime} and expires on {expiresAt}.",
+        "title": "Scheduled export ready"
+      },
+      "recordsLabel": "Records",
+      "subject": "Scheduled Export: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Review security settings",
+      "device": "Device",
+      "event": "Event",
+      "ipAddress": "IP address",
+      "notYou": "If you did not make this change, secure your account now: change your password and review your security settings.",
+      "passwordChanged": {
+        "description": "The password of your Z8 account was changed.",
+        "title": "Password changed"
+      },
+      "time": "Time",
+      "twoFactorDisabled": {
+        "description": "Two-factor authentication was turned off for your Z8 account.",
+        "title": "Two-factor authentication disabled"
+      },
+      "twoFactorEnabled": {
+        "description": "Two-factor authentication was turned on for your Z8 account.",
+        "title": "Two-factor authentication enabled"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Absence Recorded",
+      "absenceRequestApproved": "Absence Request Approved",
+      "absenceRequestRejected": "Absence Request Rejected",
+      "absenceRequestSubmitted": "Absence Request Submitted",
+      "approvalRequestSubmitted": "New Absence Request Pending Approval",
+      "exportFailed": "Data export failed - {organizationName}",
+      "exportReady": "Your data export is ready - {organizationName}",
+      "organizationDeletion": "Organization {organizationName} scheduled for deletion",
+      "organizationInvitation": "You have been invited to join {organizationName}",
+      "passwordChanged": "Security Alert: Password Changed",
+      "passwordReset": "Reset your password",
+      "teamMemberAdded": "You've been added to {teamName}",
+      "teamMemberRemoved": "You've been removed from {teamName}",
+      "timeCorrectionApproved": "Time Correction Approved",
+      "timeCorrectionRejected": "Time Correction Rejected",
+      "timeCorrectionSubmitted": "New Time Correction Pending Approval",
+      "twoFactorDisabled": "Security Alert: Two-Factor Authentication Disabled",
+      "twoFactorEnabled": "Security Alert: Two-Factor Authentication Enabled",
+      "verifyEmail": "Verify your email address"
+    },
+    "variables": {
+      "noReason": "No reason provided",
+      "noTime": "-",
+      "yourManager": "your manager"
+    },
+    "verification": {
+      "action": "Verify email address",
+      "body": "Welcome to Z8! Please verify your email address with the button below to finish your registration.",
+      "note": "If you did not create an account, you can ignore this email. The link expires in 1 hour.",
+      "title": "Verify your email address"
+    }
+  }
+}

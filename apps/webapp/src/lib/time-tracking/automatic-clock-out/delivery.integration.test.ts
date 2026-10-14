@@ -280,7 +280,8 @@ describe("automatic clock-out durable delivery", () => {
 		);
 		expect(rows).toEqual([
 			{
-				message: expect.stringContaining("Pause"),
+				// Stored in English; channels render it in the recipient language (#1149).
+				message: expect.stringContaining("start of your break"),
 				metadata: expect.stringContaining(
 					'"messageKey":"common:notifications.content.automaticClockOut.breakMessage"',
 				),
@@ -321,13 +322,13 @@ describe("automatic clock-out durable delivery", () => {
 		expect(rows).toEqual([
 			{
 				user_id: manager.userId,
-				title: "Kim Kiosk: Automatisch ausgestempelt",
+				title: "Kim Kiosk: Automatically clocked out",
 				action_url: null,
 				metadata: expect.stringContaining(`"forwardedFor":{"userId":"${person.userId}"`),
 			},
 		]);
 		expect(delivered).toEqual([
-			{ channel: "email", userId: manager.userId, title: "Kim Kiosk: Automatisch ausgestempelt" },
+			{ channel: "email", userId: manager.userId, title: "Kim Kiosk: Automatically clocked out" },
 		]);
 	});
 	function runner(
@@ -346,7 +347,6 @@ describe("automatic clock-out durable delivery", () => {
 			effects,
 			transport: {
 				preferences: async () => channels(options.enabled ?? ["email"]),
-				locale: async () => "de",
 				insertInApp: options.insert ?? insertInAppNotification,
 				deliver: options.deliver ?? (async () => "sent"),
 			},
@@ -537,7 +537,7 @@ describe("automatic clock-out durable delivery", () => {
 		).rows;
 		expect(rows).toHaveLength(1);
 		expect(rows[0].type).toBe("automatic_clock_out");
-		expect(rows[0].title).toBe("Automatisch ausgestempelt");
+		expect(rows[0].title).toBe("Automatically clocked out");
 		expect(send).toHaveBeenCalledTimes(1);
 	});
 	it("retries only a failed optional transport while unavailable transport completes visibly", async () => {

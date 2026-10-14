@@ -10462,6 +10462,11 @@ describe("time correction requester decision notifications", () => {
 			originalTime: period.startTime,
 			correctedTime: correction.timestamp,
 			approverName: "Morgan Manager",
+			// The decision email's times, each at its own entry's offset (#1137).
+			corrected: {
+				clockIn: { at: correction.timestamp, utcOffsetMinutes: 120 },
+				clockOut: expect.objectContaining({ at: period.endTime }),
+			},
 		});
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 	});
@@ -10599,6 +10604,10 @@ describe("time correction requester decision notifications", () => {
 			expect.objectContaining({
 				originalTime: period.endTime,
 				correctedTime: clockOutCorrection.timestamp,
+				corrected: {
+					clockIn: expect.objectContaining({ at: period.startTime }),
+					clockOut: { at: clockOutCorrection.timestamp, utcOffsetMinutes: 120 },
+				},
 			}),
 		);
 	});
@@ -11210,6 +11219,10 @@ describe("time correction requester decision notifications", () => {
 			expect.objectContaining({
 				originalTime: period.endTime,
 				correctedTime: clockOutCorrection.timestamp,
+				corrected: {
+					clockIn: expect.objectContaining({ at: period.startTime }),
+					clockOut: { at: clockOutCorrection.timestamp, utcOffsetMinutes: 120 },
+				},
 			}),
 		);
 	});

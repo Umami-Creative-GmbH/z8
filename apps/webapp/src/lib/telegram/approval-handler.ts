@@ -136,7 +136,7 @@ async function reassignedAcknowledgment(
 	const reassigned = await approvalStatusNotice(
 		{ workflowStatus: "pending", evidence: null, reassigned: true },
 		display,
-		bot.organizationId,
+		{ userId: recipientUserId, organizationId: bot.organizationId },
 		approvalDeliveryMessageReviewReference(message),
 	);
 	return reassigned.title;

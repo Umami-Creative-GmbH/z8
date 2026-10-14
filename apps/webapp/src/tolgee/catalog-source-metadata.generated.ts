@@ -413,6 +413,9 @@ const sourceShape0: CatalogSourceMetadata = {
 			digest: 1,
 			exceptionTypes: 1,
 		},
+		emails: {
+			emails: 1,
+		},
 	},
 	collisions: {
 		'["common","more"]': ["common", "teamsBot"],
