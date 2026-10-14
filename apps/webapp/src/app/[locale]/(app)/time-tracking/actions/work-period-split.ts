@@ -5,12 +5,11 @@ import "server-only";
  * entry points (`splitWorkPeriod` in `../actions` and in `./mutations`) are
  * thin adapters of this one caller.
  *
- * Every organization splits inside the coordinated completed-work transaction,
- * with the same caller policy, and work records divides the work period and its
- * canonical work record (ADR 0010) in either admission. Organizations whose
- * append control is active commit the split's receipt and replay it; legacy
- * admission commits none (#1219). The action still chooses by admission until
- * admission is hidden from callers.
+ * Every organization splits inside the coordinated completed-work transaction
+ * through the one completed-work split, which hides admission (#1231): work
+ * records divides the work period and its canonical work record (ADR 0010) with
+ * the writer of the organization's admission, and the split commits and replays
+ * a receipt where work records appended the entries.
  */
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
@@ -26,13 +25,11 @@ import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-m
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
 import {
 	replayCommittedSplit,
-	replaySplitCompletedWork,
 	SPLIT_COMPLETED_WORK_COMMAND_VERSION,
 	type SplitCompletedWorkCommand,
 	type SplitCompletedWorkInput,
-	type SplitCompletedWorkResult,
+	type SplitCompletedWorkOutcome,
 	splitCompletedWork,
-	splitLegacyCompletedWork,
 } from "@/lib/time-tracking/split-completed-work";
 import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
@@ -74,13 +71,12 @@ const submissionIdSchema = z.uuid();
 
 const FAILED = "Failed to split work period. Please try again.";
 
-function committedResponse(result: SplitCompletedWorkResult): SplitWorkPeriodResult {
-	const [retained, generated] = result.segments;
+function committedResponse(outcome: SplitCompletedWorkOutcome): SplitWorkPeriodResult {
 	return {
 		success: true,
 		data: {
-			firstPeriodId: retained.workPeriodId,
-			secondPeriodId: generated.workPeriodId,
+			firstPeriodId: outcome.retainedWorkPeriodId,
+			secondPeriodId: outcome.generatedWorkPeriodId,
 		},
 	};
 }
@@ -151,7 +147,7 @@ export async function splitOwnWorkPeriod(
 				actorUserId,
 				command,
 			});
-			if (committed) return committedResponse(committed.result);
+			if (committed) return committedResponse(committed);
 		}
 
 		const timezone = await getUserTimezone(actorUserId);
@@ -243,47 +239,15 @@ export async function splitOwnWorkPeriod(
 		};
 		const outcome = await withCompletedWorkTransaction(
 			{ organizationId, employeeId: currentEmployee.id, actorUserId },
-			async (scope) => {
-				if (scope.admission === "append") {
-					const replayed = await replaySplitCompletedWork(scope, {
-						organizationId,
-						employeeId: currentEmployee.id,
-						actorUserId,
-						command,
-					});
-					return {
-						kind: "operation" as const,
-						receipt: replayed ?? (await splitCompletedWork(scope, splitInput)),
-					};
-				}
-				return {
-					kind: "legacy" as const,
-					division: await splitLegacyCompletedWork(scope, splitInput),
-				};
-			},
+			(scope) => splitCompletedWork(scope, splitInput),
 		);
-
-		if (outcome.kind === "legacy") {
-			const firstPeriodId = outcome.division.retained.segment.workPeriodId;
-			const secondPeriodId = outcome.division.generated.segment.workPeriodId;
-			logger.info(
-				{
-					originalPeriodId: request.workPeriodId,
-					firstPeriodId,
-					secondPeriodId,
-					splitTime: request.splitTime,
-				},
-				"Work period split successfully",
-			);
-			return { success: true, data: { firstPeriodId, secondPeriodId } };
-		}
-		if (outcome.receipt.disposition === "executed") {
-			// Post-commit best effort, recorded as such in the receipt; replays repeat no effects.
-			for (const segment of outcome.receipt.result.segments) {
-				await calculateAndPersistSurcharges(segment.workPeriodId, organizationId);
+		if (outcome.disposition === "executed") {
+			// Post-commit best effort (recorded as such in a receipt); replays repeat no effects.
+			for (const workPeriodId of [outcome.retainedWorkPeriodId, outcome.generatedWorkPeriodId]) {
+				await calculateAndPersistSurcharges(workPeriodId, organizationId);
 			}
 		}
-		return committedResponse(outcome.receipt.result);
+		return committedResponse(outcome);
 	} catch (error) {
 		const failure = await describeSplitFailure(error);
 		if (failure) {

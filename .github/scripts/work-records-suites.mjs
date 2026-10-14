@@ -21,6 +21,8 @@ export const workRecordsSuitePatterns = [
   // Historical repairs attach and repair through work records (#1226).
   { pattern: "apps/webapp/src/lib/time-tracking/historical-work-proposals*.integration.test.ts" },
   { pattern: "apps/webapp/src/lib/time-tracking/historical-gap-repair*.integration.test.ts" },
+  // Vehicle-use completion amends with admission hidden (#1231).
+  { pattern: "apps/webapp/src/lib/time-tracking/vehicle-use/clock-out-completion*.integration.test.ts" },
 ];
 
 function patternExpression(pattern) {

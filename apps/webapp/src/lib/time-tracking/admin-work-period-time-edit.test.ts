@@ -1,21 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { amend, amendLegacy, replay, admission } = vi.hoisted(() => ({
+const { amend, replay } = vi.hoisted(() => ({
 	amend: vi.fn(),
-	amendLegacy: vi.fn(),
 	replay: vi.fn(),
-	admission: { current: "append" as "append" | "legacy" },
 }));
 vi.mock("./completed-work-transaction", () => ({
 	withCompletedWorkTransaction: async (
 		_input: unknown,
 		callback: (scope: unknown) => unknown,
-	) => callback({ admission: admission.current }),
+	) =>
+		callback({
+			// The edit never chooses by admission (#1231).
+			get admission(): never {
+				throw new Error("The admin edit read the admission");
+			},
+		}),
 }));
 vi.mock("./amend-completed-work", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./amend-completed-work")>()),
 	replayOrAmendCompletedWork: amend,
-	amendLegacyCompletedWork: amendLegacy,
 	replayCommittedAmendment: replay,
 }));
 
@@ -54,19 +57,16 @@ const input = {
 
 describe("admin calendar location amendments", () => {
 	beforeEach(() => {
-		admission.current = "append";
+		amend.mockReset();
 	});
 
-	it("amends legacy work through the same amendment, without a receipt (#1226)", async () => {
-		admission.current = "legacy";
-		amendLegacy.mockResolvedValue({ result: { workPeriodId: "period" } });
-		amend.mockClear();
+	it("runs the one amendment as an organization admin, never choosing by admission", async () => {
+		amend.mockResolvedValue({ result: { workPeriodId: "period" } });
 		await expect(applyAdminWorkPeriodTimeEdit(input)).resolves.toEqual({
 			workPeriodId: "period",
 			employeeId: "employee",
 		});
-		expect(amend).not.toHaveBeenCalled();
-		expect(amendLegacy).toHaveBeenCalledWith(
+		expect(amend).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({
 				authority: "organization_admin",

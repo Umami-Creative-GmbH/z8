@@ -26,7 +26,7 @@ import "server-only";
  * - Legacy organizations run the same policy and division without an intent or a
  *   receipt; a blocked adjustment is simply not made, and the daily check retries.
  */
-import { and, asc, eq, exists, isNull, sql } from "drizzle-orm";
+import { and, asc, eq, exists, isNull, type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	completedWorkOperation,
@@ -240,11 +240,19 @@ function blockerOf(refusal: WorkRecordRefusal): WorkBreakAdjustmentBlocker {
  */
 export async function adjustAutomaticBreakInTransaction(
 	scope: SealedWorkTransactionScope,
-	input: AutomaticBreakTarget & { trigger: AutomaticBreakAdjustmentTrigger; now: Instant },
+	input: AutomaticBreakTarget & {
+		trigger: AutomaticBreakAdjustmentTrigger;
+		now: Instant;
+		recoveringIntent?: boolean;
+	},
 ): Promise<AutomaticBreakAdjustmentOutcome> {
 	const { organizationId, employeeId, workPeriodId } = input;
 	scope.assertEmployee(organizationId, employeeId);
+	// Durable intents are the adopted organization's commitment: its closures commit
+	// one. The job reads that here, inside the transaction; its callers never do (#1231).
 	const adopted = scope.admission === "append";
+	// Admission turned legacy after the intent was read: leave it for re-adoption.
+	if (input.recoveringIntent && !adopted) return { kind: "not_required" };
 	const tx = scope.db;
 	const now = dateFromInstant(input.now);
 	const intentId = deriveAutomaticBreakIntentId(input);
@@ -413,9 +421,11 @@ export async function adjustAutomaticBreakInTransaction(
 		startTime: instantFromDate(period.startTime),
 		endTime: sourceEnd,
 	});
+	// The receipt follows work records' outcome: only appended entries commit one.
+	const receipted = outcome.appended.admission === "append";
 	const adjusted = {
 		kind: "adjusted",
-		operationId: adopted ? operationId : null,
+		operationId: receipted ? operationId : null,
 		workPeriodId: period.id,
 		generatedWorkPeriodId: outcome.generated.segment.workPeriodId,
 		breakMinutes: outcome.owedBreak.breakMinutes,
@@ -426,8 +436,8 @@ export async function adjustAutomaticBreakInTransaction(
 			outcome.retained.segment.durationMinutes + outcome.generated.segment.durationMinutes,
 		surchargeSnapshot,
 	} as const;
-	// Legacy admission commits no receipt, as before.
-	if (!adopted) return adjusted;
+	// Legacy admission's writer commits no receipt, as before.
+	if (!receipted) return resolveIntent(adjusted);
 
 	const command: AutomaticBreakAdjustmentCommand = {
 		version: AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION,
@@ -562,10 +572,10 @@ function adjustmentResult(input: {
 export type RunAutomaticBreakAdjustmentInput = AutomaticBreakTarget & {
 	trigger: AutomaticBreakAdjustmentTrigger;
 	/**
-	 * Adjust only in append admission: a committed intent of an organization that
-	 * returned to legacy admission waits for re-adoption, untouched.
+	 * The scheduled recovery of a committed intent. An organization that returned to
+	 * legacy admission keeps its intents for re-adoption, untouched.
 	 */
-	adoptedOnly?: boolean;
+	recoveringIntent?: boolean;
 	now?: () => Instant;
 };
 
@@ -578,7 +588,7 @@ export async function runAutomaticBreakAdjustment(
 	input: RunAutomaticBreakAdjustmentInput,
 ): Promise<AutomaticBreakAdjustmentOutcome> {
 	const now = input.now ?? (() => systemClock.nowInstant());
-	if (!input.adoptedOnly && !(await mayOweBreak(input))) return { kind: "not_required" };
+	if (!input.recoveringIntent && !(await mayOweBreak(input))) return { kind: "not_required" };
 	try {
 		return await withCompletedWorkTransaction(
 			{
@@ -586,10 +596,7 @@ export async function runAutomaticBreakAdjustment(
 				employeeId: input.employeeId,
 				actorUserId: null,
 			},
-			async (scope) => {
-				if (input.adoptedOnly && scope.admission !== "append") return { kind: "not_required" };
-				return adjustAutomaticBreakInTransaction(scope, { ...input, now: now() });
-			},
+			(scope) => adjustAutomaticBreakInTransaction(scope, { ...input, now: now() }),
 		);
 	} catch (error) {
 		await recordAutomaticBreakFailure(input, error, now());
@@ -598,17 +605,22 @@ export async function runAutomaticBreakAdjustment(
 }
 
 /**
- * A routing hint from plain reads, so that work no break regulation applies to opens
- * no coordinated transaction in legacy admission, which keeps no intent to resolve.
- * The transaction re-reads everything; append admission always runs it.
+ * A hint from plain reads, so that work with no committed intent to resolve and no
+ * break regulation opens no coordinated transaction. It never reads admission (#1231):
+ * the transaction re-reads everything, and a committed intent always runs it.
  */
 async function mayOweBreak(target: AutomaticBreakTarget): Promise<boolean> {
-	const [control] = await db
-		.select({ mode: timeEntryAppendControl.mode })
-		.from(timeEntryAppendControl)
-		.where(eq(timeEntryAppendControl.organizationId, target.organizationId))
+	const [intent] = await db
+		.select({ id: workBreakAdjustmentIntent.id })
+		.from(workBreakAdjustmentIntent)
+		.where(
+			and(
+				eq(workBreakAdjustmentIntent.id, deriveAutomaticBreakIntentId(target)),
+				eq(workBreakAdjustmentIntent.organizationId, target.organizationId),
+			),
+		)
 		.limit(1);
-	if (control?.mode === "active") return true;
+	if (intent) return true;
 	const [period] = await db
 		.select({ endTime: workPeriod.endTime, wasAutoAdjusted: workPeriod.wasAutoAdjusted })
 		.from(workPeriod)
@@ -665,6 +677,15 @@ async function recordAutomaticBreakFailure(
 	} catch {
 		// The adjustment's own error is the one to report.
 	}
+}
+
+/**
+ * Whether the organization's closures commit adjustment intents: those organizations'
+ * work is recovered by `processAutomaticBreakIntents`, so the daily check of a day's
+ * work leaves them out. A selection by it never names admission (#1231).
+ */
+export function recoveredByIntent(organizationId: SQLWrapper): SQL {
+	return sql`exists (select 1 from time_entry_append_control control where control.organization_id = ${organizationId} and control.mode = 'active')`;
 }
 
 export type AutomaticBreakIntentRun = {
@@ -737,8 +758,7 @@ export async function processAutomaticBreakIntents(input: {
 			const outcome = await runAutomaticBreakAdjustment({
 				...target,
 				trigger: { userId: intent.triggeredByUserId, closureEntryId: intent.closureEntryId },
-				// Admission turned legacy after the read: leave the intent for re-adoption.
-				adoptedOnly: true,
+				recoveringIntent: true,
 				now: input.now,
 			});
 			if (outcome.kind === "adjusted") {
