@@ -1,24 +1,31 @@
 import "server-only";
 
-import { timeEntry } from "@/db/schema";
 /**
  * The admission seam of work records: how the time entries of a change are
- * appended to the employee's history. Work records writes the work period, the
- * canonical work record and the effects the same way in both admissions; only
- * the entries differ:
+ * appended to the employee's history, and how written work rounds its minutes.
+ * Work records writes the work period, the canonical work record and the
+ * effects the same way in both admissions; only the admission's writer differs:
  *
- * - append admission: the append collaborator admits the change, names the
- *   exact predecessor and advances the append position (`appendEntryWriter`);
- * - legacy admission: the legacy head selection (`legacyEntryWriter`, #1219).
+ * - append admission (`appendEntryWriter`): the append collaborator admits the
+ *   change, names the exact predecessor and advances the append position; each
+ *   interval's minutes round half up.
+ * - legacy admission (`legacyEntryWriter`, #1219): the legacy writers' rules.
+ *   Entries chain after the employee's latest entry (the latest-entry head);
+ *   an entry that takes over from an endpoint and carries notes supersedes it;
+ *   each interval's minutes are floored.
  *
  * Retiring legacy admission deletes the legacy adapter; callers never choose.
  */
+import { and, desc, eq } from "drizzle-orm";
+import { timeEntry } from "@/db/schema";
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "../blockchain";
+import { CompletedWorkIntegrityError } from "../close-active-work";
 import { type AppendReviewRequirement, admitTimeEntryAppend } from "../time-entry-append";
 import type { SealedWorkTransactionScope, WorkTransactionClient } from "../work-transaction";
 import type { NewEntryProvenance } from "./change";
+import type { WorkDurationArithmetic } from "./plan";
 import type { TimeEntryRow } from "./rows";
 
 /** One entry a change appends. */
@@ -27,6 +34,13 @@ export type EntryDraft = {
 	at: Instant;
 	notes: string | null;
 	provenance: NewEntryProvenance;
+	/**
+	 * The endpoint whose place this entry takes for the changed work, while that
+	 * endpoint still stands elsewhere: a division's new clock-out ends the
+	 * retained half in place of the source clock-out, which keeps ending the
+	 * generated half. Only legacy admission acts on it (see `legacyEntryWriter`).
+	 */
+	takesOverFrom?: TimeEntryRow;
 };
 
 /** An admitted change: appends its entries, in order, each after the previous. */
@@ -40,7 +54,12 @@ export type EntryAdmission =
 
 export interface WorkRecordEntryWriter {
 	readonly admission: "append" | "legacy";
-	/** Admits the change's entries. In append admission this locks the append position. */
+	/** How the admission rounds the minutes of the work it writes; the plan step applies it. */
+	readonly durationArithmetic: WorkDurationArithmetic;
+	/**
+	 * Admits the change's entries: the last step before the first write, after
+	 * every refusal. In append admission this locks the append position.
+	 */
 	admit(): Promise<EntryAdmission>;
 }
 
@@ -64,6 +83,7 @@ export function entryWriterFor(
 function appendEntryWriter(tx: WorkTransactionClient, input: EntryScope): WorkRecordEntryWriter {
 	return {
 		admission: "append",
+		durationArithmetic: "half_up",
 		async admit() {
 			const admission = await admitTimeEntryAppend(
 				tx,
@@ -136,15 +156,74 @@ async function insertAppendedEntry(
 }
 
 /**
- * Legacy admission's entries. Work records does not write in legacy admission
- * until #1219 moves the legacy writers onto it; until then the legacy callers
- * keep their own sequence and never reach this adapter.
+ * Legacy admission's writer, the rules the legacy writers have always followed:
+ *
+ * - the head is the employee's latest entry by creation (ties by id), read
+ *   without a lock: the coordinator's employee guard already serializes the
+ *   employee's writers, and a row lock here would break `WORK_RECORD_LOCK_ORDER`.
+ *   Later entries of the same change chain after the one before.
+ * - an entry that takes over from an endpoint and carries notes supersedes that
+ *   endpoint, as the legacy split did with its new clock-out (#304's legacy path).
+ * - minutes are floored.
+ *
+ * Legacy admission always admits; there is no append position to review.
  */
-function legacyEntryWriter(_tx: WorkTransactionClient, _input: EntryScope): WorkRecordEntryWriter {
+function legacyEntryWriter(tx: WorkTransactionClient, input: EntryScope): WorkRecordEntryWriter {
 	return {
 		admission: "legacy",
+		durationArithmetic: "floor",
 		async admit() {
-			throw new Error("Work records does not write in legacy admission yet (#1219)");
+			return {
+				kind: "admitted",
+				entries: {
+					async append(drafts) {
+						const [head] = await tx
+							.select({ id: timeEntry.id, hash: timeEntry.hash })
+							.from(timeEntry)
+							.where(
+								and(
+									eq(timeEntry.organizationId, input.organizationId),
+									eq(timeEntry.employeeId, input.employeeId),
+								),
+							)
+							.orderBy(desc(timeEntry.createdAt), desc(timeEntry.id))
+							.limit(1);
+						let previous = { id: head?.id ?? null, hash: head?.hash ?? null };
+						const written: TimeEntryRow[] = [];
+						for (const draft of drafts) {
+							const entry = await insertAppendedEntry(tx, input, draft, previous);
+							if (draft.takesOverFrom && draft.notes) {
+								await supersedeTakenOverEntry(tx, draft.takesOverFrom, entry);
+							}
+							previous = { id: entry.id, hash: entry.hash };
+							written.push(entry);
+						}
+						return written;
+					},
+				},
+			};
 		},
 	};
+}
+
+async function supersedeTakenOverEntry(
+	tx: WorkTransactionClient,
+	endpoint: TimeEntryRow,
+	by: TimeEntryRow,
+): Promise<void> {
+	const superseded = await tx
+		.update(timeEntry)
+		.set({ isSuperseded: true, supersededById: by.id })
+		.where(
+			and(
+				eq(timeEntry.id, endpoint.id),
+				eq(timeEntry.organizationId, endpoint.organizationId),
+				eq(timeEntry.employeeId, endpoint.employeeId),
+				eq(timeEntry.isSuperseded, false),
+			),
+		)
+		.returning({ id: timeEntry.id });
+	if (superseded.length !== 1) {
+		throw new CompletedWorkIntegrityError("Endpoint changed under its lock");
+	}
 }

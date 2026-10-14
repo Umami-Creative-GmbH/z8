@@ -805,23 +805,26 @@ describe("historical gap repair on PostgreSQL", () => {
 		}
 	});
 
-	// The split refuses linked canonical work that disagrees with its period (#1205), so
-	// the racing splits divide a gap without a canonical record (#1234).
-	it("stops a stale plan after a real calendar split", async () => {
+	// A split divides through work records in either admission (#1219), which refuses
+	// work without a canonical record: only the repair can fill the gap, so the split
+	// writes nothing and leaves the plan applicable.
+	it("refuses a real calendar split on a gap, and the plan still applies", async () => {
 		await authorizeRepair();
 		const periodId = await missingRecord("2026-07-20");
 		const plan = await readPlan();
 		const before = await snapshot();
 
 		actAs(ids.workerUser);
-		const split = await splitWorkPeriod(periodId, "2026-07-20", "09:00");
-		expect(split).toMatchObject({ success: true });
-		const afterSplit = await snapshot();
+		await expect(splitWorkPeriod(periodId, "2026-07-20", "09:00")).resolves.toMatchObject({
+			success: false,
+			code: "completed_work_review_required",
+		});
+		expect(await snapshot()).toEqual(before);
 
 		const outcome = await apply(plan);
-		expect(outcome.body.outcomes).toEqual([{ employeeId: ids.worker, status: "stale" }]);
-		expect((await snapshot()).receipts).toEqual(before.receipts);
-		expect(await snapshot()).toEqual(afterSplit);
+		expect(outcome.body.outcomes).toEqual([
+			expect.objectContaining({ employeeId: ids.worker, status: "applied" }),
+		]);
 	});
 
 	/**
@@ -857,29 +860,11 @@ describe("historical gap repair on PostgreSQL", () => {
 		throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
 	}
 
-	// #327: the real split writer races the repair in both arrival orders, instead of
-	// an SQL write holding the shared key.
-	it("stops a stale plan when a real split commits first while the repair waits", async () => {
-		await authorizeRepair();
-		const periodId = await missingRecord("2026-07-23");
-		const plan = await readPlan();
-		const before = await snapshot();
-
-		const park = await parkNextInsert("time_entry");
-		actAs(ids.workerUser);
-		const split = splitWorkPeriod(periodId, "2026-07-23", "09:00");
-		await waitForLockWaiters(1);
-		const repair = apply(plan);
-		await waitForLockWaiters(2);
-		await park.release();
-
-		await expect(split).resolves.toMatchObject({ success: true });
-		const outcome = await repair;
-		expect(outcome.body.outcomes).toEqual([{ employeeId: ids.worker, status: "stale" }]);
-		expect((await snapshot()).receipts).toEqual(before.receipts);
-	});
-
-	it("lets a real split proceed on the repaired graph when the repair commits first", async () => {
+	// #327: the real split writer waits for the repair under the shared key, instead of
+	// an SQL write holding it. A split arriving first is refused on the gap (above). The
+	// repair advances the work's revision, so the waiting split, decided on the work as
+	// read before, is stale (#1219); a fresh split proceeds on the repaired graph.
+	it("refuses a waiting split as stale once the repair commits", async () => {
 		await authorizeRepair();
 		const { periodId } = await incompleteRecord("2026-07-24");
 		const plan = await readPlan();
@@ -896,7 +881,13 @@ describe("historical gap repair on PostgreSQL", () => {
 		expect(outcome.body.outcomes).toEqual([
 			expect.objectContaining({ employeeId: ids.worker, status: "applied" }),
 		]);
-		await expect(split).resolves.toMatchObject({ success: true });
+		await expect(split).resolves.toMatchObject({
+			success: false,
+			code: "time_correction_work_period_stale",
+		});
+		await expect(splitWorkPeriod(periodId, "2026-07-24", "09:00")).resolves.toMatchObject({
+			success: true,
+		});
 		const { rows } = await admin.query(
 			`select count(*)::int as periods from work_period
 			 where employee_id = $1 and deleted_at is null

@@ -14,8 +14,8 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
-import { planCompletedWorkSplit } from "../split-work-period";
 import { splitWorkVehicleUse } from "../vehicle-use/split-vehicle-use";
+import { deriveWorkDurationMinutes, WorkIntervalError } from "../work-duration";
 import type { DivideWorkRecord, WorkRecordRefusal } from "./change";
 import {
 	type AgreementCanonicalRecord,
@@ -56,19 +56,39 @@ export type WorkRecordPlan = DivisionPlan;
 /** The policy part of a change: everything the plan needs besides the locked pair. */
 export type PlannableChange = Pick<DivideWorkRecord, "kind" | "at" | "odometerKm" | "attribution">;
 
+/**
+ * How the admission's writer rounds the minutes of written work: append
+ * admission rounds each interval's exact elapsed time half up (#252 §2); legacy
+ * admission floors it, as the legacy writers always have. Retiring legacy
+ * admission removes `floor`.
+ */
+export type WorkDurationArithmetic = "half_up" | "floor";
+
+export function workDurationMinutes(
+	arithmetic: WorkDurationArithmetic,
+	startAt: Instant,
+	endAt: Instant,
+): number {
+	if (arithmetic === "half_up") return deriveWorkDurationMinutes(startAt, endAt);
+	if (compareInstants(endAt, startAt) <= 0) throw new WorkIntervalError();
+	return Math.floor((endAt.epochMilliseconds - startAt.epochMilliseconds) / 60_000);
+}
+
 export function planChange(
 	pair: WorkRecordPair,
 	change: PlannableChange,
+	arithmetic: WorkDurationArithmetic,
 ): WorkRecordPlan | WorkRecordRefusal {
 	switch (change.kind) {
 		case "divide":
-			return planDivision(pair, change);
+			return planDivision(pair, change, arithmetic);
 	}
 }
 
 function planDivision(
 	pair: WorkRecordPair,
 	change: PlannableChange,
+	arithmetic: WorkDurationArithmetic,
 ): DivisionPlan | WorkRecordRefusal {
 	const { period, canonical } = pair;
 	if (period.endTime === null) return { kind: "work_running" };
@@ -90,7 +110,19 @@ function planDivision(
 	if (compareInstants(change.at, startAt) <= 0 || compareInstants(change.at, endAt) >= 0) {
 		return { kind: "instant_outside_work" };
 	}
-	const segments = planCompletedWorkSplit({ startAt, endAt, splitAt: change.at });
+	// Each half rounds its own exact elapsed time.
+	const segments = {
+		first: {
+			startAt,
+			endAt: change.at,
+			durationMinutes: workDurationMinutes(arithmetic, startAt, change.at),
+		},
+		second: {
+			startAt: change.at,
+			endAt,
+			durationMinutes: workDurationMinutes(arithmetic, change.at, endAt),
+		},
+	};
 
 	// The vehicle carries over to both halves; the value at the instant divides the km (#1126).
 	const source = WorkAttribution.fromWorkPeriod(period);
