@@ -4,8 +4,8 @@
  * and its canonical work record together. No I/O and no server-only imports.
  *
  * Endpoints that already exist as recorded time entries are adopted by
- * reference (`AdoptedEndpoint`, #1226). #1227 adds the approval state to the
- * same change.
+ * reference (`AdoptedEndpoint`, #1226). The Approvals finalizers decide the
+ * approval state in the same change (#1227).
  */
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import type { Instant } from "@/lib/datetime/temporal-core";
@@ -65,10 +65,28 @@ export type AmendAttributionPatch = Omit<WorkAttributionPatch, "project"> & {
 };
 
 /**
- * Amend completed work: change its times, its work attribution or both, in
- * one revision step with one send-back. Callers keep their own policy (change
- * policy, eligibility, review guard, a range rule for the new times) and name
- * only what changes. A change of nothing is refused as `unchanged`.
+ * An approval decision (#1227): the work period and its canonical work record
+ * both take the decided state, and the work period's pending changes, which
+ * waited for the decision, are cleared. Only the Approvals finalizers decide;
+ * the decision's preconditions (a pending record, the lifecycle) stay theirs.
+ */
+export type WorkApprovalDecision = "approved" | "rejected";
+
+/**
+ * Facets on which a locked pair may disagree because the change rewrites them
+ * from the work period: its interval and minutes. Only time-correction
+ * finalization names them, for history from before the legacy split and the
+ * legacy automatic break kept the canonical work record (#304). #1229 removes
+ * this once production shows no divergence.
+ */
+export type ToleratedDrift = "interval" | "duration";
+
+/**
+ * Amend completed work: change its times, its work attribution, its approval
+ * state or several of them, in one revision step with one send-back. Callers
+ * keep their own policy (change policy, eligibility, review guard, a range
+ * rule for the new times) and name only what changes. A change of nothing is
+ * refused as `unchanged`.
  */
 export type AmendWorkRecord = {
 	kind: "amend";
@@ -77,14 +95,22 @@ export type AmendWorkRecord = {
 	expected: WorkRecordExpected;
 	times?: AmendedTimes;
 	attribution?: AmendAttributionPatch;
+	approval?: WorkApprovalDecision;
+	toleratedDrift?: readonly ToleratedDrift[];
 	/** The user making the change; null for a job or the system. */
 	actorUserId: string | null;
 };
 
 /** What an amendment changed. */
 export type AmendmentChanges = {
+	/**
+	 * Whether the clock-in moved: to a new instant, or to an adopted recorded
+	 * correction, which replaces the endpoint even at the same instant.
+	 */
 	clockIn: boolean;
 	clockOut: boolean;
 	/** The parts of the work attribution that changed, in `WorkAttribution` order. */
 	attribution: WorkAttributionPart[];
+	/** Whether the approval state changed. */
+	approval: boolean;
 };

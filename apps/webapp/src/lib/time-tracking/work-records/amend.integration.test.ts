@@ -73,6 +73,7 @@ const { applyWorkRecordChange, readWorkRecord } = await import(".");
 const { expectRecordAgreement } = await import("./__tests__/expect-record-agreement");
 const { calculateHash } = await import("../blockchain");
 type AmendWorkRecord = import(".").AmendWorkRecord;
+type DeleteWorkRecord = import(".").DeleteWorkRecord;
 type DivideWorkRecord = import(".").DivideWorkRecord;
 type WorkRecordExpected = import(".").WorkRecordExpected;
 
@@ -268,7 +269,7 @@ function retime(clockInAt: Instant | null, clockOutAt: Instant | null) {
 	};
 }
 
-function apply(change: AmendWorkRecord | DivideWorkRecord) {
+function apply(change: AmendWorkRecord | DeleteWorkRecord | DivideWorkRecord) {
 	return withCompletedWorkTransaction(
 		{ organizationId: ORG, employeeId: ids.requester, actorUserId: change.actorUserId },
 		(scope) => applyWorkRecordChange(scope, change),
@@ -355,11 +356,12 @@ async function recordPendingCorrection(
 	endpoint: "clock_in" | "clock_out" = "clock_in",
 ): Promise<string> {
 	const id = randomUUID();
-	const { rows } = await admin.query<{ hash: string }>(
-		"select hash from time_entry where id = $1",
-		[period.clock_out_id],
+	const { rows } = await admin.query<{ id: string; hash: string }>(
+		`select id, hash from time_entry where organization_id = $1 and employee_id = $2
+		 order by created_at desc, id desc limit 1`,
+		[ORG, ids.requester],
 	);
-	const previousHash = only(rows).hash;
+	const { id: previousEntryId, hash: previousHash } = only(rows);
 	const hash = calculateHash({
 		employeeId: ids.requester,
 		type: "correction",
@@ -379,7 +381,7 @@ async function recordPendingCorrection(
 			new Date(at),
 			hash,
 			previousHash,
-			period.clock_out_id,
+			previousEntryId,
 			endpoint === "clock_in" ? period.clock_in_id : period.clock_out_id,
 			userOf("requester"),
 		],
@@ -709,6 +711,7 @@ function amendContract({
 			clockIn: true,
 			clockOut: true,
 			attribution: ["project", "work_location"],
+			approval: false,
 		});
 		expect(result.appended.corrections.map(({ endpoint }) => endpoint)).toEqual([
 			"clock_in",
@@ -944,4 +947,293 @@ function amendContract({
 			});
 		},
 	);
+
+	describe("the approval state (#1227)", () => {
+		/** Work awaiting a decision, as a manual entry needing approval leaves it. */
+		async function pendingWork() {
+			const source = await recordWork();
+			await admin.query(
+				`update work_period set approval_status = 'pending', pending_changes = '{"ordinarySubmission":{}}'
+				 where id = $1`,
+				[source.id],
+			);
+			await admin.query("update time_record set approval_state = 'pending' where id = $1", [
+				source.canonical_record_id,
+			]);
+			await admin.query(
+				"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+				[ids.requester],
+			);
+			return source;
+		}
+
+		async function approvalOf(source: { id: string; canonical_record_id: string }) {
+			const { rows } = await admin.query(
+				`select wp.approval_status, wp.pending_changes, wp.graph_revision, tr.approval_state,
+				        tr.updated_by
+				 from work_period wp join time_record tr on tr.id = wp.canonical_record_id
+				 where wp.id = $1`,
+				[source.id],
+			);
+			return only(rows);
+		}
+
+		it.each(["approved", "rejected"] as const)(
+			"decides %s on both records in one revision step, with the effects",
+			async (decision) => {
+				const source = await pendingWork();
+				const before = await snapshot();
+
+				const result = await apply(
+					amend(await expectedOf(source.id), {
+						approval: decision,
+						actorUserId: userOf("manager"),
+					}),
+				);
+
+				await expectRecordAgreement({ organizationId: ORG });
+				if (result.kind !== "amended") throw new Error(`refused: ${result.kind}`);
+				expect(result.changes).toEqual({
+					clockIn: false,
+					clockOut: false,
+					attribution: [],
+					approval: true,
+				});
+				expect(result.source).toMatchObject({
+					approvalState: "pending",
+					recordApprovalState: "pending",
+				});
+				expect(await approvalOf(source)).toEqual({
+					approval_status: decision,
+					pending_changes: null,
+					graph_revision: source.graph_revision + 1,
+					approval_state: decision,
+					updated_by: userOf("manager"),
+				});
+				// The decision changes what the balance counts; it appends nothing.
+				const { rows } = await admin.query(
+					"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
+					[ids.requester],
+				);
+				expect(only(rows)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
+				const after = await snapshot();
+				expect([after.entries, after.positions]).toEqual([before.entries, before.positions]);
+			},
+		);
+
+		it("decides together with adopted times and attribution in one change", async () => {
+			const source = await pendingWork();
+			const pending = await recordPendingCorrection(source, "2026-07-22T07:30:20Z");
+
+			const result = await apply(
+				amend(await expectedOf(source.id), {
+					times: { ...CORRECTION, clockIn: { adopt: pending } },
+					attribution: { workLocationType: "home" },
+					approval: "approved",
+				}),
+			);
+
+			await expectRecordAgreement({ organizationId: ORG });
+			expect(result).toMatchObject({
+				kind: "amended",
+				changes: { clockIn: true, attribution: ["work_location"], approval: true },
+			});
+			expect(await approvalOf(source)).toMatchObject({
+				approval_status: "approved",
+				approval_state: "approved",
+				graph_revision: source.graph_revision + 1,
+			});
+		});
+
+		it("refuses a decision the work already holds as unchanged, writing nothing", async () => {
+			const source = await recordWork();
+			const before = await snapshot();
+
+			await expect(
+				apply(amend(await expectedOf(source.id), { approval: "approved" })),
+			).resolves.toEqual({ kind: "unchanged" });
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("rewrites tolerated minutes drift of the record only when the change tolerates it", async () => {
+			const source = await pendingWork();
+			await admin.query("update time_record set duration_minutes = 600 where id = $1", [
+				source.canonical_record_id,
+			]);
+			const expected = await expectedOf(source.id);
+			const before = await snapshot();
+
+			await expect(apply(amend(expected, { approval: "approved" }))).resolves.toEqual({
+				kind: "canonical_divergence",
+				found: "locked_pair",
+				disagreements: ["duration"],
+			});
+			expect(await snapshot()).toEqual(before);
+
+			await expect(
+				apply(amend(expected, { approval: "approved", toleratedDrift: ["duration"] })),
+			).resolves.toMatchObject({ kind: "amended" });
+			await expectRecordAgreement({ organizationId: ORG });
+			expect((await workOf(source.id)).record_duration).toBe(540);
+		});
+	});
+}
+
+describe.each(ADMISSIONS)(
+	"work records: delete in $admission admission on PostgreSQL (#1227)",
+	deleteContract,
+);
+
+/**
+ * The soft delete of an approved business deletion. It shares the amend
+ * harness: completed work recorded through the real clock-in and clock-out,
+ * and the deletion's markers recorded as pending corrections.
+ */
+function deleteContract({ appendControl }: (typeof ADMISSIONS)[number]) {
+	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+	const MARKER = "2026-07-22T17:00:31Z";
+
+	beforeEach(async () => {
+		await seed(appendControl);
+	});
+
+	afterAll(async () => {
+		await cleanup();
+	});
+
+	async function markers(source: { clock_in_id: string; clock_out_id: string }) {
+		const clockIn = await recordPendingCorrection(source, MARKER, "clock_in");
+		const clockOut = await recordPendingCorrection(source, MARKER, "clock_out");
+		return { clockIn: { adopt: clockIn }, clockOut: { adopt: clockOut } };
+	}
+
+	function remove(
+		expected: WorkRecordExpected,
+		marked: DeleteWorkRecord["markers"],
+		overrides: Partial<DeleteWorkRecord> = {},
+	): DeleteWorkRecord {
+		return {
+			kind: "delete",
+			organizationId: ORG,
+			employeeId: ids.requester,
+			expected,
+			markers: marked,
+			deletion: {
+				at: parseInstant("2026-07-25T09:00:00Z"),
+				reason: "Recorded by mistake",
+				approvalRequestId: null,
+			},
+			actorUserId: userOf("manager"),
+			...overrides,
+		};
+	}
+
+	it("soft-deletes the work as a zero-length sentinel at the adopted markers, with the effects", async () => {
+		const source = await recordWork();
+		const marked = await markers(source);
+		const submission = await submitWeek();
+		await admin.query(
+			"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+			[ids.requester],
+		);
+		const before = await snapshot();
+
+		const result = await apply(remove(await expectedOf(source.id), marked));
+
+		if (result.kind !== "deleted") throw new Error(`refused: ${result.kind}`);
+		const { rows } = await admin.query(
+			`select wp.clock_in_id, wp.clock_out_id, wp.start_time, wp.end_time, wp.duration_minutes,
+			        wp.graph_revision, wp.deleted_at, wp.deleted_by, wp.deletion_reason,
+			        wp.deletion_approval_request_id, wp.project_id, wp.approval_status,
+			        tr.start_at as record_start, tr.end_at as record_end,
+			        tr.duration_minutes as record_duration, tr.approval_state
+			 from work_period wp join time_record tr on tr.id = wp.canonical_record_id
+			 where wp.id = $1`,
+			[source.id],
+		);
+		expect(only(rows)).toEqual({
+			clock_in_id: marked.clockIn.adopt,
+			clock_out_id: marked.clockOut.adopt,
+			start_time: new Date(MARKER),
+			end_time: new Date(MARKER),
+			duration_minutes: 0,
+			graph_revision: source.graph_revision + 1,
+			deleted_at: new Date("2026-07-25T09:00:00Z"),
+			deleted_by: userOf("manager"),
+			deletion_reason: "Recorded by mistake",
+			deletion_approval_request_id: null,
+			project_id: ids.project,
+			approval_status: "approved",
+			record_start: new Date(MARKER),
+			record_end: new Date(MARKER),
+			record_duration: 0,
+			approval_state: "approved",
+		});
+		const { rows: entries } = await admin.query(
+			`select id, is_superseded, superseded_by_id from time_entry
+			 where id = any($1::uuid[]) order by created_at, id`,
+			[[source.clock_in_id, source.clock_out_id]],
+		);
+		expect(entries).toEqual([
+			{ id: source.clock_in_id, is_superseded: true, superseded_by_id: marked.clockIn.adopt },
+			{ id: source.clock_out_id, is_superseded: true, superseded_by_id: marked.clockOut.adopt },
+		]);
+		expect(result).toMatchObject({
+			source: { revision: source.graph_revision, segment: { durationMinutes: 540 } },
+			sentinel: { clockInEntryId: marked.clockIn.adopt, durationMinutes: 0 },
+			revision: source.graph_revision + 1,
+			appended: {
+				corrections: [
+					{ endpoint: "clock_in", entryId: marked.clockIn.adopt, adopted: true },
+					{ endpoint: "clock_out", entryId: marked.clockOut.adopt, adopted: true },
+				],
+			},
+			effects: { workBalanceDirtyFromDate: "2026-07-22" },
+		});
+		// Nothing is appended; the deleted work no longer counts for the submitted week.
+		const after = await snapshot();
+		expect([after.entries.length, after.positions]).toEqual([
+			before.entries.length,
+			before.positions,
+		]);
+		expect(await submission()).toEqual({ status: "withdrawn", closed_cause: "change" });
+		await expectRecordAgreement({ organizationId: ORG });
+		// The interval is free again.
+		await recordWork(parseInstant("2026-07-22T09:00:00Z"), parseInstant("2026-07-22T10:00:00Z"));
+	});
+
+	it("refuses markers that are not pending corrections of the endpoints, writing nothing", async () => {
+		const source = await recordWork();
+		const marked = await markers(source);
+		const expected = await expectedOf(source.id);
+		const before = await snapshot();
+
+		await expect(
+			apply(remove(expected, { clockIn: marked.clockOut, clockOut: marked.clockIn })),
+		).resolves.toEqual({ kind: "adopted_entry_mismatch" });
+		await expect(
+			apply(remove({ ...expected, revision: expected.revision + 1 }, marked)),
+		).resolves.toMatchObject({ kind: "stale" });
+		expect(await snapshot()).toEqual(before);
+	});
+
+	it("returns month_closed from the pre-check without writing", async () => {
+		const source = await recordWork();
+		const marked = await markers(source);
+		const expected = await expectedOf(source.id);
+		await closeMonth(db, {
+			organizationId: ORG,
+			month: "2026-07",
+			scope: { kind: "organization" },
+			actor: { kind: "user", userId: userOf("owner") },
+			now: parseInstant("2026-08-03T09:00:00Z"),
+		});
+		const before = await snapshot();
+
+		await expect(apply(remove(expected, marked))).resolves.toEqual({
+			kind: "month_closed",
+			month: "2026-07",
+		});
+		expect(await snapshot()).toEqual(before);
+	});
 }

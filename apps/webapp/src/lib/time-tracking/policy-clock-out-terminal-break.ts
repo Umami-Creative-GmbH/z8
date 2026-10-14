@@ -31,6 +31,7 @@ import { completedWorkOperation, employee, userSettings } from "@/db/schema";
 import type { OrdinaryWorkPeriodFinalizerDbService } from "@/lib/approvals/domain-adapters/work-period-contract";
 import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
+import { holdFinalizerEmployeeLocks } from "./finalizer-employee-locks";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { assertNoUnrelatedWorkPeriodReview } from "./work-period-review";
@@ -43,13 +44,7 @@ import {
 	type WorkSegment,
 	workRecordScopeForFinalizer,
 } from "./work-records";
-import { type WorkTransactionClient, workTransactionScopeFor } from "./work-transaction";
-import {
-	employeeCoordinationGuard,
-	holdGuard,
-	lockGuard,
-	sourceIdentityGuard,
-} from "./work-transaction/ranks";
+import type { WorkTransactionClient } from "./work-transaction";
 
 /** The approved work as the finalizer verified it; work that differs is stale. */
 export interface PolicyClockOutTerminalPeriodSnapshot {
@@ -206,14 +201,6 @@ export function derivePolicyClockOutBreakOperationId(input: {
  * approval transaction that finalizes several employees' work is never
  * refused for taking the next employee key after it.
  */
-async function lockEmployeeUncoordinated(
-	db: WorkTransactionClient,
-	input: EnforcePolicyClockOutTerminalBreakInput,
-): Promise<void> {
-	await holdGuard(db, employeeCoordinationGuard(input.employeeId));
-	await lockGuard(db, sourceIdentityGuard([input.organizationId, input.employeeId]));
-}
-
 /** The regulation the captured policy snapshot names, or null when none applies. */
 function regulationFrom(snapshot: PolicyClockOutBreakSnapshot): BreakPolicyRegulation | null {
 	if (
@@ -265,7 +252,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	// for this transaction. Another approval runtime outside the coordinators (for
 	// example an assignment activation after a reassignment) keeps the established
 	// employee locks; work records accepts that only in a legacy organization.
-	if (!workTransactionScopeFor(db)) await lockEmployeeUncoordinated(db, input);
+	await holdFinalizerEmployeeLocks(db, { organizationId, employeeId });
 	const scope = await workRecordScopeForFinalizer(db, { organizationId, employeeId });
 	const adopted = scope.admission === "append";
 	const regulation = regulationFrom(input.breakPolicySnapshot);

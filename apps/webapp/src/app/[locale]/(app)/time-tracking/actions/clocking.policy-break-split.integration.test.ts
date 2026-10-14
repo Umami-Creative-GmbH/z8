@@ -411,7 +411,8 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 			start_time: new Date("2026-07-22T08:00:00Z"),
 			end_time: new Date("2026-07-22T14:00:00Z"),
 			duration_minutes: 360,
-			graph_revision: submitted.graph_revision + 1,
+			// The decision itself is a change through work records (#1227); the split follows it.
+			graph_revision: submitted.graph_revision + 2,
 		});
 		expect(generated).toMatchObject({
 			clock_out_id: submissionId,
@@ -578,7 +579,10 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 				},
 			},
 			revisions: {
-				originating: { source: submitted.graph_revision, result: submitted.graph_revision + 1 },
+				originating: {
+					source: submitted.graph_revision + 1,
+					result: submitted.graph_revision + 2,
+				},
 				generated: { source: null, result: 1 },
 			},
 			followUps: {
@@ -591,7 +595,7 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 			version: 1,
 			workPeriodId: periodId,
 			lifecycle: { authority: "legacy", approvalRequestId: requestId, observedWorkflowId: null },
-			sourceRevision: submitted.graph_revision,
+			sourceRevision: submitted.graph_revision + 1,
 		});
 
 		// Exact replay returns the committed decision and writes nothing.
@@ -639,10 +643,11 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 
 		await expect(approve(requestId)).resolves.toMatchObject({ status: "approved" });
 
-		// Legacy admission floors each half and advances the revision (ADR 0010).
+		// Legacy admission floors each half and advances the revision (ADR 0010), for
+		// the decision and the split alike.
 		const split = await periods();
 		expect(split.map((period) => [period.duration_minutes, period.graph_revision])).toEqual([
-			[360, submitted.graph_revision + 1],
+			[360, submitted.graph_revision + 2],
 			[30, 1],
 		]);
 		await expectRecordAgreement({ organizationId: ids.organization });

@@ -18,6 +18,7 @@ import type { WorkOccupant } from "../work-occupancy";
 import type { AmendWorkRecord } from "./amend-change";
 import type { CreateNewWork } from "./create-new-plan";
 import type { CreateWorkRecord } from "./create-plan";
+import type { DeleteWorkRecord } from "./delete-change";
 import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
@@ -105,7 +106,8 @@ export type WorkRecordChange =
 	| CreateWorkRecord
 	| CreateNewWork
 	| AttachWorkRecord
-	| RepairWorkRecord;
+	| RepairWorkRecord
+	| DeleteWorkRecord;
 
 /** Why a change was not made. Nothing is written for any of them. */
 export type WorkRecordRefusal =

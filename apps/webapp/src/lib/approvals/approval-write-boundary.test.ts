@@ -407,11 +407,11 @@ export function unconditionalAncestor() {
 			{
 				[path]: `import { db, workPeriod } from "@/db";
 const holder = { db };
-export function finalizeOrdinaryWorkPeriodTerminal() {
-  return holder.db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
+export function bindPreCanonicalOrdinaryWorkflow() {
+  return holder.db.update(workPeriod).set({ approvalWorkflowId: "workflow" });
 }
 export function wrongObjectOwner() {
-  return holder.db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
+  return holder.db.update(workPeriod).set({ approvalWorkflowId: "workflow" });
 }`,
 			},
 			(workspaceRoot) => {
@@ -4488,15 +4488,15 @@ db.delete(approvalOutbox);`,
 					table: "time_entry",
 				},
 				{
-					columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
-					functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+					columns: ["is_superseded", "superseded_by_id"],
+					functionName: "applyLiveWorkCorrection",
 					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
+					semantic: "correction_lifecycle",
+					table: "time_entry",
 				},
 				{
-					columns: ["duration_minutes", "end_at", "start_at"],
-					functionName: "syncCanonicalWorkCorrection",
+					columns: ["start_at"],
+					functionName: "applyLiveWorkCorrection",
 					operation: "update",
 					semantic: "ordinary_finalization",
 					table: "time_record",
@@ -4570,19 +4570,6 @@ db.delete(approvalOutbox);`,
 					operation: "update",
 					table: "work_period",
 				},
-				{
-					columns: ["approval_status", "pending_changes"],
-					functionName: "finalizeOrdinaryWorkPeriodTerminal",
-					operation: "update",
-					table: "work_period",
-				},
-				{
-					columns: ["approval_state"],
-					functionName: "finalizeOrdinaryWorkPeriodTerminal",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
 			],
 			"src/lib/time-tracking/record-imported-work.ts": [
 				{
@@ -4598,7 +4585,7 @@ db.delete(approvalOutbox);`,
 			],
 			"src/lib/time-tracking/work-records/amend.ts": [
 				{
-					columns: ["duration_minutes", "end_at", "start_at"],
+					columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
 					functionName: "writeAmendedPair",
 					operation: "update",
 					semantic: "ordinary_finalization",
@@ -4622,10 +4609,12 @@ db.delete(approvalOutbox);`,
 				},
 				{
 					columns: [
+						"approval_status",
 						"clock_in_id",
 						"clock_out_id",
 						"duration_minutes",
 						"end_time",
+						"pending_changes",
 						"start_time",
 					],
 					functionName: "writeAmendedPair",
@@ -4638,6 +4627,27 @@ db.delete(approvalOutbox);`,
 					operation: "update",
 					semantic: "correction_lifecycle",
 					table: "time_entry",
+				},
+			],
+			"src/lib/time-tracking/work-records/delete.ts": [
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "deleteWorkRecord",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "deleteWorkRecord",
+					operation: "update",
+					table: "work_period",
 				},
 			],
 			"src/lib/time-tracking/work-records/repair.ts": [
@@ -4965,15 +4975,8 @@ db.delete(approvalOutbox);`,
 			],
 			"src/lib/approvals/server/time-correction-approvals.ts": [
 				{
-					columns: [
-						"approval_status",
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"start_time",
-					],
-					functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
+					columns: ["clock_in_id", "start_time"],
+					functionName: "applyLiveWorkCorrection",
 					operation: "update",
 					table: "work_period",
 				},
@@ -5119,8 +5122,8 @@ export function ${functionName}() {
 		withApprovalWriteTree(
 			{
 				[ownerPath]: `import { db, workPeriod } from "@/db";
-export function finalizeOrdinaryWorkPeriodTerminal() {
-  return db.update(workPeriod).set({ approvalStatus: "approved", pendingChanges: null });
+export function bindPreCanonicalOrdinaryWorkflow() {
+  return db.update(workPeriod).set({ approvalWorkflowId: "workflow" });
 }
 export function dynamicFinalizer(patch: object) {
   return db.update(workPeriod).set(patch);
@@ -5148,7 +5151,8 @@ export function dynamicFinalizer(patch: object) {
 		);
 	});
 
-	it("allows only the exact canonical finalizer and no terminal-split Drizzle owner", () => {
+	it("allows no ordinary finalizer and no terminal-split Drizzle owner of canonical records", () => {
+		// The ordinary finalizer decides through work records (#1227); its file owns no canonical write.
 		const finalizerPath = "src/lib/approvals/server/work-period-approvals.ts";
 		// The terminal break divides through work records (#1221); its file owns no write.
 		const splitPath =
@@ -5171,6 +5175,11 @@ export function applyPolicyClockOutTerminalBreakInTransaction() {
 				expect(
 					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
 				).toEqual([
+					expect.objectContaining({
+						functionName: "finalizeOrdinaryWorkPeriodTerminal",
+						path: finalizerPath,
+						table: "time_record",
+					}),
 					expect.objectContaining({
 						functionName: "renamedFinalizer",
 						path: finalizerPath,
@@ -5201,7 +5210,7 @@ export function wrongCompletedPeriodOwner() {
 }`,
 				[correctionPath]: `import { db, workPeriod } from "@/db";
 export function writeAmendedPair() {
-  return db.update(workPeriod).set({ clockInId, clockOutId, startTime, endTime, durationMinutes });
+  return db.update(workPeriod).set({ clockInId, clockOutId, startTime, endTime, durationMinutes, approvalStatus, pendingChanges });
 }
 export function dynamicCorrectionOwner(patch: object) {
   return db.update(workPeriod).set(patch);

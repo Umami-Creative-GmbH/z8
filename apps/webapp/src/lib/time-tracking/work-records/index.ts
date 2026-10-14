@@ -8,9 +8,9 @@ import "server-only";
  *   work record, its expected state and its record agreement, optionally
  *   locked so a caller can check its own preconditions first.
  * - `applyWorkRecordChange`: one change (divide, divide by an owed break,
- *   amend, create from live work, create new work, attach a missing canonical
- *   work record, repair a pair)
- *   against a named expected state. It returns the applied result or a
+ *   amend, create from live work, create new work, delete, attach a missing
+ *   canonical work record, repair a pair) against a named expected state. It
+ *   returns the applied result or a
  *   refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
@@ -31,6 +31,8 @@ import { createWorkRecord, type WorkCreation } from "./create";
 import { createNewWorkRecord, type NewWorkCreation } from "./create-new";
 import type { CreateNewWork } from "./create-new-plan";
 import type { CreateWorkRecord } from "./create-plan";
+import { deleteWorkRecord, type WorkDeletion } from "./delete";
+import type { DeleteWorkRecord } from "./delete-change";
 import { divideWorkRecord, type WorkDivision } from "./divide";
 import { divideByOwedBreak, type OwedBreakDivision } from "./divide-owed-break";
 import type { DivideByOwedBreak, OwedBreakNotRequired } from "./owed-break";
@@ -51,8 +53,12 @@ export {
 	type AmendWorkRecord,
 	isAdoptedEndpoint,
 	type NewAmendedEndpoint,
+	type ToleratedDrift,
+	type WorkApprovalDecision,
 } from "./amend-change";
 export type { AmendedEntryEvidence, WorkAmendment } from "./amend";
+export type { WorkDeletion } from "./delete";
+export type { DeleteWorkRecord } from "./delete-change";
 
 export type {
 	DivideWorkRecord,
@@ -120,7 +126,9 @@ export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkR
 						? WorkAttachment
 						: C extends RepairWorkRecord
 							? WorkRepair
-							: never;
+							: C extends DeleteWorkRecord
+								? WorkDeletion
+								: never;
 
 export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	scope: SealedWorkTransactionScope,
@@ -141,5 +149,7 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 			return (await attachWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 		case "repair":
 			return (await repairWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "delete":
+			return (await deleteWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }
