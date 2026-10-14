@@ -29,7 +29,7 @@ export function selectTestScopes(files, { full = false } = {}) {
   return scopes;
 }
 
-export function checkTestResults(needs) {
+export function checkTestResults(needs, { integrationEnabled = true } = {}) {
   if (needs.changes?.result !== "success") throw new Error("Test scope detection did not succeed");
   const scopes = {};
   for (const scope of Object.keys(allScopes)) {
@@ -40,7 +40,7 @@ export function checkTestResults(needs) {
   const jobs = {
     debounce: Object.values(scopes).some(Boolean),
     "unit-tests": Object.values(scopes).some(Boolean),
-    "integration-tests": scopes.webapp,
+    "integration-tests": scopes.webapp && integrationEnabled,
   };
   const summary = [];
   for (const [job, selected] of Object.entries(jobs)) {

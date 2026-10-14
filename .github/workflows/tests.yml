@@ -161,9 +161,12 @@ jobs:
           key: ${{ steps.vitest-cache.outputs.cache-primary-key }}
 
   integration-tests:
+    # Temporarily off to conserve runner minutes (#1207). Set the repository Actions
+    # variable POSTGRES_INTEGRATION_TESTS_ENABLED to 'true' to re-enable.
     name: PostgreSQL integration tests
     needs: [changes, unit-tests]
     if: >-
+      vars.POSTGRES_INTEGRATION_TESTS_ENABLED == 'true' &&
       (github.event_name != 'pull_request' || !github.event.pull_request.draft) &&
       !cancelled() && needs.changes.result == 'success' && needs.changes.outputs.webapp == 'true' &&
       (needs.unit-tests.result == 'success' || (github.event_name == 'workflow_dispatch' && inputs.diagnose_integration))
@@ -241,10 +244,13 @@ jobs:
       - name: Check selected test results
         env:
           NEEDS_JSON: ${{ toJSON(needs) }}
+          POSTGRES_INTEGRATION_TESTS_ENABLED: ${{ vars.POSTGRES_INTEGRATION_TESTS_ENABLED == 'true' }}
         run: |
           node --input-type=module <<'NODE'
           import { appendFileSync } from 'node:fs';
           import { checkTestResults } from './.github/scripts/test-scope.mjs';
-          const summary = checkTestResults(JSON.parse(process.env.NEEDS_JSON));
+          const summary = checkTestResults(JSON.parse(process.env.NEEDS_JSON), {
+            integrationEnabled: process.env.POSTGRES_INTEGRATION_TESTS_ENABLED === 'true',
+          });
           appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
           NODE
