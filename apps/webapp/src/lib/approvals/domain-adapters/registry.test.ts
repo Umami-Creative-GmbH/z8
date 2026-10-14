@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type {
 	ApprovalWorkflowSourceMap,
-	ApprovalWorkflowType,
+	ApprovalWorkflowType
 } from "../workflow/ports";
 import {
 	type AbsenceApprovalSource,
-	createAbsenceApprovalAdapter,
+	createAbsenceApprovalAdapter
 } from "./absence.adapter";
 import { createProductionApprovalDomainAdapterRegistry } from "./production-registry";
 import * as registryModule from "./registry";
@@ -16,7 +16,7 @@ import {
 } from "./registry";
 import type {
 	ApprovalDomainAdapter,
-	ApprovalDomainAdapterContext,
+	ApprovalDomainAdapterContext
 } from "./types";
 import type { OrdinaryWorkPeriodApprovalSource } from "./work-period-contract";
 
@@ -46,6 +46,7 @@ function adapter<Type extends ApprovalWorkflowType>(
 function completeAdapters() {
 	return {
 		absence: adapter("absence", true),
+		absence_change: adapter("absence_change", false),
 		time_correction: adapter("time_correction", false),
 		manual_time_submission: adapter("manual_time_submission", false),
 		policy_clock_out: adapter("policy_clock_out", false),
@@ -195,7 +196,7 @@ describe("approval domain adapter registry", () => {
 	it("selects the registered adapter and mints an exactly scoped token", async () => {
 		const registry = createApprovalDomainAdapterRegistry(completeAdapters());
 		const token = await registry.authorizeApprovedCancellation(
-			context("absence"),
+			context("absence")
 		);
 
 		expect(registry.get("absence").workflowType).toBe("absence");
@@ -220,13 +221,13 @@ describe("approval domain adapter registry", () => {
 		const wrongOrganization = context("absence");
 		wrongOrganization.sourceIdentity.organizationId = "org-2";
 		await expect(
-			registry.authorizeApprovedCancellation(wrongOrganization),
-		).rejects.toThrow(/context/i);
+			registry.authorizeApprovedCancellation(wrongOrganization)
+		).rejects.toThrow(/context/i,);
 
 		const wrongSource = context("absence");
 		wrongSource.sourceIdentity.sourceType = "forged_source";
 		await expect(
-			registry.authorizeApprovedCancellation(wrongSource),
+			registry.authorizeApprovedCancellation(wrongSource)
 		).rejects.toThrow(/context/i);
 	});
 
@@ -247,7 +248,7 @@ describe("approval domain adapter registry", () => {
 	it("rejects copied, inherited, and wrong-scope tokens", async () => {
 		const registry = createApprovalDomainAdapterRegistry(completeAdapters());
 		const token = await registry.authorizeApprovedCancellation(
-			context("absence"),
+			context("absence")
 		);
 		const scope = {
 			organizationId,

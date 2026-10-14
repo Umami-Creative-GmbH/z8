@@ -2,7 +2,6 @@
 
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { getApprovalTypeLabels } from "./approval-type-labels";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import type { ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import type { ApprovalInboxFilters } from "@/lib/query/use-approval-inbox";
+import { getApprovalTypeLabels } from "./approval-type-labels";
 
 interface ApprovalInboxToolbarProps {
 	filters: ApprovalInboxFilters;
@@ -31,6 +31,7 @@ interface ApprovalInboxToolbarProps {
 
 const APPROVAL_TYPES: { value: ApprovalInboxType; label: string }[] = [
 	{ value: "absence_entry", label: "Absence Requests" },
+	{ value: "absence_change_request", label: "Absence Changes" },
 	{ value: "time_entry", label: "Time Corrections" },
 	{ value: "travel_expense_claim", label: "Travel Expenses" },
 	{ value: "travel_expense_report", label: "Expense Reports" },

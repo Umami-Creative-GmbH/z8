@@ -8,6 +8,7 @@ export const APPROVAL_WORKFLOW_TYPES = [
 	"compliance_exception",
 	// Canonical-only from day one (Approvals ADR-0002, #805).
 	"period_submission",
+	"absence_change",
 ] as const;
 
 export type ApprovalWorkflowType = (typeof APPROVAL_WORKFLOW_TYPES)[number];
@@ -48,7 +49,7 @@ export type ApprovalAssignmentStatus =
 export const APPROVAL_ACTOR_KINDS = [
 	"employee",
 	"system",
-	"legacy_unknown",
+	"legacy_unknown"
 ] as const;
 
 export type ApprovalActorKind = (typeof APPROVAL_ACTOR_KINDS)[number];
@@ -98,7 +99,7 @@ export type ApprovalOutboxStatus = (typeof APPROVAL_OUTBOX_STATUSES)[number];
 
 export const APPROVAL_OUTBOX_EXPANSION_STATUSES = [
 	"pending",
-	"expanded",
+	"expanded"
 ] as const;
 
 export type ApprovalOutboxExpansionStatus =

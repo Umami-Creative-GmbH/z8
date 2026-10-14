@@ -23,7 +23,7 @@ export interface ApprovalStageReviewerDirectory {
 	teamMemberships: EligibleTeamMembership[];
 	teams: EligibleTeam[];
 	/** Replacements captured by effective departures, keyed by departed employee. */
-	departureReplacements?: Array<{ employeeId: string; replacementEmployeeId: string }>;
+	departureReplacements?: Array<{ employeeId: string; replacementEmployeeId: string; }>;
 }
 
 export type ApprovalStageReviewerResolution =
@@ -86,7 +86,7 @@ function specificApproverIds(
 		activeEmployeeInOrganization(
 			directory.employees,
 			context.organizationId,
-			approverEmployeeId,
+			approverEmployeeId
 		)
 	) {
 		return [approverEmployeeId];
@@ -99,7 +99,7 @@ function specificApproverIds(
 		activeEmployeeInOrganization(
 			directory.employees,
 			context.organizationId,
-			replacementId,
+			replacementId
 		)
 		? [replacementId]
 		: [];
@@ -115,7 +115,7 @@ function resolveDisposition(
 	if (approverEmployeeIds.length === 0) {
 		throw new ApprovalStageActivationError(
 			"no_eligible_reviewer",
-			"No eligible reviewer.",
+			"No eligible reviewer."
 		);
 	}
 
@@ -136,7 +136,8 @@ function resolveDisposition(
  * the requester (a `fail` fallback refuses). Only the default stage (the primary manager, no policy)
  * falls back to the organization's admins other than the requester. Without anyone it is refused.
  */
-const REQUESTER_NEVER_AUTO_APPROVES: ReadonlySet<string> = new Set(["period_submission"]);
+const REQUESTER_NEVER_AUTO_APPROVES: ReadonlySet<string> = new Set(["period_submission",
+	"absence_change",]);
 
 /** Whether a stage came from a matched policy or from the default approver (no policy). */
 export type ApprovalStageOrigin = "policy" | "default_approver";
@@ -163,7 +164,7 @@ export function resolveApprovalStageReviewers({
 	) {
 		throw new ApprovalStageActivationError(
 			"invalid_stage_resolver",
-			"Unsupported approver type.",
+			"Unsupported approver type."
 		);
 	}
 
@@ -231,13 +232,13 @@ export function resolveApprovalStageReviewers({
 					case "org_admin":
 						return activeOrganizationAdminIds(
 							directory,
-							context.organizationId,
+							context.organizationId
 						);
 					case "specific_employee":
 						return specificApproverIds(
 							directory,
 							context,
-							stage.approverEmployeeId,
+							stage.approverEmployeeId
 						);
 				}
 			})()

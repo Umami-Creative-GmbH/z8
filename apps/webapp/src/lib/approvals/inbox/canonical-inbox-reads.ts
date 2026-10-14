@@ -1,3 +1,4 @@
+import { absenceChangeInboxRead } from "./absence-change-read";
 import type { CanonicalInboxRead } from "./canonical-inbox-read";
 import {
 	countOrdinaryCanonicalApprovals,
@@ -23,4 +24,5 @@ export const ordinaryWorkPeriodInboxRead: CanonicalInboxRead = {
 export const CANONICAL_INBOX_READS: readonly CanonicalInboxRead[] = [
 	ordinaryWorkPeriodInboxRead,
 	periodSubmissionInboxRead,
+	absenceChangeInboxRead,
 ];

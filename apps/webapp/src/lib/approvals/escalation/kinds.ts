@@ -12,6 +12,7 @@ import type { ApprovalWorkflowType } from "../workflow/ports";
 /** Kinds whose canonical assignments escalation transfers through the workflow. */
 export const CANONICAL_ESCALATION_WORKFLOW_TYPES = [
 	"absence",
+	"absence_change",
 	"manual_time_submission",
 	"policy_clock_out",
 	"time_correction",
@@ -112,7 +113,7 @@ export function unsupportedCanonicalReplacementRoute(input: {
 	compatibilityWriting: boolean;
 	pendingSiblingCount: number;
 }): string | null {
-	if (input.workflowType === "period_submission") return null;
+	if (input.workflowType === "period_submission" || input.workflowType === "absence_change") return null;
 	if (!input.compatibilityWriting) {
 		return input.workflowType === "absence"
 			? "absence_inbox_requires_compatibility_mirror"

@@ -68,17 +68,18 @@ function createAuthorizationRegistry() {
 		}) as never;
 	return createApprovalDomainAdapterRegistry({
 		absence: adapter("absence", "absence_entry"),
+		absence_change: adapter("absence_change", "absence_change_request"),
 		time_correction: adapter("time_correction", "time_correction"),
 		manual_time_submission: adapter(
 			"manual_time_submission",
-			"manual_time_submission",
+			"manual_time_submission"
 		),
 		policy_clock_out: adapter("policy_clock_out", "policy_clock_out"),
 		travel_expense: adapter("travel_expense", "travel_expense"),
 		shift_request: adapter("shift_request", "shift_request"),
 		compliance_exception: adapter(
 			"compliance_exception",
-			"compliance_exception",
+			"compliance_exception"
 		),
 		period_submission: adapter("period_submission", "period_submission"),
 	});
@@ -98,7 +99,7 @@ async function authorizeApprovedCancellationFor(
 
 beforeAll(async () => {
 	approvedCancellationAuthorization = await authorizeApprovedCancellationFor(
-		pendingWorkflow(),
+		pendingWorkflow()
 	);
 	approvedCancellationPolicy = {
 		kind: "approved_cancellation",
@@ -250,7 +251,7 @@ function jsonRoundTrip<Value>(value: Value): Value {
 
 function fixtureStage(
 	value: ApprovalWorkflowSnapshot,
-	index: number,
+	index: number
 ): ApprovalStageSnapshot {
 	const item = value.stages[index];
 	if (!item) throw new Error("Invalid test fixture stage index");
@@ -269,7 +270,7 @@ function fixtureAssignment(
 
 function plannedStage(
 	plan: ApprovalTransitionPlan,
-	index: number,
+	index: number
 ): ApprovalPlannedStageSnapshot {
 	const item = plan.plannedSnapshot.stages[index];
 	if (!item) throw new Error("Invalid planned stage index");
@@ -301,7 +302,7 @@ function retainPlanEvents(
 	plan.events = plan.events.filter(predicate);
 	for (const [index, event] of plan.events.entries()) event.eventIndex = index;
 	const eventAllocationKeys = new Set(
-		plan.events.map((event) => event.reference.allocationKey),
+		plan.events.map((event) => event.reference.allocationKey)
 	);
 	plan.identityAllocations = plan.identityAllocations.filter(
 		(allocation) =>
@@ -450,7 +451,7 @@ describe("planWorkflowTransition", () => {
 				],
 			});
 			expect(plan.plannedSnapshot.stages[1]).toMatchObject(
-				snapshot.stages[1] ?? {},
+				snapshot.stages[1] ?? {}
 			);
 			expect(plan.nextAction).toEqual({
 				kind: "needs_activation",
@@ -545,7 +546,7 @@ describe("planWorkflowTransition", () => {
 					"50000000-0000-4000-8000-000000000003",
 					stageTwoId,
 					1,
-					approverThree,
+					approverThree
 				),
 			];
 			snapshot.currentStageOrder = 2;
@@ -614,8 +615,8 @@ describe("planWorkflowTransition", () => {
 				"cancelled",
 			]);
 			expect(
-				plan.plannedSnapshot.stages[0]?.assignments.map((item) => item.status),
-			).toEqual(["rejected", "cancelled"]);
+				plan.plannedSnapshot.stages[0]?.assignments.map((item) => item.status)
+			).toEqual(["rejected", "cancelled",]);
 			expect(plan.events.map((event) => event.eventType)).toEqual([
 				"assignment.rejected",
 				"assignment.cancelled",
@@ -670,8 +671,8 @@ describe("planWorkflowTransition", () => {
 				"cancelled",
 			]);
 			expect(
-				plan.plannedSnapshot.stages[0]?.assignments.map((item) => item.status),
-			).toEqual(["cancelled", "cancelled"]);
+				plan.plannedSnapshot.stages[0]?.assignments.map((item) => item.status)
+			).toEqual(["cancelled", "cancelled",]);
 			expect(plan.nextAction).toMatchObject({
 				kind: "finalize_terminal",
 				transition: { kind: "cancel_pending" },
@@ -731,7 +732,7 @@ describe("planWorkflowTransition", () => {
 		it.each([
 			"rejected",
 			"cancelled",
-			"expired",
+			"expired"
 		] as const)("keeps %s workflows terminal", (status) => {
 			const snapshot = terminalSnapshot(status);
 			expectMachineError(
@@ -744,7 +745,7 @@ describe("planWorkflowTransition", () => {
 					),
 				"TERMINAL_TRANSITION",
 			);
-		});
+		},);
 
 		it("expires only a pending workflow and closes active work at the supplied instant", () => {
 			const plan = planWorkflowTransition(
@@ -767,15 +768,15 @@ describe("planWorkflowTransition", () => {
 				"expired",
 			]);
 			expect(
-				plan.plannedSnapshot.stages[0]?.assignments.map((item) => item.status),
-			).toEqual(["expired", "expired"]);
+				plan.plannedSnapshot.stages[0]?.assignments.map((item) => item.status)
+			).toEqual(["expired", "expired",]);
 			expect(plan.events.at(-1)).toMatchObject({
 				eventType: "workflow.expired",
 				reason: "SLA elapsed",
 				occurredAt: now,
 			});
 			expect(
-				plan.events.every((event) => event.actor.kind === "command_actor"),
+				plan.events.every((event) => event.actor.kind === "command_actor")
 			).toBe(true);
 		});
 	});
@@ -838,7 +839,7 @@ describe("planWorkflowTransition", () => {
 			expect(plan.events[0]).toMatchObject({
 				eventType,
 				previousState: { status: "pending" },
-				resultingState: { status: "pending", targetEmployeeId: approverThree },
+				resultingState: { status: "pending", targetEmployeeId: approverThree, },
 				metadata: { kind: reasonKind, sourceEmployeeId: approverOne },
 				references: {
 					sourceAssignment: { kind: "persisted", id: assignmentOneId },
@@ -850,7 +851,7 @@ describe("planWorkflowTransition", () => {
 			});
 			expect(plan.changes.assignments.map((change) => change.kind)).toEqual([
 				"update",
-				"create",
+				"create"
 			]);
 		});
 
@@ -860,7 +861,7 @@ describe("planWorkflowTransition", () => {
 			[
 				"missing source",
 				"30000000-0000-4000-8000-000000000999",
-				"REASSIGNMENT_CONFLICT",
+				"REASSIGNMENT_CONFLICT"
 			],
 		] as const)("rejects %s", (_label, target, code) => {
 			expectMachineError(
@@ -888,7 +889,7 @@ describe("planWorkflowTransition", () => {
 					"50000000-0000-4000-8000-000000000003",
 					stageOneId,
 					3,
-					approverOne,
+					approverOne
 				),
 			);
 			expectMachineError(
@@ -948,7 +949,7 @@ describe("planWorkflowTransition", () => {
 			],
 			[
 				"missing current stage",
-				(value: ApprovalWorkflowSnapshot) => (value.currentStageOrder = 9),
+				(value: ApprovalWorkflowSnapshot) => (value.currentStageOrder = 9)
 			],
 			[
 				"pending workflow completion timestamp",
@@ -1195,7 +1196,7 @@ describe("planStageActivation", () => {
 		["wrong stage", resolvedStage({ stageId: stageTwoId })],
 		[
 			"invalid runtime mode",
-			resolvedStage({ activationMode: "unsupported" as never }),
+			resolvedStage({ activationMode: "unsupported" as never })
 		],
 	] as const)("rejects invalid activation: %s", (_label, candidate) => {
 		expectMachineError(
@@ -1243,13 +1244,13 @@ describe("Task 2.1 corrective findings", () => {
 		const approved = materialize(
 			approvalPlan,
 			managerActor,
-			20,
+			20
 		).resultingSnapshot;
 
 		expect(approved.status).toBe("approved");
 		expect(
 			fixtureStage(approved, 0).assignments.find(
-				(assignment) => assignment.id === target.id,
+				(assignment) => assignment.id === target.id
 			)?.status,
 		).toBe("approved");
 	});
@@ -1309,11 +1310,11 @@ describe("Task 2.1 corrective findings", () => {
 		const afterSecond = materialize(second, managerActor, 20).resultingSnapshot;
 		const assignments = fixtureStage(afterSecond, 0).assignments;
 		const latest = assignments.find(
-			(assignment) => assignment.approverEmployeeId === approverFour,
+			(assignment) => assignment.approverEmployeeId === approverFour
 		);
 
 		expect(assignments.map((assignment) => assignment.sequence)).toEqual([
-			1, 2, 3, 4,
+			1, 2, 3, 4
 		]);
 		expect(latest).toMatchObject({
 			status: "pending",
@@ -1401,7 +1402,7 @@ describe("Task 2.1 corrective findings", () => {
 			},
 		});
 		expect(JSON.stringify(plan.events)).not.toContain(
-			`"assignmentId":"${workflowId}:stage`,
+			`"assignmentId":"${workflowId}:stage`
 		);
 		expect(plan.events[0]).toMatchObject({
 			references: {
@@ -1428,7 +1429,7 @@ describe("Task 2.1 corrective findings", () => {
 		const materialized = materialize(plan);
 		const created = fixtureStage(
 			materialized.resultingSnapshot,
-			0,
+			0
 		).assignments.at(-1);
 		if (!created) throw new Error("fixture");
 
@@ -1481,15 +1482,15 @@ describe("Task 2.1 corrective findings", () => {
 			bindCommandActor(plan),
 		);
 		expect(
-			fixtureStage(materialized.resultingSnapshot, 0).assignments.at(-1)?.id,
-		).toBe(assignmentId);
+			fixtureStage(materialized.resultingSnapshot, 0).assignments.at(-1)?.id
+		).toBe(assignmentId,);
 		expect(materialized.events[0]?.id).toBe(eventId);
 	});
 
 	it.each([
 		"missing",
 		"extra",
-		"duplicate",
+		"duplicate"
 	] as const)("rejects %s allocation resolutions", (failure) => {
 		const plan = planWorkflowTransition(
 			pendingWorkflow(),
@@ -1523,11 +1524,11 @@ describe("Task 2.1 corrective findings", () => {
 				materializeApprovalTransitionPlan(
 					plan,
 					resolutions,
-					bindCommandActor(plan),
+					bindCommandActor(plan)
 				),
 			"MATERIALIZATION_CONFLICT",
 		);
-	});
+	},);
 
 	it("rejects an incompatible legacy command actor during materialization", () => {
 		const plan = planWorkflowTransition(
@@ -1577,7 +1578,7 @@ describe("Task 2.1 corrective findings", () => {
 			materializeApprovalTransitionPlan(
 				plan,
 				resolutions,
-				bindCommandActor(plan, actor),
+				bindCommandActor(plan, actor)
 			),
 		).not.toThrow();
 	});
@@ -1711,11 +1712,11 @@ describe("Task 2.1 corrective findings", () => {
 	it.each([
 		[
 			"stage",
-			{ type: "approve", stageId: "not-a-uuid", assignmentId: assignmentOneId },
+			{ type: "approve", stageId: "not-a-uuid", assignmentId: assignmentOneId }
 		],
 		[
 			"assignment",
-			{ type: "approve", stageId: stageOneId, assignmentId: "not-a-uuid" },
+			{ type: "approve", stageId: stageOneId, assignmentId: "not-a-uuid" }
 		],
 		[
 			"reassignment source",
@@ -1856,7 +1857,7 @@ describe("Task 2.1 corrective findings", () => {
 
 		expectMachineError(
 			() => materialize(plan, managerActor),
-			"MATERIALIZATION_CONFLICT",
+			"MATERIALIZATION_CONFLICT"
 		);
 	});
 
@@ -1916,15 +1917,15 @@ describe("Task 2.1 corrective findings", () => {
 		const previousMetadataKind = previousMetadata.kind;
 		previousMetadata.kind = "mutated previous";
 		expect(fixtureAssignment(reassigned, 0, 2).reassignmentMetadata).toEqual(
-			originalMetadata,
+			originalMetadata
 		);
 
 		const resultingStage = cancellationPlan.changes.stages[0]?.resulting;
 		if (!resultingStage) throw new Error("fixture");
 		resultingStage.resolverSnapshot.mutated = true;
 		expect(
-			cancellationPlan.plannedSnapshot.stages[0]?.resolverSnapshot,
-		).not.toHaveProperty("mutated");
+			cancellationPlan.plannedSnapshot.stages[0]?.resolverSnapshot
+		).not.toHaveProperty("mutated",);
 		previousMetadata.kind = previousMetadataKind;
 		delete resultingStage.resolverSnapshot.mutated;
 
@@ -1933,7 +1934,7 @@ describe("Task 2.1 corrective findings", () => {
 		if (!eventMetadata) throw new Error("fixture");
 		eventMetadata.mutated = true;
 		expect(fixtureAssignment(reassigned, 0, 2).reassignmentMetadata).toEqual(
-			originalMetadata,
+			originalMetadata
 		);
 
 		expect(materialized).toHaveProperty("changes");
@@ -1941,7 +1942,7 @@ describe("Task 2.1 corrective findings", () => {
 		if (!materializedEventMetadata) throw new Error("fixture");
 		materializedEventMetadata.materializedMutation = true;
 		expect(cancellationPlan.events[0]?.metadata).not.toHaveProperty(
-			"materializedMutation",
+			"materializedMutation"
 		);
 
 		const materializedPreviousMetadata =
@@ -1959,8 +1960,8 @@ describe("Task 2.1 corrective findings", () => {
 		if (!materializedResultingStage) throw new Error("fixture");
 		materializedResultingStage.resolverSnapshot.materializedMutation = true;
 		expect(
-			cancellationPlan.changes.stages[0]?.resulting.resolverSnapshot,
-		).not.toHaveProperty("materializedMutation");
+			cancellationPlan.changes.stages[0]?.resulting.resolverSnapshot
+		).not.toHaveProperty("materializedMutation",);
 
 		materialized.resultingSnapshot.displaySnapshot.materializedMutation = true;
 		expect(cancellationPlan.plannedSnapshot.displaySnapshot).not.toHaveProperty(
@@ -2028,7 +2029,7 @@ describe("Task 2.1 corrective findings", () => {
 		});
 		materialized.changes.root.resulting.decisionReason = "mutated root";
 		expect(plan.changes.root.resulting.decisionReason).toBe(
-			"complete root change",
+			"complete root change"
 		);
 	});
 
@@ -2053,7 +2054,7 @@ describe("Task 2.1 corrective findings", () => {
 
 	it.each([
 		"approve",
-		"reject",
+		"reject"
 	] as const)("rejects %s on a non-human pending stage before assignment lookup", (type) => {
 		const snapshot = pendingWorkflow({ activeMode: "legacy_auto" });
 		const command =
@@ -2069,7 +2070,7 @@ describe("Task 2.1 corrective findings", () => {
 			() => planWorkflowTransition(snapshot, command, standardPolicy, now),
 			"INVALID_SNAPSHOT",
 		);
-	});
+	},);
 
 	it("uses a command actor intent instead of inferring the assignee as actor", () => {
 		const plan = planWorkflowTransition(
@@ -2083,14 +2084,14 @@ describe("Task 2.1 corrective findings", () => {
 			kind: "command_actor",
 		});
 		expect(
-			plan.events.every((event) => event.actor.kind === "command_actor"),
+			plan.events.every((event) => event.actor.kind === "command_actor")
 		).toBe(true);
 		const materialized = materialize(plan, managerActor);
 		expect(
-			fixtureAssignment(materialized.resultingSnapshot, 0, 0).resolvedBy,
-		).toEqual({ ...managerActor, userId: null });
+			fixtureAssignment(materialized.resultingSnapshot, 0, 0).resolvedBy
+		).toEqual({ ...managerActor, userId: null, });
 		expect(
-			materialized.events.every((event) => event.actor === managerActor),
+			materialized.events.every((event) => event.actor === managerActor)
 		).toBe(false);
 		expect(materialized.events.map((event) => event.actor)).toEqual(
 			materialized.events.map(() => managerActor),
@@ -2112,10 +2113,10 @@ describe("Task 2.1 corrective findings", () => {
 		const materialized = materialize(plan, systemCommandActor);
 		const assignments = fixtureStage(
 			materialized.resultingSnapshot,
-			0,
+			0
 		).assignments;
 		const source = assignments.find(
-			(assignment) => assignment.id === assignmentOneId,
+			(assignment) => assignment.id === assignmentOneId
 		);
 		const target = assignments.find(
 			(assignment) => assignment.approverEmployeeId === approverThree,
@@ -2137,9 +2138,9 @@ describe("Task 2.1 corrective findings", () => {
 
 	it.each([
 		"approve",
-		"reject",
+		"reject"
 	] as const)("rejects malformed requester-auto assignments for %s", (type) => {
-		const snapshot = pendingWorkflow({ activeMode: "requester_auto_approve" });
+		const snapshot = pendingWorkflow({ activeMode: "requester_auto_approve", });
 		const command =
 			type === "approve"
 				? { type, stageId: stageOneId, assignmentId: assignmentOneId }
@@ -2153,11 +2154,11 @@ describe("Task 2.1 corrective findings", () => {
 			() => planWorkflowTransition(snapshot, command, standardPolicy, now),
 			"INVALID_SNAPSHOT",
 		);
-	});
+	},);
 
 	it.each([
 		"approved",
-		"rejected",
+		"rejected"
 	] as const)("rejects impossible %s assignment history under a pending human stage", (status) => {
 		const snapshot = pendingWorkflow();
 		const historical = fixtureAssignment(snapshot, 0, 0);
@@ -2173,7 +2174,7 @@ describe("Task 2.1 corrective findings", () => {
 				),
 			"INVALID_SNAPSHOT",
 		);
-	});
+	},);
 
 	it("rejects an approved root containing an active pending stage", () => {
 		const snapshot = pendingWorkflow({ secondStage: false });
@@ -2230,7 +2231,7 @@ describe("Task 2.1 corrective findings", () => {
 					stage.status === "pending" ||
 					stage.status === "waiting" ||
 					stage.assignments.some(
-						(assignment) => assignment.status === "pending",
+						(assignment) => assignment.status === "pending"
 					),
 			),
 		).toBe(false);
@@ -2248,8 +2249,8 @@ describe("Task 2.1 quality blockers", () => {
 		const result = materialize(plan, managerActor);
 
 		expect(
-			result.resultingSnapshot.stages[0]?.assignments[0]?.resolvedBy,
-		).not.toHaveProperty("fingerprint");
+			result.resultingSnapshot.stages[0]?.assignments[0]?.resolvedBy
+		).not.toHaveProperty("fingerprint",);
 		expect(result.events[0]?.actor).not.toHaveProperty("fingerprint");
 	});
 
@@ -2268,7 +2269,7 @@ describe("Task 2.1 quality blockers", () => {
 			}),
 		).toBe(fingerprintApprovalCommandActor(managerActor));
 		expect(fingerprintApprovalCommandActor(systemCommandActor)).toBe(
-			'v1:["system"]',
+			'v1:["system"]'
 		);
 
 		const plan = planWorkflowTransition(
@@ -2357,13 +2358,13 @@ describe("Task 2.1 quality blockers", () => {
 		};
 		const persistenceMetadata = serializeApprovalWorkflowEventMetadata(
 			metadata,
-			references,
+			references
 		);
 
 		expect(persistenceMetadata).not.toBe(metadata);
 		expect(
-			deserializeApprovalWorkflowEventMetadata(persistenceMetadata),
-		).toEqual({ metadata, references });
+			deserializeApprovalWorkflowEventMetadata(persistenceMetadata)
+		).toEqual({ metadata, references, });
 		expect(
 			deserializeApprovalWorkflowEventMetadata(
 				serializeApprovalWorkflowEventMetadata(null, {
@@ -2417,7 +2418,7 @@ describe("Task 2.1 quality blockers", () => {
 		[
 			"empty references",
 			{ businessMetadataWasNull: false, references: {} },
-			{},
+			{}
 		],
 		[
 			"business metadata with null flag",
@@ -2436,7 +2437,7 @@ describe("Task 2.1 quality blockers", () => {
 				}),
 			"INVALID_EVENT_METADATA",
 		);
-	});
+	},);
 
 	it.each([
 		[
@@ -2446,7 +2447,7 @@ describe("Task 2.1 quality blockers", () => {
 					null as never,
 					{} as never,
 					null as never,
-					null as never,
+					null as never
 				),
 			"INVALID_SNAPSHOT",
 		],
@@ -2506,7 +2507,7 @@ describe("Task 2.1 quality blockers", () => {
 	it.each([
 		[
 			"approve sibling",
-			{ type: "approve", stageId: stageOneId, assignmentId: assignmentOneId },
+			{ type: "approve", stageId: stageOneId, assignmentId: assignmentOneId }
 		],
 		[
 			"reject sibling",
@@ -2522,7 +2523,7 @@ describe("Task 2.1 quality blockers", () => {
 	] as const)("rejects a future-dated pending assignment during %s", (_label, command) => {
 		const snapshot = pendingWorkflow({ secondStage: false });
 		fixtureAssignment(snapshot, 0, 1).assignedAt = parseInstant(
-			"2026-07-16T15:00:00Z",
+			"2026-07-16T15:00:00Z"
 		);
 
 		expectMachineError(
@@ -2851,7 +2852,7 @@ describe("Task 2.1 quality blockers", () => {
 			alpha: 1,
 		};
 		plan.plannedSnapshot.submittedAt = parseInstant(
-			plan.previousSnapshot.submittedAt.toString(),
+			plan.previousSnapshot.submittedAt.toString()
 		);
 
 		expect(() => materialize(plan)).not.toThrow();
@@ -2920,7 +2921,7 @@ describe("Task 2.1 quality blockers", () => {
 		};
 		plannedStage(plan, 0).assignments.push(injected);
 		const stageChange = plan.changes.stages.find(
-			(change) => change.stageId === stageOneId,
+			(change) => change.stageId === stageOneId
 		);
 		if (!stageChange) throw new Error("fixture");
 		stageChange.resulting.assignments.push({
@@ -2958,7 +2959,7 @@ describe("Task 2.1 quality blockers", () => {
 					snapshot,
 					{ type: "cancel", reason: "uuid" },
 					standardPolicy,
-					now,
+					now
 				),
 			"INVALID_SNAPSHOT",
 		);
@@ -2987,7 +2988,7 @@ describe("Task 2.1 quality blockers", () => {
 						snapshot,
 						{ type: "cancel", reason: "json" },
 						standardPolicy,
-						now,
+						now
 					),
 				"INVALID_SNAPSHOT",
 			);
@@ -3003,7 +3004,7 @@ describe("Task 2.1 quality blockers", () => {
 				snapshot,
 				{ type: "cancel", reason: "json" },
 				standardPolicy,
-				now,
+				now
 			),
 		).not.toThrow();
 	});
@@ -3069,7 +3070,7 @@ describe("purity and event integrity", () => {
 			expect(() =>
 				planWorkflowTransition(
 					deepFreeze(
-						pendingWorkflow({ secondStage: command.type !== "approve" }),
+						pendingWorkflow({ secondStage: command.type !== "approve" })
 					),
 					deepFreeze(command),
 					deepFreeze(standardPolicy),
@@ -3114,7 +3115,7 @@ describe("purity and event integrity", () => {
 		);
 		expect(source).not.toMatch(/\b(?:Date|Math\.random|crypto|console\.)\b/);
 		expect(
-			[...source.matchAll(/from\s+["']([^"']+)["']/g)].map((match) => match[1]),
+			[...source.matchAll(/from\s+["']([^"']+)["']/g)].map((match) => match[1])
 		).toEqual([
 			"@/lib/datetime/temporal-core",
 			"../domain-adapters/registry",
@@ -3125,7 +3126,7 @@ describe("purity and event integrity", () => {
 });
 
 function terminalSnapshot(
-	status: "rejected" | "cancelled" | "expired",
+	status: "rejected" | "cancelled" | "expired"
 ): ApprovalWorkflowSnapshot {
 	const snapshot = pendingWorkflow();
 	snapshot.status = status;

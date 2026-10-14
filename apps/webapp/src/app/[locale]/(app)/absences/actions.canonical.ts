@@ -37,7 +37,7 @@ export function mapAbsenceRangeToCanonicalTimestamps(input: {
 		zone: "utc",
 	}).startOf("day");
 	const endOfEndDate = DateTime.fromISO(input.endDate, { zone: "utc" }).endOf(
-		"day",
+		"day"
 	);
 
 	const startAt =
@@ -79,7 +79,7 @@ export function buildCanonicalAbsenceRecordValues(input: {
 			endAt,
 			durationMinutes: Math.max(
 				0,
-				Math.floor((endAt.getTime() - startAt.getTime()) / 60000),
+				Math.floor((endAt.getTime() - startAt.getTime()) / 60000)
 			),
 			approvalState: input.requiresApproval
 				? ("pending" as const)
@@ -143,6 +143,8 @@ export async function updateCanonicalAbsenceRangeInTransaction(
 		endDate: string;
 		endPeriod: DayPeriod;
 		updatedBy: string;
+		resolvedBounds?: { startAt: Date; endAt: Date
+	};
 	},
 ): Promise<void> {
 	if (!input.canonicalRecordId) {
@@ -150,7 +152,7 @@ export async function updateCanonicalAbsenceRangeInTransaction(
 	}
 
 	const canonicalRecordId = input.canonicalRecordId;
-	const { startAt, endAt } = mapAbsenceRangeToCanonicalTimestamps(input);
+	const { startAt, endAt } = input.resolvedBounds ?? mapAbsenceRangeToCanonicalTimestamps(input);
 
 	await tx
 		.update(timeRecord)
@@ -159,7 +161,7 @@ export async function updateCanonicalAbsenceRangeInTransaction(
 			endAt,
 			durationMinutes: Math.max(
 				0,
-				Math.floor((endAt.getTime() - startAt.getTime()) / 60000),
+				Math.floor((endAt.getTime() - startAt.getTime()) / 60000)
 			),
 			updatedAt: currentTimestamp(),
 			updatedBy: input.updatedBy,

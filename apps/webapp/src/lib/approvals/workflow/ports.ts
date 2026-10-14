@@ -1,9 +1,9 @@
 import type { SQL } from "drizzle-orm";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovalWriteGateResult } from "../authority/resolution";
+import type { PeriodSubmissionApprovalSource } from "../domain-adapters/period-submission-contract";
 import type { ApprovedCancellationAuthorization } from "../domain-adapters/registry";
 import type { ApprovalTerminalFinalizationResult } from "../domain-adapters/types";
-import type { PeriodSubmissionApprovalSource } from "../domain-adapters/period-submission-contract";
 import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
 import type { RequesterEligibilityMode } from "../policies/manager-eligibility";
 import type { ApprovalProjectionWriteInput } from "../projection/contracts";
@@ -89,7 +89,8 @@ export type ApprovalWorkflowPrincipal =
 				| "approval-expiry"
 				| "approval-activation"
 				| typeof APPROVAL_ESCALATION_SYSTEM_ID
-				| typeof PERIOD_SUBMISSION_CHANGE_SYSTEM_ID;
+				| typeof PERIOD_SUBMISSION_CHANGE_SYSTEM_ID
+				| typeof ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID;
 	  }
 	| OffboardingHandoverPrincipal;
 
@@ -100,6 +101,10 @@ export type ApprovalWorkflowPrincipal =
  * user and no active employee, so a change to a departed employee's period still withdraws it.
  */
 export const PERIOD_SUBMISSION_CHANGE_SYSTEM_ID = "period-submission-change";
+
+/** Only retires a pending absence-change workflow whose proposal is obsolete. */
+export const ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID = "absence-change-obsolete";
+export const ABSENCE_CHANGE_OBSOLETE_REASON = "This request is obsolete. Submit a fresh request.";
 
 /**
  * Narrow departure-handover capability (#341). It carries the persisted
@@ -124,10 +129,8 @@ export interface OffboardingHandoverPrincipal {
 export function isOffboardingHandoverPrincipal(
 	principal: ApprovalWorkflowPrincipal,
 ): principal is OffboardingHandoverPrincipal {
-	return (
-		principal.kind === "system" &&
-		principal.systemId === EMPLOYEE_OFFBOARDING_SYSTEM_ID
-	);
+	return principal.kind === "system" &&
+		principal.systemId === EMPLOYEE_OFFBOARDING_SYSTEM_ID;
 }
 
 /**
@@ -251,8 +254,7 @@ export interface ApprovalTransitionIdentityResolution {
 	id: string;
 }
 
-export type ApprovalEventActorIntent =
-	| { kind: "command_actor" }
+export type ApprovalEventActorIntent = { kind: "command_actor" }
 	| { kind: "system" };
 
 export type ApprovalPlannedActorReference =
@@ -594,8 +596,7 @@ export interface LegacyApprovalRequestSnapshot {
 	updatedAt: Instant;
 }
 
-export type LegacyApprovalChainStatus =
-	| "pending"
+export type LegacyApprovalChainStatus = "pending"
 	| "approved"
 	| "rejected"
 	| "cancelled";
@@ -697,8 +698,7 @@ export interface TransactionalWorkflowRepository {
 		organizationId: string;
 		workflowId: string;
 		expectedVersion: number;
-	}): Promise<
-		| { kind: "advanced"; version: number }
+	}): Promise< { kind: "advanced"; version: number }
 		| { kind: "conflict"; version: number | null }
 	>;
 	allocateTransitionIdentities(input: {
@@ -712,7 +712,7 @@ export interface TransactionalWorkflowRepository {
 	 * caller-owned transaction.
 	 */
 	applyMaterializedTransition(
-		plan: ApprovalMaterializedTransitionPlan,
+		plan: ApprovalMaterializedTransitionPlan
 	): Promise<void>;
 	completeCommand(
 		input: ApprovalCommandReceiptIdentity & { result: ApprovalCommandResult },
@@ -754,6 +754,7 @@ export interface StageActivationResolver {
 
 export interface ApprovalWorkflowSourceMap {
 	absence: unknown;
+	absence_change: import("../domain-adapters/absence-change.adapter").AbsenceChangeApprovalSource;
 	time_correction: unknown;
 	manual_time_submission: OrdinaryWorkPeriodApprovalSource;
 	policy_clock_out: OrdinaryWorkPeriodApprovalSource;
