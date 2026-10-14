@@ -7,8 +7,10 @@ import "server-only";
  * - `readWorkRecord`: a completed work period with its entries and canonical
  *   work record, its expected state and its record agreement, optionally
  *   locked so a caller can check its own preconditions first.
- * - `applyWorkRecordChange`: one change (divide, amend, create) against a named
- *   expected state. It returns the applied result or a refusal, never both;
+ * - `applyWorkRecordChange`: one change (divide, divide by an owed break,
+ *   amend, create, attach a missing canonical work record, repair a pair)
+ *   against a named expected state. It returns the applied result or a
+ *   refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
  * Both run only on a sealed work-transaction scope; the Approvals finalizer's
@@ -26,13 +28,23 @@ import type { CreateWorkRecord } from "./create-plan";
 import { divideWorkRecord, type WorkDivision } from "./divide";
 import { divideByOwedBreak, type OwedBreakDivision } from "./divide-owed-break";
 import type { DivideByOwedBreak, OwedBreakNotRequired } from "./owed-break";
+import {
+	attachWorkRecord,
+	repairWorkRecord,
+	type WorkAttachment,
+	type WorkRepair,
+} from "./repair";
+import type { AttachWorkRecord, RepairWorkRecord } from "./repair-change";
 
-export type {
-	AmendAttributionPatch,
-	AmendedEndpoint,
-	AmendedTimes,
-	AmendmentChanges,
-	AmendWorkRecord,
+export {
+	type AdoptedEndpoint,
+	type AmendAttributionPatch,
+	type AmendedEndpoint,
+	type AmendedTimes,
+	type AmendmentChanges,
+	type AmendWorkRecord,
+	isAdoptedEndpoint,
+	type NewAmendedEndpoint,
 } from "./amend-change";
 export type { AmendedEntryEvidence, WorkAmendment } from "./amend";
 
@@ -68,6 +80,13 @@ export {
 export { WORK_RECORD_LOCK_ORDER, type WorkRecordKey } from "./rows";
 export type { WorkSegment } from "./segment";
 
+export type { WorkAttachment, WorkRepair } from "./repair";
+export type {
+	AttachWorkRecord,
+	RepairWorkRecord,
+	WorkRecordResolution,
+} from "./repair-change";
+
 /** The applied result of each change. */
 export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkRecord
 	? WorkDivision
@@ -77,7 +96,11 @@ export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkR
 			? WorkAmendment
 			: C extends CreateWorkRecord
 				? WorkCreation
-				: never;
+				: C extends AttachWorkRecord
+					? WorkAttachment
+					: C extends RepairWorkRecord
+						? WorkRepair
+						: never;
 
 export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	scope: SealedWorkTransactionScope,
@@ -92,5 +115,9 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 			return (await amendWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 		case "create":
 			return (await createWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "attach":
+			return (await attachWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "repair":
+			return (await repairWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }

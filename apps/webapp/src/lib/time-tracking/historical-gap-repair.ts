@@ -23,6 +23,7 @@
 import { createHash } from "node:crypto";
 import { compareInstants, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { canonicalJson } from "./canonical-json";
+import { gapRepairResolution, repairedWorkAgrees } from "./historical-repair-resolution";
 import {
 	type HistoricalEntryEvidence,
 	type HistoricalPeriodEvidence,
@@ -138,7 +139,9 @@ export type GapHoldReason =
 	/** Active work is completed by its own writers, not by repair. */
 	| "active_work"
 	/** A referenced project or category is not the organization's. */
-	| "reference_outside_organization";
+	| "reference_outside_organization"
+	/** The filled work would still disagree with its canonical record (#1226). */
+	| "repair_leaves_divergence";
 
 export interface HeldGap {
 	findingId: string;
@@ -234,6 +237,18 @@ export function planHistoricalGapRepair(input: HistoricalGapRepairInput): Histor
 			if (outcome.actor) originalActor = outcome.actor;
 		}
 		if (fills.length === 0) continue;
+		// Work records writes a repair only when the repaired pair agrees (#1226):
+		// work whose fills leave a disagreement, such as a gap held on its own, is held whole.
+		const agrees = fills.some((fill) => fill.kind === "canonical_record")
+			? repairedWorkAgrees(period, null, {})
+			: repairedWorkAgrees(period, record, gapRepairResolution(fills));
+		if (!agrees) {
+			const filled = new Set(fills.map((fill) => fill.findingId));
+			for (const gap of periodGaps) {
+				if (filled.has(gap.id)) hold(gap, "repair_leaves_divergence");
+			}
+			continue;
+		}
 
 		const expected = expectedStateOf(period, record);
 		const unit = {

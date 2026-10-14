@@ -1,12 +1,11 @@
 /**
  * The amend change of work records (ADR 0010, #1225): new times and a work
  * attribution patch for one completed work period, applied to the work period
- * and its canonical work record together. Types only, no I/O and no
- * server-only imports.
+ * and its canonical work record together. No I/O and no server-only imports.
  *
- * Later slices extend it here: #1226 adopts endpoints that already exist as
- * recorded time entries (a second `AmendedEndpoint` variant), #1227 adds the
- * approval state to the same change.
+ * Endpoints that already exist as recorded time entries are adopted by
+ * reference (`AdoptedEndpoint`, #1226). #1227 adds the approval state to the
+ * same change.
  */
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import type { Instant } from "@/lib/datetime/temporal-core";
@@ -15,15 +14,33 @@ import type { NewEntryProvenance, WorkRecordExpected } from "./change";
 import type { WorkAttributionPart, WorkAttributionPatch } from "./work-attribution";
 
 /** A new endpoint: a correction entry at the instant, captured in the zone it was resolved in. */
-export type AmendedEndpoint = {
+export type NewAmendedEndpoint = {
 	at: Instant;
 	capture: TimeEntryTimezoneCapture;
 };
 
 /**
+ * An endpoint that already exists as a recorded time entry (#1226): a pending
+ * correction recorded while its change waited for approval, still inactive
+ * (superseded, by nothing) and replacing the current endpoint. Work records
+ * adopts it by reference, activating it in place of the endpoint, and appends
+ * nothing for it. Its instant and capture are the entry's own.
+ */
+export type AdoptedEndpoint = {
+	/** The id of the recorded correction entry. */
+	adopt: string;
+};
+
+export type AmendedEndpoint = NewAmendedEndpoint | AdoptedEndpoint;
+
+export function isAdoptedEndpoint(endpoint: AmendedEndpoint): endpoint is AdoptedEndpoint {
+	return "adopt" in endpoint;
+}
+
+/**
  * New times. Each named endpoint is appended as a correction entry that
- * replaces the current one; an endpoint left out, or named at its current
- * instant, stays.
+ * replaces the current one, or adopted when it is already recorded; an
+ * endpoint left out, or named at its current instant, stays.
  */
 export type AmendedTimes = {
 	clockIn?: AmendedEndpoint;

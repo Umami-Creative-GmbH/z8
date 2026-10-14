@@ -41,6 +41,8 @@ const REFUSAL_KINDS = new Set<WorkRecordRefusalKind>([
 	"append_review_required",
 	"unchanged",
 	"interval_invalid",
+	"adopted_entry_mismatch",
+	"canonical_record_present",
 ] satisfies WorkRecordRefusalKind[]);
 
 export function isWorkRecordRefusal(outcome: { kind: string }): outcome is WorkRecordRefusal {
@@ -109,6 +111,16 @@ export function refusalError(refusal: WorkRecordRefusal): Error {
 			return new ValidationError({
 				message: "Clock out time must be after clock in time",
 				field: "timestamp",
+			});
+		case "adopted_entry_mismatch":
+			return new ConflictError({
+				message: "Time entry was already corrected by another process",
+				conflictType: "time_entry_already_corrected",
+			});
+		case "canonical_record_present":
+			return new ConflictError({
+				message: "Work period changed while editing",
+				conflictType: "time_correction_work_period_stale",
 			});
 	}
 }

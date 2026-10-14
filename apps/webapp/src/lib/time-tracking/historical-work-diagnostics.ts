@@ -43,8 +43,11 @@ import {
 	type WorkVehicleUseColumns,
 } from "./vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "./work-location";
-import type { RecordAgreementFacet } from "./work-records/record-agreement";
-import { diagnoseRecordAgreement } from "./work-records/record-agreement-diagnosis";
+import type { AgreementWorkPeriod, RecordAgreementFacet } from "./work-records/record-agreement";
+import {
+	diagnoseRecordAgreement,
+	type StoredCanonicalRecord,
+} from "./work-records/record-agreement-diagnosis";
 import type { CanonicalAllocationShape } from "./work-records/work-attribution";
 
 // ---------------------------------------------------------------------------
@@ -1010,38 +1013,45 @@ type PairDraft = {
  * and names its facet in `details.facet`. A disagreement that is a missing end or
  * duration is reported where that value is missing, not twice.
  */
+/** A period's evidence as the record agreement rule reads a work period. */
+export function agreementPeriodOf(period: HistoricalPeriodEvidence): AgreementWorkPeriod {
+	return {
+		startTime: dateFromInstant(period.startTime),
+		endTime: period.endTime ? dateFromInstant(period.endTime) : null,
+		durationMinutes: period.durationMinutes,
+		approvalStatus: period.approvalStatus,
+		projectId: period.projectId,
+		taskId: period.taskId,
+		isBillable: period.isBillable ?? false,
+		workCategoryId: period.workCategoryId,
+		workLocationType: period.workLocationType,
+		...vehicleColumnsOf(period),
+	};
+}
+
+/** A record's evidence as the record agreement rule reads a stored canonical work record. */
+export function agreementRecordOf(record: HistoricalRecordEvidence): StoredCanonicalRecord {
+	return {
+		record: {
+			startAt: dateFromInstant(record.startAt),
+			endAt: record.endAt ? dateFromInstant(record.endAt) : null,
+			durationMinutes: record.durationMinutes,
+			approvalState: record.approvalState,
+		},
+		detail: record.detail && {
+			workCategoryId: record.detail.workCategoryId,
+			workLocationType: record.detail.workLocationType,
+			...vehicleColumnsOf(record.detail),
+		},
+		allocations: record.allocations,
+	};
+}
+
 function recordAgreementFindings(
 	period: HistoricalPeriodEvidence,
 	record: HistoricalRecordEvidence,
 ): PairDraft[] {
-	const diagnosis = diagnoseRecordAgreement(
-		{
-			startTime: dateFromInstant(period.startTime),
-			endTime: period.endTime ? dateFromInstant(period.endTime) : null,
-			durationMinutes: period.durationMinutes,
-			approvalStatus: period.approvalStatus,
-			projectId: period.projectId,
-			taskId: period.taskId,
-			isBillable: period.isBillable ?? false,
-			workCategoryId: period.workCategoryId,
-			workLocationType: period.workLocationType,
-			...vehicleColumnsOf(period),
-		},
-		{
-			record: {
-				startAt: dateFromInstant(record.startAt),
-				endAt: record.endAt ? dateFromInstant(record.endAt) : null,
-				durationMinutes: record.durationMinutes,
-				approvalState: record.approvalState,
-			},
-			detail: record.detail && {
-				workCategoryId: record.detail.workCategoryId,
-				workLocationType: record.detail.workLocationType,
-				...vehicleColumnsOf(record.detail),
-			},
-			allocations: record.allocations,
-		},
-	);
+	const diagnosis = diagnoseRecordAgreement(agreementPeriodOf(period), agreementRecordOf(record));
 
 	const drafts: PairDraft[] = diagnosis.unrepresentable.map(({ side, reason }) => ({
 		kind: "attribution_unrepresentable",

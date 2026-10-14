@@ -174,7 +174,7 @@ describe("legacy time-tracking action billing guards", () => {
 	it("guards the canonical same-day edit before writing time data", () => {
 		expectBillingGuardBeforeWrite(
 			"editSameDayTimeEntry",
-			"canonicalTimeEntryClient.createCorrectionEntry",
+			"withCompletedWorkTransaction(",
 			correctionSubmissionSource,
 		);
 	});
@@ -188,15 +188,13 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain("dirtyFromDate:");
 	});
 
-	it("marks work balances dirty after the canonical same-day edit", () => {
+	it("leaves the same-day edit's balance refresh to the amendment's transaction (#1226)", () => {
 		const body = functionBody(
 			"editSameDayTimeEntry",
 			correctionSubmissionSource,
 		);
-		expect(body).toContain(
-			"await markWorkBalanceDirtyAfterSameDayEditBestEffort(",
-		);
-		expect(body).toContain("dirtyFromDate:");
+		expect(body).toContain("amendLegacyCompletedWork(scope, amendment)");
+		expect(body).not.toContain("markEmployeeWorkBalanceDirty");
 	});
 
 	it.each(["updateWorkPeriodProject", "updateWorkPeriodBillability", "updateWorkPeriodNotes"])(

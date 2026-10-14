@@ -2,18 +2,7 @@ import { Effect } from "effect";
 import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
-import {
-	employee as employeeTable,
-	teamMembership as teamMembershipTable,
-	team as teamTable,
-	timeRecord as timeRecordTable,
-	timeRecordWork as timeRecordWorkTable,
-	workCategorySetAssignment as workCategorySetAssignmentTable,
-	workCategorySetCategory as workCategorySetCategoryTable,
-	workCategorySet as workCategorySetTable,
-	workCategory as workCategoryTable,
-	workPeriod as workPeriodTable,
-} from "@/db/schema";
+import { ConflictError, ValidationError } from "@/lib/effect/errors";
 
 const state = vi.hoisted(() => ({
 	selectLimit: vi.fn(),
@@ -33,17 +22,13 @@ const state = vi.hoisted(() => ({
 	pendingApproval: vi.fn(),
 	editCapability: vi.fn(),
 	directTransaction: vi.fn(),
-	createCorrectionEntry: vi.fn(),
+	amendLegacy: vi.fn(),
 	markWorkBalanceDirty: vi.fn(),
 	txCategoryFindFirst: vi.fn(),
 	txAssignmentsFindMany: vi.fn(),
 	txSetCategoryFindFirst: vi.fn(),
 	txApprovalWorkflowFindFirst: vi.fn(),
 	txApprovalRequestFindMany: vi.fn(),
-	directSelectForUpdate: vi.fn(),
-	directUpdateCalls: [] as Array<Record<string, unknown>>,
-	directSetCalls: [] as Array<Record<string, unknown>>,
-	directCanonicalFailure: false,
 	nowInstant: vi.fn(),
 	sendEmail: vi.fn(),
 	onTimeCorrectionPendingApproval: vi.fn(),
@@ -163,10 +148,11 @@ vi.mock("./policy-helpers", () => ({
 	getEditCapabilityForPeriod: state.editCapability,
 }));
 
-vi.mock("../actions.canonical", () => ({
-	canonicalTimeEntryClient: {
-		createCorrectionEntry: state.createCorrectionEntry,
-	},
+// Legacy same-day edits amend through work records (#1226); its PostgreSQL
+// suites prove the writes, this suite the caller policy around them.
+vi.mock("@/lib/time-tracking/amend-completed-work", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/amend-completed-work")>()),
+	amendLegacyCompletedWork: state.amendLegacy,
 }));
 
 vi.mock("@/lib/work-balance/service", () => ({
@@ -432,166 +418,22 @@ function configure(result: {
 function configureDirectEdit(selectedPeriod = period) {
 	configure({ kind: "default_created" });
 	state.selectLimit.mockResolvedValue([selectedPeriod]);
-	state.timeEntryFindMany.mockResolvedValue([
-		{ ...originals[0], timestamp: selectedPeriod.startTime },
-		{ ...originals[1], timestamp: selectedPeriod.endTime },
-	]);
-	state.createCorrectionEntry.mockResolvedValue({ id: "correction-1" });
-	state.directUpdateCalls.length = 0;
-	state.directSetCalls.length = 0;
-	state.directCanonicalFailure = false;
-	state.directSelectForUpdate.mockReset();
-	state.directSelectForUpdate
-		.mockResolvedValueOnce([employee])
-		.mockResolvedValueOnce([])
-		.mockResolvedValueOnce([selectedPeriod])
-		.mockResolvedValueOnce([
-			{
-				id: selectedPeriod.canonicalRecordId,
-				organizationId: selectedPeriod.organizationId,
-				employeeId: selectedPeriod.employeeId,
-				recordKind: "work",
-			},
-		])
-		.mockResolvedValueOnce([
-			{
-				recordId: selectedPeriod.canonicalRecordId,
-				organizationId: selectedPeriod.organizationId,
-				recordKind: "work",
-				workLocationType: selectedPeriod.workLocationType,
-				workCategoryId: selectedPeriod.workCategoryId,
-			},
-		]);
-	state.directTransaction.mockImplementation(async (operation) => {
-		const stagedUpdates: Array<Record<string, unknown>> = [];
-		const tx = {
-			select:
-
-vi.fn(() => ({
-				from: vi.fn((table) => ({
-					where: vi.fn(() => ({
-						for: vi.fn(() => state.directSelectForUpdate(table)),
-						limit: vi.fn(() => ({
-							for: vi.fn(() => state.directSelectForUpdate(table)),
-						})),
-						orderBy: vi.fn(() => ({
-							for: vi.fn(() => state.directSelectForUpdate(table)),
-							limit: vi.fn(() => ({
-								for: vi.fn(() => state.directSelectForUpdate(table)),
-							})),
-						})),
-					})),
-				})),
-			})),
-			update: vi.fn(() => ({
-				set: vi.fn((values) => {
-					state.directSetCalls.push(values);
-					return {
-						where: vi.fn(() => ({
-							returning: async () => {
-								stagedUpdates.push(values);
-								if (
-									state.directCanonicalFailure &&
-									stagedUpdates.length === 2
-								) {
-									throw new Error("canonical update failed");
-								}
-								return [
-									{
-										id:
-											stagedUpdates.length === 1
-												? period.id
-												: period.canonicalRecordId,
-									},
-								];
-							},
-						})),
-					};
-				}),
-			})),
-			query: {
-				workCategory: { findFirst: state.txCategoryFindFirst },
-				workCategorySetAssignment: { findMany: state.txAssignmentsFindMany },
-				workCategorySetCategory: { findFirst: state.txSetCategoryFindFirst },
-			},
-		};
-		const result = await operation(tx);
-		state.directUpdateCalls.push(...stagedUpdates);
-		return result;
+	state.directTransaction.mockImplementation(async (operation) => operation({}));
+	state.amendLegacy.mockReset().mockResolvedValue({
+		disposition: "executed",
+		result: {
+			operationId: submissionId,
+			workPeriodId: selectedPeriod.id,
+			append: { admission: "legacy", used: true },
+		},
+		correctionEntries: [],
 	});
 }
 
-function configureDirectCategoryEdit(input: {
-	membershipOrganizationId: string;
-	teamOrganizationId: string;
-}) {
-	configureDirectEdit();
-	const employeeWithTeam = { ...employee, teamId: ids.team };
-	const rows = new Map<unknown, unknown[]>([
-		[employeeTable, [employeeWithTeam]],
-		[
-			teamMembershipTable,
-			[
-				{
-					organizationId: input.membershipOrganizationId,
-					employeeId: ids.employee,
-					teamId: ids.team,
-				},
-			],
-		],
-		[teamTable, [{ id: ids.team, organizationId: input.teamOrganizationId }]],
-		[workPeriodTable, [period]],
-		[
-			workCategoryTable,
-			[{ id: categoryId, organizationId: "org-1", isActive: true }],
-		],
-		[
-			workCategorySetAssignmentTable,
-			[
-				{
-					id: "assignment-1",
-					assignmentType: "team",
-					organizationId: "org-1",
-					teamId: ids.team,
-					setId: categorySetId,
-					isActive: true,
-					effectiveFrom: null,
-					effectiveUntil: null,
-				},
-			],
-		],
-		[
-			workCategorySetTable,
-			[{ id: categorySetId, organizationId: "org-1", isActive: true }],
-		],
-		[workCategorySetCategoryTable, [{ id: "set-category-1" }]],
-		[
-			timeRecordTable,
-			[
-				{
-					id: period.canonicalRecordId,
-					organizationId: period.organizationId,
-					employeeId: period.employeeId,
-					recordKind: "work",
-				},
-			],
-		],
-		[
-			timeRecordWorkTable,
-			[
-				{
-					recordId: period.canonicalRecordId,
-					organizationId: period.organizationId,
-					recordKind: "work",
-					workLocationType: period.workLocationType,
-					workCategoryId: period.workCategoryId,
-				},
-			],
-		],
-	]);
-	state.directSelectForUpdate
-		.mockReset()
-		.mockImplementation((table) => rows.get(table) ?? []);
+/** The amendment the legacy same-day edit asked for. */
+function amendment() {
+	expect(state.amendLegacy).toHaveBeenCalledOnce();
+	return state.amendLegacy.mock.calls[0]?.[1];
 }
 
 // Legacy organizations: the coordinated scope borrows the mocked transaction.
@@ -1902,50 +1744,7 @@ describe("time correction submission actions", () => {
 		);
 	});
 
-	it("does not grant direct category access from cross-organization team evidence", async () => {
-		configureDirectCategoryEdit({
-			membershipOrganizationId: "org-2",
-			teamOrganizationId: "org-2",
-		});
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "08:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "office",
-			workCategoryId: categoryId,
-		});
-
-		expect(result).toMatchObject({ success: false });
-		expect(state.directUpdateCalls).toEqual([]);
-	});
-
-	it("grants direct category access from valid scoped team evidence", async () => {
-		configureDirectCategoryEdit({
-			membershipOrganizationId: "org-1",
-			teamOrganizationId: "org-1",
-		});
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "08:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "office",
-			workCategoryId: categoryId,
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(state.directUpdateCalls).toEqual([
-			{ workLocationType: "office", workCategoryId: categoryId },
-			{ workLocationType: "office", workCategoryId: categoryId },
-		]);
-	});
-
-	it("updates legacy and canonical metadata for a direct metadata-only edit", async () => {
+	it("amends a direct metadata-only edit through the completed-work amendment", async () => {
 		configureDirectEdit();
 
 		const result = await modular.editSameDayTimeEntry({
@@ -1956,49 +1755,39 @@ describe("time correction submission actions", () => {
 			newClockOutTime: "16:00",
 			workLocationType: "home",
 			workCategoryId: null,
+			reason: "Worked from home",
 		});
 
-		expect(result).toMatchObject({ success: true });
-		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
-		expect(state.directUpdateCalls).toEqual([
-			{ workLocationType: "home", workCategoryId: null },
-			{ workLocationType: "home", workCategoryId: null },
-		]);
+		expect(result).toEqual({ success: true, data: { workPeriodId: ids.period } });
+		expect(amendment()).toMatchObject({
+			organizationId: "org-1",
+			employeeId: ids.employee,
+			actorUserId: "user-1",
+			authority: "owner",
+			writer: "self_service_time_edit",
+			intent: {
+				workPeriodId: ids.period,
+				clockIn: { kind: "set", at: "2026-07-01T08:00:00Z", precision: "minute" },
+				clockOut: { kind: "set", at: "2026-07-01T16:00:00Z", precision: "minute" },
+				workLocation: { kind: "replace", id: "home" },
+				workCategory: { kind: "clear" },
+				notes: "Worked from home",
+			},
+			expectedSource: {
+				clockInId: ids.clockIn,
+				clockOutId: ids.clockOut,
+			},
+		});
+		// The balance refresh commits with the amendment.
 		expect(state.markWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 
-	it("preserves hidden endpoint precision for a direct metadata-only edit", async () => {
-		const precisePeriod = {
+	it("passes the displayed minute of a moved endpoint to the amendment", async () => {
+		configureDirectEdit({
 			...period,
 			startTime: new Date("2026-07-01T08:00:42.123Z"),
 			endTime: new Date("2026-07-01T16:00:42.123Z"),
-		};
-		configureDirectEdit(precisePeriod);
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "08:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "home",
-			workCategoryId: null,
 		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
-	});
-
-	it("creates a direct endpoint correction when the displayed minute changes", async () => {
-		const precisePeriod = {
-			...period,
-			startTime: new Date("2026-07-01T08:00:42.123Z"),
-			endTime: new Date("2026-07-01T16:00:42.123Z"),
-		};
-		configureDirectEdit(precisePeriod);
-		state.timeEntryFindMany.mockResolvedValue([
-			{ ...originals[0], timestamp: precisePeriod.startTime },
-		]);
 
 		const result = await modular.editSameDayTimeEntry({
 			workPeriodId: ids.period,
@@ -2011,65 +1800,11 @@ describe("time correction submission actions", () => {
 		});
 
 		expect(result).toMatchObject({ success: true });
-		expect(state.createCorrectionEntry).toHaveBeenCalledOnce();
-		expect(state.createCorrectionEntry).toHaveBeenCalledWith(
-			expect.objectContaining({
-				timestamp: new Date("2026-07-01T08:01:00.000Z"),
-			}),
-			expect.anything(),
-		);
-	});
-
-	it("moves the clock-out first when a direct edit shifts the period past its original end", async () => {
-		configureDirectEdit();
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "17:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "19:00",
-			workLocationType: "office",
-			workCategoryId: null,
+		expect(amendment().intent.clockIn).toMatchObject({
+			kind: "set",
+			at: "2026-07-01T08:01:00Z",
+			precision: "minute",
 		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(
-			state.createCorrectionEntry.mock.calls.map(([input]) => ({
-				replacesEntryId: input.replacesEntryId,
-				timestamp: input.timestamp,
-			})),
-		).toEqual([
-			{
-				replacesEntryId: ids.clockOut,
-				timestamp: new Date("2026-07-01T19:00:00.000Z"),
-			},
-			{
-				replacesEntryId: ids.clockIn,
-				timestamp: new Date("2026-07-01T17:00:00.000Z"),
-			},
-		]);
-	});
-
-	it("keeps clock-in first when a direct edit overlaps the original period", async () => {
-		configureDirectEdit();
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "07:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "15:00",
-			workLocationType: "office",
-			workCategoryId: null,
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(
-			state.createCorrectionEntry.mock.calls.map(
-				([input]) => input.replacesEntryId,
-			),
-		).toEqual([ids.clockIn, ids.clockOut]);
 	});
 
 	it("validates a direct correction near UTC midnight in the employee timezone", async () => {
@@ -2080,9 +1815,6 @@ describe("time correction submission actions", () => {
 		};
 		configureDirectEdit(nearMidnightPeriod);
 		state.getTimezone.mockResolvedValue("America/Los_Angeles");
-		state.timeEntryFindMany.mockResolvedValue([
-			{ ...originals[0], timestamp: nearMidnightPeriod.startTime },
-		]);
 
 		await modular.editSameDayTimeEntry({
 			workPeriodId: ids.period,
@@ -2102,138 +1834,14 @@ describe("time correction submission actions", () => {
 		);
 	});
 
-	it("keeps a reasoned direct metadata-only edit away from endpoint rows", async () => {
+	it("returns the amendment's refusal of an unchanged edit", async () => {
 		configureDirectEdit();
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "08:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "home",
-			workCategoryId: null,
-			reason: "Worked from home",
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
-		expect(state.directSetCalls).toEqual([
-			{ workLocationType: "home", workCategoryId: null },
-			{ workLocationType: "home", workCategoryId: null },
-		]);
-		expect(state.markWorkBalanceDirty).not.toHaveBeenCalled();
-	});
-
-	it("rolls back direct metadata when the canonical update fails", async () => {
-		configureDirectEdit();
-		state.directCanonicalFailure = true;
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "08:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "home",
-			workCategoryId: null,
-		});
-
-		expect(result).toMatchObject({ success: false });
-		expect(state.directUpdateCalls).toEqual([]);
-		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
-	});
-
-	it("fails before writing when direct-edit legacy metadata changed after form load", async () => {
-		configureDirectEdit();
-		state.directSelectForUpdate.mockReset();
-		state.directSelectForUpdate
-			.mockResolvedValueOnce([employee])
-			.mockResolvedValueOnce([])
-			.mockResolvedValueOnce([{ ...period, workLocationType: "remote" }]);
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "08:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "home",
-			workCategoryId: null,
-		});
-
-		expect(result).toMatchObject({ success: false });
-		expect(state.directSelectForUpdate).toHaveBeenCalledTimes(3);
-		expect(state.directUpdateCalls).toEqual([]);
-	});
-
-	it("rolls back when canonical work metadata diverges from locked legacy metadata", async () => {
-		configureDirectEdit();
-		state.directSelectForUpdate.mockReset();
-		state.directSelectForUpdate
-			.mockResolvedValueOnce([employee])
-			.mockResolvedValueOnce([])
-			.mockResolvedValueOnce([period])
-			.mockResolvedValueOnce([
-				{
-					id: period.canonicalRecordId,
-					organizationId: period.organizationId,
-					employeeId: period.employeeId,
-					recordKind: "work",
-				},
-			])
-			.mockResolvedValueOnce([
-				{
-					recordId: period.canonicalRecordId,
-					organizationId: period.organizationId,
-					recordKind: "work",
-					workLocationType: "remote",
-					workCategoryId: null,
-				},
-			]);
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "08:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "home",
-			workCategoryId: null,
-		});
-
-		expect(result).toMatchObject({ success: false });
-		expect(state.directUpdateCalls).toEqual([]);
-		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
-	});
-
-	it("allows a time-only direct edit without a canonical metadata extension", async () => {
-		configureDirectEdit();
-		state.timeEntryFindMany.mockResolvedValue([originals[0]]);
-		state.directSelectForUpdate.mockReset();
-		state.directSelectForUpdate
-			.mockResolvedValueOnce([employee])
-			.mockResolvedValueOnce([])
-			.mockResolvedValueOnce([period]);
-
-		const result = await modular.editSameDayTimeEntry({
-			workPeriodId: ids.period,
-			newClockInDate: "2026-07-01",
-			newClockInTime: "09:00",
-			newClockOutDate: "2026-07-01",
-			newClockOutTime: "16:00",
-			workLocationType: "office",
-			workCategoryId: null,
-		});
-
-		expect(result).toMatchObject({ success: true });
-		expect(state.directSelectForUpdate).toHaveBeenCalledTimes(3);
-		expect(state.directUpdateCalls).toEqual([]);
-		expect(state.createCorrectionEntry).toHaveBeenCalledOnce();
-	});
-
-	it("rejects a completely unchanged direct edit", async () => {
-		configureDirectEdit();
+		state.amendLegacy.mockRejectedValueOnce(
+			new ValidationError({
+				message: "At least one correction value must change",
+				field: "correction",
+			}),
+		);
 
 		const result = await modular.editSameDayTimeEntry({
 			workPeriodId: ids.period,
@@ -2249,10 +1857,32 @@ describe("time correction submission actions", () => {
 			success: false,
 			error: "At least one correction value must change",
 		});
-		// Decided under the coordinated transaction, before any lock or write.
-		expect(state.directSelectForUpdate).not.toHaveBeenCalled();
-		expect(state.directUpdateCalls).toEqual([]);
-		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
+	});
+
+	it("returns the conflict code when the work changed after the form loaded", async () => {
+		configureDirectEdit();
+		state.amendLegacy.mockRejectedValueOnce(
+			new ConflictError({
+				message: "Work period changed while editing",
+				conflictType: "time_correction_work_period_stale",
+			}),
+		);
+
+		const result = await modular.editSameDayTimeEntry({
+			workPeriodId: ids.period,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "08:00",
+			newClockOutDate: "2026-07-01",
+			newClockOutTime: "16:00",
+			workLocationType: "home",
+			workCategoryId: null,
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Work period changed while editing",
+			code: "time_correction_work_period_stale",
+		});
 	});
 });
 

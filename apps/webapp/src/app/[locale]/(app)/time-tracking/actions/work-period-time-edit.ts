@@ -55,7 +55,6 @@ import {
 	type WorkPeriodTimeEditAccess,
 	type WorkPeriodTimeEditValues,
 } from "@/lib/time-tracking/work-period-time-edit-policy";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	getCurrentEmployee,
 	getCurrentSession,
@@ -547,7 +546,8 @@ async function applyAdminEdit(
 		}
 
 		const requestMetadata = await getRequestMetadata();
-		const result = await applyAdminWorkPeriodTimeEdit({
+		// The balance refresh commits with the edit (#1226).
+		await applyAdminWorkPeriodTimeEdit({
 			organizationId,
 			actorUserId: target.userId,
 			workPeriodId: period.id,
@@ -571,21 +571,6 @@ async function applyAdminEdit(
 			ipAddress: requestMetadata.ipAddress,
 			deviceInfo: requestMetadata.userAgent,
 		});
-
-		if (result.balanceRefresh === "caller") {
-			try {
-				await markEmployeeWorkBalanceDirty({
-					employeeId: result.employeeId,
-					organizationId,
-					dirtyFromDate: result.dirtyFromDate ?? undefined,
-				});
-			} catch (error) {
-				logger.error(
-					{ error, workPeriodId: period.id },
-					"Failed to mark work balance dirty after admin time edit",
-				);
-			}
-		}
 
 		logger.info(
 			{

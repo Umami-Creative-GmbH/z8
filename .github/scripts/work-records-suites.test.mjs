@@ -13,6 +13,8 @@ const callerSuites = [
   `${actions}/correction-lifecycle.integration.test.ts`,
   "apps/webapp/src/lib/approvals/server/time-correction-approvals.integration.test.ts",
   "apps/webapp/src/lib/effect/services/break-enforcement.integration.test.ts",
+  "apps/webapp/src/lib/time-tracking/historical-work-proposals.integration.test.ts",
+  "apps/webapp/src/lib/time-tracking/historical-gap-repair.integration.test.ts",
 ];
 const relative = file => file.replace(/^apps\/webapp\//, "");
 

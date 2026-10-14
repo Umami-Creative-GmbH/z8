@@ -1,18 +1,21 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { amend, replay } = vi.hoisted(() => ({
+const { amend, amendLegacy, replay, admission } = vi.hoisted(() => ({
 	amend: vi.fn(),
+	amendLegacy: vi.fn(),
 	replay: vi.fn(),
+	admission: { current: "append" as "append" | "legacy" },
 }));
 vi.mock("./completed-work-transaction", () => ({
 	withCompletedWorkTransaction: async (
 		_input: unknown,
 		callback: (scope: unknown) => unknown,
-	) => callback({ admission: "append" }),
+	) => callback({ admission: admission.current }),
 }));
 vi.mock("./amend-completed-work", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./amend-completed-work")>()),
 	replayOrAmendCompletedWork: amend,
+	amendLegacyCompletedWork: amendLegacy,
 	replayCommittedAmendment: replay,
 }));
 
@@ -50,6 +53,29 @@ const input = {
 };
 
 describe("admin calendar location amendments", () => {
+	beforeEach(() => {
+		admission.current = "append";
+	});
+
+	it("amends legacy work through the same amendment, without a receipt (#1226)", async () => {
+		admission.current = "legacy";
+		amendLegacy.mockResolvedValue({ result: { workPeriodId: "period" } });
+		amend.mockClear();
+		await expect(applyAdminWorkPeriodTimeEdit(input)).resolves.toEqual({
+			workPeriodId: "period",
+			employeeId: "employee",
+		});
+		expect(amend).not.toHaveBeenCalled();
+		expect(amendLegacy).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({
+				authority: "organization_admin",
+				writer: "admin_time_edit",
+				intent: expect.objectContaining({ workLocation: { kind: "replace", id: "home" } }),
+			}),
+		);
+	});
+
 	it("preserves unchanged instants and timezone captures with sub-minute precision", async () => {
 		amend.mockResolvedValue({ result: { workPeriodId: "period" } });
 		const clockIn = new Date("2025-10-26T01:30:20Z");

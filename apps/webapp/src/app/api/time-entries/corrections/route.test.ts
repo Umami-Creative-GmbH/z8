@@ -25,7 +25,7 @@ const mockState = vi.hoisted(() => {
 	return {
 		canApproveFor: vi.fn(),
 		connection: vi.fn(),
-		createCorrectionEntry: vi.fn(),
+		amendLegacy: vi.fn(),
 		dispatchCommittedSubmission: vi.fn(),
 		createTimeCorrectionApprovalWorkflow: vi.fn(),
 		createTimeEntry: vi.fn(),
@@ -37,12 +37,10 @@ const mockState = vi.hoisted(() => {
 		headers: vi.fn(),
 		limit,
 		loggerError: vi.fn(),
-		markEmployeeWorkBalanceDirty: vi.fn(),
 		validateTimeEntryRange: vi.fn(),
 		resolveCorrectionApprovalManager: vi.fn(),
 		submitCorrection: vi.fn(),
 		timeEntryFindFirst: vi.fn(),
-		runPromiseExit: vi.fn(),
 		requireActor: vi.fn(),
 		select,
 		transaction: vi.fn(),
@@ -138,23 +136,6 @@ vi.mock("@/lib/authorization", () => ({
 	toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
 }));
 
-vi.mock("@/lib/effect/runtime", () => ({
-	runtime: {
-		runPromiseExit: mockState.runPromiseExit,
-	},
-}));
-
-vi.mock("@/lib/effect/services/time-entry.service", async () => {
-	const { Context } = await vi.importActual<typeof import("effect")>("effect");
-	return {
-		TimeEntryService: Context.Service("TestTimeEntryService"),
-	};
-});
-
-vi.mock("@/lib/work-balance/service", () => ({
-	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
-}));
-
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntryRange: mockState.validateTimeEntryRange,
 }));
@@ -164,7 +145,7 @@ vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	clockingService: { requireActor: mockState.requireActor },
 }));
 
-// Legacy organizations: the direct branch runs the service inside the coordinated scope.
+// Legacy organizations: the direct branch amends inside the coordinated scope (#1226).
 vi.mock("@/lib/time-tracking/completed-work-transaction", () => ({
 	withCompletedWorkTransaction: (
 		_input: unknown,
@@ -182,6 +163,7 @@ vi.mock("@/lib/time-tracking/amend-completed-work", () => ({
 	describeAmendmentFailure: () => null,
 	replayCommittedAmendment: async () => null,
 	replayOrAmendCompletedWork: vi.fn(),
+	amendLegacyCompletedWork: mockState.amendLegacy,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -191,9 +173,6 @@ vi.mock("drizzle-orm", () => ({
 	or: (...conditions: unknown[]) => ({ conditions, type: "or" }),
 }));
 
-const { TimeEntryService } = await import(
-	"@/lib/effect/services/time-entry.service"
-);
 const { GET, POST } = await import("./route");
 
 describe("correction route Temporal contract", () => {
@@ -328,7 +307,6 @@ describe("GET /api/time-entries/corrections", () => {
 		mockState.getSession.mockReset();
 		mockState.headers.mockReset();
 		mockState.limit.mockReset();
-		mockState.runPromiseExit.mockReset();
 		mockState.where.mockClear();
 		mockState.headers.mockResolvedValue(new Headers());
 		mockState.getSession.mockResolvedValue({
@@ -428,7 +406,6 @@ describe("POST /api/time-entries/corrections", () => {
 		mockState.dispatchCommittedSubmission.mockResolvedValue(undefined);
 		mockState.getForbiddenCorrectionEditMessage.mockResolvedValue(null);
 		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");
-		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
 		mockState.validateTimeEntryRange.mockResolvedValue({ isValid: true });
 		mockState.resolveCorrectionApprovalManager.mockResolvedValue({
 			ok: true,
@@ -460,20 +437,13 @@ describe("POST /api/time-entries/corrections", () => {
 				approvalRequestId: "approval-1",
 			}),
 		);
-		mockState.createCorrectionEntry.mockReturnValue(
-			Effect.succeed({ id: "entry-direct-correction" }),
-		);
+		mockState.amendLegacy.mockResolvedValue({
+			disposition: "executed",
+			result: { workPeriodId: "period-1" },
+			correctionEntries: [{ id: "entry-direct-correction" }],
+		});
 		mockState.transaction.mockImplementation(
 			async (callback: (tx: unknown) => Promise<unknown>) => callback({}),
-		);
-		mockState.runPromiseExit.mockImplementation((effect) =>
-			Effect.runPromiseExit(
-				effect.pipe(
-					Effect.provideService(TimeEntryService, {
-						createCorrectionEntry: mockState.createCorrectionEntry,
-					} as never),
-				),
-			),
 		);
 	});
 
@@ -625,35 +595,6 @@ describe("POST /api/time-entries/corrections", () => {
 			expect(mockState.submitCorrection).not.toHaveBeenCalled();
 		},
 	);
-
-	it("uses the corrected endpoint's stored IANA evidence for the dirty date", async () => {
-		mockPostTarget({
-			currentEmployeeId: "employee-manager",
-			entryTimestamp: "2026-07-02T02:30:00.000Z",
-			entryTimezone: "America/New_York",
-			entryUtcOffsetMinutes: -240,
-			periodStart: "2026-07-02T02:30:00.000Z",
-			periodEnd: "2026-07-02T12:00:00.000Z",
-			targetEmployeeId: "employee-target",
-			targetUserId: "target-user",
-		});
-		mockState.canApproveFor.mockResolvedValueOnce(true);
-
-		const response = await POST(
-			createPostRequest({
-				replacesEntryId: "entry-clock-in",
-				timestamp: "2026-07-02T08:15:00+02:00",
-				notes: "Manager correction after travel",
-			}),
-		);
-
-		expect(response.status).toBe(201);
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			dirtyFromDate: "2026-07-01",
-			employeeId: "employee-target",
-			organizationId: "org-1",
-		});
-	});
 
 	it("scopes target entry lookup to the active organization and hides foreign targets", async () => {
 		mockState.limit
@@ -922,8 +863,7 @@ describe("POST /api/time-entries/corrections", () => {
 		expect(
 			mockState.createTimeCorrectionApprovalWorkflow,
 		).not.toHaveBeenCalled();
-		expect(mockState.runPromiseExit).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mockState.amendLegacy).not.toHaveBeenCalled();
 		expectAndPredicateIncludes(mockState.where.mock.calls[2]?.[0], [
 			{ column: "employee.id", value: "employee-1" },
 			{ column: "employee.organizationId", value: "org-1" },
@@ -983,7 +923,7 @@ describe("POST /api/time-entries/corrections", () => {
 			timezone: "Europe/Berlin",
 		});
 		expect(mockState.submitCorrection).not.toHaveBeenCalled();
-		expect(mockState.runPromiseExit).not.toHaveBeenCalled();
+		expect(mockState.amendLegacy).not.toHaveBeenCalled();
 	});
 
 	it("fails closed when the self correction change policy cannot be resolved", async () => {
@@ -1258,19 +1198,29 @@ describe("POST /api/time-entries/corrections", () => {
 			message: "Correction applied successfully.",
 		});
 		expect(mockState.getUserTimezone).toHaveBeenCalledWith("target-user");
-		expect(mockState.createCorrectionEntry).toHaveBeenCalledWith(
+		expect(mockState.amendLegacy).toHaveBeenCalledWith(
+			expect.objectContaining({ admission: "legacy" }),
 			expect.objectContaining({
 				employeeId: "employee-target",
 				organizationId: "org-1",
-				workPeriodId: "period-1",
-				workLocationType: "home",
-				workCategoryId: null,
-				timezone: "Europe/Berlin",
-				timezoneSource: "manager_target_user_setting",
-				utcOffsetMinutes: 120,
+				authority: "owner_or_manager",
+				writer: "http_direct_correction",
+				intent: expect.objectContaining({
+					workPeriodId: "period-1",
+					clockIn: {
+						kind: "set",
+						at: "2026-07-01T08:15:00Z",
+						precision: "exact",
+						timezone: "Europe/Berlin",
+						timezoneSource: "manager_target_user_setting",
+						utcOffsetMinutes: 120,
+					},
+					clockOut: { kind: "preserve" },
+					workLocation: { kind: "replace", id: "home" },
+					workCategory: { kind: "clear" },
+				}),
 			}),
 		);
-		expect(mockState.runPromiseExit).toHaveBeenCalledOnce();
 		expect(mockState.transaction).not.toHaveBeenCalled();
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 		expect(
@@ -1278,7 +1228,7 @@ describe("POST /api/time-entries/corrections", () => {
 		).not.toHaveBeenCalled();
 	});
 
-	it("accepts a manager metadata-only correction without creating an endpoint row", async () => {
+	it("returns no entry for a manager metadata-only correction", async () => {
 		mockPostTarget({
 			currentEmployeeId: "employee-manager",
 			periodEnd: "2026-01-01T20:00:00.000Z",
@@ -1287,7 +1237,11 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.createCorrectionEntry.mockReturnValueOnce(Effect.succeed(null));
+		mockState.amendLegacy.mockResolvedValueOnce({
+			disposition: "executed",
+			result: { workPeriodId: "period-1" },
+			correctionEntries: [],
+		});
 
 		const response = await POST(
 			createPostRequest({
@@ -1303,16 +1257,18 @@ describe("POST /api/time-entries/corrections", () => {
 			entry: null,
 			message: "Correction applied successfully.",
 		});
-		expect(mockState.createCorrectionEntry).toHaveBeenCalledWith(
+		expect(mockState.amendLegacy).toHaveBeenCalledWith(
+			expect.anything(),
 			expect.objectContaining({
-				timestamp: new Date("2026-01-01T06:00:00.000Z"),
-				workLocationType: "home",
-				workCategoryId: null,
+				intent: expect.objectContaining({
+					clockIn: expect.objectContaining({ at: "2026-01-01T06:00:00Z" }),
+					workLocation: { kind: "replace", id: "home" },
+				}),
 			}),
 		);
 	});
 
-	it("passes manager category removal to the atomic correction boundary", async () => {
+	it("passes manager category removal to the amendment", async () => {
 		const categoryId = "31000000-0000-4000-8000-000000000910";
 		mockPostTarget({
 			currentEmployeeId: "employee-manager",
@@ -1334,10 +1290,10 @@ describe("POST /api/time-entries/corrections", () => {
 		);
 
 		expect(response.status).toBe(201);
-		expect(mockState.createCorrectionEntry).toHaveBeenCalledWith(
+		expect(mockState.amendLegacy).toHaveBeenCalledWith(
+			expect.anything(),
 			expect.objectContaining({
-				expectedWorkCategoryId: categoryId,
-				workCategoryId: null,
+				intent: expect.objectContaining({ workCategory: { kind: "clear" } }),
 			}),
 		);
 	});
@@ -1351,13 +1307,11 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.createCorrectionEntry.mockReturnValueOnce(
-			Effect.fail(
-				new ValidationError({
-					message: "At least one correction value must change",
-					field: "correction",
-				}),
-			),
+		mockState.amendLegacy.mockRejectedValueOnce(
+			new ValidationError({
+				message: "At least one correction value must change",
+				field: "correction",
+			}),
 		);
 
 		const response = await POST(
@@ -1393,7 +1347,7 @@ describe("POST /api/time-entries/corrections", () => {
 			error: "Work period cannot exceed 24 hours",
 		});
 		expect(mockState.submitCorrection).not.toHaveBeenCalled();
-		expect(mockState.createCorrectionEntry).not.toHaveBeenCalled();
+		expect(mockState.amendLegacy).not.toHaveBeenCalled();
 		expect(mockState.validateTimeEntryRange).not.toHaveBeenCalled();
 	});
 
@@ -1440,9 +1394,9 @@ describe("POST /api/time-entries/corrections", () => {
 		);
 
 		expect(response.status).toBe(201);
-		const input = mockState.createCorrectionEntry.mock.calls[0]?.[0];
-		expect(input.validateTimeRange).toEqual(expect.any(Function));
-		await input.validateTimeRange();
+		expect(mockState.validateTimeEntryRange.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.amendLegacy.mock.invocationCallOrder[0] ?? 0,
+		);
 		expect(mockState.validateTimeEntryRange).toHaveBeenCalledWith(
 			"org-1",
 			new Date("2026-07-01T07:15:00.000Z"),
@@ -1497,22 +1451,6 @@ describe("POST /api/time-entries/corrections", () => {
 			error: "errors.holiday.blocksTimeEntry",
 			holidayName: "Founders Day",
 		});
-		mockState.createCorrectionEntry.mockImplementationOnce((input) =>
-			Effect.tryPromise({
-				try: async () => {
-					const validation = await input.validateTimeRange();
-					if (!validation.isValid) {
-						throw new ValidationError({
-							message: validation.error,
-							field: "timestamp",
-							value: validation.holidayName,
-						});
-					}
-					throw new Error("Expected holiday validation to fail");
-				},
-				catch: (error) => error as ValidationError,
-			}),
-		);
 
 		const response = await POST(
 			createPostRequest({
@@ -1533,90 +1471,7 @@ describe("POST /api/time-entries/corrections", () => {
 			new Date("2026-07-01T20:00:00.000Z"),
 			"America/Los_Angeles",
 		);
-	});
-
-	it.each([
-		[
-			"an earlier corrected clock-in",
-			"entry-clock-in",
-			"2026-07-01T10:15:00+02:00",
-			"2026-07-01T12:00:00.000Z",
-			"2026-07-02T08:00:00.000Z",
-			"2026-07-01",
-		],
-		[
-			"a clock-out-only correction",
-			"entry-clock-out",
-			"2026-07-03T19:30:00+02:00",
-			"2026-07-02T20:00:00.000Z",
-			"2026-07-03T17:00:00.000Z",
-			"2026-07-03",
-		],
-	])(
-		"marks the target employee work balance dirty after applying %s",
-		async (_label, targetEntryId, timestamp, periodStart, periodEnd, dirtyFromDate) => {
-			mockPostTarget({
-				currentEmployeeId: "employee-manager",
-				periodEnd,
-				periodStart,
-				targetEmployeeId: "employee-target",
-				targetEntryId,
-				targetUserId: "target-user",
-			});
-			mockState.canApproveFor.mockResolvedValueOnce(true);
-
-			const response = await POST(
-				createPostRequest({
-					replacesEntryId: targetEntryId,
-					timestamp,
-					notes: "Manager correction",
-				}),
-			);
-
-			expect(response.status).toBe(201);
-			expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-				dirtyFromDate,
-				employeeId: "employee-target",
-				organizationId: "org-1",
-			});
-			expect(mockState.runPromiseExit.mock.invocationCallOrder[0]).toBeLessThan(
-				mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0] ?? 0,
-			);
-		},
-	);
-
-	it("keeps a successful direct correction response when work balance invalidation fails", async () => {
-		mockPostTarget({
-			currentEmployeeId: "employee-manager",
-			targetEmployeeId: "employee-target",
-			targetUserId: "target-user",
-		});
-		mockState.canApproveFor.mockResolvedValueOnce(true);
-		const error = new Error("dirty marker failed");
-		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(error);
-
-		const response = await POST(
-			createPostRequest({
-				replacesEntryId: "entry-clock-in",
-				timestamp: "2026-07-01T10:15:00+02:00",
-				notes: "Manager correction",
-			}),
-		);
-
-		expect(response.status).toBe(201);
-		expect(await response.json()).toEqual({
-			entry: { id: "entry-direct-correction" },
-			message: "Correction applied successfully.",
-		});
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledOnce();
-		expect(mockState.loggerError).toHaveBeenCalledWith(
-			expect.objectContaining({
-				error,
-				employeeId: "employee-target",
-				organizationId: "org-1",
-			}),
-			"Failed to mark work balance dirty after direct time correction",
-		);
+		expect(mockState.amendLegacy).not.toHaveBeenCalled();
 	});
 
 	it("returns a bounded conflict when an immediate manager correction loses the race", async () => {
@@ -1626,15 +1481,11 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.runPromiseExit.mockImplementationOnce(() =>
-			Effect.runPromiseExit(
-				Effect.fail(
-					new ConflictError({
-						message: "Time entry was already corrected by another process",
-						conflictType: "time_entry_already_corrected",
-					}),
-				),
-			),
+		mockState.amendLegacy.mockRejectedValueOnce(
+			new ConflictError({
+				message: "Time entry was already corrected by another process",
+				conflictType: "time_entry_already_corrected",
+			}),
 		);
 
 		const response = await POST(
@@ -1659,17 +1510,13 @@ describe("POST /api/time-entries/corrections", () => {
 			targetUserId: "target-user",
 		});
 		mockState.canApproveFor.mockResolvedValueOnce(true);
-		mockState.runPromiseExit.mockImplementationOnce(() =>
-			Effect.runPromiseExit(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Not authorized to correct this time entry",
-						action: "correct",
-						resource: "time_entry",
-						userId: "user-1",
-					}),
-				),
-			),
+		mockState.amendLegacy.mockRejectedValueOnce(
+			new AuthorizationError({
+				message: "Not authorized to correct this time entry",
+				action: "correct",
+				resource: "time_entry",
+				userId: "user-1",
+			}),
 		);
 
 		const response = await POST(
@@ -1684,7 +1531,6 @@ describe("POST /api/time-entries/corrections", () => {
 		expect(await response.json()).toEqual({
 			error: "Not authorized to correct this time entry",
 		});
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 
 	it("rolls back the inactive correction when approval creation fails", async () => {

@@ -17,6 +17,7 @@ import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
@@ -79,6 +80,13 @@ const { withCompletedWorkTransaction } = await import(
 	"@/lib/time-tracking/completed-work-transaction"
 );
 const { deleteDemoEmployeeHistory } = await import("@/lib/demo/demo-work");
+const { db } = await import("@/db");
+const { submitPeriodSubmission } = await import(
+	"@/lib/time-tracking/period-submissions/submission-service"
+);
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 
 const ids = {
 	organization: "t323-proposal-org",
@@ -536,6 +544,97 @@ describe("authorized repair and continuation proposals on PostgreSQL", () => {
 			ids.organization,
 		]);
 		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "already_applied" });
+	});
+
+	it("repairs both records through work records: the pair agrees and the effects apply (#1226)", async () => {
+		await authorizeRepair();
+		const { periodId, recordId } = await conflictingWork("2026-07-15", 200);
+		const category = randomUUID();
+		await admin.query(
+			`insert into work_category (id, organization_id, name, created_by, updated_at)
+			 values ($1, $2, 'T1226 travel', $3, now())`,
+			[category, ids.organization, ids.ownerUser],
+		);
+		// The record also books a category the period lost.
+		await admin.query("update time_record_work set work_category_id = $2 where record_id = $1", [
+			recordId,
+			category,
+		]);
+		await admin.query(
+			`insert into period_submission_cadence_change
+			 (id, organization_id, cadence, week_start_day, changed_at, changed_by)
+			 values ($1, $2, 'weekly', 'monday', '2026-06-01T00:00:00Z', $3)`,
+			[randomUUID(), ids.organization, ids.ownerUser],
+		);
+		const submitted = await submitPeriodSubmission(
+			{ organizationId: ids.organization, userId: ids.workerUser, periodStartDate: "2026-07-13" },
+			{ database: db, clock: { nowInstant: () => parseInstant("2026-07-20T12:00:00Z") } },
+		);
+		if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
+		await admin.query(
+			"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+			[ids.worker],
+		);
+
+		// Named on either representation, each value lands in both.
+		const proposal = (
+			await proposeRepair(periodId, [
+				{ target: "time_record", field: "duration_minutes", after: 240 },
+				{ target: "work_period", field: "work_category_id", after: category },
+			])
+		).body.proposal;
+		await approve(proposal);
+		const before = await periodRow(periodId);
+		expect((await applyProposal(proposal.id)).body).toMatchObject({ status: "applied" });
+
+		await expectRecordAgreement({ organizationId: ids.organization });
+		expect(await periodRow(periodId)).toMatchObject({
+			duration_minutes: 240,
+			work_category_id: category,
+			graph_revision: before.graph_revision + 1,
+		});
+		const { rows: balances } = await admin.query(
+			"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
+			[ids.worker],
+		);
+		expect(balances).toEqual([{ is_dirty: true, dirty_from_date: "2026-07-15" }]);
+		const { rows: submissions } = await admin.query(
+			"select status, closed_cause from period_submission where id = $1",
+			[submitted.submissionId],
+		);
+		expect(submissions).toEqual([{ status: "withdrawn", closed_cause: "change" }]);
+		expect(await findingKinds()).toEqual([]);
+	});
+
+	it("refuses a proposal whose repaired work would still disagree (#1226)", async () => {
+		const { periodId } = await conflictingWork("2026-07-16", 200);
+		// The record's start is evidence of nothing: the period's start mirrors its entry.
+		expect(
+			(
+				await proposeRepair(periodId, [
+					{ target: "time_record", field: "duration_minutes", after: 240 },
+					{ target: "time_record", field: "start_at", after: "2026-07-16T05:30:00Z" },
+				])
+			).body,
+		).toMatchObject({ code: "proposal_refused", reasons: ["repair_leaves_divergence"] });
+		// A repair of the duration alone cannot fix a category the records disagree on.
+		const category = randomUUID();
+		await admin.query(
+			`insert into work_category (id, organization_id, name, created_by, updated_at)
+			 values ($1, $2, 'T1226 travel', $3, now())`,
+			[category, ids.organization, ids.ownerUser],
+		);
+		await admin.query("update work_period set work_category_id = $2 where id = $1", [
+			periodId,
+			category,
+		]);
+		expect(
+			(
+				await proposeRepair(periodId, [
+					{ target: "time_record", field: "duration_minutes", after: 240 },
+				])
+			).body,
+		).toMatchObject({ code: "proposal_refused", reasons: ["repair_leaves_divergence"] });
 	});
 
 	it("accepts approval by the proposer and returns the same proposal for a repeated creation", async () => {

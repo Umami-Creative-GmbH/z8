@@ -432,18 +432,9 @@ describe(
 				clock_out_id: before.clock_out_id,
 				project_id: before.project_id,
 				duration_minutes: before.duration_minutes,
+				// Both admissions amend through work records, which advances the revision (#1226).
+				graph_revision: before.graph_revision + 1,
 			});
-			if (admission === "inactive") {
-				const { rows } = await admin.query(
-					"select changes from audit_log where organization_id = $1 and entity_id = $2",
-					[ids.organization, period.id],
-				);
-				expect(
-					rows.some(
-						(row) => JSON.parse(row.changes).workLocationType?.after === "home",
-					),
-				).toBe(true);
-			}
 		},
 	);
 
@@ -951,7 +942,7 @@ describe(
 			expect(await snapshot()).toEqual(before);
 		});
 
-		it("keeps the legacy writes for inactive organizations and still replays committed receipts", async () => {
+		it("amends inactive organizations without a receipt and still replays committed receipts", async () => {
 			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			const submissionId = randomUUID();
 			await expect(
@@ -971,11 +962,11 @@ describe(
 			await expect(adminEdit(period.id, { clockOutTime: "09:45" })).resolves.toMatchObject({
 				success: true,
 			});
-			// Legacy writes: no receipt and no revision advance.
+			// Legacy admission commits no receipt; work records advances the revision (#1226).
 			expect(await receipts()).toHaveLength(1);
 			expect(await graph(period.id)).toMatchObject({
 				end_time: new Date("2026-07-22T09:45:00Z"),
-				graph_revision: 2,
+				graph_revision: 3,
 			});
 		});
 
