@@ -1,4 +1,5 @@
 import type { LocaleTranslationMap } from "@/db/schema/absence";
+import { builtInAbsenceCategoryTranslations } from "./built-in-category-translations";
 
 export type AbsenceCategoryDisplayType =
 	| "home_office"
@@ -21,14 +22,14 @@ type DisplayCategory = {
 	descriptionTranslations?: LocaleTranslationMap | null;
 };
 
-type BuiltInType = Exclude<AbsenceCategoryDisplayType, "custom">;
+export type BuiltInAbsenceCategoryType = Exclude<AbsenceCategoryDisplayType, "custom">;
 
 /**
  * Translation keys for the seeded categories, with the seeded English copy as their default.
  * Keys are static so the Tolgee extractor sees them with these defaults.
  */
 export const builtInAbsenceCategoryText: Record<
-	BuiltInType,
+	BuiltInAbsenceCategoryType,
 	{ nameKey: string; name: string; descriptionKey: string; description: string }
 > = {
 	vacation: {
@@ -81,7 +82,9 @@ export const builtInAbsenceCategoryText: Record<
 	},
 };
 
-function isBuiltInType(type: AbsenceCategoryDisplayType): type is BuiltInType {
+function isBuiltInAbsenceCategoryType(
+	type: AbsenceCategoryDisplayType,
+): type is BuiltInAbsenceCategoryType {
 	return type !== "custom";
 }
 
@@ -99,8 +102,11 @@ export function getAbsenceCategoryDisplayName(
 	locale: string,
 	t: TranslateFn,
 ) {
-	if (isBuiltInType(category.type)) {
-		const fallback = trimmedValue(category.name) ?? category.type;
+	if (isBuiltInAbsenceCategoryType(category.type)) {
+		const fallback =
+			(locale === "en" ? null : builtInAbsenceCategoryTranslations[locale]?.[category.type].name) ??
+			trimmedValue(category.name) ??
+			category.type;
 		return t(builtInAbsenceCategoryText[category.type].nameKey, fallback);
 	}
 
@@ -118,12 +124,17 @@ export function getAbsenceCategoryDisplayDescription(
 ) {
 	const fallback = trimmedValue(category.description);
 
-	if (isBuiltInType(category.type)) {
+	if (isBuiltInAbsenceCategoryType(category.type)) {
 		if (!fallback) {
 			return null;
 		}
 
-		return t(builtInAbsenceCategoryText[category.type].descriptionKey, fallback);
+		return t(
+			builtInAbsenceCategoryText[category.type].descriptionKey,
+			(locale === "en"
+				? null
+				: builtInAbsenceCategoryTranslations[locale]?.[category.type].description) ?? fallback,
+		);
 	}
 
 	return translatedValue(category.descriptionTranslations, locale) ?? fallback;

@@ -18,13 +18,13 @@ describe("absence category display helpers", () => {
 				"de",
 				t,
 			),
-		).toBe("settings.absenceCategories.defaults.vacation.name:Vacation");
+		).toBe("settings.absenceCategories.defaults.vacation.name:Urlaub");
 	});
 
 	it("uses the camelCase key for home office categories", () => {
 		expect(
 			getAbsenceCategoryDisplayName({ type: "home_office", name: "Home Office" }, "de", t),
-		).toBe("settings.absenceCategories.defaults.homeOffice.name:Home Office");
+		).toBe("settings.absenceCategories.defaults.homeOffice.name:Homeoffice");
 	});
 
 	it("translates the built-in time off in lieu category like the other built-in categories", () => {
@@ -36,10 +36,10 @@ describe("absence category display helpers", () => {
 		};
 
 		expect(getAbsenceCategoryDisplayName(category, "de", t)).toBe(
-			"settings.absenceCategories.defaults.timeOffInLieu.name:Time off in lieu",
+			"settings.absenceCategories.defaults.timeOffInLieu.name:Freizeitausgleich",
 		);
 		expect(getAbsenceCategoryDisplayDescription(category, "de", t)).toBe(
-			"settings.absenceCategories.defaults.timeOffInLieu.description:Time off taken against the work balance",
+			"settings.absenceCategories.defaults.timeOffInLieu.description:Vom Arbeitszeitsaldo abgezogene Abwesenheit",
 		);
 	});
 
@@ -78,7 +78,7 @@ describe("absence category display helpers", () => {
 				"de",
 				t,
 			),
-		).toBe("settings.absenceCategories.defaults.sick.description:Sick day");
+		).toBe("settings.absenceCategories.defaults.sick.description:Krankheitstag");
 	});
 
 	it("uses custom category description translations without canonical descriptions", () => {

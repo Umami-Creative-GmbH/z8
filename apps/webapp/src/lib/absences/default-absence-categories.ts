@@ -1,9 +1,10 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { absenceCategory } from "@/db/schema";
+import { getBuiltInAbsenceCategoryTranslations } from "./built-in-category-translations";
 import { builtInAbsenceCategoryText } from "./category-display";
 
-export const defaultAbsenceCategories = [
+const categoryDefaults = [
 	{
 		type: "vacation",
 		name: builtInAbsenceCategoryText.vacation.name,
@@ -79,6 +80,11 @@ export const defaultAbsenceCategories = [
 		color: "#14b8a6",
 	},
 ] satisfies Array<Omit<typeof absenceCategory.$inferInsert, "organizationId" | "isActive">>;
+
+export const defaultAbsenceCategories = categoryDefaults.map((category) => ({
+	...category,
+	...getBuiltInAbsenceCategoryTranslations(category.type),
+}));
 
 export async function ensureDefaultAbsenceCategoriesForOrganization(organizationId: string) {
 	return db.transaction(async (tx) => {
