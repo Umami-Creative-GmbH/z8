@@ -261,6 +261,7 @@ describe("production auth plugin composition with installed Better Auth", () => 
 			"z8-account-ban",
 			"z8-reserved-email-guard",
 			"z8-password-setup-verification",
+			"z8-security-alerts",
 			"z8-social-org-oauth",
 			"bearer",
 			"scim",

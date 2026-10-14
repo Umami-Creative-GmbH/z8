@@ -549,6 +549,33 @@ describe("Notification Service", () => {
 					'"params":{"teamName":"Ops","performedByName":"Mina Manager"}}}}',
 			);
 		});
+
+		test("keeps a security alert's IP address and user agent out of the webhook payload (#1180)", async () => {
+			mockFindMany.mockImplementation(() => Promise.resolve([]));
+			mockReturning.mockImplementation(() =>
+				Promise.resolve([createMockNotification({ id: "notification-1" })]),
+			);
+			const i18n = { titleKey: "common:notifications.content.passwordChanged.title" };
+
+			const { createNotification } = await import("../notification-service");
+
+			await createNotification({
+				userId: "user-1",
+				organizationId: "org-1",
+				type: "password_changed",
+				title: "Password changed",
+				message: "Your password was successfully changed.",
+				actionUrl: "/settings/security",
+				metadata: { i18n, ipAddress: "203.0.113.7", userAgent: "Synthetic Browser/1.0" },
+			});
+
+			expect(mockPublishEventAsync).toHaveBeenCalledOnce();
+			const [type, , data] = mockPublishEventAsync.mock.calls[0];
+			expect(type).toBe("password_changed");
+			expect(data).toMatchObject({ userId: "user-1", metadata: { i18n } });
+			expect(data.metadata).not.toHaveProperty("ipAddress");
+			expect(data.metadata).not.toHaveProperty("userAgent");
+		});
 	});
 
 	test("durable web push carries the metadata it localizes the text from (#1155)", async () => {

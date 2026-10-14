@@ -308,6 +308,21 @@ export async function deliverNotificationToChannel(
 }
 
 /**
+ * The recipient's own client details (a security alert's IP address and user agent,
+ * #1180) are for their notification and email only, never an organization's webhooks.
+ */
+const RECIPIENT_ONLY_METADATA = ["ipAddress", "userAgent"] as const;
+
+function webhookMetadata(
+	metadata: CreateNotificationParams["metadata"],
+): CreateNotificationParams["metadata"] {
+	if (!metadata || !RECIPIENT_ONLY_METADATA.some((key) => key in metadata)) return metadata;
+	const published = { ...metadata };
+	for (const key of RECIPIENT_ONLY_METADATA) delete published[key];
+	return published;
+}
+
+/**
  * Create a new notification
  *
  * This will:
@@ -502,7 +517,7 @@ export async function createNotification(
 			entityType: params.entityType,
 			entityId: params.entityId,
 			actionUrl: params.actionUrl,
-			metadata: params.metadata,
+			metadata: webhookMetadata(params.metadata),
 		});
 
 		return created;

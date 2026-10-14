@@ -1,11 +1,8 @@
 // Mailer only: the email copy and its catalog never reach a route or the client.
 import "server-only";
 
-import { asc, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
-import { createLogger } from "@/lib/logger";
+import { getUserPrimaryOrganizationId } from "@/lib/auth/primary-organization";
 import {
 	resolveOrganizationNotificationLocale,
 	resolveRecipientNotificationLocale,
@@ -20,8 +17,6 @@ import {
 import { renderOrganizationEmailTemplate } from "./template-renderer";
 import type { EmailTransportResult } from "./transports";
 
-const logger = createLogger("AuthEmails");
-
 /** The Better Auth user a sign-in email goes to. */
 interface AuthEmailUser {
 	id: string;
@@ -35,24 +30,6 @@ interface SignInEmailInput {
 	url: string;
 	/** The request that asked for the email, for its page language. */
 	request?: Request;
-}
-
-/**
- * The user's primary organization for sign-in emails: their earliest membership
- * (deterministic for members of several organizations). None for a new sign-up.
- */
-async function getUserPrimaryOrganizationId(userId: string): Promise<string | undefined> {
-	try {
-		const membership = await db.query.member.findFirst({
-			where: eq(member.userId, userId),
-			columns: { organizationId: true },
-			orderBy: [asc(member.createdAt), asc(member.id)],
-		});
-		return membership?.organizationId;
-	} catch (error) {
-		logger.warn({ error, userId }, "Failed to get user organization for email");
-		return undefined;
-	}
 }
 
 /**
