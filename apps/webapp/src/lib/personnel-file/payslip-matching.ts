@@ -5,10 +5,12 @@
  *
  * A personnel number matches when it appears in the file's base name (folders
  * and the file extension removed) as a whole token: delimited on both sides by
- * a non-alphanumeric character or the start or end of the name. Numbers are
- * trimmed, leading zeros stay significant and letters compare
- * case-insensitively. Employees without a personnel number never match.
+ * a non-alphanumeric character or the start or end of the name. Numbers
+ * compare by the shared personnel number key (trimmed, letters ignoring case,
+ * leading zeros significant). Employees without a personnel number never match.
  */
+
+import { personnelNumberKey } from "@/lib/organization/personnel-number";
 
 export interface PayslipMatchCandidate {
 	employeeId: string;
@@ -48,10 +50,11 @@ export function matchPayslipFile(
 	fileName: string,
 	candidates: readonly PayslipMatchCandidate[],
 ): PayslipFileMatch {
+	// Lowercased like the personnel number comparison key, so tokens compare alike.
 	const name = payslipMatchName(fileName).toLocaleLowerCase("en");
 	const matched = new Set<string>();
 	for (const candidate of candidates) {
-		const number = candidate.personnelNumber?.trim().toLocaleLowerCase("en");
+		const number = personnelNumberKey(candidate.personnelNumber);
 		if (!number) continue;
 		if (containsToken(name, number)) matched.add(candidate.employeeId);
 	}
