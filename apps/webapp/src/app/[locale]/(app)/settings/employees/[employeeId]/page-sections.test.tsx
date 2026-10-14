@@ -69,11 +69,11 @@ const translations = new Map([
 		"settings.employees.detailView.positionDescription",
 		"Stellenbezeichnung oder Rolle",
 	],
-	["settings.employees.detailView.employeeNumber", "Personalnummer"],
+	["settings.employees.detailView.personnelNumber", "Personalnummer"],
 	["settings.employees.detailView.employeeNumberPlaceholder", "z. B. EMP-001"],
 	[
-		"settings.employees.detailView.employeeNumberDescription",
-		"Externe ID im Lohnabrechnungssystem",
+		"settings.employees.detailView.personnelNumberDescription",
+		"Die eigene Nummer Ihrer Organisation für diesen Mitarbeiter",
 	],
 	["settings.employees.detailView.startDate", "Startdatum"],
 	[
