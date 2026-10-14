@@ -18,6 +18,7 @@ import {
 	timeRecordAllocation,
 	timeRecordApprovalDecision,
 	timeRecordWork,
+	type WorkPeriodAutoAdjustmentReason,
 	workPeriod,
 } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
@@ -200,39 +201,11 @@ export async function divideWorkRecord(
 		],
 		dividedOff: [{ sourceWorkPeriodId: period.id, newWorkPeriodId: generated.period.id }],
 	});
-	const decisions = await tx
-		.select({ id: timeRecordApprovalDecision.id })
-		.from(timeRecordApprovalDecision)
-		.where(
-			and(
-				eq(timeRecordApprovalDecision.organizationId, organizationId),
-				eq(timeRecordApprovalDecision.recordId, canonical.record.id),
-			),
-		)
-		.orderBy(asc(timeRecordApprovalDecision.createdAt), asc(timeRecordApprovalDecision.id));
 
 	return {
 		kind: "divided",
 		at: change.at,
-		source: {
-			segment: workSegment({
-				workPeriodId: period.id,
-				canonicalRecordId: canonical.record.id,
-				clockIn,
-				clockOut,
-				startAt,
-				endAt,
-				durationMinutes: period.durationMinutes ?? 0,
-				attribution: WorkAttribution.fromWorkPeriod(period),
-				allocations: canonical.allocations,
-			}),
-			revision: period.graphRevision,
-			approvalState: period.approvalStatus,
-			recordApprovalState: canonical.record.approvalState,
-			recordCreatedBy: canonical.record.createdBy,
-			clockOutNotes: clockOut.notes ?? null,
-			decisionIds: decisions.map(({ id }) => id),
-		},
+		source: await divisionSource(tx, { period, clockIn, clockOut, canonical }),
 		retained: dividedHalf(retained, plan.retained, { clockIn, clockOut: newClockOut }),
 		generated: dividedHalf(generated, plan.generated, { clockIn: newClockIn, clockOut }),
 		appended: {
@@ -241,6 +214,49 @@ export async function divideWorkRecord(
 			clockIn: appendedEvidence(newClockIn),
 		},
 		effects,
+	};
+}
+
+/** The divided source exactly as it was locked, with the decisions on its record. */
+export async function divisionSource(
+	tx: WorkTransactionClient,
+	locked: {
+		period: WorkPeriodRow;
+		clockIn: TimeEntryRow;
+		clockOut: TimeEntryRow;
+		canonical: CanonicalWorkRows;
+	},
+): Promise<WorkDivision["source"]> {
+	const { period, clockIn, clockOut, canonical } = locked;
+	if (!period.endTime) throw new CompletedWorkIntegrityError("Divided work has no end");
+	const decisions = await tx
+		.select({ id: timeRecordApprovalDecision.id })
+		.from(timeRecordApprovalDecision)
+		.where(
+			and(
+				eq(timeRecordApprovalDecision.organizationId, period.organizationId),
+				eq(timeRecordApprovalDecision.recordId, canonical.record.id),
+			),
+		)
+		.orderBy(asc(timeRecordApprovalDecision.createdAt), asc(timeRecordApprovalDecision.id));
+	return {
+		segment: workSegment({
+			workPeriodId: period.id,
+			canonicalRecordId: canonical.record.id,
+			clockIn,
+			clockOut,
+			startAt: instantFromDate(period.startTime),
+			endAt: instantFromDate(period.endTime),
+			durationMinutes: period.durationMinutes ?? 0,
+			attribution: WorkAttribution.fromWorkPeriod(period),
+			allocations: canonical.allocations,
+		}),
+		revision: period.graphRevision,
+		approvalState: period.approvalStatus,
+		recordApprovalState: canonical.record.approvalState,
+		recordCreatedBy: canonical.record.createdBy,
+		clockOutNotes: clockOut.notes ?? null,
+		decisionIds: decisions.map(({ id }) => id),
 	};
 }
 
@@ -278,14 +294,15 @@ async function replaceClockOutNotes(
 	if (updated.length !== 1) throw new CompletedWorkIntegrityError("Source clock-out changed");
 }
 
-type WrittenPair = { period: WorkPeriodRow } & CanonicalWorkRows;
+export type WrittenPair = { period: WorkPeriodRow } & CanonicalWorkRows;
 
 /**
  * The retained half keeps the work period, its clock-in and its canonical work
  * record; it ends at the new clock-out. Compare-and-set on the revision, which
- * advances.
+ * advances. With `autoAdjustment` (an owed break) the work period is marked
+ * auto-adjusted and keeps its original end and minutes.
  */
-async function writeRetainedHalf(
+export async function writeRetainedHalf(
 	tx: WorkTransactionClient,
 	input: {
 		period: WorkPeriodRow;
@@ -294,13 +311,20 @@ async function writeRetainedHalf(
 		clockOut: TimeEntryRow;
 		updatedAt: Date;
 		updatedBy: string | null;
+		autoAdjustment?: WorkPeriodAutoAdjustmentReason;
 	},
 ): Promise<WrittenPair> {
 	const { period, canonical, half } = input;
 	const columns = half.period;
+	const adjusted = input.autoAdjustment;
 	const [written] = await tx
 		.update(workPeriod)
 		.set({
+			wasAutoAdjusted: adjusted ? true : undefined,
+			autoAdjustmentReason: adjusted,
+			autoAdjustedAt: adjusted ? input.updatedAt : undefined,
+			originalEndTime: adjusted ? period.endTime : undefined,
+			originalDurationMinutes: adjusted ? period.durationMinutes : undefined,
 			clockOutId: input.clockOut.id,
 			endTime: columns.endTime,
 			durationMinutes: columns.durationMinutes,
@@ -411,9 +435,10 @@ async function writeRetainedHalf(
 /**
  * The generated half: a new canonical work record (keeping the source's
  * origin, approval state and recording actor) and a new work period from the
- * new clock-in to the source clock-out, at revision 1.
+ * new clock-in to the source clock-out, at revision 1, marked auto-adjusted
+ * with `autoAdjustment`.
  */
-async function writeGeneratedHalf(
+export async function writeGeneratedHalf(
 	tx: WorkTransactionClient,
 	input: {
 		period: WorkPeriodRow;
@@ -422,9 +447,11 @@ async function writeGeneratedHalf(
 		clockIn: TimeEntryRow;
 		updatedAt: Date;
 		updatedBy: string | null;
+		autoAdjustment?: WorkPeriodAutoAdjustmentReason;
 	},
 ): Promise<WrittenPair> {
 	const { period, canonical, half } = input;
+	const adjusted = input.autoAdjustment;
 	const recordId = randomUUID();
 	const [record] = await tx
 		.insert(timeRecord)
@@ -491,6 +518,9 @@ async function writeGeneratedHalf(
 			drivenDistanceKm: columns.drivenDistanceKm,
 			canonicalRecordId: recordId,
 			graphRevision: 1,
+			wasAutoAdjusted: adjusted ? true : undefined,
+			autoAdjustmentReason: adjusted,
+			autoAdjustedAt: adjusted ? input.updatedAt : undefined,
 			updatedAt: input.updatedAt,
 		})
 		.returning();
@@ -528,7 +558,7 @@ async function insertAllocations(
 }
 
 /** The written rows must agree; anything else is a defect of work records. */
-function assertWrittenAgreement(written: WrittenPair): void {
+export function assertWrittenAgreement(written: WrittenPair): void {
 	const agreement = recordAgreement(written.period, written);
 	if (!agreement.agrees) {
 		throw new CompletedWorkIntegrityError(
@@ -555,7 +585,7 @@ function sameAllocations(
 	return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-function dividedHalf(
+export function dividedHalf(
 	written: WrittenPair,
 	half: PlannedHalf,
 	entries: { clockIn: TimeEntryRow; clockOut: TimeEntryRow },
@@ -576,7 +606,7 @@ function dividedHalf(
 	};
 }
 
-function appendedEvidence(entry: TimeEntryRow): AppendedEntryEvidence {
+export function appendedEvidence(entry: TimeEntryRow): AppendedEntryEvidence {
 	return {
 		entryId: entry.id,
 		hash: entry.hash,
