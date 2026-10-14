@@ -15,7 +15,9 @@ import type { AppendReviewRequirement } from "../time-entry-append";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkVehicleUseChangeRefusalCode } from "../vehicle-use/work-vehicle-use-refusals";
 import type { WorkOccupant } from "../work-occupancy";
+import type { AmendWorkRecord } from "./amend-change";
 import type { CreateWorkRecord } from "./create-plan";
+import type { DivideByOwedBreak } from "./owed-break";
 import type { RecordAgreementFacet } from "./record-agreement";
 import type {
 	UnrepresentableWorkAttribution,
@@ -94,7 +96,11 @@ export type DivideWorkRecord = {
 	appendOperation: TimeEntryAppendOperation;
 };
 
-export type WorkRecordChange = DivideWorkRecord | CreateWorkRecord;
+export type WorkRecordChange =
+	| DivideWorkRecord
+	| DivideByOwedBreak
+	| AmendWorkRecord
+	| CreateWorkRecord;
 
 /** Why a change was not made. Nothing is written for any of them. */
 export type WorkRecordRefusal =
@@ -110,8 +116,8 @@ export type WorkRecordRefusal =
 	| { kind: "canonical_record_missing" }
 	| {
 			kind: "canonical_divergence";
-			/** Whether the locked pair disagreed, or a planned half would have. */
-			found: "locked_pair" | "planned_half";
+			/** Whether the locked pair disagreed, or a planned half (or amended pair) would have. */
+			found: "locked_pair" | "planned_half" | "planned_amendment";
 			disagreements: RecordAgreementFacet[];
 	  }
 	| { kind: "endpoint_entry_missing" }
@@ -121,6 +127,10 @@ export type WorkRecordRefusal =
 	| { kind: "attribution_unrepresentable"; reason: UnrepresentableWorkAttribution }
 	| { kind: "month_closed"; month: string }
 	| { kind: "work_occupied"; occupants: WorkOccupant[] }
-	| { kind: "append_review_required"; requirement: AppendReviewRequirement };
+	| { kind: "append_review_required"; requirement: AppendReviewRequirement }
+	/** Amend (#1225): the change names nothing that differs from the stored work. */
+	| { kind: "unchanged" }
+	/** Amend (#1225): the new times do not end after they start. */
+	| { kind: "interval_invalid" };
 
 export type WorkRecordRefusalKind = WorkRecordRefusal["kind"];

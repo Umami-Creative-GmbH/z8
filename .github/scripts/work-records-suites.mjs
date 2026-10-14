@@ -16,6 +16,8 @@ export const workRecordsSuitePatterns = [
   { pattern: `${actions}/correction-lifecycle*.integration.test.ts` },
   // Time-correction finalization.
   { pattern: "apps/webapp/src/lib/approvals/server/time-correction-approvals*.integration.test.ts" },
+  // Automatic break enforcement divides by the owed break (#1220).
+  { pattern: "apps/webapp/src/lib/effect/services/break-enforcement*.integration.test.ts" },
 ];
 
 function patternExpression(pattern) {

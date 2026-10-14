@@ -519,9 +519,10 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				const period = await recordWork(ids.billableProject, { billable: false });
 
 				actAs();
+				// Both admissions run the same amendment (#1225): naming the same project changes nothing.
 				await expect(
 					updateWorkPeriodProject(period.id, ids.billableProject),
-				).resolves.toMatchObject({ success: admission === "legacy" });
+				).resolves.toMatchObject({ success: false });
 				expectAgreement(await attributionOf(period.id), {
 					projectId: ids.billableProject,
 					billable: false,

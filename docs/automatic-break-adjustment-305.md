@@ -1,5 +1,14 @@
 # Automatic break adjustment and its durable recovery (#305 / T41)
 
+> **Since #1220 (spec #1212):** the adjustment divides the work through work records
+> (`lib/time-tracking/work-records`, ADR 0010) in both admissions, as a divide by an owed
+> break counting "earlier breaks". Both previous write sequences, the adopted one below
+> and the legacy one with its plan from plain reads, are gone. Legacy admission now
+> divides the canonical work record too, refuses a pair that disagrees, advances the
+> revision and marks the work balance dirty; it still keeps no intent and no receipt.
+> Work records' outcomes add three blockers (migration 0233): `canonical_divergence`,
+> `month_closed` and `work_period_stale`. The sections below describe #305 as delivered.
+
 ## Delivery and activation status
 
 A work policy with break rules can owe a break after an ordinary clock-out, one that no

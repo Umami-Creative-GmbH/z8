@@ -3,6 +3,11 @@
  * completed-work operation, its durable intent, deferral under unresolved review and
  * recovery across dates, process loss and duplicate workers.
  *
+ * Since #1220 the job divides through work records, whose own contract suite
+ * (`lib/time-tracking/work-records/owed-break.integration.test.ts`) covers the division
+ * in both admissions: both records, agreement, vehicle use and the effects. This suite
+ * keeps the job's policy: intents, deferral and its blockers, receipts and recovery.
+ *
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
@@ -23,8 +28,6 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
-import { lacksDrivingDetails } from "@/lib/time-tracking/vehicle-use/driving-details-missing";
-import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -757,98 +760,8 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		expect(await receipts()).toHaveLength(1);
 	});
 
-	describe("a submitted week the adjustment changes (#805)", () => {
-		async function submitWeek() {
-			await admin.query(
-				`insert into period_submission_cadence_change
-				 (id, organization_id, cadence, week_start_day, changed_at, changed_by)
-				 values ($1, $2, 'weekly', 'monday', '2026-07-01T00:00:00Z', $3)`,
-				[randomUUID(), ids.organization, ids.managerUser],
-			);
-			const { submitPeriodSubmission } = await import(
-				"@/lib/time-tracking/period-submissions/submission-service"
-			);
-			const { db } = await import("@/db");
-			const submitted = await submitPeriodSubmission(
-				{
-					organizationId: ids.organization,
-					userId: ids.requesterUser,
-					periodStartDate: "2026-07-20",
-				},
-				{ database: db, clock: { nowInstant: () => parseInstant("2026-07-26T12:00:00Z") } },
-			);
-			if (submitted.kind !== "submitted") throw new Error(`not submitted: ${submitted.reason}`);
-			return submitted.submissionId;
-		}
-
-		async function sentBack(submissionId: string) {
-			const { rows } = await admin.query<{ status: string; metadata: string | null }>(
-				`select s.status, a.metadata from period_submission s
-				 left join audit_log a on a.entity_id = s.id and a.action = 'period_submission.withdrawn'
-				 where s.id = $1`,
-				[submissionId],
-			);
-			return rows.map((row) => ({
-				status: row.status,
-				metadata: row.metadata ? JSON.parse(row.metadata) : null,
-			}));
-		}
-
-		const withdrawnBySystem = [
-			{
-				status: "withdrawn",
-				metadata: expect.objectContaining({ automatic: true, causedByUserId: null }),
-			},
-		];
-
-		it("sends it back when the adjustment recovers from its intent, as a system change", async () => {
-			await workWithLostAdjustment();
-			const submissionId = await submitWeek();
-
-			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
-			expect(await sentBack(submissionId)).toEqual(withdrawnBySystem);
-		});
-
-		it("sends it back when a legacy organization's daily check adjusts the work", async () => {
-			await setAdmission("inactive");
-			actAs(ids.requesterUser);
-			await expect(
-				clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
-			).resolves.toMatchObject({ success: true });
-			// The established adjustment at clock-out is lost: its generated work cannot be written.
-			await admin.query(
-				`create function t305_fail() returns trigger language plpgsql as $$
-				 begin raise exception 't305 injected write failure'; end $$`,
-			);
-			await admin.query(
-				"create trigger t305_fail before insert on work_period for each row execute function t305_fail()",
-			);
-			await expect(
-				clockOut(undefined, undefined, {
-					submissionId: randomUUID(),
-					instant: clockOutAt,
-					browserTimezone: "UTC",
-				}),
-			).resolves.toMatchObject({ success: true });
-			await admin.query("drop function t305_fail() cascade");
-			expect(await periods()).toMatchObject([{ was_auto_adjusted: false }]);
-			const submissionId = await submitWeek();
-
-			await expect(recover(new Date("2026-07-22T12:00:00Z"))).resolves.toMatchObject({
-				adjustedCount: 1,
-				errors: [],
-			});
-			expect(await sentBack(submissionId)).toEqual(withdrawnBySystem);
-		});
-	});
-
 	it.each([
 		["time_entry", "insert"],
-		["time_entry_append_position", "update"],
-		["work_period", "update"],
-		["time_record", "update"],
-		["time_record", "insert"],
-		["time_record_work", "insert"],
 		["work_period", "insert"],
 		["employee_work_balance", "update"],
 		["work_break_adjustment_intent", "delete"],
@@ -1098,61 +1011,17 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		expect(await periods()).toEqual([]);
 	});
 
-	it("keeps a legacy organization's established writes, now atomic and without an intent", async () => {
+	it("adjusts a legacy organization's work through work records, without an intent or a receipt", async () => {
 		await setAdmission("inactive");
 		const { id: periodId, result } = await recordWork();
 		expect(result).toMatchObject({
 			success: true,
-			data: { breakAdjustment: { breakMinutes: 30 } },
+			data: { breakAdjustment: { breakMinutes: 30, adjustedDurationMinutes: 389 } },
 		});
-		const [retained, generated] = await periods();
-		expect(retained).toMatchObject({
-			id: periodId,
-			end_time: new Date("2026-07-22T14:00:40Z"),
-			duration_minutes: 360,
-			was_auto_adjusted: true,
-			// The clock-out's revision (#1222); the legacy break itself advances none yet.
-			graph_revision: 1,
-		});
-		// Established arithmetic: whole minutes, floored.
-		expect(generated).toMatchObject({
-			start_time: new Date("2026-07-22T14:30:40Z"),
-			duration_minutes: 29,
-			was_auto_adjusted: true,
-		});
-		const { rows: breakStart } = await admin.query<{ previous_hash: string; created_by: string }>(
-			"select previous_hash, created_by from time_entry where id = $1",
-			[retained?.clock_out_id],
-		);
-		const { rows: closure } = await admin.query<{ hash: string }>(
-			"select hash from time_entry where id = $1",
-			[generated?.clock_out_id],
-		);
-		expect(only(breakStart)).toEqual({
-			previous_hash: only(closure).hash,
-			created_by: ids.requesterUser,
-		});
-		// The canonical record divides with the work instead of spanning the break (#514).
-		expect(generated?.canonical_record_id).not.toBeNull();
-		expect(await canonicalGraph()).toEqual([
-			{
-				id: retained?.canonical_record_id,
-				start_at: retained?.start_time,
-				end_at: retained?.end_time,
-				duration_minutes: 360,
-				approval_state: "approved",
-				work_location_type: "office",
-				period_location: "office",
-			},
-			{
-				id: generated?.canonical_record_id,
-				start_at: generated?.start_time,
-				end_at: generated?.end_time,
-				duration_minutes: 29,
-				approval_state: "approved",
-				work_location_type: "office",
-				period_location: "office",
-			},
+		// Legacy admission floors each half: 14:30:40 to 15:00:31 is 29 minutes.
+		expect(await periods()).toMatchObject([
+			{ id: periodId, duration_minutes: 360, was_auto_adjusted: true },
+			{ duration_minutes: 29, was_auto_adjusted: true },
 		]);
 		expect(await intents()).toEqual([]);
 		expect(await receipts()).toEqual([]);
@@ -1184,7 +1053,7 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		});
 	});
 
-	it("leaves a legacy organization's closure whole when an established write fails", async () => {
+	it("leaves a legacy organization's closure whole when the adjustment's write fails", async () => {
 		await setAdmission("inactive");
 		await admin.query(
 			`create function t305_fail() returns trigger language plpgsql as $$
@@ -1237,284 +1106,52 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		expect((await periods()).map((period) => period.duration_minutes)).toEqual([360, 29]);
 	});
 
-	it("marks a legacy organization's work balance dirty from the work's captured local start date (#1214)", async () => {
-		await setAdmission("inactive");
-		// 08:00:40Z is 22:00:40 on 21 July at the captured Honolulu offset.
-		await admin.query("update user_settings set timezone = 'Pacific/Honolulu' where user_id = $1", [
-			ids.requesterUser,
-		]);
-		actAs(ids.requesterUser);
-		await expect(
-			clockIn("office", { instant: clockInAt, browserTimezone: "Pacific/Honolulu" }),
-		).resolves.toMatchObject({ success: true });
-		// The established adjustment at clock-out is lost; the daily check makes it.
+	it("defers a pair that disagrees with a divergence blocker and writes nothing else", async () => {
+		const { id: periodId } = await workWithLostAdjustment();
 		await admin.query(
-			`create function t305_fail() returns trigger language plpgsql as $$
-			 begin
-			   if NEW.was_auto_adjusted then raise exception 't305 injected legacy failure'; end if;
-			   return NEW;
-			 end $$`,
+			`update time_record_work set work_location_type = 'home'
+			 where record_id = (select canonical_record_id from work_period where id = $1)`,
+			[periodId],
 		);
-		await admin.query(
-			"create trigger t305_fail before insert on work_period for each row execute function t305_fail()",
-		);
-		await expect(
-			clockOut(undefined, undefined, {
-				submissionId: randomUUID(),
-				instant: clockOutAt,
-				browserTimezone: "Pacific/Honolulu",
-			}),
-		).resolves.toMatchObject({ success: true });
-		await admin.query("drop function t305_fail() cascade");
-		const { rows: captured } = await admin.query<{ utc_offset_minutes: number }>(
-			`select te.utc_offset_minutes from work_period wp join time_entry te on te.id = wp.clock_in_id
-			 where wp.organization_id = $1`,
-			[ids.organization],
-		);
-		expect(only(captured)).toEqual({ utc_offset_minutes: -600 });
-		// The closure's own refresh has run: the balance is clean before the adjustment.
-		await admin.query(
-			`insert into employee_work_balance
-			 (employee_id, organization_id, actual_minutes, required_minutes, balance_minutes,
-			  computed_from_date, computed_through_date, is_dirty, dirty_from_date, updated_at)
-			 values ($1, $2, 420, 0, 420, '2026-07-01', '2026-07-31', false, null, now())
-			 on conflict (organization_id, employee_id)
-			 do update set is_dirty = false, dirty_from_date = null`,
-			[ids.requester, ids.organization],
-		);
+		const before = await snapshot();
 
-		await expect(recover(new Date("2026-07-22T12:00:00Z"))).resolves.toMatchObject({
-			adjustedCount: 1,
+		await expect(recover(laterRunDate)).resolves.toMatchObject({
+			adjustedCount: 0,
+			deferredCount: 1,
 			errors: [],
 		});
-		expect((await periods()).map((period) => period.duration_minutes)).toEqual([360, 29]);
-		const { rows: balances } = await admin.query<{ is_dirty: boolean; dirty_from_date: string }>(
-			`select is_dirty, dirty_from_date::text from employee_work_balance
-			 where organization_id = $1 and employee_id = $2`,
-			[ids.organization, ids.requester],
-		);
-		expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-21" });
+		expect(only(await intents())).toMatchObject({
+			status: "deferred",
+			blocker: "canonical_divergence",
+		});
+		const after = (await snapshot()) as Record<string, unknown>;
+		expect({ ...after, intents: null }).toEqual({ ...before, intents: null });
 	});
 
-	it.each([
-		["an adopted", "active"],
-		["a legacy", "inactive"],
-	] as const)(
-		"keeps %s closure's project and billability on both segments in both representations (#900)",
-		async (_label, mode) => {
-			await setAdmission(mode);
-			const customerId = randomUUID();
-			const projectId = randomUUID();
-			await admin.query(
-				`insert into customer (id, organization_id, name, created_by, updated_at)
-				 values ($1, $2, 'Acme', $3, now())`,
-				[customerId, ids.organization, ids.managerUser],
-			);
-			await admin.query(
-				`insert into project (id, organization_id, name, status, is_active, customer_id, billable_default, created_by, updated_at)
-				 values ($1, $2, 'Billable', 'active', true, $3, true, $4, now())`,
-				[projectId, ids.organization, customerId, ids.managerUser],
-			);
-			await admin.query(
-				`insert into project_assignment (id, project_id, organization_id, assignment_type, employee_id, created_by)
-				 values (gen_random_uuid(), $1, $2, 'employee', $3, $4)`,
-				[projectId, ids.organization, ids.requester, ids.managerUser],
-			);
-			actAs(ids.requesterUser);
-			await expect(
-				clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
-			).resolves.toMatchObject({ success: true });
-			await expect(
-				clockOut(projectId, undefined, {
-					submissionId: randomUUID(),
-					instant: clockOutAt,
-					browserTimezone: "UTC",
-				}),
-			).resolves.toMatchObject({ success: true, data: { breakAdjustment: { breakMinutes: 30 } } });
-
-			const { rows } = await admin.query<{
-				project_id: string | null;
-				is_billable: boolean;
-				allocations: { projectId: string; isBillable: boolean }[] | null;
-			}>(
-				`select wp.project_id, wp.is_billable,
-				        (select json_agg(json_build_object('projectId', a.project_id, 'isBillable', a.is_billable))
-				           from time_record_allocation a where a.record_id = wp.canonical_record_id) as allocations
-				 from work_period wp where wp.organization_id = $1 order by wp.start_time`,
-				[ids.organization],
-			);
-			const segment = {
-				project_id: projectId,
-				is_billable: true,
-				allocations: [{ projectId, isBillable: true }],
-			};
-			expect(rows).toEqual([segment, segment]);
-		},
-	);
-
-	describe("vehicle use (#1126)", () => {
-		const van = "f3053000-0000-4000-8000-000000000001";
-		type Km = { start: number | null; end: number | null; distance: number | null };
-		const km = (start: number | null, end: number | null, distance: number | null) => ({
-			vehicle: van,
-			start,
-			end,
-			distance,
+	it("defers work in a closed month and applies once the month is reopened", async () => {
+		const { id: periodId } = await workWithLostAdjustment();
+		const { db } = await import("@/db");
+		const { closeMonth, reopenMonth } = await import("@/lib/time-tracking/closed-months/store");
+		const month = { organizationId: ids.organization, month: "2026-07" };
+		await closeMonth(db, {
+			...month,
+			scope: { kind: "organization" },
+			actor: { kind: "user", userId: ids.managerUser },
+			now: parseInstant("2026-08-03T09:00:00Z"),
 		});
 
-		/** Records vehicle use the way #1120 stores it: on the period and its canonical detail. */
-		async function driveVan(periodId: string, value: Km) {
-			await admin.query(
-				`insert into organization_vehicle (id, organization_id, name, licence_plate)
-				 values ($1, $2, 'Van', 'B-VN 305') on conflict do nothing`,
-				[van, ids.organization],
-			);
-			const set = `vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = $3,
-			  odometer_end_km = $4, driven_distance_km = $5`;
-			const values = [periodId, van, value.start, value.end, value.distance];
-			await admin.query(`update work_period set ${set} where id = $1`, values);
-			await admin.query(
-				`update time_record_work set ${set}
-				 where record_id = (select canonical_record_id from work_period where id = $1)`,
-				values,
-			);
-		}
+		await expect(recover(laterRunDate)).resolves.toMatchObject({ deferredCount: 1, errors: [] });
+		expect(only(await intents())).toMatchObject({ status: "deferred", blocker: "month_closed" });
 
-		async function vehicleGraph() {
-			const { rows } = await admin.query<{ period: Km; detail: Km | null }>(
-				`select json_build_object('vehicle', wp.vehicle_id, 'start', wp.odometer_start_km,
-				   'end', wp.odometer_end_km, 'distance', wp.driven_distance_km) as period,
-				 case when w.record_id is null then null else json_build_object('vehicle', w.vehicle_id,
-				   'start', w.odometer_start_km, 'end', w.odometer_end_km, 'distance', w.driven_distance_km) end as detail
-				 from work_period wp
-				 left join time_record_work w on w.record_id = wp.canonical_record_id
-				 where wp.organization_id = $1 and wp.deleted_at is null
-				 order by wp.start_time`,
-				[ids.organization],
-			);
-			return rows;
-		}
-
-		/** Whether each half shows "driving details missing" (vehicle use expected). */
-		async function drivingDetailsFlags() {
-			return (await vehicleGraph()).map(({ period }) =>
-				lacksDrivingDetails(
-					vehicleUseFromColumns({
-						vehicleKind: "organization",
-						vehicleId: van,
-						odometerStartKm: period.start,
-						odometerEndKm: period.end,
-						drivenDistanceKm: period.distance,
-					}),
-				),
-			);
-		}
-
-		it("keeps complete readings on the retained work and gives the generated work 0 km", async () => {
-			const { id: periodId } = await workWithLostAdjustment();
-			await driveVan(periodId, { start: 12_000, end: 12_085, distance: 85 });
-
-			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
-
-			expect(await vehicleGraph()).toEqual([
-				{ period: km(12_000, 12_085, 85), detail: km(12_000, 12_085, 85) },
-				{ period: km(null, null, 0), detail: km(null, null, 0) },
-			]);
-			expect(await drivingDetailsFlags()).toEqual([false, false]);
-			const receipt = only(await receipts()).result as {
-				originatingWork: { attribution: object };
-				segments: { attribution: object }[];
-			};
-			const vehicle = { kind: "organization", vehicleId: van };
-			expect(receipt.originatingWork.attribution).toMatchObject({
-				vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 },
-			});
-			expect(receipt.segments.map(({ attribution }) => attribution)).toMatchObject([
-				{ vehicleUse: { vehicle, startKm: 12_000, endKm: 12_085, distanceKm: 85 } },
-				{ vehicleUse: { vehicle, startKm: null, endKm: null, distanceKm: 0 } },
-			]);
-		});
-
-		it("keeps a directly entered distance on the retained work", async () => {
-			const { id: periodId } = await workWithLostAdjustment();
-			await driveVan(periodId, { start: null, end: null, distance: 120 });
-
-			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
-
-			expect(await vehicleGraph()).toEqual([
-				{ period: km(null, null, 120), detail: km(null, null, 120) },
-				{ period: km(null, null, 0), detail: km(null, null, 0) },
-			]);
-			expect(await drivingDetailsFlags()).toEqual([false, false]);
-		});
-
-		it("leaves vehicle use awaiting its end reading on the work that ends at the clock-out", async () => {
-			const { id: periodId } = await workWithLostAdjustment();
-			await driveVan(periodId, { start: 12_000, end: null, distance: null });
-
-			await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
-
-			expect(await vehicleGraph()).toEqual([
-				{ period: km(null, null, 0), detail: km(null, null, 0) },
-				{ period: km(12_000, null, null), detail: km(12_000, null, null) },
-			]);
-			expect(await drivingDetailsFlags()).toEqual([false, true]);
-		});
-
-		it("defers for review when the period and its canonical record disagree on vehicle use", async () => {
-			const { id: periodId } = await workWithLostAdjustment();
-			await driveVan(periodId, { start: 12_000, end: 12_085, distance: 85 });
-			await admin.query(
-				`update time_record_work set odometer_end_km = 12_090, driven_distance_km = 90
-				 where record_id = (select canonical_record_id from work_period where id = $1)`,
-				[periodId],
-			);
-
-			await expect(recover(laterRunDate)).resolves.toMatchObject({
-				adjustedCount: 0,
-				deferredCount: 1,
-			});
-			expect(only(await intents())).toMatchObject({
-				status: "deferred",
-				blocker: "completed_work_review_required",
-			});
-		});
-
-		it("carries the vehicle over a legacy organization's established break writes", async () => {
-			await setAdmission("inactive");
-			actAs(ids.requesterUser);
-			await expect(
-				clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
-			).resolves.toMatchObject({ success: true });
-			// The established adjustment at clock-out is lost: its generated work cannot be written.
-			await admin.query(
-				`create function t305_fail() returns trigger language plpgsql as $$
-				 begin raise exception 't305 injected write failure'; end $$`,
-			);
-			await admin.query(
-				"create trigger t305_fail before insert on work_period for each row execute function t305_fail()",
-			);
-			await expect(
-				clockOut(undefined, undefined, {
-					submissionId: randomUUID(),
-					instant: clockOutAt,
-					browserTimezone: "UTC",
-				}),
-			).resolves.toMatchObject({ success: true });
-			await admin.query("drop function t305_fail() cascade");
-			const [period] = await periods();
-			await driveVan(period?.id ?? "", { start: 12_000, end: 12_085, distance: 85 });
-
-			await expect(recover(new Date("2026-07-22T12:00:00Z"))).resolves.toMatchObject({
-				adjustedCount: 1,
-				errors: [],
-			});
-
-			expect(await vehicleGraph()).toEqual([
-				{ period: km(12_000, 12_085, 85), detail: km(12_000, 12_085, 85) },
-				{ period: km(null, null, 0), detail: km(null, null, 0) },
-			]);
-			expect(await drivingDetailsFlags()).toEqual([false, false]);
-		});
+		await expect(
+			reopenMonth(db, {
+				...month,
+				scope: { kind: "all" },
+				reason: "Missing break",
+				actorUserId: ids.managerUser,
+			}),
+		).resolves.toMatchObject({ kind: "reopened" });
+		await expect(recover(laterRunDate)).resolves.toMatchObject({ adjustedCount: 1, errors: [] });
+		await expectStandardAdjustment(periodId);
 	});
 });

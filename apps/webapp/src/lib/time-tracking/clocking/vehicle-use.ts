@@ -89,7 +89,7 @@ async function pickable(
 }
 
 /** Writes vehicle use to live work, when it changes. Completed work's is work records'. */
-async function write(
+async function writeLive(
 	db: WorkTransactionClient,
 	scope: Scope,
 	period: Period,
@@ -139,7 +139,7 @@ export async function recordClockInVehicleUse<Result extends { disposition: stri
 		clockInId: entryIdOf(result as Result & { disposition: "executed" }),
 	});
 	if (!period || !(await pickable(db, scope, null, use))) return result;
-	await write(db, scope, period, use);
+	await writeLive(db, scope, period, use);
 	return result;
 }
 
@@ -185,7 +185,7 @@ export function breakVehicleUseCarry(db: WorkTransactionClient, command: BreakCo
 	async function recordResumed(closure: BreakClosure): Promise<BreakClosure> {
 		if (closure.disposition !== "executed" || resumedUse === undefined) return closure;
 		const resumed = await readPeriod(db, scope, { id: closure.result.workPeriodId });
-		if (resumed) await write(db, scope, resumed, resumedUse);
+		if (resumed) await writeLive(db, scope, resumed, resumedUse);
 		return closure;
 	}
 	return { closing, recordResumed };
