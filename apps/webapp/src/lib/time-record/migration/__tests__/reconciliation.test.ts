@@ -72,6 +72,32 @@ describe("reconcileLegacyToCanonical", () => {
 		const result = await reconcileLegacyToCanonical("org-1");
 		expect(Object.values(result).every((count) => count === 0)).toBe(true);
 	});
+	it("tolerates an unlinked half pair in a closed month but not one in an open month (#1213)", async () => {
+		const completed = {
+			canonicalRecordId: null,
+			isActive: false,
+			endTime: new Date("2026-03-10T16:00:00Z"),
+			projectId: "project-1",
+			durationMinutes: 480,
+			approvalStatus: "approved",
+		};
+		mockState.legacyWorkCount.mockResolvedValue([
+			{ ...completed, id: "closed-march", unlinkedClosedMonth: "2026-03-01" },
+			{ ...completed, id: "open-april", unlinkedClosedMonth: null },
+		]);
+		mockState.employeeFindMany.mockResolvedValue([]);
+		mockState.absenceEntryFindMany.mockResolvedValue([]);
+		mockState.canonicalTimeRecordCount.mockResolvedValue([]);
+
+		const result = await reconcileLegacyToCanonical("org-1");
+
+		expect(result).toMatchObject({
+			missingWorkCanonicalRecords: 1,
+			missingWorkDetailRows: 1,
+			missingProjectAllocationRows: 1,
+		});
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([]);

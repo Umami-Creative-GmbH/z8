@@ -53,6 +53,14 @@ export async function reconcileLegacyToCanonical(
 				durationMinutes: true,
 				approvalStatus: true,
 			},
+			// The closed month an unlinked period's work touches, if any (#1213).
+			extras: (period, { sql }) => ({
+				unlinkedClosedMonth: sql<
+					string | null
+				>`case when ${period.canonicalRecordId} is null then public.closed_month_touching_work(${period.employeeId}, ${period.startTime}, ${period.endTime}) end`.as(
+					"unlinked_closed_month",
+				),
+			}),
 		}),
 		db.query.absenceEntry.findMany({
 			where: eq(absenceEntry.organizationId, organizationId),
@@ -119,11 +127,18 @@ export async function reconcileLegacyToCanonical(
 		}),
 	]);
 
-	// Live work receives its completed canonical representation at clock-out.
-	const legacyWork = allLegacyWork.filter((row) => !(row.isActive && row.endTime === null));
+	const canonicalWorkIds = new Set(canonicalWork.map((row) => row.id));
+	// Live work receives its completed canonical representation at clock-out. A completed
+	// period without a canonical work record in a closed month is a half pair the database
+	// keeps from changing (Time Tracking ADR-0004), so it can't diverge and doesn't count
+	// against readiness; reopening the month lets the backfill attach it (#1213).
+	const legacyWork = allLegacyWork.filter(
+		(row) =>
+			!(row.isActive && row.endTime === null) &&
+			!(row.unlinkedClosedMonth && !canonicalWorkIds.has(row.id)),
+	);
 	const expectedWorkCanonicalIds = new Set(legacyWork.map(resolveExpectedCanonicalId));
 	const expectedAbsenceCanonicalIds = new Set(legacyAbsence.map(resolveExpectedCanonicalId));
-	const canonicalWorkIds = new Set(canonicalWork.map((row) => row.id));
 	const canonicalAbsenceIds = new Set(canonicalAbsence.map((row) => row.id));
 	const canonicalWorkDetailIds = new Set(
 		canonicalWorkDetails.map((row) => row.recordId),
