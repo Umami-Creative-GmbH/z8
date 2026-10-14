@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import {
@@ -11,20 +11,35 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db";
+import { diagnoseRecordAgreement } from "@/lib/time-tracking/work-records/record-agreement-diagnosis";
+import type { CanonicalAllocationShape } from "@/lib/time-tracking/work-records/work-attribution";
 
 export type LegacyCanonicalReconciliation = {
 	workCountMismatch: number;
 	absenceCountMismatch: number;
-	durationMismatchRecords: number;
+	/**
+	 * Completed work whose canonical work record disagrees with it under the
+	 * record agreement rule (#1217): interval, duration, approval state or work
+	 * attribution, or whose attribution cannot be represented.
+	 */
+	divergentWorkRecords: number;
+	absenceDurationMismatchRecords: number;
 	missingWorkCanonicalRecords: number;
 	missingAbsenceCanonicalRecords: number;
 	missingWorkDetailRows: number;
 	missingAbsenceDetailRows: number;
-	missingProjectAllocationRows: number;
-	approvalStateMismatchRecords: number;
+	absenceApprovalStateMismatchRecords: number;
 	missingAbsenceCanonicalLinks: number;
 	missingAbsenceOrganizationIds: number;
 };
+
+const vehicleColumns = {
+	vehicleKind: true,
+	vehicleId: true,
+	odometerStartKm: true,
+	odometerEndKm: true,
+	drivenDistanceKm: true,
+} as const;
 
 export async function reconcileLegacyToCanonical(
 	organizationId: string,
@@ -39,7 +54,7 @@ export async function reconcileLegacyToCanonical(
 		targetEmployees,
 		canonicalWorkDetails,
 		canonicalAbsenceDetails,
-		canonicalProjectAllocations,
+		canonicalWorkAllocations,
 	] = await Promise.all([
 		db.query.workPeriod.findMany({
 			where: eq(workPeriod.organizationId, organizationId),
@@ -47,11 +62,17 @@ export async function reconcileLegacyToCanonical(
 				id: true,
 				canonicalRecordId: true,
 				isActive: true,
+				deletedAt: true,
+				startTime: true,
 				endTime: true,
-				projectId: true,
-				isBillable: true,
 				durationMinutes: true,
 				approvalStatus: true,
+				projectId: true,
+				taskId: true,
+				isBillable: true,
+				workCategoryId: true,
+				workLocationType: true,
+				...vehicleColumns,
 			},
 			// The closed month an unlinked period's work touches, if any (#1213).
 			extras: (period, { sql }) => ({
@@ -75,11 +96,14 @@ export async function reconcileLegacyToCanonical(
 			},
 		}),
 		db.query.timeRecord.findMany({
-			where: and(
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.recordKind, "work"),
-			),
-			columns: { id: true, durationMinutes: true, approvalState: true },
+			where: and(eq(timeRecord.organizationId, organizationId), eq(timeRecord.recordKind, "work")),
+			columns: {
+				id: true,
+				startAt: true,
+				endAt: true,
+				durationMinutes: true,
+				approvalState: true,
+			},
 		}),
 		db.query.timeRecord.findMany({
 			where: and(
@@ -112,18 +136,30 @@ export async function reconcileLegacyToCanonical(
 		}),
 		db.query.timeRecordWork.findMany({
 			where: eq(timeRecordWork.organizationId, organizationId),
-			columns: { recordId: true },
+			columns: {
+				recordId: true,
+				workCategoryId: true,
+				workLocationType: true,
+				...vehicleColumns,
+			},
 		}),
 		db.query.timeRecordAbsence.findMany({
 			where: eq(timeRecordAbsence.organizationId, organizationId),
 			columns: { recordId: true },
 		}),
 		db.query.timeRecordAllocation.findMany({
-			where: and(
-				eq(timeRecordAllocation.organizationId, organizationId),
-				eq(timeRecordAllocation.allocationKind, "project"),
-			),
-			columns: { recordId: true, projectId: true, isBillable: true },
+			where: eq(timeRecordAllocation.organizationId, organizationId),
+			columns: {
+				recordId: true,
+				allocationKind: true,
+				projectId: true,
+				taskId: true,
+				costCenterId: true,
+				weightPercent: true,
+				isBillable: true,
+			},
+			// A stable order: the record agreement rule reads the first project allocation.
+			orderBy: [asc(timeRecordAllocation.createdAt), asc(timeRecordAllocation.id)],
 		}),
 	]);
 
@@ -140,39 +176,23 @@ export async function reconcileLegacyToCanonical(
 	const expectedWorkCanonicalIds = new Set(legacyWork.map(resolveExpectedCanonicalId));
 	const expectedAbsenceCanonicalIds = new Set(legacyAbsence.map(resolveExpectedCanonicalId));
 	const canonicalAbsenceIds = new Set(canonicalAbsence.map((row) => row.id));
-	const canonicalWorkDetailIds = new Set(
-		canonicalWorkDetails.map((row) => row.recordId),
+	const canonicalWorkDetailById = new Map(
+		canonicalWorkDetails.map(({ recordId, ...detail }) => [recordId, detail]),
 	);
-	const canonicalAbsenceDetailIds = new Set(
-		canonicalAbsenceDetails.map((row) => row.recordId),
-	);
+	const canonicalAbsenceDetailIds = new Set(canonicalAbsenceDetails.map((row) => row.recordId));
 	const canonicalWorkById = new Map(canonicalWork.map((row) => [row.id, row]));
-	const canonicalAbsenceById = new Map(
-		canonicalAbsence.map((row) => [row.id, row]),
-	);
-	const legacyWorkByCanonicalId = new Map(
-		legacyWork.map((row) => [resolveExpectedCanonicalId(row), row]),
-	);
-	// A project allocation matches only with the period's billability (#900).
-	const expectedProjectAllocations = new Set(
-		legacyWork
-			.filter((row) => row.projectId)
-			.map(
-				(row) => `${resolveExpectedCanonicalId(row)}:${row.projectId}:${row.isBillable ?? false}`,
-			),
-	);
-	const canonicalProjectAllocationKeys = new Set(
-		canonicalProjectAllocations.map(
-			(row) => `${row.recordId}:${row.projectId}:${row.isBillable ?? false}`,
-		),
-	);
+	const canonicalAbsenceById = new Map(canonicalAbsence.map((row) => [row.id, row]));
+	const allocationsByRecord = new Map<string, CanonicalAllocationShape[]>();
+	for (const { recordId, ...allocation } of canonicalWorkAllocations) {
+		const recordAllocations = allocationsByRecord.get(recordId);
+		if (recordAllocations) recordAllocations.push(allocation);
+		else allocationsByRecord.set(recordId, [allocation]);
+	}
 	const targetEmployeeIds = new Set(targetEmployees.map((row) => row.id));
 	const attributedNullOrgAbsenceEntries = nullOrgAbsenceEntries.filter((row) =>
 		targetEmployeeIds.has(row.employeeId),
 	);
-	const effectiveExpectedAbsenceCanonicalIds = new Set(
-		expectedAbsenceCanonicalIds,
-	);
+	const effectiveExpectedAbsenceCanonicalIds = new Set(expectedAbsenceCanonicalIds);
 	const effectiveLegacyAbsenceByCanonicalId = new Map(
 		legacyAbsence.map((row) => [resolveExpectedCanonicalId(row), row]),
 	);
@@ -183,10 +203,25 @@ export async function reconcileLegacyToCanonical(
 		effectiveLegacyAbsenceByCanonicalId.set(expectedCanonicalId, row);
 	}
 
-	const missingWorkCanonicalRecords = countMissingIds(
-		expectedWorkCanonicalIds,
-		canonicalWorkIds,
+	// Each pair is judged by the record agreement rule every writer and work
+	// diagnostics use (#1217). Deleted work is no longer work: diagnostics reports
+	// only a payable representation of it.
+	const legacyWorkByCanonicalId = new Map(
+		legacyWork.map((row) => [resolveExpectedCanonicalId(row), row]),
 	);
+	let divergentWorkRecords = 0;
+	for (const [id, period] of legacyWorkByCanonicalId) {
+		const record = canonicalWorkById.get(id);
+		if (!record || period.deletedAt !== null) continue;
+		const diagnosis = diagnoseRecordAgreement(period, {
+			record,
+			detail: canonicalWorkDetailById.get(id) ?? null,
+			allocations: allocationsByRecord.get(id) ?? [],
+		});
+		if (!diagnosis.agrees) divergentWorkRecords += 1;
+	}
+
+	const missingWorkCanonicalRecords = countMissingIds(expectedWorkCanonicalIds, canonicalWorkIds);
 	const missingAbsenceCanonicalRecords = countMissingIds(
 		effectiveExpectedAbsenceCanonicalIds,
 		canonicalAbsenceIds,
@@ -195,39 +230,28 @@ export async function reconcileLegacyToCanonical(
 	return {
 		workCountMismatch: missingWorkCanonicalRecords,
 		absenceCountMismatch: missingAbsenceCanonicalRecords,
-		durationMismatchRecords:
-			countWorkDurationMismatches(legacyWorkByCanonicalId, canonicalWorkById) +
-			countAbsenceDurationMismatches(
-				effectiveLegacyAbsenceByCanonicalId,
-				canonicalAbsenceById,
-			),
+		divergentWorkRecords,
+		absenceDurationMismatchRecords: countAbsenceDurationMismatches(
+			effectiveLegacyAbsenceByCanonicalId,
+			canonicalAbsenceById,
+		),
 		missingWorkCanonicalRecords,
 		missingAbsenceCanonicalRecords,
 		missingWorkDetailRows: countMissingIds(
 			expectedWorkCanonicalIds,
-			canonicalWorkDetailIds,
+			new Set(canonicalWorkDetailById.keys()),
 		),
 		missingAbsenceDetailRows: countMissingIds(
 			effectiveExpectedAbsenceCanonicalIds,
 			canonicalAbsenceDetailIds,
 		),
-		missingProjectAllocationRows: countMissingIds(
-			expectedProjectAllocations,
-			canonicalProjectAllocationKeys,
-		),
 		missingAbsenceCanonicalLinks:
 			linkedAbsenceEntries.filter((row) => !row.canonicalRecordId).length +
-			attributedNullOrgAbsenceEntries.filter((row) => !row.canonicalRecordId)
-				.length,
-		approvalStateMismatchRecords:
-			countWorkApprovalStateMismatches(
-				legacyWorkByCanonicalId,
-				canonicalWorkById,
-			) +
-			countAbsenceApprovalStateMismatches(
-				effectiveLegacyAbsenceByCanonicalId,
-				canonicalAbsenceById,
-			),
+			attributedNullOrgAbsenceEntries.filter((row) => !row.canonicalRecordId).length,
+		absenceApprovalStateMismatchRecords: countAbsenceApprovalStateMismatches(
+			effectiveLegacyAbsenceByCanonicalId,
+			canonicalAbsenceById,
+		),
 		missingAbsenceOrganizationIds: attributedNullOrgAbsenceEntries.length,
 	};
 }
@@ -244,26 +268,6 @@ function countMissingIds(legacyIds: Set<string>, canonicalIds: Set<string>) {
 
 	for (const legacyId of legacyIds) {
 		if (!canonicalIds.has(legacyId)) {
-			count += 1;
-		}
-	}
-
-	return count;
-}
-
-function countWorkDurationMismatches(
-	legacyWorkById: Map<string, { durationMinutes: number | null }>,
-	canonicalWorkById: Map<string, { durationMinutes: number | null }>,
-) {
-	let count = 0;
-
-	for (const [id, legacyRecord] of legacyWorkById) {
-		const canonicalRecord = canonicalWorkById.get(id);
-		if (!canonicalRecord) {
-			continue;
-		}
-
-		if (legacyRecord.durationMinutes !== canonicalRecord.durationMinutes) {
 			count += 1;
 		}
 	}
@@ -306,37 +310,8 @@ function countAbsenceDurationMismatches(
 	return count;
 }
 
-function countWorkApprovalStateMismatches(
-	legacyWorkById: Map<
-		string,
-		{ approvalStatus: "pending" | "approved" | "rejected" }
-	>,
-	canonicalWorkById: Map<
-		string,
-		{ approvalState: "pending" | "approved" | "rejected" | "draft" }
-	>,
-) {
-	let count = 0;
-
-	for (const [id, legacyRecord] of legacyWorkById) {
-		const canonicalRecord = canonicalWorkById.get(id);
-		if (!canonicalRecord) {
-			continue;
-		}
-
-		if (legacyRecord.approvalStatus !== canonicalRecord.approvalState) {
-			count += 1;
-		}
-	}
-
-	return count;
-}
-
 function countAbsenceApprovalStateMismatches(
-	legacyAbsenceById: Map<
-		string,
-		{ status: "pending" | "approved" | "rejected" }
-	>,
+	legacyAbsenceById: Map<string, { status: "pending" | "approved" | "rejected" }>,
 	canonicalAbsenceById: Map<
 		string,
 		{ approvalState: "pending" | "approved" | "rejected" | "draft" }
@@ -370,17 +345,11 @@ function calculateAbsenceDurationMinutes(
 	return Math.max(0, Math.round(endAt.diff(startAt, "minutes").minutes));
 }
 
-function dateWithPeriod(
-	dateIso: string,
-	period: "full_day" | "am" | "pm",
-	edge: "start" | "end",
-) {
+function dateWithPeriod(dateIso: string, period: "full_day" | "am" | "pm", edge: "start" | "end") {
 	const day = DateTime.fromISO(dateIso, { zone: "utc" });
 
 	if (period === "am") {
-		return edge === "start"
-			? day.startOf("day")
-			: day.startOf("day").plus({ hours: 12 });
+		return edge === "start" ? day.startOf("day") : day.startOf("day").plus({ hours: 12 });
 	}
 
 	if (period === "pm") {
@@ -389,14 +358,10 @@ function dateWithPeriod(
 			: day.endOf("day").plus({ millisecond: 1 });
 	}
 
-	return edge === "start"
-		? day.startOf("day")
-		: day.endOf("day").plus({ millisecond: 1 });
+	return edge === "start" ? day.startOf("day") : day.endOf("day").plus({ millisecond: 1 });
 }
 
-function normalizeLegacyDayPeriod(
-	period: "full_day" | "am" | "pm" | "morning" | "afternoon",
-) {
+function normalizeLegacyDayPeriod(period: "full_day" | "am" | "pm" | "morning" | "afternoon") {
 	if (period === "morning") {
 		return "am" as const;
 	}

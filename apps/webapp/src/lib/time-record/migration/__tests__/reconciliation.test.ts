@@ -36,6 +36,8 @@ vi.mock("@/db", () => ({
 	timeRecordAllocation: {
 		allocationKind: "time-record-allocation-kind",
 		organizationId: "time-record-allocation-organization-id",
+		createdAt: "time-record-allocation-created-at",
+		id: "time-record-allocation-id",
 	},
 	timeRecordAbsence: {
 		organizationId: "time-record-absence-organization-id",
@@ -53,68 +55,142 @@ vi.mock("@/db", () => ({
 
 import { reconcileLegacyToCanonical } from "@/lib/time-record/migration/reconciliation";
 
+const noVehicle = {
+	vehicleKind: null,
+	vehicleId: null,
+	odometerStartKm: null,
+	odometerEndKm: null,
+	drivenDistanceKm: null,
+};
+
+/** A completed, approved eight-hour work period without attribution. */
+function legacyWork(id: string, overrides: Record<string, unknown> = {}) {
+	return {
+		id,
+		canonicalRecordId: id,
+		isActive: false,
+		deletedAt: null,
+		startTime: new Date("2026-01-15T08:00:00Z"),
+		endTime: new Date("2026-01-15T16:00:00Z"),
+		durationMinutes: 480,
+		approvalStatus: "approved",
+		projectId: null,
+		taskId: null,
+		isBillable: false,
+		workCategoryId: null,
+		workLocationType: null,
+		...noVehicle,
+		unlinkedClosedMonth: null,
+		...overrides,
+	};
+}
+
+/** The canonical work record that agrees with `legacyWork(id)`. */
+function canonicalWork(id: string, overrides: Record<string, unknown> = {}) {
+	return {
+		id,
+		startAt: new Date("2026-01-15T08:00:00Z"),
+		endAt: new Date("2026-01-15T16:00:00Z"),
+		durationMinutes: 480,
+		approvalState: "approved",
+		...overrides,
+	};
+}
+
+function workDetail(recordId: string, overrides: Record<string, unknown> = {}) {
+	return { recordId, workCategoryId: null, workLocationType: null, ...noVehicle, ...overrides };
+}
+
+function projectAllocation(recordId: string, projectId: string, overrides = {}) {
+	return {
+		recordId,
+		allocationKind: "project",
+		projectId,
+		taskId: null,
+		costCenterId: null,
+		weightPercent: 100,
+		isBillable: false,
+		...overrides,
+	};
+}
+
+const reconciled = {
+	workCountMismatch: 0,
+	absenceCountMismatch: 0,
+	divergentWorkRecords: 0,
+	absenceDurationMismatchRecords: 0,
+	missingWorkCanonicalRecords: 0,
+	missingAbsenceCanonicalRecords: 0,
+	missingAbsenceDetailRows: 0,
+	absenceApprovalStateMismatchRecords: 0,
+	missingAbsenceCanonicalLinks: 0,
+	missingAbsenceOrganizationIds: 0,
+	missingWorkDetailRows: 0,
+};
+
 describe("reconcileLegacyToCanonical", () => {
-	it("does not require a completed canonical record for healthy live work", async () => {
-		mockState.legacyWorkCount.mockResolvedValue([
-			{
-				id: "live-work",
-				canonicalRecordId: null,
-				isActive: true,
-				endTime: null,
-				projectId: "project-1",
-				durationMinutes: null,
-				approvalStatus: "approved",
-			},
-		]);
-		mockState.employeeFindMany.mockResolvedValue([]);
-		mockState.absenceEntryFindMany.mockResolvedValue([]);
-		mockState.canonicalTimeRecordCount.mockResolvedValue([]);
-		const result = await reconcileLegacyToCanonical("org-1");
-		expect(Object.values(result).every((count) => count === 0)).toBe(true);
-	});
-	it("tolerates an unlinked half pair in a closed month but not one in an open month (#1213)", async () => {
-		const completed = {
-			canonicalRecordId: null,
-			isActive: false,
-			endTime: new Date("2026-03-10T16:00:00Z"),
-			projectId: "project-1",
-			durationMinutes: 480,
-			approvalStatus: "approved",
-		};
-		mockState.legacyWorkCount.mockResolvedValue([
-			{ ...completed, id: "closed-march", unlinkedClosedMonth: "2026-03-01" },
-			{ ...completed, id: "open-april", unlinkedClosedMonth: null },
-		]);
-		mockState.employeeFindMany.mockResolvedValue([]);
-		mockState.absenceEntryFindMany.mockResolvedValue([]);
-		mockState.canonicalTimeRecordCount.mockResolvedValue([]);
-
-		const result = await reconcileLegacyToCanonical("org-1");
-
-		expect(result).toMatchObject({
-			missingWorkCanonicalRecords: 1,
-			missingWorkDetailRows: 1,
-			missingProjectAllocationRows: 1,
-		});
-	});
-
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([]);
 		mockState.canonicalTimeRecordAllocationFindMany.mockResolvedValue([]);
 		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([]);
+		mockState.employeeFindMany.mockResolvedValue([]);
+		mockState.absenceEntryFindMany.mockResolvedValue([]);
+		mockState.canonicalTimeRecordCount.mockResolvedValue([]);
 	});
 
-	it("reports zero mismatches when legacy and canonical counts match", async () => {
-		mockState.legacyWorkCount.mockResolvedValue([
-			{
-				id: "work-1",
-				projectId: null,
-				durationMinutes: 480,
-				approvalStatus: "approved",
-			},
-		]);
-		mockState.employeeFindMany.mockResolvedValue([]);
+	/** Reconciles legacy work against canonical work, with no absences. */
+	async function reconcileWork(input: {
+		legacy: unknown[];
+		canonical: unknown[];
+		details?: unknown[];
+		allocations?: unknown[];
+	}) {
+		mockState.legacyWorkCount.mockResolvedValue(input.legacy);
+		mockState.canonicalTimeRecordCount
+			.mockResolvedValueOnce(input.canonical)
+			.mockResolvedValueOnce([]);
+		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue(input.details ?? []);
+		mockState.canonicalTimeRecordAllocationFindMany.mockResolvedValue(input.allocations ?? []);
+		return reconcileLegacyToCanonical("org-1");
+	}
+
+	it("does not require a completed canonical record for healthy live work", async () => {
+		const result = await reconcileWork({
+			legacy: [
+				legacyWork("live-work", {
+					canonicalRecordId: null,
+					isActive: true,
+					endTime: null,
+					durationMinutes: null,
+					projectId: "project-1",
+				}),
+			],
+			canonical: [],
+		});
+		expect(Object.values(result).every((count) => count === 0)).toBe(true);
+	});
+
+	it("tolerates an unlinked half pair in a closed month but not one in an open month (#1213)", async () => {
+		const completed = { canonicalRecordId: null, projectId: "project-1" };
+
+		const result = await reconcileWork({
+			legacy: [
+				legacyWork("closed-march", { ...completed, unlinkedClosedMonth: "2026-03-01" }),
+				legacyWork("open-april", completed),
+			],
+			canonical: [],
+		});
+
+		expect(result).toMatchObject({
+			missingWorkCanonicalRecords: 1,
+			missingWorkDetailRows: 1,
+			divergentWorkRecords: 0,
+		});
+	});
+
+	it("reports zero mismatches when legacy and canonical work agree", async () => {
+		mockState.legacyWorkCount.mockResolvedValue([legacyWork("work-1")]);
 		mockState.absenceEntryFindMany
 			.mockResolvedValueOnce([
 				{
@@ -126,19 +202,10 @@ describe("reconcileLegacyToCanonical", () => {
 					status: "approved",
 				},
 			])
-			.mockResolvedValueOnce([
-				{ id: "absence-1", canonicalRecordId: "absence-1" },
-			])
+			.mockResolvedValueOnce([{ id: "absence-1", canonicalRecordId: "absence-1" }])
 			.mockResolvedValueOnce([]);
 		mockState.canonicalTimeRecordCount
-			.mockResolvedValueOnce([
-				{
-					id: "work-1",
-					recordKind: "work",
-					durationMinutes: 480,
-					approvalState: "approved",
-				},
-			])
+			.mockResolvedValueOnce([canonicalWork("work-1")])
 			.mockResolvedValueOnce([
 				{
 					id: "absence-1",
@@ -147,26 +214,10 @@ describe("reconcileLegacyToCanonical", () => {
 					approvalState: "approved",
 				},
 			]);
-		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
-			{ recordId: "work-1" },
-		]);
-		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([
-			{ recordId: "absence-1" },
-		]);
+		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([workDetail("work-1")]);
+		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([{ recordId: "absence-1" }]);
 
-		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual({
-			workCountMismatch: 0,
-			absenceCountMismatch: 0,
-			durationMismatchRecords: 0,
-			missingWorkCanonicalRecords: 0,
-			missingAbsenceCanonicalRecords: 0,
-			missingAbsenceDetailRows: 0,
-			approvalStateMismatchRecords: 0,
-			missingAbsenceCanonicalLinks: 0,
-			missingAbsenceOrganizationIds: 0,
-			missingProjectAllocationRows: 0,
-			missingWorkDetailRows: 0,
-		});
+		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual(reconciled);
 
 		expect(mockState.absenceEntryFindMany).toHaveBeenCalledTimes(3);
 		expect(mockState.absenceEntryFindMany).toHaveBeenNthCalledWith(
@@ -185,9 +236,7 @@ describe("reconcileLegacyToCanonical", () => {
 		);
 		expect(mockState.absenceEntryFindMany).toHaveBeenNthCalledWith(
 			2,
-			expect.objectContaining({
-				columns: { id: true, canonicalRecordId: true },
-			}),
+			expect.objectContaining({ columns: { id: true, canonicalRecordId: true } }),
 		);
 		expect(mockState.absenceEntryFindMany).toHaveBeenNthCalledWith(
 			3,
@@ -208,138 +257,96 @@ describe("reconcileLegacyToCanonical", () => {
 	});
 
 	it("reconciles linked legacy IDs while allowing canonical-native records", async () => {
-		mockState.legacyWorkCount.mockResolvedValue([
-			{
-				id: "legacy-work-1",
-				canonicalRecordId: "canonical-work-1",
-				projectId: "project-1",
-				durationMinutes: 480,
-				approvalStatus: "approved",
-			},
-		]);
-		mockState.employeeFindMany.mockResolvedValue([]);
-		mockState.absenceEntryFindMany
-			.mockResolvedValueOnce([
-				{
-					id: "legacy-absence-1",
-					canonicalRecordId: "canonical-absence-1",
-					startDate: "2026-01-15",
-					startPeriod: "full_day",
-					endDate: "2026-01-15",
-					endPeriod: "full_day",
-					status: "approved",
-				},
-			])
-			.mockResolvedValueOnce([
-				{ id: "legacy-absence-1", canonicalRecordId: "canonical-absence-1" },
-			])
-			.mockResolvedValueOnce([]);
-		mockState.canonicalTimeRecordCount
-			.mockResolvedValueOnce([
-				{
-					id: "canonical-work-1",
-					recordKind: "work",
-					durationMinutes: 480,
-					approvalState: "approved",
-				},
-				{
-					id: "canonical-native-work",
-					recordKind: "work",
-					durationMinutes: 60,
-					approvalState: "approved",
-				},
-			])
-			.mockResolvedValueOnce([
-				{
-					id: "canonical-absence-1",
-					recordKind: "absence",
-					durationMinutes: 1440,
-					approvalState: "approved",
-				},
-				{
-					id: "canonical-native-absence",
-					recordKind: "absence",
-					durationMinutes: 1440,
-					approvalState: "approved",
-				},
-			]);
-		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
-			{ recordId: "canonical-work-1" },
-			{ recordId: "canonical-native-work" },
-		]);
-		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([
-			{ recordId: "canonical-absence-1" },
-			{ recordId: "canonical-native-absence" },
-		]);
-		mockState.canonicalTimeRecordAllocationFindMany.mockResolvedValue([
-			{ recordId: "canonical-work-1", projectId: "project-1" },
-		]);
-
-		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual({
-			workCountMismatch: 0,
-			absenceCountMismatch: 0,
-			durationMismatchRecords: 0,
-			missingWorkCanonicalRecords: 0,
-			missingAbsenceCanonicalRecords: 0,
-			missingAbsenceDetailRows: 0,
-			approvalStateMismatchRecords: 0,
-			missingAbsenceCanonicalLinks: 0,
-			missingAbsenceOrganizationIds: 0,
-			missingProjectAllocationRows: 0,
-			missingWorkDetailRows: 0,
+		const result = await reconcileWork({
+			legacy: [
+				legacyWork("legacy-work-1", {
+					canonicalRecordId: "canonical-work-1",
+					projectId: "project-1",
+				}),
+			],
+			canonical: [canonicalWork("canonical-work-1"), canonicalWork("canonical-native-work")],
+			details: [workDetail("canonical-work-1"), workDetail("canonical-native-work")],
+			allocations: [projectAllocation("canonical-work-1", "project-1")],
 		});
+
+		expect(result).toEqual(reconciled);
 	});
 
 	it("treats an established canonical link as authoritative", async () => {
-		mockState.legacyWorkCount.mockResolvedValue([
-			{
-				id: "legacy-work-1",
-				canonicalRecordId: "missing-canonical-work",
-				projectId: null,
-				durationMinutes: 480,
-				approvalStatus: "approved",
-			},
-		]);
-		mockState.employeeFindMany.mockResolvedValue([]);
-		mockState.absenceEntryFindMany
-			.mockResolvedValueOnce([])
-			.mockResolvedValueOnce([])
-			.mockResolvedValueOnce([]);
-		mockState.canonicalTimeRecordCount
-			.mockResolvedValueOnce([
-				{
-					id: "legacy-work-1",
-					recordKind: "work",
-					durationMinutes: 480,
-					approvalState: "approved",
-				},
-			])
-			.mockResolvedValueOnce([]);
-		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
-			{ recordId: "legacy-work-1" },
-		]);
+		const result = await reconcileWork({
+			legacy: [legacyWork("legacy-work-1", { canonicalRecordId: "missing-canonical-work" })],
+			canonical: [canonicalWork("legacy-work-1")],
+			details: [workDetail("legacy-work-1")],
+		});
 
-		await expect(reconcileLegacyToCanonical("org-1")).resolves.toMatchObject({
+		expect(result).toMatchObject({
 			workCountMismatch: 1,
 			missingWorkCanonicalRecords: 1,
 			missingWorkDetailRows: 1,
 		});
 	});
 
+	it.each<[string, Record<string, unknown>, Record<string, unknown>, unknown[]]>([
+		["start", {}, { startAt: new Date("2026-01-15T08:30:00Z") }, []],
+		["end", {}, { endAt: new Date("2026-01-15T16:30:00Z") }, []],
+		["duration", {}, { durationMinutes: 450 }, []],
+		["approval state", {}, { approvalState: "pending" }, []],
+		["project", { projectId: "project-1" }, {}, [projectAllocation("work-1", "project-2")]],
+		[
+			"task",
+			{ projectId: "project-1", taskId: "task-1" },
+			{},
+			[projectAllocation("work-1", "project-1")],
+		],
+		[
+			"billable flag",
+			{ projectId: "project-1", isBillable: true },
+			{},
+			[projectAllocation("work-1", "project-1")],
+		],
+		["category", { workCategoryId: "category-1" }, {}, []],
+		["location", { workLocationType: "home" }, {}, []],
+		["vehicle use", { vehicleKind: "own", odometerStartKm: 100 }, {}, []],
+	])(
+		"counts linked work disagreeing on its %s as divergent by the record agreement rule",
+		async (_facet, period, record, allocations) => {
+			const result = await reconcileWork({
+				legacy: [legacyWork("work-1", period)],
+				canonical: [canonicalWork("work-1", record)],
+				details: [workDetail("work-1")],
+				allocations,
+			});
+
+			expect(result).toEqual({ ...reconciled, divergentWorkRecords: 1 });
+		},
+	);
+
+	it("counts work whose attribution cannot be represented as divergent instead of failing", async () => {
+		const result = await reconcileWork({
+			legacy: [legacyWork("work-1", { isBillable: true })],
+			canonical: [canonicalWork("work-1")],
+			details: [workDetail("work-1")],
+		});
+
+		expect(result.divergentWorkRecords).toBe(1);
+	});
+
+	it("does not judge deleted work by the record agreement rule", async () => {
+		const result = await reconcileWork({
+			legacy: [legacyWork("work-1", { deletedAt: new Date("2026-01-16T00:00:00Z") })],
+			canonical: [
+				canonicalWork("work-1", { endAt: new Date("2026-01-15T08:00:00Z"), durationMinutes: 0 }),
+			],
+			details: [workDetail("work-1")],
+		});
+
+		expect(result).toEqual(reconciled);
+	});
+
 	it("reports id-level cutover gaps including null organization rows", async () => {
 		mockState.legacyWorkCount.mockResolvedValue([
-			{
-				id: "work-1",
-				projectId: null,
-				durationMinutes: 480,
-				approvalStatus: "approved",
-			},
-			{
-				id: "work-2",
-				projectId: "project-2",
-				durationMinutes: 300,
-				approvalStatus: "approved",
-			},
+			legacyWork("work-1"),
+			legacyWork("work-2", { projectId: "project-2", durationMinutes: 300 }),
 		]);
 		mockState.employeeFindMany.mockResolvedValue([{ id: "employee-2" }]);
 		mockState.absenceEntryFindMany
@@ -379,20 +386,7 @@ describe("reconcileLegacyToCanonical", () => {
 				},
 			]);
 		mockState.canonicalTimeRecordCount
-			.mockResolvedValueOnce([
-				{
-					id: "work-1",
-					recordKind: "work",
-					durationMinutes: 480,
-					approvalState: "approved",
-				},
-				{
-					id: "work-9",
-					recordKind: "work",
-					durationMinutes: 300,
-					approvalState: "approved",
-				},
-			])
+			.mockResolvedValueOnce([canonicalWork("work-1"), canonicalWork("work-9")])
 			.mockResolvedValueOnce([
 				{
 					id: "absence-1",
@@ -400,46 +394,26 @@ describe("reconcileLegacyToCanonical", () => {
 					durationMinutes: 1440,
 					approvalState: "approved",
 				},
-				{
-					id: "absence-2",
-					recordKind: "absence",
-					durationMinutes: 1440,
-					approvalState: "pending",
-				},
+				{ id: "absence-2", recordKind: "absence", durationMinutes: 1440, approvalState: "pending" },
 			]);
-		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
-			{ recordId: "work-1" },
-		]);
+		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([workDetail("work-1")]);
 		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([
 			{ recordId: "absence-1" },
 			{ recordId: "absence-2" },
 		]);
-		mockState.canonicalTimeRecordAllocationFindMany.mockResolvedValue([]);
 
 		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual({
+			...reconciled,
 			workCountMismatch: 1,
-			absenceCountMismatch: 0,
-			durationMismatchRecords: 0,
 			missingWorkCanonicalRecords: 1,
-			missingAbsenceCanonicalRecords: 0,
-			missingAbsenceDetailRows: 0,
-			approvalStateMismatchRecords: 0,
 			missingAbsenceCanonicalLinks: 1,
 			missingAbsenceOrganizationIds: 1,
-			missingProjectAllocationRows: 1,
 			missingWorkDetailRows: 1,
 		});
 	});
 
 	it("attributes null-org absences to the target org via employee when no canonical row exists", async () => {
-		mockState.legacyWorkCount.mockResolvedValue([
-			{
-				id: "work-1",
-				projectId: null,
-				durationMinutes: 480,
-				approvalStatus: "approved",
-			},
-		]);
+		mockState.legacyWorkCount.mockResolvedValue([legacyWork("work-1")]);
 		mockState.employeeFindMany.mockResolvedValue([{ id: "employee-9" }]);
 		mockState.absenceEntryFindMany
 			.mockResolvedValueOnce([
@@ -452,9 +426,7 @@ describe("reconcileLegacyToCanonical", () => {
 					status: "approved",
 				},
 			])
-			.mockResolvedValueOnce([
-				{ id: "absence-1", canonicalRecordId: "absence-1" },
-			])
+			.mockResolvedValueOnce([{ id: "absence-1", canonicalRecordId: "absence-1" }])
 			.mockResolvedValueOnce([
 				{
 					id: "absence-9",
@@ -469,14 +441,7 @@ describe("reconcileLegacyToCanonical", () => {
 				},
 			]);
 		mockState.canonicalTimeRecordCount
-			.mockResolvedValueOnce([
-				{
-					id: "work-1",
-					recordKind: "work",
-					durationMinutes: 480,
-					approvalState: "approved",
-				},
-			])
+			.mockResolvedValueOnce([canonicalWork("work-1")])
 			.mockResolvedValueOnce([
 				{
 					id: "absence-1",
@@ -485,38 +450,21 @@ describe("reconcileLegacyToCanonical", () => {
 					approvalState: "approved",
 				},
 			]);
-		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
-			{ recordId: "work-1" },
-		]);
-		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([
-			{ recordId: "absence-1" },
-		]);
+		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([workDetail("work-1")]);
+		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([{ recordId: "absence-1" }]);
 
 		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual({
-			workCountMismatch: 0,
+			...reconciled,
 			absenceCountMismatch: 1,
-			durationMismatchRecords: 0,
-			missingWorkCanonicalRecords: 0,
 			missingAbsenceCanonicalRecords: 1,
 			missingAbsenceDetailRows: 1,
-			approvalStateMismatchRecords: 0,
 			missingAbsenceCanonicalLinks: 1,
 			missingAbsenceOrganizationIds: 1,
-			missingProjectAllocationRows: 0,
-			missingWorkDetailRows: 0,
 		});
 	});
 
-	it("detects duration and approval-state mismatches on matched canonical records", async () => {
-		mockState.legacyWorkCount.mockResolvedValue([
-			{
-				id: "work-1",
-				projectId: null,
-				durationMinutes: 480,
-				approvalStatus: "approved",
-			},
-		]);
-		mockState.employeeFindMany.mockResolvedValue([]);
+	it("detects absence duration and approval-state mismatches on matched canonical records", async () => {
+		mockState.legacyWorkCount.mockResolvedValue([]);
 		mockState.absenceEntryFindMany
 			.mockResolvedValueOnce([
 				{
@@ -528,46 +476,19 @@ describe("reconcileLegacyToCanonical", () => {
 					status: "approved",
 				},
 			])
-			.mockResolvedValueOnce([
-				{ id: "absence-1", canonicalRecordId: "absence-1" },
-			])
+			.mockResolvedValueOnce([{ id: "absence-1", canonicalRecordId: "absence-1" }])
 			.mockResolvedValueOnce([]);
 		mockState.canonicalTimeRecordCount
+			.mockResolvedValueOnce([])
 			.mockResolvedValueOnce([
-				{
-					id: "work-1",
-					recordKind: "work",
-					durationMinutes: 450,
-					approvalState: "pending",
-				},
-			])
-			.mockResolvedValueOnce([
-				{
-					id: "absence-1",
-					recordKind: "absence",
-					durationMinutes: 1440,
-					approvalState: "rejected",
-				},
+				{ id: "absence-1", recordKind: "absence", durationMinutes: 720, approvalState: "rejected" },
 			]);
-		mockState.canonicalTimeRecordWorkFindMany.mockResolvedValue([
-			{ recordId: "work-1" },
-		]);
-		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([
-			{ recordId: "absence-1" },
-		]);
+		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([{ recordId: "absence-1" }]);
 
 		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual({
-			workCountMismatch: 0,
-			absenceCountMismatch: 0,
-			durationMismatchRecords: 1,
-			missingWorkCanonicalRecords: 0,
-			missingAbsenceCanonicalRecords: 0,
-			missingAbsenceDetailRows: 0,
-			approvalStateMismatchRecords: 2,
-			missingAbsenceCanonicalLinks: 0,
-			missingAbsenceOrganizationIds: 0,
-			missingProjectAllocationRows: 0,
-			missingWorkDetailRows: 0,
+			...reconciled,
+			absenceDurationMismatchRecords: 1,
+			absenceApprovalStateMismatchRecords: 1,
 		});
 	});
 });

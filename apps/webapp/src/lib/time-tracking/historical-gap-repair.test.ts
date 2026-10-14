@@ -27,6 +27,14 @@ function nextId(prefix = "b") {
 
 const at = (value: string) => parseInstant(value);
 
+const noVehicle = {
+	vehicleKind: null,
+	vehicleId: null,
+	odometerStartKm: null,
+	odometerEndKm: null,
+	drivenDistanceKm: null,
+} as const;
+
 function entry(
 	type: "clock_in" | "clock_out",
 	timestamp: string,
@@ -83,9 +91,12 @@ function work(
 		approvalWorkflowId: null,
 		deletedAt: null,
 		projectId: null,
+		taskId: null,
 		workCategoryId: null,
 		workLocationType: null,
+		...noVehicle,
 		canonicalRecordId: options.record === null ? null : recordId,
+		closedMonth: null,
 		graphRevision: 0,
 		createdAt: at(end),
 		...options.period,
@@ -102,8 +113,13 @@ function work(
 					approvalState: "approved",
 					origin: "clock",
 					createdAt: at(end),
-					detail: { workCategoryId: null, workLocationType: null, computationMetadata: null },
-					projectIds: [],
+					detail: {
+						workCategoryId: null,
+						workLocationType: null,
+						...noVehicle,
+						computationMetadata: null,
+					},
+					allocations: [],
 					...options.record,
 				};
 	return { period, record, entries: [clockIn, clockOut] };
