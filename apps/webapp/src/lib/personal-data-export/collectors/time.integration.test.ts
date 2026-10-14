@@ -40,6 +40,8 @@ const ids = {
 	surchargeModel: "11670000-0000-4000-8000-0000000000e3",
 	surchargeRule: "11670000-0000-4000-8000-0000000000e4",
 	proposal: "11670000-0000-4000-8000-0000000000e5",
+	van: "11670000-0000-4000-8000-0000000000f1",
+	otherVan: "11670000-0000-4000-8000-0000000000f2",
 } as const;
 
 const admin = integrationAdminPool();
@@ -259,6 +261,28 @@ describe("personal data export: Time category (#1167)", () => {
 			`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, updated_at)
 			 values ($1, $2, $3, $4, '2026-07-03 08:00:00', now())`,
 			[ids.otherPeriod, ids.adaOther, OTHER_ORG, ids.otherClockIn],
+		);
+		// Vehicle use (#807): Ada drove an organization van, since archived, on the travel
+		// day, and her own car on the deleted period; the other organization has its own van.
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate, archived_at) values
+			   ($1, $3, 'Sprinter 3', 'M AB 123', '2026-09-01 00:00:00+00'),
+			   ($2, $4, 'Other-org van', 'B XY 999', null)`,
+			[ids.van, ids.otherVan, ORG, OTHER_ORG],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = 12000,
+			   odometer_end_km = 12180, driven_distance_km = 180 where id = $1`,
+			[ids.period, ids.van],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'own', driven_distance_km = 42 where id = $1`,
+			[ids.deletedPeriod],
+		);
+		await admin.query(
+			`update work_period set vehicle_kind = 'organization', vehicle_id = $2, odometer_start_km = 5,
+			   odometer_end_km = 7, driven_distance_km = 2 where id = $1`,
+			[ids.otherPeriod, ids.otherVan],
 		);
 		// The work operation log: the owner's amendment (receipts stay out), and one in the other org.
 		await admin.query(
@@ -557,6 +581,43 @@ describe("personal data export: Time category (#1167)", () => {
 				resolved_at: "2026-07-04T11:00:01Z",
 			},
 		]);
+	});
+
+	it("exports each work period's vehicle use with the vehicle's name and plate, archived vehicles too", async () => {
+		const periods = table(await timeCollector.collect(db, scope("employee")), "work_periods");
+		const vehicleUse = (row: PersonalDataRow | undefined) => ({
+			vehicle_kind: row?.vehicle_kind,
+			vehicle_name: row?.vehicle_name,
+			licence_plate: row?.licence_plate,
+			odometer_start_km: row?.odometer_start_km,
+			odometer_end_km: row?.odometer_end_km,
+			driven_distance_km: row?.driven_distance_km,
+		});
+		expect(vehicleUse(periods[0])).toEqual({
+			vehicle_kind: "organization",
+			vehicle_name: "Sprinter 3",
+			licence_plate: "M AB 123",
+			odometer_start_km: 12000,
+			odometer_end_km: 12180,
+			driven_distance_km: 180,
+		});
+		// An own vehicle identifies no vehicle: no name, no plate; the distance was entered directly.
+		expect(vehicleUse(periods[1])).toEqual({
+			vehicle_kind: "own",
+			vehicle_name: null,
+			licence_plate: null,
+			odometer_start_km: null,
+			odometer_end_km: null,
+			driven_distance_km: 42,
+		});
+
+		const other = table(await timeCollector.collect(db, scope("employee", OTHER_ORG)), "work_periods");
+		expect(vehicleUse(other[0])).toMatchObject({
+			vehicle_name: "Other-org van",
+			licence_plate: "B XY 999",
+		});
+		expect(JSON.stringify(periods)).not.toContain("Other-org van");
+		expect(JSON.stringify(other)).not.toContain("Sprinter 3");
 	});
 
 	it("exports compliance exceptions, work-policy violations and surcharge calculations", async () => {
