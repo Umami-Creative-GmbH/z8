@@ -20,6 +20,7 @@ import {
 } from "@/lib/time-tracking/work-location";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { toastClockCommandError } from "./clock-command-error-toast";
+import { useClockVehicleUse, warnVehicleUseLeftOut } from "./clock-vehicle-use";
 import { showSavedClockToast } from "./saved-clock-toast";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 
@@ -143,7 +144,8 @@ export function useClockInOutWidget(
 	const elapsedSeconds = useElapsedTimer(
 		timeClock.activeWorkPeriod?.startTime ?? null,
 	);
-	const handleAddBreak = useQuickBreakHandler(timeClock.addBreak, t);
+	const vehicleUse = useClockVehicleUse({ enabled: true });
+	const handleAddBreak = useQuickBreakHandler(timeClock.addBreak, t, vehicleUse);
 
 	useEffect(() => {
 		localStorage.setItem("z8-work-location-type", uiState.workLocationType);
@@ -161,11 +163,16 @@ export function useClockInOutWidget(
 	};
 
 	async function submitClockIn(browserTimezone: string | null) {
+		// Vehicle use never holds the clock-in: what cannot be sent is left out (#1122).
+		const vehicle = vehicleUse.clockIn;
 		const result = await timeClock.clockIn({
 			workLocationType: uiState.workLocationType,
 			browserTimezone,
+			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 		if (result.success) {
+			warnVehicleUseLeftOut(vehicle, t, result);
+			vehicleUse.reset();
 			if (showSavedClockToast(result, "clock_in", t)) return;
 
 			toast.success(
@@ -200,8 +207,14 @@ export function useClockInOutWidget(
 	}
 
 	async function submitClockOut(browserTimezone: string | null) {
-		const result = await timeClock.clockOut({ browserTimezone });
+		const vehicle = vehicleUse.clockOut;
+		const result = await timeClock.clockOut({
+			browserTimezone,
+			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
+		});
 		if (result.success) {
+			warnVehicleUseLeftOut(vehicle, t, result);
+			vehicleUse.reset();
 			if (showSavedClockToast(result, "clock_out", t)) return;
 
 			toast.success(
@@ -430,6 +443,7 @@ export function useClockInOutWidget(
 		handleTimezoneMismatchContinueOnce: continueTimezoneMismatch,
 		handleTimezoneMismatchCancel: () => setTimezoneMismatch(null),
 		handleAddBreak,
+		vehicleUse,
 		handleSaveNotes,
 		handleDismissNotes: () => dispatch({ type: "closeNotesInput" }),
 		handleRequestException,

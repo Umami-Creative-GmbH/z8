@@ -88,6 +88,15 @@ import {
 	resolveWorkBillabilityInTransaction,
 } from "./work-billability";
 import { WorkIntervalError } from "./work-duration";
+import { assertWorkVehicleUseChangeAllowed } from "./vehicle-use/work-vehicle-use-eligibility";
+import {
+	sameWorkVehicleUse,
+	type VehicleUseIntent,
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+	type WorkVehicleUseColumns,
+} from "./vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "./work-location";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
@@ -162,6 +171,11 @@ export type AmendCompletedWorkIntent = {
 	 * Intents recorded before #900 omit it.
 	 */
 	billable?: BillableIntent;
+	/**
+	 * Vehicle use (#1120). Omitted, never stored, when the writer names none: the
+	 * recorded vehicle use is kept.
+	 */
+	vehicleUse?: VehicleUseIntent;
 	/** Note recorded on each correction entry. */
 	notes: string | null;
 };
@@ -183,6 +197,8 @@ export type AmendedSegment = {
 		taskId?: string;
 		workCategoryId: string | null;
 		workLocationType: string | null;
+		/** Present only when the segment has vehicle use (#1120). */
+		vehicleUse?: WorkVehicleUse;
 	};
 };
 
@@ -209,6 +225,8 @@ export type AmendCompletedWorkResult = {
 		workLocation: boolean;
 		/** Whether billability changed (#900); absent on receipts committed before it. */
 		billable?: boolean;
+		/** Present only when vehicle use changed (#1120). */
+		vehicleUse?: true;
 	};
 	corrections: Array<{
 		endpoint: "clock_in" | "clock_out";
@@ -599,6 +617,7 @@ function assertAuthorityPermitsIntent(input: AmendCompletedWorkInput): void {
 		intent.project.kind !== "preserve" ||
 		intent.workCategory.kind !== "preserve" ||
 		intent.workLocation.kind !== "preserve" ||
+		(intent.vehicleUse !== undefined && intent.vehicleUse.kind !== "preserve") ||
 		intent.billable?.kind !== "set"
 	) {
 		throw new AuthorizationError({
@@ -690,13 +709,17 @@ async function assertTaskBookable(
 	}
 }
 
-/** A segment's attribution; the task is recorded only when there is one. */
+/**
+ * A segment's attribution; the task and vehicle use are recorded only when there
+ * is one, keeping earlier receipts' shape.
+ */
 function segmentAttribution(values: {
 	projectId: string | null;
 	taskId?: string | null;
 	isBillable: boolean;
 	workCategoryId: string | null;
 	workLocationType: string | null;
+	vehicleUse?: WorkVehicleUse | null;
 }): AmendedSegment["attribution"] {
 	return {
 		projectId: values.projectId,
@@ -704,15 +727,34 @@ function segmentAttribution(values: {
 		isBillable: values.isBillable,
 		workCategoryId: values.workCategoryId,
 		workLocationType: values.workLocationType,
+		...(values.vehicleUse ? { vehicleUse: values.vehicleUse } : {}),
 	};
 }
 
-/** The receipt's changes: `task` only when it changed, keeping earlier receipts' shape. */
+/**
+ * The receipt's changes: `task` and `vehicleUse` only when they changed, keeping
+ * earlier receipts' shape.
+ */
 function receiptChanges(
-	changes: Omit<AmendCompletedWorkResult["changes"], "task"> & { task: boolean },
+	changes: Omit<AmendCompletedWorkResult["changes"], "task" | "vehicleUse"> & {
+		task: boolean;
+		vehicleUse: boolean;
+	},
 ): AmendCompletedWorkResult["changes"] {
-	const { task, ...rest } = changes;
-	return task ? { ...rest, task: true } : rest;
+	const { task, vehicleUse, ...rest } = changes;
+	return {
+		...rest,
+		...(task ? { task: true as const } : {}),
+		...(vehicleUse ? { vehicleUse: true as const } : {}),
+	};
+}
+
+/** Period and canonical detail record the same vehicle use, column by column (#1120). */
+export function sameVehicleColumns(
+	left: Partial<WorkVehicleUseColumns>,
+	right: Partial<WorkVehicleUseColumns>,
+): boolean {
+	return sameWorkVehicleUse(vehicleUseFromColumns(left), vehicleUseFromColumns(right));
 }
 
 /**
@@ -865,6 +907,7 @@ export async function amendCompletedWork(
 		!sameInstant(record.endAt, instantFromDate(period.endTime)) ||
 		detail.workCategoryId !== period.workCategoryId ||
 		detail.workLocationType !== period.workLocationType ||
+		!sameVehicleColumns(detail, period) ||
 		!allocationAgrees
 	) {
 		throw new CompletedWorkReviewRequiredError("canonical_divergence");
@@ -878,7 +921,9 @@ export async function amendCompletedWork(
 		workCategory: requested.workCategory,
 		workLocation: requested.workLocation,
 		billable: requested.billable,
+		vehicleUse: requested.vehicleUse,
 	};
+	const sourceVehicleUse = vehicleUseFromColumns(period);
 	let plan: ReturnType<typeof planCompletedWorkAmendment>;
 	try {
 		plan = planCompletedWorkAmendment(
@@ -891,6 +936,7 @@ export async function amendCompletedWork(
 				workCategoryId: period.workCategoryId,
 				workLocationType: period.workLocationType,
 				isBillable: period.isBillable,
+				vehicleUse: sourceVehicleUse,
 			},
 			intent,
 		);
@@ -917,6 +963,7 @@ export async function amendCompletedWork(
 		changes: plan.changes,
 		resulting,
 		currentWorkCategoryId: period.workCategoryId,
+		currentVehicleUse: sourceVehicleUse,
 	});
 	// An explicit `set` wins; a changed project applies its default; else kept (#900).
 	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
@@ -1039,6 +1086,7 @@ export async function amendCompletedWork(
 	const resultClockIn = replacements.get(originalClockIn.id) ?? originalClockIn;
 	const resultClockOut = replacements.get(originalClockOut.id) ?? originalClockOut;
 
+	const vehicle = vehicleUseColumns(resulting.vehicleUse);
 	const startAt = dateFromInstant(resulting.startAt);
 	const endAt = dateFromInstant(resulting.endAt);
 	const updatedAt = new Date();
@@ -1056,6 +1104,11 @@ export async function amendCompletedWork(
 			taskId: resulting.taskId,
 			workCategoryId: resulting.workCategoryId,
 			workLocationType: resulting.workLocationType as WorkLocationType | null,
+			vehicleKind: vehicle.vehicleKind,
+			vehicleId: vehicle.vehicleId,
+			odometerStartKm: vehicle.odometerStartKm,
+			odometerEndKm: vehicle.odometerEndKm,
+			drivenDistanceKm: vehicle.drivenDistanceKm,
 			graphRevision: resultRevision,
 			updatedAt,
 		})
@@ -1093,12 +1146,17 @@ export async function amendCompletedWork(
 	if (updatedRecords.length !== 1) {
 		throw new CompletedWorkIntegrityError("Canonical work record update failed");
 	}
-	if (changes.workCategory || changes.workLocation) {
+	if (changes.workCategory || changes.workLocation || changes.vehicleUse) {
 		const updatedDetails = await tx
 			.update(timeRecordWork)
 			.set({
 				workCategoryId: resulting.workCategoryId,
 				workLocationType: resulting.workLocationType as WorkLocationType | null,
+				vehicleKind: vehicle.vehicleKind,
+				vehicleId: vehicle.vehicleId,
+				odometerStartKm: vehicle.odometerStartKm,
+				odometerEndKm: vehicle.odometerEndKm,
+				drivenDistanceKm: vehicle.drivenDistanceKm,
 			})
 			.where(
 				and(
@@ -1183,6 +1241,7 @@ export async function amendCompletedWork(
 			taskId: string | null;
 			workCategoryId: string | null;
 			workLocationType: string | null;
+			vehicleUse: WorkVehicleUse | null;
 		},
 	): AmendedSegment => ({
 		clockInEntryId: clockIn.id,
@@ -1212,6 +1271,7 @@ export async function amendCompletedWork(
 			isBillable: period.isBillable,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
+			vehicleUse: sourceVehicleUse,
 		}),
 		segment: segmentOf(resultClockIn, resultClockOut, { ...resulting, isBillable }),
 		changes: receiptChanges(changes),
@@ -1233,9 +1293,15 @@ async function assertAttributionEligible(
 		organizationId: string;
 		employeeId: string;
 		teamId: string | null;
-		changes: { project: boolean; task: boolean; workCategory: boolean };
-		resulting: { projectId: string | null; taskId: string | null; workCategoryId: string | null };
+		changes: { project: boolean; task: boolean; workCategory: boolean; vehicleUse: boolean };
+		resulting: {
+			projectId: string | null;
+			taskId: string | null;
+			workCategoryId: string | null;
+			vehicleUse: WorkVehicleUse | null;
+		};
 		currentWorkCategoryId: string | null;
+		currentVehicleUse: WorkVehicleUse | null;
 	},
 ) {
 	if (input.changes.project && input.resulting.projectId) {
@@ -1265,6 +1331,14 @@ async function assertAttributionEligible(
 			currentWorkCategoryId: input.currentWorkCategoryId,
 		});
 	}
+	if (input.changes.vehicleUse) {
+		await assertWorkVehicleUseChangeAllowed(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			previous: input.currentVehicleUse,
+			resulting: input.resulting.vehicleUse,
+		});
+	}
 }
 
 /**
@@ -1286,6 +1360,7 @@ async function amendActiveAttribution(
 		workCategoryId: period.workCategoryId,
 		workLocationType: period.workLocationType,
 		isBillable: period.isBillable,
+		vehicleUse: vehicleUseFromColumns(period),
 	};
 	let planned: ReturnType<typeof planAttributionChange>;
 	try {
@@ -1300,6 +1375,7 @@ async function amendActiveAttribution(
 		changes: planned.changes,
 		resulting: planned.result,
 		currentWorkCategoryId: period.workCategoryId,
+		currentVehicleUse: source.vehicleUse,
 	});
 	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
 		projectId: planned.result.projectId,
@@ -1309,6 +1385,7 @@ async function amendActiveAttribution(
 	});
 	const changes = { ...planned.changes, billable: isBillable !== period.isBillable };
 	const resultRevision = period.graphRevision + 1;
+	const vehicle = vehicleUseColumns(planned.result.vehicleUse);
 	const updated = await tx
 		.update(workPeriod)
 		.set({
@@ -1317,6 +1394,11 @@ async function amendActiveAttribution(
 			taskId: planned.result.taskId,
 			workCategoryId: planned.result.workCategoryId,
 			workLocationType: planned.result.workLocationType as WorkLocationType | null,
+			vehicleKind: vehicle.vehicleKind,
+			vehicleId: vehicle.vehicleId,
+			odometerStartKm: vehicle.odometerStartKm,
+			odometerEndKm: vehicle.odometerEndKm,
+			drivenDistanceKm: vehicle.drivenDistanceKm,
 			graphRevision: resultRevision,
 			updatedAt: new Date(),
 		})

@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "@/db";
 import { timeRecord, timeRecordAllocation, timeRecordWork } from "@/db/schema";
+import { vehicleUseColumns, type WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "./work-location";
 
 type CanonicalWorkRecordDbClient = Pick<typeof db, "insert">;
@@ -29,6 +30,8 @@ export const canonicalWorkRecordClient = {
 			/** A task of `projectId` (#873); only recorded with the project. */
 			taskId?: string | null;
 			computationMetadata?: string | null;
+			/** Vehicle use (#1120), mirrored from the work period; absent records none. */
+			vehicleUse?: WorkVehicleUse | null;
 			origin: "clock" | "manual";
 		},
 		client?: CanonicalWorkRecordDbClient,
@@ -52,6 +55,7 @@ export const canonicalWorkRecordClient = {
 				})
 				.returning({ id: timeRecord.id });
 
+			const vehicle = vehicleUseColumns(input.vehicleUse ?? null);
 			await writeClient.insert(timeRecordWork).values({
 				recordId: record.id,
 				organizationId: input.organizationId,
@@ -59,6 +63,11 @@ export const canonicalWorkRecordClient = {
 				workCategoryId: input.workCategoryId ?? null,
 				workLocationType: input.workLocationType ?? null,
 				computationMetadata: input.computationMetadata ?? null,
+				vehicleKind: vehicle.vehicleKind,
+				vehicleId: vehicle.vehicleId,
+				odometerStartKm: vehicle.odometerStartKm,
+				odometerEndKm: vehicle.odometerEndKm,
+				drivenDistanceKm: vehicle.drivenDistanceKm,
 			});
 
 			if (input.projectId) {

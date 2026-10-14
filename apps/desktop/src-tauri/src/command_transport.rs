@@ -5,7 +5,9 @@
 use serde::Deserialize;
 
 use crate::clock::ClockService;
-use crate::frozen_command::{CommandContext, CommandKind, CLOCK_COMMAND_VERSION};
+use crate::frozen_command::{
+    CommandContext, CommandKind, CLOCK_COMMAND_VERSION, VEHICLE_CLOCK_COMMAND_VERSION,
+};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -60,6 +62,22 @@ impl Capabilities {
     pub fn supports(&self, kind: CommandKind) -> bool {
         self.body.command_versions.contains(&CLOCK_COMMAND_VERSION)
             && self.body.kinds.iter().any(|value| value == kind.as_str())
+    }
+
+    /// The server records vehicle use: it advertises the version 4 command
+    /// (#1124), and its online clock route reads vehicle use too.
+    pub fn accepts_vehicle_use(&self) -> bool {
+        self.body
+            .command_versions
+            .contains(&VEHICLE_CLOCK_COMMAND_VERSION)
+    }
+
+    /// Whether a saved command of this version may be sent now.
+    pub fn accepts_version(&self, version: u64) -> bool {
+        self.body
+            .command_versions
+            .iter()
+            .any(|advertised| u64::from(*advertised) == version)
     }
 
     /// Fresh submission follows the organization's completed-work adoption.

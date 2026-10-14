@@ -145,6 +145,7 @@ export async function submitManualTimeEntryCommand(input: {
 						taskId: prepared.taskId,
 						workCategoryId: prepared.workCategoryId,
 						workLocationType: prepared.workLocationType,
+						...(prepared.vehicleUse ? { vehicleUse: prepared.vehicleUse } : {}),
 						daysBack: prepared.daysBack,
 						policy: prepared.policy,
 						approval: prepared.approval,
@@ -272,6 +273,8 @@ const REJECTION_MESSAGES: Record<ManualCommandRejection["reason"], string> = {
 		"This employee's time history needs review before new entries can be saved. Please contact your administrator.",
 	// Worded with the month's name by `monthClosedMessage` (#762).
 	month_closed: "This month is closed. It must be reopened before its work can change.",
+	// The form translates the rejection's `code` (#1120).
+	vehicle_use_refused: "The vehicle use cannot be recorded.",
 };
 
 /**

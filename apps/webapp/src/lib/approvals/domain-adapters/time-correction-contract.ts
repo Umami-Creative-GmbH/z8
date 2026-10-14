@@ -5,6 +5,11 @@ import {
 	isInstant,
 } from "@/lib/datetime/temporal-core";
 import {
+	readWorkVehicleUse,
+	vehicleUseIdentity,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import {
 	isWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
@@ -27,6 +32,11 @@ export type CurrentTimeCorrectionWorkflowContract =
 		readonly action: TimeCorrectionAction;
 		readonly workLocationType: WorkLocationType;
 		readonly workCategoryId: string | null;
+		/**
+		 * Requested vehicle use (#1120); present only when the request names it,
+		 * so contracts without it keep their exact shape. Null clears it.
+		 */
+		readonly vehicleUse?: WorkVehicleUse | null;
 	};
 
 export type LegacyTimeCorrectionWorkflowContract = TimeCorrectionEndpointIds & {
@@ -42,6 +52,8 @@ export type TimeCorrectionWorkflowPayload = {
 export type TimeCorrectionOriginalWorkMetadata = Readonly<{
 	workLocationType: WorkLocationType;
 	workCategoryId: string | null;
+	/** The vehicle use at submission (#1120); present only when vehicle use was requested. */
+	vehicleUse?: WorkVehicleUse | null;
 }>;
 
 export interface TimeCorrectionSubmissionIdentityInput {
@@ -50,6 +62,8 @@ export interface TimeCorrectionSubmissionIdentityInput {
 	readonly action: TimeCorrectionAction;
 	readonly workLocationType: WorkLocationType;
 	readonly workCategoryId: string | null;
+	/** Present only when vehicle use is requested (#1120); keys without it are unchanged. */
+	readonly vehicleUse?: WorkVehicleUse | null;
 	readonly clockIn?: {
 		readonly originalEntryId: string;
 		readonly instant: Instant;
@@ -62,7 +76,7 @@ export interface TimeCorrectionSubmissionIdentityInput {
 
 export type LegacyTimeCorrectionSubmissionIdentityInput = Omit<
 	TimeCorrectionSubmissionIdentityInput,
-	"workLocationType" | "workCategoryId"
+	"workLocationType" | "workCategoryId" | "vehicleUse"
 >;
 
 export interface TimeCorrectionEndpointEvidence {
@@ -147,10 +161,11 @@ export function normalizeTimeCorrectionOriginalWorkMetadata(
 	value: unknown,
 ): TimeCorrectionOriginalWorkMetadata {
 	try {
-		const metadata = snapshotStrictObject(value, [
-			"workLocationType",
-			"workCategoryId",
-		]);
+		const metadata = snapshotStrictObject(
+			value,
+			["workLocationType", "workCategoryId"],
+			["vehicleUse"],
+		);
 		if (!metadata || !isWorkLocationType(metadata.workLocationType as string)) {
 			throw new TimeCorrectionOriginalWorkMetadataError();
 		}
@@ -164,10 +179,30 @@ export function normalizeTimeCorrectionOriginalWorkMetadata(
 		return Object.freeze({
 			workLocationType: metadata.workLocationType as WorkLocationType,
 			workCategoryId,
+			...(Object.hasOwn(metadata, "vehicleUse")
+				? { vehicleUse: readWorkVehicleUse(metadata.vehicleUse) }
+				: {}),
 		});
 	} catch {
 		throw new TimeCorrectionOriginalWorkMetadataError();
 	}
+}
+
+type VehicleUseCarrier = { readonly vehicleUse?: WorkVehicleUse | null } | object;
+
+/** The vehicle use a contract or original metadata names, or undefined without one (#1120). */
+export function namedVehicleUse(value: VehicleUseCarrier): WorkVehicleUse | null | undefined {
+	return Object.hasOwn(value, "vehicleUse")
+		? ((value as { vehicleUse?: WorkVehicleUse | null }).vehicleUse ?? null)
+		: undefined;
+}
+
+/** Both name no vehicle use, or both name the same (#1120). */
+export function sameNamedVehicleUse(left: VehicleUseCarrier, right: VehicleUseCarrier): boolean {
+	const a = namedVehicleUse(left);
+	const b = namedVehicleUse(right);
+	if (a === undefined || b === undefined) return a === b;
+	return vehicleUseIdentity(a) === vehicleUseIdentity(b);
 }
 
 function readSubmissionIdentityEvidence(
@@ -182,6 +217,8 @@ function readSubmissionIdentityEvidence(
 			action: input.action as unknown,
 			workLocationType: input.workLocationType as unknown,
 			workCategoryId: input.workCategoryId as unknown,
+			vehicleUsePresent: Object.hasOwn(input, "vehicleUse") && input.vehicleUse !== undefined,
+			vehicleUse: input.vehicleUse as unknown,
 			clockInPresent: clockIn !== undefined,
 			clockInOriginalEntryId: clockIn?.originalEntryId as unknown,
 			clockInInstant: clockIn?.instant as unknown,
@@ -218,6 +255,7 @@ export function normalizeTimeCorrectionWorkflowPayload(
 			[
 				"workLocationType",
 				"workCategoryId",
+				"vehicleUse",
 				"clockInCorrectionId",
 				"clockOutCorrectionId",
 			],
@@ -235,7 +273,8 @@ export function normalizeTimeCorrectionWorkflowPayload(
 		const hasWorkLocation = Object.hasOwn(correction, "workLocationType");
 		const hasWorkCategory = Object.hasOwn(correction, "workCategoryId");
 		const hasWorkMetadata = hasWorkLocation && hasWorkCategory;
-		if (!validAction(action)) {
+		const hasVehicleUse = Object.hasOwn(correction, "vehicleUse");
+		if (!validAction(action) || (hasVehicleUse && !hasWorkMetadata)) {
 			throw new TimeCorrectionWorkflowPayloadError();
 		}
 		const workLocationType = correction.workLocationType;
@@ -279,6 +318,9 @@ export function normalizeTimeCorrectionWorkflowPayload(
 					action,
 					workLocationType,
 					workCategoryId,
+					...(hasVehicleUse
+						? { vehicleUse: readWorkVehicleUse(correction.vehicleUse) }
+						: {}),
 					...endpointIds,
 				});
 			return Object.freeze({ timeCorrection });
@@ -333,6 +375,19 @@ export function deriveTimeCorrectionSubmissionKey(
 	const clockOutInstant = isInstant(evidence.clockOutInstant)
 		? serializeSubmissionInstant(evidence.clockOutInstant)
 		: "";
+	// Requested vehicle use (#1120) is appended only when present, so every key
+	// derived without it stays exactly as before.
+	let vehicleUseFields: string[] = [];
+	if (evidence.vehicleUsePresent) {
+		try {
+			vehicleUseFields = [
+				"vehicle_use",
+				vehicleUseIdentity(readWorkVehicleUse(evidence.vehicleUse)),
+			];
+		} catch {
+			throw new TimeCorrectionContractError();
+		}
+	}
 
 	const digest = createHash("sha256")
 		.update(
@@ -349,6 +404,7 @@ export function deriveTimeCorrectionSubmissionKey(
 				"clock_out",
 				clockOutId ?? "",
 				clockOutInstant,
+				...vehicleUseFields,
 			].join("\0"),
 		)
 		.digest("hex");

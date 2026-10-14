@@ -298,6 +298,12 @@ export const queryKeys = {
 		breakStatus: () => ["time-clock", "break-status"] as const,
 		/** The signed-in employee's own position capture and consent (#826). */
 		positionCapture: () => ["time-clock", "position-capture"] as const,
+		/**
+		 * The signed-in employee's vehicle use for clocking (#1122): mode, vehicles,
+		 * pre-fill and the live work's vehicle use. Under `status`, so every clock
+		 * status refresh also refreshes it.
+		 */
+		vehicleUse: () => ["time-clock", "status", "vehicle-use"] as const,
 	},
 
 	// Position stamps on a work period's detail (#831); never the positions themselves
@@ -564,6 +570,9 @@ export const queryKeys = {
 		/** Whether and how the current user may edit a work period's times */
 		workPeriodTimeEdit: (workPeriodId: string) =>
 			["calendar", "work-period-time-edit", workPeriodId] as const,
+		/** Whether the work's own-vehicle distance can be added to an expense report (#1131) */
+		workPeriodMileage: (workPeriodId: string) =>
+			["calendar", "work-period-mileage", workPeriodId] as const,
 	},
 
 	// Hydration / Water reminders

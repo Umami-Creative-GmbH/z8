@@ -81,6 +81,7 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 	period_submission_reminder: layout("/time-tracking"),
 	period_submission_sent_back: layout("/time-tracking"),
 	period_submission_decided: layout("/time-tracking"),
+	driving_details_missing_reminder: layout("/time-tracking"),
 	personnel_file_document_shared: layout("/my-documents"),
 	personnel_file_employee_upload: layout("/personnel-files/"),
 	// Officers get the employee's personnel file, the employee My documents (#869).

@@ -1,4 +1,5 @@
 import type { EditCapability } from "@/lib/effect/services/change-policy.service";
+import { sameWorkVehicleUse, type WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "./work-location";
 
 /**
@@ -105,6 +106,8 @@ export function resolveWorkPeriodTimeEditRoute(
 
 export interface WorkPeriodTimeEditValues {
 	workLocationType?: WorkLocationType | null;
+	/** Vehicle use (#1120); undefined when the editor did not offer it. */
+	vehicleUse?: WorkVehicleUse | null;
 	clockInDate: string;
 	clockInTime: string;
 	clockOutDate: string;
@@ -118,7 +121,8 @@ export function haveWorkPeriodEditValuesChanged(
 	return (
 		haveWorkPeriodTimesChanged(original, next) ||
 		(next.workLocationType !== undefined &&
-			next.workLocationType !== original.workLocationType)
+			next.workLocationType !== original.workLocationType) ||
+		(next.vehicleUse !== undefined && !sameWorkVehicleUse(next.vehicleUse, original.vehicleUse))
 	);
 }
 

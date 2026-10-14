@@ -217,6 +217,30 @@ pub async fn get_desktop_context(app_handle: AppHandle) -> Result<Value, String>
         Err(error) => Err(error.into()),
     }
 }
+
+/// Plausibility warnings for the vehicle use about to be sent with a clock-in,
+/// or with the clock-out of the live work it names (#1124). Warnings are advice:
+/// offline, or from a server without the route, there are none.
+#[tauri::command]
+pub async fn check_vehicle_use_warnings(
+    app_handle: AppHandle,
+    vehicle_use: Value,
+    closing_work_period_id: Option<String>,
+) -> Result<Value, String> {
+    let mut body = serde_json::json!({ "vehicleUse": vehicle_use });
+    if let Some(id) = closing_work_period_id {
+        body["closingWorkPeriodId"] = id.into();
+    }
+    match request(&app_handle, "/api/desktop/vehicle-use-warnings", Some(body)).await {
+        Ok(answer) if answer["warnings"].is_array() => Ok(answer),
+        Ok(_) | Err(RequestFailure::Offline) => Ok(serde_json::json!({ "warnings": [] })),
+        Err(RequestFailure::Other(message)) => {
+            log::warn!("Vehicle use warnings could not be checked: {message}");
+            Ok(serde_json::json!({ "warnings": [] }))
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn open_webapp(
     app_handle: AppHandle,

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import {
 	absenceEntry,
 	approvalRequest,
+	organizationVehicle,
 	timeEntry,
 	workCategory,
 	workPeriod,
@@ -20,11 +21,14 @@ import {
 	type SickNoteMarker,
 } from "@/lib/personnel-file/sick-note-store";
 import {
+	addVehicleLabelsForOrganization,
 	categoryIdsFromTimeCorrectionMetadata,
 	categoryNamesForOrganization,
+	vehicleIdsFromTimeCorrectionMetadata,
 	parseTimeCorrectionReviewMetadata,
 	timeCorrectionMetadataChanges,
 } from "./time-correction-review-metadata";
+import { withVehicleUseReviewWarnings } from "./time-correction-vehicle-use-warnings";
 import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "./types";
 
 interface PendingRequestRecord {
@@ -64,6 +68,7 @@ interface AbsenceLookupRecord {
 
 interface WorkPeriodLookupRecord {
 	id: string;
+	employeeId: string;
 	startTime: Date;
 	endTime: Date | null;
 	clockIn: {
@@ -370,7 +375,8 @@ export async function getPendingApprovals(): Promise<{
 			),
 	);
 	const categoryIds = categoryIdsFromTimeCorrectionMetadata(pendingRequests);
-	const [correctionEntriesResult, categories] = await Promise.all([
+	const vehicleIds = vehicleIdsFromTimeCorrectionMetadata(pendingRequests);
+	const [correctionEntriesResult, categories, vehicles] = await Promise.all([
 		originalEntryIds.length > 0
 			? db.query.timeEntry.findMany({
 					where: and(
@@ -389,11 +395,29 @@ export async function getPendingApprovals(): Promise<{
 					columns: { id: true, organizationId: true, name: true },
 				})
 			: Promise.resolve([]),
+		vehicleIds.length > 0
+			? db
+					.select({
+						id: organizationVehicle.id,
+						organizationId: organizationVehicle.organizationId,
+						name: organizationVehicle.name,
+						licencePlate: organizationVehicle.licencePlate,
+					})
+					.from(organizationVehicle)
+					.where(
+						and(
+							eq(organizationVehicle.organizationId, currentEmployee.organizationId),
+							inArray(organizationVehicle.id, vehicleIds),
+						),
+					)
+			: Promise.resolve([]),
 	]);
 	const correctionEntries =
 		correctionEntriesResult as CorrectionEntryForReview[];
-	const categoryNamesById = categoryNamesForOrganization(
-		categories,
+	// Vehicle labels (#1120) share the review names map with the categories.
+	const categoryNamesById = addVehicleLabelsForOrganization(
+		categoryNamesForOrganization(categories, currentEmployee.organizationId),
+		vehicles,
 		currentEmployee.organizationId,
 	);
 	const correctionEntriesByReplacedId = new Map<
@@ -422,7 +446,7 @@ export async function getPendingApprovals(): Promise<{
 		absences: absenceRecords,
 	});
 
-	return buildPendingApprovalResult({
+	const result = buildPendingApprovalResult({
 		pendingRequests,
 		absencesById,
 		periodsById,
@@ -438,6 +462,50 @@ export async function getPendingApprovals(): Promise<{
 			absences: absences as AbsenceLookupRecord[],
 		}),
 	});
+	return {
+		...result,
+		timeCorrectionApprovals: await withVehicleUseWarnings({
+			organizationId: currentEmployee.organizationId,
+			approvals: result.timeCorrectionApprovals,
+			periodsById,
+			metadataById: new Map(pendingRequests.map((request) => [request.id, request.metadata])),
+		}),
+	};
+}
+
+/**
+ * The plausibility warnings of requested vehicle use (#1121), checked over the
+ * requested interval. Best effort: the approvals list never fails because of it.
+ */
+async function withVehicleUseWarnings(input: {
+	organizationId: string;
+	approvals: ApprovalWithTimeCorrection[];
+	periodsById: Map<string, WorkPeriodLookupRecord>;
+	/** Each request's metadata by approval request id. */
+	metadataById: Map<string, unknown>;
+}): Promise<ApprovalWithTimeCorrection[]> {
+	return Promise.all(
+		input.approvals.map(async (approval) => {
+			const changes = approval.workPeriod.metadataChanges;
+			const period = input.periodsById.get(approval.workPeriod.id);
+			if (!changes?.vehicleUse || !period) return approval;
+			try {
+				const metadataChanges = await withVehicleUseReviewWarnings(db, {
+					organizationId: input.organizationId,
+					employeeId: period.employeeId,
+					workPeriodId: period.id,
+					metadata: parseTimeCorrectionReviewMetadata(input.metadataById.get(approval.id)),
+					changes,
+					start: approval.workPeriod.clockInCorrectionEntry?.timestamp ?? period.startTime,
+					end: approval.workPeriod.clockOutCorrectionEntry?.timestamp ?? period.endTime,
+				});
+				return { ...approval, workPeriod: { ...approval.workPeriod, metadataChanges } };
+			} catch (error) {
+				logger.error({ error }, "Failed to check vehicle use plausibility for approvals");
+				return approval;
+			}
+		}),
+	);
 }
 
 /** Each pending absence's deputy (#1011). Best effort, like the sick note markers. */

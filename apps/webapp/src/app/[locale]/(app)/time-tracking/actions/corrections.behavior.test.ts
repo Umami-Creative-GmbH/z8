@@ -60,6 +60,11 @@ const state = vi.hoisted(() => ({
 // Mock databases cannot model the advisory locks: corrections run on the work
 // transaction fake (real ledger, recorded guards) over the database of the
 // suite's approval context. The PostgreSQL suites prove the protocol.
+// The legacy same-day edit sends a submitted period back; the PostgreSQL suites cover it.
+vi.mock("@/lib/time-tracking/period-submissions/submission-send-back", () => ({
+	sendBackChangedPeriodSubmissions: async () => undefined,
+}));
+
 vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) => {
 	const actual =
 		await importOriginal<typeof import("@/lib/approvals/server/time-correction-work-transaction")>();

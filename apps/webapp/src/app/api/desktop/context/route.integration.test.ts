@@ -335,3 +335,209 @@ describe("desktop context project tasks on PostgreSQL (#875)", () => {
 		]);
 	});
 });
+
+describe("desktop context vehicle use on PostgreSQL (#1124)", () => {
+	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+	const admin = integrationAdminPool();
+	const vehicles = {
+		alpha: "f1124000-0000-4000-8000-0000000000a1",
+		zulu: "f1124000-0000-4000-8000-0000000000a2",
+		archived: "f1124000-0000-4000-8000-0000000000a3",
+		foreign: "f1124000-0000-4000-8000-0000000000a4",
+	} as const;
+
+	async function cleanup() {
+		await admin.query("delete from organization where id in ($1, $2)", [
+			ids.organization,
+			ids.otherOrganization,
+		]);
+		await admin.query('delete from "user" where id = $1', [ids.user]);
+	}
+
+	async function seed() {
+		await cleanup();
+		const timestamp = new Date("2026-07-01T00:00:00Z");
+		await admin.query(
+			`insert into organization (id, name, slug, created_at) values
+			 ($1, 'T1124 desktop', $1, $3), ($2, 'T1124 other', $2, $3)`,
+			[ids.organization, ids.otherOrganization, timestamp],
+		);
+		await admin.query(
+			`insert into "user" (id, name, email, created_at, updated_at)
+			 values ($1, 'Desktop user', 't1124-desktop@example.test', $2, $2)`,
+			[ids.user, timestamp],
+		);
+		await admin.query(
+			`insert into member (id, organization_id, user_id, role, status, created_at) values
+			 ('t1124-member', $1, $3, 'member', 'approved', $4),
+			 ('t1124-member-other', $2, $3, 'member', 'approved', $4)`,
+			[ids.organization, ids.otherOrganization, ids.user, timestamp],
+		);
+		await admin.query(
+			`insert into employee (id, user_id, organization_id, role, updated_at) values
+			 ($1, $3, $4, 'employee', $6), ($2, $3, $5, 'employee', $6)`,
+			[
+				ids.employee,
+				ids.otherEmployee,
+				ids.user,
+				ids.organization,
+				ids.otherOrganization,
+				timestamp,
+			],
+		);
+	}
+
+	async function enable(organizationId: string, mode: "asked" | "expected") {
+		await admin.query(
+			"insert into vehicle_use_setting (organization_id, enabled) values ($1, true)",
+			[organizationId],
+		);
+		await admin.query(
+			`insert into vehicle_use_assignment (organization_id, assignment_type, priority, mode, created_by)
+			 values ($1, 'organization', 0, $2, $3)`,
+			[organizationId, mode, ids.user],
+		);
+	}
+
+	async function addVehicles() {
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate, archived_at) values
+			 ($1, $5, 'Alpha van', 'M-AV 1', null),
+			 ($2, $5, 'Zulu van', 'M-ZV 2', null),
+			 ($3, $5, 'Old van', 'M-OV 3', now()),
+			 ($4, $6, 'Foreign van', 'B-FV 4', null)`,
+			[
+				vehicles.alpha,
+				vehicles.zulu,
+				vehicles.archived,
+				vehicles.foreign,
+				ids.organization,
+				ids.otherOrganization,
+			],
+		);
+		// The employee is the assigned driver of the Zulu van.
+		await admin.query(
+			`insert into organization_vehicle_driver (organization_id, vehicle_id, employee_id)
+			 values ($1, $2, $3)`,
+			[ids.organization, vehicles.zulu, ids.employee],
+		);
+	}
+
+	/** Work of the employee in the active organization, completed or live. */
+	async function work(
+		vehicleId: string,
+		readings: { startKm: number; endKm: number | null },
+		live: boolean,
+	) {
+		const [entry] = (
+			await admin.query(
+				`insert into time_entry
+				 (employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone, timezone_source, hash, created_by)
+				 values ($1, $2, 'clock_in', now() - interval '3 hours', 0, 'UTC', 'user_setting', 't1124-context', $3)
+				 returning id`,
+				[ids.employee, ids.organization, ids.user],
+			)
+		).rows;
+		await admin.query(
+			`insert into work_period
+			 (employee_id, organization_id, clock_in_id, start_time, end_time, duration_minutes, is_active,
+			  vehicle_kind, vehicle_id, odometer_start_km, odometer_end_km, driven_distance_km, updated_at)
+			 values ($1, $2, $3, now() - interval '3 hours', $4, $5, $6, 'organization', $7, $8, $9, $10, now())`,
+			[
+				ids.employee,
+				ids.organization,
+				entry.id,
+				live ? null : new Date(Date.now() - 2 * 60 * 60_000),
+				live ? null : 60,
+				live,
+				vehicleId,
+				readings.startKm,
+				readings.endKm,
+				readings.endKm === null ? null : readings.endKm - readings.startKm,
+			],
+		);
+	}
+
+	async function read() {
+		const response = await route.GET();
+		return {
+			status: response.status,
+			body: (await response.json()) as Record<string, any>,
+		};
+	}
+
+	beforeEach(async () => {
+		harness.userId = ids.user;
+		harness.organizationId = ids.organization;
+		await seed();
+	});
+
+	afterAll(async () => {
+		await cleanup();
+	});
+
+	it("asks nothing and lists no vehicles while vehicle use is off", async () => {
+		await addVehicles();
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		expect(context.body.vehicleUse).toEqual({
+			mode: "off",
+			vehicles: [],
+			suggestedVehicleIds: [],
+			lastEndKmByVehicleId: {},
+			live: null,
+		});
+	});
+
+	it("gives the mode, only the organization's active vehicles with the assigned one first, and the pre-fill reading", async () => {
+		await enable(ids.organization, "expected");
+		await enable(ids.otherOrganization, "asked");
+		await addVehicles();
+		await work(vehicles.zulu, { startKm: 12_000, endKm: 12_040 }, false);
+
+		const context = await read();
+
+		expect(context.status).toBe(200);
+		expect(context.body.vehicleUse).toEqual({
+			mode: "expected",
+			vehicles: [
+				{ id: vehicles.zulu, name: "Zulu van", licencePlate: "M-ZV 2" },
+				{ id: vehicles.alpha, name: "Alpha van", licencePlate: "M-AV 1" },
+			],
+			suggestedVehicleIds: [vehicles.zulu],
+			lastEndKmByVehicleId: { [vehicles.zulu]: 12_040 },
+			live: null,
+		});
+	});
+
+	it("gives the live work's vehicle use while clocked in", async () => {
+		await enable(ids.organization, "asked");
+		await addVehicles();
+		await work(vehicles.alpha, { startKm: 500, endKm: null }, true);
+
+		const context = await read();
+
+		expect(context.body.vehicleUse.live).toEqual({
+			vehicle: { kind: "organization", vehicleId: vehicles.alpha },
+			startKm: 500,
+			endKm: null,
+			distanceKm: null,
+		});
+	});
+
+	it("reads only the active organization's vehicles", async () => {
+		await enable(ids.otherOrganization, "asked");
+		await addVehicles();
+		harness.organizationId = ids.otherOrganization;
+
+		const context = await read();
+
+		expect(context.body.vehicleUse).toMatchObject({
+			mode: "asked",
+			vehicles: [{ id: vehicles.foreign, name: "Foreign van", licencePlate: "B-FV 4" }],
+			suggestedVehicleIds: [],
+		});
+	});
+});

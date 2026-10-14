@@ -648,6 +648,12 @@ export async function closeActiveWorkGraph(
 		workCategoryId,
 		workLocationType: period.workLocationType ?? null,
 		computationMetadata: null,
+		// Vehicle use is attribution of the live work, mirrored into its record (#1122).
+		vehicleKind: period.vehicleKind,
+		vehicleId: period.vehicleId,
+		odometerStartKm: period.odometerStartKm,
+		odometerEndKm: period.odometerEndKm,
+		drivenDistanceKm: period.drivenDistanceKm,
 	});
 	if (projectId) {
 		await tx.insert(timeRecordAllocation).values({

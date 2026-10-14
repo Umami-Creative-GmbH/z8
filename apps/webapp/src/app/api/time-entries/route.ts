@@ -31,6 +31,7 @@ import {
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { PROJECT_TASK_INELIGIBILITY_MESSAGES } from "@/lib/time-tracking/project-eligibility";
 import { isProjectTaskId } from "@/lib/time-tracking/task-attribution";
+import { readClockVehicleUse } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import {
 	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
@@ -527,10 +528,15 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 		if (type === "clock_out" && !task.ok) {
 			return refusedResponse({ code: "task_not_allowed", reason: "task_not_found" });
 		}
+		// The desktop's online vehicle use (#1124) rides beside the body. Malformed
+		// vehicle use is dropped, never refused; the module records what it may.
+		const vehicleUse = readClockVehicleUse(body.vehicleUse);
+		const vehicle = vehicleUse ? { vehicleUse } : {};
 		const outcome =
 			type === "clock_in"
 				? await clocking.run({
 						...command,
+						...vehicle,
 						body: {
 							kind: "clock_in",
 							workLocationType: workLocationType ?? "office",
@@ -538,6 +544,7 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any, reques
 					})
 				: await clocking.run({
 						...command,
+						...vehicle,
 						body: {
 							kind: "clock_out",
 							project: attributionOf(projectId),

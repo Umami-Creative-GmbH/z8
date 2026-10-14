@@ -5,6 +5,7 @@ import {
 	IconBriefcase,
 	IconBuilding,
 	IconCalendarEvent,
+	IconCar,
 	IconCategory,
 	IconCheck,
 	IconCircle,
@@ -22,6 +23,7 @@ import {
 import { useTranslate } from "@tolgee/react";
 import { useReducer, useState } from "react";
 import {
+	assignVehicleUseToPeriodsStepAction,
 	assignWorkCategoriesToPeriodsStepAction,
 	clearTimeDataAction,
 	deleteNonAdminDataAction,
@@ -449,6 +451,20 @@ function useDemoDataWizardController({
 			});
 		}
 
+		// Vehicle use on work (depends on the demo vehicles from the locations + time entries)
+		if (includeLocations && includeTimeEntries) {
+			activeSteps.push({
+				id: "vehicle-use",
+				label: t("settings.demo.steps.vehicleUse.label", "Vehicle Use"),
+				description: t(
+					"settings.demo.steps.vehicleUse.description",
+					"Recording vehicle use on work periods",
+				),
+				icon: <IconCar className="size-4" />,
+				status: "pending",
+			});
+		}
+
 		dispatchWizard({ type: "start-generation", steps: activeSteps });
 
 		const input: StepGenerationInput = {
@@ -475,11 +491,14 @@ function useDemoDataWizardController({
 			locationsCreated: 0,
 			subareasCreated: 0,
 			locationSupervisorsAssigned: 0,
+			vehiclesCreated: 0,
 			// NEW: Work category results
 			workCategorySetsCreated: 0,
 			workCategoriesCreated: 0,
 			workCategoryAssignmentsCreated: 0,
 			workCategoriesAssignedToPeriods: 0,
+			vehicleUseRecorded: 0,
+			drivingDetailsMissing: 0,
 			// NEW: Change policy results
 			changePoliciesCreated: 0,
 			changePolicyAssignmentsCreated: 0,
@@ -705,6 +724,7 @@ function useDemoDataWizardController({
 										locationsCreated: number;
 										subareasCreated: number;
 										supervisorAssignmentsCreated: number;
+										vehiclesCreated: number;
 									};
 									return {
 										result: `${d.locationsCreated} locations, ${d.subareasCreated} subareas`,
@@ -713,6 +733,7 @@ function useDemoDataWizardController({
 											subareasCreated: d.subareasCreated,
 											locationSupervisorsAssigned:
 												d.supervisorAssignmentsCreated,
+											vehiclesCreated: d.vehiclesCreated,
 										},
 									};
 								},
@@ -813,6 +834,25 @@ function useDemoDataWizardController({
 						result: `${d.workCategoriesAssigned} periods assigned`,
 						updates: {
 							workCategoriesAssignedToPeriods: d.workCategoriesAssigned,
+						},
+					};
+				},
+			);
+			if (!success) hasError = true;
+		}
+
+		// Phase 8: Vehicle use on work periods (depends on vehicles + time entries)
+		if (!hasError && activeSteps.some((s) => s.id === "vehicle-use")) {
+			const success = await executeStep(
+				"vehicle-use",
+				() => assignVehicleUseToPeriodsStepAction(input),
+				(data) => {
+					const d = data as { vehicleUseRecorded: number; drivingDetailsMissing: number };
+					return {
+						result: `${d.vehicleUseRecorded} periods, ${d.drivingDetailsMissing} with driving details missing`,
+						updates: {
+							vehicleUseRecorded: d.vehicleUseRecorded,
+							drivingDetailsMissing: d.drivingDetailsMissing,
 						},
 					};
 				},
@@ -1348,8 +1388,8 @@ function AdvancedDataTypeOptions({ controller }: PresentationProps) {
 					</div>
 					<p className="text-xs text-muted-foreground">
 						{t(
-							"settings.demo.form.dataTypes.locations.description",
-							"Work locations and subareas",
+							"settings.demo.form.dataTypes.locations.descriptionWithVehicles",
+							"Work locations, subareas and a few vehicles",
 						)}
 					</p>
 					{includeLocations && (
@@ -2161,6 +2201,15 @@ function ClearDataSection({ controller }: PresentationProps) {
 									"settings.demo.dangerZone.clearData.subareasDeleted",
 									"{count} subareas deleted",
 									{ count: clearResult.subareasDeleted },
+								)}
+							</li>
+						)}
+						{clearResult.vehiclesDeleted > 0 && (
+							<li>
+								{t(
+									"settings.demo.dangerZone.clearData.vehiclesDeleted",
+									"{count, plural, one {# vehicle deleted} other {# vehicles deleted}}",
+									{ count: clearResult.vehiclesDeleted },
 								)}
 							</li>
 						)}

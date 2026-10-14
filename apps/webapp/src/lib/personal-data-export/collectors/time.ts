@@ -1,8 +1,10 @@
 /**
  * Time category of a personal data export (#811, #1167).
  *
- * Time entries, work periods with their corrections and break adjustments,
- * the work operation log (who changed the employee's work, and how),
+ * Time entries, work periods with their corrections, break adjustments and
+ * vehicle use (#807: the vehicle driven, by name and plate even once
+ * archived, the odometer readings and the driven distance), the work
+ * operation log (who changed the employee's work, and how),
  * historical repair proposals, automatic clock-outs, compliance exceptions,
  * work-policy violations, surcharge calculations, balances and balance
  * adjustments (cancelled ones too, with their reason).
@@ -29,6 +31,7 @@ import {
 	employeeWorkBalance,
 	employeeWorkBalancePeriod,
 	historicalWorkProposal,
+	organizationVehicle,
 	project,
 	projectTask,
 	surchargeCalculation,
@@ -41,6 +44,8 @@ import {
 	workPolicyViolation,
 } from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+import { vehicleUseSelectColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-sql";
 import { isUuid } from "@/lib/validations/uuid";
 import {
 	type CollectedCategory,
@@ -126,6 +131,9 @@ async function collectWorkParts(
 				isBillable: workPeriod.isBillable,
 				workCategory: workCategory.name,
 				workLocationType: workPeriod.workLocationType,
+				vehicleUse: vehicleUseSelectColumns(workPeriod),
+				vehicleName: organizationVehicle.name,
+				licencePlate: organizationVehicle.licencePlate,
 				approvalStatus: workPeriod.approvalStatus,
 				pendingChanges: workPeriod.pendingChanges,
 				breakStartedAt: workPeriod.breakStartedAt,
@@ -155,6 +163,14 @@ async function collectWorkParts(
 				and(
 					eq(workCategory.id, workPeriod.workCategoryId),
 					eq(workCategory.organizationId, organizationId),
+				),
+			)
+			// The vehicle the employee drove, archived ones included.
+			.leftJoin(
+				organizationVehicle,
+				and(
+					eq(organizationVehicle.id, workPeriod.vehicleId),
+					eq(organizationVehicle.organizationId, organizationId),
 				),
 			)
 			.where(
@@ -266,6 +282,9 @@ async function collectWorkParts(
 			WORK_PERIOD_COLUMNS,
 			periods.map((row) => {
 				const pending = pendingChanges.get(row.id) ?? null;
+				const vehicleUse = vehicleUseFromColumns(row.vehicleUse);
+				// An own vehicle identifies no vehicle, so it has no name or plate.
+				const organizationVehicleUse = vehicleUse?.vehicle.kind === "organization";
 				return {
 					id: row.id,
 					start_time: instantText(row.startTime),
@@ -281,6 +300,12 @@ async function collectWorkParts(
 					is_billable: row.isBillable,
 					work_category: row.workCategory,
 					work_location_type: row.workLocationType,
+					vehicle_kind: vehicleUse?.vehicle.kind ?? null,
+					vehicle_name: organizationVehicleUse ? row.vehicleName : null,
+					licence_plate: organizationVehicleUse ? row.licencePlate : null,
+					odometer_start_km: vehicleUse?.startKm ?? null,
+					odometer_end_km: vehicleUse?.endKm ?? null,
+					driven_distance_km: vehicleUse?.distanceKm ?? null,
 					break_started_at: instantText(row.breakStartedAt),
 					break_started_zone: row.breakStartedZone,
 					approval_status: row.approvalStatus,
@@ -775,6 +800,12 @@ const WORK_PERIOD_COLUMNS = [
 	"is_billable",
 	"work_category",
 	"work_location_type",
+	"vehicle_kind",
+	"vehicle_name",
+	"licence_plate",
+	"odometer_start_km",
+	"odometer_end_km",
+	"driven_distance_km",
 	"break_started_at",
 	"break_started_zone",
 	"approval_status",

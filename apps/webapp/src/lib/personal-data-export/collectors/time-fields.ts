@@ -155,6 +155,30 @@ export const timeFieldGuide: PersonalDataFieldGuide = (t) => {
 					"personalDataExport.readme.fields.time.workPeriods.workLocationType",
 					"Where you worked, for example office, home or remote.",
 				),
+				vehicle_kind: t(
+					"personalDataExport.readme.fields.time.workPeriods.vehicleKind",
+					"The vehicle you drove during the work: organization for a vehicle of the organization, own for your own vehicle; empty if none was recorded.",
+				),
+				vehicle_name: t(
+					"personalDataExport.readme.fields.time.workPeriods.vehicleName",
+					"The name of the organization vehicle you drove; empty for your own vehicle.",
+				),
+				licence_plate: t(
+					"personalDataExport.readme.fields.time.workPeriods.licencePlate",
+					"The licence plate of the organization vehicle you drove; empty for your own vehicle.",
+				),
+				odometer_start_km: t(
+					"personalDataExport.readme.fields.time.workPeriods.odometerStartKm",
+					"The vehicle's odometer reading when the work started, in kilometres.",
+				),
+				odometer_end_km: t(
+					"personalDataExport.readme.fields.time.workPeriods.odometerEndKm",
+					"The vehicle's odometer reading when the work ended, in kilometres.",
+				),
+				driven_distance_km: t(
+					"personalDataExport.readme.fields.time.workPeriods.drivenDistanceKm",
+					"The distance you drove during the work, in kilometres: the end reading minus the start reading, or the distance entered directly when there was no start reading.",
+				),
 				break_started_at: t(
 					"personalDataExport.readme.fields.time.workPeriods.breakStartedAt",
 					"When your current break started (UTC); empty when you are not on a break.",

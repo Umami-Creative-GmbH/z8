@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { useI18n } from "../lib/i18n";
 import type { IdleEvent } from "../types";
 interface IdleDialogProps {
@@ -8,6 +8,8 @@ interface IdleDialogProps {
 	onResume: () => void;
 	isLoading?: boolean;
 	canRecord?: boolean;
+	/** Asked with the break, e.g. its odometer reading (#1124). */
+	children?: ReactNode;
 }
 export function IdleDialog(props: IdleDialogProps) {
 	return props.isOpen && props.idleEvent ? (
@@ -20,6 +22,7 @@ function IdleQuestion({
 	onResume,
 	isLoading,
 	canRecord = true,
+	children,
 }: IdleDialogProps & { idleEvent: IdleEvent }) {
 	const { t, language } = useI18n();
 	const dialog = useRef<HTMLDialogElement>(null);
@@ -66,6 +69,7 @@ function IdleQuestion({
 					)}
 				</p>
 			)}
+			{!idleEvent.review && canRecord && children}
 			{!canRecord && !idleEvent.review && (
 				<p role="status">{t("Refresh status before confirming a break.")}</p>
 			)}

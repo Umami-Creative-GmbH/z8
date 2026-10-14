@@ -114,6 +114,8 @@ export const NOTIFICATION_TYPES = [
 	// Skill expiry reminders to the employee and their managers (#1143)
 	"skill_expiry_upcoming",
 	"skill_expired_today",
+	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
+	"driving_details_missing_reminder",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -143,6 +145,7 @@ const IN_APP_AND_PUSH_BY_DEFAULT: ReadonlySet<NotificationType> = new Set([
 	"period_submission_reminder",
 	"period_submission_sent_back",
 	"period_submission_decided",
+	"driving_details_missing_reminder",
 ]);
 
 /** Whether a channel is on for a type the user stored no preference for. */

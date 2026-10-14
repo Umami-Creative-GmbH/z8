@@ -435,6 +435,32 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 			),
 			fields: { project: project(), ...common("assigned_at", "assigned_by") },
 		},
+		assigned_vehicles: {
+			summary: t(
+				"personalDataExport.readme.fields.employment.assignedVehicles.summary",
+				"The organization vehicles assigned to you or your teams, which the app suggests first when you record a vehicle on your work.",
+			),
+			fields: {
+				vehicle: t(
+					"personalDataExport.readme.fields.employment.assignedVehicles.vehicle",
+					"The vehicle's name.",
+				),
+				licence_plate: t(
+					"personalDataExport.readme.fields.employment.assignedVehicles.licencePlate",
+					"The vehicle's licence plate.",
+				),
+				archived: t(
+					"personalDataExport.readme.fields.employment.assignedVehicles.archived",
+					"Whether the organization has archived the vehicle, so it can no longer be picked.",
+				),
+				assignment_type: t(
+					"personalDataExport.readme.fields.employment.assignedVehicles.assignmentType",
+					"How it reaches you: assigned to you (employee) or to your team (team).",
+				),
+				team: team(),
+				...common("assigned_at", "assigned_by"),
+			},
+		},
 		custom_roles: {
 			summary: t(
 				"personalDataExport.readme.fields.employment.customRoles.summary",

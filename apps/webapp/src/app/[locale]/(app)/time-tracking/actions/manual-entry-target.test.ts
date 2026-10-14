@@ -11,6 +11,11 @@ const mocks = vi.hoisted(() => ({
 	readAppendAdmission: vi.fn(),
 }));
 
+// Vehicle use (#1120) is off unless a test says otherwise.
+vi.mock("@/lib/time-tracking/vehicle-use/form-context", () => ({
+	loadWorkVehicleUseFormContext: async () => ({ mode: "off", vehicles: [] }),
+}));
+
 vi.mock("@/db", () => ({
 	db: {
 		query: {
@@ -199,6 +204,7 @@ describe("getManualEntryTargetContextForEmployee", () => {
 				categories: [
 					{ id: "category-1", name: "Night", factor: "1.25", color: null },
 				],
+				vehicleUse: { mode: "off", vehicles: [] },
 			},
 		});
 	});

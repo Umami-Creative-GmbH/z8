@@ -1,18 +1,22 @@
-import { and, eq, gt, isNull, lt, not, or } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lt, not, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { SurchargeCalculationDetails } from "@/db/schema";
 import {
+	auditLog,
 	automaticClockOutExecution,
+	completedWorkOperation,
 	employee,
+	organizationVehicle,
 	project,
 	projectTask,
 	surchargeCalculation,
 	timeEntry,
 	workPeriod,
 } from "@/db/schema";
+import { vehicleUseFromColumns } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
 import { dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { localMonthRange } from "@/lib/datetime/temporal-boundaries";
@@ -24,12 +28,104 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
-import { resolveWorkPeriodEditedBy } from "./work-period-edited-by";
+import { resolveWorkPeriodEditedBy, type WorkPeriodAttributionEdit } from "./work-period-edited-by";
 
 const clockInEntry = alias(timeEntry, "clock_in_entry");
 const clockOutEntry = alias(timeEntry, "clock_out_entry");
 const clockInEditor = alias(user, "clock_in_editor");
 const clockOutEditor = alias(user, "clock_out_editor");
+const attributionEditor = alias(user, "attribution_editor");
+
+/**
+ * Edits of the periods' attribution that appended no correction entry (#1120):
+ * amendments by a person (adopted organizations) and the legacy admin edit's
+ * audit rows. Organization-scoped; keyed by work period.
+ */
+async function loadAttributionEdits(
+	organizationId: string,
+	workPeriodIds: string[],
+): Promise<Map<string, WorkPeriodAttributionEdit[]>> {
+	const edits = new Map<string, WorkPeriodAttributionEdit[]>();
+	if (workPeriodIds.length === 0) return edits;
+	const add = (workPeriodId: string, edit: WorkPeriodAttributionEdit) => {
+		edits.set(workPeriodId, [...(edits.get(workPeriodId) ?? []), edit]);
+	};
+	const finalized = alias(completedWorkOperation, "finalized_correction");
+	const [amendments, audits, corrections] = await Promise.all([
+		db
+			.select({
+				workPeriodId: completedWorkOperation.workPeriodId,
+				createdBy: completedWorkOperation.actorUserId,
+				createdAt: completedWorkOperation.createdAt,
+				editorName: attributionEditor.name,
+			})
+			.from(completedWorkOperation)
+			.leftJoin(attributionEditor, eq(attributionEditor.id, completedWorkOperation.actorUserId))
+			.where(
+				and(
+					eq(completedWorkOperation.organizationId, organizationId),
+					eq(completedWorkOperation.kind, "amend_completed_work"),
+					eq(completedWorkOperation.actorKind, "human"),
+					inArray(completedWorkOperation.workPeriodId, workPeriodIds),
+				),
+			),
+		db
+			.select({
+				workPeriodId: auditLog.entityId,
+				createdBy: auditLog.performedBy,
+				createdAt: auditLog.timestamp,
+				editorName: attributionEditor.name,
+			})
+			.from(auditLog)
+			.leftJoin(attributionEditor, eq(attributionEditor.id, auditLog.performedBy))
+			.where(
+				and(
+					eq(auditLog.organizationId, organizationId),
+					eq(auditLog.entityType, "work_period"),
+					eq(auditLog.action, "update"),
+					inArray(auditLog.entityId, workPeriodIds),
+				),
+			),
+		// An approved time correction by its submitter (an on-behalf editor), dated
+		// at its approval: a metadata-only correction appends no entry.
+		db
+			.select({
+				workPeriodId: completedWorkOperation.workPeriodId,
+				createdBy: completedWorkOperation.actorUserId,
+				createdAt: finalized.createdAt,
+				editorName: attributionEditor.name,
+			})
+			.from(completedWorkOperation)
+			.innerJoin(
+				finalized,
+				and(
+					eq(finalized.organizationId, completedWorkOperation.organizationId),
+					eq(finalized.workPeriodId, completedWorkOperation.workPeriodId),
+					eq(finalized.kind, "finalize_time_correction"),
+					sql`${finalized.result} ->> 'transition' = 'approved'`,
+					sql`${finalized.createdAt} >= ${completedWorkOperation.createdAt}`,
+				),
+			)
+			.leftJoin(attributionEditor, eq(attributionEditor.id, completedWorkOperation.actorUserId))
+			.where(
+				and(
+					eq(completedWorkOperation.organizationId, organizationId),
+					eq(completedWorkOperation.kind, "submit_time_correction"),
+					eq(completedWorkOperation.actorKind, "human"),
+					inArray(completedWorkOperation.workPeriodId, workPeriodIds),
+				),
+			),
+	]);
+	for (const row of [...amendments, ...audits, ...corrections]) {
+		if (!row.workPeriodId) continue;
+		add(row.workPeriodId, {
+			createdBy: row.createdBy,
+			createdAt: row.createdAt,
+			editorName: row.editorName ?? null,
+		});
+	}
+	return edits;
+}
 
 interface WorkPeriodFilters {
 	organizationId: string;
@@ -128,6 +224,10 @@ export async function getWorkPeriodsForMonth(
 					name: projectTask.name,
 					state: projectTask.state,
 				},
+				vehicle: {
+					name: organizationVehicle.name,
+					licencePlate: organizationVehicle.licencePlate,
+				},
 				automaticExecution: {
 					organizationId: automaticClockOutExecution.organizationId,
 					employeeId: automaticClockOutExecution.employeeId,
@@ -164,7 +264,18 @@ export async function getWorkPeriodsForMonth(
 					eq(projectTask.organizationId, workPeriod.organizationId),
 				),
 			)
+			.leftJoin(
+				organizationVehicle,
+				and(
+					eq(organizationVehicle.id, workPeriod.vehicleId),
+					eq(organizationVehicle.organizationId, workPeriod.organizationId),
+				),
+			)
 			.where(and(...conditions));
+		const attributionEdits = await loadAttributionEdits(
+			filters.organizationId,
+			periods.filter(({ period }) => period.endTime !== null).map(({ period }) => period.id),
+		);
 
 		// Return individual work periods as timed events (not aggregated)
 		// This allows the calendar to show work blocks at specific times
@@ -181,9 +292,20 @@ export async function getWorkPeriodsForMonth(
 				project: proj,
 				projectHasCustomer,
 				task,
+				vehicle,
 				automaticExecution,
 			}) => {
 				const notes = clockOutEntry?.notes?.trim();
+				// Vehicle use (#1120), with the vehicle's label while the organization has it.
+				const vehicleUse = vehicleUseFromColumns(period);
+				const vehicleMetadata = vehicleUse
+					? {
+							vehicleUse,
+							...(vehicle?.name
+								? { vehicleLabel: `${vehicle.name} (${vehicle.licencePlate})` }
+								: {}),
+						}
+					: {};
 				// A task is shown next to its project (#874); it never outlives the project.
 				const bookedTask = proj && task?.id ? task : null;
 				const projectPrefix = proj?.name
@@ -224,6 +346,7 @@ export async function getWorkPeriodsForMonth(
 						color: eventColor,
 						metadata: {
 							workLocationType: period.workLocationType ?? null,
+							...vehicleMetadata,
 							durationMinutes,
 							employeeId: period.employeeId,
 							employeeName: user.name,
@@ -291,6 +414,7 @@ export async function getWorkPeriodsForMonth(
 								}
 							: null,
 					],
+					attributionEdits: attributionEdits.get(period.id),
 				});
 				const durationMinutes = period.durationMinutes ?? 0;
 				const surchargeMinutes = surcharge?.surchargeMinutes ?? 0;
@@ -338,6 +462,7 @@ export async function getWorkPeriodsForMonth(
 					color: eventColor,
 					metadata: {
 						workLocationType: period.workLocationType ?? null,
+						...vehicleMetadata,
 						durationMinutes,
 						employeeId: period.employeeId,
 						employeeName: user.name,

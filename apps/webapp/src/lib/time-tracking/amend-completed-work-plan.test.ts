@@ -47,6 +47,7 @@ describe("planCompletedWorkAmendment", () => {
 			workCategory: false,
 			workLocation: false,
 			billable: false,
+			vehicleUse: false,
 		});
 		expect(result.result.durationMinutes).toBe(481);
 		expect(result.result.endAt.equals(end.add({ seconds: 40 }))).toBe(true);
@@ -165,12 +166,14 @@ describe("planCompletedWorkAmendment", () => {
 				workCategory: false,
 				workLocation: false,
 				billable: false,
+				vehicleUse: false,
 			},
 			result: {
 				projectId: "project-b",
 				taskId: null,
 				workCategoryId: null,
 				workLocationType: "office",
+				vehicleUse: null,
 			},
 		});
 		expect(() =>
@@ -193,6 +196,7 @@ describe("planCompletedWorkAmendment", () => {
 				workCategory: false,
 				workLocation: false,
 				billable: true,
+				vehicleUse: false,
 			});
 			expect(result.result.projectId).toBe("project-a");
 			expect(result.result.durationMinutes).toBe(479);
@@ -227,6 +231,7 @@ describe("planCompletedWorkAmendment", () => {
 				workCategory: false,
 				workLocation: false,
 				billable: true,
+				vehicleUse: false,
 			});
 		});
 	});
@@ -307,5 +312,65 @@ describe("planCompletedWorkAmendment", () => {
 		expect(() => plan({ workLocation: { kind: "replace", id: "moon" } })).toThrow(
 			AmendmentRangeError,
 		);
+	});
+
+	describe("vehicle use (#1120)", () => {
+		const driven = {
+			vehicle: { kind: "own" as const },
+			startKm: 100,
+			endKm: 140,
+			distanceKm: 40,
+		};
+
+		it("counts a vehicle-use-only change as a change and keeps the stored minutes", () => {
+			const result = plan({ vehicleUse: { kind: "set", use: driven } });
+			expect(result.changes).toMatchObject({
+				clockIn: false,
+				clockOut: false,
+				workLocation: false,
+				vehicleUse: true,
+			});
+			expect(result.result.vehicleUse).toEqual(driven);
+			expect(result.result.durationMinutes).toBe(479);
+		});
+
+		it("treats the same vehicle use, an omitted intent or preserve as unchanged", () => {
+			const recorded = { ...source, vehicleUse: driven };
+			for (const vehicleUse of [
+				{ kind: "set" as const, use: { ...driven } },
+				{ kind: "preserve" as const },
+				undefined,
+			]) {
+				expect(() =>
+					planCompletedWorkAmendment(recorded, { ...preserveAll, vehicleUse }),
+				).toThrow(AmendmentNoChangeError);
+			}
+		});
+
+		it("clears recorded vehicle use", () => {
+			const result = planCompletedWorkAmendment(
+				{ ...source, vehicleUse: driven },
+				{ ...preserveAll, vehicleUse: { kind: "clear" } },
+			);
+			expect(result.changes.vehicleUse).toBe(true);
+			expect(result.result.vehicleUse).toBeNull();
+		});
+
+		it("plans a vehicle use change of active work", () => {
+			expect(
+				planAttributionChange(
+					{ projectId: null, workCategoryId: null, workLocationType: null, isBillable: false },
+					{
+						project: { kind: "preserve" },
+						workCategory: { kind: "preserve" },
+						workLocation: { kind: "preserve" },
+						vehicleUse: { kind: "set", use: { ...driven, endKm: null, distanceKm: null } },
+					},
+				),
+			).toMatchObject({
+				changes: { vehicleUse: true },
+				result: { vehicleUse: { startKm: 100, endKm: null } },
+			});
+		});
 	});
 });

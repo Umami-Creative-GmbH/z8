@@ -28,6 +28,13 @@ const CLOCK_QUEUE_MODE = "preservation-only-v1";
 /** Reported to callers: this worker stores and sends frozen v2 clock commands (#279). */
 const CLOCK_COMMAND_MODE = "frozen-v2";
 
+/**
+ * The frozen command versions this worker can build (#1122). Additive to the
+ * mode: a page offers version 4 vehicle use only to a worker that lists it, and
+ * keeps every other capture on "frozen-v2" workers unchanged.
+ */
+const CLOCK_COMMAND_VERSIONS = [2, 3, 4];
+
 /** Background sync tag */
 const SYNC_TAG = "clock-sync";
 
@@ -448,6 +455,7 @@ self.addEventListener("message", (event) => {
 				pushVersion: PUSH_CACHE,
 				clockQueueMode: CLOCK_QUEUE_MODE,
 				clockCommandMode: CLOCK_COMMAND_MODE,
+				clockCommandVersions: CLOCK_COMMAND_VERSIONS,
 			});
 			break;
 

@@ -355,6 +355,56 @@ function createSources(overrides = {}) {
 		getApprovals: vi.fn().mockResolvedValue([]),
 		getOvertimeWarnings: vi.fn().mockResolvedValue([]),
 		getPayrollIssues: vi.fn().mockResolvedValue([]),
+		getDrivingDetailsMissingCount: vi.fn().mockResolvedValue(0),
 		...overrides,
 	};
 }
+
+describe("driving details missing in the briefing (#1127)", () => {
+	const now = DateTime.fromISO("2026-04-28T09:20:00.000+02:00", { setZone: true });
+
+	it("counts the scoped employees' work lacking driving details and links to the team list", async () => {
+		const sources = createSources({
+			getDrivingDetailsMissingCount: vi.fn().mockResolvedValue(3),
+		});
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now,
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(sources.getDrivingDetailsMissingCount).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeIds: ["emp-1"],
+		});
+		expect(briefing.needsAction).toContainEqual(
+			expect.objectContaining({
+				id: "driving:details-missing",
+				category: "driving",
+				severity: "warning",
+				title: "Driving details missing (3)",
+				titleKey: "today.briefing.items.drivingDetailsMissing.title",
+				titleParams: { count: 3 },
+				href: "/team/driving",
+			}),
+		);
+	});
+
+	it("shows nothing when no work lacks driving details, or the count cannot be read", async () => {
+		for (const getDrivingDetailsMissingCount of [
+			vi.fn().mockResolvedValue(0),
+			vi.fn().mockRejectedValue(new Error("down")),
+		]) {
+			const briefing = await getManagerDailyBriefingFromSources({
+				organizationId: "org-1",
+				currentEmployee: { id: "manager-1", role: "manager" },
+				now,
+				timezone: "Europe/Berlin",
+				sources: createSources({ getDrivingDetailsMissingCount }),
+			});
+			expect(briefing.needsAction.map((item) => item.category)).not.toContain("driving");
+		}
+	});
+});

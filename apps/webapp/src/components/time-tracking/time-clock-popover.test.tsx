@@ -128,6 +128,11 @@ vi.mock("@/components/time-tracking/use-available-work-categories", () => ({
 	}),
 }));
 
+// Vehicle use off; clock-vehicle-use.test.tsx covers the vehicle use the clock asks (#1122).
+vi.mock("@/components/time-tracking/clock-vehicle-use", async () =>
+	(await import("./clock-vehicle-use.test-stub")).vehicleUseOffModule(),
+);
+
 describe("TimeClockPopover", () => {
 	beforeEach(() => {
 		vi.stubGlobal(

@@ -19,7 +19,7 @@
 -- - An hourly employee whose wage lives only on employee.current_hourly_rate (no confirmed terms,
 --   no rate rows) gets confirmed hourly terms carrying it from the start of their latest
 --   employment period (or their start date), linked to that period. Without a known start the
---   employee is reported instead. This runs here because 0224 drops the column.
+--   employee is reported instead. This runs here because 0230 drops the column.
 -- Every conflict (once per rate row and terms), every skipped or ignored row and every stored
 -- wage goes to employee_rate_history_merge_report (operator-only). Each affected employee gets one
 -- employee_wage_history_merge_note for the org admins, counting every rate row the merge acted on
@@ -627,7 +627,7 @@ $$;
 -- and no rate rows) gets confirmed hourly terms with that wage from the start of their latest
 -- employment period, or their start date, and the terms form's defaults. Without a known start the
 -- employee is reported instead. Returns the number of terms rows created. The column is read
--- through to_jsonb, so once 0224 has dropped it this finds no wage and does nothing.
+-- through to_jsonb, so once 0230 has dropped it this finds no wage and does nothing.
 CREATE OR REPLACE FUNCTION "employee_rate_history_merge_employee_wage"(
 	p_organization_id text,
 	p_employee_id uuid,

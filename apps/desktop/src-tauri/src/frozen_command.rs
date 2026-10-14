@@ -10,7 +10,91 @@ use serde::{Deserialize, Serialize};
 use crate::break_evidence::{BreakEvidence, BreakReview, Observation};
 use crate::clock::WorkLocationType;
 
+/// The command without vehicle use; every server that takes frozen commands
+/// accepts it, and the desktop requires it to be advertised.
 pub const CLOCK_COMMAND_VERSION: u32 = 2;
+/// Version 2 plus optional vehicle use beside the body (#1124, server #1122).
+/// Sent only when the server advertises it and vehicle use was entered.
+pub const VEHICLE_CLOCK_COMMAND_VERSION: u32 = 4;
+
+/// An organization vehicle by id, or the employee's own vehicle.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "lowercase", deny_unknown_fields)]
+pub enum VehicleChoice {
+    Own,
+    Organization {
+        #[serde(rename = "vehicleId")]
+        vehicle_id: String,
+    },
+}
+
+impl VehicleChoice {
+    /// The one representation the server accepts: a lowercase UUID. Anything
+    /// else would make the whole command invalid, so it is left out instead.
+    fn wire(&self) -> Option<serde_json::Value> {
+        match self {
+            Self::Own => Some(serde_json::json!({ "kind": "own" })),
+            Self::Organization { vehicle_id } => {
+                let id = vehicle_id.to_ascii_lowercase();
+                uuid::Uuid::parse_str(&id)
+                    .ok()
+                    .filter(|parsed| parsed.hyphenated().to_string() == id)
+                    .map(|_| serde_json::json!({ "kind": "organization", "vehicleId": id }))
+            }
+        }
+    }
+}
+
+/// Vehicle use the employee entered at a clock-in or clock-out, in whole
+/// kilometres. Absent (or `null`) fields are omitted from the frozen command.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ClockVehicleUse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vehicle: Option<VehicleChoice>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start_km: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_km: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub distance_km: Option<u32>,
+}
+
+impl ClockVehicleUse {
+    /// A clock-in names the vehicle and, optionally, the start reading.
+    pub fn clock_in_wire(&self) -> Option<serde_json::Value> {
+        let mut value = serde_json::json!({ "vehicle": self.vehicle.as_ref()?.wire()? });
+        if let Some(start) = self.start_km {
+            value["startKm"] = start.into();
+        }
+        Some(value)
+    }
+
+    /// A clock-out names at least one field; absent ones keep what the work records.
+    pub fn clock_out_wire(&self) -> Option<serde_json::Value> {
+        let mut value = serde_json::Map::new();
+        if let Some(vehicle) = self.vehicle.as_ref().and_then(VehicleChoice::wire) {
+            value.insert("vehicle".into(), vehicle);
+        }
+        for (key, reading) in [
+            ("startKm", self.start_km),
+            ("endKm", self.end_km),
+            ("distanceKm", self.distance_km),
+        ] {
+            if let Some(reading) = reading {
+                value.insert(key.into(), reading.into());
+            }
+        }
+        (!value.is_empty()).then_some(serde_json::Value::Object(value))
+    }
+}
+
+/// A break's one reading: the closed work's end and the resumed work's start.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BreakVehicleUse {
+    pub reading_km: u32,
+}
 
 /// Consistency assertions captured with the action. They never grant access;
 /// the server derives ownership and refuses a command whose context differs.
@@ -71,6 +155,8 @@ pub enum ClockTarget {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FrozenCommand {
+    /// The `version` the body states.
+    pub version: u32,
     pub operation_id: String,
     pub kind: CommandKind,
     pub context: CommandContext,
@@ -106,10 +192,23 @@ pub struct CommandFrame {
     pub depends_on: Option<String>,
 }
 
-fn freeze(frame: CommandFrame, kind: CommandKind, fields: serde_json::Value) -> FrozenCommand {
+/// Version 2 without vehicle use; version 4 with it, appended as `vehicleUse`.
+fn freeze(
+    frame: CommandFrame,
+    kind: CommandKind,
+    mut fields: serde_json::Value,
+    vehicle_use: Option<serde_json::Value>,
+) -> FrozenCommand {
+    let version = match vehicle_use {
+        Some(vehicle_use) => {
+            fields["vehicleUse"] = vehicle_use;
+            VEHICLE_CLOCK_COMMAND_VERSION
+        }
+        None => CLOCK_COMMAND_VERSION,
+    };
     let occurred_at = utc_instant(frame.occurred_at);
     let mut body = serde_json::json!({
-        "version": CLOCK_COMMAND_VERSION,
+        "version": version,
         "operationId": frame.operation_id,
         "kind": kind.as_str(),
         "admission": frame.admission,
@@ -121,6 +220,7 @@ fn freeze(frame: CommandFrame, kind: CommandKind, fields: serde_json::Value) -> 
         body[key] = value.clone();
     }
     FrozenCommand {
+        version,
         operation_id: frame.operation_id,
         kind,
         context: frame.context,
@@ -132,10 +232,21 @@ fn freeze(frame: CommandFrame, kind: CommandKind, fields: serde_json::Value) -> 
 }
 
 pub fn freeze_clock_in(frame: CommandFrame, location: WorkLocationType) -> FrozenCommand {
+    freeze_clock_in_with(frame, location, None)
+}
+
+/// A clock-in with the vehicle use entered for it (#1124). Without a vehicle
+/// there is nothing to send, and the command keeps its version 2 bytes.
+pub fn freeze_clock_in_with(
+    frame: CommandFrame,
+    location: WorkLocationType,
+    vehicle_use: Option<&ClockVehicleUse>,
+) -> FrozenCommand {
     freeze(
         frame,
         CommandKind::ClockIn,
         serde_json::json!({ "workLocationType": location.as_str() }),
+        vehicle_use.and_then(ClockVehicleUse::clock_in_wire),
     )
 }
 
@@ -157,6 +268,7 @@ pub fn freeze_clock_out(frame: CommandFrame, target: ClockTarget) -> FrozenComma
             "project": { "kind": "preserve" },
             "workCategory": { "kind": "preserve" },
         }),
+        None,
     )
 }
 
@@ -177,10 +289,21 @@ fn observation_json(observation: Observation, timezone: Option<&str>) -> serde_j
 /// resumes at the return. Evidence that leaves the interval uncertain is not
 /// frozen; it needs a reviewed correction instead.
 pub fn freeze_break(
+    frame: CommandFrame,
+    target: ClockTarget,
+    location: WorkLocationType,
+    evidence: &BreakEvidence,
+) -> Result<FrozenCommand, BreakReview> {
+    freeze_break_with(frame, target, location, evidence, None)
+}
+
+/// A confirmed idle break with the one odometer reading entered for it (#1124).
+pub fn freeze_break_with(
     mut frame: CommandFrame,
     target: ClockTarget,
     location: WorkLocationType,
     evidence: &BreakEvidence,
+    vehicle_use: Option<BreakVehicleUse>,
 ) -> Result<FrozenCommand, BreakReview> {
     if let Some(review) = evidence.review() {
         return Err(review);
@@ -210,6 +333,7 @@ pub fn freeze_break(
                 "confirmed": observation_json(evidence.confirmed, None),
             },
         }),
+        vehicle_use.map(|reading| serde_json::json!({ "readingKm": reading.reading_km })),
     ))
 }
 
@@ -252,6 +376,18 @@ pub fn freeze_attributed_clock_out(
     target: ClockTarget,
     attribution: &ClosingAttribution,
 ) -> FrozenCommand {
+    freeze_attributed_clock_out_with(frame, target, attribution, None)
+}
+
+/// The closing attribution plus the vehicle use entered at the clock-out
+/// (#1124): the end reading or distance, and the vehicle and start reading when
+/// the work records none. Nothing entered keeps the version 2 bytes.
+pub fn freeze_attributed_clock_out_with(
+    frame: CommandFrame,
+    target: ClockTarget,
+    attribution: &ClosingAttribution,
+    vehicle_use: Option<&ClockVehicleUse>,
+) -> FrozenCommand {
     let mut fields = serde_json::json!({
         "target": target_json(target), "project": attribution.project,
         "workCategory": attribution.work_category,
@@ -259,5 +395,10 @@ pub fn freeze_attributed_clock_out(
     if let Some(task) = &attribution.task {
         fields["task"] = serde_json::json!(task);
     }
-    freeze(frame, CommandKind::ClockOut, fields)
+    freeze(
+        frame,
+        CommandKind::ClockOut,
+        fields,
+        vehicle_use.and_then(ClockVehicleUse::clock_out_wire),
+    )
 }

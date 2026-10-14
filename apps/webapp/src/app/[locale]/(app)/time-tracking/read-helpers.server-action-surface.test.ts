@@ -48,8 +48,8 @@ describe("time-tracking read helper surface", () => {
 		expect(readSource("regions.tsx")).toContain(
 			'import { readActiveWorkPeriod } from "./read-queries";',
 		);
-		expect(readSource("regions.tsx")).toContain(
-			'import { readHistoryRegion, readPeriodsRegion, readSummaryRegion } from "./region-data";',
+		expect(readSource("regions.tsx")).toMatch(
+			/import \{\s*readDrivingRegion,\s*readHistoryRegion,\s*readPeriodsRegion,\s*readSummaryRegion,?\s*\} from "\.\/region-data";/,
 		);
 		expect(readSource("regions.tsx")).toContain(
 			"getTimeTrackingRenderContext()",

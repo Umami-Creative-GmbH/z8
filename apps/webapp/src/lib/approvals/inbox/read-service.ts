@@ -12,6 +12,7 @@ import type {
 import type { AbsenceDeputyView } from "@/lib/absences/deputy";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
+import { vehicleUseWarningReviewText } from "../presentation/vehicle-use-warning-text";
 import { buildAbsenceDeputySection } from "../presentation/absence-deputy";
 import {
 	buildAbsenceReviewSections,
@@ -1183,6 +1184,43 @@ function buildTimeCorrectionDetailSections(
 				},
 			},
 		});
+	}
+
+	// Vehicle and odometer readings before and after (#1120).
+	if (correction.metadataChanges?.vehicleUse) {
+		rows.push({
+			label: {
+				key: "approvals:approvals.vehicleUse",
+				fallback: "Vehicle use",
+			},
+			value: {
+				kind: "change",
+				original: {
+					kind: "vehicle_use",
+					value: correction.metadataChanges.vehicleUse.original,
+				},
+				requested: {
+					kind: "vehicle_use",
+					value: correction.metadataChanges.vehicleUse.requested,
+				},
+			},
+		});
+		// The same plausibility warnings the employee saw on entry (#1121); never a blocker.
+		const warnings = correction.metadataChanges.vehicleUse.warnings ?? [];
+		if (warnings.length > 0) {
+			rows.push({
+				label: {
+					key: "approvals:approvals.vehicleUseWarnings",
+					fallback: "Please check",
+				},
+				value: {
+					key: "approvals:approvals.vehicleUseWarningList",
+					fallback: "{warnings}",
+					params: { warnings: warnings.map(vehicleUseWarningReviewText) },
+				},
+				tone: "warning",
+			});
+		}
 	}
 
 	const sections: ApprovalInboxDetailSection[] = [

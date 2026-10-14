@@ -12,6 +12,7 @@ import {
 	isNotNull,
 	isNull,
 	notInArray,
+	sql,
 } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
@@ -32,6 +33,8 @@ import {
 	locationEmployee,
 	locationSubarea,
 	notification,
+	organizationVehicle,
+	organizationVehicleDriver,
 	project,
 	shift,
 	shiftRecurrence,
@@ -78,6 +81,8 @@ import {
 	absencePendingApprovalContent,
 	timeCorrectionPendingApprovalContent,
 } from "@/lib/notifications/triggers";
+import { RECORDED_VEHICLE_FOREIGN_KEYS } from "@/lib/organization/vehicles/vehicle-rules";
+import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
@@ -99,6 +104,7 @@ import {
 	recordDemoWorkDay,
 	withDemoWorkTransaction,
 } from "./demo-work";
+import { assignDemoVehicleUseToPeriods } from "./demo-vehicle-use-generator";
 import { runWorkTransaction, type Transaction } from "@/lib/time-tracking/work-transaction";
 import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configuration";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
@@ -256,11 +262,16 @@ export interface DemoDataResult {
 	locationsCreated: number;
 	subareasCreated: number;
 	locationSupervisorsAssigned: number;
+	// Organization vehicles, generated with the locations (#1118)
+	vehiclesCreated: number;
 	// NEW: Work category results
 	workCategorySetsCreated: number;
 	workCategoriesCreated: number;
 	workCategoryAssignmentsCreated: number;
 	workCategoriesAssignedToPeriods: number;
+	// Vehicle use on demo work, some with driving details missing (#1132)
+	vehicleUseRecorded: number;
+	drivingDetailsMissing: number;
 	// NEW: Change policy results
 	changePoliciesCreated: number;
 	changePolicyAssignmentsCreated: number;
@@ -285,6 +296,7 @@ export interface ClearDataResult {
 	// NEW: Location cleanup
 	locationsDeleted: number;
 	subareasDeleted: number;
+	vehiclesDeleted: number;
 	// NEW: Work category cleanup
 	workCategorySetsDeleted: number;
 	workCategoriesDeleted: number;
@@ -2046,6 +2058,67 @@ export async function generateDemoLocations(options: DemoDataOptions): Promise<{
 }
 
 // ============================================
+// VEHICLE GENERATORS (#1118)
+// ============================================
+
+/** Demo vehicles are named "Demo - …"; a demo reset removes exactly those. */
+const DEMO_VEHICLE_PREFIX = "Demo - ";
+
+/**
+ * Generates a few organization vehicles with the demo locations: one assigned to
+ * an employee, one to a team, one pool car. Fixed demo plates make a second run
+ * add nothing.
+ */
+export async function generateDemoVehicles(
+	options: DemoDataOptions,
+): Promise<{ vehiclesCreated: number }> {
+	if (!options.includeLocations) return { vehiclesCreated: 0 };
+
+	const [employees, teams] = await Promise.all([
+		db.query.employee.findMany({
+			where: and(eq(employee.organizationId, options.organizationId), eq(employee.isActive, true)),
+		}),
+		db.query.team.findMany({ where: eq(team.organizationId, options.organizationId) }),
+	]);
+	const driver = employees.length > 0 ? faker.helpers.arrayElement(employees) : null;
+	const driverTeam = teams.length > 0 ? faker.helpers.arrayElement(teams) : null;
+	const demoVehicles = [
+		{ name: "Service van 1", licencePlate: "Z8-DEMO 1", employeeId: driver?.id, teamId: undefined },
+		{ name: "Service van 2", licencePlate: "Z8-DEMO 2", employeeId: undefined, teamId: driverTeam?.id },
+		{ name: "Pool car", licencePlate: "Z8-DEMO 3", employeeId: undefined, teamId: undefined },
+	];
+
+	return db.transaction(async (tx) => {
+		let vehiclesCreated = 0;
+		for (const demo of demoVehicles) {
+			const [created] = await tx
+				.insert(organizationVehicle)
+				.values({
+					organizationId: options.organizationId,
+					name: `${DEMO_VEHICLE_PREFIX}${demo.name}`,
+					licencePlate: demo.licencePlate,
+					createdBy: options.createdBy,
+					updatedBy: options.createdBy,
+				})
+				.onConflictDoNothing()
+				.returning({ id: organizationVehicle.id });
+			if (!created) continue;
+			vehiclesCreated++;
+			if (demo.employeeId || demo.teamId) {
+				await tx.insert(organizationVehicleDriver).values({
+					organizationId: options.organizationId,
+					vehicleId: created.id,
+					employeeId: demo.employeeId ?? null,
+					teamId: demo.teamId ?? null,
+					createdBy: options.createdBy,
+				});
+			}
+		}
+		return { vehiclesCreated };
+	});
+}
+
+// ============================================
 // NEW: WORK CATEGORY GENERATORS
 // ============================================
 
@@ -2744,6 +2817,7 @@ export async function generateDemoData(
 	const teamResult = await generateDemoTeams(options);
 	const projectResult = await generateDemoProjects(options);
 	const locationResult = await generateDemoLocations(options);
+	const vehicleResult = await generateDemoVehicles(options);
 
 	// Phase 2: Configuration data (categories, policies)
 	const workCategoryResult = await generateDemoWorkCategories(options);
@@ -2772,6 +2846,9 @@ export async function generateDemoData(
 	// Phase 7: Work category assignments (depends on categories + time entries)
 	const categoryAssignmentResult = await assignWorkCategoriesToPeriods(options);
 
+	// Phase 8: Vehicle use on work (depends on vehicles + time entries)
+	const vehicleUseResult = await assignDemoVehicleUseToPeriods(options);
+
 	return {
 		timeEntriesCreated: timeResult.timeEntriesCreated,
 		workPeriodsCreated: timeResult.workPeriodsCreated,
@@ -2784,12 +2861,15 @@ export async function generateDemoData(
 		locationsCreated: locationResult.locationsCreated,
 		subareasCreated: locationResult.subareasCreated,
 		locationSupervisorsAssigned: locationResult.supervisorAssignmentsCreated,
+		vehiclesCreated: vehicleResult.vehiclesCreated,
 		// NEW: Work category results
 		workCategorySetsCreated: workCategoryResult.setsCreated,
 		workCategoriesCreated: workCategoryResult.categoriesCreated,
 		workCategoryAssignmentsCreated: workCategoryResult.assignmentsCreated,
 		workCategoriesAssignedToPeriods:
 			categoryAssignmentResult.workCategoriesAssigned,
+		vehicleUseRecorded: vehicleUseResult.vehicleUseRecorded,
+		drivingDetailsMissing: vehicleUseResult.drivingDetailsMissing,
 		// NEW: Change policy results
 		changePoliciesCreated: changePolicyResult.policiesCreated,
 		changePolicyAssignmentsCreated: changePolicyResult.assignmentsCreated,
@@ -2826,6 +2906,7 @@ export async function clearOrganizationTimeData(
 		// NEW fields
 		locationsDeleted: 0,
 		subareasDeleted: 0,
+		vehiclesDeleted: 0,
 		workCategorySetsDeleted: 0,
 		workCategoriesDeleted: 0,
 		workCategoryAssignmentsRemoved: 0,
@@ -3055,6 +3136,42 @@ export async function clearOrganizationTimeData(
 			// Delete locations
 			await tx.delete(location).where(inArray(location.id, locationIdsToDelete));
 			result.locationsDeleted = locationsToDelete.length;
+		}
+
+		// ============================================
+		// VEHICLE CLEANUP (#1118)
+		// ============================================
+
+		// Demo vehicles go with their assigned drivers. The work above is gone, so
+		// nothing records them any more; one still recorded on work (outside the
+		// demo cleanup) refuses its delete, and the demo vehicles are archived instead.
+		const demoVehicles = (
+			await tx
+				.select({ id: organizationVehicle.id, name: organizationVehicle.name })
+				.from(organizationVehicle)
+				.where(eq(organizationVehicle.organizationId, organizationId))
+		).filter((vehicle) => vehicle.name.startsWith(DEMO_VEHICLE_PREFIX));
+		if (demoVehicles.length > 0) {
+			const demoVehicleIds = demoVehicles.map((vehicle) => vehicle.id);
+			const vehicleScope = and(
+				eq(organizationVehicle.organizationId, organizationId),
+				inArray(organizationVehicle.id, demoVehicleIds),
+			);
+			const deleted = await tx
+				.transaction(async (savepoint) => {
+					await savepoint.delete(organizationVehicle).where(vehicleScope);
+					return true;
+				})
+				.catch(async (error: unknown) => {
+					// Only work still recording a vehicle refuses the delete; anything else fails the reset.
+					if (!isConstraintViolation(error, "23503", RECORDED_VEHICLE_FOREIGN_KEYS)) throw error;
+					await tx
+						.update(organizationVehicle)
+						.set({ archivedAt: sql`now()`, updatedAt: sql`now()` })
+						.where(vehicleScope);
+					return false;
+				});
+			if (deleted) result.vehiclesDeleted = demoVehicles.length;
 		}
 
 		// ============================================

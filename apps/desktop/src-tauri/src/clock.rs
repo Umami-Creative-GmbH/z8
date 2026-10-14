@@ -39,6 +39,10 @@ pub struct ClockWriteOutcome {
     pub status: Option<ClockStatus>,
     pub status_refresh_failed: bool,
     pub context_changed: bool,
+    /// Vehicle use entered for this action was not sent: the route that
+    /// recorded it cannot carry it (the legacy idle break, #1124).
+    #[serde(default)]
+    pub vehicle_use_left_out: bool,
 }
 
 /// Legacy breaks are two independent requests. Even a failed first response
@@ -150,6 +154,7 @@ impl ClockService {
         ClockWriteOutcome {
             operation_id: None,
             context_changed: false,
+            vehicle_use_left_out: false,
             status_refresh_failed: status.is_none(),
             entries,
             status,

@@ -193,6 +193,40 @@ const german: Record<string, string> = {
 		"Gespeicherte Aktionen bleiben während des Neustarts auf diesem Gerät.",
 	"Release updates are not configured yet.":
 		"Release-Updates sind noch nicht eingerichtet.",
+	"Vehicle use": "Fahrzeugnutzung",
+	Vehicle: "Fahrzeug",
+	"No vehicle": "Kein Fahrzeug",
+	"Own vehicle": "Eigenes Fahrzeug",
+	"Organization vehicle": "Firmenfahrzeug",
+	"Start reading (km)": "Anfangskilometerstand (km)",
+	"End reading (km)": "Endkilometerstand (km)",
+	"Driven distance (km)": "Gefahrene Strecke (km)",
+	"Odometer reading at the break (km)": "Kilometerstand bei der Pause (km)",
+	"Optional. It ends this work's reading and starts the next one's.":
+		"Optional. Er beendet den Kilometerstand dieser Arbeit und beginnt den der nächsten.",
+	"from {km} km": "ab {km} km",
+	"Your organization expects you to record the vehicle you drove and its readings.":
+		"Ihre Organisation erwartet, dass Sie das gefahrene Fahrzeug und seine Kilometerstände erfassen.",
+	"Please check the vehicle use": "Bitte prüfen Sie die Fahrzeugnutzung",
+	"The start reading is below this vehicle's last recorded end reading ({km} km).":
+		"Der Anfangskilometerstand liegt unter dem zuletzt erfassten Endkilometerstand dieses Fahrzeugs ({km} km).",
+	"This vehicle is already recorded on another employee's running work.":
+		"Dieses Fahrzeug ist bereits in der laufenden Arbeit einer anderen Person erfasst.",
+	"The driven distance implies an average of {speed} km/h over this work period, more than 150 km/h.":
+		"Die gefahrene Strecke ergibt in diesem Arbeitszeitraum durchschnittlich {speed} km/h, mehr als 150 km/h.",
+	"{km} km is more than 1,500 km in one work period.":
+		"{km} km sind mehr als 1.500 km in einem Arbeitszeitraum.",
+	"The end reading cannot be below the start reading.":
+		"Der Endkilometerstand darf nicht unter dem Anfangskilometerstand liegen.",
+	"Enter odometer readings in whole kilometres.":
+		"Geben Sie Kilometerstände in ganzen Kilometern ein.",
+	"Enter the driven distance in whole kilometres.":
+		"Geben Sie die gefahrene Strecke in ganzen Kilometern ein.",
+	"Choose an organization vehicle or your own vehicle.":
+		"Wählen Sie ein Firmenfahrzeug oder Ihr eigenes Fahrzeug.",
+	"Vehicle use was not recorded": "Die Fahrzeugnutzung wurde nicht erfasst",
+	"This server does not record the break's odometer reading. Add it to the work in Z8.":
+		"Dieser Server erfasst den Kilometerstand der Pause nicht. Tragen Sie ihn in Z8 bei der Arbeit nach.",
 };
 const LocaleContext = createContext<Language>("en");
 export function LocaleProvider({

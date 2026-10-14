@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
 import type { CalendarEvent } from "@/lib/calendar/types";
@@ -154,5 +155,104 @@ describe("SplitWorkPeriodDialog", () => {
 		// The refused attempt's retry reuses its identity; a completed split does not.
 		expect(identities[1]).toBe(identities[0]);
 		expect(identities[2]).not.toBe(identities[1]);
+		// Work without vehicle use asks nothing about kilometres (#1126).
+		expect(screen.queryByLabelText(/Odometer reading at the split/)).toBeNull();
+		expect(split.mock.calls.map((call) => call[7])).toEqual([undefined, undefined, undefined]);
+	});
+
+	describe("vehicle use (#1126)", () => {
+		const van = {
+			kind: "organization",
+			vehicleId: "0b9f8f2e-6c1d-4d6c-9a43-7f2f3c1f5e10",
+		} as const;
+		const drivenEvent = (vehicleUse: object): CalendarEvent => ({
+			...event,
+			date: new Date("2026-05-04T08:00:00.000Z"),
+			endDate: new Date("2026-05-04T16:00:00.000Z"),
+			metadata: { durationMinutes: 480, employeeName: "Ada Lovelace", vehicleUse },
+		});
+
+		async function splitWith(evt: CalendarEvent, label: RegExp, value?: string) {
+			const split = vi.mocked(splitWorkPeriod);
+			split.mockReset();
+			split.mockResolvedValue({
+				success: true,
+				data: { firstPeriodId: "period-1", secondPeriodId: "period-2" },
+			});
+			render(
+				<SplitWorkPeriodDialog
+					event={evt}
+					open={true}
+					onOpenChange={vi.fn()}
+					displayContext={{ locale: "en-US", timezone: "Europe/Berlin", timeFormat: "24h" }}
+				/>,
+			);
+			fireEvent.change(screen.getByLabelText("Split at"), { target: { value: "13:30" } });
+			if (value !== undefined) {
+				fireEvent.change(screen.getByLabelText(label), { target: { value } });
+			}
+			fireEvent.click(screen.getByRole("button", { name: "Split Work Period" }));
+			await waitFor(() => expect(split).toHaveBeenCalledTimes(1));
+			return split.mock.calls[0]?.[7];
+		}
+
+		it("asks for the odometer reading at the split when the work has readings", async () => {
+			const value = await splitWith(
+				drivenEvent({ vehicle: van, startKm: 12_000, endKm: 12_085, distanceKm: 85 }),
+				/Odometer reading at the split/,
+				"12040",
+			);
+			expect(value).toBe(12_040);
+		});
+
+		it("asks for the first period's kilometres of a directly entered distance", async () => {
+			const value = await splitWith(
+				drivenEvent({ vehicle: { kind: "own" }, startKm: null, endKm: null, distanceKm: 120 }),
+				/Kilometres in the first period/,
+				"70",
+			);
+			expect(value).toBe(70);
+		});
+
+		it("sends no value when the reading is skipped", async () => {
+			const value = await splitWith(
+				drivenEvent({ vehicle: van, startKm: 12_000, endKm: 12_085, distanceKm: 85 }),
+				/Odometer reading at the split/,
+			);
+			expect(value).toBeUndefined();
+		});
+
+		it("explains that claimed work can't be split until its expense item is removed", async () => {
+			const split = vi.mocked(splitWorkPeriod);
+			split.mockReset();
+			split.mockResolvedValue({
+				success: false,
+				error: "The work's distance is on an expense item",
+				code: "work_period_distance_claimed",
+			});
+			const error = vi.mocked(toast.error);
+			error.mockClear();
+			render(
+				<SplitWorkPeriodDialog
+					event={drivenEvent({
+						vehicle: { kind: "own" },
+						startKm: null,
+						endKm: null,
+						distanceKm: 120,
+					})}
+					open={true}
+					onOpenChange={vi.fn()}
+					displayContext={{ locale: "en-US", timezone: "Europe/Berlin", timeFormat: "24h" }}
+				/>,
+			);
+			fireEvent.change(screen.getByLabelText("Split at"), { target: { value: "13:30" } });
+			fireEvent.click(screen.getByRole("button", { name: "Split Work Period" }));
+
+			await waitFor(() =>
+				expect(error).toHaveBeenCalledWith(
+					"This work period's distance is on an expense item. Remove the item from the expense report before splitting the work period.",
+				),
+			);
+		});
 	});
 });

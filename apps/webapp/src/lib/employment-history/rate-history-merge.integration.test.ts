@@ -1,6 +1,6 @@
 /**
  * PostgreSQL contract for the one-time merge of `employee_rate_history` into confirmed
- * employment terms (#1176, Organization ADR 0002): migration 0223's function
+ * employment terms (#1176, Organization ADR 0002): migration 0229's function
  * `employee_rate_history_merge_into_terms`, called per organization and re-run to prove it
  * changes nothing the second time.
  */
@@ -881,8 +881,8 @@ describe("rate history merge into employment terms", () => {
 
 	/**
 	 * D9: an hourly employee whose wage lived only on `employee.current_hourly_rate` (no confirmed
-	 * terms, no rate rows) gets confirmed hourly terms carrying it. 0223 runs while the column still
-	 * exists; 0224 drops it, so these cases bring it back for their duration.
+	 * terms, no rate rows) gets confirmed hourly terms carrying it. 0229 runs while the column still
+	 * exists; 0230 drops it, so these cases bring it back for their duration.
 	 */
 	describe("employee wage backfill", () => {
 		const BACKFILL_REASON = "Migrated from employee wage";

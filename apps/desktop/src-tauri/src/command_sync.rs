@@ -206,7 +206,14 @@ pub async fn drain(
             }
         }
 
-        if !capabilities.supports(command.kind) || !capabilities.accepts_fresh_commands() {
+        // A saved version 4 command waits while the server does not list it
+        // (#1124); it is never rewritten to an older version. The version
+        // stored at capture decides, so a command whose body cannot be read
+        // waits too instead of being sent as if its version were unknown.
+        if !capabilities.supports(command.kind)
+            || !capabilities.accepts_fresh_commands()
+            || !capabilities.accepts_version(u64::from(command.command_version))
+        {
             let failure = CommandFailure {
                 class: FailureClass::Paused,
                 code: "submit_unavailable".into(),

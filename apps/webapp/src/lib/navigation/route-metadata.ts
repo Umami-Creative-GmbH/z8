@@ -65,6 +65,12 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleDefault: "Project Reports",
 	},
 	{
+		id: "reports-vehicles",
+		href: "/reports/vehicles",
+		titleKey: "reports.vehicles.title",
+		titleDefault: "Distance per Vehicle",
+	},
+	{
 		id: "reports",
 		href: "/reports",
 		titleKey: "nav.reports",
@@ -87,6 +93,12 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		href: "/team/period-submissions",
 		titleKey: "nav.teamPeriodSubmissions",
 		titleDefault: "Period Submissions",
+	},
+	{
+		id: "team-driving",
+		href: "/team/driving",
+		titleKey: "nav.teamDriving",
+		titleDefault: "Driving Details",
 	},
 	{ id: "team", href: "/team", titleKey: "nav.team", titleDefault: "Team" },
 	{

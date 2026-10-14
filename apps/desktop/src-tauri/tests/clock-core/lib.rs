@@ -124,3 +124,6 @@ mod pilot_tests;
 
 #[cfg(test)]
 mod online_tests;
+
+#[cfg(test)]
+mod vehicle_use_tests;

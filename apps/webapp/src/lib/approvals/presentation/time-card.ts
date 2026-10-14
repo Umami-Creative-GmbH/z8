@@ -3,6 +3,7 @@ import {
 	type ApprovalPresentationProvider,
 	approvalRequest,
 	approvalWorkflow,
+	organizationVehicle,
 	workCategory,
 } from "@/db/schema";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
@@ -13,6 +14,11 @@ import {
 	formatInstant,
 	formatUtcOffset,
 } from "@/lib/datetime/temporal-format";
+import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
+import {
+	organizationVehicleIdOf,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { readApprovalAuthoritySnapshot } from "../authority";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import {
@@ -32,6 +38,7 @@ import {
 import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
 import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
 import type { WorkPeriodEndpointFacts } from "../evidence/work-period-facts";
+import { submittedVehicleUseWarnings } from "../server/time-correction-vehicle-use-warnings";
 import type { ApprovalDatabase } from "../server/types";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import type {
@@ -42,6 +49,7 @@ import type {
 	ApprovalReviewSummary,
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
+import { vehicleUseWarningBotText } from "./vehicle-use-warning-text";
 
 /**
  * An endpoint's full local date and time in the offset captured with that
@@ -192,6 +200,8 @@ export function buildTimeCorrectionCardFacts(
 	categoryNames: Readonly<Record<string, string | null>>,
 	display: DisplayContext,
 	t: BotTranslateFn,
+	/** Plausibility warnings of the requested vehicle use (#1121); never a blocker. */
+	vehicleUseWarnings: readonly VehicleUseWarning[] = [],
 ): ApprovalCardFact[] | null {
 	const roles = roleFacts(revision, t);
 	if (!roles) return null;
@@ -202,7 +212,8 @@ export function buildTimeCorrectionCardFacts(
 		(changeMask.clockIn && !requested.clockIn) ||
 		(changeMask.clockOut && !requested.clockOut) ||
 		(changeMask.workLocation && requested.workLocationType.kind !== "set") ||
-		(changeMask.workCategory && requested.workCategoryId.kind !== "set")
+		(changeMask.workCategory && requested.workCategoryId.kind !== "set") ||
+		(changeMask.vehicleUse && !requested.vehicleUse)
 	) {
 		return null;
 	}
@@ -263,6 +274,22 @@ export function buildTimeCorrectionCardFacts(
 				value: `${before} → ${after}`,
 			});
 		}
+		// Vehicle and odometer readings before and after (#1120).
+		if (changeMask.vehicleUse && requested.vehicleUse) {
+			facts.push({
+				label: t("bot.approval.card.vehicleUse", "Vehicle use"),
+				value: `${vehicleUseCardText(baseline.attribution.vehicleUse ?? null, categoryNames, t)} → ${vehicleUseCardText(requested.vehicleUse.value, categoryNames, t)}`,
+			});
+			// The same plausibility warnings the employee saw on entry (#1121).
+			if (vehicleUseWarnings.length > 0) {
+				facts.push({
+					label: t("bot.approval.card.vehicleUseWarnings", "Please check"),
+					value: vehicleUseWarnings
+						.map((warning) => vehicleUseWarningBotText(t, warning, display.locale))
+						.join(" "),
+				});
+			}
+		}
 	}
 	facts.push({
 		label: t("bot.approval.card.submittedAt", "Submitted"),
@@ -282,6 +309,37 @@ function workLocationText(value: string | null, t: BotTranslateFn): string {
 	const label = value ? WORK_LOCATIONS[value] : undefined;
 	if (label) return t(label.key, label.fallback);
 	return value ?? t("bot.approval.card.notSet", "Not set");
+}
+
+/** Vehicle use with its readings; an organization vehicle by its current name and plate. */
+function vehicleUseCardText(
+	use: WorkVehicleUse | null,
+	names: Readonly<Record<string, string | null>>,
+	t: BotTranslateFn,
+): string {
+	if (!use) return t("bot.approval.card.noVehicle", "No vehicle");
+	const vehicle =
+		use.vehicle.kind === "own"
+			? t("bot.approval.card.ownVehicle", "Own vehicle")
+			: (names[use.vehicle.vehicleId] ?? t("bot.approval.card.unknownVehicle", "Unknown vehicle"));
+	const reading = (value: number | null) => (value === null ? "–" : String(value));
+	const parts = [vehicle];
+	if (use.startKm !== null || use.endKm !== null) {
+		parts.push(
+			t("bot.approval.card.vehicleReadings", "{start} → {end} km", {
+				start: reading(use.startKm),
+				end: reading(use.endKm),
+			}),
+		);
+	}
+	if (use.distanceKm !== null) {
+		parts.push(
+			t("bot.approval.card.vehicleDistance", "{distance} km driven", {
+				distance: use.distanceKm,
+			}),
+		);
+	}
+	return parts.join(" · ");
 }
 
 /** An explicit null is "no category"; a named category without a name is unintelligible. */
@@ -320,12 +378,43 @@ export async function loadTimeCorrectionCategoryNames(
 		baseline.attribution.workCategoryId,
 		requested.workCategoryId.kind === "set" ? requested.workCategoryId.value : null,
 	].filter((id): id is string => id !== null);
-	if (ids.length === 0) return {};
-	const rows = await database
-		.select({ id: workCategory.id, name: workCategory.name })
-		.from(workCategory)
-		.where(and(eq(workCategory.organizationId, organizationId), inArray(workCategory.id, ids)));
-	return Object.fromEntries(ids.map((id) => [id, rows.find((row) => row.id === id)?.name ?? null]));
+	// Organization vehicles (#1120) share the names record, as "Name (PLATE)".
+	const vehicleIds = [
+		organizationVehicleIdOf(baseline.attribution.vehicleUse),
+		organizationVehicleIdOf(requested.vehicleUse?.value),
+	].filter((id): id is string => id !== null);
+	if (ids.length === 0 && vehicleIds.length === 0) return {};
+	const rows =
+		ids.length === 0
+			? []
+			: await database
+					.select({ id: workCategory.id, name: workCategory.name })
+					.from(workCategory)
+					.where(
+						and(eq(workCategory.organizationId, organizationId), inArray(workCategory.id, ids)),
+					);
+	const vehicles =
+		vehicleIds.length === 0
+			? []
+			: await database
+					.select({
+						id: organizationVehicle.id,
+						name: organizationVehicle.name,
+						licencePlate: organizationVehicle.licencePlate,
+					})
+					.from(organizationVehicle)
+					.where(
+						and(
+							eq(organizationVehicle.organizationId, organizationId),
+							inArray(organizationVehicle.id, vehicleIds),
+						),
+					);
+	return {
+		...Object.fromEntries(ids.map((id) => [id, rows.find((row) => row.id === id)?.name ?? null])),
+		...Object.fromEntries(
+			vehicles.map((vehicle) => [vehicle.id, `${vehicle.name} (${vehicle.licencePlate})`]),
+		),
+	};
 }
 
 /**
@@ -418,10 +507,11 @@ async function loadCanonicalTimeCardRevision(
 		const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
 		if (comparison.kind !== "current") return { status: "material_change" };
 		const names = await loadTimeCorrectionCategoryNames(database, input.organizationId, revision);
+		const warnings = await submittedVehicleUseWarnings(database, revision);
 		return {
 			status: "current",
 			submittedRevisionId: revision.id,
-			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t),
+			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t, warnings),
 		};
 	}
 	const revision = await loadCanonicalWorkPeriodSubmittedRevision(database, scope);
@@ -455,10 +545,11 @@ async function loadLegacyTimeCardRevision(
 		const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
 		if (comparison.kind !== "current") return { status: "material_change" };
 		const names = await loadTimeCorrectionCategoryNames(database, organizationId, revision);
+		const warnings = await submittedVehicleUseWarnings(database, revision);
 		return {
 			status: "current",
 			submittedRevisionId: revision.id,
-			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t),
+			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t, warnings),
 		};
 	}
 	const { revision } = cycle;

@@ -45,6 +45,7 @@ function getNotificationStyle(type: NotificationType): {
 		case "break_due_reminder":
 		case "period_submission_reminder":
 		case "period_submission_sent_back":
+		case "driving_details_missing_reminder":
 		// Approved or rejected: the type covers both outcomes, so it keeps the neutral clock.
 		case "period_submission_decided":
 			return {
