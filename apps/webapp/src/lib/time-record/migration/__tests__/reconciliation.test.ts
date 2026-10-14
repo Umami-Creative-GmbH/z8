@@ -117,15 +117,17 @@ function projectAllocation(recordId: string, projectId: string, overrides = {}) 
 const reconciled = {
 	workCountMismatch: 0,
 	absenceCountMismatch: 0,
-	divergentWorkRecords: 0,
-	absenceDurationMismatchRecords: 0,
+	durationMismatchRecords: 0,
 	missingWorkCanonicalRecords: 0,
 	missingAbsenceCanonicalRecords: 0,
 	missingAbsenceDetailRows: 0,
-	absenceApprovalStateMismatchRecords: 0,
+	approvalStateMismatchRecords: 0,
 	missingAbsenceCanonicalLinks: 0,
 	missingAbsenceOrganizationIds: 0,
+	missingProjectAllocationRows: 0,
 	missingWorkDetailRows: 0,
+	divergentWorkRecords: 0,
+	blockingMismatchCount: 0,
 };
 
 describe("reconcileLegacyToCanonical", () => {
@@ -185,6 +187,7 @@ describe("reconcileLegacyToCanonical", () => {
 		expect(result).toMatchObject({
 			missingWorkCanonicalRecords: 1,
 			missingWorkDetailRows: 1,
+			missingProjectAllocationRows: 1,
 			divergentWorkRecords: 0,
 		});
 	});
@@ -286,30 +289,42 @@ describe("reconcileLegacyToCanonical", () => {
 		});
 	});
 
-	it.each<[string, Record<string, unknown>, Record<string, unknown>, unknown[]]>([
-		["start", {}, { startAt: new Date("2026-01-15T08:30:00Z") }, []],
-		["end", {}, { endAt: new Date("2026-01-15T16:30:00Z") }, []],
-		["duration", {}, { durationMinutes: 450 }, []],
-		["approval state", {}, { approvalState: "pending" }, []],
-		["project", { projectId: "project-1" }, {}, [projectAllocation("work-1", "project-2")]],
+	// Full record agreement is reported in `divergentWorkRecords`; only the checks that
+	// blocked before #1217 block until production shows no divergence (#1228).
+	it.each<
+		[string, Record<string, unknown>, Record<string, unknown>, unknown[], Record<string, number>]
+	>([
+		["start", {}, { startAt: new Date("2026-01-15T08:30:00Z") }, [], {}],
+		["end", {}, { endAt: new Date("2026-01-15T16:30:00Z") }, [], {}],
+		["duration", {}, { durationMinutes: 450 }, [], { durationMismatchRecords: 1 }],
+		["approval state", {}, { approvalState: "pending" }, [], { approvalStateMismatchRecords: 1 }],
+		[
+			"project",
+			{ projectId: "project-1" },
+			{},
+			[projectAllocation("work-1", "project-2")],
+			{ missingProjectAllocationRows: 1 },
+		],
 		[
 			"task",
 			{ projectId: "project-1", taskId: "task-1" },
 			{},
 			[projectAllocation("work-1", "project-1")],
+			{},
 		],
 		[
 			"billable flag",
 			{ projectId: "project-1", isBillable: true },
 			{},
 			[projectAllocation("work-1", "project-1")],
+			{ missingProjectAllocationRows: 1 },
 		],
-		["category", { workCategoryId: "category-1" }, {}, []],
-		["location", { workLocationType: "home" }, {}, []],
-		["vehicle use", { vehicleKind: "own", odometerStartKm: 100 }, {}, []],
+		["category", { workCategoryId: "category-1" }, {}, [], {}],
+		["location", { workLocationType: "home" }, {}, [], {}],
+		["vehicle use", { vehicleKind: "own", odometerStartKm: 100 }, {}, [], {}],
 	])(
-		"counts linked work disagreeing on its %s as divergent by the record agreement rule",
-		async (_facet, period, record, allocations) => {
+		"counts linked work disagreeing on its %s as divergent, blocking only as before",
+		async (_facet, period, record, allocations, blocking) => {
 			const result = await reconcileWork({
 				legacy: [legacyWork("work-1", period)],
 				canonical: [canonicalWork("work-1", record)],
@@ -317,9 +332,28 @@ describe("reconcileLegacyToCanonical", () => {
 				allocations,
 			});
 
-			expect(result).toEqual({ ...reconciled, divergentWorkRecords: 1 });
+			expect(result).toEqual({
+				...reconciled,
+				...blocking,
+				divergentWorkRecords: 1,
+				blockingMismatchCount: Object.keys(blocking).length,
+			});
 		},
 	);
+
+	it("does not block on a pair that diverges only in task or vehicle use", async () => {
+		const result = await reconcileWork({
+			legacy: [
+				legacyWork("task-only", { projectId: "project-1", taskId: "task-1" }),
+				legacyWork("vehicle-only", { vehicleKind: "own", odometerStartKm: 100 }),
+			],
+			canonical: [canonicalWork("task-only"), canonicalWork("vehicle-only")],
+			details: [workDetail("task-only"), workDetail("vehicle-only")],
+			allocations: [projectAllocation("task-only", "project-1")],
+		});
+
+		expect(result).toMatchObject({ divergentWorkRecords: 2, blockingMismatchCount: 0 });
+	});
 
 	it("counts work whose attribution cannot be represented as divergent instead of failing", async () => {
 		const result = await reconcileWork({
@@ -328,15 +362,13 @@ describe("reconcileLegacyToCanonical", () => {
 			details: [workDetail("work-1")],
 		});
 
-		expect(result.divergentWorkRecords).toBe(1);
+		expect(result).toEqual({ ...reconciled, divergentWorkRecords: 1 });
 	});
 
 	it("does not judge deleted work by the record agreement rule", async () => {
 		const result = await reconcileWork({
 			legacy: [legacyWork("work-1", { deletedAt: new Date("2026-01-16T00:00:00Z") })],
-			canonical: [
-				canonicalWork("work-1", { endAt: new Date("2026-01-15T08:00:00Z"), durationMinutes: 0 }),
-			],
+			canonical: [canonicalWork("work-1", { endAt: new Date("2026-01-15T08:00:00Z") })],
 			details: [workDetail("work-1")],
 		});
 
@@ -409,6 +441,8 @@ describe("reconcileLegacyToCanonical", () => {
 			missingAbsenceCanonicalLinks: 1,
 			missingAbsenceOrganizationIds: 1,
 			missingWorkDetailRows: 1,
+			missingProjectAllocationRows: 1,
+			blockingMismatchCount: 6,
 		});
 	});
 
@@ -460,6 +494,7 @@ describe("reconcileLegacyToCanonical", () => {
 			missingAbsenceDetailRows: 1,
 			missingAbsenceCanonicalLinks: 1,
 			missingAbsenceOrganizationIds: 1,
+			blockingMismatchCount: 5,
 		});
 	});
 
@@ -487,8 +522,9 @@ describe("reconcileLegacyToCanonical", () => {
 
 		await expect(reconcileLegacyToCanonical("org-1")).resolves.toEqual({
 			...reconciled,
-			absenceDurationMismatchRecords: 1,
-			absenceApprovalStateMismatchRecords: 1,
+			durationMismatchRecords: 1,
+			approvalStateMismatchRecords: 1,
+			blockingMismatchCount: 2,
 		});
 	});
 });

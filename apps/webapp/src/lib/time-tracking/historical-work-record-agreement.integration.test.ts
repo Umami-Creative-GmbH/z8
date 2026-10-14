@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
 import { reconcileLegacyToCanonical } from "@/lib/time-record/migration/reconciliation";
 import { closeMonth } from "./closed-months/store";
 import {
@@ -215,6 +216,38 @@ describe("record agreement in work diagnostics and the cutover reconciliation", 
 		}
 		expect((await reconcileLegacyToCanonical(seeded.org.organizationId)).divergentWorkRecords).toBe(
 			divergences.length,
+		);
+	});
+
+	it("reports, without blocking the payroll gate, work diverging only in task or vehicle use", async () => {
+		const seeded = await organizationWithReferences();
+		const taskOnly = await agreeingPair(seeded, "2026-07-01", {
+			projectId: seeded.refs.project,
+			taskId: seeded.refs.task,
+		});
+		const vehicleOnly = await agreeingPair(seeded, "2026-07-02", { ownCarFromKm: 100 });
+		await fixture.pool.query(
+			"update time_record_allocation set task_id = null where record_id = $1",
+			[taskOnly],
+		);
+		await fixture.pool.query(
+			"update time_record_work set odometer_start_km = 120 where record_id = $1",
+			[vehicleOnly],
+		);
+
+		// Enforcement waits until production shows no divergence (#1228).
+		await expect(assertCanonicalCutoverReady(seeded.org.organizationId)).resolves.toBeUndefined();
+		expect(await reconcileLegacyToCanonical(seeded.org.organizationId)).toMatchObject({
+			divergentWorkRecords: 2,
+			blockingMismatchCount: 0,
+		});
+		expect(
+			(await findings(seeded)).map((finding) => [finding.workPeriodIds[0], finding.details.facet]),
+		).toEqual(
+			expect.arrayContaining([
+				[taskOnly, "task"],
+				[vehicleOnly, "vehicle_use"],
+			]),
 		);
 	});
 

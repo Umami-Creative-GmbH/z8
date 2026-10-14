@@ -17,13 +17,13 @@ describe("mapPayrollWorkspaceActionError", () => {
 		const reconciliation = {
 			workCountMismatch: 0,
 			absenceCountMismatch: 0,
-			absenceDurationMismatchRecords: 0,
+			durationMismatchRecords: 0,
 			missingWorkCanonicalRecords: 0,
 			missingAbsenceCanonicalRecords: 0,
 			missingWorkDetailRows: 0,
 			missingAbsenceDetailRows: 0,
-			divergentWorkRecords: 0,
-			absenceApprovalStateMismatchRecords: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
 			missingAbsenceCanonicalLinks: 0,
 			missingAbsenceOrganizationIds: 0,
 		};

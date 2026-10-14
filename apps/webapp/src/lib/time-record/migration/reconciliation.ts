@@ -17,21 +17,48 @@ import type { CanonicalAllocationShape } from "@/lib/time-tracking/work-records/
 export type LegacyCanonicalReconciliation = {
 	workCountMismatch: number;
 	absenceCountMismatch: number;
-	/**
-	 * Completed work whose canonical work record disagrees with it under the
-	 * record agreement rule (#1217): interval, duration, approval state or work
-	 * attribution, or whose attribution cannot be represented.
-	 */
-	divergentWorkRecords: number;
-	absenceDurationMismatchRecords: number;
+	durationMismatchRecords: number;
 	missingWorkCanonicalRecords: number;
 	missingAbsenceCanonicalRecords: number;
 	missingWorkDetailRows: number;
 	missingAbsenceDetailRows: number;
-	absenceApprovalStateMismatchRecords: number;
+	missingProjectAllocationRows: number;
+	approvalStateMismatchRecords: number;
 	missingAbsenceCanonicalLinks: number;
 	missingAbsenceOrganizationIds: number;
+	/**
+	 * Completed work whose canonical work record disagrees with it under the
+	 * record agreement rule (#1217): interval, duration, approval state or work
+	 * attribution, or whose attribution cannot be represented. Reported only:
+	 * it does not block until production shows no divergence (#1228).
+	 */
+	divergentWorkRecords: number;
+	/** The sum of the blocking counts (`BLOCKING_RECONCILIATION_KEYS`). */
+	blockingMismatchCount: number;
 };
+
+/**
+ * The counts that hold the payroll gate and the approval cutover back: the
+ * mismatches blocked before #1217. Full record agreement (`divergentWorkRecords`)
+ * is reported without blocking until the user confirms production shows none
+ * (#1228); enforcing it means adding `divergentWorkRecords` here.
+ */
+export const BLOCKING_RECONCILIATION_KEYS = [
+	"workCountMismatch",
+	"absenceCountMismatch",
+	"durationMismatchRecords",
+	"missingWorkCanonicalRecords",
+	"missingAbsenceCanonicalRecords",
+	"missingWorkDetailRows",
+	"missingAbsenceDetailRows",
+	"missingProjectAllocationRows",
+	"approvalStateMismatchRecords",
+	"missingAbsenceCanonicalLinks",
+	"missingAbsenceOrganizationIds",
+] as const satisfies readonly Exclude<
+	keyof LegacyCanonicalReconciliation,
+	"blockingMismatchCount"
+>[];
 
 const vehicleColumns = {
 	vehicleKind: true,
@@ -203,9 +230,9 @@ export async function reconcileLegacyToCanonical(
 		effectiveLegacyAbsenceByCanonicalId.set(expectedCanonicalId, row);
 	}
 
-	// Each pair is judged by the record agreement rule every writer and work
-	// diagnostics use (#1217). Deleted work is no longer work: diagnostics reports
-	// only a payable representation of it.
+	// Each pair is also judged by the record agreement rule every writer and work
+	// diagnostics use (#1217), reported without blocking. Deleted work is no longer
+	// work: diagnostics reports only a payable representation of it.
 	const legacyWorkByCanonicalId = new Map(
 		legacyWork.map((row) => [resolveExpectedCanonicalId(row), row]),
 	);
@@ -226,15 +253,24 @@ export async function reconcileLegacyToCanonical(
 		effectiveExpectedAbsenceCanonicalIds,
 		canonicalAbsenceIds,
 	);
+	// A project allocation matches only with the period's billability (#900).
+	const expectedProjectAllocations = new Set(
+		legacyWork
+			.filter((row) => row.projectId)
+			.map((row) => `${resolveExpectedCanonicalId(row)}:${row.projectId}:${row.isBillable ?? false}`),
+	);
+	const canonicalProjectAllocationKeys = new Set(
+		canonicalWorkAllocations
+			.filter((row) => row.allocationKind === "project")
+			.map((row) => `${row.recordId}:${row.projectId}:${row.isBillable ?? false}`),
+	);
 
-	return {
+	const counts: Omit<LegacyCanonicalReconciliation, "blockingMismatchCount"> = {
 		workCountMismatch: missingWorkCanonicalRecords,
 		absenceCountMismatch: missingAbsenceCanonicalRecords,
-		divergentWorkRecords,
-		absenceDurationMismatchRecords: countAbsenceDurationMismatches(
-			effectiveLegacyAbsenceByCanonicalId,
-			canonicalAbsenceById,
-		),
+		durationMismatchRecords:
+			countDurationMismatches(legacyWorkByCanonicalId, canonicalWorkById) +
+			countAbsenceDurationMismatches(effectiveLegacyAbsenceByCanonicalId, canonicalAbsenceById),
 		missingWorkCanonicalRecords,
 		missingAbsenceCanonicalRecords,
 		missingWorkDetailRows: countMissingIds(
@@ -245,17 +281,24 @@ export async function reconcileLegacyToCanonical(
 			effectiveExpectedAbsenceCanonicalIds,
 			canonicalAbsenceDetailIds,
 		),
+		missingProjectAllocationRows: countMissingIds(
+			expectedProjectAllocations,
+			canonicalProjectAllocationKeys,
+		),
+		approvalStateMismatchRecords:
+			countWorkApprovalStateMismatches(legacyWorkByCanonicalId, canonicalWorkById) +
+			countAbsenceApprovalStateMismatches(effectiveLegacyAbsenceByCanonicalId, canonicalAbsenceById),
 		missingAbsenceCanonicalLinks:
 			linkedAbsenceEntries.filter((row) => !row.canonicalRecordId).length +
 			attributedNullOrgAbsenceEntries.filter((row) => !row.canonicalRecordId).length,
-		absenceApprovalStateMismatchRecords: countAbsenceApprovalStateMismatches(
-			effectiveLegacyAbsenceByCanonicalId,
-			canonicalAbsenceById,
-		),
 		missingAbsenceOrganizationIds: attributedNullOrgAbsenceEntries.length,
+		divergentWorkRecords,
+	};
+	return {
+		...counts,
+		blockingMismatchCount: BLOCKING_RECONCILIATION_KEYS.reduce((sum, key) => sum + counts[key], 0),
 	};
 }
-
 function resolveExpectedCanonicalId(record: {
 	id: string;
 	canonicalRecordId: string | null | undefined;
@@ -275,6 +318,33 @@ function countMissingIds(legacyIds: Set<string>, canonicalIds: Set<string>) {
 	return count;
 }
 
+function countDurationMismatches(
+	legacyWorkById: Map<string, { durationMinutes: number | null }>,
+	canonicalWorkById: Map<string, { durationMinutes: number | null }>,
+) {
+	let count = 0;
+	for (const [id, legacyRecord] of legacyWorkById) {
+		const canonicalRecord = canonicalWorkById.get(id);
+		if (canonicalRecord && legacyRecord.durationMinutes !== canonicalRecord.durationMinutes) {
+			count += 1;
+		}
+	}
+	return count;
+}
+
+function countWorkApprovalStateMismatches(
+	legacyWorkById: Map<string, { approvalStatus: "pending" | "approved" | "rejected" }>,
+	canonicalWorkById: Map<string, { approvalState: "pending" | "approved" | "rejected" | "draft" }>,
+) {
+	let count = 0;
+	for (const [id, legacyRecord] of legacyWorkById) {
+		const canonicalRecord = canonicalWorkById.get(id);
+		if (canonicalRecord && legacyRecord.approvalStatus !== canonicalRecord.approvalState) {
+			count += 1;
+		}
+	}
+	return count;
+}
 function countAbsenceDurationMismatches(
 	legacyAbsenceById: Map<
 		string,

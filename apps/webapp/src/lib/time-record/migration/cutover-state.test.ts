@@ -38,28 +38,32 @@ describe("assertCanonicalCutoverReady", () => {
 			.mockResolvedValueOnce({
 				workCountMismatch: 1,
 				absenceCountMismatch: 0,
-				absenceDurationMismatchRecords: 0,
+				durationMismatchRecords: 0,
 				missingWorkCanonicalRecords: 0,
 				missingAbsenceCanonicalRecords: 0,
 				missingWorkDetailRows: 0,
 				missingAbsenceDetailRows: 0,
-				divergentWorkRecords: 0,
-				absenceApprovalStateMismatchRecords: 0,
+				missingProjectAllocationRows: 0,
+				approvalStateMismatchRecords: 0,
 				missingAbsenceCanonicalLinks: 0,
 				missingAbsenceOrganizationIds: 0,
+				divergentWorkRecords: 0,
+				blockingMismatchCount: 1,
 			})
 			.mockResolvedValueOnce({
 				workCountMismatch: 0,
 				absenceCountMismatch: 0,
-				absenceDurationMismatchRecords: 0,
+				durationMismatchRecords: 0,
 				missingWorkCanonicalRecords: 0,
 				missingAbsenceCanonicalRecords: 0,
 				missingWorkDetailRows: 0,
 				missingAbsenceDetailRows: 0,
-				divergentWorkRecords: 0,
-				absenceApprovalStateMismatchRecords: 0,
+				missingProjectAllocationRows: 0,
+				approvalStateMismatchRecords: 0,
 				missingAbsenceCanonicalLinks: 0,
 				missingAbsenceOrganizationIds: 0,
+				divergentWorkRecords: 0,
+				blockingMismatchCount: 0,
 			});
 
 		await expect(assertCanonicalCutoverReady("org-1")).resolves.toBeUndefined();
@@ -75,28 +79,32 @@ describe("assertCanonicalCutoverReady", () => {
 		const initialReconciliation = {
 			workCountMismatch: 1,
 			absenceCountMismatch: 0,
-			absenceDurationMismatchRecords: 0,
+			durationMismatchRecords: 0,
 			missingWorkCanonicalRecords: 0,
 			missingAbsenceCanonicalRecords: 0,
 			missingWorkDetailRows: 0,
 			missingAbsenceDetailRows: 0,
-			divergentWorkRecords: 0,
-			absenceApprovalStateMismatchRecords: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
 			missingAbsenceCanonicalLinks: 0,
 			missingAbsenceOrganizationIds: 0,
+			divergentWorkRecords: 0,
+			blockingMismatchCount: 1,
 		};
 		const finalReconciliation = {
 			workCountMismatch: 0,
 			absenceCountMismatch: 1,
-			absenceDurationMismatchRecords: 2,
+			durationMismatchRecords: 2,
 			missingWorkCanonicalRecords: 0,
 			missingAbsenceCanonicalRecords: 0,
 			missingWorkDetailRows: 0,
 			missingAbsenceDetailRows: 0,
-			divergentWorkRecords: 0,
-			absenceApprovalStateMismatchRecords: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
 			missingAbsenceCanonicalLinks: 0,
 			missingAbsenceOrganizationIds: 0,
+			divergentWorkRecords: 0,
+			blockingMismatchCount: 3,
 		};
 		reconcileLegacyToCanonical
 			.mockResolvedValueOnce(initialReconciliation)
@@ -116,19 +124,42 @@ describe("assertCanonicalCutoverReady", () => {
 		expect(reconcileLegacyToCanonical).toHaveBeenCalledTimes(2);
 	});
 
-	it("does not run backfill when reconciliation is already clean", async () => {
+	it("passes without backfill while full record agreement only reports divergence (#1217)", async () => {
 		reconcileLegacyToCanonical.mockResolvedValue({
 			workCountMismatch: 0,
 			absenceCountMismatch: 0,
-			absenceDurationMismatchRecords: 0,
+			durationMismatchRecords: 0,
 			missingWorkCanonicalRecords: 0,
 			missingAbsenceCanonicalRecords: 0,
 			missingWorkDetailRows: 0,
 			missingAbsenceDetailRows: 0,
-			divergentWorkRecords: 0,
-			absenceApprovalStateMismatchRecords: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
 			missingAbsenceCanonicalLinks: 0,
 			missingAbsenceOrganizationIds: 0,
+			divergentWorkRecords: 2,
+			blockingMismatchCount: 0,
+		});
+
+		await expect(assertCanonicalCutoverReady("org-1")).resolves.toBeUndefined();
+		expect(runCanonicalBackfill).not.toHaveBeenCalled();
+	});
+
+	it("does not run backfill when reconciliation is already clean", async () => {
+		reconcileLegacyToCanonical.mockResolvedValue({
+			workCountMismatch: 0,
+			absenceCountMismatch: 0,
+			durationMismatchRecords: 0,
+			missingWorkCanonicalRecords: 0,
+			missingAbsenceCanonicalRecords: 0,
+			missingWorkDetailRows: 0,
+			missingAbsenceDetailRows: 0,
+			missingProjectAllocationRows: 0,
+			approvalStateMismatchRecords: 0,
+			missingAbsenceCanonicalLinks: 0,
+			missingAbsenceOrganizationIds: 0,
+			divergentWorkRecords: 0,
+			blockingMismatchCount: 0,
 		});
 
 		await expect(assertCanonicalCutoverReady("org-1")).resolves.toBeUndefined();
