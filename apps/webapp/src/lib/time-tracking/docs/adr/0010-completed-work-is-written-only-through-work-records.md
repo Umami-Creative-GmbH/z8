@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # Completed work is written only through work records, and every completed work period has a canonical work record in agreement with it

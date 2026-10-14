@@ -19,7 +19,7 @@ import {
 	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
-import { readBreakMinutesTakenBefore } from "../breaks-taken";
+import { readApprovedBreakMinutesOfLocalDay, readBreakMinutesTakenBefore } from "../breaks-taken";
 import { closedRangeTouchedByWork } from "../closed-months/rules";
 import { closedRangesForEmployee } from "../closed-months/store";
 import { capturedZone, resolveFallbackTimezoneCapture } from "../timezone-capture";
@@ -107,6 +107,7 @@ export async function divideByOwedBreak(
 				startAt,
 				endAt,
 				clockIn,
+				entriesZone: change.entries.timezone,
 			}),
 		},
 		writer.durationArithmetic,
@@ -210,7 +211,13 @@ export async function divideByOwedBreak(
 async function breakMinutesTakenBefore(
 	tx: WorkTransactionClient,
 	takenBefore: OwedBreakTakenBefore,
-	work: { period: WorkPeriodRow; startAt: Instant; endAt: Instant; clockIn: TimeEntryRow },
+	work: {
+		period: WorkPeriodRow;
+		startAt: Instant;
+		endAt: Instant;
+		clockIn: TimeEntryRow;
+		entriesZone: string;
+	},
 ): Promise<number> {
 	switch (takenBefore) {
 		case "earlier_breaks":
@@ -225,8 +232,15 @@ async function breakMinutesTakenBefore(
 				startZone: capturedZone(work.clockIn),
 			});
 		case "approved_work_of_local_day":
-			// The terminal break moves onto work records with its own count (#1221).
-			throw new Error("Counting approved work of the local day is not supported yet");
+			// The local day the work ends on, in the zone the break entries are captured in.
+			// A plain read: the employee's guard already serializes their writers, and a row
+			// lock on other work periods here would break `WORK_RECORD_LOCK_ORDER`.
+			return readApprovedBreakMinutesOfLocalDay(tx, {
+				organizationId: work.period.organizationId,
+				employeeId: work.period.employeeId,
+				endAt: work.endAt,
+				zone: work.entriesZone,
+			});
 	}
 }
 

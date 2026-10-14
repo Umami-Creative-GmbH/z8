@@ -11,8 +11,10 @@ import "server-only";
  *   expected state. It returns the applied result or a refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
- * Both run only on a sealed work-transaction scope. Work records never opens a
- * transaction and never takes guards (ADR 0001); it takes row locks only, in
+ * Both run only on a sealed work-transaction scope; the Approvals finalizer's
+ * database handle becomes one through `workRecordScopeForFinalizer`. Work
+ * records never opens a transaction and never takes guards (ADR 0001); it
+ * takes row locks only, in
  * `WORK_RECORD_LOCK_ORDER`.
  */
 import type { SealedWorkTransactionScope } from "../work-transaction";
@@ -44,6 +46,7 @@ export type {
 } from "./change";
 export type { AppendedEntryEvidence, DividedHalf, WorkDivision } from "./divide";
 export type { OwedBreakDivision } from "./divide-owed-break";
+export { workRecordScopeForFinalizer } from "./finalizer-scope";
 export type {
 	DivideByOwedBreak,
 	OwedBreak,
@@ -52,7 +55,12 @@ export type {
 	OwedBreakTakenBefore,
 } from "./owed-break";
 export { readWorkRecord, type WorkRecord } from "./read";
-export { CompletedWorkReviewRequiredError, isWorkRecordRefusal, orRefuse } from "./refusals";
+export {
+	CompletedWorkReviewRequiredError,
+	isWorkRecordRefusal,
+	orRefuse,
+	refusalError,
+} from "./refusals";
 export { WORK_RECORD_LOCK_ORDER, type WorkRecordKey } from "./rows";
 export type { WorkSegment } from "./segment";
 

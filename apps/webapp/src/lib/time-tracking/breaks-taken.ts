@@ -1,11 +1,12 @@
 import "server-only";
 
 /**
- * Breaks already taken before one piece of completed work (#547): the one read the
- * adopted automatic adjustment and the legacy break enforcement share. It depends
- * only on the work's facts, never on the date it is evaluated or a viewer's zone.
+ * Breaks already taken before one piece of completed work (#547): the reads the
+ * owed-break division counts them with ("earlier breaks" for the automatic break,
+ * "approved work of the local day" for the terminal break). They depend only on the
+ * work's facts, never on the date they are evaluated or a viewer's zone.
  */
-import { and, eq, gte, isNull, lte, ne } from "drizzle-orm";
+import { and, eq, gte, isNotNull, isNull, lt, lte, ne } from "drizzle-orm";
 import type { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
@@ -54,4 +55,40 @@ export async function readBreakMinutesTakenBefore(
 		{ startAt: work.startAt, endAt: work.endAt },
 	];
 	return breakMinutesTakenBefore(intervals, work.endAt);
+}
+
+/**
+ * Break minutes taken on the local day the work ends on, in `zone` (the terminal
+ * break's rule, #303 / #1221): the gaps of more than a minute between the employee's
+ * approved, completed, kept work of that organization that starts on that day, up to
+ * the work's end. The work itself counts only when it is approved and starts that day.
+ */
+export async function readApprovedBreakMinutesOfLocalDay(
+	client: BreaksTakenClient,
+	work: { organizationId: string; employeeId: string; endAt: Instant; zone: string },
+): Promise<number> {
+	const dayStart = work.endAt.toZonedDateTimeISO(work.zone).startOfDay();
+	const nextDayStart = dayStart.add({ days: 1 });
+	const dayWork = await client
+		.select({ startTime: workPeriod.startTime, endTime: workPeriod.endTime })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, work.organizationId),
+				eq(workPeriod.employeeId, work.employeeId),
+				eq(workPeriod.approvalStatus, "approved"),
+				eq(workPeriod.isActive, false),
+				isNull(workPeriod.deletedAt),
+				isNotNull(workPeriod.endTime),
+				gte(workPeriod.startTime, dateFromInstant(dayStart.toInstant())),
+				lt(workPeriod.startTime, dateFromInstant(nextDayStart.toInstant())),
+				lte(workPeriod.startTime, dateFromInstant(work.endAt)),
+			),
+		);
+	return breakMinutesTakenBefore(
+		dayWork.flatMap(({ startTime, endTime }) =>
+			endTime ? [{ startAt: instantFromDate(startTime), endAt: instantFromDate(endTime) }] : [],
+		),
+		work.endAt,
+	);
 }

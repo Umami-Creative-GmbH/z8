@@ -29,17 +29,7 @@ const state = vi.hoisted(() => ({
 	originError: null as unknown,
 }));
 const terminalBreakMocks = vi.hoisted(() => ({
-	apply: vi.fn().mockResolvedValue({
-		kind: "not_required",
-		maintenance: {
-			organizationId: "org-1",
-			employeeId: "20000000-0000-4000-8000-000000000001",
-			dirtyFromDate: "2026-07-22",
-			decision: "approved",
-			surchargePeriodIds: ["10000000-0000-4000-8000-000000000001"],
-			staleSurchargePeriodIds: [],
-		},
-	}),
+	apply: vi.fn().mockResolvedValue({ kind: "not_required" }),
 }));
 
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
