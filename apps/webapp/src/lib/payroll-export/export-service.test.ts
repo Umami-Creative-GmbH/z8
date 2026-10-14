@@ -67,7 +67,10 @@ vi.mock("@/lib/payroll-collection/payroll-export-work-input", () => ({
 }));
 
 // The custom field identifier read (#821) has its own PostgreSQL suite.
-vi.mock("./personnel-identifier-store", () => ({ readPersonnelIdentifierValues: vi.fn() }));
+vi.mock("./personnel-identifier-store", () => ({
+	readPersonnelIdentifierValues: vi.fn(),
+	refuseDuplicatePersonnelIdentifiers: vi.fn(async () => undefined),
+}));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: vi.fn(() => ({

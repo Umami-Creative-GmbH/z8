@@ -148,4 +148,71 @@ describe("PayrollReadinessDashboard", () => {
 			"/approvals/inbox",
 		);
 	});
+
+	it("shows the shared personnel identifier of each clashing employee and links to employees", async () => {
+		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
+		const clashData: PayrollReadinessResult = {
+			...readyData,
+			status: "blocked",
+			groups: [
+				{
+					id: "exports",
+					title: "Exports",
+					titleKey: "settings.payrollReadiness.groups.exports.title",
+					status: "fail",
+					checks: [
+						{
+							id: "duplicate-personnel-identifiers",
+							group: "exports",
+							title: "Shared personnel identifiers",
+							titleKey: "settings.payrollReadiness.checks.duplicatePersonnelIdentifiers.title",
+							description: "Employees a payroll export would write under the same identifier.",
+							descriptionKey:
+								"settings.payrollReadiness.checks.duplicatePersonnelIdentifiers.description",
+							status: "fail",
+							severity: "blocker",
+							required: true,
+							count: 2,
+							actionHref: "/settings/employees",
+							affectedEmployees: [
+								{ id: "e-1", name: "Anna", employeeNumber: "A-1", personnelIdentifier: "LG-7" },
+								{ id: "e-2", name: "Ben", employeeNumber: null, personnelIdentifier: "lg-7" },
+							],
+						},
+					],
+				},
+			],
+		};
+
+		render(<PayrollReadinessDashboard t={t} data={clashData} />);
+
+		expect(screen.getByRole("columnheader", { name: "Payroll identifier" })).toBeTruthy();
+		expect(within(screen.getByRole("row", { name: /Anna/ })).getByText("LG-7")).toBeTruthy();
+		expect(within(screen.getByRole("row", { name: /Ben/ })).getByText("lg-7")).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Review employees" }).getAttribute("href")).toBe(
+			"/settings/employees",
+		);
+	});
+
+	it("shows no payroll identifier column for checks about other things", async () => {
+		const { PayrollReadinessDashboard } = await import("./payroll-readiness-dashboard");
+		const data: PayrollReadinessResult = {
+			...readyData,
+			groups: [
+				{
+					...readyData.groups[0],
+					checks: [
+						{
+							...readyData.groups[0].checks[0],
+							affectedEmployees: [{ id: "e-1", name: "Anna", employeeNumber: "A-1" }],
+						},
+					],
+				},
+			],
+		};
+
+		render(<PayrollReadinessDashboard t={t} data={data} />);
+
+		expect(screen.queryByRole("columnheader", { name: "Payroll identifier" })).toBeNull();
+	});
 });
