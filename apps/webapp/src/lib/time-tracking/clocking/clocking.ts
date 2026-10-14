@@ -108,9 +108,9 @@ import type {
 	OperationIdentity,
 } from "./types";
 import {
-	recordBreakVehicleUse,
+	breakVehicleUseCarry,
+	clockOutClosingVehicleUse,
 	recordClockInVehicleUse,
-	recordClockOutVehicleUse,
 } from "./vehicle-use";
 
 const CANONICAL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -619,16 +619,16 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						target,
 						eventInstant: end.instant,
 						capture: eventCapture(command, end.instant, end.zone ?? command.zone.device),
+						// The end reading belongs to the closed work, also when it ends at a break's start.
+						closingVehicleUse: clockOutClosingVehicleUse(coordination.db, command),
 					});
 					if (closed.disposition === "executed") {
 						await settleBreakInProgress(coordination.db, periodScope, target.breakInProgress);
 					}
-					const stampedClosure = await stampExecutedClockEvent(coordination.db, stamped, closed, {
+					return stampExecutedClockEvent(coordination.db, stamped, closed, {
 						eventInstant,
 						entryIdOf: (executed) => executed.entry.id,
 					});
-					// The end reading belongs to the closed work, also when it ends at a break's start.
-					return recordClockOutVehicleUse(coordination.db, command, stampedClosure);
 				},
 			);
 		} catch (error) {
@@ -791,6 +791,8 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			closure = await transactions.run(
 				{ ...transactionScope(plan), workPeriodId: target.workPeriodId, endTime: breakStart },
 				async (coordination) => {
+					// The vehicle carries over; the one reading ends and resumes the work (#1122).
+					const vehicle = breakVehicleUseCarry(coordination.db, command);
 					const taken = await takeBreak(coordination, {
 						plan,
 						replayable: isReplayable(command.identity),
@@ -803,6 +805,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 							},
 							resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
 						},
+						closingVehicleUse: vehicle.closing,
 					});
 					if (taken.disposition === "executed") {
 						await settleBreakInProgress(
@@ -821,8 +824,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						eventInstant,
 						entryIdOf: (executed) => executed.resumeEntryId,
 					});
-					// The vehicle carries over; the one reading ends and resumes the work (#1122).
-					return recordBreakVehicleUse(coordination.db, command, stampedBreak);
+					return vehicle.recordResumed(stampedBreak);
 				},
 			);
 		} catch (error) {

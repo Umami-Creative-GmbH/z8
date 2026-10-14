@@ -513,7 +513,8 @@ describe("web active breaks through the close/resume operation on PostgreSQL", (
 			id: active.id,
 			is_active: false,
 			approval_status: "approved",
-			graph_revision: 0,
+			// Work records closes the work and advances its revision in both admissions (#1222).
+			graph_revision: 1,
 		});
 		expect(resumed).toMatchObject({ is_active: true, work_location_type: "home" });
 		const { rows } = await admin.query(

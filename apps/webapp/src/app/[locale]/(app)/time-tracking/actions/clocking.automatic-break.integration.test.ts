@@ -1111,7 +1111,8 @@ describe("automatic break adjustment on PostgreSQL", () => {
 			end_time: new Date("2026-07-22T14:00:40Z"),
 			duration_minutes: 360,
 			was_auto_adjusted: true,
-			graph_revision: 0,
+			// The clock-out's revision (#1222); the legacy break itself advances none yet.
+			graph_revision: 1,
 		});
 		// Established arithmetic: whole minutes, floored.
 		expect(generated).toMatchObject({

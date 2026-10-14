@@ -986,7 +986,8 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 			clock_out_id: operationId,
 			// Omission no longer clears the target's project.
 			project_id: ids.projectA,
-			graph_revision: 0,
+			// Work records advances the revision in both admissions (#1222).
+			graph_revision: 1,
 			clock_out_created_by: ids.managerUser,
 			clock_out_timezone: "America/New_York",
 			clock_out_timezone_source: "manager_target_user_setting",

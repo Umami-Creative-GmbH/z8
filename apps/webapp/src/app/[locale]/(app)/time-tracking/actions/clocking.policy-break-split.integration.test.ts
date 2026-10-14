@@ -628,7 +628,8 @@ describe("policy clock-out terminal break splits on PostgreSQL", () => {
 
 		const split = await periods();
 		expect(split.map((period) => [period.duration_minutes, period.graph_revision])).toEqual([
-			[360, 0],
+			// The clock-out's revision (#1222); the legacy terminal break advances none yet.
+			[360, 1],
 			[31, 0],
 		]);
 		expect(await receipts()).toEqual([]);

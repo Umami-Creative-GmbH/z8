@@ -7,7 +7,7 @@ import "server-only";
  * - `readWorkRecord`: a completed work period with its entries and canonical
  *   work record, its expected state and its record agreement, optionally
  *   locked so a caller can check its own preconditions first.
- * - `applyWorkRecordChange`: one change (today: divide) against a named
+ * - `applyWorkRecordChange`: one change (divide, create) against a named
  *   expected state. It returns the applied result or a refusal, never both;
  *   `orRefuse` turns a refusal into the error interactive callers throw.
  *
@@ -17,6 +17,8 @@ import "server-only";
  */
 import type { SealedWorkTransactionScope } from "../work-transaction";
 import type { DivideWorkRecord, WorkRecordChange, WorkRecordRefusal } from "./change";
+import { createWorkRecord, type WorkCreation } from "./create";
+import type { CreateWorkRecord } from "./create-plan";
 import { divideWorkRecord, type WorkDivision } from "./divide";
 
 export type {
@@ -29,6 +31,8 @@ export type {
 	WorkRecordRefusal,
 	WorkRecordRefusalKind,
 } from "./change";
+export type { WorkCreation } from "./create";
+export type { CompletingLiveWork, CreateWorkRecord } from "./create-plan";
 export type { AppendedEntryEvidence, DividedHalf, WorkDivision } from "./divide";
 export { readWorkRecord, type WorkRecord } from "./read";
 export { CompletedWorkReviewRequiredError, isWorkRecordRefusal, orRefuse } from "./refusals";
@@ -38,7 +42,9 @@ export type { WorkSegment } from "./segment";
 /** The applied result of each change. */
 export type WorkRecordResult<C extends WorkRecordChange> = C extends DivideWorkRecord
 	? WorkDivision
-	: never;
+	: C extends CreateWorkRecord
+		? WorkCreation
+		: never;
 
 export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	scope: SealedWorkTransactionScope,
@@ -47,5 +53,7 @@ export async function applyWorkRecordChange<C extends WorkRecordChange>(
 	switch (change.kind) {
 		case "divide":
 			return (await divideWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
+		case "create":
+			return (await createWorkRecord(scope, change)) as WorkRecordResult<C> | WorkRecordRefusal;
 	}
 }

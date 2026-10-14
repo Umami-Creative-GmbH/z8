@@ -9,7 +9,7 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
-import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import type { AppendScope } from "./append-lineage";
 import { calculateHash } from "./blockchain";
@@ -20,7 +20,6 @@ import {
 	TimeEntryAppendReviewRequiredError,
 } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import { deriveWorkDurationMinutes } from "./work-duration";
 import {
 	acquireAdoptionGate,
 	readAppendAdmission,
@@ -106,43 +105,8 @@ export type ClockingInput = {
 type ClockInInput = ClockingInput & {
 	workLocationType: "office" | "remote" | "home" | "other";
 };
-type ClockOutInput = ClockingInput & {
-	workPeriodId?: string;
-	projectId?: string | null;
-	/** The closure's resolved billability (#900); absent leaves the period's value. */
-	isBillable?: boolean;
-	/** A task of the project (#873), mirrored from the canonical allocation. */
-	taskId?: string | null;
-	workCategoryId?: string | null;
-	canonicalRecordId?: string | null;
-	approvalStatus?: "approved" | "pending";
-	pendingChanges?: Record<string, unknown> | null;
-	beforePeriodClose?: (context: {
-		transaction: unknown;
-		activePeriod: ActivePeriod;
-		durationMinutes: number;
-	}) => Promise<Record<string, unknown> | undefined>;
-	afterPeriodClose?: (context: {
-		transaction: unknown;
-		activePeriod: ActivePeriod;
-		durationMinutes: number;
-		entry: Entry;
-		period: { id: string };
-	}) => Promise<unknown>;
-};
-
 type ActivePeriod = { id: string; startTime: Date };
 export type Entry = { id: string; [key: string]: unknown };
-type CompletedPeriod = {
-	id: string;
-	startTime: Date;
-	endTime: Date;
-	durationMinutes: number;
-	projectId: string | null;
-	taskId?: string | null;
-	workCategoryId: string | null;
-};
-
 export type ClockingStore = {
 	transaction?: unknown;
 	/** The shared organization adoption gate (#264 step 1); uncoordinated writers only. */
@@ -164,12 +128,6 @@ export type ClockingStore = {
 		organizationId: string,
 		workPeriodId?: string,
 	): Promise<ActivePeriod | null>;
-	getCompletedPeriodByClockOutActionId?(
-		employeeId: string,
-		organizationId: string,
-		actionId: string,
-		workPeriodId?: string,
-	): Promise<CompletedPeriod | null>;
 	/**
 	 * Whether undeleted completed work of the employee ends after the instant. An
 	 * adopted live start is refused over it: active work occupies its start onward.
@@ -190,12 +148,6 @@ export type ClockingStore = {
 	): Promise<TimeEntryAppendAdmissionResult>;
 	insertEntry(entry: Record<string, unknown>): Promise<Entry>;
 	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
-	closeActivePeriod(
-		periodId: string,
-		employeeId: string,
-		organizationId: string,
-		patch: Record<string, unknown>,
-	): Promise<{ id: string } | null>;
 };
 
 export type ClockingDependencies = {
@@ -509,127 +461,6 @@ export function createClockingService(deps: ClockingDependencies) {
 				});
 				return { entry, period };
 			}),
-		clockOut: async (input: ClockOutInput) =>
-			withinEmployeeTransaction(input, async (store) => {
-				const existingEntry = await store.getEntryByActionId(
-					input.employeeId,
-					input.organizationId,
-					input.actionId,
-				);
-				if (existingEntry) {
-					if (
-						existingEntry.type !== "clock_out" ||
-						!input.actionId ||
-						!store.getCompletedPeriodByClockOutActionId
-					) {
-						throw new ClockingConflictError("Clock-out action id collision");
-					}
-					const period = await store.getCompletedPeriodByClockOutActionId(
-						input.employeeId,
-						input.organizationId,
-						input.actionId,
-						input.workPeriodId,
-					);
-					if (
-						!period ||
-						period.projectId !== (input.projectId ?? null) ||
-						(period.taskId ?? null) !== (input.taskId ?? null) ||
-						period.workCategoryId !== (input.workCategoryId ?? null)
-					) {
-						throw new ClockingConflictError("Clock-out action id collision");
-					}
-					return {
-						entry: existingEntry,
-						period,
-						activePeriod: { id: period.id, startTime: period.startTime },
-						durationMinutes: period.durationMinutes,
-						transactionResult: undefined,
-						disposition: "replayed" as const,
-					};
-				}
-				const activePeriod = await store.getActivePeriod(
-					input.employeeId,
-					input.organizationId,
-					input.workPeriodId,
-				);
-				if (!activePeriod)
-					throw new ClockingConflictError("No active work period found");
-				const timestamp = dateFromInstant(input.action.instant);
-				const elapsedMinutes = input.action.instant
-					.since(instantFromDate(activePeriod.startTime))
-					.total({ unit: "minutes" });
-				if (elapsedMinutes < 0) {
-					throw new ClockingConflictError("Clock-out precedes clock-in");
-				}
-				// Positive intervals use the shared half-up rule (#252, #388). Equal
-				// endpoints keep this closer's legacy zero-minute result for its other
-				// callers until their own adoption (#275, #276). Bots left it in #277.
-				const durationMinutes =
-					elapsedMinutes === 0
-						? 0
-						: deriveWorkDurationMinutes(
-								instantFromDate(activePeriod.startTime),
-								input.action.instant,
-							);
-				if (
-					(input.beforePeriodClose || input.afterPeriodClose) &&
-					!store.transaction
-				) {
-					throw new Error("Clock-out transaction context is unavailable");
-				}
-				const additionalPeriodPatch = input.beforePeriodClose
-					? await input.beforePeriodClose({
-							transaction: store.transaction,
-							activePeriod,
-							durationMinutes,
-						})
-					: undefined;
-				const entry = await store.insertEntry(
-					entryValues(input, "clock_out", {
-						kind: "legacy",
-						previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
-					}),
-				);
-				const period = await store.closeActivePeriod(
-					activePeriod.id,
-					input.employeeId,
-					input.organizationId,
-					{
-						clockOutId: entry.id,
-						endTime: timestamp,
-						durationMinutes,
-						isActive: false,
-						projectId: input.projectId ?? null,
-						...(input.isBillable === undefined ? {} : { isBillable: input.isBillable }),
-						taskId: input.taskId ?? null,
-						workCategoryId: input.workCategoryId ?? null,
-						canonicalRecordId: input.canonicalRecordId ?? null,
-						approvalStatus: input.approvalStatus ?? "approved",
-						pendingChanges: input.pendingChanges ?? null,
-						updatedAt: new Date(),
-						...additionalPeriodPatch,
-					},
-				);
-				if (!period)
-					throw new ClockingConflictError("Active work period changed");
-				const transactionResult = input.afterPeriodClose
-					? await input.afterPeriodClose({
-							transaction: store.transaction,
-							activePeriod,
-							durationMinutes,
-							entry,
-							period,
-						})
-					: undefined;
-				return {
-					entry,
-					period,
-					activePeriod,
-					durationMinutes,
-					transactionResult,
-					disposition: "executed" as const,
-				};
-			}),
 	};
 }
 
@@ -692,46 +523,6 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				.limit(1);
 			return period ?? null;
 		},
-		getCompletedPeriodByClockOutActionId: async (
-			employeeId,
-			organizationId,
-			actionId,
-			workPeriodId,
-		) => {
-			const [period] = await tx
-				.select({
-					id: workPeriod.id,
-					startTime: workPeriod.startTime,
-					endTime: workPeriod.endTime,
-					durationMinutes: workPeriod.durationMinutes,
-					projectId: workPeriod.projectId,
-					taskId: workPeriod.taskId,
-					workCategoryId: workPeriod.workCategoryId,
-				})
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.employeeId, employeeId),
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.clockOutId, actionId),
-						eq(workPeriod.isActive, false),
-						...(workPeriodId ? [eq(workPeriod.id, workPeriodId)] : []),
-					),
-				)
-				.limit(1);
-			if (
-				!period ||
-				!(period.endTime instanceof Date) ||
-				period.durationMinutes === null
-			) {
-				return null;
-			}
-			return {
-				...period,
-				endTime: period.endTime,
-				durationMinutes: period.durationMinutes,
-			};
-		},
 		hasCompletedWorkEndingAfter: async (employeeId, organizationId, instant) => {
 			const [occupant] = await tx
 				.select({ id: workPeriod.id })
@@ -777,22 +568,6 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				.returning({ id: workPeriod.id });
 			if (!period) throw new Error("Failed to create work period");
 			return period;
-		},
-		closeActivePeriod: async (periodId, employeeId, organizationId, patch) => {
-			const [period] = await tx
-				.update(workPeriod)
-				.set(patch as never)
-				.where(
-					and(
-						eq(workPeriod.id, periodId),
-						eq(workPeriod.employeeId, employeeId),
-						eq(workPeriod.organizationId, organizationId),
-						eq(workPeriod.isActive, true),
-						isNull(workPeriod.endTime),
-					),
-				)
-				.returning({ id: workPeriod.id });
-			return period ?? null;
 		},
 	};
 }
