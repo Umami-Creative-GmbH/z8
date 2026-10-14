@@ -911,6 +911,43 @@ describe(
 			expect(await snapshot()).toEqual(committed);
 		});
 
+		// The route never chooses by admission (#1231): the same request amends in both,
+		// and only where work records appended the correction is a receipt committed.
+		it.each([
+			["active", 1],
+			["inactive", 0],
+		] as const)(
+			"applies a manager's direct correction through the route under %s admission",
+			async (admission, receiptCount) => {
+				const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
+				await setAdmission(admission);
+				const response = await postDirectCorrection(
+					{
+						replacesEntryId: period.clock_out_id,
+						timestamp: "2026-07-22T09:15:00Z",
+						notes: "Manager correction",
+						workLocationType: "office",
+						workCategoryId: null,
+					},
+					{ userId: ids.managerUser, canApprove: true, idempotencyKey: randomUUID() },
+				);
+
+				expect(response.status).toBe(201);
+				const created = (await response.json()) as { entry: { id: string; type: string } };
+				expect(created.entry.type).toBe("correction");
+				expect(await graph(period.id)).toMatchObject({
+					clock_in_id: period.clock_in_id,
+					clock_out_id: created.entry.id,
+					end_time: new Date("2026-07-22T09:15:00Z"),
+					record_end: new Date("2026-07-22T09:15:00Z"),
+					duration_minutes: 75,
+					record_duration: 75,
+					graph_revision: 2,
+				});
+				expect(await receipts()).toHaveLength(receiptCount);
+			},
+		);
+
 		it("refuses changes while an approval over the work is unresolved", async () => {
 			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
 			await admin.query(

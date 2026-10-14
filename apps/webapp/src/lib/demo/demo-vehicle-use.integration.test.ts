@@ -54,6 +54,9 @@ const {
 	generateTimeEntriesStepAction,
 } = await import("@/app/[locale]/(app)/settings/demo/actions");
 const { db } = await import("@/db");
+const { expectRecordAgreement } = await import(
+	"@/lib/time-tracking/work-records/__tests__/expect-record-agreement"
+);
 const { listDrivingDetailsMissing } = await import(
 	"@/lib/time-tracking/vehicle-use/driving-details-missing-store"
 );
@@ -161,20 +164,12 @@ describe("demo vehicle use on PostgreSQL", () => {
 			with_vehicle_use: number;
 			organization_vehicle: number;
 			own_vehicle: number;
-			canonical_disagreeing: number;
 		}>(
 			`select
 			   count(*) filter (where wp.vehicle_kind is not null)::int as with_vehicle_use,
 			   count(*) filter (where wp.vehicle_kind = 'organization')::int as organization_vehicle,
-			   count(*) filter (where wp.vehicle_kind = 'own')::int as own_vehicle,
-			   count(*) filter (where
-			     w.vehicle_kind is distinct from wp.vehicle_kind
-			     or w.vehicle_id is distinct from wp.vehicle_id
-			     or w.odometer_start_km is distinct from wp.odometer_start_km
-			     or w.odometer_end_km is distinct from wp.odometer_end_km
-			     or w.driven_distance_km is distinct from wp.driven_distance_km)::int as canonical_disagreeing
+			   count(*) filter (where wp.vehicle_kind = 'own')::int as own_vehicle
 			 from work_period wp
-			 join time_record_work w on w.record_id = wp.canonical_record_id
 			 where wp.organization_id = $1 and wp.employee_id = $2`,
 			[ids.organization, employeeId],
 		);
@@ -228,8 +223,9 @@ describe("demo vehicle use on PostgreSQL", () => {
 			with_vehicle_use: workPeriodsPerEmployee,
 			organization_vehicle: workPeriodsPerEmployee,
 			own_vehicle: 0,
-			canonical_disagreeing: 0,
 		});
+		// Both records carry the vehicle use (#1223).
+		await expectRecordAgreement({ organizationId: ids.organization });
 		// Nobody asks the office employee for vehicle use.
 		expect(await vehicleUseByEmployee(ids.office)).toMatchObject({ with_vehicle_use: 0 });
 
@@ -282,6 +278,7 @@ describe("demo vehicle use on PostgreSQL", () => {
 			[ids.organization, ids.driver],
 		);
 		expect(only(rows).with_vehicle_use).toBe(workPeriodsPerEmployee);
+		await expectRecordAgreement({ organizationId: ids.organization });
 	});
 
 	it("leaves vehicle use alone in an organization that switched it off", async () => {

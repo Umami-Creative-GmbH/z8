@@ -43,9 +43,14 @@ describe("Clocking module layering", () => {
 	});
 
 	it("keeps the follow-up effects and the work record and entry writers in lib", () => {
+		const workRecordFiles = readdirSync(fileURLToPath(new URL("../work-records/", import.meta.url)))
+			.filter((file) => file.endsWith(".ts") && !file.includes(".test."))
+			.map((file) => `../work-records/${file}`);
+
+		expect(workRecordFiles).toContain("../work-records/create-new.ts");
 		expect([
 			...appImports("../clock-out-effects.ts"),
-			...appImports("../canonical-work-record.ts"),
+			...workRecordFiles.flatMap(appImports),
 			...appImports("../time-entry-writer.ts"),
 		]).toEqual([]);
 	});

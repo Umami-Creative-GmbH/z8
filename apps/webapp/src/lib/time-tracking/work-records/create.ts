@@ -114,8 +114,10 @@ export async function createWorkRecord(
 	]);
 	if (!clockOut) throw new Error("Work records clock-out was not appended");
 	const canonical = await insertCanonicalRecord(tx, {
-		period,
+		organizationId,
+		employeeId,
 		half: completed,
+		origin: "clock",
 		recordedBy: change.recordedBy,
 	});
 	const written = await closeLiveWorkPeriod(tx, {
@@ -167,23 +169,33 @@ export async function createWorkRecord(
 	};
 }
 
-/** The completed work's canonical work record: base record, detail and project allocation. */
-async function insertCanonicalRecord(
+/**
+ * A created work's canonical work record: base record, detail and project
+ * allocation, as the plan says. Shared by both creations (#1222, #1223).
+ */
+export async function insertCanonicalRecord(
 	tx: WorkTransactionClient,
-	input: { period: WorkPeriodRow; half: PlannedHalf; recordedBy: string },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		half: PlannedHalf;
+		origin: "clock" | "manual" | "import";
+		recordedBy: string;
+		computationMetadata?: string | null;
+	},
 ): Promise<CanonicalWorkRows> {
-	const { period, half } = input;
+	const { organizationId, half } = input;
 	const [record] = await tx
 		.insert(timeRecord)
 		.values({
-			organizationId: period.organizationId,
-			employeeId: period.employeeId,
+			organizationId,
+			employeeId: input.employeeId,
 			recordKind: "work",
 			startAt: half.canonical.record.startAt,
 			endAt: half.canonical.record.endAt,
 			durationMinutes: half.canonical.record.durationMinutes,
 			approvalState: half.canonical.record.approvalState,
-			origin: "clock",
+			origin: input.origin,
 			createdBy: input.recordedBy,
 			updatedBy: input.recordedBy,
 		})
@@ -194,11 +206,11 @@ async function insertCanonicalRecord(
 		.insert(timeRecordWork)
 		.values({
 			recordId: record.id,
-			organizationId: period.organizationId,
+			organizationId,
 			recordKind: "work",
 			workCategoryId: columns.workCategoryId,
 			workLocationType: columns.workLocationType,
-			computationMetadata: null,
+			computationMetadata: input.computationMetadata ?? null,
 			vehicleKind: columns.vehicleKind,
 			vehicleId: columns.vehicleId,
 			odometerStartKm: columns.odometerStartKm,
@@ -212,7 +224,7 @@ async function insertCanonicalRecord(
 		const [row] = await tx
 			.insert(timeRecordAllocation)
 			.values({
-				organizationId: period.organizationId,
+				organizationId,
 				recordId: record.id,
 				allocationKind: allocation.allocationKind,
 				projectId: allocation.projectId,

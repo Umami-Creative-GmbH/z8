@@ -26,7 +26,6 @@ import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,
 	type AmendCompletedWorkInput,
-	amendLegacyCompletedWork,
 	describeAmendmentFailure,
 	replayCommittedAmendment,
 	replayOrAmendCompletedWork,
@@ -177,7 +176,7 @@ export async function POST(request: NextRequest) {
 		const submissionId = idempotencyKey
 			? idempotencyKey.toLowerCase()
 			: randomUUID();
-		// The request exactly as submitted: an adopted direct correction's command.
+		// The request exactly as submitted: the direct correction's command.
 		const directCommand: AmendCompletedWorkCommand = {
 			version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
 			operationId: submissionId,
@@ -191,7 +190,7 @@ export async function POST(request: NextRequest) {
 			},
 		};
 		if (idempotencyKey) {
-			// A committed adopted correction replays before fresh reads: its own
+			// A committed correction replays before fresh reads: its own
 			// result superseded the entry this request names.
 			const replayed = await replayCommittedAmendment({
 				organizationId: activeOrgId,
@@ -482,8 +481,8 @@ export async function POST(request: NextRequest) {
 					: trustedCorrectionTimestamp,
 				targetTimezone,
 			);
-		// Both admissions amend through work records (#1226); the balance refresh
-		// commits with the correction.
+		// The amendment writes through work records (#1226) and hides admission
+		// (#1231); the balance refresh commits with the correction.
 		const receipt = await withCompletedWorkTransaction(
 			{
 				organizationId: activeOrgId,
@@ -541,9 +540,7 @@ export async function POST(request: NextRequest) {
 					evaluatedAt: systemClock.nowInstant(),
 					request: { ipAddress, deviceInfo },
 				};
-				return scope.admission === "append"
-					? replayOrAmendCompletedWork(scope, amendment)
-					: amendLegacyCompletedWork(scope, amendment);
+				return replayOrAmendCompletedWork(scope, amendment);
 			},
 		);
 		const correctionEntry = receipt.correctionEntries[0] ?? null;

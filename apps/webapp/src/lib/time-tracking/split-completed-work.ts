@@ -12,9 +12,10 @@ import "server-only";
  * divide, the notes and the odometer value at the split.
  *
  * Exact replay of a committed receipt writes nothing, and a receipt whose work
- * has since changed or been deleted is a collision. In legacy admission the
- * split runs the same policy and division without a receipt
- * (`splitLegacyCompletedWork`, #1219).
+ * has since changed or been deleted is a collision. Callers never choose by
+ * admission (#1231): the split runs the same policy and division in either
+ * admission and commits the receipt only where work records appended the
+ * entries (#1219).
  */
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "@/db";
@@ -228,7 +229,7 @@ async function isSplitStanding(
  */
 export async function replayCommittedSplit(
 	input: Omit<ReplayInput, "employeeId">,
-): Promise<SplitCompletedWorkReceipt | null> {
+): Promise<SplitCompletedWorkOutcome | null> {
 	const [receipt] = await db
 		.select({ employeeId: completedWorkOperation.employeeId })
 		.from(completedWorkOperation)
@@ -246,34 +247,66 @@ export async function replayCommittedSplit(
 			employeeId: receipt.employeeId,
 			actorUserId: input.actorUserId,
 		},
-		(scope) => replaySplitCompletedWork(scope, { ...input, employeeId: receipt.employeeId }),
+		async (scope) => {
+			const replayed = await replaySplitCompletedWork(scope, {
+				...input,
+				employeeId: receipt.employeeId,
+			});
+			return replayed && receiptOutcome(replayed);
+		},
 	);
 }
 
 /**
- * Fresh split. The caller has already ruled out committed replay under the same
- * transaction, so an existing receipt with this identity is a collision.
+ * What a split hands its caller, in either admission: the two halves and, where
+ * one was committed, the receipt.
+ */
+export type SplitCompletedWorkOutcome = {
+	disposition: "executed" | "replayed";
+	retainedWorkPeriodId: string;
+	generatedWorkPeriodId: string;
+	/** The committed receipt's result; null where work records' writer commits none (legacy admission). */
+	result: SplitCompletedWorkResult | null;
+};
+
+function receiptOutcome(receipt: SplitCompletedWorkReceipt): SplitCompletedWorkOutcome {
+	const [retained, generated] = receipt.result.segments;
+	return {
+		disposition: receipt.disposition,
+		retainedWorkPeriodId: retained.workPeriodId,
+		generatedWorkPeriodId: generated.workPeriodId,
+		result: receipt.result,
+	};
+}
+
+/**
+ * The split every caller runs, in either admission (#1231): exact replay of a
+ * committed receipt first, otherwise the fresh split. Admission stays hidden:
+ * work records divides with the writer of the organization's admission, and the
+ * receipt is committed only when its outcome says the entries were appended
+ * (append admission). A legacy split commits no receipt, so a retry is not
+ * recognized there.
  */
 export async function splitCompletedWork(
 	scope: SealedWorkTransactionScope,
 	input: SplitCompletedWorkInput,
-): Promise<SplitCompletedWorkReceipt> {
+): Promise<SplitCompletedWorkOutcome> {
 	const { organizationId, employeeId, command } = input;
 	scope.assertEmployee(organizationId, employeeId);
-	if (scope.admission !== "append") {
-		throw new Error("Completed-work split requires the adopted work transaction");
-	}
-	const tx = scope.db;
-	const [existing] = await tx
-		.select({ id: completedWorkOperation.id })
-		.from(completedWorkOperation)
-		.where(eq(completedWorkOperation.id, command.operationId))
-		.limit(1);
-	if (existing) throw new CompletedWorkCollisionError();
+	const replayed = await replaySplitCompletedWork(scope, input);
+	if (replayed) return receiptOutcome(replayed);
 
 	const division = await divideForSplit(scope, input);
+	if (division.appended.admission !== "append") {
+		return {
+			disposition: "executed",
+			retainedWorkPeriodId: division.retained.segment.workPeriodId,
+			generatedWorkPeriodId: division.generated.segment.workPeriodId,
+			result: null,
+		};
+	}
 	const result = splitResult(input, division);
-	await tx.insert(completedWorkOperation).values({
+	await scope.db.insert(completedWorkOperation).values({
 		id: command.operationId,
 		organizationId,
 		employeeId,
@@ -290,24 +323,7 @@ export async function splitCompletedWork(
 		resultVersion: SPLIT_COMPLETED_WORK_RESULT_VERSION,
 		result,
 	});
-	return { disposition: "executed", result };
-}
-
-/**
- * The split of an organization in legacy admission (#1219): the same caller
- * policy and the same division through work records, whose legacy writer
- * appends the entries. Legacy admission commits no receipt, so a retry is not
- * recognized; the split action chooses by admission until admission is hidden.
- */
-export async function splitLegacyCompletedWork(
-	scope: SealedWorkTransactionScope,
-	input: SplitCompletedWorkInput,
-): Promise<WorkDivision> {
-	scope.assertEmployee(input.organizationId, input.employeeId);
-	if (scope.admission !== "legacy") {
-		throw new Error("Legacy completed-work split requires the legacy work transaction");
-	}
-	return divideForSplit(scope, input);
+	return receiptOutcome({ disposition: "executed", result });
 }
 
 /**

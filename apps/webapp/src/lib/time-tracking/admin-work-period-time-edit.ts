@@ -7,7 +7,6 @@ import {
 	type AmendCompletedWorkCommand,
 	type AmendCompletedWorkInput,
 	type AmendCompletedWorkIntent,
-	amendLegacyCompletedWork,
 	replayCommittedAmendment,
 	replayOrAmendCompletedWork,
 } from "@/lib/time-tracking/amend-completed-work";
@@ -145,9 +144,9 @@ function adminEditIntent(
  * through an invalid intermediate range. Original entries are superseded,
  * never mutated, preserving the audit chain.
  *
- * Both admissions run the completed-work amendment, which writes through work
- * records (#1226): adopted organizations replay a committed receipt first and
- * commit a new one; legacy organizations commit no receipt. Either way the
+ * The completed-work amendment writes through work records (#1226) and hides
+ * admission (#1231): a committed receipt replays first, and a new one is
+ * committed only where work records appended the entries. Either way the
  * balance refresh commits with the work.
  */
 export async function applyAdminWorkPeriodTimeEdit(
@@ -190,10 +189,7 @@ export async function applyAdminWorkPeriodTimeEdit(
 				evaluatedAt: systemClock.nowInstant(),
 				request: { ipAddress: input.ipAddress, deviceInfo: input.deviceInfo },
 			};
-			const receipt =
-				scope.admission === "legacy"
-					? await amendLegacyCompletedWork(scope, amendment)
-					: await replayOrAmendCompletedWork(scope, amendment);
+			const receipt = await replayOrAmendCompletedWork(scope, amendment);
 			return {
 				workPeriodId: receipt.result.workPeriodId,
 				employeeId: input.expected.employeeId,

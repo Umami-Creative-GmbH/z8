@@ -701,20 +701,16 @@ describe("billable work across the work writers on PostgreSQL", () => {
 
 			it("commits rows staged without attribution with no project, as before", async () => {
 				await expect(importRow(undefined)).resolves.toMatchObject({ row_status: "committed" });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: null, billable: false },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), { projectId: null, billable: false });
 			});
 
-			it("marks the work balance dirty from the day before the imported work's UTC start date (#1214)", async () => {
+			it("marks the work balance dirty from the imported work's UTC start date (#1214, #1223)", async () => {
 				await cleanBalance();
 				await expect(importRow(undefined)).resolves.toMatchObject({ row_status: "committed" });
-				// Imported endpoints are captured in UTC; the employee's local day may start a day earlier.
+				// Imported endpoints are captured in UTC, so the work's own day is its UTC date.
 				await expect(balanceRefresh()).resolves.toEqual({
 					is_dirty: true,
-					dirty_from_date: "2026-07-19",
+					dirty_from_date: "2026-07-20",
 				});
 			});
 
@@ -722,22 +718,20 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				await expect(importRow({ projectId: ids.billableProject })).resolves.toMatchObject({
 					row_status: "committed",
 				});
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.billableProject, billable: true },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.billableProject,
+					billable: true,
+				});
 			});
 
 			it("records an imported billability over the project default", async () => {
 				await expect(
 					importRow({ projectId: ids.customerProject, billable: true }),
 				).resolves.toMatchObject({ row_status: "committed" });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.customerProject, billable: true },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.customerProject,
+					billable: true,
+				});
 			});
 
 			it("holds billable imported work on a project without a customer", async () => {
@@ -758,11 +752,10 @@ describe("billable work across the work writers on PostgreSQL", () => {
 						nonBillableWhenRefused: true,
 					}),
 				).resolves.toMatchObject({ row_status: "committed", commit_hold: null });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.internalProject, billable: false },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.internalProject,
+					billable: false,
+				});
 			});
 
 			it("holds an explicit billable import, but downgrades a provider's request, once the customer is deleted", async () => {
@@ -780,11 +773,10 @@ describe("billable work across the work writers on PostgreSQL", () => {
 						nonBillableWhenRefused: true,
 					}),
 				).resolves.toMatchObject({ row_status: "committed" });
-				expectAgreement(
-					only(await attributions()),
-					{ projectId: ids.billableProject, billable: false },
-					{ canonical: admission === "append" },
-				);
+				expectAgreement(only(await attributions()), {
+					projectId: ids.billableProject,
+					billable: false,
+				});
 			});
 		});
 

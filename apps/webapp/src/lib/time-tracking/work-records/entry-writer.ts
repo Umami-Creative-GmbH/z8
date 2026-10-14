@@ -16,7 +16,7 @@ import "server-only";
  *
  * Retiring legacy admission deletes the legacy adapter; callers never choose.
  */
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, type SQL, sql } from "drizzle-orm";
 import { timeEntry } from "@/db/schema";
 import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
@@ -142,6 +142,7 @@ async function insertAppendedEntry(
 		.insert(timeEntry)
 		.values({
 			...(draft.id === undefined ? {} : { id: draft.id }),
+			...(previous.id === null ? {} : { createdAt: createdAfter(previous.id, scope) }),
 			employeeId: scope.employeeId,
 			organizationId: scope.organizationId,
 			type: draft.type,
@@ -169,12 +170,25 @@ async function insertAppendedEntry(
 }
 
 /**
+ * A creation time strictly after the predecessor's, and never before the
+ * transaction's, in both admissions: entries written in one transaction would
+ * otherwise share `now()`, and the latest-entry head of the next legacy change
+ * (or of legacy admission, should an organization return to it) could pick an
+ * earlier one of them (#1223).
+ */
+function createdAfter(previousId: string, scope: EntryScope): SQL<Date> {
+	return sql<Date>`greatest(now(), (select ${timeEntry.createdAt} + interval '1 microsecond' from ${timeEntry} where ${timeEntry.id} = ${previousId} and ${timeEntry.organizationId} = ${scope.organizationId}))`;
+}
+
+/**
  * Legacy admission's writer, the rules the legacy writers have always followed:
  *
  * - the head is the employee's latest entry by creation (ties by id), read
  *   without a lock: the coordinator's employee guard already serializes the
  *   employee's writers, and a row lock here would break `WORK_RECORD_LOCK_ORDER`.
- *   Later entries of the same change chain after the one before.
+ *   Later entries of the same change chain after the one before, and every
+ *   entry is created after its predecessor, so a later change in the same
+ *   transaction finds the latest one as its head (#1223).
  * - an entry that takes over from an endpoint and carries notes supersedes that
  *   endpoint, as the legacy split did with its new clock-out (#304's legacy path).
  * - minutes are floored.
