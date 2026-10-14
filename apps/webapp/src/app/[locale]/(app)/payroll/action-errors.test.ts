@@ -5,6 +5,7 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { PayrollIdentifierDuplicateError } from "@/lib/payroll-export/personnel-identifier";
 import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
 import { mapPayrollWorkspaceActionError } from "./action-errors";
@@ -55,6 +56,41 @@ describe("mapPayrollWorkspaceActionError", () => {
 			message: "Export blocked: resolve the work minutes that need review first",
 		});
 		expect(result.details).toEqual({ organizationId: "org-1", blockedRecordCount: 1 });
+	});
+
+	it("names the employees sharing a personnel identifier in a translated conflict", () => {
+		const translate = (key: string, fallback: string, params?: Record<string, string>) =>
+			`${key}|${fallback.replace("{employees}", params?.employees ?? "")}`;
+		const result = mapPayrollWorkspaceActionError(
+			new PayrollIdentifierDuplicateError(
+				[
+					{
+						employees: [
+							{ employeeId: "employee-1", identifier: "E-42", name: "Anna Muster" },
+							{ employeeId: "employee-2", identifier: "e-42", name: null },
+						],
+					},
+				],
+				"org-1",
+			),
+			translate,
+		);
+
+		expect(result).toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "payroll_identifier_duplicate",
+			message:
+				"payroll.errors.exportBlockedByDuplicateIdentifier|Export blocked: several employees share a personnel identifier. Give each employee their own: Anna Muster (E-42), employee-2 (e-42)",
+		});
+		expect(result.details).toEqual({
+			organizationId: "org-1",
+			clashes: [
+				[
+					{ employeeId: "employee-1", identifier: "E-42" },
+					{ employeeId: "employee-2", identifier: "e-42" },
+				],
+			],
+		});
 	});
 
 	it("preserves authentication, authorization, and validation failures", () => {

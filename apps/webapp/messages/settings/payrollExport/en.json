@@ -325,6 +325,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Review approval inbox",
+        "employees": "Review employees",
         "payrollExport": "Open payroll export settings",
         "timeTracking": "Review time tracking",
         "travelExpenses": "Review travel expenses"
@@ -332,10 +333,15 @@
       "affectedEmployees": {
         "name": "Employee",
         "noNumber": "Not set",
-        "number": "Employee number"
+        "number": "Employee number",
+        "personnelIdentifier": "Payroll identifier"
       },
       "checks": {
         "count": "Count",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Employees a payroll export would write under the same personnel identifier. The payroll system would merge them, so the export is refused until each employee has their own.",
+          "title": "Shared personnel identifiers"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "All active employees have confirmed employment history for this payroll period.",
           "descriptionWarning": "Some active employees do not have confirmed employment history for this payroll period."

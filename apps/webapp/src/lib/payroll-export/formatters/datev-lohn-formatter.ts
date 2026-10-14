@@ -20,6 +20,7 @@ import {
 	expenseLinesInFileOrder,
 	GERMAN_EXPENSE_LINE_NOTE,
 	germanPersonnelNumber,
+	refuseSharedGermanPersonnelNumbers,
 } from "./expense-lines";
 import {
 	addOvertimePayoutHours,
@@ -91,6 +92,10 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		);
 
 		const datevConfig = config as unknown as DatevLohnConfig;
+		refuseSharedGermanPersonnelNumbers(
+			[...workPeriods, ...absences, ...expenseLines, ...overtimePayouts],
+			datevConfig,
+		);
 
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();

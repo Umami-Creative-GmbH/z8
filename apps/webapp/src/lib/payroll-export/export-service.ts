@@ -49,6 +49,7 @@ import {
 	resolvePayrollRunEmployeeIds,
 } from "./data-fetcher";
 import { isExpensePayrollFormat } from "./expense-wage-type.types";
+import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
 import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
 import { workdayConnector } from "./exporters/workday/workday-connector";
 import type { PayrollExportApiFormatId, PayrollExportFileFormatId } from "./format-registry";
@@ -60,10 +61,14 @@ import {
 	employeesWithoutIdentifier,
 	PayrollIdentifierChangedError,
 	PayrollIdentifierMissingError,
+	type PayrollIdentityRow,
 	payrollIdentifierCustomFieldId,
 	withPersonnelIdentifiers,
 } from "./personnel-identifier";
-import { readPersonnelIdentifierValues } from "./personnel-identifier-store";
+import {
+	readPersonnelIdentifierValues,
+	refuseDuplicatePersonnelIdentifiers,
+} from "./personnel-identifier-store";
 import type {
 	AbsenceData,
 	ApiExportResult,
@@ -426,8 +431,20 @@ export async function processExportJob(
 			const payrollRun =
 				isExpensePayrollFormat(formatId) &&
 				(await exportIsPayrollRun(db, { organizationId: job.organizationId, formatId }));
+			// Two employees under one personnel identifier would be merged into one line (#1198).
+			const refuseSharedIdentifiers = (
+				database: ExportDatabase,
+				expenseLines: readonly PayrollIdentityRow[],
+			) =>
+				refuseDuplicatePersonnelIdentifiersOfFormat(database, {
+					organizationId: job.organizationId,
+					formatId,
+					config: job.config.config,
+					rows: [...workPeriods, ...absences, ...overtimePayouts, ...expenseLines],
+				});
 			// Awaited inside the try: a failed delivery must reach the catch that marks the job failed.
 			if (!payrollRun) {
+				await refuseSharedIdentifiers(db, []);
 				return await writeFileExport(
 					db,
 					job,
@@ -466,6 +483,8 @@ export async function processExportJob(
 				);
 				// A missing identifier throws here and rolls the inclusions back.
 				const expenseLines = await identify.rows(inclusion.expenseLines);
+				// A shared identifier throws here too, rolling the inclusions back.
+				await refuseSharedIdentifiers(tx, expenseLines);
 				skipped = inclusion.skipped;
 				return writeFileExport(
 					tx,
@@ -507,8 +526,33 @@ export async function processExportJob(
  * `storeFile` asks for it (#1008), otherwise returned inline. `database` is
  * the payroll run's transaction when the file carries expense lines (#852).
  */
+type ExportDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * The duplicate-identifier check of a format (#1198): refuses the rows when two
+ * employees would be written under one personnel identifier, naming them. A
+ * format the check doesn't cover passes.
+ */
+async function refuseDuplicatePersonnelIdentifiersOfFormat(
+	database: ExportDatabase,
+	input: {
+		organizationId: string;
+		formatId: string;
+		config: unknown;
+		rows: readonly PayrollIdentityRow[];
+	},
+): Promise<void> {
+	const identifierOf = exportedPersonnelIdentifier(input.formatId, input.config);
+	if (!identifierOf) return;
+	await refuseDuplicatePersonnelIdentifiers(database, {
+		organizationId: input.organizationId,
+		rows: input.rows,
+		identifierOf,
+	});
+}
+
 async function writeFileExport(
-	database: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	database: ExportDatabase,
 	job: { id: string; organizationId: string; isAsync: boolean },
 	exportResult: ExportResult,
 	storeFile: boolean,
