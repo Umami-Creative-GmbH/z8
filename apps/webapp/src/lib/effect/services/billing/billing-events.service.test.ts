@@ -2,9 +2,11 @@ import { eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { sendBillingSystemEmail } from "@/lib/billing/billing-system-email";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { StripeError } from "@/lib/effect/errors";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { notificationParam } from "@/lib/notifications/notification-params";
 import { BillingEventsService, BillingEventsServiceLive } from "./billing-events.service";
 import { SeatSyncService } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";
@@ -16,6 +18,7 @@ import {
 const {
 	stripeEventFindFirst,
 	subscriptionFindFirst,
+	organizationFindFirst,
 	insertValues,
 	onConflictDoNothing,
 	setValues,
@@ -24,6 +27,7 @@ const {
 } = vi.hoisted(() => ({
 	stripeEventFindFirst: vi.fn(),
 	subscriptionFindFirst: vi.fn(),
+	organizationFindFirst: vi.fn(),
 	insertValues: vi.fn(),
 	onConflictDoNothing: vi.fn(),
 	setValues: vi.fn(),
@@ -43,6 +47,9 @@ vi.mock("@/db", () => {
 			},
 			subscription: {
 				findFirst: subscriptionFindFirst,
+			},
+			organization: {
+				findFirst: organizationFindFirst,
 			},
 		},
 		insert: vi.fn(() => ({
@@ -130,7 +137,13 @@ describe("BillingEventsService", () => {
 		vi.clearAllMocks();
 		stripeEventFindFirst.mockResolvedValue(null);
 		subscriptionFindFirst.mockResolvedValue({
+			organizationId: "org_123",
 			metadata: {},
+		});
+		organizationFindFirst.mockResolvedValue({
+			id: "org_123",
+			name: "Acme GmbH",
+			timezone: "America/New_York",
 		});
 		insertValues.mockReturnValue({ onConflictDoNothing });
 		onConflictDoNothing.mockResolvedValue(undefined);
@@ -205,14 +218,93 @@ describe("BillingEventsService", () => {
 		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith({
 			templateKey: "billing-trial-ending",
 			to: "billing@example.com",
+			organizationId: "org_123",
 			data: expect.objectContaining({
-				organizationName: "your organization",
+				organizationName: "Acme GmbH",
 				customerEmail: "billing@example.com",
 				billingUrl: "https://app.z8-time.app/settings/billing",
 				billingPortalUrl: "https://app.z8-time.app/settings/billing",
+				// 2026-05-27T00:00Z is still May 26 in the organization's timezone.
+				trialEndsAt: notificationParam.plainDate(parsePlainDate("2026-05-26")),
 			}),
 		});
+		expect(eq).toHaveBeenCalledWith(expect.anything(), "sub_test_123");
 		expect(updateWhere).toHaveBeenCalled();
+	});
+
+	it("finds the billed organization through the subscription row", async () => {
+		subscriptionFindFirst.mockResolvedValue({ organizationId: "org_from_row", metadata: {} });
+		organizationFindFirst.mockResolvedValue({
+			id: "org_from_row",
+			name: "Acme GmbH",
+			timezone: "America/New_York",
+		});
+
+		await processEvent({
+			type: "invoice.finalized",
+			object: createStripeInvoice({ parent: subscriptionParent("sub_row_123") }),
+		});
+
+		expect(eq).toHaveBeenCalledWith(expect.anything(), "sub_row_123");
+		expect(eq).toHaveBeenCalledWith(expect.anything(), "org_from_row");
+		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				templateKey: "billing-invoice-ready",
+				organizationId: "org_from_row",
+				data: expect.objectContaining({
+					organizationName: "Acme GmbH",
+					invoiceAmount: notificationParam.money("123.00", "EUR"),
+					dueDate: notificationParam.plainDate(parsePlainDate("2026-05-26")),
+				}),
+			}),
+		);
+	});
+
+	it("leaves the organization name and dates to the sender when nothing identifies the organization", async () => {
+		subscriptionFindFirst.mockResolvedValue(undefined);
+
+		await processEvent({
+			type: "invoice.finalized",
+			object: createStripeInvoice({ due_date: null }),
+		});
+
+		const params = sendBillingSystemEmailMock.mock.calls[0][0];
+		expect(params.organizationId).toBeUndefined();
+		expect(params.data.organizationName).toBeUndefined();
+		expect(params.data.dueDate).toBeUndefined();
+		expect(organizationFindFirst).not.toHaveBeenCalled();
+	});
+
+	it("states the invoice's next retry in the payment failed email", async () => {
+		getInvoiceForPaymentIntent.mockReturnValue(
+			Effect.succeed(createStripeInvoice({ next_payment_attempt: 1_779_926_400 })),
+		);
+
+		await processEvent({
+			type: "payment_intent.payment_failed",
+			object: createStripePaymentIntent(),
+		});
+
+		expect(sendBillingSystemEmailMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				templateKey: "billing-payment-failed",
+				organizationId: "org_123",
+				data: expect.objectContaining({
+					invoiceAmount: notificationParam.money("123.00", "EUR"),
+					paymentRetryDate: notificationParam.plainDate(parsePlainDate("2026-05-27")),
+				}),
+			}),
+		);
+	});
+
+	it("dates a resumed subscription by the organization's calendar", async () => {
+		await processEvent({
+			type: "customer.subscription.resumed",
+			object: createStripeSubscription({ customer: "cus_test_123" }),
+		});
+
+		const params = sendBillingSystemEmailMock.mock.calls[0][0];
+		expect(params.data.resumeDate).toEqual({ kind: "plainDate", date: expect.any(String) });
 	});
 
 	it.each([

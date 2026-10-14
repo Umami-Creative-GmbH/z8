@@ -41,6 +41,7 @@ import {
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
+import { type WorkPeriodEntryTimes, workPeriodEntryTimesOf } from "@/lib/notifications/entry-times";
 import {
 	onTimeCorrectionApproved,
 	onTimeCorrectionRejected,
@@ -269,10 +270,16 @@ type AutoCompletedApprovalResult = Extract<
 	{ kind: "auto_completed" }
 >;
 
-type TimeCorrectionAutoCompletionResult = TimeCorrectionApprovalResult & {
+type TimeCorrectionAutoCompletionResult = TimeCorrectionApprovalResult &
+	TimeCorrectionNotificationTimes;
+
+/** What the requester's decision notification (and its email) shows. */
+interface TimeCorrectionNotificationTimes {
 	originalNotificationTime: Date;
 	correctedNotificationTime: Date;
-};
+	/** The period as corrected, each endpoint at its own entry's offset (#1137). */
+	correctedNotificationTimes: WorkPeriodEntryTimes | null;
+}
 
 export type TimeCorrectionApprovalWorkflowResult =
 	| Exclude<ResolvePolicyAndCreateApprovalResult, AutoCompletedApprovalResult>
@@ -1492,10 +1499,9 @@ interface FinalizerEmployee {
 }
 
 interface TimeCorrectionTerminalDetailedResult
-	extends TimeCorrectionTerminalResult {
+	extends TimeCorrectionTerminalResult,
+		TimeCorrectionNotificationTimes {
 	period: WorkPeriodRecord;
-	originalNotificationTime: Date;
-	correctedNotificationTime: Date;
 }
 
 const TIME_CORRECTION_TIMEZONE_SOURCES = new Set([
@@ -2809,6 +2815,11 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		clockInCorrection?.timestamp ??
 		clockOutCorrection?.timestamp ??
 		originalNotificationTime;
+	// The corrected period's endpoints: the correction entry when there is one, else the original.
+	const correctedNotificationTimes = workPeriodEntryTimesOf(
+		clockInCorrection ?? originalClockIn,
+		clockOutCorrection ?? originalClockOut,
+	);
 	const hasEndpointCorrection = correctionEntries.length > 0;
 	const adopted = adoptedScope
 		? {
@@ -2876,6 +2887,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				period: periodForResult,
 				originalNotificationTime,
 				correctedNotificationTime,
+				correctedNotificationTimes,
 			};
 		}
 		if (
@@ -2958,6 +2970,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			period: periodForResult,
 			originalNotificationTime,
 			correctedNotificationTime,
+			correctedNotificationTimes,
 		};
 	}
 
@@ -3287,6 +3300,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		period: periodForResult,
 		originalNotificationTime,
 		correctedNotificationTime,
+		correctedNotificationTimes,
 	};
 }
 
@@ -3812,6 +3826,7 @@ async function loadCanonicalAutoCompletionReplay(input: {
 			period,
 			originalNotificationTime: period.startTime,
 			correctedNotificationTime: period.startTime,
+			correctedNotificationTimes: await loadReplayCorrectedTimes(input, period, {}),
 		};
 	}
 	const corrections = (await input.dbService.db.query.timeEntry.findMany({
@@ -3890,12 +3905,50 @@ async function loadCanonicalAutoCompletionReplay(input: {
 		period,
 		originalNotificationTime,
 		correctedNotificationTime,
+		correctedNotificationTimes: await loadReplayCorrectedTimes(input, period, {
+			clockIn: clockInCorrection,
+			clockOut: clockOutCorrection,
+		}),
 		workBalanceDirtyMark: {
 			employeeId: input.requesterEmployeeId,
 			organizationId: input.organizationId,
 			dirtyFromDate,
 		},
 	};
+}
+
+/**
+ * The corrected period of a replayed decision for its notification: each corrected
+ * endpoint's correction entry, else the period's own entry for that endpoint.
+ */
+async function loadReplayCorrectedTimes(
+	input: { dbService: ApprovalDbService; organizationId: string; requesterEmployeeId: string },
+	period: WorkPeriodRecord,
+	corrections: {
+		clockIn?: LockedTimeCorrectionEntry | null;
+		clockOut?: LockedTimeCorrectionEntry | null;
+	},
+): Promise<WorkPeriodEntryTimes | null> {
+	const missingIds = [
+		corrections.clockIn ? null : period.clockInId,
+		corrections.clockOut ? null : period.clockOutId,
+	].filter((id): id is string => Boolean(id));
+	const endpoints =
+		missingIds.length === 0
+			? []
+			: await input.dbService.db.query.timeEntry.findMany({
+					where: and(
+						eq(timeEntry.organizationId, input.organizationId),
+						eq(timeEntry.employeeId, input.requesterEmployeeId),
+						inArray(timeEntry.id, missingIds),
+					),
+					columns: { id: true, timestamp: true, utcOffsetMinutes: true },
+				});
+	const periodEntry = (id: string | null) =>
+		id ? endpoints.find((entry) => entry.id === id) : undefined;
+	const clockIn = corrections.clockIn ?? periodEntry(period.clockInId);
+	if (!clockIn) return null;
+	return workPeriodEntryTimesOf(clockIn, corrections.clockOut ?? periodEntry(period.clockOutId));
 }
 
 export async function executeTimeCorrectionSubmissionInTransaction(
@@ -4653,13 +4706,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 				dirtyFromDate: effects.terminal.dirtyFromDate,
 			});
 		}
-		notifyApprovedCorrection(
-			result.period,
-			request.entityId,
-			actor,
-			result.originalNotificationTime,
-			result.correctedNotificationTime,
-		);
+		notifyApprovedCorrection(result.period, request.entityId, actor, result);
 		return;
 	}
 	notifyRejectedCorrection(
@@ -4667,8 +4714,7 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 		request.entityId,
 		actor,
 		input.reason ?? request.rejectionReason ?? "",
-		result.originalNotificationTime,
-		result.correctedNotificationTime,
+		result,
 	);
 }
 
@@ -6125,17 +6171,17 @@ function notifyApprovedCorrection(
 	period: WorkPeriodRecord,
 	entityId: string,
 	currentEmployee: CurrentApprover,
-	originalTime: Date,
-	correctedTime: Date,
+	times: TimeCorrectionNotificationTimes,
 ) {
 	void onTimeCorrectionApproved({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
 		organizationId: period.employee.organizationId,
-		originalTime,
-		correctedTime,
+		originalTime: times.originalNotificationTime,
+		correctedTime: times.correctedNotificationTime,
 		approverName: currentEmployee.user.name,
+		corrected: times.correctedNotificationTimes,
 	});
 }
 
@@ -6144,17 +6190,17 @@ function notifyRejectedCorrection(
 	entityId: string,
 	currentEmployee: CurrentApprover,
 	reason: string,
-	originalTime: Date,
-	correctedTime: Date,
+	times: TimeCorrectionNotificationTimes,
 ) {
 	void onTimeCorrectionRejected({
 		workPeriodId: entityId,
 		employeeUserId: period.employee.userId,
 		employeeName: period.employee.user.name,
 		organizationId: period.employee.organizationId,
-		originalTime,
-		correctedTime,
+		originalTime: times.originalNotificationTime,
+		correctedTime: times.correctedNotificationTime,
 		approverName: currentEmployee.user.name,
+		corrected: times.correctedNotificationTimes,
 		rejectionReason: reason,
 	});
 }
@@ -6214,6 +6260,7 @@ function persistApprovedTimeCorrection(
 					: undefined,
 				originalNotificationTime: result.originalNotificationTime,
 				correctedNotificationTime: result.correctedNotificationTime,
+				correctedNotificationTimes: result.correctedNotificationTimes,
 			};
 		},
 		catch: (error) => error as AnyAppError,
@@ -6263,27 +6310,15 @@ function completeApprovedTimeCorrectionAfterCommit(
 function notifyApprovedTimeCorrectionAfterCommit(
 	entityId: string,
 	currentEmployee: CurrentApprover,
-	result: {
-		period: WorkPeriodRecord;
-		originalNotificationTime: Date;
-		correctedNotificationTime: Date;
-	},
+	result: { period: WorkPeriodRecord } & TimeCorrectionNotificationTimes,
 ) {
 	return Effect.sync(() =>
-		notifyApprovedCorrection(
-			result.period,
-			entityId,
-			currentEmployee,
-			result.originalNotificationTime,
-			result.correctedNotificationTime,
-		),
+		notifyApprovedCorrection(result.period, entityId, currentEmployee, result),
 	);
 }
 
-type RejectedTimeCorrectionResult = TimeCorrectionApprovalResult & {
-	originalNotificationTime: Date;
-	correctedNotificationTime: Date;
-};
+type RejectedTimeCorrectionResult = TimeCorrectionApprovalResult &
+	TimeCorrectionNotificationTimes;
 
 function persistRejectedTimeCorrection(
 	dbService: ApprovalDbService,
@@ -6366,6 +6401,7 @@ function persistRejectedTimeCorrection(
 			period: result.period,
 			originalNotificationTime: result.originalNotificationTime,
 			correctedNotificationTime: result.correctedNotificationTime,
+			correctedNotificationTimes: result.correctedNotificationTimes,
 		} satisfies RejectedTimeCorrectionResult;
 	});
 }
@@ -6382,8 +6418,7 @@ function notifyRejectedTimeCorrectionAfterCommit(
 			entityId,
 			currentEmployee,
 			reason,
-			result.originalNotificationTime,
-			result.correctedNotificationTime,
+			result,
 		),
 	);
 }

@@ -15,6 +15,11 @@ export interface RenderOrganizationEmailTemplateInput {
 	templateKey: EmailTemplateKey;
 	data: Record<string, unknown>;
 	subjectOverride?: string;
+	/**
+	 * Replaces the registry's default body when no override is enabled: notification
+	 * emails pass the shared layout in the recipient language (#1150).
+	 */
+	renderDefaultHtml?: () => Promise<string>;
 }
 
 export interface RenderedOrganizationEmailTemplate {
@@ -29,11 +34,14 @@ export async function renderOrganizationEmailTemplate({
 	templateKey,
 	data,
 	subjectOverride,
+	renderDefaultHtml,
 }: RenderOrganizationEmailTemplateInput): Promise<RenderedOrganizationEmailTemplate> {
 	const definition = getEmailTemplateDefinition(templateKey);
 	const defaultTemplate = async (): Promise<RenderedOrganizationEmailTemplate> => ({
 		subject: subjectOverride ?? interpolateTemplate(definition.defaultSubject, data),
-		html: await definition.renderDefault(data as never),
+		html: renderDefaultHtml
+			? await renderDefaultHtml()
+			: await definition.renderDefault(data as never),
 		usedOverride: false,
 	});
 

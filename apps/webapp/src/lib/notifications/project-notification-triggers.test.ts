@@ -142,6 +142,68 @@ describe("checkAndSendDeadlineNotifications", () => {
 			else process.env.TZ = serverTimeZone;
 		}
 
-		expect(createNotificationMock.mock.calls[0]?.[0].message).toContain("May 10, 2026");
+		const notification = createNotificationMock.mock.calls[0]?.[0];
+		expect(notification.message).toContain("May 10, 2026");
+		// Each channel formats the UTC calendar day in the recipient's language.
+		expect(notification.metadata.i18n).toMatchObject({
+			titleKey: "common:notifications.content.projectDeadlineWarning1d.title",
+			messageKey: "common:notifications.content.projectDeadlineWarning1d.message",
+			params: {
+				projectName: "new-york-1",
+				deadline: { kind: "plainDate", date: "2026-05-10", preset: "dateMedium" },
+			},
+		});
+	});
+});
+
+describe("checkProjectBudgetWarnings", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		notificationStateFindFirstMock.mockResolvedValue({
+			projectId: "project-1",
+			budgetThresholdsNotified: [70],
+			deadlineThresholdsNotified: [],
+		});
+		createNotificationMock.mockResolvedValue(undefined);
+	});
+
+	it("translates each newly crossed threshold with typed hours", async () => {
+		const { checkProjectBudgetWarnings } = await import("./project-notification-triggers");
+
+		await checkProjectBudgetWarnings({
+			projectId: "project-1",
+			projectName: "Website",
+			organizationId: "org-1",
+			budgetHours: 40,
+			usedHours: 41.25,
+		});
+
+		const sent = createNotificationMock.mock.calls.map(([notification]) => notification);
+		expect(sent.map((notification) => notification.type).sort()).toEqual([
+			"project_budget_warning_100",
+			"project_budget_warning_90",
+		]);
+		const exceeded = sent.find((notification) => notification.type === "project_budget_warning_100");
+		expect(exceeded).toMatchObject({
+			title: "Project budget exceeded",
+			message:
+				'"Website" has exceeded its budget (41 hours 15 minutes of 40 hours budgeted). Review and adjust as needed.',
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.projectBudgetWarning100.title",
+					messageKey: "common:notifications.content.projectBudgetWarning100.message",
+					params: {
+						projectName: "Website",
+						percent: 103,
+						used: { kind: "duration", minutes: 2475 },
+						budget: { kind: "duration", minutes: 2400 },
+					},
+				},
+			},
+		});
+		const near = sent.find((notification) => notification.type === "project_budget_warning_90");
+		expect(near?.message).toBe(
+			'"Website" has used 103% of its budget (41 hours 15 minutes of 40 hours). Consider reviewing time allocations.',
+		);
 	});
 });

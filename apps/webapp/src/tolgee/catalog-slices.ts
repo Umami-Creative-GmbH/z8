@@ -1,8 +1,9 @@
 import type { TolgeeStaticData } from "@tolgee/react";
 import {
 	ALL_LANGUAGES,
-	ALL_NAMESPACES,
+	APP_NAMESPACES,
 	DEFAULT_LANGUAGE,
+	isAppNamespace,
 	type Namespace,
 } from "./shared";
 
@@ -23,13 +24,14 @@ export function canonicalizeNamespaces(
 	namespaces: readonly Namespace[],
 ): readonly Namespace[] {
 	for (const namespace of namespaces) {
-		if (!ALL_NAMESPACES.includes(namespace)) {
+		// The mailer's namespaces never reach a route or the client.
+		if (!isAppNamespace(namespace)) {
 			throw new Error(`Unsupported translation namespace: ${namespace}`);
 		}
 	}
 	const selected = new Set(namespaces);
 	// The cache identity and merge order both follow the predecessor's explicit priority.
-	return ALL_NAMESPACES.filter((namespace) => selected.has(namespace));
+	return APP_NAMESPACES.filter((namespace) => selected.has(namespace));
 }
 
 // catalog-slices.test.ts checks generated metadata against every locale.

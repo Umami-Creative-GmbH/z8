@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import type { DateTime } from "luxon";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema/user-settings";
+import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE, loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 
@@ -77,17 +78,20 @@ export function fmtWeekdayShortDateTime(dt: DateTime, locale: string): string {
 }
 
 /**
- * Get the user's persisted locale from the database.
- * Falls back to DEFAULT_LANGUAGE if not set.
+ * The recipient language of a bot reply: the user's saved language, then the
+ * organization's default language, then `en`. Pass `userId: null` for someone
+ * not linked to a Z8 user yet; only the organization's default then counts.
  */
-export async function getUserLocale(userId: string): Promise<string> {
-	const locale = await getUserLocaleRaw(userId);
-	return locale ?? DEFAULT_LANGUAGE;
+export async function getUserLocale(input: {
+	userId: string | null;
+	organizationId: string;
+}): Promise<string> {
+	return resolveRecipientNotificationLocale(input);
 }
 
 /**
- * Get the user's persisted locale from the database.
- * Returns null if no locale preference has been set.
+ * The language the user saved themselves, or null when they saved none (or an
+ * unsupported one). This is the user's own choice, not the language they get.
  */
 export async function getUserLocaleRaw(userId: string): Promise<string | null> {
 	const settings = await db.query.userSettings.findFirst({

@@ -163,11 +163,11 @@ describe("email template settings actions", () => {
 		expect(mocks.requireAccess).toHaveBeenCalledTimes(1);
 		expect(mocks.conditions).toContainEqual({ eq: ["organizationId", "org_1"] });
 		expect(passwordReset?.override).toBeNull();
-		expect(passwordReset?.starterDraftPlainText).toContain("Reset Your Password");
+		expect(passwordReset?.starterDraftPlainText).toContain("Reset your password");
 		expect(passwordReset?.starterDraftPlainText).toContain("{{userName}}");
 		expect(passwordReset?.starterDraftPlainText).toContain("{{resetUrl}}");
 		expect(passwordReset?.starterDraftPlainText).not.toContain("Alex Morgan");
-		expect(passwordReset?.starterDraftHtml).toContain("Reset Your Password");
+		expect(passwordReset?.starterDraftHtml).toContain("Reset your password");
 		expect(passwordReset?.starterDraftHtml).toContain("{{resetUrl}}");
 		expect(passwordReset?.starterDraftHtml).not.toContain("/reset-password?token=preview");
 	});
@@ -176,10 +176,10 @@ describe("email template settings actions", () => {
 		const templates = await listEmailTemplates();
 		const exportReady = templates.find((entry) => entry.key === "export-ready");
 
-		expect(exportReady?.starterDraftHtml).toContain("Your Data Export is Ready");
+		expect(exportReady?.starterDraftHtml).toContain("Your data export is ready");
 		expect(exportReady?.starterDraftHtml).toContain("{{categories}}");
 		expect(exportReady?.starterDraftHtml).not.toContain("Time entries, Absences");
-		expect(exportReady?.starterDraftPlainText).toContain("Your Data Export is Ready");
+		expect(exportReady?.starterDraftPlainText).toContain("Your data export is ready");
 		expect(exportReady?.starterDraftPlainText).toContain("{{categories}}");
 		expect(exportReady?.starterDraftPlainText).not.toContain("Time entries, Absences");
 	});
@@ -234,7 +234,7 @@ describe("email template settings actions", () => {
 		const passwordReset = templates.find((entry) => entry.key === "password-reset");
 
 		expect(passwordReset?.override).toBeNull();
-		expect(passwordReset?.starterDraftPlainText).toContain("Reset Your Password");
+		expect(passwordReset?.starterDraftPlainText).toContain("Reset your password");
 		expect(passwordReset?.starterDraftPlainText).toContain("{{resetUrl}}");
 		expect(passwordReset?.starterDraftPlainText).not.toContain("stale custom content");
 	});

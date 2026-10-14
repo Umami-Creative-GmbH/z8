@@ -78,6 +78,8 @@ const NAMESPACE_PREFIXES = {
 	onboarding: "onboarding",
 	// bot namespace
 	bot: "bot",
+	// emails namespace (mailer only)
+	emails: "emails",
 };
 
 const NESTED_NAMESPACE_PREFIXES = [
