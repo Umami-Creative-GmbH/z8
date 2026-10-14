@@ -60,7 +60,10 @@ interface KioskVehicleUseStepProps {
 const NONE = "";
 
 /** When the asked-about work starts and when the action takes effect, for the warnings. */
-function workTimes(state: KioskEmployeeSnapshot["state"]): { since: Instant | null; at: Instant } {
+function workTimes(state: KioskEmployeeSnapshot["state"]): {
+	since: Instant | null;
+	at: Instant;
+} {
 	const now = systemClock.nowInstant();
 	if (state.status === "clocked_out") return { since: null, at: now };
 	// A day ended on a break ends at the break's start.
@@ -87,7 +90,6 @@ export function KioskVehicleUseStep({
 }: KioskVehicleUseStepProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
-	const id = useId();
 	const [draft, setDraft] = useState<VehicleUseDraft>(() =>
 		question === "clock_in" ? prefilledVehicleUseDraft(context) : EMPTY_VEHICLE_USE_DRAFT,
 	);
@@ -106,12 +108,13 @@ export function KioskVehicleUseStep({
 	function confirm() {
 		onConfirm(
 			request.ok
-				? { ...(request.vehicleUse ? { vehicleUse: request.vehicleUse } : {}), leftOut: false }
+				? {
+						...(request.vehicleUse ? { vehicleUse: request.vehicleUse } : {}),
+						leftOut: false,
+					}
 				: { leftOut: true },
 		);
 	}
-
-	const set = (patch: Partial<VehicleUseDraft>) => setDraft({ ...draft, ...patch });
 
 	return (
 		<div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
@@ -154,71 +157,15 @@ export function KioskVehicleUseStep({
 			) : live ? (
 				<p className="text-center text-xl">{liveText(t, context, live, locale)}</p>
 			) : null}
-			{asksWholeUse && draft.vehicle !== NONE ? (
-				<div className="grid gap-4 sm:grid-cols-2">
-					<Reading
-						id={`${id}-start`}
-						label={t("timeTracking.vehicleUse.startKm", "Start reading (km)")}
-						value={draft.startKm}
-						onChange={(startKm) => set({ startKm })}
-						disabled={pending}
-					/>
-					{question === "clock_out" ? (
-						<>
-							<Reading
-								id={`${id}-end`}
-								label={t("timeTracking.vehicleUse.endKm", "End reading (km)")}
-								value={draft.endKm}
-								onChange={(endKm) => set({ endKm })}
-								disabled={pending}
-							/>
-							{draft.startKm.trim() === "" ? (
-								<Reading
-									id={`${id}-distance`}
-									label={t("timeTracking.vehicleUse.distanceKm", "Driven distance (km)")}
-									value={draft.distanceKm}
-									onChange={(distanceKm) => set({ distanceKm })}
-									disabled={pending}
-								/>
-							) : (
-								<DerivedDistance draft={draft} />
-							)}
-						</>
-					) : null}
-				</div>
-			) : null}
-			{question === "clock_out" && live ? (
-				live.startKm === null ? (
-					<Reading
-						id={`${id}-distance`}
-						label={t("timeTracking.vehicleUse.distanceKm", "Driven distance (km)")}
-						value={draft.distanceKm}
-						onChange={(distanceKm) => set({ distanceKm })}
-						disabled={pending}
-					/>
-				) : (
-					<Reading
-						id={`${id}-end`}
-						label={t("timeTracking.vehicleUse.endKm", "End reading (km)")}
-						value={draft.endKm}
-						onChange={(endKm) => set({ endKm })}
-						disabled={pending}
-					/>
-				)
-			) : null}
-			{question === "break" ? (
-				<Reading
-					id={`${id}-reading`}
-					label={t("timeTracking.vehicleUse.breakReading", "Odometer reading at the break (km)")}
-					hint={t(
-						"timeTracking.vehicleUse.breakReadingHint",
-						"Optional. It ends this work's reading and starts the next one's.",
-					)}
-					value={reading}
-					onChange={setReading}
-					disabled={pending}
-				/>
-			) : null}
+			<KioskVehicleReadings
+				question={question}
+				live={live}
+				draft={draft}
+				onChange={setDraft}
+				reading={reading}
+				onReadingChange={setReading}
+				pending={pending}
+			/>
 			{!request.ok ? (
 				<p role="alert" className="text-center text-lg text-destructive">
 					{vehicleUseRefusalText(t, request.code)}
@@ -253,7 +200,10 @@ function liveText(
 			vehicle:
 				use.vehicle.kind === "own"
 					? { kind: "own" }
-					: { kind: "organization", label: vehicle ? vehicleOptionLabel(vehicle) : null },
+					: {
+							kind: "organization",
+							label: vehicle ? vehicleOptionLabel(vehicle) : null,
+						},
 			startKm: use.startKm,
 			endKm: use.endKm,
 			distanceKm: use.distanceKm,
@@ -277,14 +227,20 @@ function VehicleChoice({
 	const { t } = useTranslate();
 	const name = useId();
 	const options: { value: string; label: ReactNode }[] = [
-		{ value: NONE, label: t("timeTracking.vehicleUse.noVehicle", "No vehicle") },
+		{
+			value: NONE,
+			label: t("timeTracking.vehicleUse.noVehicle", "No vehicle"),
+		},
 		...context.vehicles
 			.filter((vehicle) => !vehicle.archived || vehicle.id === value)
 			.map((vehicle) => ({
 				value: vehicle.id,
 				label: vehicleOptionLabel(vehicle),
 			})),
-		{ value: "own", label: t("timeTracking.vehicleUse.ownVehicle", "Own vehicle") },
+		{
+			value: "own",
+			label: t("timeTracking.vehicleUse.ownVehicle", "Own vehicle"),
+		},
 	];
 	return (
 		<div
@@ -364,5 +320,97 @@ function DerivedDistance({ draft }: { draft: VehicleUseDraft }) {
 				distance: formatKm(distance, locale),
 			})}
 		</p>
+	);
+}
+
+function KioskVehicleReadings({
+	question,
+	live,
+	draft,
+	onChange,
+	reading,
+	onReadingChange,
+	pending,
+}: {
+	question: KioskVehicleQuestion;
+	live: KioskVehicleUse["live"];
+	draft: VehicleUseDraft;
+	onChange: (value: VehicleUseDraft) => void;
+	reading: string;
+	onReadingChange: (value: string) => void;
+	pending: boolean;
+}) {
+	const { t } = useTranslate();
+	const id = useId();
+	const asksWholeUse = question === "clock_in" || (question === "clock_out" && !live);
+	const set = (patch: Partial<VehicleUseDraft>) => onChange({ ...draft, ...patch });
+	return (
+		<>
+			{asksWholeUse && draft.vehicle !== NONE ? (
+				<div className="grid gap-4 sm:grid-cols-2">
+					<Reading
+						id={`${id}-start`}
+						label={t("timeTracking.vehicleUse.startKm", "Start reading (km)")}
+						value={draft.startKm}
+						onChange={(startKm) => set({ startKm })}
+						disabled={pending}
+					/>
+					{question === "clock_out" ? (
+						<>
+							<Reading
+								id={`${id}-end`}
+								label={t("timeTracking.vehicleUse.endKm", "End reading (km)")}
+								value={draft.endKm}
+								onChange={(endKm) => set({ endKm })}
+								disabled={pending}
+							/>
+							{draft.startKm.trim() === "" ? (
+								<Reading
+									id={`${id}-distance`}
+									label={t("timeTracking.vehicleUse.distanceKm", "Driven distance (km)")}
+									value={draft.distanceKm}
+									onChange={(distanceKm) => set({ distanceKm })}
+									disabled={pending}
+								/>
+							) : (
+								<DerivedDistance draft={draft} />
+							)}
+						</>
+					) : null}
+				</div>
+			) : null}
+			{question === "clock_out" && live ? (
+				live.startKm === null ? (
+					<Reading
+						id={`${id}-distance`}
+						label={t("timeTracking.vehicleUse.distanceKm", "Driven distance (km)")}
+						value={draft.distanceKm}
+						onChange={(distanceKm) => set({ distanceKm })}
+						disabled={pending}
+					/>
+				) : (
+					<Reading
+						id={`${id}-end`}
+						label={t("timeTracking.vehicleUse.endKm", "End reading (km)")}
+						value={draft.endKm}
+						onChange={(endKm) => set({ endKm })}
+						disabled={pending}
+					/>
+				)
+			) : null}
+			{question === "break" ? (
+				<Reading
+					id={`${id}-reading`}
+					label={t("timeTracking.vehicleUse.breakReading", "Odometer reading at the break (km)")}
+					hint={t(
+						"timeTracking.vehicleUse.breakReadingHint",
+						"Optional. It ends this work's reading and starts the next one's.",
+					)}
+					value={reading}
+					onChange={onReadingChange}
+					disabled={pending}
+				/>
+			) : null}
+		</>
 	);
 }

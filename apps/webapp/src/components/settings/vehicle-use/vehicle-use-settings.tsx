@@ -40,7 +40,10 @@ type AssignmentTargetType = VehicleUseAssignmentTarget["type"];
 export function VehicleUseSettings({ data }: VehicleUseSettingsProps) {
 	return (
 		<div className="space-y-6">
-			<VehicleUseSwitch data={data} />
+			<VehicleUseSwitch
+				key={String(data.settings.enabled)}
+				initialEnabled={data.settings.enabled}
+			/>
 			<VehicleUseAssignments data={data} />
 		</div>
 	);
@@ -72,10 +75,10 @@ function vehicleUseErrorMessage(t: Translate, code: VehicleUseErrorCode): string
 	}
 }
 
-function VehicleUseSwitch({ data }: VehicleUseSettingsProps) {
+function VehicleUseSwitch({ initialEnabled }: { initialEnabled: boolean }) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const [enabled, setEnabled] = useState(data.settings.enabled);
+	const [enabled, setEnabled] = useState(initialEnabled);
 	const [saving, setSaving] = useState(false);
 
 	const toggle = async (next: boolean) => {
@@ -141,7 +144,10 @@ function VehicleUseSwitch({ data }: VehicleUseSettingsProps) {
 function modeOptions(t: Translate): { value: VehicleUseMode; label: string }[] {
 	return [
 		{ value: "asked", label: t("settings.vehicleUse.modeAsked", "Asked") },
-		{ value: "expected", label: t("settings.vehicleUse.modeExpected", "Vehicle use expected") },
+		{
+			value: "expected",
+			label: t("settings.vehicleUse.modeExpected", "Vehicle use expected"),
+		},
 		{ value: "off", label: t("settings.vehicleUse.modeOff", "Off (excluded)") },
 	];
 }
@@ -300,7 +306,10 @@ function VehicleUseAssignments({ data }: VehicleUseSettingsProps) {
 											size="icon"
 											onClick={() =>
 												void runAssignmentChange(
-													() => removeVehicleUseAssignmentAction({ assignmentId: assignment.id }),
+													() =>
+														removeVehicleUseAssignmentAction({
+															assignmentId: assignment.id,
+														}),
 													t("settings.vehicleUse.assignmentRemoved", "Assignment removed"),
 												)
 											}

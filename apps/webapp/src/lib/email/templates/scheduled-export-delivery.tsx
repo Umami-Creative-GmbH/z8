@@ -47,10 +47,18 @@ export function ScheduledExportDeliveryEmail({
 	download,
 }: ScheduledExportDeliveryEmailProps) {
 	const details: EmailDetailRow[] = [
-		{ label: t("emails.scheduledExport.dateRangeLabel", "Date range"), value: dateRange },
+		{
+			label: t("emails.scheduledExport.dateRangeLabel", "Date range"),
+			value: dateRange,
+		},
 		...(recordCount === undefined
 			? []
-			: [{ label: t("emails.scheduledExport.recordsLabel", "Records"), value: recordCount }]),
+			: [
+					{
+						label: t("emails.scheduledExport.recordsLabel", "Records"),
+						value: recordCount,
+					},
+				]),
 	];
 	const body = download
 		? t(
@@ -107,5 +115,5 @@ export function ScheduledExportDeliveryEmail({
 export async function renderScheduledExportDeliveryEmail(
 	props: ScheduledExportDeliveryEmailProps,
 ): Promise<string> {
-	return render(ScheduledExportDeliveryEmail(props));
+	return render(<ScheduledExportDeliveryEmail {...props} />);
 }

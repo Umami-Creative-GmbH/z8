@@ -96,42 +96,19 @@ export function useClockVehicleUse({ enabled }: { enabled: boolean }) {
 			setClockInDraft(null);
 			setClockOutDraft(EMPTY_VEHICLE_USE_DRAFT);
 			setBreakReading("");
-			void queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.vehicleUse() });
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.timeClock.vehicleUse(),
+			});
 		},
 		refresh() {
-			return queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.vehicleUse() });
+			return queryClient.invalidateQueries({
+				queryKey: queryKeys.timeClock.vehicleUse(),
+			});
 		},
 	};
 }
 
 export type ClockVehicleUseState = ReturnType<typeof useClockVehicleUse>;
-
-/**
- * Tells the employee that entered vehicle use could not be sent with the clock
- * event, which went ahead without it: the entry was refused, or the accepted
- * event could not carry it (`outcome.vehicleUseLeftOut`, an offline clock event
- * under a service worker older than #1122).
- */
-export function warnVehicleUseLeftOut(
-	result: { ok: true } | { ok: false; code: Parameters<typeof vehicleUseRefusalText>[1] },
-	t: TFnType,
-	outcome?: object,
-) {
-	if (!result.ok) {
-		toast.warning(t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded"), {
-			description: vehicleUseRefusalText(t, result.code),
-		});
-		return;
-	}
-	if (outcome && "vehicleUseLeftOut" in outcome && outcome.vehicleUseLeftOut === true) {
-		toast.warning(t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded"), {
-			description: t(
-				"timeTracking.vehicleUse.notSentOffline",
-				"It could not be saved with this offline clock event. Add it to the work period once you are online.",
-			),
-		});
-	}
-}
 
 function vehicleLabel(context: ClockVehicleUseContext | null, use: WorkVehicleUse) {
 	if (use.vehicle.kind === "own") return null;
@@ -185,7 +162,11 @@ export function ClockInVehicleUse({
 	disabled?: boolean;
 	t: TFnType;
 }) {
-	const draft = vehicleUseFromDraft({ ...state.clockInDraft, endKm: "", distanceKm: "" });
+	const draft = vehicleUseFromDraft({
+		...state.clockInDraft,
+		endKm: "",
+		distanceKm: "",
+	});
 	const warnings = useClockWarnings(
 		state.asks && draft.ok && draft.input ? { vehicleUse: draft.input } : null,
 	);
@@ -218,8 +199,6 @@ export function ClockOutVehicleUse({
 	disabled?: boolean;
 	t: TFnType;
 }) {
-	const id = useId();
-	const locale = useLocale();
 	const [editing, setEditing] = useState(false);
 	const { live } = state;
 	const closingUse =
@@ -258,6 +237,35 @@ export function ClockOutVehicleUse({
 			/>
 		);
 	}
+	return (
+		<LiveVehicleUseClosing
+			state={state}
+			live={live}
+			disabled={disabled}
+			t={t}
+			warnings={warnings}
+			onEdit={() => setEditing(true)}
+		/>
+	);
+}
+
+function LiveVehicleUseClosing({
+	state,
+	live,
+	disabled,
+	t,
+	warnings,
+	onEdit,
+}: {
+	state: ClockVehicleUseState;
+	live: WorkVehicleUse;
+	disabled?: boolean;
+	t: TFnType;
+	warnings: Parameters<typeof VehicleUseWarnings>[0]["warnings"];
+	onEdit: () => void;
+}) {
+	const id = useId();
+	const locale = useLocale();
 	const startMissing = live.startKm === null;
 	return (
 		<div className="space-y-2">
@@ -272,7 +280,7 @@ export function ClockOutVehicleUse({
 						size="sm"
 						variant="ghost"
 						className="h-7 px-2"
-						onClick={() => setEditing(true)}
+						onClick={onEdit}
 						disabled={disabled}
 					>
 						<IconPencil className="size-3.5" aria-hidden="true" />
@@ -348,7 +356,10 @@ function LiveVehicleUseEditor({
 		const saved = await changeLiveVehicleUse({
 			workPeriodId,
 			vehicleUse: result.input
-				? { vehicle: result.input.vehicle, startKm: result.input.startKm ?? null }
+				? {
+						vehicle: result.input.vehicle,
+						startKm: result.input.startKm ?? null,
+					}
 				: null,
 		}).catch(() => null);
 		setSaving(false);

@@ -77,56 +77,64 @@ async function collectIntegrations(
 	const { organizationId, employeeId } = scope;
 	await loadSubjectEmployee(database, scope);
 
-	const calendars = await database
-		.select({
-			provider: calendarConnection.provider,
-			account: calendarConnection.providerAccountId,
-			calendarId: calendarConnection.calendarId,
-			isActive: calendarConnection.isActive,
-			pushEnabled: calendarConnection.pushEnabled,
-			conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
-			lastSyncAt: calendarConnection.lastSyncAt,
-			createdAt: calendarConnection.createdAt,
-			updatedAt: calendarConnection.updatedAt,
-		})
-		.from(calendarConnection)
-		.where(
-			and(
-				eq(calendarConnection.organizationId, organizationId),
-				eq(calendarConnection.employeeId, employeeId),
-			),
-		)
-		.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id));
+	const [calendars, feeds, { pin, pinSetters }, chatAccounts] = await Promise.all([
+		database
+			.select({
+				provider: calendarConnection.provider,
+				account: calendarConnection.providerAccountId,
+				calendarId: calendarConnection.calendarId,
+				isActive: calendarConnection.isActive,
+				pushEnabled: calendarConnection.pushEnabled,
+				conflictDetectionEnabled: calendarConnection.conflictDetectionEnabled,
+				lastSyncAt: calendarConnection.lastSyncAt,
+				createdAt: calendarConnection.createdAt,
+				updatedAt: calendarConnection.updatedAt,
+			})
+			.from(calendarConnection)
+			.where(
+				and(
+					eq(calendarConnection.organizationId, organizationId),
+					eq(calendarConnection.employeeId, employeeId),
+				),
+			)
+			.orderBy(asc(calendarConnection.createdAt), asc(calendarConnection.id)),
 
-	const feeds = await database
-		.select({
-			includeApproved: icsFeed.includeApproved,
-			includePending: icsFeed.includePending,
-			createdAt: icsFeed.createdAt,
-			lastUsedAt: icsFeed.lastUsedAt,
-			revokedAt: icsFeed.revokedAt,
-		})
-		.from(icsFeed)
-		.where(
-			and(
-				eq(icsFeed.organizationId, organizationId),
-				eq(icsFeed.employeeId, employeeId),
-				eq(icsFeed.feedType, "user"),
-			),
-		)
-		.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id));
-
-	const [pin] = await database
-		.select({ updatedAt: employeeKioskPin.updatedAt, setByUserId: employeeKioskPin.setByUserId })
-		.from(employeeKioskPin)
-		.where(
-			and(
-				eq(employeeKioskPin.organizationId, organizationId),
-				eq(employeeKioskPin.employeeId, employeeId),
-			),
-		)
-		.limit(1);
-	const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
+		database
+			.select({
+				includeApproved: icsFeed.includeApproved,
+				includePending: icsFeed.includePending,
+				createdAt: icsFeed.createdAt,
+				lastUsedAt: icsFeed.lastUsedAt,
+				revokedAt: icsFeed.revokedAt,
+			})
+			.from(icsFeed)
+			.where(
+				and(
+					eq(icsFeed.organizationId, organizationId),
+					eq(icsFeed.employeeId, employeeId),
+					eq(icsFeed.feedType, "user"),
+				),
+			)
+			.orderBy(asc(icsFeed.createdAt), asc(icsFeed.id)),
+		(async () => {
+			const [pin] = await database
+				.select({
+					updatedAt: employeeKioskPin.updatedAt,
+					setByUserId: employeeKioskPin.setByUserId,
+				})
+				.from(employeeKioskPin)
+				.where(
+					and(
+						eq(employeeKioskPin.organizationId, organizationId),
+						eq(employeeKioskPin.employeeId, employeeId),
+					),
+				)
+				.limit(1);
+			const pinSetters = await loadUserNames(database, [pin?.setByUserId]);
+			return { pin, pinSetters };
+		})(),
+		chatAccountRows(database, scope),
+	]);
 
 	return {
 		category: "integrations",
@@ -158,7 +166,7 @@ async function collectIntegrations(
 					revoked_at: instantText(row.revokedAt),
 				})),
 			),
-			tablePart("chat_accounts", CHAT_ACCOUNT_COLUMNS, await chatAccountRows(database, scope)),
+			tablePart("chat_accounts", CHAT_ACCOUNT_COLUMNS, chatAccounts),
 			recordPart("kiosk_pin", {
 				pin_set: Boolean(pin),
 				set_at: instantText(pin?.updatedAt),

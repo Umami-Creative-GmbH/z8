@@ -93,6 +93,7 @@ export async function loadWorkVehicleUseFormContext(
 		employeeId: input.employeeId,
 	});
 	const recorded = input.recordedVehicleIds ?? [];
+	const recordedIds = new Set(recorded);
 	const empty = { suggestedVehicleIds: [], lastEndKmByVehicleId: {} };
 	// With vehicle use off, only recorded vehicles need names (read-only display).
 	if (mode === "off") {
@@ -100,7 +101,7 @@ export async function loadWorkVehicleUseFormContext(
 		const vehicles = await listWorkVehicleOptions(reader, input.organizationId, recorded);
 		return {
 			mode,
-			vehicles: vehicles.filter((vehicle) => recorded.includes(vehicle.id)),
+			vehicles: vehicles.filter((vehicle) => recordedIds.has(vehicle.id)),
 			...empty,
 		};
 	}

@@ -65,8 +65,9 @@ function VehicleDialogContent({
 	const { t } = useTranslate();
 	const initialEmployeeIds = vehicle?.drivers.employees.map((driver) => driver.id) ?? [];
 	// Departed employees can't be newly assigned, but one still assigned stays listed.
+	const initiallyAssigned = new Set(initialEmployeeIds);
 	const employeeOptions = employees
-		.filter((employee) => employee.isActive || initialEmployeeIds.includes(employee.id))
+		.filter((employee) => employee.isActive || initiallyAssigned.has(employee.id))
 		.map((employee) => toSelectableEmployee(employee, { isActive: employee.isActive }));
 
 	const form = useForm({

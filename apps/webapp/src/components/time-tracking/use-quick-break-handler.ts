@@ -4,7 +4,8 @@ import type { TFnType } from "@tolgee/react";
 import { toast } from "sonner";
 import type { BreakVehicleUse } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import { toastClockCommandError } from "./clock-command-error-toast";
-import { type ClockVehicleUseState, warnVehicleUseLeftOut } from "./clock-vehicle-use";
+import type { ClockVehicleUseState } from "./clock-vehicle-use";
+import { warnVehicleUseLeftOut } from "./clock-vehicle-use-notice";
 
 type AddBreakMutation = (params: {
 	breakMinutes: number;

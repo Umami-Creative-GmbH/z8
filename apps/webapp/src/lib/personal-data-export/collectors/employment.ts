@@ -268,7 +268,10 @@ async function collectEmployment(
 			)
 			.orderBy(asc(employeeDeparture.createdAt)),
 		database
-			.select({ terms: employeeEmploymentHistory, workPolicyName: workPolicy.name })
+			.select({
+				terms: employeeEmploymentHistory,
+				workPolicyName: workPolicy.name,
+			})
 			.from(employeeEmploymentHistory)
 			.leftJoin(
 				workPolicy,
@@ -640,30 +643,32 @@ async function collectEmployment(
 		for (const row of permissionTeams) teamNames.set(row.id, row.name);
 	}
 
-	const byUser = await userNameLookup(database, [
-		...departureEvents.map((row) => row.actorUserId),
-		...memberships.map((row) => row.createdBy),
-		...periods.map((row) => row.createdBy),
-		...departures.map((row) => row.createdBy),
-		...terms.flatMap((row) => [row.terms.createdBy, row.terms.updatedBy]),
-		...managers.map((row) => row.assignedBy),
-		...assignedLocations.map((row) => row.createdBy),
-		...supervisedLocations.map((row) => row.createdBy),
-		...supervisedSubareas.map((row) => row.createdBy),
-		...skills.map((row) => row.assignedBy),
-		...projectRows.map((row) => row.createdBy),
-		...projectHistoryRows.map((row) => row.createdBy),
-		...managedProjects.map((row) => row.assignedBy),
-		...roles.map((row) => row.assignedBy),
-		...groups.map((row) => row.createdBy),
-		...policyRows.map((row) => row.createdBy),
-		...customFields.map((row) => row.updatedBy),
-		...assignedVehicles.map((row) => row.createdBy),
-	]);
-	const byEmployee = await employeeNameLookup(database, organizationId, [
-		...managers.map((row) => row.managerId),
-		...permissions.map((row) => row.grantedBy),
-		...departures.map((row) => row.replacementEmployeeId),
+	const [byUser, byEmployee] = await Promise.all([
+		userNameLookup(database, [
+			...departureEvents.map((row) => row.actorUserId),
+			...memberships.map((row) => row.createdBy),
+			...periods.map((row) => row.createdBy),
+			...departures.map((row) => row.createdBy),
+			...terms.flatMap((row) => [row.terms.createdBy, row.terms.updatedBy]),
+			...managers.map((row) => row.assignedBy),
+			...assignedLocations.map((row) => row.createdBy),
+			...supervisedLocations.map((row) => row.createdBy),
+			...supervisedSubareas.map((row) => row.createdBy),
+			...skills.map((row) => row.assignedBy),
+			...projectRows.map((row) => row.createdBy),
+			...projectHistoryRows.map((row) => row.createdBy),
+			...managedProjects.map((row) => row.assignedBy),
+			...roles.map((row) => row.assignedBy),
+			...groups.map((row) => row.createdBy),
+			...policyRows.map((row) => row.createdBy),
+			...customFields.map((row) => row.updatedBy),
+			...assignedVehicles.map((row) => row.createdBy),
+		]),
+		employeeNameLookup(database, organizationId, [
+			...managers.map((row) => row.managerId),
+			...permissions.map((row) => row.grantedBy),
+			...departures.map((row) => row.replacementEmployeeId),
+		]),
 	]);
 
 	const employeeRecord: PersonalDataRow = {

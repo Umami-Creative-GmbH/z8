@@ -7,11 +7,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { requestMyPersonalDataExport } from "@/app/[locale]/(app)/settings/my-data/actions";
 import {
-	isBuilding,
 	PersonalDataExportList,
 	type PersonalDataExportListLabels,
-	REFRESH_WHILE_BUILDING_MS,
 } from "@/components/settings/personal-data-export/personal-data-export-list";
+import {
+	isBuilding,
+	REFRESH_WHILE_BUILDING_MS,
+} from "@/components/settings/personal-data-export/personal-data-export-status";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
@@ -105,9 +107,10 @@ export function MyDataPanel({ exports }: MyDataPanelProps) {
 			} else {
 				toast.error(refusalMessage(t, result.refusal));
 			}
-		} finally {
-			setRequesting(false);
+		} catch {
+			toast.error(refusalMessage(t, undefined));
 		}
+		setRequesting(false);
 	};
 
 	return (

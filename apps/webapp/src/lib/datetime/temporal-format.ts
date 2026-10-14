@@ -104,16 +104,19 @@ export function formatInstant(
 	const options: Intl.DateTimeFormatOptions = {
 		...DATE_TIME_FORMAT_OPTIONS[preset],
 		timeZone: timezone,
-		...(TIME_PRESETS.has(preset) ? { hour12: context.timeFormat === "12h" } : {}),
+		...(TIME_PRESETS.has(preset)
+			? {
+					// ICU versions differ on numeric 24-hour padding; make the display contract explicit.
+					hour: context.timeFormat === "24h" ? "2-digit" : "numeric",
+					hour12: context.timeFormat === "12h",
+				}
+			: {}),
 	};
 
 	return new TemporalDateTimeFormat(context.locale, options).format(instant);
 }
 
-export function getInstantLocalMinuteFields(
-	instant: Instant,
-	timezone: string,
-): LocalMinuteFields {
+export function getInstantLocalMinuteFields(instant: Instant, timezone: string): LocalMinuteFields {
 	const local = instant.toZonedDateTimeISO(parseTimeZone(timezone));
 	return {
 		date: local.toPlainDate().toString(),

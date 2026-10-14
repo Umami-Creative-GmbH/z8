@@ -103,7 +103,9 @@ function confirmationOf(
 /** The kiosk as the server describes it now, from the heartbeat; null when unreadable. */
 async function kioskInfoOf(response: Response): Promise<KioskDeviceInfo | null> {
 	if (!response.ok) return null;
-	const body = (await response.json().catch(() => null)) as { kiosk?: KioskDeviceInfo } | null;
+	const body = (await response.json().catch(() => null)) as {
+		kiosk?: KioskDeviceInfo;
+	} | null;
 	return body?.kiosk && typeof body.kiosk.boardEnabled === "boolean" ? body.kiosk : null;
 }
 
@@ -177,7 +179,13 @@ export function KioskPairedScreen({
 		});
 		if (result.kind === "kiosk") return kioskRefused(result.code);
 		if (result.kind === "ok") {
-			setFlow({ step: "employee", pin, snapshot: result.body, pending: null, error: null });
+			setFlow({
+				step: "employee",
+				pin,
+				snapshot: result.body,
+				pending: null,
+				error: null,
+			});
 			return;
 		}
 		setFlow({
@@ -189,17 +197,6 @@ export function KioskPairedScreen({
 		});
 	}
 
-	/** An action's button: the vehicle step first when the action asks vehicle use (#1123). */
-	function choose(pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) {
-		const question = kioskVehicleQuestion(action, snapshot.vehicleUse);
-		if (question && snapshot.vehicleUse) {
-			const ask = { question, context: snapshot.vehicleUse };
-			setFlow({ step: "vehicle", pin, snapshot, action, ask, pending: false });
-			return;
-		}
-		void act(pin, snapshot, action);
-	}
-
 	async function act(
 		pin: string,
 		snapshot: KioskEmployeeSnapshot,
@@ -208,7 +205,14 @@ export function KioskPairedScreen({
 	) {
 		setFlow(
 			vehicle
-				? { step: "vehicle", pin, snapshot, action, ask: vehicle.ask, pending: true }
+				? {
+						step: "vehicle",
+						pin,
+						snapshot,
+						action,
+						ask: vehicle.ask,
+						pending: true,
+					}
 				: { step: "employee", pin, snapshot, pending: action, error: null },
 		);
 		const vehicleUse = vehicle?.answer.vehicleUse;
@@ -228,8 +232,17 @@ export function KioskPairedScreen({
 			return;
 		}
 		if (result.kind === "refused" && KIOSK_PIN_REFUSALS.has(result.refusal.code)) {
-			const employee = { id: snapshot.employee.id, name: snapshot.employee.name };
-			setFlow({ step: "pin", employee, attempt: 1, busy: false, error: result.refusal });
+			const employee = {
+				id: snapshot.employee.id,
+				name: snapshot.employee.name,
+			};
+			setFlow({
+				step: "pin",
+				employee,
+				attempt: 1,
+				busy: false,
+				error: result.refusal,
+			});
 			return;
 		}
 		const refusal = result.kind === "offline" ? "offline" : result.refusal;
@@ -237,7 +250,24 @@ export function KioskPairedScreen({
 			refusal !== "offline" && "state" in refusal && refusal.state && refusal.dayTotal
 				? { ...snapshot, state: refusal.state, dayTotal: refusal.dayTotal }
 				: snapshot;
-		setFlow({ step: "employee", pin, snapshot: after, pending: null, error: refusal });
+		setFlow({
+			step: "employee",
+			pin,
+			snapshot: after,
+			pending: null,
+			error: refusal,
+		});
+	}
+
+	/** An action's button: the vehicle step first when the action asks vehicle use (#1123). */
+	function choose(pin: string, snapshot: KioskEmployeeSnapshot, action: KioskPanelAction) {
+		const question = kioskVehicleQuestion(action, snapshot.vehicleUse);
+		if (question && snapshot.vehicleUse) {
+			const ask = { question, context: snapshot.vehicleUse };
+			setFlow({ step: "vehicle", pin, snapshot, action, ask, pending: false });
+			return;
+		}
+		void act(pin, snapshot, action);
 	}
 
 	return (
@@ -265,7 +295,13 @@ export function KioskPairedScreen({
 					locale={language.locale}
 					onChooseLanguage={language.choose}
 					onPick={(employee) =>
-						setFlow({ step: "pin", employee, attempt: 0, busy: false, error: null })
+						setFlow({
+							step: "pin",
+							employee,
+							attempt: 0,
+							busy: false,
+							error: null,
+						})
 					}
 					onKioskRefused={kioskRefused}
 				/>
@@ -302,7 +338,10 @@ export function KioskPairedScreen({
 					pending={flow.pending}
 					disabled={!online}
 					onConfirm={(answer) =>
-						void act(flow.pin, flow.snapshot, flow.action, { ask: flow.ask, answer })
+						void act(flow.pin, flow.snapshot, flow.action, {
+							ask: flow.ask,
+							answer,
+						})
 					}
 					onBack={() =>
 						setFlow({
@@ -316,27 +355,46 @@ export function KioskPairedScreen({
 				/>
 			) : null}
 			{flow.step === "done" ? (
-				<KioskConfirmation
-					name={flow.confirmation.name}
-					action={labels.done[flow.confirmation.action]}
-					time={formatKioskTime(flow.confirmation.at, flow.confirmation.zone, language.locale)}
-					note={
-						flow.confirmation.action === "end_day"
-							? t(
-									"timeTracking.kiosk.done.endDayNote",
-									"Your day ended at the start of your break.",
-								)
-							: null
-					}
-					warning={
-						flow.confirmation.vehicleUseLeftOut
-							? t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded")
-							: null
-					}
-					returnsInMs={KIOSK_CONFIRMATION_MS}
+				<KioskDoneScreen
+					confirmation={flow.confirmation}
+					locale={language.locale}
+					labels={labels}
 					onHome={goHome}
 				/>
 			) : null}
 		</div>
+	);
+}
+
+function KioskDoneScreen({
+	confirmation,
+	locale,
+	labels,
+	onHome,
+}: {
+	confirmation: Confirmation;
+	locale: string;
+	labels: ReturnType<typeof useKioskActionLabels>;
+	onHome: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<KioskConfirmation
+			name={confirmation.name}
+			action={labels.done[confirmation.action]}
+			time={formatKioskTime(confirmation.at, confirmation.zone, locale)}
+			note={
+				confirmation.action === "end_day"
+					? t("timeTracking.kiosk.done.endDayNote", "Your day ended at the start of your break.")
+					: null
+			}
+			warning={
+				confirmation.vehicleUseLeftOut
+					? t("timeTracking.vehicleUse.notRecorded", "Vehicle use was not recorded")
+					: null
+			}
+			returnsInMs={KIOSK_CONFIRMATION_MS}
+			onHome={onHome}
+		/>
 	);
 }

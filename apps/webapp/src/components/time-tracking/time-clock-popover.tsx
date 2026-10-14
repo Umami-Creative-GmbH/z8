@@ -36,8 +36,8 @@ import {
 	ClockOutVehicleUse,
 	type ClockVehicleUseState,
 	useClockVehicleUse,
-	warnVehicleUseLeftOut,
 } from "./clock-vehicle-use";
+import { warnVehicleUseLeftOut } from "./clock-vehicle-use-notice";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
 import { showSavedClockToast } from "./saved-clock-toast";
@@ -366,7 +366,10 @@ function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: Ti
 				: taskIdToSend({
 						projectId: uiState.selectedProjectId,
 						taskId: uiState.selectedTaskId,
-						current: { projectId: currentTask?.projectId, taskId: currentTask?.id },
+						current: {
+							projectId: currentTask?.projectId,
+							taskId: currentTask?.id,
+						},
 					});
 		const vehicle = vehicleUse.clockOut;
 		const result = await clockOut({

@@ -13,14 +13,57 @@ export default {
 		],
 		overrides: [
 			{
+				// Four table headings belong to different domains (vacation vs invoice drafts).
+				// Assignment target selects have different fields, translations and downstream policy controls.
+				// Their structural resemblance is incidental, not one shared component contract.
+				files: [
+					"**/components/settings/vacation/proration-notice.tsx",
+					"**/components/settings/vehicle-use/vehicle-use-settings.tsx",
+				],
+				rules: ["react-doctor/duplicate-jsx-subtree"],
+			},
+			{
+				// Export categories bound database work to one category at a time; file cleanup bounds
+				// storage deletion and its retry bookkeeping to one object at a time.
+				files: [
+					"**/src/lib/personal-data-export/processor.ts",
+					"**/src/lib/personal-data-export/store.ts",
+				],
+				rules: ["react-doctor/async-await-in-loop"],
+			},
+
+			{
+				// Server-only mailer modules never participate in client Fast Refresh.
+				// They deliberately expose the HTML renderer and subject beside their template.
+				files: [
+					"**/src/lib/email/templates/billing-email.tsx",
+					"**/src/lib/email/templates/scheduled-export-delivery.tsx",
+					"**/src/lib/email/templates/security-alert.tsx",
+				],
+				rules: ["react-doctor/only-export-components"],
+			},
+			{
+				// Tests must round-trip the JSON stored in notification.metadata, including JSON's conversions.
+				// structuredClone would not exercise the persisted representation.
+				files: ["**/src/lib/notifications/notification-params.test.ts"],
+				rules: ["react-doctor/no-json-parse-stringify-clone"],
+			},
+
+			{
 				// TanStack Form performs client validation and owns submission. Native navigation would bypass it.
-				files: ["**/components/billable-time/billable-currency-form.tsx"],
+				files: [
+					"**/components/billable-time/billable-currency-form.tsx",
+					"**/components/calendar/work-period-mileage-action.tsx",
+				],
 				rules: ["react-doctor/no-prevent-default"],
 			},
 			{
 				// Redacted immutable server snapshots have no interactive row state, reordering or filtering.
 				// Adding employee identifiers as keys would undermine the review model's privacy boundary.
-				files: ["**/components/works-council/position-capture-review-section.tsx"],
+				files: [
+					"**/components/works-council/position-capture-review-section.tsx",
+					"**/components/works-council/vehicle-use-review-section.tsx",
+				],
 				rules: ["react-doctor/no-array-index-as-key"],
 			},
 			{
@@ -41,7 +84,13 @@ export default {
 			{
 				// Job delivery is intentionally bounded to one tenant/reminder at a time. Retention recipient lookups
 				// populate a shared cache; a claim precedes each delivery and the result records who was notified.
-				files: ["**/src/lib/jobs/clocking-reminders.ts", "**/src/lib/personnel-file/expiry-reminders.ts", "**/src/lib/personnel-file/retention-reminders.ts", "**/src/lib/scheduling/skill-expiry-reminders.ts"],
+				files: [
+					"**/src/lib/jobs/clocking-reminders.ts",
+					"**/src/lib/jobs/driving-details-reminders.ts",
+					"**/src/lib/personnel-file/expiry-reminders.ts",
+					"**/src/lib/personnel-file/retention-reminders.ts",
+					"**/src/lib/scheduling/skill-expiry-reminders.ts",
+				],
 				rules: ["react-doctor/async-await-in-loop"],
 			},
 
@@ -53,7 +102,9 @@ export default {
 			{
 				// TanStack Form array fields are addressed by index (`changes[${index}]`), so the index
 				// is the row identity; draft change rows have no other identity until submitted.
-				files: ["**/components/settings/work-diagnostics/work-proposal-panel.tsx"],
+				files: [
+					"**/components/settings/work-diagnostics/work-proposal-panel.tsx",
+				],
 				rules: ["react-doctor/no-array-index-as-key"],
 			},
 			{
@@ -65,6 +116,14 @@ export default {
 				files: [
 					"**/settings/clockodo-import/actions.ts",
 					"**/src/lib/billable-time/settings.ts",
+					"**/src/lib/absences/change-request-proposal.ts",
+					"**/src/lib/absences/change-request-service.ts",
+					"**/src/lib/employment-history/write-terms.ts",
+					"**/src/lib/personnel-file/skill-certificate-expiry.ts",
+					"**/src/lib/demo/demo-vehicle-use-generator.ts",
+					"**/src/lib/personal-data-export/collectors/position-stamps.ts",
+					"**/src/lib/time-tracking/period-submissions/submitted-content.ts",
+					"**/src/lib/time-tracking/vehicle-use/form-context.ts",
 					"**/src/lib/personnel-file/payslip-batch-store.ts",
 					"**/src/lib/personnel-file/retention-store.ts",
 					"**/src/lib/personnel-file/upload-ledger.ts",
@@ -134,6 +193,8 @@ export default {
 				files: [
 					"**/time-tracking/actions/work-period-split.ts",
 					"**/src/lib/approvals/delivery/owner.ts",
+					"**/src/lib/jobs/personal-data-export-sweep.ts",
+					"**/src/lib/jobs/clocking-reminders.ts",
 					"**/src/lib/approvals/delivery/scheduled-job.ts",
 					"**/src/lib/approvals/escalation/replacement-delivery.ts",
 					"**/src/lib/auth/auth-transaction.ts",
@@ -141,7 +202,10 @@ export default {
 					"**/src/lib/jobs/travel-expense-receipt-cleanup.ts",
 					"**/src/lib/time-tracking/clocking/follow-ups.ts",
 				],
-				rules: ["react-doctor/async-await-in-loop", "react-doctor/server-sequential-independent-await"],
+				rules: [
+					"react-doctor/async-await-in-loop",
+					"react-doctor/server-sequential-independent-await",
+				],
 			},
 		],
 	},

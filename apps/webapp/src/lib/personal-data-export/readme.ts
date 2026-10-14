@@ -160,9 +160,15 @@ export interface PersonalDataReadmeAccess {
 	/** Direct managers, and people whose team permissions cover the employee's teams. */
 	managers: readonly { name: string; via: "direct" | "team" }[];
 	/** With the document categories of the employee's file they manage. */
-	personnelFileOfficers: readonly { name: string; categories: readonly DocumentCategory[] }[];
+	personnelFileOfficers: readonly {
+		name: string;
+		categories: readonly DocumentCategory[];
+	}[];
 	/** With what their grant covers: every employee, the employee by name, or one of their teams. */
-	payrollOfficers: readonly { name: string; covers: readonly PayrollCoverage[] }[];
+	payrollOfficers: readonly {
+		name: string;
+		covers: readonly PayrollCoverage[];
+	}[];
 	expenseOfficers: readonly {
 		name: string;
 		canExport: boolean;
@@ -186,7 +192,10 @@ export interface PersonalDataReadmePart {
 export type PersonalDataReadmeContents = Partial<
 	Record<
 		PersonalDataCategoryKey,
-		{ parts: readonly PersonalDataReadmePart[]; guide: PersonalDataFieldGuide | undefined }
+		{
+			parts: readonly PersonalDataReadmePart[];
+			guide: PersonalDataFieldGuide | undefined;
+		}
 	>
 >;
 
@@ -200,8 +209,11 @@ export function readmeContentsOf(
 	collectors: readonly PersonalDataCollector[],
 ): PersonalDataReadmeContents {
 	const contents: PersonalDataReadmeContents = {};
+	const collectorsByCategory = new Map(
+		collectors.toReversed().map((collector) => [collector.category, collector]),
+	);
 	for (const category of categories) {
-		const guide = collectors.find((collector) => collector.category === category.category)?.fields;
+		const guide = collectorsByCategory.get(category.category)?.fields;
 		const guideFields = (key: string) =>
 			Object.keys(guide?.(fallbackReadmeTranslator)[key]?.fields ?? {});
 		contents[category.category] = {
@@ -320,7 +332,9 @@ function renderAccess(
 		),
 		access.ownersAndAdmins.map((person) =>
 			person.role === "owner"
-				? t("personalDataExport.readme.accessOwner", "{name} (owner)", { name: person.name })
+				? t("personalDataExport.readme.accessOwner", "{name} (owner)", {
+						name: person.name,
+					})
 				: t("personalDataExport.readme.accessAdmin", "{name} (administrator)", {
 						name: person.name,
 					}),
@@ -526,9 +540,10 @@ export function renderPersonalDataExportReadme(input: PersonalDataReadmeInput): 
 	);
 
 	heading(t("personalDataExport.readme.filesTitle", "Files"));
+	const csvCategories = input.csvCategories ? new Set(input.csvCategories) : null;
 	for (const category of input.categories) {
 		lines.push(`${category}.json`, `  ${categoryDescription(category, input.kind, t)}`);
-		if (input.csvCategories && !input.csvCategories.includes(category)) continue;
+		if (csvCategories && !csvCategories.has(category)) continue;
 		lines.push(
 			`  ${t(
 				"personalDataExport.readme.csvFolder",

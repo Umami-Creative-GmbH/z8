@@ -80,7 +80,10 @@ export async function loadPersonalDataReadmeFacts(
 	input: { organizationId: string; employeeId: string; now?: Instant },
 ): Promise<PersonalDataReadmeFacts> {
 	const { organizationId, employeeId, now } = input;
-	const subject = await loadEmployeeRef(database, { organizationId, employeeId });
+	const subject = await loadEmployeeRef(database, {
+		organizationId,
+		employeeId,
+	});
 	if (!subject) throw new Error("The export's employee no longer exists in its organization");
 	const teamIds = [...subject.teamIds];
 
@@ -117,22 +120,48 @@ export async function loadPersonalDataReadmeFacts(
 		return new Map(
 			rows.map((row) => [
 				row.id,
-				{ employeeId: row.id, userId: row.userId, name: buildAuthUserDisplayName(row) },
+				{
+					employeeId: row.id,
+					userId: row.userId,
+					name: buildAuthUserDisplayName(row),
+				},
 			]),
 		);
 	};
 
-	const [ownersAndAdmins, managers, personnelFileOfficers, payrollOfficers, expenseOfficers] =
-		await Promise.all([
-			loadOwnersAndAdmins(database, { organizationId, employeeId, now }),
-			loadManagers(database, { organizationId, employeeId, teamIds, people }),
-			loadPersonnelFileOfficers(database, { organizationId, subject, now }),
-			loadPayrollOfficers(database, { organizationId, employeeId, teamIds, people }),
-			loadExpenseOfficers(database, { organizationId, employeeId, teamIds, people }),
-		]);
-	const documentYears = await loadRetentionPeriods(database, organizationId);
+	const [
+		ownersAndAdmins,
+		managers,
+		personnelFileOfficers,
+		payrollOfficers,
+		expenseOfficers,
+		documentYears,
+	] = await Promise.all([
+		loadOwnersAndAdmins(database, { organizationId, employeeId, now }),
+		loadManagers(database, { organizationId, employeeId, teamIds, people }),
+		loadPersonnelFileOfficers(database, { organizationId, subject, now }),
+		loadPayrollOfficers(database, {
+			organizationId,
+			employeeId,
+			teamIds,
+			people,
+		}),
+		loadExpenseOfficers(database, {
+			organizationId,
+			employeeId,
+			teamIds,
+			people,
+		}),
+		loadRetentionPeriods(database, organizationId),
+	]);
 	return {
-		access: { ownersAndAdmins, managers, personnelFileOfficers, payrollOfficers, expenseOfficers },
+		access: {
+			ownersAndAdmins,
+			managers,
+			personnelFileOfficers,
+			payrollOfficers,
+			expenseOfficers,
+		},
 		retention: { documentYears, auditLogDays: AUDIT_LOG_RETENTION_DAYS },
 	};
 }
@@ -177,7 +206,12 @@ type People = (employeeIds: Iterable<string>) => Promise<Map<string, Person>>;
 
 async function loadManagers(
 	database: PersonalDataExportDatabase,
-	input: { organizationId: string; employeeId: string; teamIds: string[]; people: People },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		teamIds: string[];
+		people: People;
+	},
 ): Promise<PersonalDataReadmeAccess["managers"]> {
 	const { organizationId, teamIds } = input;
 	const [direct, permitted] = await Promise.all([
@@ -223,7 +257,9 @@ async function loadPersonnelFileOfficers(
 	},
 ): Promise<PersonalDataReadmeAccess["personnelFileOfficers"]> {
 	const { organizationId, subject } = input;
-	const officers = await listActivePersonnelFileOfficers(database, { organizationId });
+	const officers = await listActivePersonnelFileOfficers(database, {
+		organizationId,
+	});
 	const candidates = officers.filter((officer) => officer.grant.officerEmployeeId !== subject.id);
 	if (candidates.length === 0) return [];
 	// The resolver applies the toggle, membership, departure cutoff and own-file rule.
@@ -236,7 +272,10 @@ async function loadPersonnelFileOfficers(
 			});
 			if (!access) return null;
 			const managed = managedCategoriesFor(
-				{ ...access, grants: access.grants.filter((grant) => grant.source === "officer_grant") },
+				{
+					...access,
+					grants: access.grants.filter((grant) => grant.source === "officer_grant"),
+				},
 				subject,
 			);
 			const categories = DOCUMENT_CATEGORIES.filter((category) => managed.has(category));
@@ -261,7 +300,12 @@ async function loadPersonnelFileOfficers(
 
 async function loadPayrollOfficers(
 	database: PersonalDataExportDatabase,
-	input: { organizationId: string; employeeId: string; teamIds: string[]; people: People },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		teamIds: string[];
+		people: People;
+	},
 ): Promise<PersonalDataReadmeAccess["payrollOfficers"]> {
 	const { organizationId, employeeId, teamIds } = input;
 	const [grants, named, teams] = await Promise.all([
@@ -324,7 +368,12 @@ async function loadPayrollOfficers(
 
 async function loadExpenseOfficers(
 	database: PersonalDataExportDatabase,
-	input: { organizationId: string; employeeId: string; teamIds: string[]; people: People },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		teamIds: string[];
+		people: People;
+	},
 ): Promise<PersonalDataReadmeAccess["expenseOfficers"]> {
 	const { organizationId, employeeId } = input;
 	const [grants, named, reports, claims] = await Promise.all([

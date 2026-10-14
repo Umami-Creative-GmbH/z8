@@ -59,7 +59,11 @@ function billingEmailContent(
 					t(
 						"emails.billing.trialEnding.body",
 						"Your {planName} trial for {organizationName} ends on {trialEndsAt}.",
-						{ planName, organizationName, trialEndsAt: text(values.trialEndsAt) },
+						{
+							planName,
+							organizationName,
+							trialEndsAt: text(values.trialEndsAt),
+						},
 					),
 					t(
 						"emails.billing.trialEnding.paymentMethod",
@@ -200,5 +204,5 @@ export function BillingEmail({ templateKey, locale, t, values }: BillingEmailPro
 
 /** `BillingEmail` as an HTML string. */
 export async function renderBillingEmail(props: BillingEmailProps): Promise<string> {
-	return render(BillingEmail(props));
+	return render(<BillingEmail {...props} />);
 }

@@ -12,6 +12,7 @@ import {
 	renderScheduledExportDeliveryEmail,
 	scheduledExportDeliverySubject,
 } from "@/lib/email/templates/scheduled-export-delivery";
+import { numberFormatter } from "@/lib/intl-number-format";
 import { createLogger } from "@/lib/logger";
 import {
 	formatNotificationParam,
@@ -46,7 +47,11 @@ function formatLifetime(totalSeconds: number, locale: string): string {
 	return units
 		.filter(([count]) => count > 0)
 		.map(([count, unit]) =>
-			new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" }).format(count),
+			numberFormatter(locale, {
+				style: "unit",
+				unit,
+				unitDisplay: "long",
+			}).format(count),
 		)
 		.join(" ");
 }
@@ -105,7 +110,11 @@ export class DeliveryService {
 
 			if (!s3Key) {
 				logger.warn(
-					{ organizationId, scheduleName, underlyingJobId: exportResult.underlyingJobId },
+					{
+						organizationId,
+						scheduleName,
+						underlyingJobId: exportResult.underlyingJobId,
+					},
 					"Scheduled export produced no file",
 				);
 			}
@@ -160,7 +169,10 @@ export class DeliveryService {
 			this.resolveRecipientLanguages(organizationId, recipients),
 			loadOrganizationTimezone(db, organizationId).catch((error: unknown) => {
 				logger.warn(
-					{ organizationId, error: error instanceof Error ? error.message : "Unknown error" },
+					{
+						organizationId,
+						error: error instanceof Error ? error.message : "Unknown error",
+					},
 					"Failed to load the organization timezone for scheduled export emails",
 				);
 				return "UTC";
@@ -245,24 +257,28 @@ export class DeliveryService {
 		organizationId: string,
 		recipients: readonly string[],
 	): Promise<Map<string, string>> {
-		const organizationLanguage = await resolveOrganizationNotificationLocale(organizationId).catch(
-			(error: unknown) => {
+		const [organizationLanguage, memberUserIds] = await Promise.all([
+			resolveOrganizationNotificationLocale(organizationId).catch((error: unknown) => {
 				logger.warn(
-					{ organizationId, error: error instanceof Error ? error.message : "Unknown error" },
+					{
+						organizationId,
+						error: error instanceof Error ? error.message : "Unknown error",
+					},
 					"Failed to load the organization language for scheduled export emails",
 				);
 				return DEFAULT_LANGUAGE;
-			},
-		);
-		const memberUserIds = await findMemberUserIdsByEmail(organizationId, recipients).catch(
-			(error: unknown) => {
+			}),
+			findMemberUserIdsByEmail(organizationId, recipients).catch((error: unknown) => {
 				logger.warn(
-					{ organizationId, error: error instanceof Error ? error.message : "Unknown error" },
+					{
+						organizationId,
+						error: error instanceof Error ? error.message : "Unknown error",
+					},
 					"Failed to match scheduled export recipients to members",
 				);
 				return new Map<string, string>();
-			},
-		);
+			}),
+		]);
 
 		const entries = await Promise.all(
 			recipients.map(async (recipient): Promise<[string, string]> => {
@@ -314,7 +330,7 @@ export class DeliveryService {
 			scheduleName,
 			dateRange,
 			recordCount:
-				recordCount === undefined ? undefined : new Intl.NumberFormat(locale).format(recordCount),
+				recordCount === undefined ? undefined : numberFormatter(locale).format(recordCount),
 			download: fileUrl
 				? {
 						url: fileUrl.url,

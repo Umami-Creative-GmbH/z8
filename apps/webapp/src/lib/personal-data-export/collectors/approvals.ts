@@ -105,7 +105,10 @@ async function collectApprovals(
 				.where(eq(approvalWorkflowStage.organizationId, organizationId))
 				.orderBy(asc(approvalWorkflow.submittedAt), asc(approvalWorkflowStage.sequence)),
 			database
-				.select({ assignment: approvalStageAssignment, stage: approvalWorkflowStage.label })
+				.select({
+					assignment: approvalStageAssignment,
+					stage: approvalWorkflowStage.label,
+				})
 				.from(approvalStageAssignment)
 				.innerJoin(
 					approvalWorkflow,
@@ -203,9 +206,8 @@ async function collectApprovals(
 					)
 					.orderBy(asc(approvalDeputyDecision.decidedAt));
 
-	const decisions = await collectDecisionsOnOthers(database, scope);
-
-	const [byEmployee, byUser] = await Promise.all([
+	const [decisions, byEmployee, byUser] = await Promise.all([
+		collectDecisionsOnOthers(database, scope),
 		employeeNameLookup(database, organizationId, [
 			...requests.map((row) => row.approverId),
 			...approvers.flatMap(({ assignment }) => [
@@ -603,7 +605,9 @@ async function collectDecisionsOnOthers(
 		candidateIds.length === 0
 			? []
 			: database
-					.select({ requestId: approvalWorkflowStage.legacyApprovalRequestId })
+					.select({
+						requestId: approvalWorkflowStage.legacyApprovalRequestId,
+					})
 					.from(approvalWorkflowStage)
 					.where(
 						and(

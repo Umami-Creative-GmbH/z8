@@ -86,7 +86,13 @@ export function SplitWorkPeriodDialog({
 	const [splitDate, setSplitDate] = useState(() => splitDates[0] ?? "");
 
 	const { splitResolution, previewDurations, formattedSplitTime, hasAmbiguousSplitTime } =
-		resolveSplitPreview({ event, splitDate, splitTime, disambiguation, displayContext });
+		resolveSplitPreview({
+			event,
+			splitDate,
+			splitTime,
+			disambiguation,
+			displayContext,
+		});
 
 	// Check if split time is valid
 	const isValidSplitTime =
@@ -159,41 +165,18 @@ export function SplitWorkPeriodDialog({
 						displayContext={displayContext}
 					/>
 
-					{/* Split time input */}
-					<div className="space-y-2">
-						<Label htmlFor="splitDate">{t("calendar.split.splitDate", "Split date")}</Label>
-						<select
-							id="splitDate"
-							aria-label={t("calendar.split.splitDate", "Split date")}
-							value={splitDate}
-							onChange={(event) => {
-								setSplitDate(event.target.value);
-								setDisambiguation(undefined);
-							}}
-							className="flex h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs"
-						>
-							{splitDates.map((date) => (
-								<option key={date} value={date}>
-									{formatPlainDate(parsePlainDate(date), displayContext.locale, "dateMedium")}
-								</option>
-							))}
-						</select>
-						<Label htmlFor="splitTime">{t("calendar.split.splitAt", "Split at")}</Label>
-						<TimeInput
-							id="splitTime"
-							value={splitTime}
-							onChange={(e) => setSplitTime(e.target.value)}
-							className="w-full"
-						/>
-						{splitResolution && !splitResolution.success && (
-							<p className="text-sm text-destructive">
-								{splitErrorMessage(splitResolution.code, t)}
-							</p>
-						)}
-						{hasAmbiguousSplitTime && (
-							<OccurrencePicker value={disambiguation} onChange={setDisambiguation} />
-						)}
-					</div>
+					<SplitTimeFields
+						splitDate={splitDate}
+						splitDates={splitDates}
+						splitTime={splitTime}
+						setSplitDate={setSplitDate}
+						setSplitTime={setSplitTime}
+						setDisambiguation={setDisambiguation}
+						disambiguation={disambiguation}
+						displayContext={displayContext}
+						splitResolution={splitResolution}
+						hasAmbiguousSplitTime={hasAmbiguousSplitTime}
+					/>
 
 					{isValidSplitTime && previewDurations && (
 						<div className="space-y-3 rounded-lg border p-3">
@@ -281,7 +264,10 @@ function resolveSplitPreview({
 		splitTime,
 		timezone: displayContext.timezone,
 	};
-	const splitResolution = resolveWorkPeriodSplit({ ...request, disambiguation });
+	const splitResolution = resolveWorkPeriodSplit({
+		...request,
+		disambiguation,
+	});
 	// Without a chosen occurrence, an ambiguous wall time stays ambiguous.
 	const unresolved = resolveWorkPeriodSplit(request);
 	return {
@@ -461,6 +447,64 @@ function SplitPeriodPreview({
 				rows={2}
 				className="resize-none"
 			/>
+		</div>
+	);
+}
+
+function SplitTimeFields({
+	splitDate,
+	splitDates,
+	splitTime,
+	setSplitDate,
+	setSplitTime,
+	setDisambiguation,
+	disambiguation,
+	displayContext,
+	splitResolution,
+	hasAmbiguousSplitTime,
+}: {
+	splitDate: string;
+	splitDates: string[];
+	splitTime: string;
+	setSplitDate: (value: string) => void;
+	setSplitTime: (value: string) => void;
+	setDisambiguation: (value: "earlier" | "later" | undefined) => void;
+	disambiguation: "earlier" | "later" | undefined;
+	displayContext: DisplayContext;
+} & Pick<ReturnType<typeof resolveSplitPreview>, "splitResolution" | "hasAmbiguousSplitTime">) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-2">
+			<Label htmlFor="splitDate">{t("calendar.split.splitDate", "Split date")}</Label>
+			<select
+				id="splitDate"
+				aria-label={t("calendar.split.splitDate", "Split date")}
+				value={splitDate}
+				onChange={(event) => {
+					setSplitDate(event.target.value);
+					setDisambiguation(undefined);
+				}}
+				className="flex h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-xs"
+			>
+				{splitDates.map((date) => (
+					<option key={date} value={date}>
+						{formatPlainDate(parsePlainDate(date), displayContext.locale, "dateMedium")}
+					</option>
+				))}
+			</select>
+			<Label htmlFor="splitTime">{t("calendar.split.splitAt", "Split at")}</Label>
+			<TimeInput
+				id="splitTime"
+				value={splitTime}
+				onChange={(e) => setSplitTime(e.target.value)}
+				className="w-full"
+			/>
+			{splitResolution && !splitResolution.success && (
+				<p className="text-sm text-destructive">{splitErrorMessage(splitResolution.code, t)}</p>
+			)}
+			{hasAmbiguousSplitTime && (
+				<OccurrencePicker value={disambiguation} onChange={setDisambiguation} />
+			)}
 		</div>
 	);
 }

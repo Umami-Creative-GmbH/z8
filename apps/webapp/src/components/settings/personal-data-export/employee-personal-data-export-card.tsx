@@ -13,11 +13,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 import { queryKeys } from "@/lib/query";
 import {
-	isBuilding,
 	PersonalDataExportList,
 	type PersonalDataExportListLabels,
-	REFRESH_WHILE_BUILDING_MS,
 } from "./personal-data-export-list";
+import { isBuilding, REFRESH_WHILE_BUILDING_MS } from "./personal-data-export-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 

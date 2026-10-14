@@ -131,28 +131,30 @@ export async function accrueVacationPeriods(
 		},
 	);
 	if (employees.length === 0) return NOTHING_ACCRUED;
-	const overrides = await loadEmployeeVacationOverrides(db, {
-		organizationId,
-		employeeIds: employees.map((emp) => emp.id),
-		year: input.year,
-	});
+	const [overrides, accrued] = await Promise.all([
+		loadEmployeeVacationOverrides(db, {
+			organizationId,
+			employeeIds: employees.map((emp) => emp.id),
+			year: input.year,
+		}),
 
-	const accrued = await db
-		.select({
-			employeeId: vacationAdjustment.employeeId,
-			month: vacationAdjustment.accrualMonth,
-		})
-		.from(vacationAdjustment)
-		.innerJoin(employee, eq(employee.id, vacationAdjustment.employeeId))
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				eq(vacationAdjustment.year, input.year),
-				eq(vacationAdjustment.kind, "accrual"),
-				isNotNull(vacationAdjustment.accrualMonth),
-				inArray(vacationAdjustment.accrualMonth, months),
+		db
+			.select({
+				employeeId: vacationAdjustment.employeeId,
+				month: vacationAdjustment.accrualMonth,
+			})
+			.from(vacationAdjustment)
+			.innerJoin(employee, eq(employee.id, vacationAdjustment.employeeId))
+			.where(
+				and(
+					eq(employee.organizationId, organizationId),
+					eq(vacationAdjustment.year, input.year),
+					eq(vacationAdjustment.kind, "accrual"),
+					isNotNull(vacationAdjustment.accrualMonth),
+					inArray(vacationAdjustment.accrualMonth, months),
+				),
 			),
-		);
+	]);
 	const accruedKeys = new Set(accrued.map((row) => `${row.employeeId}:${row.month}`));
 
 	const rows: (typeof vacationAdjustment.$inferInsert)[] = [];

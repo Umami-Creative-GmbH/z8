@@ -32,7 +32,9 @@ vi.mock("@/app/[locale]/(app)/settings/vehicle-use/actions", () => ({
 	setVehicleUseAssignmentAction: setAssignmentMock,
 	removeVehicleUseAssignmentAction: removeAssignmentMock,
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshMock }) }));
+vi.mock("next/navigation", () => ({
+	useRouter: () => ({ refresh: refreshMock }),
+}));
 vi.mock("sonner", () => ({ toast: toastMock }));
 
 const teamId = "d1119000-0000-4000-8000-0000000000a1";
@@ -72,7 +74,11 @@ describe("VehicleUseSettings", () => {
 	});
 
 	it("translates a refusal by its code and never shows the server's text", async () => {
-		saveMock.mockResolvedValue({ success: false, error: "diagnostic", code: "admin_only" });
+		saveMock.mockResolvedValue({
+			success: false,
+			error: "diagnostic",
+			code: "admin_only",
+		});
 		render(<VehicleUseSettings data={adminData()} />);
 
 		await userEvent.click(screen.getByRole("switch", { name: "Record vehicle use" }));
@@ -83,6 +89,17 @@ describe("VehicleUseSettings", () => {
 			),
 		);
 		expect(refreshMock).not.toHaveBeenCalled();
+	});
+
+	it("uses refreshed organization settings after a server-side change", () => {
+		const { rerender } = render(<VehicleUseSettings data={adminData()} />);
+		expect(
+			screen.getByRole("switch", { name: "Record vehicle use" }).getAttribute("aria-checked"),
+		).toBe("false");
+		rerender(<VehicleUseSettings data={adminData({ settings: { enabled: true } })} />);
+		expect(
+			screen.getByRole("switch", { name: "Record vehicle use" }).getAttribute("aria-checked"),
+		).toBe("true");
 	});
 
 	it("adds an assignment with its mode", async () => {
@@ -117,7 +134,13 @@ describe("VehicleUseSettings", () => {
 							employeeId: null,
 							mode: "asked",
 						},
-						{ id: "a1", assignmentType: "employee", teamId: null, employeeId, mode: "off" },
+						{
+							id: "a1",
+							assignmentType: "employee",
+							teamId: null,
+							employeeId,
+							mode: "off",
+						},
 					],
 				})}
 			/>,
@@ -131,7 +154,9 @@ describe("VehicleUseSettings", () => {
 		expect(within(items[1]).getByRole("combobox").textContent).toContain("Off (excluded)");
 
 		fireEvent.click(
-			within(items[0]).getByRole("combobox", { name: "Mode for Whole organization" }),
+			within(items[0]).getByRole("combobox", {
+				name: "Mode for Whole organization",
+			}),
 		);
 		await userEvent.click(await screen.findByRole("option", { name: "Vehicle use expected" }));
 		expect(setAssignmentMock).toHaveBeenCalledWith({
@@ -140,7 +165,9 @@ describe("VehicleUseSettings", () => {
 		});
 
 		await userEvent.click(
-			within(items[1]).getByRole("button", { name: "Remove Employee: Dana Driver" }),
+			within(items[1]).getByRole("button", {
+				name: "Remove Employee: Dana Driver",
+			}),
 		);
 		expect(removeAssignmentMock).toHaveBeenCalledWith({ assignmentId: "a1" });
 	});

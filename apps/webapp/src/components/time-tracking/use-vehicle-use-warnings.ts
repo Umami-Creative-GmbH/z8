@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import type { VehicleUseWarning } from "@/lib/time-tracking/vehicle-use/plausibility";
 
 const NO_WARNINGS: VehicleUseWarning[] = [];
@@ -17,18 +17,17 @@ export function useVehicleUseWarnings(
 	request: string | null,
 	check: () => Promise<VehicleUseWarning[]>,
 ): VehicleUseWarning[] {
-	const [result, setResult] = useState<{ request: string; warnings: VehicleUseWarning[] } | null>(
-		null,
-	);
-	const checkRef = useRef(check);
-	checkRef.current = check;
+	const [result, setResult] = useState<{
+		request: string;
+		warnings: VehicleUseWarning[];
+	} | null>(null);
+	const checkCurrent = useEffectEvent(() => check());
 
 	useEffect(() => {
 		if (request === null) return;
 		let cancelled = false;
 		const timer = setTimeout(() => {
-			checkRef
-				.current()
+			checkCurrent()
 				.then((warnings) => {
 					if (!cancelled) setResult({ request, warnings });
 				})

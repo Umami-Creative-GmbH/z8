@@ -64,25 +64,15 @@ function routeNeedsReason(route: WorkPeriodTimeEditRoute | null): boolean {
 
 function isChronological(values: WorkPeriodTimeEditValues): boolean {
 	try {
-		const clockIn = Temporal.PlainDateTime.from(
-			`${values.clockInDate}T${values.clockInTime}`,
-		);
-		const clockOut = Temporal.PlainDateTime.from(
-			`${values.clockOutDate}T${values.clockOutTime}`,
-		);
+		const clockIn = Temporal.PlainDateTime.from(`${values.clockInDate}T${values.clockInTime}`);
+		const clockOut = Temporal.PlainDateTime.from(`${values.clockOutDate}T${values.clockOutTime}`);
 		return Temporal.PlainDateTime.compare(clockIn, clockOut) < 0;
 	} catch {
 		return false;
 	}
 }
 
-function BlockedHint({
-	access,
-	t,
-}: {
-	access: WorkPeriodTimeEditAccess;
-	t: TFnType;
-}) {
+function BlockedHint({ access, t }: { access: WorkPeriodTimeEditAccess; t: TFnType }) {
 	if (access.kind !== "blocked") return null;
 
 	let message: string | null = null;
@@ -99,18 +89,10 @@ function BlockedHint({
 		);
 	}
 
-	return message ? (
-		<p className="mt-1 text-xs text-muted-foreground">{message}</p>
-	) : null;
+	return message ? <p className="mt-1 text-xs text-muted-foreground">{message}</p> : null;
 }
 
-function RouteHint({
-	route,
-	t,
-}: {
-	route: WorkPeriodTimeEditRoute | null;
-	t: TFnType;
-}) {
+function RouteHint({ route, t }: { route: WorkPeriodTimeEditRoute | null; t: TFnType }) {
 	if (route === "approval_request") {
 		return (
 			<p className="text-xs text-amber-600 dark:text-amber-400">
@@ -211,10 +193,9 @@ function EditedVehicleUseFields({
 	);
 }
 
-function WorkPeriodTimeEditForm({
+function useWorkPeriodTimeEditForm({
 	workPeriodId,
 	context,
-	onCancel,
 	onSaved,
 	t,
 }: {
@@ -266,31 +247,19 @@ function WorkPeriodTimeEditForm({
 				);
 				return;
 			}
-			if (
-				haveWorkPeriodTimesChanged(context.values, value) &&
-				!isChronological(value)
-			) {
-				toast.error(
-					t(
-						"calendar.edit.time.invalidRange",
-						"Clock out must be after clock in.",
-					),
-				);
+			if (haveWorkPeriodTimesChanged(context.values, value) && !isChronological(value)) {
+				toast.error(t("calendar.edit.time.invalidRange", "Clock out must be after clock in."));
 				return;
 			}
 			const route = routeFor(value);
 			if (routeNeedsReason(route) && !value.reason.trim()) {
 				toast.error(
-					t(
-						"calendar.edit.time.reasonRequired",
-						"Please add a reason for your manager.",
-					),
+					t("calendar.edit.time.reasonRequired", "Please add a reason for your manager."),
 				);
 				return;
 			}
 
-			const submissionId =
-				submissionIdRef.current ?? globalThis.crypto.randomUUID();
+			const submissionId = submissionIdRef.current ?? globalThis.crypto.randomUUID();
 			submissionIdRef.current = submissionId;
 			const result = await updateWorkPeriodTimes({
 				workPeriodId,
@@ -309,8 +278,7 @@ function WorkPeriodTimeEditForm({
 				toast.error(
 					vehicleRefusal
 						? vehicleUseRefusalText(t, vehicleRefusal)
-						: result?.error ||
-								t("calendar.edit.time.saveFailed", "Failed to update time entry"),
+						: result?.error || t("calendar.edit.time.saveFailed", "Failed to update time entry"),
 				);
 				return;
 			}
@@ -324,15 +292,31 @@ function WorkPeriodTimeEditForm({
 								"calendar.edit.time.submittedOnBehalf",
 								"Change submitted to the employee's approver",
 							)
-						: t(
-								"calendar.edit.time.submitted",
-								"Change submitted for manager approval",
-							);
+						: t("calendar.edit.time.submitted", "Change submitted for manager approval");
 			}
 			toast.success(message);
 			onSaved();
 		},
 	});
+
+	return { reasonId, form, routeFor, editsVehicleUse, recordedVehicleUse };
+}
+
+function WorkPeriodTimeEditForm({
+	workPeriodId,
+	context,
+	onCancel,
+	onSaved,
+	t,
+}: {
+	workPeriodId: string;
+	context: WorkPeriodTimeEditContext;
+	onCancel: () => void;
+	onSaved: () => void;
+	t: TFnType;
+}) {
+	const { reasonId, form, routeFor, editsVehicleUse, recordedVehicleUse } =
+		useWorkPeriodTimeEditForm({ workPeriodId, context, onCancel, onSaved, t });
 
 	return (
 		<form
@@ -343,11 +327,9 @@ function WorkPeriodTimeEditForm({
 			}}
 		>
 			<p className="text-xs text-muted-foreground">
-				{t(
-					"calendar.edit.time.timezoneNote",
-					"Times are in the employee's timezone ({timezone})",
-					{ timezone: getTimezoneAbbreviation(context.timezone) },
-				)}
+				{t("calendar.edit.time.timezoneNote", "Times are in the employee's timezone ({timezone})", {
+					timezone: getTimezoneAbbreviation(context.timezone),
+				})}
 			</p>
 			<EndpointFields
 				legend={t("calendar.edit.time.clockIn", "Clock in")}
@@ -358,10 +340,7 @@ function WorkPeriodTimeEditForm({
 								type="date"
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockInDate",
-									"Clock in date",
-								)}
+								aria-label={t("calendar.edit.time.clockInDate", "Clock in date")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -376,10 +355,7 @@ function WorkPeriodTimeEditForm({
 							<TimeInput
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockInTime",
-									"Clock in time",
-								)}
+								aria-label={t("calendar.edit.time.clockInTime", "Clock in time")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -398,10 +374,7 @@ function WorkPeriodTimeEditForm({
 								type="date"
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockOutDate",
-									"Clock out date",
-								)}
+								aria-label={t("calendar.edit.time.clockOutDate", "Clock out date")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -416,10 +389,7 @@ function WorkPeriodTimeEditForm({
 							<TimeInput
 								name={field.name}
 								autoComplete="off"
-								aria-label={t(
-									"calendar.edit.time.clockOutTime",
-									"Clock out time",
-								)}
+								aria-label={t("calendar.edit.time.clockOutTime", "Clock out time")}
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
 								onBlur={field.handleBlur}
@@ -472,7 +442,8 @@ function WorkPeriodTimeEditForm({
 			) : recordedVehicleUse ? (
 				<VehicleUseSummary
 					use={recordedVehicleUse}
-					vehicleLabel={vehicleLabelOf(context, recordedVehicleUse)} t={t}
+					vehicleLabel={vehicleLabelOf(context, recordedVehicleUse)}
+					t={t}
 				/>
 			) : null}
 			<form.Subscribe
@@ -504,10 +475,7 @@ function WorkPeriodTimeEditForm({
 														"calendar.edit.time.reasonPlaceholder",
 														"Explain why this correction is needed…",
 													)
-												: t(
-														"calendar.edit.time.notePlaceholder",
-														"Add a note about this change…",
-													)
+												: t("calendar.edit.time.notePlaceholder", "Add a note about this change…")
 										}
 										required={routeNeedsReason(route)}
 										rows={2}
@@ -518,25 +486,14 @@ function WorkPeriodTimeEditForm({
 						</form.Field>
 						<RouteHint route={route} t={t} />
 						<div className="flex gap-2">
-							<Button
-								type="submit"
-								size="sm"
-								disabled={isSubmitting}
-								className="flex-1"
-							>
+							<Button type="submit" size="sm" disabled={isSubmitting} className="flex-1">
 								{isSubmitting ? (
-									<IconLoader2
-										className="mr-1 size-4 animate-spin"
-										aria-hidden="true"
-									/>
+									<IconLoader2 className="mr-1 size-4 animate-spin" aria-hidden="true" />
 								) : (
 									<IconCheck className="mr-1 size-4" aria-hidden="true" />
 								)}
 								{route === "approval_request"
-									? t(
-											"calendar.edit.time.submitForApproval",
-											"Submit for approval",
-										)
+									? t("calendar.edit.time.submitForApproval", "Submit for approval")
 									: route === "on_behalf_request"
 										? t("calendar.edit.time.submitOnBehalf", "Submit change")
 										: t("common.save", "Save")}
@@ -590,16 +547,9 @@ export function WorkPeriodTimeSection({
 	return (
 		<div>
 			<div className="mb-1 flex items-center justify-between">
-				<span className="text-sm text-muted-foreground">
-					{t("calendar.details.time", "Time")}
-				</span>
+				<span className="text-sm text-muted-foreground">{t("calendar.details.time", "Time")}</span>
 				{canEdit && !isEditing ? (
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => setIsEditing(true)}
-						className="h-7 px-2"
-					>
+					<Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="h-7 px-2">
 						<IconPencil className="mr-1 size-4" aria-hidden="true" />
 						{t("calendar.edit.time.edit", "Edit entry")}
 					</Button>
@@ -620,9 +570,7 @@ export function WorkPeriodTimeSection({
 				/>
 			) : (
 				<>
-					<p className="font-medium">
-						{formatEventTimeRange(event, displayContext)}
-					</p>
+					<p className="font-medium">{formatEventTimeRange(event, displayContext)}</p>
 					<div className="mt-2 space-y-1">
 						<p className="text-sm text-muted-foreground">
 							{t("calendar.details.workLocation", "Work location")}
@@ -638,7 +586,8 @@ export function WorkPeriodTimeSection({
 						<div className="mt-2">
 							<VehicleUseSummary
 								use={event.metadata.vehicleUse}
-								vehicleLabel={event.metadata.vehicleLabel ?? null} t={t}
+								vehicleLabel={event.metadata.vehicleLabel ?? null}
+								t={t}
 							/>
 							{/* Own-vehicle distance can become a mileage item (#1131); the server decides. */}
 							{event.metadata.vehicleUse.vehicle.kind === "own" &&

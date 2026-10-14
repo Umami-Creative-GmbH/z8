@@ -12,13 +12,6 @@ import { formatInstant } from "@/lib/datetime/temporal-format";
 import { formatFileSize } from "@/lib/format-file-size";
 import type { PersonalDataExportSummary } from "@/lib/personal-data-export/store";
 
-/** How often a list looks for a finished build while one is in progress. */
-export const REFRESH_WHILE_BUILDING_MS = 15_000;
-
-export function isBuilding(exports: readonly PersonalDataExportSummary[]): boolean {
-	return exports.some((entry) => entry.status === "pending" || entry.status === "processing");
-}
-
 /** The texts of one page's list, from that page's own translation keys. */
 export interface PersonalDataExportListLabels {
 	list: string;
@@ -54,9 +47,10 @@ export function PersonalDataExportList({
 			} else {
 				toast.error(labels.downloadFailed);
 			}
-		} finally {
-			setDownloading(null);
+		} catch {
+			toast.error(labels.downloadFailed);
 		}
+		setDownloading(null);
 	};
 
 	if (exports.length === 0) return null;

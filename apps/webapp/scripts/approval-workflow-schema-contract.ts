@@ -5,8 +5,7 @@ const POSTGRES_IDENTIFIER_MAX_BYTES = 63;
 
 export function toPostgresIdentifier(value: string): string {
 	const encoder = new TextEncoder();
-	if (encoder.encode(value).length <= POSTGRES_IDENTIFIER_MAX_BYTES)
-		return value;
+	if (encoder.encode(value).length <= POSTGRES_IDENTIFIER_MAX_BYTES) return value;
 
 	let bytes = 0;
 	let result = "";
@@ -25,9 +24,7 @@ export function assertPhysicalForeignKeyNames(
 	const encoder = new TextEncoder();
 	const identities = new Set<string>();
 	for (const foreignKey of foreignKeys) {
-		if (
-			encoder.encode(foreignKey.name).length > POSTGRES_IDENTIFIER_MAX_BYTES
-		) {
+		if (encoder.encode(foreignKey.name).length > POSTGRES_IDENTIFIER_MAX_BYTES) {
 			throw new Error(
 				`Physical foreign key name exceeds ${POSTGRES_IDENTIFIER_MAX_BYTES} bytes: ${foreignKey.name}`,
 			);
@@ -137,13 +134,7 @@ const relations = [
 
 const enums = {
 	approval_actor_kind: ["employee", "system", "legacy_unknown"],
-	approval_assignment_status: [
-		"pending",
-		"approved",
-		"rejected",
-		"cancelled",
-		"expired",
-	],
+	approval_assignment_status: ["pending", "approved", "rejected", "cancelled", "expired"],
 	approval_command_state: ["reserved", "completed"],
 	approval_outbox_channel: [
 		"in_app",
@@ -157,36 +148,11 @@ const enums = {
 	],
 	approval_outbox_disposition: ["observe", "deliver"],
 	approval_outbox_expansion_status: ["pending", "expanded"],
-	approval_outbox_status: [
-		"pending",
-		"processing",
-		"delivered",
-		"failed",
-		"suppressed",
-	],
+	approval_outbox_status: ["pending", "processing", "delivered", "failed", "suppressed"],
 	approval_side_effect_mode: ["legacy", "canonical"],
-	approval_stage_status: [
-		"waiting",
-		"pending",
-		"approved",
-		"rejected",
-		"cancelled",
-		"expired",
-	],
-	approval_workflow_lifecycle_mode: [
-		"legacy",
-		"shadow",
-		"ready",
-		"canonical",
-		"complete",
-	],
-	approval_workflow_status: [
-		"pending",
-		"approved",
-		"rejected",
-		"cancelled",
-		"expired",
-	],
+	approval_stage_status: ["waiting", "pending", "approved", "rejected", "cancelled", "expired"],
+	approval_workflow_lifecycle_mode: ["legacy", "shadow", "ready", "canonical", "complete"],
+	approval_workflow_status: ["pending", "approved", "rejected", "cancelled", "expired"],
 	approval_workflow_type: [
 		"absence",
 		"time_correction",
@@ -230,33 +196,11 @@ const columns = [
 	column("approval_workflow", "policy_snapshot", "jsonb"),
 	column("approval_workflow", "context_snapshot", "jsonb"),
 	column("approval_workflow", "display_snapshot", "jsonb"),
-	column(
-		"approval_workflow",
-		"submitted_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
-	column(
-		"approval_workflow",
-		"completed_at",
-		"timestamp with time zone",
-		false,
-	),
-	column(
-		"approval_workflow",
-		"cancelled_at",
-		"timestamp with time zone",
-		false,
-	),
+	column("approval_workflow", "submitted_at", "timestamp with time zone", true, "now()"),
+	column("approval_workflow", "completed_at", "timestamp with time zone", false),
+	column("approval_workflow", "cancelled_at", "timestamp with time zone", false),
 	column("approval_workflow", "decision_reason", "text", false),
-	column(
-		"approval_workflow",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_workflow", "created_at", "timestamp with time zone", true, "now()"),
 	column("approval_workflow", "updated_at", "timestamp with time zone"),
 
 	column("approval_workflow_stage", "id", "uuid", true, "gen_random_uuid()"),
@@ -273,32 +217,11 @@ const columns = [
 		true,
 		"'waiting'::approval_stage_status",
 	),
-	column(
-		"approval_workflow_stage",
-		"activated_at",
-		"timestamp with time zone",
-		false,
-	),
-	column(
-		"approval_workflow_stage",
-		"decided_at",
-		"timestamp with time zone",
-		false,
-	),
+	column("approval_workflow_stage", "activated_at", "timestamp with time zone", false),
+	column("approval_workflow_stage", "decided_at", "timestamp with time zone", false),
 	column("approval_workflow_stage", "decision_reason", "text", false),
-	column(
-		"approval_workflow_stage",
-		"legacy_approval_request_id",
-		"uuid",
-		false,
-	),
-	column(
-		"approval_workflow_stage",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_workflow_stage", "legacy_approval_request_id", "uuid", false),
+	column("approval_workflow_stage", "created_at", "timestamp with time zone", true, "now()"),
 	column("approval_workflow_stage", "updated_at", "timestamp with time zone"),
 
 	column("approval_stage_assignment", "id", "uuid", true, "gen_random_uuid()"),
@@ -314,46 +237,14 @@ const columns = [
 		true,
 		"'pending'::approval_assignment_status",
 	),
-	column(
-		"approval_stage_assignment",
-		"assigned_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
-	column(
-		"approval_stage_assignment",
-		"resolved_at",
-		"timestamp with time zone",
-		false,
-	),
-	column(
-		"approval_stage_assignment",
-		"resolved_by_actor_kind",
-		"approval_actor_kind",
-		false,
-	),
+	column("approval_stage_assignment", "assigned_at", "timestamp with time zone", true, "now()"),
+	column("approval_stage_assignment", "resolved_at", "timestamp with time zone", false),
+	column("approval_stage_assignment", "resolved_by_actor_kind", "approval_actor_kind", false),
 	column("approval_stage_assignment", "resolved_by_actor_id", "uuid", false),
-	column(
-		"approval_stage_assignment",
-		"reassigned_by_employee_id",
-		"uuid",
-		false,
-	),
-	column(
-		"approval_stage_assignment",
-		"reassigned_from_assignment_id",
-		"uuid",
-		false,
-	),
+	column("approval_stage_assignment", "reassigned_by_employee_id", "uuid", false),
+	column("approval_stage_assignment", "reassigned_from_assignment_id", "uuid", false),
 	column("approval_stage_assignment", "reassignment_metadata", "jsonb", false),
-	column(
-		"approval_stage_assignment",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_stage_assignment", "created_at", "timestamp with time zone", true, "now()"),
 	column("approval_stage_assignment", "updated_at", "timestamp with time zone"),
 
 	column("approval_workflow_event", "id", "uuid", true, "gen_random_uuid()"),
@@ -370,20 +261,8 @@ const columns = [
 	column("approval_workflow_event", "reason", "text", false),
 	column("approval_workflow_event", "metadata", "jsonb", false),
 	column("approval_workflow_event", "idempotency_key", "text", false),
-	column(
-		"approval_workflow_event",
-		"occurred_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
-	column(
-		"approval_workflow_event",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_workflow_event", "occurred_at", "timestamp with time zone", true, "now()"),
+	column("approval_workflow_event", "created_at", "timestamp with time zone", true, "now()"),
 
 	column("approval_workflow_command", "id", "uuid", true, "gen_random_uuid()"),
 	column("approval_workflow_command", "organization_id", "text"),
@@ -399,53 +278,21 @@ const columns = [
 		"'reserved'::approval_command_state",
 	),
 	column("approval_workflow_command", "result", "jsonb", false),
-	column(
-		"approval_workflow_command",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_workflow_command", "created_at", "timestamp with time zone", true, "now()"),
 	column("approval_workflow_command", "updated_at", "timestamp with time zone"),
 
-	column(
-		"approval_requester_projection",
-		"id",
-		"uuid",
-		true,
-		"gen_random_uuid()",
-	),
+	column("approval_requester_projection", "id", "uuid", true, "gen_random_uuid()"),
 	column("approval_requester_projection", "organization_id", "text"),
 	column("approval_requester_projection", "workflow_id", "uuid"),
-	column(
-		"approval_requester_projection",
-		"requester_employee_id",
-		"uuid",
-		false,
-	),
+	column("approval_requester_projection", "requester_employee_id", "uuid", false),
 	column("approval_requester_projection", "source_type", "text"),
 	column("approval_requester_projection", "source_id", "uuid"),
 	column("approval_requester_projection", "status", "approval_workflow_status"),
-	column(
-		"approval_requester_projection",
-		"current_stage_order",
-		"integer",
-		false,
-	),
+	column("approval_requester_projection", "current_stage_order", "integer", false),
 	column("approval_requester_projection", "display_payload", "jsonb"),
 	column("approval_requester_projection", "search_text", "text"),
-	column(
-		"approval_requester_projection",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
-	column(
-		"approval_requester_projection",
-		"updated_at",
-		"timestamp with time zone",
-	),
+	column("approval_requester_projection", "created_at", "timestamp with time zone", true, "now()"),
+	column("approval_requester_projection", "updated_at", "timestamp with time zone"),
 
 	column("approval_inbox_projection", "id", "uuid", true, "gen_random_uuid()"),
 	column("approval_inbox_projection", "organization_id", "text"),
@@ -456,13 +303,7 @@ const columns = [
 	column("approval_inbox_projection", "status", "approval_workflow_status"),
 	column("approval_inbox_projection", "display_payload", "jsonb"),
 	column("approval_inbox_projection", "search_text", "text"),
-	column(
-		"approval_inbox_projection",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_inbox_projection", "created_at", "timestamp with time zone", true, "now()"),
 	column("approval_inbox_projection", "updated_at", "timestamp with time zone"),
 
 	column("approval_outbox", "id", "uuid", true, "gen_random_uuid()"),
@@ -481,23 +322,13 @@ const columns = [
 		"'pending'::approval_outbox_expansion_status",
 	),
 	column("approval_outbox", "expanded_at", "timestamp with time zone", false),
-	column(
-		"approval_outbox",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_outbox", "created_at", "timestamp with time zone", true, "now()"),
 
 	column("approval_outbox_delivery", "id", "uuid", true, "gen_random_uuid()"),
 	column("approval_outbox_delivery", "organization_id", "text"),
 	column("approval_outbox_delivery", "outbox_id", "uuid"),
 	column("approval_outbox_delivery", "dedupe_key", "text"),
-	column(
-		"approval_outbox_delivery",
-		"disposition",
-		"approval_outbox_disposition",
-	),
+	column("approval_outbox_delivery", "disposition", "approval_outbox_disposition"),
 	column(
 		"approval_outbox_delivery",
 		"status",
@@ -509,45 +340,19 @@ const columns = [
 	column("approval_outbox_delivery", "recipient_kind", "text"),
 	column("approval_outbox_delivery", "recipient_employee_id", "uuid", false),
 	column("approval_outbox_delivery", "recipient_address", "text", false),
-	column(
-		"approval_outbox_delivery",
-		"available_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
-	column(
-		"approval_outbox_delivery",
-		"claimed_at",
-		"timestamp with time zone",
-		false,
-	),
+	column("approval_outbox_delivery", "available_at", "timestamp with time zone", true, "now()"),
+	column("approval_outbox_delivery", "claimed_at", "timestamp with time zone", false),
 	column("approval_outbox_delivery", "claim_token", "text", false),
 	column("approval_outbox_delivery", "retry_count", "integer", true, "0"),
 	column("approval_outbox_delivery", "attempt_count", "integer", true, "0"),
-	column(
-		"approval_outbox_delivery",
-		"processed_at",
-		"timestamp with time zone",
-		false,
-	),
+	column("approval_outbox_delivery", "processed_at", "timestamp with time zone", false),
 	column("approval_outbox_delivery", "last_error", "text", false),
-	column(
-		"approval_outbox_delivery",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_outbox_delivery", "created_at", "timestamp with time zone", true, "now()"),
 	column("approval_outbox_delivery", "updated_at", "timestamp with time zone"),
 
 	column("approval_workflow_rollout", "id", "uuid", true, "gen_random_uuid()"),
 	column("approval_workflow_rollout", "organization_id", "text"),
-	column(
-		"approval_workflow_rollout",
-		"workflow_type",
-		"approval_workflow_type",
-	),
+	column("approval_workflow_rollout", "workflow_type", "approval_workflow_type"),
 	column(
 		"approval_workflow_rollout",
 		"lifecycle_mode",
@@ -562,67 +367,25 @@ const columns = [
 		true,
 		"'legacy'::approval_side_effect_mode",
 	),
-	column(
-		"approval_workflow_rollout",
-		"backfilled_through",
-		"timestamp with time zone",
-		false,
-	),
+	column("approval_workflow_rollout", "backfilled_through", "timestamp with time zone", false),
 	column("approval_workflow_rollout", "mismatch_count", "integer", true, "0"),
-	column(
-		"approval_workflow_rollout",
-		"last_reconciled_at",
-		"timestamp with time zone",
-		false,
-	),
-	column(
-		"approval_workflow_rollout",
-		"created_at",
-		"timestamp with time zone",
-		true,
-		"now()",
-	),
+	column("approval_workflow_rollout", "last_reconciled_at", "timestamp with time zone", false),
+	column("approval_workflow_rollout", "created_at", "timestamp with time zone", true, "now()"),
 	column("approval_workflow_rollout", "updated_at", "timestamp with time zone"),
 
-	column(
-		"approval_workflow_migration_issue",
-		"id",
-		"uuid",
-		true,
-		"gen_random_uuid()",
-	),
+	column("approval_workflow_migration_issue", "id", "uuid", true, "gen_random_uuid()"),
 	column("approval_workflow_migration_issue", "organization_id", "text"),
 	column("approval_workflow_migration_issue", "workflow_id", "uuid", false),
-	column(
-		"approval_workflow_migration_issue",
-		"workflow_type",
-		"approval_workflow_type",
-	),
+	column("approval_workflow_migration_issue", "workflow_type", "approval_workflow_type"),
 	column("approval_workflow_migration_issue", "legacy_type", "text", false),
 	column("approval_workflow_migration_issue", "legacy_id", "uuid", false),
 	column("approval_workflow_migration_issue", "source_type", "text"),
 	column("approval_workflow_migration_issue", "source_id", "uuid"),
 	column("approval_workflow_migration_issue", "issue_code", "text"),
 	column("approval_workflow_migration_issue", "evidence", "jsonb"),
-	column(
-		"approval_workflow_migration_issue",
-		"disposition",
-		"text",
-		true,
-		"'open'::text",
-	),
-	column(
-		"approval_workflow_migration_issue",
-		"operator_user_id",
-		"text",
-		false,
-	),
-	column(
-		"approval_workflow_migration_issue",
-		"disposed_at",
-		"timestamp with time zone",
-		false,
-	),
+	column("approval_workflow_migration_issue", "disposition", "text", true, "'open'::text"),
+	column("approval_workflow_migration_issue", "operator_user_id", "text", false),
+	column("approval_workflow_migration_issue", "disposed_at", "timestamp with time zone", false),
 	column(
 		"approval_workflow_migration_issue",
 		"created_at",
@@ -630,11 +393,7 @@ const columns = [
 		true,
 		"now()",
 	),
-	column(
-		"approval_workflow_migration_issue",
-		"updated_at",
-		"timestamp with time zone",
-	),
+	column("approval_workflow_migration_issue", "updated_at", "timestamp with time zone"),
 
 	column("audit_log", "id", "uuid", true, "gen_random_uuid()"),
 	column("audit_log", "organization_id", "text"),
@@ -647,13 +406,7 @@ const columns = [
 	column("audit_log", "metadata", "text", false),
 	column("audit_log", "ip_address", "text", false),
 	column("audit_log", "user_agent", "text", false),
-	column(
-		"audit_log",
-		"timestamp",
-		"timestamp without time zone",
-		true,
-		"now()",
-	),
+	column("audit_log", "timestamp", "timestamp without time zone", true, "now()"),
 
 	column("absence_entry", "organization_id", "text", false),
 	column("absence_entry", "approval_workflow_id", "uuid", false),
@@ -681,13 +434,7 @@ function foreignKey(
 	onDelete: ApprovalCatalogForeignKey["onDelete"] = "no action",
 	onUpdate: ApprovalCatalogForeignKey["onUpdate"] = "no action",
 ): ApprovalCatalogForeignKey {
-	const logicalName = [
-		table,
-		...columns,
-		foreignTable,
-		...foreignColumns,
-		"fk",
-	].join("_");
+	const logicalName = [table, ...columns, foreignTable, ...foreignColumns, "fk"].join("_");
 	return {
 		name: toPostgresIdentifier(logicalName),
 		sourceSchema: "public",
@@ -702,26 +449,12 @@ function foreignKey(
 }
 
 const foreignKeys = [
-	foreignKey(
-		"approval_workflow",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
-	foreignKey(
-		"approval_workflow",
-		["requester_employee_id", "organization_id"],
-		"employee",
-		["id", "organization_id"],
-	),
-	foreignKey(
-		"approval_workflow_stage",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_workflow", ["organization_id"], "organization", ["id"], "cascade"),
+	foreignKey("approval_workflow", ["requester_employee_id", "organization_id"], "employee", [
+		"id",
+		"organization_id",
+	]),
+	foreignKey("approval_workflow_stage", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_workflow_stage",
 		["workflow_id", "organization_id"],
@@ -729,13 +462,7 @@ const foreignKeys = [
 		["id", "organization_id"],
 		"cascade",
 	),
-	foreignKey(
-		"approval_stage_assignment",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_stage_assignment", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_stage_assignment",
 		["workflow_id", "stage_id", "organization_id"],
@@ -743,18 +470,14 @@ const foreignKeys = [
 		["workflow_id", "id", "organization_id"],
 		"cascade",
 	),
-	foreignKey(
-		"approval_stage_assignment",
-		["approver_employee_id", "organization_id"],
-		"employee",
-		["id", "organization_id"],
-	),
-	foreignKey(
-		"approval_stage_assignment",
-		["resolved_by_actor_id", "organization_id"],
-		"employee",
-		["id", "organization_id"],
-	),
+	foreignKey("approval_stage_assignment", ["approver_employee_id", "organization_id"], "employee", [
+		"id",
+		"organization_id",
+	]),
+	foreignKey("approval_stage_assignment", ["resolved_by_actor_id", "organization_id"], "employee", [
+		"id",
+		"organization_id",
+	]),
 	foreignKey(
 		"approval_stage_assignment",
 		["reassigned_by_employee_id", "organization_id"],
@@ -763,22 +486,11 @@ const foreignKeys = [
 	),
 	foreignKey(
 		"approval_stage_assignment",
-		[
-			"workflow_id",
-			"stage_id",
-			"reassigned_from_assignment_id",
-			"organization_id",
-		],
+		["workflow_id", "stage_id", "reassigned_from_assignment_id", "organization_id"],
 		"approval_stage_assignment",
 		["workflow_id", "stage_id", "id", "organization_id"],
 	),
-	foreignKey(
-		"approval_workflow_event",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_workflow_event", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_workflow_event",
 		["workflow_id", "organization_id"],
@@ -786,20 +498,12 @@ const foreignKeys = [
 		["id", "organization_id"],
 		"cascade",
 	),
-	foreignKey(
-		"approval_workflow_event",
-		["actor_employee_id", "organization_id"],
-		"employee",
-		["id", "organization_id"],
-	),
+	foreignKey("approval_workflow_event", ["actor_employee_id", "organization_id"], "employee", [
+		"id",
+		"organization_id",
+	]),
 	foreignKey("approval_workflow_event", ["actor_user_id"], "user", ["id"]),
-	foreignKey(
-		"approval_workflow_command",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_workflow_command", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_workflow_command",
 		["workflow_id", "organization_id"],
@@ -827,13 +531,7 @@ const foreignKeys = [
 		"employee",
 		["id", "organization_id"],
 	),
-	foreignKey(
-		"approval_inbox_projection",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_inbox_projection", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_inbox_projection",
 		["workflow_id", "active_stage_id", "organization_id"],
@@ -841,13 +539,7 @@ const foreignKeys = [
 		["workflow_id", "id", "organization_id"],
 		"cascade",
 	),
-	foreignKey(
-		"approval_outbox",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_outbox", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_outbox",
 		["workflow_id", "event_id", "organization_id", "event_type"],
@@ -855,13 +547,7 @@ const foreignKeys = [
 		["workflow_id", "id", "organization_id", "event_type"],
 		"cascade",
 	),
-	foreignKey(
-		"approval_outbox_delivery",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_outbox_delivery", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_outbox_delivery",
 		["outbox_id", "organization_id", "disposition"],
@@ -869,19 +555,11 @@ const foreignKeys = [
 		["id", "organization_id", "disposition"],
 		"cascade",
 	),
-	foreignKey(
-		"approval_outbox_delivery",
-		["recipient_employee_id", "organization_id"],
-		"employee",
-		["id", "organization_id"],
-	),
-	foreignKey(
-		"approval_workflow_rollout",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_outbox_delivery", ["recipient_employee_id", "organization_id"], "employee", [
+		"id",
+		"organization_id",
+	]),
+	foreignKey("approval_workflow_rollout", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey(
 		"approval_workflow_migration_issue",
 		["organization_id"],
@@ -896,45 +574,28 @@ const foreignKeys = [
 		["id", "organization_id"],
 		"cascade",
 	),
-	foreignKey(
-		"approval_workflow_migration_issue",
-		["operator_user_id"],
-		"user",
-		["id"],
-	),
-	foreignKey(
-		"audit_log",
-		["organization_id"],
-		"organization",
-		["id"],
-		"cascade",
-	),
+	foreignKey("approval_workflow_migration_issue", ["operator_user_id"], "user", ["id"]),
+	foreignKey("audit_log", ["organization_id"], "organization", ["id"], "cascade"),
 	foreignKey("audit_log", ["performed_by"], "user", ["id"]),
 	foreignKey("audit_log", ["employee_id"], "employee", ["id"]),
-	foreignKey(
-		"absence_entry",
-		["approval_workflow_id", "organization_id"],
-		"approval_workflow",
-		["id", "organization_id"],
-	),
+	foreignKey("absence_entry", ["approval_workflow_id", "organization_id"], "approval_workflow", [
+		"id",
+		"organization_id",
+	]),
 	foreignKey(
 		"compliance_exception",
 		["approval_workflow_id", "organization_id"],
 		"approval_workflow",
 		["id", "organization_id"],
 	),
-	foreignKey(
-		"shift_request",
-		["approval_workflow_id", "organization_id"],
-		"approval_workflow",
-		["id", "organization_id"],
-	),
-	foreignKey(
-		"work_period",
-		["approval_workflow_id", "organization_id"],
-		"approval_workflow",
-		["id", "organization_id"],
-	),
+	foreignKey("shift_request", ["approval_workflow_id", "organization_id"], "approval_workflow", [
+		"id",
+		"organization_id",
+	]),
+	foreignKey("work_period", ["approval_workflow_id", "organization_id"], "approval_workflow", [
+		"id",
+		"organization_id",
+	]),
 	foreignKey(
 		"travel_expense_claim",
 		["approval_workflow_id", "organization_id"],
@@ -993,30 +654,24 @@ const indexes = [
 		"organization_id",
 		"status",
 	]),
-	index(
-		"approval_workflow_stage",
-		"approvalWorkflowStage_id_organizationId_idx",
-		true,
-		["id", "organization_id"],
-	),
-	index(
-		"approval_workflow_stage",
-		"approvalWorkflowStage_workflow_id_organizationId_idx",
-		true,
-		["workflow_id", "id", "organization_id"],
-	),
-	index(
-		"approval_workflow_stage",
-		"approvalWorkflowStage_org_workflow_order_idx",
-		true,
-		["organization_id", "workflow_id", "stage_order"],
-	),
-	index(
-		"approval_stage_assignment",
-		"approvalStageAssignment_id_organizationId_idx",
-		true,
-		["id", "organization_id"],
-	),
+	index("approval_workflow_stage", "approvalWorkflowStage_id_organizationId_idx", true, [
+		"id",
+		"organization_id",
+	]),
+	index("approval_workflow_stage", "approvalWorkflowStage_workflow_id_organizationId_idx", true, [
+		"workflow_id",
+		"id",
+		"organization_id",
+	]),
+	index("approval_workflow_stage", "approvalWorkflowStage_org_workflow_order_idx", true, [
+		"organization_id",
+		"workflow_id",
+		"stage_order",
+	]),
+	index("approval_stage_assignment", "approvalStageAssignment_id_organizationId_idx", true, [
+		"id",
+		"organization_id",
+	]),
 	index(
 		"approval_stage_assignment",
 		"approvalStageAssignment_workflow_stage_id_organizationId_idx",
@@ -1036,30 +691,27 @@ const indexes = [
 		["organization_id", "workflow_id", "stage_id", "approver_employee_id"],
 		"status = 'pending'",
 	),
-	index(
-		"approval_workflow_event",
-		"approvalWorkflowEvent_id_organizationId_idx",
-		true,
-		["id", "organization_id"],
-	),
-	index(
-		"approval_workflow_event",
-		"approvalWorkflowEvent_workflow_id_organizationId_idx",
-		true,
-		["workflow_id", "id", "organization_id"],
-	),
+	index("approval_workflow_event", "approvalWorkflowEvent_id_organizationId_idx", true, [
+		"id",
+		"organization_id",
+	]),
+	index("approval_workflow_event", "approvalWorkflowEvent_workflow_id_organizationId_idx", true, [
+		"workflow_id",
+		"id",
+		"organization_id",
+	]),
 	index(
 		"approval_workflow_event",
 		"approvalWorkflowEvent_workflow_id_organizationId_eventType_idx",
 		true,
 		["workflow_id", "id", "organization_id", "event_type"],
 	),
-	index(
-		"approval_workflow_event",
-		"approvalWorkflowEvent_org_workflow_version_index_idx",
-		true,
-		["organization_id", "workflow_id", "version", "event_index"],
-	),
+	index("approval_workflow_event", "approvalWorkflowEvent_org_workflow_version_index_idx", true, [
+		"organization_id",
+		"workflow_id",
+		"version",
+		"event_index",
+	]),
 	index(
 		"approval_workflow_event",
 		"approvalWorkflowEvent_org_idempotency_idx",
@@ -1067,46 +719,36 @@ const indexes = [
 		["organization_id", "idempotency_key"],
 		"idempotency_key is not null",
 	),
-	index(
-		"approval_workflow_command",
-		"approvalWorkflowCommand_org_workflow_idempotency_idx",
-		true,
-		["organization_id", "workflow_id", "idempotency_key"],
-	),
-	index(
-		"approval_requester_projection",
-		"approvalRequesterProjection_org_workflow_idx",
-		true,
-		["organization_id", "workflow_id"],
-	),
+	index("approval_workflow_command", "approvalWorkflowCommand_org_workflow_idempotency_idx", true, [
+		"organization_id",
+		"workflow_id",
+		"idempotency_key",
+	]),
+	index("approval_requester_projection", "approvalRequesterProjection_org_workflow_idx", true, [
+		"organization_id",
+		"workflow_id",
+	]),
 	index(
 		"approval_requester_projection",
 		"approvalRequesterProjection_org_requester_status_idx",
 		false,
 		["organization_id", "requester_employee_id", "status"],
 	),
-	index(
-		"approval_inbox_projection",
-		"approvalInboxProjection_org_workflow_stage_idx",
-		true,
-		["organization_id", "workflow_id", "active_stage_id"],
-	),
-	index(
-		"approval_inbox_projection",
-		"approvalInboxProjection_org_status_idx",
-		false,
-		["organization_id", "status"],
-	),
-	index("approval_outbox", "approvalOutbox_id_organizationId_idx", true, [
+	index("approval_inbox_projection", "approvalInboxProjection_org_workflow_stage_idx", true, [
+		"organization_id",
+		"workflow_id",
+		"active_stage_id",
+	]),
+	index("approval_inbox_projection", "approvalInboxProjection_org_status_idx", false, [
+		"organization_id",
+		"status",
+	]),
+	index("approval_outbox", "approvalOutbox_id_organizationId_idx", true, ["id", "organization_id"]),
+	index("approval_outbox", "approvalOutbox_id_organizationId_disposition_idx", true, [
 		"id",
 		"organization_id",
+		"disposition",
 	]),
-	index(
-		"approval_outbox",
-		"approvalOutbox_id_organizationId_disposition_idx",
-		true,
-		["id", "organization_id", "disposition"],
-	),
 	index("approval_outbox", "approvalOutbox_org_dedupe_idx", true, [
 		"organization_id",
 		"dedupe_key",
@@ -1122,24 +764,18 @@ const indexes = [
 		["expansion_status", "created_at"],
 		"expansion_status = 'pending'",
 	),
-	index(
-		"approval_outbox_delivery",
-		"approvalOutboxDelivery_org_dedupe_idx",
-		true,
-		["organization_id", "dedupe_key"],
-	),
-	index(
-		"approval_outbox_delivery",
-		"approvalOutboxDelivery_status_available_idx",
-		false,
-		["status", "available_at"],
-	),
-	index(
-		"approval_workflow_rollout",
-		"approvalWorkflowRollout_org_type_idx",
-		true,
-		["organization_id", "workflow_type"],
-	),
+	index("approval_outbox_delivery", "approvalOutboxDelivery_org_dedupe_idx", true, [
+		"organization_id",
+		"dedupe_key",
+	]),
+	index("approval_outbox_delivery", "approvalOutboxDelivery_status_available_idx", false, [
+		"status",
+		"available_at",
+	]),
+	index("approval_workflow_rollout", "approvalWorkflowRollout_org_type_idx", true, [
+		"organization_id",
+		"workflow_type",
+	]),
 	index(
 		"approval_workflow_migration_issue",
 		"approvalWorkflowMigrationIssue_org_type_disposition_idx",
@@ -1150,12 +786,10 @@ const indexes = [
 		"organization_id",
 		"approval_workflow_id",
 	]),
-	index(
-		"compliance_exception",
-		"complianceException_org_approvalWorkflowId_idx",
-		false,
-		["organization_id", "approval_workflow_id"],
-	),
+	index("compliance_exception", "complianceException_org_approvalWorkflowId_idx", false, [
+		"organization_id",
+		"approval_workflow_id",
+	]),
 	index("shift_request", "shiftRequest_org_approvalWorkflowId_idx", false, [
 		"organization_id",
 		"approval_workflow_id",
@@ -1164,12 +798,10 @@ const indexes = [
 		"organization_id",
 		"approval_workflow_id",
 	]),
-	index(
-		"travel_expense_claim",
-		"travelExpenseClaim_org_approvalWorkflowId_idx",
-		false,
-		["organization_id", "approval_workflow_id"],
-	),
+	index("travel_expense_claim", "travelExpenseClaim_org_approvalWorkflowId_idx", false, [
+		"organization_id",
+		"approval_workflow_id",
+	]),
 	index(
 		"notification",
 		"notification_org_idempotencyKey_idx",
@@ -1177,19 +809,13 @@ const indexes = [
 		["organization_id", "idempotency_key"],
 		"idempotency_key is not null",
 	),
-	index("shift", "shift_organizationId_id_idx", true, [
-		"organization_id",
-		"id",
-	]),
+	index("shift", "shift_organizationId_id_idx", true, ["organization_id", "id"]),
 	index("audit_log", "auditLog_organizationId_idx", false, ["organization_id"]),
 	index("audit_log", "auditLog_organizationId_timestamp_idx", false, [
 		"organization_id",
 		"timestamp",
 	]),
-	index("audit_log", "auditLog_entityType_entityId_idx", false, [
-		"entity_type",
-		"entity_id",
-	]),
+	index("audit_log", "auditLog_entityType_entityId_idx", false, ["entity_type", "entity_id"]),
 	index("audit_log", "auditLog_performedBy_idx", false, ["performed_by"]),
 	index("audit_log", "auditLog_timestamp_idx", false, ["timestamp"]),
 ] as const;
@@ -1219,14 +845,8 @@ export const APPROVAL_EXPANSION_CONTRACT = {
 	checks,
 } as const satisfies ApprovalExpansionContract;
 
-function sameValues(
-	left: readonly string[],
-	right: readonly string[],
-): boolean {
-	return (
-		left.length === right.length &&
-		left.every((value, index) => value === right[index])
-	);
+function sameValues(left: readonly string[], right: readonly string[]): boolean {
+	return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function removeBalancedOuterParentheses(value: string): string {
@@ -1264,10 +884,7 @@ function normalizeExpression(value: string): string {
 	return removeBalancedOuterParentheses(withoutCheck);
 }
 
-function defaultsMatch(
-	actual: string | null,
-	expected: string | null,
-): boolean {
+function defaultsMatch(actual: string | null, expected: string | null): boolean {
 	if (actual === null || expected === null) return actual === expected;
 	return normalizeExpression(actual) === normalizeExpression(expected);
 }
@@ -1277,15 +894,19 @@ export function validateApprovalExpansionCatalog(
 	contract: ApprovalExpansionContract = APPROVAL_EXPANSION_CONTRACT,
 ): void {
 	const missing: string[] = [];
+	const tables = new Set(catalog.tables);
+	const operationalTables = new Set(catalog.operationalTables);
+	const sourceTables = new Set(catalog.sourceTables);
+	const indexesByName = new Map(catalog.indexes.map((index) => [index.name, index]));
+	const checksByName = new Map(catalog.checks.map((check) => [check.name, check]));
 	for (const table of contract.tables) {
-		if (!catalog.tables.includes(table)) missing.push(`table ${table}`);
+		if (!tables.has(table)) missing.push(`table ${table}`);
 	}
 	for (const table of contract.operationalTables) {
-		if (!catalog.operationalTables.includes(table))
-			missing.push(`table ${table}`);
+		if (!operationalTables.has(table)) missing.push(`table ${table}`);
 	}
 	for (const table of contract.sourceTables) {
-		if (!catalog.sourceTables.includes(table)) missing.push(`table ${table}`);
+		if (!sourceTables.has(table)) missing.push(`table ${table}`);
 	}
 	for (const [name, values] of Object.entries(contract.enums)) {
 		const actual = catalog.enums[name];
@@ -1295,15 +916,11 @@ export function validateApprovalExpansionCatalog(
 	}
 	for (const expected of contract.columns) {
 		const actual = catalog.columns.find(
-			(candidate) =>
-				candidate.table === expected.table && candidate.name === expected.name,
+			(candidate) => candidate.table === expected.table && candidate.name === expected.name,
 		);
 		if (!actual) {
 			missing.push(`column ${expected.table}.${expected.name}`);
-		} else if (
-			actual.type !== expected.type ||
-			actual.notNull !== expected.notNull
-		) {
+		} else if (actual.type !== expected.type || actual.notNull !== expected.notNull) {
 			missing.push(
 				`column ${expected.table}.${expected.name} expected ${expected.type} ${expected.notNull ? "not null" : "nullable"}`,
 			);
@@ -1374,22 +991,14 @@ export function validateApprovalExpansionCatalog(
 		const expectedCheckCount = contract.checks.filter(
 			(check) => (check.table as string) === relation.name,
 		).length;
-		const actualCheckCount = catalog.checks.filter(
-			(check) => check.table === relation.name,
-		).length;
+		const actualCheckCount = catalog.checks.filter((check) => check.table === relation.name).length;
 		if (actualCheckCount > expectedCheckCount) {
 			missing.push(`unexpected check on full relation ${relation.name}`);
 		}
 	}
 	for (const expected of contract.indexes) {
-		const actual = catalog.indexes.find(
-			(candidate) => candidate.name === expected.name,
-		);
-		const kind = expected.predicate
-			? "partial index"
-			: expected.unique
-				? "unique index"
-				: "index";
+		const actual = indexesByName.get(expected.name);
+		const kind = expected.predicate ? "partial index" : expected.unique ? "unique index" : "index";
 		if (
 			!actual ||
 			actual.table !== expected.table ||
@@ -1398,29 +1007,23 @@ export function validateApprovalExpansionCatalog(
 			!sameValues(actual.columns, expected.columns) ||
 			(actual.predicate === null || expected.predicate === null
 				? actual.predicate !== expected.predicate
-				: normalizeExpression(actual.predicate) !==
-					normalizeExpression(expected.predicate))
+				: normalizeExpression(actual.predicate) !== normalizeExpression(expected.predicate))
 		) {
 			missing.push(`${kind} ${expected.name}`);
 		}
 	}
 	for (const expected of contract.checks) {
-		const actual = catalog.checks.find(
-			(candidate) => candidate.name === expected.name,
-		);
+		const actual = checksByName.get(expected.name);
 		if (
 			!actual ||
 			actual.table !== expected.table ||
-			normalizeExpression(actual.definition) !==
-				normalizeExpression(expected.definition)
+			normalizeExpression(actual.definition) !== normalizeExpression(expected.definition)
 		) {
 			missing.push(`check ${expected.name}`);
 		}
 	}
 	if (missing.length > 0) {
-		throw new Error(
-			`Approval workflow expansion schema is incomplete:\n- ${missing.join("\n- ")}`,
-		);
+		throw new Error(`Approval workflow expansion schema is incomplete:\n- ${missing.join("\n- ")}`);
 	}
 }
 
@@ -1434,9 +1037,7 @@ function catalogFromResult(result: unknown): ApprovalExpansionCatalog {
 	}
 	const row = rows[0];
 	if (!row || typeof row !== "object" || !("catalog" in row)) {
-		throw new Error(
-			"Approval workflow catalog query returned malformed evidence",
-		);
+		throw new Error("Approval workflow catalog query returned malformed evidence");
 	}
 	return row.catalog as ApprovalExpansionCatalog;
 }

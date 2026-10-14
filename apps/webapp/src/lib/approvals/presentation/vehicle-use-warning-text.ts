@@ -6,6 +6,7 @@
  * `components/time-tracking/vehicle-use-format.ts`. Pure: no I/O.
  */
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
+import { numberFormatter } from "@/lib/intl-number-format";
 import {
 	PLAUSIBLE_AVERAGE_SPEED_KMH,
 	PLAUSIBLE_DISTANCE_KM,
@@ -35,7 +36,10 @@ export function vehicleUseWarningReviewText(
 				key: "approvals:approvals.vehicleUseWarning.speedAboveLimit",
 				fallback:
 					"The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
-				params: { speed: warning.averageKmh, limit: PLAUSIBLE_AVERAGE_SPEED_KMH },
+				params: {
+					speed: warning.averageKmh,
+					limit: PLAUSIBLE_AVERAGE_SPEED_KMH,
+				},
 			};
 		case "distance_above_limit":
 			return {
@@ -52,7 +56,7 @@ export function vehicleUseWarningBotText(
 	warning: VehicleUseWarning,
 	locale: string,
 ): string {
-	const km = (value: number) => new Intl.NumberFormat(locale).format(value);
+	const km = (value: number) => numberFormatter(locale).format(value);
 	switch (warning.code) {
 		case "start_below_last_end":
 			return t(
@@ -69,7 +73,10 @@ export function vehicleUseWarningBotText(
 			return t(
 				"bot.vehicleUse.warning.speedAboveLimit",
 				"The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
-				{ speed: km(warning.averageKmh), limit: km(PLAUSIBLE_AVERAGE_SPEED_KMH) },
+				{
+					speed: km(warning.averageKmh),
+					limit: km(PLAUSIBLE_AVERAGE_SPEED_KMH),
+				},
 			);
 		case "distance_above_limit":
 			return t(

@@ -67,17 +67,7 @@ export function VehicleUseFields({
 	readings?: "all" | "start";
 	t: TFnType;
 }) {
-	const id = useId();
-	const locale = useLocale();
-	const onlyStart = readings === "start";
 	const result = vehicleUseFromDraft(value);
-	const hasVehicle = value.vehicle !== "";
-	const startMissing = value.startKm.trim() === "";
-	const derived = result.ok && result.use && !startMissing ? result.use.distanceKm : null;
-	const selectable = vehicles.filter(
-		(vehicle) => !vehicle.archived || vehicle.id === value.vehicle,
-	);
-	const set = (patch: Partial<VehicleUseDraft>) => onChange({ ...value, ...patch });
 
 	return (
 		<fieldset className="space-y-2" disabled={disabled}>
@@ -93,102 +83,15 @@ export function VehicleUseFields({
 					)}
 				</p>
 			) : null}
-			<div className="grid gap-1.5">
-				<Label htmlFor={`${id}-vehicle`} className="text-xs text-muted-foreground">
-					{t("timeTracking.vehicleUse.vehicle", "Vehicle")}
-				</Label>
-				<Select
-					value={value.vehicle || NONE}
-					onValueChange={(next: string) =>
-						next === NONE
-							? onChange({ vehicle: "", startKm: "", endKm: "", distanceKm: "" })
-							: onChange(withPickedVehicle(value, next, lastEndKmByVehicleId))
-					}
-					disabled={disabled}
-				>
-					<SelectTrigger id={`${id}-vehicle`} className="w-full">
-						<SelectValue>
-							{value.vehicle === "own"
-								? t("timeTracking.vehicleUse.ownVehicle", "Own vehicle")
-								: value.vehicle
-									? (() => {
-											const vehicle = vehicles.find((option) => option.id === value.vehicle);
-											return vehicle
-												? vehicleOptionLabel(vehicle)
-												: t(
-														"timeTracking.vehicleUse.unknownVehicle",
-														"Unknown vehicle (unavailable)",
-													);
-										})()
-									: t("timeTracking.vehicleUse.noVehicle", "No vehicle")}
-						</SelectValue>
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value={NONE}>
-							{t("timeTracking.vehicleUse.noVehicle", "No vehicle")}
-						</SelectItem>
-						<SelectItem value="own">
-							{t("timeTracking.vehicleUse.ownVehicle", "Own vehicle")}
-						</SelectItem>
-						{selectable.map((vehicle) => (
-							<SelectItem key={vehicle.id} value={vehicle.id}>
-								{vehicleOptionLabel(vehicle)}
-								{vehicle.archived ? ` · ${t("timeTracking.vehicleUse.archived", "archived")}` : ""}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</div>
-			{hasVehicle ? (
-				<div className="grid grid-cols-2 gap-2">
-					<div className="grid gap-1.5">
-						<Label htmlFor={`${id}-start`} className="text-xs text-muted-foreground">
-							{t("timeTracking.vehicleUse.startKm", "Start reading (km)")}
-						</Label>
-						<Input
-							id={`${id}-start`}
-							inputMode="numeric"
-							autoComplete="off"
-							value={value.startKm}
-							onChange={(event) => set({ startKm: event.target.value })}
-						/>
-					</div>
-					{onlyStart ? null : (
-						<div className="grid gap-1.5">
-							<Label htmlFor={`${id}-end`} className="text-xs text-muted-foreground">
-								{t("timeTracking.vehicleUse.endKm", "End reading (km)")}
-							</Label>
-							<Input
-								id={`${id}-end`}
-								inputMode="numeric"
-								autoComplete="off"
-								value={value.endKm}
-								onChange={(event) => set({ endKm: event.target.value })}
-							/>
-						</div>
-					)}
-					{onlyStart ? null : startMissing ? (
-						<div className="col-span-2 grid gap-1.5">
-							<Label htmlFor={`${id}-distance`} className="text-xs text-muted-foreground">
-								{t("timeTracking.vehicleUse.distanceKm", "Driven distance (km)")}
-							</Label>
-							<Input
-								id={`${id}-distance`}
-								inputMode="numeric"
-								autoComplete="off"
-								value={value.distanceKm}
-								onChange={(event) => set({ distanceKm: event.target.value })}
-							/>
-						</div>
-					) : derived !== null ? (
-						<p className="col-span-2 text-xs text-muted-foreground" aria-live="polite">
-							{t("timeTracking.vehicleUse.derivedDistance", "Driven distance: {distance} km", {
-								distance: formatKm(derived, locale),
-							})}
-						</p>
-					) : null}
-				</div>
-			) : null}
+			<VehiclePicker
+				value={value}
+				onChange={onChange}
+				vehicles={vehicles}
+				lastEndKmByVehicleId={lastEndKmByVehicleId}
+				disabled={disabled}
+				t={t}
+			/>
+			<VehicleReadings value={value} onChange={onChange} readings={readings} t={t} />
 			{!result.ok ? (
 				<p className="text-xs text-destructive" role="alert">
 					{vehicleUseRefusalText(t, result.code)}
@@ -297,5 +200,140 @@ export function VehicleUseSummary({
 				)}
 			</p>
 		</div>
+	);
+}
+
+function VehiclePicker({
+	value,
+	onChange,
+	vehicles,
+	lastEndKmByVehicleId,
+	disabled,
+	t,
+}: Pick<
+	Parameters<typeof VehicleUseFields>[0],
+	"value" | "onChange" | "vehicles" | "lastEndKmByVehicleId" | "disabled" | "t"
+>) {
+	const id = useId();
+	const selectable = vehicles.filter(
+		(vehicle) => !vehicle.archived || vehicle.id === value.vehicle,
+	);
+	return (
+		<div className="grid gap-1.5">
+			<Label htmlFor={`${id}-vehicle`} className="text-xs text-muted-foreground">
+				{t("timeTracking.vehicleUse.vehicle", "Vehicle")}
+			</Label>
+			<Select
+				value={value.vehicle || NONE}
+				onValueChange={(next: string) =>
+					next === NONE
+						? onChange({ vehicle: "", startKm: "", endKm: "", distanceKm: "" })
+						: onChange(withPickedVehicle(value, next, lastEndKmByVehicleId))
+				}
+				disabled={disabled}
+			>
+				<SelectTrigger id={`${id}-vehicle`} className="w-full">
+					<SelectValue>
+						{value.vehicle === "own"
+							? t("timeTracking.vehicleUse.ownVehicle", "Own vehicle")
+							: value.vehicle
+								? (() => {
+										const vehicle = vehicles.find((option) => option.id === value.vehicle);
+										return vehicle
+											? vehicleOptionLabel(vehicle)
+											: t(
+													"timeTracking.vehicleUse.unknownVehicle",
+													"Unknown vehicle (unavailable)",
+												);
+									})()
+								: t("timeTracking.vehicleUse.noVehicle", "No vehicle")}
+					</SelectValue>
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value={NONE}>
+						{t("timeTracking.vehicleUse.noVehicle", "No vehicle")}
+					</SelectItem>
+					<SelectItem value="own">
+						{t("timeTracking.vehicleUse.ownVehicle", "Own vehicle")}
+					</SelectItem>
+					{selectable.map((vehicle) => (
+						<SelectItem key={vehicle.id} value={vehicle.id}>
+							{vehicleOptionLabel(vehicle)}
+							{vehicle.archived ? ` · ${t("timeTracking.vehicleUse.archived", "archived")}` : ""}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</div>
+	);
+}
+
+function VehicleReadings({
+	value,
+	onChange,
+	readings,
+	t,
+}: Pick<Parameters<typeof VehicleUseFields>[0], "value" | "onChange" | "readings" | "t">) {
+	const id = useId();
+	const locale = useLocale();
+	const onlyStart = readings === "start";
+	const result = vehicleUseFromDraft(value);
+	const hasVehicle = value.vehicle !== "";
+	const startMissing = value.startKm.trim() === "";
+	const derived = result.ok && result.use && !startMissing ? result.use.distanceKm : null;
+	const set = (patch: Partial<VehicleUseDraft>) => onChange({ ...value, ...patch });
+	return (
+		<>
+			{hasVehicle ? (
+				<div className="grid grid-cols-2 gap-2">
+					<div className="grid gap-1.5">
+						<Label htmlFor={`${id}-start`} className="text-xs text-muted-foreground">
+							{t("timeTracking.vehicleUse.startKm", "Start reading (km)")}
+						</Label>
+						<Input
+							id={`${id}-start`}
+							inputMode="numeric"
+							autoComplete="off"
+							value={value.startKm}
+							onChange={(event) => set({ startKm: event.target.value })}
+						/>
+					</div>
+					{onlyStart ? null : (
+						<div className="grid gap-1.5">
+							<Label htmlFor={`${id}-end`} className="text-xs text-muted-foreground">
+								{t("timeTracking.vehicleUse.endKm", "End reading (km)")}
+							</Label>
+							<Input
+								id={`${id}-end`}
+								inputMode="numeric"
+								autoComplete="off"
+								value={value.endKm}
+								onChange={(event) => set({ endKm: event.target.value })}
+							/>
+						</div>
+					)}
+					{onlyStart ? null : startMissing ? (
+						<div className="col-span-2 grid gap-1.5">
+							<Label htmlFor={`${id}-distance`} className="text-xs text-muted-foreground">
+								{t("timeTracking.vehicleUse.distanceKm", "Driven distance (km)")}
+							</Label>
+							<Input
+								id={`${id}-distance`}
+								inputMode="numeric"
+								autoComplete="off"
+								value={value.distanceKm}
+								onChange={(event) => set({ distanceKm: event.target.value })}
+							/>
+						</div>
+					) : derived !== null ? (
+						<p className="col-span-2 text-xs text-muted-foreground" aria-live="polite">
+							{t("timeTracking.vehicleUse.derivedDistance", "Driven distance: {distance} km", {
+								distance: formatKm(derived, locale),
+							})}
+						</p>
+					) : null}
+				</div>
+			) : null}
+		</>
 	);
 }
