@@ -4649,166 +4649,6 @@ db.delete(approvalOutbox);`,
 					table: "time_record",
 				},
 			],
-			"src/lib/time-tracking/policy-clock-out-terminal-break.ts": [
-				{
-					columns: ["type"],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "insert",
-					semantic: "synthetic_time_entry",
-					table: "time_entry",
-				},
-				{
-					columns: ["clock_out_id", "duration_minutes", "end_time"],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "update",
-					semantic: "policy_clock_out_terminal_break",
-					table: "work_period",
-				},
-				{
-					columns: ["duration_minutes", "end_at"],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "update",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-				{
-					columns: ["driven_distance_km", "odometer_end_km", "odometer_start_km"],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "update",
-					table: "time_record_work",
-				},
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"computation_metadata",
-						"driven_distance_km",
-						"odometer_end_km",
-						"odometer_start_km",
-						"organization_id",
-						"record_id",
-						"record_kind",
-						"vehicle_id",
-						"vehicle_kind",
-						"work_category_id",
-						"work_location_type",
-					],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_work",
-				},
-				{
-					columns: [
-						"allocation_kind",
-						"cost_center_id",
-						"created_at",
-						"id",
-						"is_billable",
-						"organization_id",
-						"project_id",
-						"record_id",
-						"task_id",
-						"weight_percent",
-					],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_allocation",
-				},
-				{
-					columns: [
-						"approval_status",
-						"approval_workflow_id",
-						"canonical_record_id",
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"pending_changes",
-						"start_time",
-					],
-					functionName: "applyPolicyClockOutTerminalBreakInTransaction",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "work_period",
-				},
-			],
-			"src/lib/time-tracking/close-active-work.ts": [
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "closeActiveWorkGraph",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"computation_metadata",
-						"driven_distance_km",
-						"odometer_end_km",
-						"odometer_start_km",
-						"organization_id",
-						"record_id",
-						"record_kind",
-						"vehicle_id",
-						"vehicle_kind",
-						"work_category_id",
-						"work_location_type",
-					],
-					functionName: "closeActiveWorkGraph",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_work",
-				},
-				{
-					columns: [
-						"allocation_kind",
-						"is_billable",
-						"organization_id",
-						"project_id",
-						"record_id",
-						"task_id",
-						"weight_percent",
-					],
-					functionName: "closeActiveWorkGraph",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record_allocation",
-				},
-				{
-					columns: [
-						"approval_status",
-						"canonical_record_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"pending_changes",
-					],
-					functionName: "closeActiveWorkGraph",
-					operation: "update",
-					table: "work_period",
-				},
-			],
 			"src/lib/time-tracking/record-imported-work.ts": [
 				{
 					columns: [
@@ -5059,6 +4899,70 @@ db.delete(approvalOutbox);`,
 					table: "time_entry",
 				},
 			],
+			"src/lib/time-tracking/work-records/create.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "insertCanonicalRecord",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"driven_distance_km",
+						"odometer_end_km",
+						"odometer_start_km",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"vehicle_id",
+						"vehicle_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "insertCanonicalRecord",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"cost_center_id",
+						"is_billable",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"task_id",
+						"weight_percent",
+					],
+					functionName: "insertCanonicalRecord",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"pending_changes",
+					],
+					functionName: "closeLiveWorkPeriod",
+					operation: "update",
+					table: "work_period",
+				},
+			],
 			"src/lib/time-tracking/work-records/divide.ts": [
 				{
 					columns: [
@@ -5192,19 +5096,6 @@ db.delete(approvalOutbox);`,
 				},
 			],
 			"src/lib/time-tracking/clocking/break.ts": [
-				{
-					columns: [
-						"approval_status",
-						"canonical_record_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"pending_changes",
-					],
-					functionName: "takeLegacyBreak",
-					operation: "update",
-					table: "work_period",
-				},
 				{
 					columns: ["clock_in_id", "start_time"],
 					functionName: "takeLegacyBreak",
@@ -5388,13 +5279,6 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 					uncertainty: "dynamic_payload",
 				},
-				{
-					columns: [],
-					functionName: "closeActivePeriod",
-					operation: "update",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
-				},
 			],
 		});
 	});
@@ -5486,8 +5370,9 @@ export function dynamicFinalizer(patch: object) {
 		);
 	});
 
-	it("allows only exact canonical finalizer and terminal-split Drizzle owners", () => {
+	it("allows only the exact canonical finalizer and no terminal-split Drizzle owner", () => {
 		const finalizerPath = "src/lib/approvals/server/work-period-approvals.ts";
+		// The terminal break divides through work records (#1221); its file owns no write.
 		const splitPath =
 			"src/lib/time-tracking/policy-clock-out-terminal-break.ts";
 		withApprovalWriteTree(
@@ -5499,15 +5384,9 @@ export function finalizeOrdinaryWorkPeriodTerminal() {
 export function renamedFinalizer() {
   return db.update(timeRecord).set({ approvalState: "approved" });
 }`,
-				[splitPath]: `import { db, timeRecord, timeRecordWork, timeRecordAllocation } from "@/db";
-export function applyPolicyClockOutTerminalBreakInTransaction(dynamic: object) {
-  db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
-  db.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata, vehicleKind, vehicleId, odometerStartKm, odometerEndKm, drivenDistanceKm });
-  db.insert(timeRecordAllocation).values({ id, organizationId, recordId, allocationKind, projectId, taskId, costCenterId, weightPercent, isBillable, createdAt });
-  db.insert(timeRecordAllocation).values(dynamic);
-}
-export function wrongSplitOwner() {
-  return db.insert(timeRecordWork).values({ recordId, organizationId, recordKind: "work", workCategoryId, workLocationType, computationMetadata });
+				[splitPath]: `import { db, timeRecord } from "@/db";
+export function applyPolicyClockOutTerminalBreakInTransaction() {
+  return db.insert(timeRecord).values({ organizationId, employeeId, startAt, endAt, durationMinutes, approvalState: "approved" });
 }`,
 			},
 			(workspaceRoot) => {
@@ -5522,13 +5401,7 @@ export function wrongSplitOwner() {
 					expect.objectContaining({
 						functionName: "applyPolicyClockOutTerminalBreakInTransaction",
 						path: splitPath,
-						table: "time_record_allocation",
-						uncertainty: "dynamic_payload",
-					}),
-					expect.objectContaining({
-						functionName: "wrongSplitOwner",
-						path: splitPath,
-						table: "time_record_work",
+						table: "time_record",
 					}),
 				]);
 			},

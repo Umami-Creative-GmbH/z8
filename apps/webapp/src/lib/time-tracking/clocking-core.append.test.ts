@@ -43,7 +43,6 @@ function harness(
 			return { id: "entry-new", ...entry };
 		}),
 		insertActivePeriod: vi.fn(async () => ({ id: "period-new" })),
-		closeActivePeriod: async () => null,
 	} satisfies ClockingStore;
 	const coordination = sealWorkTransactionScope({
 		db: transaction as never,

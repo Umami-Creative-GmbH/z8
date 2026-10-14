@@ -28,6 +28,7 @@ const REFUSAL_KINDS = new Set<WorkRecordRefusalKind>([
 	"not_found",
 	"stale",
 	"work_running",
+	"work_not_live",
 	"canonical_record_missing",
 	"canonical_divergence",
 	"endpoint_entry_missing",
@@ -71,6 +72,11 @@ export function refusalError(refusal: WorkRecordRefusal): Error {
 			return new ConflictError({
 				message: "Cannot split an active work period",
 				conflictType: "work_period_running",
+			});
+		case "work_not_live":
+			return new ConflictError({
+				message: "Work is no longer live",
+				conflictType: "work_period_not_live",
 			});
 		case "canonical_record_missing":
 		case "canonical_divergence":

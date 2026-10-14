@@ -726,7 +726,7 @@ describe("web clock-in append admission on PostgreSQL", () => {
 		// The uncoordinated clocking core refuses fresh writes once the organization
 		// adopted (#327), without writing anything.
 		await expect(
-			clockingService.clockOut({
+			clockingService.clockIn({
 				employeeId: ids.requester,
 				organizationId: ids.organization,
 				createdBy: ids.requesterUser,
@@ -738,6 +738,7 @@ describe("web clock-in append admission on PostgreSQL", () => {
 					timezoneSource: "browser",
 				},
 				source: { ipAddress: null, deviceInfo: "web" },
+				workLocationType: "office",
 			}),
 		).rejects.toBeInstanceOf(ClockingAppendAdoptedError);
 		expect(await position()).toEqual(admitted);

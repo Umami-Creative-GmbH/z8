@@ -70,8 +70,9 @@ const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/a
 const { withCompletedWorkTransaction } = await import("../completed-work-transaction");
 const { submitPeriodSubmission } = await import("../period-submissions/submission-service");
 const { closeMonth } = await import("../closed-months/store");
-const { applyWorkRecordChange, readWorkRecord } = await import(".");
+const { applyWorkRecordChange, readWorkRecord, workRecordScopeForFinalizer } = await import(".");
 const { expectRecordAgreement } = await import("./__tests__/expect-record-agreement");
+const { employeeCoordinationGuard, holdGuard } = await import("../work-transaction/ranks");
 type DivideByOwedBreak = import(".").DivideByOwedBreak;
 type WorkRecordExpected = import(".").WorkRecordExpected;
 
@@ -251,6 +252,30 @@ function apply(change: DivideByOwedBreak) {
 	);
 }
 
+/**
+ * The change on the Approvals finalizer's database handle, as the terminal break
+ * runs it (#1221). Append admission runs inside a registered work transaction;
+ * legacy admission also outside one, in an approval transaction whose caller
+ * already holds the employee locks.
+ */
+function applyOnFinalizerHandle(
+	change: DivideByOwedBreak,
+	registered: "registered" | "unregistered",
+) {
+	const key = { organizationId: ORG, employeeId: ids.requester };
+	if (registered === "registered") {
+		return withCompletedWorkTransaction({ ...key, actorUserId: change.actorUserId }, (scope) =>
+			workRecordScopeForFinalizer(scope.db, key).then((handle) =>
+				applyWorkRecordChange(handle, change),
+			),
+		);
+	}
+	return db.transaction(async (tx) => {
+		await holdGuard(tx, employeeCoordinationGuard(ids.requester));
+		return applyWorkRecordChange(await workRecordScopeForFinalizer(tx, key), change);
+	});
+}
+
 /** Every row a division can write, to prove "nothing written" by equality. */
 async function snapshot() {
 	const { rows } = await admin.query(
@@ -304,8 +329,8 @@ async function segments() {
  */
 const ADMISSIONS = [
 	// 08:00:40-14:00:40 is 360 minutes; 14:30:40-15:00:31 is 29m51s.
-	{ admission: "append", appendControl: "active", divided: [360, 30] },
-	{ admission: "legacy", appendControl: "inactive", divided: [360, 29] },
+	{ admission: "append", appendControl: "active", divided: [360, 30], finalizer: "registered" },
+	{ admission: "legacy", appendControl: "inactive", divided: [360, 29], finalizer: "unregistered" },
 ] as const;
 
 describe.each(ADMISSIONS)(
@@ -313,7 +338,54 @@ describe.each(ADMISSIONS)(
 	owedBreakContract,
 );
 
-function owedBreakContract({ admission, appendControl, divided }: (typeof ADMISSIONS)[number]) {
+describe("work records: the Approvals finalizer handle without a work transaction (#1221)", () => {
+	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
+	const key = { organizationId: ORG, employeeId: ids.requester };
+
+	afterAll(async () => {
+		await cleanup();
+	});
+
+	it("is refused in an adopted organization, even under the employee locks", async () => {
+		await seed("active");
+		await recordWork();
+		const before = await snapshot();
+
+		await expect(
+			db.transaction(async (tx) => {
+				await holdGuard(tx, employeeCoordinationGuard(ids.requester));
+				return workRecordScopeForFinalizer(tx, key);
+			}),
+		).rejects.toThrow(/adopted organization/);
+		expect(await snapshot()).toEqual(before);
+	});
+
+	it("is refused in a legacy organization whose caller does not hold the employee locks", async () => {
+		await seed("inactive");
+
+		await expect(db.transaction((tx) => workRecordScopeForFinalizer(tx, key))).rejects.toThrow(
+			/employee locks/,
+		);
+	});
+
+	it("is refused for another employee than the one whose locks the caller holds", async () => {
+		await seed("inactive");
+
+		await expect(
+			db.transaction(async (tx) => {
+				await holdGuard(tx, employeeCoordinationGuard(ids.manager));
+				return workRecordScopeForFinalizer(tx, key);
+			}),
+		).rejects.toThrow(/employee locks/);
+	});
+});
+
+function owedBreakContract({
+	admission,
+	appendControl,
+	divided,
+	finalizer,
+}: (typeof ADMISSIONS)[number]) {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 	beforeEach(async () => {
@@ -562,6 +634,93 @@ function owedBreakContract({ admission, appendControl, divided }: (typeof ADMISS
 			[ORG, submitted.submissionId],
 		);
 		expect(only(rows)).toEqual({ status: "withdrawn", closed_cause: "change" });
+	});
+
+	describe("on the Approvals finalizer handle, counting approved work of the local day (#1221)", () => {
+		const terminal = (expected: WorkRecordExpected) =>
+			owedBreak(expected, {
+				takenBefore: "approved_work_of_local_day",
+				actorUserId: userOf("manager"),
+				entries: {
+					createdBy: userOf("manager"),
+					ipAddress: "system",
+					deviceInfo: "break-enforcement",
+					timezone: "Europe/Berlin",
+					timezoneSource: "historical_inference",
+				},
+				appendOperation: "policy_clock_out_break",
+			});
+
+		/** Earlier work of the same Berlin day, 07:00-07:30, in the given approval state. */
+		async function earlierWork(approval: "approved" | "pending") {
+			const earlier = await recordWork(
+				parseInstant("2026-07-22T05:00:00Z"),
+				parseInstant("2026-07-22T05:30:00Z"),
+			);
+			await admin.query("update work_period set approval_status = $2 where id = $1", [
+				earlier.id,
+				approval,
+			]);
+			await admin.query("update time_record set approval_state = $2 where id = $1", [
+				earlier.canonical_record_id,
+				approval,
+			]);
+		}
+
+		it("divides both records and applies the effects when only unapproved work came before", async () => {
+			// A break before work still awaiting approval is not counted as taken.
+			await earlierWork("pending");
+			const source = await recordWork();
+			await admin.query(
+				"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+				[ids.requester],
+			);
+
+			const result = await applyOnFinalizerHandle(terminal(await expectedOf(source.id)), finalizer);
+
+			await expectRecordAgreement({ organizationId: ORG });
+			expect(result).toMatchObject({
+				kind: "owed_break_divided",
+				owedBreak: { breakMinutes: 30, alreadyTakenBreakMinutes: 0 },
+				retained: { segment: { workPeriodId: source.id, durationMinutes: divided[0] } },
+				generated: { segment: { durationMinutes: divided[1] } },
+				appended: { admission },
+				effects: { workBalanceDirtyFromDate: "2026-07-22" },
+			});
+			const { rows } = await admin.query(
+				"select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1",
+				[ids.requester],
+			);
+			expect(only(rows)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
+		});
+
+		it("counts the breaks between approved work of the local day and writes nothing", async () => {
+			await earlierWork("approved");
+			const source = await recordWork();
+			const before = await snapshot();
+
+			await expect(
+				applyOnFinalizerHandle(terminal(await expectedOf(source.id)), finalizer),
+			).resolves.toEqual({ kind: "not_required" });
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("refuses a divergent pair without writing", async () => {
+			const source = await recordWork();
+			await admin.query(
+				"update time_record_work set work_location_type = 'home' where record_id = $1",
+				[source.canonical_record_id],
+			);
+			const expected = await expectedOf(source.id);
+			const before = await snapshot();
+
+			await expect(applyOnFinalizerHandle(terminal(expected), finalizer)).resolves.toEqual({
+				kind: "canonical_divergence",
+				found: "locked_pair",
+				disagreements: ["work_location"],
+			});
+			expect(await snapshot()).toEqual(before);
+		});
 	});
 
 	describe("vehicle use across the break", () => {

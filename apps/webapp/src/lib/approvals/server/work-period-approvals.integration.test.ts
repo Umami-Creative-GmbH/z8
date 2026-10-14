@@ -3578,13 +3578,15 @@ describe(
 					await expect(
 						waitForBlocker(blockerPid.rows[0].pid),
 					).resolves.toMatchObject({ wait_event_type: "Lock" });
+					// Created when the blocker's transaction started, before the waiting split's:
+					// the break entries work records appends carry their own transaction's time (#1221).
 					await client.query(
 						`insert into time_entry (
 			 id, organization_id, employee_id, type, timestamp, utc_offset_minutes,
 			 timezone, timezone_source, previous_entry_id, hash, previous_hash,
 			 created_by, created_at
 			 ) values ($1, $2, $3, 'correction', $4, 0, 'UTC', 'backfill', $5,
-			 $6, $7, $8, $9)`,
+			 $6, $7, $8, now())`,
 						[
 							ids.competingEntry,
 							ids.organization,
@@ -3594,7 +3596,6 @@ describe(
 							competingHash,
 							previousHash,
 							ids.managerUser,
-							new Date(now.epochMilliseconds),
 						],
 					);
 					await commit();

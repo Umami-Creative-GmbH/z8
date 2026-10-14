@@ -18,6 +18,7 @@ import {
 } from "@/lib/time-tracking/clocking-core";
 import { sendClockingReminder } from "./delivery";
 import { deleteExpiredClockingReminderOccasions } from "./occasion-retention";
+import { completeLiveWork } from "@/lib/time-tracking/work-records/__tests__/complete-live-work";
 
 const RETENTION_DAYS = 7;
 const NOW = parseInstant("2026-05-20T12:00:00Z");
@@ -83,7 +84,13 @@ describe("clocking reminder occasion retention on PostgreSQL", () => {
 			const opened = await clocking.clockIn({ ...common, workLocationType: "office" });
 			if (!("period" in opened)) throw new Error("Expected live work");
 		} else {
-			await clocking.clockOut(common);
+			await completeLiveWork({
+				organizationId,
+				employeeId: person.employeeId,
+				actorUserId: person.userId,
+				at: instant,
+				capture: common.action,
+			});
 		}
 	}
 

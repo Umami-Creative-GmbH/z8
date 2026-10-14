@@ -6,10 +6,11 @@ import "server-only";
  * clock-out (#277); manager on-behalf closure reaches it directly (#276).
  *
  * One call inside the web clock-out outer transaction establishes the whole
- * completed graph: the clock-out entry through the append collaborator, the
- * closed period, canonical base/detail/allocation, the work-balance refresh
- * intent and the committed operation receipt. A live closure never routes
- * approval (#361). Callers supply intent and evidence (operation identity, attribution
+ * completed graph: work records creates the completed work from the live work
+ * (#1222: the clock-out entry, the closed period, canonical base/detail/
+ * allocation and their effects), then the automatic break intent and the
+ * committed operation receipt follow. A live closure never routes approval
+ * (#361). Callers supply intent and evidence (operation identity, attribution
  * intent, event instant and capture), never duration, links or storage patches.
  *
  * Exact replay of a committed receipt writes nothing. Receipt-less committed
@@ -19,39 +20,25 @@ import { and, eq } from "drizzle-orm";
 import {
 	type CompletedWorkWriter,
 	completedWorkOperation,
-	project,
 	timeEntry,
-	timeRecord,
-	timeRecordAllocation,
-	timeRecordWork,
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
 import type { WorkPeriodPostCommitDescriptor } from "@/lib/approvals/server/work-period-submission";
 import type { BotPlatform } from "@/lib/bot-platform/types";
-import {
-	comparePlainDates,
-	dateFromInstant,
-	type Instant,
-	instantFromDate,
-	instantToCanonicalString,
-} from "@/lib/datetime/temporal-core";
+import { comparePlainDates, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	commitAutomaticBreakIntent,
 	isClosureCarriedByAutomaticBreak,
 } from "./automatic-break-intent";
 import { canonicalJson } from "./canonical-json";
 import {
-	appendClockEntry,
 	ClockingConflictError,
 	ClockingOrganizationError,
 	createDatabaseClockingStore,
 	type Entry,
 } from "./clocking-core";
-import { assertWorkOpen } from "./closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -71,9 +58,20 @@ import {
 } from "./receipt-actor";
 import { recordedTaskId, taskIdFollowingProject } from "./task-attribution";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
+import { vehicleUseFromColumns, type WorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
-import { resolveWorkBillabilityInTransaction } from "./work-billability";
-import { deriveWorkDurationMinutes } from "./work-duration";
+import {
+	readProjectBillability,
+	resolveWorkBillability,
+	resolveWorkBillabilityInTransaction,
+} from "./work-billability";
+import { WorkIntervalError } from "./work-duration";
+import {
+	applyWorkRecordChange,
+	isWorkRecordRefusal,
+	orRefuse,
+	readWorkRecord,
+} from "./work-records";
 import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
 export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
@@ -472,7 +470,22 @@ export type CloseActiveWorkInput = {
 		timezone: string;
 		timezoneSource: TimeEntryTimezoneSource;
 	};
+	/**
+	 * The clock-out entry's source evidence; the writer's by default. A legacy
+	 * break records its request's (#304).
+	 */
+	entrySource?: { ipAddress: string | null; deviceInfo: string | null };
+	/**
+	 * The vehicle use the closed work ends with, decided from the live work's own
+	 * under its lock (#1122): undefined keeps the live work's.
+	 */
+	closingVehicleUse?: ClosingVehicleUse;
 };
+
+/** Decides the closed work's vehicle use from the live work's; undefined keeps it. */
+export type ClosingVehicleUse = (
+	live: WorkVehicleUse | null,
+) => Promise<WorkVehicleUse | null | undefined>;
 
 export type ClosedActiveWork = CloseActiveWorkReceipt & {
 	disposition: "executed";
@@ -509,13 +522,18 @@ export async function closeActiveWork(
 
 /**
  * The closure's graph without its receipt, for an operation that commits the
- * closure as one part of its own receipt (#281). The clock-out entry takes
- * `clockOutEntryId`, which must be unused.
+ * closure as one part of its own receipt (#281), and for a legacy closure, which
+ * keeps none. Clocking's policy runs here (membership, the lifecycle gate, the
+ * attribution of the command, the surcharge snapshot); work records creates the
+ * completed work from the live work (#1222). The clock-out entry takes
+ * `clockOutEntryId`, which must be unused; a caller that already looked it up
+ * passes `identityChecked`.
  */
 export async function closeActiveWorkGraph(
 	context: WorkTransactionContext,
 	input: CloseActiveWorkInput,
 	clockOutEntryId: string,
+	options: { identityChecked?: boolean } = {},
 ): Promise<ClosedActiveWork> {
 	const { organizationId, employeeId, command } = input;
 	context.assertEmployee(organizationId, employeeId);
@@ -534,89 +552,66 @@ export async function closeActiveWorkGraph(
 	) {
 		await assertEmployeeMayClock(store, { employeeId, organizationId });
 	}
-	if (await store.getEntryByActionId(employeeId, organizationId, clockOutEntryId)) {
+	if (
+		!options.identityChecked &&
+		(await store.getEntryByActionId(employeeId, organizationId, clockOutEntryId))
+	) {
 		throw new CompletedWorkCollisionError();
 	}
 
-	// Authoritative source: the routed period row, already locked by the coordinator.
-	const [period] = await tx
-		.select()
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.id, input.workPeriodId),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-			),
-		)
-		.for("update")
-		.limit(1);
-	if (!period?.isActive || period.endTime !== null || period.deletedAt !== null) {
+	// Authoritative source: the routed live work, locked in work records' order.
+	const live = await readWorkRecord(
+		context,
+		{ organizationId, employeeId, workPeriodId: input.workPeriodId },
+		{ lock: true },
+	);
+	if (!live?.period.isActive || live.period.endTime !== null) {
 		throw new ClockingConflictError("No active work period found");
 	}
-	const [clockIn] = await tx
-		.select()
-		.from(timeEntry)
-		.where(
-			and(
-				eq(timeEntry.id, period.clockInId),
-				eq(timeEntry.organizationId, organizationId),
-				eq(timeEntry.employeeId, employeeId),
-			),
-		)
-		.limit(1);
+	const { period, clockIn } = live;
 	if (clockIn?.type !== "clock_in") {
 		throw new CompletedWorkIntegrityError("Active period has no clock-in entry");
 	}
-
 	const start = instantFromDate(period.startTime);
-	// Every writer, the departure and automatic closures included, refuses work
-	// touching a closed month (#762).
-	await assertWorkOpen(tx, {
-		organizationId,
-		employeeId,
-		intervals: [{ start, end: input.eventInstant }],
-	});
-	// Completing work sends the submitted periods it touches back to the employee (#1062).
-	await sendBackChangedPeriodSubmissions(tx, {
-		organizationId,
-		employeeId,
-		causedByUserId: humanActorUserId(
-			input.completingActor ?? writerActor(input.writer, input.actorUserId),
-		),
-		work: [{ start, end: input.eventInstant }],
-	});
-	const durationMinutes = deriveWorkDurationMinutes(start, input.eventInstant);
-	const projectId = await resolveAttribution(
-		tx,
-		organizationId,
-		"projectId",
-		command.project,
-		period.projectId,
-	);
+	// A replacement project must exist in this organization (the coordinator locked
+	// it); one read gives both that and its billable facts.
+	const replaced =
+		command.project.kind === "replace"
+			? await readProjectBillability(tx, organizationId, command.project.id)
+			: undefined;
+	if (replaced === null) throw new CompletedWorkAttributionError("projectId");
+	const projectId =
+		command.project.kind === "preserve"
+			? period.projectId
+			: command.project.kind === "clear"
+				? null
+				: command.project.id;
 	// Choosing another project takes its billable default; keeping it keeps the
 	// live period's billability, unless the command chose it (#900).
-	const isBillable = await resolveWorkBillabilityInTransaction(tx, organizationId, {
-		projectId,
+	const billability = {
 		projectChosen: projectId !== period.projectId,
 		current: period.isBillable,
 		requested: command.billable,
-	});
+	};
+	const isBillable = replaced
+		? resolveWorkBillability({ ...billability, project: replaced })
+		: await resolveWorkBillabilityInTransaction(tx, organizationId, {
+				...billability,
+				projectId,
+			});
 	const taskId = await resolveTaskAttribution(tx, {
 		organizationId,
 		task: command.task,
 		projectId,
 		current: { projectId: period.projectId, taskId: period.taskId },
 	});
-	const workCategoryId = await resolveAttribution(
+	const workCategoryId = await resolveWorkCategory(
 		tx,
 		organizationId,
-		"workCategoryId",
 		command.workCategory,
 		period.workCategoryId,
 	);
-	const endAt = dateFromInstant(input.eventInstant);
-
+	const vehicleUse = await input.closingVehicleUse?.(vehicleUseFromColumns(period));
 	const surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
 		dbService: { db: tx },
 		organizationId,
@@ -625,97 +620,37 @@ export async function closeActiveWorkGraph(
 		endTime: input.eventInstant,
 	});
 
-	const [record] = await tx
-		.insert(timeRecord)
-		.values({
-			organizationId,
-			employeeId,
-			recordKind: "work",
-			startAt: period.startTime,
-			endAt,
-			durationMinutes,
-			approvalState: "approved",
-			origin: "clock",
-			createdBy: input.actorUserId,
-			updatedBy: input.actorUserId,
-		})
-		.returning({ id: timeRecord.id });
-	if (!record) throw new Error("Failed to create canonical work record");
-	await tx.insert(timeRecordWork).values({
-		recordId: record.id,
+	const completing = input.completingActor ?? writerActor(input.writer, input.actorUserId);
+	const source = input.entrySource ?? {
+		ipAddress: input.writer.ipAddress ?? null,
+		deviceInfo: input.writer.deviceInfo,
+	};
+	const created = await applyWorkRecordChange(context, {
+		kind: "create",
 		organizationId,
-		recordKind: "work",
-		workCategoryId,
-		workLocationType: period.workLocationType ?? null,
-		computationMetadata: null,
-		// Vehicle use is attribution of the live work, mirrored into its record (#1122).
-		vehicleKind: period.vehicleKind,
-		vehicleId: period.vehicleId,
-		odometerStartKm: period.odometerStartKm,
-		odometerEndKm: period.odometerEndKm,
-		drivenDistanceKm: period.drivenDistanceKm,
-	});
-	if (projectId) {
-		await tx.insert(timeRecordAllocation).values({
-			organizationId,
-			recordId: record.id,
-			allocationKind: "project",
-			projectId,
-			taskId,
-			weightPercent: 100,
-			isBillable,
-		});
-	}
-
-	const appended = await appendClockEntry(
-		store,
-		{
-			employeeId,
-			organizationId,
-			createdBy: input.actorUserId,
-			actionId: clockOutEntryId,
-			action: { instant: input.eventInstant, ...input.capture },
-			source: { ipAddress: input.writer.ipAddress ?? null, deviceInfo: input.writer.deviceInfo },
-		},
-		"clock_out",
-		context.admission,
-	);
-
-	const resultRevision = period.graphRevision + 1;
-	const [closed] = await tx
-		.update(workPeriod)
-		.set({
-			clockOutId: appended.entry.id,
-			endTime: endAt,
-			durationMinutes,
-			isActive: false,
-			projectId,
-			isBillable,
-			taskId,
+		employeeId,
+		expected: live.expected,
+		completing: live,
+		at: input.eventInstant,
+		attribution: {
+			project: projectId === null ? null : { projectId, billableDefault: isBillable },
+			task: taskId,
+			billable: isBillable,
 			workCategoryId,
-			canonicalRecordId: record.id,
-			approvalStatus: "approved",
-			pendingChanges: null,
-			graphRevision: resultRevision,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(workPeriod.id, period.id),
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.isActive, true),
-				eq(workPeriod.graphRevision, period.graphRevision),
-			),
-		)
-		.returning({ id: workPeriod.id });
-	if (!closed) throw new ClockingConflictError("Active work period changed");
+			...(vehicleUse === undefined ? {} : { vehicleUse }),
+		},
+		recordedBy: input.actorUserId,
+		actorUserId: humanActorUserId(completing),
+		entries: { createdBy: input.actorUserId, ...source, capture: input.capture },
+		clockOutEntryId,
+		appendOperation: "live_clock_out",
+	});
+	// A live closure never ends where it started (#252 §2).
+	if (isWorkRecordRefusal(created) && created.kind === "instant_outside_work") {
+		throw new WorkIntervalError();
+	}
+	const { segment, appended, effects } = orRefuse(created);
 
-	// Required recalculation commits with the work and recovers through the
-	// existing balance refresh owner. The earlier of the UTC and captured-offset
-	// local start date covers the work's day in either representation.
-	const dirtyFromDate = earliestStartDate(start, clockIn.utcOffsetMinutes);
-	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
 	// A closure owes any automatic break adjustment later; its intent commits with
 	// the work so process loss, dates and review cannot lose it (#305).
 	const breakIntentId =
@@ -730,7 +665,11 @@ export async function closeActiveWorkGraph(
 				});
 
 	const followUps: CompletedWorkFollowUp[] = [
-		{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate },
+		{
+			kind: "work_balance_refresh",
+			delivery: "committed_intent",
+			dirtyFromDate: effects.workBalanceDirtyFromDate,
+		},
 		{ kind: "compliance_check", delivery: "post_commit_best_effort" },
 		breakIntentId === null
 			? { kind: "break_enforcement", delivery: "post_commit_best_effort" }
@@ -743,16 +682,16 @@ export async function closeActiveWorkGraph(
 		owner: { employeeId },
 		actors: {
 			clockIn: { kind: "human", userId: clockIn.createdBy },
-			completing: input.completingActor ?? writerActor(input.writer, input.actorUserId),
+			completing,
 		},
 		workPeriodId: period.id,
 		clockInEntryId: clockIn.id,
 		clockOutEntryId: appended.entry.id,
-		canonicalRecordId: record.id,
+		canonicalRecordId: segment.canonicalRecordId,
 		segment: {
-			startAt: instantToCanonicalString(start),
-			endAt: instantToCanonicalString(input.eventInstant),
-			durationMinutes,
+			startAt: segment.startAt,
+			endAt: segment.endAt,
+			durationMinutes: segment.durationMinutes,
 			startUtcOffsetMinutes: clockIn.utcOffsetMinutes,
 			endUtcOffsetMinutes: input.capture.utcOffsetMinutes,
 			endTimezone: input.capture.timezone,
@@ -765,11 +704,13 @@ export async function closeActiveWorkGraph(
 			workCategoryId,
 			workLocationType: period.workLocationType ?? null,
 		},
-		revisions: { workPeriod: { source: period.graphRevision, result: resultRevision } },
+		revisions: {
+			workPeriod: { source: period.graphRevision, result: period.graphRevision + 1 },
+		},
 		append: {
 			admission: appended.admission,
-			previousEntryId: appended.previousEntryId,
-			previousHash: appended.previousHash,
+			previousEntryId: appended.clockOut.previousEntryId,
+			previousHash: appended.clockOut.previousHash,
 		},
 		approvalState: "approved",
 		approval: { participation: "none" },
@@ -785,38 +726,30 @@ export async function closeActiveWorkGraph(
 }
 
 /**
- * Replacement attribution must exist in this organization (re-read in the
- * transaction; the coordinator locked the requested rows). Employee eligibility
- * stays with the caller's existing assignment validators.
+ * A replacement work category must exist, active, in this organization (re-read
+ * in the transaction; the coordinator locked the requested rows). Employee
+ * eligibility stays with the caller's existing assignment validators.
  */
-async function resolveAttribution(
+async function resolveWorkCategory(
 	tx: WorkTransactionContext["db"],
 	organizationId: string,
-	field: "projectId" | "workCategoryId",
 	intent: AttributionIntent,
 	current: string | null,
 ): Promise<string | null> {
 	if (intent.kind === "preserve") return current;
 	if (intent.kind === "clear") return null;
-	const [row] =
-		field === "projectId"
-			? await tx
-					.select({ id: project.id })
-					.from(project)
-					.where(and(eq(project.id, intent.id), eq(project.organizationId, organizationId)))
-					.limit(1)
-			: await tx
-					.select({ id: workCategory.id })
-					.from(workCategory)
-					.where(
-						and(
-							eq(workCategory.id, intent.id),
-							eq(workCategory.organizationId, organizationId),
-							eq(workCategory.isActive, true),
-						),
-					)
-					.limit(1);
-	if (!row) throw new CompletedWorkAttributionError(field);
+	const [row] = await tx
+		.select({ id: workCategory.id })
+		.from(workCategory)
+		.where(
+			and(
+				eq(workCategory.id, intent.id),
+				eq(workCategory.organizationId, organizationId),
+				eq(workCategory.isActive, true),
+			),
+		)
+		.limit(1);
+	if (!row) throw new CompletedWorkAttributionError("workCategoryId");
 	return row.id;
 }
 
