@@ -2,27 +2,19 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
-import { timeRecordAllocation, workPeriod } from "@/db/schema";
+import { workPeriod } from "@/db/schema";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { NotFoundError } from "@/lib/effect/errors";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
-	type AmendCompletedWorkIntent,
+	type AmendCompletedWorkInput,
 	type AmendmentAuthority,
 	amendCompletedWork,
-	lockAuthority,
+	amendLegacyCompletedWork,
 	replayOrAmendCompletedWork,
 } from "./amend-completed-work";
-import { assertWorkOpen, workInterval } from "./closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
-import {
-	PROJECT_TASK_INELIGIBILITY_MESSAGES,
-	projectTaskIneligibility,
-} from "./project-eligibility";
-import { namedTaskId, namedTaskIntent, taskIdFollowingProject } from "./task-attribution";
-import { resolveWorkBillabilityInTransaction } from "./work-billability";
-import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
+import { namedTaskId, namedTaskIntent } from "./task-attribution";
 import type { SealedWorkTransactionScope } from "./work-transaction";
 
 type PeriodSource = Pick<
@@ -46,11 +38,11 @@ type AttributionChange = {
 };
 
 /**
- * Standalone project change of the owner's own work period (#286). Adopted
- * organizations run the completed-work operation: the period, the canonical
- * project allocation and the work revision change together, eligibility is
- * re-checked under the locks and a receipt records the change. Legacy
- * organizations keep the period-only update inside the coordinated transaction.
+ * Standalone project change of the owner's own work period (#286). It runs the
+ * completed-work amendment in both admissions: eligibility is re-checked under
+ * the locks, and work records changes the period, the canonical project
+ * allocation and the work revision together with the effects (#1225); adopted
+ * organizations also commit a receipt.
  *
  * The new project's billable default applies unless the same edit sets
  * `billable` (#900); setting it with an unchanged project is a billability-only
@@ -88,6 +80,20 @@ export async function changeWorkPeriodBillability(
 	await changeWorkPeriodAttribution(input, "owner_manager_or_project_manager");
 }
 
+/** The amendment of the scope's admission: with a receipt in append admission. */
+function amendmentOf(scope: SealedWorkTransactionScope) {
+	return scope.admission === "append" ? amendCompletedWork : amendLegacyCompletedWork;
+}
+
+function expectedSourceOf(period: PeriodSource): AmendCompletedWorkInput["expectedSource"] {
+	return {
+		clockInId: period.clockInId,
+		clockOutId: period.clockOutId,
+		startAt: instantFromDate(period.startTime),
+		endAt: period.endTime ? instantFromDate(period.endTime) : null,
+	};
+}
+
 async function changeWorkPeriodAttribution(
 	input: AttributionChange,
 	authority: Extract<AmendmentAuthority, "owner" | "owner_manager_or_project_manager">,
@@ -99,38 +105,7 @@ async function changeWorkPeriodAttribution(
 			actorUserId: input.actorUserId,
 		},
 		async (scope) => {
-			if (scope.admission === "legacy") {
-				// Legacy writes verify the same authority under the same locks first.
-				const authorized = await lockAuthority(scope.db, {
-					...input,
-					authority,
-					workPeriodId: input.period.id,
-				});
-				await changeLegacyWorkPeriodProject(scope.db, {
-					...input,
-					authorizedProjectId: authorized.authorizedProjectId,
-				});
-				return;
-			}
-			const intent: AmendCompletedWorkIntent = {
-				workPeriodId: input.period.id,
-				clockIn: { kind: "preserve" },
-				clockOut: { kind: "preserve" },
-				project:
-					input.projectId === undefined
-						? { kind: "preserve" }
-						: input.projectId
-							? { kind: "replace", id: input.projectId }
-							: { kind: "clear" },
-				...namedTaskIntent(input.taskId),
-				workCategory: { kind: "preserve" },
-				workLocation: { kind: "preserve" },
-				...(input.billable === undefined
-					? {}
-					: { billable: { kind: "set" as const, billable: input.billable } }),
-				notes: null,
-			};
-			await amendCompletedWork(scope, {
+			await amendmentOf(scope)(scope, {
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				actorUserId: input.actorUserId,
@@ -147,13 +122,25 @@ async function changeWorkPeriodAttribution(
 						...(input.billable === undefined ? {} : { billable: String(input.billable) }),
 					},
 				},
-				intent,
-				expectedSource: {
-					clockInId: input.period.clockInId,
-					clockOutId: input.period.clockOutId,
-					startAt: instantFromDate(input.period.startTime),
-					endAt: input.period.endTime ? instantFromDate(input.period.endTime) : null,
+				intent: {
+					workPeriodId: input.period.id,
+					clockIn: { kind: "preserve" },
+					clockOut: { kind: "preserve" },
+					project:
+						input.projectId === undefined
+							? { kind: "preserve" }
+							: input.projectId
+								? { kind: "replace", id: input.projectId }
+								: { kind: "clear" },
+					...namedTaskIntent(input.taskId),
+					workCategory: { kind: "preserve" },
+					workLocation: { kind: "preserve" },
+					...(input.billable === undefined
+						? {}
+						: { billable: { kind: "set" as const, billable: input.billable } }),
+					notes: null,
 				},
+				expectedSource: expectedSourceOf(input.period),
 				evaluatedAt: systemClock.nowInstant(),
 				request: { ipAddress: null, deviceInfo: null },
 			});
@@ -165,9 +152,9 @@ async function changeWorkPeriodAttribution(
  * An organization admin's billability-only change of one work period inside the
  * caller's coordinated scope (#901 bulk billability), with a caller-chosen
  * operation identity so a retry replays the committed receipt. Same path as a
- * single billability change: the `work_period_attribution_edit` writer and
- * receipt in adopted organizations, the legacy writer otherwise, both under the
- * `organization_admin` authority. Work with an unresolved review is refused in
+ * single billability change: the `work_period_attribution_edit` writer through
+ * work records in both admissions, with a receipt in adopted organizations, under
+ * the `organization_admin` authority. Work with an unresolved review is refused in
  * both admissions. `unchanged` means the work already had this billability
  * (legacy; adopted organizations refuse a no-change amendment).
  */
@@ -184,45 +171,11 @@ export async function setWorkPeriodBillabilityAsAdmin(
 		evidence: Record<string, string>;
 	},
 ): Promise<"executed" | "replayed" | "unchanged"> {
-	const authority = "organization_admin" as const;
-	if (scope.admission === "legacy") {
-		await lockAuthority(scope.db, { ...input, authority, workPeriodId: input.period.id });
-		const [period] = await scope.db
-			.select({
-				id: workPeriod.id,
-				approvalStatus: workPeriod.approvalStatus,
-				isBillable: workPeriod.isBillable,
-			})
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, input.period.id),
-					eq(workPeriod.organizationId, input.organizationId),
-					eq(workPeriod.employeeId, input.employeeId),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.for("update");
-		if (!period) {
-			throw new NotFoundError({
-				message: "Work period not found",
-				entityType: "workPeriod",
-				entityId: input.period.id,
-			});
-		}
-		await assertNoUnresolvedWorkPeriodReview(scope.db, input.organizationId, period);
-		if (period.isBillable === input.billable) return "unchanged";
-		await changeLegacyWorkPeriodProject(scope.db, {
-			...input,
-			authorizedProjectId: null,
-		});
-		return "executed";
-	}
-	const receipt = await replayOrAmendCompletedWork(scope, {
+	const amendment: AmendCompletedWorkInput = {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		actorUserId: input.actorUserId,
-		authority,
+		authority: "organization_admin",
 		writer: "work_period_attribution_edit",
 		command: {
 			version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
@@ -243,51 +196,16 @@ export async function setWorkPeriodBillabilityAsAdmin(
 			billable: { kind: "set", billable: input.billable },
 			notes: null,
 		},
-		expectedSource: {
-			clockInId: input.period.clockInId,
-			clockOutId: input.period.clockOutId,
-			startAt: instantFromDate(input.period.startTime),
-			endAt: input.period.endTime ? instantFromDate(input.period.endTime) : null,
-		},
+		expectedSource: expectedSourceOf(input.period),
 		evaluatedAt: systemClock.nowInstant(),
 		request: { ipAddress: null, deviceInfo: null },
-	});
-	return receipt.disposition;
-}
-
-/**
- * The legacy attribution change (#900): the period and its canonical record's
- * project allocation change together, so both representations keep agreeing on
- * project, task and billability. A changed project applies its billable default unless
- * the edit sets billability; the same project keeps the period's billability. The
- * task follows the period as it is now (#873), re-read under its row lock rather
- * than taken from the caller's earlier read; a newly booked task is re-checked.
- */
-async function changeLegacyWorkPeriodProject(
-	tx: SealedWorkTransactionScope["db"],
-	input: {
-		organizationId: string;
-		employeeId: string;
-		teamId?: string | null;
-		period: { id: string };
-		projectId?: string | null;
-		taskId?: string | null;
-		billable?: boolean;
-		authorizedProjectId: string | null;
-		actorUserId: string;
-	},
-): Promise<void> {
-	const [period] = await tx
-		.select({
-			id: workPeriod.id,
-			projectId: workPeriod.projectId,
-			taskId: workPeriod.taskId,
-			isBillable: workPeriod.isBillable,
-			canonicalRecordId: workPeriod.canonicalRecordId,
-			approvalStatus: workPeriod.approvalStatus,
-			startTime: workPeriod.startTime,
-			endTime: workPeriod.endTime,
-		})
+	};
+	if (scope.admission === "append") {
+		return (await replayOrAmendCompletedWork(scope, amendment)).disposition;
+	}
+	// Legacy admission has no receipt to replay: work already at the billability is unchanged.
+	const [period] = await scope.db
+		.select({ isBillable: workPeriod.isBillable })
 		.from(workPeriod)
 		.where(
 			and(
@@ -297,7 +215,7 @@ async function changeLegacyWorkPeriodProject(
 				isNull(workPeriod.deletedAt),
 			),
 		)
-		.for("update");
+		.limit(1);
 	if (!period) {
 		throw new NotFoundError({
 			message: "Work period not found",
@@ -305,98 +223,7 @@ async function changeLegacyWorkPeriodProject(
 			entityId: input.period.id,
 		});
 	}
-	// A project manager's authority holds only while the work is on their project.
-	if (input.authorizedProjectId !== null && period.projectId !== input.authorizedProjectId) {
-		throw new ConflictError({
-			message: "Work period changed while editing",
-			conflictType: "time_correction_work_period_stale",
-		});
-	}
-	// Work under review keeps its facts, as in adopted organizations (#256).
-	await assertNoUnresolvedWorkPeriodReview(tx, input.organizationId, period);
-	// Attribution of work touching a closed month is frozen (#762).
-	await assertWorkOpen(tx, {
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		intervals: [workInterval(period.startTime, period.endTime)],
-	});
-	// Billability is changed after recording; live work gets it at clock-out.
-	if (input.projectId === undefined && period.endTime === null) {
-		throw new ConflictError({
-			message: "Cannot edit an active work period. Please clock out first.",
-			conflictType: "work_period_running",
-		});
-	}
-	const projectId = input.projectId === undefined ? period.projectId : input.projectId;
-	const { task } = namedTaskIntent(input.taskId);
-	const taskId = taskIdFollowingProject({ task, projectId, current: period });
-	if (task?.kind === "replace" && taskId) {
-		const reason = await projectTaskIneligibility(
-			{
-				employeeId: input.employeeId,
-				teamId: input.teamId ?? null,
-				organizationId: input.organizationId,
-			},
-			{ projectId, taskId },
-			tx,
-			{ lock: "share" },
-		);
-		if (reason) {
-			throw new ValidationError({
-				message: PROJECT_TASK_INELIGIBILITY_MESSAGES[reason],
-				field: "taskId",
-				value: reason,
-			});
-		}
-	}
-	const isBillable = await resolveWorkBillabilityInTransaction(tx, input.organizationId, {
-		projectId,
-		projectChosen: projectId !== period.projectId,
-		current: period.isBillable,
-		requested: input.billable,
-	});
-	await tx
-		.update(workPeriod)
-		.set({ projectId, taskId, isBillable, updatedAt: new Date() })
-		.where(
-			and(
-				eq(workPeriod.id, input.period.id),
-				eq(workPeriod.organizationId, input.organizationId),
-				isNull(workPeriod.deletedAt),
-			),
-		);
-	// Changed attribution sends a submitted period back to the employee (#1062).
-	if (
-		projectId !== period.projectId ||
-		taskId !== period.taskId ||
-		isBillable !== period.isBillable
-	) {
-		await sendBackChangedPeriodSubmissions(tx, {
-			organizationId: input.organizationId,
-			employeeId: input.employeeId,
-			causedByUserId: input.actorUserId,
-			work: [workInterval(period.startTime, period.endTime)],
-		});
-	}
-	if (!period.canonicalRecordId) return;
-	await tx
-		.delete(timeRecordAllocation)
-		.where(
-			and(
-				eq(timeRecordAllocation.recordId, period.canonicalRecordId),
-				eq(timeRecordAllocation.organizationId, input.organizationId),
-				eq(timeRecordAllocation.allocationKind, "project"),
-			),
-		);
-	if (projectId) {
-		await tx.insert(timeRecordAllocation).values({
-			organizationId: input.organizationId,
-			recordId: period.canonicalRecordId,
-			allocationKind: "project",
-			projectId,
-			taskId,
-			weightPercent: 100,
-			isBillable,
-		});
-	}
+	if (period.isBillable === input.billable) return "unchanged";
+	await amendLegacyCompletedWork(scope, amendment);
+	return "executed";
 }

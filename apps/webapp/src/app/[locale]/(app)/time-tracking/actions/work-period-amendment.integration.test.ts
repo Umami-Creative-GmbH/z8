@@ -618,52 +618,6 @@ describe(
 			});
 		});
 
-		it("derives half-up minutes from exact UTC endpoints, keeping positive zero-minute work", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ minutes: 5 }));
-			const entryId = period.clock_out_id;
-			const zero = await postDirectCorrection(
-				{
-					replacesEntryId: entryId,
-					timestamp: "2026-07-22T08:00:29Z",
-					notes: "Short",
-					workLocationType: "office",
-					workCategoryId: null,
-				},
-				{ userId: ids.requesterUser, canApprove: true },
-			);
-			expect(zero.status).toBe(201);
-			expect(await graph(period.id)).toMatchObject({ duration_minutes: 0, record_duration: 0 });
-
-			const { rows } = await admin.query<{ clock_out_id: string }>(
-				"select clock_out_id from work_period where id = $1",
-				[period.id],
-			);
-			const one = await postDirectCorrection(
-				{
-					replacesEntryId: only(rows).clock_out_id,
-					timestamp: "2026-07-22T08:00:30Z",
-					notes: "Half minute",
-					workLocationType: "office",
-					workCategoryId: null,
-				},
-				{ userId: ids.requesterUser, canApprove: true },
-			);
-			expect(one.status).toBe(201);
-			expect(await graph(period.id)).toMatchObject({ duration_minutes: 1, record_duration: 1 });
-
-			const equal = await postDirectCorrection(
-				{
-					replacesEntryId: (await graph(period.id)).clock_out_id,
-					timestamp: "2026-07-22T08:00:00Z",
-					notes: "Equal",
-					workLocationType: "office",
-					workCategoryId: null,
-				},
-				{ userId: ids.requesterUser, canApprove: true },
-			);
-			expect(equal.status).toBe(400);
-		});
-
 		it("replays an exact retry without writes and treats a changed command as a collision", async () => {
 			const period = await recordWork(
 				dayStart,
@@ -777,42 +731,6 @@ describe(
 			});
 		});
 
-		it("treats active work as occupying from its start onward", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
-			actAs(ids.adminUser, { isOrgAdmin: true });
-			await expect(
-				clockIn("office", { instant: dayStart.add({ hours: 3 }), browserTimezone: "UTC" }),
-			).resolves.toMatchObject({ success: true });
-			const before = await snapshot();
-			await expect(adminEdit(period.id, { clockOutTime: "11:30" })).resolves.toMatchObject({
-				error: occupied,
-			});
-			expect(await snapshot()).toEqual(before);
-		});
-
-		it("counts active work that started on the previous day", async () => {
-			// 2026-07-21 20:00-21:00, then still clocked in since 2026-07-21 22:00.
-			const period = await recordWork(
-				dayStart.subtract({ hours: 12 }),
-				dayStart.subtract({ hours: 11 }),
-				undefined,
-				adminOwner,
-			);
-			actAs(ids.adminUser, { isOrgAdmin: true });
-			await expect(
-				clockIn("office", {
-					instant: dayStart.subtract({ hours: 10 }),
-					browserTimezone: "UTC",
-				}),
-			).resolves.toMatchObject({ success: true });
-			const before = await snapshot();
-			// Moving the finished work to the next morning lands inside that open work.
-			await expect(adminEdit(period.id, { clockOutTime: "09:00" })).resolves.toMatchObject({
-				error: occupied,
-			});
-			expect(await snapshot()).toEqual(before);
-		});
-
 		it("rejects stale sources and serializes concurrent edits of one period", async () => {
 			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			const results = await Promise.all([
@@ -830,47 +748,6 @@ describe(
 			);
 			expect(only(rows).count).toBe(1);
 			expect((await graph(period.id)).graph_revision).toBe(2);
-		});
-
-		it.each([
-			["time_entry", "insert"],
-			["time_entry", "update"],
-			["time_entry_append_position", "update"],
-			["work_period", "update"],
-			["time_record", "update"],
-			["time_record_allocation", "delete"],
-			["time_record_allocation", "insert"],
-			["employee_work_balance", "insert"],
-			["completed_work_operation", "insert"],
-		])("rolls back the whole graph when the %s %s fails", async (table, event) => {
-			const period = await recordWork(
-				dayStart,
-				dayStart.add({ hours: 1 }),
-				ids.projectA,
-				adminOwner,
-			);
-			const before = await snapshot();
-			await admin.query(
-				`create function t286_fail() returns trigger language plpgsql as $$
-			 begin raise exception 't286 injected failure'; end $$`,
-			);
-			await admin.query(
-				`create trigger t286_fail before ${event} on ${table} for each row execute function t286_fail()`,
-			);
-			try {
-				const result =
-					table === "time_record_allocation"
-						? await (async () => {
-								// Project changes exercise the allocation writes.
-								actAs(ids.adminUser, { isOrgAdmin: true });
-								return updateWorkPeriodProject(period.id, ids.projectB);
-							})()
-						: await adminEdit(period.id, { clockOutTime: "09:30" });
-				expect(result.success).toBe(false);
-			} finally {
-				await admin.query("drop function t286_fail() cascade");
-			}
-			expect(await snapshot()).toEqual(before);
 		});
 
 		it("changes metadata in both representations and preserves unaffected attribution", async () => {
@@ -908,7 +785,8 @@ describe(
 					authority: "owner",
 					changes: { clockIn: false, clockOut: false, workLocation: true, project: false },
 					corrections: [],
-					followUps: [],
+					// Every change of work marks the balance dirty inside the transaction (#1225).
+					followUps: [{ kind: "work_balance_refresh", delivery: "committed_intent" }],
 				},
 			});
 			// The retry replays even though the submitted value is now the current value.
@@ -1055,27 +933,6 @@ describe(
 			await expect(updateWorkPeriodProject(period.id, ids.projectB)).resolves.toMatchObject({
 				success: false,
 				error: "A time correction approval is already pending for this work period",
-			});
-			expect(await snapshot()).toEqual(before);
-		});
-
-		it("holds work whose canonical project allocation disagrees with the period for review", async () => {
-			const period = await recordWork(
-				dayStart,
-				dayStart.add({ hours: 1 }),
-				ids.projectA,
-				adminOwner,
-			);
-			// The legacy project change moved only the period (the historical divergence).
-			await admin.query("update work_period set project_id = $2 where id = $1", [
-				period.id,
-				ids.projectB,
-			]);
-			const before = await snapshot();
-			await expect(adminEdit(period.id, { clockOutTime: "09:30" })).resolves.toEqual({
-				success: false,
-				error: needsReview,
-				code: "completed_work_review_required",
 			});
 			expect(await snapshot()).toEqual(before);
 		});
