@@ -1023,6 +1023,18 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		)
 		.limit(1);
 	if (!sourceClockOut) return { kind: "obsolete", reason: "changed" };
+	const [sourceClockIn] = await tx
+		.select({ utcOffsetMinutes: timeEntry.utcOffsetMinutes })
+		.from(timeEntry)
+		.where(
+			and(
+				eq(timeEntry.id, plan.expected.clockInId),
+				eq(timeEntry.organizationId, organizationId),
+				eq(timeEntry.employeeId, employeeId),
+			),
+		)
+		.limit(1);
+	if (!sourceClockIn) return { kind: "obsolete", reason: "changed" };
 	// The canonical record divides with the work, as in the adopted adjustment; the
 	// established writes left it spanning the break and the generated work (#514).
 	// A record that no longer spans exactly this period stays as it is.
@@ -1275,6 +1287,13 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		causedByUserId: null,
 		work: [workInterval(period.startTime, plan.expected.endTime)],
 	});
+	// The break shortens the work: the refresh commits with it, from the earliest UTC or
+	// captured-offset local date of its start, as in the adopted adjustment (#1214).
+	const dirtyFromDate = earliestStartDate(
+		instantFromDate(period.startTime),
+		sourceClockIn.utcOffsetMinutes,
+	);
+	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
 	return {
 		kind: "adjusted",
 		operationId: null,

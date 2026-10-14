@@ -220,6 +220,28 @@ describe("billable work across the work writers on PostgreSQL", () => {
 		return only(rows);
 	}
 
+	/** A computed, clean work balance, as after the latest refresh. */
+	async function cleanBalance() {
+		await admin.query(
+			`insert into employee_work_balance
+			 (employee_id, organization_id, actual_minutes, required_minutes, balance_minutes,
+			  computed_from_date, computed_through_date, is_dirty, dirty_from_date, updated_at)
+			 values ($1, $2, 0, 0, 0, '2026-07-01', '2026-07-31', false, null, now())
+			 on conflict (organization_id, employee_id)
+			 do update set is_dirty = false, dirty_from_date = null`,
+			[ids.employee, ids.organization],
+		);
+	}
+
+	async function balanceRefresh() {
+		const { rows } = await admin.query<{ is_dirty: boolean; dirty_from_date: string | null }>(
+			`select is_dirty, dirty_from_date::text from employee_work_balance
+			 where organization_id = $1 and employee_id = $2`,
+			[ids.organization, ids.employee],
+		);
+		return only(rows);
+	}
+
 	async function startWork(start: Instant = workStart) {
 		actAs();
 		await expect(
@@ -578,6 +600,29 @@ describe("billable work across the work writers on PostgreSQL", () => {
 			);
 		});
 
+		it("marks the work balance dirty from the split work's start date (#1214)", async () => {
+			const period = await recordWork(ids.billableProject);
+			await cleanBalance();
+			actAs();
+
+			await expect(
+				splitWorkPeriod(
+					period.id,
+					"2026-07-22",
+					"10:00",
+					undefined,
+					undefined,
+					undefined,
+					randomUUID(),
+				),
+			).resolves.toMatchObject({ success: true });
+
+			await expect(balanceRefresh()).resolves.toEqual({
+				is_dirty: true,
+				dirty_from_date: "2026-07-22",
+			});
+		});
+
 		it("never changes existing work when the project's billable default changes", async () => {
 			const billable = await recordWork(ids.billableProject);
 			await admin.query("update project set billable_default = false where id = $1", [
@@ -660,6 +705,16 @@ describe("billable work across the work writers on PostgreSQL", () => {
 					{ projectId: null, billable: false },
 					{ canonical: admission === "append" },
 				);
+			});
+
+			it("marks the work balance dirty from the day before the imported work's UTC start date (#1214)", async () => {
+				await cleanBalance();
+				await expect(importRow(undefined)).resolves.toMatchObject({ row_status: "committed" });
+				// Imported endpoints are captured in UTC; the employee's local day may start a day earlier.
+				await expect(balanceRefresh()).resolves.toEqual({
+					is_dirty: true,
+					dirty_from_date: "2026-07-19",
+				});
 			});
 
 			it("records an imported project with its billable default", async () => {
