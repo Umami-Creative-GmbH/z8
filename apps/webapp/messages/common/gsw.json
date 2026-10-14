@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Speseneinstellungen werden geladen",
       "twoFactorVerification": "Zwei-Faktor-Verifizierung wird geladen",
       "vacationSettings": "Ferieneinstellungen werden geladen",
+      "vehicleDistanceReport": "Distanz pro Fahrzüüg-Bricht wird glade",
       "wellnessSettings": "Wellness-Einstellungen werden geladen",
       "workCategorySettings": "Arbeitskategorie-Einstellungen werden geladen",
       "workerQueue": "Worker-Warteschlange wird geladen",
@@ -418,6 +419,17 @@
     "update": "Aktualisiere",
     "updating": "Wird aktualisiert...",
     "uploading": "Am ufelade...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "decklet ufs volle Guthabe",
+      "employmentMonths": "{months, plural, one {# volle Aastelligsmonet} other {# volli Aastelligsmonet}}",
+      "lastWorkingDay": "letschte Arbetstag {date}",
+      "notEmployed": "{allowance} vo {fullAllowance} Tääg: nöd aagstellt im {year}",
+      "overdrawn": "{days, plural, one {# Tag überzoge} other {# Tääg überzoge}}",
+      "overdrawnHint": "Ferietääg über s Guthabe use gnah. Wird nur zur Information aazeigt: es wird nüüt abzoge.",
+      "proratedSummary": "{allowance} vo {fullAllowance} Tääg, aateilig: {details}",
+      "started": "aagfange am {date}",
+      "statutoryMinimumApplies": "gsetzliche Mindestaspruch gilt"
+    },
     "validate": "Validiere",
     "validationError": "Validierigsfehler",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "Betriibsrat",
       "to": "Bis",
       "unassignedTeam": "Nöd zuegwisnigs Team",
-      "updateRange": "Bereich aktualisiere"
+      "updateRange": "Bereich aktualisiere",
+      "vehicleUse": {
+        "activeVehicles": "Aktivi Fahrzüüg",
+        "archivedVehicles": "Archivierti Fahrzüüg",
+        "coveredAsked": "Aagfragt vo",
+        "coveredDescription": "{count, plural, one {# aktive Mitarbeiter isch ufgforderet oder erwartet, jetzt d Fahrzüügnutzig z erfasse.} other {# aktivi Mitarbeiter sind ufgforderet oder erwartet, jetzt d Fahrzüügnutzig z erfasse.}}",
+        "coveredExpected": "Erwartet vo",
+        "coveredTitle": "Betroffeni Mitarbeiter",
+        "description": "Wär vo de Organisation drum bäte wird, s Fahrzüüg für d Arbet z erfasse. D Personalverträtig gseht nie Kilometerständ oder gfahreti Distanze vo Mitarbeiter.",
+        "employeeAssignmentCounts": "{asked} aagfragt, {expected} erwartet, {off} individuell uus",
+        "employeeAssignments": "Mitarbeiter-Zueordnige",
+        "employeePseudonym": "Mitarbeiter {ref}",
+        "enabled": "Wächsle",
+        "modeAsked": "Aagfragt",
+        "modeExpected": "Erwartet",
+        "modeOff": "Uus",
+        "noEmployeeAssignments": "Käi Mitarbeiter-Zueordnige.",
+        "notAssigned": "Nöd zuegordnet",
+        "noTeamAssignments": "Käi Team-Zueordnige.",
+        "off": "Uus",
+        "on": "Aa",
+        "organizationAssignment": "Ganze Organisation",
+        "teamAssignments": "Teamzuteilige",
+        "title": "Fahrzügnutzig",
+        "vehiclesTitle": "Organisationsfahrzeuge"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Istellige",
     "team": "Team",
     "teamAbsences": "Team-Abweseheite",
+    "teamDriving": "Fahrtdetails",
     "team-label": "Team",
     "teamPeriodSubmissions": "Periode-Iigabe",
     "teamPresence": "Wer da isch",
@@ -618,6 +656,9 @@
       "markRead": "Gläse markiere",
       "settings": "Benachrichtigungseistellige",
       "viewAll": "Alli Benachrichtigunge aaluege"
+    },
+    "channels": {
+      "viewInZ8": "In Z8 aaluege"
     },
     "content": {
       "absenceDeputyAssigned": {
@@ -645,7 +686,12 @@
         "message": "{managerName} hät {absenceType} für {dateRange} i dim Name iitrait.",
         "title": "Absänz erfasst"
       },
+      "absenceRequestApproved": {
+        "message": "Din {categoryName}-Aatrag für {dateRange} isch vo {approverName} bewilligt worde."
+      },
       "absenceRequestRejected": {
+        "message": "Dini {categoryName}-Aafraag für {dateRange} isch vo {approverName} abglehnt worde.",
+        "messageWithReason": "Dini {categoryName}-Aafraag für {dateRange} isch vo {approverName} abglehnt worde. Grund: {rejectionReason}",
         "title": "Abwesenheitsantrag abgelehnt"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +705,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {Du vertrittst die Genehmigungen von {name}: Noch nichts ausstehend.} other {Du vertrittst die Genehmigungen von {name}: # ausstehend.}}",
         "title": "Du vertrittst Genehmigungen"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "D Eskalationshistorie vonere Gnähmigung isch nöd eidütig und muess vor jedere automatische Übertragig überprüeft werde.",
+        "deliveryExhausted": "Eskalationsbenachrichtigunge für e Freigab sind nach allne Versüech fählgschlage.",
+        "deliveryUnavailable": "Für eine Genehmigung ist kein Ziel für die Eskalationsbenachrichtigung verfügbar.",
+        "noEligibleBackup": "En überfälligi Genehmigung hät kein berechtigte Stellverträter. De aktuell Genehmiger bhaltet d Zueordnig.",
+        "replacementOverdue": "E Freigaab isch nach ihrer automatische Eskalation immer no unentschide. Es findet kei witeri automatischi Witerleitig meh statt.",
+        "title": "Freigaab-Eskalation bruucht Ufmerksamkeit",
+        "unsupportedRoute": "E Genehmigung cha nöd eskaliert werde, will ihre Entscheidigspfad nöd unterstützt wird."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName} hät die bewilligti {categoryName} für {dateRange} storniert.",
+        "title": "Bewilligti Absänz storniert"
       },
       "automaticClockOut": {
         "breakMessage": "Du bisch automatisch am Afang vo dinere Pause um {cutoff} ({timezone}) usgstämpflet worde, will d Pause nöd innerhalb vo de Zytlimite vo dinere Organisation vo {duration} Minute beendet worde isch.",
@@ -683,9 +742,56 @@
           "title": "Überstundenauszahlung erfasst"
         }
       },
+      "birthdayReminder": {
+        "message": "{name} het am {date} Geburtstag.",
+        "title": "Chömmende Geburtstag"
+      },
       "breakDueReminder": {
         "message": "Dini Pause isch um {breakTime} ({timezone}) fällig. Mach bis dänn Pause, zum d Pauseregle vo dim Betriib yzhalte.",
         "title": "Bald Ziit für e Pause"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName} hät sich am {date} ({startTime} – {endTime}, {duration}) usgstämplet. Gnähmigung erforderlich.",
+        "messageWithoutTimes": "{employeeName} hät usgstemplet ({duration}). Gnähmigung erforderlich.",
+        "title": "Genehmigung zum Ausstempeln erforderlich"
+      },
+      "clockOutApproved": {
+        "message": "Dis Usstempfle isch vo {approverName} gnämiget worde.",
+        "title": "Usstämple bewilligt"
+      },
+      "clockOutPendingApproval": {
+        "message": "Dis Usstämple am {date} ({duration}) wartet no uf d Gnähmigung vo dim Vorgesetzte.",
+        "messageWithoutDate": "Dis Uusstämpfle ({duration}) wartet no uf d Gnämigung vom Vorgesetzte.",
+        "title": "Usstemple wartet uf d Freigab"
+      },
+      "clockOutRejected": {
+        "message": "Dini Usstämpligs-Freigaab isch vo {approverName} abglehnt worde. Die erfasste Ziite bliibed unveränderet und werded vo de gnähmigte Lohnabrechnigsziit usgschlosse.",
+        "messageWithReason": "Ihre Genehmigung zum Ausstempeln wurde von {approverName} abgelehnt. Die erfassten Zeiten bleiben unverändert und sind von der genehmigten Abrechnungszeit ausgeschlossen. Grund: {rejectionReason}",
+        "title": "Usstämple abglehnt"
+      },
+      "complianceExceptionApproved": {
+        "message": "Ihre Ausnahme für {exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}} wurde von {approverName} genehmigt. Gültig bis {validUntil}.",
+        "title": "Ausnahme genehmigt"
+      },
+      "complianceExceptionExpired": {
+        "message": "Ihre Vorabgenehmigung für {exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}} ist abgelaufen (24 Stunden ohne Nutzung vergangen).",
+        "title": "Usnahm abgloffe"
+      },
+      "complianceExceptionRejected": {
+        "message": "Ihre {exceptionType, select, rest_period {Ruhezeit} overtime_daily {Tagesüberstunden} overtime_weekly {Wochenüberstunden} overtime_monthly {Monatsüberstunden} other {Compliance}}-Ausnahme wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihre Ausnahme für {exceptionType, select, rest_period {die Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}} wurde von {approverName} abgelehnt. Begründung: \"{reason}\"",
+        "title": "Usnahm abglehnt"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} hat eine Ausnahme für {exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}} beantragt: \"{reason}\"",
+        "title": "Compliance-Uusnahm aagforderet"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "Bi {count} Arbetsperiode vo {dates} fählt s Fahrzüüg oder en Kilometerstand. Füeg si zu de Arbetsperiode dezue."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "Bi dinere Arbet am {date} fählt s Fahrzüüg oder en Kilometerstand. Füeg si zur Arbetsperiode dezue.",
+        "title": "Dini Fahragabe hinzuefüege"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Stellvertretung (Austritt wirksam {cutoff}, {timezone}).",
@@ -698,6 +804,15 @@
       "forgottenClockOutReminder": {
         "message": "Dini Schicht het um {endTime} ({timezone}) gändet. Stämpfel us, wänn du fertig gschaffet häsch.",
         "title": "Du bisch immer no yygstämpflet"
+      },
+      "manualEntryApproved": {
+        "message": "Dini manuelli Ziterfassig isch vo {approverName} gnämigt worde.",
+        "title": "Manuelli Ziiterfassig gnämigt"
+      },
+      "manualEntryRejected": {
+        "message": "Dini manuelli Ziterfassig isch vo {approverName} abglehnt worde.",
+        "messageWithReason": "Dini manuelli Ziterfassig isch vo {approverName} abglehnt worde. Grund: {rejectionReason}",
+        "title": "Manuelli Ziiterfassig abglehnt"
       },
       "missedClockInReminder": {
         "message": "Dini Schicht het um {startTime} ({timezone}) aagfange. Stämpfel ii, wänn du am Schaffe bisch.",
@@ -716,7 +831,27 @@
         "title": "Monet wider göffnet"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName} hät {categoryName} für {dateRange} beaatreit.",
         "title": "Neue Abwesenheitsanfrage"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName} hät e Ziitkorrekturaafrag für {date} iigreicht.",
+        "messageWithoutDate": "{employeeName} hät en Zitchorrektur-Aatrag iigreicht.",
+        "messageWithoutDateWithReason": "{employeeName} hät en Zitchorrektur-Aatrag iigreicht. Grund: {reason}",
+        "messageWithReason": "{employeeName} hät en Zitchorrektur-Aatrag für de {date} iigreicht. Grund: {reason}",
+        "title": "Neue Zitchorrektur-Aatrag"
+      },
+      "openShiftAvailable": {
+        "message": "E offeni Schicht isch am {shiftDate} vo {startTime} bis {endTime} verfüegbar.",
+        "title": "Offeni Schicht verfüegbar"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Überziit-Verstoss erfasst"
+      },
+      "overtimeWarning": {
+        "message": "Du häsch {worked} {period, select, daily {hüt} weekly {die Wuche} other {dä Monet}} gschaffet ({percent}% vo de {limit}-Limite).",
+        "title": "Überziit-Limite wird bald erreicht"
       },
       "passwordChanged": {
         "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
@@ -745,6 +880,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "Dini Ziit für {startDate} – {endDate} hät sich gänderet, nachdem du si iigreicht häsch, drum isch d Iireichig zruggzoge worde. Überprüef dini Ziit und riich si nomal ii.",
         "title": "Riich dini Ziit nomal ii"
+      },
+      "personalDataExportAdminExported": {
+        "message": "En Administrator hät dini persönliche Date am {onDate} exportiert.",
+        "title": "Dini persönliche Date sind exportiert worde"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "De Export vo de persönliche Date vo {employeeName} isch parat. Lad en uf de Mitarbeiter-Siite abe, während du aagmolde bisch; er wird nach 7 Täg glöscht.",
+        "adminTitle": "Export vo persönliche Date isch parat",
+        "message": "Din Export vo de persönliche Date isch parat. Lad en unter «Mini Date» abe, während du aagmolde bisch; er wird nach 7 Täg glöscht.",
+        "title": "Din Export vo de persönliche Date isch parat"
+      },
+      "personalDataExportReminder": {
+        "message": "Lad dini persönliche Date vor em {untilDate} unter «Mini Date» abe. Denach cha s nur no en Administrator für dich exportiere.",
+        "title": "Lad dini persönliche Date abe, bevor du gahsch"
       },
       "personnelFileDocumentShared": {
         "message": "S Dokumänt \"{title}\" isch mit dir teilt worde.",
@@ -781,13 +930,94 @@
       "policyMissedClockInReminder": {
         "message": "Ihr letztes Einstempeln heute war um {startTime} ({timezone}). Stempeln Sie ein, wenn Sie arbeiten."
       },
+      "projectBudgetWarning100": {
+        "message": "\"{projectName}\" hät s Budget überschritte ({used} vo {budget} budgetiert). Überprüef und pass es bi Bedarf aa.",
+        "title": "Projektbudget überschritte"
+      },
+      "projectBudgetWarning70": {
+        "message": "\"{projectName}\" hät {percent}% vom Budget bruucht ({used} vo {budget}).",
+        "title": "Projekt chunnt a d Budgetlimite"
+      },
+      "projectBudgetWarning90": {
+        "message": "\"{projectName}\" hät {percent}% vom Budget bruucht ({used} vo {budget}). Überleg, d Zitzuewiisige z überprüefe.",
+        "title": "Projekt nöch a de Budgetlimite"
+      },
+      "projectDeadlineOverdue": {
+        "message": "\"{projectName}\" isch über d Frist ({deadline}) drüber. Aktualisier de Status oder verlängere d Frist.",
+        "title": "Projektfrist überfällig"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "D Frist für \"{projectName}\" isch hüt ({deadline}). Schlüss die verblibene Arbete ab.",
+        "title": "Projektfrist isch hüt"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "D Frist für \"{projectName}\" isch in 2 Wuche ({deadline}). Plan vorausschauend, zum d Frist iizhalte.",
+        "title": "Projektfrist in 2 Wuche"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "D Frist für \"{projectName}\" isch morn ({deadline}). No en letschte Spurt zum Abschlüsse!",
+        "title": "Projektfrist isch morn"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "D Frist für \"{projectName}\" isch in 1 Wuche ({deadline}). Lueg, dass uf Kurs bisch.",
+        "title": "Projektfrist in 1 Wuche"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Rueziit-Verstoss erfasst"
+      },
+      "restPeriodWarning": {
+        "message": "Du häsch no {remaining} vo de erforderliche Rueziit übrig. Nöchschts erlaubs Iistempfle: {nextAllowedClockIn}.",
+        "title": "Erinnerig a d Rueziit"
+      },
       "scheduledExportPaused": {
         "message": "\"{scheduleName}\" isch pausiert worde, will de Bsitzer, {ownerName}, kein Org-Admin meh isch. Mach dich sälber oder en andere Org-Admin zum Bsitzer, zum en fortzsetze.",
         "title": "Plaante Export pausiert"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, one {# Schicht isch für {dateRange} veröffentlicht worde.} other {# Schichte sind für {dateRange} veröffentlicht worde.}}",
+        "title": "Neue Schichtplan veröffentlicht"
+      },
       "shiftAssigned": {
         "message": "Du bisch für en Schicht am {shiftDate} vo {startTime} bis {endTime} vom {assignedByName} yteilt worde.",
         "title": "Schicht yteilt"
+      },
+      "shiftPickupApproved": {
+        "message": "Dini Aafraag für d Übernahm vo de Schicht am {shiftDate} isch vo {approverName} genehmigt worde.",
+        "title": "Schichtübernahm genehmigt"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName} hät d Übernahm vo de Schicht am {shiftDate} ({startTime} - {endTime}) beaadragt.",
+        "messageUnnamedRequester": "En Mitarbeiter hät d Übernahm vo de Schicht am {shiftDate} ({startTime} - {endTime}) beaadragt.",
+        "title": "Aafraag für Schichtübernahm"
+      },
+      "shiftSwapApproved": {
+        "message": "Dini Schichttuusch-Aafraag für de {shiftDate} isch vo {approverName} genehmigt worde.",
+        "title": "Schichttuusch genehmigt"
+      },
+      "shiftSwapRejected": {
+        "message": "Dini Schichttuusch-Aafraag für de {shiftDate} isch vo {approverName} abglehnt worde.",
+        "messageWithReason": "Dini Schichttuusch-Aafraag für de {shiftDate} isch vo {approverName} abglehnt worde. Grund: {reason}",
+        "title": "Schichttuusch abglehnt"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName} het en Tuusch für d Schicht am {shiftDate} ({startTime} - {endTime}) aagfrogt.",
+        "messageWithTarget": "{requesterName} het aagfrogt, mit {targetName} für d Schicht am {shiftDate} ({startTime} - {endTime}) z tuusche.",
+        "title": "Schichttuusch-Aafroog"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName} möcht mit dir d Schicht am {shiftDate} ({startTime} - {endTime}) tuusche.",
+        "title": "Schichttuusch-Aafroog"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "Dini Fähigkeit \"{skill}\" lauft hüt ab.",
+        "message": "D Fähigkeit \"{skill}\" vo {employee} lauft hüt ab.",
+        "title": "E Fähigkeit lauft hüt ab"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "Dini Fähigkeit \"{skill}\" lauft am {untilDate} ab.",
+        "message": "D Fähigkeit \"{skill}\" vo {employee} lauft am {untilDate} ab.",
+        "title": "E Fähigkeit lauft bald ab"
       },
       "teamMemberAdded": {
         "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
@@ -797,12 +1027,30 @@
         "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
         "title": "Us em Team entfernt"
       },
+      "timeCorrectionApproved": {
+        "message": "Dini Zytkorräktur-Aafroog isch vo {approverName} bewilligt worde.",
+        "title": "Zytkorräktur bewilligt"
+      },
+      "timeCorrectionRejected": {
+        "message": "Dini Zytkorräktur-Aafroog isch vo {approverName} abglehnt worde.",
+        "messageWithReason": "Dini Zytkorräktur-Aafroog isch vo {approverName} abglehnt worde. Grund: {rejectionReason}",
+        "title": "Zytkorräktur abglehnt"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "Dini Zytkorräktur-Aafroog isch iigreicht worde und wartet uf d Bewilligung.",
+        "title": "Zytkorräktur iigreicht"
+      },
       "timeOffInLieuAvailable": {
         "message": "Mitarbeitende können nun Kompensation über ihren Arbeitszeitsaldo beziehen. Die neue Abwesenheitskategorie bleibt inaktiv, bis Sie sie in den Abwesenheitseinstellungen aktivieren.",
         "title": "Kompensation ist verfügbar"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Eine genehmigte Anpassung hat den geschuldeten Betrag für den Spesenbericht {report} von {employee} erhöht. Wartet auf Rückerstattung: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "Dini Reisespese-Aafroog für {destination} ({amount}) isch vo {approverName} bewilligt worde.",
+        "messageWithoutDestination": "Dini Reisespese-Aafroog über {amount} isch vo {approverName} bewilligt worde.",
+        "title": "Reisespese bewilligt"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "{employee}s Speseabrechnig {report} wird nöd über en Lohnlauf vergüetet. Wartet uf Vergüetig: {amounts}."
@@ -832,6 +1080,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Dini Reisespese sind mit em Lohnlauf {period} vollständig vergüetet worde: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "Dini Reisespese-Aafroog für {destination} ({amount}) isch vo {approverName} abglehnt worde.",
+        "messageWithoutDestination": "Dini Reisespese-Aafroog über {amount} isch vo {approverName} abglehnt worde.",
+        "messageWithoutDestinationWithReason": "Dini Reisespese-Aafroog über {amount} isch vo {approverName} abglehnt worde. Grund: {reason}",
+        "messageWithReason": "Dini Reisespese-Aafroog für {destination} ({amount}) isch vo {approverName} abglehnt worde. Grund: {reason}",
+        "title": "Reisespese abglehnt"
+      },
+      "travelExpenseReportApproved": {
+        "message": "Dini Speseabrechnig (zrugzerstatte: {amount}) isch vo {approverName} bewilligt worde.",
+        "title": "Speseabrechnig bewilligt"
+      },
+      "travelExpenseReportRejected": {
+        "message": "Dini Speseabrechnig (zrugzerstatte: {amount}) isch vo {approverName} abglehnt worde.",
+        "messageWithReason": "Dini Speseabrechnig (zrugzerstatte: {amount}) isch vo {approverName} abglehnt worde. Grund: {reason}",
+        "title": "Speseabrechnig abglehnt"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} het dini Speseabrechnig für Änderige zruggschickt: {note}",
+        "title": "Speseabrechnig für Änderige zruggschickt"
+      },
+      "twoFactorDisabled": {
+        "message": "Zwei-Faktor-Authentifizierig isch uf dim Konto deaktiviert worde. Mir empfehled, si us Sicherheitsgründ wider z aktiviere.",
+        "title": "Zwei-Faktor-Authentifizierig deaktiviert"
+      },
+      "twoFactorEnabled": {
+        "message": "Zwei-Faktor-Authentifizierig isch uf dim Konto für zuesätzlechi Sicherheit aktiviert worde.",
+        "title": "Zwei-Faktor-Authentifizierig aktiviert"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {Du hesch # Ferietag, wo am {expiryDate} ablauft. Nimm en, bevor er ablauft!} other {Du hesch # Ferietäg, wo am {expiryDate} ablaufe. Nimm si, bevor si ablaufe!}}",
+        "message": "{remainingDays, plural, one {Du hesch no # Ferietag übrig. Vergiss nöd, dir chli Zyt frei z näh!} other {Du hesch no # Ferietäg übrig. Vergiss nöd, dir chli Zyt frei z näh!}}",
+        "title": "Ferieguthabe-Erinnerig"
+      },
+      "waterReminder": {
+        "done": "Gschafft!",
+        "message": "Bliib gsund – trink chli Wasser",
+        "snooze": "Hüt pausiere",
+        "title": "Zyt zum Trinke!"
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
@@ -937,11 +1224,17 @@
         "approval_cover_return_summary": "Vo dinere Stellvertretig entschide",
         "approval_cover_started": "Abwäseheitsvertretig gstartet",
         "break_due_reminder": "Pause fällig",
+        "driving_details_missing_reminder": "Fahrtdetails fähled",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
         "missed_clock_in_reminder": "Verpasstes Einstempeln",
         "period_submission_decided": "Iigreichti Ziit gnähmigt oder abglehnt",
         "period_submission_reminder": "Riich dini Ziit ii",
         "period_submission_sent_back": "Ziit nachere Änderig zrugggschickt",
+        "personal_data_export_admin_exported": "Persönlechi Date dur en Administrator exportiert",
+        "personal_data_export_ready": "Export vo de persönliche Date isch parat",
+        "personal_data_export_reminder": "Lade dini Date abe, bevor du gahsch",
+        "skill_expired_today": "Fähigkeit lauft hüt ab",
+        "skill_expiry_upcoming": "Fähigkeit lauft bald ab",
         "work_balance_adjustment_cancelled": "Saldoanpassung storniert",
         "work_balance_adjustment_recorded": "Saldoanpassung erfasst"
       },
@@ -1020,6 +1313,1092 @@
       "loading": "Gspeichereti Iiträg werded gläse…",
       "review": "Gspeichereti Iiträg überprüefe",
       "title": "Gspeichereti Stämpfel-Iiträg"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (Administrator)",
+      "accessExpenseExport": "\"sie exportiere\"",
+      "accessExpenseOfficers": "Spesenverantwortliche (Ihre genehmigten Reisespesenabrechnungen und deren Belege):",
+      "accessExpenseRead": "genehmigti Bricht läse",
+      "accessExpenseReimburse": "Rückvergüetige erfasse",
+      "accessIntro": "Ussert dir chönd die Persone bi {organization} uf dini Date in Z8 zuegriffe, zum Zitpunkt, wo dä Export erstellt worde isch:",
+      "accessManagerDirect": "{name} (din Vorgesetzte)",
+      "accessManagers": "Vorgesetzte (Ihre Zeiten, Absenzen, Einsatzpläne und Anträge, soweit es ihre Rolle erlaubt):",
+      "accessManagerTeam": "{name} (Teamberechtigunge für dis Team)",
+      "accessNobody": "Niemert.",
+      "accessOwner": "{name} (Inhaber)",
+      "accessOwnersAdmins": "Inhaber und Administratore (alli dini Date i de Organisation):",
+      "accessPayrollAll": "alli Mitarbeiter",
+      "accessPayrollEmployee": "dich namentlich",
+      "accessPayrollOfficers": "Zuegriff Lohnabrechnig (dini Arbetszit und Absänze, exportiert für d Lohnabrechnig):",
+      "accessPayrollTeam": "dis Team",
+      "accessPersonnelFileOfficers": "Personaldossier-Verantwortlichi (d Dokument i Irem Personaldossier vo däne Kategorie):",
+      "accessTitle": "Wär Zuegriff uf dini Date hät",
+      "category": {
+        "absences": "Dini Absänze, Ferieguthabe und Ferieapassige.",
+        "account": "Dis Benutzerkonto: Sitzige, Amäldemethode, Sicherheitsiistellige, Vorliebene und Grät.",
+        "accountAdmin": "De Name und d E-Mail-Adresse vo dim Benutzerkonto.",
+        "approvals": "Ihre eigenen Anträge und Periodeneinreichungen sowie die Entscheide, die Sie zu Anträgen anderer Personen getroffen haben.",
+        "auditLog": "Audit-Log-Iiträg über dich und Iiträg, wo du usgfüehrt häsch.",
+        "employment": "Dini Personalakte und dis Profil, Aastelligszitruum und Ustritt, Aastelligsbedingige mit dim Stundelohn und sinere Historie, Teams, Vorgesetzti, Standört, Fähigkeite, Projektzueordnige, Rolle, Gruppe, Choschtästell und jedi Richtlinie, wo dir zuegwise isch.",
+        "integrations": "Dini Kaländerverbindige, din Kaländer-Feed, verchnüpfti Chat-Konti und de Kiosk-PIN-Status.",
+        "notifications": "Din Benachrichtigungsverlauf.",
+        "personnelFile": "Die Dokumente in Ihrem Personaldossier, als Originaldateien.",
+        "planning": "Dini Schichte und Schichtafrage.",
+        "positionStamps": "Dini Positionsstempel, din Iiwilligungsverlauf und wer dini Positione aagluegt hät.",
+        "time": "Ihre Zeiteinträge, Arbeitsperioden und Korrekturen, Pausen, automatischen Ausstempelungen, Compliance-Ausnahmen, Richtlinienverstösse, Zuschläge, Salden und Saldoanpassungen.",
+        "travelExpenses": "Dini Spesenaträg, Bricht, Poschtione, Abrechnige und Beleg."
+      },
+      "completeCopy": "{organization} het villicht no witeri Ufzeichnige über dich, wo nöd Teil vo däm Export sind. Du chasch d Administratore vo {organization} um e vollständigi Kopie vo dine persönliche Date bitte.",
+      "completeCopyTitle": "Vollständigi Kopie",
+      "csvFolder": "De Ordner {folder} enthaltet die gliiche Tabelle als CSV-Dateie.",
+      "documentCategory": {
+        "certificate": "Zertifikate",
+        "contract": "Verträg",
+        "other": "Anderi Dokumänt",
+        "payslip": "Lohnabrechnige",
+        "sickNote": "Arztzeugnisse"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Wenn d Abweseheit entschide worde isch (UTC).",
+            "approvedBy": "Wär über d Absänz entschide hät.",
+            "category": "D Abweseheitskategorie, wie d Organisation si benennt.",
+            "categoryType": "D Art vo de Abweseheit hinder de Kategorie, zum Biispil Ferie, chrank oder home_office.",
+            "deputy": "De Kolleg, wo dich während de Abweseheit vertritt.",
+            "deputyAssignedAt": "Wann die Stellvertretung zugewiesen wurde (UTC).",
+            "endDate": "De letscht Tag vo de Abweseheit (YYYY-MM-DD).",
+            "endPeriod": "Wele Teil vom letschte Tag du abwesend bisch: full_day, am oder pm.",
+            "notes": "D Notiz, wo bi de Abweseheit gschribe worde isch.",
+            "rejectionReason": "Warum d Abweseheit abglehnt worde isch.",
+            "sickDetail": "Bei Krankheit: weitere Details, zum Beispiel mit oder ohne Arztzeugnis oder krankes Kind.",
+            "startDate": "De erschti Tag vo de Abweseheit (YYYY-MM-DD).",
+            "startPeriod": "Wele Teil vom erschte Tag du abwesend bisch: full_day (ganze Tag), am (Morge) oder pm (Namittag).",
+            "status": "Öb d Abweseheit usstehend, bewilligt oder abglehnt isch.",
+            "summary": "Dini Abweseheite, wie Ferie, Chranket oder Homeoffice, mitsamt em Bewilligungsstatus."
+          },
+          "shared": {
+            "year": "S Feriejahr."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "Für en aagsammlete Aateil: de Monet (1 bis 12), won er defür guetgschribe worde n isch.",
+            "adjustedBy": "Wer d Änderig gmacht het.",
+            "days": "D Tääg, wo dezuecho sind (positiv) oder abzoge worde sind (negativ).",
+            "kind": "Öb öpper d Änderig vo Hand gmacht het (manuell) oder d App en aagsammlete Aateil guetgschribe het (accrual).",
+            "reason": "Worum d Änderig gmacht worde n isch.",
+            "summary": "Jedi Änderig a dine Ferietääg näbem Kontingent: manuelli Korrekture und aagsammleti Aateil."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "Dini Ferietääg fürs Jahr; leer, wenn d Zahl vo diner Richtlinie gilt.",
+            "customCarryoverDays": "D Tääg, wo usem Vorjahr überno worde sind; leer, wenn keini für di feschtgleit worde sind.",
+            "summary": "Feriekontingent, wo für di persönlich statt diner Ferierichtlinie pro Jahr feschtgleit sind."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "De Monet (1 bis 12), wo d Aasammlig vo Ferietääg aafangt.",
+            "accrualType": "Wie d Tääg guetgschribe werded: alli uf eimol pro Jahr (jöhrlich), monatlich oder alli zwei Wuche (zweiwöchentlich).",
+            "allowCarryover": "Öb nöd bruchti Tääg is nächste Jahr übertreit werded.",
+            "assignmentActive": "Öb d Zueordnig aktiv isch.",
+            "assignmentEffectiveFrom": "Ab wenn d Zueordnig vo de Richtlinie gilt (UTC).",
+            "assignmentEffectiveUntil": "Wenn d Zueordnig ufhört z gelte (UTC); leer, solang si gilt.",
+            "assignmentType": "Wie si di erreicht: dir zuegwise (Mitarbeiter), dim Team (Team) oder de ganze Organisation (Organisation).",
+            "carryoverExpiryMonths": "Wie vill Mönet is nächste Jahr übertraiti Tääg gültig bliibed; leer, wenn si nöd verlaufed.",
+            "defaultAnnualDays": "D Ferietääg pro Jahr gmääss de Richtlinie.",
+            "maxCarryoverDays": "D Maximalzahl a Tääg, wo übertreit werde chönd; leer für keis Limit.",
+            "policy": "De Name vo de Richtlinie.",
+            "prorateInStartAndExitYear": "Öb es Jahreskontingent im Ii- oder Ustrittsjahr um d Mönet vo de Aastellig reduziert wird.",
+            "statutoryMinimumDays": "D Mindestzahl a Tääg, uf die es reduzierts Kontingent sinke dörf, sobald dini Wartezit umme n isch.",
+            "summary": "D Ferierichtlinie, wo für di gelted: dir zuegwise, dine Teams oder de Standard vo de Organisation.",
+            "validFrom": "De erschti Tag, wo d Richtlinie gilt (YYYY-MM-DD).",
+            "validUntil": "De letschti Tag, wo d Richtlinie gilt (YYYY-MM-DD); leer, solang si gilt."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Was passiert isch: blockiert, überprüeft oder protokolliert.",
+            "blockedCountry": "S blockierte Land.",
+            "blockedIp": "D blockierti IP-Adrässe.",
+            "concurrentSessionCount": "Wie vill Sitzige zu dere Zit offe gsi sind.",
+            "reason": "De protokollierti Grund.",
+            "requestMethod": "D Art vo de Aafrog, z. B. GET.",
+            "requestPath": "D Syte oder Adrässe, wo aagfrogt worde n isch.",
+            "requiredMfaType": "De zweiti Faktor, wo d Regle verlangt het.",
+            "summary": "Aafroge, wo d Zuegriffsregle vo dere Organisation blockiert, überprüeft oder markiert hend.",
+            "violationType": "Gäge weli Regle verstosse worde n isch, z. B. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Tääg hinterenand, wo du dis Ziel erreicht hesch, bis jetzt.",
+            "lastGoalMetDate": "De letschti Tag, wo du dis Ziel erreicht hesch.",
+            "longestStreak": "Dini längschti Serie.",
+            "snoozedUntil": "Bis wenn du Erinnerige pausiert hesch.",
+            "summary": "Dini Gsamtmenge a Wasser und Serie.",
+            "totalIntakeAllTime": "Alli Gläser, wo du erfasst hesch."
+          },
+          "notificationPreferences": {
+            "channel": "Wo s zuegstellt wird, z. B. E-Mail oder Push.",
+            "enabled": "Öb du s döt bechunnsch.",
+            "notificationType": "D Art vo de Benachrichtigung.",
+            "summary": "Weli Benachrichtigunge du ii- oder usgschaltet hesch, pro Kanal."
+          },
+          "passkeys": {
+            "aaguid": "D ID vom Authenticator-Modell.",
+            "backedUp": "Öb es Backup gmacht worde isch.",
+            "deviceType": "Öb s uf eim Grät blibt oder über mehreri Grät synchronisiert wird.",
+            "name": "De Name vom Passkey.",
+            "summary": "Dini Passkeys (Schlüssel werded nie exportiert).",
+            "transports": "Wie de Authenticator verbunde isch, z. B. USB oder intern."
+          },
+          "pushDevices": {
+            "deviceName": "De Name vom Grät.",
+            "kind": "«web» für en Browser, «native» für d Mobile-App.",
+            "lastSeenAt": "Wänn d App s Grät s letscht Mal registriert hät.",
+            "platform": "D Mobile-Plattform (iOS oder Android); leer bimene Browser.",
+            "summary": "Browser und Grät, wo Push-Benachrichtigunge empfanged (ihri Schlüssel werded nie exportiert)."
+          },
+          "sessions": {
+            "city": "D Stadt vo dere IP-Adrässe.",
+            "createdAt": "Wänn du di aagmolde häsch.",
+            "expiresAt": "Wänn d Sitzig ablauft, usser si wird verlängeret.",
+            "impersonated": "Öb de Plattform-Support die Sitzig als dich gstartet hät. D IP-Adrässe, de Browser und de Standort werded dänn wegglah: Si ghöred zum Support, nöd zu dir.",
+            "lastActivityAt": "Wänn du d Sitzig s letscht Mal i dere Organisation bruucht häsch.",
+            "mfaMethod": "Wie du de zweiti Faktor bestätigt häsch, falls verlangt.",
+            "mfaVerifiedAt": "Wänn du en bestätigt häsch.",
+            "region": "D Region vo dere IP-Adrässe.",
+            "summary": "Dini Aamäldige (Sitzige), wo no gspeicheret sind, mit Detail, wo die Organisation drüber erfasst hät.",
+            "updatedAt": "Wänn d Sitzig s letscht Mal verlängeret worde isch."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "Wie du dis Dashboard aagordnet häsch, als JSON.",
+            "helpImproveProduct": "Öb du zuegstimmt häsch, bim Verbessere vom Produkt z hälfe.",
+            "locale": "Dini App-Sprach; leer bedütet, dass si sich nach dim Browser richtet.",
+            "onboardingComplete": "Öb du d Iifüehrig abgschlosse häsch.",
+            "onboardingCompletedAt": "Wänn du si abgschlosse häsch.",
+            "onboardingStartedAt": "Wänn du mit de Iifüehrig aagfange häsch.",
+            "onboardingStep": "De Schritt vo de Iifüehrig, wo du erreicht häsch.",
+            "summary": "Dini persönliche Iistellige i de App.",
+            "timeFormat": "Öb Zite im 12- oder 24-Stunde-Format aazeigt werded.",
+            "timezone": "D Zitzone, wo du für d Aazeig vo Zite usgwählt häsch.",
+            "waterReminderDailyGoal": "Dis Tagesziel i Gläser.",
+            "waterReminderEnabled": "Öb d Wasser-Erinnerige aktiv sind.",
+            "waterReminderIntervalMinutes": "Minute zwüschet de Wasser-Erinnerige.",
+            "waterReminderPreset": "D Vorlag für Wasser-Erinnerige, wo du usgwählt häsch.",
+            "weekStartDay": "De Tag, wo dini Wuche aafangt."
+          },
+          "shared": {
+            "country": "S Land vo dere IP-Adrässe (ISO-Code).",
+            "ipAddress": "D IP-Adrässe, vo dere s cho isch.",
+            "isActive": "Öb s no im Iisatz isch.",
+            "lastUsedAt": "Wänn s s letscht Mal bruucht worde isch.",
+            "userAgent": "De Browser oder d App, wie si sich identifiziert hät."
+          },
+          "signInMethods": {
+            "accountId": "D ID vo dim Konto bi däm Aabieter.",
+            "passwordSet": "Öb es Passwort gsetzt isch (s Passwort sälber wird nie exportiert).",
+            "provider": "D Aamäldemethode; «credential» bedütet E-Mail und Passwort.",
+            "summary": "D Möglichkeite, wie du di aamälde chasch: es Passwort oder verchnüpfti Kontene wie Google oder Microsoft."
+          },
+          "trustedDevices": {
+            "deviceName": "De Name vom Grät.",
+            "expiresAt": "Wänn s Vertraue ablauft.",
+            "lastIpAddress": "D IP-Adrässe vo de letschte Nutzig.",
+            "mdmCompliant": "Öb s Gräteverwaltigssystem gmeldet hät, dass es konform isch.",
+            "mdmProvider": "S Gräteverwaltigssystem, falls vorhande.",
+            "platform": "S Betribssystem.",
+            "revokedAt": "Wänn s Vertroue zruggzoge worde isch.",
+            "revokedBy": "Wär s zruggzoge hät.",
+            "revokeReason": "Warum s zruggzoge worde isch.",
+            "summary": "Gräät, wo die Organisation für dini Aamäldige vertrout.",
+            "trustSource": "Warum s vertrout wird: en Passkey, en Administrator, dini Wahl zum s merke, oder Gräateverwaltig (MDM)."
+          },
+          "user": {
+            "banExpires": "Wänn d Sperrig ufhört; läär, wänn si nöd ufhört.",
+            "banned": "Öb d Plattform dis Chonto gsperrt hät.",
+            "banReason": "Warum d Plattform es gsperrt hät.",
+            "canCreateOrganizations": "Öb du eigeti Organisatione erstelle dörfsch.",
+            "email": "D E-Mail-Adrässe, wo du di drmit aamäldsch.",
+            "emailVerified": "Öb du die E-Mail-Adrässe bestätigt häsch.",
+            "firstName": "De Vorname vo dim Chonto.",
+            "image": "D Adrässe vo dim Profilbild.",
+            "lastName": "De Nachname vo dim Chonto.",
+            "name": "De Aazeigename vo dim Chonto.",
+            "role": "Dini Rolle uf de Plattform (nöd i dere Organisation).",
+            "summary": "Dis Benutzerchonto: s Login, wo du für die Organisation bruuchsch.",
+            "twoFactorEnabled": "Öb Zwei-Faktor-Authentifizierig iigschaltet isch."
+          },
+          "waterIntake": {
+            "amount": "Wie vili Gläser.",
+            "loggedAt": "Wänn du s trunke häsch.",
+            "source": "Wo du s erfasst häsch: e Erinnerig, vo Hand oder s Widget.",
+            "summary": "S Wasser, wo du erfasst häsch."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Wänn über de letscht Schritt entschiede worde isch (UTC).",
+            "policy": "D Gnähmigungsrichtlinie, wo d Schritt festgleit hät, mit ihrem dõmalige Name.",
+            "status": "Wo d Gnähmigung staht.",
+            "summary": "Mehrstuufigi Gnähmigunge vo dine Aaträg, wie si vonere früenere Version vom Gnähmigungssystem erfasst worde sind."
+          },
+          "approvalChainStages": {
+            "approver": "D Person, wo bittet worde isch, über de Schritt z entscheide.",
+            "chainId": "D ID vo de Gnähmigung in approval_chains.",
+            "decidedAt": "Wänn über de Schritt entschiede worde isch (UTC).",
+            "decidedBy": "Wär über de Schritt entschiede hät.",
+            "status": "Wo de Schritt staht.",
+            "step": "D Position vom Schritt: 1 isch de erschti Schritt.",
+            "summary": "D Schritt vo dene mehrstuufige Gnähmigunge."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Wänn du entschiede häsch (UTC).",
+            "action": "Was du entschiede häsch: gnähmigt oder abglehnt, oder neu zuegwise, wänn du de Aatrag an en anderi Person witergleitet häsch.",
+            "asDeputy": "Öb du als Stellverträtig für di gnähmigendi Person entschiede häsch.",
+            "authority": "Wo d Entscheidig erfasst isch: s aktuelle Gnähmigungssystem (canonical), s früenere (legacy) oder nur uf em Datensatz sälber (record).",
+            "otherPerson": "En anonymi ID für die Person, wo de Aatrag gstellt hät. Die gliich Person hät die gliich ID im ganze Export und en anderi in jedem andere Export.",
+            "recordKind": "Über was für en Aatrag du entschiede häsch, zum Bispil e Abweseheit oder en Schichtaatrag.",
+            "summary": "D Entscheidige, wo du über d Aaträg vo andere Persone troffe häsch. Die anderi Person erschiint nur als anonymi ID."
+          },
+          "deputyDecisions": {
+            "actingFor": "Di gnähmigendi Person, wo d Stellverträtig defür iigsprunge isch.",
+            "authority": "Zu welem Gnähmigungssystem d Entscheidig ghört: legacy (früener) oder canonical (aktuell).",
+            "decidedAt": "Wänn d Stellverträtig entschiede hät (UTC).",
+            "decidedBy": "D Stellverträtig, wo entschiede hät.",
+            "decision": "Was d Stellverträtig entschiede hät: gnähmigt oder abglehnt.",
+            "requestId": "D ID vom Aatrag in requests, für s früenere System.",
+            "summary": "Entscheidige über dini Aaträg, wo vonere Stellverträtig für di gnähmigendi Person troffe worde sind.",
+            "workflowId": "D ID vo de Gnähmigung in workflows, für s aktuelle System."
+          },
+          "periodSubmissions": {
+            "cadence": "Öb du dini Ziit pro Wuche (weekly) oder pro Monet (monthly) iiriiksch.",
+            "cadenceEndDate": "De letscht Tag vo de ganze Wuche oder vom Monet (YYYY-MM-DD).",
+            "cadenceStartDate": "De erscht Tag vo de ganze Wuche oder vom Monet (YYYY-MM-DD).",
+            "closedAt": "Wenn d Iireichig zruggzoge worde isch, oder d Gnähmigung nach ere Änderig nüme aktuell gsi isch (UTC).",
+            "closedCause": "Wieso d Iireichig gschlosse worde isch: Du häsch si zruggzoge (Mitarbeiter), oder d Ziit hät sich denoo gänderet (Änderig).",
+            "decidedAt": "Wenn d Iireichig gnähmigt oder abglehnt worde isch (UTC).",
+            "decidedBy": "Wär d Iireichig gnähmigt oder abglehnt hät.",
+            "endDate": "De letscht Tag, wo du iigreicht häsch (YYYY-MM-DD).",
+            "rangeEnd": "S Ändi vo de iigreichte Täg als Ziitpunkt (UTC), nöd inbegriffe.",
+            "rangeStart": "De Start vo de iigreichte Täg als Ziitpunkt (UTC).",
+            "startDate": "De erscht Tag, wo du iigreicht häsch (YYYY-MM-DD).",
+            "status": "De Status vo de Iireichig: Pändent, gnähmigt, abglehnt, zruggzoge oder veraaltet, wenn en spööteri Änderig d Gnähmigung ungültig gmacht hät.",
+            "submittedAt": "Wenn d Periode iigreicht worde isch (UTC).",
+            "submittedBy": "Wär d Periode iigreicht hät.",
+            "summary": "D Wuche oder Mönet vo de Arbetsziit, wo du zur Gnähmigung iigreicht häsch. E Periode nomol iizreiche füegt e neui Ziile dezue.",
+            "timezone": "D Ziitzone, wo d Täg vo de Periode dinne zellt wärded.",
+            "weekStartDay": "Für wöchentlichi Iireichige: De Tag, wo d Wuche dermit aafangt."
+          },
+          "requests": {
+            "approvedAt": "Wenn über d Aafroog entschide worde isch (UTC).",
+            "approver": "D Person, wo um en Entscheid bittet worde isch.",
+            "notes": "Notize zur Aafroog.",
+            "reason": "Dii Grund für d Aafroog.",
+            "rejectionReason": "Wieso d Aafroog abglehnt worde isch.",
+            "status": "Öb d Aafroog pändent, gnähmigt oder abglehnt isch.",
+            "summary": "Dini Gnähmigungsaafrooge, wie si vonere früenere Version vom Gnähmigungssystem erfasst worde sind."
+          },
+          "shared": {
+            "decisionReason": "De Grund, wo bim Entscheid aagee worde isch.",
+            "recordId": "D ID vo däm Iitrag, zum Biispil vonere Absänz in absences.json.",
+            "recordKind": "Um weli Art vo Iitrag es sich bi de Aafroog handlet, zum Biispil e Absänz oder e Ziitkorrektur.",
+            "stageLabel": "De Name vom Gnähmigungsschritt.",
+            "workflowId": "D ID vo de Gnähmigung in Workflows."
+          },
+          "workflowApprovers": {
+            "approver": "D Person, wo um en Entscheid bittet worde isch.",
+            "assignedAt": "Wenn d Person gfroogt worde isch (UTC).",
+            "decidedBy": "Wär tatsächlich entschide hät: De Name vonere Person oder 'system', wenn d App es erledigt hät (legacy_unknown für alti Iiträg).",
+            "reassignedBy": "Wär de Entscheid an öpper anders wiitergleitet hät.",
+            "resolvedAt": "Wenn ihre Teil erledigt worde isch (UTC).",
+            "status": "De Status vo ihrem Teil: Pändent, gnähmigt, abglehnt, abbroche oder abgloffe.",
+            "summary": "D Persone, wo bi jedem Schritt vo dine Gnähmigunge um en Entscheid bittet worde sind."
+          },
+          "workflowEvents": {
+            "actor": "Wärs gmacht hät: De Name vonere Person oder 'system', wenn d App es gmacht hät (legacy_unknown für alti Iiträg).",
+            "eventType": "Was passiert isch, zum Biispil stage.activated, assignment.approved oder assignment.escalated.",
+            "occurredAt": "Wenns passiert isch (UTC).",
+            "reason": "De aagebeni Grund.",
+            "summary": "Alles, was mit dine Gnähmigunge passiert isch, de Reihe nooch."
+          },
+          "workflows": {
+            "cancelledAt": "Wenn d Aafroog abbroche worde isch (UTC).",
+            "completedAt": "Wenn de definitivi Entscheid troffe worde isch (UTC).",
+            "status": "De Status vo de Gnähmigung: Pändent, gnähmigt, abglehnt, abbroche oder abgloffe.",
+            "submittedAt": "Wenn d Aafroog iigreicht worde isch (UTC).",
+            "summary": "Dini Gnähmigungsaafrooge im aktuelle Gnähmigungssystem, eini pro Aafroog.",
+            "workflowType": "Was genehmigt wird, zum Bispil en Absänz, e Ziitkorrektur oder d'Iireichig vonere Periode."
+          },
+          "workflowStages": {
+            "activatedAt": "Wenn de Schritt aagfange hät (UTC).",
+            "decidedAt": "Wenn über de Schritt entschide worde isch (UTC).",
+            "stageOrder": "D Position vom Schritt: 1 isch de erschti Schritt.",
+            "status": "De Status vom Schritt: waiting (nöd gstartet), pändent, gnähmigt, abglehnt, abbroche oder abgloffe.",
+            "summary": "D Schritt, wo jedi vo dine Gnähmigunge durloffe hät, de Reihe nooch."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "Wänn du's gmacht häsch (UTC).",
+            "action": "Was du gmacht häsch.",
+            "asDeputy": "Öb du als Stellverträtig vo öpperem ghandlet häsch.",
+            "authority": "Wo d'Aktion erfasst wird: audit_log fürs Audit-Log, record für de Datensatz sälber.",
+            "otherPerson": "En anonymi ID für de Kolleg oder d'Kollegin, di gliich für die Person während däm ganze Export; läär, wänn d'Aktion kei Person betroffe hät.",
+            "recordKind": "D'Art vom Datensatz, wo du bearbeitet häsch, z. B. absence_entry oder time_entry.",
+            "summary": "Was du gmacht häsch, wo nöd dini eigene Datensätz betrifft: Aktione uf Datensätz vo Kollege oder uf d'Organisation. Kollege erschined nur mit ere anonyme ID."
+          },
+          "entries": {
+            "action": "Was gmacht worde isch, wie's d'App ufzeichnet, z. B. absence.requested.",
+            "changes": "Was sich gänderet hät, als JSON (meischtens d'Wärt vorher und nachher).",
+            "entityId": "D'ID vo däm Datensatz i de App.",
+            "entityType": "D'Art vom Datensatz, wo's betroffe hät, z. B. absence_entry oder employee.",
+            "ipAddress": "Dini IP-Adrässe, wänn du's gmacht häsch; läär, wänn's öpper anders gmacht hät.",
+            "metadata": "Wiitere Kontext, wo d'App ufzeichnet hät, als JSON.",
+            "performedBy": "De Name vo de Person, wo's gmacht hät.",
+            "performedByYou": "Öb du's sälber gmacht häsch.",
+            "summary": "Audit-Log-Iiträg über dich: Was a dine Datensätz gmacht worde isch, vo wäm und wänn.",
+            "timestamp": "Wänn's passiert isch (UTC).",
+            "userAgent": "Dine Browser oder d'App, wänn du's gmacht häsch; läär, wänn's öpper anders gmacht hät."
+          }
+        },
+        "common": {
+          "assignedAt": "Wänn's dir zuegwise worde isch.",
+          "assignedBy": "Wär's dir zuegwise hät.",
+          "createdAt": "Wänn de Datensatz erstellt worde isch.",
+          "createdBy": "Wär de Datensatz erstellt hät.",
+          "effectiveFrom": "Wänn's in Chraft trätte isch.",
+          "effectiveTo": "Wänn's nüme gültig gsi isch; läär, solang's no gilt.",
+          "id": "D'ID vom Datensatz i de App, damit anderi Dateie druf verwiise chönd.",
+          "updatedAt": "Wänn de Datensatz zletscht gänderet worde isch.",
+          "updatedBy": "Wär de Datensatz zletscht gänderet hät."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "D'Stadt vom Standort.",
+            "country": "S'Land vom Standort.",
+            "location": "De Name vom Standort.",
+            "postalCode": "D'Postleitzahl vom Standort.",
+            "street": "D'Strass vom Standort.",
+            "summary": "D'Standört, wo du zueteilt bisch zum schaffe."
+          },
+          "assignedVehicles": {
+            "archived": "Öb d'Organisation s'Fahrzüüg archiviert hät, sodass es nüme cha uswählt wärde.",
+            "assignmentType": "Wie's dich erreicht: dir zuegwise (employee) oder dim Team (team).",
+            "licencePlate": "S'Kontrollschild vom Fahrzüüg.",
+            "summary": "D'Organisationsfahrzüüg, wo dir oder dine Teams zuegwise sind, wo d'App zersch vorschlat, wänn du es Fahrzüüg bi dinere Arbet erfassisch.",
+            "vehicle": "De Name vom Fahrzüüg."
+          },
+          "billableRates": {
+            "hourlyRate": "De verrechneti Stundesatz.",
+            "level": "Öb de Satz für dini ganzi Arbet oder für es einzigs Projekt gilt.",
+            "project": "S'Projekt, wo de Satz defür gilt; läär für dini ganzi Arbet.",
+            "summary": "D'Sätz, wo d'Organisation de Chunde für dini Arbet verrechnet."
+          },
+          "costCenters": {
+            "code": "De Code vo de Choschtestell.",
+            "costCenter": "De Name vo de Choschtestell.",
+            "summary": "D'Choschtestelle, wo dini Arbet druf buecht wird."
+          },
+          "costRates": {
+            "hourlyRate": "D'Chöschte pro Stund.",
+            "summary": "D'interne Chöschte vo dinere Arbet pro Stund, wie's d'Organisation berächnet."
+          },
+          "customFields": {
+            "field": "De Name vom Fäld.",
+            "fieldArchived": "Öb d'Organisation s'Fäld archiviert hät.",
+            "summary": "D Wärt vo de eigete Fälder vo de Organisazion i dim Mitarbeiterdatensatz.",
+            "tracked": "Öb s Fäld en Verlouf vo sine Wärt füehrt.",
+            "type": "De Typ vom Fäld, zum Bispil Text, Zahl, Datum oder Uswahl.",
+            "validFrom": "Für Fälder mit ere Historie: de Tag, ab däm de Wärt gilt (YYYY-MM-DD).",
+            "value": "De Wärt."
+          },
+          "customRoles": {
+            "description": "D Beschribig vo de Rolle.",
+            "role": "De Name vo de Rolle.",
+            "summary": "D benutzerdefinierte Rolle, wo du häsch."
+          },
+          "departureEvents": {
+            "actor": "Wärs gmacht hät; läär, wänns s System gsi isch.",
+            "departureId": "De Ustritt, zu däm das Ereignis ghört (d ID bi de Ustritt).",
+            "kind": "Was passiert isch, zum Bispil departure_scheduled oder departure_effective.",
+            "occurredAt": "Wänn s passiert isch.",
+            "revision": "D Version vom Ustritt nach däm Ereignis.",
+            "summary": "D Historie vo dine Ustritt: wänn jedi(e) plant, gänderet, abbroche oder wirksam worde isch, und wär s gmacht hät."
+          },
+          "departureReviews": {
+            "affectedEndAt": "S Ändi vom Zitruum, wo de Datensatz betrifft.",
+            "affectedStartAt": "De Aafang vom Zitruum, wo de Datensatz betrifft.",
+            "departureId": "D ID vom Ustritt bi de Ustritt.",
+            "kind": "Was für en Datensatz e Überprüefig bruucht hät.",
+            "resolution": "Wie d Überprüefig glöst worde isch.",
+            "resolvedAt": "Wänn d Überprüefig glöst worde isch.",
+            "resolvedBy": "Wär d Überprüefig glöst hät.",
+            "status": "Wo d Überprüefig staht.",
+            "subjectId": "D ID vom Datensatz, wo überprüft wird.",
+            "summary": "Datesätz, wo wäge dim Ustritt e Überprüefig bruucht händ."
+          },
+          "departures": {
+            "blockedReason": "Warum de Ustritt nöd hät chönne abgschlosse wärde, falls das de Fall isch.",
+            "cutoffAt": "Wänn din Zuegang zu de Organisazion ändet.",
+            "effectiveAt": "Wänn de Ustritt wirksam worde isch.",
+            "lastWorkingDay": "Din letscht Arbeitstag (YYYY-MM-DD).",
+            "mode": "Wie de Ustritt igrichtet worde isch.",
+            "replacement": "D Person, wo dini Arbet übernimmt.",
+            "status": "Wo de Ustritt staht.",
+            "summary": "Dini Ustritt us de Organisazion.",
+            "timezone": "D Zitzone vom letschte Arbeitstag."
+          },
+          "departureTasks": {
+            "completedAt": "Wänn d Ufgab abgschlosse worde isch.",
+            "departureId": "D ID vom Ustritt bi de Ustritt.",
+            "kind": "Was d Ufgab macht.",
+            "status": "Wo d Ufgab staht.",
+            "summary": "D Ufgabe, wo d App für din Ustritt usgfüehrt hät."
+          },
+          "employee": {
+            "birthday": "Din Geburtstag (YYYY-MM-DD).",
+            "contractType": "Din Vertragstyp.",
+            "email": "D E-Mail-Adrässe vo dim Benutzerkonto.",
+            "endDate": "Wänn dis Aastelligsverhältnis gändet hät; läär, solangs no wiiterlouft.",
+            "firstName": "Din Vorname i dim Mitarbeiterdatensatz.",
+            "gender": "Dis Gschlächt.",
+            "isActive": "Öb din Mitarbeiterdatensatz aktiv isch.",
+            "lastName": "Din Nachname i dim Mitarbeiterdatensatz.",
+            "organization": "De Name vo de Organisazion.",
+            "personnelNumber": "Dini Personalnummere.",
+            "position": "Dini Position oder din Jobtitel.",
+            "primaryTeam": "Dis primäre Team.",
+            "pronouns": "Dini Pronome.",
+            "role": "Dini Rolle i de App: Admin, Manager oder Mitarbeiter.",
+            "startDate": "Wenn dini Aastellig aagfange hät.",
+            "summary": "Dis Mitarbeiterprofil i dere Organisation und de Name vo dim Benutzerkonto.",
+            "userFirstName": "De Vorname vo dim Benutzerkonto.",
+            "userId": "D ID vo dim Benutzerkonto.",
+            "userLastName": "De Nachname vo dim Benutzerkonto.",
+            "userName": "De Name vo dim Benutzerkonto."
+          },
+          "employmentPeriods": {
+            "endedAt": "Wenn d Periode z Änd gange isch; leer, solang si offe isch.",
+            "startedAt": "Wenn d Periode aagfange hät.",
+            "startProvenance": "Woher de Start chunnt, zum Biispiil en Iistellig oder e Wideriistellig.",
+            "status": "Öb d Periode offe oder gschlosse isch.",
+            "summary": "Jedi Periode, wo du bi de Organisation aagstellt gsi bisch."
+          },
+          "employmentTerms": {
+            "changeReason": "Warum d Bedingige feschtgleit oder gänderet worde sind.",
+            "contractType": "Din Vertragstyp.",
+            "currency": "D Währig vom Stundelohn.",
+            "hourlyRate": "Din Stundelohn under dene Bedingige.",
+            "probationEndsOn": "De letscht Tag vo dinere Probiziit (JJJJ-MM-TT).",
+            "probationStartsOn": "De erscht Tag vo dinere Probiziit (JJJJ-MM-TT).",
+            "reviewState": "Öb d Bedingige bstätigt worde sind oder no überprüeft werde müend.",
+            "status": "Öb die Bedingige in Chraft sind.",
+            "summary": "Dini Aastelligsbedingige im Lauf vo de Ziit, mit dim Stundelohn.",
+            "validFrom": "Ab wenn die Bedingige gelted.",
+            "validUntil": "Wenn die Bedingige nüme gelted; leer, solang si gelted.",
+            "weeklyContractMinutes": "Dini vertraglichi Arbetsziit pro Wuche, i Minute.",
+            "workModel": "Dis Arbetsmodell.",
+            "workPolicy": "D Arbetsrichtlinie, wo die Bedingige verwended."
+          },
+          "groups": {
+            "addedAt": "Wenn du zu de Gruppe hinzuegfüegt worde bisch.",
+            "addedBy": "Wer dich zu de Gruppe hinzuegfüegt hät.",
+            "description": "D Beschriibig vo de Gruppe.",
+            "group": "De Name vo de Gruppe.",
+            "summary": "D Mitarbeitergruppe, wo du dezueghörsch."
+          },
+          "locationSupervision": {
+            "location": "De Name vom Standort.",
+            "subarea": "De Beriich innerhalb vom Standort; leer für de ganz Standort.",
+            "summary": "D Standort und Beriich, wo du beaufsichtigsch."
+          },
+          "managers": {
+            "manager": "De Name vom Manager.",
+            "summary": "Dini Manager."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Nur für d Standorterfassig: öb din Standort erfasst wird, wenn di ii- oder usstempflisch.",
+            "effectiveFrom": "Ab wenn d Zueordnig gilt.",
+            "effectiveUntil": "Wenn d Zueordnig nüme gilt; leer, solang si gilt.",
+            "isActive": "Öb d Zueordnig aktiv isch.",
+            "policy": "De Name vo de Richtlinie; leer für d Standorterfassig.",
+            "policyKind": "D Art vo de Richtlinie: Arbet, Ferie, Fiirtig (e Fiirtigsvorlag), Fiirtigszueordnig (en einzelne Fiirtig), Fiirtigskategori, Änderig, Zueschlag, Arbetskategorieset oder Standorterfassig.",
+            "priority": "Welli Zueordnig gwünnt, wenn mehreri gelted: die höcheri Zahl gwünnt.",
+            "summary": "Jedi Richtlinie, wo für dich gilt: dir zuegordnet, dine Teams zuegordnet oder de Standard vo de Organisation."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Früecheri und aktuelli Projektzueordnige, und wenn si gulte händ."
+          },
+          "projectAssignments": {
+            "summary": "D Projekt, wo dir oder dine Teams zuegordnet sind."
+          },
+          "projectsManaged": {
+            "summary": "D Projekt, wo du leitisch."
+          },
+          "shared": {
+            "assignmentType": "Wie 's dich erreicht: dir zuegordnet (Mitarbeiter), dim Team zuegordnet (Team) oder de ganze Organisation (Organisation).",
+            "primary": "Öb 's dis primäre isch.",
+            "project": "De Name vom Projekt.",
+            "team": "De Name vom Team."
+          },
+          "skills": {
+            "category": "D Kategorie vode Fähigkeit.",
+            "expiresOn": "De Tag, wenn d Fähigkeit ablauft (JJJJ-MM-TT); leer, falls si nöd ablauft.",
+            "notes": "Notize zu dinere Fähigkeit.",
+            "skill": "De Name vode Fähigkeit.",
+            "summary": "Dini Fähigkeite und Qualifikatione."
+          },
+          "teamHistory": {
+            "summary": "Jedes Team, wo du debii gsi bisch, und wenn."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Öb du d Aafroge vom Team dörfsch genehmige.",
+            "canCreateTeams": "Öb du Teams dörfsch erstelle.",
+            "canManageTeamMembers": "Öb du d Mitglider vom Team dörfsch verwalte.",
+            "canManageTeamSettings": "Öb du d Iistellige vom Team dörfsch ändere.",
+            "grantedAt": "Wenn d Berächtigunge erteilt worde sind.",
+            "grantedBy": "Wer d Berächtigunge erteilt hät.",
+            "summary": "D Team-Berächtigunge, wo du häsch.",
+            "team": "S Team, für das d Berächtigunge gelted; leer für jedes Team vode Organisation."
+          },
+          "teams": {
+            "addedBy": "Wer dich zum Team hinzuegfüegt hät.",
+            "memberSince": "Sit wenn du im Team bisch.",
+            "summary": "D Teams, wo du jetzt debii bisch."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Dis Konto bim Kaländerdienst.",
+            "calendarId": "De Kaländer, wo d App i däm Konto brucht.",
+            "conflictDetectionEnabled": "Öb d App de Kaländer uf Terminkonflikt überprüft.",
+            "createdAt": "Wenn du de Kaländer verbunde häsch (UTC).",
+            "lastSyncAt": "Wenn d App zletscht mit em Kaländer synchronisiert hät (UTC).",
+            "provider": "De Kaländerdienst, zum Biispil google, microsoft365 oder icloud.",
+            "pushEnabled": "Öb d App dini Abweseheite zu däm Kaländer hinzuefüegt.",
+            "summary": "D Kaländer, wo du mit de App verbunde häsch. Zuegriffstoken sind nie debii.",
+            "updatedAt": "Wenn d Verbindig zletscht gänderet worde isch (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "D ID vo dim Konto bim Chat-Dienst.",
+            "displayName": "Din Aazeigename bim Chat-Dienst.",
+            "email": "Dini E-Mail-Adrässe bim Chat-Dienst, falls vorhande.",
+            "isActive": "Öb d Verknüpfig aktiv isch.",
+            "lastSeenAt": "Wenn du d App zletscht über das Konto brucht häsch (UTC).",
+            "linkedAt": "Wenn du s Konto verknüpft häsch (UTC).",
+            "platform": "De Chat-Dienst: slack, teams, telegram oder discord.",
+            "summary": "Dini Chat-Konte, wo mit de App verknüpft sind, damit du si über Slack, Microsoft Teams, Telegram oder Discord bruche chasch.",
+            "username": "Din Benutzername bim Chat-Dienst.",
+            "workspaceId": "D ID vom Workspace oder Tenant, zu dem dis Konto ghört, falls de Dienst eini hät."
+          },
+          "icsFeeds": {
+            "createdAt": "Wenn d Verknüpfig erstellt worde isch (UTC).",
+            "includeApproved": "Öb de Feed genehmigti Abweseheite aazeigt.",
+            "includePending": "Öb de Feed Abweseheite aazeigt, wo no uf d Genehmigung warted.",
+            "isActive": "Öb de Link no funktioniert.",
+            "lastUsedAt": "Wenn e Kaländer-App de Feed zletscht gläse hät (UTC).",
+            "revokedAt": "Wenn de Link deaktiviert worde isch (UTC).",
+            "summary": "Dini Kaländer-Feed-Links, womit e Kaländer-App dini Abweseheite aboniere cha. De gheim Link selber isch nie debii."
+          },
+          "kioskPin": {
+            "pinSet": "Öb en Kiosk-PIN für dich gsetzt isch.",
+            "setAt": "Wenn de PIN zletscht gsetzt worde isch (UTC).",
+            "setBy": "Wer de PIN gsetzt hät.",
+            "summary": "Öb du en PIN zum Iistämpfle amene Kiosk-Terminal häsch. De PIN selber wird nie läsbar gspycheret und isch nöd debii."
+          },
+          "shared": {
+            "isActive": "Öb d Verbindig aktiv isch."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "D Siite i de App, wo d Benachrichtigung druf verlinkt.",
+            "createdAt": "Wänn du d Benachrichtigung übercho häsch (UTC).",
+            "entityId": "D ID vo däm Datensatz.",
+            "entityType": "D Art vom Datensatz, wo sich d Benachrichtigung druf bezieht, zum Biispil en Absänz.",
+            "isRead": "Öb du d Benachrichtigung gläse häsch.",
+            "message": "De Text vo de Benachrichtigung.",
+            "metadata": "Wiiteri Details, wo i de Benachrichtigung gsi sind, als JSON.",
+            "readAt": "Wänn du si gläse häsch (UTC).",
+            "summary": "D Benachrichtigunge, wo du i de App übercho häsch, genau so wie du si übercho häsch.",
+            "title": "De Titel vo de Benachrichtigung.",
+            "type": "Um was es i de Benachrichtigung gaht, zum Biispil approval_request_submitted."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "Für es Chrankezüügnis: de letscht Tag vo de Absänz (YYYY-MM-DD).",
+            "absenceId": "Für es Chrankezüügnis: d ID vo de Absänz, wo betroffe isch, i absences.json.",
+            "absenceStartDate": "Für es Chrankezüügnis: de erst Tag vo de Absänz (YYYY-MM-DD).",
+            "category": "D Dokumentekategori: contract, payslip, certificate, sick_note oder other.",
+            "documentDate": "S Datum vom Dokument (YYYY-MM-DD).",
+            "expiryDate": "De Tag, wo s Dokument ablauft (YYYY-MM-DD), zum Biispil bineme Zertifikat.",
+            "file": "Wo s Originalfile i däm Archiv liit.",
+            "fileName": "De Dateiname, wie n er ufeghlade worde n isch.",
+            "mimeType": "De Dateityp, zum Biispil application/pdf.",
+            "payPeriodMonth": "Für en Lohnabrechnig: de Monet (1 bis 12), für de si gilt.",
+            "payPeriodYear": "Für en Lohnabrechnig: s Jahr, für das si gilt.",
+            "sizeBytes": "D Dateigrössi, in Bytes.",
+            "summary": "D Dokument i diim Personaldossier. D Dateie sälber sind im Ordner personnel_file nach Kategori gordnet.",
+            "title": "De Titel vom Dokument.",
+            "uploadedBy": "Wär s Dokument ufeghlade hät.",
+            "visibility": "Wär s Dokument gseh cha; «shared» heisst, dass du s i diim Dossier gseh chasch."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Wänn über d Afrag entschide worde n isch (UTC).",
+            "approver": "Wär über d Afrag entschide hät.",
+            "lifecycleStatus": "De Status vo de Afrag, inklusive öb si abbroche worde n isch.",
+            "requestCreatedAt": "Wänn d Afrag gstellt worde n isch (UTC).",
+            "requestId": "D ID vo de Afrag i de App.",
+            "requestStatus": "De Entscheid über d Afrag: pending, approved oder rejected.",
+            "requestType": "Was aagfragt worde n isch: swap (Schichte tuusche), assignment (en Schicht übernäh) oder pickup (en offigi Schicht übernäh).",
+            "shiftDate": "De Tag vo de Schicht, wo d Afrag betrifft (YYYY-MM-DD).",
+            "shiftEndTime": "Wänn die Schicht ufhört, als lokali Uhrziit (HH:mm).",
+            "shiftStartTime": "Wänn die Schicht aafangt, als lokali Uhrziit (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "Dini Notiz zur Afrag.",
+            "reason": "Diin Grund für d Afrag.",
+            "reasonCategory": "D Art vom Grund, zum Biispil sick, emergency, childcare oder other.",
+            "rejectionReason": "Warum d Afrag abglehnt worde n isch.",
+            "summary": "D Schichtafrage, wo du gstellt häsch.",
+            "swapPartner": "D Kollegin oder de Kolleg, wo du gfragt häsch zum Tuusche oder zum d Schicht übernäh."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "D Kollegin oder de Kolleg, wo d Afrag gstellt hät.",
+            "summary": "Afrage, wo Kolleginne und Kollege a dich gstellt händ, wie zum Biispil zum Tuusche oder zum en Schicht übernäh. Ihri Gründ, Notize und Schichte sind nöd debii: Schichtdatum und -ziite werdet nur aazeigt, wänn d Schicht dir ghört."
+          },
+          "shifts": {
+            "date": "De Tag vo de Schicht (YYYY-MM-DD).",
+            "endTime": "Wänn d Schicht ufhört, als lokali Uhrziit am Arbetsplatz (HH:mm).",
+            "location": "De Ort vo de Schicht.",
+            "notes": "D Notiz zu de Schicht.",
+            "publishedAt": "Wänn d Schicht veröffentlicht worde n isch (UTC).",
+            "publishedBy": "Wär d Schicht veröffentlicht hät.",
+            "startTime": "Wänn d Schicht aafangt, als lokali Uhrziit am Arbetsplatz (HH:mm).",
+            "status": "Öb d Schicht no en Entwurf isch oder für diich veröffentlicht worde-n-isch.",
+            "subarea": "De Beriich innerhalb vom Standort.",
+            "summary": "D Schichte, wo du iiteilt gsi bisch.",
+            "template": "D Schichtvorlag, wo d Schicht druus erstellt worde-n-isch."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Wänn dini Standört aazeigt worde sind (UTC).",
+            "exportId": "Für en Export: d ID vom Export.",
+            "kind": "Wie si aazeigt worde sind: i de Detail vonere Arbetsperiode (work_period_detail) oder imene Export (data_export).",
+            "summary": "Wär ussert diir dini Standört gseh hät und wänn: ei Ziile pro aazeigti Arbetsperiode oder ei Ziile pro Export.",
+            "viewer": "Wär dini Standört aazeigt überchoo hät.",
+            "workPeriodId": "D ID vo de aazeigte Arbetsperiode, in time.json > work_periods.",
+            "workPeriodStartedAt": "Wänn die Arbetsperiode aagfange hät (UTC).",
+            "workPeriodUtcOffsetMinutes": "De UTC-Offset bim Iistemple vo dere Arbetsperiode, in Minute."
+          },
+          "consents": {
+            "consentId": "D ID vo de Zuestimmig i de App.",
+            "grantedAt": "Wänn du dini Zuestimmig gee häsch (UTC).",
+            "summary": "Jedi Zuestimmig, wo du für d Standorterfassig gee häsch, und wänn du si widerruefe häsch.",
+            "withdrawnAt": "Wänn du dini Zuestimmig widerruefe häsch (UTC); läär, solang si no gilt."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Wänn du gantwortet häsch (UTC).",
+            "summary": "D Ziite, wo du de Standorthinwiis mit \"nöd jetzt\" beantwortet häsch."
+          },
+          "shared": {
+            "noticeVersion": "D Version vom Standorthinwiis, wo du beantwortet häsch.",
+            "purposeStatement": "Worum d Organisation Standört erfasst, wie's im Hinwiis gstande-n-isch.",
+            "retentionDays": "Wie vill Tääg d Standört bhalte wärded, wie's im Hinwiis gstande-n-isch."
+          },
+          "stamps": {
+            "accuracyMeters": "Wie gnau de Standort isch, in Meter, wie's dis Gräät gmeldet hät.",
+            "capturedAt": "Wänn de Standort bim Stempfle erfasst worde-n-isch (UTC).",
+            "clockEvent": "Öb de Standort bim Iistemple (clock_in) oder bim Uusstemple (clock_out) erfasst worde-n-isch.",
+            "consentId": "D ID vo de Zuestimmig in consents, under welere de Standort erfasst worde-n-isch.",
+            "createdAt": "Wänn de Standort gspeicheret worde-n-isch (UTC).",
+            "fixedAt": "Wänn dis Gräät de Standort ermittlet hät (UTC); cha chli früener sii als s Stempfle.",
+            "latitude": "D Breiti, in Dezimalgrad.",
+            "longitude": "D Längi, in Dezimalgrad.",
+            "purgeAt": "Wänn de Standort glöscht wird (UTC).",
+            "summary": "D Standört, wo bim Ii- oder Uusstemple erfasst worde sind. Jedi wird automatisch bi purge_at glöscht.",
+            "timeEntryId": "D ID vom Ii- oder Uusstemple in time.json > time_entries.",
+            "utcOffsetMinutes": "De UTC-Offset vom Stempelereignis, in Minute (120 bedüütet UTC+2)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "D ID vom Uusstemple, wo d App erfasst hät, in time_entries.",
+            "cutoffTime": "D Ziit, wo du uusgstempflet worde bisch (UTC).",
+            "maxUninterruptedMinutes": "D Maximalziit, in Minute, wo du ohni Pause iigstempflet bliibe döfsch.",
+            "processedAt": "Wänn d App diich uusgstempflet hät (UTC).",
+            "startTime": "Wänn d Arbetsperiode aagfange hät (UTC).",
+            "summary": "D Ziite, wo d App diich uusgstempflet hät, will du länger als erlaubt iigstempflet blibe bisch.",
+            "timezone": "D Ziitzone vo de Arbetsperiode.",
+            "utcOffsetMinutes": "De UTC-Offset vom Uusstemple, in Minute."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Worum d Aabassig storniert worde-n-isch.",
+            "cancelledAt": "Wänn d Aabassig storniert worde-n-isch (UTC); läär, wänn si no zellt.",
+            "cancelledBy": "Wär d Aabassig storniert hät.",
+            "day": "De Tag, a däm d Aabassig zellt (YYYY-MM-DD).",
+            "kind": "D Art vo de Aabassig: opening_balance oder overtime_payout.",
+            "minutes": "D Minute, wo dim Saldo hinzuegfüegt (positiv) oder abzoge (negativ) worde sind.",
+            "reason": "Worum d Aabassig gmacht worde-n-isch.",
+            "recordedAt": "Wann die Anpassung erfasst wurde (UTC).",
+            "recordedBy": "Wer die Anpassung erfasst hat.",
+            "summary": "Manuelle Änderungen an Ihrem Arbeitszeitsaldo, wie ein Anfangssaldo oder ausbezahlte Überstunden, einschliesslich stornierter Änderungen."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Wann die App die Pause hinzugefügt hat (UTC).",
+            "adjustedDurationMinutes": "Die Dauer des Zeitraums nach dem Hinzufügen der Pause, in Minuten.",
+            "breakInsertedAt": "Wo im Zeitraum die Pause eingefügt wurde (UTC).",
+            "breakInsertedMinutes": "Wie lange die hinzugefügte Pause ist, in Minuten.",
+            "originalDurationMinutes": "Die Dauer des Zeitraums vor dem Hinzufügen der Pause, in Minuten.",
+            "originalEndTime": "Das Ende des Zeitraums vor dem Hinzufügen der Pause (UTC).",
+            "policy": "Die Pausenregel, die die Pause vorgeschrieben hat.",
+            "requiredBreakMinutes": "Die von der Regel vorgeschriebene Pause, in Minuten.",
+            "summary": "Pausen, die die App zu einer Arbeitsperiode hinzugefügt hat, weil die gesetzlich vorgeschriebene Pause fehlte.",
+            "workingMinutesThreshold": "Die Arbeitszeit in Minuten, nach der die Regel die Pause vorschreibt."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "Wie lange Sie tatsächlich unter der Ausnahme gearbeitet haben, in Minuten.",
+            "approvedAt": "Wann die Ausnahme genehmigt wurde (UTC).",
+            "approver": "Wer über die Ausnahme entschieden hat.",
+            "exceptionType": "Von welcher Regel die Ausnahme stammt, zum Beispiel rest_period oder overtime_daily.",
+            "plannedDurationMinutes": "Die Arbeitszeit, für die die Ausnahme beantragt wurde, in Minuten.",
+            "reason": "Warum die Ausnahme beantragt wurde.",
+            "rejectedAt": "Wann die Ausnahme abgelehnt wurde (UTC).",
+            "rejectionReason": "Warum die Ausnahme abgelehnt wurde.",
+            "status": "Ob die Ausnahme ausstehend, genehmigt, abgelehnt, abgelaufen oder verwendet ist.",
+            "summary": "Für Sie beantragte Ausnahmen von Arbeitszeitregeln, wie eine kürzere Ruhezeit oder zusätzliche Überstunden.",
+            "usedAt": "Wann Sie unter der Ausnahme gearbeitet haben (UTC).",
+            "validFrom": "Ab wann die Ausnahme gilt (UTC).",
+            "validUntil": "Bis wann die Ausnahme gilt (UTC).",
+            "wasUsed": "Ob Sie unter der Ausnahme gearbeitet haben."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Wann die Korrektur genehmigt wurde (UTC).",
+            "approvedBy": "Wer die Korrektur genehmigt hat.",
+            "kind": "Was die Korrektur ändert.",
+            "proposedAt": "Wann die Korrektur vorgeschlagen wurde (UTC).",
+            "proposedBy": "Wer die Korrektur vorgeschlagen hat.",
+            "reason": "Warum die Korrektur vorgeschlagen wurde.",
+            "resolvedAt": "Wann der Vorschlag abgeschlossen wurde (UTC).",
+            "resolvedBy": "Wer den Vorschlag abgeschlossen hat.",
+            "status": "Wo der Vorschlag steht, zum Beispiel vorgeschlagen, genehmigt, angewendet oder abgelehnt.",
+            "summary": "Vorgeschlagene Korrekturen älterer Arbeitsaufzeichnungen, zum Beispiel ein fehlendes Ausstempeln, und was daraus wurde."
+          },
+          "shared": {
+            "actualMinutes": "Die von Ihnen gearbeiteten Minuten, wie sie für den Saldo angerechnet werden.",
+            "balanceMinutes": "Ihr Saldo in Minuten: positiv bedeutet Überstunden, negativ noch geschuldete Zeit.",
+            "computedAt": "Wann die App diese Zahlen zuletzt berechnet hat (UTC).",
+            "requiredMinutes": "Die Minuten, die Sie gemäss Ihrer Arbeitszeitregelung arbeiten sollten.",
+            "workPeriodId": "Die ID der Arbeitsperiode in work_periods."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "Der Zuschlagssatz als Dezimalzahl (0.25 bedeutet 25 %).",
+            "baseMinutes": "Die im Zeitraum gearbeiteten Minuten.",
+            "calculatedAt": "Der Zeitpunkt, für den der Zuschlag gilt (UTC).",
+            "calculationDetails": "Wie der Zuschlag berechnet wurde, als JSON.",
+            "qualifyingMinutes": "Die Minuten, die für den Zuschlag berechtigt sind.",
+            "summary": "Für Ihre Arbeit berechnete Zuschläge, zum Beispiel für Nacht-, Sonntags- oder Feiertagsarbeit.",
+            "surchargeMinutes": "Die als Zuschlag gutgeschriebenen zusätzlichen Minuten.",
+            "surchargeModel": "Das angewendete Zuschlagsmodell.",
+            "surchargeRule": "D Regle vom Modell, wo aagwändet worde isch."
+          },
+          "timeEntries": {
+            "createdBy": "Wär de Iitrag erfasst hät: du oder d Person, wo ihn für dich erfasst hät.",
+            "deviceInfo": "S Gräat oder de Browser, womit du de Iitrag erfasst häsch; läar, wänn öpper anderscht ihn erfasst hät.",
+            "ipAddress": "D IP-Adrässe vom Gräat, womit du de Iitrag erfasst häsch; läar, wänn öpper anderscht ihn erfasst hät.",
+            "isSuperseded": "Öb e spöteri Korrektur dä Iitrag ersetzt hät.",
+            "location": "De Standort, wo bim Iitrag erfasst worde isch, als Ortsname oder Koordinate.",
+            "notes": "D Notiz, wo zum Iitrag gschribe worde isch.",
+            "replacesEntryId": "Für e Korrektur: d ID vom Iitrag, wo ersetzt wird.",
+            "summary": "Jedes Iistämpfle, Usstämpfle und jedi Korrektur, wo für dich erfasst worde isch. Iiträg wärdet nie gänderet: E Korrektur isch en neue Iitrag, wo de alti ersetzt.",
+            "supersededById": "D ID vo de Korrektur, wo dä Iitrag ersetzt hät.",
+            "timestamp": "De Ziitpunkt, für de de Iitrag staht, i UTC.",
+            "timezone": "D Ziitzone, wo de Iitrag erfasst worde isch, zum Biispil Europe/Berlin.",
+            "timezoneSource": "Woher d Ziitzone chunt, zum Biispil vo dim Gräat oder us de Iistellige vo de Organisation.",
+            "type": "Was de Iitrag erfasst: clock_in, clock_out oder correction.",
+            "utcOffsetMinutes": "De UTC-Offset am Ort vo de Erfassig, i Minute (120 bedüütet UTC+2). Zells zum Ziitstämpfel dezue für d Lokalziit."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "D Minute, wo dur Saldokorrekture dezuechoo oder abzoge worde sind.",
+            "computedFromDate": "De erschti Tag, wo de Saldo zellt (JJJJ-MM-TT).",
+            "computedThroughDate": "De letschti Tag, wo de Saldo zellt (JJJJ-MM-TT).",
+            "summary": "Diin aktuelle Arbetsziitsaldo: d Ziit, wo gschaffet häsch, im Vergliich zu de Sollziit."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Öb d Periode abgschlosse isch, sodass sich d Zahle nüme ändered.",
+            "periodEnd": "De letschti Tag vo de Periode (JJJJ-MM-TT).",
+            "periodStart": "De erschti Tag vo de Periode (JJJJ-MM-TT).",
+            "periodType": "D Duur vo de Periode: Monet oder Jahr.",
+            "summary": "Diin Arbetsziitsaldo pro Monet und pro Jahr."
+          },
+          "workOperations": {
+            "actor": "D Person, wo d Änderig gmacht hät.",
+            "actorKind": "Wär d Änderig gmacht hät: e Person (human), d App sälber (system), en Kiosk oder unbekannt bi alte Datensätz.",
+            "createdAt": "Wänn d Änderig gmacht worde isch (UTC).",
+            "kind": "Was gmacht worde isch, zum Biispil Iistämpfle, e Bearbeitig oder e Löschig.",
+            "summary": "Es Protokoll vo jedere Änderig a diine Arbetsperiode: was gmacht worde isch und dur wänn.",
+            "writer": "Weli Komponänte vo de App d Änderig gmacht hät, zum Biispil Usstämpfle i de Web-App, en Import oder e Bearbeitig dur en Administrator."
+          },
+          "workPeriods": {
+            "approvalStatus": "Öb d Periode gnähmigt, abglehnt oder no offe isch.",
+            "breakStartedAt": "Wänn diini aktuelli Pause aagfange hät (UTC); läar, wänn du nöd i de Pause bisch.",
+            "breakStartedZone": "D Ziitzone, wo d Pause drin gstartet worde isch.",
+            "clockInEntryId": "D ID vom Iistämpfle i time_entries.",
+            "clockOutEntryId": "D ID vom Usstämpfle i time_entries.",
+            "deletedAt": "Wänn d Periode glöscht worde isch (UTC); läar, wänn si nöd glöscht worde isch.",
+            "deletedBy": "Wär d Periode glöscht hät.",
+            "deletionReason": "Worum d Periode glöscht worde isch.",
+            "drivenDistanceKm": "D Strecki, wo während de Arbet gfahre worde isch, i Kilometer: Endstand minus Aafangsstand oder di direkt iigäbeni Strecki, wänn s kein Aafangsstand gha hät.",
+            "durationMinutes": "Wie lang du gschaffet häsch, i Minute.",
+            "endTime": "Wänn d Arbet ufghört hät (UTC); läar, solang du no iigstämpflet bisch.",
+            "endUtcOffsetMinutes": "De UTC-Offset vom Usstämpfle, i Minute.",
+            "isActive": "Öb du für die Periode no iigstämpflet bisch.",
+            "isBillable": "Öb d Arbet eme Chund verrechnet wärde chan.",
+            "licencePlate": "S Kontrollschild vom Betriebsfahrzüüg, wo du gfahre häsch; läar bim eigene Fahrzüüg.",
+            "odometerEndKm": "De Kilometerstand vom Fahrzüüg bim Ändi vo de Arbet, i Kilometer.",
+            "odometerStartKm": "De Kilometerstand vom Fahrzüüg bim Aafang vo de Arbet, i Kilometer.",
+            "pendingDurationMinutes": "Für e Änderig, wo uf d Gnähmigung wartet: di aagfordereti Duur, i Minute.",
+            "pendingEndTime": "Für e Änderig, wo uf d Gnähmigung wartet: s aagforderete Ändi (UTC).",
+            "pendingReason": "Worum d Änderig beaatreit worde isch.",
+            "pendingRequestedAt": "Wänn d Änderig aagforderet worde isch (UTC).",
+            "pendingRequestedBy": "Wär d Änderig aagforderet hät.",
+            "pendingStartTime": "Für en Änderig, wo uf d Gnämigung wartet: de aagfordereti Start (UTC).",
+            "project": "S Projekt, wo d Arbet druf buecht worde isch.",
+            "startTime": "Wänn d Arbet aagfange hät (UTC).",
+            "startUtcOffsetMinutes": "De UTC-Versatz bim Iistämpfle, i Minute (120 bedütet UTC+2).",
+            "summary": "Dini Arbetsperiode, jedi vom Ii- bis zum Uusstämpfle, mit allfällige Änderige, wo uf d Gnämigung warted.",
+            "task": "D Projektaufgab, wo d Arbet druf buecht worde isch.",
+            "vehicleKind": "S Fahrzüüg, wo du während de Arbet gfaare bisch: organization für es Fahrzüüg vo de Organisation, own für dis eigne Fahrzüüg; leer, wänn kes erfasst worde isch.",
+            "vehicleName": "De Name vom Organisationsfahrzüüg, wo du gfaare bisch; leer bim eigne Fahrzüüg.",
+            "workCategory": "D Art vo de Arbet, wie si d Organisation benennt.",
+            "workLocationType": "Wo du gschaffet häsch, zum Bispil Büro, Dihei oder Remote."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "Wänn d Verletzig bestätigt worde isch (UTC).",
+            "acknowledgedBy": "Wär d Verletzig bestätigt hät.",
+            "acknowledgedNote": "D Notiz, wo gschribe worde isch, wo d Verletzig bestätigt worde isch.",
+            "details": "D Zahle hinder de Verletzig, als JSON, zum Bispil d gleistete Stunde und d Limite.",
+            "policy": "D Arbetsrichtlinie, wo d Regle devo verletzt worde isch.",
+            "summary": "Zite, wo dini Arbet geg e Regle vo dinere Arbetsrichtlinie verstosse hät, zum Bispil e fählendi Pause oder en z lange Tag.",
+            "violatedAt": "Wänn d Regle verletzt worde isch (UTC).",
+            "violationType": "Weli Regle verletzt worde isch."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "D Minute, wo für Abweseheite wie Ferie oder Chrangghet guetgschribe worde sind.",
+            "summary": "Dis Arbetszitsaldo pro Jahr, wie s vonere früenere Version vo de App berächnet worde isch.",
+            "year": "S Jahr."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "D ID vom Bricht, wo korrigiert wird.",
+            "reportId": "D ID vom korrigierende Bricht i de Bricht.",
+            "sourceReportId": "D ID vom Bricht, wo d Korrektur devo kopiert worde isch: s Original oder sini neuschti Korrektur.",
+            "summary": "Bricht, wo en bereits exportierte oder rückvergüetete Bricht korrigiered."
+          },
+          "allowanceOverrides": {
+            "amount": "De festgleiti Betrag.",
+            "calculationBasis": "Wie de Betrag berächnet worde isch.",
+            "evidence": "Woruf de Betrag basiert.",
+            "kind": "Weli Entschädigung festgleit worde isch: mileage oder per_diem.",
+            "revokedAt": "Wänn de Betrag zruggzoge worde isch (UTC); leer, wänn er no gilt.",
+            "revokedBy": "Wär de Betrag zruggzoge hät, mit em damalige Name.",
+            "scope": "Weli Teil vo de Usgab de Betrag deckt, als JSON.",
+            "situation": "Worum d Regle kein Betrag ergee händ, als JSON.",
+            "summary": "Kilometer- oder Tagspauschale, wo en Spese-Administrator vo Hand festgleit hät, wo d Regle kein Betrag ergee händ."
+          },
+          "claimDecisions": {
+            "action": "De Entscheid: gnämiget oder abglehnt.",
+            "actor": "Wär de Entscheid troffe hät.",
+            "approver": "D Person für d Gnämigung, wo d Aaforderig zuegwise worde isch.",
+            "comment": "De Kommentar, wo bim Entscheid gschribe worde isch.",
+            "createdAt": "Wänn de Entscheid troffe worde isch (UTC).",
+            "summary": "Jede Entscheid zu dine Speseaaforderige."
+          },
+          "claimReceipts": {
+            "summary": "D Beleg, wo an dini Aaforderige aaghängt sind. D Dateie sälber sind im Ordner claim-receipts."
+          },
+          "claims": {
+            "approver": "Wär über d Aaforderig entschide hät.",
+            "calculatedAmount": "De Betrag zur Rückvergüetig, wie berächnet.",
+            "calculatedCurrency": "D Währig vom Betrag zur Rückvergüetig.",
+            "destinationCity": "D Stadt, wo du anegreist bisch.",
+            "destinationCountry": "S Land, wo du anegreist bisch.",
+            "notes": "Dini Notize zur Aaforderig.",
+            "status": "Öb d Aaforderig en Entwurf isch, iigreicht, gnämiget oder abglehnt.",
+            "summary": "Dini Spesenabrechnige, wo mit em früenere Einzelspese-Formular gmacht worde sind.",
+            "tripDateTimeZone": "D Zitzone, wo d Reisetäg drin zellt wärded.",
+            "tripEnd": "S Ändi vo de Reis (UTC).",
+            "tripStart": "De Start vo de Reis (UTC).",
+            "type": "D Art vo de Spese: receipt, mileage oder per_diem (Tagägeld)."
+          },
+          "currencyConversions": {
+            "basis": "Wie de Betrag umgrächnet worde isch: was dinere Charte tatsächlich belastet worde isch (card_charge), en Churs, wo en Administrator feschtgleit hät (manual_rate), oder en veröffentlichte Referänzchurs (reference_rate).",
+            "chargedAmount": "Für card_charge: de Betrag, wo dinere Charte belastet worde isch, i de Zielwährig.",
+            "evidenceReceiptFile": "Für card_charge: d Quittigsdatei i däm Archiv, wo d Belaschtig aazeigt.",
+            "rate": "De Wächselchurs: 1 Eiheit vo rate_base_currency entspricht so vil Eiheite vo rate_quote_currency.",
+            "rateBaseCurrency": "D Basiswährig vom Churs.",
+            "rateDate": "De Tag, vo däm de Churs stammt (YYYY-MM-DD).",
+            "rateEvidence": "Wo de Churs überprüft wärde cha, wie z. B. e Zile uf em Kontouszug.",
+            "rateQuoteCurrency": "D Notierigswährig vom Churs.",
+            "recordedBy": "Wär d Umrächnig erfasst hät.",
+            "referenceExpenseDate": "Für reference_rate: de Spesetag, für de de Churs usgwählt worde isch (YYYY-MM-DD).",
+            "referenceSource": "Für reference_rate: de bruchti veröffentlichti Churs, als JSON.",
+            "sourceCurrency": "D Währig, wo devo umgrächnet worde isch.",
+            "summary": "Wie Spese inere Främdwährig i dini Rückerstattigswährig umgrächnet worde sind.",
+            "targetCurrency": "D Währig, wo dri umgrächnet worde isch."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Wänn de Entwurf verschobe worde isch (UTC).",
+            "convertedBy": "Wär de Entwurf verschobe hät.",
+            "flags": "Alles, wo nöd eso wie's isch hät chönne verschobe wärde, als JSON.",
+            "legacyFacts": "Was de Entwurfsatrag bim Verschiebe enthalte hät, als JSON.",
+            "summary": "Entwurfsaträg us em früenere Atragsformular, wo inen Bricht verschobe worde sind."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Wänn's bestätigt oder nüme iigschlosse worde isch (UTC).",
+            "endedBy": "Wär's bestätigt, entfernt oder verworfe hät.",
+            "includedAt": "Wänn de Bricht zum Lauf hinzuegfüegt worde isch (UTC).",
+            "lines": "D Beträg, wo a d Lohnbuechhaltig übermittlet worde sind, mit ihrne Lohnarte, als JSON.",
+            "state": "De Status vo de Ufnahm: included, confirmed, removed, discarded oder superseded dur en spätere Lauf.",
+            "summary": "Bricht, wo über d Lohnbuechhaltig a dich usbezahlt worde sind."
+          },
+          "perDiemItineraries": {
+            "endDate": "De Tag, wo du zruggcho bisch (YYYY-MM-DD).",
+            "endTime": "D Lokalzit, wo du zruggcho bisch (HH:mm).",
+            "endTimeZone": "D Zitzone vo de Rückkehr.",
+            "meals": "D Moolzite, wo dir pro Tag zur Verfüegig gstellt worde sind, als JSON; si reduziered d Pauschale.",
+            "overnight": "Öb und wie du übernachtet häsch.",
+            "policy": "D Asätz, wo d Pauschale berächnet händ, als JSON, feschtgleit bim Iireiche.",
+            "prolongedWorkplace": "Öb du für längeri Zit am gliche Ort usswärts gschafft häsch, was d Pauschale reduziere cha.",
+            "startDate": "De Tag, wo du abgreist bisch (YYYY-MM-DD).",
+            "startTime": "D Lokalzit, wo du abgreist bisch (HH:mm).",
+            "startTimeZone": "D Zitzone vo de Abreis.",
+            "summary": "D Reise, wo dini Tagägelder (per diem) devo berächnet worde sind."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "Wär d Erlaubnis erteilt hät.",
+            "evidence": "D interni Notiz vom Spesenadministrator zum Beleg.",
+            "project": "S Projekt.",
+            "reason": "D interni Begründig vom Spesenadministrator für d Erlaubnis.",
+            "summary": "Berächtigunge, um dini Spese uf es Projekt z bueche für Täg, wo d App kei Ufzeichnig hät, dass du dra gschafft häsch.",
+            "validFrom": "De erschti abdeckti Spesetag (YYYY-MM-DD).",
+            "validTo": "De letschti abdeckti Spesetag (YYYY-MM-DD)."
+          },
+          "reportItems": {
+            "accountingReference": "E Referänz für d Buechhaltig, wie zum Bispil e Rächnigsnummere.",
+            "category": "D Spesekategorie, zum Bispil Hotel, Zug oder Moolzite.",
+            "description": "Dini Beschriibig vo de Uusgab.",
+            "expenseDate": "De Tag vo de Uusgab (YYYY-MM-DD).",
+            "mileageDistanceKm": "Für d'Kilometer: d'Distanz, in Kilometer.",
+            "mileagePolicy": "Für d'Kilometer: d'Ansätz, wo für d'Priisberächnig gulte händ, als JSON, feschtgleit bim Iireiche.",
+            "mileageRoute": "Für d'Kilometer: d'Strecki, wo du gfahre bisch.",
+            "mileageVehicle": "Für d'Kilometer: d'Art vom Fahrzüüg.",
+            "paidBy": "Wer zahlt hät: du (Mitarbeiter) oder d'Organisation (Firma).",
+            "position": "D'Position vo de Uusgab im Bricht.",
+            "projectInherits": "Öb d'Uusgab s'Projekt vo de Reis statt em eigene bruucht.",
+            "receiptExceptionReason": "Dini Erchlärig, warum en Beleg fählt.",
+            "summary": "D'Uusgabe i dine Bricht.",
+            "type": "D'Art vo de Uusgab: receipt, mileage oder per_diem (Tagespauschale)."
+          },
+          "reportReceipts": {
+            "summary": "D'Beleg, wo a d'Uusgabe i dine Bricht aaghängt sind. D'Dateie selber sind im Ordner vo dere Kategorie."
+          },
+          "reports": {
+            "kind": "Öb de Bricht für e Reis (trip) oder für Uusgabe ohni Reis (standalone) isch.",
+            "project": "S'Projekt vo de Reis, wo d'Uusgabe bruuche, usser si gänd es eiges aa.",
+            "reimbursementCurrency": "D'Währig, wo du drin rückvergüetet wirsch.",
+            "status": "De Status vom Bricht: draft, submitted, approved, rejected oder zrugggschickt für Änderige.",
+            "submissionCount": "Wie hüüfig de Bricht iigreicht worde isch.",
+            "summary": "Dini Reisespesebricht, wo jewils d'Uusgabe vonere Reis oder einzelni Uusgabe zämefassed.",
+            "tripDestinations": "D'Ort, wo du anegreist bisch, als JSON.",
+            "tripPurpose": "De Zweck vo de Reis.",
+            "tripTimeZone": "D'Zitzone, i dere d'Reisetäg zellt werded."
+          },
+          "reviewCycleClosures": {
+            "actor": "Wer's beendet hät.",
+            "createdAt": "Wänn's beendet worde isch (UTC).",
+            "kind": "Wie d'Iireichig beendet worde isch: returned, withdrawn oder reopened.",
+            "note": "D'Notiz, wo bim Beende gschribe worde isch.",
+            "submissionCycle": "Weli Iireichig vom Bricht es gsi isch: 1 isch die erschti.",
+            "summary": "Iireichige vo dine Bricht, wo ohni e definitivi Entscheidig beendet worde sind: zrugggschickt, zruggzoge oder widereröffnet."
+          },
+          "reviewNotes": {
+            "body": "De Kommentar.",
+            "closureId": "D'ID vo de zrugggschickte Iireichig in review_cycle_closures.",
+            "summary": "D'Kommentär vome Prüefer zu einzelne Uusgabe vome Bricht, wo dir zrugggschickt worde isch."
+          },
+          "settlementEntries": {
+            "amount": "De Betrag.",
+            "balanceBefore": "Was vor dere Zahlig no gschuldet gsi isch.",
+            "basisSubmissionCycle": "Uf welere genehmigte Iireichig vom Bricht d'Zahlig basiert.",
+            "exportBatchId": "D'ID vom Spesenexport, für de d'Zahlig erfasst worde isch.",
+            "kind": "Öb dir s'Geld uszahlt worde isch (reimbursement) oder du Geld zruggzahlt häsch (recovery).",
+            "note": "D'Notiz, wo mit de Zahlig gschribe worde isch.",
+            "occurredOn": "De Tag, wo s'Geld überwise worde isch (YYYY-MM-DD).",
+            "recordedAt": "Wänn d'Zahlig erfasst worde isch (UTC).",
+            "recordedBy": "Wer d'Zahlig erfasst hät.",
+            "reference": "D'Zahligsreferenz, wie z.B. e Banküberwiisigsreferenz.",
+            "sourceType": "Für was s'Geld isch: en Bricht oder en Aaspruch us em früenere Formular (legacy_claim).",
+            "summary": "Geld, wo dir für genehmigti Uusgabe zahlt worde isch, oder wo du nachere Überzahlig zruggzahlt häsch."
+          },
+          "shared": {
+            "authorizedAt": "Wänn's autorisiert worde isch (UTC).",
+            "authorizedBy": "De Spese-Administrator, wo's autorisiert hät, mit sim damalige Name.",
+            "claimId": "D'ID vom Aaspruch in claims.",
+            "currency": "D'Währig, als drüstelligi Code wie z.B. EUR.",
+            "decidedAt": "Wänn's zletscht genehmigt, abglehnt oder zrugggschickt worde isch (UTC).",
+            "file": "Wo die originali Belegdatei i dem Archiv liit.",
+            "fileName": "De Dateiname vom Beleg, wie er ufeghlade worde isch.",
+            "itemId": "D ID vo de Uusgab in report_items.",
+            "mimeType": "De Dateityp, zum Biispil application/pdf oder image/jpeg.",
+            "originalAmount": "De Betrag wie zahlt, i de Originalwährig.",
+            "originalCurrency": "D Währig, wo de Betrag drin zahlt worde n-isch.",
+            "payrollRunId": "D ID vom Lohnlauf.",
+            "payrollRunPeriodEnd": "De letscht Tag vo de Lohnlauf-Periode (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "De erscht Tag vo de Lohnlauf-Periode (YYYY-MM-DD).",
+            "project": "S Projekt, wo d Uusgab druf buechet isch.",
+            "reason": "De aagebeni Grund.",
+            "reportId": "D ID vom Bricht in reports.",
+            "sizeBytes": "D Dateigrösse, in Bytes.",
+            "submittedAt": "Wänn s s letscht Mal iigreicht worde n-isch (UTC).",
+            "tripEndDate": "De letscht Tag vo de Reis (YYYY-MM-DD).",
+            "tripStartDate": "De erscht Tag vo de Reis (YYYY-MM-DD).",
+            "uploadedBy": "Wär d Quittig ufeeglade hät."
+          }
+        }
+      },
+      "fieldsIntro": "Was jede Teil vo de JSON-Dateie enthaltet und was jedes Fäld bedüütet. Es läärs Fäld (null) hät kein Wärt.",
+      "fieldsTitle": "Fälder",
+      "filesTitle": "Dateie",
+      "formatJson": "D JSON-Dateie sind di vollständigi, maschineläsbari Kopii vo diine Date. D CSV-Dateie wiederholed die Tabälle für Tabällekalkulatione.",
+      "formatOtherPeople": "Persone, wo dini Datesätz bearbeitet händ, wärded namentlich gnännt. Persone, wo du bearbeitet häsch, erschiined nur als anonymi ID.",
+      "formatsTitle": "Format",
+      "formatTimes": "Ziitpünkt wärded in UTC aageh (ISO 8601, mit Z am Ändi). Ziitiiträg händ au de UTC-Offset, wo dört gulte hät, wo si erfasst worde sind. Kaländertäg wärded als YYYY-MM-DD aageh.",
+      "intro": "Das Archiv enthaltet di personebezogene Date, wo {organization} über {employee} hät, Stand {exportedAt} (UTC).",
+      "kindAdmin": "En Administrator vo {organization} hät de Export i diim Name erstellt.",
+      "kindEmployee": "Du häsch de Export sälber aagforderet.",
+      "manifest": "Lischted jedi Datei in däm Archiv mit ihrer Grössi und de Aazaahl Datesätz uf.",
+      "retentionAuditLog": "Audit-Log-Iiträg wärded nach {days} Täg glöscht.",
+      "retentionCategoryNone": "{category}: kei Ufbewahrigsfrischt feschtgleit",
+      "retentionCategoryYears": "{years, plural, other {{category}: # Jahr} }",
+      "retentionDocuments": "Dokumänt in diim Personaldossier wärded für d Frischt ufbewahrt, wo {organization} für ihri Kategorii feschtgleit hät. D Frischt lauft ab em 1. Januar nach em spätere Jahr vo diim Aastelligsändi oder em Jahr vom Dokumänt. Dokumänt vonere Kategorii ohni Frischt wärded ufbewahrt, bis si öpper löscht.",
+      "retentionOther": "Usser wenn obenandersch aageh, wärded dini andere Date ufbewahrt, bis {organization} si löscht oder diin Mitarbeiterdatesatz glöscht wird.",
+      "retentionTitle": "Wie lang dini Date ufbewahrt wärded",
+      "rightsAccess": "Uskumpft über dini personebezogene Date und e Kopii devo z überchoo (Art. 15 DSGVO)",
+      "rightsComplaint": "dich binere Dateschutzufsichtsbehörde z beschwäre (Art. 77 DSGVO)",
+      "rightsContact": "Um die Rächt wahrznäh, kontaktier {organization}. D Dateschutzerchlärig vo {organization} gilt und beschriibt, wie dini Date verarbeitet wärded.",
+      "rightsErasure": "dini Date lösche z laa (Art. 17 DSGVO)",
+      "rightsIntro": "Nach de Dateschutz-Grundverordnig (DSGVO) häsch du s Rächt:",
+      "rightsNotification": "über Korrekture, Löschige und Iischränkige informiert z wärde, wo Empfänger vo diine Date wiitergleitet worde sind (Art. 19 DSGVO)",
+      "rightsObjection": "Widerspruch gäge d Verarbeitig vo diine Date iizlege (Art. 21 DSGVO)",
+      "rightsPortability": "dini Date ineme maschineläsbare Format z erhalte, wie z. B. de JSON-Dateie vo däm Archiv, und si an öpper anders übermittle z laa (Art. 20 DSGVO)",
+      "rightsRectification": "unrichtigi Date korrigiere und unvollständigi Date vervollständige z laa (Art. 16 DSGVO)",
+      "rightsRestriction": "d Verarbeitig vo diine Date iischränke z laa (Art. 18 DSGVO)",
+      "rightsTitle": "Dini Rächt",
+      "title": "Dini personebezogene Date vo {organization}"
     }
   },
   "presence": {

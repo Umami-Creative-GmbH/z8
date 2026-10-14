@@ -434,6 +434,45 @@
       "reportGenerated": "Report generato correttamente",
       "unexpectedError": "Si è verificato un errore imprevisto",
       "unknownError": "Si è verificato un errore sconosciuto"
+    },
+    "vehicles": {
+      "archived": "archiviato",
+      "archivedBadge": "Archiviato",
+      "empty": {
+        "description": "In questo periodo non è stato registrato alcun lavoro completato con distanza percorsa.",
+        "title": "Nessuna guida in questo periodo"
+      },
+      "error": "Errore",
+      "export": {
+        "footer": "Generato da Z8",
+        "generatedAt": "Generato il",
+        "note": "Chilometri interi di lavoro completato, conteggiati nel mese in cui è iniziato il lavoro (ora locale in cui è stato registrato).",
+        "period": "Periodo",
+        "table": "Chilometri"
+      },
+      "failed": "Impossibile generare il report sulla distanza per veicolo",
+      "filter": {
+        "period": "Periodo"
+      },
+      "generate": "Genera report",
+      "generating": "Generazione report in corso…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Nessun report ancora generato",
+      "ownVehicle": "Veicolo proprio",
+      "page": {
+        "description": "Chilometri percorsi per lavoro per veicolo e dipendente, per mese",
+        "feature": "visualizza il report sulla distanza per veicolo"
+      },
+      "selectPeriod": "Scegli un periodo e genera il report.",
+      "table": {
+        "employee": "Dipendente",
+        "licencePlate": "Targa",
+        "total": "Totale",
+        "vehicle": "Veicolo",
+        "vehicleAndEmployee": "Veicolo / dipendente"
+      },
+      "title": "Distanza per veicolo",
+      "totalDriven": "{distance} percorsi"
     }
   }
 }

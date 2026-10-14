@@ -304,6 +304,8 @@
       "dayTotals": "Totali giornalieri",
       "difference": "Differenza",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Dettagli di guida mancanti",
+      "drivingDetailsMissingWork": "Veicolo o lettura del contachilometri mancante",
       "employee": "Dipendente",
       "holidays": "Festività",
       "openCalendar": "Apri il calendario per questo periodo",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Visualizza tutti i tipi di approvazione in un unico posto con filtri, azioni collettive e monitoraggio SLA.",
     "unifiedInboxBannerTitle": "Prova la nuova Posta in arrivo unificata",
+    "vehicleUse": "Uso del veicolo",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km è superiore a {limit} km in un solo periodo di lavoro.",
+      "onOtherLiveWork": "Questo veicolo è già registrato nell'attività in corso di un altro dipendente.",
+      "speedAboveLimit": "La distanza percorsa implica una media di {speed} km/h in questo periodo di lavoro, superiore a {limit} km/h.",
+      "startBelowLastEnd": "La lettura iniziale è inferiore all'ultima lettura finale registrata per questo veicolo ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Verifica",
     "viewExpenseClaim": "Visualizza richiesta e ricevute",
     "viewExpenseReport": "Visualizza nota spese inviata e ricevute",
     "workBalance": {

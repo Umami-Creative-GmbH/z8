@@ -316,7 +316,7 @@
         "directHint": "Denne endringen trer i kraft umiddelbart.",
         "edit": "Rediger oppføring",
         "invalidRange": "Utstempling må være etter innstempling.",
-        "noChanges": "Endre dato, klokkeslett eller arbeidssted først.",
+        "noChangesWithVehicle": "Endre dato, klokkeslett, arbeidssted eller kjøretøybruk først.",
         "noteLabel": "Notat (valgfritt)",
         "notePlaceholder": "Legg til et notat om denne endringen…",
         "onBehalfHint": "Denne endringen følger den ansattes godkjenningskjede. Hvis du er godkjenneren deres, trer den i kraft umiddelbart.",
@@ -420,7 +420,11 @@
       "splitAt": "Del ved",
       "splitDate": "Delingsdato",
       "success": "Arbeidsperioden ble delt",
-      "title": "Del arbeidsperiode"
+      "title": "Del arbeidsperiode",
+      "vehicleFirstDistance": "Kilometer i første periode (valgfritt)",
+      "vehicleFirstDistanceHint": "Av {distance} km kjørt; resten går til den andre perioden. Hvis feltet står tomt, forblir alt i den første perioden.",
+      "vehicleReading": "Kilometerstand ved deling (valgfritt)",
+      "vehicleReadingHint": "Den avslutter avlesningene for den første perioden og starter den andre ({start} til {end} km). La feltet stå tomt hvis du ikke leste det av."
     },
     "status": {
       "approved": "Godkjent",

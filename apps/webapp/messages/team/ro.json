@@ -108,6 +108,36 @@
       "noBalance": "Fără sold"
     },
     "description": "Vizualizați și gestionați angajații pe care îi coordonați direct",
+    "driving": {
+      "columns": {
+        "calendar": "Calendar",
+        "date": "Dată",
+        "employee": "Angajat",
+        "missing": "Lipsă",
+        "time": "Ora locală înregistrată"
+      },
+      "count": "{count, plural, one {# perioadă de lucru nu are detalii despre deplasare.} other {# perioade de lucru nu au detalii despre deplasare.}}",
+      "descriptionAll": "Perioade de lucru cărora le lipsește un vehicul sau o citire a kilometrajului, deși utilizarea vehiculului este prevăzută. Acestea rămân afișate până când detaliile sunt completate.",
+      "descriptionManaged": "Perioadele de lucru ale angajaților pe care îi gestionați cărora le lipsește un vehicul sau o citire a kilometrajului, deși utilizarea vehiculului este prevăzută. Acestea rămân afișate până când detaliile sunt completate.",
+      "empty": "Nicio activitate nu are detalii lipsă despre deplasare.",
+      "filters": {
+        "allEmployees": "Toți angajații",
+        "allTeams": "Toate echipele",
+        "employee": "Angajat",
+        "team": "Echipă"
+      },
+      "loading": "Se încarcă detaliile despre deplasare",
+      "missing": {
+        "endReading": "Fără citire finală",
+        "readings": "Fără citiri ale kilometrajului",
+        "startReading": "Fără citire inițială",
+        "vehicle": "Niciun vehicul"
+      },
+      "openCalendar": "Calendar",
+      "openCalendarOf": "Deschideți calendarul pentru {name}",
+      "title": "Lipsesc detalii despre deplasare",
+      "truncated": "Se afișează cele mai recente {count} perioade de lucru. Filtrați după echipă sau angajat pentru a le vedea pe restul."
+    },
     "empty": {
       "action": "Accesați setările angajaților",
       "description": "Angajații atribuiți dumneavoastră ca manager vor apărea aici. Puteți gestiona atribuirile de echipă în setările angajaților.",

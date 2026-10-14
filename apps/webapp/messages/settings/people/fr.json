@@ -28,7 +28,10 @@
         "contractHourly": "Horaire",
         "contractHourlyDescription": "Rémunéré aux heures travaillées",
         "contractType": "Type de contrat",
+        "contractTypeChangeLink": "Modification du contrat et du modèle de travail",
         "contractTypeDescription": "Détermine le mode de calcul de la rémunération",
+        "contractTypeFromTerms": "Le type de contrat et le salaire proviennent des conditions d'emploi confirmées et en vigueur aujourd'hui.",
+        "contractTypeNoTerms": "Aucune condition confirmée aujourd'hui",
         "dayFriday": "Ven",
         "dayMonday": "Lun",
         "daySaturday": "Sam",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Traitement des pauses et des majorations",
           "clockRepair": "Réparation du minuteur",
           "dispatchDeparture": "Planification du départ",
+          "notifyDataExportReminder": "Rappel de téléchargement des données personnelles",
           "notifyDeputyRelease": "Notification d'indisponibilité du remplaçant",
           "notifyReview": "Notification de révision",
           "sessionRevocation": "Déconnexion de session"
@@ -352,6 +356,25 @@
           "through": "Jusqu'au {date}",
           "title": "Solde d'heures"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Disponible jusqu'au {date}",
+        "description": "Un fichier ZIP contenant l'ensemble des données conservées par cette organisation sur cet employé, y compris celles exclues de son propre export. L'employé en poste est informé dès qu'il est prêt. Les fichiers sont supprimés au bout de 7 jours.",
+        "download": "Télécharger",
+        "downloadFailed": "Impossible de lancer le téléchargement. Veuillez réessayer.",
+        "listLabel": "Anciens exports administrateur",
+        "loadFailed": "Impossible de charger les anciens exports.",
+        "ownRecord": "Vous ne pouvez pas exporter vos propres données ici. Utilisez « Mes données » dans les paramètres de votre compte.",
+        "refusalInProgress": "Un export des données de cet employé est déjà en cours de préparation.",
+        "refusalStorage": "Le stockage de fichiers n'est pas encore configuré pour cette organisation.",
+        "request": "Demander un export",
+        "requested": "L'export est en cours de préparation. Vous recevrez une notification et un e-mail dès qu'il sera prêt.",
+        "requestedAt": "Demandé le {date}",
+        "requestFailed": "Impossible de lancer l'export. Veuillez réessayer.",
+        "statusFailed": "Échec",
+        "statusPreparing": "En cours de préparation",
+        "statusReady": "Prêt",
+        "title": "Export des données personnelles"
       },
       "tabs": {
         "employees": "Employés",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Annuler cette modification d'emploi ? Cela supprimera la modification d'emploi programmée ou le brouillon.",
       "cancelError": "Échec de l'annulation de la modification de l'historique d'emploi",
       "cancelSuccess": "Modification de l'historique d'emploi annulée",
+      "changeWage": {
+        "currencyHint": "Dans la devise des conditions en vigueur",
+        "description": "Crée de nouvelles conditions à compter de cette date. Le type de contrat, le volume horaire hebdomadaire, le modèle de travail, la politique de travail et la devise sont copiés depuis les conditions en vigueur à cette date.",
+        "draftSuccess": "Modification de salaire enregistrée comme brouillon",
+        "error": "Échec de la modification du salaire",
+        "newWage": "Nouveau salaire horaire",
+        "reason": "Motif",
+        "reasonRequired": "Le motif est requis",
+        "save": "Enregistrer la modification de salaire",
+        "saveAsDraft": "Enregistrer comme brouillon",
+        "success": "Salaire modifié",
+        "title": "Modifier le salaire",
+        "validFrom": "Valable à partir du",
+        "validFromRequired": "La date de début de validité est requise",
+        "wageInvalid": "Le taux horaire doit être un nombre positif"
+      },
       "confirmError": "Échec de la confirmation de la modification de l'historique d'emploi",
       "confirmSuccess": "Modification de l'historique d'emploi confirmée",
       "contractType": "Type de contrat",
@@ -511,6 +550,8 @@
       },
       "timeline": "Chronologie",
       "title": "Contrat et modèle de travail",
+      "wageHistoryMergeNote": "{count, plural, one {L'historique des salaires a été fusionné à partir de l'ancien historique des taux le {date} ; # modification de taux a été ajustée.} other {L'historique des salaires a été fusionné à partir de l'ancien historique des taux le {date} ; # modifications de taux ont été ajustées.}}",
+      "wageHistoryMergeNoteDismiss": "Ignorer",
       "weeklyHours": "Heures hebdomadaires",
       "weeklyHoursValue": "{hours} / semaine",
       "workModel": "Modèle de travail",
@@ -829,7 +870,8 @@
         "edit": "Modifier {title}",
         "expires": "Expire le {date}",
         "open": "Ouvrir {title}",
-        "payPeriod": "Période de paie {period}"
+        "payPeriod": "Période de paie {period}",
+        "provesSkill": "Atteste de la compétence {skill}"
       },
       "myDocuments": {
         "description": "Documents de votre dossier du personnel partagés par votre organisation.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Impossible de dissocier le certificat médical.",
         "unlinkFromAbsence": "Dissocier {title} de son congé maladie"
       },
+      "skillCertificates": {
+        "description": "Choisissez la compétence de cet employé attestée par « {title} ». Le planning indiquera alors qu'un certificat est enregistré, sans jamais afficher son contenu.",
+        "edit": "Choisissez la compétence attestée par {title}",
+        "errors": {
+          "notCertificate": "Seuls les certificats peuvent attester d'une compétence.",
+          "notEmployeeSkill": "Choisissez l'une des compétences de cet employé.",
+          "undatedRequiresExpiry": "Cette compétence nécessite une date d'expiration. Seul un certificat comportant une date d'expiration peut l'attester."
+        },
+        "loadFailed": "Impossible de charger les compétences de l'employé.",
+        "needsExpiry": "Nécessite une date d'expiration. Ajoutez-en d'abord une à ce certificat.",
+        "none": "Aucune compétence",
+        "noSkills": "Cet employé n'a encore aucune compétence. Attribuez-lui des compétences sur sa fiche.",
+        "save": "Enregistrer",
+        "saved": "Compétence enregistrée",
+        "saveFailed": "La compétence du certificat n'a pas pu être enregistrée.",
+        "title": "Compétence attestée par ce certificat"
+      },
       "tabs": {
         "access": "Accès",
         "reminders": "Rappels",
@@ -1021,23 +1080,6 @@
         "hint": "Un fichier ZIP contenant les documents des catégories que vous gérez, classés dans un dossier par catégorie.",
         "sharedOnly": "Documents partagés uniquement"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Modifier le taux",
-      "currentRate": "Taux actuel : {rate}",
-      "description": "Le taux horaire change au fil du temps",
-      "effectiveFrom": "En vigueur à partir du",
-      "effectiveFromHelp": "Date de prise d'effet du nouveau taux",
-      "empty": "Aucun historique de taux disponible",
-      "newHourlyRate": "Nouveau taux horaire",
-      "reasonOptional": "Motif (facultatif)",
-      "reasonPlaceholder": "par ex. Évaluation annuelle, Promotion, etc.",
-      "title": "Historique des taux",
-      "updateDescription": "Créer une nouvelle entrée de taux. Le taux actuel sera clôturé automatiquement.",
-      "updateError": "Échec de la mise à jour du taux",
-      "updateRate": "Mettre à jour le taux",
-      "updateSuccess": "Taux mis à jour avec succès",
-      "updateTitle": "Mettre à jour le taux horaire"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Catalogue de compétences",
       "catalogDescription": "Définissez les compétences pouvant être requises pour les sous-zones et les modèles de quart",
       "category": "Catégorie",
+      "certificateOnFile": "Certificat au dossier",
       "confirmDelete": "Êtes-vous sûr de vouloir supprimer cette compétence ?",
       "confirmRemove": "Retirer « {skillName} » de cet employé ?",
       "createError": "Échec de la création de la compétence",
@@ -1155,16 +1198,25 @@
       "deleteError": "Échec de la suppression de la compétence",
       "description": "Description",
       "descriptionPlaceholder": "Description facultative de la compétence ou de la certification",
+      "editExpiryDate": "Modifier la date d'expiration",
+      "editExpiryDateDescription": "Le dernier jour de validité de {skillName}. Les quarts de travail postérieurs à cette date l'indiqueront comme expirée.",
+      "editExpiryDateFor": "Modifier la date d'expiration de {skillName}",
       "editSkill": "Modifier la compétence",
       "editSkillDescription": "Mettre à jour les détails de la compétence",
       "employeeSkills": "Compétences et qualifications",
       "employeeSkillsDescription": "Certifications et compétences assignées à cet employé",
+      "errors": {
+        "expiryDateSetByCertificate": "Un certificat de compétence dans le dossier du personnel définit cette date. Modifiez la date sur le certificat."
+      },
       "expired": "Expiré",
       "expiredOn": "Expiré le {date}",
       "expiresOn": "Expire le {date}",
       "expiringSoon": "Expire bientôt",
       "expiry": "Suivi des expirations",
       "expiryDate": "Date d'expiration",
+      "expiryDateFromCertificate": "Un certificat de compétence dans le dossier du personnel définit cette date.",
+      "expiryDateUpdated": "Date d'expiration mise à jour",
+      "expiryDateUpdateError": "Échec de la mise à jour de la date d'expiration",
       "expiryRequired": "Requis",
       "expiryRequiredHint": "Cette certification nécessite une date d'expiration",
       "name": "Nom",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Créez votre première compétence pour commencer",
       "notes": "Notes",
       "notesPlaceholder": "ex. : numéro de certificat, date de formation…",
+      "reminders": {
+        "intro": "Les compétences des employés dotées d'une date d'expiration génèrent un rappel pendant le délai de prévenance et un autre le jour de l'expiration. L'employé et ses responsables reçoivent un rappel, ou les propriétaires et administrateurs si l'employé n'a pas de responsable. Le badge « Expire bientôt » utilise le même délai de prévenance.",
+        "leadDays": "Délai de prévenance du rappel de compétence (jours)",
+        "leadDaysDescription": "Les jours sont comptabilisés selon le fuseau horaire de l'organisation. Modifier la date d'expiration d'une compétence renvoie les deux rappels.",
+        "leadDaysInvalid": "Saisissez un délai de prévenance compris entre {min} et {max} jours.",
+        "save": "Enregistrer le délai de prévenance",
+        "saved": "Délai de prévenance du rappel enregistré",
+        "saveFailed": "Le délai de prévenance du rappel n'a pas pu être enregistré.",
+        "title": "Rappels d'expiration de compétence"
+      },
       "removeError": "Échec de la suppression de la compétence",
       "requiresExpiry": "Date d'expiration requise",
       "requiresExpiryHint": "Activez cette option si cette certification doit être renouvelée (ex. : secourisme)",

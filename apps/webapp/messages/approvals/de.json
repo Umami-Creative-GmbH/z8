@@ -304,6 +304,8 @@
       "dayTotals": "Tagessummen",
       "difference": "Differenz",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Fahrtdetails fehlen",
+      "drivingDetailsMissingWork": "Fahrzeug oder Kilometerstand fehlt",
       "employee": "Mitarbeiter",
       "holidays": "Feiertage",
       "openCalendar": "Kalender für diesen Zeitraum öffnen",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Sehen Sie alle Genehmigungsarten an einem Ort mit Filtern, Massenaktionen und SLA-Nachverfolgung.",
     "unifiedInboxBannerTitle": "Probieren Sie den neuen einheitlichen Posteingang aus",
+    "vehicleUse": "Fahrzeugnutzung",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km ist mehr als {limit} km in einem Arbeitszeitraum.",
+      "onOtherLiveWork": "Dieses Fahrzeug ist bereits für eine laufende Arbeit eines anderen Mitarbeiters erfasst.",
+      "speedAboveLimit": "Die gefahrene Strecke ergibt einen Durchschnitt von {speed} km/h in diesem Arbeitszeitraum, mehr als {limit} km/h.",
+      "startBelowLastEnd": "Der Anfangsstand liegt unter dem zuletzt erfassten Endstand dieses Fahrzeugs ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Bitte prüfen",
     "viewExpenseClaim": "Antrag und Belege anzeigen",
     "viewExpenseReport": "Eingereichten Bericht und Belege anzeigen",
     "workBalance": {

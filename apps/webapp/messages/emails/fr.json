@@ -1,3 +1,218 @@
 {
-  "emails": {}
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Accéder à la facturation",
+        "amountLabel": "Montant dû",
+        "body": "La facture {invoiceNumber} pour {organizationName} est prête.",
+        "dueDateLabel": "Date d'échéance",
+        "subject": "Votre facture Z8 {invoiceNumber} est prête",
+        "title": "Votre facture est prête"
+      },
+      "paymentFailed": {
+        "action": "Mettre à jour le moyen de paiement",
+        "body": "Nous n'avons pas pu prélever {invoiceAmount} pour {organizationName}.",
+        "retry": "Veuillez mettre à jour votre moyen de paiement avant la prochaine tentative le {paymentRetryDate} afin d'éviter toute interruption de service.",
+        "subject": "Action requise : échec du paiement Z8",
+        "title": "Votre paiement a échoué"
+      },
+      "subscriptionPaused": {
+        "action": "Gérer la facturation",
+        "body": "L'abonnement {planName} pour {organizationName} est suspendu.",
+        "limits": "Les données de suivi du temps restent disponibles, mais les fonctionnalités du forfait payant peuvent être limitées jusqu'à la reprise de la facturation.",
+        "subject": "Votre abonnement Z8 est suspendu",
+        "title": "Votre abonnement est suspendu"
+      },
+      "subscriptionResumed": {
+        "action": "Afficher les détails de facturation",
+        "active": "Vos fonctionnalités payantes de Z8 sont de nouveau actives.",
+        "body": "L'abonnement {planName} pour {organizationName} a repris le {resumeDate}.",
+        "subject": "Votre abonnement Z8 a repris",
+        "title": "Votre abonnement a repris"
+      },
+      "trialEnding": {
+        "action": "Vérifier les paramètres de facturation",
+        "body": "Votre période d'essai {planName} pour {organizationName} se termine le {trialEndsAt}.",
+        "paymentMethod": "Pour continuer à utiliser Z8 sans interruption, ajoutez un moyen de paiement dans les paramètres de facturation.",
+        "subject": "{daysRemaining, plural, one {Votre essai Z8 se termine dans # jour} other {Votre essai Z8 se termine dans # jours}}",
+        "subjectSoon": "Votre essai Z8 se termine bientôt",
+        "title": "Votre période d'essai se termine"
+      },
+      "values": {
+        "noDueDate": "non défini",
+        "retrySoon": "bientôt",
+        "yourOrganization": "votre organisation"
+      }
+    },
+    "common": {
+      "greeting": "Bonjour {name},"
+    },
+    "details": {
+      "category": "Catégorie",
+      "correctedTimes": "Heures corrigées",
+      "date": "Date",
+      "dates": "Dates",
+      "days": "Jours",
+      "notes": "Notes",
+      "originalTimes": "Heures d'origine",
+      "range": "{start} – {end}",
+      "reason": "Motif"
+    },
+    "export": {
+      "categories": {
+        "absences": "Absences",
+        "auditLogs": "Journaux d'audit",
+        "balanceAdjustments": "Ajustements du solde d'heures",
+        "customers": "Clients",
+        "employees": "Employés",
+        "holidays": "Jours fériés",
+        "projects": "Projets",
+        "schedules": "Horaires de travail",
+        "shifts": "Quarts de travail",
+        "teams": "Équipes",
+        "timeEntries": "Suivi du temps",
+        "vacation": "Politiques de congés",
+        "workPeriods": "Périodes de travail"
+      },
+      "organization": "Organisation",
+      "values": {
+        "yourOrganization": "Votre organisation"
+      }
+    },
+    "exportFailed": {
+      "action": "Réessayer",
+      "body": "Malheureusement, votre exportation de données pour {organizationName} n'a pas pu être effectuée.",
+      "categories": "Données demandées",
+      "error": "Erreur",
+      "note": "Si cette erreur persiste, contactez l'assistance en fournissant le message d'erreur ci-dessus. Exporter moins de catégories de données à la fois peut également aider.",
+      "title": "Échec de l'exportation des données",
+      "unknownError": "Erreur inconnue"
+    },
+    "exportReady": {
+      "action": "Ouvrir l'historique des exportations",
+      "body": "Votre exportation de données pour {organizationName} est terminée. Vous pouvez la télécharger depuis l'historique des exportations dans Z8.",
+      "categories": "Données incluses",
+      "expiresAt": "Disponible jusqu'au",
+      "fileSize": "Taille du fichier",
+      "note": "Connectez-vous à Z8 en tant qu'administrateur de l'organisation pour télécharger le fichier. Chaque téléchargement utilise un lien sécurisé unique. Passée la date indiquée ci-dessus, le fichier d'exportation sera automatiquement supprimé.",
+      "title": "Votre exportation de données est prête"
+    },
+    "invitation": {
+      "action": "Accepter l'invitation",
+      "body": "{inviterName} vous a invité à rejoindre {organizationName} en tant que {role}.",
+      "email": "Votre adresse e-mail",
+      "greeting": "Bonjour,",
+      "invitedBy": "Invité par",
+      "note": "Si vous n'attendiez pas cette invitation, vous pouvez ignorer cet e-mail.",
+      "organization": "Organisation",
+      "role": "Rôle",
+      "roles": {
+        "admin": "Administrateur",
+        "member": "Membre",
+        "owner": "Propriétaire"
+      },
+      "title": "Vous avez été invité à rejoindre {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "Si le bouton ne fonctionne pas, ouvrez ce lien :",
+      "footer": "Cet e-mail a été envoyé par Z8."
+    },
+    "notification": {
+      "openAction": "Ouvrir Z8"
+    },
+    "organizationDeletion": {
+      "action": "Récupérer l'organisation",
+      "body": "{deletedByName} a programmé la suppression de l'organisation {organizationName}. Vous pouvez la récupérer jusqu'au {permanentDeletionDate}.",
+      "initiatedBy": "Initié par",
+      "items": {
+        "absences": "Toutes les absences et soldes de congés",
+        "employees": "Tous les employés, équipes et affectations de responsables",
+        "members": "Tous les membres et invitations en attente",
+        "projects": "Tous les projets et leurs affectations de temps",
+        "settings": "Tous les paramètres, horaires et configurations",
+        "timeEntries": "Toutes les saisies de temps et périodes de travail"
+      },
+      "itemsTitle": "Ce qui sera définitivement supprimé :",
+      "note": "Si vous aviez l'intention de supprimer l'organisation, aucune action n'est requise. Dans le cas contraire, récupérez-la dès maintenant et vérifiez la sécurité de votre compte.",
+      "organization": "Organisation",
+      "permanentAt": "Suppression définitive",
+      "preview": "{organizationName} sera définitivement supprimée le {permanentDeletionDate}.",
+      "requestedAt": "Suppression demandée",
+      "title": "Organisation programmée pour suppression"
+    },
+    "passwordReset": {
+      "action": "Réinitialiser le mot de passe",
+      "body": "Nous avons reçu une demande de réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau.",
+      "note": "Si vous n'avez pas demandé à réinitialiser votre mot de passe, vous pouvez ignorer cet e-mail ; votre mot de passe restera inchangé. Ce lien expire dans 1 heure.",
+      "title": "Réinitialisez votre mot de passe"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Plage de dates",
+      "empty": {
+        "body": "Votre exportation planifiée {scheduleName} a été exécutée, mais il n'y a rien à télécharger.",
+        "noFile": "Aucun fichier n'a été généré pour cette exécution.",
+        "title": "Exportation programmée terminée"
+      },
+      "ready": {
+        "action": "Télécharger l'exportation",
+        "body": "Votre exportation programmée {scheduleName} s'est terminée avec succès.",
+        "linkExpiry": "Ce lien de téléchargement est valide pendant {lifetime} et expire le {expiresAt}.",
+        "title": "Exportation programmée prête"
+      },
+      "recordsLabel": "Enregistrements",
+      "subject": "Exportation programmée : {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Vérifier les paramètres de sécurité",
+      "device": "Appareil",
+      "event": "Événement",
+      "ipAddress": "Adresse IP",
+      "notYou": "Si vous n'êtes pas à l'origine de cette modification, sécurisez votre compte dès maintenant : modifiez votre mot de passe et vérifiez vos paramètres de sécurité.",
+      "passwordChanged": {
+        "description": "Le mot de passe de votre compte Z8 a été modifié.",
+        "title": "Mot de passe modifié"
+      },
+      "time": "Heure",
+      "twoFactorDisabled": {
+        "description": "L'authentification à deux facteurs a été désactivée pour votre compte Z8.",
+        "title": "Authentification à deux facteurs désactivée"
+      },
+      "twoFactorEnabled": {
+        "description": "L'authentification à deux facteurs a été activée pour votre compte Z8.",
+        "title": "Authentification à deux facteurs activée"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Absence enregistrée",
+      "absenceRequestApproved": "Demande d'absence approuvée",
+      "absenceRequestRejected": "Demande d'absence refusée",
+      "absenceRequestSubmitted": "Demande d'absence soumise",
+      "approvalRequestSubmitted": "Nouvelle demande d'absence en attente d'approbation",
+      "exportFailed": "Échec de l'exportation des données - {organizationName}",
+      "exportReady": "Votre exportation de données est prête - {organizationName}",
+      "organizationDeletion": "Organisation {organizationName} programmée pour suppression",
+      "organizationInvitation": "Vous avez été invité à rejoindre {organizationName}",
+      "passwordChanged": "Alerte de sécurité : mot de passe modifié",
+      "passwordReset": "Réinitialiser votre mot de passe",
+      "teamMemberAdded": "Vous avez été ajouté à l'équipe {teamName}",
+      "teamMemberRemoved": "Vous avez été retiré de l'équipe {teamName}",
+      "timeCorrectionApproved": "Correction d'heures approuvée",
+      "timeCorrectionRejected": "Correction d'heures refusée",
+      "timeCorrectionSubmitted": "Nouvelle correction d'heures en attente d'approbation",
+      "twoFactorDisabled": "Alerte de sécurité : authentification à deux facteurs désactivée",
+      "twoFactorEnabled": "Alerte de sécurité : authentification à deux facteurs activée",
+      "verifyEmail": "Vérifiez votre adresse e-mail"
+    },
+    "variables": {
+      "noReason": "Aucun motif fourni",
+      "noTime": "-",
+      "yourManager": "votre responsable"
+    },
+    "verification": {
+      "action": "Vérifier l'adresse e-mail",
+      "body": "Bienvenue sur Z8 ! Veuillez vérifier votre adresse e-mail à l'aide du bouton ci-dessous pour finaliser votre inscription.",
+      "note": "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail. Le lien expire dans 1 heure.",
+      "title": "Vérifiez votre adresse e-mail"
+    }
+  }
 }

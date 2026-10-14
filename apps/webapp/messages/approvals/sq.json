@@ -304,6 +304,8 @@
       "dayTotals": "Totalet ditore",
       "difference": "Diferenca",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Mungojnë detajet e drejtimit",
+      "drivingDetailsMissingWork": "Mungon automjeti ose leximi i odometrit",
       "employee": "Punonjësi",
       "holidays": "Festat zyrtare",
       "openCalendar": "Hap kalendarin për këtë periudhë",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Shikoni të gjitha llojet e miratimeve në një vend të vetëm me filtrime, veprime në grup dhe ndjekje të SLA-së.",
     "unifiedInboxBannerTitle": "Provoni kutinë e re hyrëse të unifikuar",
+    "vehicleUse": "Përdorimi i automjetit",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km është më shumë se {limit} km në një periudhë pune.",
+      "onOtherLiveWork": "Ky automjet është regjistruar tashmë në një punë aktive të një punonjësi tjetër.",
+      "speedAboveLimit": "Distanca e përshkuar nënkupton një mesatare prej {speed} km/h gjatë kësaj periudhe pune, më shumë se {limit} km/h.",
+      "startBelowLastEnd": "Leximi fillestar është më i ulët se leximi i fundit përfundimtar i regjistruar për këtë automjet ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Ju lutemi kontrolloni",
     "viewExpenseClaim": "Shiko kërkesën dhe faturat",
     "viewExpenseReport": "Shikoni raportin e dorëzuar dhe faturat",
     "workBalance": {

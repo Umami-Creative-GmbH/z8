@@ -434,6 +434,45 @@
       "reportGenerated": "Informe generado correctamente",
       "unexpectedError": "Ocurrió un error inesperado",
       "unknownError": "Ocurrió un error desconocido"
+    },
+    "vehicles": {
+      "archived": "archivado",
+      "archivedBadge": "Archivado",
+      "empty": {
+        "description": "No se registraron trabajos completados con distancia recorrida en este periodo.",
+        "title": "Sin conducción en este periodo"
+      },
+      "error": "Error",
+      "export": {
+        "footer": "Generado por Z8",
+        "generatedAt": "Generado el",
+        "note": "Kilómetros enteros de trabajo completado, contabilizados en el mes en que comenzó el trabajo (hora local donde se registró).",
+        "period": "Período",
+        "table": "Kilómetros"
+      },
+      "failed": "No se pudo generar el informe de distancia por vehículo",
+      "filter": {
+        "period": "Período"
+      },
+      "generate": "Generar informe",
+      "generating": "Generando informe…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Aún no se ha generado ningún informe",
+      "ownVehicle": "Vehículo propio",
+      "page": {
+        "description": "Kilómetros recorridos por trabajo por vehículo y empleado, por mes",
+        "feature": "ver el informe de distancia por vehículo"
+      },
+      "selectPeriod": "Elija un período y genere el informe.",
+      "table": {
+        "employee": "Empleado",
+        "licencePlate": "Matrícula",
+        "total": "Total",
+        "vehicle": "Vehículo",
+        "vehicleAndEmployee": "Vehículo / empleado"
+      },
+      "title": "Distancia por vehículo",
+      "totalDriven": "{distance} recorridos"
     }
   }
 }

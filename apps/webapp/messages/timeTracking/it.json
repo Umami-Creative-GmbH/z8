@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Attualmente hai timbrato l'entrata",
     "deadline": "Scadenza",
+    "drivingDetailsMissing": {
+      "description": "La tua organizzazione richiede il veicolo e le letture del contachilometri per il tuo lavoro. Aggiungili a questi periodi di lavoro.",
+      "missing": {
+        "endReading": "Nessuna lettura finale",
+        "readings": "Nessuna lettura del contachilometri",
+        "startReading": "Nessuna lettura iniziale",
+        "vehicle": "Nessun veicolo"
+      },
+      "open": "Apri nel calendario",
+      "title": "Dettagli di guida mancanti",
+      "truncated": "Sono elencati solo i periodi di lavoro più recenti. Completa questi per vedere i restanti."
+    },
     "errors": {
       "alreadyClockedIn": "Hai già registrato l'ingresso",
       "appendReviewRequired": "L'ingresso richiede una revisione della tua cronologia oraria",
@@ -214,7 +226,10 @@
         "onBreak": "In pausa dalle {time}"
       },
       "unreachableDescription": "Il chiosco non riesce a raggiungere il server. Controlla la connessione di rete; la timbratura funziona solo online.",
-      "unreachableTitle": "Chiosco offline"
+      "unreachableTitle": "Chiosco offline",
+      "vehicle": {
+        "back": "Indietro"
+      }
     },
     "manualEntry": {
       "addButton": "Aggiungi voce manuale",
@@ -386,6 +401,7 @@
       "corrected": "Corretto",
       "date": "Data",
       "description": "Descrizione",
+      "drivingDetailsMissing": "Dettagli di guida mancanti",
       "duration": "Durata",
       "emptyState": "Nessuna voce oraria trovata per questa settimana.",
       "recordedLocalTime": "Ora locale registrata",
@@ -422,6 +438,58 @@
     "title": "Rilevazione presenze",
     "unknownCategory": "Categoria sconosciuta",
     "unknownProject": "Progetto sconosciuto",
+    "vehicleUse": {
+      "archived": "archiviato",
+      "breakReading": "Lettura del contachilometri alla pausa (km)",
+      "breakReadingHint": "Facoltativo. Termina la lettura di questo lavoro e avvia quella del successivo.",
+      "changeLive": "Modifica",
+      "derivedDistance": "Distanza percorsa: {distance} km",
+      "distanceKm": "Distanza percorsa (km)",
+      "distanceText": "{distance} km percorsi",
+      "endKm": "Lettura finale (km)",
+      "expectedHint": "La tua organizzazione richiede che tu registri il veicolo guidato e le relative letture.",
+      "expenseReport": {
+        "action": "Aggiungi alla nota spese",
+        "add": "Aggiungi {distance} km",
+        "added": "In una nota spese",
+        "alreadyAdded": "La distanza di questo lavoro è già presente in una nota spese.",
+        "chooseReport": "A quale nota spese desideri aggiungerla?",
+        "failed": "Impossibile aggiungere la distanza alla nota spese. Riprova.",
+        "newReport": "Nuovo report chilometrico",
+        "routeHint": "La data e la distanza vengono inserite automaticamente da questo lavoro. Nel report dovrai inserire l'itinerario.",
+        "untitledTrip": "Viaggio senza titolo"
+      },
+      "liveChanged": "Uso del veicolo modificato",
+      "liveChangeFailed": "Impossibile modificare l'uso del veicolo",
+      "notRecorded": "L'uso del veicolo non è stato registrato",
+      "notSentOffline": "Non è stato possibile salvarlo con questo evento di timbratura offline. Aggiungilo al periodo di lavoro una volta online.",
+      "noVehicle": "Nessun veicolo",
+      "ownVehicle": "Veicolo personale",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Questo veicolo è archiviato e non può più essere selezionato.",
+        "distanceClaimed": "La distanza di questo periodo di lavoro è presente in una voce di spesa. Rimuovi la voce dalla nota spese prima di dividere il periodo di lavoro.",
+        "endBeforeStart": "La lettura finale non può essere inferiore alla lettura iniziale.",
+        "invalidDistance": "Inserisci la distanza percorsa in chilometri interi.",
+        "invalidReading": "Inserisci le letture del contachilometri in chilometri interi.",
+        "invalidVehicle": "Scegli un veicolo aziendale o il tuo veicolo personale.",
+        "notFound": "Il veicolo non è stato trovato.",
+        "off": "L'uso del veicolo non è registrato per questo dipendente.",
+        "splitOutOfRange": "I chilometri al momento della divisione devono rientrare nei chilometri del periodo di lavoro."
+      },
+      "startKm": "Lettura iniziale (km)",
+      "title": "Uso del veicolo",
+      "unknownVehicle": "Veicolo sconosciuto (non disponibile)",
+      "vehicle": "Veicolo",
+      "warning": {
+        "distanceAboveLimit": "{distance} km supera {limit} km in un periodo di lavoro.",
+        "onOtherLiveWork": "Questo veicolo è già registrato nell'attività in corso di un altro dipendente.",
+        "speedAboveLimit": "La distanza percorsa implica una media di {speed} km/h in questo periodo di lavoro, superiore a {limit} km/h.",
+        "startBelowLastEnd": "La lettura iniziale è inferiore all'ultima lettura finale registrata per questo veicolo ({lastEndKm} km).",
+        "title": "Verifica l'uso del veicolo"
+      }
+    },
     "welcomeBack": "Bentornato, {name}",
     "workCategory": "Categoria lavorativa",
     "workLocation": "Luogo di lavoro",

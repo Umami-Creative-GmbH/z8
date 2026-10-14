@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Trenutačno ste prijavljeni",
     "deadline": "Rok",
+    "drivingDetailsMissing": {
+      "description": "Vaša organizacija očekuje podatke o vozilu i stanju brojača kilometara za vaš rad. Dodajte ih ovim radnim razdobljima.",
+      "missing": {
+        "endReading": "Nema završnog stanja",
+        "readings": "Nema stanja brojača kilometara",
+        "startReading": "Nema početnog stanja",
+        "vehicle": "Nema vozila"
+      },
+      "open": "Otvori u kalendaru",
+      "title": "Nedostaju podaci o vožnji",
+      "truncated": "Prikazana su samo najnovija radna razdoblja. Ispunite ih da biste vidjeli ostala."
+    },
     "errors": {
       "alreadyClockedIn": "Već ste prijavljeni",
       "appendReviewRequired": "Prijava dolaska zahtijeva pregled vaše povijesti radnog vremena",
@@ -214,7 +226,10 @@
         "onBreak": "Na pauzi od {time}"
       },
       "unreachableDescription": "Kiosk ne može uspostaviti vezu s poslužiteljem. Provjerite mrežnu vezu; evidencija radnog vremena radi samo na mreži.",
-      "unreachableTitle": "Kiosk je izvan mreže"
+      "unreachableTitle": "Kiosk je izvan mreže",
+      "vehicle": {
+        "back": "Natrag"
+      }
     },
     "manualEntry": {
       "addButton": "Dodaj ručni unos",
@@ -386,6 +401,7 @@
       "corrected": "Ispravljeno",
       "date": "Datum",
       "description": "Opis",
+      "drivingDetailsMissing": "Nedostaju podaci o vožnji",
       "duration": "Trajanje",
       "emptyState": "Nema pronađenih unosa vremena za ovaj tjedan.",
       "recordedLocalTime": "Zabilježeno lokalno vrijeme",
@@ -422,6 +438,58 @@
     "title": "Praćenje radnog vremena",
     "unknownCategory": "Nepoznata kategorija",
     "unknownProject": "Nepoznat projekt",
+    "vehicleUse": {
+      "archived": "arhivirano",
+      "breakReading": "Stanje brojača kilometara na pauzi (km)",
+      "breakReadingHint": "Neobavezno. Time završava očitanje za ovaj rad i započinje za sljedeći.",
+      "changeLive": "Promijeni",
+      "derivedDistance": "Prijeđena udaljenost: {distance} km",
+      "distanceKm": "Prijeđena udaljenost (km)",
+      "distanceText": "Prijeđeno {distance} km",
+      "endKm": "Završno stanje (km)",
+      "expectedHint": "Vaša organizacija očekuje da zabilježite vozilo koje ste vozili i njegova očitanja.",
+      "expenseReport": {
+        "action": "Dodaj u izvješće o troškovima",
+        "add": "Dodaj {distance} km",
+        "added": "U izvješću o troškovima",
+        "alreadyAdded": "Udaljenost za ovaj rad već se nalazi u izvješću o troškovima.",
+        "chooseReport": "U koje izvješće o troškovima dodati?",
+        "failed": "Nije bilo moguće dodati udaljenost u izvješće o troškovima. Pokušajte ponovno.",
+        "newReport": "Novo izvješće o kilometraži",
+        "routeHint": "Datum i udaljenost popunjavaju se iz ovog rada. Rutu unosite u izvješću.",
+        "untitledTrip": "Putovanje bez naslova"
+      },
+      "liveChanged": "Korištenje vozila promijenjeno",
+      "liveChangeFailed": "Nije bilo moguće promijeniti korištenje vozila",
+      "notRecorded": "Korištenje vozila nije zabilježeno",
+      "notSentOffline": "Nije ga bilo moguće spremiti s ovim izvanmrežnim događajem bilježenja vremena. Dodajte ga u radno razdoblje kada budete na mreži.",
+      "noVehicle": "Bez vozila",
+      "ownVehicle": "Vlastito vozilo",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Ovo je vozilo arhivirano i više se ne može odabrati.",
+        "distanceClaimed": "Udaljenost ovog radnog razdoblja nalazi se na stavci troška. Uklonite stavku iz izvješća o troškovima prije dijeljenja radnog razdoblja.",
+        "endBeforeStart": "Završno stanje ne može biti manje od početnog stanja.",
+        "invalidDistance": "Unesite prijeđenu udaljenost u cijelim kilometrima.",
+        "invalidReading": "Unesite očitanja brojača kilometara u cijelim kilometrima.",
+        "invalidVehicle": "Odaberite vozilo organizacije ili vlastito vozilo.",
+        "notFound": "Vozilo nije pronađeno.",
+        "off": "Korištenje vozila ne bilježi se za ovog zaposlenika.",
+        "splitOutOfRange": "Kilometri na podjeli moraju biti unutar raspona kilometara radnog razdoblja."
+      },
+      "startKm": "Početno stanje (km)",
+      "title": "Korištenje vozila",
+      "unknownVehicle": "Nepoznato vozilo (nedostupno)",
+      "vehicle": "Vozilo",
+      "warning": {
+        "distanceAboveLimit": "{distance} km je više od {limit} km u jednom radnom razdoblju.",
+        "onOtherLiveWork": "Ovo vozilo je već zabilježeno u aktivnom radu drugog zaposlenika.",
+        "speedAboveLimit": "Prijeđena udaljenost podrazumijeva prosjek od {speed} km/h tijekom ovog radnog razdoblja, što je više od {limit} km/h.",
+        "startBelowLastEnd": "Početno stanje je manje od zadnjeg zabilježenog završnog stanja ovog vozila ({lastEndKm} km).",
+        "title": "Molimo provjerite korištenje vozila"
+      }
+    },
     "welcomeBack": "Dobro došli natrag, {name}",
     "workCategory": "Kategorija rada",
     "workLocation": "Lokacija rada",

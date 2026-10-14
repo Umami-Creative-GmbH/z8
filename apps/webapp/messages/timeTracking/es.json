@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Actualmente has marcado entrada",
     "deadline": "Fecha límite",
+    "drivingDetailsMissing": {
+      "description": "Su organización requiere el vehículo y las lecturas del odómetro para su trabajo. Agréguelos a estos períodos de trabajo.",
+      "missing": {
+        "endReading": "Sin lectura final",
+        "readings": "Sin lecturas del odómetro",
+        "startReading": "Sin lectura inicial",
+        "vehicle": "Sin vehículo"
+      },
+      "open": "Abrir en el calendario",
+      "title": "Faltan detalles de conducción",
+      "truncated": "Solo se muestran los períodos de trabajo más recientes. Complete estos para ver el resto."
+    },
     "errors": {
       "alreadyClockedIn": "Ya ha registrado su entrada",
       "appendReviewRequired": "El registro de entrada requiere una revisión de su historial de horas",
@@ -214,7 +226,10 @@
         "onBreak": "En pausa desde {time}"
       },
       "unreachableDescription": "El quiosco no puede conectarse con el servidor. Comprueba la conexión de red; el registro de jornada solo funciona con conexión.",
-      "unreachableTitle": "Quiosco sin conexión"
+      "unreachableTitle": "Quiosco sin conexión",
+      "vehicle": {
+        "back": "Atrás"
+      }
     },
     "manualEntry": {
       "addButton": "Añadir entrada manual",
@@ -386,6 +401,7 @@
       "corrected": "Corregido",
       "date": "Fecha",
       "description": "Descripción",
+      "drivingDetailsMissing": "Faltan detalles de conducción",
       "duration": "Duración",
       "emptyState": "No se encontraron entradas de tiempo para esta semana.",
       "recordedLocalTime": "Hora local registrada",
@@ -422,6 +438,58 @@
     "title": "Control de tiempo",
     "unknownCategory": "Categoría desconocida",
     "unknownProject": "Proyecto desconocido",
+    "vehicleUse": {
+      "archived": "archivado",
+      "breakReading": "Lectura del odómetro en la pausa (km)",
+      "breakReadingHint": "Opcional. Finaliza la lectura de este trabajo e inicia la del siguiente.",
+      "changeLive": "Cambiar",
+      "derivedDistance": "Distancia recorrida: {distance} km",
+      "distanceKm": "Distancia recorrida (km)",
+      "distanceText": "{distance} km recorridos",
+      "endKm": "Lectura final (km)",
+      "expectedHint": "Su organización requiere que registre el vehículo que condujo y sus lecturas.",
+      "expenseReport": {
+        "action": "Agregar al informe de gastos",
+        "add": "Agregar {distance} km",
+        "added": "En un informe de gastos",
+        "alreadyAdded": "La distancia de este trabajo ya se encuentra en un informe de gastos.",
+        "chooseReport": "¿A qué informe de gastos desea agregarlo?",
+        "failed": "No se pudo agregar la distancia al informe de gastos. Vuelva a intentarlo.",
+        "newReport": "Nuevo informe de kilometraje",
+        "routeHint": "La fecha y la distancia se completan a partir de este trabajo. Ingrese la ruta en el informe.",
+        "untitledTrip": "Viaje sin título"
+      },
+      "liveChanged": "Uso del vehículo modificado",
+      "liveChangeFailed": "No se pudo cambiar el uso del vehículo",
+      "notRecorded": "No se registró el uso del vehículo",
+      "notSentOffline": "No se pudo guardar con este fichaje sin conexión. Agréguelo al período de trabajo una vez que esté en línea.",
+      "noVehicle": "Sin vehículo",
+      "ownVehicle": "Vehículo propio",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Este vehículo está archivado y ya no se puede seleccionar.",
+        "distanceClaimed": "La distancia de este período de trabajo está en un elemento de gasto. Elimine el elemento del informe de gastos antes de dividir el período de trabajo.",
+        "endBeforeStart": "La lectura final no puede ser inferior a la lectura inicial.",
+        "invalidDistance": "Introduzca la distancia recorrida en kilómetros enteros.",
+        "invalidReading": "Introduzca las lecturas del odómetro en kilómetros enteros.",
+        "invalidVehicle": "Elija un vehículo de la organización o su propio vehículo.",
+        "notFound": "No se encontró el vehículo.",
+        "off": "El uso del vehículo no se registra para este empleado.",
+        "splitOutOfRange": "Los kilómetros en la división deben estar dentro de los kilómetros del período de trabajo."
+      },
+      "startKm": "Lectura inicial (km)",
+      "title": "Uso del vehículo",
+      "unknownVehicle": "Vehículo desconocido (no disponible)",
+      "vehicle": "Vehículo",
+      "warning": {
+        "distanceAboveLimit": "{distance} km es más de {limit} km en un período de trabajo.",
+        "onOtherLiveWork": "Este vehículo ya está registrado en el trabajo en curso de otro empleado.",
+        "speedAboveLimit": "La distancia recorrida implica un promedio de {speed} km/h durante este período de trabajo, superior a {limit} km/h.",
+        "startBelowLastEnd": "La lectura inicial es inferior a la última lectura final registrada de este vehículo ({lastEndKm} km).",
+        "title": "Por favor, revise el uso del vehículo"
+      }
+    },
     "welcomeBack": "Te damos la bienvenida de nuevo, {name}",
     "workCategory": "Categoría de trabajo",
     "workLocation": "Lugar de trabajo",

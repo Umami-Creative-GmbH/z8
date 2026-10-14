@@ -316,7 +316,7 @@
         "directHint": "This change applies immediately.",
         "edit": "Edit entry",
         "invalidRange": "Clock out must be after clock in.",
-        "noChanges": "Change the date, time, or work location first.",
+        "noChangesWithVehicle": "Change the date, time, work location or vehicle use first.",
         "noteLabel": "Note (optional)",
         "notePlaceholder": "Add a note about this change…",
         "onBehalfHint": "This change follows the employee's approval chain. If you are their approver, it applies right away.",
@@ -420,7 +420,11 @@
       "splitAt": "Split at",
       "splitDate": "Split date",
       "success": "Work period split successfully",
-      "title": "Split Work Period"
+      "title": "Split Work Period",
+      "vehicleFirstDistance": "Kilometres in the first period (optional)",
+      "vehicleFirstDistanceHint": "Of {distance} km driven; the rest goes to the second period. Left empty, all of it stays on the first period.",
+      "vehicleReading": "Odometer reading at the split (optional)",
+      "vehicleReadingHint": "It ends the first period's readings and starts the second's ({start} to {end} km). Leave it empty if you did not read it."
     },
     "status": {
       "approved": "Approved",

@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} vremenskih unosa obrisano",
           "title": "Očisti podatke o vremenu",
           "vacationAllowancesReset": "{count} prava na godišnji odmor resetovano",
+          "vehiclesDeleted": "{count, plural, one {# vozilo obrisano} few {# vozila obrisana} other {# vozila obrisano}}",
           "willDelete": "Ovo će trajno obrisati:",
           "workCategoriesDeleted": "{count} radnih kategorija obrisano",
           "workCategorySetsDeleted": "{count} setova radnih kategorija obrisano",
@@ -109,7 +110,7 @@
           "label": "Vrste podataka",
           "locations": {
             "countLabel": "Broj lokacija:",
-            "description": "Radne lokacije i podoblasti",
+            "descriptionWithVehicles": "Lokacije rada, podoblasti i nekoliko vozila",
             "title": "Lokacije"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Kreiranje unosa radnog vremena i radnih perioda",
           "label": "Unosi radnog vremena"
+        },
+        "vehicleUse": {
+          "description": "Evidentiranje upotrebe vozila tokom radnih perioda",
+          "label": "Upotreba vozila"
         },
         "workCategories": {
           "description": "Kreiranje skupova kategorija rada i kategorija",

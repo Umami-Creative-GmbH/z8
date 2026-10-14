@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Cualquiera puede tomarlo",
       "assignTo": "Asignar a",
+      "certificateOnFileFor": "Certificado en archivo: {skills}",
       "confirmDelete": "Confirmar eliminación",
       "created": "Turno creado",
       "createDescription": "Completa los detalles del nuevo turno",
@@ -118,6 +119,7 @@
       "updateShift": "Actualizar turno"
     },
     "skills": {
+      "certificateOnFile": "Certificado en archivo",
       "expiredCertifications": "Certificaciones caducadas:",
       "expiredOn": "(Caducó el {date})",
       "missingPreferred": "Habilidades preferidas faltantes:",

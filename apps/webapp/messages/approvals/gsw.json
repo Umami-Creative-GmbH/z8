@@ -304,6 +304,8 @@
       "dayTotals": "Tagestotale",
       "difference": "Differenz",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Fahrtdetails fähled",
+      "drivingDetailsMissingWork": "Fahrzüüg oder Kilometerstand fählt",
       "employee": "Mitarbeitende",
       "holidays": "Feiertage",
       "openCalendar": "Kalender für diesen Zeitraum öffnen",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Gseh alli Genehmigungsarte uf eim Blick mit Filter, Sammelaktione und SLA-Tracking.",
     "unifiedInboxBannerTitle": "Probier de neu zentrali Postig us",
+    "vehicleUse": "Fahrzüügnutzig",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km isch meh als {limit} km in einere Arbetsperiode.",
+      "onOtherLiveWork": "Das Fahrzüüg isch scho binere laufende Arbet vome andere Mitarbeiter erfasst.",
+      "speedAboveLimit": "Die gfahreti Distanz ergit en Schnitt vo {speed} km/h über die Arbetsperiode, meh als {limit} km/h.",
+      "startBelowLastEnd": "De Startstand isch tüüfer als de letschti erfassti Endstand vo dem Fahrzüüg ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Bitte überprüefe",
     "viewExpenseClaim": "Abrechnung und Belege anzeigen",
     "viewExpenseReport": "Iigreichte Bricht und Beleg aaluege",
     "workBalance": {

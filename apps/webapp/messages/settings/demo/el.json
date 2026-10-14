@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} καταχωρήσεις χρόνου διαγράφηκαν",
           "title": "Εκκαθάριση δεδομένων χρόνου",
           "vacationAllowancesReset": "{count} επιδόματα αδείας επαναφέρθηκαν",
+          "vehiclesDeleted": "{count, plural, one {# όχημα διαγράφηκε} other {# οχήματα διαγράφηκαν}}",
           "willDelete": "Αυτό θα διαγράψει οριστικά:",
           "workCategoriesDeleted": "{count} κατηγορίες εργασίας διαγράφηκαν",
           "workCategorySetsDeleted": "{count} σύνολα κατηγοριών εργασίας διαγράφηκαν",
@@ -109,7 +110,7 @@
           "label": "Τύποι Δεδομένων",
           "locations": {
             "countLabel": "Αριθμός τοποθεσιών:",
-            "description": "Τοποθεσίες εργασίας και υποπεριοχές",
+            "descriptionWithVehicles": "Τοποθεσίες εργασίας, υποπεριοχές και μερικά οχήματα",
             "title": "Τοποθεσίες"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Δημιουργία εγγραφών χρόνου και περιόδων εργασίας",
           "label": "Εγγραφές χρόνου"
+        },
+        "vehicleUse": {
+          "description": "Καταγραφή χρήσης οχήματος σε περιόδους εργασίας",
+          "label": "Χρήση οχήματος"
         },
         "workCategories": {
           "description": "Δημιουργία συνόλων κατηγοριών εργασίας και κατηγοριών",

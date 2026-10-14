@@ -304,6 +304,8 @@
       "dayTotals": "Totales del día",
       "difference": "Diferencia",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Faltan los detalles de conducción",
+      "drivingDetailsMissingWork": "Falta el vehículo o la lectura del odómetro",
       "employee": "Empleado",
       "holidays": "Días festivos",
       "openCalendar": "Abrir el calendario para este período",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Vea todos los tipos de aprobación en un solo lugar con filtrado, acciones masivas y seguimiento de SLA.",
     "unifiedInboxBannerTitle": "Pruebe la nueva bandeja de entrada unificada",
+    "vehicleUse": "Uso del vehículo",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km es más de {limit} km en un período de trabajo.",
+      "onOtherLiveWork": "Este vehículo ya está registrado en el trabajo en curso de otro empleado.",
+      "speedAboveLimit": "La distancia recorrida implica un promedio de {speed} km/h durante este período de trabajo, más de {limit} km/h.",
+      "startBelowLastEnd": "La lectura inicial es inferior a la última lectura final registrada de este vehículo ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Por favor, revise",
     "viewExpenseClaim": "Ver solicitud y recibos",
     "viewExpenseReport": "Ver informe enviado y recibos",
     "workBalance": {

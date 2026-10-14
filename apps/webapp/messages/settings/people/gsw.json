@@ -28,7 +28,10 @@
         "contractHourly": "Im Stundenlohn",
         "contractHourlyDescription": "Nach gleischtete Schtunde zahlt",
         "contractType": "Vertragsart",
+        "contractTypeChangeLink": "Änderig im Vertrag & Arbeitsmodell",
         "contractTypeDescription": "Leit fescht, wie d Entlöhnig berächnet wird",
+        "contractTypeFromTerms": "Vertragsart und Lohn chömed vo de bestätigte Aastelligsbedingige, wo hüt gültig sind.",
+        "contractTypeNoTerms": "Hüt kei bestätigte Bedingige",
         "dayFriday": "Fr",
         "dayMonday": "Mo",
         "daySaturday": "Sa",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Pausen- und Zuschlagsverarbeitung",
           "clockRepair": "Timer-Reparatur",
           "dispatchDeparture": "Austrittsplanung",
+          "notifyDataExportReminder": "Erinnerig zum Download vo persöönliche Date",
           "notifyDeputyRelease": "Benachrichtigung: Stellvertretig nümme verfüegbar",
           "notifyReview": "Überprüfungsbenachrichtigung",
           "sessionRevocation": "Sitzungsabmeldung"
@@ -352,6 +356,25 @@
           "through": "Bis {date}",
           "title": "Arbeitszeitsaldo"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Verfüegbar bis {date}",
+        "description": "Es ZIP-File mit allem, wo die Organisation über die Person gspycheret hät, inklusive Date, wo bim eigene Export fähled. Aktuelli Mitarbeiter werded benachrichtigt, sobald es parat isch. Dateie werded nach 7 Tääg glöscht.",
+        "download": "Aabelade",
+        "downloadFailed": "De Download hät nöd chönne gstartet werde. Bitte probier's nomal.",
+        "listLabel": "Früecheri Admin-Export",
+        "loadFailed": "Früecheri Export händ nöd chönne glade werde.",
+        "ownRecord": "Du chasch dyyne eigene Date da nöd exportiere. Bruuch «Myni Date» i dyyne Kontoiistellige.",
+        "refusalInProgress": "En Export vo de Date vo däre Person wird bereits vorbereitet.",
+        "refusalStorage": "Dateispicher isch für die Organisation no nöd yygrichtet.",
+        "request": "Export aafordere",
+        "requested": "De Export wird vorbereitet. Du bechunnsch e Benachrichtigung und es E-Mail, sobald er parat isch.",
+        "requestedAt": "Aagforderet am {date}",
+        "requestFailed": "De Export hät nöd chönne gstartet werde. Bitte probier's nomal.",
+        "statusFailed": "Fählgschlage",
+        "statusPreparing": "Wird vorbereitet",
+        "statusReady": "Parat",
+        "title": "Export vo persöönliche Date"
       },
       "tabs": {
         "employees": "Mitarbeitende",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Die Aastelligsänderig abbreche? Das entfernt die planti oder entworfeni Aastelligsänderig.",
       "cancelError": "Abbruch vo de Aastelligshistorie-Änderig isch fehlgschlage",
       "cancelSuccess": "Aastelligshistorie-Änderig isch abbroche worde",
+      "changeWage": {
+        "currencyHint": "I de Währig vo de gültige Bedingige",
+        "description": "Erstellt neui Bedingige ab däm Datum. Vertragsart, Wuchestunde, Arbeitsmodell, Arbeitsrichtlinie und Währig werded vo de Bedingige übernoh, wo a däm Datum gültig sind.",
+        "draftSuccess": "Lohnänderig als Entwurf gspycheret",
+        "error": "Lohnänderig isch fählgschlage",
+        "newWage": "Neue Stundelohn",
+        "reason": "Grund",
+        "reasonRequired": "Grund isch erforderlich",
+        "save": "Lohnänderig spychere",
+        "saveAsDraft": "Als Entwurf spychere",
+        "success": "Lohn gänderet",
+        "title": "Lohn ändere",
+        "validFrom": "Gültig ab",
+        "validFromRequired": "Gültig ab isch erforderlich",
+        "wageInvalid": "Stundesatz muess e positivi Zahl syy"
+      },
       "confirmError": "Bestätigung vo de Aastelligshistorie-Änderig isch fehlgschlage",
       "confirmSuccess": "Aastelligshistorie-Änderig isch bestätigt worde",
       "contractType": "Vertragsart",
@@ -511,6 +550,8 @@
       },
       "timeline": "Zytleischte",
       "title": "Vertrag & Arbeitsmodell",
+      "wageHistoryMergeNote": "{count, plural, one {Lohnverlauf isch am {date} mit em alte Tarifverlauf zämegfüehrt worde; # Tarifänderig isch aapasst worde.} other {Lohnverlauf isch am {date} mit em alte Tarifverlauf zämegfüehrt worde; # Tarifänderige sind aapasst worde.}}",
+      "wageHistoryMergeNoteDismiss": "Verwärfe",
       "weeklyHours": "Wöchentliche Arbeitszeit",
       "weeklyHoursValue": "{hours} / Wuche",
       "workModel": "Arbeitsmodell",
@@ -829,7 +870,8 @@
         "edit": "{title} bearbeiten",
         "expires": "Läuft am {date} ab",
         "open": "{title} öffnen",
-        "payPeriod": "Lohnperiode {period}"
+        "payPeriod": "Lohnperiode {period}",
+        "provesSkill": "Wyst {skill} nah"
       },
       "myDocuments": {
         "description": "Dokumente aus Ihrem Personaldossier, die Ihre Organisation mit Ihnen geteilt hat.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Die Verknüpfung des Arztzeugnisses konnte nicht aufgehoben werden.",
         "unlinkFromAbsence": "Verknüpfung von {title} mit der Krankheitsabsenz aufheben"
       },
+      "skillCertificates": {
+        "description": "Wähl d Fähigkeit vo däm Mitarbeiter uus, wo dur «{title}» nahgwise wird. D Planig zeigt dänn aa, dass es Zertifikat hinderleit isch, aber nie de Inhalt dervo.",
+        "edit": "Wähl d Fähigkeit, wo {title} nahwyst",
+        "errors": {
+          "notCertificate": "Nur Zertifikat chönd e Fähigkeit nahwyse.",
+          "notEmployeeSkill": "Wähl eini vo de Fähigkeite vo däm Mitarbeiter uus.",
+          "undatedRequiresExpiry": "Die Fähigkeit bruucht es Ablaufdatum. Nur es Zertifikat mit eme Ablaufdatum chan das nahwyse."
+        },
+        "loadFailed": "D Fähigkeite vo däm Mitarbeiter händ nöd chönne glade werde.",
+        "needsExpiry": "Bruucht es Ablaufdatum. Füeg zersch eis zu däm Zertifikat dezue.",
+        "none": "Keine Fähigkeit",
+        "noSkills": "Dä Mitarbeiter hät no kei Fähigkeite. Wys Fähigkeite uf de Syte vom Mitarbeiter zue.",
+        "save": "Speichern",
+        "saved": "Fähigkeit gespeichert",
+        "saveFailed": "Die Fähigkeit des Zertifikats konnte nicht gespeichert werden.",
+        "title": "Fähigkeit, die dieses Zertifikat nachweist"
+      },
       "tabs": {
         "access": "Zugriff",
         "reminders": "Erinnerungen",
@@ -1021,23 +1080,6 @@
         "hint": "Es ZIP mit de Dokumänt vo de Kategorie, wo du verwaltisch, sortiert in en Ordner pro Kategori.",
         "sharedOnly": "Nur teilte Dokumänt"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Aasatz ändere",
-      "currentRate": "Aktuelle Aasatz: {rate}",
-      "description": "Stundelohn ändret sich mit dr Zyt",
-      "effectiveFrom": "Gültig ab",
-      "effectiveFromHelp": "Wenn dr neu Aasatz in Chraft tryt",
-      "empty": "Kei Aasatz-Historie verfüegbar",
-      "newHourlyRate": "Neue Stundelohn",
-      "reasonOptional": "Grund (optional)",
-      "reasonPlaceholder": "z. B. Jahresgspröch, Beförderig, etc.",
-      "title": "Aasatz-Historie",
-      "updateDescription": "En neue Aasatz-Ytrag erstelle. Dr aktuell Aasatz wird automatisch abgschlosse.",
-      "updateError": "Aasatz chann nid aktualisiert werde",
-      "updateRate": "Aasatz aktualisiere",
-      "updateSuccess": "Aasatz erfolgrych aktualisiert",
-      "updateTitle": "Stundelohn aktualisiere"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Fähigkeitskatalog",
       "catalogDescription": "Definier Fähigkeite, wo für Teilberiich und Schichtvorlage verlangt wärde chönd",
       "category": "Kategorie",
+      "certificateOnFile": "Zertifikat hinterlegt",
       "confirmDelete": "Bisch sicher, dass die Fähigkeit lösche wotsch?",
       "confirmRemove": "Wotsch \"{skillName}\" vo däm Aagstellte entferne?",
       "createError": "Fähigkeit hät nöd chöne erstellt wärde",
@@ -1155,16 +1198,25 @@
       "deleteError": "Fähigkeit hät nöd chöne glöscht wärde",
       "description": "Beschriibig",
       "descriptionPlaceholder": "Optionali Beschriibig vo de Fähigkeit oder em Zertifikat",
+      "editExpiryDate": "Ablaufdatum bearbeiten",
+      "editExpiryDateDescription": "Der letzte Tag, an dem {skillName} gültig ist. Schichten nach diesem Tag zeigen sie als abgelaufen an.",
+      "editExpiryDateFor": "Ablaufdatum von {skillName} bearbeiten",
       "editSkill": "Fähigkeit bearbeite",
       "editSkillDescription": "Aktualisier d'Details vo de Fähigkeit",
       "employeeSkills": "Fähigkeite & Qualifikazione",
       "employeeSkillsDescription": "Zertifikat und Fähigkeite, wo däm Aagstellte zuegwise sind",
+      "errors": {
+        "expiryDateSetByCertificate": "Ein Fähigkeitszertifikat im Personaldossier legt dieses Datum fest. Ändern Sie das Datum auf dem Zertifikat."
+      },
       "expired": "Abglaufe",
       "expiredOn": "Abglaufe am {date}",
       "expiresOn": "Läuft ab am {date}",
       "expiringSoon": "Läuft bald ab",
       "expiry": "Ablaufverfolgig",
       "expiryDate": "Ablaufdatum",
+      "expiryDateFromCertificate": "Ein Fähigkeitszertifikat im Personaldossier legt dieses Datum fest.",
+      "expiryDateUpdated": "Ablaufdatum aktualisiert",
+      "expiryDateUpdateError": "Ablaufdatum konnte nicht aktualisiert werden",
       "expiryRequired": "Erforderlich",
       "expiryRequiredHint": "Für das Zertifikat isch es Ablaufdatum erforderlich",
       "name": "Name",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Erstell dini erschti Fähigkeit zum aafange",
       "notes": "Notize",
       "notesPlaceholder": "z.B. Zertifikatsnummer, Trainingsdatum…",
+      "reminders": {
+        "intro": "Mitarbeiterfähigkeiten mit einem Ablaufdatum senden eine Erinnerung innerhalb der Vorlaufzeit und eine weitere am Ablaufdatum. Der Mitarbeiter und seine Vorgesetzten werden erinnert, oder Inhaber und Admins, wenn der Mitarbeiter keinen Vorgesetzten hat. Das Badge \"Bald ablaufend\" verwendet dieselbe Vorlaufzeit.",
+        "leadDays": "Vorlaufzeit für Fähigkeitserinnerungen (Tage)",
+        "leadDaysDescription": "Tage werden in der Zeitzone der Organisation gezählt. Das Ändern des Ablaufdatums einer Fähigkeit sendet beide Erinnerungen erneut.",
+        "leadDaysInvalid": "Geben Sie eine Vorlaufzeit zwischen {min} und {max} Tagen ein.",
+        "save": "Vorlaufzeit speichern",
+        "saved": "Vorlaufzeit für Erinnerung gespeichert",
+        "saveFailed": "Die Vorlaufzeit für die Erinnerung konnte nicht gespeichert werden.",
+        "title": "Erinnerungen an ablaufende Fähigkeiten"
+      },
       "removeError": "Fähigkeit hät nöd chöne entfernt wärde",
       "requiresExpiry": "Erfordert Ablaufdatum",
       "requiresExpiryHint": "Aktivier das, wenn das Zertifikat erneuert wärde muess (z.B. Erschthilf)",

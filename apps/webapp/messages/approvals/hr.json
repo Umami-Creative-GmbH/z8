@@ -304,6 +304,8 @@
       "dayTotals": "Ukupno po danu",
       "difference": "Razlika",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Nedostaju podaci o vožnji",
+      "drivingDetailsMissingWork": "Nedostaje vozilo ili stanje brojača kilometara",
       "employee": "Zaposlenik",
       "holidays": "Praznici i blagdani",
       "openCalendar": "Otvori kalendar za ovo razdoblje",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Pregledajte sve vrste odobrenja na jednom mjestu uz filtriranje, masovne radnje i praćenje SLA-a.",
     "unifiedInboxBannerTitle": "Isprobajte novi objedinjeni sandučić",
+    "vehicleUse": "Korištenje vozila",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km je više od {limit} km u jednom radnom razdoblju.",
+      "onOtherLiveWork": "Ovo je vozilo već zabilježeno na radu drugog zaposlenika koji je u tijeku.",
+      "speedAboveLimit": "Prijeđena udaljenost implicira prosjek od {speed} km/h tijekom ovog radnog razdoblja, što je više od {limit} km/h.",
+      "startBelowLastEnd": "Početno stanje je manje od zadnjeg zabilježenog završnog stanja za ovo vozilo ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Molimo provjerite",
     "viewExpenseClaim": "Prikaži zahtjev i račune",
     "viewExpenseReport": "Prikaži podneseno izvješće i račune",
     "workBalance": {

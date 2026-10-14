@@ -316,7 +316,7 @@
         "directHint": "Ky ndryshim zbatohet menjëherë.",
         "edit": "Modifiko regjistrimin",
         "invalidRange": "Dalja duhet të jetë pas hyrjes.",
-        "noChanges": "Ndryshoni më parë datën, orën ose vendndodhjen e punës.",
+        "noChangesWithVehicle": "Ndryshoni më parë datën, orën, vendndodhjen e punës ose përdorimin e automjetit.",
         "noteLabel": "Shënim (opsionale)",
         "notePlaceholder": "Shtoni një shënim rreth këtij ndryshimi…",
         "onBehalfHint": "Ky ndryshim ndjek zinxhirin e miratimit të punonjësit. Nëse jeni miratuesi i tyre, ai zbatohet menjëherë.",
@@ -420,7 +420,11 @@
       "splitAt": "Ndaj në",
       "splitDate": "Data e ndarjes",
       "success": "Periudha e punës u nda me sukses",
-      "title": "Ndaj periudhën e punës"
+      "title": "Ndaj periudhën e punës",
+      "vehicleFirstDistance": "Kilometrat në periudhën e parë (opsionale)",
+      "vehicleFirstDistanceHint": "Nga {distance} km të përshkuar; pjesa e mbetur kalon në periudhën e dytë. Nëse lihet bosh, e gjitha mbetet në periudhën e parë.",
+      "vehicleReading": "Leximi i odometrit në ndarje (opsionale)",
+      "vehicleReadingHint": "Përfundon leximet e periudhës së parë dhe fillon të dytën ({start} deri në {end} km). Lëreni bosh nëse nuk e keni lexuar."
     },
     "status": {
       "approved": "Miratuar",

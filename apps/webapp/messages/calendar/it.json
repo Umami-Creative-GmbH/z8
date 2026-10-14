@@ -316,7 +316,7 @@
         "directHint": "Questa modifica ha effetto immediato.",
         "edit": "Modifica voce",
         "invalidRange": "L'uscita deve essere successiva all'entrata.",
-        "noChanges": "Modifica prima la data, l'ora o il luogo di lavoro.",
+        "noChangesWithVehicle": "Modifica prima la data, l'orario, la sede di lavoro o l'uso del veicolo.",
         "noteLabel": "Nota (facoltativa)",
         "notePlaceholder": "Aggiungi una nota su questa modifica…",
         "onBehalfHint": "Questa modifica segue la catena di approvazione del dipendente. Se sei il suo approvatore, viene applicata immediatamente.",
@@ -420,7 +420,11 @@
       "splitAt": "Dividi a",
       "splitDate": "Data di suddivisione",
       "success": "Periodo di lavoro diviso con successo",
-      "title": "Dividi periodo di lavoro"
+      "title": "Dividi periodo di lavoro",
+      "vehicleFirstDistance": "Chilometri nel primo periodo (facoltativo)",
+      "vehicleFirstDistanceHint": "Su {distance} km percorsi; il resto viene assegnato al secondo periodo. Se lasciato vuoto, l'intera distanza rimane nel primo periodo.",
+      "vehicleReading": "Lettura del contachilometri al momento della suddivisione (facoltativo)",
+      "vehicleReadingHint": "Termina le letture del primo periodo e avvia quelle del secondo (da {start} a {end} km). Lascia vuoto se non è stata rilevata."
     },
     "status": {
       "approved": "Approvato",

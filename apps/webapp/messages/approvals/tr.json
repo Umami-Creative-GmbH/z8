@@ -304,6 +304,8 @@
       "dayTotals": "Günlük toplamlar",
       "difference": "Fark",
       "differenceHours": "{difference} sa",
+      "drivingDetailsMissing": "Sürüş ayrıntıları eksik",
+      "drivingDetailsMissingWork": "Araç veya kilometre sayacı değeri eksik",
       "employee": "Çalışan",
       "holidays": "Resmi tatiller",
       "openCalendar": "Bu dönem için takvimi aç",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Tüm onay türlerini filtreleme, toplu işlemler ve SLA takibi ile tek bir yerden görüntüleyin.",
     "unifiedInboxBannerTitle": "Yeni Birleşik Gelen Kutusunu deneyin",
+    "vehicleUse": "Araç kullanımı",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km, tek bir çalışma dönemi için {limit} km sınırından fazla.",
+      "onOtherLiveWork": "Bu araç zaten başka bir çalışanın devam eden işinde kayıtlı.",
+      "speedAboveLimit": "Katedilen mesafe, bu çalışma dönemi boyunca ortalama {speed} km/sa hıza denk geliyor ve bu da {limit} km/sa sınırından fazla.",
+      "startBelowLastEnd": "Başlangıç değeri, bu aracın son kaydedilen bitiş değerinden ({lastEndKm} km) daha düşük."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Lütfen kontrol edin",
     "viewExpenseClaim": "Talebi ve fişleri görüntüle",
     "viewExpenseReport": "Gönderilen raporu ve fişleri görüntüle",
     "workBalance": {

@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Çdokush mund ta marrë",
       "assignTo": "Caktoja",
+      "certificateOnFileFor": "Certifikata në dosje: {skills}",
       "confirmDelete": "Konfirmo fshirjen",
       "created": "Turni u krijua",
       "createDescription": "Plotësoni të dhënat për turnin e ri",
@@ -118,6 +119,7 @@
       "updateShift": "Përditëso turnin"
     },
     "skills": {
+      "certificateOnFile": "Certifikata në dosje",
       "expiredCertifications": "Certifikime të skaduara:",
       "expiredOn": "(Skaduar më {date})",
       "missingPreferred": "Aftësi të preferuara që mungojnë:",

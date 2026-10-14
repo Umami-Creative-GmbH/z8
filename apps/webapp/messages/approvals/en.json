@@ -304,6 +304,8 @@
       "dayTotals": "Day totals",
       "difference": "Difference",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Driving details missing",
+      "drivingDetailsMissingWork": "Vehicle or odometer reading missing",
       "employee": "Employee",
       "holidays": "Public holidays",
       "openCalendar": "Open the calendar for this period",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "View all approval types in one place with filtering, bulk actions, and SLA tracking.",
     "unifiedInboxBannerTitle": "Try the new Unified Inbox",
+    "vehicleUse": "Vehicle use",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km is more than {limit} km in one work period.",
+      "onOtherLiveWork": "This vehicle is already recorded on another employee's running work.",
+      "speedAboveLimit": "The driven distance implies an average of {speed} km/h over this work period, more than {limit} km/h.",
+      "startBelowLastEnd": "The start reading is below this vehicle's last recorded end reading ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Please check",
     "viewExpenseClaim": "View claim and receipts",
     "viewExpenseReport": "View submitted report and receipts",
     "workBalance": {

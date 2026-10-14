@@ -316,7 +316,7 @@
         "directHint": "Ova promjena se primjenjuje odmah.",
         "edit": "Uredi unos",
         "invalidRange": "Odjava mora biti nakon prijave.",
-        "noChanges": "Prvo promijenite datum, vrijeme ili lokaciju rada.",
+        "noChangesWithVehicle": "Prvo promijenite datum, vrijeme, lokaciju rada ili korištenje vozila.",
         "noteLabel": "Bilješka (opcionalno)",
         "notePlaceholder": "Dodajte bilješku o ovoj promjeni…",
         "onBehalfHint": "Ova promjena prati lanac odobravanja zaposlenika. Ako ste vi njihov odobravatelj, primjenjuje se odmah.",
@@ -420,7 +420,11 @@
       "splitAt": "Podijeli u",
       "splitDate": "Datum podjele",
       "success": "Radni period je uspješno podijeljen",
-      "title": "Podijeli radni period"
+      "title": "Podijeli radni period",
+      "vehicleFirstDistance": "Kilometri u prvom periodu (opcionalno)",
+      "vehicleFirstDistanceHint": "Od {distance} pređenih km; ostatak ide u drugi period. Ako ostane prazno, sve ostaje u prvom periodu.",
+      "vehicleReading": "Očitanje odometra pri podjeli (opcionalno)",
+      "vehicleReadingHint": "Završava očitanja prvog perioda i započinje očitanja drugog ({start} do {end} km). Ostavite prazno ako ga niste očitali."
     },
     "status": {
       "approved": "Odobreno",

@@ -108,6 +108,36 @@
       "noBalance": "Brak salda"
     },
     "description": "Przeglądaj i zarządzaj pracownikami, których bezpośrednio nadzorujesz",
+    "driving": {
+      "columns": {
+        "calendar": "Kalendarz",
+        "date": "Data",
+        "employee": "Pracownik",
+        "missing": "Brakujące",
+        "time": "Zarejestrowany czas lokalny"
+      },
+      "count": "{count, plural, one {W # okresie pracy brakuje szczegółów dotyczących jazdy.} other {W # okresach pracy brakuje szczegółów dotyczących jazdy.} }",
+      "descriptionAll": "Okresy pracy, w których brakuje pojazdu lub stanu licznika, mimo że oczekiwane jest użycie pojazdu. Pozostają na liście do momentu uzupełnienia szczegółów.",
+      "descriptionManaged": "Okresy pracy zarządzanych przez Ciebie pracowników, w których brakuje pojazdu lub stanu licznika, mimo że oczekiwane jest użycie pojazdu. Pozostają na liście do momentu uzupełnienia szczegółów.",
+      "empty": "Żaden okres pracy nie ma brakujących szczegółów dotyczących jazdy.",
+      "filters": {
+        "allEmployees": "Wszyscy pracownicy",
+        "allTeams": "Wszystkie zespoły",
+        "employee": "Pracownik",
+        "team": "Zespół"
+      },
+      "loading": "Ładowanie szczegółów dotyczących jazdy",
+      "missing": {
+        "endReading": "Brak końcowego stanu licznika",
+        "readings": "Brak stanów licznika",
+        "startReading": "Brak początkowego stanu licznika",
+        "vehicle": "Brak pojazdu"
+      },
+      "openCalendar": "Kalendarz",
+      "openCalendarOf": "Otwórz kalendarz użytkownika {name}",
+      "title": "Brak szczegółów dotyczących jazdy",
+      "truncated": "Wyświetlanie najnowszych {count} okresów pracy. Przefiltruj według zespołu lub pracownika, aby zobaczyć pozostałe."
+    },
     "empty": {
       "action": "Przejdź do ustawień pracownika",
       "description": "Tutaj pojawią się pracownicy przypisani do Ciebie jako menedżera. Możesz zarządzać przypisaniami do zespołu w ustawieniach pracownika.",

@@ -304,6 +304,8 @@
       "dayTotals": "Dagssummor",
       "difference": "Differens",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Körinformation saknas",
+      "drivingDetailsMissingWork": "Fordon eller mätarställning saknas",
       "employee": "Medarbetare",
       "holidays": "Helgdagar",
       "openCalendar": "Öppna kalendern för denna period",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Visa alla typer av godkännanden på ett ställe med filtrering, massåtgärder och SLA-uppföljning.",
     "unifiedInboxBannerTitle": "Prova den nya enhetliga inkorgen",
+    "vehicleUse": "Fordonsanvändning",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km är mer än {limit} km under ett arbetspass.",
+      "onOtherLiveWork": "Detta fordon är redan registrerat på en annan medarbetares pågående arbete.",
+      "speedAboveLimit": "Den körda sträckan innebär ett genomsnitt på {speed} km/h under detta arbetspass, vilket är mer än {limit} km/h.",
+      "startBelowLastEnd": "Startmätarställningen är lägre än fordonets senast registrerade slutmätarställning ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Vänligen kontrollera",
     "viewExpenseClaim": "Visa reseräkning och kvitton",
     "viewExpenseReport": "Visa inskickad rapport och kvitton",
     "workBalance": {

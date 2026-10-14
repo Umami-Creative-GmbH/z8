@@ -304,6 +304,8 @@
       "dayTotals": "Dagstotaler",
       "difference": "Differanse",
       "differenceHours": "{difference} t",
+      "drivingDetailsMissing": "Kjøredetaljer mangler",
+      "drivingDetailsMissingWork": "Kjøretøy eller kilometerstand mangler",
       "employee": "Ansatt",
       "holidays": "Helligdager",
       "openCalendar": "Åpne kalenderen for denne perioden",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Se alle godkjenningstyper på ett sted med filtrering, massehandlinger og SLA-sporing.",
     "unifiedInboxBannerTitle": "Prøv den nye samlede innboksen",
+    "vehicleUse": "Kjøretøybruk",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km er mer enn {limit} km i én arbeidsperiode.",
+      "onOtherLiveWork": "Dette kjøretøyet er allerede registrert på en annen ansatts pågående arbeid.",
+      "speedAboveLimit": "Den kjørte distansen tilsier et gjennomsnitt på {speed} km/t over denne arbeidsperioden, mer enn {limit} km/t.",
+      "startBelowLastEnd": "Startavlesningen er lavere enn kjøretøyets sist registrerte sluttavlesning ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Vennligst sjekk",
     "viewExpenseClaim": "Vis krav og kvitteringer",
     "viewExpenseReport": "Vis innsendt rapport og kvitteringer",
     "workBalance": {

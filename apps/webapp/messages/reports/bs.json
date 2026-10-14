@@ -434,6 +434,45 @@
       "reportGenerated": "Izvještaj je uspješno generisan",
       "unexpectedError": "Došlo je do neočekivane greške",
       "unknownError": "Došlo je do nepoznate greške"
+    },
+    "vehicles": {
+      "archived": "arhivirano",
+      "archivedBadge": "Arhivirano",
+      "empty": {
+        "description": "U ovom periodu nije zabilježen završeni rad s pređenom udaljenošću.",
+        "title": "Nema vožnje u ovom periodu"
+      },
+      "error": "Greška",
+      "export": {
+        "footer": "Generisao Z8",
+        "generatedAt": "Generisano",
+        "note": "Puni kilometri završenog rada, računati u mjesecu u kojem je rad počeo (lokalno vrijeme gdje je zabilježeno).",
+        "period": "Period",
+        "table": "Kilometri"
+      },
+      "failed": "Izvještaj o kilometraži po vozilu nije se mogao generisati",
+      "filter": {
+        "period": "Period"
+      },
+      "generate": "Generiši izvještaj",
+      "generating": "Generisanje izvještaja…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Još nema generisanih izvještaja",
+      "ownVehicle": "Vlastito vozilo",
+      "page": {
+        "description": "Pređeni kilometri za posao po vozilu i zaposleniku, po mjesecima",
+        "feature": "pogledajte izvještaj o kilometraži po vozilu"
+      },
+      "selectPeriod": "Odaberite period i generišite izvještaj.",
+      "table": {
+        "employee": "Zaposlenik",
+        "licencePlate": "Registarska oznaka",
+        "total": "Ukupno",
+        "vehicle": "Vozilo",
+        "vehicleAndEmployee": "Vozilo / zaposlenik"
+      },
+      "title": "Kilometraža po vozilu",
+      "totalDriven": "Pređeno {distance}"
     }
   }
 }

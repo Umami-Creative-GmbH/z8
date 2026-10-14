@@ -304,6 +304,8 @@
       "dayTotals": "Sumy dzienne",
       "difference": "Różnica",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Brak szczegółów przejazdu",
+      "drivingDetailsMissingWork": "Brak pojazdu lub stanu licznika",
       "employee": "Pracownik",
       "holidays": "Dni ustawowo wolne od pracy",
       "openCalendar": "Otwórz kalendarz dla tego okresu",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Przeglądaj wszystkie typy zatwierdzeń w jednym miejscu dzięki filtrowaniu, akcjom masowym i śledzeniu SLA.",
     "unifiedInboxBannerTitle": "Wypróbuj nową ujednoliconą skrzynkę odbiorczą",
+    "vehicleUse": "Użycie pojazdu",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km to więcej niż {limit} km w jednym okresie pracy.",
+      "onOtherLiveWork": "Ten pojazd jest już przypisany do trwającej pracy innego pracownika.",
+      "speedAboveLimit": "Przejechany dystans wskazuje na średnią prędkość {speed} km/h w tym okresie pracy, czyli ponad {limit} km/h.",
+      "startBelowLastEnd": "Początkowy stan licznika jest niższy niż ostatni zarejestrowany stan końcowy tego pojazdu ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Proszę sprawdzić",
     "viewExpenseClaim": "Wyświetl wniosek i rachunki",
     "viewExpenseReport": "Wyświetl przesłany raport i rachunki",
     "workBalance": {

@@ -1,3 +1,218 @@
 {
-  "emails": {}
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Faturalandırmayı aç",
+        "amountLabel": "Ödenecek tutar",
+        "body": "{organizationName} için {invoiceNumber} numaralı fatura hazır.",
+        "dueDateLabel": "Son ödeme tarihi",
+        "subject": "{invoiceNumber} numaralı Z8 faturanız hazır",
+        "title": "Faturanız hazır"
+      },
+      "paymentFailed": {
+        "action": "Ödeme yöntemini güncelle",
+        "body": "{organizationName} için {invoiceAmount} tutarı tahsil edilemedi.",
+        "retry": "Hizmet kesintisini önlemek için lütfen {paymentRetryDate} tarihindeki bir sonraki denemeden önce ödeme yönteminizi güncelleyin.",
+        "subject": "İşlem yapılması gerekiyor: Z8 ödemesi başarısız oldu",
+        "title": "Ödemeniz başarısız oldu"
+      },
+      "subscriptionPaused": {
+        "action": "Faturalandırmayı yönet",
+        "body": "{organizationName} için {planName} aboneliği duraklatıldı.",
+        "limits": "Zaman takibi verileri erişilebilir kalmaya devam eder, ancak faturalandırma yeniden başlayana kadar ücretli plan özellikleri sınırlandırılabilir.",
+        "subject": "Z8 aboneliğiniz duraklatıldı",
+        "title": "Aboneliğiniz duraklatıldı"
+      },
+      "subscriptionResumed": {
+        "action": "Faturalandırma ayrıntılarını görüntüle",
+        "active": "Ücretli Z8 özellikleriniz yeniden etkinleştirildi.",
+        "body": "{organizationName} için {planName} aboneliği {resumeDate} tarihinde yeniden başlatıldı.",
+        "subject": "Z8 aboneliğiniz yeniden başlatıldı",
+        "title": "Aboneliğiniz yeniden başlatıldı"
+      },
+      "trialEnding": {
+        "action": "Faturalandırma ayarlarını incele",
+        "body": "{organizationName} için {planName} deneme süreniz {trialEndsAt} tarihinde sona eriyor.",
+        "paymentMethod": "Z8'i kesintisiz kullanmaya devam etmek için faturalandırma ayarlarına bir ödeme yöntemi ekleyin.",
+        "subject": "{daysRemaining, plural, other {Z8 deneme süreniz # gün içinde sona eriyor} }",
+        "subjectSoon": "Z8 deneme süreniz yakında sona eriyor",
+        "title": "Deneme süreniz sona eriyor"
+      },
+      "values": {
+        "noDueDate": "ayarlanmadı",
+        "retrySoon": "yakında",
+        "yourOrganization": "kuruluşunuz"
+      }
+    },
+    "common": {
+      "greeting": "Merhaba {name},"
+    },
+    "details": {
+      "category": "Kategori",
+      "correctedTimes": "Düzeltilen saatler",
+      "date": "Tarih",
+      "dates": "Tarihler",
+      "days": "Günler",
+      "notes": "Notlar",
+      "originalTimes": "Orijinal saatler",
+      "range": "{start} – {end}",
+      "reason": "Neden"
+    },
+    "export": {
+      "categories": {
+        "absences": "Devamsızlıklar",
+        "auditLogs": "Denetim Günlükleri",
+        "balanceAdjustments": "Çalışma Bakiyesi Düzeltmeleri",
+        "customers": "Müşteriler",
+        "employees": "Çalışanlar",
+        "holidays": "Tatiller",
+        "projects": "Projeler",
+        "schedules": "Çalışma Programları",
+        "shifts": "Vardiyalar",
+        "teams": "Ekipler",
+        "timeEntries": "Zaman Takibi",
+        "vacation": "İzin Politikaları",
+        "workPeriods": "Çalışma Dönemleri"
+      },
+      "organization": "Kuruluş",
+      "values": {
+        "yourOrganization": "Kuruluşunuz"
+      }
+    },
+    "exportFailed": {
+      "action": "Yeniden dene",
+      "body": "Maalesef {organizationName} için veri dışa aktarma işleminiz tamamlanamadı.",
+      "categories": "Talep edilen veriler",
+      "error": "Hata",
+      "note": "Bu hata devam ederse yukarıdaki hata iletisiyle birlikte destek ekibiyle iletişime geçin. Tek seferde daha az veri kategorisi dışa aktarmak da yardımcı olabilir.",
+      "title": "Veri dışa aktarma başarısız oldu",
+      "unknownError": "Bilinmeyen hata"
+    },
+    "exportReady": {
+      "action": "Dışa aktarma geçmişini aç",
+      "body": "{organizationName} için veri dışa aktarma işleminiz tamamlandı. Dosyayı Z8'deki dışa aktarma geçmişinden indirebilirsiniz.",
+      "categories": "Dahil edilen veriler",
+      "expiresAt": "Geçerlilik süresi",
+      "fileSize": "Dosya boyutu",
+      "note": "Dosyayı indirmek için Z8'e kuruluş yöneticisi olarak giriş yapın. Her indirme yeni ve güvenli bir bağlantıyla başlar. Yukarıdaki tarihten sonra dışa aktarma dosyası otomatik olarak silinir.",
+      "title": "Veri dışa aktarmanız hazır"
+    },
+    "invitation": {
+      "action": "Daveti kabul et",
+      "body": "{inviterName}, sizi {organizationName} kuruluşuna {role} olarak katılmaya davet etti.",
+      "email": "E-posta adresiniz",
+      "greeting": "Merhaba,",
+      "invitedBy": "Davet eden",
+      "note": "Bu daveti beklemiyorsanız bu e-postayı dikkate almayabilirsiniz.",
+      "organization": "Kuruluş",
+      "role": "Rol",
+      "roles": {
+        "admin": "Yönetici",
+        "member": "Üye",
+        "owner": "Sahip"
+      },
+      "title": "{organizationName} kuruluşuna davet edildiniz"
+    },
+    "layout": {
+      "actionFallback": "Düğme çalışmıyorsa bu bağlantıyı açın:",
+      "footer": "Bu e-posta Z8 tarafından gönderildi."
+    },
+    "notification": {
+      "openAction": "Z8'i Aç"
+    },
+    "organizationDeletion": {
+      "action": "Kuruluşu kurtar",
+      "body": "{deletedByName}, {organizationName} kuruluşunu silinmek üzere planladı. Kuruluşu {permanentDeletionDate} tarihine kadar kurtarabilirsiniz.",
+      "initiatedBy": "Başlatan",
+      "items": {
+        "absences": "Tüm devamsızlıklar ve izin hakları",
+        "employees": "Tüm çalışanlar, ekipler ve yönetici atamaları",
+        "members": "Tüm üyeler ve bekleyen davetler",
+        "projects": "Tüm projeler ve zaman atamaları",
+        "settings": "Tüm ayarlar, programlar ve yapılandırmalar",
+        "timeEntries": "Tüm zaman girişleri ve çalışma dönemleri"
+      },
+      "itemsTitle": "Kalıcı olarak silinecekler:",
+      "note": "Kuruluşu silmek istediyseniz herhangi bir işlem yapmanız gerekmez. Silmek istemediyseniz kuruluşu şimdi kurtarın ve hesap güvenliğinizi gözden geçirin.",
+      "organization": "Kuruluş",
+      "permanentAt": "Kalıcı silme",
+      "preview": "{organizationName}, {permanentDeletionDate} tarihinde kalıcı olarak silinecektir.",
+      "requestedAt": "Silme talep edildi",
+      "title": "Kuruluş silinmek üzere planlandı"
+    },
+    "passwordReset": {
+      "action": "Şifreyi sıfırla",
+      "body": "Şifrenizi sıfırlamak için bir talep aldık. Yeni bir şifre seçmek için aşağıdaki düğmeyi kullanın.",
+      "note": "Şifrenizi sıfırlama talebinde bulunmadıysanız bu e-postayı dikkate almayabilirsiniz; şifreniz aynı kalacaktır. Bağlantının süresi 1 saat içinde dolar.",
+      "title": "Şifrenizi sıfırlayın"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Tarih aralığı",
+      "empty": {
+        "body": "Planlanan {scheduleName} dışa aktarma işleminiz çalıştırıldı ancak indirilecek bir şey yok.",
+        "noFile": "Bu çalıştırma için dosya oluşturulmadı.",
+        "title": "Zamanlanmış dışa aktarma tamamlandı"
+      },
+      "ready": {
+        "action": "Dışa aktarmayı indir",
+        "body": "{scheduleName} adlı zamanlanmış dışa aktarmanız başarıyla tamamlandı.",
+        "linkExpiry": "Bu indirme bağlantısı {lifetime} boyunca geçerlidir ve süresi {expiresAt} tarihinde dolacaktır.",
+        "title": "Zamanlanmış dışa aktarma hazır"
+      },
+      "recordsLabel": "Kayıtlar",
+      "subject": "Zamanlanmış Dışa Aktarma: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Güvenlik ayarlarını gözden geçirin",
+      "device": "Cihaz",
+      "event": "Olay",
+      "ipAddress": "IP adresi",
+      "notYou": "Bu değişikliği siz yapmadıysanız hemen hesabınızı güvenceye alın: şifrenizi değiştirin ve güvenlik ayarlarınızı gözden geçirin.",
+      "passwordChanged": {
+        "description": "Z8 hesabınızın şifresi değiştirildi.",
+        "title": "Şifre değiştirildi"
+      },
+      "time": "Saat",
+      "twoFactorDisabled": {
+        "description": "Z8 hesabınız için iki adımlı doğrulama kapatıldı.",
+        "title": "İki adımlı doğrulama devre dışı bırakıldı"
+      },
+      "twoFactorEnabled": {
+        "description": "Z8 hesabınız için iki adımlı doğrulama açıldı.",
+        "title": "İki adımlı doğrulama etkinleştirildi"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "İzin Kaydedildi",
+      "absenceRequestApproved": "İzin Talebi Onaylandı",
+      "absenceRequestRejected": "İzin Talebi Reddedildi",
+      "absenceRequestSubmitted": "İzin Talebi Gönderildi",
+      "approvalRequestSubmitted": "Onay Bekleyen Yeni İzin Talebi",
+      "exportFailed": "Veri dışa aktarma başarısız oldu - {organizationName}",
+      "exportReady": "Veri dışa aktarmanız hazır - {organizationName}",
+      "organizationDeletion": "{organizationName} adlı kuruluş silinmek üzere zamanlandı",
+      "organizationInvitation": "{organizationName} adlı kuruluşa katılmaya davet edildiniz",
+      "passwordChanged": "Güvenlik Uyarısı: Şifre Değiştirildi",
+      "passwordReset": "Şifrenizi sıfırlayın",
+      "teamMemberAdded": "{teamName} ekibine eklendiniz",
+      "teamMemberRemoved": "{teamName} ekibinden çıkarıldınız",
+      "timeCorrectionApproved": "Zaman Düzeltmesi Onaylandı",
+      "timeCorrectionRejected": "Zaman Düzeltmesi Reddedildi",
+      "timeCorrectionSubmitted": "Onay Bekleyen Yeni Zaman Düzeltmesi",
+      "twoFactorDisabled": "Güvenlik Uyarısı: İki Adımlı Doğrulama Devre Dışı Bırakıldı",
+      "twoFactorEnabled": "Güvenlik Uyarısı: İki Adımlı Doğrulama Etkinleştirildi",
+      "verifyEmail": "E-posta adresinizi doğrulayın"
+    },
+    "variables": {
+      "noReason": "Neden belirtilmedi",
+      "noTime": "-",
+      "yourManager": "yöneticiniz"
+    },
+    "verification": {
+      "action": "E-posta adresini doğrula",
+      "body": "Z8'e hoş geldiniz! Kaydınızı tamamlamak için lütfen aşağıdaki butondan e-posta adresinizi doğrulayın.",
+      "note": "Bir hesap oluşturmadıysanız bu e-postayı dikkate almayabilirsiniz. Bağlantının süresi 1 saat içinde dolar.",
+      "title": "E-posta adresinizi doğrulayın"
+    }
+  }
 }

@@ -304,6 +304,8 @@
       "dayTotals": "Totaux journaliers",
       "difference": "Différence",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Détails de conduite manquants",
+      "drivingDetailsMissingWork": "Véhicule ou relevé kilométrique manquant",
       "employee": "Employé",
       "holidays": "Jours fériés",
       "openCalendar": "Ouvrir le calendrier pour cette période",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Visualisez tous les types d'approbation au même endroit avec filtrage, actions groupées et suivi des SLA.",
     "unifiedInboxBannerTitle": "Essayez la nouvelle boîte de réception unifiée",
+    "vehicleUse": "Utilisation du véhicule",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km dépasse la limite de {limit} km pour une seule période de travail.",
+      "onOtherLiveWork": "Ce véhicule est déjà enregistré pour le travail en cours d'un autre employé.",
+      "speedAboveLimit": "La distance parcourue implique une vitesse moyenne de {speed} km/h sur cette période de travail, ce qui dépasse {limit} km/h.",
+      "startBelowLastEnd": "Le relevé initial est inférieur au dernier relevé final enregistré pour ce véhicule ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Veuillez vérifier",
     "viewExpenseClaim": "Afficher la demande et les reçus",
     "viewExpenseReport": "Afficher la note de frais soumise et les justificatifs",
     "workBalance": {

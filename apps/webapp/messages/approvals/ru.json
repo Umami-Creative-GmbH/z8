@@ -304,6 +304,8 @@
       "dayTotals": "Итоги за день",
       "difference": "Разница",
       "differenceHours": "{difference} ч",
+      "drivingDetailsMissing": "Отсутствуют данные о поездке",
+      "drivingDetailsMissingWork": "Отсутствует транспортное средство или показания одометра",
       "employee": "Сотрудник",
       "holidays": "Государственные праздники",
       "openCalendar": "Открыть календарь за этот период",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Просматривайте все типы согласований в одном месте с фильтрацией, массовыми действиями и отслеживанием SLA.",
     "unifiedInboxBannerTitle": "Попробуйте новую единую папку «Входящие»",
+    "vehicleUse": "Использование транспорта",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} км превышает {limit} км за один рабочий период.",
+      "onOtherLiveWork": "Это транспортное средство уже указано в текущей работе другого сотрудника.",
+      "speedAboveLimit": "Пройденное расстояние предполагает среднюю скорость {speed} км/ч за этот рабочий период, что превышает {limit} км/ч.",
+      "startBelowLastEnd": "Начальные показания меньше последних зафиксированных конечных показаний для этого транспортного средства ({lastEndKm} км)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Пожалуйста, проверьте",
     "viewExpenseClaim": "Просмотреть заявку и квитанции",
     "viewExpenseReport": "Просмотреть отправленный отчет и чеки",
     "workBalance": {

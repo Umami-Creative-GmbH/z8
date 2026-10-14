@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Po ngarkohen cilësimet e shpenzimeve të udhëtimit",
       "twoFactorVerification": "Po ngarkohet verifikimi me dy faktorë",
       "vacationSettings": "Po ngarkohen cilësimet e pushimeve",
+      "vehicleDistanceReport": "Po ngarkohet raporti i distancës për automjet",
       "wellnessSettings": "Po ngarkohen cilësimet e mirëqenies",
       "workCategorySettings": "Po ngarkohen cilësimet e kategorisë së punës",
       "workerQueue": "Po ngarkohet radha e punëtorëve",
@@ -418,6 +419,17 @@
     "update": "Përditëso",
     "updating": "Po përditësohet...",
     "uploading": "Po ngarkohet...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "kufizuar në lejen e plotë",
+      "employmentMonths": "{months, plural, one {# muaj i plotë punësimi} other {# muaj të plotë punësimi}}",
+      "lastWorkingDay": "dita e fundit e punës {date}",
+      "notEmployed": "{allowance} nga {fullAllowance} ditë: pa marrëdhënie pune në {year}",
+      "overdrawn": "{days, plural, one {# ditë e tejkaluar} other {# ditë të tejkaluara}}",
+      "overdrawnHint": "Pushime të marra përtej lejes së caktuar. Shfaqet vetëm për informacion: asgjë nuk zbritet.",
+      "proratedSummary": "{allowance} nga {fullAllowance} ditë, në proporcion: {details}",
+      "started": "filloi më {date}",
+      "statutoryMinimumApplies": "zbatohet minimumi ligjor"
+    },
     "validate": "Valido",
     "validationError": "Gabim vërtetimi",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "Këshilli i Punonjësve",
       "to": "Deri më",
       "unassignedTeam": "Ekip i pacaktuar",
-      "updateRange": "Përditëso diapazonin"
+      "updateRange": "Përditëso diapazonin",
+      "vehicleUse": {
+        "activeVehicles": "Automjetet aktive",
+        "archivedVehicles": "Automjetet e arkivuara",
+        "coveredAsked": "Kërkuar nga",
+        "coveredDescription": "{count, plural, one {# punonjës aktiv kërkohet ose pritet të regjistrojë përdorimin e automjetit tani.} other {# punonjës aktivë kërkohen ose priten të regjistrojnë përdorimin e automjetit tani.}}",
+        "coveredExpected": "Pritet nga",
+        "coveredTitle": "Punonjësit e përfshirë",
+        "description": "Ata që organizata u kërkon të regjistrojnë automjetin që ngasin për punë. Këshilli i punës nuk i sheh kurrë leximet e odometrit ose distancat e përshkuara nga një punonjës.",
+        "employeeAssignmentCounts": "{asked} të kërkuar, {expected} të pritur, {off} të çaktivizuar individualisht",
+        "employeeAssignments": "Caktimet e punonjësve",
+        "employeePseudonym": "Punonjësi {ref}",
+        "enabled": "Ndërro",
+        "modeAsked": "Kërkuar",
+        "modeExpected": "Pritur",
+        "modeOff": "Joaktiv",
+        "noEmployeeAssignments": "Nuk ka caktime punonjësish.",
+        "notAssigned": "I pacaktuar",
+        "noTeamAssignments": "Nuk ka caktime ekipi.",
+        "off": "Joaktiv",
+        "on": "Aktiv",
+        "organizationAssignment": "E gjithë organizata",
+        "teamAssignments": "Caktimet e ekipit",
+        "title": "Përdorimi i automjetit",
+        "vehiclesTitle": "Automjetet e organizatës"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Cilësimet",
     "team": "Ekipi",
     "teamAbsences": "Mungesat e ekipit",
+    "teamDriving": "Detajet e drejtimit",
     "team-label": "Ekipi",
     "teamPeriodSubmissions": "Dorëzimet e periudhës",
     "teamPresence": "Kush është i pranishëm",
@@ -618,6 +656,9 @@
       "markRead": "Shëno si të lexuar",
       "settings": "Cilësimet e njoftimeve",
       "viewAll": "Shiko të gjitha njoftimet"
+    },
+    "channels": {
+      "viewInZ8": "Shiko në Z8"
     },
     "content": {
       "absenceDeputyAssigned": {
@@ -645,7 +686,12 @@
         "message": "{managerName} regjistroi {absenceType} për {dateRange} në emrin tuaj.",
         "title": "Mungesa u regjistrua"
       },
+      "absenceRequestApproved": {
+        "message": "Kërkesa juaj për {categoryName} për {dateRange} u miratua nga {approverName}."
+      },
       "absenceRequestRejected": {
+        "message": "Kërkesa juaj për {categoryName} për {dateRange} u refuzua nga {approverName}.",
+        "messageWithReason": "Kërkesa juaj për {categoryName} për {dateRange} u refuzua nga {approverName}. Arsyeja: {rejectionReason}",
         "title": "Kërkesa për mungesë u refuzua"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +705,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {Po mbuloni miratimet e {name}: asgjë në pritje ende.} other {Po mbuloni miratimet e {name}: # në pritje.}}",
         "title": "Po mbuloni miratimet"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "Historiku i përshkallëzimit të një miratimi është i paqartë dhe ka nevojë për shqyrtim përpara çdo transferimi automatik.",
+        "deliveryExhausted": "Njoftimet e përshkallëzimit për një miratim dështuan pas të gjitha riprovimeve.",
+        "deliveryUnavailable": "Nuk disponohet asnjë destinacion njoftimi për përshkallëzimin e një miratimi.",
+        "noEligibleBackup": "Një miratim i vonuar nuk ka asnjë miratues rezervë të përshtatshëm. Miratuesi aktual e mban caktimin.",
+        "replacementOverdue": "Një miratim është ende i pavendosur pas përshkallëzimit të tij automatik. Nuk do të ndodhë asnjë transferim tjetër automatik.",
+        "title": "Përshkallëzimi i miratimit kërkon vëmendje",
+        "unsupportedRoute": "Një miratim nuk mund të përshkallëzohet sepse rruga e tij e vendimmarrjes nuk mbështetet."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName} anuloi {categoryName} të miratuar për {dateRange}.",
+        "title": "Mungesa e miratuar u anulua"
       },
       "automaticClockOut": {
         "breakMessage": "U çregjistruat automatikisht në fillim të pushimit tuaj në {cutoff} ({timezone}) sepse pushimi nuk përfundoi brenda afatit kohor prej {duration} minutash të organizatës suaj.",
@@ -683,9 +742,56 @@
           "title": "Pagesa e orëve jashtë orarit u regjistrua"
         }
       },
+      "birthdayReminder": {
+        "message": "Ditëlindja e {name} është më {date}.",
+        "title": "Ditëlindje e ardhshme"
+      },
       "breakDueReminder": {
         "message": "Pushimi juaj duhet të merret në {breakTime} ({timezone}). Merrni një pushim deri atëherë për të ndjekur rregullat e pushimit të politikës suaj të punës.",
         "title": "Së shpejti koha për pushim"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName} shënoi daljen më {date} ({startTime} – {endTime}, {duration}). Kërkohet miratim.",
+        "messageWithoutTimes": "{employeeName} shënoi daljen ({duration}). Kërkohet miratim.",
+        "title": "Kërkohet miratimi i daljes"
+      },
+      "clockOutApproved": {
+        "message": "Dalja juaj u miratua nga {approverName}.",
+        "title": "Dalja u miratua"
+      },
+      "clockOutPendingApproval": {
+        "message": "Dalja juaj më {date} ({duration}) është në pritje të miratimit nga menaxheri.",
+        "messageWithoutDate": "Dalja juaj ({duration}) është në pritje të miratimit nga menaxheri.",
+        "title": "Dalja në pritje të miratimit"
+      },
+      "clockOutRejected": {
+        "message": "Miratimi i daljes suaj u refuzua nga {approverName}. Kohët e regjistruara mbeten të pandryshuara dhe përjashtohen nga koha e miratuar e listëpagesës.",
+        "messageWithReason": "Miratimi i daljes suaj u refuzua nga {approverName}. Kohët e regjistruara mbeten të pandryshuara dhe përjashtohen nga koha e miratuar e listëpagesës. Arsyeja: {rejectionReason}",
+        "title": "Dalja u refuzua"
+      },
+      "complianceExceptionApproved": {
+        "message": "Përjashtimi juaj për {exceptionType, select, rest_period {periudhë pushimi} overtime_daily {orë shtesë ditore} overtime_weekly {orë shtesë javore} overtime_monthly {orë shtesë mujore} other {pajtueshmëri}} u miratua nga {approverName}. I vlefshëm deri më {validUntil}.",
+        "title": "Përjashtimi u miratua"
+      },
+      "complianceExceptionExpired": {
+        "message": "Paramiratimi juaj për {exceptionType, select, rest_period {periudhë pushimi} overtime_daily {orë shtesë ditore} overtime_weekly {orë shtesë javore} overtime_monthly {orë shtesë mujore} other {pajtueshmëri}} ka skaduar (kanë kaluar 24 orë pa u përdorur).",
+        "title": "Përjashtimi skadoi"
+      },
+      "complianceExceptionRejected": {
+        "message": "Përjashtimi juaj për {exceptionType, select, rest_period {periudhë pushimi} overtime_daily {orë shtesë ditore} overtime_weekly {orë shtesë javore} overtime_monthly {orë shtesë mujore} other {pajtueshmëri}} u refuzua nga {approverName}.",
+        "messageWithReason": "Përjashtimi juaj për {exceptionType, select, rest_period {periudhë pushimi} overtime_daily {orë shtesë ditore} overtime_weekly {orë shtesë javore} overtime_monthly {orë shtesë mujore} other {pajtueshmëri}} u refuzua nga {approverName}. Arsyeja: \"{reason}\"",
+        "title": "Përjashtimi u refuzua"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} kërkoi një përjashtim për {exceptionType, select, rest_period {periudhë pushimi} overtime_daily {orë shtesë ditore} overtime_weekly {orë shtesë javore} overtime_monthly {orë shtesë mujore} other {pajtueshmëri}}: \"{reason}\"",
+        "title": "U kërkua përjashtim për pajtueshmëri"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "{count} periudhave të punës nga {dates} u mungon automjeti ose leximi i odometrit. Shtojini ato në periudhat e punës."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "Në punën tuaj më {date} mungon automjeti ose leximi i odometrit. Shtojini ato në periudhën e punës.",
+        "title": "Shtoni detajet tuaja të drejtimit"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Detyrat e miratimit kanë nevojë për një zëvendësues (largimi hyn në fuqi më {cutoff}, {timezone}).",
@@ -698,6 +804,15 @@
       "forgottenClockOutReminder": {
         "message": "Turni juaj përfundoi në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën.",
         "title": "Jeni ende i regjistruar në punë"
+      },
+      "manualEntryApproved": {
+        "message": "Dorëzimi juaj manual i kohës u miratua nga {approverName}.",
+        "title": "Dorëzimi manual i kohës u miratua"
+      },
+      "manualEntryRejected": {
+        "message": "Dorëzimi juaj manual i kohës u refuzua nga {approverName}.",
+        "messageWithReason": "Dorëzimi juaj manual i kohës u refuzua nga {approverName}. Arsyeja: {rejectionReason}",
+        "title": "Dorëzimi manual i kohës u refuzua"
       },
       "missedClockInReminder": {
         "message": "Turni juaj filloi në {startTime} ({timezone}). Regjistroni hyrjen nëse jeni duke punuar.",
@@ -716,7 +831,27 @@
         "title": "Muaji u rihap"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName} kërkoi {categoryName} për {dateRange}.",
         "title": "Kërkesë e re për mungesë"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName} dorëzoi një kërkesë për korrigjimin e kohës për {date}.",
+        "messageWithoutDate": "{employeeName} dërgoi një kërkesë për korrigjim ore.",
+        "messageWithoutDateWithReason": "{employeeName} dërgoi një kërkesë për korrigjim ore. Arsyeja: {reason}",
+        "messageWithReason": "{employeeName} dërgoi një kërkesë për korrigjim ore për më {date}. Arsyeja: {reason}",
+        "title": "Kërkesë e re për korrigjim ore"
+      },
+      "openShiftAvailable": {
+        "message": "Një turn i lirë është i disponueshëm më {shiftDate} nga {startTime} deri në {endTime}.",
+        "title": "Turn i lirë i disponueshëm"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Shkelja e orëve shtesë u regjistrua"
+      },
+      "overtimeWarning": {
+        "message": "Keni punuar {worked} {period, select, daily {sot} weekly {këtë javë} other {këtë muaj}} ({percent}% e kufirit prej {limit}).",
+        "title": "Pragu i orëve shtesë po afrohet"
       },
       "passwordChanged": {
         "message": "Fjalëkalimi juaj u ndryshua me sukses. Nëse nuk e keni bërë ju këtë ndryshim, ju lutemi kontaktoni menjëherë mbështetjen.",
@@ -745,6 +880,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "Koha juaj për {startDate} – {endDate} ndryshoi pasi e dorëzuat, prandaj dorëzimi u tërhoq. Rishikoni kohën tuaj dhe dorëzojeni përsëri.",
         "title": "Dorëzoni kohën tuaj përsëri"
+      },
+      "personalDataExportAdminExported": {
+        "message": "Një administrator eksportoi të dhënat tuaja personale më {onDate}.",
+        "title": "Të dhënat tuaja personale u eksportuan"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "Eksportimi i të dhënave personale të {employeeName} është gati. Shkarkojeni nga faqja e punonjësit ndërsa jeni të kyçur; fshihet pas 7 ditësh.",
+        "adminTitle": "Eksportimi i të dhënave personale është gati",
+        "message": "Eksportimi i të dhënave tuaja personale është gati. Shkarkojeni te Të dhënat e mia ndërsa jeni të kyçur; fshihet pas 7 ditësh.",
+        "title": "Eksportimi i të dhënave tuaja personale është gati"
+      },
+      "personalDataExportReminder": {
+        "message": "Shkarkoni të dhënat tuaja personale te Të dhënat e mia para datës {untilDate}. Pas kësaj, vetëm një administrator mund t'i eksportojë ato për ju.",
+        "title": "Shkarkoni të dhënat tuaja personale para se të largoheni"
       },
       "personnelFileDocumentShared": {
         "message": "Dokumenti \"{title}\" u nda me ju.",
@@ -781,13 +930,94 @@
       "policyMissedClockInReminder": {
         "message": "Regjistrimi juaj i fundit i hyrjes sot ishte në {startTime} ({timezone}). Regjistroni hyrjen nëse jeni duke punuar."
       },
+      "projectBudgetWarning100": {
+        "message": "\"{projectName}\" ka tejkaluar buxhetin e tij ({used} nga {budget} të buxhetuara). Rishikoni dhe rregulloni sipas nevojës.",
+        "title": "Buxheti i projektit u tejkalua"
+      },
+      "projectBudgetWarning70": {
+        "message": "\"{projectName}\" ka përdorur {percent}% të buxhetit të tij ({used} nga {budget}).",
+        "title": "Projekti po i afrohet kufirit të buxhetit"
+      },
+      "projectBudgetWarning90": {
+        "message": "\"{projectName}\" ka përdorur {percent}% të buxhetit të tij ({used} nga {budget}). Merrni parasysh rishikimin e alokimeve të kohës.",
+        "title": "Projekti është pranë kufirit të buxhetit"
+      },
+      "projectDeadlineOverdue": {
+        "message": "\"{projectName}\" e ka kaluar afatin e tij ({deadline}). Përditësoni statusin ose zgjatni afatin.",
+        "title": "Afati i projektit ka skaduar"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "Afati i \"{projectName}\" është sot ({deadline}). Përmbyllni punën e mbetur.",
+        "title": "Afati i projektit është sot"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "Afati i \"{projectName}\" është pas 2 javësh ({deadline}). Planifikoni paraprakisht për të respektuar afatin.",
+        "title": "Afati i projektit është pas 2 javësh"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "Afati i \"{projectName}\" është nesër ({deadline}). Përpjekja e fundit për ta përfunduar!",
+        "title": "Afati i projektit është nesër"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "Afati i \"{projectName}\" është pas 1 jave ({deadline}). Sigurohuni që jeni brenda planit.",
+        "title": "Afati i projektit është pas 1 jave"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Shkelja e periudhës së pushimit u regjistrua"
+      },
+      "restPeriodWarning": {
+        "message": "Ju kanë mbetur {remaining} nga pushimi i kërkuar. Regjistrimi i ardhshëm i lejuar i hyrjes: {nextAllowedClockIn}.",
+        "title": "Kujtues për periudhën e pushimit"
+      },
       "scheduledExportPaused": {
         "message": "\"{scheduleName}\" u pezullua sepse pronari i tij, {ownerName}, nuk është më administrator organizate. Caktoni veten ose një administrator tjetër organizate si pronar për ta rifilluar.",
         "title": "Eksporti i planifikuar u pezullua"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, one {# turn është publikuar për {dateRange}.} other {# turne janë publikuar për {dateRange}.}}",
+        "title": "Orari i ri u publikua"
+      },
       "shiftAssigned": {
         "message": "Ju është caktuar një turn më {shiftDate} nga {startTime} deri në {endTime} nga {assignedByName}.",
         "title": "Turni u caktua"
+      },
+      "shiftPickupApproved": {
+        "message": "Kërkesa juaj për të marrë turnin më {shiftDate} u miratua nga {approverName}.",
+        "title": "Marrja e turnit u miratua"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName} kërkoi të marrë turnin më {shiftDate} ({startTime} - {endTime}).",
+        "messageUnnamedRequester": "Një punonjës kërkoi të marrë turnin më {shiftDate} ({startTime} - {endTime}).",
+        "title": "Kërkesë për marrje turni"
+      },
+      "shiftSwapApproved": {
+        "message": "Kërkesa juaj për ndërrim turni për më {shiftDate} u miratua nga {approverName}.",
+        "title": "Ndërrimi i turnit u miratua"
+      },
+      "shiftSwapRejected": {
+        "message": "Kërkesa juaj për ndërrim turni për më {shiftDate} u refuzua nga {approverName}.",
+        "messageWithReason": "Kërkesa juaj për ndërrim turni për më {shiftDate} u refuzua nga {approverName}. Arsyeja: {reason}",
+        "title": "Ndërrimi i turnit u refuzua"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName} kërkoi një ndërrim për turnin më {shiftDate} ({startTime} - {endTime}).",
+        "messageWithTarget": "{requesterName} kërkoi të ndërrojë me {targetName} turnin më {shiftDate} ({startTime} - {endTime}).",
+        "title": "Kërkesë për ndërrim turni"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName} dëshiron të ndërrojë turnin me ju për {shiftDate} ({startTime} - {endTime}).",
+        "title": "Kërkesë për ndërrim turni"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "Aftësia juaj \"{skill}\" skadon sot.",
+        "message": "Aftësia \"{skill}\" e {employee} skadon sot.",
+        "title": "Një aftësi skadon sot"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "Aftësia juaj \"{skill}\" skadon më {untilDate}.",
+        "message": "Aftësia \"{skill}\" e {employee} skadon më {untilDate}.",
+        "title": "Një aftësi skadon së shpejti"
       },
       "teamMemberAdded": {
         "message": "Jeni shtuar në ekipin {teamName} nga {performedByName}.",
@@ -797,12 +1027,30 @@
         "message": "Jeni hequr nga ekipi {teamName} nga {performedByName}.",
         "title": "U hoqët nga ekipi"
       },
+      "timeCorrectionApproved": {
+        "message": "Kërkesa juaj për korrigjimin e orarit u miratua nga {approverName}.",
+        "title": "Korrigjimi i orarit u miratua"
+      },
+      "timeCorrectionRejected": {
+        "message": "Kërkesa juaj për korrigjimin e orarit u refuzua nga {approverName}.",
+        "messageWithReason": "Kërkesa juaj për korrigjimin e orarit u refuzua nga {approverName}. Arsyeja: {rejectionReason}",
+        "title": "Korrigjimi i orarit u refuzua"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "Kërkesa juaj për korrigjimin e orarit është dërguar dhe pret miratim.",
+        "title": "Korrigjimi i orarit u dërgua"
+      },
       "timeOffInLieuAvailable": {
         "message": "Punonjësit tani mund të marrin leje kundrejt bilancit të tyre të punës. Kategoria e re e mungesave qëndron joaktive derisa ta aktivizoni në cilësimet e mungesave.",
         "title": "Pushimi kompensues është i disponueshëm"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Një rregullim i miratuar e rriti shumën e detyrimit në raportin e shpenzimeve {report} të {employee}. Në pritje të rimbursimit: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "Kërkesa juaj për shpenzimet e udhëtimit për {destination} ({amount}) u miratua nga {approverName}.",
+        "messageWithoutDestination": "Kërkesa juaj për shpenzimet e udhëtimit për {amount} u miratua nga {approverName}.",
+        "title": "Shpenzimet e udhëtimit u miratuan"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "Raporti i shpenzimeve {report} i {employee} nuk rimbursohet përmes llogaritjes së pagave. Në pritje të rimbursimit: {amounts}."
@@ -832,6 +1080,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Shpenzimet tuaja të udhëtimit janë rimbursuar plotësisht me pagën e periudhës {period}: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "Kërkesa juaj për shpenzimet e udhëtimit për {destination} ({amount}) u refuzua nga {approverName}.",
+        "messageWithoutDestination": "Kërkesa juaj për shpenzimet e udhëtimit për {amount} u refuzua nga {approverName}.",
+        "messageWithoutDestinationWithReason": "Kërkesa juaj për shpenzimet e udhëtimit për {amount} u refuzua nga {approverName}. Arsyeja: {reason}",
+        "messageWithReason": "Kërkesa juaj për shpenzimet e udhëtimit për {destination} ({amount}) u refuzua nga {approverName}. Arsyeja: {reason}",
+        "title": "Shpenzimet e udhëtimit u refuzuan"
+      },
+      "travelExpenseReportApproved": {
+        "message": "Raporti juaj i shpenzimeve (të rimbursueshme: {amount}) u miratua nga {approverName}.",
+        "title": "Raporti i shpenzimeve u miratua"
+      },
+      "travelExpenseReportRejected": {
+        "message": "Raporti juaj i shpenzimeve (të rimbursueshme: {amount}) u refuzua nga {approverName}.",
+        "messageWithReason": "Raporti juaj i shpenzimeve (të rimbursueshme: {amount}) u refuzua nga {approverName}. Arsyeja: {reason}",
+        "title": "Raporti i shpenzimeve u refuzua"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} e ktheu raportin tuaj të shpenzimeve për modifikime: {note}",
+        "title": "Raporti i shpenzimeve u kthye për modifikime"
+      },
+      "twoFactorDisabled": {
+        "message": "Autentifikimi me dy faktorë është çaktivizuar në llogarinë tuaj. Ju rekomandojmë ta riaktivizoni për arsye sigurie.",
+        "title": "Autentifikimi me dy faktorë u çaktivizua"
+      },
+      "twoFactorEnabled": {
+        "message": "Autentifikimi me dy faktorë është aktivizuar në llogarinë tuaj për siguri të shtuar.",
+        "title": "Autentifikimi me dy faktorë u aktivizua"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {Keni # ditë pushimi që skadon më {expiryDate}. Përdoreni para se të skadojë!} other {Keni # ditë pushimi që skadojnë më {expiryDate}. Përdorini para se të skadojnë!}}",
+        "message": "{remainingDays, plural, one {Keni # ditë pushimi të mbetur. Mos harroni të merrni pushim!} other {Keni # ditë pushimi të mbetura. Mos harroni të merrni pushim!}}",
+        "title": "Kujtues për balancën e pushimeve"
+      },
+      "waterReminder": {
+        "done": "E bëra!",
+        "message": "Qëndroni të shëndetshëm - pini pak ujë",
+        "snooze": "Shtyje për sot",
+        "title": "Koha për t'u hidratuar!"
       }
     },
     "description": "Shqyrtoni përditësimet, miratimet dhe sinjalizimet e sistemit në një linjë kohore.",
@@ -937,11 +1224,17 @@
         "approval_cover_return_summary": "Vendosur nga zëvendësuesi juaj",
         "approval_cover_started": "Zëvendësimi gjatë mungesës filloi",
         "break_due_reminder": "Koha për pushim",
+        "driving_details_missing_reminder": "Mungojnë detajet e drejtimit të automjetit",
         "forgotten_clock_out_reminder": "Dalje e harruar",
         "missed_clock_in_reminder": "Hyrje e paregjistruar",
         "period_submission_decided": "Koha e dorëzuar u miratua ose u refuzua",
         "period_submission_reminder": "Dorëzoni kohën tuaj",
         "period_submission_sent_back": "Koha u kthye mbrapsht pas një ndryshimi",
+        "personal_data_export_admin_exported": "Të dhënat personale u eksportuan nga një administrator",
+        "personal_data_export_ready": "Eksportimi i të dhënave personale është gati",
+        "personal_data_export_reminder": "Shkarkoni të dhënat tuaja para se të largoheni",
+        "skill_expired_today": "Aftësia skadon sot",
+        "skill_expiry_upcoming": "Aftësia skadon së shpejti",
         "work_balance_adjustment_cancelled": "Rregullimi i bilancit u anulua",
         "work_balance_adjustment_recorded": "Rregullimi i bilancit u regjistrua"
       },
@@ -1020,6 +1313,1092 @@
       "loading": "Po lexohen regjistrimet e ruajtura…",
       "review": "Rishiko regjistrimet e ruajtura",
       "title": "Regjistrimet e ruajtura të orarit"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (administrator)",
+      "accessExpenseExport": "t'i eksportojnë ato",
+      "accessExpenseOfficers": "Zyrtarët e shpenzimeve (raportet tuaja të miratuara të shpenzimeve të udhëtimit dhe faturat e tyre):",
+      "accessExpenseRead": "të lexojnë raportet e miratuara",
+      "accessExpenseReimburse": "të regjistrojnë rimbursimet",
+      "accessIntro": "Përveç jush, këta persona në {organization} mund të kenë qasje në të dhënat tuaja në Z8, në momentin kur u krijua ky eksportim:",
+      "accessManagerDirect": "{name} (menaxheri juaj)",
+      "accessManagers": "Menaxherët (koha juaj, mungesat, oraret dhe kërkesat, sipas rolit të tyre):",
+      "accessManagerTeam": "{name} (lejet e ekipit për ekipin tuaj)",
+      "accessNobody": "Askush.",
+      "accessOwner": "{name} (pronar)",
+      "accessOwnersAdmins": "Pronarët dhe administratorët (të gjitha të dhënat tuaja në organizatë):",
+      "accessPayrollAll": "të gjithë punonjësit",
+      "accessPayrollEmployee": "ju me emër",
+      "accessPayrollOfficers": "Qasja në listëpagesa (koha juaj e punës dhe mungesat, të eksportuara për listëpagesat):",
+      "accessPayrollTeam": "ekipi juaj",
+      "accessPersonnelFileOfficers": "Zyrtarët e dosjes së personelit (dokumentet në dosjen tuaj të personelit të këtyre kategorive):",
+      "accessTitle": "Kush mund të ketë qasje në të dhënat tuaja",
+      "category": {
+        "absences": "Mungesat tuaja, lejet vjetore dhe rregullimet e pushimeve.",
+        "account": "Llogaria juaj e përdoruesit: seancat, metodat e hyrjes, cilësimet e sigurisë, preferencat dhe pajisjet.",
+        "accountAdmin": "Emri dhe adresa e email-it e llogarisë suaj të përdoruesit.",
+        "approvals": "Kërkesat tuaja dhe dorëzimet e periudhave, si dhe vendimet që keni marrë për kërkesat e personave të tjerë.",
+        "auditLog": "Regjistrimet e auditimit rreth jush dhe veprimet e kryera nga ju.",
+        "employment": "Të dhënat dhe profili juaj si punonjës, periudhat e punësimit dhe largimi, kushtet e punësimit me pagën tuaj për orë dhe historikun e saj, ekipet, menaxherët, vendndodhjet, aftësitë, caktimet në projekte, rolet, grupet, qendra e kostos dhe çdo politikë e caktuar për ju.",
+        "integrations": "Lidhjet e kalendarit tuaj, furnizimi i kalendarit, llogaritë e lidhura të bisedës dhe statusi i PIN-it të kioskës.",
+        "notifications": "Historiku juaj i njoftimeve.",
+        "personnelFile": "Dokumentet në dosjen tuaj të personelit, si skedarë origjinalë.",
+        "planning": "Turnet tuaja dhe kërkesat për turne.",
+        "positionStamps": "Regjistrimet e pozicionit tuaj, historiku i pëlqimit tuaj dhe kush i ka parë pozicionet tuaja.",
+        "time": "Hyrjet tuaja të kohës, periudhat e punës dhe korrigjimet, pushimet, daljet automatike, përjashtimet e pajtueshmërisë, shkeljet e politikave të punës, shtesat, balancat dhe rregullimet e balancës.",
+        "travelExpenses": "Kërkesat tuaja për shpenzimet e udhëtimit, raportet, zërat, shlyerjet dhe faturat."
+      },
+      "completeCopy": "{organization} mund të mbajë të dhëna të mëtejshme rreth jush që nuk janë pjesë e këtij eksportimi. Mund t'u kërkoni administratorëve të {organization} një kopje të plotë të të dhënave tuaja personale.",
+      "completeCopyTitle": "Kopje e plotë",
+      "csvFolder": "Dosja {folder} përmban të njëjtat tabela si skedarë CSV.",
+      "documentCategory": {
+        "certificate": "Certifikatat",
+        "contract": "Kontratat",
+        "other": "Dokumente të tjera",
+        "payslip": "Fletëpagat",
+        "sickNote": "Raportet mjekësore"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Kur u vendos për mungesën (UTC).",
+            "approvedBy": "Kush vendosi për mungesën.",
+            "category": "Kategoria e mungesës, siç e emërton organizata.",
+            "categoryType": "Lloji i mungesës prapa kategorisë, për shembull vacation, sick ose home_office.",
+            "deputy": "Kolegu që ju zëvendëson gjatë mungesës.",
+            "deputyAssignedAt": "Kur u caktua zëvendësuesi (UTC).",
+            "endDate": "Dita e fundit e mungesës (YYYY-MM-DD).",
+            "endPeriod": "Cila pjesë e ditës së fundit jeni mungesë: full_day, am ose pm.",
+            "notes": "Shënimi i shkruar për mungesën.",
+            "rejectionReason": "Pse u refuzua mungesa.",
+            "sickDetail": "Për sëmundje: më shumë hollësi, për shembull me ose pa raport mjekësor, ose një fëmijë i sëmurë.",
+            "startDate": "Dita e parë e mungesës (VVVV-MM-DD).",
+            "startPeriod": "Pjesa e ditës së parë që mungoni: full_day, am (mëngjes) ose pm (pasdite).",
+            "status": "Nëse mungesa është në pritje, e miratuar apo e refuzuar.",
+            "summary": "Mungesat tuaja, si leja, sëmundja ose puna nga shtëpia, bashkë me miratimin e tyre."
+          },
+          "shared": {
+            "year": "Viti i pushimeve."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "Për një pjesë të akumuluar: muaji (1 deri në 12) për të cilin është dhënë.",
+            "adjustedBy": "Kush e bëri ndryshimin.",
+            "days": "Ditët e shtuara (pozitive) ose të zbritura (negative).",
+            "kind": "Nëse dikush e ka bërë ndryshimin manualisht (manual) apo aplikacioni ka akorduar një pjesë të akumuluar (accrual).",
+            "reason": "Arsyeja pse u bë ndryshimi.",
+            "summary": "Çdo ndryshim në ditët tuaja të pushimit përveç normës suaj: korrigjimet manuale dhe pjesët e akumuluara."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "Ditët tuaja të pushimit për vitin; bosh kur zbatohet numri i politikës suaj.",
+            "customCarryoverDays": "Ditët e bartura në këtë vit nga viti i kaluar; bosh kur nuk është caktuar asnjë për ju.",
+            "summary": "Normat e pushimeve të caktuara personalisht për ju, në vend të politikës suaj të pushimeve, për çdo vit."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "Muaji (1 deri në 12) nga i cili fillon akumulimi i ditëve të pushimit.",
+            "accrualType": "Mënyra se si jepen ditët: të gjitha njëherësh në vit (annual), çdo muaj (monthly) ose çdo dy javë (biweekly).",
+            "allowCarryover": "Nëse ditët e papërdorura barten në vitin pasardhës.",
+            "assignmentActive": "Nëse caktimi është aktiv.",
+            "assignmentEffectiveFrom": "Kur fillon të zbatohet caktimi i politikës (UTC).",
+            "assignmentEffectiveUntil": "Kur përfundon zbatimi i caktimit (UTC); bosh për sa kohë zbatohet.",
+            "assignmentType": "Mënyra se si ju arrin: e caktuar për ju (punonjës), për ekipin tuaj (ekip) apo për të gjithë organizatën (organizatë).",
+            "carryoverExpiryMonths": "Sa muaj në vitin pasardhës mbeten të vlefshme ditët e bartura; bosh nëse nuk skadojnë.",
+            "defaultAnnualDays": "Ditët e pushimit në vit sipas politikës.",
+            "maxCarryoverDays": "Numri maksimal i ditëve që barten; bosh nëse nuk ka kufizim.",
+            "policy": "Emri i politikës.",
+            "prorateInStartAndExitYear": "Nëse një normë vjetore reduktohet në vitin që filloni ose largoheni nga puna, sipas muajve që jeni i punësuar.",
+            "statutoryMinimumDays": "Numri minimal i ditëve në të cilin mund të bjerë një normë e reduktuar pasi mbaron periudha juaj e pritjes.",
+            "summary": "Politikat e pushimeve që zbatohen për ju: të caktuara për ju, për ekipet tuaja ose standarde të organizatës.",
+            "validFrom": "Dita e parë kur zbatohet politika (VVVV-MM-DD).",
+            "validUntil": "Dita e fundit kur zbatohet politika (VVVV-MM-DD); bosh për sa kohë zbatohet."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Çfarë ndodhi: e bllokuar, e sfiduar ose e regjistruar.",
+            "blockedCountry": "Shteti i bllokuar.",
+            "blockedIp": "Adresa IP e bllokuar.",
+            "concurrentSessionCount": "Sa seanca ishin të hapura në atë kohë.",
+            "reason": "Arsyeja e regjistruar.",
+            "requestMethod": "Lloji i kërkesës, p.sh. GET.",
+            "requestPath": "Faqja ose adresa e kërkuar.",
+            "requiredMfaType": "Faktori i dytë që kërkonte rregulli.",
+            "summary": "Kërkesat që rregullat e qasjes të kësaj organizate kanë bllokuar, sfiduar ose shënuar.",
+            "violationType": "Cilin rregull theu, p.sh. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Ditë radhazi që keni arritur synimin tuaj, deri tani.",
+            "lastGoalMetDate": "Dita e fundit që keni arritur synimin tuaj.",
+            "longestStreak": "Seria juaj më e gjatë.",
+            "snoozedUntil": "Deri kur i keni pezulluar kujtuesit.",
+            "summary": "Sasitë totale dhe seritë e konsumimit tuaj të ujit.",
+            "totalIntakeAllTime": "Të gjitha gotat që keni regjistruar."
+          },
+          "notificationPreferences": {
+            "channel": "Ku dërgohet, p.sh. me email ose push.",
+            "enabled": "Nëse e merrni atje.",
+            "notificationType": "Lloji i njoftimit.",
+            "summary": "Cilat njoftime i keni aktivizuar ose çaktivizuar, për çdo kanal."
+          },
+          "passkeys": {
+            "aaguid": "ID-ja e modelit të autentifikuesit.",
+            "backedUp": "Nëse është ruajtur në kopje rezervë.",
+            "deviceType": "Nëse qëndron në një pajisje apo sinkronizohet në disa pajisje.",
+            "name": "Emri i çelësit të hyrjes (passkey).",
+            "summary": "Çelësat tuaj të hyrjes (çelësat nuk eksportohen kurrë).",
+            "transports": "Mënyra se si lidhet autentifikuesi, p.sh. USB ose i brendshëm."
+          },
+          "pushDevices": {
+            "deviceName": "Emri i pajisjes.",
+            "kind": "web për një shfletues, native për aplikacionin celular.",
+            "lastSeenAt": "Kur aplikacioni e regjistroi për herë të fundit pajisjen.",
+            "platform": "Platforma celulare (ios ose android); bosh për një shfletues.",
+            "summary": "Shfletuesit dhe pajisjet që marrin njoftime push (çelësat e tyre nuk eksportohen kurrë)."
+          },
+          "sessions": {
+            "city": "Qyteti i asaj adrese IP.",
+            "createdAt": "Kur keni hyrë.",
+            "expiresAt": "Kur përfundon seanca, përveç nëse rinovohet.",
+            "impersonated": "Nëse mbështetja e platformës e hapi këtë seancë si ju. Adresa e saj IP, shfletuesi dhe vendndodhja lihen jashtë: ato i përkasin mbështetjes, jo juve.",
+            "lastActivityAt": "Kur e keni përdorur për herë të fundit seancën në këtë organizatë.",
+            "mfaMethod": "Mënyra se si e konfirmuat faktorin e dytë, nëse u kërkua.",
+            "mfaVerifiedAt": "Kur e konfirmuat atë.",
+            "region": "Rajoni i asaj adrese IP.",
+            "summary": "Hyrjet tuaja (seancat) që janë ende të ruajtura, me detajet që kjo organizatë ka regjistruar për to.",
+            "updatedAt": "Kur u rinovua për herë të fundit seanca."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "Mënyra se si e rregulluat panelin tuaj, si JSON.",
+            "helpImproveProduct": "Nëse keni pranuar të ndihmoni në përmirësimin e produktit.",
+            "locale": "Gjuha e aplikacionit tuaj; bosh do të thotë se ndjek shfletuesin tuaj.",
+            "onboardingComplete": "Nëse e keni përfunduar prezantimin.",
+            "onboardingCompletedAt": "Kur e keni përfunduar atë.",
+            "onboardingStartedAt": "Kur e keni filluar prezantimin.",
+            "onboardingStep": "Hapi i prezantimit që keni arritur.",
+            "summary": "Cilësimet tuaja personale në aplikacion.",
+            "timeFormat": "Nëse orët shfaqen në formatin 12- apo 24-orësh.",
+            "timezone": "Zona kohore që keni zgjedhur për shfaqjen e orëve.",
+            "waterReminderDailyGoal": "Objektivi juaj ditor në gota.",
+            "waterReminderEnabled": "Nëse rikujtuesit e ujit janë aktivë.",
+            "waterReminderIntervalMinutes": "Minutat ndërmjet rikujtuesve të ujit.",
+            "waterReminderPreset": "Paracaktimi i rikujtuesit të ujit që keni zgjedhur.",
+            "weekStartDay": "Dita me të cilën fillon java juaj."
+          },
+          "shared": {
+            "country": "Shteti i asaj adrese IP (kodi ISO).",
+            "ipAddress": "Adresa IP nga e cila erdhi.",
+            "isActive": "Nëse është ende në përdorim.",
+            "lastUsedAt": "Kur është përdorur për herë të fundit.",
+            "userAgent": "Shfletuesi ose aplikacioni, siç u identifikua vetë."
+          },
+          "signInMethods": {
+            "accountId": "ID-ja e llogarisë suaj te ai ofrues.",
+            "passwordSet": "Nëse është caktuar një fjalëkalim (vetë fjalëkalimi nuk eksportohet kurrë).",
+            "provider": "Metoda e hyrjes; kredencial do të thotë email dhe fjalëkalim.",
+            "summary": "Mënyrat se si mund të hyni: një fjalëkalim ose llogari të lidhura si Google apo Microsoft."
+          },
+          "trustedDevices": {
+            "deviceName": "Emri i pajisjes.",
+            "expiresAt": "Kur përfundon besueshmëria.",
+            "lastIpAddress": "Adresa IP e përdorimit të saj të fundit.",
+            "mdmCompliant": "Nëse sistemi i menaxhimit të pajisjes e raportoi atë në përputhje.",
+            "mdmProvider": "Sistemi i menaxhimit të pajisjeve, nëse ka.",
+            "platform": "Sistemi operativ.",
+            "revokedAt": "Kur u tërhoq besueshmëria.",
+            "revokedBy": "Kush e tërhoqi.",
+            "revokeReason": "Pse u tërhoq.",
+            "summary": "Pajisjet që kjo organizatë i konsideron të besuara për hyrjet tuaja.",
+            "trustSource": "Pse konsiderohet e besuar: një çelës kalimi, një administrator, zgjedhja juaj për ta mbajtur mend, ose menaxhimi i pajisjes (MDM)."
+          },
+          "user": {
+            "banExpires": "Kur përfundon bllokimi; bosh nëse nuk përfundon.",
+            "banned": "Nëse platforma e ka bllokuar llogarinë tuaj.",
+            "banReason": "Pse platforma e bllokoi atë.",
+            "canCreateOrganizations": "Nëse mund të krijoni organizata tuajat.",
+            "email": "Adresa e email-it me të cilën hyni.",
+            "emailVerified": "Nëse e keni konfirmuar atë adresë email-i.",
+            "firstName": "Emri i llogarisë suaj.",
+            "image": "Adresa e fotos suaj të profilit.",
+            "lastName": "Mbiemri i llogarisë suaj.",
+            "name": "Emri i shfaqur i llogarisë suaj.",
+            "role": "Roli juaj në platformë (jo në këtë organizatë).",
+            "summary": "Llogaria juaj e përdoruesit: identifikimi që përdorni për këtë organizatë.",
+            "twoFactorEnabled": "Nëse autentifikimi me dy faktorë është i aktivizuar."
+          },
+          "waterIntake": {
+            "amount": "Sa gota.",
+            "loggedAt": "Kur e keni pirë.",
+            "source": "Ku e regjistruat: një kujtues, manualisht ose nga mini-aplikacioni.",
+            "summary": "Uji që keni regjistruar."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Kur u vendos hapi i fundit (UTC).",
+            "policy": "Politika e miratimit që përcaktoi hapat, sipas emrit të saj në atë kohë.",
+            "status": "Ku qëndron miratimi.",
+            "summary": "Miratimet me shumë hapa të kërkesave tuaja, të regjistruara nga një version i mëparshëm i sistemit të miratimit."
+          },
+          "approvalChainStages": {
+            "approver": "Personi nga i cili u kërkua të vendosë për hapin.",
+            "chainId": "ID-ja e miratimit në approval_chains.",
+            "decidedAt": "Kur u vendos për hapin (UTC).",
+            "decidedBy": "Kush vendosi për hapin.",
+            "status": "Ku qëndron hapi.",
+            "step": "Pozicioni i hapit: 1 është hapi i parë.",
+            "summary": "Hapat e atyre miratimeve me shumë hapa."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Kur keni vendosur (UTC).",
+            "action": "Çfarë keni vendosur: miratuar apo refuzuar, ose ricaktuar kur ia keni kaluar kërkesën një miratuesi tjetër.",
+            "asDeputy": "Nëse keni marrë vendim si një zëvendësues i miratuesit.",
+            "authority": "Ku është regjistruar vendimi: në sistemin aktual të miratimit (canonical), në atë të mëparshmin (legacy), ose vetëm në vetë regjistrimin (record).",
+            "otherPerson": "Një ID anonime për personin kërkesa e të cilit ishte. I njëjti person ka të njëjtën ID gjatë gjithë këtij eksportimi, dhe një tjetër në çdo eksportim tjetër.",
+            "recordKind": "Për çfarë lloj kërkese keni vendosur, për shembull një kërkesë për mungesë ose një kërkesë për turn.",
+            "summary": "Vendimet që keni marrë për kërkesat e personave të tjerë. Personi tjetër shfaqet vetëm si një ID anonime."
+          },
+          "deputyDecisions": {
+            "actingFor": "Miratuesi në vend të të cilit veproi zëvendësi.",
+            "authority": "Cilit sistem miratimi i përket vendimi: legacy (i mëparshmi) apo canonical (aktual).",
+            "decidedAt": "Kur vendosi zëvendësi (UTC).",
+            "decidedBy": "Zëvendësi që mori vendimin.",
+            "decision": "Çfarë vendosi zëvendësi: miratuar apo refuzuar.",
+            "requestId": "ID-ja e kërkesës në requests, për sistemin e mëparshëm.",
+            "summary": "Vendimet për kërkesat tuaja të marra nga një zëvendës në vend të miratuesit.",
+            "workflowId": "ID-ja e miratimit në workflows, për sistemin aktual."
+          },
+          "periodSubmissions": {
+            "cadence": "Nëse i dorëzoni orët tuaja çdo javë (javore) apo çdo muaj (mujore).",
+            "cadenceEndDate": "Dita e fundit e tërë javës ose muajit (YYYY-MM-DD).",
+            "cadenceStartDate": "Dita e parë e tërë javës ose muajit (YYYY-MM-DD).",
+            "closedAt": "Kur dorëzimi u tërhoq, ose miratimi i tij u vjetërua pas një ndryshimi (UTC).",
+            "closedCause": "Pse u mbyll dorëzimi: e keni tërhequr ju (punonjësi), ose orari juaj ka ndryshuar më pas (ndryshim).",
+            "decidedAt": "Kur dorëzimi u miratua ose u refuzua (UTC).",
+            "decidedBy": "Kush e miratoi ose e refuzoi dorëzimin.",
+            "endDate": "Dita e fundit që keni dorëzuar (YYYY-MM-DD).",
+            "rangeEnd": "Fundi i ditëve të dorëzuara si një pikë në kohë (UTC), e papërfshirë.",
+            "rangeStart": "Fillimi i ditëve të dorëzuara si një pikë në kohë (UTC).",
+            "startDate": "Dita e parë që keni dorëzuar (YYYY-MM-DD).",
+            "status": "Statusi i dorëzimit: në pritje, miratuar, refuzuar, tërhequr ose i vjetëruar kur një ndryshim i mëvonshëm e bëri miratimin të pavlefshëm.",
+            "submittedAt": "Kur u dorëzua periudha (UTC).",
+            "submittedBy": "Kush e dorëzoi periudhën.",
+            "summary": "Javët ose muajt e orëve të punës që keni dorëzuar për miratim. Ridorezimi i një periudhe shton një rresht të ri.",
+            "timezone": "Zona kohore në të cilën llogariten ditët e periudhës.",
+            "weekStartDay": "Për dorëzimet javore: dita kur fillon java."
+          },
+          "requests": {
+            "approvedAt": "Kur u mor vendimi për kërkesën (UTC).",
+            "approver": "Personi nga i cili u kërkua të vendosë.",
+            "notes": "Shënime mbi kërkesën.",
+            "reason": "Arsyeja juaj për kërkesën.",
+            "rejectionReason": "Pse u refuzua kërkesa.",
+            "status": "Nëse kërkesa është në pritje, e miratuar ose e refuzuar.",
+            "summary": "Kërkesat tuaja për miratim, siç janë regjistruar nga një version i mëparshëm i sistemit të miratimit."
+          },
+          "shared": {
+            "decisionReason": "Arsyeja e dhënë me vendimin.",
+            "recordId": "ID-ja e atij regjistrimi, për shembull e një mungese te absences.json.",
+            "recordKind": "Për çfarë lloj regjistrimi bëhet fjalë në kërkesë, për shembull një mungesë ose një korrigjim i orarit.",
+            "stageLabel": "Emri i hapit të miratimit.",
+            "workflowId": "ID-ja e miratimit në workflows."
+          },
+          "workflowApprovers": {
+            "approver": "Personi nga i cili u kërkua të vendosë.",
+            "assignedAt": "Kur iu kërkua (UTC).",
+            "decidedBy": "Kush vendosi në të vërtetë: emri i një personi ose system kur e zgjidhi aplikacioni (legacy_unknown për regjistrimet e vjetra).",
+            "reassignedBy": "Kush ia kaloi vendimin dikujt tjetër.",
+            "resolvedAt": "Kur u zgjidh pjesa e tyre (UTC).",
+            "status": "Statusi i pjesës së tyre: në pritje, miratuar, refuzuar, anuluar ose skaduar.",
+            "summary": "Personat nga të cilët është kërkuar të vendosin për çdo hap të miratimeve tuaja."
+          },
+          "workflowEvents": {
+            "actor": "Kush e kreu: emri i një personi ose system kur e kreu aplikacioni (legacy_unknown për regjistrimet e vjetra).",
+            "eventType": "Çfarë ndodhi, për shembull stage.activated, assignment.approved ose assignment.escalated.",
+            "occurredAt": "Kur ndodhi (UTC).",
+            "reason": "Arsyeja e dhënë.",
+            "summary": "Gjithçka që ka ndodhur me miratimet tuaja, sipas radhës."
+          },
+          "workflows": {
+            "cancelledAt": "Kur u anulua kërkesa (UTC).",
+            "completedAt": "Kur u mor vendimi përfundimtar (UTC).",
+            "status": "Statusi i miratimit: në pritje, miratuar, refuzuar, anuluar ose skaduar.",
+            "submittedAt": "Kur u dorëzua kërkesa (UTC).",
+            "summary": "Kërkesat tuaja për miratim në sistemin aktual të miratimit, një për çdo kërkesë.",
+            "workflowType": "Çfarë po miratohet, për shembull një mungesë, një korrigjim ore ose një dorëzim periudhe."
+          },
+          "workflowStages": {
+            "activatedAt": "Kur filloi hapi (UTC).",
+            "decidedAt": "Kur u vendos për hapin (UTC).",
+            "stageOrder": "Pozicioni i hapit: 1 është hapi i parë.",
+            "status": "Statusi i hapit: duke pritur (pa filluar), në pritje, miratuar, refuzuar, anuluar ose skaduar.",
+            "summary": "Hapat nëpër të cilët kaloi secili nga miratimet tuaja, sipas radhës."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "Kur e keni bërë (UTC).",
+            "action": "Çfarë keni bërë.",
+            "asDeputy": "Nëse keni vepruar si zëvendësues i dikujt.",
+            "authority": "Ku regjistrohet veprimi: audit_log për regjistrin e auditimit, record për vetë regjistrimin.",
+            "otherPerson": "Një ID anonime për kolegun, e njëjta për një koleg gjatë gjithë këtij eksportimi; bosh kur veprimi nuk kishte të bënte me asnjë person.",
+            "recordKind": "Lloji i regjistrimit mbi të cilin keni vepruar, p.sh. absence_entry ose time_entry.",
+            "summary": "Çfarë keni bërë që nuk lidhet me regjistrimet tuaja: veprime mbi regjistrimet e kolegëve ose mbi organizatën. Kolegët shfaqen vetëm me një ID anonime."
+          },
+          "entries": {
+            "action": "Çfarë u krye, ashtu siç e regjistron aplikacioni, p.sh. absence.requested.",
+            "changes": "Çfarë ndryshoi, si JSON (zakonisht vlerat para dhe pas).",
+            "entityId": "ID-ja e atij regjistrimi në aplikacion.",
+            "entityType": "Lloji i regjistrimit mbi të cilin u krye veprimi, p.sh. absence_entry ose employee.",
+            "ipAddress": "Adresa juaj IP kur e keni bërë; bosh kur e ka bërë dikush tjetër.",
+            "metadata": "Më shumë kontekst të regjistruar nga aplikacioni, si JSON.",
+            "performedBy": "Emri i personit që e ka bërë.",
+            "performedByYou": "Nëse e keni bërë vetë.",
+            "summary": "Zërat e regjistrit të auditimit për ju: çfarë u bë me regjistrimet tuaja, nga kush dhe kur.",
+            "timestamp": "Kur ka ndodhur (UTC).",
+            "userAgent": "Shfletuesi ose aplikacioni juaj kur e keni bërë; bosh kur e ka bërë dikush tjetër."
+          }
+        },
+        "common": {
+          "assignedAt": "Kur ju është caktuar.",
+          "assignedBy": "Kush jua ka caktuar.",
+          "createdAt": "Kur është krijuar regjistrimi.",
+          "createdBy": "Kush e ka krijuar regjistrimin.",
+          "effectiveFrom": "Kur hyri në fuqi.",
+          "effectiveTo": "Kur pushoi së zbatuari; bosh për sa kohë ende zbatohet.",
+          "id": "ID-ja e regjistrimit në aplikacion, në mënyrë që skedarët e tjerë t'i referohen asaj.",
+          "updatedAt": "Kur është ndryshuar për herë të fundit regjistrimi.",
+          "updatedBy": "Kush e ka ndryshuar për herë të fundit regjistrimin."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "Qyteti i vendndodhjes.",
+            "country": "Shteti i vendndodhjes.",
+            "location": "Emri i vendndodhjes.",
+            "postalCode": "Kodi postar i vendndodhjes.",
+            "street": "Rruga e vendndodhjes.",
+            "summary": "Vendndodhjet ku jeni caktuar të punoni."
+          },
+          "assignedVehicles": {
+            "archived": "Nëse organizata e ka arkivuar automjetin, në mënyrë që të mos mund të zgjidhet më.",
+            "assignmentType": "Si ju arrin: caktuar për ju (employee) ose për ekipin tuaj (team).",
+            "licencePlate": "Targa e automjetit.",
+            "summary": "Automjetet e organizatës të caktuara për ju ose ekipet tuaja, të cilat aplikacioni i sugjeron të parat kur regjistroni një automjet në punën tuaj.",
+            "vehicle": "Emri i automjetit."
+          },
+          "billableRates": {
+            "hourlyRate": "Tarifa e faturuar për orë.",
+            "level": "Nëse tarifa zbatohet për të gjithë punën tuaj apo për një projekt.",
+            "project": "Projekti për të cilin zbatohet tarifa; bosh për të gjithë punën tuaj.",
+            "summary": "Tarifat që organizata u faturon klientëve për punën tuaj."
+          },
+          "costCenters": {
+            "code": "Kodi i qendrës së kostos.",
+            "costCenter": "Emri i qendrës së kostos.",
+            "summary": "Qendrat e kostos ku është regjistruar puna juaj."
+          },
+          "costRates": {
+            "hourlyRate": "Kostoja për orë.",
+            "summary": "Kostoja e brendshme e punës suaj për orë, siç e llogarit organizata."
+          },
+          "customFields": {
+            "field": "Emri i fushës.",
+            "fieldArchived": "Nëse organizata e ka arkivuar fushën.",
+            "summary": "Vlerat e fushave të vetë organizatës në skedarin tuaj të punonjësit.",
+            "tracked": "Nëse fusha ruan një historik të vlerave të saj.",
+            "type": "Lloji i fushës, për shembull tekst, numër, datë ose zgjedhje.",
+            "validFrom": "Për fushat me historik: dita nga e cila zbatohet vlera (YYYY-MM-DD).",
+            "value": "Vlera."
+          },
+          "customRoles": {
+            "description": "Përshkrimi i rolit.",
+            "role": "Emri i rolit.",
+            "summary": "Rolet e personalizuara që mbani."
+          },
+          "departureEvents": {
+            "actor": "Kush e kreu; bosh nëse u krye nga sistemi.",
+            "departureId": "Largimi të cilit i përket kjo ngjarje (id-ja e tij te largimet).",
+            "kind": "Çfarë ndodhi, për shembull departure_scheduled ose departure_effective.",
+            "occurredAt": "Kur ndodhi.",
+            "revision": "Versioni i largimit pas kësaj ngjarjeje.",
+            "summary": "Historiku i largimeve tuaja: kur secili u planifikua, u ndryshua, u anulua ose hyri në fuqi, dhe kush e kreu."
+          },
+          "departureReviews": {
+            "affectedEndAt": "Fundi i periudhës kohore që regjistrimi prek.",
+            "affectedStartAt": "Fillimi i periudhës kohore që regjistrimi prek.",
+            "departureId": "ID-ja e largimit te largimet.",
+            "kind": "Çfarë lloj regjistrimi kërkonte shqyrtim.",
+            "resolution": "Si u zgjidh shqyrtimi.",
+            "resolvedAt": "Kur u zgjidh shqyrtimi.",
+            "resolvedBy": "Kush e zgjidhi shqyrtimin.",
+            "status": "Gjendja e shqyrtimit.",
+            "subjectId": "ID-ja e regjistrimit në shqyrtim.",
+            "summary": "Regjistrimet që kërkonin një shqyrtim për shkak të largimit tuaj."
+          },
+          "departures": {
+            "blockedReason": "Pse largimi nuk mundi të përfundonte, nëse nuk mundi.",
+            "cutoffAt": "Kur përfundon qasja juaj në organizatë.",
+            "effectiveAt": "Kur hyri në fuqi largimi.",
+            "lastWorkingDay": "Dita juaj e fundit e punës (YYYY-MM-DD).",
+            "mode": "Si u konfigurua largimi.",
+            "replacement": "Kolegu që merr përsipër punën tuaj.",
+            "status": "Gjendja e largimit.",
+            "summary": "Largimet tuaja nga organizata.",
+            "timezone": "Zona kohore e ditës së fundit të punës."
+          },
+          "departureTasks": {
+            "completedAt": "Kur përfundoi detyra.",
+            "departureId": "ID-ja e largimit te largimet.",
+            "kind": "Çfarë bën detyra.",
+            "status": "Gjendja e detyrës.",
+            "summary": "Detyrat që aplikacioni ekzekutoi për largimin tuaj."
+          },
+          "employee": {
+            "birthday": "Ditëlindja juaj (YYYY-MM-DD).",
+            "contractType": "Lloji i kontratës suaj.",
+            "email": "Adresa e emailit të llogarisë suaj të përdoruesit.",
+            "endDate": "Kur përfundoi punësimi juaj; bosh për sa kohë vazhdon.",
+            "firstName": "Emri juaj në skedarin tuaj të punonjësit.",
+            "gender": "Gjinia juaj.",
+            "isActive": "Nëse skedari juaj i punonjësit është aktiv.",
+            "lastName": "Mbiemri juaj në skedarin tuaj të punonjësit.",
+            "organization": "Emri i organizatës.",
+            "personnelNumber": "Numri juaj i personelit.",
+            "position": "Pozicioni ose titulli juaj i punës.",
+            "primaryTeam": "Ekipi juaj kryesor.",
+            "pronouns": "Përemrat tuaj.",
+            "role": "Roli juaj në aplikacion: administrator, menaxher ose punonjës.",
+            "startDate": "Kur filloi punësimi juaj.",
+            "summary": "Regjistri juaj i punonjësit në këtë organizatë dhe emri i llogarisë suaj të përdoruesit.",
+            "userFirstName": "Emri i llogarisë suaj të përdoruesit.",
+            "userId": "ID-ja e llogarisë suaj të përdoruesit.",
+            "userLastName": "Mbiemri i llogarisë suaj të përdoruesit.",
+            "userName": "Emri i plotë i llogarisë suaj të përdoruesit."
+          },
+          "employmentPeriods": {
+            "endedAt": "Kur përfundoi periudha; bosh përderisa është e hapur.",
+            "startedAt": "Kur filloi periudha.",
+            "startProvenance": "Nga rrjedh fillimi, për shembull një punësim ose një ripunësim.",
+            "status": "Nëse periudha është e hapur apo e mbyllur.",
+            "summary": "Çdo periudhë gjatë së cilës keni qenë të punësuar nga organizata."
+          },
+          "employmentTerms": {
+            "changeReason": "Pse u caktuan ose u ndryshuan kushtet.",
+            "contractType": "Lloji i kontratës suaj.",
+            "currency": "Valuta e pagës për orë.",
+            "hourlyRate": "Paga juaj për orë sipas këtyre kushteve.",
+            "probationEndsOn": "Dita e fundit e periudhës suaj të provës (YYYY-MM-DD).",
+            "probationStartsOn": "Dita e parë e periudhës suaj të provës (YYYY-MM-DD).",
+            "reviewState": "Nëse kushtet janë konfirmuar apo kërkojnë ende shqyrtim.",
+            "status": "Nëse këto kushte janë në fuqi.",
+            "summary": "Kushtet tuaja të punësimit me kalimin e kohës, me pagën tuaj për orë.",
+            "validFrom": "Kur fillojnë të zbatohen këto kushte.",
+            "validUntil": "Kur pushojnë së zbatuari këto kushte; bosh përderisa zbatohen.",
+            "weeklyContractMinutes": "Koha juaj kontraktuale e punës në javë, në minuta.",
+            "workModel": "Modeli juaj i punës.",
+            "workPolicy": "Politika e punës që përdorin këto kushte."
+          },
+          "groups": {
+            "addedAt": "Kur u shtuat në grup.",
+            "addedBy": "Kush ju shtoi në grup.",
+            "description": "Përshkrimi i grupit.",
+            "group": "Emri i grupit.",
+            "summary": "Grupet e punonjësve ku bëni pjesë."
+          },
+          "locationSupervision": {
+            "location": "Emri i vendndodhjes.",
+            "subarea": "Zona brenda vendndodhjes; bosh për të gjithë vendndodhjen.",
+            "summary": "Vendndodhjet dhe zonat që mbikëqyrni."
+          },
+          "managers": {
+            "manager": "Emri i menaxherit.",
+            "summary": "Menaxherët tuaj."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Vetëm për regjistrimin e pozicionit: nëse pozicioni juaj regjistrohet kur shënoni hyrjen ose daljen.",
+            "effectiveFrom": "Kur fillon të zbatohet caktimi.",
+            "effectiveUntil": "Kur pushon së zbatuari caktimi; bosh përderisa zbatohet.",
+            "isActive": "Nëse caktimi është aktiv.",
+            "policy": "Emri i politikës; bosh për regjistrimin e pozicionit.",
+            "policyKind": "Lloji i politikës: punë, pushim vjetor, festë zyrtare (paracaktim feste), caktim feste (një festë e vetme), kategori feste, ndryshim, shtesë, grup kategorish pune ose regjistrim pozicioni.",
+            "priority": "Cili caktim ka përparësi kur zbatohen disa: numri më i lartë fiton.",
+            "summary": "Çdo politikë që zbatohet për ju: e caktuar për ju, për ekipet tuaja ose e parazgjedhur nga organizata."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Caktimet e mëparshme dhe aktuale të projekteve, dhe kur ato janë zbatuar."
+          },
+          "projectAssignments": {
+            "summary": "Projektet e caktuara për ju ose ekipet tuaja."
+          },
+          "projectsManaged": {
+            "summary": "Projektet që menaxhoni."
+          },
+          "shared": {
+            "assignmentType": "Si ju arrin: e caktuar për ju (punonjës), për ekipin tuaj (ekip) ose për të gjithë organizatën (organizatë).",
+            "primary": "Nëse është parësori juaj.",
+            "project": "Emri i projektit.",
+            "team": "Emri i ekipit."
+          },
+          "skills": {
+            "category": "Kategoria e aftësisë.",
+            "expiresOn": "Dita kur skadon aftësia (YYYY-MM-DD); bosh nëse nuk skadon.",
+            "notes": "Shënime mbi aftësinë tuaj.",
+            "skill": "Emri i aftësisë.",
+            "summary": "Aftësitë dhe kualifikimet tuaja."
+          },
+          "teamHistory": {
+            "summary": "Çdo ekip ku keni qenë dhe kur."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Nëse mund t'i miratoni kërkesat e ekipit.",
+            "canCreateTeams": "Nëse mund të krijoni ekipe.",
+            "canManageTeamMembers": "Nëse mund të menaxhoni anëtarët e ekipit.",
+            "canManageTeamSettings": "Nëse mund të ndryshoni cilësimet e ekipit.",
+            "grantedAt": "Kur u dhanë lejet.",
+            "grantedBy": "Kush i dha lejet.",
+            "summary": "Lejet e ekipit që zotëroni.",
+            "team": "Ekipi për të cilin zbatohen lejet; bosh për çdo ekip të organizatës."
+          },
+          "teams": {
+            "addedBy": "Kush ju shtoi në ekip.",
+            "memberSince": "Prej kur jeni në ekip.",
+            "summary": "Ekipet ku bëni pjesë aktualisht."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Llogaria juaj në shërbimin e kalendarit.",
+            "calendarId": "Kalendari që aplikacioni përdor në atë llogari.",
+            "conflictDetectionEnabled": "Nëse aplikacioni e kontrollon atë kalendar për takime në konflikt.",
+            "createdAt": "Kur e lidhët kalendarin (UTC).",
+            "lastSyncAt": "Kur aplikacioni u sinkronizua për herë të fundit me kalendarin (UTC).",
+            "provider": "Shërbimi i kalendarit, për shembull google, microsoft365 ose icloud.",
+            "pushEnabled": "Nëse aplikacioni i shton mungesat tuaja në atë kalendar.",
+            "summary": "Kalendarët që keni lidhur me aplikacionin. Shenjat e aksesit (tokens) nuk përfshihen kurrë.",
+            "updatedAt": "Kur u ndryshua lidhja për herë të fundit (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "ID-ja e llogarisë suaj në shërbimin e bisedës.",
+            "displayName": "Emri juaj i shfaqur në shërbimin e bisedës.",
+            "email": "Adresa juaj e emailit në shërbimin e bisedës, nëse ofrohet.",
+            "isActive": "Nëse lidhja është në përdorim.",
+            "lastSeenAt": "Kur e keni përdorur aplikacionin për herë të fundit përmes llogarisë (UTC).",
+            "linkedAt": "Kur e lidhët llogarinë (UTC).",
+            "platform": "Shërbimi i bisedës: slack, teams, telegram ose discord.",
+            "summary": "Llogaritë tuaja të bisedës të lidhura me aplikacionin, në mënyrë që ta përdorni nga Slack, Microsoft Teams, Telegram ose Discord.",
+            "username": "Emri juaj i përdoruesit në shërbimin e bisedës.",
+            "workspaceId": "ID-ja e hapësirës së punës ose entitetit (tenant) ku bën pjesë llogaria juaj, nëse shërbimi ka një të tillë."
+          },
+          "icsFeeds": {
+            "createdAt": "Kur u krijua lidhja (UTC).",
+            "includeApproved": "Nëse burimi shfaq mungesat e miratuara.",
+            "includePending": "Nëse burimi shfaq mungesat që janë ende në pritje të miratimit.",
+            "isActive": "Nëse lidhja funksionon ende.",
+            "lastUsedAt": "Kur një aplikacion kalendari e lexoi burimin për herë të fundit (UTC).",
+            "revokedAt": "Kur u çaktivizua lidhja (UTC).",
+            "summary": "Lidhjet e burimit të kalendarit tuaj, të cilat lejojnë një aplikacion kalendari të abonohet në mungesat tuaja. Vetë lidhja sekrete nuk përfshihet kurrë."
+          },
+          "kioskPin": {
+            "pinSet": "Nëse është caktuar një PIN kioske për ju.",
+            "setAt": "Kur u caktua PIN-i për herë të fundit (UTC).",
+            "setBy": "Kush e caktoi PIN-in.",
+            "summary": "Nëse keni një PIN për regjistrimin e hyrjes në një terminal kioske. Vetë PIN-i nuk ruhet kurrë në mënyrë të lexueshme dhe nuk përfshihet."
+          },
+          "shared": {
+            "isActive": "Nëse lidhja është në përdorim."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "Faqja në aplikacion me të cilën lidhet njoftimi.",
+            "createdAt": "Kur e keni marrë njoftimin (UTC).",
+            "entityId": "ID-ja e atij regjistrimi.",
+            "entityType": "Lloji i regjistrimit të cilit i referohet njoftimi, për shembull një mungesë.",
+            "isRead": "Nëse e keni lexuar njoftimin.",
+            "message": "Teksti i njoftimit.",
+            "metadata": "Detaje të mëtejshme që përmbante njoftimi, si JSON.",
+            "readAt": "Kur e keni lexuar (UTC).",
+            "summary": "Njoftimet që keni marrë në aplikacion, saktësisht ashtu siç i keni marrë.",
+            "title": "Titulli i njoftimit.",
+            "type": "Për çfarë bën fjalë njoftimi, për shembull approval_request_submitted."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "Për një raport mjekësor: dita e fundit e mungesës (YYYY-MM-DD).",
+            "absenceId": "Për një raport mjekësor: ID-ja e mungesës që mbulon, në absences.json.",
+            "absenceStartDate": "Për një raport mjekësor: dita e parë e mungesës (YYYY-MM-DD).",
+            "category": "Kategoria e dokumentit: contract, payslip, certificate, sick_note ose other.",
+            "documentDate": "Data e dokumentit (YYYY-MM-DD).",
+            "expiryDate": "Dita kur skadon dokumenti (YYYY-MM-DD), për shembull e një certifikate.",
+            "file": "Vendndodhja e skedarit origjinal brenda këtij arkivi.",
+            "fileName": "Emri i skedarit siç është ngarkuar.",
+            "mimeType": "Lloji i skedarit, për shembull application/pdf.",
+            "payPeriodMonth": "Për një fletëpage: muaji (1 deri në 12) të cilit i përket.",
+            "payPeriodYear": "Për një fletëpage: viti të cilit i përket.",
+            "sizeBytes": "Madhësia e skedarit, në bajt.",
+            "summary": "Dokumentet në dosjen tuaj të personelit. Vetë skedarët ndodhen në dosjen personnel_file, sipas kategorisë.",
+            "title": "Titulli i dokumentit.",
+            "uploadedBy": "Kush e ngarkoi dokumentin.",
+            "visibility": "Kush mund ta shohë dokumentin; shared do të thotë që mund ta shihni në dosjen tuaj."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Kur u vendos për kërkesën (UTC).",
+            "approver": "Kush vendosi për kërkesën.",
+            "lifecycleStatus": "Statusi i kërkesës, duke përfshirë nëse është anuluar.",
+            "requestCreatedAt": "Kur është bërë kërkesa (UTC).",
+            "requestId": "ID-ja e kërkesës në aplikacion.",
+            "requestStatus": "Vendimi për kërkesën: pending, approved ose rejected.",
+            "requestType": "Çfarë është kërkuar: swap (ndërrim turnesh), assignment (marrje përsipër e një turni) ose pickup (marrje e një turni të lirë).",
+            "shiftDate": "Dita e turnit për të cilin bëhet kërkesa (YYYY-MM-DD).",
+            "shiftEndTime": "Kur përfundon ai turn, si ora lokale e ditës (HH:mm).",
+            "shiftStartTime": "Kur fillon ai turn, si ora lokale e ditës (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "Shënimi juaj mbi kërkesën.",
+            "reason": "Arsyeja juaj për kërkesën.",
+            "reasonCategory": "Lloji i arsyes, për shembull sick, emergency, childcare ose other.",
+            "rejectionReason": "Pse u refuzua kërkesa.",
+            "summary": "Kërkesat për turne që keni bërë.",
+            "swapPartner": "Kolegu të cilit i keni kërkuar të ndërroni turnin ose ta marrë atë."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "Kolegu që bëri kërkesën.",
+            "summary": "Kërkesat që kolegët ju kanë bërë juve, si kërkesa për të ndërruar ose marrë një turn. Arsyet, shënimet dhe turnet e tyre nuk përfshihen: data dhe oraret e turnit shfaqen vetëm kur turni është i juaji."
+          },
+          "shifts": {
+            "date": "Dita e turnit (YYYY-MM-DD).",
+            "endTime": "Kur përfundon turni, si ora lokale e ditës në vendin e punës (HH:mm).",
+            "location": "Vendndodhja e turnit.",
+            "notes": "Shënimi i shkruar për turnin.",
+            "publishedAt": "Kur u publikua turni (UTC).",
+            "publishedBy": "Kush e publikoi turnin.",
+            "startTime": "Kur fillon turni, si orë lokale e ditës në vendin e punës (HH:mm).",
+            "status": "Nëse turni është ende draft apo i publikuar për ju.",
+            "subarea": "Zona brenda vendndodhjes.",
+            "summary": "Turnet për të cilat ishit caktuar në orar.",
+            "template": "Shablloni i turnit nga i cili u krijua turni."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Kur u shfaqën vendndodhjet tuaja (UTC).",
+            "exportId": "Për një eksport: ID-ja e eksportit.",
+            "kind": "Si u shfaqën: te detajet e periudhës së punës (work_period_detail) ose në një eksport (data_export).",
+            "summary": "Kujt tjetër përveç jush iu shfaqën vendndodhjet tuaja dhe kur: një rresht për periudhë pune të shfaqur, ose një rresht për eksport.",
+            "viewer": "Kujt iu shfaqën vendndodhjet tuaja.",
+            "workPeriodId": "ID-ja e periudhës së punës së shfaqur, te time.json > work_periods.",
+            "workPeriodStartedAt": "Kur filloi ajo periudhë pune (UTC).",
+            "workPeriodUtcOffsetMinutes": "Diferenca UTC e regjistrimit të hyrjes për atë periudhë pune, në minuta."
+          },
+          "consents": {
+            "consentId": "ID-ja e pëlqimit në aplikacion.",
+            "grantedAt": "Kur dhatë pëlqimin tuaj (UTC).",
+            "summary": "Çdo pëlqim që keni dhënë për regjistrimin e vendndodhjes suaj, dhe kur e keni tërhequr atë.",
+            "withdrawnAt": "Kur e tërhoqët pëlqimin tuaj (UTC); bosh për sa kohë mbetet në fuqi."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Kur u përgjigjët (UTC).",
+            "summary": "Herët kur iu përgjigjët njoftimit të vendndodhjes me \"jo tani\"."
+          },
+          "shared": {
+            "noticeVersion": "Versioni i njoftimit të vendndodhjes të cilit iu përgjigjët.",
+            "purposeStatement": "Pse organizata regjistron vendndodhjet, siç deklarohej në njoftim.",
+            "retentionDays": "Për sa ditë ruhen vendndodhjet, siç deklarohej në njoftim."
+          },
+          "stamps": {
+            "accuracyMeters": "Sa e saktë është vendndodhja, në metra, siç është raportuar nga pajisja juaj.",
+            "capturedAt": "Kur u regjistrua vendndodhja me regjistrimin e orarit (UTC).",
+            "clockEvent": "Nëse vendndodhja u regjistrua gjatë clock_in apo gjatë clock_out.",
+            "consentId": "ID-ja e pëlqimit te consents nën të cilin u regjistrua vendndodhja.",
+            "createdAt": "Kur u ruajt vendndodhja (UTC).",
+            "fixedAt": "Kur pajisja juaj përcaktoi vendndodhjen (UTC); mund të jetë pak më herët se veprimi i regjistrimit të orarit.",
+            "latitude": "Gjerësia gjeografike, në gradë dhjetore.",
+            "longitude": "Gjatësia gjeografike, në gradë dhjetore.",
+            "purgeAt": "Kur do të fshihet vendndodhja (UTC).",
+            "summary": "Vendndodhjet e regjistruara kur keni shënuar hyrjen ose daljen. Secila fshihet automatikisht te purge_at.",
+            "timeEntryId": "ID-ja e hyrjes ose daljes te time.json > time_entries.",
+            "utcOffsetMinutes": "Diferenca UTC e regjistrimit të orarit, në minuta (120 do të thotë UTC+2)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "ID-ja e daljes që regjistroi aplikacioni, te time_entries.",
+            "cutoffTime": "Ora kur jeni regjistruar në dalje (UTC).",
+            "maxUninterruptedMinutes": "Koha më e gjatë, në minuta, që mund të qëndroni i regjistruar në hyrje pa pushim.",
+            "processedAt": "Kur aplikacioni ju regjistroi në dalje (UTC).",
+            "startTime": "Kur filloi periudha e punës (UTC).",
+            "summary": "Herët kur aplikacioni ju regjistroi në dalje sepse qëndruat i regjistruar në hyrje më gjatë sesa lejohej.",
+            "timezone": "Zona kohore e periudhës së punës.",
+            "utcOffsetMinutes": "Diferenca UTC e daljes nga puna, në minuta."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Pse u anulua rregullimi.",
+            "cancelledAt": "Kur u anulua rregullimi (UTC); bosh nëse llogaritet ende.",
+            "cancelledBy": "Kush e anuloi rregullimin.",
+            "day": "Dita në të cilën llogaritet rregullimi (YYYY-MM-DD).",
+            "kind": "Lloji i rregullimit: opening_balance ose overtime_payout.",
+            "minutes": "Minutat e shtuara (pozitive) ose të zbritura (negative) nga bilanci juaj.",
+            "reason": "Pse u bë rregullimi.",
+            "recordedAt": "Kur u regjistrua rregullimi (UTC).",
+            "recordedBy": "Kush e regjistroi rregullimin.",
+            "summary": "Ndryshimet manuale në balancën e orarit të punës, si një balancë fillestare ose orët shtesë të paguara, përfshirë ato të anuluara."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Kur aplikacioni shtoi pushimin (UTC).",
+            "adjustedDurationMinutes": "Kohëzgjatja e periudhës pasi u shtua pushimi, në minuta.",
+            "breakInsertedAt": "Vendi në periudhë ku u vendos pushimi (UTC).",
+            "breakInsertedMinutes": "Sa zgjat pushimi i shtuar, në minuta.",
+            "originalDurationMinutes": "Kohëzgjatja e periudhës para se të shtohej pushimi, në minuta.",
+            "originalEndTime": "Përfundimi i periudhës para se të shtohej pushimi (UTC).",
+            "policy": "Rregulli i pushimit që kërkoi pushimin.",
+            "requiredBreakMinutes": "Pushimi që kërkon rregulli, në minuta.",
+            "summary": "Pushimet që aplikacioni shtoi në një periudhë pune sepse mungonte pushimi i kërkuar me ligj.",
+            "workingMinutesThreshold": "Koha e punës, në minuta, pas së cilës rregulli kërkon pushim."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "Sa kohë keni punuar realisht sipas përjashtimit, në minuta.",
+            "approvedAt": "Kur u miratua përjashtimi (UTC).",
+            "approver": "Kush vendosi për përjashtimin.",
+            "exceptionType": "Nga cili rregull vjen përjashtimi, për shembull rest_period ose overtime_daily.",
+            "plannedDurationMinutes": "Koha e punës për të cilën u kërkua përjashtimi, në minuta.",
+            "reason": "Pse u kërkua përjashtimi.",
+            "rejectedAt": "Kur u refuzua përjashtimi (UTC).",
+            "rejectionReason": "Pse u refuzua përjashtimi.",
+            "status": "Nëse përjashtimi është në pritje, i miratuar, i refuzuar, i skaduar apo i përdorur.",
+            "summary": "Përjashtimet nga rregullat e orarit të punës të kërkuara për ju, si një periudhë më e shkurtër pushimi ose orë shtesë ekstra.",
+            "usedAt": "Kur keni punuar sipas përjashtimit (UTC).",
+            "validFrom": "Kur fillon të zbatohet përjashtimi (UTC).",
+            "validUntil": "Kur pushon së zbatuari përjashtimi (UTC).",
+            "wasUsed": "Nëse keni punuar sipas përjashtimit."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Kur u miratua korrigjimi (UTC).",
+            "approvedBy": "Kush e miratoi korrigjimin.",
+            "kind": "Çfarë ndryshon korrigjimi.",
+            "proposedAt": "Kur u propozua korrigjimi (UTC).",
+            "proposedBy": "Kush e propozoi korrigjimin.",
+            "reason": "Pse u propozua korrigjimi.",
+            "resolvedAt": "Kur u mbyll propozimi (UTC).",
+            "resolvedBy": "Kush e mbylli propozimin.",
+            "status": "Statusi i propozimit, për shembull i propozuar, i miratuar, i zbatuar ose i refuzuar.",
+            "summary": "Korrigjimet e propozuara të regjistrimeve më të vjetra të punës, për shembull një regjistrim daljeje i munguar, dhe çfarë ndodhi me to."
+          },
+          "shared": {
+            "actualMinutes": "Minutat që keni punuar, të llogaritura për balancën.",
+            "balanceMinutes": "Balanca juaj në minuta: pozitive janë orë shtesë, negative është kohë e mbetur borxh.",
+            "computedAt": "Kur aplikacioni i llogariti për herë të fundit këto shifra (UTC).",
+            "requiredMinutes": "Minutat që duhej të punonit sipas politikës suaj të punës.",
+            "workPeriodId": "ID-ja e periudhës së punës në work_periods."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "Shkalla e shtesës, si thyesë (0.25 do të thotë 25%).",
+            "baseMinutes": "Minutat e punuara gjatë periudhës.",
+            "calculatedAt": "Momenti në kohë për të cilin zbatohet shtesa (UTC).",
+            "calculationDetails": "Mënyra se si u llogarit shtesa, si JSON.",
+            "qualifyingMinutes": "Minutat që kualifikohen për shtesën.",
+            "summary": "Shtesat e llogaritura për punën tuaj, për shembull për punën gjatë natës, të dielave ose ditëve të pushimit.",
+            "surchargeMinutes": "Minutat shtesë të kredituara si shtesë.",
+            "surchargeModel": "Modeli i shtesës që u zbatua.",
+            "surchargeRule": "Rregulli i modelit që u zbatua."
+          },
+          "timeEntries": {
+            "createdBy": "Kush e regjistroi hyrjen: ju, apo personi që e regjistroi për ju.",
+            "deviceInfo": "Pajisja ose shfletuesi me të cilin keni regjistruar hyrjen; bosh kur e ka regjistruar dikush tjetër.",
+            "ipAddress": "Adresa IP e pajisjes me të cilën keni regjistruar hyrjen; bosh kur e ka regjistruar dikush tjetër.",
+            "isSuperseded": "Nëse një korrigjim i mëvonshëm e zëvendësoi këtë hyrje.",
+            "location": "Vendndodhja e regjistruar me hyrjen, si emër vendi ose koordinata.",
+            "notes": "Shënimi i shkruar në hyrje.",
+            "replacesEntryId": "Për një korrigjim: ID-ja e hyrjes që zëvendëson.",
+            "summary": "Çdo regjistrim i hyrjes, daljes dhe korrigjim i regjistruar për ju. Hyrjet nuk ndryshohen kurrë: një korrigjim është një hyrje e re që zëvendëson të vjetrën.",
+            "supersededById": "ID-ja e korrigjimit që zëvendësoi këtë hyrje.",
+            "timestamp": "Momenti që përfaqëson hyrja, në UTC.",
+            "timezone": "Zona kohore në të cilën u regjistrua hyrja, për shembull Europe/Berlin.",
+            "timezoneSource": "Nga ka ardhur zona kohore, për shembull pajisja juaj ose cilësimi i organizatës.",
+            "type": "Çfarë regjistron hyrja: clock_in, clock_out ose correction.",
+            "utcOffsetMinutes": "Diferenca me UTC në fuqi ku u regjistrua hyrja, në minuta (120 do të thotë UTC+2). Shtojeni te vula kohore për kohën lokale."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "Minutat e shtuara ose të hequra nga rregullimet e bilancit.",
+            "computedFromDate": "Dita e parë që llogaritet bilanci (YYYY-MM-DD).",
+            "computedThroughDate": "Dita e fundit që llogaritet bilanci (YYYY-MM-DD).",
+            "summary": "Bilanci juaj aktual i orëve të punës: koha që keni punuar krahasuar me kohën që duhej të punonit."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Nëse periudha është e mbyllur, kështu që shifrat e saj nuk ndryshojnë më.",
+            "periodEnd": "Dita e fundit e periudhës (YYYY-MM-DD).",
+            "periodStart": "Dita e parë e periudhës (YYYY-MM-DD).",
+            "periodType": "Kohëzgjatja e periudhës: muaj ose vit.",
+            "summary": "Bilanci juaj i orëve të punës për muaj dhe për vit."
+          },
+          "workOperations": {
+            "actor": "Personi që bëri ndryshimin.",
+            "actorKind": "Kush e bëri ndryshimin: një person (njeri), vetë aplikacioni (sistem), një kioskë, ose e panjohur për regjistrimet e vjetra.",
+            "createdAt": "Kur u bë ndryshimi (UTC).",
+            "kind": "Çfarë u bë, për shembull një regjistrim hyrjeje, një modifikim ose një fshirje.",
+            "summary": "Një regjistër i çdo ndryshimi në periudhat tuaja të punës: çfarë u bë dhe nga kush.",
+            "writer": "Cila pjesë e aplikacionit bëri ndryshimin, për shembull një regjistrim daljeje në aplikacionin e uebit, një importim ose një modifikim nga administratori."
+          },
+          "workPeriods": {
+            "approvalStatus": "Nëse periudha është miratuar, refuzuar apo në pritje të miratimit.",
+            "breakStartedAt": "Kur nisi pushimi juaj aktual (UTC); bosh kur nuk jeni në pushim.",
+            "breakStartedZone": "Zona kohore në të cilën nisi pushimi.",
+            "clockInEntryId": "ID-ja e regjistrimit të hyrjes në time_entries.",
+            "clockOutEntryId": "ID-ja e regjistrimit të daljes në time_entries.",
+            "deletedAt": "Kur u fshi periudha (UTC); bosh nëse nuk u fshi.",
+            "deletedBy": "Kush e fshiu periudhën.",
+            "deletionReason": "Pse u fshi periudha.",
+            "drivenDistanceKm": "Distanca që keni përshkuar gjatë punës, në kilometra: leximi përfundimtar minus leximin fillestar, ose distanca e futur drejtpërdrejt kur nuk kishte lexim fillestar.",
+            "durationMinutes": "Sa kohë keni punuar, në minuta.",
+            "endTime": "Kur përfundoi puna (UTC); bosh për sa kohë jeni ende me hyrje të regjistruar.",
+            "endUtcOffsetMinutes": "Diferenca me UTC e regjistrimit të daljes, në minuta.",
+            "isActive": "Nëse jeni ende me hyrje të regjistruar për këtë periudhë.",
+            "isBillable": "Nëse puna mund t'i faturohet një klienti.",
+            "licencePlate": "Targa e mjetit të organizatës me të cilin udhëtuat; bosh për mjetin tuaj personal.",
+            "odometerEndKm": "Leximi i odometrit të mjetit kur përfundoi puna, në kilometra.",
+            "odometerStartKm": "Leximi i odometrit të mjetit kur nisi puna, në kilometra.",
+            "pendingDurationMinutes": "Për një ndryshim në pritje të miratimit: kohëzgjatja e kërkuar, në minuta.",
+            "pendingEndTime": "Për një ndryshim në pritje të miratimit: përfundimi i kërkuar (UTC).",
+            "pendingReason": "Pse u kërkua ndryshimi.",
+            "pendingRequestedAt": "Kur u kërkua ndryshimi (UTC).",
+            "pendingRequestedBy": "Kush e kërkoi ndryshimin.",
+            "pendingStartTime": "Për një ndryshim në pritje të miratimit: fillimi i kërkuar (UTC).",
+            "project": "Projekti në të cilin u regjistrua puna.",
+            "startTime": "Kur nisi puna (UTC).",
+            "startUtcOffsetMinutes": "Diferenca UTC e regjistrimit të hyrjes, në minuta (120 do të thotë UTC+2).",
+            "summary": "Periudhat tuaja të punës, secila nga hyrja deri te dalja, bashkë me çdo ndryshim në pritje të miratimit.",
+            "task": "Detyra e projektit në të cilën u regjistrua puna.",
+            "vehicleKind": "Automjeti që keni drejtuar gjatë punës: organization për një automjet të organizatës, own për automjetin tuaj personal; bosh nëse nuk është regjistruar asnjë.",
+            "vehicleName": "Emri i automjetit të organizatës që keni drejtuar; bosh për automjetin tuaj personal.",
+            "workCategory": "Lloji i punës, sipas emërtimit nga organizata.",
+            "workLocationType": "Vendi ku keni punuar, për shembull zyrë, shtëpi ose në distancë."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "Kur u pranua shkelja (UTC).",
+            "acknowledgedBy": "Kush e pranoi shkeljen.",
+            "acknowledgedNote": "Shënimi i shkruar kur u pranua shkelja.",
+            "details": "Shifrat pas shkeljes, si JSON, për shembull orët e punuara dhe limiti.",
+            "policy": "Rregullorja e punës rregulli i së cilës u shkel.",
+            "summary": "Rastet kur puna juaj ka shkelur një rregull të rregullores së punës, për shembull një pushim i munguar ose një ditë shumë e gjatë.",
+            "violatedAt": "Kur u shkel rregulli (UTC).",
+            "violationType": "Cili rregull u shkel."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "Minutat e kredituara për mungesa të tilla si pushimet ose sëmundja.",
+            "summary": "Bilanci i orëve tuaja të punës për vit, siç është llogaritur nga një version i mëparshëm i aplikacionit.",
+            "year": "Viti."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "ID-ja e raportit që po korrigjohet.",
+            "reportId": "ID-ja e raportit korrigjues te raportet.",
+            "sourceReportId": "ID-ja e raportit nga i cili u kopjua korrigjimi: origjinali ose korrigjimi i tij më i fundit.",
+            "summary": "Raporte që korrigjojnë një raport tashmë të eksportuar ose të rimbursuar."
+          },
+          "allowanceOverrides": {
+            "amount": "Shuma e caktuar.",
+            "calculationBasis": "Si u llogarit shuma.",
+            "evidence": "Mbi çfarë bazohet shuma.",
+            "kind": "Cila shtesë u caktua: mileage apo per_diem.",
+            "revokedAt": "Kur u tërhoq shuma (UTC); bosh nëse ende zbatohet.",
+            "revokedBy": "Kush e tërhoqi shumën, sipas emrit të tyre në atë kohë.",
+            "scope": "Cilën pjesë të shpenzimit mbulon shuma, si JSON.",
+            "situation": "Pse rregullat nuk dhanë asnjë shumë, si JSON.",
+            "summary": "Kilometrazhi ose dietat ditore që një administrator shpenzimesh i caktoi me dorë kur rregullat nuk jepnin asnjë shumë."
+          },
+          "claimDecisions": {
+            "action": "Vendimi: i miratuar ose i refuzuar.",
+            "actor": "Kush e mori vendimin.",
+            "approver": "Miratuesi të cilit iu caktua kërkesa.",
+            "comment": "Komenti i shkruar me vendimin.",
+            "createdAt": "Kur u mor vendimi (UTC).",
+            "summary": "Çdo vendim mbi kërkesat tuaja."
+          },
+          "claimReceipts": {
+            "summary": "Faturat e bashkëngjitura në kërkesat tuaja. Vetë skedarët ndodhen në dosjen claim-receipts."
+          },
+          "claims": {
+            "approver": "Kush vendosi për kërkesën.",
+            "calculatedAmount": "Shuma për rimbursim, siç është llogaritur.",
+            "calculatedCurrency": "Monedha e shumës për rimbursim.",
+            "destinationCity": "Qyteti ku keni udhëtuar.",
+            "destinationCountry": "Shteti ku keni udhëtuar.",
+            "notes": "Shënimet tuaja për kërkesën.",
+            "status": "Nëse kërkesa është draft, e dërguar, e miratuar apo e refuzuar.",
+            "summary": "Kërkesat tuaja për shpenzimet e udhëtimit të bëra me formularin e mëparshëm me një shpenzim të vetëm.",
+            "tripDateTimeZone": "Zona kohore në të cilën llogariten ditët e udhëtimit.",
+            "tripEnd": "Përfundimi i udhëtimit (UTC).",
+            "tripStart": "Fillimi i udhëtimit (UTC).",
+            "type": "Lloji i shpenzimit: faturë, kilometrazh ose per_diem (dietë ditore)."
+          },
+          "currencyConversions": {
+            "basis": "Si u konvertua shuma: çfarë u tarifua realisht në kartën tuaj (card_charge), një normë e caktuar nga administratori (manual_rate), ose një normë reference e publikuar (reference_rate).",
+            "chargedAmount": "Për card_charge: shuma e tarifuar në kartën tuaj, në monedhën e synuar.",
+            "evidenceReceiptFile": "Për card_charge: skedari i faturës brenda këtij arkivi që tregon tarifimin.",
+            "rate": "Kursi i këmbimit: 1 njësi e rate_base_currency është e barabartë me kaq njësi të rate_quote_currency.",
+            "rateBaseCurrency": "Monedha bazë e kursit.",
+            "rateDate": "Dita nga është kursi (YYYY-MM-DD).",
+            "rateEvidence": "Vendi ku mund të verifikohet kursi, si për shembull një rresht i pasqyrës bankare.",
+            "rateQuoteCurrency": "Monedha kuotuese e kursit.",
+            "recordedBy": "Kush e regjistroi konvertimin.",
+            "referenceExpenseDate": "Për reference_rate: dita e shpenzimit për të cilën u zgjodh kursi (YYYY-MM-DD).",
+            "referenceSource": "Për reference_rate: kursi i publikuar i përdorur, si JSON.",
+            "sourceCurrency": "Monedha nga e cila u bë konvertimi.",
+            "summary": "Mënyra se si shpenzimet në një monedhë të huaj u konvertuan në monedhën tuaj të rimbursimit.",
+            "targetCurrency": "Monedha në të cilën u bë konvertimi."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Kur u zhvendos drafti (UTC).",
+            "convertedBy": "Kush e zhvendosi draftin.",
+            "flags": "Çdo gjë që nuk mund të zhvendosej ashtu siç ishte, si JSON.",
+            "legacyFacts": "Çfarë përmbante kërkesa draft kur u zhvendos, si JSON.",
+            "summary": "Kërkesat draft nga formulari i mëparshëm i kërkesës që u zhvendosën në një raport."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Kur u konfirmua ose kur pushoi së përfshiri (UTC).",
+            "endedBy": "Kush e konfirmoi, e hoqi ose e hodhi poshtë.",
+            "includedAt": "Kur iu shtua raporti ekzekutimit (UTC).",
+            "lines": "Shumat e kaluara në listëpagesë, me llojet e tyre të pagave, si JSON.",
+            "state": "Statusi i përfshirjes: përfshirë, konfirmuar, hequr, hedhur poshtë ose zëvendësuar nga një ekzekutim i mëvonshëm.",
+            "summary": "Raportet e paguara për ju përmes listëpagesës."
+          },
+          "perDiemItineraries": {
+            "endDate": "Dita kur u kthyet (YYYY-MM-DD).",
+            "endTime": "Ora lokale kur u kthyet (HH:mm).",
+            "endTimeZone": "Zona kohore e kthimit.",
+            "meals": "Vaktet e ofruara për ju në ditë, si JSON; ato e reduktojnë dietën.",
+            "overnight": "Nëse dhe si qëndruat gjatë natës.",
+            "policy": "Tarifat që përcaktuan dietën, si JSON, të fiksuara kur e dorëzuat.",
+            "prolongedWorkplace": "Nëse keni punuar në të njëjtin vend larg shtëpisë për një kohë të gjatë, gjë që mund të reduktojë dietën.",
+            "startDate": "Dita kur u nisët (YYYY-MM-DD).",
+            "startTime": "Ora lokale kur u nisët (HH:mm).",
+            "startTimeZone": "Zona kohore e nisjes.",
+            "summary": "Udhëtimet nga të cilat u llogaritën dietat tuaja ditore (per diem)."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "Kush e dha lejen.",
+            "evidence": "Shënimi i brendshëm i administratorit të shpenzimeve mbi dëshminë.",
+            "project": "Projekti.",
+            "reason": "Arsyeja e brendshme e administratorit të shpenzimeve për lejen.",
+            "summary": "Lejet për të regjistruar shpenzimet tuaja në një projekt për ditët kur aplikacioni nuk ka të dhëna se keni punuar në të.",
+            "validFrom": "Dita e parë e shpenzimit e mbuluar (YYYY-MM-DD).",
+            "validTo": "Dita e fundit e shpenzimit e mbuluar (YYYY-MM-DD)."
+          },
+          "reportItems": {
+            "accountingReference": "Një referencë për kontabilitetin, si për shembull një numër fature.",
+            "category": "Kategoria e shpenzimit, për shembull hotel, tren ose vakte.",
+            "description": "Përshkrimi juaj i shpenzimit.",
+            "expenseDate": "Dita e shpenzimit (YYYY-MM-DD).",
+            "mileageDistanceKm": "Për kilometrazhin: distanca, në kilometra.",
+            "mileagePolicy": "Për kilometrazhin: tarifat me të cilat u llogarit, si JSON, të fiksuara kur e dorëzuat.",
+            "mileageRoute": "Për kilometrazhin: itinerari që keni përshkuar.",
+            "mileageVehicle": "Për kilometrazhin: lloji i automjetit.",
+            "paidBy": "Kush e pagoi: ju (punonjësi) apo organizata (kompania).",
+            "position": "Pozicioni i shpenzimit në raport.",
+            "projectInherits": "Nëse shpenzimi përdor projektin e udhëtimit në vend të të vetit.",
+            "receiptExceptionReason": "Shpjegimi juaj se pse mungon fatura.",
+            "summary": "Shpenzimet në raportet tuaja.",
+            "type": "Lloji i shpenzimit: faturë, kilometrazh ose per_diem (dietë ditore)."
+          },
+          "reportReceipts": {
+            "summary": "Faturat e bashkëngjitura me shpenzimet në raportet tuaja. Vetë skedarët ndodhen në dosjen e kësaj kategorie."
+          },
+          "reports": {
+            "kind": "Nëse raporti është për një udhëtim (trip) apo për shpenzime të veçanta (standalone).",
+            "project": "Projekti i udhëtimit, të cilin e përdorin shpenzimet e tij përveç nëse ato përcaktojnë të vetin.",
+            "reimbursementCurrency": "Monedha në të cilën rimbursoheni.",
+            "status": "Gjendja e raportit: draft, i dorëzuar, i miratuar, i refuzuar ose i kthyer për ndryshime.",
+            "submissionCount": "Sa herë është dorëzuar raporti.",
+            "summary": "Raportet tuaja të shpenzimeve të udhëtimit, ku secili grupon shpenzimet e një udhëtimi ose shpenzime të veçanta.",
+            "tripDestinations": "Vendet ku keni udhëtuar, si JSON.",
+            "tripPurpose": "Qëllimi i udhëtimit.",
+            "tripTimeZone": "Zona kohore në të cilën llogariten ditët e udhëtimit."
+          },
+          "reviewCycleClosures": {
+            "actor": "Kush e përfundoi.",
+            "createdAt": "Kur përfundoi (UTC).",
+            "kind": "Si përfundoi dorëzimi: i kthyer, i tërhequr ose i rihapur.",
+            "note": "Shënimi i shkruar kur përfundoi.",
+            "submissionCycle": "Cili dorëzim i raportit ishte: 1 është i pari.",
+            "summary": "Dorëzimet e raporteve tuaja që përfunduan pa një vendim përfundimtar: të kthyera te ju, të tërhequra ose të rihapura."
+          },
+          "reviewNotes": {
+            "body": "Komenti.",
+            "closureId": "ID-ja e dorëzimit të kthyer në review_cycle_closures.",
+            "summary": "Komentet e një shqyrtuesi për shpenzime individuale të një raporti të kthyer te ju."
+          },
+          "settlementEntries": {
+            "amount": "Shuma.",
+            "balanceBefore": "Çfarë mbetej e papaguar përpara kësaj pagese.",
+            "basisSubmissionCycle": "Në cilin dorëzim të miratuar të raportit bazohet pagesa.",
+            "exportBatchId": "ID-ja e eksportit të shpenzimeve për të cilin u regjistrua pagesa.",
+            "kind": "Nëse jeni paguar ju (rimbursim) apo keni kthyer para mbrapsht (rikthim).",
+            "note": "Shënimi i shkruar bashkë me pagesën.",
+            "occurredOn": "Dita kur u transferuan paratë (YYYY-MM-DD).",
+            "recordedAt": "Kur u regjistrua pagesa (UTC).",
+            "recordedBy": "Kush e regjistroi pagesën.",
+            "reference": "Referenca e pagesës, si për shembull referenca e transferës bankare.",
+            "sourceType": "Për çfarë shërbejnë paratë: një raport apo një kërkesë nga formulari i mëparshëm (legacy_claim).",
+            "summary": "Paratë e paguara për ju për shpenzime të miratuara, ose të kthyera mbrapsht nga ju pas një mbipagese."
+          },
+          "shared": {
+            "authorizedAt": "Kur u autorizua (UTC).",
+            "authorizedBy": "Administratori i shpenzimeve që e autorizoi, sipas emrit të tij në atë kohë.",
+            "claimId": "ID-ja e kërkesës në claims.",
+            "currency": "Monedha, si kod me tre shkronja si p.sh. EUR.",
+            "decidedAt": "Kur u miratua, u refuzua ose u kthye për herë të fundit (UTC).",
+            "file": "Vendndodhja e skedarit origjinal të faturës brenda këtij arkivi.",
+            "fileName": "Emri i skedarit të faturës siç është ngarkuar.",
+            "itemId": "ID-ja e shpenzimit në report_items.",
+            "mimeType": "Lloji i skedarit, për shembull application/pdf ose image/jpeg.",
+            "originalAmount": "Shuma e paguar, në monedhën origjinale.",
+            "originalCurrency": "Monedha në të cilën është paguar shuma.",
+            "payrollRunId": "ID-ja e ekzekutimit të listëpagesës.",
+            "payrollRunPeriodEnd": "Dita e fundit e periudhës së ekzekutimit të listëpagesës (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "Dita e parë e periudhës së ekzekutimit të listëpagesës (YYYY-MM-DD).",
+            "project": "Projekti ku është regjistruar shpenzimi.",
+            "reason": "Arsyeja e dhënë.",
+            "reportId": "ID-ja e raportit në reports.",
+            "sizeBytes": "Madhësia e skedarit, në bajtë.",
+            "submittedAt": "Kur është dorëzuar për herë të fundit (UTC).",
+            "tripEndDate": "Dita e fundit e udhëtimit (YYYY-MM-DD).",
+            "tripStartDate": "Dita e parë e udhëtimit (YYYY-MM-DD).",
+            "uploadedBy": "Kush e ngarkoi faturën."
+          }
+        }
+      },
+      "fieldsIntro": "Çfarë përmban secila pjesë e skedarëve JSON dhe çfarë do të thotë secila fushë. Një fushë boshe (null) nuk ka vlerë.",
+      "fieldsTitle": "Fushat",
+      "filesTitle": "Skedarët",
+      "formatJson": "Skedarët JSON janë kopja e plotë dhe e lexueshme nga makina e të dhënave tuaja. Skedarët CSV përsërisin tabelat e tyre për fletëllogaritëse.",
+      "formatOtherPeople": "Personat që kanë vepruar mbi të dhënat tuaja emërtohen. Personat mbi të cilët keni vepruar ju shfaqen vetëm si një ID anonime.",
+      "formatsTitle": "Formatet",
+      "formatTimes": "Pikat në kohë janë të shkruara në UTC (ISO 8601, që përfundojnë me Z). Regjistrimet e kohës mbajnë gjithashtu zhvendosjen UTC në fuqi aty ku janë regjistruar. Ditët kalendarike janë shkruar si YYYY-MM-DD.",
+      "intro": "Ky arkiv përmban të dhënat personale që {organization} mban për {employee}, sipas leximit më {exportedAt} (UTC).",
+      "kindAdmin": "Një administrator i {organization} e krijoi këtë eksportim në emrin tuaj.",
+      "kindEmployee": "Ju e keni kërkuar vetë këtë eksportim.",
+      "manifest": "Rreshton çdo skedar në këtë arkiv me madhësinë dhe numrin e regjistrimeve të tij.",
+      "retentionAuditLog": "Regjistrimet e ditarit të auditimit fshihen pas {days} ditësh.",
+      "retentionCategoryNone": "{category}: nuk është caktuar periudhë ruajtjeje",
+      "retentionCategoryYears": "{years, plural, one {{category}: # vit} other {{category}: # vjet}}",
+      "retentionDocuments": "Dokumentet në dosjen tuaj të personelit ruhen për periudhën që {organization} ka caktuar për kategorinë e tyre. Periudha llogaritet nga data 1 janar pas vitit më të vonshëm midis vitit kur përfundoi punësimi juaj dhe vitit të dokumentit. Dokumentet e një kategorie pa periudhë të caktuar ruhen derisa dikush t'i fshijë ato.",
+      "retentionOther": "Përveç rasteve të përcaktuara më sipër, të dhënat tuaja të tjera ruhen derisa {organization} t'i fshijë ato ose të fshihet dosja juaj e punonjësit.",
+      "retentionTitle": "Sa kohë ruhen të dhënat tuaja",
+      "rightsAccess": "të keni qasje në të dhënat tuaja personale dhe të merrni një kopje të tyre (Neni 15 i GDPR-së)",
+      "rightsComplaint": "të paraqisni ankesë pranë një autoriteti mbikëqyrës për mbrojtjen e të dhënave (Neni 77 i GDPR-së)",
+      "rightsContact": "Për të ushtruar këto të drejta, kontaktoni {organization}. Njoftimi i privatësisë i {organization} zbatohet dhe përshkruan se si përpunohen të dhënat tuaja.",
+      "rightsErasure": "të kërkoni fshirjen e të dhënave tuaja (Neni 17 i GDPR-së)",
+      "rightsIntro": "Sipas Rregullores së Përgjithshme për Mbrojtjen e të Dhënave (GDPR), ju keni të drejtë të:",
+      "rightsNotification": "informoheni për korrigjimet, fshirjet dhe kufizimet e përcjella te marrësit e të dhënave tuaja (Neni 19 i GDPR-së)",
+      "rightsObjection": "kundërshtoni përpunimin e të dhënave tuaja (Neni 21 i GDPR-së)",
+      "rightsPortability": "merrni të dhënat tuaja në një format të lexueshëm nga makina, siç janë skedarët JSON të këtij arkivi, dhe t'ia dërgoni dikujt tjetër (Neni 20 i GDPR-së)",
+      "rightsRectification": "të kërkoni korrigjimin e të dhënave të pasakta dhe plotësimin e të dhënave jo të plota (Neni 16 i GDPR-së)",
+      "rightsRestriction": "kërkoni kufizimin e përpunimit të të dhënave tuaja (Neni 18 i GDPR-së)",
+      "rightsTitle": "Të drejtat tuaja",
+      "title": "Të dhënat tuaja personale nga {organization}"
     }
   },
   "presence": {

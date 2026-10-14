@@ -108,6 +108,36 @@
       "noBalance": "Nuk ka balancë"
     },
     "description": "Shikoni dhe menaxhoni punonjësit që mbikëqyrni drejtpërdrejt",
+    "driving": {
+      "columns": {
+        "calendar": "Kalendari",
+        "date": "Data",
+        "employee": "Punonjësi",
+        "missing": "Mungon",
+        "time": "Koha lokale e regjistruar"
+      },
+      "count": "{count, plural, one {# periudhe pune i mungojnë detajet e drejtimit.} other {# periudhave pune u mungojnë detajet e drejtimit.}}",
+      "descriptionAll": "Periudhat e punës që nuk kanë një automjet ose lexim odometri, megjithëse pritet përdorimi i automjetit. Ato mbeten të listuara derisa të plotësohen detajet.",
+      "descriptionManaged": "Periudhat e punës të punonjësve që menaxhoni, të cilave u mungon një automjet ose leximi i odometrit, megjithëse pritet përdorimi i automjetit. Ato mbeten të listuara derisa të plotësohen detajet.",
+      "empty": "Asnjë pune nuk i mungojnë detajet e drejtimit.",
+      "filters": {
+        "allEmployees": "Të gjithë punonjësit",
+        "allTeams": "Të gjitha ekipet",
+        "employee": "Punonjësi",
+        "team": "Ekipi"
+      },
+      "loading": "Po ngarkohen detajet e drejtimit",
+      "missing": {
+        "endReading": "Nuk ka lexim përfundimtar",
+        "readings": "Nuk ka lexime të odometrit",
+        "startReading": "Nuk ka lexim fillestar",
+        "vehicle": "Nuk ka automjet"
+      },
+      "openCalendar": "Kalendari",
+      "openCalendarOf": "Hap kalendarin e {name}",
+      "title": "Mungojnë detajet e drejtimit",
+      "truncated": "Po shfaqen {count} periudhat më të reja të punës. Filtroni sipas ekipit ose punonjësit për të parë pjesën tjetër."
+    },
     "empty": {
       "action": "Shko te Cilësimet e punonjësve",
       "description": "Punonjësit e caktuar për ju si menaxher i tyre do të shfaqen këtu. Mund të menaxhoni caktimet e ekipit te cilësimet e punonjësve.",

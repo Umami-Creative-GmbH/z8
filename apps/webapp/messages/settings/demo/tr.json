@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} zaman kaydı silindi",
           "title": "Zaman Verilerini Temizle",
           "vacationAllowancesReset": "{count} izin ödeneği sıfırlandı",
+          "vehiclesDeleted": "{count, plural, other {# araç silindi} }",
           "willDelete": "Bu işlem şunları kalıcı olarak silecektir:",
           "workCategoriesDeleted": "{count} çalışma kategorisi silindi",
           "workCategorySetsDeleted": "{count} çalışma kategorisi seti silindi",
@@ -109,7 +110,7 @@
           "label": "Veri Türleri",
           "locations": {
             "countLabel": "Konum sayısı:",
-            "description": "İş konumları ve alt alanlar",
+            "descriptionWithVehicles": "Çalışma konumları, alt alanlar ve birkaç araç",
             "title": "Konumlar"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Zaman kayıtları ve çalışma dönemleri oluşturuluyor",
           "label": "Zaman Kayıtları"
+        },
+        "vehicleUse": {
+          "description": "Çalışma dönemlerinde araç kullanımının kaydedilmesi",
+          "label": "Araç Kullanımı"
         },
         "workCategories": {
           "description": "Çalışma kategorisi setleri ve kategoriler oluşturuluyor",

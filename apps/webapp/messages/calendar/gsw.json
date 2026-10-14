@@ -316,7 +316,7 @@
         "directHint": "Die Änderig gilt sofort.",
         "edit": "Iitrag bearbeite",
         "invalidRange": "Usstämple muess nach em Iistämple si.",
-        "noChanges": "Ändere zerscht s Datum, d Ziit oder de Arbetsort.",
+        "noChangesWithVehicle": "Pass zersch s Datum, d Ziit, de Arbetsort oder d Fahrzüügnutzig aa.",
         "noteLabel": "Notiz (optional)",
         "notePlaceholder": "En Notiz zu dere Änderig hinzuefüege…",
         "onBehalfHint": "Die Änderig folgt de Gnähmigungskette vom Mitarbeiter. Wänn du d Gnähmigungsperson bisch, gilt si sofort.",
@@ -420,7 +420,11 @@
       "splitAt": "Teile um",
       "splitDate": "Split-Datum",
       "success": "Arbetsperiode erfolgriich teilt",
-      "title": "Arbetsperiode teile"
+      "title": "Arbetsperiode teile",
+      "vehicleFirstDistance": "Kilometer i de erschte Periode (optional)",
+      "vehicleFirstDistanceHint": "Vo {distance} km gfahre; de Rescht gaht a die zweiti Periode. Wenns läär blibt, blibt alles bi de erschte Periode.",
+      "vehicleReading": "Kilometerstand bim Split (optional)",
+      "vehicleReadingHint": "Er beendet d Mässige vo de erschte Periode und startet die vo de zweite ({start} bis {end} km). Lahs läär, wenn du en nöd abgläse häsch."
     },
     "status": {
       "approved": "Gnehmigt",

@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Učitavanje postavki putnih troškova",
       "twoFactorVerification": "Učitavanje dvofaktorske provjere",
       "vacationSettings": "Učitavanje postavki godišnjeg odmora",
+      "vehicleDistanceReport": "Učitavanje izvješća o udaljenosti po vozilu",
       "wellnessSettings": "Učitavanje postavki wellnessa",
       "workCategorySettings": "Učitavanje postavki kategorija rada",
       "workerQueue": "Učitavanje reda čekanja radnika",
@@ -418,6 +419,17 @@
     "update": "Ažuriraj",
     "updating": "Ažuriranje...",
     "uploading": "Učitavanje...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "ograničeno na puni fond",
+      "employmentMonths": "{months, plural, one {# puni mjesec zaposlenja} few {# puna mjeseca zaposlenja} other {# punih mjeseci zaposlenja}}",
+      "lastWorkingDay": "zadnji radni dan {date}",
+      "notEmployed": "{allowance} od {fullAllowance} dana: nije u radnom odnosu u {year}.",
+      "overdrawn": "{days, plural, one {# dan prekoračenja} other {# dana prekoračenja} }",
+      "overdrawnHint": "Godišnji odmor iskorišten iznad fonda. Prikazano samo informativno: ništa se ne oduzima.",
+      "proratedSummary": "{allowance} od {fullAllowance} dana, razmjerno: {details}",
+      "started": "početak rada {date}",
+      "statutoryMinimumApplies": "primjenjuje se zakonski minimum"
+    },
     "validate": "Provjeri valjanost",
     "validationError": "Pogreška provjere valjanosti",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "Radničko vijeće",
       "to": "Do",
       "unassignedTeam": "Nedodijeljeni tim",
-      "updateRange": "Ažuriraj raspon"
+      "updateRange": "Ažuriraj raspon",
+      "vehicleUse": {
+        "activeVehicles": "Aktivna vozila",
+        "archivedVehicles": "Arhivirana vozila",
+        "coveredAsked": "Zatraženo od",
+        "coveredDescription": "{count, plural, one {Od # aktivnog zaposlenika traži se ili očekuje da trenutačno bilježi korištenje vozila.} few {Od # aktivna zaposlenika traži se ili očekuje da trenutačno bilježe korištenje vozila.} other {Od # aktivnih zaposlenika traži se ili očekuje da trenutačno bilježe korištenje vozila.}}",
+        "coveredExpected": "Očekuje se od",
+        "coveredTitle": "Obuhvaćeni zaposlenici",
+        "description": "Od koga organizacija traži da bilježi vozilo koje vozi za posao. Radničko vijeće nikada ne vidi očitanja brojača kilometara niti prijeđene udaljenosti zaposlenika.",
+        "employeeAssignmentCounts": "{asked} zatraženo, {expected} očekivano, {off} pojedinačno isključeno",
+        "employeeAssignments": "Dodjele zaposlenika",
+        "employeePseudonym": "Zaposlenik {ref}",
+        "enabled": "Prebaci",
+        "modeAsked": "Zatraženo",
+        "modeExpected": "Očekivano",
+        "modeOff": "Isključeno",
+        "noEmployeeAssignments": "Nema dodijeljenih zaposlenika.",
+        "notAssigned": "Nije dodijeljeno",
+        "noTeamAssignments": "Nema dodijeljenih timova.",
+        "off": "Isključeno",
+        "on": "Uključeno",
+        "organizationAssignment": "Cijela organizacija",
+        "teamAssignments": "Dodjele timu",
+        "title": "Korištenje vozila",
+        "vehiclesTitle": "Vozila organizacije"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Postavke",
     "team": "Tim",
     "teamAbsences": "Odsutnosti tima",
+    "teamDriving": "Pojedinosti o vožnji",
     "team-label": "Tim",
     "teamPeriodSubmissions": "Slanja razdoblja",
     "teamPresence": "Tko je prisutan",
@@ -618,6 +656,9 @@
       "markRead": "Označi pročitanim",
       "settings": "Postavke obavijesti",
       "viewAll": "Prikaži sve obavijesti"
+    },
+    "channels": {
+      "viewInZ8": "Prikaži u Z8"
     },
     "content": {
       "absenceDeputyAssigned": {
@@ -645,7 +686,12 @@
         "message": "{managerName} je evidentirao/la {absenceType} za {dateRange} u vaše ime.",
         "title": "Odsutnost evidentirana"
       },
+      "absenceRequestApproved": {
+        "message": "Vaš zahtjev za {categoryName} za razdoblje {dateRange} odobrio je {approverName}."
+      },
       "absenceRequestRejected": {
+        "message": "Vaš zahtjev za {categoryName} za razdoblje {dateRange} odbio je {approverName}.",
+        "messageWithReason": "Vaš zahtjev za {categoryName} za razdoblje {dateRange} odbio je {approverName}. Razlog: {rejectionReason}",
         "title": "Zahtjev za odsutnost odbijen"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +705,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {Mijenjate {name} u odobravanju: nema zahtjeva na čekanju.} one {Mijenjate {name} u odobravanju: # zahtjev na čekanju.} other {Mijenjate {name} u odobravanju: # zahtjeva na čekanju.} }",
         "title": "Mijenjate u odobravanju"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "Povijest eskalacije odobrenja je nejasna i zahtijeva pregled prije automatskog prijenosa.",
+        "deliveryExhausted": "Slanje obavijesti o eskalaciji za odobrenje nije uspjelo nakon svih ponovnih pokušaja.",
+        "deliveryUnavailable": "Nema dostupnog odredišta za obavijest o eskalaciji za odobrenje.",
+        "noEligibleBackup": "Prekoračeno odobrenje nema prihvatljivog zamjenskog odobravatelja. Trenutačni odobravatelj zadržava zadatak.",
+        "replacementOverdue": "Odobrenje je još uvijek neriješeno nakon automatske eskalacije. Neće biti daljnjeg automatskog prijenosa.",
+        "title": "Eskalacija odobrenja zahtijeva pažnju",
+        "unsupportedRoute": "Odobrenje se ne može eskalirati jer njegov put odlučivanja nije podržan."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName} je otkazao/la odobreni {categoryName} za razdoblje {dateRange}.",
+        "title": "Odobrena odsutnost je otkazana"
       },
       "automaticClockOut": {
         "breakMessage": "Automatski ste odjavljeni na početku stanke u {cutoff} ({timezone}) jer stanka nije završena unutar vremenskog ograničenja vaše organizacije od {duration} minuta.",
@@ -683,9 +742,56 @@
           "title": "Isplata prekovremenih sati evidentirana"
         }
       },
+      "birthdayReminder": {
+        "message": "Rođendan korisnika {name} je {date}.",
+        "title": "Nadolazeći rođendan"
+      },
       "breakDueReminder": {
         "message": "Vrijeme je za vašu pauzu u {breakTime} ({timezone}). Uzmite pauzu do tada kako biste se pridržavali pravila o pauzama.",
         "title": "Uskoro je vrijeme za pauzu"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName} se odjavio/la dana {date} ({startTime} – {endTime}, {duration}). Potrebno je odobrenje.",
+        "messageWithoutTimes": "{employeeName} se odjavio/la ({duration}). Potrebno je odobrenje.",
+        "title": "Potrebno je odobrenje odjave"
+      },
+      "clockOutApproved": {
+        "message": "Vašu odjavu odobrio je {approverName}.",
+        "title": "Odjava odobrena"
+      },
+      "clockOutPendingApproval": {
+        "message": "Vaša odjava dana {date} ({duration}) čeka odobrenje voditelja.",
+        "messageWithoutDate": "Vaša odjava ({duration}) čeka odobrenje voditelja.",
+        "title": "Odjava čeka odobrenje"
+      },
+      "clockOutRejected": {
+        "message": "Vaše odobrenje odjave odbio je {approverName}. Evidentirano vrijeme ostaje nepromijenjeno i isključeno je iz odobrenih sati za obračun plaće.",
+        "messageWithReason": "Vaše odobrenje odjave odbio je {approverName}. Evidentirano vrijeme ostaje nepromijenjeno i isključeno je iz odobrenih sati za obračun plaće. Razlog: {rejectionReason}",
+        "title": "Odjava odbijena"
+      },
+      "complianceExceptionApproved": {
+        "message": "Vaše izuzeće za {exceptionType, select, rest_period {razdoblje odmora} overtime_daily {dnevni prekovremeni rad} overtime_weekly {tjedni prekovremeni rad} overtime_monthly {mjesečni prekovremeni rad} other {usklađenost}} odobrio je {approverName}. Vrijedi do {validUntil}.",
+        "title": "Izuzeće odobreno"
+      },
+      "complianceExceptionExpired": {
+        "message": "Vaše prethodno odobrenje za {exceptionType, select, rest_period {razdoblje odmora} overtime_daily {dnevni prekovremeni rad} overtime_weekly {tjedni prekovremeni rad} overtime_monthly {mjesečni prekovremeni rad} other {usklađenost}} je isteklo (prošla su 24 sata bez korištenja).",
+        "title": "Izuzeće isteklo"
+      },
+      "complianceExceptionRejected": {
+        "message": "Vaše izuzeće za {exceptionType, select, rest_period {razdoblje odmora} overtime_daily {dnevni prekovremeni rad} overtime_weekly {tjedni prekovremeni rad} overtime_monthly {mjesečni prekovremeni rad} other {usklađenost}} odbio je {approverName}.",
+        "messageWithReason": "Vaše izuzeće za {exceptionType, select, rest_period {razdoblje odmora} overtime_daily {dnevni prekovremeni rad} overtime_weekly {tjedni prekovremeni rad} overtime_monthly {mjesečni prekovremeni rad} other {usklađenost}} odbio je {approverName}. Razlog: \"{reason}\"",
+        "title": "Izuzeće odbijeno"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} je zatražio/la izuzeće za {exceptionType, select, rest_period {razdoblje odmora} overtime_daily {dnevni prekovremeni rad} overtime_weekly {tjedni prekovremeni rad} overtime_monthly {mjesečni prekovremeni rad} other {usklađenost}}: \"{reason}\"",
+        "title": "Zatraženo izuzeće od usklađenosti"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "Za {count} radnih razdoblja od {dates} nedostaje vozilo ili stanje brojača kilometara. Dodajte ih u radna razdoblja."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "Za vaš rad na dan {date} nedostaje vozilo ili stanje brojača kilometara. Dodajte ih u radno razdoblje.",
+        "title": "Dodajte pojedinosti o vožnji"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Za dužnosti odobravanja potrebna je zamjena (odlazak stupa na snagu {cutoff}, {timezone}).",
@@ -698,6 +804,15 @@
       "forgottenClockOutReminder": {
         "message": "Vaša smjena završila je u {endTime} ({timezone}). Odjavite se ako ste završili s radom.",
         "title": "Još uvijek ste prijavljeni"
+      },
+      "manualEntryApproved": {
+        "message": "Vaš ručni unos radnog vremena odobrio je {approverName}.",
+        "title": "Ručni unos radnog vremena odobren"
+      },
+      "manualEntryRejected": {
+        "message": "Vaš ručni unos radnog vremena odbio je {approverName}.",
+        "messageWithReason": "Vaš ručni unos radnog vremena odbio je {approverName}. Razlog: {rejectionReason}",
+        "title": "Ručni unos radnog vremena odbijen"
       },
       "missedClockInReminder": {
         "message": "Vaša smjena započela je u {startTime} ({timezone}). Prijavite se ako radite.",
@@ -716,7 +831,27 @@
         "title": "Mjesec ponovno otvoren"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName} je zatražio/la {categoryName} za razdoblje {dateRange}.",
         "title": "Novi zahtjev za odsustvo"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName} je podnio/la zahtjev za ispravak radnog vremena za dan {date}.",
+        "messageWithoutDate": "{employeeName} je poslao/la zahtjev za ispravak radnog vremena.",
+        "messageWithoutDateWithReason": "{employeeName} je poslao/la zahtjev za ispravak radnog vremena. Razlog: {reason}",
+        "messageWithReason": "{employeeName} je poslao/la zahtjev za ispravak radnog vremena za {date}. Razlog: {reason}",
+        "title": "Novi zahtjev za ispravak radnog vremena"
+      },
+      "openShiftAvailable": {
+        "message": "Dostupna je otvorena smjena dana {shiftDate} od {startTime} do {endTime}.",
+        "title": "Dostupna otvorena smjena"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Zabilježeno je kršenje prekovremenog rada"
+      },
+      "overtimeWarning": {
+        "message": "Odradili ste {worked} {period, select, daily {danas} weekly {ovaj tjedan} other {ovaj mjesec}} ({percent}% ograničenja od {limit}).",
+        "title": "Približavanje pragu prekovremenog rada"
       },
       "passwordChanged": {
         "message": "Vaša lozinka uspješno je promijenjena. Ako niste zatražili ovu promjenu, odmah se obratite podršci.",
@@ -745,6 +880,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "Vaše radno vrijeme za {startDate} – {endDate} promijenilo se nakon što ste ga poslali, pa je slanje povučeno. Pregledajte svoje radno vrijeme i pošaljite ga ponovno.",
         "title": "Ponovno pošaljite svoje radno vrijeme"
+      },
+      "personalDataExportAdminExported": {
+        "message": "Administrator je izvezao vaše osobne podatke dana {onDate}.",
+        "title": "Vaši osobni podaci su izvezeni"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "Izvoz osobnih podataka zaposlenika {employeeName} je spreman. Preuzmite ga sa stranice zaposlenika dok ste prijavljeni; briše se nakon 7 dana.",
+        "adminTitle": "Izvoz osobnih podataka je spreman",
+        "message": "Izvoz vaših osobnih podataka je spreman. Preuzmite ga pod Moji podaci dok ste prijavljeni; briše se nakon 7 dana.",
+        "title": "Izvoz vaših osobnih podataka je spreman"
+      },
+      "personalDataExportReminder": {
+        "message": "Preuzmite svoje osobne podatke pod Moji podaci prije {untilDate}. Nakon toga ih samo administrator može izvesti za vas.",
+        "title": "Preuzmite svoje osobne podatke prije odlaska"
       },
       "personnelFileDocumentShared": {
         "message": "Dokument „{title}” podijeljen je s vama.",
@@ -781,13 +930,94 @@
       "policyMissedClockInReminder": {
         "message": "Vaša posljednja prijava danas bila je u {startTime} ({timezone}). Prijavite se ako radite."
       },
+      "projectBudgetWarning100": {
+        "message": "\"{projectName}\" je premašio svoj proračun ({used} od predviđenih {budget}). Pregledajte i prilagodite po potrebi.",
+        "title": "Proračun projekta je premašen"
+      },
+      "projectBudgetWarning70": {
+        "message": "\"{projectName}\" je iskoristio {percent}% svog proračuna ({used} od {budget}).",
+        "title": "Projekt se približava proračunskom ograničenju"
+      },
+      "projectBudgetWarning90": {
+        "message": "\"{projectName}\" je iskoristio {percent}% svog proračuna ({used} od {budget}). Razmislite o pregledu raspodjele radnog vremena.",
+        "title": "Projekt je blizu proračunskog ograničenja"
+      },
+      "projectDeadlineOverdue": {
+        "message": "\"{projectName}\" je prešao svoj rok ({deadline}). Ažurirajte status ili produžite rok.",
+        "title": "Rok projekta je istekao"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "Rok za \"{projectName}\" je danas ({deadline}). Dovršite preostali rad.",
+        "title": "Rok projekta je danas"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "Rok za \"{projectName}\" je za 2 tjedna ({deadline}). Planirajte unaprijed kako biste ispoštovali rok.",
+        "title": "Rok projekta je za 2 tjedna"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "Rok za \"{projectName}\" je sutra ({deadline}). Završni napor za dovršetak!",
+        "title": "Rok projekta je sutra"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "Rok za \"{projectName}\" je za 1 tjedan ({deadline}). Provjerite jeste li u skladu s planom.",
+        "title": "Rok projekta je za 1 tjedan"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Zabilježeno je kršenje razdoblja odmora"
+      },
+      "restPeriodWarning": {
+        "message": "Preostalo vam je još {remaining} obveznog odmora. Sljedeća dopuštena prijava: {nextAllowedClockIn}.",
+        "title": "Podsjetnik na razdoblje odmora"
+      },
       "scheduledExportPaused": {
         "message": "\"{scheduleName}\" je pauziran jer njegov vlasnik, {ownerName}, više nije administrator organizacije. Postavite sebe ili drugog administratora organizacije kao vlasnika kako biste ga nastavili.",
         "title": "Zakazani izvoz je pauziran"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, one {# smjena je objavljena za {dateRange}.} few {# smjene su objavljene za {dateRange}.} other {# smjena je objavljeno za {dateRange}.}}",
+        "title": "Objavljen je novi raspored"
+      },
       "shiftAssigned": {
         "message": "Dodijeljena vam je smjena dana {shiftDate} od {startTime} do {endTime}. Dodijelio: {assignedByName}.",
         "title": "Smjena dodijeljena"
+      },
+      "shiftPickupApproved": {
+        "message": "Vaš zahtjev za preuzimanje smjene dana {shiftDate} odobrio/la je {approverName}.",
+        "title": "Preuzimanje smjene odobreno"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName} je zatražio/la preuzimanje smjene dana {shiftDate} ({startTime} - {endTime}).",
+        "messageUnnamedRequester": "Zaposlenik je zatražio preuzimanje smjene dana {shiftDate} ({startTime} - {endTime}).",
+        "title": "Zahtjev za preuzimanje smjene"
+      },
+      "shiftSwapApproved": {
+        "message": "Vaš zahtjev za zamjenu smjene za {shiftDate} odobrio/la je {approverName}.",
+        "title": "Zamjena smjene odobrena"
+      },
+      "shiftSwapRejected": {
+        "message": "Vaš zahtjev za zamjenu smjene za {shiftDate} odbio/la je {approverName}.",
+        "messageWithReason": "Vaš zahtjev za zamjenu smjene za {shiftDate} odbio/la je {approverName}. Razlog: {reason}",
+        "title": "Zamjena smjene odbijena"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName} je zatražio/la zamjenu za smjenu dana {shiftDate} ({startTime} - {endTime}).",
+        "messageWithTarget": "{requesterName} je zatražio/la zamjenu s korisnikom {targetName} za smjenu dana {shiftDate} ({startTime} - {endTime}).",
+        "title": "Zahtjev za zamjenu smjene"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName} želi zamijeniti smjenu s vama za {shiftDate} ({startTime} - {endTime}).",
+        "title": "Zahtjev za zamjenu smjene"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "Vaša vještina \"{skill}\" istječe danas.",
+        "message": "Vještina \"{skill}\" zaposlenika {employee} istječe danas.",
+        "title": "Vještina istječe danas"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "Vaša vještina \"{skill}\" istječe {untilDate}.",
+        "message": "Vještina \"{skill}\" zaposlenika {employee} istječe {untilDate}.",
+        "title": "Vještina uskoro istječe"
       },
       "teamMemberAdded": {
         "message": "Korisnik {performedByName} dodao vas je u tim {teamName}.",
@@ -797,12 +1027,30 @@
         "message": "{performedByName} vas je uklonio/la iz tima {teamName}.",
         "title": "Uklonjeni iz tima"
       },
+      "timeCorrectionApproved": {
+        "message": "Vaš zahtjev za ispravak radnog vremena odobrio/la je {approverName}.",
+        "title": "Ispravak radnog vremena odobren"
+      },
+      "timeCorrectionRejected": {
+        "message": "Vaš zahtjev za ispravak radnog vremena odbio/la je {approverName}.",
+        "messageWithReason": "Vaš zahtjev za ispravak radnog vremena odbio/la je {approverName}. Razlog: {rejectionReason}",
+        "title": "Ispravak radnog vremena odbijen"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "Vaš zahtjev za ispravak radnog vremena je poslan i čeka odobrenje.",
+        "title": "Ispravak radnog vremena poslan"
+      },
       "timeOffInLieuAvailable": {
         "message": "Zaposlenici sada mogu uzimati slobodne sate na temelju svog salda radnih sati. Nova kategorija odsutnosti ostaje neaktivna dok je ne uključite u postavkama odsutnosti.",
         "title": "Dostupni su zamjenski slobodni sati"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Odobreno usklađenje povećalo je iznos duga na izvještaju o troškovima {report} zaposlenika {employee}. Čeka povrat: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "Vaš zahtjev za putne troškove za {destination} ({amount}) odobrio/la je {approverName}.",
+        "messageWithoutDestination": "Vaš zahtjev za putne troškove za {amount} odobrio/la je {approverName}.",
+        "title": "Putni trošak odobren"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "Izvješće o troškovima zaposlenika {employee} ({report}) ne nadoknađuje se putem obračuna plaće. Čeka na nadoknadu: {amounts}."
@@ -832,6 +1080,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Vaši putni troškovi u potpunosti su nadoknađeni s obračunom plaće za {period}: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "Vaš zahtjev za putne troškove za {destination} ({amount}) odbio/la je {approverName}.",
+        "messageWithoutDestination": "Vaš zahtjev za putne troškove za {amount} odbio/la je {approverName}.",
+        "messageWithoutDestinationWithReason": "Vaš zahtjev za putne troškove za {amount} odbio/la je {approverName}. Razlog: {reason}",
+        "messageWithReason": "Vaš zahtjev za putne troškove za {destination} ({amount}) odbio/la je {approverName}. Razlog: {reason}",
+        "title": "Putni trošak odbijen"
+      },
+      "travelExpenseReportApproved": {
+        "message": "Vaše izvješće o troškovima (za nadoknadu: {amount}) odobrio/la je {approverName}.",
+        "title": "Izvješće o troškovima odobreno"
+      },
+      "travelExpenseReportRejected": {
+        "message": "Vaše izvješće o troškovima (za nadoknadu: {amount}) odbio/la je {approverName}.",
+        "messageWithReason": "Vaše izvješće o troškovima (za nadoknadu: {amount}) odbio/la je {approverName}. Razlog: {reason}",
+        "title": "Izvješće o troškovima odbijeno"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} je vratio/la vaše izvješće o troškovima na doradu: {note}",
+        "title": "Izvješće o troškovima vraćeno na doradu"
+      },
+      "twoFactorDisabled": {
+        "message": "Dvofaktorska autentifikacija je onemogućena na vašem računu. Preporučujemo da je ponovno omogućite radi sigurnosti.",
+        "title": "Dvofaktorska autentifikacija onemogućena"
+      },
+      "twoFactorEnabled": {
+        "message": "Dvofaktorska autentifikacija je omogućena na vašem računu radi dodatne sigurnosti.",
+        "title": "Dvofaktorska autentifikacija omogućena"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {Preostao vam je # dan godišnjeg odmora koji istječe {expiryDate}. Iskoristite ga prije isteka!} few {Preostala su vam # dana godišnjeg odmora koja istječu {expiryDate}. Iskoristite ih prije isteka!} other {Preostalo vam je # dana godišnjeg odmora koji istječu {expiryDate}. Iskoristite ih prije isteka!}}",
+        "message": "{remainingDays, plural, one {Imate još # preostali dan godišnjeg odmora. Ne zaboravite uzeti malo slobodnog vremena!} few {Imate još # preostala dana godišnjeg odmora. Ne zaboravite uzeti malo slobodnog vremena!} other {Imate još # preostalih dana godišnjeg odmora. Ne zaboravite uzeti malo slobodnog vremena!}}",
+        "title": "Podsjetnik na stanje godišnjeg odmora"
+      },
+      "waterReminder": {
+        "done": "Obavljeno!",
+        "message": "Ostanite zdravi – popijte vode",
+        "snooze": "Odgodi za danas",
+        "title": "Vrijeme je za hidrataciju!"
       }
     },
     "description": "Pregledajte ažuriranja, odobrenja i upozorenja sustava na jednoj vremenskoj traci.",
@@ -937,11 +1224,17 @@
         "approval_cover_return_summary": "Odluku donio vaš zamjenik",
         "approval_cover_started": "Zamjena za odsutnost je započela",
         "break_due_reminder": "Vrijeme je za pauzu",
+        "driving_details_missing_reminder": "Nedostaju podaci o vožnji",
         "forgotten_clock_out_reminder": "Zaboravljena odjava",
         "missed_clock_in_reminder": "Propuštena prijava",
         "period_submission_decided": "Poslano radno vrijeme je odobreno ili odbijeno",
         "period_submission_reminder": "Pošaljite svoje radno vrijeme",
         "period_submission_sent_back": "Radno vrijeme vraćeno nakon promjene",
+        "personal_data_export_admin_exported": "Administrator je izvezao osobne podatke",
+        "personal_data_export_ready": "Izvoz osobnih podataka je spreman",
+        "personal_data_export_reminder": "Preuzmite svoje podatke prije odlaska",
+        "skill_expired_today": "Vještina istječe danas",
+        "skill_expiry_upcoming": "Vještina uskoro istječe",
         "work_balance_adjustment_cancelled": "Prilagodba salda poništena",
         "work_balance_adjustment_recorded": "Prilagodba salda evidentirana"
       },
@@ -1020,6 +1313,1092 @@
       "loading": "Čitanje spremljenih zapisa…",
       "review": "Pregledaj spremljene zapise",
       "title": "Spremljeni zapisi evidencije radnog vremena"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (administrator)",
+      "accessExpenseExport": "izvesti ih",
+      "accessExpenseOfficers": "Referenti za troškove (vaša odobrena izvješća o putnim troškovima i pripadajući računi):",
+      "accessExpenseRead": "pregled odobrenih izvješća",
+      "accessExpenseReimburse": "evidentiranje nadoknada",
+      "accessIntro": "Osim vas, ove osobe u organizaciji {organization} imaju pristup vašim podacima u sustavu Z8 u trenutku stvaranja ovog izvoza:",
+      "accessManagerDirect": "{name} (vaš voditelj)",
+      "accessManagers": "Voditelji (vaše radno vrijeme, odsustva, rasporedi i zahtjevi, u skladu s njihovom ulogom):",
+      "accessManagerTeam": "{name} (timsko dopuštenje za vaš tim)",
+      "accessNobody": "Nitko.",
+      "accessOwner": "{name} (vlasnik)",
+      "accessOwnersAdmins": "Vlasnici i administratori (svi vaši podaci u organizaciji):",
+      "accessPayrollAll": "svi zaposlenici",
+      "accessPayrollEmployee": "vi osobno",
+      "accessPayrollOfficers": "Pristup obračunu plaća (vaše radno vrijeme i odsustva, izvezeno za obračun plaća):",
+      "accessPayrollTeam": "vaš tim",
+      "accessPersonnelFileOfficers": "Referenti za kadrovsku evidenciju (dokumenti u vašem kadrovskom dosjeu iz ovih kategorija):",
+      "accessTitle": "Tko može pristupiti vašim podacima",
+      "category": {
+        "absences": "Vaša odsustva, dani godišnjeg odmora i prilagodbe godišnjeg odmora.",
+        "account": "Vaš korisnički račun: sesije, načini prijave, sigurnosne postavke, preferencije i uređaji.",
+        "accountAdmin": "Ime i adresa e-pošte vašeg korisničkog računa.",
+        "approvals": "Vaši vlastiti zahtjevi i predana razdoblja te odluke koje ste donijeli o zahtjevima drugih osoba.",
+        "auditLog": "Zapisi revizijskog dnevnika o vama i radnje koje ste vi izvršili.",
+        "employment": "Vaš dosje i profil zaposlenika, razdoblja zaposlenja i odlazak, uvjeti zaposlenja s vašom satnicom i njezinom poviješću, timovi, voditelji, lokacije, vještine, dodjele projektima, uloge, grupe, mjesto troška i sva pravila koja su vam dodijeljena.",
+        "integrations": "Vaša povezivanja s kalendarom, sažetak kalendara, povezani računi za razgovor i status PIN-a za kiosk.",
+        "notifications": "Vaša povijest obavijesti.",
+        "personnelFile": "Dokumenti u vašem kadrovskom dosjeu, kao izvorne datoteke.",
+        "planning": "Vaše smjene i zahtjevi za smjenama.",
+        "positionStamps": "Vaše oznake lokacije, povijest vaših privola i tko je pregledavao vaše lokacije.",
+        "time": "Vaši unosi radnog vremena, razdoblja rada i ispravci, pauze, automatske odjave, iznimke usklađenosti, kršenja pravila rada, dodaci, salda i prilagodbe salda.",
+        "travelExpenses": "Vaši zahtjevi za putne troškove, izvješća, stavke, obračuni i računi."
+      },
+      "completeCopy": "{organization} može voditi dodatne evidencije o vama koje nisu dio ovog izvoza. Možete zatražiti od administratora organizacije {organization} potpunu kopiju svojih osobnih podataka.",
+      "completeCopyTitle": "Potpuna kopija",
+      "csvFolder": "Mapa {folder} sadrži iste tablice kao CSV datoteke.",
+      "documentCategory": {
+        "certificate": "Potvrde",
+        "contract": "Ugovori",
+        "other": "Ostali dokumenti",
+        "payslip": "Platne liste",
+        "sickNote": "Doznake za bolovanje"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Kada je donesena odluka o odsustvu (UTC).",
+            "approvedBy": "Tko je donio odluku o odsustvu.",
+            "category": "Kategorija odsustva, kako ju naziva organizacija.",
+            "categoryType": "Vrsta odsustva u pozadini kategorije, na primjer vacation, sick ili home_office.",
+            "deputy": "Kolega koji vas zamjenjuje tijekom odsustva.",
+            "deputyAssignedAt": "Kada je zamjenik dodijeljen (UTC).",
+            "endDate": "Zadnji dan odsustva (GGGG-MM-DD).",
+            "endPeriod": "Koji dio zadnjeg dana ste odsutni: full_day, am ili pm.",
+            "notes": "Napomena upisana uz odsustvo.",
+            "rejectionReason": "Zašto je odsustvo odbijeno.",
+            "sickDetail": "Za bolovanje: više pojedinosti, na primjer sa ili bez liječničke potvrde, ili bolesno dijete.",
+            "startDate": "Prvi dan odsutnosti (GGGG-MM-DD).",
+            "startPeriod": "Koji dio prvog dana ste odsutni: full_day, am (prijepodne) ili pm (poslijepodne).",
+            "status": "Je li odsutnost na čekanju, odobrena ili odbijena.",
+            "summary": "Vaše odsutnosti, poput godišnjeg odmora, bolovanja ili rada od kuće, s njihovim odobrenjem."
+          },
+          "shared": {
+            "year": "Godina godišnjeg odmora."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "Za obračunati dio: mjesec (1 do 12) za koji je dodijeljen.",
+            "adjustedBy": "Tko je unio promjenu.",
+            "days": "Dodani (pozitivno) ili oduzeti (negativno) dani.",
+            "kind": "Je li promjena unesena ručno (manual) ili je aplikacija dodijelila obračunati dio (accrual).",
+            "reason": "Razlog promjene.",
+            "summary": "Svaka promjena vaših dana godišnjeg odmora osim dodijeljenog broja: ručne ispravke i obračunati dijelovi."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "Vaši dani godišnjeg odmora za ovu godinu; prazno ako se primjenjuje broj iz pravila.",
+            "customCarryoverDays": "Dani preneseni u ovu godinu iz prethodne; prazno ako vam nije postavljen nijedan dan.",
+            "summary": "Godišnji odmor postavljen osobno za vas, umjesto općih pravila o godišnjem odmoru, po godini."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "Mjesec (1 do 12) od kojeg počinje obračun dana godišnjeg odmora.",
+            "accrualType": "Kako se dani dodjeljuju: odjednom godišnje (annual), mjesečno ili svaka dva tjedna (biweekly).",
+            "allowCarryover": "Prenose li se neiskorišteni dani u sljedeću godinu.",
+            "assignmentActive": "Je li dodjela aktivna.",
+            "assignmentEffectiveFrom": "Kada se dodjela pravila počinje primjenjivati (UTC).",
+            "assignmentEffectiveUntil": "Kada se dodjela prestaje primjenjivati (UTC); prazno dok je u primjeni.",
+            "assignmentType": "Kako se primjenjuje na vas: dodijeljeno vama (employee), vašem timu (team) ili cijeloj organizaciji (organization).",
+            "carryoverExpiryMonths": "Koliko mjeseci u sljedećoj godini vrijede preneseni dani; prazno ako ne istječu.",
+            "defaultAnnualDays": "Broj dana godišnjeg odmora godišnje prema pravilu.",
+            "maxCarryoverDays": "Maksimalan broj dana koji se prenose; prazno za neograničeno.",
+            "policy": "Naziv pravila.",
+            "prorateInStartAndExitYear": "Smanjuje li se godišnji odmor u godini zapošljavanja ili odlaska, razmjerno mjesecima zaposlenja.",
+            "statutoryMinimumDays": "Najmanji broj dana na koji se smanjeni odmor može spustiti nakon isteka probnog razdoblja.",
+            "summary": "Pravila o godišnjem odmoru koja se primjenjuju na vas: dodijeljena vama, vašim timovima ili zadana pravila organizacije.",
+            "validFrom": "Prvi dan primjene pravila (GGGG-MM-DD).",
+            "validUntil": "Zadnji dan primjene pravila (GGGG-MM-DD); prazno dok je u primjeni."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Što se dogodilo: blokirano (blocked), sigurnosna provjera (challenged) ili zabilježeno (logged).",
+            "blockedCountry": "Blokirana država.",
+            "blockedIp": "Blokirana IP adresa.",
+            "concurrentSessionCount": "Koliko je sesija u tom trenutku bilo otvoreno.",
+            "reason": "Zabilježeni razlog.",
+            "requestMethod": "Vrsta zahtjeva, npr. GET.",
+            "requestPath": "Zatražena stranica ili adresa.",
+            "requiredMfaType": "Drugi faktor koji je pravilo zahtijevalo.",
+            "summary": "Zahtjevi koje su pravila pristupa ove organizacije blokirala, provjerila ili označila.",
+            "violationType": "Koje je pravilo prekršeno, npr. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Broj uzastopnih dana u kojima ste ostvarili cilj, do danas.",
+            "lastGoalMetDate": "Zadnji dan kada ste ostvarili cilj.",
+            "longestStreak": "Vaš najdulji niz.",
+            "snoozedUntil": "Do kada ste pauzirali podsjetnike.",
+            "summary": "Ukupan unos vode i nizovi.",
+            "totalIntakeAllTime": "Sve čaše koje ste zabilježili."
+          },
+          "notificationPreferences": {
+            "channel": "Gdje se isporučuje, npr. e-pošta ili push.",
+            "enabled": "Primate li obavijest tamo.",
+            "notificationType": "Vrsta obavijesti.",
+            "summary": "Koje ste obavijesti uključili ili isključili, po kanalu."
+          },
+          "passkeys": {
+            "aaguid": "ID modela autentifikatora.",
+            "backedUp": "Je li stvorena sigurnosna kopija.",
+            "deviceType": "Nalazi li se na jednom uređaju ili se sinkronizira na više uređaja.",
+            "name": "Naziv pristupnog ključa.",
+            "summary": "Vaši pristupni ključevi (ključevi se nikada ne izvoze).",
+            "transports": "Način povezivanja autentifikatora, npr. USB ili interno."
+          },
+          "pushDevices": {
+            "deviceName": "Naziv uređaja.",
+            "kind": "'web' za preglednik, 'native' za mobilnu aplikaciju.",
+            "lastSeenAt": "Kada je aplikacija zadnji put registrirala uređaj.",
+            "platform": "Mobilna platforma (ios ili android); prazno za preglednik.",
+            "summary": "Preglednici i uređaji koji primaju push obavijesti (njihovi se ključevi nikada ne izvoze)."
+          },
+          "sessions": {
+            "city": "Grad te IP adrese.",
+            "createdAt": "Kada ste se prijavili.",
+            "expiresAt": "Kada sesija završava ako se ne obnovi.",
+            "impersonated": "Je li korisnička podrška platforme otvorila ovu sesiju umjesto vas. Njezina IP adresa, preglednik i lokacija tada su izostavljeni: pripadaju podršci, a ne vama.",
+            "lastActivityAt": "Kada ste zadnji put upotrijebili sesiju u ovoj organizaciji.",
+            "mfaMethod": "Način na koji ste potvrdili drugi faktor, ako je zatraženo.",
+            "mfaVerifiedAt": "Kada ste to potvrdili.",
+            "region": "Regija te IP adrese.",
+            "summary": "Vaše prijave (sesije) koje su još uvijek pohranjene, s pojedinostima koje je ova organizacija o njima zabilježila.",
+            "updatedAt": "Kada je sesija zadnji put obnovljena."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "Raspored vaše nadzorne ploče, u JSON formatu.",
+            "helpImproveProduct": "Jeste li pristali pomoći u poboljšanju proizvoda.",
+            "locale": "Jezik vaše aplikacije; ako je prazno, prati postavke preglednika.",
+            "onboardingComplete": "Jeste li dovršili uvod.",
+            "onboardingCompletedAt": "Kada ste ga dovršili.",
+            "onboardingStartedAt": "Kada ste započeli uvod.",
+            "onboardingStep": "Korak uvoda do kojeg ste stigli.",
+            "summary": "Vaše osobne postavke u aplikaciji.",
+            "timeFormat": "Prikazuje li se vrijeme u 12-satnom ili 24-satnom formatu.",
+            "timezone": "Vremenska zona koju ste odabrali za prikaz vremena.",
+            "waterReminderDailyGoal": "Vaš dnevni cilj u čašama.",
+            "waterReminderEnabled": "Jesu li podsjetnici za vodu uključeni.",
+            "waterReminderIntervalMinutes": "Minute između podsjetnika za vodu.",
+            "waterReminderPreset": "Predložak podsjetnika za vodu koji ste odabrali.",
+            "weekStartDay": "Dan kojim započinje vaš tjedan."
+          },
+          "shared": {
+            "country": "Zemlja te IP adrese (ISO kôd).",
+            "ipAddress": "IP adresa s koje je pristiglo.",
+            "isActive": "Je li još uvijek u upotrebi.",
+            "lastUsedAt": "Kada je zadnji put upotrijebljeno.",
+            "userAgent": "Preglednik ili aplikacija, kako se identificirala."
+          },
+          "signInMethods": {
+            "accountId": "ID vašeg računa kod tog pružatelja usluga.",
+            "passwordSet": "Je li lozinka postavljena (sama lozinka se nikada ne izvozi).",
+            "provider": "Način prijave; vjerodajnica označava e-poštu i lozinku.",
+            "summary": "Načini na koje se možete prijaviti: lozinka ili povezani računi kao što su Google ili Microsoft."
+          },
+          "trustedDevices": {
+            "deviceName": "Naziv uređaja.",
+            "expiresAt": "Kada povjerenje istječe.",
+            "lastIpAddress": "IP adresa zadnje upotrebe.",
+            "mdmCompliant": "Je li sustav za upravljanje uređajima prijavio da je usklađen.",
+            "mdmProvider": "Sustav za upravljanje uređajima, ako postoji.",
+            "platform": "Operacijski sustav.",
+            "revokedAt": "Kada je povjerenje povučeno.",
+            "revokedBy": "Tko ga je povukao.",
+            "revokeReason": "Zašto je povučeno.",
+            "summary": "Uređaji kojima ova organizacija vjeruje za vaše prijave.",
+            "trustSource": "Zašto mu se vjeruje: pristupni ključ, administrator, vaš odabir da ga zapamtite ili upravljanje uređajima (MDM)."
+          },
+          "user": {
+            "banExpires": "Kada blokada završava; prazno ako ne završava.",
+            "banned": "Je li platforma blokirala vaš račun.",
+            "banReason": "Zašto ga je platforma blokirala.",
+            "canCreateOrganizations": "Možete li stvarati vlastite organizacije.",
+            "email": "Adresa e-pošte kojom se prijavljujete.",
+            "emailVerified": "Jeste li potvrdili tu adresu e-pošte.",
+            "firstName": "Ime vašeg računa.",
+            "image": "Adresa vaše profilne slike.",
+            "lastName": "Prezime vašeg računa.",
+            "name": "Prikazano ime vašeg računa.",
+            "role": "Vaša uloga na platformi (ne u ovoj organizaciji).",
+            "summary": "Vaš korisnički račun: prijava koju upotrebljavate za ovu organizaciju.",
+            "twoFactorEnabled": "Je li dvofaktorska autentifikacija uključena."
+          },
+          "waterIntake": {
+            "amount": "Koliko čaša.",
+            "loggedAt": "Kada ste popili.",
+            "source": "Gdje ste zabilježili: podsjetnik, ručno ili widget.",
+            "summary": "Voda koju ste zabilježili."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Kada je donesena odluka o posljednjem koraku (UTC).",
+            "policy": "Pravilo odobravanja koje je odredilo korake, prema nazivu u to vrijeme.",
+            "status": "U kojem je stanju odobrenje.",
+            "summary": "Višestupanjska odobrenja vaših zahtjeva, kako ih je zabilježila ranija verzija sustava odobravanja."
+          },
+          "approvalChainStages": {
+            "approver": "Osoba od koje se traži odluka o koraku.",
+            "chainId": "ID odobrenja u approval_chains.",
+            "decidedAt": "Kada je donesena odluka o koraku (UTC).",
+            "decidedBy": "Tko je donio odluku o koraku.",
+            "status": "U kojem je stanju korak.",
+            "step": "Položaj koraka: 1 je prvi korak.",
+            "summary": "Koraci tih višestupanjskih odobrenja."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Kada ste donijeli odluku (UTC).",
+            "action": "Što ste odlučili: odobreno ili odbijeno, ili ponovno dodijeljeno kad ste zahtjev proslijedili drugom odobravatelju.",
+            "asDeputy": "Jeste li odlučili kao zamjenik koji mijenja odobravatelja.",
+            "authority": "Gdje je odluka zabilježena: trenutačni sustav odobravanja (canonical), raniji (legacy) ili samo u samom zapisu (record).",
+            "otherPerson": "Anonimni ID osobe čiji je to bio zahtjev. Ista osoba ima isti ID u cijelom ovom izvozu, a različit u bilo kojem drugom izvozu.",
+            "recordKind": "O kakvoj ste vrsti zahtjeva odlučili, na primjer o zahtjevu za odsutnost ili smjenu.",
+            "summary": "Odluke koje ste donijeli o zahtjevima drugih osoba. Druga se osoba prikazuje samo kao anonimni ID."
+          },
+          "deputyDecisions": {
+            "actingFor": "Odobravatelj kojeg je zamjenik mijenjao.",
+            "authority": "Kojem sustavu odobravanja pripada odluka: legacy (raniji) ili canonical (trenutačni).",
+            "decidedAt": "Kada je zamjenik donio odluku (UTC).",
+            "decidedBy": "Zamjenik koji je donio odluku.",
+            "decision": "Što je zamjenik odlučio: odobreno ili odbijeno.",
+            "requestId": "ID zahtjeva u requests, za raniji sustav.",
+            "summary": "Odluke o vašim zahtjevima koje je donio zamjenik koji mijenja odobravatelja.",
+            "workflowId": "ID odobrenja u workflows, za trenutačni sustav."
+          },
+          "periodSubmissions": {
+            "cadence": "Predajete li svoje radno vrijeme tjedno (weekly) ili mjesečno (monthly).",
+            "cadenceEndDate": "Posljednji dan cijelog tjedna ili mjeseca (YYYY-MM-DD).",
+            "cadenceStartDate": "Prvi dan cijelog tjedna ili mjeseca (YYYY-MM-DD).",
+            "closedAt": "Kada je podnesak povučen ili je njegovo odobrenje postalo nevažeće nakon promjene (UTC).",
+            "closedCause": "Zašto je podnesak zatvoren: vi ste ga povukli (zaposlenik) ili je vaše radno vrijeme promijenjeno nakon toga (promjena).",
+            "decidedAt": "Kada je podnesak odobren ili odbijen (UTC).",
+            "decidedBy": "Tko je odobrio ili odbio podnesak.",
+            "endDate": "Posljednji dan koji ste podnijeli (YYYY-MM-DD).",
+            "rangeEnd": "Kraj podnesenih dana kao vremenska točka (UTC), nije uključeno.",
+            "rangeStart": "Početak podnesenih dana kao vremenska točka (UTC).",
+            "startDate": "Prvi dan koji ste podnijeli (YYYY-MM-DD).",
+            "status": "Status podneska: na čekanju, odobreno, odbijeno, povučeno ili zastarjelo kada je kasnija promjena učinila odobrenje nevažećim.",
+            "submittedAt": "Kada je razdoblje podneseno (UTC).",
+            "submittedBy": "Tko je podnio razdoblje.",
+            "summary": "Tjedni ili mjeseci radnog vremena koje ste podnijeli na odobrenje. Ponovno podnošenje razdoblja dodaje novi redak.",
+            "timezone": "Vremenska zona u kojoj se računaju dani razdoblja.",
+            "weekStartDay": "Za tjedna podnošenja: dan kojim tjedan započinje."
+          },
+          "requests": {
+            "approvedAt": "Kada je donesena odluka o zahtjevu (UTC).",
+            "approver": "Osoba od koje je zatražena odluka.",
+            "notes": "Bilješke o zahtjevu.",
+            "reason": "Vaš razlog za zahtjev.",
+            "rejectionReason": "Zašto je zahtjev odbijen.",
+            "status": "Je li zahtjev na čekanju, odobren ili odbijen.",
+            "summary": "Vaši zahtjevi za odobrenje zabilježeni u ranijoj verziji sustava odobravanja."
+          },
+          "shared": {
+            "decisionReason": "Razlog naveden uz odluku.",
+            "recordId": "ID tog zapisa, primjerice odsutnosti u absences.json.",
+            "recordKind": "O kakvoj je vrsti zapisa riječ u zahtjevu, primjerice o odsutnosti ili ispravku radnog vremena.",
+            "stageLabel": "Naziv koraka odobravanja.",
+            "workflowId": "ID odobrenja u workflows."
+          },
+          "workflowApprovers": {
+            "approver": "Osoba od koje je zatražena odluka.",
+            "assignedAt": "Kada je od njih zatražena odluka (UTC).",
+            "decidedBy": "Tko je zapravo donio odluku: ime osobe ili sustav kada ga je riješila aplikacija (legacy_unknown za stare zapise).",
+            "reassignedBy": "Tko je proslijedio odluku nekome drugome.",
+            "resolvedAt": "Kada je njihov dio riješen (UTC).",
+            "status": "Status njihovog dijela: na čekanju, odobreno, odbijeno, otkazano ili isteklo.",
+            "summary": "Osobe od kojih je zatražena odluka u svakom koraku vaših odobrenja."
+          },
+          "workflowEvents": {
+            "actor": "Tko je to učinio: ime osobe ili sustav kada je to učinila aplikacija (legacy_unknown za stare zapise).",
+            "eventType": "Što se dogodilo, primjerice stage.activated, assignment.approved ili assignment.escalated.",
+            "occurredAt": "Kada se dogodilo (UTC).",
+            "reason": "Navedeni razlog.",
+            "summary": "Sve što se dogodilo s vašim odobrenjima, redom."
+          },
+          "workflows": {
+            "cancelledAt": "Kada je zahtjev otkazan (UTC).",
+            "completedAt": "Kada je donesena konačna odluka (UTC).",
+            "status": "Status odobrenja: na čekanju, odobreno, odbijeno, otkazano ili isteklo.",
+            "submittedAt": "Kada je zahtjev podnesen (UTC).",
+            "summary": "Vaši zahtjevi za odobrenje u trenutačnom sustavu odobravanja, po jedan za svaki zahtjev.",
+            "workflowType": "Što se odobrava, na primjer odsutnost, ispravak radnog vremena ili slanje razdoblja."
+          },
+          "workflowStages": {
+            "activatedAt": "Kada je korak započeo (UTC).",
+            "decidedAt": "Kada je donesena odluka o koraku (UTC).",
+            "stageOrder": "Položaj koraka: 1 označava prvi korak.",
+            "status": "Status koraka: na čekanju (nije započeto), u tijeku, odobreno, odbijeno, otkazano ili isteklo.",
+            "summary": "Koraci kroz koje je prošlo svako vaše odobrenje, redom."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "Kada ste to učinili (UTC).",
+            "action": "Što ste učinili.",
+            "asDeputy": "Jeste li djelovali kao nečiji zamjenik.",
+            "authority": "Gdje se radnja bilježi: audit_log za zapisnik radnji, record za sam zapis.",
+            "otherPerson": "Anonimni ID za kolegu, isti za jednog kolegu kroz cijeli ovaj izvoz; prazno kada se radnja nije odnosila ni na jednu osobu.",
+            "recordKind": "Vrsta zapisa na kojem ste radili, npr. absence_entry ili time_entry.",
+            "summary": "Što ste učinili a da se ne odnosi na vaše vlastite zapise: radnje na zapisima kolega ili na organizaciji. Kolege se prikazuju samo putem anonimnog ID-ja."
+          },
+          "entries": {
+            "action": "Što je učinjeno, kako to bilježi aplikacija, npr. absence.requested.",
+            "changes": "Što se promijenilo, u JSON formatu (obično vrijednosti prije i poslije).",
+            "entityId": "ID tog zapisa u aplikaciji.",
+            "entityType": "Vrsta zapisa na kojem je to učinjeno, npr. absence_entry ili employee.",
+            "ipAddress": "Vaša IP adresa kada ste to učinili; prazno kada je to učinio netko drugi.",
+            "metadata": "Dodatni kontekst koji je aplikacija zabilježila, u JSON formatu.",
+            "performedBy": "Ime osobe koja je to učinila.",
+            "performedByYou": "Jeste li to učinili sami.",
+            "summary": "Unosi u zapisniku radnji o vama: što je učinjeno s vašim zapisima, tko je to učinio i kada.",
+            "timestamp": "Kada se to dogodilo (UTC).",
+            "userAgent": "Vaš preglednik ili aplikacija kada ste to učinili; prazno kada je to učinio netko drugi."
+          }
+        },
+        "common": {
+          "assignedAt": "Kada vam je to dodijeljeno.",
+          "assignedBy": "Tko vam je to dodijelio.",
+          "createdAt": "Kada je zapis stvoren.",
+          "createdBy": "Tko je stvorio zapis.",
+          "effectiveFrom": "Kada je stupilo na snagu.",
+          "effectiveTo": "Kada je prestalo vrijediti; prazno dok se još primjenjuje.",
+          "id": "ID zapisa u aplikaciji, kako bi se druge datoteke mogle pozivati na njega.",
+          "updatedAt": "Kada je zapis zadnji put promijenjen.",
+          "updatedBy": "Tko je zadnji promijenio zapis."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "Grad lokacije.",
+            "country": "Država lokacije.",
+            "location": "Naziv lokacije.",
+            "postalCode": "Poštanski broj lokacije.",
+            "street": "Ulica lokacije.",
+            "summary": "Lokacije na kojima vam je dodijeljen rad."
+          },
+          "assignedVehicles": {
+            "archived": "Je li organizacija arhivirala vozilo, tako da se više ne može odabrati.",
+            "assignmentType": "Kako dolazi do vas: dodijeljeno vama (employee) ili vašem timu (team).",
+            "licencePlate": "Registarska oznaka vozila.",
+            "summary": "Vozila organizacije dodijeljena vama ili vašim timovima, koja aplikacija prva predlaže kada evidentirate vozilo na svom radu.",
+            "vehicle": "Naziv vozila."
+          },
+          "billableRates": {
+            "hourlyRate": "Fakturirana stopa po satu.",
+            "level": "Primjenjuje li se stopa na sav vaš rad ili na jedan projekt.",
+            "project": "Projekt na koji se stopa primjenjuje; prazno za sav vaš rad.",
+            "summary": "Stope koje organizacija naplaćuje klijentima za vaš rad."
+          },
+          "costCenters": {
+            "code": "Šifra mjesta troška.",
+            "costCenter": "Naziv mjesta troška.",
+            "summary": "Mjesta troška na koja se knjiži vaš rad."
+          },
+          "costRates": {
+            "hourlyRate": "Trošak po satu.",
+            "summary": "Interni trošak vašeg rada po satu, kako ga organizacija izračunava."
+          },
+          "customFields": {
+            "field": "Naziv polja.",
+            "fieldArchived": "Je li organizacija arhivirala polje.",
+            "summary": "Vrijednosti vlastitih polja organizacije u vašem zaposleničkom dosjeu.",
+            "tracked": "Bilježi li polje povijest svojih vrijednosti.",
+            "type": "Vrsta polja, na primjer tekst, broj, datum ili odabir.",
+            "validFrom": "Za polja s poviješću: dan od kojeg se vrijednost primjenjuje (YYYY-MM-DD).",
+            "value": "Vrijednost."
+          },
+          "customRoles": {
+            "description": "Opis uloge.",
+            "role": "Naziv uloge.",
+            "summary": "Prilagođene uloge koje imate."
+          },
+          "departureEvents": {
+            "actor": "Tko je to učinio; prazno ako je učinio sustav.",
+            "departureId": "Odlazak kojem ovaj događaj pripada (njegov ID u odlascima).",
+            "kind": "Što se dogodilo, na primjer departure_scheduled ili departure_effective.",
+            "occurredAt": "Kada se dogodilo.",
+            "revision": "Verzija odlaska nakon ovog događaja.",
+            "summary": "Povijest vaših odlazaka: kada je pojedini zakazan, izmijenjen, otkazan ili stupio na snagu te tko je to učinio."
+          },
+          "departureReviews": {
+            "affectedEndAt": "Kraj razdoblja na koje zapis utječe.",
+            "affectedStartAt": "Početak razdoblja na koje zapis utječe.",
+            "departureId": "ID odlaska u odlascima.",
+            "kind": "Koja je vrsta zapisa trebala pregled.",
+            "resolution": "Kako je pregled riješen.",
+            "resolvedAt": "Kada je pregled riješen.",
+            "resolvedBy": "Tko je riješio pregled.",
+            "status": "U kojem je statusu pregled.",
+            "subjectId": "ID zapisa koji se pregledava.",
+            "summary": "Zapisi koji su trebali pregled zbog vašeg odlaska."
+          },
+          "departures": {
+            "blockedReason": "Zašto odlazak nije mogao biti dovršen, ako nije mogao.",
+            "cutoffAt": "Kada prestaje vaš pristup organizaciji.",
+            "effectiveAt": "Kada je odlazak stupio na snagu.",
+            "lastWorkingDay": "Vaš zadnji radni dan (YYYY-MM-DD).",
+            "mode": "Kako je odlazak postavljen.",
+            "replacement": "Kolega koji preuzima vaš posao.",
+            "status": "U kojem je statusu odlazak.",
+            "summary": "Vaši odlasci iz organizacije.",
+            "timezone": "Vremenska zona zadnjeg radnog dana."
+          },
+          "departureTasks": {
+            "completedAt": "Kada je zadatak dovršen.",
+            "departureId": "ID odlaska u odlascima.",
+            "kind": "Što zadatak radi.",
+            "status": "U kojem je statusu zadatak.",
+            "summary": "Zadaci koje je aplikacija pokrenula za vaš odlazak."
+          },
+          "employee": {
+            "birthday": "Vaš datum rođenja (YYYY-MM-DD).",
+            "contractType": "Vrsta vašeg ugovora.",
+            "email": "Adresa e-pošte vašeg korisničkog računa.",
+            "endDate": "Kada je vaš radni odnos završio; prazno dok još traje.",
+            "firstName": "Vaše ime u zaposleničkom dosjeu.",
+            "gender": "Vaš spol.",
+            "isActive": "Je li vaš zaposlenički dosje aktivan.",
+            "lastName": "Vaše prezime u zaposleničkom dosjeu.",
+            "organization": "Naziv organizacije.",
+            "personnelNumber": "Vaš broj zaposlenika.",
+            "position": "Vaša pozicija ili naziv radnog mjesta.",
+            "primaryTeam": "Vaš primarni tim.",
+            "pronouns": "Vaše zamjenice.",
+            "role": "Vaša uloga u aplikaciji: administrator, voditelj ili zaposlenik.",
+            "startDate": "Kada je vaše zaposlenje započelo.",
+            "summary": "Vaša evidencija zaposlenika u ovoj organizaciji i naziv vašeg korisničkog računa.",
+            "userFirstName": "Ime vašeg korisničkog računa.",
+            "userId": "ID vašeg korisničkog računa.",
+            "userLastName": "Prezime vašeg korisničkog računa.",
+            "userName": "Naziv vašeg korisničkog računa."
+          },
+          "employmentPeriods": {
+            "endedAt": "Kada je razdoblje završilo; prazno dok je otvoreno.",
+            "startedAt": "Kada je razdoblje započelo.",
+            "startProvenance": "Odakle potječe početak, na primjer zapošljavanje ili ponovno zapošljavanje.",
+            "status": "Je li razdoblje otvoreno ili zatvoreno.",
+            "summary": "Svako razdoblje u kojem ste bili zaposleni u organizaciji."
+          },
+          "employmentTerms": {
+            "changeReason": "Razlog postavljanja ili promjene uvjeta.",
+            "contractType": "Vrsta vašeg ugovora.",
+            "currency": "Valuta satnice.",
+            "hourlyRate": "Vaša satnica prema ovim uvjetima.",
+            "probationEndsOn": "Zadnji dan vašeg probnog rada (GGGG-MM-DD).",
+            "probationStartsOn": "Prvi dan vašeg probnog rada (GGGG-MM-DD).",
+            "reviewState": "Jesu li uvjeti potvrđeni ili još uvijek zahtijevaju pregled.",
+            "status": "Jesu li ovi uvjeti na snazi.",
+            "summary": "Vaši uvjeti zaposlenja kroz vrijeme, s vašom satnicom.",
+            "validFrom": "Kada se ovi uvjeti počinju primjenjivati.",
+            "validUntil": "Kada se ovi uvjeti prestaju primjenjivati; prazno dok se primjenjuju.",
+            "weeklyContractMinutes": "Vaše ugovoreno radno vrijeme po tjednu, u minutama.",
+            "workModel": "Vaš model rada.",
+            "workPolicy": "Pravilo o radu koje ovi uvjeti koriste."
+          },
+          "groups": {
+            "addedAt": "Kada ste dodani u grupu.",
+            "addedBy": "Tko vas je dodao u grupu.",
+            "description": "Opis grupe.",
+            "group": "Naziv grupe.",
+            "summary": "Grupe zaposlenika kojima pripadate."
+          },
+          "locationSupervision": {
+            "location": "Naziv lokacije.",
+            "subarea": "Područje unutar lokacije; prazno za cijelu lokaciju.",
+            "summary": "Lokacije i područja koja nadzirete."
+          },
+          "managers": {
+            "manager": "Ime voditelja.",
+            "summary": "Vaši voditelji."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Samo za bilježenje položaja: bilježi li se vaš položaj pri prijavi ili odjavi.",
+            "effectiveFrom": "Kada se dodjela počinje primjenjivati.",
+            "effectiveUntil": "Kada se dodjela prestaje primjenjivati; prazno dok se primjenjuje.",
+            "isActive": "Je li dodjela aktivna.",
+            "policy": "Naziv pravila; prazno za bilježenje položaja.",
+            "policyKind": "Vrsta pravila: rad, godišnji odmor, praznik (unaprijed postavljeni praznici), dodjela praznika (pojedinačni praznik), kategorija praznika, izmjena, doplata, skup kategorija rada ili bilježenje položaja.",
+            "priority": "Koja dodjela ima prednost kada ih se primjenjuje više: veći broj ima prednost.",
+            "summary": "Svako pravilo koje se primjenjuje na vas: dodijeljeno vama, vašim timovima ili zadano za organizaciju."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Ranije i trenutne dodjele projekata te kada su se primjenjivale."
+          },
+          "projectAssignments": {
+            "summary": "Projekti dodijeljeni vama ili vašim timovima."
+          },
+          "projectsManaged": {
+            "summary": "Projekti kojima upravljate."
+          },
+          "shared": {
+            "assignmentType": "Kako dolazi do vas: dodijeljeno vama (zaposlenik), vašem timu (tim) ili cijeloj organizaciji (organizacija).",
+            "primary": "Je li primarno.",
+            "project": "Naziv projekta.",
+            "team": "Naziv tima."
+          },
+          "skills": {
+            "category": "Kategorija vještine.",
+            "expiresOn": "Dan isteka vještine (GGGG-MM-DD); prazno ako ne istječe.",
+            "notes": "Bilješke o vašoj vještini.",
+            "skill": "Naziv vještine.",
+            "summary": "Vaše vještine i kvalifikacije."
+          },
+          "teamHistory": {
+            "summary": "Svaki tim u kojem ste bili i kada."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Smijete li odobravati zahtjeve tima.",
+            "canCreateTeams": "Smijete li stvarati timove.",
+            "canManageTeamMembers": "Smijete li upravljati članovima tima.",
+            "canManageTeamSettings": "Smijete li mijenjati postavke tima.",
+            "grantedAt": "Kada su dozvole dodijeljene.",
+            "grantedBy": "Tko je dodijelio dozvole.",
+            "summary": "Dozvole tima koje imate.",
+            "team": "Tim na koji se dozvole primjenjuju; prazno za svaki tim organizacije."
+          },
+          "teams": {
+            "addedBy": "Tko vas je dodao u tim.",
+            "memberSince": "Od kada ste u timu.",
+            "summary": "Timovi u kojima se trenutno nalazite."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Vaš račun na usluzi kalendara.",
+            "calendarId": "Kalendar koji aplikacija koristi na tom računu.",
+            "conflictDetectionEnabled": "Provjerava li aplikacija taj kalendar radi sukobljenih termina.",
+            "createdAt": "Kada ste povezali kalendar (UTC).",
+            "lastSyncAt": "Kada se aplikacija zadnji put sinkronizirala s kalendarom (UTC).",
+            "provider": "Usluga kalendara, na primjer google, microsoft365 ili icloud.",
+            "pushEnabled": "Dodaje li aplikacija vaše odsutnosti u taj kalendar.",
+            "summary": "Kalendari koje ste povezali s aplikacijom. Pristupni tokeni nikada nisu uključeni.",
+            "updatedAt": "Kada je veza zadnji put promijenjena (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "ID vašeg računa na usluzi za razgovor.",
+            "displayName": "Vaše ime za prikaz na usluzi za razgovor.",
+            "email": "Vaša adresa e-pošte na usluzi za razgovor, ako je usluga pruža.",
+            "isActive": "Je li poveznica u upotrebi.",
+            "lastSeenAt": "Kada ste zadnji put koristili aplikaciju putem tog računa (UTC).",
+            "linkedAt": "Kada ste povezali račun (UTC).",
+            "platform": "Usluga za razgovor: slack, teams, telegram ili discord.",
+            "summary": "Vaši računi za razgovor povezani s aplikacijom kako biste je mogli koristiti putem usluga Slack, Microsoft Teams, Telegram ili Discord.",
+            "username": "Vaše korisničko ime na usluzi za razgovor.",
+            "workspaceId": "ID radnog prostora ili zakupca kojem vaš račun pripada, ako ga usluga ima."
+          },
+          "icsFeeds": {
+            "createdAt": "Kada je poveznica stvorena (UTC).",
+            "includeApproved": "Prikazuje li feed odobrene odsutnosti.",
+            "includePending": "Prikazuje li feed odsutnosti koje još čekaju odobrenje.",
+            "isActive": "Radi li poveznica još uvijek.",
+            "lastUsedAt": "Kada je kalendarska aplikacija zadnji put pročitala feed (UTC).",
+            "revokedAt": "Kada je poveznica isključena (UTC).",
+            "summary": "Poveznice vašeg kalendarskog feeda koje aplikaciji za kalendar omogućuju pretplatu na vaše odsutnosti. Sama tajna poveznica nikada nije uključena."
+          },
+          "kioskPin": {
+            "pinSet": "Je li vam postavljen PIN za kiosk.",
+            "setAt": "Kada je PIN zadnji put postavljen (UTC).",
+            "setBy": "Tko je postavio PIN.",
+            "summary": "Imate li PIN za prijavu na kiosk terminalu. Sam PIN nikada se ne pohranjuje u čitljivom obliku i nije uključen."
+          },
+          "shared": {
+            "isActive": "Je li veza u upotrebi."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "Stranica u aplikaciji na koju vodi obavijest.",
+            "createdAt": "Kada ste primili obavijest (UTC).",
+            "entityId": "ID tog zapisa.",
+            "entityType": "Vrsta zapisa na koji se obavijest odnosi, na primjer odsustvo.",
+            "isRead": "Jeste li pročitali obavijest.",
+            "message": "Tekst obavijesti.",
+            "metadata": "Dodatne pojedinosti koje je obavijest sadržavala, kao JSON.",
+            "readAt": "Kada ste je pročitali (UTC).",
+            "summary": "Obavijesti koje ste primili u aplikaciji, točno onako kako ste ih primili.",
+            "title": "Naslov obavijesti.",
+            "type": "O čemu je obavijest, na primjer approval_request_submitted."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "Za doznaku o bolovanju: zadnji dan odsustva (YYYY-MM-DD).",
+            "absenceId": "Za doznaku o bolovanju: ID odsustva koje pokriva, u absences.json.",
+            "absenceStartDate": "Za doznaku o bolovanju: prvi dan odsustva (YYYY-MM-DD).",
+            "category": "Kategorija dokumenta: contract, payslip, certificate, sick_note ili other.",
+            "documentDate": "Datum dokumenta (YYYY-MM-DD).",
+            "expiryDate": "Dan isteka dokumenta (YYYY-MM-DD), na primjer certifikata.",
+            "file": "Gdje se izvorna datoteka nalazi unutar ove arhive.",
+            "fileName": "Naziv datoteke kako je prenesena.",
+            "mimeType": "Vrsta datoteke, na primjer application/pdf.",
+            "payPeriodMonth": "Za platnu listu: mjesec (1 do 12) na koji se odnosi.",
+            "payPeriodYear": "Za platnu listu: godina na koju se odnosi.",
+            "sizeBytes": "Veličina datoteke, u bajtovima.",
+            "summary": "Dokumenti u vašem kadrovskom dosjeu. Same datoteke nalaze se u mapi personnel_file, po kategorijama.",
+            "title": "Naslov dokumenta.",
+            "uploadedBy": "Tko je prenio dokument.",
+            "visibility": "Tko može vidjeti dokument; shared znači da ga možete vidjeti u svojem dosjeu."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Kada je donesena odluka o zahtjevu (UTC).",
+            "approver": "Tko je odlučio o zahtjevu.",
+            "lifecycleStatus": "Trenutačni status zahtjeva, uključujući i je li otkazan.",
+            "requestCreatedAt": "Kada je zahtjev podnesen (UTC).",
+            "requestId": "ID zahtjeva u aplikaciji.",
+            "requestStatus": "Odluka o zahtjevu: pending, approved ili rejected.",
+            "requestType": "Što je zatraženo: swap (zamjena smjena), assignment (preuzimanje smjene) ili pickup (preuzimanje otvorene smjene).",
+            "shiftDate": "Dan smjene na koju se zahtjev odnosi (YYYY-MM-DD).",
+            "shiftEndTime": "Kada ta smjena završava, kao lokalno doba dana (HH:mm).",
+            "shiftStartTime": "Kada ta smjena počinje, kao lokalno doba dana (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "Vaša bilješka uz zahtjev.",
+            "reason": "Vaš razlog za zahtjev.",
+            "reasonCategory": "Vrsta razloga, na primjer sick, emergency, childcare ili other.",
+            "rejectionReason": "Zašto je zahtjev odbijen.",
+            "summary": "Zahtjevi za smjenu koje ste podnijeli.",
+            "swapPartner": "Kolega s kojim ste zatražili zamjenu ili koji treba preuzeti smjenu."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "Kolega koji je podnio zahtjev.",
+            "summary": "Zahtjevi koje su vam uputili kolege, poput molbe za zamjenu ili preuzimanje smjene. Njihovi razlozi, bilješke i smjene nisu uključeni: datum i vremena smjene prikazuju se samo ako je smjena vaša."
+          },
+          "shifts": {
+            "date": "Dan smjene (YYYY-MM-DD).",
+            "endTime": "Kada smjena završava, kao lokalno doba dana na radnom mjestu (HH:mm).",
+            "location": "Lokacija smjene.",
+            "notes": "Bilješka napisana uz smjenu.",
+            "publishedAt": "Kada je smjena objavljena (UTC).",
+            "publishedBy": "Tko je objavio smjenu.",
+            "startTime": "Kada smjena počinje, kao lokalno doba dana na radnom mjestu (HH:mm).",
+            "status": "Je li smjena još uvijek skica ili vam je objavljena.",
+            "subarea": "Područje unutar lokacije.",
+            "summary": "Smjene za koje ste bili raspoređeni.",
+            "template": "Predložak smjene na temelju kojeg je smjena izrađena."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Kada su vaši položaji prikazani (UTC).",
+            "exportId": "Za izvoz: ID izvoza.",
+            "kind": "Kako su prikazani: u detaljima radnog razdoblja (work_period_detail) ili u izvozu (data_export).",
+            "summary": "Kome su osim vama prikazani vaši položaji i kada: jedan redak po prikazanom radnom razdoblju ili jedan redak po izvozu.",
+            "viewer": "Kome su prikazani vaši položaji.",
+            "workPeriodId": "ID prikazanog radnog razdoblja, u time.json > work_periods.",
+            "workPeriodStartedAt": "Kada je to radno razdoblje započelo (UTC).",
+            "workPeriodUtcOffsetMinutes": "UTC pomak prijave tog radnog razdoblja, u minutama."
+          },
+          "consents": {
+            "consentId": "ID privole u aplikaciji.",
+            "grantedAt": "Kada ste dali privolu (UTC).",
+            "summary": "Svaka privola koju ste dali za bilježenje svog položaja i kada ste je povukli.",
+            "withdrawnAt": "Kada ste povukli privolu (UTC); prazno dok je na snazi."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Kada ste odgovorili (UTC).",
+            "summary": "Vremena kada ste na obavijest o položaju odgovorili s \"ne sada\"."
+          },
+          "shared": {
+            "noticeVersion": "Verzija obavijesti o položaju na koju ste odgovorili.",
+            "purposeStatement": "Zašto organizacija bilježi položaje, kako je navedeno u obavijesti.",
+            "retentionDays": "Koliko se dana čuvaju položaji, kako je navedeno u obavijesti."
+          },
+          "stamps": {
+            "accuracyMeters": "Koliko je položaj točan, u metrima, kako je izvijestio vaš uređaj.",
+            "capturedAt": "Kada je položaj zabilježen uz događaj prijave/odjave (UTC).",
+            "clockEvent": "Je li položaj zabilježen pri prijavi (clock_in) ili odjavi (clock_out).",
+            "consentId": "ID privole u consents pod kojom je položaj zabilježen.",
+            "createdAt": "Kada je položaj spremljen (UTC).",
+            "fixedAt": "Kada je vaš uređaj utvrdio položaj (UTC); može biti malo ranije od događaja prijave/odjave.",
+            "latitude": "Zemljopisna širina, u decimalnim stupnjevima.",
+            "longitude": "Zemljopisna dužina, u decimalnim stupnjevima.",
+            "purgeAt": "Kada će položaj biti izbrisan (UTC).",
+            "summary": "Položaji zabilježeni prilikom vaše prijave ili odjave. Svaki se automatski briše u purge_at.",
+            "timeEntryId": "ID prijave ili odjave u time.json > time_entries.",
+            "utcOffsetMinutes": "UTC pomak događaja prijave/odjave, u minutama (120 znači UTC+2)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "ID odjave koju je aplikacija zabilježila, u time_entries.",
+            "cutoffTime": "Vrijeme u koje ste odjavljeni (UTC).",
+            "maxUninterruptedMinutes": "Najdulje vrijeme, u minutama, tijekom kojeg možete ostati prijavljeni bez stanke.",
+            "processedAt": "Kada vas je aplikacija odjavila (UTC).",
+            "startTime": "Kada je radno razdoblje započelo (UTC).",
+            "summary": "Vremena kada vas je aplikacija odjavila jer ste ostali prijavljeni dulje nego što je dopušteno.",
+            "timezone": "Vremenska zona radnog razdoblja.",
+            "utcOffsetMinutes": "UTC pomak odjave, u minutama."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Zašto je prilagodba otkazana.",
+            "cancelledAt": "Kada je prilagodba otkazana (UTC); prazno ako se još uvijek računa.",
+            "cancelledBy": "Tko je otkazao prilagodbu.",
+            "day": "Dan na koji se prilagodba računa (YYYY-MM-DD).",
+            "kind": "Vrsta prilagodbe: opening_balance ili overtime_payout.",
+            "minutes": "Minute dodane na vaš saldo (pozitivno) ili oduzete s njega (negativno).",
+            "reason": "Zašto je prilagodba napravljena.",
+            "recordedAt": "Kada je prilagodba zabilježena (UTC).",
+            "recordedBy": "Tko je zabilježio prilagodbu.",
+            "summary": "Ručne promjene vašeg stanja radnog vremena, poput početnog stanja ili isplaćenih prekovremenih sati, uključujući poništene."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Kada je aplikacija dodala pauzu (UTC).",
+            "adjustedDurationMinutes": "Trajanje razdoblja nakon dodavanja pauze, u minutama.",
+            "breakInsertedAt": "Gdje je u razdoblju pauza smještena (UTC).",
+            "breakInsertedMinutes": "Koliko traje dodana pauza, u minutama.",
+            "originalDurationMinutes": "Trajanje razdoblja prije dodavanja pauze, u minutama.",
+            "originalEndTime": "Kraj razdoblja prije dodavanja pauze (UTC).",
+            "policy": "Pravilo o pauzama koje je zahtijevalo pauzu.",
+            "requiredBreakMinutes": "Pauza koju pravilo zahtijeva, u minutama.",
+            "summary": "Pauze koje je aplikacija dodala radnom razdoblju jer je nedostajala zakonski propisana pauza.",
+            "workingMinutesThreshold": "Radno vrijeme, u minutama, nakon kojeg pravilo zahtijeva pauzu."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "Koliko ste dugo stvarno radili prema izuzeću, u minutama.",
+            "approvedAt": "Kada je izuzeće odobreno (UTC).",
+            "approver": "Tko je odlučio o izuzeću.",
+            "exceptionType": "Iz kojeg je pravila izuzeće, na primjer rest_period ili overtime_daily.",
+            "plannedDurationMinutes": "Radno vrijeme za koje je zatraženo izuzeće, u minutama.",
+            "reason": "Zašto je zatraženo izuzeće.",
+            "rejectedAt": "Kada je izuzeće odbijeno (UTC).",
+            "rejectionReason": "Zašto je izuzeće odbijeno.",
+            "status": "Je li izuzeće na čekanju, odobreno, odbijeno, isteklo ili iskorišteno.",
+            "summary": "Izuzeća od pravila o radnom vremenu zatražena za vas, poput kraćeg razdoblja odmora ili dodatnih prekovremenih sati.",
+            "usedAt": "Kada ste radili prema izuzeću (UTC).",
+            "validFrom": "Kada se izuzeće počinje primjenjivati (UTC).",
+            "validUntil": "Kada se izuzeće prestaje primjenjivati (UTC).",
+            "wasUsed": "Jeste li radili prema izuzeću."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Kada je ispravak odobren (UTC).",
+            "approvedBy": "Tko je odobrio ispravak.",
+            "kind": "Što ispravak mijenja.",
+            "proposedAt": "Kada je ispravak predložen (UTC).",
+            "proposedBy": "Tko je predložio ispravak.",
+            "reason": "Zašto je ispravak predložen.",
+            "resolvedAt": "Kada je prijedlog zatvoren (UTC).",
+            "resolvedBy": "Tko je zatvorio prijedlog.",
+            "status": "U kojem je statusu prijedlog, na primjer predložen, odobren, primijenjen ili odbijen.",
+            "summary": "Predloženi ispravci starijih evidencija rada, na primjer propuštena odjava, i što se s njima dogodilo."
+          },
+          "shared": {
+            "actualMinutes": "Minute koje ste odradili, kako se računaju za stanje.",
+            "balanceMinutes": "Vaše stanje u minutama: pozitivno označava prekovremeni rad, negativno dugovano vrijeme.",
+            "computedAt": "Kada je aplikacija zadnji put izračunala ove brojke (UTC).",
+            "requiredMinutes": "Minute koje ste trebali odraditi prema pravilima rada.",
+            "workPeriodId": "ID radnog razdoblja u work_periods."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "Stopa dodatka, kao udio (0,25 znači 25%).",
+            "baseMinutes": "Odrađene minute u razdoblju.",
+            "calculatedAt": "Trenutak u vremenu na koji se dodatak primjenjuje (UTC).",
+            "calculationDetails": "Kako je dodatak izračunat, u obliku JSON-a.",
+            "qualifyingMinutes": "Minute koje ispunjavaju uvjete za dodatak.",
+            "summary": "Dodaci izračunati za vaš rad, na primjer za noćni rad, rad nedjeljom ili blagdanom.",
+            "surchargeMinutes": "Dodatne minute pripisane kao dodatak.",
+            "surchargeModel": "Model dodatka koji se primjenjivao.",
+            "surchargeRule": "Pravilo modela koje se primijenilo."
+          },
+          "timeEntries": {
+            "createdBy": "Tko je zabilježio unos: vi ili osoba koja ga je zabilježila za vas.",
+            "deviceInfo": "Uređaj ili preglednik kojim ste zabilježili unos; prazno ako ga je zabilježio netko drugi.",
+            "ipAddress": "IP adresa uređaja kojim ste zabilježili unos; prazno ako ga je zabilježio netko drugi.",
+            "isSuperseded": "Je li kasniji ispravak zamijenio ovaj unos.",
+            "location": "Lokacija zabilježena uz unos, kao naziv mjesta ili koordinate.",
+            "notes": "Bilješka napisana uz unos.",
+            "replacesEntryId": "Za ispravak: ID unosa koji zamjenjuje.",
+            "summary": "Svaka prijava, odjava i ispravak zabilježeni za vas. Unosi se nikada ne mijenjaju: ispravak je novi unos koji zamjenjuje stari.",
+            "supersededById": "ID ispravka koji je zamijenio ovaj unos.",
+            "timestamp": "Trenutak na koji se unos odnosi, u UTC-u.",
+            "timezone": "Vremenska zona u kojoj je unos zabilježen, na primjer Europe/Berlin.",
+            "timezoneSource": "Izvor vremenske zone, na primjer vaš uređaj ili postavka organizacije.",
+            "type": "Što unos bilježi: clock_in, clock_out ili correction.",
+            "utcOffsetMinutes": "UTC pomak koji je bio na snazi pri bilježenju unosa, u minutama (120 znači UTC+2). Dodajte ga vremenskoj oznaci za lokalno vrijeme."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "Minute dodane ili oduzete prilagodbama stanja sati.",
+            "computedFromDate": "Prvi dan koji se ubraja u stanje sati (YYYY-MM-DD).",
+            "computedThroughDate": "Zadnji dan koji se ubraja u stanje sati (YYYY-MM-DD).",
+            "summary": "Vaše trenutno stanje radnog vremena: odrađeno vrijeme u odnosu na vrijeme koje ste trebali odraditi."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Je li razdoblje zaključeno, tako da se njegove brojke više ne mijenjaju.",
+            "periodEnd": "Zadnji dan razdoblja (YYYY-MM-DD).",
+            "periodStart": "Prvi dan razdoblja (YYYY-MM-DD).",
+            "periodType": "Duljina razdoblja: mjesec ili godina.",
+            "summary": "Vaše stanje radnog vremena po mjesecu i po godini."
+          },
+          "workOperations": {
+            "actor": "Osoba koja je napravila promjenu.",
+            "actorKind": "Tko je napravio promjenu: osoba (human), sama aplikacija (system), kiosk ili nepoznato za stare zapise.",
+            "createdAt": "Kada je promjena napravljena (UTC).",
+            "kind": "Što je učinjeno, na primjer prijava, uređivanje ili brisanje.",
+            "summary": "Zapisnik svake promjene vaših radnih razdoblja: što je učinjeno i tko je to učinio.",
+            "writer": "Koji je dio aplikacije napravio promjenu, na primjer odjava u web-aplikaciji, uvoz ili uređivanje od strane administratora."
+          },
+          "workPeriods": {
+            "approvalStatus": "Je li razdoblje odobreno, odbijeno ili čeka odobrenje.",
+            "breakStartedAt": "Kada je vaša trenutna pauza započela (UTC); prazno ako niste na pauzi.",
+            "breakStartedZone": "Vremenska zona u kojoj je pauza započela.",
+            "clockInEntryId": "ID prijave u time_entries.",
+            "clockOutEntryId": "ID odjave u time_entries.",
+            "deletedAt": "Kada je razdoblje izbrisano (UTC); prazno ako nije.",
+            "deletedBy": "Tko je izbrisao razdoblje.",
+            "deletionReason": "Zašto je razdoblje izbrisano.",
+            "drivenDistanceKm": "Udaljenost koju ste prešli tijekom rada, u kilometrima: završno očitanje minus početno očitanje ili izravno unesena udaljenost ako nije bilo početnog očitanja.",
+            "durationMinutes": "Koliko ste dugo radili, u minutama.",
+            "endTime": "Kada je rad završio (UTC); prazno dok ste još prijavljeni.",
+            "endUtcOffsetMinutes": "UTC pomak odjave, u minutama.",
+            "isActive": "Jeste li još uvijek prijavljeni za ovo razdoblje.",
+            "isBillable": "Može li se rad fakturirati klijentu.",
+            "licencePlate": "Registarska oznaka službenog vozila koje ste vozili; prazno za vlastito vozilo.",
+            "odometerEndKm": "Očitanje brojača kilometara vozila na kraju rada, u kilometrima.",
+            "odometerStartKm": "Očitanje brojača kilometara vozila na početku rada, u kilometrima.",
+            "pendingDurationMinutes": "Za promjenu koja čeka odobrenje: zatraženo trajanje, u minutama.",
+            "pendingEndTime": "Za promjenu koja čeka odobrenje: zatraženi završetak (UTC).",
+            "pendingReason": "Zašto je promjena zatražena.",
+            "pendingRequestedAt": "Kada je promjena zatražena (UTC).",
+            "pendingRequestedBy": "Tko je zatražio promjenu.",
+            "pendingStartTime": "Za promjenu koja čeka odobrenje: zatraženi početak (UTC).",
+            "project": "Projekt na koji je rad evidentiran.",
+            "startTime": "Kada je rad započeo (UTC).",
+            "startUtcOffsetMinutes": "UTC pomak prijave rada, u minutama (120 znači UTC+2).",
+            "summary": "Vaša radna razdoblja, svako od prijave do odjave rada, sa svim promjenama koje čekaju odobrenje.",
+            "task": "Projektni zadatak na koji je rad evidentiran.",
+            "vehicleKind": "Vozilo koje ste vozili tijekom rada: organization za vozilo organizacije, own za vlastito vozilo; prazno ako nijedno nije zabilježeno.",
+            "vehicleName": "Naziv vozila organizacije koje ste vozili; prazno za vlastito vozilo.",
+            "workCategory": "Vrsta rada, kako je organizacija naziva.",
+            "workLocationType": "Gdje ste radili, na primjer ured, od kuće ili na daljinu."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "Kada je prekršaj potvrđen (UTC).",
+            "acknowledgedBy": "Tko je potvrdio prekršaj.",
+            "acknowledgedNote": "Napomena napisana prilikom potvrde prekršaja.",
+            "details": "Brojke povezane s prekršajem, u formatu JSON, na primjer odrađeni sati i ograničenje.",
+            "policy": "Pravilnik o radu čije je pravilo prekršeno.",
+            "summary": "Slučajevi u kojima je vaš rad prekršio pravilo pravilnika o radu, na primjer propuštena pauza ili predug radni dan.",
+            "violatedAt": "Kada je pravilo prekršeno (UTC).",
+            "violationType": "Koje je pravilo prekršeno."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "Minute priznate za odsutnosti poput godišnjeg odmora ili bolovanja.",
+            "summary": "Vaš saldo radnog vremena po godini, kako ga je izračunala ranija verzija aplikacije.",
+            "year": "Godina."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "ID izvješća koje se ispravlja.",
+            "reportId": "ID izvješća o ispravku u izvješćima.",
+            "sourceReportId": "ID izvješća iz kojeg je ispravak kopiran: izvornik ili njegov najnoviji ispravak.",
+            "summary": "Izvješća koja ispravljaju već izvezeno ili refundirano izvješće."
+          },
+          "allowanceOverrides": {
+            "amount": "Postavljeni iznos.",
+            "calculationBasis": "Kako je iznos izračunat.",
+            "evidence": "Na čemu se iznos temelji.",
+            "kind": "Koja je naknada postavljena: mileage ili per_diem.",
+            "revokedAt": "Kada je iznos povučen (UTC); prazno ako se i dalje primjenjuje.",
+            "revokedBy": "Tko je povukao iznos, prema svojem imenu u to vrijeme.",
+            "scope": "Koji dio troška iznos pokriva, u formatu JSON.",
+            "situation": "Zašto pravila nisu odredila iznos, u formatu JSON.",
+            "summary": "Kilometraža ili dnevnice koje je administrator troškova ručno postavio tamo gdje pravila nisu odredila iznos."
+          },
+          "claimDecisions": {
+            "action": "Odluka: odobreno ili odbijeno.",
+            "actor": "Tko je donio odluku.",
+            "approver": "Odobravatelj kojem je zahtjev dodijeljen.",
+            "comment": "Komentar napisan uz odluku.",
+            "createdAt": "Kada je odluka donesena (UTC).",
+            "summary": "Svaka odluka o vašim zahtjevima."
+          },
+          "claimReceipts": {
+            "summary": "Računi priloženi vašim zahtjevima. Same datoteke nalaze se u mapi claim-receipts."
+          },
+          "claims": {
+            "approver": "Tko je odlučio o zahtjevu.",
+            "calculatedAmount": "Iznos za nadoknadu, prema izračunu.",
+            "calculatedCurrency": "Valuta iznosa za nadoknadu.",
+            "destinationCity": "Grad u koji ste putovali.",
+            "destinationCountry": "Država u koju ste putovali.",
+            "notes": "Vaše bilješke o zahtjevu.",
+            "status": "Je li zahtjev skica, podnesen, odobren ili odbijen.",
+            "summary": "Vaši zahtjevi za putne troškove podneseni putem ranijeg obrasca za pojedinačni trošak.",
+            "tripDateTimeZone": "Vremenska zona u kojoj se računaju dani putovanja.",
+            "tripEnd": "Kraj putovanja (UTC).",
+            "tripStart": "Početak putovanja (UTC).",
+            "type": "Vrsta troška: račun, kilometraža ili per_diem (dnevnica)."
+          },
+          "currencyConversions": {
+            "basis": "Način preračuna iznosa: stvarni terećeni iznos kartice (card_charge), tečaj koji je postavio administrator (manual_rate) ili objavljeni referentni tečaj (reference_rate).",
+            "chargedAmount": "Za card_charge: iznos kojim je vaša kartica terećena, u ciljnoj valuti.",
+            "evidenceReceiptFile": "Za card_charge: datoteka računa unutar ove arhive koja prikazuje terećenje.",
+            "rate": "Tečaj: 1 jedinica valute rate_base_currency jednaka je ovoliko jedinica valute rate_quote_currency.",
+            "rateBaseCurrency": "Osnovna valuta tečaja.",
+            "rateDate": "Dan iz kojeg je tečaj (YYYY-MM-DD).",
+            "rateEvidence": "Gdje se tečaj može provjeriti, poput stavke na bankovnom izvodu.",
+            "rateQuoteCurrency": "Kotirana valuta tečaja.",
+            "recordedBy": "Tko je zabilježio konverziju.",
+            "referenceExpenseDate": "Za reference_rate: dan troška za koji je odabran tečaj (YYYY-MM-DD).",
+            "referenceSource": "Za reference_rate: upotrijebljeni objavljeni tečaj, kao JSON.",
+            "sourceCurrency": "Valuta iz koje se preračunava.",
+            "summary": "Kako su troškovi u stranoj valuti preračunati u vašu valutu za povrat troškova.",
+            "targetCurrency": "Valuta u koju se preračunava."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Kada je skica premještena (UTC).",
+            "convertedBy": "Tko je premjestio skicu.",
+            "flags": "Sve što se nije moglo premjestiti u izvornom obliku, kao JSON.",
+            "legacyFacts": "Sadržaj skice zahtjeva u trenutku premještanja, kao JSON.",
+            "summary": "Skice zahtjeva iz ranijeg obrasca zahtjeva koje su premještene u izvještaj."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Kada je potvrđeno ili prestalo biti uključeno (UTC).",
+            "endedBy": "Tko je to potvrdio, uklonio ili odbacio.",
+            "includedAt": "Kada je izvještaj dodan u obradu (UTC).",
+            "lines": "Iznosi proslijeđeni obračunu plaća, s vrstama primanja, kao JSON.",
+            "state": "Status uključenosti: uključeno, potvrđeno, uklonjeno, odbačeno ili zamijenjeno kasnijom obradom.",
+            "summary": "Izvještaji isplaćeni putem obračuna plaća."
+          },
+          "perDiemItineraries": {
+            "endDate": "Dan povratka (YYYY-MM-DD).",
+            "endTime": "Lokalno vrijeme povratka (HH:mm).",
+            "endTimeZone": "Vremenska zona povratka.",
+            "meals": "Osigurani obroci po danu, kao JSON; oni umanjuju dnevnicu.",
+            "overnight": "Jeste li i kako noćili.",
+            "policy": "Stope prema kojima je dnevnica obračunata, kao JSON, fiksirane prilikom podnošenja.",
+            "prolongedWorkplace": "Jeste li radili na istom mjestu izvan doma dulje vrijeme, što može umanjiti dnevnicu.",
+            "startDate": "Dan polaska (YYYY-MM-DD).",
+            "startTime": "Lokalno vrijeme polaska (HH:mm).",
+            "startTimeZone": "Vremenska zona polaska.",
+            "summary": "Putovanja na temelju kojih su izračunate vaše dnevnice (per diem)."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "Tko je dodijelio dopuštenje.",
+            "evidence": "Interna bilješka administratora troškova o dokazima.",
+            "project": "Projekt.",
+            "reason": "Interni razlog administratora troškova za dopuštenje.",
+            "summary": "Dopuštenja za knjiženje vaših troškova na projekt za dane kada u aplikaciji nema evidencije o radu na njemu.",
+            "validFrom": "Prvi obuhvaćeni dan troška (YYYY-MM-DD).",
+            "validTo": "Zadnji obuhvaćeni dan troška (YYYY-MM-DD)."
+          },
+          "reportItems": {
+            "accountingReference": "Referenca za knjigovodstvo, poput broja računa.",
+            "category": "Kategorija troška, na primjer hotel, vlak ili obroci.",
+            "description": "Vaš opis troška.",
+            "expenseDate": "Datum troška (YYYY-MM-DD).",
+            "mileageDistanceKm": "Za kilometražu: udaljenost u kilometrima.",
+            "mileagePolicy": "Za kilometražu: stope prema kojima je obračunata, kao JSON, fiksirane prilikom slanja.",
+            "mileageRoute": "Za kilometražu: ruta kojom ste vozili.",
+            "mileageVehicle": "Za kilometražu: vrsta vozila.",
+            "paidBy": "Tko je platio: vi (zaposlenik) ili organizacija (tvrtka).",
+            "position": "Položaj troška u izvještaju.",
+            "projectInherits": "Koristi li trošak projekt putovanja umjesto vlastitog.",
+            "receiptExceptionReason": "Vaše obrazloženje zašto račun nedostaje.",
+            "summary": "Troškovi u vašim izvještajima.",
+            "type": "Vrsta troška: račun (receipt), kilometraža (mileage) ili dnevnica (per_diem)."
+          },
+          "reportReceipts": {
+            "summary": "Računi priloženi uz troškove u vašim izvještajima. Same datoteke nalaze se u mapi ove kategorije."
+          },
+          "reports": {
+            "kind": "Je li izvještaj za putovanje (trip) ili za zasebne troškove bez putovanja (standalone).",
+            "project": "Projekt putovanja koji njegovi troškovi koriste osim ako nije naveden zaseban projekt.",
+            "reimbursementCurrency": "Valuta u kojoj vam se refundiraju troškovi.",
+            "status": "Status izvještaja: skica (draft), podnesen (submitted), odobren (approved), odbijen (rejected) ili vraćen na doradu.",
+            "submissionCount": "Koliko je puta izvještaj podnesen.",
+            "summary": "Vaši izvještaji o putnim troškovima, od kojih svaki grupira troškove jednog putovanja ili zasebne troškove.",
+            "tripDestinations": "Mjesta na koja ste putovali, kao JSON.",
+            "tripPurpose": "Svrha putovanja.",
+            "tripTimeZone": "Vremenska zona u kojoj se računaju dani putovanja."
+          },
+          "reviewCycleClosures": {
+            "actor": "Tko je zaključio.",
+            "createdAt": "Kada je završeno (UTC).",
+            "kind": "Kako je podnošenje završeno: vraćeno, povučeno ili ponovno otvoreno.",
+            "note": "Bilješka napisana prilikom završetka.",
+            "submissionCycle": "Koje je to podnošenje izvještaja po redu: 1 je prvo.",
+            "summary": "Podnošenja vaših izvještaja koja su završila bez konačne odluke: vraćena vama, povučena ili ponovno otvorena."
+          },
+          "reviewNotes": {
+            "body": "Komentar.",
+            "closureId": "ID vraćenog podnošenja u review_cycle_closures.",
+            "summary": "Komentari recenzenta na pojedinačne troškove izvještaja koji vam je vraćen."
+          },
+          "settlementEntries": {
+            "amount": "Iznos.",
+            "balanceBefore": "Preostali dug prije ovog plaćanja.",
+            "basisSubmissionCycle": "Na kojem se odobrenom podnošenju izvještaja temelji plaćanje.",
+            "exportBatchId": "ID izvoza troškova za koji je plaćanje evidentirano.",
+            "kind": "Jeste li primili isplatu (reimbursement) ili izvršili povrat novca (recovery).",
+            "note": "Bilješka unesena uz plaćanje.",
+            "occurredOn": "Datum prijenosa novca (YYYY-MM-DD).",
+            "recordedAt": "Kada je plaćanje evidentirano (UTC).",
+            "recordedBy": "Tko je evidentirao plaćanje.",
+            "reference": "Referenca plaćanja, poput poziva na broj bankovnog prijenosa.",
+            "sourceType": "Čemu je novac namijenjen: izvještaju ili zahtjevu iz ranijeg obrasca (legacy_claim).",
+            "summary": "Novac isplaćen vama za odobrene troškove ili novac koji ste vratili nakon preplate."
+          },
+          "shared": {
+            "authorizedAt": "Kada je autorizirano (UTC).",
+            "authorizedBy": "Administrator troškova koji je autorizirao, prema imenu u tom trenutku.",
+            "claimId": "ID zahtjeva u claims.",
+            "currency": "Valuta, kao troslovna oznaka poput EUR.",
+            "decidedAt": "Kada je zadnji put odobreno, odbijeno ili vraćeno (UTC).",
+            "file": "Gdje se izvorna datoteka računa nalazi unutar ove arhive.",
+            "fileName": "Naziv datoteke računa kakav je prenesen.",
+            "itemId": "ID troška u report_items.",
+            "mimeType": "Vrsta datoteke, na primjer application/pdf ili image/jpeg.",
+            "originalAmount": "Plaćeni iznos u izvornoj valuti.",
+            "originalCurrency": "Valuta u kojoj je plaćen iznos.",
+            "payrollRunId": "ID obračuna plaće.",
+            "payrollRunPeriodEnd": "Posljednji dan razdoblja obračuna plaće (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "Prvi dan razdoblja obračuna plaće (YYYY-MM-DD).",
+            "project": "Projekt na koji je trošak evidentiran.",
+            "reason": "Navedeni razlog.",
+            "reportId": "ID izvješća u izvješćima.",
+            "sizeBytes": "Veličina datoteke, u bajtovima.",
+            "submittedAt": "Kada je posljednji put podneseno (UTC).",
+            "tripEndDate": "Posljednji dan putovanja (YYYY-MM-DD).",
+            "tripStartDate": "Prvi dan putovanja (YYYY-MM-DD).",
+            "uploadedBy": "Tko je učitao račun."
+          }
+        }
+      },
+      "fieldsIntro": "Što sadrži svaki dio JSON datoteka i što svako polje znači. Prazno polje (null) nema vrijednost.",
+      "fieldsTitle": "Polja",
+      "filesTitle": "Datoteke",
+      "formatJson": "JSON datoteke potpuna su, strojno čitljiva kopija vaših podataka. CSV datoteke ponavljaju njihove tablice za proračunske tablice.",
+      "formatOtherPeople": "Osobe koje su poduzele radnje na vašim zapisima navedene su imenom. Osobe nad kojima ste vi poduzeli radnje prikazuju se samo kao anonimni ID.",
+      "formatsTitle": "Formati",
+      "formatTimes": "Vremenske točke zapisane su u UTC-u (ISO 8601, završavaju sa Z). Vremenski unosi također sadrže UTC pomak koji je bio na snazi na mjestu gdje su zabilježeni. Kalendarski dani zapisani su kao YYYY-MM-DD.",
+      "intro": "Ova arhiva sadrži osobne podatke koje {organization} čuva o {employee}, očitano {exportedAt} (UTC).",
+      "kindAdmin": "Administrator organizacije {organization} izradio je ovaj izvoz u vaše ime.",
+      "kindEmployee": "Sami ste zatražili ovaj izvoz.",
+      "manifest": "Navodi svaku datoteku u ovoj arhivi s njezinom veličinom i brojem zapisa.",
+      "retentionAuditLog": "Unosi u dnevnik revizije brišu se nakon {days} dana.",
+      "retentionCategoryNone": "{category}: nije postavljeno razdoblje čuvanja",
+      "retentionCategoryYears": "{years, plural, few {{category}: # godine} other {{category}: # godina} }",
+      "retentionDocuments": "Dokumenti u vašem osobnom dosjeu čuvaju se tijekom razdoblja koje je {organization} odredila za njihovu kategoriju. To se razdoblje računa od 1. siječnja nakon godine prestanka vašeg radnog odnosa ili godine dokumenta, ovisno o tome što je kasnije. Dokumenti iz kategorije bez određenog razdoblja čuvaju se dok ih netko ne izbriše.",
+      "retentionOther": "Osim ako gore nije drukčije navedeno, vaši ostali podaci čuvaju se dok ih {organization} ne izbriše ili dok se ne izbriše vaša evidencija zaposlenika.",
+      "retentionTitle": "Koliko se dugo čuvaju vaši podaci",
+      "rightsAccess": "dobiti pristup svojim osobnim podacima i njihovu kopiju (čl. 15. GDPR-a)",
+      "rightsComplaint": "podnijeti pritužbu nadzornom tijelu za zaštitu podataka (čl. 77. GDPR-a)",
+      "rightsContact": "Kako biste iskoristili ova prava, kontaktirajte {organization}. Primjenjuje se obavijest o privatnosti organizacije {organization} koja opisuje kako obrađuje vaše podatke.",
+      "rightsErasure": "brisanje svojih podataka (čl. 17. GDPR-a)",
+      "rightsIntro": "Prema Općoj uredbi o zaštiti podataka (GDPR) imate pravo:",
+      "rightsNotification": "biti obaviješteni o ispravcima, brisanjima i ograničenjima proslijeđenima primateljima vaših podataka (čl. 19. GDPR-a)",
+      "rightsObjection": "uložiti prigovor na obradu vaših podataka (čl. 21. GDPR-a)",
+      "rightsPortability": "primiti svoje podatke u strojno čitljivom formatu, kao što su JSON datoteke ove arhive, i poslati ih nekome drugome (čl. 20. GDPR-a)",
+      "rightsRectification": "zatražiti ispravak netočnih podataka i dopunu nepotpunih podataka (čl. 16. GDPR-a)",
+      "rightsRestriction": "zatražiti ograničenje obrade svojih podataka (čl. 18. GDPR-a)",
+      "rightsTitle": "Vaša prava",
+      "title": "Vaši osobni podaci od {organization}"
     }
   },
   "presence": {

@@ -28,7 +28,10 @@
         "contractHourly": "Orario",
         "contractHourlyDescription": "Retribuito in base alle ore lavorate",
         "contractType": "Tipo di contratto",
+        "contractTypeChangeLink": "Modifica del contratto e del modello di lavoro",
         "contractTypeDescription": "Determina come viene calcolata la retribuzione",
+        "contractTypeFromTerms": "Il tipo di contratto e la retribuzione derivano dalle condizioni contrattuali confermate e in vigore oggi.",
+        "contractTypeNoTerms": "Nessuna condizione confermata per oggi",
         "dayFriday": "Ven",
         "dayMonday": "Lun",
         "daySaturday": "Sab",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Elaborazione di pause e maggiorazioni",
           "clockRepair": "Riparazione timer",
           "dispatchDeparture": "Pianificazione dell'uscita",
+          "notifyDataExportReminder": "Promemoria per il download dei dati personali",
           "notifyDeputyRelease": "Notifica di sostituto non più disponibile",
           "notifyReview": "Notifica di revisione",
           "sessionRevocation": "Disconnessione della sessione"
@@ -352,6 +356,25 @@
           "through": "Fino al {date}",
           "title": "Saldo ore lavorative"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Disponibile fino al {date}",
+        "description": "Un file ZIP con tutte le informazioni conservate da questa organizzazione su questo dipendente, inclusi i dati non presenti nell'esportazione autonoma del dipendente. Se il dipendente è attualmente in organico, riceverà una notifica non appena il file sarà pronto. I file vengono eliminati dopo 7 giorni.",
+        "download": "Scarica",
+        "downloadFailed": "Impossibile avviare il download. Riprova.",
+        "listLabel": "Esportazioni amministrative precedenti",
+        "loadFailed": "Impossibile caricare le esportazioni precedenti.",
+        "ownRecord": "Non puoi esportare i tuoi dati da qui. Utilizza \"I miei dati\" nelle impostazioni del tuo account.",
+        "refusalInProgress": "Un'esportazione dei dati di questo dipendente è già in preparazione.",
+        "refusalStorage": "Lo spazio di archiviazione file non è ancora configurato per questa organizzazione.",
+        "request": "Richiedi esportazione",
+        "requested": "L'esportazione è in preparazione. Riceverai una notifica e un'email quando sarà pronta.",
+        "requestedAt": "Richiesta il {date}",
+        "requestFailed": "Impossibile avviare l'esportazione. Riprova.",
+        "statusFailed": "Non riuscita",
+        "statusPreparing": "In preparazione",
+        "statusReady": "Pronta",
+        "title": "Esportazione dati personali"
       },
       "tabs": {
         "employees": "Dipendenti",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Annullare questa modifica lavorativa? Verrà rimossa la modifica programmata o la bozza.",
       "cancelError": "Impossibile annullare la modifica alla cronologia lavorativa",
       "cancelSuccess": "Modifica alla cronologia lavorativa annullata",
+      "changeWage": {
+        "currencyHint": "Nella valuta delle condizioni in vigore",
+        "description": "Crea nuove condizioni a partire da questa data. Tipo di contratto, ore settimanali, modello di lavoro, criteri lavorativi e valuta vengono copiati dalle condizioni in vigore in tale data.",
+        "draftSuccess": "Modifica della retribuzione salvata come bozza",
+        "error": "Impossibile modificare la retribuzione",
+        "newWage": "Nuova retribuzione oraria",
+        "reason": "Motivo",
+        "reasonRequired": "Il motivo è obbligatorio",
+        "save": "Salva modifica retribuzione",
+        "saveAsDraft": "Salva come bozza",
+        "success": "Retribuzione modificata",
+        "title": "Modifica retribuzione",
+        "validFrom": "Valida dal",
+        "validFromRequired": "\"Valida dal\" è obbligatorio",
+        "wageInvalid": "La tariffa oraria deve essere un numero positivo"
+      },
       "confirmError": "Impossibile confermare la modifica alla cronologia lavorativa",
       "confirmSuccess": "Modifica alla cronologia lavorativa confermata",
       "contractType": "Tipo di contratto",
@@ -511,6 +550,8 @@
       },
       "timeline": "Cronologia",
       "title": "Contratto e modello di lavoro",
+      "wageHistoryMergeNote": "{count, plural, one {La cronologia delle retribuzioni è stata unita dalla cronologia delle vecchie tariffe il {date}; # modifica della tariffa è stata corretta.} other {La cronologia delle retribuzioni è stata unita dalla cronologia delle vecchie tariffe il {date}; # modifiche della tariffa sono state corrette.}}",
+      "wageHistoryMergeNoteDismiss": "Ignora",
       "weeklyHours": "Ore settimanali",
       "weeklyHoursValue": "{hours} / settimana",
       "workModel": "Modello di lavoro",
@@ -829,7 +870,8 @@
         "edit": "Modifica {title}",
         "expires": "Scade il {date}",
         "open": "Apri {title}",
-        "payPeriod": "Periodo di paga {period}"
+        "payPeriod": "Periodo di paga {period}",
+        "provesSkill": "Certifica {skill}"
       },
       "myDocuments": {
         "description": "Documenti del tuo fascicolo del personale condivisi con te dalla tua organizzazione.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Impossibile scollegare il certificato medico.",
         "unlinkFromAbsence": "Scollega {title} dal relativo congedo per malattia"
       },
+      "skillCertificates": {
+        "description": "Scegli la competenza di questo dipendente attestata da \"{title}\". La pianificazione mostrerà la presenza di un certificato registrato, mai il suo contenuto.",
+        "edit": "Scegli la competenza certificata da {title}",
+        "errors": {
+          "notCertificate": "Solo i certificati possono attestare una competenza.",
+          "notEmployeeSkill": "Scegli una delle competenze di questo dipendente.",
+          "undatedRequiresExpiry": "Questa competenza richiede una data di scadenza. Solo un certificato provvisto di data di scadenza può attestarla."
+        },
+        "loadFailed": "Impossibile caricare le competenze del dipendente.",
+        "needsExpiry": "Richiede una data di scadenza. Aggiungine prima una a questo certificato.",
+        "none": "Nessuna competenza",
+        "noSkills": "Questo dipendente non ha ancora alcuna competenza. Assegna le competenze nella pagina del dipendente.",
+        "save": "Salva",
+        "saved": "Competenza salvata",
+        "saveFailed": "Impossibile salvare la competenza del certificato.",
+        "title": "Competenza attestata da questo certificato"
+      },
       "tabs": {
         "access": "Accesso",
         "reminders": "Promemoria",
@@ -1021,23 +1080,6 @@
         "hint": "Un file ZIP con i documenti delle categorie che gestisci, suddivisi in una cartella per ciascuna categoria.",
         "sharedOnly": "Solo documenti condivisi"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Modifica tariffa",
-      "currentRate": "Tariffa attuale: {rate}",
-      "description": "La tariffa oraria cambia nel tempo",
-      "effectiveFrom": "In vigore dal",
-      "effectiveFromHelp": "Quando la nuova tariffa diventa effettiva",
-      "empty": "Nessuna cronologia delle tariffe disponibile",
-      "newHourlyRate": "Nuova tariffa oraria",
-      "reasonOptional": "Motivo (opzionale)",
-      "reasonPlaceholder": "ad es. Revisione annuale, Promozione, ecc.",
-      "title": "Cronologia tariffe",
-      "updateDescription": "Crea una nuova voce di tariffa. La tariffa corrente verrà chiusa automaticamente.",
-      "updateError": "Impossibile aggiornare la tariffa",
-      "updateRate": "Aggiorna tariffa",
-      "updateSuccess": "Tariffa aggiornata correttamente",
-      "updateTitle": "Aggiorna tariffa oraria"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Catalogo competenze",
       "catalogDescription": "Definisci le competenze che possono essere richieste per sottoaree e modelli di turno",
       "category": "Categoria",
+      "certificateOnFile": "Certificato archiviato",
       "confirmDelete": "Sei sicuro di voler eliminare questa competenza?",
       "confirmRemove": "Rimuovere \"{skillName}\" da questo dipendente?",
       "createError": "Impossibile creare la competenza",
@@ -1155,16 +1198,25 @@
       "deleteError": "Impossibile eliminare la competenza",
       "description": "Descrizione",
       "descriptionPlaceholder": "Descrizione facoltativa della competenza o certificazione",
+      "editExpiryDate": "Modifica data di scadenza",
+      "editExpiryDateDescription": "L'ultimo giorno di validità di {skillName}. I turni successivi a questo giorno la mostreranno come scaduta.",
+      "editExpiryDateFor": "Modifica data di scadenza di {skillName}",
       "editSkill": "Modifica competenza",
       "editSkillDescription": "Aggiorna i dettagli della competenza",
       "employeeSkills": "Competenze e qualifiche",
       "employeeSkillsDescription": "Certificazioni e competenze assegnate a questo dipendente",
+      "errors": {
+        "expiryDateSetByCertificate": "Un certificato di competenza nel fascicolo del personale imposta questa data. Modifica la data sul certificato."
+      },
       "expired": "Scaduto",
       "expiredOn": "Scaduto il {date}",
       "expiresOn": "Scade il {date}",
       "expiringSoon": "In scadenza",
       "expiry": "Monitoraggio scadenze",
       "expiryDate": "Data di scadenza",
+      "expiryDateFromCertificate": "Un certificato di competenza nel fascicolo del personale imposta questa data.",
+      "expiryDateUpdated": "Data di scadenza aggiornata",
+      "expiryDateUpdateError": "Impossibile aggiornare la data di scadenza",
       "expiryRequired": "Obbligatorio",
       "expiryRequiredHint": "Questa certificazione richiede una data di scadenza",
       "name": "Nome",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Crea la tua prima competenza per iniziare",
       "notes": "Note",
       "notesPlaceholder": "es. numero di certificato, data di formazione…",
+      "reminders": {
+        "intro": "Le competenze dei dipendenti con una data di scadenza inviano un promemoria entro il tempo di preavviso e un altro alla data di scadenza. Vengono avvisati il dipendente e i suoi responsabili, oppure i proprietari e gli amministratori se il dipendente non ha un responsabile. Il badge \"In scadenza\" utilizza lo stesso tempo di preavviso.",
+        "leadDays": "Preavviso promemoria competenza (giorni)",
+        "leadDaysDescription": "I giorni vengono conteggiati nel fuso orario dell'organizzazione. La modifica della data di scadenza di una competenza invia nuovamente entrambi i promemoria.",
+        "leadDaysInvalid": "Inserisci un tempo di preavviso compreso tra {min} e {max} giorni.",
+        "save": "Salva tempo di preavviso",
+        "saved": "Tempo di preavviso del promemoria salvato",
+        "saveFailed": "Impossibile salvare il tempo di preavviso del promemoria.",
+        "title": "Promemoria scadenza competenze"
+      },
       "removeError": "Impossibile rimuovere la competenza",
       "requiresExpiry": "Richiede data di scadenza",
       "requiresExpiryHint": "Abilita se questa certificazione necessita di rinnovo (es. Primo Soccorso)",

@@ -34,7 +34,7 @@
         "action": "Review billing settings",
         "body": "Your {planName} trial for {organizationName} ends on {trialEndsAt}.",
         "paymentMethod": "To keep Z8 running without interruption, add a payment method in billing settings.",
-        "subject": "Your Z8 trial ends in {daysRemaining, plural, one {# day} other {# days}}",
+        "subject": "{daysRemaining, plural, one {Your Z8 trial ends in # day} other {Your Z8 trial ends in # days}}",
         "subjectSoon": "Your Z8 trial ends soon",
         "title": "Your trial is ending"
       },

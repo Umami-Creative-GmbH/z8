@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Может взять любой",
       "assignTo": "Назначить",
+      "certificateOnFileFor": "Сертификат прикреплен: {skills}",
       "confirmDelete": "Подтвердить удаление",
       "created": "Смена создана",
       "createDescription": "Заполните данные новой смены",
@@ -118,6 +119,7 @@
       "updateShift": "Обновить смену"
     },
     "skills": {
+      "certificateOnFile": "Сертификат прикреплен",
       "expiredCertifications": "Истекшие сертификаты:",
       "expiredOn": "(Истекло {date})",
       "missingPreferred": "Отсутствуют желаемые навыки:",

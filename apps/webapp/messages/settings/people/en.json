@@ -28,7 +28,10 @@
         "contractHourly": "Hourly",
         "contractHourlyDescription": "Paid by hours worked",
         "contractType": "Contract Type",
+        "contractTypeChangeLink": "Change in Contract & Work Model",
         "contractTypeDescription": "Determines how compensation is calculated",
+        "contractTypeFromTerms": "Contract type and wage come from the confirmed employment terms in force today.",
+        "contractTypeNoTerms": "No confirmed terms today",
         "dayFriday": "Fri",
         "dayMonday": "Mon",
         "daySaturday": "Sat",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Break and surcharge processing",
           "clockRepair": "Timer repair",
           "dispatchDeparture": "Departure scheduling",
+          "notifyDataExportReminder": "Personal data download reminder",
           "notifyDeputyRelease": "Deputy no longer available notification",
           "notifyReview": "Review notification",
           "sessionRevocation": "Session sign-out"
@@ -352,6 +356,25 @@
           "through": "Through {date}",
           "title": "Work balance"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Available until {date}",
+        "description": "A ZIP file with everything this organization keeps about this employee, including data the employee's own export leaves out. A current employee is notified when it is ready. Files are deleted after 7 days.",
+        "download": "Download",
+        "downloadFailed": "The download could not be started. Please try again.",
+        "listLabel": "Past admin exports",
+        "loadFailed": "Past exports could not be loaded.",
+        "ownRecord": "You can't export your own data here. Use My data in your account settings.",
+        "refusalInProgress": "An export of this employee's data is already being prepared.",
+        "refusalStorage": "File storage is not set up for this organization yet.",
+        "request": "Request export",
+        "requested": "The export is being prepared. You'll get a notification and an email when it is ready.",
+        "requestedAt": "Requested {date}",
+        "requestFailed": "The export could not be started. Please try again.",
+        "statusFailed": "Failed",
+        "statusPreparing": "Being prepared",
+        "statusReady": "Ready",
+        "title": "Personal data export"
       },
       "tabs": {
         "employees": "Employees",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Cancel this employment change? This removes the scheduled or draft employment change.",
       "cancelError": "Failed to cancel employment history change",
       "cancelSuccess": "Employment history change canceled",
+      "changeWage": {
+        "currencyHint": "In the currency of the terms in force",
+        "description": "Creates new terms from this date. Contract type, weekly hours, work model, work policy and currency are copied from the terms in force on that date.",
+        "draftSuccess": "Wage change saved as a draft",
+        "error": "Failed to change the wage",
+        "newWage": "New hourly wage",
+        "reason": "Reason",
+        "reasonRequired": "Reason is required",
+        "save": "Save wage change",
+        "saveAsDraft": "Save as draft",
+        "success": "Wage changed",
+        "title": "Change wage",
+        "validFrom": "Valid from",
+        "validFromRequired": "Valid from is required",
+        "wageInvalid": "Hourly rate must be a positive number"
+      },
       "confirmError": "Failed to confirm employment history change",
       "confirmSuccess": "Employment history change confirmed",
       "contractType": "Contract Type",
@@ -511,6 +550,8 @@
       },
       "timeline": "Timeline",
       "title": "Contract & Work Model",
+      "wageHistoryMergeNote": "{count, plural, one {Wage history was merged from the old rate history on {date}; # rate change was adjusted.} other {Wage history was merged from the old rate history on {date}; # rate changes were adjusted.}}",
+      "wageHistoryMergeNoteDismiss": "Dismiss",
       "weeklyHours": "Weekly Hours",
       "weeklyHoursValue": "{hours} / week",
       "workModel": "Work Model",
@@ -829,7 +870,8 @@
         "edit": "Edit {title}",
         "expires": "Expires {date}",
         "open": "Open {title}",
-        "payPeriod": "Pay period {period}"
+        "payPeriod": "Pay period {period}",
+        "provesSkill": "Proves {skill}"
       },
       "myDocuments": {
         "description": "Documents from your personnel file that your organization shared with you.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "The sick note could not be unlinked.",
         "unlinkFromAbsence": "Unlink {title} from its sick leave"
       },
+      "skillCertificates": {
+        "description": "Choose the skill of this employee that \"{title}\" proves. Scheduling then shows that a certificate is on file, never its content.",
+        "edit": "Choose the skill {title} proves",
+        "errors": {
+          "notCertificate": "Only certificates can prove a skill.",
+          "notEmployeeSkill": "Choose one of this employee's skills.",
+          "undatedRequiresExpiry": "This skill requires an expiry date. Only a certificate with an expiry date can prove it."
+        },
+        "loadFailed": "The employee's skills could not be loaded.",
+        "needsExpiry": "Requires an expiry date. Add one to this certificate first.",
+        "none": "No skill",
+        "noSkills": "This employee has no skills yet. Assign skills on the employee's page.",
+        "save": "Save",
+        "saved": "Skill saved",
+        "saveFailed": "The skill of the certificate could not be saved.",
+        "title": "Skill this certificate proves"
+      },
       "tabs": {
         "access": "Access",
         "reminders": "Reminders",
@@ -1021,23 +1080,6 @@
         "hint": "One ZIP with the documents of the categories you manage, sorted into a folder per category.",
         "sharedOnly": "Shared documents only"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Change Rate",
-      "currentRate": "Current rate: {rate}",
-      "description": "Hourly rate changes over time",
-      "effectiveFrom": "Effective From",
-      "effectiveFromHelp": "When the new rate takes effect",
-      "empty": "No rate history available",
-      "newHourlyRate": "New Hourly Rate",
-      "reasonOptional": "Reason (Optional)",
-      "reasonPlaceholder": "e.g., Annual review, Promotion, etc.",
-      "title": "Rate History",
-      "updateDescription": "Create a new rate entry. The current rate will be closed automatically.",
-      "updateError": "Failed to update rate",
-      "updateRate": "Update Rate",
-      "updateSuccess": "Rate updated successfully",
-      "updateTitle": "Update Hourly Rate"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Skill Catalog",
       "catalogDescription": "Define skills that can be required for subareas and shift templates",
       "category": "Category",
+      "certificateOnFile": "Certificate on file",
       "confirmDelete": "Are you sure you want to delete this skill?",
       "confirmRemove": "Remove \"{skillName}\" from this employee?",
       "createError": "Failed to create skill",
@@ -1155,16 +1198,25 @@
       "deleteError": "Failed to delete skill",
       "description": "Description",
       "descriptionPlaceholder": "Optional description of the skill or certification",
+      "editExpiryDate": "Edit expiry date",
+      "editExpiryDateDescription": "The last day {skillName} is valid. Shifts after this day show it as expired.",
+      "editExpiryDateFor": "Edit expiry date of {skillName}",
       "editSkill": "Edit Skill",
       "editSkillDescription": "Update the skill details",
       "employeeSkills": "Skills & Qualifications",
       "employeeSkillsDescription": "Certifications and skills assigned to this employee",
+      "errors": {
+        "expiryDateSetByCertificate": "A skill certificate in the personnel file sets this date. Change the date on the certificate."
+      },
       "expired": "Expired",
       "expiredOn": "Expired on {date}",
       "expiresOn": "Expires {date}",
       "expiringSoon": "Expiring Soon",
       "expiry": "Expiry Tracking",
       "expiryDate": "Expiry Date",
+      "expiryDateFromCertificate": "A skill certificate in the personnel file sets this date.",
+      "expiryDateUpdated": "Expiry date updated",
+      "expiryDateUpdateError": "Failed to update the expiry date",
       "expiryRequired": "Required",
       "expiryRequiredHint": "This certification requires an expiry date",
       "name": "Name",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Create your first skill to get started",
       "notes": "Notes",
       "notesPlaceholder": "e.g., Certificate number, training date…",
+      "reminders": {
+        "intro": "Employee skills with an expiry date send a reminder within the lead time and another on the expiry date. The employee and their managers are reminded, or owners and admins when the employee has no manager. The \"Expiring soon\" badge uses the same lead time.",
+        "leadDays": "Skill reminder lead time (days)",
+        "leadDaysDescription": "Days are counted in the organization's timezone. Changing a skill's expiry date sends both reminders again.",
+        "leadDaysInvalid": "Enter a lead time between {min} and {max} days.",
+        "save": "Save lead time",
+        "saved": "Reminder lead time saved",
+        "saveFailed": "The reminder lead time could not be saved.",
+        "title": "Skill expiry reminders"
+      },
       "removeError": "Failed to remove skill",
       "requiresExpiry": "Requires Expiry Date",
       "requiresExpiryHint": "Enable if this certification needs renewal (e.g., First Aid)",

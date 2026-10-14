@@ -316,7 +316,7 @@
         "directHint": "Esta alteração é aplicada imediatamente.",
         "edit": "Editar registro",
         "invalidRange": "A saída deve ser após a entrada.",
-        "noChanges": "Altere a data, o horário ou o local de trabalho primeiro.",
+        "noChangesWithVehicle": "Altere primeiro a data, o horário, o local de trabalho ou o uso do veículo.",
         "noteLabel": "Observação (opcional)",
         "notePlaceholder": "Adicione uma observação sobre esta alteração…",
         "onBehalfHint": "Esta alteração segue o fluxo de aprovação do funcionário. Se você for o aprovador dele, ela será aplicada imediatamente.",
@@ -420,7 +420,11 @@
       "splitAt": "Dividir às",
       "splitDate": "Data de divisão",
       "success": "Período de trabalho dividido com sucesso",
-      "title": "Dividir período de trabalho"
+      "title": "Dividir período de trabalho",
+      "vehicleFirstDistance": "Quilômetros no primeiro período (opcional)",
+      "vehicleFirstDistanceHint": "De {distance} km percorridos; o restante vai para o segundo período. Se deixado em branco, tudo fica no primeiro período.",
+      "vehicleReading": "Leitura do odômetro na divisão (opcional)",
+      "vehicleReadingHint": "Finaliza as leituras do primeiro período e inicia as do segundo ({start} a {end} km). Deixe em branco se não tiver realizado a leitura."
     },
     "status": {
       "approved": "Aprovado",

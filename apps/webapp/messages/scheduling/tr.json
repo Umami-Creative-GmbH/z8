@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Herkes alabilir",
       "assignTo": "Atanacak Kişi",
+      "certificateOnFileFor": "Kayıtlı sertifika: {skills}",
       "confirmDelete": "Silmeyi Onayla",
       "created": "Vardiya oluşturuldu",
       "createDescription": "Yeni vardiya için detayları doldurun",
@@ -118,6 +119,7 @@
       "updateShift": "Vardiyayı Güncelle"
     },
     "skills": {
+      "certificateOnFile": "Kayıtlı sertifika",
       "expiredCertifications": "Süresi Dolan Sertifikalar:",
       "expiredOn": "(Süresi dolma tarihi: {date})",
       "missingPreferred": "Eksik Tercih Edilen Beceriler:",

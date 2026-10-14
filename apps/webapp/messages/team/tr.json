@@ -108,6 +108,36 @@
       "noBalance": "Bakiye yok"
     },
     "description": "Doğrudan yönettiğiniz çalışanları görüntüleyin ve yönetin",
+    "driving": {
+      "columns": {
+        "calendar": "Takvim",
+        "date": "Tarih",
+        "employee": "Çalışan",
+        "missing": "Eksik",
+        "time": "Kaydedilen yerel saat"
+      },
+      "count": "{count, plural, other {# çalışma döneminin sürüş ayrıntıları eksik.} }",
+      "descriptionAll": "Araç kullanımı beklenmesine rağmen araç veya kilometre sayacı değeri eksik olan çalışma dönemleri. Ayrıntılar tamamlanana kadar listede kalırlar.",
+      "descriptionManaged": "Yönettiğiniz çalışanların araç kullanımı beklenmesine rağmen araç veya kilometre sayacı değeri eksik olan çalışma dönemleri. Ayrıntılar tamamlanana kadar listede kalırlar.",
+      "empty": "Hiçbir çalışmanın sürüş ayrıntıları eksik değil.",
+      "filters": {
+        "allEmployees": "Tüm çalışanlar",
+        "allTeams": "Tüm ekipler",
+        "employee": "Çalışan",
+        "team": "Ekip"
+      },
+      "loading": "Sürüş ayrıntıları yükleniyor",
+      "missing": {
+        "endReading": "Bitiş değeri yok",
+        "readings": "Kilometre sayacı değeri yok",
+        "startReading": "Başlangıç değeri yok",
+        "vehicle": "Araç yok"
+      },
+      "openCalendar": "Takvim",
+      "openCalendarOf": "{name} adlı kullanıcının takvimini aç",
+      "title": "Sürüş ayrıntıları eksik",
+      "truncated": "En yeni {count} çalışma dönemi gösteriliyor. Kalanları görmek için ekibe veya çalışana göre filtreleyin."
+    },
     "empty": {
       "action": "Çalışan Ayarlarına Git",
       "description": "Yöneticisi olduğunuz çalışanlar burada görünecektir. Ekip atamalarını çalışan ayarlarından yönetebilirsiniz.",

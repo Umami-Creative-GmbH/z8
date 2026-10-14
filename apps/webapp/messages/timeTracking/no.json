@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Du er for øyeblikket stemplet inn",
     "deadline": "Frist",
+    "drivingDetailsMissing": {
+      "description": "Organisasjonen din forventer kjøretøy og kilometerstand for arbeidet ditt. Legg dem til i disse arbeidsperiodene.",
+      "missing": {
+        "endReading": "Ingen sluttstand",
+        "readings": "Ingen kilometerstander",
+        "startReading": "Ingen startstand",
+        "vehicle": "Ingen kjøretøy"
+      },
+      "open": "Åpne i kalender",
+      "title": "Kjøredetaljer mangler",
+      "truncated": "Bare de nyeste arbeidsperiodene vises. Fullfør disse for å se resten."
+    },
     "errors": {
       "alreadyClockedIn": "Du er allerede stemplet inn",
       "appendReviewRequired": "Innstempling krever en gjennomgang av tidshistorikken din",
@@ -214,7 +226,10 @@
         "onBreak": "På pause siden {time}"
       },
       "unreachableDescription": "Kiosken får ikke kontakt med serveren. Sjekk nettverkstilkoblingen; stempling fungerer bare på nett.",
-      "unreachableTitle": "Kiosk frakoblet"
+      "unreachableTitle": "Kiosk frakoblet",
+      "vehicle": {
+        "back": "Tilbake"
+      }
     },
     "manualEntry": {
       "addButton": "Legg til manuell registrering",
@@ -386,6 +401,7 @@
       "corrected": "Korrigert",
       "date": "Dato",
       "description": "Beskrivelse",
+      "drivingDetailsMissing": "Kjøredetaljer mangler",
       "duration": "Varighet",
       "emptyState": "Ingen timeregistreringer funnet for denne uken.",
       "recordedLocalTime": "Registrert lokal tid",
@@ -422,6 +438,58 @@
     "title": "Tidsregistrering",
     "unknownCategory": "Ukjent kategori",
     "unknownProject": "Ukjent prosjekt",
+    "vehicleUse": {
+      "archived": "arkivert",
+      "breakReading": "Kilometerstand ved pausen (km)",
+      "breakReadingHint": "Valgfritt. Den avslutter avlesningen for dette arbeidet og starter neste.",
+      "changeLive": "Endre",
+      "derivedDistance": "Kjørt distanse: {distance} km",
+      "distanceKm": "Kjørt distanse (km)",
+      "distanceText": "{distance} km kjørt",
+      "endKm": "Sluttstand (km)",
+      "expectedHint": "Organisasjonen din forventer at du registrerer kjøretøyet du kjørte og kilometerstanden.",
+      "expenseReport": {
+        "action": "Legg til i utgiftsrapport",
+        "add": "Legg til {distance} km",
+        "added": "I en utgiftsrapport",
+        "alreadyAdded": "Distansen for dette arbeidet er allerede i en utgiftsrapport.",
+        "chooseReport": "Legg til i hvilken utgiftsrapport?",
+        "failed": "Distansen kunne ikke legges til i utgiftsrapporten. Prøv på nytt.",
+        "newReport": "Ny kjørerapport",
+        "routeHint": "Dato og distanse fylles ut fra dette arbeidet. Du legger inn ruten i rapporten.",
+        "untitledTrip": "Tur uten tittel"
+      },
+      "liveChanged": "Kjøretøybruk endret",
+      "liveChangeFailed": "Kjøretøybruken kunne ikke endres",
+      "notRecorded": "Kjøretøybruk ble ikke registrert",
+      "notSentOffline": "Det kunne ikke lagres med denne frakoblede stemplingshendelsen. Legg det til i arbeidsperioden når du er på nett.",
+      "noVehicle": "Ingen kjøretøy",
+      "ownVehicle": "Eget kjøretøy",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Dette kjøretøyet er arkivert og kan ikke lenger velges.",
+        "distanceClaimed": "Denne arbeidsperiodens distanse er registrert på en utgiftspost. Fjern posten fra utgiftsrapporten før du deler arbeidsperioden.",
+        "endBeforeStart": "Sluttavlesningen kan ikke være lavere enn startavlesningen.",
+        "invalidDistance": "Angi kjørelengde i hele kilometer.",
+        "invalidReading": "Angi kilometeravlesninger i hele kilometer.",
+        "invalidVehicle": "Velg et organisasjonskjøretøy eller eget kjøretøy.",
+        "notFound": "Kjøretøyet ble ikke funnet.",
+        "off": "Kjøretøybruk registreres ikke for denne ansatte.",
+        "splitOutOfRange": "Kilometerne ved delingen må ligge innenfor arbeidsperiodens kilometer."
+      },
+      "startKm": "Startavlesning (km)",
+      "title": "Kjøretøybruk",
+      "unknownVehicle": "Ukjent kjøretøy (utilgjengelig)",
+      "vehicle": "Kjøretøy",
+      "warning": {
+        "distanceAboveLimit": "{distance} km er mer enn {limit} km i én arbeidsperiode.",
+        "onOtherLiveWork": "Dette kjøretøyet er allerede registrert på en annen ansatts pågående arbeid.",
+        "speedAboveLimit": "Den kjørte distansen tilsier et gjennomsnitt på {speed} km/t over denne arbeidsperioden, noe som er mer enn {limit} km/t.",
+        "startBelowLastEnd": "Startavlesningen er lavere enn dette kjøretøyets sist registrerte sluttavlesning ({lastEndKm} km).",
+        "title": "Vennligst kontroller kjøretøybruken"
+      }
+    },
     "welcomeBack": "Velkommen tilbake, {name}",
     "workCategory": "Arbeidskategori",
     "workLocation": "Arbeidssted",

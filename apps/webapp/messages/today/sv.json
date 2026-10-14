@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Idag",
       "description": "Granska de ärenden som kräver åtgärd idag och gå sedan direkt vidare till rätt arbetsflöde.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Arbetsperioder för dina medarbetare som saknar ett fordon eller en mätarställning.",
+          "title": "Körningsuppgifter saknas ({count})"
+        }
+      },
       "needsAction": {
         "description": "Börja här för den mest brådskande operativa uppföljningen.",
         "empty": "Allt är klart. Ingen chefsåtgärd behövs just nu.",

@@ -28,7 +28,10 @@
         "contractHourly": "Por hora",
         "contractHourlyDescription": "Pago por horas trabalhadas",
         "contractType": "Tipo de contrato",
+        "contractTypeChangeLink": "Alteração no contrato e modelo de trabalho",
         "contractTypeDescription": "Determina como a remuneração é calculada",
+        "contractTypeFromTerms": "O tipo de contrato e o salário são provenientes dos termos de emprego confirmados e vigentes hoje.",
+        "contractTypeNoTerms": "Nenhum termo confirmado hoje",
         "dayFriday": "Sex",
         "dayMonday": "Seg",
         "daySaturday": "Sáb",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Processamento de pausas e adicionais",
           "clockRepair": "Reparo do temporizador",
           "dispatchDeparture": "Agendamento de desligamento",
+          "notifyDataExportReminder": "Lembrete de download de dados pessoais",
           "notifyDeputyRelease": "Notificação de substituto não mais disponível",
           "notifyReview": "Notificação de revisão",
           "sessionRevocation": "Encerramento de sessão"
@@ -352,6 +356,25 @@
           "through": "Até {date}",
           "title": "Saldo de trabalho"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Disponível até {date}",
+        "description": "Um arquivo ZIP com tudo o que esta organização mantém sobre este funcionário, incluindo dados que a própria exportação do funcionário omite. Um funcionário ativo é notificado quando estiver pronto. Os arquivos são excluídos após 7 dias.",
+        "download": "Baixar",
+        "downloadFailed": "Não foi possível iniciar o download. Tente novamente.",
+        "listLabel": "Exportações administrativas anteriores",
+        "loadFailed": "Não foi possível carregar as exportações anteriores.",
+        "ownRecord": "Você não pode exportar seus próprios dados aqui. Use \"Meus dados\" nas configurações da sua conta.",
+        "refusalInProgress": "Uma exportação dos dados deste funcionário já está sendo preparada.",
+        "refusalStorage": "O armazenamento de arquivos ainda não está configurado para esta organização.",
+        "request": "Solicitar exportação",
+        "requested": "A exportação está sendo preparada. Você receberá uma notificação e um e-mail quando estiver pronta.",
+        "requestedAt": "Solicitado em {date}",
+        "requestFailed": "Não foi possível iniciar a exportação. Tente novamente.",
+        "statusFailed": "Falhou",
+        "statusPreparing": "Em preparação",
+        "statusReady": "Pronto",
+        "title": "Exportação de dados pessoais"
       },
       "tabs": {
         "employees": "Funcionários",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Cancelar esta alteração de emprego? Isso removerá a alteração de emprego agendada ou em rascunho.",
       "cancelError": "Falha ao cancelar alteração no histórico de emprego",
       "cancelSuccess": "Alteração no histórico de emprego cancelada",
+      "changeWage": {
+        "currencyHint": "Na moeda dos termos em vigor",
+        "description": "Cria novos termos a partir desta data. Tipo de contrato, horas semanais, modelo de trabalho, política de trabalho e moeda são copiados dos termos em vigor nessa data.",
+        "draftSuccess": "Alteração salarial salva como rascunho",
+        "error": "Falha ao alterar o salário",
+        "newWage": "Novo salário por hora",
+        "reason": "Motivo",
+        "reasonRequired": "O motivo é obrigatório",
+        "save": "Salvar alteração salarial",
+        "saveAsDraft": "Salvar como rascunho",
+        "success": "Salário alterado",
+        "title": "Alterar salário",
+        "validFrom": "Válido a partir de",
+        "validFromRequired": "A data inicial de validade é obrigatória",
+        "wageInvalid": "O valor por hora deve ser um número positivo"
+      },
       "confirmError": "Falha ao confirmar alteração no histórico de emprego",
       "confirmSuccess": "Alteração no histórico de emprego confirmada",
       "contractType": "Tipo de Contrato",
@@ -511,6 +550,8 @@
       },
       "timeline": "Linha do tempo",
       "title": "Contrato e Modelo de Trabalho",
+      "wageHistoryMergeNote": "{count, plural, one {O histórico salarial foi mesclado a partir do histórico antigo em {date}; # alteração foi ajustada.} other {O histórico salarial foi mesclado a partir do histórico antigo em {date}; # alterações foram ajustadas.}}",
+      "wageHistoryMergeNoteDismiss": "Dispensar",
       "weeklyHours": "Horas Semanais",
       "weeklyHoursValue": "{hours} / semana",
       "workModel": "Modelo de Trabalho",
@@ -829,7 +870,8 @@
         "edit": "Editar {title}",
         "expires": "Expira em {date}",
         "open": "Abrir {title}",
-        "payPeriod": "Período de pagamento {period}"
+        "payPeriod": "Período de pagamento {period}",
+        "provesSkill": "Comprova {skill}"
       },
       "myDocuments": {
         "description": "Documentos do seu dossiê de pessoal que a sua organização compartilhou com você.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Não foi possível desvincular o atestado médico.",
         "unlinkFromAbsence": "Desvincular {title} da sua licença médica"
       },
+      "skillCertificates": {
+        "description": "Escolha a habilidade deste funcionário que \"{title}\" comprova. A escala mostrará que há um certificado registrado, nunca o seu conteúdo.",
+        "edit": "Escolha a habilidade que {title} comprova",
+        "errors": {
+          "notCertificate": "Apenas certificados podem comprovar uma habilidade.",
+          "notEmployeeSkill": "Escolha uma das habilidades deste funcionário.",
+          "undatedRequiresExpiry": "Esta habilidade requer uma data de validade. Apenas um certificado com data de validade pode comprová-la."
+        },
+        "loadFailed": "Não foi possível carregar as habilidades do funcionário.",
+        "needsExpiry": "Requer uma data de validade. Adicione uma a este certificado primeiro.",
+        "none": "Nenhuma habilidade",
+        "noSkills": "Este funcionário ainda não possui habilidades. Atribua habilidades na página do funcionário.",
+        "save": "Salvar",
+        "saved": "Habilidade salva",
+        "saveFailed": "Não foi possível salvar a habilidade do certificado.",
+        "title": "Habilidade comprovada por este certificado"
+      },
       "tabs": {
         "access": "Acesso",
         "reminders": "Lembretes",
@@ -1021,23 +1080,6 @@
         "hint": "Um ficheiro ZIP com os documentos das categorias que gere, organizados numa pasta por categoria.",
         "sharedOnly": "Apenas documentos partilhados"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Alterar taxa",
-      "currentRate": "Taxa atual: {rate}",
-      "description": "A taxa horária muda ao longo do tempo",
-      "effectiveFrom": "Efetivo a partir de",
-      "effectiveFromHelp": "Quando a nova taxa entra em vigor",
-      "empty": "Nenhum histórico de taxa disponível",
-      "newHourlyRate": "Nova taxa horária",
-      "reasonOptional": "Motivo (opcional)",
-      "reasonPlaceholder": "por exemplo, Avaliação anual, Promoção, etc.",
-      "title": "Histórico de taxas",
-      "updateDescription": "Criar uma nova entrada de taxa. A taxa atual será encerrada automaticamente.",
-      "updateError": "Falha ao atualizar a taxa",
-      "updateRate": "Atualizar taxa",
-      "updateSuccess": "Taxa atualizada com sucesso",
-      "updateTitle": "Atualizar taxa horária"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Catálogo de Habilidades",
       "catalogDescription": "Defina habilidades que podem ser exigidas para subáreas e modelos de turno",
       "category": "Categoria",
+      "certificateOnFile": "Certificado registrado",
       "confirmDelete": "Tem certeza de que deseja excluir esta habilidade?",
       "confirmRemove": "Remover \"{skillName}\" deste funcionário?",
       "createError": "Falha ao criar habilidade",
@@ -1155,16 +1198,25 @@
       "deleteError": "Falha ao excluir habilidade",
       "description": "Descrição",
       "descriptionPlaceholder": "Descrição opcional da habilidade ou certificação",
+      "editExpiryDate": "Editar data de expiração",
+      "editExpiryDateDescription": "O último dia em que {skillName} é válida. Os turnos após esse dia a mostrarão como expirada.",
+      "editExpiryDateFor": "Editar data de expiração de {skillName}",
       "editSkill": "Editar Habilidade",
       "editSkillDescription": "Atualize os detalhes da habilidade",
       "employeeSkills": "Habilidades e Qualificações",
       "employeeSkillsDescription": "Certificações e habilidades atribuídas a este funcionário",
+      "errors": {
+        "expiryDateSetByCertificate": "Um certificado de habilidade no dossiê do funcionário define esta data. Altere a data no certificado."
+      },
       "expired": "Expirado",
       "expiredOn": "Expirou em {date}",
       "expiresOn": "Expira em {date}",
       "expiringSoon": "Expirando em breve",
       "expiry": "Rastreamento de Expiração",
       "expiryDate": "Data de Expiração",
+      "expiryDateFromCertificate": "Um certificado de habilidade no dossiê do funcionário define esta data.",
+      "expiryDateUpdated": "Data de expiração atualizada",
+      "expiryDateUpdateError": "Falha ao atualizar a data de expiração",
       "expiryRequired": "Obrigatório",
       "expiryRequiredHint": "Esta certificação requer uma data de expiração",
       "name": "Nome",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Crie sua primeira competência para começar",
       "notes": "Notas",
       "notesPlaceholder": "ex.: Número do certificado, data de treinamento…",
+      "reminders": {
+        "intro": "Habilidades de funcionários com data de validade enviam um lembrete dentro do prazo de antecedência e outro na data de validade. O funcionário e seus gestores são avisados, ou proprietários e administradores quando o funcionário não tem gestor. O selo \"Expirando em breve\" usa o mesmo prazo de antecedência.",
+        "leadDays": "Prazo de antecedência do lembrete de habilidade (dias)",
+        "leadDaysDescription": "Os dias são contados no fuso horário da organização. Alterar a data de validade de uma habilidade enviará ambos os lembretes novamente.",
+        "leadDaysInvalid": "Insira um prazo de antecedência entre {min} e {max} dias.",
+        "save": "Salvar prazo de antecedência",
+        "saved": "Prazo de antecedência do lembrete salvo",
+        "saveFailed": "Não foi possível salvar o prazo de antecedência do lembrete.",
+        "title": "Lembretes de expiração de habilidade"
+      },
       "removeError": "Falha ao remover competência",
       "requiresExpiry": "Requer data de validade",
       "requiresExpiryHint": "Ative se esta certificação precisar de renovação (ex.: Primeiros Socorros)",

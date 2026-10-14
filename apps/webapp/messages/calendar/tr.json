@@ -316,7 +316,7 @@
         "directHint": "Bu değişiklik hemen uygulanır.",
         "edit": "Kaydı düzenle",
         "invalidRange": "Çıkış saati, giriş saatinden sonra olmalıdır.",
-        "noChanges": "Önce tarihi, saati veya çalışma konumunu değiştirin.",
+        "noChangesWithVehicle": "Önce tarihi, saati, çalışma konumunu veya araç kullanımını değiştirin.",
         "noteLabel": "Not (isteğe bağlı)",
         "notePlaceholder": "Bu değişiklikle ilgili bir not ekleyin…",
         "onBehalfHint": "Bu değişiklik çalışanın onay zincirini takip eder. Onaylayan kişi sizseniz hemen uygulanır.",
@@ -420,7 +420,11 @@
       "splitAt": "Bölünme zamanı",
       "splitDate": "Bölünmüş tarih",
       "success": "Çalışma dönemi başarıyla bölündü",
-      "title": "Çalışma Dönemini Böl"
+      "title": "Çalışma Dönemini Böl",
+      "vehicleFirstDistance": "İlk dönemdeki kilometre (isteğe bağlı)",
+      "vehicleFirstDistanceHint": "Katedilen {distance} km içinden; kalanı ikinci döneme aktarılır. Boş bırakılırsa tamamı ilk dönemde kalır.",
+      "vehicleReading": "Bölünme anındaki kilometre sayacı göstergesi (isteğe bağlı)",
+      "vehicleReadingHint": "İlk dönemin göstergelerini sonlandırır ve ikincininkini başlatır ({start} - {end} km). Okumadıysanız boş bırakın."
     },
     "status": {
       "approved": "Onaylandı",

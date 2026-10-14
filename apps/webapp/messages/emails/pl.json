@@ -1,3 +1,218 @@
 {
-  "emails": {}
+  "emails": {
+    "billing": {
+      "invoiceReady": {
+        "action": "Otwórz rozliczenia",
+        "amountLabel": "Kwota do zapłaty",
+        "body": "Faktura {invoiceNumber} dla {organizationName} jest gotowa.",
+        "dueDateLabel": "Termin płatności",
+        "subject": "Twoja faktura Z8 {invoiceNumber} jest gotowa",
+        "title": "Twoja faktura jest gotowa"
+      },
+      "paymentFailed": {
+        "action": "Zaktualizuj metodę płatności",
+        "body": "Nie udało się pobrać kwoty {invoiceAmount} dla {organizationName}.",
+        "retry": "Zaktualizuj metodę płatności przed kolejną próbą w dniu {paymentRetryDate}, aby uniknąć przerw w świadczeniu usług.",
+        "subject": "Wymagane działanie: płatność za Z8 nie powiodła się",
+        "title": "Płatność nie powiodła się"
+      },
+      "subscriptionPaused": {
+        "action": "Zarządzaj rozliczeniami",
+        "body": "Subskrypcja planu {planName} dla {organizationName} została wstrzymana.",
+        "limits": "Dane rejestracji czasu pracy pozostają dostępne, ale funkcje płatnego planu mogą być ograniczone do momentu wznowienia rozliczeń.",
+        "subject": "Twoja subskrypcja Z8 została wstrzymana",
+        "title": "Twoja subskrypcja została wstrzymana"
+      },
+      "subscriptionResumed": {
+        "action": "Wyświetl szczegóły rozliczeń",
+        "active": "Płatne funkcje Z8 są ponownie aktywne.",
+        "body": "Subskrypcja planu {planName} dla {organizationName} została wznowiona w dniu {resumeDate}.",
+        "subject": "Twoja subskrypcja Z8 została wznowiona",
+        "title": "Twoja subskrypcja została wznowiona"
+      },
+      "trialEnding": {
+        "action": "Przejrzyj ustawienia rozliczeń",
+        "body": "Twój okres próbny planu {planName} dla {organizationName} kończy się {trialEndsAt}.",
+        "paymentMethod": "Aby korzystać z Z8 bez zakłóceń, dodaj metodę płatności w ustawieniach rozliczeń.",
+        "subject": "{daysRemaining, plural, one {Twój okres próbny Z8 kończy się za # dzień} other {Twój okres próbny Z8 kończy się za # dni} }",
+        "subjectSoon": "Twój okres próbny Z8 wkrótce się kończy",
+        "title": "Twój okres próbny dobiega końca"
+      },
+      "values": {
+        "noDueDate": "nie ustawiono",
+        "retrySoon": "wkrótce",
+        "yourOrganization": "twoja organizacja"
+      }
+    },
+    "common": {
+      "greeting": "Cześć {name},"
+    },
+    "details": {
+      "category": "Kategoria",
+      "correctedTimes": "Skorygowane godziny",
+      "date": "Data",
+      "dates": "Daty",
+      "days": "Dni",
+      "notes": "Notatki",
+      "originalTimes": "Pierwotne godziny",
+      "range": "{start} – {end}",
+      "reason": "Powód"
+    },
+    "export": {
+      "categories": {
+        "absences": "Nieobecności",
+        "auditLogs": "Dzienniki audytu",
+        "balanceAdjustments": "Korekty salda czasu pracy",
+        "customers": "Klienci",
+        "employees": "Pracownicy",
+        "holidays": "Dni wolne",
+        "projects": "Projekty",
+        "schedules": "Harmonogramy pracy",
+        "shifts": "Zmiany",
+        "teams": "Zespoły",
+        "timeEntries": "Rejestracja czasu pracy",
+        "vacation": "Zasady urlopowe",
+        "workPeriods": "Okresy pracy"
+      },
+      "organization": "Organizacja",
+      "values": {
+        "yourOrganization": "Twoja organizacja"
+      }
+    },
+    "exportFailed": {
+      "action": "Spróbuj ponownie",
+      "body": "Niestety nie udało się ukończyć eksportu danych dla organizacji {organizationName}.",
+      "categories": "Żądane dane",
+      "error": "Błąd",
+      "note": "Jeśli ten błąd będzie się powtarzać, skontaktuj się z pomocą techniczną, podając powyższy komunikat o błędzie. Pomóc może również eksportowanie mniejszej liczby kategorii danych jednocześnie.",
+      "title": "Eksport danych nie powiódł się",
+      "unknownError": "Nieznany błąd"
+    },
+    "exportReady": {
+      "action": "Otwórz historię eksportu",
+      "body": "Eksport danych dla organizacji {organizationName} został ukończony. Możesz go pobrać z historii eksportu w Z8.",
+      "categories": "Uwzględnione dane",
+      "expiresAt": "Dostępne do",
+      "fileSize": "Rozmiar pliku",
+      "note": "Zaloguj się do Z8 jako administrator organizacji, aby pobrać plik. Każde pobranie rozpoczyna się od nowego, bezpiecznego linku. Po upływie powyższej daty plik eksportu zostanie automatycznie usunięty.",
+      "title": "Twój eksport danych jest gotowy"
+    },
+    "invitation": {
+      "action": "Zaakceptuj zaproszenie",
+      "body": "{inviterName} zaprasza Cię do dołączenia do {organizationName} jako {role}.",
+      "email": "Twój adres e-mail",
+      "greeting": "Witaj,",
+      "invitedBy": "Zaproszenie od",
+      "note": "Jeśli to zaproszenie nie było oczekiwane, możesz zignorować tę wiadomość e-mail.",
+      "organization": "Organizacja",
+      "role": "Rola",
+      "roles": {
+        "admin": "Administrator",
+        "member": "Członek",
+        "owner": "Właściciel"
+      },
+      "title": "Masz zaproszenie do {organizationName}"
+    },
+    "layout": {
+      "actionFallback": "Jeśli przycisk nie działa, otwórz ten link:",
+      "footer": "Ta wiadomość e-mail została wysłana przez Z8."
+    },
+    "notification": {
+      "openAction": "Otwórz Z8"
+    },
+    "organizationDeletion": {
+      "action": "Odzyskaj organizację",
+      "body": "{deletedByName} zaplanował(a) usunięcie organizacji {organizationName}. Możesz ją odzyskać do {permanentDeletionDate}.",
+      "initiatedBy": "Zainicjowane przez",
+      "items": {
+        "absences": "Wszystkie nieobecności i limity urlopowe",
+        "employees": "Wszyscy pracownicy, zespoły i przypisania menedżerów",
+        "members": "Wszyscy członkowie i oczekujące zaproszenia",
+        "projects": "Wszystkie projekty i przypisany do nich czas",
+        "settings": "Wszystkie ustawienia, harmonogramy i konfiguracje",
+        "timeEntries": "Wszystkie wpisy czasu i okresy pracy"
+      },
+      "itemsTitle": "Co zostanie trwale usunięte:",
+      "note": "Jeśli usunięcie organizacji było zamierzone, nie musisz podejmować żadnych działań. W przeciwnym razie odzyskaj ją teraz i sprawdź bezpieczeństwo swojego konta.",
+      "organization": "Organizacja",
+      "permanentAt": "Trwałe usunięcie",
+      "preview": "{organizationName} zostanie trwale usunięta w dniu {permanentDeletionDate}.",
+      "requestedAt": "Zażądano usunięcia",
+      "title": "Organizacja zaplanowana do usunięcia"
+    },
+    "passwordReset": {
+      "action": "Zresetuj hasło",
+      "body": "Otrzymaliśmy prośbę o zresetowanie Twojego hasła. Użyj poniższego przycisku, aby wybrać nowe.",
+      "note": "Jeśli ta prośba o zresetowanie hasła nie pochodzi od Ciebie, możesz zignorować tę wiadomość e-mail — Twoje hasło pozostanie bez zmian. Link wygasa za 1 godzinę.",
+      "title": "Zresetuj swoje hasło"
+    },
+    "scheduledExport": {
+      "dateRangeLabel": "Zakres dat",
+      "empty": {
+        "body": "Zaplanowany eksport {scheduleName} został uruchomiony, ale nie znaleziono żadnych danych do pobrania.",
+        "noFile": "Dla tego uruchomienia nie wygenerowano żadnego pliku.",
+        "title": "Zaplanowany eksport zakończony"
+      },
+      "ready": {
+        "action": "Pobierz eksport",
+        "body": "Twój zaplanowany eksport {scheduleName} zakończył się pomyślnie.",
+        "linkExpiry": "Ten link do pobrania jest ważny przez {lifetime} i wygasa {expiresAt}.",
+        "title": "Zaplanowany eksport jest gotowy"
+      },
+      "recordsLabel": "Rekordy",
+      "subject": "Zaplanowany eksport: {scheduleName} ({dateRange})"
+    },
+    "securityAlert": {
+      "action": "Przejrzyj ustawienia bezpieczeństwa",
+      "device": "Urządzenie",
+      "event": "Zdarzenie",
+      "ipAddress": "Adres IP",
+      "notYou": "Jeśli to nie Ty dokonałeś tej zmiany, zabezpiecz swoje konto teraz: zmień hasło i przejrzyj ustawienia bezpieczeństwa.",
+      "passwordChanged": {
+        "description": "Hasło do Twojego konta Z8 zostało zmienione.",
+        "title": "Hasło zmienione"
+      },
+      "time": "Czas",
+      "twoFactorDisabled": {
+        "description": "Uwierzytelnianie dwuskładnikowe na Twoim koncie Z8 zostało wyłączone.",
+        "title": "Uwierzytelnianie dwuskładnikowe wyłączone"
+      },
+      "twoFactorEnabled": {
+        "description": "Uwierzytelnianie dwuskładnikowe na Twoim koncie Z8 zostało włączone.",
+        "title": "Uwierzytelnianie dwuskładnikowe włączone"
+      }
+    },
+    "subjects": {
+      "absenceRecordedByManager": "Nieobecność zarejestrowana",
+      "absenceRequestApproved": "Wniosek o nieobecność zatwierdzony",
+      "absenceRequestRejected": "Wniosek o nieobecność odrzucony",
+      "absenceRequestSubmitted": "Wniosek o nieobecność złożony",
+      "approvalRequestSubmitted": "Nowy wniosek o nieobecność oczekuje na zatwierdzenie",
+      "exportFailed": "Eksport danych nie powiódł się – {organizationName}",
+      "exportReady": "Twój eksport danych jest gotowy – {organizationName}",
+      "organizationDeletion": "Organizacja {organizationName} zaplanowana do usunięcia",
+      "organizationInvitation": "Zaproszono Cię do dołączenia do {organizationName}",
+      "passwordChanged": "Alert bezpieczeństwa: Hasło zmienione",
+      "passwordReset": "Zresetuj swoje hasło",
+      "teamMemberAdded": "Dodano Cię do {teamName}",
+      "teamMemberRemoved": "Usunięto Cię z {teamName}",
+      "timeCorrectionApproved": "Korekta czasu zatwierdzona",
+      "timeCorrectionRejected": "Korekta czasu odrzucona",
+      "timeCorrectionSubmitted": "Nowa korekta czasu oczekuje na zatwierdzenie",
+      "twoFactorDisabled": "Alert bezpieczeństwa: Uwierzytelnianie dwuskładnikowe wyłączone",
+      "twoFactorEnabled": "Alert bezpieczeństwa: Uwierzytelnianie dwuskładnikowe włączone",
+      "verifyEmail": "Zweryfikuj swój adres e-mail"
+    },
+    "variables": {
+      "noReason": "Nie podano powodu",
+      "noTime": "-",
+      "yourManager": "twój przełożony"
+    },
+    "verification": {
+      "action": "Zweryfikuj adres e-mail",
+      "body": "Witamy w Z8! Zweryfikuj swój adres e-mail za pomocą poniższego przycisku, aby dokończyć rejestrację.",
+      "note": "Jeśli to nie Ty utworzyłeś konto, możesz zignorować tę wiadomość. Link wygasa za 1 godzinę.",
+      "title": "Zweryfikuj swój adres e-mail"
+    }
+  }
 }

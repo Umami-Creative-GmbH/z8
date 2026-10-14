@@ -434,6 +434,45 @@
       "reportGenerated": "Raport generat cu succes",
       "unexpectedError": "A apărut o eroare neașteptată",
       "unknownError": "A apărut o eroare necunoscută"
+    },
+    "vehicles": {
+      "archived": "arhivat",
+      "archivedBadge": "Arhivat",
+      "empty": {
+        "description": "Nu a fost înregistrată nicio activitate finalizată cu distanță parcursă în această perioadă.",
+        "title": "Nicio deplasare în această perioadă"
+      },
+      "error": "Eroare",
+      "export": {
+        "footer": "Generat de Z8",
+        "generatedAt": "Generat la",
+        "note": "Kilometri întregi de muncă finalizată, contorizați în luna în care a început activitatea (ora locală a locului în care a fost înregistrată).",
+        "period": "Perioadă",
+        "table": "Kilometri"
+      },
+      "failed": "Raportul privind distanța per vehicul nu a putut fi generat",
+      "filter": {
+        "period": "Perioadă"
+      },
+      "generate": "Generează raportul",
+      "generating": "Se generează raportul…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Niciun raport generat încă",
+      "ownVehicle": "Vehicul propriu",
+      "page": {
+        "description": "Kilometri parcurși în interes de serviciu per vehicul și angajat, pe luni",
+        "feature": "vizualizați raportul privind distanța per vehicul"
+      },
+      "selectPeriod": "Alegeți o perioadă și generați raportul.",
+      "table": {
+        "employee": "Angajat",
+        "licencePlate": "Număr de înmatriculare",
+        "total": "Total",
+        "vehicle": "Vehicul",
+        "vehicleAndEmployee": "Vehicul / angajat"
+      },
+      "title": "Distanță per vehicul",
+      "totalDriven": "{distance} parcurși"
     }
   }
 }

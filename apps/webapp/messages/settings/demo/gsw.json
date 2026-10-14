@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} Ziitibuechige glöscht",
           "title": "Ziitdate lösche",
           "vacationAllowancesReset": "{count} Ferieaspruch zrugggsetzt",
+          "vehiclesDeleted": "{count, plural, other {# Fahrzüüg glöscht} }",
           "willDelete": "Das wird permanent lösche:",
           "workCategoriesDeleted": "{count} Arbetskategorie glöscht",
           "workCategorySetsDeleted": "{count} Arbetskategori-Sets glöscht",
@@ -109,7 +110,7 @@
           "label": "Datetüpe",
           "locations": {
             "countLabel": "Aazahl Standört:",
-            "description": "Arbeitsort und Unterberiich",
+            "descriptionWithVehicles": "Arbetsort, Teilbereich und es paar Fahrzüüg",
             "title": "Standört"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Ziitiiträg und Arbeitsperiode erstelle",
           "label": "Ziitiiträg"
+        },
+        "vehicleUse": {
+          "description": "Fahrzüüg-Iisatz bi Arbetszite erfasse",
+          "label": "Fahrzüüg-Iisatz"
         },
         "workCategories": {
           "description": "Arbeitskategorie-Set und Kategoriee erstelle",

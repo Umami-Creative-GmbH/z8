@@ -434,6 +434,45 @@
       "reportGenerated": "Bericht erfolgreich erstellt",
       "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
       "unknownError": "Ein unbekannter Fehler ist aufgetreten"
+    },
+    "vehicles": {
+      "archived": "archiviert",
+      "archivedBadge": "Archiviert",
+      "empty": {
+        "description": "In diesem Zeitraum wurden keine abgeschlossenen Arbeiten mit Fahrstrecke erfasst.",
+        "title": "Keine Fahrten in diesem Zeitraum"
+      },
+      "error": "Fehler",
+      "export": {
+        "footer": "Erstellt von Z8",
+        "generatedAt": "Erstellt am",
+        "note": "Ganze Kilometer abgeschlossener Arbeit, gezählt in dem Monat, in dem die Arbeit begonnen wurde (Ortszeit der Erfassung).",
+        "period": "Zeitraum",
+        "table": "Kilometer"
+      },
+      "failed": "Der Bericht „Strecke pro Fahrzeug“ konnte nicht erstellt werden",
+      "filter": {
+        "period": "Zeitraum"
+      },
+      "generate": "Bericht erstellen",
+      "generating": "Bericht wird erstellt …",
+      "kilometres": "{distance} km",
+      "noReportYet": "Noch kein Bericht erstellt",
+      "ownVehicle": "Eigenes Fahrzeug",
+      "page": {
+        "description": "Dienstlich gefahrene Kilometer pro Fahrzeug und Mitarbeiter, nach Monat",
+        "feature": "Bericht „Strecke pro Fahrzeug“ ansehen"
+      },
+      "selectPeriod": "Wählen Sie einen Zeitraum aus und erstellen Sie den Bericht.",
+      "table": {
+        "employee": "Mitarbeiter",
+        "licencePlate": "Kennzeichen",
+        "total": "Gesamt",
+        "vehicle": "Fahrzeug",
+        "vehicleAndEmployee": "Fahrzeug / Mitarbeiter"
+      },
+      "title": "Strecke pro Fahrzeug",
+      "totalDriven": "{distance} gefahren"
     }
   }
 }

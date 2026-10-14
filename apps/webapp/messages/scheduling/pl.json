@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Każdy może przejąć",
       "assignTo": "Przypisz do",
+      "certificateOnFileFor": "Certyfikat w aktach: {skills}",
       "confirmDelete": "Potwierdź usunięcie",
       "created": "Zmiana utworzona",
       "createDescription": "Wypełnij szczegóły nowej zmiany",
@@ -118,6 +119,7 @@
       "updateShift": "Aktualizuj zmianę"
     },
     "skills": {
+      "certificateOnFile": "Certyfikat w aktach",
       "expiredCertifications": "Wygasłe certyfikaty:",
       "expiredOn": "(Wygasło {date})",
       "missingPreferred": "Brakujące preferowane umiejętności:",

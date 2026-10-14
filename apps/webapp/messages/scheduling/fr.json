@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Tout le monde peut prendre le créneau",
       "assignTo": "Assigner à",
+      "certificateOnFileFor": "Certificat au dossier : {skills}",
       "confirmDelete": "Confirmer la suppression",
       "created": "Quart de travail créé",
       "createDescription": "Remplissez les détails du nouveau quart de travail",
@@ -118,6 +119,7 @@
       "updateShift": "Mettre à jour le quart de travail"
     },
     "skills": {
+      "certificateOnFile": "Certificat au dossier",
       "expiredCertifications": "Certifications expirées :",
       "expiredOn": "(Expiré le {date})",
       "missingPreferred": "Compétences préférées manquantes :",

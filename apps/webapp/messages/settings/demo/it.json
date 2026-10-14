@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} voci di tempo eliminate",
           "title": "Cancella dati temporali",
           "vacationAllowancesReset": "{count} indennità di ferie ripristinate",
+          "vehiclesDeleted": "{count, plural, one {# veicolo eliminato} other {# veicoli eliminati}}",
           "willDelete": "Questo eliminerà in modo permanente:",
           "workCategoriesDeleted": "{count} categorie di lavoro eliminate",
           "workCategorySetsDeleted": "{count} set di categorie di lavoro eliminati",
@@ -109,7 +110,7 @@
           "label": "Tipi di dati",
           "locations": {
             "countLabel": "Numero di sedi:",
-            "description": "Sedi di lavoro e sottoaree",
+            "descriptionWithVehicles": "Sedi di lavoro, sottoaree e alcuni veicoli",
             "title": "Sedi"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Creazione voci di tempo e periodi di lavoro",
           "label": "Voci di tempo"
+        },
+        "vehicleUse": {
+          "description": "Registrazione dell'uso dei veicoli nei periodi lavorativi",
+          "label": "Uso del veicolo"
         },
         "workCategories": {
           "description": "Creazione set di categorie di lavoro e categorie",

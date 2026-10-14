@@ -108,6 +108,36 @@
       "noBalance": "Aucun solde"
     },
     "description": "Voir et gérer les employés que vous supervisez directement",
+    "driving": {
+      "columns": {
+        "calendar": "Calendrier",
+        "date": "Date",
+        "employee": "Employé",
+        "missing": "Manquant",
+        "time": "Heure locale enregistrée"
+      },
+      "count": "{count, plural, one {Il manque les détails de conduite pour # période de travail.} other {Il manque les détails de conduite pour # périodes de travail.}}",
+      "descriptionAll": "Périodes de travail pour lesquelles il manque un véhicule ou un relevé de compteur kilométrique alors que l'utilisation d'un véhicule est prévue. Elles restent affichées jusqu'à ce que les détails soient renseignés.",
+      "descriptionManaged": "Périodes de travail des employés que vous gérez pour lesquelles il manque un véhicule ou un relevé de compteur kilométrique alors que l'utilisation d'un véhicule est prévue. Elles restent affichées jusqu'à ce que les détails soient renseignés.",
+      "empty": "Aucun travail ne manque de détails de conduite.",
+      "filters": {
+        "allEmployees": "Tous les employés",
+        "allTeams": "Toutes les équipes",
+        "employee": "Employé",
+        "team": "Équipe"
+      },
+      "loading": "Chargement des détails de conduite",
+      "missing": {
+        "endReading": "Aucun relevé de fin",
+        "readings": "Aucun relevé de compteur kilométrique",
+        "startReading": "Aucun relevé de début",
+        "vehicle": "Aucun véhicule"
+      },
+      "openCalendar": "Calendrier",
+      "openCalendarOf": "Ouvrir le calendrier de {name}",
+      "title": "Détails de conduite manquants",
+      "truncated": "Affichage des {count} périodes de travail les plus récentes. Filtrez par équipe ou par employé pour voir les autres."
+    },
     "empty": {
       "action": "Aller aux paramètres des employés",
       "description": "Les employés qui vous sont assignés en tant que manager apparaîtront ici. Vous pouvez gérer les assignations d'équipe dans les paramètres des employés.",

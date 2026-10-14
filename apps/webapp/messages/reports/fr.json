@@ -434,6 +434,45 @@
       "reportGenerated": "Rapport généré avec succès",
       "unexpectedError": "Une erreur inattendue est survenue",
       "unknownError": "Une erreur inconnue est survenue"
+    },
+    "vehicles": {
+      "archived": "archivé",
+      "archivedBadge": "Archivé",
+      "empty": {
+        "description": "Aucun travail effectué avec une distance parcourue n'a été enregistré sur cette période.",
+        "title": "Aucun trajet sur cette période"
+      },
+      "error": "Erreur",
+      "export": {
+        "footer": "Généré par Z8",
+        "generatedAt": "Généré le",
+        "note": "Kilomètres entiers de travail effectué, comptabilisés dans le mois où le travail a débuté (heure locale de l'enregistrement).",
+        "period": "Période",
+        "table": "Kilomètres"
+      },
+      "failed": "Le rapport de distance par véhicule n'a pas pu être généré",
+      "filter": {
+        "period": "Période"
+      },
+      "generate": "Générer le rapport",
+      "generating": "Génération du rapport…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Aucun rapport généré pour l'instant",
+      "ownVehicle": "Véhicule personnel",
+      "page": {
+        "description": "Kilomètres parcourus pour le travail par véhicule et par employé, par mois",
+        "feature": "consulter le rapport de distance par véhicule"
+      },
+      "selectPeriod": "Choisissez une période et générez le rapport.",
+      "table": {
+        "employee": "Employé",
+        "licencePlate": "Plaque d'immatriculation",
+        "total": "Total",
+        "vehicle": "Véhicule",
+        "vehicleAndEmployee": "Véhicule / employé"
+      },
+      "title": "Distance par véhicule",
+      "totalDriven": "{distance} parcourus"
     }
   }
 }

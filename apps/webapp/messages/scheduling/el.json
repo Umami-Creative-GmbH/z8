@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Οποιοσδήποτε μπορεί να αναλάβει",
       "assignTo": "Ανάθεση σε",
+      "certificateOnFileFor": "Πιστοποιητικό στο αρχείο: {skills}",
       "confirmDelete": "Επιβεβαίωση διαγραφής",
       "created": "Η βάρδια δημιουργήθηκε",
       "createDescription": "Συμπληρώστε τις λεπτομέρειες για τη νέα βάρδια",
@@ -118,6 +119,7 @@
       "updateShift": "Ενημέρωση βάρδιας"
     },
     "skills": {
+      "certificateOnFile": "Πιστοποιητικό στο αρχείο",
       "expiredCertifications": "Ληγμένες πιστοποιήσεις:",
       "expiredOn": "(Έληξε στις {date})",
       "missingPreferred": "Ελλείπουσες προτιμώμενες δεξιότητες:",

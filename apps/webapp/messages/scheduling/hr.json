@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Svatko može preuzeti",
       "assignTo": "Dodijeli",
+      "certificateOnFileFor": "Certifikat u evidenciji: {skills}",
       "confirmDelete": "Potvrdi brisanje",
       "created": "Smjena je stvorena",
       "createDescription": "Ispunite pojedinosti za novu smjenu",
@@ -118,6 +119,7 @@
       "updateShift": "Ažuriraj smjenu"
     },
     "skills": {
+      "certificateOnFile": "Certifikat u evidenciji",
       "expiredCertifications": "Istekli certifikati:",
       "expiredOn": "(Isteklo {date})",
       "missingPreferred": "Nedostaju poželjne vještine:",

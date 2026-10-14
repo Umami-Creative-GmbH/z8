@@ -434,6 +434,45 @@
       "reportGenerated": "Relatório gerado com sucesso",
       "unexpectedError": "Ocorreu um erro inesperado",
       "unknownError": "Ocorreu um erro desconhecido"
+    },
+    "vehicles": {
+      "archived": "arquivado",
+      "archivedBadge": "Arquivado",
+      "empty": {
+        "description": "Nenhum trabalho concluído com distância percorrida foi registrado neste período.",
+        "title": "Nenhum deslocamento neste período"
+      },
+      "error": "Erro",
+      "export": {
+        "footer": "Gerado por Z8",
+        "generatedAt": "Gerado em",
+        "note": "Quilômetros inteiros de trabalho concluído, contabilizados no mês em que o trabalho foi iniciado (horário local onde foi registrado).",
+        "period": "Período",
+        "table": "Quilômetros"
+      },
+      "failed": "Não foi possível gerar o relatório de distância por veículo",
+      "filter": {
+        "period": "Período"
+      },
+      "generate": "Gerar relatório",
+      "generating": "Gerando relatório…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Nenhum relatório gerado ainda",
+      "ownVehicle": "Veículo próprio",
+      "page": {
+        "description": "Quilômetros rodados a trabalho por veículo e funcionário, por mês",
+        "feature": "ver o relatório de distância por veículo"
+      },
+      "selectPeriod": "Escolha um período e gere o relatório.",
+      "table": {
+        "employee": "Funcionário",
+        "licencePlate": "Placa",
+        "total": "Total",
+        "vehicle": "Veículo",
+        "vehicleAndEmployee": "Veículo / funcionário"
+      },
+      "title": "Distância por Veículo",
+      "totalDriven": "{distance} percorridos"
     }
   }
 }

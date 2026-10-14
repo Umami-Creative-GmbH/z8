@@ -434,6 +434,45 @@
       "reportGenerated": "Raporti u gjenerua me sukses",
       "unexpectedError": "Ndodhi një gabim i papritur",
       "unknownError": "Ndodhi një gabim i panjohur"
+    },
+    "vehicles": {
+      "archived": "arkivuar",
+      "archivedBadge": "Arkivuar",
+      "empty": {
+        "description": "Nuk u regjistrua asnjë punë e përfunduar me distancë të përshkuar me automjet gjatë kësaj periudhe.",
+        "title": "Nuk ka drejtim automjeti në këtë periudhë"
+      },
+      "error": "Gabim",
+      "export": {
+        "footer": "Gjeneruar nga Z8",
+        "generatedAt": "Gjeneruar më",
+        "note": "Kilometra të plotë të punës së përfunduar, të llogaritur në muajin kur filloi puna (koha lokale ku u regjistrua).",
+        "period": "Periudha",
+        "table": "Kilometra"
+      },
+      "failed": "Raporti i distancës për automjet nuk mund të gjenerohej",
+      "filter": {
+        "period": "Periudha"
+      },
+      "generate": "Gjenero raportin",
+      "generating": "Duke gjeneruar raportin…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Ende nuk është gjeneruar asnjë raport",
+      "ownVehicle": "Automjet personal",
+      "page": {
+        "description": "Kilometra të përshkuar për punë për automjet dhe punonjës, sipas muajit",
+        "feature": "shikoni raportin e distancës për automjet"
+      },
+      "selectPeriod": "Zgjidhni një periudhë dhe gjeneroni raportin.",
+      "table": {
+        "employee": "Punonjësi",
+        "licencePlate": "Targa",
+        "total": "Totali",
+        "vehicle": "Automjeti",
+        "vehicleAndEmployee": "Automjeti / punonjësi"
+      },
+      "title": "Distanca për automjet",
+      "totalDriven": "{distance} të përshkuara"
     }
   }
 }

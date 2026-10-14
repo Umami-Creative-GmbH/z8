@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Bugün",
       "description": "Bugün işlem gerektiren öğeleri gözden geçirin, ardından doğrudan doğru iş akışına geçin.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Çalışanlarınızın araç veya kilometre sayacı değeri eksik olan çalışma dönemleri.",
+          "title": "Sürüş ayrıntıları eksik ({count})"
+        }
+      },
       "needsAction": {
         "description": "En acil operasyonel takipler için buradan başlayın.",
         "empty": "Her şey yolunda. Şu an için yönetici müdahalesi gerekmiyor.",

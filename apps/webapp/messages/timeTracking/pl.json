@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Aktualnie pracujesz",
     "deadline": "Termin",
+    "drivingDetailsMissing": {
+      "description": "Twoja organizacja wymaga podania pojazdu i stanów licznika dla Twojej pracy. Dodaj je do tych okresów pracy.",
+      "missing": {
+        "endReading": "Brak końcowego stanu licznika",
+        "readings": "Brak stanów licznika",
+        "startReading": "Brak początkowego stanu licznika",
+        "vehicle": "Brak pojazdu"
+      },
+      "open": "Otwórz w kalendarzu",
+      "title": "Brak szczegółów dotyczących jazdy",
+      "truncated": "Wyświetlane są tylko najnowsze okresy pracy. Uzupełnij je, aby zobaczyć pozostałe."
+    },
     "errors": {
       "alreadyClockedIn": "Jesteś już w trakcie pracy",
       "appendReviewRequired": "Rozpoczęcie pracy wymaga weryfikacji historii czasu pracy",
@@ -214,7 +226,10 @@
         "onBreak": "Na przerwie od {time}"
       },
       "unreachableDescription": "Kiosk nie może połączyć się z serwerem. Sprawdź połączenie sieciowe; rejestracja czasu pracy działa tylko w trybie online.",
-      "unreachableTitle": "Kiosk offline"
+      "unreachableTitle": "Kiosk offline",
+      "vehicle": {
+        "back": "Wstecz"
+      }
     },
     "manualEntry": {
       "addButton": "Dodaj wpis ręczny",
@@ -386,6 +401,7 @@
       "corrected": "Skorygowano",
       "date": "Data",
       "description": "Opis",
+      "drivingDetailsMissing": "Brak szczegółów dotyczących jazdy",
       "duration": "Czas trwania",
       "emptyState": "Brak wpisów czasu dla tego tygodnia.",
       "recordedLocalTime": "Zarejestrowany czas lokalny",
@@ -422,6 +438,58 @@
     "title": "Rejestracja czasu pracy",
     "unknownCategory": "Nieznana kategoria",
     "unknownProject": "Nieznany projekt",
+    "vehicleUse": {
+      "archived": "zarchiwizowane",
+      "breakReading": "Stan licznika w czasie przerwy (km)",
+      "breakReadingHint": "Opcjonalnie. Kończy stan licznika tej pracy i rozpoczyna kolejną.",
+      "changeLive": "Zmień",
+      "derivedDistance": "Przejechany dystans: {distance} km",
+      "distanceKm": "Przejechany dystans (km)",
+      "distanceText": "Przejechano {distance} km",
+      "endKm": "Końcowy stan licznika (km)",
+      "expectedHint": "Twoja organizacja wymaga rejestrowania pojazdu, którym jeździsz, oraz stanów jego licznika.",
+      "expenseReport": {
+        "action": "Dodaj do raportu wydatków",
+        "add": "Dodaj {distance} km",
+        "added": "W raporcie wydatków",
+        "alreadyAdded": "Dystans z tego okresu pracy znajduje się już w raporcie wydatków.",
+        "chooseReport": "Do którego raportu wydatków dodać?",
+        "failed": "Nie udało się dodać dystansu do raportu wydatków. Spróbuj ponownie.",
+        "newReport": "Nowy raport przebiegu",
+        "routeHint": "Data i dystans są uzupełniane na podstawie tej pracy. Trasę wprowadzasz w raporcie.",
+        "untitledTrip": "Przejazd bez tytułu"
+      },
+      "liveChanged": "Zmieniono użycie pojazdu",
+      "liveChangeFailed": "Nie udało się zmienić użycia pojazdu",
+      "notRecorded": "Nie zarejestrowano użycia pojazdu",
+      "notSentOffline": "Nie można było zapisać tego ze zdarzeniem zegara w trybie offline. Dodaj je do okresu pracy po przejściu w tryb online.",
+      "noVehicle": "Brak pojazdu",
+      "ownVehicle": "Własny pojazd",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Ten pojazd jest zarchiwizowany i nie można go już wybrać.",
+        "distanceClaimed": "Dystans z tego okresu pracy znajduje się na pozycji wydatku. Usuń tę pozycję z raportu wydatków przed podzieleniem okresu pracy.",
+        "endBeforeStart": "Stan końcowy nie może być niższy niż stan początkowy.",
+        "invalidDistance": "Wprowadź przejechany dystans w pełnych kilometrach.",
+        "invalidReading": "Wprowadź stan licznika w pełnych kilometrach.",
+        "invalidVehicle": "Wybierz pojazd organizacji lub pojazd własny.",
+        "notFound": "Nie znaleziono pojazdu.",
+        "off": "Użycie pojazdu nie jest rejestrowane dla tego pracownika.",
+        "splitOutOfRange": "Wartość kilometrów w punkcie podziału musi mieścić się w zakresie kilometrów okresu pracy."
+      },
+      "startKm": "Stan początkowy (km)",
+      "title": "Użycie pojazdu",
+      "unknownVehicle": "Nieznany pojazd (niedostępny)",
+      "vehicle": "Pojazd",
+      "warning": {
+        "distanceAboveLimit": "{distance} km to więcej niż {limit} km w jednym okresie pracy.",
+        "onOtherLiveWork": "Ten pojazd jest już przypisany do trwającej pracy innego pracownika.",
+        "speedAboveLimit": "Przejechany dystans oznacza średnią prędkość {speed} km/h w tym okresie pracy, czyli powyżej {limit} km/h.",
+        "startBelowLastEnd": "Stan początkowy jest niższy niż ostatnio zarejestrowany stan końcowy tego pojazdu ({lastEndKm} km).",
+        "title": "Sprawdź użycie pojazdu"
+      }
+    },
     "welcomeBack": "Witaj ponownie, {name}",
     "workCategory": "Kategoria pracy",
     "workLocation": "Miejsce pracy",

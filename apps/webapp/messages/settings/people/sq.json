@@ -28,7 +28,10 @@
         "contractHourly": "Me orë",
         "contractHourlyDescription": "Paguhet sipas orëve të punuara",
         "contractType": "Lloji i kontratës",
+        "contractTypeChangeLink": "Ndryshim në kontratë dhe modelin e punës",
         "contractTypeDescription": "Përcakton mënyrën se si llogaritet kompensimi",
+        "contractTypeFromTerms": "Lloji i kontratës dhe paga vijnë nga kushtet e konfirmuara të punësimit në fuqi sot.",
+        "contractTypeNoTerms": "Nuk ka kushte të konfirmuara sot",
         "dayFriday": "Pre",
         "dayMonday": "Hën",
         "daySaturday": "Sht",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Përpunimi i pushimeve dhe tarifave shtesë",
           "clockRepair": "Rregullimi i kohëmatësit",
           "dispatchDeparture": "Programimi i largimit",
+          "notifyDataExportReminder": "Kujtues për shkarkimin e të dhënave personale",
           "notifyDeputyRelease": "Njoftimi se zëvendësuesi nuk është më i disponueshëm",
           "notifyReview": "Njoftimi i shqyrtimit",
           "sessionRevocation": "Dalja nga sesioni"
@@ -352,6 +356,25 @@
           "through": "Deri më {date}",
           "title": "Bilanci i punës"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "E disponueshme deri më {date}",
+        "description": "Një skedar ZIP me gjithçka që kjo organizatë mban për këtë punonjës, duke përfshirë të dhëna që eksporti i vetë punonjësit i lë jashtë. Punonjësi aktual njoftohet kur të jetë gati. Skedarët fshihen pas 7 ditësh.",
+        "download": "Shkarko",
+        "downloadFailed": "Shkarkimi nuk mund të nisej. Ju lutemi provoni përsëri.",
+        "listLabel": "Eksportet e mëparshme të administratorit",
+        "loadFailed": "Eksportet e mëparshme nuk mund të ngarkoheshin.",
+        "ownRecord": "Këtu nuk mund të eksportoni të dhënat tuaja. Përdorni «Të dhënat e mia» te cilësimet e llogarisë suaj.",
+        "refusalInProgress": "Një eksport i të dhënave të këtij punonjësi tashmë po përgatitet.",
+        "refusalStorage": "Ruajtja e skedarëve nuk është konfiguruar ende për këtë organizatë.",
+        "request": "Kërko eksport",
+        "requested": "Eksportimi po përgatitet. Do të merrni një njoftim dhe një email kur të jetë gati.",
+        "requestedAt": "Kërkuar më {date}",
+        "requestFailed": "Eksportimi nuk mund të nisej. Ju lutemi provoni përsëri.",
+        "statusFailed": "Dështoi",
+        "statusPreparing": "Po përgatitet",
+        "statusReady": "Gati",
+        "title": "Eksporti i të dhënave personale"
       },
       "tabs": {
         "employees": "Punonjësit",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Të anulohet ky ndryshim punësimi? Kjo heq ndryshimin e planifikuar ose draft të punësimit.",
       "cancelError": "Dështoi anulimi i ndryshimit të historikut të punësimit",
       "cancelSuccess": "Ndryshimi i historikut të punësimit u anulua",
+      "changeWage": {
+        "currencyHint": "Në monedhën e kushteve në fuqi",
+        "description": "Krijon kushte të reja nga kjo datë. Lloji i kontratës, orët javore, modeli i punës, politika e punës dhe monedha kopjohen nga kushtet në fuqi në atë datë.",
+        "draftSuccess": "Ndryshimi i pagës u ruajt si draft",
+        "error": "Ndryshimi i pagës dështoi",
+        "newWage": "Paga e re për orë",
+        "reason": "Arsyeja",
+        "reasonRequired": "Arsyeja është e detyrueshme",
+        "save": "Ruaj ndryshimin e pagës",
+        "saveAsDraft": "Ruaj si draft",
+        "success": "Paga u ndryshua",
+        "title": "Ndrysho pagën",
+        "validFrom": "E vlefshme nga",
+        "validFromRequired": "Fusha «E vlefshme nga» është e detyrueshme",
+        "wageInvalid": "Tarifa për orë duhet të jetë një numër pozitiv"
+      },
       "confirmError": "Dështoi konfirmimi i ndryshimit të historikut të punësimit",
       "confirmSuccess": "Ndryshimi i historikut të punësimit u konfirmua",
       "contractType": "Lloji i kontratës",
@@ -511,6 +550,8 @@
       },
       "timeline": "Kronologjia",
       "title": "Kontrata dhe modeli i punës",
+      "wageHistoryMergeNote": "{count, plural, one {Historiku i pagës u bashkua nga historiku i vjetër i tarifave më {date}; # ndryshim i tarifës u rregullua.} other {Historiku i pagës u bashkua nga historiku i vjetër i tarifave më {date}; # ndryshime të tarifës u rregulluan.}}",
+      "wageHistoryMergeNoteDismiss": "Mbyll",
       "weeklyHours": "Orët javore",
       "weeklyHoursValue": "{hours} / javë",
       "workModel": "Modeli i punës",
@@ -829,7 +870,8 @@
         "edit": "Ndrysho {title}",
         "expires": "Skadon më {date}",
         "open": "Hap {title}",
-        "payPeriod": "Periudha e pagesës {period}"
+        "payPeriod": "Periudha e pagesës {period}",
+        "provesSkill": "Vërteton {skill}"
       },
       "myDocuments": {
         "description": "Dokumente nga dosja juaj e personelit që organizata juaj ka ndarë me ju.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Raporti mjekësor nuk mund të shkëputej.",
         "unlinkFromAbsence": "Shkëputni {title} nga leja e saj mjekësore"
       },
+      "skillCertificates": {
+        "description": "Zgjidhni aftësinë e këtij punonjësi që vërteton \"{title}\". Planifikimi më pas tregon se një certifikatë është në dosje, por asnjëherë përmbajtjen e saj.",
+        "edit": "Zgjidhni aftësinë që vërteton {title}",
+        "errors": {
+          "notCertificate": "Vetëm certifikatat mund të vërtetojnë një aftësi.",
+          "notEmployeeSkill": "Zgjidhni një nga aftësitë e këtij punonjësi.",
+          "undatedRequiresExpiry": "Kjo aftësi kërkon një datë skadence. Vetëm një certifikatë me datë skadence mund ta vërtetojë atë."
+        },
+        "loadFailed": "Aftësitë e punonjësit nuk mund të ngarkoheshin.",
+        "needsExpiry": "Kërkon një datë skadence. Shtoni fillimisht një të tillë te kjo certifikatë.",
+        "none": "Pa aftësi",
+        "noSkills": "Ky punonjës nuk ka ende aftësi. Caktoni aftësi te faqja e punonjësit.",
+        "save": "Ruaj",
+        "saved": "Aftësia u ruajt",
+        "saveFailed": "Aftësia e certifikatës nuk mund të ruhej.",
+        "title": "Aftësia që vërteton kjo certifikatë"
+      },
       "tabs": {
         "access": "Qasja",
         "reminders": "Kujtuesit",
@@ -1021,23 +1080,6 @@
         "hint": "Një skedar ZIP me dokumentet e kategorive që menaxhoni, të renditura në një dosje për çdo kategori.",
         "sharedOnly": "Vetëm dokumentet e ndara"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Ndrysho tarifën",
-      "currentRate": "Tarifa aktuale: {rate}",
-      "description": "Tarifa orare ndryshon me kalimin e kohës",
-      "effectiveFrom": "Efektive nga",
-      "effectiveFromHelp": "Kur hyn në fuqi tarifa e re",
-      "empty": "Nuk ka historik tarifash",
-      "newHourlyRate": "Tarifa e re orare",
-      "reasonOptional": "Arsyeja (Opsionale)",
-      "reasonPlaceholder": "p.sh., Rishikim vjetor, Ngritje në detyrë, etj.",
-      "title": "Historiku i tarifave",
-      "updateDescription": "Krijoni një regjistrim të ri tarife. Tarifa aktuale do të mbyllet automatikisht.",
-      "updateError": "Dështoi përditësimi i tarifës",
-      "updateRate": "Përditëso tarifën",
-      "updateSuccess": "Tarifa u përditësua me sukses",
-      "updateTitle": "Përditëso tarifën orare"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Katalogu i aftësive",
       "catalogDescription": "Përcaktoni aftësitë që mund të kërkohen për nën-zonat dhe shabllonet e turneve",
       "category": "Kategoria",
+      "certificateOnFile": "Certifikata në dosje",
       "confirmDelete": "Jeni të sigurt që dëshironi ta fshini këtë aftësi?",
       "confirmRemove": "Të hiqet \"{skillName}\" nga ky punonjës?",
       "createError": "Krijimi i aftësisë dështoi",
@@ -1155,16 +1198,25 @@
       "deleteError": "Fshirja e aftësisë dështoi",
       "description": "Përshkrimi",
       "descriptionPlaceholder": "Përshkrim opsional i aftësisë ose certifikimit",
+      "editExpiryDate": "Ndrysho datën e skadimit",
+      "editExpiryDateDescription": "Dita e fundit kur {skillName} është e vlefshme. Turnet pas kësaj dite e shfaqin atë si të skaduar.",
+      "editExpiryDateFor": "Ndrysho datën e skadimit të {skillName}",
       "editSkill": "Modifiko aftësinë",
       "editSkillDescription": "Përditësoni detajet e aftësisë",
       "employeeSkills": "Aftësitë & Kualifikimet",
       "employeeSkillsDescription": "Certifikimet dhe aftësitë e caktuara për këtë punonjës",
+      "errors": {
+        "expiryDateSetByCertificate": "Kjo datë përcaktohet nga një certifikatë aftësie në dosjen e personelit. Ndryshoni datën në certifikatë."
+      },
       "expired": "E skaduar",
       "expiredOn": "Ka skaduar më {date}",
       "expiresOn": "Skadon më {date}",
       "expiringSoon": "Skadon së shpejti",
       "expiry": "Gjurmimi i skadimit",
       "expiryDate": "Data e skadimit",
+      "expiryDateFromCertificate": "Kjo datë përcaktohet nga një certifikatë aftësie në dosjen e personelit.",
+      "expiryDateUpdated": "Data e skadimit u përditësua",
+      "expiryDateUpdateError": "Përditësimi i datës së skadimit dështoi",
       "expiryRequired": "E detyrueshme",
       "expiryRequiredHint": "Ky certifikim kërkon një datë skadimi",
       "name": "Emri",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Krijoni aftësinë tuaj të parë për të filluar",
       "notes": "Shënime",
       "notesPlaceholder": "p.sh., Numri i certifikatës, data e trajnimit…",
+      "reminders": {
+        "intro": "Aftësitë e punonjësve me një datë skadimi dërgojnë një kujtesë brenda kohës paraprake dhe një tjetër në datën e skadimit. Kujtohen punonjësi dhe menaxherët e tij, ose pronarët dhe administratorët kur punonjësi nuk ka menaxher. Emblema \"Skadon së shpejti\" përdor të njëjtën kohë paraprake.",
+        "leadDays": "Koha paraprake e kujtesës së aftësisë (ditë)",
+        "leadDaysDescription": "Ditët llogariten sipas zonës kohore të organizatës. Ndryshimi i datës së skadimit të një aftësie dërgon sërish të dyja kujtesat.",
+        "leadDaysInvalid": "Futni një kohë paraprake midis {min} dhe {max} ditësh.",
+        "save": "Ruaj kohën paraprake",
+        "saved": "Koha paraprake e kujtesës u ruajt",
+        "saveFailed": "Koha paraprake e kujtesës nuk mund të ruhej.",
+        "title": "Kujtesat e skadimit të aftësive"
+      },
       "removeError": "Heqja e aftësisë dështoi",
       "requiresExpiry": "Kërkon datë skadimi",
       "requiresExpiryHint": "Aktivizojeni nëse ky certifikim kërkon rinovim (p.sh., Ndihma e Parë)",

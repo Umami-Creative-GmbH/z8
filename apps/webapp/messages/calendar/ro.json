@@ -316,7 +316,7 @@
         "directHint": "Această modificare se aplică imediat.",
         "edit": "Editare înregistrare",
         "invalidRange": "Pontarea de ieșire trebuie să fie după pontarea de intrare.",
-        "noChanges": "Modificați mai întâi data, ora sau locația de muncă.",
+        "noChangesWithVehicle": "Modificați mai întâi data, ora, locul de muncă sau utilizarea vehiculului.",
         "noteLabel": "Notă (opțional)",
         "notePlaceholder": "Adăugați o notă despre această modificare…",
         "onBehalfHint": "Această modificare urmează lanțul de aprobare al angajatului. Dacă sunteți aprobatorul acestuia, se aplică imediat.",
@@ -420,7 +420,11 @@
       "splitAt": "Împarte la",
       "splitDate": "Dată de divizare",
       "success": "Perioada de lucru a fost împărțită cu succes",
-      "title": "Împarte perioada de lucru"
+      "title": "Împarte perioada de lucru",
+      "vehicleFirstDistance": "Kilometri în prima perioadă (opțional)",
+      "vehicleFirstDistanceHint": "Din {distance} km parcurși; restul se alocă celei de-a doua perioade. Dacă este lăsat necompletat, întreaga distanță rămâne în prima perioadă.",
+      "vehicleReading": "Indexul odometrului la divizare (opțional)",
+      "vehicleReadingHint": "Acesta încheie citirile primei perioade și le începe pe cele ale celei de-a doua perioade ({start} până la {end} km). Lăsați necompletat dacă nu l-ați citit."
     },
     "status": {
       "approved": "Aprobat",

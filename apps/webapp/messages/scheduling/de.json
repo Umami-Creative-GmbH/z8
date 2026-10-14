@@ -84,6 +84,7 @@
     "shiftDialog": {
       "anyoneCanPickUp": "Jeder kann die Schicht übernehmen",
       "assignTo": "Zuweisen an",
+      "certificateOnFileFor": "Zertifikat hinterlegt: {skills}",
       "confirmDelete": "Löschen bestätigen",
       "created": "Schicht erstellt",
       "createDescription": "Geben Sie die Details für die neue Schicht ein",
@@ -118,6 +119,7 @@
       "updateShift": "Schicht aktualisieren"
     },
     "skills": {
+      "certificateOnFile": "Zertifikat hinterlegt",
       "expiredCertifications": "Abgelaufene Zertifizierungen:",
       "expiredOn": "(Abgelaufen am {date})",
       "missingPreferred": "Fehlende bevorzugte Qualifikationen:",

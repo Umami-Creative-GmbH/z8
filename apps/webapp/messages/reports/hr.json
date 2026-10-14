@@ -434,6 +434,45 @@
       "reportGenerated": "Izvještaj je uspješno generiran",
       "unexpectedError": "Došlo je do neočekivane pogreške",
       "unknownError": "Došlo je do nepoznate pogreške"
+    },
+    "vehicles": {
+      "archived": "arhivirano",
+      "archivedBadge": "Arhivirano",
+      "empty": {
+        "description": "U ovom razdoblju nije zabilježen dovršen rad s prijeđenom udaljenošću.",
+        "title": "Nema vožnje u ovom razdoblju"
+      },
+      "error": "Pogreška",
+      "export": {
+        "footer": "Generirao Z8",
+        "generatedAt": "Generirano",
+        "note": "Cijeli kilometri dovršenog rada, pribrojani u mjesecu u kojem je rad započeo (lokalno vrijeme u kojem je zabilježeno).",
+        "period": "Razdoblje",
+        "table": "Kilometri"
+      },
+      "failed": "Nije bilo moguće generirati izvješće o udaljenosti po vozilu",
+      "filter": {
+        "period": "Razdoblje"
+      },
+      "generate": "Generiraj izvješće",
+      "generating": "Generiranje izvješća…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Izvješće još nije generirano",
+      "ownVehicle": "Vlastito vozilo",
+      "page": {
+        "description": "Prijeđeni kilometri za posao po vozilu i zaposleniku, po mjesecima",
+        "feature": "pregledajte izvješće o udaljenosti po vozilu"
+      },
+      "selectPeriod": "Odaberite razdoblje i generirajte izvješće.",
+      "table": {
+        "employee": "Zaposlenik",
+        "licencePlate": "Registarska oznaka",
+        "total": "Ukupno",
+        "vehicle": "Vozilo",
+        "vehicleAndEmployee": "Vozilo / zaposlenik"
+      },
+      "title": "Udaljenost po vozilu",
+      "totalDriven": "Prijeđeno: {distance}"
     }
   }
 }

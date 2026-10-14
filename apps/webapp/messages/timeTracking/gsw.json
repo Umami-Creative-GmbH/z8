@@ -74,6 +74,18 @@
     },
     "currentlyClockedIn": "Du bisch momentan iigstämplet",
     "deadline": "Frist",
+    "drivingDetailsMissing": {
+      "description": "Dini Organisation erwartet s Fahrzüg und d Kilometerständ für dini Arbet. Füeg si zu dene Arbetsperiode dezue.",
+      "missing": {
+        "endReading": "Kei Endstand",
+        "readings": "Kei Kilometerständ",
+        "startReading": "Kei Startstand",
+        "vehicle": "Keis Fahrzüg"
+      },
+      "open": "Im Kaländer öffne",
+      "title": "Fahrtdetails fähled",
+      "truncated": "Nur die neuste Arbetsperiode sind ufgfüehrt. Ergänz die, zum de Rest z gseh."
+    },
     "errors": {
       "alreadyClockedIn": "Du bisch scho iigstämplet",
       "appendReviewRequired": "Fürs Iistämple mues dini Zithistorie überprüft wärde",
@@ -214,7 +226,10 @@
         "onBreak": "In Pause seit {time}"
       },
       "unreachableDescription": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung; Stempeln funktioniert nur online.",
-      "unreachableTitle": "Kiosk offline"
+      "unreachableTitle": "Kiosk offline",
+      "vehicle": {
+        "back": "Zrugg"
+      }
     },
     "manualEntry": {
       "addButton": "Manuelle Iitrag erfasse",
@@ -386,6 +401,7 @@
       "corrected": "Korrigiert",
       "date": "Datum",
       "description": "Beschriibig",
+      "drivingDetailsMissing": "Fahrtdetails fähled",
       "duration": "Duur",
       "emptyState": "Kei Ziit-Iiträg für die Wuche gfunde.",
       "recordedLocalTime": "Erfassti Lokalziit",
@@ -422,6 +438,58 @@
     "title": "Ziiterfassig",
     "unknownCategory": "Unbekannti Kategorie",
     "unknownProject": "Unbekannts Projekt",
+    "vehicleUse": {
+      "archived": "archiviert",
+      "breakReading": "Kilometerstand bi de Pause (km)",
+      "breakReadingHint": "Optional. Das beändet de Stand vo dere Arbet und startet de nächschti.",
+      "changeLive": "Ändere",
+      "derivedDistance": "Gfahreti Distanz: {distance} km",
+      "distanceKm": "Gfahreti Distanz (km)",
+      "distanceText": "{distance} km gfahre",
+      "endKm": "Endstand (km)",
+      "expectedHint": "Dini Organisation erwartet, dass du s Fahrzüg, wo du gfahre bisch, und d Ständ erfassisch.",
+      "expenseReport": {
+        "action": "Zu de Speseabrächnig dezuefüege",
+        "add": "{distance} km dezuefüege",
+        "added": "Inere Speseabrächnig",
+        "alreadyAdded": "D Distanz vo dere Arbet isch scho inere Speseabrächnig.",
+        "chooseReport": "Zu welere Speseabrächnig dezuefüege?",
+        "failed": "D Distanz het nöd zu de Speseabrächnig chönne dezuegfüegt wärde. Bitte nomol probiere.",
+        "newReport": "Neui Kilometerabrächnig",
+        "routeHint": "S Datum und d Distanz wärded vo dere Arbet übernoh. Du träisch d Route im Bricht ii.",
+        "untitledTrip": "Fahrt ohni Titel"
+      },
+      "liveChanged": "Fahrzeugnutzung geändert",
+      "liveChangeFailed": "D Fahrzügnutzig het nöd chönne gänderet wärde",
+      "notRecorded": "Fahrzeugnutzung wurde nicht erfasst",
+      "notSentOffline": "Es konnte mit diesem Offline-Stempelereignis nicht gespeichert werden. Fügen Sie es der Arbeitsperiode hinzu, sobald Sie online sind.",
+      "noVehicle": "Kein Fahrzeug",
+      "ownVehicle": "Eigenes Fahrzeug",
+      "readingMissing": "–",
+      "readingsText": "{start} → {end} km",
+      "refusal": {
+        "archived": "Dieses Fahrzeug ist archiviert und kann nicht mehr ausgewählt werden.",
+        "distanceClaimed": "Die Distanz dieser Arbeitsperiode ist in einer Spesenposition enthalten. Entfernen Sie die Position aus der Spesenabrechnung, bevor Sie die Arbeitsperiode aufteilen.",
+        "endBeforeStart": "Der Endstand kann nicht kleiner als der Anfangsstand sein.",
+        "invalidDistance": "Geben Sie die gefahrene Distanz in ganzen Kilometern ein.",
+        "invalidReading": "Geben Sie die Kilometerstände in ganzen Kilometern ein.",
+        "invalidVehicle": "Wählen Sie ein Fahrzeug der Organisation oder Ihr eigenes Fahrzeug aus.",
+        "notFound": "Das Fahrzeug wurde nicht gefunden.",
+        "off": "Für diesen Mitarbeitenden wird keine Fahrzeugnutzung erfasst.",
+        "splitOutOfRange": "Die Kilometer bei der Aufteilung müssen innerhalb der Kilometer der Arbeitsperiode liegen."
+      },
+      "startKm": "Anfangsstand (km)",
+      "title": "Fahrzeugnutzung",
+      "unknownVehicle": "Unbekanntes Fahrzeug (nicht verfügbar)",
+      "vehicle": "Fahrzeug",
+      "warning": {
+        "distanceAboveLimit": "{distance} km ist mehr als {limit} km in einer Arbeitsperiode.",
+        "onOtherLiveWork": "Dieses Fahrzeug ist bereits bei einer laufenden Arbeit eines anderen Mitarbeitenden erfasst.",
+        "speedAboveLimit": "Die gefahrene Distanz ergibt einen Durchschnitt von {speed} km/h über diese Arbeitsperiode, mehr als {limit} km/h.",
+        "startBelowLastEnd": "Der Anfangsstand liegt unter dem zuletzt erfassten Endstand dieses Fahrzeugs ({lastEndKm} km).",
+        "title": "Bitte überprüfen Sie die Fahrzeugnutzung"
+      }
+    },
     "welcomeBack": "Willkomme zrugg, {name}",
     "workCategory": "Arbetskategorie",
     "workLocation": "Arbetsort",

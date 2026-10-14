@@ -28,7 +28,10 @@
         "contractHourly": "Stündlich",
         "contractHourlyDescription": "Vergütung nach geleisteten Arbeitsstunden",
         "contractType": "Vertragsart",
+        "contractTypeChangeLink": "Änderung von Vertrag und Arbeitsmodell",
         "contractTypeDescription": "Bestimmt, wie die Vergütung berechnet wird",
+        "contractTypeFromTerms": "Vertragsart und Lohn stammen aus den heute gültigen, bestätigten Beschäftigungsbedingungen.",
+        "contractTypeNoTerms": "Heute keine bestätigten Bedingungen",
         "dayFriday": "Fr",
         "dayMonday": "Mo",
         "daySaturday": "Sa",
@@ -339,6 +342,7 @@
           "clockPostprocess": "Pausen- und Zuschlagsverarbeitung",
           "clockRepair": "Timer-Reparatur",
           "dispatchDeparture": "Austrittsplanung",
+          "notifyDataExportReminder": "Erinnerung an den Download personenbezogener Daten",
           "notifyDeputyRelease": "Benachrichtigung: Vertretung nicht mehr verfügbar",
           "notifyReview": "Überprüfungsbenachrichtigung",
           "sessionRevocation": "Sitzungsabmeldung"
@@ -352,6 +356,25 @@
           "through": "Bis einschließlich {date}",
           "title": "Arbeitszeitsaldo"
         }
+      },
+      "personalDataExport": {
+        "availableUntil": "Verfügbar bis {date}",
+        "description": "Eine ZIP-Datei mit allem, was diese Organisation über diesen Mitarbeiter gespeichert hat, einschließlich Daten, die im eigenen Export des Mitarbeiters fehlen. Ein aktiver Mitarbeiter wird benachrichtigt, sobald sie bereitsteht. Dateien werden nach 7 Tagen gelöscht.",
+        "download": "Herunterladen",
+        "downloadFailed": "Der Download konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
+        "listLabel": "Vergangene Admin-Exporte",
+        "loadFailed": "Frühere Exporte konnten nicht geladen werden.",
+        "ownRecord": "Sie können Ihre eigenen Daten hier nicht exportieren. Nutzen Sie „Meine Daten“ in Ihren Kontoeinstellungen.",
+        "refusalInProgress": "Ein Export der Daten dieses Mitarbeiters wird bereits vorbereitet.",
+        "refusalStorage": "Der Dateispeicher ist für diese Organisation noch nicht eingerichtet.",
+        "request": "Export anfordern",
+        "requested": "Der Export wird vorbereitet. Sie erhalten eine Benachrichtigung und eine E-Mail, sobald er bereit ist.",
+        "requestedAt": "Angefordert am {date}",
+        "requestFailed": "Der Export konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
+        "statusFailed": "Fehlgeschlagen",
+        "statusPreparing": "Wird vorbereitet",
+        "statusReady": "Bereit",
+        "title": "Export personenbezogener Daten"
       },
       "tabs": {
         "employees": "Mitarbeiter",
@@ -476,6 +499,22 @@
       "cancelConfirm": "Diese Beschäftigungsänderung abbrechen? Dies entfernt die geplante oder als Entwurf gespeicherte Beschäftigungsänderung.",
       "cancelError": "Abbrechen der Beschäftigungshistorien-Änderung fehlgeschlagen",
       "cancelSuccess": "Beschäftigungshistorien-Änderung abgebrochen",
+      "changeWage": {
+        "currencyHint": "In der Währung der geltenden Bedingungen",
+        "description": "Erstellt neue Bedingungen ab diesem Datum. Vertragsart, Wochenstunden, Arbeitsmodell, Arbeitsrichtlinie und Währung werden aus den an diesem Datum geltenden Bedingungen übernommen.",
+        "draftSuccess": "Lohnänderung als Entwurf gespeichert",
+        "error": "Lohn konnte nicht geändert werden",
+        "newWage": "Neuer Stundenlohn",
+        "reason": "Grund",
+        "reasonRequired": "Grund ist erforderlich",
+        "save": "Lohnänderung speichern",
+        "saveAsDraft": "Als Entwurf speichern",
+        "success": "Lohn geändert",
+        "title": "Lohn ändern",
+        "validFrom": "Gültig ab",
+        "validFromRequired": "„Gültig ab“ ist erforderlich",
+        "wageInvalid": "Der Stundensatz muss eine positive Zahl sein"
+      },
       "confirmError": "Bestätigen der Beschäftigungshistorien-Änderung fehlgeschlagen",
       "confirmSuccess": "Beschäftigungshistorien-Änderung bestätigt",
       "contractType": "Vertragstyp",
@@ -511,6 +550,8 @@
       },
       "timeline": "Zeitleiste",
       "title": "Vertrag & Arbeitsmodell",
+      "wageHistoryMergeNote": "{count, plural, one {Lohnverlauf wurde am {date} aus dem alten Stundensatzverlauf zusammengeführt; # Stundensatzänderung wurde angepasst.} other {Lohnverlauf wurde am {date} aus dem alten Stundensatzverlauf zusammengeführt; # Stundensatzänderungen wurden angepasst.}}",
+      "wageHistoryMergeNoteDismiss": "Verwerfen",
       "weeklyHours": "Wöchentliche Arbeitszeit",
       "weeklyHoursValue": "{hours} / Woche",
       "workModel": "Arbeitsmodell",
@@ -829,7 +870,8 @@
         "edit": "{title} bearbeiten",
         "expires": "Läuft am {date} ab",
         "open": "{title} öffnen",
-        "payPeriod": "Abrechnungszeitraum {period}"
+        "payPeriod": "Abrechnungszeitraum {period}",
+        "provesSkill": "Weist {skill} nach"
       },
       "myDocuments": {
         "description": "Dokumente aus Ihrer Personalakte, die Ihre Organisation mit Ihnen geteilt hat.",
@@ -994,6 +1036,23 @@
         "unlinkFailed": "Die Verknüpfung der Krankschreibung konnte nicht aufgehoben werden.",
         "unlinkFromAbsence": "Verknüpfung von {title} mit der Krankmeldung aufheben"
       },
+      "skillCertificates": {
+        "description": "Wählen Sie die Qualifikation dieses Mitarbeiters aus, die durch „{title}“ nachgewiesen wird. In der Einsatzplanung wird dann angezeigt, dass ein Zertifikat hinterlegt ist, nie jedoch dessen Inhalt.",
+        "edit": "Wählen Sie die Qualifikation aus, die {title} nachweist",
+        "errors": {
+          "notCertificate": "Nur Zertifikate können eine Qualifikation nachweisen.",
+          "notEmployeeSkill": "Wählen Sie eine der Qualifikationen dieses Mitarbeiters aus.",
+          "undatedRequiresExpiry": "Diese Qualifikation erfordert ein Ablaufdatum. Sie kann nur durch ein Zertifikat mit Ablaufdatum nachgewiesen werden."
+        },
+        "loadFailed": "Die Qualifikationen des Mitarbeiters konnten nicht geladen werden.",
+        "needsExpiry": "Erfordert ein Ablaufdatum. Fügen Sie diesem Zertifikat zuerst eines hinzu.",
+        "none": "Keine Qualifikation",
+        "noSkills": "Dieser Mitarbeiter hat noch keine Qualifikationen. Weisen Sie Qualifikationen auf der Mitarbeiterseite zu.",
+        "save": "Speichern",
+        "saved": "Qualifikation gespeichert",
+        "saveFailed": "Die Qualifikation des Zertifikats konnte nicht gespeichert werden.",
+        "title": "Durch dieses Zertifikat nachgewiesene Qualifikation"
+      },
       "tabs": {
         "access": "Zugriff",
         "reminders": "Erinnerungen",
@@ -1021,23 +1080,6 @@
         "hint": "Eine ZIP-Datei mit den Dokumenten der von Ihnen verwalteten Kategorien, sortiert in jeweils einen Ordner pro Kategorie.",
         "sharedOnly": "Nur freigegebene Dokumente"
       }
-    },
-    "rateHistory": {
-      "changeRate": "Satz ändern",
-      "currentRate": "Aktueller Satz: {rate}",
-      "description": "Stundensatz ändert sich im Laufe der Zeit",
-      "effectiveFrom": "Gültig ab",
-      "effectiveFromHelp": "Wann der neue Satz in Kraft tritt",
-      "empty": "Kein Satzverlauf verfügbar",
-      "newHourlyRate": "Neuer Stundensatz",
-      "reasonOptional": "Grund (optional)",
-      "reasonPlaceholder": "z. B. Jährliche Überprüfung, Beförderung usw.",
-      "title": "Verlauf der Stundensätze",
-      "updateDescription": "Einen neuen Stundensatz erstellen. Der aktuelle Satz wird automatisch geschlossen.",
-      "updateError": "Aktualisierung des Stundensatzes fehlgeschlagen",
-      "updateRate": "Stundensatz aktualisieren",
-      "updateSuccess": "Stundensatz erfolgreich aktualisiert",
-      "updateTitle": "Stundensatz aktualisieren"
     },
     "roles": {
       "actions": {
@@ -1145,6 +1187,7 @@
       "catalog": "Fähigkeitskatalog",
       "catalogDescription": "Definieren Sie Fähigkeiten, die für Teilbereiche und Schichtvorlagen erforderlich sein können",
       "category": "Kategorie",
+      "certificateOnFile": "Zertifikat hinterlegt",
       "confirmDelete": "Sind Sie sicher, dass Sie diese Fähigkeit löschen möchten?",
       "confirmRemove": "\"{skillName}\" von diesem Mitarbeiter entfernen?",
       "createError": "Erstellung der Fähigkeit fehlgeschlagen",
@@ -1155,16 +1198,25 @@
       "deleteError": "Löschen der Fähigkeit fehlgeschlagen",
       "description": "Beschreibung",
       "descriptionPlaceholder": "Optionale Beschreibung der Fähigkeit oder Zertifizierung",
+      "editExpiryDate": "Ablaufdatum bearbeiten",
+      "editExpiryDateDescription": "Der letzte Tag, an dem {skillName} gültig ist. Bei Schichten nach diesem Tag wird sie als abgelaufen angezeigt.",
+      "editExpiryDateFor": "Ablaufdatum von {skillName} bearbeiten",
       "editSkill": "Fähigkeit bearbeiten",
       "editSkillDescription": "Aktualisieren Sie die Details der Fähigkeit",
       "employeeSkills": "Fähigkeiten & Qualifikationen",
       "employeeSkillsDescription": "Diesem Mitarbeiter zugewiesene Zertifizierungen und Fähigkeiten",
+      "errors": {
+        "expiryDateSetByCertificate": "Ein Qualifikationszertifikat in der Personalakte legt dieses Datum fest. Ändern Sie das Datum im Zertifikat."
+      },
       "expired": "Abgelaufen",
       "expiredOn": "Abgelaufen am {date}",
       "expiresOn": "Läuft am {date} ab",
       "expiringSoon": "Läuft bald ab",
       "expiry": "Ablaufverfolgung",
       "expiryDate": "Ablaufdatum",
+      "expiryDateFromCertificate": "Ein Qualifikationszertifikat in der Personalakte legt dieses Datum fest.",
+      "expiryDateUpdated": "Ablaufdatum aktualisiert",
+      "expiryDateUpdateError": "Ablaufdatum konnte nicht aktualisiert werden",
       "expiryRequired": "Erforderlich",
       "expiryRequiredHint": "Diese Zertifizierung erfordert ein Ablaufdatum",
       "name": "Name",
@@ -1176,6 +1228,16 @@
       "noSkillsHint": "Erstellen Sie Ihre erste Fähigkeit, um zu beginnen",
       "notes": "Notizen",
       "notesPlaceholder": "z. B. Zertifikatsnummer, Schulungsdatum…",
+      "reminders": {
+        "intro": "Für Mitarbeiterqualifikationen mit Ablaufdatum wird innerhalb der Vorlaufzeit und am Ablaufdatum eine Erinnerung gesendet. Der Mitarbeiter und seine Führungskräfte werden erinnert bzw. Inhaber und Admins, falls der Mitarbeiter keine Führungskraft hat. Das Badge „Läuft bald ab“ verwendet dieselbe Vorlaufzeit.",
+        "leadDays": "Vorlaufzeit für Qualifikationserinnerung (Tage)",
+        "leadDaysDescription": "Tage werden in der Zeitzone der Organisation gezählt. Bei Änderung des Ablaufdatums einer Qualifikation werden beide Erinnerungen erneut gesendet.",
+        "leadDaysInvalid": "Geben Sie eine Vorlaufzeit zwischen {min} und {max} Tagen ein.",
+        "save": "Vorlaufzeit speichern",
+        "saved": "Vorlaufzeit für Erinnerungen gespeichert",
+        "saveFailed": "Die Vorlaufzeit für Erinnerungen konnte nicht gespeichert werden.",
+        "title": "Erinnerungen an Qualifikationsablauf"
+      },
       "removeError": "Fähigkeit konnte nicht entfernt werden",
       "requiresExpiry": "Ablaufdatum erforderlich",
       "requiresExpiryHint": "Aktivieren, wenn diese Zertifizierung erneuert werden muss (z. B. Erste Hilfe)",

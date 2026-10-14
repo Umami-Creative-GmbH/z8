@@ -21,6 +21,12 @@
     "briefing": {
       "badge": "Aujourd'hui",
       "description": "Examinez les éléments nécessitant une action aujourd'hui, puis passez directement au flux de travail approprié.",
+      "items": {
+        "drivingDetailsMissing": {
+          "description": "Périodes de travail de vos employés sans véhicule ou sans relevé du compteur kilométrique.",
+          "title": "Détails du trajet manquants ({count})"
+        }
+      },
       "needsAction": {
         "description": "Commencez ici pour le suivi opérationnel le plus urgent.",
         "empty": "Tout est en ordre. Aucune action du responsable n'est requise pour le moment.",

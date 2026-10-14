@@ -288,6 +288,7 @@
       "travelExpenseSettings": "Reisekosteneinstellungen werden geladen",
       "twoFactorVerification": "Zwei-Faktor-Verifizierung wird geladen",
       "vacationSettings": "Urlaubseinstellungen werden geladen",
+      "vehicleDistanceReport": "Bericht „Strecke pro Fahrzeug“ wird geladen",
       "wellnessSettings": "Wellness-Einstellungen werden geladen",
       "workCategorySettings": "Arbeitskategorie-Einstellungen werden geladen",
       "workerQueue": "Worker-Warteschlange wird geladen",
@@ -418,6 +419,17 @@
     "update": "Aktualisieren",
     "updating": "Aktualisiere...",
     "uploading": "Hochladen...",
+    "vacationAllowance": {
+      "cappedAtFullAllowance": "auf den vollen Anspruch begrenzt",
+      "employmentMonths": "{months, plural, one {# voller Beschäftigungsmonat} other {# volle Beschäftigungsmonate}}",
+      "lastWorkingDay": "letzter Arbeitstag {date}",
+      "notEmployed": "{allowance} von {fullAllowance} Tagen: nicht beschäftigt im Jahr {year}",
+      "overdrawn": "{days, plural, one {# Tag überzogen} other {# Tage überzogen}}",
+      "overdrawnHint": "Urlaub über den Anspruch hinaus genommen. Dient nur zur Information: Es wird nichts abgezogen.",
+      "proratedSummary": "{allowance} von {fullAllowance} Tagen, anteilig: {details}",
+      "started": "begonnen am {date}",
+      "statutoryMinimumApplies": "es gilt der gesetzliche Mindestanspruch"
+    },
     "validate": "Validieren",
     "validationError": "Validierungsfehler",
     "weekdays": {
@@ -493,7 +505,32 @@
       "title": "Betriebsrat",
       "to": "Bis",
       "unassignedTeam": "Nicht zugewiesenes Team",
-      "updateRange": "Bereich aktualisieren"
+      "updateRange": "Bereich aktualisieren",
+      "vehicleUse": {
+        "activeVehicles": "Aktive Fahrzeuge",
+        "archivedVehicles": "Archivierte Fahrzeuge",
+        "coveredAsked": "Erbeten von",
+        "coveredDescription": "{count, plural, one {# aktiver Mitarbeiter wird derzeit gebeten oder erwartet, die Fahrzeugnutzung zu erfassen.} other {# aktive Mitarbeiter werden derzeit gebeten oder erwartet, die Fahrzeugnutzung zu erfassen.}}",
+        "coveredExpected": "Erwartet von",
+        "coveredTitle": "Erfasste Mitarbeiter",
+        "description": "Personen, die von der Organisation gebeten werden, das für die Arbeit genutzte Fahrzeug zu erfassen. Der Betriebsrat sieht niemals Kilometerstände oder die von einem Mitarbeiter gefahrenen Strecken.",
+        "employeeAssignmentCounts": "{asked} erbeten, {expected} erwartet, {off} individuell deaktiviert",
+        "employeeAssignments": "Mitarbeiterzuweisungen",
+        "employeePseudonym": "Mitarbeiter {ref}",
+        "enabled": "Wechseln",
+        "modeAsked": "Erbeten",
+        "modeExpected": "Erwartet",
+        "modeOff": "Aus",
+        "noEmployeeAssignments": "Keine Mitarbeiterzuweisungen.",
+        "notAssigned": "Nicht zugewiesen",
+        "noTeamAssignments": "Keine Teamzuweisungen.",
+        "off": "Aus",
+        "on": "An",
+        "organizationAssignment": "Gesamte Organisation",
+        "teamAssignments": "Teamzuweisungen",
+        "title": "Fahrzeugnutzung",
+        "vehiclesTitle": "Organisationsfahrzeuge"
+      }
     }
   },
   "employeeSelect": {
@@ -602,6 +639,7 @@
     "settings": "Einstellungen",
     "team": "Team",
     "teamAbsences": "Team-Abwesenheiten",
+    "teamDriving": "Fahrtdetails",
     "team-label": "Team",
     "teamPeriodSubmissions": "Zeitraum-Einreichungen",
     "teamPresence": "Wer ist anwesend",
@@ -618,6 +656,9 @@
       "markRead": "Als gelesen markieren",
       "settings": "Benachrichtigungseinstellungen",
       "viewAll": "Alle Benachrichtigungen anzeigen"
+    },
+    "channels": {
+      "viewInZ8": "In Z8 anzeigen"
     },
     "content": {
       "absenceDeputyAssigned": {
@@ -645,7 +686,12 @@
         "message": "{managerName} hat in Ihrem Namen {absenceType} für {dateRange} erfasst.",
         "title": "Abwesenheit erfasst"
       },
+      "absenceRequestApproved": {
+        "message": "Ihr Antrag auf {categoryName} für {dateRange} wurde von {approverName} genehmigt."
+      },
       "absenceRequestRejected": {
+        "message": "Ihr Antrag auf {categoryName} für {dateRange} wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihr Antrag auf {categoryName} für {dateRange} wurde von {approverName} abgelehnt. Grund: {rejectionReason}",
         "title": "Abwesenheitsantrag abgelehnt"
       },
       "absenceRequestSubmitted": {
@@ -659,6 +705,19 @@
       "approvalCoverStarted": {
         "message": "{count, plural, =0 {Du übernimmst Genehmigungen für {name}: noch nichts ausstehend.} other {Du übernimmst Genehmigungen für {name}: # ausstehend.}}",
         "title": "Du übernimmst Genehmigungen"
+      },
+      "approvalEscalationAttention": {
+        "ambiguousHistory": "Der Eskalationsverlauf einer Genehmigung ist uneindeutig und muss vor einer automatischen Weiterleitung überprüft werden.",
+        "deliveryExhausted": "Eskalationsbenachrichtigungen für eine Genehmigung sind nach allen Wiederholungsversuchen fehlgeschlagen.",
+        "deliveryUnavailable": "Für eine Genehmigung ist kein Ziel für Eskalationsbenachrichtigungen verfügbar.",
+        "noEligibleBackup": "Für eine überfällige Genehmigung ist kein geeigneter Ersatzgenehmiger verfügbar. Die Zuweisung verbleibt beim aktuellen Genehmiger.",
+        "replacementOverdue": "Eine Genehmigung ist nach ihrer automatischen Eskalation immer noch unentschieden. Es erfolgt keine weitere automatische Weiterleitung.",
+        "title": "Genehmigungs-Eskalation erfordert Aufmerksamkeit",
+        "unsupportedRoute": "Eine Genehmigung kann nicht eskaliert werden, da ihr Entscheidungspfad nicht unterstützt wird."
+      },
+      "approvedAbsenceCancelled": {
+        "message": "{employeeName} hat genehmigte Abwesenheit ({categoryName}) für {dateRange} storniert.",
+        "title": "Genehmigte Abwesenheit storniert"
       },
       "automaticClockOut": {
         "breakMessage": "Sie wurden zu Beginn Ihrer Pause um {cutoff} ({timezone}) automatisch ausgestempelt, da die Pause nicht innerhalb des Zeitlimits Ihrer Organisation von {duration} Minuten beendet wurde.",
@@ -683,9 +742,56 @@
           "title": "Überstundenauszahlung erfasst"
         }
       },
+      "birthdayReminder": {
+        "message": "{name} hat am {date} Geburtstag.",
+        "title": "Bevorstehender Geburtstag"
+      },
       "breakDueReminder": {
         "message": "Ihre Pause ist um {breakTime} ({timezone}) fällig. Machen Sie bis dahin eine Pause, um die Pausenregeln Ihrer Arbeitsrichtlinie einzuhalten.",
         "title": "Bald Zeit für eine Pause"
+      },
+      "clockOutApprovalRequired": {
+        "message": "{employeeName} hat sich am {date} ausgestempelt ({startTime} – {endTime}, {duration}). Genehmigung erforderlich.",
+        "messageWithoutTimes": "{employeeName} hat sich ausgestempelt ({duration}). Genehmigung erforderlich.",
+        "title": "Ausstempel-Genehmigung erforderlich"
+      },
+      "clockOutApproved": {
+        "message": "Ihr Ausstempeln wurde von {approverName} genehmigt.",
+        "title": "Ausstempeln genehmigt"
+      },
+      "clockOutPendingApproval": {
+        "message": "Ihr Ausstempeln am {date} ({duration}) wartet auf die Genehmigung durch die Führungskraft.",
+        "messageWithoutDate": "Ihr Ausstempeln ({duration}) wartet auf die Genehmigung durch die Führungskraft.",
+        "title": "Ausstempeln wartet auf Genehmigung"
+      },
+      "clockOutRejected": {
+        "message": "Die Genehmigung Ihres Ausstempelns wurde von {approverName} abgelehnt. Die erfassten Zeiten bleiben unverändert und werden nicht in die genehmigte Abrechnungszeit einbezogen.",
+        "messageWithReason": "Die Genehmigung Ihres Ausstempelns wurde von {approverName} abgelehnt. Die erfassten Zeiten bleiben unverändert und werden nicht in die genehmigte Abrechnungszeit einbezogen. Grund: {rejectionReason}",
+        "title": "Ausstempeln abgelehnt"
+      },
+      "complianceExceptionApproved": {
+        "message": "Ihre Ausnahme ({exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}}) wurde von {approverName} genehmigt. Gültig bis {validUntil}.",
+        "title": "Ausnahme genehmigt"
+      },
+      "complianceExceptionExpired": {
+        "message": "Ihre Vorabgenehmigung für eine Ausnahme ({exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}}) ist abgelaufen (24 Stunden ungenutzt verstrichen).",
+        "title": "Ausnahme abgelaufen"
+      },
+      "complianceExceptionRejected": {
+        "message": "Ihre Ausnahme ({exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}}) wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihre Ausnahme ({exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}}) wurde von {approverName} abgelehnt. Grund: \"{reason}\"",
+        "title": "Ausnahme abgelehnt"
+      },
+      "complianceExceptionRequested": {
+        "message": "{employeeName} hat eine Ausnahme ({exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}}) beantragt: \"{reason}\"",
+        "title": "Compliance-Ausnahme beantragt"
+      },
+      "drivingDetailsMissingReminderMany": {
+        "message": "Für {count} Arbeitszeiträume von {dates} fehlt das Fahrzeug oder ein Kilometerstand. Fügen Sie diese den Arbeitszeiträumen hinzu."
+      },
+      "drivingDetailsMissingReminder": {
+        "message": "Für Ihre Arbeitszeit am {date} fehlt das Fahrzeug oder ein Kilometerstand. Fügen Sie diese dem Arbeitszeitraum hinzu.",
+        "title": "Fahrtdetails hinzufügen"
       },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
@@ -698,6 +804,15 @@
       "forgottenClockOutReminder": {
         "message": "Ihre Schicht endete um {endTime} ({timezone}). Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben.",
         "title": "Sie sind noch eingestempelt"
+      },
+      "manualEntryApproved": {
+        "message": "Ihre manuelle Zeiteinreichung wurde von {approverName} genehmigt.",
+        "title": "Manuelle Zeiteinreichung genehmigt"
+      },
+      "manualEntryRejected": {
+        "message": "Ihre manuelle Zeiteinreichung wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihre manuelle Zeiteinreichung wurde von {approverName} abgelehnt. Grund: {rejectionReason}",
+        "title": "Manuelle Zeiteinreichung abgelehnt"
       },
       "missedClockInReminder": {
         "message": "Ihre Schicht hat um {startTime} ({timezone}) begonnen. Stempeln Sie ein, wenn Sie arbeiten.",
@@ -716,7 +831,27 @@
         "title": "Monat wieder geöffnet"
       },
       "newAbsenceRequest": {
+        "message": "{employeeName} hat {categoryName} für {dateRange} beantragt.",
         "title": "Neuer Abwesenheitsantrag"
+      },
+      "newTimeCorrectionRequest": {
+        "message": "{employeeName} hat einen Zeitkorrekturantrag für {date} eingereicht.",
+        "messageWithoutDate": "{employeeName} hat einen Antrag auf Zeitkorrektur eingereicht.",
+        "messageWithoutDateWithReason": "{employeeName} hat einen Antrag auf Zeitkorrektur eingereicht. Grund: {reason}",
+        "messageWithReason": "{employeeName} hat einen Antrag auf Zeitkorrektur für {date} eingereicht. Grund: {reason}",
+        "title": "Neuer Antrag auf Zeitkorrektur"
+      },
+      "openShiftAvailable": {
+        "message": "Eine offene Schicht ist am {shiftDate} von {startTime} bis {endTime} verfügbar.",
+        "title": "Offene Schicht verfügbar"
+      },
+      "overtimeViolation": {
+        "message": "{description}",
+        "title": "Überstundenverstoß erfasst"
+      },
+      "overtimeWarning": {
+        "message": "Sie haben {period, select, daily {heute} weekly {diese Woche} other {diesen Monat}} {worked} gearbeitet ({percent} % des Limits von {limit}).",
+        "title": "Überstundengrenze fast erreicht"
       },
       "passwordChanged": {
         "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
@@ -745,6 +880,20 @@
       "periodSubmissionWithdrawnAfterChange": {
         "message": "Ihre Zeiten für {startDate} – {endDate} wurden nach der Einreichung geändert, weshalb die Einreichung zurückgezogen wurde. Überprüfen Sie Ihre Zeiten und reichen Sie sie erneut ein.",
         "title": "Zeiten erneut einreichen"
+      },
+      "personalDataExportAdminExported": {
+        "message": "Ein Administrator hat Ihre personenbezogenen Daten am {onDate} exportiert.",
+        "title": "Ihre personenbezogenen Daten wurden exportiert"
+      },
+      "personalDataExportReady": {
+        "adminMessage": "Der Export der personenbezogenen Daten von {employeeName} ist bereit. Laden Sie ihn im angemeldeten Zustand über die entsprechende Mitarbeiterseite herunter; er wird nach 7 Tagen gelöscht.",
+        "adminTitle": "Export personenbezogener Daten bereit",
+        "message": "Ihr Export personenbezogener Daten ist bereit. Laden Sie ihn im angemeldeten Zustand unter „Meine Daten“ herunter; er wird nach 7 Tagen gelöscht.",
+        "title": "Ihr Export personenbezogener Daten ist bereit"
+      },
+      "personalDataExportReminder": {
+        "message": "Laden Sie Ihre personenbezogenen Daten vor dem {untilDate} unter „Meine Daten“ herunter. Danach kann nur noch ein Administrator sie für Sie exportieren.",
+        "title": "Laden Sie Ihre personenbezogenen Daten vor Ihrem Ausscheiden herunter"
       },
       "personnelFileDocumentShared": {
         "message": "Das Dokument \"{title}\" wurde mit Ihnen geteilt.",
@@ -781,13 +930,94 @@
       "policyMissedClockInReminder": {
         "message": "Ihre letzte Einstempelung heute war um {startTime} ({timezone}). Stempeln Sie ein, wenn Sie arbeiten."
       },
+      "projectBudgetWarning100": {
+        "message": "„{projectName}“ hat das Budget überschritten ({used} von {budget} budgetiert). Überprüfen und nach Bedarf anpassen.",
+        "title": "Projektbudget überschritten"
+      },
+      "projectBudgetWarning70": {
+        "message": "„{projectName}“ hat {percent} % des Budgets aufgebraucht ({used} von {budget}).",
+        "title": "Projekt nähert sich Budgetgrenze"
+      },
+      "projectBudgetWarning90": {
+        "message": "„{projectName}“ hat {percent} % des Budgets aufgebraucht ({used} von {budget}). Prüfen Sie gegebenenfalls die Zeitzuteilungen.",
+        "title": "Projekt nahe Budgetgrenze"
+      },
+      "projectDeadlineOverdue": {
+        "message": "„{projectName}“ hat die Frist überschritten ({deadline}). Status aktualisieren oder Frist verlängern.",
+        "title": "Projektfrist überfällig"
+      },
+      "projectDeadlineWarning0d": {
+        "message": "Die Frist für „{projectName}“ endet heute ({deadline}). Verbleibende Arbeiten abschließen.",
+        "title": "Projektfrist heute"
+      },
+      "projectDeadlineWarning14d": {
+        "message": "Die Frist für „{projectName}“ endet in 2 Wochen ({deadline}). Vorausschauend planen, um die Frist einzuhalten.",
+        "title": "Projektfrist in 2 Wochen"
+      },
+      "projectDeadlineWarning1d": {
+        "message": "Die Frist für „{projectName}“ endet morgen ({deadline}). Endspurt zur Fertigstellung!",
+        "title": "Projektfrist morgen"
+      },
+      "projectDeadlineWarning7d": {
+        "message": "Die Frist für „{projectName}“ endet in 1 Woche ({deadline}). Stellen Sie sicher, dass alles im Zeitplan liegt.",
+        "title": "Projektfrist in 1 Woche"
+      },
+      "restPeriodViolation": {
+        "message": "{description}",
+        "title": "Ruhezeitverstoß erfasst"
+      },
+      "restPeriodWarning": {
+        "message": "Ihnen verbleiben {remaining} der erforderlichen Ruhezeit. Nächstes zulässiges Einstempeln: {nextAllowedClockIn}.",
+        "title": "Ruhezeit-Erinnerung"
+      },
       "scheduledExportPaused": {
         "message": "„{scheduleName}“ wurde pausiert, da der Eigentümer {ownerName} kein Organisations-Admin mehr ist. Machen Sie sich selbst oder einen anderen Organisations-Admin zum Eigentümer, um ihn fortzusetzen.",
         "title": "Geplanter Export pausiert"
       },
+      "schedulePublished": {
+        "message": "{shiftCount, plural, one {# Schicht wurde für {dateRange} veröffentlicht.} other {# Schichten wurden für {dateRange} veröffentlicht.}}",
+        "title": "Neuer Schichtplan veröffentlicht"
+      },
       "shiftAssigned": {
         "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
         "title": "Schicht zugewiesen"
+      },
+      "shiftPickupApproved": {
+        "message": "Ihre Anfrage zur Schichtübernahme am {shiftDate} wurde von {approverName} genehmigt.",
+        "title": "Schichtübernahme genehmigt"
+      },
+      "shiftPickupRequested": {
+        "message": "{requesterName} hat angefragt, die Schicht am {shiftDate} ({startTime} - {endTime}) zu übernehmen.",
+        "messageUnnamedRequester": "Ein Mitarbeiter hat angefragt, die Schicht am {shiftDate} ({startTime} - {endTime}) zu übernehmen.",
+        "title": "Anfrage zur Schichtübernahme"
+      },
+      "shiftSwapApproved": {
+        "message": "Ihre Anfrage zum Schichttausch für {shiftDate} wurde von {approverName} genehmigt.",
+        "title": "Schichttausch genehmigt"
+      },
+      "shiftSwapRejected": {
+        "message": "Ihre Anfrage zum Schichttausch für {shiftDate} wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihre Anfrage zum Schichttausch für {shiftDate} wurde von {approverName} abgelehnt. Grund: {reason}",
+        "title": "Schichttausch abgelehnt"
+      },
+      "shiftSwapRequestedToManager": {
+        "message": "{requesterName} hat einen Tausch für die Schicht am {shiftDate} ({startTime} - {endTime}) angefragt.",
+        "messageWithTarget": "{requesterName} hat einen Schichttausch mit {targetName} für die Schicht am {shiftDate} ({startTime} - {endTime}) angefragt.",
+        "title": "Schichttauschanfrage"
+      },
+      "shiftSwapRequestedToTarget": {
+        "message": "{requesterName} möchte die Schicht am {shiftDate} ({startTime} - {endTime}) mit Ihnen tauschen.",
+        "title": "Schichttauschanfrage"
+      },
+      "skillExpiredToday": {
+        "employeeMessage": "Ihr Skill \"{skill}\" läuft heute ab.",
+        "message": "Der Skill \"{skill}\" von {employee} läuft heute ab.",
+        "title": "Ein Skill läuft heute ab"
+      },
+      "skillExpiryUpcoming": {
+        "employeeMessage": "Ihr Skill \"{skill}\" läuft am {untilDate} ab.",
+        "message": "Der Skill \"{skill}\" von {employee} läuft am {untilDate} ab.",
+        "title": "Ein Skill läuft bald ab"
       },
       "teamMemberAdded": {
         "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
@@ -797,12 +1027,30 @@
         "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
         "title": "Aus dem Team entfernt"
       },
+      "timeCorrectionApproved": {
+        "message": "Ihr Antrag auf Zeitkorrektur wurde von {approverName} genehmigt.",
+        "title": "Zeitkorrektur genehmigt"
+      },
+      "timeCorrectionRejected": {
+        "message": "Ihr Antrag auf Zeitkorrektur wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihr Antrag auf Zeitkorrektur wurde von {approverName} abgelehnt. Grund: {rejectionReason}",
+        "title": "Zeitkorrektur abgelehnt"
+      },
+      "timeCorrectionSubmitted": {
+        "message": "Ihr Antrag auf Zeitkorrektur wurde eingereicht und wartet auf Genehmigung.",
+        "title": "Zeitkorrektur eingereicht"
+      },
       "timeOffInLieuAvailable": {
         "message": "Mitarbeitende können nun Freizeitausgleich über ihren Arbeitszeitsaldo nehmen. Die neue Abwesenheitskategorie bleibt inaktiv, bis Sie sie in den Abwesenheitseinstellungen aktivieren.",
         "title": "Freizeitausgleich ist verfügbar"
       },
       "travelExpenseAdjustmentReadyForReimbursement": {
         "message": "Eine genehmigte Anpassung hat den geschuldeten Betrag für die Spesenabrechnung {report} von {employee} erhöht. Wartet auf Erstattung: {amounts}."
+      },
+      "travelExpenseApproved": {
+        "message": "Ihre Reisekostenabrechnung für {destination} ({amount}) wurde von {approverName} genehmigt.",
+        "messageWithoutDestination": "Ihre Reisekostenabrechnung über {amount} wurde von {approverName} genehmigt.",
+        "title": "Reisekosten genehmigt"
       },
       "travelExpenseLeftOutOfPayrollRun": {
         "message": "Die Spesenabrechnung {report} von {employee} wird nicht über einen Gehaltsabrechnungslauf erstattet. Ausstehende Erstattung: {amounts}."
@@ -832,6 +1080,45 @@
       },
       "travelExpenseReimbursedWithPayroll": {
         "message": "Ihre Reisekosten wurden mit der Gehaltsabrechnung {period} vollständig erstattet: {amount} {currency}."
+      },
+      "travelExpenseRejected": {
+        "message": "Ihre Reisekostenabrechnung für {destination} ({amount}) wurde von {approverName} abgelehnt.",
+        "messageWithoutDestination": "Ihre Reisekostenabrechnung über {amount} wurde von {approverName} abgelehnt.",
+        "messageWithoutDestinationWithReason": "Ihre Reisekostenabrechnung über {amount} wurde von {approverName} abgelehnt. Grund: {reason}",
+        "messageWithReason": "Ihre Reisekostenabrechnung für {destination} ({amount}) wurde von {approverName} abgelehnt. Grund: {reason}",
+        "title": "Reisekosten abgelehnt"
+      },
+      "travelExpenseReportApproved": {
+        "message": "Ihre Spesenabrechnung (erstattungsfähig {amount}) wurde von {approverName} genehmigt.",
+        "title": "Spesenabrechnung genehmigt"
+      },
+      "travelExpenseReportRejected": {
+        "message": "Ihre Spesenabrechnung (erstattungsfähig {amount}) wurde von {approverName} abgelehnt.",
+        "messageWithReason": "Ihre Spesenabrechnung (erstattungsfähig {amount}) wurde von {approverName} abgelehnt. Grund: {reason}",
+        "title": "Spesenabrechnung abgelehnt"
+      },
+      "travelExpenseReportReturned": {
+        "message": "{reviewerName} hat Ihre Spesenabrechnung zur Überarbeitung zurückgegeben: {note}",
+        "title": "Spesenabrechnung zur Überarbeitung zurückgegeben"
+      },
+      "twoFactorDisabled": {
+        "message": "Die Zwei-Faktor-Authentifizierung wurde für Ihr Konto deaktiviert. Wir empfehlen, sie aus Sicherheitsgründen wieder zu aktivieren.",
+        "title": "Zwei-Faktor-Authentifizierung deaktiviert"
+      },
+      "twoFactorEnabled": {
+        "message": "Die Zwei-Faktor-Authentifizierung wurde für Ihr Konto zur Erhöhung der Sicherheit aktiviert.",
+        "title": "Zwei-Faktor-Authentifizierung aktiviert"
+      },
+      "vacationBalanceAlert": {
+        "expiringMessage": "{remainingDays, plural, one {Sie haben # Urlaubstag, der am {expiryDate} verfällt. Nutzen Sie ihn vor dem Verfall!} other {Sie haben # Urlaubstage, die am {expiryDate} verfallen. Nutzen Sie sie vor dem Verfall!}}",
+        "message": "{remainingDays, plural, one {Sie haben noch # Urlaubstag. Vergessen Sie nicht, sich etwas frei zu nehmen!} other {Sie haben noch # Urlaubstage. Vergessen Sie nicht, sich etwas frei zu nehmen!}}",
+        "title": "Erinnerung an Urlaubsguthaben"
+      },
+      "waterReminder": {
+        "done": "Erledigt!",
+        "message": "Bleiben Sie gesund – trinken Sie etwas Wasser",
+        "snooze": "Heute pausieren",
+        "title": "Zeit, etwas zu trinken!"
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
@@ -937,11 +1224,17 @@
         "approval_cover_return_summary": "Von Ihrer Vertretung entschieden",
         "approval_cover_started": "Abwesenheitsvertretung hat begonnen",
         "break_due_reminder": "Pause fällig",
+        "driving_details_missing_reminder": "Fahrtdetails fehlen",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
         "missed_clock_in_reminder": "Verpasstes Einstempeln",
         "period_submission_decided": "Eingereichte Zeiten genehmigt oder abgelehnt",
         "period_submission_reminder": "Zeiten einreichen",
         "period_submission_sent_back": "Zeiten nach Änderung zurückgesendet",
+        "personal_data_export_admin_exported": "Personenbezogene Daten wurden durch einen Administrator exportiert",
+        "personal_data_export_ready": "Export der personenbezogenen Daten bereit",
+        "personal_data_export_reminder": "Laden Sie Ihre Daten herunter, bevor Sie gehen",
+        "skill_expired_today": "Skill läuft heute ab",
+        "skill_expiry_upcoming": "Skill läuft bald ab",
         "work_balance_adjustment_cancelled": "Saldoanpassung storniert",
         "work_balance_adjustment_recorded": "Saldoanpassung erfasst"
       },
@@ -1020,6 +1313,1092 @@
       "loading": "Gespeicherte Datensätze werden gelesen…",
       "review": "Gespeicherte Datensätze überprüfen",
       "title": "Gespeicherte Stempelzeit-Datensätze"
+    }
+  },
+  "personalDataExport": {
+    "readme": {
+      "accessAdmin": "{name} (Administrator)",
+      "accessExpenseExport": "sie exportieren",
+      "accessExpenseOfficers": "Spesenbeauftragte (Ihre genehmigten Reisekostenabrechnungen und deren Belege):",
+      "accessExpenseRead": "genehmigte Abrechnungen einsehen",
+      "accessExpenseReimburse": "Rückerstattungen erfassen",
+      "accessIntro": "Außer Ihnen können zum Zeitpunkt der Erstellung dieses Exports folgende Personen bei {organization} auf Ihre Daten in Z8 zugreifen:",
+      "accessManagerDirect": "{name} (Ihre Führungskraft)",
+      "accessManagers": "Führungskräfte (Ihre Arbeitszeiten, Abwesenheiten, Dienstpläne und Anträge, soweit es ihre Rolle erlaubt):",
+      "accessManagerTeam": "{name} (Teamberechtigungen für Ihr Team)",
+      "accessNobody": "Niemand.",
+      "accessOwner": "{name} (Inhaber)",
+      "accessOwnersAdmins": "Inhaber und Administratoren (alle Ihre Daten in der Organisation):",
+      "accessPayrollAll": "alle Mitarbeiter",
+      "accessPayrollEmployee": "Sie namentlich",
+      "accessPayrollOfficers": "Lohnbuchhaltungszugriff (Ihre Arbeitszeiten und Abwesenheiten, exportiert für die Lohnabrechnung):",
+      "accessPayrollTeam": "Ihr Team",
+      "accessPersonnelFileOfficers": "Personalaktenbeauftragte (die Dokumente in Ihrer Personalakte dieser Kategorien):",
+      "accessTitle": "Wer auf Ihre Daten zugreifen kann",
+      "category": {
+        "absences": "Ihre Abwesenheiten, Urlaubsansprüche und Urlaubsanpassungen.",
+        "account": "Ihr Benutzerkonto: Sitzungen, Anmeldemethoden, Sicherheitseinstellungen, Einstellungen und Geräte.",
+        "accountAdmin": "Der Name und die E-Mail-Adresse Ihres Benutzerkontos.",
+        "approvals": "Ihre eigenen Anträge und Zeitraum-Einreichungen sowie die Entscheidungen, die Sie zu Anträgen anderer Personen getroffen haben.",
+        "auditLog": "Audit-Log-Einträge über Sie und Einträge, die Sie vorgenommen haben.",
+        "employment": "Ihre Personalakte und Ihr Profil, Beschäftigungszeiträume und Austritt, Beschäftigungsbedingungen mit Ihrem Stundenlohn und dessen Historie, Teams, Führungskräfte, Standorte, Qualifikationen, Projektzuweisungen, Rollen, Gruppen, Kostenstelle und jede Ihnen zugewiesene Richtlinie.",
+        "integrations": "Ihre Kalenderverknüpfungen, Ihr Kalender-Feed, verknüpfte Chat-Konten und Kiosk-PIN-Status.",
+        "notifications": "Ihr Benachrichtigungsverlauf.",
+        "personnelFile": "Die Dokumente in Ihrer Personalakte als Originaldateien.",
+        "planning": "Ihre Schichten und Schichtanfragen.",
+        "positionStamps": "Ihre Positionsstempel, Ihr Einwilligungsverlauf und wer Ihre Positionen eingesehen hat.",
+        "time": "Ihre Zeiteinträge, Arbeitszeiträume und Korrekturen, Pausen, automatische Abmeldungen, Compliance-Ausnahmen, Verstöße gegen Arbeitszeitrichtlinien, Zuschläge, Salden und Saldenanpassungen.",
+        "travelExpenses": "Ihre Reisekostenabrechnungen, Berichte, Posten, Abrechnungen und Belege."
+      },
+      "completeCopy": "{organization} führt möglicherweise weitere Datensätze über Sie, die nicht Teil dieses Exports sind. Sie können die Administratoren von {organization} um eine vollständige Kopie Ihrer personenbezogenen Daten bitten.",
+      "completeCopyTitle": "Vollständige Kopie",
+      "csvFolder": "Der Ordner {folder} enthält dieselben Tabellen als CSV-Dateien.",
+      "documentCategory": {
+        "certificate": "Zertifikate",
+        "contract": "Verträge",
+        "other": "Sonstige Dokumente",
+        "payslip": "Gehaltsabrechnungen",
+        "sickNote": "Krankmeldungen"
+      },
+      "fields": {
+        "absences": {
+          "absences": {
+            "approvedAt": "Wann über die Abwesenheit entschieden wurde (UTC).",
+            "approvedBy": "Wer über die Abwesenheit entschieden hat.",
+            "category": "Die Abwesenheitskategorie, wie von der Organisation benannt.",
+            "categoryType": "Die Art der Abwesenheit hinter der Kategorie, zum Beispiel vacation, sick oder home_office.",
+            "deputy": "Die Kollegin oder der Kollege, die bzw. der Sie während der Abwesenheit vertritt.",
+            "deputyAssignedAt": "Wann die Vertretung zugewiesen wurde (UTC).",
+            "endDate": "Der letzte Tag der Abwesenheit (JJJJ-MM-TT).",
+            "endPeriod": "An welchem Teil des letzten Tages Sie abwesend sind: full_day, am oder pm.",
+            "notes": "Die zur Abwesenheit hinterlegte Notiz.",
+            "rejectionReason": "Warum die Abwesenheit abgelehnt wurde.",
+            "sickDetail": "Bei Krankheit: nähere Angaben, zum Beispiel mit oder ohne ärztliches Attest oder krankes Kind.",
+            "startDate": "Der erste Tag der Abwesenheit (JJJJ-MM-TT).",
+            "startPeriod": "Zu welchem Teil des ersten Tages Sie abwesend sind: full_day (ganztägig), am (vormittags) oder pm (nachmittags).",
+            "status": "Gibt an, ob die Abwesenheit ausstehend, genehmigt oder abgelehnt ist.",
+            "summary": "Ihre Abwesenheiten wie Urlaub, Krankheit oder Homeoffice mitsamt Genehmigungsstatus."
+          },
+          "shared": {
+            "year": "Das Urlaubsjahr."
+          },
+          "vacationAdjustments": {
+            "accrualMonth": "Für einen anteilig erworbenen Anspruch: der Monat (1 bis 12), für den er gewährt wurde.",
+            "adjustedBy": "Wer die Änderung vorgenommen hat.",
+            "days": "Die hinzugefügten (positiv) oder abgezogenen (negativ) Tage.",
+            "kind": "Ob jemand die Änderung manuell vorgenommen hat (manual) oder die App einen anteiligen Anspruch gutgeschrieben hat (accrual).",
+            "reason": "Warum die Änderung vorgenommen wurde.",
+            "summary": "Jede Änderung an Ihren Urlaubstagen neben Ihrem Grundanspruch: manuelle Korrekturen und anteilige Ansprüche."
+          },
+          "vacationAllowances": {
+            "customAnnualDays": "Ihre Urlaubstage für das Jahr; leer, wenn der Wert Ihrer Richtlinie gilt.",
+            "customCarryoverDays": "Die aus dem Vorjahr in dieses Jahr übertragenen Tage; leer, wenn keine für Sie festgelegt wurden.",
+            "summary": "Urlaubsansprüche, die persönlich für Sie anstelle Ihrer Urlaubsrichtlinie festgelegt wurden, pro Jahr."
+          },
+          "vacationPolicies": {
+            "accrualStartMonth": "Der Monat (1 bis 12), ab dem der Anspruch auf Urlaubstage erworben wird.",
+            "accrualType": "Wie die Tage gewährt werden: alle auf einmal pro Jahr (annual), monatlich (monthly) oder alle zwei Wochen (biweekly).",
+            "allowCarryover": "Gibt an, ob ungenutzte Tage in das nächste Jahr übertragen werden.",
+            "assignmentActive": "Gibt an, ob die Zuweisung aktiv ist.",
+            "assignmentEffectiveFrom": "Ab wann die Zuweisung der Richtlinie gilt (UTC).",
+            "assignmentEffectiveUntil": "Wann die Zuweisung nicht mehr gilt (UTC); leer, solange sie gilt.",
+            "assignmentType": "Wie sie zugewiesen ist: Ihnen persönlich (employee), Ihrem Team (team) oder der gesamten Organisation (organization).",
+            "carryoverExpiryMonths": "Wie viele Monate im Folgejahr übertragene Tage gültig bleiben; leer, wenn sie nicht verfallen.",
+            "defaultAnnualDays": "Die Urlaubstage pro Jahr gemäß der Richtlinie.",
+            "maxCarryoverDays": "Die maximale Anzahl übertragbarer Tage; leer bedeutet keine Begrenzung.",
+            "policy": "Der Name der Richtlinie.",
+            "prorateInStartAndExitYear": "Gibt an, ob ein Jahresanspruch im Ein- oder Austrittsjahr anteilig anhand der Beschäftigungsmonate gekürzt wird.",
+            "statutoryMinimumDays": "Die Mindestanzahl an Tagen, auf die ein gekürzter Anspruch nach Ablauf der Wartezeit sinken darf.",
+            "summary": "Die für Sie geltenden Urlaubsrichtlinien: Ihnen zugewiesen, Ihren Teams zugewiesen oder die Standardrichtlinie der Organisation.",
+            "validFrom": "Der erste Tag, an dem die Richtlinie gilt (JJJJ-MM-TT).",
+            "validUntil": "Der letzte Tag, an dem die Richtlinie gilt (JJJJ-MM-TT); leer, solange sie gilt."
+          }
+        },
+        "account": {
+          "accessViolations": {
+            "actionTaken": "Was geschehen ist: blocked (blockiert), challenged (überprüft) oder logged (protokolliert).",
+            "blockedCountry": "Das blockierte Land.",
+            "blockedIp": "Die blockierte IP-Adresse.",
+            "concurrentSessionCount": "Wie viele Sitzungen zu diesem Zeitpunkt geöffnet waren.",
+            "reason": "Der erfasste Grund.",
+            "requestMethod": "Die Art der Anfrage, z. B. GET.",
+            "requestPath": "Die aufgerufene Seite oder Adresse.",
+            "requiredMfaType": "Der von der Regel geforderte zweite Faktor.",
+            "summary": "Anfragen, die durch die Zugriffsregeln dieser Organisation blockiert, überprüft oder markiert wurden.",
+            "violationType": "Gegen welche Regel verstoßen wurde, z. B. ip_blocked."
+          },
+          "hydrationStats": {
+            "currentStreak": "Aufeinanderfolgende Tage, an denen Sie Ihr Ziel bisher erreicht haben.",
+            "lastGoalMetDate": "Der letzte Tag, an dem Sie Ihr Ziel erreicht haben.",
+            "longestStreak": "Ihre längste Serie.",
+            "snoozedUntil": "Bis wann Sie Erinnerungen pausiert haben.",
+            "summary": "Ihre gesamte Wasseraufnahme und Serien.",
+            "totalIntakeAllTime": "Alle Gläser, die Sie erfasst haben."
+          },
+          "notificationPreferences": {
+            "channel": "Wohin die Zustellung erfolgt, z. B. E-Mail oder Push.",
+            "enabled": "Gibt an, ob Sie Benachrichtigungen dort erhalten.",
+            "notificationType": "Die Art der Benachrichtigung.",
+            "summary": "Welche Benachrichtigungen Sie pro Kanal aktiviert oder deaktiviert haben."
+          },
+          "passkeys": {
+            "aaguid": "Die ID des Authenticator-Modells.",
+            "backedUp": "Ob es gesichert ist.",
+            "deviceType": "Ob es nur auf einem Gerät vorhanden ist oder geräteübergreifend synchronisiert wird.",
+            "name": "Der Name des Passkeys.",
+            "summary": "Ihre Passkeys (Schlüssel werden nie exportiert).",
+            "transports": "Wie der Authenticator verbunden ist, z. B. USB oder intern."
+          },
+          "pushDevices": {
+            "deviceName": "Der Name des Geräts.",
+            "kind": "web für einen Browser, native für die mobile App.",
+            "lastSeenAt": "Wann die App das Gerät zuletzt registriert hat.",
+            "platform": "Die mobile Plattform (iOS oder Android); leer für einen Browser.",
+            "summary": "Browser und Geräte, die Push-Benachrichtigungen empfangen (ihre Schlüssel werden nie exportiert)."
+          },
+          "sessions": {
+            "city": "Die Stadt dieser IP-Adresse.",
+            "createdAt": "Wann Sie sich angemeldet haben.",
+            "expiresAt": "Wann die Sitzung endet, sofern sie nicht verlängert wird.",
+            "impersonated": "Ob der Plattform-Support diese Sitzung als Sie geöffnet hat. IP-Adresse, Browser und Standort werden dann ausgelassen: Sie stammen vom Support, nicht von Ihnen.",
+            "lastActivityAt": "Wann Sie die Sitzung in dieser Organisation zuletzt verwendet haben.",
+            "mfaMethod": "Wie Sie den zweiten Faktor bestätigt haben, falls abgefragt.",
+            "mfaVerifiedAt": "Wann Sie ihn bestätigt haben.",
+            "region": "Die Region dieser IP-Adresse.",
+            "summary": "Ihre noch gespeicherten Anmeldungen (Sitzungen), mit Details, die diese Organisation darüber erfasst hat.",
+            "updatedAt": "Wann die Sitzung zuletzt verlängert wurde."
+          },
+          "settings": {
+            "dashboardWidgetOrder": "Wie Sie Ihr Dashboard angeordnet haben, als JSON.",
+            "helpImproveProduct": "Ob Sie zugestimmt haben, zur Verbesserung des Produkts beizutragen.",
+            "locale": "Ihre App-Sprache; leer bedeutet, dass sie sich nach Ihrem Browser richtet.",
+            "onboardingComplete": "Ob Sie die Einführung abgeschlossen haben.",
+            "onboardingCompletedAt": "Wann Sie sie abgeschlossen haben.",
+            "onboardingStartedAt": "Wann Sie die Einführung gestartet haben.",
+            "onboardingStep": "Der von Ihnen erreichte Einführungsschritt.",
+            "summary": "Ihre persönlichen Einstellungen in der App.",
+            "timeFormat": "Ob Uhrzeiten im 12- oder 24-Stunden-Format angezeigt werden.",
+            "timezone": "Die von Ihnen gewählte Zeitzone für die Anzeige von Uhrzeiten.",
+            "waterReminderDailyGoal": "Ihr Tagesziel in Gläsern.",
+            "waterReminderEnabled": "Ob Trinkerinnerungen aktiviert sind.",
+            "waterReminderIntervalMinutes": "Minuten zwischen Trinkerinnerungen.",
+            "waterReminderPreset": "Die von Ihnen gewählte Voreinstellung für Trinkerinnerungen.",
+            "weekStartDay": "Der Tag, an dem Ihre Woche beginnt."
+          },
+          "shared": {
+            "country": "Das Land dieser IP-Adresse (ISO-Code).",
+            "ipAddress": "Die IP-Adresse, von der es stammt.",
+            "isActive": "Ob es noch verwendet wird.",
+            "lastUsedAt": "Wann es zuletzt verwendet wurde.",
+            "userAgent": "Der Browser oder die App, wie er/sie sich identifiziert hat."
+          },
+          "signInMethods": {
+            "accountId": "Die ID Ihres Kontos bei diesem Anbieter.",
+            "passwordSet": "Ob ein Passwort festgelegt ist (das Passwort selbst wird nie exportiert).",
+            "provider": "Die Anmeldemethode; credential bedeutet E-Mail und Passwort.",
+            "summary": "Die Möglichkeiten, wie Sie sich anmelden können: ein Passwort oder verknüpfte Konten wie Google oder Microsoft."
+          },
+          "trustedDevices": {
+            "deviceName": "Der Name des Geräts.",
+            "expiresAt": "Wann die Vertrauensstellung endet.",
+            "lastIpAddress": "Die IP-Adresse der letzten Verwendung.",
+            "mdmCompliant": "Ob das Geräteverwaltungssystem es als konform gemeldet hat.",
+            "mdmProvider": "Das Geräteverwaltungssystem, falls vorhanden.",
+            "platform": "Das Betriebssystem.",
+            "revokedAt": "Wann das Vertrauen entzogen wurde.",
+            "revokedBy": "Wer es entzogen hat.",
+            "revokeReason": "Warum es entzogen wurde.",
+            "summary": "Geräte, denen diese Organisation für Ihre Anmeldungen vertraut.",
+            "trustSource": "Warum dem Gerät vertraut wird: ein Passkey, ein Administrator, Ihre Auswahl, es sich zu merken, oder die Geräteverwaltung (MDM)."
+          },
+          "user": {
+            "banExpires": "Wann die Sperre endet; leer, wenn sie nicht endet.",
+            "banned": "Ob die Plattform Ihr Konto gesperrt hat.",
+            "banReason": "Warum die Plattform es gesperrt hat.",
+            "canCreateOrganizations": "Ob Sie eigene Organisationen erstellen dürfen.",
+            "email": "Die E-Mail-Adresse, mit der Sie sich anmelden.",
+            "emailVerified": "Ob Sie diese E-Mail-Adresse bestätigt haben.",
+            "firstName": "Der Vorname Ihres Kontos.",
+            "image": "Die Adresse Ihres Profilbilds.",
+            "lastName": "Der Nachname Ihres Kontos.",
+            "name": "Der Anzeigename Ihres Kontos.",
+            "role": "Ihre Rolle auf der Plattform (nicht in dieser Organisation).",
+            "summary": "Ihr Benutzerkonto: der Login, den Sie für diese Organisation verwenden.",
+            "twoFactorEnabled": "Ob die Zwei-Faktor-Authentifizierung aktiviert ist."
+          },
+          "waterIntake": {
+            "amount": "Wie viele Gläser.",
+            "loggedAt": "Wann Sie es getrunken haben.",
+            "source": "Wo Sie es erfasst haben: eine Erinnerung, manuell oder das Widget.",
+            "summary": "Das von Ihnen erfasste Wasser."
+          }
+        },
+        "approvals": {
+          "approvalChains": {
+            "completedAt": "Wann über den letzten Schritt entschieden wurde (UTC).",
+            "policy": "Die Genehmigungsrichtlinie, die die Schritte festgelegt hat, nach ihrem damaligen Namen.",
+            "status": "Wo die Genehmigung steht.",
+            "summary": "Mehrstufige Genehmigungen Ihrer Anträge, wie von einer früheren Version des Genehmigungssystems erfasst."
+          },
+          "approvalChainStages": {
+            "approver": "Die Person, die gebeten wurde, über den Schritt zu entscheiden.",
+            "chainId": "Die ID der Genehmigung in approval_chains.",
+            "decidedAt": "Wann über den Schritt entschieden wurde (UTC).",
+            "decidedBy": "Wer über den Schritt entschieden hat.",
+            "status": "Wo der Schritt steht.",
+            "step": "Die Position des Schritts: 1 ist der erste Schritt.",
+            "summary": "Die Schritte dieser mehrstufigen Genehmigungen."
+          },
+          "decisionsOnOthers": {
+            "actedAt": "Wann Sie entschieden haben (UTC).",
+            "action": "Was Sie entschieden haben: genehmigt, abgelehnt oder neu zugewiesen, als Sie den Antrag an eine andere genehmigende Person weitergegeben haben.",
+            "asDeputy": "Ob Sie als Stellvertretung für die genehmigende Person entschieden haben.",
+            "authority": "Wo die Entscheidung erfasst ist: das aktuelle Genehmigungssystem (canonical), das frühere (legacy) oder nur im Datensatz selbst (record).",
+            "otherPerson": "Eine anonyme ID für die Person, von der die Anfrage stammt. Dieselbe Person hat im gesamten Export dieselbe ID und in jedem anderen Export eine andere.",
+            "recordKind": "Über welche Art von Antrag Sie entschieden haben, zum Beispiel eine Abwesenheit oder eine Schichtanfrage.",
+            "summary": "Die Entscheidungen, die Sie zu den Anträgen anderer Personen getroffen haben. Die andere Person wird nur als anonyme ID angezeigt."
+          },
+          "deputyDecisions": {
+            "actingFor": "Die genehmigende Person, für die die Stellvertretung einsprang.",
+            "authority": "Zu welchem Genehmigungssystem die Entscheidung gehört: Legacy (früheres) oder Canonical (aktuelles).",
+            "decidedAt": "Wann die Stellvertretung entschieden hat (UTC).",
+            "decidedBy": "Die Stellvertretung, die entschieden hat.",
+            "decision": "Was die Stellvertretung entschieden hat: genehmigt oder abgelehnt.",
+            "requestId": "Die ID der Anfrage in requests für das frühere System.",
+            "summary": "Entscheidungen über Ihre Anträge, die von einer Stellvertretung für die genehmigende Person getroffen wurden.",
+            "workflowId": "Die ID der Genehmigung in workflows für das aktuelle System."
+          },
+          "periodSubmissions": {
+            "cadence": "Ob Sie Ihre Zeiten wöchentlich (weekly) oder monatlich (monthly) übermitteln.",
+            "cadenceEndDate": "Der letzte Tag der gesamten Woche oder des gesamten Monats (JJJJ-MM-TT).",
+            "cadenceStartDate": "Der erste Tag der gesamten Woche oder des gesamten Monats (JJJJ-MM-TT).",
+            "closedAt": "Wann die Einreichung zurückgezogen wurde oder ihre Genehmigung nach einer Änderung veraltet ist (UTC).",
+            "closedCause": "Warum die Einreichung geschlossen wurde: Sie haben sie zurückgezogen (employee) oder Ihre Zeiten haben sich danach geändert (change).",
+            "decidedAt": "Wann die Einreichung genehmigt oder abgelehnt wurde (UTC).",
+            "decidedBy": "Wer die Einreichung genehmigt oder abgelehnt hat.",
+            "endDate": "Der letzte von Ihnen eingereichte Tag (JJJJ-MM-TT).",
+            "rangeEnd": "Das Ende der eingereichten Tage als Zeitpunkt (UTC), nicht inbegriffen.",
+            "rangeStart": "Der Beginn der eingereichten Tage als Zeitpunkt (UTC).",
+            "startDate": "Der erste von Ihnen eingereichte Tag (JJJJ-MM-TT).",
+            "status": "Status der Einreichung: pending, approved, rejected, withdrawn oder outdated, wenn eine spätere Änderung eine Genehmigung ungültig gemacht hat.",
+            "submittedAt": "Wann der Zeitraum eingereicht wurde (UTC).",
+            "submittedBy": "Wer den Zeitraum eingereicht hat.",
+            "summary": "Die Wochen oder Monate an Arbeitszeit, die Sie zur Genehmigung eingereicht haben. Das erneute Einreichen eines Zeitraums fügt eine neue Zeile hinzu.",
+            "timezone": "Die Zeitzone, in der die Tage des Zeitraums gezählt werden.",
+            "weekStartDay": "Für wöchentliche Einreichungen: der Tag, an dem eine Woche beginnt."
+          },
+          "requests": {
+            "approvedAt": "Wann über die Anfrage entschieden wurde (UTC).",
+            "approver": "Die Person, die um eine Entscheidung gebeten wurde.",
+            "notes": "Notizen zur Anfrage.",
+            "reason": "Ihr Grund für die Anfrage.",
+            "rejectionReason": "Warum die Anfrage abgelehnt wurde.",
+            "status": "Ob die Anfrage ausstehend, genehmigt oder abgelehnt ist.",
+            "summary": "Ihre Genehmigungsanfragen, wie sie von einer früheren Version des Genehmigungssystems erfasst wurden."
+          },
+          "shared": {
+            "decisionReason": "Der bei der Entscheidung angegebene Grund.",
+            "recordId": "Die ID dieses Datensatzes, zum Beispiel einer Abwesenheit in absences.json.",
+            "recordKind": "Um welche Art von Datensatz es sich bei der Anfrage handelt, zum Beispiel eine Abwesenheit oder eine Zeitkorrektur.",
+            "stageLabel": "Der Name des Genehmigungsschritts.",
+            "workflowId": "Die ID der Genehmigung in workflows."
+          },
+          "workflowApprovers": {
+            "approver": "Die Person, die um eine Entscheidung gebeten wurde.",
+            "assignedAt": "Wann die Person angefragt wurde (UTC).",
+            "decidedBy": "Wer tatsächlich entschieden hat: der Name einer Person oder „system“, wenn die App entschieden hat (legacy_unknown für alte Datensätze).",
+            "reassignedBy": "Wer die Entscheidung an eine andere Person weitergegeben hat.",
+            "resolvedAt": "Wann dieser Teil entschieden wurde (UTC).",
+            "status": "Status dieses Teils: pending, approved, rejected, cancelled oder expired.",
+            "summary": "Die Personen, die gebeten wurden, über die einzelnen Schritte Ihrer Genehmigungen zu entscheiden."
+          },
+          "workflowEvents": {
+            "actor": "Wer es ausgeführt hat: der Name einer Person oder „system“, wenn die App es getan hat (legacy_unknown für alte Datensätze).",
+            "eventType": "Was passiert ist, zum Beispiel stage.activated, assignment.approved oder assignment.escalated.",
+            "occurredAt": "Wann es geschehen ist (UTC).",
+            "reason": "Der angegebene Grund.",
+            "summary": "Alles, was bei Ihren Genehmigungen geschehen ist, in chronologischer Reihenfolge."
+          },
+          "workflows": {
+            "cancelledAt": "Wann die Anfrage storniert wurde (UTC).",
+            "completedAt": "Wann die endgültige Entscheidung getroffen wurde (UTC).",
+            "status": "Status der Genehmigung: pending, approved, rejected, cancelled oder expired.",
+            "submittedAt": "Wann die Anfrage eingereicht wurde (UTC).",
+            "summary": "Ihre Genehmigungsanfragen im aktuellen Genehmigungssystem, eine pro Anfrage.",
+            "workflowType": "Was genehmigt wird, zum Beispiel eine Abwesenheit, eine Zeiterfassungskorrektur oder die Einreichung einer Periode."
+          },
+          "workflowStages": {
+            "activatedAt": "Wann der Schritt gestartet wurde (UTC).",
+            "decidedAt": "Wann über den Schritt entschieden wurde (UTC).",
+            "stageOrder": "Die Position des Schritts: 1 ist der erste Schritt.",
+            "status": "Status des Schritts: waiting (nicht gestartet), pending, approved, rejected, cancelled oder expired.",
+            "summary": "Die Schritte, die jede Ihrer Genehmigungen durchlaufen hat, in der entsprechenden Reihenfolge."
+          }
+        },
+        "auditLog": {
+          "actionsOnOthers": {
+            "actedAt": "Wann Sie dies getan haben (UTC).",
+            "action": "Was Sie getan haben.",
+            "asDeputy": "Ob Sie als Vertretung für jemanden gehandelt haben.",
+            "authority": "Wo die Aktion erfasst ist: audit_log für das Audit-Protokoll, record für den Datensatz selbst.",
+            "otherPerson": "Eine anonyme ID für das Teammitglied, die für dieselbe Person in diesem gesamten Export identisch ist; leer, wenn die Aktion keine Person betraf.",
+            "recordKind": "Die Art des Datensatzes, auf den Sie sich bezogen haben, z. B. absence_entry oder time_entry.",
+            "summary": "Was Sie getan haben, das nicht Ihre eigenen Datensätze betrifft: Aktionen an Datensätzen von Teammitgliedern oder an der Organisation. Teammitglieder werden nur über eine anonyme ID angezeigt."
+          },
+          "entries": {
+            "action": "Was durchgeführt wurde, wie von der App erfasst, z. B. absence.requested.",
+            "changes": "Was geändert wurde, als JSON (in der Regel die Werte vor und nach der Änderung).",
+            "entityId": "Die ID dieses Datensatzes in der App.",
+            "entityType": "Die Art des Datensatzes, an dem die Aktion durchgeführt wurde, z. B. absence_entry oder employee.",
+            "ipAddress": "Ihre IP-Adresse zum Zeitpunkt der Aktion; leer, wenn jemand anderes sie durchgeführt hat.",
+            "metadata": "Weiterer Kontext, den die App erfasst hat, als JSON.",
+            "performedBy": "Der Name der Person, die dies getan hat.",
+            "performedByYou": "Ob Sie es selbst getan haben.",
+            "summary": "Audit-Protokolleinträge über Sie: Was an Ihren Datensätzen getan wurde, von wem und wann.",
+            "timestamp": "Wann es geschehen ist (UTC).",
+            "userAgent": "Ihr Browser oder Ihre App zum Zeitpunkt der Aktion; leer, wenn jemand anderes sie durchgeführt hat."
+          }
+        },
+        "common": {
+          "assignedAt": "Wann es Ihnen zugewiesen wurde.",
+          "assignedBy": "Wer es Ihnen zugewiesen hat.",
+          "createdAt": "Wann der Datensatz erstellt wurde.",
+          "createdBy": "Wer den Datensatz erstellt hat.",
+          "effectiveFrom": "Wann es in Kraft getreten ist.",
+          "effectiveTo": "Wann die Gültigkeit endete; leer, solange es noch gilt.",
+          "id": "Die ID des Datensatzes in der App, damit andere Dateien darauf verweisen können.",
+          "updatedAt": "Wann der Datensatz zuletzt geändert wurde.",
+          "updatedBy": "Wer den Datensatz zuletzt geändert hat."
+        },
+        "employment": {
+          "assignedLocations": {
+            "city": "Die Stadt des Standorts.",
+            "country": "Das Land des Standorts.",
+            "location": "Der Name des Standorts.",
+            "postalCode": "Die Postleitzahl des Standorts.",
+            "street": "Die Straße des Standorts.",
+            "summary": "Die Standorte, denen Sie zum Arbeiten zugewiesen sind."
+          },
+          "assignedVehicles": {
+            "archived": "Ob die Organisation das Fahrzeug archiviert hat, sodass es nicht mehr ausgewählt werden kann.",
+            "assignmentType": "Wie es Sie erreicht: Ihnen zugewiesen (employee) oder Ihrem Team zugewiesen (team).",
+            "licencePlate": "Das Kennzeichen des Fahrzeugs.",
+            "summary": "Die Organisationsfahrzeuge, die Ihnen oder Ihren Teams zugewiesen sind und die von der App zuerst vorgeschlagen werden, wenn Sie ein Fahrzeug für Ihre Arbeit erfassen.",
+            "vehicle": "Der Name des Fahrzeugs."
+          },
+          "billableRates": {
+            "hourlyRate": "Der abgerechnete Stundensatz.",
+            "level": "Ob der Satz für Ihre gesamte Arbeit oder für ein bestimmtes Projekt gilt.",
+            "project": "Das Projekt, für das der Satz gilt; leer für Ihre gesamte Arbeit.",
+            "summary": "Die Sätze, die die Organisation Kunden für Ihre Arbeit in Rechnung stellt."
+          },
+          "costCenters": {
+            "code": "Der Code der Kostenstelle.",
+            "costCenter": "Der Name der Kostenstelle.",
+            "summary": "Die Kostenstellen, auf die Ihre Arbeit gebucht wird."
+          },
+          "costRates": {
+            "hourlyRate": "Die Kosten pro Stunde.",
+            "summary": "Die internen Kosten Ihrer Arbeit pro Stunde, wie von der Organisation berechnet."
+          },
+          "customFields": {
+            "field": "Der Name des Feldes.",
+            "fieldArchived": "Ob die Organisation das Feld archiviert hat.",
+            "summary": "Die Werte der organisationsspezifischen Felder in Ihrer Personalakte.",
+            "tracked": "Gibt an, ob für das Feld ein Verlauf seiner Werte geführt wird.",
+            "type": "Der Feldtyp, z. B. Text, Zahl, Datum oder Auswahl.",
+            "validFrom": "Für Felder mit Verlauf: der Tag, ab dem der Wert gilt (JJJJ-MM-TT).",
+            "value": "Der Wert."
+          },
+          "customRoles": {
+            "description": "Die Beschreibung der Rolle.",
+            "role": "Der Name der Rolle.",
+            "summary": "Die benutzerdefinierten Rollen, die Sie innehaben."
+          },
+          "departureEvents": {
+            "actor": "Wer die Aktion durchgeführt hat; leer, wenn dies durch das System geschah.",
+            "departureId": "Der Austritt, zu dem dieses Ereignis gehört (seine ID unter „departures“).",
+            "kind": "Was passiert ist, z. B. departure_scheduled oder departure_effective.",
+            "occurredAt": "Wann es passiert ist.",
+            "revision": "Die Version des Austritts nach diesem Ereignis.",
+            "summary": "Der Verlauf Ihrer Austritte: wann die einzelnen Austritte geplant, geändert, storniert oder wirksam wurden und wer dies getan hat."
+          },
+          "departureReviews": {
+            "affectedEndAt": "Das Ende des Zeitraums, auf den sich der Datensatz auswirkt.",
+            "affectedStartAt": "Der Beginn des Zeitraums, auf den sich der Datensatz auswirkt.",
+            "departureId": "Die ID des Austritts unter „departures“.",
+            "kind": "Die Art des Datensatzes, der überprüft werden musste.",
+            "resolution": "Wie die Überprüfung abgeschlossen wurde.",
+            "resolvedAt": "Wann die Überprüfung abgeschlossen wurde.",
+            "resolvedBy": "Wer die Überprüfung abgeschlossen hat.",
+            "status": "Der Status der Überprüfung.",
+            "subjectId": "Die ID des zu überprüfenden Datensatzes.",
+            "summary": "Datensätze, die aufgrund Ihres Austritts überprüft werden mussten."
+          },
+          "departures": {
+            "blockedReason": "Warum der Austritt nicht abgeschlossen werden konnte, falls dies der Fall war.",
+            "cutoffAt": "Wann Ihr Zugriff auf die Organisation endet.",
+            "effectiveAt": "Wann der Austritt wirksam wurde.",
+            "lastWorkingDay": "Ihr letzter Arbeitstag (JJJJ-MM-TT).",
+            "mode": "Wie der Austritt eingerichtet wurde.",
+            "replacement": "Die Person, die Ihre Aufgaben übernimmt.",
+            "status": "Der Status des Austritts.",
+            "summary": "Ihre Austritte aus der Organisation.",
+            "timezone": "Die Zeitzone des letzten Arbeitstags."
+          },
+          "departureTasks": {
+            "completedAt": "Wann die Aufgabe abgeschlossen wurde.",
+            "departureId": "Die ID des Austritts unter „departures“.",
+            "kind": "Was die Aufgabe tut.",
+            "status": "Der Status der Aufgabe.",
+            "summary": "Die Aufgaben, die die App für Ihren Austritt ausgeführt hat."
+          },
+          "employee": {
+            "birthday": "Ihr Geburtsdatum (JJJJ-MM-TT).",
+            "contractType": "Ihre Vertragsart.",
+            "email": "Die E-Mail-Adresse Ihres Benutzerkontos.",
+            "endDate": "Wann Ihr Beschäftigungsverhältnis endete; leer, solange es fortbesteht.",
+            "firstName": "Ihr Vorname in Ihrer Personalakte.",
+            "gender": "Ihr Geschlecht.",
+            "isActive": "Gibt an, ob Ihre Personalakte aktiv ist.",
+            "lastName": "Ihr Nachname in Ihrer Personalakte.",
+            "organization": "Der Name der Organisation.",
+            "personnelNumber": "Ihre Personalnummer.",
+            "position": "Ihre Position oder Berufsbezeichnung.",
+            "primaryTeam": "Ihr primäres Team.",
+            "pronouns": "Ihre Pronomen.",
+            "role": "Ihre Rolle in der App: Administrator, Manager oder Mitarbeiter.",
+            "startDate": "Wann Ihr Beschäftigungsverhältnis begonnen hat.",
+            "summary": "Ihre Mitarbeiterakte in dieser Organisation und der Name Ihres Benutzerkontos.",
+            "userFirstName": "Der Vorname Ihres Benutzerkontos.",
+            "userId": "Die ID Ihres Benutzerkontos.",
+            "userLastName": "Der Nachname Ihres Benutzerkontos.",
+            "userName": "Der Name Ihres Benutzerkontos."
+          },
+          "employmentPeriods": {
+            "endedAt": "Wann der Zeitraum endete; leer, solange er offen ist.",
+            "startedAt": "Wann der Zeitraum begann.",
+            "startProvenance": "Ursprung des Beginns, zum Beispiel eine Einstellung oder Wiedereinstellung.",
+            "status": "Ob der Zeitraum offen oder geschlossen ist.",
+            "summary": "Jeder Zeitraum, in dem Sie bei der Organisation angestellt waren."
+          },
+          "employmentTerms": {
+            "changeReason": "Warum die Bedingungen festgelegt oder geändert wurden.",
+            "contractType": "Ihre Vertragsart.",
+            "currency": "Die Währung des Stundenlohns.",
+            "hourlyRate": "Ihr Stundenlohn gemäß diesen Bedingungen.",
+            "probationEndsOn": "Der letzte Tag Ihrer Probezeit (JJJJ-MM-TT).",
+            "probationStartsOn": "Der erste Tag Ihrer Probezeit (JJJJ-MM-TT).",
+            "reviewState": "Ob die Bedingungen bestätigt wurden oder noch geprüft werden müssen.",
+            "status": "Ob diese Bedingungen in Kraft sind.",
+            "summary": "Ihre Anstellungsbedingungen im Zeitverlauf mit Ihrem Stundenlohn.",
+            "validFrom": "Ab wann diese Bedingungen gelten.",
+            "validUntil": "Wann diese Bedingungen enden; leer, solange sie gelten.",
+            "weeklyContractMinutes": "Ihre vertragliche Arbeitszeit pro Woche in Minuten.",
+            "workModel": "Ihr Arbeitsmodell.",
+            "workPolicy": "Die Arbeitsrichtlinie, die diese Bedingungen verwenden."
+          },
+          "groups": {
+            "addedAt": "Wann Sie der Gruppe hinzugefügt wurden.",
+            "addedBy": "Wer Sie der Gruppe hinzugefügt hat.",
+            "description": "Die Beschreibung der Gruppe.",
+            "group": "Der Name der Gruppe.",
+            "summary": "Die Mitarbeitergruppen, denen Sie angehören."
+          },
+          "locationSupervision": {
+            "location": "Der Name des Standorts.",
+            "subarea": "Der Bereich innerhalb des Standorts; leer für den gesamten Standort.",
+            "summary": "Die Standorte und Bereiche, die Sie beaufsichtigen."
+          },
+          "managers": {
+            "manager": "Der Name des Vorgesetzten.",
+            "summary": "Ihre Vorgesetzten."
+          },
+          "policyAssignments": {
+            "captureEnabled": "Nur für Standorterfassung: Ob Ihr Standort beim Ein- oder Ausstempeln erfasst wird.",
+            "effectiveFrom": "Ab wann die Zuweisung gilt.",
+            "effectiveUntil": "Wann die Zuweisung endet; leer, solange sie gilt.",
+            "isActive": "Ob die Zuweisung aktiv ist.",
+            "policy": "Der Name der Richtlinie; leer bei Standorterfassung.",
+            "policyKind": "Die Art der Richtlinie: Arbeit, Urlaub, Feiertag (eine Feiertagsvorlage), Feiertagszuweisung (ein einzelner Feiertag), Feiertagskategorie, Änderung, Zuschlag, Arbeitskategoriesatz oder Standorterfassung.",
+            "priority": "Welche Zuweisung Vorrang hat, wenn mehrere gelten: Die höhere Zahl gewinnt.",
+            "summary": "Jede Richtlinie, die für Sie gilt: Ihnen zugewiesen, Ihren Teams oder der Standard der Organisation."
+          },
+          "projectAssignmentHistory": {
+            "summary": "Frühere und aktuelle Projektzuweisungen und wann sie galten."
+          },
+          "projectAssignments": {
+            "summary": "Die Ihnen oder Ihren Teams zugewiesenen Projekte."
+          },
+          "projectsManaged": {
+            "summary": "Die Projekte, die Sie leiten."
+          },
+          "shared": {
+            "assignmentType": "Wie es Sie erreicht: Ihnen zugewiesen (Mitarbeiter), Ihrem Team (Team) oder der gesamten Organisation (Organisation).",
+            "primary": "Ob es Ihr primärer Eintrag ist.",
+            "project": "Der Name des Projekts.",
+            "team": "Der Name des Teams."
+          },
+          "skills": {
+            "category": "Die Kategorie der Fähigkeit.",
+            "expiresOn": "Das Datum, an dem die Fähigkeit abläuft (JJJJ-MM-TT); leer, falls sie nicht abläuft.",
+            "notes": "Notizen zu Ihrer Fähigkeit.",
+            "skill": "Der Name der Fähigkeit.",
+            "summary": "Ihre Fähigkeiten und Qualifikationen."
+          },
+          "teamHistory": {
+            "summary": "Jedes Team, in dem Sie waren, und wann."
+          },
+          "teamPermissions": {
+            "canApproveTeamRequests": "Ob Sie die Anträge des Teams genehmigen dürfen.",
+            "canCreateTeams": "Ob Sie Teams erstellen dürfen.",
+            "canManageTeamMembers": "Ob Sie die Mitglieder des Teams verwalten dürfen.",
+            "canManageTeamSettings": "Ob Sie die Einstellungen des Teams ändern dürfen.",
+            "grantedAt": "Wann die Berechtigungen erteilt wurden.",
+            "grantedBy": "Wer die Berechtigungen erteilt hat.",
+            "summary": "Die Teamberechtigungen, die Sie besitzen.",
+            "team": "Das Team, für das die Berechtigungen gelten; leer für jedes Team der Organisation."
+          },
+          "teams": {
+            "addedBy": "Wer Sie zum Team hinzugefügt hat.",
+            "memberSince": "Seit wann Sie im Team sind.",
+            "summary": "Die Teams, in denen Sie aktuell sind."
+          }
+        },
+        "integrations": {
+          "calendarConnections": {
+            "account": "Ihr Konto beim Kalenderdienst.",
+            "calendarId": "Der Kalender, den die App in diesem Konto verwendet.",
+            "conflictDetectionEnabled": "Ob die App diesen Kalender auf Terminkonflikte prüft.",
+            "createdAt": "Wann Sie den Kalender verknüpft haben (UTC).",
+            "lastSyncAt": "Wann die App zuletzt mit dem Kalender synchronisiert wurde (UTC).",
+            "provider": "Der Kalenderdienst, zum Beispiel Google, Microsoft 365 oder iCloud.",
+            "pushEnabled": "Ob die App Ihre Abwesenheiten zu diesem Kalender hinzufügt.",
+            "summary": "Die Kalender, die Sie mit der App verknüpft haben. Zugriffstoken sind niemals enthalten.",
+            "updatedAt": "Wann die Verbindung zuletzt geändert wurde (UTC)."
+          },
+          "chatAccounts": {
+            "accountId": "Die ID Ihres Kontos beim Chatdienst.",
+            "displayName": "Ihr Anzeigename beim Chatdienst.",
+            "email": "Ihre E-Mail-Adresse beim Chatdienst, sofern dieser eine bereitstellt.",
+            "isActive": "Ob die Verknüpfung verwendet wird.",
+            "lastSeenAt": "Wann Sie die App zuletzt über das Konto verwendet haben (UTC).",
+            "linkedAt": "Wann Sie das Konto verknüpft haben (UTC).",
+            "platform": "Der Chatdienst: Slack, Teams, Telegram oder Discord.",
+            "summary": "Ihre mit der App verknüpften Chatkonten, damit Sie sie über Slack, Microsoft Teams, Telegram oder Discord nutzen können.",
+            "username": "Ihr Benutzername beim Chatdienst.",
+            "workspaceId": "Die ID des Arbeitsbereichs oder Mandanten, zu dem Ihr Konto gehört, sofern der Dienst einen besitzt."
+          },
+          "icsFeeds": {
+            "createdAt": "Wann der Link erstellt wurde (UTC).",
+            "includeApproved": "Ob der Feed genehmigte Abwesenheiten anzeigt.",
+            "includePending": "Ob der Feed Abwesenheiten anzeigt, die noch auf Genehmigung warten.",
+            "isActive": "Ob der Link noch funktioniert.",
+            "lastUsedAt": "Wann eine Kalender-App den Feed zuletzt abgerufen hat (UTC).",
+            "revokedAt": "Wann der Link deaktiviert wurde (UTC).",
+            "summary": "Ihre Kalender-Feed-Links, mit denen eine Kalender-App Ihre Abwesenheiten abonnieren kann. Der geheime Link selbst ist niemals enthalten."
+          },
+          "kioskPin": {
+            "pinSet": "Ob eine Kiosk-PIN für Sie festgelegt ist.",
+            "setAt": "Wann die PIN zuletzt festgelegt wurde (UTC).",
+            "setBy": "Wer die PIN festgelegt hat.",
+            "summary": "Ob Sie eine PIN zum Einstempeln an einem Kiosk-Terminal haben. Die PIN selbst wird niemals lesbar gespeichert und ist nicht enthalten."
+          },
+          "shared": {
+            "isActive": "Ob die Verbindung verwendet wird."
+          }
+        },
+        "notifications": {
+          "notifications": {
+            "actionUrl": "Die Seite in der App, auf die die Benachrichtigung verweist.",
+            "createdAt": "Wann Sie die Benachrichtigung erhalten haben (UTC).",
+            "entityId": "Die ID dieses Datensatzes.",
+            "entityType": "Die Art des Datensatzes, auf den sich die Benachrichtigung bezieht, z. B. eine Abwesenheit.",
+            "isRead": "Gibt an, ob Sie die Benachrichtigung gelesen haben.",
+            "message": "Der Text der Benachrichtigung.",
+            "metadata": "Weitere in der Benachrichtigung enthaltene Details im JSON-Format.",
+            "readAt": "Wann Sie sie gelesen haben (UTC).",
+            "summary": "Die Benachrichtigungen, die Sie in der App erhalten haben, genau so, wie Sie sie erhalten haben.",
+            "title": "Der Titel der Benachrichtigung.",
+            "type": "Worum es in der Benachrichtigung geht, z. B. approval_request_submitted."
+          }
+        },
+        "personnelFile": {
+          "documents": {
+            "absenceEndDate": "Bei einer Krankschreibung: der letzte Tag der Abwesenheit (JJJJ-MM-TT).",
+            "absenceId": "Bei einer Krankschreibung: die ID der abgedeckten Abwesenheit in absences.json.",
+            "absenceStartDate": "Bei einer Krankschreibung: der erste Tag der Abwesenheit (JJJJ-MM-TT).",
+            "category": "Die Dokumentenkategorie: contract, payslip, certificate, sick_note oder other.",
+            "documentDate": "Das Datum des Dokuments (JJJJ-MM-TT).",
+            "expiryDate": "Der Tag, an dem das Dokument abläuft (JJJJ-MM-TT), z. B. bei einem Zertifikat.",
+            "file": "Der Pfad der Originaldatei innerhalb dieses Archivs.",
+            "fileName": "Der Dateiname beim Hochladen.",
+            "mimeType": "Der Dateityp, z. B. application/pdf.",
+            "payPeriodMonth": "Bei einer Entgeltabrechnung: der Monat (1 bis 12), für den sie gilt.",
+            "payPeriodYear": "Bei einer Entgeltabrechnung: das Jahr, für das sie gilt.",
+            "sizeBytes": "Die Dateigröße in Bytes.",
+            "summary": "Die Dokumente in Ihrer Personalakte. Die Dateien selbst befinden sich nach Kategorien geordnet im Ordner „personnel_file“.",
+            "title": "Der Titel des Dokuments.",
+            "uploadedBy": "Wer das Dokument hochgeladen hat.",
+            "visibility": "Wer das Dokument einsehen kann; „shared“ bedeutet, dass Sie es in Ihrer Akte sehen können."
+          }
+        },
+        "planning": {
+          "shared": {
+            "approvedAt": "Wann über die Anfrage entschieden wurde (UTC).",
+            "approver": "Wer über die Anfrage entschieden hat.",
+            "lifecycleStatus": "Der aktuelle Status der Anfrage, einschließlich der Angabe, ob sie storniert wurde.",
+            "requestCreatedAt": "Wann die Anfrage gestellt wurde (UTC).",
+            "requestId": "Die ID der Anfrage in der App.",
+            "requestStatus": "Die Entscheidung über die Anfrage: pending, approved oder rejected.",
+            "requestType": "Was angefragt wurde: swap (Schicht tauschen), assignment (Schicht übernehmen) oder pickup (offene Schicht annehmen).",
+            "shiftDate": "Der Tag der Schicht, auf die sich die Anfrage bezieht (JJJJ-MM-TT).",
+            "shiftEndTime": "Wann diese Schicht endet, als lokale Uhrzeit (HH:mm).",
+            "shiftStartTime": "Wann diese Schicht beginnt, als lokale Uhrzeit (HH:mm)."
+          },
+          "shiftRequests": {
+            "notes": "Ihre Notiz zur Anfrage.",
+            "reason": "Ihr Grund für die Anfrage.",
+            "reasonCategory": "Die Art des Grundes, z. B. sick, emergency, childcare oder other.",
+            "rejectionReason": "Warum die Anfrage abgelehnt wurde.",
+            "summary": "Die Schichtanfragen, die Sie gestellt haben.",
+            "swapPartner": "Die Kollegin bzw. der Kollege, die bzw. den Sie um einen Tausch oder eine Schichtübernahme gebeten haben."
+          },
+          "shiftRequestsReceived": {
+            "requestedBy": "Die Kollegin bzw. der Kollege, die bzw. der die Anfrage gestellt hat.",
+            "summary": "Anfragen, die Kolleginnen und Kollegen an Sie gerichtet haben, z. B. die Bitte um Schichttausch oder -übernahme. Deren Gründe, Notizen und Schichten sind nicht enthalten: Schichtdatum und -zeiten werden nur angezeigt, wenn es sich um Ihre Schicht handelt."
+          },
+          "shifts": {
+            "date": "Der Tag der Schicht (JJJJ-MM-TT).",
+            "endTime": "Wann die Schicht endet, als lokale Uhrzeit am Arbeitsort (HH:mm).",
+            "location": "Der Standort der Schicht.",
+            "notes": "Die Notiz zur Schicht.",
+            "publishedAt": "Wann die Schicht veröffentlicht wurde (UTC).",
+            "publishedBy": "Wer die Schicht veröffentlicht hat.",
+            "startTime": "Wann die Schicht beginnt, als Ortszeit am Arbeitsort (HH:mm).",
+            "status": "Ob die Schicht noch ein Entwurf ist oder für Sie veröffentlicht wurde.",
+            "subarea": "Der Bereich innerhalb des Standorts.",
+            "summary": "Die Schichten, für die Sie eingeteilt waren.",
+            "template": "Die Schichtvorlage, aus der die Schicht erstellt wurde."
+          }
+        },
+        "positionStamps": {
+          "accessLog": {
+            "accessedAt": "Wann Ihre Positionen angezeigt wurden (UTC).",
+            "exportId": "Bei einem Export: die ID des Exports.",
+            "kind": "Wie sie angezeigt wurden: in den Details eines Arbeitszeitraums (work_period_detail) oder in einem Export (data_export).",
+            "summary": "Wem außer Ihnen Ihre Positionen wann angezeigt wurden: eine Zeile pro angezeigtem Arbeitszeitraum oder eine Zeile pro Export.",
+            "viewer": "Wem Ihre Positionen angezeigt wurden.",
+            "workPeriodId": "Die ID des angezeigten Arbeitszeitraums in time.json > work_periods.",
+            "workPeriodStartedAt": "Wann dieser Arbeitszeitraum begann (UTC).",
+            "workPeriodUtcOffsetMinutes": "Der UTC-Offset des Einstempelns dieses Arbeitszeitraums in Minuten."
+          },
+          "consents": {
+            "consentId": "Die ID der Einwilligung in der App.",
+            "grantedAt": "Wann Sie Ihre Einwilligung erteilt haben (UTC).",
+            "summary": "Jede Einwilligung, die Sie zur Erfassung Ihrer Position erteilt haben, und wann Sie sie widerrufen haben.",
+            "withdrawnAt": "Wann Sie Ihre Einwilligung widerrufen haben (UTC); leer, solange sie gültig ist."
+          },
+          "noticeDeclines": {
+            "declinedAt": "Wann Sie geantwortet haben (UTC).",
+            "summary": "Die Zeitpunkte, zu denen Sie den Positionshinweis mit „Nicht jetzt“ beantwortet haben."
+          },
+          "shared": {
+            "noticeVersion": "Die Version des Positionshinweises, den Sie beantwortet haben.",
+            "purposeStatement": "Warum die Organisation Positionen erfasst, wie im Hinweis angegeben.",
+            "retentionDays": "Wie viele Tage Positionen gespeichert werden, wie im Hinweis angegeben."
+          },
+          "stamps": {
+            "accuracyMeters": "Wie genau die Position ist, in Metern, wie von Ihrem Gerät gemeldet.",
+            "capturedAt": "Wann die Position beim Stempelereignis erfasst wurde (UTC).",
+            "clockEvent": "Ob die Position bei einem clock_in oder einem clock_out erfasst wurde.",
+            "consentId": "Die ID der Einwilligung in consents, unter der die Position erfasst wurde.",
+            "createdAt": "Wann die Position gespeichert wurde (UTC).",
+            "fixedAt": "Wann Ihr Gerät die Position ermittelt hat (UTC); dies kann etwas früher als das Stempelereignis sein.",
+            "latitude": "Der Breitengrad in Dezimalgrad.",
+            "longitude": "Der Längengrad in Dezimalgrad.",
+            "purgeAt": "Wann die Position gelöscht wird (UTC).",
+            "summary": "Die beim Ein- oder Ausstempeln erfassten Positionen. Jede wird automatisch bei purge_at gelöscht.",
+            "timeEntryId": "Die ID des Einstempelns oder Ausstempelns in time.json > time_entries.",
+            "utcOffsetMinutes": "Der UTC-Offset des Stempelereignisses in Minuten (120 bedeutet UTC+2)."
+          }
+        },
+        "time": {
+          "automaticClockOuts": {
+            "clockOutEntryId": "Die ID des von der App erfassten Ausstempelns in time_entries.",
+            "cutoffTime": "Der Zeitpunkt, zu dem Sie ausgestempelt wurden (UTC).",
+            "maxUninterruptedMinutes": "Die maximale Dauer in Minuten, die Sie ohne Pause eingestempelt bleiben dürfen.",
+            "processedAt": "Wann die App Sie ausgestempelt hat (UTC).",
+            "startTime": "Wann der Arbeitszeitraum begann (UTC).",
+            "summary": "Zeitpunkte, an denen die App Sie ausgestempelt hat, weil Sie länger als erlaubt eingestempelt waren.",
+            "timezone": "Die Zeitzone des Arbeitszeitraums.",
+            "utcOffsetMinutes": "Der UTC-Offset des Ausstempelns in Minuten."
+          },
+          "balanceAdjustments": {
+            "cancellationReason": "Warum die Anpassung storniert wurde.",
+            "cancelledAt": "Wann die Anpassung storniert wurde (UTC); leer, wenn sie noch gültig ist.",
+            "cancelledBy": "Wer die Anpassung storniert hat.",
+            "day": "Der Tag, für den die Anpassung gilt (YYYY-MM-DD).",
+            "kind": "Die Art der Anpassung: opening_balance oder overtime_payout.",
+            "minutes": "Die Minuten, die Ihrem Saldo hinzugefügt (positiv) oder davon abgezogen (negativ) wurden.",
+            "reason": "Warum die Anpassung vorgenommen wurde.",
+            "recordedAt": "Wann die Korrektur erfasst wurde (UTC).",
+            "recordedBy": "Wer die Korrektur erfasst hat.",
+            "summary": "Manuelle Änderungen an Ihrem Arbeitszeitkonto, wie z. B. ein Anfangssaldo oder ausgezahlte Überstunden, einschließlich stornierter Änderungen."
+          },
+          "breakAdjustments": {
+            "adjustedAt": "Wann die App die Pause hinzugefügt hat (UTC).",
+            "adjustedDurationMinutes": "Die Dauer des Zeitraums nach dem Hinzufügen der Pause in Minuten.",
+            "breakInsertedAt": "An welcher Stelle im Zeitraum die Pause eingefügt wurde (UTC).",
+            "breakInsertedMinutes": "Wie lang die hinzugefügte Pause ist, in Minuten.",
+            "originalDurationMinutes": "Die Dauer des Zeitraums vor dem Hinzufügen der Pause in Minuten.",
+            "originalEndTime": "Das Ende des Zeitraums vor dem Hinzufügen der Pause (UTC).",
+            "policy": "Die Pausenregel, die die Pause vorgeschrieben hat.",
+            "requiredBreakMinutes": "Die von der Regel vorgeschriebene Pause in Minuten.",
+            "summary": "Pausen, die die App zu einer Arbeitsperiode hinzugefügt hat, da die gesetzlich vorgeschriebene Pause fehlte.",
+            "workingMinutesThreshold": "Die Arbeitszeit in Minuten, nach der die Regel die Pause vorschreibt."
+          },
+          "complianceExceptions": {
+            "actualDurationMinutes": "Wie lange Sie im Rahmen der Ausnahme tatsächlich gearbeitet haben, in Minuten.",
+            "approvedAt": "Wann die Ausnahme genehmigt wurde (UTC).",
+            "approver": "Wer über die Ausnahme entschieden hat.",
+            "exceptionType": "Von welcher Regel die Ausnahme abweicht, z. B. rest_period oder overtime_daily.",
+            "plannedDurationMinutes": "Die Arbeitszeit in Minuten, für die die Ausnahme beantragt wurde.",
+            "reason": "Warum die Ausnahme beantragt wurde.",
+            "rejectedAt": "Wann die Ausnahme abgelehnt wurde (UTC).",
+            "rejectionReason": "Warum die Ausnahme abgelehnt wurde.",
+            "status": "Ob die Ausnahme ausstehend, genehmigt, abgelehnt, abgelaufen oder in Anspruch genommen ist.",
+            "summary": "Für Sie beantragte Ausnahmen von Arbeitszeitregeln, wie z. B. eine verkürzte Ruhezeit oder zusätzliche Überstunden.",
+            "usedAt": "Wann Sie im Rahmen der Ausnahme gearbeitet haben (UTC).",
+            "validFrom": "Ab wann die Ausnahme gilt (UTC).",
+            "validUntil": "Bis wann die Ausnahme gilt (UTC).",
+            "wasUsed": "Ob Sie im Rahmen der Ausnahme gearbeitet haben."
+          },
+          "historicalRepairProposals": {
+            "approvedAt": "Wann die Korrektur genehmigt wurde (UTC).",
+            "approvedBy": "Wer die Korrektur genehmigt hat.",
+            "kind": "Was die Korrektur ändert.",
+            "proposedAt": "Wann die Korrektur vorgeschlagen wurde (UTC).",
+            "proposedBy": "Wer die Korrektur vorgeschlagen hat.",
+            "reason": "Warum die Korrektur vorgeschlagen wurde.",
+            "resolvedAt": "Wann der Vorschlag geschlossen wurde (UTC).",
+            "resolvedBy": "Wer den Vorschlag geschlossen hat.",
+            "status": "Status des Vorschlags, z. B. vorgeschlagen, genehmigt, angewendet oder abgelehnt.",
+            "summary": "Vorgeschlagene Korrekturen älterer Arbeitszeiteinträge, z. B. ein fehlendes Ausstempeln, und was daraus wurde."
+          },
+          "shared": {
+            "actualMinutes": "Die von Ihnen gearbeiteten Minuten, angerechnet auf das Arbeitszeitkonto.",
+            "balanceMinutes": "Ihr Saldo in Minuten: Positive Werte bedeuten Überstunden, negative noch zu leistende Zeit.",
+            "computedAt": "Wann die App diese Zahlen zuletzt berechnet hat (UTC).",
+            "requiredMinutes": "Die Minuten, die Sie laut Ihrer Arbeitszeitrichtlinie arbeiten sollten.",
+            "workPeriodId": "Die ID der Arbeitsperiode in work_periods."
+          },
+          "surchargeCalculations": {
+            "appliedPercentage": "Der Zuschlagssatz als Dezimalwert (0,25 bedeutet 25 %).",
+            "baseMinutes": "Die im Zeitraum gearbeiteten Minuten.",
+            "calculatedAt": "Der Zeitpunkt, für den der Zuschlag gilt (UTC).",
+            "calculationDetails": "Wie der Zuschlag berechnet wurde, im JSON-Format.",
+            "qualifyingMinutes": "Die zuschlagsberechtigten Minuten.",
+            "summary": "Für Ihre Arbeit berechnete Zuschläge, z. B. für Nacht-, Sonntags- oder Feiertagsarbeit.",
+            "surchargeMinutes": "Die als Zuschlag gutgeschriebenen zusätzlichen Minuten.",
+            "surchargeModel": "Das angewendete Zuschlagsmodell.",
+            "surchargeRule": "Die Regel des Modells, die angewendet wurde."
+          },
+          "timeEntries": {
+            "createdBy": "Wer den Eintrag erfasst hat: Sie oder die Person, die ihn für Sie erfasst hat.",
+            "deviceInfo": "Das Gerät oder der Browser, mit dem Sie den Eintrag erfasst haben; leer, wenn er von jemand anderem erfasst wurde.",
+            "ipAddress": "Die IP-Adresse des Geräts, mit dem Sie den Eintrag erfasst haben; leer, wenn er von jemand anderem erfasst wurde.",
+            "isSuperseded": "Gibt an, ob dieser Eintrag durch eine spätere Korrektur ersetzt wurde.",
+            "location": "Der mit dem Eintrag erfasste Standort, als Ortsname oder Koordinaten.",
+            "notes": "Die Notiz zum Eintrag.",
+            "replacesEntryId": "Bei einer Korrektur: die ID des Eintrags, der ersetzt wird.",
+            "summary": "Jedes Einstempeln, Ausstempeln und jede Korrektur, die für Sie erfasst wurden. Einträge werden nie geändert: Eine Korrektur ist ein neuer Eintrag, der den alten ersetzt.",
+            "supersededById": "Die ID der Korrektur, die diesen Eintrag ersetzt hat.",
+            "timestamp": "Der Zeitpunkt, für den der Eintrag steht, in UTC.",
+            "timezone": "Die Zeitzone, in der der Eintrag erfasst wurde, z. B. Europe/Berlin.",
+            "timezoneSource": "Woher die Zeitzone stammt, z. B. von Ihrem Gerät oder aus den Einstellungen der Organisation.",
+            "type": "Was der Eintrag erfasst: clock_in, clock_out oder correction.",
+            "utcOffsetMinutes": "Der zum Zeitpunkt der Erfassung gültige UTC-Offset in Minuten (120 bedeutet UTC+2). Addieren Sie ihn zum Zeitstempel, um die Ortszeit zu erhalten."
+          },
+          "workBalance": {
+            "adjustmentMinutes": "Die Minuten, die durch Saldokorrekturen hinzugefügt oder abgezogen wurden.",
+            "computedFromDate": "Der erste Tag, für den der Saldo zählt (YYYY-MM-DD).",
+            "computedThroughDate": "Der letzte Tag, für den der Saldo zählt (YYYY-MM-DD).",
+            "summary": "Ihr aktueller Arbeitszeitsaldo: Ihre tatsächliche Arbeitszeit im Vergleich zur Sollarbeitszeit."
+          },
+          "workBalancePeriods": {
+            "isClosed": "Gibt an, ob der Zeitraum abgeschlossen ist, sodass sich die Werte nicht mehr ändern.",
+            "periodEnd": "Der letzte Tag des Zeitraums (YYYY-MM-DD).",
+            "periodStart": "Der erste Tag des Zeitraums (YYYY-MM-DD).",
+            "periodType": "Die Dauer des Zeitraums: Monat oder Jahr.",
+            "summary": "Ihr Arbeitszeitsaldo pro Monat und pro Jahr."
+          },
+          "workOperations": {
+            "actor": "Die Person, die die Änderung vorgenommen hat.",
+            "actorKind": "Wer die Änderung vorgenommen hat: eine Person (human), die App selbst (system), ein Kiosk oder unbekannt bei alten Datensätzen.",
+            "createdAt": "Wann die Änderung vorgenommen wurde (UTC).",
+            "kind": "Was getan wurde, z. B. ein Einstempeln, eine Bearbeitung oder eine Löschung.",
+            "summary": "Ein Protokoll jeder Änderung an Ihren Arbeitszeiträumen: was getan wurde und von wem.",
+            "writer": "Welcher Teil der App die Änderung vorgenommen hat, z. B. ein Ausstempeln in der Web-App, ein Import oder eine Bearbeitung durch einen Administrator."
+          },
+          "workPeriods": {
+            "approvalStatus": "Gibt an, ob der Zeitraum genehmigt, abgelehnt oder noch nicht freigegeben ist.",
+            "breakStartedAt": "Wann Ihre aktuelle Pause begonnen hat (UTC); leer, wenn Sie sich nicht in einer Pause befinden.",
+            "breakStartedZone": "Die Zeitzone, in der die Pause begonnen wurde.",
+            "clockInEntryId": "Die ID des Einstempelns in time_entries.",
+            "clockOutEntryId": "Die ID des Ausstempelns in time_entries.",
+            "deletedAt": "Wann der Zeitraum gelöscht wurde (UTC); leer, wenn er nicht gelöscht wurde.",
+            "deletedBy": "Wer den Zeitraum gelöscht hat.",
+            "deletionReason": "Warum der Zeitraum gelöscht wurde.",
+            "drivenDistanceKm": "Die während der Arbeit gefahrene Strecke in Kilometern: der Endstand minus der Anfangsstand oder die direkt eingegebene Strecke, wenn kein Anfangsstand vorhanden war.",
+            "durationMinutes": "Wie lange Sie gearbeitet haben, in Minuten.",
+            "endTime": "Wann die Arbeit beendet wurde (UTC); leer, solange Sie noch eingestempelt sind.",
+            "endUtcOffsetMinutes": "Der UTC-Offset des Ausstempelns in Minuten.",
+            "isActive": "Gibt an, ob Sie für diesen Zeitraum noch eingestempelt sind.",
+            "isBillable": "Gibt an, ob die Arbeit einem Kunden in Rechnung gestellt werden kann.",
+            "licencePlate": "Das Kennzeichen des Fahrzeugs der Organisation, das Sie gefahren haben; leer bei Ihrem eigenen Fahrzeug.",
+            "odometerEndKm": "Der Kilometerstand des Fahrzeugs bei Arbeitsende, in Kilometern.",
+            "odometerStartKm": "Der Kilometerstand des Fahrzeugs bei Arbeitsbeginn, in Kilometern.",
+            "pendingDurationMinutes": "Bei einer ausstehenden Genehmigung: die beantragte Dauer in Minuten.",
+            "pendingEndTime": "Bei einer ausstehenden Genehmigung: das beantragte Ende (UTC).",
+            "pendingReason": "Warum die Änderung beantragt wurde.",
+            "pendingRequestedAt": "Wann die Änderung angefordert wurde (UTC).",
+            "pendingRequestedBy": "Wer die Änderung angefordert hat.",
+            "pendingStartTime": "Für eine Änderung, die auf Genehmigung wartet: der angeforderte Beginn (UTC).",
+            "project": "Das Projekt, auf das die Arbeit gebucht wurde.",
+            "startTime": "Wann die Arbeit begonnen hat (UTC).",
+            "startUtcOffsetMinutes": "Die UTC-Abweichung beim Einstempeln in Minuten (120 bedeutet UTC+2).",
+            "summary": "Ihre Arbeitszeiträume, jeweils vom Einstempeln bis zum Ausstempeln, einschließlich Änderungen, die auf Genehmigung warten.",
+            "task": "Die Projektaufgabe, auf die die Arbeit gebucht wurde.",
+            "vehicleKind": "Das Fahrzeug, das Sie während der Arbeit gefahren haben: „organization“ für ein Fahrzeug der Organisation, „own“ für Ihr eigenes Fahrzeug; leer, wenn keines erfasst wurde.",
+            "vehicleName": "Der Name des Organisationsfahrzeugs, das Sie gefahren haben; leer bei Ihrem eigenen Fahrzeug.",
+            "workCategory": "Die Art der Arbeit, wie von der Organisation benannt.",
+            "workLocationType": "Wo Sie gearbeitet haben, z. B. Büro, Homeoffice oder mobil."
+          },
+          "workPolicyViolations": {
+            "acknowledgedAt": "Wann der Verstoß bestätigt wurde (UTC).",
+            "acknowledgedBy": "Wer den Verstoß bestätigt hat.",
+            "acknowledgedNote": "Die Notiz, die bei der Bestätigung des Verstoßes verfasst wurde.",
+            "details": "Die Zahlenwerte hinter dem Verstoß als JSON, z. B. die geleisteten Arbeitsstunden und das Limit.",
+            "policy": "Die Arbeitsrichtlinie, deren Regel verletzt wurde.",
+            "summary": "Zeiten, zu denen Ihre Arbeit gegen eine Regel Ihrer Arbeitsrichtlinie verstoßen hat, z. B. eine fehlende Pause oder ein zu langer Arbeitstag.",
+            "violatedAt": "Wann die Regel verletzt wurde (UTC).",
+            "violationType": "Welche Regel verletzt wurde."
+          },
+          "yearlyBalances": {
+            "absenceAdjustedMinutes": "Die gutgeschriebenen Minuten für Abwesenheiten wie Urlaub oder Krankheit.",
+            "summary": "Ihr Arbeitszeitsaldo pro Jahr, berechnet von einer früheren Version der App.",
+            "year": "Das Jahr."
+          }
+        },
+        "travelExpenses": {
+          "adjustments": {
+            "originalReportId": "Die ID des Berichts, der korrigiert wird.",
+            "reportId": "Die ID des korrigierenden Berichts in „reports“.",
+            "sourceReportId": "Die ID des Berichts, von dem die Korrektur kopiert wurde: das Original oder dessen letzte Korrektur.",
+            "summary": "Berichte, die einen bereits exportierten oder erstatteten Bericht korrigieren."
+          },
+          "allowanceOverrides": {
+            "amount": "Der festgelegte Betrag.",
+            "calculationBasis": "Wie der Betrag berechnet wurde.",
+            "evidence": "Worauf der Betrag basiert.",
+            "kind": "Welche Pauschale festgelegt wurde: mileage oder per_diem.",
+            "revokedAt": "Wann der Betrag zurückgezogen wurde (UTC); leer, wenn er weiterhin gilt.",
+            "revokedBy": "Wer den Betrag zurückgezogen hat, unter dem damaligen Namen.",
+            "scope": "Welchen Teil der Ausgabe der Betrag abdeckt, als JSON.",
+            "situation": "Warum die Regeln keinen Betrag ergaben, als JSON.",
+            "summary": "Kilometerpauschalen oder Tagegelder, die ein Ausgabenadministrator manuell festgelegt hat, wenn die Regeln keinen Betrag ergaben."
+          },
+          "claimDecisions": {
+            "action": "Die Entscheidung: genehmigt oder abgelehnt.",
+            "actor": "Wer die Entscheidung getroffen hat.",
+            "approver": "Die genehmigende Person, der der Antrag zugewiesen wurde.",
+            "comment": "Der mit der Entscheidung verfasste Kommentar.",
+            "createdAt": "Wann die Entscheidung getroffen wurde (UTC).",
+            "summary": "Jede Entscheidung zu Ihren Anträgen."
+          },
+          "claimReceipts": {
+            "summary": "Die Belege, die Ihren Anträgen beigefügt sind. Die Dateien selbst befinden sich im Ordner „claim-receipts“."
+          },
+          "claims": {
+            "approver": "Wer über den Antrag entschieden hat.",
+            "calculatedAmount": "Der zu erstattende Betrag, wie berechnet.",
+            "calculatedCurrency": "Die Währung des zu erstattenden Betrags.",
+            "destinationCity": "Die Stadt, in die Sie gereist sind.",
+            "destinationCountry": "Das Land, in das Sie gereist sind.",
+            "notes": "Ihre Notizen zum Antrag.",
+            "status": "Gibt an, ob der Antrag ein Entwurf, eingereicht, genehmigt oder abgelehnt ist.",
+            "summary": "Ihre Reisekostenabrechnungen, die mit dem früheren Einzelkosten-Abrechnungsformular erstellt wurden.",
+            "tripDateTimeZone": "Die Zeitzone, in der die Reisetage gezählt werden.",
+            "tripEnd": "Das Ende der Reise (UTC).",
+            "tripStart": "Der Beginn der Reise (UTC).",
+            "type": "Die Art der Ausgabe: Beleg (receipt), Fahrtstrecke (mileage) oder Tagegeld (per_diem)."
+          },
+          "currencyConversions": {
+            "basis": "Wie der Betrag umgerechnet wurde: Tatsächliche Kartenbelastung (card_charge), ein von Administratoren festgelegter Kurs (manual_rate) oder ein veröffentlichter Referenzkurs (reference_rate).",
+            "chargedAmount": "Für card_charge: Der Betrag, mit dem Ihre Karte belastet wurde, in der Zielwährung.",
+            "evidenceReceiptFile": "Für card_charge: Die Belegdatei in diesem Archiv, die die Belastung belegt.",
+            "rate": "Der Wechselkurs: 1 Einheit von rate_base_currency entspricht so vielen Einheiten von rate_quote_currency.",
+            "rateBaseCurrency": "Die Basiswährung des Wechselkurses.",
+            "rateDate": "Der Tag, von dem der Wechselkurs stammt (YYYY-MM-DD).",
+            "rateEvidence": "Wo der Kurs nachvollzogen werden kann, z. B. eine Zeile auf dem Kontoauszug.",
+            "rateQuoteCurrency": "Die Notierungswährung des Wechselkurses.",
+            "recordedBy": "Wer die Umrechnung erfasst hat.",
+            "referenceExpenseDate": "Für reference_rate: Der Ausgabentag, für den der Kurs ausgewählt wurde (YYYY-MM-DD).",
+            "referenceSource": "Für reference_rate: Der verwendete veröffentlichte Kurs als JSON.",
+            "sourceCurrency": "Die Ausgangswährung der Umrechnung.",
+            "summary": "Wie Fremdwährungsausgaben in Ihre Erstattungswährung umgerechnet wurden.",
+            "targetCurrency": "Die Zielwährung der Umrechnung."
+          },
+          "legacyDraftConversions": {
+            "convertedAt": "Wann der Entwurf verschoben wurde (UTC).",
+            "convertedBy": "Wer den Entwurf verschoben hat.",
+            "flags": "Alles, was nicht unverändert verschoben werden konnte, als JSON.",
+            "legacyFacts": "Inhalt des Abrechnungsentwurfs zum Zeitpunkt der Verschiebung als JSON.",
+            "summary": "Abrechnungsentwürfe aus dem früheren Abrechnungsformular, die in einen Bericht verschoben wurden."
+          },
+          "payrollRunInclusions": {
+            "endedAt": "Wann es bestätigt wurde oder nicht mehr berücksichtigt wurde (UTC).",
+            "endedBy": "Wer es bestätigt, entfernt oder verworfen hat.",
+            "includedAt": "Wann der Bericht dem Lauf hinzugefügt wurde (UTC).",
+            "lines": "Die an die Abrechnung übermittelten Beträge mit ihren Lohnarten als JSON.",
+            "state": "Status der Berücksichtigung: enthalten, bestätigt, entfernt, verworfen oder durch einen späteren Lauf ersetzt.",
+            "summary": "Berichte, die über die Entgeltabrechnung an Sie ausgezahlt wurden."
+          },
+          "perDiemItineraries": {
+            "endDate": "Der Tag Ihrer Rückkehr (YYYY-MM-DD).",
+            "endTime": "Die Ortszeit Ihrer Rückkehr (HH:mm).",
+            "endTimeZone": "Die Zeitzone der Rückkehr.",
+            "meals": "Die Ihnen pro Tag bereitgestellten Mahlzeiten als JSON; sie mindern das Tagegeld.",
+            "overnight": "Ob und wie Sie übernachtet haben.",
+            "policy": "Die Sätze, nach denen das Tagegeld berechnet wurde, als JSON; festgelegt bei der Einreichung.",
+            "prolongedWorkplace": "Ob Sie über einen längeren Zeitraum am selben auswärtigen Ort gearbeitet haben, was das Tagegeld mindern kann.",
+            "startDate": "Der Tag Ihrer Abreise (YYYY-MM-DD).",
+            "startTime": "Die Ortszeit Ihrer Abreise (HH:mm).",
+            "startTimeZone": "Die Zeitzone der Abreise.",
+            "summary": "Die Reisen, auf deren Grundlage Ihre Tagegelder berechnet wurden."
+          },
+          "projectAttributionExceptions": {
+            "authorizedBy": "Wer die Genehmigung erteilt hat.",
+            "evidence": "Die interne Notiz der Ausgabenverwaltung zum Nachweis.",
+            "project": "Das Projekt.",
+            "reason": "Die interne Begründung der Ausgabenverwaltung für die Genehmigung.",
+            "summary": "Berechtigungen, Ihre Ausgaben für Tage auf ein Projekt zu buchen, für die in der App keine Arbeitseinträge vorliegen.",
+            "validFrom": "Der erste abgedeckte Ausgabentag (YYYY-MM-DD).",
+            "validTo": "Der letzte abgedeckte Ausgabentag (YYYY-MM-DD)."
+          },
+          "reportItems": {
+            "accountingReference": "Eine Referenz für die Buchhaltung, z. B. eine Rechnungsnummer.",
+            "category": "Die Ausgabenkategorie, zum Beispiel Hotel, Bahn oder Verpflegung.",
+            "description": "Ihre Beschreibung der Ausgabe.",
+            "expenseDate": "Das Datum der Ausgabe (JJJJ-MM-TT).",
+            "mileageDistanceKm": "Für Kilometergeld: die Distanz in Kilometern.",
+            "mileagePolicy": "Für Kilometergeld: die zugrunde gelegten Sätze als JSON, festgelegt bei der Einreichung.",
+            "mileageRoute": "Für Kilometergeld: die gefahrene Strecke.",
+            "mileageVehicle": "Für Kilometergeld: die Art des Fahrzeugs.",
+            "paidBy": "Wer bezahlt hat: Sie (Mitarbeiter) oder die Organisation (Unternehmen).",
+            "position": "Die Position der Ausgabe im Bericht.",
+            "projectInherits": "Gibt an, ob die Ausgabe das Projekt der Reise anstelle eines eigenen Projekts verwendet.",
+            "receiptExceptionReason": "Ihre Erklärung, warum ein Beleg fehlt.",
+            "summary": "Die Ausgaben in Ihren Berichten.",
+            "type": "Die Art der Ausgabe: Beleg (receipt), Kilometergeld (mileage) oder Tagegeld (per_diem)."
+          },
+          "reportReceipts": {
+            "summary": "Die an die Ausgaben in Ihren Berichten angehängten Belege. Die Dateien selbst befinden sich im Ordner dieser Kategorie."
+          },
+          "reports": {
+            "kind": "Gibt an, ob der Bericht für eine Reise (trip) oder für Einzelausgaben ohne Reise (standalone) ist.",
+            "project": "Das Projekt der Reise, das für die zugehörigen Ausgaben verwendet wird, sofern kein eigenes angegeben ist.",
+            "reimbursementCurrency": "Die Währung, in der die Erstattung erfolgt.",
+            "status": "Status des Berichts: Entwurf (draft), eingereicht (submitted), genehmigt (approved), abgelehnt (rejected) oder zur Überarbeitung zurückgesendet (returned).",
+            "submissionCount": "Wie oft der Bericht eingereicht wurde.",
+            "summary": "Ihre Reisekostenabrechnungen, die jeweils die Ausgaben einer Reise oder Einzelausgaben zusammenfassen.",
+            "tripDestinations": "Die Reiseziele als JSON.",
+            "tripPurpose": "Der Zweck der Reise.",
+            "tripTimeZone": "Die Zeitzone, nach der die Reisetage berechnet werden."
+          },
+          "reviewCycleClosures": {
+            "actor": "Wer es beendet hat.",
+            "createdAt": "Wann es beendet wurde (UTC).",
+            "kind": "Wie die Einreichung beendet wurde: zurückgegeben (returned), zurückgezogen (withdrawn) oder wiedereröffnet (reopened).",
+            "note": "Die beim Beenden verfasste Notiz.",
+            "submissionCycle": "Welche Einreichung des Berichts es war: 1 steht für die erste.",
+            "summary": "Einreichungen Ihrer Berichte, die ohne endgültige Entscheidung beendet wurden: an Sie zurückgegeben, zurückgezogen oder wiedereröffnet."
+          },
+          "reviewNotes": {
+            "body": "Der Kommentar.",
+            "closureId": "Die ID der zurückgegebenen Einreichung in review_cycle_closures.",
+            "summary": "Kommentare eines Prüfers zu einzelnen Ausgaben eines an Sie zurückgegebenen Berichts."
+          },
+          "settlementEntries": {
+            "amount": "Der Betrag.",
+            "balanceBefore": "Der noch ausstehende Betrag vor dieser Zahlung.",
+            "basisSubmissionCycle": "Auf welcher genehmigten Einreichung des Berichts die Zahlung basiert.",
+            "exportBatchId": "Die ID des Ausgabenexports, für den die Zahlung erfasst wurde.",
+            "kind": "Gibt an, ob Sie eine Auszahlung erhalten haben (Erstattung / reimbursement) oder Geld zurückgezahlt haben (Rückforderung / recovery).",
+            "note": "Die zur Zahlung verfasste Notiz.",
+            "occurredOn": "Das Datum des Geldflusses (JJJJ-MM-TT).",
+            "recordedAt": "Wann die Zahlung erfasst wurde (UTC).",
+            "recordedBy": "Wer die Zahlung erfasst hat.",
+            "reference": "Die Zahlungsreferenz, z. B. ein Überweisungsbetreff.",
+            "sourceType": "Wofür das Geld bestimmt ist: ein Bericht oder eine Forderung aus dem früheren Formular (legacy_claim).",
+            "summary": "An Sie ausgezahltes Geld für genehmigte Ausgaben oder von Ihnen nach einer Überzahlung zurückgezahltes Geld."
+          },
+          "shared": {
+            "authorizedAt": "Wann es autorisiert wurde (UTC).",
+            "authorizedBy": "Der Ausgabenadministrator, der es autorisiert hat, mit seinem damaligen Namen.",
+            "claimId": "Die ID der Forderung in claims.",
+            "currency": "Die Währung als dreistelliger Buchstabencode, z. B. EUR.",
+            "decidedAt": "Wann es zuletzt genehmigt, abgelehnt oder zurückgegeben wurde (UTC).",
+            "file": "Der Speicherort der ursprünglichen Belegdatei in diesem Archiv.",
+            "fileName": "Der Dateiname des Belegs beim Hochladen.",
+            "itemId": "Die ID der Ausgabe in report_items.",
+            "mimeType": "Der Dateityp, zum Beispiel application/pdf oder image/jpeg.",
+            "originalAmount": "Der gezahlte Betrag in der Originalwährung.",
+            "originalCurrency": "Die Währung, in der der Betrag bezahlt wurde.",
+            "payrollRunId": "Die ID des Abrechnungslaufs.",
+            "payrollRunPeriodEnd": "Der letzte Tag des Abrechnungszeitraums (YYYY-MM-DD).",
+            "payrollRunPeriodStart": "Der erste Tag des Zeitraums des Abrechnungslaufs (YYYY-MM-DD).",
+            "project": "Das Projekt, auf das die Ausgabe gebucht ist.",
+            "reason": "Der angegebene Grund.",
+            "reportId": "Die ID des Berichts in Berichten.",
+            "sizeBytes": "Die Dateigröße in Bytes.",
+            "submittedAt": "Wann es zuletzt eingereicht wurde (UTC).",
+            "tripEndDate": "Der letzte Tag der Reise (JJJJ-MM-TT).",
+            "tripStartDate": "Der erste Tag der Reise (JJJJ-MM-TT).",
+            "uploadedBy": "Wer den Beleg hochgeladen hat."
+          }
+        }
+      },
+      "fieldsIntro": "Was die einzelnen Teile der JSON-Dateien enthalten und was die jeweiligen Felder bedeuten. Ein leeres Feld (null) hat keinen Wert.",
+      "fieldsTitle": "Felder",
+      "filesTitle": "Dateien",
+      "formatJson": "Die JSON-Dateien sind die vollständige, maschinenlesbare Kopie Ihrer Daten. Die CSV-Dateien wiederholen diese Tabellen für Tabellenkalkulationsprogramme.",
+      "formatOtherPeople": "Personen, die Aktionen für Ihre Datensätze ausgeführt haben, werden namentlich genannt. Personen, für die Sie Aktionen ausgeführt haben, erscheinen nur als anonyme ID.",
+      "formatsTitle": "Formate",
+      "formatTimes": "Zeitpunkte werden in UTC angegeben (ISO 8601, endend auf Z). Zeiteinträge enthalten zusätzlich den UTC-Offset, der am Ort ihrer Erfassung galt. Kalendertage werden als YYYY-MM-DD angegeben.",
+      "intro": "Dieses Archiv enthält die personenbezogenen Daten, die {organization} über {employee} speichert, Stand {exportedAt} (UTC).",
+      "kindAdmin": "Ein Administrator von {organization} hat diesen Export in Ihrem Namen erstellt.",
+      "kindEmployee": "Sie haben diesen Export selbst angefordert.",
+      "manifest": "Listet jede Datei in diesem Archiv mit ihrer Größe und der Anzahl der Datensätze auf.",
+      "retentionAuditLog": "Audit-Log-Einträge werden nach {days} Tagen gelöscht.",
+      "retentionCategoryNone": "{category}: keine Aufbewahrungsfrist festgelegt",
+      "retentionCategoryYears": "{years, plural, one {{category}: # Jahr} other {{category}: # Jahre}}",
+      "retentionDocuments": "Dokumente in Ihrer Personalakte werden für den Zeitraum aufbewahrt, den {organization} für ihre Kategorie festgelegt hat. Die Frist beginnt am 1. Januar nach dem jeweils späteren Jahr: dem Jahr, in dem Ihre Beschäftigung endete, oder dem Jahr des Dokuments. Dokumente einer Kategorie ohne Frist werden aufbewahrt, bis jemand sie löscht.",
+      "retentionOther": "Sofern oben nicht anders angegeben, werden Ihre sonstigen Daten aufbewahrt, bis {organization} sie löscht oder Ihr Mitarbeiterdatensatz gelöscht wird.",
+      "retentionTitle": "Wie lange Ihre Daten gespeichert werden",
+      "rightsAccess": "Zugang zu Ihren personenbezogenen Daten und eine Kopie davon erhalten (Art. 15 DSGVO)",
+      "rightsComplaint": "Beschwerde bei einer Datenschutzaufsichtsbehörde einlegen (Art. 77 DSGVO)",
+      "rightsContact": "Um diese Rechte auszuüben, wenden Sie sich an {organization}. Es gilt die Datenschutzerklärung von {organization}, die beschreibt, wie Ihre Daten verarbeitet werden.",
+      "rightsErasure": "Ihre Daten löschen lassen (Art. 17 DSGVO)",
+      "rightsIntro": "Gemäß der Datenschutz-Grundverordnung (DSGVO) haben Sie das Recht:",
+      "rightsNotification": "über Berichtigungen, Löschungen und Einschränkungen informiert zu werden, die an Empfänger Ihrer Daten weitergegeben wurden (Art. 19 DSGVO)",
+      "rightsObjection": "der Verarbeitung Ihrer Daten widersprechen (Art. 21 DSGVO)",
+      "rightsPortability": "Ihre Daten in einem maschinenlesbaren Format zu erhalten, wie z. B. den JSON-Dateien dieses Archivs, und sie an eine andere Person übermitteln zu lassen (Art. 20 DSGVO)",
+      "rightsRectification": "unrichtige Daten berichtigen und unvollständige Daten vervollständigen zu lassen (Art. 16 DSGVO)",
+      "rightsRestriction": "die Verarbeitung Ihrer Daten einschränken lassen (Art. 18 DSGVO)",
+      "rightsTitle": "Ihre Rechte",
+      "title": "Ihre personenbezogenen Daten von {organization}"
     }
   },
   "presence": {

@@ -45,6 +45,7 @@
           "timeEntriesDeleted": "{count} registros de tempo excluídos",
           "title": "Limpar dados de tempo",
           "vacationAllowancesReset": "{count} subsídios de férias redefinidos",
+          "vehiclesDeleted": "{count, plural, one {# veículo excluído} other {# veículos excluídos}}",
           "willDelete": "Isso excluirá permanentemente:",
           "workCategoriesDeleted": "{count} categorias de trabalho excluídas",
           "workCategorySetsDeleted": "{count} conjuntos de categorias de trabalho excluídos",
@@ -109,7 +110,7 @@
           "label": "Tipos de Dados",
           "locations": {
             "countLabel": "Número de locais:",
-            "description": "Locais de trabalho e subáreas",
+            "descriptionWithVehicles": "Locais de trabalho, subáreas e alguns veículos",
             "title": "Locais"
           },
           "projects": {
@@ -222,6 +223,10 @@
         "timeEntries": {
           "description": "Criando registros de tempo e períodos de trabalho",
           "label": "Registros de tempo"
+        },
+        "vehicleUse": {
+          "description": "Registro do uso de veículos em períodos de trabalho",
+          "label": "Uso de Veículos"
         },
         "workCategories": {
           "description": "Criando conjuntos de categorias de trabalho e categorias",

@@ -316,7 +316,7 @@
         "directHint": "Ta zmiana zostanie zastosowana natychmiast.",
         "edit": "Edytuj wpis",
         "invalidRange": "Czas zakończenia pracy musi być późniejszy niż czas rozpoczęcia pracy.",
-        "noChanges": "Najpierw zmień datę, godzinę lub miejsce pracy.",
+        "noChangesWithVehicle": "Najpierw zmień datę, godzinę, miejsce pracy lub użycie pojazdu.",
         "noteLabel": "Notatka (opcjonalnie)",
         "notePlaceholder": "Dodaj notatkę dotyczącą tej zmiany…",
         "onBehalfHint": "Ta zmiana podlega ścieżce zatwierdzania pracownika. Jeśli jesteś osobą zatwierdzającą, zostanie zastosowana natychmiast.",
@@ -420,7 +420,11 @@
       "splitAt": "Podziel w",
       "splitDate": "Data podziału",
       "success": "Okres pracy został pomyślnie podzielony",
-      "title": "Podziel okres pracy"
+      "title": "Podziel okres pracy",
+      "vehicleFirstDistance": "Kilometry w pierwszym okresie (opcjonalnie)",
+      "vehicleFirstDistanceHint": "Z przejechanych {distance} km; reszta przechodzi do drugiego okresu. W przypadku pozostawienia pustego pola całość pozostanie w pierwszym okresie.",
+      "vehicleReading": "Stan licznika w momencie podziału (opcjonalnie)",
+      "vehicleReadingHint": "Kończy odczyty pierwszego okresu i rozpoczyna drugi ({start} do {end} km). Pozostaw puste, jeśli nie odczytano stanu."
     },
     "status": {
       "approved": "Zatwierdzone",

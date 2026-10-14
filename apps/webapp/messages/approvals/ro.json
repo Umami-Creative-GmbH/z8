@@ -304,6 +304,8 @@
       "dayTotals": "Totaluri zilnice",
       "difference": "Diferență",
       "differenceHours": "{difference} h",
+      "drivingDetailsMissing": "Lipsesc detaliile de conducere",
+      "drivingDetailsMissingWork": "Lipsește vehiculul sau citirea kilometrajului",
       "employee": "Angajat",
       "holidays": "Sărbători legale",
       "openCalendar": "Deschide calendarul pentru această perioadă",
@@ -421,6 +423,15 @@
     },
     "unifiedInboxBannerDescription": "Vizualizați toate tipurile de aprobări într-un singur loc, cu filtrare, acțiuni în masă și urmărirea SLA-urilor.",
     "unifiedInboxBannerTitle": "Încercați noua căsuță de primire unificată",
+    "vehicleUse": "Utilizare vehicul",
+    "vehicleUseWarning": {
+      "distanceAboveLimit": "{distance} km depășește {limit} km într-o singură perioadă de lucru.",
+      "onOtherLiveWork": "Acest vehicul este deja înregistrat pentru activitatea în curs a altui angajat.",
+      "speedAboveLimit": "Distanța parcursă indică o viteză medie de {speed} km/h în această perioadă de lucru, mai mare de {limit} km/h.",
+      "startBelowLastEnd": "Citirea inițială este sub ultima citire finală înregistrată a acestui vehicul ({lastEndKm} km)."
+    },
+    "vehicleUseWarningList": "{warnings}",
+    "vehicleUseWarnings": "Vă rugăm să verificați",
     "viewExpenseClaim": "Vizualizează decontul și chitanțele",
     "viewExpenseReport": "Vizualizați raportul trimis și chitanțele",
     "workBalance": {

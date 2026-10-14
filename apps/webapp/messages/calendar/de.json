@@ -316,7 +316,7 @@
         "directHint": "Diese Änderung wird sofort wirksam.",
         "edit": "Eintrag bearbeiten",
         "invalidRange": "Das Ausstempeln muss nach dem Einstempeln liegen.",
-        "noChanges": "Ändern Sie zuerst das Datum, die Uhrzeit oder den Arbeitsort.",
+        "noChangesWithVehicle": "Ändern Sie zuerst Datum, Uhrzeit, Arbeitsort oder Fahrzeugnutzung.",
         "noteLabel": "Notiz (optional)",
         "notePlaceholder": "Notiz zu dieser Änderung hinzufügen…",
         "onBehalfHint": "Diese Änderung folgt der Genehmigungskette des Mitarbeiters. Wenn Sie die genehmigende Person sind, wird sie sofort wirksam.",
@@ -420,7 +420,11 @@
       "splitAt": "Teilen um",
       "splitDate": "Geteiltes Datum",
       "success": "Arbeitszeitraum erfolgreich geteilt",
-      "title": "Arbeitszeitraum teilen"
+      "title": "Arbeitszeitraum teilen",
+      "vehicleFirstDistance": "Kilometer im ersten Zeitraum (optional)",
+      "vehicleFirstDistanceHint": "Von {distance} gefahrenen Kilometern; der Rest geht an den zweiten Zeitraum. Bleibt das Feld leer, verbleibt alles im ersten Zeitraum.",
+      "vehicleReading": "Kilometerstand bei der Aufteilung (optional)",
+      "vehicleReadingHint": "Er beendet die Stände des ersten Zeitraums und beginnt die des zweiten ({start} bis {end} km). Leer lassen, falls nicht abgelesen."
     },
     "status": {
       "approved": "Genehmigt",

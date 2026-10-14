@@ -434,6 +434,45 @@
       "reportGenerated": "Rapporten har genererats",
       "unexpectedError": "Ett oväntat fel uppstod",
       "unknownError": "Ett okänt fel uppstod"
+    },
+    "vehicles": {
+      "archived": "arkiverad",
+      "archivedBadge": "Arkiverad",
+      "empty": {
+        "description": "Inget slutfört arbete med körsträcka registrerades under denna period.",
+        "title": "Ingen körning under denna period"
+      },
+      "error": "Fel",
+      "export": {
+        "footer": "Genererad av Z8",
+        "generatedAt": "Genererad den",
+        "note": "Hela kilometrar av utfört arbete, räknat i den månad arbetet påbörjades (lokal tid där det registrerades).",
+        "period": "Period",
+        "table": "Kilometer"
+      },
+      "failed": "Rapporten över sträcka per fordon kunde inte genereras",
+      "filter": {
+        "period": "Period"
+      },
+      "generate": "Generera rapport",
+      "generating": "Genererar rapport…",
+      "kilometres": "{distance} km",
+      "noReportYet": "Ingen rapport har genererats ännu",
+      "ownVehicle": "Eget fordon",
+      "page": {
+        "description": "Körda kilometer i tjänsten per fordon och anställd, per månad",
+        "feature": "visa rapporten över sträcka per fordon"
+      },
+      "selectPeriod": "Välj en period och generera rapporten.",
+      "table": {
+        "employee": "Anställd",
+        "licencePlate": "Registreringsnummer",
+        "total": "Totalt",
+        "vehicle": "Fordon",
+        "vehicleAndEmployee": "Fordon / anställd"
+      },
+      "title": "Sträcka per fordon",
+      "totalDriven": "{distance} körda"
     }
   }
 }

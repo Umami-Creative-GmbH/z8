@@ -316,7 +316,7 @@
         "directHint": "Denna ändring tillämpas omedelbart.",
         "edit": "Redigera post",
         "invalidRange": "Utstämpling måste ske efter instämpling.",
-        "noChanges": "Ändra datum, tid eller arbetsplats först.",
+        "noChangesWithVehicle": "Ändra datum, tid, arbetsplats eller fordonsanvändning först.",
         "noteLabel": "Anteckning (valfritt)",
         "notePlaceholder": "Lägg till en anteckning om denna ändring…",
         "onBehalfHint": "Denna ändring följer medarbetarens godkännandekedja. Om du är dennes godkännare tillämpas den direkt.",
@@ -420,7 +420,11 @@
       "splitAt": "Dela vid",
       "splitDate": "Dela datum",
       "success": "Arbetsperioden har delats",
-      "title": "Dela arbetsperiod"
+      "title": "Dela arbetsperiod",
+      "vehicleFirstDistance": "Kilometer under den första perioden (valfritt)",
+      "vehicleFirstDistanceHint": "Av {distance} körda km; resten tillfaller den andra perioden. Om fältet lämnas tomt kvarstår allt på den första perioden.",
+      "vehicleReading": "Mätarställning vid delningen (valfritt)",
+      "vehicleReadingHint": "Den avslutar den första periodens mätarställningar och startar den andras ({start} till {end} km). Lämna tomt om du inte läste av den."
     },
     "status": {
       "approved": "Godkänd",
