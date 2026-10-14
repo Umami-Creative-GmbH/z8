@@ -23,14 +23,15 @@
 import { createHash } from "node:crypto";
 import { compareInstants, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { canonicalJson } from "./canonical-json";
-import type {
-	HistoricalEntryEvidence,
-	HistoricalPeriodEvidence,
-	HistoricalRecordEvidence,
-	HistoricalWorkDiagnostics,
-	HistoricalWorkEvidence,
-	WorkFinding,
-	WorkFindingKind,
+import {
+	type HistoricalEntryEvidence,
+	type HistoricalPeriodEvidence,
+	type HistoricalRecordEvidence,
+	type HistoricalWorkDiagnostics,
+	type HistoricalWorkEvidence,
+	recordProjectIds,
+	type WorkFinding,
+	type WorkFindingKind,
 } from "./historical-work-diagnostics";
 
 export const HISTORICAL_GAP_REPAIR_PLAN_VERSION = 1;
@@ -317,10 +318,11 @@ function fillFor(
 		}
 		case "canonical_detail_missing": {
 			if (!record || record.detail !== null) return { hold: "no_restorable_evidence" };
+			const projectIds = recordProjectIds(record);
 			if (
 				period.projectId !== null &&
-				record.projectIds.length > 0 &&
-				!record.projectIds.includes(period.projectId)
+				projectIds.length > 0 &&
+				!projectIds.includes(period.projectId)
 			) {
 				return { hold: "no_restorable_evidence" };
 			}
@@ -331,7 +333,7 @@ function fillFor(
 					findingId,
 					recordId: record.id,
 					detail: detailOf(period),
-					projectId: record.projectIds.length === 0 ? period.projectId : null,
+					projectId: projectIds.length === 0 ? period.projectId : null,
 				},
 			};
 		}
@@ -417,7 +419,7 @@ function fillFor(
 			const value = gap.details.periodValue;
 			if (!record?.detail || typeof value !== "string") return { hold: "no_restorable_evidence" };
 			if (field === "project") {
-				if (record.projectIds.length > 0) return { hold: "no_restorable_evidence" };
+				if (recordProjectIds(record).length > 0) return { hold: "no_restorable_evidence" };
 				if (!references.projectIds.has(value)) return { hold: "reference_outside_organization" };
 				return { fill: { kind: "canonical_metadata", findingId, recordId: record.id, field, value } };
 			}
@@ -519,7 +521,7 @@ function expectedStateOf(
 								workLocationType: record.detail.workLocationType,
 							}
 						: null,
-					projectIds: [...record.projectIds].toSorted(),
+					projectIds: recordProjectIds(record).toSorted(),
 				}
 			: null,
 	};

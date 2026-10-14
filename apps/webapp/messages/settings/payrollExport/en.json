@@ -415,11 +415,13 @@
       "kind": {
         "approvalRelationshipMissing": "Pending work without an approval request",
         "approvalStateConflict": "Approval states disagree",
+        "attributionUnrepresentable": "Billable flag or task without a project",
         "canonicalDetailMissing": "Time record work detail missing",
         "canonicalLinkMissing": "Time record link missing",
         "canonicalLinkShared": "Several work periods link one time record",
         "canonicalLinkUnresolved": "Linked time record not found",
         "canonicalMissing": "Time record missing",
+        "canonicalMissingClosedMonth": "Time record missing in a closed month",
         "captureInferred": "Time zone capture inferred after the event",
         "deletedWorkPayable": "Deleted work still has a payable time record",
         "durationConflict": "Stored durations disagree",

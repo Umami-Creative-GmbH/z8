@@ -23,6 +23,14 @@ function nextId(prefix: string) {
 
 const at = (value: string) => parseInstant(value);
 
+const noVehicle = {
+	vehicleKind: null,
+	vehicleId: null,
+	odometerStartKm: null,
+	odometerEndKm: null,
+	drivenDistanceKm: null,
+} as const;
+
 function entry(type: "clock_in" | "clock_out", timestamp: string): HistoricalEntryEvidence {
 	return {
 		id: nextId("e"),
@@ -74,9 +82,12 @@ function work(
 		approvalWorkflowId: null,
 		deletedAt: null,
 		projectId: null,
+		taskId: null,
 		workCategoryId: null,
 		workLocationType: null,
+		...noVehicle,
 		canonicalRecordId: options.record === null ? null : id,
+		closedMonth: null,
 		graphRevision: 3,
 		createdAt: at(end),
 		...options.period,
@@ -93,8 +104,13 @@ function work(
 					approvalState: "approved",
 					origin: "clock",
 					createdAt: at(end),
-					detail: { workCategoryId: null, workLocationType: null, computationMetadata: null },
-					projectIds: [],
+					detail: {
+						workCategoryId: null,
+						workLocationType: null,
+						...noVehicle,
+						computationMetadata: null,
+					},
+					allocations: [],
 					...options.record,
 				};
 	return { period, record, entries: [clockIn, clockOut] };
@@ -248,7 +264,21 @@ describe("proposeHistoricalRepair", () => {
 	});
 
 	it("discloses that record allocations keep their weights when minutes change", () => {
-		const fixture = work({ recordMinutes: 45, record: { projectIds: [project] } });
+		const fixture = work({
+			recordMinutes: 45,
+			record: {
+				allocations: [
+					{
+						allocationKind: "project",
+						projectId: project,
+						taskId: null,
+						costCenterId: null,
+						weightPercent: 100,
+						isBillable: false,
+					},
+				],
+			},
+		});
 		const { proposal } = proposalOf(
 			propose(evidence([fixture]), fixture.period.id, [
 				{ target: "time_record", field: "duration_minutes", after: 60 },
