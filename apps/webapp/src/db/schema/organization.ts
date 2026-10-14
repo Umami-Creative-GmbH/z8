@@ -12,6 +12,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import { PERSONNEL_NUMBER_WHITESPACE_SQL } from "@/lib/organization/personnel-number";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
 import { contractTypeEnum, genderEnum, roleEnum } from "./enums";
@@ -174,6 +175,16 @@ export const employee = pgTable(
 			table.organizationId,
 			table.userId,
 		),
+		// A personnel number is unique per organization among current and former employees,
+		// compared trimmed and ignoring case (#881, migration 0232).
+		uniqueIndex("employee_organization_personnel_number_unique_idx")
+			.on(
+				table.organizationId,
+				sql`lower(btrim(${table.employeeNumber}, ${sql.raw(PERSONNEL_NUMBER_WHITESPACE_SQL)}))`,
+			)
+			.where(
+				sql`btrim(${table.employeeNumber}, ${sql.raw(PERSONNEL_NUMBER_WHITESPACE_SQL)}) <> ''`,
+			),
 		unique("employee_id_organizationId_idx").on(table.id, table.organizationId),
 	],
 );

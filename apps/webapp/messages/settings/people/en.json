@@ -43,8 +43,6 @@
         "editRealEmployee": "Edit active employee",
         "editTitle": "Edit Employee",
         "employeeInformation": "Employee Information",
-        "employeeNumber": "Employee Number",
-        "employeeNumberDescription": "External payroll system ID",
         "employeeNumberPlaceholder": "e.g., EMP-001",
         "firstName": "First name",
         "firstNameDescription": "Shown across the employee account",
@@ -64,6 +62,8 @@
         "manageEmployees": "manage employees",
         "managers": "Managers",
         "noScheduleAssigned": "No schedule assigned",
+        "personnelNumber": "Personnel number",
+        "personnelNumberDescription": "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
         "position": "Position",
         "positionDescription": "Job title or role",
         "positionPlaceholder": "Enter position",
@@ -136,7 +136,7 @@
           "actions": "Actions",
           "contract": "Contract",
           "employee": "Employee",
-          "employeeNumber": "Employee Number",
+          "personnelNumber": "Personnel number",
           "position": "Position",
           "role": "Role",
           "status": "Status",
@@ -375,6 +375,10 @@
         "statusPreparing": "Being prepared",
         "statusReady": "Ready",
         "title": "Personal data export"
+      },
+      "personnelNumber": {
+        "taken": "This personnel number belongs to {name}. Every employee, current or former, needs their own number.",
+        "takenByAnother": "Another employee already has this personnel number. Every employee, current or former, needs their own number."
       },
       "tabs": {
         "employees": "Employees",

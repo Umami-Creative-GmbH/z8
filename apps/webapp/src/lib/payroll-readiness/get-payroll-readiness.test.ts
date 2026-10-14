@@ -13,6 +13,21 @@ const mockState = vi.hoisted(() => ({
 	travelExpenseReportFindMany: vi.fn(),
 	findOpenDepartureClockRepairs: vi.fn(),
 	loadPeriodSubmissionGaps: vi.fn(),
+	loadPersonnelIdentifierClashes: vi.fn(),
+	logError: vi.fn(),
+}));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({
+		error: mockState.logError,
+		warn: vi.fn(),
+		info: vi.fn(),
+		debug: vi.fn(),
+	}),
+}));
+
+vi.mock("./personnel-identifier-clashes", () => ({
+	loadPersonnelIdentifierClashes: mockState.loadPersonnelIdentifierClashes,
 }));
 
 vi.mock("@/lib/employee-lifecycle/reviews", () => ({
@@ -158,6 +173,7 @@ function mockReadyQueries() {
 	mockState.travelExpenseReportFindMany.mockResolvedValue([]);
 	mockState.findOpenDepartureClockRepairs.mockResolvedValue([]);
 	mockState.loadPeriodSubmissionGaps.mockResolvedValue({ collected: false, gaps: [] });
+	mockState.loadPersonnelIdentifierClashes.mockResolvedValue([]);
 }
 
 function findCheck(result: Awaited<ReturnType<typeof getPayrollReadiness>>, id: string) {
@@ -199,6 +215,69 @@ describe("getPayrollReadiness", () => {
 		]) {
 			expect(JSON.stringify(findMany.mock.calls[0]?.[0]?.where)).toContain("org-1");
 		}
+	});
+
+	it("blocks on employees an export would write under one personnel identifier, naming them", async () => {
+		mockState.employeeFindMany.mockResolvedValue([
+			{
+				id: "employee-1",
+				employeeNumber: "E-1",
+				user: { name: "Anna", email: "anna@example.com" },
+			},
+		]);
+		mockState.loadPersonnelIdentifierClashes.mockResolvedValue([
+			{
+				employees: [
+					{ employeeId: "employee-1", identifier: "LG-7", name: "Anna" },
+					{ employeeId: "employee-9", identifier: "lg-7", name: "Former Ben" },
+				],
+			},
+		]);
+
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("blocked");
+		expect(getCheck(result, "duplicate-personnel-identifiers")).toMatchObject({
+			group: "exports",
+			status: "fail",
+			severity: "blocker",
+			count: 2,
+			affectedEmployees: [
+				{
+					id: "employee-1",
+					name: "Anna",
+					email: "anna@example.com",
+					employeeNumber: "E-1",
+					personnelIdentifier: "LG-7",
+				},
+				{ id: "employee-9", name: "Former Ben", employeeNumber: null, personnelIdentifier: "lg-7" },
+			],
+		});
+		const [request] = mockState.loadPersonnelIdentifierClashes.mock.calls[0];
+		expect(request).toMatchObject({ organizationId: "org-1", configs: [{ id: "config-1" }] });
+		expect([request.from.toString(), request.asOf.toString()]).toEqual([
+			"2026-04-01",
+			"2026-04-30",
+		]);
+	});
+
+	it("passes the personnel identifier check without clashes and is unavailable when it fails", async () => {
+		expect(
+			getCheck(await getPayrollReadiness(defaultInput()), "duplicate-personnel-identifiers"),
+		).toMatchObject({ status: "pass", count: 0, affectedEmployees: [] });
+		expect(mockState.logError).not.toHaveBeenCalled();
+
+		const failure = new Error("db down");
+		mockState.loadPersonnelIdentifierClashes.mockRejectedValue(failure);
+		const result = await getPayrollReadiness(defaultInput());
+
+		expect(result.status).toBe("unavailable");
+		expect(getCheck(result, "duplicate-personnel-identifiers").status).toBe("unavailable");
+		// Logged before degrading, so the cause of "unavailable" is findable.
+		expect(mockState.logError).toHaveBeenCalledExactlyOnceWith(
+			{ organizationId: "org-1", error: failure },
+			expect.any(String),
+		);
 	});
 
 	it("has no period submission check while the organization collects no submissions", async () => {

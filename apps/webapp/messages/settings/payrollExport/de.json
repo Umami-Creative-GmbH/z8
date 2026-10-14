@@ -325,6 +325,7 @@
     "payrollReadiness": {
       "actions": {
         "approvals": "Genehmigungsposteingang prüfen",
+        "employees": "Mitarbeiter prüfen",
         "payrollExport": "Einstellungen für Lohnabrechnungsexport öffnen",
         "timeTracking": "Zeiterfassung prüfen",
         "travelExpenses": "Reisekosten prüfen"
@@ -332,10 +333,15 @@
       "affectedEmployees": {
         "name": "Mitarbeiter",
         "noNumber": "Nicht festgelegt",
-        "number": "Personalnummer"
+        "personnelIdentifier": "Personalkennung",
+        "personnelNumber": "Personalnummer"
       },
       "checks": {
         "count": "Anzahl",
+        "duplicatePersonnelIdentifiers": {
+          "description": "Mitarbeiter, die ein Lohnabrechnungsexport unter derselben Personalnummer ausgeben würde. Das Abrechnungssystem würde sie zusammenführen, daher wird der Export verweigert, bis jeder Mitarbeiter eine eigene hat.",
+          "title": "Mehrfach vergebene Personalnummern"
+        },
         "missingEmploymentHistory": {
           "descriptionPass": "Alle aktiven Mitarbeitenden haben einen bestätigten Beschäftigungsverlauf für diesen Abrechnungszeitraum.",
           "descriptionWarning": "Einige aktive Mitarbeitende haben keinen bestätigten Beschäftigungsverlauf für diesen Abrechnungszeitraum."

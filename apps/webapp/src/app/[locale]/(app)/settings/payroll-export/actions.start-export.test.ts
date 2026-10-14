@@ -101,6 +101,12 @@ vi.mock("@/lib/payroll-export", () => ({
 
 vi.mock("@/lib/travel-expenses/payroll-run", () => ({ discardPayrollRun: vi.fn() }));
 
+// Marks the key so the test sees the refusal went through translation.
+vi.mock("@/tolgee/server", () => ({
+	getTranslate: async () => (key: string, fallback: string, params?: Record<string, string>) =>
+		`${key}|${fallback.replace(/\{(\w+)\}/g, (_, name: string) => params?.[name] ?? `{${name}}`)}`,
+}));
+
 vi.mock("@/lib/effect/services/auth.service", async () => {
 	const { Context } = await import("effect");
 	const AuthService = Context.Service<{
@@ -201,6 +207,9 @@ vi.mock("@/lib/effect/result", async () => {
 });
 
 const { startExportAction } = await import("./actions");
+const { PayrollIdentifierDuplicateError } = await import(
+	"@/lib/payroll-export/personnel-identifier"
+);
 
 describe("startExportAction", () => {
 	beforeEach(() => {
@@ -279,5 +288,54 @@ describe("startExportAction", () => {
 			organizationId: "org-1",
 		});
 		expect(mockState.enqueuePayrollExportJob).not.toHaveBeenCalled();
+	});
+
+	it("refuses a synchronous export with a translated message naming employees sharing an identifier", async () => {
+		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
+		mockState.processExportJob.mockRejectedValueOnce(
+			new PayrollIdentifierDuplicateError(
+				[
+					{
+						employees: [
+							{ employeeId: "employee-1", identifier: "LG-7", name: "Anna Muster" },
+							{ employeeId: "employee-2", identifier: "lg-7", name: "Ben Beispiel" },
+						],
+					},
+				],
+				"org-1",
+			),
+		);
+
+		const result = await startExportAction({
+			organizationId: "org-1",
+			formatId: "personio",
+			startDate: "2026-01-01",
+			endDate: "2026-01-31",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			code: "ConflictError",
+			error:
+				"payroll.errors.exportBlockedByDuplicateIdentifier|Export blocked: several employees share a personnel identifier. Give each employee their own: Anna Muster (LG-7), Ben Beispiel (lg-7)",
+		});
+	});
+
+	it("keeps other synchronous export failures as before", async () => {
+		mockState.createExportJob.mockResolvedValueOnce({ jobId: "job-sync", isAsync: false });
+		mockState.processExportJob.mockRejectedValueOnce(new Error("connector unreachable"));
+
+		const result = await startExportAction({
+			organizationId: "org-1",
+			formatId: "personio",
+			startDate: "2026-01-01",
+			endDate: "2026-01-31",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			code: "UNKNOWN_ERROR",
+			error: "connector unreachable",
+		});
 	});
 });

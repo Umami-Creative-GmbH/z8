@@ -26,7 +26,6 @@ import {
 } from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
 import {
-	classifyPayrollRunCandidates,
 	countIncludedReportsByRun,
 	exportIsPayrollRun,
 	includeReportsInPayrollRun,
@@ -49,21 +48,31 @@ import {
 	resolvePayrollRunEmployeeIds,
 } from "./data-fetcher";
 import { isExpensePayrollFormat } from "./expense-wage-type.types";
+import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
 import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
 import { workdayConnector } from "./exporters/workday/workday-connector";
-import type { PayrollExportApiFormatId, PayrollExportFileFormatId } from "./format-registry";
+import {
+	isPayrollExportFormatId,
+	type PayrollExportApiFormatId,
+	type PayrollExportFileFormatId,
+} from "./format-registry";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { overtimePayoutCodeFormat, overtimePayoutsForFormat } from "./formatters/overtime-payouts";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
+import { employeesWithPayoutsOrExpenseLines, logicalPeriod } from "./payout-and-expense-employees";
 import {
 	employeesWithoutIdentifier,
 	PayrollIdentifierChangedError,
 	PayrollIdentifierMissingError,
+	type PayrollIdentityRow,
 	payrollIdentifierCustomFieldId,
 	withPersonnelIdentifiers,
 } from "./personnel-identifier";
-import { readPersonnelIdentifierValues } from "./personnel-identifier-store";
+import {
+	readPersonnelIdentifierValues,
+	refuseDuplicatePersonnelIdentifiers,
+} from "./personnel-identifier-store";
 import type {
 	AbsenceData,
 	ApiExportResult,
@@ -373,6 +382,14 @@ export async function processExportJob(
 
 		// BRANCH: API-based exporter (Personio, etc.)
 		if (exporter) {
+			// Two employees matching one external worker would be merged there (#1199);
+			// refused before any call to the external system.
+			await refuseDuplicatePersonnelIdentifiersOfFormat(db, {
+				organizationId: job.organizationId,
+				formatId: job.config.formatId,
+				config: job.config.config,
+				rows: [...workPeriods, ...absences],
+			});
 			const apiResult = await exporter.export(
 				job.organizationId,
 				workPeriods,
@@ -426,8 +443,20 @@ export async function processExportJob(
 			const payrollRun =
 				isExpensePayrollFormat(formatId) &&
 				(await exportIsPayrollRun(db, { organizationId: job.organizationId, formatId }));
+			// Two employees under one personnel identifier would be merged into one line (#1198).
+			const refuseSharedIdentifiers = (
+				database: ExportDatabase,
+				expenseLines: readonly PayrollIdentityRow[],
+			) =>
+				refuseDuplicatePersonnelIdentifiersOfFormat(database, {
+					organizationId: job.organizationId,
+					formatId,
+					config: job.config.config,
+					rows: [...workPeriods, ...absences, ...overtimePayouts, ...expenseLines],
+				});
 			// Awaited inside the try: a failed delivery must reach the catch that marks the job failed.
 			if (!payrollRun) {
+				await refuseSharedIdentifiers(db, []);
 				return await writeFileExport(
 					db,
 					job,
@@ -466,6 +495,8 @@ export async function processExportJob(
 				);
 				// A missing identifier throws here and rolls the inclusions back.
 				const expenseLines = await identify.rows(inclusion.expenseLines);
+				// A shared identifier throws here too, rolling the inclusions back.
+				await refuseSharedIdentifiers(tx, expenseLines);
 				skipped = inclusion.skipped;
 				return writeFileExport(
 					tx,
@@ -507,8 +538,35 @@ export async function processExportJob(
  * `storeFile` asks for it (#1008), otherwise returned inline. `database` is
  * the payroll run's transaction when the file carries expense lines (#852).
  */
+type ExportDatabase = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * The duplicate-identifier check of a format (#1198, #1199): refuses the rows
+ * when two employees would be written under, or matched by, one personnel
+ * identifier, naming them. A format the check doesn't cover passes.
+ */
+async function refuseDuplicatePersonnelIdentifiersOfFormat(
+	database: ExportDatabase,
+	input: {
+		organizationId: string;
+		formatId: string;
+		config: unknown;
+		rows: readonly PayrollIdentityRow[];
+	},
+): Promise<void> {
+	const identifierOf = isPayrollExportFormatId(input.formatId)
+		? exportedPersonnelIdentifier(input.formatId, input.config)
+		: null;
+	if (!identifierOf) return;
+	await refuseDuplicatePersonnelIdentifiers(database, {
+		organizationId: input.organizationId,
+		rows: input.rows,
+		identifierOf,
+	});
+}
+
 async function writeFileExport(
-	database: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
+	database: ExportDatabase,
 	job: { id: string; organizationId: string; isAsync: boolean },
 	exportResult: ExportResult,
 	storeFile: boolean,
@@ -642,39 +700,10 @@ async function employeesWithNonWorkRows(input: {
 		canonicalReadiness: input.scopedCollection ? "absences" : "cutover",
 	});
 	const employeeIds = new Set(absences.map((absence) => absence.employeeId));
-	if (overtimePayoutCodeFormat(input.formatId)) {
-		const payouts = await fetchOvertimePayoutsForExport(input.organizationId, input.filters);
-		for (const payout of payouts) employeeIds.add(payout.employeeId);
-	}
-	if (
-		formatters.has(input.formatId) &&
-		(await exportIsPayrollRun(db, {
-			organizationId: input.organizationId,
-			formatId: input.formatId,
-		}))
-	) {
-		const candidates = await classifyPayrollRunCandidates(db, {
-			organizationId: input.organizationId,
-			format: input.formatId,
-			period: logicalPeriod(input.filters),
-			employeeIds: await resolvePayrollRunEmployeeIds(input.organizationId, input.filters),
-		});
-		for (const candidate of candidates) {
-			if (candidate.classification.outcome === "include") {
-				employeeIds.add(candidate.account.employeeId);
-			}
-		}
+	for (const employeeId of await employeesWithPayoutsOrExpenseLines(input)) {
+		employeeIds.add(employeeId);
 	}
 	return [...employeeIds].toSorted();
-}
-
-function logicalPeriod(filters: PayrollExportFilters): { startDate: string; endDate: string } {
-	const startDate = filters.dateRange.start.toISODate();
-	const endDate = filters.dateRange.end.toISODate();
-	if (!startDate || !endDate) {
-		throw new Error("Invalid payroll export date range");
-	}
-	return { startDate, endDate };
 }
 
 /**
