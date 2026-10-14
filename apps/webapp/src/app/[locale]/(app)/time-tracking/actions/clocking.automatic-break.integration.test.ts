@@ -1236,6 +1236,65 @@ describe("automatic break adjustment on PostgreSQL", () => {
 		expect((await periods()).map((period) => period.duration_minutes)).toEqual([360, 29]);
 	});
 
+	it("marks a legacy organization's work balance dirty from the work's captured local start date (#1214)", async () => {
+		await setAdmission("inactive");
+		// 08:00:40Z is 22:00:40 on 21 July at the captured Honolulu offset.
+		await admin.query("update user_settings set timezone = 'Pacific/Honolulu' where user_id = $1", [
+			ids.requesterUser,
+		]);
+		actAs(ids.requesterUser);
+		await expect(
+			clockIn("office", { instant: clockInAt, browserTimezone: "Pacific/Honolulu" }),
+		).resolves.toMatchObject({ success: true });
+		// The established adjustment at clock-out is lost; the daily check makes it.
+		await admin.query(
+			`create function t305_fail() returns trigger language plpgsql as $$
+			 begin
+			   if NEW.was_auto_adjusted then raise exception 't305 injected legacy failure'; end if;
+			   return NEW;
+			 end $$`,
+		);
+		await admin.query(
+			"create trigger t305_fail before insert on work_period for each row execute function t305_fail()",
+		);
+		await expect(
+			clockOut(undefined, undefined, {
+				submissionId: randomUUID(),
+				instant: clockOutAt,
+				browserTimezone: "Pacific/Honolulu",
+			}),
+		).resolves.toMatchObject({ success: true });
+		await admin.query("drop function t305_fail() cascade");
+		const { rows: captured } = await admin.query<{ utc_offset_minutes: number }>(
+			`select te.utc_offset_minutes from work_period wp join time_entry te on te.id = wp.clock_in_id
+			 where wp.organization_id = $1`,
+			[ids.organization],
+		);
+		expect(only(captured)).toEqual({ utc_offset_minutes: -600 });
+		// The closure's own refresh has run: the balance is clean before the adjustment.
+		await admin.query(
+			`insert into employee_work_balance
+			 (employee_id, organization_id, actual_minutes, required_minutes, balance_minutes,
+			  computed_from_date, computed_through_date, is_dirty, dirty_from_date, updated_at)
+			 values ($1, $2, 420, 0, 420, '2026-07-01', '2026-07-31', false, null, now())
+			 on conflict (organization_id, employee_id)
+			 do update set is_dirty = false, dirty_from_date = null`,
+			[ids.requester, ids.organization],
+		);
+
+		await expect(recover(new Date("2026-07-22T12:00:00Z"))).resolves.toMatchObject({
+			adjustedCount: 1,
+			errors: [],
+		});
+		expect((await periods()).map((period) => period.duration_minutes)).toEqual([360, 29]);
+		const { rows: balances } = await admin.query<{ is_dirty: boolean; dirty_from_date: string }>(
+			`select is_dirty, dirty_from_date::text from employee_work_balance
+			 where organization_id = $1 and employee_id = $2`,
+			[ids.organization, ids.requester],
+		);
+		expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-21" });
+	});
+
 	it.each([
 		["an adopted", "active"],
 		["a legacy", "inactive"],

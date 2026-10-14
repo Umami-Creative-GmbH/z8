@@ -31,6 +31,7 @@ import {
 	CompletedWorkReviewRequiredError,
 	describeAmendmentFailure,
 } from "@/lib/time-tracking/amend-completed-work";
+import { earliestStartDate } from "@/lib/time-tracking/close-active-work";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 import { workInterval } from "@/lib/time-tracking/closed-months/store";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
@@ -62,6 +63,7 @@ import {
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import { assertNoUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { getCurrentEmployee, getCurrentSession, getRequestMetadata, getUserTimezone } from "./auth";
 import { calculateAndPersistSurcharges } from "./compliance";
 import { logger } from "./shared";
@@ -628,6 +630,31 @@ async function splitLegacyWorkPeriod(
 		causedByUserId: input.actorUserId,
 		work: [workInterval(locked.startTime, locked.endTime)],
 	});
+	// Independent rounding can change the total: the refresh commits with the work, from the
+	// earliest UTC or captured-offset local date of the affected endpoints, as in the
+	// adopted split (#1214).
+	const [sourceClockIn] = await tx
+		.select({ utcOffsetMinutes: timeEntry.utcOffsetMinutes })
+		.from(timeEntry)
+		.where(
+			and(
+				eq(timeEntry.id, locked.clockInId),
+				eq(timeEntry.organizationId, organizationId),
+				eq(timeEntry.employeeId, employeeId),
+			),
+		)
+		.limit(1);
+	if (!sourceClockIn) throw new Error("Split work clock-in missing");
+	const startDate = earliestStartDate(
+		instantFromDate(locked.startTime),
+		sourceClockIn.utcOffsetMinutes,
+	);
+	const splitDate = earliestStartDate(
+		instantFromDate(input.splitAtDate),
+		input.splitTimezoneCapture.utcOffsetMinutes,
+	);
+	const dirtyFromDate = splitDate < startDate ? splitDate : startDate;
+	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
 	// Invoiced work stays invoiced in both halves; the source is marked by trigger (#903).
 	await carryInvoicedWorkToSplit(tx, {
 		organizationId,

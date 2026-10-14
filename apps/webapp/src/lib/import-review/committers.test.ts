@@ -78,6 +78,10 @@ const workHarness = vi.hoisted(() => ({
 vi.mock("@/lib/time-tracking/period-submissions/submission-send-back", () => ({
 	sendBackChangedPeriodSubmissions: vi.fn(async () => ({ withdrawn: [], outdated: [] })),
 }));
+// The balance refresh (#1214) has its own PostgreSQL suites; here it is only recorded.
+vi.mock("@/lib/work-balance/service", () => ({
+	markEmployeeWorkBalanceDirty: vi.fn(async () => {}),
+}));
 // The closed-month check (#762) has its own PostgreSQL suites; here it never refuses.
 vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/time-tracking/closed-months/store")>()),
@@ -147,6 +151,7 @@ vi.mock("@/lib/time-tracking/record-imported-work", async (importOriginal) => ({
 
 const { commitAcceptedRowsForEntity } = await import("./committers");
 const { calculateHash } = await import("@/lib/time-tracking/blockchain");
+const { markEmployeeWorkBalanceDirty } = await import("@/lib/work-balance/service");
 
 function commitJob(entityType: "work_period" | "absence") {
 	return {
@@ -529,6 +534,11 @@ describe("commitAcceptedRowsForEntity", () => {
 				commitTargetId: "created_3",
 				commitError: null,
 			}),
+		);
+		// From the day before the UTC start date, inside the row's transaction (#1214).
+		expect(markEmployeeWorkBalanceDirty).toHaveBeenCalledWith(
+			{ employeeId: "emp_1", organizationId: "org_1", dirtyFromDate: "2025-12-31" },
+			expect.anything(),
 		);
 		expect(dbMock.updatePredicates).toEqual(
 			expect.arrayContaining([

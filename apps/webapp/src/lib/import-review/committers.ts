@@ -15,7 +15,7 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { assertAbsenceDaysOpen, workInterval } from "@/lib/time-tracking/closed-months/store";
@@ -30,6 +30,7 @@ import {
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
+import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { type CustomerImportHold, commitCustomerRow } from "./customer-committer";
 import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
@@ -460,6 +461,20 @@ async function commitWorkPeriod(
 			workInterval(startAt.toJSDate(), endAt?.toJSDate() ?? startAt.toJSDate()),
 		],
 	});
+	// Completed work changes the balance: the refresh commits with it, as in the adopted
+	// import (#1214). Endpoints are captured in UTC; the employee's local day may start on
+	// the previous UTC date, so the refresh covers it too.
+	if (endAt) {
+		const dirtyFromDate = instantFromDate(startAt.toJSDate())
+			.toZonedDateTimeISO("UTC")
+			.toPlainDate()
+			.subtract({ days: 1 })
+			.toString();
+		await markEmployeeWorkBalanceDirty(
+			{ employeeId: payload.employeeId, organizationId: job.organizationId, dirtyFromDate },
+			database,
+		);
+	}
 
 	await markCommitted(database, row.id, job, "work_period", period.id);
 }
