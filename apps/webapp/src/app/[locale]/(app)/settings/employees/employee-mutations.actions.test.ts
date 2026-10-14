@@ -74,6 +74,11 @@ vi.mock("@/lib/organization/custom-fields/form-values", () => ({
 	saveFormCustomFieldValues: vi.fn(async () => undefined),
 }));
 
+// The work balance is marked from the terms' calendar date in the organization's timezone.
+vi.mock("@/lib/timezone/load-organization-timezone", () => ({
+	loadOrganizationTimezone: vi.fn(async () => "Europe/Berlin"),
+}));
+
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mocks.markEmployeeWorkBalanceDirty,
 	requestEmployeeWorkBalanceFullRebuild:

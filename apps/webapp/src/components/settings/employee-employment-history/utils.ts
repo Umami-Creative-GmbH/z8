@@ -1,5 +1,8 @@
 import { DateTime } from "luxon";
-import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
+import {
+	hourlyWageFromForm,
+	type UpsertEmploymentHistory,
+} from "@/lib/validations/employment-history";
 import type { EmploymentHistoryEntry, EmploymentHistoryPeriod, FormValues } from "./types";
 
 export const defaultFormValues: FormValues = {
@@ -37,10 +40,7 @@ export function toEmploymentHistoryPayload(value: FormValues): UpsertEmploymentH
 		probationEndsOn: value.probationEndsOn ? dateInputToDate(value.probationEndsOn) : null,
 		workModel: value.workModel,
 		workPolicyId: value.workPolicyId === "__inherit__" ? null : value.workPolicyId,
-		hourlyRate:
-			value.contractType === "hourly" && value.hourlyRate.trim()
-				? Number(value.hourlyRate.trim())
-				: null,
+		hourlyRate: hourlyWageFromForm(value.contractType, value.hourlyRate),
 		currency: "EUR",
 		changeReason: value.changeReason.trim() || null,
 		reviewState: value.reviewState,

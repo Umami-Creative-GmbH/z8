@@ -14,11 +14,7 @@ import {
 import { isInvitationActionable } from "@/lib/auth/employee-invitation-draft";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
-import {
-	dateFromInstant,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { ManagerService } from "@/lib/effect/services/manager.service";
@@ -34,6 +30,7 @@ import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/ap
 import {
 	type AssignManagers,
 	assignManagersSchema,
+	type ContractType,
 	type CreateEmployee,
 	createEmployeeSchema,
 	type PersonalInformation,
@@ -63,6 +60,7 @@ import {
 } from "./employee-action-utils";
 import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-draft-eligibility";
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
+import { keepTermsRefusal, markContractWorkBalanceDirty } from "./employment-history-actions";
 
 const logger = createLogger("EmployeeActions");
 const employeeIdSchema = z.uuid("Invalid employee ID");
@@ -71,7 +69,7 @@ const invitationCancellationFailureMessage =
 
 /** An hourly employee's wage, as employment terms hold it; null otherwise. */
 function parseFirstTermsWage(
-	contractType: "fixed" | "hourly",
+	contractType: ContractType,
 	hourlyRate: string | null | undefined,
 ): Effect.Effect<number | null, ValidationError> {
 	if (contractType !== "hourly" || !hourlyRate) return Effect.succeed(null);
@@ -84,31 +82,6 @@ function parseFirstTermsWage(
 					field: "hourlyRate",
 				}),
 			);
-}
-
-/** First confirmed terms change the contract the work balance counts from. */
-async function markFirstTermsWorkBalanceDirty(input: {
-	employeeId: string;
-	organizationId: string;
-	validFrom: Date;
-}) {
-	// Terms dates are stored as UTC midnight of their calendar date (D1).
-	const dirtyFromDate = instantFromDate(input.validFrom)
-		.toZonedDateTimeISO("UTC")
-		.toPlainDate()
-		.toString();
-	try {
-		await markEmployeeWorkBalanceDirty({
-			employeeId: input.employeeId,
-			organizationId: input.organizationId,
-			dirtyFromDate,
-		});
-	} catch (error) {
-		logger.error(
-			{ error, employeeId: input.employeeId, dirtyFromDate },
-			"Failed to mark work balance dirty after first employment terms",
-		);
-	}
 }
 
 export async function createEmployeeAction(
@@ -222,16 +195,13 @@ export async function createEmployeeAction(
 								});
 							}
 							// Keep the terms refusal for the user (D8).
-							return error.cause instanceof ValidationError ||
-								error.cause instanceof NotFoundError
-								? error.cause
-								: error;
+							return keepTermsRefusal(error);
 						}),
 					);
 
 				if (firstTerms) {
 					yield* Effect.promise(() =>
-						markFirstTermsWorkBalanceDirty({
+						markContractWorkBalanceDirty(dbService.db, {
 							employeeId: newEmployee.id,
 							organizationId: newEmployee.organizationId,
 							validFrom: firstTerms.validFrom,

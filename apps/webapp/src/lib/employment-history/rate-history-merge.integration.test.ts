@@ -41,6 +41,8 @@ describe("rate history merge into employment terms", () => {
 			timezone?: string;
 			contractType?: ContractType;
 			period?: { startedAt: string; endedAt?: string } | null;
+			/** The legacy employee start date; defaults to 2026-01-01 UTC. */
+			startDate?: Date | null;
 		} = {},
 	): Promise<Scenario> {
 		const organizationId = await fixture.createOrganization();
@@ -53,6 +55,7 @@ describe("rate history merge into employment terms", () => {
 		const seeded = await fixture.seedEmployee({
 			organizationId,
 			withPeriod: input.period === undefined,
+			startDate: input.startDate,
 		});
 		await fixture.pool.query(`update employee set contract_type = $2 where id = $1`, [
 			seeded.employeeId,
@@ -232,7 +235,7 @@ describe("rate history merge into employment terms", () => {
 	async function reportOf(organizationId: string) {
 		const { rows } = await fixture.pool.query<{
 			employeeId: string;
-			rateHistoryId: string;
+			rateHistoryId: string | null;
 			reason: string;
 			winningValue: number | null;
 		}>(
@@ -243,6 +246,34 @@ describe("rate history merge into employment terms", () => {
 			[organizationId],
 		);
 		return rows;
+	}
+
+	/** Each report row with the first day of the terms it names, if any. */
+	async function reportTermsOf(organizationId: string) {
+		const { rows } = await fixture.pool.query<{
+			rateHistoryId: string | null;
+			reason: string;
+			termsFrom: string | null;
+		}>(
+			`select r.rate_history_id as "rateHistoryId", r.reason,
+			        to_char(h.valid_from, 'YYYY-MM-DD HH24:MI:SS') as "termsFrom"
+			 from employee_rate_history_merge_report r
+			 left join employee_employment_history h
+			   on h.id = r.terms_id and h.organization_id = r.organization_id
+			 where r.organization_id = $1
+			 order by r.reason, h.valid_from`,
+			[organizationId],
+		);
+		return rows;
+	}
+
+	async function noteCountOf(at: Scenario): Promise<number | undefined> {
+		const { rows } = await fixture.pool.query<{ adjustedCount: number }>(
+			`select adjusted_count as "adjustedCount" from employee_wage_history_merge_note
+			 where organization_id = $1 and employee_id = $2`,
+			[at.organizationId, at.employeeId],
+		);
+		return rows[0]?.adjustedCount;
 	}
 
 	async function dirtyFrom(at: Scenario): Promise<string | null | undefined> {
@@ -683,7 +714,109 @@ describe("rate history merge into employment terms", () => {
 		expect((await termsOf(own.employeeId)).map((terms) => terms.rate)).toEqual([20]);
 	});
 
-	it("leaves one note per affected employee with the number of adjusted rate changes", async () => {
+	it("reports a rate row once against each hourly terms it conflicts with", async () => {
+		const at = await scenario();
+		const first = await seedTerms(at, {
+			contractType: "hourly",
+			from: "2026-01-01 00:00:00",
+			until: "2026-03-01 00:00:00",
+			rate: "30.00",
+			updatedAt: "2026-05-01 09:00:00",
+		});
+		const second = await seedTerms(at, {
+			contractType: "hourly",
+			from: "2026-03-01 00:00:00",
+			rate: "32.00",
+			updatedAt: "2026-05-01 09:00:00",
+		});
+		const rateId = await seedRate(at, {
+			rate: "35.00",
+			from: "2026-02-01 00:00:00",
+			createdAt: "2026-02-15 09:00:00",
+		});
+
+		expect(await mergeTwice(at.organizationId)).toBe(0);
+
+		const { rows } = await fixture.pool.query<{ termsId: string; winningValue: number }>(
+			`select terms_id as "termsId", winning_value::float8 as "winningValue"
+			 from employee_rate_history_merge_report
+			 where organization_id = $1 and rate_history_id = $2 and reason = 'terms_wage_kept'
+			 order by winning_value`,
+			[at.organizationId, rateId],
+		);
+		expect(rows).toEqual([
+			{ termsId: first, winningValue: 30 },
+			{ termsId: second, winningValue: 32 },
+		]);
+		expect(await noteCountOf(at)).toBe(1);
+	});
+
+	it("names the terms that carry each conflict after a split, and a re-run adds no report rows", async () => {
+		const at = await scenario();
+		await seedTerms(at, {
+			contractType: "hourly",
+			from: "2026-01-01 00:00:00",
+			rate: "30.00",
+			updatedAt: "2026-03-15 09:00:00",
+		});
+		// Written after the terms: its wage applies.
+		const applied = await seedRate(at, {
+			rate: "40.00",
+			from: "2026-02-01 00:00:00",
+			to: "2026-03-01 00:00:00",
+			createdAt: "2026-03-20 09:00:00",
+		});
+		// Written before the terms: the terms keep their wage, on a piece the split creates.
+		const kept = await seedRate(at, {
+			rate: "35.00",
+			from: "2026-04-01 00:00:00",
+			createdAt: "2026-01-20 09:00:00",
+		});
+
+		expect(await mergeTwice(at.organizationId)).toBe(3);
+
+		expect(
+			(await termsOf(at.employeeId)).map((terms) => [terms.from, terms.until, terms.rate]),
+		).toEqual([
+			["2026-01-01 00:00:00", "2026-02-01 00:00:00", 30],
+			["2026-02-01 00:00:00", "2026-03-01 00:00:00", 40],
+			["2026-03-01 00:00:00", null, 30],
+		]);
+		expect(await reportTermsOf(at.organizationId)).toEqual([
+			{ rateHistoryId: applied, reason: "rate_wage_applied", termsFrom: "2026-02-01 00:00:00" },
+			{ rateHistoryId: kept, reason: "terms_wage_kept", termsFrom: "2026-03-01 00:00:00" },
+		]);
+		expect(await noteCountOf(at)).toBe(2);
+	});
+
+	it("counts every rate row the merge acted on in the note, including terms it split without a conflict", async () => {
+		const at = await scenario();
+		// Hourly terms without a wage: the rate rows fill it in without a conflict to report.
+		await seedTerms(at, {
+			contractType: "hourly",
+			from: "2026-01-01 00:00:00",
+			rate: null,
+			updatedAt: "2026-01-01 09:00:00",
+		});
+		await seedRate(at, {
+			rate: "20.00",
+			from: "2026-01-01 00:00:00",
+			to: "2026-02-01 00:00:00",
+			createdAt: "2026-01-01 09:00:00",
+		});
+		await seedRate(at, {
+			rate: "22.00",
+			from: "2026-02-01 00:00:00",
+			createdAt: "2026-02-01 09:00:00",
+		});
+
+		expect(await mergeTwice(at.organizationId)).toBe(2);
+
+		expect(await reportOf(at.organizationId)).toEqual([]);
+		expect(await noteCountOf(at)).toBe(2);
+	});
+
+	it("leaves one note per affected employee counting every rate row the merge acted on", async () => {
 		const at = await scenario({ timezone: "Pacific/Kiritimati" });
 		const unaffected = await fixture.seedEmployee({ organizationId: at.organizationId });
 		const untouched = await fixture.seedEmployee({ organizationId: at.organizationId });
@@ -739,9 +872,167 @@ describe("rate history merge into employment terms", () => {
 		const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Kiritimati" }).format(
 			new Date(),
 		);
+		// Both rate rows created terms; the first was also partly ignored under the fixed terms.
 		expect(rows).toEqual([
-			{ employeeId: at.employeeId, mergedOn: today, adjustedCount: 1, dismissedAt: null },
+			{ employeeId: at.employeeId, mergedOn: today, adjustedCount: 2, dismissedAt: null },
 		]);
 		expect(rows.map((row) => row.employeeId)).not.toContain(untouched.employeeId);
+	});
+
+	/**
+	 * D9: an hourly employee whose wage lived only on `employee.current_hourly_rate` (no confirmed
+	 * terms, no rate rows) gets confirmed hourly terms carrying it. 0217 runs while the column still
+	 * exists; 0218 drops it, so these cases bring it back for their duration.
+	 */
+	describe("employee wage backfill", () => {
+		const BACKFILL_REASON = "Migrated from employee wage";
+
+		beforeAll(async () => {
+			await fixture.pool.query(
+				`alter table employee add column if not exists current_hourly_rate numeric(10, 2)`,
+			);
+		});
+
+		afterAll(async () => {
+			await fixture.pool.query(`alter table employee drop column if exists current_hourly_rate`);
+		});
+
+		async function setWage(at: Pick<Scenario, "employeeId">, wage: string) {
+			await fixture.pool.query(`update employee set current_hourly_rate = $2 where id = $1`, [
+				at.employeeId,
+				wage,
+			]);
+		}
+
+		it("gives an hourly employee with only a stored wage confirmed hourly terms from their period start", async () => {
+			const at = await scenario();
+			await setWage(at, "27.50");
+			const other = await scenario();
+			await setWage(other, "40.00");
+			const otherBefore = await organizationState(other.organizationId);
+
+			expect(await mergeTwice(at.organizationId)).toBe(1);
+
+			const { rows: termsIds } = await fixture.pool.query<{ id: string }>(
+				`select id from employee_employment_history where employee_id = $1`,
+				[at.employeeId],
+			);
+			expect(await termsOf(at.employeeId)).toEqual([
+				{
+					from: "2026-01-01 00:00:00",
+					until: null,
+					contractType: "hourly",
+					rate: 27.5,
+					currency: "EUR",
+					weeklyMinutes: 2400,
+					workModel: "onsite",
+					workPolicyId: null,
+					changeReason: BACKFILL_REASON,
+					reviewState: "confirmed",
+					status: "active",
+					periodId: at.employmentPeriodId,
+				},
+			]);
+			expect(await reportOf(at.organizationId)).toEqual([
+				{
+					employeeId: at.employeeId,
+					rateHistoryId: null,
+					reason: "employee_wage_migrated",
+					winningValue: 27.5,
+				},
+			]);
+			const { rows: reported } = await fixture.pool.query<{ termsId: string }>(
+				`select terms_id as "termsId" from employee_rate_history_merge_report
+				 where organization_id = $1`,
+				[at.organizationId],
+			);
+			expect(reported).toEqual([{ termsId: termsIds[0]?.id }]);
+			expect(await noteCountOf(at)).toBe(1);
+			expect(await dirtyFrom(at)).toBe("2026-01-01");
+
+			// Organization-scoped: the other organization waits for its own run.
+			expect(await organizationState(other.organizationId)).toEqual(otherBefore);
+			expect(await mergeTwice(other.organizationId)).toBe(1);
+			expect((await termsOf(other.employeeId)).map((terms) => terms.rate)).toEqual([40]);
+		});
+
+		it("starts the terms on the employee's start date through their legacy period", async () => {
+			const at = await scenario({ period: null, startDate: new Date("2025-09-01T00:00:00Z") });
+			await setWage(at, "19.00");
+
+			expect(await mergeTwice(at.organizationId)).toBe(1);
+
+			const { rows: periods } = await fixture.pool.query<{ id: string }>(
+				`select id from employee_employment_period where organization_id = $1 and employee_id = $2`,
+				[at.organizationId, at.employeeId],
+			);
+			expect(
+				(await termsOf(at.employeeId)).map((terms) => [
+					terms.from,
+					terms.until,
+					terms.rate,
+					terms.changeReason,
+					terms.periodId,
+				]),
+			).toEqual([["2025-09-01 00:00:00", null, 19, BACKFILL_REASON, periods[0]?.id]]);
+		});
+
+		it("reports an employee whose employment start is unknown and writes no terms", async () => {
+			const at = await scenario({ period: null, startDate: null });
+			await setWage(at, "21.00");
+
+			expect(await mergeTwice(at.organizationId)).toBe(0);
+
+			expect(await termsOf(at.employeeId)).toEqual([]);
+			expect(await reportOf(at.organizationId)).toEqual([
+				{
+					employeeId: at.employeeId,
+					rateHistoryId: null,
+					reason: "no_employment_period",
+					winningValue: null,
+				},
+			]);
+			expect(await noteCountOf(at)).toBe(1);
+		});
+
+		it("leaves fixed employees, employees with confirmed terms and employees with rate rows alone", async () => {
+			const fixed = await scenario({ contractType: "fixed" });
+			await setWage(fixed, "25.00");
+
+			const withTerms = await scenario();
+			await setWage(withTerms, "25.00");
+			await seedTerms(withTerms, {
+				contractType: "hourly",
+				from: "2026-01-01 00:00:00",
+				rate: "30.00",
+				updatedAt: "2026-01-01 09:00:00",
+			});
+			const termsBefore = await termsOf(withTerms.employeeId);
+
+			const withRates = await scenario();
+			await setWage(withRates, "25.00");
+			await seedRate(withRates, {
+				rate: "26.00",
+				from: "2026-02-01 00:00:00",
+				createdAt: "2026-02-01 09:00:00",
+			});
+
+			for (const at of [fixed, withTerms]) {
+				expect(await mergeTwice(at.organizationId)).toBe(0);
+				expect(await reportOf(at.organizationId)).toEqual([]);
+				expect(await noteCountOf(at)).toBeUndefined();
+			}
+			expect(await termsOf(fixed.employeeId)).toEqual([]);
+			expect(await termsOf(withTerms.employeeId)).toEqual(termsBefore);
+
+			expect(await mergeTwice(withRates.organizationId)).toBe(1);
+			expect(
+				(await termsOf(withRates.employeeId)).map((terms) => [
+					terms.from,
+					terms.rate,
+					terms.changeReason,
+				]),
+			).toEqual([["2026-02-01 00:00:00", 26, MIGRATED_REASON]]);
+		});
 	});
 });

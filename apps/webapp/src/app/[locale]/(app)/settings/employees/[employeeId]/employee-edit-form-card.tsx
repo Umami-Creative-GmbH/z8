@@ -23,6 +23,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import type { ContractType } from "@/lib/validations/employee";
 import { defaultTranslate, type Translate } from "./employee-section-shared";
 import { PronounsEditField } from "./pronouns-edit-field";
 import { TextField } from "./text-field";
@@ -35,7 +36,7 @@ import type { EmployeeDetailFormApi, EmployeeDetailFormValues } from "./page-uti
  */
 export type EmployeeEditFormContract =
 	| { kind: "draft" }
-	| { kind: "terms"; contractTypeToday: "fixed" | "hourly" | null };
+	| { kind: "terms"; contractTypeToday: ContractType | null };
 
 export function EmployeeEditFormCard({
 	form,
@@ -254,22 +255,7 @@ export function EmployeeEditFormCard({
 											value={field.state.value}
 											onChange={field.handleChange}
 											disabled={!canEditOrgAdminFields || isUpdating}
-											labels={{
-												fixed: {
-													label: t("settings.employees.detailView.contractFixed", "Fixed"),
-													description: t(
-														"settings.employees.detailView.contractFixedDescription",
-														"Salary-based compensation",
-													),
-												},
-												hourly: {
-													label: t("settings.employees.detailView.contractHourly", "Hourly"),
-													description: t(
-														"settings.employees.detailView.contractHourlyDescription",
-														"Paid by hours worked",
-													),
-												},
-											}}
+											labels={contractTypeLabels(t)}
 										/>
 										<TFormDescription>
 											{t(
@@ -335,19 +321,38 @@ export function EmployeeEditFormCard({
 	);
 }
 
+/** The contract type labels the selector and the read-only terms view share. */
+function contractTypeLabels(
+	t: Translate,
+): Record<ContractType, { label: string; description: string }> {
+	return {
+		fixed: {
+			label: t("settings.employees.detailView.contractFixed", "Fixed"),
+			description: t(
+				"settings.employees.detailView.contractFixedDescription",
+				"Salary-based compensation",
+			),
+		},
+		hourly: {
+			label: t("settings.employees.detailView.contractHourly", "Hourly"),
+			description: t(
+				"settings.employees.detailView.contractHourlyDescription",
+				"Paid by hours worked",
+			),
+		},
+	};
+}
+
 function TermsContractType({
 	contractTypeToday,
 	t,
 }: {
-	contractTypeToday: "fixed" | "hourly" | null;
+	contractTypeToday: ContractType | null;
 	t: Translate;
 }) {
-	const value =
-		contractTypeToday === "hourly"
-			? t("settings.employees.detailView.contractHourly", "Hourly")
-			: contractTypeToday === "fixed"
-				? t("settings.employees.detailView.contractFixed", "Fixed")
-				: t("settings.employees.detailView.contractTypeNoTerms", "No confirmed terms today");
+	const value = contractTypeToday
+		? contractTypeLabels(t)[contractTypeToday].label
+		: t("settings.employees.detailView.contractTypeNoTerms", "No confirmed terms today");
 
 	return (
 		<div className="grid gap-2">

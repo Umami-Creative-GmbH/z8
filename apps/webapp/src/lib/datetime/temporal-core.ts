@@ -113,6 +113,26 @@ export function comparePlainDates(left: PlainDate, right: PlainDate): number {
 	return Temporal.PlainDate.compare(left, right);
 }
 
+/** The earlier of two instants. */
+export function earlierInstant(left: Instant, right: Instant): Instant {
+	return compareInstants(left, right) <= 0 ? left : right;
+}
+
+/** The later of two instants. */
+export function laterInstant(left: Instant, right: Instant): Instant {
+	return compareInstants(left, right) >= 0 ? left : right;
+}
+
+/** The earlier of two calendar dates. */
+export function earlierPlainDate(left: PlainDate, right: PlainDate): PlainDate {
+	return comparePlainDates(left, right) <= 0 ? left : right;
+}
+
+/** The later of two calendar dates. */
+export function laterPlainDate(left: PlainDate, right: PlainDate): PlainDate {
+	return comparePlainDates(left, right) >= 0 ? left : right;
+}
+
 export function calendarYearAt(instant: Instant, timezone: string): number {
 	return plainDateAt(instant, timezone).year;
 }

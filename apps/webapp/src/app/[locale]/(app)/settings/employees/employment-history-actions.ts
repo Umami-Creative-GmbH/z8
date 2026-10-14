@@ -11,6 +11,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { termsCalendarDate } from "@/lib/employment-history/terms-in-force";
 import type { TimelineUpdate } from "@/lib/employment-history/timeline";
 import {
 	changeHourlyWage,
@@ -18,6 +19,7 @@ import {
 	writeEmploymentTerms,
 } from "@/lib/employment-history/write-terms";
 import { createLogger } from "@/lib/logger";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
 	type ChangeHourlyWage,
 	changeHourlyWageSchema,
@@ -160,31 +162,31 @@ export function buildEmploymentCancellationRestorationPlan({
  * The wage command throws its refusals inside the query; keep their type so
  * users see the refusal, not "Database query failed" (D8).
  */
-function keepTermsRefusal(error: DatabaseError) {
+export function keepTermsRefusal(error: DatabaseError) {
 	return error.cause instanceof ValidationError || error.cause instanceof NotFoundError
 		? error.cause
 		: error;
 }
 
-async function markContractWorkBalanceDirty(input: {
-	employeeId: string;
-	organizationId: string;
-	fromDate: Date;
-}) {
-	const dirtyFromDate = DateTime.fromJSDate(input.fromDate, { zone: "utc" }).toISODate();
-	if (!dirtyFromDate) return;
-
+/**
+ * Confirmed terms change the contract the work balance counts from: marks it
+ * dirty from the terms' first calendar date (D1). Runs after the commit and
+ * never throws.
+ */
+export async function markContractWorkBalanceDirty(
+	reader: Parameters<typeof loadOrganizationTimezone>[0],
+	input: { employeeId: string; organizationId: string; validFrom: Date },
+) {
 	try {
+		const timezone = await loadOrganizationTimezone(reader, input.organizationId);
+		const dirtyFromDate = termsCalendarDate(input.validFrom, timezone).toString();
 		await markEmployeeWorkBalanceDirty({
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
 			dirtyFromDate,
 		});
 	} catch (error) {
-		logger.error(
-			{ error, ...input, dirtyFromDate },
-			"Failed to mark work balance dirty after contract change",
-		);
+		logger.error({ error, ...input }, "Failed to mark work balance dirty after contract change");
 	}
 }
 
@@ -311,10 +313,10 @@ export async function createEmployeeEmploymentHistoryAction(
 
 				if (createdHistory.reviewState === "confirmed") {
 					yield* Effect.promise(() =>
-						markContractWorkBalanceDirty({
+						markContractWorkBalanceDirty(dbService.db, {
 							employeeId,
 							organizationId: actor.organizationId,
-							fromDate: createdHistory.validFrom,
+							validFrom: createdHistory.validFrom,
 						}),
 					);
 				}
@@ -346,7 +348,7 @@ export async function changeEmployeeWageAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "changeEmployeeWageAction:actor" });
+				const actor = yield* getEmployeeSettingsActorContext({ queryName: "employmentTerms.changeWageActor" });
 				const { dbService, session } = actor;
 
 				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
@@ -365,7 +367,7 @@ export async function changeEmployeeWageAction(
 				});
 
 				const written = yield* dbService
-					.query("changeEmployeeWage", () =>
+					.query("employmentTerms.changeWage", () =>
 						dbService.db.transaction((tx) =>
 							changeHourlyWage(tx, {
 								organizationId: actor.organizationId,
@@ -382,10 +384,10 @@ export async function changeEmployeeWageAction(
 
 				if (written.reviewState === "confirmed") {
 					yield* Effect.promise(() =>
-						markContractWorkBalanceDirty({
+						markContractWorkBalanceDirty(dbService.db, {
 							employeeId,
 							organizationId: actor.organizationId,
-							fromDate: written.validFrom,
+							validFrom: written.validFrom,
 						}),
 					);
 				}
@@ -445,10 +447,10 @@ export async function confirmEmployeeEmploymentHistoryAction(
 					.pipe(Effect.mapError(keepTermsRefusal));
 
 				yield* Effect.promise(() =>
-					markContractWorkBalanceDirty({
+					markContractWorkBalanceDirty(dbService.db, {
 						employeeId,
 						organizationId: actor.organizationId,
-						fromDate: confirmedHistory.validFrom,
+						validFrom: confirmedHistory.validFrom,
 					}),
 				);
 
@@ -582,10 +584,10 @@ export async function cancelEmployeeEmploymentHistoryAction(
 
 				if (canceledHistory.reviewState === "confirmed") {
 					yield* Effect.promise(() =>
-						markContractWorkBalanceDirty({
+						markContractWorkBalanceDirty(dbService.db, {
 							employeeId,
 							organizationId: actor.organizationId,
-							fromDate: canceledHistory.validFrom,
+							validFrom: canceledHistory.validFrom,
 						}),
 					);
 				}

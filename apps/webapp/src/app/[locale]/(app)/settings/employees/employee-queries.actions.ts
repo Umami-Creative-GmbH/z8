@@ -459,7 +459,7 @@ export async function getEmployeeAction(
 		}
 
 		// The edit form shows today's contract type read-only (#1177).
-		const termsToday = yield* dbService.query("getEmployeeTermsToday", async () => {
+		const termsToday = yield* dbService.query("employmentTerms.getToday", async () => {
 			const { timezone, today } = await loadOrganizationDay(dbService.db, {
 				organizationId: actor.organizationId,
 				now: systemClock.nowInstant(),
