@@ -376,6 +376,10 @@
         "statusReady": "Ready",
         "title": "Personal data export"
       },
+      "personnelNumber": {
+        "taken": "This personnel number belongs to {name}. Every employee, current or former, needs their own number.",
+        "takenByAnother": "Another employee already has this personnel number. Every employee, current or former, needs their own number."
+      },
       "tabs": {
         "employees": "Employees",
         "invitations": "Invitations",

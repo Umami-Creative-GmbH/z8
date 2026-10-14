@@ -376,6 +376,10 @@
         "statusReady": "Bereit",
         "title": "Export personenbezogener Daten"
       },
+      "personnelNumber": {
+        "taken": "Diese Personalnummer gehört {name}. Jeder Mitarbeiter, aktuell oder ehemalig, braucht eine eigene Nummer.",
+        "takenByAnother": "Ein anderer Mitarbeiter hat bereits diese Personalnummer. Jeder Mitarbeiter, aktuell oder ehemalig, braucht eine eigene Nummer."
+      },
       "tabs": {
         "employees": "Mitarbeiter",
         "invitations": "Einladungen",
