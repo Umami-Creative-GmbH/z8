@@ -507,6 +507,10 @@ function findingKindLabel(kind: WorkFindingKind, t: TranslateFn) {
 			"Work owned outside the organization's employees",
 		),
 		canonical_missing: t("settings.workDiagnostics.kind.canonicalMissing", "Time record missing"),
+		canonical_missing_closed_month: t(
+			"settings.workDiagnostics.kind.canonicalMissingClosedMonth",
+			"Time record missing in a closed month",
+		),
 		canonical_link_missing: t(
 			"settings.workDiagnostics.kind.canonicalLinkMissing",
 			"Time record link missing",
@@ -580,6 +584,10 @@ function findingKindLabel(kind: WorkFindingKind, t: TranslateFn) {
 		metadata_canonical_only: t(
 			"settings.workDiagnostics.kind.metadataCanonicalOnly",
 			"Assignment only on time record",
+		),
+		attribution_unrepresentable: t(
+			"settings.workDiagnostics.kind.attributionUnrepresentable",
+			"Billable flag or task without a project",
 		),
 		approval_state_conflict: t(
 			"settings.workDiagnostics.kind.approvalStateConflict",

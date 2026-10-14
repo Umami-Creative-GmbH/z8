@@ -896,9 +896,7 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				await setAdmission(mode);
 				const period = await recordWork(ids.billableProject);
 				expect(await diagnose()).toEqual([]);
-				expect(
-					(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
-				).toBe(0);
+				expect((await reconcileLegacyToCanonical(ids.organization)).divergentWorkRecords).toBe(0);
 
 				await divergeBillability(period);
 
@@ -907,12 +905,15 @@ describe("billable work across the work writers on PostgreSQL", () => {
 						kind: "metadata_conflict",
 						shape: "conflicting",
 						workPeriodIds: [period.id],
-						details: { field: "billable", periodValue: true, canonicalValue: false },
+						details: {
+							facet: "billable",
+							field: "billable",
+							periodValue: true,
+							canonicalValue: false,
+						},
 					}),
 				);
-				expect(
-					(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
-				).toBe(1);
+				expect((await reconcileLegacyToCanonical(ids.organization)).divergentWorkRecords).toBe(1);
 			},
 		);
 
@@ -930,9 +931,7 @@ describe("billable work across the work writers on PostgreSQL", () => {
 				projectId: ids.billableProject,
 				billable: true,
 			});
-			expect(
-				(await reconcileLegacyToCanonical(ids.organization)).missingProjectAllocationRows,
-			).toBe(0);
+			expect((await reconcileLegacyToCanonical(ids.organization)).divergentWorkRecords).toBe(0);
 		});
 	});
 });

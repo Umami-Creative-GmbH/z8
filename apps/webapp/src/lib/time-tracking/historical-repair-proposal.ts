@@ -38,12 +38,13 @@ import {
 	type HistoricalPeriodEvidence,
 	type HistoricalRecordEvidence,
 	type HistoricalWorkEvidence,
+	recordProjectIds,
 	type WorkFinding,
 	type WorkFindingKind,
 	type WorkFindingShape,
 	type WorkFindingTreatment,
 } from "./historical-work-diagnostics";
-import { isWorkLocationType } from "./work-location";
+import { isWorkLocationType, type WorkLocationType } from "./work-location";
 
 export const HISTORICAL_REPAIR_PROPOSAL_VERSION = 1;
 
@@ -381,7 +382,7 @@ function applyToEvidence(
 			if (change.field === "work_category_id")
 				changedPeriod.workCategoryId = change.after as string;
 			if (change.field === "work_location_type") {
-				changedPeriod.workLocationType = change.after as string;
+				changedPeriod.workLocationType = change.after as WorkLocationType | null;
 			}
 			if (change.field === "project_id") changedPeriod.projectId = change.after as string;
 			continue;
@@ -394,7 +395,7 @@ function applyToEvidence(
 			changedRecord.detail.workCategoryId = change.after as string;
 		}
 		if (changedRecord.detail && change.field === "work_location_type") {
-			changedRecord.detail.workLocationType = change.after as string;
+			changedRecord.detail.workLocationType = change.after as WorkLocationType | null;
 		}
 	}
 	return {
@@ -428,7 +429,7 @@ function consequencesOf(
 	if (intervalChanges && states.includes("rejected")) approval.push("rejected_work_changes");
 	approval.push("no_decision_recorded");
 
-	const projectIds = [...(record?.projectIds ?? [])].toSorted();
+	const projectIds = (record ? recordProjectIds(record) : []).toSorted();
 	const allocation: HistoricalRepairProposal["consequences"]["allocation"]["effects"] = [];
 	if (recordInterval && projectIds.length > 0) allocation.push("allocation_weights_unchanged");
 	const periodProject = changes.find(
@@ -497,7 +498,7 @@ function expectedStateOf(
 								workLocationType: record.detail.workLocationType,
 							}
 						: null,
-					projectIds: [...record.projectIds].toSorted(),
+					projectIds: recordProjectIds(record).toSorted(),
 				}
 			: null,
 	};

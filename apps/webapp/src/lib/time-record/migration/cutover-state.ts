@@ -68,6 +68,10 @@ export async function assertCanonicalAbsencesReady(organizationId: string) {
 	}
 }
 
-function hasReconciliationMismatch(reconciliation: Record<string, number>) {
-	return Object.values(reconciliation).some((count) => count > 0);
+/**
+ * Only the blocking counts hold readiness back; full record agreement is reported
+ * without blocking until #1228 (BLOCKING_RECONCILIATION_KEYS).
+ */
+function hasReconciliationMismatch(reconciliation: LegacyCanonicalReconciliation) {
+	return reconciliation.blockingMismatchCount > 0;
 }

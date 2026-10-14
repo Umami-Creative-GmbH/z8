@@ -415,11 +415,13 @@
       "kind": {
         "approvalRelationshipMissing": "Ausstehende Arbeit ohne Genehmigungsanfrage",
         "approvalStateConflict": "Genehmigungsstatus stimmen nicht überein",
+        "attributionUnrepresentable": "Abrechenbar oder Aufgabe ohne Projekt",
         "canonicalDetailMissing": "Arbeitsdetails im Zeiteintrag fehlen",
         "canonicalLinkMissing": "Verknüpfung zum Zeiteintrag fehlt",
         "canonicalLinkShared": "Mehrere Arbeitszeiträume verknüpfen denselben Zeiteintrag",
         "canonicalLinkUnresolved": "Verknüpfter Zeiteintrag nicht gefunden",
         "canonicalMissing": "Zeiteintrag fehlt",
+        "canonicalMissingClosedMonth": "Zeiteintrag fehlt in einem abgeschlossenen Monat",
         "captureInferred": "Zeitzonenerfassung nach dem Ereignis abgeleitet",
         "deletedWorkPayable": "Gelöschte Arbeit enthält weiterhin einen vergütbaren Zeiteintrag",
         "durationConflict": "Gespeicherte Zeitdauern stimmen nicht überein",
