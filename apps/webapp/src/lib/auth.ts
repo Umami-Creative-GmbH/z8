@@ -38,6 +38,7 @@ import { rejectOrganizationSsoApprovalUpdate } from "@/lib/auth/organization-sso
 import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
 import { passwordSetupVerification } from "@/lib/auth/password-setup-verification";
 import { reservedEmailGuard } from "@/lib/auth/reserved-email-guard";
+import { securityAlerts } from "@/lib/auth/security-alerts";
 import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
 import { storeAppSessionPlugin } from "@/lib/auth/store-app-session";
 import {
@@ -59,6 +60,7 @@ import {
 	createSsoEnforcementPlugin,
 	recordVerifiedSsoLogin,
 } from "@/lib/enterprise-identity/sso-enforcement-plugin";
+import { notifySecurityAlert } from "@/lib/notifications/security-alert-notifier";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { API_KEY_HTTP_PATHS, API_KEY_PLUGIN_OPTIONS } from "@/lib/public-api/keys/plugin-config";
 import {
@@ -439,6 +441,7 @@ export const auth = betterAuth({
 		accountBanPlugin(),
 		reservedEmailGuard(), // Kiosk-only placeholder addresses never sign in (#857)
 		passwordSetupVerification(), // A kiosk-only employee's new address is verified by its setup link (#857)
+		securityAlerts(notifySecurityAlert), // Password replaced, 2FA on or off: alert the user (#1180)
 		socialOrgOAuthPlugin(),
 		bearer(), // Enable Bearer token auth for desktop app
 		createZ8SCIMPlugin(getSCIMCredentialHashSecret()),

@@ -38,6 +38,17 @@ Proof is bound to session ID, user ID, organization ID, and provider ID. Revokin
 
 Custom social OAuth uses Better Auth's normal session lifecycle and signed-cookie issuance. Current bans are enforced during session creation and during both cached and database-backed session validation. Platform-admin bans revoke existing sessions; access remains denied even if immediate revocation encounters an infrastructure failure. Expired bans are evaluated as absolute instants.
 
+## Security alerts
+
+The `z8-security-alerts` plugin (`apps/webapp/src/lib/auth/security-alerts.ts`) alerts users about changes to their own account security (#1180). It sends an in-app notification plus the security-alert email when:
+
+- an existing password is replaced, by change-password, a reset link, or an admin's set-user-password;
+- two-factor authentication actually turns on or off.
+
+Choosing a first password creates a credential and sends no alert. Rewriting the 2FA flag without a state change also sends no alert. Alerts fire from Better Auth's post-commit database hooks, so only committed changes are reported.
+
+The alert goes to the user's primary organization, which is their earliest membership. A user without an organization gets no alert. The email shows the request's IP address and user agent. Those two fields stay out of organization webhooks and out of copies forwarded to a kiosk-only employee's managers.
+
 ## CAPTCHA
 
 See [Turnstile authentication guard](turnstile-auth.md). Browser and direct/native password clients send a fresh widget token in `x-captcha-response` on the same signup, sign-in, or password-reset request. The server enforces global or verified-domain policy before the operation's side effects.

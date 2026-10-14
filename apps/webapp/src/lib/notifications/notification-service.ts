@@ -21,6 +21,7 @@ import {
 	type PushPayload,
 	sendPushToUser,
 } from "./push-service";
+import { withoutRecipientOnlyMetadata } from "./recipient-only-metadata";
 import { isSlackAvailable, sendSlackNotification } from "./slack-channel";
 import { isTeamsAvailable, sendTeamsNotification } from "./teams-channel";
 import {
@@ -502,7 +503,7 @@ export async function createNotification(
 			entityType: params.entityType,
 			entityId: params.entityId,
 			actionUrl: params.actionUrl,
-			metadata: params.metadata,
+			metadata: withoutRecipientOnlyMetadata(params.metadata),
 		});
 
 		return created;
