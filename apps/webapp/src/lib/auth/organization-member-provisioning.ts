@@ -7,10 +7,17 @@ import {
 	team,
 	teamPermissions,
 } from "@/db/schema";
+import { AuditAction } from "@/lib/audit-logger";
+import { AuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
+import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
+import {
+	findPersonnelNumberHolder,
+	isPersonnelNumberConflict,
+} from "@/lib/organization/personnel-number-uniqueness";
 import { hourlyWageSchema } from "@/lib/validations/employment-history";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
@@ -75,6 +82,10 @@ async function resolveDraftTeamId(
 	return targetTeam?.id ?? null;
 }
 
+/**
+ * The employee values a draft gives a new employee. The personnel number is
+ * left out: `writeWithDraftPersonnelNumber` adds it only while it is free.
+ */
 function draftEmployeeCreationValues(
 	draft: typeof employeeInvitationDraft.$inferSelect | null,
 	teamId: string | null,
@@ -89,13 +100,13 @@ function draftEmployeeCreationValues(
 		pronouns: draft.pronouns,
 		birthday: draft.birthday,
 		position: draft.position,
-		employeeNumber: draft.employeeNumber,
 		startDate: draft.startDate,
 		endDate: draft.endDate,
 		contractType: draft.contractType,
 	};
 }
 
+/** Like `draftEmployeeCreationValues`, for a reactivated employee: only what the draft sets. */
 function draftEmployeeReactivationValues(
 	draft: typeof employeeInvitationDraft.$inferSelect | null,
 	teamId: string | null,
@@ -110,13 +121,98 @@ function draftEmployeeReactivationValues(
 		...(draft.pronouns != null ? { pronouns: draft.pronouns } : {}),
 		...(draft.birthday != null ? { birthday: draft.birthday } : {}),
 		...(draft.position != null ? { position: draft.position } : {}),
-		...(draft.employeeNumber != null
-			? { employeeNumber: draft.employeeNumber }
-			: {}),
 		...(draft.startDate != null ? { startDate: draft.startDate } : {}),
 		...(draft.endDate != null ? { endDate: draft.endDate } : {}),
 		...(draft.contractType != null ? { contractType: draft.contractType } : {}),
 	};
+}
+
+/** A draft personnel number acceptance did not copy because another employee held it. */
+type DroppedPersonnelNumber = {
+	droppedPersonnelNumber: string;
+	/** Null when the employee who won a concurrent save can no longer be found. */
+	heldByEmployeeId: string | null;
+};
+
+/**
+ * Writes the new or reactivated employee with the draft's personnel number
+ * (#1197) when it is free, and without it when another employee of the
+ * organization holds it, so acceptance never fails because of the number. A
+ * concurrent save that takes the number first hits the unique index inside a
+ * savepoint, and the write is repeated without the number.
+ */
+async function writeWithDraftPersonnelNumber<T>(
+	tx: EmployeeProvisioningTransaction,
+	input: {
+		organizationId: string;
+		/** The draft's number, normalized; null writes none. */
+		personnelNumber: string | null;
+		/** The reactivated employee, whose own number is no clash. */
+		exceptEmployeeId?: string;
+	},
+	write: (
+		client: EmployeeProvisioningTransaction,
+		personnelNumber: { employeeNumber: string } | Record<string, never>,
+	) => Promise<T>,
+): Promise<{ written: T; dropped: DroppedPersonnelNumber | null }> {
+	const { personnelNumber } = input;
+	if (personnelNumber === null) return { written: await write(tx, {}), dropped: null };
+	const scope = {
+		organizationId: input.organizationId,
+		personnelNumber,
+		exceptEmployeeId: input.exceptEmployeeId,
+	};
+	const dropWith = async (heldByEmployeeId: string | null) => ({
+		written: await write(tx, {}),
+		dropped: { droppedPersonnelNumber: personnelNumber, heldByEmployeeId },
+	});
+
+	const holder = await findPersonnelNumberHolder(tx, scope);
+	if (holder) return dropWith(holder.employeeId);
+	try {
+		const written = await tx.transaction((savepoint) =>
+			write(savepoint, { employeeNumber: personnelNumber }),
+		);
+		return { written, dropped: null };
+	} catch (error) {
+		if (!isPersonnelNumberConflict(error)) throw error;
+		const winner = await findPersonnelNumberHolder(tx, scope);
+		return dropWith(winner?.employeeId ?? null);
+	}
+}
+
+/** The audit entry of a draft personnel number acceptance dropped (#1197). */
+function recordDroppedPersonnelNumber(
+	tx: EmployeeProvisioningTransaction,
+	audit: AuditTrail,
+	input: {
+		organizationId: string;
+		userId: string;
+		employee: { id: string; employeeNumber: string | null };
+		draft: typeof employeeInvitationDraft.$inferSelect;
+		dropped: DroppedPersonnelNumber;
+		outcome: "created" | "reactivated";
+	},
+) {
+	return audit.record(tx, {
+		organizationId: input.organizationId,
+		action: AuditAction.EMPLOYEE_PERSONNEL_NUMBER_DROPPED,
+		// The invitee's acceptance dropped the number.
+		actorUserId: input.userId,
+		targetType: "employee",
+		targetId: input.employee.id,
+		employeeId: input.employee.id,
+		metadata: {
+			...input.dropped,
+			reason: "personnel_number_taken",
+			outcome: input.outcome,
+			invitationId: input.draft.invitationId,
+			draftId: input.draft.id,
+			...(input.outcome === "reactivated"
+				? { keptPersonnelNumber: input.employee.employeeNumber }
+				: {}),
+		},
+	});
 }
 
 /**
@@ -225,6 +321,8 @@ export async function ensureEmployeeForOrganizationMember(
 		invitationId?: string | null;
 	},
 ) {
+	// Entries reach the external audit service only once the transaction committed.
+	const audit = new AuditTrail();
 	const transactionResult = await dbClient.transaction(async (tx) => {
 		// Provisioning creates, reactivates, places or grants the user's employee:
 		// facts manual creation reads under the user's shared guard (#318). The
@@ -272,25 +370,51 @@ export async function ensureEmployeeForOrganizationMember(
 			),
 		});
 		let provisionedEmployee: typeof existingEmployee;
+		// Old drafts may hold a blank number: that is no number (#881).
+		const draftPersonnelNumber = normalizePersonnelNumber(draft?.employeeNumber);
 
 		if (existingEmployee) {
 			if (input.mode === "membershipAccepted" && !existingEmployee.isActive) {
-				const [reactivatedEmployee] = await tx
-					.update(employee)
-					.set({
-						isActive: true,
-						...reactivationValues,
-						...(draft ? {} : isAdminRole ? { role: "admin" as const } : {}),
-					})
-					.where(
-						and(
-							eq(employee.id, existingEmployee.id),
-							eq(employee.organizationId, input.organizationId),
-						),
-					)
-					.returning();
+				const {
+					written: [reactivatedEmployee],
+					dropped,
+				} = await writeWithDraftPersonnelNumber(
+					tx,
+					{
+						organizationId: input.organizationId,
+						personnelNumber: draftPersonnelNumber,
+						exceptEmployeeId: existingEmployee.id,
+					},
+					(client, personnelNumber) =>
+						client
+							.update(employee)
+							.set({
+								isActive: true,
+								...reactivationValues,
+								...personnelNumber,
+								...(draft ? {} : isAdminRole ? { role: "admin" as const } : {}),
+							})
+							.where(
+								and(
+									eq(employee.id, existingEmployee.id),
+									eq(employee.organizationId, input.organizationId),
+								),
+							)
+							.returning(),
+				);
 
 				const updatedEmployee = reactivatedEmployee ?? existingEmployee;
+
+				if (draft && dropped) {
+					await recordDroppedPersonnelNumber(tx, audit, {
+						organizationId: input.organizationId,
+						userId: input.userId,
+						employee: updatedEmployee,
+						draft,
+						dropped,
+						outcome: "reactivated",
+					});
+				}
 
 				// The database keeps an employee whose employment ended inactive
 				// (only a rehire starts a new one), so only a reactivated employee
@@ -332,17 +456,38 @@ export async function ensureEmployeeForOrganizationMember(
 				provisionedEmployee = existingEmployee;
 			}
 		} else {
-			const insertResult = tx.insert(employee).values({
-				userId: input.userId,
-				organizationId: input.organizationId,
-				role: draft?.role ?? (isAdminRole ? "admin" : "employee"),
-				isActive: true,
-				...creationValues,
-			});
+			const {
+				written: [newEmployee],
+				dropped,
+			} = await writeWithDraftPersonnelNumber(
+				tx,
+				{
+					organizationId: input.organizationId,
+					personnelNumber: draftPersonnelNumber,
+				},
+				async (client, personnelNumber) => {
+					const insertResult = client.insert(employee).values({
+						userId: input.userId,
+						organizationId: input.organizationId,
+						role: draft?.role ?? (isAdminRole ? "admin" : "employee"),
+						isActive: true,
+						...creationValues,
+						...personnelNumber,
+					});
+					return insertResult.returning ? await insertResult.returning() : [];
+				},
+			);
 
-			const [newEmployee] = insertResult.returning
-				? await insertResult.returning()
-				: [];
+			if (newEmployee && draft && dropped) {
+				await recordDroppedPersonnelNumber(tx, audit, {
+					organizationId: input.organizationId,
+					userId: input.userId,
+					employee: newEmployee,
+					draft,
+					dropped,
+					outcome: "created",
+				});
+			}
 
 			if (newEmployee && draft) {
 				await writeDraftFirstTerms(tx, {
@@ -381,6 +526,7 @@ export async function ensureEmployeeForOrganizationMember(
 					: null,
 		};
 	});
+	audit.forwardCommitted();
 
 	if (transactionResult.acceptedDraftCleanup) {
 		await consumeEmployeeInvitationDraft(

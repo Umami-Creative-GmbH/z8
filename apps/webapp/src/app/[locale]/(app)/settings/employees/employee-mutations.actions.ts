@@ -65,6 +65,10 @@ import {
 } from "./employee-action-utils";
 import { buildEligibleInvitationDraftPredicate } from "./employee-invitation-draft-eligibility";
 import { filterEmployeeUpdateForScopedManager } from "./employee-scope";
+import {
+	assertDraftPersonnelNumberFree,
+	findDraftPersonnelNumberHolder,
+} from "./invitation-draft-personnel-number";
 import { keepTermsRefusal, markContractWorkBalanceDirty } from "./employment-history-actions";
 
 const logger = createLogger("EmployeeActions");
@@ -517,6 +521,16 @@ export async function updateEmployeeInvitationDraftAction(
 					? parseHourlyRate(validatedData.hourlyRate)
 					: null;
 				const { hourlyRate: _hourlyRate, ...draftUpdate } = validatedData;
+				// A draft's personnel number follows the employee rule (#1197): not one an
+				// employee of the organization or another pending draft holds.
+				const draftPersonnelNumber =
+					typeof draftUpdate.employeeNumber === "string" ? draftUpdate.employeeNumber : null;
+				const draftPersonnelNumberScope = (personnelNumber: string) => ({
+					organizationId: actor.organizationId,
+					personnelNumber,
+					draftId,
+					now: dateFromInstant(systemClock.nowInstant()),
+				});
 				const updatedDrafts = yield* actor.dbService.query("updateEmployeeInvitationDraft", async () => {
 					return await actor.dbService.db.transaction(
 						async (tx) => {
@@ -583,6 +597,13 @@ export async function updateEmployeeInvitationDraftAction(
 
 							if (!eligibleDraft) return [];
 
+							if (draftPersonnelNumber !== null) {
+								await assertDraftPersonnelNumberFree(
+									tx,
+									draftPersonnelNumberScope(draftPersonnelNumber),
+								);
+							}
+
 							const updatedDrafts = await tx
 								.update(employeeInvitationDraft)
 								.set({
@@ -622,7 +643,16 @@ export async function updateEmployeeInvitationDraftAction(
 						},
 						{ isolationLevel: "serializable" },
 					);
-				});
+				}).pipe(
+					keepPersonnelNumberRefusal(() =>
+						draftPersonnelNumber === null
+							? Promise.resolve(null)
+							: findDraftPersonnelNumberHolder(
+									actor.dbService.db,
+									draftPersonnelNumberScope(draftPersonnelNumber),
+								),
+					),
+				);
 
 				if (updatedDrafts.length === 0) {
 					return yield* Effect.fail(

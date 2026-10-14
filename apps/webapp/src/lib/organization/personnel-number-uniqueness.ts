@@ -82,7 +82,8 @@ export async function findPersonnelNumberHolder(
 
 /** Thrown inside a save's transaction when the personnel number is taken; rolls it back. */
 export class PersonnelNumberTaken extends Error {
-	constructor(readonly holder: PersonnelNumberHolder) {
+	/** `holder` is the employee, or the pending invitation draft (#1197), holding the number. */
+	constructor(readonly holder: Pick<PersonnelNumberHolder, "name">) {
 		super("Personnel number is taken");
 		this.name = "PersonnelNumberTaken";
 	}
@@ -120,7 +121,7 @@ function takenCause(error: unknown): PersonnelNumberTaken | null {
  * rollback. Other errors pass through.
  */
 export function keepPersonnelNumberRefusal(
-	findHolder: () => Promise<PersonnelNumberHolder | null>,
+	findHolder: () => Promise<Pick<PersonnelNumberHolder, "name"> | null>,
 ) {
 	return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | ValidationError, R> =>
 		effect.pipe(
