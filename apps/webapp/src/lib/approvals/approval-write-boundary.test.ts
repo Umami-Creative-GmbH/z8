@@ -1995,9 +1995,14 @@ runner.transaction(async (tx) => {
 					}),
 				],
 			},
+			// Work periods' approval links in their savepoint (#1213), then absences'.
 			{
 				relativePath: fixtures[1],
 				writes: [
+					expect.objectContaining({
+						operation: "update",
+						table: "approval_request",
+					}),
 					expect.objectContaining({
 						operation: "update",
 						table: "approval_request",

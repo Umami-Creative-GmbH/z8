@@ -16,6 +16,7 @@ const mockState = vi.hoisted(() => ({
 	updateWhere: vi.fn(),
 	deleteWhere: vi.fn(),
 	transaction: vi.fn(),
+	savepoint: vi.fn(),
 	dbInsert: vi.fn(),
 	dbUpdate: vi.fn(),
 	dbDelete: vi.fn(),
@@ -81,6 +82,14 @@ import {
 	buildCanonicalBackfillPayload,
 	runCanonicalBackfill,
 } from "@/lib/time-record/migration/backfill";
+
+/** The transaction and each per-period savepoint share the same mocked writers. */
+const transactionClient = {
+	delete: mockState.dbDelete,
+	insert: mockState.dbInsert,
+	update: mockState.dbUpdate,
+	transaction: mockState.savepoint,
+};
 
 describe("canonical backfill period normalization", () => {
 	const closedWork = {
@@ -178,6 +187,86 @@ describe("canonical backfill period normalization", () => {
 		).rejects.toThrow("Work changed during canonical backfill");
 	});
 
+	it("skips a period the closed-month refusal rolls back and attaches the rest (#1213)", async () => {
+		const march = { ...closedWork, id: "work-march" };
+		const april = { ...closedWork, id: "work-april" };
+		mockState.savepoint.mockImplementationOnce(async () => {
+			throw Object.assign(new Error("Failed query"), {
+				cause: Object.assign(new Error("month closed"), { code: "Z8M01", detail: "2026-03" }),
+			});
+		});
+		mockState.workInsertReturning.mockResolvedValue([{ id: "work-april" }]);
+
+		const result = await runCanonicalBackfill({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			legacy: {
+				workPeriods: [march, april],
+				absenceEntries: [],
+				approvalRequests: [],
+				absenceCategories: [],
+			},
+		});
+
+		expect(result.closedMonthSkips).toEqual([{ workPeriodId: "work-march", month: "2026-03" }]);
+		expect(mockState.savepoint).toHaveBeenCalledTimes(2);
+		expect(mockState.updateSet).toHaveBeenCalledExactlyOnceWith({
+			canonicalRecordId: "work-april",
+		});
+	});
+
+	it("aborts the whole backfill on any other failure in a period's savepoint", async () => {
+		mockState.savepoint.mockRejectedValueOnce(
+			Object.assign(new Error("deadlock detected"), { code: "40P01" }),
+		);
+
+		await expect(
+			runCanonicalBackfill({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				legacy: {
+					workPeriods: [closedWork, { ...closedWork, id: "work-2" }],
+					absenceEntries: [],
+					approvalRequests: [],
+					absenceCategories: [],
+				},
+			}),
+		).rejects.toThrow("deadlock detected");
+		expect(mockState.savepoint).toHaveBeenCalledTimes(1);
+	});
+
+	it("copies the period's vehicle use onto its canonical work detail", () => {
+		const payload = buildCanonicalBackfillPayload({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			legacy: {
+				workPeriods: [
+					{
+						...closedWork,
+						vehicleKind: "own",
+						vehicleId: null,
+						odometerStartKm: 100,
+						odometerEndKm: 130,
+						drivenDistanceKm: 30,
+					},
+				],
+				absenceEntries: [],
+				approvalRequests: [],
+				absenceCategories: [],
+			},
+		});
+
+		expect(payload.timeRecordWork).toEqual([
+			expect.objectContaining({
+				vehicleKind: "own",
+				vehicleId: null,
+				odometerStartKm: 100,
+				odometerEndKm: 130,
+				drivenDistanceKm: 30,
+			}),
+		]);
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 
@@ -211,12 +300,11 @@ describe("canonical backfill period normalization", () => {
 		mockState.deleteWhere.mockResolvedValue(undefined);
 		mockState.dbDelete.mockReturnValue({ where: mockState.deleteWhere });
 
+		mockState.savepoint.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
+			callback(transactionClient),
+		);
 		mockState.transaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) =>
-			callback({
-				delete: mockState.dbDelete,
-				insert: mockState.dbInsert,
-				update: mockState.dbUpdate,
-			}),
+			callback(transactionClient),
 		);
 
 		mockState.absenceCategoryFindMany.mockResolvedValue([]);

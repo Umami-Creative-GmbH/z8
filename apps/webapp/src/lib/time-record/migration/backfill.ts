@@ -14,6 +14,7 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db";
+import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { recordedTaskId } from "@/lib/time-tracking/task-attribution";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
@@ -40,6 +41,12 @@ export type LegacyWorkPeriod = {
 	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType: WorkLocationType | null;
+	/** Vehicle use (#1120); absent from callers that predate it. */
+	vehicleKind?: "organization" | "own" | null;
+	vehicleId?: string | null;
+	odometerStartKm?: number | null;
+	odometerEndKm?: number | null;
+	drivenDistanceKm?: number | null;
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -117,6 +124,11 @@ export type CanonicalBackfillPayload = {
 		workCategoryId: string | null;
 		workLocationType: WorkLocationType | null;
 		computationMetadata: string | null;
+		vehicleKind: "organization" | "own" | null;
+		vehicleId: string | null;
+		odometerStartKm: number | null;
+		odometerEndKm: number | null;
+		drivenDistanceKm: number | null;
 	}>;
 	timeRecordAbsence: Array<{
 		recordId: string;
@@ -210,7 +222,13 @@ export function buildCanonicalBackfillPayload(
 			recordKind: "work",
 			workCategoryId: workPeriod.workCategoryId,
 			workLocationType: workPeriod.workLocationType,
+			// A work period keeps no computation metadata; only its canonical writers record it.
 			computationMetadata: null,
+			vehicleKind: workPeriod.vehicleKind ?? null,
+			vehicleId: workPeriod.vehicleId ?? null,
+			odometerStartKm: workPeriod.odometerStartKm ?? null,
+			odometerEndKm: workPeriod.odometerEndKm ?? null,
+			drivenDistanceKm: workPeriod.drivenDistanceKm ?? null,
 		});
 
 		if (workPeriod.projectId) {
@@ -328,61 +346,126 @@ export function buildCanonicalBackfillPayload(
 	};
 }
 
+export type CanonicalBackfillResult = CanonicalBackfillPayload & {
+	/**
+	 * Completed work periods left without a canonical work record because their work touches
+	 * a closed month (#1213). The database refuses the record (Time Tracking ADR-0004), and a
+	 * half pair in a closed month can't change, so it stays as it is until the month reopens.
+	 */
+	closedMonthSkips: Array<{ workPeriodId: string; month: string }>;
+};
+
 export async function runCanonicalBackfill(
 	input: CanonicalBackfillRunInput,
-): Promise<CanonicalBackfillPayload> {
+): Promise<CanonicalBackfillResult> {
 	const resolvedInput = input.legacy
 		? { organizationId: input.organizationId, actorId: input.actorId, legacy: input.legacy }
 		: await loadCanonicalBackfillInput(input);
 	const payload = buildCanonicalBackfillPayload(resolvedInput);
 	const sourceWork = new Map(resolvedInput.legacy.workPeriods.map((period) => [period.id, period]));
+	const workRecordIds = new Set(
+		payload.legacyLinks.workPeriod.map((link) => link.canonicalRecordId),
+	);
+	const isWork = (row: { recordId: string }) => workRecordIds.has(row.recordId);
+	const work = {
+		records: new Map(
+			payload.timeRecords
+				.filter((record) => record.recordKind === "work")
+				.map((record) => [record.id, record]),
+		),
+		details: groupByRecordId(payload.timeRecordWork),
+		allocations: groupByRecordId(payload.timeRecordAllocation),
+		decisions: groupByRecordId(payload.timeRecordApprovalDecision.filter(isWork)),
+		approvalLinks: groupByRecordId(
+			payload.legacyLinks.approvalRequest
+				.filter((link) => workRecordIds.has(link.canonicalRecordId))
+				.map((link) => ({ ...link, recordId: link.canonicalRecordId })),
+		),
+	};
+	const closedMonthSkips: CanonicalBackfillResult["closedMonthSkips"] = [];
 
 	await db.transaction(async (tx) => {
-		await upsertCanonicalTimeRecords(tx, payload.timeRecords);
-		await insertIfPresent(tx, timeRecordWork, payload.timeRecordWork);
+		// One savepoint per work period: a closed-month refusal (Z8M01) rolls back only that
+		// period, which keeps its half pair, and the rest of the organization is still attached.
+		// Any other failure still aborts the whole backfill.
+		for (const link of payload.legacyLinks.workPeriod) {
+			const recordId = link.canonicalRecordId;
+			const record = work.records.get(recordId);
+			try {
+				await tx.transaction(async (savepoint) => {
+					await upsertCanonicalTimeRecords(savepoint, record ? [record] : []);
+					await insertIfPresent(savepoint, timeRecordWork, work.details.get(recordId) ?? []);
+
+					const allocations = work.allocations.get(recordId) ?? [];
+					if (allocations.length > 0) {
+						await savepoint
+							.delete(timeRecordAllocation)
+							.where(eq(timeRecordAllocation.recordId, recordId));
+						await savepoint.insert(timeRecordAllocation).values(allocations);
+					}
+
+					const decisions = work.decisions.get(recordId) ?? [];
+					if (decisions.length > 0) {
+						await savepoint
+							.delete(timeRecordApprovalDecision)
+							.where(eq(timeRecordApprovalDecision.recordId, recordId));
+						await savepoint.insert(timeRecordApprovalDecision).values(decisions);
+					}
+
+					const source = sourceWork.get(link.id);
+					if (!source || source.endTime === null) throw new Error("Invalid work backfill source");
+					// A clock-out or correction may have established work since the read.
+					// Reject the stale snapshot and roll back every representation written here.
+					const linked = await savepoint
+						.update(workPeriod)
+						.set({ canonicalRecordId: recordId })
+						.where(
+							and(
+								eq(workPeriod.id, link.id),
+								eq(workPeriod.organizationId, input.organizationId),
+								isNull(workPeriod.canonicalRecordId),
+								eq(workPeriod.isActive, false),
+								eq(workPeriod.startTime, source.startTime),
+								eq(workPeriod.endTime, source.endTime),
+								eq(workPeriod.updatedAt, source.updatedAt),
+							),
+						)
+						.returning({ id: workPeriod.id });
+					if (linked.length !== 1) throw new Error("Work changed during canonical backfill");
+
+					for (const approvalLink of work.approvalLinks.get(recordId) ?? []) {
+						await savepoint
+							.update(approvalRequest)
+							.set({ canonicalRecordId: recordId })
+							.where(eq(approvalRequest.id, approvalLink.id));
+					}
+				});
+			} catch (error) {
+				const refusal = monthClosedRefusalOf(error);
+				if (!refusal) throw error;
+				closedMonthSkips.push({ workPeriodId: link.id, month: refusal.month });
+			}
+		}
+
+		// Absences: the closed-month refusal guards an absence by its entry's local days, and
+		// neither its canonical record nor the entry's link and organization are frozen.
+		await upsertCanonicalTimeRecords(
+			tx,
+			payload.timeRecords.filter((record) => record.recordKind === "absence"),
+		);
 		await insertIfPresent(tx, timeRecordAbsence, payload.timeRecordAbsence);
 
-		const allocationRecordIds = payload.timeRecordAllocation.map(
-			(allocation) => allocation.recordId,
+		const absenceDecisions = payload.timeRecordApprovalDecision.filter(
+			(decision) => !isWork(decision),
 		);
-		if (allocationRecordIds.length > 0) {
-			await tx
-				.delete(timeRecordAllocation)
-				.where(inArray(timeRecordAllocation.recordId, allocationRecordIds));
-			await tx.insert(timeRecordAllocation).values(payload.timeRecordAllocation);
-		}
-
-		const decisionRecordIds = payload.timeRecordApprovalDecision.map(
-			(decision) => decision.recordId,
-		);
-		if (decisionRecordIds.length > 0) {
-			await tx
-				.delete(timeRecordApprovalDecision)
-				.where(inArray(timeRecordApprovalDecision.recordId, decisionRecordIds));
-			await tx.insert(timeRecordApprovalDecision).values(payload.timeRecordApprovalDecision);
-		}
-
-		for (const link of payload.legacyLinks.workPeriod) {
-			const source = sourceWork.get(link.id);
-			if (!source || source.endTime === null) throw new Error("Invalid work backfill source");
-			// A clock-out or correction may have established work since the read.
-			// Reject the stale snapshot and roll back every representation written here.
-			const linked = await tx
-				.update(workPeriod)
-				.set({ canonicalRecordId: link.canonicalRecordId })
-				.where(
-					and(
-						eq(workPeriod.id, link.id),
-						eq(workPeriod.organizationId, input.organizationId),
-						isNull(workPeriod.canonicalRecordId),
-						eq(workPeriod.isActive, false),
-						eq(workPeriod.startTime, source.startTime),
-						eq(workPeriod.endTime, source.endTime),
-						eq(workPeriod.updatedAt, source.updatedAt),
-					),
-				)
-				.returning({ id: workPeriod.id });
-			if (linked.length !== 1) throw new Error("Work changed during canonical backfill");
+		if (absenceDecisions.length > 0) {
+			await tx.delete(timeRecordApprovalDecision).where(
+				inArray(
+					timeRecordApprovalDecision.recordId,
+					absenceDecisions.map((decision) => decision.recordId),
+				),
+			);
+			await tx.insert(timeRecordApprovalDecision).values(absenceDecisions);
 		}
 
 		for (const link of payload.legacyLinks.absenceEntry) {
@@ -396,6 +479,7 @@ export async function runCanonicalBackfill(
 		}
 
 		for (const link of payload.legacyLinks.approvalRequest) {
+			if (workRecordIds.has(link.canonicalRecordId)) continue;
 			await tx
 				.update(approvalRequest)
 				.set({ canonicalRecordId: link.canonicalRecordId })
@@ -403,7 +487,17 @@ export async function runCanonicalBackfill(
 		}
 	});
 
-	return payload;
+	return { ...payload, closedMonthSkips };
+}
+
+function groupByRecordId<T extends { recordId: string }>(rows: T[]): Map<string, T[]> {
+	const groups = new Map<string, T[]>();
+	for (const row of rows) {
+		const group = groups.get(row.recordId);
+		if (group) group.push(row);
+		else groups.set(row.recordId, [row]);
+	}
+	return groups;
 }
 
 async function loadCanonicalBackfillInput(
