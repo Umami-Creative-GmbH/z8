@@ -805,9 +805,11 @@ describe("historical gap repair on PostgreSQL", () => {
 		}
 	});
 
+	// The split refuses linked canonical work that disagrees with its period (#1205), so
+	// the racing splits divide a gap without a canonical record (#1234).
 	it("stops a stale plan after a real calendar split", async () => {
 		await authorizeRepair();
-		const { periodId } = await incompleteRecord("2026-07-20");
+		const periodId = await missingRecord("2026-07-20");
 		const plan = await readPlan();
 		const before = await snapshot();
 
@@ -859,7 +861,7 @@ describe("historical gap repair on PostgreSQL", () => {
 	// an SQL write holding the shared key.
 	it("stops a stale plan when a real split commits first while the repair waits", async () => {
 		await authorizeRepair();
-		const { periodId } = await incompleteRecord("2026-07-23");
+		const periodId = await missingRecord("2026-07-23");
 		const plan = await readPlan();
 		const before = await snapshot();
 
