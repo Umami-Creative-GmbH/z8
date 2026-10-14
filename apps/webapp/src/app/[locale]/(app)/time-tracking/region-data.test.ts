@@ -4,11 +4,13 @@ import { notFound, redirect } from "next/navigation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import { listDrivingDetailsMissing } from "@/lib/time-tracking/vehicle-use/driving-details-missing-store";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 import { readTimeSummary, readWorkPeriods } from "./read-queries";
 import {
 	getSafeEmployeeWorkBalance,
+	readDrivingRegion,
 	readHistoryRegion,
 	readSummaryRegion,
 } from "./region-data";
@@ -17,6 +19,9 @@ import type { EmployeeRenderContext } from "./render-context";
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester: vi.fn(),
+}));
+vi.mock("@/lib/time-tracking/vehicle-use/driving-details-missing-store", () => ({
+	listDrivingDetailsMissing: vi.fn(),
 }));
 vi.mock("@/lib/work-balance/service", () => ({
 	getEmployeeWorkBalance: vi.fn(),
@@ -65,6 +70,7 @@ beforeEach(() => {
 	vi.mocked(readTimeSummary).mockResolvedValue(expectedSummary);
 	vi.mocked(getEmployeeWorkBalance).mockResolvedValue(expectedBalance);
 	vi.mocked(readWorkPeriods).mockResolvedValue([]);
+	vi.mocked(listDrivingDetailsMissing).mockResolvedValue([]);
 	vi.mocked(getPrimaryEligibleManagerIdForRequester).mockResolvedValue(
 		"manager-1",
 	);
@@ -72,6 +78,48 @@ beforeEach(() => {
 afterEach(() => {
 	vi.useRealTimers();
 	vi.restoreAllMocks();
+});
+
+describe("driving details missing on the time tracking page (#1127)", () => {
+	const flagged = (workPeriodId: string) => ({
+		workPeriodId,
+		employeeId: scope.employeeId,
+		startedAt: "2026-03-23T07:00:00Z",
+		endedAt: "2026-03-23T15:00:00Z",
+		startOffsetMinutes: 60,
+		endOffsetMinutes: 60,
+		workDay: "2026-03-23",
+		vehicleUse: null,
+	});
+
+	it("marks the listed work periods that lack driving details, read for this employee only", async () => {
+		const listed = [{ id: "work-1" }, { id: "work-2" }];
+		vi.mocked(readWorkPeriods).mockResolvedValue(
+			listed as Awaited<ReturnType<typeof readWorkPeriods>>,
+		);
+		vi.mocked(listDrivingDetailsMissing).mockResolvedValue([flagged("work-2")]);
+		expect(await readHistoryRegion(employeeContext)).toMatchObject({
+			drivingDetailsMissingIds: ["work-2"],
+		});
+		expect(listDrivingDetailsMissing).toHaveBeenCalledWith(db, {
+			organizationId: scope.organizationId,
+			employeeIds: [scope.employeeId],
+			workPeriodIds: ["work-1", "work-2"],
+		});
+	});
+
+	it("lists the employee's newest flagged work and says when there is more", async () => {
+		const many = Array.from({ length: 21 }, (_, index) => flagged(`work-${index}`));
+		vi.mocked(listDrivingDetailsMissing).mockResolvedValue(many);
+		const region = await readDrivingRegion(employeeContext);
+		expect(region.work).toHaveLength(20);
+		expect(region.truncated).toBe(true);
+		expect(listDrivingDetailsMissing).toHaveBeenCalledWith(db, {
+			organizationId: scope.organizationId,
+			employeeIds: [scope.employeeId],
+			limit: 21,
+		});
+	});
 });
 
 describe("independent time tracking region data", () => {
@@ -115,6 +163,7 @@ describe("independent time tracking region data", () => {
 		vi.mocked(getEmployeeWorkBalance).mockReturnValue(new Promise(() => {}));
 		expect(await readHistoryRegion(employeeContext)).toEqual({
 			workPeriods: [],
+			drivingDetailsMissingIds: [],
 			hasManager: true,
 			canApproveTimeEntries: true,
 		});
@@ -141,6 +190,7 @@ describe("independent time tracking region data", () => {
 		manager.resolve("manager-1");
 		expect(await result).toEqual({
 			workPeriods: [],
+			drivingDetailsMissingIds: [],
 			hasManager: true,
 			canApproveTimeEntries: true,
 		});

@@ -1555,6 +1555,48 @@
       "when": 1803830400000,
       "tag": "0221_skill_expiry_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 222,
+      "version": "7",
+      "when": 1803916800000,
+      "tag": "0222_organization_vehicles",
+      "breakpoints": true
+    },
+    {
+      "idx": 223,
+      "version": "7",
+      "when": 1804003200000,
+      "tag": "0223_vehicle_use_enablement",
+      "breakpoints": true
+    },
+    {
+      "idx": 224,
+      "version": "7",
+      "when": 1804089600000,
+      "tag": "0224_work_vehicle_use",
+      "breakpoints": true
+    },
+    {
+      "idx": 225,
+      "version": "7",
+      "when": 1804176000000,
+      "tag": "0225_mileage_item_source_work_period",
+      "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1804262400000,
+      "tag": "0226_driving_details_missing_reminder",
+      "breakpoints": true
+    },
+    {
+      "idx": 227,
+      "version": "7",
+      "when": 1804348800000,
+      "tag": "0227_closed_month_canonical_vehicle_use",
+      "breakpoints": true
     }
   ]
 }

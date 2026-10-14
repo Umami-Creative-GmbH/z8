@@ -13,18 +13,40 @@
 import { z } from "zod";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimezone } from "./timezone-capture";
+import {
+	breakVehicleUseSchema,
+	clockInVehicleUseSchema,
+	clockOutVehicleUseSchema,
+} from "./vehicle-use/clock-vehicle-use";
 import { WORK_LOCATION_TYPES } from "./work-location";
 
 /** The frozen command without a position; the desktop and every unstamped browser command. */
 export const UNSTAMPED_CLOCK_COMMAND_VERSION = 2;
 /**
- * The newest frozen command (#826): a clock-in or clock-out that carries the
+ * The stamped frozen command (#826): a clock-in or clock-out that carries the
  * device position taken at the event. Accepted with its position only from
  * cookie-authenticated browser requests.
  */
 export const CLOCK_COMMAND_VERSION = 3;
+/**
+ * The frozen command with vehicle use (#1122): a clock-in, clock-out or desktop
+ * break that may carry vehicle use beside its body; a clock-in or clock-out may
+ * also carry a position. Vehicle use is accepted from every client, bearer ones
+ * included; the position, as in version 3, only from the browser. Clients send
+ * it only when the server advertises it.
+ */
+export const VEHICLE_CLOCK_COMMAND_VERSION = 4;
 /** Every version the commands route accepts and advertises. */
-export const CLOCK_COMMAND_VERSIONS = [UNSTAMPED_CLOCK_COMMAND_VERSION, CLOCK_COMMAND_VERSION];
+export const CLOCK_COMMAND_VERSIONS = [
+	UNSTAMPED_CLOCK_COMMAND_VERSION,
+	CLOCK_COMMAND_VERSION,
+	VEHICLE_CLOCK_COMMAND_VERSION,
+];
+/** The versions whose position a browser command may be stamped with. */
+export const POSITION_CLOCK_COMMAND_VERSIONS: readonly number[] = [
+	CLOCK_COMMAND_VERSION,
+	VEHICLE_CLOCK_COMMAND_VERSION,
+];
 
 const MINUTE_MILLISECONDS = 60_000;
 /** Elapsed-instant windows, not local calendar days (#263 §5). */
@@ -147,39 +169,67 @@ const stampedClockCommandSchema = z.discriminatedUnion("kind", [
 	z.strictObject({ ...stampedFields, ...clockOutFields }),
 ]);
 
+/**
+ * A confirmed desktop idle break (#281, resolution #263 §8): one atomic
+ * operation closes the target at the estimated idle start and resumes at the
+ * detected return. `occurredAt`/`timezone` are the detected return, never the
+ * later confirmation; `breakStart` is the close endpoint with the zone
+ * observed when idleness was detected. The observations explain both.
+ */
+const breakFields = {
+	kind: z.literal("break"),
+	target: closeTarget,
+	/** Location of the resumed work. */
+	workLocationType: z.enum(WORK_LOCATION_TYPES),
+	breakStart: z.strictObject({ at: utcInstant, timezone: ianaZone }),
+	observations: z.strictObject({
+		/** The last input before idleness: the estimated idle start. */
+		lastActivity: observation,
+		/** When the idle threshold was noticed, with the zone observed then. */
+		idleDetected: zonedObservation,
+		/** The first input after idleness, with the zone observed then. */
+		returnDetected: zonedObservation,
+		/** When the employee confirmed the break. */
+		confirmed: observation,
+	}),
+};
+
 const unstampedClockCommandSchema = z.discriminatedUnion("kind", [
 	z.strictObject({ ...commandFields, ...clockInFields }),
 	z.strictObject({ ...commandFields, ...clockOutFields }),
-	/**
-	 * A confirmed desktop idle break (#281, resolution #263 §8): one atomic
-	 * operation closes the target at the estimated idle start and resumes at the
-	 * detected return. `occurredAt`/`timezone` are the detected return, never the
-	 * later confirmation; `breakStart` is the close endpoint with the zone
-	 * observed when idleness was detected. The observations explain both.
-	 */
+	z.strictObject({ ...commandFields, ...breakFields }),
+]);
+
+/**
+ * Version 4 (#1122): the version 2 fields plus optional vehicle use beside the
+ * body, and an optional position on a clock-in or clock-out. Both are part of
+ * the frozen bytes; an absent one is omitted, never null.
+ */
+const vehicleFields = { ...commandFields, version: z.literal(VEHICLE_CLOCK_COMMAND_VERSION) };
+const vehicleClockCommandSchema = z.discriminatedUnion("kind", [
 	z.strictObject({
-		...commandFields,
-		kind: z.literal("break"),
-		target: closeTarget,
-		/** Location of the resumed work. */
-		workLocationType: z.enum(WORK_LOCATION_TYPES),
-		breakStart: z.strictObject({ at: utcInstant, timezone: ianaZone }),
-		observations: z.strictObject({
-			/** The last input before idleness: the estimated idle start. */
-			lastActivity: observation,
-			/** When the idle threshold was noticed, with the zone observed then. */
-			idleDetected: zonedObservation,
-			/** The first input after idleness, with the zone observed then. */
-			returnDetected: zonedObservation,
-			/** When the employee confirmed the break. */
-			confirmed: observation,
-		}),
+		...vehicleFields,
+		...clockInFields,
+		position: clockCommandPositionSchema.optional(),
+		vehicleUse: clockInVehicleUseSchema.optional(),
+	}),
+	z.strictObject({
+		...vehicleFields,
+		...clockOutFields,
+		position: clockCommandPositionSchema.optional(),
+		vehicleUse: clockOutVehicleUseSchema.optional(),
+	}),
+	z.strictObject({
+		...vehicleFields,
+		...breakFields,
+		vehicleUse: breakVehicleUseSchema.optional(),
 	}),
 ]);
 
 export type ClockCommand =
 	| z.infer<typeof unstampedClockCommandSchema>
-	| z.infer<typeof stampedClockCommandSchema>;
+	| z.infer<typeof stampedClockCommandSchema>
+	| z.infer<typeof vehicleClockCommandSchema>;
 export type ClockInCommand = Extract<ClockCommand, { kind: "clock_in" }>;
 export type ClockOutCommand = Extract<ClockCommand, { kind: "clock_out" }>;
 export type BreakCommand = Extract<ClockCommand, { kind: "break" }>;
@@ -221,12 +271,16 @@ export type ParsedClockCommand =
 export function parseClockCommand(body: unknown): ParsedClockCommand {
 	if (!body || typeof body !== "object") return { ok: false, code: "invalid_command" };
 	const { version } = body as { version?: unknown };
-	if (version !== UNSTAMPED_CLOCK_COMMAND_VERSION && version !== CLOCK_COMMAND_VERSION) {
-		return { ok: false, code: "unsupported_version" };
-	}
-	const parsed = (
-		version === CLOCK_COMMAND_VERSION ? stampedClockCommandSchema : unstampedClockCommandSchema
-	).safeParse(body);
+	const schema =
+		version === UNSTAMPED_CLOCK_COMMAND_VERSION
+			? unstampedClockCommandSchema
+			: version === CLOCK_COMMAND_VERSION
+				? stampedClockCommandSchema
+				: version === VEHICLE_CLOCK_COMMAND_VERSION
+					? vehicleClockCommandSchema
+					: null;
+	if (!schema) return { ok: false, code: "unsupported_version" };
+	const parsed = schema.safeParse(body);
 	if (!parsed.success) return { ok: false, code: "invalid_command" };
 	if (parsed.data.kind === "break" && !breakEndpointsMatchObservations(parsed.data)) {
 		return { ok: false, code: "invalid_command" };

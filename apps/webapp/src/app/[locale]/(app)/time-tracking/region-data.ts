@@ -11,6 +11,10 @@ import {
 } from "@/lib/time-tracking/period-submissions/employee-period-view-store";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
+import {
+	type DrivingDetailsMissingWork,
+	listDrivingDetailsMissing,
+} from "@/lib/time-tracking/vehicle-use/driving-details-missing-store";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 import {
@@ -30,7 +34,17 @@ export type HistoryRegionData = {
 	workPeriods: WorkPeriodWithEntries[];
 	hasManager: boolean;
 	canApproveTimeEntries: boolean;
+	/** The listed work periods showing driving details missing (#1127). */
+	drivingDetailsMissingIds: string[];
 };
+
+export type DrivingRegionData = {
+	work: DrivingDetailsMissingWork[];
+	truncated: boolean;
+};
+
+/** How many of the employee's flagged work periods the notice lists. */
+const DRIVING_NOTICE_LIMIT = 20;
 
 export async function readSummaryRegion(
 	context: EmployeeRenderContext,
@@ -66,12 +80,41 @@ export async function readHistoryRegion(
 			organizationId: scope.organizationId,
 		}),
 	]);
+	const flagged = await listDrivingDetailsMissing(db, {
+		...drivingScope(scope),
+		workPeriodIds: workPeriods.map((period) => period.id),
+	});
 	return {
 		workPeriods,
+		drivingDetailsMissingIds: flagged.map((work) => work.workPeriodId),
 		hasManager: Boolean(managerId),
 		canApproveTimeEntries:
 			context.membershipRole === "admin" || context.membershipRole === "owner",
 	};
+}
+
+/**
+ * The employee's own work showing driving details missing (#1127), newest first; empty unless
+ * vehicle use is expected of them.
+ */
+export async function readDrivingRegion(
+	context: EmployeeRenderContext,
+): Promise<DrivingRegionData> {
+	const work = await listDrivingDetailsMissing(db, {
+		...drivingScope({
+			employeeId: context.employee.id,
+			organizationId: context.employee.organizationId,
+		}),
+		limit: DRIVING_NOTICE_LIMIT + 1,
+	});
+	return {
+		work: work.slice(0, DRIVING_NOTICE_LIMIT),
+		truncated: work.length > DRIVING_NOTICE_LIMIT,
+	};
+}
+
+function drivingScope(scope: EmployeeReadScope) {
+	return { organizationId: scope.organizationId, employeeIds: [scope.employeeId] };
 }
 
 /** The employee's period submissions (#1059); null when the organization collects none. */

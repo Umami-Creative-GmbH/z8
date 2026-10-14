@@ -183,6 +183,7 @@ const NOTIFICATION_CATEGORIES = [
 			"forgotten_clock_out_reminder",
 			"break_due_reminder",
 			"period_submission_reminder",
+			"driving_details_missing_reminder",
 			"period_submission_sent_back",
 			"personal_data_export_reminder",
 			"skill_expiry_upcoming",
@@ -429,6 +430,11 @@ function useNotificationSettingsViewModel() {
 				);
 			case "break_due_reminder":
 				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
+			case "driving_details_missing_reminder":
+				return t(
+					"common:notifications.preferences.types.driving_details_missing_reminder",
+					"Driving details missing",
+				);
 			case "period_submission_reminder":
 				return t(
 					"common:notifications.preferences.types.period_submission_reminder",

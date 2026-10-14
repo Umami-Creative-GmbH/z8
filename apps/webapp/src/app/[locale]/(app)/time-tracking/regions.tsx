@@ -6,6 +6,7 @@ import { getLocale } from "next-intl/server";
 import { type ReactNode, Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
+import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-details-missing-notice";
 import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
@@ -13,9 +14,15 @@ import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-ca
 import { getTranslate } from "@/tolgee/server";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
-import { readHistoryRegion, readPeriodsRegion, readSummaryRegion } from "./region-data";
+import {
+	readDrivingRegion,
+	readHistoryRegion,
+	readPeriodsRegion,
+	readSummaryRegion,
+} from "./region-data";
 import {
 	ClockLoading,
+	DrivingLoading,
 	HistoryLoading,
 	PeriodsLoading,
 	RegionLoadError,
@@ -59,6 +66,35 @@ export async function ClockRegion({
 				activeWorkPeriod={activeWorkPeriod}
 				employeeName={employeeName}
 				timeFormat={context.timeFormat}
+			/>
+		</div>
+	);
+}
+
+/**
+ * The employee's work showing driving details missing (#1127). Nothing while there is none, or
+ * while it cannot be read: the notice is a reminder, never a reason to fail the page.
+ */
+export async function DrivingRegion({
+	context,
+}: {
+	context: EmployeeRenderContext;
+}): Promise<ReactNode> {
+	let data: Awaited<ReturnType<typeof readDrivingRegion>>;
+	try {
+		data = await readDrivingRegion(context);
+	} catch (error) {
+		unstable_rethrow(error);
+		return null;
+	}
+	if (data.work.length === 0) return null;
+	return (
+		<div className="px-4 lg:px-6">
+			<DrivingDetailsMissingNotice
+				work={data.work}
+				employeeId={context.employee.id}
+				timeFormat={context.timeFormat}
+				truncated={data.truncated}
 			/>
 		</div>
 	);
@@ -175,6 +211,7 @@ export async function HistoryRegion({
 		<div className="px-4 lg:px-6">
 			<TimeEntriesTable
 				workPeriods={data.workPeriods}
+				drivingDetailsMissingIds={data.drivingDetailsMissingIds}
 				hasManager={data.hasManager}
 				canApproveTimeEntries={data.canApproveTimeEntries}
 				employeeTimezone={context.timezone}
@@ -210,6 +247,9 @@ export async function TimeTrackingPageContent({
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			<Suspense fallback={<ClockLoading />}>
 				<ClockRegion context={context} />
+			</Suspense>
+			<Suspense fallback={<DrivingLoading />}>
+				<DrivingRegion context={context} />
 			</Suspense>
 			<Suspense fallback={<TimelineLoading />}>
 				<TimelineRegion context={context} searchParams={searchParams} />

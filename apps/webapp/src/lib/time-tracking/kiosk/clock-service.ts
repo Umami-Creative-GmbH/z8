@@ -18,6 +18,10 @@ import type { Clocking } from "@/lib/time-tracking/clocking/clocking";
 import { proveKioskPin } from "@/lib/time-tracking/clocking/kiosk";
 import type { ClockPrincipal } from "@/lib/time-tracking/clocking/types";
 import type { KioskPinVerification } from "@/lib/time-tracking/kiosk/verify-kiosk-pin";
+import {
+	readBreakVehicleUse,
+	readClockVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
@@ -35,6 +39,7 @@ import {
 	type KioskEventTime,
 } from "./protocol";
 import { kioskRefusalDetail } from "./refusal-detail";
+import { readKioskVehicleUse } from "./vehicle-use-context";
 
 /** An employee's own calendar, in which their day total counts. */
 export type EmployeeCalendar = { timezone: string; weekStartDay: WeekStartDay };
@@ -81,7 +86,20 @@ const clockRequest = employeeRequest.extend({
 		.min(1)
 		.max(24 * 60)
 		.optional(),
+	/** Read leniently per action (#1123): a malformed one is dropped, never refused. */
+	vehicleUse: z.unknown().optional(),
 });
+
+/** The action's vehicle use beside its body (#1123), when it carried one Clocking can read. */
+function clockVehicleUseOf(value: unknown) {
+	const vehicleUse = readClockVehicleUse(value);
+	return vehicleUse ? { vehicleUse } : {};
+}
+
+function breakVehicleUseOf(value: unknown) {
+	const vehicleUse = readBreakVehicleUse(value);
+	return vehicleUse ? { vehicleUse } : {};
+}
 
 function json(body: unknown, status = 200) {
 	return Response.json(body, { status, headers: NO_STORE });
@@ -252,11 +270,13 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			case "clock_in":
 				return deps.clocking.run({
 					...command,
+					...clockVehicleUseOf(body.vehicleUse),
 					body: { kind: "clock_in", workLocationType: "office" },
 				});
 			case "clock_out":
 				return deps.clocking.run({
 					...command,
+					...clockVehicleUseOf(body.vehicleUse),
 					body: {
 						kind: "clock_out",
 						project: { kind: "preserve" },
@@ -266,12 +286,14 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			case "break":
 				return deps.clocking.run({
 					...command,
+					...breakVehicleUseOf(body.vehicleUse),
 					body: { kind: "break", breakMinutes: body.breakMinutes ?? 0 },
 				});
 			case "start_break":
+				// The break's one reading is asked when it ends (#1123).
 				return deps.clocking.startBreak(command);
 			case "resume_break":
-				return deps.clocking.resumeBreak(command);
+				return deps.clocking.resumeBreak({ ...command, ...breakVehicleUseOf(body.vehicleUse) });
 		}
 	}
 
@@ -285,7 +307,14 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 			if (!body) return json({ code: "invalid_request" }, 400);
 			const admitted = await admit(body, kiosk);
 			if ("response" in admitted) return admitted.response;
-			return json(await snapshot(kiosk, admitted.employee));
+			const [current, vehicleUse] = await Promise.all([
+				snapshot(kiosk, admitted.employee),
+				readKioskVehicleUse(db, {
+					organizationId: kiosk.organizationId,
+					employeeId: admitted.employee.id,
+				}),
+			]);
+			return json(vehicleUse ? { ...current, vehicleUse } : current);
 		},
 
 		/** `POST /api/kiosk/clock`: one action, when it took effect, then the state and day total. */

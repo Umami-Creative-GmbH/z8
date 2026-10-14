@@ -71,6 +71,8 @@ export type ManagerDailyBriefingSources = {
 	): Promise<BriefingApproval[]>;
 	getOvertimeWarnings(input: SourceScope): Promise<BriefingActionItem[]>;
 	getPayrollIssues(input: SourceScope): Promise<BriefingActionItem[]>;
+	/** The scoped employees' work periods showing driving details missing (#1127). */
+	getDrivingDetailsMissingCount(input: SourceScope): Promise<number>;
 };
 
 type GetManagerDailyBriefingFromSourcesInput = {
@@ -184,6 +186,7 @@ export async function getManagerDailyBriefingFromSources({
 		approvalsResult,
 		overtimeResult,
 		payrollResult,
+		drivingResult,
 	] = await Promise.allSettled([
 		sources.getOpenTimeRecords({ ...sourceScope, ...timeRecordWindow }),
 		sources.getApprovedAbsences({ ...sourceScope, date }),
@@ -195,6 +198,7 @@ export async function getManagerDailyBriefingFromSources({
 		}),
 		sources.getOvertimeWarnings(sourceScope),
 		sources.getPayrollIssues(sourceScope),
+		sources.getDrivingDetailsMissingCount(sourceScope),
 	]);
 
 	const timeRecords = settledValue(timeRecordsResult, []);
@@ -265,6 +269,7 @@ export async function getManagerDailyBriefingFromSources({
 			...sections.coverage.items,
 			...sections.overtime.items,
 			...sections.payroll.items,
+			...drivingDetailsMissingItems(settledValue(drivingResult, 0)),
 		]),
 		approvals: sections.approvals.items,
 		attendance: sections.attendance.items,
@@ -586,6 +591,20 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		return [];
 	},
 
+	async getDrivingDetailsMissingCount({ organizationId, employeeIds }) {
+		if (employeeIds.length === 0) {
+			return 0;
+		}
+
+		const [{ db }, { countDrivingDetailsMissing }] = await Promise.all([
+			import("@/db"),
+			import("@/lib/time-tracking/vehicle-use/driving-details-missing-store"),
+		]);
+
+		// Counted in SQL over the active employees `/team/driving` lists.
+		return countDrivingDetailsMissing(db, { organizationId, employeeIds });
+	},
+
 	async getPayrollIssues({ organizationId }) {
 		const { db, payrollExportConfig, payrollWageTypeMapping } = await import("@/db");
 
@@ -630,6 +649,35 @@ export const managerDailyBriefingDatabaseSources: ManagerDailyBriefingSources = 
 		];
 	},
 };
+
+/**
+ * One item counting the scoped employees' work lacking its vehicle or an odometer reading (#1127),
+ * linking to the team list where it can be filtered; none without any.
+ */
+function drivingDetailsMissingItems(count: number): BriefingActionItem[] {
+	if (count <= 0) return [];
+	return [
+		{
+			id: "driving:details-missing",
+			category: "driving",
+			severity: "warning",
+			title: DRIVING_DETAILS_MISSING_TEXT.title.replace("{count}", String(count)),
+			titleKey: DRIVING_DETAILS_MISSING_TEXT.titleKey,
+			titleParams: { count },
+			description: DRIVING_DETAILS_MISSING_TEXT.description,
+			descriptionKey: DRIVING_DETAILS_MISSING_TEXT.descriptionKey,
+			href: "/team/driving",
+		},
+	];
+}
+
+// Each key sits next to its English template, so the Tolgee extractor reads it as the default.
+const DRIVING_DETAILS_MISSING_TEXT = {
+	titleKey: "today.briefing.items.drivingDetailsMissing.title",
+	title: "Driving details missing ({count})",
+	descriptionKey: "today.briefing.items.drivingDetailsMissing.description",
+	description: "Work periods of your employees lacking a vehicle or an odometer reading.",
+} as const;
 
 function buildSection<TItem extends BriefingActionItem>(
 	sectionId: keyof typeof SECTION_METADATA,

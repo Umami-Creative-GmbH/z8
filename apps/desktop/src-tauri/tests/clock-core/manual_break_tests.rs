@@ -22,7 +22,7 @@ async fn offline_manual_break_survives_restart_and_resume_clears_it() {
     device
         .act(
             endpoint,
-            ClockCommand::ClockIn(crate::clock::WorkLocationType::Home),
+            ClockCommand::ClockIn(crate::clock::WorkLocationType::Home, None),
         )
         .await
         .unwrap();

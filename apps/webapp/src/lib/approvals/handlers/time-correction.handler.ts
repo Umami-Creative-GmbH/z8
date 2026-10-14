@@ -13,6 +13,7 @@ import {
 	approvalChainStageInstance,
 	approvalRequest,
 	employee,
+	organizationVehicle,
 	timeEntry,
 	workCategory,
 	workPeriod,
@@ -30,13 +31,16 @@ import type {
 } from "../domain/types";
 import type { ApprovalInboxTimeComparison } from "../inbox/types";
 import {
+	addVehicleLabelsForOrganization,
 	categoryIdsFromTimeCorrectionMetadata,
 	categoryNamesForOrganization,
+	vehicleIdsFromTimeCorrectionMetadata,
 	parseTimeCorrectionReviewMetadata,
 	type TimeCorrectionMetadataChanges,
 	type TimeCorrectionReviewMetadata,
 	timeCorrectionMetadataChanges,
 } from "../server/time-correction-review-metadata";
+import { withVehicleUseReviewWarnings } from "../server/time-correction-vehicle-use-warnings";
 import type { ApprovalDbService, CurrentApprover } from "../server/types";
 import {
 	classifyTimeApprovalRequest,
@@ -449,6 +453,34 @@ function publicStage(
 		: { name: "Approval", order: stageOrderFromMetadata(request.metadata) };
 }
 
+/** Organization vehicles named by time corrections under review (#1120), organization-scoped. */
+function reviewVehicles(
+	dbService: typeof DatabaseService.Service,
+	organizationId: string,
+	vehicleIds: string[],
+) {
+	return vehicleIds.length > 0
+		? dbService.query(
+				"getTimeCorrectionReviewVehicles",
+				async () =>
+					await dbService.db
+						.select({
+							id: organizationVehicle.id,
+							organizationId: organizationVehicle.organizationId,
+							name: organizationVehicle.name,
+							licencePlate: organizationVehicle.licencePlate,
+						})
+						.from(organizationVehicle)
+						.where(
+							and(
+								eq(organizationVehicle.organizationId, organizationId),
+								inArray(organizationVehicle.id, vehicleIds),
+							),
+						),
+			)
+		: Effect.succeed([]);
+}
+
 export function buildPendingCorrectionReview(
 	period: WorkPeriodWithRelations,
 	request: { metadata?: unknown },
@@ -647,7 +679,8 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 							),
 						];
 						const categoryIds = categoryIdsFromTimeCorrectionMetadata(requests);
-						const [correctionEntries, categories] = yield* Effect.all(
+						const vehicleIds = vehicleIdsFromTimeCorrectionMetadata(requests);
+						const [correctionEntries, categories, vehicles] = yield* Effect.all(
 							[
 								originalEntryIds.length > 0
 									? dbService.query(
@@ -690,11 +723,14 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 												}),
 										)
 									: Effect.succeed([]),
+								reviewVehicles(dbService, params.organizationId, vehicleIds),
 							],
 							{ concurrency: "unbounded" },
 						);
-						const categoryNamesById = categoryNamesForOrganization(
-							categories,
+						// Vehicle labels (#1120) share the review names map with the categories.
+						const categoryNamesById = addVehicleLabelsForOrganization(
+							categoryNamesForOrganization(categories, params.organizationId),
+							vehicles,
 							params.organizationId,
 						);
 
@@ -1024,11 +1060,21 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 									}),
 							)
 						: Effect.succeed([]);
-				const [correctionEntries, categories] = yield* Effect.all([correctionEntriesEffect, categoriesEffect], {
-					concurrency: "unbounded",
-				});
-				const categoryNamesById = categoryNamesForOrganization(
-					categories,
+				const [correctionEntries, categories, vehicles] = yield* Effect.all(
+					[
+						correctionEntriesEffect,
+						categoriesEffect,
+						reviewVehicles(
+							dbService,
+							period.employee.organizationId,
+							vehicleIdsFromTimeCorrectionMetadata([request]),
+						),
+					],
+					{ concurrency: "unbounded" },
+				);
+				const categoryNamesById = addVehicleLabelsForOrganization(
+					categoryNamesForOrganization(categories, period.employee.organizationId),
+					vehicles,
 					period.employee.organizationId,
 				);
 				const review = buildTimeApprovalReview(
@@ -1040,6 +1086,26 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 					correctionEntries as CorrectionEntryForReview[],
 					categoryNamesById,
 				);
+				// The approver sees the plausibility warnings of requested vehicle use (#1121).
+				const pendingCorrection = review.pendingCorrection;
+				if (
+					pendingCorrection?.metadataChanges?.vehicleUse &&
+					pendingCorrection.action !== "delete"
+				) {
+					pendingCorrection.metadataChanges = yield* dbService.query(
+						"getTimeCorrectionVehicleUseWarnings",
+						() =>
+							withVehicleUseReviewWarnings(dbService.db, {
+								organizationId: period.employee.organizationId,
+								employeeId: period.employee.id,
+								workPeriodId: period.id,
+								metadata: parseTimeCorrectionReviewMetadata(request.metadata),
+								changes: pendingCorrection.metadataChanges,
+								start: pendingCorrection.clockIn?.requested ?? period.startTime,
+								end: pendingCorrection.clockOut?.requested ?? period.endTime,
+							}),
+					);
+				}
 				const periodWithReview = {
 					...period,
 					pendingChanges:

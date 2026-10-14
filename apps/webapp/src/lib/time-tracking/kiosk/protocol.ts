@@ -10,6 +10,8 @@
  * - A refused token is answered with 401 and `{ code }`: `kiosk_unknown` (pair
  *   again) or `kiosk_revoked` (show the revoked screen).
  */
+import type { WorkVehicleOption, WorkVehicleUse } from "../vehicle-use/work-vehicle-use";
+
 export const KIOSK_TOKEN_HEADER = "x-kiosk-token";
 
 export const KIOSK_TOKEN_STORAGE_KEY = "z8.kiosk.deviceToken";
@@ -24,10 +26,15 @@ export type KioskRefusalCode = "kiosk_unknown" | "kiosk_revoked";
  * - `POST /api/kiosk/employee-status` with `{ employeeId, pin }` answers the
  *   employee's current state and today's day total (`KioskEmployeeSnapshot`).
  * - `POST /api/kiosk/clock` with `{ employeeId, pin, action, operationId?,
- *   breakMinutes? }` runs the action and answers `KioskClockResult`: the
+ *   breakMinutes?, vehicleUse? }` runs the action and answers `KioskClockResult`: the
  *   outcome, when it took effect, and the state and day total after it. `operationId` (a UUID the
  *   device makes once per attempted action) makes a retried request replay
  *   instead of clocking twice; without it the server makes one.
+ *   `vehicleUse` (#1123) is the web clock's (#1122): on `clock_in` the vehicle
+ *   and start reading, on `clock_out` the end reading or distance (or the whole
+ *   vehicle use when the work records none), on `resume_break` and `break` one
+ *   `{ readingKm }`. It never refuses the action: what cannot be recorded is
+ *   dropped. `start_break` carries none; the break's reading is asked on resume.
  *
  * Refusals are `{ code, ... }` (`KioskClockRefusal`). A wrong or locked PIN is
  * answered without clocking.
@@ -65,10 +72,32 @@ export type KioskEmployeeState =
  */
 export type KioskDayTotal = { date: string; timezone: string; minutes: number };
 
+/**
+ * What the kiosk asks about vehicle use (#1123, spec #807), as the web clock
+ * does (#1121, #1122): the employee's mode, the vehicles to pick with their
+ * assigned ones first, each vehicle's last recorded end reading (before the live
+ * work started, while clocked in), the organization vehicles on another
+ * employee's live work, and the live work's recorded vehicle use. The kiosk
+ * pre-fills and warns from these facts alone, so asking costs no PIN attempts.
+ */
+export type KioskVehicleUse = {
+	mode: "asked" | "expected";
+	vehicles: WorkVehicleOption[];
+	suggestedVehicleIds: string[];
+	lastEndKmByVehicleId: Record<string, number>;
+	vehiclesOnOtherLiveWork: string[];
+	live: WorkVehicleUse | null;
+};
+
 export type KioskEmployeeSnapshot = {
 	employee: { id: string; name: string };
 	state: KioskEmployeeState;
 	dayTotal: KioskDayTotal;
+	/**
+	 * Only `POST /api/kiosk/employee-status` answers it, and only while vehicle
+	 * use is asked or expected for the employee: without it the kiosk asks nothing.
+	 */
+	vehicleUse?: KioskVehicleUse;
 };
 
 /**

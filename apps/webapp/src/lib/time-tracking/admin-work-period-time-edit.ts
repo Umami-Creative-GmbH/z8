@@ -43,6 +43,15 @@ import {
 	type TimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
+import { assertWorkVehicleUseChangeAllowed } from "./vehicle-use/work-vehicle-use-eligibility";
+import {
+	sameWorkVehicleUse,
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+	workVehicleUseIntentOf,
+	workVehicleUseRequestValue,
+} from "./vehicle-use/work-vehicle-use";
 import type { WorkLocationType } from "./work-location";
 import { assertWorkOpen } from "./closed-months/store";
 import { sendBackChangedPeriodSubmissions } from "./period-submissions/submission-send-back";
@@ -58,6 +67,8 @@ export interface AdminWorkPeriodTimeEditInput {
 	/** The form values exactly as submitted, before interpretation. */
 	submitted: {
 		workLocationType?: WorkLocationType;
+		/** Vehicle use (#1120): absent keeps it, null clears it. Already validated. */
+		vehicleUse?: WorkVehicleUse | null;
 		clockInDate: string;
 		clockInTime: string;
 		clockOutDate: string;
@@ -242,12 +253,15 @@ type AdminEditIdentity = Pick<
 >;
 
 function adminEditCommand(input: AdminEditIdentity): AmendCompletedWorkCommand {
+	const { vehicleUse, ...submitted } = input.submitted;
 	return {
 		version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
 		operationId: input.submissionId,
 		request: {
 			workPeriodId: input.workPeriodId,
-			...input.submitted,
+			...submitted,
+			// Only when submitted, keeping earlier commands byte-identical (#1120).
+			...(vehicleUse !== undefined ? { vehicleUse: workVehicleUseRequestValue(vehicleUse) } : {}),
 			notes: input.notes,
 		},
 	};
@@ -303,6 +317,7 @@ function adminEditIntent(
 			input.submitted.workLocationType === undefined
 				? { kind: "preserve" }
 				: { kind: "replace", id: input.submitted.workLocationType },
+		...workVehicleUseIntentOf(input.submitted.vehicleUse),
 		notes: input.notes,
 	};
 }
@@ -441,13 +456,43 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 		const locationChanged =
 			input.submitted.workLocationType !== undefined &&
 			input.submitted.workLocationType !== period.workLocationType;
-		if (!clockInChanged && !clockOutChanged && !locationChanged) {
+		const previousVehicleUse = vehicleUseFromColumns(period);
+		const vehicleUseChanged =
+			input.submitted.vehicleUse !== undefined &&
+			!sameWorkVehicleUse(input.submitted.vehicleUse, previousVehicleUse);
+		if (!clockInChanged && !clockOutChanged && !locationChanged && !vehicleUseChanged) {
 			throw new ValidationError({
 				message: "At least one correction value must change",
 				field: "correction",
 			});
 		}
-		if (locationChanged && !period.canonicalRecordId) {
+		const resultingVehicleUse = vehicleUseChanged
+			? (input.submitted.vehicleUse ?? null)
+			: previousVehicleUse;
+		if (vehicleUseChanged) {
+			await assertWorkVehicleUseChangeAllowed(tx, {
+				organizationId: input.organizationId,
+				employeeId: period.employeeId,
+				previous: previousVehicleUse,
+				resulting: resultingVehicleUse,
+			});
+			// Vehicle use of work in a closed month is frozen (#1120, #762).
+			if (!clockInChanged && !clockOutChanged) {
+				await assertWorkOpen(tx, {
+					organizationId: input.organizationId,
+					employeeId: period.employeeId,
+					intervals: [
+						{
+							start: instantFromTimeCorrectionBoundary(input.expected.startTime),
+							end: instantFromTimeCorrectionBoundary(input.expected.endTime),
+						},
+					],
+				});
+			}
+		}
+		const resultingVehicle = vehicleUseColumns(resultingVehicleUse);
+		const metadataChanged = locationChanged || vehicleUseChanged;
+		if (metadataChanged && !period.canonicalRecordId) {
 			throw new ConflictError({
 				message: "Canonical work record is missing",
 				conflictType: "canonical_work_missing",
@@ -582,6 +627,11 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 				startTime,
 				endTime,
 				workLocationType: input.submitted.workLocationType ?? period.workLocationType,
+				vehicleKind: resultingVehicle.vehicleKind,
+				vehicleId: resultingVehicle.vehicleId,
+				odometerStartKm: resultingVehicle.odometerStartKm,
+				odometerEndKm: resultingVehicle.odometerEndKm,
+				drivenDistanceKm: resultingVehicle.drivenDistanceKm,
 				durationMinutes,
 				updatedAt,
 			})
@@ -622,7 +672,7 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 					),
 				);
 		}
-		if (locationChanged) {
+		if (metadataChanged) {
 			const canonicalRecordId = period.canonicalRecordId;
 			if (!canonicalRecordId) {
 				throw new ConflictError({
@@ -632,7 +682,14 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 			}
 			const updated = await tx
 				.update(timeRecordWork)
-				.set({ workLocationType: input.submitted.workLocationType })
+				.set({
+					workLocationType: input.submitted.workLocationType ?? period.workLocationType,
+					vehicleKind: resultingVehicle.vehicleKind,
+					vehicleId: resultingVehicle.vehicleId,
+					odometerStartKm: resultingVehicle.odometerStartKm,
+					odometerEndKm: resultingVehicle.odometerEndKm,
+					drivenDistanceKm: resultingVehicle.drivenDistanceKm,
+				})
 				.where(
 					and(
 						eq(timeRecordWork.recordId, canonicalRecordId),
@@ -654,10 +711,17 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 				performedBy: input.actorUserId,
 				employeeId: period.employeeId,
 				changes: JSON.stringify({
-					workLocationType: {
-						before: period.workLocationType,
-						after: input.submitted.workLocationType,
-					},
+					...(locationChanged
+						? {
+								workLocationType: {
+									before: period.workLocationType,
+									after: input.submitted.workLocationType,
+								},
+							}
+						: {}),
+					...(vehicleUseChanged
+						? { vehicleUse: { before: previousVehicleUse, after: resultingVehicleUse } }
+						: {}),
 				}),
 				metadata: JSON.stringify({ reason: input.notes }),
 				ipAddress: input.ipAddress,

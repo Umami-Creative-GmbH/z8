@@ -41,6 +41,7 @@ import {
   IconShieldCheck,
   IconWorld,
   IconDroplet,
+  IconCar,
   IconDeviceDesktop as IconMonitor,
 } from '@tabler/icons-react';
 
@@ -69,6 +70,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Bug: IconBug,
   Briefcase: IconBriefcase,
   Percent: IconPercentage,
+  Car: IconCar,
   // Technical
   PlayerPlay: IconPlayerPlay,
   Database: IconDatabase,

@@ -207,9 +207,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -407,6 +412,12 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record",
 		},
 		{
+			columns: ["driven_distance_km", "odometer_end_km", "odometer_start_km"],
+			functionName: "applyPolicyClockOutTerminalBreakInTransaction",
+			operation: "update",
+			table: "time_record_work",
+		},
+		{
 			columns: [
 				"approval_state",
 				"duration_minutes",
@@ -423,9 +434,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -647,9 +663,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -700,9 +721,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -817,9 +843,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -921,9 +952,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -1004,9 +1040,14 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],
@@ -1281,9 +1322,14 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 		{
 			columns: [
 				"computation_metadata",
+				"driven_distance_km",
+				"odometer_end_km",
+				"odometer_start_km",
 				"organization_id",
 				"record_id",
 				"record_kind",
+				"vehicle_id",
+				"vehicle_kind",
 				"work_category_id",
 				"work_location_type",
 			],

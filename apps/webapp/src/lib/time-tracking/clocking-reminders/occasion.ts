@@ -9,6 +9,7 @@ export type ClockingReminderType = Extract<
 	| "period_submission_reminder"
 	| "period_submission_sent_back"
 	| "period_submission_decided"
+	| "driving_details_missing_reminder"
 >;
 
 /**
@@ -52,7 +53,9 @@ export type ClockingReminderOccasionSource =
 	 * One period submission: sent back to the employee after a change (#1062), or decided (#805).
 	 * A submission is decided at most once, so its key names the decision.
 	 */
-	| { kind: "period_submission"; submissionId: string };
+	| { kind: "period_submission"; submissionId: string }
+	/** One completed work period, for the morning-after driving details reminder (#1127). */
+	| { kind: "work_period"; workPeriodId: string };
 
 /** The organization-unique key that dedupes one reminder occasion. */
 export function clockingReminderOccasionKey(
@@ -70,6 +73,8 @@ export function clockingReminderOccasionKey(
 			return `${type}:submission_period:${source.employeeId}:${source.endDate.toString()}:${source.stage}`;
 		case "period_submission":
 			return `${type}:period_submission:${source.submissionId}`;
+		case "work_period":
+			return `${type}:work_period:${source.workPeriodId}`;
 	}
 }
 
@@ -113,6 +118,8 @@ export interface DueClockingReminder {
 		outcome: "approved" | "rejected";
 		reason: string | null;
 	};
+	/** The work lacking its vehicle or a reading (#1127), by its event-local start date. */
+	drivingWork?: { workPeriodId: string; workDay: PlainDate };
 }
 
 /** Approved absences and public holidays exempt only the missed clock-in reminder. */

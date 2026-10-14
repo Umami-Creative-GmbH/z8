@@ -159,4 +159,27 @@ describe("getTimeEntriesColumns", () => {
 			expect(screen.queryByText("Billable") !== null).toBe(marked);
 		},
 	);
+	it.each([
+		[true, true],
+		[false, false],
+	])("marks work lacking driving details (flagged %s) (#1127)", (flagged, marked) => {
+		const columns = getTimeEntriesColumns({
+			t,
+			locale: "en-US",
+			employeeTimezone: "Europe/Berlin",
+			timeFormat: "24h",
+			hasManager: false,
+			renderEditAction: vi.fn(),
+			isDrivingDetailsMissing: (workPeriodId) => flagged && workPeriodId === workPeriod.id,
+		});
+		const description = columns.find((column) => column.id === "description");
+
+		render(
+			typeof description?.cell === "function"
+				? description.cell({ row: { original: workPeriod } } as never)
+				: null,
+		);
+
+		expect(screen.queryByText("Driving details missing") !== null).toBe(marked);
+	});
 });

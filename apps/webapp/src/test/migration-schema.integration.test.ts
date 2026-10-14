@@ -142,3 +142,55 @@ it("the SQL migration chain supplies every declared table, column, enum, index a
 				missing.push(`enum ${en.name}.${value}`);
 	expect(missing).toEqual([]);
 });
+
+it("supplies what the schema cannot declare for vehicle use (#807)", async () => {
+	const pool = integrationAdminPool();
+	// Closed months guard vehicle use on both representations of work (0224, 0227).
+	const triggers = (
+		await pool.query<{ table_name: string; name: string; columns: string[] }>(`
+ select c.relname as table_name, t.tgname as name,
+ array(select a.attname::text from unnest(t.tgattr) k(num) join pg_attribute a on a.attrelid=t.tgrelid and a.attnum=k.num order by a.attname) as columns
+ from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace
+ where n.nspname='public' and not t.tgisinternal and t.tgname like 'closed_month_guard_%'
+ `)
+	).rows;
+	expect(triggers).toEqual(
+		expect.arrayContaining([
+			{ table_name: "work_period", name: "closed_month_guard_work_period", columns: [] },
+			{
+				table_name: "time_record_work",
+				name: "closed_month_guard_time_record_work",
+				columns: [
+					"driven_distance_km",
+					"odometer_end_km",
+					"odometer_start_km",
+					"vehicle_id",
+					"vehicle_kind",
+				],
+			},
+		]),
+	);
+	const guard = (
+		await pool.query<{ source: string }>(
+			"select prosrc as source from pg_proc where proname = 'closed_month_guard_work_period'",
+		)
+	).rows[0]?.source;
+	for (const column of [
+		"vehicle_kind",
+		"vehicle_id",
+		"odometer_start_km",
+		"odometer_end_km",
+		"driven_distance_km",
+	]) {
+		expect(guard).toContain(`NEW.${column}`);
+	}
+	// A deleted work period clears only a mileage item's link, never its organization (0225):
+	// Drizzle declares the action, not the column list.
+	const setNull = (
+		await pool.query<{ columns: string[] }>(`
+ select array(select a.attname::text from unnest(con.confdelsetcols) k(num) join pg_attribute a on a.attrelid=con.conrelid and a.attnum=k.num) as columns
+ from pg_constraint con where con.conname = 'travel_expense_report_item_source_work_period_fk'
+ `)
+	).rows;
+	expect(setNull).toEqual([{ columns: ["source_work_period_id"] }]);
+});

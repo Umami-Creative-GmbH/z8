@@ -165,6 +165,49 @@ describe("prepareBrowserClockCommand", () => {
 		expect(unstamped.ok && unstamped.request).not.toHaveProperty("position");
 	});
 
+	it("carries vehicle use only where both the server and the worker freeze version 4 (#1122)", () => {
+		const vehicleUse = { vehicle: { kind: "own" as const }, startKm: 12_000 };
+		const position = {
+			latitude: 52.520008,
+			longitude: 13.404954,
+			accuracyMeters: 18.5,
+			fixedAt: "2026-09-25T08:15:29.000Z",
+		};
+		const prepare = (commandVersions: number[], workerCommandVersions: number[]) =>
+			prepareBrowserClockCommand({
+				kind: "clock_in",
+				operationId,
+				capabilities: { ...capabilities, commandVersions },
+				session,
+				now,
+				timezone: "Europe/Berlin",
+				position,
+				vehicleUse,
+				workerCommandVersions,
+			});
+
+		expect(prepare([2, 3, 4], [2, 3, 4])).toMatchObject({
+			ok: true,
+			request: { position, vehicleUse },
+		});
+		// A server or worker without version 4 would drop typed readings: the page decides.
+		expect(prepare([2, 3], [2, 3, 4])).toEqual({ ok: false, reason: "vehicle_use_unsupported" });
+		expect(prepare([2, 3, 4], [2, 3])).toEqual({ ok: false, reason: "vehicle_use_unsupported" });
+		// Without vehicle use nothing changes for an old worker.
+		const unchanged = prepareBrowserClockCommand({
+			kind: "clock_in",
+			operationId,
+			capabilities: { ...capabilities, commandVersions: [2, 3, 4] },
+			session,
+			now,
+			timezone: "Europe/Berlin",
+			position,
+			workerCommandVersions: [2, 3],
+		});
+		expect(unchanged.ok && unchanged.request).not.toHaveProperty("vehicleUse");
+		expect(unchanged).toMatchObject({ ok: true, request: { position } });
+	});
+
 	it("defaults a missing work location the way the legacy clock-in does", () => {
 		expect(
 			prepareBrowserClockCommand({

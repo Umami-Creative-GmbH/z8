@@ -147,6 +147,17 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { assertWorkOpen } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
+import { assertWorkVehicleUseChangeAllowed } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-eligibility";
+import {
+	sameWorkVehicleUse,
+	vehicleUseColumns,
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+	workVehicleUseIntentOf,
+	workVehicleUseRequestValue,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { ApprovalWriteGateResult } from "../authority";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 
@@ -303,6 +314,10 @@ function sameDayEditCommand(
 			reason: data.reason ?? null,
 			workLocationType: data.workLocationType,
 			workCategoryId: data.workCategoryId,
+			// Only when submitted, keeping earlier commands byte-identical (#1120).
+			...(data.vehicleUse !== undefined
+				? { vehicleUse: workVehicleUseRequestValue(data.vehicleUse) }
+				: {}),
 		},
 	};
 }
@@ -340,6 +355,7 @@ function sameDayEditIntent(input: {
 				? { kind: "clear" }
 				: { kind: "replace", id: input.data.workCategoryId.toLowerCase() },
 		workLocation: { kind: "replace", id: input.data.workLocationType },
+		...workVehicleUseIntentOf(input.data.vehicleUse),
 		notes: input.notes,
 	};
 }
@@ -524,10 +540,15 @@ export async function editSameDayTimeEntry(
 				timezone,
 			}),
 	);
+	const selectedVehicleUse = vehicleUseFromColumns(selectedWorkPeriod);
+	const vehicleUseChanged =
+		data.vehicleUse !== undefined &&
+		!sameWorkVehicleUse(data.vehicleUse, selectedVehicleUse);
 	const metadataChanged =
 		data.workLocationType !==
 			getRecordedWorkLocationType(selectedWorkPeriod.workLocationType) ||
-		data.workCategoryId !== selectedWorkPeriod.workCategoryId;
+		data.workCategoryId !== selectedWorkPeriod.workCategoryId ||
+		vehicleUseChanged;
 	const now = new Date();
 
 	if (clockInChanged && correctedClockInDate > now) {
@@ -735,11 +756,23 @@ export async function editSameDayTimeEntry(
 						selectedWorkPeriod.endTime?.getTime() ||
 					lockedPeriod.workLocationType !==
 						selectedWorkPeriod.workLocationType ||
-					lockedPeriod.workCategoryId !== selectedWorkPeriod.workCategoryId
+					lockedPeriod.workCategoryId !== selectedWorkPeriod.workCategoryId ||
+					!sameWorkVehicleUse(vehicleUseFromColumns(lockedPeriod), selectedVehicleUse)
 				) {
 					throw new ConflictError({
 						message: "Work period changed while editing",
 						conflictType: "time_correction_work_period_stale",
+					});
+				}
+				const resultingVehicleUse = vehicleUseChanged
+					? (data.vehicleUse ?? null)
+					: selectedVehicleUse;
+				if (vehicleUseChanged) {
+					await assertWorkVehicleUseChangeAllowed(tx, {
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						previous: selectedVehicleUse,
+						resulting: resultingVehicleUse,
 					});
 				}
 				const proposedMetadata = await validateCorrectionWorkMetadata({
@@ -754,7 +787,8 @@ export async function editSameDayTimeEntry(
 				const lockedMetadataChanged =
 					proposedMetadata.workLocationType !==
 						getRecordedWorkLocationType(lockedPeriod.workLocationType) ||
-					proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId;
+					proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId ||
+					vehicleUseChanged;
 				if (!clockInChanged && !clockOutChanged && !lockedMetadataChanged) {
 					throw new ValidationError({
 						message: "At least one correction value must change",
@@ -801,7 +835,11 @@ export async function editSameDayTimeEntry(
 						!canonicalWorkRow ||
 						canonicalWorkRow.workLocationType !==
 							lockedPeriod.workLocationType ||
-						canonicalWorkRow.workCategoryId !== lockedPeriod.workCategoryId
+						canonicalWorkRow.workCategoryId !== lockedPeriod.workCategoryId ||
+						!sameWorkVehicleUse(
+							vehicleUseFromColumns(canonicalWorkRow),
+							vehicleUseFromColumns(lockedPeriod),
+						)
 					) {
 						throw new ConflictError({
 							message: "Canonical work metadata diverges from work period",
@@ -889,9 +927,19 @@ export async function editSameDayTimeEntry(
 					if (!canonicalRecordId) {
 						throw new Error("Canonical work record is missing");
 					}
+					const vehicle = vehicleUseColumns(resultingVehicleUse);
 					const metadata = {
 						workLocationType: proposedMetadata.workLocationType,
 						workCategoryId: proposedMetadata.workCategoryId,
+						...(vehicleUseChanged
+							? {
+									vehicleKind: vehicle.vehicleKind,
+									vehicleId: vehicle.vehicleId,
+									odometerStartKm: vehicle.odometerStartKm,
+									odometerEndKm: vehicle.odometerEndKm,
+									drivenDistanceKm: vehicle.drivenDistanceKm,
+								}
+							: {}),
 					};
 					const updatedPeriods = await tx
 						.update(workPeriod)
@@ -926,6 +974,24 @@ export async function editSameDayTimeEntry(
 						throw new Error("Canonical work metadata update failed");
 					}
 				}
+
+				// The changed work sends a submitted period back, as the adopted
+				// amendment does (#1062); vehicle use changes count too (#1120).
+				await sendBackChangedPeriodSubmissions(tx, {
+					organizationId: currentEmployee.organizationId,
+					employeeId: currentEmployee.id,
+					causedByUserId: session.user.id,
+					work: [
+						{
+							start: instantFromDate(selectedWorkPeriod.startTime),
+							end: selectedWorkPeriod.endTime ? instantFromDate(selectedWorkPeriod.endTime) : null,
+						},
+						{
+							start: instantFromDate(effectiveClockIn),
+							end: effectiveClockOut ? instantFromDate(effectiveClockOut) : null,
+						},
+					],
+				});
 
 				return {
 					kind: "legacy" as const,
@@ -1001,7 +1067,10 @@ export async function editSameDayTimeEntry(
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {
 		if (error instanceof ValidationError) {
-			return { success: false, error: error.message };
+			// A refused vehicle use change carries its code for a translated message (#1120).
+			return error.field === "vehicleUse" && error.refusal
+				? { success: false, error: error.message, code: error.refusal }
+				: { success: false, error: error.message };
 		}
 		const failure = await localizeMonthClosed(describeAmendmentFailure(error));
 		if (failure) {
@@ -1462,6 +1531,8 @@ function adoptedSubmissionCommand(input: {
 			})),
 			workLocationType: request.workLocationType,
 			workCategoryId: request.workCategoryId,
+			// Only when requested, keeping earlier commands byte-identical (#1120).
+			...(request.vehicleUse !== undefined ? { vehicleUse: request.vehicleUse } : {}),
 		},
 	};
 }
@@ -1595,6 +1666,14 @@ async function recordAdoptedSubmission(
 			clockOut: endpointOf("clock_out") !== null,
 			workLocation: input.proposedMetadata.workLocationType !== currentLocation,
 			workCategory: input.proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId,
+			...(request.vehicleUse !== undefined && !input.legacyReplay
+				? {
+						vehicleUse: !sameWorkVehicleUse(
+							request.vehicleUse,
+							vehicleUseFromColumns(lockedPeriod),
+						),
+					}
+				: {}),
 		},
 		baseline: {
 			clockInEntryId: lockedPeriod.clockInId,
@@ -1610,6 +1689,9 @@ async function recordAdoptedSubmission(
 				projectId: lockedPeriod.projectId,
 				workCategoryId: lockedPeriod.workCategoryId,
 				workLocationType: lockedPeriod.workLocationType,
+				...(lockedPeriod.vehicleKind
+					? { vehicleUse: vehicleUseFromColumns(lockedPeriod) ?? undefined }
+					: {}),
 			},
 		},
 		requested: {
@@ -1620,6 +1702,7 @@ async function recordAdoptedSubmission(
 				: {
 						workLocationType: input.proposedMetadata.workLocationType,
 						workCategoryId: input.proposedMetadata.workCategoryId,
+						...(request.vehicleUse !== undefined ? { vehicleUse: request.vehicleUse } : {}),
 					}),
 		},
 		corrections: input.correctionEntries.map((entry) => ({
@@ -1690,6 +1773,8 @@ export async function submitCorrection(input: {
 	endpoints: SubmissionEndpoint[];
 	workLocationType: WorkLocationType;
 	workCategoryId: string | null;
+	/** Requested vehicle use (#1120), already validated: absent keeps it, null clears it. */
+	vehicleUse?: WorkVehicleUse | null;
 	validateTimeRange?: () => Promise<{
 		isValid: boolean;
 		error?: string;
@@ -1751,10 +1836,15 @@ function submitCorrectionInTransaction(
 			workLocationType: input.workLocationType,
 			workCategoryId: input.workCategoryId,
 		});
+		const lockedVehicleUse = vehicleUseFromColumns(lockedPeriod);
+		const vehicleUseRequested = input.action === "edit" && input.vehicleUse !== undefined;
+		const vehicleUseChanged =
+			vehicleUseRequested && !sameWorkVehicleUse(input.vehicleUse, lockedVehicleUse);
 		const metadataChanged =
 			proposedMetadata.workLocationType !==
 				getRecordedWorkLocationType(lockedPeriod.workLocationType) ||
-			proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId;
+			proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId ||
+			vehicleUseChanged;
 		if (
 			input.action === "edit" &&
 			input.endpoints.length === 0 &&
@@ -1831,12 +1921,36 @@ function submitCorrectionInTransaction(
 				},
 			]),
 		);
+		if (vehicleUseChanged) {
+			// Vehicle use (#1120): read-only while it is not asked, a newly picked
+			// vehicle must be pickable, and work in a closed month is frozen.
+			await assertWorkVehicleUseChangeAllowed(tx, {
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				previous: lockedVehicleUse,
+				resulting: input.vehicleUse ?? null,
+			});
+			await assertWorkOpen(tx, {
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				intervals: [
+					{
+						start: instantFromDate(lockedPeriod.startTime),
+						end: lockedPeriod.endTime ? instantFromDate(lockedPeriod.endTime) : null,
+					},
+				],
+			});
+		}
+		const requestedVehicleUse = vehicleUseRequested
+			? { vehicleUse: input.vehicleUse ?? null }
+			: {};
 		const businessSubmissionKey = deriveTimeCorrectionSubmissionKey({
 			organizationId: input.organizationId,
 			workPeriodId: input.workPeriodId,
 			action: input.action,
 			workLocationType: proposedMetadata.workLocationType,
 			workCategoryId: proposedMetadata.workCategoryId,
+			...requestedVehicleUse,
 			...identity,
 		});
 		const v2SubmissionKey = `time-correction-cycle:v2:${input.submissionId}:${businessSubmissionKey}`;
@@ -1844,7 +1958,8 @@ function submitCorrectionInTransaction(
 			// Preserve the historical v1 identity lookup for old timestamp-only receipts.
 			proposedMetadata.workLocationType ===
 				normalizeWorkLocationType(lockedPeriod.workLocationType) &&
-			proposedMetadata.workCategoryId === lockedPeriod.workCategoryId;
+			proposedMetadata.workCategoryId === lockedPeriod.workCategoryId &&
+			!vehicleUseRequested;
 		const v1SubmissionKey =
 			input.endpoints.length > 0 && sourceMetadataUnchanged
 				? `time-correction-cycle:v1:${input.submissionId}:${deriveLegacyTimeCorrectionSubmissionKey(
@@ -1932,6 +2047,7 @@ function submitCorrectionInTransaction(
 				? {
 						workLocationType: proposedMetadata.workLocationType,
 						workCategoryId: proposedMetadata.workCategoryId,
+						...requestedVehicleUse,
 					}
 				: {}),
 			...(evidence.find((item) => item.endpointType === "clock_in")
@@ -2666,6 +2782,9 @@ function submissionEffect(
 						action === "edit"
 							? (data as CorrectionRequest).workCategoryId
 							: period.workCategoryId,
+					...(action === "edit" && (data as CorrectionRequest).vehicleUse !== undefined
+						? { vehicleUse: (data as CorrectionRequest).vehicleUse }
+						: {}),
 					validateTimeRange: () =>
 						validateTimeEntryRange(
 							organizationId,

@@ -116,7 +116,8 @@ describe("getWorkPeriodsForMonth", () => {
 		vi.setSystemTime(new Date("2026-05-04T10:30:00.000Z"));
 
 		mockDb.select.mockReturnValue({ from: mockDb.from });
-		mockDb.from.mockReturnValue({ innerJoin: mockDb.innerJoin });
+		// Attribution edits (#1120) are read with a left join right after the table.
+		mockDb.from.mockReturnValue({ innerJoin: mockDb.innerJoin, leftJoin: mockDb.leftJoin });
 		mockDb.innerJoin.mockReturnValue({
 			innerJoin: mockDb.innerJoin,
 			leftJoin: mockDb.leftJoin,

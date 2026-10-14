@@ -9,6 +9,7 @@
 import { Temporal } from "temporal-polyfill";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
+import { buildWorkVehicleUse } from "./vehicle-use/work-vehicle-use";
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { isWorkLocationType, type WorkLocationType } from "./work-location";
 
@@ -57,6 +58,20 @@ export type ManualTimeEntryCommand = {
 	billable?: boolean;
 	/** A task of `projectId` (#873); omitted, never null, when the entry names none. */
 	taskId?: string;
+	/**
+	 * Vehicle use as entered (#1120); omitted, never null, when the entry names none,
+	 * so earlier frozen commands keep their representation. The server derives the
+	 * driven distance from it.
+	 */
+	vehicleUse?: ManualVehicleUseCommand;
+};
+
+/** Vehicle use as a manual command carries it: every key present, missing values null. */
+export type ManualVehicleUseCommand = {
+	vehicle: { kind: "own" } | { kind: "organization"; vehicleId: string };
+	startKm: number | null;
+	endKm: number | null;
+	distanceKm: number | null;
 };
 
 export type ManualCommandRejection = { reason: "invalid_command"; field: string };
@@ -75,6 +90,7 @@ const COMMAND_KEYS = [
 	"workCategoryId",
 ] as const;
 const ENDPOINT_KEYS = ["time", "occurrence", "displayedOffsetMinutes"] as const;
+const VEHICLE_USE_KEYS = ["vehicle", "startKm", "endKm", "distanceKm"] as const;
 const ZONE_KEYS = ["basis", "timezone"] as const;
 const CANONICAL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const STRICT_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -144,6 +160,37 @@ function parseEndpoint(value: unknown, field: ManualEndpointName): ManualEndpoin
 	};
 }
 
+function parseVehicleUse(value: unknown): ManualVehicleUseCommand {
+	const record = exactRecord(value, VEHICLE_USE_KEYS, "vehicleUse");
+	const vehicle = record.vehicle as { kind?: unknown } | null;
+	const vehicleKeys =
+		vehicle && typeof vehicle === "object" && vehicle.kind === "own"
+			? ["kind"]
+			: ["kind", "vehicleId"];
+	exactRecord(record.vehicle, vehicleKeys, "vehicleUse.vehicle");
+	const built = buildWorkVehicleUse({
+		vehicle: record.vehicle,
+		startKm: record.startKm,
+		endKm: record.endKm,
+		distanceKm: record.distanceKm,
+	});
+	if (!built.ok) {
+		throw new InvalidCommandField(
+			built.code === "end_before_start"
+				? "vehicleUse.endKm"
+				: built.code === "invalid_vehicle"
+					? "vehicleUse.vehicle"
+					: "vehicleUse",
+		);
+	}
+	for (const key of ["startKm", "endKm", "distanceKm"] as const) {
+		if (record[key] !== null && typeof record[key] !== "number") {
+			throw new InvalidCommandField(`vehicleUse.${key}`);
+		}
+	}
+	return record as ManualVehicleUseCommand;
+}
+
 /**
  * Strictly parse a version-2 command: exact keys, a valid calendar date,
  * `HH:mm` endpoints, a named IANA zone and a nonblank reason. The result is the
@@ -160,6 +207,7 @@ export function parseManualTimeEntryCommand(
 		const hasWorkLocation = hasOptional("workLocationType");
 		const hasBillable = hasOptional("billable");
 		const hasTask = hasOptional("taskId");
+		const hasVehicleUse = hasOptional("vehicleUse");
 		const record = exactRecord(
 			value,
 			[
@@ -167,9 +215,11 @@ export function parseManualTimeEntryCommand(
 				...(hasWorkLocation ? ["workLocationType"] : []),
 				...(hasBillable ? ["billable"] : []),
 				...(hasTask ? ["taskId"] : []),
+				...(hasVehicleUse ? ["vehicleUse"] : []),
 			],
 			"command",
 		);
+		const vehicleUse = hasVehicleUse ? parseVehicleUse(record.vehicleUse) : undefined;
 		if (
 			hasWorkLocation &&
 			!isWorkLocationType(record.workLocationType as string)
@@ -234,6 +284,7 @@ export function parseManualTimeEntryCommand(
 					: {}),
 				...(hasBillable ? { billable: record.billable as boolean } : {}),
 				...(hasTask ? { taskId: record.taskId as string } : {}),
+				...(vehicleUse ? { vehicleUse } : {}),
 			},
 		};
 	} catch (error) {

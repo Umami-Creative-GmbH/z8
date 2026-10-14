@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
+import { checkVehicleUseWarnings } from "@/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings";
 import {
 	MANUAL_ENTRY_COLLISION,
 	MANUAL_ENTRY_CONTEXT_MISMATCH,
@@ -39,6 +40,15 @@ import {
 	ManualEntryTargetContextError,
 	useManualEntryTargetContext,
 } from "@/components/time-tracking/use-manual-entry-target-context";
+import {
+	EMPTY_VEHICLE_USE_DRAFT,
+	prefilledVehicleUseDraft,
+	type VehicleUseDraft,
+	vehicleUseDraftOf,
+	vehicleUseFromDraft,
+} from "@/components/time-tracking/vehicle-use-draft";
+import { CheckedVehicleUseFields } from "@/components/time-tracking/vehicle-use-fields";
+import { vehicleUseRefusalText } from "@/components/time-tracking/vehicle-use-format";
 import { WorkCategorySelectorView } from "@/components/time-tracking/work-category-selector";
 import {
 	ActionPanel,
@@ -69,11 +79,16 @@ import {
 	type ManualEndpointCommand,
 	type ManualEndpointOccurrence,
 	type ManualTimeEntryCommand,
+	type ManualVehicleUseCommand,
 	type ManualWallTime,
 	type ManualZoneBasis,
 } from "@/lib/time-tracking/manual-command";
 import { formatUtcOffset, getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import {
+	type WorkVehicleUseChangeRefusalCode,
+	workVehicleUseRefusalOfResult,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { useRouter } from "@/navigation";
 
@@ -107,6 +122,8 @@ interface FormValues {
 	/** Version-2 commands: the chosen occurrence of a repeated wall-clock time. */
 	clockInOccurrence: ManualEndpointOccurrence | undefined;
 	clockOutOccurrence: ManualEndpointOccurrence | undefined;
+	/** Vehicle use (#1120), asked while the target's vehicle use is asked or expected. */
+	vehicleUseDraft: VehicleUseDraft;
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -199,6 +216,34 @@ const MESSAGES = {
 	],
 } as const satisfies Record<string, Message>;
 
+/** Refused vehicle use (#1120) as a message: the key and wording of `vehicleUseRefusalText`. */
+function vehicleUseRefusalMessage(code: WorkVehicleUseChangeRefusalCode): Message {
+	let message: Message = ["", ""];
+	vehicleUseRefusalText((key, fallback) => {
+		message = [key, fallback];
+		return fallback;
+	}, code);
+	return message;
+}
+
+/** The entered vehicle use as a manual command carries it, or why it is refused. */
+function manualVehicleUse(
+	draft: VehicleUseDraft,
+): { ok: true; vehicleUse: ManualVehicleUseCommand | null } | { ok: false; message: Message } {
+	const result = vehicleUseFromDraft(draft);
+	if (!result.ok) return { ok: false, message: vehicleUseRefusalMessage(result.code) };
+	if (!result.input) return { ok: true, vehicleUse: null };
+	return {
+		ok: true,
+		vehicleUse: {
+			vehicle: result.input.vehicle,
+			startKm: result.input.startKm ?? null,
+			endKm: result.input.endKm ?? null,
+			distanceKm: result.input.distanceKm ?? null,
+		},
+	};
+}
+
 const APPROVAL_STATUS_MESSAGES = {
 	pending: ["timeTracking.manualEntry.recovery.status.pending", "pending"],
 	approved: ["timeTracking.manualEntry.recovery.status.approved", "approved"],
@@ -274,6 +319,8 @@ function buildManualCommand(input: {
 	submissionId: string;
 }): { ok: true; command: ManualTimeEntryCommand } | { ok: false; message: Message } {
 	const { value, timezone } = input;
+	const vehicle = manualVehicleUse(value.vehicleUseDraft);
+	if (!vehicle.ok) return vehicle;
 	const clockIn = endpointCommand(value.date, value.clockInTime, value.clockInOccurrence, timezone);
 	if (!clockIn.ok) return clockIn;
 	const clockOut = endpointCommand(
@@ -299,6 +346,8 @@ function buildManualCommand(input: {
 		workCategoryId: value.workCategoryId ?? null,
 		workLocationType: value.workLocationType,
 		...(value.billable === undefined ? {} : { billable: value.billable }),
+		// Optional key: absent unless vehicle use is entered (#1120).
+		...(vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 	};
 	const interval = interpretManualInterval({
 		command,
@@ -323,6 +372,10 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 	if (result.code === MANUAL_ENTRY_COLLISION) return MESSAGES.collision;
 	const taskRefusal = projectTaskRefusalMessage(result.code);
 	if (taskRefusal) return taskRefusal;
+	const vehicleRefusal = workVehicleUseRefusalOfResult({
+		code: result.rejection?.reason === "vehicle_use_refused" ? result.rejection.code : result.code,
+	});
+	if (vehicleRefusal) return vehicleUseRefusalMessage(vehicleRefusal);
 	const reason = result.rejection?.reason;
 	if (reason === "reconfirmation_required") return MESSAGES.reconfirm;
 	if (reason === "occupancy_conflict") return MESSAGES.overlap;
@@ -371,6 +424,7 @@ function getDefaultValues(
 		workLocationType: "office",
 		clockInOccurrence: undefined,
 		clockOutOccurrence: undefined,
+		vehicleUseDraft: EMPTY_VEHICLE_USE_DRAFT,
 	};
 }
 
@@ -1025,6 +1079,27 @@ function ManualEntryFormContent({
 						)}
 					</form.Field>
 
+					{context && !contextError && (context.vehicleUse?.mode ?? "off") !== "off" ? (
+						<form.Subscribe
+							selector={(state) => ({
+								draft: state.values.vehicleUseDraft,
+								date: state.values.date,
+								clockInTime: state.values.clockInTime,
+								clockOutTime: state.values.clockOutTime,
+							})}
+						>
+							{(values) => (
+								<ManualVehicleUseFields
+									context={context}
+									values={values}
+									onChange={(draft) => form.setFieldValue("vehicleUseDraft", draft)}
+									disabled={!isContextReady || isTimezoneContinuationPending}
+									t={t}
+								/>
+							)}
+						</form.Subscribe>
+					) : null}
+
 					<form.Field name="projectId">
 						{(field) => (
 							<ProjectSelectorView
@@ -1124,6 +1199,82 @@ function ManualEntryFormContent({
 }
 
 /**
+ * The vehicle use fields of a manual entry with their plausibility warnings
+ * (#1121), checked on the server over the entered times. Warnings never block
+ * creating the entry.
+ */
+function ManualVehicleUseFields({
+	context,
+	values,
+	onChange,
+	disabled,
+	t,
+}: {
+	context: ManualEntryTargetContext;
+	values: { draft: VehicleUseDraft; date: string; clockInTime: string; clockOutTime: string };
+	onChange: (draft: VehicleUseDraft) => void;
+	disabled: boolean;
+	t: Translate;
+}) {
+	const { draft, date, clockInTime, clockOutTime } = values;
+	const targetEmployeeId = context.targetEmployeeId;
+	return (
+		<CheckedVehicleUseFields
+			value={draft}
+			onChange={onChange}
+			context={context.vehicleUse}
+			checkFor={(input) =>
+				date && clockInTime && clockOutTime
+					? {
+							key: JSON.stringify({ targetEmployeeId, input, date, clockInTime, clockOutTime }),
+							run: async () => {
+								const result = await checkVehicleUseWarnings({
+									targetEmployeeId,
+									vehicleUse: input,
+									manual: { date, clockInTime, clockOutTime },
+								});
+								return result.success ? result.data.warnings : [];
+							},
+						}
+					: null
+			}
+			t={t}
+			disabled={disabled}
+		/>
+	);
+}
+
+/**
+ * Pre-selects the target's assigned vehicle and pre-fills its start reading
+ * (#1121) once per opening and target, while the vehicle use is still empty.
+ */
+function useVehicleUsePrefill({
+	context,
+	form,
+	open,
+}: {
+	context: ManualEntryTargetContext | null;
+	form: ManualEntryFormApi;
+	open: boolean;
+}) {
+	const appliedForRef = useRef<string | null>(null);
+	useEffect(() => {
+		if (!open) {
+			appliedForRef.current = null;
+			return;
+		}
+		if (!context || appliedForRef.current === context.targetEmployeeId) return;
+		appliedForRef.current = context.targetEmployeeId;
+		if (!context.vehicleUse) return;
+		const prefilled = prefilledVehicleUseDraft(context.vehicleUse);
+		const current = form.state.values.vehicleUseDraft;
+		if (prefilled.vehicle && !current.vehicle && vehicleUseFromDraft(current).ok) {
+			form.setFieldValue("vehicleUseDraft", prefilled);
+		}
+	}, [context, form, open]);
+}
+
+/**
  * Drop draft selections the current target cannot use. Changing the target
  * clears project/category choices and any pending timezone confirmation;
  * a refreshed context for the same target only drops choices that are no
@@ -1157,6 +1308,8 @@ function useTargetDraftRevalidation({
 		form.setFieldValue("billable", undefined);
 		form.setFieldValue("taskId", undefined);
 		form.setFieldValue("workCategoryId", undefined);
+		// Another employee may drive other vehicles (#1120).
+		form.setFieldValue("vehicleUseDraft", EMPTY_VEHICLE_USE_DRAFT);
 		setPendingMismatch(null);
 		setMessage(
 			open && (projectId || workCategoryId)
@@ -1383,6 +1536,17 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue("taskId", command.taskId ?? undefined);
 		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
 		form.setFieldValue("workLocationType", command.workLocationType ?? "office");
+		form.setFieldValue(
+			"vehicleUseDraft",
+			command.vehicleUse
+				? vehicleUseDraftOf({
+						vehicle: command.vehicleUse.vehicle,
+						startKm: command.vehicleUse.startKm ?? null,
+						endKm: command.vehicleUse.endKm ?? null,
+						distanceKm: command.vehicleUse.distanceKm ?? null,
+					})
+				: EMPTY_VEHICLE_USE_DRAFT,
+		);
 		recovery.discard(record);
 	}
 
@@ -1589,8 +1753,14 @@ export function ManualTimeEntryDialog({
 			}
 			result = attempt.result;
 		} else {
+			const vehicle = manualVehicleUse(value.vehicleUseDraft);
+			if (!vehicle.ok) {
+				toast.error(t(vehicle.message[0], vehicle.message[1]));
+				return false;
+			}
 			result = await createManualTimeEntry({
 				submissionId,
+				...(vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 				...(targetEmployeeId ? { employeeId: targetEmployeeId } : {}),
 				date: value.date,
 				clockInTime: value.clockInTime,
@@ -1707,6 +1877,8 @@ export function ManualTimeEntryDialog({
 		}
 		wasOpenRef.current = open;
 	});
+	// After the opening reset above, so the pre-fill lands on the fresh draft.
+	useVehicleUsePrefill({ context, form, open });
 
 	return (
 		<>

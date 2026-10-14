@@ -12,6 +12,7 @@ use crate::clock_command::{
 use crate::clock_journal::ClockJournal;
 use crate::command_store::CommandStore;
 use crate::command_sync::Pacing;
+use crate::frozen_command::{BreakVehicleUse, ClockVehicleUse};
 use crate::offline::RecoverySummary;
 use crate::settings::Settings;
 use crate::startup;
@@ -115,13 +116,14 @@ pub async fn get_clock_status(app_handle: AppHandle) -> Result<ClockStatus, Stri
 pub async fn clock_in(
     app_handle: AppHandle,
     work_location_type: String,
+    vehicle_use: Option<ClockVehicleUse>,
     expectation: ClockExpectation,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     let work_location_type = WorkLocationType::from_str(&work_location_type)
         .ok_or_else(|| ClockCommandError::pre_send("Invalid work location type"))?;
     run_clock_command(
         app_handle,
-        ClockCommand::ClockIn(work_location_type),
+        ClockCommand::ClockIn(work_location_type, vehicle_use),
         expectation,
     )
     .await
@@ -131,6 +133,7 @@ pub async fn clock_in(
 pub async fn start_manual_break(
     app_handle: AppHandle,
     attribution: Option<crate::frozen_command::ClosingAttribution>,
+    vehicle_use: Option<ClockVehicleUse>,
     expectation: ClockExpectation,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     run_clock_command(
@@ -138,6 +141,7 @@ pub async fn start_manual_break(
         ClockCommand::AttributedClose {
             attribution: attribution.unwrap_or_default(),
             manual_break: true,
+            vehicle_use,
         },
         expectation,
     )
@@ -179,6 +183,7 @@ pub async fn end_manual_break(
 pub async fn clock_out(
     app_handle: AppHandle,
     attribution: Option<crate::frozen_command::ClosingAttribution>,
+    vehicle_use: Option<ClockVehicleUse>,
     expectation: ClockExpectation,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     run_clock_command(
@@ -186,6 +191,7 @@ pub async fn clock_out(
         ClockCommand::AttributedClose {
             attribution: attribution.unwrap_or_default(),
             manual_break: false,
+            vehicle_use,
         },
         expectation,
     )
@@ -200,6 +206,7 @@ pub async fn clock_out_with_break(
     app_handle: AppHandle,
     break_id: String,
     work_location_type: String,
+    vehicle_use: Option<BreakVehicleUse>,
     expectation: ClockExpectation,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
     // The confirmation is observed first, before waiting on anything.
@@ -219,6 +226,7 @@ pub async fn clock_out_with_break(
         ClockCommand::Break {
             evidence: BreakEvidence { idle, confirmed },
             location: work_location_type,
+            vehicle_use,
         },
         expectation,
     )

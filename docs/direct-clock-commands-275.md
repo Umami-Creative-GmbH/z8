@@ -8,7 +8,7 @@ Direct-HTTP clients get a versioned transport next to the legacy
 | Route | Purpose |
 | --- | --- |
 | `GET /api/time-entries/commands` | Capabilities and the server-derived context a client captures into each command |
-| `POST /api/time-entries/commands` | Submit one frozen version 2 command, or a position-stamped version 3 browser command (#826) |
+| `POST /api/time-entries/commands` | Submit one frozen version 2 command, a position-stamped version 3 browser command (#826), or a version 4 command with vehicle use (#1122) |
 | `GET /api/time-entries/commands/{operationId}` | Lookup-only recovery of that command's outcome |
 
 Fresh submission is gated with the same per-organization `time_entry_append_control`
@@ -90,17 +90,60 @@ last, with the device position taken at the event (spec #766, Time Tracking ADR 
 }
 ```
 
-- Capabilities advertise `commandVersions: [2, 3]`. Version 2 stays accepted and never
+- Capabilities advertise version 3 (see version 4 below). Version 2 stays accepted and never
   carries a position; a version 3 `break` does not exist.
 - The position is part of the frozen bytes, so an identical stamped resend replays and
   a resend with a different position is a collision.
 - Only a cookie-authenticated browser request may stamp. A request with an
   `Authorization` header (the desktop, any bearer client) still runs, without its
-  position, and the receipt keeps its bytes. The desktop stays on version 2.
+  position, and the receipt keeps its bytes. The desktop never stamps a position.
 - The server keeps the position as a `position_stamp` only if, when the command
   arrives, capture is on for the employee and their consent to the current notice is
   active and was given before `occurredAt`. Otherwise it drops the position silently
   and accepts the event. The check runs inside the clocking work transaction.
+
+## Version 4: vehicle use (#1122)
+
+Version 4 is version 2's `clock_in`, `clock_out` or desktop `break`, plus two optional
+fields appended in this order: `position` (as in version 3; never on a `break`) and
+`vehicleUse` (spec #807, Time Tracking ADR 0009). An absent field is omitted, never `null`.
+
+```jsonc
+// clock_in: the vehicle, and the start reading when entered
+"vehicleUse": { "vehicle": { "kind": "own" } | { "kind": "organization", "vehicleId": "…" },
+                "startKm": 12000 }
+// clock_out: at least one field; absent ones keep what the live work records
+"vehicleUse": { "vehicle"?: …, "startKm"?: 12000, "endKm"?: 12085, "distanceKm"?: 85 }
+// break: the one reading, the closed work's end and the resumed work's start
+"vehicleUse": { "readingKm": 12040 }
+```
+
+- Readings are whole kilometres (integers, >= 0); `vehicleId` is a lowercase UUID. The
+  shape per kind is strict (`invalid_command`); values the server cannot record (a
+  reading out of range, an end reading below the start reading, an archived or unknown
+  vehicle, vehicle use off for the employee) are dropped and the clock event still
+  commits. A clock command is never refused or delayed for vehicle use.
+- Capabilities advertise `commandVersions: [2, 3, 4]`. Versions 2 and 3 stay accepted
+  byte-for-byte and never carry `vehicleUse`. Send version 4 only when it is advertised.
+- Vehicle use is accepted from every client, bearer ones (the desktop) included; the
+  position still only from a cookie-authenticated browser.
+- The desktop (#1124) freezes version 4 only when the server advertises it and vehicle
+  use was entered; otherwise it keeps its version 2 bytes. A saved version 4 command waits
+  (`submit_unavailable`) while the server does not list 4 and is never rewritten. Before
+  adoption it clocks online through the legacy `POST /api/time-entries`, which reads the
+  same `vehicleUse` beside the body leniently (malformed vehicle use is dropped).
+  `GET /api/desktop/context` gives the mode, the organization's active vehicles, the
+  assigned ones and each vehicle's last end reading; `POST /api/desktop/vehicle-use-warnings`
+  gives the plausibility warnings.
+- `vehicleUse` is part of the frozen bytes: an identical resend replays, different
+  readings under one `operationId` are a collision.
+- Only the employee's own commands record it. On-behalf, departure and automatic
+  clock-outs leave the end reading empty. A break carries the vehicle over to the
+  resumed work while vehicle use is on, with or without a reading.
+- The browser's service worker reports the versions it can build in
+  `GET_VERSION.clockCommandVersions` (the `frozen-v2` mode is unchanged). The page
+  freezes vehicle use only when both the server and the worker list 4; otherwise it
+  sends online through `/api/time-clock`, or offline freezes the event without it.
 
 ## Order of checks
 

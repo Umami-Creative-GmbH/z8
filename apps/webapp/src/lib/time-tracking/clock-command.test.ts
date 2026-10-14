@@ -76,7 +76,7 @@ describe("parseClockCommand", () => {
 	});
 
 	it("reports other versions as unsupported rather than invalid", () => {
-		expect(parseClockCommand({ ...clockIn, version: 4 })).toEqual({
+		expect(parseClockCommand({ ...clockIn, version: 5 })).toEqual({
 			ok: false,
 			code: "unsupported_version",
 		});
@@ -159,6 +159,70 @@ describe("position-stamped version 3 commands (#826)", () => {
 		],
 		["an altitude", { ...stampedIn, position: { ...position, altitude: 34 } }],
 		["a desktop break", { ...breakFixture(), version: 3, position }],
+	])("rejects %s", (_label, body) => {
+		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
+	});
+});
+
+describe("version 4 commands carrying vehicle use (#1122)", () => {
+	const position = {
+		latitude: 52.520008,
+		longitude: 13.404954,
+		accuracyMeters: 18.5,
+		fixedAt: "2026-09-25T07:59:30.250Z",
+	};
+	const van = { kind: "organization", vehicleId: "f0000000-0000-4000-8000-0000000000a1" };
+	const vehicleIn = { ...clockIn, version: 4, vehicleUse: { vehicle: van, startKm: 12_000 } };
+	const vehicleOut = { ...clockOut, version: 4, vehicleUse: { endKm: 12_085 } };
+	const vehicleBreak = () => ({ ...breakFixture(), version: 4, vehicleUse: { readingKm: 12_040 } });
+
+	it("accepts a clock-in, clock-out and desktop break with vehicle use verbatim", () => {
+		expect(parseClockCommand(vehicleIn)).toEqual({ ok: true, command: vehicleIn });
+		expect(parseClockCommand(vehicleOut)).toEqual({ ok: true, command: vehicleOut });
+		const taken = vehicleBreak();
+		expect(parseClockCommand(taken)).toEqual({ ok: true, command: taken });
+	});
+
+	it("accepts an optional position beside the vehicle use, and either alone", () => {
+		for (const body of [
+			{ ...vehicleIn, position },
+			{ ...vehicleOut, position },
+			{ ...clockIn, version: 4, position },
+			{ ...clockOut, version: 4, vehicleUse: { vehicle: { kind: "own" }, distanceKm: 37 } },
+		]) {
+			expect(parseClockCommand(body)).toEqual({ ok: true, command: body });
+		}
+	});
+
+	it("keeps vehicle use out of earlier versions", () => {
+		expect(parseClockCommand({ ...vehicleIn, version: 2 })).toEqual({
+			ok: false,
+			code: "invalid_command",
+		});
+		expect(parseClockCommand({ ...vehicleIn, version: 3, position })).toEqual({
+			ok: false,
+			code: "invalid_command",
+		});
+	});
+
+	it.each([
+		["a clock-in without a vehicle", { ...vehicleIn, vehicleUse: { startKm: 12_000 } }],
+		["an end reading on a clock-in", { ...vehicleIn, vehicleUse: { vehicle: van, endKm: 1 } }],
+		["an empty clock-out vehicle use", { ...vehicleOut, vehicleUse: {} }],
+		["a fractional reading", { ...vehicleOut, vehicleUse: { endKm: 12_085.5 } }],
+		["a negative reading", { ...vehicleOut, vehicleUse: { endKm: -1 } }],
+		["a textual reading", { ...vehicleOut, vehicleUse: { endKm: "12085" } }],
+		[
+			"an uppercase vehicle id",
+			{
+				...vehicleIn,
+				vehicleUse: { vehicle: { ...van, vehicleId: van.vehicleId.toUpperCase() } },
+			},
+		],
+		["an unknown vehicle kind", { ...vehicleIn, vehicleUse: { vehicle: { kind: "rental" } } }],
+		["a null vehicle use", { ...vehicleIn, vehicleUse: null }],
+		["a clock-out reading on a break", { ...vehicleBreak(), vehicleUse: { endKm: 1 } }],
+		["a break without its reading", { ...vehicleBreak(), vehicleUse: {} }],
 	])("rejects %s", (_label, body) => {
 		expect(parseClockCommand(body)).toEqual({ ok: false, code: "invalid_command" });
 	});
@@ -357,6 +421,10 @@ describe("desktop frozen commands (#280)", () => {
 		"desktop-v2-clock-out.json",
 		"desktop-v2-clock-out-task.json",
 		"desktop-v2-break.json",
+		// Version 4 with vehicle use (#1124), pinned by frozen_command_tests.rs too.
+		"desktop-v4-clock-in.json",
+		"desktop-v4-clock-out.json",
+		"desktop-v4-break.json",
 	])("accepts the exact bytes the desktop sends: %s", (name) => {
 		const sent = JSON.parse(fixture(name));
 		const parsed = parseClockCommand(sent);

@@ -41,6 +41,7 @@ import {
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "../policy-clock-out-surcharge-snapshot";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
+import { vehicleUseFromColumns } from "../vehicle-use/work-vehicle-use";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
 import { resolveWorkBillabilityInTransaction } from "../work-billability";
 import type { WorkLocationType } from "../work-location";
@@ -421,6 +422,11 @@ async function legacyAttribution(
 			isBillable: workPeriod.isBillable,
 			taskId: workPeriod.taskId,
 			workCategoryId: workPeriod.workCategoryId,
+			vehicleKind: workPeriod.vehicleKind,
+			vehicleId: workPeriod.vehicleId,
+			odometerStartKm: workPeriod.odometerStartKm,
+			odometerEndKm: workPeriod.odometerEndKm,
+			drivenDistanceKm: workPeriod.drivenDistanceKm,
 		})
 		.from(workPeriod)
 		.where(
@@ -458,6 +464,8 @@ async function legacyAttribution(
 		}),
 		isBillable,
 		workCategoryId: kept(command.body.workCategory, period?.workCategoryId),
+		// The live work's vehicle use, which the canonical record mirrors (#1122).
+		vehicleUse: period ? vehicleUseFromColumns(period) : null,
 	};
 }
 
@@ -490,7 +498,7 @@ async function closeLegacyClockOut(
 	const { plan, target, eventInstant } = input;
 	const { command, employee, writer } = plan;
 	// Read under the coordinator's period lock, as the append writer resolves it.
-	const { projectId, taskId, isBillable, workCategoryId } = await legacyAttribution(
+	const { projectId, taskId, isBillable, workCategoryId, vehicleUse } = await legacyAttribution(
 		coordination,
 		plan,
 		target.workPeriodId,
@@ -538,6 +546,7 @@ async function closeLegacyClockOut(
 					projectId,
 					isBillable,
 					taskId,
+					vehicleUse,
 					origin: "clock",
 				},
 				coordination.db,

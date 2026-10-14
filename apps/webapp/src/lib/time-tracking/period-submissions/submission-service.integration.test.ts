@@ -317,6 +317,50 @@ describe("period submissions on PostgreSQL", () => {
 			target: null,
 			violations: [],
 		});
+		// Without vehicle use the facts keep the shape captured before #1127.
+		expect(rows[0]?.facts).not.toHaveProperty("drivingDetailsMissing");
+	});
+
+	it("lists work lacking driving details as a warning for the approver and still submits (#1127)", async () => {
+		const since = new Date("2026-02-01T00:00:00Z");
+		await fixture.pool.query(
+			"insert into vehicle_use_setting (organization_id, enabled, updated_at) values ($1, true, $2)",
+			[organizationId, since],
+		);
+		await fixture.pool.query(
+			`insert into vehicle_use_assignment
+			 (id, organization_id, assignment_type, priority, mode, created_by, created_at, updated_at)
+			 values ($1, $2, 'organization', 0, 'expected', $3, $4, $4)`,
+			[randomUUID(), organizationId, ownerUserId, since],
+		);
+		const missing = await fixture.work({
+			organizationId,
+			employeeId: employee.employeeId,
+			userId: employee.userId,
+			start: "2026-03-03T07:00:00Z",
+			end: "2026-03-03T15:00:00Z",
+		});
+		const complete = await fixture.work({
+			organizationId,
+			employeeId: employee.employeeId,
+			userId: employee.userId,
+			start: "2026-03-04T07:00:00Z",
+			end: "2026-03-04T15:00:00Z",
+		});
+		await fixture.pool.query(
+			"update work_period set vehicle_kind = 'own', driven_distance_km = 30 where id = $1",
+			[complete.workPeriodId],
+		);
+
+		const result = await submit();
+		if (result.kind !== "submitted") throw new Error(`not submitted: ${result.reason}`);
+		const { rows } = await fixture.pool.query<{ facts: Record<string, unknown> }>(
+			"select facts from approval_submitted_revision where organization_id = $1 and workflow_id = $2",
+			[organizationId, result.workflowId],
+		);
+		expect(rows[0]?.facts.drivingDetailsMissing).toEqual([
+			{ workPeriodId: missing.workPeriodId, date: "2026-03-03" },
+		]);
 	});
 
 	it("routes by a matching period submission policy before the primary manager", async () => {

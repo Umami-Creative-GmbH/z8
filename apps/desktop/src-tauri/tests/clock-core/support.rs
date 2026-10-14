@@ -25,8 +25,18 @@ pub fn capabilities(organization_id: &str, submit: &str) -> String {
 }
 
 pub fn capabilities_with(organization_id: &str, submit: &str, kinds: &[&str]) -> String {
+    capabilities_versions(organization_id, submit, kinds, &[2])
+}
+
+/// A server that also advertises later versions, e.g. version 4 with vehicle use (#1124).
+pub fn capabilities_versions(
+    organization_id: &str,
+    submit: &str,
+    kinds: &[&str],
+    versions: &[u32],
+) -> String {
     serde_json::json!({
-        "commandVersions": [2],
+        "commandVersions": versions,
         "kinds": kinds,
         "submit": submit,
         "onlineSubmit": if submit == "unavailable" { "available" } else { "unavailable" },
@@ -125,13 +135,24 @@ impl Device {
         clocked_in: bool,
         kinds: &[&str],
     ) {
+        self.negotiated_versions(endpoint, organization_id, clocked_in, kinds, &[2]);
+    }
+
+    pub fn negotiated_versions(
+        &self,
+        endpoint: &str,
+        organization_id: &str,
+        clocked_in: bool,
+        kinds: &[&str],
+        versions: &[u32],
+    ) {
         let mut store = self.store.lock();
         let session = token_fingerprint(TOKEN);
         store
             .save_capabilities(
                 endpoint,
                 &session,
-                &capabilities_with(organization_id, "available", kinds),
+                &capabilities_versions(organization_id, "available", kinds, versions),
                 1,
             )
             .unwrap();

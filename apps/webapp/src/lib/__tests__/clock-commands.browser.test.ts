@@ -403,6 +403,26 @@ describe.skipIf(!executablePath)("browser frozen clock commands", () => {
 		);
 	});
 
+	it("freezes vehicle use into a version 4 command and refuses malformed vehicle use (#1122)", async () => {
+		await loadLibraries();
+		const vehicleUse = { vehicle: { kind: "own" }, startKm: 12_000 };
+		const result = await page.evaluate(`(async () => {
+			const frozen = await ClockCommandStore.capture(${JSON.stringify(request(OP_IN, "clock_in", { vehicleUse }))});
+			let malformed;
+			try {
+				await ClockCommandStore.capture(${JSON.stringify(request(OP_OTHER, "clock_in", { vehicleUse: { startKm: -1, vehicle: { kind: "own" } } }))});
+			} catch (error) { malformed = error.code; }
+			return { command: frozen.record.command, body: frozen.record.body, malformed };
+		})()`);
+		expect(result).toMatchObject({
+			command: { version: 4, operationId: OP_IN, vehicleUse },
+			malformed: "invalid_request",
+		});
+		expect(JSON.parse((result as { body: string }).body)).toEqual(
+			(result as { command: unknown }).command,
+		);
+	});
+
 	it("orders a clock-in behind an unconfirmed clock-out and keeps archived uncertain work blocking", async () => {
 		await loadLibraries();
 		const result = await page.evaluate(`(async () => {

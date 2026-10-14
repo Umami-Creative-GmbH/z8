@@ -10,6 +10,10 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { instantFromDate, instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import {
+	vehicleUseFromColumns,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { ApprovalDatabase } from "../server/types";
 import type {
 	ApprovalCommandResult,
@@ -112,6 +116,11 @@ async function loadPeriod(
 			projectId: workPeriod.projectId,
 			workCategoryId: workPeriod.workCategoryId,
 			workLocationType: workPeriod.workLocationType,
+			vehicleKind: workPeriod.vehicleKind,
+			vehicleId: workPeriod.vehicleId,
+			odometerStartKm: workPeriod.odometerStartKm,
+			odometerEndKm: workPeriod.odometerEndKm,
+			drivenDistanceKm: workPeriod.drivenDistanceKm,
 			approvalWorkflowId: workPeriod.approvalWorkflowId,
 			graphRevision: workPeriod.graphRevision,
 		})
@@ -150,6 +159,8 @@ type Correction = {
 	action: "edit" | "delete";
 	workLocationType?: string;
 	workCategoryId?: string | null;
+	/** Present only when the proposal names vehicle use (#1120). */
+	vehicleUse?: WorkVehicleUse | null;
 	clockInCorrectionId?: string;
 	clockOutCorrectionId?: string;
 };
@@ -234,6 +245,7 @@ async function readCorrectionResult(
 			projectId: period.projectId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
+			...(period.vehicleKind ? { vehicleUse: vehicleUseFromColumns(period) } : {}),
 		},
 	};
 	if (period.deletedAt === null) {
@@ -555,6 +567,7 @@ function correctionFromFacts(facts: TimeCorrectionSubmittedFacts): Correction {
 		...(facts.requested.workCategoryId.kind === "set"
 			? { workCategoryId: facts.requested.workCategoryId.value }
 			: {}),
+		...(facts.requested.vehicleUse ? { vehicleUse: facts.requested.vehicleUse.value } : {}),
 		...(facts.requested.clockIn
 			? { clockInCorrectionId: facts.requested.clockIn.correctionEntryId }
 			: {}),

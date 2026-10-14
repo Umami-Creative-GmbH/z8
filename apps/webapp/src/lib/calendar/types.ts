@@ -1,3 +1,5 @@
+import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
+
 export type CalendarEventType =
 	| "holiday"
 	| "absence"
@@ -99,6 +101,10 @@ export interface WorkPeriodEvent extends CalendarEvent {
 	type: "work_period";
 	metadata: {
 		workLocationType?: string | null;
+		/** Recorded vehicle use (#1120); absent without a vehicle. */
+		vehicleUse?: WorkVehicleUse;
+		/** "Name (PLATE)" of an organization vehicle the organization still has. */
+		vehicleLabel?: string;
 		durationMinutes: number;
 		employeeId: string;
 		employeeName: string;

@@ -50,6 +50,10 @@ import type {
 	ApprovalWriteGateResult,
 } from "../workflow/ports";
 import { startApprovalWorkflow } from "../workflow/start-workflow";
+import {
+	vehicleUseColumns,
+	type WorkVehicleUse,
+} from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import type { ApprovalDbService } from "./types";
 import {
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
@@ -116,10 +120,13 @@ export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
 	taskId?: string | null;
 	workCategoryId: string | null;
 	workLocationType?: (typeof workPeriod.$inferInsert)["workLocationType"];
+	/** Vehicle use (#1120); absent records none. */
+	vehicleUse?: WorkVehicleUse | null;
 	canonicalRecordId: string;
 	approvalStatus: "pending" | "approved";
 	pendingChanges: unknown;
 }) {
+	const vehicle = vehicleUseColumns(input.vehicleUse ?? null);
 	const [period] = await input.dbService.db
 		.insert(workPeriod)
 		.values({
@@ -138,6 +145,11 @@ export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
 			...(input.workLocationType !== undefined
 				? { workLocationType: input.workLocationType }
 				: {}),
+			vehicleKind: vehicle.vehicleKind,
+			vehicleId: vehicle.vehicleId,
+			odometerStartKm: vehicle.odometerStartKm,
+			odometerEndKm: vehicle.odometerEndKm,
+			drivenDistanceKm: vehicle.drivenDistanceKm,
 			canonicalRecordId: input.canonicalRecordId,
 			isActive: false,
 			approvalStatus: input.approvalStatus,

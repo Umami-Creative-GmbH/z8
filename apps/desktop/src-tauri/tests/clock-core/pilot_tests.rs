@@ -21,7 +21,7 @@ async fn pilot_never_falls_back_to_an_older_server_writer() {
     let (endpoint, requests) = test_http::server(vec![Some((404, "{}"))]);
     let error = execute_pilot(
         &device.at(&endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-1",
     )
@@ -41,7 +41,7 @@ async fn pilot_refuses_a_changed_organization_and_missing_atomic_breaks() {
     device.negotiated_with(endpoint, "org-1", false, BREAK_KINDS);
     let error = execute_pilot(
         &device.at(endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-2",
     )
@@ -51,7 +51,7 @@ async fn pilot_refuses_a_changed_organization_and_missing_atomic_breaks() {
     device.negotiated(endpoint, "org-1", false);
     let error = execute_pilot(
         &device.at(endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-1",
     )
@@ -77,7 +77,7 @@ async fn offline_clock_in_requires_a_previously_confirmed_status() {
         .unwrap();
     let error = execute_pilot(
         &device.at(endpoint, TOKEN),
-        ClockCommand::ClockIn(WorkLocationType::Home),
+        ClockCommand::ClockIn(WorkLocationType::Home, None),
         evidence(),
         "org-1",
     )
@@ -320,6 +320,7 @@ async fn confirmed_work_also_overrides_an_unresolved_atomic_idle_break_projectio
                     Some("Europe/Berlin"),
                 ),
                 location: WorkLocationType::Office,
+                vehicle_use: None,
             },
         )
         .await

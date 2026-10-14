@@ -9,6 +9,7 @@ import { type ReactElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ClockInOutWidget } from "@/components/time-tracking/clock-in-out-widget";
+import { DrivingDetailsMissingNotice } from "@/components/time-tracking/driving-details-missing-notice";
 import { PeriodSubmissionsCard } from "@/components/time-tracking/period-submissions-card";
 import { PersonalWorkdayTimeline } from "@/components/time-tracking/personal-workday-timeline";
 import { TimeEntriesTable } from "@/components/time-tracking/time-entries-table";
@@ -16,9 +17,15 @@ import { WeeklySummaryCards } from "@/components/time-tracking/weekly-summary-ca
 import { getTranslate } from "@/tolgee/server";
 import type { TimeTrackingPageSearchParams } from "./page-data";
 import { readActiveWorkPeriod } from "./read-queries";
-import { readHistoryRegion, readPeriodsRegion, readSummaryRegion } from "./region-data";
+import {
+	readDrivingRegion,
+	readHistoryRegion,
+	readPeriodsRegion,
+	readSummaryRegion,
+} from "./region-data";
 import {
 	ClockLoading,
+	DrivingLoading,
 	HistoryLoading,
 	PeriodsLoading,
 	RegionLoadError,
@@ -27,6 +34,7 @@ import {
 } from "./region-fallbacks";
 import {
 	ClockRegion,
+	DrivingRegion,
 	HistoryRegion,
 	PeriodsRegion,
 	SummaryRegion,
@@ -66,6 +74,7 @@ vi.mock("next-intl/server", () => ({ getLocale: vi.fn(async () => "de") }));
 vi.mock("./render-context", () => ({ getTimeTrackingRenderContext: vi.fn() }));
 vi.mock("./read-queries", () => ({ readActiveWorkPeriod: vi.fn() }));
 vi.mock("./region-data", () => ({
+	readDrivingRegion: vi.fn(),
 	readHistoryRegion: vi.fn(),
 	readPeriodsRegion: vi.fn(),
 	readSummaryRegion: vi.fn(),
@@ -76,6 +85,9 @@ vi.mock("@/components/time-tracking/period-submissions-card", () => ({
 vi.mock("./workday-timeline-data", () => ({ getWorkdayTimelineData: vi.fn() }));
 vi.mock("@/components/errors/no-employee-error", () => ({
 	NoEmployeeError: () => null,
+}));
+vi.mock("@/components/time-tracking/driving-details-missing-notice", () => ({
+	DrivingDetailsMissingNotice: () => null,
 }));
 vi.mock("@/components/time-tracking/clock-in-out-widget", () => ({
 	ClockInOutWidget: () => null,
@@ -142,6 +154,38 @@ beforeEach(() => {
 	vi.mocked(getWorkdayTimelineData).mockResolvedValue(timelineResult);
 });
 
+describe("driving details missing notice (#1127)", () => {
+	const work = {
+		workPeriodId: "work-1",
+		employeeId: "employee-1",
+		startedAt: "2026-10-01T06:00:00Z",
+		endedAt: "2026-10-01T14:00:00Z",
+		startOffsetMinutes: 120,
+		endOffsetMinutes: 120,
+		workDay: "2026-10-01",
+		vehicleUse: null,
+	};
+
+	it("lists the employee's flagged work", async () => {
+		vi.mocked(readDrivingRegion).mockResolvedValue({ work: [work], truncated: false });
+		const notice = leaf(await DrivingRegion({ context }));
+		expect(notice.type).toBe(DrivingDetailsMissingNotice);
+		expect(notice.props).toMatchObject({
+			work: [work],
+			employeeId: "employee-1",
+			timeFormat: "24h",
+			truncated: false,
+		});
+	});
+
+	it("shows nothing without flagged work, or when it cannot be read", async () => {
+		vi.mocked(readDrivingRegion).mockResolvedValue({ work: [], truncated: false });
+		expect(await DrivingRegion({ context })).toBeNull();
+		vi.mocked(readDrivingRegion).mockRejectedValue(new Error("down"));
+		expect(await DrivingRegion({ context })).toBeNull();
+	});
+});
+
 describe("independent time tracking region components", () => {
 	it("clock resolves while secondary regions and search params are pending", async () => {
 		const identity = Promise.withResolvers<EmployeeRenderContext>();
@@ -197,8 +241,9 @@ describe("independent time tracking region components", () => {
 			}>;
 			fallback: ReactElement;
 		}>[];
-		expect(boundaries).toHaveLength(5);
+		expect(boundaries).toHaveLength(6);
 		expect(boundaries.map((boundary) => boundary.type)).toEqual([
+			Suspense,
 			Suspense,
 			Suspense,
 			Suspense,
@@ -207,6 +252,7 @@ describe("independent time tracking region components", () => {
 		]);
 		expect(boundaries.map((boundary) => boundary.props.children.type)).toEqual([
 			ClockRegion,
+			DrivingRegion,
 			TimelineRegion,
 			SummaryRegion,
 			PeriodsRegion,
@@ -214,6 +260,7 @@ describe("independent time tracking region components", () => {
 		]);
 		expect(boundaries.map((boundary) => boundary.props.fallback.type)).toEqual([
 			ClockLoading,
+			DrivingLoading,
 			TimelineLoading,
 			SummaryLoading,
 			PeriodsLoading,
@@ -221,10 +268,10 @@ describe("independent time tracking region components", () => {
 		]);
 		expect(
 			boundaries.map((boundary) => boundary.props.children.props.context),
-		).toEqual([context, context, context, context, context]);
+		).toEqual([context, context, context, context, context, context]);
 		expect(
 			boundaries.map((boundary) => boundary.props.children.props.searchParams),
-		).toEqual([undefined, date.promise, undefined, undefined, undefined]);
+		).toEqual([undefined, undefined, date.promise, undefined, undefined, undefined]);
 		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
 		expect(readSummaryRegion).not.toHaveBeenCalled();
 		expect(readHistoryRegion).not.toHaveBeenCalled();

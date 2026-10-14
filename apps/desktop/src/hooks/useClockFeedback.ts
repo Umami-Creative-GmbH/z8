@@ -20,10 +20,18 @@ export function useClockFeedback() {
 						"Check your time entries in Z8 before recording replacement work.",
 					),
 				});
-			else
+			else {
 				toast.success(
 					t(result.write.contextChanged ? "Previous context updated" : success),
 				);
+				// The legacy idle break records no odometer reading (#1124).
+				if (result.write.vehicleUseLeftOut)
+					toast.warning(t("Vehicle use was not recorded"), {
+						description: t(
+							"This server does not record the break's odometer reading. Add it to the work in Z8.",
+						),
+					});
+			}
 			return true;
 		} catch (error) {
 			toast.error(t("Clock action failed"), {

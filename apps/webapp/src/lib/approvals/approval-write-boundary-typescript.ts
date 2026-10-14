@@ -139,6 +139,7 @@ const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
 	computationMetadata: "computation_metadata",
 	costCenterId: "cost_center_id",
 	createdAt: "created_at",
+	drivenDistanceKm: "driven_distance_km",
 	durationMinutes: "duration_minutes",
 	employeeId: "employee_id",
 	endAt: "end_at",
@@ -146,6 +147,8 @@ const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
 	id: "id",
 	isBillable: "is_billable",
 	isSuperseded: "is_superseded",
+	odometerEndKm: "odometer_end_km",
+	odometerStartKm: "odometer_start_km",
 	organizationId: "organization_id",
 	pendingChanges: "pending_changes",
 	projectId: "project_id",
@@ -157,6 +160,8 @@ const SOURCE_COLUMN_NAMES: Readonly<Record<string, string>> = {
 	supersededById: "superseded_by_id",
 	taskId: "task_id",
 	type: "type",
+	vehicleId: "vehicle_id",
+	vehicleKind: "vehicle_kind",
 	weightPercent: "weight_percent",
 	workCategoryId: "work_category_id",
 	workLocationType: "work_location_type",
@@ -2523,6 +2528,12 @@ function analyzeApprovalWriteMutationsInContext(
 										"workCategoryId",
 										"workLocationType",
 										"computationMetadata",
+										// Vehicle use (#1120) is part of the work's attribution.
+										"vehicleKind",
+										"vehicleId",
+										"odometerStartKm",
+										"odometerEndKm",
+										"drivenDistanceKm",
 									]
 								: [
 										"id",

@@ -13,20 +13,31 @@ export interface WorkPeriodEditedBy {
 	editedAt: Date;
 }
 
+/** A recorded edit of the work's attribution (#1120), e.g. its vehicle use. */
+export type WorkPeriodAttributionEdit = Omit<WorkPeriodEndpointEdit, "type">;
+
 /**
  * Who last edited a work period on the employee's behalf (#507). An applied
  * correction becomes the period's endpoint, so the newest correction endpoint
- * names the last edit. Only edits by someone other than the employee count.
+ * names the last edit. An attribution-only edit (#1120: vehicle use, location)
+ * appends no correction entry, so the caller passes those edits separately.
+ * Only edits by someone other than the employee count.
  */
 export function resolveWorkPeriodEditedBy(input: {
 	ownerUserId: string;
 	endpoints: Array<WorkPeriodEndpointEdit | null>;
+	attributionEdits?: readonly WorkPeriodAttributionEdit[];
 }): WorkPeriodEditedBy | null {
-	let latest: WorkPeriodEndpointEdit | null = null;
-	for (const endpoint of input.endpoints) {
-		if (endpoint?.type !== "correction") continue;
-		if (!latest || endpoint.createdAt.getTime() > latest.createdAt.getTime()) {
-			latest = endpoint;
+	let latest: WorkPeriodAttributionEdit | null = null;
+	const candidates: WorkPeriodAttributionEdit[] = [
+		...input.endpoints.filter(
+			(endpoint): endpoint is WorkPeriodEndpointEdit => endpoint?.type === "correction",
+		),
+		...(input.attributionEdits ?? []),
+	];
+	for (const candidate of candidates) {
+		if (!latest || candidate.createdAt.getTime() > latest.createdAt.getTime()) {
+			latest = candidate;
 		}
 	}
 	if (!latest?.createdBy || latest.createdBy === input.ownerUserId || !latest.editorName) {

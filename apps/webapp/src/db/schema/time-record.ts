@@ -28,6 +28,7 @@ import {
 import { employee } from "./organization";
 import { project, projectTask } from "./project";
 import { workCategory } from "./work-category";
+import { workVehicleUseColumns, workVehicleUseConstraints } from "./work-vehicle-use-columns";
 
 export const timeRecord = pgTable(
 	"time_record",
@@ -92,8 +93,11 @@ export const timeRecordWork = pgTable(
 		}),
 		workLocationType: workLocationTypeEnum("work_location_type"),
 		computationMetadata: text("computation_metadata"),
+		// Vehicle use (#1120), mirrored from the work period like the location.
+		...workVehicleUseColumns(),
 	},
 	(table) => [
+		...workVehicleUseConstraints("timeRecordWork", table),
 		index("timeRecordWork_organizationId_idx").on(table.organizationId),
 		index("timeRecordWork_workCategoryId_idx").on(table.workCategoryId),
 		check("timeRecordWork_recordKind_work_chk", sql`${table.recordKind} = 'work'`),

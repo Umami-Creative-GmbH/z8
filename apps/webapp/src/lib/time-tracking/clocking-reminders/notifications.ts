@@ -58,6 +58,14 @@ const reminderCopy = {
 		messageKey: "common:notifications.content.periodSubmissionApproved.message",
 		messageDefault: "Your time for {startDate} – {endDate} was approved.",
 	},
+	// The morning after work lacking its vehicle or a reading, while vehicle use is expected (#1127).
+	driving_details_missing_reminder: {
+		titleKey: "common:notifications.content.drivingDetailsMissingReminder.title",
+		titleDefault: "Add your driving details",
+		messageKey: "common:notifications.content.drivingDetailsMissingReminder.message",
+		messageDefault:
+			"Your work on {date} is missing its vehicle or an odometer reading. Add them to the work period.",
+	},
 } as const satisfies Record<ClockingReminderType, Record<string, string>>;
 
 /** A rejected period, with the approver's reason (#805). */
@@ -106,6 +114,15 @@ const policyMessageCopy = {
 	Record<ClockingReminderType, Pick<ReminderCopy, "messageKey" | "messageDefault">>
 >;
 
+/** Several work periods lacking driving details, due the same morning (#807 decision 8). */
+const drivingDetailsManyCopy = {
+	titleKey: "common:notifications.content.drivingDetailsMissingReminder.title",
+	titleDefault: "Add your driving details",
+	messageKey: "common:notifications.content.drivingDetailsMissingReminderMany.message",
+	messageDefault:
+		"{count} work periods from {dates} are missing their vehicle or an odometer reading. Add them to the work periods.",
+} as const satisfies ReminderCopy;
+
 /**
  * The reminder as the employee receives it: the stored English text plus the i18n keys and typed
  * params (#1149), which every channel formats in the reader's language and hour cycle when it
@@ -125,7 +142,10 @@ export function buildClockingReminderNotification(input: {
 	// The message prints the zone as `{timezone}`, so the time itself does not.
 	const formatTime = (instant: Instant) =>
 		notificationParam.zonedInstant(instant, timezone, "time", { printZone: false });
-	if (reminder.type === "period_submission_decided") {
+	if (reminder.type === "driving_details_missing_reminder") {
+		// The work's own event-local day, never a reader's zone.
+		params.date = formatDate(reminder.drivingWork?.workDay ?? reminder.day);
+	} else if (reminder.type === "period_submission_decided") {
 		const period = reminder.decidedPeriod;
 		if (period?.outcome === "rejected") {
 			copy = periodSubmissionRejectedCopy;
@@ -167,12 +187,67 @@ export function buildClockingReminderNotification(input: {
 		title: copy.titleDefault,
 		message: fillNotificationTemplate(copy.messageDefault, params),
 		...(reminder.shift ? { entityType: "shift", entityId: reminder.shift.id } : {}),
+		...(reminder.drivingWork
+			? { entityType: "work_period", entityId: reminder.drivingWork.workPeriodId }
+			: {}),
 		actionUrl: "/time-tracking",
 		idempotencyKey: `clocking-reminder:${reminder.occasionKey}`,
 		metadata: {
 			occasionKey: reminder.occasionKey,
 			day: reminder.day.toString(),
 			expectedAt: reminder.expectedAt.toString(),
+			i18n: { ...copy, params },
+		},
+	};
+}
+
+/**
+ * The one driving details reminder of an employee's morning (#1127, #807 decision 8): every
+ * newly due work period lacking its vehicle or a reading, by their event-local dates. One period
+ * keeps the single reminder; several name their count and dates. The same text feeds the in-app
+ * notification, the email and the push message.
+ */
+export function buildDrivingDetailsReminderNotification(input: {
+	reminders: readonly DueClockingReminder[];
+	organizationId: string;
+	userId: string;
+	timezone: string;
+}): CreateNotificationParams {
+	const workDayOf = (reminder: DueClockingReminder) =>
+		reminder.drivingWork?.workDay ?? reminder.day;
+	const reminders = [...input.reminders].sort(
+		(left, right) =>
+			workDayOf(left).toString().localeCompare(workDayOf(right).toString()) ||
+			left.occasionKey.localeCompare(right.occasionKey),
+	);
+	const [first] = reminders;
+	if (!first) throw new Error("A driving details reminder needs at least one work period");
+	if (reminders.length === 1) {
+		return buildClockingReminderNotification({ ...input, reminder: first });
+	}
+	// Sorted by work day, so the dates run from the first to the last flagged day; each channel
+	// formats them in the reader's language (#1149).
+	const last = reminders[reminders.length - 1] ?? first;
+	const params: Record<string, NotificationParamValue> = {
+		count: reminders.length,
+		dates: notificationParam.plainDateRange(workDayOf(first), workDayOf(last)),
+	};
+	const copy = drivingDetailsManyCopy;
+	return {
+		userId: input.userId,
+		organizationId: input.organizationId,
+		type: "driving_details_missing_reminder",
+		title: copy.titleDefault,
+		message: fillNotificationTemplate(copy.messageDefault, params),
+		actionUrl: "/time-tracking",
+		// Each work period is claimed once, so the first one's key names this reminder for good.
+		idempotencyKey: `clocking-reminder:${first.occasionKey}`,
+		metadata: {
+			occasionKeys: reminders.map((reminder) => reminder.occasionKey),
+			workPeriodIds: reminders.flatMap((reminder) =>
+				reminder.drivingWork ? [reminder.drivingWork.workPeriodId] : [],
+			),
+			expectedAt: first.expectedAt.toString(),
 			i18n: { ...copy, params },
 		},
 	};

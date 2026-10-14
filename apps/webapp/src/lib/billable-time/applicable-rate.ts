@@ -1,6 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
-import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import { offsetMinutesToTimeZoneId, workDayOf } from "@/lib/datetime/temporal-format";
 import { type ElapsedInterval, splitElapsedTime } from "./elapsed-split";
 import {
 	type AccruedAmount,
@@ -61,13 +61,8 @@ export type ApplicableRate =
 
 const UNPRICED: ApplicableRate = { kind: "unpriced" };
 
-/**
- * The employee-local day an instant falls on, at the offset captured with the
- * work (never the viewer's time zone; `docs/refs/timekeeping.md`).
- */
-export function workDayOf(instant: Instant, offsetMinutes: number): PlainDate {
-	return instant.toZonedDateTimeISO(offsetMinutesToTimeZoneId(offsetMinutes)).toPlainDate();
-}
+/** The work-local day of an instant; it lives with the timekeeping helpers. */
+export { workDayOf };
 
 function matches(rate: BillableRatePeriod, work: RatedWork): boolean {
 	switch (rate.level) {

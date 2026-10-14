@@ -27,6 +27,7 @@ import {
 import { findLiveWorkOccupant } from "../start-live-work";
 import { createTimeEntry, type TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
+import { vehicleUseFromColumns } from "../vehicle-use/work-vehicle-use";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
 import { deriveWorkDurationMinutes } from "../work-duration";
 import type { WorkLocationType } from "../work-location";
@@ -299,6 +300,11 @@ async function takeLegacyBreak(
 			taskId: workPeriod.taskId,
 			workCategoryId: workPeriod.workCategoryId,
 			workLocationType: workPeriod.workLocationType,
+			vehicleKind: workPeriod.vehicleKind,
+			vehicleId: workPeriod.vehicleId,
+			odometerStartKm: workPeriod.odometerStartKm,
+			odometerEndKm: workPeriod.odometerEndKm,
+			drivenDistanceKm: workPeriod.drivenDistanceKm,
 		})
 		.from(workPeriod)
 		.where(
@@ -342,6 +348,8 @@ async function takeLegacyBreak(
 			// The closed period keeps its billability; both representations agree (#900).
 			isBillable: period.isBillable,
 			taskId: period.taskId,
+			// The closed work's vehicle use, mirrored into its record (#1122).
+			vehicleUse: vehicleUseFromColumns(period),
 			origin: "clock",
 		},
 		tx,

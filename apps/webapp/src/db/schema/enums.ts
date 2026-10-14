@@ -312,6 +312,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// Skill expiry reminders to the employee and their managers (#1143)
 	"skill_expiry_upcoming",
 	"skill_expired_today",
+	// The morning-after reminder about work lacking its vehicle or a reading (#1127)
+	"driving_details_missing_reminder",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

@@ -1,6 +1,9 @@
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import type { PerDiemDayLocation } from "@/lib/travel-expenses/per-diem";
-import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
+import type {
+	VehicleUseReviewValue,
+	WorkCategoryReviewValue,
+} from "../server/time-correction-review-metadata";
 
 export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"absence_entry",
@@ -140,7 +143,9 @@ export interface ApprovalInboxLocalizedText {
 
 export type ApprovalInboxDetailChangeValue =
 	| { kind: "work_location"; value: WorkLocationType }
-	| { kind: "work_category"; value: WorkCategoryReviewValue };
+	| { kind: "work_category"; value: WorkCategoryReviewValue }
+	/** Vehicle use with its readings (#1120). */
+	| { kind: "vehicle_use"; value: VehicleUseReviewValue };
 
 export interface ApprovalInboxDetailChange {
 	kind: "change";

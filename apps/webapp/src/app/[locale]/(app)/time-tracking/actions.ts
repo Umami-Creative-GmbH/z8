@@ -613,6 +613,7 @@ export async function splitWorkPeriod(
 	afterNotes?: string,
 	disambiguation?: "earlier" | "later",
 	submissionId?: string,
+	vehicleSplitKm?: number,
 ): Promise<
 	ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>
 > {
@@ -624,6 +625,7 @@ export async function splitWorkPeriod(
 		afterNotes,
 		disambiguation,
 		submissionId,
+		vehicleSplitKm,
 	});
 }
 

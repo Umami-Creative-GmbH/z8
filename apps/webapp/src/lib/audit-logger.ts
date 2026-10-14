@@ -134,6 +134,11 @@ export enum AuditAction {
 	POSITION_CAPTURE_ASSIGNMENT_SET = "position_capture.assignment_set",
 	POSITION_CAPTURE_ASSIGNMENT_REMOVED = "position_capture.assignment_removed",
 
+	// Vehicle Use Enablement Operations (#1119)
+	VEHICLE_USE_SETTINGS_CHANGED = "vehicle_use.settings_changed",
+	VEHICLE_USE_ASSIGNMENT_SET = "vehicle_use.assignment_set",
+	VEHICLE_USE_ASSIGNMENT_REMOVED = "vehicle_use.assignment_removed",
+
 	// Expense Officer Grant Operations
 	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",
@@ -310,6 +315,13 @@ export enum AuditAction {
 	KIOSK_TOKEN_ROTATED = "kiosk.token_rotated",
 	KIOSK_REVOKED = "kiosk.revoked",
 
+	// Organization vehicles (#1118); assigned driver changes are part of an update
+	VEHICLE_CREATED = "vehicle.created",
+	VEHICLE_UPDATED = "vehicle.updated",
+	VEHICLE_ARCHIVED = "vehicle.archived",
+	VEHICLE_RESTORED = "vehicle.restored",
+	VEHICLE_DELETED = "vehicle.deleted",
+
 	// Scheduled exports (#988): the schedule lifecycle and one entry per run. Automatic
 	// actions are attributed to the schedule owner.
 	SCHEDULED_EXPORT_CREATED = "scheduled_export.created",
@@ -395,6 +407,7 @@ export interface AuditLogEntry {
 		| "location_employee"
 		| "subarea_employee"
 		| "kiosk"
+		| "vehicle"
 		| "employee_assigned_location"
 		| "user"
 		| "kiosk_pin"
