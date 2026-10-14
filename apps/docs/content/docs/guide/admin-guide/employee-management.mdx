@@ -125,57 +125,46 @@ When an employee leaves:
 
 ## Contract Types & Hourly Rates
 
+Contract type and hourly wage are part of an employee's **employment terms**, on the **Contract & Work Model** card of the employee's profile. Only org admins can change them.
+
 ### Contract Type Selection
 
-When creating or editing an employee, specify their contract type:
+When you prepare an invited employee's profile, choose their contract type:
+
+- **Fixed Salary**: Monthly or annual salary
+- **Hourly**: Paid by the hour. Enter the hourly wage too.
+
+When the invitation is accepted, an hourly employee with a wage starts with confirmed employment terms that carry that wage. Later contract type changes go through the **Contract & Work Model** card. The employee edit form shows the current contract type but does not change it.
+
+### Changing an Hourly Wage
 
 <Steps>
   <Step>
-    Navigate to the employee's profile
+    Open the employee's profile and find the **Contract & Work Model** card
   </Step>
   <Step>
-    Find the **Contract** section
+    Click **Change wage**
   </Step>
   <Step>
-    Select contract type:
-    - **Fixed Salary**: Monthly or annual salary
-    - **Hourly**: Paid by the hour
+    Enter the date the new wage applies from, the new wage, and a reason
   </Step>
   <Step>
-    Save changes
+    Save. The change is confirmed right away unless you save it as a draft.
   </Step>
 </Steps>
 
-### Hourly Rate Configuration
-
-For hourly employees, configure their pay rate:
-
-1. In the employee profile, find **Hourly Rate**
-2. Enter the rate amount
-3. Select the currency
-4. Set the effective date
-5. Save changes
+The new terms copy the contract type, weekly hours, work model, work policy and currency from the terms in force on that date. To change anything else, add a full change on the card instead.
 
 <Callout type="info">
-  Hourly rates are used in payroll exports and cost calculations. Changes take effect from the specified effective date.
+  A wage change takes effect at local midnight of its date. Draft and pending terms never affect earnings. Only confirmed hourly terms do. A shift that crosses midnight on the change date is paid at the old wage before midnight and the new wage after it.
 </Callout>
 
-### Rate History Tracking
+### Wage History
 
-The system maintains a complete history of rate changes:
+The **Contract & Work Model** card's timeline is the employee's wage history. Every set of terms shows its dates, its wage and the reason for the change. Employee reports compute earnings from each stretch of confirmed hourly terms in the report period. Work under fixed terms earns nothing in that report.
 
-- **Effective dates**: Each rate has a start date
-- **Previous rates**: Automatically archived when new rate is set
-- **Reporting**: Historical rates used for accurate payroll calculations
+### Wage Best Practices
 
-To view rate history:
-1. Go to employee profile
-2. Click **"View Rate History"**
-3. See all past rates with effective dates and who made the change
-
-### Rate Best Practices
-
-- **Set rates promptly** - Affects payroll calculations immediately
-- **Use effective dates correctly** - Rate changes apply from that date forward
-- **Document changes** - Add notes when adjusting rates
-- **Review regularly** - Ensure rates stay current with agreements
+- **Date changes correctly** - A wage applies from its date until the next confirmed terms
+- **Give a reason** - The reason is stored with the terms and shown in the timeline
+- **Review regularly** - Ensure wages stay current with agreements
