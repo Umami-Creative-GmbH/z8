@@ -611,7 +611,10 @@ describe("personal data export: Time category (#1167)", () => {
 			driven_distance_km: 42,
 		});
 
-		const other = table(await timeCollector.collect(db, scope("employee", OTHER_ORG)), "work_periods");
+		const other = table(
+			await timeCollector.collect(db, scope("employee", OTHER_ORG)),
+			"work_periods",
+		);
 		expect(vehicleUse(other[0])).toMatchObject({
 			vehicle_name: "Other-org van",
 			licence_plate: "B XY 999",

@@ -4,7 +4,8 @@
  * The employee record and profile, employment periods, departures and their
  * history, employment terms with the hourly wage (the employee's own pay,
  * never withheld) and the legacy wage history, teams, managers, team
- * permissions, locations, skills, project assignments, custom roles, groups,
+ * permissions, locations, skills, project assignments, assigned organization
+ * vehicles (#807, archived ones too), custom roles, groups,
  * cost centres, every policy assignment that reaches the employee (holiday
  * presets, single holidays and holiday categories included), and custom field
  * values.
@@ -53,6 +54,8 @@ import {
 	location,
 	locationEmployee,
 	locationSubarea,
+	organizationVehicle,
+	organizationVehicleDriver,
 	positionCaptureAssignment,
 	project,
 	projectAssignment,
@@ -245,6 +248,7 @@ async function collectEmployment(
 		costCenters,
 		policyRows,
 		customFields,
+		assignedVehicles,
 	] = await Promise.all([
 		database
 			.select()
@@ -583,6 +587,37 @@ async function collectEmployment(
 				),
 			)
 			.orderBy(asc(customFieldDefinition.position), asc(customFieldValue.validFrom)),
+		// Assigned drivers (#807): vehicles assigned to the employee or her own teams,
+		// archived ones too. A driver row has no assignment type: its target column says it.
+		database
+			.select({
+				vehicle: organizationVehicle.name,
+				licencePlate: organizationVehicle.licencePlate,
+				archivedAt: organizationVehicle.archivedAt,
+				teamId: organizationVehicleDriver.teamId,
+				createdAt: organizationVehicleDriver.createdAt,
+				createdBy: organizationVehicleDriver.createdBy,
+			})
+			.from(organizationVehicleDriver)
+			.innerJoin(
+				organizationVehicle,
+				and(
+					eq(organizationVehicle.id, organizationVehicleDriver.vehicleId),
+					eq(organizationVehicle.organizationId, organizationId),
+				),
+			)
+			.where(
+				and(
+					eq(organizationVehicleDriver.organizationId, organizationId),
+					or(
+						eq(organizationVehicleDriver.employeeId, employeeId),
+						ownTeamIds.length > 0
+							? inArray(organizationVehicleDriver.teamId, ownTeamIds)
+							: undefined,
+					),
+				),
+			)
+			.orderBy(asc(organizationVehicle.name), asc(organizationVehicleDriver.createdAt)),
 	]);
 
 	// The departure history, without its technical metadata. Review and task
@@ -637,6 +672,7 @@ async function collectEmployment(
 		...groups.map((row) => row.createdBy),
 		...policyRows.map((row) => row.createdBy),
 		...customFields.map((row) => row.updatedBy),
+		...assignedVehicles.map((row) => row.createdBy),
 	]);
 	const byEmployee = await employeeNameLookup(database, organizationId, [
 		...managers.map((row) => row.managerId),
@@ -915,6 +951,27 @@ async function collectEmployment(
 					project: row.project,
 					assigned_at: instantText(row.assignedAt),
 					assigned_by: byUser(row.assignedBy),
+				})),
+			),
+			tablePart(
+				"assigned_vehicles",
+				[
+					"vehicle",
+					"licence_plate",
+					"archived",
+					"assignment_type",
+					"team",
+					"assigned_at",
+					"assigned_by",
+				],
+				assignedVehicles.map((row) => ({
+					vehicle: row.vehicle,
+					licence_plate: row.licencePlate,
+					archived: row.archivedAt !== null,
+					assignment_type: row.teamId ? "team" : "employee",
+					team: teamName(row.teamId),
+					assigned_at: instantText(row.createdAt),
+					assigned_by: byUser(row.createdBy),
 				})),
 			),
 			tablePart(

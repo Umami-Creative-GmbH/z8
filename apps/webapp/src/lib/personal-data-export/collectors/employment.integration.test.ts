@@ -26,6 +26,9 @@ const ids = {
 	holidaySecret: "81100000-0000-4000-8000-000000000e33",
 	period: "81100000-0000-4000-8000-000000000e41",
 	departure: "81100000-0000-4000-8000-000000000e42",
+	vanOwn: "81100000-0000-4000-8000-000000000e51",
+	vanTeam: "81100000-0000-4000-8000-000000000e52",
+	vanSecret: "81100000-0000-4000-8000-000000000e53",
 } as const;
 
 const admin = integrationAdminPool();
@@ -148,6 +151,51 @@ describe("personal data export: Employment additions (#811 review)", () => {
 			    '{"resolution":"review-content-t811e"}', null, null)`,
 			[ORG, ids.ada, ids.departure, ids.period],
 		);
+
+		// Assigned drivers (#807): a van for Ada, an archived one for her team, one for another team.
+		await admin.query(
+			`insert into organization_vehicle (id, organization_id, name, licence_plate, archived_at) values
+			   ($1, $4, 'Caddy 1', 'M AB 1', null),
+			   ($2, $4, 'Sprinter 2', 'M AB 2', '2026-09-01T00:00:00Z'),
+			   ($3, $4, 'Secret van', 'M SE 3', null)`,
+			[ids.vanOwn, ids.vanTeam, ids.vanSecret, ORG],
+		);
+		await admin.query(
+			`insert into organization_vehicle_driver (organization_id, vehicle_id, employee_id, team_id, created_at, created_by) values
+			   ($1, $2, $5, null, '2026-08-01T08:00:00Z', 't811e-olga'),
+			   ($1, $3, null, $6, '2026-08-02T08:00:00Z', 't811e-olga'),
+			   ($1, $4, null, $7, '2026-08-03T08:00:00Z', 't811e-olga')`,
+			[ORG, ids.vanOwn, ids.vanTeam, ids.vanSecret, ids.ada, ids.teamAda, ids.teamOther],
+		);
+	});
+
+	it("exports the organization vehicles assigned to the employee or her teams, archived ones too", async () => {
+		for (const kind of ["employee", "admin"] as const) {
+			const collected = await employmentCollector.collect(db, scopeOf(kind));
+			expect(table(collected, "assigned_vehicles"), kind).toEqual([
+				{
+					vehicle: "Caddy 1",
+					licence_plate: "M AB 1",
+					archived: false,
+					assignment_type: "employee",
+					team: null,
+					assigned_at: "2026-08-01T08:00:00Z",
+					assigned_by: "Olga Owner",
+				},
+				{
+					vehicle: "Sprinter 2",
+					licence_plate: "M AB 2",
+					archived: true,
+					assignment_type: "team",
+					team: "Platform",
+					assigned_at: "2026-08-02T08:00:00Z",
+					assigned_by: "Olga Owner",
+				},
+			]);
+			const text = JSON.stringify(table(collected, "assigned_vehicles"));
+			expect(text, kind).not.toContain("Secret van");
+			expect(text, kind).not.toContain(ids.vanSecret);
+		}
 	});
 
 	afterAll(cleanup);
