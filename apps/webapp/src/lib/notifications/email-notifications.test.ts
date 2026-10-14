@@ -174,6 +174,27 @@ describe("sendEmailNotification", () => {
 			"https://org.example.com",
 		]);
 	});
+	it("links skill expiry reminders to the employee's skills or the own profile only (#1143)", async () => {
+		const reminder = {
+			userId: "user_123",
+			organizationId: "org",
+			type: "skill_expired_today" as const,
+			title: "A skill expires today",
+			message: "Today",
+		};
+		findUserMock.mockResolvedValue({ email: "alex@example.com", name: "Alex" });
+		await sendEmailNotification({ ...reminder, actionUrl: "/settings/employees/emp-1" });
+		await sendEmailNotification({ ...reminder, actionUrl: "/settings/profile#skills" });
+		await sendEmailNotification({ ...reminder, actionUrl: "/settings/billing" });
+		const links = sendEmailMock.mock.calls.map(([message]) =>
+			/href="([^"]+)"/.exec(message.html ?? "")?.[1],
+		);
+		expect(links).toEqual([
+			"https://org.example.com/settings/employees/emp-1",
+			"https://org.example.com/settings/profile#skills",
+			"https://org.example.com",
+		]);
+	});
 	it("sends deputy notifications as plain localized emails linking to the dashboard (#1013)", async () => {
 		findUserMock.mockResolvedValue({ email: "alex@example.com", name: "Alex" });
 		for (const type of [

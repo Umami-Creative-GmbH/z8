@@ -74,6 +74,8 @@ export const EVENT_CATEGORIES = {
 			"break_due_reminder",
 			"period_submission_reminder",
 			"period_submission_sent_back",
+			"skill_expiry_upcoming",
+			"skill_expired_today",
 		],
 	},
 } as const;

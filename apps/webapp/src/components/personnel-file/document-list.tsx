@@ -1,6 +1,12 @@
 "use client";
 
-import { IconCalendarOff, IconDownload, IconExternalLink, IconFileText } from "@tabler/icons-react";
+import {
+	IconCalendarOff,
+	IconCertificate,
+	IconDownload,
+	IconExternalLink,
+	IconFileText,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import type { EmployeeDocumentView } from "@/app/[locale]/(app)/personnel-files/actions";
@@ -86,6 +92,14 @@ export function DocumentList({
 										document.absence.endDate,
 										locale,
 									),
+								})}
+							</p>
+						) : null}
+						{document.skill ? (
+							<p className="flex items-center gap-1 text-sm text-muted-foreground">
+								<IconCertificate aria-hidden="true" className="size-3.5" />
+								{t("settings.personnelFiles.list.provesSkill", "Proves {skill}", {
+									skill: document.skill.name,
 								})}
 							</p>
 						) : null}

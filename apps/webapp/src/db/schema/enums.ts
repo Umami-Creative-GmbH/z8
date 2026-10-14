@@ -309,6 +309,9 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"personal_data_export_admin_exported",
 	// Download your personal data on My data before your departure cutoff (#1173)
 	"personal_data_export_reminder",
+	// Skill expiry reminders to the employee and their managers (#1143)
+	"skill_expiry_upcoming",
+	"skill_expired_today",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

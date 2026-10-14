@@ -185,6 +185,8 @@ const NOTIFICATION_CATEGORIES = [
 			"period_submission_reminder",
 			"period_submission_sent_back",
 			"personal_data_export_reminder",
+			"skill_expiry_upcoming",
+			"skill_expired_today",
 		] as NotificationType[],
 	},
 	{
@@ -219,7 +221,9 @@ type StaticallyLabelledType =
 	| "approval_cover_return_summary"
 	| "personal_data_export_reminder"
 	| "personal_data_export_ready"
-	| "personal_data_export_admin_exported";
+	| "personal_data_export_admin_exported"
+	| "skill_expiry_upcoming"
+	| "skill_expired_today";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
 const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, string> = {
@@ -434,6 +438,16 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.period_submission_sent_back",
 					"Time sent back after a change",
+				);
+			case "skill_expiry_upcoming":
+				return t(
+					"common:notifications.preferences.types.skill_expiry_upcoming",
+					"Skill expires soon",
+				);
+			case "skill_expired_today":
+				return t(
+					"common:notifications.preferences.types.skill_expired_today",
+					"Skill expires today",
 				);
 			case "period_submission_decided":
 				return t(

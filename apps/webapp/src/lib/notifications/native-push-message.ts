@@ -103,6 +103,8 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	personal_data_export_ready: "attention",
 	personal_data_export_admin_exported: "attention",
 	personal_data_export_reminder: "attention",
+	skill_expiry_upcoming: "reminder",
+	skill_expired_today: "reminder",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

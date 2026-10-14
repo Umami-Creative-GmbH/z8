@@ -1534,6 +1534,27 @@
       "when": 1803571200000,
       "tag": "0223_personal_data_export_reminder",
       "breakpoints": true
+    },
+    {
+      "idx": 224,
+      "version": "7",
+      "when": 1803657600000,
+      "tag": "0224_skill_certificate_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 225,
+      "version": "7",
+      "when": 1803744000000,
+      "tag": "0225_employee_skill_expiry_date",
+      "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1803830400000,
+      "tag": "0226_skill_expiry_reminders",
+      "breakpoints": true
     }
   ]
 }

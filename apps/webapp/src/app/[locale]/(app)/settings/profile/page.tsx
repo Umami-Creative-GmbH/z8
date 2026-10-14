@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { OwnCustomFieldsCard } from "@/components/settings/custom-fields/own-custom-fields-card";
+import { OwnSkillsCard } from "@/components/settings/own-skills-card";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
@@ -7,6 +8,8 @@ import { WeekStartSettings } from "@/components/settings/week-start-settings";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
+import { systemClock } from "@/lib/datetime/temporal-core";
+import { loadOwnSkills } from "@/lib/scheduling/own-skills";
 import { getTranslate } from "@/tolgee/server";
 import { getOwnCustomFieldValues } from "../custom-fields/value-actions";
 import {
@@ -29,10 +32,21 @@ export default async function ProfilePage() {
 			getTranslate(),
 			getOwnCustomFieldValues(),
 		]);
-	const settings = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, authContext.user.id),
-		columns: { helpImproveProduct: true },
-	});
+	const ownEmployee = authContext.employee;
+	const [settings, ownSkills] = await Promise.all([
+		db.query.userSettings.findFirst({
+			where: eq(userSettings.userId, authContext.user.id),
+			columns: { helpImproveProduct: true },
+		}),
+		// Skill expiry reminders link the employee here (#1143).
+		ownEmployee
+			? loadOwnSkills(db, {
+					organizationId: ownEmployee.organizationId,
+					employeeId: ownEmployee.id,
+					now: systemClock.nowInstant(),
+				})
+			: null,
+	]);
 	const user = {
 		...authContext.user,
 		helpImproveProduct: settings?.helpImproveProduct ?? true,
@@ -53,6 +67,8 @@ export default async function ProfilePage() {
 				<ProfileForm user={user} />
 
 				{ownCustomFields.success ? <OwnCustomFieldsCard section={ownCustomFields.data} /> : null}
+
+				{ownSkills && ownSkills.skills.length > 0 ? <OwnSkillsCard ownSkills={ownSkills} /> : null}
 
 				<TimezoneSettings currentTimezone={currentTimezone} onUpdate={updateTimezone} />
 				<WeekStartSettings

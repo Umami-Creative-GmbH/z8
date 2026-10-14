@@ -290,7 +290,7 @@ describe("personal data export pipeline (#1165)", () => {
 		);
 		await admin.query(
 			`insert into employee_skill (employee_id, skill_id, expires_at, assigned_by) values
-			   ($1, $2, '2027-03-31 00:00:00', 't1165-owner'), ($3, $4, null, 't1165-owner')`,
+			   ($1, $2, '2027-03-31', 't1165-owner'), ($3, $4, null, 't1165-owner')`,
 			[ids.ada, ids.skill, ids.adaOther, ids.skillOther],
 		);
 		await admin.query(

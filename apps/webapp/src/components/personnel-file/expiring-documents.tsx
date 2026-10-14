@@ -6,7 +6,7 @@ import { useAppLocale } from "@/components/providers/app-locale-provider";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateOnly } from "@/components/ui/date-picker-utils";
-import type { ExpiryDescription } from "@/lib/personnel-file/expiry";
+import type { ExpiryDescription } from "@/lib/expiry-reminders/expiry";
 import type { ExpiringDocument } from "@/lib/personnel-file/expiry-store";
 import { Link } from "@/navigation";
 import { usePersonnelFileLabels } from "./document-labels";

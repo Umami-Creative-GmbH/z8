@@ -7,11 +7,10 @@ import {
 	expiryWindowEnd,
 	validateExpiryReminderLeadDays,
 } from "./expiry";
-import { todayInOrganization } from "./organization-day";
 
 const instant = (value: string) => Temporal.Instant.from(value);
 const dayIn = (now: Temporal.Instant, timezone: string) =>
-	todayInOrganization(now, timezone).toString();
+	now.toZonedDateTimeISO(timezone).toPlainDate().toString();
 
 describe("dueExpiryReminder", () => {
 	const certificate = { expiryDate: "2026-11-30", leadDays: 30 };

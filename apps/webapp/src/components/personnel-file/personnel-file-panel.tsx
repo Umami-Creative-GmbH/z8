@@ -1,6 +1,13 @@
 "use client";
 
-import { IconLink, IconPencil, IconTrash, IconUnlink, IconUpload } from "@tabler/icons-react";
+import {
+	IconCertificate,
+	IconLink,
+	IconPencil,
+	IconTrash,
+	IconUnlink,
+	IconUpload,
+} from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -23,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { DocumentCategory } from "@/lib/personnel-file/document.types";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query/keys";
+import { CertificateSkillDialog } from "./certificate-skill-dialog";
 import { DeleteDocumentDialog } from "./delete-document-dialog";
 import { DocumentDialog } from "./document-dialog";
 import { usePersonnelFileLabels } from "./document-labels";
@@ -52,6 +60,7 @@ export function PersonnelFilePanel({
 	const [editing, setEditing] = useState<EmployeeDocumentView | null>(null);
 	const [deleting, setDeleting] = useState<EmployeeDocumentView | null>(null);
 	const [linking, setLinking] = useState<EmployeeDocumentView | null>(null);
+	const [namingSkill, setNamingSkill] = useState<EmployeeDocumentView | null>(null);
 	const [unlinkingId, setUnlinkingId] = useState<string | null>(null);
 	const employeeId = capability.employeeId;
 
@@ -73,6 +82,11 @@ export function PersonnelFilePanel({
 	function refreshSickNotes() {
 		refresh();
 		void queryClient.invalidateQueries({ queryKey: queryKeys.personnelFile.sickNotesAll() });
+	}
+
+	function refreshSkillCertificates() {
+		refresh();
+		void queryClient.invalidateQueries({ queryKey: queryKeys.skills.employee(employeeId) });
 	}
 
 	async function unlink(document: EmployeeDocumentView) {
@@ -200,6 +214,21 @@ export function PersonnelFilePanel({
 										</Button>
 									)
 								) : null}
+								{document.category === "certificate" ? (
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										onClick={() => setNamingSkill(document)}
+										aria-label={t(
+											"settings.personnelFiles.skillCertificates.edit",
+											"Choose the skill {title} proves",
+											{ title: document.title },
+										)}
+									>
+										<IconCertificate aria-hidden="true" className="size-4" />
+									</Button>
+								) : null}
 								<Button
 									type="button"
 									variant="ghost"
@@ -268,6 +297,17 @@ export function PersonnelFilePanel({
 						if (!open) setLinking(null);
 					}}
 					onLinked={refreshSickNotes}
+				/>
+			) : null}
+			{namingSkill ? (
+				<CertificateSkillDialog
+					key={namingSkill.id}
+					document={namingSkill}
+					open
+					onOpenChange={(open) => {
+						if (!open) setNamingSkill(null);
+					}}
+					onSaved={refreshSkillCertificates}
 				/>
 			) : null}
 		</Card>

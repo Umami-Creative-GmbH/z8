@@ -106,6 +106,9 @@ const NOTIFICATION_EMAIL_ROUTES: { readonly [Type in NotificationType]: Notifica
 	personal_data_export_admin_exported: layout(MY_DATA_PATH),
 	// Download your personal data before your departure cutoff (#1173).
 	personal_data_export_reminder: layout(MY_DATA_PATH),
+	// Managers, owners and admins get the employee's skills, the employee their profile (#1143).
+	skill_expiry_upcoming: layout("/settings/employees/", "/settings/profile"),
+	skill_expired_today: layout("/settings/employees/", "/settings/profile"),
 
 	// Email-free (U1).
 	// The employee's own "submitted"/"pending approval" confirmation. Its approver gets the
