@@ -431,7 +431,13 @@ describe("the MCP server on PostgreSQL", () => {
 			["list_customers", {}],
 		] as const) {
 			const page = await client.callTool({ name, arguments: args });
-			expect(page.structuredContent, name).toMatchObject({ data: [], nextCursor: null });
+			expect(page.structuredContent, name).toEqual({
+				data: [],
+				nextCursor: null,
+				...(name === "list_projects" || name === "list_customers"
+					? { asOf: expect.any(String) }
+					: {}),
+			});
 		}
 	});
 

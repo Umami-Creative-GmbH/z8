@@ -33,7 +33,7 @@ The assistant sees only the tools its key's scopes allow. Calling a tool without
 
 `custom-fields:read-restricted` adds no tool of its own: it only widens which custom fields the employee, project and customer tools return.
 
-Each tool takes its endpoint's query parameters as arguments and returns the same page as structured content: `{ "data": [...], "nextCursor": "..." }`. To read the next page, the assistant passes `nextCursor` back as `cursor`.
+Each tool takes its endpoint's query parameters as arguments and returns the same page as structured content: `{ "data": [...], "nextCursor": "..." }`, plus `asOf` for employees, projects and customers. To read the next page, the assistant passes `nextCursor` back as `cursor`.
 
 The data rules are the same as for the API, and each tool's description repeats them for the assistant:
 

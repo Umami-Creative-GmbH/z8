@@ -7,6 +7,7 @@
 import { Temporal } from "temporal-polyfill";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
+import { encodeCursor } from "../pagination";
 import type { ApiKeyScope } from "../scopes";
 import { callPublicApi, createTestKey, walkPublicApi } from "../testing/public-api-fixture";
 
@@ -440,6 +441,15 @@ describe("custom fields in the Public API", () => {
 			expect(text, endpoint.path).not.toContain(foreign.id);
 			expect(text, endpoint.path).not.toMatch(/Secret|hidden/);
 		}
+
+		// A cursor naming a guessed foreign field id only positions the walk: it reads nothing foreign.
+		const guessed = await callPublicApi(
+			listEmployeeCustomFields,
+			ours,
+			`?cursor=${encodeCursor([-1, foreign.id])}`,
+		);
+		expect(guessed.status).toBe(200);
+		expect(JSON.stringify(guessed.body)).not.toMatch(new RegExp(`${foreign.id}|Secret`));
 
 		const theirs = await createTestKey(ids.other, ids.otherAdmin, ["employees:read"]);
 		const [otto] = await walkPublicApi(listEmployees, theirs, "");

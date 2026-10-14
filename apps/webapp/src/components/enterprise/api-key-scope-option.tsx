@@ -2,23 +2,20 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import type { ApiKeyScope } from "@/lib/validations/api-key";
 
 /** One key scope checkbox of the create and edit forms, with the scope's warning when it has one. */
 export function ApiKeyScopeOption({
 	id,
-	scope,
 	label,
 	warning,
 	checked,
-	onToggle,
+	onCheckedChange,
 }: {
 	id: string;
-	scope: ApiKeyScope;
 	label: string;
 	warning: string | undefined;
 	checked: boolean;
-	onToggle: (scope: ApiKeyScope) => void;
+	onCheckedChange: () => void;
 }) {
 	const warningId = `${id}-warning`;
 	return (
@@ -27,7 +24,7 @@ export function ApiKeyScopeOption({
 				id={id}
 				className="mt-0.5"
 				checked={checked}
-				onCheckedChange={() => onToggle(scope)}
+				onCheckedChange={onCheckedChange}
 				aria-describedby={warning ? warningId : undefined}
 			/>
 			<div className="min-w-0 space-y-1">

@@ -325,11 +325,10 @@ export function ApiKeyCreateFormBody(props: ApiKeyCreateDialogProps) {
 											<ApiKeyScopeOption
 												key={scope}
 												id={scope}
-												scope={scope}
 												label={scopeLabels[scope]}
 												warning={scopeWarnings[scope]}
 												checked={field.state.value.includes(scope)}
-												onToggle={() =>
+												onCheckedChange={() =>
 													field.handleChange(
 														field.state.value.includes(scope)
 															? field.state.value.filter(

@@ -113,11 +113,7 @@ export async function readPageCustomFields(
 	};
 }
 
-// ---------------------------------------------------------------------------
-// Definitions
-// ---------------------------------------------------------------------------
-
-const decimal = z.string().nullable();
+const nullableDecimalString = z.string().nullable();
 
 export const customFieldDefinitionSchema = z
 	.object({
@@ -136,8 +132,12 @@ export const customFieldDefinitionSchema = z
 		archived: z.boolean().describe("Archived fields are left out of `customFields`."),
 		position: z.int().describe("The field's place in the order fields are shown in."),
 		integerOnly: z.boolean().nullable().describe("Number fields only, else null."),
-		min: decimal.describe("A number field's lower bound as a decimal string, else null."),
-		max: decimal.describe("A number field's upper bound as a decimal string, else null."),
+		min: nullableDecimalString.describe(
+			"A number field's lower bound as a decimal string, else null.",
+		),
+		max: nullableDecimalString.describe(
+			"A number field's upper bound as a decimal string, else null.",
+		),
 		options: z
 			.array(z.object({ id: idSchema(), label: z.string(), archived: z.boolean() }))
 			.describe("A select field's options, active ones first; empty for other types."),
@@ -167,52 +167,37 @@ function publicDefinitionOf(field: CustomFieldDefinitionView): PublicCustomField
 	};
 }
 
-const ENTITY_ENDPOINTS = {
-	employee: {
-		path: "employees",
-		operation: "Employee",
-		plural: "employees",
-		tag: "Employees",
-		scope: "employees:read",
-	},
-	project: {
-		path: "projects",
-		operation: "Project",
-		plural: "projects",
-		tag: "Projects",
-		scope: "projects:read",
-	},
-	customer: {
-		path: "customers",
-		operation: "Customer",
-		plural: "customers",
-		tag: "Customers",
-		scope: "customers:read",
-	},
+/** Each record kind's collection, as its list path and tag name it, and its read scope. */
+const RECORD_KINDS = {
+	employee: { collection: "employees", tag: "Employees", scope: "employees:read" },
+	project: { collection: "projects", tag: "Projects", scope: "projects:read" },
+	customer: { collection: "customers", tag: "Customers", scope: "customers:read" },
 } as const satisfies Record<
 	CustomFieldEntity,
-	{ path: string; operation: string; plural: string; tag: string; scope: ApiKeyScope }
+	{ collection: string; tag: string; scope: ApiKeyScope }
 >;
 
-/** Position order with the id as tie-breaker: archived fields may share an active field's position. */
-const compareFields = (field: { position: number; id: string }, position: number, id: string) =>
-	field.position - position || field.id.localeCompare(id);
+type FieldOrder = { position: number; id: string };
 
-/** `GET /api/v1/{employees|projects|customers}/custom-fields`, behind the entity's read scope. */
-function customFieldDefinitionsEndpoint(entity: CustomFieldEntity) {
-	const meta = ENTITY_ENDPOINTS[entity];
+/** Position order with the id as tie-breaker: archived fields may share an active field's position. */
+const byPosition = (a: FieldOrder, b: FieldOrder) =>
+	a.position - b.position || a.id.localeCompare(b.id);
+
+/** `GET /api/v1/{employees|projects|customers}/custom-fields`, behind the record kind's read scope. */
+function customFieldDefinitionsEndpoint(entity: CustomFieldEntity, operationId: string) {
+	const { collection, tag, scope } = RECORD_KINDS[entity];
 	return defineEndpoint({
 		method: "GET",
-		path: `/api/v1/${meta.path}/custom-fields`,
-		operationId: `list${meta.operation}CustomFields`,
-		tag: meta.tag,
+		path: `/api/v1/${collection}/custom-fields`,
+		operationId,
+		tag,
 		summary: `List ${entity} custom fields`,
 		description: [
-			`The organization's custom fields for ${meta.plural}, active and archived, ordered by position. Each of its ${meta.plural} carries their values in \`customFields\`, keyed by field id.`,
+			`The organization's custom fields for ${collection}, active and archived, ordered by position. Each of its ${collection} carries their values in \`customFields\`, keyed by field id.`,
 			"",
 			"Without the key scope `custom-fields:read-restricted`, fields only managers or admins see are left out, names included.",
 		].join("\n"),
-		scope: meta.scope,
+		scope,
 		query: z.object({
 			...pageQueryShape,
 			status: z
@@ -224,14 +209,15 @@ function customFieldDefinitionsEndpoint(entity: CustomFieldEntity) {
 		async run({ principal, query, database }) {
 			const after = query.cursor ? decodeCursor(query.cursor, ["number", "uuid"]) : null;
 			if (query.cursor && !after) return invalidCursor();
+			const start = after ? { position: Number(after[0]), id: String(after[1]) } : null;
 			const level = customFieldLevelOf(principal);
 			const fields = (
 				await listCustomFieldDefinitions(database, principal.organizationId, [entity])
 			)
 				.filter((field) => canViewCustomField(level, field.visibility))
 				.filter((field) => !query.status || field.archived === (query.status === "archived"))
-				.sort((a, b) => compareFields(a, b.position, b.id))
-				.filter((field) => !after || compareFields(field, Number(after[0]), String(after[1])) > 0);
+				.sort(byPosition)
+				.filter((field) => !start || byPosition(field, start) > 0);
 			const page = pageOf(fields, query.limit, publicDefinitionOf, (field) => [
 				field.position,
 				field.id,
@@ -241,6 +227,15 @@ function customFieldDefinitionsEndpoint(entity: CustomFieldEntity) {
 	});
 }
 
-export const listEmployeeCustomFields = customFieldDefinitionsEndpoint("employee");
-export const listProjectCustomFields = customFieldDefinitionsEndpoint("project");
-export const listCustomerCustomFields = customFieldDefinitionsEndpoint("customer");
+export const listEmployeeCustomFields = customFieldDefinitionsEndpoint(
+	"employee",
+	"listEmployeeCustomFields",
+);
+export const listProjectCustomFields = customFieldDefinitionsEndpoint(
+	"project",
+	"listProjectCustomFields",
+);
+export const listCustomerCustomFields = customFieldDefinitionsEndpoint(
+	"customer",
+	"listCustomerCustomFields",
+);
