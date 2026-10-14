@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Richiesta di assenza approvata",
+    "absenceChange": {
+      "afternoon": "Pomeriggio",
+      "cancelAll": "Annulla l'intera assenza",
+      "cancellationTitle": "Annullamento assenza",
+      "category": "Categoria assenza",
+      "displacedVacation": "Date di ferie sostituite all'approvazione",
+      "exactHours": "Ore registrate esatte",
+      "fullDay": "Giornata intera",
+      "morning": "Mattina",
+      "original": "Date registrate",
+      "originalEndCoverage": "Giorno di fine registrato",
+      "originalInterval": "Ore registrate",
+      "originalStartCoverage": "Giorno di inizio registrato",
+      "proposed": "Modifica proposta",
+      "proposedEndCoverage": "Giorno di fine proposto",
+      "proposedInterval": "Ore proposte",
+      "proposedStartCoverage": "Giorno di inizio proposto",
+      "range": "{range}",
+      "reason": "Motivo",
+      "reasonValue": "{reason}",
+      "title": "Modifica assenza"
+    },
     "absenceRejected": "Richiesta di assenza respinta",
     "absenceRequests": "Richieste di assenza",
     "absenceRequestsDescription": "Esamina e approva le richieste di ferie dei membri del tuo team",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} in sospeso",
     "type": "Tipo",
     "types": {
+      "absence_change_request": "Modifiche assenza",
       "absence_entry": "Richieste di assenza",
       "period_submission": "Invii del periodo",
       "time_entry": "Correzioni orario",

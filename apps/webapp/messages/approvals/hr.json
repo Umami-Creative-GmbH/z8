@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Zahtjev za odsutnost je odobren",
+    "absenceChange": {
+      "afternoon": "Poslijepodne",
+      "cancelAll": "Otkaži cijelu odsutnost",
+      "cancellationTitle": "Otkazivanje odsutnosti",
+      "category": "Kategorija odsutnosti",
+      "displacedVacation": "Datumi godišnjeg odmora zamjenjuju se nakon odobrenja",
+      "exactHours": "Točni evidentirani sati",
+      "fullDay": "Cijeli dan",
+      "morning": "Prijepodne",
+      "original": "Evidentirani datumi",
+      "originalEndCoverage": "Evidentirani završni dan",
+      "originalInterval": "Evidentirani sati",
+      "originalStartCoverage": "Evidentirani početni dan",
+      "proposed": "Predložena promjena",
+      "proposedEndCoverage": "Predloženi završni dan",
+      "proposedInterval": "Predloženi sati",
+      "proposedStartCoverage": "Predloženi početni dan",
+      "range": "{range}",
+      "reason": "Razlog",
+      "reasonValue": "{reason}",
+      "title": "Promjena odsutnosti"
+    },
     "absenceRejected": "Zahtjev za odsutnost je odbijen",
     "absenceRequests": "Zahtjevi za izostanak",
     "absenceRequestsDescription": "Pregledajte i odobrite zahtjeve za slobodne dane članova vašeg tima",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} na čekanju",
     "type": "Vrsta",
     "types": {
+      "absence_change_request": "Promjene odsutnosti",
       "absence_entry": "Zahtjevi za odsustvo",
       "period_submission": "Predaje razdoblja",
       "time_entry": "Ispravci radnog vremena",

@@ -661,6 +661,30 @@
       "viewInZ8": "Wyświetl w Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Wniosek o anulowanie dla {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Wniosek o zmianę nieobecności został zatwierdzony"
+      },
+      "absenceChangeExpired": {
+        "title": "Wniosek o zmianę nieobecności wygasł"
+      },
+      "absenceChange": {
+        "message": "Zarejestrowane daty: {original}. Proponowane daty: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Wniosek o zmianę nieobecności jest nieaktualny"
+      },
+      "absenceChangePending": {
+        "title": "Zmiana nieobecności oczekuje na zatwierdzenie"
+      },
+      "absenceChangeRejected": {
+        "title": "Wniosek o zmianę nieobecności został odrzucony"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Wniosek o zmianę nieobecności został wycofany"
+      },
       "absenceDeputyAssigned": {
         "message": "Zastępujesz użytkownika {name} ({dateRange}).",
         "title": "Jesteś zastępcą na czas nieobecności"

@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "İzin talebi onaylandı",
+    "absenceChange": {
+      "afternoon": "Öğleden sonra",
+      "cancelAll": "İznin tamamını iptal et",
+      "cancellationTitle": "İzin iptali",
+      "category": "İzin kategorisi",
+      "displacedVacation": "Onaylandığında tatil tarihleri değiştirilir",
+      "exactHours": "Kayıtlı tam saatler",
+      "fullDay": "Tam gün",
+      "morning": "Sabah",
+      "original": "Kayıtlı tarihler",
+      "originalEndCoverage": "Kayıtlı bitiş günü",
+      "originalInterval": "Kayıtlı saatler",
+      "originalStartCoverage": "Kayıtlı başlangıç günü",
+      "proposed": "Önerilen değişiklik",
+      "proposedEndCoverage": "Önerilen bitiş günü",
+      "proposedInterval": "Önerilen saatler",
+      "proposedStartCoverage": "Önerilen başlangıç günü",
+      "range": "{range}",
+      "reason": "Neden",
+      "reasonValue": "{reason}",
+      "title": "İzin değişikliği"
+    },
     "absenceRejected": "İzin talebi reddedildi",
     "absenceRequests": "İzin Talepleri",
     "absenceRequestsDescription": "Ekip üyelerinizden gelen izin taleplerini inceleyin ve onaylayın",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} beklemede",
     "type": "Tür",
     "types": {
+      "absence_change_request": "İzin Değişiklikleri",
       "absence_entry": "İzin Talepleri",
       "period_submission": "Dönem Gönderimleri",
       "time_entry": "Zaman Düzeltmeleri",

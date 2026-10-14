@@ -661,6 +661,30 @@
       "viewInZ8": "Z8'de Görüntüle"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "{original} için iptal talebi. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "İzin değişikliği talebi onaylandı"
+      },
+      "absenceChangeExpired": {
+        "title": "İzin değişikliği talebinin süresi doldu"
+      },
+      "absenceChange": {
+        "message": "Kayıtlı tarihler: {original}. Önerilen tarihler: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "İzin değişikliği talebi geçerliliğini yitirdi"
+      },
+      "absenceChangePending": {
+        "title": "İzin değişikliği onay bekliyor"
+      },
+      "absenceChangeRejected": {
+        "title": "İzin değişikliği talebi reddedildi"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "İzin değişikliği talebi geri çekildi"
+      },
       "absenceDeputyAssigned": {
         "message": "{name} yerine vekillik yapıyorsunuz ({dateRange}).",
         "title": "İzin vekilisiniz"

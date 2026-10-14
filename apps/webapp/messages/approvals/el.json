@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Το αίτημα απουσίας εγκρίθηκε",
+    "absenceChange": {
+      "afternoon": "Απόγευμα",
+      "cancelAll": "Ακύρωση ολόκληρης της απουσίας",
+      "cancellationTitle": "Ακύρωση απουσίας",
+      "category": "Κατηγορία απουσίας",
+      "displacedVacation": "Οι ημερομηνίες άδειας αντικαθίστανται κατά την έγκριση",
+      "exactHours": "Ακριβείς καταγεγραμμένες ώρες",
+      "fullDay": "Ολόκληρη ημέρα",
+      "morning": "Πρωί",
+      "original": "Καταγεγραμμένες ημερομηνίες",
+      "originalEndCoverage": "Καταγεγραμμένη ημέρα λήξης",
+      "originalInterval": "Καταγεγραμμένες ώρες",
+      "originalStartCoverage": "Καταγεγραμμένη ημέρα έναρξης",
+      "proposed": "Προτεινόμενη αλλαγή",
+      "proposedEndCoverage": "Προτεινόμενη ημέρα λήξης",
+      "proposedInterval": "Προτεινόμενες ώρες",
+      "proposedStartCoverage": "Προτεινόμενη ημέρα έναρξης",
+      "range": "{range}",
+      "reason": "Αιτιολογία",
+      "reasonValue": "{reason}",
+      "title": "Αλλαγή απουσίας"
+    },
     "absenceRejected": "Το αίτημα απουσίας απορρίφθηκε",
     "absenceRequests": "Αιτήματα απουσίας",
     "absenceRequestsDescription": "Ελέγξτε και εγκρίνετε αιτήματα άδειας από τα μέλη της ομάδας σας",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} σε εκκρεμότητα",
     "type": "Τύπος",
     "types": {
+      "absence_change_request": "Αλλαγές απουσιών",
       "absence_entry": "Αιτήματα απουσίας",
       "period_submission": "Υποβολές περιόδου",
       "time_entry": "Διορθώσεις χρόνου",

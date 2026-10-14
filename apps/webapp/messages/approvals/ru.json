@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Запрос на отсутствие одобрен",
+    "absenceChange": {
+      "afternoon": "Вторая половина дня",
+      "cancelAll": "Отменить отсутствие полностью",
+      "cancellationTitle": "Отмена отсутствия",
+      "category": "Категория отсутствия",
+      "displacedVacation": "Даты отпуска будут заменены после утверждения",
+      "exactHours": "Точные учтенные часы",
+      "fullDay": "Полный день",
+      "morning": "Первая половина дня",
+      "original": "Учтенные даты",
+      "originalEndCoverage": "Учтенный день окончания",
+      "originalInterval": "Учтенные часы",
+      "originalStartCoverage": "Учтенный день начала",
+      "proposed": "Предлагаемое изменение",
+      "proposedEndCoverage": "Предлагаемый день окончания",
+      "proposedInterval": "Предлагаемые часы",
+      "proposedStartCoverage": "Предлагаемый день начала",
+      "range": "{range}",
+      "reason": "Причина",
+      "reasonValue": "{reason}",
+      "title": "Изменение отсутствия"
+    },
     "absenceRejected": "Запрос на отсутствие отклонен",
     "absenceRequests": "Заявки на отсутствие",
     "absenceRequestsDescription": "Просматривайте и утверждайте заявки на отсутствие от участников вашей команды",
@@ -415,6 +437,7 @@
     "totalCount": "Ожидают решения: {totalCount}",
     "type": "Тип",
     "types": {
+      "absence_change_request": "Изменения отсутствия",
       "absence_entry": "Запросы на отсутствие",
       "period_submission": "Отправки за период",
       "time_entry": "Корректировки времени",

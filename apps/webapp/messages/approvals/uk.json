@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Запит на відсутність схвалено",
+    "absenceChange": {
+      "afternoon": "Друга половина дня",
+      "cancelAll": "Скасувати всю відсутність",
+      "cancellationTitle": "Скасування відсутності",
+      "category": "Категорія відсутності",
+      "displacedVacation": "Дати відпустки замінюються після схвалення",
+      "exactHours": "Точні зареєстровані години",
+      "fullDay": "Повний день",
+      "morning": "Перша половина дня",
+      "original": "Зареєстровані дати",
+      "originalEndCoverage": "Зареєстрований день завершення",
+      "originalInterval": "Зареєстровані години",
+      "originalStartCoverage": "Зареєстрований день початку",
+      "proposed": "Запропонована зміна",
+      "proposedEndCoverage": "Запропонований день завершення",
+      "proposedInterval": "Запропоновані години",
+      "proposedStartCoverage": "Запропонований день початку",
+      "range": "{range}",
+      "reason": "Причина",
+      "reasonValue": "{reason}",
+      "title": "Зміна відсутності"
+    },
     "absenceRejected": "Запит на відсутність відхилено",
     "absenceRequests": "Запити на відсутність",
     "absenceRequestsDescription": "Переглядайте та погоджуйте запити на відсутність від учасників вашої команди",
@@ -415,6 +437,7 @@
     "totalCount": "Очікують: {totalCount}",
     "type": "Тип",
     "types": {
+      "absence_change_request": "Зміни відсутності",
       "absence_entry": "Запити на відсутність",
       "period_submission": "Подання за періоди",
       "time_entry": "Виправлення часу",

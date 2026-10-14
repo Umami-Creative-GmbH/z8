@@ -661,6 +661,30 @@
       "viewInZ8": "Visualizza in Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Richiesta di annullamento per {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Richiesta di modifica assenza approvata"
+      },
+      "absenceChangeExpired": {
+        "title": "Richiesta di modifica assenza scaduta"
+      },
+      "absenceChange": {
+        "message": "Date registrate: {original}. Date proposte: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Richiesta di modifica assenza obsoleta"
+      },
+      "absenceChangePending": {
+        "title": "Modifica assenza in attesa di approvazione"
+      },
+      "absenceChangeRejected": {
+        "title": "Richiesta di modifica assenza rifiutata"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Richiesta di modifica assenza ritirata"
+      },
       "absenceDeputyAssigned": {
         "message": "Stai sostituendo {name} ({dateRange}).",
         "title": "Sei un sostituto per assenza"

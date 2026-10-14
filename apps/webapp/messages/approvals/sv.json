@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Frånvaroansökan godkänd",
+    "absenceChange": {
+      "afternoon": "Eftermiddag",
+      "cancelAll": "Avbryt hela frånvaron",
+      "cancellationTitle": "Avbokning av frånvaro",
+      "category": "Frånvarokategori",
+      "displacedVacation": "Semesterdatum ersätts vid godkännande",
+      "exactHours": "Exakta registrerade timmar",
+      "fullDay": "Heldag",
+      "morning": "Förmiddag",
+      "original": "Registrerade datum",
+      "originalEndCoverage": "Registrerad slutdag",
+      "originalInterval": "Registrerade timmar",
+      "originalStartCoverage": "Registrerad startdag",
+      "proposed": "Föreslagen ändring",
+      "proposedEndCoverage": "Föreslagen slutdag",
+      "proposedInterval": "Föreslagna timmar",
+      "proposedStartCoverage": "Föreslagen startdag",
+      "range": "{range}",
+      "reason": "Anledning",
+      "reasonValue": "{reason}",
+      "title": "Frånvaroändring"
+    },
     "absenceRejected": "Frånvaroansökan avvisad",
     "absenceRequests": "Frånvaroansökningar",
     "absenceRequestsDescription": "Granska och godkänn ledighetsansökningar från dina teammedlemmar",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} väntande",
     "type": "Typ",
     "types": {
+      "absence_change_request": "Frånvaroändringar",
       "absence_entry": "Frånvaroansökningar",
       "period_submission": "Periodinlämningar",
       "time_entry": "Tidskorrigeringar",

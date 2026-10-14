@@ -661,6 +661,30 @@
       "viewInZ8": "Prikaži u Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Zahtjev za otkazivanje za {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Zahtjev za promjenu odsutnosti odobren"
+      },
+      "absenceChangeExpired": {
+        "title": "Zahtjev za promjenu odsutnosti istekao"
+      },
+      "absenceChange": {
+        "message": "Evidentirani datumi: {original}. Predloženi datumi: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Zahtjev za promjenu odsutnosti zastario"
+      },
+      "absenceChangePending": {
+        "title": "Promjena odsutnosti čeka odobrenje"
+      },
+      "absenceChangeRejected": {
+        "title": "Zahtjev za promjenu odsutnosti odbijen"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Zahtjev za promjenu odsutnosti povučen"
+      },
       "absenceDeputyAssigned": {
         "message": "Mijenjate korisnika {name} ({dateRange}).",
         "title": "Vi ste zamjenik za odsutnost"

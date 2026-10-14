@@ -661,6 +661,30 @@
       "viewInZ8": "Переглянути в Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Запит на скасування для {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Запит на зміну відсутності схвалено"
+      },
+      "absenceChangeExpired": {
+        "title": "Термін дії запиту на зміну відсутності закінчився"
+      },
+      "absenceChange": {
+        "message": "Зареєстровані дати: {original}. Запропоновані дати: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Запит на зміну відсутності застарів"
+      },
+      "absenceChangePending": {
+        "title": "Зміна відсутності очікує на схвалення"
+      },
+      "absenceChangeRejected": {
+        "title": "Запит на зміну відсутності відхилено"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Запит на зміну відсутності відкликано"
+      },
       "absenceDeputyAssigned": {
         "message": "Ви заміщаєте {name} ({dateRange}).",
         "title": "Ви є заступником на час відсутності"

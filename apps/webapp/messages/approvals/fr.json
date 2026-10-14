@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Demande d'absence approuvée",
+    "absenceChange": {
+      "afternoon": "Après-midi",
+      "cancelAll": "Annuler toute l'absence",
+      "cancellationTitle": "Annulation d'absence",
+      "category": "Catégorie d'absence",
+      "displacedVacation": "Dates de congés remplacées lors de l'approbation",
+      "exactHours": "Heures exactes enregistrées",
+      "fullDay": "Journée entière",
+      "morning": "Matin",
+      "original": "Dates enregistrées",
+      "originalEndCoverage": "Jour de fin enregistré",
+      "originalInterval": "Heures enregistrées",
+      "originalStartCoverage": "Jour de début enregistré",
+      "proposed": "Modification proposée",
+      "proposedEndCoverage": "Jour de fin proposé",
+      "proposedInterval": "Heures proposées",
+      "proposedStartCoverage": "Jour de début proposé",
+      "range": "{range}",
+      "reason": "Motif",
+      "reasonValue": "{reason}",
+      "title": "Modification d'absence"
+    },
     "absenceRejected": "Demande d'absence rejetée",
     "absenceRequests": "Demandes d'absence",
     "absenceRequestsDescription": "Examinez et approuvez les demandes de congés des membres de votre équipe",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} en attente",
     "type": "Type",
     "types": {
+      "absence_change_request": "Modifications d'absence",
       "absence_entry": "Demandes d'absence",
       "period_submission": "Soumissions de période",
       "time_entry": "Corrections d'heures",

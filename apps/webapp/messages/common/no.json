@@ -661,6 +661,30 @@
       "viewInZ8": "Vis i Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Forespørsel om kansellering for {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Forespørsel om fraværsendring godkjent"
+      },
+      "absenceChangeExpired": {
+        "title": "Forespørsel om fraværsendring utløpt"
+      },
+      "absenceChange": {
+        "message": "Registrerte datoer: {original}. Foreslåtte datoer: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Forespørsel om fraværsendring foreldet"
+      },
+      "absenceChangePending": {
+        "title": "Fraværsendring venter på godkjenning"
+      },
+      "absenceChangeRejected": {
+        "title": "Forespørsel om fraværsendring avslått"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Forespørsel om fraværsendring trukket tilbake"
+      },
       "absenceDeputyAssigned": {
         "message": "Du er stedfortreder for {name} ({dateRange}).",
         "title": "Du er fraværsstedfortreder"

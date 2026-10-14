@@ -661,6 +661,30 @@
       "viewInZ8": "Vizualizați în Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Cerere de anulare pentru {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Cerere de modificare a absenței aprobată"
+      },
+      "absenceChangeExpired": {
+        "title": "Cerere de modificare a absenței expirată"
+      },
+      "absenceChange": {
+        "message": "Date înregistrate: {original}. Date propuse: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Cerere de modificare a absenței depășită"
+      },
+      "absenceChangePending": {
+        "title": "Modificare a absenței în așteptarea aprobării"
+      },
+      "absenceChangeRejected": {
+        "title": "Cerere de modificare a absenței respinsă"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Cerere de modificare a absenței retrasă"
+      },
       "absenceDeputyAssigned": {
         "message": "Îl/o înlocuiți pe {name} ({dateRange}).",
         "title": "Sunteți înlocuitor pe perioada absenței"

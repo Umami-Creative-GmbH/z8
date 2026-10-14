@@ -661,6 +661,30 @@
       "viewInZ8": "Ver no Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Solicitação de cancelamento para {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Solicitação de alteração de ausência aprovada"
+      },
+      "absenceChangeExpired": {
+        "title": "Solicitação de alteração de ausência expirada"
+      },
+      "absenceChange": {
+        "message": "Datas registradas: {original}. Datas propostas: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Solicitação de alteração de ausência obsoleta"
+      },
+      "absenceChangePending": {
+        "title": "Alteração de ausência aguardando aprovação"
+      },
+      "absenceChangeRejected": {
+        "title": "Solicitação de alteração de ausência rejeitada"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Solicitação de alteração de ausência retirada"
+      },
       "absenceDeputyAssigned": {
         "message": "Você está substituindo {name} ({dateRange}).",
         "title": "Você é um substituto de ausência"

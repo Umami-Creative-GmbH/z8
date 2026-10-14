@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Absence request approved",
+    "absenceChange": {
+      "afternoon": "Afternoon",
+      "cancelAll": "Cancel the entire absence",
+      "cancellationTitle": "Absence cancellation",
+      "category": "Absence category",
+      "displacedVacation": "Vacation dates replaced on approval",
+      "exactHours": "Exact recorded hours",
+      "fullDay": "Full day",
+      "morning": "Morning",
+      "original": "Recorded dates",
+      "originalEndCoverage": "Recorded end day",
+      "originalInterval": "Recorded hours",
+      "originalStartCoverage": "Recorded start day",
+      "proposed": "Proposed change",
+      "proposedEndCoverage": "Proposed end day",
+      "proposedInterval": "Proposed hours",
+      "proposedStartCoverage": "Proposed start day",
+      "range": "{range}",
+      "reason": "Reason",
+      "reasonValue": "{reason}",
+      "title": "Absence change"
+    },
     "absenceRejected": "Absence request rejected",
     "absenceRequests": "Absence Requests",
     "absenceRequestsDescription": "Review and approve time-off requests from your team members",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} pending",
     "type": "Type",
     "types": {
+      "absence_change_request": "Absence Changes",
       "absence_entry": "Absence Requests",
       "period_submission": "Period Submissions",
       "time_entry": "Time Corrections",

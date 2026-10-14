@@ -661,6 +661,30 @@
       "viewInZ8": "Shiko në Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Kërkesë për anulim për {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Kërkesa për ndryshimin e mungesës u miratua"
+      },
+      "absenceChangeExpired": {
+        "title": "Kërkesa për ndryshimin e mungesës ka skaduar"
+      },
+      "absenceChange": {
+        "message": "Datat e regjistruara: {original}. Datat e propozuara: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Kërkesa për ndryshimin e mungesës është e vjetruar"
+      },
+      "absenceChangePending": {
+        "title": "Ndryshimi i mungesës në pritje të miratimit"
+      },
+      "absenceChangeRejected": {
+        "title": "Kërkesa për ndryshimin e mungesës u refuzua"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Kërkesa për ndryshimin e mungesës u tërhoq"
+      },
       "absenceDeputyAssigned": {
         "message": "Po zëvendësoni {name} ({dateRange}).",
         "title": "Jeni zëvendësues gjatë mungesës"

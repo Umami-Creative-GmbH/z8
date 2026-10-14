@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Abwesenheitsantrag genehmigt",
+    "absenceChange": {
+      "afternoon": "Nachmittag",
+      "cancelAll": "Gesamte Abwesenheit stornieren",
+      "cancellationTitle": "Abwesenheitsstornierung",
+      "category": "Abwesenheitskategorie",
+      "displacedVacation": "Urlaubsdaten werden bei Genehmigung ersetzt",
+      "exactHours": "Exakt erfasste Stunden",
+      "fullDay": "Ganztägig",
+      "morning": "Vormittag",
+      "original": "Erfasste Daten",
+      "originalEndCoverage": "Erfasster Endtag",
+      "originalInterval": "Erfasste Stunden",
+      "originalStartCoverage": "Erfasster Starttag",
+      "proposed": "Vorgeschlagene Änderung",
+      "proposedEndCoverage": "Vorgeschlagener Endtag",
+      "proposedInterval": "Vorgeschlagene Stunden",
+      "proposedStartCoverage": "Vorgeschlagener Starttag",
+      "range": "{range}",
+      "reason": "Grund",
+      "reasonValue": "{reason}",
+      "title": "Abwesenheitsänderung"
+    },
     "absenceRejected": "Abwesenheitsantrag abgelehnt",
     "absenceRequests": "Abwesenheitsanträge",
     "absenceRequestsDescription": "Überprüfen und genehmigen Sie Abwesenheitsanträge Ihrer Teammitglieder",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} ausstehend",
     "type": "Typ",
     "types": {
+      "absence_change_request": "Abwesenheitsänderungen",
       "absence_entry": "Abwesenheitsanträge",
       "period_submission": "Zeitraum-Einreichungen",
       "time_entry": "Zeitkorrekturen",

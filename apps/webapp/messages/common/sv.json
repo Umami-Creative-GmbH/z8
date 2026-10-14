@@ -661,6 +661,30 @@
       "viewInZ8": "Visa i Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Begäran om annullering för {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Begäran om frånvaroändring godkänd"
+      },
+      "absenceChangeExpired": {
+        "title": "Begäran om frånvaroändring har löpt ut"
+      },
+      "absenceChange": {
+        "message": "Registrerade datum: {original}. Föreslagna datum: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Begäran om frånvaroändring inaktuell"
+      },
+      "absenceChangePending": {
+        "title": "Frånvaroändring väntar på godkännande"
+      },
+      "absenceChangeRejected": {
+        "title": "Begäran om frånvaroändring avvisad"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Begäran om frånvaroändring återkallad"
+      },
       "absenceDeputyAssigned": {
         "message": "Du ersätter {name} ({dateRange}).",
         "title": "Du är frånvaroställföreträdare"

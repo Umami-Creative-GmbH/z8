@@ -661,6 +661,30 @@
       "viewInZ8": "Afficher dans Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Demande d'annulation pour {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Demande de modification d'absence approuvée"
+      },
+      "absenceChangeExpired": {
+        "title": "Demande de modification d'absence expirée"
+      },
+      "absenceChange": {
+        "message": "Dates enregistrées : {original}. Dates proposées : {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Demande de modification d'absence obsolète"
+      },
+      "absenceChangePending": {
+        "title": "Modification d'absence en attente d'approbation"
+      },
+      "absenceChangeRejected": {
+        "title": "Demande de modification d'absence rejetée"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Demande de modification d'absence retirée"
+      },
       "absenceDeputyAssigned": {
         "message": "Vous remplacez {name} ({dateRange}).",
         "title": "Vous êtes remplaçant d'absence"

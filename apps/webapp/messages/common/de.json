@@ -661,6 +661,30 @@
       "viewInZ8": "In Z8 anzeigen"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Stornierungsantrag für {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Antrag auf Abwesenheitsänderung genehmigt"
+      },
+      "absenceChangeExpired": {
+        "title": "Antrag auf Abwesenheitsänderung abgelaufen"
+      },
+      "absenceChange": {
+        "message": "Erfasste Daten: {original}. Vorgeschlagene Daten: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Antrag auf Abwesenheitsänderung hinfällig"
+      },
+      "absenceChangePending": {
+        "title": "Abwesenheitsänderung wartet auf Genehmigung"
+      },
+      "absenceChangeRejected": {
+        "title": "Antrag auf Abwesenheitsänderung abgelehnt"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Antrag auf Abwesenheitsänderung zurückgezogen"
+      },
       "absenceDeputyAssigned": {
         "message": "Du vertrittst {name} ({dateRange}).",
         "title": "Du bist Abwesenheitsvertretung"

@@ -661,6 +661,30 @@
       "viewInZ8": "Προβολή στο Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Αίτημα ακύρωσης για {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Το αίτημα αλλαγής απουσίας εγκρίθηκε"
+      },
+      "absenceChangeExpired": {
+        "title": "Το αίτημα αλλαγής απουσίας έληξε"
+      },
+      "absenceChange": {
+        "message": "Καταγεγραμμένες ημερομηνίες: {original}. Προτεινόμενες ημερομηνίες: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Το αίτημα αλλαγής απουσίας είναι παρωχημένο"
+      },
+      "absenceChangePending": {
+        "title": "Αλλαγή απουσίας σε αναμονή έγκρισης"
+      },
+      "absenceChangeRejected": {
+        "title": "Το αίτημα αλλαγής απουσίας απορρίφθηκε"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Το αίτημα αλλαγής απουσίας αποσύρθηκε"
+      },
       "absenceDeputyAssigned": {
         "message": "Αναπληρώνετε τον/την {name} ({dateRange}).",
         "title": "Είστε αναπληρωτής απουσίας"

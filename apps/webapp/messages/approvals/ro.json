@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Cerere de absență aprobată",
+    "absenceChange": {
+      "afternoon": "După-amiază",
+      "cancelAll": "Anulează întreaga absență",
+      "cancellationTitle": "Anulare absență",
+      "category": "Categorie de absență",
+      "displacedVacation": "Datele de concediu sunt înlocuite la aprobare",
+      "exactHours": "Ore exacte înregistrate",
+      "fullDay": "Zi întreagă",
+      "morning": "Dimineață",
+      "original": "Date înregistrate",
+      "originalEndCoverage": "Zi de sfârșit înregistrată",
+      "originalInterval": "Ore înregistrate",
+      "originalStartCoverage": "Zi de început înregistrată",
+      "proposed": "Modificare propusă",
+      "proposedEndCoverage": "Zi de sfârșit propusă",
+      "proposedInterval": "Ore propuse",
+      "proposedStartCoverage": "Zi de început propusă",
+      "range": "{range}",
+      "reason": "Motiv",
+      "reasonValue": "{reason}",
+      "title": "Modificare absență"
+    },
     "absenceRejected": "Cerere de absență respinsă",
     "absenceRequests": "Cereri de absență",
     "absenceRequestsDescription": "Examinați și aprobați cererile de concediu de la membrii echipei dumneavoastră",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} în așteptare",
     "type": "Tip",
     "types": {
+      "absence_change_request": "Modificări absență",
       "absence_entry": "Cereri de absență",
       "period_submission": "Trimiteri perioade",
       "time_entry": "Corecții pontaj",

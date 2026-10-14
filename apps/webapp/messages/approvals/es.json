@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Solicitud de ausencia aprobada",
+    "absenceChange": {
+      "afternoon": "Tarde",
+      "cancelAll": "Cancelar toda la ausencia",
+      "cancellationTitle": "Cancelación de ausencia",
+      "category": "Categoría de ausencia",
+      "displacedVacation": "Fechas de vacaciones sustituidas tras la aprobación",
+      "exactHours": "Horas registradas exactas",
+      "fullDay": "Día completo",
+      "morning": "Mañana",
+      "original": "Fechas registradas",
+      "originalEndCoverage": "Día de finalización registrado",
+      "originalInterval": "Horas registradas",
+      "originalStartCoverage": "Día de inicio registrado",
+      "proposed": "Cambio propuesto",
+      "proposedEndCoverage": "Día de finalización propuesto",
+      "proposedInterval": "Horas propuestas",
+      "proposedStartCoverage": "Día de inicio propuesto",
+      "range": "{range}",
+      "reason": "Motivo",
+      "reasonValue": "{reason}",
+      "title": "Cambio de ausencia"
+    },
     "absenceRejected": "Solicitud de ausencia rechazada",
     "absenceRequests": "Solicitudes de ausencia",
     "absenceRequestsDescription": "Revise y apruebe las solicitudes de tiempo libre de los miembros de su equipo",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} pendientes",
     "type": "Tipo",
     "types": {
+      "absence_change_request": "Cambios de ausencia",
       "absence_entry": "Solicitudes de ausencia",
       "period_submission": "Envíos del período",
       "time_entry": "Correcciones de tiempo",

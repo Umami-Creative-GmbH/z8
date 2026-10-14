@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Fraværsforespørsel godkjent",
+    "absenceChange": {
+      "afternoon": "Ettermiddag",
+      "cancelAll": "Kanseller hele fraværet",
+      "cancellationTitle": "Fraværskansellering",
+      "category": "Fraværskategori",
+      "displacedVacation": "Feriedatoer erstattes ved godkjenning",
+      "exactHours": "Nøyaktig registrerte timer",
+      "fullDay": "Hel dag",
+      "morning": "Formiddag",
+      "original": "Registrerte datoer",
+      "originalEndCoverage": "Registrert sluttdag",
+      "originalInterval": "Registrerte timer",
+      "originalStartCoverage": "Registrert startdag",
+      "proposed": "Foreslått endring",
+      "proposedEndCoverage": "Foreslått sluttdag",
+      "proposedInterval": "Foreslåtte timer",
+      "proposedStartCoverage": "Foreslått startdag",
+      "range": "{range}",
+      "reason": "Begrunnelse",
+      "reasonValue": "{reason}",
+      "title": "Fraværsendring"
+    },
     "absenceRejected": "Fraværsforespørsel avvist",
     "absenceRequests": "Fraværsforespørsler",
     "absenceRequestsDescription": "Gå gjennom og godkjenn fraværsforespørsler fra teammedlemmene dine",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} venter",
     "type": "Type",
     "types": {
+      "absence_change_request": "Fraværsendringer",
       "absence_entry": "Fraværsforespørsler",
       "period_submission": "Periodeinnsendinger",
       "time_entry": "Tidskorrigeringer",

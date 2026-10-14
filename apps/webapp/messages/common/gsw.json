@@ -661,6 +661,30 @@
       "viewInZ8": "In Z8 aaluege"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Stornierigsaatrag für {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Aatrag uf Abwäseheitsänderig gnähmigt"
+      },
+      "absenceChangeExpired": {
+        "title": "Aatrag uf Abwäseheitsänderig abgloffe"
+      },
+      "absenceChange": {
+        "message": "Erfassti Date: {original}. Vorgschlageni Date: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Aatrag uf Abwäseheitsänderig hinfällig"
+      },
+      "absenceChangePending": {
+        "title": "Abwäseheitsänderig wartet uf Gnähmigung"
+      },
+      "absenceChangeRejected": {
+        "title": "Aatrag uf Abwäseheitsänderig abglehnt"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Aatrag uf Abwäseheitsänderig zruggzoge"
+      },
       "absenceDeputyAssigned": {
         "message": "Du vertrittst {name} ({dateRange}).",
         "title": "Du bist Abwesenheitsstellvertretung"

@@ -1,6 +1,28 @@
 {
   "approvals": {
     "absenceApproved": "Wniosek o nieobecność zatwierdzony",
+    "absenceChange": {
+      "afternoon": "Popołudnie",
+      "cancelAll": "Anuluj całą nieobecność",
+      "cancellationTitle": "Anulowanie nieobecności",
+      "category": "Kategoria nieobecności",
+      "displacedVacation": "Daty urlopu zostaną zastąpione po zatwierdzeniu",
+      "exactHours": "Dokładne zarejestrowane godziny",
+      "fullDay": "Cały dzień",
+      "morning": "Przedpołudnie",
+      "original": "Zarejestrowane daty",
+      "originalEndCoverage": "Zarejestrowany dzień zakończenia",
+      "originalInterval": "Zarejestrowane godziny",
+      "originalStartCoverage": "Zarejestrowany dzień rozpoczęcia",
+      "proposed": "Proponowana zmiana",
+      "proposedEndCoverage": "Proponowany dzień zakończenia",
+      "proposedInterval": "Proponowane godziny",
+      "proposedStartCoverage": "Proponowany dzień rozpoczęcia",
+      "range": "{range}",
+      "reason": "Powód",
+      "reasonValue": "{reason}",
+      "title": "Zmiana nieobecności"
+    },
     "absenceRejected": "Wniosek o nieobecność odrzucony",
     "absenceRequests": "Wnioski o urlop",
     "absenceRequestsDescription": "Przeglądaj i zatwierdzaj wnioski urlopowe członków swojego zespołu",
@@ -415,6 +437,7 @@
     "totalCount": "{totalCount} oczekujących",
     "type": "Typ",
     "types": {
+      "absence_change_request": "Zmiany nieobecności",
       "absence_entry": "Wnioski o nieobecność",
       "period_submission": "Zgłoszenia okresów",
       "time_entry": "Korekty czasu pracy",

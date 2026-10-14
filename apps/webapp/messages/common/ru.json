@@ -661,6 +661,30 @@
       "viewInZ8": "Просмотреть в Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Запрос на отмену для {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Запрос на изменение отсутствия согласован"
+      },
+      "absenceChangeExpired": {
+        "title": "Срок действия запроса на изменение отсутствия истек"
+      },
+      "absenceChange": {
+        "message": "Зафиксированные даты: {original}. Предложенные даты: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Запрос на изменение отсутствия устарел"
+      },
+      "absenceChangePending": {
+        "title": "Изменение отсутствия ожидает согласования"
+      },
+      "absenceChangeRejected": {
+        "title": "Запрос на изменение отсутствия отклонен"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Запрос на изменение отсутствия отозван"
+      },
       "absenceDeputyAssigned": {
         "message": "Вы замещаете {name} ({dateRange}).",
         "title": "Вы назначены заместителем на время отсутствия"

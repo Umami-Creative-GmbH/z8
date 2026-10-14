@@ -661,6 +661,30 @@
       "viewInZ8": "View in Z8"
     },
     "content": {
+      "absenceCancellation": {
+        "message": "Cancellation request for {original}. {decision}"
+      },
+      "absenceChangeApproved": {
+        "title": "Absence change request approved"
+      },
+      "absenceChangeExpired": {
+        "title": "Absence change request expired"
+      },
+      "absenceChange": {
+        "message": "Recorded dates: {original}. Proposed dates: {proposed}. {decision}"
+      },
+      "absenceChangeObsolete": {
+        "title": "Absence change request obsolete"
+      },
+      "absenceChangePending": {
+        "title": "Absence change awaiting approval"
+      },
+      "absenceChangeRejected": {
+        "title": "Absence change request rejected"
+      },
+      "absenceChangeWithdrawn": {
+        "title": "Absence change request withdrawn"
+      },
       "absenceDeputyAssigned": {
         "message": "You're covering for {name} ({dateRange}).",
         "title": "You're an absence deputy"
