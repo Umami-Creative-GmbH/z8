@@ -26,7 +26,7 @@ import { deleteSickNotesOfCancelledAbsence } from "@/lib/personnel-file/sick-not
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { loadCanonicalCoverage, validateAbsenceProposal } from "./change-request-proposal";
+import { coverageDays, loadCanonicalCoverage, validateAbsenceProposal } from "./change-request-proposal";
 import { AbsenceChangeError } from "./change-request-types";
 import type { AbsenceDeputyEvent } from "./deputy-notifications";
 import type { VacationOverrideSummary } from "./sick-vacation-override";
@@ -178,7 +178,7 @@ export async function applyAbsenceChange(
 		organizationId: row.organizationId,
 		employeeId: row.employeeId,
 		causedByUserId: actorUserId,
-		days: [row.original, ...(row.proposed ? [row.proposed] : [])],
+		days: [coverageDays(row.original), ...(row.proposed ? [coverageDays(row.proposed)] : [])],
 	});
 	const deputyEvents: AbsenceDeputyEvent[] = [
 		{

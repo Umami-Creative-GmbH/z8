@@ -24,12 +24,12 @@ import { loadVacationBalances } from "./vacation-balance-store";
 vi.mock("@/lib/notifications/notification-service", () => ({
 	createNotification: vi.fn(async () => null),
 }));
-vi.mock("@/lib/approvals/delivery/kick", () => ({
-	kickApprovalDelivery: vi.fn(),
-}));
-vi.mock("@/lib/queue", () => ({
-	addCalendarSyncJob: vi.fn(async () => undefined),
-}));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(),
+);
+vi.mock("@/lib/queue", async (original) =>
+	(await import("@/test/integration-harness")).calendarSyncQueue(original),
+);
 vi.mock("./deputy-notifier", () => ({
 	notifyAbsenceDeputies: vi.fn(async () => undefined),
 }));
@@ -537,6 +537,15 @@ describe("employee absence change requests", () => {
 	])(
 		"preserves exact $start–$end coverage when moving a recorded partial absence",
 		async ({ start, end, endDay, movedEndDay, minutes }) => {
+			const followingDaySubmissionId = randomUUID();
+			await fixture.pool.query(
+				"insert into period_submission_cadence_change (organization_id, cadence, changed_at) values ($1, 'monthly', '2026-10-01T00:00:00Z')",
+				[organizationId],
+			);
+			await fixture.pool.query(
+				"insert into period_submission (id, organization_id, employee_id, cadence, timezone, start_date, end_date, cadence_start_date, cadence_end_date, range_start, range_end, status, submitted_by, submitted_at, decided_at) values ($1, $2, $3, 'monthly', 'Europe/Berlin', '2026-10-07', '2026-10-07', '2026-10-01', '2026-10-31', '2026-10-06T22:00:00Z', '2026-10-07T22:00:00Z', 'approved', $4, '2026-10-08T00:00:00Z', '2026-10-09T00:00:00Z')",
+				[followingDaySubmissionId, organizationId, employee.employeeId, employee.userId],
+			);
 			const recordId = randomUUID();
 			await fixture.pool.query(
 				"insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at, duration_minutes, approval_state, origin, updated_at, created_by, updated_by) values ($1, $2, $3, 'absence', $4, $5, $6, 'approved', 'manual', now(), $7, $7)",
@@ -602,6 +611,11 @@ describe("employee absence change requests", () => {
 					duration_minutes: minutes,
 				},
 			]);
+			expect(
+				(await fixture.pool.query("select status from period_submission where id = $1", [
+					followingDaySubmissionId,
+				])).rows,
+			).toEqual([{ status: minutes === 360 ? "outdated" : "approved" }]);
 		},
 	);
 
