@@ -1,4 +1,5 @@
 import {
+	assertUniquePersonnelIdentifiers,
 	CUSTOM_FIELD_IDENTIFIER,
 	type PayrollIdentityRow,
 	type PersonnelNumberType,
@@ -45,6 +46,17 @@ export function germanPersonnelNumber(
 		return line.employeeNumber;
 	}
 	return line.employeeId;
+}
+
+/**
+ * The German formats group lines by personnel number (#1198): two employees
+ * under one number would be merged into one line, so the file is refused.
+ */
+export function refuseSharedGermanPersonnelNumbers(
+	rows: readonly PayrollIdentityRow[],
+	config: { personnelNumberType: PersonnelNumberType },
+): void {
+	assertUniquePersonnelIdentifiers(rows, (row) => germanPersonnelNumber(row, config));
 }
 
 /** "123.40" as "123,40": the stored amount is never parsed into a float. */

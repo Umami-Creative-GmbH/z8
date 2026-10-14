@@ -9,13 +9,19 @@ import {
 import { PayrollWorkCollectionBlockedError } from "@/lib/payroll-collection/payroll-work-collection-blocked-error";
 import { PayrollOffboardingRepairBlockedError } from "@/lib/payroll-export/offboarding-repair-guard";
 import {
+	describePersonnelIdentifierClashes,
 	PayrollIdentifierChangedError,
+	PayrollIdentifierDuplicateError,
 	PayrollIdentifierMissingError,
 } from "@/lib/payroll-export/personnel-identifier";
 import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
 
-export type PayrollErrorTranslator = (key: string, fallback: string) => string;
+export type PayrollErrorTranslator = (
+	key: string,
+	fallback: string,
+	params?: Record<string, string>,
+) => string;
 
 export function mapPayrollWorkspaceActionError(
 	error: unknown,
@@ -63,6 +69,24 @@ export function mapPayrollWorkspaceActionError(
 				organizationId: error.organizationId,
 				affectedEmployeeCount: error.employeeIds.length,
 				employeeIds: error.employeeIds,
+			},
+		});
+	}
+
+	if (error instanceof PayrollIdentifierDuplicateError) {
+		// The employees are in the requester's export scope: the refusal names them.
+		return new ConflictError({
+			message: t(
+				"payroll.errors.exportBlockedByDuplicateIdentifier",
+				"Export blocked: several employees share a personnel identifier. Give each employee their own: {employees}",
+				{ employees: describePersonnelIdentifierClashes(error.clashes) },
+			),
+			conflictType: "payroll_identifier_duplicate",
+			details: {
+				organizationId: error.organizationId,
+				clashes: error.clashes.map((clash) =>
+					clash.employees.map(({ employeeId, identifier }) => ({ employeeId, identifier })),
+				),
 			},
 		});
 	}

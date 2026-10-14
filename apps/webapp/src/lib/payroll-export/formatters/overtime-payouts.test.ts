@@ -92,7 +92,13 @@ describe("DATEV Lohn overtime payouts", () => {
 			DATEV,
 			[
 				payout(),
-				payout({ id: "payout-2", employeeId: "employee-2", day: "2026-09-20", minutes: 90 }),
+				payout({
+					id: "payout-2",
+					employeeId: "employee-2",
+					employeeNumber: "P-2",
+					day: "2026-09-20",
+					minutes: 90,
+				}),
 			],
 		);
 

@@ -9,6 +9,8 @@
  * never filled in from the employee number or ID.
  */
 
+import { personnelNumberKey } from "@/lib/organization/personnel-number";
+
 /** The identifier option that names a custom field. */
 export const CUSTOM_FIELD_IDENTIFIER = "customField";
 
@@ -126,4 +128,93 @@ export function employeesWithoutIdentifier(
 	return [
 		...new Set(rows.map((row) => row.employeeId).filter((id) => values[id] === undefined)),
 	].toSorted();
+}
+
+/** An employee and the personnel identifier an export writes for them. */
+export interface PersonnelIdentifierHolder {
+	employeeId: string;
+	identifier: string;
+	/** The employee's name, when the refusal has been resolved for display. */
+	name?: string | null;
+}
+
+/** Two or more employees an export would write under one personnel identifier. */
+export interface PersonnelIdentifierClash {
+	/** Sorted by employee ID; each employee once, with the identifier of their first row. */
+	employees: PersonnelIdentifierHolder[];
+}
+
+/**
+ * The employees of the rows that share a personnel identifier (#1198), under
+ * the personnel number comparison rule (#881): trimmed, case ignored, leading
+ * zeros kept. `identifierOf` returns what the export writes for a row, so a
+ * fallback to the employee ID is compared too. One employee on several rows is
+ * no clash; rows without an identifier are skipped. Clashes are sorted by key.
+ *
+ * Shared by every export target before it writes a file or calls a connector,
+ * and by payroll readiness.
+ */
+export function findDuplicatePersonnelIdentifiers<T extends { employeeId: string }>(
+	rows: readonly T[],
+	identifierOf: (row: T) => string | null,
+): PersonnelIdentifierClash[] {
+	const holdersByKey = new Map<string, Map<string, string>>();
+	for (const row of rows) {
+		const identifier = identifierOf(row);
+		const key = personnelNumberKey(identifier);
+		if (identifier === null || key === null) continue;
+		const holders = holdersByKey.get(key) ?? new Map<string, string>();
+		if (!holders.has(row.employeeId)) holders.set(row.employeeId, identifier);
+		holdersByKey.set(key, holders);
+	}
+	return [...holdersByKey]
+		.filter(([, holders]) => holders.size > 1)
+		.toSorted(([left], [right]) => left.localeCompare(right))
+		.map(([, holders]) => ({
+			employees: [...holders]
+				.map(([employeeId, identifier]) => ({ employeeId, identifier }))
+				.toSorted((left, right) => left.employeeId.localeCompare(right.employeeId)),
+		}));
+}
+
+/**
+ * The clashes as one line, e.g. `Anna Muster (E-42), Ben Beispiel (e-42)`,
+ * clashes separated by `; `. Employees without a resolved name show their ID.
+ */
+export function describePersonnelIdentifierClashes(
+	clashes: readonly PersonnelIdentifierClash[],
+): string {
+	return clashes
+		.map((clash) =>
+			clash.employees
+				.map((holder) => `${holder.name?.trim() || holder.employeeId} (${holder.identifier})`)
+				.join(", "),
+		)
+		.join("; ");
+}
+
+/**
+ * Two or more employees in the export would be written under one personnel
+ * identifier, so the payroll system would merge them (#1198). The export is
+ * refused and no file is written; the message names the employees.
+ */
+export class PayrollIdentifierDuplicateError extends Error {
+	constructor(
+		readonly clashes: readonly PersonnelIdentifierClash[],
+		readonly organizationId: string | null = null,
+	) {
+		super(
+			`Payroll export blocked: employees share a personnel identifier: ${describePersonnelIdentifierClashes(clashes)}`,
+		);
+		this.name = "PayrollIdentifierDuplicateError";
+	}
+}
+
+/** Refuses the rows when two employees share the identifier `identifierOf` writes. */
+export function assertUniquePersonnelIdentifiers<T extends { employeeId: string }>(
+	rows: readonly T[],
+	identifierOf: (row: T) => string | null,
+): void {
+	const clashes = findDuplicatePersonnelIdentifiers(rows, identifierOf);
+	if (clashes.length > 0) throw new PayrollIdentifierDuplicateError(clashes);
 }
