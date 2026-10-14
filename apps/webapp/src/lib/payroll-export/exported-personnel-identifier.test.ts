@@ -6,6 +6,8 @@
 
 import { describe, expect, it } from "vitest";
 import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
+import type { PayrollExportFormatId } from "./format-registry";
+import { findDuplicatePersonnelIdentifiers } from "./personnel-identifier";
 
 const anna = {
 	employeeId: "employee-anna",
@@ -20,7 +22,7 @@ const withoutValues = {
 	personnelIdentifier: null,
 };
 
-function ruleOf(formatId: string, config: unknown) {
+function ruleOf(formatId: PayrollExportFormatId, config: unknown) {
 	const rule = exportedPersonnelIdentifier(formatId, config);
 	if (!rule) throw new Error(`no identifier rule for ${formatId}`);
 	return rule;
@@ -67,7 +69,56 @@ describe("exportedPersonnelIdentifier for Workday", () => {
 	});
 });
 
-describe.each(["successfactors_api", "successfactors_csv"])(
+describe.each(["datev_lohn", "lexware_lohn", "sage_lohn"] as const)(
+	"exportedPersonnelIdentifier for %s",
+	(formatId) => {
+		it("writes the employee number, falling back to the employee ID", () => {
+			const byNumber = ruleOf(formatId, { personnelNumberType: "employeeNumber" });
+
+			expect(byNumber(anna)).toBe("E-42");
+			expect(byNumber(withoutValues)).toBe("employee-ben");
+		});
+
+		it("writes the employee ID when configured so", () => {
+			expect(ruleOf(formatId, { personnelNumberType: "employeeId" })(anna)).toBe("employee-anna");
+		});
+
+		it("writes the custom field value, leaving a missing one to the missing-value check", () => {
+			const byField = ruleOf(formatId, {
+				personnelNumberType: "customField",
+				personnelNumberCustomFieldId: "field-1",
+			});
+
+			expect(byField(anna)).toBe("LG-7");
+			expect(byField(withoutValues)).toBeNull();
+		});
+
+		// The export service compares every row a file carries: work, absences,
+		// overtime payouts and expense lines alike.
+		it("finds an employee number that equals the ID another employee falls back to", () => {
+			const rows = [
+				{ ...withoutValues, employeeId: "employee-ben" },
+				{ ...anna, employeeNumber: " EMPLOYEE-BEN" },
+			];
+
+			expect(
+				findDuplicatePersonnelIdentifiers(
+					rows,
+					ruleOf(formatId, { personnelNumberType: "employeeNumber" }),
+				),
+			).toEqual([
+				{
+					employees: [
+						{ employeeId: "employee-anna", identifier: " EMPLOYEE-BEN" },
+						{ employeeId: "employee-ben", identifier: "employee-ben" },
+					],
+				},
+			]);
+		});
+	},
+);
+
+describe.each(["successfactors_api", "successfactors_csv"] as const)(
 	"exportedPersonnelIdentifier for %s",
 	(formatId) => {
 		it("matches the user ID by employee number, falling back to the employee ID", () => {

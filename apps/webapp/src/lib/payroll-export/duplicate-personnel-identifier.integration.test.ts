@@ -247,6 +247,15 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 		]);
 	}
 
+	/** An overtime payout (#1001) on the day: a payroll file carries it without any work. */
+	async function overtimePayout(employeeId: string, day: string) {
+		await admin.query(
+			`insert into balance_adjustment (organization_id, employee_id, kind, day, minutes, reason, recorded_by)
+			 values ($1, $2, 'overtime_payout', $3, -120, 'Paid out with the payroll', $4)`,
+			[ORG, employeeId, day, ids.ownerUser],
+		);
+	}
+
 	beforeEach(async () => {
 		harness.personioAttendances.length = 0;
 		vi.restoreAllMocks();
@@ -329,6 +338,44 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 			expect(job).toEqual({ status: "failed", file_name: null });
 		},
 	);
+
+	it("refuses a clash carried only by an overtime payout, before the formatter runs", async () => {
+		await configure("datev_lohn", { ...DATEV, personnelNumberType: "employeeNumber" });
+		await numberClash();
+		await approvedWork(ids.worker, "2026-07-10");
+		await overtimePayout(ids.peer, "2026-07-20");
+
+		const { outcome, job } = await exportJuly("datev_lohn");
+
+		expect(clashingEmployees(outcome)).toEqual([
+			[
+				[ids.worker, "Anna Worker"],
+				[ids.peer, "Ben Peer"],
+			],
+		]);
+		expect(job).toEqual({ status: "failed", file_name: null });
+	});
+
+	it("names the employees as everywhere else in the app: structured name first, then email", async () => {
+		await admin.query(
+			`update "user" set first_name = 'Annika', last_name = 'Werner' where id = $1`,
+			[ids.workerUser],
+		);
+		await admin.query(`update "user" set name = '' where id = $1`, [ids.peerUser]);
+		await configure("datev_lohn", { ...DATEV, personnelNumberType: "employeeNumber" });
+		await numberClash();
+		await approvedWork(ids.worker, "2026-07-10");
+		await approvedWork(ids.peer, "2026-07-11");
+
+		const { outcome } = await exportJuly("datev_lohn");
+
+		expect(clashingEmployees(outcome)).toEqual([
+			[
+				[ids.worker, "Annika Werner"],
+				[ids.peer, "ben@t1198.test"],
+			],
+		]);
+	});
 
 	it("refuses the same clash without scoped collection", async () => {
 		await admin.query("delete from payroll_work_collection_control where organization_id = $1", [
@@ -533,6 +580,36 @@ describe("duplicate personnel identifiers in payroll file exports on PostgreSQL"
 				ids.worker,
 				ids.peer,
 			]);
+		});
+
+		it("lists a clash with an employee who has only an overtime payout as a blocker", async () => {
+			await configure("datev_lohn", { ...DATEV, personnelNumberType: "employeeNumber" });
+			await numberClash();
+			await approvedWork(ids.worker, "2026-07-10");
+			await overtimePayout(ids.peer, "2026-07-20");
+
+			const check = duplicateCheck(await readinessOfJuly());
+
+			expect(check?.status).toBe("fail");
+			expect(check?.affectedEmployees.map((employee) => employee.id)).toEqual([
+				ids.worker,
+				ids.peer,
+			]);
+		});
+
+		it("ignores an overtime payout for a format that does not carry payouts", async () => {
+			await configure("personio", {
+				employeeMatchStrategy: "customField",
+				employeeMatchCustomFieldId: ids.payrollId,
+			});
+			await textValue(ids.worker, "LG-7");
+			await textValue(ids.peer, "LG-7");
+			await approvedWork(ids.worker, "2026-07-10");
+			await overtimePayout(ids.peer, "2026-07-20");
+
+			const check = duplicateCheck(await readinessOfJuly());
+
+			expect(check).toMatchObject({ status: "pass", count: 0 });
 		});
 
 		it("lists two employees one Workday worker would match as a blocker", async () => {

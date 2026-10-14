@@ -211,12 +211,3 @@ export class PayrollIdentifierDuplicateError extends Error {
 		this.name = "PayrollIdentifierDuplicateError";
 	}
 }
-
-/** Refuses the rows when two employees share the identifier `identifierOf` writes. */
-export function assertUniquePersonnelIdentifiers<T extends { employeeId: string }>(
-	rows: readonly T[],
-	identifierOf: (row: T) => string | null,
-): void {
-	const clashes = findDuplicatePersonnelIdentifiers(rows, identifierOf);
-	if (clashes.length > 0) throw new PayrollIdentifierDuplicateError(clashes);
-}

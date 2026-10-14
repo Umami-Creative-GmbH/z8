@@ -26,7 +26,6 @@ import {
 	commaDecimalAmount,
 	expenseLinesInFileOrder,
 	germanPersonnelNumber,
-	refuseSharedGermanPersonnelNumbers,
 } from "./expense-lines";
 import {
 	addOvertimePayoutHours,
@@ -83,10 +82,6 @@ export class LexwareLohnFormatter implements IPayrollExportFormatter {
 		);
 
 		const lexwareConfig = config as unknown as LexwareLohnConfig;
-		refuseSharedGermanPersonnelNumbers(
-			[...workPeriods, ...absences, ...expenseLines, ...overtimePayouts],
-			lexwareConfig,
-		);
 
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();

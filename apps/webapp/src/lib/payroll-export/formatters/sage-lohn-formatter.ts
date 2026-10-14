@@ -28,7 +28,6 @@ import {
 	expenseLinesInFileOrder,
 	GERMAN_EXPENSE_LINE_NOTE,
 	germanPersonnelNumber,
-	refuseSharedGermanPersonnelNumbers,
 } from "./expense-lines";
 import {
 	addOvertimePayoutHours,
@@ -95,10 +94,6 @@ export class SageLohnFormatter implements IPayrollExportFormatter {
 		);
 
 		const sageConfig = config as unknown as SageLohnConfig;
-		refuseSharedGermanPersonnelNumbers(
-			[...workPeriods, ...absences, ...expenseLines, ...overtimePayouts],
-			sageConfig,
-		);
 
 		// Build mapping lookups
 		const workCategoryMappings = new Map<string, WageTypeMapping>();

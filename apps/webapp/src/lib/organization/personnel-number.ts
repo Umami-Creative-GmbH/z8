@@ -35,6 +35,16 @@ export function normalizePersonnelNumber(value: string | null | undefined): stri
 /**
  * The key two personnel numbers are compared by, or `null` for no number.
  * Numbers with the same key are the same personnel number.
+ *
+ * The unique index and the SQL lookups lowercase with PostgreSQL's `lower()`,
+ * which follows the database collation; this uses JavaScript's Unicode
+ * lowercasing. Both agree for ASCII, but can differ for some other characters
+ * (Greek final sigma, or anything non-ASCII under the `C` collation, where
+ * `lower()` changes only A-Z). Then JavaScript may call two numbers equal that
+ * the index allowed, and the payroll export guard refuses them conservatively.
+ * Under the `C` and English/ICU-root collations it never goes the other way:
+ * what the index treats as one number, this key does too. (A Turkish database
+ * collation would, as its `lower('I')` is the dotless `ı`.)
  */
 export function personnelNumberKey(value: string | null | undefined): string | null {
 	const normalized = normalizePersonnelNumber(value);

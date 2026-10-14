@@ -13,12 +13,14 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { db as database } from "@/db";
 import { user } from "@/db/auth-schema";
 import { customFieldDefinition, employee, payrollExportConfig } from "@/db/schema";
-import type { PlainDate } from "@/lib/datetime/temporal-core";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { isUuid } from "@/lib/billable-time/input";
+import type { PlainDate } from "@/lib/datetime/temporal-core";
 import type { CustomFieldReader } from "@/lib/organization/custom-fields/definitions";
 import { lockCustomFieldDefinitions } from "@/lib/organization/custom-fields/lock";
 import { readCustomFieldValues } from "@/lib/organization/custom-fields/values";
 import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
+import { isPayrollExportFormatId } from "./format-registry";
 import {
 	CUSTOM_FIELD_IDENTIFIER,
 	EMPLOYEE_MATCH_CUSTOM_FIELD_KEY,
@@ -190,22 +192,29 @@ async function readIdentityEmployees(
 	const unique = [...new Set(employeeIds)];
 	const employees: IdentityEmployee[] = [];
 	for (let index = 0; index < unique.length; index += ID_CHUNK) {
+		const rows = await reader
+			.select({
+				employeeId: employee.id,
+				employeeNumber: employee.employeeNumber,
+				email: user.email,
+				name: user.name,
+				firstName: user.firstName,
+				lastName: user.lastName,
+			})
+			.from(employee)
+			.innerJoin(user, eq(user.id, employee.userId))
+			.where(
+				and(
+					eq(employee.organizationId, organizationId),
+					inArray(employee.id, unique.slice(index, index + ID_CHUNK)),
+				),
+			);
 		employees.push(
-			...(await reader
-				.select({
-					employeeId: employee.id,
-					employeeNumber: employee.employeeNumber,
-					email: user.email,
-					name: user.name,
-				})
-				.from(employee)
-				.innerJoin(user, eq(user.id, employee.userId))
-				.where(
-					and(
-						eq(employee.organizationId, organizationId),
-						inArray(employee.id, unique.slice(index, index + ID_CHUNK)),
-					),
-				)),
+			...rows.map(({ firstName, lastName, name, ...row }) => ({
+				...row,
+				// The display name the employee holder lookups use (#881).
+				name: buildAuthUserDisplayName({ firstName, lastName, name, email: row.email }) || null,
+			})),
 		);
 	}
 	return employees;
@@ -270,7 +279,9 @@ export async function findPersonnelIdentifierClashes(
 	},
 ): Promise<PersonnelIdentifierClash[]> {
 	const rules = input.configs.flatMap(({ formatId, config }) => {
-		const identifierOf = exportedPersonnelIdentifier(formatId, config);
+		const identifierOf = isPayrollExportFormatId(formatId)
+			? exportedPersonnelIdentifier(formatId, config)
+			: null;
 		return identifierOf
 			? [{ identifierOf, customFieldId: payrollIdentifierCustomFieldId(config) }]
 			: [];

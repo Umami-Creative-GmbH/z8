@@ -60,7 +60,7 @@
       "employeeIdsMustContainOnlyStrings": "employeeIds darf nur Strings enthalten",
       "endDateAfterStart": "Das Enddatum muss nach oder am Startdatum liegen",
       "exportBlockedByDuplicateIdentifier": "Export blockiert: Mehrere Mitarbeiter haben dieselbe Personalnummer in der Abrechnung. Geben Sie jedem Mitarbeiter eine eigene: {employees}",
-      "exportBlockedByMissingIdentifier":"Export blockiert: Einige Mitarbeiter haben keinen Wert für das benutzerdefinierte Feld, das als Abrechnungskennung verwendet wird",
+      "exportBlockedByMissingIdentifier": "Export blockiert: Einige Mitarbeiter haben keinen Wert für das benutzerdefinierte Feld, das als Abrechnungskennung verwendet wird",
       "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigieren Sie zuerst das Offboarding-Ausstempeln",
       "exportBlockedByUncertainWork": "Export blockiert: Klären Sie zuerst die unklaren Arbeitszeiten im ausgewählten Zeitraum",
       "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Klären Sie zuerst die zu überprüfenden Arbeitsminuten",

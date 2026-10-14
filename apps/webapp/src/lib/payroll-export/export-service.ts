@@ -26,7 +26,6 @@ import {
 } from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
 import {
-	classifyPayrollRunCandidates,
 	countIncludedReportsByRun,
 	exportIsPayrollRun,
 	includeReportsInPayrollRun,
@@ -52,11 +51,16 @@ import { isExpensePayrollFormat } from "./expense-wage-type.types";
 import { exportedPersonnelIdentifier } from "./exported-personnel-identifier";
 import { successFactorsFormatter } from "./exporters/successfactors/successfactors-formatter";
 import { workdayConnector } from "./exporters/workday/workday-connector";
-import type { PayrollExportApiFormatId, PayrollExportFileFormatId } from "./format-registry";
+import {
+	isPayrollExportFormatId,
+	type PayrollExportApiFormatId,
+	type PayrollExportFileFormatId,
+} from "./format-registry";
 import { DatevLohnFormatter } from "./formatters/datev-lohn-formatter";
 import { LexwareLohnFormatter } from "./formatters/lexware-lohn-formatter";
 import { overtimePayoutCodeFormat, overtimePayoutsForFormat } from "./formatters/overtime-payouts";
 import { SageLohnFormatter } from "./formatters/sage-lohn-formatter";
+import { employeesWithPayoutsOrExpenseLines, logicalPeriod } from "./payout-and-expense-employees";
 import {
 	employeesWithoutIdentifier,
 	PayrollIdentifierChangedError,
@@ -550,7 +554,9 @@ async function refuseDuplicatePersonnelIdentifiersOfFormat(
 		rows: readonly PayrollIdentityRow[];
 	},
 ): Promise<void> {
-	const identifierOf = exportedPersonnelIdentifier(input.formatId, input.config);
+	const identifierOf = isPayrollExportFormatId(input.formatId)
+		? exportedPersonnelIdentifier(input.formatId, input.config)
+		: null;
 	if (!identifierOf) return;
 	await refuseDuplicatePersonnelIdentifiers(database, {
 		organizationId: input.organizationId,
@@ -694,39 +700,10 @@ async function employeesWithNonWorkRows(input: {
 		canonicalReadiness: input.scopedCollection ? "absences" : "cutover",
 	});
 	const employeeIds = new Set(absences.map((absence) => absence.employeeId));
-	if (overtimePayoutCodeFormat(input.formatId)) {
-		const payouts = await fetchOvertimePayoutsForExport(input.organizationId, input.filters);
-		for (const payout of payouts) employeeIds.add(payout.employeeId);
-	}
-	if (
-		formatters.has(input.formatId) &&
-		(await exportIsPayrollRun(db, {
-			organizationId: input.organizationId,
-			formatId: input.formatId,
-		}))
-	) {
-		const candidates = await classifyPayrollRunCandidates(db, {
-			organizationId: input.organizationId,
-			format: input.formatId,
-			period: logicalPeriod(input.filters),
-			employeeIds: await resolvePayrollRunEmployeeIds(input.organizationId, input.filters),
-		});
-		for (const candidate of candidates) {
-			if (candidate.classification.outcome === "include") {
-				employeeIds.add(candidate.account.employeeId);
-			}
-		}
+	for (const employeeId of await employeesWithPayoutsOrExpenseLines(input)) {
+		employeeIds.add(employeeId);
 	}
 	return [...employeeIds].toSorted();
-}
-
-function logicalPeriod(filters: PayrollExportFilters): { startDate: string; endDate: string } {
-	const startDate = filters.dateRange.start.toISODate();
-	const endDate = filters.dateRange.end.toISODate();
-	if (!startDate || !endDate) {
-		throw new Error("Invalid payroll export date range");
-	}
-	return { startDate, endDate };
 }
 
 /**

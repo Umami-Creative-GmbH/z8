@@ -333,8 +333,8 @@
       "affectedEmployees": {
         "name": "Mitarbeiter",
         "noNumber": "Nicht festgelegt",
-        "number": "Personalnummer",
-        "personnelIdentifier": "Abrechnungskennung"
+        "personnelIdentifier": "Personalkennung",
+        "personnelNumber": "Personalnummer"
       },
       "checks": {
         "count": "Anzahl",

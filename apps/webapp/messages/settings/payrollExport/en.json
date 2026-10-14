@@ -333,8 +333,8 @@
       "affectedEmployees": {
         "name": "Employee",
         "noNumber": "Not set",
-        "number": "Employee number",
-        "personnelIdentifier": "Payroll identifier"
+        "personnelIdentifier": "Personnel identifier",
+        "personnelNumber": "Personnel number"
       },
       "checks": {
         "count": "Count",

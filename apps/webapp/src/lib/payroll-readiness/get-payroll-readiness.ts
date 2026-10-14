@@ -17,8 +17,11 @@ import {
 } from "@/db/schema";
 import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
+import { createLogger } from "@/lib/logger";
 import { loadPeriodSubmissionGaps } from "@/lib/time-tracking/period-submissions/submission-gaps-store";
 import { loadPersonnelIdentifierClashes } from "./personnel-identifier-clashes";
+
+const logger = createLogger("PayrollReadiness");
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
 export type PayrollReadinessSeverity = "info" | "warning" | "blocker";
@@ -376,10 +379,17 @@ export async function getPayrollReadiness(
 			organizationId,
 			configs: exportConfigs,
 			period: { start: start.toJSDate(), end: end.toJSDate() },
+			from: parsePlainDate(selectedStartDate),
 			asOf: parsePlainDate(selectedEndDate),
 		}).then(
 			(clashes) => ({ available: true as const, clashes }),
-			() => ({ available: false as const, clashes: [] }),
+			(error: unknown) => {
+				logger.error(
+					{ organizationId, error },
+					"Payroll readiness could not check for shared personnel identifiers",
+				);
+				return { available: false as const, clashes: [] };
+			},
 		),
 	]);
 

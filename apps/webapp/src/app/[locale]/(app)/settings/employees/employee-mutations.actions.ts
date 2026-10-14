@@ -25,6 +25,7 @@ import {
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import {
 	assertPersonnelNumberFree,
 	findPersonnelNumberHolder,
@@ -341,11 +342,13 @@ export async function updateEmployeeAction(
 						// A concurrent save that took the number first hits the unique index.
 						keepPersonnelNumberRefusal(() =>
 							personnelNumber === null
-								? Promise.resolve(null)
-								: findPersonnelNumberHolder(dbService.db, {
-										...personnelNumberScope,
-										personnelNumber,
-									}),
+								? Effect.succeed(null)
+								: dbService.query("updateEmployee:personnelNumberHolder", () =>
+										findPersonnelNumberHolder(dbService.db, {
+											...personnelNumberScope,
+											personnelNumber,
+										}),
+									),
 						),
 					);
 
@@ -543,6 +546,7 @@ export async function updateEmployeeInvitationDraftAction(
 								.select({
 									id: employeeInvitationDraft.id,
 									invitationId: employeeInvitationDraft.invitationId,
+									employeeNumber: employeeInvitationDraft.employeeNumber,
 								})
 								.from(employeeInvitationDraft)
 								.where(
@@ -597,7 +601,13 @@ export async function updateEmployeeInvitationDraftAction(
 
 							if (!eligibleDraft) return [];
 
-							if (draftPersonnelNumber !== null) {
+							// Like an employee, a draft saved with its unchanged number keeps it; a
+							// clash is dropped and audited when the invitation is accepted.
+							if (
+								draftPersonnelNumber !== null &&
+								personnelNumberKey(draftPersonnelNumber) !==
+									personnelNumberKey(lockedDraft.employeeNumber)
+							) {
 								await assertDraftPersonnelNumberFree(
 									tx,
 									draftPersonnelNumberScope(draftPersonnelNumber),
@@ -644,12 +654,16 @@ export async function updateEmployeeInvitationDraftAction(
 						{ isolationLevel: "serializable" },
 					);
 				}).pipe(
+					// Serializable: a concurrent draft save of the same number rolls one back (40001),
+					// which is refused like a taken number once the other holds it.
 					keepPersonnelNumberRefusal(() =>
 						draftPersonnelNumber === null
-							? Promise.resolve(null)
-							: findDraftPersonnelNumberHolder(
-									actor.dbService.db,
-									draftPersonnelNumberScope(draftPersonnelNumber),
+							? Effect.succeed(null)
+							: actor.dbService.query("updateEmployeeInvitationDraft:personnelNumberHolder", () =>
+									findDraftPersonnelNumberHolder(
+										actor.dbService.db,
+										draftPersonnelNumberScope(draftPersonnelNumber),
+									),
 								),
 					),
 				);
