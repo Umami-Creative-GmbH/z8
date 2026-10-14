@@ -13,6 +13,12 @@ const logger = createLogger("PlatformSystemEmailTemplateRenderer");
 export interface RenderPlatformSystemEmailTemplateInput {
 	templateKey: PlatformSystemEmailTemplateKey;
 	data: Record<string, unknown>;
+	/**
+	 * Replaces the registry's English default (subject and body) when no override
+	 * applies: billing emails pass their copy in the organization's language (#1156).
+	 * An enabled override is still sent as written.
+	 */
+	renderDefault?: () => Promise<{ subject: string; html: string }>;
 }
 
 export interface RenderedPlatformSystemEmailTemplate {
@@ -30,15 +36,19 @@ export interface SkippedPlatformSystemEmailTemplate {
 export async function renderPlatformSystemEmailTemplate({
 	templateKey,
 	data,
+	renderDefault,
 }: RenderPlatformSystemEmailTemplateInput): Promise<
 	RenderedPlatformSystemEmailTemplate | SkippedPlatformSystemEmailTemplate
 > {
 	const definition = getPlatformSystemEmailTemplateDefinition(templateKey);
-	const defaultTemplate = async (): Promise<RenderedPlatformSystemEmailTemplate> => ({
-		subject: interpolateTemplate(definition.defaultSubject, data),
-		html: await definition.renderDefault(data as never),
-		usedOverride: false,
-	});
+	const defaultTemplate = async (): Promise<RenderedPlatformSystemEmailTemplate> => {
+		if (renderDefault) return { ...(await renderDefault()), usedOverride: false };
+		return {
+			subject: interpolateTemplate(definition.defaultSubject, data),
+			html: await definition.renderDefault(data as never),
+			usedOverride: false,
+		};
+	};
 
 	let override;
 	try {

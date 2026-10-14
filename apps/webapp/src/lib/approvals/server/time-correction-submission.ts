@@ -28,7 +28,6 @@ import {
 	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import {
 	deriveLegacyTimeCorrectionSubmissionKey,
 	deriveTimeCorrectionSubmissionKey,
@@ -101,8 +100,8 @@ import {
 	DatabaseService,
 	makeDatabaseService,
 } from "@/lib/effect/services/database.service";
-import { EmailService } from "@/lib/effect/services/email.service";
-import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
+import { type WorkPeriodEntryTimes, workPeriodEntryTimesOf } from "@/lib/notifications/entry-times";
+import { onTimeCorrectionPendingApproval } from "@/lib/notifications/triggers";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,
@@ -2246,18 +2245,56 @@ function submitCorrectionInTransaction(
 	});
 }
 
-async function dispatchSubmissionPostCommit(input: {
+/**
+ * The period's clock-in and clock-out as recorded and as corrected, each at the
+ * UTC offset stored on its own time entry. An endpoint without a correction
+ * entry keeps its recorded time.
+ */
+async function loadSubmissionEntryTimes(input: {
 	dbService: typeof DatabaseService.Service;
-	emailService: typeof EmailService.Service;
 	organizationId: string;
 	employeeId: string;
-	/** The submitting employee; an on-behalf editor is not emailed about their own change. */
+	period: typeof workPeriod.$inferSelect;
+	correctionEntryIds: readonly string[];
+}): Promise<{ original: WorkPeriodEntryTimes; corrected: WorkPeriodEntryTimes } | null> {
+	const { period } = input;
+	const ids = [period.clockInId, period.clockOutId, ...input.correctionEntryIds].filter(
+		(id): id is string => Boolean(id),
+	);
+	const entries = await input.dbService.db.query.timeEntry.findMany({
+		where: and(
+			eq(timeEntry.organizationId, input.organizationId),
+			eq(timeEntry.employeeId, input.employeeId),
+			inArray(timeEntry.id, ids),
+		),
+		columns: { id: true, timestamp: true, utcOffsetMinutes: true, replacesEntryId: true },
+	});
+	const original = (id: string | null) => entries.find((entry) => entry.id === id);
+	const corrected = (id: string | null) =>
+		entries.find(
+			(entry) =>
+				id !== null &&
+				entry.replacesEntryId === id &&
+				input.correctionEntryIds.includes(entry.id),
+		) ?? original(id);
+	const clockIn = original(period.clockInId);
+	const correctedClockIn = corrected(period.clockInId);
+	if (!clockIn || !correctedClockIn) return null;
+	return {
+		original: workPeriodEntryTimesOf(clockIn, original(period.clockOutId)),
+		corrected: workPeriodEntryTimesOf(correctedClockIn, corrected(period.clockOutId)),
+	};
+}
+
+async function dispatchSubmissionPostCommit(input: {
+	dbService: typeof DatabaseService.Service;
+	organizationId: string;
+	employeeId: string;
+	/** The submitting employee; an on-behalf editor is not notified about their own change. */
 	actorEmployeeId?: string;
 	workPeriodId: string;
 	reason: string;
 	period: typeof workPeriod.$inferSelect;
-	correctedClockIn: Date;
-	correctedClockOut?: Date;
 	result: ApprovalResult;
 }) {
 	const effects = input.result.postCommit;
@@ -2294,41 +2331,31 @@ async function dispatchSubmissionPostCommit(input: {
 			}),
 		]);
 		if (!managerRecord || !requester) return;
-		const appUrl = await getOrganizationBaseUrl(input.organizationId);
-		const formatDate = (value: Date) =>
-			value.toLocaleDateString("en-US", {
-				month: "short",
-				day: "numeric",
-				year: "numeric",
-			});
-		const formatTime = (value: Date) =>
-			value.toLocaleTimeString("en-US", {
-				hour: "numeric",
-				minute: "2-digit",
-				hour12: true,
-			});
-		const html = await renderTimeCorrectionPendingApproval({
-			managerName: managerRecord.user.name,
-			employeeName: requester.user.name,
-			date: formatDate(input.period.startTime),
-			originalClockIn: formatTime(input.period.startTime),
-			originalClockOut: input.period.endTime
-				? formatTime(input.period.endTime)
-				: "-",
-			correctedClockIn: formatTime(input.correctedClockIn),
-			correctedClockOut: input.correctedClockOut
-				? formatTime(input.correctedClockOut)
-				: "-",
-			reason: input.reason,
-			approvalUrl: `${appUrl}/approvals/inbox`,
+		const times = await loadSubmissionEntryTimes({
+			dbService: input.dbService,
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			period: input.period,
+			correctionEntryIds: input.result.correctionEntryIds ?? [],
 		});
-		await Effect.runPromise(
-			input.emailService.send({
-				to: managerRecord.user.email,
-				subject: `Time Correction Request from ${requester.user.name}`,
-				html,
-			}),
-		);
+		if (!times) {
+			// Sent exactly once all the same: the manager learns of the request without its times.
+			logger.warn(
+				{ workPeriodId: input.workPeriodId, organizationId: input.organizationId },
+				"Notifying the manager of a time correction without its times: its entries could not be read",
+			);
+		}
+		// The manager's pending email goes out with this notification, through the
+		// notification email channel (#1152).
+		await onTimeCorrectionPendingApproval({
+			workPeriodId: input.workPeriodId,
+			managerUserId: managerRecord.userId,
+			employeeName: requester.user.name,
+			organizationId: input.organizationId,
+			reason: input.reason,
+			original: times?.original ?? null,
+			corrected: times?.corrected ?? null,
+		});
 	} catch (error) {
 		logger.error(
 			{ error, workPeriodId: input.workPeriodId },
@@ -2338,10 +2365,7 @@ async function dispatchSubmissionPostCommit(input: {
 }
 
 export async function dispatchCommittedTimeCorrectionSubmission(
-	input: Omit<
-		Parameters<typeof dispatchSubmissionPostCommit>[0],
-		"dbService" | "emailService"
-	>,
+	input: Omit<Parameters<typeof dispatchSubmissionPostCommit>[0], "dbService">,
 ) {
 	const effects = input.result.postCommit;
 	if (
@@ -2352,10 +2376,7 @@ export async function dispatchCommittedTimeCorrectionSubmission(
 	}
 	const effect = Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
-		const emailService = yield* EmailService;
-		yield* Effect.promise(() =>
-			dispatchSubmissionPostCommit({ ...input, dbService, emailService }),
-		);
+		yield* Effect.promise(() => dispatchSubmissionPostCommit({ ...input, dbService }));
 	});
 	await runtime.runPromise(effect);
 }
@@ -2480,7 +2501,6 @@ function submissionEffect(
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
-		const emailService = yield* EmailService;
 		const organizationId = session.session.activeOrganizationId;
 		if (!organizationId) {
 			return yield* Effect.fail(
@@ -2778,15 +2798,12 @@ function submissionEffect(
 		yield* Effect.promise(() =>
 			dispatchSubmissionPostCommit({
 				dbService,
-				emailService,
 				organizationId,
 				employeeId: period.employeeId,
 				actorEmployeeId: currentEmployee.id,
 				workPeriodId: period.id,
 				reason: data.reason,
 				period,
-				correctedClockIn,
-				correctedClockOut,
 				result,
 			}),
 		);

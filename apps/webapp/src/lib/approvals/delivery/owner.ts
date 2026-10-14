@@ -635,7 +635,7 @@ async function processRefresh(
 	const notice = await approvalStatusNotice(
 		{ workflowStatus: state.workflowStatus, evidence, reassigned },
 		display,
-		work.organizationId,
+		{ userId: message.recipientUserId, organizationId: work.organizationId },
 		approvalDeliveryMessageReviewReference(message),
 	);
 	// Attempt time, and proof the lease still holds right before editing: at
@@ -709,7 +709,7 @@ async function retireDeputyCard(
 			...(approverName ? { noLongerCoveringFor: approverName } : {}),
 		},
 		display,
-		work.organizationId,
+		{ userId: message.recipientUserId, organizationId: work.organizationId },
 		approvalDeliveryMessageReviewReference(message),
 	);
 	const now = clock();

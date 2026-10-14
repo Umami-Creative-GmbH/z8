@@ -33,6 +33,14 @@ vi.mock("@/lib/discord", () => ({
 }));
 vi.mock("@/lib/telegram", () => ({ isTelegramEnabledForOrganization: mocks.enabled }));
 vi.mock("@/lib/discord/formatters", () => ({ buildNotificationEmbed: () => [] }));
+vi.mock("./outbound-localization", () => ({
+	localizeOutboundNotification: async ({ title, message }: { title: string; message: string }) => ({
+		locale: "en",
+		title,
+		message,
+		actionLabel: "View in Z8",
+	}),
+}));
 vi.mock("@/lib/email/email-service", () => ({
 	getTransportName: async () => "Console (Development)",
 	sendEmail: vi.fn(),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatNotificationParams } from "@/lib/notifications/notification-params";
 import {
 	buildClockingReminderNotification,
 	buildDrivingDetailsReminderNotification,
@@ -16,39 +17,55 @@ describe("buildClockingReminderNotification", () => {
 		expectedAt: at("2026-04-28T04:00:00Z"),
 		shift: null,
 	};
-	function build(locale: string) {
+	function build() {
 		const notification = buildClockingReminderNotification({
 			reminder: overnight,
 			organizationId: "org-1",
 			userId: "user-1",
 			timezone: "Europe/Berlin",
-			locale,
 		});
 		const i18n = notification.metadata?.i18n as {
 			messageKey: string;
-			params: Record<string, string>;
+			params: Record<string, unknown>;
 		};
 		return { message: notification.message, i18n };
 	}
 
 	it("names the day whose required hours a policy forgotten clock-out was judged against", () => {
-		const { message, i18n } = build("en");
+		const { message, i18n } = build();
 		expect(message).toBe(
-			`You reached the required hours for Monday, April 27 at ${i18n.params.endTime} (Europe/Berlin). Clock out if you have finished working.`,
+			"You reached the required hours for Monday, April 27 at 6:00 AM (Europe/Berlin). Clock out if you have finished working.",
 		);
 		expect(i18n).toMatchObject({
 			messageKey: "common:notifications.content.policyForgottenClockOutReminder.message",
-			params: { day: "Monday, April 27", timezone: "Europe/Berlin" },
+			params: { timezone: "Europe/Berlin" },
 		});
 	});
 
-	it("formats the day and time in the employee's locale", () => {
-		expect(build("de").i18n.params).toMatchObject({ day: "Montag, 27. April", endTime: "06:00" });
+	it("stores the day and time as typed params, formatted in the reader's language on delivery (#1149)", () => {
+		const { params } = build().i18n;
+		expect(params).toMatchObject({
+			day: { kind: "plainDate", date: "2026-04-27", preset: "weekdayMonthDayLong" },
+			endTime: {
+				kind: "zonedInstant",
+				at: "2026-04-28T04:00:00Z",
+				timeZone: "Europe/Berlin",
+				preset: "time",
+				printZone: false,
+			},
+		});
+		expect(formatNotificationParams(params, { locale: "de" })).toMatchObject({
+			day: "Montag, 27. April",
+			endTime: expect.stringMatching(/^0?6:00$/),
+		});
+		expect(formatNotificationParams(params, { locale: "en", timeFormat: "24h" })).toMatchObject({
+			endTime: expect.stringMatching(/^0?6:00$/),
+		});
 	});
 });
 
 describe("period submission reminder notifications", () => {
-	function build(stage: "period_end" | "after_delay", locale = "en") {
+	function build(stage: "period_end" | "after_delay") {
 		return buildClockingReminderNotification({
 			reminder: {
 				type: "period_submission_reminder",
@@ -65,7 +82,6 @@ describe("period submission reminder notifications", () => {
 			organizationId: "org-1",
 			userId: "user-1",
 			timezone: "Europe/Berlin",
-			locale,
 		});
 	}
 
@@ -83,7 +99,10 @@ describe("period submission reminder notifications", () => {
 				i18n: {
 					titleKey: "common:notifications.content.periodSubmissionReminder.title",
 					messageKey: "common:notifications.content.periodSubmissionReminder.message",
-					params: { startDate: "Mar 2, 2026", endDate: "Mar 8, 2026" },
+					params: {
+						startDate: { kind: "plainDate", date: "2026-03-02" },
+						endDate: { kind: "plainDate", date: "2026-03-08" },
+					},
 				},
 			},
 		});
@@ -103,9 +122,11 @@ describe("period submission reminder notifications", () => {
 		});
 	});
 
-	it("formats the period's dates in the employee's locale", () => {
-		expect(build("period_end", "de").metadata?.i18n).toMatchObject({
-			params: { startDate: "02.03.2026", endDate: "08.03.2026" },
+	it("formats the period's dates in the reader's language on delivery", () => {
+		const i18n = build("period_end").metadata?.i18n as { params: Record<string, unknown> };
+		expect(formatNotificationParams(i18n.params, { locale: "de" })).toMatchObject({
+			startDate: "2. März 2026",
+			endDate: "8. März 2026",
 		});
 	});
 });
@@ -129,7 +150,6 @@ describe("period submission decided notifications (#805)", () => {
 			organizationId: "org-1",
 			userId: "user-1",
 			timezone: "Europe/Berlin",
-			locale: "en",
 		});
 	}
 
@@ -177,7 +197,6 @@ describe("period submission sent back notifications (#1062)", () => {
 			organizationId: "org-1",
 			userId: "user-1",
 			timezone: "Europe/Berlin",
-			locale: "en",
 		});
 	}
 
@@ -194,7 +213,10 @@ describe("period submission sent back notifications (#1062)", () => {
 				i18n: {
 					titleKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.title",
 					messageKey: "common:notifications.content.periodSubmissionWithdrawnAfterChange.message",
-					params: { startDate: "Mar 2, 2026", endDate: "Mar 8, 2026" },
+					params: {
+						startDate: { kind: "plainDate", date: "2026-03-02" },
+						endDate: { kind: "plainDate", date: "2026-03-08" },
+					},
 				},
 			},
 		});
@@ -216,24 +238,21 @@ describe("period submission sent back notifications (#1062)", () => {
 });
 
 describe("driving details missing reminders (#1127)", () => {
-	it("names the day of the work lacking its vehicle or a reading, in the employee's locale", () => {
-		const reminder = {
-			type: "driving_details_missing_reminder" as const,
-			occasionKey: "driving_details_missing_reminder:work_period:work-1",
-			day: parsePlainDate("2026-09-07"),
-			expectedAt: at("2026-09-08T06:00:00Z"),
-			shift: null,
-			drivingWork: { workPeriodId: "work-1", workDay: parsePlainDate("2026-09-07") },
-		};
-		const build = (locale: string) =>
-			buildClockingReminderNotification({
-				reminder,
-				organizationId: "org-1",
-				userId: "user-1",
-				timezone: "Europe/Berlin",
-				locale,
-			});
-		expect(build("en")).toMatchObject({
+	it("names the event-local day of the work lacking its vehicle or a reading", () => {
+		const notification = buildClockingReminderNotification({
+			reminder: {
+				type: "driving_details_missing_reminder" as const,
+				occasionKey: "driving_details_missing_reminder:work_period:work-1",
+				day: parsePlainDate("2026-09-07"),
+				expectedAt: at("2026-09-08T06:00:00Z"),
+				shift: null,
+				drivingWork: { workPeriodId: "work-1", workDay: parsePlainDate("2026-09-07") },
+			},
+			organizationId: "org-1",
+			userId: "user-1",
+			timezone: "Europe/Berlin",
+		});
+		expect(notification).toMatchObject({
 			type: "driving_details_missing_reminder",
 			title: "Add your driving details",
 			message:
@@ -246,10 +265,14 @@ describe("driving details missing reminders (#1127)", () => {
 				i18n: {
 					titleKey: "common:notifications.content.drivingDetailsMissingReminder.title",
 					messageKey: "common:notifications.content.drivingDetailsMissingReminder.message",
+					params: { date: { kind: "plainDate", date: "2026-09-07" } },
 				},
 			},
 		});
-		expect(build("de").metadata?.i18n).toMatchObject({ params: { date: "07.09.2026" } });
+		const i18n = notification.metadata?.i18n as { params: Record<string, unknown> };
+		expect(formatNotificationParams(i18n.params, { locale: "de" })).toMatchObject({
+			date: "7. Sept. 2026",
+		});
 	});
 
 	it("lists every newly due work period in one reminder per morning (#807 decision 8)", () => {
@@ -261,25 +284,20 @@ describe("driving details missing reminders (#1127)", () => {
 			shift: null,
 			drivingWork: { workPeriodId, workDay: parsePlainDate(workDay) },
 		});
-		const build = (locale: string) =>
-			buildDrivingDetailsReminderNotification({
-				reminders: [
-					due("work-2", "2026-09-08"),
-					due("work-1", "2026-09-07"),
-					due("work-3", "2026-09-08"),
-				],
-				organizationId: "org-1",
-				userId: "user-1",
-				timezone: "Europe/Berlin",
-				locale,
-			});
+		const notification = buildDrivingDetailsReminderNotification({
+			reminders: [
+				due("work-2", "2026-09-08"),
+				due("work-1", "2026-09-07"),
+				due("work-3", "2026-09-08"),
+			],
+			organizationId: "org-1",
+			userId: "user-1",
+			timezone: "Europe/Berlin",
+		});
 
-		const notification = build("en");
 		expect(notification).toMatchObject({
 			type: "driving_details_missing_reminder",
 			title: "Add your driving details",
-			message:
-				"3 work periods on Sep 7, 2026 and Sep 8, 2026 are missing their vehicle or an odometer reading. Add them to the work periods.",
 			actionUrl: "/time-tracking",
 			idempotencyKey: "clocking-reminder:driving_details_missing_reminder:work_period:work-1",
 			metadata: {
@@ -292,14 +310,17 @@ describe("driving details missing reminders (#1127)", () => {
 				i18n: {
 					titleKey: "common:notifications.content.drivingDetailsMissingReminder.title",
 					messageKey: "common:notifications.content.drivingDetailsMissingReminderMany.message",
-					params: { count: "3", dates: "Sep 7, 2026 and Sep 8, 2026" },
+					params: {
+						count: 3,
+						dates: { kind: "plainDateRange", start: "2026-09-07", end: "2026-09-08" },
+					},
 				},
 			},
 		});
+		expect(notification.message).toMatch(/^3 work periods from Sep 7\s*–\s*8, 2026 are missing/);
 		expect(notification).not.toHaveProperty("entityId");
-		expect(build("de").metadata?.i18n).toMatchObject({
-			params: { dates: "07.09.2026 und 08.09.2026" },
-		});
+		const i18n = notification.metadata?.i18n as { params: Record<string, unknown> };
+		expect(formatNotificationParams(i18n.params, { locale: "de" }).dates).toBe("7.–8. Sept. 2026");
 
 		// One period: the single reminder, unchanged.
 		expect(
@@ -308,7 +329,6 @@ describe("driving details missing reminders (#1127)", () => {
 				organizationId: "org-1",
 				userId: "user-1",
 				timezone: "Europe/Berlin",
-				locale: "en",
 			}),
 		).toMatchObject({
 			message:

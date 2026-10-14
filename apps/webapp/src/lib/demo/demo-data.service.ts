@@ -77,6 +77,10 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import {
+	absencePendingApprovalContent,
+	timeCorrectionPendingApprovalContent,
+} from "@/lib/notifications/triggers";
 import { RECORDED_VEHICLE_FOREIGN_KEYS } from "@/lib/organization/vehicles/vehicle-rules";
 import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { shiftStoredDate } from "@/lib/scheduling/shift-date";
@@ -106,6 +110,9 @@ import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configu
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 const demoLogger = createLogger("demo-data");
+
+/** The demo time correction's reason, also shown in its approver's notification. */
+const DEMO_TIME_CORRECTION_REASON = "Demo data - Pending time correction approval";
 
 class DemoCorrectionAutoCompletedError extends Error {}
 class DemoCorrectionSourceChangedError extends Error {}
@@ -584,6 +591,8 @@ export async function generateDemoPendingAbsenceApprovals(
 					inArray(employee.id, options.employeeIds),
 				)
 			: eq(employee.organizationId, options.organizationId),
+		// The requester's name for the approver's notification.
+		with: { user: { columns: { name: true } } },
 	});
 
 	if (employees.length < 2) {
@@ -660,15 +669,23 @@ export async function generateDemoPendingAbsenceApprovals(
 			reason: "Demo data - Pending absence approval",
 		});
 
+		// The same translated copy as a real request, so it reads in the approver's language.
+		const content = absencePendingApprovalContent({
+			employeeName: requester.user?.name ?? "",
+			categoryName: category.name,
+			startDate: startDate.toISODate()!,
+			endDate: endDate.toISODate()!,
+		});
 		await db.insert(notification).values({
 			userId: approver.userId,
 			organizationId: options.organizationId,
 			type: "approval_request_submitted",
-			title: "New absence request",
-			message: "Demo data - Pending absence request needs approval.",
+			title: content.title,
+			message: content.message,
 			entityType: "absence_entry",
 			entityId: insertedAbsence.id,
 			actionUrl: "/approvals/inbox",
+			metadata: JSON.stringify({ approvalSubject: "absence", i18n: content.i18n }),
 		});
 
 		pendingAbsenceApprovalsCreated++;
@@ -760,6 +777,19 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 				.orderBy(asc(employee.id))
 				.limit(1)
 		: [];
+	// The requesters' names for the approver's notification.
+	const requesterNames = new Map(
+		(
+			await db.query.employee.findMany({
+				where: and(
+					eq(employee.organizationId, options.organizationId),
+					inArray(employee.id, requesterIds),
+				),
+				columns: { id: true },
+				with: { user: { columns: { name: true } } },
+			})
+		).map((row) => [row.id, row.user?.name ?? ""]),
+	);
 	const employeeIdSet = new Set(employees.map((candidate) => candidate.id));
 	const employeesById = new Map(
 		employees.map((candidate) => [candidate.id, candidate]),
@@ -1287,7 +1317,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					teamId,
 					workPeriodId: period.id,
 					defaultApproverId: approverId,
-					reason: "Demo data - Pending time correction approval",
+					reason: DEMO_TIME_CORRECTION_REASON,
 					overtimeRisk: null,
 					submissionKey,
 					submissionId,
@@ -1407,20 +1437,28 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					approver.organizationId === options.organizationId &&
 					approver.isActive
 				) {
+					// The same translated copy as a real request, without its times.
+					const content = timeCorrectionPendingApprovalContent({
+						employeeName: requesterNames.get(requester.id) ?? "",
+						reason: DEMO_TIME_CORRECTION_REASON,
+						original: null,
+						corrected: null,
+					});
 					await db
 						.insert(notification)
 						.values({
 							userId: approver.userId,
 							organizationId: options.organizationId,
 							type: "approval_request_submitted",
-							title: "New time correction request",
-							message:
-								"Demo data - Pending time correction request needs approval.",
+							title: content.title,
+							message: content.message,
 							entityType: "work_period",
 							entityId: period.id,
 							actionUrl: "/approvals/inbox",
 							metadata: JSON.stringify({
 								approvalRequestId: durableRequest.id,
+								approvalSubject: "time_correction",
+								i18n: content.i18n,
 							}),
 							idempotencyKey: notificationIdempotencyKey,
 						})

@@ -1,8 +1,14 @@
 # Organization
 
-An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. Projects themselves belong to the Projects context.
+An organization's master data about its employees, customers and vehicles, and the custom fields it defines for itself on employees, projects and customers. It also hands an employee their personal data on request. Projects themselves belong to the Projects context.
 
 ## Language
+
+### Employees
+
+**Personnel number**:
+The organization's own identifier for an employee, used by payroll exports and to match payslips. An employee may have none. No two employees of an organization share one, current or former: a former employee keeps theirs and it is never given to anyone else. Numbers that differ only in surrounding spaces or in upper and lower case are the same number; leading zeros count.
+_Avoid_: employee ID, payroll ID
 
 ### Custom fields
 
@@ -33,6 +39,34 @@ _Avoid_: deleted field, disabled field
 **Missing required value**:
 A required custom field with no value as of today on an employee, project or customer. Records created by SCIM, imports or demo data can have one; the forms refuse to save a record that still has one.
 _Avoid_: incomplete record, invalid record
+
+### Employment
+
+**Employment terms**:
+What the organization has agreed with an employee from a given date: contract type, weekly contract hours, work model, work policy and, for an hourly contract, the hourly wage. Only confirmed terms apply; draft and pending terms are proposals.
+_Avoid_: contract record, employment record, employment history row
+
+**Hourly wage**:
+What an employee on an hourly contract is paid per hour worked. It is part of their employment terms, so the wage in force on a day is the one in the confirmed terms for that day. Changing it means confirming new terms.
+_Avoid_: hourly rate, rate, salary, pay rate
+
+### Personal data
+
+**Personal data export**:
+A file holding one employee's personal data kept by one organization, in a form they can read and reuse elsewhere. The employee requests it for themselves, or an org admin requests it on their behalf. An employee of several organizations gets a separate one from each.
+_Avoid_: GDPR export, DSAR, self-export, data export (that is the organization-wide export)
+
+**Employee export**:
+A personal data export the employee requests for themselves. It leaves out withheld data.
+_Avoid_: self-service export, own export
+
+**Admin export**:
+A personal data export an org admin requests on an employee's behalf, including withheld data. It is the complete answer to a request for access and the only route for a former employee.
+_Avoid_: full export, HR export
+
+**Withheld data**:
+The fixed list of personal data an employee export leaves out: HR-only documents, custom field values above employee visibility, billable and cost rates, internal notes on travel expenses, and departure tasks and reviews.
+_Avoid_: hidden data, private data, restricted data
 
 ### Vehicles
 

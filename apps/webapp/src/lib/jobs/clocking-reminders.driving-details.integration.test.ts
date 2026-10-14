@@ -185,7 +185,10 @@ describe("driving details missing reminders on PostgreSQL", () => {
 		expect(metadata.workPeriodIds?.slice().sort()).toEqual([morning, afternoon].sort());
 		expect(metadata.i18n).toMatchObject({
 			messageKey: "common:notifications.content.drivingDetailsMissingReminderMany.message",
-			params: { count: "2" },
+			params: {
+				count: 2,
+				dates: { kind: "plainDateRange", start: "2026-09-21", end: "2026-09-21" },
+			},
 		});
 		expect(pushesTo(driver)).toBe(1);
 		const [push] = channels.push.mock.calls.at(-1) as unknown as [string, { body?: string }];

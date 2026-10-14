@@ -15,6 +15,7 @@
 - [Personnel File](./apps/webapp/src/lib/personnel-file/CONTEXT.md): keeps each employee's documents and controls which of them the employee sees
 - [Scheduling](./apps/webapp/src/lib/scheduling/CONTEXT.md): plans shifts ahead of time and helps planners staff open shifts
 - [Scheduled Exports](./apps/webapp/src/lib/scheduled-exports/CONTEXT.md): runs payroll exports, data exports and audit reports on a schedule and delivers each file only to approved recipients
+- [Notifications](./apps/webapp/src/lib/notifications/CONTEXT.md): tells people that something happened, in the app and over every outbound channel, in their recipient language
 
 ## Relationships
 
@@ -31,11 +32,17 @@
 - **Organization → Projects**: an organization defines project custom fields in Organization; a project holds custom field values for them, and Projects owns the project itself
 - **Employee lifecycle → Time Tracking**: a departure closes live work inside a Time Tracking **work transaction**
 - **Employee lifecycle → Personnel File**: a departure revokes the personnel file officer grant the employee holds and starts the **retention** clock of their documents; a rehire stops it
+- **Organization → Personnel File**: a payslip batch matches files to employees by their personnel number, which Organization owns
 - **Absences → Personnel File**: a sick-leave absence can have sick notes, which are employee documents in the personnel file; the absence knows only that they exist, and personnel file access decides who sees them
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
 - **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and while an approver is away the deputy named on their absence may decide their approvals as a **deputy decision**
 - **Work policy → Absences**: the schedule of an employee's work policy decides which of their days are working days; Absences reads it to count absence days and never changes it
+- **Personal data export ≠ data export**: an Organization personal data export holds one employee's data in one organization; a data export, scheduled or not, holds the whole organization's data for its admins
+- **Personnel File → Organization**: a personal data export includes the employee's shared documents; HR-only documents are withheld data, included only in an admin export
 - **Download link ≠ report share link**: a Scheduled Exports download link hands one run's file to an approved external recipient; a Projects report share link shows a frozen report snapshot to whoever holds the URL
 - **Organization → Time Tracking**: an employee records the organization vehicle or their own vehicle they drove during a work period; Organization owns the vehicles
 - **Time Tracking → Travel Expenses**: distance driven in an own vehicle can pre-fill a mileage item; only the mileage item is reimbursed, after its own submission and approval
+- **Every context → Notifications**: a context decides who must hear about one of its events and supplies the text as translation keys with English defaults; Notifications picks the recipient language and delivers over each channel
+- **Scheduled Exports → Notifications**: an approved external recipient has no Z8 user, so their emails use the organization's default language
+- **Personnel File → Scheduling**: a skill certificate names the employee skill it proves; Scheduling knows only that one is on file, and personnel file access decides who opens it
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them

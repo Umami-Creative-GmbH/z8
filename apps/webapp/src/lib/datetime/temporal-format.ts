@@ -18,6 +18,7 @@ export type PlainDateFormatPreset =
 	| "monthYear"
 	| "weekdayShort"
 	| "weekdayMonthDay"
+	| "weekdayMonthDayLong"
 	| "weekdayDateLong";
 
 export interface DisplayContext {
@@ -72,6 +73,7 @@ const PLAIN_DATE_FORMAT_OPTIONS: Readonly<
 	monthYear: { year: "numeric", month: "long" },
 	weekdayShort: { weekday: "short" },
 	weekdayMonthDay: { weekday: "short", month: "short", day: "numeric" },
+	weekdayMonthDayLong: { weekday: "long", month: "long", day: "numeric" },
 	weekdayDateLong: { weekday: "long", year: "numeric", month: "long", day: "numeric" },
 };
 
@@ -81,6 +83,17 @@ const TIME_PRESETS: ReadonlySet<DateTimeFormatPreset> = new Set([
 	"timeWithSeconds",
 ]);
 const MAX_FIXED_OFFSET_MINUTES = 23 * 60 + 59;
+
+/** The hour cycle a locale uses by default, for readers without a time-format preference. */
+export function localeDefaultTimeFormat(locale: string): "12h" | "24h" {
+	try {
+		return new Intl.DateTimeFormat(locale, { hour: "numeric" }).resolvedOptions().hour12
+			? "12h"
+			: "24h";
+	} catch {
+		return "24h";
+	}
+}
 
 export function formatInstant(
 	instant: Instant,

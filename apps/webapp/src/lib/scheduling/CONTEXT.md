@@ -26,6 +26,24 @@ _Avoid_: claim, shift application
 An employee with the manager or admin role who creates shifts and assigns employees to them.
 _Avoid_: scheduler, shift manager
 
+### Skills
+
+**Skill**:
+A qualification the organization defines, such as a forklift licence or first-aid training, that shifts and subareas can require.
+_Avoid_: qualification, competency, certification (a certificate is a personnel file document)
+
+**Employee skill**:
+A skill one employee holds, optionally with an expiry date.
+_Avoid_: skill assignment, employee qualification
+
+**Skill expiry date**:
+The last day an employee skill is valid, as a plain day on the organization's calendar. It means the same as a personnel file expiry date. While skill certificates name the employee skill, the latest of their expiry dates is the skill expiry date.
+_Avoid_: expires at, valid until
+
+**Expired skill**:
+An employee skill whose skill expiry date is before the day in question: the shift date when planning a shift, the organization's today for reminders.
+_Avoid_: invalid skill, lapsed skill
+
 ### Staffing
 
 **Staffing suggestion**:

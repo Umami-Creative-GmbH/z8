@@ -218,7 +218,10 @@ export async function handleTeamsVehicleUseInvoke(
 	user: ResolvedTeamsUser,
 	tenant: ResolvedTenant,
 ): Promise<TeamsInvokeResponse> {
-	const locale = await getUserLocale(user.userId);
+	const locale = await getUserLocale({
+		userId: user.userId,
+		organizationId: tenant.organizationId,
+	});
 	const t = await getBotTranslate(locale);
 	const saved = (warnings: readonly string[] = []) =>
 		replaceCard(t("bot.vehicleUse.saved", "Vehicle use saved."), {

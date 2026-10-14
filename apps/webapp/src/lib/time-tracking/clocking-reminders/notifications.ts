@@ -1,4 +1,9 @@
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
+import {
+	fillNotificationTemplate,
+	type NotificationParamValue,
+	notificationParam,
+} from "@/lib/notifications/notification-params";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import type { ClockingReminderType, DueClockingReminder } from "./occasion";
 
@@ -115,29 +120,30 @@ const drivingDetailsManyCopy = {
 	titleDefault: "Add your driving details",
 	messageKey: "common:notifications.content.drivingDetailsMissingReminderMany.message",
 	messageDefault:
-		"{count} work periods on {dates} are missing their vehicle or an odometer reading. Add them to the work periods.",
+		"{count} work periods from {dates} are missing their vehicle or an odometer reading. Add them to the work periods.",
 } as const satisfies ReminderCopy;
 
-function formatTime(instant: Instant, locale: string, timezone: string): string {
-	return instant.toLocaleString(locale, { timeStyle: "short", timeZone: timezone });
-}
-
 /**
- * The reminder as the employee receives it: English text plus the i18n keys and parameters, with
- * shift and break times shown in the employee's own timezone and locale.
+ * The reminder as the employee receives it: the stored English text plus the i18n keys and typed
+ * params (#1149), which every channel formats in the reader's language and hour cycle when it
+ * delivers. Shift, policy and break times stay in the zone the reminder was judged in (the
+ * employee's effective timezone), which the message names; dates are calendar days.
  */
 export function buildClockingReminderNotification(input: {
 	reminder: DueClockingReminder;
 	organizationId: string;
 	userId: string;
 	timezone: string;
-	locale: string;
 }): CreateNotificationParams {
-	const { reminder, timezone, locale } = input;
-	const params: Record<string, string> = { timezone };
+	const { reminder, timezone } = input;
+	const params: Record<string, NotificationParamValue> = { timezone };
 	let copy: ReminderCopy = reminderCopy[reminder.type];
-	const formatDate = (date: PlainDate) => date.toLocaleString(locale, { dateStyle: "medium" });
+	const formatDate = (date: PlainDate) => notificationParam.plainDate(date);
+	// The message prints the zone as `{timezone}`, so the time itself does not.
+	const formatTime = (instant: Instant) =>
+		notificationParam.zonedInstant(instant, timezone, "time", { printZone: false });
 	if (reminder.type === "driving_details_missing_reminder") {
+		// The work's own event-local day, never a reader's zone.
 		params.date = formatDate(reminder.drivingWork?.workDay ?? reminder.day);
 	} else if (reminder.type === "period_submission_decided") {
 		const period = reminder.decidedPeriod;
@@ -158,34 +164,28 @@ export function buildClockingReminderNotification(input: {
 		params.startDate = formatDate(period?.startDate ?? reminder.day);
 		params.endDate = formatDate(period?.endDate ?? reminder.day);
 	} else if (reminder.shift) {
-		params.startTime = formatTime(reminder.shift.start, locale, timezone);
-		params.endTime = formatTime(reminder.shift.end, locale, timezone);
+		params.startTime = formatTime(reminder.shift.start);
+		params.endTime = formatTime(reminder.shift.end);
 	} else if (reminder.type !== "break_due_reminder") {
 		copy = { ...copy, ...policyMessageCopy[reminder.type] };
-		const expected = formatTime(reminder.expectedAt, locale, timezone);
+		const expected = formatTime(reminder.expectedAt);
 		if (reminder.type === "missed_clock_in_reminder") {
 			params.startTime = expected;
 		} else {
 			params.endTime = expected;
 			// Live work past midnight is judged against the day it started, which need not be today.
-			params.day = reminder.day.toLocaleString(locale, {
-				weekday: "long",
-				month: "long",
-				day: "numeric",
-			});
+			params.day = notificationParam.plainDate(reminder.day, "weekdayMonthDayLong");
 		}
 	}
 	if (reminder.type === "break_due_reminder") {
-		params.breakTime = formatTime(reminder.expectedAt, locale, timezone);
+		params.breakTime = formatTime(reminder.expectedAt);
 	}
-	const render = (template: string) =>
-		template.replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);
 	return {
 		userId: input.userId,
 		organizationId: input.organizationId,
 		type: reminder.type,
 		title: copy.titleDefault,
-		message: render(copy.messageDefault),
+		message: fillNotificationTemplate(copy.messageDefault, params),
 		...(reminder.shift ? { entityType: "shift", entityId: reminder.shift.id } : {}),
 		...(reminder.drivingWork
 			? { entityType: "work_period", entityId: reminder.drivingWork.workPeriodId }
@@ -212,7 +212,6 @@ export function buildDrivingDetailsReminderNotification(input: {
 	organizationId: string;
 	userId: string;
 	timezone: string;
-	locale: string;
 }): CreateNotificationParams {
 	const workDayOf = (reminder: DueClockingReminder) =>
 		reminder.drivingWork?.workDay ?? reminder.day;
@@ -226,24 +225,20 @@ export function buildDrivingDetailsReminderNotification(input: {
 	if (reminders.length === 1) {
 		return buildClockingReminderNotification({ ...input, reminder: first });
 	}
-	const { locale } = input;
-	const days = new Map(
-		reminders.map((reminder) => [workDayOf(reminder).toString(), workDayOf(reminder)]),
-	);
-	const dates = new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format(
-		[...days.values()].map((day) => day.toLocaleString(locale, { dateStyle: "medium" })),
-	);
-	const params: Record<string, string> = { count: String(reminders.length), dates };
+	// Sorted by work day, so the dates run from the first to the last flagged day; each channel
+	// formats them in the reader's language (#1149).
+	const last = reminders[reminders.length - 1] ?? first;
+	const params: Record<string, NotificationParamValue> = {
+		count: reminders.length,
+		dates: notificationParam.plainDateRange(workDayOf(first), workDayOf(last)),
+	};
 	const copy = drivingDetailsManyCopy;
 	return {
 		userId: input.userId,
 		organizationId: input.organizationId,
 		type: "driving_details_missing_reminder",
 		title: copy.titleDefault,
-		message: copy.messageDefault.replace(
-			/\{(\w+)\}/g,
-			(match, name: string) => params[name] ?? match,
-		),
+		message: fillNotificationTemplate(copy.messageDefault, params),
 		actionUrl: "/time-tracking",
 		// Each work period is claimed once, so the first one's key names this reminder for good.
 		idempotencyKey: `clocking-reminder:${first.occasionKey}`,
