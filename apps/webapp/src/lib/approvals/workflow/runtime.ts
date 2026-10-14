@@ -1,6 +1,13 @@
 import { sql } from "drizzle-orm";
 import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
 import {
+	decideDeputyRight,
+	decidedEarlierStage,
+	deputyDecisionRefusalError,
+	isDeputyDecisionEntityType,
+} from "../deputy/deputy-decision";
+import { loadCover } from "../deputy/deputy-reads";
+import {
 	type AbsenceApprovalAdapterDependencies,
 	createAbsenceApprovalAdapter,
 } from "../domain-adapters/absence.adapter";
@@ -23,23 +30,10 @@ import {
 	preflightCanonicalWorkPeriodDecisionEvidence,
 	recordCanonicalWorkPeriodDecisionEvidence,
 } from "../evidence/work-period-evidence";
-import { loadCover } from "../deputy/deputy-reads";
-import {
-	decidedEarlierStage,
-	decideDeputyRight,
-	deputyDecisionRefusalError,
-	isDeputyDecisionEntityType,
-} from "../deputy/deputy-decision";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
 import { createOffboardingReassignmentAuthority } from "./offboarding-authority";
-import {
-	APPROVAL_ESCALATION_SYSTEM_ID,
-	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
-	isOffboardingHandoverPrincipal,
-	PERIOD_SUBMISSION_CHANGE_SYSTEM_ID,
-} from "./ports";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalCoveringDeputyGrant,
@@ -49,6 +43,13 @@ import type {
 	ApprovalWorkflowSourceLoader,
 } from "./ports";
 import {
+	ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID,
+	APPROVAL_ESCALATION_SYSTEM_ID,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+	isOffboardingHandoverPrincipal,
+	PERIOD_SUBMISSION_CHANGE_SYSTEM_ID,
+} from "./ports";
+import {
 	type ApprovalWorkflowDatabase,
 	type ApprovalWorkflowRepository,
 	createApprovalWorkflowRepository,
@@ -56,7 +57,7 @@ import {
 import { normalizeStableData } from "./stable-data";
 import {
 	type ApprovalTransitionEngine,
-	createApprovalTransitionEngine,
+	createApprovalTransitionEngine
 } from "./transition-engine";
 
 function runtimeFailure(reason: string): never {
@@ -82,7 +83,7 @@ const CANONICAL_UUID =
 function exactEmployeeActorRow(
 	value: unknown,
 	organizationId: string,
-	userId: string,
+	userId: string
 ): string {
 	if (
 		!record(value) ||
@@ -99,7 +100,7 @@ function exactEmployeeActorRow(
 function exactApprovedMemberRow(
 	value: unknown,
 	organizationId: string,
-	userId: string,
+	userId: string
 ): void {
 	if (
 		!record(value) ||
@@ -121,6 +122,7 @@ export function createDatabaseApprovalCommandActorResolver(): ApprovalCommandAct
 					input.principal.systemId !== "approval-activation" &&
 					input.principal.systemId !== APPROVAL_ESCALATION_SYSTEM_ID &&
 					input.principal.systemId !== PERIOD_SUBMISSION_CHANGE_SYSTEM_ID &&
+					input.principal.systemId !== ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID &&
 					input.principal.systemId !== EMPLOYEE_OFFBOARDING_SYSTEM_ID
 				) {
 					return runtimeFailure("unknown system actor");
@@ -162,7 +164,7 @@ export function createDatabaseApprovalCommandActorResolver(): ApprovalCommandAct
 			exactApprovedMemberRow(
 				memberships[0],
 				input.organizationId,
-				input.principal.userId,
+				input.principal.userId
 			);
 			return {
 				kind: "employee",
@@ -400,7 +402,7 @@ export function createRegistryApprovalSourceLoader(
 }
 
 function expectedTerminalEvent(
-	finalization: ApprovalTerminalFinalizationResult,
+	finalization: ApprovalTerminalFinalizationResult
 ): string {
 	switch (finalization.transitionKind) {
 		case "approve":
@@ -418,7 +420,7 @@ function expectedTerminalEvent(
 function validateBatch(
 	batch: readonly [
 		ApprovalMaterializedTransitionPlan,
-		...ApprovalMaterializedTransitionPlan[],
+		...ApprovalMaterializedTransitionPlan[]
 	],
 	finalization: ApprovalTerminalFinalizationResult | null,
 ): void {
@@ -485,7 +487,7 @@ export function createApprovalTransitionResultBuilder(): ApprovalTransitionResul
 			const snapshot = final.resultingSnapshot;
 			const events = stableInput.materializedBatch.flatMap((pass) =>
 				pass.events.map(
-					({ persistenceMetadata: _metadata, ...event }) => event,
+					({ persistenceMetadata: _metadata, ...event }) => event
 				),
 			);
 			const currentStage = snapshot.stages.find(
@@ -618,12 +620,12 @@ export function createProductionApprovalWorkflowRuntime(input: {
 						preflight: (dbService, evidenceInput) =>
 							preflightCanonicalWorkPeriodDecisionEvidence(
 								dbService.db as never,
-								evidenceInput,
+								evidenceInput
 							),
 						record: (dbService, evidenceInput) =>
 							recordCanonicalWorkPeriodDecisionEvidence(
 								dbService.db as never,
-								evidenceInput,
+								evidenceInput
 							),
 					}
 				: input.adapters.ordinaryWorkPeriod.evidence,
@@ -642,7 +644,7 @@ export function createProductionApprovalWorkflowRuntime(input: {
 						record: (dbService, evidenceInput) =>
 							recordCanonicalTimeCorrectionDecisionEvidence(
 								dbService.db as never,
-								evidenceInput,
+								evidenceInput
 							),
 					}
 				: input.adapters.timeCorrection.evidence,
@@ -650,6 +652,7 @@ export function createProductionApprovalWorkflowRuntime(input: {
 	return createApprovalWorkflowRuntime({
 		db: input.db,
 		adapterRegistry: createProductionApprovalDomainAdapterRegistry({
+			clock: input.clock,
 			absence: createAbsenceApprovalAdapter(input.adapters.absence),
 			timeCorrection: createTimeCorrectionApprovalAdapter(timeCorrection),
 			manualTimeSubmission: createOrdinaryWorkPeriodApprovalAdapter(

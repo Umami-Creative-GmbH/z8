@@ -19,6 +19,7 @@ import type {
 	ApprovalAssignmentSnapshot,
 	ApprovalCommandActor,
 	ApprovalCommandResult,
+	ApprovalCoveringDeputyGrant,
 	ApprovalEventActorIdentity,
 	ApprovalMaterializedAssignmentChange,
 	ApprovalMaterializedTransitionPlan,
@@ -26,7 +27,6 @@ import type {
 	ApprovalPlannedEntityReference,
 	ApprovalTransitionIdentityResolution,
 	ApprovalTransitionPlan,
-	ApprovalCoveringDeputyGrant,
 	ApprovalWorkflowAuthorization,
 	ApprovalWorkflowEventSnapshot,
 	ApprovalWorkflowSnapshot,
@@ -40,7 +40,7 @@ import type { ApprovalWorkflowEventType } from "./types";
 
 type Equal<Left, Right> =
 	(<Value>() => Value extends Left ? 1 : 2) extends <
-		Value,
+		Value
 	>() => Value extends Right ? 1 : 2
 		? true
 		: false;
@@ -144,8 +144,7 @@ type _TransitionPlanHasAuthoritativeBeforeAndPlannedAfter = Assert<
 >;
 type _MaterializedPlanHasPersistedAuthoritativeSnapshot = Assert<
 	Equal<
-		keyof ApprovalMaterializedTransitionPlan,
-		| "expectedVersion"
+		keyof ApprovalMaterializedTransitionPlan, "expectedVersion"
 		| "resultingSnapshot"
 		| "changes"
 		| "events"
@@ -226,6 +225,7 @@ repository.applyMaterializedTransition(unresolvedPlan);
 
 interface TestSourceMap {
 	absence: { kind: "absence" };
+	absence_change: { kind: "absence_change" };
 	time_correction: { kind: "time_correction" };
 	manual_time_submission: { kind: "manual_time_submission" };
 	policy_clock_out: { kind: "policy_clock_out" };

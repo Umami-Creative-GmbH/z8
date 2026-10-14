@@ -33,6 +33,7 @@ interface LegacyApprovalCursor {
 
 const ZERO_APPROVAL_COUNTS: Record<ApprovalType, number> = {
 	absence_entry: 0,
+	absence_change_request: 0,
 	time_entry: 0,
 	shift_request: 0,
 	travel_expense_claim: 0,

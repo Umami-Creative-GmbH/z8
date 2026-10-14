@@ -7,7 +7,7 @@ import type {
 } from "../domain-adapters/types";
 import type {
 	ApprovalPolicyConditionDraft,
-	ApprovalPolicyDraft,
+	ApprovalPolicyDraft
 } from "../policies/types";
 import type { ApprovalProjectionWriteInput } from "../projection/contracts";
 import { ApprovalStageActivationError } from "../routing/approver-resolver";
@@ -89,10 +89,10 @@ export interface StartApprovalWorkflowInput {
 	}): JsonObject;
 	displayProjection: ApprovalDisplayProjection;
 	bindSourceWorkflow(
-		workflowId: string,
+		workflowId: string
 	): Promise<ApprovalSourceWorkflowLinkEvidence>;
 	verifySourceWorkflow(
-		workflowId: string,
+		workflowId: string
 	): Promise<ApprovalSourceWorkflowLinkEvidence>;
 }
 
@@ -111,6 +111,7 @@ const CANONICAL_UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const WORKFLOW_TYPES = new Set<ApprovalWorkflowType>([
 	"absence",
+	"absence_change",
 	"time_correction",
 	"manual_time_submission",
 	"policy_clock_out",
@@ -208,7 +209,7 @@ function validateInput(input: StartApprovalWorkflowInput): void {
 			"organizationId",
 			"workflowType",
 			"sourceType",
-			"sourceId",
+			"sourceId"
 		]) ||
 		!nonEmpty(source.sourceType) ||
 		!canonicalUuid(source.sourceId) ||
@@ -338,7 +339,7 @@ function decodeCondition(
 		"organizationId",
 		"policyId",
 		"conditionType",
-		"operator",
+		"operator"
 	] as const;
 	if (
 		!canonicalUuid(value.id) ||
@@ -398,7 +399,7 @@ function decodeCondition(
 
 function decodePolicies(
 	value: unknown,
-	organizationId: string,
+	organizationId: string
 ): ApprovalPolicyDraft[] {
 	if (
 		!Array.isArray(value) ||
@@ -602,7 +603,7 @@ function buildProjection(
 	updatedAt: ApprovalWorkflowEventSnapshot["occurredAt"],
 ): ApprovalProjectionWriteInput {
 	const current = snapshot.stages.find(
-		(stage) => stage.sequence === snapshot.currentStageOrder,
+		(stage) => stage.sequence === snapshot.currentStageOrder
 	);
 	return {
 		organizationId: snapshot.organizationId,
@@ -635,7 +636,7 @@ function freezeDeep<Value>(value: Value, seen = new Set<object>()): Value {
 }
 
 function cloneWorkflowForResolver(
-	snapshot: ApprovalWorkflowSnapshot,
+	snapshot: ApprovalWorkflowSnapshot
 ): ApprovalWorkflowSnapshot {
 	return freezeDeep({
 		...snapshot,
@@ -712,7 +713,7 @@ export async function startApprovalWorkflow(
 		input.contextSnapshot ?? input.routingContext,
 	) as JsonObject;
 	const submissionDisplaySnapshot = normalizeStableData(
-		input.displayProjection,
+		input.displayProjection
 	) as JsonObject;
 	const initial = await input.context.repository.findInitialWorkflow({
 		organizationId: input.organizationId,
@@ -761,8 +762,8 @@ export async function startApprovalWorkflow(
 						'policyId', condition.policy_id,
 						'conditionType', condition.condition_type,
 						'operator', condition.operator,
-						'value', condition.value_json -> 'value',
-						'values', condition.value_json -> 'values',
+						'value', ${input.workflowType === "absence_change" ? sql`coalesce(condition.value_json -> 'value', case when jsonb_typeof(condition.value_json) = 'string' then condition.value_json end, to_jsonb(condition.overtime_risk), to_jsonb(condition.team_id), to_jsonb(condition.location_id), to_jsonb(condition.absence_category_id), to_jsonb(condition.employee_group_id))` : sql`condition.value_json -> 'value'`},
+						'values', ${input.workflowType === "absence_change" ? sql`coalesce(condition.value_json -> 'values', case when jsonb_typeof(condition.value_json) = 'array' then condition.value_json end)` : sql`condition.value_json -> 'values'`},
 						'amountMin', condition.amount_min::double precision,
 						'amountMax', condition.amount_max::double precision
 					)) order by condition.id)
@@ -828,7 +829,7 @@ export async function startApprovalWorkflow(
 	try {
 		policies = decodePolicies(
 			policyResult.rows[0].policies,
-			input.organizationId,
+			input.organizationId
 		);
 		matchedPolicy = findMatchingRoutingPolicy(input.routingContext, policies);
 	} catch (error) {
@@ -911,7 +912,7 @@ export async function startApprovalWorkflow(
 		try {
 			const resolverWorkflow = cloneWorkflowForResolver(snapshot);
 			const resolverStage = resolverWorkflow.stages.find(
-				(candidate) => candidate.id === stage.id,
+				(candidate) => candidate.id === stage.id
 			);
 			if (!resolverStage) {
 				return fail("ACTIVATION_FAILED", {
@@ -925,7 +926,7 @@ export async function startApprovalWorkflow(
 				stage: resolverStage,
 				actor: { kind: "system", employeeId: null, userId: null },
 				routingContext: freezeDeep(
-					cloneJson(input.routingContext) as JsonObject,
+					cloneJson(input.routingContext) as JsonObject
 				),
 			});
 		} catch (error) {
@@ -956,7 +957,7 @@ export async function startApprovalWorkflow(
 				identityResolutions(
 					input.organizationId,
 					workflowId,
-					plan.identityAllocations,
+					plan.identityAllocations
 				),
 				{
 					receipt: {
@@ -991,7 +992,7 @@ export async function startApprovalWorkflow(
 	if (
 		snapshot.status === "pending" &&
 		snapshot.stages.find(
-			(stage) => stage.sequence === snapshot.currentStageOrder,
+			(stage) => stage.sequence === snapshot.currentStageOrder
 		)?.status === "waiting"
 	) {
 		return fail("ACTIVATION_LIMIT");
@@ -1017,7 +1018,7 @@ export async function startApprovalWorkflow(
 	const projection = buildProjection(
 		currentSnapshot,
 		input.displayProjection,
-		updatedAt,
+		updatedAt
 	);
 	const outbox: ApprovalOutboxWriteInput[] = events.map((event) => ({
 		organizationId: input.organizationId,

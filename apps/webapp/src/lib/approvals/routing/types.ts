@@ -3,7 +3,7 @@ import type { ApprovalWorkflowType } from "@/lib/approvals/workflow/types";
 export const ROUTING_STAGE_FALLBACKS = [
 	"fail",
 	"default_manager",
-	"organization_admin",
+	"organization_admin"
 ] as const;
 
 export type RoutingStageFallback = (typeof ROUTING_STAGE_FALLBACKS)[number];
@@ -23,6 +23,8 @@ export interface ApprovalRoutingContext {
 
 export const LEGACY_APPROVAL_TYPE_ALIASES = {
 	absence: ["absence_entry"],
+	// Changes follow existing absence policies, including category/team conditions.
+	absence_change: ["absence", "absence_entry"],
 	time_correction: ["time_entry"],
 	manual_time_submission: ["time_entry"],
 	policy_clock_out: ["time_entry"],

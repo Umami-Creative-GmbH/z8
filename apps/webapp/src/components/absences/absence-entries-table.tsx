@@ -22,11 +22,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { AbsenceChangeKind } from "@/lib/absences/change-request-types";
 import { formatDateRange, formatDays } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
 import type { AbsenceWithCategory, AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { useRouter } from "@/navigation";
+import { AbsenceChangeDialog } from "./absence-change-dialog";
+import { AbsenceChangeHistory } from "./absence-change-history";
 import { CategoryBadge } from "./category-badge";
 import { ChangeDeputyDialog } from "./change-deputy-dialog";
 import { DeputyName } from "./deputy-name";
@@ -34,6 +37,7 @@ import { AbsenceSickNotesPanel } from "./sick-notes/absence-sick-notes-panel";
 import { AttachSickNoteDialog } from "./sick-notes/attach-sick-note-dialog";
 import { SickNoteMarker } from "./sick-notes/sick-note-marker";
 import { useOwnAbsenceSickNotes } from "./sick-notes/use-own-absence-sick-notes";
+import { useOwnAbsenceChanges } from "./use-own-absence-changes";
 
 interface AbsenceEntriesTableProps {
 	absences: AbsenceWithDays[];
@@ -41,10 +45,8 @@ interface AbsenceEntriesTableProps {
 	onUpdate?: () => void;
 }
 
-function canShowCancelAction(absence: AbsenceWithDays, today: string): boolean {
-	if (absence.status === "pending") return true;
-	if (absence.status === "approved") return absence.startDate > today;
-	return false;
+function canShowCancelAction(absence: AbsenceWithDays): boolean {
+	return absence.status === "pending";
 }
 
 /** The deputy can change on pending and approved absences until they have ended (#1011). */
@@ -69,6 +71,16 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	const [sickNotesOf, setSickNotesOf] = useState<AbsenceWithDays | null>(null);
 	const [attachingTo, setAttachingTo] = useState<AbsenceWithDays | null>(null);
 	const [changingDeputyOf, setChangingDeputyOf] = useState<AbsenceWithDays | null>(null);
+	const [changeOf, setChangeOf] = useState<{
+		absence: AbsenceWithDays;
+		kind: AbsenceChangeKind;
+	} | null>(null);
+	const changes = useOwnAbsenceChanges();
+	const changed = () => {
+		void changes.refetch();
+		refresh();
+		onUpdate?.();
+	};
 
 	// Attaching can turn "without certificate" into "with certificate".
 	const handleSickNotesChanged = () => {
@@ -248,9 +260,12 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			cell: ({ row }) => {
 				const absence = row.original;
 				const canAttachSickNote = sickNotes.canAttach && takesSickNotes(absence);
-				const canCancel = canShowCancelAction(absence, currentDate);
+				const canCancel = canShowCancelAction(absence);
+				const canRequestChange = absence.status === "approved";
+				const pendingChange = changes.data?.some(
+					(request) => request.absenceId === absence.id && request.status === "pending",);
 				const canChange = canChangeDeputy(absence, currentDate);
-				if (!canCancel && !canAttachSickNote && !canChange) return null;
+				if (!canCancel && !canAttachSickNote && !canChange && !canRequestChange) return null;
 				const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
 				const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
 				const attachLabel = t("absences.sickNotes.attachAction", "Attach sick note");
@@ -258,6 +273,26 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 
 				return (
 					<div className="flex justify-end gap-1">
+						{canRequestChange ? (
+							<>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={!changes.isSuccess || pendingChange}
+									onClick={() => setChangeOf({ absence, kind: "change" })}
+								>
+									{t("absences.change.request", "Request change")}
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									disabled={!changes.isSuccess || pendingChange}
+									onClick={() => setChangeOf({ absence, kind: "cancel" })}
+								>
+									{t("absences.change.requestCancellation", "Request cancellation")}
+								</Button>
+							</>
+						) : null}
 						{canChange ? (
 							<Button
 								variant="ghost"
@@ -331,6 +366,27 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 
 	return (
 		<div className="space-y-4">
+			{changes.isError ? (<p role="alert" className="text-sm text-destructive">
+					{t("absences.change.historyFailed", "Could not load change requests.")}{" "}
+					<Button variant="link" onClick={() => void changes.refetch()}>
+						{t("common.retry", "Retry")}
+					</Button>
+				</p>
+			) : null}
+			{changes.data?.length ? (
+				<AbsenceChangeHistory requests={changes.data} onChanged={changed} />
+			) : null}
+			{changeOf ? (
+				<AbsenceChangeDialog
+					absence={changeOf.absence}
+					kind={changeOf.kind}
+					open
+					onOpenChange={(open) => {
+						if (!open) setChangeOf(null);
+					}}
+					onChanged={changed}
+				/>
+			) : null}
 			<DataTableToolbar
 				search={search}
 				onSearchChange={setSearch}

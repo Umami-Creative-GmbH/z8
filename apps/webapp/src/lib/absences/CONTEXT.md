@@ -4,6 +4,12 @@ Employees request time away from work, such as vacation or sick leave, and manag
 
 ## Language
 
+### Changes
+
+**Absence change request**:
+An employee's request to change the dates or half-day coverage of, or cancel, their own approved absence, including one recorded on their behalf. It keeps the absence category unchanged and takes effect only after another eligible approver approves it.
+_Avoid_: adjustment (reserved for vacation balances), direct edit, sick-day correction
+
 ### Counting
 
 **Working day**:

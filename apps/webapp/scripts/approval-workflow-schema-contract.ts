@@ -196,6 +196,7 @@ const enums = {
 		"shift_request",
 		"compliance_exception",
 		"period_submission",
+		"absence_change",
 	],
 	shift_request_status: ["pending", "approved", "rejected", "cancelled"],
 } as const;

@@ -4,6 +4,7 @@
 // ============================================
 
 export * from "./absence";
+export * from "./absence-change-request";
 // Deputy day-before reminder markers (#1013)
 export * from "./absence-deputy-reminder";
 // Conditional access policies
@@ -11,14 +12,15 @@ export * from "./access-policy";
 export * from "./app-auth";
 export * from "./approval";
 export * from "./approval-delivery";
+// Cover summary sent markers (#1018)
+export * from "./approval-deputy-cover-summary";
+export * from "./approval-deputy-decision";
 export * from "./approval-escalation";
 export * from "./approval-evidence";
 export * from "./approval-policy";
-export * from "./approval-deputy-decision";
-// Cover summary sent markers (#1018)
-export * from "./approval-deputy-cover-summary";
 export * from "./approval-setting";
 export * from "./approval-workflow";
+export * from "./assigned-location";
 export * from "./audit";
 // Audit export (signed packages, WORM retention)
 export * from "./audit-export";
@@ -49,8 +51,6 @@ export * from "./coverage";
 export * from "./cron-job";
 // Custom fields on employees, projects and customers (#769)
 export * from "./custom-field";
-// Organization vehicles and their assigned drivers (#1118, spec #807)
-export * from "./vehicle";
 // Custom roles (configurable permissions)
 export * from "./custom-role";
 export * from "./customer";
@@ -66,6 +66,7 @@ export * from "./enterprise";
 export * from "./enterprise-identity-setup";
 // Enums
 export * from "./enums";
+export * from "./expense-officer";
 export * from "./export";
 export * from "./holiday";
 // Identity management (role templates, lifecycle)
@@ -75,6 +76,8 @@ export * from "./implementation-checklist";
 export * from "./import-review";
 // Invite codes
 export * from "./invite-code";
+export * from "./kiosk";
+export * from "./kiosk-pin";
 export * from "./notification";
 // Domain tables
 export * from "./organization";
@@ -84,20 +87,22 @@ export * from "./organization-time-tracking-settings";
 export * from "./payroll-access";
 export * from "./payroll-blocker";
 export * from "./payroll-export";
+export * from "./period-submission";
 // Personal data exports: one employee's data as a ZIP (#811)
 export * from "./personal-data-export";
 // Personnel file (employee documents)
 export * from "./personnel-file";
 // Platform admin (audit log, org suspension)
 export * from "./platform-admin";
+export * from "./position-capture";
 export * from "./project";
 export * from "./project-assignment-history";
 // Public API key request log (#763)
 export * from "./public-api";
-// Report share links and their view log (#806)
-export * from "./report-share-link";
 // All relations (centralized)
 export * from "./relations";
+// Report share links and their view log (#806)
+export * from "./report-share-link";
 // Scheduled exports
 export * from "./scheduled-export";
 // SCIM provisioning
@@ -119,26 +124,24 @@ export * from "./time-entry-append";
 export * from "./time-record";
 export * from "./time-tracking";
 export * from "./travel-expense";
+export * from "./travel-expense-adjustment";
 export * from "./travel-expense-allowance-override";
 export * from "./travel-expense-allowance-policy";
 export * from "./travel-expense-conversion";
+export * from "./travel-expense-export";
 export * from "./travel-expense-legacy-conversion";
+export * from "./travel-expense-payroll-run";
 export * from "./travel-expense-per-diem";
 export * from "./travel-expense-project";
 export * from "./travel-expense-reference-rate";
 export * from "./travel-expense-review";
 export * from "./travel-expense-settlement";
-export * from "./travel-expense-payroll-run";
-export * from "./travel-expense-export";
-export * from "./travel-expense-adjustment";
-export * from "./expense-officer";
-export * from "./position-capture";
-export * from "./assigned-location";
-export * from "./kiosk";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";
 export * from "./vacation";
+// Organization vehicles and their assigned drivers (#1118, spec #807)
+export * from "./vehicle";
 export * from "./vehicle-use";
 // One-time wage history merge note (#1176)
 export * from "./wage-history-merge-note";
@@ -147,5 +150,3 @@ export * from "./wellness";
 export * from "./work-category";
 export * from "./work-policy";
 export * from "./works-council";
-export * from "./kiosk-pin";
-export * from "./period-submission";

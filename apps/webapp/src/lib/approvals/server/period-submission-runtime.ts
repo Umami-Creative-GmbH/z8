@@ -16,8 +16,23 @@ export function createPeriodSubmissionApprovalRuntime(
 		canManageApproval?: (actorEmployeeId: string) => Promise<boolean>;
 	},
 ) {
+	return createCanonicalSourceApprovalRuntime(database, {
+		...input,
+		workflowType: PERIOD_SUBMISSION_WORKFLOW_TYPE,
+	});
+}
+
+/** A canonical-only source owns its finalizer and grants management only within its kind. */
+export function createCanonicalSourceApprovalRuntime(
+	database: ApprovalWorkflowDatabase,
+	input: {
+		clock: Clock;
+		workflowType: "period_submission" | "absence_change";
+		canManageApproval?: (actorEmployeeId: string) => Promise<boolean>;
+	},
+) {
 	const outside = async (): Promise<never> => {
-		throw new Error("Outside the period submission boundary");
+		throw new Error("Outside the canonical source boundary");
 	};
 	return createProductionApprovalWorkflowRuntime({
 		db: database,
@@ -35,7 +50,7 @@ export function createPeriodSubmissionApprovalRuntime(
 			ordinaryWorkPeriod: { finalizeTerminal: outside },
 		},
 		canManageApproval: async ({ actorEmployeeId, workflow }) =>
-			workflow.workflowType === PERIOD_SUBMISSION_WORKFLOW_TYPE &&
+			workflow.workflowType === input.workflowType &&
 			(input.canManageApproval ? await input.canManageApproval(actorEmployeeId) : false),
 		clock: input.clock,
 	});

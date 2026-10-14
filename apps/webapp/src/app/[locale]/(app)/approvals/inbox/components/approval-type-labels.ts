@@ -6,11 +6,15 @@ export function getApprovalTypeLabels(
 ): Record<ApprovalInboxType, string> {
 	return {
 		absence_entry: t("approvals:approvals.types.absence_entry", "Absence Requests"),
+		absence_change_request: t(
+			"approvals:approvals.types.absence_change_request",
+			"Absence Changes",
+		),
 		time_entry: t("approvals:approvals.types.time_entry", "Time Corrections"),
 		travel_expense_claim: t("approvals:approvals.types.travel_expense_claim", "Travel Expenses"),
 		travel_expense_report: t(
 			"approvals:approvals.types.travel_expense_report",
-			"Expense Reports",
+			"Expense Reports"
 		),
 		period_submission: t("approvals:approvals.types.period_submission", "Period Submissions"),
 	};

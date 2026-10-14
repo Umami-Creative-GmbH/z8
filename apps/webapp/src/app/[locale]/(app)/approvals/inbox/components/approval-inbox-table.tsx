@@ -8,16 +8,16 @@ import {
 	IconReceipt,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { getApprovalTypeLabels } from "./approval-type-labels";
 import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
-import { getDecidedEarlierStageNote } from "./covering-notes";
-import { getOwnRequestNote } from "./own-request-note";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
 import type { ApprovalInboxItem, ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
+import { getApprovalTypeLabels } from "./approval-type-labels";
+import { getDecidedEarlierStageNote } from "./covering-notes";
+import { getOwnRequestNote } from "./own-request-note";
 
 interface ApprovalInboxTableProps {
 	items: ApprovalInboxItem[];
@@ -29,6 +29,7 @@ interface ApprovalInboxTableProps {
 
 const TYPE_ICONS: Record<ApprovalInboxType, React.ComponentType<{ className?: string }>> = {
 	absence_entry: IconCalendarOff,
+	absence_change_request: IconCalendarOff,
 	time_entry: IconClockEdit,
 	travel_expense_claim: IconReceipt,
 	travel_expense_report: IconReceipt,
@@ -119,7 +120,8 @@ export function ApprovalInboxTable({
 									aria-label={t(
 										"approvals:approvals.openDetailsFor",
 										"Open details for {title}",
-										{ title: text(summaryField(item.summary, "title")) },
+										{ title: text(summaryField(item.summary, "title")),
+									}
 									)}
 								>
 									<div className="flex min-w-0 items-center gap-3">

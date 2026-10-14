@@ -60,7 +60,7 @@ function subjectKey(subject: EscalationAttentionSubject): string {
  * plays no part in identity.
  */
 export function escalationAttentionDedupeKey(
-	input: EscalationAttentionInput,
+	input: EscalationAttentionInput
 ): string {
 	switch (input.reason) {
 		case "ambiguous_history":
@@ -70,7 +70,7 @@ export function escalationAttentionDedupeKey(
 		case "delivery_exhausted":
 			if (!input.deliveryChannel) {
 				throw new Error(
-					"delivery_exhausted attention requires a delivery channel",
+					"delivery_exhausted attention requires a delivery channel"
 				);
 			}
 			return `${input.reason}:${subjectKey(input.subject)}:channel:${input.deliveryChannel}`;
@@ -85,7 +85,7 @@ export function escalationAttentionDedupeKey(
 }
 
 export function escalationAttentionAssignmentId(
-	input: EscalationAttentionInput,
+	input: EscalationAttentionInput
 ): string | null {
 	return input.subject.kind === "assignment"
 		? input.subject.assignmentId
@@ -114,6 +114,8 @@ const INBOX_TYPES_BY_APPROVAL_TYPE: Readonly<
 	Record<string, readonly ApprovalInboxType[]>
 > = {
 	absence: ["absence_entry"],
+	absence_change: ["absence_change_request"],
+	absence_change_request: ["absence_change_request"],
 	absence_entry: ["absence_entry"],
 	time_correction: ["time_entry"],
 	manual_time_submission: ["time_entry"],
@@ -127,7 +129,7 @@ const INBOX_TYPES_BY_APPROVAL_TYPE: Readonly<
 
 /** Web inbox link for the approval an incident concerns. */
 export function escalationAttentionApprovalHref(
-	approvalType: string | null,
+	approvalType: string | null
 ): string {
 	const inboxTypes = approvalType
 		? INBOX_TYPES_BY_APPROVAL_TYPE[approvalType]
@@ -158,8 +160,7 @@ export type EscalationAttentionRecheckResult =
 	| { kind: "persisting" }
 	| {
 			kind: "recovered";
-			cause:
-				| "approval_no_longer_pending"
+			cause: "approval_no_longer_pending"
 				| "assignment_no_longer_pending"
 				| "assignment_moved";
 	  };
