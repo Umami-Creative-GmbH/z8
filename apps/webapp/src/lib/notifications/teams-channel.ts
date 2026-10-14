@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
+import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
 
 const logger = createLogger("TeamsChannel");
@@ -132,10 +133,17 @@ export async function sendTeamsNotification(
 			return options.durable ? "unavailable" : undefined;
 		}
 
-		// Build message text
-		let text = `**${params.title}**\n\n${params.message}`;
+		const localized = await localizeOutboundNotification({
+			userId: params.userId,
+			organizationId: params.organizationId,
+			title: params.title,
+			message: params.message,
+			metadata: params.metadata,
+			withActionLabel: true,
+		});
+		let text = `**${localized.title}**\n\n${localized.message}`;
 		if (params.actionUrl) {
-			text += `\n\n[View in Z8](${params.actionUrl})`;
+			text += `\n\n[${localized.actionLabel}](${params.actionUrl})`;
 		}
 
 		const acknowledgement = await sendProactiveMessage(conversationRef, {

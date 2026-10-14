@@ -5,7 +5,7 @@ import { TolgeeNextProvider } from "./client";
 import { FeatureTranslationProvider } from "./feature-provider";
 import { loadCatalogSlice, loadShellTranslations } from "./load-translations";
 import { RouteTranslationBoundary } from "./route-boundary";
-import { ALL_LANGUAGES, ALL_NAMESPACES, type Namespace } from "./shared";
+import { ALL_LANGUAGES, APP_NAMESPACES, type Namespace } from "./shared";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("server-only", () => ({}));
@@ -20,7 +20,7 @@ describe("render-local feature SSR", () => {
 		"renders recovery, report projects and nested settings wording immediately in %s",
 		async (locale) => {
 			const shell = await loadShellTranslations(locale);
-			const complete = await loadCatalogSlice(locale, ALL_NAMESPACES);
+			const complete = await loadCatalogSlice(locale, APP_NAMESPACES);
 			const examples: { namespaces: Namespace[]; key: string }[] = [
 				{ namespaces: ["common", "billing"], key: "billing.suspended.title" },
 				{ namespaces: ["reports"], key: "reports.projects.title" },

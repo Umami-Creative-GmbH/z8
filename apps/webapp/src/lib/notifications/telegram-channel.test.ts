@@ -110,6 +110,7 @@ describe("sendTelegramNotification", () => {
 			locale: "de",
 			title: "Zum Team *hinzugefügt*",
 			message: "Sie wurden zum Team Ops (EU) hinzugefügt.",
+			actionLabel: "In Z8 ansehen",
 		});
 	});
 
@@ -140,10 +141,12 @@ describe("sendTelegramNotification", () => {
 			message: "You were added to the Ops (EU) team.",
 			metadata,
 			locale: "de",
+			timeFormat: "24h",
+			withActionLabel: true,
 		});
 		expect(sendMessageMock).toHaveBeenCalledWith("bot-token", {
 			chat_id: "chat-123",
-			text: "*Zum Team \\*hinzugefügt\\**\n\nSie wurden zum Team Ops \\(EU\\) hinzugefügt\\.\n\n[View in Z8](https://z8\\.test/teams/ops?tab\\=members)",
+			text: "*Zum Team \\*hinzugefügt\\**\n\nSie wurden zum Team Ops \\(EU\\) hinzugefügt\\.\n\n[In Z8 ansehen](https://z8\\.test/teams/ops?tab\\=members)",
 			parse_mode: "MarkdownV2",
 		});
 	});

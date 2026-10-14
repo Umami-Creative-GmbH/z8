@@ -14,6 +14,7 @@ import { pushSubscription } from "@/db/schema";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import { isNativePushAvailable, sendNativePushToUser } from "./native-push-service";
+import { localizeOutboundNotification } from "./outbound-localization";
 import { NOTHING_SENT, type PushDeliveryResult } from "./push-delivery";
 import type { NotificationType } from "./types";
 
@@ -134,16 +135,25 @@ export async function sendPushNotification(
 	}
 }
 
+interface SendPushOptions {
+	throwOnError?: boolean;
+	organizationId?: string | null;
+	/** The notification's metadata; its `i18n` keys render the web push text per recipient. */
+	metadata?: Record<string, unknown> | string | null;
+}
+
 /**
  * Send a push notification to every active web subscription and native
  * device of a user. A user with the PWA and the store app gets one
- * notification per device. Native push carries only a generic text, the
+ * notification per device. Web push carries the title and body in the
+ * recipient language when the notification has translation keys (#1155),
+ * else the stored text. Native push carries only a generic text, the
  * type, the path and `organizationId` (see native-push-message.ts).
  */
 export async function sendPushToUser(
 	userId: string,
 	payload: PushPayload,
-	options: { throwOnError?: boolean; organizationId?: string | null } = {},
+	options: SendPushOptions = {},
 ): Promise<PushDeliveryResult> {
 	const type = payload.data?.type;
 	const [web, native] = await Promise.all([
@@ -167,10 +177,27 @@ export async function sendPushToUser(
 	};
 }
 
-async function sendWebPushToUser(
+/** The payload with its title and body in the recipient language. */
+async function localizeWebPushPayload(
 	userId: string,
 	payload: PushPayload,
-	options: { throwOnError?: boolean },
+	options: SendPushOptions,
+): Promise<PushPayload> {
+	if (!options.organizationId || !options.metadata) return payload;
+	const localized = await localizeOutboundNotification({
+		userId,
+		organizationId: options.organizationId,
+		title: payload.title,
+		message: payload.body,
+		metadata: options.metadata,
+	});
+	return { ...payload, title: localized.title, body: localized.message };
+}
+
+async function sendWebPushToUser(
+	userId: string,
+	stored: PushPayload,
+	options: SendPushOptions,
 ): Promise<PushDeliveryResult> {
 	if (!configureWebPush()) {
 		return NOTHING_SENT;
@@ -187,6 +214,7 @@ async function sendWebPushToUser(
 			return NOTHING_SENT;
 		}
 
+		const payload = await localizeWebPushPayload(userId, stored, options);
 		let sent = 0;
 		let failed = 0;
 		const expired: string[] = [];

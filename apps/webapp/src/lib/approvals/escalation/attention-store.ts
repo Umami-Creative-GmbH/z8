@@ -1,7 +1,6 @@
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import type { ApprovalEscalationAttentionReason } from "@/db/schema";
 import {
 	approvalEscalationAttention,
 	approvalEscalationAttentionEvent,
@@ -22,13 +21,15 @@ import {
 	escalationAttentionCurrentApproverId,
 	escalationAttentionDedupeKey,
 } from "./attention";
+import { buildEscalationAttentionAlert } from "./attention-alert";
+
+export { ESCALATION_MANAGEMENT_PATH } from "./attention-alert";
 
 const logger = createLogger("ApprovalEscalationAttention");
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type EscalationAttentionExecutor = typeof db | DatabaseTransaction;
 
-export const ESCALATION_MANAGEMENT_PATH = "/settings/approval-escalation";
 export const MAX_ATTENTION_DISPOSITION_NOTE_LENGTH = 2000;
 
 export interface RaiseEscalationAttentionOutcome {
@@ -434,24 +435,6 @@ export async function recheckEscalationAttention(input: {
 	};
 }
 
-const ATTENTION_ALERT_MESSAGES: Record<
-	ApprovalEscalationAttentionReason,
-	string
-> = {
-	no_eligible_backup:
-		"An overdue approval has no eligible backup approver. The current approver keeps the assignment.",
-	replacement_overdue:
-		"An approval is still undecided after its automatic escalation. No further automatic transfer will happen.",
-	unsupported_route:
-		"An approval cannot be escalated because its decision path is not supported.",
-	ambiguous_history:
-		"An approval's escalation history is ambiguous and needs review before any automatic transfer.",
-	delivery_exhausted:
-		"Escalation notifications for an approval failed after all retries.",
-	delivery_unavailable:
-		"No escalation notification destination is available for an approval.",
-};
-
 export interface EscalationAttentionAlertSummary {
 	incidents: number;
 	alerted: number;
@@ -510,17 +493,12 @@ export async function dispatchEscalationAttentionAlerts(input: {
 		for (const recipient of recipients) {
 			try {
 				await createNotification(
-					{
-						userId: recipient.userId,
+					buildEscalationAttentionAlert({
 						organizationId: input.organizationId,
-						type: "approval_escalation_attention",
-						title: "Approval escalation needs attention",
-						message: ATTENTION_ALERT_MESSAGES[incident.reason],
-						entityType: "approval_escalation_attention",
-						entityId: incident.id,
-						actionUrl: ESCALATION_MANAGEMENT_PATH,
-						idempotencyKey: `approval-escalation-attention:${incident.id}:${recipient.userId}`,
-					},
+						userId: recipient.userId,
+						attentionId: incident.id,
+						reason: incident.reason,
+					}),
 					{ throwOnError: true },
 				);
 			} catch (error) {

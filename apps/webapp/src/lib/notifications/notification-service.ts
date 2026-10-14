@@ -10,7 +10,7 @@ import { notification, notificationPreference } from "@/db/schema";
 import { publishEventAsync } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
-import { sendEmailNotification } from "./email-notifications";
+import type { sendEmailNotification as SendEmailNotification } from "./email-notifications";
 import {
 	forwardedNotification,
 	type NotificationRecipients,
@@ -37,6 +37,18 @@ import type {
 import { hasMandatoryInbox, isChannelEnabledByDefault } from "./types";
 
 const logger = createLogger("NotificationService");
+
+/**
+ * The mailer (email copy, layout and templates) is `server-only`. Loading it on
+ * first send keeps notification callers, such as the approval escalation
+ * processor, importable in a plain Node worker.
+ */
+async function sendEmailNotification(
+	...args: Parameters<typeof SendEmailNotification>
+): ReturnType<typeof SendEmailNotification> {
+	const { sendEmailNotification: send } = await import("./email-notifications");
+	return send(...args);
+}
 
 /**
  * Calculate relative time string (e.g., "2 hours ago", "3 days ago")
@@ -214,6 +226,7 @@ export async function deliverNotificationToChannel(
 				},
 				{
 					organizationId: params.organizationId,
+					metadata: params.metadata,
 					...(options.durable ? { throwOnError: true } : {}),
 				},
 			);
@@ -374,9 +387,11 @@ export async function createNotification(
 				},
 			};
 
-			// Fire and forget - don't await to avoid blocking
+			// Fire and forget - don't await to avoid blocking. Web push renders the
+			// text from the metadata in the recipient language (#1155).
 			void sendPushToUser(params.userId, pushPayload, {
 				organizationId: params.organizationId,
+				metadata: params.metadata,
 			}).catch((error) => {
 				logger.error(
 					{ error, userId: params.userId, type: params.type },

@@ -488,8 +488,8 @@ describe("generateDemoPendingAbsenceApprovals", () => {
 		);
 
 		mocks.employees = [
-			{ id: "employee-1", organizationId: "org-1", userId: "user-1" },
-			{ id: "employee-2", organizationId: "org-1", userId: "user-2" },
+			{ id: "employee-1", organizationId: "org-1", userId: "user-1", user: { name: "Avery" } },
+			{ id: "employee-2", organizationId: "org-1", userId: "user-2", user: { name: "Morgan" } },
 		];
 		mocks.categories = [
 			{
@@ -502,6 +502,7 @@ describe("generateDemoPendingAbsenceApprovals", () => {
 				id: "vacation-category",
 				organizationId: "org-1",
 				type: "vacation",
+				name: "Vacation",
 				isActive: true,
 			},
 		];
@@ -556,22 +557,33 @@ describe("generateDemoPendingAbsenceApprovals", () => {
 				organizationId: "org-1",
 				type: "approval_request_submitted",
 				title: "New absence request",
-				message: "Demo data - Pending absence request needs approval.",
+				message: expect.stringMatching(/^Avery requested Vacation for /),
 				entityType: "absence_entry",
 				entityId: "absence-1",
 				actionUrl: "/approvals/inbox",
+				metadata: expect.any(String),
 			},
 			{
 				userId: "user-1",
 				organizationId: "org-1",
 				type: "approval_request_submitted",
 				title: "New absence request",
-				message: "Demo data - Pending absence request needs approval.",
+				message: expect.stringMatching(/^Morgan requested Vacation for /),
 				entityType: "absence_entry",
 				entityId: "absence-2",
 				actionUrl: "/approvals/inbox",
+				metadata: expect.any(String),
 			},
 		]);
+		// Translation keys, so the approver reads the seed row in their own language (#812).
+		expect(JSON.parse(mocks.insertedNotifications[0].metadata)).toMatchObject({
+			approvalSubject: "absence",
+			i18n: {
+				titleKey: "common:notifications.content.newAbsenceRequest.title",
+				messageKey: "common:notifications.content.newAbsenceRequest.message",
+				params: { employeeName: "Avery", categoryName: "Vacation" },
+			},
+		});
 	}, 15_000);
 });
 

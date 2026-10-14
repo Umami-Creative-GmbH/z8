@@ -458,12 +458,6 @@ export async function POST(request: NextRequest) {
 						workPeriodId: selectedWorkPeriod.id,
 						reason: notes,
 						period: selectedWorkPeriod,
-						correctedClockIn: correctsClockIn
-							? trustedCorrectionTimestamp
-							: selectedWorkPeriod.startTime,
-						correctedClockOut: correctsClockIn
-							? (selectedWorkPeriod.endTime ?? undefined)
-							: trustedCorrectionTimestamp,
 						result: approvalResult,
 					});
 				} catch (error) {

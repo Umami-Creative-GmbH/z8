@@ -7,13 +7,18 @@
  * 3. Sends notification emails on completion/failure
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { dataExport, db, employee, organization } from "@/db";
 import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { formatInstant } from "@/lib/datetime/temporal-format";
+import {
+	type EmailTranslate,
+	type EmailTranslator,
+	loadEmailTranslator,
+} from "@/lib/email/email-i18n";
 import { sendEmail } from "@/lib/email/email-service";
+import { renderExportFailed, renderExportReady } from "@/lib/email/render";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import {
 	cleanupExpiredExports,
@@ -22,9 +27,13 @@ import {
 	getPendingExports,
 	processExport,
 } from "@/lib/export/export-service";
-import { CATEGORY_LABELS, type ExportCategory, exportHistoryPath } from "@/lib/export/types";
+import { CATEGORY_LABELS, exportHistoryPath, isExportCategory } from "@/lib/export/types";
 import { createLogger } from "@/lib/logger";
-import { resolveOrganizationNotificationLocale } from "@/lib/notifications/recipient-locale";
+import {
+	formatNotificationParam,
+	notificationParam,
+} from "@/lib/notifications/notification-params";
+import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 
 const logger = createLogger("ExportProcessorJob");
@@ -46,18 +55,24 @@ export interface ExportJobResult {
  * Get requester details for sending email
  */
 async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
+	userId: string;
 	email: string;
 	name: string;
-	organizationName: string;
+	/** Null when the organization has no name; the email names it in the recipient language. */
+	organizationName: string | null;
 	organizationTimezone: string;
 } | null> {
 	try {
 		// Get employee who requested the export
 		const emp = await db.query.employee.findFirst({
-			where: eq(employee.id, exportRecord.requestedById),
+			where: and(
+				eq(employee.id, exportRecord.requestedById),
+				eq(employee.organizationId, exportRecord.organizationId),
+			),
 			with: {
 				user: {
 					columns: {
+						id: true,
 						firstName: true,
 						lastName: true,
 						email: true,
@@ -82,15 +97,47 @@ async function getRequesterDetails(exportRecord: ExportRecord): Promise<{
 		});
 
 		return {
+			userId: emp.user.id,
 			email: emp.user.email,
-			name: buildAuthUserDisplayName(emp.user) || "Admin",
-			organizationName: org?.name || "Your Organization",
+			// The display name falls back to the email address, which is always there.
+			name: buildAuthUserDisplayName(emp.user) || emp.user.email,
+			organizationName: org?.name || null,
 			organizationTimezone: resolveOrganizationTimezone(org?.timezone ?? undefined).timezone,
 		};
 	} catch (error) {
 		logger.error({ exportId: exportRecord.id, error }, "Failed to get requester details");
 		return null;
 	}
+}
+
+/** The `emails` translator in the requester's recipient language. */
+async function requesterTranslator(
+	exportRecord: ExportRecord,
+	userId: string,
+): Promise<EmailTranslator> {
+	return loadEmailTranslator(
+		await resolveRecipientNotificationLocale({
+			userId,
+			organizationId: exportRecord.organizationId,
+		}),
+	);
+}
+
+/**
+ * The exported data categories in the recipient language. A category the export
+ * no longer offers keeps its stored name.
+ */
+function exportCategoryLabels(t: EmailTranslate, categories: readonly string[]): string[] {
+	return categories.map((category) => {
+		if (!isExportCategory(category)) return category;
+		const { labelKey, label } = CATEGORY_LABELS[category];
+		return t(labelKey, label);
+	});
+}
+
+/** The export's organization name, or a stand-in in the recipient language. */
+function organizationNameOrFallback(t: EmailTranslate, organizationName: string | null): string {
+	return organizationName || t("emails.export.values.yourOrganization", "Your Organization");
 }
 
 /**
@@ -110,34 +157,39 @@ async function sendSuccessEmail(exportRecord: ExportRecord): Promise<void> {
 		// email links to the export history, which signs a fresh URL per download.
 		// The path names the export's organization so a multi-org admin is not
 		// shown the history of whichever organization is active.
-		const locale = await resolveOrganizationNotificationLocale(exportRecord.organizationId);
+		const translator = await requesterTranslator(exportRecord, requester.userId);
+		const { locale, t } = translator;
 		const downloadUrl = `${getDefaultAppBaseUrl()}/${locale}${exportHistoryPath(exportRecord.organizationId)}`;
 
-		// Format categories for display
-		const categoryNames = exportRecord.categories.map(
-			(cat) => CATEGORY_LABELS[cat as ExportCategory] || cat,
+		// The file itself stays available until the export expires: shown in the
+		// organization timezone with the zone printed.
+		const expiresAt = formatNotificationParam(
+			notificationParam.zonedInstant(
+				instantFromDate(exportRecord.expiresAt),
+				requester.organizationTimezone,
+			),
+			{ locale },
 		);
 
-		// The file itself stays available until the export expires.
-		const timezone = requester.organizationTimezone;
-		const expiresAt = `${formatInstant(
-			instantFromDate(exportRecord.expiresAt),
-			{ locale: "en-US", timezone, timeFormat: "24h" },
-			"dateTimeMedium",
-		)} (${timezone})`;
-
+		const organizationName = organizationNameOrFallback(t, requester.organizationName);
+		const data = {
+			recipientName: requester.name,
+			organizationName,
+			categories: exportCategoryLabels(t, exportRecord.categories),
+			fileSize: formatFileSize(exportRecord.fileSizeBytes),
+			downloadUrl,
+			expiresAt,
+		};
 		const rendered = await renderOrganizationEmailTemplate({
 			organizationId: exportRecord.organizationId,
 			templateKey: "export-ready",
-			data: {
-				recipientName: requester.name,
-				organizationName: requester.organizationName,
-				categories: categoryNames,
-				fileSize: formatFileSize(exportRecord.fileSizeBytes),
-				downloadUrl,
-				expiresAt,
-			},
-			subjectOverride: `Your data export is ready - ${requester.organizationName}`,
+			data,
+			subjectOverride: t(
+				"emails.subjects.exportReady",
+				"Your data export is ready - {organizationName}",
+				{ organizationName },
+			),
+			renderDefaultHtml: () => renderExportReady(data, translator),
 		});
 
 		await sendEmail({
@@ -164,25 +216,29 @@ async function sendFailureEmail(exportRecord: ExportRecord): Promise<void> {
 	if (!requester) return;
 
 	try {
-		// Format categories for display
-		const categoryNames = exportRecord.categories.map(
-			(cat) => CATEGORY_LABELS[cat as ExportCategory] || cat,
-		);
+		const translator = await requesterTranslator(exportRecord, requester.userId);
+		const { t } = translator;
 
-		// Build retry URL (settings page)
-		const retryUrl = `${getDefaultAppBaseUrl()}/settings/export`;
-
+		const organizationName = organizationNameOrFallback(t, requester.organizationName);
+		const data = {
+			recipientName: requester.name,
+			organizationName,
+			categories: exportCategoryLabels(t, exportRecord.categories),
+			errorMessage:
+				exportRecord.errorMessage || t("emails.exportFailed.unknownError", "Unknown error"),
+			// Build retry URL (settings page)
+			retryUrl: `${getDefaultAppBaseUrl()}/settings/export`,
+		};
 		const rendered = await renderOrganizationEmailTemplate({
 			organizationId: exportRecord.organizationId,
 			templateKey: "export-failed",
-			data: {
-				recipientName: requester.name,
-				organizationName: requester.organizationName,
-				categories: categoryNames,
-				errorMessage: exportRecord.errorMessage || "Unknown error",
-				retryUrl,
-			},
-			subjectOverride: `Data export failed - ${requester.organizationName}`,
+			data,
+			subjectOverride: t(
+				"emails.subjects.exportFailed",
+				"Data export failed - {organizationName}",
+				{ organizationName },
+			),
+			renderDefaultHtml: () => renderExportFailed(data, translator),
 		});
 
 		await sendEmail({

@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Effect, Exit } from "effect";
-import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { member } from "@/db/auth-schema";
 import {
@@ -14,7 +13,6 @@ import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { getAbsenceDays } from "@/lib/absences/absence-days-resolver";
 import type { VacationOverrideSummary } from "@/lib/absences/sick-vacation-override";
 import { adjustVacationAbsencesForSickness } from "@/lib/absences/sick-vacation-override";
-import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { getAbility } from "@/lib/auth-helpers";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -37,11 +35,6 @@ import {
 import { runtime as effectRuntime } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { EmailService } from "@/lib/effect/services/email.service";
-import {
-	renderAbsenceRequestApproved,
-	renderAbsenceRequestRejected,
-} from "@/lib/email/render";
 import {
 	findLegacyAbsenceDecisionTarget,
 	recordLegacyAbsenceDecisionIntent,
@@ -1129,14 +1122,6 @@ async function syncCanonicalAbsenceApprovalStateAt(
 	}
 }
 
-export function formatAbsenceDateForEmail(date: Date | string) {
-	const value =
-		typeof date === "string"
-			? DateTime.fromISO(date)
-			: DateTime.fromJSDate(date);
-	return value.toFormat("LLL d, yyyy");
-}
-
 export function buildAbsenceApprovalPolicyContext(absence: {
 	id: string;
 	organizationId: string;
@@ -1352,32 +1337,13 @@ export function rejectAbsenceWithCurrentApproverEffect(
 	);
 }
 
-function buildAbsenceEmailContext(
-	absence: AbsenceRecord,
-	currentEmployee: CurrentApprover,
-	days: number,
-) {
-	return Effect.gen(function* () {
-		const appUrl = yield* Effect.promise(() =>
-			getOrganizationBaseUrl(absence.employee.organizationId),
-		);
-
-		return {
-			employeeName: absence.employee.user.name,
-			approverName: currentEmployee.user.name,
-			startDate: formatAbsenceDateForEmail(absence.startDate),
-			endDate: formatAbsenceDateForEmail(absence.endDate),
-			absenceType: absence.category.name,
-			days,
-			appUrl,
-		};
-	});
-}
-
+// The employee's decision email goes out with the notification, through the
+// notification email channel (#1152).
 function notifyApprovedAbsence(
 	absence: AbsenceRecord,
 	entityId: string,
 	currentEmployee: CurrentApprover,
+	days: number,
 ) {
 	void onAbsenceRequestApproved({
 		absenceId: entityId,
@@ -1388,6 +1354,7 @@ function notifyApprovedAbsence(
 		startDate: absence.startDate,
 		endDate: absence.endDate,
 		approverName: currentEmployee.user.name,
+		days,
 	});
 }
 
@@ -1396,6 +1363,7 @@ function notifyRejectedAbsence(
 	entityId: string,
 	currentEmployee: CurrentApprover,
 	reason: string,
+	days: number,
 ) {
 	void onAbsenceRequestRejected({
 		absenceId: entityId,
@@ -1406,6 +1374,7 @@ function notifyRejectedAbsence(
 		startDate: absence.startDate,
 		endDate: absence.endDate,
 		approverName: currentEmployee.user.name,
+		days,
 		rejectionReason: reason,
 	});
 }
@@ -1546,30 +1515,9 @@ function notifyApprovedAbsenceAfterCommit(
 	result: ApprovedAbsenceResult,
 ) {
 	return Effect.gen(function* () {
-		const emailService = yield* EmailService;
 		const { absence } = result;
 		const days = yield* loadAbsenceDays(dbService, absence);
-		const emailContext = yield* buildAbsenceEmailContext(absence, currentEmployee, days);
-		const html = yield* Effect.promise(() => renderAbsenceRequestApproved(emailContext));
-
-		yield* emailService
-			.send({
-				to: absence.employee.user.email,
-				subject: `Absence Request Approved: ${absence.category.name}`,
-				html,
-			})
-			.pipe(
-				Effect.catchTag("EmailError", (error) =>
-					Effect.sync(() =>
-						logger.error(
-							{ error, absenceId: entityId },
-							"Failed to send absence approval email",
-						),
-					),
-				),
-			);
-
-		notifyApprovedAbsence(absence, entityId, currentEmployee);
+		notifyApprovedAbsence(absence, entityId, currentEmployee, days);
 	});
 }
 
@@ -1667,35 +1615,9 @@ function notifyRejectedAbsenceAfterCommit(
 	result: AbsenceStatusUpdateResult,
 ) {
 	return Effect.gen(function* () {
-		const emailService = yield* EmailService;
 		const { absence } = result;
 		const days = yield* loadAbsenceDays(dbService, absence);
-		const emailContext = yield* buildAbsenceEmailContext(absence, currentEmployee, days);
-		const html = yield* Effect.promise(() =>
-			renderAbsenceRequestRejected({
-				...emailContext,
-				rejectionReason: reason,
-			}),
-		);
-
-		yield* emailService
-			.send({
-				to: absence.employee.user.email,
-				subject: `Absence Request Rejected: ${absence.category.name}`,
-				html,
-			})
-			.pipe(
-				Effect.catchTag("EmailError", (error) =>
-					Effect.sync(() =>
-						logger.error(
-							{ error, absenceId: entityId },
-							"Failed to send absence rejection email",
-						),
-					),
-				),
-			);
-
-		notifyRejectedAbsence(absence, entityId, currentEmployee, reason);
+		notifyRejectedAbsence(absence, entityId, currentEmployee, reason, days);
 	});
 }
 

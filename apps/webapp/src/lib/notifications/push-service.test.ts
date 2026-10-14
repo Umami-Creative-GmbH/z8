@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
 	updates: [] as Array<{ table: unknown; set: Record<string, unknown>; where: unknown }>,
 	webPushSend: vi.fn(),
 	deviceTokenQuery: vi.fn(),
+	userLocale: "en",
 }));
 
 vi.mock("@/env", () => ({ env: state.env }));
@@ -24,7 +25,7 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			pushSubscription: { findMany: vi.fn(async () => state.webSubscriptions) },
-			userSettings: { findFirst: vi.fn(async () => ({ locale: "en" })) },
+			userSettings: { findFirst: vi.fn(async () => ({ locale: state.userLocale })) },
 			organizationNotificationSettings: { findFirst: vi.fn(async () => null) },
 		},
 		// Device tokens joined with their live session (see the PostgreSQL suite).
@@ -103,6 +104,7 @@ beforeEach(() => {
 	state.webSubscriptions = [];
 	state.deviceTokens = [];
 	state.updates = [];
+	state.userLocale = "en";
 	fcmSends.length = 0;
 	state.webPushSend.mockReset().mockResolvedValue({ statusCode: 201 });
 	state.deviceTokenQuery.mockClear();
@@ -148,6 +150,54 @@ describe("sendPushToUser", { timeout: 30_000 }, () => {
 		expect(JSON.stringify(fcmSends)).not.toContain("Anna Schmidt");
 		// Every delivery records when the subscription or device was last used.
 		expect(state.updates.filter((update) => "lastUsedAt" in update.set)).toHaveLength(3);
+	});
+
+	it("sends the web push title and body in the recipient language (#1155)", async () => {
+		state.userLocale = "de";
+		state.webSubscriptions = [
+			{ id: "web-1", endpoint: "https://push.example/1", p256dh: "k", auth: "a" },
+		];
+		const push = await loadPushService(VAPID_ENV);
+		const payload: PushPayload = {
+			title: "Added to team",
+			body: "You have been added to the Ops team by Mina Manager.",
+			tag: "team_member_added",
+			data: { type: "team_member_added", actionUrl: "/teams/ops", url: "/teams/ops" },
+		};
+
+		await push.sendPushToUser("user-1", payload, {
+			organizationId: "org-1",
+			metadata: {
+				i18n: {
+					titleKey: "common:notifications.content.teamMemberAdded.title",
+					titleDefault: "Added to team",
+					messageKey: "common:notifications.content.teamMemberAdded.message",
+					messageDefault: "You have been added to the {teamName} team by {performedByName}.",
+					params: { teamName: "Ops", performedByName: "Mina Manager" },
+				},
+			},
+		});
+
+		expect(JSON.parse(state.webPushSend.mock.calls[0][1])).toEqual({
+			...payload,
+			title: "Zum Team hinzugefügt",
+			body: "Du wurdest von Mina Manager zum Team Ops hinzugefügt.",
+		});
+	});
+
+	it("sends the stored web push text of a notification without translation keys", async () => {
+		state.userLocale = "de";
+		state.webSubscriptions = [
+			{ id: "web-1", endpoint: "https://push.example/1", p256dh: "k", auth: "a" },
+		];
+		const push = await loadPushService(VAPID_ENV);
+
+		await push.sendPushToUser("user-1", approvalPayload, {
+			organizationId: "org-1",
+			metadata: { requestId: "request-1" },
+		});
+
+		expect(JSON.parse(state.webPushSend.mock.calls[0][1])).toEqual(approvalPayload);
 	});
 
 	it("deactivates a device token FCM reports as invalid and keeps the others", async () => {

@@ -3,39 +3,129 @@
  *
  * Functions to create notifications in response to ArbZG compliance events.
  * These are fire-and-forget - they don't throw on failure.
+ *
+ * Every notification carries translation keys and typed params, so each channel
+ * renders it in the recipient's language (#812). Exception types are ICU `select`
+ * labels; instants are shown in the organization's zone.
  */
 
-import { DateTime } from "luxon";
+import { db } from "@/db";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { type NotificationCopy, translatedContent } from "./notification-copy";
+import {
+	fillNotificationTemplate,
+	type NotificationParamValue,
+	notificationParam,
+} from "./notification-params";
 import { createNotification, createNotificationForManager } from "./notification-service";
 
 const logger = createLogger("ComplianceNotificationTriggers");
 
-// Helper to format exception type for display
+/** The English label of an exception type, for the stored English text. */
 const formatExceptionType = (type: string): string => {
 	switch (type) {
 		case "rest_period":
-			return "Rest Period";
+			return "rest period";
 		case "overtime_daily":
-			return "Daily Overtime";
+			return "daily overtime";
 		case "overtime_weekly":
-			return "Weekly Overtime";
+			return "weekly overtime";
 		case "overtime_monthly":
-			return "Monthly Overtime";
+			return "monthly overtime";
 		default:
-			return type;
+			return "compliance";
 	}
 };
 
-// Helper to format date for display
-const formatDate = (date: Date): string => {
-	return DateTime.fromJSDate(date).toLocaleString({
-		month: "short",
-		day: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-};
+const OVERTIME_PERIOD_TEXT = {
+	daily: "today",
+	weekly: "this week",
+	monthly: "this month",
+} as const;
+
+/**
+ * Typed instant param in the organization's zone, so the server's zone never shows.
+ */
+async function organizationInstant(
+	organizationId: string,
+	at: Date,
+): Promise<NotificationParamValue> {
+	const timeZone = await loadOrganizationTimezone(db, organizationId);
+	return notificationParam.zonedInstant(instantFromDate(at), timeZone);
+}
+
+const exceptionRequestedCopy = {
+	titleKey: "common:notifications.content.complianceExceptionRequested.title",
+	titleDefault: "Compliance exception requested",
+	messageKey: "common:notifications.content.complianceExceptionRequested.message",
+	messageDefault:
+		'{employeeName} requested a {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception: "{reason}"',
+} as const satisfies NotificationCopy;
+
+const exceptionApprovedCopy = {
+	titleKey: "common:notifications.content.complianceExceptionApproved.title",
+	titleDefault: "Exception approved",
+	messageKey: "common:notifications.content.complianceExceptionApproved.message",
+	messageDefault:
+		"Your {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception was approved by {approverName}. Valid until {validUntil}.",
+} as const satisfies NotificationCopy;
+
+const exceptionRejectedCopy = {
+	withoutReason: {
+		titleKey: "common:notifications.content.complianceExceptionRejected.title",
+		titleDefault: "Exception rejected",
+		messageKey: "common:notifications.content.complianceExceptionRejected.message",
+		messageDefault:
+			"Your {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception was rejected by {approverName}.",
+	},
+	withReason: {
+		titleKey: "common:notifications.content.complianceExceptionRejected.title",
+		titleDefault: "Exception rejected",
+		messageKey: "common:notifications.content.complianceExceptionRejected.messageWithReason",
+		messageDefault:
+			'Your {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception was rejected by {approverName}. Reason: "{reason}"',
+	},
+} as const satisfies Record<string, NotificationCopy>;
+
+const exceptionExpiredCopy = {
+	titleKey: "common:notifications.content.complianceExceptionExpired.title",
+	titleDefault: "Exception expired",
+	messageKey: "common:notifications.content.complianceExceptionExpired.message",
+	messageDefault:
+		"Your {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} pre-approval has expired (24 hours passed without use).",
+} as const satisfies NotificationCopy;
+
+const restPeriodWarningCopy = {
+	titleKey: "common:notifications.content.restPeriodWarning.title",
+	titleDefault: "Rest period reminder",
+	messageKey: "common:notifications.content.restPeriodWarning.message",
+	messageDefault:
+		"You have {remaining} of required rest remaining. Next allowed clock-in: {nextAllowedClockIn}.",
+} as const satisfies NotificationCopy;
+
+const overtimeWarningCopy = {
+	titleKey: "common:notifications.content.overtimeWarning.title",
+	titleDefault: "Overtime threshold approaching",
+	messageKey: "common:notifications.content.overtimeWarning.message",
+	messageDefault:
+		"You've worked {worked} {period, select, daily {today} weekly {this week} other {this month}} ({percent}% of the {limit} limit).",
+} as const satisfies NotificationCopy;
+
+const restPeriodViolationCopy = {
+	titleKey: "common:notifications.content.restPeriodViolation.title",
+	titleDefault: "Rest period violation logged",
+	messageKey: "common:notifications.content.restPeriodViolation.message",
+	messageDefault: "{description}",
+} as const satisfies NotificationCopy;
+
+const overtimeViolationCopy = {
+	titleKey: "common:notifications.content.overtimeViolation.title",
+	titleDefault: "Overtime violation logged",
+	messageKey: "common:notifications.content.overtimeViolation.message",
+	messageDefault: "{description}",
+} as const satisfies NotificationCopy;
 
 // =============================================================================
 // Exception Request Notifications
@@ -87,15 +177,28 @@ export async function onComplianceExceptionRequested(
 ): Promise<void> {
 	try {
 		if (params.managerId) {
+			const copy = exceptionRequestedCopy;
+			const i18nParams = {
+				employeeName: params.employeeName,
+				exceptionType: params.exceptionType,
+				reason: params.reason,
+			};
 			await createNotificationForManager({
 				managerId: params.managerId,
 				organizationId: params.organizationId,
 				type: "compliance_exception_requested",
-				title: "Compliance exception requested",
-				message: `${params.employeeName} requested a ${formatExceptionType(params.exceptionType)} exception: "${params.reason}"`,
+				title: copy.titleDefault,
+				message: fillNotificationTemplate(
+					'{employeeName} requested a {label} exception: "{reason}"',
+					{
+						...i18nParams,
+						label: formatExceptionType(params.exceptionType),
+					},
+				),
 				entityType: "compliance_exception",
 				entityId: params.exceptionId,
 				actionUrl: "/settings/compliance",
+				metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 			});
 		}
 	} catch (error) {
@@ -113,15 +216,25 @@ export async function onComplianceExceptionApproved(
 	params: ExceptionApprovedParams,
 ): Promise<void> {
 	try {
+		const copy = exceptionApprovedCopy;
+		const i18nParams = {
+			exceptionType: params.exceptionType,
+			approverName: params.approverName,
+			validUntil: await organizationInstant(params.organizationId, params.validUntil),
+		};
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "compliance_exception_approved",
-			title: "Exception approved",
-			message: `Your ${formatExceptionType(params.exceptionType)} exception was approved by ${params.approverName}. Valid until ${formatDate(params.validUntil)}.`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(
+				"Your {label} exception was approved by {approverName}. Valid until {validUntil}.",
+				{ ...i18nParams, label: formatExceptionType(params.exceptionType) },
+			),
 			entityType: "compliance_exception",
 			entityId: params.exceptionId,
 			actionUrl: "/time-tracking",
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger compliance exception approved notification");
@@ -135,16 +248,29 @@ export async function onComplianceExceptionRejected(
 	params: ExceptionRejectedParams,
 ): Promise<void> {
 	try {
-		const reasonText = params.reason ? ` Reason: "${params.reason}"` : "";
+		const copy = params.reason
+			? exceptionRejectedCopy.withReason
+			: exceptionRejectedCopy.withoutReason;
+		const i18nParams = {
+			exceptionType: params.exceptionType,
+			approverName: params.approverName,
+			...(params.reason ? { reason: params.reason } : {}),
+		};
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "compliance_exception_rejected",
-			title: "Exception rejected",
-			message: `Your ${formatExceptionType(params.exceptionType)} exception was rejected by ${params.approverName}.${reasonText}`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(
+				params.reason
+					? 'Your {label} exception was rejected by {approverName}. Reason: "{reason}"'
+					: "Your {label} exception was rejected by {approverName}.",
+				{ ...i18nParams, label: formatExceptionType(params.exceptionType) },
+			),
 			entityType: "compliance_exception",
 			entityId: params.exceptionId,
 			actionUrl: "/time-tracking",
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger compliance exception rejected notification");
@@ -156,15 +282,23 @@ export async function onComplianceExceptionRejected(
  */
 export async function onComplianceExceptionExpired(params: ExceptionExpiredParams): Promise<void> {
 	try {
+		const copy = exceptionExpiredCopy;
+		const i18nParams = { exceptionType: params.exceptionType };
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "compliance_exception_expired",
-			title: "Exception expired",
-			message: `Your ${formatExceptionType(params.exceptionType)} pre-approval has expired (24 hours passed without use).`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(
+				"Your {label} pre-approval has expired (24 hours passed without use).",
+				{
+					label: formatExceptionType(params.exceptionType),
+				},
+			),
 			entityType: "compliance_exception",
 			entityId: params.exceptionId,
 			actionUrl: "/time-tracking",
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger compliance exception expired notification");
@@ -204,15 +338,24 @@ interface ViolationParams {
  */
 export async function onRestPeriodWarning(params: RestPeriodWarningParams): Promise<void> {
 	try {
+		const copy = restPeriodWarningCopy;
+		const i18nParams = {
+			remaining: notificationParam.duration(Math.round(params.hoursRemaining * 60)),
+			nextAllowedClockIn: await organizationInstant(
+				params.organizationId,
+				params.nextAllowedClockIn,
+			),
+		};
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "rest_period_warning",
-			title: "Rest period reminder",
-			message: `You have ${params.hoursRemaining.toFixed(1)} hours of required rest remaining. Next allowed clock-in: ${formatDate(params.nextAllowedClockIn)}.`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(copy.messageDefault, i18nParams),
 			entityType: "compliance",
 			entityId: "rest_period",
 			actionUrl: "/time-tracking",
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger rest period warning notification");
@@ -224,24 +367,30 @@ export async function onRestPeriodWarning(params: RestPeriodWarningParams): Prom
  */
 export async function onOvertimeWarning(params: OvertimeWarningParams): Promise<void> {
 	try {
-		const periodText =
-			params.overtimeType === "daily"
-				? "today"
-				: params.overtimeType === "weekly"
-					? "this week"
-					: "this month";
-		const hoursWorked = (params.currentMinutes / 60).toFixed(1);
-		const hoursLimit = (params.thresholdMinutes / 60).toFixed(1);
+		const copy = overtimeWarningCopy;
+		const i18nParams = {
+			worked: notificationParam.duration(Math.round(params.currentMinutes)),
+			period: params.overtimeType,
+			percent: Math.round(params.percentOfThreshold),
+			limit: notificationParam.duration(Math.round(params.thresholdMinutes)),
+		};
 
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "overtime_warning",
-			title: `Overtime threshold approaching`,
-			message: `You've worked ${hoursWorked}h ${periodText} (${params.percentOfThreshold.toFixed(0)}% of ${hoursLimit}h limit).`,
+			title: copy.titleDefault,
+			message: fillNotificationTemplate(
+				"You've worked {worked} {periodText} ({percent}% of the {limit} limit).",
+				{
+					...i18nParams,
+					periodText: OVERTIME_PERIOD_TEXT[params.overtimeType],
+				},
+			),
 			entityType: "compliance",
 			entityId: `overtime_${params.overtimeType}`,
 			actionUrl: "/time-tracking",
+			metadata: { i18n: translatedContent(copy, i18nParams).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger overtime warning notification");
@@ -249,19 +398,22 @@ export async function onOvertimeWarning(params: OvertimeWarningParams): Promise<
 }
 
 /**
- * Notify employee that a rest period violation has been logged
+ * Notify employee that a rest period violation has been logged. The description
+ * is the caller's text and is shown as given.
  */
 export async function onRestPeriodViolation(params: ViolationParams): Promise<void> {
 	try {
+		const copy = restPeriodViolationCopy;
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "rest_period_violation",
-			title: "Rest period violation logged",
+			title: copy.titleDefault,
 			message: params.description,
 			entityType: "work_period",
 			entityId: params.workPeriodId || "violation",
 			actionUrl: "/time-tracking",
+			metadata: { i18n: translatedContent(copy, { description: params.description }).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger rest period violation notification");
@@ -269,19 +421,22 @@ export async function onRestPeriodViolation(params: ViolationParams): Promise<vo
 }
 
 /**
- * Notify employee that an overtime violation has been logged
+ * Notify employee that an overtime violation has been logged. The description
+ * is the caller's text and is shown as given.
  */
 export async function onOvertimeViolation(params: ViolationParams): Promise<void> {
 	try {
+		const copy = overtimeViolationCopy;
 		await createNotification({
 			userId: params.employeeUserId,
 			organizationId: params.organizationId,
 			type: "overtime_violation",
-			title: "Overtime violation logged",
+			title: copy.titleDefault,
 			message: params.description,
 			entityType: "work_period",
 			entityId: params.workPeriodId || "violation",
 			actionUrl: "/time-tracking",
+			metadata: { i18n: translatedContent(copy, { description: params.description }).i18n },
 		});
 	} catch (error) {
 		logger.error({ error, params }, "Failed to trigger overtime violation notification");

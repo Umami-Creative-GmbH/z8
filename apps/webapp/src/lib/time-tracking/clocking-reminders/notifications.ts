@@ -1,4 +1,9 @@
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
+import {
+	fillNotificationTemplate,
+	type NotificationParamValue,
+	notificationParam,
+} from "@/lib/notifications/notification-params";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import type { ClockingReminderType, DueClockingReminder } from "./occasion";
 
@@ -101,25 +106,25 @@ const policyMessageCopy = {
 	Record<ClockingReminderType, Pick<ReminderCopy, "messageKey" | "messageDefault">>
 >;
 
-function formatTime(instant: Instant, locale: string, timezone: string): string {
-	return instant.toLocaleString(locale, { timeStyle: "short", timeZone: timezone });
-}
-
 /**
- * The reminder as the employee receives it: English text plus the i18n keys and parameters, with
- * shift and break times shown in the employee's own timezone and locale.
+ * The reminder as the employee receives it: the stored English text plus the i18n keys and typed
+ * params (#1149), which every channel formats in the reader's language and hour cycle when it
+ * delivers. Shift, policy and break times stay in the zone the reminder was judged in (the
+ * employee's effective timezone), which the message names; dates are calendar days.
  */
 export function buildClockingReminderNotification(input: {
 	reminder: DueClockingReminder;
 	organizationId: string;
 	userId: string;
 	timezone: string;
-	locale: string;
 }): CreateNotificationParams {
-	const { reminder, timezone, locale } = input;
-	const params: Record<string, string> = { timezone };
+	const { reminder, timezone } = input;
+	const params: Record<string, NotificationParamValue> = { timezone };
 	let copy: ReminderCopy = reminderCopy[reminder.type];
-	const formatDate = (date: PlainDate) => date.toLocaleString(locale, { dateStyle: "medium" });
+	const formatDate = (date: PlainDate) => notificationParam.plainDate(date);
+	// The message prints the zone as `{timezone}`, so the time itself does not.
+	const formatTime = (instant: Instant) =>
+		notificationParam.zonedInstant(instant, timezone, "time", { printZone: false });
 	if (reminder.type === "period_submission_decided") {
 		const period = reminder.decidedPeriod;
 		if (period?.outcome === "rejected") {
@@ -139,34 +144,28 @@ export function buildClockingReminderNotification(input: {
 		params.startDate = formatDate(period?.startDate ?? reminder.day);
 		params.endDate = formatDate(period?.endDate ?? reminder.day);
 	} else if (reminder.shift) {
-		params.startTime = formatTime(reminder.shift.start, locale, timezone);
-		params.endTime = formatTime(reminder.shift.end, locale, timezone);
+		params.startTime = formatTime(reminder.shift.start);
+		params.endTime = formatTime(reminder.shift.end);
 	} else if (reminder.type !== "break_due_reminder") {
 		copy = { ...copy, ...policyMessageCopy[reminder.type] };
-		const expected = formatTime(reminder.expectedAt, locale, timezone);
+		const expected = formatTime(reminder.expectedAt);
 		if (reminder.type === "missed_clock_in_reminder") {
 			params.startTime = expected;
 		} else {
 			params.endTime = expected;
 			// Live work past midnight is judged against the day it started, which need not be today.
-			params.day = reminder.day.toLocaleString(locale, {
-				weekday: "long",
-				month: "long",
-				day: "numeric",
-			});
+			params.day = notificationParam.plainDate(reminder.day, "weekdayMonthDayLong");
 		}
 	}
 	if (reminder.type === "break_due_reminder") {
-		params.breakTime = formatTime(reminder.expectedAt, locale, timezone);
+		params.breakTime = formatTime(reminder.expectedAt);
 	}
-	const render = (template: string) =>
-		template.replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);
 	return {
 		userId: input.userId,
 		organizationId: input.organizationId,
 		type: reminder.type,
 		title: copy.titleDefault,
-		message: render(copy.messageDefault),
+		message: fillNotificationTemplate(copy.messageDefault, params),
 		...(reminder.shift ? { entityType: "shift", entityId: reminder.shift.id } : {}),
 		actionUrl: "/time-tracking",
 		idempotencyKey: `clocking-reminder:${reminder.occasionKey}`,

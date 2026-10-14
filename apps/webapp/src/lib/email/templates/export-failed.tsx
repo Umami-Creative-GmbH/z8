@@ -1,14 +1,31 @@
-import { Body, Button, Container, Head, Heading, Hr, Html, Section, Text } from "react-email";
+// Mailer only: the email copy and its catalog never reach a route or the client.
+import "server-only";
 
-interface ExportFailedProps {
+import type { EmailTranslate } from "../email-i18n";
+import { EmailLayout, EmailText } from "../layout/email-layout";
+
+/** The export-failed email's data; also the `{{variables}}` of its override. */
+export type ExportFailedData = {
 	recipientName: string;
 	organizationName: string;
+	/** The requested data categories, already in the recipient language. */
 	categories: string[];
 	errorMessage: string;
 	retryUrl: string;
+};
+
+export interface ExportFailedProps extends ExportFailedData {
+	/** The recipient language. */
+	locale: string;
+	/** The `emails` namespace translator in `locale`. */
+	t: EmailTranslate;
 }
 
+// No inbox preview: the default body is also the override starter draft, whose plain text
+// would pick up the preview's hidden padding.
 export function ExportFailed({
+	locale,
+	t,
 	recipientName,
 	organizationName,
 	categories,
@@ -16,142 +33,34 @@ export function ExportFailed({
 	retryUrl,
 }: ExportFailedProps) {
 	return (
-		<Html>
-			<Head />
-			<Body style={main}>
-				<Container style={container}>
-					<Heading style={h1}>Data Export Failed</Heading>
-					<Text style={text}>Hi {recipientName},</Text>
-					<Text style={text}>
-						Unfortunately, your data export for <strong>{organizationName}</strong> could not be
-						completed.
-					</Text>
-
-					<Section style={detailsBox}>
-						<Text style={detailLabel}>Organization</Text>
-						<Text style={detailValue}>{organizationName}</Text>
-
-						<Text style={detailLabel}>Requested Data</Text>
-						<Text style={detailValue}>{categories.join(", ")}</Text>
-
-						<Text style={detailLabel}>Error</Text>
-						<Text style={errorValue}>{errorMessage}</Text>
-					</Section>
-
-					<Section style={buttonContainer}>
-						<Button style={button} href={retryUrl}>
-							Try Again
-						</Button>
-					</Section>
-
-					<Hr style={hr} />
-
-					<Text style={footer}>
-						If this error persists, please contact support with the error message above.
-					</Text>
-
-					<Text style={footer}>
-						You can also try exporting fewer data categories at once if you're experiencing timeout
-						issues.
-					</Text>
-				</Container>
-			</Body>
-		</Html>
+		<EmailLayout
+			locale={locale}
+			t={t}
+			title={t("emails.exportFailed.title", "Data export failed")}
+			details={[
+				{ label: t("emails.export.organization", "Organization"), value: organizationName },
+				{
+					label: t("emails.exportFailed.categories", "Requested data"),
+					value: categories.join(", "),
+				},
+				{ label: t("emails.exportFailed.error", "Error"), value: errorMessage },
+			]}
+			action={{ label: t("emails.exportFailed.action", "Try again"), href: retryUrl }}
+			note={t(
+				"emails.exportFailed.note",
+				"If this error persists, contact support with the error message above. Exporting fewer data categories at once can also help.",
+			)}
+		>
+			<EmailText>{t("emails.common.greeting", "Hi {name},", { name: recipientName })}</EmailText>
+			<EmailText>
+				{t(
+					"emails.exportFailed.body",
+					"Unfortunately, your data export for {organizationName} could not be completed.",
+					{ organizationName },
+				)}
+			</EmailText>
+		</EmailLayout>
 	);
 }
 
 export default ExportFailed;
-
-// Styles
-const main = {
-	backgroundColor: "#f6f9fc",
-	fontFamily:
-		'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-};
-
-const container = {
-	backgroundColor: "#ffffff",
-	margin: "0 auto",
-	padding: "20px 0 48px",
-	marginBottom: "64px",
-	maxWidth: "600px",
-};
-
-const h1 = {
-	color: "#dc2626",
-	fontSize: "24px",
-	fontWeight: "bold",
-	padding: "0 40px",
-	margin: "30px 0",
-	textAlign: "center" as const,
-};
-
-const text = {
-	color: "#333",
-	fontSize: "16px",
-	lineHeight: "26px",
-	padding: "0 40px",
-};
-
-const detailsBox = {
-	backgroundColor: "#fef2f2",
-	borderRadius: "8px",
-	margin: "24px 40px",
-	padding: "24px",
-	border: "1px solid #fecaca",
-};
-
-const detailLabel = {
-	color: "#666",
-	fontSize: "12px",
-	fontWeight: "600",
-	textTransform: "uppercase" as const,
-	letterSpacing: "0.5px",
-	margin: "16px 0 4px 0",
-};
-
-const detailValue = {
-	color: "#333",
-	fontSize: "16px",
-	margin: "0 0 8px 0",
-};
-
-const errorValue = {
-	color: "#dc2626",
-	fontSize: "14px",
-	margin: "0 0 8px 0",
-	fontFamily: "monospace",
-	backgroundColor: "#fff",
-	padding: "8px",
-	borderRadius: "4px",
-};
-
-const buttonContainer = {
-	padding: "27px 40px",
-	textAlign: "center" as const,
-};
-
-const button = {
-	backgroundColor: "#5469d4",
-	borderRadius: "6px",
-	color: "#fff",
-	fontSize: "16px",
-	fontWeight: "600",
-	textDecoration: "none",
-	textAlign: "center" as const,
-	display: "inline-block",
-	padding: "12px 32px",
-};
-
-const hr = {
-	borderColor: "#e6ebf1",
-	margin: "20px 40px",
-};
-
-const footer = {
-	color: "#8898aa",
-	fontSize: "14px",
-	lineHeight: "24px",
-	padding: "0 40px",
-	textAlign: "center" as const,
-};
