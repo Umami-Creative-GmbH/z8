@@ -25,6 +25,11 @@ import {
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import {
+	assertPersonnelNumberFree,
+	findPersonnelNumberHolder,
+	keepPersonnelNumberRefusal,
+} from "@/lib/organization/personnel-number-uniqueness";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
 import { pauseSchedulesAfterOwnerAccessChange } from "@/lib/scheduled-exports/application/owner-access-change";
 import {
@@ -281,6 +286,17 @@ export async function updateEmployeeAction(
 					lastName?: string;
 				};
 
+				// A personnel number is unique per organization among current and former
+				// employees (#881); a blank one is no number.
+				const personnelNumber =
+					typeof employeeUpdateData.employeeNumber === "string"
+						? employeeUpdateData.employeeNumber
+						: null;
+				const personnelNumberScope = {
+					organizationId: targetEmployee.organizationId,
+					exceptEmployeeId: employeeId,
+				};
+
 				// Role, team and active state feed creation authority and target checks.
 				yield* dbService
 					.query("updateEmployee", () =>
@@ -290,6 +306,12 @@ export async function updateEmployeeAction(
 								employeeIds: [employeeId],
 							},
 							async (tx) => {
+								if (personnelNumber !== null) {
+									await assertPersonnelNumberFree(tx, {
+										...personnelNumberScope,
+										personnelNumber,
+									});
+								}
 								await tx
 									.update(employee)
 									.set(employeeUpdateData)
@@ -310,7 +332,18 @@ export async function updateEmployeeAction(
 							dbService.db,
 						),
 					)
-					.pipe(keepCustomFieldRefusal);
+					.pipe(
+						keepCustomFieldRefusal,
+						// A concurrent save that took the number first hits the unique index.
+						keepPersonnelNumberRefusal(() =>
+							personnelNumber === null
+								? Promise.resolve(null)
+								: findPersonnelNumberHolder(dbService.db, {
+										...personnelNumberScope,
+										personnelNumber,
+									}),
+						),
+					);
 
 				// A lower role or a deactivation can take projects away from the employee's share links (#806).
 				if ("role" in employeeUpdateData || "isActive" in employeeUpdateData) {

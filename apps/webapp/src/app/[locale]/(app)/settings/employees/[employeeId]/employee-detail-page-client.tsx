@@ -39,6 +39,7 @@ import {
 	buildEmployeeUpdatePayload,
 	defaultFormValues,
 	focusFirstInvalidEmployeeDetailField,
+	showEmployeeSaveRefusal,
 	syncEmployeeForm,
 } from "./page-utils";
 
@@ -162,6 +163,8 @@ export function EmployeeDetailPageClient({
 				);
 				customFields.reset();
 				push("/settings/employees");
+			} else if (showEmployeeSaveRefusal(form, result)) {
+				document.querySelector<HTMLInputElement>('input[name="employeeNumber"]')?.focus();
 			} else {
 				toast.error(
 					result.error ||

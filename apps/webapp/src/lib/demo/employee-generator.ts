@@ -3,7 +3,9 @@ import "server-only";
 import { faker } from "@faker-js/faker";
 import { member, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import { withDemoConfigurationMutation } from "./demo-configuration";
+import { pickDemoPersonnelNumber } from "./demo-personnel-numbers";
 
 export interface GenerateEmployeesOptions {
 	organizationId: string;
@@ -78,7 +80,7 @@ export async function generateDemoEmployees(
 			// protection and the new user's guard (#318).
 			await withDemoConfigurationMutation(
 				organizationId,
-				async (tx) => {
+				async (tx, organizationEmployees) => {
 					await tx.insert(user).values({
 						id: userId,
 						name: `${firstName} ${lastName}`,
@@ -110,7 +112,17 @@ export async function generateDemoEmployees(
 						gender,
 						birthday,
 						role: isManager ? "manager" : "employee",
-						employeeNumber: `EMP${String(faker.number.int({ min: 1000, max: 9999 }))}`,
+						// Unique per organization (#881): the demo batch guard serializes demo runs, and
+						// the employees read under it hold every number taken so far.
+						employeeNumber: pickDemoPersonnelNumber(
+							new Set(
+								organizationEmployees.flatMap((row) => {
+									const key = personnelNumberKey(row.employeeNumber);
+									return key === null ? [] : [key];
+								}),
+							),
+							(min, max) => faker.number.int({ min, max }),
+						),
 						position: faker.helpers.arrayElement(positions),
 						startDate,
 						isActive: true,
