@@ -84,11 +84,16 @@
         "absencesRead": "Absenzen lesen",
         "absencesReadHealth": "Gesundheitsdetails zu Absenzen lesen",
         "customersRead": "Kunden lesen",
+        "customFieldsReadRestricted": "Eingeschränkte benutzerdefinierte Felder lesen",
         "employeesRead": "Mitarbeitende lesen",
         "projectsRead": "Projekte lesen",
         "timeEntriesRead": "Zeiteinträge lesen"
       },
       "scopes": "Berechtigunge",
+      "scopeWarning": {
+        "absencesReadHealth": "Zeigt Krankheitsabsenzen mit ihrer Kategorie und Krankheitsdetails an. Gewähren Sie dies nur Integrationen, die Gesundheitsdaten benötigen.",
+        "customFieldsReadRestricted": "Fügt Mitarbeitenden, Projekten und Kunden die benutzerdefinierten Felder hinzu, die nur Manager oder Admins sehen, wie z. B. Lohnbänder. Ohne dies liest ein Schlüssel nur Felder, die jedes Mitglied sieht."
+      },
       "security": {
         "description": "API-Schlüssel gänd volle Zuegriff uf dini Organisationsdate im Rahme vo ihrne Berechtigunge. Halt sie sicher und teils sie nie in öffentliche Repositories oder im Client-seitige Code.",
         "title": "Sicherheitshinwiis"

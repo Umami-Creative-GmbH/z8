@@ -84,11 +84,16 @@
         "absencesRead": "İzinleri oku",
         "absencesReadHealth": "İzin sağlık ayrıntılarını oku",
         "customersRead": "Müşterileri oku",
+        "customFieldsReadRestricted": "Kısıtlanmış özel alanları oku",
         "employeesRead": "Çalışanları oku",
         "projectsRead": "Projeleri oku",
         "timeEntriesRead": "Zaman girişlerini oku"
       },
       "scopes": "İzinler",
+      "scopeWarning": {
+        "absencesReadHealth": "Hastalık izinlerini kategorileri ve hastalık detaylarıyla birlikte gösterir. Yalnızca sağlık verilerine ihtiyaç duyan entegrasyonlara verin.",
+        "customFieldsReadRestricted": "Maaş bantları gibi yalnızca yöneticilerin veya sistem yöneticilerinin görebildiği özel alanları çalışanlara, projelere ve müşterilere ekler. Bu olmadan, bir anahtar yalnızca her üyenin gördüğü alanları okur."
+      },
       "security": {
         "description": "API anahtarları, izin kapsamları dahilinde kuruluş verilerinize tam erişim sağlar. Bunları güvende tutun ve asla herkese açık depolarda veya istemci tarafı kodlarında paylaşmayın.",
         "title": "Güvenlik Bildirimi"

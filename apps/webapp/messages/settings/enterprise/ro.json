@@ -84,11 +84,16 @@
         "absencesRead": "Citire absențe",
         "absencesReadHealth": "Citire detalii medicale ale absențelor",
         "customersRead": "Citire clienți",
+        "customFieldsReadRestricted": "Citire câmpuri personalizate restricționate",
         "employeesRead": "Citire angajați",
         "projectsRead": "Citire proiecte",
         "timeEntriesRead": "Citire înregistrări de timp"
       },
       "scopes": "Permisiuni",
+      "scopeWarning": {
+        "absencesReadHealth": "Afișează absențele medicale cu categoria și detaliile medicale ale acestora. Acordați-o doar integrărilor care au nevoie de date privind starea de sănătate.",
+        "customFieldsReadRestricted": "Adaugă câmpurile personalizate pe care le văd doar managerii sau administratorii, cum ar fi grilele salariale, pentru angajați, proiecte și clienți. Fără aceasta, o cheie citește doar câmpurile pe care le vede fiecare membru."
+      },
       "security": {
         "description": "Cheile API oferă acces complet la datele organizației dvs. în limita permisiunilor acordate. Păstrați-le în siguranță și nu le partajați niciodată în depozite publice sau în cod de tip client.",
         "title": "Notificare de securitate"

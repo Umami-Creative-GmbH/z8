@@ -84,11 +84,16 @@
         "absencesRead": "Lexo mungesat",
         "absencesReadHealth": "Lexo detajet shëndetësore të mungesës",
         "customersRead": "Lexo klientët",
+        "customFieldsReadRestricted": "Lexo fushat e personalizuara të kufizuara",
         "employeesRead": "Lexo punonjësit",
         "projectsRead": "Lexo projektet",
         "timeEntriesRead": "Lexo regjistrimet e kohës"
       },
       "scopes": "Lejet",
+      "scopeWarning": {
+        "absencesReadHealth": "Shfaq mungesat për shkak sëmundjeje me kategorinë dhe detajet e sëmundjes. Jepeni këtë leje vetëm për integrimet që kanë nevojë për të dhëna shëndetësore.",
+        "customFieldsReadRestricted": "Shton te punonjësit, projektet dhe klientët fushat e personalizuara që shihen vetëm nga menaxherët ose administratorët, të tilla si fashat e pagave. Pa të, një çelës lexon vetëm fushat që sheh çdo anëtar."
+      },
       "security": {
         "description": "Çelësat API ofrojnë qasje të plotë në të dhënat e organizatës suaj brenda fushës së lejeve të tyre. Mbajini të sigurt dhe mos i ndani kurrë në depo publike ose kod të anës së klientit.",
         "title": "Njoftim sigurie"

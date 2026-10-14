@@ -84,11 +84,16 @@
         "absencesRead": "Läs frånvaro",
         "absencesReadHealth": "Läs hälsouppgifter för frånvaro",
         "customersRead": "Läs kunder",
+        "customFieldsReadRestricted": "Läs begränsade anpassade fält",
         "employeesRead": "Läs medarbetare",
         "projectsRead": "Läs projekt",
         "timeEntriesRead": "Läs tidsregistreringar"
       },
       "scopes": "Behörigheter",
+      "scopeWarning": {
+        "absencesReadHealth": "Visar sjukfrånvaro med kategori och sjukdomsdetaljer. Bevilja endast till integrationer som behöver hälsodata.",
+        "customFieldsReadRestricted": "Lägger till de anpassade fält som endast chefer eller administratörer ser, såsom lönespann, för anställda, projekt och kunder. Utan den läser en nyckel endast fält som alla medlemmar ser."
+      },
       "security": {
         "description": "API-nycklar ger full åtkomst till din organisations data inom ramen för sina behörigheter. Förvara dem säkert och dela dem aldrig i publika kodarkiv eller kod på klientsidan.",
         "title": "Säkerhetsmeddelande"
