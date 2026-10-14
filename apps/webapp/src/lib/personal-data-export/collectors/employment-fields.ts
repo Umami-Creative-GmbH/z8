@@ -94,10 +94,6 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 					"personalDataExport.readme.fields.employment.employee.contractType",
 					"Your contract type.",
 				),
-				current_hourly_rate: t(
-					"personalDataExport.readme.fields.employment.employee.currentHourlyRate",
-					"Your current hourly wage.",
-				),
 				start_date: t(
 					"personalDataExport.readme.fields.employment.employee.startDate",
 					"When your employment started.",
@@ -264,27 +260,6 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 				review_state: t(
 					"personalDataExport.readme.fields.employment.employmentTerms.reviewState",
 					"Whether the terms were confirmed or still need a review.",
-				),
-			},
-		},
-		wage_history: {
-			summary: t(
-				"personalDataExport.readme.fields.employment.wageHistory.summary",
-				"Your earlier hourly wages, as recorded before employment terms.",
-			),
-			fields: {
-				...common("effective_from", "effective_to", "created_at", "created_by"),
-				hourly_rate: t(
-					"personalDataExport.readme.fields.employment.wageHistory.hourlyRate",
-					"Your hourly wage.",
-				),
-				currency: t(
-					"personalDataExport.readme.fields.employment.wageHistory.currency",
-					"The currency of the hourly wage.",
-				),
-				reason: t(
-					"personalDataExport.readme.fields.employment.wageHistory.reason",
-					"Why the wage changed.",
 				),
 			},
 		},
